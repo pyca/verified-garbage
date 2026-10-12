@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Entry
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Entry
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on AArch64: calls of the arithmetic primitives
@@ -9,6 +15,8 @@ For each call of `vg_mldsa_ntt`, `vg_mldsa_inv_ntt` (`ipAt`),
 pointers, `…Chk`), what it does (`…_ok`), and that two runs whose layout
 registers agree leak the same (`…_tr`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64
 

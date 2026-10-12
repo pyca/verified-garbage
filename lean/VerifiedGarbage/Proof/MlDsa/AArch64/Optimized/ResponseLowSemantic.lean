@@ -1,7 +1,15 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLowMemory
-import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Mem
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLowMemory
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Mem
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## From `ResponseLowStore.lean` -/
+
+@[expose] public section
 
 section
 

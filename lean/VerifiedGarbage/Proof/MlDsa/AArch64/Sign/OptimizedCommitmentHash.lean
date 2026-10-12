@@ -1,5 +1,13 @@
-import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedCommitment
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedCommitmentPack
+module
+
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedCommitment
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedCommitmentPack
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Sign
 open VG VG.AArch64 VG.Spec.MlDsa

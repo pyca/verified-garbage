@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.NttBfly
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.NttBfly
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on AArch64: the blocks and layers of `NTT` and `NTT⁻¹`
@@ -8,6 +14,8 @@ butterfly `op` of the specification does (`BflyOk`): a block runs `len`
 butterflies (`blockN`), and a layer its `128 / len` blocks (`layerN`), with
 the zetas `Z (zi c)`, whose values `tab` the table at `zP` holds.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Arith
 

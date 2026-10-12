@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.RejNttLoop
-import VerifiedGarbage.Proof.MlDsa.Sample.ExpandMask
-import VerifiedGarbage.Proof.MlDsa.Sample.LeWord
-import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.Ball
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.RejNttLoop
+public import VerifiedGarbage.Proof.MlDsa.Sample.ExpandMask
+public import VerifiedGarbage.Proof.MlDsa.Sample.LeWord
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.Ball
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on AArch64: the loop of `vg_mldsa_sample_in_ball`
@@ -12,6 +18,8 @@ over the 264 bytes after the sign bits does what `bStep` does to it and to `i`
 (in `x10`, with `256 - i` in `x11`), with the sign bits not yet used in `x9`
 (`step_ok`). The loop reads only the output, and writes only `c`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Sample.Ball
 

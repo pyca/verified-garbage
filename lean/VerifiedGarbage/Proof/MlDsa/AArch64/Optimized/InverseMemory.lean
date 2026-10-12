@@ -1,6 +1,14 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseFirstLoop
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseFinalLoop
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MemoryBank
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseFirstLoop
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseFinalLoop
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MemoryBank
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Optimized.Inverse
 open VG VG.AArch64 VG.Spec.MlDsa VG.Proof.MlDsa.Arith

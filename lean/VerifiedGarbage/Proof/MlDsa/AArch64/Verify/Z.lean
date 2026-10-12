@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Lay
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Lay
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Lay
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA verification on AArch64: the prologue, the hint and `z`
@@ -9,6 +16,8 @@ after `Â`) and `x24` whether each norm so far is small (`zOne_vpiece`). The
 results in `x24` are functions of the signature, so they are the same in two
 runs.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Verify
 

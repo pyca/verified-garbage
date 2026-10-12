@@ -1,8 +1,16 @@
-import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.Optimized
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedCalls
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.StaticRoots
+module
+
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.Optimized
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedCalls
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.StaticRoots
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## From `OptimizedMask.lean` -/
+
+@[expose] public section
 
 section
 

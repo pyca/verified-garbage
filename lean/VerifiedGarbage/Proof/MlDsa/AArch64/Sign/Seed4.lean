@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseA
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.Call4
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseA
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.Call4
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
 /-! Signing matrix expansion: four seeds, with the earlier matrix and caller state preserved. -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Sign
 open VG.Impl.MlDsa.AArch64.Call

@@ -1,7 +1,15 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedCommitmentHash
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedMasksTiming
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedDecodeTiming
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseCCTBase
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedCommitmentHash
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedMasksTiming
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedDecodeTiming
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseCCTBase
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Sign
 open VG VG.AArch64 VG.Spec.MlDsa

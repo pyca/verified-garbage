@@ -1,9 +1,17 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Batch
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InversePairs
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Bank
-import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Paired
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Batch
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InversePairs
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Bank
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Paired
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## From `PairedMultiply.lean` -/
+
+@[expose] public section
 
 section
 

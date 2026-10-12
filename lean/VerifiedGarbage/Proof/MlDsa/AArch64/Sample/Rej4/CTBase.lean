@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Top
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.RejNttCT
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Top
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.RejNttCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Sample.Rej4
 open VG VG.AArch64

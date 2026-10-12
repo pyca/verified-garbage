@@ -1,8 +1,16 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedSaved
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedCallFrame
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedCheckModel
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedSaved
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedCallFrame
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedCheckModel
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## From `PairedReturn.lean` -/
+
+@[expose] public section
 
 section
 

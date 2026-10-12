@@ -1,8 +1,17 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.Inv
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Representation
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.Inv
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Representation
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Working-space invariants for lazy forward transforms and centered products.
 Canonical `Pl` and `Fam` remain unchanged for packed and public values. -/
+
+@[expose] public section
+
 namespace VG.Proof.MlDsa.AArch64.Sign
 open VG VG.AArch64 VG.Spec.MlDsa
 open VG.Impl.MlDsa.AArch64.Sign

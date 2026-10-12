@@ -1,9 +1,15 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CallMore
-import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Hash
-import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Blocks
-import VerifiedGarbage.Proof.MlKem.AArch64.KgEnd
-import VerifiedGarbage.Proof.MlKem.AArch64.KgA
-import VerifiedGarbage.Proof.MlDsa.KeyGen.Mono
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CallMore
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Hash
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Blocks
+public import VerifiedGarbage.Proof.MlKem.AArch64.KgEnd
+public import VerifiedGarbage.Proof.MlKem.AArch64.KgA
+public import VerifiedGarbage.Proof.MlDsa.KeyGen.Mono
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA signing on AArch64: the blocks between the calls
@@ -15,6 +21,8 @@ and the bytes of `κ + r` for `ExpandMask` (`kapAdd_ok`, `cntDec_ok`,
 `setKappa_ok`), the sum of the 1s of the hint (`onesAdd_ok`) and its check
 (`onesOk_run`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Sign
 

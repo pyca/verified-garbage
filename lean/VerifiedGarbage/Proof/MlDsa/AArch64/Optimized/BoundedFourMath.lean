@@ -1,9 +1,18 @@
-import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.BoundedFour
-import VerifiedGarbage.Proof.MlDsa.Sample.HalfByte
+module
+
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.BoundedFour
+public import VerifiedGarbage.Proof.MlDsa.Sample.HalfByte
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! The bounded sampler's vector groups preserve the standard nibble order.
 Only the accepted prefix is meaningful while the parser is running; a failed
 whole polynomial is cleared by the final mask. -/
+
+@[expose] public section
+
 namespace VG.Proof.MlDsa.AArch64.Optimized.BoundedFour
 open VG VG.Spec.MlDsa VG.Proof.MlDsa.Sample
 open VG.Impl.MlDsa.AArch64.Optimized.BoundedFour (acceptedIndices)

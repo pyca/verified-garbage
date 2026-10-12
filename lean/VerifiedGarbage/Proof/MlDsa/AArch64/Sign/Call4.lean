@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CallMore
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CallMore
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA signing on AArch64: calls of the samplers
@@ -8,6 +14,8 @@ needs of the layout (`…Chk`), what it does (`…_ok`), and that two runs whose
 layout registers agree, and whose sampler leaks the same, leak the same
 (`…_tr`).
 -/
+
+@[expose] public section
 
 /-! Calls of the four-way sampler through the shared contract, including public return values. -/
 

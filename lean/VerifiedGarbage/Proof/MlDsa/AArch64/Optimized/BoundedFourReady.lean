@@ -1,13 +1,21 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejCounts
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourBatchGeometry
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourInitMemory
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourSamplerState
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejPro
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentAbsorb
-import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.BoundedFour
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.AbsorbPair
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejCounts
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourBatchGeometry
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourInitMemory
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourSamplerState
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejPro
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentAbsorb
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.BoundedFour
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.AbsorbPair
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## From `BoundedFourCounts.lean` -/
+
+@[expose] public section
 
 section
 

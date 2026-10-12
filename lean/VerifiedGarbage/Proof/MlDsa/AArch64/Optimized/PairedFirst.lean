@@ -1,10 +1,18 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedLoad
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedState
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFive
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedStore
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseFiveSlice
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedLoad
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedState
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFive
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedStore
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseFiveSlice
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## From `PairedBank.lean` -/
+
+@[expose] public section
 
 section
 

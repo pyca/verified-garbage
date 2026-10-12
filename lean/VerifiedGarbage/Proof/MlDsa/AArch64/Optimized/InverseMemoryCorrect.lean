@@ -1,16 +1,24 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseFinalStore
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseWord
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseMemory
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseMemorySchedule
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Representation
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseBankField
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseFinalBankFieldRun
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseFinalBankFieldFold
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseMemoryFinalField
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseCore
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MemoryOuterPass
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseFinalStore
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseWord
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseMemory
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseMemorySchedule
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Representation
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseBankField
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseFinalBankFieldRun
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseFinalBankFieldFold
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseMemoryFinalField
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseCore
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MemoryOuterPass
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## From `InverseFinalBankFieldCanonical.lean` -/
+
+@[expose] public section
 
 section
 

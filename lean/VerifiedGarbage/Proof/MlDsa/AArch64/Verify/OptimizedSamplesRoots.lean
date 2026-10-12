@@ -1,6 +1,14 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedSamplesDepth
-import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedTimingBase
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.StaticRootsExecution
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedSamplesDepth
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedTimingBase
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.StaticRootsExecution
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Verify.OptimizedSamples
 open VG VG.AArch64 VG.Spec.MlDsa

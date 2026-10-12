@@ -1,6 +1,14 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.RestBase
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.LazyInv
-import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedEntry
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.RestBase
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.LazyInv
+public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedEntry
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.KeyGen.Optimized
 open VG VG.AArch64 VG.Impl.MlDsa.AArch64.KeyGen

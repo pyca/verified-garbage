@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.NttLoop
-import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Lit
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.NttLoop
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.NttLoop
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Lit
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Lit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on AArch64: `vg_mldsa_ntt`
@@ -8,6 +16,8 @@ The butterfly's code does what `bfly` does (`bfly_spec`), so each layer is
 `nttLayer` (`lay_ok`), and the eight layers are `NTT` (`ntt_eq_layers`).
 `Ntt.LI`, `Ntt.pro_ok` and `inPlaceSat` serve `NTT⁻¹` too.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Arith
 

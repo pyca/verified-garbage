@@ -1,7 +1,15 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.UseHintPackTiming
-import VerifiedGarbage.Spec.MlDsa.UseHintPack
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Contracts
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.UseHintPackTiming
+public import VerifiedGarbage.Spec.MlDsa.UseHintPack
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Contracts
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Optimized.UseHintPack
 open VG VG.AArch64 VG.Spec.MlDsa

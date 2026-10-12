@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.RejNttLoop
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rel
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.RejNttLoop
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rel
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on AArch64: `vg_mldsa_rej_ntt_poly`
@@ -17,6 +23,8 @@ since both runs have the same output (a function of the seed, which the
 contract lets the function leak) and zeros in `a`, and the loop touches
 nothing else.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Sample
 

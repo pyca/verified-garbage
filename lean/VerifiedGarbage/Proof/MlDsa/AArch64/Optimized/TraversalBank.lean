@@ -1,7 +1,15 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.OuterRun
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Butterfly
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.TraversalSlice
-import VerifiedGarbage.Proof.MlDsa.Arith.Pairs
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.OuterRun
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Butterfly
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.TraversalSlice
+public import VerifiedGarbage.Proof.MlDsa.Arith.Pairs
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Optimized
 open VG VG.AArch64 VG.Proof.MlDsa.Pairs

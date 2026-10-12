@@ -1,6 +1,14 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedMaskCopy
-import VerifiedGarbage.Spec.MlDsa.CommitTail
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedCommitmentPack
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedMaskCopy
+public import VerifiedGarbage.Spec.MlDsa.CommitTail
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedCommitmentPack
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Sign.Cached
 open VG VG.AArch64 VG.Spec.MlDsa

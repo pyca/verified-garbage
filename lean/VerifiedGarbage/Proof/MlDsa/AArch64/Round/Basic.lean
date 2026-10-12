@@ -1,6 +1,12 @@
-import VerifiedGarbage.Impl.MlDsa.AArch64.Round.Round
-import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
-import VerifiedGarbage.Proof.MlDsa.Round.Decompose
+module
+
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Round.Round
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
+public import VerifiedGarbage.Proof.MlDsa.Round.Decompose
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on AArch64: what the rounding proofs share
@@ -22,6 +28,8 @@ import VerifiedGarbage.Proof.MlDsa.Round.Decompose
   and `zext_ct` proves constant time from the taint of the rest, where the
   whole register is public. `onGamma_ok` runs the branch on `γ₂`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Round
 

@@ -1,11 +1,19 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MontDotMem
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.AddSubLoop
-import VerifiedGarbage.Proof.Framework.CallLay
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.DotField
-import VerifiedGarbage.Spec.MlDsa.MontDot
-import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Mul
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MontDotMem
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.AddSubLoop
+public import VerifiedGarbage.Proof.Framework.CallLay
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.DotField
+public import VerifiedGarbage.Spec.MlDsa.MontDot
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Mul
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## From `MontDotState.lean` -/
+
+@[expose] public section
 
 section
 

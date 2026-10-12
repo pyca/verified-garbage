@@ -1,5 +1,13 @@
-import VerifiedGarbage.Impl.MlDsa.AArch64.Arith.Mul
-import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.AddSub
+module
+
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Arith.Mul
+meta import VerifiedGarbage.Impl.MlDsa.AArch64.Arith.Mul
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.AddSub
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.AddSub
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on AArch64: `vg_mldsa_multiply_ntt` and `vg_mldsa_multiply_add_ntt`
@@ -7,6 +15,8 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.AddSub
 The body stores the value `v i` to coefficient `i` of `h` (`mulBody_ok`,
 `mulAddBody_ok`); the loop is proven once for any such body (`Mul.fn_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Arith
 

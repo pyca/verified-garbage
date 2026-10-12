@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Message.VerifyCall
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.VerifyCall
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on AArch64, `verify_message`: correctness
@@ -10,6 +16,8 @@ computes `tr = H(pk, 64)`, then `μ` of the formatted message, and calls the
 verification function on `μ` `c`, which gives `ML-DSA.Verify_internal` of
 the formatted message (`verifyMessage_wp`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Message
 
