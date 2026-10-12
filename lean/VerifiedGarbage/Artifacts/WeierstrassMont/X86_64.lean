@@ -108,9 +108,28 @@ def artifacts : List Artifact := artifacts6 ++ [
       `u = t₀ (-n⁻¹) mod 2⁶⁴` and adds `u n`, which clears the low word, the accumulator in \
       registers; the result, below `2n`, is reduced by subtracting `n` and selecting the difference \
       unless it borrowed, then stored through `rsi = ws + o`."])
-    code := mulFnN6
+    code := mulFnN6 false
     contract := p384n.mulContract X86_64.abi
-    verified := p384n_mul_verified
+    verified := p384n_mul_verified false
+    spSafe := Code.all_of_allInstrs (by decide +kernel) },
+  { p384n.mulApi with
+    target := X86_64.target
+    name := p384n.mulApi.name ++ "_adx"
+    doc := p384n.mulApi.doc (notes := ["The function zero-extends the offsets and saves the \
+      callee-saved registers it writes in `xmm0`–`xmm5` (`movq`), `o` in `xmm6`, and the forty-eight \
+      bytes of `ws` from byte 4000 in `xmm7`–`xmm12`, over which it stores `n`; it writes only `[o]` \
+      and its temporary area, the last six words below byte 4096 of `ws`, and restores those bytes. \
+      It runs the inline product of the other P-384 functions modulo `n` with its operands read \
+      through registers: `[a]` through `rbx = ws + a` and `[b]` through `rsi = ws + b`. With BMI2 \
+      and ADX, Montgomery multiplication by rows (operand scanning, `mulx`, the carries through CF \
+      and OF): row `i` adds `a_i b`, computes `u = t₀ (-n⁻¹) mod 2⁶⁴` and adds `u n`, which clears \
+      the low word, the accumulator in \
+      registers; the result, below `2n`, is reduced by subtracting `n` and selecting the difference \
+      unless it borrowed, then stored through `rsi = ws + o`."])
+    code := mulFnN6 true
+    contract := p384n.mulContract X86_64.abi
+    verified := p384n_mul_verified true
+    features := ["bmi2", "adx"]
     spSafe := Code.all_of_allInstrs (by decide +kernel) }
 ]
 

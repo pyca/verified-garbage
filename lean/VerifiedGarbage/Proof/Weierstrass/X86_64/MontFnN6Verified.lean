@@ -5,11 +5,11 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFnXVerified
 # P-384's product modulo `n` as a function, on x86-64: verified
 
 `p384n.mulContract` on x86-64, by register (`mulX64`), which `mulFnN6`
-meets (`mulFnN6_x64`, from `mulFnN6_ok`: the offsets `Fit`, below byte
-3712, are apart from `n` and the function's temporary area, bytes 4000 to
-4095), constant time by taint tracking (only the stack pointer, `ws` and the
-offsets' low halves are public, `o` kept in `xmm6` meanwhile), and a state
-satisfying it (`mul_implies`).
+meets with or without BMI2 and ADX (`mulFnN6_x64`, from `mulFnN6_ok`: the
+offsets `Fit`, below byte 3712, are apart from `n` and the function's
+temporary area, bytes 4000 to 4095), constant time by taint tracking (only
+the stack pointer, `ws` and the offsets' low halves are public, `o` kept in
+`xmm6` meanwhile), and a state satisfying it (`mul_implies`).
 -/
 
 namespace VG.Proof.Weierstrass.X86_64.Mont
@@ -23,20 +23,20 @@ theorem p384n_R : p384n.R = (2 ^ 64) ^ 6 :=
   (Nat.pow_mul 2 64 p384n.k).trans (congrArg (HPow.hPow (2 ^ 64)) (show p384n.k = 6 from rfl))
 
 /-- The contract, from `mulFnN6_ok`. -/
-theorem mulFnN6_x64 (s : State) (hs : (mulX64 p384n).pre s) :
-    ∃ t s', Exec isa mulFnN6 s t s' ∧ abiPreserved s s' ∧ (mulX64 p384n).post s s' := by
+theorem mulFnN6_x64 (adx : Bool) (s : State) (hs : (mulX64 p384n).pre s) :
+    ∃ t s', Exec isa (mulFnN6 adx) s t s' ∧ abiPreserved s s' ∧ (mulX64 p384n).post s s' := by
   obtain ⟨⟨hrd, hwr, hret, hnw, ho, ha, hb⟩, hB⟩ := hs
   have hscr : Scr s (s.gpr .rdi) 8192 := ⟨rfl, by rw [hwr]; simp, hnw⟩
   simp only [Spec.Weierstrass.Mont.Fits, Spec.Weierstrass.Mont.ownAt, Spec.Weierstrass.Mont.ownBytes,
     p384n] at ho ha hb
-  suffices hwp : WP isa mulFnN6 s fun s' => gprPreserved s s' ∧ (mulX64 p384n).post s s' by
+  suffices hwp : WP isa (mulFnN6 adx) s fun s' => gprPreserved s s' ∧ (mulX64 p384n).post s s' by
     obtain ⟨t, s', he, hg, hp⟩ := hwp
-    exact ⟨t, s', he, abiPreserved_of_exec (by decide +kernel) he hg, hp⟩
+    exact ⟨t, s', he, abiPreserved_of_exec (by cases adx <;> decide +kernel) he hg, hp⟩
   simp only [argNum, numAt_eq] at hB
   have arg : ∀ x, x + 8 * 6 ≤ 4096 - 64 * 6 → ArgN6 8192 x := fun x hx =>
     ⟨.inl (by rw [fnTmp6_eq]; omega), by omega⟩
   rw [p384n_m] at hB
-  refine WP.mono (mulFnN6_ok hscr (by decide) (arg _ ho) (arg _ ha) (arg _ hb) hB)
+  refine WP.mono (mulFnN6_ok adx hscr (by decide) (arg _ ho) (arg _ ha) (arg _ hb) hB)
     fun s' ⟨hlt, heq, k, hmem⟩ => ?_
   refine ⟨⟨fun r hr => k.gpr r (by
       simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -60,12 +60,15 @@ theorem mulFnN6_x64 (s : State) (hs : (mulX64 p384n).pre s) :
     · rw [ofs_off0 _ h64]; exact ho'
     · rw [ofs_off0 _ h64, fnTmp6_eq]; omega
 
-theorem mulFnN6_ct : ConstantTime isa (mulX64 p384n).pre (mulX64 p384n).pub mulFnN6 :=
-  ct_zext (M := p384n) (fun _ h => h.1)
-    (VG.Taint.constantTime (A := X86_64.taint) τ₁ (fun _ _ _ _ h => h) (by taint_decide))
+theorem mulFnN6_ct (adx : Bool) : ConstantTime isa (mulX64 p384n).pre (mulX64 p384n).pub (mulFnN6 adx) := by
+  cases adx
+  · exact ct_zext (M := p384n) (fun _ h => h.1)
+      (VG.Taint.constantTime (A := X86_64.taint) τ₁ (fun _ _ _ _ h => h) (by taint_decide))
+  · exact ct_zext (M := p384n) (fun _ h => h.1)
+      (VG.Taint.constantTime (A := X86_64.taint) τ₁ (fun _ _ _ _ h => h) (by taint_decide))
 
-/-- `vg_p384_mul_mod_n` on x86-64. -/
-theorem p384n_mul_verified : Verified X86_64.target mulFnN6 (p384n.mulContract X86_64.abi) :=
-  Verified.of_correct mulFnN6_x64 mulFnN6_ct (mul_implies p384n (by decide) (by decide +kernel))
+/-- `vg_p384_mul_mod_n` (`adx` false) and `vg_p384_mul_mod_n_adx` on x86-64. -/
+theorem p384n_mul_verified (adx : Bool) : Verified X86_64.target (mulFnN6 adx) (p384n.mulContract X86_64.abi) :=
+  Verified.of_correct (mulFnN6_x64 adx) (mulFnN6_ct adx) (mul_implies p384n (by decide) (by decide +kernel))
 
 end VG.Proof.Weierstrass.X86_64.Mont

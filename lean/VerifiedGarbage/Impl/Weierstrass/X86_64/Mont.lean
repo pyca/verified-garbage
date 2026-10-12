@@ -310,12 +310,13 @@ def fnMoN6 : Nat := fnTmp6 - 48
 def n384 : Nat :=
   39402006196394479212279040100143613805079739270465446667946905279627659399113263569398956308152294913554433653942643
 
-/-- P-384's `n` as the function takes it. -/
-def fnModN6 : Mod where
+/-- P-384's `n` as the function takes it, with or without BMI2 and ADX. -/
+def fnModN6 (adx : Bool) : Mod where
   n := 6
   mo := fnMoN6
   tmp := fnTmp6
   minv := BitVec.ofNat 64 7986114184663260229
+  adx := adx
   fnN := true
 
 /-- `n`'s words into `[fnMoN6]`, through `rax` (`setConst`). -/
@@ -338,20 +339,21 @@ def restoreN6 : List Instr :=
 /-- `o` into `xmm6` and `rsi = ws + b`, the bytes kept and `n` stored,
 `mulRounds` with `[a]` through `rbx` and `[b]` through `rsi`, `csub`, then
 `rsi = ws + o`, the result stored through it, and the bytes restored. -/
-def mulN6 : List Instr :=
+def mulN6 (adx : Bool) : List Instr :=
   [.xop (.movq .xmm6 .rsi), .mov .rsi (.reg .rcx)] ++ saveN6 ++ storeN6 ++
-    reloc [(mA, .rbx), (mB, .rsi)] (mulRounds fnModN6 mA mB) ++ csub fnModN6 low6 top6 ++
+    reloc [(mA, .rbx), (mB, .rsi)] (mulRounds (fnModN6 adx) mA mB) ++ csub (fnModN6 adx) low6 top6 ++
     [.movqR .rsi .xmm6, .alu .add .rsi (.reg .rdi)] ++ reloc [(mO, .rsi)] (stores low6 mO) ++ restoreN6
 
-/-- `vg_p384_mul_mod_n`. -/
-def mulFnN6 : Prog isa :=
-  .seq (.block zext) (.seq (.block setup) (.seq (.block mulN6) (.block restores)))
+/-- `vg_p384_mul_mod_n` (`adx` false) and `vg_p384_mul_mod_n_adx`. -/
+def mulFnN6 (adx : Bool) : Prog isa :=
+  .seq (.block zext) (.seq (.block setup) (.seq (.block (mulN6 adx)) (.block restores)))
 
 /-- The function the products modulo `M` call, and its code: P-521's `p`, with
 the temporary area the functions' (`fnTmp`), or P-384's (`fnTmp6`) unless its
 products are written out (`Mod.inl`), with or without BMI2 and ADX; P-521's
 `n` (`Mod.fnN`), with the temporary area `fnTmp`; P-384's `n` (`Mod.fnN`),
-with the temporary area `fnTmp6`; none for any other modulus. -/
+with the temporary area `fnTmp6`, with or without BMI2 and ADX; none for any
+other modulus. -/
 def callOf (M : Mod) : Option (String × Prog isa) :=
   if M.n = 9 ∧ M.red = .friendly p521Ws ∧ M.tmp = fnTmp then
     some (if M.adx then (Spec.Weierstrass.Mont.p521p.mulApi.name ++ "_adx", mulFnX)
@@ -362,7 +364,8 @@ def callOf (M : Mod) : Option (String × Prog isa) :=
   else if M.n = 9 ∧ M.fnN ∧ M.tmp = fnTmp then
     some (Spec.Weierstrass.Mont.p521n.mulApi.name, mulFnN)
   else if M.n = 6 ∧ M.fnN ∧ M.tmp = fnTmp6 then
-    some (Spec.Weierstrass.Mont.p384n.mulApi.name, mulFnN6)
+    some (if M.adx then (Spec.Weierstrass.Mont.p384n.mulApi.name ++ "_adx", mulFnN6 true)
+      else (Spec.Weierstrass.Mont.p384n.mulApi.name, mulFnN6 false))
   else none
 
 /-- Whether a product's offsets suit the functions of `n` words: below their

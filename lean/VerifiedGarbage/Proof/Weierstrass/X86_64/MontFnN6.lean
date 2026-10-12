@@ -4,7 +4,7 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFnN
 /-!
 # P-384's product modulo `n` as a function, on x86-64
 
-`mulFnN6` (`Impl/Weierstrass/X86_64/Mont.lean`) keeps `o` in `xmm6`
+`mulFnN6 adx` (`Impl/Weierstrass/X86_64/Mont.lean`) keeps `o` in `xmm6`
 (`keepO_ok`) and the words at `fnMoN6` in `xmm7`–`xmm12`
 (`saveSteps_ok`), stores `n` there (`setConst`), then runs the inline
 product's rounds `mulRounds` relocated: its operands at the markers read
@@ -35,36 +35,43 @@ theorem n384_lt : n384 < 2 ^ (64 * 6) := by decide +kernel
 
 /-! ## The relocated code is the inline code -/
 
-theorem mulRoundsN6_reloc (a b : Nat) :
-    (mulRounds fnModN6 mA mB).map
+theorem mulRoundsN6_reloc (adx : Bool) (a b : Nat) :
+    (mulRounds (fnModN6 adx) mA mB).map
         (Instr.mapMem (unptr [(.rbx, a), (.rsi, b)] ∘ relocTo [(mA, .rbx), (mB, .rsi)])) =
-      mulRounds fnModN6 a b := by
-  simp only [mulRounds, show fnModN6.adx = false from rfl, Bool.false_eq_true, false_and, ↓reduceIte,
-    show fnModN6.n = 6 from rfl, show List.range 6 = [0, 1, 2, 3, 4, 5] from rfl, List.flatMap_cons,
-    List.flatMap_nil, List.append_nil, List.map_append]
-  refine congrArg₂ (· ++ ·) rfl (congrArg₂ (· ++ ·) rfl (congrArg₂ (· ++ ·) rfl (congrArg₂ (· ++ ·) rfl
-    (congrArg₂ (· ++ ·) rfl (congrArg₂ (· ++ ·) rfl rfl)))))
+      mulRounds (fnModN6 adx) a b := by
+  cases adx
+  · simp only [mulRounds, show (fnModN6 false).adx = false from rfl, Bool.false_eq_true, false_and, ↓reduceIte,
+      show (fnModN6 false).n = 6 from rfl, show List.range 6 = [0, 1, 2, 3, 4, 5] from rfl, List.flatMap_cons,
+      List.flatMap_nil, List.append_nil, List.map_append]
+    refine congrArg₂ (· ++ ·) rfl (congrArg₂ (· ++ ·) rfl (congrArg₂ (· ++ ·) rfl (congrArg₂ (· ++ ·) rfl
+      (congrArg₂ (· ++ ·) rfl (congrArg₂ (· ++ ·) rfl rfl)))))
+  · simp only [mulRounds, show (fnModN6 true).sparse = false from rfl, Bool.false_eq_true, false_and, and_false,
+      ↓reduceIte, show (fnModN6 true).n = 6 from rfl, show List.range 6 = [0, 1, 2, 3, 4, 5] from rfl,
+      List.flatMap_cons, List.flatMap_nil, List.append_nil, List.map_append]
+    refine congrArg₂ (· ++ ·) rfl (congrArg₂ (· ++ ·) rfl (congrArg₂ (· ++ ·) rfl (congrArg₂ (· ++ ·) rfl
+      (congrArg₂ (· ++ ·) rfl (congrArg₂ (· ++ ·) rfl rfl)))))
 
-theorem mulN6_keeps :
-    (reloc [(mA, .rbx), (mB, .rsi)] (mulRounds fnModN6 mA mB)).all (keepsPtrs [.rbx, .rsi]) = true := by
+theorem mulN6_keeps : ∀ adx : Bool,
+    (reloc [(mA, .rbx), (mB, .rsi)] (mulRounds (fnModN6 adx) mA mB)).all (keepsPtrs [.rbx, .rsi]) = true := by
   decide +kernel
 
-theorem mulN6_scal : scalCode (.block (reloc [(mA, .rbx), (mB, .rsi)] (mulRounds fnModN6 mA mB))) = true := by
+theorem mulN6_scal : ∀ adx : Bool,
+    scalCode (.block (reloc [(mA, .rbx), (mB, .rsi)] (mulRounds (fnModN6 adx) mA mB))) = true := by
   decide +kernel
 
 theorem storeN6_scal : scalCode (.block storeN6) = true := by decide +kernel
 
-theorem csubN6_scal : scalCode (.block (csub fnModN6 low6 top6)) = true := by decide +kernel
+theorem csubN6_scal : ∀ adx : Bool, scalCode (.block (csub (fnModN6 adx) low6 top6)) = true := by decide +kernel
 
 /-- The modulus of the product, as the rounds take it, once stored. -/
-theorem modOkRN6 {Z : Nat} (hZ : 4096 ≤ Z) {mem : Mem} {base : Addr} (hv : wordsVal mem base fnMoN6 6 = n384) :
-    ModOkR fnModN6 Z n384 mem base where
-  n0 := by decide
-  n7 := by decide
+theorem modOkRN6 (adx : Bool) {Z : Nat} (hZ : 4096 ≤ Z) {mem : Mem} {base : Addr}
+    (hv : wordsVal mem base fnMoN6 6 = n384) : ModOkR (fnModN6 adx) Z n384 mem base where
+  n0 := by cases adx <;> decide
+  n7 := by cases adx <;> decide
   mo := by simp only [fnModN6, fnMoN6, fnTmp6]; omega
   val := .of_val hv
-  inv := by decide +kernel
-  red := by decide +kernel
+  inv := by cases adx <;> decide +kernel
+  red := by cases adx <;> decide +kernel
 
 theorem keepX6_ne : ∀ i j, i < j → j < 6 → keepX6 i ≠ keepX6 j := by
   intro i j hij hj
@@ -76,11 +83,11 @@ theorem keepX6_ne6 : ∀ i < 6, keepX6 i ≠ .xmm6 := by decide
 /-- The middle of `mulFnN6`: the product, `[o] = [a] [b] R⁻¹ mod n`, with `n`
 stored over bytes it restores; it changes `[o]` and the temporary area only,
 and no vector register but `xmm6`–`xmm12`. -/
-theorem mulN6_ok {s : State} {base : Addr} {Z : Nat} (hs : Scr s base Z) (hZ : 4096 ≤ Z)
+theorem mulN6_ok (adx : Bool) {s : State} {base : Addr} {Z : Nat} (hs : Scr s base Z) (hZ : 4096 ≤ Z)
     {o a b : Nat} (hbx : s.gpr .rbx = off base a) (hcx : s.gpr .rcx = off base b)
     (hsi : s.gpr .rsi = BitVec.ofNat 64 o)
     (ho : ArgN6 Z o) (ha : ArgN6 Z a) (hb : ArgN6 Z b) (hB : wordsVal s.mem base b 6 < n384) :
-    WP isa (.block mulN6) s fun s' =>
+    WP isa (.block (mulN6 adx)) s fun s' =>
       KeepRegs brClob s s' ∧
       (∀ x, (ofs base x < o ∨ o + 48 ≤ ofs base x) → (ofs base x < fnTmp6 ∨ 4096 ≤ ofs base x) →
         s'.mem x = s.mem x) ∧
@@ -114,14 +121,14 @@ theorem mulN6_ok {s : State} {base : Addr} {Z : Nat} (hs : Scr s base Z) (hZ : 4
   have hp₂ : PtrsAt [(.rbx, a), (.rsi, b)] s₂ := .two
     (by rw [g₂ _ (by decide), k₁.1 _ (by decide), hbx, hs₂.rdi])
     (by rw [g₂ _ (by decide), e₁, hcx, hs₂.rdi])
-  have w₃ := mulRounds_ok (M := fnModN6) hs₂ (modOkRN6 hZ v₂) (a := a) (b := b)
+  have w₃ := mulRounds_ok (M := fnModN6 adx) hs₂ (modOkRN6 adx hZ v₂) (a := a) (b := b)
     (by simp only [fnModN6]; omega) (by simp only [fnModN6]; omega)
     (by simp only [fnModN6]; rw [far b hb.1 hb.2]; exact hB)
-  rw [← mulRoundsN6_reloc, ← reloc_unptr] at w₃
+  rw [← mulRoundsN6_reloc adx, ← reloc_unptr] at w₃
   rw [WP.block_append_iff]
-  refine WP.mono (WP.vecKeep mulN6_scal (wp_unptr (rs := [.rbx, .rsi]) (by simp) _ mulN6_keeps hp₂ w₃))
+  refine WP.mono (WP.vecKeep (mulN6_scal adx) (wp_unptr (rs := [.rbx, .rsi]) (by simp) _ (mulN6_keeps adx) hp₂ w₃))
     fun s₃ ⟨⟨⟨U, eU⟩, hT, k₃⟩, x₃, _⟩ => ?_
-  simp only [show fnModN6.n = 6 from rfl] at eU hT k₃
+  simp only [show (fnModN6 adx).n = 6 from rfl] at eU hT k₃
   have hs₃ := hs₂.of_keeps k₃ (by decide)
   -- The accumulator's value as `csub` sees it: its top word is zero.
   have hV : regsVal s₃ low6 + 2 ^ (64 * 6) * (s₃.gpr top6).toNat = regsVal s₃ (wins 6 6) := by
@@ -139,13 +146,13 @@ theorem mulN6_ok {s : State} {base : Addr} {Z : Nat} (hs : Scr s base Z) (hZ : 4
         Nat.mul_le_mul_left _ (by omega)
       omega
     rw [this, Nat.mul_zero, Nat.add_zero]
-  have hmo₃ : wordsVal s₃.mem base fnModN6.mo fnModN6.n = n384 := by rw [k₃.2.1]; exact v₂
+  have hmo₃ : wordsVal s₃.mem base (fnModN6 adx).mo (fnModN6 adx).n = n384 := by rw [k₃.2.1]; exact v₂
   rw [WP.block_append_iff]
-  refine WP.mono (WP.vecKeep csubN6_scal (csub_ok hs₃ (M := fnModN6) (ts := low6) (top := top6) rfl (by decide)
+  refine WP.mono (WP.vecKeep (csubN6_scal adx) (csub_ok hs₃ (M := fnModN6 adx) (ts := low6) (top := top6) rfl (by simp only [fnModN6]; decide)
     ⟨by decide, by decide⟩ (by simp only [fnModN6, fnMoN6, fnTmp6]; omega) (by simp only [fnModN6, fnTmp6]; omega)
-    (by simp only [fnModN6, fnMoN6, fnTmp6]; omega) (fun h => absurd h (by decide)) hmo₃
-    (by rw [show fnModN6.n = 6 from rfl, hV]; exact hT))) fun s₄ ⟨⟨e₄, k₄, O₄⟩, x₄, _⟩ => ?_
-  simp only [show fnModN6.n = 6 from rfl] at e₄ O₄
+    (by simp only [fnModN6, fnMoN6, fnTmp6]; omega) (fun h => absurd h (by simp only [fnModN6]; decide)) hmo₃
+    (by rw [show (fnModN6 adx).n = 6 from rfl, hV]; exact hT))) fun s₄ ⟨⟨e₄, k₄, O₄⟩, x₄, _⟩ => ?_
+  simp only [show (fnModN6 adx).n = 6 from rfl] at e₄ O₄
   have hs₄ := hs₃.of_keepRegs k₄ (by decide)
   rw [WP.block_append_iff]
   refine WP.mono (backO_ok s₄) fun s₅ ⟨e₅, x₅, k₅⟩ => ?_
@@ -198,10 +205,10 @@ theorem mulN6_ok {s : State} {base : Addr} {Z : Nat} (hs : Scr s base Z) (hZ : 4
 /-- `[o] = [a] [b] 2⁻³⁸⁴ mod n` for P-384's `n`, the offsets the low halves
 of `rsi`, `rdx` and `rcx`: the function changes only `fnClob`, `[o]` and its
 temporary area, bytes `fnTmp6` to 4095. -/
-theorem mulFnN6_ok {s : State} {base : Addr} {Z : Nat} (hs : Scr s base Z) (hZ : 4096 ≤ Z)
+theorem mulFnN6_ok (adx : Bool) {s : State} {base : Addr} {Z : Nat} (hs : Scr s base Z) (hZ : 4096 ≤ Z)
     (ho : ArgN6 Z (argOf s .rsi)) (ha : ArgN6 Z (argOf s .rdx)) (hb : ArgN6 Z (argOf s .rcx))
     (hB : wordsVal s.mem base (argOf s .rcx) 6 < n384) :
-    WP isa mulFnN6 s fun s' =>
+    WP isa (mulFnN6 adx) s fun s' =>
       wordsVal s'.mem base (argOf s .rsi) 6 < n384 ∧
       wordsVal s'.mem base (argOf s .rsi) 6 * (2 ^ 64) ^ 6 % n384 =
         wordsVal s.mem base (argOf s .rdx) 6 * wordsVal s.mem base (argOf s .rcx) 6 % n384 ∧
@@ -214,7 +221,7 @@ theorem mulFnN6_ok {s : State} {base : Addr} {Z : Nat} (hs : Scr s base Z) (hZ :
   generalize hA : argOf s .rdx = a at *
   generalize hBb : argOf s .rcx = b at *
   have hQ : (2 : Nat) ^ (64 * 6) = (2 ^ 64) ^ 6 := Nat.pow_mul 2 64 6
-  refine WP.seq (WP.mono (mulN6_ok hs₁ hZ bx₁ cx₁ si₁ ho ha hb (by rw [m₁]; exact hB))
+  refine WP.seq (WP.mono (mulN6_ok adx hs₁ hZ bx₁ cx₁ si₁ ho ha hb (by rw [m₁]; exact hB))
     fun s₂ ⟨k₂, O₂, xm₂, lt₂, e₂⟩ => ?_)
   have xk : ∀ x, x ∈ [XReg.xmm0, .xmm1, .xmm2, .xmm3, .xmm4, .xmm5] → s₂.xmm x = s₁.xmm x := fun x hx =>
     xm₂ x (by simp only [List.mem_cons, List.not_mem_nil, or_false] at hx

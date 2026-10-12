@@ -200,15 +200,29 @@ theorem mulCallN_ok {f : String} {s : State} {base : Addr} {Z : Nat} (hs : Scr s
     rw [ht] at ht'
     rw [hm₃, m₂ x hx (by simp only [fnTmp] at ht' ⊢; omega), hm₁]
 
-/-- A product modulo P-384's `n` (`Mod.fnN`) by a call of `mulFnN6`, inlined:
+theorem fnN6_ok {body : Prog isa} (hbody : body = mulFnN6 false ∨ body = mulFnN6 true) {s : State} {base : Addr}
+    {Z : Nat} (hs : Scr s base Z) (hZ : 4096 ≤ Z) (ho : ArgN6 Z (argOf s .rsi))
+    (ha : ArgN6 Z (argOf s .rdx)) (hb : ArgN6 Z (argOf s .rcx)) (hB : wordsVal s.mem base (argOf s .rcx) 6 < n384) :
+    WP isa body s fun s' =>
+      wordsVal s'.mem base (argOf s .rsi) 6 < n384 ∧
+      wordsVal s'.mem base (argOf s .rsi) 6 * (2 ^ 64) ^ 6 % n384 =
+        wordsVal s.mem base (argOf s .rdx) 6 * wordsVal s.mem base (argOf s .rcx) 6 % n384 ∧
+      KeepRegs fnClob s s' ∧
+      ∀ x, (ofs base x < argOf s .rsi ∨ argOf s .rsi + 48 ≤ ofs base x) →
+        (ofs base x < fnTmp6 ∨ 4096 ≤ ofs base x) → s'.mem x = s.mem x := by
+  rcases hbody with rfl | rfl
+  · exact mulFnN6_ok false hs hZ ho ha hb hB
+  · exact mulFnN6_ok true hs hZ ho ha hb hB
+
+/-- A product modulo P-384's `n` (`Mod.fnN`) by a call of `mulFnN6 adx`, inlined:
 as the inline product, for offsets apart from `n` and the functions'
 temporary area. -/
-theorem mulCallN6_ok {f : String} {s : State} {base : Addr} {Z : Nat} (hs : Scr s base Z) {M : Mod} {m : Nat}
+theorem mulCallN6_ok {f : String} {body : Prog isa} (hbody : body = mulFnN6 false ∨ body = mulFnN6 true) {s : State} {base : Addr} {Z : Nat} (hs : Scr s base Z) {M : Mod} {m : Nat}
     (hM : ModOkW M Z m s.mem base) (hf : M.fnN = true) (hn6 : M.n = 6) (ht : M.tmp = fnTmp6)
     {o a b : Nat} (hlow : lowArgs 6 o a b = true)
     (hoZ : o + 8 * M.n ≤ Z) (haZ : a + 8 * M.n ≤ Z) (hbZ : b + 8 * M.n ≤ Z)
     (hB : wordsVal s.mem base b M.n < m) :
-    WP isa (mulCall f mulFnN6 o a b).inline s fun s' => OpKeep M base o s s' ∧
+    WP isa (mulCall f body o a b).inline s fun s' => OpKeep M base o s s' ∧
       wordsVal s'.mem base o M.n < m ∧
       wordsVal s'.mem base o M.n * 2 ^ (64 * M.n) % m =
         wordsVal s.mem base a M.n * wordsVal s.mem base b M.n % m := by
@@ -230,7 +244,7 @@ theorem mulCallN6_ok {f : String} {s : State} {base : Addr} {Z : Nat} (hs : Scr 
   have hm₁ : s₁.mem = s.mem := k₁.2.1
   have arg : ∀ x, (x + 96 ≤ fnTmp6 ∨ 4096 ≤ x ∧ x < 2 ^ 31) → x + 48 ≤ Z → ArgN6 Z x := fun x h hz =>
     ⟨h.imp id And.left, hz⟩
-  refine WP.seq (WP.mono (mulFnN6_ok hs₁ hZ (by rw [o₁]; exact arg o ho hoZ) (by rw [a₁]; exact arg a ha haZ)
+  refine WP.seq (WP.mono (fnN6_ok hbody hs₁ hZ (by rw [o₁]; exact arg o ho hoZ) (by rw [a₁]; exact arg a ha haZ)
     (by rw [b₁]; exact arg b hb hbZ) (by rw [b₁, hm₁, ← hm]; exact hB)) fun s₂ ⟨lt₂, e₂, k₂, m₂⟩ => ?_)
   refine WP.mono (movReg_ok s₂ .rsi .r12) fun s₃ ⟨v₃, k₃⟩ => ?_
   rw [o₁] at lt₂ e₂ m₂

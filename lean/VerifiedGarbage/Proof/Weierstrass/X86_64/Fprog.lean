@@ -252,8 +252,9 @@ theorem opProg_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat �
           split at hcall
           · rename_i hM
             obtain ⟨hn6, hf, ht⟩ := hM
-            cases hcall
-            refine WP.mono (Mont.mulCallN6_ok hI.scr hI.mod hf hn6 ht (hn6 ▸ hlow) (hL.le o hS.1)
+            have hbody : body = Mont.mulFnN6 false ∨ body = Mont.mulFnN6 true := by
+              split at hcall <;> (cases hcall; simp)
+            refine WP.mono (Mont.mulCallN6_ok hbody hI.scr hI.mod hf hn6 ht (hn6 ▸ hlow) (hL.le o hS.1)
               (hL.le a hS.2.1) (hL.le b hS.2.2) (hI.lt b hR.2))
               fun s' ⟨hk, hlt, heq⟩ => ⟨hk, hI.update hL hS.1 hk hlt ?_⟩
             rw [toM_mul hm heq, hI.val a hR.1, hI.val b hR.2]
@@ -293,8 +294,9 @@ theorem opMulN_ok {M : Mod} {base : Addr} {Z m : Nat} {s : State} (hs : Scr s ba
       split at hcall
       · rename_i h
         obtain ⟨hn6, hf, ht⟩ := h
-        cases hcall
-        exact Mont.mulCallN6_ok hs hM hf hn6 ht (hn6 ▸ hlow) hoZ haZ hbZ hB
+        have hbody : body = Mont.mulFnN6 false ∨ body = Mont.mulFnN6 true := by
+          split at hcall <;> (cases hcall; simp)
+        exact Mont.mulCallN6_ok hbody hs hM hf hn6 ht (hn6 ▸ hlow) hoZ haZ hbZ hB
       · cases hcall
     · exact hin
 
