@@ -1,19 +1,11 @@
 import VerifiedGarbage.Proof.Dsa.X86_64.ReadyCalls
-import VerifiedGarbage.Proof.Rsa.Octets
+import VerifiedGarbage.Proof.Dsa.Encoding
 
 /-! # Reading and preserving operands across the DSA arithmetic schedule -/
 namespace VG.Proof.Dsa.X86_64
 open VG VG.X86_64 VG.Impl.Bignum.X86_64
 open VG.Impl.Dsa.Layout VG.Impl.Dsa.X86_64
 open VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.MlKem.X86_64
-
-theorem encodeBE_length (k value : Nat) : (Spec.Dsa.encodeBE k value).length = k := by
-  rw [VG.Proof.Dsa.encodeBE_i2osp, VG.Proof.Rsa.i2osp_length]
-
-theorem decodeBE_encodeBE {k value : Nat} (h : value < 256 ^ k) :
-    Spec.Dsa.decodeBE (Spec.Dsa.encodeBE k value) = value := by
-  rw [VG.Proof.Dsa.encodeBE_i2osp, VG.Proof.Dsa.decodeBE_os2ip,
-    VG.Proof.Rsa.os2ip_i2osp, Nat.mod_eq_of_lt h]
 
 theorem CallResult.localFrame {L : ExecutionLayout} {side : ModulusSide} {d value : Nat} {s t : State}
     (h : CallResult L side d value s t) (hend : d + side.length L ≤ usedBytes) :

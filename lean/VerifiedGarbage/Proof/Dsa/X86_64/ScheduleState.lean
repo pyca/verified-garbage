@@ -23,4 +23,12 @@ theorem Ready.preserveExternal {L : ExecutionLayout} {s t : State} (hs : Ready L
   rw [hs.pointer_eq ht a.pointer hp]
   exact hb.source.congrK (InScr.of_outside hf (by decide)) hk
 
+theorem Ready.encodedLocal {L : ExecutionLayout} {s : State} (h : Ready L s) (side : ModulusSide)
+    (d value : Nat) (hd : activeBytes ≤ d) (hend : d + side.length L ≤ usedBytes)
+    (hb : Spec.Rsa.bytesAt s.mem (off L.base d) (side.length L) = Spec.Dsa.encodeBE (side.length L) value) :
+    OperandBytes s L.base activeBytes ⟨.local d, side.lengthField⟩ (Spec.Dsa.encodeBE (side.length L) value) := by
+  have hs := h.readLocal side d hd hend
+  rw [hb] at hs
+  exact hs
+
 end VG.Proof.Dsa.X86_64
