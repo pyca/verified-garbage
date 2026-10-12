@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.MlKem.AArch64.Sample
-import VerifiedGarbage.Impl.MlKem.AArch64.Encode
+module
+
+public import VerifiedGarbage.Impl.MlKem.AArch64.Sample
+public import VerifiedGarbage.Impl.MlKem.AArch64.Encode
 
 /-!
 # ML-KEM-768 on AArch64: building blocks of the top-level functions
@@ -15,6 +17,8 @@ and an offset (`Loc`); its address is computed into an argument register
 `absorb` from the position the previous one returned), the padding, and
 each piece of output squeezed in turn (likewise).
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlKem.AArch64
 

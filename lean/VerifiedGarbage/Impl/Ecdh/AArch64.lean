@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Ecdsa.AArch64
+module
+
+public import VerifiedGarbage.Impl.Ecdsa.AArch64
 
 /-!
 # ECDH on AArch64
@@ -30,6 +32,8 @@ on x86-64 (`Impl/Ecdh/X86_64.lean`):
 Everything is computed whatever the flag, and only the pointers may affect
 timing (the contract would let the peer's public key affect it too).
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Ecdh.AArch64
 

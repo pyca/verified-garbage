@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Scrypt.Arm.RoMix
+module
+
+public import VerifiedGarbage.Impl.Scrypt.Arm.RoMix
 
 /-!
 # scrypt: 32-bit ARM implementation
@@ -31,6 +33,8 @@ its frame; ROMix uses no stack.
 Only the pointers and the lengths affect timing: the only branch is on the
 blocks left, and every address is a pointer argument plus a constant.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Scrypt.Arm
 

@@ -1,8 +1,13 @@
-import VerifiedGarbage.Impl.Ed25519.Arm.PointBatch
-import VerifiedGarbage.Impl.Ed25519.Arm.BatchBits
+module
+
+public import VerifiedGarbage.Impl.Ed25519.Arm.PointBatch
+public import VerifiedGarbage.Impl.Ed25519.Arm.BatchBits
 
 /-! Scalar multiplication with sixteen-bit batches and compact checkpoints.
 The scalar pointer is saved at offset 52; the batch count is public. -/
+
+@[expose] public section
+
 namespace VG.Impl.Ed25519.Arm
 open VG.Arm
 

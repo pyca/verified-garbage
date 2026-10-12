@@ -1,5 +1,10 @@
-import VerifiedGarbage.Impl.X448.AArch64
-import VerifiedGarbage.Impl.Curve448.AArch64
+module
+
+public import VerifiedGarbage.Impl.X448.AArch64
+public import VerifiedGarbage.Impl.Curve448.AArch64
+
+@[expose] public section
+
 namespace VG.Impl.X448.AArch64.Weak
 open VG VG.AArch64 VG.Impl.X448.AArch64
 abbrev cswap := VG.Impl.Curve448.AArch64.cswap

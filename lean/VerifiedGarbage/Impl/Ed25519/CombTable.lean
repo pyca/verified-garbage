@@ -1,4 +1,6 @@
-import VerifiedGarbage.Spec.Ed25519
+module
+
+public import VerifiedGarbage.Spec.Ed25519
 
 /-!
 # Ed25519: the comb's constant tables
@@ -9,6 +11,8 @@ the comb adds them or their negations, for digits from `-8` to `7`. `combG`
 is `[G]B` for the constant `G` those digits are offset by.
 The proof checks every entry against the specification's addition.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Ed25519
 

@@ -1,7 +1,9 @@
-import VerifiedGarbage.Impl.Cast5.AArch64
-import VerifiedGarbage.Impl.Modes.AArch64.Cbc
-import VerifiedGarbage.Impl.Modes.AArch64.CbcEnc
-import VerifiedGarbage.Impl.Modes.AArch64.Fb
+module
+
+public import VerifiedGarbage.Impl.Cast5.AArch64
+public import VerifiedGarbage.Impl.Modes.AArch64.Cbc
+public import VerifiedGarbage.Impl.Modes.AArch64.CbcEnc
+public import VerifiedGarbage.Impl.Modes.AArch64.Fb
 
 /-!
 # CAST5-CBC, -OFB and -CFB64 on AArch64
@@ -24,6 +26,8 @@ writes only `x2`–`x15` and `v0`–`v5`: it keeps `x23` and `x24`, which carry
 the data's address and the blocks left, and `x25`, where the feedback modes
 keep the IV's address.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Cast5.AArch64
 

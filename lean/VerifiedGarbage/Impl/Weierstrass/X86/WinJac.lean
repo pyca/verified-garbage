@@ -1,6 +1,8 @@
-import VerifiedGarbage.Impl.Weierstrass.X86.Naf
-import VerifiedGarbage.Impl.Weierstrass.X86.CachedJac
-import VerifiedGarbage.Impl.Weierstrass.JacMul
+module
+
+public import VerifiedGarbage.Impl.Weierstrass.X86.Naf
+public import VerifiedGarbage.Impl.Weierstrass.X86.CachedJac
+public import VerifiedGarbage.Impl.Weierstrass.JacMul
 
 /-! Constant-time five-bit variable-base multiplication on 32-bit x86.
 
@@ -9,6 +11,9 @@ The accumulator stays Jacobian until the final conversion. The table has
 SSE2 scans read every entry for each secret digit. The field operations
 use only low scratch slots; the table may lie above the field workspace.
 -/
+
+@[expose] public section
+
 namespace VG.Impl.Weierstrass.X86
 open VG VG.X86 VG.Impl.Mont VG.Impl.Mont.X86 VG.Impl.Weierstrass
 

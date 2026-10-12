@@ -1,5 +1,9 @@
-import VerifiedGarbage.Impl.TripleDes.BitsliceLayout
-import VerifiedGarbage.Impl.TripleDes.AArch64.BitsliceAlloc
+module
+
+public import VerifiedGarbage.Impl.TripleDes.BitsliceLayout
+meta import VerifiedGarbage.Impl.TripleDes.BitsliceLayout
+public import VerifiedGarbage.Impl.TripleDes.AArch64.BitsliceAlloc
+meta import VerifiedGarbage.Impl.TripleDes.AArch64.BitsliceAlloc
 
 /-!
 # Bitsliced Triple DES ECB on AArch64 with AdvSIMD
@@ -32,6 +36,8 @@ words (Biham's bitslicing; the S-box circuits are Rusakov's,
 * Every address and branch depends only on the pointers, `n` and the loop
   counters. Only caller-saved registers are used.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.TripleDes.AArch64.BitsliceNeon
 

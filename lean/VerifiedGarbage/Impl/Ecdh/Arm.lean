@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Ecdsa.Arm
+module
+
+public import VerifiedGarbage.Impl.Ecdsa.Arm
 
 /-!
 # ECDH on 32-bit ARM
@@ -27,6 +29,8 @@ uses, as on x86 (`Impl/Ecdh/X86.lean`):
 Everything is computed whatever the flag, and only the pointers may affect
 timing (the contract would let the peer's public key affect it too).
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Ecdh.Arm
 

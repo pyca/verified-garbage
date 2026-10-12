@@ -1,6 +1,8 @@
-import VerifiedGarbage.Spec.Blowfish
-import VerifiedGarbage.TCB.X86.Isa
-import VerifiedGarbage.Impl.Blowfish.Table
+module
+
+public import VerifiedGarbage.Spec.Blowfish
+public import VerifiedGarbage.TCB.X86.Isa
+public import VerifiedGarbage.Impl.Blowfish.Table
 
 /-!
 # Blowfish on baseline x86 (32-bit)
@@ -33,6 +35,8 @@ constant time as long as nothing secret is stored at an address it cannot
 follow (the data, the schedule's entries): they are read before such stores
 and written after.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Blowfish.X86
 

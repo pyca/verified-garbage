@@ -1,7 +1,12 @@
-import VerifiedGarbage.Impl.Scrypt.X86_64.RoMix
+module
+
+public import VerifiedGarbage.Impl.Scrypt.X86_64.RoMix
 
 /-! ROMix filling V directly: copy X to V[0] once, then write each BlockMix
 result to the next V slot, except the final result which goes back to b. -/
+
+@[expose] public section
+
 namespace VG.Impl.Scrypt.X86_64
 open VG.X86_64
 

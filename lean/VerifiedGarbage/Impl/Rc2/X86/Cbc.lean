@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Rc2.X86.Block
+module
+
+public import VerifiedGarbage.Impl.Rc2.X86.Block
 
 /-! # RC2-CBC on baseline x86
 
@@ -6,6 +8,8 @@ EBX, ECX, ESI, EDI and EBP hold the schedule, IV, data, remaining block
 count and scratch pointer. The block primitive preserves these registers.
 Calls push three cdecl arguments and use 16 bytes of stack in total.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Rc2.X86.Cbc
 

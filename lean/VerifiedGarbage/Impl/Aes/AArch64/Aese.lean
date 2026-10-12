@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.Aes
-import VerifiedGarbage.TCB.AArch64.Isa
+module
+
+public import VerifiedGarbage.Spec.Aes
+public import VerifiedGarbage.TCB.AArch64.Isa
 
 /-!
 # AES with the Armv8 Cryptographic Extension: key expansion and GCM's counter mode
@@ -45,6 +47,8 @@ Each `aese` is followed by its `aesmc`, which cores fuse.
   AES pipeline stays full, then one at a time; `v31` holds the data block
   being XORed. The final counter is written back at the end.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Aes.AArch64.Aese
 

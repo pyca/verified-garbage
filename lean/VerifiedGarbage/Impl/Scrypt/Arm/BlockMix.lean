@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Scrypt.Arm.Salsa
+module
+
+public import VerifiedGarbage.Impl.Scrypt.Arm.Salsa
 
 /-!
 # scryptBlockMix: 32-bit ARM implementation
@@ -22,6 +24,8 @@ replaces: there is no stack frame. Across the calls, which preserve them,
 temporaries. Every address is one of these plus a constant, and the only
 branch is on the count, so only the pointers and `r` affect timing.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Scrypt.Arm
 

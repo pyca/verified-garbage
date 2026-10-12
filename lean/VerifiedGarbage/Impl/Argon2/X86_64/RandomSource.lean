@@ -1,8 +1,12 @@
-import VerifiedGarbage.Impl.Argon2.X86_64.AddressMode
-import VerifiedGarbage.Impl.Argon2.X86_64.AddressCache
-import VerifiedGarbage.Impl.Argon2.X86_64.DependentWord
+module
+
+public import VerifiedGarbage.Impl.Argon2.X86_64.AddressMode
+public import VerifiedGarbage.Impl.Argon2.X86_64.AddressCache
+public import VerifiedGarbage.Impl.Argon2.X86_64.DependentWord
 
 /-! Dispatch the filling random word using the public segment addressing mode. -/
+
+@[expose] public section
 
 namespace VG.Impl.Argon2.X86_64.RandomSource
 

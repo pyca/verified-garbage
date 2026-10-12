@@ -1,6 +1,8 @@
-import VerifiedGarbage.Spec.Sha3
-import VerifiedGarbage.Impl.Sha3.Tables
-import VerifiedGarbage.TCB.AArch64.Isa
+module
+
+public import VerifiedGarbage.Spec.Sha3
+public import VerifiedGarbage.Impl.Sha3.Tables
+public import VerifiedGarbage.TCB.AArch64.Isa
 
 /-!
 # Keccak-f[1600]: AArch64 implementation
@@ -29,6 +31,8 @@ Every address is a pointer plus a constant, and the only branch is the
 round loop's, which depends only on the pointers, so only the pointers can
 affect timing.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Sha3.AArch64
 

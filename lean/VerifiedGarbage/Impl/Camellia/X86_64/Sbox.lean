@@ -1,5 +1,9 @@
-import VerifiedGarbage.Impl.Camellia.Circuit
-import VerifiedGarbage.Impl.Aes.X86_64.Sbox
+module
+
+public import VerifiedGarbage.Impl.Camellia.Circuit
+meta import VerifiedGarbage.Impl.Camellia.Circuit
+public import VerifiedGarbage.Impl.Aes.X86_64.Sbox
+meta import VerifiedGarbage.Impl.Aes.X86_64.Sbox
 
 /-!
 # The bitsliced Camellia S-box on x86-64
@@ -12,6 +16,8 @@ AES allocator `compile` produces for it, with the temporaries `r14` and
 produces) so that the kernel, which evaluates the code in the proofs, does
 not have to run the allocator.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Camellia.X86_64
 

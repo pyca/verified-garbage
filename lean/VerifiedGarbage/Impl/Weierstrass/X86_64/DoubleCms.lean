@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Weierstrass.X86_64
-import VerifiedGarbage.Impl.Mont.X86_64.Cms
+module
+
+public import VerifiedGarbage.Impl.Weierstrass.X86_64
+public import VerifiedGarbage.Impl.Mont.X86_64.Cms
 
 /-!
 # Short Weierstrass curves on x86-64: doubling with fused small multiples
@@ -17,6 +19,8 @@ into three `cms` (`C [a] - D [b] mod p`):
 with `Z₃ = (Y + Z)² - Y² - Z²`. Each coordinate is read for the last time
 before it is written, so the sequence needs no copy.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Weierstrass.X86_64
 

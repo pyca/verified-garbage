@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Aes.Circuit
-import VerifiedGarbage.TCB.Arm.Isa
+module
+
+public import VerifiedGarbage.Impl.Aes.Circuit
+public import VerifiedGarbage.TCB.Arm.Isa
 
 /-!
 # Register allocation of Boolean circuits on ARMv7
@@ -23,6 +25,8 @@ like any spilled value.
 Nothing here needs to be trusted: the proofs check the code this produces,
 not the allocator.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Aes.Arm
 

@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.P384.X86_64.Joint
+module
+
+public import VerifiedGarbage.Impl.P384.X86_64.Joint
 
 /-!
 # P-384's point operations as functions on x86-64
@@ -10,6 +12,8 @@ import VerifiedGarbage.Impl.P384.X86_64.Joint
 `addAffineCall`). The verifier's doubling stays inline: as a call it cost
 Zen 5 1–3% of a verification.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.P384.X86_64.PointOps
 

@@ -1,9 +1,14 @@
-import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Resident
-import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.ResidentUnpack
+module
+
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Resident
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.ResidentUnpack
 
 /-! Two independent 66-byte ExpandMask seeds, with the paired Keccak state
 resident through all five SHAKE256 blocks. The outer caller ABI is ordinary
 AArch64; the resident kernel is inline and never exposed as a C function. -/
+
+@[expose] public section
+
 namespace VG.Impl.MlDsa.AArch64.Optimized.ResidentMask
 open VG VG.AArch64
 open VG.Impl.MlKem.AArch64 (mov)

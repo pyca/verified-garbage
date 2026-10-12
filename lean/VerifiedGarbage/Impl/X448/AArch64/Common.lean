@@ -1,6 +1,11 @@
-import VerifiedGarbage.TCB.AArch64.Isa
+module
+
+public import VerifiedGarbage.TCB.AArch64.Isa
 
 /-! Shared register access and field-slot layout for AArch64 X448. -/
+
+@[expose] public section
+
 namespace VG.Impl.X448.AArch64
 
 open VG.AArch64

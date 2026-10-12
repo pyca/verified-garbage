@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.CmacAes.Stream.AArch64
+module
+
+public import VerifiedGarbage.Impl.CmacAes.Stream.AArch64
 
 /-!
 # AES-SIV: AArch64 implementation
@@ -82,6 +84,8 @@ numbers computed from them). Only the pointers, `rounds`, the key length,
 affect timing: the branches are on them, and so are the numbers of calls,
 bytes copied and blocks chained.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.AesSiv.AArch64
 

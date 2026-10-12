@@ -1,6 +1,8 @@
-import VerifiedGarbage.Impl.Sha3.Tables
-import VerifiedGarbage.TCB.X86_64.Isa
-import VerifiedGarbage.Impl.Sha3.X86_64
+module
+
+public import VerifiedGarbage.Impl.Sha3.Tables
+public import VerifiedGarbage.TCB.X86_64.Isa
+public import VerifiedGarbage.Impl.Sha3.X86_64
 
 /-!
 # Keccak-f[1600] on four states at once, in registers: x86-64 with AVX-512VL
@@ -37,6 +39,8 @@ It writes only `rdx`, the flags and the vector registers. Every address is
 a pointer plus a constant, and the only branch is the round loop's, so only
 the pointers can affect timing.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Sha3.X86_64.X4R
 

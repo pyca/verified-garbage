@@ -1,5 +1,7 @@
-import VerifiedGarbage.TCB.X86.Isa
-import VerifiedGarbage.Impl.Idea.Key32
+module
+
+public import VerifiedGarbage.TCB.X86.Isa
+public import VerifiedGarbage.Impl.Idea.Key32
 
 /-!
 # IDEA on x86 (32-bit)
@@ -60,6 +62,8 @@ holds after the stores through the data pointer.
 
 The only branches are on `n` and the loop counts.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Idea.X86
 

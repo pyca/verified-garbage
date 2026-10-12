@@ -1,7 +1,11 @@
-import VerifiedGarbage.Impl.EcKey.X86
-import VerifiedGarbage.Impl.Ecdsa.P384.X86
+module
+
+public import VerifiedGarbage.Impl.EcKey.X86
+public import VerifiedGarbage.Impl.Ecdsa.P384.X86
 
 /-! # P-384 public keys on x86 (32-bit): six-word field elements and scalars -/
+
+@[expose] public section
 
 namespace VG.Impl.EcKey.X86
 

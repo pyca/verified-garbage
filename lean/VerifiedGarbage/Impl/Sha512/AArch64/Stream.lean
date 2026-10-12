@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Sha512.AArch64
-import VerifiedGarbage.Impl.MdStream.AArch64
+module
+
+public import VerifiedGarbage.Impl.Sha512.AArch64
+public import VerifiedGarbage.Impl.MdStream.AArch64
 
 /-!
 # Streaming SHA-512: AArch64 implementation
@@ -19,6 +21,8 @@ The streaming state (192 bytes at `state`) is the hash value followed by a
   a 128-bit big-endian integer: `count >> 61`, then `count << 3` (modulo
   2⁶⁴); the words of the final hash value are big-endian.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Sha512.AArch64.Stream
 

@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Rsa.X86_64
+module
+
+public import VerifiedGarbage.Impl.Rsa.X86_64
 
 /-!
 # RSA within BoringSSL's limits on the public exponent, on x86-64
@@ -19,6 +21,8 @@ the saturation is masked, so that only the loop's count, `e_len`, and the
 addresses `e + i` affect timing; the check's result is the one branch, on
 public data.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Rsa.X86_64.Checked
 

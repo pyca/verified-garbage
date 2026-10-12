@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.Argon2
-import VerifiedGarbage.TCB.X86_64.Isa
+module
+
+public import VerifiedGarbage.Spec.Argon2
+public import VerifiedGarbage.TCB.X86_64.Isa
 
 /-!
 # Argon2 compression G on x86-64
@@ -12,6 +14,8 @@ All other working registers are caller-saved. The four words of each GB
 are loaded into `r8`–`r11` and stored back after it. Every address is a
 public pointer plus a fixed offset, and the code has no branches.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Argon2.X86_64
 

@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Bignum.X86_64.R2Words
+module
+
+public import VerifiedGarbage.Impl.Bignum.X86_64.R2Words
 
 /-!
 # `R² mod m` by word steps with ADX (x86-64)
@@ -21,6 +23,8 @@ Montgomery squarings, each step a single pass over the words:
 
 Other moduli take `vg_rsa_public`'s computation (`R2Words.old`).
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Bignum.X86_64.R2Adx
 

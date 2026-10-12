@@ -1,7 +1,11 @@
-import VerifiedGarbage.Impl.Ecdsa.X86_64
-import VerifiedGarbage.Spec.P192
+module
+
+public import VerifiedGarbage.Impl.Ecdsa.X86_64
+public import VerifiedGarbage.Spec.P192
 
 /-! # p192 signing on x86-64, using the general complete-addition ladder -/
+
+@[expose] public section
 
 namespace VG.Impl.Ecdsa.X86_64
 

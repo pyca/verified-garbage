@@ -1,6 +1,8 @@
-import VerifiedGarbage.Impl.Cast5.Arm
-import VerifiedGarbage.Impl.Modes.Arm.Seq
-import VerifiedGarbage.Spec.Cast5.Contract
+module
+
+public import VerifiedGarbage.Impl.Cast5.Arm
+public import VerifiedGarbage.Impl.Modes.Arm.Seq
+public import VerifiedGarbage.Spec.Cast5.Contract
 
 /-!
 # CAST5-CBC, CAST5-OFB and CAST5-CFB64 on ARMv7
@@ -11,6 +13,8 @@ which they call once per block with the number of rounds and with their
 256-byte working space (a stack argument) at the end of the mode's own
 (`ecbCore`).
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Cast5.Arm
 

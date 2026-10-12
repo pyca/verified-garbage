@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.TripleDes.Arm.Cbc
+module
+
+public import VerifiedGarbage.Impl.TripleDes.Arm.Cbc
 
 /-!
 # Triple DES-OFB, -CFB64 and -CFB8 on ARMv7
@@ -8,6 +10,8 @@ generic modes of `Impl/Modes/Arm/Seq.lean` over Triple DES's ECB encryption
 (`ecbCore .encrypt`), which they call once per 8-byte block (OFB, CFB64) or
 once per byte (CFB8).
 -/
+
+@[expose] public section
 
 namespace VG.Impl.TripleDes.Arm
 

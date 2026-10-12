@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.MlKem.AArch64.Kem
+module
+
+public import VerifiedGarbage.Impl.MlKem.AArch64.Kem
 
 /-!
 # ML-KEM on AArch64: `vg_mlkem768_encaps` and `vg_mlkem1024_encaps`
@@ -19,6 +21,8 @@ Returns 1 if every `SampleNTT` finished within 280 iterations, and 0 if not
 depend on `ρ` (which the contract declares that the function may leak);
 every other address and branch depends only on the pointers.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlKem.AArch64
 

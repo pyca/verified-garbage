@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Bignum.X86_64.MontFn
-import VerifiedGarbage.Impl.Bignum.X86_64.AdxTiledSquare
+module
+
+public import VerifiedGarbage.Impl.Bignum.X86_64.MontFn
+public import VerifiedGarbage.Impl.Bignum.X86_64.AdxTiledSquare
 
 /-!
 # Montgomery multiplication as a function, with BMI2 and ADX (x86-64)
@@ -20,6 +22,8 @@ indices tell, and so publicly) take the triangular tiles.
 As `vg_rsa_mont_mul`, it uses no stack and keeps `rbx`, `rbp` and `r12`–`r15`
 in `xmm8`–`xmm13` while it runs, and moves them back from there.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Bignum.X86_64.MontFn
 

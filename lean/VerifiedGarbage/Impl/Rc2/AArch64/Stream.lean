@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Rc2.AArch64.Cbc
-import VerifiedGarbage.Impl.Rc2.AArch64.ExpandKey
+module
+
+public import VerifiedGarbage.Impl.Rc2.AArch64.Cbc
+public import VerifiedGarbage.Impl.Rc2.AArch64.ExpandKey
 
 /-! # Streaming RC2-CBC on baseline AArch64
 
@@ -26,6 +28,8 @@ one at a time (`copy`) through pointers that advance, `x9` holding the byte.
 Every branch, loop count and address depends only on the pointers and
 lengths.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Rc2.AArch64.Stream
 

@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Bignum.AArch64.Core
+module
+
+public import VerifiedGarbage.Impl.Bignum.AArch64.Core
 
 /-!
 # AArch64 Montgomery squaring
@@ -10,6 +12,9 @@ Four-word MAC blocks keep the existing deferred-carry arithmetic and retain
 scalar tails. Array indices are fixed when the program is constructed;
 loops and the small-size fallback depend only on the public limb count.
 -/
+
+@[expose] public section
+
 namespace VG.Impl.Bignum.AArch64.Square
 open VG VG.AArch64 VG.Impl.Bignum VG.Impl.Bignum.AArch64
 

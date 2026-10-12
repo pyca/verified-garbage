@@ -1,7 +1,12 @@
-import VerifiedGarbage.Impl.Ed25519.Arm.Freeze
-import VerifiedGarbage.Impl.Ed25519.Arm.Field
+module
+
+public import VerifiedGarbage.Impl.Ed25519.Arm.Freeze
+public import VerifiedGarbage.Impl.Ed25519.Arm.Field
 
 /-! Public field comparisons through their canonical sixteen-bit limbs. -/
+
+@[expose] public section
+
 namespace VG.Impl.Ed25519.Arm
 open VG.Arm
 

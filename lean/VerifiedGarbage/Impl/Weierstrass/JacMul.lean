@@ -1,4 +1,8 @@
-import VerifiedGarbage.Impl.Weierstrass.Slots
+module
+
+public import VerifiedGarbage.Impl.Weierstrass.Slots
+
+@[expose] public section
 
 namespace VG.Impl.Weierstrass
 

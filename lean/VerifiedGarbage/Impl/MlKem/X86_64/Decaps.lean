@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.MlKem.X86_64.Encrypt
+module
+
+public import VerifiedGarbage.Impl.MlKem.X86_64.Encrypt
 
 /-!
 # ML-KEM on x86-64: decapsulation (`vg_mlkem768_decaps`, `vg_mlkem1024_decaps`)
@@ -29,6 +31,8 @@ import VerifiedGarbage.Impl.MlKem.X86_64.Encrypt
 It returns `r15`: 0 if a `SampleNTT` failed (when `key` is unspecified), and
 1 otherwise.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlKem.X86_64
 

@@ -1,8 +1,13 @@
-import VerifiedGarbage.Impl.Ed448.X86_64.ScalarBase
-import VerifiedGarbage.Impl.Ed448.Window
+module
+
+public import VerifiedGarbage.Impl.Ed448.X86_64.ScalarBase
+public import VerifiedGarbage.Impl.Ed448.Window
 
 /-! Constant-time four-bit double-scalar multiplication for Ed448 verification.
 The table of public-key multiples is projective, avoiding table inversions. -/
+
+@[expose] public section
+
 namespace VG.Impl.Ed448.X86_64.Window
 
 open VG.X86_64 VG.Impl.Ed448

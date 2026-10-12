@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Aes.X86_64.Linear
-import VerifiedGarbage.Impl.Seed.Layers
+module
+
+public import VerifiedGarbage.Impl.Aes.X86_64.Linear
+public import VerifiedGarbage.Impl.Seed.Layers
 
 /-!
 # SEED's G on sixteen words at once, bitsliced, on x86-64
@@ -30,6 +32,8 @@ data: no address and no branch depends on it. It uses the registers of the
 AES S-box (`q 0 … q 7`, `t0`, `t1`) and the masks in `maskSlots`, which
 `setG16Masks` writes.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Seed.X86_64
 

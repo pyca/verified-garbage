@@ -1,4 +1,6 @@
-import VerifiedGarbage.TCB.X86_64.Isa
+module
+
+public import VerifiedGarbage.TCB.X86_64.Isa
 
 /-! Four word stores (32 bytes) at a time, then word stores, then a byte
 tail. Unaligned stores are permitted on x86-64.
@@ -8,6 +10,9 @@ instead, from `ymm0` zeroed by `vpxor xmm0` (whose `VEX.128` form zeroes
 bits 255:128 too), then up to seven words and seven bytes as `zeroize`
 does, and clears the upper halves of the vector registers before returning
 (`vzeroupper`), for the SSE code its callers may run next. -/
+
+@[expose] public section
+
 namespace VG.Impl.Zeroize.X86_64
 open VG.X86_64
 

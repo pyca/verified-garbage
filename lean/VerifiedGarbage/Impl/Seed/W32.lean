@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Seed.Layers
+module
+
+public import VerifiedGarbage.Impl.Seed.Layers
 
 /-!
 # `G` on 32-bit words: the constants of its last layer
@@ -11,6 +13,8 @@ contribute is XORed in. These are the masks `Mᵣ` and the constant, and the
 masks that pick the bytes `X0` and `X2` (`S0`) or `X1` and `X3` (`S1`) of
 each word.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Seed.W32
 

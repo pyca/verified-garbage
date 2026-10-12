@@ -1,5 +1,9 @@
-import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.Sign
-import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.ResidentRejTwo
+module
+
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.Sign
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.ResidentRejTwo
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.AArch64.Sign.CachedMatrix
 open VG VG.AArch64 VG.Spec.MlDsa

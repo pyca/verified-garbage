@@ -1,6 +1,8 @@
-import VerifiedGarbage.Impl.Ed448.AArch64.Whole
-import VerifiedGarbage.Impl.Ed448.AArch64.Scalar
-import VerifiedGarbage.Impl.Ed448.AArch64.VerifyWindow
+module
+
+public import VerifiedGarbage.Impl.Ed448.AArch64.Whole
+public import VerifiedGarbage.Impl.Ed448.AArch64.Scalar
+public import VerifiedGarbage.Impl.Ed448.AArch64.VerifyWindow
 
 /-!
 # Ed448 verification on AArch64
@@ -21,6 +23,8 @@ kept in the locals at 248 and the first ten bytes of `dom4(0, context)` at 0:
 
 Every address and branch depends only on the pointers and the lengths.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Ed448.AArch64.Verify
 

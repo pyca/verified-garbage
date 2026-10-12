@@ -1,8 +1,13 @@
-import VerifiedGarbage.Impl.Sha3.AArch64.Neon.Pair
-import VerifiedGarbage.Impl.Sha3.AArch64.Sha3.RoundLoop
+module
+
+public import VerifiedGarbage.Impl.Sha3.AArch64.Neon.Pair
+public import VerifiedGarbage.Impl.Sha3.AArch64.Sha3.RoundLoop
 
 /-! Register-resident paired SHAKE blocks. These are inline program fragments;
 there is no custom calling convention or separately emitted resident helper. -/
+
+@[expose] public section
+
 namespace VG.Impl.MlDsa.AArch64.Optimized.Resident
 open VG VG.AArch64
 open VG.Impl.Sha3.AArch64.Sha3.Vector (vreg)

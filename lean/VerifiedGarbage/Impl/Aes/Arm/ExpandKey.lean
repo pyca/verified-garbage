@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Aes.Arm.Ctr32
+module
+
+public import VerifiedGarbage.Impl.Aes.Arm.Ctr32
 
 /-!
 # The AES key expansion on ARMv7
@@ -22,6 +24,8 @@ the bitsliced S-box of `Sbox.lean` on the word in `q 0` (as BearSSL's
   on these, which depend only on `key_len`; the key's bytes only ever
   reach the S-box's registers and memory.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Aes.Arm
 

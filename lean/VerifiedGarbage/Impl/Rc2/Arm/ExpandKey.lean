@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Rc2.Arm.Lookup
+module
+
+public import VerifiedGarbage.Impl.Rc2.Arm.Lookup
 
 /-! # RC2 key expansion on ARMv7
 
@@ -6,6 +8,8 @@ Public lengths control the loops. `lr` holds public addresses; all
 callee-saved registers are saved in the scratch buffer supplied on the stack.
 PITABLE scans never branch on key bytes.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Rc2.Arm
 

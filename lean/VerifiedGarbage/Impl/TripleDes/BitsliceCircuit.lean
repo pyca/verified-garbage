@@ -1,3 +1,5 @@
+module
+
 /-!
 # DES S-boxes as AND/OR/XOR/AND-NOT/NOT circuits, for bitslicing
 
@@ -16,6 +18,8 @@ bits, least significant first. Each target's proof checks the code made from
 a circuit on all 64 inputs against `Spec.TripleDes.sBox`; nothing here
 needs to be trusted.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.TripleDes.Bitslice
 

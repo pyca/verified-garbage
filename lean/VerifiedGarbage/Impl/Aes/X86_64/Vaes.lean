@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Aes.X86_64.AesNi
+module
+
+public import VerifiedGarbage.Impl.Aes.X86_64.AesNi
 
 /-!
 # AES with VAES on x86-64: GCM's counter mode
@@ -31,6 +33,8 @@ where it left them.
 `scratch` is not used, and no callee-saved register is written. Every branch
 and every address depends only on the pointers, `rounds` and `n`.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Aes.X86_64.Vaes
 

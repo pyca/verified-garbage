@@ -1,4 +1,6 @@
-import VerifiedGarbage.TCB.AArch64.Isa
+module
+
+public import VerifiedGarbage.TCB.AArch64.Isa
 
 /-! # Fixed-time division for ARM64 Argon2 reference indices
 
@@ -7,6 +9,9 @@ quotient is returned in x5, remainder in x4. All 32 steps are unrolled;
 borrow selects the remainder through a mask, without variable-latency
 hardware division or branches on the address word.
 -/
+
+@[expose] public section
+
 namespace VG.Impl.Argon2.AArch64.Divide
 open VG.AArch64
 

@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.ChaCha20Poly1305.X86_64
-import VerifiedGarbage.Impl.ChaCha20.X86_64.Avx2
+module
+
+public import VerifiedGarbage.Impl.ChaCha20Poly1305.X86_64
+public import VerifiedGarbage.Impl.ChaCha20.X86_64.Avx2
 
 /-!
 # ChaCha20-Poly1305: x86-64, with Poly1305 inside the AVX2 ChaCha20 kernel
@@ -51,6 +53,8 @@ absorbs the last chunk while it encrypts the 1 to 64 bytes after it; or, with
 no whole chunk, `tailS` absorbs the 448 bytes. Either way only the last 1 to
 64 bytes are left for `macPadLengths` to absorb.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.ChaCha20Poly1305.X86_64.Stitch
 

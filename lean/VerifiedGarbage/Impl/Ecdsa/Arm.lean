@@ -1,6 +1,8 @@
-import VerifiedGarbage.Impl.Weierstrass.Arm.LadderP
-import VerifiedGarbage.Spec.Weierstrass
-import VerifiedGarbage.Spec.Ecdsa
+module
+
+public import VerifiedGarbage.Impl.Weierstrass.Arm.LadderP
+public import VerifiedGarbage.Spec.Weierstrass
+public import VerifiedGarbage.Spec.Ecdsa
 
 /-!
 # ECDSA signing on 32-bit ARM
@@ -36,6 +38,8 @@ and `str` reach from `r12`, and the tables of bits are past byte 4096.
 `r = 0`, as the specification says. Everything is computed whatever the
 flag, and only the pointers may affect timing.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Ecdsa.Arm
 

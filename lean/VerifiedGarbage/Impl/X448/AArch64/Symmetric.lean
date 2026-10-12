@@ -1,5 +1,11 @@
-import VerifiedGarbage.Impl.X448.AArch64.Cached
+module
+
+public import VerifiedGarbage.Impl.X448.AArch64.Cached
+
 /-! Symmetric squaring: each cross product is computed once. -/
+
+@[expose] public section
+
 namespace VG.Impl.X448.AArch64.Symmetric
 open VG VG.AArch64
 open VG.Impl.X448.AArch64 (st ACC)

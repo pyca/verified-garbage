@@ -1,6 +1,11 @@
-import VerifiedGarbage.Impl.Ed25519.AArch64.RecoverSign
+module
+
+public import VerifiedGarbage.Impl.Ed25519.AArch64.RecoverSign
 
 /-! Decode a canonical point through the public input pointer x2. -/
+
+@[expose] public section
+
 namespace VG.Impl.Ed25519.AArch64
 open VG.AArch64
 

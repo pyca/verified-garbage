@@ -1,4 +1,8 @@
-import VerifiedGarbage.Impl.ChaCha20.AArch64
+module
+
+public import VerifiedGarbage.Impl.ChaCha20.AArch64
+
+@[expose] public section
 
 namespace VG.Impl.ChaCha20.AArch64
 

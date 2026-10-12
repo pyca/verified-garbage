@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.RejNtt4
-import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.RejBounded
+module
+
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.RejNtt4
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.RejBounded
 
 /-!
 Four bounded secret-polynomial samplers, in two independent pairs of SHAKE256
@@ -9,6 +11,8 @@ the existing scalar parser handles the final coefficient slots. Masked mode
 zeros each unsuccessful polynomial and returns the conjunction of all four
 success flags. The compaction-table address depends only on rejection bits.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.AArch64.Optimized.BoundedFour
 open VG VG.AArch64

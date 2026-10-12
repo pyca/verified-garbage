@@ -1,9 +1,14 @@
-import VerifiedGarbage.Impl.Ed25519.AArch64.PointDecode
-import VerifiedGarbage.Impl.Ed25519.AArch64.ScalarBase
-import VerifiedGarbage.Impl.Ed25519.AArch64.VerifyWindow
+module
+
+public import VerifiedGarbage.Impl.Ed25519.AArch64.PointDecode
+public import VerifiedGarbage.Impl.Ed25519.AArch64.ScalarBase
+public import VerifiedGarbage.Impl.Ed25519.AArch64.VerifyWindow
 
 /-! Canonical point/scalar checks and the uncofactored verification equation
 with the caller's full 512-bit SHA-512 challenge. -/
+
+@[expose] public section
+
 namespace VG.Impl.Ed25519.AArch64
 open VG.AArch64
 

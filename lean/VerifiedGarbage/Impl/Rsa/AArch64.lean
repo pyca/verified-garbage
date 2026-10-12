@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Bignum.AArch64
+module
+
+public import VerifiedGarbage.Impl.Bignum.AArch64
 
 /-!
 # The RSA public-key operations on AArch64
@@ -19,6 +21,8 @@ The arguments are those of x86-64's (`Impl/Rsa/X86_64.lean`), in `x0`–`x7`
 and, from the ninth, on the stack (AAPCS64): the working space `scratch` is
 the first stack argument for the public-key operations.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Rsa.AArch64
 

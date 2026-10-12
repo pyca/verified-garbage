@@ -1,5 +1,7 @@
-import VerifiedGarbage.TCB.X86_64.Isa
-import VerifiedGarbage.Impl.Bignum.Layout
+module
+
+public import VerifiedGarbage.TCB.X86_64.Isa
+public import VerifiedGarbage.Impl.Bignum.Layout
 
 /-!
 # Multiword arithmetic on x86-64: the baseline
@@ -27,6 +29,8 @@ The registers: `rdi` the working space; `r8` the accumulator, `r9` `b`,
 `rcx` a word of `a` or the multiple `u` of `m`; `rbp` a carry or a borrow
 mask; `rax`, `rdx`, `rsi`, `rbx` temporaries.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Bignum.X86_64
 

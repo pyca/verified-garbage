@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.MlKem.AArch64.Basic
+module
+
+public import VerifiedGarbage.Impl.MlKem.AArch64.Basic
 
 /-!
 # ML-KEM on AArch64: encoding, decoding and sampling from bytes
@@ -22,6 +24,8 @@ import VerifiedGarbage.Impl.MlKem.AArch64.Basic
 
 Every address and branch depends only on the pointers.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlKem.AArch64
 

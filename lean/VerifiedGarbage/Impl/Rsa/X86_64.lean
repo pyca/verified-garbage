@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Bignum.X86_64
-import VerifiedGarbage.Impl.Bignum.X86_64.R2Words
+module
+
+public import VerifiedGarbage.Impl.Bignum.X86_64
+public import VerifiedGarbage.Impl.Bignum.X86_64.R2Words
 
 /-!
 # RSA with a precomputed modulus on x86-64
@@ -11,6 +13,8 @@ computes RSAEP from them. Both use the working space, header and arrays of
 `mul o a b` (`[o] = [a] [b] R⁻¹ mod m`): the baseline `mm`, or one for other
 CPU features (`Impl/Bignum/X86_64/Adx.lean`).
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Rsa.X86_64
 
