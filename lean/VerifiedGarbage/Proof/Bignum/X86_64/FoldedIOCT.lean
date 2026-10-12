@@ -1,5 +1,15 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.FoldedIO
-import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.FoldedIO
+meta import VerifiedGarbage.Proof.Bignum.X86_64.FoldedIO
+public import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
+meta import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public

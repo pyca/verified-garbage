@@ -1,7 +1,18 @@
-import VerifiedGarbage.Proof.Dsa.X86_64.ProductCallCT
-import VerifiedGarbage.Proof.Dsa.X86_64.AddCT
+module
+
+public import VerifiedGarbage.Proof.Dsa.X86_64.ProductCallCT
+meta import VerifiedGarbage.Proof.Dsa.X86_64.ProductCallCT
+public import VerifiedGarbage.Proof.Dsa.X86_64.AddCT
+meta import VerifiedGarbage.Proof.Dsa.X86_64.AddCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # Constant time of loading and adding DSA scalars -/
+
+@[expose] public section
+
 namespace VG.Proof.Dsa.X86_64
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public
 open VG.Impl.Dsa.Layout VG.Impl.Dsa.X86_64 VG.Impl.Rsa.X86_64

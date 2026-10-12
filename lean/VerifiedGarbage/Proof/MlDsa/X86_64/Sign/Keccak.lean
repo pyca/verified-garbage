@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Glue
-import VerifiedGarbage.Proof.MlKem.X86_64.KCall
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
+meta import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Glue
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Glue
+public import VerifiedGarbage.Proof.MlKem.X86_64.KCall
+meta import VerifiedGarbage.Proof.MlKem.X86_64.KCall
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA signing on x86-64: SHAKE256 through the sponge functions
@@ -14,6 +23,8 @@ and squeezes `len` bytes to `out`: the output of the sponge from the padded
 state of their concatenation (`shake_ok`), leaking only the addresses
 (`shake_tr`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86_64.Sign
 

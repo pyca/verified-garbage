@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacEntry
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacEntry
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The Jacobian window method on x86-64: an iteration
@@ -9,6 +15,8 @@ unless the digit is zero (`jmask_ok`). The result is a Jacobian triple of
 `[winE k' J j]P` (`jstep_point`): the addition is not exceptional
 (`Window5.loop_noexc`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.X86_64
 

@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.MlKem.Arm.CallsCT
+module
+
+public import VerifiedGarbage.Proof.MlKem.Arm.CallsCT
+meta import VerifiedGarbage.Proof.MlKem.Arm.CallsCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on 32-bit ARM: the `PRF`s in constant time
@@ -8,6 +15,8 @@ Two runs of `prfLoop` with the same `scratch` leak the same trace
 the counter `N`, and the calls take the same pointers in both runs. What each
 run is at each point comes from its correctness (`relct_wp`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.Arm
 

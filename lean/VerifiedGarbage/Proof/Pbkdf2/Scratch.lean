@@ -1,5 +1,11 @@
-import VerifiedGarbage.Spec.Pbkdf2.Generic
-import VerifiedGarbage.Proof.Framework.Offset
+module
+
+public import VerifiedGarbage.Spec.Pbkdf2.Generic
+public import VerifiedGarbage.Proof.Framework.Offset
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # PBKDF2 with its working space on the stack: locality
@@ -16,6 +22,8 @@ entry only within the function's buffers (`pbkdf2Pre_local`,
 `pbkdf2Post_local`): the precondition reads none, the postcondition the
 password and the salt.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Pbkdf2
 

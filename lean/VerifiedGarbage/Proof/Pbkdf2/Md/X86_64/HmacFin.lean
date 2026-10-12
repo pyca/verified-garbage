@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Words
-import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.HmacFinInner
-import VerifiedGarbage.Proof.Framework.Omega
+module
+
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Words
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.HmacFinInner
+public import VerifiedGarbage.Proof.Framework.Omega
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # HMAC over any Merkle–Damgård hash function on x86-64: `finalize`
@@ -17,6 +23,8 @@ of the result to `out` (`finOut`, `out_ok`). That this is the outer hash is
 (`HashOK.stream`); constant time likewise, from the taint checks of the pieces between the calls
 (`Checks`) and the compression function's own proof (`compressAt_rel`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Pbkdf2.Md.X86_64.HmacFin
 

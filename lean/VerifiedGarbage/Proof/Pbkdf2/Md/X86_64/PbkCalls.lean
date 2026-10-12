@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.PbkCommon
+module
+
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.PbkCommon
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # PBKDF2-HMAC over any Merkle–Damgård hash function on x86-64: `pbkdf2`'s calls
@@ -8,6 +14,8 @@ The calls of HMAC's `init` and `finalize` and of `iterate`, whose contracts
 with `WP.call`, and shown constant time in two runs with `RelCT.call`. Each
 uses at most 24 bytes of stack below `rsp` (a call two deep).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Pbkdf2.Md.X86_64.Pbk
 

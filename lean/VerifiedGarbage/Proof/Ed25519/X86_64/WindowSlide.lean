@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Ed25519.X86_64.WindowDigits
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
+module
+
+public import VerifiedGarbage.Proof.Ed25519.X86_64.WindowDigits
+public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Verification's windows: a doubling and the digits at each position
@@ -11,6 +17,8 @@ added, twice `winVal (p + 1)` (`WinMid`), with `T` computed if a digit at `p` is
 addition needs it. `windows_ok`: from one above `top` with the identity, the windows skip the
 leading zero digits and end at position 0.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed25519.X86_64
 

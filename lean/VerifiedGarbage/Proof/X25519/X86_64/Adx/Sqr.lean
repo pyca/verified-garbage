@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.Mul
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+module
+
+public import VerifiedGarbage.Proof.X25519.X86_64.Adx.Mul
+public import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X25519 on x86-64: squaring with BMI2 and ADX
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
 `sqrX o a`: the square `[a]²` into `r8–r15` (`sqr4_ok`, `SqrProd.lean`),
 reduced as in `mulX`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X25519.X86_64
 

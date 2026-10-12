@@ -1,9 +1,15 @@
-import VerifiedGarbage.Proof.Framework.Arm.Contract
-import VerifiedGarbage.Proof.Sha3.Arm.Permute
-import VerifiedGarbage.Proof.Sha3.Arm.Stream.Absorb
-import VerifiedGarbage.Proof.Sha3.Arm.Stream.Pad
-import VerifiedGarbage.Proof.Sha3.Arm.Stream.Squeeze
-import VerifiedGarbage.Spec.Sha3.Contract
+module
+
+public import VerifiedGarbage.Proof.Framework.Arm.Contract
+public import VerifiedGarbage.Proof.Sha3.Arm.Permute
+public import VerifiedGarbage.Proof.Sha3.Arm.Stream.Absorb
+public import VerifiedGarbage.Proof.Sha3.Arm.Stream.Pad
+public import VerifiedGarbage.Proof.Sha3.Arm.Stream.Squeeze
+public import VerifiedGarbage.Spec.Sha3.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # SHA-3 on ARMv7: the shared contracts
@@ -14,6 +20,8 @@ contracts of `Spec/Sha3/Contract.lean`, which the artifacts are emitted with.
 The functions use no stack: `bl` leaves the return address in `lr`, which each
 streaming function saves in its scratch space.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sha3.Arm.Shared
 

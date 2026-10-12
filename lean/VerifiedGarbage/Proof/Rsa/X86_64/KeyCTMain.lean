@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.Rsa.X86_64.KeyCTSetup
+module
+
+public import VerifiedGarbage.Proof.Rsa.X86_64.KeyCTSetup
+meta import VerifiedGarbage.Proof.Rsa.X86_64.KeyCTSetup
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_check_key` on x86-64: constant time of `main`
@@ -6,6 +13,8 @@ import VerifiedGarbage.Proof.Rsa.X86_64.KeyCTSetup
 The setup (`setupK_ct`), then each check from `KK` (`KeyCTPieces.lean`),
 then the result from `rdi` (`main_ct`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.X86_64.Key
 

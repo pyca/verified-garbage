@@ -1,10 +1,24 @@
-import VerifiedGarbage.Proof.Ed25519.X86_64.MulAddCodec
-import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarMain
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
-import VerifiedGarbage.Impl.Ed25519.X86_64.MulAdd
-import VerifiedGarbage.Proof.Framework.Contract
+module
+
+public import VerifiedGarbage.Proof.Ed25519.X86_64.MulAddCodec
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.MulAddCodec
+public import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarMain
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarMain
+public import VerifiedGarbage.Proof.Framework.X86_64.Lit
+meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
+public import VerifiedGarbage.Impl.Ed25519.X86_64.MulAdd
+meta import VerifiedGarbage.Impl.Ed25519.X86_64.MulAdd
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Ed25519.X86_64.MulAddMain`. -/
+
+@[expose] public section
+
 section
 /-! Merged from `Proof.Ed25519.X86_64.MulAddSetup`. -/
 section

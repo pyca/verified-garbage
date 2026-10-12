@@ -1,4 +1,10 @@
-import VerifiedGarbage.Spec.Weierstrass
+module
+
+public import VerifiedGarbage.Spec.Weierstrass
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Curves of prime order
@@ -10,6 +16,8 @@ the algebra of its proofs (e.g. `Proof/P256/PrimeOrder.lean`, from
 `Proof/Weierstrass/GroupOrder.lean`), so that the proofs of the code can take
 it as a hypothesis.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass
 

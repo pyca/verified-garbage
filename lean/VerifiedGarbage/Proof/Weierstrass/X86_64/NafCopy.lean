@@ -1,8 +1,17 @@
-import VerifiedGarbage.Impl.Weierstrass.X86_64.Naf
-import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombSelectPass
-import VerifiedGarbage.Proof.Weierstrass.X86_64.NafArith
+module
+
+public import VerifiedGarbage.Impl.Weierstrass.X86_64.Naf
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombSelectPass
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafArith
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Direct copies of public Jacobian table entries. -/
+
+@[expose] public section
+
 namespace VG.Proof.Weierstrass.X86_64
 open VG VG.X86_64 VG.Impl.Weierstrass.X86_64
 open VG.Proof.Mont.X86_64 VG.Proof.Mont

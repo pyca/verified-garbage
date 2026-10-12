@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Select
-import VerifiedGarbage.Proof.Ed25519.X86_64.CombLoop
+module
+
+public import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Select
+public import VerifiedGarbage.Proof.Ed25519.X86_64.CombLoop
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The `zmm` comb: the digits and their signs
@@ -10,6 +16,8 @@ magnitudes into `r10` and `r8`, the masks of their signs to `SGB` and `SGA`
 (from `rdx`, which `combSign` leaves holding the mask), and the table `j`
 into `r9`. `zsign` puts the two masks into the halves of `zmm15`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed25519.X86_64.Zmm
 

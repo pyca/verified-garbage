@@ -1,10 +1,23 @@
-import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Variant
-import VerifiedGarbage.Proof.Sha256.AArch64.Shared
-import VerifiedGarbage.Proof.Sha256.AArch64.Variant
-import VerifiedGarbage.Proof.Sha256.Md
-import VerifiedGarbage.Proof.Hmac.Generic.Common
-import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.Framework.TaintBatch
+module
+
+public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Variant
+meta import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Variant
+public import VerifiedGarbage.Proof.Sha256.AArch64.Shared
+meta import VerifiedGarbage.Proof.Sha256.AArch64.Shared
+public import VerifiedGarbage.Proof.Sha256.AArch64.Variant
+meta import VerifiedGarbage.Proof.Sha256.AArch64.Variant
+public import VerifiedGarbage.Proof.Sha256.Md
+meta import VerifiedGarbage.Proof.Sha256.Md
+public import VerifiedGarbage.Proof.Hmac.Generic.Common
+meta import VerifiedGarbage.Proof.Hmac.Generic.Common
+public import VerifiedGarbage.TCB.AArch64.Target
+meta import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # SHA-256 on AArch64, as a Merkle–Damgård hash function
@@ -16,6 +29,8 @@ specification `Spec.Hmac.sha256S`. The facts about the code HMAC and PBKDF2
 add, which do not depend on the functions they call, are checked once
 (`coreOK`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Pbkdf2.Md.AArch64.Sha256
 

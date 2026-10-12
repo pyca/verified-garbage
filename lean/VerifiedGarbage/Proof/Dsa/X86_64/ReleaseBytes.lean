@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.Dsa.X86_64.WriteScalar
+module
+
+public import VerifiedGarbage.Proof.Dsa.X86_64.WriteScalar
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # Byte-string postconditions for masked DSA signature release -/
+
+@[expose] public section
+
 namespace VG.Proof.Dsa.X86_64
 open VG VG.X86_64
 

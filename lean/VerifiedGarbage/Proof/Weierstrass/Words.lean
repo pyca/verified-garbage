@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Mont.Words
-import VerifiedGarbage.Proof.Framework.Bswap
-import VerifiedGarbage.Spec.Ecdsa.Generic
+module
+
+public import VerifiedGarbage.Proof.Mont.Words
+public import VerifiedGarbage.Proof.Framework.Bswap
+public import VerifiedGarbage.Spec.Ecdsa.Generic
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Short Weierstrass curves: numbers as words, bits and bytes
@@ -12,6 +18,8 @@ its words (whether it is zero); their big-endian encodings (`Spec.Weierstrass.of
 `Spec.Weierstrass.toBytes`) through byte-reversed words; and when memory that changed only in
 one range keeps another range.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass
 

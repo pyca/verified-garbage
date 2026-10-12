@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Rsa.X86_64.RpExp
+module
+
+public import VerifiedGarbage.Proof.Rsa.X86_64.RpExp
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_recover_primes` on x86-64: the squarings
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.Rsa.X86_64.RpExp
 and `sqLogic` updates `done`, `ok` and `y` as `RecoverMath.sqStep` does
 (`sqBody_ok`); the loop of `64 Bw` of them gives `sqIter` (`sqLoop_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.X86_64
 

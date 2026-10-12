@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Weierstrass.X86_64.InvStep
-import VerifiedGarbage.Proof.Mont.X86_64.Wide
-import VerifiedGarbage.Proof.Divstep.Packed
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvStep
+public import VerifiedGarbage.Proof.Mont.X86_64.Wide
+public import VerifiedGarbage.Proof.Divstep.Packed
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Inversion by divsteps on x86-64: packed divsteps
@@ -13,6 +19,8 @@ updates the low words by it (`plow_ok`) and multiplies the batch's matrix
 by it (`pcomp_ok`); as integers, the batch so far is `msteps` from the
 batch's start (`Divstep.psteps_rel`, `pext_rel`, `low_upd`, `msteps_gen`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.X86_64
 

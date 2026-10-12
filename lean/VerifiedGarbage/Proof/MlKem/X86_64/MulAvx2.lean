@@ -1,7 +1,17 @@
-import VerifiedGarbage.Proof.MlKem.X86_64.Mul
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
-import VerifiedGarbage.Impl.MlKem.X86_64.MulAvx2
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86_64.Mul
+meta import VerifiedGarbage.Proof.MlKem.X86_64.Mul
+public import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
+meta import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
+public import VerifiedGarbage.Impl.MlKem.X86_64.MulAvx2
+meta import VerifiedGarbage.Impl.MlKem.X86_64.MulAvx2
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86-64: `vg_mlkem_multiply_ntts_avx2`
@@ -13,6 +23,8 @@ and `vinter`, whose proofs hold of each lane (`ylanes`), on the pairs of
 coefficients `32i + 8t + 4l + (0 … 3)`, `t < 4`, of lane `l` (`MulY.step`);
 the stores put each product in its place (`ystore4`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.X86_64
 

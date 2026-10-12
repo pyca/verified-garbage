@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.Weierstrass.X86_64.FastNafOdd
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.FastNafOdd
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Each recoder step advances one bit for an even residual, or one window for an odd residual. -/
+
+@[expose] public section
+
 namespace VG.Proof.Weierstrass.X86_64
 open VG VG.X86_64 VG.Impl.Weierstrass.X86_64 VG.Impl.Mont.X86_64
 open VG.Proof.Mont.X86_64 VG.Proof.Mont VG.Proof.X25519.X86_64

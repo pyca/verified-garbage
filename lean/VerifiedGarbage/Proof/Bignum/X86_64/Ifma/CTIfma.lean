@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.CTRegion
-import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.CTLemmas
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.CTRegion
+meta import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.CTRegion
+public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.CTLemmas
+meta import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.CTLemmas
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSA with AVX512_IFMA on x86-64, any size: constant time, `ifma`
@@ -14,6 +22,8 @@ addresses all come from `rbx`, the area's base (`vecB_ct`). With the regions
 `ifma_ok`'s hypotheses. The checks of the code that depends on the layout
 are `IfT l`, which `ifT` evaluates for each layout.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64.Ifma
 

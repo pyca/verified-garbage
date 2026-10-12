@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlKem.X86_64.DecMulV
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86_64.DecMulV
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86-64: `vg_mlkem*_encrypt_mul`
@@ -13,6 +19,8 @@ computes `ŷ[j] = NTT(y[j])`, adds `Â[j, i] ×_T ŷ[j]` to each sum `i < k`
 (`IInv`, `innerE_ok`, unrolled), then `t̂[j] ×_T ŷ[j]` to sum `k`
 (`termE_ok`); the last loop computes `NTT⁻¹` of each sum (`invStep_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.X86_64
 

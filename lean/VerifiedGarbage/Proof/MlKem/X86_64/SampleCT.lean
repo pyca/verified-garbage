@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.MlKem.X86_64.SampleNtt
-import VerifiedGarbage.Proof.MlKem.X86_64.Rel
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86_64.SampleNtt
+meta import VerifiedGarbage.Proof.MlKem.X86_64.SampleNtt
+public import VerifiedGarbage.Proof.MlKem.X86_64.Rel
+meta import VerifiedGarbage.Proof.MlKem.X86_64.Rel
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86-64: `vg_mlkem_sample_ntt`, constant time but for the seed
@@ -12,6 +20,8 @@ iteration by iteration (`body_ct`): both are at the same iteration with the
 same coefficients sampled and the same bytes to read, so each branch goes the
 same way and each store goes to the same address.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.X86_64
 

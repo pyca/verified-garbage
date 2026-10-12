@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Sha256.X86.Stream.Common
-import VerifiedGarbage.Proof.Sha512.Word64
-import VerifiedGarbage.Impl.Sha512.X86
-import VerifiedGarbage.Proof.Sha512.Spec
+module
+
+public import VerifiedGarbage.Proof.Sha256.X86.Stream.Common
+public import VerifiedGarbage.Proof.Sha512.Word64
+public import VerifiedGarbage.Impl.Sha512.X86
+public import VerifiedGarbage.Proof.Sha512.Spec
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # x86 (32-bit): 64-bit words as pairs of 32-bit words
@@ -15,6 +21,8 @@ style: the rule for `x` proves `WP (x ++ rest)` from a proof of `WP rest` for
 every state `x` can end in. The halves of 64-bit values are those of
 `Proof/Sha512/Word64.lean`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sha512.X86
 

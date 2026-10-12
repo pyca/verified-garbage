@@ -1,9 +1,15 @@
-import VerifiedGarbage.Impl.Ed25519.X86_64.Cached
-import VerifiedGarbage.Proof.Ed25519.BaseTable
-import VerifiedGarbage.Proof.Ed25519.X86_64.PointPowers
-import VerifiedGarbage.Proof.Ed25519.X86_64.FieldMemory
-import VerifiedGarbage.Proof.Ed25519.X86_64.PointAccumulateLoop
-import VerifiedGarbage.Proof.Ed25519.X86_64.FieldLazy
+module
+
+public import VerifiedGarbage.Impl.Ed25519.X86_64.Cached
+public import VerifiedGarbage.Proof.Ed25519.BaseTable
+public import VerifiedGarbage.Proof.Ed25519.X86_64.PointPowers
+public import VerifiedGarbage.Proof.Ed25519.X86_64.FieldMemory
+public import VerifiedGarbage.Proof.Ed25519.X86_64.PointAccumulateLoop
+public import VerifiedGarbage.Proof.Ed25519.X86_64.FieldLazy
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Cached points
@@ -11,6 +17,8 @@ import VerifiedGarbage.Proof.Ed25519.X86_64.FieldLazy
 The cached addition is the specification's `pointAdd` (`grind`); each constant
 field of a cached point is four immediate words stored through `rax`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed25519.X86_64
 

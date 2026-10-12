@@ -1,9 +1,17 @@
-import VerifiedGarbage.Proof.Ed25519.X86_64.PointAffine
-import VerifiedGarbage.Impl.Ed25519.X86_64.Recover
-import VerifiedGarbage.Proof.Ed25519.Recover
-import VerifiedGarbage.Proof.Ed25519.X86_64.RecoverSign
+module
+
+public import VerifiedGarbage.Proof.Ed25519.X86_64.PointAffine
+public import VerifiedGarbage.Impl.Ed25519.X86_64.Recover
+public import VerifiedGarbage.Proof.Ed25519.Recover
+public import VerifiedGarbage.Proof.Ed25519.X86_64.RecoverSign
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Candidate root and its squared check agree with the decoding specification. -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed25519.X86_64
 

@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.RsaPss.X86_64.MgfDirect
-import VerifiedGarbage.Proof.RsaPss.X86_64.BufferXor
-import VerifiedGarbage.Proof.RsaPss.MgfBytes
+module
+
+public import VerifiedGarbage.Proof.RsaPss.X86_64.MgfDirect
+public import VerifiedGarbage.Proof.RsaPss.X86_64.BufferXor
+public import VerifiedGarbage.Proof.RsaPss.MgfBytes
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSASSA-PSS on x86-64: MGF1
@@ -12,6 +18,8 @@ each counter `c`, `H ‖ I2OSP(c, 4)` is written to `Y` (`clearBlock`,
 `min(hLen, dbLen - c hLen)` bytes of its digest XORed into `DB` at `c hLen`
 (`xorOut`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPss.X86_64
 

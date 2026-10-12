@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTGPow
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTGPow
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTGPow
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSA with the CRT on x86-64: `redc` is constant time
@@ -11,6 +18,8 @@ Its loads from the header are pinned by correctness (`redcLoad_ok`,
 `redcAcc_ok` and their steps), and `addMod`'s reload of its output's base by
 `addStep_ok`'s invariant (`addMod_ct`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64
 

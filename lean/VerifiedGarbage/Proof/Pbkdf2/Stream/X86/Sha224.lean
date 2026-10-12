@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Pbkdf2.Stream.X86.Sha256
+module
+
+public import VerifiedGarbage.Proof.Pbkdf2.Stream.X86.Sha256
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # SHA-224's streaming functions on x86 (32-bit), for every backend
@@ -9,6 +15,8 @@ value (`vg_sha224_init`, then the backend's `update` and `finalize`, whose
 contracts hold from any initial hash value), with the digest the first 28
 bytes of the final hash value.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Pbkdf2.Stream.X86
 

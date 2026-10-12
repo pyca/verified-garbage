@@ -1,8 +1,14 @@
-import VerifiedGarbage.Impl.Pbkdf2.Md.X86
-import VerifiedGarbage.Impl.Pbkdf2.Whole.X86
-import VerifiedGarbage.Impl.Sha1.X86.Stream
-import VerifiedGarbage.Spec.Sha1.Contract
-import VerifiedGarbage.Spec.Pbkdf2.Generic
+module
+
+public import VerifiedGarbage.Impl.Pbkdf2.Md.X86
+public import VerifiedGarbage.Impl.Pbkdf2.Whole.X86
+public import VerifiedGarbage.Impl.Sha1.X86.Stream
+public import VerifiedGarbage.Spec.Sha1.Contract
+public import VerifiedGarbage.Spec.Pbkdf2.Generic
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # SHA-1 backends on x86: the code built on them
@@ -17,6 +23,8 @@ made with a backend: its streaming functions as the code calls them
 calls (`fns`, `Impl/Pbkdf2/Whole/X86.lean`), by the names the generic
 registration files give them (with the backend's suffix).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sha1.X86.Variants
 

@@ -1,10 +1,23 @@
-import VerifiedGarbage.Impl.MlKem.X86_64.Arith
-import VerifiedGarbage.Proof.MlKem.X86_64.VPack
-import VerifiedGarbage.Proof.MlKem.X86_64.Contracts
-import VerifiedGarbage.Proof.MlKem.Arith
-import VerifiedGarbage.Proof.Framework.X86_64.Taint
-import VerifiedGarbage.Proof.Framework.X86_64.Abi
-import VerifiedGarbage.Proof.Framework.Contract
+module
+
+public import VerifiedGarbage.Impl.MlKem.X86_64.Arith
+meta import VerifiedGarbage.Impl.MlKem.X86_64.Arith
+public import VerifiedGarbage.Proof.MlKem.X86_64.VPack
+meta import VerifiedGarbage.Proof.MlKem.X86_64.VPack
+public import VerifiedGarbage.Proof.MlKem.X86_64.Contracts
+meta import VerifiedGarbage.Proof.MlKem.X86_64.Contracts
+public import VerifiedGarbage.Proof.MlKem.Arith
+meta import VerifiedGarbage.Proof.MlKem.Arith
+public import VerifiedGarbage.Proof.Framework.X86_64.Taint
+meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
+public import VerifiedGarbage.Proof.Framework.X86_64.Abi
+meta import VerifiedGarbage.Proof.Framework.X86_64.Abi
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86-64: `vg_mlkem_add` and `vg_mlkem_sub`
@@ -12,6 +25,8 @@ import VerifiedGarbage.Proof.Framework.Contract
 A doubleword of the result is `condSub` of the sum (`add_lane`, `sub_lane`);
 the loop stores four of them at a time to `f` (`AddSub.Inv`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.X86_64
 

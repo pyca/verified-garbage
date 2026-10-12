@@ -1,6 +1,14 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.Bytes
-import VerifiedGarbage.Proof.Rsa.Octets
-import VerifiedGarbage.Proof.Framework.X86_64.Sse
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.Bytes
+public import VerifiedGarbage.Proof.Rsa.Octets
+public import VerifiedGarbage.Proof.Framework.X86_64.Sse
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64.WordIO
 open VG VG.X86_64 VG.Proof.Bignum

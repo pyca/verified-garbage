@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Digit
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Digit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## AdxRotate8HeadStep -/
+
+@[expose] public section
+
 section
 
 /-! A register cancellation step, with memory safety independent of the inverse. -/

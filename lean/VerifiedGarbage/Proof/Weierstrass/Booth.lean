@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Weierstrass.CombW
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.CombW
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Signed (Booth) digits for the fixed-base comb, and why they never collide
@@ -18,6 +24,8 @@ prime: integer multiples of `G` agree only for integers congruent modulo `n`,
 `Law.zmul_dvd`) and the digits' terms are too small to wrap around `n`, which
 `BoothSafe` checks of `n`, `w`, `J` and the scalars' bound (decidably).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass
 

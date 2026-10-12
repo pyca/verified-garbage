@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.RsaPss.AArch64.SignMain
-import VerifiedGarbage.Proof.RsaPss.SignCases
+module
+
+public import VerifiedGarbage.Proof.RsaPss.AArch64.SignMain
+public import VerifiedGarbage.Proof.RsaPss.SignCases
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSASSA-PSS signing on AArch64: the outcome, by cases
@@ -9,6 +15,8 @@ if the modulus' first byte is zero (`signOut_zero`) or the salt does not fit
 (`signOut_long`), and otherwise the private operation on the encoding
 `signEnc` writes (`signOut_eq`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPss.AArch64.Sgn
 

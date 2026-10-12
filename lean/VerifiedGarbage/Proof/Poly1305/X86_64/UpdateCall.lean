@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Poly1305.X86_64.Update
+module
+
+public import VerifiedGarbage.Proof.Poly1305.X86_64.Update
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Poly1305 on x86-64: `update`, from the call on
@@ -7,6 +13,8 @@ The call of an implementation of `vg_poly1305_blocks` for the whole blocks of
 the data (`BlocksImpl`), copying the rest into the buffer, restoring the
 registers, and the whole function.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Poly1305.X86_64
 

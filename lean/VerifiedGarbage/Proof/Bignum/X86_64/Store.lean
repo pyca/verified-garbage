@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.Bytes
-import VerifiedGarbage.Proof.Framework.WriteBytes
-import Mathlib.Tactic.Set
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.Bytes
+public import VerifiedGarbage.Proof.Framework.WriteBytes
+public import Mathlib.Tactic.Set
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Multiword arithmetic on x86-64: words to bytes
@@ -9,6 +15,8 @@ import Mathlib.Tactic.Set
 (0 or all ones, `mask c`), as `k` bytes most significant first at `rsi`:
 I2OSP of the number if `c`, and zeros otherwise (`storeBE_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64
 

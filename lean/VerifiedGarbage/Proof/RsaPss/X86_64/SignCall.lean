@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.RsaPss.X86_64.SignFail
+module
+
+public import VerifiedGarbage.Proof.RsaPss.X86_64.SignFail
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSASSA-PSS signing on x86-64: the call of `vg_rsa_private_checked`
@@ -9,6 +15,8 @@ With its stack arguments in the frame's first 14 words (`EM` at
 with `out` written as it says, the frame and our working space kept
 (`priv_call`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPss.X86_64
 

@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Rsa.X86_64.RpMain
-import VerifiedGarbage.Proof.Rsa.X86_64.CvCode
+module
+
+public import VerifiedGarbage.Proof.Rsa.X86_64.RpMain
+public import VerifiedGarbage.Proof.Rsa.X86_64.CvCode
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_recover_primes` on x86-64: correctness
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.Rsa.X86_64.CvCode
 its inputs (`rpCode_correct`), against `rpContract`, which states the shared
 contract's precondition on the registers and the stack.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.X86_64
 

@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.MlKem.X86_64.FragS
-import VerifiedGarbage.Proof.MlKem.X86_64.FragHash
-import VerifiedGarbage.Proof.MlKem.X86_64.Sample4Impl
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86_64.FragS
+meta import VerifiedGarbage.Proof.MlKem.X86_64.FragS
+public import VerifiedGarbage.Proof.MlKem.X86_64.FragHash
+meta import VerifiedGarbage.Proof.MlKem.X86_64.FragHash
+public import VerifiedGarbage.Proof.MlKem.X86_64.Sample4Impl
+meta import VerifiedGarbage.Proof.MlKem.X86_64.Sample4Impl
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86-64: four entries of the matrix at once
@@ -12,6 +21,8 @@ implementation (`Sample4Impl`), of those seeds to the four polynomials from
 `a` (`sample4At_ok`), which changes `r15` (so what it leaves is `PostB`), and
 the whole (`quad_ok`), and its constant time for a given `ρ` (`quad_tr`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.X86_64
 

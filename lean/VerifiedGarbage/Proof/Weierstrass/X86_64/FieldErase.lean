@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
-import VerifiedGarbage.Proof.Framework.KernelRfl
-import VerifiedGarbage.Impl.Weierstrass.X86_64
-import VerifiedGarbage.Impl.Weierstrass.X86_64.ForwardField
+module
+
+public import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
+public import VerifiedGarbage.Proof.Framework.X86_64.Lit
+public import VerifiedGarbage.Proof.Framework.KernelRfl
+public import VerifiedGarbage.Impl.Weierstrass.X86_64
+public import VerifiedGarbage.Impl.Weierstrass.X86_64.ForwardField
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Field arithmetic without its displacements, for constant time
@@ -18,6 +24,8 @@ displacements is then the templates one after the other
 again per operation: a constant-time check of it analyses each template once
 from the same taint (`Taint.constantTime_mapBlocks`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.X86_64
 

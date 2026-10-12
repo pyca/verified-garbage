@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Powers
-import VerifiedGarbage.Proof.Poly1305.Horner8
+module
+
+public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Powers
+public import VerifiedGarbage.Proof.Poly1305.Horner8
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Poly1305 on x86-64 with AVX-512: groups of eight blocks
@@ -10,6 +16,8 @@ quadword `k`) and multiplied by `r⁸` (Horner's rule in eight lanes,
 multiplied quadword by quadword by `r^(8 - π k)`, after which the sum of the
 quadwords is the accumulator.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Poly1305.X86_64.Avx512
 

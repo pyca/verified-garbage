@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Weierstrass.X86_64.InvBatch
-import VerifiedGarbage.Proof.Weierstrass.InvToM
-import VerifiedGarbage.Proof.Divstep.Iter
-import Mathlib.Data.Nat.Prime.Basic
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvBatch
+public import VerifiedGarbage.Proof.Weierstrass.InvToM
+public import VerifiedGarbage.Proof.Divstep.Iter
+public import Mathlib.Data.Nat.Prime.Basic
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Inversion by divsteps on x86-64: the whole inversion
@@ -14,6 +20,8 @@ start holds `(d, f, g, a, b) = (1, m, x, 0, 1)` (`init_ok`), each of the `B`
 batches takes it to the next `Divstep.invRun` (`batch_ok`), and the end
 multiplies `a` by `C` or `m - C` by the sign of `f = ±1` (`finish_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.X86_64
 

@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Weierstrass.Words
-import VerifiedGarbage.Proof.Mont.Words32
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.Words
+public import VerifiedGarbage.Proof.Mont.Words32
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Short Weierstrass curves: numbers as 32-bit words and bytes
@@ -9,6 +15,8 @@ says of 64-bit words: the bits of a number of 32-bit words (`val32`), and its
 big-endian encodings through byte-reversed words (`val32_eq_ofBytes`,
 `bytesAt_eq_toBytes32`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass
 

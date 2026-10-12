@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.MlKem.X86_64.S4Tab
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.MlKem.X86_64.S4Vec
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86_64.S4Tab
+public import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.MlKem.X86_64.S4Vec
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86-64: `vg_mlkem_sample_ntt4_avx2`, sampling
@@ -14,6 +20,8 @@ fewer than 256 coefficients, it calls `vg_mlkem_sample_ntt` on the seed
 (`fallback_ok`). Either way, polynomial `k` is then the seed's `SampleNTT`, if
 it succeeds, and `r14` records whether the first `k + 1` do (`parse_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.X86_64.S4
 

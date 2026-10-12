@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBasePrecomputedVerified
-import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.ScalarBase
-import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBaseAdx
+module
+
+public import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBasePrecomputedVerified
+public import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.ScalarBase
+public import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBaseAdx
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The base-point multiplications the Ed25519 functions call
@@ -13,6 +19,8 @@ calls: those of `scalarBase_precomputed` (each field
 multiplication), `scalarBase_adx` and `scalarBase_ifma`. Public-key derivation and signing are
 proven once for any of them.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed25519.X86_64
 

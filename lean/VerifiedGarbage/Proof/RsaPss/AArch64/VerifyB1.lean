@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyParts
+module
+
+public import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyParts
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSASSA-PSS verification on AArch64: unmasking `DB`
@@ -7,6 +13,8 @@ From RSAVP1's result in `EM`: the first checks into `acc` (`acc0`), `DB`
 unmasked (`mgfXor`) and its top bits cleared (`clearTop`), its first
 nonzero byte found (`posScan`) and checked (`posCheck`): `b1_ok`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPss.AArch64
 

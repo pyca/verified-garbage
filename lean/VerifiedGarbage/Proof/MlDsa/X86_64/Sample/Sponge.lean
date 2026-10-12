@@ -1,10 +1,16 @@
-import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
-import VerifiedGarbage.Impl.MlDsa.X86_64.Sample.Common
-import VerifiedGarbage.Proof.MlKem.X86_64.KCall
-import VerifiedGarbage.Proof.MlKem.X86_64.Zero
-import VerifiedGarbage.Proof.MlKem.X86_64.Contracts
-import VerifiedGarbage.Proof.MlKem.X86_64.Rel
-import VerifiedGarbage.Proof.MlDsa.Sample.Hash
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
+public import VerifiedGarbage.Impl.MlDsa.X86_64.Sample.Common
+public import VerifiedGarbage.Proof.MlKem.X86_64.KCall
+public import VerifiedGarbage.Proof.MlKem.X86_64.Zero
+public import VerifiedGarbage.Proof.MlKem.X86_64.Contracts
+public import VerifiedGarbage.Proof.MlKem.X86_64.Rel
+public import VerifiedGarbage.Proof.MlDsa.Sample.Hash
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on x86-64: the sampling functions' SHAKE
@@ -19,6 +25,8 @@ output, the working space and the stack below `rsp`. `sponge` then leaves
 `outlen` bytes of SHAKE of the message at `scratch + 840` (`sponge_ok`),
 leaking only the pointers and the length (`sponge_ct`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86_64.Sample
 

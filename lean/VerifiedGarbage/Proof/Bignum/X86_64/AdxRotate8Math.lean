@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.PowLit
+module
+
+public import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Framework.PowLit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64.AdxRotate8
 theorem combine {a0 a1 a2 a3 a4 a5 a6 a7 p0 p1 p2 p3 p4 p5 p6 p7 h0 h1 h2 h3 h4 h5 h6 h7 l0 l1 l2 l3 l4 l5 l6 l7 l8 c0 c1 c2 c3 c4 c5 c6 c7 o0 o1 o2 o3 o4 o5 o6 ct ot : Nat}

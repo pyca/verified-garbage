@@ -1,7 +1,17 @@
-import VerifiedGarbage.Proof.MlKem.X86_64.KgTop
-import VerifiedGarbage.Proof.MlKem.X86_64.EcTop
-import VerifiedGarbage.Proof.MlKem.X86_64.DcTop
-import VerifiedGarbage.Spec.MlKem.EncapsH
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86_64.KgTop
+meta import VerifiedGarbage.Proof.MlKem.X86_64.KgTop
+public import VerifiedGarbage.Proof.MlKem.X86_64.EcTop
+meta import VerifiedGarbage.Proof.MlKem.X86_64.EcTop
+public import VerifiedGarbage.Proof.MlKem.X86_64.DcTop
+meta import VerifiedGarbage.Proof.MlKem.X86_64.DcTop
+public import VerifiedGarbage.Spec.MlKem.EncapsH
+meta import VerifiedGarbage.Spec.MlKem.EncapsH
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM-768 on x86-64: `vg_mlkem768_keygen`, `vg_mlkem768_encaps_h` and `vg_mlkem768_decaps`
@@ -12,6 +22,8 @@ it calls `vg_mlkem_compress_encode` and `vg_mlkem_decode_decompress` for its
 widths, and the shared contracts imply the contracts the proofs are written
 against.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.X86_64
 

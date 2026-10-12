@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej4Sq
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejNtt
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej4Sq
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejNtt
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on x86-64: `vg_mldsa_rej_ntt_poly4_avx2`, sampling
@@ -11,6 +17,8 @@ the seed, as `vg_mldsa_rej_ntt_poly` squeezes it: `Xb_getD`): from `j`
 coefficients sampled, it samples those of the first `504 (h + 1)` bytes
 (`half_ok`), and writes only the seed's polynomial.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86_64.Rej4
 

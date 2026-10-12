@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.MlKem.X86_64.S4Verified
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86_64.S4Verified
+meta import VerifiedGarbage.Proof.MlKem.X86_64.S4Verified
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86-64: `vg_mlkem_sample_ntt4`, verified
@@ -9,6 +16,8 @@ the one for AVX2; its proofs are the pieces of that one's for the calls
 (`S4Parse.lean`, `S4CT.lean`), with nothing to keep of the memory but the
 polynomials already sampled.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.X86_64.S4
 

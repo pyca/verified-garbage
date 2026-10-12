@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Rsa.X86_64.KeyMod
+module
+
+public import VerifiedGarbage.Proof.Rsa.X86_64.KeyMod
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_check_key` on x86-64: the checks but those modulo `X - 1`
@@ -7,6 +13,8 @@ In the checks' context (`KCtx`), each phase of `main` and'ed into `sMask`:
 `d < n` (`dLtN_ok`), `p q = n` (`pqN_ok`), and `qInv < p` and
 `qInv q mod p = 1` (`qInv_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.X86_64.Key
 

@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Rsa.X86_64.RpSkip
-import VerifiedGarbage.Proof.Rsa.X86_64.Inv
-import VerifiedGarbage.Proof.Rsa.RecoverMath
+module
+
+public import VerifiedGarbage.Proof.Rsa.X86_64.RpSkip
+public import VerifiedGarbage.Proof.Rsa.X86_64.Inv
+public import VerifiedGarbage.Proof.Rsa.RecoverMath
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_recover_primes` on x86-64: `m = 2^t r`
@@ -9,6 +15,8 @@ import VerifiedGarbage.Proof.Rsa.RecoverMath
 (`halving_ok`), which leaves `r` in `M`'s arrays and `t` in `sT`
 (`halve_done`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.X86_64
 

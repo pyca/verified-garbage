@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Mont.X86_64.Csub
-import VerifiedGarbage.Proof.Framework.X86_64.Bswap
-import VerifiedGarbage.Proof.Weierstrass.Words
+module
+
+public import VerifiedGarbage.Proof.Mont.X86_64.Csub
+public import VerifiedGarbage.Proof.Framework.X86_64.Bswap
+public import VerifiedGarbage.Proof.Weierstrass.Words
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Short Weierstrass curves on x86-64: numbers as words, bits and bytes
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.Weierstrass.Words
 `bswap` is `byteRev64`, so the encodings of `Proof/Weierstrass/Words.lean`
 are what it loads and stores.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.X86_64
 

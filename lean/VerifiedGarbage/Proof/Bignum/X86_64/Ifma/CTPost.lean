@@ -1,7 +1,17 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Post
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTPH
-import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.CTPre
-import VerifiedGarbage.Impl.Rsa.X86_64.CrtIfma
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Post
+meta import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Post
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTPH
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTPH
+public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.CTPre
+meta import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.CTPre
+public import VerifiedGarbage.Impl.Rsa.X86_64.CrtIfma
+meta import VerifiedGarbage.Impl.Rsa.X86_64.CrtIfma
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSA with AVX512_IFMA on x86-64: constant time, after the exponentiations
@@ -13,6 +23,8 @@ copy, a Montgomery multiplication and a copy, then `hSteps` after its
 `post_ok`'s hypotheses (`PostPre`), from which `post_chain` proves what
 each piece needs, as `post_ok` runs them.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64
 

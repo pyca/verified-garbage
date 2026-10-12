@@ -1,7 +1,16 @@
-import VerifiedGarbage.Impl.Weierstrass.X86_64.FastNaf
-import VerifiedGarbage.Proof.Weierstrass.X86_64.NafSubtract
+module
+
+public import VerifiedGarbage.Impl.Weierstrass.X86_64.FastNaf
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafSubtract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Adjacent-word shifts by one, five or seven bits retain every scalar bit. -/
+
+@[expose] public section
+
 namespace VG.Proof.Weierstrass.X86_64
 open VG VG.X86_64 VG.Impl.Weierstrass.X86_64
 open VG.Proof.X25519.X86_64

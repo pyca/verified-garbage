@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Rsa.X86_64.Loops
-import VerifiedGarbage.Proof.Rsa.KeyMath
-import VerifiedGarbage.Proof.Rsa.Ranges
-import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
+module
+
+public import VerifiedGarbage.Proof.Rsa.X86_64.Loops
+public import VerifiedGarbage.Proof.Rsa.KeyMath
+public import VerifiedGarbage.Proof.Rsa.Ranges
+public import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSA private keys on x86-64: the division
@@ -12,6 +18,8 @@ import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
 for `64 w` steps from `(0, Q)` (`divmod_ok`): the remainder and the
 quotient (`divIter_done`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.X86_64
 

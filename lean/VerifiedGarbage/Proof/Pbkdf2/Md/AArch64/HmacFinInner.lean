@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Common
-import VerifiedGarbage.Proof.Framework.OmegaLit
+module
+
+public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Common
+public import VerifiedGarbage.Proof.Framework.OmegaLit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # HMAC over any Merkle–Damgård hash function on AArch64: `finalize` up to the inner digest
@@ -11,6 +17,8 @@ with the streaming `finalize` (`fin1Args_ok`, `finCall_ok`): what holds from
 the prologue on (`KR`), and that call in two runs (`fin_rel'`). The rest is
 `Proof/Pbkdf2/Md/AArch64/HmacFin.lean`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Pbkdf2.Md.AArch64.HmacFin
 

@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.CTStages
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.CTStages
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA verification on x86-64: constant time, the samplers
@@ -7,6 +13,8 @@ The seed of each entry of `Â` (and of each four, `aGrp_tr`) is `ρ ‖ s ‖ r`
 and `c̃` a piece of the signature, public in both runs; each sampler's output
 is masked with its result without a branch (`sampledTail_tr`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86_64.Verify
 

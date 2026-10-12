@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.X25519.X86_64.Divstep.Rows
+module
+
+public import VerifiedGarbage.Proof.X25519.X86_64.Divstep.Rows
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X25519 on x86-64, inversion by divsteps: the rows of `f` and `g`
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.X25519.X86_64.Divstep.Rows
 sum `c` of the corrections (`addC_ok`), and the five words shifted right by
 59 into four (`shStores_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X25519.X86_64
 

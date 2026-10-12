@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.Inv
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.Inv
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.Inv
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA key generation on x86-64: the prologue and the seeds
@@ -8,6 +15,8 @@ The prologue saves the callee-saved registers and keeps the pointers
 of `RejNTTPoly` and `ρ′ ‖ 0` to that of `RejBoundedPoly` (`seeds_piece`,
 `K1`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86_64.KeyGen
 

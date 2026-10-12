@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombJ
-import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacSelect
-import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacOps
-import VerifiedGarbage.Proof.Weierstrass.WinJacMath
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombJ
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacSelect
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacOps
+public import VerifiedGarbage.Proof.Weierstrass.WinJacMath
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The Jacobian window method on x86-64: what holds between its steps
@@ -12,6 +18,8 @@ hold them (`JTblOk`); what the method reads at the start (`JacWinFixed`); what
 the method needs of the doubling it is given (`DblOk`); and the frame of the
 whole method (`JFrame`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.X86_64
 

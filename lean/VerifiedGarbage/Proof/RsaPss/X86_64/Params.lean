@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.RsaPss.X86_64.Basic
-import VerifiedGarbage.Proof.RsaPss.Params
+module
+
+public import VerifiedGarbage.Proof.RsaPss.X86_64.Basic
+public import VerifiedGarbage.Proof.RsaPss.Params
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSASSA-PSS on x86-64: the encoding's parameters
@@ -9,6 +15,8 @@ From the modulus' first byte `n₀ ≠ 0` in `rax`, `smear` leaves
 stores the mask `0xFF >>> z` and `lo = k - emLen` to their slots and leaves
 `emLen` in `rax`, CF set iff `emLen < hLen + 2` (`emLen_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPss.X86_64
 

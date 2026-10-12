@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Weierstrass.Env
-import VerifiedGarbage.Proof.Framework.PowLit
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.Env
+public import VerifiedGarbage.Proof.Framework.PowLit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Inversion by divsteps: the result in Montgomery form, as a statement
@@ -9,6 +15,8 @@ import VerifiedGarbage.Proof.Framework.PowLit
 proof of an inversion takes it as a hypothesis and only the modules that
 supply it import that algebra.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass
 

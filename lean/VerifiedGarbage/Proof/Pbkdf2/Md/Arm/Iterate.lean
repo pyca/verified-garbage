@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Hash
-import VerifiedGarbage.Proof.Framework.Omega
+module
+
+public import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Hash
+public import VerifiedGarbage.Proof.Framework.Omega
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # PBKDF2-HMAC's iteration over a Merkle–Damgård hash function on ARMv7
@@ -13,6 +19,8 @@ compressions per step compute HMAC. The contract is `iterG`
 (`Proof/Pbkdf2/Stream/Arm/Hash.lean`), the shared one's at 16 bytes of stack,
 although the function uses none.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Pbkdf2.Md.Arm.Iterate
 

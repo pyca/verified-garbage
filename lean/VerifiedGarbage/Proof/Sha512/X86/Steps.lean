@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Sha512.X86.Sse
-import VerifiedGarbage.Proof.Sha512.X86.Rounds
+module
+
+public import VerifiedGarbage.Proof.Sha512.X86.Sse
+public import VerifiedGarbage.Proof.Sha512.X86.Rounds
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # SHA-512 on x86 (32-bit) with SSE2: the rounds
@@ -10,6 +16,8 @@ message-schedule window, with the copy of its word `Wⱼ`, `j mod 16 = 0`.
 `round_ok` and `schedule_ok` instantiate the symbolic runs of `Sse.lean` for
 round `t` and for the words `Wₜ`, `Wₜ₊₁`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sha512.X86
 

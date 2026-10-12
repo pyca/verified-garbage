@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJNorm
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJNorm
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Windows in Jacobian coordinates on x86-64: an iteration
@@ -9,6 +15,8 @@ doublings between `R` and `D`), the masks of a point's `Z` being zero
 the selection of `E`, `R` or `D` (`sumJ_ok`), for an iteration but the last
 (`winStepJ_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.X86_64
 

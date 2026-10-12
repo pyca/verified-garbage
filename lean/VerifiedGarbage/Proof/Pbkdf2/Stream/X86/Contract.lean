@@ -1,6 +1,12 @@
-import VerifiedGarbage.Spec.Pbkdf2.Generic
-import VerifiedGarbage.TCB.X86.Target
-import VerifiedGarbage.Proof.Framework.PowLit
+module
+
+public import VerifiedGarbage.Spec.Pbkdf2.Generic
+public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Proof.Framework.PowLit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # HMAC and PBKDF2-HMAC over any streaming hash function: the x86 contracts
@@ -24,6 +30,8 @@ The contracts the proofs are written against, as on the other targets
   artifacts are emitted with, and which imply them: `Contract.Implies`) have
   them.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Pbkdf2.Stream.X86
 

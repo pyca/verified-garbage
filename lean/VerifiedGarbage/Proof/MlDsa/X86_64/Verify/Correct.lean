@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.StageC
-import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Instrs
-import VerifiedGarbage.Proof.MlDsa.Verify.Norm
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.StageC
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Instrs
+public import VerifiedGarbage.Proof.MlDsa.Verify.Norm
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA verification on x86-64: correctness
@@ -11,6 +17,8 @@ least bounds (`verify_correct`): a malformed hint returns 0 at once, a `z` too
 large after the norms, and otherwise `r15` holds the result of the samplers
 (`S4`) and then the comparison of `c̃` (`compute_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86_64.Verify
 

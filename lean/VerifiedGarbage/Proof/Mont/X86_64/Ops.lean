@@ -1,10 +1,16 @@
-import VerifiedGarbage.Proof.Mont.X86_64.MulF
-import VerifiedGarbage.Proof.Mont.X86_64.SqrP
-import VerifiedGarbage.Proof.Mont.X86_64.MulPX
-import VerifiedGarbage.Proof.Mont.X86_64.AddSubP
-import VerifiedGarbage.Proof.Mont.X86_64.SqrPX
-import VerifiedGarbage.Proof.Mont.X86_64.Sub256
-import VerifiedGarbage.Proof.Mont.X86_64.Sub384
+module
+
+public import VerifiedGarbage.Proof.Mont.X86_64.MulF
+public import VerifiedGarbage.Proof.Mont.X86_64.SqrP
+public import VerifiedGarbage.Proof.Mont.X86_64.MulPX
+public import VerifiedGarbage.Proof.Mont.X86_64.AddSubP
+public import VerifiedGarbage.Proof.Mont.X86_64.SqrPX
+public import VerifiedGarbage.Proof.Mont.X86_64.Sub256
+public import VerifiedGarbage.Proof.Mont.X86_64.Sub384
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Montgomery arithmetic on x86-64: the operations
@@ -23,6 +29,8 @@ its squares, `sqrP_ok`, `SqrP.lean`; with BMI2 and ADX by rows, `mulPX_ok`,
 for any other modulus of nine words (`mulF_ok`, `MulF.lean`), and the sums and
 differences for P-521's `p` in registers (`addMer_ok`, `subMer_ok`, `AddSubP.lean`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Mont.X86_64
 

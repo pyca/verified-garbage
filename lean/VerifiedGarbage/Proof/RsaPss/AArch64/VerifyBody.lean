@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.RsaPss.AArch64.VerifySpec
+module
+
+public import VerifiedGarbage.Proof.RsaPss.AArch64.VerifySpec
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSASSA-PSS verification on AArch64: the checks
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.RsaPss.AArch64.VerifySpec
 byte and of the lengths, and either 0 returned or `main_ok`: `x0` is
 `verifyOut G s`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPss.AArch64.Vfy
 

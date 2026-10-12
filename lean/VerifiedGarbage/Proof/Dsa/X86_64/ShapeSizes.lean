@@ -1,8 +1,17 @@
-import VerifiedGarbage.Proof.Dsa.X86_64.ScanField
-import VerifiedGarbage.Proof.Dsa.X86_64.ShapeFrame
-import VerifiedGarbage.Proof.Dsa.X86_64.WidthChoice
+module
+
+public import VerifiedGarbage.Proof.Dsa.X86_64.ScanField
+public import VerifiedGarbage.Proof.Dsa.X86_64.ShapeFrame
+public import VerifiedGarbage.Proof.Dsa.X86_64.WidthChoice
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # The two public width scans and supported-size selection -/
+
+@[expose] public section
+
 namespace VG.Proof.Dsa.X86_64
 open VG VG.X86_64 VG.Impl.Bignum.X86_64
 open VG.Impl.Dsa.Layout VG.Impl.Dsa.X86_64

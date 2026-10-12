@@ -1,7 +1,15 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareCross
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareDiagonalChoice
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareCross
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareDiagonalChoice
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! The full, unreduced ADX square in the Montgomery working space. -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64.AdxSquare
 

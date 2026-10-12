@@ -1,13 +1,29 @@
-import VerifiedGarbage.Proof.X25519.X86_64.Divstep.Main
-import VerifiedGarbage.Proof.X25519.X86_64.Lit
-import VerifiedGarbage.Proof.X25519.Invert
-import VerifiedGarbage.Proof.Mont.Read
-import VerifiedGarbage.Proof.Framework.X86_64.Abi
-import VerifiedGarbage.Proof.Framework.X86_64.Taint
-import VerifiedGarbage.Proof.Framework.X86_64.VecKeep
-import VerifiedGarbage.Proof.Framework.X86_64.CallInline
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Spec.X25519.Field64
+module
+
+public import VerifiedGarbage.Proof.X25519.X86_64.Divstep.Main
+meta import VerifiedGarbage.Proof.X25519.X86_64.Divstep.Main
+public import VerifiedGarbage.Proof.X25519.X86_64.Lit
+meta import VerifiedGarbage.Proof.X25519.X86_64.Lit
+public import VerifiedGarbage.Proof.X25519.Invert
+meta import VerifiedGarbage.Proof.X25519.Invert
+public import VerifiedGarbage.Proof.Mont.Read
+meta import VerifiedGarbage.Proof.Mont.Read
+public import VerifiedGarbage.Proof.Framework.X86_64.Abi
+meta import VerifiedGarbage.Proof.Framework.X86_64.Abi
+public import VerifiedGarbage.Proof.Framework.X86_64.Taint
+meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
+public import VerifiedGarbage.Proof.Framework.X86_64.VecKeep
+meta import VerifiedGarbage.Proof.Framework.X86_64.VecKeep
+public import VerifiedGarbage.Proof.Framework.X86_64.CallInline
+meta import VerifiedGarbage.Proof.Framework.X86_64.CallInline
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.X25519.Field64
+meta import VerifiedGarbage.Spec.X25519.Field64
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X25519 on x86-64: `vg_gf25519_r64_invert`, verified
@@ -20,6 +36,8 @@ and leave in slot 17 (byte 544) slot 4's (byte 128) power `p - 2`
 (`invertDS_pow`). Constant time by taint tracking (only `rsp` and `ws` are
 public), and a state satisfying the precondition.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X25519.X86_64
 

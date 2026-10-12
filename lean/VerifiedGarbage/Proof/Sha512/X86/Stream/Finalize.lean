@@ -1,7 +1,17 @@
-import VerifiedGarbage.Proof.Sha512.X86.Stream.Update
-import VerifiedGarbage.Proof.MdStream.X86.Finalize
-import VerifiedGarbage.Proof.MdStream.X86.Words
-import VerifiedGarbage.Proof.Sha512.Word64
+module
+
+public import VerifiedGarbage.Proof.Sha512.X86.Stream.Update
+meta import VerifiedGarbage.Proof.Sha512.X86.Stream.Update
+public import VerifiedGarbage.Proof.MdStream.X86.Finalize
+meta import VerifiedGarbage.Proof.MdStream.X86.Finalize
+public import VerifiedGarbage.Proof.MdStream.X86.Words
+meta import VerifiedGarbage.Proof.MdStream.X86.Words
+public import VerifiedGarbage.Proof.Sha512.Word64
+meta import VerifiedGarbage.Proof.Sha512.Word64
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Streaming SHA-512 on x86 (32-bit): `finalize`
@@ -12,6 +22,8 @@ big-endian integer, `count >> 61` then `count << 3`, and the words of the hash
 value big-endian, each the big-endian bytes of its high half, then of its low
 half.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sha512.X86.Stream
 

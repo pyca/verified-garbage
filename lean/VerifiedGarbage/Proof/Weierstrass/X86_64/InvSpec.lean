@@ -1,7 +1,13 @@
-import VerifiedGarbage.Impl.Weierstrass.X86_64.Inv
-import VerifiedGarbage.Proof.Weierstrass.X86_64.Pow
-import VerifiedGarbage.Proof.Weierstrass.Law
-import Mathlib.Data.Nat.Prime.Defs
+module
+
+public import VerifiedGarbage.Impl.Weierstrass.X86_64.Inv
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.Pow
+public import VerifiedGarbage.Proof.Weierstrass.Law
+public import Mathlib.Data.Nat.Prime.Defs
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Inversion by divsteps on x86-64: what it computes
@@ -16,6 +22,8 @@ proofs of the functions take it as a hypothesis, and a curve's variant on
 x86-64 (`HasLawInv`, `Variants/<Curve>/X86_64/Law.lean`) supplies it with its
 group law.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.X86_64
 

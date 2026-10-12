@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyContext
-import VerifiedGarbage.Proof.Ed25519.X86_64.RecoverCTBlocks
-import VerifiedGarbage.Proof.Ed25519.X86_64.RootPair
+module
+
+public import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyContext
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyContext
+public import VerifiedGarbage.Proof.Ed25519.X86_64.RecoverCTBlocks
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.RecoverCTBlocks
+public import VerifiedGarbage.Proof.Ed25519.X86_64.RootPair
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.RootPair
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed25519 verification on x86-64: both square roots' powers first
@@ -10,6 +19,8 @@ square root's power, and both powers at once (`rootPower2_ok`): A's into slot 15
 decoding A takes it, and R's into byte 7680 of the scratch, which decoding A keeps and
 `powerRestore` moves back into slot 15 before R is decoded.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed25519.X86_64
 

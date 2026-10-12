@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Rsa.X86_64.PrivCtx
-import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
+module
+
+public import VerifiedGarbage.Proof.Rsa.X86_64.PrivCtx
+public import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_private_checked` on x86-64: the frame
@@ -8,6 +14,8 @@ The frame of `frameBytes` bytes at `S = rsp - frameBytes`, and the blocks
 that store to its slots and read the function's stack arguments, at
 `S + frameBytes + 8 + 8 j` (`stackArgAddr`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.X86_64
 

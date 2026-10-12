@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlKem.X86_64.FragC
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86_64.FragC
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM-768 on x86-64: entry and exit of the top-level functions
@@ -11,6 +17,8 @@ return (`topEpi_ok`), the branch on the results of `SampleNTT` (`ifOk_ok`,
 `ifOk_tr`), and sequences of pieces indexed by a number (`seqR_ok`,
 `seqR_tr`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.X86_64
 

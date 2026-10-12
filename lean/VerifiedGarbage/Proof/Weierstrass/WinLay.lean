@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Weierstrass.Layout
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.Layout
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The window method: where it keeps its numbers
@@ -11,6 +17,8 @@ of bits apart from what is written. Facts about offsets, as for the comb
 (`CombLay`): the complete additions' slots are apart as they need
 (`WinLay.rcbApart_*`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass
 

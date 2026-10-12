@@ -1,6 +1,12 @@
-import VerifiedGarbage.Impl.Bignum.X86_64.AdxFinish8
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareFinish
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxBlock
+module
+
+public import VerifiedGarbage.Impl.Bignum.X86_64.AdxFinish8
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareFinish
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxBlock
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Clearing the window and the final subtraction, eight words at a time
@@ -10,6 +16,8 @@ import VerifiedGarbage.Proof.Bignum.X86_64.AdxBlock
 for any word `k` of the iteration (`zst_ok`, `sst_ok`, `cst_ok`) and
 composed by induction on `k`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64
 

@@ -1,6 +1,12 @@
-import VerifiedGarbage.Impl.MlDsa.X86_64.Round.Round
-import VerifiedGarbage.Proof.MlKem.X86_64.Wp
-import VerifiedGarbage.Proof.MlDsa.Round.Mem
+module
+
+public import VerifiedGarbage.Impl.MlDsa.X86_64.Round.Round
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+public import VerifiedGarbage.Proof.MlDsa.Round.Mem
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on x86-64: the loop over the coefficients
@@ -14,6 +20,8 @@ registers, the loop writes every coefficient of each output. The inputs
 (registers `ins`) are never written, so the body reads the coefficients of the
 initial memory (`Inv.read`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86_64.Round
 

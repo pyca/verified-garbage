@@ -1,7 +1,17 @@
-import VerifiedGarbage.Impl.MlDsa.X86_64.Arith.AddSub
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.VLay
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Basic
-import VerifiedGarbage.Proof.Framework.X86_64.Abi
+module
+
+public import VerifiedGarbage.Impl.MlDsa.X86_64.Arith.AddSub
+meta import VerifiedGarbage.Impl.MlDsa.X86_64.Arith.AddSub
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.VLay
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.VLay
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Basic
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Basic
+public import VerifiedGarbage.Proof.Framework.X86_64.Abi
+meta import VerifiedGarbage.Proof.Framework.X86_64.Abi
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on x86-64: `vg_mldsa_add` and `vg_mldsa_sub`
@@ -11,6 +21,8 @@ Each iteration of the loop stores four coefficients to `f` (`addBody_ok`,
 value is `addD_toNat` (`subD_toNat`); the loop leaves `f` with all 256
 (`AddSub.fn_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86_64.Arith
 

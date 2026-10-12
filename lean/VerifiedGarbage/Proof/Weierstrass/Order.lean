@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Weierstrass.Law
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.Law
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The order of `G`, by the kernel
@@ -11,6 +17,8 @@ after `i` of the `nb` bits of `k` from the top, by the complete formulas
 `G` has order `n`, which the comb's Jacobian additions need
 (`Proof/Weierstrass/Booth.lean`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass
 

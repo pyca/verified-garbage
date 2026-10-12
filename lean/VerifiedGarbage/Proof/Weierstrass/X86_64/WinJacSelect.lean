@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacStore
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacStore
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The Jacobian window method on x86-64: selecting an entry
@@ -11,6 +17,8 @@ passes for fifteen pieces, which the 14 accumulators do not hold) or
 wide (`selTc`, `selPassY_ok`). `T` then holds entry `a`'s five coordinates for
 `1 ≤ a ≤ 16`, and zeros for `a = 0` (`jselect_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.X86_64
 

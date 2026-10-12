@@ -1,5 +1,11 @@
-import Mathlib.FieldTheory.Finite.Basic
-import VerifiedGarbage.Spec.Weierstrass
+module
+
+public import Mathlib.FieldTheory.Finite.Basic
+public import VerifiedGarbage.Spec.Weierstrass
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The specification's field `Fin p` as `ZMod p`
@@ -12,6 +18,8 @@ scalars modulo `n` need), and,
 for a prime `p > 2`, its `inv` to the field's inverse (Fermat's little
 theorem; `inv 0 = 0`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass
 

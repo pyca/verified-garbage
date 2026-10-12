@@ -1,15 +1,23 @@
-import VerifiedGarbage.Impl.MlKem.X86_64.Frag
-import VerifiedGarbage.Proof.MlKem.X86_64.Groups
-import VerifiedGarbage.Proof.MlKem.X86_64.KCall
-import VerifiedGarbage.Proof.MlKem.X86_64.SampleLoop
-import VerifiedGarbage.Proof.Framework.X86_64.Avx
-import VerifiedGarbage.Proof.Framework.CallLay
+module
+
+public import VerifiedGarbage.Impl.MlKem.X86_64.Frag
+public import VerifiedGarbage.Proof.MlKem.X86_64.Groups
+public import VerifiedGarbage.Proof.MlKem.X86_64.KCall
+public import VerifiedGarbage.Proof.MlKem.X86_64.SampleLoop
+public import VerifiedGarbage.Proof.Framework.X86_64.Avx
+public import VerifiedGarbage.Proof.Framework.CallLay
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM-768 on x86-64: moves, byte stores and copies
 
 The address of a pointer (`pa`), and what `setB` and `copy` do.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.X86_64
 

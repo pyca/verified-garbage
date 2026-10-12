@@ -1,7 +1,13 @@
-import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
-import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacBuild
-import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJNorm
-import VerifiedGarbage.Proof.Weierstrass.JacCoZ
+module
+
+public import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacBuild
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJNorm
+public import VerifiedGarbage.Proof.Weierstrass.JacCoZ
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The Jacobian window method on x86-64: the table into affine coordinates
@@ -14,6 +20,8 @@ and `Y` by the square and the cube of its `Z^(p-2)`, and every entry's `Z`,
 `Z²` and `Z³` set to one (`onesJ_ok`): a table of Jacobian triples whose `Z`
 is one (`normA_ok`). Each product is `slotMulJ_ok`, on the window's slots.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.X86_64
 

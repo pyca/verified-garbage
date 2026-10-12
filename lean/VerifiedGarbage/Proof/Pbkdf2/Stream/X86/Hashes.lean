@@ -1,11 +1,25 @@
-import VerifiedGarbage.Proof.Pbkdf2.Stream.X86.Hash
-import VerifiedGarbage.Proof.Hmac.Generic.Common
-import VerifiedGarbage.Proof.Sha512.X86.Stream.Init
-import VerifiedGarbage.Proof.Sha512.X86.Stream.Update
-import VerifiedGarbage.Proof.Sha512.X86.Stream.Finalize
-import VerifiedGarbage.Proof.Md5.X86.Stream.Init
-import VerifiedGarbage.Proof.Md5.X86.Stream.Md
-import VerifiedGarbage.Proof.Framework.TaintBatch
+module
+
+public import VerifiedGarbage.Proof.Pbkdf2.Stream.X86.Hash
+meta import VerifiedGarbage.Proof.Pbkdf2.Stream.X86.Hash
+public import VerifiedGarbage.Proof.Hmac.Generic.Common
+meta import VerifiedGarbage.Proof.Hmac.Generic.Common
+public import VerifiedGarbage.Proof.Sha512.X86.Stream.Init
+meta import VerifiedGarbage.Proof.Sha512.X86.Stream.Init
+public import VerifiedGarbage.Proof.Sha512.X86.Stream.Update
+meta import VerifiedGarbage.Proof.Sha512.X86.Stream.Update
+public import VerifiedGarbage.Proof.Sha512.X86.Stream.Finalize
+meta import VerifiedGarbage.Proof.Sha512.X86.Stream.Finalize
+public import VerifiedGarbage.Proof.Md5.X86.Stream.Init
+meta import VerifiedGarbage.Proof.Md5.X86.Stream.Init
+public import VerifiedGarbage.Proof.Md5.X86.Stream.Md
+meta import VerifiedGarbage.Proof.Md5.X86.Stream.Md
+public import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # HMAC over any streaming hash function on x86 (32-bit): the hash functions
@@ -19,6 +33,8 @@ streaming functions verified on x86 is one more `HashOK` here, and a
 registration file for each of its functions. SHA-256's and SHA-1's, for
 each of their backends, are in `Sha256.lean` and `Sha1.lean`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Pbkdf2.Stream.X86
 
