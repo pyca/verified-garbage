@@ -16,21 +16,85 @@ def memOp (base : Reg) (offset : Nat) : MemOp := { base, disp := offset }
 def rr (dst src : Reg) : Instr := .mov dst (.reg src)
 def imm (dst : Reg) (n : Nat) : Instr := .mov dst (.imm (BitVec.ofNat 32 n))
 
-/-- Equality mask for the low byte in EAX, returned in EDX. -/
-def selectMask (i : Nat) : List Instr :=
-  [rr .edx .eax, .alu .xor .edx (.imm (BitVec.ofNat 32 i)),
-   .alu .sub .edx (.imm 1), .shift .shr .edx 31,
-   .alu .xor .edx (.imm 0xffffffff), .alu .add .edx (.imm 1)]
+/-! ## PITABLE, in SSE2 registers
 
-def piStep (i : Nat) : List Instr :=
-  selectMask i ++
-    ([.alu .and .edx (.imm ((Spec.Rc2.piTable.getD i 0).setWidth 32)),
-      .alu .or .ebx (.reg .edx)] : List Instr)
+`piLookup` leaves PITABLE[EAX & 255] in EAX without a table in memory: the
+table's 64 little-endian dwords (`piWord`) are put into SSE2 registers from
+immediates, four at a time, lane `k` of group `g` holding dword `4 g + k`,
+and the one whose number is `i >> 2` survives its mask (as for the
+schedule's words below). The lanes are ORed together, and the byte `i & 3`
+of the dword is chosen in every lane by masks from bits 1 and 0 of `i`.
+Lane 0 passes through the 16 bytes at EDI, whose contents are kept in
+`xmm7` and stored back. -/
 
-/-- Select PITABLE[EAX & 255]; clobbers EAX, EBX, EDX and flags. -/
-def piLookup : List Instr :=
-  ([.alu .and .eax (.imm 255), imm .ebx 0] : List Instr) ++
-    (List.range 256).flatMap piStep ++ ([rr .eax .ebx] : List Instr)
+/-- PITABLE's bytes `4 j … 4 j + 3`, as a little-endian dword. -/
+def piWord (j : Nat) : BitVec 32 :=
+  (Spec.Rc2.piTable.getD (4 * j) 0).setWidth 32 |||
+    (Spec.Rc2.piTable.getD (4 * j + 1) 0).setWidth 32 <<< 8 |||
+    (Spec.Rc2.piTable.getD (4 * j + 2) 0).setWidth 32 <<< 16 |||
+    (Spec.Rc2.piTable.getD (4 * j + 3) 0).setWidth 32 <<< 24
+
+/-- `xmm0 := q = (EAX & 255) >> 2` in every lane, `EBX := EAX & 255`, the lane
+numbers `0, 1, 2, 3` in `xmm2`, four in every lane of `xmm3`, all ones in
+`xmm6`, nothing in `xmm1`; through EDX. -/
+def piStart : List Instr :=
+  [.alu .and .eax (.imm 255), rr .ebx .eax, .shift .shr .eax 2,
+   .xop (.movd .xmm0 .eax), .xop (.pshufd .xmm0 .xmm0 0),
+   imm .edx 1, .xop (.movd .xmm2 .edx), .xop (.pshufd .xmm2 .xmm2 0x11),
+   imm .edx 2, .xop (.movd .xmm3 .edx), .xop (.pshufd .xmm3 .xmm3 0x05),
+   .xop (.bin .paddd .xmm2 .xmm3),
+   imm .edx 4, .xop (.movd .xmm3 .edx), .xop (.pshufd .xmm3 .xmm3 0),
+   imm .edx 0xFFFFFFFF, .xop (.movd .xmm6 .edx), .xop (.pshufd .xmm6 .xmm6 0),
+   .xop (.bin .pxor .xmm1 .xmm1)]
+
+/-- Dwords `4 g … 4 g + 3` of the table `w` (PITABLE's, `piWord`) into
+`xmm5`, through EDX, `xmm4` and `xmm7`. -/
+def piLanes (w : Nat → BitVec 32) (g : Nat) : List Instr :=
+  [.mov .edx (.imm (w (4 * g))), .xop (.movd .xmm5 .edx),
+   .mov .edx (.imm (w (4 * g + 1))), .xop (.movd .xmm7 .edx), .xop (.bin .punpckldq .xmm5 .xmm7),
+   .mov .edx (.imm (w (4 * g + 2))), .xop (.movd .xmm4 .edx),
+   .mov .edx (.imm (w (4 * g + 3))), .xop (.movd .xmm7 .edx), .xop (.bin .punpckldq .xmm4 .xmm7),
+   .xop (.bin .punpcklqdq .xmm5 .xmm4)]
+
+/-- Group `g`: its dwords, each masked by whether its number (in `xmm2`) is
+`q`, ORed into `xmm1`; then the next four numbers. -/
+def piGroup (w : Nat → BitVec 32) (g : Nat) : List Instr :=
+  piLanes w g ++
+  [.xop (.bin .movdqa .xmm4 .xmm0), .xop (.bin .pxor .xmm4 .xmm2), .xop (.bin .paddd .xmm4 .xmm6),
+   .xop (.shift .psrld .xmm4 8), .xop (.bin .movdqa .xmm7 .xmm4), .xop (.shift .pslld .xmm7 8),
+   .xop (.bin .por .xmm4 .xmm7),
+   .xop (.bin .pand .xmm5 .xmm4), .xop (.bin .por .xmm1 .xmm5), .xop (.bin .paddd .xmm2 .xmm3)]
+
+/-- `-(bit n of EBX)` in every lane of `x`, through EDX. -/
+def bitMask (x : XReg) (n : Nat) : List Instr :=
+  [rr .edx .ebx] ++ (if n = 0 then [] else [.shift .shr .edx n]) ++
+  [.alu .and .edx (.imm 1), .alu .xor .edx (.imm 0xFFFFFFFF), .alu .add .edx (.imm 1),
+   .xop (.movd x .edx), .xop (.pshufd x x 0)]
+
+/-- `xmm1 := xmm1 >> n` in the lanes where `x` is all ones (`v ^ ((v ^ (v >> n)) & m)`),
+through `xmm4`. -/
+def shiftIf (x : XReg) (n : Nat) : List Instr :=
+  [.xop (.bin .movdqa .xmm4 .xmm1), .xop (.shift .psrld .xmm4 (BitVec.ofNat 8 n)),
+   .xop (.bin .pxor .xmm4 .xmm1), .xop (.bin .pand .xmm4 x), .xop (.bin .pxor .xmm1 .xmm4)]
+
+/-- The lanes ORed together (into every lane), the byte `EBX & 3` of the
+dword chosen, and lane 0 to EAX through the 16 bytes at EDI, which are kept
+in `xmm7` and stored back. -/
+def piEnd : List Instr :=
+  [.xop (.pshufd .xmm4 .xmm1 0x4E), .xop (.bin .por .xmm1 .xmm4),
+   .xop (.pshufd .xmm4 .xmm1 0xB1), .xop (.bin .por .xmm1 .xmm4)] ++
+  bitMask .xmm2 1 ++ shiftIf .xmm2 16 ++ bitMask .xmm3 0 ++ shiftIf .xmm3 8 ++
+  [.movdquLoad .xmm7 (memOp .edi 0), .movdquStore (memOp .edi 0) .xmm1,
+   .mov .eax (.mem (memOp .edi 0)), .movdquStore (memOp .edi 0) .xmm7,
+   .alu .and .eax (.imm 255)]
+
+/-- Select entry `EAX & 255` of the table of dwords `w`. -/
+def piLookupWith (w : Nat → BitVec 32) : List Instr :=
+  piStart ++ (List.range 16).flatMap (piGroup w) ++ piEnd
+
+/-- Select PITABLE[EAX & 255]; clobbers EAX, EBX, EDX, `xmm0`–`xmm7` and
+flags, and needs the 16 bytes at EDI readable and writable. -/
+def piLookup : List Instr := piLookupWith piWord
 
 /-! ## The schedule's words, in SSE2 registers
 
