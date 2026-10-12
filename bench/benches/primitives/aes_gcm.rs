@@ -396,6 +396,42 @@ pub fn bench(c: &mut Criterion) {
         });
         g.finish();
 
+        // Experiment only: the TLS shape with the output, and in place the
+        // buffer, at each 16-byte offset from a 64-byte boundary.
+        if size == 600 {
+            let mut big = vec![0u8; size + 1 + 128];
+            let base = big.as_ptr().align_offset(64);
+            for off in [0usize, 16, 32, 48] {
+                let mut g = c.benchmark_group(format!("aes-128-gcm-encrypt-two-pieces-off{off}-reused-key"));
+                g.throughput(Throughput::Bytes(size as u64 + 1));
+                let o = &mut big[base + off..base + off + size + 1];
+                g.bench_function(BenchmarkId::new(VG, size), |b| {
+                    b.iter(|| {
+                        vg_key
+                            .encrypt(
+                                black_box(&nonce),
+                                black_box(&aad),
+                                &[black_box(&data[..]), black_box(&ty[..])],
+                                black_box(&mut *o),
+                            )
+                            .unwrap()
+                    })
+                });
+                g.finish();
+                let mut g = c.benchmark_group(format!("aes-128-gcm-encrypt-off{off}-reused-key"));
+                g.throughput(Throughput::Bytes(size as u64));
+                let o = &mut big[base + off..base + off + size];
+                g.bench_function(BenchmarkId::new(VG, size), |b| {
+                    b.iter(|| {
+                        vg_key
+                            .encrypt_in_place(black_box(&nonce), black_box(&aad), black_box(&mut *o))
+                            .unwrap()
+                    })
+                });
+                g.finish();
+            }
+        }
+
         // Two halves, so that whole blocks follow the first piece.
         let (h1, h2) = data.split_at(size / 2);
         let mut out = vec![0u8; size];
