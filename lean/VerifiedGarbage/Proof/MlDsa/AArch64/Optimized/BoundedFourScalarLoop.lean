@@ -52,6 +52,8 @@ open VG VG.AArch64 VG.Spec.MlDsa VG.Proof.MlDsa.Sample
 open VG.Proof.MlKem.AArch64
 
 def parserRegs : List Reg := [.x2,.x3,.x4,.x5,.x6,.x7,.x8,.x9,.x10,.x11,.x12,.x13,.x14,.x15,.x16,.x17]
+/-- What a batch's parse may write: the parser's registers and the loop's pointers. -/
+abbrev batchRegs : List Reg := .x0::parserRegs++[.x24,.x25,.x26,.x27]
 
 structure ScalarLayout (σ : State) (p q : Addr) (X : List Byte) : Prop where
  short : X.length≤272
