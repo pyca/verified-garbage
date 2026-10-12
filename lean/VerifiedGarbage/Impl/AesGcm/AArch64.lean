@@ -178,6 +178,9 @@ def absTail : Prog isa :=
 def absorb (yo : Nat) : Prog isa :=
   .seq (absSeg1 yo) (.seq (ghCall c) (.seq (.block (absSeg2 yo)) (.seq (ghCall c) absTail)))
 
+/-- `absorb yo` with nothing buffered (`x25 = 0`): no buffer to fill first. -/
+def absorbAl (yo : Nat) : Prog isa := .seq (.block (absSeg2 yo)) (.seq (ghCall c) absTail)
+
 /-- The `x25` bytes at `x12` padded with zeros in `T`, and the arguments for
 absorbing `T` if they are not none. -/
 def padSeg (yo : Nat) (src : List Instr) : Prog isa :=
@@ -205,6 +208,11 @@ def ctrArgs : List Instr := [mov .x0 .x21, mov .x1 .x22, ptr .x2 .x20 48, ptr .x
 
 def ctrCall : Prog isa := .call c.ctr.name c.ctr.code
 
+/-- The arguments for the whole blocks at `x23`, and `x23` and `x24` past them. -/
+def crArgs : List Instr :=
+  ([.lsr .x .x4 .x24 4, mov .x3 .x23] : List Instr) ++ ctrArgs ++
+    ([.lsl .x .x9 .x4 4, .add .x .x23 .x23 .x9, .sub .x .x24 .x24 .x9] : List Instr)
+
 /-- The rest of the keystream block, from byte `x25` (unless it is 0), into
 `x23`, and the arguments for the whole blocks after it. -/
 def crSeg1 : Prog isa :=
@@ -227,6 +235,10 @@ def crTail : Prog isa :=
 
 def crypt : Prog isa :=
   .seq crSeg1 (.seq (ctrCall c) (.seq crSeg2 (.seq (ctrCall c) crTail)))
+
+/-- `crypt` from the start of a keystream block (`x25 = 0`): no rest of a
+block to use first. -/
+def cryptAl : Prog isa := .seq (.block crArgs) (.seq (ctrCall c) (.seq crSeg2 (.seq (ctrCall c) crTail)))
 
 /-! ## The tag and `J₀` -/
 
@@ -417,7 +429,7 @@ def oneEntry (w : Nat) : List Instr :=
 
 /-- The additional data absorbed. -/
 def oneAad : Prog isa :=
-  .seq (.block [.ldr .x .x23 .x19 aadO, .ldr .x .x24 .x19 alenO, imm .x25 0]) (absorb c 16)
+  .seq (.block [.ldr .x .x23 .x19 aadO, .ldr .x .x24 .x19 alenO, imm .x25 0]) (absorbAl c 16)
 
 /-- The arguments of `encBody` and `decAbs`: no text yet. -/
 def encPrep : List Instr :=
@@ -445,7 +457,7 @@ def «seal» : Prog isa :=
 
 /-- The text decrypted, from the first counter block. -/
 def oneCrypt : Prog isa :=
-  .seq (.block [.ldr .x .x23 .x19 dataO, .ldr .x .x24 .x19 lenO, imm .x25 0]) (crypt c)
+  .seq (.block [.ldr .x .x23 .x19 dataO, .ldr .x .x24 .x19 lenO, imm .x25 0]) (cryptAl c)
 
 /-- `open` once the tag length is allowed. -/
 def openMain : Prog isa :=
