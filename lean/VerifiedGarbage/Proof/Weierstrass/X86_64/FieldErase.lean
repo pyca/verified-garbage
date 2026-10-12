@@ -56,9 +56,11 @@ elab doc:(docComment)? "def_literal " id:ident " := " t:term : command => do
     let ty ← instantiateMVars (← inferType e)
     let inst ← synthInstance (mkApp (mkConst ``ToExpr [0]) ty)
     let l ← unsafe evalExpr Expr (mkConst ``Expr) (mkApp3 (mkConst ``ToExpr.toExpr [0]) ty inst e)
-    addAndCompile <| .defnDecl {
+    let d : Declaration := .defnDecl {
       name := N, levelParams := [], type := ty, value := ShareCommon.shareCommon' l
       hints := .abbrev, safety := .safe }
+    addDecl d (forceExpose := true)
+    compileDecl d
     if let some doc := doc then addDocStringCore N (← getDocStringText doc)
 
 /-- The erased code of a field operation, as the templates give it. -/

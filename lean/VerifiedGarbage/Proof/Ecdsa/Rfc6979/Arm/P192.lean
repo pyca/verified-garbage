@@ -37,6 +37,6 @@ def p192 (hL : Weierstrass.Law Spec.P192.curve) : RfcCurve where
   coreX := Proof.Ecdsa.Arm.P192.sign_arm hL
   coreCT := Proof.Ecdsa.Arm.P192.sign_ct
   coreStack := by lit_decide
-  reduceT := Function.const _ ⟨_, by taint_decide⟩
+  reduceT := by exact (Function.const _ ⟨_, by taint_decide⟩)
 
 end VG.Proof.Ecdsa.Rfc6979.Arm
