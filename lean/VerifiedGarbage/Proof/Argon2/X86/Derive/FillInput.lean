@@ -38,47 +38,32 @@ theorem sw_store (m : Mem) {a b : Nat} (ha : a + 4 ≤ 16384) (hb : b + 4 ≤ 16
   · rw [ite_eq_right e, sw, sw, scr_addr' hp (by omega), scr_addr' hp (by omega)]
     exact Mem.readW_writeW_sep (Offset.sep _ (by omega) (by omega) (by omega)) (by decide)
 
-/-- `n` stores of `eax = 0` to `[edx + 4k]`, with `edx = scratch + d`. -/
-theorem zeros_ok {s : State} (h : Inv s₀ s) {d : Nat} (hd : d + 1024 ≤ 16384)
-    (hx : s.gpr .edx = scrP s₀ + BitVec.ofNat 32 d) (ha : s.gpr .eax = 0) :
-    ∀ n ≤ 256, WP isa (.block ((List.range n).map fun k => Instr.store (at_ .edx (4 * k)) .eax)) s fun t =>
-      Inv s₀ t ∧ t.gpr = s.gpr ∧ Frame [⟨scrB s₀ + BitVec.ofNat 64 d, 1024⟩] s.mem t.mem ∧
-      ∀ i < n, sw s₀ t.mem (d + 4 * i) = 0
-  | 0, _ => WP.block_nil ⟨h, rfl, Frame.refl _ _, fun _ h => absurd h (Nat.not_lt_zero _)⟩
-  | n + 1, hn => by
-    have hs := hp.scr_fits
-    rw [List.range_succ, List.map_append, List.map_singleton]
-    refine WP.block_append ((zeros_ok h hd hx ha n (by omega)).mono fun t ⟨it, gt, ft, wt⟩ => ?_)
-    have ea : addr (t.gpr .edx) (4 * n) = scrB s₀ + BitVec.ofNat 64 (d + 4 * n) := by
-      rw [gt, hx, addr_shift, scr_addr' hp (by omega)]
-    have hc : (scrR s₀).Contains (addr (t.gpr .edx) (4 * n)) 4 := by
-      rw [ea]; exact Offset.contains_base _ (by omega) (by omega)
-    have hc' : (⟨scrB s₀ + BitVec.ofNat 64 d, 1024⟩ : Region).Contains (addr (t.gpr .edx) (4 * n)) 4 := by
-      rw [ea]; exact Offset.contains _ (by omega) (by omega) (by omega)
-    refine Wp.wp_stm rfl ⟨_, by rw [it.wr]; exact scr_mem hp, hc⟩ fun t₁ u₁ => WP.block_nil
-      ⟨it.store (R := scrR s₀) (by simp) hc u₁, by rw [u₁.gpr, gt], ?_, fun i hi => ?_⟩
-    · rw [u₁.mem]
-      exact ft.writeW (List.mem_singleton_self _) _ hc'
-    · rw [u₁.mem, gt, hx, addr_shift, sw_store hp _ (by omega) (by omega) (by omega), ha]
-      by_cases e : d + 4 * n = d + 4 * i
-      · rw [ite_eq_left e]
-      · rw [ite_eq_right e]; exact wt i (by omega)
+omit hp in
+/-- A word of four zero bytes. -/
+theorem readW_zero4 {m : Mem} {a : Addr} (h : ∀ i < 4, m (a + BitVec.ofNat 64 i) = 0) : m.readW a 32 = 0 := by
+  rw [Mem.readW, read_zero h]; rfl
 
 /-- `clearAt d`: zero `scratch[d, d + 1024)`. -/
-theorem clearAt_ok {s : State} (h : Inv s₀ s) {d : Nat} (hd : d + 1024 ≤ 16384) {is : List Instr}
-    {Q : State → Prop}
-    (k : ∀ t, Inv s₀ t → (∀ r, r ≠ .eax → r ≠ .edx → t.gpr r = s.gpr r) →
-      Frame [⟨scrB s₀ + BitVec.ofNat 64 d, 1024⟩] s.mem t.mem → (∀ i < 256, sw s₀ t.mem (d + 4 * i) = 0) →
-      WP isa (.block is) t Q) :
-    WP isa (.block (Impl.Argon2.X86.Derive.clearAt d ++ is)) s Q := by
+theorem clearAt_ok {s : State} (h : Inv s₀ s) {d : Nat} (hd : d + 1024 ≤ 16384) :
+    WP isa (Impl.Argon2.X86.Derive.clearAt d) s fun t => Inv s₀ t ∧
+      (∀ r, r ≠ .eax → r ≠ .ecx → r ≠ .edx → t.gpr r = s.gpr r) ∧
+      Frame [⟨scrB s₀ + BitVec.ofNat 64 d, 1024⟩] s.mem t.mem ∧ ∀ i < 256, sw s₀ t.mem (d + 4 * i) = 0 := by
+  have hs := hp.scr_fits
   unfold Impl.Argon2.X86.Derive.clearAt Impl.Argon2.X86.Derive.scratchAt
-  simp only [List.cons_append, List.nil_append]
-  refine wp_ldarg hp h (i := 15) (by decide) fun s₁ u₁ => wp_addi fun s₂ u₂ => wp_movi fun s₃ u₃ => ?_
-  have i₃ := ((h.upd u₁ (by decide) (by decide)).upd u₂ (by decide) (by decide)).upd u₃ (by decide) (by decide)
-  refine WP.block_append ((zeros_ok hp i₃ hd (by rw [u₃.other _ (by decide), u₂.gpr, u₁.gpr]) u₃.gpr 256
-    (Nat.le_refl _)).mono fun t ⟨it, gt, ft, wt⟩ => k t it (fun r a b => ?_) ?_ wt)
-  · rw [gt, u₃.other _ a, u₂.other _ b, u₁.other _ b]
-  · rw [show s.mem = s₃.mem by rw [u₃.mem, u₂.mem, u₁.mem]]; exact ft
+  refine WP.seq (wp_ldarg hp h (i := 15) (by decide) fun s₁ u₁ => wp_addi fun s₂ u₂ => WP.block_nil ?_)
+  have i₂ := (h.upd u₁ (by decide) (by decide)).upd u₂ (by decide) (by decide)
+  have eX : (scrP s₀ + BitVec.ofNat 32 d).setWidth 64 = scrB s₀ + BitVec.ofNat 64 d := scr_addr' hp (by omega)
+  have hX : (scrP s₀ + BitVec.ofNat 32 d).toNat = (scrP s₀).toNat + d := add_nat (by omega)
+  refine (zeroWords_ok i₂ (r := .edx) (by decide) (by decide) (by decide) (by decide) (X := scrP s₀ + BitVec.ofNat 32 d) (n := 256) (R := scrR s₀) (by simp) (scr_mem hp)
+      (off := d) eX (show d + 4 * 256 ≤ 16384 by omega) (show 16384 < 2 ^ 64 by decide) (by omega) (by decide)
+      (by rw [u₂.gpr, u₁.gpr])).mono fun t ⟨it, gt, ft, zt⟩ => ⟨it, fun r a b c => ?_, ?_, fun i hi => ?_⟩
+  · rw [gt r a b c, u₂.other _ c, u₁.other _ c]
+  · rw [show s.mem = s₂.mem by rw [u₂.mem, u₁.mem], ← eX]; exact ft
+  · rw [sw, scr_addr' hp (by omega)]
+    refine readW_zero4 fun k hk => ?_
+    have := zt (4 * i + k) (by omega)
+    rw [eX, BitVec.add_assoc, BitVec.ofNat_add_ofNat] at this
+    rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat, Nat.add_assoc]; exact this
 
 end
 
@@ -254,9 +239,8 @@ theorem sw_frame {m m' : Mem} {a n : Nat} (f : Frame [⟨scrB s₀ + BitVec.ofNa
 theorem input_ok {s : State} (h : Inv s₀ s) {pass slice lane index c : Nat}
     (ps : Pos s₀ s pass slice lane index) (hc : lw s₀ s counterOff = BitVec.ofNat 32 c)
     (h₁ : pass < 2 ^ 32) (h₂ : lane < 2 ^ 32) (h₃ : slice < 2 ^ 32) (h₄ : c < 2 ^ 32) :
-    WP isa (.block (Impl.Argon2.X86.Derive.clearAt 5120 ++ (Impl.Argon2.X86.Derive.clearAt 7168 ++
-      Impl.Argon2.X86.Derive.addressHeader))) s fun t => Inv s₀ t ∧
-      (∀ r, r ≠ .eax → r ≠ .edx → t.gpr r = s.gpr r) ∧
+    WP isa Impl.Argon2.X86.Derive.addressInput s fun t => Inv s₀ t ∧
+      (∀ r, r ≠ .eax → r ≠ .ecx → r ≠ .edx → t.gpr r = s.gpr r) ∧
       Frame [⟨scrB s₀ + BitVec.ofNat 64 5120, 1024⟩, ⟨scrB s₀ + BitVec.ofNat 64 7168, 1024⟩] s.mem t.mem ∧
       blk t.mem (scrP s₀) 5120 = Proof.Argon2.addressInput (prm s₀) pass lane slice c ∧
       blk t.mem (scrP s₀) 7168 = zeroBlock := by
@@ -264,14 +248,15 @@ theorem input_ok {s : State} (h : Inv s₀ s) {pass slice lane index c : Nat}
       ∃ r' ∈ [memR s₀, scrR s₀, outR s₀, callR s₀], Region.Sub r r' := fun d hd r hr => by
     simp only [List.mem_singleton] at hr; subst hr
     exact ⟨scrR s₀, by simp, Offset.sub_base _ hd⟩
-  refine clearAt_ok hp h (d := 5120) (by decide) fun t₁ i₁ g₁ f₁ z₁ => ?_
-  refine clearAt_ok hp i₁ (d := 7168) (by decide) fun t₂ i₂ g₂ f₂ z₂ => ?_
+  unfold Impl.Argon2.X86.Derive.addressInput
+  refine WP.seq ((clearAt_ok hp h (d := 5120) (by decide)).mono fun t₁ ⟨i₁, g₁, f₁, z₁⟩ => ?_)
+  refine WP.seq ((clearAt_ok hp i₁ (d := 7168) (by decide)).mono fun t₂ ⟨i₂, g₂, f₂, z₂⟩ => ?_)
   have L : ∀ d, d + 4 ≤ 144 → lw s₀ t₂ d = lw s₀ s d := fun d hd => by
     rw [lw_keep hp f₂ (fsub _ (by decide)) hd, lw_keep hp f₁ (fsub _ (by decide)) hd]
   refine (aheader_ok hp i₂ (pass := pass) (slice := slice) (lane := lane) (index := index) (c := c)
     (ps.of_lw fun d hd => L d (by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hd; rcases hd with rfl | rfl | rfl | rfl <;> decide)) (by rw [L _ (by decide)]; exact hc)).mono
-    fun t ⟨it, gt, ft, wt⟩ => ⟨it, fun r a b => by rw [gt r a b, g₂ r a b, g₁ r a b], ?_, ?_, ?_⟩
+    fun t ⟨it, gt, ft, wt⟩ => ⟨it, fun r a c b => by rw [gt r a b, g₂ r a c b, g₁ r a c b], ?_, ?_, ?_⟩
   · refine (Frame.trans (f₁.sub fun r hr => ⟨r, by simp at hr ⊢; exact .inl hr, fun _ h => h⟩)
       (f₂.sub fun r hr => ⟨r, by simp at hr ⊢; exact .inr hr, fun _ h => h⟩)).trans
       (ft.sub fun r hr => ⟨⟨scrB s₀ + BitVec.ofNat 64 5120, 1024⟩, by simp, by
