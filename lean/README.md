@@ -149,6 +149,14 @@ lake env lean --run Emit.lean --check
 lake env lean --run EmitOne.lean [--check] Rc2.AArch64   # one registration file
 ```
 
+On Linux, `Emit.lean` needs `vm.max_map_count` above the default of many
+distributions (65,530): its driver is not a module, so it maps every module
+it imports with its `.olean.server` and `.olean.private` parts, about six
+regions of memory per `.olean`. It refuses to start below eight per `.olean`
+and names the command to raise the limit, `sudo sysctl -w
+vm.max_map_count=262144`, which CI runs (`EmitOne.lean` loads far fewer).
+Past the limit Lean would fail with `failed to read file '….olean.private'`.
+
 Every module records a profile of its build, kept in its `.trace` file
 (`moreLeanArgs` in `lakefile.toml`), which Lake prints again for each module
 it finds already built: `--log-level=warning` (or `-q`) leaves it out and
