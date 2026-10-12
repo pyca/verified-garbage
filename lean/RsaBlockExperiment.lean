@@ -293,6 +293,87 @@ def mm (o a b : Nat) : Prog isa :=
   else Public.mm o a b
 end MultiplyFour
 
+
+namespace SelectFour
+open VG.Impl.Bignum.Crt VG.Impl.Rsa.AArch64.Crt
+open VG.Impl.Bignum.Public hiding sI sBit sV
+open VG.Impl.Rsa.AArch64
+
+def accs : List Reg := [.x8, .x9, .x10, .x11]
+def inner : List Instr :=
+  [.logic .eor .x .x3 .x2 .x5, movi .x4 1, .subs .x .x3 .x3 .x4] ++
+  borrowMask ++
+  (accs.zipIdx.flatMap fun (r,i) =>
+    [ld .x1 .x16 (8*i), .logic .and .x .x1 .x1 .x15, .logic .orr .x r r .x1]) ++
+  [.add .x .x16 .x16 .x6, .addImm .x .x2 .x2 1]
+
+def blocked : Prog isa :=
+  .seq (.block [ldh .x12 sW, .addImm .x .x6 .x12 2, .lsl .x .x6 .x6 3,
+    .lsr .x .x13 .x12 2, ldh .x5 sNib, ldh .x17 (sArr aT), movi .x7 0])
+  (.seq (.loop
+    (.seq (.block ([ldh .x16 (sArr aT), .sub .x .x16 .x17 .x16,
+      ldh .x3 sTab, .add .x .x16 .x16 .x3, movi .x2 0, movi .x14 16] ++
+      accs.map fun r => movi r 0))
+     (.seq (countLoop .x14 inner)
+      (.block (store4 accs .x17 ++ [.addImm .x .x17 .x17 32,
+        .subImm .x .x13 .x13 1])))) (.nonzero .x .x13))
+    (.block [ldh .x3 sTab, .lsl .x .x4 .x6 4, .add .x .x3 .x3 .x4,
+      sth .x3 sEnt, movi .x3 16, sth .x3 sJ]))
+
+def select : Prog isa :=
+  .seq (.block [ldh .x12 sW, .lsr .x .x3 .x12 2, movi .x4 3,
+    .logic .and .x .x4 .x12 .x4])
+    (.ite (.nonzero .x .x3)
+      (.ite (.zero .x .x4) blocked (seqs tabSelect))
+      (seqs tabSelect))
+def expWin (mul : Nat → Nat → Nat → Prog isa) : List (Prog isa) :=
+  [mul aY aY aY, mul aY aY aY, mul aY aY aY, mul aY aY aY,
+    .block [ldh .x3 sV, .lsl .x .x4 .x3 4, sth .x4 sV, .lsr .x .x3 .x3 4, movi .x4 15, .logic .and .x .x3 .x3 .x4,
+      sth .x3 sNib]] ++
+  [select] ++
+  [mul aY aY aT,
+    .block [ldh .x3 sBit, .subImm .x .x3 .x3 1, sth .x3 sBit]]
+
+/-- `Y := Y^d` (`Y` 1 and `[aXc]` in Montgomery form) for the exponent whose
+pointer and length are in `n`'s header slots `slotPtr` and `slotLen`, its
+bytes most significant first, two windows a byte. -/
+def expLoop (mul : Nat → Nat → Nat → Prog isa) (slotPtr slotLen : Nat) : List (Prog isa) := [
+  .block [ldh .x5 sLink, ldw .x3 .x5 slotPtr, sth .x3 sExp, ldw .x3 .x5 slotLen, sth .x3 sExpLen, movi .x3 0,
+    sth .x3 sI]] ++
+  tabBuild mul ++ [
+  .loop (seqs [
+    .block [ldh .x3 sExp, ldh .x4 sI, .add .x .x3 .x3 .x4, .ldrb .x3 .x3 0, sth .x3 sV, movi .x3 2, sth .x3 sBit],
+    .loop (seqs (expWin mul)) (.nonzero .x .x3),
+    .block [ldh .x3 sI, .addImm .x .x3 .x3 1, sth .x3 sI, ldh .x4 sExpLen, .sub .x .x3 .x4 .x3]]) (.nonzero .x .x3)]
+
+/-! ## The primes -/
+
+/-- `q`: `m_q = c^dQ mod q` into `q`'s `aY`. -/
+def qPhase (mul : Nat → Nat → Nat → Prog isa) : List (Prog isa) :=
+  gPow mul sWsQ ++ [.block [enterQ]] ++ redc mul aY ++ copyArr aY aXc ++ [.block [leave], mul aY aXm aY,
+    .block [enterQ]] ++ redc mul aY ++ expLoop mul sDq sQlen ++ [mul aY aY aOne, .block [leave]]
+
+/-- `p`: `m_p R_p` into `p`'s `aY`, `m_q R_p` into its `aXc`, their
+difference into `aT`, `qInv` again (masked) into its chunk array, and
+`h = (m_p - m_q) qInv mod p` into its `aY`. -/
+def pPhase (mul : Nat → Nat → Nat → Prog isa) : List (Prog isa) :=
+  gPow mul sWsP ++ [.block [enterP]] ++ redc mul aY ++ copyArr aY aXc ++ [.block [leave], zeroArr aX,
+    .block [ldh .x5 sWsQ, ldw .x16 .x5 (sArr aY), ldw .x12 .x5 sW, ldh .x17 (sArr aX)],
+    copyWords, mul aX aX aR2, mul aX aX aY, mul aY aXm aY, .block [enterP]] ++
+  redc mul aY ++ expLoop mul sDp sPlen ++ [.block [leave]] ++ [.block [enterP]] ++ redc mul aX ++
+  subModArr aT aY aXc ++ loadArr aChunk sQinv sPlen ++ maskArr aChunk ++ [mul aY aT aChunk, .block [leave]]
+
+def main (mul : Nat → Nat → Nat → Prog isa) : Prog isa :=
+  seqs (nSetup mul ++ primesSetup ++ checks ++ qPhase mul ++ pPhase mul ++ finish)
+
+/-- `vg_rsa_private_crt`: `n` checked as the public-key operation checks it
+(`invalid`, on `x2` and `x3`, still `n` and `n_len`). -/
+def code (mul : Nat → Nat → Nat → Prog isa) : Prog isa :=
+  .seq (.block (entry ++ invalid)) (.ite (.zero .x .x9) Precomputed.fail (main mul))
+
+
+end SelectFour
+
 def render (name sig : String) (body : Prog isa) : String :=
   let lines := printer.function body ++ printer.funcAlign.map Line.text
   let callees := VG.Rust.dedup (lines.filterMap fun | .call n => some n | _ => none)
@@ -304,7 +385,7 @@ def render (name sig : String) (body : Prog isa) : String :=
 def rsaFunctions (mul : Nat → Nat → Nat → Prog isa) : List (String × String × Prog isa) :=
   let pc := VG.Impl.Rsa.AArch64.Precompute.code mul
   let pd := VG.Impl.Rsa.AArch64.Checked.precomputedChecked mul
-  let crt := VG.Impl.Rsa.AArch64.Crt.code mul
+  let crt := SelectFour.code mul
   [("vg_rsa_public_precompute", Spec.Rsa.publicPrecomputeApi.sig.rust, pc),
    ("vg_rsa_public_precomputed_checked", Spec.Rsa.publicPrecomputedCheckedApi.sig.rust, pd),
    ("vg_rsa_private_crt", Spec.Rsa.privateCrtApi.sig.rust, crt),
