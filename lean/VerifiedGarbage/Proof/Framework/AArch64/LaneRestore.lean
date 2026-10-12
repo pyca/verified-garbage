@@ -1,6 +1,8 @@
-import VerifiedGarbage.Proof.Framework.AArch64.Inline
-import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+module
+
+public import VerifiedGarbage.Proof.Framework.AArch64.Inline
+public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 
 /-!
 # Registers restored from a vector lane, on AArch64
@@ -14,6 +16,8 @@ evaluation, and `straight` gives the instructions of straight-line code, so
 that a caller can check that the functions it calls keep the callee-saved
 registers it does not save itself (`Proof/Ecdsa/AArch64/Abi.lean`).
 -/
+
+@[expose] public section
 
 namespace VG.AArch64
 

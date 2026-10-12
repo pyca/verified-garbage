@@ -1,5 +1,7 @@
-import VerifiedGarbage.Proof.Framework.X86_64.Sse
-import VerifiedGarbage.TCB.X86_64.Avx
+module
+
+public import VerifiedGarbage.Proof.Framework.X86_64.Sse
+public import VerifiedGarbage.TCB.X86_64.Avx
 
 /-!
 # x86-64: AVX registers lane by lane
@@ -8,6 +10,8 @@ The AVX instructions of the model, stated on one 128-bit lane of their
 operands (`State.lane`) and on the doublewords of a lane; and little-endian
 reads and writes of any width, as the words and bytes they contain.
 -/
+
+@[expose] public section
 
 namespace VG.X86_64
 

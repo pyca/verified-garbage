@@ -1,6 +1,10 @@
-import VerifiedGarbage.TCB.AArch64.Isa
+module
+
+public import VerifiedGarbage.TCB.AArch64.Isa
 
 /-! Basic lane identities for AArch64 SIMD proofs. -/
+
+@[expose] public section
 
 namespace VG.AArch64
 

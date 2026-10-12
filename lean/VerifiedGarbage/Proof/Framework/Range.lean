@@ -1,8 +1,12 @@
-import VerifiedGarbage.Proof.Framework.Block
+module
+
+public import VerifiedGarbage.Proof.Framework.Block
 
 /-!
 # Straight-line code built from indexed steps
 -/
+
+@[expose] public section
 
 namespace VG
 

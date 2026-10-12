@@ -1,4 +1,6 @@
-import VerifiedGarbage.TCB.X86_64.Isa
+module
+
+public import VerifiedGarbage.TCB.X86_64.Isa
 
 /-!
 # x86-64: what a block leaves of the vector registers, lane by lane
@@ -7,6 +9,8 @@ import VerifiedGarbage.TCB.X86_64.Isa
 128-bit lanes of each) and the flags, as `XFrame`-like frames state of the
 SSE registers alone.
 -/
+
+@[expose] public section
 
 namespace VG.X86_64
 

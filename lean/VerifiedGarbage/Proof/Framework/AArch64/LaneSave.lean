@@ -1,5 +1,7 @@
-import VerifiedGarbage.Proof.Framework.AArch64.LaneRestore
-import VerifiedGarbage.Proof.Framework.AArch64.Exec
+module
+
+public import VerifiedGarbage.Proof.Framework.AArch64.LaneRestore
+public import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-!
 # Registers kept in vector lanes, on AArch64
@@ -10,6 +12,8 @@ lanes and changes nothing else, `umovOf_ok` sets the registers from them, so
 that a function can keep the callee-saved registers it writes without a stack
 frame.
 -/
+
+@[expose] public section
 
 namespace VG.AArch64
 

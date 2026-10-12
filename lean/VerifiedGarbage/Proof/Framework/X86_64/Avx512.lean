@@ -1,4 +1,6 @@
-import VerifiedGarbage.Proof.Framework.X86_64.Avx
+module
+
+public import VerifiedGarbage.Proof.Framework.X86_64.Avx
 
 /-!
 # x86-64: AVX-512 registers lane by lane
@@ -6,6 +8,8 @@ import VerifiedGarbage.Proof.Framework.X86_64.Avx
 The AVX-512 instructions of the model, stated on one 128-bit lane of their
 operands (`State.zlane`, lanes 0 to 3) and on the doublewords of a lane.
 -/
+
+@[expose] public section
 
 namespace VG.X86_64
 

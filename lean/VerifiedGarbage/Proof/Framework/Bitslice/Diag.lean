@@ -1,4 +1,6 @@
-import VerifiedGarbage.Proof.Framework.Bitslice.Lanes
+module
+
+public import VerifiedGarbage.Proof.Framework.Bitslice.Lanes
 
 /-!
 # Input words of atoms, as one shifted diagonal
@@ -10,6 +12,8 @@ XORs of numbers as large as the result for every word. `inWordW` is word
 `inWordW_eq_mk` says it is the same number. `Atoms.lean` and the ISAs'
 own words of atoms (`Framework/Arm/Linear.lean`) use it.
 -/
+
+@[expose] public section
 
 namespace VG.Bitslice
 

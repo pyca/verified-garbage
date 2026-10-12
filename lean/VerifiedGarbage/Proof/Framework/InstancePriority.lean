@@ -1,3 +1,5 @@
+module
+
 /-!
 # Instance search without detours through Mathlib's hierarchies
 
@@ -22,6 +24,8 @@ The search finds the same instances as before, so every term (and what the
 kernel evaluates) is unchanged; this includes `omega`'s, `List.decidableBAll`
 deciding each `x = 0` by `Int.instDecidableEq`.
 -/
+
+@[expose] public section
 
 attribute [instance low] Std.PreorderPackage.toBEq Std.LawfulBEqOrd.lawfulBEq
   Std.instLawfulBEqOfLawfulOrderBEqOfIsPartialOrder

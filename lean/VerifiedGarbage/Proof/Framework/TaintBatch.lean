@@ -1,4 +1,7 @@
-import VerifiedGarbage.Proof.Framework.Taint
+module
+
+public import VerifiedGarbage.Proof.Framework.Taint
+public meta import VerifiedGarbage.Proof.Framework.Taint
 
 /-!
 # Many decidable checks in one kernel evaluation
@@ -16,6 +19,8 @@ The goals may be any decidable propositions (e.g. `allInstrs` checks or
 `depth` bounds), with or without `Taint.check`, but must not mention local
 hypotheses.
 -/
+
+public meta section
 
 namespace VG
 

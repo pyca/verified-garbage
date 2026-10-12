@@ -1,6 +1,8 @@
-import VerifiedGarbage.Proof.Framework.X86_64.ZFrame
-import VerifiedGarbage.Proof.Framework.X86_64.LaneSse
-import VerifiedGarbage.Proof.Framework.X86_64.Avx512
+module
+
+public import VerifiedGarbage.Proof.Framework.X86_64.ZFrame
+public import VerifiedGarbage.Proof.Framework.X86_64.LaneSse
+public import VerifiedGarbage.Proof.Framework.X86_64.Avx512
 
 /-!
 # x86-64: what a block of vector instructions leaves of the AVX-512 registers
@@ -11,6 +13,8 @@ lanes, and nothing but the vector registers. A block of them whose
 destinations are among `rs` runs, and leaves `ZFrame rs` (`zframe_block`);
 `WP.zframe` adds that to what a proof of the block says.
 -/
+
+@[expose] public section
 
 namespace VG.X86_64
 

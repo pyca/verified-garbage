@@ -1,6 +1,10 @@
-import Lean.Meta.Reduce
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.TCB.Arm.Target
+module
+
+public meta import Lean.Meta.Reduce
+public import VerifiedGarbage.Proof.Framework.Contract
+public meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.TCB.Arm.Target
+public meta import VerifiedGarbage.TCB.Arm.Target
 
 /-!
 # Moving a proof to a shared contract, on Arm
@@ -11,6 +15,8 @@ twice), so a signature of a few words costs hundreds of unfoldings, once per
 field of `Contract.Implies`. `reduceClassify` evaluates it in one step instead;
 pass it in place of `Arm.classify`.
 -/
+
+public meta section
 
 namespace VG.Arm
 

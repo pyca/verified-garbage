@@ -1,4 +1,6 @@
-import VerifiedGarbage.Proof.Framework.Arm.Taint
+module
+
+public import VerifiedGarbage.Proof.Framework.Arm.Taint
 
 /-!
 # Taint tracking for ARMv7: code without its offsets
@@ -14,6 +16,8 @@ caches the analysis of the same code from the same taint, analyses one copy
 (`constantTime_eraseOff_of_eq`, with the code without its offsets written out
 as a literal, whose copies are then equal terms).
 -/
+
+@[expose] public section
 
 namespace VG.Arm
 
