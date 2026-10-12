@@ -10,12 +10,13 @@ RFC 4269 §2.3's round keys `Ki0 = G(Key0 + Key2 - KCi)` and
 outputs, so all 32 are computed first (`keyRound`), the first sixteen into
 `g16`'s words (`tSlot`) and the rest into `uSlot`, and `G` of each sixteen
 is computed by `g16`, then copied to the schedule, whose words are in the
-same order. The scratch buffer is laid out as ECB's (`Ecb.lean`), whose
+same order: a loop of two (`keyHalf`), whose schedule pointer `rsi` moves on
+to the end, in `rdx`. The scratch buffer is laid out as ECB's (`Ecb.lean`), whose
 callee-saved registers' slots it shares.
 
 `Key0 || Key1` is kept in `r10` and `Key2 || Key3` in `r11`, as 64-bit
 words, so that the rotations by eight bits are `ror`s. Nothing depends on
-the key but the data: the code is straight-line.
+the key but the data: only the pointers decide the branches.
 -/
 
 namespace VG.Impl.Seed.X86_64
@@ -63,8 +64,16 @@ def keyStore (k : Nat) : List Instr :=
 def keyMove : List Instr :=
   (List.range 16).flatMap fun w => [.mov32 .rax (.mem (lane .r9 uSlot w)), .store32 (lane .r9 (tSlot 0) w) .rax]
 
+/-- `G` of `g16`'s words, copied to the schedule at `rsi`, which moves on by
+64 bytes; then, unless `rsi` has reached the schedule's end (in `rdx`), the
+second sixteen inputs to `g16`'s words (Z clear again). -/
+def keyHalf : Prog isa :=
+  .seq (.block (g16 ++ keyStore 0 ++ [.alu .add .rsi (.imm 64), .alu .cmp .rsi (.reg .rdx)]))
+    (.ite .ne (.block (keyMove ++ [.alu .cmp .rsi (.reg .rdx)])) (.block []))
+
 def expandKey : Prog isa :=
-  .block ([movR .r9 .rdx] ++ savedRegs.map (fun (r, k) => st k r) ++ setG16Masks ++ keyLoad ++
-    (List.range 16).flatMap keyRound ++ g16 ++ keyStore 0 ++ keyMove ++ g16 ++ keyStore 16 ++ restore)
+  .seq (.block ([movR .r9 .rdx] ++ savedRegs.map (fun (r, k) => st k r) ++ setG16Masks ++ keyLoad ++
+      (List.range 16).flatMap keyRound ++ [movR .rdx .rsi, .alu .add .rdx (.imm 128)]))
+    (.seq (.loop keyHalf .ne) (.block restore))
 
 end VG.Impl.Seed.X86_64
