@@ -237,8 +237,9 @@ def arrPtrs (p j o : Nat) : List Instr :=
 def arr52 (p j o : Nat) : List Instr := arrPtrs l p j o ++ to52 l
 
 /-- The arrays every region takes, with their offsets: the modulus,
-`2^dbls R_X mod X`, `x R_X` and `R_X`. -/
-def arrs : List (Nat × Nat) := [(aN, oM), (aT, l.oK1), (aXc, l.oX), (aY, l.oY)]
+`2^dbls R_X mod X`, `x R_X`, `R_X`, and `R_X` again as the last multiplier
+(`q`'s then 1, `finOne`). -/
+def arrs : List (Nat × Nat) := [(aN, oM), (aT, l.oK1), (aXc, l.oX), (aY, l.oY), (aY, l.oFin)]
 
 /-- `to52`'s arguments for the entry of `ps` that `r8` counts down to
 (`ps.length` for the first). -/
@@ -250,7 +251,7 @@ def arrSel (p : Nat) : List (Nat × Nat) → Prog isa
 
 /-- `arrs` into region `p`, by one `to52` in a loop. -/
 def arrLoop (p : Nat) : Prog isa :=
-  .seq (.block [.mov32 .r8 (.imm 4)])
+  .seq (.block [.mov32 .r8 (.imm 5)])
     (.loop (.seq (arrSel l p (arrs l)) (.block (to52 l ++ ([.alu .sub .r8 (.imm 1)] : List Instr)))) .ne)
 
 /-- `k₀` (the low 52 bits of the inverse) in each quadword of `oK0`, `r11`
@@ -282,7 +283,7 @@ def eCopy (slotPtr slotLen : Nat) : List (Prog isa) :=
 exponent. -/
 def region (p slotPtr slotLen : Nat) : List (Prog isa) :=
   k1 l ++ [arrLoop l p] ++
-    (if p = 0 then [.block (arr52 l p aY l.oFin)] else []) ++ [.block (k0St l p), .block (eZero l)] ++
+    [.block (k0St l p), .block (eZero l)] ++
     (if p = 0 then [] else [.block (finOne l)]) ++ eCopy l slotPtr slotLen
 
 /-! ## The vector code (`rbx` the area) -/
@@ -346,23 +347,27 @@ def winSetup (b : Nat) : List Instr :=
 /-- A window: `Y := Y¹⁶ T_v 2^(-208 R)` for each prime, `v` the top 4 bits
 of its byte at `oV`, which moves up 4 bits. `S := T_v` first, then one loop
 of five multiplications (`r15` counting them down): four squarings of `Y`,
-then `Y S`. -/
+then `Y S`. After the last byte (`r13 = E`), instead `S := Fin` and the one
+multiplication `Y S`, the last window (`r14 := 1`). -/
 def window : List (Prog isa) :=
-  select l 0 ++ select l 1 ++
-  [.block (((List.range 2).flatMap fun p => [.mov .rax (.mem (at_ .rbx (l.D * p + l.oV))),
-      .shift .ror .rax 60, .store (at_ .rbx (l.D * p + l.oV)) .rax]) ++ [.mov32 .r15 (.imm 5)]),
+  [.seq (.block [.alu .cmp .r13 (.imm (BitVec.ofNat 32 l.E))])
+      (.ite .e (.block (copyN l l.oS l.oFin ++ [.mov32 .r15 (.imm 1), .mov32 .r14 (.imm 1)]))
+        (seqs (select l 0 ++ select l 1 ++
+          [.block (((List.range 2).flatMap fun p => [.mov .rax (.mem (at_ .rbx (l.D * p + l.oV))),
+            .shift .ror .rax 60, .store (at_ .rbx (l.D * p + l.oV)) .rax]) ++ [.mov32 .r15 (.imm 5)])]))),
     .loop (.seq (.block [.alu .cmp .r15 (.imm 1)])
       (.seq (.ite .e (.block (winSetup l l.oS)) (.block (winSetup l l.oY)))
         (.seq (ammCore l) (.block [.alu .sub .r15 (.imm 1)])))) .ne]
 
-/-- The exponentiations, a byte of each exponent (`r13`) at a time. -/
+/-- The exponentiations, a byte of each exponent (`r13`) at a time, and
+after the last, `Y := Y Fin 2^(-208 R)` (`window`). -/
 def expLoop : List (Prog isa) :=
   convTab l ++ [.block [.mov32 .r13 (.imm 0)],
     .loop (seqs ([.block ((List.range 2).flatMap fun p =>
         [.movzx8 .rax { base := .rbx, index := some .r13, disp := ((l.D * p + l.oE : Nat) : Int) },
           .shift .ror .rax 8, .store (at_ .rbx (l.D * p + l.oV)) .rax]), .block [.mov32 .r14 (.imm 2)],
       .loop (seqs (window l ++ [.block [.alu .sub .r14 (.imm 1)]])) .ne,
-      .block [.alu .add .r13 (.imm 1), .alu .cmp .r13 (.imm (BitVec.ofNat 32 l.E))]])) .ne]
+      .block [.alu .add .r13 (.imm 1), .alu .cmp .r13 (.imm (BitVec.ofNat 32 (l.E + 1)))]])) .ne]
 
 /-- Intel's MXCSR prologue and epilogue around `c` (see "MCDT" in
 `TCB/X86_64/Isa.lean`), the slots at `oMx`. -/
@@ -374,9 +379,9 @@ def withMxcsr (c : Prog isa) : Prog isa :=
       (.block [.ldmxcsr (at_ .rbx l.oMx), .vop .vzeroupper]))
 
 /-- The vector code: the exponentiations (`Y` and `X` into Montgomery form
-with the table), and the results multiplied by `oFin`. -/
+with the table), the results multiplied by `oFin`. -/
 def vec : Prog isa :=
-  withMxcsr l (seqs (expLoop l ++ [amm l l.oY l.oY l.oFin]))
+  withMxcsr l (seqs (expLoop l))
 
 /-- In a prime's workspace: the result into `aY`, reduced below `X`. -/
 def result (p : Nat) : List (Prog isa) :=
