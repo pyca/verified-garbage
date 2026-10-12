@@ -28,9 +28,15 @@ open VG.Impl.Aes.AArch64 (sb)
 open VG.Proof.Modes.AArch64 (KeepsReg addImm_ok runBlock_app)
 open VG.Spec.TripleDes (Direction)
 
-theorem crypt_eq (d : Direction) : (dirCore d).crypt = .seq (.block ([.addImm .x .x0 sb (8 * schedSlot)] ++
-    ([.addImm .x .x1 sb (8 * cbcBuf)] ++ ([.addImm .x .x2 sb 0] ++ ([.addImm .x .x26 .x30 0] : List Instr)))))
-    (.seq (blockCall d) (.block ([.addImm .x sb .x2 0] ++ ([.addImm .x .x30 .x26 0] : List Instr)))) := by
+/-- `crypt` before the call: the arguments, and the return address to `x26`. -/
+def cryptHead : List Instr :=
+  [.addImm .x .x0 sb (8 * schedSlot), .addImm .x .x1 sb (8 * cbcBuf), .addImm .x .x2 sb 0, .addImm .x .x26 .x30 0]
+
+/-- `crypt` after the call: `sb` and the return address back. -/
+def cryptTail : List Instr := [.addImm .x sb .x2 0, .addImm .x .x30 .x26 0]
+
+theorem crypt_eq (d : Direction) :
+    (dirCore d).crypt = .seq (.block cryptHead) (.seq (blockCall d) (.block cryptTail)) := by
   cases d <;> rfl
 
 /-- No instruction of the block function writes `r`. -/
@@ -70,22 +76,21 @@ theorem block_det {is : List Instr} {s s₁ s' : State} {t : List Leak} (h : Exe
   exact (Exec.det h he).2
 
 theorem crypt_keeps_x30_aux (d : Direction) {s s₁ s₂ s' : State} {t₁ t₂ t₃ : List Leak}
-    (hA : Exec isa (.block ([.addImm .x .x0 sb (8 * schedSlot)] ++ ([.addImm .x .x1 sb (8 * cbcBuf)] ++
-      ([.addImm .x .x2 sb 0] ++ ([.addImm .x .x26 .x30 0] : List Instr))))) s t₁ s₁)
-    (hC : Exec isa (blockCall d) s₁ t₂ s₂)
-    (hB : Exec isa (.block ([.addImm .x sb .x2 0] ++ ([.addImm .x .x30 .x26 0] : List Instr))) s₂ t₃ s') :
-    s'.gpr .x30 = s.gpr .x30 := by
+    (hA : Exec isa (.block cryptHead) s t₁ s₁) (hC : Exec isa (blockCall d) s₁ t₂ s₂)
+    (hB : Exec isa (.block cryptTail) s₂ t₃ s') : s'.gpr .x30 = s.gpr .x30 := by
   obtain ⟨a₁, e₁, -, o₁, -⟩ := addImm_ok s .x0 sb (v := 8 * schedSlot) (by decide)
   obtain ⟨a₂, e₂, -, o₂, -⟩ := addImm_ok a₁ .x1 sb (v := 8 * cbcBuf) (by decide)
   obtain ⟨a₃, e₃, -, o₃, -⟩ := addImm_ok a₂ .x2 sb (v := 0) (by decide)
   obtain ⟨a₄, e₄, r₄, -⟩ := addImm_ok a₃ .x26 .x30 (v := 0) (by decide)
   have hs₁ : s₁ = a₄ := block_det hA (by
-    rw [runBlock_app, e₁, Option.bind_some, runBlock_app, e₂, Option.bind_some, runBlock_app, e₃,
+    rw [show cryptHead = [.addImm .x .x0 sb (8 * schedSlot)] ++ ([.addImm .x .x1 sb (8 * cbcBuf)] ++
+      ([.addImm .x .x2 sb 0] ++ [.addImm .x .x26 .x30 0])) from rfl, runBlock_app, e₁, Option.bind_some, runBlock_app, e₂, Option.bind_some, runBlock_app, e₃,
       Option.bind_some, e₄])
   subst hs₁
   obtain ⟨b₁, f₁, -, ob₁, -⟩ := addImm_ok s₂ sb .x2 (v := 0) (by decide)
   obtain ⟨b₂, f₂, q₂, -⟩ := addImm_ok b₁ .x30 .x26 (v := 0) (by decide)
-  have hs' : s' = b₂ := block_det hB (by rw [runBlock_app, f₁, Option.bind_some, f₂])
+  have hs' : s' = b₂ := block_det hB (by
+    rw [show cryptTail = [.addImm .x sb .x2 0] ++ [.addImm .x .x30 .x26 0] from rfl, runBlock_app, f₁, Option.bind_some, f₂])
   subst hs'
   have k₂ : s₂.gpr .x26 = s₁.gpr .x26 := blockCall_keeps (.inr rfl) d _ _ _ hC
   rw [q₂, ob₁ _ (by decide), k₂, r₄, o₃ _ (by decide), o₂ _ (by decide), o₁ _ (by decide), BitVec.add_zero,
