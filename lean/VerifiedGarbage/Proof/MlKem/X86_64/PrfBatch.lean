@@ -8,9 +8,9 @@ import VerifiedGarbage.Proof.MlKem.X86_64.Rel
 /-!
 # ML-KEM on x86-64: four instances of `PRF₂` at once
 
-`Prf4.batch N₀ m o wl` (`Impl/MlKem/X86_64/Frag.lean`) writes `PRF₂(σ, N₀ +
-k)` to `scratch + o + 128 k` for each `k < m`, with `σ` at `scratch + 1056`
-and `scratch` in `rbx` (`batch_ok`). The input `σ ‖ N` is one block, whose
+`Prf4.batch m wl` (`Impl/MlKem/X86_64/Frag.lean`) writes `PRF₂(σ, N₀ + k)`
+to `scratch + o + 128 k` for each `k < m`, with `σ` at `scratch + 1056`,
+`scratch` in `rbx`, `scratch + o` in `r8` and `N₀` in `r9` (`batch_ok`). The input `σ ‖ N` is one block, whose
 padded state (`P0`) the code writes into each of the four states, byte by byte
 as `vg_mlkem_sample_ntt4_avx2` does (`S4Absorb.lean`); the permutation is
 `permute4` (`permute4_ok`), and the output the first 128 bytes of each
@@ -124,14 +124,18 @@ structure BPre (b : Addr) (wl o m : Nat) (s₀ : State) : Prop where
   hm : m ≤ 4
   small : 32 * wl + 2368 < 2 ^ 31
 
+/-- The registers `batch` keeps: the callee-saved ones and those of the
+loop of batches (`r8`–`r10`). -/
+def kept : List Reg := calleeSaved ++ [.r8, .r9, .r10]
+
 /-- Between the pieces of `batch`, from `s₀`. -/
 structure BEnv (b : Addr) (wl o m : Nat) (s₀ s : State) : Prop where
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
-  cs : ∀ r ∈ calleeSaved, s.gpr r = s₀.gpr r
+  cs : ∀ r ∈ kept, s.gpr r = s₀.gpr r
   frame : Frame [wR b wl, oR b o m] s₀.mem s.mem
 
-theorem rax_ncs : ∀ r ∈ calleeSaved, r ≠ .rax := by decide
+theorem rax_ncs : ∀ r ∈ kept, r ≠ .rax := by decide
 
 /-- `σ`, from `s₀`. -/
 abbrev sig (b : Addr) (s₀ : State) : List Byte := bytesAt s₀.mem (sS b) 32
@@ -182,7 +186,7 @@ omit hp in
 /-- A write within the working space. -/
 theorem BEnv.write {s s' : State} (he : BEnv b wl o m s₀ s) {e n : Nat} (hn : e + n ≤ 2368)
     {v : BitVec (8 * n)} (hm : s'.mem = s.mem.writeW (sP b wl + BitVec.ofNat 64 e) v) (hrd : s'.rd = s.rd)
-    (hwr : s'.wr = s.wr) (hg : ∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) : BEnv b wl o m s₀ s' := by
+    (hwr : s'.wr = s.wr) (hg : ∀ r ∈ kept, s'.gpr r = s.gpr r) : BEnv b wl o m s₀ s' := by
   refine ⟨hrd.trans he.rd, hwr.trans he.wr, fun r hr => (hg r hr).trans (he.cs r hr), ?_⟩
   rw [hm]
   exact he.frame.writeW (List.mem_cons_self ..) v (by
@@ -191,7 +195,7 @@ theorem BEnv.write {s s' : State} (he : BEnv b wl o m s₀ s) {e n : Nat} (hn : 
 /-- A write within the outputs. -/
 theorem BEnv.writeO {s s' : State} (he : BEnv b wl o m s₀ s) {e n : Nat} (hn : e + n ≤ 128 * m)
     {v : BitVec (8 * n)} (hm : s'.mem = s.mem.writeW (b + BitVec.ofNat 64 o + BitVec.ofNat 64 e) v)
-    (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) (hg : ∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) :
+    (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) (hg : ∀ r ∈ kept, s'.gpr r = s.gpr r) :
     BEnv b wl o m s₀ s' := by
   have := hp.hm
   refine ⟨hrd.trans he.rd, hwr.trans he.wr, fun r hr => (hg r hr).trans (he.cs r hr), ?_⟩
@@ -258,7 +262,7 @@ structure AI (b : Addr) (wl o m : Nat) (s₀ : State) (m₁ : Mem) (s : State) :
 theorem AI.write {b : Addr} {wl o m : Nat} {s₀ : State} {m₁ : Mem} {s s' : State}
     (h : AI b wl o m s₀ m₁ s) {e n : Nat} (hn : e + n ≤ 800)
     {v : BitVec (8 * n)} (hm : s'.mem = s.mem.writeW (sP b wl + BitVec.ofNat 64 e) v) (hrd : s'.rd = s.rd)
-    (hwr : s'.wr = s.wr) (hg : ∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) : AI b wl o m s₀ m₁ s' :=
+    (hwr : s'.wr = s.wr) (hg : ∀ r ∈ kept, s'.gpr r = s.gpr r) : AI b wl o m s₀ m₁ s' :=
   ⟨h.env.write (by bdd_omega) hm hrd hwr hg, by
     rw [hm]
     exact h.fr.writeW (List.mem_singleton_self _) v (by
@@ -267,7 +271,7 @@ theorem AI.write {b : Addr} {wl o m : Nat} {s₀ : State} {m₁ : Mem} {s s' : S
 /-- A step that writes no memory and no callee-saved register. -/
 theorem AI.keep {b : Addr} {wl o m : Nat} {s₀ : State} {m₁ : Mem} {s s' : State}
     (h : AI b wl o m s₀ m₁ s) (hm : s'.mem = s.mem) (hrd : s'.rd = s.rd)
-    (hwr : s'.wr = s.wr) (hg : ∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) : AI b wl o m s₀ m₁ s' :=
+    (hwr : s'.wr = s.wr) (hg : ∀ r ∈ kept, s'.gpr r = s.gpr r) : AI b wl o m s₀ m₁ s' :=
   h.write (e := 0) (n := 0) (v := 0) (by bdd_omega) (by rw [hm]; funext x; simp [Mem.writeW, Mem.write]) hrd hwr hg
 
 /-! ### Zeroing -/
@@ -410,22 +414,37 @@ theorem b8_of32 {n : Nat} (hn : n < 256) :
 def NF (b : Addr) (s₀ : State) (N₀ K : Nat) (k q : Nat) : Byte :=
   if q = 32 ∧ k < K then BitVec.ofNat 8 (N₀ + k) else GF b s₀ 4 0 k q
 
-theorem nonces_eq (N₀ wl : Nat) : nonces N₀ wl = (List.range 4).flatMap fun k =>
-    ([.mov32 .rax (.imm (BitVec.ofNat 32 (N₀ + k)))] : List Instr) ++
-      ([.store8 (at_ .rbx (32 * (wl + 32 / 8) + 8 * k + 32 % 8)) .rax] : List Instr) := rfl
+theorem b8_of64 {n : Nat} (hn : n < 256) : (BitVec.ofNat 64 n : BitVec 64) = (BitVec.ofNat 8 n).setWidth 64 := by
+  apply BitVec.eq_of_toNat_eq
+  simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat, Nat.reducePow]
+  rw [Nat.mod_eq_of_lt (by bdd_omega : n < 18446744073709551616), Nat.mod_eq_of_lt hn,
+    Nat.mod_eq_of_lt (by bdd_omega : n < 18446744073709551616)]
+
+theorem nonces_eq (wl : Nat) : nonces wl = ([.mov .rax (.reg .r9)] : List Instr) ++ (List.range 4).flatMap fun k =>
+    ([.store8 (at_ .rbx (32 * (wl + 32 / 8) + 8 * k + 32 % 8)) .rax] : List Instr) ++
+      ([.alu .add .rax (.imm 1)] : List Instr) := rfl
 
 theorem nonces_ok {b : Addr} {wl o m : Nat} {s₀ : State} (hp : BPre b wl o m s₀) {m₁ : Mem} {N₀ : Nat}
-    (hN : N₀ + 4 ≤ 256) {s : State} (h : AI b wl o m s₀ m₁ s ∧ SB (sP b wl) s.mem (GF b s₀ 4 0)) :
-    WP isa (.block (nonces N₀ wl)) s (fun s' => AI b wl o m s₀ m₁ s' ∧ SB (sP b wl) s'.mem (NF b s₀ N₀ 4)) := by
-  rw [nonces_eq]
-  refine wp_range_flatMap (M := isa) (fun K s => AI b wl o m s₀ m₁ s ∧ SB (sP b wl) s.mem (NF b s₀ N₀ K))
-    (fun K s hK ⟨ha, hb⟩ => ?_) 4 (Nat.le_refl _) s ⟨h.1, fun k hk q hq => by rw [h.2 k hk q hq, NF, ifn (by bdd_omega)]⟩
+    (hN : N₀ + 4 ≤ 256) {s : State} (h9 : s.gpr .r9 = BitVec.ofNat 64 N₀)
+    (h : AI b wl o m s₀ m₁ s ∧ SB (sP b wl) s.mem (GF b s₀ 4 0)) :
+    WP isa (.block (nonces wl)) s (fun s' => AI b wl o m s₀ m₁ s' ∧ SB (sP b wl) s'.mem (NF b s₀ N₀ 4)) := by
+  rw [nonces_eq, WP.block_append_iff]
+  refine WP.mono (WP.keep [.rax] (Q := fun s₁ => s₁.gpr .rax = BitVec.ofNat 64 N₀ ∧ s₁.mem = s.mem)
+    (by xrun [h9]) rfl) fun s₁ ⟨⟨hax, hm⟩, k₁⟩ => ?_
+  refine WP.mono (wp_range_flatMap (M := isa) (fun K s => (AI b wl o m s₀ m₁ s ∧ SB (sP b wl) s.mem (NF b s₀ N₀ K)) ∧
+      s.gpr .rax = BitVec.ofNat 64 (N₀ + K))
+    (fun K s hK ⟨⟨ha, hb⟩, hr⟩ => ?_) 4 (Nat.le_refl _) s₁
+    ⟨⟨h.1.keep hm k₁.2.1 k₁.2.2 fun r hr => k₁.gpr (by simpa using rax_ncs r hr),
+      fun k hk q hq => by rw [hm, h.2 k hk q hq, NF, ifn (by bdd_omega)]⟩, by rw [hax, Nat.add_zero]⟩)
+    fun s' h' => h'.1
   rw [WP.block_append_iff]
-  refine wp_mov32i fun s₁ u₁ => wp_nil ?_
   refine WP.mono (cbyte_step hp (F := NF b s₀ N₀ K) (q₀ := 32) (c := BitVec.ofNat 8 (N₀ + K)) hK (by decide)
-    (by rw [u₁.gpr, b8_of32 (by bdd_omega)]) ⟨ha.keep u₁.mem u₁.rd u₁.wr fun r hr => u₁.other r (rax_ncs r hr),
-      by rw [u₁.mem]; exact hb⟩) fun s' ⟨ha', _, hb'⟩ => ⟨ha', fun k hk q hq => ?_⟩
-  rw [hb' k hk q hq]
+    (by rw [hr, b8_of64 (by bdd_omega)]) ⟨ha, hb⟩) fun s₂ ⟨ha₂, hr₂, hb₂⟩ => ?_
+  refine WP.mono (WP.keep [.rax] (Q := fun s₃ => s₃.gpr .rax = BitVec.ofNat 64 (N₀ + K + 1) ∧ s₃.mem = s₂.mem)
+    (by xrun [hr₂, hr, ← VG.Proof.Sha3.ofNat_succ]) rfl) fun s₃ ⟨⟨hax₃, hm₃⟩, k₃⟩ =>
+      ⟨⟨ha₂.keep hm₃ k₃.2.1 k₃.2.2 fun r hr => k₃.gpr (by simpa using rax_ncs r hr), fun k hk q hq => ?_⟩,
+        by rw [hax₃, Nat.add_assoc]⟩
+  rw [hm₃, hb₂ k hk q hq]
   simp only [NF]
   by_cases e : k = K ∧ q = 32
   · rw [ifp e, ifp ⟨e.2, by bdd_omega⟩, e.1]
@@ -502,8 +521,8 @@ theorem pads_ok {b : Addr} {wl o m : Nat} {s₀ : State} (hp : BPre b wl o m s�
 
 /-! ## The setup -/
 
-theorem setup_eq (N₀ wl : Nat) : setup N₀ wl =
-    Impl.Sha3.X86_64.X4.rcTable .rbx (wl + 50) ++ (zero wl ++ (sigLanes wl ++ (nonces N₀ wl ++ (pads wl ++ args wl)))) := by
+theorem setup_eq (wl : Nat) : setup wl =
+    Impl.Sha3.X86_64.X4.rcTable .rbx (wl + 50) ++ (zero wl ++ (sigLanes wl ++ (nonces wl ++ (pads wl ++ args wl)))) := by
   simp only [setup, List.append_assoc]
 
 theorem args_ok {b : Addr} {wl o m : Nat} {s₀ : State} (hp : BPre b wl o m s₀) {s : State}
@@ -530,8 +549,9 @@ structure SetupPost (b : Addr) (wl o m N₀ : Nat) (s₀ s : State) : Prop where
   rdx : s.gpr .rdx = sP b wl + BitVec.ofNat 64 1600
   rcx : s.gpr .rcx = sP b wl + BitVec.ofNat 64 2368
 
-theorem setup_ok {b : Addr} {wl o m : Nat} {s₀ : State} (hp : BPre b wl o m s₀) {N₀ : Nat} (hN : N₀ + 4 ≤ 256) :
-    WP isa (.block (setup N₀ wl)) s₀ (SetupPost b wl o m N₀ s₀) := by
+theorem setup_ok {b : Addr} {wl o m : Nat} {s₀ : State} (hp : BPre b wl o m s₀) {N₀ : Nat} (hN : N₀ + 4 ≤ 256)
+    (h9 : s₀.gpr .r9 = BitVec.ofNat 64 N₀) :
+    WP isa (.block (setup wl)) s₀ (SetupPost b wl o m N₀ s₀) := by
   rw [setup_eq, WP.block_append_iff]
   refine WP.mono (rc_ok hp (BEnv.refl (b := b) (wl := wl) (o := o) (m := m) (s₀ := s₀))) fun s₁ ⟨e₁, t₁⟩ => ?_
   have a₁ : AI b wl o m s₀ s₁.mem s₁ := ⟨e₁, Frame.refl _ _⟩
@@ -540,7 +560,7 @@ theorem setup_ok {b : Addr} {wl o m : Nat} {s₀ : State} (hp : BPre b wl o m s�
   rw [WP.block_append_iff]
   refine WP.mono (sigLanes_ok hp h₂) fun s₃ h₃ => ?_
   rw [WP.block_append_iff]
-  refine WP.mono (nonces_ok hp hN h₃) fun s₄ h₄ => ?_
+  refine WP.mono (nonces_ok hp hN ((h₃.1.env.cs .r9 (by decide)).trans h9) h₃) fun s₄ h₄ => ?_
   rw [WP.block_append_iff]
   refine WP.mono (pads_ok hp h₄) fun s₅ ⟨a₅, b₅⟩ => ?_
   refine WP.mono (args_ok hp a₅.env) fun s₆ ⟨⟨hm, hdi, hsi, hdx, hcx⟩, k⟩ => ?_
@@ -585,6 +605,7 @@ theorem perm_ok {fast : Bool} {b : Addr} {wl o m N₀ : Nat} {s₀ : State} (hp 
 /-- During the copies: the first `I` lanes of state `K` copied, and all of the states before it. -/
 structure EXI (b : Addr) (wl o m : Nat) (s₀ : State) (L : Nat → Spec.Sha3.State) (K I : Nat) (s : State) : Prop where
   env : BEnv b wl o m s₀ s
+  r8 : s.gpr .r8 = b + BitVec.ofNat 64 o
   lanes : Lanes4 s.mem (sP b wl) L
   out : ∀ k < m, ∀ j < 128, (k < K ∨ (k = K ∧ j < 8 * I)) →
     s.mem (b + BitVec.ofNat 64 o + BitVec.ofNat 64 (128 * k + j)) = byteOf (L k) j
@@ -592,17 +613,18 @@ structure EXI (b : Addr) (wl o m : Nat) (s₀ : State) (L : Nat → Spec.Sha3.St
 theorem ext_step {b : Addr} {wl o m : Nat} {s₀ : State} (hp : BPre b wl o m s₀) {L : Nat → Spec.Sha3.State}
     {K I : Nat} (hK : K < m) (hI : I < 16) {s : State} (h : EXI b wl o m s₀ L K I s) :
     WP isa (.block [.mov .rax (.mem (at_ .rbx (32 * (wl + I) + 8 * K))),
-      .store (at_ .rbx (o + 128 * K + 8 * I)) .rax]) s (EXI b wl o m s₀ L K (I + 1)) := by
+      .store (at_ .r8 (128 * K + 8 * I)) .rax]) s (EXI b wl o m s₀ L K (I + 1)) := by
   have := hp.small
   have hm4 := hp.hm
   refine wp_movm (a := la (sP b wl) I K) (by rw [ea_at, h.env.rbx hp, la]; exact at_w b (by bdd_omega))
     (in_w' hp h.env (by bdd_omega)) fun s₁ u₁ => wp_store (a := b + BitVec.ofNat 64 o + BitVec.ofNat 64 (128 * K + 8 * I))
-      (by rw [ea_at, u₁.other _ (by decide), h.env.rbx hp, Offset.add_add, Nat.add_assoc])
+      (by rw [ea_at, u₁.other _ (by decide), h.r8])
       (by rw [u₁.wr]; exact in_o hp h.env (by bdd_omega)) fun s₂ g₂ m₂ r₂ w₂ => wp_nil ?_
   have hm : s₂.mem = s.mem.writeW (b + BitVec.ofNat 64 o + BitVec.ofNat 64 (128 * K + 8 * I))
       (s.mem.readW (la (sP b wl) I K) 64) := by rw [m₂, u₁.mem, u₁.gpr]
   refine ⟨h.env.writeO hp (n := 8) (by bdd_omega) hm (r₂.trans u₁.rd) (w₂.trans u₁.wr)
-      fun r hr => by rw [g₂, u₁.other r (rax_ncs r hr)], fun i hi k hk => ?_, fun k hk j hj hc => ?_⟩
+      fun r hr => by rw [g₂, u₁.other r (rax_ncs r hr)], by rw [g₂, u₁.other _ (by decide)]; exact h.r8,
+      fun i hi k hk => ?_, fun k hk j hj hc => ?_⟩
   · rw [hm, Mem.readW_writeW_sep (((hp.dWO.sub_left (Offset.sub_base (sP b wl) (d := 32 * i + 8 * k) (n := 8)
       (k := 2368) (by bdd_omega))).sub_right (Offset.sub_base (b + BitVec.ofNat 64 o) (d := 128 * K + 8 * I) (n := 8)
       (k := 128 * m) (by bdd_omega))).sep (Region.contains_self _ _) (Region.contains_self _ _)) (by decide)]
@@ -617,32 +639,34 @@ theorem ext_step {b : Addr} {wl o m : Nat} {s₀ : State} (hp : BPre b wl o m s�
     · rw [wb_out _ _ _ (by bdd_omega) (by bdd_omega) (by bdd_omega)]
       exact h.out k hk j hj (by bdd_omega)
 
-theorem extract_eq (m o wl : Nat) : extract m o wl = (List.range m).flatMap fun K => (List.range 16).flatMap fun I =>
-    [.mov .rax (.mem (at_ .rbx (32 * (wl + I) + 8 * K))), .store (at_ .rbx (o + 128 * K + 8 * I)) .rax] := rfl
+theorem extract_eq (m wl : Nat) : extract m wl = (List.range m).flatMap fun K => (List.range 16).flatMap fun I =>
+    [.mov .rax (.mem (at_ .rbx (32 * (wl + I) + 8 * K))), .store (at_ .r8 (128 * K + 8 * I)) .rax] := rfl
 
 theorem extract_ok {b : Addr} {wl o m : Nat} {s₀ : State} (hp : BPre b wl o m s₀) {L : Nat → Spec.Sha3.State}
-    {s : State} (he : BEnv b wl o m s₀ s) (hl : Lanes4 s.mem (sP b wl) L) :
-    WP isa (.block (extract m o wl)) s fun s' => BEnv b wl o m s₀ s' ∧
+    {s : State} (he : BEnv b wl o m s₀ s) (h8 : s.gpr .r8 = b + BitVec.ofNat 64 o) (hl : Lanes4 s.mem (sP b wl) L) :
+    WP isa (.block (extract m wl)) s fun s' => BEnv b wl o m s₀ s' ∧
       ∀ k < m, ∀ j < 128, s'.mem (b + BitVec.ofNat 64 o + BitVec.ofNat 64 (128 * k + j)) = byteOf (L k) j := by
   rw [extract_eq]
   refine WP.mono (wp_range_flatMap (M := isa) (fun K s => EXI b wl o m s₀ L K 0 s) (fun K s hK h => ?_) m
-    (Nat.le_refl _) s ⟨he, hl, fun _ _ _ _ hc => absurd hc (by bdd_omega)⟩)
+    (Nat.le_refl _) s ⟨he, h8, hl, fun _ _ _ _ hc => absurd hc (by bdd_omega)⟩)
     fun s' h' => ⟨h'.env, fun k hk j hj => h'.out k hk j hj (by bdd_omega)⟩
   exact WP.mono (wp_range_flatMap (M := isa) (fun I s => EXI b wl o m s₀ L K I s)
     (fun I s hI h => ext_step hp hK hI h) 16 (Nat.le_refl _) s h)
-    fun s' h' => ⟨h'.env, h'.lanes, fun k hk j hj hc => h'.out k hk j hj (by bdd_omega)⟩
+    fun s' h' => ⟨h'.env, h'.r8, h'.lanes, fun k hk j hj hc => h'.out k hk j hj (by bdd_omega)⟩
 
 /-! ## The whole -/
 
-/-- `batch N₀ m o wl`: `PRF₂(σ, N₀ + k)` to `scratch + o + 128 k` for each `k < m`. -/
-theorem batch_ok {fast : Bool} {b : Addr} {wl o m : Nat} {s₀ : State} (hp : BPre b wl o m s₀) {N₀ : Nat} (hN : N₀ + 4 ≤ 256) :
-    WP isa (batch N₀ m o wl fast) s₀ fun s => BEnv b wl o m s₀ s ∧
+/-- `batch m wl`, with `scratch + o` in `r8` and `N₀` in `r9`: `PRF₂(σ, N₀ + k)`
+to `scratch + o + 128 k` for each `k < m`. -/
+theorem batch_ok {fast : Bool} {b : Addr} {wl o m : Nat} {s₀ : State} (hp : BPre b wl o m s₀) {N₀ : Nat} (hN : N₀ + 4 ≤ 256)
+    (h8 : s₀.gpr .r8 = b + BitVec.ofNat 64 o) (h9 : s₀.gpr .r9 = BitVec.ofNat 64 N₀) :
+    WP isa (batch m wl fast) s₀ fun s => BEnv b wl o m s₀ s ∧
       ∀ k < m, bytesAt s.mem (b + BitVec.ofNat 64 (o + 128 * k)) 128 = prf 2 (sig b s₀) (BitVec.ofNat 8 (N₀ + k)) := by
   unfold batch
-  refine WP.seq (WP.mono (setup_ok hp hN) fun s₁ h₁ => ?_)
+  refine WP.seq (WP.mono (setup_ok hp hN h9) fun s₁ h₁ => ?_)
   refine WP.seq (WP.mono (perm_ok (fast := fast) hp h₁) fun s₂ ⟨e₂, l₂⟩ => ?_)
   rw [WP.block_append_iff]
-  refine WP.mono (extract_ok hp e₂ l₂) fun s₃ ⟨e₃, o₃⟩ => WP.mono (vz_ok s₃) fun s₄ ⟨hm, k⟩ =>
+  refine WP.mono (extract_ok hp e₂ ((e₂.cs .r8 (by decide)).trans h8) l₂) fun s₃ ⟨e₃, o₃⟩ => WP.mono (vz_ok s₃) fun s₄ ⟨hm, k⟩ =>
     ⟨⟨k.2.1.trans e₃.rd, k.2.2.trans e₃.wr, fun r hr => (k.gpr List.not_mem_nil).trans (e₃.cs r hr),
       by rw [hm]; exact e₃.frame⟩, fun k hk => ?_⟩
   rw [hm]
@@ -654,24 +678,24 @@ theorem batch_ok {fast : Bool} {b : Addr} {wl o m : Nat} {s₀ : State} (hp : BP
 
 /-! ## Constant time -/
 
-/-- `batch` leaks only the address in `rbx`: the immediates (the indices
-and offsets) are the same in every run, and no address or branch depends on
-the data. -/
-theorem batch_tr {fast : Bool} {P : State → State → Prop} (hP : ∀ x y, P x y → x.gpr .rbx = y.gpr .rbx) (N₀ o wl : Nat)
-    {m : Nat} (hm : m ≤ 4) : RelCT isa P (batch N₀ m o wl fast) fun x y => x.gpr .rbx = y.gpr .rbx := by
+/-- `batch` leaks only the addresses in `rbx` and `r8`: the immediates (the
+offsets) are the same in every run, and no address or branch depends on the
+data. -/
+theorem batch_tr {fast : Bool} {P : State → State → Prop}
+    (hP : ∀ x y, P x y → ∀ r ∈ [Reg.rbx, .r8, .r9], x.gpr r = y.gpr r) (wl : Nat)
+    {m : Nat} (hm : m ≤ 4) : RelCT isa P (batch m wl fast) fun x y => ∀ r ∈ [Reg.rbx, .r8, .r9], x.gpr r = y.gpr r := by
   cases fast <;> (
-    have hx : ((taint.check (X86_64.Taint.ofRegs [.rbx]) (.block (extract m o wl ++ ([.vop .vzeroupper] : List Instr)))
-        (.block [])).map fun τ' => (RegSet.ofList [Reg.rbx]).subset τ'.regs) = some true := by
+    have hx : ((taint.check (X86_64.Taint.ofRegs [.rbx, .r8, .r9]) (.block (extract m wl ++ ([.vop .vzeroupper] : List Instr)))
+        (.block [])).map fun τ' => (RegSet.ofList [Reg.rbx, .r8, .r9]).subset τ'.regs) = some true := by
       rcases (by bdd_omega : m = 0 ∨ m = 1 ∨ m = 2 ∨ m = 3 ∨ m = 4) with rfl | rfl | rfl | rfl | rfl <;> kernel_rfl
     unfold batch
-    refine RelCT.seq (RelCT.taintRegs (τ := X86_64.Taint.ofRegs [.rbx])
-      (fun x y h => X86_64.Taint.agree_ofRegs fun r hr => by
-        simp only [List.mem_singleton] at hr; subst hr; exact hP x y h) [.rbx, .rdi, .rsi, .rdx, .rcx]
+    refine RelCT.seq (RelCT.taintRegs (τ := X86_64.Taint.ofRegs [.rbx, .r8, .r9])
+      (fun x y h => X86_64.Taint.agree_ofRegs (hP x y h)) [.rbx, .r8, .r9, .rdi, .rsi, .rdx, .rcx]
       (hc := .block []) (by kernel_rfl)) ?_
-    refine RelCT.seq (RelCT.taintRegs (τ := X86_64.Taint.ofRegs [.rbx, .rdi, .rsi, .rdx, .rcx])
-      (fun x y h => X86_64.Taint.agree_ofRegs h) [.rbx] (by taint_decide)) ?_
-    exact RelCT.mono (RelCT.taintRegs (τ := X86_64.Taint.ofRegs [.rbx]) (fun x y h => X86_64.Taint.agree_ofRegs h)
-      [.rbx] hx) (fun _ _ h => h) fun _ _ h => h _ (List.mem_singleton_self _)
+    refine RelCT.seq (RelCT.taintRegs (τ := X86_64.Taint.ofRegs [.rbx, .r8, .r9, .rdi, .rsi, .rdx, .rcx])
+      (fun x y h => X86_64.Taint.agree_ofRegs h) [.rbx, .r8, .r9] (by taint_decide)) ?_
+    exact RelCT.taintRegs (τ := X86_64.Taint.ofRegs [.rbx, .r8, .r9]) (fun x y h => X86_64.Taint.agree_ofRegs h)
+      [.rbx, .r8, .r9] hx
   )
 
 end VG.Proof.MlKem.X86_64.Prf4
