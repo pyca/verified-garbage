@@ -1,3 +1,5 @@
+import VerifiedGarbage.Proof.Dsa.X86_64.WriteScalar
+import VerifiedGarbage.Proof.Dsa.X86_64.WriteScalarCT
 import VerifiedGarbage.Proof.Dsa.X86_64.Parent
 import VerifiedGarbage.Proof.Dsa.X86_64.Result
 import VerifiedGarbage.Proof.Dsa.X86_64.BoundaryCT
@@ -174,3 +176,13 @@ The whole-operation contracts must be proved before artifacts are registered.
 #assert_standard_axioms VG.Proof.Dsa.X86_64.signFailure_ok
 
 #assert_standard_axioms VG.Proof.Dsa.X86_64.signFailure_ct
+
+#assert_standard_axioms VG.Proof.Dsa.X86_64.copyMasked_ok
+
+#assert_standard_axioms VG.Proof.Dsa.X86_64.scalarHead_ok
+
+#assert_standard_axioms VG.Proof.Dsa.X86_64.writeScalar_ok
+
+#assert_standard_axioms VG.Proof.Dsa.X86_64.writeR_ct
+
+#assert_standard_axioms VG.Proof.Dsa.X86_64.writeS_ct
