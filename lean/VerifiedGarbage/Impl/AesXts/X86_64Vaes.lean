@@ -158,21 +158,26 @@ def tail (f : List XReg → Prog isa) : Prog isa :=
 def finish : List Instr :=
   [.mov .rcx (.mem (at_ .rax 0)), .store (at_ .rdx 0) .rcx, .mov .rcx (.mem (at_ .rax 8)), .store (at_ .rdx 8) .rcx]
 
-/-- All the blocks (at least one), the rounds of eight through `f8` and
-those of the rest through `f`, after `pre` (with the tweaks computed). -/
-def crypt (pre : Prog isa) (f8 f : List XReg → Prog isa) : Prog isa :=
+/-- The eight-block loop with the tweaks in `ymm4`–`ymm7`, if eight blocks
+are left. -/
+def loop8 (f8 : List XReg → Prog isa) : Prog isa :=
+  .ite .b (.block [])
+    (.seq (.block (constK ++ ldT tws 0))
+      (.seq (.loop (group f8) .ae) (.block (stT tws 0 ++ ([.vop .vzeroupper] : List Instr)))))
+
+/-- All the blocks (at least one): after `pre` (with the tweaks of the first
+eight computed), `loop` takes groups of eight while eight are left (with
+`cmp r9, 8` before it), and the rest go through `f`. -/
+def crypt (pre loop : Prog isa) (f : List XReg → Prog isa) : Prog isa :=
   .seq (.block [.alu .test .r8 (.reg .r8)])
     (.ite .e (.block [])
       (.seq (.block (enter ++ gen))
         (.seq pre
           (.seq (.block [.alu .cmp .r9 (.imm 8)])
-            (.seq (.ite .b (.block [])
-                (.seq (.block (constK ++ ldT tws 0))
-                  (.seq (.loop (group f8) .ae) (.block (stT tws 0 ++ [.vop .vzeroupper])))))
-              (.seq (tail f) (.block finish)))))))
+            (.seq loop (.seq (tail f) (.block finish)))))))
 
-def encrypt : Prog isa := crypt (.block []) Aes.X86_64.Vaes.aes Aes.X86_64.AesNi.aes
+def encrypt : Prog isa := crypt (.block []) (loop8 Aes.X86_64.Vaes.aes) Aes.X86_64.AesNi.aes
 
-def decrypt : Prog isa := crypt Aes.X86_64.AesNi.imcKeys Aes.X86_64.VaesBlocks.aesDec Aes.X86_64.AesNi.aesDec
+def decrypt : Prog isa := crypt Aes.X86_64.AesNi.imcKeys (loop8 Aes.X86_64.VaesBlocks.aesDec) Aes.X86_64.AesNi.aesDec
 
 end VG.Impl.AesXts.X86_64Vaes

@@ -52,24 +52,29 @@ theorem keys_entry {s₀ : State} (hp : UPre s₀) : Keys (R s₀) (wK s₀) s�
 theorem rsi_ofNat (s₀ : State) : s₀.gpr .rsi = BitVec.ofNat 64 (R s₀) := by
   apply BitVec.eq_of_toNat_eq; simp
 
+/-- The key schedule, as encryption's rounds need it, after the setup. -/
+theorem kpe_pre {s₁ : State} (hp₁ : UPre s₁) {s : State} (h : SInvK s₁ s) : KPe s₁ s := by
+  have hrdi : s.gpr .rdi = W s₁ := h.1.keep _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+    (by decide)
+  refine ⟨Aes.X86_64.AesNi.Ecb.keys_congr (keys_entry hp₁) hrdi h.1.rd h.1.wr ?_, hrdi,
+    h.1.keep _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide),
+    by rw [h.2, hrdi]⟩
+  exact AesCbc.X86_64.bytesAt_frame h.1.frame (fun r hr => by
+    simp only [List.mem_singleton] at hr; subst hr
+    exact hp₁.sch_scr.sub_left (Region.sub_prefix (by rcases hp₁.rounds with h | h | h <;> omega)))
+    (by rcases hp₁.rounds with h | h | h <;> omega)
+
 theorem encrypt_wp {s₀ : State} (h0 : (modeX86_64 (AesXts.xtsMode true)).pre s₀) :
     WP isa Impl.AesXts.X86_64Vaes.encrypt s₀ fun s' =>
       gprPreserved s₀ s' ∧ (modeX86_64 (AesXts.xtsMode true)).post s₀ s' := by
-  refine crypt_wp (KP := KPe) h0 (fun s₁ hp₁ => kpe_stable hp₁) (fun s₁ hp₁ => ?_) (fun s₁ hp₁ => ?_)
+  refine crypt_wp (KP := KPe) h0 (fun s₁ hp₁ => kpe_stable hp₁)
+    (fun s₁ hp₁ => loop8_ok hp₁ (kpe_stable hp₁) ?_) (fun s₁ hp₁ => ?_)
     (fun s₁ hp₁ s h => WP.block_nil ⟨h, ?_⟩)
   · intro s ⟨hK, hrdi, hrsi, hr10⟩
     exact Aes.X86_64.Vaes.aes_ok regs4 (by decide) (by decide) hp₁.rounds s hK (by rw [hrsi, rsi_ofNat]) hr10
   · intro s ⟨hK, hrdi, hrsi, hr10⟩
     exact WP.mono (Aes.X86_64.AesNi.aes_ok [.xmm0] (by decide) (by decide) hp₁.rounds s hK
       (by rw [hrsi, rsi_ofNat]) hr10) fun s' ⟨e, f⟩ => ⟨e _ List.mem_cons_self, f⟩
-  · have hrdi : s.gpr .rdi = W s₁ := h.1.keep _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-      (by decide)
-    refine ⟨Aes.X86_64.AesNi.Ecb.keys_congr (keys_entry hp₁) hrdi h.1.rd h.1.wr ?_, hrdi,
-      h.1.keep _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide),
-      by rw [h.2, hrdi]⟩
-    exact AesCbc.X86_64.bytesAt_frame h.1.frame (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr
-      exact hp₁.sch_scr.sub_left (Region.sub_prefix (by rcases hp₁.rounds with h | h | h <;> omega)))
-      (by rcases hp₁.rounds with h | h | h <;> omega)
+  · exact kpe_pre hp₁ h
 
 end VG.Proof.AesXts.X86_64.Vaes

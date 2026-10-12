@@ -55,10 +55,52 @@ theorem kpd_stable {s₀ : State} (hp : UPre s₀) : Stable (KPd s₀) s₀ :=
         · exact Offset.disjoint _ (by simp only [bufOff]; omega) (by omega) (by simp only [bufOff]; omega))
       (by decide)
 
+/-- The round keys through `aesimc` at the scratch buffer, below the tweaks:
+what decryption's rounds need. -/
+theorem imc_pre {s₁ : State} (hp₁ : UPre s₁) {s : State} (h : SInvK s₁ s) :
+    WP isa Impl.Aes.X86_64.AesNi.imcKeys s fun s' => SInvK s₁ s' ∧ KPd s₁ s' := by
+  have hsw := hp₁.scr_wrap
+  have hR : 16 * (R s₁ + 1) ≤ 240 := by rcases hp₁.rounds with h | h | h <;> omega
+  have hrdi : s.gpr .rdi = W s₁ := h.1.keep _ (by decide) (by decide) (by decide) (by decide) (by decide)
+    (by decide) (by decide)
+  have hrsi : s.gpr .rsi = s₁.gpr .rsi := h.1.keep _ (by decide) (by decide) (by decide) (by decide)
+    (by decide) (by decide) (by decide)
+  have hr8 : s.gpr .r8 = S s₁ := h.1.r8
+  have hW : s.wr = [ivR s₁, dataR s₁, scrR s₁] := by rw [h.1.wr, hp₁.wr]
+  have hscr : InRegions s.wr (s.gpr .r8) 2048 := ⟨scrR s₁, by rw [hW]; simp, by
+    rw [hr8]; simpa using Offset.contains_base (S s₁) (d := 0) (n := 2048) (k := 2176) (by omega) (by omega)⟩
+  have hsch : (⟨s.gpr .rdi, 240⟩ : Region) ∈ s.rd ++ s.wr :=
+    List.mem_append_left _ (by rw [h.1.rd, hp₁.rd, hrdi]; simp)
+  have hsep : Region.Disjoint ⟨s.gpr .rdi, 240⟩ ⟨s.gpr .r8, 2048⟩ := by
+    rw [hrdi, hr8]; exact hp₁.sch_scr.sub_right (Region.sub_prefix (by decide))
+  have hK : Keys (R s₁) (wK s₁) s :=
+    Aes.X86_64.AesNi.Ecb.keys_congr (keys_entry hp₁) hrdi h.1.rd h.1.wr
+      (AesCbc.X86_64.bytesAt_frame h.1.frame (fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr
+        exact hp₁.sch_scr.sub_left (Region.sub_prefix hR)) (by omega))
+  refine WP.mono (imcKeys_ok hp₁.rounds (by rw [hrsi, rsi_ofNat]) hscr hsch hsep)
+    fun s' ⟨S', hI, hS⟩ => ?_
+  have hg := hI.gpr
+  have fS : Frame [scrR s₁] s.mem s'.mem := hI.frame.sub fun r hr => by
+    simp only [List.mem_singleton] at hr; subst hr
+    exact ⟨scrR s₁, by simp, by rw [hr8]; exact Region.sub_prefix (by decide)⟩
+  refine ⟨⟨⟨by rw [hg, h.1.r8], by rw [hg, h.1.r9], by rw [hg, h.1.r11],
+    fun r h1 h2 h3 h4 h5 h6 h7 => by rw [hg, h.1.keep r h1 h2 h3 h4 h5 h6 h7],
+    by rw [hI.rd, h.1.rd], by rw [hI.wr, h.1.wr], h.1.frame.trans fS, fun j hj => ?_,
+    by rw [hg, h.1.rdx], by rw [hg]; exact h.1.tw⟩, by rw [hg, h.2]⟩,
+    dKeys_of_imc hK hscr hsep hI hS, by rw [hg, hrdi], by rw [hg, hrsi], by rw [hg, hr8],
+    by rw [hg, h.2, hrdi]⟩
+  rw [AesCbc.X86_64.bytesAt_frame hI.lo (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      rw [hr8]
+      exact Offset.disjoint_base _ (by simp only [bufOff]; omega) (by simp only [bufOff]; omega))
+    (by decide), h.1.buf j hj]
+
 theorem decrypt_wp {s₀ : State} (h0 : (modeX86_64 (AesXts.xtsMode false)).pre s₀) :
     WP isa Impl.AesXts.X86_64Vaes.decrypt s₀ fun s' =>
       gprPreserved s₀ s' ∧ (modeX86_64 (AesXts.xtsMode false)).post s₀ s' := by
-  refine crypt_wp (KP := KPd) h0 (fun s₁ hp₁ => kpd_stable hp₁) (fun s₁ hp₁ => ?_) (fun s₁ hp₁ => ?_)
+  refine crypt_wp (KP := KPd) h0 (fun s₁ hp₁ => kpd_stable hp₁)
+    (fun s₁ hp₁ => loop8_ok hp₁ (kpd_stable hp₁) ?_) (fun s₁ hp₁ => ?_)
     (fun s₁ hp₁ s h => ?_)
   · intro s ⟨hK, hrdi, hrsi, hr8, hr10⟩
     exact Aes.X86_64.VaesBlocks.aesDec_ok regs4 (by decide) (by decide) hp₁.rounds s hK
@@ -66,41 +108,6 @@ theorem decrypt_wp {s₀ : State} (h0 : (modeX86_64 (AesXts.xtsMode false)).pre 
   · intro s ⟨hK, hrdi, hrsi, hr8, hr10⟩
     exact WP.mono (Aes.X86_64.AesNi.aesDec_ok [.xmm0] (by decide) (by decide) hp₁.rounds s hK
       (by rw [hrsi, rsi_ofNat]) hr10) fun s' ⟨e, f⟩ => ⟨e _ List.mem_cons_self, f⟩
-  · have hsw := hp₁.scr_wrap
-    have hR : 16 * (R s₁ + 1) ≤ 240 := by rcases hp₁.rounds with h | h | h <;> omega
-    have hrdi : s.gpr .rdi = W s₁ := h.1.keep _ (by decide) (by decide) (by decide) (by decide) (by decide)
-      (by decide) (by decide)
-    have hrsi : s.gpr .rsi = s₁.gpr .rsi := h.1.keep _ (by decide) (by decide) (by decide) (by decide)
-      (by decide) (by decide) (by decide)
-    have hr8 : s.gpr .r8 = S s₁ := h.1.r8
-    have hW : s.wr = [ivR s₁, dataR s₁, scrR s₁] := by rw [h.1.wr, hp₁.wr]
-    have hscr : InRegions s.wr (s.gpr .r8) 2048 := ⟨scrR s₁, by rw [hW]; simp, by
-      rw [hr8]; simpa using Offset.contains_base (S s₁) (d := 0) (n := 2048) (k := 2176) (by omega) (by omega)⟩
-    have hsch : (⟨s.gpr .rdi, 240⟩ : Region) ∈ s.rd ++ s.wr :=
-      List.mem_append_left _ (by rw [h.1.rd, hp₁.rd, hrdi]; simp)
-    have hsep : Region.Disjoint ⟨s.gpr .rdi, 240⟩ ⟨s.gpr .r8, 2048⟩ := by
-      rw [hrdi, hr8]; exact hp₁.sch_scr.sub_right (Region.sub_prefix (by decide))
-    have hK : Keys (R s₁) (wK s₁) s :=
-      Aes.X86_64.AesNi.Ecb.keys_congr (keys_entry hp₁) hrdi h.1.rd h.1.wr
-        (AesCbc.X86_64.bytesAt_frame h.1.frame (fun r hr => by
-          simp only [List.mem_singleton] at hr; subst hr
-          exact hp₁.sch_scr.sub_left (Region.sub_prefix hR)) (by omega))
-    refine WP.mono (imcKeys_ok hp₁.rounds (by rw [hrsi, rsi_ofNat]) hscr hsch hsep)
-      fun s' ⟨S', hI, hS⟩ => ?_
-    have hg := hI.gpr
-    have fS : Frame [scrR s₁] s.mem s'.mem := hI.frame.sub fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr
-      exact ⟨scrR s₁, by simp, by rw [hr8]; exact Region.sub_prefix (by decide)⟩
-    refine ⟨⟨⟨by rw [hg, h.1.r8], by rw [hg, h.1.r9], by rw [hg, h.1.r11],
-      fun r h1 h2 h3 h4 h5 h6 h7 => by rw [hg, h.1.keep r h1 h2 h3 h4 h5 h6 h7],
-      by rw [hI.rd, h.1.rd], by rw [hI.wr, h.1.wr], h.1.frame.trans fS, fun j hj => ?_,
-      by rw [hg, h.1.rdx], by rw [hg]; exact h.1.tw⟩, by rw [hg, h.2]⟩,
-      dKeys_of_imc hK hscr hsep hI hS, by rw [hg, hrdi], by rw [hg, hrsi], by rw [hg, hr8],
-      by rw [hg, h.2, hrdi]⟩
-    rw [AesCbc.X86_64.bytesAt_frame hI.lo (fun r hr => by
-        simp only [List.mem_singleton] at hr; subst hr
-        rw [hr8]
-        exact Offset.disjoint_base _ (by simp only [bufOff]; omega) (by simp only [bufOff]; omega))
-      (by decide), h.1.buf j hj]
+  · exact imc_pre hp₁ h
 
 end VG.Proof.AesXts.X86_64.Vaes
