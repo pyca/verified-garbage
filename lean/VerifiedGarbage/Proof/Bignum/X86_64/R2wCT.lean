@@ -249,7 +249,7 @@ theorem fast_ct (M : Mont) : RelCT isa (Two FPre) (fast M.mm) fun _ _ => True :=
     rw [hx', hn', hN]
     exact Nat.mod_lt _ (by omega_arith)
   -- The squarings.
-  exact two_map (·.L) (fun _ _ h => h) (sqs_ct M 1)
+  exact two_map (·.L) (fun _ _ h => h) (sqsN_ct M 1)
 
 /-! ## The choice -/
 

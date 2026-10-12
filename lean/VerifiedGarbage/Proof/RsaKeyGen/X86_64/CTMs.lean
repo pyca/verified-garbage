@@ -1,4 +1,5 @@
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.CTMrLoop
+import VerifiedGarbage.Proof.Bignum.X86_64.SqsCT
 
 /-!
 # A candidate on x86-64: constant time of `montSetup`
@@ -96,23 +97,85 @@ theorem msMid_mm (M : Mont) {q : TPub} {s : State} {o a b : Nat} (hp : GW q s) {
   · rw [ha'.wv_of_not_mem (by decide) hnm hn']; exact hn
   · rw [← hn]; exact hlt
 
-/-- A squaring of `[aR2]` leaks the same in runs that agree on the public
-data, and keeps `MsMid`. -/
-theorem sq_ct (M : Mont) : RelCT isa (Two MsMid) (M.mm aR2 aR2 aR2) (Two MsMid) := by
-  refine two_post (two_map (fun q : TPub => (⟨q.B, q.Z, q.w⟩ : Ws)) (fun _ _ h => h.1.goodW)
-    (M.ct (Or.inl ⟨rfl, rfl, rfl⟩))) ?_
-  rintro q s ⟨hp, mi, N, hg, hinv, hn, hN1, hone, hlt⟩
+/-- A squaring of `[aR2]` keeps `MsMid`. -/
+theorem msSq_ok (M : Mont) {q : TPub} {s : State} (h : MsMid q s) : WP isa (M.mm aR2 aR2 aR2) s (MsMid q) := by
+  obtain ⟨hp, mi, N, hg, hinv, hn, hN1, hone, hlt⟩ := h
   exact WP.mono (msMid_mm M hp hg hinv hn (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) (by decide) hlt) fun t ⟨hp', hg', hinv', hn', hlt', ha⟩ =>
     ⟨hp', mi, N, hg', hinv', hn', hN1, by
       rw [ha.wv_of_not_mem (by decide) (by decide) (by have := hg.scr.nowrap; have := hp.2.2.1.z; omega_arith)]; exact hone,
       hlt'⟩
 
-theorem sqs_ct' (M : Mont) (n : Nat) :
-    RelCT isa (Two MsMid) (seqs (List.replicate (n + 1) (M.mm aR2 aR2 aR2))) (Two MsMid) := by
-  induction n with
-  | zero => exact sq_ct M
-  | succ n ih => exact RelCT.seq (sq_ct M) ih
+/-- A squaring of `[aR2]` leaks the same in runs that agree on the public
+data, and keeps `MsMid`. -/
+theorem sq_ct (M : Mont) : RelCT isa (Two MsMid) (M.mm aR2 aR2 aR2) (Two MsMid) :=
+  two_post (two_map (fun q : TPub => (⟨q.B, q.Z, q.w⟩ : Ws)) (fun _ _ h => h.1.goodW)
+    (M.ct (Or.inl ⟨rfl, rfl, rfl⟩))) fun _ _ h => msSq_ok M h
+
+/-- `MsMid` through a store to the count's slot. -/
+theorem msMid_count {q : TPub} {s : State} {c : Nat} (h : MsMid q s) (hc : 1 ≤ c) (hc' : c < 2 ^ 64)
+    (hcnt : word s.mem q.B (8 * kT0) = BitVec.ofNat 64 c) :
+    WP isa (.block (dblCount kT0)) s fun t => MsMid q t ∧ word t.mem q.B (8 * kT0) = BitVec.ofNat 64 (c - 1) ∧
+      t.zf = some (decide (c - 1 = 0)) := by
+  obtain ⟨hp, mi, N, hg, hinv, hn, hN1, hone, hlt⟩ := h
+  have hZ := hp.2.2.1.z
+  have hn' := hg.scr.nowrap
+  have sl8 : ∀ j < 8, slot q.w j + 8 * (q.w + 2) ≤ q.Z := fun j hj => Nat.le_trans (slot_le hj) hZ
+  have hhs : ∀ j, 8 * kT0 + 8 ≤ slot q.w j := fun j => hdr_lt_slot q.w j (by decide)
+  refine WP.mono (sqCount_ok hg hZ (by decide) (by decide) hc hc' hcnt) fun t ⟨g, c', z, o, k⟩ => ⟨⟨?_, mi, N, g,
+    by rw [o.word (d := slot q.w aN) (by have := hhs aN; omega) (by have := sl8 aN (by decide); omega)]; exact hinv,
+    by rw [o.wv (d := slot q.w aN) (k := q.w) (by have := hhs aN; omega) (by have := sl8 aN (by decide); omega)]; exact hn,
+    hN1, by rw [o.wv (d := slot q.w aOne) (k := q.w) (by have := hhs aOne; omega) (by have := sl8 aOne (by decide); omega)]; exact hone,
+    by rw [o.wv (d := slot q.w aR2) (k := q.w) (by have := hhs aR2; omega) (by have := sl8 aR2 (by decide); omega)]; exact hlt⟩,
+    c', z⟩
+  obtain ⟨hk, hw, hd, -⟩ := hp
+  exact ⟨hk, k.2.2.trans hw, hd, mi, g⟩
+
+/-- `sqs` leaks the same in runs that agree on the public data, and keeps
+`MsMid`. -/
+theorem sqs_ct' (M : Mont) : RelCT isa (Two MsMid) (sqs M.mm kT0) (Two MsMid) := by
+  have hrdi : ∀ {q s}, MsMid q s → s.gpr .rdi = q.B := fun h => let ⟨_, _, _, hg, _⟩ := h; hg.rdi
+  refine sqs_ctG M (fun q s₁ s₂ h₁ h₂ r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; rw [hrdi h₁, hrdi h₂])
+    (by taint_decide) (by taint_decide) ((sq_ct M).mono (fun _ _ h => h) fun _ _ _ => trivial)
+    (fun _ _ h => msSq_ok M h) ?_ ?_
+  · rintro q s ⟨hp, mi, N, hg, hinv, hn, hN1, hone, hlt⟩
+    have hZ := hp.2.2.1.z
+    have hn' := hg.scr.nowrap
+    have sl8 : ∀ j < 8, slot q.w j + 8 * (q.w + 2) ≤ q.Z := fun j hj => Nat.le_trans (slot_le hj) hZ
+    have hhs : ∀ j, 8 * kT0 + 8 ≤ slot q.w j := fun j => hdr_lt_slot q.w j (by decide)
+    refine WP.mono (WP.keep [.rcx] (Q := fun t => t.mem = s.mem.writeW (off q.B (8 * kT0)) (BitVec.ofNat 64 6)) (by
+      xrun [State.ea, hdr, hg.rdi, hdrOff, hg.scr.st (show 8 * kT0 + 8 ≤ q.Z by have := hhs 8; omega)]; rfl) rfl)
+      fun t ⟨hm, k⟩ => ?_
+    have o : Outside q.B (8 * kT0) 8 s.mem t.mem := by
+      rw [hm]; exact writeW_outside _ _ _ (by have := hhs 8; omega)
+    have h0 : t.gpr .rdi = q.B := (k.gpr (by decide)).trans hg.rdi
+    obtain ⟨hk, hw, hd, -⟩ := hp
+    have g : Good t q.B q.Z q.w mi := ⟨hg.scr.congr k.2.2, h0, by rw [hm]; exact Hdr.store hg.hdr (by decide) (by decide) _⟩
+    exact ⟨⟨⟨hk, k.2.2.trans hw, hd, mi, g⟩, mi, N, g,
+      by rw [o.word (d := slot q.w aN) (by have := hhs aN; omega) (by have := sl8 aN (by decide); omega)]; exact hinv,
+      by rw [o.wv (d := slot q.w aN) (k := q.w) (by have := hhs aN; omega) (by have := sl8 aN (by decide); omega)]; exact hn,
+      hN1, by rw [o.wv (d := slot q.w aOne) (k := q.w) (by have := hhs aOne; omega) (by have := sl8 aOne (by decide); omega)]; exact hone,
+      by rw [o.wv (d := slot q.w aR2) (k := q.w) (by have := hhs aR2; omega) (by have := sl8 aR2 (by decide); omega)]; exact hlt⟩,
+      by rw [SqCnt, h0, hm, word_writeW_self]⟩
+  · rintro q j s hj h hc
+    have hB := hrdi h
+    rw [SqCnt, hB] at hc
+    obtain ⟨hp, mi, N, hg, hinv, hn, hN1, hone, hlt⟩ := h
+    have hZ := hp.2.2.1.z
+    have hn' := hg.scr.nowrap
+    have hhs : ∀ j, 8 * kT0 + 8 ≤ slot q.w j := fun j => hdr_lt_slot q.w j (by decide)
+    refine WP.seq (WP.mono (msMid_mm M hp hg hinv hn (by decide) (by decide) (by decide) (by decide) (by decide)
+      (by decide) (by decide) (by decide) (by decide) (by decide) hlt) fun t₁ ⟨hp₁, hg₁, hinv₁, hn₁, hlt₁, ha₁⟩ => ?_)
+    have hone₁ : wv t₁.mem q.B (slot q.w aOne) q.w = 1 := by
+      rw [ha₁.wv_of_not_mem (by decide) (by decide) (by have := hp.2.2.1.z; omega)]; exact hone
+    have hc₁ : word t₁.mem q.B (8 * kT0) = BitVec.ofNat 64 (6 - j) := by
+      rw [ha₁.word_eq (fun j' hj' => Or.inl (by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hj'
+        rcases hj' with rfl | rfl | rfl <;> exact hhs _)) (by have := hhs 8; omega), hc]
+    refine WP.mono (msMid_count ⟨hp₁, mi, N, hg₁, hinv₁, hn₁, hN1, hone₁, hlt₁⟩ (c := 6 - j) (by omega) (by omega) hc₁)
+      fun t ⟨ht, c', z⟩ => ⟨by rw [z]; congr 1; exact decide_eq_decide.mpr (by omega), ht,
+        by rw [SqCnt, hrdi ht, c', show 6 - j - 1 = 6 - (j + 1) by omega]⟩
 
 theorem eval_ne_count' {s : State} {j n : Nat} (hj : j < n) (hz : s.zf = some (decide (j + 1 = n))) :
     isa.eval .ne s = some (decide (j + 1 < n)) := by
@@ -197,7 +260,7 @@ theorem montSetup_eq' (mul : Nat → Nat → Nat → Prog isa) : montSetup mul =
       .block [.movImm64 .rdx (BitVec.ofNat 64 (2 ^ 63)), .mov .rcx (.reg .r12), .alu .sub .rcx (.imm 1)],
       setWord aR2 .rcx,
       .block [.mov .rcx (.mem (hdr sW)), .alu .add .rcx (.imm 1)]] : List (Prog isa)) ++
-    ([doubles aN aAcc aTmp aR2 kT0] ++ (List.replicate (5 + 1) (mul aR2 aR2 aR2) ++ ([mul aY aR2 aOne] ++
+    ([doubles aN aAcc aTmp aR2 kT0] ++ ([sqs mul kT0] ++ ([mul aY aR2 aOne] ++
     (([.block (([.mov .r12 (.mem (hdr sW)), .mov .rsi (.mem (hdr (sArr aY)))] : List Instr) ++ extBase aR1 .rbx), copyWords] : List (Prog isa)) ++
     (([.block (([.mov .r12 (.mem (hdr sW)), .mov .r8 (.mem (hdr (sArr aN)))] : List Instr) ++ extBase aR1 .r10 ++
         extBase aRm1 .rsi ++ ([.mov32 .rbp (.imm 0)] : List Instr)),
@@ -235,7 +298,7 @@ theorem montSetup_ct (M : Mont) :
     (RelCT.seq (R := Two fun q s => MsMid q s ∧ s.gpr .rcx = BitVec.ofNat 64 (q.w + 1)) ?_ ?_)
   rotate_left
   refine RelCT.seqs_app (by simp) (by simp) (RelCT.seq doubles_ct' ?_)
-  refine RelCT.seqs_app (by simp) (by simp) (RelCT.seq (sqs_ct' M 5) ?_)
+  refine RelCT.seqs_app (by simp) (by simp) (RelCT.seq (sqs_ct' M) ?_)
   refine RelCT.seqs_app (by simp) (by simp) (RelCT.seq (R := Two fun q s => MsY q aY s) ?_ ?_)
   rotate_left
   refine RelCT.seqs_app (by simp) (by simp) (RelCT.seq (R := Two fun q s => MsY q aR1 s) ?_ ?_)

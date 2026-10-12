@@ -255,6 +255,12 @@ namespace Public
 export VG.Impl.Bignum.Public (aN aX aAcc aTmp aR2 aXm aY aOne sOut sN sK sE sElen sIn sMask sI sBit sV
   sCnt)
 
+/-- Array `aR2` squared six times by `mul`, counted in a header slot. -/
+def sqs (mul : Nat → Nat → Nat → Prog isa) (slot : Nat) : Prog isa :=
+  .seq (.block [.mov32 .rcx (.imm 6), .store (hdr slot) .rcx])
+    (.loop (.seq (mul aR2 aR2 aR2)
+      (.block [.mov .rcx (.mem (hdr slot)), .alu .sub .rcx (.imm 1), .store (hdr slot) .rcx])) .ne)
+
 /-- `[o] = [a] [b] R⁻¹ mod m`. -/
 def mm (o a b : Nat) : Prog isa := montMul aN aAcc aTmp o a b
 
@@ -343,7 +349,7 @@ def main : Prog isa := seqs [
   -- `2^w R mod m`, then six squarings: `R² mod m`.
   .block [.mov .rcx (.mem (hdr sCnt)), .alu .add .rcx (.mem (hdr sW))],
   doubles aN aAcc aTmp aR2 sCnt,
-  mm aR2 aR2 aR2, mm aR2 aR2 aR2, mm aR2 aR2 aR2, mm aR2 aR2 aR2, mm aR2 aR2 aR2, mm aR2 aR2 aR2,
+  sqs mm sCnt,
   -- `Y = R mod m`, `X = input R mod m`, the exponentiation, and `Y R⁻¹`.
   mm aY aR2 aOne, mm aXm aX aR2, expLoop, mm aY aY aOne,
   -- The result, masked, and the mask's low bit returned.

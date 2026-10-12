@@ -1,4 +1,5 @@
 import VerifiedGarbage.Proof.Bignum.X86_64.PubCode
+import VerifiedGarbage.Proof.Bignum.X86_64.SqsCT
 
 /-!
 # `vg_rsa_public` on x86-64: the exponentiation is constant time but for `e`
@@ -83,14 +84,6 @@ theorem expBit_ct : RelCT isa (Two BitPre) expBit fun _ _ => True := by
   · exact RelCT.block_nil fun _ _ hp => two_mono (fun _ _ h => h.1.1.1) hp
   -- The next bit.
   exact two_taint _ (fun (p : BitPub) s₁ s₂ h₁ h₂ => pins_good p.L s₁ s₂ h₁ h₂) (by taint_decide)
-
-/-- The `ne` condition after a count that sets ZF when `j + 1 = n`. -/
-theorem eval_ne_count {s : State} {j n : Nat} (hj : j < n) (hz : s.zf = some (decide (j + 1 = n))) :
-    isa.eval .ne s = some (decide (j + 1 < n)) := by
-  simp only [eval, hz, Option.map_some, Option.some.injEq]
-  by_cases h : j + 1 = n
-  · simp [h]
-  · simp only [h, decide_false, Bool.not_false]; exact (decide_eq_true (by omega)).symm
 
 /-! ## The bits of a byte -/
 

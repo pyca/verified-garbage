@@ -345,7 +345,7 @@ theorem fast_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64}
   have hinv₄ : ((word t₄.mem B (slot w aN)).toNat * minv.toNat + 1) % 2 ^ 64 = 0 := by
     rw [hw₄, hm₃, o₂'.word (by omega_using [sMV]) (by omega_using [hn', hsv, sMV]),
         ho₂.word (by omega_using [sXV, sMV]) (by omega_using [hn', hsv, sMV]), hm₁]; exact hinv
-  have hsq := sqs_ok M 1 hg₄ hZ hw hw' hR (E := 16 * w) hn₄ hinv₄ (by rw [hx₄]; exact Nat.mod_lt _ hN0)
+  have hsq := sqsN_ok M 1 hg₄ hZ hw hw' hR (E := 16 * w) hn₄ hinv₄ (by rw [hx₄]; exact Nat.mod_lt _ hN0)
     (by rw [hx₄, Nat.mod_mod, Nat.mul_comm])
   refine WP.mono hsq fun t ⟨h1, h2, h3, h4', h5⟩ => ⟨h1, h2, ?_, ?_, ?_⟩
   · rw [h3, show 2 ^ (1 + 1) * (16 * w) = 64 * w by omega_using []]

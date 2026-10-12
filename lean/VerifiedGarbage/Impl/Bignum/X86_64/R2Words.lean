@@ -161,7 +161,7 @@ def old : List (Prog isa) := [
   setWord aR2 .rcx,
   .block [.mov .rcx (.mem (hdr sCnt)), .alu .add .rcx (.mem (hdr sW))],
   doubles aN aAcc aTmp aR2 sCnt,
-  mul aR2 aR2 aR2, mul aR2 aR2 aR2, mul aR2 aR2 aR2, mul aR2 aR2 aR2, mul aR2 aR2 aR2, mul aR2 aR2 aR2]
+  sqs mul sCnt]
 
 /-- ZF set iff the top bit of `m`'s top word is set and `w` (`r12`) is a
 multiple of 4, for `m` at `r10`. -/

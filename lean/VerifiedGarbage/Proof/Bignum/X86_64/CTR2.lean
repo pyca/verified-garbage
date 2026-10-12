@@ -110,7 +110,8 @@ def SqPre (L : Lay) (s : State) : Prop :=
     ((word s.mem L.B (slot L.w aN)).toNat * L.minv.toNat + 1) % 2 ^ 64 = 0 ∧
     wv s.mem L.B (slot L.w aR2) L.w < wv s.mem L.B (slot L.w aN) L.w
 
-theorem sqs_ct (M : Mont) (n : Nat) : RelCT isa (Two SqPre) (seqs (List.replicate (n + 1) (M.mm aR2 aR2 aR2)))
+/-- `n + 1` squarings in a row. -/
+theorem sqsN_ct (M : Mont) (n : Nat) : RelCT isa (Two SqPre) (seqs (List.replicate (n + 1) (M.mm aR2 aR2 aR2)))
     fun _ _ => True := by
   have one : RelCT isa (Two SqPre) (M.mm aR2 aR2 aR2) fun _ _ => True :=
     two_map id (fun _ _ h => h.1) (M.ctL (.inl ⟨rfl, rfl, rfl⟩))
@@ -121,6 +122,61 @@ theorem sqs_ct (M : Mont) (n : Nat) : RelCT isa (Two SqPre) (seqs (List.replicat
     refine RelCT.seq (two_post (Ψ := SqPre) one fun L s ⟨hg, hw, hw', hinv, hlt⟩ =>
       WP.mono (mm_mid M hg hw hw' (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
         (by decide) (by decide) hinv hlt) fun t ⟨g, n, i, lt, _⟩ => ⟨g, hw, hw', i, by rw [n]; exact lt⟩) ih
+
+theorem sqStart_ok {L : Lay} {s : State} {sl : Nat} (hsl : 16 ≤ sl) (hsl' : sl < 32) (h : SqPre L s) :
+    WP isa (.block [.mov32 .rcx (.imm 6), .store (hdr sl) .rcx]) s fun t => SqPre L t ∧ SqCnt sl 0 t := by
+  obtain ⟨hg, hw, hw', hinv, hlt⟩ := h
+  have hn := hg.1.scr.nowrap
+  have hZ := hg.2
+  have sl8 : ∀ j < 8, slot L.w j + 8 * (L.w + 2) ≤ L.Z := fun j hj => Nat.le_trans (slot_le hj) hZ
+  have hhs : ∀ j, 8 * sl + 8 ≤ slot L.w j := fun j => hdr_lt_slot L.w j hsl'
+  refine WP.mono (WP.keep [.rcx] (Q := fun t => t.mem = s.mem.writeW (off L.B (8 * sl)) (BitVec.ofNat 64 6)) (by
+    xrun [State.ea, hdr, hg.1.rdi, hdrOff, hg.1.scr.st (show 8 * sl + 8 ≤ L.Z by have := hhs 8; omega)]; rfl) rfl)
+    fun t ⟨hm, k⟩ => ?_
+  have o : Outside L.B (8 * sl) 8 s.mem t.mem := by rw [hm]; exact writeW_outside _ _ _ (by have := hhs 8; omega)
+  have h0 : t.gpr .rdi = L.B := (k.gpr (by decide)).trans hg.1.rdi
+  have hN : wv t.mem L.B (slot L.w aN) L.w = wv s.mem L.B (slot L.w aN) L.w :=
+    o.wv (by have := hhs aN; omega) (by have := sl8 aN (by decide); omega)
+  have hR : wv t.mem L.B (slot L.w aR2) L.w = wv s.mem L.B (slot L.w aR2) L.w :=
+    o.wv (by have := hhs aR2; omega) (by have := sl8 aR2 (by decide); omega)
+  have hW : word t.mem L.B (slot L.w aN) = word s.mem L.B (slot L.w aN) :=
+    o.word (by have := hhs aN; omega) (by have := sl8 aN (by decide); omega)
+  exact ⟨⟨⟨⟨hg.1.scr.congr k.2.2, h0, by rw [hm]; exact Hdr.store hg.1.hdr hsl hsl' _⟩, hZ⟩, hw, hw',
+    by rw [hW]; exact hinv, by rw [hN, hR]; exact hlt⟩, by rw [SqCnt, h0, hm, word_writeW_self]⟩
+
+theorem sqStep_ok (M : Mont) {L : Lay} {s : State} {sl j : Nat} (hsl : 16 ≤ sl) (hsl' : sl < 32) (hj : j < 6)
+    (h : SqPre L s) (hc : SqCnt sl j s) :
+    WP isa (.seq (M.mm aR2 aR2 aR2) (.block (dblCount sl))) s fun t =>
+      t.zf = some (decide (j + 1 = 6)) ∧ SqPre L t ∧ SqCnt sl (j + 1) t := by
+  obtain ⟨hg, hw, hw', hinv, hlt⟩ := h
+  have hn := hg.1.scr.nowrap
+  have hZ := hg.2
+  have sl8 : ∀ j < 8, slot L.w j + 8 * (L.w + 2) ≤ L.Z := fun j hj => Nat.le_trans (slot_le hj) hZ
+  have hhs : ∀ j, 8 * sl + 8 ≤ slot L.w j := fun j => hdr_lt_slot L.w j hsl'
+  rw [SqCnt, hg.1.rdi] at hc
+  refine WP.seq (WP.mono (mm_mid M hg hw hw' (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+    (by decide) (by decide) hinv hlt) fun t₁ ⟨g₁, n₁, i₁, lt₁, a₁⟩ => ?_)
+  have hc₁ : word t₁.mem L.B (8 * sl) = BitVec.ofNat 64 (6 - j) := by
+    rw [a₁.word_eq (fun j' hj' => Or.inl (by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hj'
+      rcases hj' with rfl | rfl | rfl <;> exact hhs _)) (by have := hhs 8; omega), hc]
+  refine WP.mono (sqCount_ok g₁.1 hZ hsl hsl' (c := 6 - j) (by omega) (by omega) hc₁)
+    fun t ⟨g, c, z, o, _⟩ => ⟨by rw [z]; congr 1; exact decide_eq_decide.mpr (by omega), ⟨⟨g, hZ⟩, hw, hw', ?_, ?_⟩,
+      by rw [SqCnt, g.rdi, c, show 6 - j - 1 = 6 - (j + 1) by omega]⟩
+  · rw [o.word (d := slot L.w aN) (by have := hhs aN; omega) (by have := sl8 aN (by decide); omega)]; exact i₁
+  · have hN : wv t.mem L.B (slot L.w aN) L.w = wv t₁.mem L.B (slot L.w aN) L.w :=
+      o.wv (by have := hhs aN; omega) (by have := sl8 aN (by decide); omega)
+    have hR : wv t.mem L.B (slot L.w aR2) L.w = wv t₁.mem L.B (slot L.w aR2) L.w :=
+      o.wv (by have := hhs aR2; omega) (by have := sl8 aR2 (by decide); omega)
+    rw [hN, hR, n₁]; exact lt₁
+
+/-- `sqs` leaks the same in runs with the same working space. -/
+theorem sqs_ct (M : Mont) : RelCT isa (Two SqPre) (sqs M.mm sCnt) (Two SqPre) :=
+  sqs_ctG M (fun _ _ _ h₁ h₂ => pins_good _ _ _ h₁.1 h₂.1) (by taint_decide) (by taint_decide)
+    (two_map id (fun _ _ h => h.1) (M.ctL (.inl ⟨rfl, rfl, rfl⟩)))
+    (fun L s ⟨hg, hw, hw', hinv, hlt⟩ => WP.mono (mm_mid M hg hw hw' (by decide) (by decide) (by decide) (by decide)
+      (by decide) (by decide) (by decide) (by decide) hinv hlt) fun _ ⟨g, n, i, lt, _⟩ => ⟨g, hw, hw', i, by rw [n]; exact lt⟩)
+    (fun _ _ h => sqStart_ok (by decide) (by decide) h) (fun _ _ _ hj h hc => sqStep_ok M (by decide) (by decide) hj h hc)
 
 /-! ## `R² mod m` -/
 
@@ -329,6 +385,6 @@ theorem r2_ct (M : Mont) : RelCT isa (Two R2Pre) (seqs (r2Steps M)) fun _ _ => T
     rw [hv', hf'.r2_wv hn' (by decide) (by decide) (by decide) (by decide), hN]
     exact Nat.mod_lt _ hN0
   -- The squarings.
-  exact two_map (·.L) (fun _ _ h => h) (sqs_ct M 5)
+  exact two_map (·.L) (fun _ _ h => h) ((sqs_ct M).mono (fun _ _ h => h) fun _ _ _ => trivial)
 
 end VG.Proof.Bignum.X86_64

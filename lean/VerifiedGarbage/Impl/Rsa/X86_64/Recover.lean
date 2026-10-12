@@ -174,7 +174,7 @@ def mont : List (Prog isa) := [
   setWord aR2 .rcx,
   .block [.mov .rcx (.mem (hdr sCnt)), .alu .add .rcx (.mem (hdr sW))],
   doubles aN aAcc aTmp aR2 sCnt,
-  mul aR2 aR2 aR2, mul aR2 aR2 aR2, mul aR2 aR2 aR2, mul aR2 aR2 aR2, mul aR2 aR2 aR2, mul aR2 aR2 aR2,
+  sqs mul sCnt,
   .block [.mov32 .rdx (.imm 1), .mov32 .rcx (.imm 0), .mov .r12 (.mem (hdr sW))],
   setWord aOne .rcx,
   mul aY aR2 aOne,

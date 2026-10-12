@@ -60,7 +60,7 @@ def msR2 (mul : Nat → Nat → Nat → Prog isa) : List (Prog isa) := [
   setWord aR2 .rcx,
   .block [.mov .rcx (.mem (hdr sW)), .alu .add .rcx (.imm 1)],
   doubles aN aAcc aTmp aR2 kT0,
-  mul aR2 aR2 aR2, mul aR2 aR2 aR2, mul aR2 aR2 aR2, mul aR2 aR2 aR2, mul aR2 aR2 aR2, mul aR2 aR2 aR2]
+  sqs mul kT0]
 
 /-- What `R² mod c` changes. -/
 def msR2Ranges (w : Nat) : List (Nat × Nat) :=
@@ -135,14 +135,14 @@ theorem msR2_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 64} {
   have hW0 : word t₆.mem B (slot w aN) = word s.mem B (slot w aN) := by
     rw [hf₆'.word_eq (fun r hr => by have := harr (show aN < 8 by decide) (by decide) (by decide) (by decide) r hr; omega)
       (by have := slot_le (w := w) (show aN < 8 by decide); omega), hm₅, hw0₄]
-  show WP isa (seqs (List.replicate (5 + 1) (M.mm aR2 aR2 aR2))) t₆ _
-  refine WP.mono (sqs_ok M 5 hg₆ hZ hw hw' hR (E := w) hNf (by rw [hW0]; exact hinv)
+  show WP isa (sqs M.mm kT0) t₆ _
+  refine WP.mono (sqs_ok M hg₆ hZ hw hw' hR (E := w) (by decide) (by decide) hNf (by rw [hW0]; exact hinv)
     (by rw [hv₆]; exact Nat.mod_lt _ hN0) (by rw [hv₆, Nat.mod_mod]))
     fun t ⟨h1, h2, h3, h4, h5⟩ => ⟨h1, ?_, ?_, ((((k₃.trans k₄).trans k₅).trans k₆).trans h5).mono (by decide)⟩
   · rw [← Nat.mod_eq_of_lt h2, h3, ← Nat.pow_add]
   · have f₄ : Frm B (msR2Ranges w) s.mem t₄.mem := by
       rw [← hm₃]; exact Frm.of_arrays ha₄ (by simp [msR2Ranges])
     exact ((f₄.trans (by rw [hm₅]; exact Frm.refl _ _ _)).trans hf₆').trans
-      (Frm.of_arrays h4 (by simp [msR2Ranges]))
+      h4
 
 end VG.Proof.RsaKeyGen.X86_64

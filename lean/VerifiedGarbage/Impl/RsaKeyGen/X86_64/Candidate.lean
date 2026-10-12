@@ -321,7 +321,7 @@ def montSetup (mul : Nat → Nat → Nat → Prog isa) : List (Prog isa) := [
   setWord aR2 .rcx,
   .block [.mov .rcx (.mem (hdr sW)), .alu .add .rcx (.imm 1)],
   doubles aN aAcc aTmp aR2 kT0,
-  mul aR2 aR2 aR2, mul aR2 aR2 aR2, mul aR2 aR2 aR2, mul aR2 aR2 aR2, mul aR2 aR2 aR2, mul aR2 aR2 aR2,
+  sqs mul kT0,
   mul aY aR2 aOne,
   .block (([.mov .r12 (.mem (hdr sW)), .mov .rsi (.mem (hdr (sArr aY)))] : List Instr) ++ extBase aR1 .rbx),
   copyWords,
