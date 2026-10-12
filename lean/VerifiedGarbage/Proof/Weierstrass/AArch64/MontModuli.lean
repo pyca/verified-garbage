@@ -3,7 +3,7 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.MontFnG
 /-!
 # Montgomery products as functions on AArch64: the moduli
 
-The prime `p` of P-384 and of P-521, and P-521's order `n`, are moduli the
+The prime `p` of P-384 and of P-521, and P-384's and P-521's orders `n`, are moduli the
 functions support (`ModOk`).
 -/
 
@@ -48,6 +48,19 @@ theorem p521n_ok : ModOk p521n.k p521n.m := .inr {
   red := by decide +kernel
   g := by decide +kernel
   novec := by decide +kernel }
+
+theorem p384n_ok : ModOk p384n.k p384n.m := .inr {
+  hn := by decide
+  m_lt := by decide +kernel
+  inv := by decide +kernel
+  red := by decide +kernel
+  g := by decide +kernel
+  novec := by decide +kernel }
+
+theorem p384n_fn : mulFn p384n.k p384n.m = mulFnG p384n.k p384n.m := by
+  rcases p384n_ok with h | h
+  · exact absurd h.general (by decide +kernel)
+  · simp only [mulFn, h.g, ↓reduceIte]
 
 theorem p521n_fn : mulFn p521n.k p521n.m = mulFnG p521n.k p521n.m := by
   rcases p521n_ok with h | h
