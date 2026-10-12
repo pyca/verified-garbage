@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Impl.Ed448.X86_64.WindowSelect
+public import VerifiedGarbage.Impl.Ed448.X86_64.WindowRegister
 public import VerifiedGarbage.Impl.Ed448.Window
 
 /-! Constant-time four-bit double-scalar multiplication for Ed448 verification.
@@ -33,29 +33,16 @@ def build (P : Point64.Ops) : Nat → Prog isa
 def table (P : Point64.Ops) : Prog isa :=
   .seq (.block (copyOut (slot 8) (slot 6) ++ copyOut (slot 9) (slot 7) ++ store 0)) (build P 15)
 
-/-- Compare a nibble from expanded bits at `o + rbx` with the public index `i`. -/
-def digitMask (o i : Nat) : List Instr :=
-  [.movzx8 .rax { base := .rdi, index := some .rbx, disp := ((o + 3 : Nat) : Int) },
-   .movzx8 .rdx { base := .rdi, index := some .rbx, disp := ((o + 2 : Nat) : Int) },
-   .alu .add .rax (.reg .rax), .alu .add .rax (.reg .rdx),
-   .movzx8 .rdx { base := .rdi, index := some .rbx, disp := ((o + 1 : Nat) : Int) },
-   .alu .add .rax (.reg .rax), .alu .add .rax (.reg .rdx),
-   .movzx8 .rdx { base := .rdi, index := some .rbx, disp := (o : Int) },
-   .alu .add .rax (.reg .rax), .alu .add .rax (.reg .rdx),
-   .alu .xor .rax (.imm (BitVec.ofNat 32 i)), .alu .cmp .rax (.imm 1),
-   .mov32 .rcx (.imm 0), .alu .sbb .rcx (.reg .rcx)]
+def baseCoord (c : Nat) : List Instr :=
+  scanCoord (fun i => chooseConst (if c = 0 then (Impl.Ed448.Window.entry i).1
+    else (Impl.Ed448.Window.entry i).2)) (slot (8 + c))
 
-def baseEntry (i : Nat) : List Instr :=
-  digitMask BITS i ++ selectConst (slot 8) (Impl.Ed448.Window.entry i).1 ++
-    selectConst (slot 9) (Impl.Ed448.Window.entry i).2
+def selectBase : List Instr := loadDigit BITS ++ baseCoord 0 ++ baseCoord 1
 
-def selectBase : List Instr := (List.range 16).flatMap baseEntry
+def keyCoord (c : Nat) : List Instr :=
+  scanCoord (fun i => chooseMem (tabOffset i c)) (slot (8 + c))
 
-def keyEntry (o i : Nat) : List Instr :=
-  digitMask o i ++ selectMem (slot 8) (tabOffset i 0) ++
-    selectMem (slot 9) (tabOffset i 1) ++ selectMem (slot 10) (tabOffset i 2)
-
-def selectKey (o : Nat) : List Instr := (List.range 16).flatMap (keyEntry o)
+def selectKey (o : Nat) : List Instr := loadDigit o ++ keyCoord 0 ++ keyCoord 1 ++ keyCoord 2
 
 /-- The full projective addition, using the existing field operations. -/
 def add (F : Field) : Prog isa :=
