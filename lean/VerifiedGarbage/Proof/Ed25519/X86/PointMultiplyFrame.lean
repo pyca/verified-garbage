@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.Ed25519.X86.PointMulCounter
+module
+
+public import VerifiedGarbage.Proof.Ed25519.X86.PointMulCounter
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Ed25519.X86.PointMulBatch`. -/
+
+@[expose] public section
+
 section
 /-! Rebuild and consume one batch of sixteen exact powers. -/
 namespace VG.Proof.Ed25519.X86

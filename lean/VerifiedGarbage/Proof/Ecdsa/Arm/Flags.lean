@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Weierstrass.Arm.Bytes
-import VerifiedGarbage.Impl.Ecdsa.Arm
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.Arm.Bytes
+public import VerifiedGarbage.Impl.Ecdsa.Arm
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDSA on 32-bit ARM: the masks of the checks, and the flag
@@ -13,6 +19,8 @@ is `ltM` for `MN`), and
 the mask of `0 < [a] < [MN]` into the flag (`checkRange_ok`) and
 `checkNonzero a` the mask of `[a] ≠ 0` (`checkNonzero_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Arm
 

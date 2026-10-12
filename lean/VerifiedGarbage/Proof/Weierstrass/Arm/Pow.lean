@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Weierstrass.Layout
-import VerifiedGarbage.Proof.Weierstrass.Arm.Bits
-import VerifiedGarbage.Proof.Weierstrass.Pow
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.Layout
+public import VerifiedGarbage.Proof.Weierstrass.Arm.Bits
+public import VerifiedGarbage.Proof.Weierstrass.Pow
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Short Weierstrass curves on 32-bit ARM: powers
@@ -12,6 +18,8 @@ and keeps that product if the exponent's bit is set (`powBody_ok`), by
 calls of the functions of `S`. Their own working space at `wk` is above
 everything the power uses (`PowWk`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.Arm
 

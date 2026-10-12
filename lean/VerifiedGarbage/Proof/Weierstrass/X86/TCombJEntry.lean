@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.Weierstrass.X86.TComb
-import VerifiedGarbage.Proof.Weierstrass.X86.TCombJDigit
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86.TComb
+public import VerifiedGarbage.Proof.Weierstrass.X86.TCombJDigit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.X86
 

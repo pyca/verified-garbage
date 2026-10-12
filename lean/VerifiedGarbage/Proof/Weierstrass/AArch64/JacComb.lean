@@ -1,8 +1,17 @@
-import VerifiedGarbage.Impl.Weierstrass.AArch64.Jacobian
-import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
-import VerifiedGarbage.Proof.Weierstrass.JacAdd
+module
+
+public import VerifiedGarbage.Impl.Weierstrass.AArch64.Jacobian
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
+public import VerifiedGarbage.Proof.Weierstrass.JacAdd
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Fixed-base public comb with a Jacobian accumulator. -/
+
+@[expose] public section
+
 namespace VG.Proof.Weierstrass.AArch64
 open VG VG.AArch64 VG.Impl.Mont.AArch64 VG.Impl.Mont VG.Impl.Weierstrass.AArch64 VG.Impl.Weierstrass
 open VG.Proof.Mont.AArch64 VG.Proof.Mont VG.Proof.Weierstrass

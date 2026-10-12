@@ -1,8 +1,16 @@
-import VerifiedGarbage.Proof.Weierstrass.X86.InvLinear
-import VerifiedGarbage.Proof.Weierstrass.X86.InvRed
-import VerifiedGarbage.Proof.Weierstrass.X86.InvState
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86.InvLinear
+public import VerifiedGarbage.Proof.Weierstrass.X86.InvRed
+public import VerifiedGarbage.Proof.Weierstrass.X86.InvState
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## `InvCoeff` -/
+
+@[expose] public section
 
 section
 

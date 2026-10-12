@@ -1,10 +1,16 @@
-import VerifiedGarbage.Proof.Weierstrass.JacMul
-import VerifiedGarbage.Proof.Weierstrass.AArch64.WinSelect
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Comb
-import VerifiedGarbage.Proof.Weierstrass.WinLay
-import VerifiedGarbage.Proof.Weierstrass.Window
-import VerifiedGarbage.Proof.Weierstrass.Jac
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Zero
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.JacMul
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.WinSelect
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Comb
+public import VerifiedGarbage.Proof.Weierstrass.WinLay
+public import VerifiedGarbage.Proof.Weierstrass.Window
+public import VerifiedGarbage.Proof.Weierstrass.Jac
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Zero
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The window method on AArch64: what its proofs share
@@ -12,6 +18,8 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.Zero
 The window method's offsets (`WinA`), what it reads and never writes (`WinFixed`),
 its table (`TblOk`) and the loop's state (`WinSt`, `WinInv`); `Window` has the method.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.AArch64
 

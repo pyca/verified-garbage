@@ -1,9 +1,21 @@
-import VerifiedGarbage.Proof.Ecdsa.Arm.Main
-import VerifiedGarbage.Proof.Ecdsa.Arm.P192.Contract
-import VerifiedGarbage.Proof.Ecdsa.Arm.P192.Lit
-import VerifiedGarbage.Proof.P192.Point
-import VerifiedGarbage.Proof.Framework.Arm.Taint
-import VerifiedGarbage.Proof.Weierstrass.Arm.MontP192
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Arm.Main
+meta import VerifiedGarbage.Proof.Ecdsa.Arm.Main
+public import VerifiedGarbage.Proof.Ecdsa.Arm.P192.Contract
+meta import VerifiedGarbage.Proof.Ecdsa.Arm.P192.Contract
+public import VerifiedGarbage.Proof.Ecdsa.Arm.P192.Lit
+meta import VerifiedGarbage.Proof.Ecdsa.Arm.P192.Lit
+public import VerifiedGarbage.Proof.P192.Point
+meta import VerifiedGarbage.Proof.P192.Point
+public import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+public import VerifiedGarbage.Proof.Weierstrass.Arm.MontP192
+meta import VerifiedGarbage.Proof.Weierstrass.Arm.MontP192
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDSA over P-192 on 32-bit ARM: `Verified`
@@ -15,6 +27,8 @@ kept. Constant time by taint tracking: the only branches are on loop
 counters, and every address is `r12` (the working space, from the stack
 argument) or `lr` (`out`) plus a constant or a counter.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Arm.P192
 

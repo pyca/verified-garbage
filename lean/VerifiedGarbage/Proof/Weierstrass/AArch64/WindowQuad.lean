@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowBase
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowBase
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The window method on AArch64: `R = 16 R`
@@ -6,6 +12,8 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowBase
 Four doublings in Jacobian coordinates, a loop of two (`dbl2_ok`, `jac_ok`), and `Y = 1` where the result is `O`
 (`ySel_ok`): `quad_ok`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.AArch64
 

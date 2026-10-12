@@ -1,10 +1,18 @@
-import VerifiedGarbage.Impl.Weierstrass.X86.WinJac
-import VerifiedGarbage.Proof.Weierstrass.X86.CachedJacField
-import VerifiedGarbage.Proof.Weierstrass.X86.WinJacEntryState
-import VerifiedGarbage.Proof.Weierstrass.X86.TCombJSelect
-import VerifiedGarbage.Proof.Weierstrass.X86.JacAdd
+module
+
+public import VerifiedGarbage.Impl.Weierstrass.X86.WinJac
+public import VerifiedGarbage.Proof.Weierstrass.X86.CachedJacField
+public import VerifiedGarbage.Proof.Weierstrass.X86.WinJacEntryState
+public import VerifiedGarbage.Proof.Weierstrass.X86.TCombJSelect
+public import VerifiedGarbage.Proof.Weierstrass.X86.JacAdd
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## `WinJacAdd` -/
+
+@[expose] public section
 
 section
 

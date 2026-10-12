@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Framework.X86.Taint
+module
+
+public import VerifiedGarbage.Proof.Framework.X86.Taint
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The x86 (32-bit) curve-25519 functions' calls: what is public before each
@@ -10,6 +16,8 @@ argument, from taints that all know the same about memory and have at least
 Their summaries (`Field32/Pow250Sum`, `Point32/AddSum`) analyse each function
 once, from `τCall`, in place of every call.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X25519.X86
 

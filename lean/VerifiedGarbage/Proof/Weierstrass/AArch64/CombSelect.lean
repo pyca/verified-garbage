@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Weierstrass.AArch64.CombDigit
-import VerifiedGarbage.Proof.Framework.Range
-import VerifiedGarbage.Proof.Weierstrass.Unch
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.CombDigit
+public import VerifiedGarbage.Proof.Framework.Range
+public import VerifiedGarbage.Proof.Weierstrass.Unch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The comb on AArch64: the constant-time selection
@@ -11,6 +17,8 @@ every candidate word from immediates, ANDs it with its mask and ORs it into
 `select` writes the entry's `X`, `Y` and `Z` (`select_ok`): `(0 : R : 0)`
 for `a = 0`, else `(x : y : R)` of the table's entry `a - 1`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.AArch64
 

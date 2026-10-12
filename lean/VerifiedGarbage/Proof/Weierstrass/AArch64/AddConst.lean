@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Window
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Window
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The window method on AArch64: the recoded scalar
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.Window
 `low n` with `top n = 0`, adds `dst` by the carry chain and stores the `n + 1`
 words back: `[dst] = [src] + c` when the sum fits (`addConst_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.AArch64
 

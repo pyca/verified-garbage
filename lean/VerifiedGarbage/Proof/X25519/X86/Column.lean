@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.X25519.X86.Basic
-import VerifiedGarbage.Proof.Framework.X86.Wp
+module
+
+public import VerifiedGarbage.Proof.X25519.X86.Basic
+public import VerifiedGarbage.Proof.Framework.X86.Wp
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X25519 on x86 (32-bit): columns
@@ -9,6 +15,8 @@ Each term of a column adds its value to the 96-bit accumulator `ebx + 2³² ecx 
 accumulator's low word and shifts it down. `cols_ok` sums `n` columns into `n`
 words and a carry, when no column reads a word an earlier one stored.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X25519.X86
 

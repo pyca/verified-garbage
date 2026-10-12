@@ -309,7 +309,32 @@ CONVERTED = ["VerifiedGarbage/TCB", "VerifiedGarbage/Spec", "VerifiedGarbage/Imp
              "VerifiedGarbage/Proof/X448/AArch64",
              "VerifiedGarbage/Proof/X448/Edwards",
              "VerifiedGarbage/Proof/X448/Wide",
-             "VerifiedGarbage/Proof/Zeroize/*"]
+             "VerifiedGarbage/Proof/Zeroize/*",
+             "VerifiedGarbage/Proof/EcKey/AArch64",
+             "VerifiedGarbage/Proof/EcKey/Arm",
+             "VerifiedGarbage/Proof/EcKey/X86",
+             "VerifiedGarbage/Proof/Ecdh/*",
+             "VerifiedGarbage/Proof/Ecdh/AArch64",
+             "VerifiedGarbage/Proof/Ecdh/Arm",
+             "VerifiedGarbage/Proof/Ecdsa/*",
+             "VerifiedGarbage/Proof/Ecdsa/AArch64",
+             "VerifiedGarbage/Proof/Ecdsa/Arm",
+             "VerifiedGarbage/Proof/Ecdsa/X86",
+             "VerifiedGarbage/Proof/Ed25519/X86",
+             "VerifiedGarbage/Proof/Mont/Arm",
+             "VerifiedGarbage/Proof/P192/*",
+             "VerifiedGarbage/Proof/P224/*",
+             "VerifiedGarbage/Proof/P256/*",
+             "VerifiedGarbage/Proof/P256/VerifyAllocated",
+             "VerifiedGarbage/Proof/P256/VerifySparse",
+             "VerifiedGarbage/Proof/P384/*",
+             "VerifiedGarbage/Proof/P521/*",
+             "VerifiedGarbage/Proof/Secp256k1/*",
+             "VerifiedGarbage/Proof/Weierstrass/AArch64",
+             "VerifiedGarbage/Proof/Weierstrass/Arm",
+             "VerifiedGarbage/Proof/Weierstrass/X86",
+             "VerifiedGarbage/Proof/X25519/Arm",
+             "VerifiedGarbage/Proof/X25519/X86"]
 
 IMPORT = re.compile(r"^import\s+(\S+)\s*$")
 META_DECL = re.compile(r"^(elab|syntax|macro|macro_rules|simproc|dsimproc|elab_rules)\b", re.M)

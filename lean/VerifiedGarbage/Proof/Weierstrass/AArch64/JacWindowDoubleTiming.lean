@@ -1,9 +1,18 @@
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Production
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Timing
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAddTiming
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowInvariant
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Production
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Timing
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAddTiming
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowInvariant
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Relational timing of the five consecutive Jacobian doublings. -/
+
+@[expose] public section
+
 namespace VG.Proof.Weierstrass.AArch64
 open VG VG.AArch64 VG.Impl.Mont.AArch64 VG.Impl.Mont VG.Impl.Weierstrass.AArch64 VG.Impl.Weierstrass
 open VG.Proof.Mont.AArch64 VG.Proof.Mont

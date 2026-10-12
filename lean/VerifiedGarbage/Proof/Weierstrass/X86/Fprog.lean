@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.Weierstrass.Env
-import VerifiedGarbage.Impl.Weierstrass.X86
-import VerifiedGarbage.Proof.Mont.X86.Ops
-import VerifiedGarbage.Proof.Weierstrass.Unch
-import VerifiedGarbage.Proof.Weierstrass.X86.CallOps
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.Env
+public import VerifiedGarbage.Impl.Weierstrass.X86
+public import VerifiedGarbage.Proof.Mont.X86.Ops
+public import VerifiedGarbage.Proof.Weierstrass.Unch
+public import VerifiedGarbage.Proof.Weierstrass.X86.CallOps
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Field programs on x86 (32-bit)
@@ -22,6 +28,8 @@ working space (the calls' stack) change (`ProgKeep`).
 The complete addition `rcb` is such a program, and computes `rcbAdd`
 (`rcb_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.X86
 

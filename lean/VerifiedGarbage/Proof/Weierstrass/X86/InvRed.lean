@@ -1,9 +1,18 @@
-import VerifiedGarbage.Proof.Divstep.Red32
-import VerifiedGarbage.Proof.Weierstrass.X86.InvRedSum
-import VerifiedGarbage.Proof.Weierstrass.X86.InvShift
-import VerifiedGarbage.Proof.Weierstrass.X86.InvRedMath
+module
+
+public import VerifiedGarbage.Proof.Divstep.Red32
+public import VerifiedGarbage.Proof.Weierstrass.X86.InvRedSum
+public import VerifiedGarbage.Proof.Weierstrass.X86.InvShift
+public import VerifiedGarbage.Proof.Weierstrass.X86.InvRedMath
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # Reduction of a signed divstep coefficient row -/
+
+@[expose] public section
+
 namespace VG.Proof.Weierstrass.X86.Inv
 open VG VG.X86 VG.X86.Wp VG.Impl.Mont.X86 VG.Impl.Weierstrass.X86.Inv
   VG.Proof.Mont.X86 VG.Proof.Mont VG.Proof.Weierstrass VG.Impl.Mont

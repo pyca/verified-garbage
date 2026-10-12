@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.X25519.Arm.Slots
-import VerifiedGarbage.Proof.X25519.Ladder
+module
+
+public import VerifiedGarbage.Proof.X25519.Arm.Slots
+public import VerifiedGarbage.Proof.X25519.Ladder
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X25519 on 32-bit ARM: the ladder
@@ -9,6 +15,8 @@ z3, a24` from the state after the bits `254` down to `n` (`ladderAfter k x1
 n`) to the state after `n - 1`, with the swap in `r10` and the counter in
 `r11`; the loop (`ladder_ok`) runs it for the bits 254 down to 0.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X25519.Arm
 

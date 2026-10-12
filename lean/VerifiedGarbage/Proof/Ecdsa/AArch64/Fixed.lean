@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Lays
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Proof.Weierstrass.AArch64.MontCall
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.Lays
+public import VerifiedGarbage.Proof.Framework.AArch64.Call
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.MontCall
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDSA on AArch64: what every phase keeps
@@ -12,6 +18,8 @@ and the tables (`FixedOk`), so it keeps them (`Fixed.unch`). A slot or a
 table byte apart from what a phase writes keeps its value too (`sv_unch`,
 `tbl_unch`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.AArch64
 

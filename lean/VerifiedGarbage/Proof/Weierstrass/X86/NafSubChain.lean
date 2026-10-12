@@ -1,7 +1,15 @@
-import VerifiedGarbage.Impl.Weierstrass.X86.NafPrep
-import VerifiedGarbage.Proof.Mont.X86.Chain
+module
+
+public import VerifiedGarbage.Impl.Weierstrass.X86.NafPrep
+public import VerifiedGarbage.Proof.Mont.X86.Chain
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## `NafShiftWord` -/
+
+@[expose] public section
 
 section
 

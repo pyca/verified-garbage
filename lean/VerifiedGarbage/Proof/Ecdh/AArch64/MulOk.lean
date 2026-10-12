@@ -1,8 +1,17 @@
-import VerifiedGarbage.Proof.Ecdh.AArch64.Window
-import VerifiedGarbage.Impl.Ecdh.AArch64.WithMul
+module
+
+public import VerifiedGarbage.Proof.Ecdh.AArch64.Window
+public import VerifiedGarbage.Impl.Ecdh.AArch64.WithMul
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! The internal scalar-multiplication interface allows arbitrary invalid
 scalars to execute safely; the existing final range check rejects them. -/
+
+@[expose] public section
+
 namespace VG.Proof.Ecdh.AArch64
 open VG VG.AArch64 VG.Impl.Mont VG.Impl.Ecdsa.AArch64
 open VG.Proof.Mont.AArch64 VG.Proof.Mont VG.Proof.Weierstrass.AArch64

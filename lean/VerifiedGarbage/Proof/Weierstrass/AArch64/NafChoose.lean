@@ -1,7 +1,15 @@
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Impl.Weierstrass.AArch64.NafPrep
-import VerifiedGarbage.Proof.Weierstrass.Naf5
-import VerifiedGarbage.Proof.Weierstrass.AArch64.BytesLen
+module
+
+public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+public import VerifiedGarbage.Impl.Weierstrass.AArch64.NafPrep
+public import VerifiedGarbage.Proof.Weierstrass.Naf5
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.BytesLen
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.AArch64
 open VG VG.AArch64 VG.Impl.Weierstrass.AArch64 VG.Proof.Mont.AArch64

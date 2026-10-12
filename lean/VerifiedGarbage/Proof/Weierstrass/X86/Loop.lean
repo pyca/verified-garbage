@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Weierstrass.X86.Copy
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86.Copy
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Short Weierstrass curves on x86 (32-bit): loops counted down in `esi`
@@ -9,6 +15,8 @@ the body starts with `sub esi, 1` (`decCounter_ok`) and ends with
 (`jne`). `countLoop_ok` runs such a loop `n ≥ 1` times from an invariant
 indexed by `esi`. Also the byte loads and stores of the tables.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.X86
 

@@ -1,9 +1,15 @@
-import VerifiedGarbage.Impl.Weierstrass.X86.Window
-import VerifiedGarbage.Proof.Weierstrass.X86.TComb
-import VerifiedGarbage.Proof.Weierstrass.X86.WinLay
-import VerifiedGarbage.Proof.Weierstrass.WinLay
-import VerifiedGarbage.Proof.Weierstrass.Window
-import VerifiedGarbage.Proof.Weierstrass.Jac
+module
+
+public import VerifiedGarbage.Impl.Weierstrass.X86.Window
+public import VerifiedGarbage.Proof.Weierstrass.X86.TComb
+public import VerifiedGarbage.Proof.Weierstrass.X86.WinLay
+public import VerifiedGarbage.Proof.Weierstrass.WinLay
+public import VerifiedGarbage.Proof.Weierstrass.Window
+public import VerifiedGarbage.Proof.Weierstrass.Jac
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The window method on x86 (32-bit): the table and the additions
@@ -14,6 +20,8 @@ As on AArch64 (`Proof/Weierstrass/AArch64/Window.lean`): the table `[1 … 8]P`
 `D`, then copied). `WinEntry.lean` selects the entry of a digit, `WinQuad.lean`
 multiplies `R` by 16, and `WinLoop.lean` is the loop.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.X86
 

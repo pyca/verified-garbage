@@ -1,8 +1,17 @@
-import VerifiedGarbage.Proof.Ecdsa.X86.CombCode
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.X86.CombCode
+meta import VerifiedGarbage.Proof.Ecdsa.X86.CombCode
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDSA over P-256 on x86 (32-bit): the constant time of the comb's iteration
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.X86
 open VG VG.X86 VG.Impl.Ecdsa.X86 VG.Proof.Mont.X86 VG.Proof.Mont

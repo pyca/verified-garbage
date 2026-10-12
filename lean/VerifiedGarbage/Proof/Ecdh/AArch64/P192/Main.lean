@@ -1,7 +1,15 @@
-import VerifiedGarbage.Proof.Ecdh.AArch64.Main
-import VerifiedGarbage.Proof.Ecdh.AArch64.P192.MulPow
+module
+
+public import VerifiedGarbage.Proof.Ecdh.AArch64.Main
+public import VerifiedGarbage.Proof.Ecdh.AArch64.P192.MulPow
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # p192 ECDH with the general ladder -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdh.AArch64.P192
 

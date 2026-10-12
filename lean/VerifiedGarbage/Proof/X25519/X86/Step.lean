@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.X25519.X86.Ops
-import VerifiedGarbage.Proof.X25519.Ladder
-import VerifiedGarbage.Proof.Framework.X86.Spill
+module
+
+public import VerifiedGarbage.Proof.X25519.X86.Ops
+public import VerifiedGarbage.Proof.X25519.Ladder
+public import VerifiedGarbage.Proof.Framework.X86.Spill
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X25519 on x86 (32-bit): the ladder
@@ -11,6 +17,8 @@ changes), and the ladder: each iteration takes the ladder's state after the
 bits `254, …, n + 1` in the slots `X2, Z2, X3, Z3` and the word `SWAP` (`LInv
 (n + 1)`) to that after the bit `n` (`LInv n`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X25519.X86
 

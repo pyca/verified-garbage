@@ -1,7 +1,16 @@
-import VerifiedGarbage.Proof.Weierstrass.WinJacMath
-import VerifiedGarbage.Proof.Weierstrass.JacAdd
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.WinJacMath
+public import VerifiedGarbage.Proof.Weierstrass.JacAdd
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! The two branchless selections make each nonexceptional window addition total. -/
+
+@[expose] public section
+
 namespace VG.Proof.Weierstrass.X86.JWin
 open VG Spec.Weierstrass
 

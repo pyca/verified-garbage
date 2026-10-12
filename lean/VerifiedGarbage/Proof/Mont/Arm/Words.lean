@@ -1,6 +1,12 @@
-import VerifiedGarbage.Impl.Mont.Arm
-import VerifiedGarbage.Proof.Mont.Words32
-import VerifiedGarbage.Proof.X25519.Arm.Instr
+module
+
+public import VerifiedGarbage.Impl.Mont.Arm
+public import VerifiedGarbage.Proof.Mont.Words32
+public import VerifiedGarbage.Proof.X25519.Arm.Instr
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Montgomery arithmetic on 32-bit ARM: words and digits in the working space
@@ -13,6 +19,8 @@ accumulator holds one digit a word (`dval`, `Digs`). The loads and stores
 through `r12`, or through `r0` and `r1`, which the multiplication moves by 4
 bytes a row (`Scr.ea_at`), and what changes (`Rest`, from X25519's proofs).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Mont.Arm
 

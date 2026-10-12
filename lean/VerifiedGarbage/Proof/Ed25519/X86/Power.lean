@@ -1,10 +1,19 @@
-import VerifiedGarbage.Proof.Ed25519.X86.PowerEnv
-import VerifiedGarbage.Proof.Ed25519.RootPower
-import VerifiedGarbage.Proof.X25519.X86.Field32.Call
+module
+
+public import VerifiedGarbage.Proof.Ed25519.X86.PowerEnv
+public import VerifiedGarbage.Proof.Ed25519.RootPower
+public import VerifiedGarbage.Proof.X25519.X86.Field32.Call
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! The shared addition chain, a call of `vg_gf25519_r32_pow250`
 (`power250_ok`), computes the inversion and square-root powers with a few
 squarings and a product each (`invert_ok`, `rootPower_ok`). -/
+
+@[expose] public section
+
 namespace VG.Proof.Ed25519.X86
 open VG VG.X86 VG.Impl.Ed25519.X86
 open VG.Proof.X25519 (pw pw_mul pw_one sqn_pw pow_pw)

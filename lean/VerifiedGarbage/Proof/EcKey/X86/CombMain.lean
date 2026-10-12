@@ -1,7 +1,16 @@
-import VerifiedGarbage.Proof.EcKey.X86.Main
-import VerifiedGarbage.Proof.Ecdsa.X86.CombVerified
+module
+
+public import VerifiedGarbage.Proof.EcKey.X86.Main
+public import VerifiedGarbage.Proof.Ecdsa.X86.CombVerified
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # P-256 public-key generation with a fixed-base comb -/
+
+@[expose] public section
+
 namespace VG.Proof.EcKey.X86
 open VG VG.X86 VG.Impl.Mont.X86 VG.Impl.Mont VG.Impl.Weierstrass.X86 VG.Impl.Weierstrass
 open VG.Impl.Ecdsa.X86

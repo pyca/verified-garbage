@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Mont.Arm.Ops
-import VerifiedGarbage.Proof.Weierstrass.Unch
+module
+
+public import VerifiedGarbage.Proof.Mont.Arm.Ops
+public import VerifiedGarbage.Proof.Weierstrass.Unch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Saving and restoring registers in the working space, on 32-bit ARM
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.Weierstrass.Unch
 other), and `ldrs_ok` loads them back; `Unch.readW32` reads a word that a
 change apart from it kept.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.Arm
 

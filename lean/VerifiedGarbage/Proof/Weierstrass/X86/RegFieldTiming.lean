@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.Weierstrass.X86.FieldTiming
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86.FieldTiming
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Public lookup addresses and counters alongside equal field environments. -/
+
+@[expose] public section
+
 namespace VG.Proof.Weierstrass.X86
 open VG VG.X86 VG.Impl.Mont VG.Proof.Mont VG.Proof.Mont.X86
 

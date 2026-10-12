@@ -1,9 +1,22 @@
-import VerifiedGarbage.Proof.Ed25519.X86.RecoverCTBlocks
-import VerifiedGarbage.Proof.Ed25519.X86.PointDecode
-import VerifiedGarbage.Proof.Ed25519.X86.VerifyCTLit
-import VerifiedGarbage.Proof.Ed25519.X86.VerifyContract
+module
+
+public import VerifiedGarbage.Proof.Ed25519.X86.RecoverCTBlocks
+meta import VerifiedGarbage.Proof.Ed25519.X86.RecoverCTBlocks
+public import VerifiedGarbage.Proof.Ed25519.X86.PointDecode
+meta import VerifiedGarbage.Proof.Ed25519.X86.PointDecode
+public import VerifiedGarbage.Proof.Ed25519.X86.VerifyCTLit
+meta import VerifiedGarbage.Proof.Ed25519.X86.VerifyCTLit
+public import VerifiedGarbage.Proof.Ed25519.X86.VerifyContract
+meta import VerifiedGarbage.Proof.Ed25519.X86.VerifyContract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Ed25519.X86.RecoverCTRoot`. -/
+
+@[expose] public section
+
 section
 /-! Merged from `Proof.Ed25519.X86.RecoverCTSign`. -/
 section
