@@ -112,6 +112,9 @@ def root (F : Field) (z : Nat) : Prog isa := .seq (chain223 F (slot z)) (rootTai
 public words, `PPK` and `CNT`. -/
 def rootCall (F : Field) : Prog isa := .seq (pow223Keep [PPK, CNT]) (rootTail F)
 
+def rootCallFor (v : FieldVariant) : Prog isa :=
+  .seq (Impl.X448.X86_64.pow223KeepWith v.field v.powName [PPK, CNT]) (rootTail v.field)
+
 /-- The 57 bytes at `rsi`: `y`'s seven words into slot `yo`, the sign bit
 into `SIGN`, and `BAD |= 0` exactly when bits 448–454 are 0 and `y < p`. -/
 def decodeY (yo : Nat) : List Instr :=
@@ -250,7 +253,7 @@ def verifyEquationWith (F : Field) (P : Point64.Ops) (rt : Prog isa := root F 12
     .seq (.block (vnegA F)) <| .seq (Window.joint F P KBITS) (vfinish F P)
 
 def verifyEquationFor (v : FieldVariant) : Prog isa :=
-  verifyEquationWith v.field v.calls (rootCall v.field)
+  verifyEquationWith v.field v.calls (rootCallFor v)
 
 def verifyEquation : Prog isa := verifyEquationFor .scalar
 def verifyEquationAdx : Prog isa := verifyEquationFor .adx

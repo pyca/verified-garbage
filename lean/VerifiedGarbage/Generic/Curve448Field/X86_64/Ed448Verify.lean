@@ -16,7 +16,7 @@ specification (`Proof/Ed448/Facts.lean`).
 
 @[expose] public section
 
-namespace VG.Generic.Ed448Field.X86_64.Ed448Verify
+namespace VG.Generic.Curve448Field.X86_64.Ed448Verify
 
 def artifacts (v : Impl.Ed448.X86_64.FieldVariant) : List Artifact := [
   { Spec.Ed448.verifyApi with
@@ -39,4 +39,4 @@ def artifacts (v : Impl.Ed448.X86_64.FieldVariant) : List Artifact := [
       (Proof.Ed448.X86_64.verifyEquationFor_ct v)
     spSafe := Code.all_of_allInstrs (by cases v <;> lit_decide) }]
 
-end VG.Generic.Ed448Field.X86_64.Ed448Verify
+end VG.Generic.Curve448Field.X86_64.Ed448Verify

@@ -32,6 +32,7 @@ end VG.Proof.X448.X86_64.Adx.Lit
 
 namespace VG
 
+materialize_code Impl.X448.X86_64.pow223AdxFn
 materialize_code Impl.X448.X86_64.x448Adx
 
 end VG

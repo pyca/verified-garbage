@@ -171,7 +171,7 @@ def scalarBaseWith (F : Field) (P : Point64.Ops) (inv : Prog isa := invert F) : 
 /-- The point operations call `vg_ed448_r64_point_double` and `vg_ed448_r64_point_add_affine`,
 and the inversion `vg_gf448_r64_pow223`, keeping the output's address at `OUT`. -/
 def scalarBaseFor (v : FieldVariant) : Prog isa :=
-  scalarBaseWith v.field v.calls (invertCall v.field [OUT])
+  scalarBaseWith v.field v.calls (Impl.X448.X86_64.invertCallWith v.field v.powName [OUT])
 
 def scalarBase : Prog isa := scalarBaseFor .scalar
 def scalarBaseAdx : Prog isa := scalarBaseFor .adx

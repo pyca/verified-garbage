@@ -7,7 +7,7 @@ public import VerifiedGarbage.Proof.Ed448.X86_64.FieldVariant
 
 @[expose] public section
 
-namespace VG.Generic.Ed448Field.X86_64.Ed448R64
+namespace VG.Generic.Curve448Field.X86_64.Ed448R64
 
 open VG VG.X86_64 VG.Impl.Ed448.X86_64.Point64 VG.Proof.Ed448.X86_64.Point64
 open VG.Spec.Ed448.Point64 (doubleApi addAffineApi doubleContract addAffineContract)
@@ -40,4 +40,4 @@ def artifacts (v : Impl.Ed448.X86_64.FieldVariant) : List Artifact := [
     verified := Proof.Ed448.X86_64.FieldVariant.add_verified v
     spSafe := Code.all_of_allInstrs (by cases v <;> lit_decide) }]
 
-end VG.Generic.Ed448Field.X86_64.Ed448R64
+end VG.Generic.Curve448Field.X86_64.Ed448R64

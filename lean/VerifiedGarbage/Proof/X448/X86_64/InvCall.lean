@@ -67,4 +67,31 @@ theorem invertCall_post {keep : List Nat} (hk : ∀ d ∈ keep, d + 8 ≤ 832 �
     rw [z₂, e₂, chainEnv_21, chainEnv_20, z₁]
     rfl
 
+include hf in
+theorem invertCallWith_post (name : String) {keep : List Nat} (hk : ∀ d ∈ keep, d + 8 ≤ 832 ∨ (1648 ≤ d ∧ d + 8 ≤ 8192))
+    {s : State} {base : Addr} (hs : Scr s base) :
+    WP isa (invertCallWith fld name keep).inline s (InvPost base s) := by
+  change WP isa (.seq (.block (copyOut (slot 12) Z2))
+    (.seq (pow223KeepWith fld name keep).inline (invTail fld))) s _
+  refine WP.seq (WP.mono (copyOut_ok hs (o := slot 12) (a := Z2) (by decide) (by decide))
+    fun s₁ ⟨v₁, o₁, g₁, rd₁, wr₁⟩ => ?_)
+  have hs₁ : Scr s₁ base := ⟨(g₁ _ (by decide)).trans hs.rdi, wr₁ ▸ hs.wr, hs.nowrap⟩
+  refine WP.seq (WP.mono (pow223KeepWith_ok hf name keep (fun d hd => by rcases hk d hd with h | h <;> omega) hs₁)
+    fun s₂ ⟨g₂, rd₂, wr₂, o₂, e₂⟩ => ?_)
+  have hs₂ : Scr s₂ base :=
+    ⟨(g₂ .rdi (by decide) (by decide) (by decide)).trans hs₁.rdi, wr₂ ▸ hs₁.wr, hs₁.nowrap⟩
+  refine WP.mono (invTail_spec hf base s₂ hs₂) fun s₃ ⟨k₃, e₃⟩ => ?_
+  have z₁ : E s₁.mem base 12 = E s.mem base 2 := congrArg toFe v₁
+  have z₂ : E s₂.mem base 2 = E s.mem base 2 :=
+    (E_outside o₂ 2 (by decide)).trans (E_outside o₁ 2 (by decide))
+  refine ⟨fun r hr hb => ?_, k₃.rd.trans (rd₂.trans rd₁), k₃.wr.trans (wr₂.trans wr₁), ?_, ?_⟩
+  · rw [k₃.gpr r hr hb, g₂ r (by revert hr; cases r <;> decide) (by revert hr; cases r <;> decide)
+      (by revert hr; cases r <;> decide), g₁ r (by revert hr; cases r <;> decide)]
+  · intro x hx
+    rw [k₃.out x (by omega), o₂ x (by omega), o₁ x (by simp only [slot]; omega)]
+  · rw [e₃, invert_c]
+    simp only [↓reduceIte, tailEnv, opMul, opSqn, Function.update_apply]
+    rw [z₂, e₂, chainEnv_21, chainEnv_20, z₁]
+    rfl
+
 end VG.Proof.X448.X86_64

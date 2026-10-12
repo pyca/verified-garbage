@@ -254,13 +254,13 @@ theorem scalarBase_correct_inline (hL : BaseLadderOk) {s : State} (hp : scalarBa
 
 theorem scalarBaseFor_inline (v : Impl.Ed448.X86_64.FieldVariant) :
     (scalarBaseFor v).inline = scalarBaseWith v.field v.bodies
-      (Impl.X448.X86_64.invertCall v.field [OUT]).inline := by cases v <;> rfl
+      (Impl.X448.X86_64.invertCallWith v.field v.powName [OUT]).inline := by cases v <;> rfl
 
 theorem scalarBaseFor_correct_inline (v : Impl.Ed448.X86_64.FieldVariant)
     (hL : BaseLadderOk) {s : State} (hp : scalarBaseLocal.pre s) :
     WP isa (scalarBaseFor v).inline s fun t => gprPreserved s t ∧ scalarBaseLocal.post s t := by
   rw [scalarBaseFor_inline]
   exact scalarBase_correct_of (FieldVariant.field_ok v) (FieldVariant.bodies_ok v) hL
-    (fun hs => invertCall_post (FieldVariant.field_ok v) (keep := [OUT]) (by simp [OUT]) hs) hp
+    (fun hs => Proof.X448.X86_64.invertCallWith_post (FieldVariant.field_ok v) v.powName (keep := [OUT]) (by simp [OUT]) hs) hp
 
 end VG.Proof.Ed448.X86_64

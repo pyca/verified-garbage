@@ -14,7 +14,7 @@ is passed to the proof here, so that only registration files import it.
 
 @[expose] public section
 
-namespace VG.Generic.Ed448Field.X86_64.Ed448PublicKey
+namespace VG.Generic.Curve448Field.X86_64.Ed448PublicKey
 
 def artifacts (v : Impl.Ed448.X86_64.FieldVariant) : List Artifact := [
   { Spec.Ed448.publicKeyApi with
@@ -34,4 +34,4 @@ def artifacts (v : Impl.Ed448.X86_64.FieldVariant) : List Artifact := [
       Proof.Ed448.baseLadder_ok
     spSafe := Code.all_of_allInstrs (by cases v <;> lit_decide) }]
 
-end VG.Generic.Ed448Field.X86_64.Ed448PublicKey
+end VG.Generic.Curve448Field.X86_64.Ed448PublicKey

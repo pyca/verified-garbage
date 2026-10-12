@@ -909,13 +909,13 @@ theorem verifyEquation_correct_inline (hR : RecoverOk) (hE : VerifyEqOk) {s : St
 
 theorem verifyEquationFor_inline (v : Impl.Ed448.X86_64.FieldVariant) :
     (verifyEquationFor v).inline = verifyEquationWith v.field v.bodies
-      (rootCall v.field).inline := by cases v <;> rfl
+      (rootCallFor v).inline := by cases v <;> rfl
 
 theorem verifyEquationFor_correct_inline (v : Impl.Ed448.X86_64.FieldVariant)
     (hR : RecoverOk) (hE : VerifyEqOk) {s : State} (hp : verifyEquationLocal.pre s) :
     WP isa (verifyEquationFor v).inline s fun t => gprPreserved s t ∧ verifyEquationLocal.post s t := by
   rw [verifyEquationFor_inline]
   exact verifyEquation_correct (FieldVariant.field_ok v) (FieldVariant.bodies_ok v) hR hE
-    (rootCall_ok (FieldVariant.field_ok v)) hp
+    (rootCallFor_ok v) hp
 
 end VG.Proof.Ed448.X86_64

@@ -4054,7 +4054,7 @@ pub(crate) unsafe extern "sysv64" fn vg_ed448_scalar_base_adx(out: *mut [u8; 57]
         "mov QWORD PTR [rdi+872], r13",
         "mov QWORD PTR [rdi+880], r14",
         "mov r12, QWORD PTR [rdi+48]",
-        "call {vg_gf448_r64_pow223}",
+        "call {vg_gf448_r64_pow223_adx}",
         "mov QWORD PTR [rdi+48], r12",
         "mov r9d, 0",
         "mov r10d, 0",
@@ -6186,7 +6186,7 @@ pub(crate) unsafe extern "sysv64" fn vg_ed448_scalar_base_adx(out: *mut [u8; 57]
         ".p2align 6",
         vg_ed448_r64_point_double_adx = sym super::ed448_r64::vg_ed448_r64_point_double_adx,
         vg_ed448_r64_point_add_affine_adx = sym super::ed448_r64::vg_ed448_r64_point_add_affine_adx,
-        vg_gf448_r64_pow223 = sym super::gf448_r64::vg_gf448_r64_pow223,
+        vg_gf448_r64_pow223_adx = sym super::gf448_r64::vg_gf448_r64_pow223_adx,
     )
 }
 
@@ -9335,7 +9335,7 @@ pub(crate) unsafe extern "sysv64" fn vg_ed448_verify_equation_adx(pk: *const [u8
         "mov QWORD PTR [rdi+880], r14",
         "mov r12, QWORD PTR [rdi+1664]",
         "mov r13, QWORD PTR [rdi+1888]",
-        "call {vg_gf448_r64_pow223}",
+        "call {vg_gf448_r64_pow223_adx}",
         "mov QWORD PTR [rdi+1664], r12",
         "mov QWORD PTR [rdi+1888], r13",
         "mov r9d, 0",
@@ -15706,7 +15706,7 @@ pub(crate) unsafe extern "sysv64" fn vg_ed448_verify_equation_adx(pk: *const [u8
         "mov r15, QWORD PTR [rdi+40]",
         "ret",
         ".p2align 6",
-        vg_gf448_r64_pow223 = sym super::gf448_r64::vg_gf448_r64_pow223,
+        vg_gf448_r64_pow223_adx = sym super::gf448_r64::vg_gf448_r64_pow223_adx,
         vg_ed448_r64_point_add_affine_adx = sym super::ed448_r64::vg_ed448_r64_point_add_affine_adx,
         vg_ed448_r64_point_double_adx = sym super::ed448_r64::vg_ed448_r64_point_double_adx,
     )

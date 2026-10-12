@@ -45,6 +45,12 @@ def addFn : FieldVariant → Prog isa
   | .scalar => Point64.addFn
   | .adx => Point64.addAdxFn
 
+def powName (v : FieldVariant) : String := Spec.X448.Field64.pow223Api.name ++ v.suffix
+
+def powFn : FieldVariant → Prog isa
+  | .scalar => Impl.X448.X86_64.pow223Fn
+  | .adx => Impl.X448.X86_64.pow223AdxFn
+
 def calls (v : FieldVariant) : Point64.Ops :=
   ⟨.call (Spec.Ed448.Point64.doubleApi.name ++ v.suffix) v.doubleFn,
    .call (Spec.Ed448.Point64.addAffineApi.name ++ v.suffix) v.addFn⟩

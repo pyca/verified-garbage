@@ -74,9 +74,9 @@ theorem verifyEquationFor_ok (v : Impl.Ed448.X86_64.FieldVariant)
       ∃ t s', Exec isa (verifyEquationFor v) s t s' ∧ abiPreserved s s' ∧ verifyEquationLocal.post s s' :=
   ok_of_inline (verifyEquationFor_inlineOk v) (verifyEquationFor_okI v hR hE) verifyEquation_patch
 
-taint_summary verifyRootAdxSum : taintS (verifySumτ []) (rootCall Impl.X448.X86_64.adx)
+taint_summary verifyRootAdxSum : taintS (verifySumτ []) (rootCallFor .adx)
 taint_summary verifyDecodeAdxSum : taintS (verifySumτ [.rsi])
-    (decode Impl.X448.X86_64.adx 6 7 (rootCall Impl.X448.X86_64.adx)) using verifyRootAdxSum
+    (decode Impl.X448.X86_64.adx 6 7 (rootCallFor .adx)) using verifyRootAdxSum
 taint_summary verifyLoopAdxSum : taintS (verifySumτ [])
     (Window.joint Impl.X448.X86_64.adx (Impl.Ed448.X86_64.FieldVariant.calls .adx) KBITS)
 
