@@ -1,3 +1,5 @@
+import VerifiedGarbage.Proof.Dsa.X86_64.ChildBases
+import VerifiedGarbage.Proof.Dsa.X86_64.ChildCount
 import VerifiedGarbage.Proof.Dsa.X86_64.KeyPointers
 import VerifiedGarbage.Proof.Dsa.X86_64.InitInverseCT
 import VerifiedGarbage.Proof.Dsa.X86_64.WriteScalar
@@ -202,3 +204,7 @@ The whole-operation contracts must be proved before artifacts are registered.
 #assert_standard_axioms VG.Proof.Dsa.X86_64.initInverse_ok
 
 #assert_standard_axioms VG.Proof.Dsa.X86_64.initInverse_ct
+
+#assert_standard_axioms VG.Proof.Dsa.X86_64.childBases_ok
+
+#assert_standard_axioms VG.Proof.Dsa.X86_64.childCount_ok
