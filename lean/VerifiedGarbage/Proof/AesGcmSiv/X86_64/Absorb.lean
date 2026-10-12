@@ -144,19 +144,22 @@ theorem readW128_q (m : Mem) (a : Addr) : m.readW a 128 = m.readW (a + BitVec.of
 /-- Four blocks of `revLoopZ`. -/
 theorem revQuadStep_ok {K W SP : Addr} (L : Lay K W SP) {t₀ : State} (E : Env K W SP t₀) {Q : Addr} {c : Nat}
     (hc : c ≤ 64) (hQ : Buf K W SP t₀ Q (16 * c)) {j : Nat} (hj : j + 4 ≤ c) {t : State}
-    (I : RInv W Q c j t₀ t) (hm : ∀ l < 4, t.zlane .xmm1 l = Proof.Gcm.X86_64.revMask) :
+    (I : RInv W Q c j t₀ t) (hm : ∀ l < 2, t.lane .xmm1 l = Proof.Gcm.X86_64.revMask) :
     WP isa (.block revQuad) t fun t' =>
-      (RInv W Q c (j + 4) t₀ t' ∧ ∀ l < 4, t'.zlane .xmm1 l = Proof.Gcm.X86_64.revMask) ∧
+      (RInv W Q c (j + 4) t₀ t' ∧ ∀ l < 2, t'.lane .xmm1 l = Proof.Gcm.X86_64.revMask) ∧
         t'.cf = some (decide (c - (j + 4) < 4)) := by
   have hw := L.ww
-  have rq := in_off (d := 16 * j) (n := 64) hQ.rd (by omega) hQ.lt
-  have ww := E.perm.wW (d := 488 + 16 * j) (n := 64) (by omega)
-  rw [← I.rd, ← I.wr] at rq
-  rw [← I.wr] at ww
-  rw [show revQuad = ([.vmovdqu32Load .xmm0 (at_ .rsi 0), .zop (.zbin .vpshufb .xmm0 .xmm0 .xmm1),
-      .vmovdqu32Store (at_ .rdi 0) .xmm0] : List Instr) ++ ([.alu .add .rsi (imm 64), .alu .add .rdi (imm 64),
-      .alu .sub .rcx (imm 4), .alu .cmp .rcx (imm 4)] : List Instr) from rfl, WP.block_append_iff]
-  refine WP.mono (revZ_ok t I.rsi I.rdi hm rq ww) fun t₁ ⟨⟨v, m₁⟩, b₁, g₁, rd₁, wr₁, z₁⟩ => ?_
+  have rq := in_off (d := 16 * j) (n := 32) hQ.rd (by omega) hQ.lt
+  have rq' := in_off (d := 16 * j + 32) (n := 32) hQ.rd (by omega) hQ.lt
+  have ww := E.perm.wW (d := 488 + 16 * j) (n := 32) (by omega)
+  have ww' := E.perm.wW (d := 488 + 16 * j + 32) (n := 32) (by omega)
+  rw [← add_ofNat_assoc] at rq' ww'
+  rw [← I.rd, ← I.wr] at rq rq'
+  rw [← I.wr] at ww ww'
+  have hSP : Region.Disjoint ⟨Q + BitVec.ofNat 64 (16 * j), 64⟩ ⟨W + BitVec.ofNat 64 (488 + 16 * j), 64⟩ :=
+    (hQ.w.sub_left (Offset.sub_base Q (by omega))).sub_right (Lay.wSub (by omega))
+  rw [revQuad, WP.block_append_iff]
+  refine WP.mono (revY_ok t I.rsi I.rdi hm rq ww rq' ww' hSP) fun t₁ ⟨fr₁, b₁, g₁, rd₁, wr₁, k₁⟩ => ?_
   have cx₁ : t₁.gpr .rcx = BitVec.ofNat 64 (c - j) := by rw [g₁]; exact I.rcx
   obtain ⟨t₂, run₂, si₂, di₂, cx₂, cf₂, g₂, m₂, rd₂, wr₂, z₂⟩ :=
     adv4_run t₁ (a := .rsi) (b := .rdi) (by decide) (by decide) (by decide) (k := c - j) (by omega) (by omega) cx₁
@@ -166,11 +169,10 @@ theorem revQuadStep_ok {K W SP : Addr} (L : Lay K W SP) {t₀ : State} (E : Env 
     fun d hd => I.frame.readW (r := ⟨Q + BitVec.ofNat 64 d, 8⟩) (Region.contains_self _ _) (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact (hQ.w.sub_left (Offset.sub_base Q (by omega))).sub_right (Lay.wSub (by omega))) (by decide)
-  have fr : Frame [⟨W + BitVec.ofNat 64 (488 + 16 * j), 64⟩] t.mem t₂.mem := by
-    rw [m₂, m₁]
-    exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
+  have fr : Frame [⟨W + BitVec.ofNat 64 (488 + 16 * j), 64⟩] t.mem t₂.mem := by rw [m₂]; exact fr₁
   refine ⟨⟨⟨?_, ?_, ?_, ?_, ?_, fun r h₁ h₂ h₃ h₄ h₅ => ?_, by rw [rd₂, rd₁, I.rd], by rw [wr₂, wr₁, I.wr]⟩,
-    fun l hl => by rw [z₂, z₁ _ (by decide) l hl, hm l hl]⟩, by rw [cf₂, show c - j - 4 = c - (j + 4) by omega]⟩
+    fun l hl => by rw [z₂, k₁ l hl, hm l hl]⟩,
+    by rw [cf₂, show c - j - 4 = c - (j + 4) by omega]⟩
   · rw [si₂, g₁, I.rsi, add_ofNat_assoc]; congr 2
   · rw [di₂, g₁, I.rdi, add_ofNat_assoc]; congr 2
   · rw [cx₂]; congr 1
@@ -223,28 +225,32 @@ theorem revLoop_ok {K W SP : Addr} (L : Lay K W SP) {t₀ : State} (E : Env K W 
 theorem RInv.flags {W Q : Addr} {c j : Nat} {t₀ : State} : FlagStable (RInv W Q c j t₀) :=
   fun _ _ _ _ h => ⟨h.rsi, h.rdi, h.rcx, h.frame, h.out, h.regs, h.rd, h.wr⟩
 
-/-- `revLoopZ`: as `revLoop`, four blocks at a time on 512-bit registers. -/
-theorem revLoopZ_ok {K W SP : Addr} (L : Lay K W SP) {t₀ : State} (E : Env K W SP t₀) {Q : Addr} {c : Nat}
+theorem RInv.upper {W Q : Addr} {c j : Nat} {t₀ : State} : UpperStable (RInv W Q c j t₀) :=
+  fun _ h => ⟨h.rsi, h.rdi, h.rcx, h.frame, h.out, h.regs, h.rd, h.wr⟩
+
+/-- `revLoopY`: as `revLoop`, four blocks at a time on 256-bit registers. -/
+theorem revLoopY_ok {K W SP : Addr} (L : Lay K W SP) {t₀ : State} (E : Env K W SP t₀) {Q : Addr} {c : Nat}
     (hc1 : 1 ≤ c) (hc : c ≤ 64) (hQ : Buf K W SP t₀ Q (16 * c)) (h14 : t₀.gpr .r14 = BitVec.ofNat 64 c)
     (hsi : t₀.gpr .rsi = Q) (hdi : t₀.gpr .rdi = W + BitVec.ofNat 64 488) :
-    WP isa revLoopZ t₀ fun t => Frame [⟨W + BitVec.ofNat 64 488, 16 * c⟩] t₀.mem t.mem ∧
+    WP isa revLoopY t₀ fun t => Frame [⟨W + BitVec.ofNat 64 488, 16 * c⟩] t₀.mem t.mem ∧
       Spec.Gcm.blocksAt t.mem (W + BitVec.ofNat 64 488) c =
         (List.range c).map (fun k => Spec.GcmSiv.ofBytes (bytesAt t₀.mem (Q + BitVec.ofNat 64 (16 * k)) 16)) ∧
       (∀ r, r ≠ .rax → r ≠ .rdx → r ≠ .rsi → r ≠ .rdi → r ≠ .rcx → t.gpr r = t₀.gpr r) ∧
       t.rd = t₀.rd ∧ t.wr = t₀.wr := by
-  refine WP.seq (WP.mono (revMaskZ_ok t₀) fun t₁ ⟨hm, hcx, hg, hm₁, hrd, hwr⟩ => ?_)
+  refine WP.seq (WP.mono (revMaskY_ok t₀) fun t₁ ⟨hm, hcx, hg, hm₁, hrd, hwr⟩ => ?_)
   have I₀ : RInv W Q c 0 t₀ t₁ := ⟨by rw [hg _ (by decide) (by decide), hsi, Nat.mul_zero, BitVec.add_zero],
     by rw [hg _ (by decide) (by decide), hdi], by rw [hcx, h14, Nat.sub_zero], by rw [hm₁]; exact Frame.refl _ _,
     by simp only [Spec.Gcm.blocksAt, List.range_zero, List.map_nil],
     fun r h₁ _ _ _ h₅ => hg r h₁ h₅, hrd, hwr⟩
   refine WP.mono (quadsThenOnes_ok (c := c) (by omega) hc1 (fun k t => RInv W Q c k t₀ t)
-    (fun k t => RInv W Q c k t₀ t ∧ ∀ l < 4, t.zlane .xmm1 l = Proof.Gcm.X86_64.revMask)
+    (fun k t => RInv W Q c k t₀ t ∧ ∀ l < 2, t.lane .xmm1 l = Proof.Gcm.X86_64.revMask)
     (fun _ => RInv.flags) (fun _ _ _ _ _ h => ⟨RInv.flags _ _ _ _ h.1, fun l hl => h.2 l hl⟩)
+    (fun _ => RInv.upper)
     (fun _ _ h => h.1) (fun _ _ h => h.rcx)
     (fun _ hk _ hu => revQuadStep_ok L E hc hQ hk hu.1 hu.2)
     (fun _ hk _ hu => revOnes_ok L E hc hQ hk hu) ⟨I₀, hm⟩) fun t I => ⟨I.frame, I.out, I.regs, I.rd, I.wr⟩
 
-/-- `revSel wide`: `revLoop` or `revLoopZ`. -/
+/-- `revSel wide`: `revLoop` or `revLoopY`. -/
 theorem revSel_ok (wide : Bool) {K W SP : Addr} (L : Lay K W SP) {t₀ : State} (E : Env K W SP t₀) {Q : Addr}
     {c : Nat} (hc1 : 1 ≤ c) (hc : c ≤ 64) (hQ : Buf K W SP t₀ Q (16 * c)) (h14 : t₀.gpr .r14 = BitVec.ofNat 64 c)
     (hsi : t₀.gpr .rsi = Q) (hdi : t₀.gpr .rdi = W + BitVec.ofNat 64 488) :
@@ -255,7 +261,7 @@ theorem revSel_ok (wide : Bool) {K W SP : Addr} (L : Lay K W SP) {t₀ : State} 
       t.rd = t₀.rd ∧ t.wr = t₀.wr := by
   cases wide
   · exact revLoop_ok L E hc1 hc hQ h14 hsi hdi
-  · exact revLoopZ_ok L E hc1 hc hQ h14 hsi hdi
+  · exact revLoopY_ok L E hc1 hc hQ h14 hsi hdi
 
 /-- What absorbing writes: GHASH's accumulator, the block at `W + 128`, the
 reversed blocks, `vg_ghash`'s working space and the stack below `SP`. -/

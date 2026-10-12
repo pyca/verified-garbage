@@ -1,5 +1,5 @@
 import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Keys
-import VerifiedGarbage.Proof.Aes.X86_64.VaesZ.Ctr
+import VerifiedGarbage.Proof.Aes.X86_64.Vaes.Ctr32
 import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Exec
 
 /-!
@@ -22,6 +22,11 @@ open VG.Impl.AesGcm.X86_64 (imm)
 /-- A property of states that only their flags tell apart. -/
 def FlagStable (P : State → Prop) : Prop :=
   ∀ (u : State) (x : BitVec 64) (c o : Bool), P u → P (arithFlags u x c o)
+
+/-- A property of states that only the upper halves of their vector
+registers tell apart (which `vzeroupper` clears). -/
+def UpperStable (P : State → Prop) : Prop :=
+  ∀ u : State, P u → P { u with ymmHi := fun _ => 0, zmmHi := fun _ => 0 }
 
 /-- `cmp rcx, 4` with `k` in `rcx`: CF says whether `k < 4`. -/
 theorem cmp4_run (u : State) {k : Nat} (hk : k < 2 ^ 64) (h : u.gpr .rcx = BitVec.ofNat 64 k) :
@@ -54,6 +59,7 @@ theorem test0_run (u : State) {k : Nat} (hk : k < 2 ^ 64) (h : u.gpr .rcx = BitV
 at a time (`P`, from any block before the last). -/
 theorem quadsThenOnes_ok {quad one : List Instr} {c : Nat} (hc : c < 2 ^ 63) (hc1 : 1 ≤ c)
     (P Q : Nat → State → Prop) (hP : ∀ k, FlagStable (P k)) (hQ : ∀ k, FlagStable (Q k))
+    (hPz : ∀ k, UpperStable (P k))
     (hQP : ∀ k u, Q k u → P k u)
     (hrcx : ∀ k u, P k u → u.gpr .rcx = BitVec.ofNat 64 (c - k))
     (hquad : ∀ k, k + 4 ≤ c → ∀ u, Q k u → WP isa (.block quad) u fun u' =>
@@ -64,27 +70,28 @@ theorem quadsThenOnes_ok {quad one : List Instr} {c : Nat} (hc : c < 2 ^ 63) (hc
   unfold quadsThenOnes
   -- The quads, from block 0: after them, `k` blocks done with `c - k < 4`.
   have quads : ∀ u, Q 0 u → u.cf = some (decide (c < 4)) →
-      WP isa (.ite .b (.block []) (.loop (.block quad) .ae)) u fun u' =>
-        ∃ k, k ≤ c ∧ c - k < 4 ∧ Q k u' := by
+      WP isa (.ite .b (.block []) (.seq (.loop (.block quad) .ae) (.block [.vop .vzeroupper]))) u fun u' =>
+        ∃ k, k ≤ c ∧ c - k < 4 ∧ P k u' := by
     intro u hu hcf
-    refine WP.ite (decide (c < 4)) hcf (fun h4 => WP.block_nil ⟨0, Nat.zero_le _, by simpa using h4, hu⟩)
-      (fun h4 => ?_)
+    refine WP.ite (decide (c < 4)) hcf
+      (fun h4 => WP.block_nil ⟨0, Nat.zero_le _, by simpa using h4, hQP 0 u hu⟩) (fun h4 => ?_)
     have h4' : ¬ c < 4 := by simpa using h4
-    refine WP.loop (M := isa) (body := .block quad) (c := .ae)
-      (fun (m : Nat) (v : State) => ∃ k, m = c - k ∧ k + 4 ≤ c ∧ Q k v) ?_ (c - 0) u ⟨0, rfl, by omega, hu⟩
-    rintro m v ⟨k, rfl, hk, hv⟩
-    refine WP.mono (hquad k hk v hv) fun v' ⟨hv', hcf'⟩ => ?_
-    have ev : isa.eval .ae v' = some !(decide (c - (k + 4) < 4)) := by
-      show v'.cf.map (!·) = _; rw [hcf']; rfl
-    by_cases hlt : c - (k + 4) < 4
-    · left
-      exact ⟨by rw [ev, decide_eq_true hlt]; rfl, k + 4, hk, hlt, hv'⟩
-    · right
-      exact ⟨by rw [ev, decide_eq_false hlt]; rfl, c - (k + 4), by omega, k + 4, rfl, by omega, hv'⟩
+    have lp : WP isa (.loop (.block quad) .ae) u fun v => ∃ k, k ≤ c ∧ c - k < 4 ∧ Q k v := by
+      refine WP.loop (M := isa) (body := .block quad) (c := .ae)
+        (fun (m : Nat) (v : State) => ∃ k, m = c - k ∧ k + 4 ≤ c ∧ Q k v) ?_ (c - 0) u ⟨0, rfl, by omega, hu⟩
+      rintro m v ⟨k, rfl, hk, hv⟩
+      refine WP.mono (hquad k hk v hv) fun v' ⟨hv', hcf'⟩ => ?_
+      have ev : isa.eval .ae v' = some !(decide (c - (k + 4) < 4)) := by
+        show v'.cf.map (!·) = _; rw [hcf']; rfl
+      by_cases hlt : c - (k + 4) < 4
+      · left
+        exact ⟨by rw [ev, decide_eq_true hlt]; rfl, k + 4, hk, hlt, hv'⟩
+      · right
+        exact ⟨by rw [ev, decide_eq_false hlt]; rfl, c - (k + 4), by omega, k + 4, rfl, by omega, hv'⟩
+    exact WP.seq (WP.mono lp fun v ⟨k, hk, hlt, hv⟩ => WP.of_runBlock ⟨_, rfl, k, hk, hlt, hPz k _ (hQP k v hv)⟩)
   obtain ⟨x, o, run₁⟩ := cmp4_run u (k := c) (by omega) (by rw [hrcx 0 u (hQP 0 u h₀), Nat.sub_zero])
   refine WP.seq (WP.of_runBlock ⟨_, run₁, ?_⟩)
-  refine WP.seq (WP.mono (quads _ (hQ 0 _ x _ o h₀) rfl) fun u₂ ⟨k, hkc, hk4, hu₂⟩ => ?_)
-  have hP₂ := hQP k u₂ hu₂
+  refine WP.seq (WP.mono (quads _ (hQ 0 _ x _ o h₀) rfl) fun u₂ ⟨k, hkc, hk4, hP₂⟩ => ?_)
   obtain ⟨run₂, hy⟩ := test0_run u₂ (k := c - k) (by omega) (hrcx k u₂ hP₂)
   refine WP.seq (WP.of_runBlock ⟨_, run₂, ?_⟩)
   have hP₃ := hP k _ (BitVec.ofNat 64 (c - k)) false false hP₂
@@ -93,108 +100,192 @@ theorem quadsThenOnes_ok {quad one : List Instr} {c : Nat} (hc : c < 2 ^ 63) (hc
     subst this; exact hP₃
   · exact hone k (by simp at h0; omega) _ hP₃
 
-/-! ## Four blocks reversed -/
+/-! ## Two blocks at a time on 256-bit registers -/
 
-theorem ea_at0 (s : State) (b : Reg) : s.ea (Impl.AesGcm.X86_64.at_ b 0) = s.gpr b := by
-  show s.gpr b + BitVec.ofInt 64 ((0 : Nat) : Int) = s.gpr b
-  rw [BitVec.ofInt_natCast]; exact BitVec.add_zero _
+theorem ea_atd (s : State) (b : Reg) (d : Nat) :
+    s.ea (Impl.AesGcm.X86_64.at_ b d) = s.gpr b + BitVec.ofNat 64 d := by
+  show s.gpr b + BitVec.ofInt 64 ((d : Nat) : Int) = _
+  rw [BitVec.ofInt_natCast]
 
-/-- The four blocks at `rsi` (`S`), each byte-reversed (`zmm1` holding the
-mask in each lane), stored at `rdi` (`P`): GHASH reads each as the block's
-128-bit little-endian value. -/
-theorem revZ_ok (s : State) {S P : Addr} (hsi : s.gpr .rsi = S) (hdi : s.gpr .rdi = P)
-    (hm : ∀ l < 4, s.zlane .xmm1 l = Proof.Gcm.X86_64.revMask)
-    (hr : InRegions (s.rd ++ s.wr) S 64) (hw : InRegions s.wr P 64) :
-    WP isa (.block [.vmovdqu32Load .xmm0 (Impl.AesGcm.X86_64.at_ .rsi 0),
-        .zop (.zbin .vpshufb .xmm0 .xmm0 .xmm1), .vmovdqu32Store (Impl.AesGcm.X86_64.at_ .rdi 0) .xmm0]) s
-      fun s' =>
-        (∃ v : BitVec 512, s'.mem = s.mem.writeW P v) ∧
-        (∀ l < 4, Spec.Gcm.blockAt s'.mem (P + BitVec.ofNat 64 (16 * l)) =
-          s.mem.readW (S + BitVec.ofNat 64 (16 * l)) 128) ∧
-        s'.gpr = s.gpr ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
-        (∀ r, r ≠ .xmm0 → ∀ l < 4, s'.zlane r l = s.zlane r l) := by
-  let v := s.mem.readW S 512
-  let s₁ := s.setZ .xmm0 (v.extractLsb' 0 128) (v.extractLsb' 128 128) (v.extractLsb' 256 128)
-    (v.extractLsb' 384 128)
-  let s₂ := (ZOp.zbin .vpshufb .xmm0 .xmm0 .xmm1).exec s₁
-  have l₁ : ∀ l < 4, s₁.zlane .xmm0 l = s.mem.readW (S + BitVec.ofNat 64 (16 * l)) 128 := fun l hl => by
-    rw [State.zlane_setZ _ _ _ _ _ _ _ hl]
-    simp only [ite_true]
-    rw [pick4_lanes (fun i => v.extractLsb' (128 * i) 128) hl]
-    exact Proof.Aes.X86_64.VaesZ.load512_lane _ _ hl
-  have m₁ : ∀ l < 4, s₁.zlane .xmm1 l = Proof.Gcm.X86_64.revMask := fun l hl => by
-    rw [State.zlane_setZ _ _ _ _ _ _ _ hl]
-    simp only [show (XReg.xmm1 = .xmm0) = False by decide, ite_false]
-    exact hm l hl
-  rw [WP.block_cons_iff]
-  refine ⟨s₁, by simp only [isa, exec, State.load512, ea_at0, hsi, hr, ite_true, Option.map_some]; rfl, ?_⟩
-  rw [WP.block_cons_iff]; refine ⟨s₂, rfl, ?_⟩
-  rw [WP.block_cons_iff]
-  have hst : isa.exec (.vmovdqu32Store (Impl.AesGcm.X86_64.at_ .rdi 0) .xmm0) s₂ =
-      some (s₂.setMem (s.mem.writeW P (s₂.zmm .xmm0))) := by
-    simp only [isa, exec, State.store512_eq, ea_at0, s₂, s₁, ZOp.exec_gpr, State.setZ_gpr, ZOp.exec_wr,
-      State.setZ_wr, ZOp.exec_mem, State.setZ_mem, hdi, hw, ite_true]
-  refine ⟨_, hst, WP.block_nil ?_⟩
-  have z₂ : ∀ l < 4, s₂.zlane .xmm0 l =
-      XBinOp.eval .pshufb (s.mem.readW (S + BitVec.ofNat 64 (16 * l)) 128) Proof.Gcm.X86_64.revMask :=
-    fun l hl => by
-      simp only [s₂, zlane_zbin _ _ _ _ _ _ hl, ite_true, ZBinOp.sse, l₁ l hl, m₁ l hl]
-  refine ⟨⟨_, rfl⟩, fun l hl => ?_, by simp [s₂, s₁], by simp [s₂, s₁], by simp [s₂, s₁], fun r h1 l hl => ?_⟩
-  · simp only [State.setMem_mem]
-    rw [Proof.Aes.X86_64.VaesZ.blockAt_writeW_lane _ _ _ hl, Proof.Aes.X86_64.VaesZ.zmm_lane _ _ hl, z₂ l hl,
-      Proof.Gcm.X86_64.pshufb_rev_rev]
-  · simp [s₂, s₁, zlane_zbin _ _ _ _ _ _ hl, State.zlane_setZ _ _ _ _ _ _ _ hl, h1]
+/-- Lane `l` of a 32-byte load. -/
+theorem load256_lane (m : Mem) (a : Addr) {l : Nat} (hl : l < 2) :
+    (m.readW a 256).extractLsb' (128 * l) 128 = m.readW (a + BitVec.ofNat 64 (16 * l)) 128 := by
+  rcases (by omega : l = 0 ∨ l = 1) with rfl | rfl
+  · simpa using Proof.Aes.X86_64.Vaes.load256_lo m a
+  · simpa using Proof.Aes.X86_64.Vaes.load256_hi m a
 
-/-! ## Four keystream blocks XORed -/
+/-- Lane `l` of a register's 256 bits. -/
+theorem ymm_lane (s : State) (r : XReg) {l : Nat} (hl : l < 2) :
+    (s.ymm r).extractLsb' (128 * l) 128 = s.lane r l := by
+  rw [State.ymm_eq]
+  rcases (by omega : l = 0 ∨ l = 1) with rfl | rfl
+  · exact Proof.Aes.X86_64.Vaes.extract_lo _ _
+  · exact Proof.Aes.X86_64.Vaes.extract_hi _ _
 
-/-- Lane `l` of a 64-byte write, read back. -/
-theorem readW_lane512 (m : Mem) (q : Addr) (v : BitVec 512) {l : Nat} (hl : l < 4) :
+/-- Lane `l` of a 32-byte write, read back. -/
+theorem readW_lane256 (m : Mem) (q : Addr) (v : BitVec 256) {l : Nat} (hl : l < 2) :
     (m.writeW q v).readW (q + BitVec.ofNat 64 (16 * l)) 128 = v.extractLsb' (128 * l) 128 := by
   have e := readW_writeW_inside m q v (k := 16 * l) (n := 16) (by omega) (by decide)
   rwa [show 8 * (16 * l) = 128 * l by omega] at e
 
-/-- The four keystream blocks at `rsi` (`S`) XORed into the four data blocks at
-`r12` (`Q`). -/
-theorem ksZ_ok (s : State) {S Q : Addr} (hsi : s.gpr .rsi = S) (h12 : s.gpr .r12 = Q)
-    (hr : InRegions (s.rd ++ s.wr) S 64) (hw : InRegions s.wr Q 64) :
-    WP isa (.block [.vmovdqu32Load .xmm1 (Impl.AesGcm.X86_64.at_ .rsi 0),
-        .vmovdqu32Load .xmm0 (Impl.AesGcm.X86_64.at_ .r12 0), .zop (.zbin .vpxord .xmm1 .xmm1 .xmm0),
-        .vmovdqu32Store (Impl.AesGcm.X86_64.at_ .r12 0) .xmm1]) s
-      fun s' =>
-        (∃ v : BitVec 512, s'.mem = s.mem.writeW Q v ∧ ∀ l < 4, v.extractLsb' (128 * l) 128 =
-          s.mem.readW (Q + BitVec.ofNat 64 (16 * l)) 128 ^^^ s.mem.readW (S + BitVec.ofNat 64 (16 * l)) 128) ∧
-        s'.gpr = s.gpr ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
-  have hw' := Proof.Aes.X86_64.AesNi.inRegions_wr hw
-  let vS := s.mem.readW S 512
-  let vQ := s.mem.readW Q 512
-  let s₁ := s.setZ .xmm1 (vS.extractLsb' 0 128) (vS.extractLsb' 128 128) (vS.extractLsb' 256 128)
-    (vS.extractLsb' 384 128)
-  let s₂ := s₁.setZ .xmm0 (vQ.extractLsb' 0 128) (vQ.extractLsb' 128 128) (vQ.extractLsb' 256 128)
-    (vQ.extractLsb' 384 128)
-  let s₃ := (ZOp.zbin .vpxord .xmm1 .xmm1 .xmm0).exec s₂
+/-- The two blocks at `rsi + d`, each byte-reversed (`ymm1` holding the mask
+in each lane), stored at `rdi + d`. -/
+theorem rev2_ok (d : Nat) (s : State) {S P : Addr} (hsi : s.gpr .rsi = S) (hdi : s.gpr .rdi = P)
+    (hm : ∀ l < 2, s.lane .xmm1 l = Proof.Gcm.X86_64.revMask)
+    (hr : InRegions (s.rd ++ s.wr) (S + BitVec.ofNat 64 d) 32) (hw : InRegions s.wr (P + BitVec.ofNat 64 d) 32) :
+    WP isa (.block (rev2 d)) s fun s' =>
+      (∃ v : BitVec 256, s'.mem = s.mem.writeW (P + BitVec.ofNat 64 d) v ∧ ∀ l < 2,
+        v.extractLsb' (128 * l) 128 = XBinOp.eval .pshufb
+          (s.mem.readW (S + BitVec.ofNat 64 d + BitVec.ofNat 64 (16 * l)) 128) Proof.Gcm.X86_64.revMask) ∧
+      s'.gpr = s.gpr ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ (∀ l < 2, s'.lane .xmm1 l = s.lane .xmm1 l) := by
+  let v := s.mem.readW (S + BitVec.ofNat 64 d) 256
+  let s₁ := s.setV .l256 .xmm0 (v.extractLsb' 0 128) (v.extractLsb' 128 128)
+  let s₂ := (VOp.vbin .vpshufb .l256 .xmm0 .xmm0 .xmm1).exec s₁
+  rw [rev2, WP.block_cons_iff]
+  refine ⟨s₁, by simp only [isa, exec, State.load256, ea_atd, hsi, hr, ite_true, Option.map_some]; rfl, ?_⟩
+  rw [WP.block_cons_iff]; refine ⟨s₂, rfl, ?_⟩
   rw [WP.block_cons_iff]
-  refine ⟨s₁, by simp only [isa, exec, State.load512, ea_at0, hsi, hr, ite_true, Option.map_some]; rfl, ?_⟩
+  have hst : isa.exec (.vmovdquStore .l256 (Impl.AesGcm.X86_64.at_ .rdi d) .xmm0) s₂ =
+      some (s₂.setMem (s.mem.writeW (P + BitVec.ofNat 64 d) (s₂.ymm .xmm0))) := by
+    simp only [isa, exec, State.store256_eq, ea_atd, s₂, s₁, VOp.exec_gpr, State.setV_gpr, VOp.exec_wr,
+      State.setV_wr, VOp.exec_mem, State.setV_mem, hdi, hw, ite_true]
+  refine ⟨_, hst, WP.block_nil ⟨⟨_, rfl, fun l hl => ?_⟩, by simp [s₂, s₁], by simp [s₂, s₁], by simp [s₂, s₁],
+    fun l hl => ?_⟩⟩
+  · rw [ymm_lane _ _ hl]
+    simp only [s₂, lane_vbin256, ite_true, VBinOp.sse, s₁, State.lane_setV256,
+      show (XReg.xmm1 = .xmm0) = False by decide, ite_false, hm l hl]
+    rw [← load256_lane _ _ hl]
+    rcases (by omega : l = 0 ∨ l = 1) with rfl | rfl <;> rfl
+  · simp [s₂, s₁, lane_vbin256, State.lane_setV256]
+
+/-- The four blocks at `rsi` (`S`), each byte-reversed (`ymm1` holding the
+mask in each lane), stored at `rdi` (`P`), outside them: GHASH reads each as
+the block's 128-bit little-endian value. -/
+theorem revY_ok (s : State) {S P : Addr} (hsi : s.gpr .rsi = S) (hdi : s.gpr .rdi = P)
+    (hm : ∀ l < 2, s.lane .xmm1 l = Proof.Gcm.X86_64.revMask)
+    (hr : InRegions (s.rd ++ s.wr) S 32) (hw : InRegions s.wr P 32)
+    (hr' : InRegions (s.rd ++ s.wr) (S + BitVec.ofNat 64 32) 32) (hw' : InRegions s.wr (P + BitVec.ofNat 64 32) 32)
+    (hSP : Region.Disjoint ⟨S, 64⟩ ⟨P, 64⟩) :
+    WP isa (.block (rev2 0 ++ rev2 32)) s fun s' =>
+      Frame [⟨P, 64⟩] s.mem s'.mem ∧
+      (∀ l < 4, Spec.Gcm.blockAt s'.mem (P + BitVec.ofNat 64 (16 * l)) =
+        s.mem.readW (S + BitVec.ofNat 64 (16 * l)) 128) ∧
+      s'.gpr = s.gpr ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ (∀ l < 2, s'.lane .xmm1 l = s.lane .xmm1 l) := by
+  have e0 : ∀ a : Addr, a + BitVec.ofNat 64 0 = a := fun a => BitVec.add_zero a
+  rw [WP.block_append_iff]
+  refine WP.mono (rev2_ok 0 s (S := S) (P := P) hsi hdi hm (by rw [e0]; exact hr) (by rw [e0]; exact hw))
+    fun s₁ ⟨⟨v₁, m₁, h₁⟩, g₁, rd₁, wr₁, k₁⟩ => ?_
+  have hm₁ : ∀ l < 2, s₁.lane .xmm1 l = Proof.Gcm.X86_64.revMask := fun l hl => by rw [k₁ l hl, hm l hl]
+  refine WP.mono (rev2_ok 32 s₁ (S := S) (P := P) (by rw [g₁, hsi]) (by rw [g₁, hdi]) hm₁ (by rw [rd₁, wr₁]; exact hr')
+    (by rw [wr₁]; exact hw')) fun s₂ ⟨⟨v₂, m₂, h₂⟩, g₂, rd₂, wr₂, k₂⟩ => ?_
+  rw [e0] at m₁ h₁
+  have c0 : (⟨P, 64⟩ : Region).Contains P 32 := by
+    have := Offset.contains_base P (d := 0) (n := 32) (k := 64) (by decide) (by omega)
+    rwa [e0] at this
+  -- The source is outside the first store.
+  have srcS : ∀ l < 2, s₁.mem.readW (S + BitVec.ofNat 64 32 + BitVec.ofNat 64 (16 * l)) 128 =
+      s.mem.readW (S + BitVec.ofNat 64 32 + BitVec.ofNat 64 (16 * l)) 128 := fun l hl => by
+    rw [m₁, Offset.add_add]
+    exact Mem.readW_writeW_sep (hSP.sep (Offset.contains_base S (by omega) (by omega))
+      c0) (by decide)
+  refine ⟨?_, fun l hl => ?_, by rw [g₂, g₁], by rw [rd₂, rd₁], by rw [wr₂, wr₁], fun l hl => by rw [k₂ l hl, k₁ l hl]⟩
+  · rw [m₂, m₁]
+    exact ((Frame.refl _ _).writeW (List.mem_singleton_self _) _
+      c0).writeW
+      (List.mem_singleton_self _) _ (Offset.contains_base P (show 32 + 256 / 8 ≤ 64 by decide) (by omega))
+  · rw [Proof.Gcm.X86_64.blockAt_eq]
+    by_cases hl2 : l < 2
+    · rw [m₂, Mem.readW_writeW_sep (Offset.disjoint P (.inl (by omega)) (by omega) (by omega) |>.sep
+          (Region.contains_self _ _) (Region.contains_self _ _)) (by decide), m₁, readW_lane256 _ _ _ hl2,
+        h₁ l hl2, Proof.Gcm.X86_64.pshufb_rev_rev]
+    · have e : P + BitVec.ofNat 64 (16 * l) = P + BitVec.ofNat 64 32 + BitVec.ofNat 64 (16 * (l - 2)) := by
+        rw [Offset.add_add]; congr 2; omega
+      have eS : S + BitVec.ofNat 64 (16 * l) = S + BitVec.ofNat 64 32 + BitVec.ofNat 64 (16 * (l - 2)) := by
+        rw [Offset.add_add]; congr 2; omega
+      rw [e, m₂, readW_lane256 _ _ _ (by omega), h₂ (l - 2) (by omega), Proof.Gcm.X86_64.pshufb_rev_rev, eS,
+        srcS (l - 2) (by omega)]
+
+/-- The two keystream blocks at `rsi + d` XORed into the two data blocks at
+`r12 + d`. -/
+theorem xor2_ok (d : Nat) (s : State) {S Q : Addr} (hsi : s.gpr .rsi = S) (h12 : s.gpr .r12 = Q)
+    (hr : InRegions (s.rd ++ s.wr) (S + BitVec.ofNat 64 d) 32) (hw : InRegions s.wr (Q + BitVec.ofNat 64 d) 32) :
+    WP isa (.block (xor2 d)) s fun s' =>
+      (∃ v : BitVec 256, s'.mem = s.mem.writeW (Q + BitVec.ofNat 64 d) v ∧ ∀ l < 2,
+        v.extractLsb' (128 * l) 128 = s.mem.readW (Q + BitVec.ofNat 64 d + BitVec.ofNat 64 (16 * l)) 128 ^^^
+          s.mem.readW (S + BitVec.ofNat 64 d + BitVec.ofNat 64 (16 * l)) 128) ∧
+      s'.gpr = s.gpr ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
+  have hw' := Proof.Aes.X86_64.AesNi.inRegions_wr hw
+  let vS := s.mem.readW (S + BitVec.ofNat 64 d) 256
+  let vQ := s.mem.readW (Q + BitVec.ofNat 64 d) 256
+  let s₁ := s.setV .l256 .xmm1 (vS.extractLsb' 0 128) (vS.extractLsb' 128 128)
+  let s₂ := s₁.setV .l256 .xmm0 (vQ.extractLsb' 0 128) (vQ.extractLsb' 128 128)
+  let s₃ := (VOp.vbin .vpxor .l256 .xmm1 .xmm1 .xmm0).exec s₂
+  rw [xor2, WP.block_cons_iff]
+  refine ⟨s₁, by simp only [isa, exec, State.load256, ea_atd, hsi, hr, ite_true, Option.map_some]; rfl, ?_⟩
   rw [WP.block_cons_iff]
   refine ⟨s₂, by
-    simp only [isa, exec, State.load512, ea_at0, s₁, State.setZ_gpr, State.setZ_rd, State.setZ_wr, State.setZ_mem,
+    simp only [isa, exec, State.load256, ea_atd, s₁, State.setV_gpr, State.setV_rd, State.setV_wr, State.setV_mem,
       h12, hw', ite_true, Option.map_some]; rfl, ?_⟩
   rw [WP.block_cons_iff]; refine ⟨s₃, rfl, ?_⟩
   rw [WP.block_cons_iff]
-  have hst : isa.exec (.vmovdqu32Store (Impl.AesGcm.X86_64.at_ .r12 0) .xmm1) s₃ =
-      some (s₃.setMem (s.mem.writeW Q (s₃.zmm .xmm1))) := by
-    simp only [isa, exec, State.store512_eq, ea_at0, s₃, s₂, s₁, ZOp.exec_gpr, State.setZ_gpr, ZOp.exec_wr,
-      State.setZ_wr, ZOp.exec_mem, State.setZ_mem, h12, hw, ite_true]
+  have hst : isa.exec (.vmovdquStore .l256 (Impl.AesGcm.X86_64.at_ .r12 d) .xmm1) s₃ =
+      some (s₃.setMem (s.mem.writeW (Q + BitVec.ofNat 64 d) (s₃.ymm .xmm1))) := by
+    simp only [isa, exec, State.store256_eq, ea_atd, s₃, s₂, s₁, VOp.exec_gpr, State.setV_gpr, VOp.exec_wr,
+      State.setV_wr, VOp.exec_mem, State.setV_mem, h12, hw, ite_true]
   refine ⟨_, hst, WP.block_nil ⟨⟨_, rfl, fun l hl => ?_⟩, by simp [s₃, s₂, s₁], by simp [s₃, s₂, s₁],
     by simp [s₃, s₂, s₁]⟩⟩
-  rw [Proof.Aes.X86_64.VaesZ.zmm_lane _ _ hl]
-  simp only [s₃, zlane_zbin _ _ _ _ _ _ hl, ite_true, ZBinOp.sse]
-  rw [State.zlane_setZ _ _ _ _ _ _ _ hl, State.zlane_setZ _ _ _ _ _ _ _ hl]
-  simp only [show (XReg.xmm1 = .xmm0) = False by decide, ite_false, ite_true]
-  rw [State.zlane_setZ _ _ _ _ _ _ _ hl]
-  simp only [ite_true]
-  rw [pick4_lanes (fun i => vS.extractLsb' (128 * i) 128) hl, pick4_lanes (fun i => vQ.extractLsb' (128 * i) 128) hl,
-    Proof.Aes.X86_64.VaesZ.load512_lane _ _ hl, Proof.Aes.X86_64.VaesZ.load512_lane _ _ hl,
-    Proof.Aes.X86_64.AesNi.eval_pxor, BitVec.xor_comm]
+  rw [ymm_lane _ _ hl]
+  simp only [s₃, lane_vbin256, ite_true, VBinOp.sse, s₂, s₁, State.lane_setV256,
+    show (XReg.xmm1 = .xmm0) = False by decide, ite_false, ite_true]
+  rw [Proof.Aes.X86_64.AesNi.eval_pxor, BitVec.xor_comm, ← load256_lane _ _ hl, ← load256_lane _ _ hl]
+  rcases (by omega : l = 0 ∨ l = 1) with rfl | rfl <;> rfl
+
+/-- The four keystream blocks at `rsi` (`S`) XORed into the four data blocks
+at `r12` (`Q`), outside them. -/
+theorem ksY_ok (s : State) {S Q : Addr} (hsi : s.gpr .rsi = S) (h12 : s.gpr .r12 = Q)
+    (hr : InRegions (s.rd ++ s.wr) S 32) (hw : InRegions s.wr Q 32)
+    (hr' : InRegions (s.rd ++ s.wr) (S + BitVec.ofNat 64 32) 32) (hw' : InRegions s.wr (Q + BitVec.ofNat 64 32) 32)
+    (hSQ : Region.Disjoint ⟨S, 64⟩ ⟨Q, 64⟩) :
+    WP isa (.block (xor2 0 ++ xor2 32)) s fun s' =>
+      Frame [⟨Q, 64⟩] s.mem s'.mem ∧
+      (∀ l < 4, s'.mem.readW (Q + BitVec.ofNat 64 (16 * l)) 128 =
+        s.mem.readW (Q + BitVec.ofNat 64 (16 * l)) 128 ^^^ s.mem.readW (S + BitVec.ofNat 64 (16 * l)) 128) ∧
+      s'.gpr = s.gpr ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
+  have e0 : ∀ a : Addr, a + BitVec.ofNat 64 0 = a := fun a => BitVec.add_zero a
+  rw [WP.block_append_iff]
+  refine WP.mono (xor2_ok 0 s (S := S) (Q := Q) hsi h12 (by rw [e0]; exact hr) (by rw [e0]; exact hw))
+    fun s₁ ⟨⟨v₁, m₁, h₁⟩, g₁, rd₁, wr₁⟩ => ?_
+  refine WP.mono (xor2_ok 32 s₁ (S := S) (Q := Q) (by rw [g₁, hsi]) (by rw [g₁, h12]) (by rw [rd₁, wr₁]; exact hr')
+    (by rw [wr₁]; exact hw')) fun s₂ ⟨⟨v₂, m₂, h₂⟩, g₂, rd₂, wr₂⟩ => ?_
+  simp only [e0] at m₁ h₁
+  have c0 : (⟨Q, 64⟩ : Region).Contains Q 32 := by
+    have := Offset.contains_base Q (d := 0) (n := 32) (k := 64) (by decide) (by omega)
+    rwa [e0] at this
+  -- The second pair, read after the first store: the keystream is outside
+  -- it, and the data after it.
+  have srcS : ∀ l < 2, s₁.mem.readW (S + BitVec.ofNat 64 32 + BitVec.ofNat 64 (16 * l)) 128 =
+      s.mem.readW (S + BitVec.ofNat 64 32 + BitVec.ofNat 64 (16 * l)) 128 := fun l hl => by
+    rw [m₁, Offset.add_add]
+    exact Mem.readW_writeW_sep (hSQ.sep (Offset.contains_base S (by omega) (by omega)) c0) (by decide)
+  have srcQ : ∀ l < 2, s₁.mem.readW (Q + BitVec.ofNat 64 32 + BitVec.ofNat 64 (16 * l)) 128 =
+      s.mem.readW (Q + BitVec.ofNat 64 32 + BitVec.ofNat 64 (16 * l)) 128 := fun l hl => by
+    rw [m₁, Offset.add_add]
+    exact Mem.readW_writeW_sep ((Offset.disjoint_base Q (d := 32 + 16 * l) (n := 16) (k := 32) (by omega)
+      (by omega)).sep (Region.contains_self _ _) (Region.contains_self _ _)) (by decide)
+  refine ⟨?_, fun l hl => ?_, by rw [g₂, g₁], by rw [rd₂, rd₁], by rw [wr₂, wr₁]⟩
+  · rw [m₂, m₁]
+    exact ((Frame.refl _ _).writeW (List.mem_singleton_self _) _ c0).writeW
+      (List.mem_singleton_self _) _ (Offset.contains_base Q (show 32 + 256 / 8 ≤ 64 by decide) (by omega))
+  · by_cases hl2 : l < 2
+    · rw [m₂, Mem.readW_writeW_sep (Offset.disjoint Q (.inl (by omega)) (by omega) (by omega) |>.sep
+          (Region.contains_self _ _) (Region.contains_self _ _)) (by decide), m₁, readW_lane256 _ _ _ hl2,
+        h₁ l hl2]
+    · have e : Q + BitVec.ofNat 64 (16 * l) = Q + BitVec.ofNat 64 32 + BitVec.ofNat 64 (16 * (l - 2)) := by
+        rw [Offset.add_add]; congr 2; omega
+      have eS : S + BitVec.ofNat 64 (16 * l) = S + BitVec.ofNat 64 32 + BitVec.ofNat 64 (16 * (l - 2)) := by
+        rw [Offset.add_add]; congr 2; omega
+      rw [e, m₂, readW_lane256 _ _ _ (by omega), h₂ (l - 2) (by omega), srcQ (l - 2) (by omega),
+        srcS (l - 2) (by omega), eS]
 
 /-! ## The pointers and the count -/
 
@@ -206,7 +297,7 @@ theorem adv4_run (u : State) {a b : Reg} (ha : a ≠ .rcx) (hb : b ≠ .rcx) (ha
       u'.gpr a = u.gpr a + BitVec.ofNat 64 64 ∧ u'.gpr b = u.gpr b + BitVec.ofNat 64 64 ∧
       u'.gpr .rcx = BitVec.ofNat 64 (k - 4) ∧ u'.cf = some (decide (k - 4 < 4)) ∧
       (∀ r, r ≠ a → r ≠ b → r ≠ .rcx → u'.gpr r = u.gpr r) ∧ u'.mem = u.mem ∧ u'.rd = u.rd ∧ u'.wr = u.wr ∧
-      (∀ x l, u'.zlane x l = u.zlane x l) := by
+      (∀ x l, u'.lane x l = u.lane x l) := by
   have e64 : BitVec.signExtend 64 (BitVec.ofNat 32 64) = BitVec.ofNat 64 64 := by decide
   have e4 : BitVec.signExtend 64 (BitVec.ofNat 32 4) = BitVec.ofNat 64 4 := by decide
   have s4 : BitVec.ofNat 64 k - BitVec.ofNat 64 4 = BitVec.ofNat 64 (k - 4) :=
@@ -225,26 +316,25 @@ theorem adv4_run (u : State) {a b : Reg} (ha : a ≠ .rcx) (hb : b ≠ .rcx) (ha
 
 /-! ## The mask -/
 
-/-- The byte-reversal mask in the four lanes of `zmm1`, and the count in
-`rcx`. -/
-theorem revMaskZ_ok (s : State) :
-    WP isa (.block (revMaskZ ++ ([.mov .rcx (.reg .r14)] : List Instr))) s fun s' =>
-      (∀ l < 4, s'.zlane .xmm1 l = Proof.Gcm.X86_64.revMask) ∧ s'.gpr .rcx = s.gpr .r14 ∧
+/-- The byte-reversal mask in both lanes of `ymm1`, and the count in `rcx`. -/
+theorem revMaskY_ok (s : State) :
+    WP isa (.block (revMaskY ++ ([.mov .rcx (.reg .r14)] : List Instr))) s fun s' =>
+      (∀ l < 2, s'.lane .xmm1 l = Proof.Gcm.X86_64.revMask) ∧ s'.gpr .rcx = s.gpr .r14 ∧
       (∀ r, r ≠ .rax → r ≠ .rcx → s'.gpr r = s.gpr r) ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
-  rw [revMaskZ, List.append_assoc, WP.block_append_iff]
+  rw [revMaskY, List.append_assoc, WP.block_append_iff]
   refine WP.mono (Proof.Gcm.X86_64.Pclmul.const_ok .xmm1 _ s (by decide)) fun s₁ ⟨x₁, O⟩ => ?_
   apply WP.of_runBlock
   refine ⟨_, rfl, fun l hl => ?_, ?_, fun r h₁ h₂ => ?_, O.mem, O.rd, O.wr⟩
-  · have hz : ∀ (u : State) (r : Reg) (v : BitVec 64) (x : XReg) (l : Nat), (u.setReg r v).zlane x l =
-        u.zlane x l := fun _ _ _ _ _ => rfl
+  · have hz : ∀ (u : State) (r : Reg) (v : BitVec 64) (x : XReg) (l : Nat), (u.setReg r v).lane x l =
+        u.lane x l := fun _ _ _ _ _ => rfl
     rw [hz]
-    simp only [zlane_vshufi32x4 _ _ _ _ _ _ hl, ite_true, shuf4Lanes]
-    have e : ∀ j < 4, ((0 : BitVec 8).extractLsb' (2 * j) 2).toNat = 0 := by decide
-    rw [e l hl]
-    split <;> (rw [show s₁.zlane .xmm1 0 = s₁.xmm .xmm1 from rfl, x₁]; rfl)
-  · simp only [isa, exec, readSrc, State.setReg, ite_true, ZOp.exec_gpr, State.setZ_gpr]
+    simp only [VOp.exec, show (1 : BitVec 8).getLsbD 0 = true by decide, ite_true, State.lane_setV256]
+    rcases (by omega : l = 0 ∨ l = 1) with rfl | rfl
+    · simp only [ite_true]; rw [show s₁.lane .xmm1 0 = s₁.xmm .xmm1 from rfl, x₁]; rfl
+    · simp only [show (1 : Nat) ≠ 0 by decide, ite_false]; rw [x₁]; rfl
+  · simp only [isa, exec, readSrc, State.setReg, ite_true, VOp.exec_gpr, State.setV_gpr]
     exact O.gpr _ (by decide)
-  · simp only [isa, exec, State.setReg, h₂, ite_false, ZOp.exec_gpr, State.setZ_gpr]
+  · simp only [isa, exec, State.setReg, h₂, ite_false, VOp.exec_gpr, State.setV_gpr]
     exact O.gpr r h₁
 
 end VG.Proof.AesGcmSiv.X86_64

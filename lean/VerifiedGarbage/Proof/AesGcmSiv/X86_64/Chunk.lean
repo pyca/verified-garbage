@@ -447,21 +447,23 @@ theorem xorQuadStep_ok {K W SP : Addr} (L : Lay K W SP) {t₁ : State} (E : Env 
       XorInv D W n ciph icb x j c t₁ u' (k + 4) ∧ u'.cf = some (decide (c - (k + 4) < 4)) := by
   have hw := L.ww
   have hn := hD.lt
-  have rS : InRegions (u.rd ++ u.wr) (W + BitVec.ofNat 64 (488 + 16 * k)) 64 := by
+  have rS : InRegions (u.rd ++ u.wr) (W + BitVec.ofNat 64 (488 + 16 * k)) 32 := by
     rw [I.rd, I.wr]; exact E.perm.wR (by omega)
-  have wQ : InRegions u.wr (D + BitVec.ofNat 64 (16 * (j + k))) 64 := by
+  have rS' : InRegions (u.rd ++ u.wr) (W + BitVec.ofNat 64 (488 + 16 * k) + BitVec.ofNat 64 32) 32 := by
+    rw [I.rd, I.wr, add_ofNat_assoc]; exact E.perm.wR (by omega)
+  have wQ : InRegions u.wr (D + BitVec.ofNat 64 (16 * (j + k))) 32 := by
     rw [I.wr]; exact Proof.AesGcm.X86_64.in_off hDw (by omega) hn
-  rw [show ksQuad = ([.vmovdqu32Load .xmm1 (at_ .rsi 0), .vmovdqu32Load .xmm0 (at_ .r12 0),
-      .zop (.zbin .vpxord .xmm1 .xmm1 .xmm0), .vmovdqu32Store (at_ .r12 0) .xmm1] : List Instr) ++
-      ([.alu .add .r12 (imm 64), .alu .add .rsi (imm 64), .alu .sub .rcx (imm 4), .alu .cmp .rcx (imm 4)] :
-        List Instr) from rfl, WP.block_append_iff]
-  refine WP.mono (ksZ_ok u I.rsi I.r12 rS wQ) fun u₁ ⟨⟨v, m₁, hv⟩, g₁, rd₁, wr₁⟩ => ?_
+  have wQ' : InRegions u.wr (D + BitVec.ofNat 64 (16 * (j + k)) + BitVec.ofNat 64 32) 32 := by
+    rw [I.wr, add_ofNat_assoc]; exact Proof.AesGcm.X86_64.in_off hDw (by omega) hn
+  have hSQ : Region.Disjoint ⟨W + BitVec.ofNat 64 (488 + 16 * k), 64⟩ ⟨D + BitVec.ofNat 64 (16 * (j + k)), 64⟩ :=
+    ((hD.w.sub_left (Offset.sub_base D (by omega))).sub_right (Lay.wSub (by omega))).symm
+  rw [ksQuad, WP.block_append_iff]
+  refine WP.mono (ksY_ok u I.rsi I.r12 rS wQ rS' wQ' hSQ) fun u₁ ⟨fr₁, hv, g₁, rd₁, wr₁⟩ => ?_
   have cx₁ : u₁.gpr .rcx = BitVec.ofNat 64 (c - k) := by rw [g₁]; exact I.rcx
   obtain ⟨u₂, run₂, r12₂, rsi₂, cx₂, cf₂, g₂, m₂, rd₂, wr₂, -⟩ :=
     adv4_run u₁ (a := .r12) (b := .rsi) (by decide) (by decide) (by decide) (k := c - k) (by omega) (by omega) cx₁
   refine WP.of_runBlock ⟨u₂, run₂, ?_, by rw [cf₂, show c - k - 4 = c - (k + 4) by omega]⟩
-  have hfr : Frame [⟨D + BitVec.ofNat 64 (16 * (j + k)), 64⟩] u.mem u₂.mem := by
-    rw [m₂, m₁]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
+  have hfr : Frame [⟨D + BitVec.ofNat 64 (16 * (j + k)), 64⟩] u.mem u₂.mem := by rw [m₂]; exact fr₁
   have hks' : ∀ l < 4, bytesAt u.mem (W + BitVec.ofNat 64 (488 + 16 * k) + BitVec.ofNat 64 (16 * l)) 16 =
       GcmSiv.ksBlock ciph icb (j + k + l) := fun l hl => by
     rw [add_ofNat_assoc, show 488 + 16 * k + 16 * l = 488 + 16 * (k + l) by omega,
@@ -475,8 +477,8 @@ theorem xorQuadStep_ok {K W SP : Addr} (L : Lay K W SP) {t₁ : State} (E : Env 
     refine GcmSiv.ctrPart_stepN ciph icb x D (fun l _ => hk16 _) I.data
       (frame_outside (len := x.length) (a := 16 * (j + k)) (n := 64) hfr
         (fun q hq => by simp only [List.mem_singleton] at hq; exact .inl hq) (by omega) (by omega)) fun l hl => ?_
-    rw [m₂, m₁, show 16 * (j + k + l) = 16 * (j + k) + 16 * l by omega, ← add_ofNat_assoc, ← le16_readW,
-      readW_lane512 _ _ _ hl, hv l hl, le16_xor, le16_readW, le16_readW, hks' l hl]
+    rw [m₂, show 16 * (j + k + l) = 16 * (j + k) + 16 * l by omega, ← add_ofNat_assoc, ← le16_readW,
+      hv l hl, le16_xor, le16_readW, le16_readW, hks' l hl]
   refine ⟨?_, ?_, ?_, hx', I.frame.trans (hfr.sub fun q hq => by
       simp only [List.mem_singleton] at hq; subst hq
       exact ⟨_, List.mem_singleton_self _, Offset.sub D (by omega) (by omega)⟩),
@@ -495,21 +497,23 @@ theorem xorQuadRegs_ok {K W SP : Addr} (L : Lay K W SP) {t₁ : State} (E : Env 
       XorRegs D W j c t₁ u' (k + 4) ∧ u'.cf = some (decide (c - (k + 4) < 4)) := by
   have hw := L.ww
   have hn := hD.lt
-  have rS : InRegions (u.rd ++ u.wr) (W + BitVec.ofNat 64 (488 + 16 * k)) 64 := by
+  have rS : InRegions (u.rd ++ u.wr) (W + BitVec.ofNat 64 (488 + 16 * k)) 32 := by
     rw [I.rd, I.wr]; exact E.perm.wR (by omega)
-  have wQ : InRegions u.wr (D + BitVec.ofNat 64 (16 * (j + k))) 64 := by
+  have rS' : InRegions (u.rd ++ u.wr) (W + BitVec.ofNat 64 (488 + 16 * k) + BitVec.ofNat 64 32) 32 := by
+    rw [I.rd, I.wr, add_ofNat_assoc]; exact E.perm.wR (by omega)
+  have wQ : InRegions u.wr (D + BitVec.ofNat 64 (16 * (j + k))) 32 := by
     rw [I.wr]; exact Proof.AesGcm.X86_64.in_off hDw (by omega) hn
-  rw [show ksQuad = ([.vmovdqu32Load .xmm1 (at_ .rsi 0), .vmovdqu32Load .xmm0 (at_ .r12 0),
-      .zop (.zbin .vpxord .xmm1 .xmm1 .xmm0), .vmovdqu32Store (at_ .r12 0) .xmm1] : List Instr) ++
-      ([.alu .add .r12 (imm 64), .alu .add .rsi (imm 64), .alu .sub .rcx (imm 4), .alu .cmp .rcx (imm 4)] :
-        List Instr) from rfl, WP.block_append_iff]
-  refine WP.mono (ksZ_ok u I.rsi I.r12 rS wQ) fun u₁ ⟨⟨v, m₁, _⟩, g₁, rd₁, wr₁⟩ => ?_
+  have wQ' : InRegions u.wr (D + BitVec.ofNat 64 (16 * (j + k)) + BitVec.ofNat 64 32) 32 := by
+    rw [I.wr, add_ofNat_assoc]; exact Proof.AesGcm.X86_64.in_off hDw (by omega) hn
+  have hSQ : Region.Disjoint ⟨W + BitVec.ofNat 64 (488 + 16 * k), 64⟩ ⟨D + BitVec.ofNat 64 (16 * (j + k)), 64⟩ :=
+    ((hD.w.sub_left (Offset.sub_base D (by omega))).sub_right (Lay.wSub (by omega))).symm
+  rw [ksQuad, WP.block_append_iff]
+  refine WP.mono (ksY_ok u I.rsi I.r12 rS wQ rS' wQ' hSQ) fun u₁ ⟨fr₁, _, g₁, rd₁, wr₁⟩ => ?_
   have cx₁ : u₁.gpr .rcx = BitVec.ofNat 64 (c - k) := by rw [g₁]; exact I.rcx
   obtain ⟨u₂, run₂, r12₂, rsi₂, cx₂, cf₂, g₂, m₂, rd₂, wr₂, -⟩ :=
     adv4_run u₁ (a := .r12) (b := .rsi) (by decide) (by decide) (by decide) (k := c - k) (by omega) (by omega) cx₁
   refine WP.of_runBlock ⟨u₂, run₂, ?_, by rw [cf₂, show c - k - 4 = c - (k + 4) by omega]⟩
-  have hfr : Frame [⟨D + BitVec.ofNat 64 (16 * (j + k)), 64⟩] u.mem u₂.mem := by
-    rw [m₂, m₁]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
+  have hfr : Frame [⟨D + BitVec.ofNat 64 (16 * (j + k)), 64⟩] u.mem u₂.mem := by rw [m₂]; exact fr₁
   refine ⟨?_, ?_, ?_, I.frame.trans (hfr.sub fun q hq => by
       simp only [List.mem_singleton] at hq; subst hq
       exact ⟨_, List.mem_singleton_self _, Offset.sub D (by omega) (by omega)⟩),
@@ -526,6 +530,13 @@ theorem XorInv.flags {D W : Addr} {n : Nat} {ciph : Spec.GcmSiv.Cipher} {icb x :
 theorem XorRegs.flags {D W : Addr} {j c k : Nat} {t₁ : State} : FlagStable (fun u => XorRegs D W j c t₁ u k) :=
   fun _ _ _ _ h => ⟨h.r12, h.rsi, h.rcx, h.frame, h.gpr, h.rd, h.wr⟩
 
+theorem XorInv.upper {D W : Addr} {n : Nat} {ciph : Spec.GcmSiv.Cipher} {icb x : List Byte} {j c k : Nat}
+    {t₁ : State} : UpperStable (fun u => XorInv D W n ciph icb x j c t₁ u k) :=
+  fun _ h => ⟨h.r12, h.rsi, h.rcx, h.data, h.frame, h.gpr, h.rd, h.wr⟩
+
+theorem XorRegs.upper {D W : Addr} {j c k : Nat} {t₁ : State} : UpperStable (fun u => XorRegs D W j c t₁ u k) :=
+  fun _ h => ⟨h.r12, h.rsi, h.rcx, h.frame, h.gpr, h.rd, h.wr⟩
+
 /-- The loop of the keystream XOR, one block or four at a time. -/
 theorem ksLoop_ok (wide : Bool) {K W SP : Addr} (L : Lay K W SP) {t₁ : State} (E : Env K W SP t₁) {D : Addr}
     {n : Nat} (hD : Buf K W SP t₁ D n) (hDw : Covers [⟨D, n⟩] t₁.wr) {ciph : Spec.GcmSiv.Cipher}
@@ -538,6 +549,7 @@ theorem ksLoop_ok (wide : Bool) {K W SP : Addr} (L : Lay K W SP) {t₁ : State} 
   · exact xorLoop_ok L E hD hDw hxl hk16 hc hjc hks hc1 I₀
   · exact quadsThenOnes_ok (by omega) hc1 (fun k u => XorInv D W n ciph icb x j c t₁ u k)
       (fun k u => XorInv D W n ciph icb x j c t₁ u k) (fun _ => XorInv.flags) (fun _ => XorInv.flags)
+      (fun _ => XorInv.upper)
       (fun _ _ h => h) (fun _ _ h => h.rcx)
       (fun _ hk _ hu => xorQuadStep_ok L E hD hDw hxl hk16 hc hjc hks hk hu)
       (fun _ hk _ hu => xorLoop_ok L E hD hDw hxl hk16 hc hjc hks hk hu) I₀
@@ -550,7 +562,7 @@ theorem ksLoop_regs (wide : Bool) {K W SP : Addr} (L : Lay K W SP) {t₁ : State
   cases wide
   · exact xorLoop_regs L E hD hDw hc hjc hc1 I₀
   · exact quadsThenOnes_ok (by omega) hc1 (fun k u => XorRegs D W j c t₁ u k) (fun k u => XorRegs D W j c t₁ u k)
-      (fun _ => XorRegs.flags) (fun _ => XorRegs.flags) (fun _ _ h => h) (fun _ _ h => h.rcx)
+      (fun _ => XorRegs.flags) (fun _ => XorRegs.flags) (fun _ => XorRegs.upper) (fun _ _ h => h) (fun _ _ h => h.rcx)
       (fun _ hk _ hu => xorQuadRegs_ok L E hD hDw hc hjc hk hu)
       (fun _ hk _ hu => xorLoop_regs L E hD hDw hc hjc hk hu) I₀
 

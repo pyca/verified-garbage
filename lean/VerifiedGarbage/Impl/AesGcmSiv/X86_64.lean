@@ -32,10 +32,10 @@ implementations as AES-GCM is (`Impl.AesGcm.X86_64.Callees`: only `ctr`,
   `vg_aes_encrypt_blocks` and XORed into the data 16 bytes at a time
   (`ksXor`); the last bytes are XORed with a keystream block from
   `vg_aes_ctr32` (`crypt`).
-* With `wide` (the instances whose AES-GCM loops are on 512-bit registers,
-  `GcmImpl.short`), the copies are reversed and the keystream XORed four
-  blocks at a time, in the four lanes of `zmm0` (`revLoopZ`, `ksLoop`,
-  `quadsThenOnes`), and the blocks left one at a time as without it.
+* With `wide` (the instances whose callees need AVX2), the copies are
+  reversed and the keystream XORed four blocks at a time, two in each of two
+  256-bit loads (`revLoopY`, `ksLoop`, `quadsThenOnes`), and the blocks left
+  one at a time as without it.
 * `seal` copies the tag from `W` to `tag` at the end (`tagOut`); `open`
   copies the received tag from `tag` to `W` first (`recv`), computes the tag of the plaintext at `W + 128` and compares the two
   without a branch (`cmp`), then masks the data with `0 − ok`, 16 bytes at
@@ -170,16 +170,21 @@ def revLoop : Prog isa :=
       .alu .sub .rcx (imm 1)]) .ne)
 
 /-- The mask with which `vpshufb` reverses the bytes of each 128-bit lane, in
-the four lanes of `zmm1` (through `rax` and `xmm12`). -/
-def revMaskZ : List Instr :=
+both lanes of `ymm1` (through `rax` and `xmm12`). -/
+def revMaskY : List Instr :=
   Impl.Gcm.X86_64.Pclmul.const .xmm1 Impl.Gcm.X86_64.Pclmul.revMask ++
-    ([.zop (.vshufi32x4 .xmm1 .xmm1 .xmm1 0x00)] : List Instr)
+    ([.vop (.vinserti128 .xmm1 .xmm1 .xmm1 1)] : List Instr)
+
+/-- Two blocks at `rsi + d` copied to `rdi + d`, the bytes of each reversed. -/
+def rev2 (d : Nat) : List Instr :=
+  [.vmovdquLoad .l256 .xmm0 (at_ .rsi d), .vop (.vbin .vpshufb .l256 .xmm0 .xmm0 .xmm1),
+    .vmovdquStore .l256 (at_ .rdi d) .xmm0]
 
 /-- Four blocks at `rsi` copied to `rdi`, the bytes of each reversed; `rcx`
 four fewer, compared with 4. -/
 def revQuad : List Instr :=
-  [.vmovdqu32Load .xmm0 (at_ .rsi 0), .zop (.zbin .vpshufb .xmm0 .xmm0 .xmm1), .vmovdqu32Store (at_ .rdi 0) .xmm0,
-    .alu .add .rsi (imm 64), .alu .add .rdi (imm 64), .alu .sub .rcx (imm 4), .alu .cmp .rcx (imm 4)]
+  rev2 0 ++ rev2 32 ++
+    ([.alu .add .rsi (imm 64), .alu .add .rdi (imm 64), .alu .sub .rcx (imm 4), .alu .cmp .rcx (imm 4)] : List Instr)
 
 /-- The body of `revLoop`: one block at `rsi` copied to `rdi`, its bytes
 reversed; `rcx` one fewer. -/
@@ -189,20 +194,22 @@ def revOne : List Instr :=
     .alu .sub .rcx (imm 1)]
 
 /-- The `rcx` (at least 1) blocks: four at a time with `quad` while there are
-four, then one at a time with `one`. -/
+four, then one at a time with `one`. `vzeroupper` after the quads keeps the
+SSE instructions after them (and in the functions called later) from paying
+for the dirty upper halves of the registers. -/
 def quadsThenOnes (quad one : List Instr) : Prog isa :=
   .seq (.block [.alu .cmp .rcx (imm 4)])
-  (.seq (.ite .b (.block []) (.loop (.block quad) .ae))
+  (.seq (.ite .b (.block []) (.seq (.loop (.block quad) .ae) (.block [.vop .vzeroupper])))
   (.seq (.block [.alu .test .rcx (.reg .rcx)])
     (.ite .e (.block []) (.loop (.block one) .ne))))
 
-/-- `revLoop` four blocks at a time on 512-bit registers, then one at a
+/-- `revLoop` four blocks at a time on 256-bit registers, then one at a
 time. -/
-def revLoopZ : Prog isa :=
-  .seq (.block (revMaskZ ++ ([.mov .rcx (.reg .r14)] : List Instr))) (quadsThenOnes revQuad revOne)
+def revLoopY : Prog isa :=
+  .seq (.block (revMaskY ++ ([.mov .rcx (.reg .r14)] : List Instr))) (quadsThenOnes revQuad revOne)
 
-/-- `revLoop`, or `revLoopZ` if `wide`. -/
-def revSel (wide : Bool) : Prog isa := if wide then revLoopZ else revLoop
+/-- `revLoop`, or `revLoopY` if `wide`. -/
+def revSel (wide : Bool) : Prog isa := if wide then revLoopY else revLoop
 
 /-- Up to 64 of the `rbx` whole blocks at `r12` (`r14` of them), reversed and
 absorbed; `r12` and `rbx` past them. -/
@@ -281,15 +288,19 @@ def ksOne : List Instr :=
   [.movdquLoad .xmm0 (at_ .r12 0), .movdquLoad .xmm1 (at_ .rsi 0), .xop (.bin .pxor .xmm0 .xmm1),
     .movdquStore (at_ .r12 0) .xmm0, .alu .add .r12 (imm 16), .alu .add .rsi (imm 16), .alu .sub .rcx (imm 1)]
 
+/-- Two keystream blocks at `rsi + d` XORed into the data at `r12 + d`. -/
+def xor2 (d : Nat) : List Instr :=
+  [.vmovdquLoad .l256 .xmm1 (at_ .rsi d), .vmovdquLoad .l256 .xmm0 (at_ .r12 d),
+    .vop (.vbin .vpxor .l256 .xmm1 .xmm1 .xmm0), .vmovdquStore .l256 (at_ .r12 d) .xmm1]
+
 /-- Four keystream blocks at `rsi` XORed into the data at `r12`; `rcx`
 four fewer, compared with 4. -/
 def ksQuad : List Instr :=
-  [.vmovdqu32Load .xmm1 (at_ .rsi 0), .vmovdqu32Load .xmm0 (at_ .r12 0), .zop (.zbin .vpxord .xmm1 .xmm1 .xmm0),
-    .vmovdqu32Store (at_ .r12 0) .xmm1, .alu .add .r12 (imm 64), .alu .add .rsi (imm 64), .alu .sub .rcx (imm 4),
-    .alu .cmp .rcx (imm 4)]
+  xor2 0 ++ xor2 32 ++
+    ([.alu .add .r12 (imm 64), .alu .add .rsi (imm 64), .alu .sub .rcx (imm 4), .alu .cmp .rcx (imm 4)] : List Instr)
 
 /-- The loop of the keystream XOR: one block at a time, or, if `wide`, four
-at a time on 512-bit registers while four are left. -/
+at a time on 256-bit registers while four are left. -/
 def ksLoop (wide : Bool) : Prog isa :=
   if wide then quadsThenOnes ksQuad ksOne else .loop (.block ksOne) .ne
 

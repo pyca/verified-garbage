@@ -35,34 +35,38 @@ needs AES-NI; the emitter checks the features of every instance). -/
 def ecbOf (v : GcmImpl) : BlocksImpl :=
   if v.ctr.features = [] then .scalar else if v.ctr.features.contains "vaes" then .vaes else .aesni
 
+/-- Whether `seal` and `open` copy and XOR four blocks at a time on 256-bit
+registers (`wide`): with the instances whose `vg_aes_ctr32` or `vg_ghash`
+needs AVX2, as those loops do. -/
+def sivWide (v : GcmImpl) : Bool := (v.ctr.features ++ v.gh.features).contains "avx2"
+
 /-- The CPU features of `seal` and `open`: those of the four functions they
-call, and AVX512F and AVX512BW with the instances calling the loops on
-512-bit registers (`GcmImpl.short`), whose copies and XORs use them too (here,
-to keep `List.dedup`'s imports out of the proofs). -/
+call, and AVX and AVX2 with `sivWide` (which they include already; here, to
+keep `List.dedup`'s imports out of the proofs). -/
 def features (v : GcmImpl) : List String :=
   (v.ctr.features ++ v.key.features ++ v.gh.features ++ (ecbOf v).features ++
-    (if v.short then ["avx512f", "avx512bw"] else [])).dedup
+    (if sivWide v then ["avx", "avx2"] else [])).dedup
 
 section
 variable (v : GcmImpl) (eb : BlocksImpl) (wide : Bool)
 
 theorem seal_mx : («seal» v.callees ⟨eb.enc.name, eb.enc.code⟩ wide).allInstrs (fun i => !loadsMxcsr i) = true := by
-  cases wide <;> simp only [«seal», «open», revSel, revLoopZ, revMaskZ, revQuad, revOne, quadsThenOnes, ksLoop, ksQuad, ksOne, Impl.Gcm.X86_64.Pclmul.const, ↓reduceIte, entry, keys, derive, deriveBlock, expand, hkey, polyval, absorb, absorbChunk, revLoop, absorbTail, lens,
+  cases wide <;> simp only [«seal», «open», revSel, revLoopY, revMaskY, revQuad, rev2, revOne, quadsThenOnes, ksLoop, ksQuad, xor2, ksOne, Impl.Gcm.X86_64.Pclmul.const, ↓reduceIte, entry, keys, derive, deriveBlock, expand, hkey, polyval, absorb, absorbChunk, revLoop, absorbTail, lens,
     tag, tagIn, tagOut, recv, crypt, cryptChunk, ctrGen, ecbArgs, ksXor, callEcb, cryptTail, mask, callCtr, callKey, callGh, GcmImpl.callees, Code.allInstrs, v.ctr.mxcsr, v.key.mxcsr, v.gh.mxcsr, eb.encMxcsr, Bool.true_and, Bool.and_true] <;>
   decide +kernel
 
 theorem open_mx : («open» v.callees ⟨eb.enc.name, eb.enc.code⟩ wide).allInstrs (fun i => !loadsMxcsr i) = true := by
-  cases wide <;> simp only [«seal», «open», revSel, revLoopZ, revMaskZ, revQuad, revOne, quadsThenOnes, ksLoop, ksQuad, ksOne, Impl.Gcm.X86_64.Pclmul.const, ↓reduceIte, entry, keys, derive, deriveBlock, expand, hkey, polyval, absorb, absorbChunk, revLoop, absorbTail, lens,
+  cases wide <;> simp only [«seal», «open», revSel, revLoopY, revMaskY, revQuad, rev2, revOne, quadsThenOnes, ksLoop, ksQuad, xor2, ksOne, Impl.Gcm.X86_64.Pclmul.const, ↓reduceIte, entry, keys, derive, deriveBlock, expand, hkey, polyval, absorb, absorbChunk, revLoop, absorbTail, lens,
     tag, tagIn, tagOut, recv, crypt, cryptChunk, ctrGen, ecbArgs, ksXor, callEcb, cryptTail, mask, callCtr, callKey, callGh, GcmImpl.callees, Code.allInstrs, v.ctr.mxcsr, v.key.mxcsr, v.gh.mxcsr, eb.encMxcsr, Bool.true_and, Bool.and_true] <;>
   decide +kernel
 
 theorem seal_spSafe : («seal» v.callees ⟨eb.enc.name, eb.enc.code⟩ wide).all (fun i => !X86_64.isa.writesSp i) = true := by
-  cases wide <;> simp only [«seal», «open», revSel, revLoopZ, revMaskZ, revQuad, revOne, quadsThenOnes, ksLoop, ksQuad, ksOne, Impl.Gcm.X86_64.Pclmul.const, ↓reduceIte, entry, keys, derive, deriveBlock, expand, hkey, polyval, absorb, absorbChunk, revLoop, absorbTail, lens,
+  cases wide <;> simp only [«seal», «open», revSel, revLoopY, revMaskY, revQuad, rev2, revOne, quadsThenOnes, ksLoop, ksQuad, xor2, ksOne, Impl.Gcm.X86_64.Pclmul.const, ↓reduceIte, entry, keys, derive, deriveBlock, expand, hkey, polyval, absorb, absorbChunk, revLoop, absorbTail, lens,
     tag, tagIn, tagOut, recv, crypt, cryptChunk, ctrGen, ecbArgs, ksXor, callEcb, cryptTail, mask, callCtr, callKey, callGh, GcmImpl.callees, Code.all, v.ctr.spSafe, v.key.spSafe, v.gh.spSafe, eb.encSpSafe, Bool.true_and, Bool.and_true] <;>
   decide +kernel
 
 theorem open_spSafe : («open» v.callees ⟨eb.enc.name, eb.enc.code⟩ wide).all (fun i => !X86_64.isa.writesSp i) = true := by
-  cases wide <;> simp only [«seal», «open», revSel, revLoopZ, revMaskZ, revQuad, revOne, quadsThenOnes, ksLoop, ksQuad, ksOne, Impl.Gcm.X86_64.Pclmul.const, ↓reduceIte, entry, keys, derive, deriveBlock, expand, hkey, polyval, absorb, absorbChunk, revLoop, absorbTail, lens,
+  cases wide <;> simp only [«seal», «open», revSel, revLoopY, revMaskY, revQuad, rev2, revOne, quadsThenOnes, ksLoop, ksQuad, xor2, ksOne, Impl.Gcm.X86_64.Pclmul.const, ↓reduceIte, entry, keys, derive, deriveBlock, expand, hkey, polyval, absorb, absorbChunk, revLoop, absorbTail, lens,
     tag, tagIn, tagOut, recv, crypt, cryptChunk, ctrGen, ecbArgs, ksXor, callEcb, cryptTail, mask, callCtr, callKey, callGh, GcmImpl.callees, Code.all, v.ctr.spSafe, v.key.spSafe, v.gh.spSafe, eb.encSpSafe, Bool.true_and, Bool.and_true] <;>
   decide +kernel
 
@@ -201,13 +205,13 @@ buffers (`openLeak_local`).
 variable (v : GcmImpl) (eb : BlocksImpl) (wide : Bool)
 
 theorem seal_xdepth : («seal» v.callees ⟨eb.enc.name, eb.enc.code⟩ wide).x86_64Depth ≤ 8 := by
-  cases wide <;> simp only [«seal», revSel, revLoopZ, revMaskZ, revQuad, revOne, quadsThenOnes, ksLoop, ksQuad, ksOne, Impl.Gcm.X86_64.Pclmul.const, ↓reduceIte, keys, derive, expand, polyval, absorb, absorbChunk, absorbTail, lens, tag, crypt, cryptChunk,
+  cases wide <;> simp only [«seal», revSel, revLoopY, revMaskY, revQuad, rev2, revOne, quadsThenOnes, ksLoop, ksQuad, xor2, ksOne, Impl.Gcm.X86_64.Pclmul.const, ↓reduceIte, keys, derive, expand, polyval, absorb, absorbChunk, absorbTail, lens, tag, crypt, cryptChunk,
     ctrGen, ecbArgs, ksXor, callEcb, cryptTail, callCtr, callKey, callGh, Code.x86_64Depth, GcmImpl.callees,
     v.ctr.noStack, v.key.noStack, v.gh.noStack, eb.encNoStack] <;>
   decide +kernel
 
 theorem open_xdepth : («open» v.callees ⟨eb.enc.name, eb.enc.code⟩ wide).x86_64Depth ≤ 8 := by
-  cases wide <;> simp only [«open», revSel, revLoopZ, revMaskZ, revQuad, revOne, quadsThenOnes, ksLoop, ksQuad, ksOne, Impl.Gcm.X86_64.Pclmul.const, ↓reduceIte, keys, derive, expand, polyval, absorb, absorbChunk, absorbTail, lens, tag, crypt, cryptChunk,
+  cases wide <;> simp only [«open», revSel, revLoopY, revMaskY, revQuad, rev2, revOne, quadsThenOnes, ksLoop, ksQuad, xor2, ksOne, Impl.Gcm.X86_64.Pclmul.const, ↓reduceIte, keys, derive, expand, polyval, absorb, absorbChunk, absorbTail, lens, tag, crypt, cryptChunk,
     ctrGen, ecbArgs, ksXor, callEcb, cryptTail, callCtr, callKey, callGh, Code.x86_64Depth, GcmImpl.callees,
     v.ctr.noStack, v.key.noStack, v.gh.noStack, eb.encNoStack] <;>
   decide +kernel
