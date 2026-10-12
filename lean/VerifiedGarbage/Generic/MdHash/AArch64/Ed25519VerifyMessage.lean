@@ -21,8 +21,9 @@ def artifacts (h : Proof.Pbkdf2.Md.AArch64.MdHash) : List Artifact :=
         the selected SHA-512 backend, reduces the challenge modulo L, and checks the signature \
         equation. The 336-byte stack frame holds the digest, challenge, saved arguments and return address; \
         the SHA-512 calls use another 16 bytes below it."])
+      consts := Impl.Ed25519.AArch64.bConsts
       code := Impl.Ed25519.AArch64.VerifyMessage.code v.code v.suffix
-      contract := Spec.Ed25519.verifyContract AArch64.abi 352
+      contract := Spec.Ed25519.verifyContract (AArch64.abi.withConsts Impl.Ed25519.AArch64.bConsts) 352
       stack := 352
       verified := Proof.Ed25519.AArch64.VerifyMessage.verifyMessage_verified v
       spSafe := Code.all_of_forall (fun _ => rfl) _

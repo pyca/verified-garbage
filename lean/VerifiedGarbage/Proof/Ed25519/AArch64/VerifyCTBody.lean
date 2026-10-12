@@ -24,45 +24,48 @@ namespace VG.Proof.Ed25519.AArch64
 
 open VG VG.AArch64 VG.Impl.Ed25519.AArch64 VG.Proof.Ed25519 Edwards
 
-structure VerifyPublic (base pk sig challenge : Addr) (pkbs rbs sbs kbs : List Byte) (s : State) : Prop where
+structure VerifyPublic (base pk sig challenge : Addr) (pkbs rbs sbs kbs : List Byte) (T : Addr) (s : State) : Prop where
   context : VerifyContext s base pk sig challenge
   pkBytes : Spec.Ed25519.bytesAt s.mem pk 32 = pkbs
   rBytes : Spec.Ed25519.bytesAt s.mem sig 32 = rbs
   sBytes : Spec.Ed25519.bytesAt s.mem (off sig 32) 32 = sbs
   kBytes : Spec.Ed25519.bytesAt s.mem challenge 64 = kbs
+  /-- The static's address, the same in both runs. -/
+  sym : s.syms bSym = T
 
-theorem VerifyPublic.of_keep {base pk sig challenge : Addr} {pkbs rbs sbs kbs : List Byte} {s t : State}
-    (h : VerifyPublic base pk sig challenge pkbs rbs sbs kbs s) (kt : VerifyKeep base s t) :
-    VerifyPublic base pk sig challenge pkbs rbs sbs kbs t :=
-  ⟨h.context.of_keep kt, (verifyKeep_bytes kt h.context.pkFar).trans h.pkBytes,
+theorem VerifyPublic.of_keep {base pk sig challenge : Addr} {pkbs rbs sbs kbs : List Byte} {T : Addr} {s t : State}
+    (h : VerifyPublic base pk sig challenge pkbs rbs sbs kbs T s) (kt : VerifyKeep base s t)
+    (hy : t.syms = s.syms) :
+    VerifyPublic base pk sig challenge pkbs rbs sbs kbs T t :=
+  ⟨h.context.of_keep kt hy, (verifyKeep_bytes kt h.context.pkFar).trans h.pkBytes,
     (verifyKeep_bytes kt h.context.rFar).trans h.rBytes,
     (verifyKeep_bytes kt h.context.scalarFar).trans h.sBytes,
-    (verifyKeep_bytes kt h.context.challengeFar).trans h.kBytes⟩
+    (verifyKeep_bytes kt h.context.challengeFar).trans h.kBytes, by rw [hy]; exact h.sym⟩
 
-def PointsCTPre (base pk sig challenge : Addr) (pkbs rbs sbs kbs : List Byte)
+def PointsCTPre (base pk sig challenge : Addr) (pkbs rbs sbs kbs : List Byte) (T : Addr)
     (a r : Spec.Ed25519.Point) (s : State) : Prop :=
-  VerifyPublic base pk sig challenge pkbs rbs sbs kbs s ∧
+  VerifyPublic base pk sig challenge pkbs rbs sbs kbs T s ∧
     tablePoint s.mem base 7424 = a ∧ tablePoint s.mem base 7552 = r
 
-theorem verifyEquationPoints_ct (base pk sig challenge : Addr) (pkbs rbs sbs kbs : List Byte)
+theorem verifyEquationPoints_ct (base pk sig challenge : Addr) (pkbs rbs sbs kbs : List Byte) (T : Addr)
     (a r : Spec.Ed25519.Point) {Aa Ra : EPoint dZ} (hA : Rep a Aa) (hR : Rep r Ra) :
-    CT (fun s t => PointsCTPre base pk sig challenge pkbs rbs sbs kbs a r s ∧
-      PointsCTPre base pk sig challenge pkbs rbs sbs kbs a r t) verifyEquationPoints (fun _ _ => True) := by
+    CT (fun s t => PointsCTPre base pk sig challenge pkbs rbs sbs kbs T a r s ∧
+      PointsCTPre base pk sig challenge pkbs rbs sbs kbs T a r t) verifyEquationPoints (fun _ _ => True) := by
   let K := Spec.Ed25519.decodeLE kbs
   let S := Spec.Ed25519.decodeLE sbs
   let R₀ : State → Prop := fun s₀ => tablePoint s₀.mem base 7552 = r
-  have w (x : State) (h : PointsCTPre base pk sig challenge pkbs rbs sbs kbs a r x) :
+  have w (x : State) (h : PointsCTPre base pk sig challenge pkbs rbs sbs kbs T a r x) :
       WP isa (.seq windowPrep (.block nibbles)) x (SkipRun R₀ base Aa K S 64) := by
     have c := h.1.context
     refine WP.mono (windowStart_ok (Aa := Aa) c.scratch c.sigHeader c.challengeHeader c.scalarQ
-      c.scalarFar c.challengeQ c.challengeFar (by rw [h.2.1]; exact hA)) fun e ⟨we, _, eR⟩ => ?_
+      c.scalarFar c.challengeQ c.challengeFar (by rw [h.2.1]; exact hA) c.tbl) fun e ⟨we, _, eR⟩ => ?_
     rw [h.1.kBytes, h.1.sBytes] at we
     exact ⟨e, eR.trans h.2.2, we, Nat.div_eq_of_lt we.kLt, by decide, by decide⟩
-  have wp (x : State) (h : PointsCTPre base pk sig challenge pkbs rbs sbs kbs a r x) :
+  have wp (x : State) (h : PointsCTPre base pk sig challenge pkbs rbs sbs kbs T a r x) :
       WP isa windowPrep x (NibPre base sig challenge) := by
     have c := h.1.context
     refine WP.mono (windowPrep_ok (Aa := Aa) c.scratch c.sigHeader c.challengeHeader
-      (by rw [h.2.1]; exact hA)) fun e he => ?_
+      (by rw [h.2.1]; exact hA) c.tbl) fun e he => ?_
     exact ⟨he.scratch, he.kHeader, he.sHeader, by rw [he.keep.rd, he.keep.wr]; exact c.challengeQ,
       by rw [he.keep.rd, he.keep.wr]; exact c.scalarQ, c.challengeFar, c.scalarFar⟩
   have wn (x : State) (h : LoopRun R₀ base Aa K S 0 x) :
@@ -74,13 +77,18 @@ theorem verifyEquationPoints_ct (base pk sig challenge : Addr) (pkbs rbs sbs kbs
       ⟨ku.scr hx.ctx.scratch, by rw [u0]; exact gv, ?_⟩
     rw [u4, win_tablePoint hx.keep.mem (by decide) (by decide), r₀]
     exact hR.neg.proj
-  have prepCT : CT (fun x y => x.gpr .x0 = y.gpr .x0) windowPrep (fun _ _ => True) := by
+  have prepCT : CT (fun x y => PointsCTPre base pk sig challenge pkbs rbs sbs kbs T a r x ∧
+      PointsCTPre base pk sig challenge pkbs rbs sbs kbs T a r y) windowPrep (fun _ _ => True) := by
     rw [windowPrep]
-    exact CT.taint (Taint.ofRegs [.x0]) (fun _ _ h => agree_x0 h) (by taint_decide)
-  have startCT : CT (fun x y => PointsCTPre base pk sig challenge pkbs rbs sbs kbs a r x ∧
-      PointsCTPre base pk sig challenge pkbs rbs sbs kbs a r y) (.seq windowPrep (.block nibbles))
+    refine CT.taintS (L := [bSym]) (Taint.ofRegs [.x0]) (fun x y h => ⟨agree_x0
+      (h.1.1.context.scratch.x0.trans h.2.1.context.scratch.x0.symm), fun n hn => ?_⟩) (by taint_decide)
+    simp only [List.mem_singleton] at hn
+    subst hn
+    exact h.1.1.sym.trans h.2.1.sym.symm
+  have startCT : CT (fun x y => PointsCTPre base pk sig challenge pkbs rbs sbs kbs T a r x ∧
+      PointsCTPre base pk sig challenge pkbs rbs sbs kbs T a r y) (.seq windowPrep (.block nibbles))
       (fun _ _ => True) :=
-    seq_same (x0_ct (fun x h => h.1.context.scratch.x0) prepCT) wp nibbles_ct
+    seq_same prepCT wp nibbles_ct
   have negRCT : CT (fun x y => x.gpr .x0 = y.gpr .x0) (.block negR) (fun _ _ => True) :=
     CT.taint (Taint.ofRegs [.x0]) (fun _ _ h => agree_x0 h) (by taint_decide)
   rw [verifyEquationPoints]

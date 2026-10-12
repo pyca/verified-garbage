@@ -36,15 +36,18 @@ structure VerifyContext (s : State) (base pk sig challenge : Addr) : Prop where
   rFar : ∀ i < 32, 8192 ≤ ofs base (off sig i)
   scalarFar : ∀ i < 32, 8192 ≤ ofs base (off (off sig 32) i)
   challengeFar : ∀ i < 64, 8192 ≤ ofs base (off challenge i)
+  /-- The static of the cached `-[1]B … -[15]B`, which the equation copies. -/
+  tbl : BTblAt s base (s.syms bSym)
 
 theorem VerifyContext.of_keep {s t : State} {base pk sig challenge : Addr}
-    (h : VerifyContext s base pk sig challenge) (k : VerifyKeep base s t) :
+    (h : VerifyContext s base pk sig challenge) (k : VerifyKeep base s t) (hy : t.syms = s.syms) :
     VerifyContext t base pk sig challenge := by
   refine ⟨k.scratch h.scratch,
     (k.header (by decide) (by decide) (by decide)).trans h.pkHeader,
     (k.header (by decide) (by decide) (by decide)).trans h.sigHeader,
     (k.header (by decide) (by decide) (by decide)).trans h.challengeHeader,
-    ?_, ?_, ?_, ?_, ?_, h.pkFar, h.rFar, h.scalarFar, h.challengeFar⟩
+    ?_, ?_, ?_, ?_, ?_, h.pkFar, h.rFar, h.scalarFar, h.challengeFar,
+    by rw [hy]; exact h.tbl.of_powers k (by decide)⟩
   all_goals intros; rw [k.rd, k.wr]
   · exact h.pkRead _ ‹_›
   · exact h.rRead _ ‹_›

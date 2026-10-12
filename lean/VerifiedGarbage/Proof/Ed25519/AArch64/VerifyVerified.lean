@@ -59,7 +59,7 @@ theorem verifyDecode_ok {s : State} {base pk sig challenge : Addr}
         (Spec.Ed25519.decodePoint (Spec.Ed25519.bytesAt s.mem sig 32))
         (Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem (off sig 32) 32))
         (Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem challenge 64))) :=
-  verifyDecode_wp ⟨h, rfl, rfl, rfl, rfl⟩
+  verifyDecode_wp ⟨h, rfl, rfl, rfl, rfl, rfl⟩
 
 end VG.Proof.Ed25519.AArch64
 
@@ -104,11 +104,12 @@ theorem verifyBody_ok {s : State} {base pk sig challenge : Addr}
       VerifyKeep base s t ∧ t.gpr .x8 = signWord
         (Spec.Ed25519.verifyEquation (Spec.Ed25519.bytesAt s.mem pk 32)
           (Spec.Ed25519.bytesAt s.mem sig 64) (Spec.Ed25519.bytesAt s.mem challenge 64)) := by
-  refine WP.seq (WP.mono (verifyScalar_ok h.scratch h.sigHeader h.scalarRead) fun a ⟨ka, am, ac⟩ => ?_)
+  refine WP.seq (WP.mono_syms (verifyScalar_ok h.scratch h.sigHeader h.scalarRead)
+    fun a ⟨ka, am, ac⟩ sya => ?_)
   have kap : VerifyKeep base s a := PowersKeep.of_keep ka
   apply WP.ite _ (congrArg some ac)
   · intro ht
-    refine WP.mono (verifyDecode_ok (h.of_keep kap)) fun t ⟨kt, tv⟩ => ?_
+    refine WP.mono (verifyDecode_ok (h.of_keep kap sya)) fun t ⟨kt, tv⟩ => ?_
     refine ⟨kap.trans kt, ?_⟩
     rw [am] at tv
     rw [verifyEquation_bytes, ht, Bool.true_and]
@@ -183,19 +184,20 @@ open VG VG.AArch64 VG.Impl.Ed25519.AArch64
 open VG.Spec.Ed25519 (bytesAt)
 
 def verifyLocal : Contract isa where
-  pre s := s.rd = [⟨s.gpr .x0, 32⟩, ⟨s.gpr .x1, 64⟩, ⟨s.gpr .x2, 64⟩] ∧
+  pre s := s.rd = [⟨s.gpr .x0, 32⟩, ⟨s.gpr .x1, 64⟩, ⟨s.gpr .x2, 64⟩, ⟨s.syms bSym, 1920⟩] ∧
     s.wr = [⟨s.gpr .x3, 8192⟩] ∧
     (⟨s.gpr .x0, 32⟩ : Region).Disjoint ⟨s.gpr .x3, 8192⟩ ∧
     (⟨s.gpr .x1, 64⟩ : Region).Disjoint ⟨s.gpr .x3, 8192⟩ ∧
     (⟨s.gpr .x2, 64⟩ : Region).Disjoint ⟨s.gpr .x3, 8192⟩ ∧
-    (s.gpr .x3).toNat + 8192 ≤ 2 ^ 64
+    (s.gpr .x3).toNat + 8192 ≤ 2 ^ 64 ∧ BHeld s [⟨s.gpr .x3, 8192⟩]
   post s t := t.gpr .x0 = signWord (Spec.Ed25519.verifyEquation
     (bytesAt s.mem (s.gpr .x0) 32) (bytesAt s.mem (s.gpr .x1) 64) (bytesAt s.mem (s.gpr .x2) 64))
   pub s t := s.sp = t.sp ∧ s.gpr .x0 = t.gpr .x0 ∧
     s.gpr .x1 = t.gpr .x1 ∧ s.gpr .x2 = t.gpr .x2 ∧ s.gpr .x3 = t.gpr .x3 ∧
     bytesAt s.mem (s.gpr .x0) 32 = bytesAt t.mem (t.gpr .x0) 32 ∧
     bytesAt s.mem (s.gpr .x1) 64 = bytesAt t.mem (t.gpr .x1) 64 ∧
-    bytesAt s.mem (s.gpr .x2) 64 = bytesAt t.mem (t.gpr .x2) 64
+    bytesAt s.mem (s.gpr .x2) 64 = bytesAt t.mem (t.gpr .x2) 64 ∧
+    s.syms bSym = t.syms bSym
 
 theorem verifyBytes_frame {m m' : Mem} {base p : Addr} {n : Nat}
     (hf : Frame [⟨base, 8192⟩] m m') (hd : (⟨p, n⟩ : Region).Disjoint ⟨base, 8192⟩)
@@ -210,18 +212,20 @@ structure VerifyStarted (s t : State) : Prop where
   frame : Frame [⟨s.gpr .x3, 8192⟩] s.mem t.mem
   sp : t.sp = s.sp
   regs : ∀ r ∈ [Reg.x25, .x26, .x27, .x28, .x30], t.gpr r = s.gpr r
+  syms : t.syms = s.syms
 
 theorem verifySetup_state_ok {s : State} (hs : verifyLocal.pre s) :
     WP isa (.block verifySetup) s (VerifyStarted s) := by
-  obtain ⟨hr, hw, hpk, hsig, hchallenge, hn⟩ := hs
+  obtain ⟨hr, hw, hpk, hsig, hchallenge, hn, hheld⟩ := hs
   have hws : (⟨s.gpr .x3, 8192⟩ : Region) ∈ s.wr := by rw [hw]; exact List.mem_singleton_self _
+  have hbt : BTblAt s (s.gpr .x3) (s.syms bSym) := hheld.tblAt (by rw [hr]; simp) (by simp)
   rw [verifySetup, List.append_assoc, WP.block_append_iff]
-  refine WP.mono (verifyPrepare_ok s) fun a ⟨ach, asc, ka⟩ => ?_
+  refine WP.mono_syms (verifyPrepare_ok s) fun a ⟨ach, asc, ka⟩ sya => ?_
   rw [WP.block_append_iff]
-  refine WP.mono (scalarSave_ok asc (ka.wr ▸ hws)) fun b ⟨gb, rb, wb, spb, mb, svb⟩ => ?_
+  refine WP.mono_syms (scalarSave_ok asc (ka.wr ▸ hws)) fun b ⟨gb, rb, wb, spb, mb, svb⟩ syb => ?_
   have bs : b.gpr .x2 = s.gpr .x3 := (congrFun gb _).trans asc
-  refine WP.mono (verifyHeaders_ok bs (by rw [wb, ka.wr]; exact hws))
-    fun c ⟨cs, gc, rc, wc, spc, mc, cp, cr, cc⟩ => ?_
+  refine WP.mono_syms (verifyHeaders_ok bs (by rw [wb, ka.wr]; exact hws))
+    fun c ⟨cs, gc, rc, wc, spc, mc, cp, cr, cc⟩ syc => ?_
   have fm : Frame [⟨s.gpr .x3, 8192⟩] s.mem c.mem := by
     have f := (scratchFrame mb (by decide)).trans (scratchFrame mc (by decide))
     rw [ka.mem] at f
@@ -236,7 +240,7 @@ theorem verifySetup_state_ok {s : State} (hs : verifyLocal.pre s) :
   have hc : VerifyContext c (s.gpr .x3) (s.gpr .x0) (s.gpr .x1) (s.gpr .x2) := by
     have rr : c.rd = s.rd := rc.trans (rb.trans ka.rd)
     have ww : c.wr = s.wr := wc.trans (wb.trans ka.wr)
-    refine ⟨⟨cs, ww ▸ hws, hn⟩, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+    refine ⟨⟨cs, ww ▸ hws, hn⟩, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
     · rw [cp, gb, ka.gpr .x0 (by decide)]
     · rw [cr, gb, ka.gpr .x1 (by decide)]
     · rw [cc, gb, ach]
@@ -258,7 +262,14 @@ theorem verifySetup_state_ok {s : State} (hs : verifyLocal.pre s) :
       rw [show off (off (s.gpr .x1) 32) i = off (s.gpr .x1) (32 + i) from Offset.add_add ..]
       exact farScr hsig (by omega) (by decide)
     · intro i hi; exact farScr hchallenge hi (by decide)
-  refine ⟨hc, sv, fm, spc.trans (spb.trans ka.sp), fun r hr => ?_⟩
+    · rw [syc, syb, sya]
+      refine hbt.of_far (by rw [rr, ww]) fun x hx => fm x fun r hr hcx => ?_
+      rw [List.mem_singleton] at hr
+      subst hr
+      simp only [Region.Contains] at hcx
+      simp only [ofs] at hx
+      omega
+  refine ⟨hc, sv, fm, spc.trans (spb.trans ka.sp), fun r hr => ?_, by rw [syc, syb, sya]⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl <;>
     rw [gc _ (by decide), gb, ka.gpr _ (by decide)]
@@ -316,27 +327,27 @@ open VG.Spec.Ed25519 (bytesAt)
 theorem VerifyStarted.public {s t : State} (hs : verifyLocal.pre s) (h : VerifyStarted s t) :
     VerifyPublic (s.gpr .x3) (s.gpr .x0) (s.gpr .x1) (s.gpr .x2)
       (bytesAt s.mem (s.gpr .x0) 32) (bytesAt s.mem (s.gpr .x1) 32)
-      (bytesAt s.mem (off (s.gpr .x1) 32) 32) (bytesAt s.mem (s.gpr .x2) 64) t := by
+      (bytesAt s.mem (off (s.gpr .x1) 32) 32) (bytesAt s.mem (s.gpr .x2) 64) (s.syms bSym) t := by
   have hm := verifyBytes_frame h.frame hs.2.2.2.1 (by decide)
   have hr := congrArg (List.take 32) hm
   have hscalar := congrArg (List.drop 32) hm
   rw [signatureBytes_take, signatureBytes_take] at hr
   rw [signatureBytes_drop, signatureBytes_drop] at hscalar
   exact ⟨h.context, verifyBytes_frame h.frame hs.2.2.1 (by decide), hr, hscalar,
-    verifyBytes_frame h.frame hs.2.2.2.2.1 (by decide)⟩
+    verifyBytes_frame h.frame hs.2.2.2.2.1 (by decide), congrFun h.syms bSym⟩
 
 theorem VerifyStarted.public_right {s u t : State} (hu : verifyLocal.pre u)
     (hp : verifyLocal.pub s u) (h : VerifyStarted u t) :
     VerifyPublic (s.gpr .x3) (s.gpr .x0) (s.gpr .x1) (s.gpr .x2)
       (bytesAt s.mem (s.gpr .x0) 32) (bytesAt s.mem (s.gpr .x1) 32)
-      (bytesAt s.mem (off (s.gpr .x1) 32) 32) (bytesAt s.mem (s.gpr .x2) 64) t := by
+      (bytesAt s.mem (off (s.gpr .x1) 32) 32) (bytesAt s.mem (s.gpr .x2) 64) (s.syms bSym) t := by
   have ht := h.public hu
-  obtain ⟨_, pk, sig, challenge, base, pbs, sigbs, kbs⟩ := hp
+  obtain ⟨_, pk, sig, challenge, base, pbs, sigbs, kbs, hsy⟩ := hp
   have rbs := congrArg (List.take 32) sigbs
   have sbs := congrArg (List.drop 32) sigbs
   rw [signatureBytes_take, signatureBytes_take] at rbs
   rw [signatureBytes_drop, signatureBytes_drop] at sbs
-  rw [← pbs, ← rbs, ← sbs, ← kbs, ← pk, ← sig, ← challenge, ← base] at ht
+  rw [← pbs, ← rbs, ← sbs, ← kbs, ← pk, ← sig, ← challenge, ← base, ← hsy] at ht
   exact ht
 
 theorem verifyFinish_ct (base : Addr) :
@@ -345,16 +356,16 @@ theorem verifyFinish_ct (base : Addr) :
   apply CT.taint (Taint.ofRegs [.x0]) _ (by taint_decide)
   exact fun _ _ h => x0_agree h.1 h.2
 
-theorem verifyBody_base_ct (base pk sig challenge : Addr) (pkbs rbs sbs kbs : List Byte) :
-    CT (fun s t => VerifyPublic base pk sig challenge pkbs rbs sbs kbs s ∧
-      VerifyPublic base pk sig challenge pkbs rbs sbs kbs t)
+theorem verifyBody_base_ct (base pk sig challenge : Addr) (pkbs rbs sbs kbs : List Byte) (T : Addr) :
+    CT (fun s t => VerifyPublic base pk sig challenge pkbs rbs sbs kbs T s ∧
+      VerifyPublic base pk sig challenge pkbs rbs sbs kbs T t)
       (.seq (.block verifyScalar) (.ite (.nonzero .x .x8) verifyDecode recoverInvalid))
       (fun s t => s.gpr .x0 = base ∧ t.gpr .x0 = base) := by
-  have hw (s : State) (h : VerifyPublic base pk sig challenge pkbs rbs sbs kbs s) :
+  have hw (s : State) (h : VerifyPublic base pk sig challenge pkbs rbs sbs kbs T s) :
       WP isa (.seq (.block verifyScalar) (.ite (.nonzero .x .x8) verifyDecode recoverInvalid)) s
         (fun t => t.gpr .x0 = base) :=
     WP.mono (verifyBody_ok h.context) fun _ kt => (kt.1.scratch h.context.scratch).x0
-  exact (CT.wp (verifyBody_ct base pk sig challenge pkbs rbs sbs kbs)
+  exact (CT.wp (verifyBody_ct base pk sig challenge pkbs rbs sbs kbs T)
     (fun s t h => ⟨hw s h.1, hw t h.2⟩)).mono (fun _ _ h => h) (fun _ _ h => h.2)
 
 theorem verify_ct : ConstantTime isa verifyLocal.pre verifyLocal.pub verifyEquation := by
@@ -377,7 +388,7 @@ theorem verify_ct : ConstantTime isa verifyLocal.pre verifyLocal.pub verifyEquat
     exact CT.seq
       (verifyBody_base_ct (a.gpr .x3) (a.gpr .x0) (a.gpr .x1) (a.gpr .x2)
         (bytesAt a.mem (a.gpr .x0) 32) (bytesAt a.mem (a.gpr .x1) 32)
-        (bytesAt a.mem (off (a.gpr .x1) 32) 32) (bytesAt a.mem (a.gpr .x2) 64))
+        (bytesAt a.mem (off (a.gpr .x1) 32) 32) (bytesAt a.mem (a.gpr .x2) 64) (a.syms bSym))
       (verifyFinish_ct (a.gpr .x3)) _ _ _ _ _ _ ⟨hsp, pa, pb⟩ es et
   intro s t ts tt s' t' hs ht hp es et
   exact (whole _ _ _ _ _ _ ⟨hp.1, hs, ht, hp⟩ es et).1
@@ -395,9 +406,10 @@ def verifySatState : State where
   gpr r := match r with
     | .x0 => 0x1000 | .x1 => 0x2000 | .x2 => 0x3000 | .x3 => 0x4000 | _ => 0
   sp := 0x8000
-  mem _ := 0
-  rd := [⟨0x1000, 32⟩, ⟨0x2000, 64⟩, ⟨0x3000, 64⟩]
+  mem := bSatMem
+  rd := [⟨0x1000, 32⟩, ⟨0x2000, 64⟩, ⟨0x3000, 64⟩, ⟨0x100000, 1920⟩]
   wr := [⟨0x4000, 8192⟩]
+  syms _ := 0x100000
 
 theorem verify_ok (s : State) (hs : verifyLocal.pre s) :
     ∃ t s', Exec isa verifyEquation s t s' ∧ abiPreserved s s' ∧ verifyLocal.post s s' := verify_correct hs
@@ -408,13 +420,41 @@ private theorem byteMap_inj : ∀ {xs ys : List Byte}, xs.map (·.toNat) = ys.ma
     simp only [List.map_cons, List.cons.injEq] at h
     rw [BitVec.eq_of_toNat_eq h.1, byteMap_inj h.2]
 
-theorem verify_implies : verifyLocal.Implies (Spec.Ed25519.verifyEquationContract AArch64.abi) where
-  pre := by
-    sig_implies_pre [Spec.Ed25519.verifyEquationContract, Spec.Ed25519.verifyEquationSig,
-      Spec.Ed25519.scratchWords, AArch64.abi, AArch64.argRegs, verifyLocal]
+/-- The shared contract's precondition, from its facts. -/
+theorem verify_spec_pre {s : State}
+    (hrd : s.rd = [⟨s.gpr .x0, 32⟩, ⟨s.gpr .x1, 64⟩, ⟨s.gpr .x2, 64⟩,
+      ⟨s.syms bSym, 8 * bWords.length⟩])
+    (hw : s.wr = [⟨s.gpr .x3, 8192⟩])
+    (held : ∀ i < bWords.length,
+      s.mem.readW (s.syms bSym + BitVec.ofNat 64 (8 * i)) 64 = bWords.getD i 0)
+    (fit : (s.syms bSym).toNat + 8 * bWords.length ≤ 2 ^ 64)
+    (hdw : Region.Disjoint ⟨s.syms bSym, 8 * bWords.length⟩ ⟨s.gpr .x3, 8192⟩)
+    (h1 : Region.Disjoint ⟨s.gpr .x0, 32⟩ ⟨s.gpr .x3, 8192⟩)
+    (h2 : Region.Disjoint ⟨s.gpr .x1, 64⟩ ⟨s.gpr .x3, 8192⟩)
+    (h3 : Region.Disjoint ⟨s.gpr .x2, 64⟩ ⟨s.gpr .x3, 8192⟩)
+    (f0 : (s.gpr .x0).toNat + 32 ≤ 2 ^ 64) (f1 : (s.gpr .x1).toNat + 64 ≤ 2 ^ 64)
+    (f2 : (s.gpr .x2).toNat + 64 ≤ 2 ^ 64) (f3 : (s.gpr .x3).toNat + 8192 ≤ 2 ^ 64) :
+    (Spec.Ed25519.verifyEquationContract (AArch64.abi.withConsts bConsts)).pre s := by
+  sig_pre [Spec.Ed25519.verifyEquationContract, Spec.Ed25519.verifyEquationSig,
+    Spec.Ed25519.scratchWords, AArch64.abi, AArch64.argRegs, bConsts_eq, Abi.withConsts,
+    Abi.constRegions, Abi.constsHeld, stackBelow]
+  refine ⟨by rw [hrd]; rfl, held, fit, fun r hr => ?_, by rw [hrd]; rfl, hw, h1, h2, h3, f0, f1, f2, f3⟩
+  rw [hw, List.mem_singleton] at hr
+  rw [hr]; exact hdw
+
+theorem verify_implies :
+    verifyLocal.Implies (Spec.Ed25519.verifyEquationContract (AArch64.abi.withConsts bConsts)) where
+  pre s h := by
+    sig_pre [Spec.Ed25519.verifyEquationContract, Spec.Ed25519.verifyEquationSig,
+      Spec.Ed25519.scratchWords, AArch64.abi, AArch64.argRegs, bConsts_eq, Abi.withConsts,
+      Abi.constRegions, Abi.constsHeld, stackBelow] at h
+    obtain ⟨hd, held, fit, hdw, ht, hw, d1, d2, d3, -, -, -, f3⟩ := h
+    simp only [bWords_length, Nat.reduceMul] at hd held fit hdw
+    refine ⟨?_, hw, d1, d2, d3, f3, held, fit, fun r hr => hdw r (by rw [hw]; exact hr)⟩
+    rw [← List.take_append_drop (s.rd.length - 1) s.rd, ht, hd]; rfl
   post s t _ h := by
     sig_post [Spec.Ed25519.verifyEquationContract, Spec.Ed25519.verifyEquationSig,
-      Spec.Ed25519.scratchWords, AArch64.abi, AArch64.argRegs]
+      Spec.Ed25519.scratchWords, AArch64.abi, AArch64.argRegs, bConsts_eq, Abi.withConsts]
     change t.gpr .x0 = signWord _ at h
     rw [h]
     generalize Spec.Ed25519.verifyEquation (Spec.Ed25519.bytesAt s.mem (s.gpr .x0) 32)
@@ -422,17 +462,23 @@ theorem verify_implies : verifyLocal.Implies (Spec.Ed25519.verifyEquationContrac
     cases b <;> rfl
   pub s t _ _ h := by
     sig_pub [Spec.Ed25519.verifyEquationContract, Spec.Ed25519.verifyEquationSig,
-      Spec.Ed25519.scratchWords, AArch64.abi, AArch64.argRegs] at h
-    obtain ⟨sp, bytes, pk, sig, challenge, base⟩ := h
+      Spec.Ed25519.scratchWords, AArch64.abi, AArch64.argRegs, bConsts_eq, Abi.withConsts] at h
+    obtain ⟨sp, hsy, bytes, pk, sig, challenge, base⟩ := h
     have hb := byteMap_inj bytes
     obtain ⟨first, last⟩ := List.append_inj' hb (by simp only [bytesAt_length])
     obtain ⟨first, middle⟩ := List.append_inj' first (by simp only [bytesAt_length])
-    exact ⟨sp, pk, sig, challenge, base, first, middle, last⟩
+    exact ⟨sp, pk, sig, challenge, base, first, middle, last, hsy⟩
   sat := by
-    sig_implies_sat [Spec.Ed25519.verifyEquationContract, Spec.Ed25519.verifyEquationSig,
-      Spec.Ed25519.scratchWords, AArch64.abi, AArch64.argRegs] [verifySatState] using verifySatState
+    have hl := bWords_length
+    refine ⟨verifySatState, verify_spec_pre (by rw [hl]; rfl) rfl
+      (fun i hi => bSatMem_held i (by rw [hl] at hi; exact hi)) (by rw [hl]; decide)
+      (by rw [hl]; exact Region.disjoint_of_sep (by decide)) (Region.disjoint_of_sep (by decide))
+      (Region.disjoint_of_sep (by decide)) (Region.disjoint_of_sep (by decide)) (by decide)
+      (by decide) (by decide) (by decide)⟩
 
-theorem verify_verified : Verified AArch64.target verifyEquation (Spec.Ed25519.verifyEquationContract AArch64.abi) :=
+theorem verify_verified :
+    Verified AArch64.target verifyEquation
+      (Spec.Ed25519.verifyEquationContract (AArch64.abi.withConsts bConsts)) :=
   Verified.of_correct verify_ok verify_ct verify_implies
 
 end VG.Proof.Ed25519.AArch64
