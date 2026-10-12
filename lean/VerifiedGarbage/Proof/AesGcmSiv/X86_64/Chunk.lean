@@ -548,9 +548,8 @@ theorem ksLoop_ok (wide : Bool) {K W SP : Addr} (L : Lay K W SP) {t₁ : State} 
   cases wide
   · exact xorLoop_ok L E hD hDw hxl hk16 hc hjc hks hc1 I₀
   · exact quadsThenOnes_ok (by omega) hc1 (fun k u => XorInv D W n ciph icb x j c t₁ u k)
-      (fun k u => XorInv D W n ciph icb x j c t₁ u k) (fun _ => XorInv.flags) (fun _ => XorInv.flags)
-      (fun _ => XorInv.upper)
-      (fun _ _ h => h) (fun _ _ h => h.rcx)
+      (fun k u => XorInv D W n ciph icb x j c t₁ u k) (fun _ => XorInv.flags) (fun _ => XorInv.upper)
+      (fun _ _ h => h) (fun _ _ h => h.rcx) (fun _ h => WP.block_nil ⟨h, rfl⟩)
       (fun _ hk _ hu => xorQuadStep_ok L E hD hDw hxl hk16 hc hjc hks hk hu)
       (fun _ hk _ hu => xorLoop_ok L E hD hDw hxl hk16 hc hjc hks hk hu) I₀
 
@@ -562,7 +561,8 @@ theorem ksLoop_regs (wide : Bool) {K W SP : Addr} (L : Lay K W SP) {t₁ : State
   cases wide
   · exact xorLoop_regs L E hD hDw hc hjc hc1 I₀
   · exact quadsThenOnes_ok (by omega) hc1 (fun k u => XorRegs D W j c t₁ u k) (fun k u => XorRegs D W j c t₁ u k)
-      (fun _ => XorRegs.flags) (fun _ => XorRegs.flags) (fun _ => XorRegs.upper) (fun _ _ h => h) (fun _ _ h => h.rcx)
+      (fun _ => XorRegs.flags) (fun _ => XorRegs.upper) (fun _ _ h => h) (fun _ _ h => h.rcx)
+      (fun _ h => WP.block_nil ⟨h, rfl⟩)
       (fun _ hk _ hu => xorQuadRegs_ok L E hD hDw hc hjc hk hu)
       (fun _ hk _ hu => xorLoop_regs L E hD hDw hc hjc hk hu) I₀
 

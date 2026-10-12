@@ -194,19 +194,20 @@ def revOne : List Instr :=
     .alu .sub .rcx (imm 1)]
 
 /-- The `rcx` (at least 1) blocks: four at a time with `quad` while there are
-four, then one at a time with `one`. `vzeroupper` after the quads keeps the
+four (after `pre`), then one at a time with `one`. Only with four or more do
+the 256-bit registers get used, and `vzeroupper` after the quads keeps the
 SSE instructions after them (and in the functions called later) from paying
-for the dirty upper halves of the registers. -/
-def quadsThenOnes (quad one : List Instr) : Prog isa :=
+for their dirty upper halves. -/
+def quadsThenOnes (pre quad one : List Instr) : Prog isa :=
   .seq (.block [.alu .cmp .rcx (imm 4)])
-  (.seq (.ite .b (.block []) (.seq (.loop (.block quad) .ae) (.block [.vop .vzeroupper])))
+  (.seq (.ite .b (.block []) (.seq (.block pre) (.seq (.loop (.block quad) .ae) (.block [.vop .vzeroupper]))))
   (.seq (.block [.alu .test .rcx (.reg .rcx)])
     (.ite .e (.block []) (.loop (.block one) .ne))))
 
 /-- `revLoop` four blocks at a time on 256-bit registers, then one at a
 time. -/
 def revLoopY : Prog isa :=
-  .seq (.block (revMaskY ++ ([.mov .rcx (.reg .r14)] : List Instr))) (quadsThenOnes revQuad revOne)
+  .seq (.block [.mov .rcx (.reg .r14)]) (quadsThenOnes revMaskY revQuad revOne)
 
 /-- `revLoop`, or `revLoopY` if `wide`. -/
 def revSel (wide : Bool) : Prog isa := if wide then revLoopY else revLoop
@@ -302,7 +303,7 @@ def ksQuad : List Instr :=
 /-- The loop of the keystream XOR: one block at a time, or, if `wide`, four
 at a time on 256-bit registers while four are left. -/
 def ksLoop (wide : Bool) : Prog isa :=
-  if wide then quadsThenOnes ksQuad ksOne else .loop (.block ksOne) .ne
+  if wide then quadsThenOnes [] ksQuad ksOne else .loop (.block ksOne) .ne
 
 /-- The `r14` keystream blocks at `W + revO` XORed into the data at `r12`;
 `r12` past them. -/

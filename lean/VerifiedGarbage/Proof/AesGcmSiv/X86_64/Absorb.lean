@@ -237,18 +237,29 @@ theorem revLoopY_ok {K W SP : Addr} (L : Lay K W SP) {t₀ : State} (E : Env K W
         (List.range c).map (fun k => Spec.GcmSiv.ofBytes (bytesAt t₀.mem (Q + BitVec.ofNat 64 (16 * k)) 16)) ∧
       (∀ r, r ≠ .rax → r ≠ .rdx → r ≠ .rsi → r ≠ .rdi → r ≠ .rcx → t.gpr r = t₀.gpr r) ∧
       t.rd = t₀.rd ∧ t.wr = t₀.wr := by
-  refine WP.seq (WP.mono (revMaskY_ok t₀) fun t₁ ⟨hm, hcx, hg, hm₁, hrd, hwr⟩ => ?_)
-  have I₀ : RInv W Q c 0 t₀ t₁ := ⟨by rw [hg _ (by decide) (by decide), hsi, Nat.mul_zero, BitVec.add_zero],
-    by rw [hg _ (by decide) (by decide), hdi], by rw [hcx, h14, Nat.sub_zero], by rw [hm₁]; exact Frame.refl _ _,
+  obtain ⟨t₁, run₁, hcx₁, hg₁, hm₁, hrd₁, hwr₁⟩ : ∃ t₁ : State, runBlock isa [.mov .rcx (.reg .r14)] t₀ = some t₁ ∧
+      t₁.gpr .rcx = BitVec.ofNat 64 c ∧ (∀ r, r ≠ .rcx → t₁.gpr r = t₀.gpr r) ∧ t₁.mem = t₀.mem ∧
+      t₁.rd = t₀.rd ∧ t₁.wr = t₀.wr := by
+    refine ⟨_, by srun [], ?_, ?_, ?_, ?_, ?_⟩
+    · simp only [gpr_setReg, ite_true, h14]
+    · intro r h; simp only [gpr_setReg, h, ite_false]
+    all_goals rfl
+  refine WP.seq (WP.of_runBlock ⟨t₁, run₁, ?_⟩)
+  have I₀ : RInv W Q c 0 t₀ t₁ := ⟨by rw [hg₁ _ (by decide), hsi, Nat.mul_zero, BitVec.add_zero],
+    by rw [hg₁ _ (by decide), hdi], by rw [hcx₁, Nat.sub_zero], by rw [hm₁]; exact Frame.refl _ _,
     by simp only [Spec.Gcm.blocksAt, List.range_zero, List.map_nil],
-    fun r h₁ _ _ _ h₅ => hg r h₁ h₅, hrd, hwr⟩
+    fun r _ _ _ _ h => hg₁ r h, hrd₁, hwr₁⟩
   refine WP.mono (quadsThenOnes_ok (c := c) (by omega) hc1 (fun k t => RInv W Q c k t₀ t)
     (fun k t => RInv W Q c k t₀ t ∧ ∀ l < 2, t.lane .xmm1 l = Proof.Gcm.X86_64.revMask)
-    (fun _ => RInv.flags) (fun _ _ _ _ _ h => ⟨RInv.flags _ _ _ _ h.1, fun l hl => h.2 l hl⟩)
-    (fun _ => RInv.upper)
+    (fun _ => RInv.flags) (fun _ => RInv.upper)
     (fun _ _ h => h.1) (fun _ _ h => h.rcx)
+    (fun u I => WP.mono (revMaskY_ok u) fun u' ⟨hm, hg, hmm, hrd, hwr⟩ =>
+      ⟨⟨⟨by rw [hg _ (by decide)]; exact I.rsi, by rw [hg _ (by decide)]; exact I.rdi,
+        by rw [hg _ (by decide)]; exact I.rcx, by rw [hmm]; exact I.frame, by rw [hmm]; exact I.out,
+        fun r h₁ h₂ h₃ h₄ h₅ => (hg r h₁).trans (I.regs r h₁ h₂ h₃ h₄ h₅), hrd.trans I.rd, hwr.trans I.wr⟩, hm⟩,
+        hg _ (by decide)⟩)
     (fun _ hk _ hu => revQuadStep_ok L E hc hQ hk hu.1 hu.2)
-    (fun _ hk _ hu => revOnes_ok L E hc hQ hk hu) ⟨I₀, hm⟩) fun t I => ⟨I.frame, I.out, I.regs, I.rd, I.wr⟩
+    (fun _ hk _ hu => revOnes_ok L E hc hQ hk hu) I₀) fun t I => ⟨I.frame, I.out, I.regs, I.rd, I.wr⟩
 
 /-- `revSel wide`: `revLoop` or `revLoopY`. -/
 theorem revSel_ok (wide : Bool) {K W SP : Addr} (L : Lay K W SP) {t₀ : State} (E : Env K W SP t₀) {Q : Addr}

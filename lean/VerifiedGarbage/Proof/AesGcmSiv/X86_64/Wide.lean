@@ -55,30 +55,32 @@ theorem test0_run (u : State) {k : Nat} (hk : k < 2 ^ 64) (h : u.gpr .rcx = BitV
         exact hk0 this
       rw [beq_eq_false_iff_ne.mpr this, decide_eq_false hk0]
 
-/-- The two loops: four blocks at a time while four are left (`Q`), then one
-at a time (`P`, from any block before the last). -/
-theorem quadsThenOnes_ok {quad one : List Instr} {c : Nat} (hc : c < 2 ^ 63) (hc1 : 1 ≤ c)
-    (P Q : Nat → State → Prop) (hP : ∀ k, FlagStable (P k)) (hQ : ∀ k, FlagStable (Q k))
-    (hPz : ∀ k, UpperStable (P k))
+/-- The two loops: four blocks at a time while four are left (`Q`, after
+`pre`), then one at a time (`P`, from any block before the last). -/
+theorem quadsThenOnes_ok {pre quad one : List Instr} {c : Nat} (hc : c < 2 ^ 63) (hc1 : 1 ≤ c)
+    (P Q : Nat → State → Prop) (hP : ∀ k, FlagStable (P k)) (hPz : ∀ k, UpperStable (P k))
     (hQP : ∀ k u, Q k u → P k u)
     (hrcx : ∀ k u, P k u → u.gpr .rcx = BitVec.ofNat 64 (c - k))
+    (hpre : ∀ u, P 0 u → WP isa (.block pre) u fun u' => Q 0 u' ∧ u'.gpr .rcx = u.gpr .rcx)
     (hquad : ∀ k, k + 4 ≤ c → ∀ u, Q k u → WP isa (.block quad) u fun u' =>
       Q (k + 4) u' ∧ u'.cf = some (decide (c - (k + 4) < 4)))
     (hone : ∀ k, k < c → ∀ u, P k u → WP isa (.loop (.block one) .ne) u (P c))
-    {u : State} (h₀ : Q 0 u) :
-    WP isa (quadsThenOnes quad one) u (P c) := by
+    {u : State} (h₀ : P 0 u) :
+    WP isa (quadsThenOnes pre quad one) u (P c) := by
   unfold quadsThenOnes
   -- The quads, from block 0: after them, `k` blocks done with `c - k < 4`.
-  have quads : ∀ u, Q 0 u → u.cf = some (decide (c < 4)) →
-      WP isa (.ite .b (.block []) (.seq (.loop (.block quad) .ae) (.block [.vop .vzeroupper]))) u fun u' =>
-        ∃ k, k ≤ c ∧ c - k < 4 ∧ P k u' := by
+  have quads : ∀ u, P 0 u → u.cf = some (decide (c < 4)) →
+      WP isa (.ite .b (.block []) (.seq (.block pre) (.seq (.loop (.block quad) .ae) (.block [.vop .vzeroupper]))))
+        u fun u' => ∃ k, k ≤ c ∧ c - k < 4 ∧ P k u' := by
     intro u hu hcf
     refine WP.ite (decide (c < 4)) hcf
-      (fun h4 => WP.block_nil ⟨0, Nat.zero_le _, by simpa using h4, hQP 0 u hu⟩) (fun h4 => ?_)
+      (fun h4 => WP.block_nil ⟨0, Nat.zero_le _, by simpa using h4, hu⟩) (fun h4 => ?_)
     have h4' : ¬ c < 4 := by simpa using h4
-    have lp : WP isa (.loop (.block quad) .ae) u fun v => ∃ k, k ≤ c ∧ c - k < 4 ∧ Q k v := by
+    refine WP.seq (WP.mono (hpre u hu) fun u₁ ⟨hq₁, _⟩ => ?_)
+    have lp : WP isa (.loop (.block quad) .ae) u₁ fun v => ∃ k, k ≤ c ∧ c - k < 4 ∧ Q k v := by
       refine WP.loop (M := isa) (body := .block quad) (c := .ae)
-        (fun (m : Nat) (v : State) => ∃ k, m = c - k ∧ k + 4 ≤ c ∧ Q k v) ?_ (c - 0) u ⟨0, rfl, by omega, hu⟩
+        (fun (m : Nat) (v : State) => ∃ k, m = c - k ∧ k + 4 ≤ c ∧ Q k v) ?_ (c - 0) u₁
+        ⟨0, rfl, by omega, hq₁⟩
       rintro m v ⟨k, rfl, hk, hv⟩
       refine WP.mono (hquad k hk v hv) fun v' ⟨hv', hcf'⟩ => ?_
       have ev : isa.eval .ae v' = some !(decide (c - (k + 4) < 4)) := by
@@ -89,9 +91,9 @@ theorem quadsThenOnes_ok {quad one : List Instr} {c : Nat} (hc : c < 2 ^ 63) (hc
       · right
         exact ⟨by rw [ev, decide_eq_false hlt]; rfl, c - (k + 4), by omega, k + 4, rfl, by omega, hv'⟩
     exact WP.seq (WP.mono lp fun v ⟨k, hk, hlt, hv⟩ => WP.of_runBlock ⟨_, rfl, k, hk, hlt, hPz k _ (hQP k v hv)⟩)
-  obtain ⟨x, o, run₁⟩ := cmp4_run u (k := c) (by omega) (by rw [hrcx 0 u (hQP 0 u h₀), Nat.sub_zero])
+  obtain ⟨x, o, run₁⟩ := cmp4_run u (k := c) (by omega) (by rw [hrcx 0 u h₀, Nat.sub_zero])
   refine WP.seq (WP.of_runBlock ⟨_, run₁, ?_⟩)
-  refine WP.seq (WP.mono (quads _ (hQ 0 _ x _ o h₀) rfl) fun u₂ ⟨k, hkc, hk4, hP₂⟩ => ?_)
+  refine WP.seq (WP.mono (quads _ (hP 0 _ x _ o h₀) rfl) fun u₂ ⟨k, hkc, hk4, hP₂⟩ => ?_)
   obtain ⟨run₂, hy⟩ := test0_run u₂ (k := c - k) (by omega) (hrcx k u₂ hP₂)
   refine WP.seq (WP.of_runBlock ⟨_, run₂, ?_⟩)
   have hP₃ := hP k _ (BitVec.ofNat 64 (c - k)) false false hP₂
@@ -316,25 +318,20 @@ theorem adv4_run (u : State) {a b : Reg} (ha : a ≠ .rcx) (hb : b ≠ .rcx) (ha
 
 /-! ## The mask -/
 
-/-- The byte-reversal mask in both lanes of `ymm1`, and the count in `rcx`. -/
+/-- The byte-reversal mask in both lanes of `ymm1`. -/
 theorem revMaskY_ok (s : State) :
-    WP isa (.block (revMaskY ++ ([.mov .rcx (.reg .r14)] : List Instr))) s fun s' =>
-      (∀ l < 2, s'.lane .xmm1 l = Proof.Gcm.X86_64.revMask) ∧ s'.gpr .rcx = s.gpr .r14 ∧
-      (∀ r, r ≠ .rax → r ≠ .rcx → s'.gpr r = s.gpr r) ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
-  rw [revMaskY, List.append_assoc, WP.block_append_iff]
+    WP isa (.block revMaskY) s fun s' =>
+      (∀ l < 2, s'.lane .xmm1 l = Proof.Gcm.X86_64.revMask) ∧
+      (∀ r, r ≠ .rax → s'.gpr r = s.gpr r) ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
+  rw [revMaskY, WP.block_append_iff]
   refine WP.mono (Proof.Gcm.X86_64.Pclmul.const_ok .xmm1 _ s (by decide)) fun s₁ ⟨x₁, O⟩ => ?_
   apply WP.of_runBlock
-  refine ⟨_, rfl, fun l hl => ?_, ?_, fun r h₁ h₂ => ?_, O.mem, O.rd, O.wr⟩
-  · have hz : ∀ (u : State) (r : Reg) (v : BitVec 64) (x : XReg) (l : Nat), (u.setReg r v).lane x l =
-        u.lane x l := fun _ _ _ _ _ => rfl
-    rw [hz]
-    simp only [VOp.exec, show (1 : BitVec 8).getLsbD 0 = true by decide, ite_true, State.lane_setV256]
+  refine ⟨_, rfl, fun l hl => ?_, fun r h₁ => ?_, O.mem, O.rd, O.wr⟩
+  · simp only [isa, exec, VOp.exec, show (1 : BitVec 8).getLsbD 0 = true by decide, ite_true, State.lane_setV256]
     rcases (by omega : l = 0 ∨ l = 1) with rfl | rfl
     · simp only [ite_true]; rw [show s₁.lane .xmm1 0 = s₁.xmm .xmm1 from rfl, x₁]; rfl
     · simp only [show (1 : Nat) ≠ 0 by decide, ite_false]; rw [x₁]; rfl
-  · simp only [isa, exec, readSrc, State.setReg, ite_true, VOp.exec_gpr, State.setV_gpr]
-    exact O.gpr _ (by decide)
-  · simp only [isa, exec, State.setReg, h₂, ite_false, VOp.exec_gpr, State.setV_gpr]
+  · simp only [isa, exec, VOp.exec_gpr, State.setV_gpr]
     exact O.gpr r h₁
 
 end VG.Proof.AesGcmSiv.X86_64
