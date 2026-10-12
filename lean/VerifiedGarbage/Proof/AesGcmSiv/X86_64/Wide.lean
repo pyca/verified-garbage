@@ -68,33 +68,31 @@ theorem quadsThenOnes_ok {pre quad one : List Instr} {c : Nat} (hc : c < 2 ^ 63)
     {u : State} (h₀ : P 0 u) :
     WP isa (quadsThenOnes pre quad one) u (P c) := by
   unfold quadsThenOnes
-  -- The quads, from block 0: after them, `k` blocks done with `c - k < 4`.
-  have quads : ∀ u, P 0 u → u.cf = some (decide (c < 8)) →
-      WP isa (.ite .b (.block []) (.seq (.block pre) (.seq (.loop (.block quad) .ae) (.block [.vop .vzeroupper]))))
-        u fun u' => ∃ k, k ≤ c ∧ c - k < 8 ∧ P k u' := by
-    intro u hu hcf
-    refine WP.ite (decide (c < 8)) hcf
-      (fun h4 => WP.block_nil ⟨0, Nat.zero_le _, by simpa using h4, hu⟩) (fun h4 => ?_)
-    have h4' : ¬ c < 8 := by simpa using h4
-    refine WP.seq (WP.mono (hpre u hu) fun u₁ ⟨hq₁, _⟩ => ?_)
-    have lp : WP isa (.loop (.block quad) .ae) u₁ fun v => ∃ k, k ≤ c ∧ c - k < 4 ∧ Q k v := by
-      refine WP.loop (M := isa) (body := .block quad) (c := .ae)
-        (fun (m : Nat) (v : State) => ∃ k, m = c - k ∧ k + 4 ≤ c ∧ Q k v) ?_ (c - 0) u₁
-        ⟨0, rfl, by omega, hq₁⟩
-      rintro m v ⟨k, rfl, hk, hv⟩
-      refine WP.mono (hquad k hk v hv) fun v' ⟨hv', hcf'⟩ => ?_
-      have ev : isa.eval .ae v' = some !(decide (c - (k + 4) < 4)) := by
-        show v'.cf.map (!·) = _; rw [hcf']; rfl
-      by_cases hlt : c - (k + 4) < 4
-      · left
-        exact ⟨by rw [ev, decide_eq_true hlt]; rfl, k + 4, hk, hlt, hv'⟩
-      · right
-        exact ⟨by rw [ev, decide_eq_false hlt]; rfl, c - (k + 4), by omega, k + 4, rfl, by omega, hv'⟩
-    exact WP.seq (WP.mono lp fun v ⟨k, hk, hlt, hv⟩ => WP.of_runBlock ⟨_, rfl, k, hk, by omega, hPz k _ (hQP k v hv)⟩)
   obtain ⟨x, o, run₁⟩ := cmp8_run u (k := c) (by omega) (by rw [hrcx 0 u h₀, Nat.sub_zero])
   refine WP.seq (WP.of_runBlock ⟨_, run₁, ?_⟩)
-  refine WP.seq (WP.mono (quads _ (hP 0 _ x _ o h₀) rfl) fun u₂ ⟨k, hkc, hk4, hP₂⟩ => ?_)
-  obtain ⟨run₂, hy⟩ := test0_run u₂ (k := c - k) (by omega) (hrcx k u₂ hP₂)
+  have hP₁ := hP 0 u x (decide (c < 8)) o h₀
+  -- Below eight blocks, one at a time from block 0.
+  refine WP.ite (decide (c < 8)) rfl (fun _ => hone 0 (by omega) _ hP₁) (fun h8 => ?_)
+  have h8' : ¬ c < 8 := by simpa using h8
+  refine WP.seq (WP.mono (hpre _ hP₁) fun u₁ ⟨hq₁, _⟩ => ?_)
+  -- The quads, from block 0: after them, `k` blocks done with `c - k < 4`.
+  have lp : WP isa (.loop (.block quad) .ae) u₁ fun v => ∃ k, k ≤ c ∧ c - k < 4 ∧ Q k v := by
+    refine WP.loop (M := isa) (body := .block quad) (c := .ae)
+      (fun (m : Nat) (v : State) => ∃ k, m = c - k ∧ k + 4 ≤ c ∧ Q k v) ?_ (c - 0) u₁
+      ⟨0, rfl, by omega, hq₁⟩
+    rintro m v ⟨k, rfl, hk, hv⟩
+    refine WP.mono (hquad k hk v hv) fun v' ⟨hv', hcf'⟩ => ?_
+    have ev : isa.eval .ae v' = some !(decide (c - (k + 4) < 4)) := by
+      show v'.cf.map (!·) = _; rw [hcf']; rfl
+    by_cases hlt : c - (k + 4) < 4
+    · left
+      exact ⟨by rw [ev, decide_eq_true hlt]; rfl, k + 4, hk, hlt, hv'⟩
+    · right
+      exact ⟨by rw [ev, decide_eq_false hlt]; rfl, c - (k + 4), by omega, k + 4, rfl, by omega, hv'⟩
+  refine WP.seq (WP.mono lp fun v ⟨k, hkc, hk4, hv⟩ => ?_)
+  refine WP.seq (WP.of_runBlock ⟨_, rfl, ?_⟩)
+  have hP₂ := hPz k _ (hQP k v hv)
+  obtain ⟨run₂, hy⟩ := test0_run _ (k := c - k) (by omega) (hrcx k _ hP₂)
   refine WP.seq (WP.of_runBlock ⟨_, run₂, ?_⟩)
   have hP₃ := hP k _ (BitVec.ofNat 64 (c - k)) false false hP₂
   refine WP.ite (decide (c - k = 0)) (by rw [← hy]; rfl) (fun h0 => WP.block_nil ?_) (fun h0 => ?_)

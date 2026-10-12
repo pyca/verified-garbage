@@ -201,9 +201,9 @@ SSE instructions after them (and in the functions called later) from paying
 for their dirty upper halves. -/
 def quadsThenOnes (pre quad one : List Instr) : Prog isa :=
   .seq (.block [.alu .cmp .rcx (imm 8)])
-  (.seq (.ite .b (.block []) (.seq (.block pre) (.seq (.loop (.block quad) .ae) (.block [.vop .vzeroupper]))))
-  (.seq (.block [.alu .test .rcx (.reg .rcx)])
-    (.ite .e (.block []) (.loop (.block one) .ne))))
+  (.ite .b (.loop (.block one) .ne)
+    (.seq (.block pre) (.seq (.loop (.block quad) .ae) (.seq (.block [.vop .vzeroupper])
+      (.seq (.block [.alu .test .rcx (.reg .rcx)]) (.ite .e (.block []) (.loop (.block one) .ne)))))))
 
 /-- `revLoop` four blocks at a time on 256-bit registers, then one at a
 time. -/
