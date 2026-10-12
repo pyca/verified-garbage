@@ -10,6 +10,8 @@ public import VerifiedGarbage.Proof.Ed25519.X86.VerifyPoints
 meta import VerifiedGarbage.Proof.Ed25519.X86.VerifyPoints
 public import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+public import VerifiedGarbage.Proof.Framework.X86.TaintSym
+meta import VerifiedGarbage.Proof.Framework.X86.TaintSym
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -143,14 +145,30 @@ end VG.Proof.Ed25519.X86
 namespace VG.Proof.Ed25519.X86
 open VG VG.X86 VG.Impl.Ed25519.X86 VG.Proof.Ed25519 Edwards
 
+/-- Before the equation's points: the saved state, `A` at byte 7680, `R` at byte 7808, and the
+static's address. -/
+def PointsCTPre (s₀ : State) (a r : Spec.Ed25519.Point) (s : State) : Prop :=
+  Saved s₀ (arg s₀ 3) s ∧ tablePoint s.mem (arg s₀ 3) 7680 = a ∧ tablePoint s.mem (arg s₀ 3) 7808 = r ∧
+    s.syms = s₀.syms
+
+/-- The copy of the static: its addresses are the static's, public, and the working space's. -/
+theorem bTable_ct {s₀ t₀ : State} (h : VerifyCTFacts s₀ t₀) (a r : Spec.Ed25519.Point) :
+    RelCT isa (fun s t => PointsCTPre s₀ a r s ∧ PointsCTPre t₀ a r t) bTable (fun _ _ => True) :=
+  VG.RelCT.taint (A := taintSym [bSym]) callTaint₀
+    (fun _ _ hh => ⟨callTaint₀_agree (h.callPre hh.1.1 hh.2.1), fun n hn => by
+      rw [List.mem_singleton.mp hn, hh.1.2.2.2, hh.2.2.2.2]; exact h.sym⟩) (by taint_decide)
+
 /-- The windows, `-R`, and the comparison: the windows' traces depend only on the public
 scalars, and the comparison's on whether the points represented are equal. -/
 theorem verifyEquationPoints_ct {s₀ t₀ : State} (h : VerifyCTFacts s₀ t₀) (a r : Spec.Ed25519.Point)
     {Aa Ra : EPoint dZ} (hA : Rep a Aa) (hR : Rep r Ra) :
-    RelCT isa (fun s t => EquationCTPre s₀ a r s ∧ EquationCTPre t₀ a r t) verifyEquationPoints
+    RelCT isa (fun s t => PointsCTPre s₀ a r s ∧ PointsCTPre t₀ a r t) verifyEquationPoints
       (fun _ _ => True) := by
+  have bw (u x : State) (hu : VerifyPre u) (hx : PointsCTPre u a r x) : WP isa bTable x (EquationCTPre u a r) :=
+    WP.mono (bTable_stage hu hx.1 hx.2.2.2) fun _ ⟨sb, ab, rb, tb⟩ =>
+      ⟨sb, ab.trans hx.2.1, rb.trans hx.2.2.1, tb⟩
   have ww (u x : State) (hu : VerifyPre u) (hx : EquationCTPre u a r x) :=
-    windowMultiply_ok hu hx.1 hA hx.2.1 hx.2.2
+    windowMultiply_ok hu hx.1 hA hx.2.1 hx.2.2.1 hx.2.2.2
   have nw (u x : State) (hx : WinCtx u Aa r x ∧ Rep (point (env x.mem (arg u 3)) 0 1 2 3)
       (verificationChallenge u • Aa + verificationScalar u • (-baseAff))) :
       WP isa (.block negR) x
@@ -158,6 +176,8 @@ theorem verifyEquationPoints_ct {s₀ t₀ : State} (h : VerifyCTFacts s₀ t₀
     WP.mono (negR_ok hx.1.ctx) fun t ⟨kt, qt, pt⟩ =>
       ⟨kt.ctx hx.1.ctx, by rw [pt]; exact hx.2.proj, by rw [qt, hx.1.r]; exact hR.neg.proj⟩
   rw [verifyEquationPoints]
+  refine seq_runs (bTable_ct h a r) (fun x hx => bw s₀ x (verify_pre h.left) hx)
+    (fun y hy => bw t₀ y (verify_pre h.right) hy) ?_
   refine seq_runs (windowMultiply_ct h hA) (fun x hx => ww s₀ x (verify_pre h.left) hx)
     (fun y hy => ww t₀ y (verify_pre h.right) hy) ?_
   refine seq_runs (VG.RelCT.taint (A := taint) (regsTaint [.edi])

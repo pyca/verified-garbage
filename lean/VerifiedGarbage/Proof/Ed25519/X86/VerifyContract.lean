@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Ed25519.X86.InputSlice
 public import VerifiedGarbage.Proof.Ed25519.X86.CopyWords
 public import VerifiedGarbage.Proof.Ed25519.X86.RecoverParity
+public import VerifiedGarbage.Proof.Ed25519.X86.VerifyTbl
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -22,13 +23,14 @@ def verifyLocal : Contract isa where
     let args : Region := ⟨argAddr s 0, 16⟩
     let ret : Region := ⟨(s.gpr .esp).setWidth 64, 4⟩
     let stk : Region := callStk s
-    s.rd = [pk, sig, challenge, args] ∧ s.wr = [sub (arg s 3) 0 0, scratch] ∧
+    let tbl : Region := ⟨(s.syms bSym).setWidth 64, 1920⟩
+    s.rd = [pk, sig, challenge, args, tbl] ∧ s.wr = [sub (arg s 3) 0 0, scratch] ∧
       pk.Disjoint scratch ∧ sig.Disjoint scratch ∧ challenge.Disjoint scratch ∧
       args.Disjoint scratch ∧ ret.Disjoint scratch ∧
       (arg s 0).toNat + 32 ≤ 2 ^ 32 ∧ (arg s 1).toNat + 64 ≤ 2 ^ 32 ∧
       (arg s 2).toNat + 64 ≤ 2 ^ 32 ∧ (arg s 3).toNat + 8192 ≤ 2 ^ 32 ∧
       (s.gpr .esp).toNat + 20 ≤ 2 ^ 32 ∧ 8 ≤ (s.gpr .esp).toNat ∧ stk.Disjoint scratch ∧
-      stk.Disjoint pk ∧ stk.Disjoint sig ∧ stk.Disjoint challenge
+      stk.Disjoint pk ∧ stk.Disjoint sig ∧ stk.Disjoint challenge ∧ BHeld s [scratch, stk]
   post s t := t.gpr .eax = signWord (Spec.Ed25519.verifyEquation
     (Spec.Ed25519.bytesAt s.mem ((arg s 0).setWidth 64) 32) (Spec.Ed25519.bytesAt s.mem ((arg s 1).setWidth 64) 64)
     (Spec.Ed25519.bytesAt s.mem ((arg s 2).setWidth 64) 64))
@@ -36,7 +38,8 @@ def verifyLocal : Contract isa where
     arg s 2 = arg t 2 ∧ arg s 3 = arg t 3 ∧
     Spec.Ed25519.bytesAt s.mem ((arg s 0).setWidth 64) 32 = Spec.Ed25519.bytesAt t.mem ((arg t 0).setWidth 64) 32 ∧
     Spec.Ed25519.bytesAt s.mem ((arg s 1).setWidth 64) 64 = Spec.Ed25519.bytesAt t.mem ((arg t 1).setWidth 64) 64 ∧
-    Spec.Ed25519.bytesAt s.mem ((arg s 2).setWidth 64) 64 = Spec.Ed25519.bytesAt t.mem ((arg t 2).setWidth 64) 64
+    Spec.Ed25519.bytesAt s.mem ((arg s 2).setWidth 64) 64 = Spec.Ed25519.bytesAt t.mem ((arg t 2).setWidth 64) 64 ∧
+    s.syms bSym = t.syms bSym
 
 theorem input_slice {s : State} {scidx i n skip bytes : Nat} (h : InputPre s scidx i n)
     (hn : skip + bytes ≤ 4 * n) (hb : 0 < bytes) :
@@ -62,15 +65,19 @@ structure VerifyPre (s : State) : Prop where
   scalar : SlicePre s 3 (arg s 1 + BitVec.ofNat 32 32) 32
   challenge : SlicePre s 3 (arg s 2 + BitVec.ofNat 32 0) 64
   signature_fit : (arg s 1).toNat + 64 ≤ 2 ^ 32
+  /-- The static of `-[1]B … -[15]B`, which the equation copies. -/
+  tbl : BTblAt s (arg s 3) (s.syms bSym)
+  tblStk : (⟨(s.syms bSym).setWidth 64, 1920⟩ : Region).Disjoint (callStk s)
 
 theorem verify_pre {s : State} (h : verifyLocal.pre s) : VerifyPre s := by
-  obtain ⟨rd, wr, ps, ss, cs, ars, rs, pf, sf, cf, scf, spf, h20, ks, kp, kg, kc⟩ := h
+  obtain ⟨rd, wr, ps, ss, cs, ars, rs, pf, sf, cf, scf, spf, h20, ks, kp, kg, kc, held⟩ := h
   have hp : ScratchPre s 3 4 := ⟨by decide, by rw [wr]; simp, scf,
     by rw [rd]; simp, by omega_using [spf], ars, rs, h20, ks.symm⟩
   have p : InputPre s 3 0 8 := ⟨by rw [rd]; simp, pf, ps, kp.symm⟩
   have sg : InputPre s 3 1 16 := ⟨by rw [rd]; simp, sf, ss, kg.symm⟩
   have ch : InputPre s 3 2 16 := ⟨by rw [rd]; simp, cf, cs, kc.symm⟩
   exact ⟨hp, input_slice p (by decide) (by decide), input_slice sg (by decide) (by decide),
-    input_slice sg (by decide) (by decide), input_slice ch (by decide) (by decide), sf⟩
+    input_slice sg (by decide) (by decide), input_slice ch (by decide) (by decide), sf,
+    held.tblAt (by rw [rd]; simp) (by simp), held.2.2 _ (by simp)⟩
 
 end VG.Proof.Ed25519.X86

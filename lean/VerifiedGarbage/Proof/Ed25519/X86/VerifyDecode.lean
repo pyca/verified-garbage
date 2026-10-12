@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.X86.Syms
 public import VerifiedGarbage.Proof.Ed25519.X86.VerifyDecodeInput
 public import VerifiedGarbage.Proof.Ed25519.X86.VerifyPoints
 public import VerifiedGarbage.Proof.Ed25519.X86.VerifyTables
@@ -345,12 +346,13 @@ theorem decOk_two (s : State) :
   simp only [decOk, Bool.true_and]
 
 /-- Both decoded, and the equation if both are points. -/
-theorem verifyDecode_ok {s₀ s : State} (hp : VerifyPre s₀) (hs : Saved s₀ (arg s₀ 3) s) :
+theorem verifyDecode_ok {s₀ s : State} (hp : VerifyPre s₀) (hs : Saved s₀ (arg s₀ 3) s)
+    (hy : s.syms = s₀.syms) :
     WP isa verifyDecode s fun t => Saved s₀ (arg s₀ 3) t ∧ t.gpr .eax = signWord (decodeResult s₀) := by
   rw [verifyDecode]
-  refine WP.seq (WP.mono (decodeBoth_ok hp hs) fun a ha => ?_)
-  refine WP.seq (loadWd_ok hp ha.saved (d := DOK) (by decide) .eax (by decide) fun b hb eb _ mb =>
-    Wp.wp_test fun c hc zc => WP.block_nil ?_)
+  refine WP.seq (WP.mono_syms (decodeBoth_ok hp hs) fun a ha ya => ?_)
+  refine WP.seq (WP.of_syms (loadWd_ok hp ha.saved (d := DOK) (by decide) .eax (by decide) fun b hb eb _ mb =>
+    Wp.wp_test fun c hc zc => WP.block_nil fun yc => ?_))
   have hsc : Saved s₀ (arg s₀ 3) c := ⟨by rw [hc.gpr]; exact hb.edi, by rw [hc.gpr]; exact hb.esp,
     hc.rd.trans hb.rd, hc.wr.trans hb.wr, by rw [hc.mem]; exact hb.frame, by rw [hc.mem]; exact hb.saved, hb.stk⟩
   have mc : c.mem = a.mem := hc.mem.trans mb
@@ -366,7 +368,7 @@ theorem verifyDecode_ok {s₀ s : State} (hp : VerifyPre s₀) (hs : Saved s₀ 
     have tR : tablePoint c.mem (arg s₀ 3) 7808 = r0 := by rw [mc]; exact ha.pts 1 (by decide) r0 hr0
     obtain ⟨Aa, hAa⟩ := VG.Proof.Ed25519.decodePoint_rep ha0
     obtain ⟨Ra, hRa⟩ := VG.Proof.Ed25519.decodePoint_rep hr0
-    refine WP.mono (verifyEquationPoints_ok hp hsc (by rw [tA]; exact hAa) (by rw [tR]; exact hRa))
+    refine WP.mono (verifyEquationPoints_ok hp hsc (by rw [yc, ya, hy]) (by rw [tA]; exact hAa) (by rw [tR]; exact hRa))
       fun t ⟨ht, vt⟩ => ⟨ht, ?_⟩
     rw [vt, tA, tR]
     simp only [decodeResult, decodeRResult, ha0, hr0, equationResult]

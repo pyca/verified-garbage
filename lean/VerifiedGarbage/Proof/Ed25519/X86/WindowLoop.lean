@@ -376,7 +376,8 @@ theorem Saved.frame2s {s₀ s t : State} {x : BitVec 32} (h : Saved s₀ x s) (h
 
 theorem windowPrep_ok {s₀ s : State} (hp : VerifyPre s₀) (hs : Saved s₀ (arg s₀ 3) s)
     {A R : Spec.Ed25519.Point} {Aa : EPoint dZ} (hA : Rep A Aa)
-    (ha : tablePoint s.mem (arg s₀ 3) 7680 = A) (hr : tablePoint s.mem (arg s₀ 3) 7808 = R) :
+    (ha : tablePoint s.mem (arg s₀ 3) 7680 = A) (hr : tablePoint s.mem (arg s₀ 3) 7808 = R)
+    (htb : ∀ j < 15, Rep (tablePoint s.mem (arg s₀ 3) (3072 + 128 * j)) ((j + 1) • (-baseAff))) :
     WP isa windowPrep s fun t => WinCtx s₀ Aa R t ∧ t.gpr .esi = BitVec.ofNat 32 64 ∧
       Rep (point (env t.mem (arg s₀ 3)) 0 1 2 3) 0 := by
   have hfit := hp.scratch.fit
@@ -390,22 +391,20 @@ theorem windowPrep_ok {s₀ s : State} (hp : VerifyPre s₀) (hs : Saved s₀ (a
     (by rw [ea]; rfl)) fun b hb => ?_)
   have sb := sa.frame2s hfit hb.keep hb.frame (by decide) (by decide) (by decide) (by decide) (by decide)
     (by decide)
-  refine WP.seq (WP.mono (bTable_ok hb.ctx) fun c ⟨kc, fc, tc, dc⟩ => ?_)
-  have sc := sb.frame2 hfit kc fc (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-  have cc := sc.ctx hfit hp.scratch.wr hp.scratch.stk
+  have cb := sb.ctx hfit hp.scratch.wr hp.scratch.stk
   rw [windowInit, WP.block_append_iff]
-  refine WP.mono (fieldCode_ok _ cc) fun d ⟨kd, ed⟩ => ?_
+  refine WP.mono (fieldCode_ok _ cb) fun d ⟨kd, ed⟩ => ?_
   refine Wp.wp_movi fun e he => WP.block_nil ?_
-  have ke : IKeep (arg s₀ 3) c e := (IKeep.of_field kd).trans (IKeep.of_counter he)
-  have de : env e.mem (arg s₀ 3) 16 = env c.mem (arg s₀ 3) 16 := by rw [he.mem, ed]; rfl
-  refine ⟨⟨hp, sc.ikeep hfit ke, de.trans (dc.trans hb.d), fun j hj => ?_, fun j hj => ?_, ?_⟩, he.gpr, ?_⟩
-  · rw [workspace_table ke cc _ (by omega) (by omega),
-      tablePoint_frame2 fc hfit (by decide) (by decide) (by omega) (Or.inr (by omega)) (Or.inl (by omega))]
+  have ke : IKeep (arg s₀ 3) b e := (IKeep.of_field kd).trans (IKeep.of_counter he)
+  have de : env e.mem (arg s₀ 3) 16 = env b.mem (arg s₀ 3) 16 := by rw [he.mem, ed]; rfl
+  refine ⟨⟨hp, sb.ikeep hfit ke, de.trans hb.d, fun j hj => ?_, fun j hj => ?_, ?_⟩, he.gpr, ?_⟩
+  · rw [workspace_table ke cb _ (by omega) (by omega)]
     exact hb.table j hj
-  · rw [workspace_table ke cc _ (by omega) (by omega)]
-    exact tc j hj
-  · rw [workspace_table ke cc _ (by decide) (by decide),
-      tablePoint_frame2 fc hfit (by decide) (by decide) (by decide) (Or.inr (by decide)) (Or.inr (by decide)),
+  · rw [workspace_table ke cb _ (by omega) (by omega),
+      tablePoint_frame2s ca hb.frame (by decide) (by decide) (by omega) (Or.inr (by omega)) (Or.inr (by omega)),
+      tpa _ (by omega) (by omega)]
+    exact htb j hj
+  · rw [workspace_table ke cb _ (by decide) (by decide),
       tablePoint_frame2s ca hb.frame (by decide) (by decide) (by decide) (Or.inr (by decide))
         (Or.inr (by decide)), tpa 7808 (by decide) (by decide)]
     exact hr
@@ -413,11 +412,12 @@ theorem windowPrep_ok {s₀ s : State} (hp : VerifyPre s₀) (hs : Saved s₀ (a
 
 theorem windowMultiply_ok {s₀ s : State} (hp : VerifyPre s₀) (hs : Saved s₀ (arg s₀ 3) s)
     {A R : Spec.Ed25519.Point} {Aa : EPoint dZ} (hA : Rep A Aa)
-    (ha : tablePoint s.mem (arg s₀ 3) 7680 = A) (hr : tablePoint s.mem (arg s₀ 3) 7808 = R) :
+    (ha : tablePoint s.mem (arg s₀ 3) 7680 = A) (hr : tablePoint s.mem (arg s₀ 3) 7808 = R)
+    (htb : ∀ j < 15, Rep (tablePoint s.mem (arg s₀ 3) (3072 + 128 * j)) ((j + 1) • (-baseAff))) :
     WP isa windowMultiply s fun t => WinCtx s₀ Aa R t ∧
       Rep (point (env t.mem (arg s₀ 3)) 0 1 2 3)
         (verificationChallenge s₀ • Aa + verificationScalar s₀ • (-baseAff)) := by
-  refine WP.seq (WP.mono (windowPrep_ok hp hs hA ha hr) fun e ⟨we, ee, re⟩ => ?_)
+  refine WP.seq (WP.mono (windowPrep_ok hp hs hA ha hr htb) fun e ⟨we, ee, re⟩ => ?_)
   refine WP.seq (WP.mono (skipZero_ok we ee re) fun f ⟨c', hc1, hc2, wf, ef, rf⟩ => ?_)
   refine WP.seq (WP.mono (nibbles_ok wf ef) fun g ⟨wg, eg, mg⟩ => ?_)
   refine WP.mono (loopN_ok wg (by omega) (by omega) eg (by rw [mg, nsum_two_mul]; exact rf))
