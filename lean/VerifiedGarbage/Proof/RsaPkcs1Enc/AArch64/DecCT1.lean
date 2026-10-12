@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecCTBase
-import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncVerified
+module
+
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecCTBase
+meta import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecCTBase
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncVerified
+meta import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncVerified
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-PKCS1-v1_5 decryption on AArch64: constant time, to `D`
@@ -7,6 +15,8 @@ import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncVerified
 The setup (`setup_ct`), from two entry states whose public data agree, the
 private-key operation (`priv_ct`), and `D` (`dBuild_ct`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPkcs1Enc.AArch64.Dec
 

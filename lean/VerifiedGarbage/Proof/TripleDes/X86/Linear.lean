@@ -1,6 +1,14 @@
-import VerifiedGarbage.Proof.Framework.X86.Straight
-import VerifiedGarbage.Proof.Framework.Bitslice.Lanes
-import VerifiedGarbage.Proof.Framework.Bitslice.Table
+module
+
+public import VerifiedGarbage.Proof.Framework.X86.Straight
+public import VerifiedGarbage.Proof.Framework.Bitslice.Lanes
+public import VerifiedGarbage.Proof.Framework.Bitslice.Table
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.TripleDes.X86.Linear
 

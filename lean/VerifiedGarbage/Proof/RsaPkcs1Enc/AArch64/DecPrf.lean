@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecMsg
+module
+
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecMsg
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-PKCS1-v1_5 decryption on AArch64: a block of IRPRF
@@ -7,6 +13,8 @@ The blocks of `prfBody` that set registers and the counter, and one block of
 IRPRF (`prfBody_ok`): `HMAC(KDK, I2OSP(i, 2) ‖ label ‖ I2OSP(8 length, 2))` to
 `scratch + dst + 32 i`, the counter `i` in its slot advanced.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPkcs1Enc.AArch64.Dec
 

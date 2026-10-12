@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Seed.AArch64.Setup
+module
+
+public import VerifiedGarbage.Proof.Seed.AArch64.Setup
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The function on AArch64
@@ -7,6 +13,8 @@ After moving the scratch buffer to `x5` and saving the callee-saved
 registers in it, the function runs batches of up to 16 blocks until none are
 left (`loop_ok`), then restores the registers (`ecb_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Seed.AArch64
 

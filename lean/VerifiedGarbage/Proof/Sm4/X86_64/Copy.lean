@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Sm4.X86_64.Keys
-import VerifiedGarbage.Proof.Sm4.Common
+module
+
+public import VerifiedGarbage.Proof.Sm4.X86_64.Keys
+public import VerifiedGarbage.Proof.Sm4.Common
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Copying blocks on x86-64
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.Sm4.Common
 from `rax` to `rbx` (areas that do not overlap), through `rbp`, counting
 down `rcx`, and changes nothing else in memory.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sm4.X86_64
 

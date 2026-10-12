@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.RsaOaep.AArch64.Label
+module
+
+public import VerifiedGarbage.Proof.RsaOaep.AArch64.Label
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-OAEP on AArch64: MGF1's arguments
@@ -6,6 +12,8 @@ import VerifiedGarbage.Proof.RsaOaep.AArch64.Label
 The blocks that set MGF1's slots before each masking: the seed with `DB`
 (`seedArgs_ok`) and `DB` with the seed (`dbArgs_ok`), from `k` in its slot.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaOaep.AArch64
 

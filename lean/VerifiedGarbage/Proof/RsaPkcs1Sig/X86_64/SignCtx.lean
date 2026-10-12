@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCtx
+module
+
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCtx
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_pkcs1_sign` on x86-64: the contract on the registers
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCtx
 call of `vg_rsa_private_checked` use, `sigStack`) on the registers and the
 stack (`sign_implies`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPkcs1Sig.X86_64
 

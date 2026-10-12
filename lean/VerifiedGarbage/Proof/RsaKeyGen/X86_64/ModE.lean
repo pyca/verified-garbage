@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.RsaKeyGen.X86_64.GcdStep
-import VerifiedGarbage.Proof.Bignum.X86_64.Copy
-import VerifiedGarbage.Proof.RsaKeyGen.CandMath
+module
+
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.GcdStep
+public import VerifiedGarbage.Proof.Bignum.X86_64.Copy
+public import VerifiedGarbage.Proof.RsaKeyGen.CandMath
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # A candidate on x86-64: `(c − 1) mod e`
@@ -10,6 +16,8 @@ import VerifiedGarbage.Proof.RsaKeyGen.CandMath
 `r := (2 r + bit) mod e` (`modbit_bv`), the bits shifted out of the top of
 each word in turn.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaKeyGen.X86_64
 

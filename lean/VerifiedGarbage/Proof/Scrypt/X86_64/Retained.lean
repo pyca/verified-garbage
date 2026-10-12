@@ -1,9 +1,22 @@
-import VerifiedGarbage.Proof.Scrypt.X86_64.Salsa
-import VerifiedGarbage.Proof.Scrypt.Memory
-import VerifiedGarbage.Proof.MdStream.X86_64.Common
-import VerifiedGarbage.Impl.Scrypt.X86_64.BlockMixFused
+module
+
+public import VerifiedGarbage.Proof.Scrypt.X86_64.Salsa
+meta import VerifiedGarbage.Proof.Scrypt.X86_64.Salsa
+public import VerifiedGarbage.Proof.Scrypt.Memory
+meta import VerifiedGarbage.Proof.Scrypt.Memory
+public import VerifiedGarbage.Proof.MdStream.X86_64.Common
+meta import VerifiedGarbage.Proof.MdStream.X86_64.Common
+public import VerifiedGarbage.Impl.Scrypt.X86_64.BlockMixFused
+meta import VerifiedGarbage.Impl.Scrypt.X86_64.BlockMixFused
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! The scalar BlockMix state retained between Salsa invocations. -/
+
+@[expose] public section
+
 namespace VG.Proof.Scrypt.X86_64.Retained
 open VG VG.X86_64 VG.Impl.Scrypt.X86_64
 open VG.Spec.Scrypt (Word)

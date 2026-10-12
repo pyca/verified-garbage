@@ -1,5 +1,14 @@
-import VerifiedGarbage.Proof.TripleDes.AArch64.Permutation
-import VerifiedGarbage.Proof.TripleDes.Core
+module
+
+public import VerifiedGarbage.Proof.TripleDes.AArch64.Permutation
+public import VerifiedGarbage.Proof.TripleDes.Core
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
+
 namespace VG.Proof.TripleDes.AArch64
 open VG VG.AArch64 VG.Impl.TripleDes.AArch64
 

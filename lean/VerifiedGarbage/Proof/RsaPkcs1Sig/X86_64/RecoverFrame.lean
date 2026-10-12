@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.RecoverCtx
-import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyFrame
-import VerifiedGarbage.Impl.RsaPkcs1Sig.X86_64.Recover
+module
+
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.RecoverCtx
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyFrame
+public import VerifiedGarbage.Impl.RsaPkcs1Sig.X86_64.Recover
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_pkcs1_recover` on x86-64: the frame
@@ -8,6 +14,8 @@ import VerifiedGarbage.Impl.RsaPkcs1Sig.X86_64.Recover
 `vg_rsa_pkcs1_verify`'s frame (`Ver.fb`, `Ver.stkR`, the working space at the
 same stack arguments, `Ver.scrR`), with `out` written too, and other slots.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPkcs1Sig.X86_64.Rec
 

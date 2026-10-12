@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecKdk
+module
+
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecKdk
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-PKCS1-v1_5 decryption on x86-64: IRPRF
@@ -7,6 +13,8 @@ The message of block `i` (`msgCL_run`, `msgAM_run`), one block (`prf_step`),
 and the loops (`clLoop_step`, `amLoop_step`): `CL = IRPRF(KDK, "length", 256)`
 at `scratch + sCL` and `AM = IRPRF(KDK, "message", k)` at `scratch + sAM`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPkcs1Enc.X86_64.Dec
 

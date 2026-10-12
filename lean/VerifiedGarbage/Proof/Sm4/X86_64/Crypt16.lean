@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Sm4.X86_64.Core
+module
+
+public import VerifiedGarbage.Proof.Sm4.X86_64.Core
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The transposes, and sixteen blocks of bitsliced SM4 on x86-64
@@ -9,6 +15,8 @@ blocks (the words in reverse order); `crypt16_wp` composes them with the
 32 rounds (`rounds_wp`): each block of the tail buffer becomes the output
 of SM4's rounds with the table's round keys.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sm4.X86_64
 

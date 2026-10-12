@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Seed.AArch64.Round
-import VerifiedGarbage.Proof.Seed.Rounds
+module
+
+public import VerifiedGarbage.Proof.Seed.AArch64.Round
+public import VerifiedGarbage.Proof.Seed.Rounds
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Sixteen rounds on AArch64
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.Seed.Rounds
 `rounds_ok`: `rounds d` does sixteen rounds on every lane, with round
 `j + 1`'s key at `x0 + j * step` (`kp`), and moves `x0` back.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Seed.AArch64
 

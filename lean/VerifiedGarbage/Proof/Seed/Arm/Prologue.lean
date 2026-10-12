@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Seed.Arm.Crypt8
+module
+
+public import VerifiedGarbage.Proof.Seed.Arm.Crypt8
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Slots, copies of blocks, and saving registers, on ARMv7
@@ -10,6 +16,8 @@ blocks of 16 bytes from `r0` to `r12`; the prologue and epilogue's saving
 and restoring of the callee-saved registers (`save_ok`, `restore_ok`) in
 the slots from `savedSlot`; and the data loop's invariant (`DInv`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Seed.Arm
 

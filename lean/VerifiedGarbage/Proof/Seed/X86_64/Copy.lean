@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Seed.X86_64.Rounds
-import VerifiedGarbage.Proof.Framework.X86_64.Bswap
+module
+
+public import VerifiedGarbage.Proof.Seed.X86_64.Rounds
+public import VerifiedGarbage.Proof.Framework.X86_64.Bswap
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Copying blocks into the arrays and back
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.Framework.X86_64.Bswap
 `0 … m - 1` of the arrays, each word byte-swapped (`bw`, a block's big-endian
 word). `copyOut_ok`: the loop of `copyOutBody` copies them back, `R` first.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Seed.X86_64
 

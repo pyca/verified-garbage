@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrRound
+module
+
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrRound
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # A candidate on x86-64: `mrRound`
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrRound
 and `kStat` is 4 to go on (fewer than 17 witnesses, or fewer uniform ones
 than `checks`) or 1.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaKeyGen.X86_64
 

@@ -1,11 +1,19 @@
-import VerifiedGarbage.Proof.TripleDes.Arm.Bytes
-import VerifiedGarbage.Proof.TripleDes.Arm.Initial
-import VerifiedGarbage.Proof.TripleDes.Arm.Body
-import VerifiedGarbage.Proof.Framework.Arm.RegUpd
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Rc2.Arm.Save
+module
+
+public import VerifiedGarbage.Proof.TripleDes.Arm.Bytes
+public import VerifiedGarbage.Proof.TripleDes.Arm.Initial
+public import VerifiedGarbage.Proof.TripleDes.Arm.Body
+public import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+public import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Rc2.Arm.Save
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## `BlockIO` -/
+
+@[expose] public section
 
 section
 

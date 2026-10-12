@@ -1,7 +1,15 @@
-import VerifiedGarbage.Proof.Seed.AArch64.Key
-import VerifiedGarbage.Proof.Seed.AArch64.Verified
+module
+
+public import VerifiedGarbage.Proof.Seed.AArch64.Key
+public import VerifiedGarbage.Proof.Seed.AArch64.Verified
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # Key expansion meets its contract, with the scratch buffer as an argument -/
+
+@[expose] public section
 
 namespace VG.Proof.Seed.AArch64
 

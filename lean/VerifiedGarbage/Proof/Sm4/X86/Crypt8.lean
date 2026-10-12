@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Sm4.X86.Core
-import VerifiedGarbage.Proof.Sm4.Layout
+module
+
+public import VerifiedGarbage.Proof.Sm4.X86.Core
+public import VerifiedGarbage.Proof.Sm4.Layout
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The transposes, and eight blocks of bitsliced SM4 on x86 (32-bit)
@@ -9,6 +15,8 @@ blocks of the tail buffer into the state's planes, `fromBs_step` turns the
 state's planes back into the output blocks (the words in reverse order),
 and `crypt8_wp` composes them with the 32 rounds (`rounds_wp`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sm4.X86
 

@@ -1,19 +1,39 @@
-import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.Mem
-import VerifiedGarbage.Proof.Framework.X86.Taint
-import VerifiedGarbage.Proof.Framework.X86.Exec
-import VerifiedGarbage.Proof.Framework.X86.Spill
-import VerifiedGarbage.Proof.Framework.X86.RegUpd
-import VerifiedGarbage.Proof.Sm3.Spec
-import VerifiedGarbage.Impl.Sm3.X86
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Sm3.X86.Contract
-import VerifiedGarbage.Proof.Sm3.X86.Lit
+module
+
+public import VerifiedGarbage.Proof.Framework.Block
+meta import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Framework.Mem
+meta import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.X86.Taint
+meta import VerifiedGarbage.Proof.Framework.X86.Taint
+public import VerifiedGarbage.Proof.Framework.X86.Exec
+meta import VerifiedGarbage.Proof.Framework.X86.Exec
+public import VerifiedGarbage.Proof.Framework.X86.Spill
+meta import VerifiedGarbage.Proof.Framework.X86.Spill
+public import VerifiedGarbage.Proof.Framework.X86.RegUpd
+meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
+public import VerifiedGarbage.Proof.Sm3.Spec
+meta import VerifiedGarbage.Proof.Sm3.Spec
+public import VerifiedGarbage.Impl.Sm3.X86
+meta import VerifiedGarbage.Impl.Sm3.X86
+public import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Sm3.X86.Contract
+meta import VerifiedGarbage.Proof.Sm3.X86.Contract
+public import VerifiedGarbage.Proof.Sm3.X86.Lit
+meta import VerifiedGarbage.Proof.Sm3.X86.Lit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # SM3 compression function on x86 (32-bit): the message expansion and the iterations
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sm3.X86
 

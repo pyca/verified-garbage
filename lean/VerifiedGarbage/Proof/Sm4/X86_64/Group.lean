@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Sm4.X86_64.Prologue
+module
+
+public import VerifiedGarbage.Proof.Sm4.X86_64.Prologue
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # A group of blocks of SM4 ECB on x86-64
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.Sm4.X86_64.Prologue
 tail buffer (`crypt16_wp`), copies the blocks back and steps to the next
 group.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sm4.X86_64
 

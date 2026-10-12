@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Seed.X86_64.KeyVerified
-import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
+module
+
+public import VerifiedGarbage.Proof.Seed.X86_64.KeyVerified
+public import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # SEED on x86-64, with its working space on the stack
@@ -10,6 +16,8 @@ argument, in a frame that allocates it and zeroes it after the code
 the data: 1064 bytes, the 1056 of the working space and 8 to keep `rsp`
 aligned. The code uses no other stack.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Seed.X86_64
 

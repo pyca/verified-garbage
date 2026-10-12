@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.Framework.X86.Exec
-import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
-import VerifiedGarbage.Proof.Framework.X86.SseDword
-import VerifiedGarbage.Proof.Scrypt.Spec
-import VerifiedGarbage.Impl.Scrypt.X86.Salsa
+module
+
+public import VerifiedGarbage.Proof.Framework.X86.Exec
+public import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
+public import VerifiedGarbage.Proof.Framework.X86.SseDword
+public import VerifiedGarbage.Proof.Scrypt.Spec
+public import VerifiedGarbage.Impl.Scrypt.X86.Salsa
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The Salsa20/8 Core on x86 (32-bit), with SSE2: the rounds
@@ -16,6 +22,8 @@ that the column and row rounds of the specification are quarter rounds on
 those words, and `doubleRound_ok` composes them. `toDiag_ok` and
 `fromDiag_ok` move between the rows and the columns.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Scrypt.X86
 

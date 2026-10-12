@@ -1,15 +1,34 @@
-import VerifiedGarbage.Proof.Scrypt.AArch64.Common
-import VerifiedGarbage.Proof.Scrypt.RoMix
-import VerifiedGarbage.Impl.Scrypt.AArch64.RoMix
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.Set
-import VerifiedGarbage.Proof.Scrypt.AArch64.BlockMixVerified
-import VerifiedGarbage.Proof.Framework.AArch64.RelCT
-import Mathlib.Tactic.DefEqTransformations
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Spec.Scrypt.Contract
-import VerifiedGarbage.Proof.Framework.AArch64.Spill
-import VerifiedGarbage.Proof.Scrypt.AArch64.Lit
+module
+
+public import VerifiedGarbage.Proof.Scrypt.AArch64.Common
+meta import VerifiedGarbage.Proof.Scrypt.AArch64.Common
+public import VerifiedGarbage.Proof.Scrypt.RoMix
+meta import VerifiedGarbage.Proof.Scrypt.RoMix
+public import VerifiedGarbage.Impl.Scrypt.AArch64.RoMix
+meta import VerifiedGarbage.Impl.Scrypt.AArch64.RoMix
+public import Mathlib.Tactic.Conv
+meta import Mathlib.Tactic.Conv
+public import Mathlib.Tactic.Set
+meta import Mathlib.Tactic.Set
+public import VerifiedGarbage.Proof.Scrypt.AArch64.BlockMixVerified
+meta import VerifiedGarbage.Proof.Scrypt.AArch64.BlockMixVerified
+public import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+meta import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+public import Mathlib.Tactic.DefEqTransformations
+meta import Mathlib.Tactic.DefEqTransformations
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.Scrypt.Contract
+meta import VerifiedGarbage.Spec.Scrypt.Contract
+public import VerifiedGarbage.Proof.Framework.AArch64.Spill
+meta import VerifiedGarbage.Proof.Framework.AArch64.Spill
+public import VerifiedGarbage.Proof.Scrypt.AArch64.Lit
+meta import VerifiedGarbage.Proof.Scrypt.AArch64.Lit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+import all Init.Data.Nat.Power2.Basic
 
 /-!
 # scryptROMix on AArch64: the precondition
@@ -18,6 +37,8 @@ The regions the function works on, and `BlockMixSpec`: what a call of
 `vg_scrypt_blockmix` does (the verified one meets it:
 `Proof/Scrypt/AArch64/RoMixCT.lean`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Scrypt.AArch64.RoMix
 

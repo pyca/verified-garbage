@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Seed.X86_64.KeyLoad
+module
+
+public import VerifiedGarbage.Proof.Seed.X86_64.KeyLoad
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Copying `G`'s outputs on x86-64
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.Seed.X86_64.KeyLoad
 schedule's words from `k`; `keyMove_ok`: `keyMove` copies the second sixteen
 inputs of `G` to its words.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Seed.X86_64
 

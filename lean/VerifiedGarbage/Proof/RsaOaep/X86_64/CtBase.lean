@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.RsaOaep.X86_64.Hash
-import VerifiedGarbage.Proof.Bignum.X86_64.Mont
+module
+
+public import VerifiedGarbage.Proof.RsaOaep.X86_64.Hash
+public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-OAEP on x86-64: relating two runs
@@ -16,6 +22,8 @@ frame (the first writable region), and the slots the piece reads, public
 The calls of the streaming hash functions are constant time when their
 arguments agree (`two_init`, `two_upd`, `two_updExt`, `two_fin`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaOaep.X86_64
 

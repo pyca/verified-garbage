@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.CTFront
-import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.Lcm
+module
+
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.CTFront
+meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.CTFront
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.Lcm
+meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.Lcm
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # An RSA key from its primes on x86-64: constant time, `lcm(p − 1, q − 1)`
@@ -9,6 +17,8 @@ leave their top words zero, as `inverse` needs of `u`), the halving's loop
 (`twos_ct`, by `RelCT.loop` over the steps left), `gcdUV` (`gcdUV_ct`) and
 the division.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaKeyGen.X86_64.Key
 

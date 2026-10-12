@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Framework.X86_64.Depth
-import VerifiedGarbage.Proof.Framework.X86_64.Abi
+module
+
+public import VerifiedGarbage.Proof.Framework.X86_64.Depth
+public import VerifiedGarbage.Proof.Framework.X86_64.Abi
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-OAEP on x86-64: the stack its pieces use
@@ -9,6 +15,8 @@ level of its calls (`xdepth_le`), and what code that writes `rsp` only in
 its frames leaves of memory, added to a weakest precondition (`wp_frame`):
 changes only within its writable regions and the stack it uses.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaOaep.X86_64
 

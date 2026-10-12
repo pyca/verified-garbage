@@ -1,13 +1,21 @@
-import VerifiedGarbage.Proof.TripleDes.X86.VerifiedBlock
-import VerifiedGarbage.Impl.TripleDes.X86.Ecb
-import VerifiedGarbage.Proof.Rc2.X86.Cbc.CallFrame
-import VerifiedGarbage.Proof.TripleDes.EcbMemory
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Spec.TripleDes.Contract
-import VerifiedGarbage.Proof.TripleDes.X86.ConstantTime
-import VerifiedGarbage.Proof.TripleDes.Scratch
+module
+
+public import VerifiedGarbage.Proof.TripleDes.X86.VerifiedBlock
+public import VerifiedGarbage.Impl.TripleDes.X86.Ecb
+public import VerifiedGarbage.Proof.Rc2.X86.Cbc.CallFrame
+public import VerifiedGarbage.Proof.TripleDes.EcbMemory
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.TripleDes.Contract
+public import VerifiedGarbage.Proof.TripleDes.X86.ConstantTime
+public import VerifiedGarbage.Proof.TripleDes.Scratch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## `Call` -/
+
+@[expose] public section
 
 section
 

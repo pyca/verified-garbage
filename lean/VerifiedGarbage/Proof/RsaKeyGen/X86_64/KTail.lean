@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.RsaKeyGen.X86_64.KEnd
+module
+
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.KEnd
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # A candidate on x86-64: Montgomery setup, Miller–Rabin and the result
@@ -6,6 +12,8 @@ import VerifiedGarbage.Proof.RsaKeyGen.X86_64.KEnd
 `mrResult_ok`: the end from `kStat`; `kTail_ok`: `montSetup`, `millerRabin`
 and `mrResult` end as `primalityTest c` on the octets after the candidate.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaKeyGen.X86_64
 

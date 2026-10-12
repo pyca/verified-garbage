@@ -1,11 +1,17 @@
-import VerifiedGarbage.Proof.Seed.AArch64.Ecb
-import VerifiedGarbage.Proof.Seed.AArch64.Batch
-import VerifiedGarbage.Proof.Seed.AArch64.Lit
-import VerifiedGarbage.Proof.Seed.ModeBytes
-import VerifiedGarbage.Proof.Modes.AArch64.Core
-import VerifiedGarbage.Proof.Modes.AArch64.Words
-import VerifiedGarbage.Proof.Modes.AArch64.ViaV
-import VerifiedGarbage.Impl.Seed.AArch64.Modes
+module
+
+public import VerifiedGarbage.Proof.Seed.AArch64.Ecb
+public import VerifiedGarbage.Proof.Seed.AArch64.Batch
+public import VerifiedGarbage.Proof.Seed.AArch64.Lit
+public import VerifiedGarbage.Proof.Seed.ModeBytes
+public import VerifiedGarbage.Proof.Modes.AArch64.Core
+public import VerifiedGarbage.Proof.Modes.AArch64.Words
+public import VerifiedGarbage.Proof.Modes.AArch64.ViaV
+public import VerifiedGarbage.Impl.Seed.AArch64.Modes
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # SEED's core for the modes on AArch64
@@ -20,6 +26,8 @@ core's slots is the schedule. As on x86-64 (`Proof/Seed/X86_64/ModeCore.lean`):
 which `v29` and `v30` keep the data's address and the blocks left, since the
 batch writes no vector register (`vSafe`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Seed.AArch64
 

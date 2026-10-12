@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
-import VerifiedGarbage.Impl.X25519.AArch64
+module
+
+public import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
+public import VerifiedGarbage.Impl.X25519.AArch64
+meta import VerifiedGarbage.Impl.X25519.AArch64
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X25519 on AArch64: the code as a literal
@@ -11,6 +19,8 @@ every instruction): the literal of the code (`materialize_code`,
 are templates (`materialize_template`), each evaluated once with its offsets
 free rather than once for every product, sum and swap of the code.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X25519.AArch64.Lit
 open VG.Impl.X25519.AArch64

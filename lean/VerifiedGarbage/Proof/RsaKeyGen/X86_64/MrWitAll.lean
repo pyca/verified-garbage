@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrWit
+module
+
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrWit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # A candidate on x86-64: `mrWitness`
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrWit
 `8 w` octets `x` of `rand` in `aX`, the mask of its uniformity in `kU`, and
 `kUsed` advanced.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaKeyGen.X86_64
 

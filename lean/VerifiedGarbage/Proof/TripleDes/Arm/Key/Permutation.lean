@@ -1,4 +1,12 @@
-import VerifiedGarbage.Proof.TripleDes.Arm.Permutation
+module
+
+public import VerifiedGarbage.Proof.TripleDes.Arm.Permutation
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.TripleDes.Arm.Key
 open VG VG.Arm VG.Impl.TripleDes.Arm

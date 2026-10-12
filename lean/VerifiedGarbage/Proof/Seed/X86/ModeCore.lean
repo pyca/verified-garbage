@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Seed.X86.Ecb
-import VerifiedGarbage.Proof.Seed.ModeCipher
-import VerifiedGarbage.Proof.Modes.X86.Core
-import VerifiedGarbage.Impl.Seed.X86.Modes
+module
+
+public import VerifiedGarbage.Proof.Seed.X86.Ecb
+public import VerifiedGarbage.Proof.Seed.ModeCipher
+public import VerifiedGarbage.Proof.Modes.X86.Core
+public import VerifiedGarbage.Impl.Seed.X86.Modes
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # SEED's core for the modes on x86 (32-bit)
@@ -13,6 +19,8 @@ key a schedule, read through the first stack argument, its cipher
 and the key ready when the table of round keys in `d`'s order is in the
 scratch buffer (`ReadyAt`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Seed.X86
 

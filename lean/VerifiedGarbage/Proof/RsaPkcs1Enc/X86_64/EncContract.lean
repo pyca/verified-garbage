@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.PubVerified
-import VerifiedGarbage.Spec.RsaPkcs1Enc.Contract
-import VerifiedGarbage.Impl.RsaPkcs1Enc.X86_64.Encrypt
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.PubVerified
+public import VerifiedGarbage.Spec.RsaPkcs1Enc.Contract
+public import VerifiedGarbage.Impl.RsaPkcs1Enc.X86_64.Encrypt
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-PKCS1-v1_5 encryption on x86-64: the contracts on the registers
@@ -14,6 +20,8 @@ of `vg_rsa_public` (`pubContract`), with BoringSSL's limits on `e`
 (`Spec.Rsa.publicOpChecked`). A `PubImpl` is an implementation of it, which
 the proof of encryption is written for.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPkcs1Enc.X86_64
 

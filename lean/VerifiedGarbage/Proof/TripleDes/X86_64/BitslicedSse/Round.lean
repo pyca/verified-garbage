@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedSse.Step
+module
+
+public import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedSse.Step
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # An SSE2 round on the machine
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedSse.Step
 `r8` into `rax`, advances the pointer by the step `r9`, and does to the 64
 state words what `roundW` does, with the key's low 48 bits.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.TripleDes.X86_64.BitslicedSse
 

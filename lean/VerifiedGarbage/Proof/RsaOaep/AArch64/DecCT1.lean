@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.RsaOaep.AArch64.DecCTBase
+module
+
+public import VerifiedGarbage.Proof.RsaOaep.AArch64.DecCTBase
+meta import VerifiedGarbage.Proof.RsaOaep.AArch64.DecCTBase
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-OAEP decryption on AArch64: constant time, to the decoding
@@ -8,6 +15,8 @@ entry states whose public data agree; the private-key operation
 (`priv_ct`); its result to its slot and the check of `k` (`resK_ct`); and
 the failure for a short `k` (`decFail_tr`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaOaep.AArch64.Dec
 

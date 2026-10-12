@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.RsaOaep.X86_64.CtBase
-import VerifiedGarbage.Proof.RsaOaep.X86_64.Mgf
+module
+
+public import VerifiedGarbage.Proof.RsaOaep.X86_64.CtBase
+meta import VerifiedGarbage.Proof.RsaOaep.X86_64.CtBase
+public import VerifiedGarbage.Proof.RsaOaep.X86_64.Mgf
+meta import VerifiedGarbage.Proof.RsaOaep.X86_64.Mgf
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-OAEP on x86-64: MGF1 in constant time
@@ -11,6 +19,8 @@ analysis from the frame's public slots (`RW.words`), and the calls' arguments
 are the same in both runs; the rounds are as many as `dstLen` and `hLen`
 say, by correctness (`round_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaOaep.X86_64
 

@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecCTBase
+module
+
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecCTBase
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-PKCS1-v1_5 decryption on AArch64: the calls' arguments
@@ -9,6 +15,8 @@ and the registers the block before it sets (`initA`, `updA`, `finA`,
 from `oI` on (`Weak`, `initW` …), and that two runs with the same layout
 make the same call (`initR` …).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPkcs1Enc.AArch64.Dec
 

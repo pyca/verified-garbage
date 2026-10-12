@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.RsaKeyGen.X86_64.CTMrExp
+module
+
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.CTMrExp
+meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.CTMrExp
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # A candidate on x86-64: constant time of a round of Miller–Rabin
@@ -11,6 +18,8 @@ little (the header, `Good`); the facts that make the next pieces run come
 from the correctness lemmas of whole stretches (`roundPre_ok`,
 `roundMid_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaKeyGen.X86_64
 

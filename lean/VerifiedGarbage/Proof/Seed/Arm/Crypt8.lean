@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Seed.Arm.Round
-import VerifiedGarbage.Proof.Seed.Rounds
-import VerifiedGarbage.Proof.Seed.Memory
+module
+
+public import VerifiedGarbage.Proof.Seed.Arm.Round
+public import VerifiedGarbage.Proof.Seed.Rounds
+public import VerifiedGarbage.Proof.Seed.Memory
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Eight blocks of SEED on ARMv7
@@ -12,6 +18,8 @@ blocks' words, byte-reversed, to the arrays (`toArr`, by `moves_ok`), runs
 the eight pairs of rounds (`rounds_wp`), and copies the arrays back, `R`
 first (`fromArr`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Seed.Arm
 

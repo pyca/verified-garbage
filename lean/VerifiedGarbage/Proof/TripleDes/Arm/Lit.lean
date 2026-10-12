@@ -1,9 +1,21 @@
-import VerifiedGarbage.Impl.TripleDes.Arm.Sbox
-import VerifiedGarbage.Proof.Framework.Arm.Lit
-import VerifiedGarbage.Impl.TripleDes.Arm.Block
-import VerifiedGarbage.Impl.TripleDes.Arm.Permutation
+module
+
+public import VerifiedGarbage.Impl.TripleDes.Arm.Sbox
+meta import VerifiedGarbage.Impl.TripleDes.Arm.Sbox
+public import VerifiedGarbage.Proof.Framework.Arm.Lit
+meta import VerifiedGarbage.Proof.Framework.Arm.Lit
+public import VerifiedGarbage.Impl.TripleDes.Arm.Block
+meta import VerifiedGarbage.Impl.TripleDes.Arm.Block
+public import VerifiedGarbage.Impl.TripleDes.Arm.Permutation
+meta import VerifiedGarbage.Impl.TripleDes.Arm.Permutation
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## `SboxTable` -/
+
+@[expose] public section
 
 section
 

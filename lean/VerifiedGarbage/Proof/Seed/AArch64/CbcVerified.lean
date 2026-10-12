@@ -1,12 +1,27 @@
-import VerifiedGarbage.Proof.Seed.AArch64.ModeCore
-import VerifiedGarbage.Proof.Modes.AArch64.CbcDecrypt
-import VerifiedGarbage.Proof.Modes.AArch64.CbcEncrypt
-import VerifiedGarbage.Proof.Seed.CbcScratch
-import VerifiedGarbage.Proof.Seed.AArch64.ModesLit
-import VerifiedGarbage.Proof.Framework.AArch64.Inline
-import VerifiedGarbage.Proof.Framework.AArch64.VectorTaint
-import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
-import VerifiedGarbage.Proof.Framework.Contract
+module
+
+public import VerifiedGarbage.Proof.Seed.AArch64.ModeCore
+meta import VerifiedGarbage.Proof.Seed.AArch64.ModeCore
+public import VerifiedGarbage.Proof.Modes.AArch64.CbcDecrypt
+meta import VerifiedGarbage.Proof.Modes.AArch64.CbcDecrypt
+public import VerifiedGarbage.Proof.Modes.AArch64.CbcEncrypt
+meta import VerifiedGarbage.Proof.Modes.AArch64.CbcEncrypt
+public import VerifiedGarbage.Proof.Seed.CbcScratch
+meta import VerifiedGarbage.Proof.Seed.CbcScratch
+public import VerifiedGarbage.Proof.Seed.AArch64.ModesLit
+meta import VerifiedGarbage.Proof.Seed.AArch64.ModesLit
+public import VerifiedGarbage.Proof.Framework.AArch64.Inline
+meta import VerifiedGarbage.Proof.Framework.AArch64.Inline
+public import VerifiedGarbage.Proof.Framework.AArch64.VectorTaint
+meta import VerifiedGarbage.Proof.Framework.AArch64.VectorTaint
+public import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
+meta import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # SEED-CBC on AArch64 meets its contracts
@@ -23,6 +38,8 @@ which uses no vector instruction); the IV is secret. `cbcEncrypt_framed` and `cb
 them with their working space on the stack, zeroed on return: 1456 bytes,
 the 182 words of the scratch buffer.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Seed
 
