@@ -166,25 +166,21 @@ checked build's cache key with the manifest's `io.pyca.lean.cache-key`
 annotation and skips packaging and publishing when it matches, so Rust- or
 docs-only changes do not create a new cache version.
 
-Restore it with `curl`, which streams the layer straight from the registry
-API with an anonymous pull token. With `curl`, `python3` and `zstd`
-installed, from the repository root:
+Restore it with `ci/fetch_lean_cache.py`, which streams the layer straight
+from the registry API with an anonymous pull token, resumes from where it
+stopped when the connection drops, and checks the download against the
+layer's digest. With `python3` and `zstd` installed, from the repository
+root:
 
 ```sh
 set -o pipefail
-repo=pyca/vg-lean-cache
-token=$(curl -fsS "https://ghcr.io/token?scope=repository:$repo:pull" |
-  python3 -c 'import json, sys; print(json.load(sys.stdin)["token"])')
-layer=$(curl -fsS -H "Authorization: Bearer $token" \
-  -H "Accept: application/vnd.oci.image.manifest.v1+json" \
-  "https://ghcr.io/v2/$repo/manifests/latest" |
-  python3 -c 'import json, sys; [l] = json.load(sys.stdin)["layers"]; print(l["digest"])')
-curl -fsSL -H "Authorization: Bearer $token" "https://ghcr.io/v2/$repo/blobs/$layer" |
-  zstd -dc | tar --no-same-owner -xf - -C lean
+python3 ci/fetch_lean_cache.py | zstd -dc | tar --no-same-owner -xf - -C lean
 ```
 
 The download (about 3 GB) streams through the pipeline and is never
-stored. Install the toolchain in `lean/lean-toolchain` separately; the
+stored. If the pipeline fails (a connection that drops five times in a row
+without progress, or a download that does not match the digest), run it
+again. Install the toolchain in `lean/lean-toolchain` separately; the
 manifest's `io.pyca.lean.toolchain` and `org.opencontainers.image.revision`
 annotations identify the cached build. Lake rebuilds outputs that differ
 from the checkout. The modules' `.trace` files carry the profile CI's build
