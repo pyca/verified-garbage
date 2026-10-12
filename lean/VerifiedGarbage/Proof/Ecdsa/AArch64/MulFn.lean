@@ -1,11 +1,17 @@
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Fixed
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Lays
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Stages
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Ladder
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Rep
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Bits
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Copy
-import VerifiedGarbage.Proof.Weierstrass.AArch64.SetConst
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.Fixed
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.Lays
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.Stages
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Ladder
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Rep
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Bits
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Copy
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.SetConst
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_<curve>_mul` on AArch64, and `R = [k]P` by its call
@@ -21,6 +27,8 @@ between keeping `x19` in the word past the table and restoring it
 copied to `R`'s first two slots and `3 b R` to `BM`'s slot, then `b R` back,
 which keeps the signature's constants (`Fixed`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.AArch64
 
@@ -349,6 +357,28 @@ theorem Fixed.unchBM {base : Addr} {g : Reg → BitVec 64} {m m' : Mem} (h : Fix
   · rcases hW w hw with ⟨h1, -⟩ | h
     · rw [h1]; have := sl_ge64 c TMP; omega
     · simp (disch := decide) only [sl_eq] at h; omega
+
+/-- A slot apart from what the function writes. -/
+theorem apart_mulWF {i : Nat} (hi : i < 45)
+    (hl : i ∉ [RX, RY, RZ, ACC, PT, TX, TY, TZ, T0, T1, T2, T3, T4, T5, DX, DY, DZ, TMP])
+    (hiA : i ≠ 54 ∧ i ≠ 82 := by first | decide | exact ⟨by omega, by omega⟩) :
+    ∀ w ∈ mulWF c, c.sl i + 8 * c.n ≤ w.1 ∨ w.1 + w.2 ≤ c.sl i := by
+  refine apart_append (apart_slW hl hiA) fun w hw => ?_
+  rw [List.mem_singleton.mp hw]
+  have hT : i ≠ TMP := fun h => hl (by simp [h])
+  exact Or.inl (by have := sl_below_bits c hi 0 0 hT; dsimp only; omega)
+
+/-- The flag's word, apart from what the function and the slots `l` write. -/
+theorem flag_unch_mulWF {base : Addr} {l : List Nat} {m m' : Mem} (hu : Unch base (slW c l ++ mulWF c) m m')
+    (h7 : c.n < 10) (h0 : 0 < c.n) (hn : base.toNat + size ≤ 2 ^ 64) (hl : FLAG ∉ l)
+    (hlA : ∀ j ∈ l, j ≠ 54 ∧ j ≠ 82 := by decide) :
+    word m' base (c.sl FLAG) = word m base (c.sl FLAG) := by
+  have hF := sl_le c h7 (i := FLAG) (by decide)
+  refine hu.word (fun w hw => ?_) (by omega)
+  rcases apart_append (apart_slW hl (by decide) hlA) (apart_mulWF (c := c) (i := FLAG) (by decide) (by decide)) w hw with
+    h | h
+  · exact Or.inl (by omega)
+  · exact Or.inr h
 
 theorem fixedOk_mulWF : FixedOk c (mulWF c) := by
   refine (fixedOk_slW (by decide)).append fun w hw => ?_

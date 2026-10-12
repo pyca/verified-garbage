@@ -17,14 +17,16 @@ def sum (c : Ecdsa.AArch64.Cfg) : Prog isa :=
     (.block (copy c.n (c.sl RX) (c.sl DX) ++
       (copy c.n (c.sl RY) (c.sl DY) ++ copy c.n (c.sl RZ) (c.sl DZ))))
 
-/-- `[u]G + [v]Q`: `u`, then `v`, to `K`'s slot (`r`, which is no longer
-needed), for the calls of `vg_p192_mul`. -/
+/-- `[u]G + [v]Q`: `u`, then `v`, to `K`'s slot, which the calls of
+`vg_p192_mul` read, with `r` kept meanwhile in `EM`'s slot (free until the final
+check) and put back. -/
 def points : Prog isa :=
-  .seq (.block (copy p192.n (p192.sl K) (p192.sl U))) <|
+  .seq (.block (copy p192.n (p192.sl EM) (p192.sl K) ++ copy p192.n (p192.sl K) (p192.sl U))) <|
   .seq Ecdsa.AArch64.P192.gMul <|
   .seq (.block (Cfg.save p192)) <|
   .seq (.block (copy p192.n (p192.sl K) (p192.sl V))) <|
-  .seq Ecdh.AArch64.P192.qMul (sum p192)
+  .seq Ecdh.AArch64.P192.qMul <|
+  .seq (sum p192) (.block (copy p192.n (p192.sl K) (p192.sl EM)))
 
 def verifyWithPoints (c : Ecdsa.AArch64.Cfg) (pointCode : Prog isa) : Prog isa :=
   .seq (.block (Cfg.args c)) <|
