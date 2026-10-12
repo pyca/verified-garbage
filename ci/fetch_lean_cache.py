@@ -27,7 +27,10 @@ REGISTRY = "https://ghcr.io"
 REPOSITORY = "pyca/vg-lean-cache"
 TAG = "latest"
 CHUNK = 1 << 20
-TIMEOUT = 60
+# Seconds without a byte before a connection counts as stalled: GHCR
+# answers in well under a second, and time spent blocked writing to the
+# pipeline does not count.
+TIMEOUT = 20
 RETRIES = 5
 OCI_MANIFEST = "application/vnd.oci.image.manifest.v1+json"
 
