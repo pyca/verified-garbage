@@ -29,8 +29,11 @@ theorem jointTables_relCT {c : Joint.Cfg} {C : Curve} {base : Addr} {size : Nat}
       revert hc
       rw [Joint.cacheCode]
       split
-      · exact fun hc => (nafCacheStaged_relCT (E:=E') hL.layout.lay hm hCL hc).mono
-          (fun _ _ h => h) (fun _ _ h => ⟨_,h⟩)
+      · split
+        · exact fun hc => (nafCacheUnrolled_relCT (E:=E') hL.layout.lay hm 8 hCL.hz hCL.cache hc).mono
+            (fun _ _ h => h) (fun _ _ h => ⟨_,h⟩)
+        · exact fun hc => (nafCacheStaged_relCT (E:=E') hL.layout.lay hm hCL hc).mono
+            (fun _ _ h => h) (fun _ _ h => ⟨_,h⟩)
       · exact fun hc => (nafCacheTable_relCT (E:=E') hL.layout.lay hm hCL hc).mono
           (fun _ _ h => h) (fun _ _ h => ⟨_,h⟩)
     exact code.mono

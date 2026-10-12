@@ -19,9 +19,11 @@ structure Cfg where
   /-- The curve whose functions run the digits' additions
   (`Spec/Weierstrass/PointOps.lean`), if they are calls, else inline. -/
   pts : Option Spec.Weierstrass.PointOps.Curve := none
-  /-- Whether the cache of `Z²` and `Z³` is built by the loop's steps
-  unrolled (`Naf.cacheStaged`) rather than in the loop: faster on some CPUs
-  for some curves (P-521 on Zen 5). -/
+  /-- Whether the cache of `Z²` and `Z³` is built unrolled rather than in a
+  loop: faster on some CPUs for some curves (P-521 on Zen 5). Without BMI2
+  and ADX, by the loop's steps unrolled (`Naf.cacheStaged`), whose nine-word
+  products are calls; with them, written out (`Naf.cacheUnrolled`), which
+  was faster on Zen 3. -/
   cacheUnroll : Bool := false
 
 def prep (c : Cfg) (u v : Nat) : Prog isa :=
@@ -58,7 +60,8 @@ def run (c : Cfg) (double : Prog isa) : Prog isa :=
 
 /-- The cache of the eight entries' `Z²` and `Z³`. -/
 def cacheCode (c : Cfg) : Prog isa :=
-  if c.cacheUnroll then Naf.cacheStaged c.K.M c.K.tbl c.cache c.K.E.x
+  if c.cacheUnroll then
+    if c.K.M.adx then Naf.cacheUnrolled c.K.M c.K.tbl c.cache 8 else Naf.cacheStaged c.K.M c.K.tbl c.cache c.K.E.x
   else Naf.cacheTable c.K.M c.K.tbl c.cache c.K.E.x
 
 def window (c : Cfg) (double : Prog isa) : Prog isa :=

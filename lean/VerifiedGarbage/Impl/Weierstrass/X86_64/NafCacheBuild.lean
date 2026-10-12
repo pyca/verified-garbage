@@ -5,6 +5,19 @@ import VerifiedGarbage.Impl.Weierstrass.X86_64.Naf
 namespace VG.Impl.Weierstrass.X86_64.Naf
 open VG VG.X86_64 VG.Impl.Mont VG.Impl.Mont.X86_64
 
+def cachePairOps (n ptbl tbl i : Nat) : List FOp :=
+  [.mul (tbl+16*n*i) (ptbl+24*n*i+16*n) (ptbl+24*n*i+16*n),
+   .mul (tbl+16*n*i+8*n) (tbl+16*n*i) (ptbl+24*n*i+16*n)]
+
+def cachePair (M : Mod) (ptbl tbl i : Nat) : Prog isa :=
+  if M.adx ∧ M.n = 4 then ForwardField.program M [] (cachePairOps M.n ptbl tbl i)
+  else fprogB M (cachePairOps M.n ptbl tbl i)
+
+/-- The first `k` entries unrolled; no secret-dependent loop or address. -/
+def cacheUnrolled (M : Mod) (ptbl tbl : Nat) : Nat → Prog isa
+  | 0 => .block []
+  | k+1 => .seq (cacheUnrolled M ptbl tbl k) (cachePair M ptbl tbl k)
+
 /-- `o = z²` and `o + 8 n = z³`. -/
 def cacheOps (n z o : Nat) : List FOp :=
   [.mul o z z, .mul (o+8*n) o z]
