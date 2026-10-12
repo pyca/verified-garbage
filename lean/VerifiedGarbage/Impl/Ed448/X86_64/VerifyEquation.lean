@@ -242,7 +242,10 @@ def verifyEquationWith (F : Field) (P : Point64.Ops) (rt : Prog isa := root F 12
   .seq (.block ventry) <| .seq vbits <| .seq (.block vstart) <| .seq (vdecode F rt) <|
     .seq (.block (vnegA F)) <| .seq (Window.joint F P KBITS) (vfinish F P)
 
-def verifyEquation : Prog isa :=
-  verifyEquationWith Impl.X448.X86_64.baseline Point64.calls (rootCall Impl.X448.X86_64.baseline)
+def verifyEquationFor (v : FieldVariant) : Prog isa :=
+  verifyEquationWith v.field v.calls (rootCall v.field)
+
+def verifyEquation : Prog isa := verifyEquationFor .scalar
+def verifyEquationAdx : Prog isa := verifyEquationFor .adx
 
 end VG.Impl.Ed448.X86_64

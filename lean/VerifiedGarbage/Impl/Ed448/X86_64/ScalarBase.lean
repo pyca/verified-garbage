@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Impl.Ed448.X86_64.Point64
+public import VerifiedGarbage.Impl.Ed448.X86_64.FieldVariant
 public import VerifiedGarbage.Impl.Ed448.X86_64.Scalar
 public import VerifiedGarbage.Spec.Ed448
 public import VerifiedGarbage.Impl.Ed448.Comb
@@ -170,7 +170,10 @@ def scalarBaseWith (F : Field) (P : Point64.Ops) (inv : Prog isa := invert F) : 
 
 /-- The point operations call `vg_ed448_r64_point_double` and `vg_ed448_r64_point_add_affine`,
 and the inversion `vg_gf448_r64_pow223`, keeping the output's address at `OUT`. -/
-def scalarBase : Prog isa :=
-  scalarBaseWith Impl.X448.X86_64.baseline Point64.calls (invertCall Impl.X448.X86_64.baseline [OUT])
+def scalarBaseFor (v : FieldVariant) : Prog isa :=
+  scalarBaseWith v.field v.calls (invertCall v.field [OUT])
+
+def scalarBase : Prog isa := scalarBaseFor .scalar
+def scalarBaseAdx : Prog isa := scalarBaseFor .adx
 
 end VG.Impl.Ed448.X86_64

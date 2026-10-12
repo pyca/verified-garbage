@@ -107,18 +107,21 @@ def wipe : List Instr :=
   .mov32 .rax (.imm 0) :: (List.range 16).map fun k => .store (stk (fS + 8 * k)) .rax
 
 /-- The frame's body. -/
-def body : Prog isa :=
+def bodyFor (v : FieldVariant) : Prog isa :=
   .seq (.block hdr) <| .seq seedHash <| .seq (.block prune) <| .seq nonceHash <|
     .seq (callA "vg_ed448_scalar_reduce" scalarReduce [.sp fR, .sp fH, .slot fScr]) <|
-    .seq (callA "vg_ed448_scalar_base" scalarBase [.slot fOut, .sp fR, .slot fScr]) <|
+    .seq (callA ("vg_ed448_scalar_base" ++ v.suffix) (scalarBaseFor v) [.slot fOut, .sp fR, .slot fScr]) <|
     .seq chalHash <|
     .seq (callA "vg_ed448_scalar_reduce" scalarReduce [.sp fK, .sp fH, .slot fScr]) <|
     .seq (callA "vg_ed448_scalar_mul_add" scalarMulAdd [.slotOff fOut 57, .sp fR, .sp fK, .sp fS, .slot fScr])
       (.block wipe)
 
 /-- `vg_ed448_sign_cached`. -/
-def signCached : Prog isa :=
+def signCachedFor (v : FieldVariant) : Prog isa :=
   .seq (.block [.mov .r10 (.mem (stk 8)), .mov .r11 (.mem (stk 16)), .mov32 .rax (.imm 0)])
-    (.frame (.push regs) body (.pop .r11 56))
+    (.frame (.push regs) (bodyFor v) (.pop .r11 56))
+
+def body : Prog isa := bodyFor .scalar
+def signCached : Prog isa := signCachedFor .scalar
 
 end VG.Impl.Ed448.X86_64.SignCached

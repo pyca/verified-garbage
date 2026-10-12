@@ -20,6 +20,8 @@ imports that proof and the group theory it imports.
 
 namespace VG.Proof.Ed448.X86_64.Verify
 
+variable {v : VG.Impl.Ed448.X86_64.FieldVariant}
+
 open VG VG.X86_64 VG.Impl.Ed448.X86_64.Verify
 
 /-- A state satisfying the precondition. -/
@@ -40,8 +42,8 @@ theorem verify_sat : ∃ s, (Spec.Ed448.verifyContract X86_64.abi 272).pre s := 
     X86_64.argRegs, List.range, List.range.loop] [verifySat, stackArg, stackArgAddr, Mem.readW, Mem.read]
     using verifySat
 
-theorem verify_verified (hv : EqOk) (hct : EqCT) :
-    Verified X86_64.target verify (Spec.Ed448.verifyContract X86_64.abi 272) :=
+theorem verify_verified (hv : EqOk v) (hct : EqCT v) :
+    Verified X86_64.target (verifyFor v) (Spec.Ed448.verifyContract X86_64.abi 272) :=
   ⟨fun _ h => let ⟨t, s', he, ha, hq⟩ := verify_wp hv h; ⟨t, s', he, ha, hq⟩, verify_ct hv hct, verify_sat⟩
 
 end VG.Proof.Ed448.X86_64.Verify

@@ -22,6 +22,8 @@ The contract makes the inputs public too, but no leak depends on them.
 
 namespace VG.Proof.Ed448.X86_64.Verify
 
+variable {v : VG.Impl.Ed448.X86_64.FieldVariant}
+
 open VG VG.X86_64 VG.Impl.Ed448.X86_64.Verify
 open VG.Proof.MlKem.X86_64 (Keep)
 
@@ -63,8 +65,8 @@ theorem red_tr {Φ : Lay → Mem → State → Prop} :
       rcases hr with rfl | rfl
       exacts [⟨L.FR, by simp, within_off _ (by omega)⟩, w_scr hL (within_self _)]
 
-theorem eq_tr (hv : EqOk) (hct : EqCT) {Φ : Lay → Mem → State → Prop} :
-    RelCT isa (Two I Φ) (callA "vg_ed448_verify_equation" Impl.Ed448.X86_64.verifyEquation eqArgs)
+theorem eq_tr (hv : EqOk v) (hct : EqCT v) {Φ : Lay → Mem → State → Prop} :
+    RelCT isa (Two I Φ) (callA ("vg_ed448_verify_equation" ++ v.suffix) (Impl.Ed448.X86_64.verifyEquationFor v) eqArgs)
       fun _ _ => True := by
   have regs : ∀ (L : Lay) g mx m₀ (t t1 : State), Ctx L g mx m₀ t → Moved eqArgs t t1 →
       t1.gpr .rdi = L.pk ∧ t1.gpr .rsi = L.sig ∧ t1.gpr .rdx = L.K ∧ t1.gpr .rcx = L.scr ∧
@@ -99,10 +101,10 @@ theorem eq_tr (hv : EqOk) (hct : EqCT) {Φ : Lay → Mem → State → Prop} :
       exact w_scr hL (within_self _)
 
 /-- The frame's body, after the header. -/
-theorem rest_tr (hv : EqOk) (hct : EqCT) :
+theorem rest_tr (hv : EqOk v) (hct : EqCT v) :
     RelCT isa (Two I fun _ _ _ => True)
       (.seq hash (.seq (callA "vg_ed448_scalar_reduce" Impl.Ed448.X86_64.scalarReduce redArgs)
-        (callA "vg_ed448_verify_equation" Impl.Ed448.X86_64.verifyEquation eqArgs))) fun _ _ => True := by
+        (callA ("vg_ed448_verify_equation" ++ v.suffix) (Impl.Ed448.X86_64.verifyEquationFor v) eqArgs))) fun _ _ => True := by
   have h := two_wp (I := I) (Φ := fun _ _ _ => True) (Ψ := fun _ _ _ => True) hash_tr
     fun L g mx m₀ t hL hc _ => WP.mono (hash_ok hL hc) fun t' ⟨hc', _⟩ => ⟨hc', trivial⟩
   have r := two_wp (I := I) (Φ := fun _ _ _ => True) (Ψ := fun _ _ _ => True) red_tr
@@ -165,9 +167,9 @@ theorem hdr_spOnly : ∀ i ∈ hdr, SpOnly i := by
   · exact spOnly_nomem (fun _ => rfl) rfl
   · exact ⟨fun s₁ s₂ h => by simp [addrs, State.ea, stk, h], rfl⟩
 
-theorem verify_ct (hv : EqOk) (hct : EqCT) :
+theorem verify_ct (hv : EqOk v) (hct : EqCT v) :
     ConstantTime isa (Spec.Ed448.verifyContract X86_64.abi 272).pre (Spec.Ed448.verifyContract X86_64.abi 272).pub
-      verify := by
+      (verifyFor v) := by
   refine RelCT.constantTime (Q := fun _ _ => True) ?_
   have e0 : (fun s₁ s₂ => (Spec.Ed448.verifyContract X86_64.abi 272).pre s₁ ∧
       (Spec.Ed448.verifyContract X86_64.abi 272).pre s₂ ∧ (Spec.Ed448.verifyContract X86_64.abi 272).pub s₁ s₂) =
@@ -175,7 +177,7 @@ theorem verify_ct (hv : EqOk) (hct : EqCT) :
     funext a b; apply propext
     exact ⟨fun h => ⟨a, b, h, rfl, rfl⟩, fun ⟨_, _, h, e₁, e₂⟩ => e₁ ▸ e₂ ▸ h⟩
   rw [e0]
-  unfold verify
+  unfold verifyFor
   -- `cmp rdx, 256`.
   have hcmp := ghost_step (P := VP2) (A := fun x a => a = x) (B := ACmp) (c := .block [.alu .cmp .rdx (.imm 256)])
     (block_rsp_tr (fun i hi => by

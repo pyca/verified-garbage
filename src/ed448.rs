@@ -6,6 +6,8 @@
 //! once by [`SigningKey::from_seed`]. This is Ed448 with a context (`dom4` with
 //! flag 0), not Ed448ph. Secret scratch values are cleared after use.
 //!
+//! On x86-64, BMI2/ADX field arithmetic is selected when supported.
+//!
 //! On AArch64, each operation has an instance for each implementation of the
 //! Keccak permutation, and calls the one the SHA-3 functions use
 //! (`crate::hashes::sha3::Backend`).
@@ -24,11 +26,51 @@ use crate::arch::ed448::{
     vg_ed448_verify_sha3,
 };
 use crate::arch::ed448::{vg_ed448_public_key, vg_ed448_sign_cached, vg_ed448_verify};
+#[cfg(not(target_arch = "x86_64"))]
 use crate::hashes::sha3::Backend;
 use crate::zeroize::zeroize;
 
+#[cfg(target_arch = "x86_64")]
+use crate::arch::ed448::{
+    VG_ED448_PUBLIC_KEY_ADX_FEATURES, VG_ED448_SIGN_CACHED_ADX_FEATURES,
+    VG_ED448_VERIFY_ADX_FEATURES, vg_ed448_public_key_adx, vg_ed448_sign_cached_adx,
+    vg_ed448_verify_adx,
+};
+
+#[cfg(target_arch = "x86_64")]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum Backend {
+    Scalar,
+    Adx,
+}
+
+#[cfg(target_arch = "x86_64")]
+impl Backend {
+    fn select(features: crate::cpu::Features) -> Self {
+        if features.contains(
+            const {
+                crate::cpu::Features::all(&[
+                    VG_ED448_PUBLIC_KEY_ADX_FEATURES,
+                    VG_ED448_SIGN_CACHED_ADX_FEATURES,
+                    VG_ED448_VERIFY_ADX_FEATURES,
+                ])
+            },
+        ) {
+            Self::Adx
+        } else {
+            Self::Scalar
+        }
+    }
+}
+
+#[cfg(target_arch = "x86_64")]
+fn backend() -> Backend {
+    Backend::select(crate::cpu::detected())
+}
+
 /// The implementation to call: the Keccak implementation the SHA-3
 /// functions use, if the CPU has the features of every instance calling it.
+#[cfg(not(target_arch = "x86_64"))]
 fn backend() -> Backend {
     #[cfg(all(target_arch = "aarch64", feature = "cpu-features-env"))]
     if !crate::cpu::detected().contains(
@@ -113,6 +155,16 @@ impl VerifyingKey {
                     signature,
                     &mut scratch,
                 ),
+                #[cfg(target_arch = "x86_64")]
+                Backend::Adx => vg_ed448_verify_adx(
+                    &self.bytes,
+                    context.as_ptr(),
+                    context.len(),
+                    message.as_ptr(),
+                    message.len(),
+                    signature,
+                    &mut scratch,
+                ),
                 #[cfg(all(target_arch = "aarch64", feature = "cpu-features-env"))]
                 Backend::Sha3 => vg_ed448_verify_sha3(
                     &self.bytes,
@@ -168,6 +220,8 @@ impl SigningKey {
         unsafe {
             match backend() {
                 Backend::Scalar => vg_ed448_public_key(&mut public, seed, &mut scratch),
+                #[cfg(target_arch = "x86_64")]
+                Backend::Adx => vg_ed448_public_key_adx(&mut public, seed, &mut scratch),
                 #[cfg(all(target_arch = "aarch64", feature = "cpu-features-env"))]
                 Backend::Sha3 => vg_ed448_public_key_sha3(&mut public, seed, &mut scratch),
             }
@@ -231,6 +285,17 @@ fn sign_message(seed: &[u8; 57], pk: &[u8; 57], context: &[u8], message: &[u8]) 
                 message.len(),
                 &mut scratch,
             ),
+            #[cfg(target_arch = "x86_64")]
+            Backend::Adx => vg_ed448_sign_cached_adx(
+                &mut signature,
+                seed,
+                pk,
+                context.as_ptr(),
+                context.len(),
+                message.as_ptr(),
+                message.len(),
+                &mut scratch,
+            ),
             #[cfg(all(target_arch = "aarch64", feature = "cpu-features-env"))]
             Backend::Sha3 => vg_ed448_sign_cached_sha3(
                 &mut signature,
@@ -246,4 +311,31 @@ fn sign_message(seed: &[u8; 57], pk: &[u8; 57], context: &[u8], message: &[u8]) 
     };
     zeroize(&mut scratch);
     signature
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn backends() {
+        let _ = backend();
+        #[cfg(target_arch = "x86_64")]
+        {
+            use crate::cpu::Features;
+            assert_eq!(Backend::select(Features(0)), Backend::Scalar);
+            assert_eq!(Backend::select(Features::of(&["bmi2"])), Backend::Scalar);
+            assert_eq!(Backend::select(Features::of(&["adx"])), Backend::Scalar);
+            assert_eq!(
+                Backend::select(Features::all(&[
+                    VG_ED448_PUBLIC_KEY_ADX_FEATURES,
+                    VG_ED448_SIGN_CACHED_ADX_FEATURES,
+                    VG_ED448_VERIFY_ADX_FEATURES,
+                ])),
+                Backend::Adx
+            );
+        }
+        #[cfg(not(target_arch = "x86_64"))]
+        assert_eq!(backend(), Backend::detected());
+    }
 }

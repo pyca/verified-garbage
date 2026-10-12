@@ -121,24 +121,31 @@ theorem doubleOps_outs : OutsOk 0 doubleOps := by decide
 theorem addAffineOps_outs : OutsOk 3 addAffineOps := by decide
 
 /-- The doubling meets `doubleK`. -/
-theorem double_correct (hk : ∀ r ∈ keptRegs, KeepReg.keeps r doubleFn = true)
-    (hmx : doubleFn.allInstrs (fun i => !loadsMxcsr i) = true) (s : State) (hs : doubleK.pre s) :
-    ∃ tr s', Exec isa doubleFn s tr s' ∧ abiPreserved s s' ∧ doubleK.post s s' := by
+theorem doubleWith_correct {F : Impl.X448.X86_64.Field}
+    (hf : Proof.X448.X86_64.FieldOk F) (hk : ∀ r ∈ keptRegs, KeepReg.keeps r (doubleFnWith F) = true)
+    (hmx : (doubleFnWith F).allInstrs (fun i => !loadsMxcsr i) = true) (s : State) (hs : doubleK.pre s) :
+    ∃ tr s', Exec isa (doubleFnWith F) s tr s' ∧ abiPreserved s s' ∧ doubleK.post s s' := by
   obtain ⟨tr, s', he, ha, hv, hk'⟩ := fn_correct 0 doubleOps doubleOps_valid hk hmx doubleOps_outs s hs
-    (fun hs => fn_ok doubleOps doubleOps_valid hs)
+    (fun hs => fnWith_ok hf doubleOps doubleOps_valid hs)
   refine ⟨tr, s', he, ha, ?_, hk'⟩
   rw [pointAt_eq _ _ 0 (by decide), pointAt_eq _ _ 0 (by decide), hv]
   exact (doubleOps_eval _).trans (double_eq _)
 
+theorem double_correct (hk : ∀ r ∈ keptRegs, KeepReg.keeps r doubleFn = true)
+    (hmx : doubleFn.allInstrs (fun i => !loadsMxcsr i) = true) (s : State) (hs : doubleK.pre s) :
+    ∃ tr s', Exec isa doubleFn s tr s' ∧ abiPreserved s s' ∧ doubleK.post s s' :=
+  doubleWith_correct Proof.X448.X86_64.baseline_ok hk hmx s hs
+
 /-- The affine addition meets `addK`. -/
-theorem add_correct (hk : ∀ r ∈ keptRegs, KeepReg.keeps r addFn = true)
-    (hmx : addFn.allInstrs (fun i => !loadsMxcsr i) = true) (s : State) (hs : addK.pre s) :
-    ∃ tr s', Exec isa addFn s tr s' ∧ abiPreserved s s' ∧ addK.post s s' := by
+theorem addWith_correct {F : Impl.X448.X86_64.Field}
+    (hf : Proof.X448.X86_64.FieldOk F) (hk : ∀ r ∈ keptRegs, KeepReg.keeps r (addFnWith F) = true)
+    (hmx : (addFnWith F).allInstrs (fun i => !loadsMxcsr i) = true) (s : State) (hs : addK.pre s) :
+    ∃ tr s', Exec isa (addFnWith F) s tr s' ∧ abiPreserved s s' ∧ addK.post s s' := by
   have hd := hs.2
   rw [show Spec.X448.Field64.slotAt 11 = slot (11 : Index).val from rfl, elemAt_eq] at hd
   obtain ⟨tr, s', he, ha, hv, hk'⟩ :=
     fn_correct 3 addAffineOps addAffineOps_valid hk hmx addAffineOps_outs s hs.1
-      (fun hs => addFn_ok hs hd)
+      (fun hs => addFnWith_ok hf hs hd)
   refine ⟨tr, s', he, ha, ?_, hk'⟩
   rw [pointAt_eq _ _ 3 (by decide), pointAt_eq _ _ 0 (by decide), hv,
     show Spec.X448.Field64.slotAt 8 = slot (8 : Index).val from rfl,
@@ -146,6 +153,11 @@ theorem add_correct (hk : ∀ r ∈ keptRegs, KeepReg.keeps r addFn = true)
   refine (addAffineOps_eval _).trans ?_
   rw [hd, addWith_d]
   rfl
+
+theorem add_correct (hk : ∀ r ∈ keptRegs, KeepReg.keeps r addFn = true)
+    (hmx : addFn.allInstrs (fun i => !loadsMxcsr i) = true) (s : State) (hs : addK.pre s) :
+    ∃ tr s', Exec isa addFn s tr s' ∧ abiPreserved s s' ∧ addK.post s s' :=
+  addWith_correct Proof.X448.X86_64.baseline_ok hk hmx s hs
 
 /-! ## Constant time -/
 

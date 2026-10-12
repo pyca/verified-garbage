@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Ed448.X86_64.FieldVariant
 public import VerifiedGarbage.Proof.Ed448.X86_64.VerifyDecode
 public import VerifiedGarbage.Proof.Ed448.X86_64.Window.Joint
 public import VerifiedGarbage.Proof.Ed448.X86_64.VerifyBits
@@ -904,5 +905,16 @@ theorem verifyEquation_correct_inline (hR : RecoverOk) (hE : VerifyEqOk) {s : St
     WP isa verifyEquation.inline s fun t => gprPreserved s t ∧ verifyEquationLocal.post s t := by
   rw [verifyEquation_inline]
   exact verifyEquation_correct Proof.X448.X86_64.baseline_ok Point64.bodies_ok hR hE (rootCall_ok Proof.X448.X86_64.baseline_ok) hp
+
+theorem verifyEquationFor_inline (v : Impl.Ed448.X86_64.FieldVariant) :
+    (verifyEquationFor v).inline = verifyEquationWith v.field v.bodies
+      (rootCall v.field).inline := by cases v <;> rfl
+
+theorem verifyEquationFor_correct_inline (v : Impl.Ed448.X86_64.FieldVariant)
+    (hR : RecoverOk) (hE : VerifyEqOk) {s : State} (hp : verifyEquationLocal.pre s) :
+    WP isa (verifyEquationFor v).inline s fun t => gprPreserved s t ∧ verifyEquationLocal.post s t := by
+  rw [verifyEquationFor_inline]
+  exact verifyEquation_correct (FieldVariant.field_ok v) (FieldVariant.bodies_ok v) hR hE
+    (rootCall_ok (FieldVariant.field_ok v)) hp
 
 end VG.Proof.Ed448.X86_64
