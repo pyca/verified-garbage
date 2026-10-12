@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Seed.Rounds
+module
+
+public import VerifiedGarbage.Proof.Seed.Rounds
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The key schedule, as `G` of 32 inputs
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.Seed.Rounds
 of 32 inputs (`gInput`), the key words of each round (`keyWords`) added and
 subtracted with its constant: none depends on an output of `G`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Seed
 open VG.Spec.Seed

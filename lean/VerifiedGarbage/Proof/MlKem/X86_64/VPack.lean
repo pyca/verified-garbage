@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.MlKem.X86_64.VLay42
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.Range
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86_64.VLay42
+public import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Framework.Range
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86-64: polynomials between `u32`s and words
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.Framework.Range
 `vpack` stores the 256 `u32`s of a reduced polynomial as words (`vpack_ok`),
 and `vunpack` the words back as `u32`s (`vunpack_ok`), eight at a time.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.X86_64
 

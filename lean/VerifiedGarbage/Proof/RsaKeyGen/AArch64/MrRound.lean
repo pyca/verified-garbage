@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrWit
-import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrLoop
-import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrTail
+module
+
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrWit
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrLoop
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrTail
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # A candidate on AArch64: one round of Miller–Rabin
@@ -11,6 +17,8 @@ import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrTail
 otherwise the counters advance and `kStat` is 4 to go on (fewer than 17
 witnesses, or fewer uniform ones than `checks`) or 1.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaKeyGen.AArch64
 

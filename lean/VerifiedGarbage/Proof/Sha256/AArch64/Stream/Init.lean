@@ -1,9 +1,19 @@
-import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-import VerifiedGarbage.Proof.Sha256.AArch64.Stream.Common
+module
+
+public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+meta import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+public import VerifiedGarbage.Proof.Sha256.AArch64.Stream.Common
+meta import VerifiedGarbage.Proof.Sha256.AArch64.Stream.Common
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Streaming SHA-256 on AArch64: `init`
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sha256.AArch64.Stream
 

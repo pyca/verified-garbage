@@ -1,6 +1,15 @@
-import VerifiedGarbage.Impl.MlKem.X86_64.Decode12Avx2
-import VerifiedGarbage.Proof.MlKem.X86_64.S4Vec
-import VerifiedGarbage.Proof.MlKem.X86_64.Decode12
+module
+
+public import VerifiedGarbage.Impl.MlKem.X86_64.Decode12Avx2
+meta import VerifiedGarbage.Impl.MlKem.X86_64.Decode12Avx2
+public import VerifiedGarbage.Proof.MlKem.X86_64.S4Vec
+meta import VerifiedGarbage.Proof.MlKem.X86_64.S4Vec
+public import VerifiedGarbage.Proof.MlKem.X86_64.Decode12
+meta import VerifiedGarbage.Proof.MlKem.X86_64.Decode12
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86-64: `vg_mlkem_decode12_avx2`
@@ -10,6 +19,8 @@ The eight values of a group of 12 bytes are the candidates of
 bytes early, `cand_dword'`), each reduced by `cadd32 (x - q)` (`red_val`);
 the loop stores eight coefficients at a time (`D12Y.Inv`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.X86_64.D12Y
 

@@ -1,7 +1,16 @@
-import VerifiedGarbage.Proof.Dsa.X86_64.SignificantCT
-import VerifiedGarbage.Proof.Dsa.X86_64.ScanField
+module
+
+public import VerifiedGarbage.Proof.Dsa.X86_64.SignificantCT
+public import VerifiedGarbage.Proof.Dsa.X86_64.ScanField
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # Constant-time public width scans through the saved field bindings -/
+
+@[expose] public section
+
 namespace VG.Proof.Dsa.X86_64
 open VG VG.X86_64 VG.Impl.Dsa.Layout VG.Impl.Dsa.X86_64
 open VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.MlKem.X86_64

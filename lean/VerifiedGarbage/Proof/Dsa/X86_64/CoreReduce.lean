@@ -1,7 +1,16 @@
-import VerifiedGarbage.Proof.Dsa.X86_64.Call2
-import VerifiedGarbage.Proof.Dsa.X86_64.Reduce
+module
+
+public import VerifiedGarbage.Proof.Dsa.X86_64.Call2
+public import VerifiedGarbage.Proof.Dsa.X86_64.Reduce
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # Streaming reduction in the DSA parent workspace -/
+
+@[expose] public section
+
 namespace VG.Proof.Dsa.X86_64
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public
 open VG.Impl.Dsa.Layout

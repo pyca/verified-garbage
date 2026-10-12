@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.X25519.X86_64.Mul
+module
+
+public import VerifiedGarbage.Proof.X25519.X86_64.Mul
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X25519 on x86-64: the field operations
@@ -8,6 +14,8 @@ and `cswap`), as a change of the field elements `F` it reads and writes: the
 element at `o` becomes the result, every byte outside it is unchanged, and so
 are the registers but those the arithmetic uses (`Op`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X25519.X86_64
 

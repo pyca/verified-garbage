@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Bound
-import VerifiedGarbage.Proof.Poly1305.Limbs26
+module
+
+public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Bound
+public import VerifiedGarbage.Proof.Poly1305.Limbs26
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Poly1305 on x86-64 with AVX2: the product
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.Poly1305.Limbs26
 of `Y`, lane by lane, and carries: `Limbs26.mul`, with the limbs small enough
 that nothing wraps.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Poly1305.X86_64.Avx2
 

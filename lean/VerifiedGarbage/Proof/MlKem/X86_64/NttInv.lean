@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.MlKem.X86_64.Ntt
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86_64.Ntt
+meta import VerifiedGarbage.Proof.MlKem.X86_64.Ntt
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86-64: `vg_mlkem_inv_ntt`
@@ -7,6 +14,8 @@ As `vg_mlkem_ntt` (`Ntt.lean`): each layer is `nttInvLayer`, the seven layers
 are those of `NTT⁻¹` (`nttInv_eq_layers`), and the last pass multiplies each
 coefficient by 3303 (`vscale_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.X86_64
 

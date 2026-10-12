@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Rsa.X86_64.PrivPc
-import VerifiedGarbage.Proof.Rsa.X86_64.PublicImpl
+module
+
+public import VerifiedGarbage.Proof.Rsa.X86_64.PrivPc
+public import VerifiedGarbage.Proof.Rsa.X86_64.PublicImpl
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_private_checked` on x86-64: the call of `vg_rsa_public_precomputed_checked`
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.Rsa.X86_64.PublicImpl
 `r₃` kept in its slot, and `M^e mod n` written to `out` (`pd_stage`), for
 whatever `M` holds.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.X86_64
 

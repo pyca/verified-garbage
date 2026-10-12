@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxTri8Sum
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareCross
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTri8Sum
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareCross
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64.AdxTri8
 open VG VG.X86_64

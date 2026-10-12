@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Callee
-import VerifiedGarbage.Proof.Rsa.AArch64.PublicImpl
-import VerifiedGarbage.Proof.Rsa.AArch64.PubChecked
-import VerifiedGarbage.Proof.Rsa.AArch64.PrivVerified
+module
+
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Callee
+public import VerifiedGarbage.Proof.Rsa.AArch64.PublicImpl
+public import VerifiedGarbage.Proof.Rsa.AArch64.PubChecked
+public import VerifiedGarbage.Proof.Rsa.AArch64.PrivVerified
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The RSA operations as the signatures' callees, on AArch64
@@ -15,6 +21,8 @@ The public operations make no calls and have no frame, so they are
 pointer at the call (`Callee.pos`), and a contract with more stack implies one
 with less (`pub_stack`, `pd_stack`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPkcs1Sig.AArch64
 

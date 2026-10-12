@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.Rsa.X86_64.CvCTMain
+module
+
+public import VerifiedGarbage.Proof.Rsa.X86_64.CvCTMain
+meta import VerifiedGarbage.Proof.Rsa.X86_64.CvCTMain
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_crt_values` on x86-64: constant time but for `n`
@@ -8,6 +15,8 @@ public data (the pointers, the lengths and `n`), and so do `fail` and
 `main` (`cvMain_ct`): `cvCode_ct`, and the contract's `ConstantTime`
 (`cvCode_constantTime`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.X86_64
 

@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
-import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Correct
-import VerifiedGarbage.Proof.MlKem.X86_64.Rel
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
+meta import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Correct
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Correct
+public import VerifiedGarbage.Proof.MlKem.X86_64.Rel
+meta import VerifiedGarbage.Proof.MlKem.X86_64.Rel
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA verification on x86-64: constant time, the pieces without calls
@@ -11,6 +20,8 @@ analysis checks from the registers it sets (`blockLoop_tr`), leaks the same in
 both: the copy (`copy_tr`), the mask of a sampler's output (`mask_tr`) and the
 comparison (`cmpAnd_tr`). The rest is checked by the taint analysis.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86_64.Verify
 

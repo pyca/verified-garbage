@@ -228,6 +228,5 @@ theorem verified (sha3 : Bool) :
     sig_implies [Spec.Sha3.permuteX2Contract, Spec.Sha3.permuteX2Sig, K, pairR, scrR,
       AArch64.abi, AArch64.argRegs] [satState] using satState)
 
-#assert_standard_axioms verified
 
 end VG.Proof.Sha3.AArch64.Neon.X2

@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.R2wFast
-import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.R2wFast
+meta import VerifiedGarbage.Proof.Bignum.X86_64.R2wFast
+public import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `R² mod m` by word steps on x86-64: constant time but for `m`
@@ -10,6 +18,8 @@ division's 64 bits counted in a register. The steps' count is `w / 4`
 (`steps_ct`), and `choice` branches on the top bit of `m` and on `w`
 (`choice_ct`), which are public.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64.R2w
 

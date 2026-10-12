@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Framework.PowLit
+module
+
+public import VerifiedGarbage.Proof.Framework.PowLit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Almost Montgomery multiplication in radix `2⁵²`
@@ -16,6 +22,8 @@ the value goes from `V` to `(V + a b + u m) / 2⁵²` exactly (`step_val`),
 and twenty steps from 0 give `(a b + Q m) / 2¹⁰⁴⁰` for some `Q < 2¹⁰⁴⁰`
 (`steps_val`), below `2 m` for `a, b < 2 m` and `4 m ≤ 2¹⁰⁴⁰`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.Amm52
 

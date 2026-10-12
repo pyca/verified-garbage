@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Mont.X86_64.Rounds
+module
+
+public import VerifiedGarbage.Proof.Mont.X86_64.Rounds
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Montgomery arithmetic on x86-64: the conditional subtraction
@@ -10,6 +16,8 @@ temporary area (`diffs`) and selecting it with conditional moves
 (`selects`). Both use the final borrow directly. The mask lemmas also
 serve the memory-backed reduction for wider moduli.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Mont.X86_64
 

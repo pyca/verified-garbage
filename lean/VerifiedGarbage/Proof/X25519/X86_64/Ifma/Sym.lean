@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Sym
+module
+
+public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Sym
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X25519 on x86-64 with AVX512_IFMA: straight-line vector code, lane by lane
@@ -12,6 +18,8 @@ machine agrees. The quadword lemmas of the instructions are Poly1305's
 (`Proof/Poly1305/X86_64/Avx2/Sym.lean`), with those of `vpsubq`, `vpxor`,
 `vpmadd52luq`, `vpmadd52huq` and `vperm2i128` added here.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X25519.X86_64.Ifma
 

@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Sha1
-import VerifiedGarbage.Proof.Sha1.X86.Stream.Variant
-import VerifiedGarbage.TCB.Artifact
+module
+
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Sha1
+public import VerifiedGarbage.Proof.Sha1.X86.Stream.Variant
+public import VerifiedGarbage.TCB.Artifact
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # SHA-1 backends on x86
@@ -24,6 +30,9 @@ SHA-1, HMAC and PBKDF2 functions that call it. What the kernel checks of each
 backend's code (that it keeps `esp`, and the stack it uses) is evaluated on
 its literals.
 -/
+
+@[expose] public section
+
 namespace VG.Proof.Sha1.X86.Variants
 
 open VG.X86

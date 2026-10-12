@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Iterate
+module
+
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Iterate
+meta import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Iterate
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # PBKDF2-HMAC's iteration over a Merkle–Damgård hash function on x86 (32-bit): constant time
@@ -10,6 +17,8 @@ prologue, and the end of a step, which loads `t`) with the arguments public
 from its contract. Then `iterate` is verified against the contract with the
 arguments read only (`iterG`), and with them writable (`iterW`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Pbkdf2.Md.X86.Iterate
 

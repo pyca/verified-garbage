@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Weierstrass.InvToM
-import VerifiedGarbage.Proof.Framework.PowLit
-import VerifiedGarbage.Proof.Weierstrass.Field
-import Mathlib.Tactic.LinearCombination
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.InvToM
+public import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.Proof.Weierstrass.Field
+public import Mathlib.Tactic.LinearCombination
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Inversion by divsteps: the result in Montgomery form
@@ -11,6 +17,8 @@ for `x = 0`) and multiplies `a` by `C_f ≡ f K R³` in Montgomery form, which
 leaves `toM acc = toM x ^ (p - 2)` for a prime `p > 2` (`inv_toM`, and as
 `InvToM`, `invToM_of_prime`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass
 

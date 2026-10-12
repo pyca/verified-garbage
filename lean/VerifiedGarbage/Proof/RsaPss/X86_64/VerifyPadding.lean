@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.RsaPss.X86_64.SaltBack
+module
+
+public import VerifiedGarbage.Proof.RsaPss.X86_64.SaltBack
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSASSA-PSS verification on x86-64: correctness
@@ -8,6 +14,8 @@ valid, byte by byte (`VerifyCases.lean`). `verify_body`: from the entry
 state, the body of the frame returns 1 exactly when `RsaPss.verify` holds,
 with the callee-saved registers restored.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPss.X86_64
 

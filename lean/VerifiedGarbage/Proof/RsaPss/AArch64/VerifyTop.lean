@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyBody
-import VerifiedGarbage.Proof.RsaPss.AArch64.SignTop
+module
+
+public import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyBody
+public import VerifiedGarbage.Proof.RsaPss.AArch64.SignTop
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSASSA-PSS verification on AArch64: the whole function
@@ -8,6 +14,8 @@ The restores and the frame's release (`restore_ok`), and the function
 (`code_ok`): the calling convention, and the result as `RsaPss.verify` says
 (`Post`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPss.AArch64.Vfy
 

@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.RsaKeyGen.AArch64.ModE
-import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Close
+module
+
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.ModE
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Close
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # A candidate on AArch64: `gcd(c − 1, e)`
@@ -10,6 +16,8 @@ its low bit (`c` is odd), reduces `c − 1` modulo the odd `e > 1` in `kG`
 `gcd(c − 1, e)` in `kG` (`gcdE_ok`). `gcdCheck` leaves `x3 = 0` iff
 `gcd(c − 1, e) = 1` (`gcdCheck_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaKeyGen.AArch64
 

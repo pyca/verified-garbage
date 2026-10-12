@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Hash
-import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Common
-import VerifiedGarbage.Proof.Pbkdf2.MdKeys
+module
+
+public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Hash
+public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Common
+public import VerifiedGarbage.Proof.Pbkdf2.MdKeys
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # HMAC over any Merkle–Damgård hash function on AArch64: `init`
@@ -18,6 +24,8 @@ it keeps their low halves. Constant time: the taint analysis checks the
 pieces between the calls (`Checks`); the calls are constant time by the
 callees' own proofs.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Pbkdf2.Md.AArch64.HmacInit
 

@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Hash
-import VerifiedGarbage.Proof.Framework.X86_64.Taint
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Hash
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Hash
+public import VerifiedGarbage.Proof.Framework.X86_64.Taint
+meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA verification on x86-64: the sponge leaks only addresses
@@ -8,6 +16,8 @@ Two runs in the same layout (`LRel`: layouts whose registers and stack pointer
 agree) stay in it across code that keeps the layout (`LRel.step`), and `hash2`
 leaks the same in both (`hash2_tr`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86_64.Verify
 

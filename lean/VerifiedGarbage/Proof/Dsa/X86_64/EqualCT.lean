@@ -1,8 +1,20 @@
-import VerifiedGarbage.Proof.Dsa.X86_64.EqualHead
-import VerifiedGarbage.Proof.Dsa.X86_64.Masks
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
+module
+
+public import VerifiedGarbage.Proof.Dsa.X86_64.EqualHead
+meta import VerifiedGarbage.Proof.Dsa.X86_64.EqualHead
+public import VerifiedGarbage.Proof.Dsa.X86_64.Masks
+meta import VerifiedGarbage.Proof.Dsa.X86_64.Masks
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # Constant-time equality of DSA byte buffers -/
+
+@[expose] public section
+
 namespace VG.Proof.Dsa.X86_64
 open VG VG.X86_64 VG.Impl.Bignum.X86_64
 open VG.Impl.Dsa.Layout VG.Impl.Dsa.X86_64

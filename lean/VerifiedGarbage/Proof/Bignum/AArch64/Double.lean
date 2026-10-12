@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Bignum.AArch64.Mont
+module
+
+public import VerifiedGarbage.Proof.Bignum.AArch64.Mont
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Multiword arithmetic on AArch64: doubling modulo `m`
@@ -8,6 +14,8 @@ words), a chain of `adcs` with the carry in the carry flag from word to
 word, then subtracts `m` as Montgomery multiplication does (`subMod`,
 `selectAcc`): `[o] := 2 [o] mod m` (`double_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.AArch64
 

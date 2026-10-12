@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Rc4.AArch64.Prga
+module
+
+public import VerifiedGarbage.Proof.Rc4.AArch64.Prga
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The rotation after a group
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.Rc4.AArch64.Prga
 byte `k + 16`, around the table), `j` and `-B` move back by 16, and the base
 in `x8` advances by 16.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rc4.AArch64
 open VG VG.AArch64 VG.AArch64.RegUpd VG.Impl.Rc4.AArch64

@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlKem.X86_64.DcBase
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86_64.DcBase
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86-64: decapsulation, K-PKE.Decrypt
@@ -9,6 +15,8 @@ NTT⁻¹(ŝ^⊺ ∘ NTT(u'))))` to `M`, the product in one call of
 the steps, `DR nu ns`: the first `nu` of `u'` and `ns` of `ŝ` are done. Each
 with its constant time.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.X86_64
 

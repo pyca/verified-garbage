@@ -398,6 +398,38 @@ jobs:
         run: |
           cargo fmt --check
           cargo clippy --all-targets --locked
+      # The Benchmarks workflow's dependencies, for its `compare` jobs to
+      # restore: pull requests can read only caches saved on their own branch
+      # or on main, and that workflow does not run on main. A new stable Rust
+      # changes the key (ci/bench_cache_key.sh), so every push to main looks
+      # it up, without downloading, and builds only on a miss.
+      - id: bench-cache-key
+        if: ${{ matrix.rust == 'stable' && runner.os == 'Linux' && github.event_name == 'push' }}
+        run: echo "key=$(sh ci/bench_cache_key.sh bench)" >> "$GITHUB_OUTPUT"
+      - id: bench-cache
+        if: ${{ steps.bench-cache-key.outputs.key }}
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: bench-target
+          key: ${{ steps.bench-cache-key.outputs.key }}
+          lookup-only: true
+      - name: Build the benchmarks' dependencies
+        if: ${{ steps.bench-cache-key.outputs.key && steps.bench-cache.outputs.cache-hit != 'true' }}
+        working-directory: bench
+        # As ci/bench_compare.py builds them: same target directory and no
+        # RUSTFLAGS, both of which the build's fingerprints include. The
+        # crates of this repository are rebuilt there anyway.
+        env:
+          RUSTFLAGS: ""
+        run: |
+          export CARGO_TARGET_DIR="$GITHUB_WORKSPACE/bench-target"
+          cargo bench --no-run --locked
+          cargo clean --release -p verified-garbage -p verified-garbage-bench
+      - if: ${{ steps.bench-cache-key.outputs.key && steps.bench-cache.outputs.cache-hit != 'true' }}
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: bench-target
+          key: ${{ steps.bench-cache-key.outputs.key }}
       - run: rustc -vV
       - run: cargo test --locked
       - name: Export coverage

@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.RsaPss.X86_64.SignPro
+module
+
+public import VerifiedGarbage.Proof.RsaPss.X86_64.SignPro
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSASSA-PSS signing on x86-64: refusing
@@ -6,6 +12,8 @@ import VerifiedGarbage.Proof.RsaPss.X86_64.SignPro
 `signFail` writes zeros to `out` and returns 0 (`signFail_ok`), changing
 nothing else of the working space or the frame.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPss.X86_64
 

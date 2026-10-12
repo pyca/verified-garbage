@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Mont.X86_64.MulP
-import VerifiedGarbage.Proof.Mont.X86_64.Adx
+module
+
+public import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Mont.X86_64.MulP
+public import VerifiedGarbage.Proof.Mont.X86_64.Adx
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Montgomery arithmetic on x86-64: P-521's product by rows, with BMI2 and ADX
@@ -19,6 +25,8 @@ The rows run with `rdi` moved `c` bytes into the working space (`ScrC`,
 `rdiAdd_ok`, `rdiSub_ok`), their operands at `rc c d` (`readSrc_rc`,
 `storeXC_ok`, `maddStepsC_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Mont.X86_64
 

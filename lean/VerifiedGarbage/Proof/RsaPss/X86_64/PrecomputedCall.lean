@@ -1,6 +1,14 @@
-import VerifiedGarbage.Proof.RsaPss.X86_64.PrecomputedCtx
-import VerifiedGarbage.Proof.Rsa.X86_64.PublicImpl
-import VerifiedGarbage.Impl.RsaPss.X86_64.Precomputed
+module
+
+public import VerifiedGarbage.Proof.RsaPss.X86_64.PrecomputedCtx
+public import VerifiedGarbage.Proof.Rsa.X86_64.PublicImpl
+public import VerifiedGarbage.Impl.RsaPss.X86_64.Precomputed
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.RsaPss.X86_64.Pc
 

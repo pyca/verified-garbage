@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.MlKem.X86_64.YNttLay42
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.MlKem.X86_64.MulAvx2
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86_64.YNttLay42
+public import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.MlKem.X86_64.MulAvx2
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86-64: the NTT and its inverse on AVX2 registers, before and after the layers
@@ -10,6 +16,8 @@ The packing of the 256 `u32`s of `f` into the words of `S`, sixteen at a time
 `3303` of `NTT⁻¹` (`yscale_ok`), and the prologue and epilogue around them
 (`ypro_ok`, `yepi_ok`); and the facts kept between the layers (`LIY`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.X86_64
 

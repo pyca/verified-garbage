@@ -1,6 +1,12 @@
-import VerifiedGarbage.Spec.RsaPkcs1Sig.Contract
-import VerifiedGarbage.Impl.RsaPkcs1Sig.AArch64.Recover
-import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.VerifyFrame
+module
+
+public import VerifiedGarbage.Spec.RsaPkcs1Sig.Contract
+public import VerifiedGarbage.Impl.RsaPkcs1Sig.AArch64.Recover
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.VerifyFrame
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_pkcs1_recover` on AArch64: the precondition
@@ -9,6 +15,8 @@ import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.VerifyFrame
 stack `stk K` of `vg_rsa_pkcs1_verify`'s frame, which recovery shares, and
 a callee using `K` bytes), by name (`preR_of`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPkcs1Sig.AArch64.Rec
 

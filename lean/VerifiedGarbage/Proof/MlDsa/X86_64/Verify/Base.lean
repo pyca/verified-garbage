@@ -1,8 +1,14 @@
-import VerifiedGarbage.Impl.MlDsa.X86_64.Verify.Verify
-import VerifiedGarbage.Proof.MlKem.X86_64.Bytes
-import VerifiedGarbage.Proof.MlKem.X86_64.Rel
-import VerifiedGarbage.Proof.MlDsa.Verify.Mem
-import VerifiedGarbage.TCB.X86_64.Target
+module
+
+public import VerifiedGarbage.Impl.MlDsa.X86_64.Verify.Verify
+public import VerifiedGarbage.Proof.MlKem.X86_64.Bytes
+public import VerifiedGarbage.Proof.MlKem.X86_64.Rel
+public import VerifiedGarbage.Proof.MlDsa.Verify.Mem
+public import VerifiedGarbage.TCB.X86_64.Target
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA verification on x86-64: moves, layouts and calls
@@ -23,6 +29,8 @@ import VerifiedGarbage.TCB.X86_64.Target
 * A call of verified code, with the moves of its arguments before it
   (`callAt_ok`, `callAt_tr`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86_64.Verify
 

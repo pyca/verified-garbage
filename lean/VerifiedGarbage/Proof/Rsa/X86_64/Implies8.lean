@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtImplies
-import VerifiedGarbage.Proof.Rsa.X86_64.PubChecked
-import VerifiedGarbage.Proof.Rsa.X86_64.RpVerified
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtImplies
+public import VerifiedGarbage.Proof.Rsa.X86_64.PubChecked
+public import VerifiedGarbage.Proof.Rsa.X86_64.RpVerified
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The x86-64 RSA functions' contracts, with 8 bytes of stack
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.Rsa.X86_64.RpVerified
 What the functions that call `vg_rsa_mont_mul` meet: the shared contracts,
 with the stack their call's return address uses (`Verified.of_inline`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.X86_64
 

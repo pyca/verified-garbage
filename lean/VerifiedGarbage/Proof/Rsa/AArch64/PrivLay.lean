@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.Rsa.AArch64.PrivCtx
-import VerifiedGarbage.Impl.Rsa.AArch64.PrivChecked
-import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import VerifiedGarbage.Proof.Framework.Offset
+module
+
+public import VerifiedGarbage.Proof.Rsa.AArch64.PrivCtx
+public import VerifiedGarbage.Impl.Rsa.AArch64.PrivChecked
+public import VerifiedGarbage.Proof.Framework.AArch64.Exec
+public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+public import VerifiedGarbage.Proof.Framework.Offset
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_private_checked` on AArch64: where everything is
@@ -15,6 +21,8 @@ stack arguments are at `B + stackBytes` (`ARGS`). `Lay.Ok` is what the
 contract says of them; `Ctx` is what holds between the frames' pushes and
 pops.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.AArch64
 

@@ -1,8 +1,17 @@
-import VerifiedGarbage.Proof.Dsa.X86_64.SignEntry
-import VerifiedGarbage.Proof.Dsa.X86_64.VerifyEntry
-import VerifiedGarbage.Proof.Dsa.X86_64.ShapeFrame
+module
+
+public import VerifiedGarbage.Proof.Dsa.X86_64.SignEntry
+public import VerifiedGarbage.Proof.Dsa.X86_64.VerifyEntry
+public import VerifiedGarbage.Proof.Dsa.X86_64.ShapeFrame
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # Every saved argument has a defined value after the public shape check -/
+
+@[expose] public section
+
 namespace VG.Proof.Dsa.X86_64
 open VG VG.X86_64 VG.Impl.Dsa.Layout
 open VG.Proof.Bignum VG.Proof.Bignum.X86_64

@@ -1,7 +1,13 @@
-import VerifiedGarbage.Impl.Bignum.X86_64.Adx
-import VerifiedGarbage.Proof.Bignum.X86_64.Words
-import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+module
+
+public import VerifiedGarbage.Impl.Bignum.X86_64.Adx
+public import VerifiedGarbage.Proof.Bignum.X86_64.Words
+public import VerifiedGarbage.Proof.Framework.X86_64.Exec
+public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Multiword arithmetic on x86-64: the steps of the BMI2/ADX multiplication
@@ -13,6 +19,8 @@ the block's first half (`wordA_ok`) and of its second (`wordB_ok`), and the
 end of a chain (`close_ok`). Each states what it computes as an equation on
 numbers, the carries in and out included, which `omega` composes.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64
 

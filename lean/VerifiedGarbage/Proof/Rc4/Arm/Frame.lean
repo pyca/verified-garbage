@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Rc4.Arm.Verified
-import VerifiedGarbage.Proof.Rc4.Scratch
-import VerifiedGarbage.Proof.Framework.Arm.RegScratchWipe
+module
+
+public import VerifiedGarbage.Proof.Rc4.Arm.Verified
+public import VerifiedGarbage.Proof.Rc4.Scratch
+public import VerifiedGarbage.Proof.Framework.Arm.RegScratchWipe
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RC4 on ARMv7, with the working space on the stack
@@ -13,6 +19,8 @@ is the working space and which they zero after the code
 `vg_rc4_apply`'s arguments in the same registers and memory, so its leak, the
 context's `i`, is the code's.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rc4.Arm
 

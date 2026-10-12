@@ -1,13 +1,22 @@
-import VerifiedGarbage.Proof.Dsa.X86_64.SigningMain
-import VerifiedGarbage.Proof.Dsa.X86_64.BodyCT
-import VerifiedGarbage.Proof.Dsa.X86_64.EntryCT
-import VerifiedGarbage.Proof.Dsa.X86_64.DomainShapeCT
+module
+
+public import VerifiedGarbage.Proof.Dsa.X86_64.SigningMain
+public import VerifiedGarbage.Proof.Dsa.X86_64.BodyCT
+public import VerifiedGarbage.Proof.Dsa.X86_64.EntryCT
+public import VerifiedGarbage.Proof.Dsa.X86_64.DomainShapeCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # Public observations used to relate two complete signing calls
 
 The reference call supplies public lengths, addresses and domain bytes. The
 relation does not equate private scalars, nonces, digests or scratch contents.
 -/
+
+@[expose] public section
+
 namespace VG.Proof.Dsa.X86_64
 open VG VG.X86_64 VG.Impl.Bignum.X86_64
 open VG.Impl.Dsa.Layout VG.Impl.Dsa.X86_64

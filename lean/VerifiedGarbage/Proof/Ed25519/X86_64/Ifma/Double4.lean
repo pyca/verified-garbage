@@ -1,8 +1,17 @@
-import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.Stage
-import VerifiedGarbage.Proof.Ed25519.DblPoint
-import VerifiedGarbage.Proof.Ed25519.X86_64.PointLoop
+module
+
+public import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.Stage
+public import VerifiedGarbage.Proof.Ed25519.DblPoint
+public import VerifiedGarbage.Proof.Ed25519.X86_64.PointLoop
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Ed25519.X86_64.Ifma.Block`. -/
+
+@[expose] public section
+
 section
 /-!
 # Ed25519 doublings with AVX512_IFMA: the blocks as facts about states

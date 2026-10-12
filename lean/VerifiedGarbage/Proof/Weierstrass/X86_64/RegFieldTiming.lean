@@ -1,7 +1,16 @@
-import VerifiedGarbage.Proof.Weierstrass.X86_64.FieldTiming
-import VerifiedGarbage.Proof.Framework.X86_64.KeepReg
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.FieldTiming
+public import VerifiedGarbage.Proof.Framework.X86_64.KeepReg
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Public control registers alongside paired field environments. -/
+
+@[expose] public section
+
 namespace VG.Proof.Weierstrass.X86_64
 open VG VG.X86_64 VG.Impl.Mont VG.Proof.Mont VG.Proof.Mont.X86_64
 open VG.Proof.X25519.X86_64 (Keeps)

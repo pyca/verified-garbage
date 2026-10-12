@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.PubR2
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.PubR2
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_public` on x86-64: the exponentiation
@@ -6,6 +12,8 @@ import VerifiedGarbage.Proof.Bignum.X86_64.PubR2
 `Y := R mod m` and `X := x R mod m` from `R² mod m`, the exponentiation
 (`Y ≡ x^e R`), and `Y R⁻¹ = x^e mod m` (`expPhase_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64
 

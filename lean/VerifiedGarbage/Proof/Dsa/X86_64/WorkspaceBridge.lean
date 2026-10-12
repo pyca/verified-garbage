@@ -1,8 +1,17 @@
-import VerifiedGarbage.Proof.Dsa.X86_64.WorkspaceReady
-import VerifiedGarbage.Proof.Dsa.X86_64.WorkspacesCT
-import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleCTState
+module
+
+public import VerifiedGarbage.Proof.Dsa.X86_64.WorkspaceReady
+public import VerifiedGarbage.Proof.Dsa.X86_64.WorkspacesCT
+public import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleCTState
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # Relating independently initialized workspaces without assuming scratch equality -/
+
+@[expose] public section
+
 namespace VG.Proof.Dsa.X86_64
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public
 open VG.Impl.Dsa.Layout VG.Impl.Dsa.X86_64

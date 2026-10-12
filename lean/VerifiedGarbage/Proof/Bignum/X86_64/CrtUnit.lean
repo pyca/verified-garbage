@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtSetup
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtGPow
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtSetup
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtGPow
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSA with the CRT on x86-64: `R_X mod X`
@@ -8,6 +14,8 @@ The start of each prime's phase (`unitPhase_ok`): `G = 2^E mod n` in the
 modulus' workspace, reduced into the prime's (`G R_X^(-K) ≡ R_X (mod X)` if
 `X` divides `n`), as its `Y`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64
 

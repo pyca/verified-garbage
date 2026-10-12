@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Poly1305.X86_64.Ifma.Load
+module
+
+public import VerifiedGarbage.Proof.Poly1305.X86_64.Ifma.Load
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Poly1305 on x86-64 with AVX-512 IFMA: the short vector blocks
@@ -8,6 +14,8 @@ The vector instructions between the products: `Y` set from `rax`, `rcx` and
 `Y` from `H`; the accumulator into quadword 0 of `H`; and the folds of the
 end, each adding to some quadwords of `H` others.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Poly1305.X86_64.Ifma
 

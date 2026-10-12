@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.Bignum.AArch64.CTR2
+module
+
+public import VerifiedGarbage.Proof.Bignum.AArch64.CTR2
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CTR2
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # A candidate on AArch64: constant time of `R² mod c`
@@ -8,6 +15,8 @@ modulus; a candidate `c` is secret, but its top bit is set, so `topBit`
 runs 63 iterations and the doublings `w + 1` whatever `c` (`r2c_ct`). The
 runs agree on the working space alone (`Ws`), `-c⁻¹` and `c` differing.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaKeyGen.AArch64
 

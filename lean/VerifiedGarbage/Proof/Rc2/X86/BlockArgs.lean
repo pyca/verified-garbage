@@ -1,7 +1,15 @@
-import VerifiedGarbage.Proof.Rc2.Memory32
-import VerifiedGarbage.Proof.Rc2.Memory
-import VerifiedGarbage.Proof.Rc2.X86.RoundSteps
-import VerifiedGarbage.Proof.Rc2.X86.KeyLookup
+module
+
+public import VerifiedGarbage.Proof.Rc2.Memory32
+public import VerifiedGarbage.Proof.Rc2.Memory
+public import VerifiedGarbage.Proof.Rc2.X86.RoundSteps
+public import VerifiedGarbage.Proof.Rc2.X86.KeyLookup
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 section
 

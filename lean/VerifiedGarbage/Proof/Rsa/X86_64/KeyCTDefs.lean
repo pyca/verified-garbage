@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Rsa.X86_64.KeyPhases
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTRows
-import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
+module
+
+public import VerifiedGarbage.Proof.Rsa.X86_64.KeyPhases
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTRows
+public import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
+public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_check_key` on x86-64: constant time, the context
@@ -13,6 +19,8 @@ entry state. A piece loads the bases it needs from the header (checked by
 the taint analysis from `rdi`), then runs from the registers that
 correctness pins (`hdr_ct`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.X86_64.Key
 

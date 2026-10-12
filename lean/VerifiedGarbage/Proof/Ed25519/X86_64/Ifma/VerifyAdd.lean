@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Ed25519.X86_64.BaseOdd
-import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.CombLoop
-import VerifiedGarbage.Impl.Ed25519.X86_64.VerifyIfma
+module
+
+public import VerifiedGarbage.Proof.Ed25519.X86_64.BaseOdd
+public import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.CombLoop
+public import VerifiedGarbage.Impl.Ed25519.X86_64.VerifyIfma
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed25519 verification with AVX512_IFMA: adding a table entry in the lanes
@@ -10,6 +16,8 @@ the scratch, is loaded a row at a time (`vrows`), split into limbs (`esplit`)
 and added to the point in the lanes (`vadd`): the lanes then hold
 `pointAdd P q` for the point `P` they held.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed25519.X86_64.Ifma
 

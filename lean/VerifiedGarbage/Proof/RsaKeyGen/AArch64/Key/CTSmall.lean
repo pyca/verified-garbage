@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.CTD
-import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Small
+module
+
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.CTD
+meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.CTD
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Small
+meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Small
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # An RSA key from its primes on AArch64: constant time, `d` too small
@@ -10,6 +18,8 @@ import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Small
 (`KG FF`, which is `KFront` but for `KS`: `FF.front`). The mask in `x15`,
 on which the code branches, is the status' (`FF.x15`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaKeyGen.AArch64.Key
 

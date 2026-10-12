@@ -1,11 +1,20 @@
-import VerifiedGarbage.Impl.Weierstrass.X86_64.NafCacheBuild
-import VerifiedGarbage.Proof.Weierstrass.X86_64.ForwardField
-import VerifiedGarbage.Proof.Weierstrass.X86_64.NafState
-import VerifiedGarbage.Proof.Weierstrass.X86_64.NafArith
-import VerifiedGarbage.Proof.Weierstrass.X86_64.NafAddress
-import VerifiedGarbage.Proof.Weierstrass.X86_64.NafTableState
+module
+
+public import VerifiedGarbage.Impl.Weierstrass.X86_64.NafCacheBuild
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.ForwardField
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafState
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafArith
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafAddress
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafTableState
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Cached powers are canonical Montgomery values and preserve the source table. -/
+
+@[expose] public section
+
 namespace VG.Proof.Weierstrass.X86_64
 open VG VG.X86_64 VG.Impl.Mont VG.Impl.Weierstrass VG.Impl.Weierstrass.X86_64
 open VG.Proof.Mont VG.Proof.Mont.X86_64

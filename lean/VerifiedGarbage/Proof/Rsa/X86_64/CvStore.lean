@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Rsa.X86_64.CvHead
-import VerifiedGarbage.Proof.Bignum.X86_64.PubOut
+module
+
+public import VerifiedGarbage.Proof.Rsa.X86_64.CvHead
+public import VerifiedGarbage.Proof.Bignum.X86_64.PubOut
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_crt_values` on x86-64: the results
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.Bignum.X86_64.PubOut
 the working space), the mask's low bit returned and the saved registers
 restored (`cvStores_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.X86_64
 

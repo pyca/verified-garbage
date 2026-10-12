@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.MlKem.X86_64.VArith
-import VerifiedGarbage.Proof.MlKem.X86_64.Wp
-import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.Impl.MlKem.X86_64.Vec
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86_64.VArith
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+public import VerifiedGarbage.Impl.MlKem.X86_64.Vec
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86-64: coefficients in the words of SSE registers
@@ -15,6 +21,8 @@ Blocks of SSE instructions only are run with `vrun`, which keeps the state a
 chain of `setXmm`, whose registers the words' lemmas (`word_paddw`, …) read
 lane by lane.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.X86_64
 

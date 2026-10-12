@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Sha512.X86_64.Stream.Md
-import VerifiedGarbage.Proof.Framework.X86_64.Depth
+module
+
+public import VerifiedGarbage.Proof.Sha512.X86_64.Stream.Md
+public import VerifiedGarbage.Proof.Framework.X86_64.Depth
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Implementations of the SHA-512 compression function on x86-64
@@ -13,6 +19,8 @@ member of the SHA-512 family a variant of the interface `MdHash` on x86-64
 `TCB/Emit.lean`). The four members share the implementations, so they are
 here: `scalar`, `avx2` and `shani`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sha512.X86_64
 

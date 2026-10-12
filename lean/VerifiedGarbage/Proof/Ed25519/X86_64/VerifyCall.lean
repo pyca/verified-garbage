@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyVerified
-import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
+module
+
+public import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyVerified
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Verification calling the point functions: `Verified`
@@ -15,6 +21,8 @@ overlaps (`Sig.clear_of_pre_consts`); the postcondition reads only `rax`.
 `verify_ok_calls` is the same for a caller of the checker, which provides the
 8 bytes (`verifyLocal8`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed25519.X86_64
 

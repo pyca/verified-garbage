@@ -1,8 +1,19 @@
-import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Proof.Sha256.X86_64.ShaNi.Spec
-import VerifiedGarbage.Impl.Sha256.X86_64.ShaNi
-import VerifiedGarbage.Proof.Sha256.X86_64.Compress
-import VerifiedGarbage.Proof.Framework.Offset
+module
+
+public import VerifiedGarbage.Proof.Framework.X86_64.Exec
+meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
+public import VerifiedGarbage.Proof.Sha256.X86_64.ShaNi.Spec
+meta import VerifiedGarbage.Proof.Sha256.X86_64.ShaNi.Spec
+public import VerifiedGarbage.Impl.Sha256.X86_64.ShaNi
+meta import VerifiedGarbage.Impl.Sha256.X86_64.ShaNi
+public import VerifiedGarbage.Proof.Sha256.X86_64.Compress
+meta import VerifiedGarbage.Proof.Sha256.X86_64.Compress
+public import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Offset
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # SHA-256 compression function on x86-64 with the SHA extensions
@@ -11,6 +22,8 @@ import VerifiedGarbage.Proof.Framework.Offset
 same contract as the scalar `vg_sha256_compress`, reusing its precondition
 (`Pre`) and block lemmas.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sha256.X86_64.ShaNi
 

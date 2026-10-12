@@ -1,8 +1,14 @@
-import VerifiedGarbage.Spec.Rsa.Contract
-import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.Framework.Sig
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Framework.AArch64.Call
+module
+
+public import VerifiedGarbage.Spec.Rsa.Contract
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.Framework.Sig
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.AArch64.Call
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The checked RSA private-key operation on AArch64: its callees' contracts
@@ -14,6 +20,8 @@ frame). Its proof works with those contracts spelt out on the registers and
 the stack (`crtA`, `pcA`, `pdA`), and moves to them from the shared ones
 (`crt_pre`, `crt_post`, `crt_pub`, …).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.AArch64
 

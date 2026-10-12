@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.MlKem.X86_64.DecMul
-import VerifiedGarbage.Proof.MlKem.X86_64.Lit
-import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86_64.DecMul
+meta import VerifiedGarbage.Proof.MlKem.X86_64.DecMul
+public import VerifiedGarbage.Proof.MlKem.X86_64.Lit
+meta import VerifiedGarbage.Proof.MlKem.X86_64.Lit
+public import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
+meta import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86-64: `vg_mlkem768_decrypt_mul` and `vg_mlkem1024_decrypt_mul`, verified
@@ -8,6 +17,8 @@ import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
 The proof of `DecMul.lean` for each backend and rank, its constant time,
 and its contract implying the shared one of `Spec/MlKem/KpkeMul.lean`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.X86_64
 

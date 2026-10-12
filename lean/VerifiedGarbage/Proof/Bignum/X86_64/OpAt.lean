@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Bignum.Layout
+module
+
+public import VerifiedGarbage.Proof.Bignum.Layout
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Multiword arithmetic on x86-64: operands read from any header slot
@@ -10,6 +16,8 @@ the arrays are given at run time (`Impl/Bignum/X86_64/MontFn.lean`). A slot
 below `sFn 12` keeps its value wherever the header does (`OpAt.of_outside`,
 `OpAt.of_arrays`, `OpAt.of_frm`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum
 

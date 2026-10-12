@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSA with the CRT on x86-64: constant time of the loads into the primes'
@@ -9,6 +16,8 @@ reads the bytes' pointer and length through the workspace's link, and loads
 them (`loadArr_ct`): the link is pinned by correctness, the rest by the taint
 analysis.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64
 

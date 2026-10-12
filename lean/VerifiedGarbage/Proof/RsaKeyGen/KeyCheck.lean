@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.RsaKeyGen.KeyMath
-import VerifiedGarbage.Proof.Framework.PowLit
+module
+
+public import VerifiedGarbage.Proof.RsaKeyGen.KeyMath
+public import VerifiedGarbage.Proof.Framework.PowLit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # An RSA key from its primes: the checks
@@ -11,6 +17,8 @@ what `vg_rsa_keygen_key` checks: `p` and `q` odd, the top bit of `n` set and
 makes `p ≥ 3` and `q ≥ 2`, so `d < L < n`, `p, q < n`, and `d e ≡ 1` modulo
 `L` is modulo `p − 1` and `q − 1` too.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaKeyGen
 

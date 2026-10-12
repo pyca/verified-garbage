@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.RsaPss.X86_64.CtHash
+module
+
+public import VerifiedGarbage.Proof.RsaPss.X86_64.CtHash
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSASSA-PSS on x86-64: compressing every block, selecting the last
@@ -9,6 +15,8 @@ value to `scratch + oSel` under the mask of the block being the last of the
 padded message (`compLoop_ok`): afterwards that is the hash value of the
 first `fb + 1` blocks.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPss.X86_64
 

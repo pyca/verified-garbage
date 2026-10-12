@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Rc4.AArch64.Group
-import VerifiedGarbage.Proof.Rc4.AArch64.ApplySetup
-import VerifiedGarbage.Proof.Rc4.Schedule
+module
+
+public import VerifiedGarbage.Proof.Rc4.AArch64.Group
+public import VerifiedGarbage.Proof.Rc4.AArch64.ApplySetup
+public import VerifiedGarbage.Proof.Rc4.Schedule
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The key schedule's lanes
@@ -9,6 +15,8 @@ import VerifiedGarbage.Proof.Rc4.Schedule
 and the bytes left before the key repeats, `x5`, advance (wrapping).
 `ksaSwap_ok`: then the swap step is the specification's scheduling round.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rc4.AArch64
 open VG VG.AArch64 VG.AArch64.RegUpd VG.Impl.Rc4.AArch64 VG.Spec.Rc4 VG.Proof.Rc4

@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Framework.WriteBytes
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Spec.Aes
-import VerifiedGarbage.Proof.Ocb.Spec
+module
+
+public import VerifiedGarbage.Proof.Framework.WriteBytes
+public import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Spec.Aes
+public import VerifiedGarbage.Proof.Ocb.Spec
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # OCB: the bytes of a buffer after writes
@@ -14,6 +20,8 @@ bytes into a buffer replaces those of its bytes (`bytesAt_writeBytes_at`,
 (`getD_set16`), bytes XORed with the first bytes of a block
 (`xor_bytesAt_block`), and its first bytes (`bytesAt_take_block`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ocb
 

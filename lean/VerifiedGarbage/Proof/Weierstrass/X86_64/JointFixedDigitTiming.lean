@@ -1,9 +1,18 @@
-import VerifiedGarbage.Proof.Weierstrass.X86_64.JointDigitTiming
-import VerifiedGarbage.Proof.Weierstrass.X86_64.JointFixedTiming
-import VerifiedGarbage.Proof.Weierstrass.X86_64.JointFixedDigit
-import VerifiedGarbage.Proof.Weierstrass.X86_64.JacMixedTiming
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointDigitTiming
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointFixedTiming
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointFixedDigit
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.JacMixedTiming
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Timing of a complete fixed-generator digit, including its public zero case. -/
+
+@[expose] public section
+
 namespace VG.Proof.Weierstrass.X86_64
 open VG VG.X86_64 VG.Impl.Mont VG.Impl.Weierstrass VG.Impl.Weierstrass.X86_64
 open VG.Proof.Mont VG.Proof.Mont.X86_64 Spec.Weierstrass

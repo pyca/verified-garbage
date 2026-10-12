@@ -1,8 +1,17 @@
-import VerifiedGarbage.Proof.Bignum.AArch64.SquareCross
-import VerifiedGarbage.Proof.Bignum.AArch64.SquareDiagonalLoop
-import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
+module
+
+public import VerifiedGarbage.Proof.Bignum.AArch64.SquareCross
+public import VerifiedGarbage.Proof.Bignum.AArch64.SquareDiagonalLoop
+public import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! The exact unreduced square, with unchanged header and input. -/
+
+@[expose] public section
+
 namespace VG.Proof.Bignum.AArch64.Square
 open VG VG.AArch64 VG.Impl.Bignum VG.Impl.Bignum.AArch64 VG.Proof.Bignum
 open VG.Impl.Bignum.Public VG.Proof.Bignum.AArch64

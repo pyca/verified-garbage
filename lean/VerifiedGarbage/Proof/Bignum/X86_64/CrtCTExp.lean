@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
-import VerifiedGarbage.Proof.Bignum.X86_64.CTExp
-import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
+public import VerifiedGarbage.Proof.Bignum.X86_64.CTExp
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CTExp
+public import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSA with the CRT on x86-64: the exponentiation is constant time
@@ -15,6 +24,8 @@ Montgomery multiplications (constant time for any prime, `Mont.ct`), and
 the addresses come from the header, which the steps' correctness
 (`CrtExp.lean`, for the bounds alone: `Q := False`) pins in both runs.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64
 

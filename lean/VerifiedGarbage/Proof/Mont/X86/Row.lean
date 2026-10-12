@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Mont.X86.Step
+module
+
+public import VerifiedGarbage.Proof.Mont.X86.Step
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Montgomery arithmetic on x86 (32-bit): a row
@@ -10,6 +16,8 @@ low `N` words, leaving the carry word in `ebx`, which `carryUp` adds to
 words `N` and `N + 1` (`carryUp_ok`); the sum must fit the `N + 2` words
 (`mulRow_ok`). Only the window's bytes change.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Mont.X86
 

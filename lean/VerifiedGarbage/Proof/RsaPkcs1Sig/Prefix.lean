@@ -1,4 +1,10 @@
-import VerifiedGarbage.Spec.RsaPkcs1Sig
+module
+
+public import VerifiedGarbage.Spec.RsaPkcs1Sig
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The `DigestInfo` prefixes are DER encodings
@@ -20,6 +26,8 @@ arcs (`oid`): RFC 1321's `md5` 1.2.840.113549.2.5, `id-sha1`
 2.16.840.1.101.3.4.2.1 to .10 (RFC 5754 §2, NIST's Computer Security
 Objects Register).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPkcs1Sig
 

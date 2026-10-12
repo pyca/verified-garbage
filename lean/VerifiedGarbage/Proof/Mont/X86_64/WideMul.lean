@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Mont.X86_64.Wide
+module
+
+public import VerifiedGarbage.Proof.Mont.X86_64.Wide
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Montgomery arithmetic on x86-64: the multiplication with the accumulator in memory
@@ -10,6 +16,8 @@ round makes `2⁶⁴ T' = T + a_i B + u m` and keeps `T < 2m` (`roundW_ok`), as
 `2^(64 n) T = A B + U m` (`roundsW_ok`). Then `csubW` reduces `T` below `m`
 into `[o]` (`csubW_ok`), and `mulW_ok` is `mul_ok` for any number of words.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Mont.X86_64
 

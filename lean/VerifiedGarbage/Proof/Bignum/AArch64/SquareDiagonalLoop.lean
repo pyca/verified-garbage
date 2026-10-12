@@ -1,8 +1,17 @@
-import VerifiedGarbage.Proof.Bignum.AArch64.SquareDiagonalStep
-import VerifiedGarbage.Proof.Bignum.AArch64.SquareMath
-import VerifiedGarbage.Proof.Bignum.AArch64.Row
+module
+
+public import VerifiedGarbage.Proof.Bignum.AArch64.SquareDiagonalStep
+public import VerifiedGarbage.Proof.Bignum.AArch64.SquareMath
+public import VerifiedGarbage.Proof.Bignum.AArch64.Row
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Accumulate the full diagonal with its high carry accounted for. -/
+
+@[expose] public section
+
 namespace VG.Proof.Bignum.AArch64.Square
 open VG VG.AArch64 VG.Impl.Bignum.AArch64 VG.Proof.Bignum
 open VG.Proof.Bignum.AArch64

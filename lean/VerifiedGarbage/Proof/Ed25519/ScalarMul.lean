@@ -1,4 +1,10 @@
-import VerifiedGarbage.Spec.Ed25519
+module
+
+public import VerifiedGarbage.Spec.Ed25519
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Scalar multiplication, from high bits to low bits
@@ -9,6 +15,8 @@ accumulator is `[floor(s/2^(n+1))] [2^(n+1)]P`. Adding `[2^n]P` exactly when
 bit n is one gives the next invariant. Powers can be computed in small batches
 so the scratch space remains bounded.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed25519
 

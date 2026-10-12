@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Area
-import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Lemmas
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Area
+public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Lemmas
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSA with AVX512_IFMA on x86-64, any size: the table
@@ -11,6 +17,8 @@ and `x 2^(64 W)`; entries 0 and 1, `conv0_ok`, `conv1_ok`), then writes the
 table of the powers of `x` in the same loop (`tabIter_ok`, `convTab_ok`):
 `T_0 = Y`, `T_1 = X` and `T_i = T_(i-1) X / 2^(208 R)`, so `T_i ≡ x^i 2^(208 R)`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64.Ifma
 

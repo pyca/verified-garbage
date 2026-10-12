@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyLit
-import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
-import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyCall
-import VerifiedGarbage.Proof.Ed25519.X86_64.WindowSlideCT
-import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.VerifyCT
+module
+
+public import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyLit
+public import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
+public import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyCall
+public import VerifiedGarbage.Proof.Ed25519.X86_64.WindowSlideCT
+public import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.VerifyCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Facts about the code of each registered verification
@@ -13,6 +19,8 @@ field multiplication and doubling `vg_ed25519_verify_equation` is registered
 with: evaluated once here, from the literals, for both the equation's own
 artifacts and the generic verification over SHA-512 that calls it.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed25519.X86_64.VerifyCode
 

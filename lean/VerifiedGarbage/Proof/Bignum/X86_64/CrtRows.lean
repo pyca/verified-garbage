@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.Row
-import VerifiedGarbage.Proof.Bignum.X86_64.Loop
-import VerifiedGarbage.Impl.Rsa.X86_64.Crt
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.Row
+public import VerifiedGarbage.Proof.Bignum.X86_64.Loop
+public import VerifiedGarbage.Impl.Rsa.X86_64.Crt
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Multiword arithmetic on x86-64: a product by rows
@@ -10,6 +16,8 @@ import VerifiedGarbage.Impl.Rsa.X86_64.Crt
 accumulator (`mulAddRow`), for an accumulator of `w_a + w_b + 2` words that
 starts below `2^(64 (w_b + 1))` (`mulRows_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64
 

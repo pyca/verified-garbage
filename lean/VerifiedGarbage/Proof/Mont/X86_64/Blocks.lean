@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Mont.X86_64.Row
-import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+module
+
+public import VerifiedGarbage.Proof.Mont.X86_64.Row
+public import VerifiedGarbage.Proof.Framework.X86_64.Exec
+public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Montgomery arithmetic on x86-64: the small blocks of a round
@@ -9,6 +15,8 @@ Each run symbolically once, for any registers: loading a word into `rcx`,
 a row with its carry word cleared first (`mulRow`), the carry of a row into
 the two top words (`carryUp`), and the computation of `u = t₀ m' mod 2⁶⁴`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Mont.X86_64
 

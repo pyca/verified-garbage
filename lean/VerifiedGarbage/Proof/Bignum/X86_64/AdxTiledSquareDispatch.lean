@@ -1,13 +1,22 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledSquareRaw
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledMont
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareMont
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareRedcChoice
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareFinish
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxFinish8
-import VerifiedGarbage.Impl.Bignum.X86_64.AdxTiledSquareDispatch
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareCT
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledSquareRaw
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledMont
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareMont
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareRedcChoice
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareFinish
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxFinish8
+public import VerifiedGarbage.Impl.Bignum.X86_64.AdxTiledSquareDispatch
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## AdxTiledSquareMont -/
+
+@[expose] public section
+
 section
 
 /-! Correctness of Montgomery squaring with BMI2 and ADX. -/

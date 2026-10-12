@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.CTBase
-import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Tail
-import VerifiedGarbage.Proof.Rsa.AArch64.CvCTCode
+module
+
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.CTBase
+meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.CTBase
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Tail
+meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Tail
+public import VerifiedGarbage.Proof.Rsa.AArch64.CvCTCode
+meta import VerifiedGarbage.Proof.Rsa.AArch64.CvCTCode
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # An RSA key from its primes on AArch64: constant time, the outputs
@@ -11,6 +20,8 @@ header, which correctness pins to the public data (`zeroOutK_ct`,
 (`EG`: from the stores on, memory outside the working space changes, so
 `KS` no longer holds); the exit reads the header.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaKeyGen.AArch64.Key
 

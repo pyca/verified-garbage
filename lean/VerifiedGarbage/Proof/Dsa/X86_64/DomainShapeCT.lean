@@ -1,7 +1,16 @@
-import VerifiedGarbage.Proof.Dsa.X86_64.ShapeSizesCT
-import VerifiedGarbage.Proof.Dsa.X86_64.ShapeTailCT
+module
+
+public import VerifiedGarbage.Proof.Dsa.X86_64.ShapeSizesCT
+public import VerifiedGarbage.Proof.Dsa.X86_64.ShapeTailCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # Constant time of the entire public DSA domain-shape check -/
+
+@[expose] public section
+
 namespace VG.Proof.Dsa.X86_64
 open VG VG.X86_64 VG.Impl.Bignum.X86_64
 open VG.Impl.Dsa.Layout VG.Impl.Dsa.X86_64

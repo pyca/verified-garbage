@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Mont.X86_64.Csub
+module
+
+public import VerifiedGarbage.Proof.Mont.X86_64.Csub
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Montgomery arithmetic on x86-64: loads, stores and carry chains
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.Mont.X86_64.Csub
 space; `chain` adds (`add`, then `adc`) or subtracts (`sub`, then `sbb`) the
 words at `b` to or from registers, with the carry or borrow out in `CF`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Mont.X86_64
 

@@ -1,11 +1,17 @@
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Framework.X86_64.Inline
-import VerifiedGarbage.Proof.Sha512.X86_64.Wide
-import VerifiedGarbage.Proof.Sha512.X86_64.Stream.Init
-import VerifiedGarbage.Proof.Sha512.X86_64.Stream.Md
-import VerifiedGarbage.Proof.Sha512.X86_64.Stream.Digest
-import VerifiedGarbage.Spec.Sha512.Contract
-import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
+module
+
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.X86_64.Inline
+public import VerifiedGarbage.Proof.Sha512.X86_64.Wide
+public import VerifiedGarbage.Proof.Sha512.X86_64.Stream.Init
+public import VerifiedGarbage.Proof.Sha512.X86_64.Stream.Md
+public import VerifiedGarbage.Proof.Sha512.X86_64.Stream.Digest
+public import VerifiedGarbage.Spec.Sha512.Contract
+public import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Sha512 on X86_64: the shared contracts
@@ -19,6 +25,8 @@ function.
 The scalar compression function's own contract has less scratch than the
 shared one; it is widened first (`Proof/Sha512/X86_64/Wide.lean`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sha512.X86_64.Shared
 

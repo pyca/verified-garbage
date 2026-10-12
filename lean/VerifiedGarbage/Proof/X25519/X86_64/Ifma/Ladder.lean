@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Setup
+module
+
+public import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Setup
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X25519 on x86-64 with AVX512_IFMA: the ladder
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Setup
 the ladder's final `(x₂, z₂, x₃, z₃)` in the slots `x2, z2, x3, z3`, and its
 `swap` at `SWAP`, as `vg_x25519`'s ladder does (`LPost`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X25519.X86_64.Ifma
 

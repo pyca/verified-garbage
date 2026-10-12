@@ -1,6 +1,12 @@
-import VerifiedGarbage.Spec.Siv
-import VerifiedGarbage.Proof.Cmac.Spec
-import VerifiedGarbage.Proof.Cmac.Stream
+module
+
+public import VerifiedGarbage.Spec.Siv
+public import VerifiedGarbage.Proof.Cmac.Spec
+public import VerifiedGarbage.Proof.Cmac.Stream
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-SIV: lemmas about the specification
@@ -19,6 +25,8 @@ How the implementations compute the functions of `Spec/Siv.lean`:
 * `ctr_getD`: each byte of CTR's output is the byte of the input XORed with
   the byte of the keystream block of its block index.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Siv
 

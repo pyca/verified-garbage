@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.Rsa.AArch64.CkCTMain
-import VerifiedGarbage.Proof.Rsa.AArch64.CrtKeyCode
+module
+
+public import VerifiedGarbage.Proof.Rsa.AArch64.CkCTMain
+meta import VerifiedGarbage.Proof.Rsa.AArch64.CkCTMain
+public import VerifiedGarbage.Proof.Rsa.AArch64.CrtKeyCode
+meta import VerifiedGarbage.Proof.Rsa.AArch64.CrtKeyCode
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_check_crt_key` on AArch64: constant time, `main`
@@ -10,6 +18,8 @@ and its count `c` from the header, and pins the registers the code after it
 uses (`blkHi_ok`, `blkLo_ok`, `blkCnt_ok`) to the public data, for a count
 that is a function of it (`1` or `⌈q_len / 8⌉`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.AArch64
 

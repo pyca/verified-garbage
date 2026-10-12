@@ -1,9 +1,17 @@
-import VerifiedGarbage.Spec.Ffdh.Contract
-import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Impl.Ffdh.X86_64
-import VerifiedGarbage.Proof.Framework.Semantics
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+module
+
+public import VerifiedGarbage.Spec.Ffdh.Contract
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Impl.Ffdh.X86_64
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.Ffdh.X86_64
 open VG VG.X86_64 VG.Proof.MlKem.X86_64

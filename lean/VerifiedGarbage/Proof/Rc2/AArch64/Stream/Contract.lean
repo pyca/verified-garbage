@@ -1,11 +1,19 @@
-import VerifiedGarbage.Proof.Rc2.AArch64.ConstantTime
-import VerifiedGarbage.Spec.Rc2.Contract
+module
+
+public import VerifiedGarbage.Proof.Rc2.AArch64.ConstantTime
+public import VerifiedGarbage.Spec.Rc2.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # Streaming RC2-CBC on AArch64: the contracts the proofs use
 
 `Spec.Rc2.cbcInitContract` and `Spec.Rc2.cbcUpdateContract` spelled out for
 AArch64 (the arguments in `x0`–`x6`), with the 16-byte frame below the stack
 pointer that saves `x30` around the calls. -/
+
+@[expose] public section
 
 namespace VG.Proof.Rc2.AArch64.Stream
 

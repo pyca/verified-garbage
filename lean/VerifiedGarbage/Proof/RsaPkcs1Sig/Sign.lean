@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.RsaPkcs1Sig.Verify
-import VerifiedGarbage.Proof.Rsa.Checked
+module
+
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.Verify
+public import VerifiedGarbage.Proof.Rsa.Checked
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSASSA-PKCS1-v1_5 signing: what it releases verifies
@@ -14,6 +20,8 @@ import VerifiedGarbage.Proof.Rsa.Checked
   `EM^d mod n`: signing neither faults nor refuses the encoding.
 * `sign_verify`: hence the round trip, for such a key.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPkcs1Sig
 

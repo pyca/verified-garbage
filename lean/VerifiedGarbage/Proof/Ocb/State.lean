@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Ocb.Spec
-import VerifiedGarbage.Proof.Cmac.Frame
-import VerifiedGarbage.Spec.Aes.Contract
+module
+
+public import VerifiedGarbage.Proof.Ocb.Spec
+public import VerifiedGarbage.Proof.Cmac.Frame
+public import VerifiedGarbage.Spec.Aes.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # OCB: blocks in memory as AES states
@@ -10,6 +16,8 @@ blocks are specified on AES states (`Spec.Aes.statesAt`); OCB's blocks in
 memory (`blockAtMem`) are the same bytes (`blockAtMem_of_state`,
 `stateAt_of_statesAt`), on every target.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ocb
 

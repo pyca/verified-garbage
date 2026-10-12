@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.RsaPss.X86_64.MgfDirectCT
-import VerifiedGarbage.Proof.RsaPss.X86_64.CtHashCT
-import VerifiedGarbage.Proof.RsaPss.X86_64.Mgf
+module
+
+public import VerifiedGarbage.Proof.RsaPss.X86_64.MgfDirectCT
+public import VerifiedGarbage.Proof.RsaPss.X86_64.CtHashCT
+public import VerifiedGarbage.Proof.RsaPss.X86_64.Mgf
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSASSA-PSS on x86-64: MGF1 is constant time
@@ -11,6 +17,8 @@ loop runs once per `hLen` bytes of `DB` in both, each round's pieces between
 the calls are checked by the taint analysis (`HashChecks`), and the hash is
 constant time (`mgfHash_ct`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPss.X86_64
 

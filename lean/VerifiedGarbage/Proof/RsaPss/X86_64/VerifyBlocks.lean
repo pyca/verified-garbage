@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.RsaPss.X86_64.SignEnc
-import VerifiedGarbage.Proof.RsaPss.VerifyCases
+module
+
+public import VerifiedGarbage.Proof.RsaPss.X86_64.SignEnc
+public import VerifiedGarbage.Proof.RsaPss.VerifyCases
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSASSA-PSS verification on x86-64: the blocks
@@ -11,6 +17,8 @@ nonzero byte of `DB` (`posScan_ok`) and `posCheck` adds its checks to `acc`
 (`copyDb_ok`, `shift_ok`); `cmpH` compares the digest with `H` and returns
 whether `acc` is zero (`cmpH_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPss.X86_64
 

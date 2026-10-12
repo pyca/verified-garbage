@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Rsa.X86_64.PrivCheck
+module
+
+public import VerifiedGarbage.Proof.Rsa.X86_64.PrivCheck
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_private_checked` on x86-64: fault tolerance
@@ -6,6 +12,8 @@ import VerifiedGarbage.Proof.Rsa.X86_64.PrivCheck
 What the check returns and releases (`check_ok`) passes the check whatever
 the CRT left (`check_faultTolerant`, from `checkResult_sound`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.X86_64
 

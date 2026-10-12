@@ -1,12 +1,18 @@
-import VerifiedGarbage.Proof.Framework.Arm.Contract
-import VerifiedGarbage.Proof.Framework.Arm.Inline
-import VerifiedGarbage.Proof.Sha256.Arm.Compress
-import VerifiedGarbage.Proof.Sha256.Arm.Stream.Init
-import VerifiedGarbage.Proof.Sha256.Arm.Stream.Md
-import VerifiedGarbage.Proof.Sha256.Arm.Stream.Digest
-import VerifiedGarbage.Spec.Sha256.Contract
-import VerifiedGarbage.Proof.Sha256.Scratch
-import VerifiedGarbage.Proof.Framework.Arm.StackScratch
+module
+
+public import VerifiedGarbage.Proof.Framework.Arm.Contract
+public import VerifiedGarbage.Proof.Framework.Arm.Inline
+public import VerifiedGarbage.Proof.Sha256.Arm.Compress
+public import VerifiedGarbage.Proof.Sha256.Arm.Stream.Init
+public import VerifiedGarbage.Proof.Sha256.Arm.Stream.Md
+public import VerifiedGarbage.Proof.Sha256.Arm.Stream.Digest
+public import VerifiedGarbage.Spec.Sha256.Contract
+public import VerifiedGarbage.Proof.Sha256.Scratch
+public import VerifiedGarbage.Proof.Framework.Arm.StackScratch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Sha256 on Arm: the shared contracts
@@ -27,6 +33,8 @@ they are `updateScratch` and `finalizeScratch` (the shared contracts with
 the working space as an argument, which HMAC's and PBKDF2's code calls) run
 in a frame that allocates it (`Verified.stackScratch`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sha256.Arm.Shared
 

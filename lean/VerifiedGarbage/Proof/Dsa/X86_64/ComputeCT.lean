@@ -1,11 +1,26 @@
-import VerifiedGarbage.Proof.Dsa.X86_64.PublicKeyCT
-import VerifiedGarbage.Proof.Dsa.X86_64.PrivateKeyCT
-import VerifiedGarbage.Proof.Dsa.X86_64.CoreSignCT
-import VerifiedGarbage.Proof.Dsa.X86_64.CoreVerifyCT
-import VerifiedGarbage.Proof.Dsa.X86_64.SignCompute
-import VerifiedGarbage.Proof.Dsa.X86_64.VerifyCompute
+module
+
+public import VerifiedGarbage.Proof.Dsa.X86_64.PublicKeyCT
+meta import VerifiedGarbage.Proof.Dsa.X86_64.PublicKeyCT
+public import VerifiedGarbage.Proof.Dsa.X86_64.PrivateKeyCT
+meta import VerifiedGarbage.Proof.Dsa.X86_64.PrivateKeyCT
+public import VerifiedGarbage.Proof.Dsa.X86_64.CoreSignCT
+meta import VerifiedGarbage.Proof.Dsa.X86_64.CoreSignCT
+public import VerifiedGarbage.Proof.Dsa.X86_64.CoreVerifyCT
+meta import VerifiedGarbage.Proof.Dsa.X86_64.CoreVerifyCT
+public import VerifiedGarbage.Proof.Dsa.X86_64.SignCompute
+meta import VerifiedGarbage.Proof.Dsa.X86_64.SignCompute
+public import VerifiedGarbage.Proof.Dsa.X86_64.VerifyCompute
+meta import VerifiedGarbage.Proof.Dsa.X86_64.VerifyCompute
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # Constant time of validation and signing/verification together -/
+
+@[expose] public section
+
 namespace VG.Proof.Dsa.X86_64
 open VG VG.X86_64 VG.Impl.Bignum.X86_64
 open VG.Impl.Dsa.Layout VG.Impl.Dsa.X86_64

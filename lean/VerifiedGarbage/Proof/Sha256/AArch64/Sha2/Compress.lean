@@ -1,11 +1,25 @@
-import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-import VerifiedGarbage.Proof.Sha256.AArch64.Sha2.Spec
-import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
-import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import VerifiedGarbage.Proof.Sha256.AArch64.Sha2.Lit
-import VerifiedGarbage.Proof.Sha256.AArch64.Compress
+module
+
+public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+meta import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+public import VerifiedGarbage.Proof.Sha256.AArch64.Sha2.Spec
+meta import VerifiedGarbage.Proof.Sha256.AArch64.Sha2.Spec
+public import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
+meta import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
+public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+public import VerifiedGarbage.Proof.Sha256.AArch64.Sha2.Lit
+meta import VerifiedGarbage.Proof.Sha256.AArch64.Sha2.Lit
+public import VerifiedGarbage.Proof.Sha256.AArch64.Compress
+meta import VerifiedGarbage.Proof.Sha256.AArch64.Compress
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Correctness of SHA-256 compression with the AArch64 SHA-2 instructions. -/
+
+@[expose] public section
 
 namespace VG.Proof.Sha256.AArch64.Sha2
 

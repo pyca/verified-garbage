@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.RsaPss.X86_64.SignCtx
-import VerifiedGarbage.Proof.RsaPss.X86_64.SignMain
+module
+
+public import VerifiedGarbage.Proof.RsaPss.X86_64.SignCtx
+public import VerifiedGarbage.Proof.RsaPss.X86_64.SignMain
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSASSA-PSS signing on x86-64: the precondition by name, and the frame
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.RsaPss.X86_64.SignMain
 `SPre` names the facts of `signK.pre`; the frame is the `frameBytes` bytes
 below `rsp` (`fb`), within the stack the function uses (`stkR`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPss.X86_64
 

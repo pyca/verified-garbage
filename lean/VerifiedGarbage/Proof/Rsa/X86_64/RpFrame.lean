@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Rsa.X86_64.RpHalf
+module
+
+public import VerifiedGarbage.Proof.Rsa.X86_64.RpHalf
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_recover_primes` on x86-64: what the pieces change
@@ -8,6 +14,8 @@ working space. A piece changes only some of them (`Frm B (rg w js hs)`), and
 an array or a slot that is not listed keeps its value (`Frm.rg_wv`,
 `Frm.rg_word`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.X86_64
 

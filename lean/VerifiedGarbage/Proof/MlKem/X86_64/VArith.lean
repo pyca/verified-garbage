@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Framework.X86_64.Words
-import VerifiedGarbage.Proof.MlKem.Arith
-import VerifiedGarbage.Proof.Framework.Omega
+module
+
+public import VerifiedGarbage.Proof.Framework.X86_64.Words
+public import VerifiedGarbage.Proof.MlKem.Arith
+public import VerifiedGarbage.Proof.Framework.Omega
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86-64: arithmetic modulo `q` in 16-bit words
@@ -14,6 +20,8 @@ each word (`montW`, `caddW`, `csubW`), on the words' signed values
 * `caddW_spec`, `csubW_spec`: the value modulo `q`, in `[0, q)`, of a word in
   `(-q, q)` or `[0, 2q)`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.X86_64.W
 

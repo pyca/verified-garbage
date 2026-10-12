@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Bignum.Layout
+module
+
+public import VerifiedGarbage.Proof.Bignum.Layout
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSA private keys: ranges of the working space
@@ -9,6 +15,8 @@ and the header slots `hs`, as ranges of the working space. A piece changes
 only some of them (`Frm B (rg w js hs)`), and an array or a slot that is not
 listed keeps its value (`Frm.rg_wv`, `Frm.rg_word`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa
 

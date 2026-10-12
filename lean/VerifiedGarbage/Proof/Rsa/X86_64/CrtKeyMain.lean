@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Rsa.X86_64.KeyMain
-import VerifiedGarbage.Proof.Rsa.X86_64.CrtKeyPhases
-import VerifiedGarbage.Proof.Rsa.CrtKeyParts
+module
+
+public import VerifiedGarbage.Proof.Rsa.X86_64.KeyMain
+public import VerifiedGarbage.Proof.Rsa.X86_64.CrtKeyPhases
+public import VerifiedGarbage.Proof.Rsa.CrtKeyParts
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_check_crt_key` on x86-64: the checks
@@ -10,6 +16,8 @@ import VerifiedGarbage.Proof.Rsa.CrtKeyParts
 workspace (`setupK_ok`), then each check, and'ed into `sMask`; it returns
 `crtKeyValid` as 1 or 0 (`crtMain_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.X86_64.Key
 

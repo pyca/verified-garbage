@@ -1,3 +1,9 @@
+module
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
 /-!
 # Complete projective addition (Renes, Costello and Batina)
 
@@ -9,6 +15,8 @@ over any commutative ring of Lean's core (`Lean.Grind.CommRing`), so that
 the implementations' proofs compute it in `Fin p` without importing
 Mathlib's algebra, which only the proofs of the group law need.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass
 

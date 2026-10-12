@@ -1,4 +1,10 @@
-import Mathlib.Data.Nat.GCD.Basic
+module
+
+public import Mathlib.Data.Nat.GCD.Basic
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # A binary gcd in a fixed number of steps
@@ -9,6 +15,8 @@ zero, which stays zero; so from `u v < 2^n`, `n` steps end at
 `(0, gcd u v)` (`gcdIter_eq`). The implementations run the steps on words
 with masks, so that the number of steps does not depend on `u` or `v`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaKeyGen
 

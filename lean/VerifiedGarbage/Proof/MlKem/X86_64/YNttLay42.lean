@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.MlKem.X86_64.YNttLay
-import VerifiedGarbage.Proof.Framework.Omega
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86_64.YNttLay
+public import VerifiedGarbage.Proof.Framework.Omega
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86-64: the layers of the NTT and its inverse with `len` = 4 and 2 on AVX2 registers
@@ -11,6 +17,8 @@ butterflies and interleaving back (`Ntt.lean`) on the eight words from `j +
 of their blocks in lane `l` of `ymm13` (`yzetaS_ok`, `yzeta8_ok`); `ystep42`
 is an iteration for any such code, and `ylay4_ok` and `ylay2_ok` the layers.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.X86_64
 

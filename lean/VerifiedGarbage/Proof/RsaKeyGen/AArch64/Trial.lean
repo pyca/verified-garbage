@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.RsaKeyGen.AArch64.TrialEntry
-import VerifiedGarbage.Proof.RsaKeyGen.AArch64.TrialTable
+module
+
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.TrialEntry
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.TrialTable
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # A candidate on AArch64: trial division
@@ -9,6 +15,8 @@ for the four entries of each of its first `N` words (`N = 256` for `w > 16`,
 128 otherwise), or'ing the masks of the entries that divide `c` into `x1`:
 `x1` is not zero iff `trialAny N c` (`trial_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaKeyGen.AArch64
 

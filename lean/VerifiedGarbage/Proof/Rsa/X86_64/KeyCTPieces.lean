@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.Rsa.X86_64.KeyCTDefs
+module
+
+public import VerifiedGarbage.Proof.Rsa.X86_64.KeyCTDefs
+meta import VerifiedGarbage.Proof.Rsa.X86_64.KeyCTDefs
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_check_key` on x86-64: constant time of the pieces
@@ -8,6 +15,8 @@ loads by the taint analysis from `rdi`, the rest from the registers they
 pin (`hdr_ct`), and `KK` after it from its correctness lemma (`loadK`,
 `ltK`, …).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.X86_64.Key
 

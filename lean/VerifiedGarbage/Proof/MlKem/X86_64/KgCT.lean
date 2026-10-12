@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.MlKem.X86_64.KgB
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86_64.KgB
+meta import VerifiedGarbage.Proof.MlKem.X86_64.KgB
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86-64: key generation, constant time of the pieces
@@ -8,6 +15,8 @@ pointers, the stack pointer and `ρ`), each at the same step with its invariant
 (`Rel2`), are in the same layout (`kc_lrel`), and each piece leaks the same in
 both (`gRho_tr`, `samples_tr`, `se_tr`, `row_tr`, `encS_tr`, `fin_tr`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.X86_64
 

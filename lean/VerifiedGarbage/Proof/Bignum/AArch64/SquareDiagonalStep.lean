@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.Bignum.AArch64.SquareDiagonalCore
+module
+
+public import VerifiedGarbage.Proof.Bignum.AArch64.SquareDiagonalCore
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Execution and frame of one diagonal-square pair. -/
+
+@[expose] public section
+
 namespace VG.Proof.Bignum.AArch64.Square
 open VG VG.AArch64 VG.Impl.Bignum.AArch64 VG.Proof.Bignum
 open VG.Proof.Bignum.AArch64

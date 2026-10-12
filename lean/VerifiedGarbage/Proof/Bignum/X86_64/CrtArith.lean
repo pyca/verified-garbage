@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.Double
-import VerifiedGarbage.Impl.Rsa.X86_64.Crt
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.Double
+public import VerifiedGarbage.Impl.Rsa.X86_64.Crt
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Multiword arithmetic on x86-64: addition and subtraction modulo `m`
@@ -9,6 +15,8 @@ for `2 [o]`. `subModArr o a b`: `[o] := [a] - [b] mod m` (`subModArr_ok`):
 `subMod`'s loop into the accumulator, then `m` added under the mask of its
 borrow.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64
 

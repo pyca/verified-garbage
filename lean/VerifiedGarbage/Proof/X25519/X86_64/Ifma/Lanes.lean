@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Phase
+module
+
+public import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Phase
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X25519 on x86-64 with AVX512_IFMA: limbs as field elements
@@ -7,6 +13,8 @@ Five limbs stand for an element of `GF(p)` (`fe5`); the sums, differences
 (with the bias `2¹¹ p`), carries and products of the stages are the field's
 operations on them.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X25519.X86_64.Ifma
 

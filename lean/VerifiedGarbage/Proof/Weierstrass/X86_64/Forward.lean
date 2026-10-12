@@ -1,9 +1,18 @@
-import VerifiedGarbage.Impl.Weierstrass.X86_64.Forward
-import VerifiedGarbage.Proof.Framework.X86_64.Inline
-import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+module
+
+public import VerifiedGarbage.Impl.Weierstrass.X86_64.Forward
+public import VerifiedGarbage.Proof.Framework.X86_64.Inline
+public import VerifiedGarbage.Proof.Framework.X86_64.Exec
+public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Forwarding changes memory reads to register reads with identical state results. -/
+
+@[expose] public section
+
 namespace VG.Proof.Weierstrass.X86_64.Forward
 open VG VG.X86_64 VG.Impl.Weierstrass.X86_64.Forward
 

@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Poly1305.Arm.Blocks
-import VerifiedGarbage.Proof.Poly1305.Stream
-import VerifiedGarbage.Proof.Framework.PowLit
-import VerifiedGarbage.Proof.Framework.Omega
+module
+
+public import VerifiedGarbage.Proof.Poly1305.Arm.Blocks
+public import VerifiedGarbage.Proof.Poly1305.Stream
+public import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.Proof.Framework.Omega
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Poly1305 on 32-bit ARM: the steps of `update` and `finalize`
@@ -13,6 +19,8 @@ the accumulator (`storeAcc_ok`) keep track of them. The callee-saved registers
 are saved in and restored from `scratch` (`saveScr_ok`, `restoreScr_ok`), and
 bytes are copied into the buffer, bytes 56–71 of the state (`copy_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Poly1305.Arm
 

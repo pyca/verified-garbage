@@ -1,7 +1,16 @@
-import VerifiedGarbage.Proof.Dsa.X86_64.CallFinishCT
-import VerifiedGarbage.Proof.Dsa.X86_64.Call2
+module
+
+public import VerifiedGarbage.Proof.Dsa.X86_64.CallFinishCT
+public import VerifiedGarbage.Proof.Dsa.X86_64.Call2
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # Constant time of the complete parent-to-child reduction call -/
+
+@[expose] public section
+
 namespace VG.Proof.Dsa.X86_64
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public
 open VG.Impl.Dsa.Layout VG.Impl.Dsa.X86_64

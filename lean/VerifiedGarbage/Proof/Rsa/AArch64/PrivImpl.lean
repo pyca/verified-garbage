@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Rsa.AArch64.PrivCallees
+module
+
+public import VerifiedGarbage.Proof.Rsa.AArch64.PrivCallees
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The interface `RsaPrivateCrt` on AArch64
@@ -10,6 +16,8 @@ implementation of `vg_rsa_private_crt`, and the implementations of
 shared contract with no stack (none has a frame, so each runs in the stack
 its caller's call leaves).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.AArch64
 

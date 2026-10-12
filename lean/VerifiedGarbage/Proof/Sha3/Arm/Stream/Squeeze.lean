@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.Sha3.Arm.Permute
-import VerifiedGarbage.Proof.Sha3.Stream
-import VerifiedGarbage.Proof.Framework.Offset
+module
+
+public import VerifiedGarbage.Proof.Sha3.Arm.Permute
+meta import VerifiedGarbage.Proof.Sha3.Arm.Permute
+public import VerifiedGarbage.Proof.Sha3.Stream
+meta import VerifiedGarbage.Proof.Sha3.Stream
+public import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Offset
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The SHA-3 sponge on ARMv7: `squeeze`
@@ -9,6 +18,8 @@ The same structure as the AArch64 proof
 (`VG.Proof.Sha3.AArch64.Stream.Squeeze`), with the prologue and epilogue of
 `absorb` (`VG.Proof.Sha3.Arm.Stream.Absorb`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sha3.Arm.Stream.Squeeze
 

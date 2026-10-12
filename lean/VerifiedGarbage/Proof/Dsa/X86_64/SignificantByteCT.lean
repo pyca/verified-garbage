@@ -1,7 +1,18 @@
-import VerifiedGarbage.Proof.Dsa.X86_64.Significant
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
+module
+
+public import VerifiedGarbage.Proof.Dsa.X86_64.Significant
+meta import VerifiedGarbage.Proof.Dsa.X86_64.Significant
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # Timing of one public modulus-width scan byte -/
+
+@[expose] public section
+
 namespace VG.Proof.Dsa.X86_64
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Dsa.X86_64
 open VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.MlKem.X86_64

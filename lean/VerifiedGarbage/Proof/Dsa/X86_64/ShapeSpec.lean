@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.Dsa.X86_64.DomainShape
+module
+
+public import VerifiedGarbage.Proof.Dsa.X86_64.DomainShape
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # Public shape acceptance and early rejection in the DSA specification -/
+
+@[expose] public section
+
 namespace VG.Proof.Dsa.X86_64
 open VG
 

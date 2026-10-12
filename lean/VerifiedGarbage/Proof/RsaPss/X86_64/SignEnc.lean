@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.RsaPss.X86_64.Mgf
-import VerifiedGarbage.Proof.RsaPss.X86_64.Params
+module
+
+public import VerifiedGarbage.Proof.RsaPss.X86_64.Mgf
+public import VerifiedGarbage.Proof.RsaPss.X86_64.Params
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSASSA-PSS on x86-64: the blocks of the encoding
@@ -10,6 +16,8 @@ zeros (`copyDigest_ok`, `copySaltY_ok`), the length of `M'` and its blocks
 (`putSalt_ok`), `H` and `0xbc` (`putH_ok`) placed in it, and the top bits
 of `maskedDB` cleared (`clearTop_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPss.X86_64
 

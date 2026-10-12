@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyScan
+module
+
+public import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyScan
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSASSA-PSS verification on AArch64: the shift of `DB`
@@ -8,6 +14,8 @@ One pass of `shift` replaces each of the `dbLen` bytes of `DB`'s place in
 ten passes, with `a = pos + 1` halved and `d` doubled each time, shift it by
 `pos + 1` (`shift_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPss.AArch64
 

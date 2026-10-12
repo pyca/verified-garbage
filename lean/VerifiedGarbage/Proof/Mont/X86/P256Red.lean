@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.Mont.X86.SparseShift
+module
+
+public import VerifiedGarbage.Proof.Mont.X86.SparseShift
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # Sparse P-256 reduction on 32-bit x86 -/
+
+@[expose] public section
+
 namespace VG.Proof.Mont.X86
 open VG VG.X86 VG.X86.Wp VG.Impl.Mont.X86 VG.Impl.Mont VG.Proof.Mont
 

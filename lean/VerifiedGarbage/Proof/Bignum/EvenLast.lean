@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Bignum.Words
+module
+
+public import VerifiedGarbage.Proof.Bignum.Words
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # An odd exponent less one, byte by byte
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.Bignum.Words
 `e`, reading the bytes of `e` with bit 0 of the last one cleared
 (`evenLast`), then multiplies by the input once more.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum
 

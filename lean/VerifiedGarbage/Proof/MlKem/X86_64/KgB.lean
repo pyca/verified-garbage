@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlKem.X86_64.KgA
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86_64.KgA
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86-64: key generation, the keys
@@ -8,6 +14,8 @@ encoded to `ek` (`row_ok`), `ŝ` encoded to `dk` (`encS_ok`), and `ρ`, `ek`,
 `H(ek)` and `z` to the keys (`fin_ok`). Between the steps, `KRest n r e`: the
 first `n` of `ŝ ‖ ê`, `r` rows of `ek` and `e` of `dk` are done.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.X86_64
 

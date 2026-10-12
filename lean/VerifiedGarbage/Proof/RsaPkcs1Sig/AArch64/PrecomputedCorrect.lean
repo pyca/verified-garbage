@@ -1,6 +1,12 @@
-import VerifiedGarbage.Spec.RsaPkcs1Sig.Precomputed
-import VerifiedGarbage.Impl.RsaPkcs1Sig.AArch64.Precomputed
-import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.VerifyCorrect
+module
+
+public import VerifiedGarbage.Spec.RsaPkcs1Sig.Precomputed
+public import VerifiedGarbage.Impl.RsaPkcs1Sig.AArch64.Precomputed
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.VerifyCorrect
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_pkcs1_verify_precomputed` on AArch64: correctness
@@ -12,6 +18,8 @@ padding check (`padCheck_ok`) it shares: the call's arguments are
 `EM₁` if `pre` holds the modulus' values (`AfterCallP`); the status is kept
 in the frame, and masks the padding check's result.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPkcs1Sig.AArch64.Pc
 

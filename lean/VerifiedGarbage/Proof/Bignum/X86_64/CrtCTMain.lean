@@ -1,7 +1,17 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtMain
-import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
-import VerifiedGarbage.Proof.Bignum.X86_64.R2wCT
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtMain
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtMain
+public import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
+public import VerifiedGarbage.Proof.Bignum.X86_64.R2wCT
+meta import VerifiedGarbage.Proof.Bignum.X86_64.R2wCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSA with the CRT on x86-64: `main` in constant time
@@ -12,6 +22,8 @@ its parts (`crtMain_ct`). Its states between the parts are those of a run
 from a state `CrtPre` describes (`Stage`), where the correctness lemmas of
 the parts (`nPart_ok`, `setupPart_ok`, …) give what each part's claim needs.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64
 

@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.Bignum.AArch64.PdCode
-import VerifiedGarbage.Proof.Bignum.AArch64.CTR2
+module
+
+public import VerifiedGarbage.Proof.Bignum.AArch64.PdCode
+meta import VerifiedGarbage.Proof.Bignum.AArch64.PdCode
+public import VerifiedGarbage.Proof.Bignum.AArch64.CTR2
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CTR2
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_public_precomputed` on AArch64: the exponentiation is constant time but for `e`
@@ -8,6 +16,8 @@ The exponentiation branches on the bits of `e` and on whether it has
 started, which is whether the prefix of `e` so far is nonzero: the runs agree
 on both because they agree on `e` (`pExpBit_ct`, `pExpLoop_ct`, `finish_ct`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.AArch64
 

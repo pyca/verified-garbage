@@ -1,8 +1,20 @@
-import VerifiedGarbage.Proof.X25519.X86_64.Base.Main
-import VerifiedGarbage.Proof.X25519.X86_64.Base.Lit
-import VerifiedGarbage.Proof.Framework.X86_64.Syms
+module
+
+public import VerifiedGarbage.Proof.X25519.X86_64.Base.Main
+meta import VerifiedGarbage.Proof.X25519.X86_64.Base.Main
+public import VerifiedGarbage.Proof.X25519.X86_64.Base.Lit
+meta import VerifiedGarbage.Proof.X25519.X86_64.Base.Lit
+public import VerifiedGarbage.Proof.Framework.X86_64.Syms
+meta import VerifiedGarbage.Proof.Framework.X86_64.Syms
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Public pointers survive the secret fixed-base arithmetic. -/
+
+@[expose] public section
+
 namespace VG.Proof.X25519.X86_64.Base
 open VG VG.X86_64 VG.Impl.Ed25519.X86_64 VG.Impl.X25519.X86_64.Base
 open VG.Proof.Ed25519.X86_64

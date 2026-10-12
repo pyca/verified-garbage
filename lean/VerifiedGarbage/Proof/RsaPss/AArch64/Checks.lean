@@ -1,5 +1,13 @@
-import VerifiedGarbage.Impl.RsaPss.AArch64
-import VerifiedGarbage.Proof.Framework.AArch64.Taint
+module
+
+public import VerifiedGarbage.Impl.RsaPss.AArch64
+meta import VerifiedGarbage.Impl.RsaPss.AArch64
+public import VerifiedGarbage.Proof.Framework.AArch64.Taint
+meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSASSA-PSS on AArch64: the taint checks of each hash function
@@ -11,6 +19,8 @@ analysis once for each hash function (`by taint_decide`, in its file under
 of its streaming code and its digest size `D`. The code of a hash function
 `H` is that of `ckH H.P H.D`, by definition.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPss.AArch64
 

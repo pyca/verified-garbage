@@ -1,6 +1,12 @@
-import VerifiedGarbage.Impl.Rc2.AArch64.CbcVec
-import VerifiedGarbage.Proof.Framework.AArch64.Tbl
-import VerifiedGarbage.Proof.Framework.AArch64.Simd
+module
+
+public import VerifiedGarbage.Impl.Rc2.AArch64.CbcVec
+public import VerifiedGarbage.Proof.Framework.AArch64.Tbl
+public import VerifiedGarbage.Proof.Framework.AArch64.Simd
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RC2 words in 32-bit lanes
@@ -12,6 +18,8 @@ ones and subtraction act on each lane's low 16 bits alone, and masking,
 shifting right by `s` and inserting the word shifted left by `16 - s`
 rotates it right by `s` (`ror_lane`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rc2.AArch64.Vec
 

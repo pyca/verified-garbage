@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Pbkdf2CT
-import VerifiedGarbage.Proof.Pbkdf2.AArch64.IterateCT
-import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.HmacFinInner
-import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.HmacFin
-import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.HmacInit
+module
+
+public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Pbkdf2CT
+public import VerifiedGarbage.Proof.Pbkdf2.AArch64.IterateCT
+public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.HmacFinInner
+public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.HmacFin
+public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.HmacInit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # HMAC and PBKDF2-HMAC over any Merkle–Damgård hash function on AArch64: the functions, verified
@@ -20,6 +26,8 @@ contracts of `Spec/Hmac/Generic.lean` and `Spec/Pbkdf2/Generic.lean`.
 There is no stack pointer to check (`writesSp` is always `false` on AArch64),
 so the artifacts' `spSafe` is `Code.all_of_forall`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Pbkdf2.Md.AArch64
 

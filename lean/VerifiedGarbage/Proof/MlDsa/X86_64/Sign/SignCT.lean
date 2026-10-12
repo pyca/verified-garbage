@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseOCT
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseACT
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseOCT
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseOCT
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseACT
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseACT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA signing on x86-64: constant time
@@ -9,6 +17,8 @@ them) leak the same: the prologue and the return only the pointers, `ExpandA`
 only `ρ` (`expandA_tr`), and the rest what `signLeakT` says after `ρ`, on
 which they agree once `ExpandA` finished (`pub_leq`, `rest_tr`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86_64.Sign
 

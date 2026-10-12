@@ -1,9 +1,17 @@
-import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-import VerifiedGarbage.Proof.Framework.AArch64.Spill
-import VerifiedGarbage.Proof.Rc2.AArch64.Cbc.Contract
-import VerifiedGarbage.Proof.Rc2.AArch64.Cbc.Phase
+module
+
+public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+public import VerifiedGarbage.Proof.Framework.AArch64.Spill
+public import VerifiedGarbage.Proof.Rc2.AArch64.Cbc.Contract
+public import VerifiedGarbage.Proof.Rc2.AArch64.Cbc.Phase
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # Verified RC2-CBC encryption and decryption -/
+
+@[expose] public section
 
 namespace VG.Proof.Rc2.AArch64.Cbc
 

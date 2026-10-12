@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Framework.PowLit
-import Mathlib.AlgebraicGeometry.EllipticCurve.Affine.Formula
-import Mathlib.Tactic.LinearCombination
-import VerifiedGarbage.Proof.Weierstrass.RcbIdent
+module
+
+public import VerifiedGarbage.Proof.Framework.PowLit
+public import Mathlib.AlgebraicGeometry.EllipticCurve.Affine.Formula
+public import Mathlib.Tactic.LinearCombination
+public import VerifiedGarbage.Proof.Weierstrass.RcbIdent
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The affine group law and the complete formulas over a field
@@ -15,6 +21,8 @@ for `x₁ ≠ x₂`, of the tangent's for `P = Q`, and `(0 : Y₃ : 0)` with
 `Y₃ ≠ 0` for `Q = -P`. The slopes are any `l` with `l (x₂ - x₁) = y₂ - y₁`
 (or `l · 2y = 3x² + a`), so that callers can give them as quotients.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass
 

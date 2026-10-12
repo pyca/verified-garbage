@@ -1,11 +1,25 @@
-import VerifiedGarbage.Proof.MdStream.X86_64.UpdateCT
-import VerifiedGarbage.Proof.MdStream.X86_64.FinalizeCT
-import VerifiedGarbage.Proof.MdStream.X86_64.Words
-import VerifiedGarbage.Proof.Sha1.Md
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Sha1.X86_64.Compress
-import VerifiedGarbage.Proof.Sha1.X86_64.ShaNi.Compress
-import VerifiedGarbage.Impl.Sha1.X86_64.Stream
+module
+
+public import VerifiedGarbage.Proof.MdStream.X86_64.UpdateCT
+meta import VerifiedGarbage.Proof.MdStream.X86_64.UpdateCT
+public import VerifiedGarbage.Proof.MdStream.X86_64.FinalizeCT
+meta import VerifiedGarbage.Proof.MdStream.X86_64.FinalizeCT
+public import VerifiedGarbage.Proof.MdStream.X86_64.Words
+meta import VerifiedGarbage.Proof.MdStream.X86_64.Words
+public import VerifiedGarbage.Proof.Sha1.Md
+meta import VerifiedGarbage.Proof.Sha1.Md
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Sha1.X86_64.Compress
+meta import VerifiedGarbage.Proof.Sha1.X86_64.Compress
+public import VerifiedGarbage.Proof.Sha1.X86_64.ShaNi.Compress
+meta import VerifiedGarbage.Proof.Sha1.X86_64.ShaNi.Compress
+public import VerifiedGarbage.Impl.Sha1.X86_64.Stream
+meta import VerifiedGarbage.Impl.Sha1.X86_64.Stream
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Streaming SHA-1 on x86-64: `update` and `finalize`
@@ -18,6 +32,8 @@ any implementation `f` of the compression function (`CalleeOk`: `scalar_ok`,
 (`shape`) and that the taint analysis accepts its code between the calls
 (`taints`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sha1.X86_64.Stream
 

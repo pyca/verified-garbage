@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Weierstrass.Jac
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.Jac
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Mixed Jacobian addition
@@ -12,6 +18,8 @@ proportional to Algorithm 5's sum of the projective triples (`maddJF_cross`),
 which is a representative by `Law.add3m`; when the points have the same `x`
 and are not equal, `Z₃ = 0` and their sum is `O` (`InvJ.madd`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass
 

@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Call
-import VerifiedGarbage.Proof.MlKem.X86_64.KCall
-import VerifiedGarbage.Proof.Framework.X86_64.Abi
-import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Call
+public import VerifiedGarbage.Proof.MlKem.X86_64.KCall
+public import VerifiedGarbage.Proof.Framework.X86_64.Abi
+public import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA verification on x86-64: entry to a callee
@@ -14,6 +20,8 @@ constant time under their contracts with 16 bytes of stack (24 for
 `vg_mldsa_rej_ntt_poly4`), not writing the stack pointer, calling at most
 three deep, and never loading MXCSR.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86_64.Verify
 

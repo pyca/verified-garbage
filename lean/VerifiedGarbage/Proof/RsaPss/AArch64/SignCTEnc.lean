@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.RsaPss.AArch64.SignCTBase
-import VerifiedGarbage.Proof.RsaPss.AArch64.RelSplit
+module
+
+public import VerifiedGarbage.Proof.RsaPss.AArch64.SignCTBase
+meta import VerifiedGarbage.Proof.RsaPss.AArch64.SignCTBase
+public import VerifiedGarbage.Proof.RsaPss.AArch64.RelSplit
+meta import VerifiedGarbage.Proof.RsaPss.AArch64.RelSplit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSASSA-PSS signing on AArch64: the encoding is constant time
@@ -11,6 +19,8 @@ the pieces are checked by the taint analysis from those registers, the loads
 of the salt's address and length from the frame are related by correctness
 (`RelCT.seq_block_append`), the hash by `ctHash_ct` and MGF1 by `mgfXor_ct`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPss.AArch64.Sgn
 

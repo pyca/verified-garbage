@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.VArith
-import VerifiedGarbage.Proof.MlKem.X86_64.VLanes
-import VerifiedGarbage.Impl.MlDsa.X86_64.Arith.Ntt
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.VArith
+public import VerifiedGarbage.Proof.MlKem.X86_64.VLanes
+public import VerifiedGarbage.Impl.MlDsa.X86_64.Arith.Ntt
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on x86-64: coefficients in the doublewords of SSE registers
@@ -11,6 +17,8 @@ A register holds four coefficients (`DLanes`), and the butterflies `vbfly` and
 zetas in Montgomery form in `xmm13` (`ZLanes`) and its odd doublewords in the
 even ones of `xmm12` (`ZOdd`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86_64.Arith
 

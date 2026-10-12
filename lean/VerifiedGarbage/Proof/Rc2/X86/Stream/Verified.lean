@@ -1,16 +1,37 @@
-import VerifiedGarbage.Proof.Rc2.X86.Stream.InitCorrect
-import VerifiedGarbage.Proof.Rc2.X86.Key
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.Rc2.X86.Stream.Contract
-import VerifiedGarbage.Proof.Framework.SigEval
-import VerifiedGarbage.Proof.Framework.X86.Taint
-import VerifiedGarbage.Proof.Rc2.X86.Cbc.ConstantTime
-import VerifiedGarbage.Proof.Framework.X86.RelCT
-import VerifiedGarbage.Proof.Rc2.X86.Cbc.Correct
-import VerifiedGarbage.Proof.Rc2.X86.Cbc.Lit
-import VerifiedGarbage.Proof.Framework.X86.CallWith
-import VerifiedGarbage.Proof.Rc2.X86.Stream.UpdateLong
-import VerifiedGarbage.Proof.Rc2.Scratch
+module
+
+public import VerifiedGarbage.Proof.Rc2.X86.Stream.InitCorrect
+meta import VerifiedGarbage.Proof.Rc2.X86.Stream.InitCorrect
+public import VerifiedGarbage.Proof.Rc2.X86.Key
+meta import VerifiedGarbage.Proof.Rc2.X86.Key
+public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+public import VerifiedGarbage.Proof.Rc2.X86.Stream.Contract
+meta import VerifiedGarbage.Proof.Rc2.X86.Stream.Contract
+public import VerifiedGarbage.Proof.Framework.SigEval
+meta import VerifiedGarbage.Proof.Framework.SigEval
+public import VerifiedGarbage.Proof.Framework.X86.Taint
+meta import VerifiedGarbage.Proof.Framework.X86.Taint
+public import VerifiedGarbage.Proof.Rc2.X86.Cbc.ConstantTime
+meta import VerifiedGarbage.Proof.Rc2.X86.Cbc.ConstantTime
+public import VerifiedGarbage.Proof.Framework.X86.RelCT
+meta import VerifiedGarbage.Proof.Framework.X86.RelCT
+public import VerifiedGarbage.Proof.Rc2.X86.Cbc.Correct
+meta import VerifiedGarbage.Proof.Rc2.X86.Cbc.Correct
+public import VerifiedGarbage.Proof.Rc2.X86.Cbc.Lit
+meta import VerifiedGarbage.Proof.Rc2.X86.Cbc.Lit
+public import VerifiedGarbage.Proof.Framework.X86.CallWith
+meta import VerifiedGarbage.Proof.Framework.X86.CallWith
+public import VerifiedGarbage.Proof.Rc2.X86.Stream.UpdateLong
+meta import VerifiedGarbage.Proof.Rc2.X86.Stream.UpdateLong
+public import VerifiedGarbage.Proof.Rc2.Scratch
+meta import VerifiedGarbage.Proof.Rc2.Scratch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 section
 

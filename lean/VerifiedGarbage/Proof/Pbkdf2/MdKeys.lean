@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Pbkdf2.MdStep
-import VerifiedGarbage.Proof.Hmac.Generic.Common
-import VerifiedGarbage.Proof.Pbkdf2.Memory
-import VerifiedGarbage.Proof.Framework.Bswap
+module
+
+public import VerifiedGarbage.Proof.Pbkdf2.MdStep
+public import VerifiedGarbage.Proof.Hmac.Generic.Common
+public import VerifiedGarbage.Proof.Pbkdf2.Memory
+public import VerifiedGarbage.Proof.Framework.Bswap
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # HMAC's `init` over a Merkle–Damgård hash function: the padded keys
@@ -27,6 +33,8 @@ memory alone, shared by every target:
   its buffer, represents that block (`Md.repr_block`), for any hash function
   the streaming proofs describe (`Md`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Pbkdf2.MdKeys
 

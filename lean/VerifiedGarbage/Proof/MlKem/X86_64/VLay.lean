@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.MlKem.X86_64.VMem
-import VerifiedGarbage.Proof.MlKem.X86_64.Contracts
-import VerifiedGarbage.Proof.Framework.AddrArith
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86_64.VMem
+public import VerifiedGarbage.Proof.MlKem.X86_64.Contracts
+public import VerifiedGarbage.Proof.Framework.AddrArith
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86-64: the layers of the NTT and its inverse with `len ≥ 8`
@@ -11,6 +17,8 @@ registers (`VBflyOk`), and any block of the specification whose butterflies do
 of a block (`vblock_ok`), and the `128 / len` blocks of a layer (`vlay_ok`),
 from the words of the polynomial at `Sp`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.X86_64
 

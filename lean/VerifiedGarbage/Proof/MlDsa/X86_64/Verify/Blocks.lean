@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
-import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.HashCT
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.HashCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA verification on x86-64: the blocks between the calls
@@ -8,6 +14,8 @@ A byte store (`setB_ok`), a copy (`copy_ok`), the mask of a sampler's output
 by its result (`mask_ok`: unchanged if 1, zero if 0), and the updates of the
 result in `r15` (`and15_ok`, `mov15_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86_64.Verify
 

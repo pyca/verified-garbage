@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Bignum.AArch64.Copy
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtFrame
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtArith
-import VerifiedGarbage.Proof.Bignum.AArch64.PubOut
+module
+
+public import VerifiedGarbage.Proof.Bignum.AArch64.Copy
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtFrame
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtArith
+public import VerifiedGarbage.Proof.Bignum.AArch64.PubOut
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_private_crt` on AArch64: small pieces of the checks
@@ -12,6 +18,8 @@ import VerifiedGarbage.Proof.Bignum.AArch64.PubOut
 (`eqCheck_ok`), and `qinvCheck`, in `p`'s workspace, that of `qInv < p`
 (`qinvCheck_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.AArch64
 

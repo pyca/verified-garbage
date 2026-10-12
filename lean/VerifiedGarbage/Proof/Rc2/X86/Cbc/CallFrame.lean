@@ -1,6 +1,14 @@
-import VerifiedGarbage.Proof.Framework.X86.CallWith
+module
+
+public import VerifiedGarbage.Proof.Framework.X86.CallWith
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! A framed call also exposes unchanged non-result registers of its witness. -/
+
+@[expose] public section
 
 namespace VG.Proof.Rc2.X86.Cbc
 

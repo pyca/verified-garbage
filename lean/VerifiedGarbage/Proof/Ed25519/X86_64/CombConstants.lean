@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Ed25519.WindowConstants
-import VerifiedGarbage.Proof.Ed25519.X86_64.CombSelect
+module
+
+public import VerifiedGarbage.Proof.Ed25519.WindowConstants
+public import VerifiedGarbage.Proof.Ed25519.X86_64.CombSelect
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The comb's tables represent `[k 1024^j]B`, `combG` represents `[G]B`, and `combStart` `[G']B`
@@ -13,6 +19,8 @@ specification's addition, compared projectively; the first entry of table `j +
 start with `[W b]B` (`combStart_32`), `W b = 33 G + 32^51 (b - 16)`: the start is
 `W b / 32` modulo the group's order.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed25519.X86_64
 

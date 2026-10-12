@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Ctx
-import VerifiedGarbage.Proof.Rsa.AArch64.CvFail
+module
+
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Ctx
+public import VerifiedGarbage.Proof.Rsa.AArch64.CvFail
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # An RSA key from its primes on AArch64: the outputs
@@ -8,6 +14,8 @@ The arrays, masked by `kOk`, to their outputs (`stores_ok`, for any list of
 stores to outputs apart from each other), `kOk`'s low bit returned
 (`keyExit_ok`), and zeros to the outputs (`zeros_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaKeyGen.AArch64.Key
 

@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.MlDsa.X86_64.Message.Entry
-import VerifiedGarbage.Proof.MlKem.X86_64.Rel
-import VerifiedGarbage.Proof.Framework.X86_64.Taint
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Message.Entry
+public import VerifiedGarbage.Proof.MlKem.X86_64.Rel
+public import VerifiedGarbage.Proof.Framework.X86_64.Taint
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on x86-64, `sign_message` and `verify_message`: relating two runs
@@ -13,6 +19,8 @@ Blocks whose addresses are `rsp` plus offsets leak the same in both runs
 call whose callee's public data agree in both runs (`call_tr`); and what
 each run satisfies by correctness carries over (`two_wp`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86_64.Message
 

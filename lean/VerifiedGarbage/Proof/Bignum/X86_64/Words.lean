@@ -1,7 +1,13 @@
-import VerifiedGarbage.Impl.Bignum.X86_64
-import VerifiedGarbage.Proof.MlKem.X86_64.Wp
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Bignum.Octets
+module
+
+public import VerifiedGarbage.Impl.Bignum.X86_64
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Bignum.Octets
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Multiword arithmetic on x86-64: words in the working space
@@ -12,6 +18,8 @@ wrapping around. A number of `n` words at byte offset `d` of it is
 as `[b + 8 i + disp]` with a base `b = base + e` and an index `i` in
 registers (`ea_ix`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64
 

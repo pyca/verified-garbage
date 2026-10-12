@@ -1,4 +1,10 @@
-import VerifiedGarbage.Spec.RsaPkcs1Enc
+module
+
+public import VerifiedGarbage.Spec.RsaPkcs1Enc
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-PKCS1-v1_5 decryption with implicit rejection: what it returns
@@ -21,6 +27,8 @@ For any private-key operation `rsadp` (`decryptWith`):
 `Proof/RsaPkcs1Enc/Checked.lean` has the same for `decrypt`, with RSADP
 checked against `e` (`Rsa.privateChecked`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPkcs1Enc
 
