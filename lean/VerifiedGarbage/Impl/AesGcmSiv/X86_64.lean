@@ -384,13 +384,60 @@ def keys : Prog isa :=
   .seq (derive c) (.seq (expand c) (.block hkey))
 
 /-- POLYVAL of the additional data, the data and the lengths, and the tag
-input. -/
-def polyval (wide : Bool) : Prog isa :=
+input, absorbing up to 64 blocks per call of `vg_ghash`. -/
+def polyvalLong (wide : Bool) : Prog isa :=
   .seq (.block [.mov .r12 (.mem (at_ .r15 aadO)), .mov .rbp (.mem (at_ .r15 alenO))])
   (.seq (absorb c wide)
   (.seq (.block [.mov .r12 (.mem (at_ .r15 dataO)), .mov .rbp (.mem (at_ .r15 lenO))])
   (.seq (absorb c wide)
   (.seq (lens c) (.block tagIn)))))
+
+/-- The last `rbp` (1 to 15) bytes at `rsi`, padded with zeros, reversed at
+`rdi`; `rdi` past them. -/
+def stageTail : Prog isa :=
+  .seq (.block (([.mov .rbx (.reg .rdi)] : List Instr) ++ zero16 bO ++ ptr .rdi .r15 bO ++
+      ([.mov .rcx (.reg .rbp)] : List Instr)))
+  (.seq copyLoop
+    (.block [.mov .rax (.mem (at_ .r15 bO)), .mov .rdx (.mem (at_ .r15 (bO + 8))), .bswap .rax, .bswap .rdx,
+      .store (at_ .rbx 0) .rdx, .store (at_ .rbx 8) .rax, .mov .rdi (.reg .rbx), .alu .add .rdi (imm 16)]))
+
+/-- The `rbp` bytes at `r12`, padded with zeros to whole blocks, reversed at
+`rdi`; `rdi` past them. -/
+def stage (wide : Bool) : Prog isa :=
+  .seq (.block [.mov .rbx (.reg .rbp), .shift .shr .rbx 4, .alu .and .rbp (imm 15), .mov .rsi (.reg .r12),
+      .alu .test .rbx (.reg .rbx)])
+  (.seq (.ite .e (.block []) (.seq (.block [.mov .r14 (.reg .rbx)]) (revSel wide)))
+  (.seq (.block [.alu .test .rbp (.reg .rbp)])
+    (.ite .e (.block []) stageTail)))
+
+/-- The lengths block at `rdi`, in GHASH's order, and `vg_ghash`'s arguments
+for the blocks from `W + revO` to it. -/
+def lensAt : List Instr :=
+  [.mov .rax (.mem (at_ .r15 lenO)), .alu .add .rax (.reg .rax), .alu .add .rax (.reg .rax),
+    .alu .add .rax (.reg .rax), .bswap .rax, .store (at_ .rdi 0) .rax,
+    .mov .rax (.mem (at_ .r15 alenO)), .alu .add .rax (.reg .rax), .alu .add .rax (.reg .rax),
+    .alu .add .rax (.reg .rax), .bswap .rax, .store (at_ .rdi 8) .rax,
+    .mov .rcx (.reg .rdi), .alu .sub .rcx (.reg .r15), .shift .shr .rcx 4, .alu .sub .rcx (imm (revO / 16 - 1))] ++
+  ghArgs ++ ptr .rdx .r15 revO
+
+/-- POLYVAL with one call of `vg_ghash`: the padded additional data, the
+padded data and the lengths block, all reversed from `W + revO` first. -/
+def polyvalOne (wide : Bool) : Prog isa :=
+  .seq (.block (ptr .rdi .r15 revO ++ ([.mov .r12 (.mem (at_ .r15 aadO)), .mov .rbp (.mem (at_ .r15 alenO))] :
+      List Instr)))
+  (.seq (stage wide)
+  (.seq (.block [.mov .r12 (.mem (at_ .r15 dataO)), .mov .rbp (.mem (at_ .r15 lenO))])
+  (.seq (stage wide)
+  (.seq (.block lensAt)
+  (.seq (callGh c) (.block tagIn))))))
+
+/-- POLYVAL of the additional data, the data and the lengths, and the tag
+input: with one call of `vg_ghash` if their blocks fit the 64 at `W + revO`
+(the whole blocks number at most 61), else `polyvalLong`. -/
+def polyval (wide : Bool) : Prog isa :=
+  .seq (.block [.mov .rax (.mem (at_ .r15 alenO)), .shift .shr .rax 4, .mov .rdx (.mem (at_ .r15 lenO)),
+      .shift .shr .rdx 4, .alu .add .rax (.reg .rdx), .alu .cmp .rax (imm 62)])
+    (.ite .ae (polyvalLong c wide) (polyvalOne c wide))
 
 /-- `vg_aes_gcm_siv_seal`. -/
 def «seal» (wide : Bool) : Prog isa :=

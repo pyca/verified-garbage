@@ -655,12 +655,12 @@ theorem absorb_bufs (v : GcmImpl) (wide : Bool) {K W SP : Addr} (L : Lay K W SP)
     WP isa (absorb v.callees wide) t (Bufs K W SP R N A D al n) :=
   WP.mono (absorb_ok v wide L h.1.one.env h.1.buf h.1.r12 h.1.rbp) fun _ P => h.2.of_eq P.env P.frame L P.rd P.wr
 
-/-- `polyval`, in two runs with the same public arguments. -/
-theorem polyval_rel (v : GcmImpl) (wide : Bool) {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A D : Addr} {al n : Nat}
+/-- `polyvalLong`, in two runs with the same public arguments. -/
+theorem polyvalLong_rel (v : GcmImpl) (wide : Bool) {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A D : Addr} {al n : Nat}
     (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 3816⟩) (hn : n ≤ 2 ^ 64) (hal : al < 2 ^ 64) (hn' : n < 2 ^ 64)
     {P : State → State → Prop}
     (hP : ∀ t₁ t₂, P t₁ t₂ → Bufs K W SP R N A D al n t₁ ∧ Bufs K W SP R N A D al n t₂) :
-    RelCT isa P (polyval v.callees wide) fun _ _ => True := by
+    RelCT isa P (polyvalLong v.callees wide) fun _ _ => True := by
   have r₁ := (rel_taintC [] hDW hn (fun t₁ t₂ h => ⟨(hP _ _ h).1.one, (hP _ _ h).2.one, fun _ h => nomatch h⟩)
     polyA_check).wp
     (F₁ := fun (t : State) => AbsIn K W SP R N A D al n A al t ∧ Bufs K W SP R N A D al n t)
@@ -699,5 +699,218 @@ theorem polyval_rel (v : GcmImpl) (wide : Bool) {K W SP : Addr} (L : Lay K W SP)
   have r₆ := rel_taintC [] (P := fun t₁ t₂ => True ∧ Bufs K W SP R N A D al n t₁ ∧ Bufs K W SP R N A D al n t₂)
     hDW hn (fun t₁ t₂ h => ⟨h.2.1.one, h.2.2.one, fun _ h => nomatch h⟩) tagIn_check
   exact RelCT.seq r₁ (RelCT.seq r₂ (RelCT.seq r₃ (RelCT.seq r₄ (RelCT.seq r₅ r₆))))
+
+/-! ## POLYVAL in one call -/
+
+/-- A run before staging `nb` bytes at `Q` from block `k` of `W + 488`. -/
+structure SIn (K W SP : Addr) (R : Nat) (N A D : Addr) (al n : Nat) (Q : Addr) (nb k : Nat) (t : State) : Prop where
+  bufs : Bufs K W SP R N A D al n t
+  buf : Buf K W SP t Q nb
+  r12 : t.gpr .r12 = Q
+  rbp : t.gpr .rbp = BitVec.ofNat 64 nb
+  rdi : t.gpr .rdi = W + BitVec.ofNat 64 (488 + 16 * k)
+
+/-- A run having staged blocks up to block `k`. -/
+def SAt (K W SP : Addr) (R : Nat) (N A D : Addr) (al n : Nat) (k : Nat) (t : State) : Prop :=
+  Bufs K W SP R N A D al n t ∧ t.gpr .rdi = W + BitVec.ofNat 64 (488 + 16 * k)
+
+theorem stage_check (wide : Bool) : ∃ hc, (taint.check (sivT [.r12, .rbp, .rdi]) (stage wide) hc).isSome = true := by
+  cases wide
+  · exact ⟨_, by taint_decide⟩
+  · exact ⟨_, by taint_decide⟩
+
+theorem polyOneA_check : ∃ hc, (taint.check (sivT []) (.block (ptr .rdi .r15 revO ++
+    ([.mov .r12 (.mem (at_ .r15 aadO)), .mov .rbp (.mem (at_ .r15 alenO))] : List Instr))) hc).isSome = true :=
+  ⟨_, by taint_decide⟩
+
+theorem lensAt_check : ∃ hc, (taint.check (sivT [.rdi]) (.block lensAt) hc).isSome = true := ⟨_, by taint_decide⟩
+
+theorem polyCond_check : ∃ hc, (taint.check (sivT []) (.block [.mov .rax (.mem (at_ .r15 alenO)), .shift .shr .rax 4,
+    .mov .rdx (.mem (at_ .r15 lenO)), .shift .shr .rdx 4, .alu .add .rax (.reg .rdx), .alu .cmp .rax (imm 62)])
+    hc).isSome = true := ⟨_, by taint_decide⟩
+
+theorem stage_wp (wide : Bool) {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A D : Addr} {al n : Nat} {Q : Addr}
+    {nb k : Nat} (hk : k + nb / 16 < 64) {t : State} (h : SIn K W SP R N A D al n Q nb k t) :
+    WP isa (stage wide) t (SAt K W SP R N A D al n (k + (nb + 15) / 16)) :=
+  WP.mono (stage_ok wide L h.bufs.one.env h.buf h.r12 h.rbp hk h.rdi) fun _ P =>
+    ⟨h.bufs.of_eq P.env (Frame.stR_absR (by have := P.le; omega) P.frame) L P.rd P.wr,
+      by rw [P.rdi, elems_pad16_length_eq]⟩
+
+/-- `stage`, in two runs with the same public arguments. -/
+theorem stage_rel (wide : Bool) {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A D : Addr} {al n : Nat}
+    (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 3816⟩) (hn : n ≤ 2 ^ 64) {Q : Addr} {nb k : Nat} (hk : k + nb / 16 < 64)
+    {P : State → State → Prop}
+    (hP : ∀ t₁ t₂, P t₁ t₂ → SIn K W SP R N A D al n Q nb k t₁ ∧ SIn K W SP R N A D al n Q nb k t₂) :
+    RelCT isa P (stage wide) fun t₁ t₂ => True ∧ SAt K W SP R N A D al n (k + (nb + 15) / 16) t₁ ∧
+      SAt K W SP R N A D al n (k + (nb + 15) / 16) t₂ :=
+  (rel_taintC [.r12, .rbp, .rdi] hDW hn (fun t₁ t₂ h => ⟨(hP _ _ h).1.bufs.one, (hP _ _ h).2.bufs.one, fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl
+      · rw [(hP _ _ h).1.r12, (hP _ _ h).2.r12]
+      · rw [(hP _ _ h).1.rbp, (hP _ _ h).2.rbp]
+      · rw [(hP _ _ h).1.rdi, (hP _ _ h).2.rdi]⟩) (stage_check wide)).wp
+    (F₁ := SAt K W SP R N A D al n (k + (nb + 15) / 16)) (F₂ := SAt K W SP R N A D al n (k + (nb + 15) / 16))
+    fun t₁ t₂ h => ⟨stage_wp wide L hk (hP _ _ h).1, stage_wp wide L hk (hP _ _ h).2⟩
+
+theorem polyOneA_wp {K W SP : Addr} {R : Nat} {N A D : Addr} {al n : Nat} {t : State}
+    (h : Bufs K W SP R N A D al n t) :
+    WP isa (.block (ptr .rdi .r15 revO ++
+      ([.mov .r12 (.mem (at_ .r15 aadO)), .mov .rbp (.mem (at_ .r15 alenO))] : List Instr))) t
+      (SIn K W SP R N A D al n A al 0) := by
+  have h15 := h.one.env.r15
+  have rA := h.one.env.perm.wR (show 216 + 8 ≤ 3816 by decide)
+  have rL := h.one.env.perm.wR (show 224 + 8 ≤ 3816 by decide)
+  have sA := h.one.sl.aad
+  have sL := h.one.sl.alen
+  obtain ⟨t₁, run₁, hdi₁, h12₁, hbp₁, hg₁, hm₁, hrd₁, hwr₁⟩ : ∃ t₁ : State, runBlock isa
+      (ptr .rdi .r15 revO ++ [.mov .r12 (.mem (at_ .r15 aadO)), .mov .rbp (.mem (at_ .r15 alenO))]) t = some t₁ ∧
+      t₁.gpr .rdi = W + BitVec.ofNat 64 (488 + 16 * 0) ∧ t₁.gpr .r12 = A ∧ t₁.gpr .rbp = BitVec.ofNat 64 al ∧
+      (∀ r, r ≠ .rdi → r ≠ .r12 → r ≠ .rbp → t₁.gpr r = t.gpr r) ∧
+      t₁.mem = t.mem ∧ t₁.rd = t.rd ∧ t₁.wr = t.wr := by
+    refine ⟨_, by srun [h15, rA, rL], ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+    · simp only [gpr_arithFlags, gpr_setReg, ite_true, ite_false, reduceCtorEq, h15]
+    · simp only [gpr_arithFlags, gpr_setReg, ite_true, ite_false, reduceCtorEq, sA]
+    · simp only [gpr_arithFlags, gpr_setReg, ite_true, ite_false, reduceCtorEq, sL]
+    · intro r h₁ h₂ h₃; simp only [gpr_arithFlags, gpr_setReg, h₁, h₂, h₃, ite_false]
+    all_goals rfl
+  have E₁ : Env K W SP t₁ := h.one.env.keep (fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl <;> exact hg₁ _ (by decide) (by decide) (by decide)) hrd₁ hwr₁
+  exact WP.of_runBlock ⟨t₁, run₁, ⟨⟨E₁, hm₁ ▸ h.one.sl, hwr₁.trans h.one.wr⟩, h.aad.of_eq hrd₁ hwr₁,
+    h.data.of_eq hrd₁ hwr₁⟩, h.aad.of_eq hrd₁ hwr₁, h12₁, hbp₁, hdi₁⟩
+
+theorem polyOneD_wp {K W SP : Addr} {R : Nat} {N A D : Addr} {al n k : Nat} {t : State}
+    (h : SAt K W SP R N A D al n k t) :
+    WP isa (.block [.mov .r12 (.mem (at_ .r15 dataO)), .mov .rbp (.mem (at_ .r15 lenO))]) t
+      (SIn K W SP R N A D al n D n k) := by
+  obtain ⟨B, hdi⟩ := h
+  have h15 := B.one.env.r15
+  have rD := B.one.env.perm.wR (show 232 + 8 ≤ 3816 by decide)
+  have rN := B.one.env.perm.wR (show 240 + 8 ≤ 3816 by decide)
+  have sD := B.one.sl.data
+  have sN := B.one.sl.len
+  obtain ⟨t₁, run₁, h12₁, hbp₁, hg₁, hm₁, hrd₁, hwr₁⟩ : ∃ t₁ : State, runBlock isa
+      [.mov .r12 (.mem (at_ .r15 dataO)), .mov .rbp (.mem (at_ .r15 lenO))] t = some t₁ ∧
+      t₁.gpr .r12 = D ∧ t₁.gpr .rbp = BitVec.ofNat 64 n ∧ (∀ r, r ≠ .r12 → r ≠ .rbp → t₁.gpr r = t.gpr r) ∧
+      t₁.mem = t.mem ∧ t₁.rd = t.rd ∧ t₁.wr = t.wr := by
+    refine ⟨_, by srun [h15, rD, rN], ?_, ?_, ?_, ?_, ?_, ?_⟩
+    · simp only [gpr_setReg, ite_true, ite_false, reduceCtorEq, sD]
+    · simp only [gpr_setReg, ite_true, ite_false, reduceCtorEq, sN]
+    · intro r h₁ h₂; simp only [gpr_setReg, h₁, h₂, ite_false]
+    all_goals rfl
+  have E₁ : Env K W SP t₁ := B.one.env.keep (fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl <;> exact hg₁ _ (by decide) (by decide)) hrd₁ hwr₁
+  exact WP.of_runBlock ⟨t₁, run₁, ⟨⟨E₁, hm₁ ▸ B.one.sl, hwr₁.trans B.one.wr⟩, B.aad.of_eq hrd₁ hwr₁,
+    B.data.of_eq hrd₁ hwr₁⟩, B.data.of_eq hrd₁ hwr₁, h12₁, hbp₁, by rw [hg₁ _ (by decide) (by decide), hdi]⟩
+
+theorem lensAt_wp {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A D : Addr} {al n k : Nat} (hk : k < 64)
+    (hal : al < 2 ^ 64) (hn' : n < 2 ^ 64) {t : State} (h : SAt K W SP R N A D al n k t) :
+    WP isa (.block lensAt) t fun t₁ => GhCall t₁ (W + BitVec.ofNat 64 64) (W + BitVec.ofNat 64 80)
+      (W + BitVec.ofNat 64 488) (W + BitVec.ofNat 64 1512) (k + 1) ∧ t₁.gpr .rsp = SP ∧
+      Bufs K W SP R N A D al n t₁ := by
+  obtain ⟨B, hdi⟩ := h
+  obtain ⟨t₁, run₁, hm₁, rdi₁, rsi₁, r8₁, rdx₁, rcx₁, hg₁, hrd₁, hwr₁⟩ :=
+    lensAt_ok B.one.env hk hdi B.one.sl.alen B.one.sl.len hal hn'
+  have E₁ : Env K W SP t₁ := B.one.env.of_saved hg₁ hrd₁ hwr₁
+  have fL : Frame (absR W SP) t.mem t₁.mem := by
+    rw [hm₁]
+    have mR : (⟨W + BitVec.ofNat 64 488, 1024⟩ : Region) ∈ absR W SP := by simp
+    exact ((Frame.refl _ _).writeW mR _ (Offset.contains W (by omega) (by omega) (by have := L.ww; omega))).writeW mR _
+      (by rw [add_ofNat_assoc]; exact Offset.contains W (by omega) (by omega) (by have := L.ww; omega))
+  exact WP.of_runBlock ⟨t₁, run₁, gargs L E₁ (d := 488) (n := k + 1) (by decide) (by omega) rdi₁ rsi₁ rdx₁ rcx₁ r8₁,
+    E₁.rsp, B.of_eq E₁ fL L hrd₁ hwr₁⟩
+
+theorem ghBufs_wp (v : GcmImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A D : Addr} {al n k : Nat} {t : State}
+    (h : GhCall t (W + BitVec.ofNat 64 64) (W + BitVec.ofNat 64 80) (W + BitVec.ofNat 64 488)
+      (W + BitVec.ofNat 64 1512) k ∧ t.gpr .rsp = SP ∧ Bufs K W SP R N A D al n t) :
+    WP isa (.call v.gh.fn.name v.gh.fn.code) t (Bufs K W SP R N A D al n) := by
+  obtain ⟨gc, hsp, B⟩ := h
+  refine WP.mono (gh_call v.gh gc) fun t₁ Q => ?_
+  have fc := Q.frame
+  rw [hsp] at fc
+  exact B.of_eq (B.one.env.of_saved Q.saved Q.rd Q.wr) (fc.mono fun q hq => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
+    rcases hq with rfl | rfl | rfl <;> simp) L Q.rd Q.wr
+
+/-- `polyvalOne`, in two runs with the same public arguments. -/
+theorem polyvalOne_rel (v : GcmImpl) (wide : Bool) {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A D : Addr}
+    {al n : Nat} (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 3816⟩) (hn : n ≤ 2 ^ 64) (hal : al < 2 ^ 64) (hn' : n < 2 ^ 64)
+    (hsz : al / 16 + n / 16 ≤ 61) {P : State → State → Prop}
+    (hP : ∀ t₁ t₂, P t₁ t₂ → Bufs K W SP R N A D al n t₁ ∧ Bufs K W SP R N A D al n t₂) :
+    RelCT isa P (polyvalOne v.callees wide) fun _ _ => True := by
+  have r₁ := (rel_taintC [] hDW hn (fun t₁ t₂ h => ⟨(hP _ _ h).1.one, (hP _ _ h).2.one, fun _ h => nomatch h⟩)
+    polyOneA_check).wp
+    (F₁ := SIn K W SP R N A D al n A al 0) (F₂ := SIn K W SP R N A D al n A al 0)
+    fun t₁ t₂ h => ⟨polyOneA_wp (hP _ _ h).1, polyOneA_wp (hP _ _ h).2⟩
+  have r₂ := stage_rel wide L hDW hn (Q := A) (nb := al) (k := 0) (by omega)
+    (P := fun t₁ t₂ => True ∧ SIn K W SP R N A D al n A al 0 t₁ ∧ SIn K W SP R N A D al n A al 0 t₂)
+    fun t₁ t₂ h => ⟨h.2.1, h.2.2⟩
+  have r₃ := (rel_taintC [] (P := fun t₁ t₂ => True ∧ SAt K W SP R N A D al n (0 + (al + 15) / 16) t₁ ∧
+      SAt K W SP R N A D al n (0 + (al + 15) / 16) t₂)
+    hDW hn (fun t₁ t₂ h => ⟨h.2.1.1.one, h.2.2.1.one, fun _ h => nomatch h⟩) polyD_check).wp
+    (F₁ := SIn K W SP R N A D al n D n (0 + (al + 15) / 16)) (F₂ := SIn K W SP R N A D al n D n (0 + (al + 15) / 16))
+    fun t₁ t₂ h => ⟨polyOneD_wp h.2.1, polyOneD_wp h.2.2⟩
+  have r₄ := stage_rel wide L hDW hn (Q := D) (nb := n) (k := 0 + (al + 15) / 16) (by omega)
+    (P := fun t₁ t₂ => True ∧ SIn K W SP R N A D al n D n (0 + (al + 15) / 16) t₁ ∧
+      SIn K W SP R N A D al n D n (0 + (al + 15) / 16) t₂)
+    fun t₁ t₂ h => ⟨h.2.1, h.2.2⟩
+  have hk : 0 + (al + 15) / 16 + (n + 15) / 16 < 64 := by omega
+  have r₅ := (rel_taintC [.rdi] (P := fun t₁ t₂ => True ∧
+      SAt K W SP R N A D al n (0 + (al + 15) / 16 + (n + 15) / 16) t₁ ∧
+      SAt K W SP R N A D al n (0 + (al + 15) / 16 + (n + 15) / 16) t₂)
+    hDW hn (fun t₁ t₂ h => ⟨h.2.1.1.one, h.2.2.1.one, fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; rw [h.2.1.2, h.2.2.2]⟩) lensAt_check).wp
+    (F₁ := fun (t₁ : State) => GhCall t₁ (W + BitVec.ofNat 64 64) (W + BitVec.ofNat 64 80) (W + BitVec.ofNat 64 488)
+      (W + BitVec.ofNat 64 1512) (0 + (al + 15) / 16 + (n + 15) / 16 + 1) ∧ t₁.gpr .rsp = SP ∧
+      Bufs K W SP R N A D al n t₁)
+    (F₂ := fun (t₁ : State) => GhCall t₁ (W + BitVec.ofNat 64 64) (W + BitVec.ofNat 64 80) (W + BitVec.ofNat 64 488)
+      (W + BitVec.ofNat 64 1512) (0 + (al + 15) / 16 + (n + 15) / 16 + 1) ∧ t₁.gpr .rsp = SP ∧
+      Bufs K W SP R N A D al n t₁)
+    fun t₁ t₂ h => ⟨lensAt_wp L hk hal hn' h.2.1, lensAt_wp L hk hal hn' h.2.2⟩
+  have r₆ := (gh_rel v.gh (P := fun t₁ t₂ => True ∧ (GhCall t₁ (W + BitVec.ofNat 64 64) (W + BitVec.ofNat 64 80)
+        (W + BitVec.ofNat 64 488) (W + BitVec.ofNat 64 1512) (0 + (al + 15) / 16 + (n + 15) / 16 + 1) ∧
+        t₁.gpr .rsp = SP ∧ Bufs K W SP R N A D al n t₁) ∧
+      (GhCall t₂ (W + BitVec.ofNat 64 64) (W + BitVec.ofNat 64 80) (W + BitVec.ofNat 64 488)
+        (W + BitVec.ofNat 64 1512) (0 + (al + 15) / 16 + (n + 15) / 16 + 1) ∧ t₂.gpr .rsp = SP ∧
+        Bufs K W SP R N A D al n t₂))
+    fun t₁ t₂ h => ⟨_, _, _, _, _, h.2.1.1, h.2.2.1, by rw [h.2.1.2.1, h.2.2.2.1]⟩).wp
+    (F₁ := Bufs K W SP R N A D al n) (F₂ := Bufs K W SP R N A D al n)
+    fun t₁ t₂ h => ⟨ghBufs_wp v L h.2.1, ghBufs_wp v L h.2.2⟩
+  have r₇ := rel_taintC [] (P := fun t₁ t₂ => True ∧ Bufs K W SP R N A D al n t₁ ∧ Bufs K W SP R N A D al n t₂)
+    hDW hn (fun t₁ t₂ h => ⟨h.2.1.one, h.2.2.one, fun _ h => nomatch h⟩) tagIn_check
+  exact RelCT.seq r₁ (RelCT.seq r₂ (RelCT.seq r₃ (RelCT.seq r₄ (RelCT.seq r₅ (RelCT.seq r₆ r₇)))))
+
+theorem polyCond_wp {K W SP : Addr} {R : Nat} {N A D : Addr} {al n : Nat} (L : Lay K W SP) {t : State}
+    (h : Bufs K W SP R N A D al n t) :
+    WP isa (.block [.mov .rax (.mem (at_ .r15 alenO)), .shift .shr .rax 4, .mov .rdx (.mem (at_ .r15 lenO)),
+      .shift .shr .rdx 4, .alu .add .rax (.reg .rdx), .alu .cmp .rax (imm 62)]) t fun t₁ =>
+      Bufs K W SP R N A D al n t₁ ∧ t₁.cf = some (decide (al / 16 + n / 16 < 62)) := by
+  obtain ⟨t₁, run₁, hcf₁, hg₁, hm₁, hrd₁, hwr₁⟩ := polyCond_run h.one.env h.one.sl h.aad.lt h.data.lt
+  have E₁ : Env K W SP t₁ := h.one.env.keep (fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl <;> exact hg₁ _ (by decide) (by decide)) hrd₁ hwr₁
+  exact WP.of_runBlock ⟨t₁, run₁, h.of_eq E₁ (by rw [hm₁]; exact Frame.refl _ _) L hrd₁ hwr₁, hcf₁⟩
+
+/-- `polyval`, in two runs with the same public arguments. -/
+theorem polyval_rel (v : GcmImpl) (wide : Bool) {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A D : Addr} {al n : Nat}
+    (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 3816⟩) (hn : n ≤ 2 ^ 64) (hal : al < 2 ^ 64) (hn' : n < 2 ^ 64)
+    {P : State → State → Prop}
+    (hP : ∀ t₁ t₂, P t₁ t₂ → Bufs K W SP R N A D al n t₁ ∧ Bufs K W SP R N A D al n t₂) :
+    RelCT isa P (polyval v.callees wide) fun _ _ => True := by
+  have r₀ := (rel_taintC [] hDW hn (fun t₁ t₂ h => ⟨(hP _ _ h).1.one, (hP _ _ h).2.one, fun _ h => nomatch h⟩)
+    polyCond_check).wp
+    (F₁ := fun (t : State) => Bufs K W SP R N A D al n t ∧ t.cf = some (decide (al / 16 + n / 16 < 62)))
+    (F₂ := fun (t : State) => Bufs K W SP R N A D al n t ∧ t.cf = some (decide (al / 16 + n / 16 < 62)))
+    fun t₁ t₂ h => ⟨polyCond_wp L (hP _ _ h).1, polyCond_wp L (hP _ _ h).2⟩
+  refine RelCT.seq r₀ (RelCT.ite (fun t₁ t₂ h => by
+    show t₁.cf.map (!·) = t₂.cf.map (!·); rw [h.2.1.2, h.2.2.2]) ?_ ?_)
+  · exact polyvalLong_rel v wide L hDW hn hal hn' fun t₁ t₂ h => ⟨h.1.2.1.1, h.1.2.2.1⟩
+  · by_cases hs : al / 16 + n / 16 < 62
+    · exact polyvalOne_rel v wide L hDW hn hal hn' (by omega) fun t₁ t₂ h => ⟨h.1.2.1.1, h.1.2.2.1⟩
+    · refine RelCT.of_false fun t₁ t₂ h => ?_
+      have := h.2
+      rw [show isa.eval .ae t₁ = t₁.cf.map (!·) from rfl, h.1.2.1.2] at this
+      simp [hs] at this
 
 end VG.Proof.AesGcmSiv.X86_64
