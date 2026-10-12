@@ -25,7 +25,7 @@ namespace VG.Proof.Ed448.AArch64
 
 open VG VG.AArch64 VG.Impl.Ed448.AArch64
 open VG.Proof.X448.AArch64 (Scr Keeps off limbs Outside Outside2 ofs far)
-open VG.Impl.X448.AArch64 (slot ACC)
+open VG.Impl.X448.AArch64 (slot ACC BITS)
 open VG.Spec.Ed448 (bytesAt decodeLE)
 open VG.Proof.Ed448.AArch64.Window
 
@@ -88,13 +88,32 @@ theorem verifyEquation_correct (hR : RecoverOk) {s : State} (hp : verifyEquation
   -- `[S]B`.
   refine WP.seq (WP.mono (sBase_ok T.scr T.env T.zero hSlt B3 tb3)
     fun s4 ⟨hs4, b4, z4, rep4, o4, _, x4, rd4, wr4⟩ => ?_)
+  -- The challenge's nibbles, at `BITS`.
+  refine WP.seq (WP.seq (WP.mono (nibbles_ok hs4) fun sN ⟨hsN, NN, oN, kN⟩ => ?_))
+  have lN : ∀ i : VG.Proof.X448.AArch64.Weak.Index, ∀ j < 8,
+      limbs sN.mem base (slot i.val) j = limbs s4.mem base (slot i.val) j := fun i j hj => by
+    have := i.isLt
+    exact oN.limbs (by simp only [slot, BITS]; omega) (by simp only [slot]; omega) (by omega)
+  have eN : ∀ i : VG.Proof.X448.AArch64.Weak.Index, EV sN.mem base i = EV s4.mem base i := fun i =>
+    congrArg VG.Proof.X448.toFe (VG.Proof.X448.Wide.valN_congr (lN i))
+  have eK : ∀ k < 57, sN.mem (off base (KB + k)) = s4.mem (off base (KB + k)) := fun k hk => by
+    have ho : ofs base (off base (KB + k)) = KB + k := ofs_off0' base (by simp only [KB]; omega)
+    exact oN _ (Or.inl (by rw [ho]; simp only [KB, BITS]; omega))
+  have NN' : ∀ i < 57, NibsAt base (fun i => sN.mem (off base (KB + i))) sN.mem i := fun i hi => by
+    obtain ⟨a, b⟩ := NN i hi
+    simp only [NibsAt] at a b ⊢
+    rw [eK i hi]; exact ⟨a, b⟩
   -- `[k](-A)`, added.
-  refine WP.seq (WP.seq (WP.mono (kInit_ok hs4 b4 z4 (T.tab.of_outside2 o4 (by decide)) rfl)
-    fun s5 ⟨K5, o5, x5, rd5, wr5⟩ => WP.mono (kLoop_ok 57 s5 (by decide) (by decide) K5) fun s6 K6 => ?_))
-  have P6 := ((P3.outside2 o4).outside2 o5).outside2 K6.ctx.mem
+  refine WP.seq (WP.mono (kInit_ok hsN (fun i j hj => by rw [lN i j hj]; exact b4 i j hj)
+      (fun w hw => by rw [lN 19 w hw]; exact z4 w hw)
+      ((T.tab.of_outside2 o4 (by decide)).of_nframe oN (by decide))
+      (S := VG.Proof.X448.AArch64.Base.pt (EV s4.mem base) 0 1 2)
+      (by simp only [VG.Proof.X448.AArch64.Base.pt, eN]) NN')
+    fun s5 ⟨K5, N5, o5, x5, rd5, wr5⟩ => WP.mono (kLoop_ok s5 K5 N5) fun s6 K6 => ?_)
+  have P6 := (((P3.outside2 o4).nframe oN).outside2 o5).outside2 K6.ctx.mem
   have hrl : ∀ o, o = RX ∨ o = RY → ∀ i < 8, limbs s6.mem base o i = limbs s2.mem base o i := fun o ho i hi => by
-    rw [rlimbs_outside2 K6.ctx.mem ho hi, rlimbs_outside2 o5 ho hi, rlimbs_outside2 o4 ho hi,
-      rlimbs_tframe T.mem ho hi]
+    rw [rlimbs_outside2 K6.ctx.mem ho hi, rlimbs_outside2 o5 ho hi, rlimbs_nframe oN ho hi,
+      rlimbs_outside2 o4 ho hi, rlimbs_tframe T.mem ho hi]
   have hrx : ∀ i < 8, limbs s6.mem base RX i = limbs s1.mem base (slot 8) i := fun i hi =>
     (hrl _ (.inl rfl) i hi).trans (I.rx i hi)
   have hry : ∀ i < 8, limbs s6.mem base RY i = limbs s1.mem base (slot 9) i := fun i hi =>
@@ -135,7 +154,7 @@ theorem verifyEquation_correct (hR : RecoverOk) {s : State} (hp : verifyEquation
   · show t.gpr .x0 = _
     obtain ⟨c0, cA, cR, hx, hc0, hcA, hcR⟩ := F.chk
     have hx7 : s7.gpr .x20 = 0 ||| c0 ||| cA ||| cR := by
-      rw [k7.1 _ (by decide), K6.ctx.chk, x5, x4, T.chk, I.chk, hx]
+      rw [k7.1 _ (by decide), K6.ctx.chk, x5, kN.1 _ (by decide), x4, T.chk, I.chk, hx]
     rw [t0]
     refine if_congr ?_ rfl rfl
     rw [hx7, or_eq_zero64, or_eq_zero64, or_eq_zero64]
@@ -161,7 +180,7 @@ theorem verifyEquation_correct (hR : RecoverOk) {s : State} (hp : verifyEquation
         have hP : slotPt s1.mem base = VG.Proof.Ed448.negPoint a := F.na a ha
         have hSB := rep4
         rw [natCast_zsmul, ← hS, ← bytesAt_drop57] at hSB
-        have P5 := (P3.outside2 o4).outside2 o5
+        have P5 := ((P3.outside2 o4).nframe oN).outside2 o5
         have hb : ∀ i (h : i < 57), s5.mem (off base (KB + i)) =
             (bytesAt s.mem (s.gpr .x2) 57)[i]'(by rw [bytesAt_len]; exact h) := fun i h => by
           rw [P5.kb i h]; simp [Spec.Ed448.bytesAt]

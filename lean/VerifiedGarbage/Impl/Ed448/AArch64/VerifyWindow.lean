@@ -12,7 +12,8 @@ register-resident arithmetic (`Impl/Curve448/AArch64/Fast.lean`):
 
 * `[S]B` by `vg_ed448_scalar_base`'s comb of 57 tables (`vg_ed448_r56_comb_base`, `CombBase.call 57`),
   from the bits of `S` at `BITS`.
-* `[k](-A)` by 4-bit windows from the top, each four doublings and the
+* `[k](-A)` by 4-bit windows from the top (the challenge's nibbles, expanded into bytes at
+  `BITS` once `[S]B` no longer needs it), each four doublings and the
   addition of `[n](-A)` for the window's digit `n`, selected in constant time
   with a mask for each of the 16 entries of a table of `[n](-A)` built at run
   time (`TAB`, entry `n` at `TAB + 192 n`: `X`, `Y` and `Z`, eight words each).
@@ -112,10 +113,20 @@ def selectEntryWord (w : Nat) : List Instr :=
 /-- The entry for the digit in `x11` to slots 6–8. -/
 def selectEntry : List Instr := digitMasks ++ (List.range 24).flatMap selectEntryWord
 
-/-- `x11` = byte `x19` of `k` (from `KB`), shifted right by `sh` and masked to 4 bits. -/
-def digitOf (sh : Nat) : List Instr :=
-  [.add .x .x2 .x3 .x19, .ldrb .x11 .x2 KB, .movz .x .x10 15 0] ++
-  (if sh = 0 then [] else [.lsr .x .x11 .x11 sh]) ++ [.logic .and .x .x11 .x11 .x10]
+/-- Byte `x19 - 1` of the challenge's copy at `KB` (`x19` counted down first), split into its
+nibbles: the low at `BITS + 2 (x19 - 1)`, the high after it. `S`'s bits there are not used
+after `[S]B`. -/
+def nibBody : List Instr :=
+  [.subImm .x .x19 .x19 1, .add .x .x2 .x3 .x19, .ldrb .x4 .x2 KB, .lsr .x .x5 .x4 4,
+    .movz .x .x6 15 0, .logic .and .x .x4 .x4 .x6, .lsl .x .x2 .x19 1, .add .x .x2 .x3 .x2,
+    .strb .x4 .x2 BITS, .strb .x5 .x2 (BITS + 1)]
+
+/-- The challenge's 114 nibbles at `BITS`, nibble `i` of `k` at `BITS + i`. -/
+def nibbles : Prog isa :=
+  .seq (.block [.movz .x .x19 57 0]) (.loop (.block nibBody) (.nonzero .x .x19))
+
+/-- `x11` = nibble `x19` of `k` (from `BITS`). -/
+def digitOf : List Instr := [.add .x .x2 .x3 .x19, .ldrb .x11 .x2 BITS]
 
 /-- `Q` (slots 3–5) doubled four times: a loop counted by `x1`, which the doubling keeps. -/
 def dbl4Loop : Prog isa :=
@@ -123,20 +134,20 @@ def dbl4Loop : Prog isa :=
     (.loop (.seq Point56.doubleCall (.block [.subImm .x .x1 .x1 1])) (.nonzero .x .x1))
 
 /-- A window: `Q` (slots 3–5) doubled four times, and the entry of the digit
-(`digitOf sh`) added. -/
-def window (sh : Nat) : Prog isa :=
-  .seq dbl4Loop (.seq (.block (digitOf sh ++ selectEntry)) Point56.addCall)
+(`digitOf`) added. -/
+def window : Prog isa :=
+  .seq dbl4Loop (.seq (.block (digitOf ++ selectEntry)) Point56.addCall)
 
-/-- Byte `x19 - 1` of `k` (`x19` counts down to it): its high and its low digit. -/
-def kByte : Prog isa := .seq (.block [.subImm .x .x19 .x19 1]) (.seq (window 4) (window 0))
+/-- Nibble `x19 - 1` of `k` (`x19` counts down to it). -/
+def kNib : Prog isa := .seq (.block [.subImm .x .x19 .x19 1]) window
 
-/-- `Q` the neutral point, 1 in slot 20 (for `dblOps`), and the counter at 57. -/
+/-- `Q` the neutral point, 1 in slot 20 (for `dblOps`), and the counter at 114. -/
 def kInit : List Instr :=
   constSlot (slot 3) 0 ++ constSlot (slot 4) 1 ++ constSlot (slot 5) 1 ++ constSlot (slot 20) 1 ++
-    [.movz .x .x19 57 0]
+    [.movz .x .x19 114 0]
 
-/-- `kInit`, then the 57 bytes of `k`, from the top. -/
-def kWindows : Prog isa := .seq (.block kInit) (.loop kByte (.nonzero .x .x19))
+/-- The nibbles, `kInit`, then the 114 nibbles of `k`, from the top. -/
+def kWindows : Prog isa := .seq nibbles (.seq (.block kInit) (.loop kNib (.nonzero .x .x19)))
 
 /-! ## The comparison -/
 
