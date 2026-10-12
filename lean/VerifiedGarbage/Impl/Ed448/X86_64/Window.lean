@@ -76,10 +76,14 @@ def round (F : Field) (P : Point64.Ops) (o : Nat) : Prog isa :=
 def step (F : Field) (P : Point64.Ops) (o : Nat) : Prog isa :=
   .seq (.block [.alu .sub .rbx (.imm 5)]) (round F P o)
 
-def init : List Instr :=
-  constSlot 0 0 ++ constSlot 1 1 ++ constSlot 2 1 ++ [.mov32 .rbx (.imm 460)]
+/-- The first base-point selection is already the accumulator: no identity arithmetic. -/
+def first (F : Field) (P : Point64.Ops) (o : Nat) : Prog isa :=
+  .seq selectSignedBase <|
+  .seq (.block (copyOut (slot 0) (slot 8) ++ copyOut (slot 1) (slot 9) ++ constSlot 2 1)) <|
+  .seq (selectSignedKey o) <| .seq (add F P) (.block accept)
 
 def joint (F : Field) (P : Point64.Ops) (o : Nat) : Prog isa :=
-  .seq (table P) (.seq (.block init) (.loop (step F P o) .ne))
+  .seq (table P) <| .seq (.block [.mov32 .rbx (.imm 455)]) <|
+  .seq (first F P o) (.loop (step F P o) .ne)
 
 end VG.Impl.Ed448.X86_64.Window

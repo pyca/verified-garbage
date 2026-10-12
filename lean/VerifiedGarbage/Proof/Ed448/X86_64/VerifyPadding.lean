@@ -42,7 +42,7 @@ private theorem padding_ok {s : State} {base : Addr} (hs : Scr s base) {o : Nat}
   apply WP.of_runBlock
   simp only [bitPadding, List.map_cons, List.map_nil, List.cons_append, List.nil_append,
     runBlock_cons, runStep_some, runBlock_nil, exec, readSrc32, State.setReg32, State.store8,
-    ea_sc, RegUpd.gpr_setReg, RegUpd.mem_setReg, 
+    ea_sc, RegUpd.gpr_setReg, RegUpd.mem_setReg,
     RegUpd.wr_setReg,  hs.rdi,
     hw (o - 1) (by omega), hw (o + 456) (by omega), hw (o + 457) (by omega),
     hw (o + 458) (by omega), hw (o + 459) (by omega),
