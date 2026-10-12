@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.CmacAes.AArch64.Finalize
+module
+
+public import VerifiedGarbage.Proof.CmacAes.AArch64.Finalize
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CMAC on AArch64: `vg_cmac_aes_finalize` is correct
@@ -8,6 +14,8 @@ last block `Mₙ` of §6.2 step 4 and the chaining value `C` at `state`, the
 state is zeroed, and `x19` and `x30` are saved in the scratch buffer; the call
 leaves `CIPH_K(C ⊕ Mₙ)` there, the MAC (`macFull_split`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.CmacAes.AArch64
 

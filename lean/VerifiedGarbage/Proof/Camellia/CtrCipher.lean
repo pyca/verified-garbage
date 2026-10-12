@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Camellia.Words
-import VerifiedGarbage.Proof.Framework.Mem
-import VerifiedGarbage.Spec.Camellia.Ctr
+module
+
+public import VerifiedGarbage.Proof.Camellia.Words
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Spec.Camellia.Ctr
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Camellia's cipher for the modes, on any target
@@ -10,6 +16,8 @@ What every target's core for the modes
 the cipher of the 16 bytes at `p`, under the subkeys of the schedule's
 words, is `cryptWords` of the block (`cipher_bytes`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Camellia
 

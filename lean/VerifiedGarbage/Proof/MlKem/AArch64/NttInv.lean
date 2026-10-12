@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.MlKem.AArch64.NttFwd
-import VerifiedGarbage.Proof.Framework.Omega
-import Mathlib.Tactic.Set
+module
+
+public import VerifiedGarbage.Proof.MlKem.AArch64.NttFwd
+meta import VerifiedGarbage.Proof.MlKem.AArch64.NttFwd
+public import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.Framework.Omega
+public import Mathlib.Tactic.Set
+meta import Mathlib.Tactic.Set
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on AArch64: `vg_mlkem_inv_ntt`
@@ -10,6 +19,8 @@ from `zetas[127]` down: the layer with `len = 2` two blocks at a time
 (`ipair_step`), the layers with `len ≥ 4` (`ivstep`, `iblock_step`,
 `ilayer_step`), then the multiplication by 3303 (`scale_step`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.AArch64.Ntt
 

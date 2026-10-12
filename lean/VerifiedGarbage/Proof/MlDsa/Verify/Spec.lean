@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlDsa.Verify.Bounds
+module
+
+public import VerifiedGarbage.Proof.MlDsa.Verify.Bounds
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA: `verifyMu` as the verification functions compute it
@@ -10,6 +16,8 @@ row by row (`verifyMu_rows`): row `r` of `w′` is `NTT⁻¹` of the sum of the
 products `Â[r, s] ẑ[s]` from `s = 0` (`dotAcc`), less `ĉ t̂₁[r]`, and its
 `w′₁` the `UseHint`s of `h[r]` and its coefficients.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Verify
 

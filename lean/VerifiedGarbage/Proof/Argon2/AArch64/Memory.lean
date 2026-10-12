@@ -1,8 +1,16 @@
-import VerifiedGarbage.Proof.Argon2.AArch64.Mix
-import VerifiedGarbage.Proof.Framework.Mem
-import VerifiedGarbage.Proof.Framework.Offset
+module
+
+public import VerifiedGarbage.Proof.Argon2.AArch64.Mix
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.Offset
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # Argon2 compression working memory -/
+
+@[expose] public section
 
 namespace VG.Proof.Argon2.AArch64
 

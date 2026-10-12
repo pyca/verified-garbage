@@ -1,9 +1,15 @@
-import VerifiedGarbage.Proof.Gcm.X86.Step
-import VerifiedGarbage.Proof.Gcm.X86.GhashCT
-import VerifiedGarbage.Proof.Aes.Blocks
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Framework.X86.Spill
-import VerifiedGarbage.Spec.Gcm.Contract
+module
+
+public import VerifiedGarbage.Proof.Gcm.X86.Step
+public import VerifiedGarbage.Proof.Gcm.X86.GhashCT
+public import VerifiedGarbage.Proof.Aes.Blocks
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.X86.Spill
+public import VerifiedGarbage.Spec.Gcm.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # GHASH on x86 (32-bit): the whole function
@@ -14,6 +20,8 @@ stores `Z` as the new `Y`. The prologue saves the callee-saved registers
 in the scratch buffer with the data pointer and the count, and the
 epilogue restores them. Constant time is `GhashCT.lean`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Gcm.X86
 

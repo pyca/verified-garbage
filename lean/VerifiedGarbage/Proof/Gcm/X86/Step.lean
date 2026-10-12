@@ -1,7 +1,13 @@
-import VerifiedGarbage.Impl.Gcm.X86
-import VerifiedGarbage.Proof.Aes.X86.Common
-import VerifiedGarbage.Proof.Gcm.Spec
-import VerifiedGarbage.Proof.Framework.Range
+module
+
+public import VerifiedGarbage.Impl.Gcm.X86
+public import VerifiedGarbage.Proof.Aes.X86.Common
+public import VerifiedGarbage.Proof.Gcm.Spec
+public import VerifiedGarbage.Proof.Framework.Range
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # GHASH on x86 (32-bit): one step of Algorithm 1
@@ -10,6 +16,8 @@ What the instructions of a step (`Impl.Gcm.X86.step`) compute on the four
 words of `V` (in registers) and of `Z` (in the scratch buffer), stated on the
 whole 128-bit values, and the 128 steps of a multiplication.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Gcm.X86
 

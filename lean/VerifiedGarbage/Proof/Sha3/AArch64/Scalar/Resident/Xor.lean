@@ -1,10 +1,18 @@
-import VerifiedGarbage.Impl.Sha3.AArch64.Scalar.Resident
-import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Unrolled
-import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.AbsorbBlock
+module
+
+public import VerifiedGarbage.Impl.Sha3.AArch64.Scalar.Resident
+public import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Unrolled
+public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.AbsorbBlock
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The scalar resident absorber: XORing a block into the lane registers
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sha3.AArch64.Scalar.Resident
 

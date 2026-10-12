@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Spec.Sha256
+module
+
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Spec.Sha256
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # SHA-256: the hash value in memory
@@ -7,6 +13,8 @@ import VerifiedGarbage.Spec.Sha256
 The hash value as consecutive 32-bit words at an address (`stateAt`,
 `writeState`), and offsets into a region, independently of any target.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sha256.StateMem
 

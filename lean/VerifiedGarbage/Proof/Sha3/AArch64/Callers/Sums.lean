@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Sha3.AArch64.Sums
-import VerifiedGarbage.Proof.Framework.TaintSumGeneric
-import VerifiedGarbage.Proof.Framework.AArch64.VectorTaint
+module
+
+public import VerifiedGarbage.Proof.Sha3.AArch64.Sums
+public import VerifiedGarbage.Proof.Framework.TaintSumGeneric
+public import VerifiedGarbage.Proof.Framework.AArch64.VectorTaint
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The summaries of the sponge's callers, for any Keccak backend
@@ -19,6 +25,8 @@ of a permutation that saves and restores the callee-saved registers with less
 public at the end (`Taint.SumOk.weaken`), those of one that keeps them from
 their frames (`Taint.SumOk.restrict`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sha3.AArch64.Callers
 

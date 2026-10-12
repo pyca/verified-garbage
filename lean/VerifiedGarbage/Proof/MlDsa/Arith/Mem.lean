@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Framework.Mem
-import VerifiedGarbage.Spec.MlDsa.Poly
-import VerifiedGarbage.Proof.MlDsa.Arith.Zq
-import VerifiedGarbage.Proof.Framework.Offset
+module
+
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Spec.MlDsa.Poly
+public import VerifiedGarbage.Proof.MlDsa.Arith.Zq
+public import VerifiedGarbage.Proof.Framework.Offset
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA: polynomials in memory, for every target
@@ -10,6 +16,8 @@ How the stored representation of `Spec/MlDsa/Poly.lean` (a polynomial as
 `[u32; 256]`, `coeffAt`, `polyAt`, `Reduced`, `PolyIs`) changes when a program
 writes a coefficient, and how to conclude `PolyIs` from what each word holds.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Arith
 

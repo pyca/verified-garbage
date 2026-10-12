@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.CmacTripleDes.Block
-import VerifiedGarbage.Proof.CmacTripleDes.Bytes
+module
+
+public import VerifiedGarbage.Proof.CmacTripleDes.Block
+public import VerifiedGarbage.Proof.CmacTripleDes.Bytes
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # TDEA-CMAC: 64-bit words as two 32-bit words
@@ -8,6 +14,8 @@ Untrusted: everything here is checked by Lean. For the 32-bit targets: a
 key schedule slot's round key from its two little-endian 32-bit words, and
 a block (as a big-endian 64-bit integer) from its two.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.CmacTripleDes
 

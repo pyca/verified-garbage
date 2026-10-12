@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Divstep.Check
+module
+
+public import VerifiedGarbage.Proof.Divstep.Check
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The hulls of the divstep bound: data
@@ -11,6 +17,8 @@ build), each a list of rows `(a, b, c)` meaning `a x + b y ≤ c`, counterclockw
 them (`incl*`), as linear maps `(x, y) ↦ A (x, y) / (2^e s^k)` and, for every
 row of the target, the two rows of the source whose Farkas combination bounds it.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Divstep
 

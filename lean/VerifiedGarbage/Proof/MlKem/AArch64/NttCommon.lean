@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.MlKem.AArch64.Barrett
-import VerifiedGarbage.Proof.MlKem.AArch64.NttVec
+module
+
+public import VerifiedGarbage.Proof.MlKem.AArch64.Barrett
+public import VerifiedGarbage.Proof.MlKem.AArch64.NttVec
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on AArch64: what the NTT and its inverse share
@@ -9,6 +15,8 @@ throughout (`St`: the constants, the table of zetas in `scratch`), and a
 butterfly's effect on the polynomial in memory, from its two stores
 (`polyIs_write2`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem
 

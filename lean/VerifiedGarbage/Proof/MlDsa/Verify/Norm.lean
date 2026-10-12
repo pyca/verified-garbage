@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.MlDsa.Verify.Spec
-import VerifiedGarbage.Spec.MlDsa.Poly
-import Mathlib.Tactic.SplitIfs
+module
+
+public import VerifiedGarbage.Proof.MlDsa.Verify.Spec
+public import VerifiedGarbage.Spec.MlDsa.Poly
+public import Mathlib.Tactic.SplitIfs
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA: the norm of `z` and the range of `UseHint`
@@ -12,6 +18,8 @@ B` exactly when each `‖z[i]‖∞ < B` (`normR_vZ_iff`). `UseHint` gives a
 coefficient of `w₁` of at most `(q - 1)/(2γ₂) - 1` (`useHint_le`), which
 `SimpleBitPack` needs.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Verify
 

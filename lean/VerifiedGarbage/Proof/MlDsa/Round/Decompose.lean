@@ -1,5 +1,11 @@
-import VerifiedGarbage.Spec.MlDsa.Poly
-import VerifiedGarbage.Proof.Framework.PowLit
+module
+
+public import VerifiedGarbage.Spec.MlDsa.Poly
+public import VerifiedGarbage.Proof.Framework.PowLit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA: `Decompose` and `Power2Round` by multiplications and shifts, for every target
@@ -19,6 +25,8 @@ them, for every coefficient `a < q`:
   (`hbMul`, `hbAdd`, `hbShift`). `omega` proves it for every `a < q`, for
   both values of `γ₂`, without enumerating `a`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Round
 

@@ -1,11 +1,17 @@
-import VerifiedGarbage.Proof.Framework.PowLit
-import Mathlib.Algebra.Field.Basic
-import Mathlib.Algebra.GroupWithZero.Basic
-import Mathlib.Algebra.Group.Defs
-import Mathlib.Algebra.Group.Basic
-import Mathlib.Tactic.LinearCombination
-import Mathlib.Tactic.FieldSimp
-import Mathlib.Tactic.Ring
+module
+
+public import VerifiedGarbage.Proof.Framework.PowLit
+public import Mathlib.Algebra.Field.Basic
+public import Mathlib.Algebra.GroupWithZero.Basic
+public import Mathlib.Algebra.Group.Defs
+public import Mathlib.Algebra.Group.Basic
+public import Mathlib.Tactic.LinearCombination
+public import Mathlib.Tactic.FieldSimp
+public import Mathlib.Tactic.Ring
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The group law of a complete Edwards curve with `a = 1`
@@ -25,6 +31,8 @@ Ed448's curve (edwards448, `d = -39081`) is one; Ed25519's twisted curve
 (`a = -1`) is another through `(x, y) ↦ (√-1 · x, y)`, which takes it to this
 form with `-d` (`Proof/Ed25519/Group/Extended.lean`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.EdwardsLaw
 

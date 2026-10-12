@@ -1,7 +1,16 @@
-import VerifiedGarbage.Impl.Argon2.AArch64.SegmentSetup
-import VerifiedGarbage.Proof.Argon2.AArch64.FillSegment
+module
+
+public import VerifiedGarbage.Impl.Argon2.AArch64.SegmentSetup
+public import VerifiedGarbage.Proof.Argon2.AArch64.FillSegment
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Argon2.AArch64.FillContext`. -/
+
+@[expose] public section
+
 section
 /-! A segment context allows its starting and final indices, including an empty suffix. -/
 

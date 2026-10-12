@@ -1,8 +1,17 @@
-import VerifiedGarbage.Proof.Argon2.AArch64.ReferenceCount
-import VerifiedGarbage.Impl.Argon2.AArch64.ReferenceMap
-import VerifiedGarbage.Proof.Argon2.AArch64.DivideStep
+module
+
+public import VerifiedGarbage.Proof.Argon2.AArch64.ReferenceCount
+public import VerifiedGarbage.Impl.Argon2.AArch64.ReferenceMap
+public import VerifiedGarbage.Proof.Argon2.AArch64.DivideStep
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Argon2.AArch64.ReferenceMapArgs`. -/
+
+@[expose] public section
+
 section
 /-! Register preparation for the reference-index stages. -/
 

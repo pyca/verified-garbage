@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Gcm.Stream
+module
+
+public import VerifiedGarbage.Proof.Gcm.Stream
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # GCM: counter mode over a text given in pieces
@@ -11,6 +17,8 @@ within a block, the keystream block (`Ctr`); a piece of text is XORed with
 the rest of that block (`ctr_head`), whole blocks with `vg_aes_ctr32`
 (`ctr_whole`) and the last bytes with a new keystream block (`ctr_tail`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Gcm
 

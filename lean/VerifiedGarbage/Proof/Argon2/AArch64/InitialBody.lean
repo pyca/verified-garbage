@@ -1,8 +1,17 @@
-import VerifiedGarbage.Impl.Argon2.AArch64.InitialBody
-import VerifiedGarbage.Proof.Argon2.AArch64.InitFill
-import VerifiedGarbage.Proof.Argon2.AArch64.Initial
+module
+
+public import VerifiedGarbage.Impl.Argon2.AArch64.InitialBody
+public import VerifiedGarbage.Proof.Argon2.AArch64.InitFill
+public import VerifiedGarbage.Proof.Argon2.AArch64.Initial
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Argon2.AArch64.InitialMetadata`. -/
+
+@[expose] public section
+
 section
 /-! H₀ writes its digest into the frame while retaining all enclosing arguments. -/
 

@@ -1,8 +1,19 @@
-import VerifiedGarbage.Proof.MlKem.AArch64.Common
-import VerifiedGarbage.Proof.MlKem.EkCheck
-import VerifiedGarbage.Impl.MlKem.AArch64.Encode
-import VerifiedGarbage.Spec.MlKem.Contract
-import VerifiedGarbage.Spec.MlKem.Contract1024
+module
+
+public import VerifiedGarbage.Proof.MlKem.AArch64.Common
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Common
+public import VerifiedGarbage.Proof.MlKem.EkCheck
+meta import VerifiedGarbage.Proof.MlKem.EkCheck
+public import VerifiedGarbage.Impl.MlKem.AArch64.Encode
+meta import VerifiedGarbage.Impl.MlKem.AArch64.Encode
+public import VerifiedGarbage.Spec.MlKem.Contract
+meta import VerifiedGarbage.Spec.MlKem.Contract
+public import VerifiedGarbage.Spec.MlKem.Contract1024
+meta import VerifiedGarbage.Spec.MlKem.Contract1024
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on AArch64: `vg_mlkem768_check_ek` and `vg_mlkem1024_check_ek`
@@ -12,6 +23,8 @@ least `q` (`ekCheck_iff`); the code counts those fields (`cnt`) without
 branching, in a loop over the `128k` groups (`checkEkWith`). The proof is
 stated once for `k ≤ 4`; the end of this file is the instances.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem
 

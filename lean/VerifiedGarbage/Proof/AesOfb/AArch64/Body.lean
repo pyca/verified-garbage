@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.AesOfb.Spec
-import VerifiedGarbage.Proof.AesCbc.AArch64.CT
-import VerifiedGarbage.Impl.AesOfb.AArch64
+module
+
+public import VerifiedGarbage.Proof.AesOfb.Spec
+meta import VerifiedGarbage.Proof.AesOfb.Spec
+public import VerifiedGarbage.Proof.AesCbc.AArch64.CT
+meta import VerifiedGarbage.Proof.AesCbc.AArch64.CT
+public import VerifiedGarbage.Impl.AesOfb.AArch64
+meta import VerifiedGarbage.Impl.AesOfb.AArch64
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-OFB on AArch64: one block, and constant time
@@ -11,6 +20,8 @@ share (`Proof/AesCbc/AArch64/Loop.lean`) from `k` blocks to `k + 1`, for
 `body_ct`: it is constant time, by the shared framework, with the call on
 the block at `iv`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesOfb.AArch64
 

@@ -1,10 +1,18 @@
-import VerifiedGarbage.Impl.Argon2.AArch64.ClearBlock
-import VerifiedGarbage.Proof.Argon2.AArch64.MemoryInitClearMemory
-import VerifiedGarbage.Proof.Argon2.AArch64.Initialize
-import VerifiedGarbage.Proof.Framework.AArch64.Inline
-import VerifiedGarbage.Proof.Argon2.AArch64.AddressHeaderWords
+module
+
+public import VerifiedGarbage.Impl.Argon2.AArch64.ClearBlock
+public import VerifiedGarbage.Proof.Argon2.AArch64.MemoryInitClearMemory
+public import VerifiedGarbage.Proof.Argon2.AArch64.Initialize
+public import VerifiedGarbage.Proof.Framework.AArch64.Inline
+public import VerifiedGarbage.Proof.Argon2.AArch64.AddressHeaderWords
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Zero every word, preserving the enclosing loop's registers and memory. -/
+
+@[expose] public section
 
 namespace VG.Proof.Argon2.AArch64.ClearBlock
 

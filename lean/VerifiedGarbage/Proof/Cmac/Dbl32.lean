@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Cmac.Dbl
-import VerifiedGarbage.Proof.Cmac.Mem32
-import VerifiedGarbage.Proof.Framework.Bswap
-import VerifiedGarbage.Proof.Gcm.Bits
+module
+
+public import VerifiedGarbage.Proof.Cmac.Dbl
+public import VerifiedGarbage.Proof.Cmac.Mem32
+public import VerifiedGarbage.Proof.Framework.Bswap
+public import VerifiedGarbage.Proof.Gcm.Bits
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # CMAC: doubling a block in four 32-bit words
@@ -11,6 +17,8 @@ block as a big-endian 128-bit integer `b₀ ++ b₁ ++ b₂ ++ b₃` (`ofBytes_r
 double it a word at a time (`dbl_words4`), and store the words byte-reversed
 again (`le4_rev4`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Cmac
 

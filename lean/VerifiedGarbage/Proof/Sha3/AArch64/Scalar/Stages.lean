@@ -1,6 +1,14 @@
-import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Reflect
-import VerifiedGarbage.Proof.Sha3.Spec
-import Mathlib.Tactic.IntervalCases
+module
+
+public import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Reflect
+public import VerifiedGarbage.Proof.Sha3.Spec
+public import Mathlib.Tactic.IntervalCases
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.Sha3.AArch64.Scalar
 open VG VG.AArch64

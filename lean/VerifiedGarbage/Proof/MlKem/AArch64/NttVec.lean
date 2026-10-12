@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-import VerifiedGarbage.Proof.MlKem.Ntt
-import VerifiedGarbage.Proof.MlKem.AArch64.Common
+module
+
+public import VerifiedGarbage.Proof.MlKem.AArch64.Vec
+public import VerifiedGarbage.Proof.MlKem.Ntt
+public import VerifiedGarbage.Proof.MlKem.AArch64.Common
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on AArch64: polynomials in vectors
@@ -10,6 +16,8 @@ vectors stored into it (`polyIs_write16x2`). The butterflies of a block of the
 NTT and its inverse some at a time are in `Proof/MlKem/Ntt.lean`
 (`nttBlockN_add`, `nttBlockN_get'`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.AArch64
 

@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.MlKem.AArch64.Width
-import VerifiedGarbage.Proof.Framework.Range
+module
+
+public import VerifiedGarbage.Proof.MlKem.AArch64.Width
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Width
+public import VerifiedGarbage.Proof.Framework.Range
+meta import VerifiedGarbage.Proof.Framework.Range
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on AArch64: `ceLoop`, one width of `vg_mlkem_compress_encode`
@@ -8,6 +16,8 @@ Group `g` of the output is the number whose base-`2ᵈ` digits are the
 compressed coefficients `c g … c g + c - 1` (`byteEncode_group`): `acc g c`,
 built digit by digit (`coeff_step`) and stored byte by byte (`byte_step`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.AArch64.CE
 

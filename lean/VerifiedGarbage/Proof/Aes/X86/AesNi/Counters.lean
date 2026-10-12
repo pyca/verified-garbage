@@ -1,7 +1,15 @@
-import VerifiedGarbage.Proof.Aes.X86.AesNi.Arith
-import VerifiedGarbage.Proof.Aes.Blocks
-import VerifiedGarbage.Proof.Framework.X86.Exec
-import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
+module
+
+public import VerifiedGarbage.Proof.Aes.X86.AesNi.Arith
+public import VerifiedGarbage.Proof.Aes.Blocks
+public import VerifiedGarbage.Proof.Framework.X86.Exec
+public import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.Aes.X86.AesNi
 open VG.X86 VG.X86.RegUpd

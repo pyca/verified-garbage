@@ -1,5 +1,11 @@
-import VerifiedGarbage.Spec.MlKem
-import VerifiedGarbage.Proof.Framework.PowLit
+module
+
+public import VerifiedGarbage.Spec.MlKem
+public import VerifiedGarbage.Proof.Framework.PowLit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM: arithmetic modulo `q`, for every target
@@ -23,6 +29,8 @@ reduces (`reduce32`, `reduce64`).
 It also has the coefficients of polynomials (`getElem!_eq`, `ext_getElem!`)
 and of their sums and differences (`add_get`, `sub_get`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem
 

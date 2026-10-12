@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Cmac.Spec
-import VerifiedGarbage.Proof.Gcm.Spec
+module
+
+public import VerifiedGarbage.Proof.Cmac.Spec
+public import VerifiedGarbage.Proof.Gcm.Spec
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # GCM: GHASH and counter mode over a message given in pieces
@@ -16,6 +22,8 @@ about the steps the implementations of AES-GCM take (on every target):
   `i`-th byte of the text (`gctr_eq`), whose counter block and keystream
   block the state keeps (`Ctr`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Gcm
 

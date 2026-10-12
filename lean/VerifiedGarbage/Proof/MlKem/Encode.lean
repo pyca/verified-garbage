@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.MlKem.Bits
-import VerifiedGarbage.Proof.MlKem.Compress
+module
+
+public import VerifiedGarbage.Proof.MlKem.Bits
+public import VerifiedGarbage.Proof.MlKem.Compress
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM: encoding, decoding and sampling byte by byte, for every target
@@ -22,6 +28,8 @@ implementation does (with `Bits.lean`), for reduced inputs:
 Byte `k` of a list `B` is written `B.getD k 0`, which `bytesAt_getD`
 (`Mem.lean`) reads from memory.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem
 

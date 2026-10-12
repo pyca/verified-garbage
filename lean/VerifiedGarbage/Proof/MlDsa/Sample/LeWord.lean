@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.MlDsa.Sample.ExpandMask
-import VerifiedGarbage.Proof.Framework.Mem
+module
+
+public import VerifiedGarbage.Proof.MlDsa.Sample.ExpandMask
+public import VerifiedGarbage.Proof.Framework.Mem
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA: little-endian words in memory, for every target
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.Framework.Mem
 The `u64` a target loads from 8 bytes of memory is the little-endian integer
 of those bytes (`readW_leNat`), bit by bit (`readW64_getLsbD`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Sample
 

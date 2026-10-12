@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Aes.X86.AesNi.Dec
-import VerifiedGarbage.Proof.Aes.X86.AesNi.Data
-import VerifiedGarbage.Proof.Aes.X86.Common
+module
+
+public import VerifiedGarbage.Proof.Aes.X86.AesNi.Dec
+public import VerifiedGarbage.Proof.Aes.X86.AesNi.Data
+public import VerifiedGarbage.Proof.Aes.X86.Common
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-NI on x86 (32-bit): the round keys through `aesimc`
@@ -9,6 +15,8 @@ import VerifiedGarbage.Proof.Aes.X86.Common
 `scratch + 16 j`, and copies the last round key to `scratch + 224`
 (`imcKeys_ok`); `dKeys_of_imc` turns that into what `aesDec` needs.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Aes.X86.AesNi
 

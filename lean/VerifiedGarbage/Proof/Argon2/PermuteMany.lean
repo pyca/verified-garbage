@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Argon2.Permutation
+module
+
+public import VerifiedGarbage.Proof.Argon2.Permutation
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # P on several rows or columns
@@ -7,6 +13,8 @@ Facts about `permuteAt` on a family of disjoint index sets (the rows, or
 the columns): P on one set leaves the others alone, so the rows (or
 columns) can be permuted in any grouping (`foldl_at`, `foldl_pairs`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Argon2
 

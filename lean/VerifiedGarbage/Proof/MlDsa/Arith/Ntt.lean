@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlDsa.Arith.Zq
+module
+
+public import VerifiedGarbage.Proof.MlDsa.Arith.Zq
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA: the NTT as butterflies, for every target
@@ -23,6 +29,8 @@ The zeta of block `c` of the layer with `len` is `zetas (128 / len + c)` in
 `NTT` (the standard's counter `m` runs from 1 up) and
 `-zetas (256 / len - 1 - c)` in `NTT⁻¹` (from 255 down).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Arith
 

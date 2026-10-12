@@ -1,7 +1,14 @@
-import VerifiedGarbage.Proof.MlKem.AArch64.PrimCall
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Impl.MlKem.AArch64.Kem
-import Lean.Meta.Tactic.Delta
+module
+
+public import VerifiedGarbage.Proof.MlKem.AArch64.PrimCall
+public import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Impl.MlKem.AArch64.Kem
+public import Lean.Meta.Tactic.Delta
+public meta import Lean.Meta.Tactic.Delta
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on AArch64: the parameter sets of the top-level functions
@@ -18,6 +25,8 @@ the weakest precondition and the constant time of such a list of steps, by
 an invariant over the steps of a loop (`WPs.range`, `WPs.matrix`, `RelCTs.matrix`)
 or over the products of a sum (`WPs.dot`).
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlKem.AArch64.KemLay
 

@@ -1,4 +1,10 @@
-import VerifiedGarbage.Spec.Argon2
+module
+
+public import VerifiedGarbage.Spec.Argon2
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Argon2 H′: lengths and the streaming BLAKE2b specification
@@ -7,6 +13,8 @@ The length lemmas describe H′'s 32-byte prefixes and final 33–64-byte
 hash. `H_stream` connects the RFC definition to the existing streaming
 contract without selecting a BLAKE2b implementation.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Argon2
 
