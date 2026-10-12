@@ -63,7 +63,7 @@ instance (C : CP) (i : Nat) : Decidable (C.Out i) := by
 working space or a result's. -/
 theorem keeps_of {C : CP} {W : List (Nat × Nat)}
     (hW : ∀ w ∈ W, ∀ j < w.2, C.Own (w.1 + j) ∨ C.Out (w.1 + j)) (ws : Addr) (m m' : Mem)
-    (hfit : ws.toNat + 8192 ≤ 2 ^ 64) (hu : Unch ws W m m') : C.Keeps ws m m' := by
+    (_hfit : ws.toNat + 8192 ≤ 2 ^ 64) (hu : Unch ws W m m') : C.Keeps ws m m' := by
   intro i hi hown hout
   have h8 : Spec.Weierstrass.Mont.wsBytes = 8192 := rfl
   refine hu _ fun w hw => ?_
@@ -86,13 +86,13 @@ theorem sv_eq (hc : BaseCfgOk c) (A : Agree c C) {i : Nat} (hi : i < 45) (ht : i
     (m : Mem) : wordsVal m base (c.sl i) c.n = C.num base m (C.slot i) := by
   rw [A.sl i hi ht, A.k, num_eq C m base (slot_lt hc A hi)]
 
-theorem flag_eq (hc : BaseCfgOk c) (A : Agree c C) (base : Addr) (m : Mem) :
+theorem flag_eq (A : Agree c C) (base : Addr) (m : Mem) :
     word m base (c.sl FLAG) = C.flag base m := by
   rw [A.sl FLAG (by decide) (by decide)]
   rfl
 
 theorem mask_eq_zero {P : Prop} [Decidable P] : mask P = 0 ↔ ¬ P := by
-  by_cases h : P <;> simp only [mask, h, ite_true, ite_false, not_true, not_false_eq_true, iff_true]
+  by_cases h : P <;> simp only [mask, h, ite_true, ite_false, not_true, not_false_eq_true]
   · decide
 
 /-- The code's check of the curve's equation is the specification's. -/
@@ -101,6 +101,15 @@ theorem onCurve_iff' (C' : Spec.Weierstrass.Curve) (X Y : Fin C'.p) :
       Y * Y - ((X * X * X + Fin.ofNat C'.p C'.a * X) + Fin.ofNat C'.p C'.b) = 0 := by
   rw [onCurve, decide_eq_true_iff]
   constructor <;> intro h <;> grind
+
+/-- The checks of `x`, `y` and the curve's equation as the code states them,
+on a curve `W` equal to `C`'s, are the specification's `Valid`. -/
+theorem valid_iff (W : Spec.Weierstrass.Curve) (C : CP) (h : W = C.W) (x y : Nat) :
+    (x < W.p ∧ y < W.p ∧ Fin.ofNat W.p y * Fin.ofNat W.p y - ((Fin.ofNat W.p x * Fin.ofNat W.p x *
+      Fin.ofNat W.p x + Fin.ofNat W.p W.a * Fin.ofNat W.p x) + Fin.ofNat W.p W.b) = 0) ↔ C.Valid x y := by
+  subst h
+  unfold Spec.Weierstrass.CheckPoint.Curve.Valid
+  rw [onCurve_iff']
 
 /-- `vg_<curve>_check_point`: the contract's postcondition and the ABI's
 registers, from its precondition. -/
@@ -125,11 +134,11 @@ theorem correct (hc : BaseCfgOk c) (A : Agree c C)
     rw [sv, sv_eq hc A (by decide) (by decide), Cfg.mont, hR, A.W]; exact hb
   have hf : word s.mem (s.gpr .rdi) (c.sl FLAG) =
       mask (C.flag (s.gpr .rdi) s.mem = BitVec.allOnes 64) := by
-    rw [flag_eq hc A]
+    rw [flag_eq A]
     rcases hfl with h | h <;> rw [h] <;> decide
   obtain ⟨t, s', he, P⟩ := checkFn_ok hc hS hmp hap hr2' hbp hf
   have hnc : (Cfg.invFnX (Impl.Ecdh.X86_64.Cfg.checkBody c)).noCalls = true := by
-    simp only [Cfg.invFnX, Code.noCalls, hn, Bool.and_true, Bool.true_and]
+    simp only [Cfg.invFnX, Code.noCalls, hn, Bool.and_true]
   refine ⟨t, s', he, abiPreserved_of_exec hmx he ⟨fun r hr => ?_, ?_⟩, ?_⟩
   · have sv := invFnX_gpr hv hn he
     simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -152,15 +161,15 @@ theorem correct (hc : BaseCfgOk c) (A : Agree c C)
   have hP : CheckOk c (s.gpr .rdi) s (C.flag (s.gpr .rdi) s.mem = BitVec.allOnes 64) ↔
       C.flag (s.gpr .rdi) s.mem = BitVec.allOnes 64 ∧
         C.Valid (C.num (s.gpr .rdi) s.mem C.xAt) (C.num (s.gpr .rdi) s.mem C.yAt) := by
-    simp only [CheckOk, PeerOk, OnCurve, Spec.Weierstrass.CheckPoint.Curve.Valid, eX, eY]
-    rw [A.W, onCurve_iff']
+    simp only [CheckOk, PeerOk, OnCurve, eX, eY]
+    rw [← valid_iff c.C C A.W]
     constructor
     · rintro ⟨⟨⟨h₁, h₂⟩, h₃⟩, h₄⟩; exact ⟨h₁, h₂, h₃, h₄⟩
     · rintro ⟨h₁, h₂, h₃, h₄⟩; exact ⟨⟨⟨h₁, h₂⟩, h₃⟩, h₄⟩
   have hF : C.flag (s.gpr .rdi) s'.mem = C.flag (s.gpr .rdi) s.mem &&&
       Spec.Weierstrass.CheckPoint.Curve.mask
         (C.Valid (C.num (s.gpr .rdi) s.mem C.xAt) (C.num (s.gpr .rdi) s.mem C.yAt)) := by
-    rw [← flag_eq hc A, P.flag]
+    rw [← flag_eq A, P.flag]
     have hm : Spec.Weierstrass.CheckPoint.Curve.mask
         (C.Valid (C.num (s.gpr .rdi) s.mem C.xAt) (C.num (s.gpr .rdi) s.mem C.yAt)) =
         mask (C.Valid (C.num (s.gpr .rdi) s.mem C.xAt) (C.num (s.gpr .rdi) s.mem C.yAt)) := rfl
@@ -173,31 +182,31 @@ theorem correct (hc : BaseCfgOk c) (A : Agree c C)
   have hok : CheckOk c (s.gpr .rdi) s (C.flag (s.gpr .rdi) s.mem = BitVec.allOnes 64) ↔
       ¬ (C.flag (s.gpr .rdi) s.mem &&& Spec.Weierstrass.CheckPoint.Curve.mask
         (C.Valid (C.num (s.gpr .rdi) s.mem C.xAt) (C.num (s.gpr .rdi) s.mem C.yAt)) = 0) := by
-    rw [← hF, ← flag_eq hc A, P.flag, mask_eq_zero, not_not]
+    rw [← hF, ← flag_eq A (s.gpr .rdi) s'.mem, P.flag, mask_eq_zero, not_not]
   have hRp : 2 ^ (64 * c.n) = C.R := by rw [← hR]; rfl
   refine ⟨hF, ?_, ?_, ?_, ?_, A.keeps _ _ _ hfit P.unch⟩
-  · show C.num _ _ (C.slot 34) = _
+  · show C.num _ _ (C.slot QXM) = _
     rw [← sv_eq hc A (i := QXM) (by decide) (by decide)]
     show sv c _ s' QXM = _
     rw [P.qxm, eX, hRp, A.W]
-  · show C.num _ _ (C.slot 35) = _
+  · show C.num _ _ (C.slot QYM) = _
     rw [← sv_eq hc A (i := QYM) (by decide) (by decide)]
     show sv c _ s' QYM = _
     rw [P.qym, eY, hRp, A.W]
-  · show C.num _ _ (C.slot 38) = _
+  · show C.num _ _ (C.slot PX) = _
     rw [← sv_eq hc A (i := PX) (by decide) (by decide)]
     show sv c _ s' PX = _
-    rw [P.px, eX, hRp, A.W, sv, sv_eq hc A (i := GX) (by decide) (by decide)]
+    rw [P.px]
     by_cases h : CheckOk c (s.gpr .rdi) s (C.flag (s.gpr .rdi) s.mem = BitVec.allOnes 64)
-    · rw [if_pos h, if_neg (hok.mp h)]
-    · rw [if_neg h, if_pos (not_not.mp (mt hok.mpr h))]; rfl
-  · show C.num _ _ (C.slot 43) = _
+    · rw [ite_eq_left_of_eq_true _ _ (eq_true h), ite_eq_right_of_eq_false _ _ (eq_false (hok.mp h)), eX, hRp, A.W]
+    · rw [ite_eq_right_of_eq_false _ _ (eq_false h), ite_eq_left_of_eq_true _ _ (eq_true (not_not.mp (mt hok.mpr h))), sv, sv_eq hc A (i := GX) (by decide) (by decide)]; rfl
+  · show C.num _ _ (C.slot PY) = _
     rw [← sv_eq hc A (i := PY) (by decide) (by decide)]
     show sv c _ s' PY = _
-    rw [P.py, eY, hRp, A.W, sv, sv_eq hc A (i := GY) (by decide) (by decide)]
+    rw [P.py]
     by_cases h : CheckOk c (s.gpr .rdi) s (C.flag (s.gpr .rdi) s.mem = BitVec.allOnes 64)
-    · rw [if_pos h, if_neg (hok.mp h)]
-    · rw [if_neg h, if_pos (not_not.mp (mt hok.mpr h))]; rfl
+    · rw [ite_eq_left_of_eq_true _ _ (eq_true h), ite_eq_right_of_eq_false _ _ (eq_false (hok.mp h)), eY, hRp, A.W]
+    · rw [ite_eq_right_of_eq_false _ _ (eq_false h), ite_eq_left_of_eq_true _ _ (eq_true (not_not.mp (mt hok.mpr h))), sv, sv_eq hc A (i := GY) (by decide) (by decide)]; rfl
 
 /-! ## Constant time, and the shared contract -/
 
@@ -239,7 +248,8 @@ def satState (C : CP) : State where
   wr := [⟨0x1000, 8192⟩]
 
 theorem sat_of (C : CP) (h : C.pre 0x1000 (satMem C)) : (checkK C).pre (satState C) :=
-  ⟨rfl, rfl, Region.disjoint_of_sep (by decide), by decide, h⟩
+  ⟨rfl, rfl, Region.disjoint_of_sep (show Region.sep ⟨0x20000, 8⟩ ⟨0x1000, 8192⟩ = true by decide),
+    show (0x1000 : BitVec 64).toNat + 8192 ≤ 2 ^ 64 by decide, h⟩
 
 theorem implies (C : CP) (hsat : C.pre 0x1000 (satMem C)) : (checkK C).Implies (C.checkContract X86_64.abi) where
   pre s h := by
@@ -257,6 +267,6 @@ theorem implies (C : CP) (hsat : C.pre 0x1000 (satMem C)) : (checkK C).Implies (
   sat := ⟨satState C, by
     sig_pre [Spec.Weierstrass.CheckPoint.Curve.checkContract, Spec.Weierstrass.CheckPoint.sig,
       X86_64.abi, X86_64.argRegs, stackBelow]
-    exact sat_of C hsat⟩
+    exact ⟨Region.disjoint_of_sep (by decide), by decide, hsat⟩⟩
 
 end VG.Proof.Ecdh.X86_64.CheckFn

@@ -35,12 +35,7 @@ def artifacts (h : Proof.Weierstrass.X86_64.HasLawInvOrd Spec.P384.curve) : List
       contract := C.checkContract X86_64.abi
       ofSig := ⟨_, _, _, by unfold Spec.Weierstrass.CheckPoint.Curve.checkContract; rfl⟩
       verified := verified h.inv adx
-      spSafe := by
-        cases adx
-        · exact Code.all_of_allInstrs (show Proof.Weierstrass.X86_64.P384Literals.checkFn.allInstrs _ = true
-            by lit_decide)
-        · exact Code.all_of_allInstrs (show Proof.Weierstrass.X86_64.P384Literals.checkFnAdx.allInstrs _ = true
-            by lit_decide)
+      spSafe := by cases adx <;> exact Code.all_of_allInstrs (by lit_decide)
       features := if adx then ["bmi2", "adx"] else [] }
 
 end VG.Generic.P384.X86_64.CheckPointP384

@@ -32,15 +32,10 @@ theorem hn (adx : Bool) : (Impl.Ecdh.X86_64.Cfg.checkBody (cfg adx)).noCalls = t
   cases adx <;> lit_decide
 
 theorem hmx (adx : Bool) : (code adx).allInstrs (fun i => !loadsMxcsr i) = true := by
-  cases adx
-  · show P384Literals.checkFn.allInstrs _ = true; lit_decide
-  · show P384Literals.checkFnAdx.allInstrs _ = true; lit_decide
+  cases adx <;> lit_decide
 
 theorem ct (adx : Bool) : ConstantTime isa (checkK C).pre (checkK C).pub (code adx) := by
-  cases adx
-  · show ConstantTime isa _ _ P384Literals.checkFn
-    exact VG.Taint.constantTime (A := X86_64.taint) (Taint.ofRegs [.rdi, .rsp]) (agreeK C) (by taint_decide)
-  · show ConstantTime isa _ _ P384Literals.checkFnAdx
+  cases adx <;>
     exact VG.Taint.constantTime (A := X86_64.taint) (Taint.ofRegs [.rdi, .rsp]) (agreeK C) (by taint_decide)
 
 theorem sat : C.pre 0x1000 (satMem C) := by
