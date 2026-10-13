@@ -6,6 +6,10 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.FastEnv
 public meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.FastEnv
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Literal
 public meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Literal
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Spec.Weierstrass
 
 /-! Generate a literal certificate and final states. Callers independently
 validate the certificate and both executions in the kernel. -/

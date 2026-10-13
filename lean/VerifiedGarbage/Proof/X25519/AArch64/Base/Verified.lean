@@ -12,6 +12,10 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseCTEngine
+import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarMemory
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseCTEngine
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarMemory
 
 /-!
 # X25519 of the base point on AArch64: constant time and the contract

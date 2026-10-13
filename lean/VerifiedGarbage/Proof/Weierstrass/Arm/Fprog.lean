@@ -8,6 +8,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Weierstrass.Unch
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # Field programs on 32-bit ARM

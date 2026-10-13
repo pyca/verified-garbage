@@ -10,6 +10,7 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 
 /-! Jacobian addition field programs, including the header's public branch values. -/
 
