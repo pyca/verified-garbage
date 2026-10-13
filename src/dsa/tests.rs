@@ -184,6 +184,7 @@ fn import_lengths_errors_and_backends() {
     );
     assert_eq!(Backend::select(Features::of(&[])), Backend::Baseline);
     assert_eq!(Backend::select(Features::of(&["bmi2"])), Backend::Baseline);
+    #[cfg(target_arch = "x86_64")]
     assert_eq!(
         Backend::select(Features::of(&["bmi2", "adx"])),
         Backend::Adx

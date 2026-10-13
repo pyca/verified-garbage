@@ -11,12 +11,12 @@ use core::cmp::Ordering;
 pub(super) fn canonical(a: &[u8]) -> &[u8] {
     &a[a.iter().position(|&b| b != 0).unwrap_or(a.len())..]
 }
-pub(super) fn bits(a: &[u8]) -> usize {
+pub(crate) fn bits(a: &[u8]) -> usize {
     let a = canonical(a);
     a.first()
         .map_or(0, |b| 8 * a.len() - b.leading_zeros() as usize)
 }
-pub(super) fn value_cmp(a: &[u8], b: &[u8]) -> Ordering {
+pub(crate) fn value_cmp(a: &[u8], b: &[u8]) -> Ordering {
     let (a, b) = (canonical(a), canonical(b));
     a.len().cmp(&b.len()).then_with(|| a.cmp(b))
 }
@@ -27,7 +27,7 @@ pub(super) fn scalar(a: &[u8], len: usize) -> Vec<u8> {
     out
 }
 /// Subtract one from a public odd modulus, so there is no borrow.
-pub(super) fn minus_one(a: &[u8]) -> Vec<u8> {
+pub(crate) fn minus_one(a: &[u8]) -> Vec<u8> {
     let mut out = a.to_vec();
     let last = out.len() - 1;
     out[last] -= 1;
@@ -35,7 +35,7 @@ pub(super) fn minus_one(a: &[u8]) -> Vec<u8> {
 }
 
 /// Public long reduction for q | p-1 checks, with a spare carry byte.
-pub(super) fn divides(q: &[u8], n: &[u8]) -> bool {
+pub(crate) fn divides(q: &[u8], n: &[u8]) -> bool {
     let modulus = scalar(q, q.len() + 1);
     let mut rem = vec![0u8; modulus.len()];
     for &byte in n {
@@ -78,7 +78,7 @@ impl Backend {
 }
 
 #[derive(Clone, Debug)]
-pub(super) struct Montgomery {
+pub(crate) struct Montgomery {
     modulus: Vec<u64>,
     r2: Vec<u64>,
     minv: u64,
@@ -88,7 +88,7 @@ pub(super) struct Montgomery {
 impl Montgomery {
     /// Only public values are used in precomputation. Works for any odd
     /// modulus >=3, including the 511-bit Sophie Germain prime of a 512-bit p.
-    pub(super) fn new(p: &[u8]) -> Self {
+    pub(crate) fn new(p: &[u8]) -> Self {
         let w = p.len().div_ceil(8).max(2);
         let modulus = words(p, w);
         let mut inv = 1u64;
@@ -108,7 +108,7 @@ impl Montgomery {
             backend: Backend::select(detected()),
         }
     }
-    pub(super) fn power(&self, base: &[u8], exponent: &[u8]) -> Vec<u8> {
+    pub(crate) fn power(&self, base: &[u8], exponent: &[u8]) -> Vec<u8> {
         let w = self.modulus.len();
         let window = if exponent.len() >= 39 { 5 } else { 4 };
         let table_words = if cfg!(target_arch = "aarch64") {
@@ -199,7 +199,7 @@ impl Montgomery {
 
     /// Variable-time exponentiation for public exponents only (e.g. subgroup
     /// orders). Never use this for a private scalar or a secret prime exponent.
-    pub(super) fn power_public(&self, base: &[u8], exponent: &[u8]) -> Vec<u8> {
+    pub(crate) fn power_public(&self, base: &[u8], exponent: &[u8]) -> Vec<u8> {
         let mut ws = self.power_public_montgomery(base, exponent);
         self.finish(&mut ws)
     }
@@ -292,6 +292,19 @@ impl Montgomery {
         false
     }
 
+    /// Multiply reduced, fixed-width operands, with wiped intermediate storage.
+    #[cfg(target_arch = "aarch64")]
+    pub(crate) fn product(&self, a: &[u8], b: &[u8]) -> Vec<u8> {
+        let mut ws = self.workspace(a, 0);
+        let at = |j| 32 + j * (self.modulus.len() + 2);
+        for (i, &byte) in b.iter().rev().enumerate() {
+            ws[at(6) + i / 8] |= u64::from(byte) << (8 * (i % 8));
+        }
+        self.mul(&mut ws, 6, 6, 1);
+        self.mul(&mut ws, 5, 4, 6);
+        self.finish(&mut ws)
+    }
+
     fn workspace(&self, base: &[u8], table_words: usize) -> Scratch {
         let w = self.modulus.len();
         let table_at = 32 + 8 * (w + 2);
@@ -305,7 +318,10 @@ impl Montgomery {
         let at = |j| 32 + j * (w + 2);
         ws[at(0)..at(0) + w].copy_from_slice(&self.modulus);
         ws[at(1)..at(1) + w].copy_from_slice(&self.r2);
-        ws[at(4)..at(4) + w].copy_from_slice(&words(base, w));
+        // Decode directly into wiped scratch: DSA also supplies secret bases.
+        for (i, &byte) in base.iter().rev().enumerate() {
+            ws[at(4) + i / 8] |= u64::from(byte) << (8 * (i % 8));
+        }
         ws[at(7)] = 1;
         self.mul(&mut ws, 4, 4, 1);
         self.mul(&mut ws, 5, 7, 1);

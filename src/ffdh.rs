@@ -18,7 +18,7 @@
     feature = "alloc"
 ))]
 
-mod arithmetic;
+pub(crate) mod arithmetic;
 mod generation;
 
 use crate::zeroize::zeroize;

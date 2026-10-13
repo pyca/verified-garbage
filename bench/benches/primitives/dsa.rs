@@ -2,13 +2,13 @@
 //! aws-lc-rs does not expose a DSA signing/verification API.
 use criterion::Criterion;
 
-pub const USES: &[&str] = &["dsa"];
+pub const USES: &[&str] = &["dsa", "rsa_mont", "ffdh", "ct"];
 
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
 #[path = "../../../tests/cavp/dsa_vectors.rs"]
 mod vectors;
 
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
 pub fn bench(c: &mut Criterion) {
     use crate::{OPENSSL, VG};
     use criterion::BenchmarkId;
@@ -155,5 +155,5 @@ pub fn bench(c: &mut Criterion) {
     }
 }
 
-#[cfg(not(target_arch = "x86_64"))]
+#[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
 pub fn bench(_: &mut Criterion) {}
