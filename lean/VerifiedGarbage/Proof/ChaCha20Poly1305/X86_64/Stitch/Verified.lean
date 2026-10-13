@@ -1354,20 +1354,21 @@ structure FlagsOnly (s t : State) : Prop where
   mx : t.mxcsr = s.mxcsr
 
 /-- The comparison of `len` with `smallLim`. -/
-abbrev cmpSmall : List Instr := [.alu .cmp .r9 (.imm (BitVec.ofNat 32 (smallLim)))]
+abbrev cmpSmall (vl : Bool) : List Instr := [.alu .cmp .r9 (.imm (BitVec.ofNat 32 (smallLim vl)))]
 
 /-- What the comparison leaves, from `s`. -/
-def Cmped (s t : State) : Prop :=
-  isa.eval .b t = some (decide ((s.gpr .r9).toNat < smallLim)) ∧ FlagsOnly s t
+def Cmped (vl : Bool) (s t : State) : Prop :=
+  isa.eval .b t = some (decide ((s.gpr .r9).toNat < smallLim vl)) ∧ FlagsOnly s t
 
-theorem cmpSmall_ok (s : State) : WP isa (.block cmpSmall) s (Cmped s) := by
-  apply WP.of_runBlock
-  simp only [cmpSmall, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc, Option.bind_some,
-    Option.some.injEq, exists_eq_left']
-  refine ⟨?_, ⟨rfl, rfl, rfl, rfl, rfl⟩⟩
-  show (State.cf _) = _
-  simp only [RegUpd.cf_arithFlags]
-  rfl
+theorem cmpSmall_ok (vl : Bool) (s : State) : WP isa (.block (cmpSmall vl)) s (Cmped vl s) := by
+  cases vl <;>
+  · apply WP.of_runBlock
+    simp only [cmpSmall, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc, Option.bind_some,
+      Option.some.injEq, exists_eq_left']
+    refine ⟨?_, ⟨rfl, rfl, rfl, rfl, rfl⟩⟩
+    show (State.cf _) = _
+    simp only [RegUpd.cf_arithFlags]
+    rfl
 
 namespace FlagsOnly
 
@@ -1411,7 +1412,7 @@ theorem sealSmall_ok (u : Proof.ChaCha20.X86_64.XorImpl) (hu : u.poly = .avx2) {
     (s : State) (hs : sealX86_64.pre s) :
     ∃ t s', Exec isa (sealSmall u.callee big) s t s' ∧ abiPreserved s s' ∧ sealX86_64.post s s' := by
   have hw : WP isa (sealSmall u.callee big) s fun z => abiPreserved s z ∧ sealX86_64.post s z := by
-    refine WP.seq (WP.mono (cmpSmall_ok s) fun e ⟨he, hf⟩ => ?_)
+    refine WP.seq (WP.mono (cmpSmall_ok u.callee.vl s) fun e ⟨he, hf⟩ => ?_)
     refine WP.ite _ he (fun _ => ?_) (fun _ => ?_)
     · obtain ⟨t, s', ex, ha, hp⟩ := sealS_ok u hu e (hf.pre hs)
       rw [hu] at ex
@@ -1425,9 +1426,9 @@ theorem sealSmall_ok (u : Proof.ChaCha20.X86_64.XorImpl) (hu : u.poly = .avx2) {
 abbrev PP (s₁ s₂ : State) : Prop := sealX86_64.pre s₁ ∧ sealX86_64.pre s₂ ∧ sealX86_64.pub s₁ s₂
 
 /-- Constant-time code, from states after the comparison in two runs. -/
-theorem rel_cmped {c : Prog isa} (hc : ConstantTime isa sealX86_64.pre sealX86_64.pub c)
+theorem rel_cmped {vl : Bool} {c : Prog isa} (hc : ConstantTime isa sealX86_64.pre sealX86_64.pub c)
     {R : State → State → Prop}
-    (hR : ∀ a b, R a b → ∃ σ₁ σ₂, PP σ₁ σ₂ ∧ Cmped σ₁ a ∧ Cmped σ₂ b) :
+    (hR : ∀ a b, R a b → ∃ σ₁ σ₂, PP σ₁ σ₂ ∧ Cmped vl σ₁ a ∧ Cmped vl σ₂ b) :
     RelCT isa R c fun _ _ => True := by
   intro a b t₁ t₂ a' b' hr e₁ e₂
   obtain ⟨σ₁, σ₂, ⟨p₁, p₂, hp⟩, ⟨-, f₁⟩, ⟨-, f₂⟩⟩ := hR a b hr
@@ -1436,12 +1437,12 @@ theorem rel_cmped {c : Prog isa} (hc : ConstantTime isa sealX86_64.pre sealX86_6
 theorem sealSmall_ct (u : Proof.ChaCha20.X86_64.XorImpl) (hu : u.poly = .avx2) {big : Prog isa} (hb : ConstantTime isa sealX86_64.pre sealX86_64.pub big) :
     ConstantTime isa sealX86_64.pre sealX86_64.pub (sealSmall u.callee big) := by
   refine RelCT.constantTime (Q := fun _ _ => True) ?_
-  have hblk : RelCT isa PP (.block cmpSmall) fun _ _ => True := by
-    obtain ⟨_, hc⟩ : ∃ hc, (taint.check (Taint.ofRegs [.r9]) (.block cmpSmall) hc).isSome = true :=
-      ⟨_, by taint_decide⟩
+  have hblk : RelCT isa PP (.block (cmpSmall u.callee.vl)) fun _ _ => True := by
+    obtain ⟨_, hc⟩ : ∃ hc, (taint.check (Taint.ofRegs [.r9]) (.block (cmpSmall u.callee.vl)) hc).isSome = true := by
+      generalize u.callee.vl = vl; cases vl <;> exact ⟨_, by taint_decide⟩
     exact RelCT.taint (A := taint) (Taint.ofRegs [.r9]) (fun s₁ s₂ h => Taint.agree_ofRegs (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact h.2.2.2.2.2.2.2.1)) hc
-  refine RelCT.seq (RelCT.wpDep (F := Cmped) hblk fun s₁ s₂ _ => ⟨cmpSmall_ok s₁, cmpSmall_ok s₂⟩) ?_
+  refine RelCT.seq (RelCT.wpDep (F := Cmped u.callee.vl) hblk fun s₁ s₂ _ => ⟨cmpSmall_ok _ s₁, cmpSmall_ok _ s₂⟩) ?_
   refine RelCT.ite (fun a b ⟨_, σ₁, σ₂, ⟨_, _, hp⟩, ⟨e₁, _⟩, ⟨e₂, _⟩⟩ => ?_) ?_ ?_
   · rw [e₁, e₂, show σ₁.gpr .r9 = σ₂.gpr .r9 from hp.2.2.2.2.2.1]
   · have hs := sealS_ct u hu
@@ -1466,7 +1467,7 @@ theorem sealSmall_spSafe (u : Proof.ChaCha20.X86_64.XorImpl) (hu : u.poly = .avx
   have h := sealS_spSafe u hu
   rw [hu] at h
   simp only [sealSmall, Code.all, hb, Bool.and_true]
-  exact Bool.and_eq_true_iff.mpr ⟨by decide, h⟩
+  exact Bool.and_eq_true_iff.mpr ⟨by generalize u.callee.vl = vl; cases vl <;> decide, h⟩
 
 theorem sealSmall_xdepth (u : Proof.ChaCha20.X86_64.XorImpl) (hu : u.poly = .avx2) {big : Prog isa} (hb : big.x86_64Depth ≤ 24) : (sealSmall u.callee big).x86_64Depth ≤ 24 := by
   have h := sealS_xdepth u
@@ -3083,20 +3084,21 @@ theorem openS_framed (v : Proof.ChaCha20.X86_64.XorImpl) :
 which `open`'s contract does not read either. -/
 
 /-- The comparison of `len` with `openLim`. -/
-abbrev cmpOpen : List Instr := [.alu .cmp .r9 (.imm (BitVec.ofNat 32 (openLim)))]
+abbrev cmpOpen (vl : Bool) : List Instr := [.alu .cmp .r9 (.imm (BitVec.ofNat 32 (openLim vl)))]
 
 /-- What the comparison leaves, from `s`. -/
-def CmpedO (s t : State) : Prop :=
-  isa.eval .b t = some (decide ((s.gpr .r9).toNat < openLim)) ∧ FlagsOnly s t
+def CmpedO (vl : Bool) (s t : State) : Prop :=
+  isa.eval .b t = some (decide ((s.gpr .r9).toNat < openLim vl)) ∧ FlagsOnly s t
 
-theorem cmpOpen_ok (s : State) : WP isa (.block cmpOpen) s (CmpedO s) := by
-  apply WP.of_runBlock
-  simp only [cmpOpen, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc, Option.bind_some,
-    Option.some.injEq, exists_eq_left']
-  refine ⟨?_, ⟨rfl, rfl, rfl, rfl, rfl⟩⟩
-  show (State.cf _) = _
-  simp only [RegUpd.cf_arithFlags]
-  rfl
+theorem cmpOpen_ok (vl : Bool) (s : State) : WP isa (.block (cmpOpen vl)) s (CmpedO vl s) := by
+  cases vl <;>
+  · apply WP.of_runBlock
+    simp only [cmpOpen, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc, Option.bind_some,
+      Option.some.injEq, exists_eq_left']
+    refine ⟨?_, ⟨rfl, rfl, rfl, rfl, rfl⟩⟩
+    show (State.cf _) = _
+    simp only [RegUpd.cf_arithFlags]
+    rfl
 
 theorem FlagsOnly.preO {s t : State} (h : FlagsOnly s t) (hs : openX86_64.pre s) : openX86_64.pre t := by
   show preX86_64 false t
@@ -3122,7 +3124,7 @@ theorem openSmall_ok (u : Proof.ChaCha20.X86_64.XorImpl) (hu : u.poly = .avx2) {
     (s : State) (hs : openX86_64.pre s) :
     ∃ t s', Exec isa (openSmall u.callee big) s t s' ∧ abiPreserved s s' ∧ openX86_64.post s s' := by
   have hw : WP isa (openSmall u.callee big) s fun z => abiPreserved s z ∧ openX86_64.post s z := by
-    refine WP.seq (WP.mono (cmpOpen_ok s) fun e ⟨he, hf⟩ => ?_)
+    refine WP.seq (WP.mono (cmpOpen_ok u.callee.vl s) fun e ⟨he, hf⟩ => ?_)
     refine WP.ite _ he (fun _ => ?_) (fun _ => ?_)
     · obtain ⟨t, s', ex, ha, hp⟩ := openS_ok u e (hf.preO hs)
       rw [hu] at ex
@@ -3135,9 +3137,9 @@ theorem openSmall_ok (u : Proof.ChaCha20.X86_64.XorImpl) (hu : u.poly = .avx2) {
 /-- Pairs of states that `open`'s contract allows, with the same public data. -/
 abbrev PPO (s₁ s₂ : State) : Prop := openX86_64.pre s₁ ∧ openX86_64.pre s₂ ∧ openX86_64.pub s₁ s₂
 
-theorem rel_cmpedO {c : Prog isa} (hc : ConstantTime isa openX86_64.pre openX86_64.pub c)
+theorem rel_cmpedO {vl : Bool} {c : Prog isa} (hc : ConstantTime isa openX86_64.pre openX86_64.pub c)
     {R : State → State → Prop}
-    (hR : ∀ a b, R a b → ∃ σ₁ σ₂, PPO σ₁ σ₂ ∧ CmpedO σ₁ a ∧ CmpedO σ₂ b) :
+    (hR : ∀ a b, R a b → ∃ σ₁ σ₂, PPO σ₁ σ₂ ∧ CmpedO vl σ₁ a ∧ CmpedO vl σ₂ b) :
     RelCT isa R c fun _ _ => True := by
   intro a b t₁ t₂ a' b' hr e₁ e₂
   obtain ⟨σ₁, σ₂, ⟨p₁, p₂, hp⟩, ⟨-, f₁⟩, ⟨-, f₂⟩⟩ := hR a b hr
@@ -3146,12 +3148,12 @@ theorem rel_cmpedO {c : Prog isa} (hc : ConstantTime isa openX86_64.pre openX86_
 theorem openSmall_ct (u : Proof.ChaCha20.X86_64.XorImpl) (hu : u.poly = .avx2) {big : Prog isa} (hb : ConstantTime isa openX86_64.pre openX86_64.pub big) :
     ConstantTime isa openX86_64.pre openX86_64.pub (openSmall u.callee big) := by
   refine RelCT.constantTime (Q := fun _ _ => True) ?_
-  have hblk : RelCT isa PPO (.block cmpOpen) fun _ _ => True := by
-    obtain ⟨_, hc⟩ : ∃ hc, (taint.check (Taint.ofRegs [.r9]) (.block cmpOpen) hc).isSome = true :=
-      ⟨_, by taint_decide⟩
+  have hblk : RelCT isa PPO (.block (cmpOpen u.callee.vl)) fun _ _ => True := by
+    obtain ⟨_, hc⟩ : ∃ hc, (taint.check (Taint.ofRegs [.r9]) (.block (cmpOpen u.callee.vl)) hc).isSome = true := by
+      generalize u.callee.vl = vl; cases vl <;> exact ⟨_, by taint_decide⟩
     exact RelCT.taint (A := taint) (Taint.ofRegs [.r9]) (fun s₁ s₂ h => Taint.agree_ofRegs (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact h.2.2.2.2.2.2.2.1)) hc
-  refine RelCT.seq (RelCT.wpDep (F := CmpedO) hblk fun s₁ s₂ _ => ⟨cmpOpen_ok s₁, cmpOpen_ok s₂⟩) ?_
+  refine RelCT.seq (RelCT.wpDep (F := CmpedO u.callee.vl) hblk fun s₁ s₂ _ => ⟨cmpOpen_ok _ s₁, cmpOpen_ok _ s₂⟩) ?_
   refine RelCT.ite (fun a b ⟨_, σ₁, σ₂, ⟨_, _, hp⟩, ⟨e₁, _⟩, ⟨e₂, _⟩⟩ => ?_) ?_ ?_
   · rw [e₁, e₂, show σ₁.gpr .r9 = σ₂.gpr .r9 from hp.2.2.2.2.2.1]
   · have hs := openS_ct u
@@ -3171,7 +3173,7 @@ theorem openSmall_spSafe (u : Proof.ChaCha20.X86_64.XorImpl) (hu : u.poly = .avx
   have h := openS_spSafe u
   rw [hu] at h
   simp only [openSmall, Code.all, hb, Bool.and_true]
-  exact Bool.and_eq_true_iff.mpr ⟨by decide, h⟩
+  exact Bool.and_eq_true_iff.mpr ⟨by generalize u.callee.vl = vl; cases vl <;> decide, h⟩
 
 theorem openSmall_xdepth (u : Proof.ChaCha20.X86_64.XorImpl) (hu : u.poly = .avx2) {big : Prog isa} (hb : big.x86_64Depth ≤ 24) : (openSmall u.callee big).x86_64Depth ≤ 24 := by
   have h := openS_xdepth u
