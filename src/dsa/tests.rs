@@ -154,6 +154,43 @@ fn public_subgroup_windows() {
 }
 
 #[test]
+fn signing_key_consistency_implies_public_subgroup() {
+    let cases = vectors(include_str!("../../vectors/nist-cavp-dsa/SigGen.txt"), true);
+    let v = &cases[0];
+    let p = hex(&v["P"], 0);
+    let q = hex(&v["Q"], 0);
+    let g = hex(&v["G"], p.len());
+    let y = hex(&v["Y"], p.len());
+    let x = hex(&v["X"], q.len());
+    let nonce = hex(&v["K"], q.len());
+    let digest = digest(&v["Hash"], &hex(&v["Msg"], 0));
+    let mut minus_one = p.clone();
+    *minus_one.last_mut().unwrap() -= 1;
+    let mut one = vec![0; q.len()];
+    *one.last_mut().unwrap() = 1;
+    let mut output = vec![0xa5; 2 * q.len()];
+    let mut scratch = Secret(vec![0xa5a5a5a5a5a5a5a5; 16 * p.len()]);
+
+    // A valid generator with an out-of-subgroup public value fails g^x = y.
+    // With x = 1, g = y = -1 passes consistency but must fail g^q = 1.
+    // With x = 1 and the original y, both subgroup checks pass but consistency fails.
+    for (generator, public, private) in [
+        (&g, &minus_one, &x),
+        (&minus_one, &minus_one, &one),
+        (&g, &y, &one),
+    ] {
+        let key = PrivateKey::from_components(&p, &q, generator, public, private).unwrap();
+        output.fill(0xa5);
+        assert!(!key.sign_once(&digest, &nonce, &mut output, &mut scratch.0));
+        assert_eq!(output, vec![0; 2 * q.len()]);
+    }
+    // The same boundary private scalar succeeds when y = g.
+    let key = PrivateKey::from_components(&p, &q, &g, &g, &one).unwrap();
+    assert!(key.sign_once(&digest, &nonce, &mut output, &mut scratch.0));
+    assert!(key.public_key().verify(&digest, &output));
+}
+
+#[test]
 fn malformed_keys_nonces_and_bounded_retries() {
     let (mut key, digest, nonce) = sample();
     let mut output = vec![0xa5; 40];

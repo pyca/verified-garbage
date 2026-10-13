@@ -19,13 +19,13 @@ open VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.MlKem.X86_64
 
 theorem signingSuccess_ok (M : Mont) {p : SigningInput} {original st : State} (h : SigningPre p original)
     (hs : SigningShapePost p original h.pLength st) (ha : p.accepted = true) :
-    WP isa (seqs [SignVerify.workspaces, Checks.publicKey M.mm, Checks.privateKey M.mm,
+    WP isa (seqs [SignVerify.workspaces, Checks.signingKey M.mm, Checks.privateKey M.mm,
       Core.sign M.mm, Checks.zero (Core.scalar r) true, Checks.zero (Core.scalar s) true,
       SignVerify.writeScalar r false, SignVerify.writeScalar s true, .block SignVerify.result]) st
       (SigningPost p original) := by
   refine WP.seq (WP.mono (signingInitialize_ok h hs ha) fun t ht => ?_)
   have hb := signingAccepted_ok M h ht ha
-  apply wpAppendSequences (a := [Checks.publicKey M.mm, Checks.privateKey M.mm,
+  apply wpAppendSequences (a := [Checks.signingKey M.mm, Checks.privateKey M.mm,
     Core.sign M.mm, Checks.zero (Core.scalar r) true, Checks.zero (Core.scalar s) true])
     (b := [SignVerify.writeScalar r false, SignVerify.writeScalar s true, .block SignVerify.result])
     (by simp) (by simp)
