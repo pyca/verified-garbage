@@ -96,7 +96,7 @@ structure SPre (s : State) : Prop where
   hdpl : (stackArg s 5).toNat = (stackArg s 1).toNat
   hqil : (stackArg s 9).toNat = (stackArg s 1).toNat
   hdql : (stackArg s 7).toNat = (stackArg s 3).toNat
-  hsl : 16 * (s.gpr .rcx).toNat + 1024 ≤ (stackArg s 14).toNat
+  hsl : 16 * (s.gpr .rcx).toNat + 32 + 1024 ≤ (stackArg s 14).toNat
 
 theorem SPre.of {s : State} (h : (signK G).pre s) : SPre G s := by
   simp only [signK] at h

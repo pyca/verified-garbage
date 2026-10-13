@@ -37,7 +37,7 @@ structure VerifyingABI (s : State) : Prop where
   lengths : Spec.Dsa.lengthsValid (s.gpr .rdx).toNat (s.gpr .rcx).toNat
   keyLength : (s.gpr .rsi).toNat = 3 * (s.gpr .rdx).toNat + (s.gpr .rcx).toNat
   signatureLength : (s.gpr .r9).toNat = 2 * (s.gpr .rcx).toNat
-  scratchLength : Spec.Rsa.scratchWords (s.gpr .rdx).toNat ≤ (stackArg s 3).toNat
+  scratchLength : Spec.Dsa.scratchWords (s.gpr .rdx).toNat ≤ (stackArg s 3).toNat
 
 theorem verifyingABI_of {s : State} (h : (Spec.Dsa.verifyContract abi).pre s) : VerifyingABI s := by
   sig_pre [Spec.Dsa.verifyContract, Spec.Dsa.verifySig, abi, argRegs, stackArgs_four] at h
@@ -62,7 +62,7 @@ theorem VerifyingABI.used {s : State} (h : VerifyingABI s) : usedBytes ≤ (stac
   have hl := h.lengths
   have hs := h.scratchLength
   unfold Spec.Dsa.lengthsValid at hl
-  unfold Spec.Rsa.scratchWords at hs
+  unfold Spec.Dsa.scratchWords at hs
   change 15712 ≤ _
   omega
 

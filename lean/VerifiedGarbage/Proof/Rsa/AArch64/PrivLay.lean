@@ -138,7 +138,7 @@ structure Ok : Prop where
   dpl : L.dpl.toNat = L.pl.toNat
   qil : L.qil.toNat = L.pl.toNat
   dql : L.dql.toNat = L.ql.toNat
-  slk : 16 * L.k.toNat ≤ L.sl.toNat
+  slk : 16 * L.k.toNat + 32 ≤ L.sl.toNat
 
 end Lay
 

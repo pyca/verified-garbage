@@ -110,7 +110,7 @@ structure PreF (s : State) : Prop where
   hdpl : (stackArg s 7).toNat = (stackArg s 3).toNat
   hqil : (stackArg s 11).toNat = (stackArg s 3).toNat
   hdql : (stackArg s 9).toNat = (stackArg s 5).toNat
-  hsl : 16 * (s.gpr .rcx).toNat ≤ (stackArg s 13).toNat
+  hsl : 16 * (s.gpr .rcx).toNat + 32 ≤ (stackArg s 13).toNat
 
 theorem preF_of {s : State} (h : chkContract.pre s) : PreF s := by
   simp only [chkContract] at h

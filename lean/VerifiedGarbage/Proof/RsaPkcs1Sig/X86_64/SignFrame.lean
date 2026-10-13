@@ -105,7 +105,7 @@ structure PreS (s : State) : Prop where
   hdpl : (stackArg s 8).toNat = (stackArg s 4).toNat
   hqil : (stackArg s 12).toNat = (stackArg s 4).toNat
   hdql : (stackArg s 10).toNat = (stackArg s 6).toNat
-  hsl : 16 * (s.gpr .rcx).toNat ≤ (stackArg s 14).toNat
+  hsl : 16 * (s.gpr .rcx).toNat + 32 ≤ (stackArg s 14).toNat
 
 theorem preS_of {s : State} (h : sigContract.pre s) : PreS s := by
   simp only [sigContract] at h

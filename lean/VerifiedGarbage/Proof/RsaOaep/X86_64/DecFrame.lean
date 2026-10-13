@@ -50,7 +50,7 @@ theorem fb_toNatD {s : State} (hp : DPre s) : (fb s).toNat + frameBytes = (s.gpr
   have := hp.sp1; unfold decStack privStack at this
   simp only [fb, BitVec.toNat_sub, BitVec.toNat_ofNat]; unfold frameBytes at *; omega
 
-theorem DPre.hsl {s : State} (hp : DPre s) : 16 * (s.gpr .r8).toNat + 1024 ≤ (stackArg s 16).toNat := by
+theorem DPre.hsl {s : State} (hp : DPre s) : 16 * (s.gpr .r8).toNat + 32 + 1024 ≤ (stackArg s 16).toNat := by
   have := hp.hsw; unfold Spec.RsaPss.scratchWords Spec.Rsa.scratchWords at this; omega
 
 theorem DPre.geo {s : State} (hp : DPre s) : Geo (fb s) (stackArg s 15) := by

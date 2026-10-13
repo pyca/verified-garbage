@@ -118,10 +118,11 @@ def encSatState : State where
   zf := none
   sf := none
   of := none
-  mem a := if a = 0x10009 then 0x40 else if a = 0x10019 then 0x41 else if a = 0x10020 then 61
+  mem a := if a = 0x10030 then 0x20
+    else if a = 0x10009 then 0x40 else if a = 0x10019 then 0x41 else if a = 0x10020 then 61
     else if a = 0x1002A then 0x02 else if a = 0x10031 then 0x04 else 0
   rd := [⟨0x2000, 64⟩, ⟨0x3000, 1⟩, ⟨0x4000, 0⟩, ⟨0x4100, 61⟩, ⟨0x10008, 48⟩]
-  wr := [⟨0x1000, 64⟩, ⟨0x20000, 8192⟩]
+  wr := [⟨0x1000, 64⟩, ⟨0x20000, 8448⟩]
 
 theorem encrypt_implies : encK.Implies (Spec.RsaPkcs1Enc.encryptContract abi encStack) where
   pre := by

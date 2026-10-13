@@ -117,7 +117,7 @@ structure DPre (s : State) : Prop where
   hdpl : (stackArg s 10).toNat = (stackArg s 6).toNat
   hqil : (stackArg s 14).toNat = (stackArg s 6).toNat
   hdql : (stackArg s 12).toNat = (stackArg s 8).toNat
-  hsl : 16 * (s.gpr .r8).toNat ≤ (stackArg s 16).toNat
+  hsl : 16 * (s.gpr .r8).toNat + 32 ≤ (stackArg s 16).toNat
 
 theorem dPre_of {s : State} (h : decK.pre s) : DPre s := by
   simp only [decK] at h

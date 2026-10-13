@@ -32,13 +32,14 @@ def keySat : State where
   zf := none
   sf := none
   of := none
-  mem a := if a = 0x9009 then 0x40 else if a = 0x9010 then 0x20 else if a = 0x9019 then 0x50 else
+  mem a := if a = 0x9060 then 0x20
+    else if a = 0x9009 then 0x40 else if a = 0x9010 then 0x20 else if a = 0x9019 then 0x50 else
     if a = 0x9020 then 0x20 else if a = 0x9029 then 0x60 else if a = 0x9030 then 0x20 else
     if a = 0x9039 then 0x70 else if a = 0x9040 then 0x20 else if a = 0x9049 then 0x80 else
     if a = 0x9050 then 0x01 else if a = 0x905a then 0x01 else if a = 0x9061 then 0x04 else 0
   rd := [⟨0x8000, 1⟩, ⟨0x9008, 96⟩]
   wr := [⟨0x1000, 64⟩, ⟨0x2000, 64⟩, ⟨0x3000, 32⟩, ⟨0x4000, 32⟩, ⟨0x5000, 32⟩, ⟨0x6000, 32⟩, ⟨0x7000, 32⟩,
-    ⟨0x10000, 8192⟩]
+    ⟨0x10000, 8448⟩]
 
 theorem key_implies : keyCtr.Implies (Spec.RsaKeyGen.keyContract abi) where
   pre := by
