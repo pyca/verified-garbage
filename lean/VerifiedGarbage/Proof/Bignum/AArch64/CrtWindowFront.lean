@@ -69,6 +69,8 @@ theorem setupPart_ok {s t₃ : State} {B : Addr} {Z k : Nat} {op np ip pp qp dpp
   have hZq := hwide
   have htp : tabBytes (wsWords pl) ≤ tabBytes32 (wsWords pl) := by unfold tabBytes tabBytes32; omega
   have htq : tabBytes (wsWords ql) ≤ tabBytes32 (wsWords ql) := by unfold tabBytes tabBytes32; omega
+  have ewp : wsTab (wsWords pl) = tabBytes32 (wsWords pl) := rfl
+  have ewq : wsTab (wsWords ql) = tabBytes32 (wsWords ql) := rfl
   have hn := h.scr.nowrap
   have hP8 : 256 ≤ slot (wsWords pl) 8 := by unfold slot hdrBytes; omega_arith
   have hQ8 : 256 ≤ slot (wsWords ql) 8 := by unfold slot hdrBytes; omega_arith
@@ -142,6 +144,8 @@ theorem checksPart_ok {s t₄ : State} {B : Addr} {Z k : Nat} {op np ip pp qp dp
   have hZq := hwide
   have htp : tabBytes (wsWords pl) ≤ tabBytes32 (wsWords pl) := by unfold tabBytes tabBytes32; omega
   have htq : tabBytes (wsWords ql) ≤ tabBytes32 (wsWords ql) := by unfold tabBytes tabBytes32; omega
+  have ewp : wsTab (wsWords pl) = tabBytes32 (wsWords pl) := rfl
+  have ewq : wsTab (wsWords ql) = tabBytes32 (wsWords ql) := rfl
   have hn := h.scr.nowrap
   have hP8 : 256 ≤ slot (wsWords pl) 8 := by unfold slot hdrBytes; omega_arith
   have hQ8 : 256 ≤ slot (wsWords ql) 8 := by unfold slot hdrBytes; omega_arith
