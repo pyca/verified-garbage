@@ -10,7 +10,7 @@
 //! curve, a compressed point, malformed DER) cannot be passed, and its vector
 //! must not be valid.
 
-#![cfg(target_arch = "x86_64")]
+#![cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
 
 use serde::Deserialize;
 use verified_garbage::ecdh::{BrainpoolP384r1, Error, PrivateKey};

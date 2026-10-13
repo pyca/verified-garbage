@@ -319,9 +319,11 @@ def nPow : Prog isa :=
 /-- The ladder of `vg_<curve>_mul` (`Spec/Weierstrass/Mul.lean`): its point
 at `ACC`, `PT` (its copy of `Q`) and `ONEP`, `a` and `3 b` at `AP`'s and
 `BM`'s slots (where the contract has them), over the `64 n` bits of the table
-at `bitsAt n 0`. -/
+at `bitsAt n 0`. Its products' temporary area is the inversions' (`invTmp`),
+which the contract gives the function too: `TMP`'s for four words; for six,
+where x86-64's is, since the products are not calls. -/
 def mulLadder : LadderCfg where
-  M := c.MP'
+  M := { c.MP' with tmp := c.invTmp }
   S := c.rcbSlots
   G := c.pt ACC PT ONEP
   R := c.pt RX RY RZ

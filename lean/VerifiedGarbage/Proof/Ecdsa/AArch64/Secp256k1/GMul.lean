@@ -36,7 +36,7 @@ theorem ladLayM : LadLay secp256k1.mulLadder size := by
 
 theorem ladAM : LadA secp256k1.mulLadder where
   sl := by decide +kernel
-  mod := MP'_A secp256k1
+  mod := ⟨sl_mod8 secp256k1 MP, by decide⟩
   bits := by decide
   call := by intro f m h; cases h
 
@@ -63,7 +63,7 @@ theorem gMul_ok (hc : BaseCfgOk secp256k1) (hC : Law secp256k1.C)
     show Point.affine (toM _ _ (wordsVal s.mem base (secp256k1.sl GX) secp256k1.n))
       (toM _ _ (wordsVal s.mem base (secp256k1.sl GY) secp256k1.n)) = Point.affine _ _
     rw [F.gx, F.gy, toM_cmont hc, toM_cmont hc]
-  have W := mulAt_ok hc rfl ladLayM ladAM hC mulFn_v mulFn_nf
+  have W := mulAt_ok hc (.inl rfl) (.inl (by decide)) ladLayM ladAM hC mulFn_v mulFn_nf
     (name := Spec.Weierstrass.Mul.secp256k1.mulApi.name) (px := GX) (py := GY) (by decide) (by decide)
     (by decide) (by decide) (by decide) hs F (lt_of_eq_of_lt F.gx (hmont _))
     (lt_of_eq_of_lt F.gy (hmont _)) (by rw [eG]; exact hc.onG)

@@ -75,13 +75,13 @@ theorem qMul_ok (hc : BaseCfgOk secp256k1) (hC : Law secp256k1.C)
   have hPe₁ : P = .affine (tmv secp256k1.C secp256k1.n base s₁ (secp256k1.sl PX)) (tmv secp256k1.C secp256k1.n base s₁ (secp256k1.sl PY)) := by
     show P = .affine (tmv secp256k1.C 4 base s₁ (secp256k1.sl PX)) (tmv secp256k1.C 4 base s₁ (secp256k1.sl PY))
     rw [eP (i := PX) (by decide) (by decide), eP (i := PY) (by decide) (by decide)]; exact hPe
-  refine WP.mono (mulAt_ok hc rfl ladLayM ladAM hC mulFn_v mulFn_nf
+  refine WP.mono (mulAt_ok hc (.inl rfl) (.inl (by decide)) ladLayM ladAM hC mulFn_v mulFn_nf
     (name := Spec.Weierstrass.Mul.secp256k1.mulApi.name) (px := PX) (py := PY) (by decide) (by decide)
     (by decide) (by decide) (by decide) hs₁ F₁ (by rw [e₁ (by decide) (by decide)]; exact hpx)
     (by rw [e₁ (by decide) (by decide)]; exact hpy) (by rw [← hPe₁]; exact hP))
     fun s' ⟨K, U, F', M, L, R⟩ => ⟨(K₁.mono (by decide)).trans K, U₁.trans U, F', M, L, ?_, ?_⟩
   · rw [← hPe₁, e₁ (by decide) (by decide)] at R; exact R
   · exact (sv_unch U h7 hn (i := EXPP) (by decide)
-      (apart_append (apart_slW (by decide)) (apart_mulWF (by decide) (by decide)))).trans b₁
+      (apart_append (apart_slW (by decide)) (apart_mulWF (.inl (by decide)) (by decide) (by decide)))).trans b₁
 
 end VG.Proof.Ecdh.AArch64.Secp256k1
