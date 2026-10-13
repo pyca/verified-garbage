@@ -10,6 +10,7 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.MlKem.AArch64.KgC
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversal
 
 @[expose] public section
 

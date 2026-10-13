@@ -11,6 +11,7 @@ import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.MlKem.Arm.Reduce
+import VerifiedGarbage.Proof.Framework.Range
 
 /-!
 # ML-KEM on 32-bit ARM: `vg_mlkem_sample_ntt`, correctness

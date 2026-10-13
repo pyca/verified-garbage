@@ -10,6 +10,7 @@ import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Instrs
 import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
 
 /-!
 # ML-DSA on x86-64, `verify_message`: the verification functions on `μ` it calls

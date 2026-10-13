@@ -12,6 +12,7 @@ public import VerifiedGarbage.Proof.MlKem.Arm.Decode12
 public import VerifiedGarbage.Proof.MlKem.Arm.Decompress
 public import VerifiedGarbage.Proof.MlKem.Arm.Encode12
 public import VerifiedGarbage.Proof.MlKem.Arm.Ntt
+import VerifiedGarbage.Proof.MlKem.Arm.NttInv
 
 /-!
 # ML-KEM-768 on 32-bit ARM: calling the primitives on buffers

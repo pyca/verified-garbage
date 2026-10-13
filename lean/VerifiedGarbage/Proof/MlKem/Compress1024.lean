@@ -7,6 +7,7 @@ import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.MlKem.Arith
 
 /-!
 # ML-KEM-1024: Compress and Decompress without division, for every target

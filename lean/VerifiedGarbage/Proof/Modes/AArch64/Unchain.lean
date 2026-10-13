@@ -8,6 +8,8 @@ import all Init.Data.Vector.Basic
 import Mathlib.Data.List.Induction
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Modes.AArch64.Core
+import VerifiedGarbage.Proof.Modes.Ctr
 
 /-!
 # Unchaining CBC blocks on AArch64

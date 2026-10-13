@@ -15,6 +15,11 @@ import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.MlKem.Encode
+public import VerifiedGarbage.Proof.MlDsa.KeyGen.Mask32
+public import VerifiedGarbage.Proof.MlDsa.Pack.Coeffs
+public import VerifiedGarbage.Proof.MlDsa.Pack.Hint2
+public import VerifiedGarbage.Proof.MlDsa.Pack.HintMem
+public import VerifiedGarbage.Proof.MlDsa.Verify.Mem
 
 /-!
 # ML-DSA verification on x86 (32-bit): the setting

@@ -12,6 +12,12 @@ import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
 meta import Mathlib.Tactic.Conv
 meta import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.MlKem.X86_64.ArithOk
+import VerifiedGarbage.Proof.MlKem.X86_64.FragCall
+meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
+meta import VerifiedGarbage.Proof.MlKem.X86_64.ArithOk
+meta import VerifiedGarbage.Proof.MlKem.X86_64.FragCall
 
 /-!
 # ML-DSA on x86-64: `vg_mldsa_rej_ntt_poly4`

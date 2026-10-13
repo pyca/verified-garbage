@@ -16,6 +16,8 @@ meta import Mathlib.Tactic.Conv
 meta import Mathlib.Tactic.SplitIfs
 meta import VerifiedGarbage.Proof.MlKem.AArch64.KgC
 meta import VerifiedGarbage.Spec.MlDsa.ResponseZ
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedZCheck
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedZCheck
 
 @[expose] public section
 

@@ -10,6 +10,10 @@ import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CommitTailInitial
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Impl.Sha3.AArch64.Callee
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CommitTailSqueezeRate
+import VerifiedGarbage.Proof.MlKem.Mem
+import VerifiedGarbage.Proof.Sha3.Arith
 
 /-! ## The core loop -/
 

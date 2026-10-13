@@ -9,6 +9,8 @@ import all Init.Data.Vector.Basic
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlKem.AArch64.KgC
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLowMemory
+import VerifiedGarbage.Spec.MlDsa.ResponseLow
 
 @[expose] public section
 

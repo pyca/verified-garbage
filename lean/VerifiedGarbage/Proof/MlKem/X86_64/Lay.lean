@@ -9,6 +9,7 @@ public import VerifiedGarbage.Proof.Framework.CallLay
 import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
 import VerifiedGarbage.Proof.Sha3.X86_64.X4.Wp
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
 
 /-!
 # ML-KEM-768 on x86-64: the buffers of the top-level functions

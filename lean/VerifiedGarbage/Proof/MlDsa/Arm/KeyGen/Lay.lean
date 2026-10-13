@@ -9,6 +9,7 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.MlDsa.Verify.Mem
 
 /-!
 # ML-DSA key generation on 32-bit ARM: its parameters, precondition and buffers

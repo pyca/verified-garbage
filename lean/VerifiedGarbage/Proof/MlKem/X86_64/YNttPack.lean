@@ -7,6 +7,7 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.MlKem.X86_64.VMxcsr
 
 /-!
 # ML-KEM on x86-64: the NTT and its inverse on AVX2 registers, before and after the layers

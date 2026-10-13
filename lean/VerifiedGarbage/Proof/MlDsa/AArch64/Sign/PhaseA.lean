@@ -11,6 +11,7 @@ import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlKem.AArch64.KgC
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Blocks
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.Inv
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.Blocks
 
 /-!
 # ML-DSA signing on AArch64: `ExpandA`

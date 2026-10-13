@@ -9,6 +9,8 @@ import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
 import VerifiedGarbage.Proof.MlKem.AArch64.KgC
 import VerifiedGarbage.TCB.Axioms
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MatrixMask
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRate
 
 @[expose] public section
 

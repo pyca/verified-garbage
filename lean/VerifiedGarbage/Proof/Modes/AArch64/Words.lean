@@ -10,6 +10,7 @@ import all Init.Data.Vector.Basic
 import Mathlib.Data.List.Induction
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.AesCbc.Spec
 
 /-!
 # Copying and XORing blocks a word at a time, on AArch64

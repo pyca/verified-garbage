@@ -9,6 +9,7 @@ import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
 import VerifiedGarbage.Proof.MlKem.AArch64.KgC
+import VerifiedGarbage.Proof.MlDsa.Sign.Mem
 
 /-!
 # ML-DSA signing on AArch64: the checks of an iteration

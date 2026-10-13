@@ -8,6 +8,7 @@ import all Init.Data.Vector.Basic
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.MlKem.Encode
+import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Call
 
 /-!
 # ML-DSA on x86-64, `verify_message`: the precondition and the layout

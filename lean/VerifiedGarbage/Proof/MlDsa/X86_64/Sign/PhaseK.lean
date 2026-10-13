@@ -10,6 +10,7 @@ import all Init.Data.Vector.Basic
 import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.MlKem.Encode
 import VerifiedGarbage.Proof.MlKem.X86_64.Contracts
+import VerifiedGarbage.Impl.MlKem.X86_64.Frag
 
 /-!
 # ML-DSA signing on x86-64: the checks of an iteration

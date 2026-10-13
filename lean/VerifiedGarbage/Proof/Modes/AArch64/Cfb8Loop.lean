@@ -7,6 +7,8 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Modes.Cfb8
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.WriteBytes
+import VerifiedGarbage.Proof.Modes.AArch64.Xor
 
 /-!
 # CFB8 on AArch64, for any core: the data loop

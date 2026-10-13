@@ -15,6 +15,8 @@ import VerifiedGarbage.Proof.Framework.Arm.Frame
 import VerifiedGarbage.Proof.Framework.Arm.Linear
 import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Impl.Aes.Arm.Alloc
+import VerifiedGarbage.Proof.AesCbc.Spec
 
 /-!
 # Copying and XORing blocks a word at a time, on ARMv7

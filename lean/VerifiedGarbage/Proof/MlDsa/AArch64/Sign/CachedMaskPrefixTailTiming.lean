@@ -20,6 +20,8 @@ meta import Mathlib.Tactic.Conv
 meta import Mathlib.Tactic.SplitIfs
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseCCTBase
 meta import VerifiedGarbage.Proof.MlKem.AArch64.KgC
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedMasksTiming
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedMasksTiming
 
 /-! ## From `CachedMaskPrefix.lean` -/
 

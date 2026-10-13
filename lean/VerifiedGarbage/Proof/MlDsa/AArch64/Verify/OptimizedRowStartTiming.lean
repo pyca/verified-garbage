@@ -8,6 +8,8 @@ import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedTimingBase
 import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.MlKem.AArch64.KgC
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversal
+import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedNttTiming
 
 @[expose] public section
 

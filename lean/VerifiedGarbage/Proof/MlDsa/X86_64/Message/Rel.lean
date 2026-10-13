@@ -11,6 +11,7 @@ import Mathlib.Tactic.Conv
 import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.MlKem.Encode
+import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Call
 
 /-!
 # ML-DSA on x86-64, `sign_message` and `verify_message`: relating two runs

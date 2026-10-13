@@ -12,6 +12,14 @@ import VerifiedGarbage.Proof.Sha3.X86_64.X4.Wp
 meta import Mathlib.Tactic.Conv
 meta import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
 meta import VerifiedGarbage.Proof.Sha3.X86_64.X4.Wp
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.MlKem.X86_64.Zero
+import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Absorb
+import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Squeeze
+meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
+meta import VerifiedGarbage.Proof.MlKem.X86_64.Zero
+meta import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Absorb
+meta import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Squeeze
 
 /-!
 # ML-KEM-768 on x86-64: the calls of the SHA-3 sponge

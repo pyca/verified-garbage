@@ -20,6 +20,8 @@ import VerifiedGarbage.Proof.MlKem.AArch64.DecapsA
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFold
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Compute
 meta import VerifiedGarbage.Proof.MlKem.AArch64.DecapsA
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseZMemory
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseZMemory
 
 /-! ## From `CachedMatrixCallTiming.lean` -/
 

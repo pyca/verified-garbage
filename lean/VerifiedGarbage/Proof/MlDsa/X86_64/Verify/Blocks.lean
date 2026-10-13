@@ -7,6 +7,7 @@ import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import Mathlib.Tactic.Conv
+import VerifiedGarbage.Proof.Framework.WriteBytes
 
 /-!
 # ML-DSA verification on x86-64: the blocks between the calls

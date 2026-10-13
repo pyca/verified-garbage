@@ -16,6 +16,8 @@ public import VerifiedGarbage.Proof.MlKem.Compress1024
 import Mathlib.Tactic.SplitIfs
 meta import VerifiedGarbage.Proof.MlKem.Compress1024
 meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Range
+meta import VerifiedGarbage.Proof.Framework.Range
 
 /-!
 # ML-KEM-1024 on 32-bit ARM: `vg_mlkem1024_compress_encode`

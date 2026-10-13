@@ -30,6 +30,16 @@ meta import VerifiedGarbage.Proof.MlDsa.AArch64.Message.Depth
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFold
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Compute
 meta import VerifiedGarbage.Proof.MlKem.AArch64.DecapsA
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseHintMemory
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLowMemory
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseZMemory
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedExpansion
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedRootsTrace
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseHintMemory
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLowMemory
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseZMemory
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedExpansion
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedRootsTrace
 
 /-! ## From `OptimizedPairedRestTiming.lean` -/
 

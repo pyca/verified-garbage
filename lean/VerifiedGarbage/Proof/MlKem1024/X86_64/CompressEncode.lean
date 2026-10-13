@@ -20,6 +20,10 @@ meta import VerifiedGarbage.Proof.MlKem.X86_64.CompressEncode
 meta import Mathlib.Tactic.Conv
 meta import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
 meta import VerifiedGarbage.Proof.Sha3.X86_64.X4.Wp
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.MlKem.Compress1024
+meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
+meta import VerifiedGarbage.Proof.MlKem.Compress1024
 
 /-!
 # ML-KEM-1024 on x86-64: `vg_mlkem1024_compress_encode`

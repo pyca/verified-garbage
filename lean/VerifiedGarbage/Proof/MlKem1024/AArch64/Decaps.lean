@@ -9,6 +9,7 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.MlKem1024.AArch64.KeyGen
 
 /-!
 # ML-KEM-1024 on AArch64: `vg_mlkem1024_decaps`

@@ -16,6 +16,10 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.MlKem.Compress1024
+meta import VerifiedGarbage.Proof.Framework.Range
+meta import VerifiedGarbage.Proof.MlKem.Compress1024
 
 /-!
 # ML-KEM-1024 on 32-bit ARM: `vg_mlkem1024_decode_decompress`
