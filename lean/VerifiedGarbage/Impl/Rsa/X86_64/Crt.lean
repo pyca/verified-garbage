@@ -389,6 +389,58 @@ def tabSelect : List (Prog isa) :=
   [.block [.mov .rax (.mem (hdr sTab)), .store (hdr sEnt) .rax, .mov32 .rax (.imm 0), .store (hdr sJ) .rax],
     .loop (seqs gatherPass) .ne]
 
+/-! ### The selection with AVX2
+
+The same passes as `gatherPass`, four words at a time in `ymm` registers
+(then two in `xmm` registers if `2 ⌈w / 2⌉` is not a multiple of 4), the
+masks broadcast to the whole register; `vzeroupper` at the end. -/
+
+/-- `x := mask (r15 + j = src)` in every quadword of `ymm`, by `r14`. -/
+def selMaskV (j : BitVec 32) (src : Src) (x : XReg) : List Instr :=
+  [.mov .r14 (.reg .r15), .alu .add .r14 (.imm j), .alu .xor .r14 src, .alu .cmp .r14 (.imm 1),
+    .alu .sbb .r14 (.reg .r14), .vop (.vmovq x .r14), .vop (.vpbroadcastq .l256 x x)]
+
+/-- `ymm7 := ` the mask of `p ≠ 0`. -/
+def keepMaskV : List Instr :=
+  [.mov32 .r14 (.imm 0), .alu .cmp .r14 (.reg .r15), .alu .sbb .r14 (.reg .r14), .vop (.vmovq .xmm7 .r14),
+    .vop (.vpbroadcastq .l256 .xmm7 .xmm7)]
+
+/-- As `gatherRegs`, and `r12 := r13` rounded down to a multiple of 4. -/
+def gatherRegsV : List Instr :=
+  gatherRegs ++ ([.mov .r12 (.reg .r13), .alu .and .r12 (.imm (BitVec.ofInt 32 (-4)))] : List Instr)
+
+def gatherHeadV : List (Prog isa) :=
+  [.block gatherRegsV,
+    .block (selMaskV 0 (.mem (hdr sNib)) .xmm8), .block (selMaskV 1 (.mem (hdr sNib)) .xmm9),
+    .block (selMaskV 2 (.mem (hdr sNib)) .xmm10), .block (selMaskV 3 (.mem (hdr sNib)) .xmm11),
+    .block (selMaskV 4 (.mem (hdr sNib)) .xmm12), .block (selMaskV 5 (.mem (hdr sNib)) .xmm13),
+    .block (selMaskV 6 (.mem (hdr sNib)) .xmm14), .block (selMaskV 7 (.mem (hdr sNib)) .xmm15),
+    .block keepMaskV,
+    .block gatherBases]
+
+/-- `x0 |= [b + 8 r14] & x`, `L / 64` words. -/
+def gatherOrV (L : VLen) (b : Reg) (x : XReg) : List Instr :=
+  [.vmovdquLoad L .xmm1 (ix b .r14), .vop (.vbin .vpand L .xmm1 .xmm1 x), .vop (.vbin .vpor L .xmm0 .xmm0 .xmm1)]
+
+def gatherBodyV (L : VLen) (n : Nat) : List Instr :=
+  [.vmovdquLoad L .xmm0 (ix .rcx .r14), .vop (.vbin .vpand L .xmm0 .xmm0 .xmm8)] ++
+  gatherOrV L .rdx .xmm9 ++ gatherOrV L .rsi .xmm10 ++ gatherOrV L .rbp .xmm11 ++ gatherOrV L .r8 .xmm12 ++
+  gatherOrV L .r9 .xmm13 ++ gatherOrV L .r10 .xmm14 ++ gatherOrV L .rax .xmm15 ++ gatherOrV L .rbx .xmm7 ++
+  ([.vmovdquStore L (ix .rbx .r14) .xmm0, .alu .add .r14 (.imm (BitVec.ofNat 32 n))] : List Instr)
+
+def gatherPassV : List (Prog isa) :=
+  [seqs gatherHeadV,
+    .block [.alu .test .r12 (.reg .r12)],
+    .ite .ne (.loop (.block (gatherBodyV .l256 4 ++ ([.alu .cmp .r14 (.reg .r12)] : List Instr))) .ne) (.block []),
+    .block [.alu .cmp .r14 (.reg .r13)],
+    .ite .ne (.block (gatherBodyV .l128 2)) (.block []),
+    .block gatherEnd]
+
+/-- `[aT] := T_v`, `v` in `sNib`: four passes of `gatherPassV`. -/
+def tabSelectV : List (Prog isa) :=
+  [.block [.mov .rax (.mem (hdr sTab)), .store (hdr sEnt) .rax, .mov32 .rax (.imm 0), .store (hdr sJ) .rax],
+    .loop (seqs gatherPassV) .ne, .block [.vop .vzeroupper]]
+
 /-- In a prime's header: `2^(56 - b)`, the factor that puts the next byte of
 the exponent below the `b` bits (in `sBit`) left in `sV`'s top bits. -/
 def sPow : Nat := sFn 13
@@ -433,7 +485,7 @@ def expWin (mul : Nat → Nat → Nat → Prog isa) : List (Prog isa) :=
     .ite .b (.block refill) (.block []),
     mul aY aY aY, mul aY aY aY, mul aY aY aY, mul aY aY aY, mul aY aY aY,
     .block takeWin] ++
-  tabSelect ++
+  tabSelectV ++
   [mul aY aY aT,
     .block [.mov .rax (.mem (hdr sExpLen)), .alu .sub .rax (.mem (hdr sI)), .alu .add .rax (.mem (hdr sBit))]]
 
