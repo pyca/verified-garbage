@@ -96,6 +96,12 @@ private theorem blockAt_congr (h : ∀ i < 16, m₂ (p + BitVec.ofNat 64 i) = m�
   funext j
   exact h _ j.isLt
 
+/-- The blocks, in memory changed only outside them. -/
+theorem blocksAt_frame {rs : List Region} {m m' : Mem} {n : Nat} (hf : Frame rs m m')
+    (hd : ∀ r ∈ rs, Region.Disjoint ⟨p, n * 16⟩ r) (hfit : n * 16 ≤ 2 ^ 64) :
+    blocksAt m' p n = blocksAt m p n :=
+  blocksAt_congr fun _ hi => hf.bytes (R := ⟨p, n * 16⟩) hd hfit hi
+
 /-- The memory agrees on the `n` bytes at `p`, from its agreeing on the
 region. -/
 private theorem agree_of {n : Nat} (h : ∀ a, Region.Contains ⟨p, n⟩ a 1 → m₁ a = m₂ a) :

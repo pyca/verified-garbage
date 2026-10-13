@@ -103,20 +103,8 @@ theorem publicRegs_four (s₁ s₂ : State) : PublicRegs [.x0, .x1, .x2, .x3] s�
       s₁.gpr .x2 = s₂.gpr .x2 ∧ s₁.gpr .x3 = s₂.gpr .x3 := by
   simp [PublicRegs]
 
-theorem encrypt_verified : Verified target Impl.Seed.AArch64.encrypt
-    (Proof.Seed.ecbScratchContract abi .encrypt 122) := by
-  refine Verified.of_correct (encrypt_correct (Nat.le_refl _)) (encrypt_constantTime _) ?_
-  sig_implies [Proof.Seed.ecbScratchContract, Proof.Seed.ecbScratchSig, Spec.Seed.ecbPost, abi, argRegs,
-    contract, publicRegs_four] [satState] using satState
-
-theorem decrypt_verified : Verified target Impl.Seed.AArch64.decrypt
-    (Proof.Seed.ecbScratchContract abi .decrypt 122) := by
-  refine Verified.of_correct (decrypt_correct (Nat.le_refl _)) (decrypt_constantTime _) ?_
-  sig_implies [Proof.Seed.ecbScratchContract, Proof.Seed.ecbScratchSig, Spec.Seed.ecbPost, abi, argRegs,
-    contract, publicRegs_four] [satState] using satState
-
-/-- `encrypt_verified` against `vg_seed_encrypt_blocks`'s contract: its working space is 136 words,
-of which the code uses the first 122. -/
+/-- ECB against `vg_seed_encrypt_blocks`'s contract: its working space is 136 words, of which
+the code uses the first 122. -/
 theorem encrypt_blocks_verified : Verified target Impl.Seed.AArch64.encrypt
     (Spec.Seed.blocksContract abi .encrypt) := by
   refine Verified.of_correct (encrypt_correct (n := 1088) (by decide)) (encrypt_constantTime _) ?_
