@@ -25,14 +25,30 @@ runs:
       id: mods
       shell: bash
       run: |
-        # A background process that died would never write its status: give
-        # up long after it normally finishes (in under a minute).
-        for _ in $(seq 600); do
+        # Shows the background job's log as it is written, so a slow or
+        # stuck download is visible while it happens. The job bounds every
+        # step it runs; the limit here only catches a job that died without
+        # writing its status.
+        log="$RUNNER_TEMP/lean-setup.log"
+        shown=0
+        show() {
+          [ -f "$log" ] || return 0
+          local n
+          n=$(wc -l < "$log")
+          [ "$n" -gt "$shown" ] && sed -n "$((shown + 1)),${n}p" "$log"
+          shown=$n
+        }
+        for _ in $(seq 1200); do
+          show
           [ -f "$RUNNER_TEMP/lean-setup.status" ] && break
           sleep 1
         done
-        cat "$RUNNER_TEMP/lean-setup.log" 2>/dev/null || true
+        show
         status=$(cat "$RUNNER_TEMP/lean-setup.status" 2>/dev/null || echo "no status")
+        if [ "$status" = "no status" ]; then
+          echo "Still running:"
+          ps -eo pid,etime,args --forest | grep -v ' ps ' || true
+        fi
         if [ "$status" != 0 ]; then
           echo "::error::Installing elan or listing the imports failed ($status)."
           exit 1

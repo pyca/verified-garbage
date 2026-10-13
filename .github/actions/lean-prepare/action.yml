@@ -43,15 +43,36 @@ runs:
           # Not `-e` (bash steps run with it): a failure must still write
           # the status, or `lean-setup` would wait for it.
           set +e -o pipefail
+          log() { echo "[lean-setup $(date -u +%T)] $*"; }
+          # Runs a download up to three times, each bounded by a timeout
+          # (which stops the command's whole process group): a stalled
+          # connection otherwise hangs until `lean-setup` gives up.
+          retry() {
+            local what=$1 limit=$2 attempt status
+            shift 2
+            for attempt in 1 2 3; do
+              log "$what (attempt $attempt, at most ${limit}s)"
+              timeout "$limit" "$@"
+              status=$?
+              [ "$status" = 0 ] && { log "$what: done"; return 0; }
+              [ "$status" = 124 ] && log "$what: timed out" || log "$what: failed ($status)"
+            done
+            return 1
+          }
           {
-            curl -sSfL https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh \
-              | sh -s -- -y --default-toolchain none &&
+            retry "Installing elan" 60 sh -c '
+              curl -sSfL --connect-timeout 20 https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh \
+                | sh -s -- -y --default-toolchain none' &&
+            retry "Installing $(cat lean-toolchain)" 180 \
+              "$HOME/.elan/bin/elan" toolchain install "$(cat lean-toolchain)" &&
+            log "Listing the imports" &&
             # Every module the Lean files import from outside this project
             # and Lean itself, as Lean's own parser reads their headers.
-            git ls-files '*.lean' | xargs "$HOME/.elan/bin/lean" --deps-json \
+            git ls-files '*.lean' | timeout 300 xargs "$HOME/.elan/bin/lean" --deps-json \
               | jq -r '.imports[].result.imports[].module
                        | select(test("^(VerifiedGarbage[A-Za-z]*|Init|Std|Lean)(\\.|$)") | not)' \
-              | sort -u > "$RUNNER_TEMP/lean-mods"
+              | sort -u > "$RUNNER_TEMP/lean-mods" &&
+            log "Listing the imports: done"
           } > "$RUNNER_TEMP/lean-setup.log" 2>&1
           echo $? > "$RUNNER_TEMP/lean-setup.status.tmp"
           mv "$RUNNER_TEMP/lean-setup.status.tmp" "$RUNNER_TEMP/lean-setup.status"
