@@ -563,7 +563,7 @@ jobs:
               aes,ssse3 | aes_gcm cmac aes_ccm aes_siv aes_ocb aes_ecb aes_cbc aes_ofb aes_cfb aes_cfb8 aes_ctr aes_xts zeroize cpu
               pclmulqdq,ssse3 | aes_gcm cpu
               aes,pclmulqdq,ssse3 | aes_gcm cpu
-              aes,avx,pclmulqdq,ssse3 | aes_gcm cpu
+              aes,avx,pclmulqdq,ssse3 | aes_gcm aes_xts cpu
               aes,avx,avx2,pclmulqdq,ssse3 | aes_gcm cpu
               aes,avx,avx2,pclmulqdq,ssse3,vaes,vpclmulqdq | aes_gcm cpu
               aes,avx,avx2,ssse3,vaes | aes_xts cpu

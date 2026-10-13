@@ -16,9 +16,11 @@
 //! On x86-64, CPUs with VAES, VPCLMULQDQ and AVX2 run
 //! `vg_aes_xts_encrypt_vaes_vpclmul` and `vg_aes_xts_decrypt_vaes_vpclmul`,
 //! which read each block once and call nothing, with the `_vaes` functions
-//! for the rest; CPUs with VAES and AVX2 alone run the `_vaes` functions, and
-//! other CPUs with AES-NI the `_aesni` ones (`crate::aes::Backend`), as on
-//! x86; on AArch64, CPUs with the AES instructions run the `_aes` ones. Elsewhere, and on other CPUs, the
+//! for the rest; CPUs with VAES and AVX2 alone run the `_vaes` functions;
+//! other CPUs with AES-NI, PCLMULQDQ and AVX run
+//! `vg_aes_xts_encrypt_aesni_pclmul` and `vg_aes_xts_decrypt_aesni_pclmul`,
+//! also in one pass, and those with AES-NI alone the `_aesni` ones
+//! (`crate::aes::Backend`), as on x86; on AArch64, CPUs with the AES instructions run the `_aes` ones. Elsewhere, and on other CPUs, the
 //! constant-time bitsliced implementation runs.
 
 #![cfg(any(
@@ -49,6 +51,11 @@ use crate::arch::aes_xts::{
 use crate::arch::aes_xts::{
     VG_AES_XTS_DECRYPT_AESNI_FEATURES, VG_AES_XTS_ENCRYPT_AESNI_FEATURES, vg_aes_xts_decrypt_aesni,
     vg_aes_xts_encrypt_aesni,
+};
+#[cfg(target_arch = "x86_64")]
+use crate::arch::aes_xts::{
+    VG_AES_XTS_DECRYPT_AESNI_PCLMUL_FEATURES, VG_AES_XTS_ENCRYPT_AESNI_PCLMUL_FEATURES,
+    vg_aes_xts_decrypt_aesni_pclmul, vg_aes_xts_encrypt_aesni_pclmul,
 };
 #[cfg(target_arch = "x86_64")]
 use crate::arch::aes_xts::{
@@ -83,8 +90,8 @@ macro_rules! instance {
 }
 
 /// The XTS functions a key uses: those of an implementation of AES, which
-/// call its block functions, or x86-64's in one pass, with VAES's for the
-/// rest.
+/// call its block functions, or x86-64's in one pass, with VAES's or
+/// AES-NI's for the rest.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum Impl {
     /// The `vg_aes_xts_*` functions of an implementation of AES.
@@ -92,6 +99,9 @@ enum Impl {
     /// `vg_aes_xts_encrypt_vaes_vpclmul` and `vg_aes_xts_decrypt_vaes_vpclmul`.
     #[cfg(target_arch = "x86_64")]
     VaesVpclmul,
+    /// `vg_aes_xts_encrypt_aesni_pclmul` and `vg_aes_xts_decrypt_aesni_pclmul`.
+    #[cfg(target_arch = "x86_64")]
+    AesNiPclmul,
 }
 
 impl Impl {
@@ -102,20 +112,27 @@ impl Impl {
             Impl::Blocks(backend) => backend,
             #[cfg(target_arch = "x86_64")]
             Impl::VaesVpclmul => Backend::Vaes,
+            #[cfg(target_arch = "x86_64")]
+            Impl::AesNiPclmul => Backend::AesNi,
         }
     }
 }
 
 /// The best XTS functions a CPU with the features `f` can run: in one pass
-/// if it has VAES's and their features too.
+/// if it has those of VAES's or AES-NI's and the one-pass functions' too.
 #[cfg(target_arch = "x86_64")]
 fn select(f: Features) -> Impl {
-    const ONE_PASS: Features = Features::all(&[
+    const VAES: Features = Features::all(&[
         VG_AES_XTS_ENCRYPT_VAES_VPCLMUL_FEATURES,
         VG_AES_XTS_DECRYPT_VAES_VPCLMUL_FEATURES,
     ]);
+    const AESNI: Features = Features::all(&[
+        VG_AES_XTS_ENCRYPT_AESNI_PCLMUL_FEATURES,
+        VG_AES_XTS_DECRYPT_AESNI_PCLMUL_FEATURES,
+    ]);
     match select_aes(f) {
-        Backend::Vaes if f.contains(ONE_PASS) => Impl::VaesVpclmul,
+        Backend::Vaes if f.contains(VAES) => Impl::VaesVpclmul,
+        Backend::AesNi if f.contains(AESNI) => Impl::AesNiPclmul,
         backend => Impl::Blocks(backend),
     }
 }
@@ -282,6 +299,8 @@ impl AesXts {
             ),
             #[cfg(target_arch = "x86_64")]
             Impl::VaesVpclmul => vg_aes_xts_encrypt_vaes_vpclmul,
+            #[cfg(target_arch = "x86_64")]
+            Impl::AesNiPclmul => vg_aes_xts_encrypt_aesni_pclmul,
         };
         let mut tweak = self.tweak(i, buffer.len())?;
         let mut scratch = [0; 272];
@@ -318,6 +337,8 @@ impl AesXts {
             ),
             #[cfg(target_arch = "x86_64")]
             Impl::VaesVpclmul => vg_aes_xts_decrypt_vaes_vpclmul,
+            #[cfg(target_arch = "x86_64")]
+            Impl::AesNiPclmul => vg_aes_xts_decrypt_aesni_pclmul,
         };
         let mut tweak = self.tweak(i, buffer.len())?;
         let mut scratch = [0; 272];
@@ -443,9 +464,14 @@ mod tests {
             let one_pass = Features::of(&["aes", "avx", "avx2", "ssse3", "vaes", "vpclmulqdq"]);
             assert_eq!(select(one_pass), Impl::VaesVpclmul);
             assert_eq!(Impl::VaesVpclmul.aes(), Backend::Vaes);
-            // VPCLMULQDQ without VAES.
+            let aesni_pclmul = Features::of(&["aes", "avx", "pclmulqdq", "ssse3"]);
+            assert_eq!(select(aesni_pclmul), Impl::AesNiPclmul);
+            assert_eq!(Impl::AesNiPclmul.aes(), Backend::AesNi);
+            // VPCLMULQDQ without VAES, and PCLMULQDQ without AVX.
             let no_vaes = Features::of(&["aes", "avx", "avx2", "ssse3", "vpclmulqdq"]);
             assert_eq!(select(no_vaes), Impl::Blocks(Backend::AesNi));
+            let no_avx = Features::of(&["aes", "pclmulqdq", "ssse3"]);
+            assert_eq!(select(no_avx), Impl::Blocks(Backend::AesNi));
         }
         #[cfg(target_arch = "x86")]
         assert_eq!(select(Features::of(&["aes"])), Impl::Blocks(Backend::AesNi));

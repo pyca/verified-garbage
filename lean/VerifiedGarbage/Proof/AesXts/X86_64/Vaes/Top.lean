@@ -9,10 +9,11 @@ import all Init.Data.Vector.Basic
 /-!
 # One-pass XTS-AES on x86-64: the whole function
 
-`crypt_wp`: `crypt pre f8 f` meets the contract of `vg_aes_xts_encrypt` (or
+`crypt_wp`: `crypt pre L f` meets the contract of `vg_aes_xts_encrypt` (or
 `vg_aes_xts_decrypt`), given that `pre` sets up what the rounds need (`KP`)
-without disturbing the tweaks, and that `f8` and `f` compute the cipher (or
-its inverse) on `ymm0`–`ymm3` and on `xmm0`.
+without disturbing the tweaks, that the loop `L` takes groups of eight blocks
+(`LoopOk`; `loop8_ok` for `loop8`), and that `f` computes the cipher (or its
+inverse) on `xmm0`.
 -/
 
 @[expose] public section
@@ -135,18 +136,24 @@ theorem finish_wp {enc : Bool} {KP : State → Prop} {s₀ : State} (hp : UPre s
   · simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp
 
-open VG.Impl.AesXts.X86_64Vaes (crypt enter gen)
+open VG.Impl.AesXts.X86_64Vaes (crypt enter gen loop8)
+
+/-- `L` takes groups of eight blocks while eight are left: from `GInv 0 0`,
+with `cmp r9, 8` done, to `GInv c c` with fewer than eight left. -/
+def LoopOk (enc : Bool) (L : Prog isa) (KP : State → Prop) (s₀ : State) : Prop :=
+  ∀ s, GInv enc KP s₀ 0 0 s → s.cf = some (decide (N s₀ < 8)) →
+    WP isa L s fun s' => ∃ c, N s₀ - c < 8 ∧ GInv enc KP s₀ c c s'
+
+theorem loop8_ok {enc : Bool} {KP : State → Prop} {f8 : List XReg → Prog isa} {s₀ : State} (hp : UPre s₀)
+    (hst : Stable KP s₀) (hf8 : Blk8 enc f8 KP s₀) : LoopOk enc (loop8 f8) KP s₀ :=
+  fun _ h hcf => groups_wp hp hst hf8 h hcf
 
 /-- The function's body, with at least one block. -/
-theorem body_wp {enc : Bool} {KP : State → Prop} {pre : Prog isa} {f8 f : List XReg → Prog isa} {s₀ : State}
-    (hp : UPre s₀) (hst : Stable KP s₀) (hf8 : Blk8 enc f8 KP s₀) (hf : Blk1 enc f KP s₀)
+theorem body_wp {enc : Bool} {KP : State → Prop} {pre L : Prog isa} {f : List XReg → Prog isa} {s₀ : State}
+    (hp : UPre s₀) (hst : Stable KP s₀) (hL : LoopOk enc L KP s₀) (hf : Blk1 enc f KP s₀)
     (hpre : ∀ s, SInvK s₀ s → WP isa pre s fun s' => SInvK s₀ s' ∧ KP s') :
     WP isa (.seq (.block (enter ++ gen)) (.seq pre (.seq (.block [.alu .cmp .r9 (.imm 8)])
-      (.seq (.ite .b (.block []) (.seq (.block (Impl.AesXts.X86_64Vaes.constK ++
-          Impl.AesXts.X86_64Vaes.ldT Impl.AesXts.X86_64Vaes.tws 0))
-        (.seq (.loop (Impl.AesXts.X86_64Vaes.group f8) .ae)
-          (.block (Impl.AesXts.X86_64Vaes.stT Impl.AesXts.X86_64Vaes.tws 0 ++ ([.vop .vzeroupper] : List Instr))))))
-        (.seq (Impl.AesXts.X86_64Vaes.tail f) (.block finish)))))) s₀
+      (.seq L (.seq (Impl.AesXts.X86_64Vaes.tail f) (.block finish)))))) s₀
       fun s' => gprPreserved s₀ s' ∧ (modeX86_64 (AesXts.xtsMode enc)).post s₀ s' := by
   refine WP.seq ?_
   rw [WP.block_append_iff]
@@ -154,17 +161,17 @@ theorem body_wp {enc : Bool} {KP : State → Prop} {pre : Prog isa} {f8 f : List
   refine WP.seq (WP.mono (hpre s₂ h₂) fun s₃ ⟨h₃, kp₃⟩ => ?_)
   have g₃ := SInvK.ginv (enc := enc) hp h₃ kp₃
   refine WP.seq (WP.mono (cmp8_ok hst g₃) fun s₄ ⟨g₄, cf₄⟩ => ?_)
-  refine WP.seq (WP.mono (groups_wp hp hst hf8 g₄ (by simpa using cf₄)) fun s₅ ⟨c, hc, g₅⟩ => ?_)
+  refine WP.seq (WP.mono (hL s₄ g₄ (by simpa using cf₄)) fun s₅ ⟨c, hc, g₅⟩ => ?_)
   exact WP.seq (WP.mono (tail_wp hp hst hf (by omega) g₅) fun s₆ h₆ => finish_wp hp h₆)
 
 /-- The whole function. -/
-theorem crypt_wp {enc : Bool} {KP : State → State → Prop} {pre : Prog isa} {f8 f : List XReg → Prog isa} {s₀ : State}
+theorem crypt_wp {enc : Bool} {KP : State → State → Prop} {pre L : Prog isa} {f : List XReg → Prog isa} {s₀ : State}
     (h0 : (modeX86_64 (AesXts.xtsMode enc)).pre s₀)
     (hst : ∀ s₁ : State, UPre s₁ → Stable (KP s₁) s₁)
-    (hf8 : ∀ s₁ : State, UPre s₁ → Blk8 enc f8 (KP s₁) s₁)
+    (hL : ∀ s₁ : State, UPre s₁ → LoopOk enc L (KP s₁) s₁)
     (hf : ∀ s₁ : State, UPre s₁ → Blk1 enc f (KP s₁) s₁)
     (hpre : ∀ s₁ : State, UPre s₁ → ∀ s, SInvK s₁ s → WP isa pre s fun s' => SInvK s₁ s' ∧ KP s₁ s') :
-    WP isa (crypt pre f8 f) s₀ fun s' => gprPreserved s₀ s' ∧ (modeX86_64 (AesXts.xtsMode enc)).post s₀ s' := by
+    WP isa (crypt pre L f) s₀ fun s' => gprPreserved s₀ s' ∧ (modeX86_64 (AesXts.xtsMode enc)).post s₀ s' := by
   have hn : N s₀ < 2 ^ 64 := (s₀.gpr .r8).isLt
   have st : WP isa (.block [.alu .test .r8 (.reg .r8)]) s₀ fun s₁ =>
       s₁.gpr = s₀.gpr ∧ s₁.mem = s₀.mem ∧ s₁.rd = s₀.rd ∧ s₁.wr = s₀.wr ∧ s₁.zf = some (decide (N s₀ = 0)) := by
@@ -187,7 +194,7 @@ theorem crypt_wp {enc : Bool} {KP : State → State → Prop} {pre : Prog isa} {
   · have h1 : (modeX86_64 (AesXts.xtsMode enc)).pre s₁ := by
       simp only [modeX86_64, g, rd, wr]; simpa only [modeX86_64] using h0
     have hp₁ := UPre.of h1
-    refine WP.mono (body_wp hp₁ (hst s₁ hp₁) (hf8 s₁ hp₁) (hf s₁ hp₁) (hpre s₁ hp₁)) fun s' ⟨gp, po⟩ => ?_
+    refine WP.mono (body_wp hp₁ (hst s₁ hp₁) (hL s₁ hp₁) (hf s₁ hp₁) (hpre s₁ hp₁)) fun s' ⟨gp, po⟩ => ?_
     refine ⟨⟨fun r hr => by rw [gp.1 r hr, g], by rw [← m, ← g]; exact gp.2⟩, ?_⟩
     simp only [modeX86_64, g, m] at po ⊢
     exact po
