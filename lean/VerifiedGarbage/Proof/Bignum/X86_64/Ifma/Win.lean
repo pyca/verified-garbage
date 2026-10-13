@@ -6,6 +6,7 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # RSA with AVX512_IFMA on x86-64, any size: a window of the exponentiations

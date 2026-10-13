@@ -8,6 +8,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+meta import Mathlib.Tactic.SplitIfs
 
 /-! Literal code keeps the audits that evaluate it (constant time, `spSafe`)
 from rebuilding it, the initial schedule's immediates included. -/
