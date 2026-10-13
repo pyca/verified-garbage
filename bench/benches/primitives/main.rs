@@ -51,6 +51,7 @@ mod cmac_aes;
 mod cmac_triple_des;
 mod dsa;
 mod ecdh_brainpoolp256r1;
+mod ecdh_brainpoolp384r1;
 mod ecdh_p192;
 mod ecdh_p224;
 mod ecdh_p256;
@@ -58,6 +59,7 @@ mod ecdh_p384;
 mod ecdh_p521;
 mod ecdh_secp256k1;
 mod ecdsa_brainpoolp256r1;
+mod ecdsa_brainpoolp384r1;
 mod ecdsa_p192;
 mod ecdsa_p224;
 mod ecdsa_p256;
@@ -498,6 +500,7 @@ const BENCHES: &[Bench] = &[
     (ecdsa_p224::USES, ecdsa_p224::bench),
     (ecdsa_secp256k1::USES, ecdsa_secp256k1::bench),
     (ecdsa_brainpoolp256r1::USES, ecdsa_brainpoolp256r1::bench),
+    (ecdsa_brainpoolp384r1::USES, ecdsa_brainpoolp384r1::bench),
     (dsa::USES, dsa::bench),
     (ecdsa_p256::USES, ecdsa_p256::bench),
     (ecdsa_p384::USES, ecdsa_p384::bench),
@@ -506,6 +509,7 @@ const BENCHES: &[Bench] = &[
     (ecdh_p224::USES, ecdh_p224::bench),
     (ecdh_secp256k1::USES, ecdh_secp256k1::bench),
     (ecdh_brainpoolp256r1::USES, ecdh_brainpoolp256r1::bench),
+    (ecdh_brainpoolp384r1::USES, ecdh_brainpoolp384r1::bench),
     (ecdh_p256::USES, ecdh_p256::bench),
     (ecdh_p384::USES, ecdh_p384::bench),
     (ecdh_p521::USES, ecdh_p521::bench),
