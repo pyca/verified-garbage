@@ -16,8 +16,8 @@ module of the imported closure, one line of tab-separated fields:
   refer to (`_proof_…`), closed over the declarations of the module they
   refer to;
 * the other modules whose constants occur anywhere in it, proofs included;
-* `meta` if it declares syntax, macros, elaborators or simprocs (by the types
-  of its constants), else `-`;
+* `meta` if it declares syntax, macros, elaborators, simprocs (by the types
+  of its constants) or instances, else `-`;
 * for a module of this project, the namespaces under `VG` its constants are
   in (each prefix of their names), which an `open` elsewhere needs to see.
 
@@ -79,7 +79,8 @@ def main (args : List String) : IO Unit := do
       (alts.getD c #[]).find? (clo[i]!.testBit ·)
     -- Everything the module's constants use.
     let mut all : Std.HashSet Nat := {}
-    let mut isMeta := false
+    -- An instance can serve elaboration alone (a `ToExpr` for a literal).
+    let mut isMeta := !(Lean.Meta.instanceExtension.ext.getModuleEntries env i).isEmpty
     for ci in data.constants do
       if let some hd := ci.type.getForallBody.getAppFn.constName? then
         if metaTypes.contains hd then isMeta := true

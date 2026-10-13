@@ -65,6 +65,7 @@ Like the emitter, it loads every module at once: on Linux it needs
 `vm.max_map_count` raised (lean/README.md).
 """
 
+import json
 import pathlib
 import re
 import subprocess
@@ -286,6 +287,21 @@ def opened_namespaces(text: str) -> list[list[str]]:
     return out
 
 
+def source_refs(n: str) -> set[str]:
+    """The modules whose constants the source of module `n` names, from its
+    `.ilean`: names a proof term may not show, such as a `rfl` lemma `simp`
+    uses, or a name `open X (y)` takes."""
+    p = LEAN / ".lake" / "build" / "lib" / "lean" / (n.replace(".", "/") + ".ilean")
+    if not p.exists():
+        return set()
+    out = set()
+    for key in json.loads(p.read_text())["references"]:
+        ref = json.loads(key)
+        if "c" in ref and ref["c"]["m"] != n:
+            out.add(ref["c"]["m"])
+    return out
+
+
 def plan_visibility(mods: dict) -> dict:
     """For each module of this project whose imports change: (the imports
     that become plain `import`s, the `public import`s to add, the `import`s to
@@ -299,7 +315,9 @@ def plan_visibility(mods: dict) -> dict:
     gets a direct import of what it no longer sees but uses (a constant, in
     a proof too) or sees today and is outside this project or such a module:
     `public import` for what its public surface needs, plain `import`
-    otherwise (with `meta import` too in a file that evaluates code)."""
+    otherwise (with `meta import` too in a file that evaluates code). A
+    module defining syntax keeps sight of all it sees today, which its
+    quotations may name, and shows it to its importers, where they expand."""
     names = list(mods)
     idx = {n: i for i, n in enumerate(names)}
     project = {n for n in names if n.startswith("VerifiedGarbage.")}
@@ -358,7 +376,12 @@ def plan_visibility(mods: dict) -> dict:
         else:
             pub_need = bit(mods[n][1] - implicit) & ~(1 << idx[n])
             public, private, optional = [], [], []
+            # A module imported twice alike is decided once, as its most
+            # visible import.
+            merged: dict[tuple[str, bool], bool] = {}
             for m, p, mt in imports:
+                merged[m, mt] = merged.get((m, mt), False) or p
+            for (m, mt), p in merged.items():
                 if m not in mods:
                     continue
                 if p and (mt or n in keep or m in keep):
@@ -395,7 +418,14 @@ def plan_visibility(mods: dict) -> dict:
             for m, _, mt in imports:
                 if m in mods:
                     old_sees |= old_clo[m]
-            need = bit(mods[n][2] - implicit) | (old_sees & keep_bits)
+            # The `.ilean` also names builtins (an option, a simproc) from
+            # modules it does not import: only what it sees counts.
+            need = (bit(mods[n][2] - implicit) | (bit(source_refs(n) - implicit) & old_sees)
+                    | (old_sees & keep_bits))
+            # A macro's quotations name constants that neither its terms nor
+            # its `.ilean` show: a module defining one keeps all it sees.
+            if SURFACE_SYNTAX.search(src[n]):
+                need |= old_sees & ~bit(implicit)
             # What a module uses it sees today: an import added for it changes
             # what no module sees, and adds no dependency.
             unseen = need & ~old_sees & ~(1 << idx[n])
@@ -416,6 +446,9 @@ def plan_visibility(mods: dict) -> dict:
                     if m is not None:
                         add.append(m)
                         sees |= new_clo[m]
+            # What a macro names, it names where it expands: importers see it.
+            if SURFACE_SYNTAX.search(src[n]):
+                add_pub, add = add_pub + add, []
             if demoted or add_pub or add:
                 plan[n] = (demoted, add_pub, add)
             new_pub_edges[n] = public + add_pub

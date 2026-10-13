@@ -62,6 +62,44 @@ class Visibility(unittest.TestCase):
         self.assertEqual(plan["VerifiedGarbage.A"], ([], [], ["VerifiedGarbage.C"]))
         self.assertNotIn("VerifiedGarbage.A", self.plan(mods))
 
+    def test_keeps_what_the_source_names(self):
+        # A's terms show only B, but its source names a constant of C (a `rfl`
+        # lemma `simp` used, say): once B's import of C is private, A imports C.
+        mods = dict(self.MODS)
+        mods["VerifiedGarbage.A"] = ([("VerifiedGarbage.B", True, False)],
+                                     {"VerifiedGarbage.B"}, {"VerifiedGarbage.B"}, False, set())
+        orig = modularize.source_refs
+        modularize.source_refs = lambda n: {"VerifiedGarbage.C"} if n == "VerifiedGarbage.A" else set()
+        try:
+            plan = self.plan(mods)
+        finally:
+            modularize.source_refs = orig
+        self.assertEqual(plan["VerifiedGarbage.A"], ([], [], ["VerifiedGarbage.C"]))
+
+    def test_keeps_what_a_macro_sees(self):
+        # A uses only B but defines a macro, whose quotations may name C's
+        # constants: once B's import of C is private, A imports C itself.
+        mods = dict(self.MODS)
+        mods["VerifiedGarbage.A"] = ([("VerifiedGarbage.B", True, False)],
+                                     {"VerifiedGarbage.B"}, {"VerifiedGarbage.B"}, False, set())
+        plan = self.plan(mods, {"VerifiedGarbage.A": "module\nmacro \"t\" : tactic => `(tactic| rfl)\n"})
+        # Publicly: the macro expands in A's importers.
+        self.assertEqual(plan["VerifiedGarbage.A"], ([], ["VerifiedGarbage.C"], []))
+
+    def test_an_import_repeated(self):
+        # A imports B twice and needs it publicly: neither line is demoted.
+        mods = dict(self.MODS)
+        mods["VerifiedGarbage.A"] = ([("VerifiedGarbage.B", True, False), ("VerifiedGarbage.B", True, False)],
+                                     {"VerifiedGarbage.B"}, {"VerifiedGarbage.B", "VerifiedGarbage.C"}, False, set())
+        self.assertEqual(self.plan(mods)["VerifiedGarbage.A"], ([], [], ["VerifiedGarbage.C"]))
+
+    def test_a_meta_import_beside(self):
+        # A `meta import B` beside `public import B` leaves B's to decide.
+        mods = dict(self.MODS)
+        mods["VerifiedGarbage.A"] = ([("VerifiedGarbage.B", True, False), ("VerifiedGarbage.B", False, True)],
+                                     set(), {"VerifiedGarbage.B", "VerifiedGarbage.C"}, False, set())
+        self.assertEqual(self.plan(mods)["VerifiedGarbage.A"], (["VerifiedGarbage.B"], [], ["VerifiedGarbage.C"]))
+
     def test_opened_namespaces(self):
         self.assertEqual(modularize.opened_namespaces("namespace VG.P\nopen X.Y Z (a) in\nopen scoped W\n"),
                          [["VG.P.X.Y", "VG.X.Y", "X.Y"], ["VG.P.Z", "VG.Z", "Z"], ["VG.P.W", "VG.W", "W"]])
