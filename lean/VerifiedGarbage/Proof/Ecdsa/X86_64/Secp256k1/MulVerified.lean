@@ -164,7 +164,7 @@ theorem mul_correct (hL : Law Spec.Secp256k1.curve) (hI : InvSounds) (s : State)
     rw [qx, qy, dq hL, dq hL]
     rfl
   have hQ : onCurve secp256k1.C (ptQ secp256k1 (s.gpr .rdi) s) = true := by rw [← eP]; exact hon
-  have W := mulFn_ok hc rfl hL hS hmp' hz' hone' ha' hb3' hx' hy' hQ
+  have W := mulFn_ok hc (.inl rfl) hL hS hmp' hz' hone' ha' hb3' hx' hy' hQ
   rw [Code.inline_of_noCalls hnc] at W
   obtain ⟨t, s', he, K', U', M', L', R'⟩ := W
   have sv' := invFnX_gpr hv hncB he

@@ -86,7 +86,7 @@ theorem consts_tmv (hc : BaseCfgOk c) {base : Addr} {g : Reg → BitVec 64} {s :
 verification holds, and restores the callee-saved registers. -/
 theorem verify_ok (hc : BaseCfgOk c) (hC : Law c.C) (hT : CombTbls c) {s₀ : State}
     (hp : VPre c s₀)
-    (hm : c.mul.isSome = true → c.n = 4 ∧ c.mulFn.noCalls = true := by exact fun h => absurd h (by decide)) :
+    (hm : c.mul.isSome = true → (c.n = 4 ∨ c.n = 6) ∧ c.mulFn.noCalls = true := by exact fun h => absurd h (by decide)) :
     WP isa (Impl.Ecdsa.Verify.X86_64.Cfg.verify c).inline s₀ fun s' =>
       (∀ r ∈ Cfg.saved.map Prod.fst, s'.gpr r = s₀.gpr r) ∧ VPost c s₀ s' := by
   have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
