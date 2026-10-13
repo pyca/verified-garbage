@@ -50,6 +50,11 @@ def blockCall : Direction → Prog isa
   | .encrypt => .call "vg_seed_encrypt_blocks" encrypt
   | .decrypt => .call "vg_seed_decrypt_blocks" decrypt
 
+/-- `vg_seed_ecb_encrypt` or `vg_seed_ecb_decrypt` within its frame, which
+allocates the working space at `x3`: a call of the blocks function in the
+direction `d`, in a frame saving `x30`. -/
+def ecbCall (d : Direction) : Prog isa := .frame (.push .x30) (blockCall d) (.pop .x30)
+
 /-- Before the call: the return address, the scratch buffer's address, the
 data's address and the blocks left to `v28`, `v27`, `v29` and `v30` (the
 callee writes no vector register, and the taint analysis keeps them public
