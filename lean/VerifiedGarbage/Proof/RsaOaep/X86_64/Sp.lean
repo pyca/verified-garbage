@@ -36,16 +36,6 @@ theorem Good.all {c : Prog isa} (h : Good c) : c.all (fun i => !isa.writesSp i) 
 variable {Hl Gm : Hash} (hH : HashOK Hl) (KH : Callees Hl) (hG : HashOK Gm) (KG : Callees Gm)
 
 include hH KH hG KG in
-theorem enc_spSafe :
-    (encrypt Hl.stream Gm.stream pubChecked.name pubChecked.code).all (fun i => !isa.writesSp i) = true := by
-  have g := HGood.of hH KH
-  have g' := HGood.of hG KG
-  simp only [encrypt, encBody, encMain, encEm, encFail, seqs, Code.all,
-    zeroOut_good.all, clearEm_good.all, (copySeed_good _).all, (hashLabel_good g oDig).all, (copyLh_good _).all,
-    putMsg_good.all, (mgfXor_good g').all, pubChecked.spSafe, Bool.and_true]
-  rfl
-
-include hH KH hG KG in
 theorem dec_spSafe (v : PrivImpl) :
     (decrypt Hl.stream Gm.stream v.name v.code).all (fun i => !isa.writesSp i) = true := by
   have g := HGood.of hH KH

@@ -34,7 +34,7 @@ theorem not_zmask (bs : List Byte) :
   unfold zmask pmask
   split <;> decide
 
-theorem maskArgs_run {s t : State} (hp : EPre s) (h : PostCall s t) :
+theorem maskArgs_run {s t : State} (hp : EPre s) (h : AfterCall s t) :
     WP isa (.block maskArgs) t fun t' => t'.mem = t.mem ∧ t'.gpr .rdx = pmask (psOk s) ∧
       t'.gpr .r11 = t.gpr .rax &&& pmask (psOk s) ∧ t'.gpr .rdi = s.gpr .rdi ∧ t'.gpr .rcx = s.gpr .rcx ∧
       t'.gpr .r10 = BitVec.ofNat 64 0 ∧ Keep [.rdx, .rax, .r11, .rdi, .rcx, .r10] t t' := by
@@ -129,7 +129,7 @@ structure Tail (s t₀ t : State) : Prop where
     if psOk s then Spec.Rsa.bytesAt t₀.mem (s.gpr .rdi) (kOf s) else List.replicate (kOf s) 0
   keep : Keep [.rdx, .rax, .r11, .rdi, .rcx, .r10] t₀ t
 
-theorem tail_ok {s t : State} (hp : EPre s) (h : PostCall s t) :
+theorem tail_ok {s t : State} (hp : EPre s) (h : AfterCall s t) :
     WP isa (.seq (.block maskArgs) (.seq maskLoop (.block [.mov .rax (.reg .r11)]))) t (Tail s t) := by
   have hk1 := hp.k1
   have hk2 := hp.k2
