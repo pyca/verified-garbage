@@ -36,8 +36,8 @@ theorem absorbAll_eight :
   have l : (b0 ++ b1 ++ b2 ++ b3).length % 16 = 0 := by simp [h0, h1, h2, h3]
   rw [show b0 ++ b1 ++ b2 ++ b3 ++ b4 ++ b5 ++ b6 ++ b7 = (b0 ++ b1 ++ b2 ++ b3) ++ (b4 ++ b5 ++ b6 ++ b7) by
     simp only [List.append_assoc], absorbAll_append l]
-  refine (absorbAll_four h4 h5 h6 h7).trans ?_
-  have hA := absorbAll_four (r := r) (a := a) h0 h1 h2 h3
+  refine Nat.ModEq.trans (absorbAll_four h4 h5 h6 h7) ?_
+  have hA : _ ≡ _ [MOD P] := absorbAll_four (r := r) (a := a) h0 h1 h2 h3
   refine ((((hA.mul_left (r ^ 4)).add_right _).add_right _).add_right _).add_right _ |>.trans ?_
   rw [show r ^ 4 * (r ^ 4 * a + r ^ 4 * mv b0 + r ^ 3 * mv b1 + r ^ 2 * mv b2 + r * mv b3) + r ^ 4 * mv b4 +
       r ^ 3 * mv b5 + r ^ 2 * mv b6 + r * mv b7 =
