@@ -48,38 +48,86 @@ def ecbAArch64 (dir : Dir) : Contract isa where
 /-- The order of the subkeys in the table, for each direction. -/
 def permOf (dir : Dir) : Nat → Nat → Nat := Proof.Camellia.dirPerm (specDir dir)
 
-theorem endAddr_post {s₀ s : State} {b sched : Addr} {g : Nat} {perm : Nat → Nat} (hg : g = 3 ∨ g = 4)
-    (h : KeysPost s₀ b sched g perm s) :
-    ∃ s', runBlock isa (endAddr g) s = some s' ∧ KeysPost s₀ b sched g perm s' ∧
-      s'.gpr .x4 = b + BitVec.ofNat 64 (8 * keySlot + 512 * g) := by
+/-- The subkeys the loop bitslices, for `g` groups. -/
+def cntOf : Dir → Nat → Nat
+  | .encrypt, g => 8 * g + 2
+  | .decrypt, g => 8 * g - 2
+
+/-- How far `groupConsts` moves `x0`. -/
+def x0Of : Dir → Nat → Nat
+  | .encrypt, _ => 0
+  | .decrypt, g => 64 * g
+
+theorem groupConsts_ok (dir : Dir) {g : Nat} (hg : g = 3 ∨ g = 4) (s : State) :
+    ∃ s', runBlock isa (groupConsts dir g) s = some s' ∧
+      s'.gpr .x4 = s.gpr sb + BitVec.ofNat 64 (8 * keySlot + 512 * g) ∧
+      s'.gpr t1 = BitVec.ofNat 64 (cntOf dir g) ∧ s'.gpr .x0 = s.gpr .x0 + BitVec.ofNat 64 (x0Of dir g) ∧
+      (∀ r, r ≠ .x4 → r ≠ t1 → r ≠ .x0 → s'.gpr r = s.gpr r) ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧
+      s'.wr = s.wr := by
   obtain ⟨s₁, e₁, r₁, o₁, m₁, rd₁, wr₁⟩ := movR_ok s .x4 sb
   obtain ⟨s₂, e₂, r₂, o₂, m₂, rd₂, wr₂⟩ := addI_ok s₁ .x4 .x4 (imm := 8 * keySlot + 512 * g)
     (by rw [keySlot_eq]; omega)
-  have hb : s₂.gpr sb = s.gpr sb := by rw [o₂ _ (by decide), o₁ _ (by decide)]
-  refine ⟨s₂, by rw [endAddr, show ([movR .x4 sb, .addImm .x .x4 .x4 (8 * keySlot + 512 * g)] :
+  have e₁₂ : runBlock isa (endAddr g) s = some s₂ := by
+    rw [endAddr, show ([movR .x4 sb, .addImm .x .x4 .x4 (8 * keySlot + 512 * g)] :
       List Instr) = [movR .x4 sb] ++ [.addImm .x .x4 .x4 (8 * keySlot + 512 * g)] from rfl,
-      runBlock_append', e₁, Option.bind_some, e₂],
-    ⟨h.pre.congr hb (by rw [rd₂, rd₁]) (by rw [wr₂, wr₁]), fun i hi => by rw [m₂, m₁]; exact h.ent i hi,
-      fun kv hkv => by
-        show s₂.mem.readW (wordAddr (s₂.gpr sb) kv.1) 64 = kv.2
-        rw [m₂, m₁, hb]; exact h.masks kv hkv,
-      by rw [m₂, m₁]; exact h.frame, fun r h1 h2 h3 h4 => ?_,
-      by rw [rd₂, rd₁, h.rd], by rw [wr₂, wr₁, h.wr]⟩, ?_⟩
-  · rw [o₂ r h4, o₁ r h4, h.regs r h1 h2 h3 h4]
-  · rw [r₂, r₁, h.pre.base]
+      runBlock_append', e₁, Option.bind_some, e₂]
+  have x4₂ : s₂.gpr .x4 = s.gpr sb + BitVec.ofNat 64 (8 * keySlot + 512 * g) := by rw [r₂, r₁]
+  have o₁₂ : ∀ r, r ≠ .x4 → s₂.gpr r = s.gpr r := fun r h => by rw [o₂ r h, o₁ r h]
+  cases dir
+  · obtain ⟨s₃, e₃, t₃, o₃, m₃, rd₃, wr₃⟩ := movz_ok s₂ t1 (v := 8 * g + 2) (by omega)
+    refine ⟨s₃, by rw [groupConsts, runBlock_append', e₁₂, Option.bind_some, e₃],
+      by rw [o₃ _ (by decide), x4₂], t₃, by rw [o₃ _ (by decide), o₁₂ _ (by decide)]; simp [x0Of],
+      fun r h1 h2 _ => by rw [o₃ r h2, o₁₂ r h1], by rw [m₃, m₂, m₁], by rw [rd₃, rd₂, rd₁],
+      by rw [wr₃, wr₂, wr₁]⟩
+  · obtain ⟨s₃, e₃, r₃, o₃, m₃, rd₃, wr₃⟩ := addI_ok s₂ .x0 .x0 (imm := 64 * g) (by omega)
+    obtain ⟨s₄, e₄, t₄, o₄, m₄, rd₄, wr₄⟩ := movz_ok s₃ t1 (v := 8 * g - 2) (by omega)
+    refine ⟨s₄, by
+      rw [groupConsts, runBlock_append', e₁₂, Option.bind_some,
+        show ([Instr.addImm .x .x0 .x0 (64 * g), .movz .x t1 (BitVec.ofNat 16 (8 * g - 2)) 0] : List Instr) =
+          [.addImm .x .x0 .x0 (64 * g)] ++ [.movz .x t1 (BitVec.ofNat 16 (8 * g - 2)) 0] from rfl,
+        runBlock_append', e₃, Option.bind_some, e₄],
+      by rw [o₄ _ (by decide), o₃ _ (by decide), x4₂], t₄,
+      by rw [o₄ _ (by decide), r₃, o₁₂ _ (by decide)]; rfl,
+      fun r h1 h2 h3 => by rw [o₄ r h2, o₃ r h3, o₁₂ r h1], by rw [m₄, m₃, m₂, m₁], by rw [rd₄, rd₃, rd₂, rd₁],
+      by rw [wr₄, wr₃, wr₂, wr₁]⟩
+
+/-- `KeysPost` from the state after `groupConsts`, which wrote only `x4`, `t1` and `x0`. -/
+theorem KeysPost.of_consts {s₀ s₁ s : State} {b sched : Addr} {g : Nat} {perm : Nat → Nat}
+    (h : KeysPost s₁ b sched g perm s) (hm : s₁.mem = s₀.mem) (hrd : s₁.rd = s₀.rd) (hwr : s₁.wr = s₀.wr)
+    (ho : ∀ r, r ≠ .x4 → r ≠ t1 → r ≠ .x0 → s₁.gpr r = s₀.gpr r) : KeysPost s₀ b sched g perm s :=
+  ⟨h.pre, fun i hi => hm ▸ h.ent i hi, h.masks, hm ▸ h.frame,
+    fun r h1 h2 h3 h4 => by rw [h.regs r h1 h2 h3 h4, ho r h4 (fun h => h1 (by subst h; decide)) h3],
+    h.rd.trans hrd, h.wr.trans hwr⟩
 
 theorem keys_wp (dir : Dir) {s₀ : State} {b sched : Addr} {g : Nat} (hg : g = 3 ∨ g = 4)
+    (hz : isa.eval (.zero .x t0) s₀ = some (decide (g = 3)))
     (hk : KeyPre s₀ b sched) (hx0 : s₀.gpr .x0 = sched) (hm : MasksOk s₀) :
-    WP isa (keys dir g) s₀ fun s => KeysPost s₀ b sched g (permOf dir g) s ∧
+    WP isa (keys dir) s₀ fun s => KeysPost s₀ b sched g (permOf dir g) s ∧
       s.gpr .x4 = b + BitVec.ofNat 64 (8 * keySlot + 512 * g) := by
   unfold keys
+  refine WP.seq (WP.mono (M := isa) (Q := fun s₁ =>
+      s₁.gpr .x4 = s₀.gpr sb + BitVec.ofNat 64 (8 * keySlot + 512 * g) ∧
+      s₁.gpr t1 = BitVec.ofNat 64 (cntOf dir g) ∧ s₁.gpr .x0 = s₀.gpr .x0 + BitVec.ofNat 64 (x0Of dir g) ∧
+      (∀ r, r ≠ .x4 → r ≠ t1 → r ≠ .x0 → s₁.gpr r = s₀.gpr r) ∧ s₁.mem = s₀.mem ∧ s₁.rd = s₀.rd ∧
+      s₁.wr = s₀.wr)
+    (WP.ite (decide (g = 3)) hz (fun h => ?_) (fun h => ?_)) fun s₁ h₁ => ?_)
+  · obtain rfl : g = 3 := by simpa using h
+    obtain ⟨s', e', h'⟩ := groupConsts_ok dir hg s₀
+    exact WP.of_runBlock ⟨s', e', h'⟩
+  · obtain rfl : g = 4 := by simp at h; omega
+    obtain ⟨s', e', h'⟩ := groupConsts_ok dir hg s₀
+    exact WP.of_runBlock ⟨s', e', h'⟩
+  obtain ⟨x4₁, t₁, x0₁, o₁, m₁, rd₁, wr₁⟩ := h₁
+  have hk₁ : KeyPre s₁ b sched := hk.congr (o₁ _ (by decide) (by decide) (by decide)) rd₁ wr₁
+  have hm₁ : MasksOk s₁ := fun kv hkv => by
+    show s₁.mem.readW (wordAddr (s₁.gpr sb) kv.1) 64 = kv.2
+    rw [m₁, o₁ _ (by decide) (by decide) (by decide)]; exact hm kv hkv
+  have x4 : s₁.gpr .x4 = b + BitVec.ofNat 64 (8 * keySlot + 512 * g) := by rw [x4₁, hk.base]
   cases dir
-  · refine WP.seq (WP.mono (encKeys_wp hg hk hx0 hm) fun s h => ?_)
-    obtain ⟨s', e', h', r'⟩ := endAddr_post hg h
-    exact WP.of_runBlock ⟨s', e', h', r'⟩
-  · refine WP.seq (WP.mono (decKeys_wp hg hk hx0 hm) fun s h => ?_)
-    obtain ⟨s', e', h', r'⟩ := endAddr_post hg h
-    exact WP.of_runBlock ⟨s', e', h', r'⟩
+  · exact WP.mono (encKeys_wp hg hk₁ (by rw [x0₁, hx0]; simp [x0Of]) t₁ hm₁) fun s ⟨h, h4⟩ =>
+      ⟨h.of_consts m₁ rd₁ wr₁ o₁, h4.trans x4⟩
+  · exact WP.mono (decKeys_wp hg hk₁ (by rw [x0₁, hx0]; simp only [x0Of]; congr 2; omega) t₁ hm₁)
+      fun s ⟨h, h4⟩ => ⟨h.of_consts m₁ rd₁ wr₁ o₁, h4.trans x4⟩
 
 theorem dataLoop_wp {s₀ : State} {b D : Addr} {n g : Nat} {E : Nat → BitVec 64} (hp : GPre s₀ b D n g)
     {s : State} (hi : GInv s₀ b D n g E 0 s) :
@@ -157,14 +205,9 @@ theorem ecb_wp (dir : Dir) {s₀ : State} (hp : (ecbAArch64 dir).pre s₀) :
   -- The table.
   obtain ⟨g, hgR⟩ : ∃ g, R / 6 = g := ⟨_, rfl⟩
   rw [hgR] at hg hg4
-  refine WP.seq (WP.mono (M := isa) (Q := fun s => KeysPost s₁ b sched g (permOf dir g) s ∧
-      s.gpr .x4 = b + BitVec.ofNat 64 (8 * keySlot + 512 * g))
-    (WP.ite (decide (R = 18)) ((eval_zero s₁ t0).trans (by rw [hz₁])) (fun h => ?_) (fun h => ?_))
-    fun s₂ ⟨k₂, x4₂⟩ => ?_)
-  · obtain rfl : g = 3 := by simp at h; omega
-    exact keys_wp dir (Or.inl rfl) hk₁ x0₁ m₁
-  · obtain rfl : g = 4 := by simp at h; omega
-    exact keys_wp dir (Or.inr rfl) hk₁ x0₁ m₁
+  refine WP.seq (WP.mono (keys_wp dir hg ((eval_zero s₁ t0).trans (by
+    rw [hz₁]; exact congrArg some (decide_eq_decide.mpr ⟨fun h => by omega, fun h => by omega⟩)))
+    hk₁ x0₁ m₁) fun s₂ ⟨k₂, x4₂⟩ => ?_)
   -- The scratch buffer and the data before the groups.
   let E : Nat → BitVec 64 := fun i => (schedWords s₀.mem sched R).getD (permOf dir g i) 0
   have hfitB := fitB

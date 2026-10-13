@@ -32,7 +32,7 @@ open VG.AArch64 VG.Impl.Aes.AArch64
 decryption. -/
 def dirCore (d : Dir) : Impl.Modes.AArch64.Core where
   prepare := .seq (.block (setSlots layerMasks ++ ([.subImm .x t0 .x1 18] : List Instr)))
-    (.ite (.zero .x t0) (keys d 3) (keys d 4))
+    (keys d)
   crypt := crypt8
   slots := tailSlot + 16
   total := slots
