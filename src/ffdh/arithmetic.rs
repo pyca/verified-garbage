@@ -92,8 +92,9 @@ impl Montgomery {
     pub(super) fn power(&self, base: &[u8], exponent: &[u8]) -> Vec<u8> {
         let w = self.modulus.len();
         let table_at = 32 + 8 * (w + 2);
+        let window = if exponent.len() >= 39 { 5 } else { 4 };
         let table_words = if cfg!(target_arch = "aarch64") {
-            16 * w
+            (1 << window) * w
         } else {
             0
         };
@@ -126,42 +127,62 @@ impl Montgomery {
         }
         #[cfg(target_arch = "aarch64")]
         {
-            // All sixteen powers, including Montgomery one, in wiped storage.
+            // All window powers, including Montgomery one, in wiped storage.
             // The verified multiplication preserves this extension of the workspace.
             for i in 0..w {
                 ws[table_at + i] = ws[at(5) + i];
                 ws[table_at + w + i] = ws[at(4) + i];
                 ws[at(6) + i] = ws[at(4) + i];
             }
-            for digit in 2..16 {
-                self.mul(&mut ws, 6, 6, 4);
-                for i in 0..w {
-                    ws[table_at + digit * w + i] = ws[at(6) + i];
+            for digit in 2..(1 << window) {
+                if digit % 2 == 0 {
+                    // Public table indices. Route even powers through the shared
+                    // RSA squarer, whose callable fast path uses accumulator 5.
+                    ws.copy_within(
+                        table_at + (digit / 2) * w..table_at + (digit / 2 + 1) * w,
+                        at(5),
+                    );
+                    self.mul(&mut ws, 5, 5, 5);
+                    ws.copy_within(at(5)..at(5) + w, at(6));
+                } else {
+                    self.mul(&mut ws, 6, 6, 4);
                 }
+                ws.copy_within(at(6)..at(6) + w, table_at + digit * w);
             }
-            // Fixed four-bit windows. Every table entry is read in the same order;
-            // the secret digit never controls a branch, loop bound, or address.
-            for &byte in exponent {
-                for shift in [4, 0] {
-                    for _ in 0..4 {
+            ws.copy_within(table_at..table_at + w, at(5));
+            // Window size and bit positions depend only on the public encoding
+            // length. Every table entry is read in the same order, even for zero.
+            let bits = exponent.len() * 8;
+            for start in (0..bits).step_by(window) {
+                let width = window.min(bits - start);
+                let mut digit = 0u64;
+                for bit in start..start + width {
+                    digit = (digit << 1) | u64::from((exponent[bit / 8] >> (7 - bit % 8)) & 1);
+                }
+                if start != 0 {
+                    for _ in 0..width {
                         self.mul(&mut ws, 5, 5, 5);
                     }
-                    let digit = u64::from((byte >> shift) & 15);
-                    let (arrays, table) = ws.split_at_mut(table_at);
-                    let selected = &mut arrays[at(6)..at(6) + w];
-                    selected.fill(0);
-                    for (candidate, row) in table.chunks_exact(w).enumerate() {
-                        // Both values are in 0..16: the high bit of (x-1)
-                        // is set exactly when x is zero.
-                        let equal = (digit ^ candidate as u64).wrapping_sub(1) >> 63;
-                        // SAFETY: choose has no preconditions. The opaque assembly
-                        // call returns a mask; Rust sees an arbitrary u64, so the
-                        // following AND/OR operations need no conditional select.
-                        let mask = unsafe { vg_ffdh_choose(0, u64::MAX, equal) };
-                        for (dst, &src) in selected.iter_mut().zip(row) {
-                            *dst |= src & mask;
-                        }
+                }
+                let (arrays, table) = ws.split_at_mut(table_at);
+                let selected = &mut arrays[at(6)..at(6) + w];
+                selected.fill(0);
+                for (candidate, row) in table.chunks_exact(w).enumerate() {
+                    // Both values are below 32: the high bit of (x-1)
+                    // is set exactly when x is zero.
+                    let equal = (digit ^ candidate as u64).wrapping_sub(1) >> 63;
+                    // SAFETY: choose has no preconditions. The opaque assembly
+                    // call returns a mask; Rust sees an arbitrary u64, so the
+                    // following AND/OR operations need no conditional select.
+                    let mask = unsafe { vg_ffdh_choose(0, u64::MAX, equal) };
+                    for (dst, &src) in selected.iter_mut().zip(row) {
+                        *dst |= src & mask;
                     }
+                }
+                if start == 0 {
+                    // The first window replaces Montgomery one directly.
+                    ws.copy_within(at(6)..at(6) + w, at(5));
+                } else {
                     self.mul(&mut ws, 5, 5, 6);
                 }
             }

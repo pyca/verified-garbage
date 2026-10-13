@@ -148,3 +148,34 @@ fn partial_words_and_arbitrary_exponents_match_openssl() {
         }
     }
 }
+
+#[test]
+fn window_boundaries_match_openssl() {
+    use openssl::bn::MsbOption;
+    let p = BigNum::get_rfc3526_prime_2048().unwrap();
+    let p_bytes = p.to_vec();
+    let params = Parameters::from_components(&p_bytes, &[2], None).unwrap();
+    let peer = PublicKey::from_components(&params, &[3]).unwrap();
+    let mut ctx = BigNumContext::new().unwrap();
+    // Exercise the public window-size boundary and every final-window width.
+    // OpenSSL supplies an independent oracle for fresh random exponents.
+    for bytes in 38..=43 {
+        let mut x = BigNum::new().unwrap();
+        x.rand(bytes * 8, MsbOption::ONE, false).unwrap();
+        let mut y = BigNum::new().unwrap();
+        y.mod_exp(&BigNum::from_u32(2).unwrap(), &x, &p, &mut ctx)
+            .unwrap();
+        let mut expected = BigNum::new().unwrap();
+        expected
+            .mod_exp(&BigNum::from_u32(3).unwrap(), &x, &p, &mut ctx)
+            .unwrap();
+        for padding in [0, 1, 5] {
+            let encoded = x.to_vec_padded(bytes + padding).unwrap();
+            let key = PrivateKey::from_components(&params, &y.to_vec(), &encoded).unwrap();
+            assert_eq!(
+                key.exchange(&peer).unwrap(),
+                expected.to_vec_padded(256).unwrap()
+            );
+        }
+    }
+}
