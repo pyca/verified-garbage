@@ -74,21 +74,26 @@ def initVal (i : Nat) : Nat :=
 /-- Limb `k` of slot `i`'s initial value. -/
 def initLimb (i k : Nat) : Nat := initVal i / 2 ^ (16 * k) % 65536
 
-/-- Limb `k` of slot `i`, through `ebp = edi + 64`, the address of slot 0
-(`ebx` is zero). -/
+/-- Limb `k` of slot `i`, through `ebp = edi + 64`, the address of slot 0,
+if it is not zero (the slots are zeroed first). -/
 def initStep (i k : Nat) : List Instr :=
-  if initLimb i k = 0 then [.store (at_ .ebp (128 * i + 4 * k)) .ebx]
+  if initLimb i k = 0 then []
   else [.mov .eax (.imm (BitVec.ofNat 32 (initLimb i k))), .store (at_ .ebp (128 * i + 4 * k)) .eax]
 
 def initSlot (i : Nat) : List Instr := (List.range 28).flatMap (initStep i)
+
+/-- The 704 words of the slots zeroed, through `ebp` from `edi + 64` (`eax`
+counts them down). -/
+def zeroSlots : Prog isa :=
+  .seq (.block [.mov .ebp (.reg .edi), .alu .add .ebp (.imm 64), .mov .ebx (.imm 0), .mov .eax (.imm 704)])
+    (.loop (.block [.store (at_ .ebp 0) .ebx, .alu .add .ebp (.imm 4), .alu .sub .eax (.imm 1)]) .ne)
 
 /-- Every slot set to its initial value. The stores are through `ebp`, not
 `edi`: the taint analysis records public words it stores at known offsets of
 the working space, and the constants (the base point and `d`) would stay in
 that record through the whole ladder, slowing every check of a store. -/
-def initSlots : List Instr :=
-  [.mov .ebp (.reg .edi), .alu .add .ebp (.imm 64), .mov .ebx (.imm 0)] ++
-    (List.range 22).flatMap initSlot
+def initSlots : Prog isa :=
+  .seq zeroSlots (.block ([.mov .ebp (.reg .edi), .alu .add .ebp (.imm 64)] ++ (List.range 22).flatMap initSlot))
 
 /-! ## The scalar's bits -/
 
@@ -96,7 +101,7 @@ def initSlots : List Instr :=
 def baseBits : Prog isa := .seq (.block [.mov .esi (.mem (at_ .esp 8))]) (bitsLoop BITS 57)
 
 /-- The callee-saved registers saved, the slots initialized and the scalar's bits. -/
-def baseEntry : Prog isa := .seq (.block (save 12 ++ initSlots)) baseBits
+def baseEntry : Prog isa := .seq (.block (save 12)) (.seq initSlots baseBits)
 
 /-! ## The loop over the bits -/
 

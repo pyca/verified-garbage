@@ -114,8 +114,8 @@ theorem entry_stage {s₀ : State} (h : BasePre s₀) :
   have hA := h.args
   have hin : Input s₀ (bsB s₀) (arg s₀ 1) 57 :=
     Input.of_region h.scalar_fit (by rw [h.rd]; simp) h.scalar_sc
-  refine WP.seq (WP.block_append (WP.mono (save_ok hA) fun s₁ ⟨hs₁, sv₁, o₁, k₁⟩ => ?_))
-  refine WP.mono (initSlots_ok hs₁) fun s₂ ⟨l₂, o₂, k₂⟩ => ?_
+  refine WP.seq (WP.mono (save_ok hA) fun s₁ ⟨hs₁, sv₁, o₁, k₁⟩ => ?_)
+  refine WP.seq (WP.mono (initSlots_ok hs₁) fun s₂ ⟨l₂, o₂, k₂⟩ => ?_)
   have hs₂ := hs₁.of_keeps k₂ (by decide)
   have k02 : Keeps [.eax, .ebx, .ebp, .edi] s₀ s₂ := (k₁.mono (by decide)).trans (k₂.mono (by decide))
   have o02 : Outside (bsB s₀) 0 8192 s₀.mem s₂.mem :=
