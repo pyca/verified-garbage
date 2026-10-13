@@ -56,6 +56,12 @@ pub(crate) mod blowfish_cfb;
 pub(crate) mod blowfish_ofb;
 
 #[rustfmt::skip]
+pub(crate) mod brainpoolp384r1_mont;
+
+#[rustfmt::skip]
+pub(crate) mod brainpoolp384r1_point;
+
+#[rustfmt::skip]
 pub(crate) mod camellia;
 
 #[rustfmt::skip]
@@ -98,6 +104,9 @@ pub(crate) mod consts;
 pub(crate) mod ct;
 
 #[rustfmt::skip]
+pub(crate) mod ec_brainpoolp384r1;
+
+#[rustfmt::skip]
 pub(crate) mod ec_p192;
 
 #[rustfmt::skip]
@@ -113,6 +122,9 @@ pub(crate) mod ec_p384;
 pub(crate) mod ec_p521;
 
 #[rustfmt::skip]
+pub(crate) mod ecdh_brainpoolp384r1;
+
+#[rustfmt::skip]
 pub(crate) mod ecdh_p192;
 
 #[rustfmt::skip]
@@ -126,6 +138,12 @@ pub(crate) mod ecdh_p384;
 
 #[rustfmt::skip]
 pub(crate) mod ecdh_p521;
+
+#[rustfmt::skip]
+pub(crate) mod ecdsa_brainpoolp384r1;
+
+#[rustfmt::skip]
+pub(crate) mod ecdsa_brainpoolp384r1_sha384;
 
 #[rustfmt::skip]
 pub(crate) mod ecdsa_p192;

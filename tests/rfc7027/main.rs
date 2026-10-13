@@ -2,7 +2,12 @@
 //! brainpool curve, the private keys `dA` and `dB` of two parties, their
 //! public keys, and the x-coordinate of their shared secret.
 
-#![cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
+#![cfg(any(
+    target_arch = "x86_64",
+    target_arch = "x86",
+    target_arch = "aarch64",
+    target_arch = "arm"
+))]
 
 mod brainpoolp256r1;
 mod brainpoolp384r1;

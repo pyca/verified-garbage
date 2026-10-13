@@ -1,0 +1,41 @@
+module
+
+public import VerifiedGarbage.Proof.Framework.X86.Lit
+meta import VerifiedGarbage.Proof.Framework.X86.Lit
+public import VerifiedGarbage.Impl.Weierstrass.X86.Mont
+meta import VerifiedGarbage.Impl.Weierstrass.X86.Mont
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+meta import Mathlib.Tactic.SplitIfs
+
+/-!
+# Shared literals for brainpoolP384r1's x86 Montgomery calls
+
+Materialize each operation once so callers can reuse its checked literal
+instead of evaluating the unrolled instruction generator again.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Weierstrass.X86.MontLit.BrainpoolP384r1
+
+open VG
+
+materialize_flat_code pMul := Impl.Weierstrass.X86.Mont.mulFn
+  Spec.Weierstrass.Mont.brainpoolp384r1p.k Spec.Weierstrass.Mont.brainpoolp384r1p.m
+materialize_code pAdd := Impl.Weierstrass.X86.Mont.addFn
+  Spec.Weierstrass.Mont.brainpoolp384r1p.k Spec.Weierstrass.Mont.brainpoolp384r1p.m
+materialize_code pSub := Impl.Weierstrass.X86.Mont.subFn
+  Spec.Weierstrass.Mont.brainpoolp384r1p.k Spec.Weierstrass.Mont.brainpoolp384r1p.m
+
+materialize_flat_code nMul := Impl.Weierstrass.X86.Mont.mulFn
+  Spec.Weierstrass.Mont.brainpoolp384r1n.k Spec.Weierstrass.Mont.brainpoolp384r1n.m
+materialize_code nAdd := Impl.Weierstrass.X86.Mont.addFn
+  Spec.Weierstrass.Mont.brainpoolp384r1n.k Spec.Weierstrass.Mont.brainpoolp384r1n.m
+materialize_code nSub := Impl.Weierstrass.X86.Mont.subFn
+  Spec.Weierstrass.Mont.brainpoolp384r1n.k Spec.Weierstrass.Mont.brainpoolp384r1n.m
+
+end VG.Proof.Weierstrass.X86.MontLit.BrainpoolP384r1
