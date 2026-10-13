@@ -10,6 +10,9 @@ import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.Naf
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Unch
+import VerifiedGarbage.Spec.Weierstrass.CheckPoint
 
 @[expose] public section
 

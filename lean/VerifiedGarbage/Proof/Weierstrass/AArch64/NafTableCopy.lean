@@ -8,6 +8,9 @@ import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Checked
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
+import VerifiedGarbage.Spec.Weierstrass.CheckPoint
 
 @[expose] public section
 

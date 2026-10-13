@@ -12,6 +12,7 @@ import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.X86.Sse
 import VerifiedGarbage.Proof.Weierstrass.X86.WinQuad
 import VerifiedGarbage.Proof.X25519.X86.Column
+import VerifiedGarbage.Proof.Weierstrass.X86.JacAdd
 
 /-! ## `WinJacFirst` -/
 

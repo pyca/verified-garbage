@@ -8,6 +8,8 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.X25519.X86.Column
+import VerifiedGarbage.Proof.X25519.X86.Arith
+import VerifiedGarbage.Spec.Rc2
 
 /-! In-place doubling for the secret-scalar Jacobian window loop. -/
 

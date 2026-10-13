@@ -14,6 +14,7 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombDigit
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
 import VerifiedGarbage.Spec.Weierstrass.Point
+import VerifiedGarbage.Impl.Ecdsa.X86_64
 
 /-! The odd-multiple table retains its initialized prefix and cached double. -/
 

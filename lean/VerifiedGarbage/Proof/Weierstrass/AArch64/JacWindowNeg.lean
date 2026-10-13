@@ -9,6 +9,10 @@ import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
 import VerifiedGarbage.Proof.Weierstrass.CombLay
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Checked
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Ladder
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Unch
+import VerifiedGarbage.Spec.Weierstrass.CheckPoint
 
 /-! Signed field selections for public Jacobian windows. -/
 

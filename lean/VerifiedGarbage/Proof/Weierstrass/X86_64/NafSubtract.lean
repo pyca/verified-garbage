@@ -8,6 +8,7 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 
 /-! The five-, seven- and ten-word subtractions used by signed scalar recoding, and the value of the
 scalar's registers (`nafValN`). -/

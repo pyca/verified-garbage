@@ -7,6 +7,8 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Weierstrass.Unch
 import VerifiedGarbage.Proof.Weierstrass.CombLay
+import VerifiedGarbage.Proof.Framework.CallLay
+import VerifiedGarbage.Proof.Weierstrass.TCombWords
 
 /-!
 # The comb from tables in memory on x86-64: the selection

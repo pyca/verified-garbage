@@ -10,6 +10,10 @@ import VerifiedGarbage.Proof.Mont.X86_64.Wide
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
 import VerifiedGarbage.Spec.Weierstrass.Point
+import VerifiedGarbage.Impl.Ecdsa.X86_64
+import VerifiedGarbage.Proof.Weierstrass.JacMul
+import VerifiedGarbage.Proof.Weierstrass.X86_64.JacAdd
+import VerifiedGarbage.Spec.Ecdsa.Generic
 
 /-! Ordinary Jacobian addition retains equal public field environments in every branch. -/
 

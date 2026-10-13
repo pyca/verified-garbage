@@ -11,6 +11,7 @@ import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Weierstrass.CombLay
+import VerifiedGarbage.Proof.Mont.AArch64.Ops
 
 @[expose] public section
 

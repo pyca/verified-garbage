@@ -10,6 +10,11 @@ import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.X86_64.Call
 import VerifiedGarbage.Proof.Framework.X86_64.Words
+import VerifiedGarbage.Impl.Aes.X86_64.Alloc
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Straight
+import VerifiedGarbage.Proof.Rc2.X86_64.Save
 
 @[expose] public section
 

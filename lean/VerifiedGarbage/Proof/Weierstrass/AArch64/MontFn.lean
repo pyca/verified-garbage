@@ -9,6 +9,7 @@ import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Spec.Ecdsa.Generic
 
 /-!
 # Montgomery products modulo a curve's `p` or `n`, as functions, on AArch64

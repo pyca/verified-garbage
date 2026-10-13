@@ -9,6 +9,7 @@ import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86_64.Taint
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 
 @[expose] public section
 

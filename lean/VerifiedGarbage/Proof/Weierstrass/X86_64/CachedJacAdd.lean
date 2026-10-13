@@ -11,6 +11,9 @@ import VerifiedGarbage.Proof.Mont.X86_64.Wide
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
 import VerifiedGarbage.Spec.Weierstrass.Point
+import VerifiedGarbage.Impl.Ecdsa.X86_64
+import VerifiedGarbage.Proof.Weierstrass.X86_64.JacZero
+import VerifiedGarbage.Spec.Ecdsa.Generic
 
 /-! Complete public addition with cached Z powers, including all exceptional cases. -/
 

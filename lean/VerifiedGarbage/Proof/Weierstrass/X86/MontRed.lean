@@ -8,6 +8,7 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Spec.Rc2
 
 /-!
 # Montgomery arithmetic as functions on x86 (32-bit): P-256's sparse reduction

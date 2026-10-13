@@ -30,6 +30,10 @@ import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.X25519.X86.Column
 meta import Mathlib.Tactic.SplitIfs
 meta import VerifiedGarbage.Proof.X25519.X86.Column
+import VerifiedGarbage.Proof.X25519.X86.Arith
+import VerifiedGarbage.Spec.Rc2
+meta import VerifiedGarbage.Proof.X25519.X86.Arith
+meta import VerifiedGarbage.Spec.Rc2
 
 /-!
 # Complete point addition and doubling as functions, on x86 (32-bit): the curves

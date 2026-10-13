@@ -11,6 +11,7 @@ import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Mont.X86_64.Wide
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+public import VerifiedGarbage.Proof.Weierstrass.JacAdd
 
 /-!
 # Windows in Jacobian coordinates on x86-64: the table into affine coordinates

@@ -5,6 +5,7 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 
 /-! Selecting a signed width-five digit from the public scalar's low word. -/
 

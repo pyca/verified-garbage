@@ -7,6 +7,7 @@ import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Spec.Rc2
 
 /-!
 # Short Weierstrass curves: numbers as 32-bit words and bytes

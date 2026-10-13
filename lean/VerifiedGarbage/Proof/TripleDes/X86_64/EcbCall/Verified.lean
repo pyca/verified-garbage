@@ -22,6 +22,12 @@ import VerifiedGarbage.Proof.Framework.X86_64.Avx512
 meta import Mathlib.Tactic.SplitIfs
 meta import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
 meta import VerifiedGarbage.Proof.Framework.X86_64.Avx512
+import VerifiedGarbage.Proof.Framework.X86_64.Straight
+import VerifiedGarbage.Proof.Framework.X86_64.StraightX
+import VerifiedGarbage.Proof.Framework.X86_64.StraightZ
+meta import VerifiedGarbage.Proof.Framework.X86_64.Straight
+meta import VerifiedGarbage.Proof.Framework.X86_64.StraightX
+meta import VerifiedGarbage.Proof.Framework.X86_64.StraightZ
 
 /-!
 # Triple DES ECB on x86-64, calling the core, verified

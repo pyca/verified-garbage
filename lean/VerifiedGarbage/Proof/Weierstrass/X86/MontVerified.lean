@@ -24,6 +24,10 @@ import VerifiedGarbage.Proof.X25519.X86.Column
 meta import VerifiedGarbage.Proof.Mont.Read
 meta import Mathlib.Tactic.SplitIfs
 meta import VerifiedGarbage.Proof.X25519.X86.Column
+import VerifiedGarbage.Proof.X25519.X86.Arith
+import VerifiedGarbage.Spec.Rc2
+meta import VerifiedGarbage.Proof.X25519.X86.Arith
+meta import VerifiedGarbage.Spec.Rc2
 
 /-!
 # Montgomery arithmetic modulo the curves' `p` and `n`, as functions, on x86 (32-bit): verified

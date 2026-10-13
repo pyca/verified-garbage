@@ -10,6 +10,8 @@ public import VerifiedGarbage.Proof.Mont.AArch64.Words
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Data
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Scalar
 
 @[expose] public section
 

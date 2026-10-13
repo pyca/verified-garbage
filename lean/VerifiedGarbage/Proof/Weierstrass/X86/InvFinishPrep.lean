@@ -7,6 +7,12 @@ import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.X25519.X86.Column
+public import VerifiedGarbage.Proof.Rc2.PairMem
+public import VerifiedGarbage.Proof.Rc2.Select
+public import VerifiedGarbage.Proof.Rc2.Word
+public import VerifiedGarbage.Proof.Weierstrass.X86.MontBody
+public import VerifiedGarbage.Proof.Weierstrass.X86.MontSquareBody
+public import VerifiedGarbage.Proof.Weierstrass.X86.MontSquareInit
 
 /-! # Selecting the final Montgomery correction from the sign of f -/
 

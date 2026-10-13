@@ -7,6 +7,7 @@ import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Weierstrass.CombLay
+import VerifiedGarbage.Proof.Weierstrass.TCombWords
 
 /-! Public copies from a read-only table outside the scratch allocation. -/
 

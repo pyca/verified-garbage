@@ -10,6 +10,7 @@ import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
 import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowQuad
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
 
 /-! The full public Jacobian variable-point multiplication. -/
 

@@ -10,6 +10,9 @@ import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Ed25519.AArch64.CounterKeep
+import VerifiedGarbage.Impl.Mont.Mod
+import VerifiedGarbage.Proof.Ed25519.AArch64.PointEncode
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
 
 /-!
 # X25519 of the base point on AArch64: the engine

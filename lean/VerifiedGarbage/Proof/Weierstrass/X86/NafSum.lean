@@ -9,6 +9,11 @@ import VerifiedGarbage.Proof.Framework.X86.Sse
 import VerifiedGarbage.Proof.Weierstrass.X86.JacAdd
 import VerifiedGarbage.Proof.Weierstrass.X86.WinQuad
 import VerifiedGarbage.Proof.X25519.X86.Column
+public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+public import VerifiedGarbage.Proof.Weierstrass.Words32
+public import VerifiedGarbage.Proof.Weierstrass.X86.JacDouble
+public import VerifiedGarbage.Proof.Weierstrass.X86.NafTableIO
+public import VerifiedGarbage.Proof.Weierstrass.X86.WinFinish
 
 /-! Adding a signed digit to the doubled accumulator. -/
 

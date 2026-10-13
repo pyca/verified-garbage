@@ -13,6 +13,7 @@ import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Mont.X86_64.Wide
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+public import VerifiedGarbage.Proof.Divstep.WordBasic
 
 /-!
 # Inversion by divsteps on x86-64: numbers of several words

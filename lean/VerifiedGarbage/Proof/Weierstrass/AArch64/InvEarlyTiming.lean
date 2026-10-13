@@ -18,6 +18,26 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
 meta import VerifiedGarbage.Proof.Divstep.Bound
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
+public import VerifiedGarbage.Proof.Divstep.Early
+public import VerifiedGarbage.Proof.Divstep.Iter
+public import VerifiedGarbage.Proof.Divstep.WordBasic
+public import VerifiedGarbage.Proof.Framework.Range
+public import VerifiedGarbage.Proof.Mont.AArch64.P256Square.Core
+public import VerifiedGarbage.Proof.Mont.AArch64.P256Square.Words
+public import VerifiedGarbage.Proof.Mont.AArch64.RowInit
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.OptimizeK
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Refine
+public import VerifiedGarbage.Proof.Weierstrass.Pow
+meta import VerifiedGarbage.Proof.Divstep.Early
+meta import VerifiedGarbage.Proof.Divstep.Iter
+meta import VerifiedGarbage.Proof.Divstep.WordBasic
+meta import VerifiedGarbage.Proof.Framework.Range
+meta import VerifiedGarbage.Proof.Mont.AArch64.P256Square.Core
+meta import VerifiedGarbage.Proof.Mont.AArch64.P256Square.Words
+meta import VerifiedGarbage.Proof.Mont.AArch64.RowInit
+meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.OptimizeK
+meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Refine
+meta import VerifiedGarbage.Proof.Weierstrass.Pow
 
 @[expose] public section
 

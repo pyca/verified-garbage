@@ -7,6 +7,7 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Scalar
 
 /-! `foldMoves` keeps every word a block leaves in memory: dropping a copy
 `orr d a a` whose register `d` the rest of the block does not read before

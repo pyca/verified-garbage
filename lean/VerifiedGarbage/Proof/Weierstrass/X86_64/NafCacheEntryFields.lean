@@ -14,6 +14,7 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombDigit
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
 import VerifiedGarbage.Spec.Weierstrass.Point
+import VerifiedGarbage.Impl.Ecdsa.X86_64
 
 /-! Signed peer lookup keeps exact point coordinates and cached powers. -/
 
