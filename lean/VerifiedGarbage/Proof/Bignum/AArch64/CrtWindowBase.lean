@@ -8,6 +8,11 @@ public import VerifiedGarbage.Proof.Bignum.AArch64.WindowHelper
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVerified
 import Mathlib.Data.Int.ModEq
 import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
+import VerifiedGarbage.Impl.Mont.Mod
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTCode
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTN
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowRunContext
+import VerifiedGarbage.Spec.Rsa.MontSquare
 
 @[expose] public section
 namespace VG.Proof.Bignum.AArch64.WindowFive

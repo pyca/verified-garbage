@@ -14,6 +14,22 @@ import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Sha512.Word64
 meta import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Sha512.Word64
+public import VerifiedGarbage.Proof.Argon2.X86.HPrime.HashCT
+public import VerifiedGarbage.Proof.Blake2.Scratch
+public import VerifiedGarbage.Proof.Blake2.X86.CompressB.Verified
+public import VerifiedGarbage.Proof.Blake2.X86.Stream.Init
+public import VerifiedGarbage.Proof.Blake2.X86.Stream.Update
+public import VerifiedGarbage.Proof.Framework.Bswap
+public import VerifiedGarbage.Proof.Sha256.X86.Compress
+public import VerifiedGarbage.Proof.Sha256.X86.Lit
+meta import VerifiedGarbage.Proof.Argon2.X86.HPrime.HashCT
+meta import VerifiedGarbage.Proof.Blake2.Scratch
+meta import VerifiedGarbage.Proof.Blake2.X86.CompressB.Verified
+meta import VerifiedGarbage.Proof.Blake2.X86.Stream.Init
+meta import VerifiedGarbage.Proof.Blake2.X86.Stream.Update
+meta import VerifiedGarbage.Proof.Framework.Bswap
+meta import VerifiedGarbage.Proof.Sha256.X86.Compress
+meta import VerifiedGarbage.Proof.Sha256.X86.Lit
 
 @[expose] public section
 

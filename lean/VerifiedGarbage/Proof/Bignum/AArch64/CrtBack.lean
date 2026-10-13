@@ -9,6 +9,7 @@ import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtFix
 import Mathlib.Data.Int.ModEq
 import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Bignum.CrtMath
 
 /-!
 # RSA with the CRT on AArch64: from the checks to the result

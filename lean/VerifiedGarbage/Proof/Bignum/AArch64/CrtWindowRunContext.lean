@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowAppliedGroupCT
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowTailByteCT
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowFinishCT
 import Mathlib.Data.Int.ModEq
+import VerifiedGarbage.Proof.Bignum.CrtWindowFive
 
 /-! Only the workspace layout, exponent address, length, and progress are public. -/
 

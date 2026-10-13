@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowCode
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowCodeCT
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtImplies
 import Mathlib.Data.Int.ModEq
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTN
 
 /-! Wider-window RSA CRT against the unchanged shared contract. -/
 

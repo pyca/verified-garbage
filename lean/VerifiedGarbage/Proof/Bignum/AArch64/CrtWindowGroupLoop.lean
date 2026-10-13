@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowPrefixInv
 import Mathlib.Data.Int.ModEq
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowAppliedBatch
+import VerifiedGarbage.Proof.Bignum.CrtWindowPrefix
 
 /-! One five-byte group advances the public index and the exact exponent prefix. -/
 

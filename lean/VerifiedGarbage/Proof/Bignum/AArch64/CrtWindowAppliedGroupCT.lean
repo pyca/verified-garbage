@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowAppliedGroup
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowGroupCT
 import Mathlib.Data.Int.ModEq
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowDigit
 
 /-! Constant-time composition of a full group. Its value remains secret. -/
 

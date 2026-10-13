@@ -10,6 +10,9 @@ import all Init.Data.Vector.Basic
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Impl.MdStream.AArch64
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.MdStream.Spec
 
 /-! # H′: saving the caller and writing the length prefix -/
 

@@ -9,6 +9,7 @@ import all Init.Data.Vector.Basic
 import Mathlib.Data.Int.ModEq
 import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.CrtMath
 
 /-!
 # RSA with the CRT on AArch64: `R_X mod X`

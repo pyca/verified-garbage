@@ -10,6 +10,7 @@ import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightColumns
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcColumns
 
 @[expose] public section
 namespace VG.Proof.Bignum.AArch64.ProductEight

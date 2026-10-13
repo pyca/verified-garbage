@@ -12,6 +12,8 @@ import VerifiedGarbage.Proof.Framework.Omega
 meta import Mathlib.Tactic.SplitIfs
 meta import VerifiedGarbage.Proof.Framework.AArch64.Call
 meta import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcSquare
+meta import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcSquare
 
 @[expose] public section
 

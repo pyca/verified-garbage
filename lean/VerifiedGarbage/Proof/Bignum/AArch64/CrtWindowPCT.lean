@@ -12,6 +12,8 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import Mathlib.Data.Int.ModEq
 meta import Mathlib.Data.Int.ModEq
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtSetup
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtSetup
 
 /-!
 # RSA with the CRT on AArch64: constant time, `p`'s phase

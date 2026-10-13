@@ -8,6 +8,7 @@ import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Bignum.AArch64.Run
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.AArch64.SquareDiagonal
 
 /-! Execution and frame of one diagonal-square pair. -/
 

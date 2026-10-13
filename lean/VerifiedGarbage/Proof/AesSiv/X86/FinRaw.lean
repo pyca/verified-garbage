@@ -11,6 +11,8 @@ import VerifiedGarbage.Proof.Aes.KeyExp
 import VerifiedGarbage.Proof.Aes.SboxSpec
 import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.CmacAes.X86.FinalizeCT
+import VerifiedGarbage.Proof.Framework.X86.Straight
 
 /-!
 # AES-SIV on x86: calling `vg_cmac_aes_finalize` with any subkeys

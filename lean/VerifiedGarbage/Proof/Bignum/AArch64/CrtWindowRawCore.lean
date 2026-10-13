@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowRawSquares
 import Mathlib.Data.Int.ModEq
+import VerifiedGarbage.Proof.Bignum.CrtWindowRelation
 
 /-! A window's Montgomery relation for arbitrary reduced table entries. -/
 

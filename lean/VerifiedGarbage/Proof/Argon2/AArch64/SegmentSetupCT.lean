@@ -74,6 +74,12 @@ import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.Conv
 meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Impl.Argon2.AArch64.HPrime
+import VerifiedGarbage.Impl.MdStream.AArch64
+import VerifiedGarbage.Proof.MdStream.Spec
+meta import VerifiedGarbage.Impl.Argon2.AArch64.HPrime
+meta import VerifiedGarbage.Impl.MdStream.AArch64
+meta import VerifiedGarbage.Proof.MdStream.Spec
 
 /-! Merged from `Proof.Argon2.AArch64.SegmentSetupTrace`. -/
 

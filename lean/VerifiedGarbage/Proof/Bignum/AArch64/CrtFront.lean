@@ -8,6 +8,8 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import Mathlib.Data.Int.ModEq
 import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtFix
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtSetup
 
 /-!
 # RSA with the CRT on AArch64: up to the checks

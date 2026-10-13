@@ -9,6 +9,8 @@ import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Framework.TaintBatch
+import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightSetup
+import VerifiedGarbage.Proof.Bignum.AArch64.SquareGuard
 
 @[expose] public section
 namespace VG.Proof.Bignum.AArch64.SquareEight
