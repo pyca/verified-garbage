@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Sm4.AArch64.Group
 public import VerifiedGarbage.Proof.Sm4.Common
+public import VerifiedGarbage.Spec.Sm4.Contract
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -69,11 +70,12 @@ theorem dataLoop_wp {s₀ : State} {b D : Addr} {n : Nat} {E : Nat → Spec.Sm4.
 theorem sreg_ne (i : Nat) (hi : i < 10) : sreg i ≠ sb := by
   revert i; decide
 
-theorem prologue_ok {s₀ : State} {b : Addr} (hb : s₀.gpr .x3 = b) (hw : (⟨b, 8 * slots⟩ : Region) ∈ s₀.wr) :
-    ∃ s, runBlock isa (([movR sb .x3] : List Instr) ++ saveRegs ++ setSlots keyMasks) s₀ = some s ∧
+theorem prologue_ok {sr : Reg} {s₀ : State} {b : Addr} (hb : s₀.gpr sr = b)
+    (hw : (⟨b, 8 * slots⟩ : Region) ∈ s₀.wr) :
+    ∃ s, runBlock isa (([movR sb sr] : List Instr) ++ saveRegs ++ setSlots keyMasks) s₀ = some s ∧
       s.gpr sb = b ∧ (∀ r, r ≠ sb → r ≠ t0 → s.gpr r = s₀.gpr r) ∧
       Saved s₀ b s.mem ∧ MasksOk s ∧ Frame [⟨b, 8 * slots⟩] s₀.mem s.mem ∧ s.rd = s₀.rd ∧ s.wr = s₀.wr := by
-  obtain ⟨s₁, e₁, r₁, o₁, m₁, rd₁, wr₁⟩ := movR_ok s₀ sb .x3
+  obtain ⟨s₁, e₁, r₁, o₁, m₁, rd₁, wr₁⟩ := movR_ok s₀ sb sr
   have hb₁ : s₁.gpr sb = b := by rw [r₁, hb]
   obtain ⟨s₂, e₂, sv₂, g₂, rd₂, wr₂, f₂, -⟩ := save_ok (b := b) (by rw [wr₁]; exact hw) hb₁
   obtain ⟨s₃, e₃, v₃, -, g₃, rd₃, wr₃, f₃⟩ := setSlots_ok (b := b) keyMasks (by rw [g₂, hb₁])
@@ -100,18 +102,29 @@ theorem outF_spec (dir : Dir) (m : Mem) (sch : Spec.Sm4.Schedule) (D : Addr) (j 
   · simp only [outF, blockFn, specDirA, Spec.Sm4.encryptBlock, crypt_eq]; rfl
   · simp only [outF, blockFn, specDirA, Spec.Sm4.decryptBlock, crypt_eq]; rfl
 
-theorem ecb_wp (dir : Dir) {s₀ : State} (hp : (ecbAArch64 dir).pre s₀) :
-    WP isa (ecb dir) s₀ fun s' => (∀ i < 10, s'.gpr (sreg i) = s₀.gpr (sreg i)) ∧
-      (ecbAArch64 dir).post s₀ s' := by
-  obtain ⟨hrd, hwr, dSD, dSS, dDS, fitK, fitD, fitB⟩ := hp
-  let b := s₀.gpr .x3
+/-- `ecbWith sr k`, from the arguments' regions with the working space at
+`sr`, for code `k` that builds the table of `dir` from the prologue's state. -/
+theorem ecbWith_wp (sr : Reg) (k : Prog isa) (dir : Dir) {s₀ : State}
+    (hrd : s₀.rd = [⟨s₀.gpr .x0, 128⟩]) (hwr : s₀.wr = [⟨s₀.gpr .x1, 16 * (s₀.gpr .x2).toNat⟩, ⟨s₀.gpr sr, 8 * slots⟩])
+    (dSS : Region.Disjoint ⟨s₀.gpr .x0, 128⟩ ⟨s₀.gpr sr, 8 * slots⟩)
+    (dDS : Region.Disjoint ⟨s₀.gpr .x1, 16 * (s₀.gpr .x2).toNat⟩ ⟨s₀.gpr sr, 8 * slots⟩)
+    (fitK : (s₀.gpr .x0).toNat + 128 ≤ 2 ^ 64) (fitD : (s₀.gpr .x1).toNat + 16 * (s₀.gpr .x2).toNat ≤ 2 ^ 64)
+    (fitB : (s₀.gpr sr).toNat + 8 * slots ≤ 2 ^ 64)
+    (hk : ∀ s₁, SchedPre s₁ (s₀.gpr sr) (s₀.gpr .x0) → s₁.gpr .x0 = s₀.gpr .x0 → MasksOk s₁ →
+      (∀ r, r ≠ sb → r ≠ t0 → s₁.gpr r = s₀.gpr r) →
+      WP isa k s₁ (KeysPost s₁ (s₀.gpr sr) (s₀.gpr .x0) dir)) :
+    WP isa (ecbWith sr k) s₀ fun s' => (∀ i < 10, s'.gpr (sreg i) = s₀.gpr (sreg i)) ∧
+      Spec.Sm4.blocksAt s'.mem (s₀.gpr .x1) (s₀.gpr .x2).toNat =
+        Spec.Sm4.ecb (Spec.Sm4.scheduleAt s₀.mem (s₀.gpr .x0)) (specDirA dir)
+          (Spec.Sm4.blocksAt s₀.mem (s₀.gpr .x1) (s₀.gpr .x2).toNat) := by
+  let b := s₀.gpr sr
   let D := s₀.gpr .x1
   let n := (s₀.gpr .x2).toNat
   let sched := s₀.gpr .x0
   have hwS : (⟨b, 8 * slots⟩ : Region) ∈ s₀.wr := by rw [hwr]; simp [b]
   have hwD : (⟨D, 16 * n⟩ : Region) ∈ s₀.wr := by rw [hwr]; simp [D, n]
   have hrK : (⟨sched, 128⟩ : Region) ∈ s₀.rd := by rw [hrd]; simp [sched]
-  unfold ecb
+  unfold ecbWith
   -- The prologue.
   obtain ⟨s₁, e₁, b₁, g₁, sv₁, m₁, f₁, rd₁, wr₁⟩ := prologue_ok (b := b) rfl hwS
   refine WP.seq (WP.of_runBlock ⟨s₁, e₁, ?_⟩)
@@ -119,7 +132,7 @@ theorem ecb_wp (dir : Dir) {s₀ : State} (hp : (ecbAArch64 dir).pre s₀) :
     ⟨b₁, by rw [wr₁]; exact hwS, fitB, List.mem_append_left _ (by rw [rd₁]; exact hrK), fitK, dSS⟩
   have x0₁ : s₁.gpr .x0 = sched := g₁ _ (by decide) (by decide)
   -- The table.
-  refine WP.seq (WP.mono (keys_wp dir hk₁ x0₁ m₁) fun s₂ k₂ => ?_)
+  refine WP.seq (WP.mono (hk s₁ hk₁ x0₁ m₁ g₁) fun s₂ k₂ => ?_)
   let E : Nat → Spec.Sm4.Word := dirKeys dir (Spec.Sm4.scheduleAt s₀.mem sched)
   have hsch : Spec.Sm4.scheduleAt s₁.mem sched = Spec.Sm4.scheduleAt s₀.mem sched :=
     hk₁.sched_eq' (Nat.le_refl _) f₁
@@ -177,5 +190,58 @@ theorem ecb_wp (dir : Dir) {s₀ : State} (hp : (ecbAArch64 dir).pre s₀) :
   simp only [Spec.Sm4.blocksAt, List.map_map]
   refine List.map_congr_left fun j _ => ?_
   exact outF_spec dir s₀.mem _ D j
+
+theorem ecb_wp (dir : Dir) {s₀ : State} (hp : (ecbAArch64 dir).pre s₀) :
+    WP isa (ecb dir) s₀ fun s' => (∀ i < 10, s'.gpr (sreg i) = s₀.gpr (sreg i)) ∧
+      (ecbAArch64 dir).post s₀ s' := by
+  obtain ⟨hrd, hwr, -, dSS, dDS, fitK, fitD, fitB⟩ := hp
+  exact ecbWith_wp .x3 (keys dir) dir hrd hwr dSS dDS fitK fitD fitB
+    fun _ hk₁ x0₁ m₁ _ => keys_wp dir hk₁ x0₁ m₁
+
+/-- The direction `vg_sm4_ecb`'s `decrypt` selects. -/
+def dirOf (decrypt : BitVec 64) : Dir := if decrypt = 0 then .encrypt else .decrypt
+
+theorem specDirA_dirOf (decrypt : BitVec 64) :
+    specDirA (dirOf decrypt) = Spec.Sm4.directionOf decrypt.toNat := by
+  unfold dirOf Spec.Sm4.directionOf
+  by_cases h : decrypt = 0
+  · subst h; rfl
+  · have h' : decrypt.toNat ≠ 0 := fun h' => h (BitVec.eq_of_toNat_eq h')
+    simp only [h, h', ite_false]; rfl
+
+/-- ECB in the direction `x3` selects, with its working space at `x4`. -/
+def ecbAnyAArch64 : Contract AArch64.isa where
+  pre s :=
+    let sched : Region := ⟨s.gpr .x0, 128⟩
+    let data : Region := ⟨s.gpr .x1, 16 * (s.gpr .x2).toNat⟩
+    let scratch : Region := ⟨s.gpr .x4, 8 * slots⟩
+    s.rd = [sched] ∧ s.wr = [data, scratch] ∧ sched.Disjoint data ∧ sched.Disjoint scratch ∧
+      data.Disjoint scratch ∧
+      (s.gpr .x0).toNat + 128 ≤ 2 ^ 64 ∧ (s.gpr .x1).toNat + 16 * (s.gpr .x2).toNat ≤ 2 ^ 64 ∧
+      (s.gpr .x4).toNat + 8 * slots ≤ 2 ^ 64
+  post s s' :=
+    Spec.Sm4.blocksAt s'.mem (s.gpr .x1) (s.gpr .x2).toNat =
+      Spec.Sm4.ecb (Spec.Sm4.scheduleAt s.mem (s.gpr .x0)) (Spec.Sm4.directionOf (s.gpr .x3).toNat)
+        (Spec.Sm4.blocksAt s.mem (s.gpr .x1) (s.gpr .x2).toNat)
+  pub s₁ s₂ :=
+    s₁.gpr .x0 = s₂.gpr .x0 ∧ s₁.gpr .x1 = s₂.gpr .x1 ∧ s₁.gpr .x2 = s₂.gpr .x2 ∧
+      s₁.gpr .x3 = s₂.gpr .x3 ∧ s₁.gpr .x4 = s₂.gpr .x4 ∧ s₁.sp = s₂.sp
+
+theorem ecbAny_wp {s₀ : State} (hp : ecbAnyAArch64.pre s₀) :
+    WP isa ecbAny s₀ fun s' => (∀ i < 10, s'.gpr (sreg i) = s₀.gpr (sreg i)) ∧
+      ecbAnyAArch64.post s₀ s' := by
+  obtain ⟨hrd, hwr, -, dSS, dDS, fitK, fitD, fitB⟩ := hp
+  refine WP.mono (ecbWith_wp .x4 keysAny (dirOf (s₀.gpr .x3)) hrd hwr dSS dDS fitK fitD fitB
+    fun s₁ hk₁ x0₁ m₁ g₁ => ?_) fun s' ⟨h₁, h₂⟩ => ⟨h₁, by
+      show Spec.Sm4.blocksAt s'.mem (s₀.gpr .x1) (s₀.gpr .x2).toNat = _
+      rw [h₂, specDirA_dirOf]⟩
+  have x3₁ : s₁.gpr .x3 = s₀.gpr .x3 := g₁ _ (by decide) (by decide)
+  unfold keysAny
+  refine WP.ite (s₀.gpr .x3 == 0) ((eval_zero s₁ .x3).trans (by rw [x3₁])) (fun h => ?_) (fun h => ?_)
+  · have : dirOf (s₀.gpr .x3) = .encrypt := by simp only [dirOf, beq_iff_eq.mp h, ite_true]
+    rw [this]; exact keys_wp .encrypt hk₁ x0₁ m₁
+  · have h' : s₀.gpr .x3 ≠ 0 := fun e => by rw [e] at h; exact absurd h (by decide)
+    have : dirOf (s₀.gpr .x3) = .decrypt := by simp only [dirOf, h', ite_false]
+    rw [this]; exact keys_wp .decrypt hk₁ x0₁ m₁
 
 end VG.Proof.Sm4.AArch64

@@ -96,10 +96,35 @@ def copyOut : Prog isa :=
 def group : Prog isa :=
   .seq copyIn (.seq crypt16 (.seq copyOut (.block [.sub .x .x2 .x2 .x16, .addImm .x .x1 .x1 256])))
 
-/-- The whole function: the table, then the groups. -/
-def ecb (dir : Dir) : Prog isa :=
-  .seq (.block ([movR sb .x3] ++ saveRegs ++ setSlots keyMasks))
-    (.seq (keys dir)
+/-- The code with its working space at `sr` and the table built by `k`:
+the table, then the groups. -/
+def ecbWith (sr : Reg) (k : Prog isa) : Prog isa :=
+  .seq (.block ([movR sb sr] ++ saveRegs ++ setSlots keyMasks))
+    (.seq k
       (.seq (.ite (.zero .x .x2) (.block []) (.loop group (.nonzero .x .x2))) (.block restoreRegs)))
+
+/-- The whole function, with its working space at `x3`. -/
+def ecb (dir : Dir) : Prog isa := ecbWith .x3 (keys dir)
+
+/-! ## Either direction
+
+`vg_sm4_ecb(schedule = x0, data = x1, n = x2, decrypt = x3, scratch = x4)`:
+the table of encryption if `decrypt` is 0, of decryption otherwise (`x3` is
+public), then the same code. `vg_sm4_ecb_encrypt` and `vg_sm4_ecb_decrypt`
+call it with `decrypt` set (`ecbCall`). -/
+
+/-- The table in the direction `x3` selects. -/
+def keysAny : Prog isa := .ite (.zero .x .x3) (keys .encrypt) (keys .decrypt)
+
+/-- ECB in the direction `x3` selects, with its working space at `x4`. -/
+def ecbAny : Prog isa := ecbWith .x4 keysAny
+
+/-- `vg_sm4_ecb_encrypt` or `vg_sm4_ecb_decrypt`: `x3 := 0` or `1` and a
+call of `vg_sm4_ecb` (`c`, its code with the working space on the stack), in
+a frame saving `x30`. -/
+def ecbCall (dir : Dir) (c : Prog isa) : Prog isa :=
+  .frame (.push .x30)
+    (.seq (.block [.movz .x .x3 (match dir with | .encrypt => 0 | .decrypt => 1) 0]) (.call "vg_sm4_ecb" c))
+    (.pop .x30)
 
 end VG.Impl.Sm4.AArch64
