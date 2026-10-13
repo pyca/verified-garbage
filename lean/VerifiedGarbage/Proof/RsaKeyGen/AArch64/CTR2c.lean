@@ -154,18 +154,13 @@ theorem doubles_ctW {mo acc tmp o sl : Nat} (hmo : mo < 8) (hacc : acc < 8) (htm
     exact WP.mono (dblIter_ok hZ hw hw' hmo hacc htmp ho d1 d2 d3 d6 d7 d8 hsl hsl' hc' hN0 hj hI)
       fun t ⟨hI', hz⟩ => ⟨eval_count hj hz, fun _ => ⟨mi, σ, O, N, hI', hZ, hw, hw', hc', hN0⟩, fun _ => trivial⟩
 
-/-- Squarings of `[aR2]`, for any `-m⁻¹`. -/
-theorem sqs_ctW (M : Mont) (n : Nat) :
-    RelCT isa (Two fun (L : Ws) s => ∃ mi, SqPre (lay L mi) s) (seqs (List.replicate (n + 1) (M.mm aR2 aR2 aR2)))
-      fun _ _ => True := by
-  have one : RelCT isa (Two fun (L : Ws) s => ∃ mi, SqPre (lay L mi) s) (M.mm aR2 aR2 aR2) fun _ _ => True :=
-    two_map id (fun _ _ ⟨mi, h⟩ => ⟨mi, h.1⟩) (M.ct (.inl ⟨rfl, rfl, rfl⟩))
-  induction n with
-  | zero => exact one
-  | succ n ih =>
-    show RelCT isa _ (.seq (M.mm aR2 aR2 aR2) (seqs (List.replicate (n + 1) (M.mm aR2 aR2 aR2)))) _
-    exact RelCT.seq (two_post (Ψ := fun (L : Ws) s => ∃ mi, SqPre (lay L mi) s) one
-      fun _ _ ⟨mi, h⟩ => WP.mono (sq_pre M h) fun _ h' => ⟨mi, h'⟩) ih
+/-- The squarings of `[aR2]`, for any `-m⁻¹`. -/
+theorem sqs_ctW (M : Mont) :
+    RelCT isa (Two fun (L : Ws) s => ∃ mi, SqPre (lay L mi) s) (sqs M.mm) fun _ _ => True :=
+  sqs_ctG M (fun L _ ⟨mi, h⟩ => ⟨lay L mi, h, fun _ h => ⟨mi, h⟩⟩)
+    (pins_of [.x0] (fun L _ => L.B) fun _ _ ⟨_, h⟩ r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact h.1.1.x0)
+    (two_map id (fun _ _ ⟨mi, h⟩ => ⟨mi, h.1⟩) (M.ct (.inl ⟨rfl, rfl, rfl⟩)))
 
 /-! ## The pieces of `R² mod m` -/
 
@@ -321,7 +316,7 @@ moduli with their top bit set. -/
 theorem r2c_ct (M : Mont) : RelCT isa (Two (Up R2Pre)) (seqs (r2Steps M.mm)) fun _ _ => True := by
   rw [r2Steps_eq]
   refine RelCT.seqs_append (by simp) (by simp) (RelCT.seq (R := Two fun (L : Ws) s => ∃ mi, SqPre (lay L mi) s)
-    ?_ (sqs_ctW M 5))
+    ?_ (sqs_ctW M))
   refine RelCT.seq (RelCT.block_append (l₁ := ([ldh .x12 sW, ldh .x8 (sArr aN)] : List Instr))
     (l₂ := ([.subImm .x .x4 .x12 1, .lsl .x .x4 .x4 3, .add .x .x4 .x8 .x4, ld .x3 .x4] : List Instr))
     (RelCT.seq (two_piece (Ψ := Up R2h) _ (pins_up fun _ _ h => h) (by taint_decide)
