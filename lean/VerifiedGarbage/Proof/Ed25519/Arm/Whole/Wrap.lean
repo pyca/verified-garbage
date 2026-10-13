@@ -1,8 +1,17 @@
-import VerifiedGarbage.Proof.Ed25519.Arm.Whole.Entry
-import VerifiedGarbage.Proof.Ed25519.Arm.Whole.Layout
-import VerifiedGarbage.Proof.Framework.Arm.Frame
+module
+
+public import VerifiedGarbage.Proof.Ed25519.Arm.Whole.Entry
+public import VerifiedGarbage.Proof.Ed25519.Arm.Whole.Layout
+public import VerifiedGarbage.Proof.Framework.Arm.Frame
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Ed25519.Arm.Whole.WrapSaved`. -/
+
+@[expose] public section
+
 section
 /-! Merged from `Proof.Ed25519.Arm.Whole.WrapGeometry`. -/
 section

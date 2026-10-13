@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
-import VerifiedGarbage.Impl.Ecdsa.Verify.P384.X86_64
+module
+
+public import VerifiedGarbage.Proof.Framework.X86_64.Lit
+meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
+public import VerifiedGarbage.Impl.Ecdsa.Verify.P384.X86_64
+meta import VerifiedGarbage.Impl.Ecdsa.Verify.P384.X86_64
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # P-384 on x86-64, with BMI2 and ADX: the joint verifier's cache and doubling as literals
@@ -9,6 +17,8 @@ Both the literal of the joint verifier's code
 checks of these parts (`JointTiming`) evaluate them: their literals are
 checked once here, and both read them.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.P384.X86_64
 open VG VG.X86_64 VG.Impl.P384.X86_64 VG.Impl.Weierstrass VG.Impl.Weierstrass.X86_64

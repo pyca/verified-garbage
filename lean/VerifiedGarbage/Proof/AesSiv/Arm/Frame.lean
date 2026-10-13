@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesSiv.Arm.Verified
-import VerifiedGarbage.Proof.Framework.Arm.StackScratch
+module
+
+public import VerifiedGarbage.Proof.AesSiv.Arm.Verified
+public import VerifiedGarbage.Proof.Framework.Arm.StackScratch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-SIV on ARMv7, with the working space on the stack
@@ -15,6 +21,8 @@ pre- and postconditions read the buffers and the list of slices, and
 `decrypt`'s leak, whether it succeeds, reads only those too
 (`Proof/AesSiv/Scratch.lean`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesSiv.Arm
 

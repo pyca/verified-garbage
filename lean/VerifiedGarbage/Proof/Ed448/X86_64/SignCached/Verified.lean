@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Ed448.X86_64.SignCached.CT
+module
+
+public import VerifiedGarbage.Proof.Ed448.X86_64.SignCached.CT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 signing with a cached public key on x86-64: `Verified`
@@ -11,7 +17,11 @@ matching the private key, for any proof of `vg_ed448_scalar_base` (`BaseOk`,
 proof and the group theory it imports.
 -/
 
+@[expose] public section
+
 namespace VG.Proof.Ed448.X86_64.SignCached
+
+variable {v : VG.Impl.Ed448.X86_64.FieldVariant}
 
 open VG VG.X86_64 VG.Impl.Ed448.X86_64.SignCached
 
@@ -82,8 +92,8 @@ theorem sat : ∃ s, (Spec.Ed448.signCachedContract X86_64.abi 464).pre s := by
 
 /-! ## `Verified` -/
 
-theorem signCached_verified (hb : BaseOk) (hct : BaseCT) :
-    Verified X86_64.target signCached (Spec.Ed448.signCachedContract X86_64.abi 464) :=
+theorem signCached_verified (hb : BaseOk v) (hct : BaseCT v) :
+    Verified X86_64.target (signCachedFor v) (Spec.Ed448.signCachedContract X86_64.abi 464) :=
   ⟨fun _ h => let ⟨t, s', he, ha, hq⟩ := signCached_wp hb h; ⟨t, s', he, ha, hq⟩, signCached_ct hb hct, sat⟩
 
 end VG.Proof.Ed448.X86_64.SignCached

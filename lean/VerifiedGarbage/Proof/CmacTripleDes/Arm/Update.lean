@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.CmacTripleDes.Arm.Save
-import VerifiedGarbage.Proof.CmacTripleDes.Cmac
-import VerifiedGarbage.Proof.Cmac.Frame
+module
+
+public import VerifiedGarbage.Proof.CmacTripleDes.Arm.Save
+public import VerifiedGarbage.Proof.CmacTripleDes.Cmac
+public import VerifiedGarbage.Proof.Cmac.Frame
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # TDEA-CMAC on ARMv7: `vg_cmac_triple_des_update`
@@ -11,6 +17,8 @@ the next block and the blocks left, only the state, the block's words and
 those three have changed since the registers were saved, and the state is
 the chaining value after the first `k` blocks.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.CmacTripleDes.Arm
 

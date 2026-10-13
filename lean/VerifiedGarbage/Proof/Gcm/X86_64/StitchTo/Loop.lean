@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchTo.Aes
-import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Enc
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchZTo.Loop
+module
+
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchTo.Aes
+public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Enc
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZTo.Loop
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The out-of-place VAES loop: the loop of one group, and the stores
@@ -17,6 +23,8 @@ between their rounds (`Stitch.gq_ok`), which they do not write
 (`Stitch.QG.data`, for the in-place view `dst s₀`). `finalTo_ok`: the
 stores after the loop, and the contract (`EPostTo`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Gcm.X86_64.StitchTo
 

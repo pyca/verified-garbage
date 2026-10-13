@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Argon2.X86.Derive.FillState
+module
+
+public import VerifiedGarbage.Proof.Argon2.X86.Derive.FillState
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Argon2 on x86 (32-bit): calls of G in the filling loops
@@ -9,6 +15,8 @@ cell of the memory matrix or a block of `scratch` from offset 4096 on
 (`GArg`), to `scratch + o`, with `scratch[0, 4096)` as its working space
 (`ccall_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Argon2.X86.Derive
 

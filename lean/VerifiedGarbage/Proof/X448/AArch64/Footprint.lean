@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Framework.AArch64.Interleave
+module
+
+public import VerifiedGarbage.Proof.Framework.AArch64.Interleave
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AArch64: footprints bounded once for any slots
@@ -14,6 +20,8 @@ moved to them (`fpIn_reloc`), as the code at any slots is the code at the
 probe slots with its offsets moved (`relocI`, checked once by the kernel for
 any slots). Independence then needs only the bounds' (`indeps_of_bnd`).
 -/
+
+@[expose] public section
 
 namespace VG.AArch64.Interleave
 

@@ -1,6 +1,8 @@
-import VerifiedGarbage.Proof.Argon2.X86_64.Compress
-import VerifiedGarbage.Proof.Argon2.X86_64.Avx2.Compress
-import VerifiedGarbage.Proof.Argon2.X86_64.Avx512.Compress
+module
+
+public import VerifiedGarbage.Proof.Argon2.X86_64.Compress
+public import VerifiedGarbage.Proof.Argon2.X86_64.Avx2.Compress
+public import VerifiedGarbage.Proof.Argon2.X86_64.Avx512.Compress
 
 /-!
 # Argon2 compression on x86-64
@@ -8,6 +10,8 @@ import VerifiedGarbage.Proof.Argon2.X86_64.Avx512.Compress
 Registration for the scalar compression primitive. The API and contract
 come from the reviewed specification; the code and proof are untrusted.
 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.Argon2.X86_64
 

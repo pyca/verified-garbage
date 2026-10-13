@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Fn
-import VerifiedGarbage.Proof.AesGcm.X86_64.FnCT
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Fn
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Fn
+public import VerifiedGarbage.Proof.AesGcm.X86_64.FnCT
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.FnCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM streaming encryption out of place, x86-64: constant time
@@ -12,6 +20,8 @@ addresses memory with is the same in both runs by what correctness says of
 each (`step`): the lengths, the bytes done and the pointers; and the calls
 get the same public arguments.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

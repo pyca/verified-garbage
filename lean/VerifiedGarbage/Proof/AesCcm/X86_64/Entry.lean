@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesCcm.X86_64.Run
+module
+
+public import VerifiedGarbage.Proof.AesCcm.X86_64.Run
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CCM on x86-64: the entry and the exit (`entry`, `restore`)
@@ -7,6 +13,8 @@ Untrusted: everything here is checked by Lean. `entry` reads the stack
 arguments but `tag`, saves our caller's registers at `W + 112` and keeps the arguments
 in `W` (`entry_ok`); `restore` reads the registers back (`restore_ok`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

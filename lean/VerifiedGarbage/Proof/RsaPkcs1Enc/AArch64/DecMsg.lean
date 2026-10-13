@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecKdk
-import VerifiedGarbage.Proof.RsaPkcs1Enc.Steps
+module
+
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecKdk
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.Steps
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-PKCS1-v1_5 decryption on AArch64: IRPRF's messages
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.RsaPkcs1Enc.Steps
 The message of block `i` of IRPRF, `I2OSP(i, 2) ‖ label ‖ I2OSP(8 length, 2)`,
 written at `scratch + sMsg` (`msgCL_ok` for `CL`, `msgAM_ok` for `AM`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPkcs1Enc.AArch64.Dec
 

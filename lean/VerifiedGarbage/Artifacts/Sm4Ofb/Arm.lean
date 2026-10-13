@@ -1,6 +1,10 @@
-import VerifiedGarbage.Proof.Sm4.Arm.FbVerified
+module
+
+public import VerifiedGarbage.Proof.Sm4.Arm.FbVerified
 
 /-! # SM4-OFB artifacts on baseline ARMv7 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.Sm4Ofb.Arm
 

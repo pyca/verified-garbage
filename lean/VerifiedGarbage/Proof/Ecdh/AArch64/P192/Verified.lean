@@ -1,8 +1,19 @@
-import VerifiedGarbage.Proof.Ecdh.AArch64.P192.Main
-import VerifiedGarbage.Proof.Ecdh.AArch64.P192.Contract
-import VerifiedGarbage.Proof.Ecdh.AArch64.P192.Lit
-import VerifiedGarbage.Proof.Ecdsa.AArch64.P192.Config
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
+module
+
+public import VerifiedGarbage.Proof.Ecdh.AArch64.P192.Main
+meta import VerifiedGarbage.Proof.Ecdh.AArch64.P192.Main
+public import VerifiedGarbage.Proof.Ecdh.AArch64.P192.Contract
+meta import VerifiedGarbage.Proof.Ecdh.AArch64.P192.Contract
+public import VerifiedGarbage.Proof.Ecdh.AArch64.P192.Lit
+meta import VerifiedGarbage.Proof.Ecdh.AArch64.P192.Lit
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.P192.Config
+meta import VerifiedGarbage.Proof.Ecdsa.AArch64.P192.Config
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
+meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDH over p192 on AArch64: `Verified`
@@ -15,6 +26,8 @@ instruction writes the other callee-saved registers, `sp` or a SIMD register
 loop counters, and every address is an argument plus a constant or a counter,
 so not even the peer's key (which the contract would let leak) affects timing.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdh.AArch64.P192
 

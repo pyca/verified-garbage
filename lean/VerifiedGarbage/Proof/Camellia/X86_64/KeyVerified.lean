@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Camellia.X86_64.ExpandKey
-import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Camellia.X86_64.Lit
+module
+
+public import VerifiedGarbage.Proof.Camellia.X86_64.ExpandKey
+public import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Camellia.X86_64.Lit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The Camellia key schedule on x86-64 meets its contracts
@@ -11,6 +17,8 @@ time (`expandKey_ct`). `expandKey_framed` runs it with its working space on
 the stack, zeroed on return: 3216 bytes, the 401 words of the scratch
 buffer and 8 more.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Camellia.X86_64
 

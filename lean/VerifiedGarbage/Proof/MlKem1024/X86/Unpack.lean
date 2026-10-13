@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlKem1024.X86.Pack
+module
+
+public import VerifiedGarbage.Proof.MlKem1024.X86.Pack
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM-1024 on x86 (32-bit): loading bytes and decompressing coefficients
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.MlKem1024.X86.Pack
 combine bytes into `ebx` (`bySteps_spec`, `ldW_spec`), as the number `pk 8`
 whose base-2⁸ digits they are.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem1024.X86
 

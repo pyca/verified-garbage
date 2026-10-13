@@ -1,6 +1,8 @@
-import VerifiedGarbage.Variants.RsaPublicPrecomputed.X86_64.Adx
-import VerifiedGarbage.Proof.Rsa.X86_64.PrivImpl
-import VerifiedGarbage.Proof.Rsa.X86_64.Calls
+module
+
+public import VerifiedGarbage.Variants.RsaPublicPrecomputed.X86_64.Adx
+public import VerifiedGarbage.Proof.Rsa.X86_64.PrivImpl
+public import VerifiedGarbage.Proof.Rsa.X86_64.Calls
 
 /-!
 # `vg_rsa_private_crt` on x86-64: with BMI2 and ADX
@@ -10,6 +12,8 @@ A variant of `RsaPrivateCrt` on x86-64 (see `TCB/Emit.lean`):
 `vg_rsa_public_precomputed_checked_adx`, all three by calls of
 `vg_rsa_mont_mul_adx`, which needs BMI2 and ADX.
 -/
+
+@[expose] public section
 
 namespace VG.Variants.RsaPrivateCrt.X86_64.Adx
 

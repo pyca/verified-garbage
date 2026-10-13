@@ -1,18 +1,27 @@
-import VerifiedGarbage.Impl.Ed25519.AArch64.PublicKey
-import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Layout
-import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Setup
-import VerifiedGarbage.Proof.Ed25519.Bytes
-import VerifiedGarbage.Proof.Ed25519.AArch64.PublicKey.Prune
-import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseVerified
-import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Wipe
-import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.HashPre
-import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Wrap
-import VerifiedGarbage.Spec.Ed25519.Contract
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.CallCT
-import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.WrapCT
+module
+
+public import VerifiedGarbage.Impl.Ed25519.AArch64.PublicKey
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Layout
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Setup
+public import VerifiedGarbage.Proof.Ed25519.Bytes
+public import VerifiedGarbage.Proof.Ed25519.AArch64.PublicKey.Prune
+public import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseVerified
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Wipe
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.HashPre
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Wrap
+public import VerifiedGarbage.Spec.Ed25519.Contract
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.CallCT
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.WrapCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Ed25519.AArch64.PublicKey.Layout`. -/
+
+@[expose] public section
+
 section
 namespace VG.Proof.Ed25519.AArch64.PublicKey
 open VG VG.AArch64 VG.Impl.Ed25519.AArch64.Whole

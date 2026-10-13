@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Seed.AArch64.KeyStore
-import VerifiedGarbage.Proof.Seed.AArch64.Batch
+module
+
+public import VerifiedGarbage.Proof.Seed.AArch64.KeyStore
+public import VerifiedGarbage.Proof.Seed.AArch64.Batch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The key schedule's computation on AArch64
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.Seed.AArch64.Batch
 the two `g16`s and the copies write `G` of the 32 inputs (`gInput`) to the
 schedule.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Seed.AArch64
 

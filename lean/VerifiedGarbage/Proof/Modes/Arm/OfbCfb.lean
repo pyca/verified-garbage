@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Modes.Arm.Cbc
-import VerifiedGarbage.Spec.Ofb
-import VerifiedGarbage.Spec.Cfb
+module
+
+public import VerifiedGarbage.Proof.Modes.Arm.Cbc
+public import VerifiedGarbage.Spec.Ofb
+public import VerifiedGarbage.Spec.Cfb
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # OFB and CFB as modes one block at a time on ARMv7
@@ -14,6 +20,8 @@ the chaining block the value to continue from (`Spec.Ofb.next`,
 and written has, with a scratch buffer, the precondition `RwPre`, which
 implies `seqArm`'s.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Modes.Arm
 

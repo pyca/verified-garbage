@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Blowfish.Arm.KeyEnc
+module
+
+public import VerifiedGarbage.Proof.Blowfish.Arm.KeyEnc
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Blowfish on ARMv7: key expansion
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.Blowfish.Arm.KeyEnc
 written, the key XORed into the P-array, the 521 encryptions, and the
 registers restored.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Blowfish.Arm
 

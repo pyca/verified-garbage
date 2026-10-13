@@ -1,12 +1,28 @@
-import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyMessage.CTReady
-import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyMessage.Args
-import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Wrap
-import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyMessage.Body
-import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.WrapCT
-import VerifiedGarbage.Proof.Ed25519.AArch64.RecoverParity
-import VerifiedGarbage.Proof.Framework.Contract
+module
+
+public import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyMessage.CTReady
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyMessage.CTReady
+public import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyMessage.Args
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyMessage.Args
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Wrap
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Wrap
+public import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyMessage.Body
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyMessage.Body
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.WrapCT
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.WrapCT
+public import VerifiedGarbage.Proof.Ed25519.AArch64.RecoverParity
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.RecoverParity
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Ed25519.AArch64.VerifyMessage.CTHashPipeline`. -/
+
+@[expose] public section
+
 section
 /-! Merged from `Proof.Ed25519.AArch64.VerifyMessage.CTHash`. -/
 section

@@ -1,7 +1,16 @@
-import VerifiedGarbage.Impl.Ed448.Window
-import VerifiedGarbage.Proof.X448.BaseTable
+module
+
+public import VerifiedGarbage.Impl.Ed448.Window
+public import VerifiedGarbage.Proof.X448.BaseTable
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! The fixed table and scalar arithmetic for four-bit Ed448 verification windows. -/
+
+@[expose] public section
+
 namespace VG.Proof.Ed448.Window
 
 open VG.Spec.Ed448 VG.Proof.Ed448 VG.Proof.EdwardsLaw

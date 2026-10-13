@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.SignCtx
-import VerifiedGarbage.Impl.RsaPkcs1Sig.X86_64.Sign
-import VerifiedGarbage.Proof.MlKem.X86_64.Wp
-import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+module
+
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.SignCtx
+public import VerifiedGarbage.Impl.RsaPkcs1Sig.X86_64.Sign
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+public import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
+public import VerifiedGarbage.Proof.Framework.X86_64.Call
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_pkcs1_sign` on x86-64: the frame
@@ -11,6 +17,8 @@ The frame of `frameBytes` bytes at `S = rsp - frameBytes`, below which the
 call of `vg_rsa_private_checked` uses 3264 bytes; its slots, and the
 function's stack arguments, at `S + frameBytes + 8 + 8 j` (`stackArgAddr`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPkcs1Sig.X86_64.Sgn
 

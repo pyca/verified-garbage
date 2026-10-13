@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombInput
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafMulTiming
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombInput
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafMulTiming
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Verify.X86
 open VG VG.X86 VG.Impl.Ecdsa.X86 VG.Impl.Ecdsa.Verify.X86

@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.AesGcm.Arm.CTVerify
-import VerifiedGarbage.Proof.AesGcm.Arm.Open
+module
+
+public import VerifiedGarbage.Proof.AesGcm.Arm.CTVerify
+meta import VerifiedGarbage.Proof.AesGcm.Arm.CTVerify
+public import VerifiedGarbage.Proof.AesGcm.Arm.Open
+meta import VerifiedGarbage.Proof.AesGcm.Arm.Open
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on ARMv7: the pieces of `seal` and `open` are constant time
@@ -8,6 +16,8 @@ Untrusted: everything here is checked by Lean. Each piece is related across
 two runs from `s₀` and `s₀'` with the same public data (`onePub`), from
 what it needs in each run, to what the next piece needs.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

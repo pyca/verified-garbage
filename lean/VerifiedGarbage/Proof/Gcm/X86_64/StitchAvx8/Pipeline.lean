@@ -1,10 +1,19 @@
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.Buffers
-import VerifiedGarbage.Proof.Aes.X86_64.Ctr32
-import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Ctr32
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.Ops
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.AesHash
+module
+
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.Buffers
+public import VerifiedGarbage.Proof.Aes.X86_64.Ctr32
+public import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Ctr32
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.Ops
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.AesHash
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## Counter -/
+
+@[expose] public section
+
 section
 
 /-!

@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesSiv.X86.FinishShort
+module
+
+public import VerifiedGarbage.Proof.AesSiv.X86.FinishShort
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-SIV on x86: finishing S2V with a string of a block or more
@@ -11,6 +17,8 @@ the last `T = L − 16 k` bytes of `P` are copied to the tail at `W + 32` and
 tail are chained into a zero state at `W + out` and the rest of the tail
 finalized (`longMac_ok`), which is S2V's end (`long_spec`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.RsaOaep.AArch64.DecCT1
-import VerifiedGarbage.Proof.RsaOaep.AArch64.DecCT2
-import VerifiedGarbage.Proof.Framework.Contract
+module
+
+public import VerifiedGarbage.Proof.RsaOaep.AArch64.DecCT1
+public import VerifiedGarbage.Proof.RsaOaep.AArch64.DecCT2
+public import VerifiedGarbage.Proof.Framework.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-OAEP decryption on AArch64: verified
@@ -12,6 +18,8 @@ for any implementation of the hash functions and `pv` of
 stack it and its callee use (`dec_verified`), given that the contract is
 satisfiable for it (which the registration file checks).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaOaep.AArch64.Dec
 

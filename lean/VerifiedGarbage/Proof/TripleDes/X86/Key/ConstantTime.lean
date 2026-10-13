@@ -1,11 +1,19 @@
-import Batteries.Logic
-import VerifiedGarbage.Proof.TripleDes.X86.Key.Component
-import VerifiedGarbage.Proof.Rc2.X86.RoundSteps
-import VerifiedGarbage.Proof.TripleDes.X86.CorrectBlock
-import VerifiedGarbage.Proof.TripleDes.KeyMemory
-import VerifiedGarbage.Proof.TripleDes.X86.ConstantTime
+module
+
+public import Batteries.Logic
+public import VerifiedGarbage.Proof.TripleDes.X86.Key.Component
+public import VerifiedGarbage.Proof.Rc2.X86.RoundSteps
+public import VerifiedGarbage.Proof.TripleDes.X86.CorrectBlock
+public import VerifiedGarbage.Proof.TripleDes.KeyMemory
+public import VerifiedGarbage.Proof.TripleDes.X86.ConstantTime
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## `Copy` -/
+
+@[expose] public section
 
 section
 

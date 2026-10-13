@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Blowfish.X86.KeyEnc
+module
+
+public import VerifiedGarbage.Proof.Blowfish.X86.KeyEnc
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Blowfish on x86 (32-bit): key expansion
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.Blowfish.X86.KeyEnc
 written, the key XORed into the P-array, the 521 encryptions, and the
 registers restored.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Blowfish.X86
 

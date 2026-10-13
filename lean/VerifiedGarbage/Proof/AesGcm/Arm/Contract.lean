@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesGcm.Arm.Fn
-import VerifiedGarbage.Spec.Gcm.Contract
+module
+
+public import VerifiedGarbage.Proof.AesGcm.Arm.Fn
+public import VerifiedGarbage.Spec.Gcm.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on ARMv7: the contracts the proofs are written against
@@ -10,6 +16,8 @@ the shared ones of `Spec/Gcm/Contract.lean`, which imply these
 stack arguments in the 8 bytes below the stack pointer (`below`), which no
 buffer overlaps.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesGcm.Arm
 

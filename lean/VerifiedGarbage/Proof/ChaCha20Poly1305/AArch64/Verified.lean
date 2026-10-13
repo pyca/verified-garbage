@@ -1,7 +1,17 @@
-import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitched.Open
-import VerifiedGarbage.Proof.ChaCha20Poly1305.Scratch
-import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
-import VerifiedGarbage.Proof.Framework.RelCT
+module
+
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitched.Open
+meta import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitched.Open
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.Scratch
+meta import VerifiedGarbage.Proof.ChaCha20Poly1305.Scratch
+public import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
+meta import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
+public import VerifiedGarbage.Proof.Framework.RelCT
+meta import VerifiedGarbage.Proof.Framework.RelCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ChaCha20-Poly1305 on AArch64: `Verified`
@@ -25,6 +35,8 @@ separately: between them, correctness says that both runs load the same
 address, from the same place (`MainS`, `MainO`), and the rest is checked with
 it public.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.ChaCha20Poly1305.AArch64
 

@@ -1,7 +1,11 @@
-import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseVerified
+module
+
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseVerified
 
 /-! Complete unsigned scalar multiplication by the Ed25519 base point. -/
+
+@[expose] public section
 
 namespace VG.Artifacts.Ed25519ScalarBase.AArch64
 

@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Seal
-import VerifiedGarbage.Proof.AesGcm.X86_64.SealBody
-import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Exec
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Seal
+public import VerifiedGarbage.Proof.AesGcm.X86_64.SealBody
+public import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Exec
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on x86-64 with AVX-512: the end of a long `seal`
@@ -15,6 +21,8 @@ encrypted in place and copied to `G[0]` (`xorText_ok`), the lengths block at
 accumulator (`finGh2_ok`, `finGh1_ok`), and the tag (`tagK_ok`):
 `sealBodyF_ok`.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Curve448.AArch64.Neon.Convert
+module
+
+public import VerifiedGarbage.Proof.Curve448.AArch64.Neon.Convert
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The products of a half
@@ -8,6 +14,8 @@ leaves, in lane `e` of each target register, its starting value (zero for a
 register the half starts) plus the products of the half aimed at it, modulo
 2⁶⁴.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Curve448.AArch64.Neon
 

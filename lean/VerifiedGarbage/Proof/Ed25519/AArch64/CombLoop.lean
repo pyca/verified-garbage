@@ -1,9 +1,15 @@
-import VerifiedGarbage.Proof.Ed25519.AArch64.CombSelect
-import VerifiedGarbage.Proof.Ed25519.AArch64.CombStart
-import VerifiedGarbage.Proof.Ed25519.AArch64.Point64.Call
-import VerifiedGarbage.Proof.Ed25519.AArch64.PointSelect
-import VerifiedGarbage.Proof.Ed25519.AArch64.PointPowers
-import VerifiedGarbage.Proof.Ed25519.PointDouble
+module
+
+public import VerifiedGarbage.Proof.Ed25519.AArch64.CombSelect
+public import VerifiedGarbage.Proof.Ed25519.AArch64.CombStart
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Point64.Call
+public import VerifiedGarbage.Proof.Ed25519.AArch64.PointSelect
+public import VerifiedGarbage.Proof.Ed25519.AArch64.PointPowers
+public import VerifiedGarbage.Proof.Ed25519.PointDouble
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The comb's loops and doublings
@@ -19,6 +25,8 @@ accumulator (slots 0–3) represents `[v + Σ_{i < j} d_{2i+par} 256^i]B`
 (`combStart_16`), and the even digits' loop ends at the scalar's multiple
 (`comb_total`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed25519.AArch64
 

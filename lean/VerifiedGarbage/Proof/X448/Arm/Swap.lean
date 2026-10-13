@@ -1,11 +1,19 @@
-import VerifiedGarbage.Proof.X448.Arm.Copy
-import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+module
+
+public import VerifiedGarbage.Proof.X448.Arm.Copy
+public import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 on ARMv7: constant-time conditional swaps
 
 An XOR mask swaps limbs without a secret-dependent branch or memory address.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448.Arm
 

@@ -1,7 +1,13 @@
-import VerifiedGarbage.Impl.Seed.AArch64.G16
-import VerifiedGarbage.Proof.Seed.G16
-import VerifiedGarbage.Proof.Framework.AArch64.Linear
-import VerifiedGarbage.Proof.Aes.AArch64.Encrypt
+module
+
+public import VerifiedGarbage.Impl.Seed.AArch64.G16
+public import VerifiedGarbage.Proof.Seed.G16
+public import VerifiedGarbage.Proof.Framework.AArch64.Linear
+public import VerifiedGarbage.Proof.Aes.AArch64.Encrypt
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `g16` on AArch64
@@ -13,6 +19,8 @@ with `G` of it. Its linear layers, which build their masks with `movz` and
 `Proof/Seed/G16.lean` states them), the S-box by AES's proof
 (`Proof.Aes.AArch64.sbox_ok`), and `g16_words` puts them together.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Seed.AArch64
 

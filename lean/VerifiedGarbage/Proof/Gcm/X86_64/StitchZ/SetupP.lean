@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Cvt
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Loop
-import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.SpecP
+module
+
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Cvt
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Loop
+public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.SpecP
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The setup of the AVX-512 loops, from the powers in the key context
@@ -13,6 +19,8 @@ the power the key context holds (`cvtPair_ok`, `Spec.Gcm.PowersRepr`).
 `setupP_ok`: then `StitchZ`'s rest of the setup (`Stitch.setupT_ok`,
 `setupZ_ok`), as `StitchZ.setup_ok`, the field aside (`StitchZ/OkP.lean`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Gcm.X86_64.StitchZP
 

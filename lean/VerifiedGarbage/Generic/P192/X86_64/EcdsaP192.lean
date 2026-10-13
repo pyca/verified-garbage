@@ -1,9 +1,13 @@
-import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.Weierstrass.X86_64.InvSpec
-import VerifiedGarbage.Proof.Ecdsa.X86_64.P192.Verified
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P192.Verified
+module
+
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvSpec
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.P192.Verified
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P192.Verified
 
 /-! # p192 on x86-64, generic over its proven group law and inversions -/
+
+@[expose] public section
 
 namespace VG.Generic.P192.X86_64.EcdsaP192
 

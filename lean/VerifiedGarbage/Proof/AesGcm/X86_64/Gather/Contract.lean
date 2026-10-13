@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Contract
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM one-shot encryption out of place, from a list of slices, x86-64: the contracts
@@ -17,6 +23,8 @@ deepest of which, `vg_aes_gcm_stream_encrypt_to`, uses 4856 bytes of stack,
 with three arguments on the stack, so it uses the 4888 bytes below the stack
 pointer (`stkG`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesGcm
 

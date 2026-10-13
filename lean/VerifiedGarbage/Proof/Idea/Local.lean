@@ -1,6 +1,12 @@
-import VerifiedGarbage.Spec.Idea.Contract
-import VerifiedGarbage.Proof.Idea.Arith
-import VerifiedGarbage.Proof.Framework.Offset
+module
+
+public import VerifiedGarbage.Spec.Idea.Contract
+public import VerifiedGarbage.Proof.Idea.Arith
+public import VerifiedGarbage.Proof.Framework.Offset
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # IDEA's postconditions read only the functions' buffers
@@ -11,6 +17,8 @@ memory on entry only within the functions' buffers (`invertKeyPost_local`,
 `ecbPost_local`), and `ecbPost` the memory on return only within the data
 (`ecbPostOut_local`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Idea
 

@@ -1,5 +1,7 @@
-import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Verified
+module
+
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Verified
 
 /-!
 # ML-DSA (FIPS 204) on x86-64: signing
@@ -9,6 +11,8 @@ implementation `v` of the polynomial arithmetic (`vg_mldsa_ntt`, …), are
 emitted once for each implementation (`Variants/MlDsaArith/X86_64/`), named
 with its suffix (e.g. `vg_mldsa44_sign_avx2`), and need its CPU features.
 -/
+
+@[expose] public section
 
 namespace VG.Generic.MlDsaArith.X86_64.MlDsaSign
 

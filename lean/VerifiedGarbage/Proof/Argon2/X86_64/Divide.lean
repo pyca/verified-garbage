@@ -1,7 +1,15 @@
-import VerifiedGarbage.Proof.Argon2.X86_64.DivideStep
-import VerifiedGarbage.Proof.Argon2.Divide
+module
+
+public import VerifiedGarbage.Proof.Argon2.X86_64.DivideStep
+public import VerifiedGarbage.Proof.Argon2.Divide
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # Complete fixed-time division for Argon2's indices -/
+
+@[expose] public section
 
 namespace VG.Proof.Argon2.X86_64.Divide
 

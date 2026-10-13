@@ -1,6 +1,8 @@
-import VerifiedGarbage.TCB.X86.Target
-import VerifiedGarbage.Proof.AesCcm.X86.Frame
-import VerifiedGarbage.Proof.CmacAes.Stream.X86.Frame
+module
+
+public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Proof.AesCcm.X86.Frame
+public import VerifiedGarbage.Proof.CmacAes.Stream.X86.Frame
 
 /-!
 # AES-CCM (NIST SP 800-38C) on x86
@@ -16,6 +18,8 @@ its ten stack arguments (`Proof/AesCcm/X86/Frame.lean`), below which it uses
 56 bytes: a call of `vg_cmac_aes_update` (its six arguments and return
 address) and its own calls of `vg_aes_ctr32`; 2664 bytes in all.
 -/
+
+@[expose] public section
 
 namespace VG.Generic.AesCtr32.X86.AesCcm
 

@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Polyval
+module
+
+public import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Polyval
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM-SIV on AArch64: the tag (`tag`)
@@ -9,6 +15,8 @@ Untrusted: everything here is checked by Lean. `tag o` encrypts the block at
 (`tag_ok`): the tag, the tag `open` computes, and counter mode's last
 keystream block.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

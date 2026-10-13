@@ -1,8 +1,19 @@
-import VerifiedGarbage.Proof.Blowfish.Arm.ModeCore
-import VerifiedGarbage.Proof.Blowfish.FbScratch
-import VerifiedGarbage.Proof.Modes.Arm.OfbCfb
-import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
-import VerifiedGarbage.Impl.Blowfish.Arm.Modes
+module
+
+public import VerifiedGarbage.Proof.Blowfish.Arm.ModeCore
+meta import VerifiedGarbage.Proof.Blowfish.Arm.ModeCore
+public import VerifiedGarbage.Proof.Blowfish.FbScratch
+meta import VerifiedGarbage.Proof.Blowfish.FbScratch
+public import VerifiedGarbage.Proof.Modes.Arm.OfbCfb
+meta import VerifiedGarbage.Proof.Modes.Arm.OfbCfb
+public import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
+meta import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
+public import VerifiedGarbage.Impl.Blowfish.Arm.Modes
+meta import VerifiedGarbage.Impl.Blowfish.Arm.Modes
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Blowfish-OFB and Blowfish-CFB128 on ARMv7 meet their contracts
@@ -13,6 +24,8 @@ with a scratch buffer of 7 words (`Proof.Blowfish.fbScratchContract`), with the
 256 bytes of stack the ECB function uses; the `_framed` theorems keep the
 buffer on the stack, zeroed on return: 64 bytes more.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Blowfish.Arm
 

@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Call
+module
+
+public import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Call
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on 32-bit ARM: calling the samplers
@@ -7,6 +13,8 @@ As `ip_ok` and `ip_tr` (`Call.lean`), for `vg_mldsa_rej_ntt_poly` and
 `vg_mldsa_rej_bounded_poly`, whose public data include what they leak of their
 seeds.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Arm.KeyGen
 

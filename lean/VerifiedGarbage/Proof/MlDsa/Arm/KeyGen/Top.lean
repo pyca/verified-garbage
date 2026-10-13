@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.RestRow
+module
+
+public import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.RestRow
+meta import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.RestRow
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA key generation on 32-bit ARM: `vg_mldsa44_keygen`, `vg_mldsa65_keygen`, `vg_mldsa87_keygen`
@@ -8,6 +15,8 @@ H(pk, 64)` (`trHash_piece`), and the whole function, piece by piece, for any
 parameter set of Table 1 and any verified implementations of the primitives
 (`keyGen_piece`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Arm.KeyGen
 

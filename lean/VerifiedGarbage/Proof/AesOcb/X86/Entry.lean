@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesOcb.X86.Run
+module
+
+public import VerifiedGarbage.Proof.AesOcb.X86.Run
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-OCB on x86: the arguments and the entry
@@ -9,6 +15,8 @@ state may access (`perm_of`). The entry saves our caller's registers in `W`
 (AES-GCM's `save_ok`) and copies the stack arguments into their slots
 (`keeps_ok`): after it, `Env` holds (`entry_ok`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

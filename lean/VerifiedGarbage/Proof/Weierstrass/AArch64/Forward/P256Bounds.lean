@@ -1,6 +1,17 @@
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Selected
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Kernel
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Selected
+meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Selected
+public import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Kernel
+meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Kernel
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.AArch64.Forward.P256Bounds
 open VG VG.AArch64 VG.Impl.Weierstrass VG.Impl.P256.VerifyDouble

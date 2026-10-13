@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesSiv.X86_64.Env
-import VerifiedGarbage.Proof.CmacAes.Stream.X86_64.Copy
+module
+
+public import VerifiedGarbage.Proof.AesSiv.X86_64.Env
+public import VerifiedGarbage.Proof.CmacAes.Stream.X86_64.Copy
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-SIV on x86-64: XORing a keystream block into the data (`xorBytes`)
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.CmacAes.Stream.X86_64.Copy
 `K` into the data at `Q`, a byte at a time, changing only `rax`, `rdx`,
 `r10` and the flags: the data then holds `Q[..n] ⊕ K[..n]` (`xorBytes_wp`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesSiv.X86_64
 

@@ -1,5 +1,15 @@
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafMulSetup
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafWindowChecks
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafMulSetup
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafMulSetup
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafWindowChecks
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafWindowChecks
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Verify.X86
 open VG VG.X86 VG.Impl.Mont VG.Impl.Mont.X86 VG.Impl.Weierstrass VG.Impl.Weierstrass.X86

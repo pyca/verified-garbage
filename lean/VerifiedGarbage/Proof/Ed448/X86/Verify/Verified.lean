@@ -1,7 +1,17 @@
-import VerifiedGarbage.Proof.Ed448.X86.Verify.Body
-import VerifiedGarbage.Proof.Ed448.X86.Shake.CT
-import VerifiedGarbage.Proof.Framework.X86.Lit
-import VerifiedGarbage.Proof.Framework.Contract
+module
+
+public import VerifiedGarbage.Proof.Ed448.X86.Verify.Body
+meta import VerifiedGarbage.Proof.Ed448.X86.Verify.Body
+public import VerifiedGarbage.Proof.Ed448.X86.Shake.CT
+meta import VerifiedGarbage.Proof.Ed448.X86.Shake.CT
+public import VerifiedGarbage.Proof.Framework.X86.Lit
+meta import VerifiedGarbage.Proof.Framework.X86.Lit
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 verification on x86 (32-bit): constant time, and `Verified`
@@ -16,6 +26,8 @@ carries through the hash (`hash_ok`) and the reduction. `verify_verified`:
 for any `eq` meeting `verifyEquationLocal` (`CalleeOk`), `code eq` meets
 `Spec.Ed448.verifyContract X86.abi 280`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.X86.Verify
 

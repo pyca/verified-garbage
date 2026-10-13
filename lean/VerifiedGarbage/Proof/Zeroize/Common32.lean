@@ -1,4 +1,12 @@
-import VerifiedGarbage.Proof.Zeroize.Common
+module
+
+public import VerifiedGarbage.Proof.Zeroize.Common
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.Zeroize
 theorem count32 (x : BitVec 32) : x >>> 2 = BitVec.ofNat 32 (x.toNat / 4) := by

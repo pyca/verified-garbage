@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Argon2.X86.Derive.FillBlock
-import VerifiedGarbage.Proof.Argon2.SegmentStart
-import VerifiedGarbage.Proof.Argon2.Slices
-import VerifiedGarbage.Proof.Argon2.Iterations
+module
+
+public import VerifiedGarbage.Proof.Argon2.X86.Derive.FillBlock
+public import VerifiedGarbage.Proof.Argon2.SegmentStart
+public import VerifiedGarbage.Proof.Argon2.Slices
+public import VerifiedGarbage.Proof.Argon2.Iterations
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Argon2 on x86 (32-bit): the filling loops
@@ -12,6 +18,8 @@ a segment, from its first index (`Proof.Argon2.segmentStart`), through
 it, and `fill_ok` all passes, from the initialized memory:
 `Spec.Argon2.fill` (`Proof.Argon2.iterations_fill`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Argon2.X86.Derive
 

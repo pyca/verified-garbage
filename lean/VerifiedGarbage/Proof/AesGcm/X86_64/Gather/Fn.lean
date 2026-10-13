@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.CallTo
-import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.SealCall
-import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Steps
-import VerifiedGarbage.Proof.AesGcm.X86_64.Run
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.CallTo
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.SealCall
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Steps
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Run
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM one-shot encryption out of place, from a list of slices, x86-64: correctness
@@ -13,6 +19,8 @@ the proof of constant time follows too; the slices, one call of
 additional data padded to a whole block (`text_ok`); and the whole function
 (`sealGather_wp`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

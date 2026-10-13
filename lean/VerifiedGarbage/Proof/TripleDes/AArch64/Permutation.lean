@@ -1,6 +1,14 @@
-import VerifiedGarbage.Proof.TripleDes.AArch64.Lit
-import VerifiedGarbage.Proof.TripleDes.Permutation
-import VerifiedGarbage.Proof.Framework.AArch64.Linear
+module
+
+public import VerifiedGarbage.Proof.TripleDes.AArch64.Lit
+public import VerifiedGarbage.Proof.TripleDes.Permutation
+public import VerifiedGarbage.Proof.Framework.AArch64.Linear
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.TripleDes.AArch64
 

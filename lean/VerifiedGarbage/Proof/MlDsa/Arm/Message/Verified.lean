@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.MlDsa.Arm.Message.VerifyCT
-import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Verified
-import VerifiedGarbage.Proof.MlDsa.Arm.Verify.Inst
+module
+
+public import VerifiedGarbage.Proof.MlDsa.Arm.Message.VerifyCT
+public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Verified
+public import VerifiedGarbage.Proof.MlDsa.Arm.Verify.Inst
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on ARMv7, `sign_message` and `verify_message`: verified
@@ -11,6 +17,8 @@ Untrusted: everything here is checked by Lean. `signMessage n c p` and
 36` and `verifyMessageContract p Arm.abi 36`; `vg_mldsa*_sign` and
 `vg_mldsa*_verify` are such functions (`sign44Fn`, …).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Arm.Message
 

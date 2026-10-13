@@ -1,6 +1,10 @@
-import VerifiedGarbage.Proof.Camellia.X86_64.CtrVerified
+module
+
+public import VerifiedGarbage.Proof.Camellia.X86_64.CtrVerified
 
 /-! # Camellia-CTR artifacts on baseline x86-64 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.CamelliaCtr.X86_64
 

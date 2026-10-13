@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.AesCtr.Arm.Steps
-import VerifiedGarbage.Proof.AesCbc.Arm.CT
+module
+
+public import VerifiedGarbage.Proof.AesCtr.Arm.Steps
+meta import VerifiedGarbage.Proof.AesCtr.Arm.Steps
+public import VerifiedGarbage.Proof.AesCbc.Arm.CT
+meta import VerifiedGarbage.Proof.AesCbc.Arm.CT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CTR on ARMv7: one block, and constant time
@@ -12,6 +20,8 @@ into the data block, and the counter block is incremented (`Steps.lean`).
 `body_ct`: it is constant time, by the shared framework, with the call on
 the copy.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesCtr.Arm
 

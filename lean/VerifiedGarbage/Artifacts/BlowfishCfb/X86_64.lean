@@ -1,6 +1,10 @@
-import VerifiedGarbage.Proof.Blowfish.X86_64.FbVerified
+module
+
+public import VerifiedGarbage.Proof.Blowfish.X86_64.FbVerified
 
 /-! # Blowfish-CFB64 artifacts on baseline x86-64 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.BlowfishCfb.X86_64
 

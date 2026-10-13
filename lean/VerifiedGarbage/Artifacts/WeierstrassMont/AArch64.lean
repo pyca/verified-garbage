@@ -1,8 +1,12 @@
-import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Impl.Weierstrass.AArch64.Mont
-import VerifiedGarbage.Proof.Weierstrass.AArch64.MontVerified
+module
+
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Impl.Weierstrass.AArch64.Mont
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.MontVerified
 
 /-! # Montgomery products modulo the curves' `p` and `n` on AArch64 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.WeierstrassMont.AArch64
 

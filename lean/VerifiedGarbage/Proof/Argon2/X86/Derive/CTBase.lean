@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Argon2.X86.Derive.Correct
-import VerifiedGarbage.Proof.Argon2.X86.HPrime.CallsCT
+module
+
+public import VerifiedGarbage.Proof.Argon2.X86.Derive.Correct
+public import VerifiedGarbage.Proof.Argon2.X86.HPrime.CallsCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Argon2 on x86 (32-bit): the derivation's taint analysis
@@ -13,6 +19,8 @@ arguments and the locals' slots `sl` public, and knows which arguments are
 the base addresses of the matrix, `scratch` and the output; `agreeB` gives it
 from what two runs of the body are known to share.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Argon2.X86.Derive
 

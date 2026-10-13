@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Scalar
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.Scalar
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDSA on AArch64: the result
@@ -8,6 +14,8 @@ by the flag's mask, restores `x19`–`x25`, and returns the flag's low bit (`fin
 stores are outside the working space, so it keeps its numbers and the saved
 registers (`Outside.unch_far`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.AArch64
 

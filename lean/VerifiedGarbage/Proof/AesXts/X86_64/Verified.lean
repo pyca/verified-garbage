@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesCbc.X86_64.Verified
-import VerifiedGarbage.Proof.AesXts.X86_64.CT
+module
+
+public import VerifiedGarbage.Proof.AesCbc.X86_64.Verified
+public import VerifiedGarbage.Proof.AesXts.X86_64.CT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # XTS-AES on x86-64: `Verified`
@@ -9,6 +15,8 @@ functions), from `crypt_wp` and `crypt_ct`, a state satisfying the
 precondition, and the shared contracts of `Spec/Xts/Contract.lean` (with 8
 bytes of stack, for the return address of the call of the block function).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesXts.X86_64
 

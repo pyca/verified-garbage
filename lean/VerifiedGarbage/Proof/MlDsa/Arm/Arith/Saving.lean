@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.MlKem.Arm.CallF
-import VerifiedGarbage.Proof.Framework.Arm.Taint
-import VerifiedGarbage.Impl.MlDsa.Arm.Arith.Common
+module
+
+public import VerifiedGarbage.Proof.MlKem.Arm.CallF
+public import VerifiedGarbage.Proof.Framework.Arm.Taint
+public import VerifiedGarbage.Impl.MlDsa.Arm.Arith.Common
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on 32-bit ARM: registers saved in frames
@@ -18,6 +24,8 @@ the head of `wr`), and memory changed only below the stack pointer (`Entry`).
 the stack pointer, so `saving rs body` is constant time if `body` is, by the
 taint analysis, from the registers `ps` public.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Arm.Arith
 

@@ -1,6 +1,15 @@
-import VerifiedGarbage.Spec.Sm4
-import VerifiedGarbage.Proof.Framework.Bitslice.Table
-import VerifiedGarbage.Proof.Framework.Lit
+module
+
+public import VerifiedGarbage.Spec.Sm4
+meta import VerifiedGarbage.Spec.Sm4
+public import VerifiedGarbage.Proof.Framework.Bitslice.Table
+meta import VerifiedGarbage.Proof.Framework.Bitslice.Table
+public import VerifiedGarbage.Proof.Framework.Lit
+meta import VerifiedGarbage.Proof.Framework.Lit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The SM4 S-box on all 256 inputs at once
@@ -11,6 +20,8 @@ its S-box circuit compares the circuit's evaluation with. The kernel
 evaluates them once, here (`materialize_table`), rather than evaluate the
 specification's S-box on every input again for every target.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sm4
 

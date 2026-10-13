@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Ed448.X86_64.ScalarLoop
-import VerifiedGarbage.Proof.X448.X86_64.Finish
+module
+
+public import VerifiedGarbage.Proof.Ed448.X86_64.ScalarLoop
+public import VerifiedGarbage.Proof.X448.X86_64.Finish
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 scalar arithmetic on x86-64: entry and exit
@@ -8,6 +14,8 @@ Saving the callee-saved registers, storing `K`, the remainders the loops
 start from (the top bytes of an input), and the result: seven words and a
 zero byte at the output's address, then the registers restored.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.X86_64
 

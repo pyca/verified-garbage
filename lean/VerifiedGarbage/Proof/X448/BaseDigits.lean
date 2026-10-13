@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.X448.BaseTable
-import Mathlib.Algebra.Module.NatInt
+module
+
+public import VerifiedGarbage.Proof.X448.BaseTable
+public import Mathlib.Algebra.Module.NatInt
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The fixed-base comb's digits and partial sums
@@ -14,6 +20,8 @@ times the first plus the second is `S` (`comb_total`), since
 A negative digit adds the negation `(-x, y)` of the table entry `|d|`
 (`baseEntry_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448
 

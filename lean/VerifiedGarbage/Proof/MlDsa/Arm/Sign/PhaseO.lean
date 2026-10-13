@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseL
+module
+
+public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseL
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA signing on ARMv7: the signature
@@ -8,6 +14,8 @@ Once an iteration passed: `c̃`, then `BitPack(z[r], γ₁ - 1, γ₁)` for each
 `HintBitPack(h)` (with at most `ω` 1s) to `sig`, which then holds
 `sigEncode(c̃, z mod± q, h)` (`output_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Arm.Sign
 

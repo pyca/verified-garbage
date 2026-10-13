@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.MlDsa.X86.Round.Common
-import VerifiedGarbage.Proof.MlDsa.Arith.Mem
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86.Round.Common
+meta import VerifiedGarbage.Proof.MlDsa.X86.Round.Common
+public import VerifiedGarbage.Proof.MlDsa.Arith.Mem
+meta import VerifiedGarbage.Proof.MlDsa.Arith.Mem
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on x86 (32-bit): `vg_mldsa_high_bits` and `vg_mldsa_low_bits`
@@ -10,6 +18,8 @@ loop `cntLoop` of a core that computes `eax ← V a` from the coefficient `a =
 to `[edi]`. The loop is proven once for any core (`bits_piece`), with the
 value `V s₀` of the entry state, as `γ₂` is (`E s₀` holds in the branch).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86.Round
 

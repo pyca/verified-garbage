@@ -1,6 +1,8 @@
-import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
-import VerifiedGarbage.Proof.Ecdsa.AArch64.P521.InverseVerified
+module
+
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.P521.InverseVerified
 
 /-!
 # P-521's inversions modulo `p` and `n` on AArch64
@@ -11,6 +13,8 @@ A generic file (see `TCB/Emit.lean`) over P-521's group law and inversions
 `h`, the variant `Variants/P521/AArch64/Law.lean`, whose inversions'
 soundness the proofs take.
 -/
+
+@[expose] public section
 
 namespace VG.Generic.P521.AArch64.InverseP521
 
@@ -32,9 +36,9 @@ def artifacts (h : Proof.Weierstrass.AArch64.HasLawInv Spec.P521.curve) : List A
     doc := C.invPApi.doc (notes := [note "p"])
     code := p521.invFn p521.pPowI
     contract := C.invPContract AArch64.abi
-    ofSig := ⟨_, _, _, by
+    ofSig := by exact (⟨_, _, _, by
       unfold Spec.Weierstrass.Inverse.Curve.invPContract Spec.Weierstrass.Inverse.Curve.invContract
-      rfl⟩
+      rfl⟩)
     verified := p_verified h.inv
     spSafe := Code.all_of_forall (fun _ => rfl) _ },
   { C.invNApi with
@@ -42,9 +46,9 @@ def artifacts (h : Proof.Weierstrass.AArch64.HasLawInv Spec.P521.curve) : List A
     doc := C.invNApi.doc (notes := [note "n"])
     code := p521.invFn p521.nPowI
     contract := C.invNContract AArch64.abi
-    ofSig := ⟨_, _, _, by
+    ofSig := by exact (⟨_, _, _, by
       unfold Spec.Weierstrass.Inverse.Curve.invNContract Spec.Weierstrass.Inverse.Curve.invContract
-      rfl⟩
+      rfl⟩)
     verified := n_verified h.inv
     spSafe := Code.all_of_forall (fun _ => rfl) _ }]
 

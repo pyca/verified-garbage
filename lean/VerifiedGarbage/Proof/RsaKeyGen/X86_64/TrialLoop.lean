@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Trial
+module
+
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Trial
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # A candidate on x86-64: the trial division's table and loop
@@ -8,6 +14,8 @@ the table (`tabWrite_ok`); `trial` runs `trialEntry` for the four entries of
 each of its first `N` words, and leaves ZF clear iff one divides `c`
 (`trial_ok`): `trialAny N c`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaKeyGen.X86_64
 

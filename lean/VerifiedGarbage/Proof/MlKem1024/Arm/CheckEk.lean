@@ -1,7 +1,17 @@
-import VerifiedGarbage.Proof.MlKem.Arm.CheckEk
-import VerifiedGarbage.Proof.MlKem.EkCheck
-import VerifiedGarbage.Impl.MlKem1024.Arm.Poly
-import VerifiedGarbage.Spec.MlKem.Contract1024
+module
+
+public import VerifiedGarbage.Proof.MlKem.Arm.CheckEk
+meta import VerifiedGarbage.Proof.MlKem.Arm.CheckEk
+public import VerifiedGarbage.Proof.MlKem.EkCheck
+meta import VerifiedGarbage.Proof.MlKem.EkCheck
+public import VerifiedGarbage.Impl.MlKem1024.Arm.Poly
+meta import VerifiedGarbage.Impl.MlKem1024.Arm.Poly
+public import VerifiedGarbage.Spec.MlKem.Contract1024
+meta import VerifiedGarbage.Spec.MlKem.Contract1024
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM-1024 on 32-bit ARM: `vg_mlkem1024_check_ek`
@@ -11,6 +21,8 @@ and counting this uses) over the 512 groups of a 1568-byte key: it counts the
 12-bit fields that are at least `q` (`badCount`), and the key passes the check
 exactly when there are none (`ekCheck1024`, `badCount_eq_zero`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem1024.Arm.CheckEk
 

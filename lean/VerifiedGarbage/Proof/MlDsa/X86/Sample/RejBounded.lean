@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.MlDsa.X86.Sample.RejNtt
-import VerifiedGarbage.Proof.MlDsa.Sample.HalfByteVal
-import VerifiedGarbage.Impl.MlDsa.X86.Sample.RejBounded
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86.Sample.RejNtt
+meta import VerifiedGarbage.Proof.MlDsa.X86.Sample.RejNtt
+public import VerifiedGarbage.Proof.MlDsa.Sample.HalfByteVal
+meta import VerifiedGarbage.Proof.MlDsa.Sample.HalfByteVal
+public import VerifiedGarbage.Impl.MlDsa.X86.Sample.RejBounded
+meta import VerifiedGarbage.Impl.MlDsa.X86.Sample.RejBounded
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on x86 (32-bit): `vg_mldsa_rej_bounded_poly`
@@ -19,6 +28,8 @@ coefficients after each iteration (`LA_len`): the branches, the counter
 and the addresses of the stores agree; the coefficient is computed and
 stored by code the taint analysis proves constant time from `edi` alone.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86.Sample.RejBounded
 

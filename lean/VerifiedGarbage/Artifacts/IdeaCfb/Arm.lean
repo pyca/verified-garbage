@@ -1,6 +1,10 @@
-import VerifiedGarbage.Proof.Idea.Arm.FbVerified
+module
+
+public import VerifiedGarbage.Proof.Idea.Arm.FbVerified
 
 /-! # IDEA-CFB64 artifacts on baseline ARMv7 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.IdeaCfb.Arm
 

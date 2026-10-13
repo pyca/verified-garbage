@@ -1,6 +1,8 @@
-import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Verified
-import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Verified
+module
+
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Verified
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Verified
 
 /-!
 # ChaCha20-Poly1305 (RFC 8439 §2.8) on x86-64
@@ -30,6 +32,8 @@ gathers its slices to its output and calls the instance of `seal` on them
 there, with the six argument registers pushed in a frame of 48 bytes and
 `tag` pushed for the call: 1808 bytes in all.
 -/
+
+@[expose] public section
 
 namespace VG.Generic.ChaCha20Xor.X86_64.ChaCha20Poly1305
 

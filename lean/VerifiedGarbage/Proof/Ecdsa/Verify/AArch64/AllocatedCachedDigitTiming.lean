@@ -1,8 +1,16 @@
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedFieldTiming
-import VerifiedGarbage.Proof.Weierstrass.AArch64.CachedAddTiming
-import VerifiedGarbage.Proof.Weierstrass.AArch64.CachedDigitTiming
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedFieldTiming
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.CachedAddTiming
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.CachedDigitTiming
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## `AllocatedCachedTiming` -/
+
+@[expose] public section
 
 section
 

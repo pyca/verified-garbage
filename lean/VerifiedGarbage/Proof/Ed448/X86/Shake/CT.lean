@@ -1,10 +1,23 @@
-import VerifiedGarbage.Proof.Ed448.X86.Shake.Sponge
-import VerifiedGarbage.Proof.Ed448.X86.Shake.Header
-import VerifiedGarbage.Proof.Ed448.X86.Shake.Prune
-import VerifiedGarbage.Proof.Ed25519.X86.Whole.CallCT
-import VerifiedGarbage.Proof.Ed25519.X86.Whole.BlocksCT
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.Framework.X86.Lit
+module
+
+public import VerifiedGarbage.Proof.Ed448.X86.Shake.Sponge
+meta import VerifiedGarbage.Proof.Ed448.X86.Shake.Sponge
+public import VerifiedGarbage.Proof.Ed448.X86.Shake.Header
+meta import VerifiedGarbage.Proof.Ed448.X86.Shake.Header
+public import VerifiedGarbage.Proof.Ed448.X86.Shake.Prune
+meta import VerifiedGarbage.Proof.Ed448.X86.Shake.Prune
+public import VerifiedGarbage.Proof.Ed25519.X86.Whole.CallCT
+meta import VerifiedGarbage.Proof.Ed25519.X86.Whole.CallCT
+public import VerifiedGarbage.Proof.Ed25519.X86.Whole.BlocksCT
+meta import VerifiedGarbage.Proof.Ed25519.X86.Whole.BlocksCT
+public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+public import VerifiedGarbage.Proof.Framework.X86.Lit
+meta import VerifiedGarbage.Proof.Framework.X86.Lit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 on x86 (32-bit): the calls of the sponge functions in constant time
@@ -17,6 +30,8 @@ every call (`AbsSlots`, …), and each callee is constant time under its own
 contract (`call_ct`). The positions the absorptions return, which the next
 ones start from, depend only on the lengths.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.X86.Shake
 

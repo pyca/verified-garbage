@@ -1,9 +1,21 @@
-import VerifiedGarbage.Proof.Sm4.X86_64.ModeCore
-import VerifiedGarbage.Proof.Modes.X86_64.Ctr
-import VerifiedGarbage.Proof.Sm4.Scratch
-import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
-import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
-import VerifiedGarbage.Proof.Framework.Contract
+module
+
+public import VerifiedGarbage.Proof.Sm4.X86_64.ModeCore
+meta import VerifiedGarbage.Proof.Sm4.X86_64.ModeCore
+public import VerifiedGarbage.Proof.Modes.X86_64.Ctr
+meta import VerifiedGarbage.Proof.Modes.X86_64.Ctr
+public import VerifiedGarbage.Proof.Sm4.Scratch
+meta import VerifiedGarbage.Proof.Sm4.Scratch
+public import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
+meta import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
+public import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
+meta import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # SM4-CTR on x86-64 meets its contracts
@@ -15,6 +27,8 @@ so is everything the code computes from them; the counter block is secret.
 `ctr_framed` runs it with its working space on the stack, zeroed on return:
 3144 bytes, the 392 words of the scratch buffer and 8 more.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sm4
 

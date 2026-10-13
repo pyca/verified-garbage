@@ -1,25 +1,54 @@
-import VerifiedGarbage.Impl.Argon2.X86_64.InitFill
-import VerifiedGarbage.Proof.Argon2.X86_64.FillFinish
-import VerifiedGarbage.Proof.Argon2.X86_64.FillCompressSetup
-import VerifiedGarbage.Proof.Argon2.X86_64.FillIterationsBody
-import VerifiedGarbage.Proof.Framework.Mem
-import VerifiedGarbage.Impl.Argon2.X86_64.FillSetup
-import VerifiedGarbage.Proof.Argon2.X86_64.DivideStep
-import VerifiedGarbage.Proof.Argon2.X86_64.Initialize
-import VerifiedGarbage.Proof.Argon2.Dimensions
-import VerifiedGarbage.Proof.Argon2.X86_64.MemoryInitLit
-import VerifiedGarbage.Proof.Argon2.X86_64.MemoryInitCall
-import VerifiedGarbage.Proof.Argon2.Matrix
-import VerifiedGarbage.Proof.Argon2.X86_64.MemoryInitScale
-import VerifiedGarbage.Proof.Argon2.X86_64.InitialLayout
-import VerifiedGarbage.Proof.Argon2.X86_64.MemoryInitSteps
-import VerifiedGarbage.Proof.Argon2.MemoryInit
-import VerifiedGarbage.Proof.Argon2.X86_64.MemoryInitClear
-import VerifiedGarbage.Impl.Argon2.X86_64.MemoryInit
-import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Copy
-import VerifiedGarbage.Proof.Blake2.Stream
+module
+
+public import VerifiedGarbage.Impl.Argon2.X86_64.InitFill
+meta import VerifiedGarbage.Impl.Argon2.X86_64.InitFill
+public import VerifiedGarbage.Proof.Argon2.X86_64.FillFinish
+meta import VerifiedGarbage.Proof.Argon2.X86_64.FillFinish
+public import VerifiedGarbage.Proof.Argon2.X86_64.FillCompressSetup
+meta import VerifiedGarbage.Proof.Argon2.X86_64.FillCompressSetup
+public import VerifiedGarbage.Proof.Argon2.X86_64.FillIterationsBody
+meta import VerifiedGarbage.Proof.Argon2.X86_64.FillIterationsBody
+public import VerifiedGarbage.Proof.Framework.Mem
+meta import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Impl.Argon2.X86_64.FillSetup
+meta import VerifiedGarbage.Impl.Argon2.X86_64.FillSetup
+public import VerifiedGarbage.Proof.Argon2.X86_64.DivideStep
+meta import VerifiedGarbage.Proof.Argon2.X86_64.DivideStep
+public import VerifiedGarbage.Proof.Argon2.X86_64.Initialize
+meta import VerifiedGarbage.Proof.Argon2.X86_64.Initialize
+public import VerifiedGarbage.Proof.Argon2.Dimensions
+meta import VerifiedGarbage.Proof.Argon2.Dimensions
+public import VerifiedGarbage.Proof.Argon2.X86_64.MemoryInitLit
+meta import VerifiedGarbage.Proof.Argon2.X86_64.MemoryInitLit
+public import VerifiedGarbage.Proof.Argon2.X86_64.MemoryInitCall
+meta import VerifiedGarbage.Proof.Argon2.X86_64.MemoryInitCall
+public import VerifiedGarbage.Proof.Argon2.Matrix
+meta import VerifiedGarbage.Proof.Argon2.Matrix
+public import VerifiedGarbage.Proof.Argon2.X86_64.MemoryInitScale
+meta import VerifiedGarbage.Proof.Argon2.X86_64.MemoryInitScale
+public import VerifiedGarbage.Proof.Argon2.X86_64.InitialLayout
+meta import VerifiedGarbage.Proof.Argon2.X86_64.InitialLayout
+public import VerifiedGarbage.Proof.Argon2.X86_64.MemoryInitSteps
+meta import VerifiedGarbage.Proof.Argon2.X86_64.MemoryInitSteps
+public import VerifiedGarbage.Proof.Argon2.MemoryInit
+meta import VerifiedGarbage.Proof.Argon2.MemoryInit
+public import VerifiedGarbage.Proof.Argon2.X86_64.MemoryInitClear
+meta import VerifiedGarbage.Proof.Argon2.X86_64.MemoryInitClear
+public import VerifiedGarbage.Impl.Argon2.X86_64.MemoryInit
+meta import VerifiedGarbage.Impl.Argon2.X86_64.MemoryInit
+public import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Copy
+meta import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Copy
+public import VerifiedGarbage.Proof.Blake2.Stream
+meta import VerifiedGarbage.Proof.Blake2.Stream
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Argon2.X86_64.MemoryInitBlock`. -/
+
+@[expose] public section
+
 section
 /-! Merged from `Proof.Argon2.X86_64.MemoryInitArgs`. -/
 section

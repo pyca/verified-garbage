@@ -1,8 +1,17 @@
-import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
-import VerifiedGarbage.Proof.Ed25519.AArch64.Ops
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+module
+
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Ops
+public import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Ed25519.AArch64.Row`. -/
+
+@[expose] public section
+
 section
 /-! One row of a four-by-four word multiplication. -/
 namespace VG.Proof.Ed25519.AArch64

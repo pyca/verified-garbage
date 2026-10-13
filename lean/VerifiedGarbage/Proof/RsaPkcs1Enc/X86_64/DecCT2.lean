@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecCT1
+module
+
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecCT1
+meta import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecCT1
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-PKCS1-v1_5 decryption on x86-64: constant time, `DH` and `KDK`
@@ -6,6 +13,8 @@ import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecCT1
 Each block addresses only the frame (from `rsp`), and each call's public
 arguments are functions of the public data.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPkcs1Enc.X86_64.Dec
 

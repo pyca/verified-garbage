@@ -1,11 +1,15 @@
-import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.Ed448.AArch64.BaseVerified
+module
+
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.Ed448.AArch64.BaseVerified
 
 /-!
 # Ed448 base-point multiplication on AArch64
 
 The signature and documentation come from the reviewed Ed448 API.
 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.Ed448ScalarBase.AArch64
 

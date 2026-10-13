@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.CmacAes.Stream.X86_64.Common
-import VerifiedGarbage.Proof.CmacAes.X86_64.Finalize
+module
+
+public import VerifiedGarbage.Proof.CmacAes.Stream.X86_64.Common
+public import VerifiedGarbage.Proof.CmacAes.X86_64.Finalize
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Streaming AES-CMAC on x86-64: copying bytes
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.CmacAes.X86_64.Finalize
 `copy` copies the `rcx` bytes at `r13` to `rdx`, a byte at a time (none if
 `rcx` is 0), changing only `rax`, `r10` and the flags.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.CmacAes.Stream.X86_64
 

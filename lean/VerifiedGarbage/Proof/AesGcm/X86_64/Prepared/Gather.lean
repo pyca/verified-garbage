@@ -1,9 +1,18 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Verified
-import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.GatherSeal
-import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.Verified
-import VerifiedGarbage.Proof.AesGcm.ScratchPreparedTo
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Verified
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.GatherSeal
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.Verified
+public import VerifiedGarbage.Proof.AesGcm.ScratchPreparedTo
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # Prepared-context Gather contracts -/
+
+@[expose] public section
+
 set_option linter.unusedSimpArgs false
 namespace VG.Proof.AesGcm.X86_64.Gather
 open VG.Proof.AesSiv.X86_64 (filter_true' filter_false' filterMap_some' filterMap_none' pairFacts_ro)

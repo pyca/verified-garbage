@@ -1,12 +1,23 @@
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.XorSplitFn
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.LitSplit
-import VerifiedGarbage.Spec.ChaCha20.OutOfPlace
+module
+
+public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.XorSplitFn
+meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.XorSplitFn
+public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.LitSplit
+meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.LitSplit
+public import VerifiedGarbage.Spec.ChaCha20.OutOfPlace
+meta import VerifiedGarbage.Spec.ChaCha20.OutOfPlace
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_chacha20_xor_split_avx512` verified
 
 Correctness (`XorSplitFn.lean`), constant time and the calling convention.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.ChaCha20.X86_64.Avx512Split
 

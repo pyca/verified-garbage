@@ -1,8 +1,10 @@
-import VerifiedGarbage.TCB.X86.Target
-import VerifiedGarbage.Proof.Sha256.X86.Variants.Interface
-import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Sha224
-import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Frame
-import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Frame
+module
+
+public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Proof.Sha256.X86.Variants.Interface
+public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Sha224
+public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Frame
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Frame
 
 /-!
 # PBKDF2-HMAC-SHA-224 (RFC 8018) on x86, for every x86 SHA-256 backend: the iteration and the whole derivation
@@ -23,6 +25,8 @@ address, and gives them 48. `pbkdf2` runs that code in a frame holding its
 working space (`Proof.Pbkdf2.Whole.X86.pbkFramed`).
 -/
 
+@[expose] public section
+
 namespace VG.Generic.Sha256.X86.Pbkdf2Sha224
 
 def artifacts (v : Proof.Sha256.X86.Variants.Backend) : List Artifact := [
@@ -32,7 +36,7 @@ def artifacts (v : Proof.Sha256.X86.Variants.Backend) : List Artifact := [
     doc := Spec.Hmac.sha224I.iterateApi.doc
     code := v.M224.iterate
     contract := Spec.Hmac.sha224I.iterateContract X86.abi 48
-    ofSig := ⟨_, _, _, by unfold Spec.Hmac.Instance.iterateContract; rfl⟩
+    ofSig := by exact (⟨_, _, _, by unfold Spec.Hmac.Instance.iterateContract; rfl⟩)
     stack := 48
     verified := v.iterate224
     spSafe := v.iter224Sp
@@ -43,7 +47,7 @@ def artifacts (v : Proof.Sha256.X86.Variants.Backend) : List Artifact := [
     doc := Spec.Hmac.sha224I.pbkdf2Api.doc
     code := Impl.StackScratch.X86.withStackScratch (Proof.Pbkdf2.Whole.X86.pbkFrame Spec.Hmac.sha224I) 7 v.F224.pbkdf2
     contract := Spec.Hmac.sha224I.pbkdf2Contract X86.abi (76 + Proof.Pbkdf2.Whole.X86.pbkFrame Spec.Hmac.sha224I)
-    ofSig := ⟨_, _, _, by unfold Spec.Hmac.Instance.pbkdf2Contract Spec.Pbkdf2.pbkdf2Contract; rfl⟩
+    ofSig := by exact (⟨_, _, _, by unfold Spec.Hmac.Instance.pbkdf2Contract Spec.Pbkdf2.pbkdf2Contract; rfl⟩)
     stack := 76 + Proof.Pbkdf2.Whole.X86.pbkFrame Spec.Hmac.sha224I
     verified := Proof.Pbkdf2.Whole.X86.pbkFramed (Proof.Pbkdf2.Whole.X86.sha224_verified v) (by decide)
       (Proof.Pbkdf2.Whole.X86.noEsp_of_all v.pbkdf2_224Sp) (Proof.Pbkdf2.Whole.X86.sha224_stack v)

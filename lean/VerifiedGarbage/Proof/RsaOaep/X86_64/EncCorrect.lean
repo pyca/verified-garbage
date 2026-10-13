@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.RsaOaep.X86_64.EncMain
+module
+
+public import VerifiedGarbage.Proof.RsaOaep.X86_64.EncMain
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-OAEP encryption on x86-64: correctness
@@ -6,6 +12,8 @@ import VerifiedGarbage.Proof.RsaOaep.X86_64.EncMain
 The frame, the prologue and the checks of `k` and the message's length
 (zeros to `out` if either fails, `encMain` otherwise): `enc_correct`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaOaep.X86_64
 

@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.AesCcm.AArch64.OpenCT
-import VerifiedGarbage.Proof.AesCcm.AArch64.SealCT
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.AesCcm.Scratch
+module
+
+public import VerifiedGarbage.Proof.AesCcm.AArch64.OpenCT
+public import VerifiedGarbage.Proof.AesCcm.AArch64.SealCT
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.AesCcm.Scratch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CCM on AArch64: `Verified`
@@ -14,6 +20,8 @@ argument (`Proof/AesCcm/Scratch.lean`), with no stack: the calls keep the
 return address in `x30`, which each function saves in the working space.
 `Frame.lean` allocates the working space.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesCcm.AArch64
 

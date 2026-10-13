@@ -1,7 +1,9 @@
-import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Variant
-import VerifiedGarbage.TCB.Emit
-import VerifiedGarbage.Proof.RsaPss.X86_64.SignCt
-import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.Callees
+module
+
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Variant
+public import VerifiedGarbage.TCB.Emit
+public import VerifiedGarbage.Proof.RsaPss.X86_64.SignCt
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.Callees
 
 /-!
 # RSASSA-PSS signing on x86-64
@@ -18,6 +20,8 @@ and needs both's CPU features.
 Its stack is its frame, a return address and `vg_rsa_private_checked`'s
 3256 bytes.
 -/
+
+@[expose] public section
 
 namespace VG.Generic.MdHash.RsaPrivateCrt.X86_64.RsaPss
 

@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.StreamRun
-import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.CT
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamRun
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.StreamRun
+public import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.CT
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.CT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on x86-64: `vg_aes_gcm_stream_encrypt` and `_decrypt` are constant time
@@ -12,6 +20,8 @@ of the same length (`part_rel`, `blocks_rel`, `start_rel`); between them,
 each run keeps `SInv` (with no hypotheses: `SI`), from the correctness
 proofs.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

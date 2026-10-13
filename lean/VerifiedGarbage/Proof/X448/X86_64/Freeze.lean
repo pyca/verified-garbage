@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.X448.X86_64.Env
-import VerifiedGarbage.Proof.Framework.Range
+module
+
+public import VerifiedGarbage.Proof.X448.X86_64.Env
+public import VerifiedGarbage.Proof.Framework.Range
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 on x86-64: the full reduction
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.Framework.Range
 `r15 = 1`) carries out of 448 bits exactly when `x ≥ p`, and then
 `y mod 2⁴⁴⁸ = x - p`, which the mask `r15 = -carry` selects word by word.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448.X86_64
 

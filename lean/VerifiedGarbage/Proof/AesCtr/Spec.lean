@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesCbc.Spec
-import VerifiedGarbage.Spec.Ctr.Contract
+module
+
+public import VerifiedGarbage.Proof.AesCbc.Spec
+public import VerifiedGarbage.Spec.Ctr.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # CTR: the mode one block at a time
@@ -12,6 +18,8 @@ counter block to continue from after them (`crypt_snoc`), whose increment
 is the counter block to continue from after `k + 1` (`next_succ`).
 `ctrMode` is CTR as a `Mode`, for the loop the targets share with CBC.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesCtr
 

@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Ecdh.Exchange
-import VerifiedGarbage.Spec.Ecdsa.Verify
+module
+
+public import VerifiedGarbage.Proof.Ecdh.Exchange
+public import VerifiedGarbage.Spec.Ecdsa.Verify
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDSA signature verification from the values an implementation computes
@@ -15,6 +21,8 @@ the hash integer `e` with the public key `bs` (`04 ‖ x ‖ y`), from
 The signature is valid exactly if the key is, `r` and `s` are in
 `[1, n-1]`, `Z ≠ 0` and `x ≡ r` modulo `n`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa
 

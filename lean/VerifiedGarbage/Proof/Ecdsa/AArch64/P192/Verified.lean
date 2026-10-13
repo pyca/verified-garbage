@@ -1,11 +1,25 @@
-import VerifiedGarbage.Proof.Ecdsa.AArch64.P192.Main
-import VerifiedGarbage.Proof.Ecdsa.AArch64.P192.Config
-import VerifiedGarbage.Proof.Ecdsa.AArch64.P192.Contract
-import VerifiedGarbage.Proof.Ecdsa.AArch64.P192.Lit
-import VerifiedGarbage.Proof.Framework.AArch64.Taint
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.P192.Main
+meta import VerifiedGarbage.Proof.Ecdsa.AArch64.P192.Main
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.P192.Config
+meta import VerifiedGarbage.Proof.Ecdsa.AArch64.P192.Config
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.P192.Contract
+meta import VerifiedGarbage.Proof.Ecdsa.AArch64.P192.Contract
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.P192.Lit
+meta import VerifiedGarbage.Proof.Ecdsa.AArch64.P192.Lit
+public import VerifiedGarbage.Proof.Framework.AArch64.Taint
+meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
+meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # p192 signing on AArch64: correctness and constant time -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.AArch64.P192
 

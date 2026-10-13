@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.RsaKeyGen.X86_64.KTail
-import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Close
-import VerifiedGarbage.Proof.RsaKeyGen.Table
+module
+
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.KTail
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Close
+public import VerifiedGarbage.Proof.RsaKeyGen.Table
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # A candidate on x86-64: once `rand` has its octets
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.RsaKeyGen.Table
 `kMain_ok`: from the header and the buffers, `kMain` ends as `afterDraw`
 for the candidate from the first `k` octets of `rand` (`CandEnd`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaKeyGen.X86_64
 

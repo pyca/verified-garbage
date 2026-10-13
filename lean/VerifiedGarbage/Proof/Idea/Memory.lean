@@ -1,6 +1,12 @@
-import VerifiedGarbage.Spec.Idea
-import VerifiedGarbage.Proof.Framework.Mem
-import VerifiedGarbage.Proof.Framework.Offset
+module
+
+public import VerifiedGarbage.Spec.Idea
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.Offset
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # IDEA: words and bytes in memory
@@ -11,6 +17,8 @@ subkey is two bytes of a little-endian quadword (`word_read`,
 (`decodeBlock_blockAt`), byte writes within a block (`write8_apply`), and
 the blocks of an ECB buffer (`block_contains`, `blocks_disjoint`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Idea
 

@@ -1,16 +1,24 @@
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedFieldTiming
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JointLoop
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JointFixedDigit
-import VerifiedGarbage.Proof.Weierstrass.AArch64.CachedDigit
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Inplace
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticProduction
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedCached
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedMixed
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointCacheTiming
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JointPairedTiming
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAddTiming
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedFieldTiming
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JointLoop
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JointFixedDigit
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.CachedDigit
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Inplace
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticProduction
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedCached
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedMixed
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointCacheTiming
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JointPairedTiming
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAddTiming
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## `JointWindow` -/
+
+@[expose] public section
 
 section
 

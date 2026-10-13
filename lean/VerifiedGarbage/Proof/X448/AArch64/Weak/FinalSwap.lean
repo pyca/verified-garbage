@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.X448.AArch64.Weak.Iter
+module
+
+public import VerifiedGarbage.Proof.X448.AArch64.Weak.Iter
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 on AArch64: the swap after the ladder
@@ -6,6 +12,8 @@ import VerifiedGarbage.Proof.X448.AArch64.Weak.Iter
 Untrusted: everything here is checked by Lean. The final swap bit selects
 the coordinates to be converted back to affine form.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448.AArch64.Weak
 

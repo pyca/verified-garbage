@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Mont.X86.Ops
-import VerifiedGarbage.Proof.Weierstrass.Unch
-import VerifiedGarbage.Proof.Weierstrass.X86.MontCall
+module
+
+public import VerifiedGarbage.Proof.Mont.X86.Ops
+public import VerifiedGarbage.Proof.Weierstrass.Unch
+public import VerifiedGarbage.Proof.Weierstrass.X86.MontCall
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Field operations by calls, on x86 (32-bit)
@@ -15,6 +21,8 @@ operation writing `[o]` keeps the registers but `clob`, and the memory but
 `[o]`, the temporary area of `M`, the own working space and memory past the
 working space (`CKeep`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.X86
 

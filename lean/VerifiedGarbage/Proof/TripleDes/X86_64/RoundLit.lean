@@ -1,6 +1,17 @@
-import VerifiedGarbage.Proof.TripleDes.X86_64.SboxTable
-import VerifiedGarbage.Impl.TripleDes.X86_64.Block
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
+module
+
+public import VerifiedGarbage.Proof.TripleDes.X86_64.SboxTable
+meta import VerifiedGarbage.Proof.TripleDes.X86_64.SboxTable
+public import VerifiedGarbage.Impl.TripleDes.X86_64.Block
+meta import VerifiedGarbage.Impl.TripleDes.X86_64.Block
+public import VerifiedGarbage.Proof.Framework.X86_64.Lit
+meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Impl.TripleDes.X86_64
 

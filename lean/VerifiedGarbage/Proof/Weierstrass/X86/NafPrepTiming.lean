@@ -1,8 +1,16 @@
-import VerifiedGarbage.Proof.Weierstrass.X86.NafPrep
-import VerifiedGarbage.Proof.Weierstrass.X86.RegFieldTiming
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86.NafPrep
+public import VerifiedGarbage.Proof.Weierstrass.X86.RegFieldTiming
+public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## `NafPrepTimingState` -/
+
+@[expose] public section
 
 section
 

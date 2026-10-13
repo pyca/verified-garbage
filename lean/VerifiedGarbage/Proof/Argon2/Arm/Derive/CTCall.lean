@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Argon2.Arm.Derive.CTBase
-import VerifiedGarbage.Proof.Argon2.Arm.HPrime.Verified
+module
+
+public import VerifiedGarbage.Proof.Argon2.Arm.Derive.CTBase
+public import VerifiedGarbage.Proof.Argon2.Arm.HPrime.Verified
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Argon2 on ARMv7: two runs of the body
@@ -10,6 +16,8 @@ public words of the locals (`slots_of_words`), and adds what each run
 satisfies by correctness; `ccall_rel` and `hcall_rel` relate the calls of G
 and H′, from their preconditions in both runs and their public arguments.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Argon2.Arm.Derive
 

@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Rc2.X86_64.Sse2Vector
-import VerifiedGarbage.Impl.Blowfish.X86_64
+module
+
+public import VerifiedGarbage.Proof.Rc2.X86_64.Sse2Vector
+public import VerifiedGarbage.Impl.Blowfish.X86_64
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # One row of a byte plane's scan
@@ -8,6 +14,8 @@ import VerifiedGarbage.Impl.Blowfish.X86_64
 rows `< r`, scanning for entry `x`: in word `x % 16 / 2`, `p x` if `x`'s row
 is one of them, and zero elsewhere (`row_acc`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Blowfish.X86_64
 

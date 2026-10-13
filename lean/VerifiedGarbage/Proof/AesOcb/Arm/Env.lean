@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.AesOcb.Arm.Contract
-import VerifiedGarbage.Proof.AesGcm.Arm.Run
-import VerifiedGarbage.Proof.AesGcm.Arm.Loops
-import VerifiedGarbage.Proof.AesGcm.Arm.Callee
-import VerifiedGarbage.Impl.AesOcb.Arm
+module
+
+public import VerifiedGarbage.Proof.AesOcb.Arm.Contract
+public import VerifiedGarbage.Proof.AesGcm.Arm.Run
+public import VerifiedGarbage.Proof.AesGcm.Arm.Loops
+public import VerifiedGarbage.Proof.AesGcm.Arm.Callee
+public import VerifiedGarbage.Impl.AesOcb.Arm
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-OCB on ARMv7: where everything is
@@ -18,6 +24,8 @@ bytes below `SP` that the calls' frames use (`Lay`); what a state may access
 functions called preserve; and the stack arguments (`Args`), which nothing
 writes. `orun` runs a block symbolically.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx2.Wide
-import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedSse.Ecb
+module
+
+public import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx2.Wide
+public import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedSse.Ecb
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The AVX2 function
@@ -8,6 +14,8 @@ The batches of 256 blocks (`wide_ok`), then the SSE2 code on the blocks
 left (`BitslicedSse.ecb_post`): every block becomes its encryption or
 decryption (`ecb_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.TripleDes.X86_64.BitslicedAvx2
 

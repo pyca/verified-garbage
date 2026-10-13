@@ -5,7 +5,8 @@ trustworthy. Read `lean/README.md` first.
 
 For a fast Lean bootstrap on Linux x86-64, restore the prebuilt GHCR cache
 before compiling proofs; see [Restoring the CI build cache](lean/README.md#restoring-the-ci-build-cache).
-The README streams it straight from the registry API with `curl`, and needs
+The README streams it straight from the registry API with
+`ci/fetch_lean_cache.py`, which resumes a dropped connection, and needs
 `zstd` to decompress it; without the command, `pip install zstandard` and use
 the README's Python one-liner.
 Restoring takes the whole cache (about 10.5 GB unpacked), since optimizing a

@@ -1,5 +1,7 @@
-import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.Rsa.AArch64.PrivVerified
+module
+
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.Rsa.AArch64.PrivVerified
 
 /-!
 # The checked RSA private-key operation on AArch64
@@ -15,6 +17,8 @@ bytes, which holds the CRT's result, the precomputed values of `n`, the
 arguments kept across the calls and the stack arguments of the calls,
 whose callees use no stack.
 -/
+
+@[expose] public section
 
 namespace VG.Generic.RsaPrivateCrt.AArch64.Rsa
 

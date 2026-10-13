@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.Mont.AArch64.P256Square.Arithmetic
-import VerifiedGarbage.Proof.Ed25519.Word64
+module
+
+public import VerifiedGarbage.Proof.Mont.AArch64.P256Square.Arithmetic
+public import VerifiedGarbage.Proof.Ed25519.Word64
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.P256.Linear.Weak
 open VG.Proof.Ed25519.Word64

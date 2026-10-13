@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.Framework.PowLit
-import VerifiedGarbage.Proof.P384.Prime
-import VerifiedGarbage.Proof.P384.Point
-import VerifiedGarbage.Proof.Weierstrass.Group
-import VerifiedGarbage.Proof.Weierstrass.Cubic
+module
+
+public import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.Proof.P384.Prime
+public import VerifiedGarbage.Proof.P384.Point
+public import VerifiedGarbage.Proof.Weierstrass.Group
+public import VerifiedGarbage.Proof.Weierstrass.Cubic
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # P-384 is a curve the proofs apply to
@@ -14,6 +20,8 @@ computer algebra and checked by the kernel). So its group law is the one the
 proofs of the code take (`law`), which only the variant files
 `Variants/P384/<Target>/Law.lean` import (the registration files are generic over it).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.P384
 

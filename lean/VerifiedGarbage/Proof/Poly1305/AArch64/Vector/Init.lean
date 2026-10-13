@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Poly1305.AArch64.Vector.Setup
-import VerifiedGarbage.Proof.Framework.Mem
-import VerifiedGarbage.Proof.Framework.Offset
+module
+
+public import VerifiedGarbage.Proof.Poly1305.AArch64.Vector.Setup
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.Offset
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Poly1305 on AArch64 in AdvSIMD: saving registers, the accumulator, the constants
@@ -10,6 +16,8 @@ Untrusted: everything here is checked by Lean. `save` stores the low halves of
 them back; `loadH` puts the accumulator's limbs in lane 0 of `H` (lane 1
 zero); `times5 R S` makes `S j` five times `R j`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Poly1305.AArch64.Vector
 

@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.Finish
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Xor
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2Tail.Out
+module
+
+public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.Finish
+public import VerifiedGarbage.Proof.ChaCha20.X86_64.Xor
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2Tail.Out
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ChaCha20 keystream XOR on x86-64 with AVX2
@@ -11,6 +17,8 @@ The contract, the entry state and the loop over 512-byte chunks (`Setup`,
 `Rounds`, `Finish`); the rest, constant time and the calling convention are
 in `Avx2/Verified.lean`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.ChaCha20.X86_64.Avx2
 

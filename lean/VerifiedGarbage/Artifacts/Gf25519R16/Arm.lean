@@ -1,8 +1,12 @@
-import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Proof.Ed25519.Arm.Pow250Verified
-import VerifiedGarbage.Proof.Ed25519.Arm.MulFnVerified
+module
+
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.Proof.Ed25519.Arm.Pow250Verified
+public import VerifiedGarbage.Proof.Ed25519.Arm.MulFnVerified
 
 /-! # Products and powers in curve25519's field, in radix `2^16`, on ARMv7 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.Gf25519R16.Arm
 

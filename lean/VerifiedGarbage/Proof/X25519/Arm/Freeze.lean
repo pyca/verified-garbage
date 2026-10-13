@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.X25519.Arm.Invert
-import VerifiedGarbage.Proof.X25519.Bytes
-import VerifiedGarbage.Proof.Framework.WriteBytes
+module
+
+public import VerifiedGarbage.Proof.X25519.Arm.Invert
+public import VerifiedGarbage.Proof.X25519.Bytes
+public import VerifiedGarbage.Proof.Framework.WriteBytes
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X25519 on 32-bit ARM: the final reduction and the output
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.Framework.WriteBytes
 `freeze` stores the 32 bytes of the element at `X2`, reduced fully modulo `p`,
 at `out` (`freeze_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X25519.Arm
 

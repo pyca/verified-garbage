@@ -1,9 +1,17 @@
-import VerifiedGarbage.Impl.Argon2.X86_64.ClearBlock
-import VerifiedGarbage.Proof.Argon2.X86_64.MemoryInitClear
-import VerifiedGarbage.Proof.Argon2.X86_64.Initialize
-import VerifiedGarbage.Proof.Framework.X86_64.Inline
+module
+
+public import VerifiedGarbage.Impl.Argon2.X86_64.ClearBlock
+public import VerifiedGarbage.Proof.Argon2.X86_64.MemoryInitClear
+public import VerifiedGarbage.Proof.Argon2.X86_64.Initialize
+public import VerifiedGarbage.Proof.Framework.X86_64.Inline
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Zero every word, preserving the enclosing loop's registers and memory. -/
+
+@[expose] public section
 
 namespace VG.Proof.Argon2.X86_64.ClearBlock
 

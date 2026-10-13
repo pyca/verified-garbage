@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.Contract
-import VerifiedGarbage.Proof.AesGcm.X86_64.FinTag
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Contract
+public import VerifiedGarbage.Proof.AesGcm.X86_64.FinTag
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on x86-64: `vg_aes_gcm_stream_finish`
@@ -10,6 +16,8 @@ lengths in it (`finEntry_ok`); `finish` keeps the address of `tag` there too,
 computes the tag (`finTag 0`) for any message the state represents and
 copies it to `tag` (`tagOut_ok`, `streamFinish_wp`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

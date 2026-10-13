@@ -1,13 +1,21 @@
-import VerifiedGarbage.Proof.Weierstrass.Unch
-import VerifiedGarbage.Proof.Weierstrass.X86.InvState
-import VerifiedGarbage.Proof.Weierstrass.InvToM
-import VerifiedGarbage.Proof.Weierstrass.Law
-import Mathlib.Data.Nat.Prime.Defs
-import VerifiedGarbage.Proof.Weierstrass.X86.InvFinishPrep
-import VerifiedGarbage.Proof.Mont.X86.Ops
-import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.Unch
+public import VerifiedGarbage.Proof.Weierstrass.X86.InvState
+public import VerifiedGarbage.Proof.Weierstrass.InvToM
+public import VerifiedGarbage.Proof.Weierstrass.Law
+public import Mathlib.Data.Nat.Prime.Defs
+public import VerifiedGarbage.Proof.Weierstrass.X86.InvFinishPrep
+public import VerifiedGarbage.Proof.Mont.X86.Ops
+public import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## `InvSpec` -/
+
+@[expose] public section
 
 section
 

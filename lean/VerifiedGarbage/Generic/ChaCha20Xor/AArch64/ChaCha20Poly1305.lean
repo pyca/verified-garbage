@@ -1,8 +1,10 @@
-import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Impl.ChaCha20Poly1305.AArch64
-import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Verified
-import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Lit
-import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Gather.Verified
+module
+
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Impl.ChaCha20Poly1305.AArch64
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Verified
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Lit
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Gather.Verified
 
 /-!
 # ChaCha20-Poly1305 (RFC 8439 §2.8) on AArch64
@@ -19,6 +21,8 @@ bytes into Poly1305 while the stream computes their keystream
 (`Impl/ChaCha20Poly1305/AArch64/Stitched.lean`). `seal_gather` gathers its
 slices to its output and calls this `seal` on them there.
 -/
+
+@[expose] public section
 
 namespace VG.Generic.ChaCha20Xor.AArch64.ChaCha20Poly1305
 

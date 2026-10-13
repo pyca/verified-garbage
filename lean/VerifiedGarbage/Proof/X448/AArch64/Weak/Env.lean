@@ -1,8 +1,15 @@
-import VerifiedGarbage.Proof.Curve448.AArch64.Pointwise
-import VerifiedGarbage.Proof.Curve448.AArch64.Square
-import VerifiedGarbage.Proof.Curve448.AArch64.Swap
-import VerifiedGarbage.Proof.X448.AArch64.Env
-import VerifiedGarbage.Impl.X448.AArch64.Weak
+module
+
+public import VerifiedGarbage.Proof.Curve448.AArch64.Pointwise
+public import VerifiedGarbage.Proof.Curve448.AArch64.Square
+public import VerifiedGarbage.Proof.Curve448.AArch64.Swap
+public import VerifiedGarbage.Proof.X448.AArch64.Env
+public import VerifiedGarbage.Impl.X448.AArch64.Weak
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
 /-!
 # X448 on AArch64: the working space as field-element slots
 
@@ -10,6 +17,8 @@ Untrusted: everything here is checked by Lean. Field operations update one
 of twenty-two slots, preserving bounded limbs in every slot. The frame
 excludes saved registers, the swap bit and the scalar's decoded bits.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448.AArch64.Weak
 

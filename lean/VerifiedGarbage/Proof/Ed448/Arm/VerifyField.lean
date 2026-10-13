@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Ed448.Arm.BaseStep
-import VerifiedGarbage.Proof.X448.Arm.Square
-import VerifiedGarbage.Impl.Ed448.Arm.VerifyEquation
+module
+
+public import VerifiedGarbage.Proof.Ed448.Arm.BaseStep
+public import VerifiedGarbage.Proof.X448.Arm.Square
+public import VerifiedGarbage.Impl.Ed448.Arm.VerifyEquation
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 verification's equation on ARMv7: field programs
@@ -13,6 +19,8 @@ decoding. `VKeep` is what the checks and decoding may change: the field
 operations' registers, the counter `r11` and `BAD` (`r10`), and the working
 space from `SIGN` to the slots' end and from X448's `ACC`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.Arm
 

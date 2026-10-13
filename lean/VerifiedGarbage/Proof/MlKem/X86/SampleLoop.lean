@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.MlKem.X86.SampleCalls
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86.SampleCalls
+meta import VerifiedGarbage.Proof.MlKem.X86.SampleCalls
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86 (32-bit): the loop of `vg_mlkem_sample_ntt`
@@ -12,6 +19,8 @@ accepts each that is less than `q` (`accept_piece`); its branches depend on
 the XOF output, which is a function of the seed, and so agree in two runs from
 the same seed.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.X86.Sample
 

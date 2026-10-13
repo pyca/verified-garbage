@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Setup
-import VerifiedGarbage.Proof.Framework.Omega
+module
+
+public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Setup
+public import VerifiedGarbage.Proof.Framework.Omega
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # PBKDF2-HMAC on 32-bit ARM, the whole derivation: a block of the output, up to `U₁`
@@ -10,6 +16,8 @@ is `done k`, and `scratch` holds `INT (k + 1)`, byte-reversed. A step copies
 the salted inner state into the working state, absorbs `INT (k + 1)` into it
 (`update`) and computes `U₁` with HMAC's `finalize`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Pbkdf2.Whole.Arm
 

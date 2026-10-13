@@ -1,8 +1,16 @@
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombPoints
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafMul
-import VerifiedGarbage.Proof.Ecdsa.X86.GMul
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombPoints
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafMul
+public import VerifiedGarbage.Proof.Ecdsa.X86.GMul
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # Comb and signed-window products for x86 P-256 verification -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Verify.X86
 open VG VG.X86 VG.Impl.Mont.X86 VG.Impl.Mont VG.Impl.Weierstrass.X86 VG.Impl.Weierstrass

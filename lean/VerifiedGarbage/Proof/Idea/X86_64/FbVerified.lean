@@ -1,10 +1,23 @@
-import VerifiedGarbage.Proof.Idea.X86_64.ModeCore
-import VerifiedGarbage.Proof.Modes.X86_64.Fb
-import VerifiedGarbage.Proof.Idea.FbScratch
-import VerifiedGarbage.Proof.Idea.X86_64.ModesLit
-import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
-import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
-import VerifiedGarbage.Proof.Framework.Contract
+module
+
+public import VerifiedGarbage.Proof.Idea.X86_64.ModeCore
+meta import VerifiedGarbage.Proof.Idea.X86_64.ModeCore
+public import VerifiedGarbage.Proof.Modes.X86_64.Fb
+meta import VerifiedGarbage.Proof.Modes.X86_64.Fb
+public import VerifiedGarbage.Proof.Idea.FbScratch
+meta import VerifiedGarbage.Proof.Idea.FbScratch
+public import VerifiedGarbage.Proof.Idea.X86_64.ModesLit
+meta import VerifiedGarbage.Proof.Idea.X86_64.ModesLit
+public import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
+meta import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
+public import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
+meta import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # IDEA-OFB and -CFB64 on x86-64 meet their contracts
@@ -18,6 +31,8 @@ them; the IV is secret. `ofb_framed`, … run them with their working space on
 the stack, zeroed on return: 184 bytes, the 22 words of the scratch buffer
 and 8 more.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Idea.X86_64
 

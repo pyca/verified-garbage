@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecCTBase
+module
+
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecCTBase
+meta import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecCTBase
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-PKCS1-v1_5 decryption on x86-64: constant time, up to `D`
@@ -7,6 +14,8 @@ The first block, the private-key operation (constant time for its
 contract, whose public data agree), and `D = I2OSP(d, k)`, whose loops
 address `scratch` and `d` from pointers and lengths that are public.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPkcs1Enc.X86_64.Dec
 

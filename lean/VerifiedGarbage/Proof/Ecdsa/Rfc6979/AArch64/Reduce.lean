@@ -1,12 +1,18 @@
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Hmac
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Bytes
-import VerifiedGarbage.Proof.Mont.AArch64.Csub
-import VerifiedGarbage.Proof.Mont.AArch64.Blocks
-import VerifiedGarbage.Proof.Weierstrass.Words
-import VerifiedGarbage.Proof.Weierstrass.BytesLen
-import VerifiedGarbage.Proof.Framework.Bswap
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Gcm.Bits
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Hmac
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Bytes
+public import VerifiedGarbage.Proof.Mont.AArch64.Csub
+public import VerifiedGarbage.Proof.Mont.AArch64.Blocks
+public import VerifiedGarbage.Proof.Weierstrass.Words
+public import VerifiedGarbage.Proof.Weierstrass.BytesLen
+public import VerifiedGarbage.Proof.Framework.Bswap
+public import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Gcm.Bits
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Deterministic ECDSA on AArch64: `h = bits2octets(digest)`
@@ -19,6 +25,8 @@ mask of the last borrow, the number's words or the difference's, big-endian
 to `h` (`sels_ok`). The number is below `2^(64 w) < 2n`, so this is it
 modulo `n` (`mod_mathK`, `reduce_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Rfc6979.AArch64
 

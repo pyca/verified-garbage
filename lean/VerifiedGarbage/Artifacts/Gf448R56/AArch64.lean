@@ -1,7 +1,11 @@
-import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.Ed448.AArch64.Point56.Verified
+module
+
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.Ed448.AArch64.Point56.Verified
 
 /-! # A power in curve448's field, in radix `2^56`, on AArch64 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.Gf448R56.AArch64
 

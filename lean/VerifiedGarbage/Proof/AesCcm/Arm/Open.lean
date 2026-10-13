@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesCcm.Arm.Mask
+module
+
+public import VerifiedGarbage.Proof.AesCcm.Arm.Mask
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CCM on ARMv7: `vg_aes_ccm_open`
@@ -9,6 +15,8 @@ plaintext at `W + 112`, then the comparison of its first `t` bytes with the
 received tag at `tag` (`recv`, `cmp`), the mask of the data and `restore`
 (`open_wp`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

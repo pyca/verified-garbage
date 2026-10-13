@@ -1,7 +1,15 @@
-import VerifiedGarbage.Proof.P256.EcdhDouble.Raw
-import VerifiedGarbage.Proof.P256.EcdhDouble.Certificate
-import VerifiedGarbage.Proof.Weierstrass.JacInplace
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTiming
+module
+
+public import VerifiedGarbage.Proof.P256.EcdhDouble.Raw
+public import VerifiedGarbage.Proof.P256.EcdhDouble.Certificate
+public import VerifiedGarbage.Proof.Weierstrass.JacInplace
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTiming
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.P256.EcdhDouble
 open VG VG.AArch64 VG.Impl.Mont VG.Impl.Weierstrass

@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.Ed25519.X86.PointMultiplyFrame
+module
+
+public import VerifiedGarbage.Proof.Ed25519.X86.PointMultiplyFrame
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Ed25519.X86.PointMulInit`. -/
+
+@[expose] public section
+
 section
 /-! Checkpoints, identity accumulator and the public batch count. -/
 namespace VG.Proof.Ed25519.X86

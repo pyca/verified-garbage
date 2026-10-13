@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Ecdh.X86_64.MulOk
-import VerifiedGarbage.Proof.Ecdh.Exchange
-import VerifiedGarbage.Proof.Weierstrass.X86_64.Rep
+module
+
+public import VerifiedGarbage.Proof.Ecdh.X86_64.MulOk
+public import VerifiedGarbage.Proof.Ecdh.Exchange
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.Rep
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDH on x86-64: the result, and the whole function
@@ -12,6 +18,8 @@ Montgomery's form by a multiplication by 1, ands the masks of `d ∈ [1, n-1]`
 and `Z ≠ 0` into the flag, and writes `x` or zeros (`middle_ok`); `finish`
 writes the result as the signature's does (`ecFinish_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdh.X86_64
 

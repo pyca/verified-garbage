@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.MlDsa.X86.Sample.Ball
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86.Sample.Ball
+meta import VerifiedGarbage.Proof.MlDsa.X86.Sample.Ball
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on x86 (32-bit): the loop of `vg_mldsa_sample_in_ball`
@@ -11,6 +18,8 @@ of `Proof/MlDsa/Sample/Ball.lean`. Its branches and addresses depend on `i`,
 `j` and the sign bits, functions of `c̃`, which agree in two runs with the
 same `c̃` (`QPub`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86.Sample.Ball
 

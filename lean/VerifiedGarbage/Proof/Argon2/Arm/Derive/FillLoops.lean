@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Argon2.Arm.Derive.FillBlock
-import VerifiedGarbage.Proof.Argon2.SegmentStart
-import VerifiedGarbage.Proof.Argon2.Slices
-import VerifiedGarbage.Proof.Argon2.Iterations
+module
+
+public import VerifiedGarbage.Proof.Argon2.Arm.Derive.FillBlock
+public import VerifiedGarbage.Proof.Argon2.SegmentStart
+public import VerifiedGarbage.Proof.Argon2.Slices
+public import VerifiedGarbage.Proof.Argon2.Iterations
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Argon2 on ARMv7: the filling loops
@@ -12,6 +18,8 @@ a segment, from its first index (`Proof.Argon2.segmentStart`), through
 it, and `passes_ok` all passes, from the initialized memory. Each loop
 counts up in the locals and runs while the count differs from its bound.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Argon2.Arm.Derive
 

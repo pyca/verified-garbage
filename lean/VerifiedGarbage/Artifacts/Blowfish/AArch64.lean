@@ -1,5 +1,9 @@
-import VerifiedGarbage.Proof.Blowfish.AArch64.KeyVerified
-import VerifiedGarbage.Proof.Blowfish.AArch64.Frame
+module
+
+public import VerifiedGarbage.Proof.Blowfish.AArch64.KeyVerified
+public import VerifiedGarbage.Proof.Blowfish.AArch64.Frame
+
+@[expose] public section
 
 namespace VG.Artifacts.Blowfish.AArch64
 
@@ -24,7 +28,7 @@ def artifacts : List Artifact := [
     code := Impl.StackScratch.AArch64.withStackScratchWiped 256 .x3 32 Impl.Blowfish.AArch64.encrypt
     contract := Spec.Blowfish.ecbEncryptContract AArch64.abi 256
     stack := 256
-    ofSig := ⟨_, _, _, by unfold Spec.Blowfish.ecbEncryptContract Spec.Blowfish.ecbContract; rfl⟩
+    ofSig := by exact (⟨_, _, _, by unfold Spec.Blowfish.ecbEncryptContract Spec.Blowfish.ecbContract; rfl⟩)
     verified := Proof.Blowfish.AArch64.ecb_framed Proof.Blowfish.AArch64.encrypt_verified
     spSafe := Code.all_of_forall (fun _ => rfl) _ },
   { Spec.Blowfish.ecbDecryptApi with
@@ -36,7 +40,7 @@ def artifacts : List Artifact := [
     code := Impl.StackScratch.AArch64.withStackScratchWiped 256 .x3 32 Impl.Blowfish.AArch64.decrypt
     contract := Spec.Blowfish.ecbDecryptContract AArch64.abi 256
     stack := 256
-    ofSig := ⟨_, _, _, by unfold Spec.Blowfish.ecbDecryptContract Spec.Blowfish.ecbContract; rfl⟩
+    ofSig := by exact (⟨_, _, _, by unfold Spec.Blowfish.ecbDecryptContract Spec.Blowfish.ecbContract; rfl⟩)
     verified := Proof.Blowfish.AArch64.ecb_framed Proof.Blowfish.AArch64.decrypt_verified
     spSafe := Code.all_of_forall (fun _ => rfl) _ }]
 

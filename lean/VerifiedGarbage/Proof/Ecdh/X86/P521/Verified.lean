@@ -1,10 +1,23 @@
-import VerifiedGarbage.Proof.Ecdh.X86.Main
-import VerifiedGarbage.Proof.Ecdh.X86.P521.Contract
-import VerifiedGarbage.Proof.Ecdh.X86.P521.Lit
-import VerifiedGarbage.Proof.Ecdsa.X86.P521.Verified
-import VerifiedGarbage.Proof.Framework.X86.Taint
-import VerifiedGarbage.Proof.Framework.X86.Inline
-import VerifiedGarbage.Proof.Framework.X86.TaintMono
+module
+
+public import VerifiedGarbage.Proof.Ecdh.X86.Main
+meta import VerifiedGarbage.Proof.Ecdh.X86.Main
+public import VerifiedGarbage.Proof.Ecdh.X86.P521.Contract
+meta import VerifiedGarbage.Proof.Ecdh.X86.P521.Contract
+public import VerifiedGarbage.Proof.Ecdh.X86.P521.Lit
+meta import VerifiedGarbage.Proof.Ecdh.X86.P521.Lit
+public import VerifiedGarbage.Proof.Ecdsa.X86.P521.Verified
+meta import VerifiedGarbage.Proof.Ecdsa.X86.P521.Verified
+public import VerifiedGarbage.Proof.Framework.X86.Taint
+meta import VerifiedGarbage.Proof.Framework.X86.Taint
+public import VerifiedGarbage.Proof.Framework.X86.Inline
+meta import VerifiedGarbage.Proof.Framework.X86.Inline
+public import VerifiedGarbage.Proof.Framework.X86.TaintMono
+meta import VerifiedGarbage.Proof.Framework.X86.TaintMono
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDH over P-521 on x86 (32-bit): `Verified`
@@ -18,6 +31,8 @@ Constant time by taint tracking, as for the signature
 arguments' slots are readable, and moves to the shared contract, which makes
 them writable, by `Verified.narrowTo`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdh.X86.P521
 

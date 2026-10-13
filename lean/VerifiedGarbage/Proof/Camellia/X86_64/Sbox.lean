@@ -1,8 +1,14 @@
-import VerifiedGarbage.Impl.Camellia.X86_64.Sbox
-import VerifiedGarbage.Proof.Camellia.SboxTable
-import VerifiedGarbage.Proof.Framework.X86_64.Straight
-import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Proof.Aes.Bitsliced
+module
+
+public import VerifiedGarbage.Impl.Camellia.X86_64.Sbox
+public import VerifiedGarbage.Proof.Camellia.SboxTable
+public import VerifiedGarbage.Proof.Framework.X86_64.Straight
+public import VerifiedGarbage.Proof.Framework.X86_64.Exec
+public import VerifiedGarbage.Proof.Aes.Bitsliced
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The bitsliced Camellia S-box on x86-64
@@ -14,6 +20,8 @@ with the specification's `SBOX1` on the same inputs. `sbox_ok` then gives,
 at every bit position `p`, `SBOX1` of the byte formed by bit `p` of the
 eight words.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Camellia.X86_64
 

@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.AesOcb.X86_64.Contract
-import VerifiedGarbage.Proof.AesCcm.X86_64.Env
-import VerifiedGarbage.Proof.Ocb.Spec
-import VerifiedGarbage.Impl.AesOcb.X86_64
+module
+
+public import VerifiedGarbage.Proof.AesOcb.X86_64.Contract
+public import VerifiedGarbage.Proof.AesCcm.X86_64.Env
+public import VerifiedGarbage.Proof.Ocb.Spec
+public import VerifiedGarbage.Impl.AesOcb.X86_64
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-OCB on x86-64: where everything is
@@ -14,6 +20,8 @@ values the entry keeps in `W` (`Slots`). The pieces write the parts of `W`
 in `mutR` (and the data, and the stack below `SP`), so the slots and our
 caller's registers saved in `W` stay as the entry left them.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

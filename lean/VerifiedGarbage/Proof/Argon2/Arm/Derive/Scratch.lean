@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Argon2.Arm.Derive.Parameters
+module
+
+public import VerifiedGarbage.Proof.Argon2.Arm.Derive.Parameters
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Argon2 on ARMv7: the derivation's use of H′'s hash macros
@@ -8,6 +14,8 @@ The H₀ code calls the BLAKE2b functions through H′'s macros
 below the locals: `ctx` gives their context (`HPrime.Ctx`), and `Inv.keeps`
 the body's invariant and locals after them.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Argon2.Arm.Derive
 

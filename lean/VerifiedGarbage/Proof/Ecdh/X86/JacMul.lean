@@ -1,9 +1,17 @@
-import VerifiedGarbage.Proof.Weierstrass.JacMadd
-import VerifiedGarbage.Proof.Ecdh.X86.JacWrites
-import VerifiedGarbage.Proof.Ecdh.X86.JacPrep
-import VerifiedGarbage.Proof.Weierstrass.X86.WinJacLoop
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.JacMadd
+public import VerifiedGarbage.Proof.Ecdh.X86.JacWrites
+public import VerifiedGarbage.Proof.Ecdh.X86.JacPrep
+public import VerifiedGarbage.Proof.Weierstrass.X86.WinJacLoop
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # The x86 P-256 variable-base product -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdh.X86
 open VG VG.X86 VG.Impl.Mont.X86 VG.Impl.Mont VG.Impl.Weierstrass.X86 VG.Impl.Weierstrass

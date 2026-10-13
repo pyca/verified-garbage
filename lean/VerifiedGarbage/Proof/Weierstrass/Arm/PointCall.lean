@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Weierstrass.Arm.MontCall
-import VerifiedGarbage.Impl.Weierstrass.Arm.Point
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.Arm.MontCall
+public import VerifiedGarbage.Impl.Weierstrass.Arm.Point
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Calls of the Montgomery functions with operands in registers, on 32-bit ARM
@@ -12,6 +18,8 @@ it in memory, and write no register but `r0`–`r3`, `r12` and `lr`.
 `mulCallR_ok`, `addCallR_ok` and `subCallR_ok` are the calls of `mulFn`,
 `addFn` and `subFn`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.Arm.Point
 

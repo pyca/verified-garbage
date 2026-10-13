@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.X448.X86.Instr
-import VerifiedGarbage.TCB.X86.Target
+module
+
+public import VerifiedGarbage.Proof.X448.X86.Instr
+public import VerifiedGarbage.TCB.X86.Target
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 on x86 (32-bit): the field functions' arguments
@@ -10,6 +16,8 @@ n` says what it knows of the first `n` of them on entry: they are readable
 and lie outside the working space at `base`, so that what the function
 writes there leaves them alone (`ArgArea.keep`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448.X86
 

@@ -1,12 +1,25 @@
-import VerifiedGarbage.Impl.P384.X86_64.Joint
-import VerifiedGarbage.Proof.Weierstrass.X86_64.CachedJacTiming
-import VerifiedGarbage.Proof.Weierstrass.X86_64.JacMixedTiming
-import VerifiedGarbage.Proof.P384.X86_64.FieldTmpl
+module
+
+public import VerifiedGarbage.Impl.P384.X86_64.Joint
+meta import VerifiedGarbage.Impl.P384.X86_64.Joint
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.CachedJacTiming
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CachedJacTiming
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.JacMixedTiming
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.JacMixedTiming
+public import VerifiedGarbage.Proof.P384.X86_64.FieldTmpl
+meta import VerifiedGarbage.Proof.P384.X86_64.FieldTmpl
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Baseline and ADX taint checks of P-384's joint verifier's point additions.
 
 The field arithmetic is checked without its displacements, as the
 templates of its operations (`FieldTmpl`), each analysed once. -/
+
+@[expose] public section
+
 namespace VG.Proof.P384.X86_64
 open VG VG.X86_64 VG.Impl.Weierstrass.X86_64 VG.Impl.P384.X86_64
 open VG.Proof.Weierstrass.X86_64

@@ -1,7 +1,15 @@
-import VerifiedGarbage.Proof.P256.EcdhJac.BuildState
-import VerifiedGarbage.Proof.P256.EcdhTable.Transfer
+module
+
+public import VerifiedGarbage.Proof.P256.EcdhJac.BuildState
+public import VerifiedGarbage.Proof.P256.EcdhTable.Transfer
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## `BuildStart` -/
+
+@[expose] public section
 
 section
 

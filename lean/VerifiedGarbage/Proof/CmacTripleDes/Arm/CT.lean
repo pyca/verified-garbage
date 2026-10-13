@@ -1,7 +1,17 @@
-import VerifiedGarbage.Proof.CmacTripleDes.Arm.Lit
-import VerifiedGarbage.Proof.CmacTripleDes.Arm.Init
-import VerifiedGarbage.Proof.CmacTripleDes.Arm.Finalize
-import VerifiedGarbage.Proof.Framework.Arm.Taint
+module
+
+public import VerifiedGarbage.Proof.CmacTripleDes.Arm.Lit
+meta import VerifiedGarbage.Proof.CmacTripleDes.Arm.Lit
+public import VerifiedGarbage.Proof.CmacTripleDes.Arm.Init
+meta import VerifiedGarbage.Proof.CmacTripleDes.Arm.Init
+public import VerifiedGarbage.Proof.CmacTripleDes.Arm.Finalize
+meta import VerifiedGarbage.Proof.CmacTripleDes.Arm.Finalize
+public import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # TDEA-CMAC on ARMv7: constant time
@@ -15,6 +25,8 @@ loaded from the stack argument in the others), so the words stored there
 through `r10` are public, and stores through other pointers come before
 the pointers are stored back.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.CmacTripleDes.Arm
 

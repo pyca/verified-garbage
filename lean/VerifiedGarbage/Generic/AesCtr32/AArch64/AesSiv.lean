@@ -1,5 +1,7 @@
-import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.AesSiv.AArch64.Frame
+module
+
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.AesSiv.AArch64.Frame
 
 /-!
 # AES-SIV (RFC 5297) key setup on AArch64
@@ -17,6 +19,8 @@ suffix (e.g. `vg_aes_siv_init_aes`), and needs its CPU features.
 (`Proof/AesSiv/AArch64/Frame.lean`): its `stack` is that frame. Its calls
 (`bl`) keep the return address in `x30`, which it saves in the working space.
 -/
+
+@[expose] public section
 
 namespace VG.Generic.AesCtr32.AArch64.AesSiv
 

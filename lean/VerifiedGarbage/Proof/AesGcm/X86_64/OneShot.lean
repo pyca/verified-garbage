@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.StreamVerify
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamVerify
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on x86-64: what `seal` and `open` share
@@ -10,6 +16,8 @@ padded (`oneAad_ok`); `oneCrypt` runs counter mode over the data from the
 first counter block (`oneCrypt_ok`); and `oneTag o` absorbs the ciphertext,
 padded, and writes the tag to `W + o` (`oneTag_ok`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

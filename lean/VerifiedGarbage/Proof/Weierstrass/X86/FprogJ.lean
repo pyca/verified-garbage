@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Weierstrass.X86.Rcb3
-import VerifiedGarbage.Proof.Weierstrass.JacMadd
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86.Rcb3
+public import VerifiedGarbage.Proof.Weierstrass.JacMadd
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The mixed Jacobian addition's code on x86 (32-bit)
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.Weierstrass.JacMadd
 `maddJ_ok`: the code of `maddJ` computes `maddJF` on the slots' values,
 using the generic numbered-formula proof shared with complete additions.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.X86
 

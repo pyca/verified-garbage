@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.X448.Limbs
+module
+
+public import VerifiedGarbage.Proof.X448.Limbs
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448: nonnegative limb subtraction
@@ -6,6 +12,8 @@ import VerifiedGarbage.Proof.X448.Limbs
 Adding twice the field prime permits every limb subtraction to be performed
 without borrowing.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448
 

@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesGcm.X86.Gather.Copy
-import VerifiedGarbage.Proof.Gcm.SealGather
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86.Gather.Copy
+public import VerifiedGarbage.Proof.Gcm.SealGather
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM one-shot encryption out of place, from a list of slices, x86: gathering the slices
@@ -14,6 +20,8 @@ what they were on entry. Descriptor `i` is at `Src + 8i`: the slice's address
 (`sb`), then its length (`sl`). A function gathering the slices runs in a
 frame of stack of its own (`WP.alloc`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

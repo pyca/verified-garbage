@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Blake2.X86.CompressS.Body
-import VerifiedGarbage.Proof.Framework.X86.Taint
-import VerifiedGarbage.TCB.X86.Target
+module
+
+public import VerifiedGarbage.Proof.Blake2.X86.CompressS.Body
+public import VerifiedGarbage.Proof.Framework.X86.Taint
+public import VerifiedGarbage.TCB.X86.Target
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # BLAKE2s on x86 (32-bit): the compression function
@@ -9,6 +15,8 @@ import VerifiedGarbage.TCB.X86.Target
 (`body_ok`) and the epilogue meet `compressX86 Spec.Blake2.s`; `τ₀`, `agree₀`:
 the start of its taint analysis.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Blake2.X86.CompressS
 

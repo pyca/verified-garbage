@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.MlDsa.Arm.Sample.RejNtt
-import VerifiedGarbage.Proof.Framework.Arm.Contract
-import VerifiedGarbage.Spec.MlDsa.Poly
+module
+
+public import VerifiedGarbage.Proof.MlDsa.Arm.Sample.RejNtt
+meta import VerifiedGarbage.Proof.MlDsa.Arm.Sample.RejNtt
+public import VerifiedGarbage.Proof.Framework.Arm.Contract
+meta import VerifiedGarbage.Proof.Framework.Arm.Contract
+public import VerifiedGarbage.Spec.MlDsa.Poly
+meta import VerifiedGarbage.Spec.MlDsa.Poly
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on 32-bit ARM: `vg_mldsa_rej_ntt_poly`, constant time but for the seed, and `Verified`
@@ -13,6 +22,8 @@ iteration by iteration (`body_ct`): both are at the same iteration with the
 same coefficients sampled and the same bytes to read, so each branch goes the
 same way and each store goes to the same address.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Arm.Sample.RejNtt
 

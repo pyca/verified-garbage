@@ -1,7 +1,16 @@
-import VerifiedGarbage.Proof.Mont.Words32
-import VerifiedGarbage.Impl.Mont.X86.Sparse
+module
+
+public import VerifiedGarbage.Proof.Mont.Words32
+public import VerifiedGarbage.Impl.Mont.X86.Sparse
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # Bounds and accumulated multiples for full-product P-256 REDC -/
+
+@[expose] public section
+
 namespace VG.Proof.Weierstrass.X86.Mont
 open VG VG.Proof.Mont VG.Impl.Mont.X86
 

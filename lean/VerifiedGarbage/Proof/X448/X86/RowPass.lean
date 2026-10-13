@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.X448.X86.Carry
+module
+
+public import VerifiedGarbage.Proof.X448.X86.Carry
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 on x86 (32-bit): multiplication-row carry propagation
@@ -6,6 +12,8 @@ import VerifiedGarbage.Proof.X448.X86.Carry
 A pass stores one digit at a time and preserves the remaining coefficients for
 the next step.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448.X86
 

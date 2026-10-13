@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.MlKem.X86.DecapsPre
-import VerifiedGarbage.Proof.MlKem.X86.CheckEkBody
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86.DecapsPre
+meta import VerifiedGarbage.Proof.MlKem.X86.DecapsPre
+public import VerifiedGarbage.Proof.MlKem.X86.CheckEkBody
+meta import VerifiedGarbage.Proof.MlKem.X86.CheckEkBody
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86 (32-bit): the implicit rejection in decapsulation
@@ -11,6 +19,8 @@ otherwise (`sub`, `sbb`), which is all ones exactly when `ct = c'`
 byte by byte into `key` (`sel_piece`): `K'` if the mask is all ones, and `K̄`
 if it is zero.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.X86.Decaps
 

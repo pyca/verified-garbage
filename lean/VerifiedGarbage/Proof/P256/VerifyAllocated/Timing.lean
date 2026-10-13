@@ -1,10 +1,25 @@
-import VerifiedGarbage.Proof.P256.VerifyAllocated.Double
-import VerifiedGarbage.Proof.P256.VerifyAllocated.MixedHead
-import VerifiedGarbage.Proof.P256.VerifyAllocated.MixedTail
-import VerifiedGarbage.Proof.P256.VerifyAllocated.JacTail
-import VerifiedGarbage.Proof.P256.VerifyAllocated.CachedHead
-import VerifiedGarbage.Proof.Framework.AArch64.Taint
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAddTiming
+module
+
+public import VerifiedGarbage.Proof.P256.VerifyAllocated.Double
+meta import VerifiedGarbage.Proof.P256.VerifyAllocated.Double
+public import VerifiedGarbage.Proof.P256.VerifyAllocated.MixedHead
+meta import VerifiedGarbage.Proof.P256.VerifyAllocated.MixedHead
+public import VerifiedGarbage.Proof.P256.VerifyAllocated.MixedTail
+meta import VerifiedGarbage.Proof.P256.VerifyAllocated.MixedTail
+public import VerifiedGarbage.Proof.P256.VerifyAllocated.JacTail
+meta import VerifiedGarbage.Proof.P256.VerifyAllocated.JacTail
+public import VerifiedGarbage.Proof.P256.VerifyAllocated.CachedHead
+meta import VerifiedGarbage.Proof.P256.VerifyAllocated.CachedHead
+public import VerifiedGarbage.Proof.Framework.AArch64.Taint
+meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAddTiming
+meta import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAddTiming
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.P256.VerifyAllocated
 open VG VG.AArch64 VG.Proof.Weierstrass.AArch64

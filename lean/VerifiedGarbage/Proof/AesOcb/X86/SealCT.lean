@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.AesOcb.X86.BodyCT
+module
+
+public import VerifiedGarbage.Proof.AesOcb.X86.BodyCT
+meta import VerifiedGarbage.Proof.AesOcb.X86.BodyCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-OCB on x86: `vg_aes_ocb_seal` and `vg_aes_ocb_open` in constant time
@@ -9,6 +16,8 @@ then the copies of the tag, the comparison and the mask, which address `W`,
 the tag and the data, their addresses and lengths loaded from their slots
 (`seal_ct`, `open_ct`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.Framework.X86.Lit
-import VerifiedGarbage.Impl.Blake2.X86.CompressB
+module
+
+public import VerifiedGarbage.Proof.Framework.X86.Lit
+meta import VerifiedGarbage.Proof.Framework.X86.Lit
+public import VerifiedGarbage.Impl.Blake2.X86.CompressB
+meta import VerifiedGarbage.Impl.Blake2.X86.CompressB
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # BLAKE2b on x86 (32-bit): the code as literals
@@ -9,6 +17,8 @@ literal (`materialize_code`) spares the kernel building the instructions in
 every check that evaluates the code (constant time, `spSafe`), and the
 streaming functions call it.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Blake2.X86.CompressB
 

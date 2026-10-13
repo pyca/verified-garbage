@@ -1,7 +1,11 @@
-import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Inst
+module
+
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Inst
 
 /-! # ML-DSA (FIPS 204) key generation on 32-bit ARM -/
+
+@[expose] public section
 
 namespace VG.Artifacts.MlDsaKeyGen.Arm
 

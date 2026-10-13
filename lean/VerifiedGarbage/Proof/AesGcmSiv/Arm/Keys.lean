@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.AesGcmSiv.Arm.Derive
-import VerifiedGarbage.Proof.GcmSiv.Words32
-import VerifiedGarbage.Proof.Gcm.Arm.Ghash
+module
+
+public import VerifiedGarbage.Proof.AesGcmSiv.Arm.Derive
+public import VerifiedGarbage.Proof.GcmSiv.Words32
+public import VerifiedGarbage.Proof.Gcm.Arm.Ghash
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM-SIV on ARMv7: the encryption key's schedule and GHASH's key
@@ -11,6 +17,8 @@ of the encryption key at `W + 192` (`expand_ok`), and `hkey` GHASH's key,
 GHASH's order at `W + 64`, and zeroes its accumulator (`hkey_ok`).
 `keys_ok`: the three together.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

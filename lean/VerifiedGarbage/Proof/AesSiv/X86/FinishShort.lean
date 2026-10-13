@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesSiv.X86.S2v
-import VerifiedGarbage.Proof.AesSiv.Long
+module
+
+public import VerifiedGarbage.Proof.AesSiv.X86.S2v
+public import VerifiedGarbage.Proof.AesSiv.Long
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-SIV on x86: finishing S2V with a short string
@@ -11,6 +17,8 @@ appended; `D` is copied to `W + 160` and doubled there (`dblAt_wp`), and
 XORed into the tail. Its CMAC, one complete block, from a zero state
 (`shortMac_ok`), is S2V's result (`Siv.s2vFinish_short`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

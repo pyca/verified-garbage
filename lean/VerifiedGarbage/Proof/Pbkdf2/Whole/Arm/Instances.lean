@@ -1,7 +1,17 @@
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.CT
-import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Instances
-import VerifiedGarbage.Proof.Framework.TaintBatch
+module
+
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.CT
+meta import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.CT
+public import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Instances
+meta import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Instances
+public import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # PBKDF2-HMAC on 32-bit ARM, the whole derivation: the instances
@@ -12,6 +22,8 @@ their own registration files (with 16 bytes of stack, the most their frames
 use: `armStack`), the taint checks are evaluated by the kernel, and a state
 satisfies the shared contract (`pbkSat`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Pbkdf2.Whole.Arm
 

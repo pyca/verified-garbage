@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.X448.X86.Ops
-import VerifiedGarbage.Proof.Framework.X86.RelCT
-import VerifiedGarbage.Proof.Framework.X86.TaintErase
+module
+
+public import VerifiedGarbage.Proof.X448.X86.Ops
+public import VerifiedGarbage.Proof.Framework.X86.RelCT
+public import VerifiedGarbage.Proof.Framework.X86.TaintErase
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 on x86 (32-bit): constant time of the field-function calls
@@ -18,6 +24,8 @@ apart from it and bounded slots (`FInv`) in each, that agree on `esp`: a
 field operation (`fieldOp_rel`), and a list of them (`ops_rel`), leaks the
 same and keeps `RF`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448.X86
 

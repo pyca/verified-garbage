@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.CTD
-import VerifiedGarbage.Proof.Rsa.X86_64.CvCTMain
+module
+
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.CTD
+meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.CTD
+public import VerifiedGarbage.Proof.Rsa.X86_64.CvCTMain
+meta import VerifiedGarbage.Proof.Rsa.X86_64.CvCTMain
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # An RSA key from its primes on x86-64: constant time, the tail
@@ -10,6 +18,8 @@ the exit. The stores and the zeros write the outputs, among them `p` and
 `q`, so from there on the runs are related by what the header and the
 working space say (`EG`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaKeyGen.X86_64.Key
 

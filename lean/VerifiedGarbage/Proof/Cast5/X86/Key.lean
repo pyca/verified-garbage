@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Cast5.X86.KeyHalf
-import VerifiedGarbage.Proof.Cast5.X86.Ecb
+module
+
+public import VerifiedGarbage.Proof.Cast5.X86.KeyHalf
+public import VerifiedGarbage.Proof.Cast5.X86.Ecb
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # CAST5 key expansion on 32-bit x86
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.Cast5.X86.Ecb
 key with zeros into `x` (§2.5), runs both halves of §2.4 and restores the
 registers (`key_correct`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Cast5.X86
 

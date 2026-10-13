@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.P521.Curve
-import VerifiedGarbage.Proof.Weierstrass.Order
-import VerifiedGarbage.Proof.Weierstrass.GroupOrder
+module
+
+public import VerifiedGarbage.Proof.P521.Curve
+public import VerifiedGarbage.Proof.Weierstrass.Order
+public import VerifiedGarbage.Proof.Weierstrass.GroupOrder
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # P-521 has prime order
@@ -13,6 +19,8 @@ has `n` elements, and every point but `O` has order `n`
 coordinates needs. Only the variant files `Variants/P521/<Target>/Law.lean`
 import this algebra.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.P521
 

@@ -1,4 +1,8 @@
-import VerifiedGarbage.Proof.Ct.AArch64
+module
+
+public import VerifiedGarbage.Proof.Ct.AArch64
+
+@[expose] public section
 
 namespace VG.Artifacts.Ct.AArch64
 open VG.AArch64

@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Weierstrass.X86_64.P384Literals
-import VerifiedGarbage.Impl.Ecdsa.Verify.P384.X86_64
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.P384Literals
+public import VerifiedGarbage.Impl.Ecdsa.Verify.P384.X86_64
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDSA verification over P-384 on x86-64: the shared code's literals
@@ -11,6 +17,8 @@ unfolding, cheaply) where verification's code writes them, so that its
 literals and checks read them rather than having the kernel build the code
 again.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Verify.X86_64.P384
 open VG VG.X86_64 VG.Impl.Ecdsa.X86_64 VG.Impl.P384.X86_64

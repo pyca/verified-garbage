@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Idea.Arm.Round
+module
+
+public import VerifiedGarbage.Proof.Idea.Arm.Round
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # IDEA on ARMv7: a block
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.Idea.Arm.Round
 `Spec.Idea.cryptBlock` of it under the subkeys at `r0`, writing no register
 but `r4`–`r12`: the interface a mode reuses it through.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Idea.Arm
 

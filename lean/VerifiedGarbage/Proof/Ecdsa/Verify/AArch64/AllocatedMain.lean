@@ -1,8 +1,17 @@
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Main
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedScalars
-import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.Joint
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Main
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedScalars
+public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.Joint
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! The Jacobian verifier satisfies the existing complete verification postcondition. -/
+
+@[expose] public section
+
 namespace VG.Proof.Ecdsa.Verify.AArch64
 
 open VG VG.AArch64 VG.Impl.Mont.AArch64 VG.Impl.Mont VG.Impl.Weierstrass.AArch64 VG.Impl.Weierstrass

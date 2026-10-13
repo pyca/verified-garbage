@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesOcb.X86_64.Whole
-import VerifiedGarbage.Proof.AesOcb.X86_64.RestTag
+module
+
+public import VerifiedGarbage.Proof.AesOcb.X86_64.Whole
+public import VerifiedGarbage.Proof.AesOcb.X86_64.RestTag
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-OCB on x86-64: the data (`body`)
@@ -8,6 +14,8 @@ Untrusted: everything here is checked by Lean. `body` runs `whole` on the
 `m = len / 16` whole blocks if there are any (`wholeIte_ok`), then `rest` on
 the `len mod 16` bytes after them if there are any (`restIte_ok`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

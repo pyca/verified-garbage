@@ -1,8 +1,21 @@
-import VerifiedGarbage.Proof.Argon2.X86.Derive.FillCT3
-import VerifiedGarbage.Proof.Argon2.X86.Derive.ReduceCT
-import VerifiedGarbage.Proof.Argon2.X86.Derive.InitialCT
-import VerifiedGarbage.Proof.Argon2.References
-import VerifiedGarbage.Proof.Argon2.X86.Derive.FillCT1
+module
+
+public import VerifiedGarbage.Proof.Argon2.X86.Derive.FillCT3
+meta import VerifiedGarbage.Proof.Argon2.X86.Derive.FillCT3
+public import VerifiedGarbage.Proof.Argon2.X86.Derive.ReduceCT
+meta import VerifiedGarbage.Proof.Argon2.X86.Derive.ReduceCT
+public import VerifiedGarbage.Proof.Argon2.X86.Derive.InitialCT
+meta import VerifiedGarbage.Proof.Argon2.X86.Derive.InitialCT
+public import VerifiedGarbage.Proof.Argon2.References
+meta import VerifiedGarbage.Proof.Argon2.References
+public import VerifiedGarbage.Proof.Argon2.X86.Derive.FillCT1
+meta import VerifiedGarbage.Proof.Argon2.X86.Derive.FillCT1
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 section
 

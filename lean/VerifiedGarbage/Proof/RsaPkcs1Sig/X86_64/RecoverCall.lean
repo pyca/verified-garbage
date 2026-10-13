@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.RecoverFrame
-import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCall
+module
+
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.RecoverFrame
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCall
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_pkcs1_recover` on x86-64: the call of `vg_rsa_public_checked`
@@ -8,6 +14,8 @@ As for `vg_rsa_pkcs1_verify` (`VerifyCall.lean`): the arguments kept in the
 frame's slots and those of the call (`slotStores_ok`, `callArgs_ok`), and the
 call (`pub_call`), writing `s^e mod n` to `EM₁`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPkcs1Sig.X86_64.Rec
 

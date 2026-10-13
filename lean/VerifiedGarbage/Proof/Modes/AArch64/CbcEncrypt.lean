@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Modes.AArch64.CbcEncLoop
-import VerifiedGarbage.Proof.Modes.AArch64.Ctr
+module
+
+public import VerifiedGarbage.Proof.Modes.AArch64.CbcEncLoop
+public import VerifiedGarbage.Proof.Modes.AArch64.Ctr
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # CBC encryption on AArch64, for any core: the whole function
@@ -11,6 +17,8 @@ cipher is the forward cipher `CIPH_K`, and its arguments in the registers
 the callee-saved registers `x19`–`x28`, and writes nothing but the scratch
 buffer and the data.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Modes.AArch64
 

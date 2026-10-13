@@ -1,17 +1,23 @@
-import VerifiedGarbage.Proof.MlDsa.Arm.Sign.SignCT
-import VerifiedGarbage.Proof.MlDsa.Arm.Arith.AddSub
-import VerifiedGarbage.Proof.MlDsa.Arm.Arith.Mul
-import VerifiedGarbage.Proof.MlDsa.Arm.Arith.NttInv
-import VerifiedGarbage.Proof.MlDsa.Arm.Round.Bits
-import VerifiedGarbage.Proof.MlDsa.Arm.Round.NormLt
-import VerifiedGarbage.Proof.MlDsa.Arm.Round.MakeHint
-import VerifiedGarbage.Proof.MlDsa.Arm.Pack.SimpleBitPack
-import VerifiedGarbage.Proof.MlDsa.Arm.Pack.BitPack
-import VerifiedGarbage.Proof.MlDsa.Arm.Pack.Unpack
-import VerifiedGarbage.Proof.MlDsa.Arm.Pack.HintPackCT
-import VerifiedGarbage.Proof.MlDsa.Arm.Sample.RejNttCT
-import VerifiedGarbage.Proof.MlDsa.Arm.Sample.ExpandMask
-import VerifiedGarbage.Proof.MlDsa.Arm.Sample.BallCT
+module
+
+public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.SignCT
+public import VerifiedGarbage.Proof.MlDsa.Arm.Arith.AddSub
+public import VerifiedGarbage.Proof.MlDsa.Arm.Arith.Mul
+public import VerifiedGarbage.Proof.MlDsa.Arm.Arith.NttInv
+public import VerifiedGarbage.Proof.MlDsa.Arm.Round.Bits
+public import VerifiedGarbage.Proof.MlDsa.Arm.Round.NormLt
+public import VerifiedGarbage.Proof.MlDsa.Arm.Round.MakeHint
+public import VerifiedGarbage.Proof.MlDsa.Arm.Pack.SimpleBitPack
+public import VerifiedGarbage.Proof.MlDsa.Arm.Pack.BitPack
+public import VerifiedGarbage.Proof.MlDsa.Arm.Pack.Unpack
+public import VerifiedGarbage.Proof.MlDsa.Arm.Pack.HintPackCT
+public import VerifiedGarbage.Proof.MlDsa.Arm.Sample.RejNttCT
+public import VerifiedGarbage.Proof.MlDsa.Arm.Sample.ExpandMask
+public import VerifiedGarbage.Proof.MlDsa.Arm.Sample.BallCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA signing on ARMv7: the primitives it calls
@@ -25,6 +31,8 @@ result signing branches on, that it depends only on their public data and that
 they succeed only if the algorithm finishes within `maxBounds` (from what
 their own proofs say they return).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Arm.Sign
 

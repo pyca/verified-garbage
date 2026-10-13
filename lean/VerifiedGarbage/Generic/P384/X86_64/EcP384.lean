@@ -1,12 +1,14 @@
-import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.Weierstrass.X86_64.InvInterface
-import VerifiedGarbage.Proof.Weierstrass.Law
-import VerifiedGarbage.Proof.P384.Comb7
-import VerifiedGarbage.Impl.EcKey.P384.X86_64
-import VerifiedGarbage.Proof.EcKey.X86_64.P384.Verified
-import VerifiedGarbage.Proof.EcKey.X86_64.P384.Lit
-import VerifiedGarbage.Proof.EcKey.X86_64.P384.VerifiedAdx
-import VerifiedGarbage.Proof.EcKey.X86_64.P384.LitAdx
+module
+
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvInterface
+public import VerifiedGarbage.Proof.Weierstrass.Law
+public import VerifiedGarbage.Proof.P384.Comb7
+public import VerifiedGarbage.Impl.EcKey.P384.X86_64
+public import VerifiedGarbage.Proof.EcKey.X86_64.P384.Verified
+public import VerifiedGarbage.Proof.EcKey.X86_64.P384.Lit
+public import VerifiedGarbage.Proof.EcKey.X86_64.P384.VerifiedAdx
+public import VerifiedGarbage.Proof.EcKey.X86_64.P384.LitAdx
 
 /-!
 # P-384 public keys (FIPS 186-5 §A.2) on x86-64
@@ -15,6 +17,8 @@ A generic file (see `TCB/Emit.lean`) over P-384's group law and
 inversions `h`, the variant `Variants/P384/X86_64/Law.lean`, for each
 multiplication: the baseline's, and BMI2's and ADX's (`_adx`).
 -/
+
+@[expose] public section
 
 namespace VG.Generic.P384.X86_64.EcP384
 

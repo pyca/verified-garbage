@@ -1,16 +1,24 @@
-import VerifiedGarbage.Spec.ChaCha20Poly1305
-import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Proof.ChaCha20Poly1305.Spec
-import VerifiedGarbage.Proof.ChaCha20.Arm.Xor
-import VerifiedGarbage.Proof.Framework.Arm.Frame
-import VerifiedGarbage.Impl.ChaCha20Poly1305.Arm
-import VerifiedGarbage.Proof.Framework.PowLit
-import VerifiedGarbage.Proof.Poly1305.Arm.Init
-import VerifiedGarbage.Proof.Poly1305.Arm.Blocks
-import VerifiedGarbage.Proof.Poly1305.Arm.Finalize
-import VerifiedGarbage.Proof.ChaCha20Poly1305.Arm.Lit
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.Omega
+module
+
+public import VerifiedGarbage.Spec.ChaCha20Poly1305
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.Spec
+public import VerifiedGarbage.Proof.ChaCha20.Arm.Xor
+public import VerifiedGarbage.Proof.Framework.Arm.Frame
+public import VerifiedGarbage.Impl.ChaCha20Poly1305.Arm
+public import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.Proof.Poly1305.Arm.Init
+public import VerifiedGarbage.Proof.Poly1305.Arm.Blocks
+public import VerifiedGarbage.Proof.Poly1305.Arm.Finalize
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.Arm.Lit
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.Omega
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 section
 

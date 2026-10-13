@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.XorSplit
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512Tail.SymSel
+module
+
+public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.XorSplit
+public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512Tail.SymSel
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ChaCha20 keystream XOR with the data's first bytes from another buffer on x86-64 with AVX-512: the last 513 to 1023 bytes
@@ -10,6 +16,8 @@ the input loaded by `selXor`: the first eight by `finishPSel`, the next as
 far as they fit by `condSel`, and the block the data ends in, if it ends
 within one, from `dst`, where the input's bytes from `C` on are.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.ChaCha20.X86_64.Avx512Split
 

@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesGcm.Arm.CryptOk
+module
+
+public import VerifiedGarbage.Proof.AesGcm.Arm.CryptOk
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on ARMv7: the tag (`tag o`)
@@ -8,6 +14,8 @@ block of `r5:r4` and `r7:r6` bytes, copies the accumulator `S` to `W + o`
 and XORs `CIPH_K(J₀)` into it with `vg_aes_ctr32`, from the counter block
 `J₀` at the state (`tag_ok`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

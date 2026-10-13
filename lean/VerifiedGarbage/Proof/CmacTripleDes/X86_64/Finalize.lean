@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.CmacTripleDes.X86_64.Update
-import VerifiedGarbage.Proof.Framework.WriteBytes
+module
+
+public import VerifiedGarbage.Proof.CmacTripleDes.X86_64.Update
+public import VerifiedGarbage.Proof.Framework.WriteBytes
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # TDEA-CMAC on x86-64: `vg_cmac_triple_des_finalize`, the last block
@@ -8,6 +14,8 @@ The steps that form the last block `Mₙ` (§6.2 step 4) in `rax`, as a
 little-endian word: `Mₙ* ⊕ K1` for a complete last block, else `Mₙ*` copied a
 byte at a time onto the zeroed slot 12, `0x80` after it, XORed with `K2`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.CmacTripleDes.X86_64
 

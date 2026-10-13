@@ -1,5 +1,7 @@
-import VerifiedGarbage.TCB.Emit
-import VerifiedGarbage.Proof.RsaOaep.X86_64.Sp
+module
+
+public import VerifiedGarbage.TCB.Emit
+public import VerifiedGarbage.Proof.RsaOaep.X86_64.Sp
 
 /-!
 # RSAES-OAEP encryption on x86-64
@@ -14,6 +16,8 @@ named by `Emit.qualifiedName` (`Inst.parts`), and needs both's CPU features.
 Its stack is its frame, a return address and what the hash functions'
 calls and `vg_rsa_public_checked` use.
 -/
+
+@[expose] public section
 
 namespace VG.Generic.MdHash.MdHash.X86_64.RsaOaep
 

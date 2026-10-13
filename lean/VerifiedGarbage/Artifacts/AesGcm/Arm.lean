@@ -1,6 +1,8 @@
-import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Proof.AesGcm.Arm.Frame
-import VerifiedGarbage.Proof.AesGcm.Arm.Gather.Verified
+module
+
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.Proof.AesGcm.Arm.Frame
+public import VerifiedGarbage.Proof.AesGcm.Arm.Gather.Verified
 
 /-!
 # AES-GCM (NIST SP 800-38D) on ARMv7
@@ -23,6 +25,8 @@ for `stream_init` and `stream_aad`, 2592 for the others,
 calls `vg_aes_gcm_seal` on them there, from a frame of 40 bytes
 (`Proof/AesGcm/Arm/Gather/`).
 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.AesGcm.Arm
 

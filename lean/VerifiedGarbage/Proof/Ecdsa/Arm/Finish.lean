@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Ecdsa.Arm.Scalar
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Arm.Scalar
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDSA on 32-bit ARM: the result
@@ -8,6 +14,8 @@ flag's mask, returns the flag's low bit and restores `r4`–`r11` and `lr`
 (`finish_ok`). The stores are outside the working space, so it
 keeps its numbers and the saved registers (`Outside.unch_far`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Arm
 

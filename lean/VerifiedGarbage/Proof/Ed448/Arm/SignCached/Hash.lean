@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Ed448.Arm.SignCached.Layout
-import VerifiedGarbage.Proof.Ed448.Arm.Shake.Header
-import VerifiedGarbage.Proof.Ed448.Arm.PublicKey.Base
+module
+
+public import VerifiedGarbage.Proof.Ed448.Arm.SignCached.Layout
+public import VerifiedGarbage.Proof.Ed448.Arm.Shake.Header
+public import VerifiedGarbage.Proof.Ed448.Arm.PublicKey.Base
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 signing with a cached public key on ARMv7: the hashes
@@ -12,6 +18,8 @@ place. `nonce_step` and `chal_step`: `SHAKE256(dom4(0, C) ‖ prefix ‖ M)` and
 first half of `out`. Each states what it may write (`W ex`: the outgoing
 stack arguments, the regions `ex`, the state and the working space).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.Arm.SignCached
 

@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Blowfish.Arm.KeyP
-import VerifiedGarbage.Proof.Blowfish.KeySched
-import VerifiedGarbage.Proof.Rc4.Scan32
+module
+
+public import VerifiedGarbage.Proof.Blowfish.Arm.KeyP
+public import VerifiedGarbage.Proof.Blowfish.KeySched
+public import VerifiedGarbage.Proof.Rc4.Scan32
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Blowfish on ARMv7: key expansion's 521 encryptions
@@ -11,6 +17,8 @@ far, and its output replaces the next two entries: the P-array's, as words
 pointer to the next entries and the encryptions left are in the working
 space, at `lr + 36` and `lr + 40`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Blowfish.Arm
 

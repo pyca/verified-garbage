@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Sm4.Rounds
-import VerifiedGarbage.Proof.Framework.Mem
-import VerifiedGarbage.Spec.Sm4.Ctr
+module
+
+public import VerifiedGarbage.Proof.Sm4.Rounds
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Spec.Sm4.Ctr
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # SM4's cipher for the modes, on any target
@@ -11,6 +17,8 @@ uses of `Spec.Sm4.cipher`: the schedule is read from memory
 the 32 rounds (`quads`) with the schedule's round keys in encryption order
 (`cipher_bytes`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sm4
 

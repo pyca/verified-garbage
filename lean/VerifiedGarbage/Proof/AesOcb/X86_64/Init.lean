@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesOcb.X86_64.Seal
+module
+
+public import VerifiedGarbage.Proof.AesOcb.X86_64.Seal
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-OCB on x86-64: `vg_aes_ocb_init`
@@ -8,6 +14,8 @@ Untrusted: everything here is checked by Lean. `init` saves `rbx`, `rbp` and
 a zero block at byte 240 of it in place, for `L_*`, and restores the
 registers (`init_wp`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

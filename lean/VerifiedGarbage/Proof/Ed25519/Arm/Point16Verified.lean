@@ -1,7 +1,17 @@
-import VerifiedGarbage.Proof.Ed25519.Arm.SpecConv
-import VerifiedGarbage.Proof.Ed25519.Arm.FnLit
-import VerifiedGarbage.Proof.Framework.Arm.Taint
-import VerifiedGarbage.Proof.Framework.Arm.Contract
+module
+
+public import VerifiedGarbage.Proof.Ed25519.Arm.SpecConv
+meta import VerifiedGarbage.Proof.Ed25519.Arm.SpecConv
+public import VerifiedGarbage.Proof.Ed25519.Arm.FnLit
+meta import VerifiedGarbage.Proof.Ed25519.Arm.FnLit
+public import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+public import VerifiedGarbage.Proof.Framework.Arm.Contract
+meta import VerifiedGarbage.Proof.Framework.Arm.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_ed25519_r16_point_add` and `vg_ed25519_r16_point_double` on ARMv7, verified
@@ -15,6 +25,8 @@ is what `Keeps` says (`keeps_of_frame`, from the slots it writes, `pointW`).
 Constant time by taint tracking: only the pointer, in `r0`, is public, and
 every address is `ws` plus a constant or the product's row counter.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed25519.Arm.Point16
 

@@ -1,6 +1,17 @@
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedScalars
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacPrefix
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacChecks
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedScalars
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedScalars
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacPrefix
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacPrefix
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacChecks
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacChecks
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Verify.AArch64
 

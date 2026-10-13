@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Ed448.Scalar
+module
+
+public import VerifiedGarbage.Proof.Ed448.Scalar
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448: the signing pipeline
@@ -8,6 +14,8 @@ by `scalarReduce`, `R` by `scalarBase` and `S` by `scalarMulAdd` of any
 57-byte encoding of the pruned scalar, make up `Spec.Ed448.sign`
 (`sign_pipeline`), given the public key of the private key.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448
 

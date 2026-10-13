@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Ed448.Arm.ScalarLoop
-import VerifiedGarbage.Proof.Framework.WriteBytes
+module
+
+public import VerifiedGarbage.Proof.Ed448.Arm.ScalarLoop
+public import VerifiedGarbage.Proof.Framework.WriteBytes
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 scalar arithmetic on ARMv7: entry and exit
@@ -9,6 +15,8 @@ restored (`restore_ok`), the remainders the input loops start from
 (`reduce114_ok`, `reduce57_ok`), and the result: the remainder's limbs as 56
 bytes and a zero byte (`pack_ok`), which are its encoding (`encode_57`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.Arm
 

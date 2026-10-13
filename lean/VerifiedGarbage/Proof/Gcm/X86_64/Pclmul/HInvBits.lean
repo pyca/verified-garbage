@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Exec
-import Mathlib.Tactic.SplitIfs
+module
+
+public import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Exec
+public import Mathlib.Tactic.SplitIfs
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # GHASH with PCLMULQDQ: the bits of `H · x⁻¹`
@@ -9,6 +15,8 @@ What `Impl.Gcm.X86_64.Pclmul.hInv` computes, bit by bit, without the field
 registers need not import its algebra: a shift left by one bit (`shl1`) and
 `x⁻¹` if the bit shifted out was set (`mask_eq`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Gcm.X86_64.Pclmul
 

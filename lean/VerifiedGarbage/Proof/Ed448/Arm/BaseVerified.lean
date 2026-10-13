@@ -1,8 +1,19 @@
-import VerifiedGarbage.Proof.Ed448.Arm.BaseMain
-import VerifiedGarbage.Proof.Ed448.Arm.BaseLit
-import VerifiedGarbage.Proof.Framework.Arm.Taint
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Spec.Ed448.Contract
+module
+
+public import VerifiedGarbage.Proof.Ed448.Arm.BaseMain
+meta import VerifiedGarbage.Proof.Ed448.Arm.BaseMain
+public import VerifiedGarbage.Proof.Ed448.Arm.BaseLit
+meta import VerifiedGarbage.Proof.Ed448.Arm.BaseLit
+public import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.Ed448.Contract
+meta import VerifiedGarbage.Spec.Ed448.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 base-point multiplication on ARMv7: `Verified`
@@ -13,6 +24,8 @@ and the shared contract of `Spec/`, given that the ladder the code computes
 encodes as `[k]B` (`Proof.Ed448.BaseLadderOk`, proven with the group law in
 `Proof/Ed448/Facts.lean`, which only the registration file imports).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.Arm
 

@@ -1,7 +1,9 @@
-import VerifiedGarbage.TCB.X86.Target
-import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Md5
-import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Instances
-import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Frame
+module
+
+public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Md5
+public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Instances
+public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Frame
 
 /-!
 # PBKDF2-HMAC-MD5 (RFC 8018) on x86: the iteration and the whole derivation
@@ -21,6 +23,8 @@ that of the shared contracts: 48 bytes for the iteration, and 76 for
 it calls, and their return address, then its frame.
 -/
 
+@[expose] public section
+
 namespace VG.Artifacts.Pbkdf2Md5.X86
 
 open VG.Proof.Pbkdf2.Stream.X86
@@ -31,7 +35,7 @@ def artifacts : List Artifact := [
     doc := Spec.Hmac.md5I.iterateApi.doc
     code := Proof.Pbkdf2.Md.X86.md5M.iterate
     contract := Spec.Hmac.md5I.iterateContract X86.abi 48
-    ofSig := ⟨_, _, _, by unfold Spec.Hmac.Instance.iterateContract; rfl⟩
+    ofSig := by exact (⟨_, _, _, by unfold Spec.Hmac.Instance.iterateContract; rfl⟩)
     stack := 48
     verified := Proof.Pbkdf2.Md.X86.Instances.md5_iterate
     spSafe := Code.all_of_allInstrs (by lit_decide) },
@@ -41,7 +45,7 @@ def artifacts : List Artifact := [
     code := Impl.StackScratch.X86.withStackScratch (Proof.Pbkdf2.Whole.X86.pbkFrame Spec.Hmac.md5I) 7
       Proof.Pbkdf2.Whole.X86.md5F.pbkdf2
     contract := Spec.Hmac.md5I.pbkdf2Contract X86.abi (76 + Proof.Pbkdf2.Whole.X86.pbkFrame Spec.Hmac.md5I)
-    ofSig := ⟨_, _, _, by unfold Spec.Hmac.Instance.pbkdf2Contract Spec.Pbkdf2.pbkdf2Contract; rfl⟩
+    ofSig := by exact (⟨_, _, _, by unfold Spec.Hmac.Instance.pbkdf2Contract Spec.Pbkdf2.pbkdf2Contract; rfl⟩)
     stack := 76 + Proof.Pbkdf2.Whole.X86.pbkFrame Spec.Hmac.md5I
     verified := Proof.Pbkdf2.Whole.X86.pbkFramed Proof.Pbkdf2.Whole.X86.md5 (by decide) (by lit_decide)
       (by lit_decide) Proof.Pbkdf2.Whole.X86.md5_pbkFrameSat

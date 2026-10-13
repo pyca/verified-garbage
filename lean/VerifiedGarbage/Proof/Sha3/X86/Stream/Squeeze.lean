@@ -1,7 +1,17 @@
-import VerifiedGarbage.Proof.Sha3.X86.Permute
-import VerifiedGarbage.Proof.Framework.X86.Spill
-import VerifiedGarbage.Proof.Sha3.Stream
-import VerifiedGarbage.Proof.Framework.Offset
+module
+
+public import VerifiedGarbage.Proof.Sha3.X86.Permute
+meta import VerifiedGarbage.Proof.Sha3.X86.Permute
+public import VerifiedGarbage.Proof.Framework.X86.Spill
+meta import VerifiedGarbage.Proof.Framework.X86.Spill
+public import VerifiedGarbage.Proof.Sha3.Stream
+meta import VerifiedGarbage.Proof.Sha3.Stream
+public import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Offset
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The SHA-3 sponge on x86 (32-bit): `squeeze`
@@ -10,6 +20,8 @@ The structure of the x86-64 proof (`VG.Proof.Sha3.X86_64.Stream.Squeeze`),
 with `state` in `ebx`, `scratch` in `ebp`, `out` in `esi`, the bytes left in
 `edi`, and `state + pos` and `rate` in the scratch space.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sha3.X86.Stream.Squeeze
 

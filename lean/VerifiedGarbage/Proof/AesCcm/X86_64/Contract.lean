@@ -1,6 +1,12 @@
-import VerifiedGarbage.Spec.Ccm.Contract
-import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+module
+
+public import VerifiedGarbage.Spec.Ccm.Contract
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.Framework.X86_64.Call
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CCM on x86-64: the contracts the proofs are written against
@@ -13,6 +19,8 @@ the shared ones of `Spec/Ccm/Contract.lean`, which imply these
 16 bytes below the stack pointer (`stk16`), which no buffer overlaps, nor
 the return address (`ret`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesCcm
 

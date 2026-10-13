@@ -1,7 +1,16 @@
-import VerifiedGarbage.Proof.Weierstrass.X86.InvLayout
-import VerifiedGarbage.Proof.Weierstrass.X86.InvHalf
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86.InvLayout
+public import VerifiedGarbage.Proof.Weierstrass.X86.InvHalf
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # Applying both matrix rows to the signed divstep values -/
+
+@[expose] public section
+
 namespace VG.Proof.Weierstrass.X86.Inv
 open VG VG.X86 VG.X86.Wp VG.Impl.Mont.X86 VG.Impl.Weierstrass.X86
   VG.Proof.Mont.X86 VG.Proof.Mont VG.Proof.Weierstrass

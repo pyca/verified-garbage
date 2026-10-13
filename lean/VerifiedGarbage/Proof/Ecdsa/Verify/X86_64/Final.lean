@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Points
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Points
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDSA verification on x86-64: `x` and the result
@@ -9,6 +15,8 @@ import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Points
 difference being zero (`x ≡ r` modulo `n`) into the flag, returns its low
 bit and restores the callee-saved registers (`vfinish_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Verify.X86_64
 

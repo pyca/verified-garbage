@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.SetupP
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Loop48
+module
+
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.SetupP
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Loop48
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The AVX-512 loops, with the powers in the key context
@@ -13,6 +19,8 @@ the tables whose last is the setup's powers (`setupP_ok`) and the others
 those `powP48` stores. `encTailP_ok` and `decTailP_ok` are `StitchZ`'s tails
 with these.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Gcm.X86_64.StitchZP
 

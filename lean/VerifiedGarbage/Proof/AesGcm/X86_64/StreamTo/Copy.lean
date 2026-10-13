@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.Loops
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Loops
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM streaming encryption out of place, x86-64: copying bytes
@@ -6,6 +12,8 @@ import VerifiedGarbage.Proof.AesGcm.X86_64.Loops
 Untrusted: everything here is checked by Lean. `copyLoop_ok` for any number
 of bytes below 2⁶⁴ (`copyLoopL_ok`), as the plaintext left may be.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.SpecP
+module
+
+public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.SpecP
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Interleaved counter mode and GHASH out of place: what the loops need and do
@@ -13,6 +19,8 @@ the output (`r10`) and the working space (`r11`).
 (`StitchToOkM`): `SPre`/`EPost` (`Stitch/Spec.lean`), with the plaintext
 read from `r8`, which nothing writes, and the ciphertext written to `r10`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Gcm.X86_64.Stitch
 

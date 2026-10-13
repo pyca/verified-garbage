@@ -1,7 +1,17 @@
-import VerifiedGarbage.Proof.MlKem.Arm.CompressEncode
-import VerifiedGarbage.Proof.MlKem.Encode1024
-import VerifiedGarbage.Impl.MlKem1024.Arm.Poly
-import VerifiedGarbage.Spec.MlKem.Contract1024
+module
+
+public import VerifiedGarbage.Proof.MlKem.Arm.CompressEncode
+meta import VerifiedGarbage.Proof.MlKem.Arm.CompressEncode
+public import VerifiedGarbage.Proof.MlKem.Encode1024
+meta import VerifiedGarbage.Proof.MlKem.Encode1024
+public import VerifiedGarbage.Impl.MlKem1024.Arm.Poly
+meta import VerifiedGarbage.Impl.MlKem1024.Arm.Poly
+public import VerifiedGarbage.Spec.MlKem.Contract1024
+meta import VerifiedGarbage.Spec.MlKem.Contract1024
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM-1024 on 32-bit ARM: `vg_mlkem1024_compress_encode`
@@ -20,6 +30,8 @@ before `j` (`add_bytes_lo`), adds the field shifted by `t` to byte `j`
 (`add_bytes_hi`). After the 8 fields, `acc` is the number of the group of
 `compressEncode5_group` or `compressEncode11_group`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem1024.Arm.CompressEncode
 

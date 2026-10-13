@@ -1,11 +1,20 @@
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Production
-import VerifiedGarbage.Impl.Weierstrass.AArch64.Jacobian
-import VerifiedGarbage.Proof.Weierstrass.JacAdd
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Fprog
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Zero
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowDouble
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Production
+public import VerifiedGarbage.Impl.Weierstrass.AArch64.Jacobian
+public import VerifiedGarbage.Proof.Weierstrass.JacAdd
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Fprog
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Zero
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowDouble
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Jacobian addition field programs, including the header's public branch values. -/
+
+@[expose] public section
+
 namespace VG.Proof.Weierstrass.AArch64
 
 open VG VG.AArch64 VG.Impl.Mont.AArch64 VG.Impl.Mont VG.Impl.Weierstrass.AArch64

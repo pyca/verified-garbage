@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Aes
-import VerifiedGarbage.Proof.Aes.X86_64.VaesZ.Ctr
-import VerifiedGarbage.Impl.Gcm.X86_64.StitchZ
+module
+
+public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Aes
+public import VerifiedGarbage.Proof.Aes.X86_64.VaesZ.Ctr
+public import VerifiedGarbage.Impl.Gcm.X86_64.StitchZ
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Interleaved counter mode and GHASH with AVX-512: a batch of sixteen blocks
@@ -14,6 +20,8 @@ blocks, the rounds nor the XOR (which writes only those sixteen blocks)
 undo; as `Stitch.batch_ok` does with eight blocks in two lanes. The blocks `g i`
 may write `zmm13`, which the next round reloads.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Gcm.X86_64.StitchZ
 

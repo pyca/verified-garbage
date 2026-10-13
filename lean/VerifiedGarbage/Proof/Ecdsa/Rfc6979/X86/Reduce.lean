@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Hmac
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Words32
-import VerifiedGarbage.Proof.Pbkdf2.Whole.Common
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Hmac
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Words32
+public import VerifiedGarbage.Proof.Pbkdf2.Whole.Common
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Deterministic ECDSA on x86 (32-bit): `h = bits2octets(digest)`
@@ -13,6 +19,8 @@ digest's word or the difference's, stored big-endian into `h`
 (`selWord_ok`). As the number is below `2^(32 k) < 2n`, this is it modulo
 `n` (`mod_mathK`, `reduce_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Rfc6979.X86
 

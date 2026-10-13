@@ -1,9 +1,13 @@
-import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Verified
-import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.Verified
-import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Calls
+module
+
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Verified
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.Verified
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Calls
 
 /-! # RSA key generation (FIPS 186-5 A.1.3) on x86-64 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.RsaKeyGen.X86_64
 

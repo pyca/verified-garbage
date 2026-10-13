@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecMac
+module
+
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecMac
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-PKCS1-v1_5 decryption on AArch64: `KDK = HMAC(DH, C)`
@@ -6,6 +12,8 @@ import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecMac
 HMAC-SHA-256 keyed with `DH` of the ciphertext, to `scratch + sKDK`
 (`kdkMac_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPkcs1Enc.AArch64.Dec
 

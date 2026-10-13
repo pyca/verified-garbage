@@ -1,6 +1,10 @@
-import VerifiedGarbage.Proof.Rsa.AArch64.PublicImpl
+module
+
+public import VerifiedGarbage.Proof.Rsa.AArch64.PublicImpl
 
 /-! # Precomputed RSA public operation on AArch64: Base -/
+
+@[expose] public section
 
 namespace VG.Variants.RsaPublicPrecomputed.AArch64.Base
 

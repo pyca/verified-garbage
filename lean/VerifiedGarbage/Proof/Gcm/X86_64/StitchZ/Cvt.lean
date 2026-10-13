@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Gcm.X86_64.Vpclmul.Exec
-import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.HInvBits
-import VerifiedGarbage.Impl.Gcm.X86_64.StitchZP
+module
+
+public import VerifiedGarbage.Proof.Gcm.X86_64.Vpclmul.Exec
+public import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.HInvBits
+public import VerifiedGarbage.Impl.Gcm.X86_64.StitchZP
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Converting the powers of a key context, two at a time
@@ -13,6 +19,8 @@ lanes of `ymm7` (`cvtLoad_ok`), byte-reversed, and leaves in each lane of
 from `Pclmul.shl1` and `mask_eq`; `Pclmul.x_φ_hInv` says it is `· x⁻¹` in
 the field), with the constants `StitchZP.cvtConsts` leaves (`consts_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Gcm.X86_64.StitchZP
 

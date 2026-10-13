@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlDsa.Arm.Verify.Compute
+module
+
+public import VerifiedGarbage.Proof.MlDsa.Arm.Verify.Compute
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA verification on 32-bit ARM: the rows of `w′₁`
@@ -8,6 +14,8 @@ Row `r`: the sum of the products `Â[r, s] ẑ[s]` in `W` (polynomial 18),
 `ĉ t̂₁[r]` (polynomial 17) subtracted from the sum, `NTT⁻¹` of it, `w′₁[r]`
 (polynomial 19) by `UseHint`, and its `SimpleBitPack` to `B` (`row_piece`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Arm.Verify
 

@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.Modes.Arm.SeqLoop
-import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
+module
+
+public import VerifiedGarbage.Proof.Modes.Arm.SeqLoop
+meta import VerifiedGarbage.Proof.Modes.Arm.SeqLoop
+public import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
+meta import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The modes one block at a time on ARMv7: constant time
@@ -17,6 +25,8 @@ The code between the calls depends on the core's block size and the mode,
 so its taint checks are hypotheses (`SeqTaint`), which each cipher's
 instance proves with `taint_decide`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Modes.Arm
 

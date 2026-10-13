@@ -1,4 +1,8 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.AddSubVerified
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.AddSubVerified
+
+@[expose] public section
 
 namespace VG.Artifacts.MlDsaVerifyHelpers.AArch64
 

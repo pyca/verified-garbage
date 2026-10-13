@@ -1,5 +1,15 @@
-import VerifiedGarbage.Impl.Ecdsa.Verify.P256.X86_64
-import VerifiedGarbage.Proof.Weierstrass.X86_64.FastNafTiming
+module
+
+public import VerifiedGarbage.Impl.Ecdsa.Verify.P256.X86_64
+meta import VerifiedGarbage.Impl.Ecdsa.Verify.P256.X86_64
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.FastNafTiming
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.FastNafTiming
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.P256.X86_64
 open VG.Impl.Ecdsa.Verify.X86_64

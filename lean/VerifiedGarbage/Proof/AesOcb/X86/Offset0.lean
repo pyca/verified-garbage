@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.AesOcb.X86.NonceBlock
-import VerifiedGarbage.Proof.Ocb.Stretch
-import VerifiedGarbage.Proof.Ocb.Stretch32
+module
+
+public import VerifiedGarbage.Proof.AesOcb.X86.NonceBlock
+public import VerifiedGarbage.Proof.Ocb.Stretch
+public import VerifiedGarbage.Proof.Ocb.Stretch32
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-OCB on x86: `Offset_0` (`offset0`)
@@ -12,6 +18,8 @@ six words (`stv`). Six masked stages shift them left by `bottom`
 (`stage_ok`, `stage32_ok`, `Proof.Ocb.shl_stages`), and the top four,
 byte-reversed, are stored to `W + ofsO` and `W + o0O` (`offset0_ok`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

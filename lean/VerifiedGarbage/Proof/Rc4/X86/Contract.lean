@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Framework.SigEval
-import VerifiedGarbage.Proof.Framework.X86.Taint
-import VerifiedGarbage.Proof.Rc4.Scratch
+module
+
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.SigEval
+public import VerifiedGarbage.Proof.Framework.X86.Taint
+public import VerifiedGarbage.Proof.Rc4.Scratch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RC4 on x86 (32-bit): the contracts the proofs use
@@ -13,6 +19,8 @@ memory only while nothing that may alias them is written): `initC` and
 `wideInit` and `wideApply` let the code write them, as the shared contracts
 do, and imply those; `Verified.lean` narrows them back.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rc4.X86
 open VG VG.X86 VG.Spec.Rc4 VG.Proof.Rc4

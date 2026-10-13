@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.EcKey.X86.CombStagesCT
+module
+
+public import VerifiedGarbage.Proof.EcKey.X86.CombStagesCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # Constant time of the public-key body with a fixed-base comb -/
+
+@[expose] public section
+
 namespace VG.Proof.EcKey.X86
 open VG VG.X86 VG.Impl.Ecdsa.X86 VG.Proof.Mont.X86 VG.Proof.Mont
 open VG.Proof.Weierstrass.X86 VG.Proof.Weierstrass Spec.Weierstrass

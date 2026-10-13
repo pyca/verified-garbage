@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Ed448.Arm.VerifyField
-import VerifiedGarbage.Proof.Ed448.Arm.VerifyBits
+module
+
+public import VerifiedGarbage.Proof.Ed448.Arm.VerifyField
+public import VerifiedGarbage.Proof.Ed448.Arm.VerifyBits
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 verification's equation on ARMv7: `[S]B + [k](-A)`
@@ -10,6 +16,8 @@ and 1 of byte `t` at `VBITS`): `Q` (slots 0, 21, 2) doubled, then `B` (slots
 the second. The loop's invariant (`VInv`): `Q` is the reference ladder's
 point after the bits above `n` (`Proof.Ed448.vladder`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.Arm
 

@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Ed448.AArch64.Window.KLoop
-import VerifiedGarbage.Proof.Ed448.AArch64.Window.CopyK
+module
+
+public import VerifiedGarbage.Proof.Ed448.AArch64.Window.KLoop
+public import VerifiedGarbage.Proof.Ed448.AArch64.Window.CopyK
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 verification on AArch64: the windows
@@ -8,6 +14,8 @@ Untrusted: everything here is checked by Lean. `kInit`: `Q` (slots 3–5) the
 neutral point, 1 in slot 20 and the counter at 114 (`kInit_ok`), keeping the
 challenge's nibbles at `BITS`, for the loop over them (`kLoop_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.AArch64.Window
 

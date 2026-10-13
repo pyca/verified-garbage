@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Kernel
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Concrete
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Kernel
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Concrete
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! A syntactic check that the interpreter over concrete words runs a block:
 every instruction decodes, writes a register other than `x0`, uses a valid
@@ -7,6 +13,8 @@ operation and an aligned slot inside the scratch area, and reads only
 registers (and the carry) that an earlier instruction of the block wrote.
 It tracks a register set and a flag, so the kernel checks it in time linear
 in the block. -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.AArch64.Forward
 open VG VG.AArch64

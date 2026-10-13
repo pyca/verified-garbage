@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Camellia.X86.KeyInit
+module
+
+public import VerifiedGarbage.Proof.Camellia.X86.KeyInit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Camellia's key schedule on x86 (32-bit): `KL` and `KR`
@@ -9,6 +15,8 @@ words (at `ecx`, loaded from the first argument) to the slots of `KL` and
 its left for one of 24), as `klkr_halves` gives their halves (`VW`, by
 `HW` for each half). The key's length is read from the second argument.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Camellia.X86
 

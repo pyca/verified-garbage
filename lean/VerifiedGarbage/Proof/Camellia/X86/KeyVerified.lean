@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.Camellia.X86.ExpandKey
-import VerifiedGarbage.Proof.Camellia.X86.Verified
+module
+
+public import VerifiedGarbage.Proof.Camellia.X86.ExpandKey
+meta import VerifiedGarbage.Proof.Camellia.X86.ExpandKey
+public import VerifiedGarbage.Proof.Camellia.X86.Verified
+meta import VerifiedGarbage.Proof.Camellia.X86.Verified
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The Camellia key schedule on x86 (32-bit) meets its contracts
@@ -13,6 +21,8 @@ with its working space on the stack, zeroed on return: 2708 bytes, the 2688
 of the scratch buffer, the copies of the three argument slots, the buffer's
 address and the return address of the call of the code.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Camellia.X86
 

@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.X448.Limbs
+module
+
+public import VerifiedGarbage.Proof.X448.Limbs
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448: canonical reduction
@@ -7,6 +13,8 @@ For a normalized value below 2⁴⁴⁸, adding 1 + 2²²⁴ produces a carry ex
 when it is at least p. Selecting the carried result in that case gives the
 canonical residue.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448
 

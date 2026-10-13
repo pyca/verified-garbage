@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.X448.Arm.Initial
-import VerifiedGarbage.Proof.X448.Arm.DecodeAll
-import VerifiedGarbage.Proof.X448.Arm.Save
+module
+
+public import VerifiedGarbage.Proof.X448.Arm.Initial
+public import VerifiedGarbage.Proof.X448.Arm.DecodeAll
+public import VerifiedGarbage.Proof.X448.Arm.Save
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 on ARMv7: reading the arguments
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.X448.Arm.Save
 Setup saves the callee-saved registers, decodes the coordinate, and
 initializes the ladder.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448.Arm
 

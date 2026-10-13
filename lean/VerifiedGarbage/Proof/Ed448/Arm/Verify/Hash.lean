@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Ed448.Arm.Verify.Header
-import VerifiedGarbage.Proof.Ed448.Arm.Shake.Sponge
+module
+
+public import VerifiedGarbage.Proof.Ed448.Arm.Verify.Header
+public import VerifiedGarbage.Proof.Ed448.Arm.Shake.Sponge
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 verification on ARMv7: the hash
@@ -10,6 +16,8 @@ the header the frame holds (`hdr_ok`), with the calls of
 the context, `R`, `A` and the message absorbed each from where the previous
 absorption stopped, the padding absorbed, and 114 bytes squeezed.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.Arm.Verify
 

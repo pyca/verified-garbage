@@ -1,11 +1,26 @@
-import VerifiedGarbage.Proof.Ed25519.AArch64.SignCached.Body
-import VerifiedGarbage.Proof.Ed25519.AArch64.SignCached.Entry
-import VerifiedGarbage.Proof.Ed25519.AArch64.SignCached.CTReady
-import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.WrapCT
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Framework.ConstMem
+module
+
+public import VerifiedGarbage.Proof.Ed25519.AArch64.SignCached.Body
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.SignCached.Body
+public import VerifiedGarbage.Proof.Ed25519.AArch64.SignCached.Entry
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.SignCached.Entry
+public import VerifiedGarbage.Proof.Ed25519.AArch64.SignCached.CTReady
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.SignCached.CTReady
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.WrapCT
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.WrapCT
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.ConstMem
+meta import VerifiedGarbage.Proof.Framework.ConstMem
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Ed25519.AArch64.SignCached.Correct`. -/
+
+@[expose] public section
+
 section
 namespace VG.Proof.Ed25519.AArch64.SignCached
 open VG VG.AArch64 VG.Impl.Ed25519.AArch64.SignCached

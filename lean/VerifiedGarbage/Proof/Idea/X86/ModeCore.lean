@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.Idea.X86.Block
-import VerifiedGarbage.Proof.Idea.X86.Ecb
-import VerifiedGarbage.Proof.Idea.ModeBytes
-import VerifiedGarbage.Proof.Modes.X86.Core
-import VerifiedGarbage.Impl.Idea.X86.Modes
+module
+
+public import VerifiedGarbage.Proof.Idea.X86.Block
+public import VerifiedGarbage.Proof.Idea.X86.Ecb
+public import VerifiedGarbage.Proof.Idea.ModeBytes
+public import VerifiedGarbage.Proof.Modes.X86.Core
+public import VerifiedGarbage.Impl.Idea.X86.Modes
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # IDEA's core for the modes on x86 (32-bit)
@@ -14,6 +20,8 @@ ready when the subkeys are copied to the scratch buffer. `crypt` is ECB's
 block (`load_run`, `rounds_run`, `output_run`) between the core's own setup
 and stores (`modeBlock_run`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Idea.X86
 

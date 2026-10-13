@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Sm4.AArch64.Prologue
+module
+
+public import VerifiedGarbage.Proof.Sm4.AArch64.Prologue
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # A group of blocks of SM4 ECB on AArch64
@@ -9,6 +15,8 @@ import VerifiedGarbage.Proof.Sm4.AArch64.Prologue
 table's end in `x1`–`x3`), copies the blocks back and steps to the next
 group.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sm4.AArch64
 

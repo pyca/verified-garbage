@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.MlDsa.X86.Sign.Call
-import VerifiedGarbage.Proof.Framework.Sig
-import VerifiedGarbage.Proof.Framework.Contract
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86.Sign.Call
+public import VerifiedGarbage.Proof.Framework.Sig
+public import VerifiedGarbage.Proof.Framework.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA signing on x86 (32-bit): the primitives it calls
@@ -16,6 +22,8 @@ Each call (`…_piece`) is made from `Ctx`, with its buffers named as `Buf`s;
 what it leaves unchanged is stated with the frame `FR s₀ bs 80` (its
 buffers, and the stack below the function's own frame).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86.Sign
 

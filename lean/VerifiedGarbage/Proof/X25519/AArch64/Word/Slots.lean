@@ -1,10 +1,19 @@
-import VerifiedGarbage.Impl.X25519.AArch64.Word
-import VerifiedGarbage.Proof.Ed25519.AArch64.Power
-import VerifiedGarbage.Proof.Ed25519.AArch64.Swap
-import VerifiedGarbage.Proof.Ed25519.AArch64.Freeze
-import VerifiedGarbage.Proof.X25519.Ladder
+module
+
+public import VerifiedGarbage.Impl.X25519.AArch64.Word
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Power
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Swap
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Freeze
+public import VerifiedGarbage.Proof.X25519.Ladder
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! The four-word field backend in X25519's existing 4 KiB workspace. -/
+
+@[expose] public section
+
 namespace VG.Proof.X25519.AArch64.Word
 open VG VG.AArch64 VG.Impl.Ed25519.AArch64
 open VG.Proof.Ed25519.AArch64

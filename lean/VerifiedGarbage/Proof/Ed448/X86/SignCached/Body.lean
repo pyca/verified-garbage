@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Ed448.X86.SignCached.Calls
-import VerifiedGarbage.Proof.Ed448.X86.Shake.Prune
-import VerifiedGarbage.Proof.Ed448.Signing
-import VerifiedGarbage.Proof.Ed25519.X86.Whole.Wipe
+module
+
+public import VerifiedGarbage.Proof.Ed448.X86.SignCached.Calls
+public import VerifiedGarbage.Proof.Ed448.X86.Shake.Prune
+public import VerifiedGarbage.Proof.Ed448.Signing
+public import VerifiedGarbage.Proof.Ed25519.X86.Whole.Wipe
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 signing with a cached key on x86 (32-bit): correctness
@@ -12,6 +18,8 @@ carried past the steps in between (each outside what they write), and the
 signature is `Spec.Ed448.sign`'s by `Proof.Ed448.sign_pipeline`.
 `signCached_ok`: the whole function, in Ed25519's frame on this target.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.X86.SignCached
 

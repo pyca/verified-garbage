@@ -1,12 +1,16 @@
-import VerifiedGarbage.TCB.X86.Target
-import VerifiedGarbage.Impl.Poly1305.X86
-import VerifiedGarbage.Proof.Poly1305.X86.Init
-import VerifiedGarbage.Proof.Poly1305.X86.Update
-import VerifiedGarbage.Proof.Poly1305.X86.Finalize
-import VerifiedGarbage.Proof.Poly1305.X86.Lit
-import VerifiedGarbage.Proof.Poly1305.X86.Frame
+module
+
+public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Impl.Poly1305.X86
+public import VerifiedGarbage.Proof.Poly1305.X86.Init
+public import VerifiedGarbage.Proof.Poly1305.X86.Update
+public import VerifiedGarbage.Proof.Poly1305.X86.Finalize
+public import VerifiedGarbage.Proof.Poly1305.X86.Lit
+public import VerifiedGarbage.Proof.Poly1305.X86.Frame
 
 /-! # Poly1305 (RFC 8439 §2.5) on x86 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.Poly1305.X86
 

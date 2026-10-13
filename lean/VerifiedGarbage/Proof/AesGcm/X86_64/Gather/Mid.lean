@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Base
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Base
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM one-shot encryption out of place, from a list of slices, x86-64: between the calls
@@ -11,6 +17,8 @@ slices one at a time (`gl_succ`, `pt_succ`); and, with `i` slices done, the
 streaming state represents the message with the additional data `A` and the
 encryption of the first `i` slices, which the output holds (`Mid`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

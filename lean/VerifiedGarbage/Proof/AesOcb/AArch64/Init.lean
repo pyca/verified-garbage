@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesOcb.AArch64.Seal
+module
+
+public import VerifiedGarbage.Proof.AesOcb.AArch64.Seal
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-OCB on AArch64: `vg_aes_ocb_init`
@@ -9,6 +15,8 @@ registers in the scratch buffer, expands the key into the key context
 for `L_*` (`vg_aes_encrypt_blocks`), and restores the registers
 (`init_wp`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

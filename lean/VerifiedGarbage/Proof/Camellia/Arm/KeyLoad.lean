@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Camellia.Arm.KeyInit
+module
+
+public import VerifiedGarbage.Proof.Camellia.Arm.KeyInit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Camellia's key schedule on ARMv7: `KL` and `KR`
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.Camellia.Arm.KeyInit
 a key of 16 bytes, its right half the complement of its left for one of
 24), as `klkr_halves` gives their halves (`VW`, by `HW` for each half).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Camellia.Arm
 

@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx2.SboxLit
-import VerifiedGarbage.Proof.TripleDes.X86_64.Sbox
-import VerifiedGarbage.Proof.Framework.X86_64.StraightY
+module
+
+public import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx2.SboxLit
+public import VerifiedGarbage.Proof.TripleDes.X86_64.Sbox
+public import VerifiedGarbage.Proof.Framework.X86_64.StraightY
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The AVX2 S-box circuits' machine code
@@ -12,6 +18,8 @@ lifts that check to every bit position of every quadword of arbitrary
 `k < spills`), read all ones from `ones`, and write no general-purpose
 register.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.TripleDes.X86_64.BitslicedAvx2
 

@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.MlDsa.Arm.Verify.Cmp
-import VerifiedGarbage.Proof.MlDsa.Verify.Final
+module
+
+public import VerifiedGarbage.Proof.MlDsa.Arm.Verify.Cmp
+meta import VerifiedGarbage.Proof.MlDsa.Arm.Verify.Cmp
+public import VerifiedGarbage.Proof.MlDsa.Verify.Final
+meta import VerifiedGarbage.Proof.MlDsa.Verify.Final
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA verification on 32-bit ARM: `vg_mldsa44_verify`, `vg_mldsa65_verify`, `vg_mldsa87_verify`
@@ -11,6 +19,8 @@ implementations of the primitives (`body_piece`): a malformed hint gives 0 at
 once, a `z` too large 0 after the norms, and otherwise `r11` is the samplers'
 result and the comparison of `c̃`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Arm.Verify
 

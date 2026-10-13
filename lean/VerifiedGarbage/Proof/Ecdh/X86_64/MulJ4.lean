@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Ecdh.X86_64.MulOk
-import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJLoop
+module
+
+public import VerifiedGarbage.Proof.Ecdh.X86_64.MulOk
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJLoop
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDH on x86-64: `[d]P` by 4-bit windows with a Jacobian accumulator
@@ -13,6 +19,8 @@ power after it, as `mulPow_ok`'s windows. Its table's inversion
 working area over the table of the bits of `n - 2`, so it writes what `mulQ`
 writes and that area (`mulQJ4W`, `winXJ`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdh.X86_64
 

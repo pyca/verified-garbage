@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.CmacTripleDes.Arm.Finalize
+module
+
+public import VerifiedGarbage.Proof.CmacTripleDes.Arm.Finalize
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # TDEA-CMAC on ARMv7: `vg_cmac_triple_des_finalize` is correct
@@ -8,6 +14,8 @@ length, `r4:r5` holds `Mₙ` (`BPost`); the function saves the state pointer,
 XORs in the chaining value `C`, encrypts it and stores `CIPH_K(C ⊕ Mₙ)` as
 the state, the MAC (`macFull_split8`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.CmacTripleDes.Arm
 

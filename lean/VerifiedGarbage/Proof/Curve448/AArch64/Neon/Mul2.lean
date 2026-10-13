@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Curve448.AArch64.Neon.Value
-import VerifiedGarbage.Proof.Curve448.AArch64.Neon.Halves
+module
+
+public import VerifiedGarbage.Proof.Curve448.AArch64.Neon.Value
+public import VerifiedGarbage.Proof.Curve448.AArch64.Neon.Halves
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Two field multiplications in AdvSIMD
@@ -8,6 +14,8 @@ Untrusted: everything here is checked by Lean. `mul2 o₁ a₁ b₁ o₂ a₂ b�
 writes products of `[a₁]` and `[b₁]`, and of `[a₂]` and `[b₂]`, to `o₁` and
 `o₂`, with limbs below `Mb`, for operand limbs below `Ib`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Curve448.AArch64.Neon
 

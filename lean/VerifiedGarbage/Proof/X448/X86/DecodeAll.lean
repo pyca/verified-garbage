@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.X448.X86.Decode
+module
+
+public import VerifiedGarbage.Proof.X448.X86.Decode
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 on x86 (32-bit): decoding the whole coordinate
@@ -6,6 +12,8 @@ import VerifiedGarbage.Proof.X448.X86.Decode
 The 28 limb loads fill two slots while preserving input bytes outside the
 working space.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448.X86
 

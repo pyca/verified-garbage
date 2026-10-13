@@ -1,7 +1,17 @@
-import VerifiedGarbage.Proof.CmacTripleDes.X86.Lit
-import VerifiedGarbage.Proof.CmacTripleDes.X86.Init
-import VerifiedGarbage.Proof.CmacTripleDes.X86.Finalize
-import VerifiedGarbage.Proof.Framework.X86.Taint
+module
+
+public import VerifiedGarbage.Proof.CmacTripleDes.X86.Lit
+meta import VerifiedGarbage.Proof.CmacTripleDes.X86.Lit
+public import VerifiedGarbage.Proof.CmacTripleDes.X86.Init
+meta import VerifiedGarbage.Proof.CmacTripleDes.X86.Init
+public import VerifiedGarbage.Proof.CmacTripleDes.X86.Finalize
+meta import VerifiedGarbage.Proof.CmacTripleDes.X86.Finalize
+public import VerifiedGarbage.Proof.Framework.X86.Taint
+meta import VerifiedGarbage.Proof.Framework.X86.Taint
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # TDEA-CMAC on x86: constant time
@@ -14,6 +24,8 @@ knows the stack argument holding it is that region's base, so `ebp`, loaded
 from it, addresses public words there, and the block's counters and step
 are stored and loaded through it.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.CmacTripleDes.X86
 

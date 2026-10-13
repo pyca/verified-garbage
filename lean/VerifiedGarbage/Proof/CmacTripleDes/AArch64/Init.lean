@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Update
-import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Keys
+module
+
+public import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Update
+public import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Keys
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # TDEA-CMAC on AArch64: `vg_cmac_triple_des_init`
@@ -9,6 +15,8 @@ each iteration of the loop then writes one DES key's sixteen round keys
 (`KInv`); the zero block is encrypted with them and doubled twice into the
 subkeys.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.CmacTripleDes.AArch64
 

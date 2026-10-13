@@ -1,12 +1,20 @@
-import VerifiedGarbage.Proof.P256.EcdhJac.Frame
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedArithmetic
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedRaw
-import VerifiedGarbage.Proof.P256.EcdhDouble.Verified
-import VerifiedGarbage.Proof.P256.EcdhJac.First
-import VerifiedGarbage.Proof.P256.EcdhJac.Masks
-import VerifiedGarbage.Proof.P256.EcdhJac.Finish
+module
+
+public import VerifiedGarbage.Proof.P256.EcdhJac.Frame
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedArithmetic
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedRaw
+public import VerifiedGarbage.Proof.P256.EcdhDouble.Verified
+public import VerifiedGarbage.Proof.P256.EcdhJac.First
+public import VerifiedGarbage.Proof.P256.EcdhJac.Masks
+public import VerifiedGarbage.Proof.P256.EcdhJac.Finish
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## `HotField` -/
+
+@[expose] public section
 
 section
 

@@ -1,9 +1,21 @@
-import VerifiedGarbage.Proof.Ed448.Arm.ScalarMain
-import VerifiedGarbage.Proof.Ed448.Arm.ScalarMulAddMain
-import VerifiedGarbage.Proof.Ed448.Arm.ScalarLit
-import VerifiedGarbage.Proof.Framework.Arm.Taint
-import VerifiedGarbage.Proof.Framework.Arm.Contract
-import VerifiedGarbage.Spec.Ed448.Contract
+module
+
+public import VerifiedGarbage.Proof.Ed448.Arm.ScalarMain
+meta import VerifiedGarbage.Proof.Ed448.Arm.ScalarMain
+public import VerifiedGarbage.Proof.Ed448.Arm.ScalarMulAddMain
+meta import VerifiedGarbage.Proof.Ed448.Arm.ScalarMulAddMain
+public import VerifiedGarbage.Proof.Ed448.Arm.ScalarLit
+meta import VerifiedGarbage.Proof.Ed448.Arm.ScalarLit
+public import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+public import VerifiedGarbage.Proof.Framework.Arm.Contract
+meta import VerifiedGarbage.Proof.Framework.Arm.Contract
+public import VerifiedGarbage.Spec.Ed448.Contract
+meta import VerifiedGarbage.Spec.Ed448.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 scalar arithmetic on ARMv7: `Verified`
@@ -12,6 +24,8 @@ Correctness includes the ABI. Taint analysis checks that secret input bytes
 never determine branches or memory addresses. A concrete witness proves the
 signature contract is satisfiable.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.Arm
 

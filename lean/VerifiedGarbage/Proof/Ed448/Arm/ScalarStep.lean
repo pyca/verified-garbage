@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Ed448.Arm.ScalarNat
-import VerifiedGarbage.Proof.X448.Arm.RowPass
-import VerifiedGarbage.Proof.X25519.Arm.Field
-import VerifiedGarbage.Proof.Framework.GetElem
+module
+
+public import VerifiedGarbage.Proof.Ed448.Arm.ScalarNat
+public import VerifiedGarbage.Proof.X448.Arm.RowPass
+public import VerifiedGarbage.Proof.X25519.Arm.Field
+public import VerifiedGarbage.Proof.Framework.GetElem
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 scalar arithmetic on ARMv7: one chunk
@@ -12,6 +18,8 @@ modulo `L` into `o` (`reduceT_ok`); together, `step o` folds a chunk into
 the remainder (`step_ok`). The working space is `r0`'s 8192 bytes
 (`CtxN 4096`), with the limb mask in `r6`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.Arm
 

@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Curve
-import VerifiedGarbage.Proof.Ecdsa.AArch64.BoothVerified
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Curve
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Curve
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.BoothVerified
+meta import VerifiedGarbage.Proof.Ecdsa.AArch64.BoothVerified
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Deterministic ECDSA on AArch64: P-256
@@ -9,6 +17,8 @@ exactly 256 bits with `2^256 < 2 n`, and `vg_ecdsa_p256_sign`, proven correct
 (given the group law and the comb's tables) and constant time against its
 contract (`coreK` at P-256's sizes, which is `Proof.Ecdsa.AArch64.signAArch64`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Rfc6979.AArch64
 

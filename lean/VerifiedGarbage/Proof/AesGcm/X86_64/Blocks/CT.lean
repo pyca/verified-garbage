@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks.Fn
-import VerifiedGarbage.Proof.AesGcm.X86_64.FnCT
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks.Fn
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks.Fn
+public import VerifiedGarbage.Proof.AesGcm.X86_64.FnCT
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.FnCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on whole blocks, x86-64: constant time
@@ -12,6 +20,8 @@ from the arguments in their registers; the branch on the blocks left agrees
 (`tailHead_ok`); and the calls get the same public arguments (`ctr_rel`,
 `gh_rel`), from what correctness says of each run (`rel_wp`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

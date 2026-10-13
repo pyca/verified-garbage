@@ -1,17 +1,38 @@
-import VerifiedGarbage.Proof.Ed25519.X86.VerifyDecode
-import VerifiedGarbage.Proof.Ed25519.X86.VerifyScalar
-import VerifiedGarbage.Proof.Ed25519.X86.VerifyFinish
-import VerifiedGarbage.Proof.Ed25519.VerifyBytes
-import VerifiedGarbage.Proof.Ed25519.X86.VerifyCTBytes
-import VerifiedGarbage.Proof.Ed25519.X86.VerifyDecodeInput
-import VerifiedGarbage.Proof.Ed25519.X86.VerifyCTEquation
-import VerifiedGarbage.Proof.Ed25519.X86.VerifyCTInputs
-import VerifiedGarbage.Proof.Ed25519.X86.VerifyContract
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Framework.X86.Inline
-import VerifiedGarbage.Proof.Ed25519.X86.VerifyLit
+module
+
+public import VerifiedGarbage.Proof.Ed25519.X86.VerifyDecode
+meta import VerifiedGarbage.Proof.Ed25519.X86.VerifyDecode
+public import VerifiedGarbage.Proof.Ed25519.X86.VerifyScalar
+meta import VerifiedGarbage.Proof.Ed25519.X86.VerifyScalar
+public import VerifiedGarbage.Proof.Ed25519.X86.VerifyFinish
+meta import VerifiedGarbage.Proof.Ed25519.X86.VerifyFinish
+public import VerifiedGarbage.Proof.Ed25519.VerifyBytes
+meta import VerifiedGarbage.Proof.Ed25519.VerifyBytes
+public import VerifiedGarbage.Proof.Ed25519.X86.VerifyCTBytes
+meta import VerifiedGarbage.Proof.Ed25519.X86.VerifyCTBytes
+public import VerifiedGarbage.Proof.Ed25519.X86.VerifyDecodeInput
+meta import VerifiedGarbage.Proof.Ed25519.X86.VerifyDecodeInput
+public import VerifiedGarbage.Proof.Ed25519.X86.VerifyCTEquation
+meta import VerifiedGarbage.Proof.Ed25519.X86.VerifyCTEquation
+public import VerifiedGarbage.Proof.Ed25519.X86.VerifyCTInputs
+meta import VerifiedGarbage.Proof.Ed25519.X86.VerifyCTInputs
+public import VerifiedGarbage.Proof.Ed25519.X86.VerifyContract
+meta import VerifiedGarbage.Proof.Ed25519.X86.VerifyContract
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.X86.Inline
+meta import VerifiedGarbage.Proof.Framework.X86.Inline
+public import VerifiedGarbage.Proof.Ed25519.X86.VerifyLit
+meta import VerifiedGarbage.Proof.Ed25519.X86.VerifyLit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Ed25519.X86.VerifyMain`. -/
+
+@[expose] public section
+
 section
 namespace VG.Proof.Ed25519.X86
 open VG VG.X86 VG.Impl.Ed25519.X86

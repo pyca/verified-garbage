@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Framework.X86.Call
-import VerifiedGarbage.Proof.Framework.Contract
+module
+
+public import VerifiedGarbage.Proof.Framework.X86.Call
+public import VerifiedGarbage.Proof.Framework.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 on x86 (32-bit): what the complete operations assume of a callee
@@ -12,6 +18,8 @@ constant time under it, never writing `esp`, and using at most the 20 bytes
 of stack below its return address that the frame of a complete operation
 leaves it.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.X86
 

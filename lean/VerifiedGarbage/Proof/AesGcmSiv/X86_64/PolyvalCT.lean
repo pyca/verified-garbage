@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.AesGcmSiv.X86_64.CryptCT
+module
+
+public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.CryptCT
+meta import VerifiedGarbage.Proof.AesGcmSiv.X86_64.CryptCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM-SIV on x86-64: the keys and POLYVAL are constant time
@@ -7,6 +14,8 @@ Untrusted: everything here is checked by Lean. Both runs derive the same
 number of blocks (`rounds / 2 − 1`), from a slot; the code around the calls
 passes the taint analysis, and each call has the same arguments in both runs.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

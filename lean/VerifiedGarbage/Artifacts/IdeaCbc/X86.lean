@@ -1,6 +1,10 @@
-import VerifiedGarbage.Proof.Idea.X86.CbcVerified
+module
+
+public import VerifiedGarbage.Proof.Idea.X86.CbcVerified
 
 /-! # IDEA-CBC artifacts on baseline x86 (32-bit) -/
+
+@[expose] public section
 
 namespace VG.Artifacts.IdeaCbc.X86
 

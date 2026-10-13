@@ -1,5 +1,11 @@
-import VerifiedGarbage.Spec.Cmac.Contract
-import VerifiedGarbage.Proof.Framework.Offset
+module
+
+public import VerifiedGarbage.Spec.Cmac.Contract
+public import VerifiedGarbage.Proof.Framework.Offset
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Streaming AES-CMAC with its working space as an argument
@@ -16,6 +22,8 @@ only within the function's buffers (`initPost_local`, `absorbPost_local`,
 `finishPost_local`): the key, the data, and the streaming state, through
 `Repr`, which reads only the state's 304 bytes (`repr_congr_304`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.CmacAes.Stream
 

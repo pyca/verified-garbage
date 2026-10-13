@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.MlDsa.Arm.Pack.HintPack
-import VerifiedGarbage.Proof.MlDsa.Arm.Pack.HintCT
+module
+
+public import VerifiedGarbage.Proof.MlDsa.Arm.Pack.HintPack
+meta import VerifiedGarbage.Proof.MlDsa.Arm.Pack.HintPack
+public import VerifiedGarbage.Proof.MlDsa.Arm.Pack.HintCT
+meta import VerifiedGarbage.Proof.MlDsa.Arm.Pack.HintCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on 32-bit ARM: `vg_mldsa_hint_bit_pack`, constant time and `Verified`
@@ -13,6 +21,8 @@ narrowed to the hint and `y` (`RelCT.narrow`), on which both runs agree once
 `y` is zeroed. What each run is at each point comes from the correctness proof
 (`RelCT.wp`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Arm.Pack.Hint
 

@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.P521
-import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.VerifiedAdx
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.P521
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.VerifiedAdx
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Deterministic ECDSA on x86-64: P-521 with BMI2 and ADX
@@ -8,6 +14,8 @@ As `P521.lean`, with `vg_ecdsa_p521_sign_adx` (`p521x`, P-521 multiplying
 modulo `p` with BMI2 and ADX), proven correct and constant time against the
 same contract; `p521Of` is either.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Rfc6979.X86_64
 

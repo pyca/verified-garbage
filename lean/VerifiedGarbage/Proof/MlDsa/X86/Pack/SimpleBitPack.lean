@@ -1,8 +1,19 @@
-import VerifiedGarbage.Proof.MlDsa.X86.Pack.Top
-import VerifiedGarbage.Impl.MlDsa.X86.Pack.Encode
-import VerifiedGarbage.TCB.X86.Target
-import VerifiedGarbage.Proof.Framework.Sig
-import VerifiedGarbage.Proof.Framework.Contract
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86.Pack.Top
+meta import VerifiedGarbage.Proof.MlDsa.X86.Pack.Top
+public import VerifiedGarbage.Impl.MlDsa.X86.Pack.Encode
+meta import VerifiedGarbage.Impl.MlDsa.X86.Pack.Encode
+public import VerifiedGarbage.TCB.X86.Target
+meta import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Proof.Framework.Sig
+meta import VerifiedGarbage.Proof.Framework.Sig
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on x86 (32-bit): `vg_mldsa_simple_bit_pack`
@@ -11,6 +22,8 @@ import VerifiedGarbage.Proof.Framework.Contract
 into `eax`, and branches on `b` (15, 43 or 1023) to the pack loop for its
 width (`packLoop_piece`), whose value of a coefficient is the coefficient.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86.Pack.SimpleBitPack
 

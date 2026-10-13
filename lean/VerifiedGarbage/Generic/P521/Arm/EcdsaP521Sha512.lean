@@ -1,6 +1,8 @@
-import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Proof.Weierstrass.Law
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.P521Sha512
+module
+
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.Proof.Weierstrass.Law
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.P521Sha512
 
 /-!
 # Deterministic ECDSA (RFC 6979) over P-521 with HMAC-SHA-512 on ARMv7
@@ -15,6 +17,8 @@ function it calls below them).
 A generic file (see `TCB/Emit.lean`) over P-521's group law `h`, the variant
 `Variants/P521/Arm/Law.lean`.
 -/
+
+@[expose] public section
 
 namespace VG.Generic.P521.Arm.EcdsaP521Sha512
 

@@ -1,8 +1,19 @@
-import VerifiedGarbage.Proof.Ecdsa.Arm.Main
-import VerifiedGarbage.Proof.Ecdsa.Arm.P384.Contract
-import VerifiedGarbage.Proof.Ecdsa.Arm.P384.Lit
-import VerifiedGarbage.Proof.P384.Point
-import VerifiedGarbage.Proof.Framework.Arm.Taint
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Arm.Main
+meta import VerifiedGarbage.Proof.Ecdsa.Arm.Main
+public import VerifiedGarbage.Proof.Ecdsa.Arm.P384.Contract
+meta import VerifiedGarbage.Proof.Ecdsa.Arm.P384.Contract
+public import VerifiedGarbage.Proof.Ecdsa.Arm.P384.Lit
+meta import VerifiedGarbage.Proof.Ecdsa.Arm.P384.Lit
+public import VerifiedGarbage.Proof.P384.Point
+meta import VerifiedGarbage.Proof.P384.Point
+public import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDSA over P-384 on 32-bit ARM: `Verified`
@@ -14,6 +25,8 @@ kept. Constant time by taint tracking: the only branches are on loop
 counters, and every address is `r12` (the working space, from the stack
 argument) or `lr` (`out`) plus a constant or a counter.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Arm.P384
 

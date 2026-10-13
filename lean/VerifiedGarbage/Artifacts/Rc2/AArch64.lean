@@ -1,9 +1,13 @@
-import VerifiedGarbage.Proof.Rc2.AArch64.Block
-import VerifiedGarbage.Proof.Rc2.AArch64.Key
-import VerifiedGarbage.Proof.Rc2.AArch64.Cbc.Verified
-import VerifiedGarbage.Proof.Rc2.AArch64.Stream.Frame
+module
+
+public import VerifiedGarbage.Proof.Rc2.AArch64.Block
+public import VerifiedGarbage.Proof.Rc2.AArch64.Key
+public import VerifiedGarbage.Proof.Rc2.AArch64.Cbc.Verified
+public import VerifiedGarbage.Proof.Rc2.AArch64.Stream.Frame
 
 /-! # RC2 artifacts on baseline AArch64 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.Rc2.AArch64
 
@@ -16,7 +20,7 @@ def artifacts : List Artifact := [
     code := Impl.StackScratch.AArch64.withStackScratchWiped 576 .x6 72 Impl.Rc2.AArch64.Stream.init
     contract := Spec.Rc2.cbcInitContract AArch64.abi 592
     stack := 592
-    ofSig := ⟨_, _, _, by unfold Spec.Rc2.cbcInitContract; rfl⟩
+    ofSig := by exact (⟨_, _, _, by unfold Spec.Rc2.cbcInitContract; rfl⟩)
     verified := Proof.Rc2.AArch64.Stream.init_framed
     spSafe := Code.all_of_forall (fun _ => rfl) _ },
   { Spec.Rc2.cbcEncryptUpdateApi with
@@ -27,7 +31,7 @@ def artifacts : List Artifact := [
     code := Impl.StackScratch.AArch64.withStackScratchWiped 576 .x6 72 Impl.Rc2.AArch64.Stream.encryptUpdate
     contract := Spec.Rc2.cbcEncryptUpdateContract AArch64.abi 592
     stack := 592
-    ofSig := ⟨_, _, _, by unfold Spec.Rc2.cbcEncryptUpdateContract Spec.Rc2.cbcUpdateContract; rfl⟩
+    ofSig := by exact (⟨_, _, _, by unfold Spec.Rc2.cbcEncryptUpdateContract Spec.Rc2.cbcUpdateContract; rfl⟩)
     verified := Proof.Rc2.AArch64.Stream.encryptUpdate_framed
     spSafe := Code.all_of_forall (fun _ => rfl) _ },
   { Spec.Rc2.cbcDecryptUpdateApi with
@@ -38,7 +42,7 @@ def artifacts : List Artifact := [
     code := Impl.StackScratch.AArch64.withStackScratchWiped 576 .x6 72 Impl.Rc2.AArch64.Stream.decryptUpdate
     contract := Spec.Rc2.cbcDecryptUpdateContract AArch64.abi 592
     stack := 592
-    ofSig := ⟨_, _, _, by unfold Spec.Rc2.cbcDecryptUpdateContract Spec.Rc2.cbcUpdateContract; rfl⟩
+    ofSig := by exact (⟨_, _, _, by unfold Spec.Rc2.cbcDecryptUpdateContract Spec.Rc2.cbcUpdateContract; rfl⟩)
     verified := Proof.Rc2.AArch64.Stream.decryptUpdate_framed
     spSafe := Code.all_of_forall (fun _ => rfl) _ },
   { Spec.Rc2.cbcEncryptApi with
@@ -48,7 +52,7 @@ def artifacts : List Artifact := [
     code := Impl.Rc2.AArch64.Cbc.encrypt
     contract := Spec.Rc2.cbcEncryptContract AArch64.abi 0
     stack := 0
-    ofSig := ⟨_, _, _, by unfold Spec.Rc2.cbcEncryptContract Spec.Rc2.cbcContract; rfl⟩
+    ofSig := by exact (⟨_, _, _, by unfold Spec.Rc2.cbcEncryptContract Spec.Rc2.cbcContract; rfl⟩)
     verified := Proof.Rc2.AArch64.Cbc.encrypt_verified
     spSafe := Code.all_of_forall (fun _ => rfl) _ },
   { Spec.Rc2.cbcDecryptApi with
@@ -62,7 +66,7 @@ def artifacts : List Artifact := [
     code := Impl.Rc2.AArch64.Cbc.decrypt
     contract := Spec.Rc2.cbcDecryptContract AArch64.abi 0
     stack := 0
-    ofSig := ⟨_, _, _, by unfold Spec.Rc2.cbcDecryptContract Spec.Rc2.cbcContract; rfl⟩
+    ofSig := by exact (⟨_, _, _, by unfold Spec.Rc2.cbcDecryptContract Spec.Rc2.cbcContract; rfl⟩)
     verified := Proof.Rc2.AArch64.Cbc.decrypt_verified
     spSafe := Code.all_of_forall (fun _ => rfl) _ },
   { Spec.Rc2.expandKeyApi with

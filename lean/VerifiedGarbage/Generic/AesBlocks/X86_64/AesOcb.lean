@@ -1,5 +1,7 @@
-import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.AesOcb.X86_64.Frame
+module
+
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.AesOcb.X86_64.Frame
 
 /-!
 # AES-OCB (RFC 7253) on x86-64
@@ -19,6 +21,8 @@ of 3632 bytes for `seal` and `open` (3584 bytes of working space, which
 includes the table of `L_j`), which also holds a copy of their four other
 stack arguments (`Verified.stackArgScratch`).
 -/
+
+@[expose] public section
 
 namespace VG.Generic.AesBlocks.X86_64.AesOcb
 

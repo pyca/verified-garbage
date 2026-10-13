@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Blowfish.AArch64.F
+module
+
+public import VerifiedGarbage.Proof.Blowfish.AArch64.F
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # One round on sixteen blocks
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.Blowfish.AArch64.F
 leaves `L ^ Pᵢ₊₁` in `L` and `R ^ F(L ^ Pᵢ₊₁)` in `R`, word by word, and
 moves `x5` to the next entry (`up`) or the previous one.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Blowfish.AArch64
 

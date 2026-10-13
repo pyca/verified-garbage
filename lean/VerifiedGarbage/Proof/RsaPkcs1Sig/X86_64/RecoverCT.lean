@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.RecoverCorrect
-import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCT
+module
+
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.RecoverCorrect
+meta import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.RecoverCorrect
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCT
+meta import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_pkcs1_recover` on x86-64: constant time
@@ -14,6 +22,8 @@ call is constant time for its callee's contract. The zeros and the copy to
 analysis does not know public: their loads are a piece of their own, and the
 loops after them are checked from the registers correctness fixes.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPkcs1Sig.X86_64.Rec
 

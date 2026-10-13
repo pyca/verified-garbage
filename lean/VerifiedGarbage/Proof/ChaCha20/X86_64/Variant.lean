@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.Verified
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Xor
-import VerifiedGarbage.Impl.ChaCha20.X86_64.Callee
-import VerifiedGarbage.Impl.Poly1305.X86_64.Callee
-import VerifiedGarbage.Proof.Framework.X86_64.Depth
+module
+
+public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.Verified
+public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Xor
+public import VerifiedGarbage.Impl.ChaCha20.X86_64.Callee
+public import VerifiedGarbage.Impl.Poly1305.X86_64.Callee
+public import VerifiedGarbage.Proof.Framework.X86_64.Depth
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Implementations of `vg_chacha20_xor` on x86-64
@@ -19,6 +25,8 @@ An implementation also names the implementation of `vg_poly1305_blocks` for
 the same CPUs (`poly`), which ChaCha20-Poly1305's instance for it calls: so
 each instance needs the CPU features of both.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.ChaCha20.X86_64
 

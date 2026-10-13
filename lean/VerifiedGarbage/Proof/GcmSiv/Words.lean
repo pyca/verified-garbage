@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.GcmSiv.Spec
+module
+
+public import VerifiedGarbage.Proof.GcmSiv.Spec
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM-SIV: GHASH's key and the tag input, on 64-bit words
@@ -14,6 +20,8 @@ from the algebra of `Proof/GcmSiv/Polyval.lean` (which they need not import):
   with the key `hkeyOf h` (equal to it by `Polyval.tagInput_eq_tagInputG`);
 * the top bit of a word cleared by two shifts (`shl_shr_one`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

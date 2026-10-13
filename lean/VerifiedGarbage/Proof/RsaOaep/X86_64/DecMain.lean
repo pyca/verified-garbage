@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.RsaOaep.X86_64.DecPriv
-import VerifiedGarbage.Proof.RsaOaep.X86_64.DecOut
-import VerifiedGarbage.Proof.RsaOaep.X86_64.DecSpec
-import VerifiedGarbage.Proof.RsaOaep.X86_64.EncMain
+module
+
+public import VerifiedGarbage.Proof.RsaOaep.X86_64.DecPriv
+public import VerifiedGarbage.Proof.RsaOaep.X86_64.DecOut
+public import VerifiedGarbage.Proof.RsaOaep.X86_64.DecSpec
+public import VerifiedGarbage.Proof.RsaOaep.X86_64.EncMain
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-OAEP decryption on x86-64: the decoding
@@ -12,6 +18,8 @@ unmasked, `lHash'` compared, `T` scanned, copied and shifted, and the
 message under the mask `ok` to `out`, its length to `*msg_len`: what
 `Spec.RsaOaep.decrypt` writes for the operation's outcome.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaOaep.X86_64
 

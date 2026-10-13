@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.MlDsa.X86.Verify.Base
-import VerifiedGarbage.Proof.MlKem.X86.DecapsCmp
-import VerifiedGarbage.Proof.Framework.X86.Wp
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86.Verify.Base
+public import VerifiedGarbage.Proof.MlKem.X86.DecapsCmp
+public import VerifiedGarbage.Proof.Framework.X86.Wp
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA verification on x86 (32-bit): the code between the calls
@@ -11,6 +17,8 @@ equality of two byte strings, compared without a branch on them
 (`cmpAnd_piece`): `edx` is the OR of the XORs of their bytes (`Decaps.accB`),
 and `sub edx, 1; sbb eax, eax` all ones exactly when it is 0.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86.Verify
 

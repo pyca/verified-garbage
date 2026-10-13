@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Cast5.X86_64.KeyHalf
-import VerifiedGarbage.Proof.Framework.X86_64.Abi
+module
+
+public import VerifiedGarbage.Proof.Cast5.X86_64.KeyHalf
+public import VerifiedGarbage.Proof.Framework.X86_64.Abi
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # CAST5 key expansion on x86-64
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.Framework.X86_64.Abi
 `expandKey` pads the key with zeros into `x` (§2.5), then runs both halves of
 §2.4 (`expandKey_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Cast5.X86_64
 

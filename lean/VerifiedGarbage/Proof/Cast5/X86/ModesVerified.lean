@@ -1,13 +1,29 @@
-import VerifiedGarbage.Proof.Cast5.X86.ModeCore
-import VerifiedGarbage.Proof.Cast5.X86.ModesLit
-import VerifiedGarbage.Proof.Cast5.ModeScratch
-import VerifiedGarbage.Proof.Modes.X86.Modes
-import VerifiedGarbage.Proof.Framework.X86.TaintSym
-import VerifiedGarbage.Proof.Framework.X86.SseTaint
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Cast5.X86.EcbVerified
-import VerifiedGarbage.Proof.Framework.ConstMem
-import VerifiedGarbage.Proof.Framework.X86.StackScratchConsts
+module
+
+public import VerifiedGarbage.Proof.Cast5.X86.ModeCore
+meta import VerifiedGarbage.Proof.Cast5.X86.ModeCore
+public import VerifiedGarbage.Proof.Cast5.X86.ModesLit
+meta import VerifiedGarbage.Proof.Cast5.X86.ModesLit
+public import VerifiedGarbage.Proof.Cast5.ModeScratch
+meta import VerifiedGarbage.Proof.Cast5.ModeScratch
+public import VerifiedGarbage.Proof.Modes.X86.Modes
+meta import VerifiedGarbage.Proof.Modes.X86.Modes
+public import VerifiedGarbage.Proof.Framework.X86.TaintSym
+meta import VerifiedGarbage.Proof.Framework.X86.TaintSym
+public import VerifiedGarbage.Proof.Framework.X86.SseTaint
+meta import VerifiedGarbage.Proof.Framework.X86.SseTaint
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Cast5.X86.EcbVerified
+meta import VerifiedGarbage.Proof.Cast5.X86.EcbVerified
+public import VerifiedGarbage.Proof.Framework.ConstMem
+meta import VerifiedGarbage.Proof.Framework.ConstMem
+public import VerifiedGarbage.Proof.Framework.X86.StackScratchConsts
+meta import VerifiedGarbage.Proof.Framework.X86.StackScratchConsts
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # CAST5-CBC, -OFB and -CFB64 on x86 (32-bit): correctness
@@ -19,6 +35,8 @@ chaining value is writable if `ivw`, for OFB and CFB). The table of S-boxes
 is readable, where the static `VG_CAST5_S1234` puts it, and holds the
 S-boxes (`Held`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Cast5.X86.ModeFns
 

@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.MlKem.X86.Red
-import VerifiedGarbage.Impl.MlDsa.X86.Arith.Basic
-import VerifiedGarbage.Proof.MlDsa.Arith.Mont
-import VerifiedGarbage.Proof.MlDsa.Arith.Mem
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86.Red
+public import VerifiedGarbage.Impl.MlDsa.X86.Arith.Basic
+public import VerifiedGarbage.Proof.MlDsa.Arith.Mont
+public import VerifiedGarbage.Proof.MlDsa.Arith.Mem
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on x86 (32-bit): the reductions modulo `q`
@@ -11,6 +17,8 @@ reduces a value less than `2q` (`csubQ_eq`), and `mredRaw` and `mred` leave
 the Montgomery reduction `mont x` (`Proof/MlDsa/Arith/Mont.lean`) of the
 product `x` in `edx:eax` (`mredRaw_spec`, `mred_spec`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86.Arith
 

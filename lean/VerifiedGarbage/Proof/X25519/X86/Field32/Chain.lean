@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.X25519.X86.Ops
-import VerifiedGarbage.Proof.X25519.Chain250
-import VerifiedGarbage.Impl.X25519.X86.Field32
+module
+
+public import VerifiedGarbage.Proof.X25519.X86.Ops
+public import VerifiedGarbage.Proof.X25519.Chain250
+public import VerifiedGarbage.Impl.X25519.X86.Field32
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_gf25519_r32_pow250` on x86 (32-bit): the addition chain
@@ -12,6 +18,8 @@ bytes 512 to 927, the slots and X25519's product (`CKeep`), so the chain
 takes the slots' values `e` to `chainEnv e` (`chain_spec`), in which `E1`
 holds `a^(2^250 - 1)` and `E0` holds `a^11` (`chainEnv_eval`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X25519.X86.Field32
 

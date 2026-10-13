@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Camellia.AArch64.KeyStore
-import VerifiedGarbage.Proof.Camellia.AArch64.KeyChecks2
+module
+
+public import VerifiedGarbage.Proof.Camellia.AArch64.KeyStore
+public import VerifiedGarbage.Proof.Camellia.AArch64.KeyChecks2
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # A pair of rounds of the key schedule on AArch64
@@ -11,6 +17,8 @@ As on x86-64: `pairPlain_ok`: with the running value's halves as words at
 The value's slots are in the tail buffer, which `Ctx` lets ECB write, so
 each step also states that it keeps the slots from the table on.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Camellia.AArch64
 

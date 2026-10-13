@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Build
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Build
+public meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Build
+public import VerifiedGarbage.Proof.Framework.AArch64.Lit
+public meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
+
+public meta section
 
 namespace VG.Proof.Weierstrass.AArch64.Forward
 

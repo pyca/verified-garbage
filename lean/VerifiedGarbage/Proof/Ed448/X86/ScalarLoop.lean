@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Ed448.X86.ScalarStep
-import VerifiedGarbage.Proof.X448.X86.Counters
-import VerifiedGarbage.Proof.X448.X86.Decode
-import VerifiedGarbage.Proof.X448.X86.Fill
+module
+
+public import VerifiedGarbage.Proof.Ed448.X86.ScalarStep
+public import VerifiedGarbage.Proof.X448.X86.Counters
+public import VerifiedGarbage.Proof.X448.X86.Decode
+public import VerifiedGarbage.Proof.X448.X86.Fill
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 scalar arithmetic on x86 (32-bit): the loops
@@ -10,6 +16,8 @@ The remainder of an input's bytes from the top, sixteen bits at a time
 (`byteLoop_ok`), and of the product's limbs (`limbLoop_ok`), and the
 remainders they start from (`zeroR_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.X86
 

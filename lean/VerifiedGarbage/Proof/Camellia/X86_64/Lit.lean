@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
-import VerifiedGarbage.Impl.Camellia.X86_64.Ecb
-import VerifiedGarbage.Impl.Camellia.X86_64.ExpandKey
+module
+
+public import VerifiedGarbage.Proof.Framework.X86_64.Lit
+meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
+public import VerifiedGarbage.Impl.Camellia.X86_64.Ecb
+meta import VerifiedGarbage.Impl.Camellia.X86_64.Ecb
+public import VerifiedGarbage.Impl.Camellia.X86_64.ExpandKey
+meta import VerifiedGarbage.Impl.Camellia.X86_64.ExpandKey
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Camellia on X86_64: the code as literals
@@ -10,6 +19,8 @@ The code of the key expansion and of ECB in both directions as literals
 whole functions (`taint_decide`, `lit_decide`) read rather than build the
 code again (seconds for the key expansion's).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Camellia.X86_64
 

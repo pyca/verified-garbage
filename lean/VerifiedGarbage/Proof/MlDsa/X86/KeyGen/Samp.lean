@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Seeds
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Seeds
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA key generation on x86 (32-bit): the samplers
@@ -7,6 +13,8 @@ Each entry of `Â` (`expA_piece`) and of `s₁ ‖ s₂` (`expS_piece`): its see
 set, the sampler called, its result ANDed into `oACC` and the polynomial
 masked with it (`maskA`), which keeps `KSamp` for one more entry.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86.KeyGen
 

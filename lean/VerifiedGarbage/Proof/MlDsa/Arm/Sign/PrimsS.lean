@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Prims
+module
+
+public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Prims
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA signing on ARMv7: calls of the samplers
@@ -9,6 +15,8 @@ of `RejNTTPoly` and `SampleInBall` are public in two runs whose seeds agree
 (`rejCall_tr`, `ballCall_tr`), and they succeed only if the algorithm finishes
 within `maxBounds` (`rejCall_ok`, `ballCall_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Arm.Sign
 

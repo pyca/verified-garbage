@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesGcm.Arm.Loops
+module
+
+public import VerifiedGarbage.Proof.AesGcm.Arm.Loops
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on ARMv7: small blocks shared by the pieces
@@ -7,6 +13,8 @@ Untrusted: everything here is checked by Lean. `cmp r, #0` (`cmp0_ok`), and
 `minLen`: `r3 := min (16 - r6, r5)`, from the carry of a comparison
 (`minLen_ok`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

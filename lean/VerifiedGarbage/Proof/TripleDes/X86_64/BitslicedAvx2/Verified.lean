@@ -1,11 +1,19 @@
-import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx2.Ecb
-import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx2.Lit
-import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Verified
+module
+
+public import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx2.Ecb
+public import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx2.Lit
+public import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Verified
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # The AVX2 bitsliced ECB functions are correct
 
 The ECB functions run this code with the core's inlined; they are verified
 in `EcbCall/Verified.lean`. -/
+
+@[expose] public section
 
 namespace VG.Proof.TripleDes.X86_64.BitslicedAvx2
 

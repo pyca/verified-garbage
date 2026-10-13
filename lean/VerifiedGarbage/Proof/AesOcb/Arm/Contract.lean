@@ -1,6 +1,12 @@
-import VerifiedGarbage.Spec.Ocb.Contract
-import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Proof.Framework.PowLit
+module
+
+public import VerifiedGarbage.Spec.Ocb.Contract
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.Proof.Framework.PowLit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-OCB on ARMv7: the contracts the proofs are written against
@@ -13,6 +19,8 @@ the shared ones of `Spec/Ocb/Contract.lean`, which imply these
 their stack argument below the stack pointer: so the 8 bytes below the stack
 pointer (`bel`) may not overlap any buffer.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesOcb.Arm
 

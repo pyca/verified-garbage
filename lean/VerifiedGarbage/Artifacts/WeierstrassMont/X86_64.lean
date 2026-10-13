@@ -1,11 +1,15 @@
-import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Impl.Weierstrass.X86_64.Mont
-import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFnXVerified
-import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFn6Verified
-import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFnNVerified
-import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFnN6Verified
+module
+
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Impl.Weierstrass.X86_64.Mont
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFnXVerified
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFn6Verified
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFnNVerified
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFnN6Verified
 
 /-! # Montgomery products modulo P-384's and P-521's `p` and `n` on x86-64 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.WeierstrassMont.X86_64
 

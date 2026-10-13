@@ -1,7 +1,13 @@
-import VerifiedGarbage.Impl.Ed448.AArch64.Whole
-import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Setup
-import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Framework.Omega
+module
+
+public import VerifiedGarbage.Impl.Ed448.AArch64.Whole
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Setup
+public import VerifiedGarbage.Proof.Framework.AArch64.Exec
+public import VerifiedGarbage.Proof.Framework.Omega
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448's complete operations on AArch64: a call's arguments
@@ -12,6 +18,8 @@ before (`retOk`: nothing before a `ret` writes `x0`). The locals hold words
 the function keeps there (`Kept`), which a write elsewhere leaves
 (`Kept.frame`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.AArch64.Whole
 

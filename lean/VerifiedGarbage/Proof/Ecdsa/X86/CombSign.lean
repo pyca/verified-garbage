@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.Ecdsa.X86.CombPrefix
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.X86.CombPrefix
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # The balanced static-address prefix and the comb signing body -/
+
+@[expose] public section
+
 namespace VG.Proof.Ecdsa.X86
 open VG VG.X86 VG.Impl.Ecdsa.X86 VG.Proof.Mont.X86 VG.Proof.Mont
 open VG.Proof.Weierstrass.X86 VG.Proof.Weierstrass Spec.Weierstrass

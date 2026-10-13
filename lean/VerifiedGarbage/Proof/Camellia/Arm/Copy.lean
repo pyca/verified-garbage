@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Camellia.Arm.Keys
+module
+
+public import VerifiedGarbage.Proof.Camellia.Arm.Keys
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Copying blocks on ARMv7, and small steps
@@ -9,6 +15,8 @@ that do not overlap), a word at a time through `t0`, counting down `r3`,
 and changes nothing else in memory (`copyBlocks_wp`); `groupCount_wp` is
 `r3 := min(r2, 8)`. And the single instructions the data loop runs.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Camellia.Arm
 

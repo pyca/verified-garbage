@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesOcb.Arm.Seal
-import VerifiedGarbage.Proof.AesGcm.Arm.Compare
+module
+
+public import VerifiedGarbage.Proof.AesOcb.Arm.Seal
+public import VerifiedGarbage.Proof.AesGcm.Arm.Compare
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-OCB on ARMv7: `vg_aes_ocb_open`
@@ -12,6 +18,8 @@ Untrusted: everything here is checked by Lean. `open` is `front`: `entry`,
 (`mask_ok`); and `restore` (`open_wp`), as on AArch64
 (`Proof.AesOcb.AArch64.open_wp`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

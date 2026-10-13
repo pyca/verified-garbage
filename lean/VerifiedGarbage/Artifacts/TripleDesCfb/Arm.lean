@@ -1,6 +1,10 @@
-import VerifiedGarbage.Proof.TripleDes.Arm.FbVerified
+module
+
+public import VerifiedGarbage.Proof.TripleDes.Arm.FbVerified
 
 /-! # Triple DES-CFB64 artifacts on baseline ARMv7 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.TripleDesCfb.Arm
 

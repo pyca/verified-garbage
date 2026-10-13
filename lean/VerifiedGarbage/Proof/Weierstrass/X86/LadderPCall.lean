@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Weierstrass.X86.PointFn
-import VerifiedGarbage.Proof.Weierstrass.X86.Copy
-import VerifiedGarbage.Impl.Weierstrass.X86.LadderP
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86.PointFn
+public import VerifiedGarbage.Proof.Weierstrass.X86.Copy
+public import VerifiedGarbage.Impl.Weierstrass.X86.LadderP
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The ladder by calls of the point functions, on x86 (32-bit): copies and calls
@@ -13,6 +19,8 @@ argument holding it (`ptCall_ok`): it changes only `eax`, `ecx` and `edx`,
 `esp`, and `O` then holds `rcbAdd` of what `a`, `3b`, `P` and `Q` (or `P`)
 stood for (`fn_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.X86.Point
 

@@ -1,5 +1,11 @@
-import VerifiedGarbage.Impl.Ed25519.AArch64.Comb
-import VerifiedGarbage.Proof.Ed25519.CombDigits
+module
+
+public import VerifiedGarbage.Impl.Ed25519.AArch64.Comb
+public import VerifiedGarbage.Proof.Ed25519.CombDigits
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Where the AArch64 comb starts: `combStart` represents `[G']B`
@@ -9,6 +15,8 @@ combGVal`: the kernel compares `combStart` with `pointMul` of the base point
 (`combStart_ok`, as `combG_ok`), and `[16 G']B` with `[17 G]B` projectively
 (`combStart_16`), so the four doublings of `[G']B` give `[17 G]B`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed25519.AArch64
 

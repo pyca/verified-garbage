@@ -1,5 +1,11 @@
-import VerifiedGarbage.Spec.Cast5.Cbc
-import VerifiedGarbage.Proof.Modes.Steps
+module
+
+public import VerifiedGarbage.Spec.Cast5.Cbc
+public import VerifiedGarbage.Proof.Modes.Steps
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # CAST5's cipher for the modes, on any target
@@ -8,6 +14,8 @@ The cipher of each direction (`dirCipher`: `Spec.Cast5.cipher` or
 `invCipher`), the 8 bytes at `p` as the block there (`bytesAt_eq`,
 `ofFn_bytesAt`), and CAST5-CBC's blocks as the modes' (`cbcBlocksAt_eq`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Cast5
 

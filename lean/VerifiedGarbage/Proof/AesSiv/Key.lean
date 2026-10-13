@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesSiv.CtrPart
+module
+
+public import VerifiedGarbage.Proof.AesSiv.CtrPart
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-SIV: the key context
@@ -7,6 +13,8 @@ The context `vg_aes_siv_init` leaves is that of the key (`Spec.Siv.KeyRepr`)
 when its three parts are where the calls of `vg_aes_expand_key_scratch` and
 `vg_cmac_aes_subkeys` left them (`keyRepr_of`), on any target.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesSiv
 

@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.Argon2.X86.HPrime.Calls
-import VerifiedGarbage.Proof.Framework.X86.RelCT
-import VerifiedGarbage.Proof.Framework.X86.Inline
+module
+
+public import VerifiedGarbage.Proof.Argon2.X86.HPrime.Calls
+meta import VerifiedGarbage.Proof.Argon2.X86.HPrime.Calls
+public import VerifiedGarbage.Proof.Framework.X86.RelCT
+meta import VerifiedGarbage.Proof.Framework.X86.RelCT
+public import VerifiedGarbage.Proof.Framework.X86.Inline
+meta import VerifiedGarbage.Proof.Framework.X86.Inline
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Argon2 H′ on x86 (32-bit): the calls, in two runs
@@ -13,6 +22,8 @@ callee's precondition in both runs (`init_pre`, `update_pre`,
 `finalize_pre`). `rel_taint` and `rel_wp` add what each run satisfies by
 correctness.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Argon2.X86.HPrime
 

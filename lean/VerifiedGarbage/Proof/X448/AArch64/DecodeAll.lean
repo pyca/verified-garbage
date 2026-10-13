@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.X448.AArch64.DecodeStore
+module
+
+public import VerifiedGarbage.Proof.X448.AArch64.DecodeStore
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 on AArch64: all input-coordinate bytes
@@ -6,6 +12,8 @@ import VerifiedGarbage.Proof.X448.AArch64.DecodeStore
 Eight limb pairs fill the two coordinate slots. The input lies outside the
 writable working space.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448.AArch64
 

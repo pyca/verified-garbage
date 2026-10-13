@@ -1,10 +1,23 @@
-import VerifiedGarbage.Proof.Ecdh.X86_64.Main
-import VerifiedGarbage.Proof.Ecdh.X86_64.Secp256k1.Contract
-import VerifiedGarbage.Proof.Ecdh.X86_64.Secp256k1.Lit
-import VerifiedGarbage.Proof.Ecdsa.X86_64.Secp256k1.Verified
-import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
-import VerifiedGarbage.Proof.Framework.LitShare
-import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
+module
+
+public import VerifiedGarbage.Proof.Ecdh.X86_64.Main
+meta import VerifiedGarbage.Proof.Ecdh.X86_64.Main
+public import VerifiedGarbage.Proof.Ecdh.X86_64.Secp256k1.Contract
+meta import VerifiedGarbage.Proof.Ecdh.X86_64.Secp256k1.Contract
+public import VerifiedGarbage.Proof.Ecdh.X86_64.Secp256k1.Lit
+meta import VerifiedGarbage.Proof.Ecdh.X86_64.Secp256k1.Lit
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.Secp256k1.Verified
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.Secp256k1.Verified
+public import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
+meta import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
+public import VerifiedGarbage.Proof.Framework.LitShare
+meta import VerifiedGarbage.Proof.Framework.LitShare
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDH over secp256k1 on x86-64: `Verified`
@@ -18,6 +31,8 @@ tracking: the only branches are on loop counters, and every address is an
 argument plus a constant or a counter, so not even the peer's key (which the
 contract would let leak) affects timing.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdh.X86_64.Secp256k1
 

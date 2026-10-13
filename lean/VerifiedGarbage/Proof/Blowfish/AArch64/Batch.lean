@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Blowfish.AArch64.Cipher
-import VerifiedGarbage.Proof.Blowfish.Blocks
-import VerifiedGarbage.Proof.Framework.Offset
+module
+
+public import VerifiedGarbage.Proof.Blowfish.AArch64.Cipher
+public import VerifiedGarbage.Proof.Blowfish.Blocks
+public import VerifiedGarbage.Proof.Framework.Offset
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # A batch of sixteen blocks
@@ -9,6 +15,8 @@ import VerifiedGarbage.Proof.Framework.Offset
 big-endian words. `storeBatch_run`: xL from `B` and xR from `A` back, as
 blocks.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Blowfish.AArch64
 

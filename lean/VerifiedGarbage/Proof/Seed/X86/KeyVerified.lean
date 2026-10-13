@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.Seed.X86.Key
-import VerifiedGarbage.Proof.Seed.X86.Verified
+module
+
+public import VerifiedGarbage.Proof.Seed.X86.Key
+meta import VerifiedGarbage.Proof.Seed.X86.Key
+public import VerifiedGarbage.Proof.Seed.X86.Verified
+meta import VerifiedGarbage.Proof.Seed.X86.Verified
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The SEED key schedule on x86 (32-bit) meets its contracts
@@ -13,6 +21,8 @@ return: 840 bytes, the 824 of the scratch buffer, the copies of the two
 argument slots, the buffer's address and the return address of the call of
 the code.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Seed.X86
 

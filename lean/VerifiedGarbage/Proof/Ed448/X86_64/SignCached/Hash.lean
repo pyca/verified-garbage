@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Ed448.X86_64.SignCached.Layout
-import VerifiedGarbage.Proof.Ed448.X86_64.Verify.Hash
+module
+
+public import VerifiedGarbage.Proof.Ed448.X86_64.SignCached.Layout
+public import VerifiedGarbage.Proof.Ed448.X86_64.Verify.Hash
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 signing with a cached public key on x86-64: the hashes
@@ -11,6 +17,8 @@ Between the frame's push and pop (`Ctx`): the first ten bytes of
 `SHAKE256(seed, 114)` (`seedHash_ok`), `SHAKE256(dom4(0, C) ‖ prefix ‖ M, 114)`
 (`nonceHash_ok`) and `SHAKE256(dom4(0, C) ‖ R ‖ A ‖ M, 114)` (`chalHash_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.X86_64.SignCached
 

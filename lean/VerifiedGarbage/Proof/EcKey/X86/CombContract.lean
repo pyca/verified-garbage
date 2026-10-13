@@ -1,7 +1,16 @@
-import VerifiedGarbage.Proof.EcKey.X86.CombFunction
-import VerifiedGarbage.Spec.EcKey.P256
+module
+
+public import VerifiedGarbage.Proof.EcKey.X86.CombFunction
+public import VerifiedGarbage.Spec.EcKey.P256
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # Shared public-key contract for the x86 fixed-base comb -/
+
+@[expose] public section
+
 namespace VG.Proof.EcKey.X86
 open VG VG.X86 VG.Impl.Ecdsa.X86 VG.Proof.Ecdsa.X86
 

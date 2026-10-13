@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.Lit
-import VerifiedGarbage.Proof.TripleDes.AArch64.ConstantTime
+module
+
+public import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.Lit
+meta import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.Lit
+public import VerifiedGarbage.Proof.TripleDes.AArch64.ConstantTime
+meta import VerifiedGarbage.Proof.TripleDes.AArch64.ConstantTime
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Constant time
@@ -8,6 +16,8 @@ The pointers and the count of blocks are public, and so is everything the
 function computes from them (the batches, the counts of passes and rounds,
 the addresses of the round keys): every address and branch.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.TripleDes.AArch64.BitslicedNeon
 

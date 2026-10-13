@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Ecdh.X86.Validate
-import VerifiedGarbage.Impl.Ecdsa.Verify.X86
+module
+
+public import VerifiedGarbage.Proof.Ecdh.X86.Validate
+public import VerifiedGarbage.Impl.Ecdsa.Verify.X86
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDSA verification on x86 (32-bit): the arguments and the key
@@ -13,6 +19,8 @@ their slots, `R = O`, the tables of `p - 2` and `n - 2`, the flag of the
 key's validity as the code checks it (`KeyOk`), and the key's point, or `G`
 if it is not valid, for ECDH's ladder (`Front`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Verify.X86
 

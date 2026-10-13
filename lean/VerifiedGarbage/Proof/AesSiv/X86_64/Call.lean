@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.AesSiv.X86_64.Contract
-import VerifiedGarbage.Proof.AesSiv.X86_64.Bits
-import VerifiedGarbage.Proof.CmacAes.X86_64.Verified
+module
+
+public import VerifiedGarbage.Proof.AesSiv.X86_64.Contract
+public import VerifiedGarbage.Proof.AesSiv.X86_64.Bits
+public import VerifiedGarbage.Proof.CmacAes.X86_64.Verified
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-SIV on x86-64: calling `vg_cmac_aes_finalize` with any subkeys
@@ -13,6 +19,8 @@ holds, for the chaining value `C` at `state` and the last block `Mₙ` of
 subkeys its key context holds (`Spec.Siv.ctxMac`), so its calls use this
 (`finr_call`), with `WP.call` from this correctness of the same code.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesSiv.X86_64
 

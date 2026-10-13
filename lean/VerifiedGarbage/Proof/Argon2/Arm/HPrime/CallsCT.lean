@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.Argon2.Arm.HPrime.Hash
-import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
+module
+
+public import VerifiedGarbage.Proof.Argon2.Arm.HPrime.Hash
+meta import VerifiedGarbage.Proof.Argon2.Arm.HPrime.Hash
+public import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
+meta import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Argon2 H′ on ARMv7: the calls, in two runs
@@ -12,6 +20,8 @@ its stack arguments) is related by the callee's constant time
 (`RelCT.call`, `frameCall_rel`), from the callee's precondition in both runs
 (`init_pre`, `update_pre`, `finalize_pre`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Argon2.Arm.HPrime
 

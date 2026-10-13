@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Base
-import VerifiedGarbage.Proof.AesGcm.X86_64.Callee
-import VerifiedGarbage.Proof.Gcm.StreamTo
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Base
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Callee
+public import VerifiedGarbage.Proof.Gcm.StreamTo
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM streaming encryption out of place, x86-64: between the calls
@@ -11,6 +17,8 @@ state and the output are those of the text so far followed by the first
 memory changed only where the code may write (`Mid`); after the entry,
 `Mid s 0` (`mid_entry`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

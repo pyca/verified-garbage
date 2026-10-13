@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Seed.X86.Group
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.TCB.X86.Target
+module
+
+public import VerifiedGarbage.Proof.Seed.X86.Group
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.TCB.X86.Target
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # SEED ECB on x86 (32-bit): the whole function
@@ -11,6 +17,8 @@ the rounds of `d` use them (`keyTable_ok`), keeps the data pointer and the
 count in their slots, transforms the blocks a group at a time
 (`dataLoop_wp`) and restores the registers.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Seed
 

@@ -1,6 +1,8 @@
-import VerifiedGarbage.Proof.P192.Curve
-import VerifiedGarbage.Proof.Weierstrass.AArch64.InvMain
-import VerifiedGarbage.Proof.Weierstrass.InvArith
+module
+
+public import VerifiedGarbage.Proof.P192.Curve
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvMain
+public import VerifiedGarbage.Proof.Weierstrass.InvArith
 
 /-!
 # p192's group law and inversions, on AArch64
@@ -13,6 +15,8 @@ proofs need Mathlib's algebra. Their registration files are generic over it
 implementation too), so that this file alone, of those that emit them,
 imports that algebra.
 -/
+
+@[expose] public section
 
 namespace VG.Variants.P192.AArch64.Law
 

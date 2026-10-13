@@ -1,7 +1,19 @@
-import VerifiedGarbage.Proof.TripleDes.Arm.Lit
-import VerifiedGarbage.Proof.Framework.Arm.Lit
-import VerifiedGarbage.Impl.TripleDes.Arm.ExpandKey
-import VerifiedGarbage.Impl.TripleDes.Arm.Ecb
+module
+
+public import VerifiedGarbage.Proof.TripleDes.Arm.Lit
+meta import VerifiedGarbage.Proof.TripleDes.Arm.Lit
+public import VerifiedGarbage.Proof.Framework.Arm.Lit
+meta import VerifiedGarbage.Proof.Framework.Arm.Lit
+public import VerifiedGarbage.Impl.TripleDes.Arm.ExpandKey
+meta import VerifiedGarbage.Impl.TripleDes.Arm.ExpandKey
+public import VerifiedGarbage.Impl.TripleDes.Arm.Ecb
+meta import VerifiedGarbage.Impl.TripleDes.Arm.Ecb
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG
 

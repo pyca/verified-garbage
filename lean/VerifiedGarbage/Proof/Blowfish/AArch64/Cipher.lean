@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Blowfish.AArch64.Round
-import VerifiedGarbage.Proof.Blowfish.Feistel
+module
+
+public import VerifiedGarbage.Proof.Blowfish.AArch64.Round
+public import VerifiedGarbage.Proof.Blowfish.Feistel
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The sixteen rounds on sixteen blocks
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.Blowfish.Feistel
 `B`, leaves `feistel` of each (encryption if `up`, decryption otherwise):
 its xL in `B` and its xR in `A`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Blowfish.AArch64
 

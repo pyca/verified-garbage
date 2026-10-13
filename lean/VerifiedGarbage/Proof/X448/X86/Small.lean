@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.X448.X86.AddSub
+module
+
+public import VerifiedGarbage.Proof.X448.X86.AddSub
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 on x86 (32-bit): multiplication by a24
@@ -6,6 +12,8 @@ import VerifiedGarbage.Proof.X448.X86.AddSub
 `vg_gf448_r16_mul_a24`'s arithmetic (`mulA24Fn`): `esi` points at the
 operand, whose 16-bit limbs keep multiplication by 39081 within a 32-bit word.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448.X86
 

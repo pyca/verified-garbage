@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Idea.Memory
+module
+
+public import VerifiedGarbage.Proof.Idea.Memory
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # IDEA: subkeys read with 32-bit loads
@@ -8,6 +14,8 @@ half of the 32-bit word at its own offset `2k` of the schedule
 (`subkey_lo32`), and the last one the high half of the word at 100
 (`subkey_hi32`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Idea
 

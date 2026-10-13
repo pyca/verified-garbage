@@ -1,7 +1,11 @@
-import VerifiedGarbage.Proof.TripleDes.AArch64.VerifiedBlock
-import VerifiedGarbage.Proof.TripleDes.AArch64.Key.Verified
-import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.Verified
-import VerifiedGarbage.Proof.TripleDes.AArch64.Frame
+module
+
+public import VerifiedGarbage.Proof.TripleDes.AArch64.VerifiedBlock
+public import VerifiedGarbage.Proof.TripleDes.AArch64.Key.Verified
+public import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.Verified
+public import VerifiedGarbage.Proof.TripleDes.AArch64.Frame
+
+@[expose] public section
 
 namespace VG.Artifacts.TripleDes.AArch64
 
@@ -41,7 +45,7 @@ def artifacts : List Artifact := [
       Impl.TripleDes.AArch64.BitsliceNeon.encrypt
     contract := Spec.TripleDes.ecbEncryptContract AArch64.abi 1024
     stack := 1024
-    ofSig := ⟨_, _, _, by unfold Spec.TripleDes.ecbEncryptContract Spec.TripleDes.ecbContract; rfl⟩
+    ofSig := by exact (⟨_, _, _, by unfold Spec.TripleDes.ecbEncryptContract Spec.TripleDes.ecbContract; rfl⟩)
     verified := Proof.TripleDes.AArch64.ecb_framed Proof.TripleDes.AArch64.BitslicedNeon.encrypt_verified
     spSafe := Code.all_of_forall (fun _ => rfl) _ },
   { Spec.TripleDes.ecbDecryptApi with
@@ -52,7 +56,7 @@ def artifacts : List Artifact := [
       Impl.TripleDes.AArch64.BitsliceNeon.decrypt
     contract := Spec.TripleDes.ecbDecryptContract AArch64.abi 1024
     stack := 1024
-    ofSig := ⟨_, _, _, by unfold Spec.TripleDes.ecbDecryptContract Spec.TripleDes.ecbContract; rfl⟩
+    ofSig := by exact (⟨_, _, _, by unfold Spec.TripleDes.ecbDecryptContract Spec.TripleDes.ecbContract; rfl⟩)
     verified := Proof.TripleDes.AArch64.ecb_framed Proof.TripleDes.AArch64.BitslicedNeon.decrypt_verified
     spSafe := Code.all_of_forall (fun _ => rfl) _ }]
 

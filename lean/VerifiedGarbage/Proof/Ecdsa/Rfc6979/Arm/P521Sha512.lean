@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Verified
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.P521
-import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Instances
-import VerifiedGarbage.Spec.Ecdsa.Rfc6979.P521Sha512
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Verified
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.P521
+public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Instances
+public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.P521Sha512
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Deterministic ECDSA over P-521 with HMAC-SHA-512 on 32-bit ARM
@@ -11,6 +17,8 @@ code calls (`Proof.Pbkdf2.Whole.Arm.sha512OKF`), and `vg_ecdsa_p521_sign`,
 with P-521's group law (`hL`, which the registration file supplies). The
 shared contract implies `rfcArm` (`implies`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Rfc6979.Arm.P521Sha512
 

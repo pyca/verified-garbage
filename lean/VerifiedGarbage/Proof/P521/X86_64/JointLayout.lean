@@ -1,9 +1,18 @@
-import VerifiedGarbage.Impl.Ecdsa.Verify.P521.X86_64
-import VerifiedGarbage.Proof.Weierstrass.X86_64.JointCachedDigit
-import VerifiedGarbage.Proof.Weierstrass.X86_64.JointInitLayout
-import VerifiedGarbage.Proof.Weierstrass.X86_64.JointPrepFields
+module
+
+public import VerifiedGarbage.Impl.Ecdsa.Verify.P521.X86_64
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointCachedDigit
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointInitLayout
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointPrepFields
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Concrete separation checks for P-521's joint verifier's scratch allocation. -/
+
+@[expose] public section
+
 namespace VG.Proof.P521.X86_64
 open VG VG.X86_64 VG.Impl.P521.X86_64 VG.Impl.Weierstrass VG.Impl.Ecdsa.X86_64
 open VG.Proof.Mont VG.Proof.Weierstrass.X86_64

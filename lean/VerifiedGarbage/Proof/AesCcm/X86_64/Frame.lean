@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesCcm.X86_64.Verified
-import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
+module
+
+public import VerifiedGarbage.Proof.AesCcm.X86_64.Verified
+public import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CCM on x86-64, with its working space on the stack
@@ -17,6 +23,8 @@ calls use 16 bytes below it: the return addresses of the call of
 (`Ctr32Impl.noStack`). `open`'s leak,
 whether it succeeds, reads only its buffers (`openLeak_local`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesCcm.X86_64
 

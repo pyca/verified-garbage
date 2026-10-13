@@ -1,8 +1,10 @@
-import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Variant
-import VerifiedGarbage.TCB.Emit
-import VerifiedGarbage.Proof.RsaPss.AArch64.SignVerified
-import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyVerified
-import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Callees
+module
+
+public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Variant
+public import VerifiedGarbage.TCB.Emit
+public import VerifiedGarbage.Proof.RsaPss.AArch64.SignVerified
+public import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyVerified
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Callees
 
 /-!
 # RSASSA-PSS signing on AArch64
@@ -12,6 +14,8 @@ Generic over two interfaces: the hash function of an `MdHash` variant `v`
 `vg_rsa_private_crt`. Its stack is its frame and `vg_rsa_private_checked`'s
 3248 bytes.
 -/
+
+@[expose] public section
 
 namespace VG.Generic.MdHash.RsaPrivateCrt.AArch64.RsaPss
 

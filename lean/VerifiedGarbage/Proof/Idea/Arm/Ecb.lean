@@ -1,9 +1,15 @@
-import VerifiedGarbage.Proof.Idea.Arm.Block
-import VerifiedGarbage.Proof.Idea.Arm.ConstantTime
-import VerifiedGarbage.Proof.Framework.Arm.Spill
-import VerifiedGarbage.Proof.Framework.Arm.Contract
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Idea.Scratch32
+module
+
+public import VerifiedGarbage.Proof.Idea.Arm.Block
+public import VerifiedGarbage.Proof.Idea.Arm.ConstantTime
+public import VerifiedGarbage.Proof.Framework.Arm.Spill
+public import VerifiedGarbage.Proof.Framework.Arm.Contract
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Idea.Scratch32
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # IDEA ECB on ARMv7
@@ -14,6 +20,8 @@ import VerifiedGarbage.Proof.Idea.Scratch32
 before are transformed and the ones after not yet (each iteration is
 `cryptBlock_run`), and restores the registers.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Idea.Arm
 

@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Idea.X86_64.Ecb
-import VerifiedGarbage.Proof.Idea.Scratch
-import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
-import VerifiedGarbage.Impl.StackScratch.X86_64
+module
+
+public import VerifiedGarbage.Proof.Idea.X86_64.Ecb
+public import VerifiedGarbage.Proof.Idea.Scratch
+public import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
+public import VerifiedGarbage.Impl.StackScratch.X86_64
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Verified IDEA ECB on x86-64
@@ -12,6 +18,8 @@ and `ecb_framed` against the shared contract, with the buffer in a frame of
 out of its buffers, 16 for `rbx` and `rbp`). The buffer only ever holds the
 caller's `rbx` and `rbp`, so it is not zeroed.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Idea.X86_64
 

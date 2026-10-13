@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Modes.Arm.Words
-import VerifiedGarbage.Impl.Modes.Arm.Seq
-import VerifiedGarbage.Spec.Cbc
+module
+
+public import VerifiedGarbage.Proof.Modes.Arm.Words
+public import VerifiedGarbage.Impl.Modes.Arm.Seq
+public import VerifiedGarbage.Spec.Cbc
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # A mode's block operations on ARMv7, and what they compute
@@ -18,6 +24,8 @@ after it.
 three blocks as `runOps` says, changing only them and `r9`, `r10` (`BlkMem`,
 with the blocks where `Lay` puts them).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Modes.Arm
 

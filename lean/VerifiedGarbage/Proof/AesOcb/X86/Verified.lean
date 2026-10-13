@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.AesOcb.X86.SealCT
-import VerifiedGarbage.Proof.AesOcb.X86.Init
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Spec.Ocb.Contract
-import VerifiedGarbage.Proof.AesOcb.Scratch
+module
+
+public import VerifiedGarbage.Proof.AesOcb.X86.SealCT
+public import VerifiedGarbage.Proof.AesOcb.X86.Init
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.Ocb.Contract
+public import VerifiedGarbage.Proof.AesOcb.Scratch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-OCB on x86: `Verified`
@@ -15,6 +21,8 @@ precondition, and the shared contracts with the working space as a last
 argument (`Proof/AesOcb/Scratch.lean`), with 24 bytes of stack: the
 arguments and return address of the calls, whose callees use no stack.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

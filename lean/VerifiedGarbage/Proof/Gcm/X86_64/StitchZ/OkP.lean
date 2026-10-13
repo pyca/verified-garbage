@@ -1,13 +1,19 @@
-import VerifiedGarbage.Proof.Gcm.X86_64.Cached.PreparedTo
-import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Prepared
-import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemTo
-import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.OutOfPlace
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.LoopP
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Ok
-import VerifiedGarbage.Proof.Gcm.Powers
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchZTo.LoopP
-import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Ok
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchTo.Loop
+module
+
+public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.PreparedTo
+public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Prepared
+public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemTo
+public import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.OutOfPlace
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.LoopP
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Ok
+public import VerifiedGarbage.Proof.Gcm.Powers
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZTo.LoopP
+public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Ok
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchTo.Loop
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The AVX-512 loops with the powers in the key context: both meet their contracts
@@ -20,6 +26,8 @@ and those of the tables loaded (`bigP_ok`, `bigDP_ok`), add up to `GHASH`
 (`StitchZ.finZ`, `finZ48`); the rest is `StitchZ`'s (`encTailG_ok`,
 `decTailG_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Gcm.X86_64.StitchZP
 

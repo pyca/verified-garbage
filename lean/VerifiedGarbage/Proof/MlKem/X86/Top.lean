@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.MlKem.X86.Keccak
-import VerifiedGarbage.Proof.MlKem.X86.Leaf
-import VerifiedGarbage.Proof.MlKem.Mem
-import VerifiedGarbage.TCB.X86.Target
-import VerifiedGarbage.Impl.MlKem.X86.Top
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86.Keccak
+public import VerifiedGarbage.Proof.MlKem.X86.Leaf
+public import VerifiedGarbage.Proof.MlKem.Mem
+public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Impl.MlKem.X86.Top
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86 (32-bit): the setting of the top-level functions
@@ -20,6 +26,8 @@ two are disjoint (`Buf.sep`), and whether one lies in its argument
 throughout the body: `esp`, `esi`, the permissions, and memory changed only
 in the written arguments and the calls' stack (`W`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.X86.Top
 

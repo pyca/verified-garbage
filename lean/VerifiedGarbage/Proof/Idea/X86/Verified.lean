@@ -1,10 +1,23 @@
-import VerifiedGarbage.Proof.Idea.X86.Ecb
-import VerifiedGarbage.Proof.Idea.X86.Lit
-import VerifiedGarbage.Proof.Idea.Local
-import VerifiedGarbage.Proof.Framework.X86.Taint
-import VerifiedGarbage.Proof.Framework.X86.StackScratch
-import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
-import VerifiedGarbage.Proof.Framework.Contract
+module
+
+public import VerifiedGarbage.Proof.Idea.X86.Ecb
+meta import VerifiedGarbage.Proof.Idea.X86.Ecb
+public import VerifiedGarbage.Proof.Idea.X86.Lit
+meta import VerifiedGarbage.Proof.Idea.X86.Lit
+public import VerifiedGarbage.Proof.Idea.Local
+meta import VerifiedGarbage.Proof.Idea.Local
+public import VerifiedGarbage.Proof.Framework.X86.Taint
+meta import VerifiedGarbage.Proof.Framework.X86.Taint
+public import VerifiedGarbage.Proof.Framework.X86.StackScratch
+meta import VerifiedGarbage.Proof.Framework.X86.StackScratch
+public import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
+meta import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Verified IDEA on x86 (32-bit), with its working space on the stack
@@ -23,6 +36,8 @@ of the subkeys and the spilled word of the block (`wipedWords`) on return.
 `invertKey_framed` keeps the four registers `invertKey` saves in a frame of
 32 bytes, which only ever holds the caller's registers and is not zeroed.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Idea.X86
 

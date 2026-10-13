@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Samp
-import VerifiedGarbage.Impl.MlDsa.Arm.Verify.Verify
-import VerifiedGarbage.Proof.MlDsa.Verify.Final
+module
+
+public import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Samp
+public import VerifiedGarbage.Impl.MlDsa.Arm.Verify.Verify
+public import VerifiedGarbage.Proof.MlDsa.Verify.Final
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA verification on 32-bit ARM: its parameters, precondition and buffers
@@ -12,6 +18,8 @@ function (`vlay`): `scratch`, the stack, `pk`, `mu` and `sig`, of which only
 each other. `vsep` proves the facts about the offsets of pointers into them by
 `omega`, for any parameter set.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Arm.Verify
 

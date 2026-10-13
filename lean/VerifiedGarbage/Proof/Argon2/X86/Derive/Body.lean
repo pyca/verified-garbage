@@ -1,11 +1,19 @@
-import VerifiedGarbage.Proof.Argon2.X86.Divide
-import VerifiedGarbage.Proof.Argon2.X86.HPrime.Verified
-import VerifiedGarbage.Proof.Argon2.X86.CompressVerified
-import VerifiedGarbage.Proof.Argon2.Dimensions
-import VerifiedGarbage.Proof.Argon2.Matrix
-import VerifiedGarbage.Impl.Argon2.X86.Derive
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.TCB.X86.Target
+module
+
+public import VerifiedGarbage.Proof.Argon2.X86.Divide
+public import VerifiedGarbage.Proof.Argon2.X86.HPrime.Verified
+public import VerifiedGarbage.Proof.Argon2.X86.CompressVerified
+public import VerifiedGarbage.Proof.Argon2.Dimensions
+public import VerifiedGarbage.Proof.Argon2.Matrix
+public import VerifiedGarbage.Impl.Argon2.X86.Derive
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.TCB.X86.Target
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 section
 

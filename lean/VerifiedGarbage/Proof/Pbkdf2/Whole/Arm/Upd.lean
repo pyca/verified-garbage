@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Calls
+module
+
+public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Calls
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # PBKDF2-HMAC on 32-bit ARM, the whole derivation: `update`, in its frame, of any length
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Calls
 that fits the address space (HMAC's functions only absorb constants of fewer
 than 2¹⁶ bytes, which `movw` sets; we absorb the password and the salt).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Pbkdf2.Whole.Arm
 

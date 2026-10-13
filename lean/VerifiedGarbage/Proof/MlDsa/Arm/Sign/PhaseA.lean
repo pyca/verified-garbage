@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Inv
-import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PrimsS
-import VerifiedGarbage.Proof.MlDsa.Sign.Setup
+module
+
+public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Inv
+public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PrimsS
+public import VerifiedGarbage.Proof.MlDsa.Sign.Setup
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA signing on ARMv7: `ExpandA`
@@ -10,6 +16,8 @@ the seed `ρ ‖ j ‖ i`, with `r11` the AND of the results (`IA`): if it is 1,
 every entry so far is `RejNTTPoly`'s within `maxBounds`; if it is 0, one
 entry's `RejNTTPoly` does not finish within `minBounds` (`expandA_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Arm.Sign
 

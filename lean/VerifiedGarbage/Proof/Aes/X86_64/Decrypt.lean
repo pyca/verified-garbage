@@ -1,7 +1,13 @@
-import VerifiedGarbage.Impl.Aes.X86_64.Blocks
-import VerifiedGarbage.Proof.Aes.X86_64.Encrypt
-import VerifiedGarbage.Proof.Aes.InvSboxSpec
-import VerifiedGarbage.Proof.Aes.InvBitsliced
+module
+
+public import VerifiedGarbage.Impl.Aes.X86_64.Blocks
+public import VerifiedGarbage.Proof.Aes.X86_64.Encrypt
+public import VerifiedGarbage.Proof.Aes.InvSboxSpec
+public import VerifiedGarbage.Proof.Aes.InvBitsliced
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Decrypting four blocks, bitsliced, on x86-64
@@ -16,6 +22,8 @@ having written only the first 384 bytes of the scratch buffer. The round
 loop's invariant is the specification's `foldl` over the rounds done, with
 `kp` stepping down from the last round key.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Aes.X86_64
 

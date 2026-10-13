@@ -1,10 +1,18 @@
-import VerifiedGarbage.Proof.X448.Arm.Columns
+module
+
+public import VerifiedGarbage.Proof.X448.Arm.Columns
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 on ARMv7: multiplication by a24
 
 The 16-bit limbs keep multiplication by 39081 within a 32-bit word.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448.Arm
 

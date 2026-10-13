@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Round
+module
+
+public import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Round
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # A bitsliced DES pass on the machine
@@ -10,6 +16,8 @@ pass count (`passStart`), runs eight pairs of rounds (the loop counts them in
 keys read at the addresses `a₀ + r δ`, which are apart from the scratch
 buffer.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.TripleDes.X86_64.Bitsliced
 

@@ -1,6 +1,10 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentMaskVerified
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejVerified
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CommitTailVerified
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentMaskVerified
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejVerified
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CommitTailVerified
+
+@[expose] public section
 
 namespace VG.Artifacts.MlDsaResident.AArch64
 open VG

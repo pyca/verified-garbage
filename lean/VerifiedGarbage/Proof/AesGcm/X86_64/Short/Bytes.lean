@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Small
-import VerifiedGarbage.Proof.Gcm.Compose
-import VerifiedGarbage.Proof.Gcm.Stream
-import VerifiedGarbage.Proof.Aes.Blocks
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Small
+public import VerifiedGarbage.Proof.Gcm.Compose
+public import VerifiedGarbage.Proof.Gcm.Stream
+public import VerifiedGarbage.Proof.Aes.Blocks
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM's short path on x86-64: the bytes
@@ -12,6 +18,8 @@ at `K` is counter mode (`xb_gctr`), and the buffer `G` (zero blocks, the
 additional data and the text each padded, the lengths block) has the blocks
 `GHASH` absorbs (`gBlocks`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

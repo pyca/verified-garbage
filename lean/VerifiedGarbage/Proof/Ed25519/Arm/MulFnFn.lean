@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Ed25519.Arm.MulFnFinal
-import VerifiedGarbage.Proof.Framework.Arm.Spill
+module
+
+public import VerifiedGarbage.Proof.Ed25519.Arm.MulFnFinal
+public import VerifiedGarbage.Proof.Framework.Arm.Spill
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_gf25519_r16_mul` on ARMv7: the function
@@ -10,6 +16,8 @@ between saving the callee-saved registers the body changes (`r4`–`r11`) at
 `r1`–`r3` and no memory but the result's and its own working space (`ACC`
 and `SAVE`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed25519.Arm
 

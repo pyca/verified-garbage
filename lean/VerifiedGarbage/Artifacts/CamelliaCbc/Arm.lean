@@ -1,6 +1,10 @@
-import VerifiedGarbage.Proof.Camellia.Arm.CbcVerified
+module
+
+public import VerifiedGarbage.Proof.Camellia.Arm.CbcVerified
 
 /-! # Camellia-CBC artifacts on baseline ARMv7 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.CamelliaCbc.Arm
 

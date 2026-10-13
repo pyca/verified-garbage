@@ -1,11 +1,19 @@
-import VerifiedGarbage.Proof.X448.AArch64.Fast.Setup
-import VerifiedGarbage.Proof.X448.AArch64.Weak.Finish
+module
+
+public import VerifiedGarbage.Proof.X448.AArch64.Fast.Setup
+public import VerifiedGarbage.Proof.X448.AArch64.Weak.Finish
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 on AArch64: the result, and restoring the callee-saved registers
 
 Untrusted: everything here is checked by Lean.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448.AArch64.Fast
 

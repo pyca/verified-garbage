@@ -1,5 +1,11 @@
-import VerifiedGarbage.Spec.Ocb.Contract
-import VerifiedGarbage.Proof.AesGcm.Scratch
+module
+
+public import VerifiedGarbage.Spec.Ocb.Contract
+public import VerifiedGarbage.Proof.AesGcm.Scratch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-OCB with its working space as an argument
@@ -20,6 +26,8 @@ the function's buffers (`sealPost_local`, `openPost_local`,
 for `rounds` of 10, 12 or 14, the round keys and `L_*` in the key context's
 256 bytes (`ctxCiph_congr`, `ctxInv_congr`, `ctxLstar_congr`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesOcb
 

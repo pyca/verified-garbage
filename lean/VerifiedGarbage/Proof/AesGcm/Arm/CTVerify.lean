@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.AesGcm.Arm.CTFin
+module
+
+public import VerifiedGarbage.Proof.AesGcm.Arm.CTFin
+meta import VerifiedGarbage.Proof.AesGcm.Arm.CTFin
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on ARMv7: `vg_aes_gcm_stream_verify` is constant time
@@ -6,6 +13,8 @@ import VerifiedGarbage.Proof.AesGcm.Arm.CTFin
 Untrusted: everything here is checked by Lean. Only the (public) tag length
 decides which code runs: the tags are compared without a branch.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

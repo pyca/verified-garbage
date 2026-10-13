@@ -1,6 +1,13 @@
-import VerifiedGarbage.Proof.X448.X86_64.Pow223
-import VerifiedGarbage.Proof.Ed448.Root
-import VerifiedGarbage.Impl.Ed448.X86_64.VerifyEquation
+module
+
+public import VerifiedGarbage.Proof.Ed448.X86_64.FieldVariant
+public import VerifiedGarbage.Proof.X448.X86_64.Pow223
+public import VerifiedGarbage.Proof.Ed448.Root
+public import VerifiedGarbage.Impl.Ed448.X86_64.VerifyEquation
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 verification's equation on x86-64: the square root's power
@@ -12,6 +19,8 @@ with that effect on the slots that writes no more than `[960, 1648)`
 (`RootOk`): `root` (`root_ok`), or its chain by a call of
 `vg_gf448_r64_pow223`, inlined (`rootCall_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.X86_64
 
@@ -55,6 +64,16 @@ theorem rootCall_ok : RootOk (rootCall fld).inline := fun {s} {base} hs => by
   refine WP.seq (WP.mono (pow223Keep_ok [PPK, CNT] (by simp [PPK, CNT]) hs) fun s₁ ⟨g₁, rd₁, wr₁, o₁, e₁⟩ => ?_)
   have hs₁ : Scr s₁ base := ⟨(g₁ .rdi (by decide) (by decide) (by decide)).trans hs.rdi, wr₁ ▸ hs.wr, hs.nowrap⟩
   refine WP.mono (rootTail_spec hf base s₁ hs₁) fun s₂ ⟨k₂, e₂⟩ => ⟨⟨fun r hr hb => ?_, k₂.rd.trans rd₁,
+    k₂.wr.trans wr₁, o₁.trans k₂.out⟩, by rw [e₂, e₁]; rfl⟩
+  rw [k₂.gpr r hr hb, g₁ r (by revert hr; cases r <;> decide) (by revert hr; cases r <;> decide)
+    (by revert hr; cases r <;> decide)]
+
+/-- The power by a call of `vg_gf448_r64_pow223`, inlined. -/
+theorem rootCallFor_ok (v : Impl.Ed448.X86_64.FieldVariant) : RootOk (rootCallFor v).inline := fun {s} {base} hs => by
+  change WP isa (.seq (Impl.X448.X86_64.pow223KeepWith v.field v.powName [PPK, CNT]).inline (rootTail v.field)) s _
+  refine WP.seq (WP.mono (Proof.X448.X86_64.pow223KeepWith_ok (FieldVariant.field_ok v) v.powName [PPK, CNT] (by simp [PPK, CNT]) hs) fun s₁ ⟨g₁, rd₁, wr₁, o₁, e₁⟩ => ?_)
+  have hs₁ : Scr s₁ base := ⟨(g₁ .rdi (by decide) (by decide) (by decide)).trans hs.rdi, wr₁ ▸ hs.wr, hs.nowrap⟩
+  refine WP.mono (rootTail_spec (FieldVariant.field_ok v) base s₁ hs₁) fun s₂ ⟨k₂, e₂⟩ => ⟨⟨fun r hr hb => ?_, k₂.rd.trans rd₁,
     k₂.wr.trans wr₁, o₁.trans k₂.out⟩, by rw [e₂, e₁]; rfl⟩
   rw [k₂.gpr r hr hb, g₁ r (by revert hr; cases r <;> decide) (by revert hr; cases r <;> decide)
     (by revert hr; cases r <;> decide)]

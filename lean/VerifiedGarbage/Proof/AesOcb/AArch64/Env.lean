@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.AesOcb.AArch64.Contract
-import VerifiedGarbage.Proof.AesGcm.AArch64.Loops
-import VerifiedGarbage.Proof.Ocb.Spec
-import VerifiedGarbage.Impl.AesOcb.AArch64
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
+module
+
+public import VerifiedGarbage.Proof.AesOcb.AArch64.Contract
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Loops
+public import VerifiedGarbage.Proof.Ocb.Spec
+public import VerifiedGarbage.Impl.AesOcb.AArch64
+public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-OCB on AArch64: where everything is
@@ -16,6 +22,8 @@ parts of `W` in `mutR` (and the data), so the slots and our caller's
 registers saved in `W` stay as the entry left them. `orun` runs a block
 symbolically.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

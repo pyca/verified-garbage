@@ -1,19 +1,39 @@
-import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.Mem
-import VerifiedGarbage.Proof.Framework.Arm.Taint
-import VerifiedGarbage.Proof.Framework.Arm.Exec
-import VerifiedGarbage.Proof.Framework.Arm.RegUpd
-import VerifiedGarbage.Proof.Framework.Arm.Spill
-import VerifiedGarbage.Proof.Sm3.Spec
-import VerifiedGarbage.Impl.Sm3.Arm
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Sm3.Arm.Contract
-import VerifiedGarbage.Proof.Sm3.Arm.Lit
+module
+
+public import VerifiedGarbage.Proof.Framework.Block
+meta import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Framework.Mem
+meta import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+public import VerifiedGarbage.Proof.Framework.Arm.Exec
+meta import VerifiedGarbage.Proof.Framework.Arm.Exec
+public import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+meta import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+public import VerifiedGarbage.Proof.Framework.Arm.Spill
+meta import VerifiedGarbage.Proof.Framework.Arm.Spill
+public import VerifiedGarbage.Proof.Sm3.Spec
+meta import VerifiedGarbage.Proof.Sm3.Spec
+public import VerifiedGarbage.Impl.Sm3.Arm
+meta import VerifiedGarbage.Impl.Sm3.Arm
+public import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Sm3.Arm.Contract
+meta import VerifiedGarbage.Proof.Sm3.Arm.Contract
+public import VerifiedGarbage.Proof.Sm3.Arm.Lit
+meta import VerifiedGarbage.Proof.Sm3.Arm.Lit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # SM3 compression function on ARMv7: the message expansion and the iterations
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sm3.Arm
 

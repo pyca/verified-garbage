@@ -1,6 +1,10 @@
-import VerifiedGarbage.Proof.Cast5.Arm.ModesVerified
+module
+
+public import VerifiedGarbage.Proof.Cast5.Arm.ModesVerified
 
 /-! # CAST5-CBC artifacts on baseline ARMv7 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.Cast5Cbc.Arm
 

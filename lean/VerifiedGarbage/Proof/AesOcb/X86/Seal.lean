@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesOcb.X86.Front
+module
+
+public import VerifiedGarbage.Proof.AesOcb.X86.Front
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-OCB on x86: `vg_aes_ocb_seal` and `vg_aes_ocb_open`
@@ -10,6 +16,8 @@ ciphertext and the tag at `W`), the copy of the tag to `tag` (`tagOut`) and
 (`cmp`), the mask of the data (`mask`), and `ok` in `eax` before `restore`
 (`open_wp`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Blowfish.AArch64.Sbox
-import VerifiedGarbage.Proof.Blowfish.F
+module
+
+public import VerifiedGarbage.Proof.Blowfish.AArch64.Sbox
+public import VerifiedGarbage.Proof.Blowfish.F
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # F on sixteen words
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.Blowfish.F
 `f sch` leaves `F(x n)` in word `n % 4` of `fReg (n / 4)`, under the
 schedule at `sch`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Blowfish.AArch64
 

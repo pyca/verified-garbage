@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.AesCcm.Arm.CTCrypt
+module
+
+public import VerifiedGarbage.Proof.AesCcm.Arm.CTCrypt
+meta import VerifiedGarbage.Proof.AesCcm.Arm.CTCrypt
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CCM on ARMv7: `vg_aes_ccm_seal` and `vg_aes_ccm_open` are constant time
@@ -9,6 +16,8 @@ public values (`entryI`), piece by piece. `open` compares the tags and masks
 the data without a branch: whether the tag is right, in `r0` and `r7`, is
 never branched on nor used as an address.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

@@ -1,9 +1,15 @@
-import VerifiedGarbage.Proof.X448.AArch64.Base.Step
-import VerifiedGarbage.Proof.X448.AArch64.Base.AddGen
-import VerifiedGarbage.Proof.X448.AArch64.Weak.Counters
-import VerifiedGarbage.Proof.Ed448.AArch64.Point56.Call
-import VerifiedGarbage.Proof.Curve448.AArch64.Copy
-import VerifiedGarbage.Proof.Framework.AArch64.LaneSave
+module
+
+public import VerifiedGarbage.Proof.X448.AArch64.Base.Step
+public import VerifiedGarbage.Proof.X448.AArch64.Base.AddGen
+public import VerifiedGarbage.Proof.X448.AArch64.Weak.Counters
+public import VerifiedGarbage.Proof.Ed448.AArch64.Point56.Call
+public import VerifiedGarbage.Proof.Curve448.AArch64.Copy
+public import VerifiedGarbage.Proof.Framework.AArch64.LaneSave
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448's comb on AArch64: `16 A + B` by calls
@@ -16,6 +22,8 @@ Untrusted: everything here is checked by Lean. `combineCall` (the comb's
 sum moved to slots 0–2; the return address kept in a lane of `v8` across the
 calls (`WP.preservedV`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.AArch64.Point56
 

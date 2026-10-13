@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.AesOfb.Spec
-import VerifiedGarbage.Proof.AesCbc.Arm.CT
-import VerifiedGarbage.Impl.AesOfb.Arm
+module
+
+public import VerifiedGarbage.Proof.AesOfb.Spec
+meta import VerifiedGarbage.Proof.AesOfb.Spec
+public import VerifiedGarbage.Proof.AesCbc.Arm.CT
+meta import VerifiedGarbage.Proof.AesCbc.Arm.CT
+public import VerifiedGarbage.Impl.AesOfb.Arm
+meta import VerifiedGarbage.Impl.AesOfb.Arm
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-OFB on ARMv7: one block, and constant time
@@ -10,6 +19,8 @@ share (`Proof/AesCbc/Arm/Loop.lean`) from `k` blocks to `k + 1`, for
 `ofbMode`. `body_ct`: it is constant time, by the shared framework, with the
 call on the block at `iv`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesOfb.Arm
 

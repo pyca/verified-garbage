@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Sm4.Arm.Linear
-import VerifiedGarbage.Proof.Sm4.Arm.Sbox
-import VerifiedGarbage.Proof.Sm4.Rounds
-import VerifiedGarbage.Proof.Framework.Offset
+module
+
+public import VerifiedGarbage.Proof.Sm4.Arm.Linear
+public import VerifiedGarbage.Proof.Sm4.Arm.Sbox
+public import VerifiedGarbage.Proof.Sm4.Rounds
+public import VerifiedGarbage.Proof.Framework.Offset
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # A round of bitsliced SM4 on ARMv7
@@ -13,6 +19,8 @@ round key's planes at entry `a` of `kp`, `round l a a b c d` replaces word
 words and writing only the slots below the table. The layers are composed
 from their checks (`Linear.lean`, `Sbox.lean`) and `W32.round_rel`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sm4.Arm
 

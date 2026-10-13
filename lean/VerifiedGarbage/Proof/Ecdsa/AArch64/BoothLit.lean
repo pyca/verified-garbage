@@ -1,8 +1,19 @@
-import VerifiedGarbage.Impl.P256.Booth
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Lit
-import VerifiedGarbage.Proof.EcKey.AArch64.Lit
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.CombMixed
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.CombOut
+module
+
+public import VerifiedGarbage.Impl.P256.Booth
+meta import VerifiedGarbage.Impl.P256.Booth
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.Lit
+meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Lit
+public import VerifiedGarbage.Proof.EcKey.AArch64.Lit
+meta import VerifiedGarbage.Proof.EcKey.AArch64.Lit
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.CombMixed
+meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.CombMixed
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.CombOut
+meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.CombOut
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! The comb that signing and public keys share is checked once, and their
 literals read it.
@@ -11,6 +22,8 @@ The comb's forwarded field programs (`CombArithmetic.program`) are the
 optimizer's output, which `Forward.CombMixed` and `Forward.CombOut` already
 have as literals: the comb's literal is its code with those, by rewriting,
 rather than the kernel running the optimizer again. -/
+
+@[expose] public section
 
 namespace VG.Impl.P256.Booth
 open VG VG.AArch64 VG.Impl.Weierstrass VG.Impl.Weierstrass.AArch64

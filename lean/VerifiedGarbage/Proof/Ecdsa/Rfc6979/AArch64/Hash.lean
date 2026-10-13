@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Regs
-import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.PbkCalls
-import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Core
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Curve
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Regs
+public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.PbkCalls
+public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Core
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Curve
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Deterministic ECDSA on AArch64: the hash function
@@ -18,6 +24,8 @@ shorter than the curve's scalars (or, for a `wide` curve, SHA-512's), and
 states and working space no larger than SHA-512's. Each hash function's file builds one for each
 implementation of its compression function.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Rfc6979.AArch64
 

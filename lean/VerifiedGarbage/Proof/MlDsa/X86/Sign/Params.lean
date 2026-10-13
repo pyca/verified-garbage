@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlDsa.X86.Sign.Base
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86.Sign.Base
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA signing on x86 (32-bit): the parameter sets, and the layout
@@ -7,6 +13,8 @@ What the proofs need of a parameter set (`PS`), which the three parameter sets
 have (`PS.of`); and the layout as numbers (`Y_n`, `Y_alen0`, …), from which
 the tactic `ofs` (`Inv.lean`) proves the layout checks of a call by `omega`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86.Sign
 

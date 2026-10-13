@@ -1,7 +1,17 @@
-import VerifiedGarbage.Proof.X25519.AArch64.Top
-import VerifiedGarbage.Proof.X25519.AArch64.Lit
-import VerifiedGarbage.Proof.Framework.AArch64.Taint
-import VerifiedGarbage.Proof.Framework.Contract
+module
+
+public import VerifiedGarbage.Proof.X25519.AArch64.Top
+meta import VerifiedGarbage.Proof.X25519.AArch64.Top
+public import VerifiedGarbage.Proof.X25519.AArch64.Lit
+meta import VerifiedGarbage.Proof.X25519.AArch64.Lit
+public import VerifiedGarbage.Proof.Framework.AArch64.Taint
+meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X25519 on AArch64: `Verified`
@@ -10,6 +20,8 @@ Constant time (by taint tracking: the only branches are on the loop counters,
 and every address is an argument plus a constant, or the working space plus a
 counter), satisfiability, and the shared contract of `Spec/`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X25519.AArch64
 

@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.Setup
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.Setup
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # An RSA key from its primes on x86-64: the inverse of `e` modulo `2⁶⁴`
@@ -6,6 +12,8 @@ import VerifiedGarbage.Proof.Bignum.X86_64.Setup
 `minv` leaves `e⁻¹ mod 2⁶⁴` in `rcx` (`minvC_ok`), as well as its negation
 in `r15` (`minv_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaKeyGen.X86_64.Key
 

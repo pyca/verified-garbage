@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.X25519.AArch64.Arith
-import VerifiedGarbage.Impl.X25519.AArch64
+module
+
+public import VerifiedGarbage.Proof.X25519.AArch64.Arith
+public import VerifiedGarbage.Impl.X25519.AArch64
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X25519 on AArch64: decoding and encoding, as numbers
@@ -7,6 +13,8 @@ import VerifiedGarbage.Impl.X25519.AArch64
 The u-coordinate's four 64-bit words cut into fifteen 17-bit limbs (the top
 bit left out), and the full reduction and packing of the result.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X25519.AArch64
 

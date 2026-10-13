@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.AesGcm.Arm.CTBase
+module
+
+public import VerifiedGarbage.Proof.AesGcm.Arm.CTBase
+meta import VerifiedGarbage.Proof.AesGcm.Arm.CTBase
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on ARMv7: `ghash1`, `absorb`, `flush` and `lens` are constant time
@@ -8,6 +15,8 @@ context, the state, `W`, the stack pointer, the data's address and length and
 the number of bytes absorbed so far modulo 16, and leave the rest
 existential.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

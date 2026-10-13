@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesGcm.Arm.Env
-import VerifiedGarbage.Proof.Framework.WriteBytes
+module
+
+public import VerifiedGarbage.Proof.AesGcm.Arm.Env
+public import VerifiedGarbage.Proof.Framework.WriteBytes
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on ARMv7: running straight-line blocks
@@ -10,6 +16,8 @@ instructions the code uses, and reads through the writes with `RegUpd`), and
 the memory facts shared by the pieces: what `DataOk` says of a buffer of
 data, and the bytes written by a copy (`bytesAt_writeBytes`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

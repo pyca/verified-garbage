@@ -1,10 +1,23 @@
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedPrefix
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacChecks
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointCache
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedFieldTiming
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JointGenerator
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedPrefix
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedPrefix
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacChecks
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacChecks
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointCache
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointCache
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedFieldTiming
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedFieldTiming
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JointGenerator
+meta import VerifiedGarbage.Proof.Weierstrass.AArch64.JointGenerator
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## `JointBoundaryChecks` -/
+
+@[expose] public section
 
 section
 

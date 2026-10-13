@@ -1,6 +1,12 @@
-import VerifiedGarbage.Impl.Sm4.AArch64.ExpandKey
-import VerifiedGarbage.Proof.Sm4.Bitsliced
-import VerifiedGarbage.Proof.Camellia.AArch64.Linear
+module
+
+public import VerifiedGarbage.Impl.Sm4.AArch64.ExpandKey
+public import VerifiedGarbage.Proof.Sm4.Bitsliced
+public import VerifiedGarbage.Proof.Camellia.AArch64.Linear
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The linear layers of bitsliced SM4 on AArch64, by evaluation
@@ -22,6 +28,8 @@ XOR of input bits given here.
 Position `p = 16 i + b` of a plane is byte `i` (from the most significant)
 of the word of block `b`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sm4.AArch64
 

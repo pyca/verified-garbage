@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.X448.AArch64.Step
+module
+
+public import VerifiedGarbage.Proof.X448.AArch64.Step
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Untrusted: carry a coefficient directly from its register. -/
+
+@[expose] public section
+
 namespace VG.Proof.X448.AArch64
 open VG VG.AArch64 VG.Impl.X448.AArch64
 

@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.Weierstrass.X86_64.FieldErase
-import VerifiedGarbage.Impl.Ecdsa.P384.X86_64
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.FieldErase
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.FieldErase
+public import VerifiedGarbage.Impl.Ecdsa.P384.X86_64
+meta import VerifiedGarbage.Impl.Ecdsa.P384.X86_64
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # P-384 on x86-64: the templates of the field operations
@@ -9,6 +17,8 @@ The erased code of P-384's field operations modulo `p` (`FieldTmpl`,
 as literals, proven to be the code of every slot's operation by the
 kernel's evaluation of the code with the slots variables.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.P384.X86_64
 

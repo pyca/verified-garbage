@@ -1,9 +1,18 @@
-import VerifiedGarbage.Impl.P256.EcdhJac
-import VerifiedGarbage.Proof.Weierstrass.AArch64.AllocatedState
-import VerifiedGarbage.Proof.Ecdsa.AArch64.SlotOps
-import VerifiedGarbage.Proof.Weierstrass.WinJacPoint
+module
+
+public import VerifiedGarbage.Impl.P256.EcdhJac
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.AllocatedState
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.SlotOps
+public import VerifiedGarbage.Proof.Weierstrass.WinJacPoint
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Shared invariants for secret-scalar P-256 Jacobian windows. -/
+
+@[expose] public section
+
 namespace VG.Proof.P256.EcdhJac
 open VG VG.AArch64 VG.Impl.Mont VG.Impl.Weierstrass VG.Impl.Weierstrass.AArch64
 open VG.Proof.Mont VG.Proof.Mont.AArch64 VG.Proof.Weierstrass VG.Proof.Weierstrass.AArch64

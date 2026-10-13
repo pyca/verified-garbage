@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Ed448.AArch64.Verify.Layout
+module
+
+public import VerifiedGarbage.Proof.Ed448.AArch64.Verify.Layout
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 verification on AArch64: the frame's body
@@ -9,6 +15,8 @@ From the saved arguments (`Args`) and `scratch` in `x6`: the entry keeps
 into `k` (`reduce_step`), and `x0` is the verification equation's result
 (`body_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.AArch64.Verify
 
