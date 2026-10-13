@@ -230,11 +230,11 @@ theorem checksS_ct (hC : ChecksCT) : RelCT isa (Two (Stage R2)) (seqs checks) (T
     hr.wsP, hr.wsQ, hr.pws, hr.qws, hr.n.nv.n, hr.n.msk, hr.pv, hr.qv, hr.qiv, hodd⟩
 
 /-- `q`'s phase leaks the same in runs that agree on the public data. -/
-theorem qS_ct (M : Mont) (S : CrtSel) (hQ : QPhaseCT M S) : RelCT isa (Two (Stage R3)) (seqs (qPhase M.mm S.code)) (Two (Stage R4)) := by
+theorem qS_ct (M : Mont) (E : CrtExpL M) (hQ : QPhaseCT M E) : RelCT isa (Two (Stage R3)) (seqs (qPhase M.mm E.code)) (Two (Stage R4)) := by
   refine stage_step (hQ.mono (fun _ _ h => two_stage (fun p minv => (⟨p.B, p.Z, p.w, minv, p.N, offQ p.w p.pl,
     wsWords p.ql, p.dqp, p.ql⟩ : PhasePub)) (fun p σ xb pb qb dpb dqb qib t h hv ⟨minv, mp, mq, hr⟩ => ?_) h)
       fun _ _ h => h)
-    fun p σ xb pb qb dpb dqb qib t h hv ⟨minv, mp, mq, hr⟩ => WP.mono (qPart_ok M S h hv hr rfl) fun _ h' =>
+    fun p σ xb pb qb dpb dqb qib t h hv ⟨minv, mp, mq, hr⟩ => WP.mono (qPart_ok M E h hv hr rfl) fun _ h' =>
       ⟨minv, mp, mq, h'⟩
   obtain ⟨hodd, hN1, hPN, hQN⟩ := crt_bounds h hv
   obtain ⟨-, -, hQ'⟩ := mask_facts (Mk := p.mask xb pb qb qib) rfl hodd hPN hQN
@@ -256,11 +256,11 @@ theorem qS_ct (M : Mont) (S : CrtSel) (hQ : QPhaseCT M S) : RelCT isa (Two (Stag
     by rw [h.dql]; omega, h.dq.congrK hr.iscr hr.keep⟩
 
 /-- `p`'s phase leaks the same in runs that agree on the public data. -/
-theorem pS_ct (M : Mont) (S : CrtSel) (hP : PPhaseCT M S) : RelCT isa (Two (Stage R4)) (seqs (pPhase M.mm S.code)) (Two (Stage R5)) := by
+theorem pS_ct (M : Mont) (E : CrtExpL M) (hP : PPhaseCT M E) : RelCT isa (Two (Stage R4)) (seqs (pPhase M.mm E.code)) (Two (Stage R5)) := by
   refine stage_step (hP.mono (fun _ _ h => two_stage (fun p minv => (⟨⟨p.B, p.Z, p.w, minv, p.N, offP p.w,
     wsWords p.pl, p.dpp, p.pl⟩, offQ p.w p.pl, wsWords p.ql, p.qip⟩ : PPhasePub))
       (fun p σ xb pb qb dpb dqb qib t h hv ⟨minv, mp, mq, hr⟩ => ?_) h) fun _ _ h => h)
-    fun p σ xb pb qb dpb dqb qib t h hv ⟨minv, mp, mq, hr⟩ => WP.mono (pPart_ok M S h hv hr rfl) fun _ h' =>
+    fun p σ xb pb qb dpb dqb qib t h hv ⟨minv, mp, mq, hr⟩ => WP.mono (pPart_ok M E h hv hr rfl) fun _ h' =>
       ⟨minv, mp, mq, h'⟩
   obtain ⟨hodd, hN1, hPN, hQN⟩ := crt_bounds h hv
   obtain ⟨hMk', hP', -⟩ := mask_facts (Mk := p.mask xb pb qb qib) rfl hodd hPN hQN
@@ -349,9 +349,9 @@ theorem outArr_ct {j : Nat} (hj : j < 8) {hc : VG.Taint.Hint VG.X86_64.Taint.T}
 
 /-- `main` leaks the same in runs that agree on the public data, given that
 its parts do. -/
-theorem crtMain_ct (M : Mont) (S : CrtSel) (hS : SetupCT) (hC : ChecksCT) (hQ : QPhaseCT M S) (hP : PPhaseCT M S)
+theorem crtMain_ct (M : Mont) (E : CrtExpL M) (hS : SetupCT) (hC : ChecksCT) (hQ : QPhaseCT M E) (hP : PPhaseCT M E)
     (hF : RelCT isa (Two (Stage R5)) (seqs finish) fun _ _ => True) :
-    RelCT isa (Two (Stage R0)) (Crt.main M.mm S.code) fun _ _ => True := by
+    RelCT isa (Two (Stage R0)) (Crt.main M.mm E.code) fun _ _ => True := by
   rw [crtMain_eq]
   refine RelCT.seqs_append (by simp [nSetup]) (by simp [qPhase]) (RelCT.seq (R := Two (Stage R3)) ?_ ?_)
   · refine RelCT.seqs_append (by simp [nSetup]) (by simp [checks])
@@ -361,7 +361,7 @@ theorem crtMain_ct (M : Mont) (S : CrtSel) (hS : SetupCT) (hC : ChecksCT) (hQ : 
     exact stage_step (nSetup_ct M) fun p σ xb _ _ _ _ _ t h hv ht => by
       subst ht; exact WP.mono (nPart_ok M h hv) fun _ ⟨minv, hr⟩ => ⟨minv, hr⟩
   rw [List.append_assoc]
-  refine RelCT.seqs_append (by simp [qPhase]) (by simp [pPhase]) (RelCT.seq (qS_ct M S hQ) ?_)
-  exact RelCT.seqs_append (by simp [pPhase]) (by simp [finish]) (RelCT.seq (pS_ct M S hP) hF)
+  refine RelCT.seqs_append (by simp [qPhase]) (by simp [pPhase]) (RelCT.seq (qS_ct M E hQ) ?_)
+  exact RelCT.seqs_append (by simp [pPhase]) (by simp [finish]) (RelCT.seq (pS_ct M E hP) hF)
 
 end VG.Proof.Bignum.X86_64

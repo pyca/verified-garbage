@@ -38,7 +38,7 @@ def CK (p : ChecksPub) (t : State) : Prop :=
   Scr t p.B p.Z ∧ Hdr t.mem p.B p.w p.minv ∧ word t.mem p.B (8 * sWsP) = off p.B p.op ∧
     word t.mem p.B (8 * sWsQ) = off p.B p.oq ∧ WsF t.mem p.B p.op p.wp ∧ WsF t.mem p.B p.oq p.wq ∧
     (∃ c, word t.mem p.B (8 * Public.sMask) = mask c) ∧ 8 ≤ p.w ∧ p.w < 2 ^ 28 ∧ slot p.w 8 ≤ p.op ∧
-    p.op + slot p.wp 8 + tabBytes p.wp ≤ p.oq ∧ p.oq + slot p.wq 8 + tabBytes p.wq ≤ p.Z ∧ 2 ≤ p.wp ∧
+    p.op + slot p.wp 8 + wsTab p.wp ≤ p.oq ∧ p.oq + slot p.wq 8 + wsTab p.wq ≤ p.Z ∧ 2 ≤ p.wp ∧
     p.wp ≤ p.w ∧ 2 ≤ p.wq ∧ p.wq ≤ p.w
 
 /-- `CK` with `x0` at `f p`. -/
@@ -49,7 +49,7 @@ theorem pins_ckr (f : ChecksPub → Addr) : Pins (CKr f) [.x0] :=
 
 theorem CK.bounds {p : ChecksPub} {t : State} (h : CK p t) :
     p.B.toNat + p.Z ≤ 2 ^ 64 ∧ 8 ≤ p.w ∧ p.w < 2 ^ 28 ∧ slot p.w 8 ≤ p.op ∧
-      p.op + slot p.wp 8 + tabBytes p.wp ≤ p.oq ∧ p.oq + slot p.wq 8 + tabBytes p.wq ≤ p.Z ∧ 2 ≤ p.wp ∧
+      p.op + slot p.wp 8 + wsTab p.wp ≤ p.oq ∧ p.oq + slot p.wq 8 + wsTab p.wq ≤ p.Z ∧ 2 ≤ p.wp ∧
       p.wp ≤ p.w ∧ 2 ≤ p.wq ∧ p.wq ≤ p.w :=
   let ⟨hs, _, _, _, _, _, _, b⟩ := h; ⟨hs.nowrap, b⟩
 
@@ -308,13 +308,13 @@ theorem pfRanges_le (wx : Nat) : ∀ r ∈ pfRanges wx, 8 * 7 ≤ r.1 ∧ r.1 + 
   rcases hr with rfl | rfl | rfl | rfl <;> simp only [sMaskX, sMinv, sFn] <;> omega
 
 theorem CK.sub {p : ChecksPub} {s : State} {o wx : Nat} (hk : CK p s) (hdi : s.gpr .x0 = off p.B o)
-    (hF : WsF s.mem p.B o wx) (hlo : slot p.w 8 ≤ o) (hhi : o + slot wx 8 + tabBytes wx ≤ p.Z) :
+    (hF : WsF s.mem p.B o wx) (hlo : slot p.w 8 ≤ o) (hhi : o + slot wx 8 + wsTab wx ≤ p.Z) :
     ∃ (minv : BitVec 64) (c : Bool), SubCtx s p.B p.Z o p.w wx minv ∧ word s.mem p.B (8 * Public.sMask) = mask c := by
   obtain ⟨hs, hH, -, -, -, -, ⟨c, hM⟩, -⟩ := hk
-  exact ⟨_, c, ⟨hs, hdi, hdr_any hF.2.1 hF.2.2, hF.1, hH.hw, hH.harr, hlo, hhi⟩, hM⟩
+  exact ⟨_, c, ⟨hs, hdi, hdr_any hF.2.1 hF.2.2, hF.1, hH.hw, hH.harr, hlo, hi_of_wsTab hhi⟩, hM⟩
 
 theorem CK.pf {p : ChecksPub} {s : State} {o wx : Nat} (hk : CK p s) (hdi : s.gpr .x0 = off p.B o)
-    (hF : WsF s.mem p.B o wx) (hlo : slot p.w 8 ≤ o) (hhi : o + slot wx 8 + tabBytes wx ≤ p.Z) (h2 : 2 ≤ wx) (hwx : wx ≤ p.w) :
+    (hF : WsF s.mem p.B o wx) (hlo : slot p.w 8 ≤ o) (hhi : o + slot wx 8 + wsTab wx ≤ p.Z) (h2 : 2 ≤ wx) (hwx : wx ≤ p.w) :
     PF ⟨p.B, p.Z, o, p.w, wx⟩ s := by
   have := hk.bounds
   obtain ⟨m, c, hc, hM⟩ := hk.sub hdi hF hlo hhi

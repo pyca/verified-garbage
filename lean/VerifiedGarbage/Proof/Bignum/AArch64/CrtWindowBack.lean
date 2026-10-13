@@ -55,6 +55,8 @@ theorem qPart_ok (W : Window) (M : Mont) (S : Selector) {s t₀ : State} {B : Ad
   have hZq := hwide
   have htp : tabBytes (wsWords pl) ≤ tabBytes32 (wsWords pl) := by unfold tabBytes tabBytes32; omega
   have htq : tabBytes (wsWords ql) ≤ tabBytes32 (wsWords ql) := by unfold tabBytes tabBytes32; omega
+  have ewp : wsTab (wsWords pl) = tabBytes32 (wsWords pl) := rfl
+  have ewq : wsTab (wsWords ql) = tabBytes32 (wsWords ql) := rfl
   generalize Spec.Rsa.os2ip nb = N at *
   generalize Spec.Rsa.os2ip xb = C at *
   generalize Spec.Rsa.os2ip pb = P at *
@@ -161,6 +163,8 @@ theorem pPart_ok (W : Window) (M : Mont) (S : Selector) {s t₁ : State} {B : Ad
   have hZq := hwide
   have htp : tabBytes (wsWords pl) ≤ tabBytes32 (wsWords pl) := by unfold tabBytes tabBytes32; omega
   have htq : tabBytes (wsWords ql) ≤ tabBytes32 (wsWords ql) := by unfold tabBytes tabBytes32; omega
+  have ewp : wsTab (wsWords pl) = tabBytes32 (wsWords pl) := rfl
+  have ewq : wsTab (wsWords ql) = tabBytes32 (wsWords ql) := rfl
   generalize Spec.Rsa.os2ip nb = N at *
   generalize Spec.Rsa.os2ip xb = C at *
   generalize Spec.Rsa.os2ip pb = P at *
@@ -250,6 +254,8 @@ theorem finPart_ok {s t₂ : State} {B : Addr} {Z k : Nat} {op np ip pp qp dpp d
   have hZq := hwide
   have htp : tabBytes (wsWords pl) ≤ tabBytes32 (wsWords pl) := by unfold tabBytes tabBytes32; omega
   have htq : tabBytes (wsWords ql) ≤ tabBytes32 (wsWords ql) := by unfold tabBytes tabBytes32; omega
+  have ewp : wsTab (wsWords pl) = tabBytes32 (wsWords pl) := rfl
+  have ewq : wsTab (wsWords ql) = tabBytes32 (wsWords ql) := rfl
   generalize Spec.Rsa.os2ip nb = N at *
   generalize Spec.Rsa.os2ip xb = C at *
   generalize Spec.Rsa.os2ip pb = P at *

@@ -461,7 +461,8 @@ otherwise: `pre` and `post` do not depend on the layout, so only the vector
 code is chosen by it. -/
 def main (mul : Nat → Nat → Nat → Prog isa) : Prog isa :=
   seqs (nSetup mul ++ primesSetup ++ checks ++
-    [.seq anySizes (.ite .e (seqs (pre mul ++ [ifmaAny] ++ post mul)) (seqs (qPhase mul tabSelect ++ pPhase mul tabSelect)))] ++
+    [.seq anySizes (.ite .e (seqs (pre mul ++ [ifmaAny] ++ post mul))
+      (seqs (qPhase mul (Crt.expLoop mul tabSelect) ++ pPhase mul (Crt.expLoop mul tabSelect))))] ++
     finish)
 
 /-- `vg_rsa_private_crt_ifma`. -/

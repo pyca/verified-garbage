@@ -69,6 +69,8 @@ theorem setupPart_ok {s t₃ : State} {B : Addr} {Z k : Nat} {op np ip pp qp dpp
   have hZq := hwide
   have htp : tabBytes (wsWords pl) ≤ tabBytes32 (wsWords pl) := by unfold tabBytes tabBytes32; omega
   have htq : tabBytes (wsWords ql) ≤ tabBytes32 (wsWords ql) := by unfold tabBytes tabBytes32; omega
+  have ewp : wsTab (wsWords pl) = tabBytes32 (wsWords pl) := rfl
+  have ewq : wsTab (wsWords ql) = tabBytes32 (wsWords ql) := rfl
   have hn := h.scr.nowrap
   have hP8 : 256 ≤ slot (wsWords pl) 8 := by unfold slot hdrBytes; omega_arith
   have hQ8 : 256 ≤ slot (wsWords ql) 8 := by unfold slot hdrBytes; omega_arith
@@ -142,6 +144,8 @@ theorem checksPart_ok {s t₄ : State} {B : Addr} {Z k : Nat} {op np ip pp qp dp
   have hZq := hwide
   have htp : tabBytes (wsWords pl) ≤ tabBytes32 (wsWords pl) := by unfold tabBytes tabBytes32; omega
   have htq : tabBytes (wsWords ql) ≤ tabBytes32 (wsWords ql) := by unfold tabBytes tabBytes32; omega
+  have ewp : wsTab (wsWords pl) = tabBytes32 (wsWords pl) := rfl
+  have ewq : wsTab (wsWords ql) = tabBytes32 (wsWords ql) := rfl
   have hn := h.scr.nowrap
   have hP8 : 256 ≤ slot (wsWords pl) 8 := by unfold slot hdrBytes; omega_arith
   have hQ8 : 256 ≤ slot (wsWords ql) 8 := by unfold slot hdrBytes; omega_arith
@@ -149,8 +153,8 @@ theorem checksPart_ok {s t₄ : State} {B : Addr} {Z k : Nat} {op np ip pp qp dp
   have h8 := hdr_lt_slot ((k + 7) / 8) 8 (show 31 < 32 by decide)
   have hwp2 : 2 ≤ wsWords pl := by unfold wsWords; omega_arith
   have hwq2 : 2 ≤ wsWords ql := by unfold wsWords; omega_arith
-  refine WP.mono (checks_ok hr.n.good (by omega_arith) (by omega_arith) (le_refl _) (by unfold offQ32; omega_arith)
-    (by unfold offQ32 at hZq ⊢; omega_arith) hwp2 (wsWords_le (by have := h.pl2; omega_arith) (by omega_arith)) hwq2
+  refine WP.mono (checks_ok hr.n.good (by omega_arith) (by omega_arith) (le_refl _) (by unfold offQ32 tabBytes32 wsTab tabBytes at *; omega_arith)
+    (by unfold offQ32 tabBytes32 wsTab tabBytes at *; omega_arith) hwp2 (wsWords_le (by have := h.pl2; omega_arith) (by omega_arith)) hwq2
     (wsWords_le (by have := h.ql2; omega_arith) (by omega_arith)) hr.wsP hr.wsQ hr.pws hr.qws hr.n.nv.n hr.n.msk hr.pv hr.qv
     hr.qiv hodd)
     fun t ⟨hg, hMt, hsPt, hsQt, ⟨mp', hwpt, hxpt, hmpt⟩, ⟨mq', hwqt, hxqt⟩, f₅, k₅⟩ => ?_

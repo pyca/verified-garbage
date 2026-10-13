@@ -295,7 +295,7 @@ theorem rowsHdr_ok {s : State} {B : Addr} {Z w op oq wp wq ja : Nat} {A Q : Addr
     (hpw : word s.mem (off B op) (8 * sW) = BitVec.ofNat 64 wp)
     (hqw : word s.mem (off B oq) (8 * sW) = BitVec.ofNat 64 wq)
     (hpa : word s.mem (off B op) (8 * sArr ja) = A) (hqa : word s.mem (off B oq) (8 * sArr aN) = Q)
-    (hja : ja < 8) (_hlo : slot w 8 ≤ op) (hop : op + slot wp 8 + tabBytes wp ≤ oq) (hoq : oq + slot wq 8 + tabBytes wq ≤ Z) :
+    (hja : ja < 8) (_hlo : slot w 8 ≤ op) (hop : op + slot wp 8 + wsTab wp ≤ oq) (hoq : oq + slot wq 8 + wsTab wq ≤ Z) :
     WP isa (.block (rowsHdr ja)) s fun t =>
       t.gpr .r11 = A ∧ t.gpr .r10 = BitVec.ofNat 64 wp ∧ t.gpr .r9 = Q ∧ t.gpr .r12 = BitVec.ofNat 64 wq ∧
       t.gpr .r8 = off B (slot w aAcc) ∧ t.mem = s.mem ∧ Keep mmRegs s t := by
@@ -334,7 +334,7 @@ theorem pqProduct_ok {s : State} {B : Addr} {Z w op oq wp wq : Nat} {minv : BitV
     (hqw : word s.mem (off B oq) (8 * sW) = BitVec.ofNat 64 wq)
     (hpa : word s.mem (off B op) (8 * sArr aN) = off B (op + slot wp aN))
     (hqa : word s.mem (off B oq) (8 * sArr aN) = off B (oq + slot wq aN))
-    (hlo : slot w 8 ≤ op) (hop : op + slot wp 8 + tabBytes wp ≤ oq) (hoq : oq + slot wq 8 + tabBytes wq ≤ Z)
+    (hlo : slot w 8 ≤ op) (hop : op + slot wp 8 + wsTab wp ≤ oq) (hoq : oq + slot wq 8 + wsTab wq ≤ Z)
     (hwp : 1 ≤ wp) (hwp' : wp ≤ w) (hwq : 1 ≤ wq) (hwq' : wq ≤ w) :
     WP isa (seqs Crt.pqProduct) s fun t =>
       wv t.mem B (slot w aAcc) (2 * w + 2) = wv s.mem B (op + slot wp aN) wp * wv s.mem B (oq + slot wq aN) wq ∧
@@ -398,7 +398,7 @@ theorem finishSum_ok {s : State} {B : Addr} {Z w op oq wp wq : Nat} {minv : BitV
     (hpy : word s.mem (off B op) (8 * sArr aY) = off B (op + slot wp aY))
     (hqy : word s.mem (off B oq) (8 * sArr aY) = off B (oq + slot wq aY))
     (hqa : word s.mem (off B oq) (8 * sArr aN) = off B (oq + slot wq aN))
-    (hlo : slot w 8 ≤ op) (hop : op + slot wp 8 + tabBytes wp ≤ oq) (hoq : oq + slot wq 8 + tabBytes wq ≤ Z)
+    (hlo : slot w 8 ≤ op) (hop : op + slot wp 8 + wsTab wp ≤ oq) (hoq : oq + slot wq 8 + wsTab wq ≤ Z)
     (hwp : 1 ≤ wp) (hwp' : wp ≤ w) (hwq : 1 ≤ wq) (hwq' : wq ≤ w) :
     WP isa (seqs finishSum) s fun t =>
       wv t.mem B (slot w aAcc) (2 * w + 2) = wv s.mem B (oq + slot wq aY) wq +

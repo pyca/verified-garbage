@@ -48,7 +48,7 @@ theorem pow_ct (W : Window) (M : Mont) (S : Selector) {sl sd slen : Nat}
       hT fun _ _ h => blk_p1_wide h) ?_)
   exact RelCT.seqs_append (by simp [redc]) (by simp) (RelCT.seq
     (two_post (Ψ := EPreWide sd slen)
-      (two_map BPub.x (fun _ _ ⟨⟨mx,X,_,hc,hX,hwx2,hwx,hw28,hX1,_⟩,_⟩ =>
+      (two_map BPub.x (fun _ _ ⟨⟨mx,X,_,hc,_,hX,hwx2,hwx,hw28,hX1,_⟩,_⟩ =>
         ⟨mx,X,hc,hX,hwx2,hwx,by omega,hX1,by decide⟩) hR)
       fun _ _ h => redc_ePre_wide M h) hE)
 

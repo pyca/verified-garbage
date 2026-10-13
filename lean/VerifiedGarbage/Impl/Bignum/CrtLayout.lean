@@ -7,7 +7,7 @@ public import VerifiedGarbage.Impl.Bignum.Layout
 
 `vg_rsa_private_crt` keeps three workspaces, each with the layout of
 `Layout.lean`, in its working space: `n`'s at `scratch`, then `p`'s and
-`q`'s, each followed by the 16 entries of its exponentiation's table. These
+`q`'s, each followed by room for its exponentiation's table of 32 entries. These
 are the header slots and arrays it uses besides the public-key operation's,
 the same on every target.
 -/

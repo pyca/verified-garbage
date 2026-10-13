@@ -40,6 +40,8 @@ theorem stage5_fa {p : CrtPub} {t : State} (h : Stage R5 p t) :
   have hZq := h.wide
   have htp : tabBytes (wsWords p.pl) ≤ tabBytes32 (wsWords p.pl) := by unfold tabBytes tabBytes32; omega
   have htq : tabBytes (wsWords p.ql) ≤ tabBytes32 (wsWords p.ql) := by unfold tabBytes tabBytes32; omega
+  have ewp : wsTab (wsWords p.pl) = tabBytes32 (wsWords p.pl) := rfl
+  have ewq : wsTab (wsWords p.ql) = tabBytes32 (wsWords p.ql) := rfl
   have hP8 : 256 ≤ slot (wsWords p.pl) 8 := by unfold slot hdrBytes; omega
   have hQ8 : 256 ≤ slot (wsWords p.ql) 8 := by unfold slot hdrBytes; omega
   have hwq2 : 2 ≤ wsWords p.ql := by unfold wsWords; omega
@@ -67,6 +69,8 @@ theorem finSum_out {p : CrtPub} {t₂ : State} (h : Stage R5 p t₂) :
   have hZq := h.wide
   have htp : tabBytes (wsWords p.pl) ≤ tabBytes32 (wsWords p.pl) := by unfold tabBytes tabBytes32; omega
   have htq : tabBytes (wsWords p.ql) ≤ tabBytes32 (wsWords p.ql) := by unfold tabBytes tabBytes32; omega
+  have ewp : wsTab (wsWords p.pl) = tabBytes32 (wsWords p.pl) := rfl
+  have ewq : wsTab (wsWords p.ql) = tabBytes32 (wsWords p.ql) := rfl
   have hn := hr.good.scr.nowrap
   have hwp2 : 2 ≤ wsWords p.pl := by unfold wsWords; omega
   have hwp := wsWords_le (len := p.pl) (w := (p.k + 7) / 8) (by omega) (by omega)

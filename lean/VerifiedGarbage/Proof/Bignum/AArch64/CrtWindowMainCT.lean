@@ -119,6 +119,8 @@ theorem setupS_ct (hS : SetupCT) : RelCT isa (Two (Stage R1)) (seqs VG.Impl.Rsa.
   have hZq := h.wide
   have htp : tabBytes (wsWords p.pl) ≤ tabBytes32 (wsWords p.pl) := by unfold tabBytes tabBytes32; omega
   have htq : tabBytes (wsWords p.ql) ≤ tabBytes32 (wsWords p.ql) := by unfold tabBytes tabBytes32; omega
+  have ewp : wsTab (wsWords p.pl) = tabBytes32 (wsWords p.pl) := rfl
+  have ewq : wsTab (wsWords p.ql) = tabBytes32 (wsWords p.ql) := rfl
   have hh : ∀ i < 32, hFixed i = true → word t.mem p.B (8 * i) = word σ.mem p.B (8 * i) := hr.hfix
   refine ⟨minv, hr.nv, pb, qb, qib, hr.good, by simp only [CrtPub.w]; omega, by simp only [CrtPub.w]; omega, hZq,
     by rw [hh _ (by decide) (by decide)]; exact h.hPl, by rw [hh _ (by decide) (by decide)]; exact h.hQl,
@@ -141,6 +143,8 @@ theorem checksS_ct (hC : ChecksCT) : RelCT isa (Two (Stage R2)) (seqs checks) (T
   have hZq := h.wide
   have htp : tabBytes (wsWords p.pl) ≤ tabBytes32 (wsWords p.pl) := by unfold tabBytes tabBytes32; omega
   have htq : tabBytes (wsWords p.ql) ≤ tabBytes32 (wsWords p.ql) := by unfold tabBytes tabBytes32; omega
+  have ewp : wsTab (wsWords p.pl) = tabBytes32 (wsWords p.pl) := rfl
+  have ewq : wsTab (wsWords p.ql) = tabBytes32 (wsWords p.ql) := rfl
   have hP8 : 256 ≤ slot (wsWords p.pl) 8 := by unfold slot hdrBytes; omega
   have hQ8 : 256 ≤ slot (wsWords p.ql) 8 := by unfold slot hdrBytes; omega
   have hwp2 : 2 ≤ wsWords p.pl := by unfold wsWords; omega
@@ -169,6 +173,8 @@ theorem qS_ct (W : Window) (M : Mont) (S : Selector) (hQ : QPhaseCT W M S) : Rel
   have hZq := h.wide
   have htp : tabBytes (wsWords p.pl) ≤ tabBytes32 (wsWords p.pl) := by unfold tabBytes tabBytes32; omega
   have htq : tabBytes (wsWords p.ql) ≤ tabBytes32 (wsWords p.ql) := by unfold tabBytes tabBytes32; omega
+  have ewp : wsTab (wsWords p.pl) = tabBytes32 (wsWords p.pl) := rfl
+  have ewq : wsTab (wsWords p.ql) = tabBytes32 (wsWords p.ql) := rfl
   have hQ8 : 256 ≤ slot (wsWords p.ql) 8 := by unfold slot hdrBytes; omega
   have hwq2 : 2 ≤ wsWords p.ql := by unfold wsWords; omega
   have hh : ∀ i < 32, hFixed i = true → word t.mem p.B (8 * i) = word σ.mem p.B (8 * i) := hr.hfix
@@ -200,6 +206,8 @@ theorem pS_ct (W : Window) (M : Mont) (S : Selector) (hP : PPhaseCT W M S) : Rel
   have hZq := h.wide
   have htp : tabBytes (wsWords p.pl) ≤ tabBytes32 (wsWords p.pl) := by unfold tabBytes tabBytes32; omega
   have htq : tabBytes (wsWords p.ql) ≤ tabBytes32 (wsWords p.ql) := by unfold tabBytes tabBytes32; omega
+  have ewp : wsTab (wsWords p.pl) = tabBytes32 (wsWords p.pl) := rfl
+  have ewq : wsTab (wsWords p.ql) = tabBytes32 (wsWords p.ql) := rfl
   have hP8 : 256 ≤ slot (wsWords p.pl) 8 := by unfold slot hdrBytes; omega
   have hQ8 : 256 ≤ slot (wsWords p.ql) 8 := by unfold slot hdrBytes; omega
   have hwp2 : 2 ≤ wsWords p.pl := by unfold wsWords; omega

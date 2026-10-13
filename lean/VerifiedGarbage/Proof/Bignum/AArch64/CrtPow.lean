@@ -42,7 +42,7 @@ bytes whose pointer and length are in the modulus' header slots `sd` and
 `slen`. Ends in the prime's workspace. -/
 theorem powPhase_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx : BitVec 64} {N X C : Nat}
     {sl o wx sd slen : Nat} {ep : Addr} {eb : List Byte}
-    (hg : Good s B Z w minv) (hw28 : w < 2 ^ 28) (hlo : slot w 8 ≤ o) (hhi : o + slot wx 8 + tabBytes wx ≤ Z)
+    (hg : Good s B Z w minv) (hw28 : w < 2 ^ 28) (hlo : slot w 8 ≤ o) (hhi : o + slot wx 8 + wsTab wx ≤ Z)
     (hwx2 : 2 ≤ wx) (hwx : wx ≤ w) (hsl : sl < 32) (hslv : word s.mem B (8 * sl) = off B o)
     (hws : WsAt s.mem B o wx mx) (hX : XVals s B o wx mx X) (hX1 : 1 < X) (hXodd : X % 2 = 1)
     (hnY : wv s.mem B (slot w Public.aY) w % N = C * 2 ^ (64 * wx * (nChunks w wx + 1)) % N)
@@ -69,7 +69,7 @@ theorem powPhase_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx : Bit
     (by brun [hg.x0, hdr_enc hsl, hs.ld (d := 8 * sl) (by omega), hslv]) rfl rfl rfl)
     fun s₁ ⟨⟨hdi₁, hm₁⟩, k₁⟩ => ?_
   have hc₁ : SubCtx s₁ B Z o w wx mx :=
-    SubCtx.mk' (hs.congr k₁.wr) (by rw [hm₁]; exact hg.hdr) (by rw [hm₁]; exact hws) hdi₁ hlo hhi
+    SubCtx.mk' (hs.congr k₁.wr) (by rw [hm₁]; exact hg.hdr) (by rw [hm₁]; exact hws) hdi₁ hlo (by have := tabBytes_le_wsTab wx; omega)
   have hX₁ : XVals s₁ B o wx mx X := ⟨by rw [hm₁]; exact hX.n, by rw [hm₁]; exact hX.inv, by rw [hm₁]; exact hX.one⟩
   refine wp_seqs_append (by simp [redc]) (by simp [expLoop]) ?_
   refine WP.mono (redc_ok M hc₁ hX₁ hwx2 hwx (by omega) hX1 (j := Public.aY) (by decide))
@@ -110,6 +110,6 @@ theorem powPhase_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx : Bit
         simp only [sMaskX, sExp, sExpLen, sI, sTab, sV, sBit, sNib, sEnt, sJ, sFn] <;> omega)
       (by unfold sMaskX sFn; omega), f₂.word_eq (sMaskX_redc wx) (by unfold sMaskX sFn; omega), hm₁]
   · rw [← hm₁]
-    exact fx₂.trans (f₃.to_xT (crtExpRanges_ok wx) (by omega) (List.mem_singleton_self _))
+    exact fx₂.trans (f₃.to_xT (crtExpRanges_ok wx) (by have := tabBytes_le_wsTab wx; omega) (List.mem_singleton_self _))
 
 end VG.Proof.Bignum.AArch64

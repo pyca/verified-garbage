@@ -40,7 +40,7 @@ theorem pPhase_eq (window : Prog isa) (select : Prog isa) (mul : Nat → Nat →
 theorem pPhase_ok (W : Window) (M : Mont) (S : Selector) {s : State} {B : Addr} {Z w : Nat} {minv mx mq : BitVec 64}
     {N X C o wx oq wq : Nat} {ep qp : Addr} {eb qib : List Byte} {c : Bool}
     (hg : Good s B Z w minv) (hw : 8 ≤ w) (hw28 : w < 2 ^ 28) (hlo : slot w 8 ≤ o) (hhi : o + slot wx 8 + tabBytes32 wx ≤ oq)
-    (hqhi : oq + slot wq 8 + tabBytes wq ≤ Z) (hwx2 : 2 ≤ wx) (hwx : wx ≤ w) (hwq : 1 ≤ wq) (hwq' : wq ≤ w)
+    (hqhi : oq + slot wq 8 + wsTab wq ≤ Z) (hwx2 : 2 ≤ wx) (hwx : wx ≤ w) (hwq : 1 ≤ wq) (hwq' : wq ≤ w)
     (hslv : word s.mem B (8 * sWsP) = off B o) (hws : WsAt s.mem B o wx mx)
     (hslq : word s.mem B (8 * sWsQ) = off B oq) (hwsq : WsAt s.mem B oq wq mq)
     (hN : NVals s B w minv N) (hodd : N % 2 = 1) (hN1 : 1 < N)
@@ -59,7 +59,7 @@ theorem pPhase_ok (W : Window) (M : Mont) (S : Selector) {s : State} {B : Addr} 
           (a + X - b) % X * Spec.Rsa.os2ip qib % X) ∧
       Frm B (pRanges w ++ [xRange32 o wx]) s.mem t.mem ∧ Keep mmRegs s t := by
   have ht : tabBytes wx ≤ tabBytes32 wx := by unfold tabBytes tabBytes32; omega
-  have hhi16 : o + slot wx 8 + tabBytes wx ≤ Z := by omega
+  have hhi16 : o + slot wx 8 + tabBytes32 wx ≤ Z := by omega
   have hs := hg.scr
   have hn := hs.nowrap
   have h8 := hdr_lt_slot w 8 (show 31 < 32 by decide)
@@ -97,7 +97,7 @@ theorem pPhase_ok (W : Window) (M : Mont) (S : Selector) {s : State} {B : Addr} 
     · rw [List.mem_singleton.mp hr]
       refine ⟨xRange32 o wx,by simp,le_rfl,?_⟩
       simp only [VG.Proof.Bignum.xRange,xRange32]
-      omega
+      unfold wsTab tabBytes tabBytes32; omega
   have f₁' := hsub sgx f₁wide
   -- `m_q G mod N`.
   refine wp_seqs_append (by simp [mqSteps]) (by simp) ?_
@@ -215,7 +215,7 @@ theorem pPhase_ok (W : Window) (M : Mont) (S : Selector) {s : State} {B : Addr} 
       rw [List.mem_singleton.mp hr]
       refine ⟨xRange32 o wx,by simp,le_rfl,?_⟩
       simp only [VG.Proof.Bignum.xRange,xRange32]
-      omega))), ⟨fun r hr => ?_, kall.rd, kall.wr, kall.sp, kall.vcs⟩⟩
+      unfold wsTab tabBytes tabBytes32; omega))), ⟨fun r hr => ?_, kall.rd, kall.wr, kall.sp, kall.vcs⟩⟩
   by_cases h : r = .x0
   · subst h; rw [hg'.x0, hg.x0]
   · exact kall.gpr r (by simp only [List.mem_append, List.mem_singleton, hr, h, or_self, not_false_eq_true])

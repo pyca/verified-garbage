@@ -48,7 +48,7 @@ theorem mqPart_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mq : BitVe
     (hg : Good s B Z w minv) (hw : 8 ≤ w) (hw28 : w < 2 ^ 28) (hN : NVals s B w minv N) (hodd : N % 2 = 1)
     (hYl : wv s.mem B (slot w Public.aY) w < N) (hY : wv s.mem B (slot w Public.aY) w % N = G % N)
     (hq : word s.mem B (8 * sWsQ) = off B oq) (hws : WsAt s.mem B oq wq mq) (hlo : slot w 8 ≤ oq)
-    (hhi : oq + slot wq 8 + tabBytes wq ≤ Z) (hwq : 1 ≤ wq) (hwq' : wq ≤ w) :
+    (hhi : oq + slot wq 8 + wsTab wq ≤ Z) (hwq : 1 ≤ wq) (hwq' : wq ≤ w) :
     WP isa (seqs (mqSteps M.mm)) s fun t => Good t B Z w minv ∧
       wv t.mem B (slot w Public.aX) w < N ∧
       wv t.mem B (slot w Public.aX) w % N = wv s.mem (off B oq) (slot wq Public.aY) wq * G % N ∧
@@ -161,7 +161,8 @@ theorem mqPart_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mq : BitVe
 `h = (m_p - m_q) qInv R_p⁻¹ R_p` into `p`'s `Y`, `qInv` masked by `c`. -/
 theorem hTail_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {mx : BitVec 64} {X o wx : Nat}
     {qp : Addr} {qib : List Byte} {c : Bool}
-    (hc : SubCtx s B Z o w wx mx) (hX : XVals s B o wx mx X) (hw28 : w < 2 ^ 28) (hwx2 : 2 ≤ wx) (hwx : wx ≤ w)
+    (hc : SubCtx s B Z o w wx mx) (hT : o + slot wx 8 + wsTab wx ≤ Z) (hX : XVals s B o wx mx X) (hw28 : w < 2 ^ 28)
+    (hwx2 : 2 ≤ wx) (hwx : wx ≤ w)
     (hyl : wv s.mem (off B o) (slot wx Public.aY) wx < X) (hlt : wv s.mem (off B o) (slot wx aXc) wx < X)
     (hmask : word s.mem (off B o) (8 * sMaskX) = mask c)
     (hqp : word s.mem B (8 * sQinv) = qp) (hql : word s.mem B (8 * sPlen) = BitVec.ofNat 64 qib.length)
@@ -194,7 +195,7 @@ theorem hTail_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {mx : BitVec 64} 
     rcases hj with rfl | rfl <;> decide) k₃.wr (k₃.gpr .x0 (by decide)) (by omega_using [hq1, hqw])
   have hb₃ : ∀ d, d + 8 ≤ o → word s₃.mem B d = word s.mem B d := fun d hd => fx₃.x_below hd ho64
   have i03 : InScr B Z s.mem s₃.mem :=
-    InScr.of_frm fx₃ fun r hr => by rw [List.mem_singleton.mp hr]; simp only [xRange]; omega_using [hhi, hX8]
+    InScr.of_frm fx₃ fun r hr => by rw [List.mem_singleton.mp hr]; simp only [xRange]; omega_using [hT, hX8]
   have hM₃ : word s₃.mem (off B o) (8 * sMaskX) = mask c := by
     rw [ha₃.hslot (by decide)]; exact hmask
   -- `qInv`, masked.
@@ -247,7 +248,7 @@ theorem hTail_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {mx : BitVec 64} 
 `h = (m_p - m_q) qInv R_p⁻¹ R_p` into `p`'s `Y`, `qInv` masked by `c`. -/
 theorem hPart_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx : BitVec 64} {N X mqv m1 o wx : Nat}
     {qp : Addr} {qib : List Byte} {c : Bool}
-    (hg : Good s B Z w minv) (hw28 : w < 2 ^ 28) (hlo : slot w 8 ≤ o) (hhi : o + slot wx 8 + tabBytes wx ≤ Z)
+    (hg : Good s B Z w minv) (hw28 : w < 2 ^ 28) (hlo : slot w 8 ≤ o) (hhi : o + slot wx 8 + wsTab wx ≤ Z)
     (hwx2 : 2 ≤ wx) (hwx : wx ≤ w) (hslv : word s.mem B (8 * sWsP) = off B o) (hws : WsAt s.mem B o wx mx)
     (hX : XVals s B o wx mx X) (hX1 : 1 < X) (hXodd : X % 2 = 1)
     (hXn : wv s.mem B (slot w Public.aX) w % N = mqv * 2 ^ (64 * wx * (nChunks w wx + 1)) % N)
@@ -277,7 +278,7 @@ theorem hPart_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx : BitVec
       have := hdr_lt_slot w 8 (show sWsP < 32 by decide); omega_using [hlo, hhi, this]), hslv]) (by decide) (by decide) (by decide +kernel))
     fun s₁ ⟨⟨hdi₁, hm₁⟩, k₁⟩ => ?_
   have hc₁ : SubCtx s₁ B Z o w wx mx :=
-    SubCtx.mk' (hs.congr k₁.wr) (by rw [hm₁]; exact hg.hdr) (by rw [hm₁]; exact hws) hdi₁ hlo hhi
+    SubCtx.mk' (hs.congr k₁.wr) (by rw [hm₁]; exact hg.hdr) (by rw [hm₁]; exact hws) hdi₁ hlo (by have := tabBytes_le_wsTab wx; omega)
   have hX₁ : XVals s₁ B o wx mx X := ⟨by rw [hm₁]; exact hX.n, by rw [hm₁]; exact hX.inv, by rw [hm₁]; exact hX.one⟩
   -- `m_q R_p` into `p`'s `X_c`.
   refine wp_seqs_append (by simp [redc]) (by simp [subModArr]) ?_
@@ -310,7 +311,7 @@ theorem hPart_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx : BitVec
   rw [show subModArr aT Public.aY aXc ++ (loadArr aChunk sQinv sPlen ++ (maskArr aChunk ++
       [M.mm Public.aY aT aChunk, .block [leave]])) = (subModArr aT Public.aY aXc ++ loadArr aChunk sQinv sPlen ++
       maskArr aChunk ++ [M.mm Public.aY aT aChunk]) ++ [.block [leave]] by simp]
-  refine wp_seqs_append (by simp [subModArr]) (by simp) (WP.mono (hTail_ok M hc₂ hX₂ hw28 hwx2 hwx
+  refine wp_seqs_append (by simp [subModArr]) (by simp) (WP.mono (hTail_ok M hc₂ (by omega_arith) hX₂ hw28 hwx2 hwx
     (by rw [hY₂]; exact hyl) hlt₂ hM₂ (by rw [hb₂ _ (by unfold sQinv sFn; omega_using [hlo, h8])]; exact hqp)
     (by rw [hb₂ _ (by unfold sPlen sFn; omega_using [hlo, h8])]; exact hql)
     (hqs.congrK (by
@@ -343,8 +344,8 @@ theorem hPart_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx : BitVec
 `N`, `X_m ≡ c R (mod N)`, `m_q` in `q`'s `Y` and `qInv` (masked by `c`). -/
 theorem pPhase_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx mq : BitVec 64}
     {N X C o wx oq wq : Nat} {ep qp : Addr} {eb qib : List Byte} {c : Bool}
-    (hg : Good s B Z w minv) (hw : 8 ≤ w) (hw28 : w < 2 ^ 28) (hlo : slot w 8 ≤ o) (hhi : o + slot wx 8 + tabBytes wx ≤ oq)
-    (hqhi : oq + slot wq 8 + tabBytes wq ≤ Z) (hwx2 : 2 ≤ wx) (hwx : wx ≤ w) (hwq : 1 ≤ wq) (hwq' : wq ≤ w)
+    (hg : Good s B Z w minv) (hw : 8 ≤ w) (hw28 : w < 2 ^ 28) (hlo : slot w 8 ≤ o) (hhi : o + slot wx 8 + wsTab wx ≤ oq)
+    (hqhi : oq + slot wq 8 + wsTab wq ≤ Z) (hwx2 : 2 ≤ wx) (hwx : wx ≤ w) (hwq : 1 ≤ wq) (hwq' : wq ≤ w)
     (hslv : word s.mem B (8 * sWsP) = off B o) (hws : WsAt s.mem B o wx mx)
     (hslq : word s.mem B (8 * sWsQ) = off B oq) (hwsq : WsAt s.mem B oq wq mq)
     (hN : NVals s B w minv N) (hodd : N % 2 = 1) (hN1 : 1 < N)
@@ -369,7 +370,7 @@ theorem pPhase_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx mq : Bi
   have hQ8 : 256 ≤ slot wq 8 := by unfold slot hdrBytes; omega_using []
   have ho64 : o < 2 ^ 64 := by omega_using [hhi, hqhi, hn, hQ8]
   have hz : B.toNat + slot w 8 ≤ 2 ^ 64 := by omega_using [hlo, hhi, hqhi, hn]
-  have hhi' : o + slot wx 8 + tabBytes wx ≤ Z := by omega_using [hhi, hqhi]
+  have hhi' : o + slot wx 8 + wsTab wx ≤ Z := by omega_using [hhi, hqhi]
   have hsub : ∀ {rs : List (Nat × Nat)}, (∀ r ∈ rs, r ∈ pRanges w ++ [xRange o wx]) → ∀ {m m' : Mem},
       Frm B rs m m' → Frm B (pRanges w ++ [xRange o wx]) m m' := fun h _ _ f => f.mono h
   have sgx : ∀ r ∈ gRanges w ++ [xRange o wx], r ∈ pRanges w ++ [xRange o wx] := fun r hr =>
@@ -389,7 +390,7 @@ theorem pPhase_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx mq : Bi
   rw [pPhase_eq]
   -- `R_p mod p`.
   refine wp_seqs_append (by simp [unitSteps]) (by simp [mqSteps]) ?_
-  refine WP.mono (unitPhase_ok M hg hw hw28 hlo hhi' hwx2 hwx (sl := sWsP) (by decide) (by decide) (by decide) hslv
+  refine WP.mono (unitPhase_ok M hg hw hw28 hlo (by have := tabBytes_le_wsTab wx; omega_using [hhi', this]) hwx2 hwx (sl := sWsP) (by decide) (by decide) (by decide) hslv
     hws hN hodd hN1 hX hX1 hXodd) fun s₁ ⟨hg₁, hws₁, hX₁, hlt₁, hG₁, hpl₁, hpy₁, hM₁, f₁, k₁⟩ => ?_
   have f₁' := hsub sgx f₁
   -- `m_q G mod N`.
