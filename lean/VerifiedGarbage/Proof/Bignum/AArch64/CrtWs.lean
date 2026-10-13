@@ -65,14 +65,14 @@ theorem wsEnd_ok {s : State} {X : Addr} {Z wx : Nat} (hs : Scr s X Z) (h5 : s.gp
 theorem wsEndT_ok {s : State} {X : Addr} {Z wx : Nat} (hs : Scr s X Z) (h5 : s.gpr .x5 = X)
     (hw : word s.mem X (8 * sW) = BitVec.ofNat 64 wx) (hwx : wx < 2 ^ 30)
     (ha : word s.mem X (8 * sArr Public.aOne) = off X (slot wx Public.aOne)) (hZ : slot wx 8 ≤ Z) :
-    WP isa (.block wsEndT) s fun t => (t.gpr .x4 = off X (slot wx 8 + tabBytes wx) ∧ t.mem = s.mem) ∧
+    WP isa (.block wsEndT) s fun t => (t.gpr .x4 = off X (slot wx 8 + wsTab wx) ∧ t.mem = s.mem) ∧
       Keep [.x4, .x6] s t := by
   unfold wsEndT
   rw [WP.block_append_iff]
   refine WP.mono (wsEnd_ok hs h5 hw hwx ha hZ) fun t₁ ⟨⟨h4, h6, hm₁⟩, k₁⟩ => ?_
-  refine WP.mono (WP.keep [.x4, .x6] (Q := fun t => t.gpr .x4 = off X (slot wx 8 + tabBytes wx) ∧ t.mem = t₁.mem)
-    (by brun [h4, h6, shl_ofNat (show 8 * (wx + 2) * 2 ^ 4 < 2 ^ 64 by omega)]; refine congrArg (off X) ?_
-        rw [show (2 : Nat) ^ 4 = 16 from rfl]; unfold tabBytes; omega)
+  refine WP.mono (WP.keep [.x4, .x6] (Q := fun t => t.gpr .x4 = off X (slot wx 8 + wsTab wx) ∧ t.mem = t₁.mem)
+    (by brun [h4, h6, shl_ofNat (show 8 * (wx + 2) * 2 ^ 5 < 2 ^ 64 by omega)]; refine congrArg (off X) ?_
+        rw [show (2 : Nat) ^ 5 = 32 from rfl]; unfold wsTab tabBytes; omega)
     (by decide) (by decide) (by decide +kernel)) fun t ⟨⟨h4', hm⟩, k⟩ =>
       ⟨⟨h4', hm.trans hm₁⟩, (k₁.trans k).mono (by decide)⟩
 

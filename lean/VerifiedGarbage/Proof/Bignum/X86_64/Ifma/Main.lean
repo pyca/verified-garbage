@@ -65,11 +65,11 @@ theorem sizes_ok (hl : LayOk l) {t : State} {B : Addr} {Z w pl ql : Nat} {minv :
 
 /-- The IFMA area fits in the working space the contract asks for. -/
 theorem ifmaZ_of (hl : LayOk l) {Z k pl : Nat} (hzk : 128 * k ≤ Z) (hw : (k + 7) / 8 = 2 * l.W)
-    (hp : wsWords pl = l.W) : offQ ((k + 7) / 8) pl + slot l.W 8 + tabBytes l.W + 2 * l.D + 8 ≤ Z := by
+    (hp : wsWords pl = l.W) : offQ ((k + 7) / 8) pl + slot l.W 8 + wsTab l.W + 2 * l.D + 8 ≤ Z := by
   rcases hl with rfl | rfl | rfl <;>
     simp only [VG.Impl.Rsa.X86_64.CrtIfma.lay2048, VG.Impl.Rsa.X86_64.CrtIfma.lay3072,
       VG.Impl.Rsa.X86_64.CrtIfma.lay4096] at hw hp ⊢ <;>
-    unfold offQ slot wsWords hdrBytes tabBytes at * <;>
+    unfold offQ slot wsWords hdrBytes wsTab tabBytes at * <;>
     simp only [VG.Impl.Rsa.X86_64.CrtIfma.Lay.D, VG.Impl.Rsa.X86_64.CrtIfma.Lay.oFin,
       VG.Impl.Rsa.X86_64.CrtIfma.Lay.oV, VG.Impl.Rsa.X86_64.CrtIfma.Lay.oK1, VG.Impl.Rsa.X86_64.CrtIfma.Lay.oE,
       VG.Impl.Rsa.X86_64.CrtIfma.Lay.oTab, VG.Impl.Rsa.X86_64.CrtIfma.Lay.oS, VG.Impl.Rsa.X86_64.CrtIfma.Lay.oX,
@@ -197,7 +197,7 @@ theorem ifmaAny_ok (hl : LayOk l) {s t₀ s₁ : State} {B : Addr} {Z k : Nat}
       (Spec.Rsa.os2ip xb)) :
     WP isa CrtIfma.ifmaAny s₁ fun t =>
       IDone l s t B Z ((k + 7) / 8) (offP ((k + 7) / 8)) (offQ ((k + 7) / 8) pl)
-        (offQ ((k + 7) / 8) pl + slot l.W 8 + tabBytes l.W) minv mp mq (Spec.Rsa.os2ip nb) (Spec.Rsa.os2ip xb)
+        (offQ ((k + 7) / 8) pl + slot l.W 8 + wsTab l.W) minv mp mq (Spec.Rsa.os2ip nb) (Spec.Rsa.os2ip xb)
         (Spec.Rsa.os2ip pb) (Spec.Rsa.os2ip qb) dpp dqp qip pl ql dpb dqb Mk ∧
       t.mxcsr = s₁.mxcsr &&& 0xFFFF := by
   obtain ⟨hW1, -⟩ := W_bounds hl
@@ -211,7 +211,7 @@ theorem ifmaAny_ok (hl : LayOk l) {s t₀ s₁ : State} {B : Addr} {Z k : Nat}
         (Spec.Rsa.os2ip xb) → s₂.mxcsr = s₁.mxcsr →
       WP isa (seqs (ifma l')) s₂ fun t =>
         IDone l s t B Z ((k + 7) / 8) (offP ((k + 7) / 8)) (offQ ((k + 7) / 8) pl)
-          (offQ ((k + 7) / 8) pl + slot l.W 8 + tabBytes l.W) minv mp mq (Spec.Rsa.os2ip nb) (Spec.Rsa.os2ip xb)
+          (offQ ((k + 7) / 8) pl + slot l.W 8 + wsTab l.W) minv mp mq (Spec.Rsa.os2ip nb) (Spec.Rsa.os2ip xb)
           (Spec.Rsa.os2ip pb) (Spec.Rsa.os2ip qb) dpp dqp qip pl ql dpb dqb Mk ∧
         t.mxcsr = s₁.mxcsr &&& 0xFFFF := by
     intro l' s₂ _ e a₂ x₂

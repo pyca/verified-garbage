@@ -396,7 +396,7 @@ theorem gStepV_ok (L : VLen) {s t : State} {B : Addr} {wx p v c n : Nat} (hs : S
   obtain ⟨i, hi, rfl⟩ : ∃ i, i < 2 * nl L ∧ k = c + i := ⟨k - c, by omega, by omega⟩
   rw [hv i hi]
   refine gvalV_congr (fun j hj => ?_) ?_
-  · have := ent_le wx (j := 8 * p + j) (by omega)
+  · have := ent_le wx (n := 16) (j := 8 * p + j) (by omega)
     have := slot_mono wx (show 8 ≤ 8 + (8 * p + j) by omega)
     rw [show 8 + 8 * p + j = 8 + (8 * p + j) by omega]
     exact hI.out.word (by omega) (by unfold slot at *; omega)

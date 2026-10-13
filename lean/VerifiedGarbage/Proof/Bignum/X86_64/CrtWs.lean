@@ -46,12 +46,12 @@ theorem wsEnd_ok {s : State} {X : Addr} {Z wx : Nat} (hs : Scr s X Z) (hdx : s.g
 theorem wsEndT_ok {s : State} {X : Addr} {Z wx : Nat} (hs : Scr s X Z) (hdx : s.gpr .rdx = X)
     (hw : word s.mem X (8 * sW) = BitVec.ofNat 64 wx)
     (ha : word s.mem X (8 * sArr Public.aOne) = off X (slot wx Public.aOne)) (hZ : slot wx 8 ≤ Z) :
-    WP isa (.block wsEndT) s fun t => t.gpr .rax = off X (slot wx 8 + tabBytes wx) ∧ t.mem = s.mem ∧
+    WP isa (.block wsEndT) s fun t => t.gpr .rax = off X (slot wx 8 + wsTab wx) ∧ t.mem = s.mem ∧
       Keep [.rax, .rdx] s t := by
   have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off X (8 * i)) 8 := fun i hi =>
     hs.ld (by have := hdr_lt_slot wx 8 hi; omega)
   refine WP.mono (WP.keep [.rax, .rdx] (c := .block wsEndT)
-    (Q := fun t => t.gpr .rax = off X (slot wx 8 + tabBytes wx) ∧ t.mem = s.mem) ?_ rfl)
+    (Q := fun t => t.gpr .rax = off X (slot wx 8 + wsTab wx) ∧ t.mem = s.mem) ?_ rfl)
     fun t ⟨⟨h1, h2⟩, k⟩ => ⟨h1, h2, k⟩
   unfold wsEndT wsEnd
   simp only [List.cons_append, List.nil_append]
@@ -59,7 +59,7 @@ theorem wsEndT_ok {s : State} {X : Addr} {Z wx : Nat} (hs : Scr s X Z) (hdx : s.
   rw [show (2 : BitVec 64) = BitVec.ofNat 64 2 from rfl]
   simp only [BitVec.ofNat_add_ofNat, off, BitVec.add_assoc]
   congr 2
-  unfold slot tabBytes Public.aOne; omega
+  unfold slot wsTab tabBytes Public.aOne; omega
 
 theorem cf_lt2 {a : Nat} (ha : a < 2 ^ 64) :
     decide ((BitVec.ofNat 64 a).toNat < (2 : BitVec 64).toNat) = decide (a < 2) := by

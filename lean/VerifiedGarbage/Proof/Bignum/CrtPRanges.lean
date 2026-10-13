@@ -36,7 +36,7 @@ theorem pRanges_le (w : Nat) : ∀ r ∈ pRanges w, r.1 + r.2 ≤ slot w 8 := by
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> simp only [Crt.sD, Public.sCnt, sFn] <;> omega
 
 theorem pxR_bound {w o wx : Nat} (hlo : slot w 8 ≤ o) :
-    ∀ r ∈ pRanges w ++ [xRange o wx], 8 * 22 ≤ r.1 ∧ r.1 + r.2 ≤ o + slot wx 8 + tabBytes wx := by
+    ∀ r ∈ pRanges w ++ [xRange o wx], 8 * 22 ≤ r.1 ∧ r.1 + r.2 ≤ o + slot wx 8 + wsTab wx := by
   have := hdr_lt_slot w Public.aAcc (show 31 < 32 by decide)
   have := hdr_lt_slot w Public.aTmp (show 31 < 32 by decide)
   have := hdr_lt_slot w Public.aY (show 31 < 32 by decide)
@@ -74,7 +74,7 @@ theorem Frm.px_hdr {m m' : Mem} {B : Addr} {w o wx : Nat} (hf : Frm B (pRanges w
   · exact Or.inl (by simp only at hb ⊢; omega)) (by omega)
 
 theorem Frm.px_above {m m' : Mem} {B : Addr} {w o wx : Nat} (hf : Frm B (pRanges w ++ [xRange o wx]) m m')
-    (hlo : slot w 8 ≤ o) {d : Nat} (hd : o + slot wx 8 + tabBytes wx ≤ d) (hd' : d + 8 ≤ 2 ^ 64) :
+    (hlo : slot w 8 ≤ o) {d : Nat} (hd : o + slot wx 8 + wsTab wx ≤ d) (hd' : d + 8 ≤ 2 ^ 64) :
     word m' B d = word m B d :=
   hf.word_eq (fun r hr => Or.inr (by have := pxR_bound hlo r hr; omega)) hd'
 

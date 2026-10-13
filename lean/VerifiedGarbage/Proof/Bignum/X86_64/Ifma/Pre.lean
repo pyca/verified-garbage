@@ -28,7 +28,7 @@ open VG.Proof.MlKem.X86_64
 /-- Into a prime's workspace (`rdi := [sl]`), and `aXc := [j] R^-K mod X`. -/
 theorem enterRedc_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx : BitVec 64} {X : Nat}
     {sl o wx j : Nat} (hj : j < 8) (hg : Good s B Z w minv) (hw28 : w < 2 ^ 28) (hlo : slot w 8 ≤ o)
-    (hhi : o + slot wx 8 + tabBytes wx ≤ Z) (hwx2 : 2 ≤ wx) (hwx : wx ≤ w) (hsl : sl < 32)
+    (hhi : o + slot wx 8 + wsTab wx ≤ Z) (hwx2 : 2 ≤ wx) (hwx : wx ≤ w) (hsl : sl < 32)
     (hslv : word s.mem B (8 * sl) = off B o) (hws : WsAt s.mem B o wx mx) (hX : XVals s B o wx mx X)
     (hX1 : 1 < X) :
     WP isa (seqs (([.block [.mov .rdi (.mem (hdr sl))]] : List (Prog isa)) ++ redc M.mm j)) s fun t =>
@@ -48,7 +48,7 @@ theorem enterRedc_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx : Bi
     (by xrun [State.ea, hdr, hg.rdi, hdrOff, hs.ld (d := 8 * sl) (by omega_using [hhi, hsl, hX8]), hslv]) rfl)
     fun s₂ ⟨⟨hdi₂, hm₂⟩, k₂⟩ => ?_
   have hc₂ : SubCtx s₂ B Z o w wx mx :=
-    SubCtx.mk' (hs.congr k₂.2.2) (by rw [hm₂]; exact hg.hdr) (by rw [hm₂]; exact hws) hdi₂ hlo hhi
+    SubCtx.mk' (hs.congr k₂.2.2) (by rw [hm₂]; exact hg.hdr) (by rw [hm₂]; exact hws) hdi₂ hlo (by have := tabBytes_le_wsTab wx; omega)
   have hX₂ : XVals s₂ B o wx mx X := by
     rw [show s₂ = { s₂ with mem := s.mem } by rw [← hm₂]] ; exact ⟨hX.n, hX.inv, hX.one⟩
   refine WP.mono (redc_ok M hc₂ hX₂ hwx2 hwx (by omega_using [hw28]) hX1 hj)
@@ -89,7 +89,7 @@ theorem nChunks_two {w wx : Nat} (hw2 : w = 2 * wx) (hwx : 1 ≤ wx) : nChunks w
 changes. -/
 theorem prep_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx : BitVec 64} {N X C : Nat}
     {sl o wx : Nat} (hg : Good s B Z w minv) (hw28 : w < 2 ^ 28) (hlo : slot w 8 ≤ o)
-    (hhi : o + slot wx 8 + tabBytes wx ≤ Z) (hwx2 : 2 ≤ wx) (hw2 : w = 2 * wx) (hsl : sl < 32)
+    (hhi : o + slot wx 8 + wsTab wx ≤ Z) (hwx2 : 2 ≤ wx) (hw2 : w = 2 * wx) (hsl : sl < 32)
     (hslv : word s.mem B (8 * sl) = off B o) (hws : WsAt s.mem B o wx mx) (hN : NVals s B w minv N)
     (hXm : wv s.mem B (slot w Public.aXm) w % N = C * 2 ^ (64 * w) % N)
     (hX : XVals s B o wx mx X) (hX1 : 1 < X) (hXodd : X % 2 = 1) :
@@ -291,7 +291,7 @@ theorem PrimeRdy.of_disj {s t : State} {B : Addr} {o wx : Nat} {mx : BitVec 64} 
 /-- `pre`: both primes ready; only their workspaces change. -/
 theorem pre_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mp mq : BitVec 64} {N P Q C op wp oq : Nat}
     (hg : Good s B Z w minv) (hw28 : w < 2 ^ 28) (hlo : slot w 8 ≤ op)
-    (hpq : op + slot wp 8 + tabBytes wp ≤ oq) (hoq : oq + slot wp 8 + tabBytes wp ≤ Z) (hwp2 : 2 ≤ wp)
+    (hpq : op + slot wp 8 + wsTab wp ≤ oq) (hoq : oq + slot wp 8 + wsTab wp ≤ Z) (hwp2 : 2 ≤ wp)
     (hw2 : w = 2 * wp) (hsp : word s.mem B (8 * sWsP) = off B op) (hsq : word s.mem B (8 * sWsQ) = off B oq)
     (hwsp : WsAt s.mem B op wp mp) (hwsq : WsAt s.mem B oq wp mq) (hN : NVals s B w minv N)
     (hXm : wv s.mem B (slot w Public.aXm) w % N = C * 2 ^ (64 * w) % N)

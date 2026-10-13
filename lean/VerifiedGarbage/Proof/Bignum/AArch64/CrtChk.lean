@@ -27,7 +27,7 @@ open VG.Proof.MlKem.AArch64 (Keep)
 `p := M ? p : 3`, `q := M ? q : 3`, their `-X⁻¹` and 1. -/
 theorem checks_ok {s : State} {B : Addr} {Z w : Nat} {minv mp mq : BitVec 64} {op oq wp wq N P Q QI : Nat}
     {m0 : Bool} (hg : Good s B Z w minv) (_hw : 8 ≤ w) (hw28 : w < 2 ^ 28) (hlo : slot w 8 ≤ op)
-    (hop : op + slot wp 8 + tabBytes wp ≤ oq) (hoq : oq + slot wq 8 + tabBytes wq ≤ Z) (hwp : 2 ≤ wp) (hwp' : wp ≤ w) (hwq : 2 ≤ wq)
+    (hop : op + slot wp 8 + wsTab wp ≤ oq) (hoq : oq + slot wq 8 + wsTab wq ≤ Z) (hwp : 2 ≤ wp) (hwp' : wp ≤ w) (hwq : 2 ≤ wq)
     (hwq' : wq ≤ w) (hsP : word s.mem B (8 * sWsP) = off B op) (hsQ : word s.mem B (8 * sWsQ) = off B oq)
     (hwsP : WsAt s.mem B op wp mp) (hwsQ : WsAt s.mem B oq wq mq)
     (hN : wv s.mem B (slot w Public.aN) w = N) (hM : word s.mem B (8 * Public.sMask) = mask m0)
@@ -122,7 +122,7 @@ theorem checks_ok {s : State} {B : Addr} {Z w : Nat} {minv mp mq : BitVec 64} {o
   have hwsP₄ : WsAt s₄.mem B op wp mp := hwsP.of_words fun i hi => by
     rw [word_off, word_off]; exact hab₄ _ (by omega_using [hlo]) (by omega_using [hop, hoq, hn, hQ8, hi])
   have kk4 := ((k₁.trans k₂).trans k₃).trans k₄
-  have hcP₄ := SubCtx.mk' (hs.congr kk4.wr) hH₄ hwsP₄ ((k₄.gpr .x0 (by decide)).trans hdi₃) hlo (by omega_using [hop, hoq])
+  have hcP₄ := SubCtx.mk' (hs.congr kk4.wr) hH₄ hwsP₄ ((k₄.gpr .x0 (by decide)).trans hdi₃) hlo (by have := tabBytes_le_wsTab wp; omega_using [hop, hoq, this])
   have hoddP : keyMask m0 N P Q QI = true → P % 2 = 1 := fun h => by
     simp only [keyMask, Bool.and_eq_true, decide_eq_true_eq] at h
     exact odd_of_mul_odd h.1.2 hodd
@@ -171,7 +171,7 @@ theorem checks_ok {s : State} {B : Addr} {Z w : Nat} {minv mp mq : BitVec 64} {o
       rw [word_off, word_off, hq₅ _ (by omega_using []) (by omega_using [hoq, hn, hQ8, hi]),
           hab₄ _ (by omega_using [hlo, hop]) (by omega_using [hoq, hn, hQ8, hi])]
   have kk6 := (kk4.trans k₅).trans k₆
-  have hcQ₆ := SubCtx.mk' (hs.congr kk6.wr) hH₆ hwsQ₆ hdi₆ (by omega_using [hlo, hop]) hoq
+  have hcQ₆ := SubCtx.mk' (hs.congr kk6.wr) hH₆ hwsQ₆ hdi₆ (by omega_using [hlo, hop]) (by have := tabBytes_le_wsTab wq; omega)
   have hM₆ : word s₆.mem B (8 * Public.sMask) = mask (keyMask m0 N P Q QI) := by
     rw [hm₆, hb₅ _ (by unfold Public.sMask sFn; omega_using [hlo, hacc, hA0])]; exact hM₄
   refine wp_seqs_append (by simp [primeFix]) (by simp) ?_

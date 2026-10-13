@@ -37,29 +37,30 @@ open VG.Proof.MlKem.X86_64
 /-! ## The prime's workspace -/
 
 /-- What the exponentiation keeps in the workspace at `P` (`w_X` words) and
-its table: the prime `X` (and its low word, for `-X⁻¹`), and `Xc`. -/
-structure CExpCtx (t : State) (P : Addr) (wx : Nat) (minv : BitVec 64) (X Xc : Nat) : Prop where
+its table of `n` entries (16 unless given): the prime `X` (and its low word,
+for `-X⁻¹`), and `Xc`. -/
+structure CExpCtx (t : State) (P : Addr) (wx : Nat) (minv : BitVec 64) (X Xc : Nat) (n : Nat := 16) : Prop where
   good : Good t P (slot wx 8) wx minv
-  scrT : Scr t P (slot wx 8 + tabBytes wx)
+  scrT : Scr t P (slot wx 8 + tabBytes wx n)
   n : wv t.mem P (slot wx aN) wx = X
   inv : ((word t.mem P (slot wx aN)).toNat * minv.toNat + 1) % 2 ^ 64 = 0
   x : wv t.mem P (slot wx Crt.aXc) wx = Xc
 
-theorem CExpCtx.ld {t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc : Nat}
-    (hc : CExpCtx t P wx minv X Xc) {i : Nat} (hi : i < 32) : InRegions (t.rd ++ t.wr) (off P (8 * i)) 8 :=
+theorem CExpCtx.ld {t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc n : Nat}
+    (hc : CExpCtx t P wx minv X Xc n) {i : Nat} (hi : i < 32) : InRegions (t.rd ++ t.wr) (off P (8 * i)) 8 :=
   hc.good.scr.ld (by have := hdr_lt_slot wx 8 hi; omega_arith)
 
-theorem CExpCtx.st {t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc : Nat}
-    (hc : CExpCtx t P wx minv X Xc) {i : Nat} (hi : i < 32) : InRegions t.wr (off P (8 * i)) 8 :=
+theorem CExpCtx.st {t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc n : Nat}
+    (hc : CExpCtx t P wx minv X Xc n) {i : Nat} (hi : i < 32) : InRegions t.wr (off P (8 * i)) 8 :=
   hc.good.scr.st (by have := hdr_lt_slot wx 8 hi; omega_arith)
 
 /-- What changes only within the exponentiation's ranges keeps the context. -/
-theorem CExpCtx.of_frm {t t' : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc : Nat}
-    (hc : CExpCtx t P wx minv X Xc) (hf : Frm P (crtExpRanges wx) t.mem t'.mem) (hwr : t'.wr = t.wr)
-    (hdi : t'.gpr .rdi = t.gpr .rdi) : CExpCtx t' P wx minv X Xc := by
+theorem CExpCtx.of_frm {t t' : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc n : Nat}
+    (hc : CExpCtx t P wx minv X Xc n) (hf : Frm P (crtExpRanges wx n) t.mem t'.mem) (hwr : t'.wr = t.wr)
+    (hdi : t'.gpr .rdi = t.gpr .rdi) : CExpCtx t' P wx minv X Xc n := by
   have hn := hc.scrT.nowrap
-  have rN := crtExpRanges_arr wx (j := aN) (by decide) (by decide) (by decide) (by decide) (by decide)
-  have rX := crtExpRanges_arr wx (j := Crt.aXc) (by decide) (by decide) (by decide) (by decide) (by decide)
+  have rN := crtExpRanges_arr wx (n := n) (j := aN) (by decide) (by decide) (by decide) (by decide) (by decide)
+  have rX := crtExpRanges_arr wx (n := n) (j := Crt.aXc) (by decide) (by decide) (by decide) (by decide) (by decide)
   have lN := slot_le (w := wx) (show aN < 8 by decide)
   have lX := slot_le (w := wx) (show Crt.aXc < 8 by decide)
   have hh : ∀ i < 17, word t'.mem P (8 * i) = word t.mem P (8 * i) := fun i hi =>
@@ -72,9 +73,9 @@ theorem CExpCtx.of_frm {t t' : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {
     by rw [hf.word_eq (fun r hr => by have := rN r hr; omega_arith) (by omega_arith)]; exact hc.inv,
     by rw [hf.wv_eq (fun r hr => by have := rX r hr; omega_arith) (by omega_arith)]; exact hc.x⟩
 
-theorem CExpCtx.of_win {t t' : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc : Nat}
-    (hc : CExpCtx t P wx minv X Xc) (hf : Frm P (crtWinRanges wx) t.mem t'.mem) (hwr : t'.wr = t.wr)
-    (hdi : t'.gpr .rdi = t.gpr .rdi) : CExpCtx t' P wx minv X Xc :=
+theorem CExpCtx.of_win {t t' : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc n : Nat}
+    (hc : CExpCtx t P wx minv X Xc n) (hf : Frm P (crtWinRanges wx) t.mem t'.mem) (hwr : t'.wr = t.wr)
+    (hdi : t'.gpr .rdi = t.gpr .rdi) : CExpCtx t' P wx minv X Xc n :=
   hc.of_frm (hf.mono (crtWinRanges_sub wx)) hwr hdi
 
 /-! ## The table's entries -/
@@ -90,8 +91,8 @@ theorem entStep (P : Addr) (e wx : Nat) :
   omega_arith
 
 /-- `sEnt` moves up an entry. -/
-theorem nextEnt_ok {t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc : Nat}
-    (hc : CExpCtx t P wx minv X Xc) {e : Nat} (he : word t.mem P (8 * Crt.sEnt) = off P e) :
+theorem nextEnt_ok {t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc n : Nat}
+    (hc : CExpCtx t P wx minv X Xc n) {e : Nat} (he : word t.mem P (8 * Crt.sEnt) = off P e) :
     WP isa Crt.nextEnt t fun t' => t'.mem = t.mem.writeW (off P (8 * Crt.sEnt)) (off P (e + 8 * (wx + 2))) ∧
       Keep [.rax, .rdx] t t' := by
   refine WP.mono (WP.keep [.rax, .rdx] (Q := fun t' => t'.mem = t.mem.writeW (off P (8 * Crt.sEnt))
@@ -102,8 +103,8 @@ theorem nextEnt_ok {t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc : 
   rw [entStep]
 
 /-- `toEnt a`: entry `j`, at `sEnt`, `:= [a]`. -/
-theorem toEnt_ok {t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc : Nat}
-    (hc : CExpCtx t P wx minv X Xc) (hw : 2 ≤ wx) (hw' : wx < 2 ^ 30) {a j : Nat} (ha : a < 8) (hj : j < 16)
+theorem toEnt_ok {t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc n : Nat}
+    (hc : CExpCtx t P wx minv X Xc n) (hw : 2 ≤ wx) (hw' : wx < 2 ^ 30) {a j : Nat} (ha : a < 8) (hj : j < n)
     (he : word t.mem P (8 * Crt.sEnt) = off P (slot wx (8 + j))) :
     WP isa (seqs (Crt.toEnt a)) t fun t' => wv t'.mem P (slot wx (8 + j)) wx = wv t.mem P (slot wx a) wx ∧
       Outside P (slot wx (8 + j)) (8 * wx) t.mem t'.mem ∧ Keep mmRegs t t' := by
@@ -126,8 +127,8 @@ theorem toEnt_ok {t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc : Na
 /-! ## Reading an entry -/
 
 /-- The selection's start: `sEnt := sTab`, `sJ := 0`. -/
-theorem selInit_ok {t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc : Nat}
-    (hc : CExpCtx t P wx minv X Xc) (ht : word t.mem P (8 * Crt.sTab) = off P (slot wx 8)) :
+theorem selInit_ok {t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc n : Nat}
+    (hc : CExpCtx t P wx minv X Xc n) (ht : word t.mem P (8 * Crt.sTab) = off P (slot wx 8)) :
     WP isa (.block [.mov .rax (.mem (hdr Crt.sTab)), .store (hdr Crt.sEnt) .rax, .mov32 .rax (.imm 0),
       .store (hdr Crt.sJ) .rax]) t fun t' =>
       t'.mem = (t.mem.writeW (off P (8 * Crt.sEnt)) (off P (slot wx 8))).writeW (off P (8 * Crt.sJ))
@@ -137,15 +138,10 @@ theorem selInit_ok {t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc : 
     xrun [State.ea, hdr, hc.good.rdi, hdrOff, hc.ld (i := Crt.sTab) (by decide), ht,
       hc.st (i := Crt.sEnt) (by decide), hc.st (i := Crt.sJ) (by decide)]) rfl) fun t' ⟨h, k⟩ => ⟨h, k⟩
 
-theorem slot_add_mul (w j k : Nat) : slot w (j + k) = slot w j + k * (8 * (w + 2)) := by
-  induction k with
-  | zero => simp
-  | succ k ih => rw [← Nat.add_assoc, slot_succ, ih, Nat.add_mul, Nat.one_mul, Nat.add_assoc]
-
 /-- A pass's registers: `r15 = 8 p`, its first entry in `rcx`, an entry's
 size in `r11`, `r13 = 2 ⌈w / 2⌉` and `rbx = aT`. -/
-theorem gRegs_ok {t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc p : Nat}
-    (hc : CExpCtx t P wx minv X Xc) (hw' : wx < 2 ^ 30)
+theorem gRegs_ok {t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc n p : Nat}
+    (hc : CExpCtx t P wx minv X Xc n) (hw' : wx < 2 ^ 30)
     (hJ : word t.mem P (8 * Crt.sJ) = BitVec.ofNat 64 (8 * p))
     (hE : word t.mem P (8 * Crt.sEnt) = off P (slot wx (8 + 8 * p))) :
     WP isa (.block Crt.gatherRegs) t fun t' =>
@@ -460,15 +456,16 @@ theorem tabSel_ok {t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc v :
   · omega
   rw [h i (by omega), ite_eq_left (by omega), hEv i hi]
 
-/-- A selection of the window's entry: code with `tabSel_ok`'s conclusion
-(`CrtSel.sse`, and `tabSelectV`'s with AVX2). -/
-structure CrtSel where
+/-- A selection of the window's entry from a table of `n` entries (16 unless
+given): code with `tabSel_ok`'s conclusion (`CrtSel.sse`, and `tabSelectV`'s
+with AVX2). -/
+structure CrtSel (n : Nat := 16) where
   code : List (Prog isa)
   ne : code ≠ []
-  ok : ∀ {t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc v : Nat}, CExpCtx t P wx minv X Xc →
-    2 ≤ wx → wx < 2 ^ 30 → v < 16 → word t.mem P (8 * Crt.sTab) = off P (slot wx 8) →
+  ok : ∀ {t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc v : Nat}, CExpCtx t P wx minv X Xc n →
+    2 ≤ wx → wx < 2 ^ 30 → v < n → word t.mem P (8 * Crt.sTab) = off P (slot wx 8) →
     word t.mem P (8 * Crt.sNib) = BitVec.ofNat 64 v →
-    WP isa (seqs code) t fun t' => CExpCtx t' P wx minv X Xc ∧
+    WP isa (seqs code) t fun t' => CExpCtx t' P wx minv X Xc n ∧
       wv t'.mem P (slot wx Crt.aT) wx = wv t.mem P (slot wx (8 + v)) wx ∧
       Frm P (selRanges wx) t.mem t'.mem ∧ Keep mmRegs t t'
 
@@ -478,8 +475,8 @@ def CrtSel.sse : CrtSel := ⟨Crt.tabSelect, by simp [tabSelect_eq], tabSel_ok�
 /-! ## A window -/
 
 /-- The window count decremented, `ZF` when it reaches 0. -/
-theorem crtBitEnd_ok {t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc b : Nat}
-    (hc : CExpCtx t P wx minv X Xc) (hb : word t.mem P (8 * Crt.sBit) = BitVec.ofNat 64 b) (hb1 : 1 ≤ b)
+theorem crtBitEnd_ok {t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc n b : Nat}
+    (hc : CExpCtx t P wx minv X Xc n) (hb : word t.mem P (8 * Crt.sBit) = BitVec.ofNat 64 b) (hb1 : 1 ≤ b)
     (hb' : b < 2 ^ 31) :
     WP isa (.block [.mov .rax (.mem (hdr Crt.sBit)), .alu .sub .rax (.imm 1), .store (hdr Crt.sBit) .rax]) t
       fun t' => t'.mem = t.mem.writeW (off P (8 * Crt.sBit)) (BitVec.ofNat 64 (b - 1)) ∧
@@ -495,11 +492,11 @@ theorem crtBitEnd_ok {t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc 
     fun t' ⟨h, k⟩ => ⟨h.1, h.2, k⟩
 
 /-- `Y := Y² R⁻¹`: `x^E R` becomes `x^(2E) R`. -/
-theorem crtSq_ok (M : Mont) {t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc : Nat} {Q : Prop}
-    {x E : Nat} (hc : CExpCtx t P wx minv X Xc) (hw : 2 ≤ wx) (hw' : wx < 2 ^ 30)
+theorem crtSq_ok (M : Mont) {t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc n : Nat} {Q : Prop}
+    {x E : Nat} (hc : CExpCtx t P wx minv X Xc n) (hw : 2 ≤ wx) (hw' : wx < 2 ^ 30)
     (hR : Nat.Coprime (2 ^ (64 * wx)) X) (hY : wv t.mem P (slot wx aY) wx < X)
     (hYv : Q → wv t.mem P (slot wx aY) wx % X = x ^ E * 2 ^ (64 * wx) % X) :
-    WP isa (M.mm aY aY aY) t fun t' => CExpCtx t' P wx minv X Xc ∧ wv t'.mem P (slot wx aY) wx < X ∧
+    WP isa (M.mm aY aY aY) t fun t' => CExpCtx t' P wx minv X Xc n ∧ wv t'.mem P (slot wx aY) wx < X ∧
       (Q → wv t'.mem P (slot wx aY) wx % X = x ^ (2 * E) * 2 ^ (64 * wx) % X) ∧
       (∀ k < 32, word t'.mem P (8 * k) = word t.mem P (8 * k)) ∧
       Frm P (crtWinRanges wx) t.mem t'.mem ∧ Keep mmRegs t t' := by
@@ -512,12 +509,12 @@ theorem crtSq_ok (M : Mont) {t : State} {P : Addr} {wx : Nat} {minv : BitVec 64}
     fun k hk => ha₁.hslot hk, f₁, k₁⟩
 
 /-- `Y := Y T R⁻¹`: `x^E R` and `T ≡ x^v R` give `x^(E+v) R`. -/
-theorem crtMulT_ok (M : Mont) {t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc : Nat} {Q : Prop}
-    {x E v : Nat} (hc : CExpCtx t P wx minv X Xc) (hw : 2 ≤ wx) (hw' : wx < 2 ^ 30)
+theorem crtMulT_ok (M : Mont) {t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc n : Nat} {Q : Prop}
+    {x E v : Nat} (hc : CExpCtx t P wx minv X Xc n) (hw : 2 ≤ wx) (hw' : wx < 2 ^ 30)
     (hR : Nat.Coprime (2 ^ (64 * wx)) X) (hT : wv t.mem P (slot wx Crt.aT) wx < X)
     (hYv : Q → wv t.mem P (slot wx aY) wx % X = x ^ E * 2 ^ (64 * wx) % X)
     (hTv : Q → wv t.mem P (slot wx Crt.aT) wx % X = x ^ v * 2 ^ (64 * wx) % X) :
-    WP isa (M.mm aY aY Crt.aT) t fun t' => CExpCtx t' P wx minv X Xc ∧ wv t'.mem P (slot wx aY) wx < X ∧
+    WP isa (M.mm aY aY Crt.aT) t fun t' => CExpCtx t' P wx minv X Xc n ∧ wv t'.mem P (slot wx aY) wx < X ∧
       (Q → wv t'.mem P (slot wx aY) wx % X = x ^ (E + v) * 2 ^ (64 * wx) % X) ∧
       (∀ k < 32, word t'.mem P (8 * k) = word t.mem P (8 * k)) ∧
       Frm P (crtWinRanges wx) t.mem t'.mem ∧ Keep mmRegs t t' := by
@@ -847,8 +844,8 @@ theorem crtByte_ok (M : Mont) (S : CrtSel) {t₀ t : State} {P : Addr} {wx : Nat
 /-! ## The table -/
 
 /-- The table's base, past the last array, into `sTab` and `sEnt`. -/
-theorem tabInit_ok {t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc : Nat}
-    (hc : CExpCtx t P wx minv X Xc) :
+theorem tabInit_ok {t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc n : Nat}
+    (hc : CExpCtx t P wx minv X Xc n) :
     WP isa (.block [.mov .rax (.mem (hdr (sArr aOne))), .mov .rdx (.mem (hdr sW)), .alu .add .rdx (.imm 2),
       .alu .add .rdx (.reg .rdx), .alu .add .rdx (.reg .rdx), .alu .add .rdx (.reg .rdx), .alu .add .rax (.reg .rdx),
       .store (hdr Crt.sTab) .rax, .store (hdr Crt.sEnt) .rax]) t fun t' =>
@@ -862,29 +859,32 @@ theorem tabInit_ok {t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc : 
   rw [entStep, ← slot_succ]
   rfl
 
-/-- `sBit := 14`, the count of the table's products. -/
-theorem cnt14_ok {t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc : Nat}
-    (hc : CExpCtx t P wx minv X Xc) :
-    WP isa (.block [.mov32 .rax (.imm 14), .store (hdr Crt.sBit) .rax]) t fun t' =>
-      t'.mem = t.mem.writeW (off P (8 * Crt.sBit)) (BitVec.ofNat 64 14) ∧ Keep [.rax] t t' := by
+/-- `sBit := c`, the count of the table's products. -/
+theorem cnt_ok {t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc n : Nat}
+    (hc : CExpCtx t P wx minv X Xc n) {c : Nat} (hc' : c < 2 ^ 32) :
+    WP isa (.block [.mov32 .rax (.imm (BitVec.ofNat 32 c)), .store (hdr Crt.sBit) .rax]) t fun t' =>
+      t'.mem = t.mem.writeW (off P (8 * Crt.sBit)) (BitVec.ofNat 64 c) ∧ Keep [.rax] t t' := by
   refine WP.mono (WP.keep [.rax] (Q := fun t' => t'.mem = t.mem.writeW (off P (8 * Crt.sBit))
-      (BitVec.ofNat 64 14)) ?_ rfl) fun t' ⟨h, k⟩ => ⟨h, k⟩
+      (BitVec.ofNat 64 c)) ?_ rfl) fun t' ⟨h, k⟩ => ⟨h, k⟩
   xrun [State.ea, hdr, hc.good.rdi, hdrOff, hc.st (i := Crt.sBit) (by decide)]
-  rfl
+  congr 1
+  apply BitVec.eq_of_toNat_eq
+  rw [BitVec.toNat_setWidth, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hc',
+    Nat.mod_eq_of_lt (by omega)]
 
-/-- After `i` of the table's products from `t₀`: entries `0 … i + 1`
-written, `T ≡ x^(i+1) R` the last. -/
+/-- After `i` of the products of a table of `n` entries from `t₀`: entries
+`0 … i + 1` written, `T ≡ x^(i+1) R` the last. -/
 structure BuildInv (t₀ : State) (P : Addr) (wx : Nat) (minv : BitVec 64) (X Xc : Nat) (Q : Prop) (x : Nat)
-    (i : Nat) (t : State) : Prop where
-  ctx : CExpCtx t P wx minv X Xc
+    (n i : Nat) (t : State) : Prop where
+  ctx : CExpCtx t P wx minv X Xc n
   tab : word t.mem P (8 * Crt.sTab) = off P (slot wx 8)
   ent : word t.mem P (8 * Crt.sEnt) = off P (slot wx (8 + (i + 1)))
-  cnt : word t.mem P (8 * Crt.sBit) = BitVec.ofNat 64 (14 - i)
+  cnt : word t.mem P (8 * Crt.sBit) = BitVec.ofNat 64 (n - 2 - i)
   tlt : wv t.mem P (slot wx Crt.aT) wx < X
   tval : Q → wv t.mem P (slot wx Crt.aT) wx % X = x ^ (i + 1) * 2 ^ (64 * wx) % X
   elt : ∀ j < i + 2, wv t.mem P (slot wx (8 + j)) wx < X
   eval : Q → ∀ j < i + 2, wv t.mem P (slot wx (8 + j)) wx % X = x ^ j * 2 ^ (64 * wx) % X
-  frm : Frm P (buildRanges wx) t₀.mem t.mem
+  frm : Frm P (buildRanges wx n) t₀.mem t.mem
   keep : Keep mmRegs t₀ t
 
 /-- A product of the table's build. -/
@@ -893,12 +893,12 @@ def tabBody (mul : Nat → Nat → Nat → Prog isa) : List (Prog isa) :=
     [.block [.mov .rax (.mem (hdr Crt.sBit)), .alu .sub .rax (.imm 1), .store (hdr Crt.sBit) .rax]])
 
 /-- The table's product `i`. -/
-theorem buildStep_ok (M : Mont) {t₀ t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc : Nat} {Q : Prop}
+theorem buildStep_ok (M : Mont) {t₀ t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc n : Nat} {Q : Prop}
     {x : Nat} (hw : 2 ≤ wx) (hw' : wx < 2 ^ 30) (hR : Nat.Coprime (2 ^ (64 * wx)) X) (hXN : Xc < X)
-    (hXc : Q → Xc % X = x * 2 ^ (64 * wx) % X) {i : Nat} (hi : i < 14)
-    (hI : BuildInv t₀ P wx minv X Xc Q x i t) :
+    (hXc : Q → Xc % X = x * 2 ^ (64 * wx) % X) (hn : n ≤ 32) {i : Nat} (hi : i < n - 2)
+    (hI : BuildInv t₀ P wx minv X Xc Q x n i t) :
     WP isa (seqs (tabBody M.mm)) t
-      fun t' => t'.zf = some (decide (i + 1 = 14)) ∧ BuildInv t₀ P wx minv X Xc Q x (i + 1) t' := by
+      fun t' => t'.zf = some (decide (i + 1 = n - 2)) ∧ BuildInv t₀ P wx minv X Xc Q x n (i + 1) t' := by
   have hc := hI.ctx
   have hn := hc.scrT.nowrap
   have hT0 := slot_le (w := wx) (show Crt.aT < 8 by decide)
@@ -911,9 +911,9 @@ theorem buildStep_ok (M : Mont) {t₀ t : State} {P : Addr} {wx : Nat} {minv : B
     (by rw [hc.x, hc.n]; exact hXN)) fun t₁ ⟨_, hlt₁, hm₁, ha₁, k₁⟩ => ?_)
   rw [hc.n] at hlt₁
   rw [hc.n, hc.x] at hm₁
-  have f₁ : Frm P (buildRanges wx) t.mem t₁.mem := Frm.of_arrays ha₁ (by simp [buildRanges])
+  have f₁ : Frm P (buildRanges wx n) t.mem t₁.mem := Frm.of_arrays ha₁ (by simp [buildRanges])
   have hc₁ := hc.of_frm (f₁.mono (buildRanges_sub wx)) k₁.2.2 (k₁.gpr (by decide))
-  have he₁ : ∀ j < 16, wv t₁.mem P (slot wx (8 + j)) wx = wv t.mem P (slot wx (8 + j)) wx := fun j hj =>
+  have he₁ : ∀ j < n, wv t₁.mem P (slot wx (8 + j)) wx = wv t.mem P (slot wx (8 + j)) wx := fun j hj =>
     ha₁.wv_eq (fun k hk => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hk
       have := slot_mono wx (show 8 ≤ 8 + j by omega_arith)
@@ -926,20 +926,20 @@ theorem buildStep_ok (M : Mont) {t₀ t : State} {P : Addr} {wx : Nat} {minv : B
     fun t₂ ⟨hm₂, k₂⟩ => ?_
   have o₂ := writeW_outside t₁.mem P (d := 8 * Crt.sEnt) (off P (slot wx (8 + (i + 1)) + 8 * (wx + 2))) (by decide)
   rw [← hm₂] at o₂
-  have f₂ : Frm P (buildRanges wx) t₁.mem t₂.mem := Frm.of_outside o₂ (by simp [buildRanges])
+  have f₂ : Frm P (buildRanges wx n) t₁.mem t₂.mem := Frm.of_outside o₂ (by simp [buildRanges])
   have hc₂ := hc₁.of_frm (f₂.mono (buildRanges_sub wx)) k₂.2.2 (k₂.gpr (by decide))
   have hT₂ : wv t₂.mem P (slot wx Crt.aT) wx = wv t₁.mem P (slot wx Crt.aT) wx :=
     o₂.wv (by have := hdr_lt_slot wx Crt.aT (show Crt.sEnt < 32 by decide); omega_arith) (by omega_arith)
-  have he₂ : ∀ j < 16, wv t₂.mem P (slot wx (8 + j)) wx = wv t₁.mem P (slot wx (8 + j)) wx := fun j hj =>
+  have he₂ : ∀ j < n, wv t₂.mem P (slot wx (8 + j)) wx = wv t₁.mem P (slot wx (8 + j)) wx := fun j hj =>
     o₂.wv (by have := hdr_lt_slot wx (8 + j) (show Crt.sEnt < 32 by decide); omega_arith) (by have := ent_le wx hj; omega_arith)
   -- Entry `i + 2 := T`.
   refine wp_seqs_append (by simp [Crt.toEnt]) (by simp) ?_
   refine WP.mono (toEnt_ok hc₂ hw hw' (a := Crt.aT) (j := i + 2) (by decide) (by omega_arith) (by
     rw [hm₂, word_writeW_self, ← slot_succ]; rfl)) fun t₃ ⟨hv₃, o₃, k₃⟩ => ?_
-  have hE := ent_le wx (show i + 2 < 16 by omega_arith)
+  have hE := ent_le wx (show i + 2 < n by omega_arith)
   have hE8 := slot_mono wx (show 8 ≤ 8 + (i + 2) by omega_arith)
-  have f₃ : Frm P (buildRanges wx) t₂.mem t₃.mem :=
-    Frm.of_outside (o₃.mono (o' := slot wx 8) (n' := tabBytes wx) hE8 (by omega_arith)) (by simp [buildRanges])
+  have f₃ : Frm P (buildRanges wx n) t₂.mem t₃.mem :=
+    Frm.of_outside (o₃.mono (o' := slot wx 8) (n' := tabBytes wx n) hE8 (by omega_arith)) (by simp [buildRanges])
   have hc₃ := hc₂.of_frm (f₃.mono (buildRanges_sub wx)) k₃.2.2 (k₃.gpr (by decide))
   have hh₃ : ∀ k < 32, word t₃.mem P (8 * k) = word t₂.mem P (8 * k) := fun k hk =>
     o₃.word (by have := hdr_lt_slot wx (8 + (i + 2)) hk; omega_arith) (by omega_arith)
@@ -950,18 +950,18 @@ theorem buildStep_ok (M : Mont) {t₀ t : State} {P : Addr} {wx : Nat} {minv : B
     o₃.wv (by omega_arith) (by omega_arith)
   simp only [seqs]
   -- The count.
-  refine WP.mono (crtBitEnd_ok hc₃ (b := 14 - i) (by rw [hh₃ _ (by decide), hm₂,
+  refine WP.mono (crtBitEnd_ok hc₃ (b := n - 2 - i) (by rw [hh₃ _ (by decide), hm₂,
     hdrStore_hdr _ _ _ (by decide) (by decide) (by decide), ha₁.hslot (by decide)]; exact hI.cnt) (by omega_arith)
     (by omega_arith)) fun t' ⟨hm', hz', k'⟩ => ⟨by rw [hz']; congr 1; exact decide_eq_decide.mpr (by omega_arith), ?_⟩
-  have o₄ := writeW_outside t₃.mem P (d := 8 * Crt.sBit) (BitVec.ofNat 64 (14 - i - 1)) (by decide)
+  have o₄ := writeW_outside t₃.mem P (d := 8 * Crt.sBit) (BitVec.ofNat 64 (n - 2 - i - 1)) (by decide)
   rw [← hm'] at o₄
-  have f₄ : Frm P (buildRanges wx) t₃.mem t'.mem := Frm.of_outside o₄ (by simp [buildRanges])
+  have f₄ : Frm P (buildRanges wx n) t₃.mem t'.mem := Frm.of_outside o₄ (by simp [buildRanges])
   have hT' : wv t'.mem P (slot wx Crt.aT) wx = wv t₁.mem P (slot wx Crt.aT) wx := by
     rw [o₄.wv (by have := hdr_lt_slot wx Crt.aT (show Crt.sBit < 32 by decide); omega_arith) (by omega_arith), hT₃, hT₂]
-  have hE' : ∀ j < 16, wv t'.mem P (slot wx (8 + j)) wx = wv t₃.mem P (slot wx (8 + j)) wx := fun j hj =>
+  have hE' : ∀ j < n, wv t'.mem P (slot wx (8 + j)) wx = wv t₃.mem P (slot wx (8 + j)) wx := fun j hj =>
     o₄.wv (by have := hdr_lt_slot wx (8 + j) (show Crt.sBit < 32 by decide); omega_arith) (by have := ent_le wx hj; omega_arith)
   -- Entries other than `i + 2` are kept by `toEnt`.
-  have hEo : ∀ j < 16, j ≠ i + 2 → wv t₃.mem P (slot wx (8 + j)) wx = wv t.mem P (slot wx (8 + j)) wx :=
+  have hEo : ∀ j < n, j ≠ i + 2 → wv t₃.mem P (slot wx (8 + j)) wx = wv t.mem P (slot wx (8 + j)) wx :=
     fun j hj hne => by
       have := slot_sep (w := wx) (show 8 + j ≠ 8 + (i + 2) by omega_arith)
       rw [o₃.wv (by omega_arith) (by have := ent_le wx hj; omega_arith), he₂ j hj, he₁ j hj]
@@ -986,31 +986,33 @@ theorem buildStep_ok (M : Mont) {t₀ t : State} {P : Addr} {wx : Nat} {minv : B
     · subst hj2; rw [hv₃, hT₂]; exact hTv hq
     · rw [hEo j (by omega_arith) hj2]; exact hI.eval hq j (by omega_arith)
 
-/-- The table's first two entries, `T` and the count. -/
-def tabPre : List (Prog isa) :=
+/-- The table's first two entries, `T` and the count `c` of its products. -/
+def tabPre (c : Nat) : List (Prog isa) :=
   [.block [.mov .rax (.mem (hdr (sArr aOne))), .mov .rdx (.mem (hdr sW)), .alu .add .rdx (.imm 2),
     .alu .add .rdx (.reg .rdx), .alu .add .rdx (.reg .rdx), .alu .add .rdx (.reg .rdx), .alu .add .rax (.reg .rdx),
     .store (hdr Crt.sTab) .rax, .store (hdr Crt.sEnt) .rax]] ++ (Crt.toEnt aY ++ ([Crt.nextEnt] ++
-    (Crt.toEnt Crt.aXc ++ (Crt.copyArr Crt.aT Crt.aXc ++ [.block [.mov32 .rax (.imm 14), .store (hdr Crt.sBit) .rax]]))))
+    (Crt.toEnt Crt.aXc ++ (Crt.copyArr Crt.aT Crt.aXc ++
+      [.block [.mov32 .rax (.imm (BitVec.ofNat 32 c)), .store (hdr Crt.sBit) .rax]]))))
 
 /-- The table's products. -/
 def tabLoop (mul : Nat → Nat → Nat → Prog isa) : Prog isa := .loop (seqs (tabBody mul)) .ne
 
-theorem tabBuild_eq (mul : Nat → Nat → Nat → Prog isa) : Crt.tabBuild mul = tabPre ++ [tabLoop mul] := by
-  simp [Crt.tabBuild, tabPre, tabLoop, tabBody]
+theorem tabBuild_eq (mul : Nat → Nat → Nat → Prog isa) (c : Nat) :
+    Crt.tabBuildN mul c = tabPre c ++ [tabLoop mul] := by
+  simp [Crt.tabBuildN, tabPre, tabLoop, tabBody]
 
 /-- The table's first two entries: `T_0 := Y ≡ R`, `T_1 := [aXc] ≡ x R`. -/
-theorem tabPre_ok {t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc : Nat} {Q : Prop}
-    {x : Nat} (hc : CExpCtx t P wx minv X Xc) (hw : 2 ≤ wx) (hw' : wx < 2 ^ 30)
+theorem tabPre_ok {t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc n : Nat} {Q : Prop}
+    {x : Nat} (hc : CExpCtx t P wx minv X Xc n) (hn : 3 ≤ n) (hn' : n ≤ 32) (hw : 2 ≤ wx) (hw' : wx < 2 ^ 30)
     (hXN : Xc < X) (hXc : Q → Xc % X = x * 2 ^ (64 * wx) % X) (hY : wv t.mem P (slot wx aY) wx < X)
     (hYv : Q → wv t.mem P (slot wx aY) wx % X = 2 ^ (64 * wx) % X) :
-    WP isa (seqs tabPre) t (BuildInv t P wx minv X Xc Q x 0) := by
+    WP isa (seqs (tabPre (n - 2))) t (BuildInv t P wx minv X Xc Q x n 0) := by
   have hn := hc.scrT.nowrap
   have hY0 := slot_le (w := wx) (show aY < 8 by decide)
   have hT0 := slot_le (w := wx) (show Crt.aT < 8 by decide)
   have hX0 := slot_le (w := wx) (show Crt.aXc < 8 by decide)
-  have hE0 := ent_le wx (show 0 < 16 by decide)
-  have hE1 := ent_le wx (show 1 < 16 by decide)
+  have hE0 := ent_le wx (show 0 < n by omega_arith)
+  have hE1 := ent_le wx (show 1 < n by omega_arith)
   have h8 := hdr_lt_slot wx 8 (show 31 < 32 by decide)
   unfold tabPre
   refine wp_seqs_append (by simp) (by simp [Crt.toEnt]) ?_
@@ -1021,15 +1023,15 @@ theorem tabPre_ok {t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc : N
   have o2 := writeW_outside (t.mem.writeW (off P (8 * Crt.sTab)) (off P (slot wx 8))) P (d := 8 * Crt.sEnt)
     (off P (slot wx 8)) (by decide)
   rw [← hm₁] at o2
-  have f₁ : Frm P (buildRanges wx) t.mem t₁.mem :=
+  have f₁ : Frm P (buildRanges wx n) t.mem t₁.mem :=
     (Frm.of_outside o1 (by simp [buildRanges])).trans (Frm.of_outside o2 (by simp [buildRanges]))
   have hc₁ := hc.of_frm (f₁.mono (buildRanges_sub wx)) k₁.2.2 (k₁.gpr (by decide))
   -- `T_0 := Y`.
   refine wp_seqs_append (by simp [Crt.toEnt]) (by simp) ?_
-  refine WP.mono (toEnt_ok hc₁ hw hw' (a := aY) (j := 0) (by decide) (by decide) (by
+  refine WP.mono (toEnt_ok hc₁ hw hw' (a := aY) (j := 0) (by decide) (by omega_arith) (by
     rw [hm₁, word_writeW_self])) fun t₂ ⟨hv₂, o₃, k₂⟩ => ?_
-  have f₂ : Frm P (buildRanges wx) t₁.mem t₂.mem :=
-    Frm.of_outside (o₃.mono (o' := slot wx 8) (n' := tabBytes wx) (Nat.le_refl _) (by omega_arith)) (by simp [buildRanges])
+  have f₂ : Frm P (buildRanges wx n) t₁.mem t₂.mem :=
+    Frm.of_outside (o₃.mono (o' := slot wx 8) (n' := tabBytes wx n) (Nat.le_refl _) (by omega_arith)) (by simp [buildRanges])
   have hc₂ := hc₁.of_frm (f₂.mono (buildRanges_sub wx)) k₂.2.2 (k₂.gpr (by decide))
   have hh₂ : ∀ k < 32, word t₂.mem P (8 * k) = word t₁.mem P (8 * k) := fun k hk =>
     o₃.word (by have := hdr_lt_slot wx (8 + 0) hk; omega_arith) (by omega_arith)
@@ -1040,15 +1042,15 @@ theorem tabPre_ok {t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc : N
     fun t₃ ⟨hm₃, k₃⟩ => ?_
   have o₄ := writeW_outside t₂.mem P (d := 8 * Crt.sEnt) (off P (slot wx 8 + 8 * (wx + 2))) (by decide)
   rw [← hm₃] at o₄
-  have f₃ : Frm P (buildRanges wx) t₂.mem t₃.mem := Frm.of_outside o₄ (by simp [buildRanges])
+  have f₃ : Frm P (buildRanges wx n) t₂.mem t₃.mem := Frm.of_outside o₄ (by simp [buildRanges])
   have hc₃ := hc₂.of_frm (f₃.mono (buildRanges_sub wx)) k₃.2.2 (k₃.gpr (by decide))
   -- `T_1 := Xc`.
   refine wp_seqs_append (by simp [Crt.toEnt]) (by simp [Crt.copyArr]) ?_
-  refine WP.mono (toEnt_ok hc₃ hw hw' (a := Crt.aXc) (j := 1) (by decide) (by decide) (by
+  refine WP.mono (toEnt_ok hc₃ hw hw' (a := Crt.aXc) (j := 1) (by decide) (by omega_arith) (by
     rw [hm₃, word_writeW_self, ← slot_succ])) fun t₄ ⟨hv₄, o₅, k₄⟩ => ?_
   have hE01 := slot_sep (w := wx) (show 8 + 0 ≠ 8 + 1 by decide)
-  have f₄ : Frm P (buildRanges wx) t₃.mem t₄.mem :=
-    Frm.of_outside (o₅.mono (o' := slot wx 8) (n' := tabBytes wx) (slot_mono wx (by decide)) (by omega_arith))
+  have f₄ : Frm P (buildRanges wx n) t₃.mem t₄.mem :=
+    Frm.of_outside (o₅.mono (o' := slot wx 8) (n' := tabBytes wx n) (slot_mono wx (by decide)) (by omega_arith))
       (by simp [buildRanges])
   have hc₄ := hc₃.of_frm (f₄.mono (buildRanges_sub wx)) k₄.2.2 (k₄.gpr (by decide))
   have hh₄ : ∀ k < 32, word t₄.mem P (8 * k) = word t₃.mem P (8 * k) := fun k hk =>
@@ -1057,7 +1059,7 @@ theorem tabPre_ok {t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc : N
   refine wp_seqs_append (by simp [Crt.copyArr]) (by simp) ?_
   refine WP.mono (copyArr_ok hc₄.good (Nat.le_refl _) (by omega_arith) (by omega_arith) (o := Crt.aT) (a := Crt.aXc)
     (by decide) (by decide) (by decide)) fun t₅ ⟨hv₅, o₆, k₅⟩ => ?_
-  have f₅ : Frm P (buildRanges wx) t₄.mem t₅.mem :=
+  have f₅ : Frm P (buildRanges wx n) t₄.mem t₅.mem :=
     Frm.of_outside (o₆.mono (o' := slot wx Crt.aT) (n' := 8 * (wx + 2)) (Nat.le_refl _) (by omega_arith))
       (by simp [buildRanges])
   have hc₅ := hc₄.of_frm (f₅.mono (buildRanges_sub wx)) k₅.2.2 (k₅.gpr (by decide))
@@ -1067,12 +1069,12 @@ theorem tabPre_ok {t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc : N
     have := slot_mono wx (show 8 ≤ 8 + j by omega_arith); omega_arith
   simp only [seqs]
   -- The count.
-  refine WP.mono (cnt14_ok hc₅) fun t₆ ⟨hm₆, k₆⟩ => ?_
-  have o₇ := writeW_outside t₅.mem P (d := 8 * Crt.sBit) (BitVec.ofNat 64 14) (by decide)
+  refine WP.mono (cnt_ok hc₅ (c := n - 2) (by omega_arith)) fun t₆ ⟨hm₆, k₆⟩ => ?_
+  have o₇ := writeW_outside t₅.mem P (d := 8 * Crt.sBit) (BitVec.ofNat 64 (n - 2)) (by decide)
   rw [← hm₆] at o₇
-  have f₆ : Frm P (buildRanges wx) t₅.mem t₆.mem := Frm.of_outside o₇ (by simp [buildRanges])
+  have f₆ : Frm P (buildRanges wx n) t₅.mem t₆.mem := Frm.of_outside o₇ (by simp [buildRanges])
   have hc₆ := hc₅.of_frm (f₆.mono (buildRanges_sub wx)) k₆.2.2 (k₆.gpr (by decide))
-  have f06 : Frm P (buildRanges wx) t.mem t₆.mem := ((((f₁.trans f₂).trans f₃).trans f₄).trans f₅).trans f₆
+  have f06 : Frm P (buildRanges wx n) t.mem t₆.mem := ((((f₁.trans f₂).trans f₃).trans f₄).trans f₅).trans f₆
   have k06 : Keep mmRegs t t₆ := (((((k₁.trans k₂).trans k₃).trans k₄).trans k₅).trans k₆).mono (by decide)
   -- Entries 0 and 1, and `T`, at `t₆`.
   have hX₄ : wv t₄.mem P (slot wx Crt.aXc) wx = Xc := hc₄.x
@@ -1095,7 +1097,7 @@ theorem tabPre_ok {t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc : N
       hdrStore_hdr _ _ _ (by decide) (by decide) (by decide), word_writeW_self]
   · rw [hm₆, hdrStore_hdr _ _ _ (by decide) (by decide) (by decide), hh₅ _ (by decide), hh₄ _ (by decide), hm₃,
       word_writeW_self, ← slot_succ]
-  · rw [hm₆, word_writeW_self]
+  · rw [hm₆, word_writeW_self, Nat.sub_zero]
   · rcases (show j = 0 ∨ j = 1 by omega_arith) with rfl | rfl
     · rw [e0]; exact hY
     · rw [e1]; exact hXN
@@ -1104,21 +1106,23 @@ theorem tabPre_ok {t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc : N
     · rw [e1, Nat.pow_one]; exact hXc hq
 
 /-- The table: `T_0 := Y ≡ R`, `T_1 := [aXc] ≡ x R` and `T_i := T_(i-1) [aXc] R⁻¹`. -/
-theorem tabBuild_ok (M : Mont) {t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc : Nat} {Q : Prop}
-    {x : Nat} (hc : CExpCtx t P wx minv X Xc) (hw : 2 ≤ wx) (hw' : wx < 2 ^ 30) (hR : Nat.Coprime (2 ^ (64 * wx)) X)
+theorem tabBuild_ok (M : Mont) {t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc n : Nat} {Q : Prop}
+    {x : Nat} (hc : CExpCtx t P wx minv X Xc n) (hn3 : 3 ≤ n) (hn32 : n ≤ 32) (hw : 2 ≤ wx) (hw' : wx < 2 ^ 30)
+    (hR : Nat.Coprime (2 ^ (64 * wx)) X)
     (hXN : Xc < X) (hXc : Q → Xc % X = x * 2 ^ (64 * wx) % X) (hY : wv t.mem P (slot wx aY) wx < X)
     (hYv : Q → wv t.mem P (slot wx aY) wx % X = 2 ^ (64 * wx) % X) :
-    WP isa (seqs (Crt.tabBuild M.mm)) t fun t' => CExpCtx t' P wx minv X Xc ∧ CTab t'.mem P wx X Q x ∧
+    WP isa (seqs (Crt.tabBuildN M.mm (n - 2))) t fun t' => CExpCtx t' P wx minv X Xc n ∧ CTab t'.mem P wx X Q x n ∧
       wv t'.mem P (slot wx aY) wx = wv t.mem P (slot wx aY) wx ∧
       (∀ k < 32, k ≠ Crt.sTab → k ≠ Crt.sEnt → k ≠ Crt.sBit → word t'.mem P (8 * k) = word t.mem P (8 * k)) ∧
-      Frm P (crtExpRanges wx) t.mem t'.mem ∧ Keep mmRegs t t' := by
+      Frm P (crtExpRanges wx n) t.mem t'.mem ∧ Keep mmRegs t t' := by
   have hn := hc.scrT.nowrap
   have hY0 := slot_le (w := wx) (show aY < 8 by decide)
   rw [tabBuild_eq]
-  refine wp_seqs_append (by simp [tabPre]) (by simp) (WP.mono (tabPre_ok hc hw hw' hXN hXc hY hYv) fun t₆ h₀ => ?_)
+  refine wp_seqs_append (by simp [tabPre]) (by simp) (WP.mono (tabPre_ok hc hn3 hn32 hw hw' hXN hXc hY hYv)
+    fun t₆ h₀ => ?_)
   simp only [seqs, tabLoop]
-  refine WP.mono (wp_upto (a := 0) (N := 14) (by decide) (BuildInv t P wx minv X Xc Q x)
-    (fun i _ hi s hI => buildStep_ok M hw hw' hR hXN hXc hi hI) (fun s h => h) h₀) fun t' hI => ?_
+  refine WP.mono (wp_upto (a := 0) (N := n - 2) (by omega_arith) (BuildInv t P wx minv X Xc Q x n)
+    (fun i _ hi s hI => buildStep_ok M hw hw' hR hXN hXc hn32 hi hI) (fun s h => h) h₀) fun t' hI => ?_
   refine ⟨hI.ctx, ⟨hI.tab, fun j hj => hI.elt j (by omega_arith), fun hq j hj => hI.eval hq j (by omega_arith)⟩,
     hI.frm.wv_eq (buildRanges_y wx) (by omega_arith),
     fun k hk h1 h2 h3 => hI.frm.word_eq (fun r hr => by
@@ -1214,7 +1218,7 @@ theorem crtExpHead_ok (M : Mont) {s : State} {B : Addr} {Z o w wx : Nat} {minv :
   have hc₀ : CExpCtx s (off B o) wx minv X (wv s.mem (off B o) (slot wx Crt.aXc) wx) :=
     ⟨hc.good, hc.scrT, hn, hinv, rfl⟩
   rw [← List.singleton_append]
-  refine wp_seqs_append (by simp) (by simp [tabBuild_eq, tabPre]) ?_
+  refine wp_seqs_append (by simp) (by simp [Crt.tabBuild, tabBuild_eq, tabPre]) ?_
   simp only [seqs, expInit]
   refine WP.mono (crtExpInit_ok hc hsp hsl hep hel) fun t₁ ⟨hm₁, k₁⟩ => ?_
   have o1 := writeW_outside s.mem (off B o) (d := 8 * Crt.sExp) ep (by decide)
@@ -1234,7 +1238,7 @@ theorem crtExpHead_ok (M : Mont) {s : State} {B : Addr} {Z o w wx : Nat} {minv :
     rw [o3.wv (by unfold Crt.sI sFn at *; omega_arith) (by omega_arith), o2.wv (by unfold Crt.sExpLen sFn at *; omega_arith)
       (by omega_arith), o1.wv (by unfold Crt.sExp sFn at *; omega_arith) (by omega_arith)]
   -- The table.
-  refine WP.mono (tabBuild_ok M (Q := Q) (x := x) hc₁ hw2 (by omega_arith) hR hxl hxc (by rw [hYe₁]; exact hyl)
+  refine WP.mono (tabBuild_ok M (Q := Q) (x := x) hc₁ (by decide) (by decide) hw2 (by omega_arith) hR hxl hxc (by rw [hYe₁]; exact hyl)
     (fun hq => by rw [hYe₁]; exact hyc hq)) fun t₂ ⟨hc₂, htab₂, hYe₂, hh₂, f₂, k₂⟩ => ?_
   refine ⟨hc₂, htab₂, by rw [hYe₂, hYe₁]; exact hyl, fun hq => ?_, ?_, ?_, ?_, f₁.trans f₂,
     (k₁.trans k₂).mono (by decide)⟩
