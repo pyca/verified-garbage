@@ -41,6 +41,8 @@ def Instr.asm : Instr → List String
   | .cmp n op2 => [s!"cmp {n.name}, {op2.str}"]
   | .movw d imm => [s!"movw {d.name}, #{imm.toNat}"]
   | .movt d imm => [s!"movt {d.name}, #{imm.toNat}"]
+  | .adrSym d name => [s!"movw {d.name}, #:lower16:({name} - (2f + 2 * (3f - 2f)))",
+      s!"movt {d.name}, #:upper16:({name} - (2f + 2 * (3f - 2f)))", "2:", s!"add {d.name}, pc", "3:"]
   | .rev d m => [s!"rev {d.name}, {m.name}"]
   | .mul d n m => [s!"mul {d.name}, {n.name}, {m.name}"]
   | .ldr t n off => [s!"ldr {t.name}, [{n.name}, #{off}]"]
@@ -63,5 +65,14 @@ def printer : Printer isa where
   jump l := s!"b {l}"
   ret := ["bx lr"]
   call := "bl"
+  -- Labels 2 and 3 are private to `adrSym`, around its `add`: structured
+  -- control flow uses 20, 21, ...; repeated sequences use the nearest 2f/3f.
+  -- `2f + 2 * (3f - 2f)` is the `pc` the `add` reads: its address plus 8 in
+  -- ARM state, where it is 4 bytes, and plus 4 in Thumb state, where it is 2.
+  symLines
+    | .adrSym d name => some [.sym s!"movw {d.name}, #:lower16:(" .armPcRel name,
+        .sym s!"movt {d.name}, #:upper16:(" .armPcRel name, .text "2:", .text s!"add {d.name}, pc",
+        .text "3:"]
+    | _ => none
 
 end VG.Arm

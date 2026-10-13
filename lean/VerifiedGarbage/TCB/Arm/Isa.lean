@@ -61,6 +61,11 @@ Modelling choices:
   `bx` switches back to. A linker veneer between a `bl` and its target may
   change `r12` and the condition flags (AAELF32 §5.6.1.4, "Call and Jump
   relocations"), so a call leaves unknown values in them too.
+* A `static` the code reads (`Artifact.consts`) is at the address
+  `State.syms name`, where `name` is its name, which `adrSym` (`movw`,
+  `movt` and an `add` of `pc`, resolved by the linker) puts in a register.
+  No instruction changes `syms`: a static's address is fixed for the run of
+  the program. `adrSym` reads `pc`, which is not otherwise an operand.
 -/
 
 @[expose] public section
@@ -89,6 +94,8 @@ structure State where
   intra-procedure-call scratch registers and condition flags (see
   `TCB/Code.lean`). -/
   unknowns : Nat → BitVec 32 := fun _ => 0
+  /-- The address of each `static` the code can name (`adrSym`), by name. -/
+  syms : String → BitVec 32 := fun _ => 0
 
 inductive Shift | lsl | lsr | ror
   deriving DecidableEq, Repr
@@ -124,6 +131,10 @@ inductive Instr
   | movw (d : Reg) (imm : BitVec 16)
   /-- `movt d, #imm16` -/
   | movt (d : Reg) (imm : BitVec 16)
+  /-- `movw d, #:lower16:(name - L)`, `movt d, #:upper16:(name - L)`, then
+  `add d, pc` (MOVW, MOVT, ADD (register)), `L` the value the `add` reads
+  from `pc`: the address of the `static` `name`, `State.syms name`. -/
+  | adrSym (d : Reg) (name : String)
   /-- `rev d, m` -/
   | rev (d m : Reg)
   /-- `mul d, n, m`: the low 32 bits of `n * m` (no flags set) -/
@@ -260,7 +271,34 @@ and later; the 16-bit T1 encoding sets the flags outside an IT block, so an
 assembler uses T2 for `mul`) instruction sets. `pc` (and, in Thumb, `sp`) as
 any of the registers is UNPREDICTABLE, which the model cannot express; since
 ARMv6, `d` may be `n` (the ARM encoding's `ArchVersion() < 6 && d == n`
-restriction does not apply to ARMv7). -/
+restriction does not apply to ARMv7).
+
+`adrSym d name` is three instructions, which the linker completes with the
+static's address `S` (`State.syms name`): "MOVW" (A8.8.102, "MOV
+(immediate)" encoding A2 or T3: `R[d] = ZeroExtend(imm16, 32)`), then "MOVT"
+(A8.8.106, encoding A1 or T1: `R[d]<31:16> = imm16`), then `add d, pc`,
+"ADD (register, ARM)" (A8.8.7, encoding A1, `add d, d, pc`) or "ADD
+(register, Thumb)" (A8.8.6, the 16-bit encoding T2), with `S` = 0 and `m` =
+15: `R[d] = R[d] + R[15]`, no flags set. Their immediates are bits 15:0 and
+31:16 of `S - L`, where `L` is the value the `add` reads from `pc`: its
+address plus 8 in ARM state and plus 4 in Thumb state (A2.3, "ARM core
+registers"), so its address plus twice its size (A1 is 4 bytes, T2 2),
+which the printed relocation expression says in either state. The relocations are
+`R_ARM_MOVW_PREL_NC` and `R_ARM_MOVT_PREL` in ARM code and
+`R_ARM_THM_MOVW_PREL_NC` and `R_ARM_THM_MOVT_PREL` in Thumb code (ELF for
+the Arm Architecture, AAELF32 §5.6.1, "Static Data relocations": `((S + A) |
+T) - P` and `(S + A) - P`, `T` = 0 for the data object a `static` is, the
+addend `A` making the difference relative to `L`; MOVT takes bits 31:16 of
+the result), so `R[d] = (S - L) + L = S`, modulo 2³², whatever the distance
+from the code to the static. The relocations are PC-relative, so the code
+is position independent, as Rust's PIC executables and shared libraries
+require (the absolute `R_ARM_MOVW_ABS_NC` would not link there).
+https://github.com/ARM-software/abi-aa/blob/2025Q4/aaelf32/aaelf32.rst.
+`d` is never `sp` or `pc` (UNPREDICTABLE in the T3, T1 encodings of MOVW and
+MOVT, `BadReg(d)`, and a branch in ADD's); `lr` is allowed. MOVW and MOVT
+are ARMv6T2 and later, in both instruction sets, and so in the ARMv7
+baseline: `requires` stays empty. All three take a time independent of
+their operands. -/
 def exec : Instr → State → Option State
   | .mov d op2, s => (op2.eval s).map fun x => s.setReg d x
   | .dp op d n op2, s => (op2.eval s).map fun y =>
@@ -276,6 +314,7 @@ def exec : Instr → State → Option State
   | .cmp n op2, s => (op2.eval s).map fun y => subFlags s (s.gpr n) y
   | .movw d imm, s => some (s.setReg d (imm.setWidth 32))
   | .movt d imm, s => some (s.setReg d (imm ++ (s.gpr d).extractLsb' 0 16 : BitVec 32))
+  | .adrSym d name, s => some (s.setReg d (s.syms name))
   | .rev d m, s => some (s.setReg d (rev (s.gpr m)))
   | .mul d n m, s => some (s.setReg d (s.gpr n * s.gpr m))
   | .ldr t n off, s =>
