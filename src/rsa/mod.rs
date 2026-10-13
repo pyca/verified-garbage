@@ -480,6 +480,29 @@ pub(crate) mod tests {
         }
     }
 
+    /// Exercise the 65537 shortcut and a neighboring general exponent at
+    /// whole-word and partial-word widths. For n = 2^(8k) - 1, powers of
+    /// two wrap at bit 8k, giving an independent expected result.
+    #[test]
+    fn public_65537_and_neighbor() {
+        for k in [64, 65, 71, 72, 127, 128, 255, 256, 384, 512, 1023, 1024] {
+            let n = vec![0xff; k];
+            for e in [65537_u32, 65539] {
+                let exponent = e.to_be_bytes();
+                let key = PublicKey::new(&n, &exponent[1..]).unwrap();
+                let mut expected = vec![0; k];
+                let bit = e as usize % (8 * k);
+                expected[k - 1 - bit / 8] = 1 << (bit % 8);
+                let mut out = vec![0; k];
+                key.public_op(&be(2, k), &mut out).unwrap();
+                assert_eq!(out, expected, "k={k}, e={e}");
+                key.public_op(&minus_one(&n), &mut out).unwrap();
+                assert_eq!(out, minus_one(&n));
+                assert_eq!(key.public_op(&n, &mut out), Err(Error::InputOutOfRange));
+            }
+        }
+    }
+
     #[test]
     fn invalid() {
         let n = modulus(64);

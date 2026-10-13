@@ -311,8 +311,10 @@ theorem cl_rest {p : CPubD} {t : State} (h : CL p t) (he : isa.eval (.zero .x .x
 
 /-- `vg_rsa_public_precomputed` leaks the same in runs that agree on the public
 data. -/
-theorem pdCode_ct : RelCT isa (Two CR) (Precomputed.code M.mm) fun _ _ => True := by
-  unfold Precomputed.code
+theorem pdCodeWith_ct (rest : Prog isa)
+    (hrest : RelCT isa (Two DRel) rest (fun _ _ => True)) :
+    RelCT isa (Two CR) (.seq (.block (Precomputed.entry false))
+      (.seq (seqs Precomputed.load) (.ite (.zero .x .x9) Precomputed.fail rest))) (fun _ _ => True) := by
   refine RelCT.seq (R := Two CE2) ?_ ?_
   · rw [pdEntry_split]
     refine RelCT.block_append (RelCT.seq (two_piece (Ψ := CE1) [] (fun _ _ _ _ _ r hr => absurd hr (by simp))
@@ -359,7 +361,10 @@ theorem pdCode_ct : RelCT isa (Two CR) (Precomputed.code M.mm) fun _ _ => True :
         hl sK (by decide), hO, hK]) (by decide) (by decide) (by decide +kernel))
       fun t' ⟨h, _⟩ => h
   · -- `rest`.
-    exact two_map (fun p => p.d) (fun _ _ h => cl_rest h.1 h.2) pdRest_ct
+    exact two_map (fun p => p.d) (fun _ _ h => cl_rest h.1 h.2) hrest
+
+theorem pdCode_ct : RelCT isa (Two CR) (Precomputed.code M.mm) (fun _ _ => True) :=
+  pdCodeWith_ct (Precomputed.rest M.mm) pdRest_ct
 
 /-- The public data of a state. -/
 def cpubOfD (s : State) : CPubD :=
@@ -370,8 +375,10 @@ def cpubOfD (s : State) : CPubD :=
     s.gpr .x2, s.sp⟩
 
 /-- `vg_rsa_public_precomputed` is constant time but for `pre` and `e`. -/
-theorem pdCode_constantTime : ConstantTime isa pdContract.pre pdContract.pub (Precomputed.code M.mm) := by
-  refine RelCT.constantTime (pdCode_ct.mono (fun s₁ s₂ ⟨h₁, h₂, hp⟩ => ⟨cpubOfD s₁, ?_, ?_, hp.1⟩) fun _ _ h => h)
+theorem pdCodeWith_constantTime (c : Prog isa)
+    (hct : RelCT isa (Two CR) c (fun _ _ => True)) :
+    ConstantTime isa pdContract.pre pdContract.pub c := by
+  refine RelCT.constantTime (hct.mono (fun s₁ s₂ ⟨h₁, h₂, hp⟩ => ⟨cpubOfD s₁, ?_, ?_, hp.1⟩) fun _ _ h => h)
   · exact ⟨h₁, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩
   · obtain ⟨hsp, a0, a1, a2, a3, a4, a5, a6, -, s0, s1, hw, he⟩ := hp
     have c := pdCtx_of h₂
@@ -384,5 +391,8 @@ theorem pdCode_constantTime : ConstantTime isa pdContract.pre pdContract.pub (Pr
       exact (wv_of_wordsAt hw (by omega)).symm
     · rw [← a2, ← a1]
       exact (wv_of_wordsAt hw (by omega)).symm
+
+theorem pdCode_constantTime : ConstantTime isa pdContract.pre pdContract.pub (Precomputed.code M.mm) :=
+  pdCodeWith_constantTime (Precomputed.code M.mm) pdCode_ct
 
 end VG.Proof.Bignum.AArch64
