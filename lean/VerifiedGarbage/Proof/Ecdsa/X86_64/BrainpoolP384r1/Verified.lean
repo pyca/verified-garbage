@@ -107,7 +107,7 @@ theorem pre_of {s : State} (h : signX86_64.pre s) : Pre brainpoolp384r1 s := by
 
 /-- `[k]G` is a call of `vg_brainpoolp384r1_mul`, which calls no other function. -/
 theorem brainpoolp384r1_mulBase : MulBaseOk brainpoolp384r1 :=
-  ⟨fun h => absurd h (by decide), fun _ => ⟨.inr rfl, by lit_decide⟩⟩
+  ⟨fun h => absurd h (by decide), fun _ => ⟨.inr (.inl rfl), by lit_decide⟩⟩
 
 theorem sign_x86 (hL : Law Spec.BrainpoolP384r1.curve)
     (hI : InvSounds) (s : State)

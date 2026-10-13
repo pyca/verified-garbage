@@ -11,6 +11,7 @@
 
 mod brainpoolp256r1;
 mod brainpoolp384r1;
+mod brainpoolp512r1;
 
 const TEXT: &str = include_str!("../../vectors/rfc7027/rfc7027.txt");
 
