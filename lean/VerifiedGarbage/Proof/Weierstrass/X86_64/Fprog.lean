@@ -342,6 +342,8 @@ theorem opMulP_ok {M : Mod} {base : Addr} {Z m : Nat} {s : State} (hs : Scr s ba
         exact Mont.mulCall6_ok hbody hs hM hsp ht (hn6 ▸ hlow) hoZ haZ hbZ hB
       split at hcall
       · rename_i h; rw [hfn] at h; exact absurd h.2.1 (by simp)
+      split at hcall
+      · rename_i h; rw [hfn] at h; exact absurd h.2.1 (by simp)
       · cases hcall
     · exact hin
 
