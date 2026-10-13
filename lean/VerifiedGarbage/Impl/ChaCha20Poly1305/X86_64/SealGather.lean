@@ -53,13 +53,16 @@ inductive Width where
   /-- 64, with AVX-512's `vmovdqu32` of `zmm0`. -/
   | z64
 
-/-- The widest copy the CPUs of an implementation of `vg_poly1305_blocks`
-have: the instance of `vg_chacha20_poly1305_seal_split` called runs on the CPUs of
-the implementation of `vg_poly1305_blocks` it calls. -/
+/-- The copy for an implementation of `vg_poly1305_blocks`: the widest its
+CPUs have (the instance of `vg_chacha20_poly1305_seal_split` called runs on
+the CPUs of the implementation of `vg_poly1305_blocks` it calls), but 32
+bytes with the AVX-512 one without IFMA, whose `seal` runs no 512-bit
+instruction for short data (`Stitch.sealSmall`): on its CPUs (Skylake-SP,
+Cascade Lake) a 512-bit copy would lower the clock for the `seal` after it. -/
 def Width.ofBlocks : Impl.Poly1305.X86_64.Blocks → Width
   | .scalar => .x16
   | .avx2 => .y32
-  | .avx512 => .z64
+  | .avx512 => .y32
   | .ifma => .z64
 
 /-- The number of bytes, a power of two. -/
