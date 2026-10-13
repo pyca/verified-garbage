@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.P224.Curve
+import Mathlib.AlgebraicGeometry.EllipticCurve.Affine.Point
 
 /-!
 # P-224's group law, on 32-bit ARM

@@ -5,6 +5,8 @@ public import VerifiedGarbage.Proof.P256.Curve
 public import VerifiedGarbage.Proof.P256.PrimeOrder
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvMain
 public import VerifiedGarbage.Proof.Weierstrass.InvArith
+import VerifiedGarbage.Proof.Divstep.Bound
+import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 
 /-!
 # P-256's group law, on AArch64

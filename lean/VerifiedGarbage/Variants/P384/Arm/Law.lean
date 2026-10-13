@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.P384.Curve
+import Mathlib.AlgebraicGeometry.EllipticCurve.Affine.Point
 
 /-!
 # P-384's group law, on 32-bit ARM

@@ -6,6 +6,8 @@ public import VerifiedGarbage.Proof.Sha1.X86.Shared
 meta import VerifiedGarbage.Proof.Sha1.X86.Shared
 public import VerifiedGarbage.Proof.Sha1.X86.ShaNi.Compress
 meta import VerifiedGarbage.Proof.Sha1.X86.ShaNi.Compress
+public import VerifiedGarbage.Proof.Sha1.X86.Stream.Variant
+meta import VerifiedGarbage.Proof.Sha1.X86.Stream.Variant
 
 /-!
 # SHA-1 on x86 with the SHA extensions

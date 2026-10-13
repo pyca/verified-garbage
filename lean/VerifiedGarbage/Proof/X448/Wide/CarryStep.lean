@@ -5,6 +5,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.X448.Wide.Memory
+import Mathlib.Tactic.SplitIfs
 
 /-! Untrusted: one wide carry step and its optional interface conversion. -/
 

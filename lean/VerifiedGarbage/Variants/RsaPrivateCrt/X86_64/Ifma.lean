@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Variants.RsaPublicPrecomputed.X86_64.Adx
 public import VerifiedGarbage.Proof.Rsa.X86_64.PrivImpl
 public import VerifiedGarbage.Proof.Rsa.X86_64.IfmaLit
+public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Verified
 
 /-!
 # `vg_rsa_private_crt` on x86-64: with AVX512_IFMA
