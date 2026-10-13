@@ -160,10 +160,10 @@ theorem padMod_ok {t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc n L
 for each of 1 to 4 that is at most `b`. -/
 theorem padPow_ok {t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc n b : Nat}
     (hc : CExpCtx t P wx minv X Xc n) (hax : t.gpr .rax = BitVec.ofNat 64 b) (hb : b < 5) :
-    WP isa (.block ([.mov32 .rcx (.imm 0), .store (hdr Crt.sV) .rcx, .movImm64 .rcx (BitVec.ofNat 64 (2 ^ 56))] ++
+    WP isa (.block (([.mov32 .rcx (.imm 0), .store (hdr Crt.sV) .rcx, .movImm64 .rcx (BitVec.ofNat 64 (2 ^ 56))] : List Instr) ++
       (List.range 4).flatMap (fun k => [.mov .rdx (.reg .rcx), .shift .shr .rdx 1,
         .alu .cmp .rax (.imm (BitVec.ofNat 32 (k + 1))), .cmov .ae .rcx (.reg .rdx)]) ++
-      [.store (hdr Crt.sPow) .rcx])) t fun t' =>
+      ([.store (hdr Crt.sPow) .rcx] : List Instr))) t fun t' =>
       t'.mem = (t.mem.writeW (off P (8 * Crt.sV)) (BitVec.setWidth 64 (0 : BitVec 32))).writeW
         (off P (8 * Crt.sPow)) (BitVec.ofNat 64 (2 ^ (56 - b))) ∧ Keep [.rax, .rcx, .rdx] t t' := by
   refine WP.mono (WP.keep [.rax, .rcx, .rdx] (Q := fun t' => t'.mem = (t.mem.writeW (off P (8 * Crt.sV))
@@ -182,10 +182,10 @@ theorem padInit_eq : Crt.padInit =
     (([.mov .rax (.reg .rdx), .alu .add .rax (.reg .rax), .alu .add .rax (.reg .rax), .alu .add .rax (.reg .rdx),
       .alu .sub .rcx (.reg .rax), .alu .add .rcx (.reg .rcx), .mov .rax (.reg .rcx), .alu .sub .rax (.imm 5),
       .cmov .b .rax (.reg .rcx), .store (hdr Crt.sBit) .rax] : List Instr) ++
-    ([.mov32 .rcx (.imm 0), .store (hdr Crt.sV) .rcx, .movImm64 .rcx (BitVec.ofNat 64 (2 ^ 56))] ++
+    (([.mov32 .rcx (.imm 0), .store (hdr Crt.sV) .rcx, .movImm64 .rcx (BitVec.ofNat 64 (2 ^ 56))] : List Instr) ++
       (List.range 4).flatMap (fun k => [.mov .rdx (.reg .rcx), .shift .shr .rdx 1,
         .alu .cmp .rax (.imm (BitVec.ofNat 32 (k + 1))), .cmov .ae .rcx (.reg .rdx)]) ++
-      [.store (hdr Crt.sPow) .rcx])) := rfl
+      ([.store (hdr Crt.sPow) .rcx] : List Instr))) := rfl
 
 /-- `padInit`: `sBit := padBits L` for the exponent's length `L` in
 `sExpLen`, `sV := 0` and `sPow := 2^(56 - padBits L)`. -/
@@ -430,7 +430,7 @@ theorem fill_ok {t₀ t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc 
 /-! ## A window -/
 
 theorem expWin5_eq (mul : Nat → Nat → Nat → Prog isa) (sel : List (Prog isa)) : Crt.expWin5 mul sel =
-    [.block [.mov .rax (.mem (hdr Crt.sBit)), .alu .cmp .rax (.imm 5)], .ite .b (.block Crt.refill) (.block [])] ++
+    ([.block [.mov .rax (.mem (hdr Crt.sBit)), .alu .cmp .rax (.imm 5)], .ite .b (.block Crt.refill) (.block [])] : List (Prog isa)) ++
     ([mul aY aY aY, mul aY aY aY, mul aY aY aY, mul aY aY aY, mul aY aY aY, .block Crt.takeWin] ++
       (sel ++ [mul aY aY Crt.aT, .block [.mov .rax (.mem (hdr Crt.sExpLen)), .alu .sub .rax (.mem (hdr Crt.sI)),
         .alu .add .rax (.mem (hdr Crt.sBit))]])) := rfl
@@ -603,7 +603,7 @@ def W5Inv (t₀ : State) (P : Addr) (wx : Nat) (minv : BitVec 64) (X Xc : Nat) (
 
 theorem expLoop5_eq (mul : Nat → Nat → Nat → Prog isa) (sel : List (Prog isa)) (sp sl : Nat) :
     Crt.expLoop5 mul sel sp sl = ((expInit sp sl :: Crt.tabBuildN mul 30) ++
-      [.block Crt.padInit]) ++ [.loop (seqs (Crt.expWin5 mul sel)) .ne] := by
+      ([.block Crt.padInit] : List (Prog isa))) ++ ([.loop (seqs (Crt.expWin5 mul sel)) .ne] : List (Prog isa)) := by
   simp [Crt.expLoop5, expInit]
 
 /-- `expLoop5`'s start, table and padding: the windows' invariant. -/
@@ -620,7 +620,7 @@ theorem crtExpHead5_ok (M : Mont) {s : State} {B : Addr} {Z o w wx : Nat} {minv 
     {sp sl : Nat} (hsp : sp < 32) (hsl : sl < 32) {ep : Addr} {eb : List Byte}
     (hep : word s.mem B (8 * sp) = ep) (hel : word s.mem B (8 * sl) = BitVec.ofNat 64 eb.length)
     (hL2 : eb.length ≤ 1024) :
-    WP isa (seqs ((expInit sp sl :: Crt.tabBuildN M.mm 30) ++ [.block Crt.padInit])) s
+    WP isa (seqs ((expInit sp sl :: Crt.tabBuildN M.mm 30) ++ ([.block Crt.padInit] : List (Prog isa)))) s
       (W5Inv s (off B o) wx minv X (wv s.mem (off B o) (slot wx Crt.aXc) wx) Q x ep eb.length eb 0) := by
   have hi := hc.hi
   have hlo := hc.lo

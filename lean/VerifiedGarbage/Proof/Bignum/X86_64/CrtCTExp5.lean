@@ -264,7 +264,7 @@ theorem crtExpHead5_ct (M : Mont) {sp sl : Nat} {hc : VG.Taint.Hint VG.X86_64.Ta
     (hT : (taint.check (Taint.ofRegs [.rdi, .rax]) (.block [.mov .rdx (.mem (Crt.ws .rax sp)),
       .store (hdr Crt.sExp) .rdx, .mov .rdx (.mem (Crt.ws .rax sl)), .store (hdr Crt.sExpLen) .rdx,
       .mov32 .rdx (.imm 0), .store (hdr Crt.sI) .rdx]) hc).isSome = true) :
-    RelCT isa (Two (EPre5 sp sl)) (seqs ((expInit sp sl :: Crt.tabBuildN M.mm 30) ++ [.block Crt.padInit]))
+    RelCT isa (Two (EPre5 sp sl)) (seqs ((expInit sp sl :: Crt.tabBuildN M.mm 30) ++ ([.block Crt.padInit] : List (Prog isa))))
       fun _ _ => True := by
   refine RelCT.seqs_append (by simp) (by simp) (RelCT.seq (two_post
     (Ψ := fun (a : BPub) t => t.gpr .rdi = off a.x.B a.x.o) ?_ fun a s h => ?_)

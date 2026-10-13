@@ -21,7 +21,7 @@
 /// * `e_len` must be in 1..=`n_len`.
 /// * `msg_len + 11` must be at most `n_len`.
 /// * `ps_len` must be `n_len - msg_len - 3`.
-/// * `scratch_len` must be at least `16 * n_len`.
+/// * `scratch_len` must be at least `16 * n_len + 32`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out` and `scratch` must not overlap each other, `n`, `e`, `msg`, `ps` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `out`, `n`, `e`, `msg`, `ps` and `scratch` may overlap the 1089 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
@@ -123,7 +123,7 @@ pub(crate) unsafe extern "C" fn vg_rsa_pkcs1_encrypt(out: *mut u8, out_len: usiz
 /// * `e_len` and `d_len` must be in 1..=`n_len`.
 /// * `p_len` and `q_len` must be in 1..`n_len`.
 /// * `dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`.
-/// * `scratch_len` must be at least `16 * n_len`.
+/// * `scratch_len` must be at least `16 * n_len + 32`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out`, `msg_len` and `scratch` must not overlap each other, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `out`, `msg_len`, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv` and `scratch` may overlap the 3472 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
@@ -525,7 +525,7 @@ pub(crate) const VG_RSA_PKCS1_DECRYPT_SHA256_SHA2_FEATURES: crate::cpu::Features
 /// * `e_len` and `d_len` must be in 1..=`n_len`.
 /// * `p_len` and `q_len` must be in 1..`n_len`.
 /// * `dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`.
-/// * `scratch_len` must be at least `16 * n_len`.
+/// * `scratch_len` must be at least `16 * n_len + 32`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out`, `msg_len` and `scratch` must not overlap each other, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `out`, `msg_len`, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv` and `scratch` may overlap the 3472 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
