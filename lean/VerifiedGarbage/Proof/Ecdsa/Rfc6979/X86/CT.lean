@@ -12,6 +12,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.X86.TaintErase
+meta import VerifiedGarbage.Proof.Framework.X86.TaintErase
 import VerifiedGarbage.Proof.X25519.X86.Column
 meta import VerifiedGarbage.Proof.X25519.X86.Column
 
@@ -470,7 +472,7 @@ theorem tryOne_ct {i : Nat} :
   -- A run that goes on has a later candidate to stop at, so the other cannot have stopped.
   have mixed : ∀ (m m' : Mem) (u u' : State), exitAt P e.1 m = exitAt P e.1 m' → Exit P e.1 m i u →
       LoopInv P e.1 m' (i + 1) u' → False := fun _ m' _ _ hx' hE hI => by
-    have hgo : sigI P e.1 m' i = none ∧ i + 1 < 8 := ⟨hI.fails i (by omega), hI.lt⟩
+    have hgo : sigI P e.1 m' i = none ∧ i + 1 < P.I.tries := ⟨hI.fails i (by omega), hI.lt⟩
     rw [go_iff (by omega) (fun j hj => hI.fails j (by omega)), ← hx', ← go_iff hE.lt hE.fails] at hgo
     rcases hE.last with h | h
     · exact h hgo.1
@@ -483,24 +485,45 @@ theorem tryOne_ct {i : Nat} :
 
 /-! ## The loop -/
 
-theorem next_n {n : Nat} (h : 8 - n + 1 < 8) : 8 - (8 - n + 1) < n ∧ 8 - (8 - (8 - n + 1)) = 8 - n + 1 :=
+theorem next_n {T n : Nat} (h : T - n + 1 < T) : T - (T - n + 1) < n ∧ T - (T - (T - n + 1)) = T - n + 1 :=
   ⟨by omega, by omega⟩
 
 theorem loop_ct :
     RelCT isa (Two P fun L _ m₀ t => LoopInv P L m₀ 0 t) (.loop (cfgOf P).tryOne .ne)
+      (Two P fun L _ m₀ t => ∃ i, Exit P L m₀ i t) := by
+  have h : RelCT isa (Two P fun L _ m₀ t => LoopInv P L m₀ (P.I.tries - P.I.tries) t) (.loop (cfgOf P).tryOne .ne)
       (Two P fun L _ m₀ t => ∃ i, Exit P L m₀ i t) :=
-  VG.RelCT.loop (M := isa) (fun n => Two P fun L _ m₀ t => LoopInv P L m₀ (8 - n) t)
-    (fun n => tryOne_ct.mono (fun _ _ h => h) fun _ _ ⟨he, hf, ht⟩ =>
-      ⟨he, fun h => (hf h).mono fun _ _ _ _ hx => ⟨_, hx⟩, fun h => by
-        obtain ⟨e, hL, hq, hx, c₁, c₂, f₁, f₂⟩ := ht h
-        have hn := next_n f₁.lt
-        refine ⟨8 - (8 - n + 1), hn.1, e, hL, hq, hx, c₁, c₂, ?_, ?_⟩ <;> rwa [hn.2]⟩) 8
+    VG.RelCT.loop (M := isa) (fun n => Two P fun L _ m₀ t => LoopInv P L m₀ (P.I.tries - n) t)
+      (fun n => tryOne_ct.mono (fun _ _ h => h) fun _ _ ⟨he, hf, ht⟩ =>
+        ⟨he, fun h => (hf h).mono fun _ _ _ _ hx => ⟨_, hx⟩, fun h => by
+          obtain ⟨e, hL, hq, hx, c₁, c₂, f₁, f₂⟩ := ht h
+          have hn := next_n f₁.lt
+          refine ⟨P.I.tries - (P.I.tries - n + 1), hn.1, e, hL, hq, hx, c₁, c₂, ?_, ?_⟩ <;> rwa [hn.2]⟩)
+      P.I.tries
+  rwa [Nat.sub_self] at h
 
 /-! ## The frame's body -/
 
-theorem initCnt_blk : TaintOk [.esp] (cfgC
-    { n := 4, C := Spec.P256.curve, SP := Spec.Weierstrass.Mont.p256p, SN := Spec.Weierstrass.Mont.p256n }).initCnt :=
-  ⟨_, by taint_decide⟩
+/-- One count's initial store, from which every count's follows. -/
+abbrev initCnt₀ : List Instr := (cfgC
+    { n := 4, C := Spec.P256.curve, SP := Spec.Weierstrass.Mont.p256p, SN := Spec.Weierstrass.Mont.p256n }).initCnt
+
+/-- The analysis' hint for `initCnt₀`. -/
+abbrev initCntHint : VG.Taint.Hint taint.T := taint.hintOfSize Taint.chunk (τr [.esp]) (.block initCnt₀)
+
+theorem initCnt_blk₀ : (VG.Taint.check taint (τr [.esp]) (.block initCnt₀) initCntHint).isSome = true := by
+  decide +kernel
+
+/-- The count's initial store, for any count: the analysis does not read
+immediates (`check_erase`), so it is that of one count's. -/
+theorem initCnt_blk (c : Cfg) : TaintOk [.esp] c.initCnt := by
+  refine ⟨initCntHint, ?_⟩
+  have hn : Taint.noBases (τr [.esp]) = true := by decide +kernel
+  have hh : Taint.hintNoBases initCntHint = true := by decide +kernel
+  rw [← Taint.check_erase (.block c.initCnt) _ _ hn hh,
+    show Code.erase (.block c.initCnt) = Code.erase (.block initCnt₀) from rfl,
+    Taint.check_erase (.block initCnt₀) _ _ hn hh]
+  exact initCnt_blk₀
 
 /-- `digest` in `esi`, and, if two `V`s make a candidate, `scratch` in `edi`. -/
 def DgIn (P : RfcHash) {dn : Nat} (L : Lay dn) (_ : Reg → BitVec 32) (_ : Mem) (u : State) : Prop :=
@@ -536,7 +559,7 @@ theorem rest_ct :
     stageC_ok (P := P) hL hk hc h).seq ?_
   refine (two_wp (Ψ := fun L _ m₀ t => QD P L m₀ t) (rekeyFull_ct 1 (by omega)) fun _ _ _ _ hL hk hc h =>
     stageD_ok (P := P) hL hk hc h).seq ?_
-  refine (two_wp (Ψ := fun L _ m₀ t => LoopInv P L m₀ 0 t) (two_blk [.esp] espOnly initCnt_blk)
+  refine (two_wp (Ψ := fun L _ m₀ t => LoopInv P L m₀ 0 t) (two_blk [.esp] espOnly (initCnt_blk _))
     fun _ _ _ _ hL hk hc h => stageE_ok (P := P) hL hk hc h).seq ?_
   exact loop_ct.seq (two_blk [.esp] espOnly (wipe_blk _))
 
@@ -594,7 +617,7 @@ theorem start_ct : RelCT isa (Entered P) (.block (Cfg.save ++ Cfg.digestPtr P.R.
     rw [hres, hsi, hdx]
   rw [hl] at y₂
   exact ⟨ht, ⟨lay P.I.hashLen P.I.ecdsa.curve.len P.R.wide s₁ P.R.E.combConsts, s₁.gpr, s₂.gpr, s₁.mem, s₂.mem⟩, lay_ok p₁,
-    coreOk_lay P s₁, congrArg (fun x => if x = 0 then 7 else x - 1) hr, y₁.1, y₂.1, y₁.2, y₂.2⟩
+    coreOk_lay P s₁, congrArg (fun x => if x = 0 then P.I.tries - 1 else x - 1) hr, y₁.1, y₂.1, y₁.2, y₂.2⟩
 
 /-- Runs whose public data agree have the same layout, and stop at the same candidate. -/
 theorem sign_ct : ConstantTime isa (rfcX86 P.I (272 + 4 * P.e) P.R.E.combConsts).pre (rfcX86 P.I (272 + 4 * P.e) P.R.E.combConsts).pub

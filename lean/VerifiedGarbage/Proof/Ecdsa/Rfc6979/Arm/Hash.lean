@@ -49,7 +49,9 @@ structure RfcHash where
   len : I.hashLen = F.H.D
   /-- The hash function's digests have `F.H.D` bytes. -/
   macLen : ∀ x, (ok.hH.SH.H.hash x).length = F.H.D
-  tries : I.tries = 8
+  /-- It tries at least one candidate, as many as a 16-bit immediate holds. -/
+  tries_pos : 0 < I.tries
+  tries_lt : I.tries < 2 ^ 16
   /-- The sizes the frame and `scratch` hold: the output and block sizes of
   SHA-256, SHA-384 or SHA-512. -/
   hDB : (F.H.D = 32 ∧ F.H.B = 64) ∨ (F.H.D = 48 ∧ F.H.B = 128) ∨ (F.H.D = 64 ∧ F.H.B = 128)
@@ -144,7 +146,7 @@ def cfgOf (P : RfcHash) : Cfg where
   wide := P.R.wide
   sh := P.R.sh
   n := P.R.E.C.n
-  tries := 8
+  tries := P.I.tries
   coreN := P.R.coreN
   coreC := P.R.coreC
 

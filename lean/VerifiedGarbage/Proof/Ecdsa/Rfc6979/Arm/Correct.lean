@@ -32,7 +32,8 @@ variable {P : RfcHash} {L : Lay P.I.hashLen} {g : Reg → BitVec 32} {m₀ : Mem
 
 theorem loop_ok (hL : L.Ok) (hk : CoreOk P L) {t : State} (hc : Ctx L g m₀ t) (h0 : LoopInv P L m₀ 0 t) :
     WP isa (.loop (cfgOf P).tryOne .ne) t fun t' => Ctx L g m₀ t' ∧ ∃ i, Exit P L m₀ i t' := by
-  refine WP.loop (M := isa) (fun n (s : State) => Ctx L g m₀ s ∧ LoopInv P L m₀ (8 - n) s ∧ n ≤ 8) ?_ 8 t
+  refine WP.loop (M := isa) (fun n (s : State) => Ctx L g m₀ s ∧ LoopInv P L m₀ (P.I.tries - n) s ∧ n ≤ P.I.tries)
+    ?_ P.I.tries t
     ⟨hc, by rw [Nat.sub_self]; exact h0, Nat.le_refl _⟩
   rintro n s ⟨hcs, hi, hn⟩
   have hn1 : 1 ≤ n := by have := hi.lt; omega_arith
@@ -40,7 +41,7 @@ theorem loop_ok (hL : L.Ok) (hk : CoreOk P L) {t : State} (hc : Ctx L g m₀ t) 
   rcases h with ⟨he, hx⟩ | ⟨he, hx⟩
   · exact .inl ⟨he, hc', _, hx⟩
   · refine .inr ⟨he, n - 1, by omega_arith, hc', ?_, by omega_arith⟩
-    rwa [show 8 - (n - 1) = 8 - n + 1 by omega_arith]
+    rwa [show P.I.tries - (n - 1) = P.I.tries - n + 1 by omega_arith]
 
 /-! ## Steps a–g -/
 
@@ -220,8 +221,8 @@ theorem stageD_ok (hL : L.Ok) (hk : CoreOk P L) {u : State} (hc : Ctx L g m₀ u
 
 theorem stageE_ok {u : State} (hc : Ctx L g m₀ u) (hq : QD P L m₀ u) :
     WP isa (.block (cfgOf P).initCnt) u fun u' => Ctx L g m₀ u' ∧ LoopInv P L m₀ 0 u' :=
-  WP.mono (initCnt_ok (P := P) hc) fun u' ⟨hc', hm', hn'⟩ => ⟨hc', by omega_arith, hm' ▸ hq.k, hm' ▸ hq.v,
-    by rw [hn'], fun j hj => absurd hj (Nat.not_lt_zero _), hm' ▸ hq.dg⟩
+  WP.mono (initCnt_ok (P := P) hc) fun u' ⟨hc', hm', hn'⟩ => ⟨hc', P.tries_pos, hm' ▸ hq.k, hm' ▸ hq.v,
+    by rw [hn', Nat.sub_zero], fun j hj => absurd hj (Nat.not_lt_zero _), hm' ▸ hq.dg⟩
 
 /-- After the wiping: the result, and our caller's registers. -/
 structure Fin (P : RfcHash) (L : Lay P.I.hashLen) (g : Reg → BitVec 32) (m₀ : Mem) (u : State) : Prop where
@@ -275,9 +276,9 @@ theorem result_unfold :
     result P.I m₀ (State.addr L.d) (State.addr L.dg) =
       if 1 ≤ xOf P L m₀ ∧ xOf P L m₀ < P.R.E.C.n then
         let (K, V) := kv0 P L m₀
-        Spec.Ecdsa.Rfc6979.search P.R.E.C P.ok.hH.SH.H P.F.H.D (xOf P L m₀) (eOf P L m₀) K V 8
+        Spec.Ecdsa.Rfc6979.search P.R.E.C P.ok.hH.SH.H P.F.H.D (xOf P L m₀) (eOf P L m₀) K V P.I.tries
       else (none, 0) := by
-  simp only [result, Spec.Ecdsa.Rfc6979.Instance.result, P.ecdsa, P.R.curve, P.hash, P.tries, P.len,
+  simp only [result, Spec.Ecdsa.Rfc6979.Instance.result, P.ecdsa, P.R.curve, P.hash, P.len,
     ecdsa_bytesAt, Spec.Ecdsa.Rfc6979.sign]
 
 /-- The signature of the candidate the loop stopped at is RFC 6979's. -/
@@ -286,14 +287,13 @@ theorem result_eq {i : Nat} {t : State} (hx : Exit P L m₀ i t) :
   rw [result_unfold]
   by_cases hv : 1 ≤ xOf P L m₀ ∧ xOf P L m₀ < P.R.E.C.n
   · simp only [hv, and_self, ite_true]
-    rw [Proof.Ecdsa.Rfc6979.searchB_shift (blocks_eq P) i 8 (by have := hx.lt; omega_arith) hx.fails,
-      show 8 - i = (7 - i) + 1 by have := hx.lt; omega_arith]
+    rw [Proof.Ecdsa.Rfc6979.searchB_shift (blocks_eq P) i P.I.tries (by have := hx.lt; omega_arith) hx.fails,
+      show P.I.tries - i = (P.I.tries - 1 - i) + 1 by have := hx.lt; omega_arith]
     cases hs : sigI P L m₀ i with
     | some rs => rw [Proof.Ecdsa.Rfc6979.searchB_ok (blocks_eq P) hs]
     | none =>
-      have h7 : i = 7 := hx.last.resolve_left (by simp [hs])
-      subst h7
-      rw [Proof.Ecdsa.Rfc6979.searchB_fail (blocks_eq P) hs]
+      have h7 : i + 1 = P.I.tries := hx.last.resolve_left (by simp [hs])
+      rw [Proof.Ecdsa.Rfc6979.searchB_fail (blocks_eq P) hs, show P.I.tries - 1 - i = 0 by omega]
       rfl
   · symm
     simp only [hv, ite_false, sigI, Spec.Ecdsa.signWith]
@@ -303,37 +303,42 @@ theorem result_eq {i : Nat} {t : State} (hx : Exit P L m₀ i t) :
 
 /-! ## How many candidates -/
 
+theorem ite_le_of_not {c : Prop} [Decidable c] {a b i : Nat} (hc : ¬c) (hb : b ≤ i) :
+    (if c then a else b) ≤ i := by
+  simp only [hc, ite_false]; exact hb
+
 /-- The candidate the loop stops at, from the number RFC 6979 tries. -/
 def exitAt (P : RfcHash) (L : Lay P.I.hashLen) (m₀ : Mem) : Nat :=
-  if (result P.I m₀ (State.addr L.d) (State.addr L.dg)).2 = 0 then 7 else (result P.I m₀ (State.addr L.d) (State.addr L.dg)).2 - 1
+  if (result P.I m₀ (State.addr L.d) (State.addr L.dg)).2 = 0 then P.I.tries - 1 else (result P.I m₀ (State.addr L.d) (State.addr L.dg)).2 - 1
 
 /-- The loop goes on after candidate `i` iff it stops at a later one. -/
-theorem go_iff {i : Nat} (hi : i < 8) (hf : ∀ j < i, sigI P L m₀ j = none) :
-    (sigI P L m₀ i = none ∧ i + 1 < 8) ↔ i < exitAt P L m₀ := by
+theorem go_iff {i : Nat} (hi : i < P.I.tries) (hf : ∀ j < i, sigI P L m₀ j = none) :
+    (sigI P L m₀ i = none ∧ i + 1 < P.I.tries) ↔ i < exitAt P L m₀ := by
   unfold exitAt
   rw [result_unfold]
   by_cases hv : 1 ≤ xOf P L m₀ ∧ xOf P L m₀ < P.R.E.C.n
   · simp only [hv, and_self, ite_true]
-    rw [Proof.Ecdsa.Rfc6979.searchB_shift (blocks_eq P) i 8 (by omega_arith) hf, show 8 - i = (7 - i) + 1 by omega_arith]
+    rw [Proof.Ecdsa.Rfc6979.searchB_shift (blocks_eq P) i P.I.tries (by omega_arith) hf,
+      show P.I.tries - i = (P.I.tries - 1 - i) + 1 by omega_arith]
     cases hs : sigI P L m₀ i with
     | some rs =>
       rw [Proof.Ecdsa.Rfc6979.searchB_ok (blocks_eq P) hs]
       simp
     | none =>
       rw [Proof.Ecdsa.Rfc6979.searchB_fail (blocks_eq P) hs]
-      by_cases h7 : i + 1 < 8
+      by_cases h7 : i + 1 < P.I.tries
       · have := Proof.Ecdsa.Rfc6979.searchB_pos (C := P.R.E.C) (H := P.ok.hH.SH.H) (hlen := P.F.H.D)
-          (d := xOf P L m₀) (e := eOf P L m₀) (n := 6 - i)
+          (d := xOf P L m₀) (e := eOf P L m₀) (n := P.I.tries - 2 - i)
           (K := (stepB P.ok.hH.SH.H P.nb (kvI P L m₀ i).1 (kvI P L m₀ i).2).1)
           (V := (stepB P.ok.hH.SH.H P.nb (kvI P L m₀ i).1 (kvI P L m₀ i).2).2) (blocks_eq P)
-        rw [show 7 - i = 6 - i + 1 by omega_arith]
+        rw [show P.I.tries - 1 - i = P.I.tries - 2 - i + 1 by omega_arith]
         simp only [true_and, h7]
         simp only [kvI] at this
         rw [true_iff]
         split <;> omega_arith
-      · have hi7 : i = 7 := by omega_arith
-        subst hi7
-        simp [Spec.Ecdsa.Rfc6979.search]
+      · rw [show P.I.tries - 1 - i = 0 by omega_arith]
+        simp only [Spec.Ecdsa.Rfc6979.search, h7, and_false, false_iff, Nat.not_lt]
+        exact ite_le_of_not (by omega) (by omega)
   · simp only [hv, ite_false, ite_true]
     have hs : sigI P L m₀ i = none := by
       simp only [sigI, Spec.Ecdsa.signWith]

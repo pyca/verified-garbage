@@ -125,7 +125,7 @@ theorem cnt_addr (hL : L.Ok) : addr L.F fCnt = L.B + BitVec.ofNat 64 252 := hL.a
 
 theorem initCnt_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) :
     WP isa (.block (cfgOf P).initCnt) t fun t' => Ctx L g m₀ t' ∧
-      Frame [⟨L.B + BitVec.ofNat 64 252, 4⟩] t.mem t'.mem ∧ cnt L t'.mem = BitVec.ofNat 32 8 := by
+      Frame [⟨L.B + BitVec.ofNat 64 252, 4⟩] t.mem t'.mem ∧ cnt L t'.mem = BitVec.ofNat 32 P.I.tries := by
   simp only [Cfg.initCnt, cfgOf, stk]
   refine wp_movi fun u₁ v₁ => wp_stm (B := L.F) (by rw [v₁.other _ (by decide), hc.esp])
     (by rw [cnt_addr hL, v₁.wr]; exact hc.inFrW (by omega_arith) (by omega_arith) hL) fun u₂ v₂ => WP.block_nil ?_

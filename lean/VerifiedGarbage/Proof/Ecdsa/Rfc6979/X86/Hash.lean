@@ -16,7 +16,7 @@ What the proof needs of the hash function, for any one of them (`RfcHash`),
 as on x86-64 (`Proof/Ecdsa/Rfc6979/X86_64/Hash.lean`): the curve
 (`RfcCurve`, with what is proven of `vg_ecdsa_<curve>_sign`, which each
 candidate calls), the instance of the contract it implements (the curve's,
-the hash function's HMAC, its output length, 8 candidates), the functions
+the hash function's HMAC, its output length, its number of candidates), the functions
 PBKDF2's code calls, verified (`FnsOK`: the streaming `update`, and HMAC's
 `init` and `finalize`, which take their working space as an argument), and
 the sizes the frame and `scratch` are laid out for: the output and block
@@ -43,14 +43,16 @@ structure RfcHash where
   /-- The functions the code calls, verified. -/
   F : Fns
   ok : FnsOK F
-  /-- The instance is of the curve, with this hash function's HMAC, its
-  output length and 8 candidates. -/
+  /-- The instance is of the curve, with this hash function's HMAC and its
+  output length. -/
   ecdsa : I.ecdsa = R.inst
   hash : I.hash = ok.hH.SH.H
   len : I.hashLen = F.H.D
   /-- The hash function's digests have `F.H.D` bytes. -/
   macLen : ∀ x, (ok.hH.SH.H.hash x).length = F.H.D
-  tries : I.tries = 8
+  /-- It tries at least one candidate, as many as a 32-bit immediate holds. -/
+  tries_pos : 0 < I.tries
+  tries_lt : I.tries < 2 ^ 32
   /-- The sizes the frame and `scratch` hold: the output and block sizes of
   SHA-256, SHA-384 or SHA-512, and states and working space no larger than
   SHA-512's. -/
@@ -142,7 +144,7 @@ def cfgOf (P : RfcHash) : Cfg where
   wide := P.R.wide
   sh := P.R.sh
   n := P.R.E.C.n
-  tries := 8
+  tries := P.I.tries
   coreN := P.R.coreN
   coreC := P.R.coreC
 

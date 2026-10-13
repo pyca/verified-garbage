@@ -18,7 +18,7 @@ RFC 6979 computes them from the private key and the digest on entry (`kvI`,
 `candI`, `sigI`), with candidates of `nb` `V`s (two if `wide`); the
 candidate's `k` for `core` (`cand_ok`); the loop's invariant before candidate
 `i` (`LoopInv`): `K` and `V` are those before it, the count in `r9` is
-`8 - i`, every earlier candidate was unsuitable, and `core`'s digest is the
+`tries - i`, every earlier candidate was unsuitable, and `core`'s digest is the
 digest's (`DgOk`). One iteration either moves to candidate `i + 1`,
 branching back, or leaves the loop with the signature of candidate `i`, which
 is suitable or the last (`tryOne_ok`).
@@ -69,18 +69,18 @@ def ResultIs (P : RfcHash) {dn : Nat} (L : Lay dn) (r : Option (Nat × Nat)) (t 
 
 /-- Before candidate `i`. -/
 structure LoopInv (P : RfcHash) (L : Lay P.I.hashLen) (m₀ : Mem) (i : Nat) (t : State) : Prop where
-  lt : i < 8
+  lt : i < P.I.tries
   k : kOf P L t.mem = (kvI P L m₀ i).1
   v : vOfP P L t.mem = (kvI P L m₀ i).2
-  cnt : t.gpr .r9 = BitVec.ofNat 32 (8 - i)
+  cnt : t.gpr .r9 = BitVec.ofNat 32 (P.I.tries - i)
   fails : ∀ j < i, sigI P L m₀ j = none
   dg : DgOk P L m₀ t.mem
 
 /-- After the loop, at candidate `i`: suitable or the last. -/
 structure Exit (P : RfcHash) (L : Lay P.I.hashLen) (m₀ : Mem) (i : Nat) (t : State) : Prop where
-  lt : i < 8
+  lt : i < P.I.tries
   fails : ∀ j < i, sigI P L m₀ j = none
-  last : sigI P L m₀ i ≠ none ∨ i = 7
+  last : sigI P L m₀ i ≠ none ∨ i + 1 = P.I.tries
   res : ResultIs P L (sigI P L m₀ i) t
 
 /-! ## Facts kept -/
@@ -155,13 +155,18 @@ theorem DgOk.frameOf (hL : L.Ok) (hk : CoreOk P L) {m m' : Mem} (h : DgOk P L m�
     (hf : Frame ws m m') (hd : ∀ r ∈ ws, DgApart P L r) : DgOk P L m₀ m' :=
   h.frame hf fun r hr => dg_apart hL hk (hd r hr)
 
-theorem cnt_sub {i : Nat} (hi : i < 8) : BitVec.ofNat 32 (8 - i) - 1 = BitVec.ofNat 32 (8 - (i + 1)) := by
-  have : ∀ i < 8, BitVec.ofNat 32 (8 - i) - 1 = BitVec.ofNat 32 (8 - (i + 1)) := by decide
-  exact this i hi
+theorem cnt_sub {T i : Nat} (hi : i < T) :
+    BitVec.ofNat 32 (T - i) - 1 = BitVec.ofNat 32 (T - (i + 1)) := by
+  apply BitVec.eq_of_toNat_eq
+  have h1 : (1 : BitVec 32).toNat = 1 := rfl
+  simp only [BitVec.toNat_sub, BitVec.toNat_ofNat, h1]
+  omega
 
-theorem cnt_ne {i : Nat} (hi : i < 8) : BitVec.ofNat 32 (8 - (i + 1)) ≠ 0 ↔ i + 1 < 8 := by
-  have : ∀ i < 8, (BitVec.ofNat 32 (8 - (i + 1)) ≠ 0 ↔ i + 1 < 8) := by decide
-  exact this i hi
+theorem cnt_ne {T i : Nat} (hT : T < 2 ^ 16) : BitVec.ofNat 32 (T - (i + 1)) ≠ 0 ↔ i + 1 < T := by
+  rw [Ne, ← BitVec.toNat_inj]
+  have h0 : (0 : BitVec 32).toNat = 0 := rfl
+  simp only [BitVec.toNat_ofNat, h0]
+  omega
 
 theorem length_bytesAt (m : Mem) (p : Addr) (n : Nat) : (Spec.Sha256.bytesAt m p n).length = n := by
   simp [Spec.Sha256.bytesAt]
@@ -262,10 +267,10 @@ theorem corew_apart : ∀ r ∈ CoreW L, DgApart P L r := by
 
 /-- After the candidate: `k` for `core`. -/
 structure P₁ (P : RfcHash) (L : Lay P.I.hashLen) (m₀ : Mem) (i : Nat) (u : State) : Prop where
-  lt : i < 8
+  lt : i < P.I.tries
   k : kOf P L u.mem = (kvI P L m₀ i).1
   v : vOfP P L u.mem = (Spec.Ecdsa.Rfc6979.genT P.ok.hH.SH.H (kvI P L m₀ i).1 P.nb (kvI P L m₀ i).2).2
-  cnt : u.gpr .r9 = BitVec.ofNat 32 (8 - i)
+  cnt : u.gpr .r9 = BitVec.ofNat 32 (P.I.tries - i)
   fails : ∀ j < i, sigI P L m₀ j = none
   dg : DgOk P L m₀ u.mem
   kk : Spec.Weierstrass.ofBytes (Spec.Sha256.bytesAt u.mem (kAddr L) P.Q) =
@@ -273,24 +278,24 @@ structure P₁ (P : RfcHash) (L : Lay P.I.hashLen) (m₀ : Mem) (i : Nat) (u : S
 
 /-- After `core`: its result. -/
 structure P₃ (P : RfcHash) (L : Lay P.I.hashLen) (m₀ : Mem) (i : Nat) (u : State) : Prop where
-  lt : i < 8
+  lt : i < P.I.tries
   k : kOf P L u.mem = (kvI P L m₀ i).1
   v : vOfP P L u.mem = (Spec.Ecdsa.Rfc6979.genT P.ok.hH.SH.H (kvI P L m₀ i).1 P.nb (kvI P L m₀ i).2).2
-  cnt : u.gpr .r9 = BitVec.ofNat 32 (8 - i)
+  cnt : u.gpr .r9 = BitVec.ofNat 32 (P.I.tries - i)
   fails : ∀ j < i, sigI P L m₀ j = none
   dg : DgOk P L m₀ u.mem
   res : ResultIs P L (sigI P L m₀ i) u
 
 /-- After the decision: whether to go on. -/
 structure Mid (P : RfcHash) (L : Lay P.I.hashLen) (m₀ : Mem) (i : Nat) (u : State) : Prop where
-  lt : i < 8
+  lt : i < P.I.tries
   k : kOf P L u.mem = (kvI P L m₀ i).1
   v : vOfP P L u.mem = (Spec.Ecdsa.Rfc6979.genT P.ok.hH.SH.H (kvI P L m₀ i).1 P.nb (kvI P L m₀ i).2).2
-  cnt : u.gpr .r9 = BitVec.ofNat 32 (8 - (i + 1))
+  cnt : u.gpr .r9 = BitVec.ofNat 32 (P.I.tries - (i + 1))
   fails : ∀ j < i, sigI P L m₀ j = none
   dg : DgOk P L m₀ u.mem
   res : ResultIs P L (sigI P L m₀ i) u
-  dec : isa.eval .ne u = some (decide (sigI P L m₀ i = none ∧ i + 1 < 8))
+  dec : isa.eval .ne u = some (decide (sigI P L m₀ i = none ∧ i + 1 < P.I.tries))
 
 theorem try₁_ok (hL : L.Ok) (hk : CoreOk P L) {t : State} (hc : Ctx L g m₀ t) {i : Nat}
     (hi : LoopInv P L m₀ i t) :
@@ -325,14 +330,14 @@ theorem try₄_ok {t : State} (hc : Ctx L g m₀ t) {i : Nat} (hi : P₃ P L m�
     ⟨hc₄, hi.lt, hm₄ ▸ hi.k, hm₄ ▸ hi.v, by rw [h9₄, hi.cnt, cnt_sub hi.lt], hi.fails, hm₄ ▸ hi.dg,
       hi.res.keep h0₄ (by rw [hm₄]), ?_⟩
   rw [hz₄, hi.cnt, cnt_sub hi.lt]
-  simp only [hi.res.r0_zero, cnt_ne hi.lt]
+  simp only [hi.res.r0_zero, cnt_ne P.tries_lt]
 
 /-- The branch: step h.3 and the next candidate, or the end. -/
 theorem branch_ok (hL : L.Ok) (hk : CoreOk P L) {t : State} (hc : Ctx L g m₀ t) {i : Nat} (hi : Mid P L m₀ i t) :
     WP isa (.ite .ne (.seq (cfgOf P).rekey (.block Cfg.again)) (.block Cfg.stop)) t fun t' => Ctx L g m₀ t' ∧
       ((isa.eval .ne t' = some false ∧ Exit P L m₀ i t') ∨
         (isa.eval .ne t' = some true ∧ LoopInv P L m₀ (i + 1) t')) := by
-  by_cases hgo : sigI P L m₀ i = none ∧ i + 1 < 8
+  by_cases hgo : sigI P L m₀ i = none ∧ i + 1 < P.I.tries
   · refine WP.ite true (by rw [hi.dec, decide_eq_true hgo]) (fun _ => ?_) (fun h => absurd h (by decide))
     refine WP.seq (WP.mono (rekey_ok hL (hok_of hk) hc) fun u₅ ⟨hc₅, h9₅, hf₅, hk₅, hv₅⟩ => ?_)
     refine WP.mono (again_ok hc₅) fun u₆ ⟨hc₆, hm₆, h9₆, hz₆⟩ => ⟨hc₆, .inr ⟨hz₆, ?_⟩⟩
@@ -349,7 +354,7 @@ theorem branch_ok (hL : L.Ok) (hk : CoreOk P L) {t : State} (hc : Ctx L g m₀ t
     refine WP.mono (stop_ok hc) fun u₅ ⟨hc₅, hm₅, ha₅, hz₅⟩ => ⟨hc₅, .inl ⟨hz₅,
       ⟨hi.lt, hi.fails, ?_, hi.res.keep ha₅ (by rw [hm₅])⟩⟩⟩
     by_cases hs : sigI P L m₀ i = none
-    · exact .inr (by have := hi.lt; have : ¬ i + 1 < 8 := fun h => hgo ⟨hs, h⟩; omega)
+    · exact .inr (by have := hi.lt; have : ¬ i + 1 < P.I.tries := fun h => hgo ⟨hs, h⟩; omega)
     · exact .inl hs
 
 theorem tryOne_ok (hL : L.Ok) (hk : CoreOk P L) {t : State} (hc : Ctx L g m₀ t) {i : Nat}

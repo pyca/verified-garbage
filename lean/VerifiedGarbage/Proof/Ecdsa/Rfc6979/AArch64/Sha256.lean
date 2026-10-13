@@ -118,7 +118,8 @@ def pack (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.AArch64.InvSou
   ecdsa := rfl
   hash := rfl
   len := rfl
-  tries := rfl
+  tries_pos := Nat.le_of_ble_eq_true rfl
+  tries_lt := Nat.le_of_ble_eq_true rfl
   hDB := .inl ⟨rfl, rfl⟩
   hS := Nat.le_of_ble_eq_true rfl
   hW := Nat.le_of_ble_eq_true rfl

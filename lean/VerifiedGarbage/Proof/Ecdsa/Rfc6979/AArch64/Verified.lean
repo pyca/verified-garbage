@@ -33,7 +33,9 @@ variable (P : RfcHash)
 
 theorem cfgOf_H : (cfgOf P).H = P.H := rfl
 theorem reduce_eq : (cfgOf P).reduce = (cfgC P.R.E).reduce := rfl
-theorem initCnt_eq : (cfgOf P).initCnt = (cfgC ⟨4, Spec.P256.curve, [], (0, 0), "", true, none, none⟩).initCnt := rfl
+/-- The count's initial store writes no callee-saved SIMD register, whatever the count. -/
+theorem initCnt_keepsV :
+    List.rec (motive := fun _ => Bool) true (fun i _ ih => keepsV i && ih) (cfgOf P).initCnt = true := rfl
 theorem coreC_eq : (cfgOf P).coreC = P.R.coreC := rfl
 
 /-- No instruction writes a callee-saved SIMD register: not those of the
@@ -50,7 +52,7 @@ theorem sign_keepsV : (cfgOf P).sign.allInstrs keepsV = true := by
   · have hR := P.R.reduceKeepsV hw
     have e : (cfgOf P).wide = false := hw
     simp only [Cfg.sign, Cfg.body, Cfg.start, Cfg.tryOne, Cfg.cand, Cfg.rekeyFull, Cfg.rekey, Cfg.hmacV,
-      Cfg.hmac, e, Bool.false_eq_true, ite_false, Code.allInstrs, reduce_eq, initCnt_eq, cfgOf_H, coreC_eq, hI,
+      Cfg.hmac, e, Bool.false_eq_true, ite_false, initCnt_keepsV, Code.allInstrs, reduce_eq, cfgOf_H, coreC_eq, hI,
       hU, hF, P.R.coreKeepsV, Bool.and_true, Bool.true_and] at hR ⊢
     have hQD : P.R.E.C.len ≤ P.H.D := (P.sizesA hw).2.2
     simp only [hR, hw', hl', Bool.true_and]
@@ -63,7 +65,7 @@ theorem sign_keepsV : (cfgOf P).sign.allInstrs keepsV = true := by
     have e : (cfgOf P).wide = true := hw
     have hs : (cfgOf P).sh = 7 := sh7 hw
     simp only [Cfg.sign, Cfg.body, Cfg.start, Cfg.tryOne, Cfg.cand, Cfg.coreDigest, Cfg.keepV, Cfg.candTop, Cfg.conv,
-      Cfg.rekeyFull, Cfg.rekey, Cfg.hmacV, Cfg.hmac, e, ite_true, Code.allInstrs, initCnt_eq, cfgOf_H, coreC_eq,
+      Cfg.rekeyFull, Cfg.rekey, Cfg.hmacV, Cfg.hmac, e, ite_true, initCnt_keepsV, Code.allInstrs, cfgOf_H, coreC_eq,
       hI, hU, hF, P.R.coreKeepsV, Bool.and_true, Bool.true_and]
     have hw9' : P.R.E.n = 9 := hw9
     have hQ66' : P.R.E.C.len = 66 := hQ66

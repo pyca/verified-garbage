@@ -12,6 +12,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Arm.TaintErase
+meta import VerifiedGarbage.Proof.Framework.Arm.TaintErase
 import VerifiedGarbage.Proof.Weierstrass.Layout
 meta import VerifiedGarbage.Proof.Weierstrass.Layout
 
@@ -457,7 +459,7 @@ theorem tryOne_ct {i : Nat} :
   -- A run that goes on has a later candidate to stop at, so the other cannot have stopped.
   have mixed : ∀ (m m' : Mem) (u u' : State), exitAt P e.1 m = exitAt P e.1 m' → Exit P e.1 m i u →
       LoopInv P e.1 m' (i + 1) u' → False := fun _ m' _ _ hx' hE hI => by
-    have hgo : sigI P e.1 m' i = none ∧ i + 1 < 8 := ⟨hI.fails i (by omega), hI.lt⟩
+    have hgo : sigI P e.1 m' i = none ∧ i + 1 < P.I.tries := ⟨hI.fails i (by omega), hI.lt⟩
     rw [go_iff (by omega) (fun j hj => hI.fails j (by omega)), ← hx', ← go_iff hE.lt hE.fails] at hgo
     rcases hE.last with h | h
     · exact h hgo.1
@@ -470,25 +472,37 @@ theorem tryOne_ct {i : Nat} :
 
 /-! ## The loop -/
 
-theorem next_n {n : Nat} (h : 8 - n + 1 < 8) : 8 - (8 - n + 1) < n ∧ 8 - (8 - (8 - n + 1)) = 8 - n + 1 :=
+theorem next_n {T n : Nat} (h : T - n + 1 < T) : T - (T - n + 1) < n ∧ T - (T - (T - n + 1)) = T - n + 1 :=
   ⟨by omega, by omega⟩
 
 theorem loop_ct :
     RelCT isa (Two P fun L _ m₀ t => LoopInv P L m₀ 0 t) (.loop (cfgOf P).tryOne .ne)
+      (Two P fun L _ m₀ t => ∃ i, Exit P L m₀ i t) := by
+  have h : RelCT isa (Two P fun L _ m₀ t => LoopInv P L m₀ (P.I.tries - P.I.tries) t) (.loop (cfgOf P).tryOne .ne)
       (Two P fun L _ m₀ t => ∃ i, Exit P L m₀ i t) :=
-  VG.RelCT.loop (M := isa) (fun n => Two P fun L _ m₀ t => LoopInv P L m₀ (8 - n) t)
-    (fun n => tryOne_ct.mono (fun _ _ h => h) fun _ _ ⟨he, hf, ht⟩ =>
-      ⟨he, fun h => (hf h).mono fun _ _ _ _ hx => ⟨_, hx⟩, fun h => by
-        obtain ⟨e, hL, hq, hx, c₁, c₂, f₁, f₂⟩ := ht h
-        have hn := next_n f₁.lt
-        refine ⟨8 - (8 - n + 1), hn.1, e, hL, hq, hx, c₁, c₂, ?_, ?_⟩ <;> rwa [hn.2]⟩) 8
+    VG.RelCT.loop (M := isa) (fun n => Two P fun L _ m₀ t => LoopInv P L m₀ (P.I.tries - n) t)
+      (fun n => tryOne_ct.mono (fun _ _ h => h) fun _ _ ⟨he, hf, ht⟩ =>
+        ⟨he, fun h => (hf h).mono fun _ _ _ _ hx => ⟨_, hx⟩, fun h => by
+          obtain ⟨e, hL, hq, hx, c₁, c₂, f₁, f₂⟩ := ht h
+          have hn := next_n f₁.lt
+          refine ⟨P.I.tries - (P.I.tries - n + 1), hn.1, e, hL, hq, hx, c₁, c₂, ?_, ?_⟩ <;> rwa [hn.2]⟩)
+      P.I.tries
+  rwa [Nat.sub_self] at h
 
 /-! ## The frame's body -/
 
 theorem reduce_eq : (cfgOf P).reduce ++ Cfg.initKV = (cfgC P.R.E).reduce ++ Cfg.initKV := rfl
-theorem initCnt_eq : (cfgOf P).initCnt = [.movw .r9 (BitVec.ofNat 16 8)] := rfl
+theorem initCnt_blk₀ : TaintOk [.movw .r9 (BitVec.ofNat 16 8)] := ⟨_, by taint_decide⟩
 
-theorem initCnt_blk : TaintOk [.movw .r9 (BitVec.ofNat 16 8)] := ⟨_, by taint_decide⟩
+/-- The count's initial `movw`, for any count: the analysis does not read its
+immediate (`Taint.check_eraseOff`), so it is that of one count's. -/
+theorem initCnt_blk (c : Cfg) : TaintOk c.initCnt := by
+  obtain ⟨h, hs⟩ := initCnt_blk₀
+  have hb : Taint.NoBase (τr ptrRegs) := ⟨rfl, rfl⟩
+  have e := Taint.check_eraseOff (.block c.initCnt) h hb
+  have e₀ := Taint.check_eraseOff (.block [.movw .r9 (BitVec.ofNat 16 8)]) h hb
+  have he : Code.eraseOff (.block c.initCnt) = Code.eraseOff (.block [.movw .r9 (BitVec.ofNat 16 8)]) := rfl
+  exact ⟨h, e ▸ he ▸ e₀ ▸ hs⟩
 
 /-- The body after the prologue, `h`, `V` and `K`. -/
 theorem rest_ct :
@@ -499,7 +513,7 @@ theorem rest_ct :
     stageC_ok (P := P) hL hk hc h).seq ?_
   refine (two_wp (Ψ := fun L _ m₀ t => QD P L m₀ t) (rekeyFull_ct 1 (by omega)) fun _ _ _ _ hL hk hc h =>
     stageD_ok (P := P) hL hk hc h).seq ?_
-  refine (two_wp (Ψ := fun L _ m₀ t => LoopInv P L m₀ 0 t) (by rw [initCnt_eq]; exact two_blk initCnt_blk)
+  refine (two_wp (Ψ := fun L _ m₀ t => LoopInv P L m₀ 0 t) (two_blk (initCnt_blk _))
     fun _ _ _ _ _ _ hc h => stageE_ok (P := P) hc h).seq ?_
   exact loop_ct.seq (two_blk (wipe_blk _))
 
@@ -570,7 +584,7 @@ theorem start_ct : RelCT isa (Entered P) (.block Cfg.prologue) (Two P fun _ _ _ 
   rw [hl] at y₂
   exact ⟨ht, ⟨lay P.I.hashLen P.I.ecdsa.curve.len P.R.wide s₁, s₁.gpr, s₂.gpr, s₁.mem, s₂.mem⟩, lay_ok p₁,
     coreOk_lay P s₁,
-    congrArg (fun x => if x = 0 then 7 else x - 1) hr, y₁, y₂, trivial, trivial⟩
+    congrArg (fun x => if x = 0 then P.I.tries - 1 else x - 1) hr, y₁, y₂, trivial, trivial⟩
 
 /-- Runs whose public data agree have the same layout, and stop at the same candidate. -/
 theorem sign_ct : ConstantTime isa (rfcArm P.I (240 + 4 * P.e)).pre (rfcArm P.I (240 + 4 * P.e)).pub

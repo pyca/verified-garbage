@@ -60,7 +60,8 @@ def pack (hL : Weierstrass.Law Spec.P192.curve) : RfcHash where
   macLen x := by
     show (Spec.Sha256.hash x).length = 32
     rw [Proof.Sha256.hash_eq]; exact Proof.Sha256.md.digest_length _
-  tries := rfl
+  tries_pos := Nat.le_of_ble_eq_true rfl
+  tries_lt := Nat.le_of_ble_eq_true rfl
   hDB := .inl ⟨rfl, rfl⟩
   hS := Nat.le_of_ble_eq_true rfl
   hWi := Nat.le_of_ble_eq_true rfl

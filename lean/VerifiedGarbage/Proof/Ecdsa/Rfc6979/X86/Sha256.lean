@@ -48,7 +48,8 @@ def pack (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.X86.Inv.InvSou
   macLen x := by
     show (Spec.Sha256.hash x).length = 32
     rw [Proof.Sha256.hash_eq]; exact Proof.Sha256.md.digest_length _
-  tries := rfl
+  tries_pos := Nat.le_of_ble_eq_true rfl
+  tries_lt := Nat.le_of_ble_eq_true rfl
   hDB := .inl ⟨rfl, rfl⟩
   hS := show 96 ≤ 192 by decide
   hWi := show 104 * 8 ≤ 1872 by decide
