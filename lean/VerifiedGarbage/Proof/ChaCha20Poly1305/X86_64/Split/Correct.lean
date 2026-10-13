@@ -46,18 +46,31 @@ theorem PTs_frame {s₀ : State} {rs : List Region} {m m' : Mem} (hf : Frame rs 
 
 theorem cryptSplit_mx : cryptSplit.allInstrs (fun i => !loadsMxcsr i) = true := by lit_decide
 
-theorem sealSplitBody_correct (b : Impl.Poly1305.X86_64.Blocks) (hb : b = .avx512 ∨ b = .ifma) {s₀ : State}
+/-- An implementation for the AVX-512 implementations of `vg_poly1305_blocks`
+already has `bigCallee`'s `fold`, `pass` and `wide`. -/
+theorem big_fold {v : Proof.ChaCha20.X86_64.XorImpl} (h : v.poly = .avx512 ∨ v.poly = .ifma) :
+    v.callee.fold = 960 := by
+  rcases v.fold_poly with ⟨_, _, _, hp⟩ | ⟨_, _, _, hp⟩ | ⟨hf, _, _, _⟩
+  · rcases h with h | h <;> rw [hp] at h <;> cases h
+  · rcases h with h | h <;> rw [hp] at h <;> cases h
+  · exact hf
+
+theorem bigCallee_eq {v : Proof.ChaCha20.X86_64.XorImpl} (h : v.poly = .avx512 ∨ v.poly = .ifma) :
+    bigCallee v.callee = v.callee := by
+  rcases v.fold_poly with ⟨_, _, _, hp⟩ | ⟨_, _, _, hp⟩ | ⟨hf, hpa, hw, _⟩
+  · rcases h with h | h <;> rw [hp] at h <;> cases h
+  · rcases h with h | h <;> rw [hp] at h <;> cases h
+  · unfold bigCallee; rw [← hf, ← hpa, ← hw]
+
+theorem sealSplitBody_correct (v : Proof.ChaCha20.X86_64.XorImpl) (b : Impl.Poly1305.X86_64.Blocks)
+    (hvb : v.poly = b) (hb : b = .avx512 ∨ b = .ifma) {s₀ : State}
     (hT : SPre s₀) :
-    WP isa (sealSplitBody b) s₀ fun s' => abiPreserved s₀ s' ∧
+    WP isa (sealSplitBody v.callee b) s₀ fun s' => abiPreserved s₀ s' ∧
       Spec.ChaCha20Poly1305.encrypt (K s₀) (N s₀) (A s₀) (PTs s₀ s₀.mem) =
         (bytesAt s'.mem (dp s₀) (L s₀), bytesAt s'.mem (tp s₀) 16) := by
   have hp := hT.hp
   have hL' := (Nat.le_of_lt (s₀.gpr .r9).isLt)
-  obtain ⟨v, hv, hcal⟩ : ∃ v : Proof.ChaCha20.X86_64.XorImpl, v.poly = b ∧
-      v.callee = Impl.ChaCha20.X86_64.Callee.avx512 := by
-    rcases hb with rfl | rfl
-    · exact ⟨Proof.ChaCha20.X86_64.XorImpl.avx512, rfl, rfl⟩
-    · exact ⟨Proof.ChaCha20.X86_64.XorImpl.ifma, rfl, rfl⟩
+  have hcal : bigCallee v.callee = v.callee := bigCallee_eq (hvb ▸ hb)
   have hA2 : ∀ {rs : List Region} {m m' : Mem}, Frame rs m m' → (∀ r ∈ rs, (arg2R s₀).Disjoint r) →
       ∀ j, j = 2 ∨ j = 3 → m'.readW (stackArgAddr s₀ j) 64 = m.readW (stackArgAddr s₀ j) 64 :=
     fun hf hd _ hj => arg_frame hj hf hd

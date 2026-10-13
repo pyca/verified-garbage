@@ -125,11 +125,17 @@ def cryptSplit : Prog isa :=
   (.seq (foldM 960 1024)
   (.seq (.block [.alu .add .rdx (.imm 64)]) (zeroKs 6)))))
 
-/-- `seal` with `vg_chacha20_xor_avx512` and the implementation `b` of
+/-- The implementation `x` of `vg_chacha20_xor`, called as the AVX-512
+instances call `vg_chacha20_xor_avx512` (`fold` 960, `pass` 1024, `wide` 6). -/
+def bigCallee (x : ChaCha20.X86_64.Callee) : ChaCha20.X86_64.Callee :=
+  { x with fold := 960, pass := 1024, wide := 6 }
+
+/-- `seal` with the implementation `x` of `vg_chacha20_xor` for its prologue
+(`vg_chacha20_xor_avx512` or `vg_chacha20_xor_avx512vl`) and `b` of
 `vg_poly1305_blocks`, with `cryptSplit`. -/
-def sealSplitBody (b : Poly1305.X86_64.Blocks) : Prog isa :=
+def sealSplitBody (x : ChaCha20.X86_64.Callee) (b : Poly1305.X86_64.Blocks) : Prog isa :=
   .seq (.block entry)
-  (.seq (prologue ChaCha20.X86_64.Callee.avx512)
+  (.seq (prologue (bigCallee x))
   (.seq (macPad b .rbx .rbp)
   (.seq (.block lengths)
   (.seq cryptSplit
@@ -139,10 +145,11 @@ def sealSplitBody (b : Poly1305.X86_64.Blocks) : Prog isa :=
 
 /-- `vg_chacha20_poly1305_seal_split` of an instance, which calls the
 implementation `x` of `vg_chacha20_xor` and `b` of `vg_poly1305_blocks`
-(`x` is `vg_chacha20_xor_avx512` for `.avx512` and `.ifma`). -/
+(`vg_chacha20_xor_avx512` or `vg_chacha20_xor_avx512vl` for `.avx512` and
+`.ifma`, whose `vg_chacha20_xor_split_avx512` calls `vg_chacha20_xor_avx512`). -/
 def sealSplitFor (x : ChaCha20.X86_64.Callee) : Poly1305.X86_64.Blocks → Prog isa
-  | .avx512 => .seq (head false .z64) (framed (sealSplitBody .avx512))
-  | .ifma => .seq (head false .z64) (framed (sealSplitBody .ifma))
+  | .avx512 => .seq (head false .z64) (framed (sealSplitBody x .avx512))
+  | .ifma => .seq (head false .z64) (framed (sealSplitBody x .ifma))
   | b => .seq (head true (Width.ofBlocks b)) (framed (Stitch.sealFor x b))
 
 end VG.Impl.ChaCha20Poly1305.X86_64.SealSplit
