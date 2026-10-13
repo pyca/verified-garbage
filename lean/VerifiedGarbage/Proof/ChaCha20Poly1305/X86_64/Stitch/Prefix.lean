@@ -48,12 +48,12 @@ theorem Lay.shift {c dp : Addr} {L : Nat} (hl : Lay c dp L) {o : Nat} (ho : o �
 /-- The first chunk after the 448 bytes before it, which it absorbs: the loop
 invariant at 1 of the data after the 448 (on the permissions of that data),
 with the 448 absorbed into the accumulator on entry. -/
-theorem chunkP_ok {c dp : Addr} {L : Nat} (hl : Lay c dp L) {R0 R1 : BitVec 64} (hk : Key R0 R1) {A : Nat}
+theorem chunkP_ok (vl : Bool) {c dp : Addr} {L : Nat} (hl : Lay c dp L) {R0 R1 : BitVec 64} (hk : Key R0 R1) {A : Nat}
     {m₀ : Mem} {sp : Addr} (hge : 960 ≤ L) {s : State} (hwr : s.wr = bulkWr c dp L)
     (hrdi : s.gpr .rdi = stA c) (hrcx : s.gpr .rcx = bfA c) (hrsi : s.gpr .rsi = dp) (hrsp : s.gpr .rsp = sp)
     (hslot : s.mem.readW (slot (bfA c)) 64 = BitVec.ofNat 64 (L - 448))
     (hm : s.mem = m₀) (hc : Consts s.mem (bfA c)) (hacc : Acc R0 R1 A s) :
-    WP isa (chunk true) s fun s' =>
+    WP isa (chunk vl true) s fun s' =>
       LI c (dp + BitVec.ofNat 64 448) (L - 448) R0 R1 (absorbAll (rN R0 R1) A (bytesAt m₀ dp 448)) m₀ sp 1
         (s'.withRegions [] (bulkWr c (dp + BitVec.ofNat 64 448) (L - 448))) ∧
       s'.cf = some (decide (L - 448 - 512 * 1 < 512)) ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
@@ -77,7 +77,7 @@ theorem chunkP_ok {c dp : Addr} {L : Nat} (hl : Lay c dp L) {R0 R1 : BitVec 64} 
   have dbd : (bufR (bfA c)).Disjoint (dR5 (dp + BitVec.ofNat 64 448)) := (hl.cd (by decide)).sub_right wsub
   have dqs : (dR5 dp).Disjoint (slotsR (bfA c)) :=
     ((hl.cd (d := 128) (n := 128) (by decide)).sub_right (Region.sub_prefix (by omega))).symm
-  refine WP.seq (WP.mono (chunkMain_ok true hk hrdi hrcx hrsi mst mbf hwd hin hc
+  refine WP.seq (WP.mono (chunkMain_ok vl true hk hrdi hrcx hrsi mst mbf hwd hin hc
     (by rw [tot_true]; exact dsd) st_bf (by rw [tot_true]; exact dbd) dqs hacc)
     fun s₁ ⟨d₁, a₁, f₁, g₁, rsi₁, rd₁, wr₁⟩ => ?_)
   rw [tot_true] at d₁ f₁ rsi₁
@@ -235,11 +235,11 @@ theorem pre_after {dp : Addr} {L : Nat} (hL : L < 2 ^ 64) (hnw : dp.toNat + L �
   rw [Offset.sub_toNat' _ (by omega) (by omega)]
   split <;> omega
 
-theorem bulkP_ok {c dp : Addr} {L : Nat} (hl : Lay c dp L) (hge : 960 ≤ L)
+theorem bulkP_ok (vl : Bool) {c dp : Addr} {L : Nat} (hl : Lay c dp L) (hge : 960 ≤ L)
     (hr : 1 ≤ (L - 448) % 512 ∧ (L - 448) % 512 ≤ 64) {s : State} (hwr : s.wr = bulkWr c dp L) (hrsi : s.gpr .rsi = dp)
     (hrdx : s.gpr .rdx = BitVec.ofNat 64 (L - 448)) (hrcx : s.gpr .rcx = bfA c)
     {key msg : List Byte} (hrep : Repr s.mem (psA c) key msg) :
-    WP isa bulkP s (PreDone c dp L s key msg) := by
+    WP isa (bulkP vl) s (PreDone c dp L s key msg) := by
   have hLe := hl.L_lt
   have hnw := hl.nowrap
   have hl' := hl.shift (o := 448) (by omega)
@@ -261,7 +261,7 @@ theorem bulkP_ok {c dp : Addr} {L : Nat} (hl : Lay c dp L) (hge : 960 ≤ L)
   have P₁ : bytesAt s₁.mem dp 448 = bytesAt s.mem dp 448 := by
     simp only [bytesAt]
     exact List.map_congr_left fun k hk => enter_data hl F₁ k (by rw [List.mem_range] at hk; omega)
-  refine WP.seq (WP.mono (chunkP_ok hl hk (m₀ := s₁.mem) (sp := s.gpr .rsp) hge (by rw [wr₁, hwr]) rdi₁
+  refine WP.seq (WP.mono (chunkP_ok vl hl hk (m₀ := s₁.mem) (sp := s.gpr .rsp) hge (by rw [wr₁, hwr]) rdi₁
     (by rw [gk _ (.inl rfl), hrcx]) (by rw [gk _ (.inr (.inl rfl)), hrsi]) (gk _ (.inr (.inr rfl)))
     (by rw [sl₁, hrdx]) rfl C₁ acc₁) fun s₂ ⟨L₂, cf₂, rd₂, wr₂, F₂⟩ => ?_)
   -- The rest, on the permissions of the data after the 448 bytes.
@@ -274,12 +274,13 @@ theorem bulkP_ok {c dp : Addr} {L : Nat} (hl : Lay c dp L) (hge : 960 ≤ L)
     · exact ⟨⟨dp, L⟩, by simp, 448, rfl, by show 448 + (L - 448) ≤ L; omega⟩
     · exact ⟨bufR (bfA c), by simp, 0, by simp, by simp⟩
     · exact ⟨psR c, by simp, 0, by simp, by simp⟩
-  have hn : ((.seq (.ite .b (.block []) (.loop (chunk false) .ae)) restT : Prog isa)).noCalls = true := by
+  have hn : ((.seq (.ite .b (.block []) (.loop (chunk vl false) .ae)) restT : Prog isa)).noCalls = true := by
+    cases vl <;>
     decide +kernel
   have hlen : (msg ++ bytesAt s.mem dp 448).length % 16 = 0 := by
     rw [List.length_append, VG.Proof.Poly1305.length_bytesAt]; have := hrep.1; omega
   refine regionModel.wp_narrow (r := []) (w := bulkWr c (dp + BitVec.ofNat 64 448) (L - 448))
-    (restLI_ok hl' hk (σ := s.withRegions [] (bulkWr c (dp + BitVec.ofNat 64 448) (L - 448)))
+    (restLI_ok vl hl' hk (σ := s.withRegions [] (bulkWr c (dp + BitVec.ofNat 64 448) (L - 448)))
       (key := key) (msg := msg ++ bytesAt s.mem dp 448) rfl rfl hlen hrep.2.1 hcl
       (by rw [hAm, VG.Proof.Poly1305.accumulate_append hrep.1, P₁])
       (by rw [State.withRegions_mem, S₁]) (fun k hk => by
@@ -402,17 +403,17 @@ theorem tailP_ok {c dp : Addr} {L : Nat} (hl : Lay c dp L) (hlo : 449 ≤ L) (hh
 /-- `bulkP`'s `enter` and first chunk: after `enter`, the kernel's pointers;
 after the first chunk, the loop invariant on the data after the 448 bytes,
 from whose narrowed state the rest runs. -/
-theorem bulkPHead_ok {c dp : Addr} {L : Nat} (hl : Lay c dp L) (hge : 960 ≤ L) {s : State}
+theorem bulkPHead_ok (vl : Bool) {c dp : Addr} {L : Nat} (hl : Lay c dp L) (hge : 960 ≤ L) {s : State}
     (hwr : s.wr = bulkWr c dp L) (hrsi : s.gpr .rsi = dp)
     (hrdx : s.gpr .rdx = BitVec.ofNat 64 (L - 448)) (hrcx : s.gpr .rcx = bfA c)
     {key msg : List Byte} (hrep : Repr s.mem (psA c) key msg) :
     WP isa (.block enter) s fun s₁ => s₁.gpr .rdi = stA c ∧ s₁.gpr .rcx = bfA c ∧ s₁.gpr .rsi = dp ∧
       s₁.gpr .rsp = s.gpr .rsp ∧
-      WP isa (chunk true) s₁ fun s₂ =>
+      WP isa (chunk vl true) s₁ fun s₂ =>
         (∃ R0 R1 A m₀, Key R0 R1 ∧ LI c (dp + BitVec.ofNat 64 448) (L - 448) R0 R1 A m₀ (s.gpr .rsp) 1
           (s₂.withRegions [] (bulkWr c (dp + BitVec.ofNat 64 448) (L - 448)))) ∧
         s₂.cf = some (decide (L - 448 - 512 * 1 < 512)) ∧ s₂.rd = s.rd ∧ s₂.wr = s.wr ∧
-        ∃ F, WP isa (.seq (.ite .b (.block []) (.loop (chunk false) .ae)) restT)
+        ∃ F, WP isa (.seq (.ite .b (.block []) (.loop (chunk vl false) .ae)) restT)
           (s₂.withRegions [] (bulkWr c (dp + BitVec.ofNat 64 448) (L - 448))) F := by
   have hl' := hl.shift (o := 448) (by omega)
   refine WP.mono (enter_ok hwr hrcx)
@@ -435,11 +436,11 @@ theorem bulkPHead_ok {c dp : Addr} {L : Nat} (hl : Lay c dp L) (hge : 960 ≤ L)
   have hlen : (msg ++ bytesAt s.mem dp 448).length % 16 = 0 := by
     rw [List.length_append, VG.Proof.Poly1305.length_bytesAt]; have := hrep.1; omega
   refine ⟨rdi₁, by rw [gk _ (.inl rfl), hrcx], by rw [gk _ (.inr (.inl rfl)), hrsi], gk _ (.inr (.inr rfl)),
-    WP.mono (chunkP_ok hl hk (m₀ := s₁.mem) (sp := s.gpr .rsp) hge (by rw [wr₁, hwr]) rdi₁
+    WP.mono (chunkP_ok vl hl hk (m₀ := s₁.mem) (sp := s.gpr .rsp) hge (by rw [wr₁, hwr]) rdi₁
       (by rw [gk _ (.inl rfl), hrcx]) (by rw [gk _ (.inr (.inl rfl)), hrsi]) (gk _ (.inr (.inr rfl)))
       (by rw [sl₁, hrdx]) rfl C₁ acc₁) fun s₂ ⟨L₂, cf₂, rd₂, wr₂, _⟩ =>
     ⟨⟨R0, R1, _, _, hk, L₂⟩, cf₂, by rw [rd₂, rd₁], by rw [wr₂, wr₁], _,
-      restLI_ok hl' hk (σ := s.withRegions [] (bulkWr c (dp + BitVec.ofNat 64 448) (L - 448)))
+      restLI_ok vl hl' hk (σ := s.withRegions [] (bulkWr c (dp + BitVec.ofNat 64 448) (L - 448)))
         (key := key) (msg := msg ++ bytesAt s.mem dp 448) rfl rfl hlen hrep.2.1 hcl
         (by rw [hAm, VG.Proof.Poly1305.accumulate_append hrep.1, P₁])
         (by rw [State.withRegions_mem, S₁]) (fun k hk => by

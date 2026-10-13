@@ -804,7 +804,7 @@ theorem enter_key {c : Addr} {m m' : Mem} (F : Frame [bufR (bfA c), stashR c] m 
 /-- After the first chunk (`LI` at 1, from the memory `m₀`): the later
 chunks and the rest, as `bulk` ends them, relative to the state `σ` it starts
 from, whose memory `m₀` is but for `enter`'s stores. -/
-theorem restLI_ok {c dp : Addr} {L : Nat} (hl : Lay c dp L) {R0 R1 : BitVec 64} (hk : Key R0 R1) {A : Nat}
+theorem restLI_ok (vl : Bool) {c dp : Addr} {L : Nat} (hl : Lay c dp L) {R0 R1 : BitVec 64} (hk : Key R0 R1) {A : Nat}
     {m₀ : Mem} {σ s₂ : State} (hrd : σ.rd = []) (hwr : σ.wr = bulkWr c dp L)
     {key msg : List Byte} (hlen : msg.length % 16 = 0) (hK : bytesAt σ.mem (psA c + 24) 32 = key)
     (hr : clamp (leNum (key.take 16)) = rN R0 R1) (hAm : A = accumulate (rN R0 R1) msg)
@@ -815,11 +815,11 @@ theorem restLI_ok {c dp : Addr} {L : Nat} (hl : Lay c dp L) {R0 R1 : BitVec 64} 
     (v13 : m₀.readW (c + BitVec.ofNat 64 528) 64 = σ.gpr .r13)
     (v14 : m₀.readW (c + BitVec.ofNat 64 536) 64 = σ.gpr .r14)
     (L₂ : LI c dp L R0 R1 A m₀ (σ.gpr .rsp) 1 s₂) (cf₂ : s₂.cf = some (decide (L - 512 * 1 < 512))) :
-    WP isa (.seq (.ite .b (.block []) (.loop (chunk false) .ae)) restT) s₂
+    WP isa (.seq (.ite .b (.block []) (.loop (chunk vl false) .ae)) restT) s₂
       fun s' => ∃ T, BulkL c dp L σ key msg T s' ∨ BulkT c dp L σ key msg T s' := by
   have hLe := hl.L_lt
   have hAP : A < P := hAm ▸ VG.Proof.Poly1305.accumulate_lt _ _
-  refine WP.seq (WP.mono (chunks_ok hl hk L₂ cf₂) fun s₃ ⟨T, L₃, hT⟩ => ?_)
+  refine WP.seq (WP.mono (chunks_ok vl hl hk L₂ cf₂) fun s₃ ⟨T, L₃, hT⟩ => ?_)
   have ht := L₃.t1
   have hTL := L₃.le
   unfold restT
@@ -982,11 +982,11 @@ theorem restLI_ok {c dp : Addr} {L : Nat} (hl : Lay c dp L) {R0 R1 : BitVec 64} 
     · rw [r14₅, m₄, st3 536 (by decide) (by decide), v14]
 
 
-theorem bulk_ok {c dp : Addr} {L : Nat} (hl : Lay c dp L) (hge : 512 ≤ L) {s : State}
+theorem bulk_ok (vl : Bool) {c dp : Addr} {L : Nat} (hl : Lay c dp L) (hge : 512 ≤ L) {s : State}
     (hrd : s.rd = []) (hwr : s.wr = bulkWr c dp L) (hrsi : s.gpr .rsi = dp)
     (hrdx : s.gpr .rdx = BitVec.ofNat 64 L) (hrcx : s.gpr .rcx = bfA c)
     {key msg : List Byte} (hrep : Repr s.mem (psA c) key msg) :
-    WP isa bulk s fun s' => ∃ T, BulkL c dp L s key msg T s' ∨ BulkT c dp L s key msg T s' := by
+    WP isa (bulk vl) s fun s' => ∃ T, BulkL c dp L s key msg T s' ∨ BulkT c dp L s key msg T s' := by
   have hLe := hl.L_lt
   unfold bulk
   refine WP.seq (WP.mono (enter_ok hwr hrcx)
@@ -1012,7 +1012,7 @@ theorem bulk_ok {c dp : Addr} {L : Nat} (hl : Lay c dp L) (hge : 512 ≤ L) {s :
     · have hP : P = 2 ^ 130 - 5 := rfl
       rw [rbp₁]; omega_using [hA', hAP, hP]
     · simp only [hval, r11₁, rbx₁, rbp₁, hA']
-  refine WP.seq (WP.mono (firstChunk_ok hl (R0 := R0) (R1 := R1) (A := A) (m₀ := s₁.mem) (sp := s.gpr .rsp)
+  refine WP.seq (WP.mono (firstChunk_ok vl hl (R0 := R0) (R1 := R1) (A := A) (m₀ := s₁.mem) (sp := s.gpr .rsp)
     hge (by rw [rd₁, hrd]) (by rw [wr₁, hwr]) rdi₁ (by rw [gk _ (.inl rfl), hrcx])
     (by rw [gk _ (.inr (.inl rfl)), hrsi]) (gk _ (.inr (.inr rfl))) (by rw [sl₁, hrdx]) rfl C₁ acc₁)
     fun s₂ ⟨L₂, cf₂⟩ => ?_)
@@ -1022,7 +1022,7 @@ theorem bulk_ok {c dp : Addr} {L : Nat} (hl : Lay c dp L) (hge : 512 ≤ L) {s :
     rcases hr with rfl | rfl
     · exact st_bf
     · exact Offset.disjoint c (Or.inl (by decide)) (by decide) (by decide)
-  exact restLI_ok hl hk hrd hwr hrep.1 hrep.2.1 hr hAm (Proof.ChaCha20.X86_64.Xor.stateAt_frame F₁ dst)
+  exact restLI_ok vl hl hk hrd hwr hrep.1 hrep.2.1 hr hAm (Proof.ChaCha20.X86_64.Xor.stateAt_frame F₁ dst)
     (enter_data hl F₁) (enter_key F₁) v12 v13 v14 L₂ cf₂
 
 end VG.Proof.ChaCha20Poly1305.X86_64.Stitch
