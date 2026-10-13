@@ -459,6 +459,15 @@ theorem absorb_ok {H : Block} {x : List Byte} {D : Addr} {n : Nat} {s : State}
       refine WP.seq (WP.mono (whole_ok v L hyo hj (hj.data_eq hyo)) fun s'' hj' => ?_)
       exact tail_ok L hyo hj' (by have := hj.le; omega) (hj'.data_eq hyo)
 
+/-- `absorbHead` alone, for data within the rest of the buffer. -/
+theorem absorbHead_out {H : Block} {x : List Byte} {D : Addr} {n : Nat} {s : State}
+    (h : AbsIn Ctx St W SP yo H x D n s) (hn : n ≠ 0) (ho : x.length % 16 ≠ 0) (hle : n ≤ 16 - x.length % 16) :
+    WP isa (absorbHead v.callees yo) s (AbsOut Ctx St W SP yo H x (x ++ bytesAt s.mem D n) s.mem) := by
+  have e : min (16 - x.length % 16) n = n := Nat.min_eq_right hle
+  refine WP.mono (head_ok v L hyo h hn ho) fun s' hm => ?_
+  rw [e] at hm
+  exact ⟨hm.env, hm.abs, hm.frame⟩
+
 omit L hyo in
 /-- With nothing buffered, nothing absorbed yet. -/
 theorem AbsIn.mid {H : Block} {x : List Byte} {D : Addr} {n : Nat} {s : State}

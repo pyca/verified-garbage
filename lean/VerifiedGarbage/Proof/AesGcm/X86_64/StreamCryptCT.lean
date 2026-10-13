@@ -103,6 +103,11 @@ def PartMid (Ctx St W SP : Addr) (R P₀ : Nat) (D : Addr) (j k : Nat) (s : Stat
     s.mem.readW (W + BitVec.ofNat 64 208) 64 = BitVec.ofNat 64 k ∧
     s.mem.readW (W + BitVec.ofNat 64 192) 64 = BitVec.ofNat 64 (P₀ + j)
 
+/-- `PartMid` with the registers the parts start from. -/
+abbrev PartIn (Ctx St W SP : Addr) (R P₀ : Nat) (D : Addr) (j k : Nat) (s : State) : Prop :=
+  PartMid Ctx St W SP R P₀ D j k s ∧ s.gpr .r12 = D + BitVec.ofNat 64 j ∧ s.gpr .rbp = BitVec.ofNat 64 k ∧
+    s.gpr .rbx = BitVec.ofNat 64 ((P₀ + j) % 16)
+
 omit L in
 theorem PartPre.mid {enc : Bool} {j k : Nat} {s : State} (h : PartPre M Ctx St W SP R P₀ enc D n j k s) :
     PartMid Ctx St W SP R P₀ D j k s ∧ s.gpr .r12 = D + BitVec.ofNat 64 j ∧ s.gpr .rbp = BitVec.ofNat 64 k ∧
@@ -137,13 +142,15 @@ theorem partMid_load {j k : Nat} {s : State} (h : PartMid Ctx St W SP R P₀ D j
   exact WP.of_runBlock ⟨s', run, ⟨he.keep (load_env hg) hrd hwr, hm ▸ hR, hd.of_eq hrd hwr, hm ▸ hdat, hm ▸ hlen,
     hm ▸ htl⟩, h12, hbp, hbx⟩
 
-/-- After `crypt`. -/
-theorem partMid_crypt {j k : Nat} {s : State}
+/-- After `cr`, which does what `crypt` does. -/
+theorem partMid_crypt {cr : Prog isa} {j k : Nat} {s : State}
+    (hcr : ∀ {t : State}, CrIn Ctx St W SP R 0 (P₀ + j) (D + BitVec.ofNat 64 j) k t →
+      WP isa cr t (CrOut Ctx St W SP R 0 (P₀ + j) (D + BitVec.ofNat 64 j) k t.mem))
     (h : PartMid Ctx St W SP R P₀ D j k s ∧ s.gpr .r12 = D + BitVec.ofNat 64 j ∧ s.gpr .rbp = BitVec.ofNat 64 k ∧
       s.gpr .rbx = BitVec.ofNat 64 ((P₀ + j) % 16)) :
-    WP isa (crypt v.callees) s (PartMid Ctx St W SP R P₀ D j k) := by
+    WP isa cr s (PartMid Ctx St W SP R P₀ D j k) := by
   have hd := h.1.2.2.1
-  refine WP.mono (WP.with_rdwr (crypt_ok v L (PartMid.crIn h))) fun s' ⟨co, hrd, hwr⟩ => ?_
+  refine WP.mono (WP.with_rdwr (hcr (PartMid.crIn h))) fun s' ⟨co, hrd, hwr⟩ => ?_
   have sl : ∀ d, 176 ≤ d → d + 8 ≤ 240 →
       s'.mem.readW (W + BitVec.ofNat 64 d) 64 = s.mem.readW (W + BitVec.ofNat 64 d) 64 := fun d h₁ h₂ =>
     co.frame.readW (r := ⟨W + BitVec.ofNat 64 d, 8⟩) (Region.contains_self _ _) (slot_crFrame L hd.ok h₁ (by omega))
@@ -151,13 +158,16 @@ theorem partMid_crypt {j k : Nat} {s : State}
   exact ⟨co.env, co.rounds, hd.of_eq hrd hwr, by rw [sl 200 (by decide) (by decide)]; exact h.1.2.2.2.1,
     by rw [sl 208 (by decide) (by decide)]; exact h.1.2.2.2.2.1, by rw [sl 192 (by decide) (by decide)]; exact h.1.2.2.2.2.2⟩
 
-/-- After `absorb`. -/
-theorem partMid_absorb {j k : Nat} {s : State}
+/-- After `ab`, which does what `absorb` does. -/
+theorem partMid_absorb {ab : Prog isa} {j k : Nat} {s : State}
+    (hab : ∀ {H : Block} {t : State}, AbsIn Ctx St W SP 16 H (List.replicate (P₀ + j) 0) (D + BitVec.ofNat 64 j) k t →
+      WP isa ab t (AbsOut Ctx St W SP 16 H (List.replicate (P₀ + j) 0)
+        (List.replicate (P₀ + j) 0 ++ bytesAt t.mem (D + BitVec.ofNat 64 j) k) t.mem))
     (h : PartMid Ctx St W SP R P₀ D j k s ∧ s.gpr .r12 = D + BitVec.ofNat 64 j ∧ s.gpr .rbp = BitVec.ofNat 64 k ∧
       s.gpr .rbx = BitVec.ofNat 64 ((P₀ + j) % 16)) :
-    WP isa (absorb v.callees 16) s (PartMid Ctx St W SP R P₀ D j k) := by
+    WP isa ab s (PartMid Ctx St W SP R P₀ D j k) := by
   have hd := h.1.2.2.1
-  refine WP.mono (WP.with_rdwr (absorb_ok v L (yo := 16) (.inr rfl) (PartMid.absIn h))) fun s' ⟨ao, hrd, hwr⟩ => ?_
+  refine WP.mono (WP.with_rdwr (hab (PartMid.absIn h))) fun s' ⟨ao, hrd, hwr⟩ => ?_
   have sl : ∀ d, 176 ≤ d → d + 8 ≤ 240 →
       s'.mem.readW (W + BitVec.ofNat 64 d) 64 = s.mem.readW (W + BitVec.ofNat 64 d) 64 := fun d h₁ h₂ =>
     ao.frame.readW (r := ⟨W + BitVec.ofNat 64 d, 8⟩) (Region.contains_self _ _) (slot_absFrame L h₁ (by omega))
@@ -166,29 +176,69 @@ theorem partMid_absorb {j k : Nat} {s : State}
     by rw [sl 200 (by decide) (by decide)]; exact h.1.2.2.2.1,
     by rw [sl 208 (by decide) (by decide)]; exact h.1.2.2.2.2.1, by rw [sl 192 (by decide) (by decide)]; exact h.1.2.2.2.2.2⟩
 
-/-- `crypt` and `absorb` over the same part of the data in both runs. -/
-theorem part_rel (enc : Bool) {j k : Nat} :
+omit L in
+/-- `cr` and `ab` over the same part of the data in both runs, for any `cr`
+and `ab` that do what `crypt` and `absorb` do, and leak only what the
+registers they start from fix. -/
+theorem partWith_rel (enc : Bool) {cr ab : Prog isa} {j k : Nat}
+    (crR : RelCT isa (fun s₁ s₂ => PartIn Ctx St W SP R P₀ D j k s₁ ∧ PartIn Ctx St W SP R P₀ D j k s₂) cr
+      fun _ _ => True)
+    (abR : RelCT isa (fun s₁ s₂ => PartIn Ctx St W SP R P₀ D j k s₁ ∧ PartIn Ctx St W SP R P₀ D j k s₂) ab
+      fun _ _ => True)
+    (crW : ∀ s, PartIn Ctx St W SP R P₀ D j k s → WP isa cr s (PartMid Ctx St W SP R P₀ D j k))
+    (abW : ∀ s, PartIn Ctx St W SP R P₀ D j k s → WP isa ab s (PartMid Ctx St W SP R P₀ D j k)) :
     RelCT isa (fun s₁ s₂ => PartPre M Ctx St W SP R P₀ enc D n j k s₁ ∧ PartPre M Ctx St W SP R P₀ enc D n j k s₂)
-      (if enc then .seq (crypt v.callees) (.seq (.block streamLoad) (absorb v.callees 16))
-        else .seq (absorb v.callees 16) (.seq (.block streamLoad) (crypt v.callees))) fun _ _ => True := by
-  let M : State → Prop := fun s => PartMid Ctx St W SP R P₀ D j k s ∧ s.gpr .r12 = D + BitVec.ofNat 64 j ∧
-    s.gpr .rbp = BitVec.ofNat 64 k ∧ s.gpr .rbx = BitVec.ofNat 64 ((P₀ + j) % 16)
-  have cr : RelCT isa (fun s₁ s₂ => M s₁ ∧ M s₂) (crypt v.callees) fun _ _ => True :=
-    (crypt_rel v L (icb₁ := 0) (icb₂ := 0) rfl).mono (fun _ _ h => ⟨PartMid.crIn h.1, PartMid.crIn h.2⟩)
-      fun _ _ h => h
-  have ab : RelCT isa (fun s₁ s₂ => M s₁ ∧ M s₂) (absorb v.callees 16) fun _ _ => True :=
-    (RelCT.exists_ fun H₁ => RelCT.exists_ fun H₂ => absorb_rel v L (yo := 16) (.inr rfl) (H₁ := H₁) (H₂ := H₂)
-      (x₁ := List.replicate (P₀ + j) 0) (x₂ := List.replicate (P₀ + j) 0) rfl).mono
-      (fun _ _ h => ⟨_, _, PartMid.absIn h.1, PartMid.absIn h.2⟩) fun _ _ h => h
+      (partWith enc cr ab) fun _ _ => True := by
   have ld := rel_both (rel_envT (F := PartMid Ctx St W SP R P₀ D j k) [] (fun _ h => h.1) (fun _ _ _ _ _ h => by
     cases h) ⟨_, by taint_decide⟩) (fun _ h => partMid_load h) (fun _ h => partMid_load h)
   cases enc
-  · simp only [Bool.false_eq_true, ↓reduceIte]
-    exact (RelCT.seq (rel_both ab (fun _ h => partMid_absorb v L h) (fun _ h => partMid_absorb v L h))
-      (RelCT.seq ld cr)).mono (fun _ _ h => ⟨h.1.mid, h.2.mid⟩) fun _ _ h => h
-  · simp only [↓reduceIte]
-    exact (RelCT.seq (rel_both cr (fun _ h => partMid_crypt v L h) (fun _ h => partMid_crypt v L h))
-      (RelCT.seq ld ab)).mono (fun _ _ h => ⟨h.1.mid, h.2.mid⟩) fun _ _ h => h
+  · simp only [partWith, Bool.false_eq_true, ↓reduceIte]
+    exact (RelCT.seq (rel_both abR abW abW) (RelCT.seq ld crR)).mono (fun _ _ h => ⟨h.1.mid, h.2.mid⟩)
+      fun _ _ h => h
+  · simp only [partWith, ↓reduceIte]
+    exact (RelCT.seq (rel_both crR crW crW) (RelCT.seq ld abR)).mono (fun _ _ h => ⟨h.1.mid, h.2.mid⟩)
+      fun _ _ h => h
+
+omit L in
+/-- The registers the parts start from agree. -/
+theorem PartIn.agree {j k : Nat} {s₁ s₂ : State} (h₁ : PartIn Ctx St W SP R P₀ D j k s₁)
+    (h₂ : PartIn Ctx St W SP R P₀ D j k s₂) : ∀ r ∈ absRegs, s₁.gpr r = s₂.gpr r := by
+  intro r hr
+  simp only [absRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
+  · rw [h₁.2.1, h₂.2.1]
+  · rw [h₁.2.2.1, h₂.2.2.1]
+  · rw [h₁.2.2.2, h₂.2.2.2]
+  · rw [h₁.1.1.r13, h₂.1.1.r13]
+  · rw [h₁.1.1.r14, h₂.1.1.r14]
+  · rw [h₁.1.1.r15, h₂.1.1.r15]
+  · rw [h₁.1.1.rsp, h₂.1.1.rsp]
+
+/-- `crypt` and `absorb` over the same part of the data in both runs. -/
+theorem part_rel (enc : Bool) {j k : Nat} :
+    RelCT isa (fun s₁ s₂ => PartPre M Ctx St W SP R P₀ enc D n j k s₁ ∧ PartPre M Ctx St W SP R P₀ enc D n j k s₂)
+      (partWith enc (crypt v.callees) (absorb v.callees 16)) fun _ _ => True :=
+  partWith_rel enc
+    ((crypt_rel v L (icb₁ := 0) (icb₂ := 0) rfl).mono (fun _ _ h => ⟨PartMid.crIn h.1, PartMid.crIn h.2⟩)
+      fun _ _ h => h)
+    ((RelCT.exists_ fun H₁ => RelCT.exists_ fun H₂ => absorb_rel v L (yo := 16) (.inr rfl) (H₁ := H₁) (H₂ := H₂)
+      (x₁ := List.replicate (P₀ + j) 0) (x₂ := List.replicate (P₀ + j) 0) rfl).mono
+      (fun _ _ h => ⟨_, _, PartMid.absIn h.1, PartMid.absIn h.2⟩) fun _ _ h => h)
+    (fun _ h => partMid_crypt L (crypt_ok v L) h) (fun _ h => partMid_absorb L (absorb_ok v L (.inr rfl)) h)
+
+/-- The head in both runs: `cryptHead` and `absorbHead`, for a head within
+the rest of the block the text so far left partial. -/
+theorem headPart_rel (enc : Bool) {k : Nat} (hk0 : k ≠ 0) (hP : P₀ % 16 ≠ 0) (hle : k ≤ 16 - P₀ % 16) :
+    RelCT isa (fun s₁ s₂ => PartPre M Ctx St W SP R P₀ enc D n 0 k s₁ ∧ PartPre M Ctx St W SP R P₀ enc D n 0 k s₂)
+      (partWith enc cryptHead (absorbHead v.callees 16)) fun _ _ => True :=
+  partWith_rel enc
+    (rel_taint absRegs (fun _ _ h => PartIn.agree h.1 h.2) ⟨_, by taint_decide⟩)
+    ((RelCT.exists_ fun H₁ => RelCT.exists_ fun H₂ => head_rel v L (yo := 16) (.inr rfl) (H₁ := H₁) (H₂ := H₂)
+      (x₁ := List.replicate (P₀ + 0) 0) (x₂ := List.replicate (P₀ + 0) 0) rfl).mono
+      (fun _ _ h => ⟨_, _, PartMid.absIn h.1, PartMid.absIn h.2⟩) fun _ _ h => h)
+    (fun _ h => partMid_crypt L (fun hc => cryptHead_out hc hk0 (by rwa [Nat.add_zero]) (by rwa [Nat.add_zero])) h)
+    (fun _ h => partMid_absorb L (fun ha => absorbHead_out v L (.inr rfl) ha hk0
+      (by rw [List.length_replicate, Nat.add_zero]; exact hP) (by rw [List.length_replicate, Nat.add_zero]; exact hle)) h)
 
 end
 
@@ -360,12 +410,19 @@ variable (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M) {Ctx St W S
 
 /-- What `part_ok` does to `PartPre`. -/
 theorem si_part (enc : Bool) {j k : Nat} {s : State} (h : PartPre M Ctx St W SP R P₀ enc D n j k s) :
-    WP isa (if enc then .seq (crypt v.callees) (.seq (.block streamLoad) (absorb v.callees 16))
-      else .seq (absorb v.callees 16) (.seq (.block streamLoad) (crypt v.callees))) s fun s' =>
+    WP isa (partWith enc (crypt v.callees) (absorb v.callees 16)) s fun s' =>
       SI M Ctx St W SP R P₀ enc D n (j + k) s' ∧
       ∀ d, 176 ≤ d → d + 8 ≤ 240 → s'.mem.readW (W + BitVec.ofNat 64 d) 64 = s.mem.readW (W + BitVec.ofNat 64 d) 64 :=
   let ⟨hs, hk, h12, hbp, hbx, hdat, hlen, htl⟩ := h
   hs.lift fun K hx I => part_ok v K enc I hx hk h12 hbp hbx hdat hlen htl
+
+/-- What `headPart_ok` does to `PartPre`. -/
+theorem si_head (enc : Bool) {s : State} (h : PartPre M Ctx St W SP R P₀ enc D n 0 (headLen P₀ n) s) (hn : n ≠ 0) :
+    WP isa (headPart v.callees enc) s fun s' =>
+      SI M Ctx St W SP R P₀ enc D n (0 + headLen P₀ n) s' ∧
+      ∀ d, 176 ≤ d → d + 8 ≤ 240 → s'.mem.readW (W + BitVec.ofNat 64 d) 64 = s.mem.readW (W + BitVec.ofNat 64 d) 64 :=
+  let ⟨hs, _, h12, hbp, hbx, hdat, hlen, htl⟩ := h
+  hs.lift fun K hx I => headPart_ok v K enc I hx hn h12 hbp hbx hdat hlen htl
 
 include L in
 /-- `streamText` in two runs, with the same data and lengths. -/
@@ -431,8 +488,7 @@ theorem streamText_rel (enc : Bool) (hP : P₀ < 2 ^ 64) :
     ⟨h.1, by omega, by simp [h.2.1], h.2.2.1, by rw [h.2.2.2.1, Nat.add_zero], by rw [h.2.2.2.2.1]; simp,
       h.2.2.2.2.2.1, by rw [h.2.2.2.2.2.2, Nat.add_zero]⟩
   have gsm : ∀ s, PartPre M Ctx St W SP R P₀ enc D n 0 n s →
-      WP isa (if enc then .seq (crypt v.callees) (.seq (.block streamLoad) (absorb v.callees 16))
-        else .seq (absorb v.callees 16) (.seq (.block streamLoad) (crypt v.callees))) s (Env Ctx St W SP) :=
+      WP isa (partWith enc (crypt v.callees) (absorb v.callees 16)) s (Env Ctx St W SP) :=
     fun s h => WP.mono (si_part v enc h) fun _ h' => h'.1.env
   -- The head's length.
   let G₄ : State → Prop := fun s => PartPre M Ctx St W SP R P₀ enc D n 0 k s ∧
@@ -464,17 +520,37 @@ theorem streamText_rel (enc : Bool) (hP : P₀ < 2 ^ 64) :
     s.mem.readW (W + BitVec.ofNat 64 200) 64 = D ∧
     s.mem.readW (W + BitVec.ofNat 64 192) 64 = BitVec.ofNat 64 P₀ ∧
     s.mem.readW (W + BitVec.ofNat 64 216) 64 = BitVec.ofNat 64 n
-  have g₅ : ∀ s, G₄ s → WP isa (if enc then .seq (crypt v.callees) (.seq (.block streamLoad) (absorb v.callees 16))
-      else .seq (absorb v.callees 16) (.seq (.block streamLoad) (crypt v.callees))) s G₅ := fun s h => by
+  have g₅ : n ≠ 0 → ∀ s, G₄ s → WP isa (headPart v.callees enc) s G₅ := fun hn s h => by
     obtain ⟨hp, ha⟩ := h
     have ⟨_, _, _, _, _, hdat, hlen, htl⟩ := hp
-    refine WP.mono (si_part v enc hp) fun s' ⟨hs, sl⟩ => ⟨?_, ?_, ?_, ?_, ?_⟩
+    subst hk
+    refine WP.mono (si_head v enc hp hn) fun s' ⟨hs, sl⟩ => ⟨?_, ?_, ?_, ?_, ?_⟩
     · rw [Nat.zero_add] at hs; exact hs
     · rw [sl 208 (by decide) (by decide)]; exact hlen
     · rw [sl 200 (by decide) (by decide), hdat]; simp
     · rw [sl 192 (by decide) (by decide), htl, Nat.add_zero]
     · rw [sl 216 (by decide) (by decide)]; exact ha
-  have e := rel_both ((part_rel v L enc (j := 0) (k := k)).mono (fun _ _ h => ⟨h.1.1, h.2.1⟩) fun _ _ h => h) g₅ g₅
+  -- Whether the text so far left a block partial: the head, by `cryptHead` and `absorbHead`, if so.
+  let T₄ : State → Prop := fun s => G₄ s ∧ s.zf = some (decide (P₀ % 16 = 0))
+  have g₄t : ∀ s, G₄ s → WP isa (.block [.alu .test .rbx (.reg .rbx)]) s T₄ := fun s h => by
+    obtain ⟨⟨hs, hk', h12, hbp, hbx, hdat, hlen, htl⟩, ha⟩ := h
+    have hlt := Nat.mod_lt (P₀ + 0) (show 16 > 0 by decide)
+    obtain ⟨s', run, hz, hg, hm, hrd, hwr⟩ := test_ok s .rbx hbx (by omega)
+    rw [Nat.add_zero] at hz
+    exact WP.of_runBlock ⟨s', run, ⟨⟨hs.regs (fun r _ => by rw [hg]) hm hrd hwr, hk', by rw [hg]; exact h12,
+      by rw [hg]; exact hbp, by rw [hg]; exact hbx, hm ▸ hdat, hm ▸ hlen, hm ▸ htl⟩, hm ▸ ha⟩, hz⟩
+  have e₁ := rel_both (rel_envT (F := G₄) [.rbx] (fun _ h => h.1.1.env) (fun _ _ h₁ h₂ r hr => by
+    simp only [List.mem_singleton] at hr; subst hr; rw [h₁.1.2.2.2.2.1, h₂.1.2.2.2.2.1]) ⟨_, by taint_decide⟩) g₄t g₄t
+  have e : n ≠ 0 → RelCT isa (fun s₁ s₂ => G₄ s₁ ∧ G₄ s₂) (headPart v.callees enc) fun s₁ s₂ => G₅ s₁ ∧ G₅ s₂ :=
+    fun hn => by
+    refine rel_both (RelCT.seq e₁ (rel_ite_e (fun _ _ h => h.1.2.trans h.2.2.symm)
+      (RelCT.block_nil fun _ _ _ => trivial) ?_)) (g₅ hn) (g₅ hn)
+    by_cases hz : P₀ % 16 = 0
+    · exact RelCT.of_false fun _ _ h => by have := h.1.1.2.symm.trans h.2; simp [hz] at this
+    have e' : headLen P₀ n = min (16 - P₀ % 16) n := by simp [headLen, hz]
+    rw [hk] at e'
+    exact (headPart_rel v L enc (k := k) (by omega) hz (by omega)).mono (fun _ _ h => ⟨h.1.1.1.1, h.1.2.1.1⟩)
+      fun _ _ h => h
   -- Past the head.
   have g₆ : ∀ s, G₅ s → WP isa (.block streamNext) s (BPre M Ctx St W SP R P₀ enc D n k) := fun s h => by
     obtain ⟨hs, hl, hdat, htl, ha⟩ := h
@@ -509,8 +585,7 @@ theorem streamText_rel (enc : Bool) (hP : P₀ < 2 ^ 64) :
   have i := rel_both (rel_envT (F := G₇) [] (fun _ h => h.1.env) (fun _ _ _ _ _ h => by cases h)
     ⟨_, by taint_decide⟩) g₈ g₈
   have g₉ : ∀ s, PartPre M Ctx St W SP R P₀ enc D n (k + 16 * ((n - k) / 16)) ((n - k) % 16) s →
-      WP isa (if enc then .seq (crypt v.callees) (.seq (.block streamLoad) (absorb v.callees 16))
-        else .seq (absorb v.callees 16) (.seq (.block streamLoad) (crypt v.callees))) s (Env Ctx St W SP) :=
+      WP isa (partWith enc (crypt v.callees) (absorb v.callees 16)) s (Env Ctx St W SP) :=
     fun s h => WP.mono (si_part v enc h) fun _ h' => h'.1.env
   have j := rel_both (part_rel v L enc) g₉ g₉
   simp only [streamText]
@@ -528,7 +603,7 @@ theorem streamText_rel (enc : Bool) (hP : P₀ < 2 ^ 64) :
     refine rel_reassoc2 ((RelCT.seq b (RelCT.seq c (RelCT.seq cs (RelCT.seq
       (RelCT.ite (M := isa) (c := .b) (fun _ _ h => by show _ = _; exact h.1.2.trans h.2.2.symm)
         (RelCT.of_false fun _ _ h => by have := h.1.1.2.symm.trans h.2; simp [hs] at this)
-        ((RelCT.seq d (RelCT.seq e (RelCT.seq f (RelCT.seq g i)))).mono
+        ((RelCT.seq d (RelCT.seq (e (by omega)) (RelCT.seq f (RelCT.seq g i)))).mono
           (fun _ _ h => ⟨h.1.1.1, h.1.2.1⟩) fun _ _ h => h))
       j)))).mono
       (fun _ _ h => ⟨⟨h.1.1, h.2⟩, ⟨h.1.2, by rw [h.1.2.2, ← h.1.1.2, h.2]⟩⟩) fun _ _ h => h)
