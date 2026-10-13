@@ -189,7 +189,9 @@ pub fn bench(c: &mut Criterion) {
     }
     for generator in [2, 5] {
         let mut group = c.benchmark_group(format!("ffdh_parameters_g{generator}"));
-        group.sample_size(10);
+        // Safe-prime search has high variance: ten random draws can
+        // look like a regression even with identical baseline code.
+        group.sample_size(100);
         group.bench_function(BenchmarkId::new(VG, 64), |b| {
             b.iter(|| Parameters::generate(512, generator).unwrap())
         });

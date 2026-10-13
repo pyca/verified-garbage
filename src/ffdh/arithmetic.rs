@@ -443,11 +443,8 @@ mod tests {
             ),
         ];
         for &(features, expected) in cases {
-            assert_eq!(
-                Backend::select(Features::of(features)),
-                expected,
-                "{features:?}"
-            );
+            let backend = Backend::select(Features::of(features));
+            assert_eq!(backend, expected, "{features:?}");
         }
     }
 }
