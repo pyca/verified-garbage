@@ -12,7 +12,7 @@ namespace VG.Impl.Ecdsa.X86_64
 open VG.X86_64
 
 def brainpoolp384r1 : Cfg where
-  n := 4
+  n := 6
   C := Spec.BrainpoolP384r1.curve
   fastN := true
   windows := false
