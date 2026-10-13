@@ -29,6 +29,8 @@ beside the baseline's additions, subtractions and swaps
 
 materialize_template mulXT := mulX
 materialize_template sqrXT := sqrX
+materialize_template mulXLT := mulXL
+materialize_template sqrXLT := sqrXL
 materialize_template a24XT := a24addX
 materialize_template mul2XT := mul2X
 materialize_template sqr2XT := sqr2X

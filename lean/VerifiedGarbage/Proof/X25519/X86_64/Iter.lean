@@ -85,17 +85,17 @@ def opsList (fld : Field) : List Instr :=
   subCmov (32 * (8 : Fin 128).val) (32 * (3 : Fin 128).val) (32 * (4 : Fin 128).val) ++
   addCmov (32 * (9 : Fin 128).val) (32 * (5 : Fin 128).val) (32 * (6 : Fin 128).val) ++
   subCmov (32 * (10 : Fin 128).val) (32 * (5 : Fin 128).val) (32 * (6 : Fin 128).val) ++
-  fld.sqr (32 * (11 : Fin 128).val) (32 * (7 : Fin 128).val) ++
+  fld.sqrL (32 * (11 : Fin 128).val) (32 * (7 : Fin 128).val) ++
   fld.sqr (32 * (12 : Fin 128).val) (32 * (8 : Fin 128).val) ++
-  fld.mul (32 * (14 : Fin 128).val) (32 * (10 : Fin 128).val) (32 * (7 : Fin 128).val) ++
+  fld.mulL (32 * (14 : Fin 128).val) (32 * (10 : Fin 128).val) (32 * (7 : Fin 128).val) ++
   fld.mul (32 * (15 : Fin 128).val) (32 * (9 : Fin 128).val) (32 * (8 : Fin 128).val) ++
   subCmov (32 * (13 : Fin 128).val) (32 * (11 : Fin 128).val) (32 * (12 : Fin 128).val) ++
   subCmov (32 * (6 : Fin 128).val) (32 * (14 : Fin 128).val) (32 * (15 : Fin 128).val) ++
   addCmov (32 * (5 : Fin 128).val) (32 * (14 : Fin 128).val) (32 * (15 : Fin 128).val) ++
-  fld.mul (32 * (3 : Fin 128).val) (32 * (11 : Fin 128).val) (32 * (12 : Fin 128).val) ++
+  fld.mulL (32 * (3 : Fin 128).val) (32 * (11 : Fin 128).val) (32 * (12 : Fin 128).val) ++
   fld.a24add (32 * (4 : Fin 128).val) (32 * (11 : Fin 128).val) (32 * (13 : Fin 128).val) ++
-  fld.sqr (32 * (6 : Fin 128).val) (32 * (6 : Fin 128).val) ++
-  fld.sqr (32 * (5 : Fin 128).val) (32 * (5 : Fin 128).val) ++
+  fld.sqrL (32 * (6 : Fin 128).val) (32 * (6 : Fin 128).val) ++
+  fld.sqrL (32 * (5 : Fin 128).val) (32 * (5 : Fin 128).val) ++
   fld.mul (32 * (6 : Fin 128).val) (32 * (2 : Fin 128).val) (32 * (6 : Fin 128).val) ++
   fld.mul (32 * (4 : Fin 128).val) (32 * (13 : Fin 128).val) (32 * (4 : Fin 128).val)
 
@@ -160,13 +160,13 @@ theorem ops_ok {s1 : State} {base : Addr} (hs1 : Scr s1 base) {sw : Bool}
     fun s7 ⟨k7, e7, o7⟩ => ?_
   have hs7 := k7.scr hs6
   rw [WP.block_append_iff]
-  refine WP.mono (sqrEB hf hs7 11 7 ⟨by decide, by decide⟩) fun s8 ⟨k8, e8, o8, _⟩ => ?_
+  refine WP.mono (sqrLEB hf hs7 11 7 ⟨by decide, by decide⟩) fun s8 ⟨k8, e8, o8⟩ => ?_
   have hs8 := k8.scr hs7
   rw [WP.block_append_iff]
   refine WP.mono (sqrEB hf hs8 12 8 ⟨by decide, by decide⟩) fun s9 ⟨k9, e9, _, b9⟩ => ?_
   have hs9 := k9.scr hs8
   rw [WP.block_append_iff]
-  refine WP.mono (mulEB hf hs9 14 10 7 ⟨by decide, by decide⟩) fun s10 ⟨k10, e10, o10, _⟩ => ?_
+  refine WP.mono (mulLEB hf hs9 14 10 7 ⟨by decide, by decide⟩) fun s10 ⟨k10, e10, o10⟩ => ?_
   have hs10 := k10.scr hs9
   rw [WP.block_append_iff]
   refine WP.mono (mulEB hf hs10 15 9 8 ⟨by decide, by decide⟩) fun s11 ⟨k11, e11, o11, b11⟩ => ?_
@@ -187,16 +187,16 @@ theorem ops_ok {s1 : State} {base : Addr} (hs1 : Scr s1 base) {sw : Bool}
     fun s14 ⟨k14, e14, _⟩ => ?_
   have hs14 := k14.scr hs13
   rw [WP.block_append_iff]
-  refine WP.mono (mulEB hf hs14 3 11 12 ⟨by decide, by decide⟩) fun s15 ⟨k15, e15, _, _⟩ => ?_
+  refine WP.mono (mulLEB hf hs14 3 11 12 ⟨by decide, by decide⟩) fun s15 ⟨k15, e15, _⟩ => ?_
   have hs15 := k15.scr hs14
   rw [WP.block_append_iff]
   refine WP.mono (a24AddEB hf hs15 4 11 13 ⟨by decide, by decide⟩) fun s16 ⟨k16, e16, _⟩ => ?_
   have hs16 := k16.scr hs15
   rw [WP.block_append_iff]
-  refine WP.mono (sqrEB hf hs16 6 6 ⟨by decide, by decide⟩) fun s17 ⟨k17, e17, _, _⟩ => ?_
+  refine WP.mono (sqrLEB hf hs16 6 6 ⟨by decide, by decide⟩) fun s17 ⟨k17, e17, _⟩ => ?_
   have hs17 := k17.scr hs16
   rw [WP.block_append_iff]
-  refine WP.mono (sqrEB hf hs17 5 5 ⟨by decide, by decide⟩) fun s18 ⟨k18, e18, _, _⟩ => ?_
+  refine WP.mono (sqrLEB hf hs17 5 5 ⟨by decide, by decide⟩) fun s18 ⟨k18, e18, _⟩ => ?_
   have hs18 := k18.scr hs17
   rw [WP.block_append_iff]
   refine WP.mono (mulEB hf hs18 6 2 6 ⟨by decide, by decide⟩) fun s19 ⟨k19, e19, _, b19⟩ => ?_

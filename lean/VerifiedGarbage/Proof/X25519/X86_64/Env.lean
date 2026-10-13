@@ -78,6 +78,12 @@ structure FieldOk (fld : Field) : Prop where
   sqr : ∀ {s : State} {base : Addr}, Scr s base → ∀ {o a : Nat}, Slot o → Slot a →
     WP isa (.block (fld.sqr o a)) s fun s' =>
       Op base o s s' ∧ F s'.mem base o = F s.mem base a * F s.mem base a
+  mulL : ∀ {s : State} {base : Addr}, Scr s base → ∀ {o a b : Nat}, Slot o → Slot a → Slot b →
+    WP isa (.block (fld.mulL o a b)) s fun s' =>
+      Op base o s s' ∧ F s'.mem base o = F s.mem base a * F s.mem base b
+  sqrL : ∀ {s : State} {base : Addr}, Scr s base → ∀ {o a : Nat}, Slot o → Slot a →
+    WP isa (.block (fld.sqrL o a)) s fun s' =>
+      Op base o s s' ∧ F s'.mem base o = F s.mem base a * F s.mem base a
   a24add : ∀ {s : State} {base : Addr}, Scr s base → ∀ {o b a : Nat}, Slot o → Slot b → Slot a →
     WP isa (.block (fld.a24add o b a)) s fun s' =>
       Op base o s s' ∧ F s'.mem base o = F s.mem base b + Spec.X25519.a24 * F s.mem base a
@@ -115,6 +121,8 @@ theorem dbl_after {code : List Instr} {s : State} {base : Addr} (hs : Scr s base
 theorem baseline_ok : FieldOk baseline where
   mul hs _ _ _ ho ha hb := mul_ok hs ho ha hb
   sqr hs _ _ ho ha := sqr_ok hs ho ha
+  mulL hs _ _ _ ho ha hb := mul_ok hs ho ha hb
+  sqrL hs _ _ ho ha := sqr_ok hs ho ha
   a24add hs _ _ _ ho hb ha := mulA24Add_ok hs ho hb ha
   mul2 hs _ _ _ ho ha hb := dbl_after hs ho (mul_ok hs ho ha hb)
   sqr2 hs _ _ ho ha := dbl_after hs ho (sqr_ok hs ho ha)
@@ -198,6 +206,22 @@ theorem sqrEB {s : State} {base : Addr} (hs : Scr s base) (o a : Fin 128) (ho : 
         Outside base (32 * o.val) 32 s.mem s'.mem ∧ fe s'.mem base (32 * o.val) ≤ 2 * Spec.X25519.P :=
   WP.mono (hf.sqrB hs (by omega) (by omega)) fun _ ⟨h, e, hb⟩ =>
     ⟨h.keep (by omega) (by omega), by rw [E_update h.mem, e]; rfl, h.mem, hb⟩
+
+include hf in
+theorem mulLEB {s : State} {base : Addr} (hs : Scr s base) (o a b : Fin 128) (ho : LSlot o) :
+    WP isa (.block (fld.mulL (32 * o.val) (32 * a.val) (32 * b.val))) s fun s' =>
+      Keep base s s' ∧ E s'.mem base = opMul o a b (E s.mem base) ∧
+        Outside base (32 * o.val) 32 s.mem s'.mem :=
+  WP.mono (hf.mulL hs (by omega) (by omega) (by omega)) fun _ ⟨h, e⟩ =>
+    ⟨h.keep (by omega) (by omega), by rw [E_update h.mem, e]; rfl, h.mem⟩
+
+include hf in
+theorem sqrLEB {s : State} {base : Addr} (hs : Scr s base) (o a : Fin 128) (ho : LSlot o) :
+    WP isa (.block (fld.sqrL (32 * o.val) (32 * a.val))) s fun s' =>
+      Keep base s s' ∧ E s'.mem base = opMul o a a (E s.mem base) ∧
+        Outside base (32 * o.val) 32 s.mem s'.mem :=
+  WP.mono (hf.sqrL hs (by omega) (by omega)) fun _ ⟨h, e⟩ =>
+    ⟨h.keep (by omega) (by omega), by rw [E_update h.mem, e]; rfl, h.mem⟩
 
 theorem addCmovE {s : State} {base : Addr} (hs : Scr s base) (o a b : Fin 128) (ho : LSlot o)
     (hab : fe s.mem base (32 * a.val) ≤ 2 * Spec.X25519.P ∨

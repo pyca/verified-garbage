@@ -76,6 +76,9 @@ def reduceLo : List Instr :=
 /-- `reduceLo`, then `r8–r11 += 38 r12`, folded at bit 255 (at most `2p`). -/
 def reduceX : List Instr := reduceLo ++ [.mulx .rcx .rax (.reg .r12)] ++ carry19 .rbp
 
+/-- `reduceLo`, then `r8–r11 += 38 r12`, folded once (below `2²⁵⁶`). -/
+def reduceXL : List Instr := reduceLo ++ [.mulx .rcx .rax (.reg .r12)] ++ carry38
+
 /-- `r8–r12` doubled. -/
 def dbl5 : List Instr :=
   [.alu .add .r8 (.reg .r8), .alu .adc .r9 (.reg .r9), .alu .adc .r10 (.reg .r10),
@@ -87,6 +90,10 @@ def reduceX2 : List Instr := reduceLo ++ dbl5 ++ [.mulx .rcx .rax (.reg .r12)] +
 /-- `[o] = [a] · [b]`. -/
 def mulX (o a b : Nat) : List Instr :=
   rowX0 a b ++ rowX a b 1 ++ rowX a b 2 ++ rowX a b 3 ++ reduceX ++ store4 o
+
+/-- `mulX`, reduced below `2²⁵⁶` rather than `2p` (`reduceXL`). -/
+def mulXL (o a b : Nat) : List Instr :=
+  rowX0 a b ++ rowX a b 1 ++ rowX a b 2 ++ rowX a b 3 ++ reduceXL ++ store4 o
 
 /-- The products `a₀ a_j` (`j > 0`) into `r9–r12`, through CF. -/
 def sqrA (a : Nat) : List Instr :=
@@ -119,6 +126,9 @@ def sqrD (a : Nat) : List Instr :=
 doubled while the squares are added, and reduced. -/
 def sqrX (o a : Nat) : List Instr := sqrA a ++ sqrB a ++ sqrC a ++ sqrD a ++ reduceX ++ store4 o
 
+/-- `sqrX`, reduced below `2²⁵⁶` rather than `2p` (`reduceXL`). -/
+def sqrXL (o a : Nat) : List Instr := sqrA a ++ sqrB a ++ sqrC a ++ sqrD a ++ reduceXL ++ store4 o
+
 /-- `[o] = [b] + a24 · [a]`: `[b]` into `r8–r11`, then `a24 · [a]` added as a
 row of `mulX` (`r8–r12`), and `r12` folded as 38. -/
 def a24addX (o b a : Nat) : List Instr :=
@@ -138,6 +148,8 @@ def sqr2X (o a : Nat) : List Instr := sqrA a ++ sqrB a ++ sqrC a ++ sqrD a ++ re
 def adx : Field where
   mul := mulX
   sqr := sqrX
+  mulL := mulXL
+  sqrL := sqrXL
   a24add := a24addX
   mul2 := mul2X
   sqr2 := sqr2X

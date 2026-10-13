@@ -81,6 +81,8 @@ theorem a24addX_ok {s : State} {base : Addr} (hs : Scr s base) {o b a : Nat} (ho
 theorem adx_ok : FieldOk adx where
   mul hs _ _ _ ho ha hb := mulX_ok hs ho ha hb
   sqr hs _ _ ho ha := sqrX_ok hs ho ha
+  mulL hs _ _ _ ho ha hb := mulXL_ok hs ho ha hb
+  sqrL hs _ _ ho ha := sqrXL_ok hs ho ha
   a24add hs _ _ _ ho hb ha := a24addX_ok hs ho hb ha
   mul2 hs _ _ _ ho ha hb := mul2X_ok hs ho ha hb
   sqr2 hs _ _ ho ha := sqr2X_ok hs ho ha

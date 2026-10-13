@@ -153,6 +153,21 @@ theorem reduceX_ok (s : State) :
   refine ⟨?_, b8, k6.trans (k8.mono (by decide))⟩
   rw [e8, hv, fold256]
 
+open VG.Spec.X25519 (P) in
+/-- `r8–r11 + 2²⁵⁶ r12–r15`, reduced into `r8–r11` (modulo `p`, below `2²⁵⁶`). -/
+theorem reduceXL_ok (s : State) :
+    WP isa (.block reduceXL) s fun s' =>
+      val4 (s'.gpr .r8) (s'.gpr .r9) (s'.gpr .r10) (s'.gpr .r11) % P =
+        (val4 (s.gpr .r8) (s.gpr .r9) (s.gpr .r10) (s.gpr .r11) +
+          2 ^ 256 * val4 (s.gpr .r12) (s.gpr .r13) (s.gpr .r14) (s.gpr .r15)) % P ∧
+      Keeps [.r8, .r9, .r10, .r11, .r12, .rax, .rcx, .rdx, .rbp] s s' := by
+  rw [show reduceXL = reduceLo ++ (([.mulx .rcx .rax (.reg .r12)] : List Instr) ++ carry38) by
+    simp only [reduceXL, List.append_assoc], WP.block_append_iff]
+  refine WP.mono (reduceLo_ok s) fun s6 ⟨hv, h12, hd, k6⟩ => ?_
+  refine WP.mono (foldX_ok s6 (by omega) hd) fun s8 ⟨e8, k8⟩ => ?_
+  refine ⟨?_, k6.trans (k8.mono (by decide))⟩
+  rw [e8, hv, fold256]
+
 /-- `r8–r12` doubled, for `r12 < 2⁶³`. -/
 theorem dbl5_ok (s : State) (h12 : (s.gpr .r12).toNat < 2 ^ 63) :
     WP isa (.block dbl5) s fun s' =>
@@ -251,6 +266,35 @@ theorem mulX_ok {s : State} {base : Addr} (hs : Scr s base) {o a b : Nat} (ho : 
     WP isa (.block (mulX o a b)) s fun s' =>
       Op base o s s' ∧ F s'.mem base o = F s.mem base a * F s.mem base b :=
   WP.mono (mulXBnd_ok hs ho ha hb) fun _ ⟨h, e, _⟩ => ⟨h, e⟩
+
+theorem mulXL_eq (o a b : Nat) : mulXL o a b = (rowX0 a b ++ (rowR' a b 1 .r9 .r10 .r11 .r12 .r13 ++
+    (rowR' a b 2 .r10 .r11 .r12 .r13 .r14 ++ rowR' a b 3 .r11 .r12 .r13 .r14 .r15))) ++
+      (reduceXL ++ store4 o) := by
+  simp only [mulXL, rowX_eq, List.append_assoc]; rfl
+
+/-- `[o] = [a] · [b]`, below `2²⁵⁶`. -/
+theorem mulXL_ok {s : State} {base : Addr} (hs : Scr s base) {o a b : Nat} (ho : Slot o)
+    (ha : Slot a) (hb : Slot b) :
+    WP isa (.block (mulXL o a b)) s fun s' =>
+      Op base o s s' ∧ F s'.mem base o = F s.mem base a * F s.mem base b := by
+  rw [mulXL_eq, WP.block_append_iff]
+  refine WP.mono (mul4_ok hs ha hb) fun s₄ ⟨e4, k4⟩ => ?_
+  have hs₄ := hs.of_keeps k4 (by decide)
+  rw [WP.block_append_iff]
+  refine WP.mono (reduceXL_ok s₄) fun s₅ ⟨e5, k5⟩ => ?_
+  have hs₅ := hs₄.of_keeps k5 (by decide)
+  refine WP.mono (store4_ok hs₅ ho) fun s₆ ⟨m6, g6, rd6, wr6⟩ => ?_
+  have M : s₅.mem = s.mem := k5.2.1.trans k4.2.1
+  refine ⟨⟨fun r hr => ?_, ?_, ?_, ?_⟩, ?_⟩
+  · simp only [clob, List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+    obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12⟩ := hr
+    rw [g6, k5.1 r (by simp [*]), k4.1 r (by simp [*])]
+  · rw [rd6, k5.2.2.1, k4.2.2.1]
+  · rw [wr6, k5.2.2.2, k4.2.2.2]
+  · rw [m6, M]; exact st4_outside _ _ (by omega) _ _ _ _
+  · simp only [F]
+    apply toFe_mul
+    rw [m6, fe_st4 _ _ (by omega), e5, e4]
 
 theorem mul2X_eq (o a b : Nat) : mul2X o a b = (rowX0 a b ++ (rowR' a b 1 .r9 .r10 .r11 .r12 .r13 ++
     (rowR' a b 2 .r10 .r11 .r12 .r13 .r14 ++ rowR' a b 3 .r11 .r12 .r13 .r14 .r15))) ++
