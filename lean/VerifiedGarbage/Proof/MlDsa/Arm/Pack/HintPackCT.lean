@@ -8,6 +8,10 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.MlDsa.Pack.Mem
+import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Proof.MlDsa.Pack.Mem
+meta import Mathlib.Tactic.SplitIfs
 
 /-!
 # ML-DSA on 32-bit ARM: `vg_mldsa_hint_bit_pack`, constant time and `Verified`

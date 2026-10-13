@@ -5,6 +5,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Impl.MlDsa.Arm.Message
+import VerifiedGarbage.Proof.Framework.Arm.Contract
 
 /-!
 # ML-DSA on ARMv7, `sign_message` and `verify_message`: the moves of a call's arguments

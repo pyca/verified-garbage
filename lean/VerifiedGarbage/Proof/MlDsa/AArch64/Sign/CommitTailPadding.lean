@@ -5,6 +5,11 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.CommitTail
+public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Keep
+public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.AbsorbBlock
+import Mathlib.Tactic.Conv
+import Mathlib.Tactic.SplitIfs
 
 /-! ## From `CommitTailPaddingWord.lean` -/
 

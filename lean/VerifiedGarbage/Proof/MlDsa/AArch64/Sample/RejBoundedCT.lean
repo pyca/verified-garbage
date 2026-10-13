@@ -6,6 +6,12 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rel
+import Mathlib.Tactic.Conv
+import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rel
+meta import Mathlib.Tactic.Conv
+meta import Mathlib.Tactic.SplitIfs
 
 /-!
 # ML-DSA on AArch64: `vg_mldsa_rej_bounded_poly`, constant time but for which half-bytes it accepts
