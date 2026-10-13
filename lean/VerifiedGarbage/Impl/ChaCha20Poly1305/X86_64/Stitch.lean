@@ -327,13 +327,29 @@ def sealStitched (x : ChaCha20.X86_64.Callee) (b : Poly1305.X86_64.Blocks) : Pro
   (.seq finalizeTag
     (.block restore)))))))
 
+/-- The AVX-512 instance (without IFMA) seals fewer bytes of data than this
+with the AVX2 code (`sealSmall`): on Cascade Lake, from 640 bytes on, the
+AVX-512 code is the faster even with its lower clock. -/
+def smallLim : Nat := 640
+
+/-- `seal` for fewer than `smallLim` bytes of data (`len`, in `r9`) with the AVX2
+code, `sealStitched` with `vg_chacha20_xor_avx2` and `vg_poly1305_blocks_avx2`,
+which runs no 512-bit instruction, and for more with `big`. On CPUs whose
+clock drops while they run 512-bit instructions (Skylake-SP, Cascade Lake:
+the AVX-512 implementations without IFMA), that slows the whole of `seal`
+for short data more than the 16-block keystream gains. -/
+def sealSmall (big : Prog isa) : Prog isa :=
+  .seq (.block [.alu .cmp .r9 (.imm (BitVec.ofNat 32 (smallLim)))])
+    (.ite .b (sealStitched { ChaCha20.X86_64.Callee.avx2 with pass := 512 } .avx2) big)
+
 /-- The `seal` an instance uses: with the AVX2 implementation of
 `vg_poly1305_blocks` (whose ChaCha20 is the AVX2 kernel), `sealStitched`,
 whose prologue computes the keystream of the first 448 bytes too when the
-rest is whole chunks and 1 to 64 bytes (`pass` 512, `splitM`); otherwise
-`seal`. -/
+rest is whole chunks and 1 to 64 bytes (`pass` 512, `splitM`); with the
+AVX-512 one (without IFMA), `sealSmall` of `seal`; otherwise `seal`. -/
 def sealFor (x : ChaCha20.X86_64.Callee) : Poly1305.X86_64.Blocks → Prog isa
   | .avx2 => sealStitched { x with pass := 512 } .avx2
+  | .avx512 => sealSmall («seal» x .avx512)
   | b => «seal» x b
 
 /-! ## `open`

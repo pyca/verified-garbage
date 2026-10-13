@@ -84,6 +84,18 @@ def splitNote (v : Proof.ChaCha20.X86_64.XorImpl) : String :=
   | _ => "This implementation copies `src` to `dst` and encrypts it there in place, as \
       `vg_chacha20_poly1305_seal` does."
 
+/-- What `vg_chacha20_poly1305_seal` does for short data with the AVX-512
+implementation of `vg_poly1305_blocks` (without IFMA): the AVX2 code, whose
+CPUs (Skylake-SP, Cascade Lake) run slower while they run 512-bit
+instructions (`Stitch.sealSmall`). -/
+def sealNotes (v : Proof.ChaCha20.X86_64.XorImpl) : List String :=
+  match v.poly with
+  | .avx512 => [xorNote v, "For fewer than " ++ toString Impl.ChaCha20Poly1305.X86_64.Stitch.smallLim ++
+      " bytes of data, it runs the code of `vg_chacha20_poly1305_seal_avx2` instead, with no 512-bit \
+      instruction: the CPUs with AVX-512 but not IFMA (Skylake-SP, Cascade Lake) lower their clock while \
+      they run 512-bit instructions, which costs short data more than the wider keystream saves."]
+  | _ => [xorNote v]
+
 /-- The CPU features an instance requires: those of both implementations. -/
 def features (v : Proof.ChaCha20.X86_64.XorImpl) : List String :=
   (v.features ++ v.poly.features).eraseDups
@@ -92,7 +104,7 @@ def artifacts (v : Proof.ChaCha20.X86_64.XorImpl) : List Artifact := [
   { Spec.ChaCha20Poly1305.sealApi with
     name := Spec.ChaCha20Poly1305.sealApi.name ++ v.suffix
     target := X86_64.target
-    doc := Spec.ChaCha20Poly1305.sealApi.doc (notes := [xorNote v])
+    doc := Spec.ChaCha20Poly1305.sealApi.doc (notes := sealNotes v)
     code := Impl.StackScratch.X86_64.withStackArgScratchWipedX 1720 1 42
       (Impl.ChaCha20Poly1305.X86_64.Stitch.sealFor v.callee v.poly)
     contract := Spec.ChaCha20Poly1305.sealContract X86_64.abi 1744

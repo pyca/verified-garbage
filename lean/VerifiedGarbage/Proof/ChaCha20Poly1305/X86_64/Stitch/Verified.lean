@@ -1335,6 +1335,137 @@ theorem sealS_framed (v : Proof.ChaCha20.X86_64.XorImpl) (hv : v.poly = .avx2) :
     (sealS_spSafe v hv) (sealS_xdepth v) (by decide) (pre_local _ _) (sealPost_local _) (sealPost_out _)
     sealFrameSat_pre
 
+/-! ## Short data with the AVX2 code
+
+`sealSmall big` compares `len` (`r9`) with `smallLim` and runs the
+stitched AVX2 `seal` below it, `big` otherwise. The comparison changes only
+the flags, which `seal`'s contract does not read (`FlagsOnly`), and both runs
+of the constant-time proof take the same branch, `len` being public. -/
+
+/-- A state that differs from `s` at most in the flags. -/
+structure FlagsOnly (s t : State) : Prop where
+  gpr : t.gpr = s.gpr
+  mem : t.mem = s.mem
+  rd : t.rd = s.rd
+  wr : t.wr = s.wr
+  mx : t.mxcsr = s.mxcsr
+
+/-- The comparison of `len` with `smallLim`. -/
+abbrev cmpSmall : List Instr := [.alu .cmp .r9 (.imm (BitVec.ofNat 32 (smallLim)))]
+
+/-- What the comparison leaves, from `s`. -/
+def Cmped (s t : State) : Prop :=
+  isa.eval .b t = some (decide ((s.gpr .r9).toNat < smallLim)) ∧ FlagsOnly s t
+
+theorem cmpSmall_ok (s : State) : WP isa (.block cmpSmall) s (Cmped s) := by
+  apply WP.of_runBlock
+  simp only [cmpSmall, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc, Option.bind_some,
+    Option.some.injEq, exists_eq_left']
+  refine ⟨?_, ⟨rfl, rfl, rfl, rfl, rfl⟩⟩
+  show (State.cf _) = _
+  simp only [RegUpd.cf_arithFlags]
+  rfl
+
+namespace FlagsOnly
+
+variable {s t : State} (h : FlagsOnly s t)
+include h
+
+theorem arg (i : Nat) : stackArg t i = stackArg s i := by
+  show t.mem.readW (t.gpr .rsp + _) 64 = s.mem.readW (s.gpr .rsp + _) 64
+  rw [h.mem, h.gpr]
+
+theorem argAddr (i : Nat) : stackArgAddr t i = stackArgAddr s i := by
+  show t.gpr .rsp + _ = s.gpr .rsp + _
+  rw [h.gpr]
+
+theorem pre (hs : sealX86_64.pre s) : sealX86_64.pre t := by
+  show preX86_64 true t
+  have ha := h.arg
+  have hb := h.argAddr
+  simp only [preX86_64, h.gpr, h.rd, h.wr, ha, hb] at hs ⊢
+  exact hs
+
+theorem post {z : State} (hz : sealX86_64.post t z) : sealX86_64.post s z := by
+  have ha := h.arg
+  simp only [sealX86_64, h.gpr, h.mem, ha] at hz ⊢
+  exact hz
+
+theorem abi {z : State} (hz : abiPreserved t z) : abiPreserved s z := by
+  obtain ⟨h₁, h₂, h₃⟩ := hz
+  exact ⟨fun r hr => by rw [h₁ r hr, h.gpr], by rw [← h.mem, ← h.gpr]; exact h₂, by rw [← h.mx]; exact h₃⟩
+
+end FlagsOnly
+
+theorem FlagsOnly.pub {s₁ s₂ t₁ t₂ : State} (h₁ : FlagsOnly s₁ t₁) (h₂ : FlagsOnly s₂ t₂)
+    (hp : sealX86_64.pub s₁ s₂) : sealX86_64.pub t₁ t₂ := by
+  show pubX86_64 t₁ t₂
+  simp only [pubX86_64, h₁.gpr, h₂.gpr, h₁.arg, h₂.arg]
+  exact hp
+
+theorem sealSmall_ok {big : Prog isa}
+    (hb : ∀ s, sealX86_64.pre s → ∃ t s', Exec isa big s t s' ∧ abiPreserved s s' ∧ sealX86_64.post s s')
+    (s : State) (hs : sealX86_64.pre s) :
+    ∃ t s', Exec isa (sealSmall big) s t s' ∧ abiPreserved s s' ∧ sealX86_64.post s s' := by
+  have hw : WP isa (sealSmall big) s fun z => abiPreserved s z ∧ sealX86_64.post s z := by
+    refine WP.seq (WP.mono (cmpSmall_ok s) fun e ⟨he, hf⟩ => ?_)
+    refine WP.ite _ he (fun _ => ?_) (fun _ => ?_)
+    · obtain ⟨t, s', ex, ha, hp⟩ := sealS_ok Proof.ChaCha20.X86_64.XorImpl.avx2 rfl e (hf.pre hs)
+      exact ⟨t, s', ex, hf.abi ha, hf.post hp⟩
+    · obtain ⟨t, s', ex, ha, hp⟩ := hb e (hf.pre hs)
+      exact ⟨t, s', ex, hf.abi ha, hf.post hp⟩
+  obtain ⟨t, s', he, hq⟩ := hw
+  exact ⟨t, s', he, hq⟩
+
+/-- Pairs of states that `seal`'s contract allows, with the same public data. -/
+abbrev PP (s₁ s₂ : State) : Prop := sealX86_64.pre s₁ ∧ sealX86_64.pre s₂ ∧ sealX86_64.pub s₁ s₂
+
+/-- Constant-time code, from states after the comparison in two runs. -/
+theorem rel_cmped {c : Prog isa} (hc : ConstantTime isa sealX86_64.pre sealX86_64.pub c)
+    {R : State → State → Prop}
+    (hR : ∀ a b, R a b → ∃ σ₁ σ₂, PP σ₁ σ₂ ∧ Cmped σ₁ a ∧ Cmped σ₂ b) :
+    RelCT isa R c fun _ _ => True := by
+  intro a b t₁ t₂ a' b' hr e₁ e₂
+  obtain ⟨σ₁, σ₂, ⟨p₁, p₂, hp⟩, ⟨-, f₁⟩, ⟨-, f₂⟩⟩ := hR a b hr
+  exact ⟨hc _ _ _ _ _ _ (f₁.pre p₁) (f₂.pre p₂) (FlagsOnly.pub f₁ f₂ hp) e₁ e₂, trivial⟩
+
+theorem sealSmall_ct {big : Prog isa} (hb : ConstantTime isa sealX86_64.pre sealX86_64.pub big) :
+    ConstantTime isa sealX86_64.pre sealX86_64.pub (sealSmall big) := by
+  refine RelCT.constantTime (Q := fun _ _ => True) ?_
+  have hblk : RelCT isa PP (.block cmpSmall) fun _ _ => True := by
+    obtain ⟨_, hc⟩ : ∃ hc, (taint.check (Taint.ofRegs [.r9]) (.block cmpSmall) hc).isSome = true :=
+      ⟨_, by taint_decide⟩
+    exact RelCT.taint (A := taint) (Taint.ofRegs [.r9]) (fun s₁ s₂ h => Taint.agree_ofRegs (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact h.2.2.2.2.2.2.2.1)) hc
+  refine RelCT.seq (RelCT.wpDep (F := Cmped) hblk fun s₁ s₂ _ => ⟨cmpSmall_ok s₁, cmpSmall_ok s₂⟩) ?_
+  refine RelCT.ite (fun a b ⟨_, σ₁, σ₂, ⟨_, _, hp⟩, ⟨e₁, _⟩, ⟨e₂, _⟩⟩ => ?_) ?_ ?_
+  · rw [e₁, e₂, show σ₁.gpr .r9 = σ₂.gpr .r9 from hp.2.2.2.2.2.1]
+  · exact rel_cmped (sealS_ct Proof.ChaCha20.X86_64.XorImpl.avx2 rfl)
+      fun a b ⟨⟨_, σ₁, σ₂, hp, h₁, h₂⟩, _⟩ => ⟨σ₁, σ₂, hp, h₁, h₂⟩
+  · exact rel_cmped hb fun a b ⟨⟨_, σ₁, σ₂, hp, h₁, h₂⟩, _⟩ => ⟨σ₁, σ₂, hp, h₁, h₂⟩
+
+theorem sealSmall_verified {big : Prog isa}
+    (hb : ∀ s, sealX86_64.pre s → ∃ t s', Exec isa big s t s' ∧ abiPreserved s s' ∧ sealX86_64.post s s')
+    (hc : ConstantTime isa sealX86_64.pre sealX86_64.pub big) :
+    Verified X86_64.target (sealSmall big) (sealScratchContract X86_64.abi 212 24) :=
+  Verified.of_correct (sealSmall_ok hb) (sealSmall_ct hc) (by
+    sig_implies [Proof.ChaCha20Poly1305.sealScratchContract, Proof.ChaCha20Poly1305.sealScratchSig,
+      Spec.ChaCha20Poly1305.sealPost, Proof.ChaCha20Poly1305.sealX86_64,
+      Proof.ChaCha20Poly1305.preX86_64, Proof.ChaCha20Poly1305.pubX86_64, X86_64.abi, X86_64.stackArg,
+      X86_64.stackArgAddr, List.getD, List.range, List.range.loop, VG.X86_64.below, X86_64.argRegs]
+      [sealSat] using sealSat)
+
+theorem sealSmall_spSafe {big : Prog isa} (hb : big.all (fun i => !X86_64.isa.writesSp i) = true) :
+    (sealSmall big).all (fun i => !X86_64.isa.writesSp i) = true := by
+  have h := sealS_spSafe Proof.ChaCha20.X86_64.XorImpl.avx2 rfl
+  simp only [sealSmall, Code.all, hb, Bool.and_true]
+  exact Bool.and_eq_true_iff.mpr ⟨by decide, h⟩
+
+theorem sealSmall_xdepth {big : Prog isa} (hb : big.x86_64Depth ≤ 24) : (sealSmall big).x86_64Depth ≤ 24 := by
+  have h := sealS_xdepth Proof.ChaCha20.X86_64.XorImpl.avx2
+  simp only [sealSmall, Code.x86_64Depth, Nat.max_le]
+  exact ⟨by decide, h, hb⟩
+
 /-! ## The `seal` of an instance -/
 
 theorem sealFor_spSafe (v : Proof.ChaCha20.X86_64.XorImpl) :
@@ -1342,6 +1473,7 @@ theorem sealFor_spSafe (v : Proof.ChaCha20.X86_64.XorImpl) :
   have h₁ := seal_spSafe v
   cases hb : v.poly with
   | avx2 => have h₂ := sealS_spSafe v hb; rw [hb] at h₂; exact h₂
+  | avx512 => rw [hb] at h₁; exact sealSmall_spSafe h₁
   | _ => rw [hb] at h₁; exact h₁
 
 theorem sealFor_xdepth (v : Proof.ChaCha20.X86_64.XorImpl) : (sealFor v.callee v.poly).x86_64Depth ≤ 24 := by
@@ -1349,6 +1481,7 @@ theorem sealFor_xdepth (v : Proof.ChaCha20.X86_64.XorImpl) : (sealFor v.callee v
   have h₂ := sealS_xdepth v
   cases hb : v.poly with
   | avx2 => rw [hb] at h₂; exact h₂
+  | avx512 => rw [hb] at h₁; exact sealSmall_xdepth h₁
   | _ => rw [hb] at h₁; exact h₁
 
 theorem sealFor_framed (v : Proof.ChaCha20.X86_64.XorImpl) :
@@ -1358,6 +1491,17 @@ theorem sealFor_framed (v : Proof.ChaCha20.X86_64.XorImpl) :
   have h₁ := seal_framed v
   cases hb : v.poly with
   | avx2 => have h₂ := sealS_framed v hb; rw [hb] at h₂; exact h₂
+  | avx512 =>
+    have ho := seal_ok v
+    have hc := seal_ct v
+    have hs := seal_spSafe v
+    have hd := seal_xdepth v
+    rw [hb] at ho hc hs hd
+    exact X86_64.Verified.stackArgScratchWipedX (sig := Spec.ChaCha20Poly1305.sealSig) (nm := "work") (e := .u64)
+      (n := 212) (post := Spec.ChaCha20Poly1305.sealPost X86_64.abi.ptrBits) (wa := true) (stack := 24)
+      (bytes := 1720) (k := 42) (sealSmall_verified ho hc) (by decide) (by decide) (by decide)
+      (sealSmall_spSafe hs) (sealSmall_xdepth hd) (by decide) (pre_local _ _) (sealPost_local _) (sealPost_out _)
+      sealFrameSat_pre
   | _ => rw [hb] at h₁; exact h₁
 
 end VG.Proof.ChaCha20Poly1305.X86_64.Stitch
