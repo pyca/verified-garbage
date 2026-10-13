@@ -237,10 +237,10 @@ end
 
 /-! ## `sealSplitBody` -/
 
-theorem sealSplitBody_exec {b : Impl.Poly1305.X86_64.Blocks} {s s' : State} {t : List Leak}
-    (h : Exec isa (sealSplitBody b) s t s') :
+theorem sealSplitBody_exec {x : Impl.ChaCha20.X86_64.Callee} {b : Impl.Poly1305.X86_64.Blocks}
+    {s s' : State} {t : List Leak} (h : Exec isa (sealSplitBody x b) s t s') :
     Exec isa (.seq (.block entry) (.seq (prologueA 960 1024 6)
-      (.seq (.call Impl.ChaCha20.X86_64.Callee.avx512.name Impl.ChaCha20.X86_64.Callee.avx512.code)
+      (.seq (.call x.name x.code)
       (.seq (sealMid 960 b) (.seq (.ite .b (cryptSmall 6) cryptBigSplit) (sealPost 960 1024 6 b)))))) s t s' := by
   cases h with | seq e₀ h => cases h with | seq hP h => cases hP with | seq ePA hP => cases hP with
   | seq eC ePB => cases h with | seq eMA h => cases h with | seq eLEN h => cases h with | seq hC h =>
@@ -254,13 +254,15 @@ theorem sealSplitBody_exec {b : Impl.Poly1305.X86_64.Blocks} {s s' : State} {t :
   exact this
 
 theorem sealSplitBody_rel {s₀ s₀' : State} (hT : SPre s₀) (hT' : SPre s₀') (hq : PubS s₀ s₀')
-    (b : Impl.Poly1305.X86_64.Blocks) (hb : b = .avx512 ∨ b = .ifma) :
-    RelCT isa (fun s₁ s₂ => s₁ = s₀ ∧ s₂ = s₀') (sealSplitBody b) fun _ _ => True := by
+    (v : Proof.ChaCha20.X86_64.XorImpl) (b : Impl.Poly1305.X86_64.Blocks) (hvb : v.poly = b)
+    (hb : b = .avx512 ∨ b = .ifma) :
+    RelCT isa (fun s₁ s₂ => s₁ = s₀ ∧ s₂ = s₀') (sealSplitBody v.callee b) fun _ _ => True := by
+  have c1 := call1_rel hT.hp hT'.hp hq.1 v (pass := 1024)
+  rw [big_fold (hvb ▸ hb)] at c1
   have hp := hT.hp
   have hp' := hT'.hp
   have hq₀ := hq.1
   obtain ⟨eL, -, -, -⟩ := hq.eqs
-  let v := Proof.ChaCha20.X86_64.XorImpl.avx512
   have hfp : FoldPoly 960 1024 6 b := .inr (.inr ⟨rfl, rfl, rfl, hb⟩)
   obtain ⟨_, hA⟩ := prologueA_taint true hfp
   have pA := ((RelCT.taint (A := taintS) (P := fun s₁ s₂ => s₁ = entryS s₀ ∧ s₂ = entryS s₀') (τ₀ true)
@@ -290,7 +292,7 @@ theorem sealSplitBody_rel {s₀ s₀' : State} (hT : SPre s₀) (hT' : SPre s₀
   obtain ⟨_, hpost⟩ := sealPost_taint hfp
   have post := RelCT.taint (A := taintS) (P := fun s₁ s₂ => After s₀ s₁ ∧ After s₀' s₂) (τ₁ true)
     (fun _ _ h => agree₁ hp hp' hq₀ h.1 h.2) hpost
-  have all := (entry_rel hp hp' hq₀).seq (pA.seq ((call1_rel hp hp' hq₀ v).seq (mid.seq (ite.seq post))))
+  have all := (entry_rel hp hp' hq₀).seq (pA.seq (c1.seq (mid.seq (ite.seq post))))
   exact RelCT.of_exec sealSplitBody_exec all
 
 end VG.Proof.ChaCha20Poly1305.X86_64.Split

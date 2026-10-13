@@ -126,17 +126,17 @@ theorem sealSplitFor_spSafe (v : Proof.ChaCha20.X86_64.XorImpl) :
     (sealSplitFor v.callee v.poly).all (fun i => !X86_64.isa.writesSp i) = true := by
   have h₁ := Proof.ChaCha20Poly1305.X86_64.Stitch.sealFor_spSafe v
   cases hb : v.poly with
-  | avx512 => exact (Bool.and_eq_true _ _).mpr ⟨head_spSafe _ _, framed_spSafe (sealSplitBody_spSafe _ (.inl rfl))⟩
-  | ifma => exact (Bool.and_eq_true _ _).mpr ⟨head_spSafe _ _, framed_spSafe (sealSplitBody_spSafe _ (.inr rfl))⟩
+  | avx512 => exact (Bool.and_eq_true _ _).mpr ⟨head_spSafe _ _, framed_spSafe (sealSplitBody_spSafe v _ (.inl rfl))⟩
+  | ifma => exact (Bool.and_eq_true _ _).mpr ⟨head_spSafe _ _, framed_spSafe (sealSplitBody_spSafe v _ (.inr rfl))⟩
   | scalar => rw [hb] at h₁; exact (Bool.and_eq_true _ _).mpr ⟨head_spSafe _ _, framed_spSafe h₁⟩
   | avx2 => rw [hb] at h₁; exact (Bool.and_eq_true _ _).mpr ⟨head_spSafe _ _, framed_spSafe h₁⟩
 
 theorem sealSplitFor_xdepth (v : Proof.ChaCha20.X86_64.XorImpl) : (sealSplitFor v.callee v.poly).x86_64Depth ≤ 64 := by
   have h₁ := Proof.ChaCha20Poly1305.X86_64.Stitch.sealFor_xdepth v
   cases hb : v.poly with
-  | avx512 => have := sealSplitBody_xdepth .avx512
+  | avx512 => have := sealSplitBody_xdepth v .avx512
               simp only [sealSplitFor, Code.x86_64Depth, head_xdepth, framed_xdepth, Nat.max_le]; omega
-  | ifma => have := sealSplitBody_xdepth .ifma
+  | ifma => have := sealSplitBody_xdepth v .ifma
             simp only [sealSplitFor, Code.x86_64Depth, head_xdepth, framed_xdepth, Nat.max_le]; omega
   | scalar => rw [hb] at h₁; simp only [sealSplitFor, Code.x86_64Depth, head_xdepth, framed_xdepth, Nat.max_le]; omega
   | avx2 => rw [hb] at h₁; simp only [sealSplitFor, Code.x86_64Depth, head_xdepth, framed_xdepth, Nat.max_le]; omega

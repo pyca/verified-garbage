@@ -38,18 +38,22 @@ open VG.Impl.ChaCha20.X86_64 (at_)
 open VG.Spec.Poly1305 (bytesAt)
 open VG.WriteBytes
 
-theorem sealSplitBody_spSafe (b : Impl.Poly1305.X86_64.Blocks) (hb : b = .avx512 ∨ b = .ifma) :
-    (sealSplitBody b).all (fun i => !isa.writesSp i) = true := by
+theorem sealSplitBody_spSafe (v : Proof.ChaCha20.X86_64.XorImpl) (b : Impl.Poly1305.X86_64.Blocks)
+    (hb : b = .avx512 ∨ b = .ifma) :
+    (sealSplitBody v.callee b).all (fun i => !isa.writesSp i) = true := by
+  have hx := v.spSafe
+  simp only [sealSplitBody, prologue, bigCallee, Code.all, hx, Bool.and_true]
   rcases hb with rfl | rfl <;> lit_decide
 
 theorem xorSplit_xdepth : Impl.ChaCha20.X86_64.Avx512.xorSplit.x86_64Depth ≤ 24 := by
   rw [x86_64Depth_noSp xorSplit_nosp]; have := xorSplit_depth; omega
 
-theorem sealSplitBody_xdepth (b : Impl.Poly1305.X86_64.Blocks) : (sealSplitBody b).x86_64Depth ≤ 24 := by
-  have hx : Impl.ChaCha20.X86_64.Callee.avx512.code.x86_64Depth ≤ 16 := Proof.ChaCha20.X86_64.XorImpl.avx512.xdepth
+theorem sealSplitBody_xdepth (v : Proof.ChaCha20.X86_64.XorImpl) (b : Impl.Poly1305.X86_64.Blocks) :
+    (sealSplitBody v.callee b).x86_64Depth ≤ 24 := by
+  have hx : v.callee.code.x86_64Depth ≤ 16 := v.xdepth
   have hb := blocks_xdepth b
   have hs := xorSplit_xdepth
-  simp only [sealSplitBody, prologue, prologueA, prologueB, foldM, zeroKs, macPad, macPadLengths, wholeBlocks,
+  simp only [sealSplitBody, bigCallee, prologue, prologueA, prologueB, foldM, zeroKs, macPad, macPadLengths, wholeBlocks,
     padTail, cryptSplit, cryptBigSplit, cryptPre, absorbLengths, finalizeTag, finalizeWith, Code.x86_64Depth,
     xorBuf_xdepth, splitM_xdepth, init_xdepth, finalize_xdepth, Nat.max_le] at hx ⊢
   omega
@@ -477,10 +481,12 @@ def splitK : Contract isa where
     (bytesAt s'.mem (dp s₀) (L s₀), bytesAt s'.mem (tp s₀) 16)
   pub _ _ := True
 
-theorem split_hv (b : Impl.Poly1305.X86_64.Blocks) (hb : b = .avx512 ∨ b = .ifma) :
-    ∀ s, splitK.pre s → ∃ t s', Exec isa (sealSplitBody b) s t s' ∧ abiPreserved s s' ∧ splitK.post s s' :=
+theorem split_hv (v : Proof.ChaCha20.X86_64.XorImpl) (b : Impl.Poly1305.X86_64.Blocks) (hvb : v.poly = b)
+    (hb : b = .avx512 ∨ b = .ifma) :
+    ∀ s, splitK.pre s → ∃ t s', Exec isa (sealSplitBody v.callee b) s t s' ∧ abiPreserved s s' ∧
+      splitK.post s s' :=
   fun _ h => by
-    obtain ⟨t, s', he, ha, hp⟩ := sealSplitBody_correct b hb h
+    obtain ⟨t, s', he, ha, hp⟩ := sealSplitBody_correct v b hvb hb h
     exact ⟨t, s', he, ha, hp⟩
 
 theorem sealFor_hv (v : Proof.ChaCha20.X86_64.XorImpl) :
@@ -489,7 +495,9 @@ theorem sealFor_hv (v : Proof.ChaCha20.X86_64.XorImpl) :
   cases hb : v.poly with
   | avx2 => have h₂ := Proof.ChaCha20Poly1305.X86_64.Stitch.sealS_ok v hb; rw [hb] at h₂; exact h₂
   | avx512 =>
-    have h₁ := seal_ok v; rw [hb] at h₁; exact Proof.ChaCha20Poly1305.X86_64.Stitch.sealSmall_ok h₁
+    have h₁ := seal_ok v; rw [hb] at h₁
+    have := Proof.ChaCha20Poly1305.X86_64.Stitch.sealSmall_ok v.small v.small_poly h₁
+    rwa [Proof.ChaCha20.X86_64.XorImpl.small_callee] at this
   | _ => have h₁ := seal_ok v; rw [hb] at h₁; exact h₁
 
 namespace Body
@@ -537,11 +545,13 @@ end Body
 
 /-- The AVX-512 instances: the copy of the bytes the prologue's keystream
 covers, then `seal`'s body with the rest read from `src`. -/
-theorem split_wp (b : Impl.Poly1305.X86_64.Blocks) (hb : b = .avx512 ∨ b = .ifma) {s : State} (hs : FPre s) :
-    WP isa (.seq (head false .z64) (framed (sealSplitBody b))) s fun z => abiPreserved s z ∧ splitPost s z := by
+theorem split_wp (v : Proof.ChaCha20.X86_64.XorImpl) (b : Impl.Poly1305.X86_64.Blocks) (hvb : v.poly = b)
+    (hb : b = .avx512 ∨ b = .ifma) {s : State} (hs : FPre s) :
+    WP isa (.seq (head false .z64) (framed (sealSplitBody v.callee b))) s fun z =>
+      abiPreserved s z ∧ splitPost s z := by
   refine WP.seq (WP.mono (head_ok false .z64 hs) fun h hh => ?_)
-  refine WP.mono (framed_ok (k := splitK) (split_hv b hb) (SpSafe.of_all (sealSplitBody_spSafe b hb))
-    (sealSplitBody_xdepth b) (fun u => [arg2R u, spR u]) hs hh (fun u hu => hu.spre hs) (fun u hu => hu.more_cov hs))
+  refine WP.mono (framed_ok (k := splitK) (split_hv v b hvb hb) (SpSafe.of_all (sealSplitBody_spSafe v b hb))
+    (sealSplitBody_xdepth v b) (fun u => [arg2R u, spR u]) hs hh (fun u hu => hu.spre hs) (fun u hu => hu.more_cov hs))
     fun z ⟨u, s₂, hu, post, hm, hf, hcs, _, _, hmx⟩ => ⟨hu.abi hs hm hf hcs hmx, ?_⟩
   have post' : Spec.ChaCha20Poly1305.encrypt (bytesAt u.mem (u.gpr .rdi) 32) (bytesAt u.mem (u.gpr .rsi) 12)
       (bytesAt u.mem (u.gpr .rdx) (u.gpr .rcx).toNat)
@@ -598,8 +608,8 @@ theorem sealSplit_wp (v : Proof.ChaCha20.X86_64.XorImpl) {s : State} (hs : FPre 
   have hsp := SpSafe.of_all (Stitch.sealFor_spSafe v)
   have hd := Stitch.sealFor_xdepth v
   cases hp : v.poly with
-  | avx512 => exact split_wp .avx512 (.inl rfl) hs
-  | ifma => exact split_wp .ifma (.inr rfl) hs
+  | avx512 => exact split_wp v .avx512 hp (.inl rfl) hs
+  | ifma => exact split_wp v .ifma hp (.inr rfl) hs
   | scalar => rw [hp] at hv hsp hd; exact whole_wp hv hsp hd _ hs
   | avx2 => rw [hp] at hv hsp hd; exact whole_wp hv hsp hd _ hs
 

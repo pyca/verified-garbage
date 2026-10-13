@@ -44,16 +44,19 @@ def splitPub (s₁ s₂ : State) : Prop :=
     s₁.gpr .rsp = s₂.gpr .rsp ∧ stackArg s₁ 0 = stackArg s₂ 0 ∧ stackArg s₁ 1 = stackArg s₂ 1 ∧
     stackArg s₁ 2 = stackArg s₂ 2 ∧ stackArg s₁ 3 = stackArg s₂ 3
 
-theorem sealSplitBody_ct (b : Impl.Poly1305.X86_64.Blocks) (hb : b = .avx512 ∨ b = .ifma) :
-    ConstantTime isa SPre PubS (sealSplitBody b) :=
-  fun _ _ _ _ _ _ h₁ h₂ hq e₁ e₂ => (sealSplitBody_rel h₁ h₂ hq b hb _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂).1
+theorem sealSplitBody_ct (v : Proof.ChaCha20.X86_64.XorImpl) (b : Impl.Poly1305.X86_64.Blocks)
+    (hvb : v.poly = b) (hb : b = .avx512 ∨ b = .ifma) :
+    ConstantTime isa SPre PubS (sealSplitBody v.callee b) :=
+  fun _ _ _ _ _ _ h₁ h₂ hq e₁ e₂ => (sealSplitBody_rel h₁ h₂ hq v b hvb hb _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂).1
 
 theorem sealFor_ct (v : Proof.ChaCha20.X86_64.XorImpl) :
     ConstantTime isa sealX86_64.pre sealX86_64.pub (Stitch.sealFor v.callee v.poly) := by
   cases hb : v.poly with
   | avx2 => have h₂ := Proof.ChaCha20Poly1305.X86_64.Stitch.sealS_ct v hb; rw [hb] at h₂; exact h₂
   | avx512 =>
-    have h₁ := seal_ct v; rw [hb] at h₁; exact Proof.ChaCha20Poly1305.X86_64.Stitch.sealSmall_ct h₁
+    have h₁ := seal_ct v; rw [hb] at h₁
+    have := Proof.ChaCha20Poly1305.X86_64.Stitch.sealSmall_ct v.small v.small_poly h₁
+    rwa [Proof.ChaCha20.X86_64.XorImpl.small_callee] at this
   | _ => have h₁ := seal_ct v; rw [hb] at h₁; exact h₁
 
 section
@@ -135,11 +138,11 @@ implementation `v` of `vg_chacha20_xor`. -/
 theorem sealSplit_ct (v : Proof.ChaCha20.X86_64.XorImpl) :
     ConstantTime isa FPre splitPub (sealSplitFor v.callee v.poly) := by
   refine ct_of fun σ₁ σ₂ p₁ p₂ hq => ?_
-  have split : ∀ b, (hb : b = .avx512 ∨ b = .ifma) →
-      RelCT isa (Eq2 σ₁ σ₂) (.seq (head false .z64) (framed (sealSplitBody b))) TT := fun b hb =>
+  have split : ∀ b, v.poly = b → (hb : b = .avx512 ∨ b = .ifma) →
+      RelCT isa (Eq2 σ₁ σ₂) (.seq (head false .z64) (framed (sealSplitBody v.callee b))) TT := fun b hvb hb =>
     rel_seq (head_rel p₁ p₂ hq false .z64) (head_ok false .z64 p₁) (head_ok false .z64 p₂)
       fun h₁ h₂ hh₁ hh₂ => framed_rel p₁ p₂ hq (Pre := SPre) (Pub := PubS)
-        (fun s hs => let ⟨t, s', e, _, p⟩ := split_hv b hb s hs; ⟨t, s', e, p⟩) (sealSplitBody_ct b hb)
+        (fun s hs => let ⟨t, s', e, _, p⟩ := split_hv v b hvb hb s hs; ⟨t, s', e, p⟩) (sealSplitBody_ct v b hvb hb)
         (fun u => [arg2R u, spR u]) (fun _ _ hs hu => hu.spre hs) (fun _ _ hs hu => hu.more_cov hs)
         (fun hu₁ hu₂ => by have := body_pub hq hu₁ hu₂; exact this) hh₁ hh₂
   have whole : ∀ (x : Impl.ChaCha20.X86_64.Callee) (b : Impl.Poly1305.X86_64.Blocks),
@@ -156,8 +159,8 @@ theorem sealSplit_ct (v : Proof.ChaCha20.X86_64.XorImpl) :
   have hv := sealFor_hv v
   have hct := sealFor_ct v
   cases hp : v.poly with
-  | avx512 => exact split .avx512 (.inl rfl)
-  | ifma => exact split .ifma (.inr rfl)
+  | avx512 => exact split .avx512 hp (.inl rfl)
+  | ifma => exact split .ifma hp (.inr rfl)
   | scalar => rw [hp] at hv hct; exact whole _ _ hv hct
   | avx2 => rw [hp] at hv hct; exact whole _ _ hv hct
 

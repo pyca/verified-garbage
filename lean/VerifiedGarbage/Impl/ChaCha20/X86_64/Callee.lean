@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.ChaCha20.X86_64.Avx2
 public import VerifiedGarbage.Impl.ChaCha20.X86_64.Avx512
+public import VerifiedGarbage.Impl.ChaCha20.X86_64.Avx512VL
 
 /-!
 # The implementations of `vg_chacha20_xor` on x86-64
@@ -36,14 +37,27 @@ structure Callee where
   fold : Nat
   pass : Nat
   wide : Nat
+  /-- Whether its code keeps short data in `ymm` registers
+  (`vg_chacha20_xor_avx512vl`), for ChaCha20-Poly1305's AVX2 code to call
+  for short data in its place (`Callee.small`). -/
+  vl : Bool := false
 
 /-- The baseline computes one block at a time: nothing to gain. -/
-def Callee.scalar : Callee := ⟨"vg_chacha20_xor", Xor.xor, 0, 0, 4⟩
+def Callee.scalar : Callee := ⟨"vg_chacha20_xor", Xor.xor, 0, 0, 4, false⟩
 /-- Up to 512 bytes in one call: up to 384 in one computation of at most six
 blocks (`Avx2Tail.last3`), 512 in one of eight (the loop). -/
-def Callee.avx2 : Callee := ⟨"vg_chacha20_xor_avx2", Avx2.xor, 448, 0, 5⟩
+def Callee.avx2 : Callee := ⟨"vg_chacha20_xor_avx2", Avx2.xor, 448, 0, 5, false⟩
 /-- Up to 1024 bytes in one computation of sixteen blocks (the loop, or
 `Avx512.last16`), as are the rest of the data's after the first call. -/
-def Callee.avx512 : Callee := ⟨"vg_chacha20_xor_avx512", Avx512.xor, 960, 1024, 6⟩
+def Callee.avx512 : Callee := ⟨"vg_chacha20_xor_avx512", Avx512.xor, 960, 1024, 6, false⟩
+/-- As `avx512`, with fewer than 513 bytes in `ymm` registers (`Avx512VL.xorBy`). -/
+def Callee.avx512vl : Callee := ⟨"vg_chacha20_xor_avx512vl", Avx512VL.xorBy, 960, 1024, 6, true⟩
+
+/-- The implementation ChaCha20-Poly1305's AVX-512 instances without IFMA call
+from their AVX2 code for short data, as the AVX2 instances call theirs
+(`fold` 448, `wide` 5): `x` itself if it keeps short data in `ymm`
+registers, otherwise `vg_chacha20_xor_avx2`. -/
+def Callee.small (x : Callee) : Callee :=
+  if x.vl then { x with fold := 448, pass := 0, wide := 5 } else Callee.avx2
 
 end VG.Impl.ChaCha20.X86_64

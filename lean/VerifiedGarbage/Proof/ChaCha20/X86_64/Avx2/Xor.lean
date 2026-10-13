@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.Finish
+public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.RoundsVL
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Xor
 public import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Framework.Omega
@@ -211,15 +211,16 @@ theorem plus_block (S : CState) (j : Nat) :
 
 /-! ## A chunk -/
 
-theorem body_eq : body = .seq (.block setup) (.seq (rounds 10) (.block (finish ++ next))) := rfl
+theorem body_eq (vl : Bool) :
+    body vl = .seq (.block setup) (.seq (roundsFor vl) (.block (finish ++ next))) := rfl
 
 theorem calleeSaved_ne {r : Reg} (hr : r ∈ calleeSaved) : r ≠ .rax ∧ r ≠ .rsi ∧ r ≠ .rdx := by
   simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
 
-theorem body_ok {s₀ : State} (hp : APre s₀) {t : Nat} (hge : 512 ≤ eL s₀ - 512 * t) {s : State}
+theorem body_ok (vl : Bool) {s₀ : State} (hp : APre s₀) {t : Nat} (hge : 512 ≤ eL s₀ - 512 * t) {s : State}
     (h : LInv s₀ t s) :
-    WP isa body s fun s' =>
+    WP isa (body vl) s fun s' =>
       LInv s₀ (t + 1) s' ∧ s'.cf = some (decide (eL s₀ - 512 * (t + 1) < 512)) := by
   have hL := eL_lt s₀
   have hw : 512 * t + 512 ≤ eL s₀ := by omega
@@ -232,13 +233,14 @@ theorem body_ok {s₀ : State} (hp : APre s₀) {t : Nat} (hge : 512 ≤ eL s₀
   have dss : (stR (est s₀)).Disjoint (slotsR (ebp s₀)) := hp.st_b.sub_right (slotsR_sub _)
   have hsl : ∀ r ∈ [slotsR (ebp s₀)], (hiR (ebp s₀)).Disjoint r := by
     intro r hr; simp only [List.mem_singleton] at hr; subst hr; exact hiR_slots _
-  rw [body_eq]
+  rw [body_eq vl]
   refine WP.seq (WP.mono (setup_ok h.rdi h.rcx hst hb h.consts)
     fun s₁ ⟨hh, h15, g₁, rd₁, wr₁, y₁, y₂, m₁⟩ => ?_)
   have c₁ : Consts s₁.mem (ebp s₀) := by rw [m₁]; exact h.consts.w2 (by decide) y₁ y₂
   have F₁ : Frame [slotsR (ebp s₀)] s.mem s₁.mem := by
     rw [m₁]; exact W2_frame _ (by decide) y₁ y₂ (Frame.refl _ _)
-  refine WP.seq (WP.mono (rounds_ok hh h15 (by rw [g₁]; exact h.rcx) (by rw [wr₁]; exact hb) c₁.m8 10)
+  refine WP.seq (WP.mono (roundsFor_ok vl hh h15 (by rw [g₁]; exact h.rcx) (by rw [wr₁]; exact hb) c₁.m8
+    ⟨c₁.lo16, c₁.hi16⟩)
     fun s₂ hr => ?_)
   have F₂ := F₁.trans hr.frame
   have g₂ : s₂.gpr = s.gpr := hr.gpr.trans g₁

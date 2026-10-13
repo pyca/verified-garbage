@@ -878,7 +878,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ AVX-512F, AVX2</td>
+<td>✅ AVX-512F, AVX-512VL, AVX2</td>
 
 <td>✅ SVE2; NEON</td>
 
@@ -1236,7 +1236,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ AVX-512F, AVX-512 IFMA, AVX2</td>
+<td>✅ AVX-512F, AVX-512 IFMA, AVX-512VL, AVX2</td>
 
 <td>✅ SVE2; NEON</td>
 
