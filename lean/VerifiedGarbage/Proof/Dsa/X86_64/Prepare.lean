@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Setup
+public import VerifiedGarbage.Proof.Dsa.X86_64.SetupChoice
 public import VerifiedGarbage.Proof.Dsa.X86_64.Frame
 public import VerifiedGarbage.Proof.Dsa.X86_64.Load
 import all Init.Data.Array.Basic
@@ -40,17 +40,17 @@ theorem constantRanges_modulus (w : Nat) : ∀ r ∈ constantRanges w,
 
 /-- Constants setup preserves the linked parent, both input buffers and
 all modulus facts, including moduli with zero high limbs. -/
-theorem prepare_ok {s : State} {B : Addr} {Z o w wx m : Nat} {minv : BitVec 64}
+theorem prepare_ok (M : Mont) {s : State} {B : Addr} {Z o w wx m : Nat} {minv : BitVec 64}
     (hc : SubCtx s B Z o w wx minv) (hw2 : 2 ≤ wx) (hw48 : wx ≤ 48)
-    (hm : 1 < m)
+    (hm : 1 < m) (hodd : m % 2 = 1)
     (hn : wv s.mem (off B o) (slot wx aN) wx = m)
     (hinv : ((word s.mem (off B o) (slot wx aN)).toNat * minv.toNat + 1) % 2 ^ 64 = 0) :
-    WP isa Arithmetic.constants s fun t =>
+    WP isa (Arithmetic.constants M.mm) s fun t =>
       SubCtx t B Z o w wx minv ∧ ModCtx t (off B o) (slot wx 8) wx minv m ∧
       wv t.mem (off B o) (slot wx aOne) wx = 1 ∧
       wv t.mem (off B o) (slot wx aR2) wx = 2 ^ (128 * wx) % m ∧
       Frm (off B o) (workRanges wx) s.mem t.mem ∧ Keep mmRegs s t := by
-  refine WP.mono (constants_ok hc.good (Nat.le_refl _) hw2 hw48 hn hm)
+  refine WP.mono (constants_ok M hc.good (Nat.le_refl _) hw2 hw48 hn hm hodd hinv)
     fun t ⟨ht, h1, h2, hf, hk⟩ => ?_
   have hct := hc.of_frmT hf (constantRanges_work wx) hk.2.2 (hk.gpr (by decide))
   have hsep := constantRanges_modulus wx

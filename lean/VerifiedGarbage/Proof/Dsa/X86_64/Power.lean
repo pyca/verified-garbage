@@ -118,7 +118,7 @@ theorem power_ok (M : Mont) {s : State} {B : Addr} {Z o w wx m : Nat}
       ModCtx t (off B o) (slot wx 8) wx minv m ∧
       Frm (off B o) (workRanges wx) s.mem t.mem ∧ Keep mmRegs s t := by
   unfold Arithmetic.power
-  refine WP.seq (WP.mono (prepare_ok hc hw2 hw48 hm hn hinv)
+  refine WP.seq (WP.mono (prepare_ok M hc hw2 hw48 hm hodd hn hinv)
     fun u ⟨hcu, hmu, huone, hur2, hfu, hku⟩ => ?_)
   refine WP.seq (WP.mono (load_ok hcu hw2 hwx hw30 (by decide) hbp hbl
     ((work_parent hc hfu hbp).trans hb) ((work_parent hc hfu hbl).trans hblen)

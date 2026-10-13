@@ -59,8 +59,8 @@ theorem productCall_ct (M : Mont) :
   unfold Arithmetic.product seqs
   refine RelCT.seq (two_post (Ψ := fun p : ProductCallPublic => PowerCallPrepared p.toPowerCallPublic)
     (two_map (fun p : ProductCallPublic => p.toPowerPublic.product)
-      (fun p _ h => ⟨h.2.1, p.width48, p.greater⟩) constants_ct)
-    (fun _ _ h => powerCall_prepare h)) ?_
+      (fun p _ h => ⟨h.2.1, p.width48, p.greater, p.odd⟩) (constants_ct M))
+    (fun _ _ h => powerCall_prepare M h)) ?_
   refine RelCT.seq (two_post (Ψ := fun p : ProductCallPublic => PowerCallPrepared p.toPowerCallPublic)
     (two_map (fun p : ProductCallPublic => (⟨p.x, p.base, p.baseLen⟩ : BPub)) ?_
       (loadArr_ct (j := aX) (sp := arg) (sl := argLen) (by decide) (by taint_decide) (by taint_decide))) ?_) ?_
