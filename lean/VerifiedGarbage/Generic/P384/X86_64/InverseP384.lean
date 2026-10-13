@@ -11,6 +11,10 @@ import VerifiedGarbage.Proof.Mont.X86_64.Wide
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TComb
+import VerifiedGarbage.Impl.Weierstrass.X86_64.DoubleCms
+import VerifiedGarbage.Proof.Framework.X86_64.KeepReg
+import VerifiedGarbage.Proof.Framework.X86_64.TaintSym
+import VerifiedGarbage.Spec.EcKey.Generic
 
 /-!
 # P-384's inversions modulo `p` and `n` on x86-64

@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedHVerified
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedZVerified
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedLowCorrect
 import VerifiedGarbage.Proof.MlKem.Encode
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversal
 
 @[expose] public section
 

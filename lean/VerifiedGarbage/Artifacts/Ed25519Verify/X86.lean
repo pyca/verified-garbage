@@ -4,6 +4,9 @@ public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Ed25519.X86.VerifyVerified
 import VerifiedGarbage.Proof.Framework.TaintSum
 import VerifiedGarbage.Proof.Framework.X86.CallWith
+import VerifiedGarbage.Impl.Mont.Mod
+import VerifiedGarbage.Proof.Framework.X86.TaintMono
+import VerifiedGarbage.Spec.Rc2
 
 /-! The complete strict verification equation on baseline i686. -/
 

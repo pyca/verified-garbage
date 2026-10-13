@@ -10,6 +10,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.AesGcm.Arm.Words
+public import VerifiedGarbage.Proof.Cmac.Dbl32
 
 /-!
 # AES-GCM-SIV on ARMv7: the contracts, and where everything is

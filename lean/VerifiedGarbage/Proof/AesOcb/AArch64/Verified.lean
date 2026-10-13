@@ -10,6 +10,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.AesOcb.AArch64.Init
+import VerifiedGarbage.Proof.AesOcb.AArch64.Open
 
 /-!
 # AES-OCB on AArch64: `Verified`

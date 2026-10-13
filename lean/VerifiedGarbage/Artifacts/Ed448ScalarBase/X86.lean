@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Ed448.X86.BaseVerified
 public import VerifiedGarbage.Proof.Ed448.Facts
+public import VerifiedGarbage.Proof.Ed448.X86.BaseLit
 
 /-!
 # Ed448 base-point multiplication on x86 (32-bit)

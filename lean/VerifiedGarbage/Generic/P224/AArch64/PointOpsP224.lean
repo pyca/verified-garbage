@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Ecdsa.AArch64.P224.PointOpsVerified
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
 
 /-!
 # P-224's complete projective addition on AArch64

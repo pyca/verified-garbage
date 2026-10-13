@@ -10,6 +10,8 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.AesGcm.Arm.StreamFinish
 meta import VerifiedGarbage.Proof.AesGcm.Arm.StreamFinish
+import VerifiedGarbage.Proof.AesGcm.Arm.CTFn
+meta import VerifiedGarbage.Proof.AesGcm.Arm.CTFn
 
 /-!
 # AES-GCM on ARMv7: `finTag`, `vg_aes_gcm_stream_finish` and `vg_aes_gcm_stream_verify` are constant time

@@ -10,6 +10,8 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.AesGcm.X86.Cmp
 meta import VerifiedGarbage.Proof.AesGcm.X86.Cmp
+import VerifiedGarbage.Proof.AesCcm.BytesAt
+meta import VerifiedGarbage.Proof.AesCcm.BytesAt
 
 /-!
 # AES-CCM on x86: `vg_aes_ccm_open` is constant time

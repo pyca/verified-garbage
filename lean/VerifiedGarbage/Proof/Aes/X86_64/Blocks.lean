@@ -16,6 +16,8 @@ meta import Mathlib.Data.List.Induction
 meta import Mathlib.Tactic.SplitIfs
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Aes.X86_64.Ctr32
+meta import VerifiedGarbage.Proof.Aes.X86_64.Ctr32
 
 /-!
 # AES on whole blocks on x86-64: the whole functions

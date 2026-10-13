@@ -4,6 +4,8 @@ public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Inst
 import VerifiedGarbage.Proof.MlDsa.X86.Pack.Run
 import VerifiedGarbage.Proof.MlKem.Encode
+import VerifiedGarbage.Proof.MlDsa.X86.Arith.NttLoop
+import VerifiedGarbage.Proof.MlDsa.X86.Sample.Setup
 
 /-!
 # ML-DSA (FIPS 204) key generation on x86 (32-bit)

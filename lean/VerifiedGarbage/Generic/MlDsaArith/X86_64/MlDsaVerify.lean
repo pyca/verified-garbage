@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Prims
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Instrs
 import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
 
 /-!
 # ML-DSA (FIPS 204) on x86-64: verification

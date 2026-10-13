@@ -7,6 +7,7 @@ import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.X86_64.ZLaneSse
+import VerifiedGarbage.Proof.AesGcm.X86_64.Init
 
 /-! # Key setup with a prepared GHASH power table -/
 

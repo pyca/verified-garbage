@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.MlDsa.X86.Sign.Verified
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.MlDsa.X86.Sign.Inv
 import VerifiedGarbage.Proof.MlKem.Encode
+import VerifiedGarbage.Proof.MlDsa.X86.Sign.Run
 
 /-!
 # ML-DSA (FIPS 204) signing on x86

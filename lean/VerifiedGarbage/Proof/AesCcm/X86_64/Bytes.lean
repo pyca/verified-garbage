@@ -9,6 +9,8 @@ import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Framework.WriteBytes
+import VerifiedGarbage.Proof.AesCcm.Ctr
+import VerifiedGarbage.Proof.Cmac.Stream
 
 /-!
 # AES-CCM on x86-64: the bytes of a buffer after writes

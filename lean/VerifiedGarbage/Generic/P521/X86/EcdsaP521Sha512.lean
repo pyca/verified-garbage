@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.P521Sha512
 import VerifiedGarbage.Proof.Framework.TaintSum
 import VerifiedGarbage.Proof.Sha256.X86.Shared
 import VerifiedGarbage.Proof.X25519.X86.Column
+import VerifiedGarbage.Proof.Sha256.X86.Variants.Interface
 
 /-!
 # Deterministic ECDSA (RFC 6979) over P-521 with HMAC-SHA-512 on x86 (32-bit)

@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.X25519.X86.Verified
 public import VerifiedGarbage.Proof.X25519.X86.Lit
 public import VerifiedGarbage.Proof.X25519.X86.Base.Verified
 import VerifiedGarbage.Proof.Framework.X86.CallWith
+import VerifiedGarbage.Spec.Rc2
 
 /-! # X25519 (RFC 7748) on x86 -/
 

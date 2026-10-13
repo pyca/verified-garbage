@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedSelected
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFold
 import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Compute
 import VerifiedGarbage.Proof.MlKem.AArch64.DecapsA
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversal
 
 /-! # ML-DSA (FIPS 204) verification on AArch64 -/
 

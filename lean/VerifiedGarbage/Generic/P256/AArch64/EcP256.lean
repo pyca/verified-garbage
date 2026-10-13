@@ -9,6 +9,7 @@ import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowQuad
+import VerifiedGarbage.Proof.P256.Prime
 
 /-!
 # P-256 public keys (FIPS 186-5 §A.2) on AArch64

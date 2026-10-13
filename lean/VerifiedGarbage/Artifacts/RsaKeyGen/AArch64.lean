@@ -5,6 +5,9 @@ public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Verified
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Verified
 import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
 import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTMs
+import VerifiedGarbage.Proof.Rsa.AArch64.CvCT
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTMrRound
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.CTBase
 
 /-! # RSA key generation (FIPS 186-5 A.1.3) on AArch64 -/
 

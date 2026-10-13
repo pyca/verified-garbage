@@ -4,6 +4,7 @@ public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.Weierstrass.Law
 public import VerifiedGarbage.Impl.EcKey.P384.Arm
 public import VerifiedGarbage.Proof.EcKey.Arm.P384.Verified
+import VerifiedGarbage.Proof.Framework.Arm.Lit
 
 /-!
 # P-384 public keys (FIPS 186-5 §A.2) on 32-bit ARM

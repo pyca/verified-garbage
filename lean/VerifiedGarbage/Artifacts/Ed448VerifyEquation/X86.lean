@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Ed448.X86.VerifyVerified
 public import VerifiedGarbage.Proof.Ed448.Facts
+public import VerifiedGarbage.Proof.Ed448.X86.VerifyLit
 
 /-!
 # Ed448 verification's equation on x86 (32-bit)

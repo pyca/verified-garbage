@@ -10,6 +10,8 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Front
 meta import VerifiedGarbage.Proof.AesGcm.AArch64.Front
+import VerifiedGarbage.Proof.AesGcm.AArch64.Open
+meta import VerifiedGarbage.Proof.AesGcm.AArch64.Open
 
 /-!
 # AES-GCM on AArch64: what `seal` and `open` share, in two runs

@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.AesXts.AArch64.Verified
+import VerifiedGarbage.Proof.AesOcb.AArch64.Env
 
 /-!
 # XTS-AES (IEEE Std 1619-2007, NIST SP 800-38E) on AArch64

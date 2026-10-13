@@ -10,6 +10,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.CmacAes.X86.UpdateLoop
+meta import VerifiedGarbage.Proof.CmacAes.X86.UpdateLoop
 
 /-!
 # AES-CFB128 on x86: one block, and constant time

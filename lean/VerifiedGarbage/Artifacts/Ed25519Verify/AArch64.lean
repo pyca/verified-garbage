@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyVerified
+import VerifiedGarbage.Impl.Mont.Mod
 
 /-! Complete strict Ed25519 equation verification with a caller-supplied SHA-512 challenge. -/
 
