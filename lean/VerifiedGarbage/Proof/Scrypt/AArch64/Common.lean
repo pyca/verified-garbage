@@ -10,6 +10,7 @@ import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import all Init.Data.Nat.Power2.Basic
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # scrypt on AArch64: common lemmas

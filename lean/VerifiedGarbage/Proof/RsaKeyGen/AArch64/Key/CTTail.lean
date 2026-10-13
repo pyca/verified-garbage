@@ -8,6 +8,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Crt
+meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Crt
 
 /-!
 # An RSA key from its primes on AArch64: constant time, `keyPart`
