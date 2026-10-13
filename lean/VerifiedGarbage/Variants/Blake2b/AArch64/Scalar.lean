@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Backend
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! Baseline ARM64 BLAKE2b streaming backend for generic callers. -/
 

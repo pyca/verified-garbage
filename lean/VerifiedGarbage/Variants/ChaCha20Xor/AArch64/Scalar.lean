@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.ChaCha20.AArch64.XorBackends
+import Mathlib.Tactic.SplitIfs
 
 @[expose] public section
 

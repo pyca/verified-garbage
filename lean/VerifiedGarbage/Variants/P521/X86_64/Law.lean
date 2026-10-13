@@ -5,6 +5,8 @@ public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvMain
 public import VerifiedGarbage.Proof.Weierstrass.InvArith
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvInterface
 public import VerifiedGarbage.Proof.P521.PrimeOrder
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
 
 /-!
 # P-521's group law and inversions, on x86-64

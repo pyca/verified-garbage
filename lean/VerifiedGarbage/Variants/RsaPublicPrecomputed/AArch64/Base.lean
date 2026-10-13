@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.AArch64.PublicImpl
 public import VerifiedGarbage.Proof.Rsa.AArch64.FoldedChecked
+import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Precomputed RSA public operation on AArch64: Base -/
 
