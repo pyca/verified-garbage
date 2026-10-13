@@ -251,17 +251,39 @@ def module_path(name: str) -> pathlib.Path:
 def read_uses(path: pathlib.Path) -> dict:
     """The lines `ImportUses.lean` writes, by module: (imports as (name,
     public, meta), modules of the public surface, modules used anywhere,
-    whether it declares meta code)."""
+    whether it declares meta code, the namespaces under `VG` its constants
+    are in)."""
     mods = {}
     for line in path.read_text().splitlines():
-        name, imps, pub, used, meta = line.split("\t")
+        name, imps, pub, used, meta, nss = line.split("\t")
         imports = []
         for i in filter(None, imps.split(",")):
             base = i.split("+")[0]
             imports.append((base, "+p" in i, "+m" in i))
         mods[name] = (imports, set(filter(None, pub.split(","))),
-                      set(filter(None, used.split(","))), meta == "meta")
+                      set(filter(None, used.split(","))), meta == "meta",
+                      set(filter(None, nss.split(","))))
     return mods
+
+
+OPEN = re.compile(r"^\s*open\s+(?:scoped\s+)?([^(\n]*)", re.M)
+NAMESPACE = re.compile(r"^\s*namespace\s+(\S+)", re.M)
+
+
+def opened_namespaces(text: str) -> list[list[str]]:
+    """For each namespace an `open` in `text` names: the names it may resolve
+    to (relative to each enclosing `namespace` in the file, or absolute)."""
+    prefixes = {""}
+    for m in NAMESPACE.finditer(text):
+        parts = m.group(1).split(".")
+        prefixes |= {".".join(parts[:i]) + "." for i in range(1, len(parts) + 1)}
+    out = []
+    for m in OPEN.finditer(text):
+        for word in m.group(1).split():
+            if word in ("in", "hiding", "renaming") or not re.match(r"^[A-Za-z_][\w.']*$", word):
+                break
+            out.append(sorted({p + word for p in prefixes}))
+    return out
 
 
 def plan_visibility(mods: dict) -> dict:
@@ -290,6 +312,10 @@ def plan_visibility(mods: dict) -> dict:
     keep = {n for n in names if n not in project or n in surface or not is_module(src[n].split("\n"))}
     implicit = {n for n in names if n == "Init" or n.startswith("Init.")}
     bit = lambda ns: sum(1 << idx[n] for n in ns if n in idx)
+    ns_owners: dict[str, set] = {}
+    for n in project:
+        for ns in mods[n][4]:
+            ns_owners.setdefault(ns, set()).add(n)
 
     def order():
         seen, out = set(), []
@@ -377,6 +403,19 @@ def plan_visibility(mods: dict) -> dict:
                 bad = [names[i] for i in range(unseen.bit_length()) if unseen >> i & 1]
                 raise SystemExit(f"{n} uses {bad[:3]}, which it does not see: rerun ImportUses.lean")
             add = cover(need & ~sees & ~(1 << idx[n]), names, new_clo)
+            for m in add:
+                sees |= new_clo[m]
+            # An `open` needs a module declaring the namespace: keep one in
+            # sight, one the module sees today (an import, as above, that
+            # changes what no module sees).
+            for cands in opened_namespaces(src[n]):
+                owners = bit(o for ns in cands for o in ns_owners.get(ns, ()))
+                if owners & old_sees and not owners & (sees | 1 << idx[n]):
+                    m = min((names[i] for i in range(owners.bit_length()) if owners >> i & 1 and old_sees >> i & 1),
+                            key=lambda o: (-new_clo[o].bit_count(), o), default=None)
+                    if m is not None:
+                        add.append(m)
+                        sees |= new_clo[m]
             if demoted or add_pub or add:
                 plan[n] = (demoted, add_pub, add)
             new_pub_edges[n] = public + add_pub
