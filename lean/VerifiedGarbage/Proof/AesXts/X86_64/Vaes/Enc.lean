@@ -24,7 +24,7 @@ open VG VG.X86_64
 open VG.Spec.Aes (bytesAt)
 open VG.Proof.AesCbc.X86_64 (W R Iv Dp N S schR ivR dataR scrR stkR UPre blk wK iv0 modeX86_64)
 open VG.Proof.Aes.X86_64.AesNi (Keys ofInt_natCast contains_offset)
-open VG.Impl.Aes.X86_64.Vaes (regs8)
+open VG.Impl.AesXts.X86_64Vaes (regs4)
 
 /-- What encryption's rounds need: the key schedule, `rounds` and its last
 round key. -/
@@ -58,11 +58,10 @@ theorem encrypt_wp {s₀ : State} (h0 : (modeX86_64 (AesXts.xtsMode true)).pre s
   refine crypt_wp (KP := KPe) h0 (fun s₁ hp₁ => kpe_stable hp₁) (fun s₁ hp₁ => ?_) (fun s₁ hp₁ => ?_)
     (fun s₁ hp₁ s h => WP.block_nil ⟨h, ?_⟩)
   · intro s ⟨hK, hrdi, hrsi, hr10⟩
-    exact Aes.X86_64.Vaes.aes_ok regs8 (by decide) (by decide) hp₁.rounds s hK (by rw [hrsi, rsi_ofNat]) hr10
-  · intro rs hrs s ⟨hK, hrdi, hrsi, hr10⟩
-    have ⟨hnd, _⟩ := regs_cases rs hrs
-    exact Aes.X86_64.AesNi.aes_ok rs hnd (by rcases hrs with rfl | rfl <;> decide) hp₁.rounds s hK
-      (by rw [hrsi, rsi_ofNat]) hr10
+    exact Aes.X86_64.Vaes.aes_ok regs4 (by decide) (by decide) hp₁.rounds s hK (by rw [hrsi, rsi_ofNat]) hr10
+  · intro s ⟨hK, hrdi, hrsi, hr10⟩
+    exact WP.mono (Aes.X86_64.AesNi.aes_ok [.xmm0] (by decide) (by decide) hp₁.rounds s hK
+      (by rw [hrsi, rsi_ofNat]) hr10) fun s' ⟨e, f⟩ => ⟨e _ List.mem_cons_self, f⟩
   · have hrdi : s.gpr .rdi = W s₁ := h.1.keep _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
       (by decide)
     refine ⟨Aes.X86_64.AesNi.Ecb.keys_congr (keys_entry hp₁) hrdi h.1.rd h.1.wr ?_, hrdi,

@@ -7,10 +7,10 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 
 /-!
-# One-pass XTS-AES on x86-64: the arguments and the first sixteen tweaks
+# One-pass XTS-AES on x86-64: the arguments and the first eight tweaks
 
 `enter` moves the arguments and loads the tweak into `rax` and `rcx`; `gen`
-stores the tweaks of blocks `0 … 15` at `scratch + 256`, multiplying by `α`
+stores the tweaks of blocks `0 … 7` at `scratch + 256`, multiplying by `α`
 in registers between them (`genStep_ok`, `gen_ok`), and puts the last round
 key's address in `r10` (`gen_all_ok`). `SInv`: the state during, and
 `SInvK` after, from which `GInv 0 0` follows for anything the rounds need
@@ -43,7 +43,7 @@ structure SInv (s₀ : State) (n : Nat) (s : State) : Prop where
   tw : tw (s.gpr .rax) (s.gpr .rcx) = Spec.Xts.next (iv0 s₀) n
 
 /-- After `gen`: the tweaks, and the last round key's address in `r10`. -/
-def SInvK (s₀ s : State) : Prop := SInv s₀ 16 s ∧ s.gpr .r10 = W s₀ + BitVec.ofNat 64 (16 * R s₀)
+def SInvK (s₀ s : State) : Prop := SInv s₀ 8 s ∧ s.gpr .r10 = W s₀ + BitVec.ofNat 64 (16 * R s₀)
 
 theorem mulAr_ok (s : State) :
     ∃ s', runBlock isa mulAr s = some s' ∧ (∀ r, r ≠ .rax → r ≠ .rcx → r ≠ .r10 → s'.gpr r = s.gpr r) ∧
@@ -60,7 +60,7 @@ theorem mulAr_ok (s : State) :
   · simp only [gpr_setReg, gpr_arithFlags, reduceCtorEq, ↓reduceIte, carry_self, carry_self_c, add_self,
       shl_add_bit]
 
-theorem genStep_ok {s₀ : State} (hp : UPre s₀) {n : Nat} (hn : n < 16) {s : State} (h : SInv s₀ n s) :
+theorem genStep_ok {s₀ : State} (hp : UPre s₀) {n : Nat} (hn : n < 8) {s : State} (h : SInv s₀ n s) :
     WP isa (.block (genStep n)) s (SInv s₀ (n + 1)) := by
   have hsw := hp.scr_wrap
   have hW : s.wr = [ivR s₀, dataR s₀, scrR s₀] := by rw [h.wr, hp.wr]
@@ -93,7 +93,7 @@ theorem genStep_ok {s₀ : State} (hp : UPre s₀) {n : Nat} (hn : n < 16) {s : 
     by rw [rd₂, rd₁, h.rd], by rw [wr₂, wr₁, h.wr],
     h.frame.trans (fS.sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact ⟨scrR s₀, by simp, slot_scr hn⟩), fun j hj => ?_,
+      exact ⟨scrR s₀, by simp, slot_scr (j := n) (by omega)⟩), fun j hj => ?_,
     by rw [hg _ (by decide) (by decide) (by decide), h.rdx], ?_⟩
   · by_cases hjn : j = n
     · subst hjn
@@ -105,7 +105,7 @@ theorem genStep_ok {s₀ : State} (hp : UPre s₀) {n : Nat} (hn : n < 16) {s : 
   · rw [rax₂, rcx₂, mulAlpha_le8, g₁, h.tw]; rfl
 
 theorem gen_ok {s₀ : State} (hp : UPre s₀) {s : State} (h : SInv s₀ 0 s) :
-    ∀ n ≤ 16, WP isa (.block ((List.range n).flatMap genStep)) s (SInv s₀ n)
+    ∀ n ≤ 8, WP isa (.block ((List.range n).flatMap genStep)) s (SInv s₀ n)
   | 0, _ => WP.block_nil h
   | n + 1, hn => by
     rw [List.range_succ, List.flatMap_append, WP.block_append_iff]
@@ -114,7 +114,7 @@ theorem gen_ok {s₀ : State} (hp : UPre s₀) {s : State} (h : SInv s₀ 0 s) :
     exact genStep_ok hp (by omega) h₁
 
 /-- The last round key's address, `rdi + 16 · rounds`, into `r10`. -/
-theorem lastKey_ok {s₀ : State} {s : State} (h : SInv s₀ 16 s) :
+theorem lastKey_ok {s₀ : State} {s : State} (h : SInv s₀ 8 s) :
     WP isa (.block ([.mov .r10 (.reg .rsi), .alu .add .r10 (.reg .r10), .alu .add .r10 (.reg .r10),
       .alu .add .r10 (.reg .r10), .alu .add .r10 (.reg .r10), .alu .add .r10 (.reg .rdi)] : List Instr)) s
       (SInvK s₀) := by
@@ -131,7 +131,7 @@ theorem lastKey_ok {s₀ : State} {s : State} (h : SInv s₀ 16 s) :
 theorem gen_all_ok {s₀ : State} (hp : UPre s₀) {s : State} (h : SInv s₀ 0 s) :
     WP isa (.block gen) s (SInvK s₀) := by
   rw [gen, WP.block_append_iff]
-  exact WP.mono (gen_ok hp h 16 (Nat.le_refl _)) fun s₁ h₁ => lastKey_ok h₁
+  exact WP.mono (gen_ok hp h 8 (Nat.le_refl _)) fun s₁ h₁ => lastKey_ok h₁
 
 /-- The arguments moved. -/
 theorem enter_ok {s₀ : State} (hp : UPre s₀) : WP isa (.block enter) s₀ (SInv s₀ 0) := by

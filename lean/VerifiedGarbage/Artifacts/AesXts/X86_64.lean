@@ -10,7 +10,8 @@ A registration file (see `TCB/Emit.lean`): the artifacts it lists are
 emitted. They are the variants `_vaes_vpclmul` of `vg_aes_xts_encrypt` and
 `vg_aes_xts_decrypt` (whose instances for each implementation of the block
 functions are in `Generic/AesBlocks/X86_64/AesXts.lean`): they call nothing,
-and compute sixteen tweaks at a time with VPCLMULQDQ.
+and keep the tweaks of eight blocks in registers, computing the next eight
+with VPCLMULQDQ.
 
 They write no stack; the 8 bytes are those of the shared precondition.
 -/
@@ -26,8 +27,8 @@ def artifacts : List Artifact := [
     name := Spec.Xts.aesEncryptApi.name ++ "_vaes_vpclmul"
     target := X86_64.target
     doc := Spec.Xts.aesEncryptApi.doc (notes := [
-      "This implementation reads each block once: it enciphers sixteen blocks at a time with VAES, " ++
-      "their tweaks computed sixteen at a time with VPCLMULQDQ, and the rest with AES-NI."])
+      "This implementation reads each block once: it enciphers eight blocks at a time with VAES, " ++
+      "their tweaks kept in registers and computed eight at a time with VPCLMULQDQ, and the rest with AES-NI."])
     code := Impl.AesXts.X86_64Vaes.encrypt
     contract := Spec.Xts.aesEncryptContract X86_64.abi 8
     stack := 8
@@ -38,8 +39,8 @@ def artifacts : List Artifact := [
     name := Spec.Xts.aesDecryptApi.name ++ "_vaes_vpclmul"
     target := X86_64.target
     doc := Spec.Xts.aesDecryptApi.doc (notes := [
-      "This implementation reads each block once: it deciphers sixteen blocks at a time with VAES, " ++
-      "their tweaks computed sixteen at a time with VPCLMULQDQ, and the rest with AES-NI."])
+      "This implementation reads each block once: it deciphers eight blocks at a time with VAES, " ++
+      "their tweaks kept in registers and computed eight at a time with VPCLMULQDQ, and the rest with AES-NI."])
     code := Impl.AesXts.X86_64Vaes.decrypt
     contract := Spec.Xts.aesDecryptContract X86_64.abi 8
     stack := 8
