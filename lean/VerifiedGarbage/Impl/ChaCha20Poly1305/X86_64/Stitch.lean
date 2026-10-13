@@ -130,6 +130,57 @@ def srounds (pre : Bool) : Nat → Prog isa
   | 0 => .block []
   | n + 1 => .seq (srounds pre n) (sround pre n)
 
+section
+open ChaCha20.X86_64.Avx2 (quarterV)
+
+/-- `sround4` with `vprold` (`Avx2.doubleRoundV`): every word in its register,
+nothing swapped. -/
+def sround4V (j : Nat) : Prog isa :=
+  .seq (quarterV 0 4 8 12) <| .seq (.block (addProd j)) <|
+  .seq (quarterV 1 5 9 13) <| .seq (.block Poly1305.X86_64.carry) <|
+  .seq (quarterV 2 6 10 14) <| .seq (.block (addProd (j + 1))) <|
+  .seq (quarterV 3 7 11 15) <| .seq (.block Poly1305.X86_64.carry) <|
+  .seq (quarterV 0 5 10 15) <| .seq (.block (addProd (j + 2))) <|
+  .seq (quarterV 1 6 11 12) <| .seq (.block Poly1305.X86_64.carry) <|
+  .seq (quarterV 2 7 8 13) <| .seq (.block (addProd (j + 3))) <|
+  .seq (quarterV 3 4 9 14) (.block Poly1305.X86_64.carry)
+
+/-- `sround3` with `vprold`. -/
+def sround3V (j : Nat) : Prog isa :=
+  .seq (quarterV 0 4 8 12) <|
+  .seq (quarterV 1 5 9 13) <| .seq (.block (addProd j)) <|
+  .seq (quarterV 2 6 10 14) <| .seq (.block Poly1305.X86_64.carry) <|
+  .seq (quarterV 3 7 11 15) <| .seq (.block (addProd (j + 1))) <|
+  .seq (quarterV 0 5 10 15) <|
+  .seq (quarterV 1 6 11 12) <| .seq (.block Poly1305.X86_64.carry) <|
+  .seq (quarterV 2 7 8 13) <| .seq (.block (addProd (j + 2))) <|
+  .seq (quarterV 3 4 9 14) (.block Poly1305.X86_64.carry)
+
+end
+
+/-- `sround` with `vprold`. -/
+def sroundV (pre : Bool) (n : Nat) : Prog isa :=
+  if blocks pre n = 4 then sround4V (firstBlock pre n)
+  else if blocks pre n = 3 then sround3V (firstBlock pre n)
+  else ChaCha20.X86_64.Avx2.doubleRoundV
+
+def sroundsV (pre : Bool) : Nat → Prog isa
+  | 0 => .block []
+  | n + 1 => .seq (sroundsV pre n) (sroundV pre n)
+
+/-- `srounds` with `vprold` (AVX-512VL), from and to the registers and slots
+`srounds` keeps the words in, as `Avx2.roundsVL`. -/
+def sroundsVL (pre : Bool) (n : Nat) : Prog isa :=
+  .seq (.block [.vmovdquLoad .l256 .xmm14 (at_ .rcx (ChaCha20.X86_64.Avx2.slotOff 10)),
+    .vmovdquLoad .l256 .xmm15 (at_ .rcx (ChaCha20.X86_64.Avx2.slotOff 11))])
+  (.seq (sroundsV pre n) (.block [.vmovdquStore .l256 (at_ .rcx (ChaCha20.X86_64.Avx2.slotOff 10)) .xmm14,
+    .vmovdquStore .l256 (at_ .rcx (ChaCha20.X86_64.Avx2.slotOff 11)) .xmm15,
+    .vmovdquLoad .l256 .xmm15 (at_ .rcx ChaCha20.X86_64.Avx2.rot16Off)]))
+
+/-- A chunk's ten double rounds, with `vprold` if `vl`. -/
+def sroundsFor (vl : Bool) (pre : Bool) : Prog isa :=
+  if vl then sroundsVL pre 10 else srounds pre 10
+
 /-- The counter advanced by 8 and 512 bytes fewer left; `CF` is clear if at
 least 512 bytes remain. -/
 def next : List Instr :=
@@ -365,12 +416,12 @@ which `cryptO` absorbs (with the lengths block) before the call of
 
 /-- A chunk of `open` but for `next`: the 512 bytes at `rsi` absorbed during
 the rounds, then decrypted, and `rsi` advanced past them. -/
-def chunkMainO : Prog isa :=
+def chunkMainO (vl : Bool) : Prog isa :=
   .seq (.block ChaCha20.X86_64.Avx2.setup)
-    (.seq (srounds false 10)
+    (.seq (sroundsFor vl false)
       (.block (ChaCha20.X86_64.Avx2.finish ++ ([.alu .add .rsi (.imm 512)] : List Instr))))
 
-def chunkO : Prog isa := .seq chunkMainO (.block next)
+def chunkO (vl : Bool) : Prog isa := .seq (chunkMainO vl) (.block next)
 
 /-- As `leave`, with the rest of the data both the ciphertext not yet
 absorbed (`rbx`, `rbp`) and the data not yet decrypted (`rsi`, `rdx`). -/
@@ -383,8 +434,8 @@ def leaveO : List Instr :=
    .mov .r14 (.mem (at_ .rcx r14Off)), .mov .r15 (.reg .rcx), .alu .sub .r15 (.imm 128)]
 
 /-- The whole chunks of at least 512 bytes of data, decrypted and absorbed. -/
-def bulkO : Prog isa :=
-  .seq (.block enter) (.seq (.loop chunkO .ae) (.block leaveO))
+def bulkO (vl : Bool) : Prog isa :=
+  .seq (.block enter) (.seq (.loop (chunkO vl) .ae) (.block leaveO))
 
 /-- The arguments of the call on the rest of the data (`rbx`, `rbp`), from
 the counter the chunks left. -/
@@ -401,7 +452,7 @@ def cryptO (x : ChaCha20.X86_64.Callee) (b : Poly1305.X86_64.Blocks) : Prog isa 
       (.seq (.block (ptr .rsi .r15 736 ++ [.mov .rdx (.reg .r13)]))
         (.seq (xorBufX x.wide .r14) (.block (ptr .rsi .r15 128)))))
     (.seq (.block (cryptArgs ++ [.alu .cmp .rdx (.imm 512)]))
-      (.seq (.ite .b (.block whole) bulkO)
+      (.seq (.ite .b (.block whole) (bulkO x.vl))
       (.seq (macPadLengths b .rbx .rbp)
       (.seq (.block restArgs) (.call x.name x.code))))))
   (.seq (.block (anchor .rsi 128))
