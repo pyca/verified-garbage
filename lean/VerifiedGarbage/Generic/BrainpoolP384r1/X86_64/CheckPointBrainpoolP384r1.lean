@@ -26,25 +26,20 @@ namespace VG.Generic.BrainpoolP384r1.X86_64.CheckPointBrainpoolP384r1
 open VG.Impl.Ecdsa.X86_64 VG.Proof.Ecdh.X86_64.BrainpoolP384r1.Check
 
 /-- What the function runs. -/
-def note (adx : Bool) : String :=
+def note : String :=
   "The function keeps `rbx`, `rbp` and `r12`–`r15` in `xmm0` to `xmm5` while it runs. It \
   compares `x` and `y` with `p` by subtraction with borrow, takes them into Montgomery's form \
-  and computes `y² - (x³ + a x + b)` modulo `p` " ++
-  (if adx then "by rows of BMI2's `mulx` with ADX's two carry chains (`adcx`, `adox`)"
-    else "by `mul` and word-by-word Montgomery reduction") ++
-  ", and selects the point by masks; nothing depends on the numbers but through masks."
+  and computes `y² - (x³ + a x + b)` modulo `p` by `mul` and word-by-word Montgomery reduction, \
+  and selects the point by masks; nothing depends on the numbers but through masks."
 
 def artifacts (h : Proof.Weierstrass.X86_64.HasLawInv Spec.BrainpoolP384r1.curve) : List Artifact :=
-  [false].map fun adx =>
-    { C.checkApi with
-      name := C.checkApi.name ++ (if adx then "_adx" else "")
+  [{ C.checkApi with
       target := X86_64.target
-      doc := C.checkApi.doc (notes := [note adx])
-      code := code adx
+      doc := C.checkApi.doc (notes := [note])
+      code := code
       contract := C.checkContract X86_64.abi
       ofSig := by exact (⟨_, _, _, by unfold Spec.Weierstrass.CheckPoint.Curve.checkContract; rfl⟩)
-      verified := verified h.inv adx
-      spSafe := by cases adx <;> exact Code.all_of_allInstrs (by lit_decide)
-      features := if adx then ["bmi2", "adx"] else [] }
+      verified := verified h.inv
+      spSafe := Code.all_of_allInstrs (by lit_decide) }]
 
 end VG.Generic.BrainpoolP384r1.X86_64.CheckPointBrainpoolP384r1

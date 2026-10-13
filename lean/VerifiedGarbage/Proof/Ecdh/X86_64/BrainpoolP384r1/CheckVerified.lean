@@ -41,32 +41,27 @@ open VG.Proof.Ecdsa.X86_64.BrainpoolP384r1.Inverse (cfg cfg_ok)
 
 abbrev C : CP := Spec.Weierstrass.CheckPoint.brainpoolp384r1
 
-/-- `vg_brainpoolp384r1_check_point` (`_adx` with BMI2 and ADX). -/
-abbrev code (adx : Bool) : Prog isa := Cfg.invFnX (Impl.Ecdh.X86_64.Cfg.checkBody (cfg adx))
+/-- `vg_brainpoolp384r1_check_point`. -/
+abbrev code : Prog isa := Cfg.invFnX (Impl.Ecdh.X86_64.Cfg.checkBody cfg)
 
-theorem agree (adx : Bool) : Agree (cfg adx) C := by
-  cases adx <;> exact ⟨rfl, rfl, by decide, keeps_of (by decide), by decide⟩
+theorem agree : Agree cfg C := ⟨rfl, rfl, by decide, keeps_of (by decide), by decide⟩
 
-theorem hv (adx : Bool) :
-    (Impl.Ecdh.X86_64.Cfg.checkBody (cfg adx)).allInstrs (fun i => !KeepReg.writesVec i) = true := by
-  cases adx <;> lit_decide
+theorem hv : (Impl.Ecdh.X86_64.Cfg.checkBody cfg).allInstrs (fun i => !KeepReg.writesVec i) = true := by
+  lit_decide
 
-theorem hn (adx : Bool) : (Impl.Ecdh.X86_64.Cfg.checkBody (cfg adx)).noCalls = true := by
-  cases adx <;> lit_decide
+theorem hn : (Impl.Ecdh.X86_64.Cfg.checkBody cfg).noCalls = true := by
+  lit_decide
 
-theorem hmx (adx : Bool) : (code adx).allInstrs (fun i => !loadsMxcsr i) = true := by
-  cases adx <;> lit_decide
+theorem hmx : code.allInstrs (fun i => !loadsMxcsr i) = true := by
+  lit_decide
 
-theorem ct (adx : Bool) : ConstantTime isa (checkK C).pre (checkK C).pub (code adx) := by
-  cases adx <;>
-    exact VG.Taint.constantTime (A := X86_64.taint) (Taint.ofRegs [.rdi, .rsp]) (agreeK C) (by taint_decide)
+theorem ct : ConstantTime isa (checkK C).pre (checkK C).pub code :=
+  VG.Taint.constantTime (A := X86_64.taint) (Taint.ofRegs [.rdi, .rsp]) (agreeK C) (by taint_decide)
 
 theorem sat : C.pre 0x1000 (satMem C) := by
   unfold Spec.Weierstrass.CheckPoint.Curve.pre; decide +kernel
 
-theorem verified (hI : InvSounds) (adx : Bool) :
-    Verified X86_64.target (code adx) (C.checkContract X86_64.abi) :=
-  Verified.of_correct (correct (cfg_ok hI adx) (agree adx) (hv adx) (hn adx) (hmx adx)) (ct adx)
-    (implies C sat)
+theorem verified (hI : InvSounds) : Verified X86_64.target code (C.checkContract X86_64.abi) :=
+  Verified.of_correct (correct (cfg_ok hI) agree hv hn hmx) ct (implies C sat)
 
 end VG.Proof.Ecdh.X86_64.BrainpoolP384r1.Check
