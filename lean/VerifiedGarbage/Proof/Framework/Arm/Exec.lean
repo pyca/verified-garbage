@@ -25,6 +25,10 @@ theorem exec_str {s : State} {t n : Reg} {off : Nat} (ho : off < 4096)
       some { s with mem := s.mem.writeW (State.addr (s.gpr n + BitVec.ofNat 32 off)) (s.gpr t) } := by
   simp only [exec, ho, ite_true, State.store32, h]
 
+/-- `adrSym d name` puts the address of the static `name` in `d`. -/
+theorem exec_adrSym {s : State} {d : Reg} {name : String} :
+    exec (.adrSym d name) s = some (s.setReg d (s.syms name)) := rfl
+
 /-- `movw` of the low half then `movt` of the high half builds the word. -/
 theorem movw_movt (x : BitVec 32) :
     ((x.extractLsb' 16 16 ++ ((x.extractLsb' 0 16).setWidth 32).extractLsb' 0 16 : BitVec 32)) = x := by
