@@ -6,6 +6,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+meta import Mathlib.Tactic.SplitIfs
 
 /-! The callable Montgomery primitive shares RSA's accumulator-square kernel.
 The dispatch depends only on the three public, 32-bit array indices. -/
@@ -124,7 +126,11 @@ theorem row_square_rel : RelCT isa (Two GoodW) (VG.Impl.Bignum.AArch64.Square.mo
 
 /-- The published blocked reducer shares the same workspace and slot contract. -/
 theorem square_rel : RelCT isa (Two GoodW) (Public.mm 5 5 5) (fun _ _ => True) := by
-  unfold Public.mm VG.Impl.Bignum.AArch64.BlockedRedc.mm
+  unfold Public.mm VG.Impl.Bignum.AArch64.SquareEightCall.mm
+  rw [ite_eq_right (by decide)]
+  unfold VG.Impl.Bignum.AArch64.SquareCall.mm
+  rw [ite_eq_right (by decide)]
+  unfold VG.Impl.Bignum.AArch64.BlockedRedc.mm
   rw [ite_eq_left (by decide)]
   refine RelCT.seq (two_piece _ pins_goodW (by taint_decide) BlockedRedc.guard_ctx) ?_
   refine two_ite (Φ := BlockedRedc.GuardCtx) ?_ ?_ ?_

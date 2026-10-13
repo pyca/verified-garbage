@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.AArch64
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Omega
 
 @[expose] public section
 
