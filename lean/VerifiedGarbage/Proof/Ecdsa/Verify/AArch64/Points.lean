@@ -118,19 +118,51 @@ theorem save_ok (hc : BaseCfgOk c) {s : State} {base : Addr} (hs : Scr s base si
   · rw [o O₆ (by decide) (by decide) (by decide), e₅]
 
 /-- The slots `sum` writes. -/
-abbrev sumW : List Nat := [T0, T1, T2, T3, T4, T5, DX, DY, DZ, TMP, RX, RY, RZ]
+abbrev sumW : List Nat := [T0, T1, T2, T3, T4, T5, DX, DY, DZ, TMP, RX, RY, RZ, EM, TX, TY, TZ]
 
 /-- The slots of the addition. -/
-abbrev sumSl : List Nat := [AP, BM, T0, T1, T2, T3, T4, T5, DX, DY, DZ, UX, UY, UZ, RX, RY, RZ]
+abbrev sumSl : List Nat := [AP, BM, T0, T1, T2, T3, T4, T5, DX, DY, DZ, UX, UY, UZ, RX, RY, RZ, TX, TY, TZ]
 
 /-- The slots it reads. -/
 abbrev sumR : List Nat := [AP, BM, UX, UY, UZ, RX, RY, RZ]
 
-theorem sum_eq (c : Cfg) : Impl.Ecdsa.Verify.AArch64.Cfg.sum c =
-    .seq (fprogB c.MP' (rcb3 c.rcbSlots (c.pt UX UY UZ) (c.pt RX RY RZ) (c.pt DX DY DZ)))
-      (.block (copy c.n (c.sl RX) (c.sl DX) ++ (copy c.n (c.sl RY) (c.sl DY) ++
-        copy c.n (c.sl RZ) (c.sl DZ)))) := by
-  simp only [Impl.Ecdsa.Verify.AArch64.Cfg.sum, List.append_assoc]
+theorem map_sl_sub {l l' : List Nat} (h : ∀ i ∈ l, i ∈ l') : ∀ x ∈ l.map c.sl, x ∈ l'.map c.sl :=
+  fun x hx => by obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hx; exact List.mem_map_of_mem (h i hi)
+
+theorem slW_sub {l l' : List Nat} (h : ∀ i ∈ l, i ∈ l') : ∀ w ∈ slW c l, w ∈ slW c l' :=
+  fun w hw => by obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hw; exact List.mem_map_of_mem (h i hi)
+
+/-- `R = D`. -/
+theorem fromD_ok (hc : CfgOk c) {s : State} {base : Addr} (hs : Scr s base size)
+    (hM : ModOkA c.MP' size c.C.p s.mem base) :
+    WP isa (.block (Impl.Ecdsa.Verify.AArch64.Cfg.fromD c)) s fun s' =>
+      Scr s' base size ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ Unch base (slW c [RX, RY, RZ]) s.mem s'.mem ∧
+      ModOkA c.MP' size c.C.p s'.mem base ∧ sv c base s' RX = sv c base s DX ∧
+      sv c base s' RY = sv c base s DY ∧ sv c base s' RZ = sv c base s DZ := by
+  have h7 := hc.n10
+  have hn := hs.nowrap
+  rw [Impl.Ecdsa.Verify.AArch64.Cfg.fromD, List.append_assoc, WP.block_append_iff]
+  refine WP.mono (copySl_ok hc hs (o := RX) (a := DX) (by decide) (by decide) (by decide))
+    fun s₂ ⟨e₂, k₂, O₂⟩ => ?_
+  have hs₂ := hs.of_keepRegs k₂ (by decide)
+  rw [WP.block_append_iff]
+  refine WP.mono (copySl_ok hc hs₂ (o := RY) (a := DY) (by decide) (by decide) (by decide))
+    fun s₃ ⟨e₃, k₃, O₃⟩ => ?_
+  have hs₃ := hs₂.of_keepRegs k₃ (by decide)
+  refine WP.mono (copySl_ok hc hs₃ (o := RZ) (a := DZ) (by decide) (by decide) (by decide))
+    fun s₄ ⟨e₄, k₄, O₄⟩ => ?_
+  have o : ∀ {s s' : State} {j i : Nat}, Outside base (c.sl j) (8 * c.n) s.mem s'.mem → i < 45 → i ≠ j →
+      j ≠ 54 ∧ j ≠ 82 → sv c base s' i = sv c base s i := fun O hi hij hj => sv_out O h7 hn hi hij hj
+  have U₄ : Unch base (slW c [RX, RY, RZ]) s.mem s₄.mem :=
+    (O₂.unch.trans (O₃.unch.trans O₄.unch)).mono fun w hw => by
+      simp only [List.mem_append, List.mem_singleton] at hw
+      simp only [List.map_cons, List.map_nil, List.mem_cons, List.not_mem_nil, or_false]
+      rcases hw with rfl | rfl | rfl <;> simp
+  refine ⟨hs₃.of_keepRegs k₄ (by decide), by rw [k₄.rd, k₃.rd, k₂.rd],
+    by rw [k₄.wr, k₃.wr, k₂.wr], U₄, hM.unch U₄ (apart_slW (c := c) (i := MP) (by decide)) hn, ?_, ?_, ?_⟩
+  · rw [o O₄ (by decide) (by decide) (by decide), o O₃ (by decide) (by decide) (by decide), e₂]
+  · rw [o O₄ (by decide) (by decide) (by decide), e₃, o O₂ (by decide) (by decide) (by decide)]
+  · rw [e₄, o O₃ (by decide) (by decide) (by decide), o O₂ (by decide) (by decide) (by decide)]
 
 /-- `R = U + R`, by the complete addition. -/
 theorem sum_ok (hc : CfgOk c) {s : State} {base : Addr} (hs : Scr s base size)
@@ -147,86 +179,188 @@ theorem sum_ok (hc : CfgOk c) {s : State} {base : Addr} (hs : Scr s base size)
   have hn := hs.nowrap
   have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
   have hL : Lay c.MP' size (· ∈ sumSl.map c.sl) := lay_map hc rfl rfl rfl (by decide)
-  have hA : RcbApart c.rcbSlots (c.pt UX UY UZ) (c.pt RX RY RZ) (c.pt DX DY DZ) :=
-    rcbApart_of h0 (lw := [T0, T1, T2, T3, T4, T5, DX, DY, DZ]) (lr := sumR) rfl rfl (by decide)
-      (by decide)
-  have hI : Inv c.MP' base size c.C.p (· ∈ sumSl.map c.sl) (sumR.map c.sl)
-      (fun x => toM c.C.p (2 ^ (64 * c.n)) (wordsVal s.mem base x c.n)) s := by
-    refine ⟨hs, hM, fun x hx => ?_, fun x hx => ?_, fun _ _ => rfl⟩
-    · obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hx
-      have sub : ∀ i ∈ sumR, i ∈ sumSl := by decide
-      exact List.mem_map_of_mem (sub i hi)
-    · obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hx
-      exact hlt i hi
-  rw [sum_eq]
   have hAl : Aligned c.MP' (· ∈ sumSl.map c.sl) := ⟨fun x hx => by
     obtain ⟨i, -, rfl⟩ := List.mem_map.mp hx; exact sl_mod8 c i, MP'_A c,
     fun f m' h => (hc.call_p f m' h).2⟩
-  have hLow : Low c.MP' (rcbW c.rcbSlots (c.pt DX DY DZ) ++ rcbR c.rcbSlots (c.pt UX UY UZ) (c.pt RX RY RZ)) :=
-    Low.of_call fun _ _ _ x hx => by
-      rw [show rcbW c.rcbSlots (c.pt DX DY DZ) ++ rcbR c.rcbSlots (c.pt UX UY UZ) (c.pt RX RY RZ) =
-        ([T0, T1, T2, T3, T4, T5, DX, DY, DZ] ++ sumR).map c.sl from rfl] at hx
-      obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hx
-      have key : ∀ i ∈ [T0, T1, T2, T3, T4, T5, DX, DY, DZ] ++ sumR, i < 45 ∧ i ≠ TMP := by decide
-      exact sl_own c hc.n10 (key i hi).1 (key i hi).2
-  refine WP.seq (WP.mono (rcb3_ok hL hAl hpR hA (fun x hx => ?_) hLow hI (fun x hx => hx))
-    fun s₁ ⟨k₁, I₁, t₁⟩ => ?_)
-  · rw [show rcbW c.rcbSlots (c.pt DX DY DZ) ++ rcbR c.rcbSlots (c.pt UX UY UZ) (c.pt RX RY RZ) =
-      ([T0, T1, T2, T3, T4, T5, DX, DY, DZ] ++ sumR).map c.sl from rfl] at hx
-    obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hx
-    have sub : ∀ i ∈ [T0, T1, T2, T3, T4, T5, DX, DY, DZ] ++ sumR, i ∈ sumSl := by decide
-    exact List.mem_map_of_mem (sub i hi)
-  have hs₁ := k₁.scr hs
-  have hD : ∀ i ∈ [DX, DY, DZ], c.sl i ∈ [(c.pt DX DY DZ).x, (c.pt DX DY DZ).y, (c.pt DX DY DZ).z] ++
-      sumR.map c.sl := by
-    intro i hi
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hi
-    rcases hi with rfl | rfl | rfl <;> simp [Cfg.pt]
-  rw [WP.block_append_iff]
-  refine WP.mono (copySl_ok hc hs₁ (o := RX) (a := DX) (by decide) (by decide) (by decide))
-    fun s₂ ⟨e₂, k₂, O₂⟩ => ?_
-  have hs₂ := hs₁.of_keepRegs k₂ (by decide)
-  rw [WP.block_append_iff]
-  refine WP.mono (copySl_ok hc hs₂ (o := RY) (a := DY) (by decide) (by decide) (by decide))
-    fun s₃ ⟨e₃, k₃, O₃⟩ => ?_
-  have hs₃ := hs₂.of_keepRegs k₃ (by decide)
-  refine WP.mono (copySl_ok hc hs₃ (o := RZ) (a := DZ) (by decide) (by decide) (by decide))
-    fun s₄ ⟨e₄, k₄, O₄⟩ => ?_
   have o : ∀ {s s' : State} {j i : Nat}, Outside base (c.sl j) (8 * c.n) s.mem s'.mem → i < 45 → i ≠ j →
       j ≠ 54 ∧ j ≠ 82 → sv c base s' i = sv c base s i := fun O hi hij hj => sv_out O h7 hn hi hij hj
-  have x₄ : sv c base s₄ RX = sv c base s₁ DX := by
-    rw [o O₄ (by decide) (by decide) (by decide), o O₃ (by decide) (by decide) (by decide), e₂]
-  have y₄ : sv c base s₄ RY = sv c base s₁ DY := by
-    rw [o O₄ (by decide) (by decide) (by decide), e₃, o O₂ (by decide) (by decide) (by decide)]
-  have z₄ : sv c base s₄ RZ = sv c base s₁ DZ := by
-    rw [e₄, o O₃ (by decide) (by decide) (by decide), o O₂ (by decide) (by decide) (by decide)]
-  have U₄ : Unch base (slW c sumW) s.mem s₄.mem := by
-    have := (k₁.unch.trans (O₂.unch.trans (O₃.unch.trans O₄.unch)))
-    refine this.mono fun w hw => ?_
-    simp only [List.mem_append, List.mem_map, List.mem_cons, List.not_mem_nil, or_false] at hw
-    simp only [List.map_cons, List.map_nil, List.mem_cons, List.not_mem_nil, or_false]
-    rcases hw with (⟨y, hy, rfl⟩ | hw) | hw | hw | hw
-    · simp only [rcbW, Cfg.rcbSlots, Cfg.pt, List.mem_cons, List.not_mem_nil, or_false] at hy
-      rcases hy with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp [MP'_n]
-    all_goals (subst hw; simp [MP'_n, MP'_tmp])
-  refine ⟨hs₃.of_keepRegs k₄ (by decide), by rw [k₄.rd, k₃.rd, k₂.rd, k₁.rd],
-    by rw [k₄.wr, k₃.wr, k₂.wr, k₁.wr], U₄, ?_, ?_, ?_⟩
-  · have hM₁ := I₁.mod
-    refine ⟨hM₁.n0, hM₁.n10, hM₁.mo, hM₁.tmp, hM₁.sep, ?_, hM₁.inv, hM₁.red, hM₁.call⟩
-    rw [U₄.wordsVal (fun w hw => ?_) (by have := hM₁.mo; omega)]
-    · exact hM.val
-    · obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hw
-      have ne : ∀ i ∈ sumW, MP ≠ i := by decide
-      exact sl_apart c (ne i hi)
-  · constructor
-    · rw [z₄]; exact I₁.lt _ (hD DZ (by simp))
-    · rw [x₄]; exact I₁.lt _ (hD DX (by simp))
-  · have vx := I₁.val _ (hD DX (by simp))
-    have vy := I₁.val _ (hD DY (by simp))
-    have vz := I₁.val _ (hD DZ (by simp))
-    show (toM _ _ (sv c base s₄ RX), toM _ _ (sv c base s₄ RY), toM _ _ (sv c base s₄ RZ)) = _
-    rw [x₄, y₄, z₄]
-    exact (congrArg₂ Prod.mk vx (congrArg₂ Prod.mk vy vz)).trans t₁
+  -- The end: `R = D`, for `D` the sum.
+  have tail : ∀ {s₁ : State} {W : List Nat}, Scr s₁ base size → s₁.rd = s.rd → s₁.wr = s.wr →
+      Unch base (slW c W) s.mem s₁.mem → (∀ i ∈ W, i ∈ sumW) → ModOkA c.MP' size c.C.p s₁.mem base →
+      sv c base s₁ DZ < c.C.p → sv c base s₁ DX < c.C.p →
+      (tmv c.C c.n base s₁ (c.sl DX), tmv c.C c.n base s₁ (c.sl DY), tmv c.C c.n base s₁ (c.sl DZ)) =
+        rcbAdd3 (tmv c.C c.n base s (c.sl BM))
+          (tmv c.C c.n base s (c.sl UX)) (tmv c.C c.n base s (c.sl UY)) (tmv c.C c.n base s (c.sl UZ))
+          (tmv c.C c.n base s (c.sl RX)) (tmv c.C c.n base s (c.sl RY)) (tmv c.C c.n base s (c.sl RZ)) →
+      WP isa (.block (Impl.Ecdsa.Verify.AArch64.Cfg.fromD c)) s₁ fun s' =>
+        Scr s' base size ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ Unch base (slW c sumW) s.mem s'.mem ∧
+        ModOkA c.MP' size c.C.p s'.mem base ∧ (sv c base s' RZ < c.C.p ∧ sv c base s' RX < c.C.p) ∧
+        (tmv c.C c.n base s' (c.sl RX), tmv c.C c.n base s' (c.sl RY), tmv c.C c.n base s' (c.sl RZ)) =
+          rcbAdd3 (tmv c.C c.n base s (c.sl BM))
+            (tmv c.C c.n base s (c.sl UX)) (tmv c.C c.n base s (c.sl UY)) (tmv c.C c.n base s (c.sl UZ))
+            (tmv c.C c.n base s (c.sl RX)) (tmv c.C c.n base s (c.sl RY)) (tmv c.C c.n base s (c.sl RZ)) :=
+    fun hs₁ rd₁ wr₁ U₁ hW M₁ z₁ x₁ t₁ =>
+      WP.mono (fromD_ok hc hs₁ M₁) fun s₂ ⟨hs₂, rd₂, wr₂, U₂, M₂, x₂, y₂, z₂⟩ =>
+        ⟨hs₂, rd₂.trans rd₁, wr₂.trans wr₁,
+          (U₁.trans U₂).mono fun w hw => (List.mem_append.mp hw).elim (slW_sub hW w)
+            (slW_sub (by decide) w),
+          M₂, ⟨z₂ ▸ z₁, x₂ ▸ x₁⟩, by
+            show (toM _ _ (sv c base s₂ RX), toM _ _ (sv c base s₂ RY), toM _ _ (sv c base s₂ RZ)) = _
+            rw [x₂, y₂, z₂]; exact t₁⟩
+  cases hp : c.padd with
+  | none =>
+    simp only [Impl.Ecdsa.Verify.AArch64.Cfg.sum, hp]
+    have hA : RcbApart c.rcbSlots (c.pt UX UY UZ) (c.pt RX RY RZ) (c.pt DX DY DZ) :=
+      rcbApart_of h0 (lw := [T0, T1, T2, T3, T4, T5, DX, DY, DZ]) (lr := sumR) rfl rfl (by decide)
+        (by decide)
+    have hI : Inv c.MP' base size c.C.p (· ∈ sumSl.map c.sl) (sumR.map c.sl)
+        (fun x => toM c.C.p (2 ^ (64 * c.n)) (wordsVal s.mem base x c.n)) s := by
+      refine ⟨hs, hM, map_sl_sub (by decide), fun x hx => ?_, fun _ _ => rfl⟩
+      obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hx
+      exact hlt i hi
+    have hLow : Low c.MP' (rcbW c.rcbSlots (c.pt DX DY DZ) ++ rcbR c.rcbSlots (c.pt UX UY UZ) (c.pt RX RY RZ)) :=
+      Low.of_call fun _ _ _ x hx => by
+        rw [show rcbW c.rcbSlots (c.pt DX DY DZ) ++ rcbR c.rcbSlots (c.pt UX UY UZ) (c.pt RX RY RZ) =
+          ([T0, T1, T2, T3, T4, T5, DX, DY, DZ] ++ sumR).map c.sl from rfl] at hx
+        obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hx
+        have key : ∀ i ∈ [T0, T1, T2, T3, T4, T5, DX, DY, DZ] ++ sumR, i < 45 ∧ i ≠ TMP := by decide
+        exact sl_own c hc.n10 (key i hi).1 (key i hi).2
+    refine WP.seq (WP.mono (rcb3_ok hL hAl hpR hA (map_sl_sub (l := [T0, T1, T2, T3, T4, T5, DX, DY, DZ] ++ sumR)
+      (by decide)) hLow hI (fun x hx => hx)) fun s₁ ⟨k₁, I₁, t₁⟩ => ?_)
+    have hD : ∀ i ∈ [DX, DY, DZ], c.sl i ∈ [(c.pt DX DY DZ).x, (c.pt DX DY DZ).y, (c.pt DX DY DZ).z] ++
+        sumR.map c.sl := by
+      intro i hi
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hi
+      rcases hi with rfl | rfl | rfl <;> simp [Cfg.pt]
+    have U₁ : Unch base (slW c [T0, T1, T2, T3, T4, T5, DX, DY, DZ, TMP]) s.mem s₁.mem := k₁.unch
+    refine tail (k₁.scr hs) k₁.rd k₁.wr U₁ (by decide) I₁.mod (I₁.lt _ (hD DZ (by simp)))
+      (I₁.lt _ (hD DX (by simp))) ?_
+    exact (congrArg₂ Prod.mk (I₁.val _ (hD DX (by simp)))
+      (congrArg₂ Prod.mk (I₁.val _ (hD DY (by simp))) (I₁.val _ (hD DZ (by simp))))).trans t₁
+  | some f =>
+    obtain ⟨name, bAt⟩ := f
+    obtain rfl := padd_bAt hp
+    simp only [Impl.Ecdsa.Verify.AArch64.Cfg.sum, hp]
+    refine WP.seq ?_
+    rw [WP.block_append_iff]
+    -- `b` to `EM`.
+    refine WP.mono (copySl_ok hc hs (o := EM) (a := BM) (by decide) (by decide) (by decide))
+      fun s₁ ⟨e₁, k₁, O₁⟩ => ?_
+    have hs₁ := hs.of_keepRegs k₁ (by decide)
+    -- `T = R`.
+    have dT : ∀ x ∈ ([TX, TY, TZ] : List Nat).map c.sl, x ∉ ([RX, RY, RZ] : List Nat).map c.sl :=
+      map_sl_disj h0 (by decide)
+    refine WP.mono (copyPt_ok hs₁ (o := c.pt TX TY TZ) (a := c.pt RX RY RZ) (n := c.n)
+      (fun x hx => hL.le x (map_sl_sub (l := [TX, TY, TZ, RX, RY, RZ]) (by decide) x hx))
+      (fun x hx => by
+        obtain ⟨i, -, rfl⟩ := List.mem_map.mp (show x ∈ ([TX, TY, TZ, RX, RY, RZ] : List Nat).map c.sl from hx)
+        exact sl_mod8 c i)
+      (fun x hx y hy hxy => hL.apart x y (map_sl_sub (l := [TX, TY, TZ]) (by decide) x hx)
+        (map_sl_sub (l := [TX, TY, TZ, RX, RY, RZ]) (by decide) y hy) hxy)
+      (fun x hx => dT x hx)
+      ⟨fun e => absurd (sl_inj c h0 (i := TX) (j := TY) e) (by decide),
+        fun e => absurd (sl_inj c h0 (i := TX) (j := TZ) e) (by decide),
+        fun e => absurd (sl_inj c h0 (i := TY) (j := TZ) e) (by decide)⟩)
+      fun s₂ ⟨cx₂, cy₂, cz₂, k₂, U₂⟩ => ?_
+    have hs₂ := hs₁.of_keepRegs k₂ (by decide)
+    have U₂' : Unch base (slW c [TX, TY, TZ]) s₁.mem s₂.mem := U₂
+    have v₂ : ∀ {i}, i < 45 → i ∉ [TX, TY, TZ] → i ≠ EM → i ≠ 54 ∧ i ≠ 82 → sv c base s₂ i = sv c base s i :=
+      fun hi hl he ha => (sv_unch U₂' h7 hn hi (apart_slW hl ha)).trans (o O₁ hi he (by decide))
+    have em₂ : sv c base s₂ EM = sv c base s BM :=
+      (sv_unch U₂' h7 hn (i := EM) (by decide) (apart_slW (by decide))).trans e₁
+    have tx₂ : sv c base s₂ TX = sv c base s RX := cx₂.trans (o O₁ (i := RX) (by decide) (by decide) (by decide))
+    have ty₂ : sv c base s₂ TY = sv c base s RY := cy₂.trans (o O₁ (i := RY) (by decide) (by decide) (by decide))
+    have tz₂ : sv c base s₂ TZ = sv c base s RZ := cz₂.trans (o O₁ (i := RZ) (by decide) (by decide) (by decide))
+    have M₂ : ModOkA c.MP' size c.C.p s₂.mem base :=
+      (hM.unch O₁.unch (apart_slW (c := c) (l := [EM]) (i := MP) (by decide)) hn).unch U₂'
+        (apart_slW (c := c) (l := [TX, TY, TZ]) (i := MP) (by decide)) hn
+    -- `R = U`, and `D = R + T`.
+    obtain ⟨E, hE⟩ : ∃ E : Nat → Fin c.C.p, E = fun x => toM c.C.p (2 ^ (64 * c.n)) (wordsVal s₂.mem base x c.n) :=
+      ⟨_, rfl⟩
+    have hI : Inv c.MP' base size c.C.p (· ∈ sumSl.map c.sl) (([AP, BM, UX, UY, UZ, TX, TY, TZ] : List Nat).map c.sl)
+        E s₂ := by
+      refine ⟨hs₂, M₂, map_sl_sub (by decide), fun x hx => ?_, fun x _ => by subst hE; rfl⟩
+      obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hx
+      show sv c base s₂ i < c.C.p
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hi
+      rcases hi with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+      · rw [v₂ (by decide) (by decide) (by decide) (by decide)]; exact hlt _ (by decide)
+      · rw [v₂ (by decide) (by decide) (by decide) (by decide)]; exact hlt _ (by decide)
+      · rw [v₂ (by decide) (by decide) (by decide) (by decide)]; exact hlt _ (by decide)
+      · rw [v₂ (by decide) (by decide) (by decide) (by decide)]; exact hlt _ (by decide)
+      · rw [v₂ (by decide) (by decide) (by decide) (by decide)]; exact hlt _ (by decide)
+      · rw [tx₂]; exact hlt _ (by decide)
+      · rw [ty₂]; exact hlt _ (by decide)
+      · rw [tz₂]; exact hlt _ (by decide)
+    have hA : RcbApart c.rcbSlots (c.pt RX RY RZ) (c.pt TX TY TZ) (c.pt DX DY DZ) :=
+      rcbApart_of h0 (lw := [T0, T1, T2, T3, T4, T5, DX, DY, DZ]) (lr := [AP, BM, RX, RY, RZ, TX, TY, TZ]) rfl rfl
+        (by decide) (by decide)
+    have hLow : Low c.MP' (rcbW c.rcbSlots (c.pt DX DY DZ) ++ rcbR c.rcbSlots (c.pt RX RY RZ) (c.pt TX TY TZ)) :=
+      Low.of_call fun _ _ _ x hx => by
+        rw [show rcbW c.rcbSlots (c.pt DX DY DZ) ++ rcbR c.rcbSlots (c.pt RX RY RZ) (c.pt TX TY TZ) =
+          ([T0, T1, T2, T3, T4, T5, DX, DY, DZ, AP, BM, RX, RY, RZ, TX, TY, TZ] : List Nat).map c.sl from rfl] at hx
+        obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hx
+        have key : ∀ i ∈ ([T0, T1, T2, T3, T4, T5, DX, DY, DZ, AP, BM, RX, RY, RZ, TX, TY, TZ] : List Nat),
+          i < 45 ∧ i ≠ TMP := by decide
+        exact sl_own c hc.n10 (key i hi).1 (key i hi).2
+    have hpa : AddOk c.MP' size (· ∈ sumSl.map c.sl) c.rcbSlots (c.pt RX RY RZ) (c.pt TX TY TZ)
+        (c.pt DX DY DZ) (some (name, c.sl EM)) := by
+      have := addOk_of hc.toBaseCfgOk (Sl := (· ∈ sumSl.map c.sl))
+        (lay_map_em hc.toBaseCfgOk rfl rfl rfl (l := sumSl) (by decide))
+      rw [hp] at this; exact this
+    have hrd : (c.pt RX RY RZ).x ≠ (c.pt RX RY RZ).y ∧ (c.pt RX RY RZ).x ≠ (c.pt RX RY RZ).z ∧
+        (c.pt RX RY RZ).y ≠ (c.pt RX RY RZ).z :=
+      ⟨fun e => absurd (sl_inj c h0 (i := RX) (j := RY) e) (by decide),
+        fun e => absurd (sl_inj c h0 (i := RX) (j := RZ) e) (by decide),
+        fun e => absurd (sl_inj c h0 (i := RY) (j := RZ) e) (by decide)⟩
+    have hr : AddReady base c.MP' s₂.mem c.rcbSlots (some (name, c.sl EM)) := by
+      show sv c base s₂ EM = sv c base s₂ BM
+      rw [em₂, v₂ (by decide) (by decide) (by decide) (by decide)]
+    have hfar : AddFar c.MP' c.rcbSlots (slW c [RX, RY, RZ]) (some (name, c.sl EM)) := fun w hw =>
+      ⟨(apart_slW (c := c) (l := [RX, RY, RZ]) (i := EM) (by decide)) w hw,
+        (apart_slW (c := c) (l := [RX, RY, RZ]) (i := BM) (by decide)) w hw⟩
+    refine WP.seq (WP.mono (copyAdd_ok hL hAl hpR hA
+      (map_sl_sub (l := [T0, T1, T2, T3, T4, T5, DX, DY, DZ, AP, BM, RX, RY, RZ, TX, TY, TZ]) (by decide))
+      hLow hpa hI (map_sl_sub (l := [RX, RY, RZ]) (by decide)) (map_sl_sub (l := [UX, UY, UZ]) (by decide))
+      (map_sl_disj h0 (l₁ := [RX, RY, RZ]) (by decide)) hrd
+      (map_sl_sub (l := [AP, BM, RX, RY, RZ, TX, TY, TZ]) (l' := [RX, RY, RZ, AP, BM, UX, UY, UZ, TX, TY, TZ])
+        (by decide)) hr hfar) fun s₃ ⟨k₃, I₃, t₃⟩ => ?_)
+    have U₃ : Unch base (slW c [EM, TX, TY, TZ, RX, RY, RZ, T0, T1, T2, T3, T4, T5, DX, DY, DZ, TMP])
+        s.mem s₃.mem := O₁.unch.trans (U₂'.trans k₃.unch)
+    have hD : ∀ i ∈ ([DX, DY, DZ] : List Nat), c.sl i ∈ [(c.pt DX DY DZ).x, (c.pt DX DY DZ).y, (c.pt DX DY DZ).z] ++
+        ([(c.pt RX RY RZ).x, (c.pt RX RY RZ).y, (c.pt RX RY RZ).z] ++
+          ([AP, BM, UX, UY, UZ, TX, TY, TZ] : List Nat).map c.sl) := by
+      intro i hi
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hi
+      rcases hi with rfl | rfl | rfl <;> simp [Cfg.pt]
+    have er := rext_r E (c.pt UX UY UZ) hrd
+    have ro : ∀ {i j}, c.sl i ∉ ([RX, RY, RZ] : List Nat).map c.sl → sv c base s₂ i = sv c base s j →
+        rext E (c.pt RX RY RZ) (c.pt UX UY UZ) (c.sl i) = tmv c.C c.n base s (c.sl j) := fun h e => by
+      rw [rext_of h, hE]
+      show toM _ _ (sv c base s₂ _) = toM _ _ (sv c base s _)
+      rw [e]
+    have ru : ∀ {i}, i ∈ ([UX, UY, UZ] : List Nat) → E (c.sl i) = tmv c.C c.n base s (c.sl i) := fun hi => by
+      rw [hE]
+      show toM _ _ (sv c base s₂ _) = toM _ _ (sv c base s _)
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hi
+      rcases hi with rfl | rfl | rfl <;> rw [v₂ (by decide) (by decide) (by decide) (by decide)]
+    have nR : ∀ i ∈ ([BM, TX, TY, TZ] : List Nat), c.sl i ∉ ([RX, RY, RZ] : List Nat).map c.sl :=
+      fun i hi => (map_sl_disj h0 (l₁ := [BM, TX, TY, TZ]) (l₂ := [RX, RY, RZ]) (by decide)) _ (List.mem_map_of_mem hi)
+    refine tail (k₃.scr hs₂) (by rw [k₃.rd, k₂.rd, k₁.rd]) (by rw [k₃.wr, k₂.wr, k₁.wr]) U₃ (by decide) I₃.mod
+      (I₃.lt _ (hD DZ (by simp))) (I₃.lt _ (hD DX (by simp))) ?_
+    refine (congrArg₂ Prod.mk (I₃.val _ (hD DX (by simp)))
+      (congrArg₂ Prod.mk (I₃.val _ (hD DY (by simp))) (I₃.val _ (hD DZ (by simp))))).trans (t₃.trans ?_)
+    show rcbAdd3 (rext E (c.pt RX RY RZ) (c.pt UX UY UZ) (c.sl BM))
+      (rext E (c.pt RX RY RZ) (c.pt UX UY UZ) (c.pt RX RY RZ).x)
+      (rext E (c.pt RX RY RZ) (c.pt UX UY UZ) (c.pt RX RY RZ).y)
+      (rext E (c.pt RX RY RZ) (c.pt UX UY UZ) (c.pt RX RY RZ).z)
+      (rext E (c.pt RX RY RZ) (c.pt UX UY UZ) (c.sl TX)) (rext E (c.pt RX RY RZ) (c.pt UX UY UZ) (c.sl TY))
+      (rext E (c.pt RX RY RZ) (c.pt UX UY UZ) (c.sl TZ)) = _
+    rw [er.1, er.2.1, er.2.2, ro (nR BM (by decide)) (v₂ (by decide) (by decide) (by decide) (by decide)),
+      ro (nR TX (by decide)) tx₂, ro (nR TY (by decide)) ty₂, ro (nR TZ (by decide)) tz₂,
+      show E (c.pt UX UY UZ).x = _ from ru (i := UX) (by decide),
+      show E (c.pt UX UY UZ).y = _ from ru (i := UY) (by decide),
+      show E (c.pt UX UY UZ).z = _ from ru (i := UZ) (by decide)]
 
 /-- After `[u]G + [v]Q`, for what `Q₁` and `Q₂` accept of representatives of
 `[u]G` and `[v]Q`: `R` holds their complete addition. -/
@@ -255,7 +389,7 @@ theorem points_eq (c : Cfg) : Impl.Ecdsa.Verify.AArch64.Cfg.points c =
 
 /-- The slots the comb, the window method but its table, and `save` write. -/
 abbrev ptsW : List Nat :=
-  [RX, RY, RZ, T0, T1, T2, T3, T4, T5, DX, DY, DZ, TX, TY, TZ, TMP, UX, UY, UZ, PT]
+  [RX, RY, RZ, T0, T1, T2, T3, T4, T5, DX, DY, DZ, TX, TY, TZ, TMP, UX, UY, UZ, PT, EM]
 
 /-- `[u]G + [v]Q`, into `R`. -/
 theorem points_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {g : Reg → BitVec 64} {s : State}

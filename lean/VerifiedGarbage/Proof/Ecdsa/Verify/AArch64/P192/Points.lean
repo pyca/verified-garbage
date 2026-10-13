@@ -21,7 +21,7 @@ open VG.Proof.Mont VG.Proof.Mont.AArch64 VG.Proof.Weierstrass VG.Proof.Weierstra
 open Spec.Weierstrass
 
 abbrev ptsW : List Nat := [EXPP, RX, RY, RZ, T0, T1, T2, T3, T4, T5, DX, DY, DZ, TX, TY, TZ,
-  TMP, UX, UY, UZ]
+  TMP, UX, UY, UZ, EM]
 
 theorem points_ok (hc : BaseCfgOk p192) {s₀ : State} {base : Addr} {g : Reg → BitVec 64} {s : State}
     (hM : Mid p192 s₀ base g s) {Q₁ Q₂ : Nat → Fe p192.C → Fe p192.C → Fe p192.C → Prop}
