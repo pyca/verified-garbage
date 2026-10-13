@@ -18,6 +18,18 @@ fn best(mut f: impl FnMut(), iters: usize) -> f64 {
 }
 
 fn main() {
+    if let Some(m) = std::env::args().nth(1) {
+        let bits: u32 = m.parse().unwrap();
+        let key = Rsa::generate(bits).unwrap();
+        let n = key.n().to_vec();
+        let vg = PrivateKey::from_crt(&n, &key.e().to_vec(), &key.d().to_vec(),
+            &key.p().unwrap().to_vec(), &key.q().unwrap().to_vec(),
+            &key.dmp1().unwrap().to_vec(), &key.dmq1().unwrap().to_vec(), &key.iqmp().unwrap().to_vec()).unwrap();
+        let mut input = vec![0x42u8; n.len()]; input[0] = 0;
+        let mut o = vec![0u8; n.len()];
+        let it: usize = std::env::args().nth(2).map(|x| x.parse().unwrap()).unwrap_or(4000); for _ in 0..it { black_box(&vg).private_op(black_box(&input), &mut o).unwrap(); }
+        return;
+    }
     for bits in [2048u32, 3072, 4096] {
         let key = Rsa::generate(bits).unwrap();
         let n = key.n().to_vec();
