@@ -16,6 +16,12 @@ import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.Sqr
 meta import Mathlib.Tactic.SplitIfs
 meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.Sqr
+import VerifiedGarbage.Impl.Mont.Mod
+import VerifiedGarbage.Proof.Framework.X86_64.Spill
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.A24
+meta import VerifiedGarbage.Impl.Mont.Mod
+meta import VerifiedGarbage.Proof.Framework.X86_64.Spill
+meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.A24
 
 /-!
 # X25519 on x86-64 with AVX512_IFMA: `Verified`

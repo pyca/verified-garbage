@@ -11,6 +11,10 @@ import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.X86.CallWith
+import VerifiedGarbage.Proof.Ed25519.X86.CombLoop
+import VerifiedGarbage.Proof.Ed25519.X86.FreezeField
+import VerifiedGarbage.Proof.Ed25519.X86.InputBits
+import VerifiedGarbage.Spec.Rc2
 
 /-!
 # X25519 of the base point on x86: correctness

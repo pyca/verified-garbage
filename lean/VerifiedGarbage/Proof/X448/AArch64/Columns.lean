@@ -8,6 +8,7 @@ import all Init.Data.Vector.Basic
 import Batteries.Logic
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.X448.AArch64.Normalize
 
 /-!
 # X448 on AArch64: pointwise field operations

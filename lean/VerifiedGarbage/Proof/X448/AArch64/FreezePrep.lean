@@ -9,6 +9,8 @@ import all Init.Data.Vector.Basic
 import Batteries.Logic
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 
 /-!
 # X448 on AArch64: preparing canonical reduction

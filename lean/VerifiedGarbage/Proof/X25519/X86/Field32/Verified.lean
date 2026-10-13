@@ -20,6 +20,8 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Spec.Rc2
+meta import VerifiedGarbage.Spec.Rc2
 
 /-!
 # `vg_gf25519_r32_pow250` on x86 (32-bit): its `Verified`

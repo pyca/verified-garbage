@@ -6,6 +6,11 @@ public import VerifiedGarbage.Proof.Rsa.X86_64.Calls
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSelV
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtVerified
 import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.CTMain
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTExpL
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTRows
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetupWs
+import VerifiedGarbage.Proof.Bignum.X86_64.FoldedCTLoop
+import VerifiedGarbage.Proof.Rsa.X86_64.RpCT1
 
 /-!
 # `vg_rsa_private_crt` on x86-64: with BMI2 and ADX

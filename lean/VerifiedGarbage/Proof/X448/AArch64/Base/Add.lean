@@ -10,6 +10,7 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.AArch64.Inline
 import VerifiedGarbage.Proof.Framework.KernelRfl
+public import VerifiedGarbage.Proof.X448.AArch64.Fast.Bounds
 
 /-!
 # X448 of the base point on AArch64: the addition of an affine entry

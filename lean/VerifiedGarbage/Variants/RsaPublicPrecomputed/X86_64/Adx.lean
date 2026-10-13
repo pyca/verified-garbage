@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.Proof.Rsa.X86_64.PublicImpl
 public import VerifiedGarbage.Proof.Bignum.X86_64.FoldedBackend
 import VerifiedGarbage.Proof.Framework.X86_64.Sse
+import VerifiedGarbage.Proof.Bignum.X86_64.FoldedCTLoop
+import VerifiedGarbage.Proof.Bignum.X86_64.PcCT
 
 /-! # Precomputed RSA public operation: Adx -/
 

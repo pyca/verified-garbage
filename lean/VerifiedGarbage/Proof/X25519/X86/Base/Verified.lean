@@ -26,6 +26,12 @@ meta import VerifiedGarbage.Proof.Framework.X86.CallWith
 meta import VerifiedGarbage.Proof.X25519.X86.Field32.CallTaint
 import VerifiedGarbage.Proof.X25519.X86.Lit
 meta import VerifiedGarbage.Proof.X25519.X86.Lit
+import VerifiedGarbage.Impl.Mont.Mod
+import VerifiedGarbage.Proof.X25519.X86.Field32.Pow250Sum
+import VerifiedGarbage.Spec.Rc2
+meta import VerifiedGarbage.Impl.Mont.Mod
+meta import VerifiedGarbage.Proof.X25519.X86.Field32.Pow250Sum
+meta import VerifiedGarbage.Spec.Rc2
 
 /-!
 # X25519 of the base point on x86: constant time, and the shared contract

@@ -7,6 +7,7 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.X448.Wide.Memory
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.X448.Wide.CarryRegs
 
 /-! Untrusted: one wide carry step and its optional interface conversion. -/
 

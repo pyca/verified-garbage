@@ -8,6 +8,9 @@ import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.X448.X86.Init
+import VerifiedGarbage.Proof.X448.X86.RowPass
 
 /-!
 # X448 on x86 (32-bit): field multiplication

@@ -4,6 +4,8 @@ public import VerifiedGarbage.Proof.AesGcm.X86_64.Variant
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Variant
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Lit
 meta import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Lit
+import VerifiedGarbage.Spec.TripleDes
+meta import VerifiedGarbage.Spec.TripleDes
 
 /-!
 # The functions AES-GCM calls on x86-64: VaesVpclmulAvx512

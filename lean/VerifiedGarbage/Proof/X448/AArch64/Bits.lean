@@ -9,6 +9,7 @@ import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Spec.X448.Contract
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.X448.Bytes
 
 /-!
 # X448 on AArch64: the scalar's decoded bits

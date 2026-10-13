@@ -6,6 +6,7 @@ import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.X25519.Bytes
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # X448 on x86-64: the reduction of a product
