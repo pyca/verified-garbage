@@ -72,9 +72,12 @@ What remains below parity on this class:
 * **ChaCha20-Poly1305 below 1 KiB: 0.66–0.86** (in place 0 B 259 vs 186 ns,
   opening 1 KiB 0.80) on the AVX-512 path without IFMA, a fixed cost; bulk
   is 1.11–1.29.
-* **Key exchange:** secp256r1 server start_and_complete 0.82 and keygen 0.88,
-  ECDSA P-256 signing 0.87 (1.08 in aws-lc-compare: noisy), X25519 0.94–0.95,
-  P-384 ECDH 0.80.
+* **Key exchange: no real gap.** Provider-level kx rows are noise on this
+  host (three reruns put secp256r1's server start_and_complete at 1.11,
+  1.04 and 1.76, X25519's at 0.69–1.37). The steadier aws-lc-compare rows,
+  three rounds each: P-256 fixed-base keygen 0.98–1.03, P-256 ECDH 1.28,
+  X25519 keygen 1.10 and X25519 Diffie-Hellman about even (28.3–28.8 µs
+  against about 26–31 µs).
 * **HKDF-SHA-384 extract + expand: 0.91–0.94** (no SHA-NI; HMAC-SHA-384 alone is 1.23).
 
 ## Refresh at ecd4fc1e (noisy host)
