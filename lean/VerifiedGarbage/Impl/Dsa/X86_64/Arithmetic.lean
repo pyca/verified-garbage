@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Rsa.X86_64.Crt
+public import VerifiedGarbage.Impl.Bignum.X86_64.R2Words
 
 /-!
 # DSA multiword arithmetic on x86-64
@@ -13,7 +14,7 @@ the sixteen-entry exponentiation table used by RSA's private operation.
 DSA uses these routines with odd moduli greater than 255 and at least two
 limbs. The input buffers may have leading zeroes. Exponent bytes and input
 bytes are read sequentially; the only conditional branches are on public
-lengths and loop counters. These are implementation definitions, not
+moduli, lengths and loop counters. These are implementation definitions, not
 registered artifacts: registration requires the complete sign/verify proofs.
 -/
 
@@ -53,13 +54,23 @@ def r2Count : List Instr :=
     .alu .add .rcx (.reg .rcx), .alu .add .rcx (.reg .rcx),
     .alu .add .rcx (.reg .rcx)]
 
-/-- Initialize the number 1 and R² mod m by a public number of doublings.
-Unlike RSA's normalized-modulus shortcut this also handles zero high limbs.
-The modulus is greater than 1. -/
-def constants : Prog isa := seqs [
-  small aOne 1, small aR2 1,
-  .block r2Count,
-  doubles aN aAcc aTmp aR2 sCnt]
+/-- R² by doublings, including moduli with zero high limbs. -/
+def doublingR2 : Prog isa := seqs [
+  small aR2 1, .block r2Count, doubles aN aAcc aTmp aR2 sCnt]
+
+/-- Public width and modulus address for RSA's setup. -/
+def setupBases : List Instr :=
+  [.mov .r12 (.mem (hdr sW)), .mov .r10 (.mem (hdr (sArr aN)))]
+
+/-- Detect leading-zero padding without inspecting any secret operand. -/
+def setupTest : List Instr :=
+  [.mov .rax (.mem (ix .r10 .r12 (-8))), .alu .test .rax (.reg .rax)]
+
+/-- Initialize one and R². RSA's word-step/squaring setup handles nonzero
+high limbs; padded moduli retain the general doubling fallback. -/
+def constants (mul : Nat → Nat → Nat → Prog isa) : Prog isa :=
+  .seq (small aOne 1) (.seq (.block setupBases) (.seq (.block setupTest)
+    (.ite .e doublingR2 (R2Words.choice mul))))
 
 /-- Exponentiate an encoded base with accumulator R, then decode. -/
 def encodedPower (mul : Nat → Nat → Nat → Prog isa) (exp expLen : Nat) : Prog isa :=
@@ -79,7 +90,7 @@ def powerCore (mul : Nat → Nat → Nat → Prog isa) (exp expLen : Nat) : Prog
 need not be below m. aY receives the ordinary, reduced result. Exponent
 and base lengths are positive. -/
 def power (mul : Nat → Nat → Nat → Prog isa) (base baseLen exp expLen : Nat) : Prog isa :=
-  .seq constants (.seq (load aX base baseLen) (powerCore mul exp expLen))
+  .seq (constants mul) (.seq (load aX base baseLen) (powerCore mul exp expLen))
 
 /-- Four Montgomery steps: encode both operands, multiply, and decode. -/
 def productCore (mul : Nat → Nat → Nat → Prog isa) : Prog isa := seqs [
@@ -89,7 +100,7 @@ def productCore (mul : Nat → Nat → Nat → Prog isa) : Prog isa := seqs [
 /-- An ordinary modular product. Both input values fit the limb width;
 neither must be below the modulus. -/
 def product (mul : Nat → Nat → Nat → Prog isa) (a aLen b bLen : Nat) : Prog isa := seqs [
-  constants,
+  constants mul,
   load aX a aLen, load aXm b bLen,
   productCore mul]
 
@@ -118,7 +129,7 @@ def reduceByte (mul : Nat → Nat → Nat → Prog isa) : Prog isa := seqs [
 
 /-- Prepare 256R for byte reduction and clear the accumulator and byte array. -/
 def reduceSetup (mul : Nat → Nat → Nat → Prog isa) : Prog isa := seqs [
-  constants,
+  constants mul,
   mul aR2 aR2 aOne,
   .block [.mov32 .rcx (.imm 8)],
   doubles aN aAcc aTmp aR2 sCnt,

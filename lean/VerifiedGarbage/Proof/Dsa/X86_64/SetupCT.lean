@@ -1,9 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Setup
-meta import VerifiedGarbage.Proof.Dsa.X86_64.Setup
+public import VerifiedGarbage.Proof.Dsa.X86_64.SetupChoice
+meta import VerifiedGarbage.Proof.Dsa.X86_64.SetupChoice
 public import VerifiedGarbage.Proof.Dsa.X86_64.ProductCT
 meta import VerifiedGarbage.Proof.Dsa.X86_64.ProductCT
+public import VerifiedGarbage.Proof.Bignum.X86_64.R2wCT
+meta import VerifiedGarbage.Proof.Bignum.X86_64.R2wCT
 public import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
@@ -62,7 +64,7 @@ theorem small_ct {a : Nat} (ha : a < 8)
 /-- Bounds and the public modulus needed by constants setup. -/
 def SetupPre (p : ProductPublic) (s : State) : Prop :=
   ModCtx s p.layout.B p.layout.Z p.layout.w p.layout.minv p.modulus ∧
-    p.layout.w ≤ 48 ∧ 1 < p.modulus
+    p.layout.w ≤ 48 ∧ 1 < p.modulus ∧ p.modulus % 2 = 1
 
 /-- Initializing one array retains the setup precondition. -/
 theorem setup_one {a : Nat} (ha : a < 8) (han : a ≠ aN)
@@ -78,12 +80,8 @@ theorem setup_one {a : Nat} (ha : a < 8) (han : a ≠ aN)
   exact h.1.inverse
 
 /-- Setup's doubling loop has a public count even when the modulus is padded. -/
-theorem constants_ct : RelCT isa (Two SetupPre) Arithmetic.constants (fun _ _ => True) := by
-  unfold Arithmetic.constants seqs
-  refine RelCT.seq (two_post (Ψ := SetupPre)
-    (two_map (fun p : ProductPublic => p.layout) (fun p _ h => ⟨h.1.good, p.fits⟩)
-      (small_ct (a := aOne) (by decide) (by taint_decide)))
-    (fun _ _ h => WP.mono (setup_one (by decide) (by decide) h) fun _ ht => ht.1)) ?_
+theorem doublingR2_ct : RelCT isa (Two SetupPre) Arithmetic.doublingR2 (fun _ _ => True) := by
+  unfold Arithmetic.doublingR2 seqs
   refine RelCT.seq (two_post (Ψ := fun p s => SetupPre p s ∧
     wv s.mem p.layout.B (slot p.layout.w aR2) p.layout.w = 1)
     (two_map (fun p : ProductPublic => p.layout) (fun p _ h => ⟨h.1.good, p.fits⟩)
@@ -101,10 +99,55 @@ theorem constants_ct : RelCT isa (Two SetupPre) Arithmetic.constants (fun _ _ =>
     (fun p s ⟨h, hv, hcx⟩ => ⟨⟨h.1.good, p.fits⟩, p.lower, p.upper,
       by change 1 ≤ 128 * p.layout.w; have := p.lower; omega,
       by change 128 * p.layout.w < 2 ^ 31; have := h.2.1; omega, hcx,
-      by rw [hv, h.1.modulus]; exact h.2.2⟩)
+      by rw [hv, h.1.modulus]; exact h.2.2.1⟩)
     (doubles_ct (by decide) (by decide) (by decide) (by decide)
       (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
       (by decide) (by decide) (by taint_decide) (by taint_decide) (by taint_decide))).mono
     (fun _ _ h => h) (fun _ _ _ => True.intro)
+
+/-- Registers whose values determine the setup test's address. -/
+def SetupRegs (p : ProductPublic) (s : State) : Prop :=
+  SetupPre p s ∧ s.gpr .r12 = BitVec.ofNat 64 p.layout.w ∧
+    s.gpr .r10 = off p.layout.B (slot p.layout.w aN)
+
+/-- The branch depends only on the public modulus and storage width. -/
+def SetupTested (p : ProductPublic) (s : State) : Prop :=
+  SetupRegs p s ∧ s.zf = some (decide (p.modulus / 2 ^ (64 * (p.layout.w - 1)) = 0))
+
+theorem constants_ct (M : Mont) : RelCT isa (Two SetupPre)
+    (Arithmetic.constants M.mm) (fun _ _ => True) := by
+  unfold Arithmetic.constants
+  refine RelCT.seq (two_post (Ψ := SetupPre)
+    (two_map (fun p : ProductPublic => p.layout) (fun p _ h => ⟨h.1.good, p.fits⟩)
+      (small_ct (a := aOne) (by decide) (by taint_decide)))
+    (fun _ _ h => WP.mono (setup_one (by decide) (by decide) h) fun _ ht => ht.1)) ?_
+  refine RelCT.seq (two_piece (Ψ := SetupRegs) [.rdi]
+    (fun p s t hs ht => pins_good p.layout s t ⟨hs.1.good, p.fits⟩ ⟨ht.1.good, p.fits⟩)
+    (by taint_decide) ?_) ?_
+  · intro p s h
+    exact WP.mono (setupBases_ok h.1.good p.fits) fun t ⟨hg, h12, h10, hm, _⟩ =>
+      ⟨⟨⟨hg, hm ▸ h.1.modulus, hm ▸ h.1.inverse⟩, h.2⟩, h12, h10⟩
+  refine RelCT.seq (two_piece (Ψ := SetupTested) [.r10, .r12] ?_ (by taint_decide) ?_) ?_
+  · intro p s t hs ht r hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact hs.2.2.trans ht.2.2.symm
+    · exact hs.2.1.trans ht.2.1.symm
+  · intro p s ⟨h, h12, h10⟩
+    refine WP.mono (setupTest_ok h.1.good p.fits p.lower h.1.modulus h12 h10)
+      fun t ⟨hz, hm, hk⟩ => ⟨⟨?_, (hk.gpr (by decide)).trans h12, (hk.gpr (by decide)).trans h10⟩, hz⟩
+    exact ⟨⟨⟨h.1.good.scr.congr hk.2.2, (hk.gpr (by decide)).trans h.1.good.rdi,
+      hm ▸ h.1.good.hdr⟩, hm ▸ h.1.modulus, hm ▸ h.1.inverse⟩, h.2⟩
+  refine two_ite (fun p s t hs ht => by simp only [eval, hs.2, ht.2]) ?_ ?_
+  · exact two_map id (fun _ _ ⟨⟨⟨h, _, _⟩, _⟩, _⟩ => h) doublingR2_ct
+  · refine two_map (fun p : ProductPublic => (⟨p.layout, p.modulus⟩ : R2Pub)) ?_ (R2w.choice_ct M)
+    rintro p s ⟨⟨⟨h, h12, h10⟩, hz⟩, hc⟩
+    simp only [eval, hz, Option.some.injEq, decide_eq_false_iff_not] at hc
+    refine ⟨⟨h.1.good, p.fits⟩, p.lower, ?_, h.1.modulus, h.1.inverse, h12, h10, h.2.2.2, ?_⟩
+    · change p.layout.w < 2 ^ 30
+      have := h.2.1; omega
+    · change 2 ^ (64 * (p.layout.w - 1)) ≤ p.modulus
+      by_contra hl
+      exact hc (Nat.div_eq_of_lt (by omega))
 
 end VG.Proof.Dsa.X86_64
