@@ -13,13 +13,13 @@ open VG.Arm
 
 def wordReg (i : Nat) : Reg := #[Reg.r4, .r5, .r6, .r7][i % 4]!
 
-def blockSaved : List Reg := [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11]
+def blockSaved : List Reg := [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .lr]
 
 def blockSave : List Instr :=
-  (List.range 8).map fun i => .str (blockSaved.getD i .r4) .r2 (4 * i)
+  (List.range 9).map fun i => .str (blockSaved.getD i .r4) .r2 (4 * i)
 
 def blockRestore : List Instr :=
-  (List.range 8).map fun i => .ldr (blockSaved.getD i .r4) .r2 (4 * i)
+  (List.range 9).map fun i => .ldr (blockSaved.getD i .r4) .r2 (4 * i)
 
 def loadWord (i : Nat) : List Instr :=
   [.ldrb (wordReg i) .r1 (2 * i), .ldrb .r12 .r1 (2 * i + 1),
@@ -51,15 +51,26 @@ def mix (j i : Nat) : List Instr :=
 def reverseMix (j i : Nat) : List Instr :=
   rotate16 (wordReg i) (16 - Spec.Rc2.rotation i) ++ mixInputs j i ++ subInputs (wordReg i)
 
-def mash (direction : Spec.Rc2.Direction) (i : Nat) : List Instr :=
-  [rr .r12 (wordReg (i + 3))] ++ keyLookup ++ adjust (direction == .decrypt) (wordReg i)
+def mash (direction : Spec.Rc2.Direction) (i : Nat) : Prog isa :=
+  .seq (.block [rr .r12 (wordReg (i + 3))])
+    (.seq keyLookup (.block (adjust (direction == .decrypt) (wordReg i))))
 
-def round (direction : Spec.Rc2.Direction) (j : Nat) : List Instr :=
+/-- The order of the words in a mashing round. -/
+def mashOrder (direction : Spec.Rc2.Direction) : List Nat :=
   match direction with
-  | .encrypt => (List.range 4).flatMap (fun i => mix (4 * j + i) i) ++
-      (if j = 4 ∨ j = 10 then (List.range 4).flatMap (mash .encrypt) else [])
-  | .decrypt => [3, 2, 1, 0].flatMap (fun i => reverseMix (4 * (15 - j) + i) i) ++
-      (if j = 4 ∨ j = 10 then [3, 2, 1, 0].flatMap (mash .decrypt) else [])
+  | .encrypt => List.range 4
+  | .decrypt => [3, 2, 1, 0]
+
+def mashRound (direction : Spec.Rc2.Direction) : Prog isa :=
+  (mashOrder direction).foldr (fun i rest => .seq (mash direction i) rest) (.block [])
+
+def mixRound (direction : Spec.Rc2.Direction) (j : Nat) : List Instr :=
+  match direction with
+  | .encrypt => (List.range 4).flatMap (fun i => mix (4 * j + i) i)
+  | .decrypt => [3, 2, 1, 0].flatMap (fun i => reverseMix (4 * (15 - j) + i) i)
+
+def round (direction : Spec.Rc2.Direction) (j : Nat) : Prog isa :=
+  .seq (.block (mixRound direction j)) (if j = 4 ∨ j = 10 then mashRound direction else .block [])
 
 def storeWord (i : Nat) : List Instr :=
   [.strb (wordReg i) .r1 (2 * i), .mov .r12 (.shifted (wordReg i) .lsr 8),
@@ -67,10 +78,13 @@ def storeWord (i : Nat) : List Instr :=
 
 def blockStore : List Instr := (List.range 4).flatMap storeWord
 
-def blockCode (direction : Spec.Rc2.Direction) : List Instr :=
-  blockSave ++ blockLoad ++ (List.range 16).flatMap (round direction) ++ blockStore ++ blockRestore
+def rounds (direction : Spec.Rc2.Direction) : Prog isa :=
+  (List.range 16).foldr (fun j rest => .seq (round direction j) rest) (.block [])
 
-def encryptBlock : Prog isa := .block (blockCode .encrypt)
-def decryptBlock : Prog isa := .block (blockCode .decrypt)
+def blockCode (direction : Spec.Rc2.Direction) : Prog isa :=
+  .seq (.block (blockSave ++ blockLoad)) (.seq (rounds direction) (.block (blockStore ++ blockRestore)))
+
+def encryptBlock : Prog isa := blockCode .encrypt
+def decryptBlock : Prog isa := blockCode .decrypt
 
 end VG.Impl.Rc2.Arm

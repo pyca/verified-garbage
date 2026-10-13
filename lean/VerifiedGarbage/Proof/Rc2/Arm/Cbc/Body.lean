@@ -33,7 +33,7 @@ def args : List Reg := [.r0, .r1, .r2]
 def kept : List Reg := [.r0, .r1, .r2, .r4, .r5]
 
 theorem block_keeps (d : Spec.Rc2.Direction) :
-    ((instrs (.block (blockCode d) : Prog isa)).all fun i => args.all fun r => decide (dstOf i ≠ some r)) = true := by
+    ((instrs (blockCode d : Prog isa)).all fun i => args.all fun r => decide (dstOf i ≠ some r)) = true := by
   cases d
   · change ((instrs encryptBlock).all _) = true
     rw [← Code.allInstrs_eq]; lit_decide
@@ -41,20 +41,20 @@ theorem block_keeps (d : Spec.Rc2.Direction) :
     rw [← Code.allInstrs_eq]; lit_decide
 
 theorem block_keeps_reg (d : Spec.Rc2.Direction) {r : Reg} (hr : r ∈ args) :
-    ∀ i ∈ instrs (.block (blockCode d) : Prog isa), dstOf i ≠ some r := by
+    ∀ i ∈ instrs (blockCode d : Prog isa), dstOf i ≠ some r := by
   intro i hi
   have h := List.all_eq_true.mp (List.all_eq_true.mp (block_keeps d) i hi) r hr
   simpa using h
 
 theorem block_correct' (d : Spec.Rc2.Direction) (s : State) (hs : (blockContract d).pre s) :
-    ∃ t s', Exec isa (.block (blockCode d)) s t s' ∧ abiPreserved s s' ∧ (blockContract d).post s s' := by
+    ∃ t s', Exec isa (blockCode d) s t s' ∧ abiPreserved s s' ∧ (blockContract d).post s s' := by
   cases d
   · exact encrypt_correct s hs
   · exact decrypt_correct s hs
 
 theorem blockCall_eq (d : Spec.Rc2.Direction) : Impl.Rc2.Arm.Cbc.blockCall d =
     .call (match d with | .encrypt => "vg_rc2_encrypt_block" | .decrypt => "vg_rc2_decrypt_block")
-      (.block (blockCode d)) := by cases d <;> rfl
+      (blockCode d) := by cases d <;> rfl
 
 structure CallPre (s : State) : Prop where
   reads : Covers [⟨State.addr (s.gpr .r0), 128⟩, ⟨State.addr (s.gpr .r1), 8⟩, ⟨State.addr (s.gpr .r2), 256⟩] (s.rd ++ s.wr)
@@ -78,7 +78,8 @@ theorem call_ok (d : Spec.Rc2.Direction) (s : State) (hp : CallPre s) :
     WP isa (Impl.Rc2.Arm.Cbc.blockCall d) s (CallPost d s) := by
   rw [blockCall_eq]
   refine WP.call (k := blockContract d) (block_correct' d)
-    (rd := [⟨State.addr (s.gpr .r0), 128⟩]) (wr := [⟨State.addr (s.gpr .r1), 8⟩, ⟨State.addr (s.gpr .r2), 256⟩]) ?_ hp.reads hp.writes ?_ (by rfl)
+    (rd := [⟨State.addr (s.gpr .r0), 128⟩]) (wr := [⟨State.addr (s.gpr .r1), 8⟩, ⟨State.addr (s.gpr .r2), 256⟩]) ?_ hp.reads hp.writes ?_
+    (by cases d <;> rfl)
   · simp only [blockContract, State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr,
       State.callEntry_gpr _ (by decide : Reg.r0 ∉ linkRegs),
       State.callEntry_gpr _ (by decide : Reg.r1 ∉ linkRegs), State.callEntry_gpr _ (by decide : Reg.r2 ∉ linkRegs)]

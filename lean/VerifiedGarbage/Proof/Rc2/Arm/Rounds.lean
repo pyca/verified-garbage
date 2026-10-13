@@ -28,6 +28,10 @@ theorem wordReg_separate (i : Nat) :
       wordReg j ≠ .r10 ∧ wordReg j ≠ .r11 := by decide
   simpa only [wordReg, Nat.mod_mod] using h (i % 4) (Nat.mod_lt _ (by decide))
 
+theorem wordReg_ne_lr (i : Nat) : wordReg i ≠ .lr := by
+  have h : ∀ j < 4, wordReg j ≠ .lr := by decide
+  simpa only [wordReg, Nat.mod_mod] using h (i % 4) (Nat.mod_lt _ (by decide))
+
 theorem wordReg_injective : ∀ i < 4, ∀ j < 4, wordReg i = wordReg j ↔ i = j := by decide
 
 theorem rotation_bounds (i : Nat) : 1 ≤ Spec.Rc2.rotation i ∧ Spec.Rc2.rotation i < 16 := by
@@ -62,8 +66,7 @@ theorem rotate16_ok (s : State) (r : Reg) (hr : r ≠ .r12)
 
 theorem mixInputs_ok (s : State) (i j : Nat) (hj : j < 64)
     (fit : (s.gpr .r0).toNat + 128 ≤ 2 ^ 32)
-    (readable : ∀ k < 128,
-      InRegions (s.rd ++ s.wr) (State.addr (s.gpr .r0 + BitVec.ofNat 32 k)) 1) :
+    (readable : InRegions (s.rd ++ s.wr) (State.addr (s.gpr .r0)) 128) :
     ∃ s', runBlock isa (mixInputs j i) s = some s' ∧
       s'.gpr .r10 = (s.gpr (wordReg (i + 3)) &&& s.gpr (wordReg (i + 2))) +
         (~~~(s.gpr (wordReg (i + 3))) &&& s.gpr (wordReg (i + 1))) ∧
@@ -72,8 +75,10 @@ theorem mixInputs_ok (s : State) (i j : Nat) (hj : j < 64)
   have h₁ := wordReg_separate (i + 1)
   have h₂ := wordReg_separate (i + 2)
   have h₃ := wordReg_separate (i + 3)
-  have lo := readable (2 * j) (by omega)
-  have hi := readable (2 * j + 1) (by omega)
+  have lo : InRegions (s.rd ++ s.wr) (State.addr (s.gpr .r0 + BitVec.ofNat 32 (2 * j))) 1 := by
+    rw [addr_add (by omega)]; exact key_in readable (by omega)
+  have hi : InRegions (s.rd ++ s.wr) (State.addr (s.gpr .r0 + BitVec.ofNat 32 (2 * j + 1))) 1 := by
+    rw [addr_add (by omega)]; exact key_in readable (by omega)
   have loOff : 2 * j < 4096 := by omega
   have hiOff : 2 * j + 1 < 4096 := by omega
   refine ⟨_, by
@@ -109,14 +114,14 @@ theorem mixInputs_ok (s : State) (i j : Nat) (hj : j < 64)
 def Words (s : State) (v : Spec.Rc2.State) : Prop :=
   ∀ i < 4, s.gpr (wordReg i) = (v.getD i 0).setWidth 32
 
-def temps : List Reg := [.r12, .r3, .r8, .r9, .r10, .r11]
+def temps : List Reg := [.r12, .r3, .r8, .r9, .r10, .r11, .lr]
 def roundWrites : List Reg := temps ++ [.r4, .r5, .r6, .r7]
 
 theorem wordReg_not_temps (i : Nat) : wordReg i ∉ temps := by
   have h := wordReg_separate i
   simp only [temps, List.mem_cons, List.not_mem_nil, or_false, not_or]
   exact ⟨h.1, h.2.1, h.2.2.2.2.2.1, h.2.2.2.2.2.2.1,
-    h.2.2.2.2.2.2.2.1, h.2.2.2.2.2.2.2.2⟩
+    h.2.2.2.2.2.2.2.1, h.2.2.2.2.2.2.2.2, wordReg_ne_lr i⟩
 
 theorem wordReg_mem_roundWrites (i : Nat) : wordReg i ∈ roundWrites := by
   have h : ∀ j < 4, wordReg j ∈ roundWrites := by decide
@@ -196,8 +201,7 @@ theorem subInputs_ok (s : State) (r : Reg) (h6 : r ≠ .r10) :
 theorem mix_ok (s : State) (v : Spec.Rc2.State) (hv : Words s v)
     (i j : Nat) (hi : i < 4) (hj : j < 64)
     (fit : (s.gpr .r0).toNat + 128 ≤ 2 ^ 32)
-    (readable : ∀ k < 128,
-      InRegions (s.rd ++ s.wr) (State.addr (s.gpr .r0 + BitVec.ofNat 32 k)) 1) :
+    (readable : InRegions (s.rd ++ s.wr) (State.addr (s.gpr .r0)) 128) :
     WP isa (.block (mix j i)) s (fun s' =>
       Words s' (Spec.Rc2.mix (Spec.Rc2.scheduleAt s.mem (State.addr (s.gpr .r0))) j i v) ∧
       Keep (wordReg i :: temps) s s') := by
@@ -276,8 +280,7 @@ theorem keep_word {i : Nat} {s s' : State} (h : Keep [wordReg i] s s') :
 theorem reverseMix_ok (s : State) (v : Spec.Rc2.State) (hv : Words s v)
     (i j : Nat) (hi : i < 4) (hj : j < 64)
     (fit : (s.gpr .r0).toNat + 128 ≤ 2 ^ 32)
-    (readable : ∀ k < 128,
-      InRegions (s.rd ++ s.wr) (State.addr (s.gpr .r0 + BitVec.ofNat 32 k)) 1) :
+    (readable : InRegions (s.rd ++ s.wr) (State.addr (s.gpr .r0)) 128) :
     WP isa (.block (reverseMix j i)) s (fun s' =>
       Words s' (Spec.Rc2.reverseMix (Spec.Rc2.scheduleAt s.mem (State.addr (s.gpr .r0))) j i v) ∧
       Keep (wordReg i :: temps) s s') := by
@@ -292,8 +295,7 @@ theorem reverseMix_ok (s : State) (v : Spec.Rc2.State) (hv : Words s v)
   have ptr₁ : s₁.gpr .r0 = s.gpr .r0 := keep₁.reg _ (by
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]
     exact ⟨Ne.symm sep.2.2.2.1, by decide⟩)
-  have read₁ : ∀ k < 128,
-      InRegions (s₁.rd ++ s₁.wr) (State.addr (s₁.gpr .r0 + BitVec.ofNat 32 k)) 1 := by
+  have read₁ : InRegions (s₁.rd ++ s₁.wr) (State.addr (s₁.gpr .r0)) 128 := by
     rw [keep₁.rd, keep₁.wr, ptr₁]; exact readable
   obtain ⟨s₂, run₂, composite₂, key₂, keep₂⟩ := mixInputs_ok s₁ i j hj (by rw [ptr₁]; exact fit) read₁
   refine WP.of_runBlock ⟨s₂, run₂, ?_⟩
@@ -359,17 +361,16 @@ def mashSpec (direction : Spec.Rc2.Direction) (k : Spec.Rc2.Schedule)
 theorem mash_ok (direction : Spec.Rc2.Direction) (s : State)
     (v : Spec.Rc2.State) (hv : Words s v) (i : Nat) (hi : i < 4)
     (fit : (s.gpr .r0).toNat + 128 ≤ 2 ^ 32)
-    (readable : ∀ k < 128,
-      InRegions (s.rd ++ s.wr) (State.addr (s.gpr .r0 + BitVec.ofNat 32 k)) 1) :
-    WP isa (.block (mash direction i)) s (fun s' =>
+    (readable : InRegions (s.rd ++ s.wr) (State.addr (s.gpr .r0)) 128) :
+    WP isa (mash direction i) s (fun s' =>
       Words s' (mashSpec direction (Spec.Rc2.scheduleAt s.mem (State.addr (s.gpr .r0))) i v) ∧
       Keep (wordReg i :: temps) s s') := by
-  rw [mash, List.append_assoc, WP.block_append_iff]
+  unfold mash
   let s₁ := s.setReg .r12 (s.gpr (wordReg (i + 3)))
-  refine WP.of_runBlock ⟨s₁, ?_, ?_⟩
+  refine WP.seq (WP.of_runBlock ⟨s₁, ?_, ?_⟩)
   · simp only [rr, runBlock_cons, runStep_some, runBlock_nil, exec, Op2.eval, Option.map_some]
     rfl
-  rw [WP.block_append_iff]
+  refine WP.seq ?_
   have keep₁ : Keep temps s s₁ := by
     constructor
     · intro r hr
@@ -378,8 +379,7 @@ theorem mash_ok (direction : Spec.Rc2.Direction) (s : State)
     · exact rd_setReg _ _ _
     · exact wr_setReg _ _ _
   have ptr₁ := keep₁.reg .r0 (by decide)
-  have read₁ : ∀ k < 128,
-      InRegions (s₁.rd ++ s₁.wr) (State.addr (s₁.gpr .r0 + BitVec.ofNat 32 k)) 1 := by
+  have read₁ : InRegions (s₁.rd ++ s₁.wr) (State.addr (s₁.gpr .r0)) 128 := by
     rw [keep₁.rd, keep₁.wr, ptr₁]; exact readable
   apply WP.mono (keyLookup_ok s₁ (by rw [ptr₁]; exact fit) read₁)
   intro s₂ h₂
