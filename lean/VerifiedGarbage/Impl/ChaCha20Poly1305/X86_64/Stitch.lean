@@ -378,10 +378,12 @@ def sealStitched (x : ChaCha20.X86_64.Callee) (b : Poly1305.X86_64.Blocks) : Pro
   (.seq finalizeTag
     (.block restore)))))))
 
-/-- The AVX-512 instance (without IFMA) seals fewer bytes of data than this
-with the AVX2 code (`sealSmall`): on Cascade Lake, from 640 bytes on, the
-AVX-512 code is the faster even with its lower clock. -/
-def smallLim : Nat := 640
+/-- The AVX-512 instances (without IFMA) seal fewer bytes of data than this
+with the AVX2 code (`sealSmall`): on Cascade Lake, with
+`vg_chacha20_xor_avx512vl`'s rounds, it is the faster up to 767 bytes (by up
+to 6.4% from 640 on), and from 768 on the AVX-512 code is, even with its
+lower clock (the AVX2 code is 25-30% slower at 800-831 bytes). -/
+def smallLim : Nat := 768
 
 /-- `seal` for fewer than `smallLim` bytes of data (`len`, in `r9`) with the AVX2
 code, `sealStitched` with the implementation `small` of `vg_chacha20_xor`
