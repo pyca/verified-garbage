@@ -50,12 +50,14 @@ structure RfcHash where
   K : Callees H
   satI : ∃ s, (Spec.Hmac.initScratchContract ok.SH H.W X86_64.abi 16).pre s
   satF : ∃ s, (Spec.Hmac.finalizeScratchContract ok.SH H.W X86_64.abi 16).pre s
-  /-- The instance is of the curve, with this hash function's HMAC, its
-  output length and 8 candidates. -/
+  /-- The instance is of the curve, with this hash function's HMAC and its
+  output length, and tries at least one candidate, as many as a 32-bit
+  immediate holds. -/
   ecdsa : I.ecdsa = R.inst
   hash : I.hash = ok.SH.H
   len : I.hashLen = H.D
-  tries : I.tries = 8
+  tries_pos : 0 < I.tries
+  tries_lt : I.tries < 2 ^ 32
   /-- The sizes the frame and `scratch` hold: the output and block sizes of
   SHA-256, SHA-384, SHA-512 or SHA-224. -/
   hDB : (H.D = 32 ∧ H.P.B = 64) ∨ (H.D = 48 ∧ H.P.B = 128) ∨ (H.D = 64 ∧ H.P.B = 128) ∨
@@ -159,7 +161,7 @@ def cfgOf (P : RfcHash) : Cfg where
   wide := P.R.wide
   sh := P.R.sh
   n := P.R.E.C.n
-  tries := 8
+  tries := P.I.tries
   coreN := P.R.coreN
   coreC := P.R.coreC
 

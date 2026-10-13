@@ -136,7 +136,8 @@ def pack (adx : Bool) (hL : Weierstrass.Law Spec.P521.curve)
   ecdsa := by cases adx <;> rfl
   hash := rfl
   len := rfl
-  tries := rfl
+  tries_pos := Nat.le_of_ble_eq_true rfl
+  tries_lt := Nat.le_of_ble_eq_true rfl
   hDB := .inr (.inr (.inl ⟨rfl, rfl⟩))
   hS := Nat.le_of_ble_eq_true rfl
   hW := Nat.le_of_ble_eq_true rfl

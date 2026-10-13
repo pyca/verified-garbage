@@ -57,7 +57,8 @@ def pack (hL : Weierstrass.Law Spec.Secp256k1.curve)
   ecdsa := rfl
   hash := rfl
   len := rfl
-  tries := rfl
+  tries_pos := Nat.le_of_ble_eq_true rfl
+  tries_lt := Nat.le_of_ble_eq_true rfl
   hDB := .inl ⟨rfl, rfl⟩
   hS := Nat.le_of_ble_eq_true rfl
   hW := Nat.le_of_ble_eq_true rfl
