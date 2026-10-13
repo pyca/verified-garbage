@@ -484,9 +484,11 @@ theorem crtWin5_ok (M : Mont) (S : CrtSel 32) {t₀ t : State} {P : Addr} {wx : 
   have htab₆ : CTab t₆.mem P wx X Q x 32 := hI₁.tab.of_win f16 hn
   -- The window.
   have hr : pre eb i' % 2 ^ b' < 2 ^ b' := Nat.mod_lt _ (Nat.two_pow_pos b')
-  refine WP.seq (WP.mono (takeWin_ok hc₆ (by rw [hh16 _ (by decide)]; exact hI₁.pow)
+  refine wp_seqs_append (a := [.block Crt.takeWin]) (by simp) (by simp) ?_
+  simp only [seqs]
+  refine WP.mono (takeWin_ok hc₆ (by rw [hh16 _ (by decide)]; exact hI₁.pow)
     (by rw [hh16 _ (by decide)]; exact hI₁.v) (by rw [hh16 _ (by decide)]; exact hI₁.bit) hb5 hb12 hr)
-    fun t₇ ⟨hm₇, k₇⟩ => ?_)
+    fun t₇ ⟨hm₇, k₇⟩ => ?_
   have hY1 := hdr_lt_slot wx aY (show 31 < 32 by decide)
   have h8 := hdr_lt_slot wx 8 (show 31 < 32 by decide)
   have hnT : slot wx 8 + tabBytes wx 32 ≤ 2 ^ 64 := by omega_arith
@@ -511,12 +513,14 @@ theorem crtWin5_ok (M : Mont) (S : CrtSel 32) {t₀ t : State} {P : Addr} {wx : 
       hdrStore_hdr _ _ _ (by decide) hk (Ne.symm h2), hdrStore_hdr _ _ _ (by decide) hk (Ne.symm h1), hh16 k hk]
   have hv32 : pre eb i' % 2 ^ b' / 2 ^ (b' - 5) < 32 := by
     rw [Nat.div_lt_iff_lt_mul (Nat.two_pow_pos _), show (32 : Nat) = 2 ^ 5 from rfl, ← Nat.pow_add,
-      show b' - 5 + 5 = b' by omega]
+      show 5 + (b' - 5) = b' by omega]
     exact hr
   -- `T := T_v`.
   refine wp_seqs_append S.ne (by simp) ?_
-  refine WP.mono (S.ok hc₇ hw hw' hv32 (by rw [hh₇ _ (by decide) (by decide) (by decide) (by decide) (by decide)];
-      exact hI₁.tab.tab) (by rw [hm₇, hdrStore_hdr _ _ _ (by decide) (by decide) (by decide), word_writeW_self]))
+  have ht₇ : word t₇.mem P (8 * Crt.sTab) = off P (slot wx 8) := by
+    rw [hh₇ _ (by decide) (by decide) (by decide) (by decide) (by decide)]; exact hI₁.tab.tab
+  refine WP.mono (S.ok hc₇ hw hw' hv32 ht₇
+      (by rw [hm₇, hdrStore_hdr _ _ _ (by decide) (by decide) (by decide), word_writeW_self]))
     fun t₈ ⟨hc₈, hT₈, f₈, k₈⟩ => ?_
   have hY₈ : wv t₈.mem P (slot wx aY) wx = wv t₇.mem P (slot wx aY) wx :=
     f₈.wv_eq (fun r hr => by
@@ -532,7 +536,7 @@ theorem crtWin5_ok (M : Mont) (S : CrtSel 32) {t₀ t : State} {P : Addr} {wx : 
   have hv := take_val (P := pre eb i') hb5
   refine WP.seq (WP.mono (crtMulT_ok M (Q := Q) (x := x) (E := 32 * (pre eb i' / 2 ^ b'))
     (v := pre eb i' % 2 ^ b' / 2 ^ (b' - 5)) hc₈ hw hw' hR (by rw [hT₈]; exact htab₇.lt _ hv32)
-    (fun hq => by rw [hY₈, hY₇, hYv₆ hq]; congr 2; omega)
+    (fun hq => by rw [hY₈, hY₇, hYv₆ hq, show ∀ C : Nat, 2 * (2 * (2 * (2 * (2 * C)))) = 32 * C from fun C => by omega])
     (fun hq => by rw [hT₈]; exact htab₇.val hq _ hv32)) fun t₉ ⟨hc₉, hY₉, hYv₉, hh₉, f₉, k₉⟩ => ?_)
   have hh₉' : ∀ k < 32, k ≠ Crt.sEnt → k ≠ Crt.sJ → word t₉.mem P (8 * k) = word t₇.mem P (8 * k) :=
     fun k hk h1 h2 => (hh₉ k hk).trans (sel_hdr f₈ hk h1 h2)
@@ -551,8 +555,10 @@ theorem crtWin5_ok (M : Mont) (S : CrtSel 32) {t₀ t : State} {P : Addr} {wx : 
     exact ((f16.mono fun r hr => crtExpRanges_sub5 wx r (crtWinRanges_sub wx r hr)).trans f₇).trans
       ((f₈.mono fun r hr => crtExpRanges_sub5 wx r (crtWinRanges_sub wx r (selRanges_sub wx r hr))).trans
         (f₉.mono fun r hr => crtExpRanges_sub5 wx r (crtWinRanges_sub wx r hr)))
-  refine ⟨hc₉.of_frm5 (by rw [hm']; exact Frm.refl _ _ _) k'.2.2 (k'.gpr (by decide)), by rw [hm']; exact
-      htab₈.of_win f₉ hn, by rw [hm']; exact hY₉, fun hq => ?_, ?_, ?_, ?_, ?_, ?_, ?_, hI₁.frm.trans fall,
+  have htab' : CTab t'.mem P wx X Q x 32 := by rw [hm']; exact htab₈.of_win f₉ hn
+  have hY' : wv t'.mem P (slot wx aY) wx < X := by rw [hm']; exact hY₉
+  refine ⟨hc₉.of_frm5 (by rw [hm']; exact Frm.refl _ _ _) k'.2.2 (k'.gpr (by decide)), htab', hY', fun hq => ?_,
+      ?_, ?_, ?_, ?_, ?_, ?_, hI₁.frm.trans fall,
     ((((((hI₁.keep.trans k16).trans k₇).trans k₈).trans k₉).trans k').mono (by decide))⟩
   · rw [hm', hYv₉ hq, hv.1]
   · rw [hm', hh₉' _ (by decide) (by decide) (by decide), hm₇, word_writeW_self, hv.2]
@@ -567,5 +573,150 @@ theorem crtWin5_ok (M : Mont) (S : CrtSel 32) {t₀ t : State} {P : Addr} {wx : 
       (by decide)]; exact hI₁.e
   · rw [hm', hh₉' _ (by decide) (by decide) (by decide), hh₇ _ (by decide) (by decide) (by decide) (by decide)
       (by decide)]; exact hI₁.len
+
+/-! ## The exponentiation -/
+
+/-- What changes within `expLoop5`'s ranges keeps the prime's workspace. -/
+theorem SubCtx.of_frm5 {s t : State} {B : Addr} {Z o w wx : Nat} {minv : BitVec 64}
+    (h : SubCtx s B Z o w wx minv) (hT : o + slot wx 8 + wsTab wx ≤ Z) (hf : Frm (off B o) (crtExpRanges5 wx) s.mem t.mem)
+    (hwr : t.wr = s.wr) (hdi : t.gpr .rdi = s.gpr .rdi) : SubCtx t B Z o w wx minv := by
+  have hn := h.scr.nowrap
+  simp only [wsTab] at hT
+  have hL : o + (slot wx 8 + tabBytes wx 32) ≤ 2 ^ 64 := by omega
+  have hr := crtExpRanges5_ok wx
+  have hr' : ∀ r ∈ crtExpRanges5 wx, r.1 + r.2 ≤ slot wx 8 + tabBytes wx 32 := fun r hr' => (hr r hr').2
+  have hh : ∀ i < 17, word t.mem (off B o) (8 * i) = word s.mem (off B o) (8 * i) := fun i hi' =>
+    hf.word_eq (fun r hr' => Or.inl (by have := hr r hr'; omega))
+      (by have : 8 * 32 ≤ slot wx 8 := by unfold slot hdrBytes; omega
+          omega)
+  have hb : ∀ i < 32, word t.mem B (8 * i) = word s.mem B (8 * i) := fun i hi' =>
+    hf.word_below hr' hL (by unfold slot hdrBytes at hL; omega) (by have := hdr_lt_slot w 8 hi'; have := h.lo; omega)
+  exact ⟨h.scr.congr hwr, hdi.trans h.rdi,
+    ⟨(hh _ (by decide)).trans h.hdr.hw, (hh _ (by decide)).trans h.hdr.hminv,
+      fun j hj => (hh _ (by unfold sArr; omega)).trans (h.hdr.harr j hj)⟩,
+    (hh _ (by decide)).trans h.link, (hb _ (by decide)).trans h.nw,
+    fun j hj => (hb _ (by unfold sArr; omega)).trans (h.narr j hj), h.lo, h.hi⟩
+
+/-- After `j` windows: `padBits L + 8 i = 5 j + b`. -/
+def W5Inv (t₀ : State) (P : Addr) (wx : Nat) (minv : BitVec 64) (X Xc : Nat) (Q : Prop) (x : Nat)
+    (ep : Addr) (L : Nat) (eb : List Byte) (j : Nat) (t : State) : Prop :=
+  ∃ i b, padBits L + 8 * i = 5 * j + b ∧ b < 8 ∧ i ≤ L ∧ W5At t₀ P wx minv X Xc Q x ep L eb i b t
+
+theorem expLoop5_eq (mul : Nat → Nat → Nat → Prog isa) (sel : List (Prog isa)) (sp sl : Nat) :
+    Crt.expLoop5 mul sel sp sl = (expInit sp sl :: Crt.tabBuildN mul 30) ++
+      [.block Crt.padInit, .loop (seqs (Crt.expWin5 mul sel)) .ne] := by
+  simp [Crt.expLoop5, expInit]
+
+/-- The exponentiation in a prime's workspace by windows of 5 bits, with room
+for its table of 32 entries: as `crtExpLoop_ok`. -/
+theorem crtExpLoop5_ok (M : Mont) (S : CrtSel 32) {s : State} {B : Addr} {Z o w wx : Nat} {minv : BitVec 64}
+    {X x : Nat} {Q : Prop} (hc : SubCtx s B Z o w wx minv) (hT : o + slot wx 8 + wsTab wx ≤ Z) (hw2 : 2 ≤ wx)
+    (hwx : wx ≤ w) (hw30 : w < 2 ^ 30)
+    (hn : wv s.mem (off B o) (slot wx aN) wx = X)
+    (hinv : ((word s.mem (off B o) (slot wx aN)).toNat * minv.toNat + 1) % 2 ^ 64 = 0)
+    (hodd : X % 2 = 1)
+    (hxl : wv s.mem (off B o) (slot wx Crt.aXc) wx < X)
+    (hxc : Q → wv s.mem (off B o) (slot wx Crt.aXc) wx % X = x * 2 ^ (64 * wx) % X)
+    (hyl : wv s.mem (off B o) (slot wx aY) wx < X)
+    (hyc : Q → wv s.mem (off B o) (slot wx aY) wx % X = 2 ^ (64 * wx) % X)
+    {sp sl : Nat} (hsp : sp < 32) (hsl : sl < 32) {ep : Addr} {eb : List Byte}
+    (hep : word s.mem B (8 * sp) = ep) (hel : word s.mem B (8 * sl) = BitVec.ofNat 64 eb.length)
+    (hL1 : 1 ≤ eb.length) (hL2 : eb.length ≤ 1024) (he : Src s B Z ep eb) :
+    WP isa (seqs (Crt.expLoop5 M.mm S.code sp sl)) s fun t => SubCtx t B Z o w wx minv ∧
+      wv t.mem (off B o) (slot wx aY) wx < X ∧
+      (Q → wv t.mem (off B o) (slot wx aY) wx % X = x ^ Spec.Rsa.os2ip eb * 2 ^ (64 * wx) % X) ∧
+      Frm (off B o) (crtExpRanges5 wx) s.mem t.mem ∧ Keep mmRegs s t := by
+  have hi := hc.hi
+  have hlo := hc.lo
+  have hBn := hc.scr.nowrap
+  have hs32 := hc.scr32 hT
+  have hPn := hs32.nowrap
+  have hT' := hT
+  simp only [wsTab] at hT'
+  have h256 : 256 ≤ slot wx 8 := by unfold slot hdrBytes; omega_arith
+  have hR : Nat.Coprime (2 ^ (64 * wx)) X := VG.Proof.Bignum.coprime_pow2 hodd _
+  have hout : ∀ i < eb.length, slot wx 8 + tabBytes wx 32 ≤ ofs (off B o) (ep + BitVec.ofNat 64 i) := fun i hi' => by
+    have := he.out i hi'
+    rcases ofs_rebase B (ep + BitVec.ofNat 64 i) (o := o) (by omega_arith) with ⟨_, h2⟩ | ⟨h1, _⟩
+    · omega_arith
+    · omega_arith
+  have hc₀ : CExpCtx s (off B o) wx minv X (wv s.mem (off B o) (slot wx Crt.aXc) wx) 32 :=
+    ⟨hc.good, hs32, hn, hinv, rfl⟩
+  rw [expLoop5_eq]
+  refine wp_seqs_append (by simp) (by simp) ?_
+  -- The start and the table.
+  rw [← List.singleton_append]
+  refine wp_seqs_append (by simp) (by simp [tabBuild_eq, tabPre]) ?_
+  simp only [seqs, expInit]
+  refine WP.mono (crtExpInit_ok hc hsp hsl hep hel) fun t₁ ⟨hm₁, k₁⟩ => ?_
+  have o1 := writeW_outside s.mem (off B o) (d := 8 * Crt.sExp) ep (by decide)
+  have o2 := writeW_outside (s.mem.writeW (off (off B o) (8 * Crt.sExp)) ep) (off B o) (d := 8 * Crt.sExpLen)
+    (BitVec.ofNat 64 eb.length) (by decide)
+  have o3 := writeW_outside ((s.mem.writeW (off (off B o) (8 * Crt.sExp)) ep).writeW
+    (off (off B o) (8 * Crt.sExpLen)) (BitVec.ofNat 64 eb.length)) (off B o) (d := 8 * Crt.sI)
+    (BitVec.setWidth 64 (0 : BitVec 32)) (by decide)
+  rw [← hm₁] at o3
+  have f₁ : Frm (off B o) (crtExpRanges wx 32) s.mem t₁.mem :=
+    ((Frm.of_outside o1 (by simp [crtExpRanges])).trans (Frm.of_outside o2 (by simp [crtExpRanges]))).trans
+      (Frm.of_outside o3 (by simp [crtExpRanges]))
+  have hc₁ := hc₀.of_frm f₁ k₁.2.2 (k₁.gpr (by decide))
+  have hY0 := slot_le (w := wx) (show aY < 8 by decide)
+  have hY1 := hdr_lt_slot wx aY (show 31 < 32 by decide)
+  have hYe₁ : wv t₁.mem (off B o) (slot wx aY) wx = wv s.mem (off B o) (slot wx aY) wx := by
+    rw [o3.wv (by unfold Crt.sI sFn at *; omega_arith) (by omega_arith), o2.wv (by unfold Crt.sExpLen sFn at *; omega_arith)
+      (by omega_arith), o1.wv (by unfold Crt.sExp sFn at *; omega_arith) (by omega_arith)]
+  refine WP.mono (tabBuild_ok M (Q := Q) (x := x) hc₁ (by decide) (by decide) hw2 (by omega_arith) hR hxl hxc
+    (by rw [hYe₁]; exact hyl) (fun hq => by rw [hYe₁]; exact hyc hq)) fun t₂ ⟨hc₂, htab₂, hYe₂, hh₂, f₂, k₂⟩ => ?_
+  -- The padding.
+  have hlen₂ : word t₂.mem (off B o) (8 * Crt.sExpLen) = BitVec.ofNat 64 eb.length := by
+    rw [hh₂ _ (by decide) (by decide) (by decide) (by decide), hm₁,
+      hdrStore_hdr (i := Crt.sI) _ _ _ (by decide) (by decide) (by decide), word_writeW_self]
+  refine WP.seq (WP.mono (padInit_ok hc₂ hlen₂ (by omega_arith)) fun t₃ ⟨hm₃, k₃⟩ => ?_)
+  have hnT : slot wx 8 + tabBytes wx 32 ≤ 2 ^ 64 := by omega_arith
+  have f₃ : Frm (off B o) (crtExpRanges5 wx) t₂.mem t₃.mem := by
+    rw [hm₃]
+    exact ((frm5_hdrW _ _ wx _ (by simp [crtExpRanges5, crtExpRanges, crtWinRanges]) (by decide)).trans
+      (frm5_hdrW _ _ wx _ (by simp [crtExpRanges5, crtExpRanges, crtWinRanges]) (by decide))).trans
+      (frm5_hdrW _ _ wx _ (by simp [crtExpRanges5]) (by decide))
+  have f03 : Frm (off B o) (crtExpRanges5 wx) s.mem t₃.mem :=
+    ((f₁.mono (crtExpRanges_sub5 wx)).trans (f₂.mono (crtExpRanges_sub5 wx))).trans f₃
+  have hh₃ : ∀ k < 32, k ≠ Crt.sBit → k ≠ Crt.sV → k ≠ Crt.sPow → word t₃.mem (off B o) (8 * k) =
+      word t₂.mem (off B o) (8 * k) := fun k hk h1 h2 h3 => by
+    rw [hm₃, hdrStore_hdr _ _ _ (by decide) hk (Ne.symm h3), hdrStore_hdr _ _ _ (by decide) hk (Ne.symm h2),
+      hdrStore_hdr _ _ _ (by decide) hk (Ne.symm h1)]
+  have hY₃ : wv t₃.mem (off B o) (slot wx aY) wx = wv s.mem (off B o) (slot wx aY) wx := by
+    rw [hm₃, wv_hdrW _ _ _ (by decide) (by omega_arith) (by omega_arith), wv_hdrW _ _ _ (by decide) (by omega_arith)
+      (by omega_arith), wv_hdrW _ _ _ (by decide) (by omega_arith) (by omega_arith), hYe₂, hYe₁]
+  have h0 : W5Inv s (off B o) wx minv X (wv s.mem (off B o) (slot wx Crt.aXc) wx) Q x ep eb.length eb 0 t₃ := by
+    refine ⟨0, padBits eb.length, by omega, by have := padBits_lt eb.length; omega, by omega,
+      hc₂.of_frm5 f₃ k₃.2.2 (k₃.gpr (by decide)), ?_, hY₃ ▸ hyl, fun hq => ?_, ?_, ?_, ?_, ?_, ?_, ?_, f03,
+      ((k₁.trans k₂).trans k₃).mono (by decide)⟩
+    · rw [hm₃]
+      exact ((htab₂.hdrW _ (by decide) (by decide) hnT).hdrW _ (by decide) (by decide) hnT).hdrW _ (by decide)
+        (by decide) hnT
+    · rw [hY₃, hyc hq, pre_zero, Nat.zero_div, Nat.pow_zero, Nat.one_mul]
+    · rw [hm₃, hdrStore_hdr _ _ _ (by decide) (by decide) (by decide), word_writeW_self, pre_zero, Nat.zero_mod,
+        Nat.zero_mul]; rfl
+    · rw [hm₃, hdrStore_hdr _ _ _ (by decide) (by decide) (by decide),
+        hdrStore_hdr _ _ _ (by decide) (by decide) (by decide), word_writeW_self]
+    · rw [hm₃, word_writeW_self]
+    · rw [hh₃ _ (by decide) (by decide) (by decide) (by decide), hh₂ _ (by decide) (by decide) (by decide) (by decide),
+        hm₁, word_writeW_self]; rfl
+    · rw [hh₃ _ (by decide) (by decide) (by decide) (by decide), hh₂ _ (by decide) (by decide) (by decide) (by decide),
+        hm₁, hdrStore_hdr (i := Crt.sI) _ _ _ (by decide) (by decide) (by decide),
+        hdrStore_hdr (i := Crt.sExpLen) _ _ _ (by decide) (by decide) (by decide), word_writeW_self]
+    · rw [hh₃ _ (by decide) (by decide) (by decide) (by decide)]; exact hlen₂
+  -- The windows.
+  have hK := win5_dvd eb.length
+  refine wp_upto (a := 0) (N := (padBits eb.length + 8 * eb.length) / 5) (by omega)
+    (W5Inv s (off B o) wx minv X (wv s.mem (off B o) (slot wx Crt.aXc) wx) Q x ep eb.length eb)
+    (fun j _ hj t ⟨i, b, hib, hb, hiL, hI⟩ => crtWin5_ok M S hw2 (by omega_arith) hR rfl (by omega_arith) he.rd he.val
+      hout (by omega) hj hib hb hiL hI)
+    (fun t ⟨i, b, hib, hb, hiL, hI⟩ => ?_) h0
+  have hb0 : b = 0 := by omega
+  have hiL' : i = eb.length := by omega
+  subst hb0 hiL'
+  exact ⟨hc.of_frm5 hT hI.frm hI.keep.2.2 (hI.keep.gpr (by decide)), hI.ylt,
+    fun hq => by rw [hI.y hq, Nat.pow_zero, Nat.div_one, pre_len], hI.frm, hI.keep⟩
 
 end VG.Proof.Bignum.X86_64
