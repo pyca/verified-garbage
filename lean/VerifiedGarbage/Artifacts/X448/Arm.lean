@@ -1,9 +1,13 @@
-import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Impl.X448.Arm
-import VerifiedGarbage.Proof.X448.Arm.Verified
-import VerifiedGarbage.Proof.X448.Arm.Lit
+module
+
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.Impl.X448.Arm
+public import VerifiedGarbage.Proof.X448.Arm.Verified
+public import VerifiedGarbage.Proof.X448.Arm.Lit
 
 /-! # X448 (RFC 7748) on ARMv7 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.X448.Arm
 

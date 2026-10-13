@@ -1,5 +1,7 @@
-import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Variant
+module
+
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Variant
 
 /-!
 # PBKDF2-HMAC (RFC 8018) over a Merkle–Damgård hash function on x86-64
@@ -20,6 +22,8 @@ second stack argument (`Verified.stackArgScratch`). For SHA-256, whose
 `pbkdf2` scrypt's code calls with its own working space, the code is also
 emitted on its own, as `vg_pbkdf2_hmac_sha256_scratch`.
 -/
+
+@[expose] public section
 
 namespace VG.Generic.MdHash.X86_64.Pbkdf2
 

@@ -1,5 +1,9 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.DotVerified
-import VerifiedGarbage.TCB.AArch64.Target
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.DotVerified
+public import VerifiedGarbage.TCB.AArch64.Target
+
+@[expose] public section
 
 namespace VG.Artifacts.MlDsaDot.AArch64
 

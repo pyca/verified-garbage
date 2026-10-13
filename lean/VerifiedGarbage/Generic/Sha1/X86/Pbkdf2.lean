@@ -1,8 +1,10 @@
-import VerifiedGarbage.TCB.X86.Target
-import VerifiedGarbage.Proof.Sha1.X86.Variants.Interface
-import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Sha1
-import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Frame
-import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Frame
+module
+
+public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Proof.Sha1.X86.Variants.Interface
+public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Sha1
+public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Frame
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Frame
 
 /-!
 # PBKDF2-HMAC-SHA-1 (RFC 8018) on x86, for every x86 SHA-1 backend: the iteration and the whole derivation
@@ -21,6 +23,8 @@ for `pbkdf2`, which pushes up to 24 bytes of arguments for the functions it
 calls, and their return address, and gives them 48. `pbkdf2` runs that code
 in a frame holding its working space (`Proof.Pbkdf2.Whole.X86.pbkFramed`).
 -/
+
+@[expose] public section
 
 namespace VG.Generic.Sha1.X86.Pbkdf2
 

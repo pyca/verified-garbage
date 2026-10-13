@@ -1,6 +1,10 @@
-import VerifiedGarbage.Proof.MlKem.X86_64.Sample4Impl
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86_64.Sample4Impl
 
 /-! ML-KEM four-way sampling with AVX-512VL quadword rotates. -/
+
+@[expose] public section
 
 namespace VG.Variants.MlKemSample4.X86_64.Avx512
 

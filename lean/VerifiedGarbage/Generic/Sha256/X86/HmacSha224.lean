@@ -1,6 +1,8 @@
-import VerifiedGarbage.TCB.X86.Target
-import VerifiedGarbage.Proof.Sha256.X86.Variants.Interface
-import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Frame
+module
+
+public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Proof.Sha256.X86.Variants.Interface
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Frame
 
 /-!
 # HMAC-SHA-224 (RFC 2104) on x86, for every x86 SHA-256 backend
@@ -21,6 +23,8 @@ of the inner final hash value), its padding and length.
 (`Proof/Pbkdf2/Md/X86/Frame.lean`); `init_scratch` and `finalize_scratch`, the
 same code with it as an argument, are what PBKDF2's code calls.
 -/
+
+@[expose] public section
 
 namespace VG.Generic.Sha256.X86.HmacSha224
 

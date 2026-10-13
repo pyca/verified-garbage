@@ -1,6 +1,10 @@
-import VerifiedGarbage.Proof.Sm4.X86.KeyVerified
+module
+
+public import VerifiedGarbage.Proof.Sm4.X86.KeyVerified
 
 /-! # SM4 artifacts on baseline x86 (32-bit) -/
+
+@[expose] public section
 
 namespace VG.Artifacts.Sm4.X86
 

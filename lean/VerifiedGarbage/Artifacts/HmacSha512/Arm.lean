@@ -1,6 +1,8 @@
-import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Instances
-import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Frame
+module
+
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Instances
+public import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Frame
 
 /-!
 # HMAC-SHA-512 (RFC 2104) on ARMv7
@@ -21,6 +23,8 @@ offsets in `scratch`. It pushes 8 bytes of stack (the stack arguments of
 (`Proof/Pbkdf2/Md/Arm/Frame.lean`); `init_scratch` and `finalize_scratch`, the
 same code with it as an argument, are what PBKDF2's code calls.
 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.HmacSha512.Arm
 

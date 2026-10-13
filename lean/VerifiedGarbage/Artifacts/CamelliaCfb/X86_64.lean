@@ -1,6 +1,10 @@
-import VerifiedGarbage.Proof.Camellia.X86_64.FbVerified
+module
+
+public import VerifiedGarbage.Proof.Camellia.X86_64.FbVerified
 
 /-! # Camellia-CFB128 artifacts on baseline x86-64 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.CamelliaCfb.X86_64
 

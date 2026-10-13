@@ -1,10 +1,12 @@
-import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.Weierstrass.AArch64.InvInterface
-import VerifiedGarbage.Proof.P256.Comb7
-import VerifiedGarbage.Impl.Ecdsa.P256.AArch64
-import VerifiedGarbage.Proof.Ecdsa.AArch64.BoothVerified
-import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.Allocated
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedVerified
+module
+
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvInterface
+public import VerifiedGarbage.Proof.P256.Comb7
+public import VerifiedGarbage.Impl.Ecdsa.P256.AArch64
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.BoothVerified
+public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.Allocated
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedVerified
 
 /-!
 # ECDSA over P-256 (FIPS 186-5) on AArch64
@@ -12,6 +14,8 @@ import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedVerified
 A generic file (see `TCB/Emit.lean`) over P-256's group law `h`, the variant
 `Variants/P256/AArch64/Law.lean`.
 -/
+
+@[expose] public section
 
 namespace VG.Generic.P256.AArch64.EcdsaP256
 

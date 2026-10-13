@@ -1,5 +1,7 @@
-import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.Scrypt.AArch64.Whole.Verified
+module
+
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.Scrypt.AArch64.Whole.Verified
 
 /-!
 # scrypt (RFC 7914 §6) on AArch64, over SHA-256
@@ -13,6 +15,8 @@ CPU features. Other hash functions emit no scrypt artifact.
 The stack is 96 bytes: a 16-byte frame saving `x30`, a 64-byte one, and the
 16 bytes the frames of the functions called may use.
 -/
+
+@[expose] public section
 
 namespace VG.Generic.MdHash.AArch64.Scrypt
 

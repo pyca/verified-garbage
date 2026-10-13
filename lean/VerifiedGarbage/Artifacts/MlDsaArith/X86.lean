@@ -1,8 +1,10 @@
-import VerifiedGarbage.TCB.X86.Target
-import VerifiedGarbage.Proof.MlDsa.X86.Arith.AddSub
-import VerifiedGarbage.Proof.MlDsa.X86.Arith.Mul
-import VerifiedGarbage.Proof.MlDsa.X86.Arith.Ntt
-import VerifiedGarbage.Proof.MlDsa.X86.Arith.NttInv
+module
+
+public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Proof.MlDsa.X86.Arith.AddSub
+public import VerifiedGarbage.Proof.MlDsa.X86.Arith.Mul
+public import VerifiedGarbage.Proof.MlDsa.X86.Arith.Ntt
+public import VerifiedGarbage.Proof.MlDsa.X86.Arith.NttInv
 
 /-!
 # ML-DSA (FIPS 204) on x86: the arithmetic of polynomials
@@ -10,6 +12,8 @@ import VerifiedGarbage.Proof.MlDsa.X86.Arith.NttInv
 The functions call no other one, and save their caller's registers in a
 frame of 16 bytes below the return address (`stack := 16`).
 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.MlDsaArith.X86
 

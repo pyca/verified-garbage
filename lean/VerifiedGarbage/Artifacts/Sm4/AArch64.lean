@@ -1,6 +1,10 @@
-import VerifiedGarbage.Proof.Sm4.AArch64.KeyVerified
+module
+
+public import VerifiedGarbage.Proof.Sm4.AArch64.KeyVerified
 
 /-! # SM4 artifacts on baseline AArch64 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.Sm4.AArch64
 

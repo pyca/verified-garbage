@@ -1,14 +1,18 @@
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.LazyNtt
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YMontgomeryInv
-import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.AddSub
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Mul
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.NttInv
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YNtt
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YMul
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YAddSub
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.LazyNtt
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YMontgomeryInv
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.AddSub
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Mul
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.NttInv
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YNtt
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YMul
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YAddSub
 
 /-! # ML-DSA (FIPS 204) on x86-64: the arithmetic of polynomials -/
+
+@[expose] public section
 
 namespace VG.Artifacts.MlDsaArith.X86_64
 

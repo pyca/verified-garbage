@@ -1,6 +1,10 @@
-import VerifiedGarbage.Proof.Seed.X86.KeyVerified
+module
+
+public import VerifiedGarbage.Proof.Seed.X86.KeyVerified
 
 /-! # SEED artifacts on baseline x86 (32-bit) -/
+
+@[expose] public section
 
 namespace VG.Artifacts.Seed.X86
 

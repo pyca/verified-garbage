@@ -1,6 +1,10 @@
-import VerifiedGarbage.Proof.Sm4.X86_64.CbcVerified
+module
+
+public import VerifiedGarbage.Proof.Sm4.X86_64.CbcVerified
 
 /-! # SM4-CBC artifacts on baseline x86-64 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.Sm4Cbc.X86_64
 

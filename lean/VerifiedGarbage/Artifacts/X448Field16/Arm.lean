@@ -1,8 +1,12 @@
-import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Impl.X448.Arm
-import VerifiedGarbage.Proof.X448.Arm.FnVerified
+module
+
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.Impl.X448.Arm
+public import VerifiedGarbage.Proof.X448.Arm.FnVerified
 
 /-! # Arithmetic in curve448's field, in radix `2^16`, on ARMv7 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.X448Field16.Arm
 

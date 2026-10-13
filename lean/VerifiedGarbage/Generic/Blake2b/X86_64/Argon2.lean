@@ -1,6 +1,10 @@
-import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Verified
+module
+
+public import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Verified
 
 /-! # Argon2 H′ for every x86-64 BLAKE2b backend -/
+
+@[expose] public section
 
 namespace VG.Generic.Blake2b.X86_64.Argon2
 

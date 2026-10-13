@@ -1,4 +1,6 @@
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.BackendAvx2
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.BackendAvx2
 
 /-!
 # ML-DSA's polynomial arithmetic on x86-64: AVX2
@@ -12,6 +14,8 @@ A variant of `MlDsaArith` on x86-64 (see `TCB/Emit.lean`):
 registers, which need AVX and AVX2; key generation, signing and
 verification calling them need them too.
 -/
+
+@[expose] public section
 
 namespace VG.Variants.MlDsaArith.X86_64.Avx2
 

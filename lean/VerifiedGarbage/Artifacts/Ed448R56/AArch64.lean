@@ -1,8 +1,12 @@
-import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.Ed448.AArch64.Point56.Verified
-import VerifiedGarbage.Proof.Ed448.AArch64.CombBase
+module
+
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.Ed448.AArch64.Point56.Verified
+public import VerifiedGarbage.Proof.Ed448.AArch64.CombBase
 
 /-! # Ed448's point addition and doubling and its fixed-base comb, in radix `2^56`, on AArch64 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.Ed448R56.AArch64
 

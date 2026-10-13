@@ -1,6 +1,8 @@
-import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Proof.AesOcb.Arm.Init
-import VerifiedGarbage.Proof.AesOcb.Arm.Frame
+module
+
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.Proof.AesOcb.Arm.Init
+public import VerifiedGarbage.Proof.AesOcb.Arm.Frame
 
 /-!
 # AES-OCB (RFC 7253) on ARMv7
@@ -20,6 +22,8 @@ and `open` run in a frame of 2592 bytes holding theirs
 `vg_aes_decrypt_blocks` in frames that push their stack argument and `lr`:
 2600 bytes of stack in all.
 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.AesOcb.Arm
 

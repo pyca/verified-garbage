@@ -1,4 +1,6 @@
-import VerifiedGarbage.Proof.AesGcm.AArch64.Callee
+module
+
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Callee
 
 /-!
 # The functions AES-GCM calls on AArch64: Scalar
@@ -6,6 +8,8 @@ import VerifiedGarbage.Proof.AesGcm.AArch64.Callee
 A variant of `AesGcm` on AArch64 (see `TCB/Emit.lean`): the baseline ISA for
 the cipher (`vg_aes_ctr32`, `vg_aes_expand_key_scratch`) and the hash (`vg_ghash`).
 -/
+
+@[expose] public section
 
 namespace VG.Variants.AesGcm.AArch64.Scalar
 

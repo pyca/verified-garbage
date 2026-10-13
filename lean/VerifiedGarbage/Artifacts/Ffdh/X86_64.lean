@@ -1,4 +1,8 @@
-import VerifiedGarbage.Proof.Ffdh.X86_64
+module
+
+public import VerifiedGarbage.Proof.Ffdh.X86_64
+
+@[expose] public section
 
 namespace VG.Artifacts.Ffdh.X86_64
 open VG.X86_64

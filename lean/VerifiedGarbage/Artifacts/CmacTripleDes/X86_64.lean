@@ -1,5 +1,7 @@
-import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.CmacTripleDes.X86_64.Frame
+module
+
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.CmacTripleDes.X86_64.Frame
 
 /-!
 # TDEA-CMAC (3DES-CMAC, NIST SP 800-38B) on x86-64
@@ -7,6 +9,8 @@ import VerifiedGarbage.Proof.CmacTripleDes.X86_64.Frame
 The functions call nothing. They keep their working space in a frame of
 their own on the stack (`Proof/CmacTripleDes/X86_64/Frame.lean`).
 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.CmacTripleDes.X86_64
 

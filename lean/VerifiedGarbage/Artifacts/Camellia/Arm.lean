@@ -1,5 +1,9 @@
-import VerifiedGarbage.Proof.Camellia.Arm.Verified
-import VerifiedGarbage.Proof.Camellia.Arm.KeyVerified
+module
+
+public import VerifiedGarbage.Proof.Camellia.Arm.Verified
+public import VerifiedGarbage.Proof.Camellia.Arm.KeyVerified
+
+@[expose] public section
 
 namespace VG.Artifacts.Camellia.Arm
 

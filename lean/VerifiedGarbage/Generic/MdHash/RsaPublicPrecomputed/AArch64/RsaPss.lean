@@ -1,7 +1,9 @@
-import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Variant
-import VerifiedGarbage.TCB.Emit
-import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyVerified
-import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Callees
+module
+
+public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Variant
+public import VerifiedGarbage.TCB.Emit
+public import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyVerified
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Callees
 
 /-!
 # RSASSA-PSS verification using cached public-key values, on AArch64
@@ -12,6 +14,8 @@ operation variant. The digest, signature and recovered encoding stay secret.
 Its stack is its frame and 16 bytes below it, for the calls of the hash
 function's and the public operation's functions (which have no frames).
 -/
+
+@[expose] public section
 
 namespace VG.Generic.MdHash.RsaPublicPrecomputed.AArch64.RsaPss
 

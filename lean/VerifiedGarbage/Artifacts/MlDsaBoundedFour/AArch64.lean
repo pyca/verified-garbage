@@ -1,4 +1,8 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourVerified
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourVerified
+
+@[expose] public section
 
 namespace VG.Artifacts.MlDsaBoundedFour.AArch64
 

@@ -1,5 +1,7 @@
-import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Proof.AesCbc.Arm.Verified
+module
+
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.Proof.AesCbc.Arm.Verified
 
 /-!
 # AES-CBC (NIST SP 800-38A §6.2) on ARMv7
@@ -11,6 +13,8 @@ not generic over them.
 Each function calls `vg_aes_encrypt_blocks` or `vg_aes_decrypt_blocks` in a
 frame that pushes its stack argument and `lr`, so uses 8 bytes of stack.
 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.AesCbc.Arm
 

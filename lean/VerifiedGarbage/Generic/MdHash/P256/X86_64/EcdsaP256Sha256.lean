@@ -1,8 +1,10 @@
-import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.Weierstrass.Law
-import VerifiedGarbage.Proof.Weierstrass.X86_64.InvInterface
-import VerifiedGarbage.Proof.P256.Comb7
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Sha256
+module
+
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.Weierstrass.Law
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvInterface
+public import VerifiedGarbage.Proof.P256.Comb7
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Sha256
 
 /-!
 # Deterministic ECDSA (RFC 6979) over P-256 with HMAC-SHA-256 on x86-64
@@ -23,6 +25,8 @@ It is generic over P-256's group law, inversions and prime order `h` too, the va
 `vg_ecdsa_p256_sign`: the baseline's, and BMI2's and ADX's
 (`vg_ecdsa_p256_sign_adx`, which the instance with the suffix `_adx` calls).
 -/
+
+@[expose] public section
 
 namespace VG.Generic.MdHash.P256.X86_64.EcdsaP256Sha256
 

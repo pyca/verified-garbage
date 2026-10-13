@@ -1,6 +1,10 @@
-import VerifiedGarbage.Proof.Argon2.AArch64.DeriveVerified
+module
+
+public import VerifiedGarbage.Proof.Argon2.AArch64.DeriveVerified
 
 /-! # Argon2 H′ for every ARM64 BLAKE2b backend -/
+
+@[expose] public section
 
 namespace VG.Generic.Blake2b.AArch64.Argon2
 

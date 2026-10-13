@@ -1,6 +1,8 @@
-import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.Weierstrass.X86_64.InvInterface
-import VerifiedGarbage.Proof.Ecdsa.X86_64.P192.InverseVerified
+module
+
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvInterface
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.P192.InverseVerified
 
 /-!
 # P-192's inversions modulo `p` and `n` on x86-64
@@ -10,6 +12,8 @@ which the signature, the public key derivation, verification and ECDH call. A ge
 `TCB/Emit.lean`) over P-192's group law and inversions `h`, the variant
 `Variants/P192/X86_64/Law.lean`, whose inversions' soundness the proofs take.
 -/
+
+@[expose] public section
 
 namespace VG.Generic.P192.X86_64.InverseP192
 

@@ -1,9 +1,13 @@
-import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Proof.MlDsa.Arm.Arith.AddSub
-import VerifiedGarbage.Proof.MlDsa.Arm.Arith.Mul
-import VerifiedGarbage.Proof.MlDsa.Arm.Arith.NttInv
+module
+
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.Proof.MlDsa.Arm.Arith.AddSub
+public import VerifiedGarbage.Proof.MlDsa.Arm.Arith.Mul
+public import VerifiedGarbage.Proof.MlDsa.Arm.Arith.NttInv
 
 /-! # ML-DSA (FIPS 204) on 32-bit ARM: the arithmetic of polynomials -/
+
+@[expose] public section
 
 namespace VG.Artifacts.MlDsaArith.Arm
 

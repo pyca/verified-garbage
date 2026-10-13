@@ -1,6 +1,11 @@
-import VerifiedGarbage.Proof.Argon2.AArch64.Compress
+module
+
+public import VerifiedGarbage.Proof.Argon2.AArch64.Compress
 
 /-! Argon2 block compression on baseline ARM64. -/
+
+@[expose] public section
+
 namespace VG.Artifacts.Argon2.AArch64
 
 def artifacts : List Artifact := [

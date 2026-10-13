@@ -1,8 +1,10 @@
-import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
-import VerifiedGarbage.Proof.P384.Comb7
-import VerifiedGarbage.Impl.EcKey.P384.AArch64
-import VerifiedGarbage.Proof.EcKey.AArch64.P384.Verified
+module
+
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
+public import VerifiedGarbage.Proof.P384.Comb7
+public import VerifiedGarbage.Impl.EcKey.P384.AArch64
+public import VerifiedGarbage.Proof.EcKey.AArch64.P384.Verified
 
 /-!
 # P-384 public keys (FIPS 186-5 §A.2) on AArch64
@@ -10,6 +12,8 @@ import VerifiedGarbage.Proof.EcKey.AArch64.P384.Verified
 A generic file (see `TCB/Emit.lean`) over P-384's group law `h`, the variant
 `Variants/P384/AArch64/Law.lean`.
 -/
+
+@[expose] public section
 
 namespace VG.Generic.P384.AArch64.EcP384
 

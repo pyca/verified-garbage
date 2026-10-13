@@ -1,5 +1,7 @@
-import VerifiedGarbage.TCB.X86.Target
-import VerifiedGarbage.Proof.AesCbc.X86.Verified
+module
+
+public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Proof.AesCbc.X86.Verified
 
 /-!
 # AES-CBC (NIST SP 800-38A §6.2) on x86
@@ -13,6 +15,8 @@ features.
 The stack is 24 bytes: the five arguments of the block function and the
 return address of its call.
 -/
+
+@[expose] public section
 
 namespace VG.Generic.AesBlocks.X86.AesCbc
 

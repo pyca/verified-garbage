@@ -1,5 +1,7 @@
-import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Variant
+module
+
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Variant
 
 /-!
 # HMAC (RFC 2104) over a Merkle–Damgård hash function on AArch64
@@ -18,6 +20,8 @@ working space in a frame of their own, above those; `init_scratch` and
 `finalize_scratch`, the same code with it as an argument, are what PBKDF2's
 code calls.
 -/
+
+@[expose] public section
 
 namespace VG.Generic.MdHash.AArch64.Hmac
 

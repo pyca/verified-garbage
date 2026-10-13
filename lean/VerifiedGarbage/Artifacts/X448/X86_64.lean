@@ -1,12 +1,16 @@
-import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Impl.X448.X86_64
-import VerifiedGarbage.Proof.X448.X86_64.Verified
-import VerifiedGarbage.Proof.X448.X86_64.Lit
-import VerifiedGarbage.Impl.X448.X86_64.Adx
-import VerifiedGarbage.Proof.X448.X86_64.Adx.Verified
-import VerifiedGarbage.Proof.X448.X86_64.Adx.Lit
+module
+
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Impl.X448.X86_64
+public import VerifiedGarbage.Proof.X448.X86_64.Verified
+public import VerifiedGarbage.Proof.X448.X86_64.Lit
+public import VerifiedGarbage.Impl.X448.X86_64.Adx
+public import VerifiedGarbage.Proof.X448.X86_64.Adx.Verified
+public import VerifiedGarbage.Proof.X448.X86_64.Adx.Lit
 
 /-! # X448 (RFC 7748) on x86-64 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.X448.X86_64
 

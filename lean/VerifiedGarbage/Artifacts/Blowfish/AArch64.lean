@@ -1,5 +1,9 @@
-import VerifiedGarbage.Proof.Blowfish.AArch64.KeyVerified
-import VerifiedGarbage.Proof.Blowfish.AArch64.Frame
+module
+
+public import VerifiedGarbage.Proof.Blowfish.AArch64.KeyVerified
+public import VerifiedGarbage.Proof.Blowfish.AArch64.Frame
+
+@[expose] public section
 
 namespace VG.Artifacts.Blowfish.AArch64
 

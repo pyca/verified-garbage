@@ -1,5 +1,7 @@
-import VerifiedGarbage.TCB.X86.Target
-import VerifiedGarbage.Proof.CmacTripleDes.X86.Frame
+module
+
+public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Proof.CmacTripleDes.X86.Frame
 
 /-!
 # TDEA-CMAC (3DES-CMAC, NIST SP 800-38B) on x86
@@ -18,6 +20,8 @@ their own on the stack, with a copy of their stack arguments
 (`Proof/CmacTripleDes/X86/Frame.lean`): they save our caller's registers in
 the working space, and reload their stack arguments.
 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.CmacTripleDes.X86
 

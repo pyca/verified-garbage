@@ -1,6 +1,8 @@
-import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Proof.Weierstrass.Law
-import VerifiedGarbage.Proof.Weierstrass.Arm.PointCurves
+module
+
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.Proof.Weierstrass.Law
+public import VerifiedGarbage.Proof.Weierstrass.Arm.PointCurves
 
 /-!
 # P-384's point addition and doubling on 32-bit ARM
@@ -11,6 +13,8 @@ P-384's prime. A generic file (see `TCB/Emit.lean`) over P-384's group law
 `h`, the variant `Variants/P384/Arm/Law.lean`, which gives Fermat's little
 theorem in `Fin p`, so that `R⁻¹ = R^(p-2)` in the contracts.
 -/
+
+@[expose] public section
 
 namespace VG.Generic.P384.Arm.PointP384
 

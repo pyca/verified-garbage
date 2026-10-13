@@ -1,7 +1,9 @@
-import VerifiedGarbage.TCB.X86.Target
-import VerifiedGarbage.Proof.AesGcm.X86.Frame
-import VerifiedGarbage.Proof.AesGcm.X86.GhashImpls
-import VerifiedGarbage.Proof.AesGcm.X86.Gather.Verified
+module
+
+public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Proof.AesGcm.X86.Frame
+public import VerifiedGarbage.Proof.AesGcm.X86.GhashImpls
+public import VerifiedGarbage.Proof.AesGcm.X86.Gather.Verified
 
 /-!
 # AES-GCM (NIST SP 800-38D) on x86
@@ -29,6 +31,8 @@ copies its arguments passed on the stack: 2580 bytes for `init`, 2584 for
 `open`. `seal_gather` copies the slices to `dst` and calls `seal` on them
 there, from a frame of 48 bytes (`Proof/AesGcm/X86/Gather/`).
 -/
+
+@[expose] public section
 
 namespace VG.Generic.AesGcm.X86.AesGcm
 

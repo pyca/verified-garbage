@@ -1,11 +1,15 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseVerified
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.NttOutVerified
-import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.AddSub
-import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Mul
-import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.NttInv
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseVerified
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.NttOutVerified
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.AddSub
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Mul
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.NttInv
 
 /-! # ML-DSA (FIPS 204) on AArch64: the arithmetic of polynomials -/
+
+@[expose] public section
 
 namespace VG.Artifacts.MlDsaArith.AArch64
 

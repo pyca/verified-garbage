@@ -1,13 +1,17 @@
-import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.Rsa.AArch64.PubChecked
-import VerifiedGarbage.Proof.Bignum.AArch64.PcVerified
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtVerified
-import VerifiedGarbage.Proof.Rsa.AArch64.CvVerified
-import VerifiedGarbage.Proof.Rsa.AArch64.CkVerified
-import VerifiedGarbage.Proof.Rsa.AArch64.CrtKeyVerified
-import VerifiedGarbage.Proof.Rsa.AArch64.RpVerified
+module
+
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.Rsa.AArch64.PubChecked
+public import VerifiedGarbage.Proof.Bignum.AArch64.PcVerified
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtVerified
+public import VerifiedGarbage.Proof.Rsa.AArch64.CvVerified
+public import VerifiedGarbage.Proof.Rsa.AArch64.CkVerified
+public import VerifiedGarbage.Proof.Rsa.AArch64.CrtKeyVerified
+public import VerifiedGarbage.Proof.Rsa.AArch64.RpVerified
 
 /-! # RSA (RFC 8017) on AArch64 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.Rsa.AArch64
 

@@ -1,10 +1,14 @@
-import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Impl.X448.AArch64.Field56
-import VerifiedGarbage.Proof.X448.AArch64.Fast.Verified
-import VerifiedGarbage.Proof.X448.AArch64.Base.Verified
-import VerifiedGarbage.Proof.X448.AArch64.Fast.Lit
+module
+
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Impl.X448.AArch64.Field56
+public import VerifiedGarbage.Proof.X448.AArch64.Fast.Verified
+public import VerifiedGarbage.Proof.X448.AArch64.Base.Verified
+public import VerifiedGarbage.Proof.X448.AArch64.Fast.Lit
 
 /-! # X448 (RFC 7748) on AArch64 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.X448.AArch64
 

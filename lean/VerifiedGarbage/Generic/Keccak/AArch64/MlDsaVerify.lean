@@ -1,7 +1,11 @@
-import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedSelected
+module
+
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedSelected
 
 /-! # ML-DSA (FIPS 204) verification on AArch64 -/
+
+@[expose] public section
 
 namespace VG.Generic.Keccak.AArch64.MlDsaVerify
 open VG.Proof.MlDsa.AArch64.Verify.OptimizedSelected

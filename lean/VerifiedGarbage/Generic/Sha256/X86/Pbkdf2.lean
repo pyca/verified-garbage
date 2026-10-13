@@ -1,8 +1,10 @@
-import VerifiedGarbage.TCB.X86.Target
-import VerifiedGarbage.Proof.Sha256.X86.Variants.Interface
-import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Sha256
-import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Frame
-import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Frame
+module
+
+public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Proof.Sha256.X86.Variants.Interface
+public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Sha256
+public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Frame
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Frame
 
 /-!
 # PBKDF2-HMAC-SHA-256 (RFC 8018) on x86, for every x86 SHA-256 backend: the iteration and the whole derivation
@@ -23,6 +25,8 @@ in a frame holding its working space (`Proof.Pbkdf2.Whole.X86.pbkFramed`);
 scrypt's code calls the code itself, with its own working space, as
 `vg_pbkdf2_hmac_sha256_scratch`.
 -/
+
+@[expose] public section
 
 namespace VG.Generic.Sha256.X86.Pbkdf2
 

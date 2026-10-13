@@ -1,7 +1,9 @@
-import VerifiedGarbage.TCB.X86.Target
-import VerifiedGarbage.Proof.AesGcmSiv.X86.Frame
-import VerifiedGarbage.Proof.GcmSiv.Polyval
-import VerifiedGarbage.Generic.AesGcm.X86.AesGcm
+module
+
+public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Proof.AesGcmSiv.X86.Frame
+public import VerifiedGarbage.Proof.GcmSiv.Polyval
+public import VerifiedGarbage.Generic.AesGcm.X86.AesGcm
 
 /-!
 # AES-GCM-SIV (RFC 8452) on x86
@@ -20,6 +22,8 @@ address; the calls of the other two push fewer), which makes no calls;
 RFC 8452's (`Proof.GcmSiv.Polyval.tagInput_eq_tagInputG`), which this file
 imports, with its algebra, so that the proofs need not.
 -/
+
+@[expose] public section
 
 namespace VG.Generic.AesGcm.X86.AesGcmSiv
 

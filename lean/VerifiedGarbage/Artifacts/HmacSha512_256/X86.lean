@@ -1,6 +1,8 @@
-import VerifiedGarbage.TCB.X86.Target
-import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Sha512_256
-import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Frame
+module
+
+public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Sha512_256
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Frame
 
 /-!
 # HMAC-SHA-512/256 (RFC 2104) on x86
@@ -20,6 +22,8 @@ outer key's hash value, the inner digest, its padding and length.
 (`Proof/Pbkdf2/Md/X86/Frame.lean`); `init_scratch` and `finalize_scratch`, the
 same code with it as an argument, are what PBKDF2's code calls.
 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.HmacSha512_256.X86
 

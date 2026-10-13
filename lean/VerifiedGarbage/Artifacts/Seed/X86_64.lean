@@ -1,6 +1,10 @@
-import VerifiedGarbage.Proof.Seed.X86_64.Frame
+module
+
+public import VerifiedGarbage.Proof.Seed.X86_64.Frame
 
 /-! # SEED artifacts on baseline x86-64 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.Seed.X86_64
 

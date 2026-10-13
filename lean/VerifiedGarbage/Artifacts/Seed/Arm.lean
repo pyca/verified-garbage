@@ -1,6 +1,10 @@
-import VerifiedGarbage.Proof.Seed.Arm.KeyVerified
+module
+
+public import VerifiedGarbage.Proof.Seed.Arm.KeyVerified
 
 /-! # SEED artifacts on baseline ARMv7 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.Seed.Arm
 

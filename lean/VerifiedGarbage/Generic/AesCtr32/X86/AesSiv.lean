@@ -1,6 +1,8 @@
-import VerifiedGarbage.TCB.X86.Target
-import VerifiedGarbage.Proof.AesSiv.X86.Verified
-import VerifiedGarbage.Proof.CmacAes.Stream.X86.Frame
+module
+
+public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Proof.AesSiv.X86.Verified
+public import VerifiedGarbage.Proof.CmacAes.Stream.X86.Frame
 
 /-!
 # AES-SIV (RFC 5297) on x86
@@ -19,6 +21,8 @@ arguments, below which they use 56 bytes (a call of a CMAC function, its six
 arguments and return address, and its own calls of `vg_aes_ctr32`); 2668
 bytes in all.
 -/
+
+@[expose] public section
 
 namespace VG.Generic.AesCtr32.X86.AesSiv
 

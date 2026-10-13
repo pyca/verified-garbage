@@ -1,7 +1,11 @@
-import VerifiedGarbage.Proof.TripleDes.X86.VerifiedBlock
-import VerifiedGarbage.Proof.TripleDes.X86.Key.Verified
-import VerifiedGarbage.Proof.TripleDes.X86.Ecb.Verified
-import VerifiedGarbage.Proof.TripleDes.X86.Frame
+module
+
+public import VerifiedGarbage.Proof.TripleDes.X86.VerifiedBlock
+public import VerifiedGarbage.Proof.TripleDes.X86.Key.Verified
+public import VerifiedGarbage.Proof.TripleDes.X86.Ecb.Verified
+public import VerifiedGarbage.Proof.TripleDes.X86.Frame
+
+@[expose] public section
 
 namespace VG.Artifacts.TripleDes.X86
 

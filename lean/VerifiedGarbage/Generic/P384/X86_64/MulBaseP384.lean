@@ -1,7 +1,9 @@
-import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.Weierstrass.X86_64.InvInterface
-import VerifiedGarbage.Proof.P384.Comb7
-import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.MulBaseVerified
+module
+
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvInterface
+public import VerifiedGarbage.Proof.P384.Comb7
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.MulBaseVerified
 
 /-!
 # P-384's base point multiplication on x86-64
@@ -13,6 +15,8 @@ over P-384's group law and inversions `h`, the variant
 `Variants/P384/X86_64/Law.lean`: the comb's proof takes the group law, and
 the curve's facts (`p384_ok`) its inversions.
 -/
+
+@[expose] public section
 
 namespace VG.Generic.P384.X86_64.MulBaseP384
 

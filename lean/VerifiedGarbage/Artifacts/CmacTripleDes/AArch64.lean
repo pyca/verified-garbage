@@ -1,5 +1,7 @@
-import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Frame
+module
+
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Frame
 
 /-!
 # TDEA-CMAC (3DES-CMAC, NIST SP 800-38B) on AArch64
@@ -8,6 +10,8 @@ The functions call nothing: the return address stays in `x30`. They keep
 their working space in a frame of their own on the stack
 (`Proof/CmacTripleDes/AArch64/Frame.lean`).
 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.CmacTripleDes.AArch64
 

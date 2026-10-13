@@ -1,7 +1,11 @@
-import VerifiedGarbage.TCB.X86.Target
-import VerifiedGarbage.Proof.Sha256.X86.Variants.Interface
+module
+
+public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Proof.Sha256.X86.Variants.Interface
 
 /-! Generic stream registrations for every x86 SHA-256 backend. -/
+
+@[expose] public section
 
 namespace VG.Generic.Sha256.X86.Stream
 

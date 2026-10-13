@@ -1,10 +1,14 @@
-import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Proof.Aes.Arm.Ctr32
-import VerifiedGarbage.Proof.Aes.Arm.ExpandKey
-import VerifiedGarbage.Proof.Aes.Arm.Blocks
-import VerifiedGarbage.Proof.Aes.Arm.Frame
+module
+
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.Proof.Aes.Arm.Ctr32
+public import VerifiedGarbage.Proof.Aes.Arm.ExpandKey
+public import VerifiedGarbage.Proof.Aes.Arm.Blocks
+public import VerifiedGarbage.Proof.Aes.Arm.Frame
 
 /-! # AES on ARMv7 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.Aes.Arm
 

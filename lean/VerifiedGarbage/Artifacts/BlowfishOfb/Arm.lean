@@ -1,6 +1,10 @@
-import VerifiedGarbage.Proof.Blowfish.Arm.FbVerified
+module
+
+public import VerifiedGarbage.Proof.Blowfish.Arm.FbVerified
 
 /-! # Blowfish-OFB artifacts on baseline ARMv7 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.BlowfishOfb.Arm
 

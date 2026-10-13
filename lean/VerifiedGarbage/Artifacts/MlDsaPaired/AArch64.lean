@@ -1,7 +1,11 @@
-import VerifiedGarbage.Spec.MlDsa.PairedApi
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedHVerified
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedZVerified
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedLowCorrect
+module
+
+public import VerifiedGarbage.Spec.MlDsa.PairedApi
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedHVerified
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedZVerified
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedLowCorrect
+
+@[expose] public section
 
 namespace VG.Artifacts.MlDsaPaired.AArch64
 

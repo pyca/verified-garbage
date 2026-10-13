@@ -1,6 +1,8 @@
-import VerifiedGarbage.TCB.X86.Target
-import VerifiedGarbage.Proof.ChaCha20Poly1305.X86.Verified
-import VerifiedGarbage.Proof.ChaCha20Poly1305.X86.Gather.Verified
+module
+
+public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86.Verified
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86.Gather.Verified
 
 /-!
 # ChaCha20-Poly1305 (RFC 8439 §2.8) on x86
@@ -24,6 +26,8 @@ zeroed after the code, as it holds the one-time Poly1305 key and keystream:
 the instance of `seal` on them there, in a frame of 48 bytes: 824 bytes in
 all.
 -/
+
+@[expose] public section
 
 namespace VG.Generic.ChaCha20Xor.X86.ChaCha20Poly1305
 

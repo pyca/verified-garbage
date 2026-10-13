@@ -1,19 +1,23 @@
-import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.MlKem.AArch64.AddSub
-import VerifiedGarbage.Proof.MlKem.AArch64.Encode12
-import VerifiedGarbage.Proof.MlKem.AArch64.Decode12
-import VerifiedGarbage.Proof.MlKem.AArch64.Cbd2
-import VerifiedGarbage.Proof.MlKem.AArch64.CompressEncode
-import VerifiedGarbage.Proof.MlKem.AArch64.DecodeDecompress
-import VerifiedGarbage.Proof.MlKem.AArch64.CheckEk
-import VerifiedGarbage.Proof.MlKem.AArch64.Mul
-import VerifiedGarbage.Proof.MlKem.AArch64.NttInv
-import VerifiedGarbage.Proof.MlKem.AArch64.Sample
-import VerifiedGarbage.Proof.MlKem.AArch64.KeyGen
-import VerifiedGarbage.Proof.MlKem.AArch64.Encaps
-import VerifiedGarbage.Proof.MlKem.AArch64.Decaps
+module
+
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.MlKem.AArch64.AddSub
+public import VerifiedGarbage.Proof.MlKem.AArch64.Encode12
+public import VerifiedGarbage.Proof.MlKem.AArch64.Decode12
+public import VerifiedGarbage.Proof.MlKem.AArch64.Cbd2
+public import VerifiedGarbage.Proof.MlKem.AArch64.CompressEncode
+public import VerifiedGarbage.Proof.MlKem.AArch64.DecodeDecompress
+public import VerifiedGarbage.Proof.MlKem.AArch64.CheckEk
+public import VerifiedGarbage.Proof.MlKem.AArch64.Mul
+public import VerifiedGarbage.Proof.MlKem.AArch64.NttInv
+public import VerifiedGarbage.Proof.MlKem.AArch64.Sample
+public import VerifiedGarbage.Proof.MlKem.AArch64.KeyGen
+public import VerifiedGarbage.Proof.MlKem.AArch64.Encaps
+public import VerifiedGarbage.Proof.MlKem.AArch64.Decaps
 
 /-! # ML-KEM on AArch64 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.MlKem.AArch64
 

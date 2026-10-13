@@ -1,7 +1,9 @@
-import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.Ed448.X86_64.SignCached.Verified
-import VerifiedGarbage.Proof.Ed448.X86_64.BaseVerified
-import VerifiedGarbage.Proof.Ed448.Facts
+module
+
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.Ed448.X86_64.SignCached.Verified
+public import VerifiedGarbage.Proof.Ed448.X86_64.BaseVerified
+public import VerifiedGarbage.Proof.Ed448.Facts
 
 /-!
 # Ed448 signing with a cached public key on x86-64
@@ -11,6 +13,8 @@ of `vg_ed448_scalar_base` is passed to the caller's here, so that only this
 file imports it, with the reference ladder's agreement with the specification
 (`Proof/Ed448/Facts.lean`).
 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.Ed448SignCached.X86_64
 

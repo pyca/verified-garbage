@@ -1,8 +1,10 @@
-import VerifiedGarbage.Proof.P256.Curve
-import VerifiedGarbage.Proof.P256.PrimeOrder
-import VerifiedGarbage.Proof.Weierstrass.X86_64.InvInterface
-import VerifiedGarbage.Proof.Weierstrass.X86_64.InvMain
-import VerifiedGarbage.Proof.Weierstrass.InvArith
+module
+
+public import VerifiedGarbage.Proof.P256.Curve
+public import VerifiedGarbage.Proof.P256.PrimeOrder
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvInterface
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvMain
+public import VerifiedGarbage.Proof.Weierstrass.InvArith
 
 /-!
 # P-256's group law, inversions and prime order, on x86-64
@@ -16,6 +18,8 @@ Mathlib's algebra. Their registration files are generic over it
 implementation too), so that this file alone, of those that emit them,
 imports that algebra.
 -/
+
+@[expose] public section
 
 namespace VG.Variants.P256.X86_64.Law
 
