@@ -441,20 +441,26 @@ theorem PowersKeep.of_table {base : Addr} {s t : State} {o n : Nat} (h : TableKe
     rintro (rfl | rfl | rfl | rfl) <;> decide)), h.rd, h.wr, h.sp,
     TableFrame.table (h.mem.mono (by omega) (by omega))⟩
 
-/-- Before the windows: the tables, an accumulator representing `0` and the counter at 64. -/
+/-- After `windowPrep`: the tables, `d`, an accumulator representing `0` and the counter at 128. -/
+structure PrepDone (s : State) (base sig challenge : Addr) (Aa : EPoint dZ) (e : State) : Prop where
+  scratch : Scr e base
+  sHeader : e.mem.readW (off base 7944) 64 = sig
+  kHeader : e.mem.readW (off base 7952) 64 = challenge
+  d : env e.mem base 16 = Spec.Ed25519.d
+  counter : e.mem.readW (off base 56) 64 = BitVec.ofNat 64 128
+  value : RepP (point (env e.mem base) 0 1 2 3) 0
+  aTab : TableOf cache e.mem base 5376 Aa
+  bTab : TableOf cache e.mem base 2048 (-baseAff)
+  keep : PowersKeep base 56 7752 s e
+  r : tablePoint e.mem base 7552 = tablePoint s.mem base 7552
+
+/-- Before the windows: the tables, an accumulator representing `0` and the counter at 128. -/
 theorem windowPrep_ok {s : State} {base sig challenge : Addr} {Aa : EPoint dZ}
     (hs : Scr s base)
     (hp : s.mem.readW (off base 7944) 64 = sig)
     (hc : s.mem.readW (off base 7952) 64 = challenge)
-    (hr : ∀ i < 32, InRegions (s.rd ++ s.wr) (off (off sig 32) i) 1)
-    (hf : ∀ i < 32, 8192 ≤ ofs base (off (off sig 32) i))
-    (hcr : ∀ i < 64, InRegions (s.rd ++ s.wr) (off challenge i) 1)
-    (hcf : ∀ i < 64, 8192 ≤ ofs base (off challenge i))
     (hA : Rep (tablePoint s.mem base 7424) Aa) :
-    WP isa windowPrep s fun e => WinLoop e base challenge sig Aa
-      (Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem challenge 64))
-      (Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem (off sig 32) 32)) 64 e ∧
-      PowersKeep base 56 7752 s e ∧ tablePoint e.mem base 7552 = tablePoint s.mem base 7552 := by
+    WP isa windowPrep s (PrepDone s base sig challenge Aa) := by
   rw [windowPrep]
   -- The constant `d`.
   refine WP.seq (WP.seq (WP.seq (WP.mono (constField_ok hs 16 Spec.Ed25519.d) fun a ⟨ka, va⟩ => ?_)))
@@ -482,42 +488,85 @@ theorem windowPrep_ok {s : State} {base sig challenge : Addr} {Aa : EPoint dZ}
   have cB : TableOf cache c.mem base 2048 (-baseAff) := fun j hj => by
     obtain ⟨q, hq, hr⟩ := negBaseCached_ok j hj
     exact ⟨q, by rw [ct j hj, hq], hr⟩
-  -- The accumulator and the byte counter.
+  -- The accumulator and the nibble counter.
   rw [windowInit, WP.block_append_iff]
   refine WP.mono (fieldCode_ok (constPointOps Spec.Ed25519.identity) (ksc.scratch hs))
     fun d ⟨kd, vd⟩ => ?_
   have kcd : PowersKeep base 56 7752 c d := PowersKeep.of_keep kd
-  refine WP.mono (mulCounterInit_ok ((ksc.trans kcd).scratch hs) 64)
+  refine WP.mono (mulCounterInit_ok ((ksc.trans kcd).scratch hs) 128)
     fun e ⟨ec, eg, er, ew, esp, em⟩ => ?_
   have kde : ByteKeep base d e :=
     ⟨fun r _ _ _ => eg r (by rintro rfl; contradiction), er, ew, esp, em.mono (by decide) (by decide)⟩
   have kce : ByteKeep base c e := (ByteKeep.of_win (WinKeep.of_keep kd)).trans kde
   have kse := ksc.trans (PowersKeep.of_byte kce)
-  have eR : tablePoint e.mem base 7552 = tablePoint s.mem base 7552 := by
-    rw [win_tablePoint kce.mem (by decide) (by decide), cR]
-  have ed : env e.mem base 16 = Spec.Ed25519.d := by rw [header_env em, vd]; exact cd
-  have ctx : WinCtx base challenge sig Aa e :=
-    ⟨kse.scratch hs, (kse.header (by decide) (by decide) (by decide)).trans hc,
-      (kse.header (by decide) (by decide) (by decide)).trans hp,
-      fun i hi => by rw [kse.rd, kse.wr]; exact hcr i hi,
-      fun i hi => by rw [kse.rd, kse.wr]; exact hr i hi, hcf, hf,
-      cA.of_win kce.mem (by decide) (by decide), cB.of_win kce.mem (by decide) (by decide)⟩
-  have hK := decodeLE_lt64 e.mem challenge
-  have hS := decodeLE_lt32 e.mem (off sig 32)
+  refine ⟨kse.scratch hs, (kse.header (by decide) (by decide) (by decide)).trans hp,
+    (kse.header (by decide) (by decide) (by decide)).trans hc,
+    by rw [header_env em, vd]; exact cd, ec, ?_,
+    cA.of_win kce.mem (by decide) (by decide), cB.of_win kce.mem (by decide) (by decide), kse,
+    by rw [win_tablePoint kce.mem (by decide) (by decide), cR]⟩
+  rw [header_env em, vd, constPoint_eval]
+  exact identity_rep.proj
+
+theorem nib_tablePoint {base : Addr} {m m' : Mem} (h : Outside base 768 192 m m') {d : Nat}
+    (hd : 960 ≤ d) (hb : d + 128 ≤ 8192) : tablePoint m' base d = tablePoint m base d := by
+  simp only [tablePoint]
+  rw [Outside_F h (by omega) (Or.inr (by omega)), Outside_F h (by omega) (Or.inr (by omega)),
+    Outside_F h (by omega) (Or.inr (by omega)), Outside_F h (by omega) (Or.inr (by omega))]
+
+theorem TableOf.of_nib {f : Spec.Ed25519.Point → Spec.Ed25519.Point} {base : Addr} {m m' : Mem}
+    {o : Nat} {X : EPoint dZ} (h : TableOf f m base o X) (k : Outside base 768 192 m m')
+    (ho : 960 ≤ o) (hb : o + 1920 ≤ 8192) : TableOf f m' base o X := by
+  intro j hj
+  obtain ⟨q, hq, hr⟩ := h j hj
+  exact ⟨q, by rw [nib_tablePoint k (by omega) (by omega)]; exact hq, hr⟩
+
+/-- The windows' start: the nibbles of the scalars, beside `windowPrep`'s. -/
+theorem windowStart_ok {s : State} {base sig challenge : Addr} {Aa : EPoint dZ}
+    (hs : Scr s base)
+    (hp : s.mem.readW (off base 7944) 64 = sig)
+    (hc : s.mem.readW (off base 7952) 64 = challenge)
+    (hr : ∀ d, d + 16 ≤ 32 → InRegions (s.rd ++ s.wr) (off (off sig 32) d) 16)
+    (hf : ∀ i < 32, 8192 ≤ ofs base (off (off sig 32) i))
+    (hcr : ∀ d, d + 16 ≤ 64 → InRegions (s.rd ++ s.wr) (off challenge d) 16)
+    (hcf : ∀ i < 64, 8192 ≤ ofs base (off challenge i))
+    (hA : Rep (tablePoint s.mem base 7424) Aa) :
+    WP isa (.seq windowPrep (.block nibbles)) s fun f => WinLoop f base Aa
+      (Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem challenge 64))
+      (Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem (off sig 32) 32)) 128 f ∧
+      PowersKeep base 56 7752 s f ∧ tablePoint f.mem base 7552 = tablePoint s.mem base 7552 := by
+  refine WP.seq (WP.mono (windowPrep_ok hs hp hc hA) fun e he => ?_)
+  have kse := he.keep
   have eK := outside_bytes (tableFrame_work kse.mem (by decide) (by decide)) (by decide) hcf
   have eS := outside_bytes (tableFrame_work kse.mem (by decide) (by decide)) (by decide) hf
-  refine ⟨⟨ctx, ed, ec, by rw [eK], by rw [eS], ?_, ByteKeep.refl _ _⟩, kse, eR⟩
-  rw [← eK, ← eS, Nat.div_eq_of_lt hK, Nat.div_eq_of_lt (Nat.lt_trans hS (by decide)), zero_smul,
-    zero_smul, add_zero, header_env em, vd, constPoint_eval]
-  exact identity_rep.proj
+  refine WP.mono (nibbles_ok he.scratch he.kHeader he.sHeader
+    (fun d hd => by rw [kse.rd, kse.wr]; exact hcr d hd) (fun d hd => by rw [kse.rd, kse.wr]; exact hr d hd)
+    hcf hf) fun f ⟨fk, fs, fm, fg, fr, fw, fsp⟩ => ?_
+  have kef : PowersKeep base 56 7752 e f :=
+    ⟨fun r _ _ hr => fg r (fun h => hr (by rw [h]; decide)) (fun h => hr (by rw [h]; decide)), fr, fw, fsp,
+      TableFrame.table (fm.mono (by decide) (by decide))⟩
+  have hf' : Scr f base := kef.scratch he.scratch
+  have hK := decodeLE_lt64 s.mem challenge
+  have hS := decodeLE_lt32 s.mem (off sig 32)
+  have fe : env f.mem base = env e.mem base := by
+    funext i
+    exact Outside_F fm (by simp only [offset]; omega) (Or.inl (by simp only [offset]; omega))
+  refine ⟨⟨⟨hf', fun j hj => by rw [fk j hj, eK], fun j hj => by rw [fs j hj, eS],
+    he.aTab.of_nib fm (by decide) (by decide), he.bTab.of_nib fm (by decide) (by decide)⟩,
+    by rw [fe]; exact he.d, (fm.word (d := 56) (Or.inl (by decide)) (by decide)).trans he.counter,
+    hK, hS, ?_, ByteKeep.refl _ _⟩, kse.trans kef,
+    by rw [nib_tablePoint fm (by decide) (by decide), he.r]⟩
+  rw [Nat.div_eq_of_lt (show _ < 16 ^ 128 from hK),
+    Nat.div_eq_of_lt (show _ < 16 ^ 128 from Nat.lt_trans hS (by decide)), zero_smul, zero_smul,
+    add_zero, fe]
+  exact he.value
 
 theorem verifyEquationPoints_ok {s : State} {base sig challenge : Addr} {Aa Ra : EPoint dZ}
     (hs : Scr s base)
     (hp : s.mem.readW (off base 7944) 64 = sig)
     (hc : s.mem.readW (off base 7952) 64 = challenge)
-    (hr : ∀ i < 32, InRegions (s.rd ++ s.wr) (off (off sig 32) i) 1)
+    (hr : ∀ d, d + 16 ≤ 32 → InRegions (s.rd ++ s.wr) (off (off sig 32) d) 16)
     (hf : ∀ i < 32, 8192 ≤ ofs base (off (off sig 32) i))
-    (hcr : ∀ i < 64, InRegions (s.rd ++ s.wr) (off challenge i) 1)
+    (hcr : ∀ d, d + 16 ≤ 64 → InRegions (s.rd ++ s.wr) (off challenge d) 16)
     (hcf : ∀ i < 64, 8192 ≤ ofs base (off challenge i))
     (hA : Rep (tablePoint s.mem base 7424) Aa) (hR : Rep (tablePoint s.mem base 7552) Ra) :
     WP isa verifyEquationPoints s fun t => PowersKeep base 56 7752 s t ∧
@@ -528,11 +577,11 @@ theorem verifyEquationPoints_ok {s : State} {base sig challenge : Addr} {Aa Ra :
           (Spec.Ed25519.pointMul (Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem challenge 64))
             (tablePoint s.mem base 7424)))) := by
   rw [verifyEquationPoints]
-  apply WP.assoc; apply WP.assoc; apply WP.assoc
-  refine WP.seq (WP.mono (windowPrep_ok hs hp hc hr hf hcr hcf hA) fun e ⟨w0, kse, eR⟩ => ?_)
+  apply WP.assoc; apply WP.assoc; apply WP.assoc; apply WP.assoc
+  refine WP.seq (WP.mono (windowStart_ok hs hp hc hr hf hcr hcf hA) fun e ⟨w0, kse, eR⟩ => ?_)
   -- The windows.
-  refine WP.seq (WP.mono (skipZero_ok w0) fun f ⟨c, hc32, hc64, hf'⟩ => ?_)
-  refine WP.seq (WP.mono (windowsA_ok hc32 hc64 hf') fun g hg => ?_)
+  refine WP.seq (WP.mono (skipZero_ok w0) fun f ⟨c, hc64, hc128, hf'⟩ => ?_)
+  refine WP.seq (WP.mono (windowsA_ok hc64 hc128 hf') fun g hg => ?_)
   refine WP.seq (WP.mono (loopB_ok hg) fun h hh => ?_)
   have ksh := kse.trans (PowersKeep.of_byte hh.keep)
   -- The comparison with `-R`.
