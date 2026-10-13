@@ -52,7 +52,7 @@ theorem code_constantTime (c : PrivChecked) :
     ⟨s₁, ⟨preS_of h₁, PubS.refl s₁⟩, preS_of h₂, pubS_of hp⟩) fun _ _ h => h)
 
 /-- A state meeting the precondition: a 512-bit modulus, one-byte `e`, hash
-value and key parts, a working space of 1024 words, and the stack pointer at
+value and key parts, a working space of 1056 words, and the stack pointer at
 `2^40`, far above them. -/
 def satState : State where
   gpr r := match r with
@@ -75,7 +75,7 @@ theorem sat_args : stackArg satState 0 = 1 ∧ stackArg satState 1 = 0x6000 ∧ 
     stackArg satState 3 = 0x7000 ∧ stackArg satState 4 = 1 ∧ stackArg satState 5 = 0x8000 ∧
     stackArg satState 6 = 1 ∧ stackArg satState 7 = 0x9000 ∧ stackArg satState 8 = 1 ∧
     stackArg satState 9 = 0xA000 ∧ stackArg satState 10 = 1 ∧ stackArg satState 11 = 0x10000 ∧
-    stackArg satState 12 = 1024 := by
+    stackArg satState 12 = 1056 := by
   decide
 
 theorem sat (K : Nat) (hK : K ≤ 2 ^ 20) : ∃ s, (Spec.RsaPkcs1Sig.signContract abi (stk K)).pre s := by

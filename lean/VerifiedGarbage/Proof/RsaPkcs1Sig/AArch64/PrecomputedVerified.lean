@@ -234,7 +234,7 @@ def satState : State where
   rd := [⟨0x1000, 64⟩, ⟨0x2000, 1⟩, ⟨0x3000, 1⟩, ⟨0x4000, 1⟩, ⟨0x5000, 128⟩, ⟨0x10000000000, 40⟩]
   wr := [⟨0x10000, 8448⟩]
 
-theorem sat_args : stackArg satState 0 = 1 ∧ stackArg satState 1 = 0x10000 ∧ stackArg satState 2 = 1024 ∧
+theorem sat_args : stackArg satState 0 = 1 ∧ stackArg satState 1 = 0x10000 ∧ stackArg satState 2 = 1056 ∧
     stackArg satState 3 = 0x5000 ∧ stackArg satState 4 = 16 := by
   decide
 

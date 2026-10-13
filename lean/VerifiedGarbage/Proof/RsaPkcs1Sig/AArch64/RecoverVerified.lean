@@ -41,7 +41,7 @@ theorem code_constantTime (c : PubChecked) :
     ⟨s₁, ⟨preR_of h₁, PubR.refl s₁⟩, preR_of h₂, pubR_of hp⟩) fun _ _ h => h)
 
 /-- A state meeting the precondition: a 512-bit modulus, a one-byte `e`,
-SHA-256, a one-byte signature, a working space of 1024 words, and the stack
+SHA-256, a one-byte signature, a working space of 1056 words, and the stack
 pointer at `2^40`, far above them. -/
 def satState : State where
   gpr r := match r with
@@ -54,7 +54,7 @@ def satState : State where
   rd := [⟨0x1000, 64⟩, ⟨0x2000, 1⟩, ⟨0x4000, 1⟩, ⟨0x10000000000, 24⟩]
   wr := [⟨0x5000, 32⟩, ⟨0x10000, 8448⟩]
 
-theorem sat_args : stackArg satState 0 = 1 ∧ stackArg satState 1 = 0x10000 ∧ stackArg satState 2 = 1024 := by
+theorem sat_args : stackArg satState 0 = 1 ∧ stackArg satState 1 = 0x10000 ∧ stackArg satState 2 = 1056 := by
   decide
 
 theorem sat (K : Nat) (hK : K ≤ 2 ^ 20) : ∃ s, (Spec.RsaPkcs1Sig.recoverContract abi (stk K)).pre s := by
