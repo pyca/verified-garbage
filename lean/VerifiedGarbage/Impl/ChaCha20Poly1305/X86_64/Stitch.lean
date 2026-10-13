@@ -469,12 +469,16 @@ def openStitched (x : ChaCha20.X86_64.Callee) (b : Poly1305.X86_64.Blocks) : Pro
   (.seq (finalizeTo 48)
     (.block (compare ++ restore)))))))
 
-/-- `open` for fewer than `smallLim` bytes of data (`len`, in `r9`) with the
+/-- `openSmall`'s limit, as `smallLim` is `sealSmall`'s: `open`'s chunks
+and `seal`'s differ in cost. -/
+def openLim : Nat := 640
+
+/-- `open` for fewer than `openLim` bytes of data (`len`, in `r9`) with the
 AVX2 code, `openStitched` with the implementation `small` of
 `vg_chacha20_xor` and `vg_poly1305_blocks_avx2`, which runs no 512-bit
 instruction, and for more with `big`: as `sealSmall`. -/
 def openSmall (small : ChaCha20.X86_64.Callee) (big : Prog isa) : Prog isa :=
-  .seq (.block [.alu .cmp .r9 (.imm (BitVec.ofNat 32 (smallLim)))])
+  .seq (.block [.alu .cmp .r9 (.imm (BitVec.ofNat 32 (openLim)))])
     (.ite .b (openStitched small .avx2) big)
 
 /-- The `open` an instance uses, as `sealFor`: with the AVX2 implementation of
