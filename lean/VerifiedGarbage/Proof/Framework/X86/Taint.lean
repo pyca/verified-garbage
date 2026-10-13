@@ -9,6 +9,7 @@ public import VerifiedGarbage.Proof.Framework.X86.Exec
 public import VerifiedGarbage.Proof.Framework.X86.RegUpd
 public import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.TCB.X86.Target
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # Taint tracking for x86 (32-bit)

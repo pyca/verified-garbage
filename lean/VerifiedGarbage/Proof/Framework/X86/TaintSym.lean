@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.X86.Syms
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # Constant-time analysis of x86 static-table frames

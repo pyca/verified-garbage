@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # A scratch buffer on the stack, wiped after use (AArch64)

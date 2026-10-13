@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # Shift code as literals

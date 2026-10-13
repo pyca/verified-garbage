@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Framework.Inline
 public import VerifiedGarbage.Proof.Framework.AArch64.Exec
 public import VerifiedGarbage.Proof.Framework.AArch64.Taint
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # Inlining verified code (AArch64)

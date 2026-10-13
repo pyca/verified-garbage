@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.Arm.Exec
 public import VerifiedGarbage.TCB.Arm.Target
 public import Batteries.Logic
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # Taint tracking for ARMv7

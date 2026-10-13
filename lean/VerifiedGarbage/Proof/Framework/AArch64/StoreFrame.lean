@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.AArch64.Inline
 public import VerifiedGarbage.Proof.Framework.Mem
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # Code that stores only at given offsets of a base register (AArch64)

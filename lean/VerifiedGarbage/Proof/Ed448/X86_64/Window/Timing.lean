@@ -10,6 +10,10 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Ed448.X86_64.Window.SelectBase
+import VerifiedGarbage.Proof.Ed448.X86_64.Window.SelectKey
+meta import VerifiedGarbage.Proof.Ed448.X86_64.Window.SelectBase
+meta import VerifiedGarbage.Proof.Ed448.X86_64.Window.SelectKey
 
 /-! Verification lookups reveal only public scalar digits. -/
 

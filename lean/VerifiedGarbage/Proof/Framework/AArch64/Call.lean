@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 public import VerifiedGarbage.Proof.Framework.AArch64.Depth
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # Calls and frames (AArch64)

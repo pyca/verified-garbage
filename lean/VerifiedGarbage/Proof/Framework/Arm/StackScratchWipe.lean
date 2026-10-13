@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.Arm.StackScratch
 public import VerifiedGarbage.Proof.Framework.Arm.RegScratchWipe
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # A scratch buffer on the stack, after stack arguments, wiped after use (ARMv7)

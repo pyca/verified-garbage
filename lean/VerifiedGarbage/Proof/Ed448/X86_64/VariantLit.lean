@@ -10,6 +10,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.X448.X86_64.Adx.Lit
+meta import VerifiedGarbage.Proof.X448.X86_64.Adx.Lit
 
 /-! Literal code for the ADX scalar multiplication and verification equation. -/
 

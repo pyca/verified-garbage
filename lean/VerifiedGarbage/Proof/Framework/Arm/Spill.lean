@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Framework.Arm.Exec
 public import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 public import VerifiedGarbage.Proof.Framework.Offset
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # ARMv7: saving registers to memory and restoring them

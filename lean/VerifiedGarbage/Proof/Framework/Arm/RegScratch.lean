@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.Arm.StackScratch
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # A scratch buffer in a register, on the stack (ARMv7)

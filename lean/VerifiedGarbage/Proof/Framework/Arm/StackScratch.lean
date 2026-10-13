@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.Framework.Arm.Inline
 public import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.TCB.Arm.Target
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # A scratch buffer on the stack (ARMv7)

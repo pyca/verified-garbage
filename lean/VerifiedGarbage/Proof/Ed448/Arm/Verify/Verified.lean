@@ -8,6 +8,7 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Logic.Function.Basic
 
 /-!
 # Ed448 verification on ARMv7: constant time, and `Verified`

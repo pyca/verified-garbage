@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.Arm.RelCT
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # Frames (ARMv7)

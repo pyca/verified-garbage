@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.X86.Taint
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # Taint tracking for x86 (32-bit): code without its displacements

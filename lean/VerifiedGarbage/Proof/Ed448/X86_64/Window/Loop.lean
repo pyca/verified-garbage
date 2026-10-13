@@ -6,6 +6,7 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 
 /-! The joint window loop represents `[S]B + [k](-A)` for valid decoded points. -/
 

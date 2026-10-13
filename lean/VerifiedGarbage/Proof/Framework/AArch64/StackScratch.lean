@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Framework.AArch64.Call
 public import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.TCB.AArch64.Target
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # A scratch buffer on the stack (AArch64)
