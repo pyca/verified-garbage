@@ -416,13 +416,6 @@ open VG.Impl.Gcm.X86_64.StitchAvx8 (encRest decRest)
 open VG.Proof.Gcm.Poly
 open VG.Spec.Gcm (Block)
 
-private theorem prefixContinue {a b z : Prog isa} {xs ys : List Instr} {s : State} {Q : State → Prop}
-    (h : WP isa (.seq a (.seq b (.block xs))) s (fun t => WP isa (.seq (.block ys) z) t Q)) :
-    WP isa (.seq a (.seq b (.seq (.block (xs ++ ys)) z))) s Q :=
-  WP.seq (WP.mono (WP.seq_iff.mp h) fun _ h =>
-    WP.seq (WP.mono (WP.seq_iff.mp h) fun _ h =>
-      WP.seq (WP.block_append_iff.mpr (WP.mono h fun _ h => WP.seq_iff.mp h))))
-
 /-- Encryption, from a state `s` (`s₀` itself in place) where the setup
 has left what `setup` does of `s₀`, with the data where the loop reads it
 (`srcBlk s₀ ix`); the 8 bytes at `scratch + 816` as in `s₀`. -/
@@ -433,11 +426,11 @@ theorem encRestI_ok {s₀ s : State} {ix : Bool} (hp : SPre s₀) (hS : SrcOk s�
       EPost s₀ t ∧ t.mem.readW (pp s₀ + 816) 64 = s₀.mem.readW (pp s₀ + 816) 64 := by
   rw [encRest]
   have hlaw : HashLaw s₀ P := fun X y => finishHash X P (hk s₀) y hP
-  apply prefixContinue
-  refine WP.mono (firstEnc_ok hp hS hR hsrc) fun t hI => ?_
+  refine WP.seq (WP.mono (WP.seq_iff.mp (firstEnc_ok hp hS hR hsrc)) fun t ht =>
+    WP.seq (WP.mono ht fun t hI => ?_))
   refine WP.seq (WP.mono hI.compare fun u ⟨hu, hcf⟩ => ?_)
   refine WP.seq (WP.mono (loopMaybe_ok hp hS hlaw hu hcf) fun v ⟨g, hg, hv⟩ => ?_)
-  exact WP.seq (WP.mono (finalHash_ok hp hS hlaw hv hg) fun w hw => tail_ok hp hS (tailLaw hP) hw)
+  exact WP.seq (WP.mono (finalHash_ok hp hlaw hv hg) fun w hw => tail_ok hp hS (tailLaw hP) hw)
 
 /-- Encryption in place, after a setup that leaves what `setup` does. -/
 theorem encRest_ok {s₀ s : State} (hp : SPre s₀) {P : Nat → Block} (hR : Ready s₀ P s)

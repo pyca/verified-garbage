@@ -11,9 +11,11 @@ xmm3–xmm6 and xmm13–xmm15. The round key shares xmm1 with GHASH's reduction
 constant; the constant is reloaded only at reduction. Each key size has a
 fixed AES loop, with GHASH work spread across its available rounds.
 
-Scratch holds eight hash powers at 128–255, reversed hash inputs at
-512–639, counters at 640–767, constants at 768–799, the saved round count and data pointer at
-800–815, and, out of place, the saved `rbx` at 816–823. Integer loads and byte swaps prepare hash inputs one batch ahead.
+Scratch holds eight hash powers at 128–255, counters at 640–767, constants
+at 768–799, the saved round count and data pointer at 800–815, and, out of
+place, the saved `rbx` at 816–823. GHASH reads its inputs from the data,
+byte-reversed by `vpshufb` with the mask at 768, since no register is free
+to hold it.
 Counter words are prepared early for the next batch, using full inc32
 arithmetic with no counter-dependent branches. Encryption runs sixteen
 blocks ahead of hashing; decryption hashes ciphertext before overwriting it.
@@ -181,12 +183,6 @@ def finish : List Instr :=
   ([.mov .rax (.reg .rsi), .alu32 .sub .r8 (.imm 8), .bswap32 .r8,
    .store32 (at_ .rax 12) .r8, .vmovdquLoad .l128 .xmm0 (at_ .r11 768)] : List Instr) ++ Stitch.storeY ++ ([.mov .r8 (.mem (at_ .r11 808)), .mov .rsi (.mem (at_ .r11 800))] : List Instr)
 
-def prepare (k : Nat) : List Instr :=
-  [.mov .rax (.mem (at_ .rdx (16*k+8))), .bswap .rax,
-   .store (at_ .r11 (512+16*(k%8))) .rax,
-   .mov .rax (.mem (at_ .rdx (16*k))), .bswap .rax,
-   .store (at_ .r11 (520+16*(k%8))) .rax]
-
 def accInit (a b : XReg) : List Instr :=
   [.vop (.vpclmulqdq .l128 .xmm8 a b 0x00),
    .vop (.vpclmulqdq .l128 .xmm10 a b 0x11),
@@ -194,40 +190,45 @@ def accInit (a b : XReg) : List Instr :=
    .vop (.vpclmulqdq .l128 .xmm11 a b 0x10),
    .vop (.vbin .vpxor .l128 .xmm9 .xmm9 .xmm11)]
 
-def gh8 (k : Nat) : List Instr :=
+/-- The product of the `k`-th block of eight from `rdx + d` (byte-reversed
+with the mask at `r11 + 768`, since every block register holds an AES state)
+with its power. -/
+def gh8 (d k : Nat) : List Instr :=
   ([.vmovdquLoad .l128 .xmm12 (at_ .r11 (16*(8+k%8))),
-   .vmovdquLoad .l128 .xmm7 (at_ .r11 (512+16*(k%8)))] : List Instr) ++
+   .vmovdquLoad .l128 .xmm7 (at_ .rdx (d+16*(k%8))),
+   .vbinLoad .vpshufb .l128 .xmm7 .xmm7 (at_ .r11 768)] : List Instr) ++
    (if k % 8 = 0 then [.vop (.vbin .vpxor .l128 .xmm7 .xmm7 .xmm2)] else []) ++ (if k%8 = 1 then accInit .xmm7 .xmm12 else acc .xmm7 .xmm12)
 
-def q8 (nr : Nat) (more : Bool) (j : Nat) : List Instr :=
+def q8 (nr : Nat) (j : Nat) : List Instr :=
   if nr = 10 then
-    if 1 ≤ j ∧ j ≤ 8 then gh8 (j%8) ++ (if more then prepare (8+j%8) else [])
+    if 1 ≤ j ∧ j ≤ 8 then gh8 0 (j%8)
     else if j = 9 then reduceFinal else []
   else if nr = 12 then
-    if j = 1 then gh8 1 ++ (if more then prepare 9 else []) else
-    if j = 2 then gh8 2 ++ (if more then prepare 10 else []) else
-    if j = 3 then gh8 3 ++ (if more then prepare 11 else []) else
-    if j = 5 then gh8 4 ++ (if more then prepare 12 else []) else
-    if j = 6 then gh8 5 ++ (if more then prepare 13 else []) else
-    if j = 7 then gh8 6 ++ (if more then prepare 14 else []) else
-    if j = 9 then gh8 7 ++ (if more then prepare 15 else []) else
-    if j = 10 then gh8 0 ++ (if more then prepare 8 else []) else
+    if j = 1 then gh8 0 1 else
+    if j = 2 then gh8 0 2 else
+    if j = 3 then gh8 0 3 else
+    if j = 5 then gh8 0 4 else
+    if j = 6 then gh8 0 5 else
+    if j = 7 then gh8 0 6 else
+    if j = 9 then gh8 0 7 else
+    if j = 10 then gh8 0 0 else
     if j = 11 then reduceFinal else []
   else
-    if j = 1 then gh8 1 ++ (if more then prepare 9 else []) else
-    if j = 2 then gh8 2 ++ (if more then prepare 10 else []) else
-    if j = 4 then gh8 3 ++ (if more then prepare 11 else []) else
-    if j = 6 then gh8 4 ++ (if more then prepare 12 else []) else
-    if j = 8 then gh8 5 ++ (if more then prepare 13 else []) else
-    if j = 10 then gh8 6 ++ (if more then prepare 14 else []) else
-    if j = 11 then gh8 7 ++ (if more then prepare 15 else []) else
-    if j = 12 then gh8 0 ++ (if more then prepare 8 else []) else
+    if j = 1 then gh8 0 1 else
+    if j = 2 then gh8 0 2 else
+    if j = 4 then gh8 0 3 else
+    if j = 6 then gh8 0 4 else
+    if j = 8 then gh8 0 5 else
+    if j = 10 then gh8 0 6 else
+    if j = 11 then gh8 0 7 else
+    if j = 12 then gh8 0 0 else
     if j = 13 then reduceFinal else []
 
-def hash8 : List Instr := (List.range 8).flatMap (fun i => gh8 ((i+1)%8)) ++ reduceFinal
+/-- The eight blocks from `rdx + d` hashed, and the product reduced into `Y`. -/
+def hash8 (d : Nat) : List Instr := (List.range 8).flatMap (fun i => gh8 d ((i+1)%8)) ++ reduceFinal
 
 def encBody8 (nr : Nat) (ix : Bool := false) : Prog isa :=
-  .seq (.block []) (.seq (batch nr 8 16 (q8 nr true) ix)
+  .seq (.block []) (.seq (batch nr 8 16 (q8 nr) ix)
     (.block [.alu .add .rdx (.imm 128), .alu .sub .r9 (.imm 8), .alu .cmp .r9 (.imm 24)]))
 
 /-- The keystream of the eight counters prepared after the last batch,
@@ -269,19 +270,19 @@ def tailT (nr : Nat) (ix : Bool := false) : Prog isa :=
 /-- Encryption, after the setup, of the data read from `srcAt ix`. -/
 def encRest (nr : Nat) (ix : Bool := false) : Prog isa :=
   .seq (batchL regCounters nr 8 0 (fun _ => []) ix) (.seq (batch nr 8 8 (fun _ => []) ix)
-    (.seq (.block ((List.range 8).flatMap prepare ++ ([.alu .cmp .r9 (.imm 24)] : List Instr)))
+    (.seq (.block [.alu .cmp .r9 (.imm 24)])
       (.seq (.ite .b (.block []) (.loop (encBody8 nr ix) .ae))
-        (.seq (.block (hash8 ++ (List.range 8).flatMap (fun i => prepare (8+i)) ++ hash8))
+        (.seq (.block (hash8 0 ++ hash8 128))
           (.seq (tailT nr ix) (.block finish))))))
 
 def decBody8 (nr : Nat) : Prog isa :=
-  .seq (.block []) (.seq (batch nr 8 0 (q8 nr true))
+  .seq (.block []) (.seq (batch nr 8 0 (q8 nr))
     (.block [.alu .add .rdx (.imm 128), .alu .sub .r9 (.imm 8), .alu .cmp .r9 (.imm 16)]))
 
 /-- Decryption, after the setup. -/
 def decRest (nr : Nat) : Prog isa :=
-  .seq (.block ((List.range 8).flatMap prepare)) (.seq (.loop (decBody8 nr) .ae) (.seq (.block [])
-    (.seq (batch nr 8 0 (q8 nr false)) (.block finish))))
+  .seq (.block []) (.seq (.loop (decBody8 nr) .ae) (.seq (.block [])
+    (.seq (batch nr 8 0 (q8 nr)) (.block finish))))
 
 /-- The setup `su`, which does not depend on the key size, then the complete
 loop for the key size, chosen once from the public AES round count `nr`: the
