@@ -2988,9 +2988,7 @@ theorem openS_ct (v : Proof.ChaCha20.X86_64.XorImpl) :
 
 /-- The postconditions match on `decrypt` through different auxiliary
 functions, so the implication splits on it. -/
-theorem openS_verified (v : Proof.ChaCha20.X86_64.XorImpl) :
-    Verified X86_64.target (openStitched v.callee v.poly) (openScratchContract X86_64.abi 212 24) :=
-  Verified.of_correct (openS_ok v) (openS_ct v)
+theorem openS_implies : openX86_64.Implies (openScratchContract X86_64.abi 212 24) :=
     { pre := by
         sig_implies_pre [Proof.ChaCha20Poly1305.openScratchContract,
           Proof.ChaCha20Poly1305.openScratchSig, Spec.ChaCha20Poly1305.openPost,
@@ -3029,6 +3027,10 @@ theorem openS_verified (v : Proof.ChaCha20.X86_64.XorImpl) :
           List.range, List.range.loop, VG.X86_64.below, X86_64.argRegs]
           [openSat] using openSat }
 
+theorem openS_verified (v : Proof.ChaCha20.X86_64.XorImpl) :
+    Verified X86_64.target (openStitched v.callee v.poly) (openScratchContract X86_64.abi 212 24) :=
+  Verified.of_correct (openS_ok v) (openS_ct v) openS_implies
+
 theorem bulkO_xdepth : bulkO.x86_64Depth = 0 := by decide +kernel
 
 theorem openS_xdepth (v : Proof.ChaCha20.X86_64.XorImpl) :
@@ -3051,6 +3053,87 @@ theorem openS_framed (v : Proof.ChaCha20.X86_64.XorImpl) :
     (openS_spSafe v) (openS_xdepth v) (by decide) (pre_local _ _) (openPost_local _) (openPost_out _)
     openFrameSat_pre
 
+/-! ## Short data with the AVX2 code
+
+`openSmall big`, as `sealSmall`: the comparison changes only the flags,
+which `open`'s contract does not read either. -/
+
+theorem FlagsOnly.preO {s t : State} (h : FlagsOnly s t) (hs : openX86_64.pre s) : openX86_64.pre t := by
+  show preX86_64 false t
+  have ha := h.arg
+  have hb := h.argAddr
+  simp only [preX86_64, h.gpr, h.rd, h.wr, ha, hb] at hs ⊢
+  exact hs
+
+theorem FlagsOnly.postO {s t z : State} (h : FlagsOnly s t) (hz : openX86_64.post t z) :
+    openX86_64.post s z := by
+  have ha := h.arg
+  simp only [openX86_64, h.gpr, h.mem, ha] at hz ⊢
+  exact hz
+
+theorem FlagsOnly.pubO {s₁ s₂ t₁ t₂ : State} (h₁ : FlagsOnly s₁ t₁) (h₂ : FlagsOnly s₂ t₂)
+    (hp : openX86_64.pub s₁ s₂) : openX86_64.pub t₁ t₂ := by
+  show pubX86_64 t₁ t₂
+  simp only [pubX86_64, h₁.gpr, h₂.gpr, h₁.arg, h₂.arg]
+  exact hp
+
+theorem openSmall_ok {big : Prog isa}
+    (hb : ∀ s, openX86_64.pre s → ∃ t s', Exec isa big s t s' ∧ abiPreserved s s' ∧ openX86_64.post s s')
+    (s : State) (hs : openX86_64.pre s) :
+    ∃ t s', Exec isa (openSmall big) s t s' ∧ abiPreserved s s' ∧ openX86_64.post s s' := by
+  have hw : WP isa (openSmall big) s fun z => abiPreserved s z ∧ openX86_64.post s z := by
+    refine WP.seq (WP.mono (cmpSmall_ok s) fun e ⟨he, hf⟩ => ?_)
+    refine WP.ite _ he (fun _ => ?_) (fun _ => ?_)
+    · obtain ⟨t, s', ex, ha, hp⟩ := openS_ok Proof.ChaCha20.X86_64.XorImpl.avx2 e (hf.preO hs)
+      exact ⟨t, s', ex, hf.abi ha, hf.postO hp⟩
+    · obtain ⟨t, s', ex, ha, hp⟩ := hb e (hf.preO hs)
+      exact ⟨t, s', ex, hf.abi ha, hf.postO hp⟩
+  obtain ⟨t, s', he, hq⟩ := hw
+  exact ⟨t, s', he, hq⟩
+
+/-- Pairs of states that `open`'s contract allows, with the same public data. -/
+abbrev PPO (s₁ s₂ : State) : Prop := openX86_64.pre s₁ ∧ openX86_64.pre s₂ ∧ openX86_64.pub s₁ s₂
+
+theorem rel_cmpedO {c : Prog isa} (hc : ConstantTime isa openX86_64.pre openX86_64.pub c)
+    {R : State → State → Prop}
+    (hR : ∀ a b, R a b → ∃ σ₁ σ₂, PPO σ₁ σ₂ ∧ Cmped σ₁ a ∧ Cmped σ₂ b) :
+    RelCT isa R c fun _ _ => True := by
+  intro a b t₁ t₂ a' b' hr e₁ e₂
+  obtain ⟨σ₁, σ₂, ⟨p₁, p₂, hp⟩, ⟨-, f₁⟩, ⟨-, f₂⟩⟩ := hR a b hr
+  exact ⟨hc _ _ _ _ _ _ (f₁.preO p₁) (f₂.preO p₂) (FlagsOnly.pubO f₁ f₂ hp) e₁ e₂, trivial⟩
+
+theorem openSmall_ct {big : Prog isa} (hb : ConstantTime isa openX86_64.pre openX86_64.pub big) :
+    ConstantTime isa openX86_64.pre openX86_64.pub (openSmall big) := by
+  refine RelCT.constantTime (Q := fun _ _ => True) ?_
+  have hblk : RelCT isa PPO (.block cmpSmall) fun _ _ => True := by
+    obtain ⟨_, hc⟩ : ∃ hc, (taint.check (Taint.ofRegs [.r9]) (.block cmpSmall) hc).isSome = true :=
+      ⟨_, by taint_decide⟩
+    exact RelCT.taint (A := taint) (Taint.ofRegs [.r9]) (fun s₁ s₂ h => Taint.agree_ofRegs (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact h.2.2.2.2.2.2.2.1)) hc
+  refine RelCT.seq (RelCT.wpDep (F := Cmped) hblk fun s₁ s₂ _ => ⟨cmpSmall_ok s₁, cmpSmall_ok s₂⟩) ?_
+  refine RelCT.ite (fun a b ⟨_, σ₁, σ₂, ⟨_, _, hp⟩, ⟨e₁, _⟩, ⟨e₂, _⟩⟩ => ?_) ?_ ?_
+  · rw [e₁, e₂, show σ₁.gpr .r9 = σ₂.gpr .r9 from hp.2.2.2.2.2.1]
+  · exact rel_cmpedO (openS_ct Proof.ChaCha20.X86_64.XorImpl.avx2)
+      fun a b ⟨⟨_, σ₁, σ₂, hp, h₁, h₂⟩, _⟩ => ⟨σ₁, σ₂, hp, h₁, h₂⟩
+  · exact rel_cmpedO hb fun a b ⟨⟨_, σ₁, σ₂, hp, h₁, h₂⟩, _⟩ => ⟨σ₁, σ₂, hp, h₁, h₂⟩
+
+theorem openSmall_verified {big : Prog isa}
+    (hb : ∀ s, openX86_64.pre s → ∃ t s', Exec isa big s t s' ∧ abiPreserved s s' ∧ openX86_64.post s s')
+    (hc : ConstantTime isa openX86_64.pre openX86_64.pub big) :
+    Verified X86_64.target (openSmall big) (openScratchContract X86_64.abi 212 24) :=
+  Verified.of_correct (openSmall_ok hb) (openSmall_ct hc) openS_implies
+
+theorem openSmall_spSafe {big : Prog isa} (hb : big.all (fun i => !X86_64.isa.writesSp i) = true) :
+    (openSmall big).all (fun i => !X86_64.isa.writesSp i) = true := by
+  have h := openS_spSafe Proof.ChaCha20.X86_64.XorImpl.avx2
+  simp only [openSmall, Code.all, hb, Bool.and_true]
+  exact Bool.and_eq_true_iff.mpr ⟨by decide, h⟩
+
+theorem openSmall_xdepth {big : Prog isa} (hb : big.x86_64Depth ≤ 24) : (openSmall big).x86_64Depth ≤ 24 := by
+  have h := openS_xdepth Proof.ChaCha20.X86_64.XorImpl.avx2
+  simp only [openSmall, Code.x86_64Depth, Nat.max_le]
+  exact ⟨by decide, h, hb⟩
+
 /-! ## The `open` of an instance -/
 
 theorem openFor_spSafe (v : Proof.ChaCha20.X86_64.XorImpl) :
@@ -3058,11 +3141,10 @@ theorem openFor_spSafe (v : Proof.ChaCha20.X86_64.XorImpl) :
   have h₁ := open_spSafe v
   have h₂ := openS_spSafe v
   generalize v.poly = b at h₁ h₂ ⊢
-  cases b
-  · exact h₁
-  · exact h₂
-  · exact h₁
-  · exact h₁
+  cases b with
+  | avx2 => exact h₂
+  | avx512 => exact openSmall_spSafe h₁
+  | _ => exact h₁
 
 theorem openFor_framed (v : Proof.ChaCha20.X86_64.XorImpl) :
     Verified X86_64.target
@@ -3070,11 +3152,19 @@ theorem openFor_framed (v : Proof.ChaCha20.X86_64.XorImpl) :
       (Spec.ChaCha20Poly1305.openContract X86_64.abi 1744) := by
   have h₁ := open_framed v
   have h₂ := openS_framed v
-  generalize v.poly = b at h₁ h₂ ⊢
-  cases b
-  · exact h₁
-  · exact h₂
-  · exact h₁
-  · exact h₁
+  have ho := open_ok v
+  have hc := open_ct v
+  have hs := open_spSafe v
+  have hd := open_xdepth v
+  generalize v.poly = b at h₁ h₂ ho hc hs hd ⊢
+  cases b with
+  | avx2 => exact h₂
+  | avx512 =>
+    exact X86_64.Verified.stackArgScratchWipedX (sig := Spec.ChaCha20Poly1305.openSig) (nm := "work") (e := .u64)
+      (n := 212) (post := Spec.ChaCha20Poly1305.openPost X86_64.abi.ptrBits) (wa := true) (stack := 24)
+      (bytes := 1720) (k := 42) (openSmall_verified ho hc) (by decide) (by decide) (by decide)
+      (openSmall_spSafe hs) (openSmall_xdepth hd) (by decide) (pre_local _ _) (openPost_local _) (openPost_out _)
+      openFrameSat_pre
+  | _ => exact h₁
 
 end VG.Proof.ChaCha20Poly1305.X86_64.Stitch
