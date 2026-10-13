@@ -11361,7 +11361,7 @@ pub(crate) const VG_CHACHA20_XOR_AVX512VL_FEATURES: crate::cpu::Features = crate
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_chacha20_xor_avx512vl(state: *mut [u32; 16], data: *mut u8, len: usize, buf: *mut [u32; 80]) {
     core::arch::naked_asm!(
-        "cmp rdx, 513",
+        "cmp rdx, 1025",
         "jb 20f",
         "movabs rax, 0",
         "mov QWORD PTR [rcx+256], rax",
