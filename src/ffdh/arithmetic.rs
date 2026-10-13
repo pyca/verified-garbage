@@ -98,20 +98,8 @@ impl Montgomery {
         } else {
             0
         };
-        let mut ws = Scratch::new(table_at + table_words);
-        ws[6] = w as u64;
-        ws[7] = self.minv;
-        for j in 0..8 {
-            // SAFETY: each array starts inside this stable allocation.
-            ws[8 + j] = unsafe { ws.as_ptr().add(32 + j * (w + 2)) } as u64;
-        }
+        let mut ws = self.workspace(base, table_words);
         let at = |j| 32 + j * (w + 2);
-        ws[at(0)..at(0) + w].copy_from_slice(&self.modulus);
-        ws[at(1)..at(1) + w].copy_from_slice(&self.r2);
-        ws[at(4)..at(4) + w].copy_from_slice(&words(base, w));
-        ws[at(7)] = 1;
-        self.mul(&mut ws, 4, 4, 1);
-        self.mul(&mut ws, 5, 7, 1);
         #[cfg(target_arch = "x86_64")]
         for &byte in exponent {
             for bit in (0..8).rev() {
@@ -187,7 +175,89 @@ impl Montgomery {
                 }
             }
         }
-        self.mul(&mut ws, 5, 5, 7);
+        self.finish(&mut ws)
+    }
+
+    /// Variable-time exponentiation for public exponents only (e.g. subgroup
+    /// orders). Never use this for a private scalar or a secret prime exponent.
+    pub(super) fn power_public(&self, base: &[u8], exponent: &[u8]) -> Vec<u8> {
+        let exponent = canonical(exponent);
+        let window = if exponent.len() > 32 {
+            5
+        } else if exponent.len() > 1 {
+            4
+        } else {
+            1
+        };
+        let w = self.modulus.len();
+        let at = |j| 32 + j * (w + 2);
+        let table_at = at(8);
+        let entries = 1 << (window - 1);
+        let mut ws = self.workspace(base, entries * w);
+        ws.copy_within(at(4)..at(4) + w, table_at);
+        if entries > 1 {
+            // Odd powers: base, base^3, ...; one square supplies base^2.
+            ws.copy_within(at(4)..at(4) + w, at(5));
+            self.mul(&mut ws, 5, 5, 5);
+            ws.copy_within(at(4)..at(4) + w, at(6));
+            ws.copy_within(at(5)..at(5) + w, at(4));
+            for entry in 1..entries {
+                self.mul(&mut ws, 6, 6, 4);
+                ws.copy_within(at(6)..at(6) + w, table_at + entry * w);
+            }
+            self.mul(&mut ws, 5, 7, 1);
+        }
+        let bit = |i: usize| (exponent[i / 8] >> (7 - i % 8)) & 1;
+        let bits = exponent.len() * 8;
+        let mut pos = 0;
+        while pos < bits {
+            if bit(pos) == 0 {
+                self.mul(&mut ws, 5, 5, 5);
+                pos += 1;
+                continue;
+            }
+            let mut end = (pos + window).min(bits);
+            while bit(end - 1) == 0 {
+                end -= 1;
+            }
+            let mut digit = 0usize;
+            for i in pos..end {
+                self.mul(&mut ws, 5, 5, 5);
+                digit = (digit << 1) | usize::from(bit(i));
+            }
+            // This address and the skipped multiplies depend only on the public
+            // exponent. Secret exponentiation above still scans the whole table.
+            let entry = table_at + (digit >> 1) * w;
+            ws.copy_within(entry..entry + w, at(6));
+            self.mul(&mut ws, 5, 5, 6);
+            pos = end;
+        }
+        self.finish(&mut ws)
+    }
+
+    fn workspace(&self, base: &[u8], table_words: usize) -> Scratch {
+        let w = self.modulus.len();
+        let table_at = 32 + 8 * (w + 2);
+        let mut ws = Scratch::new(table_at + table_words);
+        ws[6] = w as u64;
+        ws[7] = self.minv;
+        for j in 0..8 {
+            // SAFETY: each array starts inside this stable allocation.
+            ws[8 + j] = unsafe { ws.as_ptr().add(32 + j * (w + 2)) } as u64;
+        }
+        let at = |j| 32 + j * (w + 2);
+        ws[at(0)..at(0) + w].copy_from_slice(&self.modulus);
+        ws[at(1)..at(1) + w].copy_from_slice(&self.r2);
+        ws[at(4)..at(4) + w].copy_from_slice(&words(base, w));
+        ws[at(7)] = 1;
+        self.mul(&mut ws, 4, 4, 1);
+        self.mul(&mut ws, 5, 7, 1);
+        ws
+    }
+
+    fn finish(&self, ws: &mut [u64]) -> Vec<u8> {
+        let at = |j| 32 + j * (self.modulus.len() + 2);
+        self.mul(ws, 5, 5, 7);
         let mut out = vec![0; self.len];
         for (i, b) in out.iter_mut().rev().enumerate() {
             *b = (ws[at(5) + i / 8] >> (8 * (i % 8))) as u8;
@@ -232,6 +302,30 @@ fn double_mod(a: &mut [u64], m: &[u64]) {
             let (x, b2) = x.overflowing_sub(u64::from(borrow));
             *v = x;
             borrow = b1 | b2;
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn public_and_secret_exponents_agree() {
+        // Differential checks, including zero/leading-zero exponents, every
+        // window-size boundary, sparse windows, and partial modulus words.
+        for bytes in [1, 8, 17, 32, 65] {
+            let mont = Montgomery::new(&vec![0xff; bytes]);
+            for len in [0, 1, 2, 32, 33, 39] {
+                for byte in [0, 0x55, 0x80, 0xff] {
+                    let exponent = vec![byte; len];
+                    let mut padded = vec![0; 3];
+                    padded.extend_from_slice(&exponent);
+                    let expected = mont.power(&[2], &exponent);
+                    assert_eq!(mont.power_public(&[2], &exponent), expected);
+                    assert_eq!(mont.power_public(&[2], &padded), expected);
+                }
+            }
         }
     }
 }
