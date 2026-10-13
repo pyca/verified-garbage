@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesXts.X86_64.AesNi.Step
-import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.Top
+module
+
+public import VerifiedGarbage.Proof.AesXts.X86_64.AesNi.Step
+public import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.Top
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # One-pass XTS-AES with AES-NI on x86-64: eight blocks at a time
@@ -10,6 +16,8 @@ at `scratch + 256`), with `rax` at the first of them and `0x87` in `xmm11`
 `f` on `xmm0`–`xmm7` (`BlkN`) takes it from `c` to `c + 8`; `loop8_ok`: the
 loop meets `LoopOk`, so `crypt_wp` applies.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesXts.X86_64.OnePassNi
 

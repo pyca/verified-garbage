@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.Step
-import VerifiedGarbage.Impl.AesXts.X86_64AesNi
+module
+
+public import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.Step
+public import VerifiedGarbage.Impl.AesXts.X86_64AesNi
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # One-pass XTS-AES with AES-NI on x86-64: a tweak in the buffer times `α⁸`
@@ -7,6 +13,8 @@ import VerifiedGarbage.Impl.AesXts.X86_64AesNi
 `stepT_ok`: `X86_64AesNi.stepT k` replaces the tweak at `rax + 16 k`, a word
 `v`, with `stepW v` (`Vaes/Step.lean`), through `xmm9` and `xmm10`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesXts.X86_64.OnePassNi
 
