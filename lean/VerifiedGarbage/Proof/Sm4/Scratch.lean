@@ -73,6 +73,29 @@ def ctrScratchContract {M : ISA} (A : Abi M) (n : Nat) (stack : Nat := 0) : Cont
     (post := fun schedule ctr data len _scratch => ctrPost A.ptrBits schedule ctr data len)
     (writeArgs := true) (stack := stack)
 
+/-- `ecbDirContract`'s precondition. -/
+def ecbDirPre (pb : Nat) : Curry (ecbDirSig.words pb) (Mem → Prop) :=
+  fun _schedule _data _n decrypt _ => decrypt.toNat ≤ 1
+
+/-- `ecbDirContract`'s postcondition. -/
+def ecbDirPost (pb : Nat) : ecbDirSig.Post pb := fun schedule data n decrypt m m' _ =>
+  blocksAt m' data n.toNat = ecb (scheduleAt m schedule) (directionOf decrypt.toNat) (blocksAt m data n.toNat)
+
+/-- `vg_sm4_ecb` with `scratch: *mut [u64; n]`. -/
+def ecbDirScratchSig (n : Nat) : Sig where
+  params := [("schedule", .array false .u8 128), ("data", .slice true (.array .u8 16) "n"),
+    ("decrypt", .int .usize true), ("scratch", .array true .u64 n)]
+
+/-- `ecbDirContract`, whatever `scratch` is. -/
+def ecbDirScratchContract {M : ISA} (A : Abi M) (n : Nat) (stack : Nat := 0) : Contract M :=
+  (ecbDirScratchSig n).contract A
+    (pre := fun schedule data len decrypt _scratch => ecbDirPre A.ptrBits schedule data len decrypt)
+    (post := fun schedule data len decrypt _scratch => ecbDirPost A.ptrBits schedule data len decrypt)
+    (writeArgs := true) (stack := stack)
+
+theorem ecbDirContract_eq {M : ISA} (A : Abi M) (stack : Nat) :
+    ecbDirContract A stack = ecbDirSig.contract A (ecbDirPre A.ptrBits) (ecbDirPost A.ptrBits) true stack := rfl
+
 /-! ## Locality -/
 
 section
@@ -144,6 +167,17 @@ private theorem agree_of {n : Nat} (h : ∀ a, Region.Contains ⟨p, n⟩ a 1 �
 
 end
 
+/-- The schedule, in memory changed only outside it. -/
+theorem scheduleAt_frame {rs : List Region} {m m' : Mem} {p : Addr} (hf : Frame rs m m')
+    (hd : ∀ r ∈ rs, Region.Disjoint ⟨p, 128⟩ r) : scheduleAt m' p = scheduleAt m p :=
+  scheduleAt_congr fun _ hi => hf.bytes (R := ⟨p, 128⟩) hd (show 128 ≤ 2 ^ 64 by decide) hi
+
+/-- The blocks, in memory changed only outside them. -/
+theorem blocksAt_frame {rs : List Region} {m m' : Mem} {p : Addr} {n : Nat} (hf : Frame rs m m')
+    (hd : ∀ r ∈ rs, Region.Disjoint ⟨p, n * 16⟩ r) (hfit : n * 16 ≤ 2 ^ 64) :
+    blocksAt m' p n = blocksAt m p n :=
+  blocksAt_congr fun _ hi => hf.bytes (R := ⟨p, n * 16⟩) hd hfit hi
+
 variable (pb : Nat)
 
 theorem expandKeyPostOut_local : ∀ vs m m₁ m₂ r, vs.length = (expandKeySig.words pb).length →
@@ -196,6 +230,25 @@ theorem ctrPostOut_local : ∀ vs m m₁ m₂ r, vs.length = (ctrSig.words pb).l
     have := Nat.mod_le n.toNat (2 ^ pb)
     rw [cbcBlocksAt_congr (n := (n.setWidth pb).toNat) fun i hi => hd i (by
       rw [BitVec.toNat_setWidth] at hi; have := Nat.mul_le_mul_right 16 this; omega), bytesAt_congr hc]
+    exact h
+
+theorem ecbDirPostOut_local : ∀ vs m m₁ m₂ r,
+    vs.length = (ecbDirSig.words pb).length →
+    (∀ b ∈ Sig.bufs ecbDirSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (ecbDirSig.words pb) (ecbDirPost pb) vs m m₁ r →
+      Curry.apply (ecbDirSig.words pb) (ecbDirPost pb) vs m m₂ r
+  | [_, data, n, _], m, m₁, m₂, r, _, hb, h => by
+    simp only [ecbDirSig, ecbSig, List.cons_append, List.nil_append, Sig.bufs, List.mem_cons,
+      List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
+    have hd := agree_of hb.2
+    change Curry.apply [ArgWord.addr, ArgWord.addr, ArgWord.int pb, ArgWord.int pb] (ecbDirPost pb) _
+      m m₁ r at h
+    change Curry.apply [ArgWord.addr, ArgWord.addr, ArgWord.int pb, ArgWord.int pb] (ecbDirPost pb) _
+      m m₂ r
+    dsimp only [Curry.apply, ecbDirPost, ArgWord.ofRaw] at h ⊢
+    have := Nat.mod_le n.toNat (2 ^ pb)
+    rw [blocksAt_congr (n := (n.setWidth pb).toNat) fun i hi => hd i (by
+      rw [BitVec.toNat_setWidth] at hi; have := Nat.mul_le_mul_right 16 this; omega)]
     exact h
 
 /-- `expandKeyPost` reads the memory on entry only within the key. -/
