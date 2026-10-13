@@ -263,7 +263,8 @@ theorem ifmaPart_ok (hl : LayOk l) (M : Mont) {s t₀ : State} {B : Addr} {Z k :
 theorem main_eq (mul : Nat → Nat → Nat → Prog isa) : CrtIfma.main mul =
     seqs ((nSetup mul ++ primesSetup ++ checks) ++
       (([.seq CrtIfma.anySizes (.ite .e (seqs (CrtIfma.pre mul ++ ([CrtIfma.ifmaAny] : List (Prog isa)) ++
-        CrtIfma.post mul)) (seqs (qPhase mul Crt.tabSelect ++ pPhase mul Crt.tabSelect)))] : List (Prog isa)) ++ finish)) := by
+        CrtIfma.post mul)) (seqs (qPhase mul (Crt.expLoop mul Crt.tabSelect) ++
+          pPhase mul (Crt.expLoop mul Crt.tabSelect))))] : List (Prog isa)) ++ finish)) := by
   simp only [CrtIfma.main, List.append_assoc]
 
 /-- `main`, for a valid modulus: `privateCrt`'s result as `vg_rsa_private_crt`
