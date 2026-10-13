@@ -71,4 +71,56 @@ theorem smallTest_ok {lim : Nat} (hl : BitVec.signExtend 64 (BitVec.ofNat 32 lim
       decide_false, Bool.false_eq_true, Option.some.injEq, exists_eq_left', ↓reduceIte, reduceCtorEq, e64, el]
     exact ⟨trivial, fun r h1 h2 => by simp only [h1, h2, ite_false], rfl, rfl, rfl, rfl⟩
 
+/-- `len mod 512` is from 64 to 256 if `(len & 511) - 64` is below 193. -/
+theorem tail_iff (x : BitVec 64) :
+    ((x &&& BitVec.ofNat 64 511) - BitVec.ofNat 64 64).toNat < 193 ↔
+      64 ≤ x.toNat % 512 ∧ x.toNat % 512 ≤ 256 := by
+  have ha : (x &&& BitVec.ofNat 64 511).toNat = x.toNat % 512 := by
+    rw [BitVec.toNat_and, show (BitVec.ofNat 64 511).toNat = 2 ^ 9 - 1 from rfl, Nat.and_two_pow_sub_one_eq_mod]
+  rw [BitVec.toNat_sub, ha, show (BitVec.ofNat 64 64).toNat = 64 from rfl]
+  have := Nat.mod_lt x.toNat (show 0 < 512 by decide)
+  constructor
+  · intro h
+    by_cases h64 : 64 ≤ x.toNat % 512
+    · rw [show 2 ^ 64 - 64 + x.toNat % 512 = (x.toNat % 512 - 64) + 2 ^ 64 by omega, Nat.add_mod_right,
+        Nat.mod_eq_of_lt (by omega)] at h
+      omega
+    · rw [Nat.mod_eq_of_lt (by omega)] at h
+      omega
+  · intro ⟨h1, h2⟩
+    rw [show 2 ^ 64 - 64 + x.toNat % 512 = (x.toNat % 512 - 64) + 2 ^ 64 by omega, Nat.add_mod_right,
+      Nat.mod_eq_of_lt (by omega)]
+    omega
+
+/-- `decRest`'s test of the rest: `CF` set if `len mod 512` (`r13`) is from 64
+to 256, writing only `rax` and the flags. -/
+theorem tailTest_ok (s : State) :
+    WP isa (.block [.mov .rax (.reg .r13), .alu .and .rax (.imm 511), .alu .sub .rax (.imm 64),
+      .alu .cmp .rax (.imm 193)]) s fun t =>
+      isa.eval .b t = some (decide (64 ≤ (s.gpr .r13).toNat % 512 ∧ (s.gpr .r13).toNat % 512 ≤ 256)) ∧
+      (∀ r, r ≠ .rax → t.gpr r = s.gpr r) ∧ t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
+      t.mxcsr = s.mxcsr := by
+  apply WP.of_runBlock
+  have x511 : BitVec.signExtend 64 (511 : BitVec 32) = BitVec.ofNat 64 511 := by decide
+  have x64 : BitVec.signExtend 64 (64 : BitVec 32) = BitVec.ofNat 64 64 := by decide
+  have x193 : BitVec.signExtend 64 (193 : BitVec 32) = BitVec.ofNat 64 193 := by decide
+  have e193 : (BitVec.ofNat 64 193).toNat = 193 := rfl
+  have hw := tail_iff (s.gpr .r13)
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc, x511, x64, x193,
+    Option.bind_some, Option.map_some, gpr_arithFlags, cf_arithFlags, gpr_setReg, eval, e193,
+    Option.some.injEq, exists_eq_left', ↓reduceIte]
+  exact ⟨by rw [decide_eq_decide]; exact hw, fun r h1 => by simp only [h1, ite_false], rfl, rfl, rfl, rfl⟩
+
+/-- `cmp r13, 512`: `CF` set below 512 bytes. -/
+theorem cmp13_ok (s : State) :
+    WP isa (.block [.alu .cmp .r13 (.imm 512)]) s fun t =>
+      isa.eval .b t = some (decide ((s.gpr .r13).toNat < 512)) ∧
+      t.gpr = s.gpr ∧ t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.mxcsr = s.mxcsr := by
+  apply WP.of_runBlock
+  have x512 : BitVec.signExtend 64 (512 : BitVec 32) = BitVec.ofNat 64 512 := by decide
+  have e512 : (BitVec.ofNat 64 512).toNat = 512 := rfl
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc, x512,
+    Option.bind_some, cf_arithFlags, eval, e512, Option.some.injEq, exists_eq_left']
+  exact ⟨trivial, rfl, rfl, rfl, rfl, rfl⟩
+
 end VG.Proof.ChaCha20Poly1305.X86_64.Stitch
