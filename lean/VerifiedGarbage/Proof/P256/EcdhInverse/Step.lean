@@ -6,6 +6,10 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Step
+import Mathlib.Data.BitVec
+import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Mont.AArch64.Row
 
 @[expose] public section
 

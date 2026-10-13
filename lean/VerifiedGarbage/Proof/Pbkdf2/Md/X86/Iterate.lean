@@ -6,6 +6,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Pbkdf2.Stream.X86.Common
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # PBKDF2-HMAC's iteration over a Merkle–Damgård hash function on x86 (32-bit): correct

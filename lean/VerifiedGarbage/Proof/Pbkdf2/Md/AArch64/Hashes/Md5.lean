@@ -16,6 +16,10 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Md5.AArch64.Stream.Md
+import VerifiedGarbage.Proof.Sha512.Word64
+meta import VerifiedGarbage.Proof.Md5.AArch64.Stream.Md
+meta import VerifiedGarbage.Proof.Sha512.Word64
 
 /-!
 # MD5 on AArch64, as a Merkle–Damgård hash function

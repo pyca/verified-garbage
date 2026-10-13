@@ -18,6 +18,10 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Sha256.AArch64.Stream.Init
+import VerifiedGarbage.Proof.Sha512.Word64
+meta import VerifiedGarbage.Proof.Sha256.AArch64.Stream.Init
+meta import VerifiedGarbage.Proof.Sha512.Word64
 
 /-!
 # SHA-224 on AArch64, as a Merkle–Damgård hash function
