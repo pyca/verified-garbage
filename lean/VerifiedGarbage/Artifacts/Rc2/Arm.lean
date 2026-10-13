@@ -18,9 +18,10 @@ def artifacts : List Artifact := [
   { Spec.Rc2.cbcInitApi with
     target := Arm.target
     doc := Spec.Rc2.cbcInitApi.doc (notes := ["Baseline ARMv7, copying the IV and calling the verified \
-      key expansion."])
+      key expansion (which scans PITABLE in the static `VG_RC2_PITABLE`)."])
+    consts := Impl.Rc2.piConsts
     code := Impl.StackScratch.Arm.withStackScratchWiped 592 2 144 Impl.Rc2.Arm.Stream.init
-    contract := Spec.Rc2.cbcInitContract Arm.abi 600
+    contract := Spec.Rc2.cbcInitContract (Arm.abi.withConsts Impl.Rc2.piConsts) 600
     stack := 600
     ofSig := by exact (⟨_, _, _, by unfold Spec.Rc2.cbcInitContract; rfl⟩)
     verified := Proof.Rc2.Arm.Stream.init_framed
@@ -68,9 +69,13 @@ def artifacts : List Artifact := [
   { Spec.Rc2.expandKeyApi with
     target := Arm.target
     doc := Spec.Rc2.expandKeyApi.doc
-      (notes := ["Baseline ARMv7. PITABLE selection scans all 256 candidates in a fixed order."])
+      (notes := ["Baseline ARMv7. Each PITABLE lookup scans the 256 bytes of the static `VG_RC2_PITABLE` in \
+        order, at addresses that depend only on the entry's number, keeping each byte under a mask that is \
+        nonzero exactly when the secret index is the entry's number (`eor`, then `(x - 1) >> 8`). No secret \
+        is an address or a branch condition."])
+    consts := Impl.Rc2.piConsts
     code := Impl.Rc2.Arm.expandKey
-    contract := Spec.Rc2.expandKeyContract Arm.abi
+    contract := Spec.Rc2.expandKeyContract (Arm.abi.withConsts Impl.Rc2.piConsts)
     stack := 0
     verified := Proof.Rc2.Arm.key_verified
     spSafe := Code.all_of_forall (fun _ => rfl) _ },
