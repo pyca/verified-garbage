@@ -3,15 +3,16 @@ module
 public import VerifiedGarbage.Spec.Weierstrass.MulBase
 public import VerifiedGarbage.Spec.P192
 public import VerifiedGarbage.Spec.Secp256k1
+public import VerifiedGarbage.Spec.BrainpoolP256r1
 
 /-!
 # The multiplication of a point, in a curve's working space, as a function
 
 **Trusted** (as every file in `Spec/`). The contract of one function for each
-curve of `curves` (so far P-192 and secp256k1), on the working space where
-the x86-64 code of the curve's ECDSA signature and verification, public key
-derivation and ECDH keeps its numbers, so that all of them can call one copy
-of the multiplication instead of repeating it:
+curve of `curves` (so far P-192, secp256k1 and brainpoolP256r1), on the
+working space where the x86-64 code of the curve's ECDSA signature and
+verification, public key derivation and ECDH keeps its numbers, so that all
+of them can call one copy of the multiplication instead of repeating it:
 
 * `vg_<curve>_mul(ws)`: `P = [k]Q` (`Weierstrass.mul`, SEC 1 §2.2.1) for the
   affine point `Q` and the number `k` in `ws`, as a point in projective
@@ -207,8 +208,11 @@ end Curve
 def p192 : Curve := { W := Spec.P192.curve, curve := "p192", k := 4, desc := "P-192", tmp := 2 }
 def secp256k1 : Curve :=
   { W := Spec.Secp256k1.curve, curve := "secp256k1", k := 4, desc := "secp256k1", tmp := 2 }
+def brainpoolp256r1 : Curve :=
+  { W := Spec.BrainpoolP256r1.curve, curve := "brainpoolp256r1", k := 4, desc := "brainpoolP256r1",
+    tmp := 2 }
 
 /-- Every curve. -/
-def curves : List Curve := [p192, secp256k1]
+def curves : List Curve := [p192, secp256k1, brainpoolp256r1]
 
 end VG.Spec.Weierstrass.Mul
