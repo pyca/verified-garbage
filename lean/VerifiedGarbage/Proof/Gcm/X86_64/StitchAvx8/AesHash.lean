@@ -240,11 +240,12 @@ end
 section
 
 /-!
-# Hashing a prepared input
+# Hashing an input from the data
 
 The order 1, …, 7, 0 initializes the accumulators on block 1 and incorporates
-the previous hash value on block 0. Both input and power are already in
-native field order in the scratch buffer.
+the previous hash value on block 0. The input is the data block at
+`rdx + d + 16 k`, byte-reversed by `vpshufb` with the mask at `r11 + 768`;
+the power is in native field order in the scratch buffer.
 -/
 
 namespace VG.Proof.Gcm.X86_64.StitchAvx8
@@ -258,35 +259,41 @@ open VG.Spec.Gcm (Block)
 def power (s : State) (k : Nat) : BitVec 128 :=
   s.mem.readW (s.ea (at_ .r11 (16 * (8 + k % 8)))) 128
 
-def input (s : State) (k : Nat) : BitVec 128 :=
-  s.mem.readW (s.ea (at_ .r11 (512 + 16 * (k % 8)))) 128 ^^^
-    (if k % 8 = 0 then s.lane .xmm2 0 else 0)
+/-- The data block, byte-reversed with the mask at `r11 + 768`. -/
+def dataIn (s : State) (d k : Nat) : BitVec 128 :=
+  XBinOp.eval .pshufb (s.mem.readW (s.ea (at_ .rdx (d + 16 * (k % 8)))) 128)
+    (s.mem.readW (s.ea (at_ .r11 768)) 128)
 
-private def inputs (s : State) (k : Nat) : State :=
-  (s.setV .l128 .xmm12 (power s k) 0).setV .l128 .xmm7 (input s k) 0
+def input (s : State) (d k : Nat) : BitVec 128 :=
+  dataIn s d k ^^^ (if k % 8 = 0 then s.lane .xmm2 0 else 0)
 
-private def loadInputs (k : Nat) : List Instr :=
+private def inputs (s : State) (d k : Nat) : State :=
+  (s.setV .l128 .xmm12 (power s k) 0).setV .l128 .xmm7 (input s d k) 0
+
+private def loadInputs (d k : Nat) : List Instr :=
   [.vmovdquLoad .l128 .xmm12 (at_ .r11 (16 * (8 + k % 8))),
-   .vmovdquLoad .l128 .xmm7 (at_ .r11 (512 + 16 * (k % 8)))] ++
+   .vmovdquLoad .l128 .xmm7 (at_ .rdx (d + 16 * (k % 8))),
+   .vbinLoad .vpshufb .l128 .xmm7 .xmm7 (at_ .r11 768)] ++
     (if k % 8 = 0 then [.vop (.vbin .vpxor .l128 .xmm7 .xmm7 .xmm2)] else [])
 
-private theorem prefix_ok (s : State) (k : Nat)
+private theorem prefix_ok (s : State) (d k : Nat)
     (hp : InRegions (s.rd ++ s.wr) (s.ea (at_ .r11 (16 * (8 + k % 8)))) 16)
-    (hx : InRegions (s.rd ++ s.wr) (s.ea (at_ .r11 (512 + 16 * (k % 8)))) 16) :
-    WP isa (.block (loadInputs k)) s fun t => t = inputs s k := by
+    (hx : InRegions (s.rd ++ s.wr) (s.ea (at_ .rdx (d + 16 * (k % 8)))) 16)
+    (hm : InRegions (s.rd ++ s.wr) (s.ea (at_ .r11 768)) 16) :
+    WP isa (.block (loadInputs d k)) s fun t => t = inputs s d k := by
   apply WP.of_runBlock
   by_cases hk : k % 8 = 0 <;>
     (try simp only [hk] at hp hx) <;>
     simp only [loadInputs, hk, ite_true, ite_false, List.append_nil, List.cons_append, List.nil_append,
-      runBlock_cons, runStep_some, runBlock_nil, exec, isa, State.load128, hp, hx,
+      runBlock_cons, runStep_some, runBlock_nil, exec, isa, State.load128, hp, hx, hm,
       State.setV_rd, State.setV_wr, State.setV_ea, State.setV_mem, Option.map_some,
       VOp.exec, VBinOp.sse, XBinOp.eval, State.lane, xmm_setV,
       reduceCtorEq, ite_true, ite_false, Option.some.injEq, exists_eq_left',
-      inputs, input, power] <;>
+      inputs, input, dataIn, power] <;>
     simp (config := { contextual := true }) [State.setV]
 
-private theorem inputs_frame (s : State) (k : Nat) :
-    YFrame [.xmm12, .xmm7] s (inputs s k) := by
+private theorem inputs_frame (s : State) (d k : Nat) :
+    YFrame [.xmm12, .xmm7] s (inputs s d k) := by
   refine ⟨rfl, rfl, rfl, rfl, ?_⟩
   intro r hr l hl
   simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
@@ -295,27 +302,28 @@ private theorem inputs_frame (s : State) (k : Nat) :
 /-- Registers modified by one hash product. -/
 abbrev ghRegs : List XReg := [.xmm12, .xmm7, .xmm8, .xmm9, .xmm10, .xmm11]
 
-theorem gh8_ok (s : State) (k : Nat)
+theorem gh8_ok (s : State) (d k : Nat)
     (hp : InRegions (s.rd ++ s.wr) (s.ea (at_ .r11 (16 * (8 + k % 8)))) 16)
-    (hx : InRegions (s.rd ++ s.wr) (s.ea (at_ .r11 (512 + 16 * (k % 8)))) 16) :
-    WP isa (.block (gh8 k)) s fun t =>
+    (hx : InRegions (s.rd ++ s.wr) (s.ea (at_ .rdx (d + 16 * (k % 8)))) 16)
+    (hm : InRegions (s.rd ++ s.wr) (s.ea (at_ .r11 768)) 16) :
+    WP isa (.block (gh8 d k)) s fun t =>
       prod (t.proj 0) = (if k % 8 = 1 then Prod.zero else prod (s.proj 0)).acc
-        (input s k) (power s k) ∧ YFrame ghRegs s t := by
-  change WP isa (.block (loadInputs k ++ _)) s _
+        (input s d k) (power s k) ∧ YFrame ghRegs s t := by
+  change WP isa (.block (loadInputs d k ++ _)) s _
   rw [WP.block_append_iff]
-  refine WP.mono (prefix_ok s k hp hx) fun t ht => ?_
+  refine WP.mono (prefix_ok s d k hp hx hm) fun t ht => ?_
   subst t
-  have hf := inputs_frame s k
-  have finish : ∀ t, YFrame [.xmm8, .xmm9, .xmm10, .xmm11] (inputs s k) t →
+  have hf := inputs_frame s d k
+  have finish : ∀ t, YFrame [.xmm8, .xmm9, .xmm10, .xmm11] (inputs s d k) t →
       YFrame ghRegs s t := fun t h => (hf.comp h).mono fun r hr => by
         simpa only [ghRegs, List.mem_append, List.mem_cons, List.not_mem_nil, or_false,
           or_assoc] using hr
   by_cases hk : k % 8 = 1
   · rw [ite_eq_left hk]
-    refine WP.mono (accInit_ok (inputs s k)) fun t ⟨hp, hfr⟩ => ⟨?_, finish t hfr⟩
+    refine WP.mono (accInit_ok (inputs s d k)) fun t ⟨hp, hfr⟩ => ⟨?_, finish t hfr⟩
     simpa only [inputs, State.lane, xmm_setV, reduceCtorEq, ite_true, ite_false, hk, ite_true] using hp
   · rw [ite_eq_right hk]
-    refine WP.mono (acc_ok (inputs s k)) fun t ⟨hp, hfr⟩ => ⟨?_, finish t hfr⟩
+    refine WP.mono (acc_ok (inputs s d k)) fun t ⟨hp, hfr⟩ => ⟨?_, finish t hfr⟩
     simpa only [inputs, prod, State.proj_xmm, State.lane, xmm_setV, reduceCtorEq,
       ite_true, ite_false, hk, ite_false] using hp
 
@@ -337,7 +345,7 @@ end
 section
 
 /-!
-# Hashing a complete prepared batch
+# Hashing a complete batch
 
 All eight inputs are consumed in the order 1, …, 7, 0. The first product
 does not depend on the old accumulators. Memory and the AES state registers
@@ -353,37 +361,41 @@ open VG.Impl.Gcm.X86_64.StitchAvx8 (gh8 hash8 reduceFinal)
 open VG.Impl.Gcm.X86_64.Pclmul (poly)
 open VG.Spec.Gcm (Block)
 
-def bufferBlock (s : State) (k : Nat) : Block :=
-  s.mem.readW (s.ea (at_ .r11 (512 + 16 * k))) 128
+/-- Block `k` of the eight from `rdx + d`, byte-reversed with the mask at
+`r11 + 768`. -/
+def bufferBlock (s : State) (d k : Nat) : Block :=
+  XBinOp.eval .pshufb (s.mem.readW (s.ea (at_ .rdx (d + 16 * k))) 128) (s.mem.readW (s.ea (at_ .r11 768)) 128)
 
 def bufferPower (s : State) (k : Nat) : Block :=
   s.mem.readW (s.ea (at_ .r11 (16 * (8 + k)))) 128
 
-private theorem input_frame {s t : State} (f : YFrame ghRegs s t) (k : Nat) :
-    input t k = hashInput (bufferBlock s) (s.lane .xmm2 0) (k % 8) := by
-  simp only [input, hashInput, bufferBlock, f.mem, State.ea, f.gpr,
+private theorem input_frame {s t : State} (f : YFrame ghRegs s t) (d k : Nat) :
+    input t d k = hashInput (bufferBlock s d) (s.lane .xmm2 0) (k % 8) := by
+  simp only [input, dataIn, hashInput, bufferBlock, f.mem, State.ea, f.gpr,
     f.lane .xmm2 (by decide) 0 (by decide)]
 
 private theorem power_frame {s t : State} (f : YFrame ghRegs s t) (k : Nat) :
     power t k = bufferPower s (k % 8) := by
   simp only [power, bufferPower, f.mem, State.ea, f.gpr]
 
-theorem hashSteps_ok (s : State)
+theorem hashSteps_ok (s : State) (d : Nat)
     (hp : ∀ k < 8, InRegions (s.rd ++ s.wr) (s.ea (at_ .r11 (16 * (8 + k)))) 16)
-    (hx : ∀ k < 8, InRegions (s.rd ++ s.wr) (s.ea (at_ .r11 (512 + 16 * k))) 16)
+    (hx : ∀ k < 8, InRegions (s.rd ++ s.wr) (s.ea (at_ .rdx (d + 16 * k))) 16)
+    (hm : InRegions (s.rd ++ s.wr) (s.ea (at_ .r11 768)) 16)
     (n : Nat) (hn : n ≤ 8) :
-    WP isa (.block ((List.range n).flatMap fun i => gh8 ((i + 1) % 8))) s fun t =>
+    WP isa (.block ((List.range n).flatMap fun i => gh8 d ((i + 1) % 8))) s fun t =>
       prod (t.proj 0) = (if n = 0 then prod (s.proj 0) else
-        accN (bufferBlock s) (bufferPower s) (s.lane .xmm2 0) n) ∧ YFrame ghRegs s t := by
+        accN (bufferBlock s d) (bufferPower s) (s.lane .xmm2 0) n) ∧ YFrame ghRegs s t := by
   induction n with
   | zero => exact WP.block_nil ⟨rfl, YFrame.refl _ _⟩
   | succ n ih =>
     rw [List.range_succ, List.flatMap_append, WP.block_append_iff]
     refine WP.mono (ih (by omega)) fun t ⟨hacc, hf⟩ => ?_
     simp only [List.flatMap_cons, List.flatMap_nil, List.append_nil]
-    refine WP.mono (gh8_ok t ((n + 1) % 8) (by
+    refine WP.mono (gh8_ok t d ((n + 1) % 8) (by
       rw [hf.rd, hf.wr]; simp only [State.ea, hf.gpr]; exact hp _ (Nat.mod_lt _ (by decide))) (by
-      rw [hf.rd, hf.wr]; simp only [State.ea, hf.gpr]; exact hx _ (Nat.mod_lt _ (by decide))))
+      rw [hf.rd, hf.wr]; simp only [State.ea, hf.gpr]; exact hx _ (Nat.mod_lt _ (by decide))) (by
+      rw [hf.rd, hf.wr]; simp only [State.ea, hf.gpr]; exact hm))
       fun u ⟨ha, hu⟩ => ⟨?_, hf.trans hu⟩
     rw [ha, input_frame hf, power_frame hf, Nat.mod_mod]
     simp only [Nat.add_eq_zero_iff, Nat.one_ne_zero, and_false, ite_false, accN_succ]
@@ -394,16 +406,17 @@ theorem hashSteps_ok (s : State)
       rw [ite_eq_right hm, hacc, ite_eq_right hz]
 
 /-- One complete GHASH batch and its final reduction. -/
-theorem hash8_ok (s : State)
+theorem hash8_ok (s : State) (d : Nat)
     (hp : ∀ k < 8, InRegions (s.rd ++ s.wr) (s.ea (at_ .r11 (16 * (8 + k)))) 16)
-    (hx : ∀ k < 8, InRegions (s.rd ++ s.wr) (s.ea (at_ .r11 (512 + 16 * k))) 16)
+    (hx : ∀ k < 8, InRegions (s.rd ++ s.wr) (s.ea (at_ .rdx (d + 16 * k))) 16)
+    (hm : InRegions (s.rd ++ s.wr) (s.ea (at_ .r11 768)) 16)
     (hc : InRegions (s.rd ++ s.wr) (s.ea (at_ .r11 784)) 16)
     (hv : s.mem.readW (s.ea (at_ .r11 784)) 128 = poly) :
-    WP isa (.block hash8) s fun t =>
-      t.lane .xmm2 0 = reduceB (accN (bufferBlock s) (bufferPower s) (s.lane .xmm2 0) 8) ∧
+    WP isa (.block (hash8 d)) s fun t =>
+      t.lane .xmm2 0 = reduceB (accN (bufferBlock s d) (bufferPower s) (s.lane .xmm2 0) 8) ∧
       YFrame (ghRegs ++ ([.xmm1, .xmm2, .xmm8, .xmm9, .xmm11] : List XReg)) s t := by
   rw [hash8, WP.block_append_iff]
-  refine WP.mono (hashSteps_ok s hp hx 8 (by decide)) fun t ⟨ha, hf⟩ => ?_
+  refine WP.mono (hashSteps_ok s d hp hx hm 8 (by decide)) fun t ⟨ha, hf⟩ => ?_
   refine WP.mono (reduceFinal_ok t (by
     simpa only [hf.rd, hf.wr, State.ea, hf.gpr] using hc) (by
     simpa only [hf.mem, State.ea, hf.gpr] using hv)) fun u ⟨hu, hfu⟩ => ⟨?_, hf.comp hfu⟩
