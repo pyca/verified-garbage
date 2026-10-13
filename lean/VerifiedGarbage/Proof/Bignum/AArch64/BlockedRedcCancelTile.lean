@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcCancel
+public import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcFastCancel
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -37,11 +37,11 @@ theorem cancelStep_ok {s t : State} {B : Addr} {Z eQ eN j : Nat}
   have hop := (keep_operand hI.keep (by decide) (word t.mem B eN)).trans
     (congrArg (operand s) hn)
   have hopV := congrArg blockValue hop
-  refine WP.mono (cancelRow_ok (hs.congr hI.keep.wr)
+  refine WP.mono (BlockedRedcFast.cancelRow_ok (hs.congr hI.keep.wr)
     ((hI.keep.gpr .x8 (by decide)).trans h8)
     ((hI.keep.gpr .x17 (by decide)).trans h17)
     ((hI.keep.gpr .x7 (by decide)).trans h7)
-    (by omega) hN hj (by omega)) fun u ⟨lo, hv, hc, hm, ku⟩ => ?_
+    (by omega) hN hj (by omega)) fun u ⟨hv, hm, ku⟩ => ?_
   have hmem := (congrArg (fun m : Mem => wv m B eQ (j + 1)) hm).trans
     (wv_writeW_top t.mem B eQ j (t.gpr .x19 * t.gpr .x15) (by omega))
   refine ⟨?_, ?_, (hI.keep.trans ku).mono (by decide)⟩
@@ -51,10 +51,7 @@ theorem cancelStep_ok {s t : State} {B : Addr} {Z eQ eN j : Nat}
         (congrArg BitVec.toNat hn)).trans
           ((congrArg (fun b : Nat => ((word s.mem B eN).toNat * b + 1) % 2 ^ 64)
             (congrArg BitVec.toNat (hI.keep.gpr .x15 (by decide)))).trans hinv)
-    have hlo : lo.toNat = 0 := congrArg BitVec.toNat (cancel_low hinv' hv)
-    have hv0 := (Nat.zero_add _).symm.trans
-      ((congrArg (· + 2 ^ 64 * (blockValue (accumulator u) + (2 ^ 64) ^ 8 * u.c.toNat))
-        hlo.symm).trans hv)
+    obtain ⟨hv0, hc⟩ := hv hinv'
     have hz : u.c.toNat = 0 := congrArg Bool.toNat hc
     have hv' : 2 ^ 64 * blockValue (accumulator u) =
         blockValue (accumulator t) + (t.gpr .x19 * t.gpr .x15).toNat *

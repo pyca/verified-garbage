@@ -19,10 +19,10 @@ def cancelHead (i : Nat) : List Instr :=
 
 def cancelMid : List Instr := [.adc .x .x1 .x1 .x7]
 
-theorem cancel_eq (i : Nat) : VG.Impl.Bignum.AArch64.BlockedRedc.cancel i =
+theorem cancel_eq (i : Nat) : VG.Impl.Bignum.AArch64.BlockedRedc.cancelBasic i =
     cancelHead i ++ VG.Impl.Bignum.AArch64.BlockedRedc.lowChain ++
       cancelMid ++ VG.Impl.Bignum.AArch64.BlockedRedc.highChain := by
-  simp only [VG.Impl.Bignum.AArch64.BlockedRedc.cancel, cancelHead, cancelMid,
+  simp only [VG.Impl.Bignum.AArch64.BlockedRedc.cancelBasic, cancelHead, cancelMid,
     List.append_assoc]
 
 theorem cancelHead_ok {s : State} {B : Addr} {Z eQ i : Nat}
@@ -96,7 +96,7 @@ theorem cancelRow_ok {s : State} {B : Addr} {Z eQ eN i : Nat}
     (h17 : s.gpr .x17 = off B eN) (h7 : s.gpr .x7 = 0)
     (hQ : eQ + 8 * i + 8 ≤ Z) (hN : eN + 8 ≤ Z) (hi : i < 8)
     (hsep : eQ + 8 * i + 8 ≤ eN ∨ eN + 8 ≤ eQ + 8 * i) :
-    WP isa (.block (VG.Impl.Bignum.AArch64.BlockedRedc.cancel i)) s fun t => ∃ lo : Word,
+    WP isa (.block (VG.Impl.Bignum.AArch64.BlockedRedc.cancelBasic i)) s fun t => ∃ lo : Word,
       lo.toNat + 2 ^ 64 * (blockValue (accumulator t) + (2 ^ 64) ^ 8 * t.c.toNat) =
         blockValue (accumulator s) + (s.gpr .x19 * s.gpr .x15).toNat *
           blockValue (operand s (word s.mem B eN)) ∧
@@ -139,7 +139,7 @@ theorem cancelRow_exact {s : State} {B : Addr} {Z eQ eN i : Nat}
     (hQ : eQ + 8 * i + 8 ≤ Z) (hN : eN + 8 ≤ Z) (hi : i < 8)
     (hsep : eQ + 8 * i + 8 ≤ eN ∨ eN + 8 ≤ eQ + 8 * i)
     (hinv : ((word s.mem B eN).toNat * (s.gpr .x15).toNat + 1) % 2 ^ 64 = 0) :
-    WP isa (.block (VG.Impl.Bignum.AArch64.BlockedRedc.cancel i)) s fun t =>
+    WP isa (.block (VG.Impl.Bignum.AArch64.BlockedRedc.cancelBasic i)) s fun t =>
       2 ^ 64 * (blockValue (accumulator t) + (2 ^ 64) ^ 8 * t.c.toNat) =
         blockValue (accumulator s) + (s.gpr .x19 * s.gpr .x15).toNat *
           blockValue (operand s (word s.mem B eN)) ∧
