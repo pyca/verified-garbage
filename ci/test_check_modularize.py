@@ -25,21 +25,22 @@ class Visibility(unittest.TestCase):
     # A imports B publicly, B imports C publicly; A's proofs use C, its
     # statements only B; D (outside the project) is imported publicly by B.
     MODS = {
-        "VerifiedGarbage.C": ([], set(), set(), False),
-        "Ext.D": ([], set(), set(), False),
+        "VerifiedGarbage.C": ([], set(), set(), False, {"VG.C"}),
+        "Ext.D": ([], set(), set(), False, set()),
         "VerifiedGarbage.B": ([("VerifiedGarbage.C", True, False), ("Ext.D", True, False)],
-                              set(), {"VerifiedGarbage.C"}, False),
+                              set(), {"VerifiedGarbage.C"}, False, {"VG.B"}),
         "VerifiedGarbage.A": ([("VerifiedGarbage.B", True, False)],
-                              {"VerifiedGarbage.B"}, {"VerifiedGarbage.B", "VerifiedGarbage.C"}, False),
+                              {"VerifiedGarbage.B"}, {"VerifiedGarbage.B", "VerifiedGarbage.C"}, False, set()),
     }
 
-    def plan(self):
-        src = {n: "module\n" for n in self.MODS}
+    def plan(self, mods=None, src=None):
+        mods = mods or self.MODS
+        src = {n: "module\n" for n in mods} | (src or {})
         orig = modularize.module_path
         modularize.module_path = lambda n: type("P", (), {"exists": lambda s: True,
                                                           "read_text": lambda s: src.get(n, "")})()
         try:
-            return modularize.plan_visibility(self.MODS)
+            return modularize.plan_visibility(mods)
         finally:
             modularize.module_path = orig
 
@@ -49,6 +50,21 @@ class Visibility(unittest.TestCase):
         # project) stays public; A, whose proofs use C, imports it directly.
         self.assertEqual(plan["VerifiedGarbage.B"], (["VerifiedGarbage.C"], [], []))
         self.assertEqual(plan["VerifiedGarbage.A"], ([], [], ["VerifiedGarbage.C"]))
+
+    def test_keeps_what_an_open_needs(self):
+        # A uses only B but opens `VG.C`, which only C declares: once B's
+        # import of C is private, A imports C itself.
+        mods = dict(self.MODS)
+        mods["VerifiedGarbage.A"] = ([("VerifiedGarbage.B", True, False)],
+                                     {"VerifiedGarbage.B"}, {"VerifiedGarbage.B"}, False, set())
+        plan = self.plan(mods, {"VerifiedGarbage.A": "module\nnamespace VG.A\nopen VG.C\nend VG.A\n"})
+        self.assertEqual(plan["VerifiedGarbage.B"], (["VerifiedGarbage.C"], [], []))
+        self.assertEqual(plan["VerifiedGarbage.A"], ([], [], ["VerifiedGarbage.C"]))
+        self.assertNotIn("VerifiedGarbage.A", self.plan(mods))
+
+    def test_opened_namespaces(self):
+        self.assertEqual(modularize.opened_namespaces("namespace VG.P\nopen X.Y Z (a) in\nopen scoped W\n"),
+                         [["VG.P.X.Y", "VG.X.Y", "X.Y"], ["VG.P.Z", "VG.Z", "Z"], ["VG.P.W", "VG.W", "W"]])
 
     def test_apply(self):
         text = "module\n\npublic import X\nmeta import X\nimport all Init.Data.Array.Basic\n\n/-! Doc. -/\n"

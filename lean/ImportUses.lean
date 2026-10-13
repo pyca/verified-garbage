@@ -17,7 +17,9 @@ module of the imported closure, one line of tab-separated fields:
   refer to;
 * the other modules whose constants occur anywhere in it, proofs included;
 * `meta` if it declares syntax, macros, elaborators or simprocs (by the types
-  of its constants), else `-`.
+  of its constants), else `-`;
+* for a module of this project, the namespaces under `VG` its constants are
+  in (each prefix of their names), which an `open` elsewhere needs to see.
 
 Run it from `lean/`: `lake env lean --run ImportUses.lean OUT MODULE…`.
 -/
@@ -67,7 +69,7 @@ def main (args : List String) : IO Unit := do
       im.module.toString ++ (if im.isExported then "+p" else "") ++ (if im.isMeta then "+m" else "")
     let line := s!"{mods[i]!}\t{",".intercalate imps}"
     unless (`VerifiedGarbage).isPrefixOf mods[i]! do
-      h.putStrLn (line ++ "\t\t\t-")
+      h.putStrLn (line ++ "\t\t\t-\t")
       continue
     let byName : Std.HashMap Name ConstantInfo :=
       data.constants.foldl (fun m ci => m.insert ci.name ci) {}
@@ -81,7 +83,8 @@ def main (args : List String) : IO Unit := do
     for ci in data.constants do
       if let some hd := ci.type.getForallBody.getAppFn.constName? then
         if metaTypes.contains hd then isMeta := true
-      for e in [ci.type] ++ ci.value?.toList do
+      -- `value?` leaves out theorems' proofs unless `allowOpaque`.
+      for e in [ci.type] ++ (ci.value? (allowOpaque := true)).toList do
         for c in e.getUsedConstants do
           if let some j := modOf c then
             if j != i then all := all.insert j
@@ -105,4 +108,12 @@ def main (args : List String) : IO Unit := do
           | some j => if j != i then pub := pub.insert j else todo := todo.push c
           | none => pure ()
     let names (s : Std.HashSet Nat) := ",".intercalate (s.toList.map (mods[·]!.toString))
-    h.putStrLn s!"{line}\t{names pub}\t{names all}\t{if isMeta then "meta" else "-"}"
+    -- The namespaces its constants are in, for the `open`s of other modules.
+    let mut nss : Std.HashSet Name := {}
+    for c in data.constNames do
+      let mut p := (privateToUserName? c).getD c
+      while !p.isAnonymous do
+        p := p.getPrefix
+        if (`VG).isPrefixOf p then nss := nss.insert p
+    let nsList := ",".intercalate (nss.toList.map toString)
+    h.putStrLn s!"{line}\t{names pub}\t{names all}\t{if isMeta then "meta" else "-"}\t{nsList}"
