@@ -30,7 +30,7 @@ def artifacts : List Artifact := [
     code := Impl.StackScratch.X86.withStackScratch (Proof.Pbkdf2.Md.X86.initFrame Spec.Hmac.md5I) 4
       Proof.Pbkdf2.Md.X86.md5M.hmacInit
     contract := Spec.Hmac.md5I.initContract X86.abi (48 + Proof.Pbkdf2.Md.X86.initFrame Spec.Hmac.md5I)
-    ofSig := ⟨_, _, _, by unfold Spec.Hmac.Instance.initContract; rfl⟩
+    ofSig := by exact (⟨_, _, _, by unfold Spec.Hmac.Instance.initContract; rfl⟩)
     stack := 48 + Proof.Pbkdf2.Md.X86.initFrame Spec.Hmac.md5I
     verified := Proof.Pbkdf2.Md.X86.initFramed Proof.Pbkdf2.Md.X86.Instances.md5_init (by decide) (by lit_decide)
       (by lit_decide) Proof.Pbkdf2.Md.X86.md5_initFrameSat
@@ -41,7 +41,7 @@ def artifacts : List Artifact := [
     code := Impl.StackScratch.X86.withStackScratch (Proof.Pbkdf2.Md.X86.finFrame Spec.Hmac.md5I) 5
       Proof.Pbkdf2.Md.X86.md5M.hmacFin
     contract := Spec.Hmac.md5I.finalizeContract X86.abi (48 + Proof.Pbkdf2.Md.X86.finFrame Spec.Hmac.md5I)
-    ofSig := ⟨_, _, _, by unfold Spec.Hmac.Instance.finalizeContract; rfl⟩
+    ofSig := by exact (⟨_, _, _, by unfold Spec.Hmac.Instance.finalizeContract; rfl⟩)
     stack := 48 + Proof.Pbkdf2.Md.X86.finFrame Spec.Hmac.md5I
     verified := Proof.Pbkdf2.Md.X86.finFramed Proof.Pbkdf2.Md.X86.Instances.md5_finalize (by decide) Proof.Hmac.md5_local
       (by decide) (by lit_decide) (by lit_decide) Proof.Pbkdf2.Md.X86.md5_finFrameSat
@@ -51,7 +51,7 @@ def artifacts : List Artifact := [
     doc := Spec.Hmac.md5I.initScratchApi.doc
     code := Proof.Pbkdf2.Md.X86.md5M.hmacInit
     contract := Spec.Hmac.md5I.initScratchContract X86.abi 48
-    ofSig := ⟨_, _, _, by unfold Spec.Hmac.Instance.initScratchContract; rfl⟩
+    ofSig := by exact (⟨_, _, _, by unfold Spec.Hmac.Instance.initScratchContract; rfl⟩)
     stack := 48
     verified := Proof.Pbkdf2.Md.X86.Instances.md5_init
     spSafe := Code.all_of_allInstrs (by lit_decide) },
@@ -60,7 +60,7 @@ def artifacts : List Artifact := [
     doc := Spec.Hmac.md5I.finalizeScratchApi.doc
     code := Proof.Pbkdf2.Md.X86.md5M.hmacFin
     contract := Spec.Hmac.md5I.finalizeScratchContract X86.abi 48
-    ofSig := ⟨_, _, _, by unfold Spec.Hmac.Instance.finalizeScratchContract; rfl⟩
+    ofSig := by exact (⟨_, _, _, by unfold Spec.Hmac.Instance.finalizeScratchContract; rfl⟩)
     stack := 48
     verified := Proof.Pbkdf2.Md.X86.Instances.md5_finalize
     spSafe := Code.all_of_allInstrs (by lit_decide) }]

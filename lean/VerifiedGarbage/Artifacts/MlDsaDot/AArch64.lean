@@ -3,7 +3,7 @@ import VerifiedGarbage.TCB.AArch64.Target
 
 namespace VG.Artifacts.MlDsaDot.AArch64
 
-private def dotArtifact (count : Nat) (hc : count=4 ∨ count=5 ∨ count=7) : Artifact :=
+def dotArtifact (count : Nat) (hc : count=4 ∨ count=5 ∨ count=7) : Artifact :=
   { Spec.MlDsa.dotInverseApi count with
     target := AArch64.target
     doc := (Spec.MlDsa.dotInverseApi count).doc

@@ -35,7 +35,7 @@ def artifacts : List Artifact := [
     code := Impl.MlKem.Arm.ntt
     contract := Spec.MlKem.nttContract Arm.abi
     verified := Proof.MlKem.Arm.Ntt.verified
-    ofSig := ⟨_, _, _, by unfold Spec.MlKem.nttContract Spec.MlKem.inPlaceContract; exact rfl⟩
+    ofSig := by exact (⟨_, _, _, by unfold Spec.MlKem.nttContract Spec.MlKem.inPlaceContract; exact rfl⟩)
     spSafe := Code.all_of_forall (fun _ => rfl) _ },
   { Spec.MlKem.nttInvApi with
     target := Arm.target
@@ -44,7 +44,7 @@ def artifacts : List Artifact := [
     code := Impl.MlKem.Arm.nttInv
     contract := Spec.MlKem.nttInvContract Arm.abi
     verified := Proof.MlKem.Arm.NttInv.verified
-    ofSig := ⟨_, _, _, by unfold Spec.MlKem.nttInvContract Spec.MlKem.inPlaceContract; exact rfl⟩
+    ofSig := by exact (⟨_, _, _, by unfold Spec.MlKem.nttInvContract Spec.MlKem.inPlaceContract; exact rfl⟩)
     spSafe := Code.all_of_forall (fun _ => rfl) _ },
   { Spec.MlKem.mulApi with
     target := Arm.target

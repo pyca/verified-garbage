@@ -87,7 +87,7 @@ def artifacts : List Artifact := [
     code := Impl.MlKem.AArch64.ntt
     contract := Spec.MlKem.nttContract AArch64.abi
     verified := Proof.MlKem.AArch64.Ntt.ntt_verified
-    ofSig := ⟨_, _, _, by unfold Spec.MlKem.nttContract Spec.MlKem.inPlaceContract; rfl⟩
+    ofSig := by exact (⟨_, _, _, by unfold Spec.MlKem.nttContract Spec.MlKem.inPlaceContract; rfl⟩)
     spSafe := Code.all_of_forall (fun _ => rfl) _ },
   { Spec.MlKem.nttInvApi with
     target := AArch64.target
@@ -95,7 +95,7 @@ def artifacts : List Artifact := [
     code := Impl.MlKem.AArch64.nttInv
     contract := Spec.MlKem.nttInvContract AArch64.abi
     verified := Proof.MlKem.AArch64.Ntt.ntt_inv_verified
-    ofSig := ⟨_, _, _, by unfold Spec.MlKem.nttInvContract Spec.MlKem.inPlaceContract; rfl⟩
+    ofSig := by exact (⟨_, _, _, by unfold Spec.MlKem.nttInvContract Spec.MlKem.inPlaceContract; rfl⟩)
     spSafe := Code.all_of_forall (fun _ => rfl) _ }]
 
 end VG.Artifacts.MlKem.AArch64

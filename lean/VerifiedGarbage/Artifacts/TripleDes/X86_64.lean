@@ -44,7 +44,7 @@ def artifacts : List Artifact := [
     code := Impl.TripleDes.X86_64.BitsliceSse.encrypt
     contract := Spec.TripleDes.ecbEncryptCoreContract X86_64.abi
     stack := 0
-    ofSig := ⟨_, _, _, by unfold Spec.TripleDes.ecbEncryptCoreContract Spec.TripleDes.ecbCoreContract; rfl⟩
+    ofSig := by exact (⟨_, _, _, by unfold Spec.TripleDes.ecbEncryptCoreContract Spec.TripleDes.ecbCoreContract; rfl⟩)
     verified := Proof.TripleDes.X86_64.BitslicedSse.encrypt_verified
     spSafe := Code.all_of_allInstrs (Proof.TripleDes.X86_64.sse_ecb_sp .encrypt) },
   { Spec.TripleDes.ecbDecryptCoreApi with
@@ -54,7 +54,7 @@ def artifacts : List Artifact := [
     code := Impl.TripleDes.X86_64.BitsliceSse.decrypt
     contract := Spec.TripleDes.ecbDecryptCoreContract X86_64.abi
     stack := 0
-    ofSig := ⟨_, _, _, by unfold Spec.TripleDes.ecbDecryptCoreContract Spec.TripleDes.ecbCoreContract; rfl⟩
+    ofSig := by exact (⟨_, _, _, by unfold Spec.TripleDes.ecbDecryptCoreContract Spec.TripleDes.ecbCoreContract; rfl⟩)
     verified := Proof.TripleDes.X86_64.BitslicedSse.decrypt_verified
     spSafe := Code.all_of_allInstrs (Proof.TripleDes.X86_64.sse_ecb_sp .decrypt) },
   { Spec.TripleDes.ecbEncryptApi with
@@ -65,7 +65,7 @@ def artifacts : List Artifact := [
       (Impl.TripleDes.X86_64.EcbCall.sse .encrypt)
     contract := Spec.TripleDes.ecbEncryptContract X86_64.abi 1040
     stack := 1040
-    ofSig := ⟨_, _, _, by unfold Spec.TripleDes.ecbEncryptContract Spec.TripleDes.ecbContract; rfl⟩
+    ofSig := by exact (⟨_, _, _, by unfold Spec.TripleDes.ecbEncryptContract Spec.TripleDes.ecbContract; rfl⟩)
     verified := Proof.TripleDes.X86_64.ecb_framed (Proof.TripleDes.X86_64.EcbCall.sse_verified .encrypt)
       (Code.all_of_allInstrs (Proof.TripleDes.X86_64.EcbCall.sse_sp .encrypt))
       (Proof.TripleDes.X86_64.EcbCall.sse_depth .encrypt)
@@ -78,7 +78,7 @@ def artifacts : List Artifact := [
       (Impl.TripleDes.X86_64.EcbCall.sse .decrypt)
     contract := Spec.TripleDes.ecbDecryptContract X86_64.abi 1040
     stack := 1040
-    ofSig := ⟨_, _, _, by unfold Spec.TripleDes.ecbDecryptContract Spec.TripleDes.ecbContract; rfl⟩
+    ofSig := by exact (⟨_, _, _, by unfold Spec.TripleDes.ecbDecryptContract Spec.TripleDes.ecbContract; rfl⟩)
     verified := Proof.TripleDes.X86_64.ecb_framed (Proof.TripleDes.X86_64.EcbCall.sse_verified .decrypt)
       (Code.all_of_allInstrs (Proof.TripleDes.X86_64.EcbCall.sse_sp .decrypt))
       (Proof.TripleDes.X86_64.EcbCall.sse_depth .decrypt)
@@ -92,7 +92,7 @@ def artifacts : List Artifact := [
       (Impl.TripleDes.X86_64.EcbCall.avx2 .encrypt)
     contract := Spec.TripleDes.ecbEncryptContract X86_64.abi 1040
     stack := 1040
-    ofSig := ⟨_, _, _, by unfold Spec.TripleDes.ecbEncryptContract Spec.TripleDes.ecbContract; rfl⟩
+    ofSig := by exact (⟨_, _, _, by unfold Spec.TripleDes.ecbEncryptContract Spec.TripleDes.ecbContract; rfl⟩)
     verified := Proof.TripleDes.X86_64.ecb_framed (Proof.TripleDes.X86_64.EcbCall.avx2_verified .encrypt)
       (Code.all_of_allInstrs (Proof.TripleDes.X86_64.EcbCall.avx2_sp .encrypt))
       (Proof.TripleDes.X86_64.EcbCall.avx2_depth .encrypt)
@@ -107,7 +107,7 @@ def artifacts : List Artifact := [
       (Impl.TripleDes.X86_64.EcbCall.avx2 .decrypt)
     contract := Spec.TripleDes.ecbDecryptContract X86_64.abi 1040
     stack := 1040
-    ofSig := ⟨_, _, _, by unfold Spec.TripleDes.ecbDecryptContract Spec.TripleDes.ecbContract; rfl⟩
+    ofSig := by exact (⟨_, _, _, by unfold Spec.TripleDes.ecbDecryptContract Spec.TripleDes.ecbContract; rfl⟩)
     verified := Proof.TripleDes.X86_64.ecb_framed (Proof.TripleDes.X86_64.EcbCall.avx2_verified .decrypt)
       (Code.all_of_allInstrs (Proof.TripleDes.X86_64.EcbCall.avx2_sp .decrypt))
       (Proof.TripleDes.X86_64.EcbCall.avx2_depth .decrypt)
@@ -122,7 +122,7 @@ def artifacts : List Artifact := [
       (Impl.TripleDes.X86_64.EcbCall.avx512 .encrypt)
     contract := Spec.TripleDes.ecbEncryptContract X86_64.abi 1040
     stack := 1040
-    ofSig := ⟨_, _, _, by unfold Spec.TripleDes.ecbEncryptContract Spec.TripleDes.ecbContract; rfl⟩
+    ofSig := by exact (⟨_, _, _, by unfold Spec.TripleDes.ecbEncryptContract Spec.TripleDes.ecbContract; rfl⟩)
     verified := Proof.TripleDes.X86_64.ecb_framed (Proof.TripleDes.X86_64.EcbCall.avx512_verified .encrypt)
       (Code.all_of_allInstrs (Proof.TripleDes.X86_64.EcbCall.avx512_sp .encrypt))
       (Proof.TripleDes.X86_64.EcbCall.avx512_depth .encrypt)
@@ -137,7 +137,7 @@ def artifacts : List Artifact := [
       (Impl.TripleDes.X86_64.EcbCall.avx512 .decrypt)
     contract := Spec.TripleDes.ecbDecryptContract X86_64.abi 1040
     stack := 1040
-    ofSig := ⟨_, _, _, by unfold Spec.TripleDes.ecbDecryptContract Spec.TripleDes.ecbContract; rfl⟩
+    ofSig := by exact (⟨_, _, _, by unfold Spec.TripleDes.ecbDecryptContract Spec.TripleDes.ecbContract; rfl⟩)
     verified := Proof.TripleDes.X86_64.ecb_framed (Proof.TripleDes.X86_64.EcbCall.avx512_verified .decrypt)
       (Code.all_of_allInstrs (Proof.TripleDes.X86_64.EcbCall.avx512_sp .decrypt))
       (Proof.TripleDes.X86_64.EcbCall.avx512_depth .decrypt)

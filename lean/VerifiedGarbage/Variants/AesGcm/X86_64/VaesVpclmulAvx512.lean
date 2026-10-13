@@ -16,22 +16,22 @@ def stitch : Proof.AesGcm.X86_64.StitchPart where
   name := .vaesAvx512
   suffix := "_avx512"
   features := ["avx512f", "avx512bw"]
-  encP := (⟨by lit_decide, by lit_decide, by lit_decide, by decide, by lit_decide, ⟨_, by taint_decide⟩⟩ : Proof.AesGcm.X86_64.Piece Impl.Gcm.X86_64.StitchZ.enc)
-  decP := (⟨by lit_decide, by lit_decide, by lit_decide, by decide, by lit_decide, ⟨_, by taint_decide⟩⟩ : Proof.AesGcm.X86_64.Piece Impl.Gcm.X86_64.StitchZ.dec)
-  pieceP := some
-    ⟨(⟨by lit_decide, by lit_decide, by lit_decide, by decide, by lit_decide, ⟨_, by taint_decide⟩⟩ : Proof.AesGcm.X86_64.Piece Impl.Gcm.X86_64.StitchZP.enc),
-     (⟨by lit_decide, by lit_decide, by lit_decide, by decide, by lit_decide, ⟨_, by taint_decide⟩⟩ : Proof.AesGcm.X86_64.Piece Impl.Gcm.X86_64.StitchZP.dec)⟩
-  pieceR := some
-    ⟨(⟨by lit_decide, by lit_decide, by lit_decide, by decide, by lit_decide, ⟨_, by taint_decide⟩⟩ : Proof.AesGcm.X86_64.Piece Impl.Gcm.X86_64.StitchZH.encR true true),
-     (⟨by lit_decide, by lit_decide, by lit_decide, by decide, by lit_decide, ⟨_, by taint_decide⟩⟩ : Proof.AesGcm.X86_64.Piece Impl.Gcm.X86_64.StitchZH.dec true)⟩
+  encP := by exact ((⟨by lit_decide, by lit_decide, by lit_decide, by decide, by lit_decide, ⟨_, by taint_decide⟩⟩ : Proof.AesGcm.X86_64.Piece Impl.Gcm.X86_64.StitchZ.enc))
+  decP := by exact ((⟨by lit_decide, by lit_decide, by lit_decide, by decide, by lit_decide, ⟨_, by taint_decide⟩⟩ : Proof.AesGcm.X86_64.Piece Impl.Gcm.X86_64.StitchZ.dec))
+  pieceP := by exact (some
+    ⟨(⟨by lit_decide, by lit_decide, by lit_decide, by decide, by lit_decide, (by exact ⟨_, by taint_decide⟩)⟩ : Proof.AesGcm.X86_64.Piece Impl.Gcm.X86_64.StitchZP.enc),
+     (⟨by lit_decide, by lit_decide, by lit_decide, by decide, by lit_decide, (by exact ⟨_, by taint_decide⟩)⟩ : Proof.AesGcm.X86_64.Piece Impl.Gcm.X86_64.StitchZP.dec)⟩)
+  pieceR := by exact (some
+    ⟨(⟨by lit_decide, by lit_decide, by lit_decide, by decide, by lit_decide, (by exact ⟨_, by taint_decide⟩)⟩ : Proof.AesGcm.X86_64.Piece Impl.Gcm.X86_64.StitchZH.encR true true),
+     (⟨by lit_decide, by lit_decide, by lit_decide, by decide, by lit_decide, (by exact ⟨_, by taint_decide⟩)⟩ : Proof.AesGcm.X86_64.Piece Impl.Gcm.X86_64.StitchZH.dec true)⟩)
   toPart := some
     { name := .vaesAvx512
-      piece := ⟨by lit_decide, by lit_decide, by lit_decide, by decide, by lit_decide,
-        ⟨_, by taint_decide⟩⟩
-      pieceP := some ⟨⟨by lit_decide, by lit_decide, by lit_decide, by decide, by lit_decide,
-        ⟨_, by taint_decide⟩⟩⟩
-      pieceR := some ⟨⟨by lit_decide, by lit_decide, by lit_decide, by decide, by lit_decide,
-        ⟨_, by taint_decide⟩⟩⟩ }
+      piece := by exact (⟨by lit_decide, by lit_decide, by lit_decide, by decide, by lit_decide,
+        (by exact ⟨_, by taint_decide⟩)⟩)
+      pieceP := by exact (some ⟨⟨by lit_decide, by lit_decide, by lit_decide, by decide, by lit_decide,
+        (by exact ⟨_, by taint_decide⟩)⟩⟩)
+      pieceR := by exact (some ⟨⟨by lit_decide, by lit_decide, by lit_decide, by decide, by lit_decide,
+        (by exact ⟨_, by taint_decide⟩)⟩⟩) }
 
 def variant : Proof.AesGcm.X86_64.GcmVariant := ⟨.vaes, .aesni, .vpclmul, some stitch⟩
 

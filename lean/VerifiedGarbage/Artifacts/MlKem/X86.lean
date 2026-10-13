@@ -94,7 +94,7 @@ def artifacts : List Artifact := [
     stack := 16
     verified := Proof.MlKem.X86.NttFwd.verified
     spSafe := Code.all_of_allInstrs (by lit_decide)
-    ofSig := ⟨_, _, _, by unfold Spec.MlKem.nttContract Spec.MlKem.inPlaceContract; rfl⟩ },
+    ofSig := by exact (⟨_, _, _, by unfold Spec.MlKem.nttContract Spec.MlKem.inPlaceContract; rfl⟩) },
   { Spec.MlKem.nttInvApi with
     target := X86.target
     doc := Spec.MlKem.nttInvApi.doc
@@ -103,7 +103,7 @@ def artifacts : List Artifact := [
     stack := 16
     verified := Proof.MlKem.X86.NttInvP.verified
     spSafe := Code.all_of_allInstrs (by lit_decide)
-    ofSig := ⟨_, _, _, by unfold Spec.MlKem.nttInvContract Spec.MlKem.inPlaceContract; rfl⟩ },
+    ofSig := by exact (⟨_, _, _, by unfold Spec.MlKem.nttInvContract Spec.MlKem.inPlaceContract; rfl⟩) },
   { Spec.MlKem.mulApi with
     target := X86.target
     doc := Spec.MlKem.mulApi.doc

@@ -32,9 +32,9 @@ def artifacts (h : Proof.Weierstrass.AArch64.HasLawInv Spec.Secp256k1.curve) : L
     doc := C.invPApi.doc (notes := [note "p"])
     code := secp256k1.invFn secp256k1.pPowI
     contract := C.invPContract AArch64.abi
-    ofSig := ⟨_, _, _, by
+    ofSig := by exact (⟨_, _, _, by
       unfold Spec.Weierstrass.Inverse.Curve.invPContract Spec.Weierstrass.Inverse.Curve.invContract
-      rfl⟩
+      rfl⟩)
     verified := p_verified h.inv
     spSafe := Code.all_of_forall (fun _ => rfl) _ },
   { C.invNApi with
@@ -42,9 +42,9 @@ def artifacts (h : Proof.Weierstrass.AArch64.HasLawInv Spec.Secp256k1.curve) : L
     doc := C.invNApi.doc (notes := [note "n"])
     code := secp256k1.invFn secp256k1.nPowI
     contract := C.invNContract AArch64.abi
-    ofSig := ⟨_, _, _, by
+    ofSig := by exact (⟨_, _, _, by
       unfold Spec.Weierstrass.Inverse.Curve.invNContract Spec.Weierstrass.Inverse.Curve.invContract
-      rfl⟩
+      rfl⟩)
     verified := n_verified h.inv
     spSafe := Code.all_of_forall (fun _ => rfl) _ }]
 

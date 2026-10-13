@@ -21,7 +21,7 @@ def artifacts : List Artifact := [
     code := Impl.StackScratch.X86_64.withStackScratchWiped 3144 .rcx 392 (Impl.Sm4.X86_64.ecb .encrypt)
     contract := Spec.Sm4.ecbEncryptContract X86_64.abi 3144
     stack := 3144
-    ofSig := ⟨_, _, _, by unfold Spec.Sm4.ecbEncryptContract Spec.Sm4.ecbContract; rfl⟩
+    ofSig := by exact (⟨_, _, _, by unfold Spec.Sm4.ecbEncryptContract Spec.Sm4.ecbContract; rfl⟩)
     verified := Proof.Sm4.X86_64.ecb_framed .encrypt
     spSafe := Code.all_of_allInstrs (by lit_decide) },
   { Spec.Sm4.ecbDecryptApi with
@@ -31,7 +31,7 @@ def artifacts : List Artifact := [
     code := Impl.StackScratch.X86_64.withStackScratchWiped 3144 .rcx 392 (Impl.Sm4.X86_64.ecb .decrypt)
     contract := Spec.Sm4.ecbDecryptContract X86_64.abi 3144
     stack := 3144
-    ofSig := ⟨_, _, _, by unfold Spec.Sm4.ecbDecryptContract Spec.Sm4.ecbContract; rfl⟩
+    ofSig := by exact (⟨_, _, _, by unfold Spec.Sm4.ecbDecryptContract Spec.Sm4.ecbContract; rfl⟩)
     verified := Proof.Sm4.X86_64.ecb_framed .decrypt
     spSafe := Code.all_of_allInstrs (by lit_decide) }]
 

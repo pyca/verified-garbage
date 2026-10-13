@@ -23,7 +23,7 @@ def artifacts : List Artifact := [
     stack := 16
     verified := Proof.MlDsa.X86.Arith.NttFwd.verified
     spSafe := Code.all_of_allInstrs (by lit_decide)
-    ofSig := ⟨_, _, _, by unfold Spec.MlDsa.nttContract Spec.MlDsa.inPlaceContract; rfl⟩ },
+    ofSig := by exact (⟨_, _, _, by unfold Spec.MlDsa.nttContract Spec.MlDsa.inPlaceContract; rfl⟩) },
   { Spec.MlDsa.nttInvApi with
     target := X86.target
     doc := Spec.MlDsa.nttInvApi.doc
@@ -33,7 +33,7 @@ def artifacts : List Artifact := [
     stack := 16
     verified := Proof.MlDsa.X86.Arith.NttInvP.verified
     spSafe := Code.all_of_allInstrs (by lit_decide)
-    ofSig := ⟨_, _, _, by unfold Spec.MlDsa.nttInvContract Spec.MlDsa.inPlaceContract; rfl⟩ },
+    ofSig := by exact (⟨_, _, _, by unfold Spec.MlDsa.nttInvContract Spec.MlDsa.inPlaceContract; rfl⟩) },
   { Spec.MlDsa.mulApi with
     target := X86.target
     doc := Spec.MlDsa.mulApi.doc

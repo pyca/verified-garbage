@@ -28,7 +28,7 @@ def artifacts (v : Proof.Pbkdf2.Md.AArch64.MdHash) : List Artifact := [
     doc := v.I.initApi.doc
     code := Impl.StackScratch.AArch64.withStackScratch (Proof.Pbkdf2.Md.AArch64.hmacFrame v.I) .x4 v.H.hmacInit
     contract := v.I.initContract AArch64.abi (16 + Proof.Pbkdf2.Md.AArch64.hmacFrame v.I)
-    ofSig := ⟨_, _, _, by unfold Spec.Hmac.Instance.initContract; rfl⟩
+    ofSig := by exact (⟨_, _, _, by unfold Spec.Hmac.Instance.initContract; rfl⟩)
     stack := 16 + Proof.Pbkdf2.Md.AArch64.hmacFrame v.I
     verified := v.hmacInitF
     spSafe := Code.all_of_forall (fun _ => rfl) _
@@ -39,7 +39,7 @@ def artifacts (v : Proof.Pbkdf2.Md.AArch64.MdHash) : List Artifact := [
     doc := v.I.finalizeApi.doc
     code := Impl.StackScratch.AArch64.withStackScratch (Proof.Pbkdf2.Md.AArch64.hmacFrame v.I) .x4 v.H.hmacFin
     contract := v.I.finalizeContract AArch64.abi (16 + Proof.Pbkdf2.Md.AArch64.hmacFrame v.I)
-    ofSig := ⟨_, _, _, by unfold Spec.Hmac.Instance.finalizeContract; rfl⟩
+    ofSig := by exact (⟨_, _, _, by unfold Spec.Hmac.Instance.finalizeContract; rfl⟩)
     stack := 16 + Proof.Pbkdf2.Md.AArch64.hmacFrame v.I
     verified := v.hmacFinF
     spSafe := Code.all_of_forall (fun _ => rfl) _
@@ -50,7 +50,7 @@ def artifacts (v : Proof.Pbkdf2.Md.AArch64.MdHash) : List Artifact := [
     doc := v.I.initScratchApi.doc
     code := v.H.hmacInit
     contract := v.I.initScratchContract AArch64.abi 16
-    ofSig := ⟨_, _, _, by unfold Spec.Hmac.Instance.initScratchContract; rfl⟩
+    ofSig := by exact (⟨_, _, _, by unfold Spec.Hmac.Instance.initScratchContract; rfl⟩)
     stack := 16
     verified := v.hmacInit
     spSafe := Code.all_of_forall (fun _ => rfl) _
@@ -61,7 +61,7 @@ def artifacts (v : Proof.Pbkdf2.Md.AArch64.MdHash) : List Artifact := [
     doc := v.I.finalizeScratchApi.doc
     code := v.H.hmacFin
     contract := v.I.finalizeScratchContract AArch64.abi 16
-    ofSig := ⟨_, _, _, by unfold Spec.Hmac.Instance.finalizeScratchContract; rfl⟩
+    ofSig := by exact (⟨_, _, _, by unfold Spec.Hmac.Instance.finalizeScratchContract; rfl⟩)
     stack := 16
     verified := v.hmacFin
     spSafe := Code.all_of_forall (fun _ => rfl) _
