@@ -6,6 +6,7 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.AesOcb.Arm.PadTo
 
 /-!
 # AES-OCB on ARMv7: the rest of the data and the tag (`rest`, `tag`)
