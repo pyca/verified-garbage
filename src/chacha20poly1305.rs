@@ -39,11 +39,11 @@
 //! `vg_chacha20_poly1305_seal_gather`
 //! (`VG.Spec.ChaCha20Poly1305.sealGatherContract`), which copies the pieces
 //! to the output and encrypts them there with the same implementation's
-//! `vg_chacha20_poly1305_seal`; on x86-64 it copies the pieces but the first,
-//! after the first's length, and encrypts with
-//! `vg_chacha20_poly1305_seal_split`, which reads the first piece from where
-//! it is (the AVX-512 instances copy only the bytes of it their first
-//! keystream covers).
+//! `vg_chacha20_poly1305_seal`. On x86-64, the AVX-512 instances, for more
+//! than 960 bytes, copy the pieces but the first, after the first's length,
+//! and encrypt with `vg_chacha20_poly1305_seal_split`, which reads the first
+//! piece from where it is and copies only the bytes of it that its first
+//! keystream covers.
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -410,7 +410,8 @@ mod tests {
 
     /// Out of place, from pieces: the ciphertext and the tag of the
     /// concatenation of the pieces encrypted in place, for any split, with
-    /// every implementation; and the errors.
+    /// every implementation (with AVX-512 on both sides of 960 bytes, where
+    /// `seal_gather` turns to `seal_split`); and the errors.
     #[test]
     fn encrypt_pieces() {
         let key = core::array::from_fn(|i| (i * 5) as u8);
@@ -418,9 +419,11 @@ mod tests {
         scalar.backend = Backend::Scalar;
         let best = ChaCha20Poly1305::new(&key);
         let nonce = [3; 12];
-        let msg: [u8; 600] = core::array::from_fn(|i| (i * 11) as u8);
+        let msg: [u8; 4097] = core::array::from_fn(|i| (i * 11) as u8);
         for aead in [&scalar, &best] {
-            for len in [0, 1, 15, 16, 17, 31, 64, 129, 513, 600] {
+            for len in [
+                0, 1, 15, 16, 17, 31, 64, 129, 513, 600, 960, 961, 1025, 2049, 4097,
+            ] {
                 for aad in [&[][..], &[5; 20]] {
                     let mut want = msg;
                     let want_tag = aead
@@ -432,7 +435,7 @@ mod tests {
                     let two: [&[u8]; 2] = [&m[..h], &m[h..]];
                     let five: [&[u8]; 5] = [&[], &m[..h], &m[h..h], &m[h..q], &m[q..]];
                     for pieces in [&one[..], &two, &five] {
-                        let mut out = [0u8; 600];
+                        let mut out = [0u8; 4097];
                         let tag = aead.encrypt(&nonce, aad, pieces, &mut out[..len]);
                         assert_eq!((&out[..len], tag), (&want[..len], Ok(want_tag)));
                     }
