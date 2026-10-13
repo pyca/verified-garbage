@@ -214,7 +214,7 @@ theorem pPhase_ok (W : Window) (M : Mont) (S : Selector) {s : State} {B : Addr} 
       rw [List.mem_singleton.mp hr]
       refine ⟨xRange32 o wx,by simp,le_rfl,?_⟩
       simp only [VG.Proof.Bignum.xRange,xRange32]
-      omega))), ⟨fun r hr => ?_, kall.rd, kall.wr, kall.sp, kall.vcs⟩⟩
+      unfold wsTab tabBytes tabBytes32; omega))), ⟨fun r hr => ?_, kall.rd, kall.wr, kall.sp, kall.vcs⟩⟩
   by_cases h : r = .x0
   · subst h; rw [hg'.x0, hg.x0]
   · exact kall.gpr r (by simp only [List.mem_append, List.mem_singleton, hr, h, or_self, not_false_eq_true])
