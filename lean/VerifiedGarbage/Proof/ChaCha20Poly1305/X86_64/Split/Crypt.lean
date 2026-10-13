@@ -376,4 +376,78 @@ theorem cryptBigSplit_ok {s₀ : State} (hT : SPre s₀) {s : State} (h : Inv s�
         exact fun hc => Offset.disjoint_base (dp s₀) (d := k) (n := 1) (by omega)
           (by simp only [L] at hk; omega) _ (Region.contains_self _ _) hc
 
+/-! ## The data encrypted, and the keystream wiped -/
+
+/-- `crypt_ok`, for `cryptSplit`: `PTs` encrypted. -/
+theorem cryptSplit_ok {s₀ : State} (hT : SPre s₀) {s : State} (h : Inv s₀ s)
+    (hst : stateAt s.mem (off (cx s₀) 64) = Spec.ChaCha20.initState (K s₀) 0 (N s₀))
+    (hks : ∀ k < mm s₀, s.mem (off (cx s₀) (736 + k)) =
+      (keystream (Spec.ChaCha20.initState (K s₀) 1 (N s₀)) (L s₀)).getD k 0)
+    (hS2 : s.mem.readW (stackArgAddr s₀ 2) 64 = stackArg s₀ 2)
+    (hS3 : s.mem.readW (stackArgAddr s₀ 3) 64 = stackArg s₀ 3) :
+    WP isa cryptSplit s fun s' => Inv s₀ s' ∧ (∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) ∧
+      Frame [sub s₀ 64 384, sub s₀ 672 1024, dR s₀, stkR s₀] s.mem s'.mem ∧
+      bytesAt s'.mem (dp s₀) (L s₀) = Spec.ChaCha20.encrypt (K s₀) 1 (N s₀) (PTs s₀ s.mem) := by
+  have hp := hT.hp
+  have hL9 := (s₀.gpr .r9).isLt
+  have hm : mm s₀ ≤ 960 := mOf_le 960 1024 (L s₀)
+  unfold cryptSplit
+  refine WP.seq (WP.mono (cmpFold_ok (fold := 960) (by lit_omega) h.r13)
+    fun s₁ ⟨g₁, rd₁, wr₁, m₁, c₁⟩ => ?_)
+  have h₁ : Inv s₀ s₁ := h.step (fun r _ => by rw [g₁]) rd₁ wr₁ (rs := []) (by rw [m₁]; exact Frame.refl _ _)
+    (fun _ h => by simp at h) (fun _ h => by simp at h)
+  refine WP.seq (WP.mono (Q := CryptedS s₀ s₁) ?_ fun s₂ c₂ => ?_)
+  · refine WP.ite (decide (L s₀ < 960 + 1)) (by simp [eval, c₁]) (fun hc => ?_) (fun hc => ?_)
+    · simp only [decide_eq_true_eq] at hc
+      refine WP.mono (cryptSmall_ok (fold := 960) (pass := 1024) (by lit_omega) (.inr (.inr rfl)) hp h₁
+        (by omega_using [hc]) (by rw [m₁]; exact hks)) fun s' c => ⟨c.rsi, c.cs, c.rd, c.wr, c.frame, ?_⟩
+      rw [PTs_small (by omega_using [hc])]; exact c.data
+    · simp only [decide_eq_false_iff_not] at hc
+      exact cryptBigSplit_ok hT h₁ (by omega_using [hc]) (by rw [m₁]; exact hst) (by rw [m₁]; exact hks)
+        (by rw [m₁]; exact hS2) (by rw [m₁]; exact hS3)
+  refine WP.seq (WP.mono (anchor_ok .rsi (k := 128) (by lit_omega) s₂) fun s₃ ⟨e3, g₃, rd₃, wr₃, m₃⟩ => ?_)
+  have cs₃ : ∀ r ∈ calleeSaved, s₃.gpr r = s.gpr r := fun r hr => by
+    by_cases h15 : r = .r15
+    · subst h15; rw [e3, c₂.rsi, off_sub, h.r15]
+    · rw [g₃ r h15, c₂.cs r hr h15, g₁]
+  have i₃ : Inv s₀ s₃ := h.step cs₃ (by rw [rd₃, c₂.rd, rd₁]) (by rw [wr₃, c₂.wr, wr₁])
+    (by rw [m₃, ← m₁]; exact c₂.frame) (fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl
+      · exact sub_work s₀ (by lit_omega) (by lit_omega)
+      · exact ⟨dR s₀, by simp, fun _ h => h⟩
+      · exact stk_work s₀) (fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl
+      · exact sub_disj s₀ (by lit_omega) (by lit_omega) (by lit_omega)
+      · exact hp.c_d.sub_left (sub_ctx s₀ (by lit_omega))
+      · exact (hp.stk_sub (by lit_omega)).symm)
+  -- The keystream wiped.
+  refine WP.seq (WP.mono (foldM_ok (fold := 960) (pass := 1024) (len := L s₀) (by lit_omega) (.inr (.inl rfl)) hL9
+    (by rw [i₃.r13]; exact hL s₀)) fun s₄ ⟨d₄, g₄, rd₄, wr₄, m₄⟩ => ?_)
+  refine WP.seq (WP.mono (add64_ok (n := mm s₀) d₄) fun s₅ ⟨d₅, g₅, rd₅, wr₅, m₅⟩ => ?_)
+  refine WP.mono (zeroKs_ok (w := 6) (.inr (.inr rfl)) hp (n := 64 + mm s₀) (by omega_using []) (by lit_omega) d₅
+    (by rw [g₅ _ (by decide), g₄ _ (by decide), i₃.r15]) (by rw [wr₅, wr₄, i₃.wr]))
+    fun s₆ ⟨g₆, rd₆, wr₆, f₆, _⟩ => ?_
+  have cs₆ : ∀ r ∈ calleeSaved, s₆.gpr r = s₃.gpr r := fun r hr => by
+    have h' := calleeSaved_ne hr
+    rw [g₆ r h'.1 h'.2.1, g₅ r h'.2.2.1, g₄ r h'.2.2.1]
+  have f₅₆ : Frame [sub s₀ 672 1024] s₃.mem s₆.mem := by rw [← m₄, ← m₅]; exact f₆
+  refine ⟨i₃.step cs₆ (by rw [rd₆, rd₅, rd₄]) (by rw [wr₆, wr₅, wr₄]) f₅₆
+    (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact sub_work s₀ (by lit_omega) (by lit_omega))
+    (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact sub_disj s₀ (by lit_omega) (by lit_omega) (by lit_omega)),
+    fun r hr => by rw [cs₆ r hr, cs₃ r hr], ?_, ?_⟩
+  · have fc : Frame [sub s₀ 64 384, dR s₀, stkR s₀] s.mem s₃.mem := by rw [m₃, ← m₁]; exact c₂.frame
+    refine (fc.sub fun r hr => ?_).trans (f₅₆.sub fun r hr => ?_)
+    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl
+      · exact ⟨_, by simp, fun _ h => h⟩
+      · exact ⟨dR s₀, by simp, fun _ h => h⟩
+      · exact ⟨stkR s₀, by simp, fun _ h => h⟩
+    · simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, by simp, fun _ h => h⟩
+  · rw [bytesAt_frame f₅₆ (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact (hp.c_d.sub_left (sub_ctx s₀ (by lit_omega))).symm) (Nat.le_of_lt hL9), m₃, c₂.data, ← m₁]
+
 end VG.Proof.ChaCha20Poly1305.X86_64.Split
