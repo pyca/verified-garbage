@@ -535,17 +535,4 @@ theorem ecbArgs_ok {K W SP : Addr} {R : Nat} {t : State} (E : Env K W SP t) {N A
       simp only [gpr_arithFlags, gpr_setReg, ite_true, ite_false, reduceCtorEq]
   all_goals rfl
 
-theorem stateAt_eq_ofFn (m : Mem) (p : Addr) :
-    Spec.Aes.stateAt m p = Vector.ofFn fun i => (bytesAt m p 16).getD i.1 0 := by
-  apply Vector.ext
-  intro i hi
-  simp [Spec.Aes.stateAt, bytesAt, List.getD_eq_getElem?_getD, hi]
-
-/-- A block `vg_aes_encrypt_blocks` replaced: the cipher of the old one. -/
-theorem bytesAt_cipher {m m' : Mem} {D : Addr} {c : Nat} {R : Nat} {w : List Byte}
-    (h : Spec.Aes.statesAt m' D c = (Spec.Aes.statesAt m D c).map (Spec.Aes.cipher R w)) {k : Nat} (hk : k < c) :
-    bytesAt m' (D + BitVec.ofNat 64 (16 * k)) 16 = Spec.GcmSiv.aesWith R w (bytesAt m (D + BitVec.ofNat 64 (16 * k)) 16) := by
-  rw [Proof.AesOcb.X86_64.bytesAt_toList, Proof.AesOcb.X86_64.stateAt_of_statesAt h hk, stateAt_eq_ofFn]
-  rfl
-
 end VG.Proof.AesGcmSiv.X86_64
