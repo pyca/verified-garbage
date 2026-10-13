@@ -547,6 +547,35 @@ impl Powers {
     }
 }
 
+/// Copies `src`, at most 16 bytes, to the start of `dst` in at most five
+/// moves (of 16, 8, 4, 2 and 1 bytes), without a call of `memcpy`, which
+/// costs more than the copy for so few bytes.
+#[cfg(all(target_arch = "x86_64", feature = "alloc"))]
+#[inline(always)]
+fn copy_short(dst: &mut [u8], src: &[u8]) {
+    let n = src.len();
+    let mut i = 0;
+    if n & 16 != 0 {
+        dst[..16].copy_from_slice(&src[..16]);
+        i = 16;
+    }
+    if n & 8 != 0 {
+        dst[i..i + 8].copy_from_slice(&src[i..i + 8]);
+        i += 8;
+    }
+    if n & 4 != 0 {
+        dst[i..i + 4].copy_from_slice(&src[i..i + 4]);
+        i += 4;
+    }
+    if n & 2 != 0 {
+        dst[i..i + 2].copy_from_slice(&src[i..i + 2]);
+        i += 2;
+    }
+    if n & 1 != 0 {
+        dst[i] = src[i];
+    }
+}
+
 /// Wipes and frees the key context `p`.
 ///
 /// # Safety
@@ -845,9 +874,12 @@ impl AesGcm {
 
     /// Encrypts a long first slice and at most one trailing byte without
     /// constructing a streaming state. A prepared key, a 96-bit nonce and
-    /// at most one AAD block let the verified CTR, GHASH and interleaved
-    /// block primitives handle the record directly. The ordinary gather
-    /// implementation handles every other shape.
+    /// at most one AAD block let the verified ECB, GHASH and interleaved
+    /// block primitives handle the record directly: the AAD's GHASH, the
+    /// whole blocks of the first slice, then one ECB call for both `E(K, J0)`
+    /// and the keystream of the bytes left, and the GHASH of their block and
+    /// the lengths. The short copies take no call of `memcpy`. The ordinary
+    /// gather implementation handles every other shape.
     #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
     fn seal_two_slices_prepared(
         &self,
@@ -856,7 +888,9 @@ impl AesGcm {
         plaintext: &[&[u8]],
         out: &mut [u8],
     ) -> Option<Block> {
-        use crate::arch::aes::{vg_aes_ctr32, vg_aes_ctr32_aesni, vg_aes_ctr32_vaes};
+        use crate::arch::aes::{
+            vg_aes_encrypt_blocks, vg_aes_encrypt_blocks_aesni, vg_aes_encrypt_blocks_vaes,
+        };
         use crate::arch::gcm::{
             vg_aes_gcm_encrypt_blocks_to_prepared_vaes_vpclmul_avx512, vg_ghash, vg_ghash_pclmul,
             vg_ghash_vpclmul,
@@ -871,11 +905,11 @@ impl AesGcm {
         }
         // Follow the same exhaustive backend mapping as the generic
         // assembly callers. New AES/GHASH combinations must be handled here.
-        let ctr = instance!(self.backend, vg_aes_ctr32,
-            x86_64: [vg_aes_ctr32_aesni, vg_aes_ctr32, vg_aes_ctr32_aesni],
-            vaes: [vg_aes_ctr32_vaes, vg_aes_ctr32, vg_aes_ctr32_vaes,
-                vg_aes_ctr32_aesni, vg_aes_ctr32_vaes, vg_aes_ctr32_vaes],
-            avx: [vg_aes_ctr32_aesni], aarch64: [vg_aes_ctr32_aes]);
+        let ecb = instance!(self.backend, vg_aes_encrypt_blocks,
+            x86_64: [vg_aes_encrypt_blocks_aesni, vg_aes_encrypt_blocks, vg_aes_encrypt_blocks_aesni],
+            vaes: [vg_aes_encrypt_blocks_vaes, vg_aes_encrypt_blocks, vg_aes_encrypt_blocks_vaes,
+                vg_aes_encrypt_blocks_aesni, vg_aes_encrypt_blocks_vaes, vg_aes_encrypt_blocks_vaes],
+            avx: [vg_aes_encrypt_blocks_aesni], aarch64: [vg_aes_encrypt_blocks_aes]);
         let gh = instance!(self.backend, vg_ghash,
             x86_64: [vg_ghash, vg_ghash_pclmul, vg_ghash_pclmul],
             vaes: [vg_ghash, vg_ghash_vpclmul, vg_ghash_pclmul,
@@ -900,43 +934,43 @@ impl AesGcm {
         }
         let mut scratch = MaybeUninit::<[u64; 264]>::uninit();
         let work = scratch.as_mut_ptr();
-        let mut counter = [0u8; 16];
-        counter[..12].copy_from_slice(nonce);
-        counter[15] = 1;
-        let mut tag = [0u8; 16];
+        // `J0 = nonce || 1` and the counter of the text's first block,
+        // `inc32(J0)`; after the whole blocks, the counter of the bytes left.
+        let mut ks = [[0u8; 16]; 2];
+        ks[0][..12].copy_from_slice(nonce);
+        ks[0][15] = 1;
+        let mut counter = ks[0];
+        counter[15] = 2;
         let mut y = [0u8; 16];
-        let mut padded_aad = [0u8; 16];
-        padded_aad[..aad.len()].copy_from_slice(aad);
         let head = plaintext[0].len() & !15;
         let count = head / 16;
-        let mut finish = [[0u8; 16]; 2];
         let rem = plaintext[0].len() - head;
         let tail = rem + plaintext[1].len();
-        finish[0][..rem].copy_from_slice(&plaintext[0][head..]);
-        finish[0][rem..tail].copy_from_slice(plaintext[1]);
+        // The bytes left, then the lengths block.
+        let mut finish = [[0u8; 16]; 2];
+        copy_short(&mut finish[0], &plaintext[0][head..]);
+        if let [b] = plaintext[1] {
+            finish[0][rem] = *b;
+        }
         finish[1][..8].copy_from_slice(&((aad.len() as u64) * 8).to_be_bytes());
         finish[1][8..].copy_from_slice(&((out.len() as u64) * 8).to_be_bytes());
         // SAFETY: the exhaustive dispatch above selects the key's CPU
         // features. The acquired context was initialized for this key and
         // lives as long as `self`; its first 256 bytes contain the ordinary
         // schedule and H. The caller checked nonce, AAD, text and output
-        // lengths. The nonce forms J0 = nonce || 1; CTR first computes
-        // E(K, J0), leaving inc32(J0) for the text. `head` is a whole-block
-        // prefix; `rem + suffix.len() <= 16`. Each call gets separate
-        // readable inputs and writable buffers of its specified size,
-        // including 2112 scratch bytes. The final ciphertext is zero-padded
-        // before GHASH, followed by the big-endian bit lengths (§7.1).
+        // lengths. The whole blocks start at the counter inc32(J0), and leave
+        // the counter after them in `counter`, which with J0 in `ks` the ECB
+        // call encrypts into E(K, J0) and the keystream of the bytes left.
+        // `head` is a whole-block prefix; `rem + suffix.len() <= 16`. Each
+        // call gets separate readable inputs and writable buffers of its
+        // specified size, including 2112 scratch bytes. The final ciphertext
+        // is zero-padded before GHASH, followed by the big-endian bit lengths
+        // (§7.1).
         unsafe {
-            ctr(
-                ctx.cast(),
-                self.rounds,
-                &mut counter,
-                &mut tag,
-                1,
-                work.cast(),
-            );
             let h = ctx.cast::<u8>().add(240).cast::<[u8; 16]>();
             if !aad.is_empty() {
+                let mut padded_aad = [0u8; 16];
+                copy_short(&mut padded_aad, aad);
                 gh(h, &mut y, &padded_aad, 1, work.cast());
             }
             blocks(
@@ -950,22 +984,27 @@ impl AesGcm {
                 count,
                 work,
             );
+            ks[1] = counter;
+            ecb(
+                ctx.cast(),
+                self.rounds,
+                ks.as_mut_ptr(),
+                1 + (tail != 0) as usize,
+                work.cast(),
+            );
             if tail != 0 {
-                ctr(
-                    ctx.cast(),
-                    self.rounds,
-                    &mut counter,
-                    &mut finish[0],
-                    1,
-                    work.cast(),
-                );
-                out[head..].copy_from_slice(&finish[0][..tail]);
-                finish[0][tail..].fill(0);
+                // The ciphertext of the bytes left, zero-padded (`tail` is
+                // 1 to 16).
+                let mask = u128::MAX >> (8 * (16 - tail));
+                let c = (u128::from_le_bytes(finish[0]) ^ u128::from_le_bytes(ks[1])) & mask;
+                finish[0] = c.to_le_bytes();
+                copy_short(&mut out[head..], &finish[0][..tail]);
                 gh(h, &mut y, finish.as_ptr(), 2, work.cast());
             } else {
                 gh(h, &mut y, &finish[1], 1, work.cast());
             }
         }
+        let mut tag = ks[0];
         for i in 0..16 {
             tag[i] ^= y[i];
         }
