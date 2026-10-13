@@ -508,7 +508,7 @@ theorem mulPow_ok (hc : BaseCfgOk c) (hC : Law c.C) {base : Addr} {s : State} (h
     {k : Nat} (hk : sv c base s K = k) (hk8 : k < 2 ^ (8 * c.C.len))
     (ht₀ : ∀ t < 64 * c.n, s.mem (off base (bitsAt c.n 0 + t)) = if k.testBit t then 1 else 0)
     (ht₁ : ¬ c.n ≤ 9 → ∀ t < 64 * c.n, s.mem (off base (bitsAt c.n 1 + t)) = if (c.C.p - 2).testBit t then 1 else 0)
-    (hm : c.mul.isSome = true → c.n = 4 ∧ c.mulFn.noCalls = true)
+    (hm : c.mul.isSome = true → (c.n = 4 ∨ c.n = 6) ∧ c.mulFn.noCalls = true)
     {rest : Prog isa} {R : State → Prop} (h : ∀ s', MulPost c base P k s s' → WP isa rest s' R) :
     WP isa (.seq (Impl.Ecdh.X86_64.Cfg.mulQ c).inline (.seq c.pPow.inline rest)) s R := by
   have h0 := hc.n0

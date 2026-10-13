@@ -108,7 +108,7 @@ theorem pre_of {s : State} (h : signX86_64.pre s) : Pre secp256k1 s := by
 
 /-- `[k]G` is a call of `vg_secp256k1_mul`, which calls no other function. -/
 theorem secp256k1_mulBase : MulBaseOk secp256k1 :=
-  ⟨fun h => absurd h (by decide), fun _ => ⟨rfl, by lit_decide⟩⟩
+  ⟨fun h => absurd h (by decide), fun _ => ⟨.inl rfl, by lit_decide⟩⟩
 
 theorem sign_x86 (hL : Law Spec.Secp256k1.curve)
     (hI : InvSounds) (s : State)
