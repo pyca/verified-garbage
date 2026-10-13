@@ -8,6 +8,7 @@ public import VerifiedGarbage.Spec.Weierstrass
 public import VerifiedGarbage.Spec.Ecdsa
 public import VerifiedGarbage.Spec.Weierstrass.Inverse
 public import VerifiedGarbage.Spec.Weierstrass.PointOps
+public import VerifiedGarbage.Spec.Weierstrass.Mul
 
 /-!
 # ECDSA signing on AArch64
@@ -314,6 +315,46 @@ def nPow : Prog isa :=
   match c.inverse with
   | some C => invCall C.invNApi.name (c.invFn c.nPowI)
   | none => c.nPowI
+
+/-- The ladder of `vg_<curve>_mul` (`Spec/Weierstrass/Mul.lean`): its point
+at `ACC`, `PT` (its copy of `Q`) and `ONEP`, `a` and `3 b` at `AP`'s and
+`BM`'s slots (where the contract has them), over the `64 n` bits of the table
+at `bitsAt n 0`. -/
+def mulLadder : LadderCfg where
+  M := c.MP'
+  S := c.rcbSlots
+  G := c.pt ACC PT ONEP
+  R := c.pt RX RY RZ
+  D := c.pt DX DY DZ
+  T := c.pt TX TY TZ
+  bits := bitsAt c.n 0
+  nbits := 64 * c.n
+
+/-- `vg_<curve>_mul`'s body: the table of `k`'s bits, `Q` (in `R`'s first two
+slots) copied to `ACC` and `PT`, `R` the point at infinity (from zero and
+one), then `R = [k]Q` by the ladder. -/
+def mulBody : Prog isa :=
+  .seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) <|
+  .seq (.block (copy c.n (c.sl ACC) (c.sl RX) ++ copy c.n (c.sl PT) (c.sl RY) ++
+    copy c.n (c.sl RX) (c.sl ZERO) ++ copy c.n (c.sl RY) (c.sl ONEP) ++ copy c.n (c.sl RZ) (c.sl ZERO)))
+    (ladder c.mulLadder)
+
+/-- Where `vg_<curve>_mul` keeps `x19`, which the ladder counts with: the word
+past the table of bits, in its own working space. -/
+def mulSave : Nat := bitsAt c.n 0 + 64 * c.n
+
+/-- `vg_<curve>_mul`: its body between keeping `x19` and restoring it. -/
+def mulFn : Prog isa :=
+  .seq (.block [st .x19 c.mulSave]) (.seq c.mulBody (.block [ld .x19 c.mulSave]))
+
+/-- `R = [k]P` for the `k` in `K`'s slot and the point at `px`, `py` (affine,
+Montgomery's form), by a call of the function `name` (`vg_<curve>_mul`,
+`mulFn`): `P` copied to `R`'s first two slots and `3 b R mod p` to `BM`'s slot,
+where the function reads them, and `b R mod p` back after. -/
+def mulAt (name : String) (px py : Nat) : Prog isa :=
+  .seq (.block (copy c.n (c.sl RX) (c.sl px) ++ copy c.n (c.sl RY) (c.sl py) ++
+    setConst c.n (c.sl BM) (c.mont (3 * c.C.b)))) <|
+  .seq (Cfg.invCall name c.mulFn) (.block (setConst c.n (c.sl BM) (c.mont c.C.b)))
 
 /-- The callee-saved registers the code uses (`x21`–`x25` by the
 multiplications of more than six words), and where they are saved. -/

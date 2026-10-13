@@ -263,6 +263,9 @@ pub(crate) mod p192_check_point;
 pub(crate) mod p192_inverse;
 
 #[rustfmt::skip]
+pub(crate) mod p192_mul;
+
+#[rustfmt::skip]
 pub(crate) mod p224_check_point;
 
 #[rustfmt::skip]
@@ -408,6 +411,9 @@ pub(crate) mod secp256k1_check_point;
 
 #[rustfmt::skip]
 pub(crate) mod secp256k1_inverse;
+
+#[rustfmt::skip]
+pub(crate) mod secp256k1_mul;
 
 #[rustfmt::skip]
 pub(crate) mod seed;

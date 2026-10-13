@@ -17,23 +17,8 @@ def p192 : Cfg := ⟨4, Spec.P192.curve, [], (0, 0), "", true,
 
 namespace P192
 
-/-- Slot 12 is free during point multiplication. The general formulas need
-`3b`, while the shared setup retains `b` for peer validation. -/
-def slots : RcbSlots := { p192.rcbSlots with b3 := p192.sl EXPP }
-
-def ladderCfg : LadderCfg where
-  M := p192.MP'
-  S := slots
-  G := p192.pt GX GY ONEP
-  R := p192.pt RX RY RZ
-  D := p192.pt DX DY DZ
-  T := p192.pt TX TY TZ
-  bits := bitsAt p192.n 0
-  nbits := 256
-
-def gMul : Prog isa :=
-  .seq (.block (setConst 4 (p192.sl EXPP) (p192.mont (3 * p192.C.b))))
-    (ladder ladderCfg)
+/-- `R = [k]G`, for the `k` in `K`'s slot, by a call of `vg_p192_mul`. -/
+def gMul : Prog isa := p192.mulAt Spec.Weierstrass.Mul.p192.mulApi.name GX GY
 
 end P192
 
