@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.AesOcb.X86_64.Env
 public meta import VerifiedGarbage.Proof.AesOcb.X86_64.Env
 public import VerifiedGarbage.Proof.AesCcm.X86_64.Run
 public meta import VerifiedGarbage.Proof.AesCcm.X86_64.Run
+public import VerifiedGarbage.Proof.Ocb.Spec
 
 /-!
 # AES-OCB on x86-64: running straight-line blocks

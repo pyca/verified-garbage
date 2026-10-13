@@ -8,6 +8,8 @@ meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowRunCT
 public meta import VerifiedGarbage.Impl.Rsa.AArch64.WindowLoop
 import Mathlib.Data.Int.ModEq
 meta import Mathlib.Data.Int.ModEq
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowReset
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowReset
 
 /-! The wider-table initializer shares only workspace and source layout between runs. -/
 

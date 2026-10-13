@@ -14,6 +14,12 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Argon2.Divide
+public import VerifiedGarbage.Proof.Argon2.FillPositions
+public import VerifiedGarbage.Proof.Argon2.SegmentIndices
+meta import VerifiedGarbage.Proof.Argon2.Divide
+meta import VerifiedGarbage.Proof.Argon2.FillPositions
+meta import VerifiedGarbage.Proof.Argon2.SegmentIndices
 
 @[expose] public section
 

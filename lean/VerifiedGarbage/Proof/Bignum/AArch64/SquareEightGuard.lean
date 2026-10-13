@@ -13,6 +13,8 @@ import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.Call
 meta import Mathlib.Tactic.SplitIfs
 meta import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightCorrect
+meta import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightCorrect
 
 @[expose] public section
 

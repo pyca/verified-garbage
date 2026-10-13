@@ -14,6 +14,8 @@ import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Sha512.Word64
 meta import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Sha512.Word64
+import VerifiedGarbage.Proof.Sha512.X86.Rounds
+meta import VerifiedGarbage.Proof.Sha512.X86.Rounds
 
 @[expose] public section
 

@@ -12,6 +12,8 @@ import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareMath
 import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.AArch64.SquareCross
+import VerifiedGarbage.Proof.Bignum.AArch64.SquareDiagonalLoop
 
 /-! Structural public state used by the constant-time composition. -/
 

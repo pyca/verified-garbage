@@ -7,6 +7,7 @@ import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Impl.Argon2.Arm.HPrime
+import VerifiedGarbage.Spec.Rc2
 
 /-!
 # Argon2 H′ on ARMv7: the calls of the BLAKE2b functions

@@ -9,6 +9,7 @@ public import VerifiedGarbage.Proof.Bignum.AArch64.Run
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Framework.TaintBatch
+import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
 
 @[expose] public section
 namespace VG.Proof.Bignum.AArch64.SquareEight

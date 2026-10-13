@@ -8,6 +8,8 @@ import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.CmacAes.Stream.X86_64.Common
+import VerifiedGarbage.Proof.AesSiv.X86_64.Bits
+import VerifiedGarbage.Proof.AesSiv.X86_64.Common
 
 /-!
 # AES-SIV on x86-64: CTR (`ctr`)

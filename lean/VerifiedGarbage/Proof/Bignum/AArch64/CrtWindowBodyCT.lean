@@ -9,6 +9,10 @@ import Mathlib.Data.Int.ModEq
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowGroupCT
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowTakeBitCT
 meta import Mathlib.Data.Int.ModEq
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowLoadGroup
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowLoadTail
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowLoadGroup
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowLoadTail
 
 /-! Batch and trailing-byte bodies have public source addresses and control. -/
 

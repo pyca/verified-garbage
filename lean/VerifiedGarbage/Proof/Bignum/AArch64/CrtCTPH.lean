@@ -12,6 +12,8 @@ import VerifiedGarbage.Proof.Framework.AArch64.Call
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTPSub
 meta import Mathlib.Data.Int.ModEq
 meta import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtSetup
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtSetup
 
 /-!
 # RSA with the CRT on AArch64: constant time, `h = (m_p - m_q) qInv mod p`

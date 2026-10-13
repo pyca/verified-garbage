@@ -8,6 +8,10 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.AesSiv.X86_64.CtrCT
 meta import VerifiedGarbage.Proof.AesSiv.X86_64.CtrCT
+import VerifiedGarbage.Proof.AesSiv.X86_64.Crypt
+import VerifiedGarbage.Proof.AesSiv.X86_64.Finish
+meta import VerifiedGarbage.Proof.AesSiv.X86_64.Crypt
+meta import VerifiedGarbage.Proof.AesSiv.X86_64.Finish
 
 /-!
 # AES-SIV on x86-64: the ends of `encrypt` and `decrypt` are constant time

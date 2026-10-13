@@ -11,6 +11,8 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Impl.MdStream.AArch64
+import VerifiedGarbage.Proof.MdStream.Spec
 
 /-! Merged from `Proof.Argon2.AArch64.AddressHeaderCorrect`. -/
 

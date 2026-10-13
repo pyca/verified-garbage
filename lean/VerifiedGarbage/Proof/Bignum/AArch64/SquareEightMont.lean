@@ -12,6 +12,8 @@ import VerifiedGarbage.Proof.Framework.AArch64.Call
 meta import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcMont
 meta import Mathlib.Tactic.SplitIfs
 meta import VerifiedGarbage.Proof.Framework.AArch64.Call
+public import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightGuard
+meta import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightGuard
 
 @[expose] public section
 namespace VG.Proof.Bignum.AArch64

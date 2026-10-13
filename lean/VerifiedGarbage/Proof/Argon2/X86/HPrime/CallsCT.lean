@@ -14,6 +14,8 @@ import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Sha512.Word64
 meta import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Sha512.Word64
+import VerifiedGarbage.Proof.Sha256.X86.Stream.Common
+meta import VerifiedGarbage.Proof.Sha256.X86.Stream.Common
 
 /-!
 # Argon2 H′ on x86 (32-bit): the calls, in two runs

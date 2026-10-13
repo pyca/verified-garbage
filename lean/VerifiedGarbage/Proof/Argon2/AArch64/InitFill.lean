@@ -48,6 +48,8 @@ import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
 meta import Mathlib.Tactic.SplitIfs
 meta import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Argon2.AArch64.Carry
+meta import VerifiedGarbage.Proof.Argon2.AArch64.Carry
 
 @[expose] public section
 

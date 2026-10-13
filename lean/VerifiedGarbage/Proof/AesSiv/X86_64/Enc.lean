@@ -6,6 +6,10 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.AesSiv.X86_64.Call
+import VerifiedGarbage.Proof.AesSiv.X86_64.Common
+import VerifiedGarbage.Proof.AesSiv.X86_64.S2vAd
+import VerifiedGarbage.Proof.Cmac.Block
 
 /-!
 # AES-SIV on x86-64: `vg_aes_siv_encrypt` and `vg_aes_siv_decrypt`

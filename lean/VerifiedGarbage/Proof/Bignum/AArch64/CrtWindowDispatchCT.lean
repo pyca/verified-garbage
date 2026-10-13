@@ -8,6 +8,8 @@ import Mathlib.Data.Int.ModEq
 import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
 meta import Mathlib.Data.Int.ModEq
 meta import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTNSetup
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTNSetup
 
 @[expose] public section
 namespace VG.Proof.Bignum.AArch64.WindowFive

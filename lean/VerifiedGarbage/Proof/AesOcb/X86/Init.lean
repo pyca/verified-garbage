@@ -8,6 +8,8 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.AesGcm.X86.Top
 meta import VerifiedGarbage.Proof.AesGcm.X86.Top
+import VerifiedGarbage.Proof.Ocb.State
+meta import VerifiedGarbage.Proof.Ocb.State
 
 /-!
 # AES-OCB on x86: `vg_aes_ocb_init`

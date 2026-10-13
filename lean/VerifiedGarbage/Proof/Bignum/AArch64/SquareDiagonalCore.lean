@@ -10,6 +10,7 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Bignum.AArch64.Run
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.AArch64.MulAdd
 
 /-! Register arithmetic of one doubled cross-product pair plus a diagonal. -/
 

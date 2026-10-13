@@ -14,6 +14,10 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Argon2.AArch64.Carry
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+meta import VerifiedGarbage.Proof.Argon2.AArch64.Carry
+meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 
 /-! # Masked subtraction agrees with wrapping the reference column -/
 

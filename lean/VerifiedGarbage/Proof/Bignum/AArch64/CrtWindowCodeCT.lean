@@ -24,6 +24,8 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import Mathlib.Data.Int.ModEq
 meta import Mathlib.Data.Int.ModEq
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTN
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTN
 
 /-!
 # `vg_rsa_private_crt` on AArch64: constant time

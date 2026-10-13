@@ -8,6 +8,10 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcCtSquare
+import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightCT
+meta import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcCtSquare
+meta import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightCT
 
 /-! The callable Montgomery primitive shares RSA's accumulator-square kernel.
 The dispatch depends only on the three public, 32-bit array indices. -/

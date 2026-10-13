@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.WindowHelperContext
 import Mathlib.Data.Int.ModEq
+import VerifiedGarbage.Proof.Bignum.AArch64.SquareHelper
 
 /-! A shared window verified against its reviewed callable contract. -/
 

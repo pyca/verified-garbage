@@ -14,6 +14,10 @@ meta import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightCtSetup
 meta import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightCtHead
 meta import Mathlib.Tactic.SplitIfs
 meta import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcMont
+import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightCT
+meta import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcMont
+meta import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightCT
 
 @[expose] public section
 namespace VG.Proof.Bignum.AArch64.SquareEightDispatch

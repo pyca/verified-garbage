@@ -7,6 +7,10 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Impl.Argon2.AArch64.HPrime
+import VerifiedGarbage.Impl.MdStream.AArch64
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.MdStream.Spec
 
 /-! Read exactly the public indexed word of the cached address block. -/
 
