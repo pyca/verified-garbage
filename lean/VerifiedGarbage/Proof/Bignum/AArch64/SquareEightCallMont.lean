@@ -44,21 +44,21 @@ def Mont.calledSquareEight : Mont where
   ok := by
     intro s B Z w minv hg hz hw hw' o a b ho ha hb d1 d2 d3 d4 d5 d6 hi hv
     unfold VG.Impl.Bignum.AArch64.SquareEightCall.mm
-    by_cases h : o = a ∧ a = b ∧ (o = 4 ∨ o = 6)
+    by_cases h : o = a ∧ a = b ∧ o = 6
     · rw [ite_eq_left h]
       obtain ⟨rfl, rfl, hs⟩ := h
-      exact SquareCall.call_ok Mont.squareEight (SquareEightCall.no_v31 hs)
+      exact SquareCall.call_ok Mont.squareEight (SquareEightCall.no_v31 (Or.inr hs))
         hg hz hw hw' ho ha hb d1 d2 d3 d4 d5 d6 hi hv
     · rw [ite_eq_right h]
-      exact Mont.blocked.ok hg hz hw hw' ho ha hb d1 d2 d3 d4 d5 d6 hi hv
+      exact Mont.calledSquare.ok hg hz hw hw' ho ha hb d1 d2 d3 d4 d5 d6 hi hv
   ct := by
     intro o a b huse
     unfold VG.Impl.Bignum.AArch64.SquareEightCall.mm
-    by_cases h : o = a ∧ a = b ∧ (o = 4 ∨ o = 6)
+    by_cases h : o = a ∧ a = b ∧ o = 6
     · rw [ite_eq_left h]
       obtain ⟨rfl, rfl, _⟩ := h
       exact SquareCall.wrapper_ct (Mont.squareEight.ct huse)
     · rw [ite_eq_right h]
-      exact Mont.blocked.ct huse
+      exact Mont.calledSquare.ct huse
 
 end VG.Proof.Bignum.AArch64

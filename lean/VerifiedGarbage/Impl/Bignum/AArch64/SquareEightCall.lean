@@ -12,8 +12,8 @@ namespace VG.Impl.Bignum.AArch64.SquareEightCall
 open VG VG.AArch64
 
 def mm (o a b : Nat) : Prog isa :=
-  if o = a ∧ a = b ∧ (o = 4 ∨ o = 6) then
+  if o = a ∧ a = b ∧ o = 6 then
     SquareCall.call s!"vg_rsa_square_{o}_{o}" (SquareEightDispatch.mm o o o)
-  else BlockedRedc.mm o a b
+  else SquareCall.mm o a b
 
 end VG.Impl.Bignum.AArch64.SquareEightCall

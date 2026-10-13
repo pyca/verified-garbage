@@ -19,14 +19,17 @@ namespace VG.Artifacts.Rsa.AArch64
 
 /-- The two repeated squares are shared by all RSA callers. -/
 def squareHelper (slot : Spec.Rsa.MontSquare.Slot) : Artifact :=
+  let M := match slot with
+    | .r2 => Proof.Bignum.AArch64.Mont.blocked
+    | .y => Proof.Bignum.AArch64.Mont.squareEight
   { Spec.Rsa.MontSquare.squareApi slot with
     target := AArch64.target
     doc := (Spec.Rsa.MontSquare.squareApi slot).doc
       (notes := ["Baseline AArch64 symmetric square with eight-limb blocked reduction for widths \
         of at least sixteen limbs divisible by eight; other widths retain the row-wise reduction."])
     contract := Spec.Rsa.MontSquare.squareContract slot AArch64.abi
-    code := Proof.Bignum.AArch64.Mont.squareEight.mm slot.index slot.index slot.index
-    verified := Proof.Bignum.AArch64.SquareHelper.verified Proof.Bignum.AArch64.Mont.squareEight slot
+    code := M.mm slot.index slot.index slot.index
+    verified := Proof.Bignum.AArch64.SquareHelper.verified M slot
     spSafe := Code.all_of_forall (fun _ => rfl) _ }
 
 def artifacts : List Artifact := [squareHelper .r2, squareHelper .y,
