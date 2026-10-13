@@ -125,7 +125,7 @@ open VG VG.X86 VG.Impl.Ed25519.X86
 variable {L : Lay} {g : Reg → BitVec 32} {m₀ : Mem} {s : State}
 
 def challenge (L : Lay) : Region := ⟨(L.E + 128).setWidth 64, 64⟩
-def equationRd (L : Lay) : List Region := [L.PK, L.SIG, challenge L, ⟨L.E.setWidth 64, 16⟩]
+def equationRd (L : Lay) : List Region := [L.PK, L.SIG, challenge L, ⟨L.E.setWidth 64, 16⟩, L.TBL]
 def equationWr (L : Lay) : List Region := [⟨L.scr.setWidth 64, 0⟩, L.SCR]
 def EqArgs (L : Lay) (s : State) : Prop := Whole.slots L.E s 0 = L.pk ∧
   Whole.slots L.E s 1 = L.sig ∧ Whole.slots L.E s 2 = L.E + 128 ∧ Whole.slots L.E s 3 = L.scr
@@ -136,8 +136,49 @@ theorem equation_stack : stackUse verifyEquation = 8 := by lit_decide
 theorem challengeWithin (hL : L.Ok) : Whole.Within (challenge L) L.FR :=
   ⟨128, Whole.frame_addr (hashSpace hL).frameFit (by decide), by change 128 + 64 ≤ 256; decide⟩
 
-theorem equation_pre (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : EqArgs L s) :
+/-- The static of `-[1]B … -[15]B` at `L.tbl` in `m`. -/
+def TblAt (L : Lay) (m : Mem) : Prop :=
+  ∀ i < 240, m.readW (L.tbl.setWidth 64 + BitVec.ofNat 64 (8 * i)) 64 = bWords.getD i 0
+
+/-- The static survives what the function writes. -/
+theorem Ctx.tbl (hc : Ctx L g m₀ s) (hL : L.Ok) (ht : TblAt L m₀) : TblAt L s.mem := fun i hi => by
+  have tin : L.TBL ∈ L.inputs := by simp [Lay.inputs]
+  have hcon : L.TBL.Contains (L.tbl.setWidth 64 + BitVec.ofNat 64 (8 * i)) (64 / 8) :=
+    Offset.contains_base _ (d := 8 * i) (n := 8) (k := 1920) (by omega) (by have := hL.nt; omega)
+  rw [hc.frame.readW hcon (fun R hR => by
+    simp only [Lay.outputs, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil,
+      or_false] at hR
+    rcases hR with rfl | rfl
+    · exact hL.sc _ tin
+    · exact (hL.ks _ tin).symm) (by decide)]
+  exact ht i hi
+
+/-- The static, as the equation's contract states it at its call. -/
+theorem equation_tbl (hc : Ctx L g m₀ s) (hL : L.Ok) (ht : TblAt L s.mem) (hy : s.syms bSym = L.tbl)
+    (rd wr : List Region) :
+    BHeld (s.callEntry.withRegions rd wr) [L.SCR, below (L.E - 4) 8] := by
+  have tin : L.TBL ∈ L.inputs := by simp [Lay.inputs]
+  have hy' : (s.callEntry.withRegions rd wr).syms bSym = L.tbl := hy
+  refine ⟨fun i hi => ?_, by rw [hy']; exact hL.nt, fun r hr => ?_⟩
+  · rw [hy']
+    have hcon : L.TBL.Contains (L.tbl.setWidth 64 + BitVec.ofNat 64 (8 * i)) (64 / 8) :=
+      Offset.contains_base _ (d := 8 * i) (n := 8) (k := 1920) (by omega) (by have := hL.nt; omega)
+    change (s.callEntry.mem).readW _ 64 = _
+    rw [Frame.readW (Whole.callEntry_frame s) hcon (fun R hR => by
+        rw [List.mem_singleton.mp hR, hc.esp]
+        exact (hL.ks _ tin).symm.sub_right (Whole.below_sub_stack hL.below (by decide))) (by decide)]
+    exact ht i hi
+  · rw [hy']
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact hL.sc _ tin
+    · exact (hL.ks _ tin).symm.sub_right (Whole.inner_sub_stack hL.below)
+
+theorem equation_pre (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : EqArgs L s) (ht : TblAt L s.mem)
+    (hy : s.syms bSym = L.tbl) :
     verifyLocal.pre (s.callEntry.withRegions (equationRd L) (equationWr L)) := by
+  have hb := equation_tbl hc hL ht hy (equationRd L) (equationWr L)
+  have hy' : (s.callEntry.withRegions (equationRd L) (equationWr L)).syms bSym = L.tbl := hy
   have H := hashSpace hL
   have ca {j : Nat} (hj : j < 64) := Whole.call_arg hc.esp H.below H.frameFit hj
   obtain ⟨a0, a1, a2, a3⟩ := ha
@@ -153,7 +194,7 @@ theorem equation_pre (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : EqArgs L s) :
     simp only [callStk, State.withRegions_gpr, State.callEntry_esp, hc.esp]; rfl
   simp only [verifyLocal, State.withRegions_rd, State.withRegions_wr, arg_withRegions,
     State.withRegions_gpr, State.callEntry_esp, hc.esp, e0, e1, e2, e3, ab, cs,
-    sub, addr_zero, scR]
+    sub, addr_zero, scR, hy']
   refine ⟨rfl, rfl, hL.sc _ (by simp [Lay.inputs]), hL.sc _ (by simp [Lay.inputs]),
     hL.kc.sub_left (fun p hp => Whole.frame_sub L.E p ((challengeWithin hL).sub p hp)),
     hL.kc.sub_left (fun p hp => Whole.frame_sub L.E p (Region.sub_prefix (by decide) p hp)),
@@ -161,7 +202,7 @@ theorem equation_pre (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : EqArgs L s) :
     Whole.frame_fit H.frameFit (by decide : 128 < 256) (by decide : 128 + 64 ≤ 256), hL.nc, ?_, ?_,
     hL.kc.sub_left stk, (hL.ks _ (by simp [Lay.inputs])).sub_left stk,
     (hL.ks _ (by simp [Lay.inputs])).sub_left stk,
-    Whole.inner_frame hL.below hf (d := 128) (n := 64) (by decide) (by decide)⟩
+    Whole.inner_frame hL.below hf (d := 128) (n := 64) (by decide) (by decide), hb⟩
   all_goals
     have e : (L.E - 4).toNat = L.E.toNat - 4 := sub_toNat (k := 4) (by have := hL.below; omega)
     rw [e]
@@ -170,7 +211,8 @@ theorem equation_pre (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : EqArgs L s) :
 theorem equation_correct_result (s : State) (h : verifyLocal.pre s) :
     ∃ tr t, Exec isa verifyEquation s tr t ∧ abiPreserved s t ∧ verifyLocal.post s t := verify_correct h
 
-theorem equation_call (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : EqArgs L s) :
+theorem equation_call (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : EqArgs L s) (ht : TblAt L m₀)
+    (hy : s.syms bSym = L.tbl) :
     WP isa (.call "vg_ed25519_verify_equation" verifyEquation) s fun t => Ctx L g m₀ t ∧
       t.gpr .eax = signWord (Spec.Ed25519.verifyEquation
         (Spec.Ed25519.bytesAt s.mem (L.pk.setWidth 64) 32)
@@ -182,11 +224,12 @@ theorem equation_call (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : EqArgs L s) :
   have cov : Covers (equationRd L ++ equationWr L) (L.inputs ++ L.FR :: L.outputs) := by
     apply hash_covers
     simp only [equationRd, equationWr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false]
-    rintro r (rfl | rfl | rfl | rfl | rfl | rfl)
+    rintro r (rfl | rfl | rfl | rfl | rfl | rfl | rfl)
     · exact .inr ⟨L.PK, by simp [Lay.inputs], 0, by simp, by simp⟩
     · exact .inr ⟨L.SIG, by simp [Lay.inputs], 0, by simp, by simp⟩
     · exact .inl (challengeWithin hL)
     · exact .inl (argsWithin L (by decide))
+    · exact .inr ⟨L.TBL, by simp [Lay.inputs], 0, by simp, by simp⟩
     · exact scratch_covered wz
     · exact scratch_covered wsc
   have ws : ∀ r ∈ equationWr L, Whole.Within r L.FR ∨ ∃ R ∈ L.outputs, Whole.Within r R :=
@@ -197,7 +240,7 @@ theorem equation_call (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : EqArgs L s) :
       · exact .inr wsc)
   with_reducible
     refine Whole.call_ok hc hL.below equation_correct_result equation_nosp (by rw [equation_stack]; decide)
-      (equation_pre hc hL ha) cov ws fun t ht _ _ post => ⟨ht, ?_⟩
+      (equation_pre hc hL ha (hc.tbl hL ht) hy) cov ws fun t ht _ _ post => ⟨ht, ?_⟩
   obtain ⟨t₂, hm, hg, hp⟩ := post
   have ca {j : Nat} (hj : j < 64) := Whole.call_arg hc.esp H.below H.frameFit hj
   obtain ⟨a0, a1, a2, _⟩ := ha
@@ -677,16 +720,16 @@ theorem hashInput_eq (L : Lay) (m : Mem) : hashInput L m =
   rw [e]
   rfl
 
-theorem equation_step (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀)
-    {challenge : List Byte}
+theorem equation_step (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀) (ht : TblAt L m₀)
+    (hy : s.syms Impl.Ed25519.X86.bSym = L.tbl) {challenge : List Byte}
     (hh : Spec.Ed25519.bytesAt s.mem (L.E.setWidth 64 + 128) 64 = challenge) :
     WP isa (VG.Impl.Ed25519.X86.PublicKey.callWith equationArgs "vg_ed25519_verify_equation" Impl.Ed25519.X86.verifyEquation) s
       fun t => Ctx L g m₀ t ∧ t.gpr .eax = signWord (Spec.Ed25519.verifyEquation
         (Spec.Ed25519.bytesAt m₀ (L.pk.setWidth 64) 32)
         (Spec.Ed25519.bytesAt m₀ (L.sig.setWidth 64) 64) challenge) := by
-  refine WP.seq (WP.mono (args_ok hc hL ha
+  refine WP.seq (WP.mono_syms (args_ok hc hL ha
     (vs := [.caller 0 0, .caller 3 0, .frame 128, .caller 4 0])
-    (by decide) (by simp [Whole.valid])) fun u ⟨hu, hf, hs⟩ => ?_)
+    (by decide) (by simp [Whole.valid])) fun u ⟨hu, hf, hs⟩ yu => ?_)
   have a0 := (hs.slot hL (j := 0) (by decide) (by decide)).trans (BitVec.add_zero _)
   have a1 := (hs.slot hL (j := 1) (by decide) (by decide)).trans (BitVec.add_zero _)
   have a2 := hs.slot hL (j := 2) (by decide) (by decide)
@@ -694,21 +737,22 @@ theorem equation_step (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀)
   have he : Spec.Ed25519.bytesAt u.mem (L.E.setWidth 64 + 128) 64 =
       Spec.Ed25519.bytesAt s.mem (L.E.setWidth 64 + 128) 64 :=
     setup_bytes hf (by decide : 24 ≤ 128) (by decide : 128 + 64 ≤ 256)
-  refine WP.mono (equation_call hu hL ⟨a0, a1, a2, a3⟩) fun t ⟨ht, eq⟩ => ⟨ht, ?_⟩
+  refine WP.mono (equation_call hu hL ⟨a0, a1, a2, a3⟩ ht (by rw [yu, hy])) fun t ⟨ht, eq⟩ => ⟨ht, ?_⟩
   rw [hu.input_bytes hL (r := L.PK) (by simp [Lay.inputs]) (by change 32 ≤ 2 ^ 64; decide),
     hu.input_bytes hL (r := L.SIG) (by simp [Lay.inputs]) (by change 64 ≤ 2 ^ 64; decide), he, hh] at eq
   exact eq
 
-theorem body_ok (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀) :
+theorem body_ok (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀) (ht : TblAt L m₀)
+    (hy : s.syms Impl.Ed25519.X86.bSym = L.tbl) :
     WP isa body s fun t => Ctx L g m₀ t ∧ t.gpr .eax = signWord (Spec.Ed25519.verify
       (Spec.Ed25519.bytesAt m₀ (L.pk.setWidth 64) 32)
       (Spec.Ed25519.bytesAt m₀ (L.msg.setWidth 64) L.len.toNat)
       (Spec.Ed25519.bytesAt m₀ (L.sig.setWidth 64) 64)) := by
-  refine WP.seq (WP.mono (hash_ok hc hL ha) fun t ⟨ht, hh⟩ => ?_)
-  refine WP.seq (WP.mono (reduce_step ht hL ha) fun u ⟨hu, hr⟩ => ?_)
+  refine WP.seq (WP.mono_syms (hash_ok hc hL ha) fun t ⟨hs, hh⟩ yt => ?_)
+  refine WP.seq (WP.mono_syms (reduce_step hs hL ha) fun u ⟨hu, hr⟩ yu => ?_)
   rw [hh] at hr
-  refine WP.seq (WP.mono (extend_step hu hL hr) fun v ⟨hv, he⟩ => ?_)
+  refine WP.seq (WP.mono_syms (extend_step hu hL hr) fun v ⟨hv, he⟩ yv => ?_)
   rw [hashInput_eq] at he
-  exact equation_step hv hL ha he
+  exact equation_step hv hL ha ht (by rw [yv, yu, yt, hy]) he
 
 end VG.Proof.Ed25519.X86.VerifyMessage

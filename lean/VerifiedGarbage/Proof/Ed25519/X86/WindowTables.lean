@@ -5,6 +5,8 @@ public import VerifiedGarbage.Proof.Ed25519.X86.PointPowers
 public import VerifiedGarbage.Proof.Ed25519.WindowConstants
 public import VerifiedGarbage.Proof.Ed25519.X86.Point32.Call
 public import VerifiedGarbage.Proof.Ed25519.Group.Double
+public import VerifiedGarbage.Proof.Ed25519.X86.VerifyTbl
+public import VerifiedGarbage.Proof.Framework.X86.SymFrame
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -15,7 +17,7 @@ import all Init.Data.Vector.Basic
 
 The table of multiples of `A` (byte 1024) is built by repeated addition of `A`,
 each entry representing its multiple (`Rep`); the table of negated multiples
-of `B` (byte 3072) is stored from constants. Both hold points with the
+of `B` (byte 3072) is copied from the static `bSym`. Both hold points with the
 specification's coordinates, added with `pointAdd`.
 -/
 
@@ -294,52 +296,143 @@ theorem aTable_ok {x : BitVec 32} {s : State} (hc : Ctx x s) {A : Spec.Ed25519.P
 theorem negBase_rep (i : Nat) (hi : i < 15) : Rep (negBase i) ((i + 1) • (-baseAff)) := by
   rw [smul_neg]; exact (baseMultiple_rep i hi).neg
 
-theorem bEntry_ok {x : BitVec 32} {s : State} (hc : Ctx x s) (i : Nat) (hi : i < 15) :
-    WP isa (.block (bEntry i)) s fun t => ScalarKeep s t ∧
-      Frame [sub x 64 864, sub x (3072 + 128 * i) 128] s.mem t.mem ∧
-      tablePoint t.mem x (3072 + 128 * i) = negBase i ∧ env t.mem x 16 = env s.mem x 16 := by
-  rw [bEntry, WP.block_append_iff]
-  refine WP.mono (fieldCode_ok _ hc) fun a ⟨ka, ea⟩ => ?_
-  refine WP.mono (pointTableWrite_ok (ka.ctx hc) (3072 + 128 * i) (by omega) (by omega))
-    fun t ⟨kt, ft, pt⟩ => ⟨(Keep.scalar ka.keep).trans kt, ?_, ?_, ?_⟩
-  · exact (frame1_two ka.frame hc.fit (by decide) (by decide) (by decide)).trans
-      (frame1_two' ft hc.fit (by omega) (by omega) (by omega))
-  · rw [pt, ea, constPoint_eval]
-  · rw [table_env hc.fit ft (by omega) (by omega), ea]; rfl
+/-- A table entry whose dwords are the static's: `-[i + 1]B`. -/
+theorem tablePoint_of_dwords {m : Mem} {x : BitVec 32} {i : Nat}
+    (h : ∀ k < 32, wd m x (3072 + 4 * (32 * i + k)) = bDword (32 * i + k)) :
+    tablePoint m x (3072 + 128 * i) = negBase i := by
+  have hc : ∀ c < 4, F m x (3072 + 128 * i + 32 * c) = pointCoord (negBase i) c := fun c hc => by
+    have he : fe m x (3072 + 128 * i + 32 * c) = (pointCoord (negBase i) c).val := by
+      unfold fe
+      rw [num_congr (g := fun k => (pointCoord (negBase i) c).val / (2 ^ 32) ^ k % 2 ^ 32) (fun k hk => by
+        rw [wv, show 3072 + 128 * i + 32 * c + 4 * k = 3072 + 4 * (32 * i + (8 * c + k)) by omega,
+          h _ (by omega), bDword, BitVec.toNat_ofNat, show (32 * i + (8 * c + k)) / 32 = i by omega,
+          show (32 * i + (8 * c + k)) / 8 % 4 = c by omega, show (32 * i + (8 * c + k)) % 8 = k by omega]),
+        num_digits]
+      exact Nat.mod_eq_of_lt (by have h := (pointCoord (negBase i) c).isLt; simp only [Spec.X25519.P] at h; omega)
+    rw [F, he, VG.Proof.X25519.toFe_self]
+  have h0 := hc 0 (by decide)
+  have h1 := hc 1 (by decide)
+  have h2 := hc 2 (by decide)
+  have h3 := hc 3 (by decide)
+  rw [show 3072 + 128 * i + 32 * 0 = 3072 + 128 * i by omega] at h0
+  rw [show 3072 + 128 * i + 32 * 1 = 3072 + 128 * i + 32 by omega] at h1
+  rw [show 3072 + 128 * i + 32 * 2 = 3072 + 128 * i + 64 by omega] at h2
+  rw [show 3072 + 128 * i + 32 * 3 = 3072 + 128 * i + 96 by omega] at h3
+  rw [tablePoint, h0, h1, h2, h3]
+  generalize negBase i = q
+  rfl
 
-theorem bEntries_ok {x : BitVec 32} (l : List Nat) (hl : ∀ i ∈ l, i < 15) (hnd : l.Nodup) :
-    ∀ {s : State}, Ctx x s → WP isa (bEntries l) s fun t => ScalarKeep s t ∧
-      Frame [sub x 64 864, sub x 3072 1920] s.mem t.mem ∧
-      (∀ i ∈ l, tablePoint t.mem x (3072 + 128 * i) = negBase i) ∧
-      (∀ j < 15, j ∉ l → tablePoint t.mem x (3072 + 128 * j) = tablePoint s.mem x (3072 + 128 * j)) ∧
-      env t.mem x 16 = env s.mem x 16 := by
-  induction l with
-  | nil => exact fun _ => WP.block_nil ⟨ScalarKeep.refl _, Frame.refl _ _, fun _ h => absurd h List.not_mem_nil,
-      fun _ _ _ => rfl, rfl⟩
-  | cons i is ih =>
-    intro s hc
-    have hi := hl i List.mem_cons_self
-    have hnd' := List.nodup_cons.mp hnd
-    rw [bEntries]
-    refine WP.seq (WP.mono (bEntry_ok hc i hi) fun a ⟨ka, fa, pa, da⟩ => ?_)
-    have ca : Ctx x a := hc.keep ka.edi ka.wr ka.esp
-    refine WP.mono (ih (fun j hj => hl j (List.mem_cons_of_mem _ hj)) hnd'.2 ca)
-      fun t ⟨kt, ft, et, ot, dt⟩ => ⟨ka.trans kt, ?_, fun j hj => ?_, fun j hj hjn => ?_, dt.trans da⟩
-    · exact (frame2_widen fa hc.fit (Nat.le_refl _) (Nat.le_refl _) (by omega) (by omega) (by decide)
-        (by omega)).trans ft
-    · rcases List.mem_cons.mp hj with rfl | hj
-      · rw [ot j hi hnd'.1, pa]
-      · exact et j hj
-    · rw [ot j hj (fun h => hjn (List.mem_cons_of_mem _ h)),
-        tablePoint_frame2 fa hc.fit (by decide) (by omega) (by omega) (Or.inr (by omega))
-          (by have : j ≠ i := fun e => hjn (e ▸ List.mem_cons_self); omega)]
+/-- A word of the working space outside the table at byte 3072, through a frame of the table and
+the stack a call uses. -/
+theorem wd_frameT {x : BitVec 32} {s : State} (hc : Ctx x s) {m m' : Mem}
+    (hf : Frame [sub x 3072 1920, callStk s] m m') {d : Nat} (hd : d + 4 ≤ 3072) :
+    wd m' x d = wd m x d := by
+  have hfit := hc.fit
+  refine wd_frame hf fun r hr => ?_
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl
+  · exact sub_disj (by omega) (by omega) (Or.inl hd)
+  · exact (hc.stk rfl (by decide)).2.sub_left (by rw [scR_eq]; exact sub_sub hfit (Nat.zero_le _) (by omega) (by omega))
 
-theorem bTable_ok {x : BitVec 32} {s : State} (hc : Ctx x s) :
-    WP isa bTable s fun t => ScalarKeep s t ∧ Frame [sub x 64 864, sub x 3072 1920] s.mem t.mem ∧
+theorem bTable_ok {x T : BitVec 32} {s : State} (hc : Ctx x s) (hT : BTblAt s x T) (hsym : s.syms bSym = T)
+    (hstk : (⟨T.setWidth 64, 1920⟩ : Region).Disjoint (callStk s)) :
+    WP isa bTable s fun t => ScalarKeep s t ∧ Frame [sub x 3072 1920, callStk s] s.mem t.mem ∧
       (∀ i < 15, Rep (tablePoint t.mem x (3072 + 128 * i)) ((i + 1) • (-baseAff))) ∧
-      env t.mem x 16 = env s.mem x 16 := by
-  refine WP.mono (bEntries_ok (List.range 15) (fun i hi => List.mem_range.mp hi) List.nodup_range hc)
-    fun t ⟨kt, ft, et, _, dt⟩ => ⟨kt, ft, fun i hi => ?_, dt⟩
-  rw [et i (List.mem_range.mpr hi)]; exact negBase_rep i hi
+      env t.mem x 16 = env s.mem x 16 ∧ t.syms = s.syms := by
+  have hfit := hc.fit
+  have hsp := (hc.stk rfl (by decide)).1
+  have hTf := hT.fit
+  -- The static, apart from what the copy writes.
+  have hTd : ∀ r ∈ [sub x 3072 1920, callStk s], (⟨T.setWidth 64, 1920⟩ : Region).Disjoint r := by
+    intro r hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact hT.sc.sub_right (by rw [scR_eq]; exact sub_sub hfit (Nat.zero_le _) (by omega) (by omega))
+    · exact hstk
+  -- After `n` dwords.
+  let LI : Nat → State → Prop := fun n t => ScalarKeep s t ∧ t.syms = s.syms ∧
+    t.gpr .esi = T + BitVec.ofNat 32 (4 * n) ∧ t.gpr .edx = x + BitVec.ofNat 32 (3072 + 4 * n) ∧
+    t.gpr .ecx = BitVec.ofNat 32 (480 - n) ∧ Frame [sub x 3072 1920, callStk s] s.mem t.mem ∧
+    ∀ k < n, wd t.mem x (3072 + 4 * k) = bDword k
+  unfold bTable
+  refine WP.seq (WP.mono (symFrame_ok bSym s (by omega)) fun s₁ h₁ => ?_)
+  refine WP.seq (Wp.wp_mov fun u₁ v₁ => Wp.wp_mov fun u₂ v₂ => Wp.wp_addi fun u₃ v₃ =>
+    Wp.wp_movi fun u₄ v₄ => WP.block_nil ?_)
+  have k₄ : ScalarKeep s u₄ :=
+    ⟨by rw [v₄.other _ (by decide), v₃.other _ (by decide), v₂.other _ (by decide), v₁.other _ (by decide),
+        h₁.gpr _ (by decide)],
+      by rw [v₄.other _ (by decide), v₃.other _ (by decide), v₂.other _ (by decide), v₁.other _ (by decide),
+        h₁.gpr _ (by decide)],
+      by rw [v₄.rd, v₃.rd, v₂.rd, v₁.rd, h₁.rd], by rw [v₄.wr, v₃.wr, v₂.wr, v₁.wr, h₁.wr]⟩
+  have i₀ : LI 0 u₄ := by
+    refine ⟨k₄, by rw [v₄.syms, v₃.syms, v₂.syms, v₁.syms, h₁.syms], ?_, ?_, by rw [v₄.gpr]; rfl, ?_,
+      fun _ h => absurd h (Nat.not_lt_zero _)⟩
+    · rw [v₄.other _ (by decide), v₃.other _ (by decide), v₂.other _ (by decide), v₁.gpr, h₁.addr, hsym]
+      exact (BitVec.add_zero _).symm
+    · rw [v₄.other _ (by decide), v₃.gpr, v₂.gpr, v₁.other _ (by decide), h₁.gpr _ (by decide), hc.edi]
+      rfl
+    · rw [v₄.mem, v₃.mem, v₂.mem, v₁.mem]
+      exact h₁.frame.sub fun r hr => ⟨callStk s, by simp, by
+        rw [List.mem_singleton.mp hr]; exact below_sub (by decide) hsp⟩
+  refine WP.mono (WP.loop (M := isa) (Q := LI 480) (fun m t => ∃ n, m = 480 - n ∧ n < 480 ∧ LI n t) ?_ 480 u₄
+    ⟨0, rfl, by decide, i₀⟩) fun t ⟨kt, st, _, _, _, ft, bt⟩ => ⟨kt, ft, fun i hi => ?_, ?_, st⟩
+  · rintro m t ⟨n, rfl, hn, kt, st, si, di, ci, ft, bt⟩
+    have ct : Ctx x t := hc.keep kt.edi kt.wr kt.esp
+    have Tt : BTblAt t x T := hT.of_frame ft hTd (by rw [kt.rd, kt.wr])
+    refine Wp.wp_ldm (B := T + BitVec.ofNat 32 (4 * n)) (o := 0) si
+      (by rw [show addr (T + BitVec.ofNat 32 (4 * n)) 0 = addr T (4 * n) by
+            rw [addr_zero]; rfl]
+          exact Tt.inR hn) fun u₁ w₁ => ?_
+    refine Wp.wp_stm (B := x + BitVec.ofNat 32 (3072 + 4 * n)) (o := 0) (by rw [w₁.other _ (by decide), di])
+      (by rw [show addr (x + BitVec.ofNat 32 (3072 + 4 * n)) 0 = addr x (3072 + 4 * n) by
+            rw [addr_zero]; rfl]
+          rw [w₁.wr]; exact ct.inW (by omega) (by decide)) fun u₂ w₂ => ?_
+    refine Wp.wp_addi fun u₃ w₃ => Wp.wp_addi fun u₄ w₄ => Wp.wp_subi fun u₅ w₅ _ z₅ => WP.block_nil ?_
+    have ea : addr (x + BitVec.ofNat 32 (3072 + 4 * n)) 0 = addr x (3072 + 4 * n) := by
+      rw [addr_zero]; rfl
+    have ev : u₁.gpr .eax = bDword n := by
+      rw [w₁.gpr, show addr (T + BitVec.ofNat 32 (4 * n)) 0 = addr T (4 * n) by
+        rw [addr_zero]; rfl]
+      exact Tt.val n hn
+    have m₅ : u₅.mem = t.mem.writeW (addr x (3072 + 4 * n)) (bDword n) := by
+      rw [w₅.mem, w₄.mem, w₃.mem, w₂.mem, ea, ev, w₁.mem]
+    have next : LI (n + 1) u₅ := by
+      refine ⟨kt.trans ⟨?_, ?_, ?_, ?_⟩, ?_, ?_, ?_, ?_, ?_, fun k hk => ?_⟩
+      · rw [w₅.other _ (by decide), w₄.other _ (by decide), w₃.other _ (by decide), w₂.gpr, w₁.other _ (by decide)]
+      · rw [w₅.other _ (by decide), w₄.other _ (by decide), w₃.other _ (by decide), w₂.gpr, w₁.other _ (by decide)]
+      · rw [w₅.rd, w₄.rd, w₃.rd, w₂.rd, w₁.rd]
+      · rw [w₅.wr, w₄.wr, w₃.wr, w₂.wr, w₁.wr]
+      · rw [w₅.syms, w₄.syms, w₃.syms, w₂.syms, w₁.syms, st]
+      · rw [w₅.other _ (by decide), w₄.other _ (by decide), w₃.gpr, w₂.gpr, w₁.other _ (by decide), si,
+          show (4 : BitVec 32) = BitVec.ofNat 32 4 from rfl, BitVec.add_assoc, BitVec.ofNat_add_ofNat,
+          show 4 * n + 4 = 4 * (n + 1) by omega]
+      · rw [w₅.other _ (by decide), w₄.gpr, w₃.other _ (by decide), w₂.gpr, w₁.other _ (by decide), di,
+          show (4 : BitVec 32) = BitVec.ofNat 32 4 from rfl, BitVec.add_assoc, BitVec.ofNat_add_ofNat,
+          show 3072 + 4 * n + 4 = 3072 + 4 * (n + 1) by omega]
+      · rw [w₅.gpr, w₄.other _ (by decide), w₃.other _ (by decide), w₂.gpr, w₁.other _ (by decide), ci,
+          Wp.ofNat_pred (by omega)]
+        congr 1
+      · rw [m₅]
+        exact ft.writeW (List.mem_cons_self) _ (sub_contains (by omega) (by omega) (by omega) (by decide))
+      · rw [m₅]
+        by_cases e : k = n
+        · subst e; exact wd_write_self _ _ _ _
+        · rw [wd_write_ne _ _ (by omega) (by omega) (by omega)]
+          exact bt k (by omega)
+    have z : u₅.zf = some (decide (480 - (n + 1) = 0)) := by
+      rw [z₅, w₄.other _ (by decide), w₃.other _ (by decide), w₂.gpr, w₁.other _ (by decide), ci,
+        Wp.ofNat_pred (by omega), Wp.ofNat_beq_zero (by omega)]
+      rfl
+    by_cases done : n + 1 = 480
+    · refine .inl ⟨?_, done ▸ next⟩
+      simp only [eval, z, show 480 - (n + 1) = 0 by omega, decide_true, Option.map_some, Bool.not_true]
+    · refine .inr ⟨?_, 480 - (n + 1), by omega, n + 1, rfl, by omega, next⟩
+      simp only [eval, z, show 480 - (n + 1) ≠ 0 by omega, decide_false, Option.map_some, Bool.not_false]
+  · rw [tablePoint_of_dwords fun k hk => bt _ (by omega)]
+    exact negBase_rep i hi
+  · show F t.mem x (offset 16) = F s.mem x (offset 16)
+    refine congrArg VG.Proof.X25519.toFe (num_congr fun k hk => ?_)
+    show (wd t.mem x (offset 16 + 4 * k)).toNat = (wd s.mem x (offset 16 + 4 * k)).toNat
+    rw [wd_frameT hc ft (by simp only [offset]; omega)]
 
 end VG.Proof.Ed25519.X86

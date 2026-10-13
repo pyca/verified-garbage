@@ -354,6 +354,10 @@ theorem VerifyCTFacts.args {s t : State} (h : VerifyCTFacts s t) (i : Nat) (hi :
   rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3) with rfl | rfl | rfl | rfl
   exacts [h.pub.2.1, h.pub.2.2.1, h.pub.2.2.2.1, h.pub.2.2.2.2.1]
 
+/-- The address of the static of `-[1]B … -[15]B`, public. -/
+theorem VerifyCTFacts.sym {s t : State} (h : VerifyCTFacts s t) : s.syms bSym = t.syms bSym :=
+  h.pub.2.2.2.2.2.2.2.2
+
 /-- A region of no bytes is apart from every region. -/
 theorem empty_disjoint {b : Addr} (r : Region) : (⟨b, 0⟩ : Region).Disjoint r := fun _ h => by
   simp only [Region.Contains] at h; omega
@@ -363,7 +367,7 @@ writable regions, as the code that calls a function of the workspace needs them.
 theorem verify_pointCTCtx {s₀ s : State} (hp : verifyLocal.pre s₀) (hs : Saved s₀ (arg s₀ 3) s) :
     PointCTCtx (arg s₀ 3) s := by
   have ps := verify_pre hp
-  obtain ⟨_, wr, _, _, _, _, _, _, _, _, scf, _, _, ks, _, _, _⟩ := hp
+  obtain ⟨_, wr, _, _, _, _, _, _, _, _, scf, _, _, ks, _, _, _, _⟩ := hp
   have hw : s.wr = [sub (arg s₀ 3) 0 0, scR 8192 (arg s₀ 3)] := hs.wr.trans wr
   refine ⟨hs.ctx ps.scratch.fit ps.scratch.wr ps.scratch.stk, ?_, ?_, ?_, ?_, ?_⟩
   · rw [hw]; exact .cons (Nat.zero_le _) (.cons (Nat.le_refl _) .nil)

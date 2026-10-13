@@ -441,9 +441,11 @@ theorem skipZero_ct {s₀ t₀ : State} (h : VerifyCTFacts s₀ t₀) {Aa : EPoi
 
 /-! ## The whole multiplication -/
 
-/-- Before the equation's points: the saved state, `A` at byte 7680 and `R` at byte 7808. -/
+/-- Before the windows: the saved state, `A` at byte 7680, `R` at byte 7808, and the table of
+`-[1]B … -[15]B` at byte 3072. -/
 def EquationCTPre (s₀ : State) (a r : Spec.Ed25519.Point) (s : State) : Prop :=
-  Saved s₀ (arg s₀ 3) s ∧ tablePoint s.mem (arg s₀ 3) 7680 = a ∧ tablePoint s.mem (arg s₀ 3) 7808 = r
+  Saved s₀ (arg s₀ 3) s ∧ tablePoint s.mem (arg s₀ 3) 7680 = a ∧ tablePoint s.mem (arg s₀ 3) 7808 = r ∧
+    ∀ j < 15, Rep (tablePoint s.mem (arg s₀ 3) (3072 + 128 * j)) ((j + 1) • (-baseAff))
 
 theorem windowMultiply_ct {s₀ t₀ : State} (h : VerifyCTFacts s₀ t₀) {a r : Spec.Ed25519.Point}
     {Aa : EPoint dZ} (hA : Rep a Aa) :
@@ -456,7 +458,7 @@ theorem windowMultiply_ct {s₀ t₀ : State} (h : VerifyCTFacts s₀ t₀) {a r
     VG.RelCT.taint (A := taint) callTaint₀ (fun _ _ hh => callTaint₀_agree (h.callPre hh.1.1 hh.2.1)) hc
   have pw (u x : State) (hu : VerifyPre u) (hx : EquationCTPre u a r x) :
       WP isa windowPrep x (SkipAt u Aa r 32) :=
-    WP.mono (windowPrep_ok hu hx.1 hA hx.2.1 hx.2.2) fun _ ⟨w, e, rp⟩ =>
+    WP.mono (windowPrep_ok hu hx.1 hA hx.2.1 hx.2.2.1 hx.2.2.2) fun _ ⟨w, e, rp⟩ =>
       ⟨w, by decide, by decide, e, Nat.div_eq_of_lt (decodeLE_lt64 _ _), rp⟩
   rw [windowMultiply]
   refine seq_runs prep (fun x hx => pw s₀ x (verify_pre h.left) hx)
