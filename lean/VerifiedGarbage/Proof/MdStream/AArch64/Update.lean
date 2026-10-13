@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.MdStream.AArch64.Common
-import VerifiedGarbage.Proof.Framework.Omega
+module
+
+public import VerifiedGarbage.Proof.MdStream.AArch64.Common
+public import VerifiedGarbage.Proof.Framework.Omega
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Streaming Merkle–Damgård hash functions on AArch64: `update`
@@ -10,6 +16,8 @@ proof (`VG.Proof.MdStream.X86_64.Update`); the loop runs while data is left,
 so every iteration consumes at least one byte. Constant time is proven for
 each hash function's code by the taint analysis, calls included.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MdStream.AArch64.Update
 

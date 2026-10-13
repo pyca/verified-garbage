@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Samp
-import VerifiedGarbage.Proof.MlDsa.KeyGen.Rest
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Samp
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Samp
+public import VerifiedGarbage.Proof.MlDsa.KeyGen.Rest
+meta import VerifiedGarbage.Proof.MlDsa.KeyGen.Rest
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA key generation on AArch64: after the samplers
@@ -11,6 +19,8 @@ them, whatever they are (`KR`): after the copies of `ρ` and `K`
 first `nj` of `s₁` in the NTT domain, and the first `nr` rows of `t` packed to
 `pk` and `sk`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.KeyGen
 

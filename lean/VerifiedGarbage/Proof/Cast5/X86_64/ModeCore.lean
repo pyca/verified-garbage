@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.Cast5.X86_64.Ecb
-import VerifiedGarbage.Proof.Cast5.ModeCipher
-import VerifiedGarbage.Proof.Modes.X86_64.Core
-import VerifiedGarbage.Proof.Modes.X86_64.Words
-import VerifiedGarbage.Impl.Cast5.X86_64.Modes
+module
+
+public import VerifiedGarbage.Proof.Cast5.X86_64.Ecb
+public import VerifiedGarbage.Proof.Cast5.ModeCipher
+public import VerifiedGarbage.Proof.Modes.X86_64.Core
+public import VerifiedGarbage.Proof.Modes.X86_64.Words
+public import VerifiedGarbage.Impl.Cast5.X86_64.Modes
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # CAST5's core for the modes on x86-64
@@ -17,6 +23,8 @@ the number of rounds, and the table of S-boxes is where the static
 (`TabAt`). `crypt` is ECB's block code (`encryptBlock_ok`,
 `decryptBlock_ok`) on the buffer, between its own setup and finish.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Cast5.X86_64.Mode
 

@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Sm4.AArch64.Ecb
-import VerifiedGarbage.Proof.Sm4.Planes
+module
+
+public import VerifiedGarbage.Proof.Sm4.AArch64.Ecb
+public import VerifiedGarbage.Proof.Sm4.Planes
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The start of the SM4 key schedule on AArch64
@@ -9,6 +15,8 @@ As on x86-64: the planes of `CK` stored as constants (through
 buffer (`loadHalf_ok`), whose words, bitsliced, are the key schedule's
 initial state `keyInit`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sm4.AArch64
 

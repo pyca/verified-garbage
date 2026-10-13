@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.RestPack
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.RestPack
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA key generation on AArch64: the rows of `t`
@@ -8,6 +14,8 @@ Row `i` of `t`: the sum of the products `Â[i, j] ŝ₁[j]` in `t` (`mul_ok`,
 `Power2Round` (`p2r_ok`) and `t₁[i]` packed to `pk` and `t₀[i]` to `sk`
 (`sbp_ok`, `bp_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.KeyGen
 

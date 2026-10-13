@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Blowfish.AArch64.EcbMain
-import VerifiedGarbage.Proof.Blowfish.Table
-import VerifiedGarbage.Proof.Blowfish.KeyTable
+module
+
+public import VerifiedGarbage.Proof.Blowfish.AArch64.EcbMain
+public import VerifiedGarbage.Proof.Blowfish.Table
+public import VerifiedGarbage.Proof.Blowfish.KeyTable
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Key expansion: the initial S-boxes and the keyed P-array
@@ -9,6 +15,8 @@ import VerifiedGarbage.Proof.Blowfish.KeyTable
 `x12`, 64 at a time. `keyP_run`: the 18 P-array entries, the table's XORed
 with the key's words, cycling through the key bytes.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Blowfish.AArch64
 

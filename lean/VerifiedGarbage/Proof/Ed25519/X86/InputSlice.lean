@@ -1,5 +1,13 @@
-import VerifiedGarbage.Impl.Ed25519.X86.InputSlice
-import VerifiedGarbage.Proof.Ed25519.X86.InputBits
+module
+
+public import VerifiedGarbage.Impl.Ed25519.X86.InputSlice
+public import VerifiedGarbage.Proof.Ed25519.X86.InputBits
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.Ed25519.X86
 open VG VG.X86 VG.Impl.X25519.X86 VG.Impl.Ed25519.X86
@@ -79,27 +87,5 @@ theorem inputSliceWords_ok {s₀ s : State} {scidx argc i skip n dst : Nat}
     rcases hr with rfl | rfl
     · exact hi.sep
     · exact hi.stk) (by decide)
-
-theorem inputSliceBits_ok {s₀ s : State} {scidx argc i skip bytes : Nat}
-    (hp : ScratchPre s₀ scidx argc) (hi : SlicePre s₀ scidx (arg s₀ i + BitVec.ofNat 32 skip) bytes)
-    (hs : Saved s₀ (arg s₀ scidx) s) (hia : i < argc) (hn : bytes ≤ 64) :
-    WP isa (.block (inputSliceBits i skip bytes)) s fun t => Saved s₀ (arg s₀ scidx) t ∧
-      (∀ k < 8 * bytes, t.mem (addr (arg s₀ scidx) (7168 + k)) = BitVec.ofNat 8
-        (Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s₀.mem
-          ((arg s₀ i + BitVec.ofNat 32 skip).setWidth 64) bytes) / 2 ^ k % 2)) ∧
-      Frame [sub (arg s₀ scidx) 7168 (8 * bytes)] s.mem t.mem := by
-  refine WP.block_append (WP.mono (loadSlicePointer_ok hp hs hia) fun u ⟨hu, eu, mu⟩ => ?_)
-  have cu := hu.ctx hp.fit hp.wr hp.stk
-  have hr : ∀ k < bytes, InRegions (u.rd ++ u.wr) (addr (arg s₀ i + BitVec.ofNat 32 skip) k) 1 := by
-    intro k hk; rw [hu.rd, hu.wr]
-    exact slice_read hi (by omega_using [hk]) (by decide)
-  have hsep : ∀ k < bytes, (sub (arg s₀ i + BitVec.ofNat 32 skip) k 1).Disjoint (sub (arg s₀ scidx) 7168 (8 * bytes)) := by
-    intro k hk
-    refine (hi.sep.sub_left (slice_sub hi (by omega_using [hk]) (by decide))).sub_right ?_
-    rw [scR_eq]; exact sub_sub hp.fit (by decide) (by omega_using [hn]) (by decide)
-  refine WP.mono (expandScalarBits_ok cu eu hn hi.fit hr hsep) fun t ⟨kt, ft, bt⟩ => ?_
-  refine ⟨hu.of_offset hp.fit (Keep.scalar kt) ft (by decide) (by omega_using [hn]) (by decide), ?_, by rw [← mu]; exact ft⟩
-  intro k hk
-  rw [bt k hk, sliceBytes_same hi hu]
 
 end VG.Proof.Ed25519.X86

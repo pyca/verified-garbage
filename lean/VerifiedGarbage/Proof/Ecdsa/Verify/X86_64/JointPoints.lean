@@ -1,9 +1,18 @@
-import VerifiedGarbage.Impl.Ecdsa.Verify.X86_64.Joint
-import VerifiedGarbage.Proof.Weierstrass.X86_64.JointMul
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointGenerator
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointFrame
+module
+
+public import VerifiedGarbage.Impl.Ecdsa.Verify.X86_64.Joint
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointMul
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointGenerator
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointFrame
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! The joint multiplication consumes the verifier's actual scalars and preserves its final inputs. -/
+
+@[expose] public section
+
 namespace VG.Proof.Ecdsa.Verify.X86_64
 open VG VG.X86_64 VG.Impl.Mont VG.Impl.Weierstrass VG.Impl.Weierstrass.X86_64 VG.Impl.Ecdsa.X86_64
 open VG.Proof.Mont VG.Proof.Mont.X86_64 VG.Proof.Weierstrass VG.Proof.Weierstrass.X86_64

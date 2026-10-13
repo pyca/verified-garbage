@@ -1,11 +1,17 @@
-import VerifiedGarbage.Impl.AesGcm.AArch64
-import VerifiedGarbage.Proof.Aes.AArch64.Variant
-import VerifiedGarbage.Proof.Aes.AArch64.ExpandKey
-import VerifiedGarbage.Proof.Aes.AArch64.Aese.ExpandKey
-import VerifiedGarbage.Proof.Gcm.AArch64.Ghash
-import VerifiedGarbage.Proof.Framework.AArch64.RelCT
-import VerifiedGarbage.Proof.Cmac.Frame
-import VerifiedGarbage.Proof.Gcm.Stream
+module
+
+public import VerifiedGarbage.Impl.AesGcm.AArch64
+public import VerifiedGarbage.Proof.Aes.AArch64.Variant
+public import VerifiedGarbage.Proof.Aes.AArch64.ExpandKey
+public import VerifiedGarbage.Proof.Aes.AArch64.Aese.ExpandKey
+public import VerifiedGarbage.Proof.Gcm.AArch64.Ghash
+public import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+public import VerifiedGarbage.Proof.Cmac.Frame
+public import VerifiedGarbage.Proof.Gcm.Stream
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on AArch64: the functions called
@@ -18,6 +24,8 @@ the regions it is given: what it needs (`GhCall`, `CtrCall`, `KeyCall`) and
 what it leaves (`GhPost`, `CtrPost`, `KeyPost`); and that it is constant time
 (`gh_rel`, `ctr_rel`, `key_rel`). A call (`bl`) stores nothing in memory.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesGcm.AArch64
 

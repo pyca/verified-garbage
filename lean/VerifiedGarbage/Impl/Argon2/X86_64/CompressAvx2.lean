@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Argon2.X86_64.Compress
+module
+
+public import VerifiedGarbage.Impl.Argon2.X86_64.Compress
 
 /-!
 # Argon2 compression G on x86-64 with AVX2
@@ -33,6 +35,8 @@ block P permutes; `[2048, 2056)` holds the caller's MXCSR and `0x1FBF`.
 
 Every address is a pointer plus a constant, and there are no branches.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Argon2.X86_64.Avx2
 

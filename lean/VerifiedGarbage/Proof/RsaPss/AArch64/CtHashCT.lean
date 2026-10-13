@@ -1,7 +1,17 @@
-import VerifiedGarbage.Proof.RsaPss.AArch64.CtHash
-import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Two
-import VerifiedGarbage.Proof.Framework.AArch64.TaintEraseOff
-import VerifiedGarbage.Proof.RsaPss.AArch64.Checks
+module
+
+public import VerifiedGarbage.Proof.RsaPss.AArch64.CtHash
+meta import VerifiedGarbage.Proof.RsaPss.AArch64.CtHash
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Two
+meta import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Two
+public import VerifiedGarbage.Proof.Framework.AArch64.TaintEraseOff
+meta import VerifiedGarbage.Proof.Framework.AArch64.TaintEraseOff
+public import VerifiedGarbage.Proof.RsaPss.AArch64.Checks
+meta import VerifiedGarbage.Proof.RsaPss.AArch64.Checks
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSASSA-PSS on AArch64: `ctHashWith` is constant time
@@ -17,6 +27,8 @@ the calls are constant time by their callees' contracts; the loads of the
 number of blocks are public by correctness, and the loops go the same way in
 both runs.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPss.AArch64
 

@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejBounded
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejNttCT
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejBounded
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejBounded
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejNttCT
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejNttCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on x86-64: `vg_mldsa_rej_bounded_poly`, constant time but for which half-bytes it accepts
@@ -15,6 +23,8 @@ branch goes the same way, and each store goes to the same address. The
 coefficients themselves are computed and stored by code that the taint
 analysis proves leaks nothing of them (`tryTrace`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86_64.Sample
 

@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.Bignum.Math
+module
+
+public import VerifiedGarbage.Proof.Bignum.Math
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! The last multiplication of a public exponentiation also leaves Montgomery form. -/
+
+@[expose] public section
+
 namespace VG.Proof.Bignum
 
 /-- Fold an arbitrary ordinary factor into the conversion out of Montgomery form. -/

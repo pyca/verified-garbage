@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.ExpandMask
-import VerifiedGarbage.Proof.Sha3.X86_64.X4.Bytes
-import VerifiedGarbage.Impl.MlDsa.X86_64.Sample.ExpandMask4
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.ExpandMask
+public import VerifiedGarbage.Proof.Sha3.X86_64.X4.Bytes
+public import VerifiedGarbage.Impl.MlDsa.X86_64.Sample.ExpandMask4
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on x86-64: `vg_mldsa_expand_mask_poly4`, the layout
@@ -10,6 +16,8 @@ written against (`em4K`), what holds between the pieces of the functions
 (`Env`, relative to the entry state `σ`), and the prologue, as for
 `vg_mlkem_sample_ntt4` (`Proof/MlKem/X86_64/S4Base.lean`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86_64.Mask4
 

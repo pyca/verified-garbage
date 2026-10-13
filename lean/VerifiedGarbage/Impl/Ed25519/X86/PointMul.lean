@@ -1,6 +1,11 @@
-import VerifiedGarbage.Impl.Ed25519.X86.PointBatch
+module
+
+public import VerifiedGarbage.Impl.Ed25519.X86.PointBatch
 
 /-! Descending batches, with the public remaining count at workspace byte28. -/
+
+@[expose] public section
+
 namespace VG.Impl.Ed25519.X86
 open VG.X86
 open VG.Impl.X25519.X86 (sc)

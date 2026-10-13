@@ -1,4 +1,6 @@
-import VerifiedGarbage.Proof.Framework.Taint
+module
+
+public import VerifiedGarbage.Proof.Framework.Taint
 
 /-!
 # Summaries of called functions, for the constant-time analysis
@@ -24,6 +26,8 @@ kernel checks by definitional unfolding (`Eq.refl`), says that it was the
 right code. `taint_decide_sum` and `taint_summary` compute the hints (in
 compiled code, which need not be sound) and prove both.
 -/
+
+@[expose] public section
 
 namespace VG
 

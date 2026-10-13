@@ -1,7 +1,17 @@
-import VerifiedGarbage.Proof.Cast5.Arm.ModeCore
-import VerifiedGarbage.Proof.Modes.Arm.Cbc
-import VerifiedGarbage.Proof.Modes.Arm.OfbCfb
-import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
+module
+
+public import VerifiedGarbage.Proof.Cast5.Arm.ModeCore
+meta import VerifiedGarbage.Proof.Cast5.Arm.ModeCore
+public import VerifiedGarbage.Proof.Modes.Arm.Cbc
+meta import VerifiedGarbage.Proof.Modes.Arm.Cbc
+public import VerifiedGarbage.Proof.Modes.Arm.OfbCfb
+meta import VerifiedGarbage.Proof.Modes.Arm.OfbCfb
+public import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
+meta import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # CAST5-CBC, CAST5-OFB and CAST5-CFB64 on ARMv7 meet their contracts
@@ -15,6 +25,8 @@ no stack of their own, so the modes need only the 8 bytes their push of that
 working space takes. The `_framed` theorems keep the buffer on the stack,
 zeroed on return: 328 bytes more.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Cast5.Arm
 

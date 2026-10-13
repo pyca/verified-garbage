@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Lay
-import VerifiedGarbage.Proof.MlKem.Arm.Keccak
-import VerifiedGarbage.Proof.MlKem.Arm.Common
-import VerifiedGarbage.Proof.Framework.Contract
+module
+
+public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Lay
+public import VerifiedGarbage.Proof.MlKem.Arm.Keccak
+public import VerifiedGarbage.Proof.MlKem.Arm.Common
+public import VerifiedGarbage.Proof.Framework.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA signing on ARMv7: calls of verified code
@@ -21,6 +27,8 @@ of it leak the same when the callee's public data agree (`callR_tr`,
 `callS_tr`), and a callee whose result is public in its own runs (`RetPub`)
 returns the same in both (`callRRet_tr`, `callSRet_tr`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Arm.Sign
 

@@ -1,12 +1,14 @@
-import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.Weierstrass.Law
-import VerifiedGarbage.Proof.Weierstrass.X86_64.InvInterface
-import VerifiedGarbage.Proof.P256.Comb7
-import VerifiedGarbage.Impl.EcKey.P256.X86_64
-import VerifiedGarbage.Proof.EcKey.X86_64.Verified
-import VerifiedGarbage.Proof.EcKey.X86_64.Lit
-import VerifiedGarbage.Proof.EcKey.X86_64.VerifiedAdx
-import VerifiedGarbage.Proof.EcKey.X86_64.LitAdx
+module
+
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.Weierstrass.Law
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvInterface
+public import VerifiedGarbage.Proof.P256.Comb7
+public import VerifiedGarbage.Impl.EcKey.P256.X86_64
+public import VerifiedGarbage.Proof.EcKey.X86_64.Verified
+public import VerifiedGarbage.Proof.EcKey.X86_64.Lit
+public import VerifiedGarbage.Proof.EcKey.X86_64.VerifiedAdx
+public import VerifiedGarbage.Proof.EcKey.X86_64.LitAdx
 
 /-!
 # P-256 public keys (FIPS 186-5 §A.2) on x86-64
@@ -16,6 +18,8 @@ inversions and prime order `h`, the variant `Variants/P256/X86_64/Law.lean`, for
 multiplication: the baseline's, and BMI2's and ADX's, with the comb's
 selection by AVX2 (`_adx`).
 -/
+
+@[expose] public section
 
 namespace VG.Generic.P256.X86_64.EcP256
 
@@ -32,7 +36,8 @@ def publicKey (adx : Bool) (code : Prog X86_64.isa)
     doc := Spec.EcKey.P256.publicKeyApi.doc (notes := ["The function is `vg_ecdsa_p256_sign" ++ (if adx then "_adx" else "") ++ "`'s \
       code up to the inversion of `Z`, with `d` as both the key and the secret number: it saves \
       its caller's callee-saved registers in `scratch`; field elements are four 64-bit words in \
-      Montgomery form, " ++ Proof.Ecdsa.X86_64.mulNote adx ++ "; `[d]G` is the signature's comb over the 7-bit windows of `d`, from \
+      Montgomery form, " ++ Proof.Ecdsa.X86_64.mulNote adx ++ "; `[d]G` is the signature's " ++
+      (if adx then "call of `vg_p256_mul_base_adx`, a " else "") ++ "comb over the 7-bit windows of `d`, from \
       the static `VG_P256_COMB`; and `Z⁻¹` is by the signature's divsteps. The result (or zeros) is selected by a mask of `d ∈ [1, n-1]` and `Z ≠ 0`, \
       so the time depends only on the pointers."])
     consts := Impl.Ecdsa.X86_64.p256.combConsts

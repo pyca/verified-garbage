@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Weierstrass.X86_64.Fprog
-import VerifiedGarbage.Proof.Framework.X86_64.CallInline
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.Fprog
+public import VerifiedGarbage.Proof.Framework.X86_64.CallInline
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Short Weierstrass curves on x86-64: code as a sequence of blocks
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.Framework.X86_64.CallInline
 per field operation) runs as `fprog` for a modulus whose products are not
 calls (`fprogB_wp`), and `fprog_ok` holds for it.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.X86_64
 
@@ -37,8 +45,9 @@ theorem bits_inline (src dst nbytes : Nat) : (bits src dst nbytes).inline = bits
 /-- Products of other than six or nine words are never calls. -/
 theorem callOf_of_ne {M : Mod} (h : M.n ≠ 9) (h6 : M.n ≠ 6) : Mont.callOf M = none := by
   unfold Mont.callOf
-  rw [ite_eq_right_iff.mpr fun h' => absurd h'.1 h, ite_eq_right_iff.mpr fun h' => absurd h'.1 h6]
-  exact ite_eq_right_iff.mpr fun h' => absurd h'.1 h
+  rw [ite_eq_right_iff.mpr fun h' => absurd h'.1 h, ite_eq_right_iff.mpr fun h' => absurd h'.1 h6,
+    ite_eq_right_iff.mpr fun h' => absurd h'.1 h]
+  exact ite_eq_right_iff.mpr fun h' => absurd h'.1 h6
 
 theorem opProg_of_none {M : Mod} (h : Mont.callOf M = none) (op : FOp) : opProg M op = .block (opCode M op) := by
   cases op <;> simp [opProg, opCall?, h]

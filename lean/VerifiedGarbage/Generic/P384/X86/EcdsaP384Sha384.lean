@@ -1,6 +1,8 @@
-import VerifiedGarbage.TCB.X86.Target
-import VerifiedGarbage.Proof.Weierstrass.Law
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.P384Sha384
+module
+
+public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Proof.Weierstrass.Law
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.P384Sha384
 
 /-!
 # Deterministic ECDSA (RFC 6979) over P-384 with HMAC-SHA-384 on x86 (32-bit)
@@ -14,6 +16,8 @@ HMAC's functions).
 A generic file (see `TCB/Emit.lean`) over P-384's group law `h`, the variant
 `Variants/P384/X86/Law.lean`.
 -/
+
+@[expose] public section
 
 namespace VG.Generic.P384.X86.EcdsaP384Sha384
 

@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.MlKem.X86_64.VMxcsr
-import VerifiedGarbage.Proof.Framework.X86_64.Taint
-import VerifiedGarbage.Proof.Framework.Contract
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86_64.VMxcsr
+meta import VerifiedGarbage.Proof.MlKem.X86_64.VMxcsr
+public import VerifiedGarbage.Proof.Framework.X86_64.Taint
+meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86-64: `vg_mlkem_ntt`
@@ -10,6 +19,8 @@ import VerifiedGarbage.Proof.Framework.Contract
 `scratch` (`vpro_ok`), each layer is `nttLayer` (`vlay_ok`, `vlay4_ok`,
 `vlay2_ok`), and the seven layers are `NTT` (`ntt_eq_layers`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.X86_64
 

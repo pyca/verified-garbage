@@ -174,10 +174,11 @@ CPU_FEATURES = {
 # job runs at most, or None for one job per configuration. A pass took about
 # 1 s per benchmark id (Criterion's analysis included) with a 0.2 s warm-up
 # and 0.5 s of measurement; with one round of 0.1 s and 0.3 s
-# (bench_compare.py), they should fit in one job on every runner, and each
-# shard would add a job per configuration (with its own builds), so none is
-# split for now.
-BENCHMARKS_PER_JOB = None
+# (bench_compare.py), every benchmark took 21-28 minutes on the x86-64
+# runners, and some passed the 30-minute timeout once P-521's groups also
+# ran from fresh copies (bench_compare.py's FRESH_COPIES), so a run of all
+# of them is split in two. A targeted run, of fewer, stays one job.
+BENCHMARKS_PER_JOB = 60
 
 # Changes to this script choose benchmarks but are not measured by any:
 # `ci/test_check_benchmarks.py` tests it.

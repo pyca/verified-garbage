@@ -1,7 +1,16 @@
-import VerifiedGarbage.Impl.Weierstrass.X86_64.CachedJac
-import VerifiedGarbage.Proof.Weierstrass.X86_64.JacAdd
+module
+
+public import VerifiedGarbage.Impl.Weierstrass.X86_64.CachedJac
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.JacAdd
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! The cached header and tail compute the same Jacobian addition formula. -/
+
+@[expose] public section
+
 namespace VG.Proof.Weierstrass.X86_64.CachedJac
 open VG VG.Impl.Weierstrass VG.Impl.Weierstrass.X86_64
 

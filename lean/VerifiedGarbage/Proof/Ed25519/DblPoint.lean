@@ -1,4 +1,10 @@
-import VerifiedGarbage.Spec.Ed25519
+module
+
+public import VerifiedGarbage.Spec.Ed25519
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The dedicated doubling's formula
@@ -6,6 +12,8 @@ import VerifiedGarbage.Spec.Ed25519
 `dblPoint`, apart from the group law it is proven against (`Group/Double.lean`), so that
 code computing it need not import the group's algebra.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed25519
 

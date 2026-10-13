@@ -1,4 +1,6 @@
-import Lean.Elab.ElabRules
+module
+
+public meta import Lean.Elab.ElabRules
 
 /-!
 # Long lists of AArch64 instructions
@@ -16,6 +18,8 @@ of type `Instr`. The allocated code of P-256 (`Impl/P256/*AllocatedCode.lean`,
 thousands of instructions) took most of its modules' time in the term
 elaborator, an instruction at a time.
 -/
+
+public meta section
 
 namespace VG.Impl.AArch64Instrs
 open Lean Elab Term Meta

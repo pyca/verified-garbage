@@ -1,10 +1,23 @@
-import VerifiedGarbage.Proof.X448.X86_64.Pow223
-import VerifiedGarbage.Proof.X448.X86_64.Lit
-import VerifiedGarbage.Proof.Mont.Read
-import VerifiedGarbage.Proof.Framework.X86_64.Abi
-import VerifiedGarbage.Proof.Framework.X86_64.Taint
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Spec.X448.Field64
+module
+
+public import VerifiedGarbage.Proof.X448.X86_64.Pow223
+meta import VerifiedGarbage.Proof.X448.X86_64.Pow223
+public import VerifiedGarbage.Proof.X448.X86_64.Lit
+meta import VerifiedGarbage.Proof.X448.X86_64.Lit
+public import VerifiedGarbage.Proof.Mont.Read
+meta import VerifiedGarbage.Proof.Mont.Read
+public import VerifiedGarbage.Proof.Framework.X86_64.Abi
+meta import VerifiedGarbage.Proof.Framework.X86_64.Abi
+public import VerifiedGarbage.Proof.Framework.X86_64.Taint
+meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.X448.Field64
+meta import VerifiedGarbage.Spec.X448.Field64
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 on x86-64: `vg_gf448_r64_pow223`, verified
@@ -17,6 +30,8 @@ return address is apart from; the slots' values are `c222` and `c223` of slot
 Constant time by taint tracking (only `rsp` and `ws` are public), and a state
 satisfying the precondition.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448.X86_64
 
@@ -54,14 +69,15 @@ theorem pw_val (z : Spec.X448.Fe) (e : Nat) (x : Nat) (hz : z.val = x % Spec.X44
     (pw z e).val = x ^ e % Spec.X448.P := by
   rw [pw, Fin.val_ofNat, hz, ← Nat.pow_mod]
 
-theorem pow223_x64 (s : State) (hs : pow64.pre s) :
-    ∃ t s', Exec isa pow223Fn s t s' ∧ abiPreserved s s' ∧ pow64.post s s' := by
+theorem pow223With_x64 {F : Impl.X448.X86_64.Field} (hf : FieldOk F)
+    (hmx : (pow223FnWith F).allInstrs (fun i => !loadsMxcsr i) = true) (s : State) (hs : pow64.pre s) :
+    ∃ t s', Exec isa (pow223FnWith F) s t s' ∧ abiPreserved s s' ∧ pow64.post s s' := by
   obtain ⟨hrd, hwr, hret, hnw⟩ := hs
   have hscr : Scr s (s.gpr .rdi) := ⟨rfl, by rw [hwr]; simp, hnw⟩
-  suffices hwp : WP isa pow223Fn s fun s' => gprPreserved s s' ∧ pow64.post s s' by
+  suffices hwp : WP isa (pow223FnWith F) s fun s' => gprPreserved s s' ∧ pow64.post s s' by
     obtain ⟨t, s', he, hg, hp⟩ := hwp
-    exact ⟨t, s', he, abiPreserved_of_exec (by lit_decide) he hg, hp⟩
-  refine WP.mono (pow223Fn_ok hscr) fun s' ⟨hg, _, _, hm, he⟩ => ?_
+    exact ⟨t, s', he, abiPreserved_of_exec hmx he hg, hp⟩
+  refine WP.mono (pow223FnWith_ok hf hscr) fun s' ⟨hg, _, _, hm, he⟩ => ?_
   have ha := (valAt_mod s.mem (s.gpr .rdi) 12).symm
   refine ⟨⟨fun r hr => hg r (by
       simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -79,6 +95,10 @@ theorem pow223_x64 (s : State) (hs : pow64.pre s) :
     simp only [Spec.X448.Field64.wsBytes, Spec.X448.Field64.ownAt, Spec.X448.Field64.ownEnd,
       Spec.X448.Field64.slotAt] at hi hown
     exact hm _ (by rw [ofs_off' _ (by omega)]; omega)
+
+theorem pow223_x64 (s : State) (hs : pow64.pre s) :
+    ∃ t s', Exec isa pow223Fn s t s' ∧ abiPreserved s s' ∧ pow64.post s s' :=
+  pow223With_x64 baseline_ok (by lit_decide) s hs
 
 theorem pow223_ct : ConstantTime isa pow64.pre pow64.pub pow223Fn := by
   refine VG.Taint.constantTime (A := taint) (Taint.ofRegs [.rdi, .rsp]) ?_ (by taint_decide)
@@ -104,6 +124,15 @@ def powSat : State where
 theorem pow223_verified :
     Verified X86_64.target pow223Fn (Spec.X448.Field64.pow223Contract X86_64.abi) :=
   Verified.of_correct pow223_x64 pow223_ct (by
+    sig_implies [Spec.X448.Field64.pow223Contract, Spec.X448.Field64.sig, X86_64.abi, X86_64.argRegs,
+      pow64] [powSat] using powSat)
+
+/-- Shared correctness for any verified field backend and its constant-time certificate. -/
+theorem pow223With_verified {F : Impl.X448.X86_64.Field} (hf : FieldOk F)
+    (hmx : (pow223FnWith F).allInstrs (fun i => !loadsMxcsr i) = true)
+    (hct : ConstantTime isa pow64.pre pow64.pub (pow223FnWith F)) :
+    Verified X86_64.target (pow223FnWith F) (Spec.X448.Field64.pow223Contract X86_64.abi) :=
+  Verified.of_correct (pow223With_x64 hf hmx) hct (by
     sig_implies [Spec.X448.Field64.pow223Contract, Spec.X448.Field64.sig, X86_64.abi, X86_64.argRegs,
       pow64] [powSat] using powSat)
 

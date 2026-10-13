@@ -1,8 +1,16 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.FoldedLoop
-import VerifiedGarbage.Proof.Bignum.X86_64.FoldedPublic
-import VerifiedGarbage.Proof.Bignum.X86_64.PdExp
-import VerifiedGarbage.Proof.Rsa.X86_64.ExpCheck
-import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.FoldedLoop
+public import VerifiedGarbage.Proof.Bignum.X86_64.FoldedPublic
+public import VerifiedGarbage.Proof.Bignum.X86_64.PdExp
+public import VerifiedGarbage.Proof.Rsa.X86_64.ExpCheck
+public import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64.FoldedPublic
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public

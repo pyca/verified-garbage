@@ -1,5 +1,7 @@
-import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Proof.AesSiv.Arm.Frame
+module
+
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.Proof.AesSiv.Arm.Frame
 
 /-!
 # AES-SIV (RFC 5297) on ARMv7
@@ -19,6 +21,8 @@ In it they call `vg_cmac_aes_update`, `vg_cmac_aes_finalize` and
 `vg_aes_ctr32` in frames that push their two stack arguments, and the CMAC
 functions' own frames push two more: 2624 bytes of stack in all.
 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.AesSiv.Arm
 

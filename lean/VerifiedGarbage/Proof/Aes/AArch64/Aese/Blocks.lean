@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.Aes.AArch64.Aese.Ctr32
-import VerifiedGarbage.Proof.Aes.AArch64.Aese.Dec
-import VerifiedGarbage.Proof.Aes.AArch64.Blocks
+module
+
+public import VerifiedGarbage.Proof.Aes.AArch64.Aese.Ctr32
+meta import VerifiedGarbage.Proof.Aes.AArch64.Aese.Ctr32
+public import VerifiedGarbage.Proof.Aes.AArch64.Aese.Dec
+meta import VerifiedGarbage.Proof.Aes.AArch64.Aese.Dec
+public import VerifiedGarbage.Proof.Aes.AArch64.Blocks
+meta import VerifiedGarbage.Proof.Aes.AArch64.Blocks
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES on whole blocks with the Armv8 Cryptographic Extension
@@ -17,6 +26,8 @@ blocks, the first `c` data blocks transformed and the others as they were
 (`EcbInv`, as for the bitsliced functions): each group is loaded into the
 registers (`ldData_ok`), transformed, and stored back (`stData_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Aes.AArch64.Aese
 

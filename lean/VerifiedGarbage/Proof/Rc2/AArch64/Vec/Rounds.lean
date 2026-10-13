@@ -1,10 +1,18 @@
-import VerifiedGarbage.Proof.Rc2.AArch64.Vec.Mash
+module
+
+public import VerifiedGarbage.Proof.Rc2.AArch64.Vec.Mash
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The sixteen reverse rounds on eight blocks
 
 `rounds_ok`: on both sets, the reverse rounds of `Spec.Rc2.decryptBlock`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rc2.AArch64.Vec
 

@@ -1,5 +1,7 @@
-import VerifiedGarbage.Proof.Framework.X86_64.Inline
-import VerifiedGarbage.Proof.Framework.Contract
+module
+
+public import VerifiedGarbage.Proof.Framework.X86_64.Inline
+public import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # Calls as inlined code (x86-64)
@@ -23,6 +25,8 @@ none and uses only instructions that neither read nor write `rsp`
 (`Instr.rspFree`): inside a call, `rsp` is 8 lower than in the inlined
 run, and nothing else differs.
 -/
+
+@[expose] public section
 
 namespace VG
 
@@ -291,6 +295,7 @@ def Instr.rspFree : Instr → Bool
   | .imul d r => d != .rsp && r != .rsp
   | .mulx hi lo src => hi != .rsp && lo != .rsp && src.noRsp
   | .movImm64 d _ => d != .rsp
+  | .bswap d => d != .rsp
   | .xop (.movq _ r) => r != .rsp
   | .xop _ => true
   | .movqR d _ => d != .rsp
@@ -446,6 +451,9 @@ theorem exec_setRsp {i : Instr} (hi : i.rspFree = true) :
   | movImm64 d v =>
     simp only [Instr.rspFree, bne_iff_ne, ne_eq] at hi
     simp only [exec, Option.map_some, setReg_setRsp hi]
+  | bswap d =>
+    simp only [Instr.rspFree, bne_iff_ne, ne_eq] at hi
+    simp only [exec, Option.map_some, setRsp_gpr hi, setReg_setRsp hi]
   | xop op =>
     simp only [exec, Option.map_some]; congr 1
     cases op with

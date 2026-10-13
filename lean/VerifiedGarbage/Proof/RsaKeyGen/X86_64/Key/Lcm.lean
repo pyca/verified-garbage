@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.Halve
+module
+
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.Halve
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # An RSA key from its primes on x86-64: `lcm(p − 1, q − 1)`
@@ -6,6 +12,8 @@ import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.Halve
 The halving's loop (`twos_k`), `gcd(u, v)` after it (`gcdUV_k`), and
 `lcmPart` (`lcm_k`): `[aL] := lcm(p − 1, q − 1)` (`lcm_eq`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaKeyGen.X86_64.Key
 

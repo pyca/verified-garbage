@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafPrepChecks
-import VerifiedGarbage.Proof.Weierstrass.X86.NafTableTiming
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafPrepChecks
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafPrepChecks
+public import VerifiedGarbage.Proof.Weierstrass.X86.NafTableTiming
+meta import VerifiedGarbage.Proof.Weierstrass.X86.NafTableTiming
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDSA verification on x86 (32-bit): the checks shared by the NAF's additions
@@ -9,6 +17,8 @@ add to the same point `R`, into the same `D`: the checks of the code that
 reads only those are the same, made once here, so that the two modules check
 the rest in parallel.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Verify.X86
 open VG VG.X86 VG.Impl.Mont VG.Impl.Weierstrass VG.Impl.Weierstrass.X86

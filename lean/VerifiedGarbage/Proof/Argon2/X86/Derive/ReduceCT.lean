@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.Argon2.X86.Derive.FillCT1
+module
+
+public import VerifiedGarbage.Proof.Argon2.X86.Derive.FillCT1
+meta import VerifiedGarbage.Proof.Argon2.X86.Derive.FillCT1
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Argon2 on x86 (32-bit): the final block and the tag, in two runs
@@ -8,6 +15,8 @@ trace in two runs (the lane's last block's address, which the taint analysis
 forgets, is related by correctness); `finalOutput_rel`: so does the call of
 H′ that writes the tag.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Argon2.X86.Derive
 
@@ -90,20 +99,10 @@ theorem reduce_rel {M₁ M₂ : Array Block} :
   case init => exact ⟨0, by omega, hl1, h.1, h.2⟩
   intro n s₁ s₂ t₁ t₂ s₁' s₂' ⟨l, hn, hl, g₁, g₂⟩ e₁ e₂
   have body : RelCT isa (fun s₁ s₂ => RI s₀₁ M₁ l s₁ ∧ RI s₀₂ M₂ l s₂)
-      (.block (Impl.Argon2.X86.Derive.reduceLane ++ Impl.Argon2.X86.Derive.advance laneOff
-        (Impl.Argon2.X86.Derive.fr (argOff Impl.Argon2.X86.Derive.lanesArg)))) fun _ _ => True := by
-    rw [show Impl.Argon2.X86.Derive.reduceLane ++ Impl.Argon2.X86.Derive.advance laneOff
-        (Impl.Argon2.X86.Derive.fr (argOff Impl.Argon2.X86.Derive.lanesArg)) =
-      ([.mov .eax (Impl.Argon2.X86.Derive.fr laneOff), .mov .ecx (Impl.Argon2.X86.Derive.fr laneLenOff),
-        .alu .sub .ecx (.imm 1)] ++ Impl.Argon2.X86.Derive.blockAddr) ++
-      ([.mov .esi (.reg .eax), .mov .edi (Impl.Argon2.X86.Derive.fr (argOff Impl.Argon2.X86.Derive.memoryArg))] ++
-        Impl.Argon2.X86.Derive.writeBlock true ++ Impl.Argon2.X86.Derive.advance laneOff
-          (Impl.Argon2.X86.Derive.fr (argOff Impl.Argon2.X86.Derive.lanesArg))) by
-      simp only [Impl.Argon2.X86.Derive.reduceLane, List.append_assoc]]
-    refine RelCT.block_split (RelCT.seqW (T.leafI [] (fun s₁ s₂ h => ⟨h.1.inv, h.2.inv, by simp⟩)
-        ⟨_, by taint_decide⟩)
+      (.seq (.block Impl.Argon2.X86.Derive.reduceLane) Impl.Argon2.X86.Derive.reduceXor) fun _ _ => True := by
+    refine RelCT.seqW (T.leafI [] (fun s₁ s₂ h => ⟨h.1.inv, h.2.inv, by simp⟩) ⟨_, by taint_decide⟩)
       (fun s h => redPart1_ok T.hp₁ h (by rw [hN]; exact hl))
-      (fun s h => redPart1_ok T.hp₂ h (by rw [hN₂]; exact hl)) ?_)
+      (fun s h => redPart1_ok T.hp₂ h (by rw [hN₂]; exact hl)) ?_
     exact T.leafI [.eax] (fun s₁ s₂ h => ⟨h.1.1.inv, h.2.1.inv, by
       simp only [List.mem_singleton, forall_eq]; rw [h.1.2, h.2.2, pe, T.pb.memP_eq]⟩) ⟨_, by taint_decide⟩
   obtain ⟨ht, ⟨k₁, c₁⟩, ⟨k₂, c₂⟩⟩ := HPrime.rel_wp body

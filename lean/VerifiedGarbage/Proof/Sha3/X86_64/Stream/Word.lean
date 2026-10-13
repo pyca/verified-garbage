@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Sha3.X86_64.Permute
-import VerifiedGarbage.Impl.Sha3.X86_64.Stream
-import VerifiedGarbage.Proof.Framework.Offset
+module
+
+public import VerifiedGarbage.Proof.Sha3.X86_64.Permute
+public import VerifiedGarbage.Impl.Sha3.X86_64.Stream
+public import VerifiedGarbage.Proof.Framework.Offset
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The SHA-3 sponge on x86-64: the test for a lane at a time
@@ -9,6 +15,8 @@ import VerifiedGarbage.Proof.Framework.Offset
 left (`wordTest_ok`), so that `absorb` and `squeeze` can then move a lane at
 once.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sha3.X86_64
 

@@ -1,9 +1,11 @@
-import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Proof.Weierstrass.Law
-import VerifiedGarbage.Impl.Ecdsa.P256.Arm
-import VerifiedGarbage.Proof.Ecdsa.Arm.Verified
-import VerifiedGarbage.Impl.Ecdsa.Verify.P256.Arm
-import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Verified
+module
+
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.Proof.Weierstrass.Law
+public import VerifiedGarbage.Impl.Ecdsa.P256.Arm
+public import VerifiedGarbage.Proof.Ecdsa.Arm.Verified
+public import VerifiedGarbage.Impl.Ecdsa.Verify.P256.Arm
+public import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Verified
 
 /-!
 # ECDSA over P-256 (FIPS 186-5) on 32-bit ARM
@@ -11,6 +13,8 @@ import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Verified
 A generic file (see `TCB/Emit.lean`) over P-256's group law `h`, the variant
 `Variants/P256/Arm/Law.lean`.
 -/
+
+@[expose] public section
 
 namespace VG.Generic.P256.Arm.EcdsaP256
 

@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Compute
-import VerifiedGarbage.Proof.MlKem.AArch64.DecapsCmp
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Compute
+public import VerifiedGarbage.Proof.MlKem.AArch64.DecapsCmp
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA verification on AArch64: the comparison of `c̃′` with `c̃`
@@ -9,6 +15,8 @@ ANDs `(x10 - 1) >> 63`, 1 exactly when they are equal, into `x24`
 (`cmpAnd_ok`), without a branch on the bytes: its addresses and branches
 depend only on the pointers (`cmp_taint`, in `Final.lean`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Verify
 

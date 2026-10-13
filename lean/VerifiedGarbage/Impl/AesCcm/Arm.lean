@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.AesGcm.Arm
-import VerifiedGarbage.Impl.CmacAes.Arm
+module
+
+public import VerifiedGarbage.Impl.AesGcm.Arm
+public import VerifiedGarbage.Impl.CmacAes.Arm
 
 /-!
 # AES-CCM: 32-bit ARM implementation
@@ -75,6 +77,8 @@ comparison with `adc`. Only the pointers, `rounds`, the lengths and
 `tag_len` can affect timing: the branches are on those, and so are the
 numbers of calls, bytes copied and blocks chained.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.AesCcm.Arm
 

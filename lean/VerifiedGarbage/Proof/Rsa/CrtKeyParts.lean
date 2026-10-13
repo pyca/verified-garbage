@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Rsa.KeyParts
+module
+
+public import VerifiedGarbage.Proof.Rsa.KeyParts
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSA: `crtKeyValid` from its parts
@@ -9,6 +15,8 @@ implementation computes, with each remainder (`e dP mod (p - 1)`, …) known
 only when the comparison before it holds and its prime is positive: when
 `p q = n`, both primes are at least 2 (`factor_ge_two`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa
 

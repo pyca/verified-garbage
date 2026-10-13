@@ -1,5 +1,13 @@
-import VerifiedGarbage.Impl.Idea.Key
-import VerifiedGarbage.Proof.Framework.Lit
+module
+
+public import VerifiedGarbage.Impl.Idea.Key
+meta import VerifiedGarbage.Impl.Idea.Key
+public import VerifiedGarbage.Proof.Framework.Lit
+meta import VerifiedGarbage.Proof.Framework.Lit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The key schedule's bit groups, once
@@ -9,6 +17,8 @@ target's key expansion moves together, as a table (`materialize_table`): the
 literals of both targets' code (`Lit.lean`) and their checks of each quadword
 (`Key.lean`, `lit_decide`) read it rather than group the 64 bits again.
 -/
+
+@[expose] public section
 
 namespace VG
 

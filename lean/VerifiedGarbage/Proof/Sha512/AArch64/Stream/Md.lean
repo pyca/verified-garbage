@@ -1,9 +1,15 @@
-import VerifiedGarbage.Proof.MdStream.AArch64.Update
-import VerifiedGarbage.Proof.MdStream.AArch64.Finalize
-import VerifiedGarbage.Proof.MdStream.AArch64.Words
-import VerifiedGarbage.Proof.Sha512.Md
-import VerifiedGarbage.Proof.Sha512.AArch64.Compress
-import VerifiedGarbage.Impl.Sha512.AArch64.Stream
+module
+
+public import VerifiedGarbage.Proof.MdStream.AArch64.Update
+public import VerifiedGarbage.Proof.MdStream.AArch64.Finalize
+public import VerifiedGarbage.Proof.MdStream.AArch64.Words
+public import VerifiedGarbage.Proof.Sha512.Md
+public import VerifiedGarbage.Proof.Sha512.AArch64.Compress
+public import VerifiedGarbage.Impl.Sha512.AArch64.Stream
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Streaming SHA-512 on AArch64: `update` and `finalize`
@@ -15,6 +21,8 @@ import VerifiedGarbage.Impl.Sha512.AArch64.Stream
 (`Proof/Sha512/AArch64/Variant.lean`), given what the family's own pieces do:
 its length field and digest (`shape`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sha512.AArch64.Stream
 

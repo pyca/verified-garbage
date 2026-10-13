@@ -1,4 +1,8 @@
-import VerifiedGarbage.Proof.Zeroize.AArch64Wide
+module
+
+public import VerifiedGarbage.Proof.Zeroize.AArch64Wide
+
+@[expose] public section
 
 namespace VG.Artifacts.Zeroize.AArch64
 open VG.AArch64

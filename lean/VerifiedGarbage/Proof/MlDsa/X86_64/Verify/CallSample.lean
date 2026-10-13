@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.CallArith
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.CallArith
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA verification on x86-64: calls of the samplers
@@ -8,6 +14,8 @@ The calls of `vg_mldsa_rej_ntt_poly` (seed at `SB`) and
 (`…_ok`: the result in `eax`, and the sampled polynomial, as `Outcome`), and
 that two runs whose layout registers and seeds agree leak the same (`…_tr`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86_64.Verify
 

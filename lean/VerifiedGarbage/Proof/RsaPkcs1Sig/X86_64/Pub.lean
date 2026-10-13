@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCall
-import VerifiedGarbage.Proof.Rsa.X86_64.PubChecked
-import VerifiedGarbage.Proof.Rsa.X86_64.PrivImpl
+module
+
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCall
+public import VerifiedGarbage.Proof.Rsa.X86_64.PubChecked
+public import VerifiedGarbage.Proof.Rsa.X86_64.PrivImpl
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_public_checked` for its callers on x86-64
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.Rsa.X86_64.PrivImpl
 The implementation of `vg_rsa_public_checked` that `vg_rsa_pkcs1_verify` and
 `vg_rsa_pkcs1_recover` call (`PubImpl`), with what they need of it.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPkcs1Sig.X86_64
 

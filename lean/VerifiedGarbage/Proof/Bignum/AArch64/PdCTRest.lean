@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.Bignum.AArch64.PdCTExp
+module
+
+public import VerifiedGarbage.Proof.Bignum.AArch64.PdCTExp
+meta import VerifiedGarbage.Proof.Bignum.AArch64.PdCTExp
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_public_precomputed` on AArch64: `rest` is constant time but for `e`
@@ -8,6 +15,8 @@ exponentiation and the result) leaks the same in runs that agree on the
 pointers, the lengths, `e`, `m` and `R² mod m` (`pdRest_ct`). The public-key
 operation from the modulus ends with the same `rest`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.AArch64
 

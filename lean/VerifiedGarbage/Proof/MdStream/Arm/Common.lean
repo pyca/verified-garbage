@@ -1,9 +1,15 @@
-import VerifiedGarbage.Proof.MdStream.Spec
-import VerifiedGarbage.Proof.Framework.Arm.Call
-import VerifiedGarbage.Proof.Framework.Arm.Taint
-import VerifiedGarbage.Proof.Framework.Arm.Spill
-import VerifiedGarbage.Impl.MdStream.Arm
-import VerifiedGarbage.Proof.Framework.Offset
+module
+
+public import VerifiedGarbage.Proof.MdStream.Spec
+public import VerifiedGarbage.Proof.Framework.Arm.Call
+public import VerifiedGarbage.Proof.Framework.Arm.Taint
+public import VerifiedGarbage.Proof.Framework.Arm.Spill
+public import VerifiedGarbage.Impl.MdStream.Arm
+public import VerifiedGarbage.Proof.Framework.Offset
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Streaming Merkle–Damgård hash functions on ARMv7: common lemmas
@@ -14,6 +20,8 @@ the call of the compression function (`compressAt`), saving and restoring the
 caller's registers, and weakest-precondition rules for the instruction forms
 used (which the proofs of other ARMv7 code use too).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MdStream.Arm
 

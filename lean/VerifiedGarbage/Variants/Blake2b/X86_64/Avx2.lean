@@ -1,4 +1,6 @@
-import VerifiedGarbage.Proof.Blake2.X86_64.Avx2.Stream
+module
+
+public import VerifiedGarbage.Proof.Blake2.X86_64.Avx2.Stream
 
 /-!
 # BLAKE2b on x86-64 with AVX2
@@ -9,6 +11,8 @@ needs AVX and AVX2; the streaming functions calling it, and everything
 built on them (Argon2's H′ and derivation, whose instances are named by
 `Emit.qualifiedName`, e.g. `vg_argon2_blake2b_avx2_g_avx512`), need them too.
 -/
+
+@[expose] public section
 
 namespace VG.Variants.Blake2b.X86_64.Avx2
 

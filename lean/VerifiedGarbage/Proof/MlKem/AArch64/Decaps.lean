@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.MlKem.AArch64.DecapsCmp
-import VerifiedGarbage.Proof.MlKem.AArch64.Encaps
+module
+
+public import VerifiedGarbage.Proof.MlKem.AArch64.DecapsCmp
+public import VerifiedGarbage.Proof.MlKem.AArch64.Encaps
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on AArch64: `vg_mlkem768_decaps` and `vg_mlkem1024_decaps`
@@ -17,6 +23,8 @@ The proof is stated once for a well-formed parameter set, with the taint
 analyses of its code (`DeTaints`) decided on each; the end of this file is
 ML-KEM-768's instance (and `Proof/MlKem1024/AArch64/Decaps.lean` ML-KEM-1024's).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.AArch64.Decaps
 

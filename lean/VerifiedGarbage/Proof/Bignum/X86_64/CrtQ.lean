@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtPow
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtPow
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSA with the CRT on x86-64: `q`'s phase
@@ -6,6 +12,8 @@ import VerifiedGarbage.Proof.Bignum.X86_64.CrtPow
 `qPhase`: `m_q = c^dQ mod q` into `q`'s `Y` (`qPhase_ok`), if `q` divides
 `n` and the modulus' `X_m ≡ c R`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64
 

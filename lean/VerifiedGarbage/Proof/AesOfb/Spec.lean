@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesCbc.Spec
-import VerifiedGarbage.Spec.Ofb.Contract
+module
+
+public import VerifiedGarbage.Proof.AesCbc.Spec
+public import VerifiedGarbage.Spec.Ofb.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # OFB: the mode one block at a time
@@ -12,6 +18,8 @@ continue from after them (`crypt_snoc`), which is the block to continue
 from after `k + 1` (`next_succ`). `ofbMode` is OFB as a `Mode`, for the
 loop the targets share with CBC.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesOfb
 

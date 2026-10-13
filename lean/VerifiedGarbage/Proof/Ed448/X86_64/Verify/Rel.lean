@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Ed448.X86_64.Verify.Args
-import VerifiedGarbage.Proof.MlKem.X86_64.Rel
-import VerifiedGarbage.Proof.Framework.X86_64.Taint
+module
+
+public import VerifiedGarbage.Proof.Ed448.X86_64.Verify.Args
+public import VerifiedGarbage.Proof.MlKem.X86_64.Rel
+public import VerifiedGarbage.Proof.Framework.X86_64.Taint
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 verification on x86-64: relating two runs
@@ -13,6 +19,8 @@ Blocks whose addresses are `rsp` plus offsets leak the same in both runs
 call whose callee's public data agree in both runs (`call_tr`); and what
 each run satisfies by correctness carries over (`two_wp`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.X86_64.Verify
 

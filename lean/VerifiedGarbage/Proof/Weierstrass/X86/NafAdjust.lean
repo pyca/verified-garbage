@@ -1,14 +1,22 @@
-import VerifiedGarbage.Impl.Weierstrass.X86.NafPrep
-import VerifiedGarbage.Proof.Weierstrass.Naf5
-import VerifiedGarbage.Proof.Weierstrass.X86.TCombDigit
-import VerifiedGarbage.Impl.Weierstrass.X86.Naf
-import VerifiedGarbage.Proof.Weierstrass.X86.TCombScan
-import VerifiedGarbage.Proof.Framework.X86.SseDword
-import VerifiedGarbage.Proof.Weierstrass.X86.JacState
-import VerifiedGarbage.Proof.Weierstrass.X86.Ladder
-import VerifiedGarbage.Proof.Weierstrass.X86.NafSubChain
+module
+
+public import VerifiedGarbage.Impl.Weierstrass.X86.NafPrep
+public import VerifiedGarbage.Proof.Weierstrass.Naf5
+public import VerifiedGarbage.Proof.Weierstrass.X86.TCombDigit
+public import VerifiedGarbage.Impl.Weierstrass.X86.Naf
+public import VerifiedGarbage.Proof.Weierstrass.X86.TCombScan
+public import VerifiedGarbage.Proof.Framework.X86.SseDword
+public import VerifiedGarbage.Proof.Weierstrass.X86.JacState
+public import VerifiedGarbage.Proof.Weierstrass.X86.Ladder
+public import VerifiedGarbage.Proof.Weierstrass.X86.NafSubChain
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## `NafChoose` -/
+
+@[expose] public section
 
 section
 

@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.Framework.X86.Exec
-import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Sha1.X86.ShaNi.Spec
-import VerifiedGarbage.Impl.Sha1.X86.ShaNi
+module
+
+public import VerifiedGarbage.Proof.Framework.X86.Exec
+public import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Sha1.X86.ShaNi.Spec
+public import VerifiedGarbage.Impl.Sha1.X86.ShaNi
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # SHA-1 with the SHA extensions on x86: the 80 rounds of a block
@@ -12,6 +18,8 @@ The rounds of `Impl.Sha1.X86.ShaNi`, which are those of x86-64
 block pointer: rounds `0 … 4n-1` from `ABCD` in `xmm0` and `E` in `xmm1`
 compute the specification's rounds, keeping the last sixteen schedule words.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sha1.X86.ShaNi
 

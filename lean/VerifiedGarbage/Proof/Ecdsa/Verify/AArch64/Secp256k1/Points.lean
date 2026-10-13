@@ -1,7 +1,15 @@
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Secp256k1.Sum
-import VerifiedGarbage.Proof.Ecdh.AArch64.Secp256k1.Mul
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Secp256k1.Sum
+public import VerifiedGarbage.Proof.Ecdh.AArch64.Secp256k1.Mul
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # secp256k1 verification: two complete ladders and their sum -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Verify.AArch64.Secp256k1
 
@@ -13,7 +21,7 @@ open VG.Proof.Mont VG.Proof.Mont.AArch64 VG.Proof.Weierstrass VG.Proof.Weierstra
 open Spec.Weierstrass
 
 abbrev ptsW : List Nat := [EXPP, RX, RY, RZ, T0, T1, T2, T3, T4, T5, DX, DY, DZ, TX, TY, TZ,
-  TMP, UX, UY, UZ]
+  TMP, UX, UY, UZ, EM]
 
 theorem points_ok (hc : BaseCfgOk secp256k1) {s₀ : State} {base : Addr} {g : Reg → BitVec 64} {s : State}
     (hM : Mid secp256k1 s₀ base g s) {Q₁ Q₂ : Nat → Fe secp256k1.C → Fe secp256k1.C → Fe secp256k1.C → Prop}

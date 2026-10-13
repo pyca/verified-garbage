@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.AesGcmSiv.X86.FnCT
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Spec.GcmSiv.Contract
-import VerifiedGarbage.Proof.AesGcmSiv.Scratch
+module
+
+public import VerifiedGarbage.Proof.AesGcmSiv.X86.FnCT
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.GcmSiv.Contract
+public import VerifiedGarbage.Proof.AesGcmSiv.Scratch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM-SIV on x86: `Verified`
@@ -17,6 +23,8 @@ argument (`Proof/AesGcmSiv/Scratch.lean`), with 28 bytes of stack: a call of
 `vg_aes_ctr32` (its six arguments and return address), which makes no
 calls.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

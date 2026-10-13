@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.EncPre
+module
+
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.EncPre
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-PKCS1-v1_5 encryption on x86-64: the call of `vg_rsa_public_checked`
@@ -8,6 +14,8 @@ with the stack arguments in the frame (`pub_pre`), and what it leaves
 (`pub_call`): `out` holds `vg_rsa_public_checked`'s result for `EM`, and the
 frame its slots and `EM`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPkcs1Enc.X86_64
 

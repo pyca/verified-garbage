@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Chunk
+module
+
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Chunk
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ChaCha20 and Poly1305 together (x86-64): the whole chunks
@@ -12,6 +18,8 @@ Before chunk `t` (`LI`), the first `512 t` bytes are encrypted, the counter
 is advanced by `8 t`, the first `512 (t - 1)` bytes of ciphertext are
 absorbed, and the bytes left are `L - 512 t`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.ChaCha20Poly1305.X86_64.Stitch
 

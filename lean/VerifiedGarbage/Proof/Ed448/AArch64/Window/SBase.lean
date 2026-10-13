@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Ed448.AArch64.Point56.Combine
-import VerifiedGarbage.Proof.Ed448.AArch64.Window.Table
-import VerifiedGarbage.Proof.Ed448.AArch64.CombBase
-import VerifiedGarbage.Proof.Ed448.AArch64.Window.CopyK
+module
+
+public import VerifiedGarbage.Proof.Ed448.AArch64.Point56.Combine
+public import VerifiedGarbage.Proof.Ed448.AArch64.Window.Table
+public import VerifiedGarbage.Proof.Ed448.AArch64.CombBase
+public import VerifiedGarbage.Proof.Ed448.AArch64.Window.CopyK
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 verification on AArch64: `[S]B`
@@ -11,6 +17,8 @@ Untrusted: everything here is checked by Lean. `sBase`, from the bits of `S` at
 of `vg_ed448_r56_comb_base` (`CombBase.call_ok`) and `16 A + C` (`sBase_ok`), as in
 `vg_ed448_scalar_base`: `[S]B` in slots 0–2.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.AArch64.Window
 

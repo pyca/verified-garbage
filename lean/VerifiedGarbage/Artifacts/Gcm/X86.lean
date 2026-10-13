@@ -1,8 +1,12 @@
-import VerifiedGarbage.TCB.X86.Target
-import VerifiedGarbage.Proof.Gcm.X86.Ghash
-import VerifiedGarbage.Proof.Gcm.X86.Pclmul.Ghash
+module
+
+public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Proof.Gcm.X86.Ghash
+public import VerifiedGarbage.Proof.Gcm.X86.Pclmul.Ghash
 
 /-! # GHASH on x86 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.Gcm.X86
 

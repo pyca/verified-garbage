@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Framework.Arm.Inline
-import VerifiedGarbage.Proof.Framework.Arm.Exec
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Impl.Aes.Arm.Sbox
+module
+
+public import VerifiedGarbage.Proof.Framework.Arm.Inline
+public import VerifiedGarbage.Proof.Framework.Arm.Exec
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Impl.Aes.Arm.Sbox
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # A block that stores only at given offsets of `sb` (ARMv7)
@@ -14,6 +20,8 @@ blocks stores the blocks through `sb`, whose slots the analysis of constant
 time tracks, and this gives its frame, which the linear checker's (every
 slot below `hi`) does not.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Camellia.Arm
 

@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
-import VerifiedGarbage.Impl.X448.AArch64.Field56
+module
+
+public import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
+public import VerifiedGarbage.Impl.X448.AArch64.Field56
+meta import VerifiedGarbage.Impl.X448.AArch64.Field56
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 on AArch64: the code as a literal
@@ -9,6 +17,8 @@ avoids rebuilding the unrolled arithmetic in each kernel-evaluated check.
 The field operations, the butterfly and the AdvSIMD pair of products are
 templates (`materialize_template`), each evaluated once with its offsets free.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448.AArch64.Fast.Lit
 open VG.Impl.Curve448.AArch64

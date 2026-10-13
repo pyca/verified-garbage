@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.MlDsa.Arm.Verify.Lay
+module
+
+public import VerifiedGarbage.Proof.MlDsa.Arm.Verify.Lay
+meta import VerifiedGarbage.Proof.MlDsa.Arm.Verify.Lay
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA verification on 32-bit ARM: what holds throughout, and the prologue
@@ -9,6 +16,8 @@ and the inputs), which a part keeps if it writes only `scratch` and the stack,
 apart from the saved registers (`vcChk`); the pieces of verification
 (`VPiece`); and the prologue (`vpro_piece`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Arm.Verify
 

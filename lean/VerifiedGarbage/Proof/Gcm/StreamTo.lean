@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Gcm.Compose
+module
+
+public import VerifiedGarbage.Proof.Gcm.Compose
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # GCM streaming, out of place: whole blocks on the state
@@ -11,6 +17,8 @@ GHASH accumulator (`St + 16`) are advanced over them, as
 `vg_aes_gcm_encrypt_blocks_to` does, reading the plaintext from one buffer
 and writing the ciphertext to another (`streamRepr_blocksTo`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Gcm
 

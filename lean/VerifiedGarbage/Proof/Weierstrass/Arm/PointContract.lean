@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Weierstrass.Arm.PointFn
-import VerifiedGarbage.Proof.Weierstrass.Arm.MontContract
-import VerifiedGarbage.Proof.Weierstrass.Law
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.Arm.PointFn
+public import VerifiedGarbage.Proof.Weierstrass.Arm.MontContract
+public import VerifiedGarbage.Proof.Weierstrass.Law
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Complete point addition and doubling as functions, on 32-bit ARM: the contracts
@@ -13,6 +19,8 @@ proofs' `toM`: the coordinates are what `wordsVal` reads, the
 specification's `rcbAdd` is the proofs', and what the function changes is
 what `Keeps` allows.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.Arm.Point
 

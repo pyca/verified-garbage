@@ -1,9 +1,15 @@
-import VerifiedGarbage.Proof.Aes.AArch64.Ctr32
-import VerifiedGarbage.Proof.Aes.AArch64.Aese.Ctr32
-import VerifiedGarbage.Proof.Aes.AArch64.ExpandKey
-import VerifiedGarbage.Proof.Aes.AArch64.Aese.ExpandKey
-import VerifiedGarbage.Impl.Aes.AArch64.Callee
-import VerifiedGarbage.Proof.Framework.AArch64.Call
+module
+
+public import VerifiedGarbage.Proof.Aes.AArch64.Ctr32
+public import VerifiedGarbage.Proof.Aes.AArch64.Aese.Ctr32
+public import VerifiedGarbage.Proof.Aes.AArch64.ExpandKey
+public import VerifiedGarbage.Proof.Aes.AArch64.Aese.ExpandKey
+public import VerifiedGarbage.Impl.Aes.AArch64.Callee
+public import VerifiedGarbage.Proof.Framework.AArch64.Call
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Implementations of `vg_aes_ctr32` on AArch64
@@ -18,6 +24,8 @@ implementation of `vg_aes_expand_key` that goes with it (with the same
 suffix and CPU features), for the callers that also expand the key, proven
 against `Proof.Aes.expandKeyAArch64`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Aes.AArch64
 

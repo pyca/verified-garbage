@@ -1,9 +1,17 @@
-import VerifiedGarbage.Proof.Rc2.AArch64.Cbc.Encrypt
-import VerifiedGarbage.Proof.Rc2.AArch64.Cbc.Decrypt
-import VerifiedGarbage.Proof.Rc2.AArch64.Cbc.Slice
-import VerifiedGarbage.Proof.Rc2.AArch64.KeyLoop
+module
+
+public import VerifiedGarbage.Proof.Rc2.AArch64.Cbc.Encrypt
+public import VerifiedGarbage.Proof.Rc2.AArch64.Cbc.Decrypt
+public import VerifiedGarbage.Proof.Rc2.AArch64.Cbc.Slice
+public import VerifiedGarbage.Proof.Rc2.AArch64.KeyLoop
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # A CBC loop iteration and its public counter -/
+
+@[expose] public section
 
 namespace VG.Proof.Rc2.AArch64.Cbc
 

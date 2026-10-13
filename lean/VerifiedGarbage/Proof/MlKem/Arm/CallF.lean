@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Framework.Arm.Frame
-import VerifiedGarbage.Proof.Framework.Omega
+module
+
+public import VerifiedGarbage.Proof.Framework.Arm.Frame
+public import VerifiedGarbage.Proof.Framework.Omega
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Calls of code with frames (ARMv7)
@@ -10,6 +16,8 @@ frames. A callee with frames also stores below the stack pointer: at most
 within the regions it may write and those bytes (`Exec.frameSp`), and
 `WP.callF` runs a call of it from its proof of `Verified`.
 -/
+
+@[expose] public section
 
 namespace VG.Arm
 

@@ -1,5 +1,7 @@
-import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.AesSiv.X86_64.Frame
+module
+
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.AesSiv.X86_64.Frame
 
 /-!
 # AES-SIV (RFC 5297) encryption and decryption on x86-64
@@ -18,6 +20,8 @@ most 16 bytes: the return addresses of the call of a CMAC function (or of
 `vg_aes_ctr32`) and of its call of `vg_aes_ctr32` (2616 bytes of stack in
 all).
 -/
+
+@[expose] public section
 
 namespace VG.Generic.CmacAesUpdate.X86_64.AesSiv
 

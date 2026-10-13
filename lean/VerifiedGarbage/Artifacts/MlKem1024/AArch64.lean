@@ -1,12 +1,16 @@
-import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.MlKem1024.AArch64.CompressEncode
-import VerifiedGarbage.Proof.MlKem1024.AArch64.DecodeDecompress
-import VerifiedGarbage.Proof.MlKem1024.AArch64.CheckEk
-import VerifiedGarbage.Proof.MlKem1024.AArch64.KeyGen
-import VerifiedGarbage.Proof.MlKem1024.AArch64.Encaps
-import VerifiedGarbage.Proof.MlKem1024.AArch64.Decaps
+module
+
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.MlKem1024.AArch64.CompressEncode
+public import VerifiedGarbage.Proof.MlKem1024.AArch64.DecodeDecompress
+public import VerifiedGarbage.Proof.MlKem1024.AArch64.CheckEk
+public import VerifiedGarbage.Proof.MlKem1024.AArch64.KeyGen
+public import VerifiedGarbage.Proof.MlKem1024.AArch64.Encaps
+public import VerifiedGarbage.Proof.MlKem1024.AArch64.Decaps
 
 /-! # ML-KEM-1024 on AArch64 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.MlKem1024.AArch64
 

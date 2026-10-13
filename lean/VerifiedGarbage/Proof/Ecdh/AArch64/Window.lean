@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Ecdh.AArch64.Validate
-import VerifiedGarbage.Proof.Ecdsa.AArch64.CombLays
-import VerifiedGarbage.Proof.Weierstrass.AArch64.AddConst
+module
+
+public import VerifiedGarbage.Proof.Ecdh.AArch64.Validate
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.CombLays
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.AddConst
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDH on AArch64: `[d]P` by windows, and `Z^(p-2)`
@@ -13,6 +19,8 @@ are apart as `window_ok` needs (`winLayQ`). `winPow_ok` recodes `d` into
 peer's point (or `G`) and the signature's power, and leaves `R` representing
 `[d]P`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdh.AArch64
 

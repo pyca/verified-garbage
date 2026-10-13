@@ -1,6 +1,8 @@
-import VerifiedGarbage.Impl.Sm4.Arm.Sbox
-import VerifiedGarbage.Impl.Sm4.Lin
-import VerifiedGarbage.Impl.Aes.Arm.Linear
+module
+
+public import VerifiedGarbage.Impl.Sm4.Arm.Sbox
+public import VerifiedGarbage.Impl.Sm4.Lin
+public import VerifiedGarbage.Impl.Aes.Arm.Linear
 
 /-!
 # The layers of bitsliced SM4 on ARMv7
@@ -25,6 +27,8 @@ callee-saved registers `r4`–`r11` and `lr` (352–360), and the data
 pointer and the blocks left (or the schedule's pointer) (361, 362). The
 round key's entry is at `kp` (`r9`).
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Sm4.Arm
 

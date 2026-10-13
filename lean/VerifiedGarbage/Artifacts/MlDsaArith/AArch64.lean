@@ -1,11 +1,15 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseVerified
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.NttOutVerified
-import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.AddSub
-import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Mul
-import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.NttInv
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseVerified
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.NttOutVerified
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.AddSub
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Mul
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.NttInv
 
 /-! # ML-DSA (FIPS 204) on AArch64: the arithmetic of polynomials -/
+
+@[expose] public section
 
 namespace VG.Artifacts.MlDsaArith.AArch64
 
@@ -18,7 +22,7 @@ def artifacts : List Artifact := [
     contract := Spec.MlDsa.montgomeryNttInvContract (AArch64.abi.withConsts Impl.MlDsa.AArch64.Optimized.Inverse.inverseConsts)
     verified := Proof.MlDsa.AArch64.Optimized.Inverse.inverse_verified
     spSafe := Code.all_of_forall (fun _ => rfl) _
-    ofSig := ⟨_,_,_,by unfold Spec.MlDsa.montgomeryNttInvContract Spec.MlDsa.inPlaceContract; rfl⟩ },
+    ofSig := by exact (⟨_,_,_,by unfold Spec.MlDsa.montgomeryNttInvContract Spec.MlDsa.inPlaceContract; rfl⟩) },
   { Spec.MlDsa.positiveNttApi with
     target := AArch64.target
     doc := Spec.MlDsa.positiveNttApi.doc
@@ -43,7 +47,7 @@ def artifacts : List Artifact := [
     contract := Spec.MlDsa.nttContract AArch64.abi
     verified := Proof.MlDsa.AArch64.Arith.Neon.ntt_verified
     spSafe := Code.all_of_forall (fun _ => rfl) _
-    ofSig := ⟨_, _, _, by unfold Spec.MlDsa.nttContract Spec.MlDsa.inPlaceContract; rfl⟩ },
+    ofSig := by exact (⟨_, _, _, by unfold Spec.MlDsa.nttContract Spec.MlDsa.inPlaceContract; rfl⟩) },
   { Spec.MlDsa.nttInvApi with
     target := AArch64.target
     doc := Spec.MlDsa.nttInvApi.doc
@@ -52,7 +56,7 @@ def artifacts : List Artifact := [
     contract := Spec.MlDsa.nttInvContract AArch64.abi
     verified := Proof.MlDsa.AArch64.Arith.Neon.nttInv_verified
     spSafe := Code.all_of_forall (fun _ => rfl) _
-    ofSig := ⟨_, _, _, by unfold Spec.MlDsa.nttInvContract Spec.MlDsa.inPlaceContract; rfl⟩ },
+    ofSig := by exact (⟨_, _, _, by unfold Spec.MlDsa.nttInvContract Spec.MlDsa.inPlaceContract; rfl⟩) },
   { Spec.MlDsa.mulApi with
     target := AArch64.target
     doc := Spec.MlDsa.mulApi.doc

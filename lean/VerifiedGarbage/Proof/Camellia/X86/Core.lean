@@ -1,9 +1,15 @@
-import VerifiedGarbage.Proof.Camellia.X86.Fl
-import VerifiedGarbage.Proof.Camellia.Words
-import VerifiedGarbage.Proof.Camellia.Common
-import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.Framework.Semantics
-import VerifiedGarbage.Proof.Framework.AddrArith
+module
+
+public import VerifiedGarbage.Proof.Camellia.X86.Fl
+public import VerifiedGarbage.Proof.Camellia.Words
+public import VerifiedGarbage.Proof.Camellia.Common
+public import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Framework.AddrArith
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Eight blocks of bitsliced Camellia on x86 (32-bit): the rounds
@@ -17,6 +23,8 @@ the pairs of rounds and the groups of six are loops around them, whose
 invariants are the specification's `pair` and `group`
 (`Proof/Camellia/Words.lean`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Camellia.X86
 

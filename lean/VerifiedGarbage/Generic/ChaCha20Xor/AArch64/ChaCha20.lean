@@ -1,5 +1,7 @@
-import VerifiedGarbage.Proof.ChaCha20.AArch64.XorVariant
-import VerifiedGarbage.Proof.ChaCha20.AArch64.Stream.ApplyCT
+module
+
+public import VerifiedGarbage.Proof.ChaCha20.AArch64.XorVariant
+public import VerifiedGarbage.Proof.ChaCha20.AArch64.Stream.ApplyCT
 
 /-!
 # ChaCha20 (RFC 8439) on AArch64: `vg_chacha20_xor` and `vg_chacha20_apply`
@@ -16,6 +18,8 @@ adds only notes on the implementation. The emitter adds the `# Safety` items
 that depend on the target (`Sig.layoutDoc`), from `stack` and `writeArgs`,
 which `ofSig` checks against the contract.
 -/
+
+@[expose] public section
 
 namespace VG.Generic.ChaCha20Xor.AArch64.ChaCha20
 

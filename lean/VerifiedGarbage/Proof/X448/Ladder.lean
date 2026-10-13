@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.X448.Field
-import VerifiedGarbage.Proof.X448.Invert
+module
+
+public import VerifiedGarbage.Proof.X448.Field
+public import VerifiedGarbage.Proof.X448.Invert
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448: the ladder one iteration at a time
@@ -11,6 +17,8 @@ ladder's state after the iterations for the bits `447` down to `n` (so
 one), and each iteration takes it from `n + 1` to `n` (`ladderAfter_step`).
 `x448_eq` states the spec with it, and with the inversion as `invert`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448
 

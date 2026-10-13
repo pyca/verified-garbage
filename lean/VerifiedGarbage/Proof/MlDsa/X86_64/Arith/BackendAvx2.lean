@@ -1,11 +1,17 @@
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YMontgomeryInv
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej5Verified
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Backend
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.LazyNtt
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YMul
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YAddSub
-import VerifiedGarbage.Proof.MlDsa.X86_64.Round.YHint
-import VerifiedGarbage.Proof.MlDsa.X86_64.Round.YUse
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YMontgomeryInv
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej5Verified
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Backend
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.LazyNtt
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YMul
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YAddSub
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Round.YHint
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Round.YUse
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on x86-64: the polynomial arithmetic with AVX2, as an `ArithImpl`
@@ -13,6 +19,8 @@ import VerifiedGarbage.Proof.MlDsa.X86_64.Round.YUse
 The AVX2 code (`Impl/MlDsa/X86_64/Arith/Avx2.lean`) meets what the callers of
 the polynomial arithmetic need of it (`FnOk`), and requires AVX and AVX2.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86_64
 

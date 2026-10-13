@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Carry
+module
+
+public import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Carry
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X25519 on x86-64 with AVX512_IFMA: the stages' operands
@@ -7,6 +13,8 @@ The blocks between the carries and the products of an iteration, run
 symbolically: each output limb, lane by lane, as a number (`rfl`), and its
 bounds (`decide`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X25519.X86_64.Ifma
 

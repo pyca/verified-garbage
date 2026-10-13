@@ -1,5 +1,11 @@
-import VerifiedGarbage.Impl.Ed448.X86_64.SignCached
-import VerifiedGarbage.Proof.Ed448.X86_64.Verify.Args
+module
+
+public import VerifiedGarbage.Impl.Ed448.X86_64.SignCached
+public import VerifiedGarbage.Proof.Ed448.X86_64.Verify.Args
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 signing with a cached public key on x86-64: where everything is
@@ -14,6 +20,8 @@ arguments in the frame, and that memory changed only in `scratch`, `out` and
 the stack. `call_ok` runs a call of verified code that writes only within
 `scratch`, `out` and the data of the frame in such a state.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.X86_64.SignCached
 

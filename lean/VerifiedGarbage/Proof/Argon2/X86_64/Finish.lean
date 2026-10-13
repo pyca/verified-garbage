@@ -1,6 +1,14 @@
-import VerifiedGarbage.Proof.Argon2.X86_64.Initialize
+module
+
+public import VerifiedGarbage.Proof.Argon2.X86_64.Initialize
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # XOR the permuted block with R and write the output -/
+
+@[expose] public section
 
 namespace VG.Proof.Argon2.X86_64
 

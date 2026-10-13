@@ -1,9 +1,15 @@
-import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedSse.SboxLit
-import VerifiedGarbage.Proof.Framework.X86_64.StraightX
-import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.TripleDes.Bitslice.Io
-import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
+module
+
+public import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedSse.SboxLit
+public import VerifiedGarbage.Proof.Framework.X86_64.StraightX
+public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.TripleDes.Bitslice.Io
+public import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The transposition of the SSE2 state
@@ -19,6 +25,8 @@ at word `8 g` exchanges the low three bits of those of the words `8 g + k`
 (`stB`). Together they transpose the 64 quadwords of every lane
 (`stB_stA`, `transpose_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.TripleDes.X86_64.BitslicedSse
 

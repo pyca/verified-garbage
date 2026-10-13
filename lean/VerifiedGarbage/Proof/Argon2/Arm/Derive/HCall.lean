@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Argon2.Arm.Derive.Initial
+module
+
+public import VerifiedGarbage.Proof.Argon2.Arm.Derive.Initial
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Argon2 on ARMv7: calls of H′ in the derivation
@@ -9,6 +15,8 @@ The derivation calls `vg_argon2_hprime` with its register arguments in
 output in the memory matrix or `out`, and `scratch` is its working space. The
 call writes only the output, `scratch` and the 40 bytes below the locals.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Argon2.Arm.Derive
 

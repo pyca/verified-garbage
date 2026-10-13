@@ -1,7 +1,11 @@
-import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64
-import VerifiedGarbage.Impl.Ecdsa.P521.AArch64
+module
+
+public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64
+public import VerifiedGarbage.Impl.Ecdsa.P521.AArch64
 
 /-! # ECDSA verification over P-521 on AArch64: nine-word field elements and scalars -/
+
+@[expose] public section
 
 namespace VG.Impl.Ecdsa.Verify.AArch64
 

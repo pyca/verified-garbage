@@ -1,7 +1,17 @@
-import VerifiedGarbage.Proof.Rc2.AArch64.Lit
-import VerifiedGarbage.Proof.Framework.AArch64.Taint
+module
+
+public import VerifiedGarbage.Proof.Rc2.AArch64.Lit
+meta import VerifiedGarbage.Proof.Rc2.AArch64.Lit
+public import VerifiedGarbage.Proof.Framework.AArch64.Taint
+meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # Constant-time RC2 block and key-expansion programs -/
+
+@[expose] public section
 
 namespace VG.Proof.Rc2.AArch64
 

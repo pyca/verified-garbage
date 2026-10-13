@@ -1,9 +1,18 @@
-import VerifiedGarbage.Proof.RsaPss.X86_64.CtBase
+module
+
+public import VerifiedGarbage.Proof.RsaPss.X86_64.CtBase
+meta import VerifiedGarbage.Proof.RsaPss.X86_64.CtBase
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSASSA-PSS signing on x86-64: the taint checks of the pieces that do not
 depend on the hash function
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPss.X86_64
 

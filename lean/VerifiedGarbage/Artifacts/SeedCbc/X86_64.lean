@@ -1,6 +1,10 @@
-import VerifiedGarbage.Proof.Seed.X86_64.CbcVerified
+module
+
+public import VerifiedGarbage.Proof.Seed.X86_64.CbcVerified
 
 /-! # SEED-CBC artifacts on baseline x86-64 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.SeedCbc.X86_64
 

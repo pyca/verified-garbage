@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.MlKem.Arm.Add
-import VerifiedGarbage.Proof.MlKem.Ntt
-import VerifiedGarbage.Proof.Framework.Range
-import VerifiedGarbage.Impl.MlKem.Arm.Ntt
+module
+
+public import VerifiedGarbage.Proof.MlKem.Arm.Add
+public import VerifiedGarbage.Proof.MlKem.Ntt
+public import VerifiedGarbage.Proof.Framework.Range
+public import VerifiedGarbage.Impl.MlKem.Arm.Ntt
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on 32-bit ARM: Barrett reduction, the tables and the saved registers
@@ -12,6 +18,8 @@ import VerifiedGarbage.Impl.MlKem.Arm.Ntt
 (`zetaTable_eq`, `gammaTable_eq`); `saveRegs` and `restoreRegs` keep our
 caller's `r4`–`r11` in memory.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.Arm
 

@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecLay
-import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncEntry
+module
+
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecLay
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncEntry
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-PKCS1-v1_5 decryption on AArch64: entering the frames
@@ -11,6 +17,8 @@ their slots (`Spill.save_wp`), moves our stack arguments to theirs and to the
 private-key operation's (`moves_ok`), and sets the call's registers,
 establishing `Ctx` (`entry_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPkcs1Enc.AArch64.Dec
 

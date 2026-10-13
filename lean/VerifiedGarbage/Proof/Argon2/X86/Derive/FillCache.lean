@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Argon2.X86.Derive.FillInput
+module
+
+public import VerifiedGarbage.Proof.Argon2.X86.Derive.FillInput
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Argon2 on x86 (32-bit): the address block and the random word
@@ -9,6 +15,8 @@ address block for the counter, G(0, G(0, input)), at `scratch + 6144`.
 the index enters a new group of 128. `randomSource_ok`: J₁, J₂ are the
 random word of `FillStep.random`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Argon2.X86.Derive
 
@@ -111,7 +119,7 @@ theorem addressCalls_ok {s : State} (h : Inv s₀ s) {pass slice lane index c : 
       ⟨it, fun q hq => ?_, ?_, ?_⟩
   · rw [gt q hq, g₂ q hq]
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
-    rcases hq with rfl | rfl | rfl | rfl <;> exact g₁ _ (by decide) (by decide)
+    rcases hq with rfl | rfl | rfl | rfl <;> exact g₁ _ (by decide) (by decide) (by decide)
   · refine Frame.trans (f₁.sub fun r hr => ?_) ((stage_frame (by decide) f₂).trans (stage_frame (by decide) ft))
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl

@@ -1,6 +1,12 @@
-import VerifiedGarbage.Spec.Sha3.Contract
-import VerifiedGarbage.Proof.Sha3.Stream
-import VerifiedGarbage.Proof.Framework.Offset
+module
+
+public import VerifiedGarbage.Spec.Sha3.Contract
+public import VerifiedGarbage.Proof.Sha3.Stream
+public import VerifiedGarbage.Proof.Framework.Offset
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The SHA-3 sponge with its working space on the stack: locality
@@ -17,6 +23,8 @@ only within the function's buffers (`absorbPost_local`, `padPost_local`,
 `squeezePost_local`): the data, and the state, through `stateAt`, which
 reads only its 200 bytes (`stateAt_congr`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sha3
 

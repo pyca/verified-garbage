@@ -1,5 +1,7 @@
-import VerifiedGarbage.Proof.Framework.Arm.Taint
-import VerifiedGarbage.Proof.Framework.RelCT
+module
+
+public import VerifiedGarbage.Proof.Framework.Arm.Taint
+public import VerifiedGarbage.Proof.Framework.RelCT
 
 /-!
 # A taint state for code reading its stack arguments (ARMv7)
@@ -11,6 +13,8 @@ arguments public, which two runs agree on as long as the arguments are the
 same and lie outside the writable regions (`agree_argTaint`). `rel_agree`
 relates two runs of code the taint analysis checks, each described by `WP`.
 -/
+
+@[expose] public section
 
 namespace VG.Arm
 

@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Sm4.Bitsliced
+module
+
+public import VerifiedGarbage.Proof.Sm4.Bitsliced
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # SM4's rounds as the implementations run them
@@ -15,6 +21,8 @@ x 3`, `quad` four of them with the round keys `K (4 m) … K (4 m + 3)`, and
 `rk_i` of the key schedule is word `i mod 4` after `⌊i / 4⌋ + 1` `quad`s of
 the key schedule's rounds from `MK ⊕ FK`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sm4
 

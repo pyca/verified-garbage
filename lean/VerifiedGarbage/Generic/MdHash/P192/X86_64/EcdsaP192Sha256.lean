@@ -1,6 +1,8 @@
-import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.Weierstrass.Law
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.P192Sha256
+module
+
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.Weierstrass.Law
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.P192Sha256
 
 /-!
 # Deterministic ECDSA (RFC 6979) over p192 with HMAC-SHA-256 on x86-64
@@ -18,6 +20,8 @@ calls use (`vg_ecdsa_p192_sign` only its return address).
 It is generic over p192's group law and inversions `h` too, the variant
 `Variants/P192/X86_64/Law.lean`.
 -/
+
+@[expose] public section
 
 namespace VG.Generic.MdHash.P192.X86_64.EcdsaP192Sha256
 

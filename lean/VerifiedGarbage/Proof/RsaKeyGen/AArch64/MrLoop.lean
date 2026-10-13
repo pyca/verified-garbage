@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrBit
-import VerifiedGarbage.Proof.RsaKeyGen.Bits
+module
+
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrBit
+public import VerifiedGarbage.Proof.RsaKeyGen.Bits
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # A candidate on AArch64: Miller–Rabin's exponentiation loops
@@ -10,6 +16,8 @@ import VerifiedGarbage.Proof.RsaKeyGen.Bits
 inner loop over the word's bits, 64 but 63 of the last; `mrExpLoop_ok`: the
 words.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaKeyGen.AArch64
 

@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Hash
-import VerifiedGarbage.Proof.MlDsa.Sign.Setup
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Hash
+public import VerifiedGarbage.Proof.MlDsa.Sign.Setup
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA signing on x86-64: the function's contract, layout, entry and exit
@@ -13,6 +19,8 @@ saved in `scratch`, and the return address), the saves (`pro_ok`), the return
 (`topEpi_ok`), branches on `r15` (`ifOkElse_ok`, `ifOkElse_tr`) and sequences
 of pieces indexed by a number (`seqR_ok`, `seqR_tr`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86_64.Sign
 

@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.MlKem1024.AArch64.Stream
-import VerifiedGarbage.Proof.Framework.Range
+module
+
+public import VerifiedGarbage.Proof.MlKem1024.AArch64.Stream
+meta import VerifiedGarbage.Proof.MlKem1024.AArch64.Stream
+public import VerifiedGarbage.Proof.Framework.Range
+meta import VerifiedGarbage.Proof.Framework.Range
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM-1024 on AArch64: `vg_mlkem1024_decode_decompress`
@@ -11,6 +19,8 @@ bits of the first `⌈d e / 8⌉` bytes above the first `d e` (`DInv`); the byte
 coefficient `e` needs are added above them (`byte_step`), and its digit is
 decompressed and shifted out (`coeff_step`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem1024
 

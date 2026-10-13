@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlDsa.Arm.Message.HashMu
+module
+
+public import VerifiedGarbage.Proof.MlDsa.Arm.Message.HashMu
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on ARMv7, `sign_message` and `verify_message`: entry and exit
@@ -11,6 +17,8 @@ caller's `r7` kept in the first word of `scratch`, the address of `X` in
 arguments at `X + 912 + 4j` and `0 ‖ ctx_len` at `X + 944`, give `Ctx`
 (`enter_ok`). The exit restores `lr` and `r7` (`leave_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Arm.Message
 

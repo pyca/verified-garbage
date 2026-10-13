@@ -1,7 +1,9 @@
-import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.CmacAes.X86_64.Verified
-import VerifiedGarbage.Proof.CmacAes.Stream.X86_64.Verified
-import VerifiedGarbage.Proof.CmacAes.Stream.X86_64.Frame
+module
+
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.CmacAes.X86_64.Verified
+public import VerifiedGarbage.Proof.CmacAes.Stream.X86_64.Verified
+public import VerifiedGarbage.Proof.CmacAes.Stream.X86_64.Frame
 
 /-!
 # AES-CMAC (NIST SP 800-38B) on x86-64
@@ -23,6 +25,8 @@ The streaming functions keep their working space in a frame of their own
 on the stack (`Proof/CmacAes/Stream/X86_64/Frame.lean`): their `stack` is that
 frame and the stack their code uses below it.
 -/
+
+@[expose] public section
 
 namespace VG.Generic.AesCtr32.X86_64.CmacAes
 

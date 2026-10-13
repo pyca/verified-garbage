@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.Ecb
+module
+
+public import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.Ecb
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The loop
@@ -9,6 +15,8 @@ into the scratch buffer (at `x3`), whose other lanes hold whatever the buffer
 held, and copied back; then no blocks are left (`step_ok`). Every block
 becomes its encryption or decryption (`ecb_correct`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.TripleDes.AArch64.BitslicedNeon
 

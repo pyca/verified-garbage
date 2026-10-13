@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Rsa.X86_64.Guarded
-import VerifiedGarbage.Proof.Bignum.X86_64.PubVerified
-import VerifiedGarbage.Proof.Bignum.X86_64.PdVerified
+module
+
+public import VerifiedGarbage.Proof.Rsa.X86_64.Guarded
+public import VerifiedGarbage.Proof.Bignum.X86_64.PubVerified
+public import VerifiedGarbage.Proof.Bignum.X86_64.PdVerified
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_public_checked` and `vg_rsa_public_precomputed_checked` on x86-64
@@ -12,6 +18,8 @@ those functions with the checked postcondition (`pubChkContract`,
 (`publicChecked_verified`; `vg_rsa_public_precomputed_checked`'s in
 `Proof/Bignum/X86_64/FoldedCTChecked.lean`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.X86_64
 

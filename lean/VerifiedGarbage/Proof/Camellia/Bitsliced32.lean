@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Camellia.Bitsliced
+module
+
+public import VerifiedGarbage.Proof.Camellia.Bitsliced
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Bitsliced Camellia on 32-bit planes
@@ -15,6 +21,8 @@ proof states it) into the function of RFC 3713 it computes on the halves:
 a round (`round_rel`), FL and FLINV (`fl_rel`, `flinv_rel`). Nothing here
 depends on the target.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Camellia.W32
 

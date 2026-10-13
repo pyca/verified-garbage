@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Ed448.AArch64.CombBase
+module
+
+public import VerifiedGarbage.Impl.Ed448.AArch64.CombBase
 
 /-!
 # X448 of the base point on AArch64: the function
@@ -8,6 +10,8 @@ import VerifiedGarbage.Impl.Ed448.AArch64.CombBase
 `vg_ed448_r56_point_add` (`Point56.combineCall`), and the finish. In a
 module of its own, since `CombBase.lean` imports `Base.lean`.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.X448.AArch64.Base
 

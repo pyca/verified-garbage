@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesGcm.AArch64.Flush
-import VerifiedGarbage.Proof.Gcm.Ctr
+module
+
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Flush
+public import VerifiedGarbage.Proof.Gcm.Ctr
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on AArch64: counter mode over a piece (`crypt`)
@@ -13,6 +19,8 @@ arguments for the whole blocks (`crSeg1_ok`), the whole blocks with
 (`crSeg2_ok`), a new keystream block if there are bytes left (`ctrCall2_ok`),
 and the last bytes (`crTail_ok`); `crypt_ok` puts them together.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

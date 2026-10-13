@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Mont.X86.Loop
-import VerifiedGarbage.Proof.Mont.X86.Csub
+module
+
+public import VerifiedGarbage.Proof.Mont.X86.Loop
+public import VerifiedGarbage.Proof.Mont.X86.Csub
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Montgomery arithmetic on x86 (32-bit): the operations
@@ -12,6 +18,8 @@ for `[a]`, `[b]` below `m`, in the shape of the other targets' operations
 (`n` 64-bit words). Each changes only the registers `clob`, the result, the
 temporary area and the accumulator (`OpKeep`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Mont.X86
 

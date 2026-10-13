@@ -1,8 +1,17 @@
-import VerifiedGarbage.Proof.P256.EcdhDouble.Field
-import VerifiedGarbage.Proof.P256.Linear.Linear129
-import VerifiedGarbage.Proof.P256.Linear.Linear38
+module
+
+public import VerifiedGarbage.Proof.P256.EcdhDouble.Field
+public import VerifiedGarbage.Proof.P256.Linear.Linear129
+public import VerifiedGarbage.Proof.P256.Linear.Linear38
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! The selected scheduled doubling implements the original Jacobian contract. -/
+
+@[expose] public section
+
 namespace VG.Proof.P256.EcdhDouble.Verified
 open VG VG.AArch64 VG.Impl.Mont VG.Impl.Weierstrass
 open VG.Proof.Mont VG.Proof.Mont.AArch64 VG.Proof.Weierstrass VG.Proof.Weierstrass.AArch64

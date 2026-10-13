@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.AesCcm.X86.Aad
-import VerifiedGarbage.Proof.AesCcm.X86.AbsorbCT
+module
+
+public import VerifiedGarbage.Proof.AesCcm.X86.Aad
+meta import VerifiedGarbage.Proof.AesCcm.X86.Aad
+public import VerifiedGarbage.Proof.AesCcm.X86.AbsorbCT
+meta import VerifiedGarbage.Proof.AesCcm.X86.AbsorbCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CCM on x86: the associated data is chained in constant time
@@ -9,6 +17,8 @@ on the length of the associated data, `aadHead` and `aad` also on the
 slots holding it and its address: all public (`minLen_ct`, `header_ct`,
 `aadHead_ct`, `aad_ct`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

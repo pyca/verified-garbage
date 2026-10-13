@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.X448.Edwards.URep
-import VerifiedGarbage.Proof.Ed448.Group.Projective
-import VerifiedGarbage.Proof.X448.Bytes
-import VerifiedGarbage.Proof.Framework.PowLit
+module
+
+public import VerifiedGarbage.Proof.X448.Edwards.URep
+public import VerifiedGarbage.Proof.Ed448.Group.Projective
+public import VerifiedGarbage.Proof.X448.Bytes
+public import VerifiedGarbage.Proof.Framework.PowLit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 of the base point is the u-coordinate of a multiple of Ed448's
@@ -18,6 +24,8 @@ The field facts are evaluated by the kernel: `1 - d = 39082` is not a square
 (its power `(P - 1) / 2` is `-1`, as for `d` in `Ed448/Group/Projective.lean`),
 and `a24 = -d`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448.Edwards
 

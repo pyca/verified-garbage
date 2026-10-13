@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecArgs
-import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecCT1
+module
+
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecArgs
+meta import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecArgs
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecCT1
+meta import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecCT1
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-PKCS1-v1_5 decryption on AArch64: constant time, `DH` and `KDK`
@@ -11,6 +19,8 @@ arguments depend on as functions of the layout. Each block is checked by the
 taint analysis (`pw_blk`) and each call is the same call in both runs
 (`Calls.init_rel` …): `hashD_ct`, `kdkMac_ct`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPkcs1Enc.AArch64.Dec
 

@@ -1,7 +1,11 @@
-import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Proof.Sm3.Arm.Shared
+module
+
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.Proof.Sm3.Arm.Shared
 
 /-! # SM3 (GB/T 32905-2016) on ARMv7 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.Sm3.Arm
 

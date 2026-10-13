@@ -1,8 +1,12 @@
-import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Inst
-import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedVerified
+module
+
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Inst
+public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedVerified
 
 /-! # ML-DSA (FIPS 204) key generation on AArch64 -/
+
+@[expose] public section
 
 namespace VG.Generic.Keccak.AArch64.MlDsaKeyGen
 
@@ -47,7 +51,9 @@ def legacyArtifacts (v : Proof.Sha3.AArch64.Permutation) : List Artifact := [
     spSafe := Code.all_of_forall (fun _ => rfl) _ }]
 
 /-- SHA3 key generation uses hoisted matrix seeds, grouped secret sampling, and
-positive transform arithmetic. The scalar fallback keeps its original code. -/
+positive transform arithmetic. The scalar fallback shares its grouped secret
+sampling (`Optimized.secretsWith`), with the four-way samplers of its own
+permutation. -/
 def optimizedArtifacts (v : Proof.Sha3.AArch64.Permutation) : List Artifact := [
   { Spec.MlDsa.keyGen44Api with
     name := Spec.MlDsa.keyGen44Api.name ++ v.callee.suffix

@@ -1,11 +1,21 @@
-import VerifiedGarbage.Proof.AesGcm.Arm.CTFn
-import VerifiedGarbage.Proof.AesGcm.Arm.StreamAad
+module
+
+public import VerifiedGarbage.Proof.AesGcm.Arm.CTFn
+meta import VerifiedGarbage.Proof.AesGcm.Arm.CTFn
+public import VerifiedGarbage.Proof.AesGcm.Arm.StreamAad
+meta import VerifiedGarbage.Proof.AesGcm.Arm.StreamAad
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on ARMv7: `vg_aes_gcm_stream_init` and `vg_aes_gcm_stream_aad` are constant time
 
 Untrusted: everything here is checked by Lean.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesGcm.Arm
 

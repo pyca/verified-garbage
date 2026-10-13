@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Ecdh.Arm.Validate
-import VerifiedGarbage.Impl.Ecdsa.Verify.Arm
+module
+
+public import VerifiedGarbage.Proof.Ecdh.Arm.Validate
+public import VerifiedGarbage.Impl.Ecdsa.Verify.Arm
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDSA verification on 32-bit ARM: the arguments and the key
@@ -13,6 +19,8 @@ As on x86 (`Proof/Ecdsa/Verify/X86/Front.lean`).
 `n - 2`, the flag of the key's validity as the code checks it (`KeyOk`),
 and the key's point, or `G` if it is not valid, for ECDH's ladder (`Front`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Verify.Arm
 

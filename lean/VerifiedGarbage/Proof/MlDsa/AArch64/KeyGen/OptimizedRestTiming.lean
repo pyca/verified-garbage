@@ -1,7 +1,15 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedCorrect
-import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedRowTiming
-import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedNttTiming
-import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedPieceTiming
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedCorrect
+public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedRowTiming
+public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedNttTiming
+public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedPieceTiming
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.KeyGen.Optimized
 open VG VG.AArch64 VG.Impl.MlDsa.AArch64.KeyGen

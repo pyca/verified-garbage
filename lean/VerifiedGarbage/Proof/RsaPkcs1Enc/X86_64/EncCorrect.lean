@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.EncTail
-import VerifiedGarbage.Proof.Framework.Block
+module
+
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.EncTail
+public import VerifiedGarbage.Proof.Framework.Block
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-PKCS1-v1_5 encryption on x86-64: correctness
@@ -8,6 +14,8 @@ The frame's push, `EM` (`em_ok`), the call (`callArgs_run`, `pub_call`),
 the mask (`tail_ok`) and the pop: `enc_correct`, for every implementation
 of `vg_rsa_public_checked`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPkcs1Enc.X86_64
 

@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Camellia.X86.Crypt8
+module
+
+public import VerifiedGarbage.Proof.Camellia.X86.Crypt8
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Copying blocks on x86 (32-bit)
@@ -7,6 +13,8 @@ As SM4's (`Proof/Sm4/X86/Copy.lean`, whose code is the same): `copyBlocks_wp`: t
 of 16 bytes from `edx` to `ebx` (areas that do not overlap), a word at a
 time through `eax`, counting down `ecx`, and changes nothing else in memory.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Camellia.X86
 

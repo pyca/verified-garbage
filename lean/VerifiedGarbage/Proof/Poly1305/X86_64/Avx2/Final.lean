@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Powers
+module
+
+public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Powers
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Poly1305 on x86-64 with AVX2: the accumulator in and out
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Powers
 `sumLanes` adds the lanes into lane 0 and carries, `fullCarry` and `reduce`
 reduce it modulo `p`, and `storeH` joins its limbs into words.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Poly1305.X86_64.Avx2
 

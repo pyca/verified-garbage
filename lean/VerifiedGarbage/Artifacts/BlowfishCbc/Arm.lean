@@ -1,6 +1,10 @@
-import VerifiedGarbage.Proof.Blowfish.Arm.CbcVerified
+module
+
+public import VerifiedGarbage.Proof.Blowfish.Arm.CbcVerified
 
 /-! # Blowfish-CBC artifacts on baseline ARMv7 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.BlowfishCbc.Arm
 

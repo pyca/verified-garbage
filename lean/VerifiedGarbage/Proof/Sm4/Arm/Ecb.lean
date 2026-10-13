@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Sm4.Arm.Group
-import VerifiedGarbage.Proof.Sm4.Common
-import VerifiedGarbage.Proof.Framework.Contract
+module
+
+public import VerifiedGarbage.Proof.Sm4.Arm.Group
+public import VerifiedGarbage.Proof.Sm4.Common
+public import VerifiedGarbage.Proof.Framework.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # SM4 ECB on ARMv7: the whole function
@@ -11,6 +17,8 @@ their slots, builds the table of round keys in the order `dir` uses them,
 transforms the blocks a group at a time (`dataGroup_wp`) and restores the
 registers.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sm4
 

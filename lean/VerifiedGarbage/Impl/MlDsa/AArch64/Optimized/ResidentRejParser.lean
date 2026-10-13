@@ -1,7 +1,12 @@
-import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.RejNtt4
+module
+
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.RejNtt4
 
 /-! Fixed-address vector parsing for the matrix sampler. Failed vector
 acceptance falls back to the existing ordered scalar acceptance operation. -/
+
+@[expose] public section
+
 namespace VG.Impl.MlDsa.AArch64.Optimized.ResidentRej
 open VG VG.AArch64 VG.Impl.MlDsa.AArch64.Sample
 open VG.Impl.MlKem.AArch64 (mov)

@@ -1,6 +1,14 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedStageRun
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedPackedRun
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseLocalTable
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedStageRun
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedPackedRun
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseLocalTable
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Optimized.Paired
 open VG VG.AArch64

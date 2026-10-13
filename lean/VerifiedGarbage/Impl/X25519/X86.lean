@@ -1,11 +1,13 @@
-import VerifiedGarbage.TCB.X86.Isa
+module
+
+public import VerifiedGarbage.TCB.X86.Isa
 
 /-!
 # X25519: x86 (32-bit) implementation
 
 `vg_x25519(out, scalar, point, scratch)`: every argument is on the stack
-(cdecl), at `[esp + 4]`, …, `[esp + 16]` on entry, and no code here moves
-`esp`, so they stay there.
+(cdecl), at `[esp + 4]`, …, `[esp + 16]` on entry; only the inversion's call
+(`Impl/X25519/X86/Fn.lean`) moves `esp`, and restores it, so they stay there.
 
 A field element is eight 32-bit words `x0 + 2³² x1 + … + 2²²⁴ x7`, any
 number below `2²⁵⁶`, standing for its residue modulo `p = 2²⁵⁵ - 19`; only
@@ -38,15 +40,15 @@ carry of that as 38 more, which cannot carry again. So:
   then selecting `x + 19 - 2²⁵⁵` with a mask if it is not negative.
 
 The ladder follows RFC 7748 §5 operation by operation, over the bits of the
-scalar from 254 down to 0 (the counter `esi` is `t + 1`), and the inversion
-`z2^(p-2)` is the addition chain of ref10 (254 squarings and 11
-multiplications), its runs of squarings loops with
-the counter `esi`.
+scalar from 254 down to 0 (the counter `esi` is `t + 1`). The inversion and
+the function itself are in `Impl/X25519/X86/Fn.lean`.
 
 The only branches are on the loop counters, and every address is a pointer
 plus a constant, or `edi` plus the counter, so only the pointers can affect
 timing.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.X25519.X86
 
@@ -228,11 +230,6 @@ def Op.code : Op → List Instr
 /-- A sequence of operations. -/
 def ops (l : List Op) : List Instr := l.flatMap Op.code
 
-/-- `[o] = [o]^(2^n)`, for `n ≥ 1`: `n` squarings, counted by `esi`. -/
-def sqn (o n : Nat) : Prog isa :=
-  .seq (.block [.mov .esi (.imm (BitVec.ofNat 32 n))])
-    (.loop (.block (mul o o o ++ [.alu .sub .esi (.imm 1)])) .ne)
-
 /-! ## The ladder -/
 
 /-- The operations of one iteration of the ladder, after the swaps (RFC 7748
@@ -262,23 +259,6 @@ def ladder : Prog isa :=
 def lastSwap : List Instr :=
   [.mov .edx (.mem (sc SWAP)), .mov .ecx (.imm 0), .alu .sub .ecx (.reg .edx)] ++
   cswap X2 X3 ++ cswap Z2 Z3
-
-/-! ## Inversion
-
-`[T1] = [Z2]^(p-2)`, `p - 2 = 2²⁵⁵ - 21`, as ref10's `fe_invert`. -/
-
-def invert : Prog isa :=
-  .seq (.block (ops [.mul T0 Z2 Z2, .copy T1 T0])) <| .seq (sqn T1 2) <|    -- z^2, z^8
-  .seq (.block (ops [.mul T1 Z2 T1, .mul T0 T0 T1, .mul T2 T0 T0,          -- z^9, z^11, z^22
-    .mul T1 T1 T2, .copy T2 T1])) <| .seq (sqn T2 5) <|                    -- z^(2^5 - 1)
-  .seq (.block (ops [.mul T1 T2 T1, .copy T2 T1])) <| .seq (sqn T2 10) <|  -- z^(2^10 - 1)
-  .seq (.block (ops [.mul T2 T2 T1, .copy T3 T2])) <| .seq (sqn T3 20) <|  -- z^(2^20 - 1)
-  .seq (.block (ops [.mul T2 T3 T2])) <| .seq (sqn T2 10) <|               -- z^(2^40 - 1)
-  .seq (.block (ops [.mul T1 T2 T1, .copy T2 T1])) <| .seq (sqn T2 50) <|  -- z^(2^50 - 1)
-  .seq (.block (ops [.mul T2 T2 T1, .copy T3 T2])) <| .seq (sqn T3 100) <| -- z^(2^100 - 1)
-  .seq (.block (ops [.mul T2 T3 T2])) <| .seq (sqn T2 50) <|               -- z^(2^200 - 1)
-  .seq (.block (ops [.mul T1 T2 T1])) <| .seq (sqn T1 5) <|                -- z^(2^250 - 1)
-  .block (ops [.mul T1 T1 T0])                                             -- z^(2^255 - 21)
 
 /-! ## Encoding and decoding -/
 
@@ -345,16 +325,5 @@ def initLadder : List Instr :=
     [.mov .eax (.imm 0), .store (sc SWAP) .eax]
 
 def setup : List Instr := save ++ loadPoint ++ loadScalar ++ initLadder
-
-/-- `x2 · z2^(p-2)`, reduced fully, to `out` (`[esp + 4]`), and the saved
-registers restored. -/
-def finish : List Instr :=
-  mul X2 X2 T1 ++ freeze X2 ++
-  .mov .esi (.mem (at_ .esp 4)) :: ((List.range 8).flatMap fun k =>
-    [.mov .eax (.mem (sc (X2 + 4 * k))), .store (at_ .esi (4 * k)) .eax]) ++
-  restore
-
-def x25519 : Prog isa :=
-  .seq (.block setup) <| .seq ladder <| .seq (.block lastSwap) <| .seq invert (.block finish)
 
 end VG.Impl.X25519.X86

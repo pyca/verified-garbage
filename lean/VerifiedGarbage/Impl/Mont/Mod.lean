@@ -1,3 +1,5 @@
+module
+
 /-!
 # A modulus for Montgomery arithmetic, on any target
 
@@ -13,6 +15,8 @@ its low word zero, and divides by `2⁶⁴`. When `m ≡ -1 (mod 2⁶⁴)` (P-25
 for `m' = (m + 1) / 2⁶⁴`, whose words may be zero or powers of two, which
 need no multiplication (`Red.friendly`, with `m'`'s words as `MWord`s).
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Mont
 
@@ -69,10 +73,11 @@ step may add a multiple of without multiplying by its words (`Mod.sparse`):
 def sparseOk (n m : Nat) : Bool :=
   n == 6 && m == 39402006196394479212279040100143613805079739270465446667948293404245721771496870329047266088258938001861606973112319
 
-/-- P-521's order `n`, of nine words, whose products a function computes
-with `n` stored in its own working space (`Mod.fnN`). -/
+/-- P-521's order `n`, of nine words, or P-384's, of six, whose products a
+function computes with `n` stored in its own working space (`Mod.fnN`). -/
 def fnNOk (n m : Nat) : Bool :=
-  n == 9 && m == 6864797660130609714981900799081393217269435300143305409394463459185543183397655394245057746333217197532963996371363321113864768612440380340372808892707005449
+  n == 9 && m == 6864797660130609714981900799081393217269435300143305409394463459185543183397655394245057746333217197532963996371363321113864768612440380340372808892707005449 ||
+    n == 6 && m == 39402006196394479212279040100143613805079739270465446667946905279627659399113263569398956308152294913554433653942643
 
 /-- A modulus: its number of words `n`, where it is (`mo`, `n` words), the
 working space's temporary area (`tmp`, `n` words), `minv = -m⁻¹ mod 2⁶⁴`,

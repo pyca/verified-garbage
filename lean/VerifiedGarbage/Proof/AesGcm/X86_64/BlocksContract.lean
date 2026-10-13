@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.Contract
-import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.SpecP
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Contract
+public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.SpecP
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on whole blocks, x86-64: the contracts the proofs are written against
@@ -12,6 +18,8 @@ is `blocksPre` for a key context of kind `M` (`Stitch.CtxMode`): its length,
 and what it holds beyond the key schedule and the hash subkey, as the
 `_precomputed` functions' (`Spec/Gcm/Precomputed.lean`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesGcm
 

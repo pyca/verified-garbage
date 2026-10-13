@@ -1,10 +1,17 @@
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Flags
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Ladder
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Chain
-import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
-import VerifiedGarbage.Proof.Weierstrass.Law3
-import VerifiedGarbage.Proof.Framework.AArch64.Spill
-import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.Flags
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Ladder
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Chain
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
+public import VerifiedGarbage.Proof.Weierstrass.Law3
+public import VerifiedGarbage.Proof.Framework.AArch64.Spill
+public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+public import VerifiedGarbage.Impl.Ecdh.AArch64
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDSA on AArch64: the curve, the arguments and the working space
@@ -21,6 +28,8 @@ the tables of bits `bitsAt n j` (`64 n` bytes each, `j < 3`), which are
 slots `nslots + 8 j` to `nslots + 8 j + 7`. Every offset the scalar's table
 (`j = 0`) is read at is below `4096`, as `ldrb` needs.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.AArch64
 
@@ -105,6 +114,15 @@ structure BaseCfgOk (c : Cfg) : Prop where
     (c.invFn c.nPowI).allInstrs (fun i => (vdstOf i).isNone) = true ∧
     (c.invFn c.pPowI).noFrames = true ∧ (c.invFn c.nPowI).noFrames = true
   padd : c.pointOps ≠ none → PaddOk c
+  /-- The check of the peer's point as a function (`Impl.Ecdh.AArch64.Cfg.checkFn`), for a
+  curve of `Spec/Weierstrass/CheckPoint.lean`: it writes neither `v28`, where its caller keeps
+  `x30`, nor the low halves of the callee-saved vector registers, its body writes none of the
+  lanes it keeps registers in, and it has no frames. -/
+  check_fn : Impl.Ecdh.AArch64.Cfg.checkCurve c ≠ none →
+    (Impl.Ecdh.AArch64.Cfg.checkFn c).allInstrs (fun i => vdstOf i != some .v28 && keepsV i) = true ∧
+    (Impl.Ecdh.AArch64.Cfg.checkBody c).allInstrs
+      (fun i => vdstOf i != some .v24 && vdstOf i != some .v25 && vdstOf i != some .v26) = true ∧
+    (Impl.Ecdh.AArch64.Cfg.checkFn c).noFrames = true
 
 /-- The optimized comb and window formulas additionally require `a = -3`. -/
 structure CfgOk (c : Cfg) : Prop extends BaseCfgOk c where

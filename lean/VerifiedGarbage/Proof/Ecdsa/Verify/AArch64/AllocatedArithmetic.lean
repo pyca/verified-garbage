@@ -1,14 +1,22 @@
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedFieldTiming
-import VerifiedGarbage.Proof.Weierstrass.AArch64.AllocatedJointDigits
-import VerifiedGarbage.Proof.Weierstrass.AArch64.AllocatedJointLoop
-import VerifiedGarbage.Proof.P256.VerifyAllocated.Double
-import VerifiedGarbage.Proof.P256.VerifyAllocated.MixedHead
-import VerifiedGarbage.Proof.P256.VerifyAllocated.MixedTail
-import VerifiedGarbage.Proof.P256.VerifyAllocated.JacTail
-import VerifiedGarbage.Proof.P256.VerifyAllocated.CachedHead
-import VerifiedGarbage.Proof.Weierstrass.JacInplace
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedFieldTiming
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.AllocatedJointDigits
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.AllocatedJointLoop
+public import VerifiedGarbage.Proof.P256.VerifyAllocated.Double
+public import VerifiedGarbage.Proof.P256.VerifyAllocated.MixedHead
+public import VerifiedGarbage.Proof.P256.VerifyAllocated.MixedTail
+public import VerifiedGarbage.Proof.P256.VerifyAllocated.JacTail
+public import VerifiedGarbage.Proof.P256.VerifyAllocated.CachedHead
+public import VerifiedGarbage.Proof.Weierstrass.JacInplace
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## `AllocatedPointFrame` -/
+
+@[expose] public section
 
 section
 

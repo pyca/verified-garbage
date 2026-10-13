@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.PubEntry
-import VerifiedGarbage.Spec.Rsa.Contract
-import VerifiedGarbage.Proof.Framework.X86_64.Abi
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.PubEntry
+public import VerifiedGarbage.Spec.Rsa.Contract
+public import VerifiedGarbage.Proof.Framework.X86_64.Abi
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_public` on x86-64: correctness
@@ -9,6 +15,8 @@ import VerifiedGarbage.Proof.Framework.X86_64.Abi
 (`code_correct`), against `pubContract`, which states the shared contract's
 precondition on the registers and the stack.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64
 

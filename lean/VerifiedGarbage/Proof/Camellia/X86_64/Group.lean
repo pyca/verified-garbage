@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Camellia.X86_64.Prologue
-import VerifiedGarbage.Proof.Framework.Omega
+module
+
+public import VerifiedGarbage.Proof.Camellia.X86_64.Prologue
+public import VerifiedGarbage.Proof.Framework.Omega
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # A group of blocks of Camellia ECB on x86-64
@@ -10,6 +16,8 @@ blocks left and the postwhitening's address in their slots, transforms the
 tail buffer (`crypt8_ok`), reloads them, copies the blocks back and steps
 to the next group.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Camellia.X86_64
 

@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.Sm4.X86.KeyEk
-import VerifiedGarbage.Proof.Sm4.X86.Verified
+module
+
+public import VerifiedGarbage.Proof.Sm4.X86.KeyEk
+meta import VerifiedGarbage.Proof.Sm4.X86.KeyEk
+public import VerifiedGarbage.Proof.Sm4.X86.Verified
+meta import VerifiedGarbage.Proof.Sm4.X86.Verified
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The SM4 key schedule on x86 (32-bit) meets its contracts
@@ -13,6 +21,8 @@ space on the stack, zeroed on return: 1448 bytes, the 1432 of the scratch
 buffer, the copies of the two argument slots, the buffer's address and the
 return address of the call of the code.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sm4.X86
 

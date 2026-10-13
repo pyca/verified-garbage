@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Framework.AArch64.Inline
-import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-import VerifiedGarbage.Proof.Framework.AArch64.LaneRestore
+module
+
+public import VerifiedGarbage.Proof.Framework.AArch64.Inline
+public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+public import VerifiedGarbage.Proof.Framework.AArch64.LaneRestore
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The ABI of the curve functions on AArch64
@@ -14,6 +20,8 @@ from vector lanes, which `CallsKeep` checks of their code (`restores`). So,
 with `x19`–`x25` and `x30` restored, they preserve what the ABI asks
 (`abiPreserved_of`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.AArch64
 

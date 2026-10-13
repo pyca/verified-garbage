@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.AesOcb.Arm.CTBody
+module
+
+public import VerifiedGarbage.Proof.AesOcb.Arm.CTBody
+meta import VerifiedGarbage.Proof.AesOcb.Arm.CTBody
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-OCB on ARMv7: `vg_aes_ocb_seal` and `vg_aes_ocb_open` are constant time
@@ -11,6 +18,8 @@ the restore by the taint analysis (`seal_ct`, `open_ct`). `open` compares
 the tags and masks the data without a branch: whether the tag is right, in
 `r0`, is never branched on nor used as an address.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

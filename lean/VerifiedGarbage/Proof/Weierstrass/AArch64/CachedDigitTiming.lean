@@ -1,6 +1,14 @@
-import VerifiedGarbage.Proof.Weierstrass.AArch64.CachedEntryTiming
-import VerifiedGarbage.Proof.Weierstrass.AArch64.CachedSumTiming
-import VerifiedGarbage.Proof.Weierstrass.AArch64.CachedDigit
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.CachedEntryTiming
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.CachedSumTiming
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.CachedDigit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.AArch64.CachedField
 open VG VG.AArch64 VG.Impl.Mont VG.Impl.Mont.AArch64 VG.Impl.Weierstrass VG.Impl.Weierstrass.AArch64

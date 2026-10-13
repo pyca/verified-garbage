@@ -1,5 +1,11 @@
-import VerifiedGarbage.Spec.MlDsa
-import VerifiedGarbage.Proof.Sha3.Stream
+module
+
+public import VerifiedGarbage.Spec.MlDsa
+public import VerifiedGarbage.Proof.Sha3.Stream
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA: `H` and `G` through the streaming sponge
@@ -11,6 +17,8 @@ which is what a caller of `vg_keccak_absorb`, `vg_keccak_pad` and
 (`H_take`, `G_take`), so a bound larger than another draws the same first
 bytes.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Sample
 

@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Ed25519.BaseMultiples
-import VerifiedGarbage.Impl.Ed25519.AArch64.BaseMultiply
+module
+
+public import VerifiedGarbage.Impl.Ed25519.BaseMultiples
+public import VerifiedGarbage.Impl.Ed25519.AArch64.BaseMultiply
 
 /-!
 # Verification's equation with 4-bit windows
@@ -9,13 +11,17 @@ computes `[k]A - [S]B` with one chain of doublings (`dblOps`), four per 4-bit wi
 of the scalars, from the top: each window adds `[a]A` for `k`'s digit `a`
 from a table of `[1]A … [15]A` built at run time (byte 5376, cached), and `[-b]B`
 for `S`'s digit `b` from constants (`negBaseCached`, byte 2048). A zero
-digit adds nothing. The digits are read from the inputs, byte by byte (the
-counter at byte 56), high nibble first: `k`'s 64 bytes, of which only the
-low 32 have a byte of `S` beside them. The leading zero bytes of `k` above
-its low 32 are skipped (`skipZero`): before them the sum is zero, which
-doubles to itself. The equation `[S]B = R + [k]A` holds exactly when the
-result equals `-R`, which the projective comparison `pointEqual` checks.
+digit adds nothing. The digits are first split out of the inputs with vector
+instructions (`nibbles`), one per byte of the workspace: `k`'s 128 at byte 768
+and `S`'s 64 at byte 896, nibble `j` at offset `j`. A window is then one
+iteration of a loop over the nibbles left (the counter at byte 56), from the
+top: `k`'s 128, of which only the low 64 have a nibble of `S` beside them. The
+leading zero nibbles of `k` above its low 64 are skipped (`skipZero`): before
+them the sum is zero, which doubles to itself. The equation `[S]B = R + [k]A`
+holds exactly when the result equals `-R`, which the projective comparison
+`pointEqual` checks.
 -/
+@[expose] public section
 
 namespace VG.Impl.Ed25519.AArch64
 
@@ -37,11 +43,12 @@ def dblOps (t : Bool) : List FieldOp :=
     .sub 12 9 8, .sub 13 10 12, .add 14 8 9, .mul 0 11 13, .mul 1 12 14, .mul 2 13 12] ++
     if t then [.mul 3 11 14] else []
 
-/-- Four doublings: three without `T`, with the counter `x1`, then one with it. -/
+/-- Four doublings without `T`, with the counter `x1`, then the last one's `T = EH`, from
+its `E` and `H`, which every doubling leaves in slots 11 and 14 (`dblOps true`). -/
 def doubleWindow : Prog isa :=
-  .seq (.block [.movz .w .x1 3 0]) (.seq
+  .seq (.block [.movz .w .x1 4 0]) (.seq
     (.loop (.block (fieldCode (dblOps false) ++ [.subImm .x .x1 .x1 1])) (.nonzero .x .x1))
-    (.block (fieldCode (dblOps true))))
+    (.block (fieldCode [.mul 3 11 14])))
 
 /-- `[Y - X, Y + X, 2dT, 2Z]` of the point in slots 17–20 into slots 0–3, with `d` in slot 16. -/
 def cacheOps : List FieldOp := [.sub 0 18 17, .add 1 18 17, .add 2 20 20, .mul 2 2 16, .add 3 19 19]
@@ -67,16 +74,33 @@ def aTable : Prog isa := .seq (.block aTableInit) (.loop (.block aTableBody) (.n
 def bTable : List Instr :=
   (List.range 15).flatMap fun i => cachedPointStore (negBaseCached i) (2048 + 128 * i)
 
-/-- `x19` = byte `counter` of the scalar at the pointer stored at byte `ptr`, plus `add`. -/
-def digitByte (ptr add : Nat) : List Instr :=
-  [ld .x2 ptr, ld .x8 56, .add .x .x8 .x2 .x8, .ldrb .x19 .x8 add]
+/-- 16 bytes at `x2 + src` split into their nibbles at `x0 + dst`, the low nibble of each byte
+first, with 15 in every byte of `v7`. -/
+def nibBlock (src dst : Nat) : List Instr :=
+  [.ldrq .v0 .x2 src, .vop (.shift .ushr .b16 .v1 .v0 4), .vop (.logic .and .v0 .v0 .v7),
+    .vop (.perm .zip1 .b16 .v2 .v0 .v1), .vop (.perm .zip2 .b16 .v3 .v0 .v1),
+    .strq .v2 .x0 dst, .strq .v3 .x0 (dst + 16)]
 
-/-- The byte's high nibble. -/
-def digitHigh (ptr add : Nat) : List Instr := digitByte ptr add ++ [.lsr .x .x19 .x19 4]
+/-- `16 n` bytes at `x2 + src` split into their nibbles at `x0 + dst`. -/
+def nibBlocks (src dst n : Nat) : List Instr :=
+  (List.range n).flatMap fun q => nibBlock (src + 16 * q) (dst + 32 * q)
 
-/-- The byte's low nibble. -/
-def digitLow (ptr add : Nat) : List Instr :=
-  digitByte ptr add ++ [.lsl .x .x19 .x19 60, .lsr .x .x19 .x19 60]
+/-- 15 in every byte of `v7`, then the 64 bytes at `x2` split into their 128 nibbles at byte 768. -/
+def kNibblesAt : List Instr := [.movz .w .x8 15 0, .vop (.dup .b16 .v7 .x8)] ++ nibBlocks 0 768 4
+
+/-- `k`'s 64 bytes (its pointer at byte 7952) split into its 128 nibbles at byte 768. -/
+def kNibbles : List Instr := [ld .x2 7952] ++ kNibblesAt
+
+/-- `S`'s 32 bytes (byte 32 on of the signature, whose pointer is at byte 7944) split into its
+64 nibbles at byte 896. -/
+def sNibbles : List Instr := [ld .x2 7944] ++ nibBlocks 32 896 2
+
+/-- The scalars' nibbles, one per byte: nibble `j` of `k` at byte `768 + j`, of `S` at
+`896 + j`. -/
+def nibbles : List Instr := kNibbles ++ sNibbles
+
+/-- `x19` = the nibble at byte `o + counter`. -/
+def digitAt (o : Nat) : List Instr := [ld .x8 56, .add .x .x8 .x0 .x8, .ldrb .x19 .x8 o]
 
 /-- Add entry `x19 - 1` of the table at byte `o`, unless `x19` is zero. -/
 def addDigit (o : Nat) (add : List Instr) : Prog isa :=
@@ -98,35 +122,33 @@ def windowA (digit : List Instr) : Prog isa := windowWith digit pointAddCachedP
 def windowAB (digitA digitB : List Instr) : Prog isa :=
   .seq (windowWith digitA pointAddCached) (.seq (.block digitB) (addDigit 2048 pointAddCachedP))
 
-/-- `x19` = the counter less 32: nonzero while a byte of `k` alone follows. -/
-def aboveLow : List Instr := [ld .x19 56, .subImm .x .x19 .x19 32]
+/-- `x19` = the counter less 64: nonzero while a nibble of `k` alone follows. -/
+def aboveLow : List Instr := [ld .x19 56, .subImm .x .x19 .x19 64]
 
-/-- A byte of `k` alone (bytes 63 down to 32). -/
-def byteStepA : Prog isa :=
-  .seq (.block batchBegin) (.seq (windowA (digitHigh 7952 0))
-    (.seq (windowA (digitLow 7952 0)) (.block aboveLow)))
+/-- A nibble of `k` alone (nibbles 127 down to 64). -/
+def nibStepA : Prog isa :=
+  .seq (.block batchBegin) (.seq (windowA (digitAt 768)) (.block aboveLow))
 
-/-- A byte of `k` and of `S` (bytes 31 down to 0). -/
-def byteStepAB : Prog isa :=
-  .seq (.block batchBegin) (.seq (windowAB (digitHigh 7952 0) (digitHigh 7944 32))
-    (.seq (windowAB (digitLow 7952 0) (digitLow 7944 32)) (.block batchTest)))
+/-- A nibble of `k` and of `S` (nibbles 63 down to 0). -/
+def nibStepAB : Prog isa :=
+  .seq (.block batchBegin) (.seq (windowAB (digitAt 768) (digitAt 896)) (.block batchTest))
 
-/-- `x19` = byte `c - 1` of `k`, for the counter `c`, which is `x8 + 1`. -/
+/-- `x19` = nibble `c - 1` of `k`, for the counter `c`, which is `x8 + 1`. -/
 def skipLoad : List Instr :=
-  [ld .x8 56, .subImm .x .x8 .x8 1, ld .x2 7952, .add .x .x2 .x2 .x8, .ldrb .x19 .x2 0]
+  [ld .x8 56, .subImm .x .x8 .x8 1, .add .x .x2 .x0 .x8, .ldrb .x19 .x2 768]
 
-/-- Below a zero byte, the counter moves down; `x19` is nonzero while another
-byte of `k` alone may be skipped. -/
+/-- Below a zero nibble, the counter moves down; `x19` is nonzero while another
+nibble of `k` alone may be skipped. -/
 def skipBody : Prog isa :=
   .seq (.block skipLoad) (.ite (.nonzero .x .x19) (.block [.movz .w .x19 0 0])
-    (.block [st .x8 56, .subImm .x .x19 .x8 32]))
+    (.block [st .x8 56, .subImm .x .x19 .x8 64]))
 
-/-- Skip the leading zero bytes of `k` above its low 32. -/
+/-- Skip the leading zero nibbles of `k` above its low 64. -/
 def skipZero : Prog isa := .loop skipBody (.nonzero .x .x19)
 
-/-- The bytes of `k` alone that are left after `skipZero`. -/
+/-- The nibbles of `k` alone that are left after `skipZero`. -/
 def windowsA : Prog isa :=
-  .seq (.block aboveLow) (.ite (.nonzero .x .x19) (.loop byteStepA (.nonzero .x .x19)) (.block []))
+  .seq (.block aboveLow) (.ite (.nonzero .x .x19) (.loop nibStepA (.nonzero .x .x19)) (.block []))
 
 /-- `-R` from byte 7552 into slots 4–7. -/
 def negR : List Instr :=
@@ -134,6 +156,6 @@ def negR : List Instr :=
 
 def windowSetup : List Instr := constField 16 Spec.Ed25519.d
 
-def windowInit : List Instr := constPoint Spec.Ed25519.identity ++ mulCounterInit 64
+def windowInit : List Instr := constPoint Spec.Ed25519.identity ++ mulCounterInit 128
 
 end VG.Impl.Ed25519.AArch64

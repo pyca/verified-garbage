@@ -1,5 +1,7 @@
-import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.AesSiv.AArch64.Frame
+module
+
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.AesSiv.AArch64.Frame
 
 /-!
 # AES-SIV (RFC 5297) encryption and decryption on AArch64
@@ -16,6 +18,8 @@ Each function keeps its working space, 2576 bytes, in a frame of its own
 (`bl`) keep the return address in `x30`, which they save in the working
 space.
 -/
+
+@[expose] public section
 
 namespace VG.Generic.CmacAesUpdate.AArch64.AesSiv
 

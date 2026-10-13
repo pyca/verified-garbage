@@ -1,7 +1,11 @@
-import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Proof.Ed25519.Arm.Point16Verified
+module
+
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.Proof.Ed25519.Arm.Point16Verified
 
 /-! # Ed25519's point addition and doubling, in radix `2^16`, on ARMv7 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.Ed25519R16.Arm
 

@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Ecdsa.Arm.Fixed
-import VerifiedGarbage.Proof.Ecdsa.Arm.Finish
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Arm.Fixed
+public import VerifiedGarbage.Proof.Ecdsa.Arm.Finish
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDSA on 32-bit ARM: the setup and the tables of bits
@@ -9,6 +15,8 @@ of `k`, `p - 2` and `n - 2`, and what the later stages share. None of it
 needs the group law, which only the proofs of the results (`Main.lean`)
 import.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Arm
 

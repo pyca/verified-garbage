@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacStep
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacStep
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The Jacobian window method on x86-64: an iteration
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacStep
 in `T` (`jentry_ok`), `D = R + T` (`cadd_ok`) and the masks (`jmask_ok`):
 `R` then represents `[winE k' J (j - 1)]P` (`jstep_point`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.X86_64
 

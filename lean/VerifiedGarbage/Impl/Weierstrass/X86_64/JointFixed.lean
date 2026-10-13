@@ -1,6 +1,11 @@
-import VerifiedGarbage.Impl.Weierstrass.X86_64.Naf
+module
+
+public import VerifiedGarbage.Impl.Weierstrass.X86_64.Naf
 
 /-! Direct generator-table lookup for public width-seven NAF digits. -/
+
+@[expose] public section
+
 namespace VG.Impl.Weierstrass.X86_64.Joint
 open VG VG.X86_64 VG.Impl.Mont.X86_64 VG.Impl.Weierstrass
 

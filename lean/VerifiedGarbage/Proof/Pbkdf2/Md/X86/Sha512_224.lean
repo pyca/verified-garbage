@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Instances
+module
+
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Instances
+meta import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Instances
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # HMAC-SHA-512/224's `init` and `finalize` and PBKDF2-HMAC-SHA-512/224's `iterate` on x86 (32-bit)
@@ -6,6 +13,8 @@ import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Instances
 The generic proofs at SHA-512/224 (see `Instances.lean`): the taint checks of
 their blocks, and their contracts moved to the shared ones (`sig_implies`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Pbkdf2.Md.X86.Instances
 

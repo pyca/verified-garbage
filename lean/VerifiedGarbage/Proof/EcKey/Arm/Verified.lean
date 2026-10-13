@@ -1,8 +1,19 @@
-import VerifiedGarbage.Proof.EcKey.Arm.Main
-import VerifiedGarbage.Proof.EcKey.Arm.Contract
-import VerifiedGarbage.Proof.EcKey.Arm.Lit
-import VerifiedGarbage.Proof.Ecdsa.Arm.Verified
-import VerifiedGarbage.Impl.EcKey.P256.Arm
+module
+
+public import VerifiedGarbage.Proof.EcKey.Arm.Main
+meta import VerifiedGarbage.Proof.EcKey.Arm.Main
+public import VerifiedGarbage.Proof.EcKey.Arm.Contract
+meta import VerifiedGarbage.Proof.EcKey.Arm.Contract
+public import VerifiedGarbage.Proof.EcKey.Arm.Lit
+meta import VerifiedGarbage.Proof.EcKey.Arm.Lit
+public import VerifiedGarbage.Proof.Ecdsa.Arm.Verified
+meta import VerifiedGarbage.Proof.Ecdsa.Arm.Verified
+public import VerifiedGarbage.Impl.EcKey.P256.Arm
+meta import VerifiedGarbage.Impl.EcKey.P256.Arm
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # P-256 public keys on 32-bit ARM: `Verified`
@@ -13,6 +24,8 @@ and `lr` are restored and `sp` kept. Constant time by taint tracking from
 the arguments' registers: the only branches are on loop counters, and every
 address is `r12` (`scratch`) or `lr` (`out`) plus a constant or a counter.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.EcKey.Arm
 

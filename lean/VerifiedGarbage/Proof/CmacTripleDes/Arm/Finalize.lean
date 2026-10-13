@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.CmacTripleDes.Arm.Update
-import VerifiedGarbage.Proof.Framework.WriteBytes
+module
+
+public import VerifiedGarbage.Proof.CmacTripleDes.Arm.Update
+public import VerifiedGarbage.Proof.Framework.WriteBytes
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # TDEA-CMAC on ARMv7: `vg_cmac_triple_des_finalize`, the last block
@@ -10,6 +16,8 @@ block `Mₙ` (§6.2 step 4) in `r4:r5` as little-endian words (`BPost`):
 onto the zeroed bytes `[124, 132)` of the scratch buffer, `0x80` after it,
 XORed with `K2`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.CmacTripleDes.Arm
 

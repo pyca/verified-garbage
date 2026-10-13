@@ -1,7 +1,16 @@
-import VerifiedGarbage.Proof.Weierstrass.X86_64.JacDouble
-import VerifiedGarbage.Proof.Weierstrass.X86_64.ForwardField
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.JacDouble
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.ForwardField
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! The exceptional equal-point branch uses the same forwarded field compiler. -/
+
+@[expose] public section
+
 namespace VG.Proof.Weierstrass.X86_64
 open VG VG.X86_64 VG.Impl.Mont VG.Impl.Weierstrass VG.Impl.Weierstrass.X86_64
 open VG.Proof.Mont VG.Proof.Mont.X86_64 Spec.Weierstrass

@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchZTo.Loop48
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.LoopP
+module
+
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZTo.Loop48
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.LoopP
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The out-of-place AVX-512 loop, with the powers in the key context
@@ -10,6 +16,8 @@ blocks converted from the powers of the key context (`StitchZP.powP48_ok`,
 for the in-place view `dst s₀`, whose key context the loop keeps:
 `StitchZP.ctx_keep`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Gcm.X86_64.StitchZTo
 

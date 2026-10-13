@@ -1,10 +1,18 @@
-import VerifiedGarbage.Impl.Ecdsa.Secp256k1.AArch64
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Layout
-import VerifiedGarbage.Proof.Secp256k1.Point
-import VerifiedGarbage.Proof.Secp256k1.Prime
-import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
+module
+
+public import VerifiedGarbage.Impl.Ecdsa.Secp256k1.AArch64
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.Layout
+public import VerifiedGarbage.Proof.Secp256k1.Point
+public import VerifiedGarbage.Proof.Secp256k1.Prime
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # secp256k1 parameters for the AArch64 arithmetic -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.AArch64.Secp256k1
 
@@ -55,5 +63,6 @@ theorem secp256k1_ok (hI : Weierstrass.AArch64.InvSounds) : BaseCfgOk secp256k1 
   inv_at := .inr (by decide +kernel)
   inv_fn := fun _ => ⟨by decide, by lit_decide, by lit_decide, by lit_decide, by lit_decide⟩
   padd := fun h => absurd rfl h
+  check_fn := fun _ => ⟨by lit_decide, by lit_decide, by lit_decide⟩
 
 end VG.Proof.Ecdsa.AArch64.Secp256k1

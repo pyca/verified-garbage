@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Mont.Mod
+module
+
+public import VerifiedGarbage.Impl.Mont.Mod
 
 /-!
 # Short Weierstrass curves: field programs on slots, on any target
@@ -14,6 +16,8 @@ projective coordinates `(X : Y : Z)`.
 * `LadderCfg`, `PowCfg`, `CombCfg`: the slots and tables of bits that scalar
   multiplication, powers and the fixed-base comb use.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Weierstrass
 

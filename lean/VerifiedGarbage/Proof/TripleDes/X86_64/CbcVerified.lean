@@ -1,11 +1,27 @@
-import VerifiedGarbage.Proof.TripleDes.X86_64.ModeCore
-import VerifiedGarbage.Proof.Modes.X86_64.CbcDecrypt
-import VerifiedGarbage.Proof.Modes.X86_64.CbcEncrypt
-import VerifiedGarbage.Proof.TripleDes.CbcScratch
-import VerifiedGarbage.Proof.TripleDes.X86_64.CbcLit
-import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
-import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
-import VerifiedGarbage.Proof.Framework.Contract
+module
+
+public import VerifiedGarbage.Proof.TripleDes.X86_64.ModeCore
+meta import VerifiedGarbage.Proof.TripleDes.X86_64.ModeCore
+public import VerifiedGarbage.Proof.TripleDes.X86_64.CallPatch
+meta import VerifiedGarbage.Proof.TripleDes.X86_64.CallPatch
+public import VerifiedGarbage.Proof.Modes.X86_64.CbcDecrypt
+meta import VerifiedGarbage.Proof.Modes.X86_64.CbcDecrypt
+public import VerifiedGarbage.Proof.Modes.X86_64.CbcEncrypt
+meta import VerifiedGarbage.Proof.Modes.X86_64.CbcEncrypt
+public import VerifiedGarbage.Proof.TripleDes.CbcScratch
+meta import VerifiedGarbage.Proof.TripleDes.CbcScratch
+public import VerifiedGarbage.Proof.TripleDes.X86_64.CbcLit
+meta import VerifiedGarbage.Proof.TripleDes.X86_64.CbcLit
+public import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
+meta import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
+public import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
+meta import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Triple DES-CBC on x86-64 meets its contracts
@@ -19,6 +35,8 @@ everything the code computes from them; the IV is secret. `cbcEncrypt_framed`
 and `cbcDecrypt_framed` run them with their working space on the stack,
 zeroed on return: 976 bytes, the 121 words of the scratch buffer and 8 more.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.TripleDes
 
@@ -68,7 +86,7 @@ open VG.Proof.TripleDes (cbcDecX86_64 cbcEncX86_64)
 theorem invCipher_eq (k : Spec.TripleDes.Schedule) : (dirCoreSpec .decrypt).cipher k = Spec.TripleDes.invCipher k := rfl
 
 theorem cbcDecrypt_wp {s₀ : State} (hp : cbcDecX86_64.pre s₀) :
-    WP isa cbcDecrypt s₀ fun s' => gprPreserved s₀ s' ∧ cbcDecX86_64.post s₀ s' := by
+    WP isa cbcDecryptI s₀ fun s' => gprPreserved s₀ s' ∧ cbcDecX86_64.post s₀ s' := by
   obtain ⟨hrd, hwr, dKD, dKS, dVD, dVS, dDS, dRD, dRS, fitK, fitV, fitD, fitB⟩ := hp
   have hwS : (⟨s₀.gpr .r8, 8 * 121⟩ : Region) ∈ s₀.wr := by rw [hwr]; simp
   refine WP.mono (Proof.Modes.X86_64.cbcDecrypt_wp (dirCoreSpec .decrypt) (r := ⟨.rsi, .rdx, .rcx, .r8⟩)
@@ -142,9 +160,9 @@ theorem cbcDecrypt_ct : ConstantTime isa cbcDecX86_64.pre cbcDecX86_64.pub cbcDe
   VG.Taint.constantTime (A := taint) cbcTaint cbcTaint_agree (by taint_decide)
 
 theorem cbcDecrypt_correct (s : State) (hs : cbcDecX86_64.pre s) :
-    ∃ t s', Exec isa cbcDecrypt s t s' ∧ abiPreserved s s' ∧ cbcDecX86_64.post s s' := by
+    ∃ t s', Exec isa cbcDecryptI s t s' ∧ abiPreserved s s' ∧ cbcDecX86_64.post s s' := by
   obtain ⟨t, s', he, hg, hpost⟩ := cbcDecrypt_wp hs
-  exact ⟨t, s', he, abiPreserved_of_exec (c := cbcDecrypt) (by lit_decide) he hg, hpost⟩
+  exact ⟨t, s', he, abiPreserved_of_exec (c := cbcDecryptI) (by lit_decide) he hg, hpost⟩
 
 /-- A state satisfying the precondition (one block). -/
 def cbcSat : State where
@@ -158,18 +176,38 @@ def cbcSat : State where
   rd := [⟨0x1000, 384⟩, ⟨0x2000, 8⟩]
   wr := [⟨0x3000, 8⟩, ⟨0x4000, 8 * 121⟩]
 
-theorem cbcDecrypt_verified :
-    Verified X86_64.target cbcDecrypt (Proof.TripleDes.cbcDecScratchContract X86_64.abi 121) :=
-  Verified.of_correct cbcDecrypt_correct cbcDecrypt_ct (by
+theorem cbcDec_implies : cbcDecX86_64.Implies (Proof.TripleDes.cbcDecScratchContract X86_64.abi 121) := by
     sig_implies [Proof.TripleDes.cbcDecScratchContract, Proof.TripleDes.cbcScratchSig, Spec.TripleDes.cbcSig,
-      Proof.TripleDes.cbcDecPost, cbcDecX86_64, X86_64.abi, X86_64.argRegs] [cbcSat] using cbcSat)
+      Proof.TripleDes.cbcDecPost, cbcDecX86_64, X86_64.abi, X86_64.argRegs] [cbcSat] using cbcSat
+
+theorem cbcDec_implies8 : cbcDecX86_64.Implies (Proof.TripleDes.cbcDecScratchContract X86_64.abi 121 8) :=
+  cbcDec_implies.stack8_abi (by
+    sig_implies_sat [Proof.TripleDes.cbcDecScratchContract, Proof.TripleDes.cbcScratchSig, X86_64.abi, X86_64.argRegs,
+      cbcSat] [cbcSat] using cbcSat)
+
+/-- The data are apart from the call's return address. -/
+theorem cbcDec_patch (s b : State) (hv : Mem) (u : Nat → BitVec 64)
+    (hs : (Proof.TripleDes.cbcDecScratchContract X86_64.abi 121 8).pre s) (hp : cbcDecX86_64.post s b) :
+    cbcDecX86_64.post s (b.patch (hole (s.gpr .rsp)) hv u) := by
+  obtain ⟨-, hwr, -, -, -, -, -, -, -, -, -, fitD, -⟩ := cbcDec_implies8.pre s hs
+  have hb := Clear.wr_bytes (Sig.clear_of_pre hs) (p := s.gpr .rdx) (n := 8 * (s.gpr .rcx).toNat)
+    (by rw [hwr]; simp) (by omega)
+  show Spec.TripleDes.cbcBlocksAt _ _ _ = _
+  rw [cbcBlocksAt_congr (patch_mem hb)]; exact hp
+
+theorem cbcDecrypt_inline : cbcDecrypt.inline = cbcDecryptI := rfl
+
+theorem cbcDecrypt_verified :
+    Verified X86_64.target cbcDecrypt (Proof.TripleDes.cbcDecScratchContract X86_64.abi 121 8) :=
+  Verified.of_inline_ct (by lit_decide) (fun s hs => by rw [cbcDecrypt_inline]; exact cbcDecrypt_correct s hs) cbcDecrypt_ct
+    cbcDec_implies8 (fun _ h => Sig.clear_of_pre h) cbcDec_patch
 
 /-- CBC decryption with its working space on the stack. -/
 theorem cbcDecrypt_framed :
     Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratchWiped 976 .r8 121 cbcDecrypt)
-      (Spec.TripleDes.cbcDecryptContract X86_64.abi 976) :=
+      (Spec.TripleDes.cbcDecryptContract X86_64.abi 984) :=
   X86_64.Verified.stackScratchWiped (sig := Spec.TripleDes.cbcSig) (nm := "scratch") (e := .u64)
-    (n := 121) (post := Proof.TripleDes.cbcDecPost X86_64.abi.ptrBits) (wa := true) (stack := 0)
+    (n := 121) (post := Proof.TripleDes.cbcDecPost X86_64.abi.ptrBits) (wa := true) (stack := 8)
     (bytes := 976) cbcDecrypt_verified (by decide) (by decide) (by decide)
     (Code.all_of_allInstrs (by lit_decide)) (by lit_decide) (by decide)
     (Proof.TripleDes.cbcDecPostOut_local _)
@@ -181,7 +219,7 @@ theorem cbcDecrypt_framed :
 theorem encCipher_eq (k : Spec.TripleDes.Schedule) : (dirCoreSpec .encrypt).cipher k = Spec.TripleDes.cipher k := rfl
 
 theorem cbcEncrypt_wp {s₀ : State} (hp : cbcEncX86_64.pre s₀) :
-    WP isa cbcEncrypt s₀ fun s' => gprPreserved s₀ s' ∧ cbcEncX86_64.post s₀ s' := by
+    WP isa cbcEncryptI s₀ fun s' => gprPreserved s₀ s' ∧ cbcEncX86_64.post s₀ s' := by
   obtain ⟨hrd, hwr, dKD, dKS, dVD, dVS, dDS, dRD, dRS, fitK, fitV, fitD, fitB⟩ := hp
   have hwS : (⟨s₀.gpr .r8, 8 * 121⟩ : Region) ∈ s₀.wr := by rw [hwr]; simp
   refine WP.mono (Proof.Modes.X86_64.cbcEncrypt_wp (dirCoreSpec .encrypt) (r := ⟨.rsi, .rdx, .rcx, .r8⟩)
@@ -207,22 +245,42 @@ theorem cbcEncrypt_ct : ConstantTime isa cbcEncX86_64.pre cbcEncX86_64.pub cbcEn
   VG.Taint.constantTime (A := taint) cbcTaint cbcTaint_agree (by taint_decide)
 
 theorem cbcEncrypt_correct (s : State) (hs : cbcEncX86_64.pre s) :
-    ∃ t s', Exec isa cbcEncrypt s t s' ∧ abiPreserved s s' ∧ cbcEncX86_64.post s s' := by
+    ∃ t s', Exec isa cbcEncryptI s t s' ∧ abiPreserved s s' ∧ cbcEncX86_64.post s s' := by
   obtain ⟨t, s', he, hg, hpost⟩ := cbcEncrypt_wp hs
-  exact ⟨t, s', he, abiPreserved_of_exec (c := cbcEncrypt) (by lit_decide) he hg, hpost⟩
+  exact ⟨t, s', he, abiPreserved_of_exec (c := cbcEncryptI) (by lit_decide) he hg, hpost⟩
+
+theorem cbcEnc_implies : cbcEncX86_64.Implies (Proof.TripleDes.cbcEncScratchContract X86_64.abi 121) := by
+    sig_implies [Proof.TripleDes.cbcEncScratchContract, Proof.TripleDes.cbcScratchSig, Spec.TripleDes.cbcSig,
+      Proof.TripleDes.cbcEncPost, cbcEncX86_64, cbcDecX86_64, X86_64.abi, X86_64.argRegs] [cbcSat] using cbcSat
+
+theorem cbcEnc_implies8 : cbcEncX86_64.Implies (Proof.TripleDes.cbcEncScratchContract X86_64.abi 121 8) :=
+  cbcEnc_implies.stack8_abi (by
+    sig_implies_sat [Proof.TripleDes.cbcEncScratchContract, Proof.TripleDes.cbcScratchSig, X86_64.abi, X86_64.argRegs,
+      cbcSat] [cbcSat] using cbcSat)
+
+/-- The data are apart from the call's return address. -/
+theorem cbcEnc_patch (s b : State) (hv : Mem) (u : Nat → BitVec 64)
+    (hs : (Proof.TripleDes.cbcEncScratchContract X86_64.abi 121 8).pre s) (hp : cbcEncX86_64.post s b) :
+    cbcEncX86_64.post s (b.patch (hole (s.gpr .rsp)) hv u) := by
+  obtain ⟨-, hwr, -, -, -, -, -, -, -, -, -, fitD, -⟩ := cbcEnc_implies8.pre s hs
+  have hb := Clear.wr_bytes (Sig.clear_of_pre hs) (p := s.gpr .rdx) (n := 8 * (s.gpr .rcx).toNat)
+    (by rw [hwr]; simp) (by omega)
+  show Spec.TripleDes.cbcBlocksAt _ _ _ = _
+  rw [cbcBlocksAt_congr (patch_mem hb)]; exact hp
+
+theorem cbcEncrypt_inline : cbcEncrypt.inline = cbcEncryptI := rfl
 
 theorem cbcEncrypt_verified :
-    Verified X86_64.target cbcEncrypt (Proof.TripleDes.cbcEncScratchContract X86_64.abi 121) :=
-  Verified.of_correct cbcEncrypt_correct cbcEncrypt_ct (by
-    sig_implies [Proof.TripleDes.cbcEncScratchContract, Proof.TripleDes.cbcScratchSig, Spec.TripleDes.cbcSig,
-      Proof.TripleDes.cbcEncPost, cbcEncX86_64, cbcDecX86_64, X86_64.abi, X86_64.argRegs] [cbcSat] using cbcSat)
+    Verified X86_64.target cbcEncrypt (Proof.TripleDes.cbcEncScratchContract X86_64.abi 121 8) :=
+  Verified.of_inline_ct (by lit_decide) (fun s hs => by rw [cbcEncrypt_inline]; exact cbcEncrypt_correct s hs) cbcEncrypt_ct
+    cbcEnc_implies8 (fun _ h => Sig.clear_of_pre h) cbcEnc_patch
 
 /-- CBC encryption with its working space on the stack. -/
 theorem cbcEncrypt_framed :
     Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratchWiped 976 .r8 121 cbcEncrypt)
-      (Spec.TripleDes.cbcEncryptContract X86_64.abi 976) :=
+      (Spec.TripleDes.cbcEncryptContract X86_64.abi 984) :=
   X86_64.Verified.stackScratchWiped (sig := Spec.TripleDes.cbcSig) (nm := "scratch") (e := .u64)
-    (n := 121) (post := Proof.TripleDes.cbcEncPost X86_64.abi.ptrBits) (wa := true) (stack := 0)
+    (n := 121) (post := Proof.TripleDes.cbcEncPost X86_64.abi.ptrBits) (wa := true) (stack := 8)
     (bytes := 976) cbcEncrypt_verified (by decide) (by decide) (by decide)
     (Code.all_of_allInstrs (by lit_decide)) (by lit_decide) (by decide)
     (Proof.TripleDes.cbcEncPostOut_local _)

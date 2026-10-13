@@ -1,7 +1,13 @@
-import VerifiedGarbage.Impl.MlKem.X86_64.Sample
-import VerifiedGarbage.Proof.MlKem.X86_64.Bytes
-import VerifiedGarbage.Proof.Framework.Range
-import VerifiedGarbage.Proof.Sha3.Stream
+module
+
+public import VerifiedGarbage.Impl.MlKem.X86_64.Sample
+public import VerifiedGarbage.Proof.MlKem.X86_64.Bytes
+public import VerifiedGarbage.Proof.Framework.Range
+public import VerifiedGarbage.Proof.Sha3.Stream
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86-64: zeroing a Keccak state
@@ -9,6 +15,8 @@ import VerifiedGarbage.Proof.Sha3.Stream
 `zeroSt b off` stores `rax` (zero) to the 25 lanes at `b + off`: the all-zero
 state (`zeroSt_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.X86_64
 

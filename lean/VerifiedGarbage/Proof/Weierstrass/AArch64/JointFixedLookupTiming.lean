@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JointFixedTiming
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTableTiming
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JointFixedTiming
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTableTiming
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.AArch64
 open VG VG.AArch64 VG.Impl.Mont VG.Impl.Weierstrass VG.Impl.Weierstrass.AArch64

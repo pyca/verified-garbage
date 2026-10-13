@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.RsaPss.X86_64.SignEnc
+module
+
+public import VerifiedGarbage.Proof.RsaPss.X86_64.SignEnc
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Copying the requested salt directly, with no secret-dependent offset. -/
+
+@[expose] public section
+
 namespace VG.Proof.RsaPss.X86_64
 open VG VG.X86_64 VG.Impl.RsaPss.X86_64
 open VG.Proof.MlKem.X86_64 (Keep WP.keep ifp ifn)

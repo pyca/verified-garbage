@@ -1,4 +1,8 @@
-import VerifiedGarbage.Impl.MlDsa.AArch64.Call
+module
+
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Call
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.AArch64.Optimized.MatrixMask
 open VG VG.AArch64 VG.Impl.MlDsa.AArch64.Call

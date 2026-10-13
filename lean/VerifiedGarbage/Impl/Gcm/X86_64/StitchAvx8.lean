@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Gcm.X86_64.StitchAvx
-import VerifiedGarbage.Impl.Gcm.X86_64.StitchZH
+module
+
+public import VerifiedGarbage.Impl.Gcm.X86_64.StitchAvx
+public import VerifiedGarbage.Impl.Gcm.X86_64.StitchZH
 
 /-!
 # Eight-block AES-NI/GHASH pipeline
@@ -24,6 +26,8 @@ a time, hashing each with the power `H'ᵗ⁻ⁱ` (`StitchZH.remBody`).
 The entry and exit follow Stitch's internal interface; scratch fits its
 1024-byte region, and the input data register r8 is restored on exit.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Gcm.X86_64.StitchAvx8
 open VG.X86_64

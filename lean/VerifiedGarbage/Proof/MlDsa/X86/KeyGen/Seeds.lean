@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Inv
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Inv
+meta import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Inv
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA key generation on x86 (32-bit): the seeds
@@ -7,6 +14,8 @@ The AND of the samplers' results set to 1, `(ρ, ρ′, K) = H(ξ ‖ k ‖ ℓ,
 `ρ` to the seed of `RejNTTPoly` and `ρ′ ‖ · ‖ 0` to that of `RejBoundedPoly`
 (`seeds_piece`, which ends in `KB` with the AND 1).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86.KeyGen
 

@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.MlKem.X86.TopLocal
-import VerifiedGarbage.Proof.MlKem.X86.TopKem
-import VerifiedGarbage.Proof.MlKem.X86.Extra
-import VerifiedGarbage.Impl.MlKem.X86.KeyGen
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86.TopLocal
+public import VerifiedGarbage.Proof.MlKem.X86.TopKem
+public import VerifiedGarbage.Proof.MlKem.X86.Extra
+public import VerifiedGarbage.Impl.MlKem.X86.KeyGen
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86 (32-bit): the setting of key generation
@@ -11,6 +17,8 @@ The layout of the arguments (`Y L`: `seed`, `ek`, `dk`, `scratch`, and the
 data, which includes `ρ`; and `d`, `z` and the values the body computes from
 them.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.X86.KeyGen
 

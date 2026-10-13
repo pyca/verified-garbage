@@ -1,8 +1,21 @@
-import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Sha256
-import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Frame
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Framework.X86.RelCT
-import VerifiedGarbage.Proof.Scrypt.X86.Whole.Calls
+module
+
+public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Sha256
+meta import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Sha256
+public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Frame
+meta import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Frame
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.X86.RelCT
+meta import VerifiedGarbage.Proof.Framework.X86.RelCT
+public import VerifiedGarbage.Proof.Scrypt.X86.Whole.Calls
+meta import VerifiedGarbage.Proof.Scrypt.X86.Whole.Calls
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 section
 

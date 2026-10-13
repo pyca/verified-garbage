@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Camellia.X86.Sbox
-import VerifiedGarbage.Impl.Aes.X86.Ctr32
+module
+
+public import VerifiedGarbage.Impl.Camellia.X86.Sbox
+public import VerifiedGarbage.Impl.Aes.X86.Ctr32
 
 /-!
 # The layers of bitsliced Camellia on x86 (32-bit)
@@ -28,6 +30,8 @@ rounds (654). The modes keep their own state after it. The
 subkey's entry is at `kp` (`esi`). The rounds write only below the tail
 buffer, the transposes only below the table.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Camellia.X86
 

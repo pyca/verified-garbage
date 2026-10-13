@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.Argon2.Arm.Derive.CTCall
+module
+
+public import VerifiedGarbage.Proof.Argon2.Arm.Derive.CTCall
+meta import VerifiedGarbage.Proof.Argon2.Arm.Derive.CTCall
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Argon2 on ARMv7: H₀, in two runs
@@ -9,6 +16,8 @@ data. The BLAKE2b calls are related by H′'s macros' relations
 the same arguments: `scratch`, the inputs' places and lengths, and the byte
 count, which only the inputs' lengths fix.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Argon2.Arm.Derive
 

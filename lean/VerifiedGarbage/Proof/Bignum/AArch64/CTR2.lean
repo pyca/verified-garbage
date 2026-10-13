@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.Bignum.AArch64.PcCode
+module
+
+public import VerifiedGarbage.Proof.Bignum.AArch64.PcCode
+meta import VerifiedGarbage.Proof.Bignum.AArch64.PcCode
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSA on AArch64: `R² mod m` is constant time but for `m`
@@ -7,6 +14,8 @@ import VerifiedGarbage.Proof.Bignum.AArch64.PcCode
 (`sqs_ct`) and the computation of `R² mod m` (`r2_ct`), which branches on
 the top word of the public modulus.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.AArch64
 
@@ -207,15 +216,82 @@ theorem sq_pre (M : Mont) {L : Lay} {s : State} (h : SqPre L s) :
       ha.wv_of_not_mem (by decide) (by decide) hn'
     rw [hN']; exact lt
 
-theorem sqs_ct (M : Mont) (n : Nat) : RelCT isa (Two SqPre) (seqs (List.replicate (n + 1) (M.mm aR2 aR2 aR2)))
-    fun _ _ => True := by
-  have one : RelCT isa (Two SqPre) (M.mm aR2 aR2 aR2) fun _ _ => True :=
-    two_map id (fun _ _ h => h.1) (M.ctL (.inl ⟨rfl, rfl, rfl⟩))
-  induction n with
-  | zero => exact one
-  | succ n ih =>
-    show RelCT isa (Two SqPre) (.seq (M.mm aR2 aR2 aR2) (seqs (List.replicate (n + 1) (M.mm aR2 aR2 aR2)))) _
-    exact RelCT.seq (two_post (Ψ := SqPre) one fun _ _ h => sq_pre M h) ih
+/-- `sqs`' count after `j` squarings, in the header at `x0`. -/
+def SqCnt (j : Nat) (s : State) : Prop := word s.mem (s.gpr .x0) (8 * sCnt) = BitVec.ofNat 64 (6 - j)
+
+theorem sqStart_ok {L : Lay} {s : State} (h : SqPre L s) :
+    WP isa (.block [.movz .x .x13 (BitVec.ofNat 16 6) 0, sth .x13 sCnt]) s fun t => SqPre L t ∧ SqCnt 0 t := by
+  obtain ⟨hg, hw, hw', hinv, hlt⟩ := h
+  have hn := hg.1.scr.nowrap
+  have hZ := hg.2
+  have sl8 : ∀ j < 8, slot L.w j + 8 * (L.w + 2) ≤ L.Z := fun j hj => Nat.le_trans (slot_le hj) hZ
+  have hhs : ∀ j, 8 * sCnt + 8 ≤ slot L.w j := fun j => hdr_lt_slot L.w j (by decide)
+  refine WP.mono (WP.keep [.x13] (Q := fun t => t.mem = s.mem.writeW (off L.B (8 * sCnt)) (BitVec.ofNat 64 6))
+    (by brun [hg.1.x0, hdr_enc (show sCnt < 32 by decide),
+      hg.1.scr.st (show 8 * sCnt + 8 ≤ L.Z by have := hhs 8; omega)]; rfl) rfl rfl rfl) fun t ⟨hm, k⟩ => ?_
+  have o : Outside L.B (8 * sCnt) 8 s.mem t.mem := by rw [hm]; exact writeW_outside _ _ _ (by have := hhs 8; omega)
+  have h0 : t.gpr .x0 = L.B := (k.gpr .x0 (by decide)).trans hg.1.x0
+  refine ⟨⟨⟨⟨hg.1.scr.congr k.wr, h0, by rw [hm]; exact Hdr.store hg.1.hdr (by decide) (by decide) _⟩, hZ⟩, hw, hw',
+    by rw [o.word (d := slot L.w aN) (by have := hhs aN; omega) (by have := sl8 aN (by decide); omega)]; exact hinv, ?_⟩,
+    by rw [SqCnt, h0, hm, word_writeW_self]⟩
+  rw [o.wv (d := slot L.w aN) (k := L.w) (by have := hhs aN; omega) (by have := sl8 aN (by decide); omega),
+    o.wv (d := slot L.w aR2) (k := L.w) (by have := hhs aR2; omega) (by have := sl8 aR2 (by decide); omega)]
+  exact hlt
+
+theorem sqStep_ok (M : Mont) {L : Lay} {s : State} {j : Nat} (hj : j < 6) (h : SqPre L s) (hc : SqCnt j s) :
+    WP isa (.seq (M.mm aR2 aR2 aR2) (.block (dblCount sCnt))) s fun t =>
+      SqPre L t ∧ SqCnt (j + 1) t ∧ ((t.gpr .x13).toNat ≠ 0 ↔ j + 1 ≠ 6) := by
+  obtain ⟨hg, hw, hw', hinv, hlt⟩ := h
+  have hn := hg.1.scr.nowrap
+  have hZ := hg.2
+  have sl8 : ∀ j < 8, slot L.w j + 8 * (L.w + 2) ≤ L.Z := fun j hj => Nat.le_trans (slot_le hj) hZ
+  have hhs : ∀ j, 8 * sCnt + 8 ≤ slot L.w j := fun j => hdr_lt_slot L.w j (by decide)
+  have hn' : L.B.toNat + slot L.w 8 ≤ 2 ^ 64 := by omega
+  rw [SqCnt, hg.1.x0] at hc
+  refine WP.seq (WP.mono (M.mm_ok hg.1 hg.2 hw hw' (by decide) (by decide) (by decide) (by decide) (by decide)
+    (by decide) (by decide) hinv hlt) fun t₁ ⟨g₁, lt₁, _, a₁, _⟩ => ?_)
+  have hc₁ : word t₁.mem L.B (8 * sCnt) = BitVec.ofNat 64 (6 - j) := by
+    rw [a₁.word_eq (fun j' hj' => Or.inl (by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hj'
+      rcases hj' with rfl | rfl | rfl <;> exact hhs _)) (by have := hhs 8; omega), hc]
+  refine WP.mono (sqCount_ok g₁ hZ (c := 6 - j) (by omega) (by omega) hc₁)
+    fun t ⟨g, c, h13, o, _⟩ => ⟨⟨⟨g, hZ⟩, hw, hw', ?_, ?_⟩,
+      by rw [SqCnt, g.x0, c, show 6 - j - 1 = 6 - (j + 1) by omega],
+      by rw [h13, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]; omega⟩
+  · rw [o.word (d := slot L.w aN) (by have := hhs aN; omega) (by have := sl8 aN (by decide); omega),
+      a₁.word0_of_not_mem (by decide) (by decide) hn' (by omega)]
+    exact hinv
+  · rw [o.wv (d := slot L.w aN) (k := L.w) (by have := hhs aN; omega) (by have := sl8 aN (by decide); omega),
+      o.wv (d := slot L.w aR2) (k := L.w) (by have := hhs aR2; omega) (by have := sl8 aR2 (by decide); omega)]
+    have hN : wv t₁.mem L.B (slot L.w aN) L.w = wv s.mem L.B (slot L.w aN) L.w :=
+      a₁.wv_of_not_mem (by decide) (by decide) hn'
+    rw [hN]; exact lt₁
+
+/-- `sqs` leaks the same in runs whose working space `Φ` fixes, for any `Φ`
+that some layout's `SqPre` gives and keeps. -/
+theorem sqs_ctG (M : Mont) {α : Type} {Φ : α → State → Prop}
+    (hΦ : ∀ a s, Φ a s → ∃ L, SqPre L s ∧ ∀ t, SqPre L t → Φ a t) (hpin : Pins Φ [.x0])
+    (one : RelCT isa (Two Φ) (M.mm aR2 aR2 aR2) fun _ _ => True) :
+    RelCT isa (Two Φ) (sqs M.mm) fun _ _ => True := by
+  unfold sqs
+  refine RelCT.seq (two_piece (Ψ := fun a s => 0 < 6 ∧ Φ a s ∧ SqCnt 0 s) [.x0] hpin (by taint_decide)
+    fun a s h => let ⟨_, hL, hc⟩ := hΦ a s h
+      WP.mono (sqStart_ok hL) fun t ⟨h₁, h₂⟩ => ⟨by decide, hc t h₁, h₂⟩) ?_
+  refine (two_loop (Φ := fun a j s => Φ a s ∧ SqCnt j s) (Ψ := fun _ _ => True) (fun _ => 6) ?_ ?_).mono
+    (fun _ _ h => h) fun _ _ _ => trivial
+  · refine RelCT.seq (two_post (Ψ := fun (q : α × Nat) s => Φ q.1 s)
+      (two_map (·.1) (fun _ _ h => h.2.1) one) fun q s h => ?_)
+      (two_taint [.x0] (fun q s₁ s₂ h₁ h₂ => hpin q.1 s₁ s₂ h₁ h₂) (by taint_decide))
+    obtain ⟨_, hL, hc⟩ := hΦ _ _ h.2.1
+    exact WP.mono (sq_pre M hL) hc
+  · rintro a j s hj ⟨h, hc⟩
+    obtain ⟨_, hL, hk⟩ := hΦ a s h
+    exact WP.mono (sqStep_ok M hj hL hc) fun t ⟨h₁, h₂, h₃⟩ =>
+      ⟨eval_count hj h₃, fun _ => ⟨hk t h₁, h₂⟩, fun _ => trivial⟩
+
+theorem sqs_ct (M : Mont) : RelCT isa (Two SqPre) (sqs M.mm) fun _ _ => True :=
+  sqs_ctG M (fun L _ h => ⟨L, h, fun _ h => h⟩) (fun _ _ _ h₁ h₂ => pins_good _ _ _ h₁.1 h₂.1)
+    (two_map id (fun _ _ h => h.1) (M.ctL (.inl ⟨rfl, rfl, rfl⟩)))
 
 /-! ## `R² mod m` -/
 
@@ -313,7 +389,7 @@ theorem setWord_eq (o : Nat) : setWord o =
 /-- `R² mod m` leaks the same in runs that agree on `m`. -/
 theorem r2_ct (M : Mont) : RelCT isa (Two R2Pre) (seqs (r2Steps M.mm)) fun _ _ => True := by
   rw [r2Steps_eq]
-  refine RelCT.seqs_append (by simp) (by simp) (RelCT.seq (R := Two SqPre) ?_ (sqs_ct M 5))
+  refine RelCT.seqs_append (by simp) (by simp) (RelCT.seq (R := Two SqPre) ?_ (sqs_ct M))
   -- `w` and `m`'s base.
   refine RelCT.seq (RelCT.block_append (l₁ := ([ldh .x12 sW, ldh .x8 (sArr aN)] : List Instr))
     (l₂ := ([.subImm .x .x4 .x12 1, .lsl .x .x4 .x4 3, .add .x .x4 .x8 .x4, ld .x3 .x4] : List Instr))

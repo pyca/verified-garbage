@@ -1,23 +1,47 @@
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Framework.X86.Inline
-import VerifiedGarbage.Proof.Sha256.X86.Compress
-import VerifiedGarbage.Spec.Sha256.Contract
-import VerifiedGarbage.Proof.Sha256.X86.Stream.Common
-import VerifiedGarbage.Proof.Sha256.StateMem
-import VerifiedGarbage.Proof.Sha256.X86.Contract
-import Mathlib.Tactic.Set
-import VerifiedGarbage.Proof.MdStream.X86.Finalize
-import VerifiedGarbage.Proof.MdStream.X86.Update
-import VerifiedGarbage.Proof.MdStream.X86.Words
-import VerifiedGarbage.Proof.Sha256.Md
-import VerifiedGarbage.Impl.Sha256.X86.Stream
-import VerifiedGarbage.Proof.Sha256.X86.Lit
-import VerifiedGarbage.Proof.Sha256.Scratch
-import VerifiedGarbage.Proof.Framework.X86.StackScratch
+module
+
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.X86.Inline
+meta import VerifiedGarbage.Proof.Framework.X86.Inline
+public import VerifiedGarbage.Proof.Sha256.X86.Compress
+meta import VerifiedGarbage.Proof.Sha256.X86.Compress
+public import VerifiedGarbage.Spec.Sha256.Contract
+meta import VerifiedGarbage.Spec.Sha256.Contract
+public import VerifiedGarbage.Proof.Sha256.X86.Stream.Common
+meta import VerifiedGarbage.Proof.Sha256.X86.Stream.Common
+public import VerifiedGarbage.Proof.Sha256.StateMem
+meta import VerifiedGarbage.Proof.Sha256.StateMem
+public import VerifiedGarbage.Proof.Sha256.X86.Contract
+meta import VerifiedGarbage.Proof.Sha256.X86.Contract
+public import Mathlib.Tactic.Set
+meta import Mathlib.Tactic.Set
+public import VerifiedGarbage.Proof.MdStream.X86.Finalize
+meta import VerifiedGarbage.Proof.MdStream.X86.Finalize
+public import VerifiedGarbage.Proof.MdStream.X86.Update
+meta import VerifiedGarbage.Proof.MdStream.X86.Update
+public import VerifiedGarbage.Proof.MdStream.X86.Words
+meta import VerifiedGarbage.Proof.MdStream.X86.Words
+public import VerifiedGarbage.Proof.Sha256.Md
+meta import VerifiedGarbage.Proof.Sha256.Md
+public import VerifiedGarbage.Impl.Sha256.X86.Stream
+meta import VerifiedGarbage.Impl.Sha256.X86.Stream
+public import VerifiedGarbage.Proof.Sha256.X86.Lit
+meta import VerifiedGarbage.Proof.Sha256.X86.Lit
+public import VerifiedGarbage.Proof.Sha256.Scratch
+meta import VerifiedGarbage.Proof.Sha256.Scratch
+public import VerifiedGarbage.Proof.Framework.X86.StackScratch
+meta import VerifiedGarbage.Proof.Framework.X86.StackScratch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Streaming SHA-256 on x86 (32-bit): `init`
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sha256.X86.Stream
 

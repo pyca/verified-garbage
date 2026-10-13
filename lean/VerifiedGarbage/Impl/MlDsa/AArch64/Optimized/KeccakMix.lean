@@ -1,4 +1,8 @@
-import VerifiedGarbage.Impl.Sha3.AArch64.Sha3.Vector
+module
+
+public import VerifiedGarbage.Impl.Sha3.AArch64.Sha3.Vector
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.AArch64.Optimized.KeccakMix
 open VG VG.AArch64 VG.Impl.Sha3.AArch64.Sha3.Vector

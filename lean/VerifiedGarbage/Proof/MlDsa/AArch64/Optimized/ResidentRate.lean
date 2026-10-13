@@ -1,9 +1,17 @@
-import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Resident
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.RoundLoop
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeccakMix
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Squeeze
+module
+
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Resident
+public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.RoundLoop
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeccakMix
+public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Squeeze
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## From `Resident.lean` -/
+
+@[expose] public section
 
 section
 

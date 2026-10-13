@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Modes.AArch64.CbcEncLoop
-import VerifiedGarbage.Proof.Modes.Fb
-import VerifiedGarbage.Impl.Modes.AArch64.Fb
-import VerifiedGarbage.Proof.Framework.AArch64.LaneRestore
+module
+
+public import VerifiedGarbage.Proof.Modes.AArch64.CbcEncLoop
+public import VerifiedGarbage.Proof.Modes.Fb
+public import VerifiedGarbage.Impl.Modes.AArch64.Fb
+public import VerifiedGarbage.Proof.Framework.AArch64.LaneRestore
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # OFB and CFB on AArch64, for any core: the data loop
@@ -16,6 +22,8 @@ the buffer (`BlockSpec.crypt_wp`), makes block `j` of the data its output
 The IV's address is kept in a register `iv` the core does not write
 (`KeepsReg`), which `keepsReg_of_regSafe` checks of the core's code.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Modes.AArch64
 

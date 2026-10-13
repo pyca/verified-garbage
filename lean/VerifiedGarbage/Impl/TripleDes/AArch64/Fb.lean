@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.TripleDes.AArch64.Cbc
-import VerifiedGarbage.Impl.Modes.AArch64.Cfb8
+module
+
+public import VerifiedGarbage.Impl.TripleDes.AArch64.Cbc
+public import VerifiedGarbage.Impl.Modes.AArch64.Cfb8
 
 /-!
 # Triple DES-OFB, -CFB64 and -CFB8 on AArch64
@@ -12,6 +14,8 @@ CBC encryption's core (`dirCore .encrypt`, the scalar block function, one
 the artifact allocates on the stack, and the IV's address in `x25`, which
 the block function never writes.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.TripleDes.AArch64
 

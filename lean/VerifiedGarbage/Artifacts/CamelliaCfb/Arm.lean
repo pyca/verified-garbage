@@ -1,6 +1,10 @@
-import VerifiedGarbage.Proof.Camellia.Arm.FbVerified
+module
+
+public import VerifiedGarbage.Proof.Camellia.Arm.FbVerified
 
 /-! # Camellia-CFB128 artifacts on baseline ARMv7 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.CamelliaCfb.Arm
 

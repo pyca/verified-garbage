@@ -1,9 +1,15 @@
-import VerifiedGarbage.Proof.Aes.Arm.Ctr32
-import VerifiedGarbage.Proof.Cmac.Frame
-import VerifiedGarbage.Proof.Framework.Arm.Frame
-import VerifiedGarbage.Proof.Framework.Arm.RelCT
-import VerifiedGarbage.Proof.Framework.Arm.RegUpd
-import VerifiedGarbage.Impl.CmacAes.Arm
+module
+
+public import VerifiedGarbage.Proof.Aes.Arm.Ctr32
+public import VerifiedGarbage.Proof.Cmac.Frame
+public import VerifiedGarbage.Proof.Framework.Arm.Frame
+public import VerifiedGarbage.Proof.Framework.Arm.RelCT
+public import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+public import VerifiedGarbage.Impl.CmacAes.Arm
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CMAC on ARMv7: calling `vg_aes_ctr32` on one block
@@ -14,6 +20,8 @@ block `C` and one data block `D` holding zeros: `D` then holds `CIPH_K(C)`, as
 bytes (`Cmac.aesWith`), and only `C`, `D`, `S` and the 8 bytes below the stack
 pointer change in memory.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.CmacAes.Arm
 

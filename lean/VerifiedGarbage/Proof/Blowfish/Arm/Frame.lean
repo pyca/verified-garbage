@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Blowfish.Arm.Verified
-import VerifiedGarbage.Proof.Framework.Arm.RegScratchWipe
+module
+
+public import VerifiedGarbage.Proof.Blowfish.Arm.Verified
+public import VerifiedGarbage.Proof.Framework.Arm.RegScratchWipe
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Blowfish on ARMv7, with the working space on the stack
@@ -11,6 +17,8 @@ in a frame that is the working space (64 bytes for key expansion, 256 for
 ECB, of which each uses the first 44) and whose first 48 bytes they zero
 after the code (`Verified.regScratchWiped`). The code uses no other stack.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Blowfish.Arm
 

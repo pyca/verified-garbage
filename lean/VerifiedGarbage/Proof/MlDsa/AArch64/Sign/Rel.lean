@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseA
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseA
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA signing on AArch64: two runs
@@ -11,6 +17,8 @@ invariant, and the piece's own proof the next relation (`relInvE`). The runs
 are in the same layout (`RR.lrel`) and agree on `ρ` (`RR.rho`), which the
 leakage begins with.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Sign
 

@@ -1,9 +1,15 @@
-import VerifiedGarbage.Proof.Ed448.AArch64.PublicKey.Layout
-import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Absorb
-import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Pad
-import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Squeeze
-import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Ed448.AArch64.Whole.Zero
+module
+
+public import VerifiedGarbage.Proof.Ed448.AArch64.PublicKey.Layout
+public import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Absorb
+public import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Pad
+public import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Squeeze
+public import VerifiedGarbage.Proof.Framework.AArch64.Exec
+public import VerifiedGarbage.Proof.Ed448.AArch64.Whole.Zero
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 public-key derivation on AArch64: `SHAKE256(seed, 114)`
@@ -13,6 +19,8 @@ padding absorbed, and 114 bytes squeezed into the frame (`hash_ok`), with
 any implementation `v` of the permutation: each call is of the sponge
 function's correctness for `v` (`Proof.Sha3.AArch64.Stream`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.AArch64.PublicKey
 

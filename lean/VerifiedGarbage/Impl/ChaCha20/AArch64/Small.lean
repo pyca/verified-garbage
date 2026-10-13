@@ -1,6 +1,11 @@
-import VerifiedGarbage.Impl.ChaCha20.AArch64.Neon4
+module
+
+public import VerifiedGarbage.Impl.ChaCha20.AArch64.Neon4
 
 /-! Vector tails write only the two or three whole blocks available. -/
+
+@[expose] public section
+
 namespace VG.Impl.ChaCha20.AArch64.Small
 open VG VG.AArch64
 

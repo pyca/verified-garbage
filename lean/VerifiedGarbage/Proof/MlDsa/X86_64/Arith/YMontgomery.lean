@@ -1,4 +1,13 @@
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.MontgomeryCore
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.MontgomeryCore
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.MontgomeryCore
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86_64.Arith
 

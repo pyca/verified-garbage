@@ -1,6 +1,12 @@
-import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Generic
-import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Proof.Framework.Contract
+module
+
+public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Generic
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.Proof.Framework.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Deterministic ECDSA on 32-bit ARM: the contract the proof is written against
@@ -12,6 +18,8 @@ stack, by name:
 the result in `r0` (the low word of `r1:r0`). Each instance's file shows
 `I.signContract` implies it.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Rfc6979.Arm
 

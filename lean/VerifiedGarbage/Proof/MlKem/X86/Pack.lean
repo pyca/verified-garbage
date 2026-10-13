@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.MlKem.X86.Common
-import VerifiedGarbage.Proof.MlKem.Compress
-import VerifiedGarbage.Impl.MlKem.X86.Compress
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86.Common
+public import VerifiedGarbage.Proof.MlKem.Compress
+public import VerifiedGarbage.Impl.MlKem.X86.Compress
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86 (32-bit): compressing and packing coefficients
@@ -10,6 +16,8 @@ import VerifiedGarbage.Impl.MlKem.X86.Compress
 and `accSteps` packs `j` of them, from `j - 1` down to 0 (`accSteps_spec`), as
 the number `pk` whose base-`2ᵈ` digits they are.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.X86
 

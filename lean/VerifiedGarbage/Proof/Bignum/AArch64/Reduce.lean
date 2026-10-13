@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Bignum.AArch64.Row
+module
+
+public import VerifiedGarbage.Proof.Bignum.AArch64.Row
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Multiword arithmetic on AArch64: `acc := (acc + u m) / 2⁶⁴`
@@ -13,6 +19,8 @@ that the low word is zero, and stores the sum shifted down one word:
   word `j - 1` (`RedInv`).
 * `redTop` adds the carry into words `w` and `w + 1`, stored one down.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.AArch64
 

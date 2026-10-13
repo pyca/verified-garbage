@@ -1,6 +1,12 @@
-import VerifiedGarbage.Spec.Gcm
-import VerifiedGarbage.Proof.Framework.Mem
-import Mathlib.Data.List.Induction
+module
+
+public import VerifiedGarbage.Spec.Gcm
+public import VerifiedGarbage.Proof.Framework.Mem
+public import Mathlib.Data.List.Induction
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Blocks as bytes, and the counter blocks of `inc₃₂`
@@ -9,6 +15,8 @@ import Mathlib.Data.List.Induction
 the bytes of `inc₃₂ⁱ(x)`: the first twelve are those of `x`, and the last
 four the big-endian `x mod 2³² + i`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Aes
 

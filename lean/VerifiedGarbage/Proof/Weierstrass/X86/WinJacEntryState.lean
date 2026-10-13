@@ -1,11 +1,19 @@
-import VerifiedGarbage.Proof.Weierstrass.X86.WinJacCoZField
-import VerifiedGarbage.Proof.Weierstrass.WinJacMath
-import VerifiedGarbage.Proof.Weierstrass.X86.WinJacBuildInit
-import VerifiedGarbage.Proof.Weierstrass.X86.WinJacBuildState
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.Weierstrass.X86.WinJacDouble
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86.WinJacCoZField
+public import VerifiedGarbage.Proof.Weierstrass.WinJacMath
+public import VerifiedGarbage.Proof.Weierstrass.X86.WinJacBuildInit
+public import VerifiedGarbage.Proof.Weierstrass.X86.WinJacBuildState
+public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+public import VerifiedGarbage.Proof.Weierstrass.X86.WinJacDouble
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## `WinJacCoZState` -/
+
+@[expose] public section
 
 section
 

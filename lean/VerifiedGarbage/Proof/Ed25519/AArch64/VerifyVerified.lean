@@ -1,15 +1,34 @@
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
-import VerifiedGarbage.Impl.Ed25519.AArch64.Verify
-import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyCTLit
-import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyContext
-import VerifiedGarbage.Proof.Ed25519.VerifyBytes
-import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarMemory
-import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseMain
-import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyCTBody
-import VerifiedGarbage.Proof.Framework.Contract
+module
+
+public import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
+public import VerifiedGarbage.Impl.Ed25519.AArch64.Verify
+meta import VerifiedGarbage.Impl.Ed25519.AArch64.Verify
+public import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyCTLit
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyCTLit
+public import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyContext
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyContext
+public import VerifiedGarbage.Proof.Ed25519.VerifyBytes
+meta import VerifiedGarbage.Proof.Ed25519.VerifyBytes
+public import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarMemory
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarMemory
+public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+meta import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+public import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseMain
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseMain
+public import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyCTBody
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyCTBody
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Ed25519.AArch64.VerifyLit`. -/
+
+@[expose] public section
+
 section
 /-! A checked literal for the complete verification program. -/
 
@@ -80,7 +99,7 @@ theorem verifyDecodeR_ok {s : State} {base pk sig challenge : Addr}
         workspace_tablePoint kb.mem (by decide) (by decide), ka.mem]
     obtain ⟨Ra, hRa⟩ := decodePoint_rep (hp.trans hy)
     refine WP.mono (verifyEquationPoints_ok hd.scratch hd.sigHeader hd.challengeHeader
-      hd.scalarBytes hd.scalarFar hd.challengeRead hd.challengeFar (by rw [da]; exact hA)
+      hd.scalarQ hd.scalarFar hd.challengeQ hd.challengeFar (by rw [da]; exact hA)
       (by rw [dp, cp]; exact hRa)) fun t ⟨kt, tv⟩ => ?_
     refine ⟨kabcd.trans kt, ?_⟩
     rw [tv, dp, cp, da, verifyKeep_bytes kabcd h.scalarFar, verifyKeep_bytes kabcd h.challengeFar,
@@ -325,11 +344,11 @@ theorem verifySetup_state_ok {s : State} (hs : verifyLocal.pre s) :
     · intro d hd
       rw [show off (off (s.gpr .x1) 32) d = off (s.gpr .x1) (32 + d) from Offset.add_add ..]
       exact ⟨_, by rw [rr, hr]; simp, Offset.contains_base _ (show 32 + d + 8 ≤ 64 by omega) (by omega)⟩
-    · intro i hi
-      rw [show off (off (s.gpr .x1) 32) i = off (s.gpr .x1) (32 + i) from Offset.add_add ..]
-      exact ⟨_, by rw [rr, hr]; simp, Offset.contains_base _ (show 32 + i + 1 ≤ 64 by omega) (by omega)⟩
-    · intro i hi
-      exact ⟨_, by rw [rr, hr]; simp, Offset.contains_base _ (show i + 1 ≤ 64 by omega) (by omega)⟩
+    · intro d hd
+      rw [show off (off (s.gpr .x1) 32) d = off (s.gpr .x1) (32 + d) from Offset.add_add ..]
+      exact ⟨_, by rw [rr, hr]; simp, Offset.contains_base _ (show 32 + d + 16 ≤ 64 by omega) (by omega)⟩
+    · intro d hd
+      exact ⟨_, by rw [rr, hr]; simp, Offset.contains_base _ hd (by omega)⟩
     · intro i hi; exact farScr hpk hi (by decide)
     · intro i hi; exact farScr hsig (by omega) (by decide)
     · intro i hi

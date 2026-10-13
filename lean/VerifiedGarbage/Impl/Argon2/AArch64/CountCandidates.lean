@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Argon2.AArch64.Instructions
-import VerifiedGarbage.TCB.AArch64.Isa
+module
+
+public import VerifiedGarbage.Impl.Argon2.AArch64.Instructions
+public import VerifiedGarbage.TCB.AArch64.Isa
 
 /-! # The two eligible reference windows
 
@@ -8,6 +10,8 @@ the slice and `x23` the index within the segment. `x2` receives the count
 for the current lane; `x3` receives the count for another lane. Only the
 public pass controls a branch. The zero-index adjustment uses a borrow mask.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Argon2.AArch64.CountCandidates
 

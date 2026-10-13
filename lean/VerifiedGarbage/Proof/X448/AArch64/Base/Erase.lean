@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.X448.AArch64.Fast.Erase
+module
+
+public import VerifiedGarbage.Proof.X448.AArch64.Fast.Erase
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 of the base point on AArch64: the comb's code, erased
@@ -9,6 +15,8 @@ pieces that are the same code whatever the slots (the negations, the additions
 of affine points): the constant-time check of `vg_ed448_r56_comb_base`, whose
 loop it is, analyses each once (`Split`).
 -/
+
+@[expose] public section
 
 namespace VG.AArch64
 

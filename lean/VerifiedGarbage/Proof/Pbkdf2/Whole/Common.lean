@@ -1,8 +1,14 @@
-import VerifiedGarbage.Spec.Pbkdf2
-import VerifiedGarbage.Proof.Framework.Bswap
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Hmac.Common
-import VerifiedGarbage.Proof.Hmac.Generic.Common
+module
+
+public import VerifiedGarbage.Spec.Pbkdf2
+public import VerifiedGarbage.Proof.Framework.Bswap
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Hmac.Common
+public import VerifiedGarbage.Proof.Hmac.Generic.Common
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # PBKDF2 on the 32-bit targets, the whole derivation: what does not depend on the target
@@ -13,6 +19,8 @@ the bytes of a byte-reversed word in memory (`bytes_rev_int`), and two
 disjoint regions that do not wrap around fit in the address space together
 (`len_add_le`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Pbkdf2.Whole
 

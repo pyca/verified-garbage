@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Blowfish.AArch64.Copy
+module
+
+public import VerifiedGarbage.Proof.Blowfish.AArch64.Copy
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The batches of sixteen blocks
@@ -6,6 +12,8 @@ import VerifiedGarbage.Proof.Blowfish.AArch64.Copy
 While at least sixteen blocks are left, a batch runs on the next sixteen
 in place (`wide_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Blowfish.AArch64
 

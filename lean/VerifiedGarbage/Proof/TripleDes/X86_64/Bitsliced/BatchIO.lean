@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Copy
-import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Transpose
+module
+
+public import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Copy
+public import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Transpose
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The start and end of a batch
@@ -9,6 +15,8 @@ the state words (`copyIn`, `copyOut`), counting the passes
 (`passesStart`), and the advance of the data pointer and the count of
 blocks left (`batchEnd`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.TripleDes.X86_64.Bitsliced
 

@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Rsa.X86_64.PrivOutcome
+module
+
+public import VerifiedGarbage.Proof.Rsa.X86_64.PrivOutcome
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_private_checked` on x86-64: correctness
@@ -7,6 +13,8 @@ The frame's push, the CRT's arguments and call (`crtArgs_ok`, `crt_call`),
 the check (`check_ok`) and the pop: `code_correct`, for every implementation
 of the CRT.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.X86_64
 

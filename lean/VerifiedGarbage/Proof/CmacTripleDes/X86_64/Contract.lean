@@ -1,6 +1,12 @@
-import VerifiedGarbage.Impl.CmacTripleDes.X86_64
-import VerifiedGarbage.Spec.Cmac.TripleDesContract
-import VerifiedGarbage.Proof.Framework.X86_64.Abi
+module
+
+public import VerifiedGarbage.Impl.CmacTripleDes.X86_64
+public import VerifiedGarbage.Spec.Cmac.TripleDesContract
+public import VerifiedGarbage.Proof.Framework.X86_64.Abi
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # TDEA-CMAC on x86-64: the contracts the proofs are written against
@@ -9,6 +15,8 @@ The artifacts' contracts are the shared ones of
 `Spec/Cmac/TripleDesContract.lean`, which imply these (`Verified.lean`). The
 functions call nothing and use no stack.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.CmacTripleDes.X86_64
 

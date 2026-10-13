@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesCcm.X86.Absorb
+module
+
+public import VerifiedGarbage.Proof.AesCcm.X86.Absorb
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CCM on x86: the associated data (`header`, `aadHead y`, `aad y`)
@@ -11,6 +17,8 @@ associated data after it and chains the block (`aadHead_ok`); `aad y` does
 that and chains the rest of the associated data, padded, if there is any
 (`aad_ok`): the blocks `Proof.AesCcm.adataBlocks`.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

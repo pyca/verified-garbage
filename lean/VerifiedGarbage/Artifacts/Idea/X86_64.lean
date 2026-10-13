@@ -1,6 +1,10 @@
-import VerifiedGarbage.Proof.Idea.X86_64.Invert
+module
+
+public import VerifiedGarbage.Proof.Idea.X86_64.Invert
 
 /-! # IDEA artifacts on baseline x86-64 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.Idea.X86_64
 

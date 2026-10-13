@@ -1,7 +1,11 @@
-import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.Ed25519.AArch64.MulAddVerified
+module
+
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.Ed25519.AArch64.MulAddVerified
 
 /-! The merged scalar multiply-add API, implemented with baseline integer instructions. -/
+
+@[expose] public section
 
 namespace VG.Artifacts.Ed25519MulAdd.AArch64
 

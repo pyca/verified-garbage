@@ -1,9 +1,15 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Gh
-import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Ghash
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Pow
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Field48
-import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Tab
-import VerifiedGarbage.Proof.Gcm.Powers
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Gh
+public import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Ghash
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Pow
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Field48
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Tab
+public import VerifiedGarbage.Proof.Gcm.Powers
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM's short path on x86-64: the powers of the hash subkey
@@ -19,6 +25,8 @@ registers the first block leaves: `powHead_ok`. For the end of a long
 `seal`, `finPow` leaves `H'` and `H'²` (`finPow_ok`), which multiply as one
 and two steps of `GHASH` (`step1'`, `step2`, `finPow_facts`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
-import VerifiedGarbage.Proof.MlDsa.X86_64.Round.Loop
-import VerifiedGarbage.Proof.MlDsa.X86_64.Round.Contracts
-import VerifiedGarbage.Proof.MlDsa.Round.Decompose
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Round.Loop
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Round.Contracts
+public import VerifiedGarbage.Proof.MlDsa.Round.Decompose
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on x86-64: the functions with `γ₂` and one output
@@ -12,6 +18,8 @@ run the loop of the body for the `γ₂` they found. `oneOut_ok` proves this
 once, from a body that stores `F γ₂ x` for the coefficients `x p` of the
 inputs `p`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86_64.Round
 

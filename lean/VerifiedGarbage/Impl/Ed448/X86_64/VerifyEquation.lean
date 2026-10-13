@@ -1,4 +1,7 @@
-import VerifiedGarbage.Impl.Ed448.X86_64.Window
+module
+
+public import VerifiedGarbage.Impl.Ed448.X86_64.Wnaf.Joint
+public import VerifiedGarbage.Impl.Ed448.X86_64.Window
 
 /-!
 # Ed448 verification's equation on x86-64
@@ -22,19 +25,22 @@ passes: each check ORs into it a word that is 0 if and only if it passes.
   negated (swapped with `-x` by a mask) if its low bit is not the sign bit.
 * `R` and then `A` are decoded into slots 6–7 by one loop (`vdecode`), `R`
   kept at `RX` and `RY` (`Z = 1` in slot 10). `A` is negated, and
-  `Q = [S]B + [k](-A)` uses 114 four-bit windows sharing four doublings.
-  Each window adds an affine multiple of `B` and a projective multiple of
-  `-A`, selected by full scans of sixteen entries. The public-key table is
-  built with fifteen affine additions, without inversions, at scratch
-  offsets 4096–7167. Doublings and affine additions call the existing
+  `Q = [S]B + [k](-A)` uses width-five non-adjacent form digits, with
+  461 shared doublings and additions only for nonzero public digits.
+  The signed byte streams occupy scratch 3072–3532 and 3536–3996.
+  Fixed-base selection scans seventeen affine entries; public-key selection
+  directly indexes seventeen projective entries. The public-key table is
+  built with sixteen affine additions, without inversions, at scratch
+  offsets 4096–7359. Doublings and affine additions call the existing
   point functions; projective addition uses the same field operations.
 * `Q` is doubled twice and copied into slots 3–5, `R` into slots 0–2 (with
   `Z = 1`) and doubled twice, and they are compared: `X_Q Z_R = X_R Z_Q` and
   `Y_Q Z_R = Y_R Z_Q`, fully reduced.
 
-The result is 1 if `BAD` is 0. Every address and branch depends only on the
-pointers.
+The result is 1 if `BAD` is 0. Addresses and branches depend only on public verification inputs.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Ed448.X86_64
 
@@ -108,6 +114,9 @@ def root (F : Field) (z : Nat) : Prog isa := .seq (chain223 F (slot z)) (rootTai
 public words, `PPK` and `CNT`. -/
 def rootCall (F : Field) : Prog isa := .seq (pow223Keep [PPK, CNT]) (rootTail F)
 
+def rootCallFor (v : FieldVariant) : Prog isa :=
+  .seq (Impl.X448.X86_64.pow223KeepWith v.field v.powName [PPK, CNT]) (rootTail v.field)
+
 /-- The 57 bytes at `rsi`: `y`'s seven words into slot `yo`, the sign bit
 into `SIGN`, and `BAD |= 0` exactly when bits 448–454 are 0 and `y < p`. -/
 def decodeY (yo : Nat) : List Instr :=
@@ -180,6 +189,13 @@ def bitsBodyAt (o : Nat) : List Instr :=
 
 def bitsAt (o : Nat) : Prog isa := .seq (.block [.mov32 .rbx (.imm 0)]) (.loop (.block (bitsBodyAt o)) .ne)
 
+/-- Five high zero bits for full-width signed scalar recoding. -/
+def bitPadding (o : Nat) : List Instr :=
+  [.mov32 .rdx (.imm 0)] ++
+    ([o - 1, o + 456, o + 457, o + 458, o + 459].map fun d => .store8 (sc d) .rdx)
+
+def bitsAtPadded (o : Nat) : Prog isa := .seq (bitsAt o) (.block (bitPadding o))
+
 /-- The callee-saved registers saved at the working space `rcx`, the
 pointers to `A` and the signature kept in `r8` and `r9`, the working space
 into `rdi`, and the challenge's into `rsi`. -/
@@ -189,7 +205,7 @@ def ventry : List Instr :=
 /-- The bits of `k` and `S`, before anything is stored that is read back as
 an address: their stores are at a counter's offset. -/
 def vbits : Prog isa :=
-  .seq (bitsAt KBITS) <| .seq (.block [.mov .rsi (.reg .r9), .alu .add .rsi (.imm 57)]) (bitsAt BITS)
+  .seq (bitsAtPadded KBITS) <| .seq (.block [.mov .rsi (.reg .r9), .alu .add .rsi (.imm 57)]) (bitsAtPadded BITS)
 
 /-- The pointers to `A` and the signature saved, `BAD = 0`, and the check of
 `S` (at `rsi`). -/
@@ -236,9 +252,12 @@ def vfinish (F : Field) (P : Point64.Ops) : Prog isa :=
 and the square root's power `rt`. -/
 def verifyEquationWith (F : Field) (P : Point64.Ops) (rt : Prog isa := root F 12) : Prog isa :=
   .seq (.block ventry) <| .seq vbits <| .seq (.block vstart) <| .seq (vdecode F rt) <|
-    .seq (.block (vnegA F)) <| .seq (Window.joint F P KBITS) (vfinish F P)
+    .seq (.block (vnegA F)) <| .seq (Wnaf.joint F P KBITS) (vfinish F P)
 
-def verifyEquation : Prog isa :=
-  verifyEquationWith Impl.X448.X86_64.baseline Point64.calls (rootCall Impl.X448.X86_64.baseline)
+def verifyEquationFor (v : FieldVariant) : Prog isa :=
+  verifyEquationWith v.field v.calls (rootCallFor v)
+
+def verifyEquation : Prog isa := verifyEquationFor .scalar
+def verifyEquationAdx : Prog isa := verifyEquationFor .adx
 
 end VG.Impl.Ed448.X86_64

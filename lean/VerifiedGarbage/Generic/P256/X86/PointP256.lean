@@ -1,7 +1,9 @@
-import VerifiedGarbage.Proof.Weierstrass.X86.InvInterface
-import VerifiedGarbage.TCB.X86.Target
-import VerifiedGarbage.Proof.Weierstrass.Law
-import VerifiedGarbage.Proof.Weierstrass.X86.PointCurves
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86.InvInterface
+public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Proof.Weierstrass.Law
+public import VerifiedGarbage.Proof.Weierstrass.X86.PointCurves
 
 /-!
 # P-256's point addition and doubling on x86 (32-bit)
@@ -12,6 +14,8 @@ P-256's prime. A generic file (see `TCB/Emit.lean`) over P-256's group law
 `h`, the variant `Variants/P256/X86/Law.lean`, which gives Fermat's little
 theorem in `Fin p`, so that `R⁻¹ = R^(p-2)` in the contracts.
 -/
+
+@[expose] public section
 
 namespace VG.Generic.P256.X86.PointP256
 

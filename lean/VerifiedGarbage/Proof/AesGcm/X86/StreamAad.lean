@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.AesGcm.X86.Top
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86.Top
+meta import VerifiedGarbage.Proof.AesGcm.X86.Top
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on x86: `vg_aes_gcm_stream_aad`
@@ -8,6 +15,8 @@ data absorbed into GHASH (`absorb 16`) and the exit, as one `Pc`
 (`streamAad_pc`): correct (`streamAad_correct`) and constant time
 (`streamAad_ct`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

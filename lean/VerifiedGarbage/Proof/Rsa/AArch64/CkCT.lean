@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.Rsa.AArch64.CkCode
-import VerifiedGarbage.Proof.Rsa.AArch64.CvCTMain
+module
+
+public import VerifiedGarbage.Proof.Rsa.AArch64.CkCode
+meta import VerifiedGarbage.Proof.Rsa.AArch64.CkCode
+public import VerifiedGarbage.Proof.Rsa.AArch64.CvCTMain
+meta import VerifiedGarbage.Proof.Rsa.AArch64.CvCTMain
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_check_key` on AArch64: constant time, the pieces of `main`
@@ -10,6 +18,8 @@ leaks the same in two runs from `GK p` and leaves `GK p`, its registers
 pinned after `ws` (`ws_ct`), after the clearing of an array, or after the
 block that loads a pointer and a length.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.AArch64
 

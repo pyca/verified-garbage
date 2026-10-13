@@ -1,4 +1,6 @@
-import VerifiedGarbage.TCB.X86_64.Isa
+module
+
+public import VerifiedGarbage.TCB.X86_64.Isa
 
 /-!
 # GHASH: x86-64 implementation
@@ -44,6 +46,8 @@ BearSSL's `ghash_ctmul64.c` (Thomas Pornin, MIT licence; see
   no address and no branch depends on anything else, and `mul` takes the
   same time for every operand.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Gcm.X86_64
 

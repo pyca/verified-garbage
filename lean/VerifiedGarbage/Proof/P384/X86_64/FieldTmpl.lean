@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.Weierstrass.X86_64.FieldErase
-import VerifiedGarbage.Impl.Ecdsa.P384.X86_64
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.FieldErase
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.FieldErase
+public import VerifiedGarbage.Impl.Ecdsa.P384.X86_64
+meta import VerifiedGarbage.Impl.Ecdsa.P384.X86_64
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # P-384 on x86-64: the templates of the field operations
@@ -9,6 +17,8 @@ The erased code of P-384's field operations modulo `p` (`FieldTmpl`,
 as literals, proven to be the code of every slot's operation by the
 kernel's evaluation of the code with the slots variables.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.P384.X86_64
 
@@ -89,7 +99,7 @@ theorem p384XT_ok : p384XT.Ok p384x.MP' where
 theorem p384h_callOf : Mont.callOf { p384.MP' with inl := true } = none := by
   unfold Mont.callOf
   rw [ite_eq_right_of_eq_false _ _ (by decide +kernel), ite_eq_right_of_eq_false _ _ (by decide +kernel),
-    ite_eq_right_of_eq_false _ _ (by decide +kernel)]
+    ite_eq_right_of_eq_false _ _ (by decide +kernel), ite_eq_right_of_eq_false _ _ (by decide +kernel)]
 
 /-- The templates modulo `p`, for the products written out. -/
 theorem p384HT_ok : p384T.Ok { p384.MP' with inl := true } where
@@ -104,7 +114,7 @@ theorem p384HT_ok : p384T.Ok { p384.MP' with inl := true } where
 theorem p384xh_callOf : Mont.callOf { p384x.MP' with inl := true } = none := by
   unfold Mont.callOf
   rw [ite_eq_right_of_eq_false _ _ (by decide +kernel), ite_eq_right_of_eq_false _ _ (by decide +kernel),
-    ite_eq_right_of_eq_false _ _ (by decide +kernel)]
+    ite_eq_right_of_eq_false _ _ (by decide +kernel), ite_eq_right_of_eq_false _ _ (by decide +kernel)]
 
 /-- The templates modulo `p` with BMI2 and ADX, for the products written out. -/
 theorem p384XHT_ok : p384XT.Ok { p384x.MP' with inl := true } where

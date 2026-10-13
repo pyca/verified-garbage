@@ -1,8 +1,17 @@
-import VerifiedGarbage.Impl.P256.X86_64.Half
-import VerifiedGarbage.Spec.P256
-import VerifiedGarbage.Proof.Weierstrass.X86_64.NafSubtract
+module
+
+public import VerifiedGarbage.Impl.P256.X86_64.Half
+public import VerifiedGarbage.Spec.P256
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafSubtract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Arithmetic and instruction proofs for the branchless P-256 halving block. -/
+
+@[expose] public section
+
 namespace VG.Proof.P256.X86_64
 open VG VG.X86_64 VG.Impl.P256.X86_64
 open VG.Proof.X25519.X86_64 VG.Proof.Weierstrass.X86_64

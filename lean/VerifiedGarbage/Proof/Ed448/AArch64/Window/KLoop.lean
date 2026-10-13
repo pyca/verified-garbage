@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Ed448.AArch64.Window.Window
-import VerifiedGarbage.Proof.Ed448.AArch64.Window.TableInit
+module
+
+public import VerifiedGarbage.Proof.Ed448.AArch64.Window.Window
+public import VerifiedGarbage.Proof.Ed448.AArch64.Window.TableInit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 verification on AArch64: the windows of the challenge
@@ -10,6 +16,8 @@ applies a window (`kNib_ok`); after the 114 nibbles (`kLoop_ok`), `Q` is
 `winQN P N 114` for the nibbles `N`, which is `winQ P b 57` for the challenge's
 bytes `b` (`winQN_eq`), and slots 0–2 are kept.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.AArch64.Window
 

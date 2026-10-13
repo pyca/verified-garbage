@@ -1,6 +1,11 @@
-import VerifiedGarbage.Impl.Weierstrass.AArch64.NafPrep
+module
+
+public import VerifiedGarbage.Impl.Weierstrass.AArch64.NafPrep
 
 /-! Sparse public width-five and width-seven NAF recoding. -/
+
+@[expose] public section
+
 namespace VG.Impl.Weierstrass.AArch64.FastNaf
 open VG VG.AArch64 VG.Impl.Mont.AArch64
 

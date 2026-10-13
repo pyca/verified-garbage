@@ -1,10 +1,23 @@
-import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-import VerifiedGarbage.Impl.Aes.AArch64.ExpandKey
-import VerifiedGarbage.Proof.Aes.AArch64.Ctr32
-import VerifiedGarbage.Proof.Aes.KeyExp
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Spec.Aes.Contract
-import VerifiedGarbage.Proof.Framework.Offset
+module
+
+public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+meta import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+public import VerifiedGarbage.Impl.Aes.AArch64.ExpandKey
+meta import VerifiedGarbage.Impl.Aes.AArch64.ExpandKey
+public import VerifiedGarbage.Proof.Aes.AArch64.Ctr32
+meta import VerifiedGarbage.Proof.Aes.AArch64.Ctr32
+public import VerifiedGarbage.Proof.Aes.KeyExp
+meta import VerifiedGarbage.Proof.Aes.KeyExp
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.Aes.Contract
+meta import VerifiedGarbage.Spec.Aes.Contract
+public import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Offset
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The AES key expansion on AArch64
@@ -15,6 +28,8 @@ word of the schedule is then a few scalar instructions around it
 (`word_ok`), and the loop over the words keeps the schedule's bytes so far
 equal to the specification's (`WInv`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Aes.AArch64
 

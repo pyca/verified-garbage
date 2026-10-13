@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.AesGcm.X86.OneAad
-import VerifiedGarbage.Proof.AesGcm.X86.Cmp
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86.OneAad
+meta import VerifiedGarbage.Proof.AesGcm.X86.OneAad
+public import VerifiedGarbage.Proof.AesGcm.X86.Cmp
+meta import VerifiedGarbage.Proof.AesGcm.X86.Cmp
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on x86: the data and the tag of `seal` and `open`
@@ -8,6 +16,8 @@ Untrusted: everything here is checked by Lean. `oneCrypt` (`oneCrypt_pc`):
 the data XORed with the keystream from a counter block; and `oneTag o`
 (`oneTag_pc`): the data absorbed and padded, then the tag into `W + o`.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

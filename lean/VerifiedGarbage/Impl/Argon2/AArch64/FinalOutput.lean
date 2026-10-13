@@ -1,8 +1,12 @@
-import VerifiedGarbage.Impl.Argon2.AArch64.Instructions
-import VerifiedGarbage.Impl.Argon2.AArch64.HPrime
-import VerifiedGarbage.Impl.Argon2.AArch64.Compress
+module
+
+public import VerifiedGarbage.Impl.Argon2.AArch64.Instructions
+public import VerifiedGarbage.Impl.Argon2.AArch64.HPrime
+public import VerifiedGarbage.Impl.Argon2.AArch64.Compress
 
 /-! Final H′: matrix block zero is the input, using the derivation's hash backend. -/
+
+@[expose] public section
 
 namespace VG.Impl.Argon2.AArch64.FinalOutput
 

@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.RsaOaep.X86_64.DecFrame
-import VerifiedGarbage.Proof.Framework.X86_64.CallSp
+module
+
+public import VerifiedGarbage.Proof.RsaOaep.X86_64.DecFrame
+public import VerifiedGarbage.Proof.Framework.X86_64.CallSp
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-OAEP decryption on x86-64: the private-key operation
@@ -9,6 +15,8 @@ frame (`privD_pre`), and what its call leaves (`privD_call`): `EM`'s place
 in the working space holds its outcome for the ciphertext, and the frame its
 words.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaOaep.X86_64
 

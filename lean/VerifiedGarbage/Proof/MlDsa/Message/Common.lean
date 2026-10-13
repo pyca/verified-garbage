@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.MlKem.Mem
-import VerifiedGarbage.Spec.MlDsa
-import VerifiedGarbage.Spec.MlDsa.Poly
+module
+
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.MlKem.Mem
+public import VerifiedGarbage.Spec.MlDsa
+public import VerifiedGarbage.Spec.MlDsa.Poly
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA, `sign_message` and `verify_message`: what every target's proof uses
@@ -11,6 +17,8 @@ others (`Within`); bytes written (`byte_writeW_self`); the formatted message `0 
 string of at most 255 bytes (`formatMessage_some`); and the bytes behind
 equal leakage (`leakBytes_inj`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Message
 

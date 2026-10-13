@@ -1,10 +1,18 @@
-import VerifiedGarbage.Proof.X448.Arm.Columns
+module
+
+public import VerifiedGarbage.Proof.X448.Arm.Columns
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 on ARMv7: addition and subtraction
 
 Twice the prime is added before subtraction, so no limb subtraction borrows.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448.Arm
 

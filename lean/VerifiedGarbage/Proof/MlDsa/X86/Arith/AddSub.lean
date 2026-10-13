@@ -1,8 +1,19 @@
-import VerifiedGarbage.Proof.MlDsa.X86.Arith.Basic
-import VerifiedGarbage.Spec.MlDsa.Poly
-import VerifiedGarbage.TCB.X86.Target
-import VerifiedGarbage.Proof.Framework.Sig
-import VerifiedGarbage.Proof.Framework.Contract
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86.Arith.Basic
+meta import VerifiedGarbage.Proof.MlDsa.X86.Arith.Basic
+public import VerifiedGarbage.Spec.MlDsa.Poly
+meta import VerifiedGarbage.Spec.MlDsa.Poly
+public import VerifiedGarbage.TCB.X86.Target
+meta import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Proof.Framework.Sig
+meta import VerifiedGarbage.Proof.Framework.Sig
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on x86 (32-bit): `vg_mldsa_add` and `vg_mldsa_sub`
@@ -11,6 +22,8 @@ Both are `Impl.MlKem.X86.mapLoop` around an arithmetic step; the loop is
 proven once for any step that computes a function `F` of the two coefficients
 (`OpSpec`), as for ML-KEM on x86.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86.Arith
 

@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesCcm.X86.Mac
+module
+
+public import VerifiedGarbage.Proof.AesCcm.X86.Mac
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CCM on x86: counter mode (`ctr`)
@@ -11,6 +17,8 @@ then its last `n mod 16` bytes with `CIPH_K(Ctr₁₊ₙ/₁₆)`, which
 CCM's keystream from `Ctr₁` (`ctr_ok`), which is its encryption
 (`Proof.AesCcm.crypt_eq`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

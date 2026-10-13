@@ -1,7 +1,13 @@
-import VerifiedGarbage.Impl.Ed448.AArch64.VerifyEquation
-import VerifiedGarbage.Proof.X448.AArch64.Init
-import VerifiedGarbage.Proof.X448.Pairs
-import VerifiedGarbage.Proof.Framework.AArch64.Tbl
+module
+
+public import VerifiedGarbage.Impl.Ed448.AArch64.VerifyEquation
+public import VerifiedGarbage.Proof.X448.AArch64.Init
+public import VerifiedGarbage.Proof.X448.Pairs
+public import VerifiedGarbage.Proof.Framework.AArch64.Tbl
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 verification's equation on AArch64: seven-byte chunks
@@ -11,6 +17,8 @@ from the highest (X448's `suffix`). `carryK rp o K`: the carry out of the 56
 bytes at `rp + o` plus `K`, chunk by chunk (`carryK_ok`): 0 exactly when
 their sum is below `2^448`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.AArch64
 

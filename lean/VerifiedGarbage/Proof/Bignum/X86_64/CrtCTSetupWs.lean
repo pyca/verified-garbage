@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetupLoad
-import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetupLoad
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetupLoad
+public import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSA with the CRT on x86-64: constant time of the primes' setup
@@ -10,6 +18,8 @@ primes'; between its pieces, what the next one reads from the headers
 (`SSt`, the primes' links, sizes and bases `WsF`) is kept by the frames of
 the pieces before it.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64
 

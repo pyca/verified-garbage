@@ -1,7 +1,15 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedHashFrame
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedHashSetup
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedHashNonce
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedMaskPrefixTailTiming
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedHashFrame
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedHashSetup
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedHashNonce
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedMaskPrefixTailTiming
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Sign.Cached
 open VG VG.AArch64 VG.Spec.MlDsa

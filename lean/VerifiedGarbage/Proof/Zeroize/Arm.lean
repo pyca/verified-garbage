@@ -1,11 +1,27 @@
-import VerifiedGarbage.Impl.Zeroize.Arm
-import VerifiedGarbage.Proof.Zeroize.Common32
-import VerifiedGarbage.Proof.Framework.Arm.Exec
-import VerifiedGarbage.Proof.Framework.Arm.RegUpd
-import VerifiedGarbage.Proof.Framework.Arm.Inline
-import VerifiedGarbage.Proof.Framework.Arm.Contract
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Spec.Zeroize.Contract
+module
+
+public import VerifiedGarbage.Impl.Zeroize.Arm
+meta import VerifiedGarbage.Impl.Zeroize.Arm
+public import VerifiedGarbage.Proof.Zeroize.Common32
+meta import VerifiedGarbage.Proof.Zeroize.Common32
+public import VerifiedGarbage.Proof.Framework.Arm.Exec
+meta import VerifiedGarbage.Proof.Framework.Arm.Exec
+public import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+meta import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+public import VerifiedGarbage.Proof.Framework.Arm.Inline
+meta import VerifiedGarbage.Proof.Framework.Arm.Inline
+public import VerifiedGarbage.Proof.Framework.Arm.Contract
+meta import VerifiedGarbage.Proof.Framework.Arm.Contract
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.Zeroize.Contract
+meta import VerifiedGarbage.Spec.Zeroize.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.Zeroize.Arm
 open VG VG.Arm RegUpd VG.Impl.Zeroize.Arm

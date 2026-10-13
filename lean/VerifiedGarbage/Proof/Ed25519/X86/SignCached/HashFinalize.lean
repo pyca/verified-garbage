@@ -1,7 +1,16 @@
-import VerifiedGarbage.Proof.Ed25519.X86.SignCached.HashUpdate
-import VerifiedGarbage.Proof.Ed25519.X86.Whole.Count
+module
+
+public import VerifiedGarbage.Proof.Ed25519.X86.SignCached.HashUpdate
+public import VerifiedGarbage.Proof.Ed25519.X86.Whole.Count
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Ed25519.X86.SignCached.FinalizeArgs`. -/
+
+@[expose] public section
+
 section
 namespace VG.Proof.Ed25519.X86.SignCached
 open VG VG.X86 VG.Impl.Ed25519.X86.Whole VG.Impl.Ed25519.X86.SignCached

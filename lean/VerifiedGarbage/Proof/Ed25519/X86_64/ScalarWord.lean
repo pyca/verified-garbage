@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarStep
+module
+
+public import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarStep
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed25519 scalar reduction: one word on x86-64
@@ -8,6 +14,8 @@ c` for `2^64 r + w = h 2^252 + l`, with `L = 2^252 + c`: below `2L` and
 congruent to `2^64 r + w` modulo `L` (`fold_nat`). Each of its blocks is
 checked against the numbers it computes.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed25519.X86_64
 

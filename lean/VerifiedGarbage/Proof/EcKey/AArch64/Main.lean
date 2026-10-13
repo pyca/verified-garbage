@@ -1,9 +1,15 @@
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Finish
-import VerifiedGarbage.Impl.EcKey.AArch64
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Middle
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Main
-import VerifiedGarbage.Proof.EcKey.PublicKey
-import VerifiedGarbage.Proof.Framework.AArch64.Inline
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.Finish
+public import VerifiedGarbage.Impl.EcKey.AArch64
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.Middle
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.Main
+public import VerifiedGarbage.Proof.EcKey.PublicKey
+public import VerifiedGarbage.Proof.Framework.AArch64.Inline
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Elliptic curve public keys on AArch64: the result, and the whole function
@@ -17,6 +23,8 @@ mask, restores `x19`–`x25`, and returns the flag's low bit
 (`pkFinish_ok`): the leading byte (`lead_ok`), then the two coordinates as
 the signature's `finish` writes `r ‖ s`, from `out + 1` in `x6`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.EcKey.AArch64
 

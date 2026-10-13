@@ -1,7 +1,12 @@
-import VerifiedGarbage.Proof.Dsa.X86_64.Backend
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxCT
+module
+
+public import VerifiedGarbage.Proof.Dsa.X86_64.Backend
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxCT
 
 /-! # BMI2/ADX Montgomery arithmetic for DSA -/
+
+@[expose] public section
+
 namespace VG.Variants.DsaArithmetic.X86_64.Adx
 open VG VG.X86_64 VG.Proof.Dsa.X86_64 VG.Proof.Bignum.X86_64
 

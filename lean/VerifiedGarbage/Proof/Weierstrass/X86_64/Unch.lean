@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Weierstrass.X86_64.Fprog
-import VerifiedGarbage.Proof.Weierstrass.Unch
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.Fprog
+public import VerifiedGarbage.Proof.Weierstrass.Unch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Memory unchanged outside a list of ranges, on x86-64
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.Weierstrass.Unch
 What the field operations and programs change (`OpKeep.unch`,
 `ProgKeep.unch`), as `Unch`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.X86_64
 

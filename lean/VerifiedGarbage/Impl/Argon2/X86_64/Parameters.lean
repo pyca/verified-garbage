@@ -1,7 +1,11 @@
-import VerifiedGarbage.Impl.Argon2.X86_64.Divide
-import VerifiedGarbage.Impl.Argon2.X86_64.Compress
+module
+
+public import VerifiedGarbage.Impl.Argon2.X86_64.Divide
+public import VerifiedGarbage.Impl.Argon2.X86_64.Compress
 
 /-! Compute the rounded lane length from the normalized memory cost and lane count. -/
+
+@[expose] public section
 
 namespace VG.Impl.Argon2.X86_64.Parameters
 

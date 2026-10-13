@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Lay
-import VerifiedGarbage.Proof.MlDsa.KeyGen.Mask32
-import VerifiedGarbage.Proof.MlDsa.KeyGen.Rest
-import VerifiedGarbage.Proof.Framework.KernelRfl
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Lay
+public import VerifiedGarbage.Proof.MlDsa.KeyGen.Mask32
+public import VerifiedGarbage.Proof.MlDsa.KeyGen.Rest
+public import VerifiedGarbage.Proof.Framework.KernelRfl
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA key generation on x86 (32-bit): the setting
@@ -13,6 +19,8 @@ layout of the arguments (`pre_of`), and its public data the pointers and what
 key generation may leak, as bytes (`lkK`, `pub_of`). `ξ` gives `(ρ, ρ′, K)`
 (`hxOf`), which the body keeps in `scratch` (`KB`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86.KeyGen
 

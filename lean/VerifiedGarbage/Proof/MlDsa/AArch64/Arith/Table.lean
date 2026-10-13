@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Mul
-import VerifiedGarbage.Proof.Framework.Range
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Mul
+public import VerifiedGarbage.Proof.Framework.Range
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on AArch64: tables of constants in the working space
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.Framework.Range
 `storeTab t n b` leaves the `u32`s `t 0, …, t (n - 1)` at `b` (`Tab`), and
 writes nothing else (`storeTab_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Arith
 

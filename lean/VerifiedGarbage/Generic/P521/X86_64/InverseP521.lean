@@ -1,6 +1,8 @@
-import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.Weierstrass.X86_64.InvInterface
-import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.InverseVerified
+module
+
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvInterface
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.InverseVerified
 
 /-!
 # P-521's inversions modulo `p` and `n` on x86-64
@@ -11,6 +13,8 @@ and their `_adx` forms with BMI2's and ADX's products. A generic file (see
 `TCB/Emit.lean`) over P-521's group law and inversions `h`, the variant
 `Variants/P521/X86_64/Law.lean`, whose inversions' soundness the proofs take.
 -/
+
+@[expose] public section
 
 namespace VG.Generic.P521.X86_64.InverseP521
 
@@ -35,9 +39,9 @@ def artifacts (h : Proof.Weierstrass.X86_64.HasLawInvOrd Spec.P521.curve) : List
       doc := C.invPApi.doc (notes := [note adx "p"])
       code := (cfg adx).invFn (cfg adx).pPowI
       contract := C.invPContract X86_64.abi
-      ofSig := ⟨_, _, _, by
+      ofSig := by exact (⟨_, _, _, by
         unfold Spec.Weierstrass.Inverse.Curve.invPContract Spec.Weierstrass.Inverse.Curve.invContract
-        rfl⟩
+        rfl⟩)
       verified := p_verified h.inv adx
       spSafe := by
         cases adx
@@ -51,9 +55,9 @@ def artifacts (h : Proof.Weierstrass.X86_64.HasLawInvOrd Spec.P521.curve) : List
       doc := C.invNApi.doc (notes := [note adx "n"])
       code := (cfg adx).invFn (cfg adx).nPowI
       contract := C.invNContract X86_64.abi
-      ofSig := ⟨_, _, _, by
+      ofSig := by exact (⟨_, _, _, by
         unfold Spec.Weierstrass.Inverse.Curve.invNContract Spec.Weierstrass.Inverse.Curve.invContract
-        rfl⟩
+        rfl⟩)
       verified := n_verified h.inv adx
       spSafe := by
         cases adx

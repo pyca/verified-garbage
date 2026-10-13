@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Aes.AArch64.Callee
-import VerifiedGarbage.Impl.AesGcm.AArch64
+module
+
+public import VerifiedGarbage.Impl.Aes.AArch64.Callee
+public import VerifiedGarbage.Impl.AesGcm.AArch64
 
 /-!
 # AES-OCB: AArch64 implementation
@@ -64,6 +66,8 @@ data, or those of the associated data left), `x27` the buffer pointer of
 lengths, `rounds` and `tag_len` (and for `open`, whether the tag is right)
 affect timing.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.AesOcb.AArch64
 

@@ -1,6 +1,8 @@
-import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Instances
-import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Frame
+module
+
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Instances
+public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Frame
 
 /-!
 # PBKDF2-HMAC-SHA-512 (RFC 8018) on ARMv7: the iteration and the whole derivation
@@ -20,6 +22,8 @@ runs in a frame holding its working space
 (`Proof.Pbkdf2.Whole.Arm.pbkFramed`).
 -/
 
+@[expose] public section
+
 namespace VG.Artifacts.Pbkdf2Sha512.Arm
 
 def artifacts : List Artifact := [
@@ -28,7 +32,7 @@ def artifacts : List Artifact := [
     doc := Spec.Hmac.sha512I.iterateApi.doc
     code := Proof.Pbkdf2.Md.Arm.sha512Md'.iterate
     contract := Spec.Hmac.sha512I.iterateContract Arm.abi 16
-    ofSig := ⟨_, _, _, by unfold Spec.Hmac.Instance.iterateContract; rfl⟩
+    ofSig := by exact (⟨_, _, _, by unfold Spec.Hmac.Instance.iterateContract; rfl⟩)
     stack := 16
     verified := Proof.Pbkdf2.Md.Arm.Instances.sha512_iterate
     spSafe := Code.all_of_forall (fun _ => rfl) _ },
@@ -38,7 +42,7 @@ def artifacts : List Artifact := [
     code := Impl.StackScratch.Arm.withStackScratch (Proof.Pbkdf2.Whole.Arm.pbkFrame Spec.Hmac.sha512I) 3
       Proof.Pbkdf2.Whole.Arm.sha512F.pbkdf2
     contract := Spec.Hmac.sha512I.pbkdf2Contract Arm.abi (24 + Proof.Pbkdf2.Whole.Arm.pbkFrame Spec.Hmac.sha512I)
-    ofSig := ⟨_, _, _, by unfold Spec.Hmac.Instance.pbkdf2Contract Spec.Pbkdf2.pbkdf2Contract; rfl⟩
+    ofSig := by exact (⟨_, _, _, by unfold Spec.Hmac.Instance.pbkdf2Contract Spec.Pbkdf2.pbkdf2Contract; rfl⟩)
     stack := 24 + Proof.Pbkdf2.Whole.Arm.pbkFrame Spec.Hmac.sha512I
     verified := Proof.Pbkdf2.Whole.Arm.pbkFramed Proof.Pbkdf2.Whole.Arm.sha512 (by decide)
       Proof.Pbkdf2.Whole.Arm.sha512_pbkFrameSat

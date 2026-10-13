@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Camellia.AArch64.Core
+module
+
+public import VerifiedGarbage.Proof.Camellia.AArch64.Core
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The head and tail of eight blocks of bitsliced Camellia on AArch64
@@ -10,6 +16,8 @@ loop. `crypt8_ok` composes them: each block becomes `cryptWords g E` of it.
 The blocks' words are loaded and stored by symbolic execution
 (`ldS_list_ok`, `stS_list_ok`), which keeps the rest of the scratch buffer.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Camellia.AArch64
 

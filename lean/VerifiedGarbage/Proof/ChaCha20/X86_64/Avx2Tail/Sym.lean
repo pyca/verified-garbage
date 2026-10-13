@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2Tail.Rounds
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512Tail.Sym
+module
+
+public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2Tail.Rounds
+public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512Tail.Sym
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ChaCha20 on x86-64 with AVX2, the last bytes: straight-line code
@@ -9,6 +15,8 @@ doublewords, `p` in lane `p / 4`), on the same regions (`Avx512Tail.regn`):
 the state (at `rdi`), `buf` (at `r9`, of which the first 256 bytes are
 written) and `4 D` bytes of data (at `rsi`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.ChaCha20.X86_64.Avx2Tail
 

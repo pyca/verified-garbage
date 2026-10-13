@@ -1,4 +1,6 @@
-import VerifiedGarbage.TCB.Arm.Isa
+module
+
+public import VerifiedGarbage.TCB.Arm.Isa
 
 /-!
 # ML-DSA on 32-bit ARM: packing and unpacking `d`-bit fields
@@ -26,6 +28,8 @@ depends only on `d`:
 `r3` never holds more than `d + 7 ≤ 27` bits, so it fits a register. Every
 address and branch depends only on the pointers and `d`.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.Arm.Pack
 

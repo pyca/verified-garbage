@@ -1,10 +1,14 @@
-import VerifiedGarbage.TCB.X86_64.Isa
+module
+
+public import VerifiedGarbage.TCB.X86_64.Isa
 
 /-! Current and preceding columns in the filling loop. The public slice,
 segment length and offset are in `r14`, `r13` and `r15`, and the lane length
 is in `r12`. `rcx` receives the current column; `rdi` receives its cyclic
 predecessor. Only the public column-zero test controls a branch.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Argon2.X86_64.FillColumn
 

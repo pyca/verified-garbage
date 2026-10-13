@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Seed.AArch64.Batch
+module
+
+public import VerifiedGarbage.Proof.Seed.AArch64.Batch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Storing to and loading from scratch slots
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.Seed.AArch64.Batch
 scratch buffer; `loads_ok`: loads of distinct registers, other than `x5`,
 from slots.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Seed.AArch64
 

@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Rsa.AArch64.Keys
-import VerifiedGarbage.Impl.RsaKeyGen.Primes
+module
+
+public import VerifiedGarbage.Impl.Rsa.AArch64.Keys
+public import VerifiedGarbage.Impl.RsaKeyGen.Primes
 
 /-!
 # A candidate for a prime of an RSA key on AArch64
@@ -56,6 +58,8 @@ carry made a mask or a value by `csel`. The code branches only on what the
 leak allows: the lengths, `e`, the result of each check, and whether each
 witness passed. No callee-saved register is written.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.RsaKeyGen.AArch64.Candidate
 

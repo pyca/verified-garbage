@@ -1,6 +1,8 @@
-import VerifiedGarbage.Impl.TripleDes.AArch64.Block
-import VerifiedGarbage.Impl.Modes.AArch64.Cbc
-import VerifiedGarbage.Impl.Modes.AArch64.CbcEnc
+module
+
+public import VerifiedGarbage.Impl.TripleDes.AArch64.Block
+public import VerifiedGarbage.Impl.Modes.AArch64.Cbc
+public import VerifiedGarbage.Impl.Modes.AArch64.CbcEnc
 
 /-!
 # Triple DES-CBC on AArch64
@@ -19,6 +21,8 @@ buffer's address (`sb`, which the block function overwrites) from `x2`.
 The block function keeps `x23` and `x24`, which carry the data's address
 and the blocks left.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.TripleDes.AArch64
 

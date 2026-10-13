@@ -1,7 +1,13 @@
-import VerifiedGarbage.Impl.Pbkdf2.Whole.X86
-import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Contract
-import VerifiedGarbage.Proof.Pbkdf2.Stream.X86.Common
-import VerifiedGarbage.Proof.Hmac.Generic.Common
+module
+
+public import VerifiedGarbage.Impl.Pbkdf2.Whole.X86
+public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Contract
+public import VerifiedGarbage.Proof.Pbkdf2.Stream.X86.Common
+public import VerifiedGarbage.Proof.Hmac.Generic.Common
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # PBKDF2-HMAC on x86 (32-bit), the whole derivation: the functions it calls, and its parts
@@ -13,6 +19,8 @@ contracts with 48 bytes of stack (`Sound`), with some working space each, at
 most the `8 W` bytes they get. Then the precondition of `pbkdf2` (`Pre`), the
 parts of its `scratch`, and what every piece of it keeps (`KR`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Pbkdf2.Whole.X86
 

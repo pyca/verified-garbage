@@ -1,10 +1,16 @@
-import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Calls
-import VerifiedGarbage.Proof.MdStream.X86_64.Common
-import VerifiedGarbage.Proof.Framework.OffsetBelow
-import VerifiedGarbage.Proof.Hmac.Generic.Common
-import Mathlib.Tactic.Set
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.OmegaLit
+module
+
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Calls
+public import VerifiedGarbage.Proof.MdStream.X86_64.Common
+public import VerifiedGarbage.Proof.Framework.OffsetBelow
+public import VerifiedGarbage.Proof.Hmac.Generic.Common
+public import Mathlib.Tactic.Set
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.OmegaLit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # HMAC and PBKDF2-HMAC over any Merkle–Damgård hash function on x86-64: what the proofs share
@@ -14,6 +20,8 @@ The byte copy (`copy`), used for states, digests and `U`, a loop that counts
 caller, stored in `scratch` after the working space of the functions we call
 (`Stream.saved`) and loaded back at the end; and facts about two runs.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Pbkdf2.Md.X86_64.Calls
 

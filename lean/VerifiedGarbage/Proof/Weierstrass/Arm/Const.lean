@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Mont.Arm.Ops
+module
+
+public import VerifiedGarbage.Proof.Mont.Arm.Ops
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Constants in the working space, on 32-bit ARM
@@ -6,6 +12,8 @@ import VerifiedGarbage.Proof.Mont.Arm.Ops
 `setConst_ok`: `setConst n o x` stores the `n`-word number `x` at `[o]`,
 a 32-bit word at a time, each from a `movw` and a `movt`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.Arm
 

@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.Verified
-import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.LitEraseAdx
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.Verified
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.Verified
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.LitEraseAdx
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.LitEraseAdx
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDSA over P-384 on x86-64 with BMI2 and ADX: `Verified`
@@ -10,6 +18,8 @@ import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.LitEraseAdx
 and either selection (`selPassV_ok`): the same curve, so the same facts
 (`p384x_ok`, from `p384_ok`) and the same precondition.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.X86_64.P384
 
@@ -94,7 +104,7 @@ theorem p384x_ok (hI : InvSounds) : CfgOk p384x where
 
 /-- `[k]G` is a call of `vg_p384_mul_base_adx`, which calls no other function. -/
 theorem p384x_mulBase : MulBaseOk p384x :=
-  ⟨fun _ => ⟨_, rfl, rfl, by decide, by lit_decide⟩, fun h => absurd h (by decide)⟩
+  ⟨fun _ => ⟨_, rfl, by decide, by lit_decide⟩, fun h => absurd h (by decide)⟩
 
 theorem p384x_tbls (hT : CombOkW Spec.P384.curve 7 55 Impl.P384.p384Comb7 Impl.P384.p384Comb7Start) :
     CombTbls p384x := fun d h => by cases h; exact ⟨hT, fun h => absurd h (by decide)⟩

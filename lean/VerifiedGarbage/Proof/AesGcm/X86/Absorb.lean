@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.AesGcm.X86.Common
-import VerifiedGarbage.Proof.Gcm.Stream
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86.Common
+meta import VerifiedGarbage.Proof.AesGcm.X86.Common
+public import VerifiedGarbage.Proof.Gcm.Stream
+meta import VerifiedGarbage.Proof.Gcm.Stream
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on x86: GHASH absorbing a piece (`absorb`)
@@ -11,6 +19,8 @@ Untrusted: everything here is checked by Lean. `absorb yo` absorbs the
 (`tail_pc`), by the steps of `Proof/Gcm/Stream.lean`. Each is a `Pc`:
 correct and constant time, indexed by the memory it started from.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

@@ -1,4 +1,6 @@
-import VerifiedGarbage.Proof.Framework.AArch64.Exec
+module
+
+public import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-!
 # AArch64: interleaving independent code
@@ -14,6 +16,8 @@ independent runs as the first block and then the second (`run_merge`).
 Independence is checked on the union of each block's footprints, by
 evaluation (`Fp.indep`): register sets and byte sets are bit masks.
 -/
+
+@[expose] public section
 
 namespace VG.AArch64.Interleave
 

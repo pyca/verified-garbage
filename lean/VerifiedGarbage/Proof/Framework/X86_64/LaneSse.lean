@@ -1,6 +1,8 @@
-import VerifiedGarbage.Proof.Framework.X86_64.Avx
-import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+module
+
+public import VerifiedGarbage.Proof.Framework.X86_64.Avx
+public import VerifiedGarbage.Proof.Framework.X86_64.Exec
+public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 
 /-!
 # x86-64: AVX2 blocks as SSE blocks on each lane
@@ -12,6 +14,8 @@ block leaves in the SSE registers of `s.proj l`, the state with lane `l` of
 each vector register as its SSE register (`WP.lanes`). A proof about SSE code
 then holds of each lane of the AVX2 code that does the same in both lanes.
 -/
+
+@[expose] public section
 
 namespace VG.X86_64
 

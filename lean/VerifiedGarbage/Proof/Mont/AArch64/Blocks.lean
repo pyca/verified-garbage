@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Mont.AArch64.Row
+module
+
+public import VerifiedGarbage.Proof.Mont.AArch64.Row
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Montgomery arithmetic on AArch64: the small blocks of a round
@@ -6,6 +12,8 @@ import VerifiedGarbage.Proof.Mont.AArch64.Row
 Each run symbolically once, for any registers: a register cleared
 (`movz0_ok`) and a constant built (`const64_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Mont.AArch64
 

@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Absorb
+module
+
+public import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Absorb
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM-SIV on AArch64: POLYVAL and the tag input (`polyval`)
@@ -11,6 +17,8 @@ copied over a zero block at `W + 224` and absorbed as one more chunk
 (`tagIn_ok`). `polyval_ok`: the tag input of RFC 8452 §4, with POLYVAL as
 GHASH with the key `H · x` (`Proof.GcmSiv.Words.tagInputG`), at `W + 96`.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Weierstrass.X86.Loop
-import VerifiedGarbage.Proof.Weierstrass.Words
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86.Loop
+public import VerifiedGarbage.Proof.Weierstrass.Words
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Short Weierstrass curves on x86 (32-bit): tables of bits, and masks of bits
@@ -10,6 +16,8 @@ one down, each giving eight bytes of the table (`bitsBody_ok`). `bitMask d`
 makes the mask `ecx` of the byte `esi` of the table at `d` (`bitMask_ok`): all
 ones for a 1, zero for a 0 (`bitMask_bool_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.X86
 

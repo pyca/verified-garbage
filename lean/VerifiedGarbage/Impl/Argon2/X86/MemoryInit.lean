@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Argon2.X86.Initial
+module
+
+public import VerifiedGarbage.Impl.Argon2.X86.Initial
 
 /-!
 # Argon2 on x86 (32-bit): memory initialization
@@ -9,6 +11,8 @@ LE32(lane)), from the 72 bytes at the start of the locals (`ebp`), with
 `scratch` as its working space. `esi` counts the lanes and `edi` points to
 the block being initialized; both are kept across the calls, as `ebp` is.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Argon2.X86.Derive
 
@@ -26,7 +30,10 @@ def clearSetup : List Instr :=
   ([.mov .edi (fr (argOff memoryArg)), .mov .ecx (fr (argOff blocksArg))] : List Instr) ++
     List.replicate 8 (.alu .add .ecx (.reg .ecx)) ++ ([.mov .eax (.imm 0)] : List Instr)
 
-def clearWord : List Instr := [.store (at_ .edi 0) .eax, .alu .add .edi (.imm 4), .alu .sub .ecx (.imm 1)]
+/-- `[r] = eax`, on to the next word, and one fewer word left in `ecx`. -/
+def clearWordAt (r : Reg) : List Instr := [.store (at_ r 0) .eax, .alu .add r (.imm 4), .alu .sub .ecx (.imm 1)]
+
+def clearWord : List Instr := clearWordAt .edi
 
 def clear : Prog isa := .seq (.block clearSetup) (.loop (.block clearWord) .ne)
 

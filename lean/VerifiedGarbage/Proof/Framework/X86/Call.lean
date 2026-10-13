@@ -1,5 +1,7 @@
-import VerifiedGarbage.Proof.Framework.X86.Inline
-import Mathlib.Tactic.Set
+module
+
+public import VerifiedGarbage.Proof.Framework.X86.Inline
+public import Mathlib.Tactic.Set
 
 /-!
 # Calls and frames (x86, 32-bit)
@@ -14,6 +16,8 @@ the `stackUse` bytes below `esp` that its calls and frames use
 `Verified` proof, as `WP.inline` does for inlined code, and `WP.frame` runs a
 frame.
 -/
+
+@[expose] public section
 
 namespace VG.X86
 

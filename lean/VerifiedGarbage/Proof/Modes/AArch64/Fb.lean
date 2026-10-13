@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Modes.AArch64.FbLoop
-import VerifiedGarbage.Proof.Modes.AArch64.Ctr
+module
+
+public import VerifiedGarbage.Proof.Modes.AArch64.FbLoop
+public import VerifiedGarbage.Proof.Modes.AArch64.Ctr
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # OFB and CFB on AArch64, for any core: the whole function
@@ -14,6 +20,8 @@ and writes nothing but the scratch buffer, the data and the IV. As on
 x86-64 (`Proof/Modes/X86_64/Fb.lean`); `ofb_of`, `cfbEnc_of` and
 `cfbDec_of` (`Proof/Modes/Fb.lean`) state these as the specification's.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Modes.AArch64
 

@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Pbkdf2.Stream.Arm.Hash
-import VerifiedGarbage.Proof.Hmac.Generic.Common
-import Mathlib.Tactic.Set
-import VerifiedGarbage.Proof.Framework.OmegaLit
+module
+
+public import VerifiedGarbage.Proof.Pbkdf2.Stream.Arm.Hash
+public import VerifiedGarbage.Proof.Hmac.Generic.Common
+public import Mathlib.Tactic.Set
+public import VerifiedGarbage.Proof.Framework.OmegaLit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Calls of a streaming hash function on 32-bit ARM: the byte loops
@@ -12,6 +18,8 @@ exclusive-or of `U` into `T`, which the whole of PBKDF2 uses. Each counts `r8`
 up from 0 and `r9` down to 0 with `subs`, and branches on its result. Addresses are 32 bits, zero-extended: every buffer the loops touch lies
 below 2³², so byte `k` of a buffer at `p + o` is at `State.addr p + o + k`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Pbkdf2.Stream.Arm
 

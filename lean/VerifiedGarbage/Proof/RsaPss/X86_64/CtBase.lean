@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.RsaPss.X86_64.Basic
-import VerifiedGarbage.Proof.RsaPss.X86_64.Checks
-import VerifiedGarbage.Proof.Bignum.X86_64.Mont
+module
+
+public import VerifiedGarbage.Proof.RsaPss.X86_64.Basic
+public import VerifiedGarbage.Proof.RsaPss.X86_64.Checks
+public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSASSA-PSS on x86-64: two runs, and their public frame
@@ -18,6 +24,8 @@ The secret stores of a piece (through pointers into the working space the
 analysis does not follow) make it forget the public words, so each piece
 starts from what the correctness proof says of both runs.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPss.X86_64
 

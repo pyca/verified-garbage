@@ -1,5 +1,7 @@
-import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Proof.CmacTripleDes.Arm.Frame
+module
+
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.Proof.CmacTripleDes.Arm.Frame
 
 /-!
 # TDEA-CMAC (3DES-CMAC, NIST SP 800-38B) on ARMv7
@@ -18,6 +20,8 @@ their own on the stack (`Proof/CmacTripleDes/Arm/Frame.lean`): they save our
 caller's registers in the working space, and the return address stays in
 `lr`.
 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.CmacTripleDes.Arm
 

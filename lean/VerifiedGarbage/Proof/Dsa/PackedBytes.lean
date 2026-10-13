@@ -1,8 +1,17 @@
-import VerifiedGarbage.Spec.Dsa.SignVerify
-import VerifiedGarbage.Proof.Dsa.Encoding
-import VerifiedGarbage.Proof.Framework.Mem
+module
+
+public import VerifiedGarbage.Spec.Dsa.SignVerify
+public import VerifiedGarbage.Proof.Dsa.Encoding
+public import VerifiedGarbage.Proof.Framework.Mem
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # Component slices of packed big-endian DSA keys and signatures -/
+
+@[expose] public section
+
 namespace VG.Proof.Dsa
 open VG
 

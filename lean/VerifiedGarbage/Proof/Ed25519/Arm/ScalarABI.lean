@@ -1,7 +1,16 @@
-import VerifiedGarbage.Impl.Ed25519.Arm.ScalarABI
-import VerifiedGarbage.Proof.Ed25519.Arm.Field
+module
+
+public import VerifiedGarbage.Impl.Ed25519.Arm.ScalarABI
+public import VerifiedGarbage.Proof.Ed25519.Arm.Field
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Saving and restoring the callee-saved registers in the reviewed scratch buffer. -/
+
+@[expose] public section
+
 namespace VG.Proof.Ed25519.Arm
 open VG VG.Arm VG.Impl.Ed25519.Arm VG.Proof.X25519.Arm
 

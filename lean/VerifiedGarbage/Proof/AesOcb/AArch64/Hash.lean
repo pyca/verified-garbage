@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesOcb.AArch64.HashChunk
+module
+
+public import VerifiedGarbage.Proof.AesOcb.AArch64.HashChunk
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-OCB on AArch64: `HASH` (`hash`)
@@ -9,6 +15,8 @@ blocks a chunk at a time (`hashChunk_ok`), and the rest, padded, XORed with
 `Offset_m ⊕ L_*` and enciphered (`hashRest_ok`): the sum is §4.1's
 `HASH(K, A)` (`hash_ok`, `Proof.Ocb.hash_eq`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

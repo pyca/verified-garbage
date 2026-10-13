@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.StageZ
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.StageZ
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA verification on x86-64: the samplers
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.StageZ
 and `c` (`ballStage_ok`), each reduced, and `r15` 1 only if every sampler
 succeeded, with their outputs (`S3`, `S4`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86_64.Verify
 

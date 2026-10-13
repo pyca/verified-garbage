@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Lays
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Stages
-import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Padd
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.Lays
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.Stages
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.Padd
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDSA on AArch64: the fixed-base comb's slots and constants
@@ -12,6 +18,8 @@ next), and its constants, the curve's tables, are what `tcomb_ok` needs
 (`tcombVals`) if the tables are right (`CombOkW`, which a curve's own facts
 prove).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.AArch64
 

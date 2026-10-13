@@ -1,6 +1,11 @@
-import VerifiedGarbage.Proof.Dsa.X86_64.Backend
+module
+
+public import VerifiedGarbage.Proof.Dsa.X86_64.Backend
 
 /-! # Baseline x86-64 Montgomery arithmetic for DSA -/
+
+@[expose] public section
+
 namespace VG.Variants.DsaArithmetic.X86_64.Base
 open VG VG.X86_64 VG.Proof.Dsa.X86_64 VG.Proof.Bignum.X86_64
 

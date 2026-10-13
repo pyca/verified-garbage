@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.MlDsa.Sample.ExpandMask
-import VerifiedGarbage.Proof.Framework.Mem
+module
+
+public import VerifiedGarbage.Proof.MlDsa.Sample.ExpandMask
+public import VerifiedGarbage.Proof.Framework.Mem
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA: fields of a little-endian word, and subtraction modulo `q`
@@ -11,6 +17,8 @@ on, if its first three bytes are those of `X` from byte `o` (`wordBits`). And
 `(g - x) mod q`, computed as `g - x` in 32 bits plus `q` masked by the borrow
 of the subtraction (`subMask_eq`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Sample
 

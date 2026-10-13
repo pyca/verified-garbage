@@ -1,4 +1,10 @@
-import VerifiedGarbage.Spec.Aes
+module
+
+public import VerifiedGarbage.Spec.Aes
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The inverse cipher's rounds, independently of any representation
@@ -8,6 +14,8 @@ the states: the bits of the products by the coefficients of InvMixColumns
 (`mulBits`), its linearity (FIPS 197 §5.3.5, for the equivalent inverse
 cipher), and the inverse cipher's middle rounds as `invCipher` folds them.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Aes
 

@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.AesOcb.X86_64.Verified
-import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
-import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
+module
+
+public import VerifiedGarbage.Proof.AesOcb.X86_64.Verified
+public import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
+public import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-OCB on x86-64, with its working space on the stack
@@ -19,6 +25,8 @@ The code's own calls use 8 bytes below the frame, the return address, as
 no stack. `open`'s leak, whether it succeeds, reads only its buffers
 (`openLeak_local`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

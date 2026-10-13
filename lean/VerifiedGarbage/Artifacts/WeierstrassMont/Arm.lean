@@ -1,8 +1,12 @@
-import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Impl.Weierstrass.Arm.Mont
-import VerifiedGarbage.Proof.Weierstrass.Arm.MontVerified
+module
+
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.Impl.Weierstrass.Arm.Mont
+public import VerifiedGarbage.Proof.Weierstrass.Arm.MontVerified
 
 /-! # Montgomery arithmetic modulo the curves' `p` and `n` on ARMv7 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.WeierstrassMont.Arm
 

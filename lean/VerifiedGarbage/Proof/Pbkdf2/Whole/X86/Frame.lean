@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Pbkdf2.Scratch
-import VerifiedGarbage.Proof.Framework.X86.StackScratch
-import VerifiedGarbage.Proof.Sha256.X86.Variants.Interface
+module
+
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Pbkdf2.Scratch
+public import VerifiedGarbage.Proof.Framework.X86.StackScratch
+public import VerifiedGarbage.Proof.Sha256.X86.Variants.Interface
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # PBKDF2 on x86, with its working space on the stack
@@ -17,6 +23,8 @@ For a SHA-256 backend, `sha256_stack` and `sha224_stack` bound the stack the
 code uses from what the backend proves of the functions it calls, and
 `nosp_of_all` gives that it keeps `esp` from `Backend.pbkdf2Sp`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Pbkdf2.Whole.X86
 

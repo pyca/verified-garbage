@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.AesSiv.X86.Entry
-import VerifiedGarbage.Proof.AesSiv.CtrPart
-import VerifiedGarbage.Proof.AesGcm.X86.Cmp
+module
+
+public import VerifiedGarbage.Proof.AesSiv.X86.Entry
+meta import VerifiedGarbage.Proof.AesSiv.X86.Entry
+public import VerifiedGarbage.Proof.AesSiv.CtrPart
+meta import VerifiedGarbage.Proof.AesSiv.CtrPart
+public import VerifiedGarbage.Proof.AesGcm.X86.Cmp
+meta import VerifiedGarbage.Proof.AesGcm.X86.Cmp
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-SIV on x86: the CMAC of a string (`cmacOf`)
@@ -13,6 +22,8 @@ the bytes of the whole blocks before the last 1 to 16
 `nb` blocks with `vg_cmac_aes_update` and finalizes the rest with
 `vg_cmac_aes_finalize` from the context's subkeys (`Siv.cmacWith_chained`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

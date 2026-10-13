@@ -1,8 +1,19 @@
-import VerifiedGarbage.Proof.Ed25519.X86.WindowCT
-import VerifiedGarbage.Proof.Ed25519.X86.RecoverCTBlocks
-import VerifiedGarbage.Proof.Ed25519.X86.PointEqual
-import VerifiedGarbage.Proof.Ed25519.X86.VerifyPoints
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
+module
+
+public import VerifiedGarbage.Proof.Ed25519.X86.WindowCT
+meta import VerifiedGarbage.Proof.Ed25519.X86.WindowCT
+public import VerifiedGarbage.Proof.Ed25519.X86.RecoverCTBlocks
+meta import VerifiedGarbage.Proof.Ed25519.X86.RecoverCTBlocks
+public import VerifiedGarbage.Proof.Ed25519.X86.PointEqual
+meta import VerifiedGarbage.Proof.Ed25519.X86.PointEqual
+public import VerifiedGarbage.Proof.Ed25519.X86.VerifyPoints
+meta import VerifiedGarbage.Proof.Ed25519.X86.VerifyPoints
+public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Verification's equation: what its traces depend on
@@ -11,6 +22,8 @@ The windows' traces depend only on the public scalars (`windowMultiply_ct`), and
 comparison's on whether the points represented are equal (`pointEqualRep_ct`), the same in both
 runs.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed25519.X86
 
@@ -47,43 +60,83 @@ def EqRepPre (base : BitVec 32) (P Q : Edwards.EPoint VG.Proof.Ed25519.dZ) (s : 
   Ctx base s ∧ VG.Proof.Ed25519.RepP (point (env s.mem base) 0 1 2 3) P ∧
     VG.Proof.Ed25519.RepP (point (env s.mem base) 4 5 6 7) Q
 
+/-- Before pass `n` of `equalStep`: slots 8 and 9 are equal exactly when `P` and `Q` agree in `x`
+(`n = 2`, with slots 10 and 11 for `y`) or in `y` (`n = 1`). -/
+def EqLoopCT (base : BitVec 32) (P Q : Edwards.EPoint VG.Proof.Ed25519.dZ) (n : Nat) (s : State) : Prop :=
+  Ctx base s ∧ s.gpr .esi = BitVec.ofNat 32 n ∧
+    ((n = 2 ∧ (env s.mem base 8 = env s.mem base 9 ↔ P.x = Q.x) ∧
+        (env s.mem base 10 = env s.mem base 11 ↔ P.y = Q.y)) ∨
+      (n = 1 ∧ (env s.mem base 8 = env s.mem base 9 ↔ P.y = Q.y)))
+
+/-- The condition pass `n` compares. -/
+abbrev eqCond (P Q : Edwards.EPoint VG.Proof.Ed25519.dZ) (n : Nat) : Prop := if n = 2 then P.x = Q.x else P.y = Q.y
+
+theorem EqLoopCT.cond {base : BitVec 32} {P Q : Edwards.EPoint VG.Proof.Ed25519.dZ} {n : Nat} {s : State}
+    (h : EqLoopCT base P Q n s) : env s.mem base 8 = env s.mem base 9 ↔ eqCond P Q n := by
+  rcases h.2.2 with ⟨rfl, e, _⟩ | ⟨rfl, e⟩
+  · exact e
+  · exact e
+
+/-- One pass: its trace depends only on the comparison, which is the same in both runs. -/
+theorem equalStep_ct (base : BitVec 32) (P Q : Edwards.EPoint VG.Proof.Ed25519.dZ) (n : Nat) :
+    RelCT isa (fun s t => EqLoopCT base P Q n s ∧ EqLoopCT base P Q n t) equalStep (fun _ _ => True) := by
+  have ht : RelCT isa (fun s t => EqLoopCT base P Q n s ∧ EqLoopCT base P Q n t)
+      (.block (fieldEqual 8 9)) (fun _ _ => True) := by
+    apply VG.RelCT.taint (A := taint) (regsTaint [.edi]) _ (by taint_decide)
+    exact fun _ _ h => edi_agree h.1.1.edi h.2.1.edi
+  have hw (s : State) (h : EqLoopCT base P Q n s) :
+      WP isa (.block (fieldEqual 8 9)) s fun t => Ctx base t ∧ t.zf = some (decide (eqCond P Q n)) :=
+    WP.mono (fieldEqual_ok h.1 8 9) fun t k => ⟨k.1.ctx h.1, by
+      rw [k.2.2]; exact congrArg some (decide_eq_decide.mpr h.cond)⟩
+  have hp := VG.RelCT.wp ht (fun s t h => ⟨hw s h.1, hw t h.2⟩)
+  rw [equalStep]
+  refine VG.RelCT.seq hp (VG.RelCT.ite (M := isa) ?_ ?_ ?_)
+  · exact fun _ _ h => h.2.1.2.trans h.2.2.2.symm
+  · apply VG.RelCT.taint (A := taint) (regsTaint [.edi]) _ (by taint_decide)
+    exact fun _ _ h => edi_agree h.1.2.1.1.edi h.1.2.2.1.edi
+  · apply VG.RelCT.taint (A := taint) (regsTaint []) _ (by taint_decide)
+    exact fun _ _ _ => regsTaint_agree (by simp)
+
 /-- The comparison branches on whether the points represented are equal. -/
 theorem pointEqualRep_ct (base : BitVec 32) (P Q : Edwards.EPoint VG.Proof.Ed25519.dZ) :
     RelCT isa (fun s t => EqRepPre base P Q s ∧ EqRepPre base P Q t)
       Impl.Ed25519.X86.pointEqual (fun _ _ => True) := by
   have ht : RelCT isa (fun s t => EqRepPre base P Q s ∧ EqRepPre base P Q t)
-      (.block (fieldCode pointEqualOps ++ fieldEqual 8 9)) (fun _ _ => True) := by
+      (.block (fieldCode pointEqualOps ++ [.mov .esi (.imm 2)])) (fun _ _ => True) := by
     apply VG.RelCT.taint (A := taint) (regsTaint [.edi]) _ (by taint_decide)
     exact fun _ _ h => edi_agree h.1.1.edi h.2.1.edi
   have hw (s : State) (h : EqRepPre base P Q s) :
-      WP isa (.block (fieldCode pointEqualOps ++ fieldEqual 8 9)) s fun t =>
-        Ctx base t ∧ t.zf = some (decide (P.x = Q.x)) ∧
-          (env t.mem base 10 = env t.mem base 11 ↔ P.y = Q.y) := by
-    refine WP.mono (equalFirst_ok h.1) fun t ⟨kt, tz, tu, tv⟩ => ⟨kt.ctx h.1, ?_, ?_⟩
-    · rw [tz]
-      exact congrArg some (decide_eq_decide.mpr (VG.Proof.Ed25519.repP_cross_x h.2.1 h.2.2))
-    · rw [tu, tv]
-      exact VG.Proof.Ed25519.repP_cross_y h.2.1 h.2.2
+      WP isa (.block (fieldCode pointEqualOps ++ [.mov .esi (.imm 2)])) s (EqLoopCT base P Q 2) := by
+    rw [WP.block_append_iff]
+    refine WP.mono (fieldCode_ok pointEqualOps h.1) fun a ⟨ka, ea⟩ => Wp.wp_movi fun t u => WP.block_nil ?_
+    have ev := ctEqualOps_eval (env s.mem base)
+    refine ⟨(IKeep.of_counter u).ctx (ka.ctx h.1), u.gpr, .inl ⟨rfl, ?_, ?_⟩⟩
+    · rw [u.mem, ea, ev.1, ev.2.1]; exact VG.Proof.Ed25519.repP_cross_x h.2.1 h.2.2
+    · rw [u.mem, ea, ev.2.2.1, ev.2.2.2]; exact VG.Proof.Ed25519.repP_cross_y h.2.1 h.2.2
   have hp := VG.RelCT.wp ht (fun s t h => ⟨hw s h.1, hw t h.2⟩)
-  have ht2 : RelCT isa (fun s t => (Ctx base s ∧ (env s.mem base 10 = env s.mem base 11 ↔ P.y = Q.y)) ∧
-      (Ctx base t ∧ (env t.mem base 10 = env t.mem base 11 ↔ P.y = Q.y)))
-      (.block (fieldEqual 10 11)) (fun _ _ => True) := by
-    apply VG.RelCT.taint (A := taint) (regsTaint [.edi]) _ (by taint_decide)
-    exact fun _ _ h => edi_agree h.1.1.edi h.2.1.edi
-  have hw2 (s : State) (h : Ctx base s ∧ (env s.mem base 10 = env s.mem base 11 ↔ P.y = Q.y)) :
-      WP isa (.block (fieldEqual 10 11)) s fun t => t.zf = some (decide (P.y = Q.y)) :=
-    WP.mono (fieldEqual_ok h.1 10 11) fun t k => by
-      rw [k.2.2]; exact congrArg some (decide_eq_decide.mpr h.2)
-  have hp2 := VG.RelCT.wp ht2 (fun s t h => ⟨hw2 s h.1, hw2 t h.2⟩)
   rw [Impl.Ed25519.X86.pointEqual]
-  refine VG.RelCT.seq hp (VG.RelCT.ite (M := isa) ?_ ?_ ?_)
-  · exact fun _ _ h => h.2.1.2.1.trans h.2.2.2.1.symm
-  · refine VG.RelCT.seq (hp2.mono (fun _ _ h => ⟨⟨h.1.2.1.1, h.1.2.1.2.2⟩, ⟨h.1.2.2.1, h.1.2.2.2.2⟩⟩)
-      (fun _ _ h => h)) (VG.RelCT.ite (M := isa) ?_ ?_ ?_)
-    · exact fun _ _ h => h.2.1.trans h.2.2.symm
-    · exact (returnFlag_ct true).mono (fun _ _ _ => trivial) (fun _ _ h => h)
-    · exact recoverInvalid_ct.mono (fun _ _ _ => trivial) (fun _ _ h => h)
-  · exact recoverInvalid_ct.mono (fun _ _ _ => trivial) (fun _ _ h => h)
+  refine VG.RelCT.seq (hp.mono (fun _ _ h => h) (fun _ _ h => h.2))
+    (VG.RelCT.loop (M := isa) (body := equalStep) (c := .ne) (Q := fun _ _ => True) (fun (n : Nat) (s t : State) => EqLoopCT base P Q n s ∧ EqLoopCT base P Q n t)
+      (fun n => ?_) 2)
+  -- One pass: the same branch in both runs, and the next pass's facts.
+  have step (s : State) (h : EqLoopCT base P Q n s) : WP isa equalStep s fun t =>
+      isa.eval .ne t = some (decide (eqCond P Q n ∧ n - 1 ≠ 0)) ∧
+      (eqCond P Q n ∧ n - 1 ≠ 0 → EqLoopCT base P Q (n - 1) t) := by
+    have hn : 1 ≤ n ∧ n ≤ 2 := by rcases h.2.2 with ⟨rfl, _⟩ | ⟨rfl, _⟩ <;> decide
+    refine WP.mono (equalStep_ok h.1 hn.1 hn.2 h.2.1) fun t ⟨k, yes, no⟩ => ?_
+    by_cases c : eqCond P Q n
+    · obtain ⟨_, ri, rz, r8, r9⟩ := yes (h.cond.mpr c)
+      refine ⟨by rw [rz]; simp [c], fun ⟨_, hn1⟩ => ⟨k.ctx h.1, ri, ?_⟩⟩
+      rcases h.2.2 with ⟨rfl, _, ey⟩ | ⟨rfl, _⟩
+      · exact .inr ⟨rfl, by rw [r8, r9]; exact ey⟩
+      · exact absurd rfl hn1
+    · obtain ⟨_, rz⟩ := no (fun e => c (h.cond.mp e))
+      exact ⟨by rw [rz]; simp [c], fun ⟨c', _⟩ => absurd c' c⟩
+  refine (VG.RelCT.wp (equalStep_ct base P Q n) fun s t h => ⟨step s h.1, step t h.2⟩).mono
+    (fun _ _ h => h) fun s t ⟨_, ⟨es, ns⟩, ⟨et, nt⟩⟩ => ⟨es.trans et.symm, fun _ => trivial, fun e => ?_⟩
+  rw [es] at e
+  have c := of_decide_eq_true (Option.some.inj e)
+  exact ⟨n - 1, by omega, ns c, nt c⟩
 
 end VG.Proof.Ed25519.X86
 

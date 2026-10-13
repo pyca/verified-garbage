@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.Loop
-import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemLoop
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx.Reduction
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx.Loop
+module
+
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.Loop
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx.Reduction
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx.Loop
+public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemLoopOne
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The blocks after the pipeline's
@@ -17,6 +23,8 @@ and adds their products with their powers (`StitchZH.remLoop_ok`), which
 `tailEnd` reduces into `Y`, for powers whose products add up to `GHASH`
 (`TailLaw`, which `Ok.lean` proves of the powers the setup stores).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Gcm.X86_64.StitchAvx8
 open VG VG.X86_64 VG.X86_64.RegUpd

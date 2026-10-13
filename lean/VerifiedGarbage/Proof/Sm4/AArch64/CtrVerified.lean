@@ -1,11 +1,25 @@
-import VerifiedGarbage.Proof.Sm4.AArch64.ModeCore
-import VerifiedGarbage.Proof.Modes.AArch64.Ctr
-import VerifiedGarbage.Proof.Sm4.Scratch
-import VerifiedGarbage.Proof.Framework.AArch64.Inline
-import VerifiedGarbage.Proof.Framework.AArch64.Taint
-import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Sm4.AArch64.Lit
+module
+
+public import VerifiedGarbage.Proof.Sm4.AArch64.ModeCore
+meta import VerifiedGarbage.Proof.Sm4.AArch64.ModeCore
+public import VerifiedGarbage.Proof.Modes.AArch64.Ctr
+meta import VerifiedGarbage.Proof.Modes.AArch64.Ctr
+public import VerifiedGarbage.Proof.Sm4.Scratch
+meta import VerifiedGarbage.Proof.Sm4.Scratch
+public import VerifiedGarbage.Proof.Framework.AArch64.Inline
+meta import VerifiedGarbage.Proof.Framework.AArch64.Inline
+public import VerifiedGarbage.Proof.Framework.AArch64.Taint
+meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
+public import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
+meta import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Sm4.AArch64.Lit
+meta import VerifiedGarbage.Proof.Sm4.AArch64.Lit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # SM4-CTR on AArch64 meets its contracts
@@ -18,6 +32,8 @@ the counter block is secret. `ctr_framed` runs it with its working space on
 the stack, zeroed on return: 3168 bytes, the 396 words of the scratch
 buffer.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sm4
 

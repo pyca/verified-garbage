@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Crypt
-import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Verified
+module
+
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Crypt
+meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Crypt
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Verified
+meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Verified
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ChaCha20 and Poly1305 together (x86-64): `bulk` is constant time
@@ -14,6 +22,8 @@ pointers public, and the XOR into the bytes left with their address and
 number, loaded from memory, public by correctness (`TailMid`). `bulk_rel` is stated with `bulk`'s permissions (`bulkWr`), and
 `relCT_narrow` moves it to `seal`'s.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.ChaCha20Poly1305.X86_64.Stitch
 

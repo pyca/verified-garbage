@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Gcm.Compose
-import VerifiedGarbage.Proof.Cmac.Mem
-import VerifiedGarbage.Proof.Gcm.Bits
+module
+
+public import VerifiedGarbage.Proof.Gcm.Compose
+public import VerifiedGarbage.Proof.Cmac.Mem
+public import VerifiedGarbage.Proof.Gcm.Bits
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # GCM: the lengths block from byte-reversed words
@@ -10,6 +16,8 @@ little-endian after a byte reversal (`byteRev64`) is the big-endian
 `[x]₆₄` of its value (`le8_byteRev64`), which is `be64` modulo 2⁶⁴
 (`be64_mod`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Gcm
 

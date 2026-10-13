@@ -1,12 +1,18 @@
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Framework.X86.Inline
-import VerifiedGarbage.Proof.Sm3.X86.Compress
-import VerifiedGarbage.Proof.Sm3.X86.Stream.Init
-import VerifiedGarbage.Proof.Sm3.X86.Stream.Md
-import VerifiedGarbage.Spec.Sm3.Contract
-import VerifiedGarbage.Proof.Sm3.X86.Lit
-import VerifiedGarbage.Proof.Sm3.Scratch
-import VerifiedGarbage.Proof.Framework.X86.StackScratch
+module
+
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.X86.Inline
+public import VerifiedGarbage.Proof.Sm3.X86.Compress
+public import VerifiedGarbage.Proof.Sm3.X86.Stream.Init
+public import VerifiedGarbage.Proof.Sm3.X86.Stream.Md
+public import VerifiedGarbage.Spec.Sm3.Contract
+public import VerifiedGarbage.Proof.Sm3.X86.Lit
+public import VerifiedGarbage.Proof.Sm3.Scratch
+public import VerifiedGarbage.Proof.Framework.X86.StackScratch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # SM3 on x86: the shared contracts
@@ -28,6 +34,8 @@ own: they are `updateScratch` and `finalizeScratch` (the shared contracts
 with the working space as an argument, `Proof/Sm3/Scratch.lean`) run in a
 frame that allocates it (`Verified.stackScratch`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sm3.X86.Shared
 

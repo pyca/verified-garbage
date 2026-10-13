@@ -1,10 +1,16 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Contract
-import VerifiedGarbage.Proof.AesGcm.X86_64.Contract
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Framework.X86_64.Depth
-import VerifiedGarbage.Spec.Gcm.Precomputed
-import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Impl.AesGcm.X86_64
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Contract
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Contract
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.X86_64.Depth
+public import VerifiedGarbage.Spec.Gcm.Precomputed
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Impl.AesGcm.X86_64
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM streaming encryption out of place, x86-64: the functions called
@@ -19,6 +25,8 @@ space in a frame of its own, so its proof is its shared contract's
 precondition implies (`encSpec_pre`), and whose postcondition is `encK`'s
 (`encSpec_post`): `EncFn.ofBase` and `EncFn.ofPowers`.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

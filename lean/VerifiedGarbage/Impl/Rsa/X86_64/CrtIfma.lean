@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Rsa.X86_64.Crt
+module
+
+public import VerifiedGarbage.Impl.Rsa.X86_64.Crt
 
 /-!
 # RSA with the CRT private key on x86-64, with AVX512_IFMA, for any size
@@ -35,6 +37,8 @@ temporary: `2 R + 6` of the thirty-two, named through `VReg` and the
   zero bytes at the top to `8 W` bytes; then a multiplication by 1, which
   leaves the result out of Montgomery form, reduced in 64-bit words.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Rsa.X86_64.CrtIfma
 

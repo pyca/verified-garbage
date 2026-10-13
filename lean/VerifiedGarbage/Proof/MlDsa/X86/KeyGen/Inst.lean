@@ -1,14 +1,20 @@
-import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Verified
-import VerifiedGarbage.Impl.MlDsa.X86.KeyGen.Inst
-import VerifiedGarbage.Proof.MlDsa.X86.Arith.AddSub
-import VerifiedGarbage.Proof.MlDsa.X86.Arith.Mul
-import VerifiedGarbage.Proof.MlDsa.X86.Arith.Ntt
-import VerifiedGarbage.Proof.MlDsa.X86.Arith.NttInv
-import VerifiedGarbage.Proof.MlDsa.X86.Sample.RejNtt
-import VerifiedGarbage.Proof.MlDsa.X86.Sample.RejBounded
-import VerifiedGarbage.Proof.MlDsa.X86.Round.Power2Round
-import VerifiedGarbage.Proof.MlDsa.X86.Pack.SimpleBitPack
-import VerifiedGarbage.Proof.MlDsa.X86.Pack.BitPack
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Verified
+public import VerifiedGarbage.Impl.MlDsa.X86.KeyGen.Inst
+public import VerifiedGarbage.Proof.MlDsa.X86.Arith.AddSub
+public import VerifiedGarbage.Proof.MlDsa.X86.Arith.Mul
+public import VerifiedGarbage.Proof.MlDsa.X86.Arith.Ntt
+public import VerifiedGarbage.Proof.MlDsa.X86.Arith.NttInv
+public import VerifiedGarbage.Proof.MlDsa.X86.Sample.RejNtt
+public import VerifiedGarbage.Proof.MlDsa.X86.Sample.RejBounded
+public import VerifiedGarbage.Proof.MlDsa.X86.Round.Power2Round
+public import VerifiedGarbage.Proof.MlDsa.X86.Pack.SimpleBitPack
+public import VerifiedGarbage.Proof.MlDsa.X86.Pack.BitPack
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA key generation on x86 (32-bit), with this library's primitives
@@ -18,6 +24,8 @@ contracts, use at most 56 bytes of stack and write `esp` only by frames and
 calls (`prims_ok`), so `vg_mldsa{44,65,87}_keygen` meet theirs
 (`keyGen44_verified`, …).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86.KeyGen
 

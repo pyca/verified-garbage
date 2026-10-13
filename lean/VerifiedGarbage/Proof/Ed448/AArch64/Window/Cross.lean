@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Ed448.AArch64.Window.Window
-import VerifiedGarbage.Proof.Ed448.AArch64.Window.TableInit
-import VerifiedGarbage.Proof.Ed448.AArch64.Point56.Call
+module
+
+public import VerifiedGarbage.Proof.Ed448.AArch64.Window.Window
+public import VerifiedGarbage.Proof.Ed448.AArch64.Window.TableInit
+public import VerifiedGarbage.Proof.Ed448.AArch64.Point56.Call
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 verification on AArch64: the points compared
@@ -12,6 +18,8 @@ and `RY` into slots 3–5 (`Z = 1`), doubled twice (calls of
 `vg_ed448_r56_point_double`), and the products `X_Q Z_R`, `X_R Z_Q`,
 `Y_Q Z_R`, `Y_R Z_Q` into slots 12–15 (`wcross_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.AArch64.Window
 

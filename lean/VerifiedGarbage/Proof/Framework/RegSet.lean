@@ -1,4 +1,6 @@
-import Lean.ToExpr
+module
+
+public import Lean.ToExpr
 
 /-!
 # Sets of registers as bit masks
@@ -13,6 +15,8 @@ with the `Nat` functions themselves (`Nat.lor`, not `|||`; `Nat.beq`, not
 unfolding the instances every time; the lemmas state them with the usual
 operations.
 -/
+
+@[expose] public section
 
 namespace VG
 

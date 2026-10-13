@@ -1,7 +1,12 @@
-import VerifiedGarbage.Impl.Ed25519.Arm.Field
+module
+
+public import VerifiedGarbage.Impl.Ed25519.Arm.Field
 
 /-! Canonical reduction in the multiplication accumulator. The working
 field elements are preserved; the two temporary fields occupy [1472,1600). -/
+
+@[expose] public section
+
 namespace VG.Impl.Ed25519.Arm
 open VG.Arm
 

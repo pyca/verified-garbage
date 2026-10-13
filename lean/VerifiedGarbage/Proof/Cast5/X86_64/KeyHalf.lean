@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Cast5.X86_64.KeyGroup
+module
+
+public import VerifiedGarbage.Proof.Cast5.X86_64.KeyGroup
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # CAST5 key expansion on x86-64: a half
@@ -6,6 +12,8 @@ import VerifiedGarbage.Proof.Cast5.X86_64.KeyGroup
 `half` runs the eight groups of lines of §2.4 (`halfImpl`), writing sixteen
 subkeys from `rdx`, then moves `rdx` on and counts the half (`half_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Cast5.X86_64
 

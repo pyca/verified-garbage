@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.Modes.Arm.Ops
-import VerifiedGarbage.Proof.Modes.Ctr
-import VerifiedGarbage.Proof.Framework.Arm.CallF
-import VerifiedGarbage.Proof.Framework.Arm.RelCT
-import VerifiedGarbage.Proof.Modes.Arm.Push
+module
+
+public import VerifiedGarbage.Proof.Modes.Arm.Ops
+public import VerifiedGarbage.Proof.Modes.Ctr
+public import VerifiedGarbage.Proof.Framework.Arm.CallF
+public import VerifiedGarbage.Proof.Framework.Arm.RelCT
+public import VerifiedGarbage.Proof.Modes.Arm.Push
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # What the modes need of a block cipher's ECB function, on ARMv7
@@ -39,6 +45,8 @@ entered in with the working space writable and the stack argument readable
 (`EcbPreS`), and `stack` covers the push too (`depthS`). A core without one
 needs none of them (their defaults).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Modes.Arm
 

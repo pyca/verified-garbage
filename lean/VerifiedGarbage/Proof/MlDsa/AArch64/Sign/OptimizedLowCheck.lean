@@ -1,7 +1,15 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedCalls
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.StaticRoots
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLowCallTiming
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLowField
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedCalls
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.StaticRoots
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLowCallTiming
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLowField
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Sign
 open VG VG.AArch64 VG.Spec.MlDsa

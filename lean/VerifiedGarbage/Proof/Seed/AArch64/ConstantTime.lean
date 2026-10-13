@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.Seed.AArch64.Lit
-import VerifiedGarbage.Proof.Framework.AArch64.Taint
+module
+
+public import VerifiedGarbage.Proof.Seed.AArch64.Lit
+meta import VerifiedGarbage.Proof.Seed.AArch64.Lit
+public import VerifiedGarbage.Proof.Framework.AArch64.Taint
+meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Constant time
@@ -8,6 +16,8 @@ The pointers, the count of blocks and the stack pointer are public; so is
 everything the functions compute from them (the batches' sizes, the counts
 of rounds and lanes, the addresses of the round keys and of the lanes).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Seed.AArch64
 

@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseK
+module
+
+public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseK
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA signing on ARMv7: the rejection sampling loop
@@ -10,6 +16,8 @@ rejected; with `r11 = 0` when `signLoop` returns nothing within `minBounds`
 (its `SampleInBall` did not finish, or it was the 814th rejected). So the loop
 (`signLoop_ok`) ends in `XS`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Arm.Sign
 

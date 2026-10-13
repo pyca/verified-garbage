@@ -1,10 +1,14 @@
-import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.X25519.X86_64.Divstep.Sound
-import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBasePrecomputedVerified
-import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.ScalarBase
-import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBaseAdx
+module
+
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.X25519.X86_64.Divstep.Sound
+public import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBasePrecomputedVerified
+public import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.ScalarBase
+public import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBaseAdx
 
 /-! Complete unsigned scalar multiplication by the Ed25519 base point. -/
+
+@[expose] public section
 
 namespace VG.Artifacts.Ed25519ScalarBase.X86_64
 

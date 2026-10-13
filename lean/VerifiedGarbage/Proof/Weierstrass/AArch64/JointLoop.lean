@@ -1,8 +1,17 @@
-import VerifiedGarbage.Impl.Weierstrass.AArch64.Joint
-import VerifiedGarbage.Proof.Weierstrass.Joint
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowLoop
+module
+
+public import VerifiedGarbage.Impl.Weierstrass.AArch64.Joint
+public import VerifiedGarbage.Proof.Weierstrass.Joint
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowLoop
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Shared doubling and two independent signed digits compose without an affine conversion. -/
+
+@[expose] public section
+
 namespace VG.Proof.Weierstrass.AArch64
 open VG VG.AArch64 VG.Impl.Mont VG.Impl.Weierstrass VG.Impl.Weierstrass.AArch64
 open VG.Proof.Mont.AArch64 VG.Proof.Weierstrass Spec.Weierstrass

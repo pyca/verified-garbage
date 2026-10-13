@@ -1,11 +1,17 @@
-import VerifiedGarbage.Proof.Blowfish.X86_64.Ecb
-import VerifiedGarbage.Proof.Blowfish.ModeBytes
-import VerifiedGarbage.Proof.Modes.X86_64.Core
-import VerifiedGarbage.Proof.Modes.X86_64.FbLoop
-import VerifiedGarbage.Proof.Modes.X86_64.Words
-import VerifiedGarbage.Proof.Modes.X86_64.KeepGpr
-import VerifiedGarbage.Proof.Framework.X86_64.Sse
-import VerifiedGarbage.Impl.Blowfish.X86_64.Modes
+module
+
+public import VerifiedGarbage.Proof.Blowfish.X86_64.Ecb
+public import VerifiedGarbage.Proof.Blowfish.ModeBytes
+public import VerifiedGarbage.Proof.Modes.X86_64.Core
+public import VerifiedGarbage.Proof.Modes.X86_64.FbLoop
+public import VerifiedGarbage.Proof.Modes.X86_64.Words
+public import VerifiedGarbage.Proof.Modes.X86_64.KeepGpr
+public import VerifiedGarbage.Proof.Framework.X86_64.Sse
+public import VerifiedGarbage.Impl.Blowfish.X86_64.Modes
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Blowfish's core for the modes on x86-64
@@ -22,6 +28,8 @@ the buffer.
 `crypt_keepsIv`: `crypt` keeps `xmm15`, its upper half zero, which it puts
 back from `r14` after the block code, which keeps `r14` (`gprSafe`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Blowfish.X86_64
 

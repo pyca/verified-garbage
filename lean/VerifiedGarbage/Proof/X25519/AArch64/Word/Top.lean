@@ -1,7 +1,16 @@
-import VerifiedGarbage.Proof.X25519.AArch64.Word.Output
-import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+module
+
+public import VerifiedGarbage.Proof.X25519.AArch64.Word.Output
+public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! The four-word implementation under the unchanged RFC 7748 signature. -/
+
+@[expose] public section
+
 namespace VG.Proof.X25519.AArch64.Word
 open VG VG.AArch64 VG.Spec.X25519 VG.Proof.X25519
 open VG.Impl.Ed25519.AArch64 VG.Proof.Ed25519.AArch64

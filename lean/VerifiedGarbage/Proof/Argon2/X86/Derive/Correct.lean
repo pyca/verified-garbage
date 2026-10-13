@@ -1,6 +1,14 @@
-import VerifiedGarbage.Proof.Argon2.X86.Derive.FillLoops
-import VerifiedGarbage.Proof.Argon2.FinalReduction
-import VerifiedGarbage.Proof.Argon2.Serialization
+module
+
+public import VerifiedGarbage.Proof.Argon2.X86.Derive.FillLoops
+public import VerifiedGarbage.Proof.Argon2.FinalReduction
+public import VerifiedGarbage.Proof.Argon2.Serialization
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 section
 
@@ -22,40 +30,6 @@ open VG.Proof.Argon2.X86 (blk ofWords blk_of_words xor_words)
 open VG.Impl.Sha512.X86 (at_)
 open VG.Impl.Argon2.X86.Derive (laneOff laneLenOff argOff divisorOff segLenOff strideOff)
 
-section
-variable {s₀ : State} (hp : DPre s₀)
-include hp
-
-/-- `n` stores of `eax = 0` to `[edi + 4k]`, `edi` the memory matrix. -/
-theorem memZeros_ok {s : State} (h : Inv s₀ s) (hx : s.gpr .edi = memP s₀) (ha : s.gpr .eax = 0) :
-    ∀ n ≤ 256, WP isa (.block ((List.range n).map fun k => Instr.store (at_ .edi (4 * k)) .eax)) s fun t =>
-      Inv s₀ t ∧ t.gpr = s.gpr ∧ Frame [⟨matrixCell (memB s₀) 0, 1024⟩] s.mem t.mem ∧
-      ∀ i < n, mw s₀ t.mem (4 * i) = 0
-  | 0, _ => WP.block_nil ⟨h, rfl, Frame.refl _ _, fun _ h => absurd h (Nat.not_lt_zero _)⟩
-  | n + 1, hn => by
-    have b1 := blocks_pos hp
-    have hb := blocks22 hp
-    have hm := hp.mem_fits
-    rw [List.range_succ, List.map_append, List.map_singleton]
-    refine WP.block_append ((memZeros_ok h hx ha n (by omega)).mono fun t ⟨it, gt, ft, wt⟩ => ?_)
-    have ea : addr (t.gpr .edi) (4 * n) = memB s₀ + BitVec.ofNat 64 (4 * n) := by
-      rw [gt, hx, mem_addr' hp (by omega)]
-    have hc : (memR s₀).Contains (addr (t.gpr .edi) (4 * n)) 4 := by
-      rw [ea]; exact Offset.contains_base _ (by omega) (by omega)
-    have hc' : (⟨matrixCell (memB s₀) 0, 1024⟩ : Region).Contains (addr (t.gpr .edi) (4 * n)) 4 := by
-      rw [ea, show matrixCell (memB s₀) 0 = memB s₀ by simp [matrixCell]]
-      exact Offset.contains_base _ (by omega) (by omega)
-    refine Wp.wp_stm rfl ⟨_, by rw [it.wr]; exact mem_mem hp, hc⟩ fun t₁ u₁ => WP.block_nil
-      ⟨it.store (R := memR s₀) (by simp) hc u₁, by rw [u₁.gpr, gt], ?_, fun i hi => ?_⟩
-    · rw [u₁.mem]
-      exact ft.writeW (List.mem_singleton_self _) _ hc'
-    · rw [u₁.mem, gt, hx, show 4 * n = 0 + 4 * n by omega, show 4 * i = 0 + 4 * i by omega,
-        mw_store hp _ (by omega) (by omega) (by omega), ha]
-      by_cases e : 0 + 4 * n = 0 + 4 * i
-      · rw [ite_eq_left e]
-      · rw [ite_eq_right e, show 0 + 4 * i = 4 * i by omega]; exact wt i (by omega)
-
-end
 
 
 theorem reduction_snoc (p : Spec.Argon2.Params) (M : Array Block) (l : Nat) (acc : Block) :
@@ -80,8 +54,7 @@ include hp
 
 /-- One lane of the reduction. -/
 theorem reduceLane_ok {s : State} {M : Array Block} {l : Nat} (h : RI s₀ M l s) (hl : l < lanesN s₀) :
-    WP isa (.block (Impl.Argon2.X86.Derive.reduceLane ++
-      Impl.Argon2.X86.Derive.advance laneOff (Impl.Argon2.X86.Derive.fr (argOff Impl.Argon2.X86.Derive.lanesArg))))
+    WP isa (.seq (.block Impl.Argon2.X86.Derive.reduceLane) Impl.Argon2.X86.Derive.reduceXor)
       s fun t => RI s₀ M (l + 1) t ∧ t.cf = some (decide (l + 1 < lanesN s₀)) := by
   have L8 := laneLen_ge hp
   have hlt := hp.lanes_lt
@@ -90,8 +63,9 @@ theorem reduceLane_ok {s : State} {M : Array Block} {l : Nat} (h : RI s₀ M l s
   have last : Proof.Argon2.lastIndex (prm s₀) l = l * (prm s₀).laneLen + ((prm s₀).laneLen - 1) := by
     unfold Proof.Argon2.lastIndex; rw [Nat.succ_mul]; omega
   have ne0 : l * (prm s₀).laneLen + ((prm s₀).laneLen - 1) ≠ 0 := by omega
-  unfold Impl.Argon2.X86.Derive.reduceLane Impl.Argon2.X86.Derive.writeBlock
-  simp only [List.append_assoc, List.cons_append, List.nil_append]
+  unfold Impl.Argon2.X86.Derive.reduceLane Impl.Argon2.X86.Derive.reduceXor
+  simp only [List.cons_append, List.nil_append]
+  refine WP.seq ?_
   refine wp_ldloc hp h.inv (d := laneOff) (by decide) fun s₁ u₁ => ?_
   have i₁ := h.inv.upd u₁ (by decide) (by decide)
   refine wp_ldloc hp i₁ (d := laneLenOff) (by decide) fun s₂ u₂ => wp_subi fun s₃ u₃ _ _ => ?_
@@ -99,11 +73,11 @@ theorem reduceLane_ok {s : State} {M : Array Block} {l : Nat} (h : RI s₀ M l s
   have m₃ : s₃.mem = s.mem := by rw [u₃.mem, u₂.mem, u₁.mem]
   refine blockAddr_ok hp i₃ (h.pr.of_mem m₃) hl (col := (prm s₀).laneLen - 1) (by omega)
     (by rw [u₃.other _ (by decide), u₂.other _ (by decide), u₁.gpr, h.lane])
-    (by rw [u₃.gpr, u₂.gpr, lw_mem u₁.mem, h.pr.laneLen, Wp.ofNat_pred (by omega)]) fun s₄ a₄ _ k₄ => ?_
+    (by rw [u₃.gpr, u₂.gpr, lw_mem u₁.mem, h.pr.laneLen, Wp.ofNat_pred (by omega)]) fun s₄ a₄ _ k₄ => WP.block_nil ?_
   have i₄ := i₃.keep k₄
-  refine wp_mov fun s₅ u₅ => ?_
+  refine WP.seq (wp_mov fun s₅ u₅ => ?_)
   have i₅ := i₄.upd u₅ (by decide) (by decide)
-  refine wp_ldarg hp i₅ (i := 13) (by decide) fun s₆ u₆ => ?_
+  refine wp_ldarg hp i₅ (i := 13) (by decide) fun s₆ u₆ => WP.block_nil ?_
   have i₆ := i₅.upd u₆ (by decide) (by decide)
   have m₆ : s₆.mem = s.mem := by rw [u₆.mem, u₅.mem, k₄.mem, m₃]
   have hm := hp.mem_fits
@@ -115,11 +89,11 @@ theorem reduceLane_ok {s : State} {M : Array Block} {l : Nat} (h : RI s₀ M l s
     rw [u₆.other _ (by decide), u₅.gpr, a₄]
   have dx : s₆.gpr .edi = memP s₀ + BitVec.ofNat 32 (0 * 1024) := by
     rw [u₆.gpr]; simp
-  refine WP.block_append ((writeWords_ok hp i₆ (cur := 0) b1 true sx
+  refine WP.seq ((writeBlock_ok hp i₆ (cur := 0) b1 true sx
     (by rw [add_nat (by omega_using [hc', hm])]; omega_using [hc', hm])
     ⟨memR s₀, by simp, c * 1024, cell_addr hp cl, hc'⟩
-    (by rw [cell_addr hp cl]; exact cell_other hp cl b1 ne0) dx 256 (Nat.le_refl _)).mono
-    fun t₇ ⟨i₇, g₇, f₇, w₇⟩ => ?_)
+    (by rw [cell_addr hp cl]; exact cell_other hp cl b1 ne0) dx).mono
+    fun t₇ ⟨i₇, f₇, w₇⟩ => ?_)
   have lt₇ : ∀ d, d + 4 ≤ 144 → lw s₀ t₇ d = lw s₀ s d := fun d hd => by
     rw [← lw_mem m₆ d]
     exact f₇.readW (r := ⟨addr (E s₀) d, 4⟩) (Region.contains_self _ _) (fun r hr => by
@@ -135,7 +109,7 @@ theorem reduceLane_ok {s : State} {M : Array Block} {l : Nat} (h : RI s₀ M l s
       xorBlock (blockAt s.mem (matrixCell (memB s₀) c)) (blockAt s.mem (matrixCell (memB s₀) 0)) := by
     rw [cell_blk hp _ b1, cell_blk hp _ b1, cell_blk hp _ cl,
       blk_of_words (f := fun i => mw s₀ s.mem (c * 1024 + 4 * i) ^^^ mw s₀ s.mem (0 * 1024 + 4 * i)) fun i hi => by
-        rw [← mw, w₇ i hi, ite_eq_left hi, ite_eq_left (rfl : true = true), m₆, addr_shift],
+        rw [← mw, w₇ i hi, ite_eq_left hi]; simp only [wnew, ite_true]; rw [m₆, addr_shift],
       blk_of_words (m := s.mem) (B := memP s₀) (o := c * 1024) (f := fun i => mw s₀ s.mem (c * 1024 + 4 * i))
         fun _ _ => rfl,
       blk_of_words (m := s.mem) (B := memP s₀) (o := 0 * 1024) (f := fun i => mw s₀ s.mem (0 * 1024 + 4 * i))
@@ -161,21 +135,25 @@ include hp
 /-- The first block of `reduce`: the memory's first block cleared, and the lane `0`. -/
 theorem reduceStart_ok {s : State} {M : Array Block} (h : Inv s₀ s) (pr : Prm s₀ s)
     (hm : Represents s.mem (memB s₀) (prm s₀).blocks M) :
-    WP isa (.block (Impl.Argon2.X86.Derive.reduceClear ++ Impl.Argon2.X86.Derive.setLocal laneOff 0)) s
+    WP isa (.seq Impl.Argon2.X86.Derive.reduceClear (.block (Impl.Argon2.X86.Derive.setLocal laneOff 0))) s
       (RI s₀ M 0) := by
   have b1 := blocks_pos hp
   have hb : blocksN s₀ = (prm s₀).blocks := hp.blocks
+  have hmf := hp.mem_fits
   unfold Impl.Argon2.X86.Derive.reduceClear Impl.Argon2.X86.Derive.setLocal
-  simp only [List.cons_append, List.nil_append]
-  refine wp_ldarg hp h (i := 13) (by decide) fun s₁ u₁ => wp_movi fun s₂ u₂ => ?_
-  have i₂ := (h.upd u₁ (by decide) (by decide)).upd u₂ (by decide) (by decide)
-  refine WP.block_append ((memZeros_ok hp i₂ (by rw [u₂.other _ (by decide), u₁.gpr]) u₂.gpr 256
-    (Nat.le_refl _)).mono fun s₃ ⟨i₃, _, f₃, z₃⟩ => ?_)
+  refine WP.seq (WP.seq (wp_ldarg hp h (i := 13) (by decide) fun s₁ u₁ => WP.block_nil ?_))
+  have i₁ := h.upd u₁ (by decide) (by decide)
+  refine (zeroWords_ok i₁ (r := .edi) (by decide) (by decide) (by decide) (by decide) (X := memP s₀) (n := 256)
+    (R := memR s₀) (by simp) (mem_mem hp) (off := 0) (BitVec.add_zero _).symm
+    (show 0 + 4 * 256 ≤ blocksN s₀ * 1024 by omega_using [b1]) (show blocksN s₀ * 1024 < 2 ^ 64 by omega_using [hmf])
+    (Nat.le_trans (Nat.add_le_add_left (show 4 * 256 ≤ blocksN s₀ * 1024 by omega_using [b1]) _) hmf)
+    (by decide) u₁.gpr).mono fun s₃ ⟨i₃, _, f₃', z₃⟩ => ?_
+  have f₃ : Frame [⟨matrixCell (memB s₀) 0, 1024⟩] s₁.mem s₃.mem := by rw [cell0]; exact f₃'
   refine wp_movi fun s₄ u₄ => ?_
   have i₄ := i₃.upd u₄ (by decide) (by decide)
   refine wp_stloc hp i₄ (d := laneOff) (by decide) fun s₅ i₅ v₅ _ _ m₅ => WP.block_nil ?_
   obtain ⟨l₅, _, c₅⟩ := loc_store hp (d := laneOff) (by decide) m₅
-  have m₂ : s₂.mem = s.mem := by rw [u₂.mem, u₁.mem]
+  have m₂ : s₁.mem = s.mem := u₁.mem
   have lt₃ : ∀ d, d + 4 ≤ 144 → lw s₀ s₃ d = lw s₀ s d := fun d hd => by
     rw [← lw_mem m₂ d]
     exact f₃.readW (r := ⟨addr (E s₀) d, 4⟩) (Region.contains_self _ _) (fun r hr => by
@@ -185,9 +163,7 @@ theorem reduceStart_ok {s : State} {M : Array Block} (h : Inv s₀ s) (pr : Prm 
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hd
     have hd4 : d + 4 ≤ 144 := by rcases hd with rfl | rfl | rfl | rfl <;> decide
     rw [l₅ d (by omega) (by rcases hd with rfl | rfl | rfl | rfl <;> decide), lw_mem u₄.mem, lt₃ d hd4]
-  · rw [c₅ _ (by rw [← hb]; exact b1), u₄.mem, cell_blk hp _ b1,
-      blk_of_words (f := fun _ => 0) fun i hi => by rw [← mw, Nat.zero_mul, Nat.zero_add]; exact z₃ i hi,
-      ofWords_zero]
+  · rw [c₅ _ (by rw [← hb]; exact b1), u₄.mem, cell0, blockAt_zero fun i hi => z₃ i (by omega)]
     rfl
   · rw [c₅ _ hk, u₄.mem, blockAt_keep f₃ (fun r hr => ?_), m₂, hm.block k hk]
     simp only [List.mem_singleton] at hr; subst hr

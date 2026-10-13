@@ -1,4 +1,8 @@
-import VerifiedGarbage.Impl.Sha3.AArch64
+module
+
+public import VerifiedGarbage.Impl.Sha3.AArch64
+
+@[expose] public section
 
 namespace VG.Impl.Sha3.AArch64
 

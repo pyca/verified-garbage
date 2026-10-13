@@ -1,9 +1,22 @@
-import VerifiedGarbage.Proof.Ed25519.AArch64.WindowCT
-import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyContext
-import VerifiedGarbage.Proof.Ed25519.AArch64.RecoverCTBlocks
-import VerifiedGarbage.Proof.Ed25519.AArch64.PointDecode
+module
+
+public import VerifiedGarbage.Proof.Ed25519.AArch64.WindowCT
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.WindowCT
+public import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyContext
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyContext
+public import VerifiedGarbage.Proof.Ed25519.AArch64.RecoverCTBlocks
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.RecoverCTBlocks
+public import VerifiedGarbage.Proof.Ed25519.AArch64.PointDecode
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.PointDecode
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Ed25519.AArch64.VerifyCTPublic`. -/
+
+@[expose] public section
+
 section
 /-! The verification inputs are public, and the equation's trace depends on them alone. -/
 
@@ -48,14 +61,20 @@ theorem verifyEquationPoints_ct (base pk sig challenge : Addr) (pkbs rbs sbs kbs
   let S := Spec.Ed25519.decodeLE sbs
   let R₀ : State → Prop := fun s₀ => tablePoint s₀.mem base 7552 = r
   have w (x : State) (h : PointsCTPre base pk sig challenge pkbs rbs sbs kbs a r x) :
-      WP isa windowPrep x (SkipRun R₀ base challenge sig Aa K S 32) := by
+      WP isa (.seq windowPrep (.block nibbles)) x (SkipRun R₀ base Aa K S 64) := by
     have c := h.1.context
-    refine WP.mono (windowPrep_ok (Aa := Aa) c.scratch c.sigHeader c.challengeHeader c.scalarBytes
-      c.scalarFar c.challengeRead c.challengeFar (by rw [h.2.1]; exact hA)) fun e ⟨we, _, eR⟩ => ?_
+    refine WP.mono (windowStart_ok (Aa := Aa) c.scratch c.sigHeader c.challengeHeader c.scalarQ
+      c.scalarFar c.challengeQ c.challengeFar (by rw [h.2.1]; exact hA)) fun e ⟨we, _, eR⟩ => ?_
     rw [h.1.kBytes, h.1.sBytes] at we
-    exact ⟨e, eR.trans h.2.2, we, Nat.div_eq_of_lt (show Spec.Ed25519.decodeLE kbs < 256 ^ (32 + 32) from we.kVal ▸ decodeLE_lt64 _ _), by decide,
-      by decide⟩
-  have wn (x : State) (h : LoopRun R₀ base challenge sig Aa K S 0 x) :
+    exact ⟨e, eR.trans h.2.2, we, Nat.div_eq_of_lt we.kLt, by decide, by decide⟩
+  have wp (x : State) (h : PointsCTPre base pk sig challenge pkbs rbs sbs kbs a r x) :
+      WP isa windowPrep x (NibPre base sig challenge) := by
+    have c := h.1.context
+    refine WP.mono (windowPrep_ok (Aa := Aa) c.scratch c.sigHeader c.challengeHeader
+      (by rw [h.2.1]; exact hA)) fun e he => ?_
+    exact ⟨he.scratch, he.kHeader, he.sHeader, by rw [he.keep.rd, he.keep.wr]; exact c.challengeQ,
+      by rw [he.keep.rd, he.keep.wr]; exact c.scalarQ, c.challengeFar, c.scalarFar⟩
+  have wn (x : State) (h : LoopRun R₀ base Aa K S 0 x) :
       WP isa (.block negR) x (EqRepPre base (K • Aa + S • (-baseAff)) (-Ra)) := by
     obtain ⟨s₀, r₀, hx⟩ := h
     have gv := hx.value
@@ -67,15 +86,19 @@ theorem verifyEquationPoints_ct (base pk sig challenge : Addr) (pkbs rbs sbs kbs
   have prepCT : CT (fun x y => x.gpr .x0 = y.gpr .x0) windowPrep (fun _ _ => True) := by
     rw [windowPrep]
     exact CT.taint (Taint.ofRegs [.x0]) (fun _ _ h => agree_x0 h) (by taint_decide)
+  have startCT : CT (fun x y => PointsCTPre base pk sig challenge pkbs rbs sbs kbs a r x ∧
+      PointsCTPre base pk sig challenge pkbs rbs sbs kbs a r y) (.seq windowPrep (.block nibbles))
+      (fun _ _ => True) :=
+    seq_same (x0_ct (fun x h => h.1.context.scratch.x0) prepCT) wp nibbles_ct
   have negRCT : CT (fun x y => x.gpr .x0 = y.gpr .x0) (.block negR) (fun _ _ => True) :=
     CT.taint (Taint.ofRegs [.x0]) (fun _ _ h => agree_x0 h) (by taint_decide)
   rw [verifyEquationPoints]
-  apply RelCT.assoc; apply RelCT.assoc; apply RelCT.assoc
-  refine CT.seq ((CT.wp (x0_ct (fun x h => h.1.context.scratch.x0) prepCT)
-    fun x y h => ⟨w x h.1, w y h.2⟩).mono (fun _ _ h => h) (fun _ _ h => h.2)) ?_
+  apply RelCT.assoc; apply RelCT.assoc; apply RelCT.assoc; apply RelCT.assoc
+  refine CT.seq ((CT.wp startCT fun x y h => ⟨w x h.1, w y h.2⟩).mono (fun _ _ h => h)
+    (fun _ _ h => h.2)) ?_
   refine CT.seq skipZero_ct ?_
-  refine CT.seq (fun x y tx ty x' y' ⟨hsp, c, hc32, hc64, hx, hy⟩ ex ey =>
-    windowsA_ct hc32 hc64 x y tx ty x' y' ⟨hsp, hx, hy⟩ ex ey) ?_
+  refine CT.seq (fun x y tx ty x' y' ⟨hsp, c, hc64, hc128, hx, hy⟩ ex ey =>
+    windowsA_ct hc64 hc128 x y tx ty x' y' ⟨hsp, hx, hy⟩ ex ey) ?_
   refine CT.seq loopB_ct ?_
   exact seq_same (x0_ct (fun x h => by obtain ⟨_, _, h⟩ := h; exact h.ctx.scratch.x0) negRCT) wn
     (pointEqualRep_ct base _ _)

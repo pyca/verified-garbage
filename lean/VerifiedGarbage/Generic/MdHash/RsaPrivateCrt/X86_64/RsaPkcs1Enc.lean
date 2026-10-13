@@ -1,6 +1,8 @@
-import VerifiedGarbage.TCB.Emit
-import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecCT5
-import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.Callees
+module
+
+public import VerifiedGarbage.TCB.Emit
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecCT5
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.Callees
 
 /-!
 # RSAES-PKCS1-v1_5 decryption with implicit rejection on x86-64
@@ -18,6 +20,8 @@ CPU features.
 Its stack is its frame, a return address and `vg_rsa_private_checked`'s
 3256 bytes, which are more than the hash functions use.
 -/
+
+@[expose] public section
 
 namespace VG.Generic.MdHash.RsaPrivateCrt.X86_64.RsaPkcs1Enc
 

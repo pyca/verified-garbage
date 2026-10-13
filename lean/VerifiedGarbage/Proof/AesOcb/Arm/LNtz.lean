@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesOcb.Arm.Words
+module
+
+public import VerifiedGarbage.Proof.AesOcb.Arm.Words
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-OCB on ARMv7: `L_{ntz(i)}` (`lNtz`)
@@ -10,6 +16,8 @@ AArch64 (`Proof.AesOcb.AArch64.lNtz_ok`). The invariant: after `j`
 doublings, `W + lO` holds `L_j`, `lr` is `i / 2^j`, which is positive, and
 `ntz(i) = j + ntz(i / 2^j)`.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

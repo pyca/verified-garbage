@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Blocks
+module
+
+public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Blocks
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA signing on ARMv7: what holds of the state between the pieces
@@ -10,6 +16,8 @@ and polynomials in slots of the working space (`Pl`), in families of
 consecutive slots (`Fam`), kept by pieces that write apart from them
 (`Fam.keep`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Arm.Sign
 

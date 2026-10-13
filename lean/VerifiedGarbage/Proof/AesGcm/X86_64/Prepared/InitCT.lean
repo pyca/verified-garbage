@@ -1,7 +1,17 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.InitPCT
-import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.Init
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.InitPCT
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.InitPCT
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.Init
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.Init
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # Constant-time key setup with prepared GHASH powers -/
+
+@[expose] public section
 
 namespace VG.Proof.AesGcm.X86_64
 open VG VG.X86_64 VG.X86_64.RegUpd VG.Impl.AesGcm.X86_64

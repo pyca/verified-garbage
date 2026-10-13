@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesCbc.AArch64.Verified
-import VerifiedGarbage.Proof.AesOfb.AArch64.Body
+module
+
+public import VerifiedGarbage.Proof.AesCbc.AArch64.Verified
+public import VerifiedGarbage.Proof.AesOfb.AArch64.Body
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-OFB on AArch64: `Verified`
@@ -10,6 +16,8 @@ precondition, and the shared contract of `Spec/Ofb/Contract.lean` (with no
 stack: the call keeps the return address in `x30`, which the function saves
 in the scratch buffer).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesOfb.AArch64
 

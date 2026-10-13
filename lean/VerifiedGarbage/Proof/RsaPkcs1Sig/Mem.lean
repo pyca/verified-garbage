@@ -1,7 +1,13 @@
-import VerifiedGarbage.Spec.RsaPkcs1Sig
-import VerifiedGarbage.Spec.Rsa.Contract
-import VerifiedGarbage.Proof.Framework.WriteBytes
-import VerifiedGarbage.Proof.Framework.Offset
+module
+
+public import VerifiedGarbage.Spec.RsaPkcs1Sig
+public import VerifiedGarbage.Spec.Rsa.Contract
+public import VerifiedGarbage.Proof.Framework.WriteBytes
+public import VerifiedGarbage.Proof.Framework.Offset
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSASSA-PKCS1-v1_5: bytes in memory
@@ -9,6 +15,8 @@ import VerifiedGarbage.Proof.Framework.Offset
 What the proofs of the encoding on every target say of the bytes they read
 and write (`Spec.Rsa.bytesAt`, `writeBytes`), whatever the ISA.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPkcs1Sig
 

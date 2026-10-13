@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Block
-import VerifiedGarbage.Proof.Framework.Omega
+module
+
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Block
+public import VerifiedGarbage.Proof.Framework.Omega
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # PBKDF2-HMAC's iteration over a Merkle–Damgård hash function on x86 (32-bit): correct
@@ -11,6 +17,8 @@ compressions per step compute HMAC. The arguments are on the stack: `scratch`,
 `scratch`), and `t` in each step. The loop counts the steps left in `edi` down
 with `sub`, and branches on its result.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Pbkdf2.Md.X86.Iterate
 

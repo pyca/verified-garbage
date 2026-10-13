@@ -1,7 +1,11 @@
-import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.Md5.AArch64.Shared
+module
+
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.Md5.AArch64.Shared
 
 /-! # MD5 (RFC 1321) on AArch64 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.Md5.AArch64
 

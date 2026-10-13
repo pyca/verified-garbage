@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejNttLoop
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejNttLoop
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on x86-64: `vg_mldsa_rej_ntt_poly`, correctness
@@ -8,6 +14,8 @@ The function runs in pieces: the prologue (`J0`), the sponge, whose output is
 t` with the coefficients `rnFold` samples from the first `3t` bytes of output
 stored.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86_64.Sample
 

@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.MlDsa.Arm.Sample.Common
-import VerifiedGarbage.Impl.MlDsa.Arm.Pack.Stream
+module
+
+public import VerifiedGarbage.Impl.MlDsa.Arm.Sample.Common
+public import VerifiedGarbage.Impl.MlDsa.Arm.Pack.Stream
 
 /-!
 # ML-DSA on 32-bit ARM: `vg_mldsa_rej_bounded_poly`
@@ -25,6 +27,8 @@ the loop's branches and the addresses of its stores depend only on which
 half-bytes are accepted (and `j`, which counts them), which the contract
 lets it leak, not on the coefficients.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.Arm.Sample
 

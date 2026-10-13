@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Mont.X86_64.Rounds
-import VerifiedGarbage.Proof.Mont.X86_64.Chain
+module
+
+public import VerifiedGarbage.Proof.Mont.X86_64.Rounds
+public import VerifiedGarbage.Proof.Mont.X86_64.Chain
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Montgomery arithmetic on x86-64: the accumulator in memory
@@ -10,6 +16,8 @@ multiply-accumulate step into a word of memory (`memStep_ok`), a row of them
 (`memRow_ok`), the words moved down by one (`moveDown_ok`, `shiftDown_ok`),
 and the cleared area (`zeroWords_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Mont.X86_64
 

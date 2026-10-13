@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Rsa.AArch64.CvHead
+module
+
+public import VerifiedGarbage.Proof.Rsa.AArch64.CvHead
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_crt_values` on AArch64: the results
@@ -6,6 +12,8 @@ import VerifiedGarbage.Proof.Rsa.AArch64.CvHead
 `dP`, `dQ` and `qInv`, masked, to their outputs (`storeA_ws`, which keeps
 the working space), and the mask's low bit returned (`cvStores_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.AArch64
 

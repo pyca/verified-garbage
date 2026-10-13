@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseCCT
-import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseK
+module
+
+public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseCCT
+public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseK
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA signing on ARMv7: the checks leak only the pointers and whether they passed
@@ -9,6 +15,8 @@ Each check leaks only its pointers, given that its inputs are reduced
 iteration passed, which two runs agree on when they agree on what the
 iteration leaks (`checks_tr`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Arm.Sign
 

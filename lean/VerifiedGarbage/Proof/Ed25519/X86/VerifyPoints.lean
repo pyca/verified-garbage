@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Ed25519.X86.WindowLoop
-import VerifiedGarbage.Proof.Ed25519.X86.PointEqual
+module
+
+public import VerifiedGarbage.Proof.Ed25519.X86.WindowLoop
+public import VerifiedGarbage.Proof.Ed25519.X86.PointEqual
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Verification's equation from the windows
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.Ed25519.X86.PointEqual
 The windows' `[k]A - [S]B` equals `-R` exactly when `[S]B = R + [k]A`
 (`window_equation`), which the projective comparison checks.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed25519.X86
 open VG VG.X86 VG.Impl.Ed25519.X86 VG.Proof.Ed25519 Edwards
@@ -38,7 +46,7 @@ theorem verifyEquationPoints_ok {s₀ s : State} (hp : VerifyPre s₀) (hs : Sav
   refine WP.seq (WP.mono (negR_ok wu.ctx) fun v ⟨kv, qv, pv⟩ => ?_)
   have sv := wu.saved.ikeep hp.scratch.fit kv
   refine WP.mono (pointEqual_ok (sv.ctx hp.scratch.fit hp.scratch.wr hp.scratch.stk)) fun t ⟨kt, et⟩ =>
-    ⟨sv.ikeep hp.scratch.fit (IKeep.of_field kt), ?_⟩
+    ⟨sv.ikeep hp.scratch.fit kt, ?_⟩
   rw [et, pv, qv, wu.r]
   congr 1
   exact window_equation hA hR ru.proj (hR.neg.proj)

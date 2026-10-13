@@ -1,6 +1,10 @@
-import VerifiedGarbage.Proof.Cast5.AArch64.CbcVerified
+module
+
+public import VerifiedGarbage.Proof.Cast5.AArch64.CbcVerified
 
 /-! # CAST5-CBC artifacts on baseline AArch64 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.Cast5Cbc.AArch64
 

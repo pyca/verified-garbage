@@ -1,6 +1,12 @@
-import VerifiedGarbage.Spec.EcKey.P256
-import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Proof.Framework.Contract
+module
+
+public import VerifiedGarbage.Spec.EcKey.P256
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.Proof.Framework.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # P-256 public keys on 32-bit ARM: the contract the proof is written against
@@ -9,6 +15,8 @@ The facts of `Spec.EcKey.P256.inst.publicKeyContract` for 32-bit ARM, by
 name: `vg_ec_p256_public_key(out, d, scratch)`, with the arguments in
 `r0`–`r2` (AAPCS), the result in `r0` (the low word of `r1:r0`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.EcKey.Arm
 

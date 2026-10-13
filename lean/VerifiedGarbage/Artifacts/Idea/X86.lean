@@ -1,6 +1,10 @@
-import VerifiedGarbage.Proof.Idea.X86.Verified
+module
+
+public import VerifiedGarbage.Proof.Idea.X86.Verified
 
 /-! # IDEA artifacts on baseline x86 (32-bit) -/
+
+@[expose] public section
 
 namespace VG.Artifacts.Idea.X86
 

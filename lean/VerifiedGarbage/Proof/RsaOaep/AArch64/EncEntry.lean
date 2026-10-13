@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.RsaOaep.AArch64.EncLay
+module
+
+public import VerifiedGarbage.Proof.RsaOaep.AArch64.EncLay
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-OAEP encryption on AArch64: entering the frames
@@ -7,6 +13,8 @@ The layout of a call (`lay`), what the shared contract says of it
 (`lay_ok`), and the prologue (`prologue_ok`): our register arguments saved
 to their slots, our stack arguments moved to theirs, establishing `Ctx`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaOaep.AArch64.Enc
 

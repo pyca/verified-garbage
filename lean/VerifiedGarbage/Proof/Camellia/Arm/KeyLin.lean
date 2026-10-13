@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Camellia.Arm.Linear
-import VerifiedGarbage.Impl.Camellia.Arm.ExpandKey
+module
+
+public import VerifiedGarbage.Proof.Camellia.Arm.Linear
+public import VerifiedGarbage.Impl.Camellia.Arm.ExpandKey
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Camellia's key schedule on ARMv7: the transposes of one value
@@ -10,6 +16,8 @@ transposed into the planes of the halves (input words `0 … 3`); and
 `unbcast_check`, lane 0's words back from the planes (input words
 `0 … 31`, the planes at `d1Slot`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Camellia.Arm
 

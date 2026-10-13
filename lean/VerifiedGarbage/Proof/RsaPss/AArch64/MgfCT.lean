@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.RsaPss.AArch64.CtHashCT
-import VerifiedGarbage.Proof.RsaPss.AArch64.Mgf
-import VerifiedGarbage.Proof.RsaPss.AArch64.RelSplit
+module
+
+public import VerifiedGarbage.Proof.RsaPss.AArch64.CtHashCT
+meta import VerifiedGarbage.Proof.RsaPss.AArch64.CtHashCT
+public import VerifiedGarbage.Proof.RsaPss.AArch64.Mgf
+meta import VerifiedGarbage.Proof.RsaPss.AArch64.Mgf
+public import VerifiedGarbage.Proof.RsaPss.AArch64.RelSplit
+meta import VerifiedGarbage.Proof.RsaPss.AArch64.RelSplit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSASSA-PSS on AArch64: `mgfXor` is constant time
@@ -12,6 +21,8 @@ pieces are checked by the taint analysis from registers the anchor fixes
 the start of `xorOut` is related by correctness, and the rounds go the same
 way in both runs (`round_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPss.AArch64
 

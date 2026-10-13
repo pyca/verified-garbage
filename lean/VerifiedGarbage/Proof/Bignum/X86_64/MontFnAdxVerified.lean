@@ -1,7 +1,17 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.MontFnVerified
-import VerifiedGarbage.Proof.Bignum.X86_64.MontFnAdxCT
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontFnVerified
+meta import VerifiedGarbage.Proof.Bignum.X86_64.MontFnVerified
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontFnAdxCT
+meta import VerifiedGarbage.Proof.Bignum.X86_64.MontFnAdxCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # `vg_rsa_mont_mul_adx` meets `vg_rsa_mont_mul`'s contract -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64.MontFn
 

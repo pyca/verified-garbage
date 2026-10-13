@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Mont.X86_64.Adx
+module
+
+public import VerifiedGarbage.Proof.Mont.X86_64.Adx
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Montgomery arithmetic on x86-64: the rounds of the multiplication
@@ -6,6 +12,8 @@ import VerifiedGarbage.Proof.Mont.X86_64.Adx
 From a cleared accumulator (`zeros_ok`), `k` rounds leave `T_k < 2m` with
 `2^(64k) T_k = A_k B + U m` (`rounds_ok`), `A_k` the low `k` words of `[a]`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Mont.X86_64
 

@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesCcm.Arm.Compare
-import VerifiedGarbage.Proof.AesCcm.Arm.Words
+module
+
+public import VerifiedGarbage.Proof.AesCcm.Arm.Compare
+public import VerifiedGarbage.Proof.AesCcm.Arm.Words
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CCM on ARMv7: `Ctr₀` (`ctrs`)
@@ -8,6 +14,8 @@ Untrusted: everything here is checked by Lean. `ctrs` zeroes the block at
 `W + 48`, writes `q − 1 = 14 − n` to its first byte (and to `r10`) and copies
 the nonce after it: `Ctr₀` (`ctrs_ok`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

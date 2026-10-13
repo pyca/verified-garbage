@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyCtBase
+module
+
+public import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyCtBase
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSASSA-PSS verification on x86-64: the public-key operation in two runs
@@ -8,6 +14,8 @@ arguments (`dbPub_ct`), and the call (`call_ct`): its arguments are public in
 both runs (the modulus, the exponent and their lengths, `EM`'s place and the
 working space), and it is constant time by its contract.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPss.X86_64
 

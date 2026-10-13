@@ -1,10 +1,18 @@
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointLit.Program
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticTableHead
-import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.Joint
+module
+
+public import VerifiedGarbage.Proof.Framework.AArch64.Lit
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointLit.Program
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticTableHead
+public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.Joint
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! The head of the forwarded additions of P-256 verification's window table, as a
 literal (`Proof/Framework/Lit.lean`): `Forward.ArithmeticTableHead`'s. -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Verify.AArch64.JointLit
 open VG VG.AArch64 VG.Impl.Ecdsa.Verify.AArch64 VG.Impl.Weierstrass VG.Impl.Weierstrass.AArch64 VG.Impl.P256

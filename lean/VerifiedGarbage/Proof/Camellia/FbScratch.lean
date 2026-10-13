@@ -1,6 +1,12 @@
-import VerifiedGarbage.Spec.Camellia.Ofb
-import VerifiedGarbage.Spec.Camellia.Cfb
-import VerifiedGarbage.Proof.Camellia.Scratch
+module
+
+public import VerifiedGarbage.Spec.Camellia.Ofb
+public import VerifiedGarbage.Spec.Camellia.Cfb
+public import VerifiedGarbage.Proof.Camellia.Scratch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Camellia-OFB and Camellia-CFB128 with their working space as an argument
@@ -15,6 +21,8 @@ memory on return only within the function's buffers (`ofbPostOut_local`,
 and postconditions to read the memory on entry only within them too
 (`ofbPre_local`, `ofbPost_local`, …).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Camellia
 

@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.Sha3.Arm.Permute
+module
+
+public import VerifiedGarbage.Proof.Sha3.Arm.Permute
+meta import VerifiedGarbage.Proof.Sha3.Arm.Permute
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The SHA-3 sponge on ARMv7: `absorb`
@@ -8,6 +15,8 @@ The same structure as the AArch64 proof
 scratch space instead of a frame, and the callee-saved registers the code does
 not save (`r8`–`r11`) kept by the permutation.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sha3.Arm.Stream.Absorb
 

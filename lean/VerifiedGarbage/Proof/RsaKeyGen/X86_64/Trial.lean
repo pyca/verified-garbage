@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.RsaKeyGen.X86_64.GcdE
-import VerifiedGarbage.Proof.RsaKeyGen.Table
-import VerifiedGarbage.Proof.RsaKeyGen.TrialMath
+module
+
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.GcdE
+public import VerifiedGarbage.Proof.RsaKeyGen.Table
+public import VerifiedGarbage.Proof.RsaKeyGen.TrialMath
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # A candidate on x86-64: trial division
@@ -10,6 +16,8 @@ For each prime `s` of the table, `acc := (acc + h) 2^(−32) mod s` over the
 reduction with `−s⁻¹ mod 2^64`): `acc < 2 s` and
 `acc 2^(64 w) ≡ c (mod s)`, so `s` divides `c` iff `acc` is 0 or `s`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaKeyGen.X86_64
 

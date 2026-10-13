@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Modes.X86_64.Setup
-import VerifiedGarbage.Proof.Modes.X86_64.Xor
-import VerifiedGarbage.Proof.Modes.Ctr
+module
+
+public import VerifiedGarbage.Proof.Modes.X86_64.Setup
+public import VerifiedGarbage.Proof.Modes.X86_64.Xor
+public import VerifiedGarbage.Proof.Modes.Ctr
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # One group of blocks of CTR on x86-64, for any core
@@ -11,6 +17,8 @@ counter blocks to the core's buffer (`ctrBlocks_ok`), encrypts them there
 (`xorBlocks_wp`) and steps to the next group. Block `j` of the data becomes
 CTR's output block `j` (`ctrOut`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Modes.X86_64
 

@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Ed448.X86_64.BaseLoop
-import VerifiedGarbage.Proof.X448.X86_64.Setup
+module
+
+public import VerifiedGarbage.Proof.Ed448.X86_64.BaseLoop
+public import VerifiedGarbage.Proof.X448.X86_64.Setup
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 base-point multiplication on x86-64: the constants
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.X448.X86_64.Setup
 `consts`: the neutral point into slots 0–2, the base point into slots 8–10
 and `d` into slot 11, each as its seven words stored by `stores`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.X86_64
 

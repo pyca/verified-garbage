@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Scrypt.X86_64.RoMixDirect
+module
+
+public import VerifiedGarbage.Impl.Scrypt.X86_64.RoMixDirect
 
 /-!
 # scrypt: x86-64 implementation
@@ -27,6 +29,8 @@ stack arguments are above the frame and the return address, from
 Only the pointers and the lengths affect timing: the only branch is on the
 block pointer, and every address is in the frame (`rsp` plus a constant).
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Scrypt.X86_64
 

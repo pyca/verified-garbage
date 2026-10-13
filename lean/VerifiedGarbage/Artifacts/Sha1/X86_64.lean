@@ -1,7 +1,11 @@
-import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.Sha1.X86_64.Shared
+module
+
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.Sha1.X86_64.Shared
 
 /-! # SHA-1 (FIPS 180-4) on x86-64 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.Sha1.X86_64
 

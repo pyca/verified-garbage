@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.RsaPss.X86_64.CtHashCT
+module
+
+public import VerifiedGarbage.Proof.RsaPss.X86_64.CtHashCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Constant time of MGF1's fixed-length padding. -/
+
+@[expose] public section
+
 namespace VG.Proof.RsaPss.X86_64
 open VG VG.X86_64 VG.Impl.RsaPss.X86_64
 open VG.Proof.Bignum.X86_64 (Two two_post two_map)

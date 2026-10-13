@@ -1,10 +1,19 @@
-import VerifiedGarbage.Proof.Weierstrass.AArch64.NafTable
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeTiming
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTableTiming
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowLoadTiming
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafTable
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeTiming
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTableTiming
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowLoadTiming
+public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! The public tree carries exact paired field values and fixed loop counters. -/
+
+@[expose] public section
+
 namespace VG.Proof.Weierstrass.AArch64
 open VG VG.AArch64 VG.Impl.Mont VG.Impl.Mont.AArch64 VG.Impl.Weierstrass
 open VG.Impl.Weierstrass.AArch64 VG.Proof.Mont VG.Proof.Mont.AArch64 Spec.Weierstrass

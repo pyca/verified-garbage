@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.MlKem.X86.Top
+module
+
+public import VerifiedGarbage.Impl.MlKem.X86.Top
 
 /-!
 # ML-DSA on x86 (32-bit), signing: the pieces of the top-level function
@@ -19,6 +21,8 @@ and the number of 1s of the hint (`ONES`) are words of `scratch`.
 The code is generic in the implementations of the primitives (`Prims`): the
 proofs hold for any code that meets their contracts.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.X86.Sign
 

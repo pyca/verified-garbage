@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Argon2.X86_64.Avx512.Cols
-import VerifiedGarbage.Proof.Argon2.X86_64.Avx2.Ends
+module
+
+public import VerifiedGarbage.Proof.Argon2.X86_64.Avx512.Cols
+public import VerifiedGarbage.Proof.Argon2.X86_64.Avx2.Ends
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Argon2 on x86-64 with AVX-512: the first and last XOR
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.Argon2.X86_64.Avx2.Ends
 words `8n…8n+7` of rows `2k` and `2k + 1` of the output: `cv` XOR R. Each
 is proven for any prefix of its chunks (`init_prefix`, `finish_prefix`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Argon2.X86_64.Avx512
 

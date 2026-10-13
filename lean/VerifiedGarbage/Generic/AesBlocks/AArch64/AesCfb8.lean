@@ -1,5 +1,7 @@
-import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.AesCfb8.AArch64.Verified
+module
+
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.AesCfb8.AArch64.Verified
 
 /-!
 # AES-CFB8 (NIST SP 800-38A §6.3, with 8-bit segments) on AArch64
@@ -13,6 +15,8 @@ forward cipher), are emitted once for each implementation
 No stack is used: the calls keep the return address in `x30`, which each
 function saves in the scratch buffer.
 -/
+
+@[expose] public section
 
 namespace VG.Generic.AesBlocks.AArch64.AesCfb8
 

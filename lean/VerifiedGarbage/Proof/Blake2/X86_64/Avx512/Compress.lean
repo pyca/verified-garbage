@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.Blake2.X86_64.Avx512.Round
-import VerifiedGarbage.Proof.Blake2.X86_64.Avx512.Lit
-import VerifiedGarbage.Proof.Blake2.X86_64.Avx2.Compress
+module
+
+public import VerifiedGarbage.Proof.Blake2.X86_64.Avx512.Round
+meta import VerifiedGarbage.Proof.Blake2.X86_64.Avx512.Round
+public import VerifiedGarbage.Proof.Blake2.X86_64.Avx512.Lit
+meta import VerifiedGarbage.Proof.Blake2.X86_64.Avx512.Lit
+public import VerifiedGarbage.Proof.Blake2.X86_64.Avx2.Compress
+meta import VerifiedGarbage.Proof.Blake2.X86_64.Avx2.Compress
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # BLAKE2b compression function on x86-64 with AVX-512
@@ -14,6 +23,8 @@ the next block, `Avx2.advance_ok`, this proof uses): the IV in registers
 the XOR into the state and the next block. There are no masks to keep.
 Constant time is checked by evaluation.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Blake2.X86_64.Avx512
 

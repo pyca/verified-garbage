@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Call
+module
+
+public import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Call
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on 32-bit ARM: calling the multiplications, additions and subtractions
@@ -6,6 +12,8 @@ import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Call
 As `ip_ok` and `ip_tr` (`Call.lean`), for `vg_mldsa_multiply_ntt`,
 `vg_mldsa_multiply_add_ntt`, `vg_mldsa_add` and `vg_mldsa_sub`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Arm.KeyGen
 

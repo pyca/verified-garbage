@@ -1,11 +1,19 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedRestCorrect
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedRootsPrologue
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedRestCorrect
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.StaticRootsPrologue
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedExpansion
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedDepth
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedRestCorrect
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedRootsPrologue
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedRestCorrect
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.StaticRootsPrologue
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedExpansion
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedDepth
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## From `OptimizedPairedCorrect.lean` -/
+
+@[expose] public section
 
 section
 

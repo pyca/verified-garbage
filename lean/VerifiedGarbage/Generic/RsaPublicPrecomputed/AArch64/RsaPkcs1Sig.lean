@@ -1,8 +1,12 @@
-import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.PrecomputedVerified
-import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Callees
+module
+
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.PrecomputedVerified
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Callees
 
 /-! # PKCS #1 v1.5 verification over precomputed RSA public variants on AArch64 -/
+
+@[expose] public section
 
 namespace VG.Generic.RsaPublicPrecomputed.AArch64.RsaPkcs1Sig
 

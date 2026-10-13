@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlKem.Arm.CallsCT
+module
+
+public import VerifiedGarbage.Proof.MlKem.Arm.CallsCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on 32-bit ARM: K-PKE.Encrypt, correctness
@@ -11,6 +17,8 @@ regions of `encW` (`encrypt_ok`). Its phases: `ρ` copied to the seed of
 `SampleNTT`, `t̂` decoded (`decT_loop`), the `PRF`s into `ŷ`, `e₁` and `e₂`,
 `μ`, the rows of `u` compressed into the ciphertext (`encRow_step`), and `v`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.Arm
 

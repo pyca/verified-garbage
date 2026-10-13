@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.Rsa.X86_64.KeyCTPieces
-import VerifiedGarbage.Proof.Rsa.X86_64.KeyMain
+module
+
+public import VerifiedGarbage.Proof.Rsa.X86_64.KeyCTPieces
+meta import VerifiedGarbage.Proof.Rsa.X86_64.KeyCTPieces
+public import VerifiedGarbage.Proof.Rsa.X86_64.KeyMain
+meta import VerifiedGarbage.Proof.Rsa.X86_64.KeyMain
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_check_key` on x86-64: constant time of the setup
@@ -9,6 +17,8 @@ From `main`'s hypotheses (`M0`), the setup leaves the checks' context
 the registers that correctness pins after the one before: `setup_nested`
 states them, piece by piece, and `setupK_ct` follows it.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.X86_64.Key
 

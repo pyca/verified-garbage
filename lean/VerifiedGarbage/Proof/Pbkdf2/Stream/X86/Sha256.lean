@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Pbkdf2.Stream.X86.Hashes
-import VerifiedGarbage.Proof.Sha256.X86.Shared
-import VerifiedGarbage.Proof.Sha256.X86.Variants.Code
+module
+
+public import VerifiedGarbage.Proof.Pbkdf2.Stream.X86.Hashes
+public import VerifiedGarbage.Proof.Sha256.X86.Shared
+public import VerifiedGarbage.Proof.Sha256.X86.Variants.Code
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # SHA-256's streaming functions on x86 (32-bit), for every backend
@@ -10,6 +16,8 @@ of its interface on x86 (`Variants/Sha256/X86/`), and its streaming `update`
 and `finalize` made with each (`Sha256Stream`, verified for any initial hash
 value): `sha256OK` is `HashOK` for any of them, with `vg_sha256_init`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Pbkdf2.Stream.X86
 

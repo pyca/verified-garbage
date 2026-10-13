@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Curve448.AArch64.Neon.Math
-import VerifiedGarbage.Impl.Curve448.AArch64.Neon
+module
+
+public import VerifiedGarbage.Proof.Curve448.AArch64.Neon.Math
+public import VerifiedGarbage.Impl.Curve448.AArch64.Neon
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Which limbs each product multiplies
@@ -9,6 +15,8 @@ half-limb `ia p` of the first operand by half-limb `ib p` of the second, at
 coefficient `ia p + ib p`; the products at coefficient `q` are, up to order,
 the terms of `cv x y q` (`perm_q`, by evaluation).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Curve448.AArch64.Neon
 

@@ -1,5 +1,11 @@
-import VerifiedGarbage.Impl.P256.VerifyRegisters
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Unch
+module
+
+public import VerifiedGarbage.Impl.P256.VerifyRegisters
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Unch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Internal register and memory frames for allocated arithmetic.
 
@@ -7,6 +13,9 @@ The allowed registers and byte ranges are explicit parameters. In particular,
 this does not relax the field compiler's existing `ProgKeep` contract or the
 outer function's ABI: the caller must restore its saved registers separately.
 -/
+
+@[expose] public section
+
 namespace VG.Proof.Weierstrass.AArch64
 open VG VG.AArch64 VG.Impl.Mont VG.Proof.Mont VG.Proof.Mont.AArch64
 open VG.Proof.Ed25519.AArch64 (Keeps)

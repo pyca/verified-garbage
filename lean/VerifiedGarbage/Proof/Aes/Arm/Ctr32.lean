@@ -1,9 +1,21 @@
-import VerifiedGarbage.Proof.Aes.Arm.Group
-import VerifiedGarbage.Spec.Gcm
-import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Proof.Framework.Arm.Taint
-import VerifiedGarbage.Proof.Framework.Arm.Contract
-import VerifiedGarbage.Spec.Gcm.Contract
+module
+
+public import VerifiedGarbage.Proof.Aes.Arm.Group
+meta import VerifiedGarbage.Proof.Aes.Arm.Group
+public import VerifiedGarbage.Spec.Gcm
+meta import VerifiedGarbage.Spec.Gcm
+public import VerifiedGarbage.TCB.Arm.Target
+meta import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+public import VerifiedGarbage.Proof.Framework.Arm.Contract
+meta import VerifiedGarbage.Proof.Framework.Arm.Contract
+public import VerifiedGarbage.Spec.Gcm.Contract
+meta import VerifiedGarbage.Spec.Gcm.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES counter mode on ARMv7: the whole function
@@ -13,6 +25,8 @@ naming domain, as is the epilogue restoring them), copies the counter block
 to its slots and writes back the final counter; the key loop
 (`Keys.lean`) and the group loop (`Group.lean`) do the rest.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Aes
 

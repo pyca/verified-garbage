@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.RsaOaep.AArch64.Basic
-import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Calls
-import VerifiedGarbage.Spec.Rsa.Contract
+module
+
+public import VerifiedGarbage.Proof.RsaOaep.AArch64.Basic
+public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Calls
+public import VerifiedGarbage.Spec.Rsa.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-OAEP on AArch64: calling the streaming hash functions
@@ -18,6 +24,8 @@ callee-saved registers but `x30` and the preserved vector registers stay,
 and memory changes only in the frame, our working space, the 16 bytes
 below the frame and the regions `ws`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaOaep.AArch64
 

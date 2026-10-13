@@ -1,6 +1,12 @@
-import VerifiedGarbage.Impl.Weierstrass.AArch64.Inv
-import VerifiedGarbage.Proof.Divstep.Word
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Loop
+module
+
+public import VerifiedGarbage.Impl.Weierstrass.AArch64.Inv
+public import VerifiedGarbage.Proof.Divstep.Word
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Loop
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Inversion by divsteps on AArch64: the word divstep
@@ -10,6 +16,8 @@ One divstep on words (`wstepCode`) leaves in `x1`–`x7` the words of
 `x12 = 0`; `N` of them, counted down in `x13` (`wstepsLoop_ok`), leave its
 `N` steps.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.AArch64
 

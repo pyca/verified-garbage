@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Sha3.X86_64
+module
+
+public import VerifiedGarbage.Impl.Sha3.X86_64
 
 /-!
 # The SHA-3 sponge: x86-64 implementation
@@ -28,6 +30,8 @@ values of those registers in `scratch[512..560)`. The call stores its return
 address in the 8 bytes below `rsp`. Every address and branch depends only on
 the pointers, `rate`, `pos` and the lengths.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Sha3.X86_64.Stream
 

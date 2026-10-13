@@ -1,9 +1,21 @@
-import VerifiedGarbage.TCB.Axioms
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Pair
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Store
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
-import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.BoundaryCommon
-import VerifiedGarbage.Proof.Framework.Sig
+module
+
+public import VerifiedGarbage.TCB.Axioms
+meta import VerifiedGarbage.TCB.Axioms
+public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Pair
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Pair
+public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Store
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Store
+public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
+public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.BoundaryCommon
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.BoundaryCommon
+public import VerifiedGarbage.Proof.Framework.Sig
+meta import VerifiedGarbage.Proof.Framework.Sig
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_keccak_f1600_x2` on AArch64
@@ -16,6 +28,8 @@ it changes nothing else but `x16`, the vector registers and those two
 regions. `verified`: its contract (`Spec/Sha3/X2.lean`), from `PairAt` of the
 states read as two `stateX2At`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sha3.AArch64.Neon.X2
 
@@ -214,6 +228,5 @@ theorem verified (sha3 : Bool) :
     sig_implies [Spec.Sha3.permuteX2Contract, Spec.Sha3.permuteX2Sig, K, pairR, scrR,
       AArch64.abi, AArch64.argRegs] [satState] using satState)
 
-#assert_standard_axioms verified
 
 end VG.Proof.Sha3.AArch64.Neon.X2

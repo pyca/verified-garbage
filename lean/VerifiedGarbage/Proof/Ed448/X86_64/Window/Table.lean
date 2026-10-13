@@ -1,7 +1,16 @@
-import VerifiedGarbage.Proof.Ed448.X86_64.Window.Ops
+module
 
-/-! Build all sixteen projective multiples without inversions. Invalid decoded points
+public import VerifiedGarbage.Proof.Ed448.X86_64.Window.Ops
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+/-! Build all seventeen projective multiples without inversions. Invalid decoded points
 still execute safely; group membership is needed only when interpreting the final equation. -/
+
+@[expose] public section
+
 namespace VG.Proof.Ed448.X86_64.Window
 
 open VG VG.X86_64 VG.Impl.Ed448 VG.Impl.Ed448.X86_64 VG.Impl.Ed448.X86_64.Window
@@ -12,7 +21,7 @@ open VG.Proof.Ed448.Window (multiples)
 private theorem build_ok {P : Point64.Ops} (hP : Point64.PointOk P) {s : State} {base : Addr}
     (hs : Scr s base) (hd : E s.mem base 11 = Spec.Ed448.d) {A : Spec.Ed448.Point} (hAz : A.Z = 1)
     (hA : pt (E s.mem base) 8 9 10 = A) (hp : pt (E s.mem base) 0 1 2 = Spec.Ed448.identity)
-    (h0 : tablePoint s.mem base 0 = Spec.Ed448.identity) (n : Nat) (hn : n < 16) :
+    (h0 : tablePoint s.mem base 0 = Spec.Ed448.identity) (n : Nat) (hn : n < 17) :
     WP isa (build P n) s fun u => KeepW base s u ∧ E u.mem base 11 = Spec.Ed448.d ∧
       pt (E u.mem base) 8 9 10 = A ∧ pt (E u.mem base) 0 1 2 = multiples A n ∧
       ∀ i ≤ n, tablePoint u.mem base i = multiples A i := by
@@ -56,7 +65,7 @@ theorem table_ok {P : Point64.Ops} (hP : Point64.PointOk P) {s : State} {base : 
     (hs : Scr s base) (hd : E s.mem base 11 = Spec.Ed448.d)
     (hz : E s.mem base 10 = 1) (hp : pt (E s.mem base) 0 1 2 = Spec.Ed448.identity) :
     WP isa (table P) s fun u => KeepW base s u ∧ E u.mem base 11 = Spec.Ed448.d ∧
-      ∀ i < 16, tablePoint u.mem base i = multiples (pt (E s.mem base) 6 7 10) i := by
+      ∀ i < 17, tablePoint u.mem base i = multiples (pt (E s.mem base) 6 7 10) i := by
   rw [table]
   apply WP.seq
   rw [List.append_assoc, WP.block_append_iff]
@@ -69,7 +78,7 @@ theorem table_ok {P : Point64.Ops} (hP : Point64.PointOk P) {s : State} {base : 
   have aa : pt (E s3.mem base) 8 9 10 = pt (E s.mem base) 6 7 10 := by rw [e3, e2, e1]; rfl
   have pp : pt (E s3.mem base) 0 1 2 = Spec.Ed448.identity := by rw [e3, e2, e1]; exact hp
   have tt : tablePoint s3.mem base 0 = Spec.Ed448.identity := by rw [p3, e2, e1]; exact hp
-  refine WP.mono (build_ok hP (k3.scr (k2.scr (k1.scr hs))) ds az aa pp tt 15 (by decide))
+  refine WP.mono (build_ok hP (k3.scr (k2.scr (k1.scr hs))) ds az aa pp tt 16 (by decide))
     fun u ⟨ku, du, _, _, tu⟩ => ?_
   exact ⟨((KeepW.of_keep (k1.trans k2)).trans k3).trans ku, du, fun i hi => tu i (by omega)⟩
 

@@ -1,7 +1,12 @@
-import VerifiedGarbage.TCB.X86.Target
-import VerifiedGarbage.Proof.Rc4.X86.Frame
+module
+
+public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Proof.Rc4.X86.Frame
 
 /-! # Raw RC4 on baseline x86 -/
+
+@[expose] public section
+
 namespace VG.Artifacts.Rc4.X86
 
 def artifacts : List Artifact := [

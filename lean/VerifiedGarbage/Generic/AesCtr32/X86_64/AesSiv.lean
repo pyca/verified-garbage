@@ -1,5 +1,7 @@
-import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.AesSiv.X86_64.Frame
+module
+
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.AesSiv.X86_64.Frame
 
 /-!
 # AES-SIV (RFC 5297) key setup on x86-64
@@ -19,6 +21,8 @@ with its suffix (e.g. `vg_aes_siv_init_aesni`), and needs its CPU features.
 `vg_aes_expand_key_scratch`) and of its call of `vg_aes_ctr32` (2584 bytes
 of stack in all).
 -/
+
+@[expose] public section
 
 namespace VG.Generic.AesCtr32.X86_64.AesSiv
 

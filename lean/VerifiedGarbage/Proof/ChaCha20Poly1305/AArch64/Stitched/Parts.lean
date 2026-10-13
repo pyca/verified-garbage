@@ -1,7 +1,13 @@
-import VerifiedGarbage.Impl.ChaCha20Poly1305.AArch64.Stitched
-import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stages
-import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitch.Bulk
-import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Setup
+module
+
+public import VerifiedGarbage.Impl.ChaCha20Poly1305.AArch64.Stitched
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stages
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitch.Bulk
+public import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Setup
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ChaCha20-Poly1305 on AArch64, stitched: the parts around the chunks
@@ -10,6 +16,8 @@ import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Setup
 `Inv0`: the invariant `Inv` without the registers `x22`–`x25`, which the
 stitched code reuses.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.ChaCha20Poly1305.AArch64
 

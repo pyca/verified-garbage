@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.X448.Arm.Mul
-import VerifiedGarbage.Proof.X448.Arm.AddSub
-import VerifiedGarbage.Proof.X448.Arm.Small
-import VerifiedGarbage.TCB.Arm.Target
+module
+
+public import VerifiedGarbage.Proof.X448.Arm.Mul
+public import VerifiedGarbage.Proof.X448.Arm.AddSub
+public import VerifiedGarbage.Proof.X448.Arm.Small
+public import VerifiedGarbage.TCB.Arm.Target
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 on ARMv7: the field functions
@@ -14,6 +20,8 @@ are loaded back (`ldrs_ok`). `fn_ok` is what the function does: it keeps the
 callee-saved registers and `r0`, and changes the memory only at `[o]` and in
 its own working space (`FieldMem`), where the operation's result is.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448.Arm
 

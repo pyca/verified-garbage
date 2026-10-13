@@ -1,8 +1,17 @@
-import VerifiedGarbage.Impl.P256.X86_64.DoubleHalf
-import VerifiedGarbage.Proof.P256.X86_64.HalfField
-import VerifiedGarbage.Proof.Weierstrass.Jac
+module
+
+public import VerifiedGarbage.Impl.P256.X86_64.DoubleHalf
+public import VerifiedGarbage.Proof.P256.X86_64.HalfField
+public import VerifiedGarbage.Proof.Weierstrass.Jac
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! The in-place halving schedule computes the usual Jacobian double. -/
+
+@[expose] public section
+
 namespace VG.Proof.P256.X86_64
 open VG VG.Impl.Weierstrass VG.Impl.P256.X86_64 VG.Proof.Weierstrass
 

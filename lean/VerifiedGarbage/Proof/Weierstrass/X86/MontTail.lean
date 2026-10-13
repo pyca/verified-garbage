@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Weierstrass.X86.MontMul
-import VerifiedGarbage.Proof.Mont.X86.Csub
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86.MontMul
+public import VerifiedGarbage.Proof.Mont.X86.Csub
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Montgomery arithmetic as functions on x86 (32-bit): chains and the result
@@ -14,6 +20,8 @@ the sum into `[o]` through a pointer (`addOut`). Then the mask of the
 conditional subtraction (`maskTop_ok`), the selection into `[o]`
 (`selectsP_ok`), and the masked modulus (`maskedI_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.X86.Mont
 

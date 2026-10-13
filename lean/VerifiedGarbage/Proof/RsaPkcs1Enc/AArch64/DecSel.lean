@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecScan
+module
+
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecScan
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-PKCS1-v1_5 decryption on AArch64: the output
@@ -7,6 +13,8 @@ The validity of the padding, the selected length and the mask of the
 private-key operation's success (`validBlock_ok`), `*msg_len` (`outInit`) and
 the output, byte by byte (`selLoop_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPkcs1Enc.AArch64.Dec
 

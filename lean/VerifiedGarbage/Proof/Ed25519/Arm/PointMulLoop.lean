@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.Ed25519.Arm.PointMulBody
+module
+
+public import VerifiedGarbage.Proof.Ed25519.Arm.PointMulBody
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Descending through every checkpoint proves the full scalar product. -/
+
+@[expose] public section
+
 namespace VG.Proof.Ed25519.Arm
 open VG VG.Arm VG.Impl.Ed25519.Arm VG.Proof.X25519.Arm
 

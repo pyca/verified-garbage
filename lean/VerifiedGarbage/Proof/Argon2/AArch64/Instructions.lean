@@ -1,8 +1,17 @@
-import VerifiedGarbage.Proof.Argon2.AArch64.DivideStep
-import VerifiedGarbage.Proof.Argon2.AArch64.Carry
-import VerifiedGarbage.Impl.Argon2.AArch64.Instructions
+module
+
+public import VerifiedGarbage.Proof.Argon2.AArch64.DivideStep
+public import VerifiedGarbage.Proof.Argon2.AArch64.Carry
+public import VerifiedGarbage.Impl.Argon2.AArch64.Instructions
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Short register operations used by the allocation and loop drivers. -/
+
+@[expose] public section
+
 namespace VG.Proof.Argon2.AArch64.Instructions
 open VG VG.AArch64
 open VG.Impl.Argon2.AArch64.Instructions

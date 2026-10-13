@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Sm4.AArch64.Crypt16
+module
+
+public import VerifiedGarbage.Proof.Sm4.AArch64.Crypt16
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The table of bitsliced round keys on AArch64
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.Sm4.AArch64.Crypt16
 it alike. `keys_wp` builds the table in the order the rounds use the round
 keys: `rk₀ … rk₃₁` for encryption, `rk₃₁ … rk₀` for decryption.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sm4.AArch64
 

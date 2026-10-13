@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Modes.AArch64.Words
-import VerifiedGarbage.Proof.Modes.AArch64.Xor
-import VerifiedGarbage.Impl.Modes.AArch64.Cbc
+module
+
+public import VerifiedGarbage.Proof.Modes.AArch64.Words
+public import VerifiedGarbage.Proof.Modes.AArch64.Xor
+public import VerifiedGarbage.Impl.Modes.AArch64.Cbc
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Loops over blocks on AArch64
@@ -12,6 +18,8 @@ but those three registers. `copyBlocks_wp`: `copyBlocks` copies `n ≥ 1`
 blocks at `x15` to `x14` (areas that do not overlap) and changes nothing
 else in memory.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Modes.AArch64
 

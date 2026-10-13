@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.Ed448.AArch64.BaseEncode
-import VerifiedGarbage.Proof.Ed448.Ref
-import VerifiedGarbage.Proof.X448.AArch64.Base.Add
-import VerifiedGarbage.Proof.X448.AArch64.Fast.Finish
-import VerifiedGarbage.Proof.X448.AArch64.Fast.Inv
+module
+
+public import VerifiedGarbage.Proof.Ed448.AArch64.BaseEncode
+public import VerifiedGarbage.Proof.Ed448.Ref
+public import VerifiedGarbage.Proof.X448.AArch64.Base.Add
+public import VerifiedGarbage.Proof.X448.AArch64.Fast.Finish
+public import VerifiedGarbage.Proof.X448.AArch64.Fast.Inv
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 base-point multiplication on AArch64: the encoding
@@ -15,6 +21,8 @@ in `X2`, and X448's `finish` writes `Y/Z` fully reduced to the output's first
 56 bytes and restores the registers. Together, the 57 bytes are
 `encodePoint R` (`encodePoint_code`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.AArch64.Base
 

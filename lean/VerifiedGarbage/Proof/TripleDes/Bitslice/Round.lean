@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.TripleDes.Bitslice.Layout
-import VerifiedGarbage.Proof.TripleDes.Round
-import VerifiedGarbage.Proof.Framework.Bitslice.Table
+module
+
+public import VerifiedGarbage.Proof.TripleDes.Bitslice.Layout
+meta import VerifiedGarbage.Proof.TripleDes.Bitslice.Layout
+public import VerifiedGarbage.Proof.TripleDes.Round
+meta import VerifiedGarbage.Proof.TripleDes.Round
+public import VerifiedGarbage.Proof.Framework.Bitslice.Table
+meta import VerifiedGarbage.Proof.Framework.Bitslice.Table
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # A bitsliced DES round, lane by lane
@@ -12,6 +21,8 @@ four outputs, computed at every bit position from the words of `E` and the
 round key's bits, into their words. `roundW_half` proves that a round does
 in every lane what DES's round does to the halves.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.TripleDes.Bitslice
 

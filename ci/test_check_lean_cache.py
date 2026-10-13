@@ -20,7 +20,10 @@ class LeanCachePublishingTests(unittest.TestCase):
         )[1].split("\n      - ", 1)[0]
         cls.script = textwrap.dedent(step.split("        run: |\n", 1)[1])
 
-    def check_publication(self, labels=None, *, error="", head="current", fail=""):
+    def check_publication(self, annotations=None, *, error="", head="current", fail=""):
+        manifest = {"schemaVersion": 2}
+        if annotations is not None:
+            manifest["annotations"] = annotations
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             mock = root / "mock"
@@ -32,23 +35,21 @@ class LeanCachePublishingTests(unittest.TestCase):
                 "if pathlib.Path(sys.argv[0]).name == 'gh':\n"
                 " if os.environ['FAIL'] == 'api': sys.exit(1)\n"
                 " print(os.environ['HEAD'])\n"
-                "elif sys.argv[1] == 'login':\n"
-                " sys.stdin.read()\n"
-                " if os.environ['FAIL'] == 'login': sys.exit(1)\n"
-                "elif sys.argv[1] == 'logout':\n"
-                " pass\n"
-                "elif os.environ['ERROR']:\n"
-                " print(os.environ['ERROR'], file=sys.stderr)\n"
-                " sys.exit(1)\n"
                 "else:\n"
-                " print(os.environ['LABELS'])\n"
+                " with open(os.environ['STDIN'], 'a') as f: f.write(sys.stdin.read())\n"
+                " if os.environ['ERROR']:\n"
+                "  print(os.environ['ERROR'], file=sys.stderr)\n"
+                "  sys.exit(1)\n"
+                " print(json.dumps(json.loads(os.environ['MANIFEST'])))\n"
             )
             mock.chmod(0o755)
-            for name in ("gh", "docker"):
+            for name in ("gh", "oras"):
                 (root / name).symlink_to(mock)
             output = root / "output"
             calls = root / "calls"
+            stdin = root / "stdin"
             output.touch()
+            stdin.touch()
             env = dict(
                 os.environ,
                 PATH=f"{root}:{os.environ['PATH']}",
@@ -59,12 +60,13 @@ class LeanCachePublishingTests(unittest.TestCase):
                 GH_TOKEN="test-token",
                 GITHUB_ACTOR="test-actor",
                 IMAGE="ghcr.io/pyca/vg-lean-cache:latest",
-                CACHE_KEY="checked-cache-zstd5-uncompressed-v2",
+                CACHE_KEY="checked-cache-zstd5-oras-v3",
                 CALLS=str(calls),
+                STDIN=str(stdin),
                 HEAD=head,
                 FAIL=fail,
                 ERROR=error,
-                LABELS=json.dumps(labels),
+                MANIFEST=json.dumps(manifest),
             )
             result = subprocess.run(
                 ["bash", "-e", "-o", "pipefail", "-c", self.script],
@@ -73,27 +75,33 @@ class LeanCachePublishingTests(unittest.TestCase):
                 capture_output=True,
             )
             calls = calls.read_text()
-            # Later steps run third-party code: never leave them a credential.
-            if "docker login" in calls and fail != "login":
-                self.assertEqual(calls.splitlines()[-1], "docker logout ghcr.io")
+            # The token goes to oras on stdin, never in its arguments.
+            self.assertNotIn("test-token", calls)
+            if "oras" in calls:
+                self.assertIn("oras manifest fetch --username test-actor --password-stdin", calls)
+                self.assertEqual(stdin.read_text(), "test-token")
             return result, output.read_text(), calls
 
     def test_matching_cache_skips_publication(self):
         result, output, _ = self.check_publication(
-            {"io.pyca.lean.cache-key": "checked-cache-zstd5-uncompressed-v2"}
+            {"io.pyca.lean.cache-key": "checked-cache-zstd5-oras-v3"}
         )
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(output, "")
 
-    def test_changed_or_unlabelled_cache_is_published(self):
-        for labels in ({"io.pyca.lean.cache-key": "older-cache"}, {}, None):
-            with self.subTest(labels=labels):
-                result, output, _ = self.check_publication(labels)
+    def test_changed_or_unannotated_cache_is_published(self):
+        for annotations in ({"io.pyca.lean.cache-key": "older-cache"}, {}, None):
+            with self.subTest(annotations=annotations):
+                result, output, _ = self.check_publication(annotations)
                 self.assertEqual(result.returncode, 0, result.stderr)
                 self.assertEqual(output, "needed=true\n")
 
     def test_first_publication(self):
-        for error in ("manifest unknown", "404 Not Found"):
+        for error in (
+            "manifest unknown",
+            'Error response from registry: failed to fetch the content of "ghcr.io/pyca/vg-lean-cache:latest": '
+            "ghcr.io/pyca/vg-lean-cache:latest: not found",
+        ):
             with self.subTest(error=error):
                 result, output, _ = self.check_publication(error=error)
                 self.assertEqual(result.returncode, 0, result.stderr)
@@ -110,14 +118,12 @@ class LeanCachePublishingTests(unittest.TestCase):
         result, output, calls = self.check_publication(head="newer")
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(output, "")
-        self.assertNotIn("docker", calls)
+        self.assertNotIn("oras", calls)
 
-    def test_api_or_login_failure_stops_publication(self):
-        for fail in ("api", "login"):
-            with self.subTest(fail=fail):
-                result, output, _ = self.check_publication(fail=fail)
-                self.assertNotEqual(result.returncode, 0)
-                self.assertEqual(output, "")
+    def test_api_failure_stops_publication(self):
+        result, output, _ = self.check_publication(fail="api")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual(output, "")
 
 
 if __name__ == "__main__":

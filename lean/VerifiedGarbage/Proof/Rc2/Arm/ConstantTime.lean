@@ -1,7 +1,17 @@
-import VerifiedGarbage.Proof.Rc2.Arm.Lit
-import VerifiedGarbage.Proof.Framework.Arm.Taint
+module
+
+public import VerifiedGarbage.Proof.Rc2.Arm.Lit
+meta import VerifiedGarbage.Proof.Rc2.Arm.Lit
+public import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # Constant-time RC2 block operations -/
+
+@[expose] public section
 
 namespace VG.Proof.Rc2.Arm
 

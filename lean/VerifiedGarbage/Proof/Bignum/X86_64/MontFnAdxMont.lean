@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.MontFnAdxCT
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontFnAdxCT
+meta import VerifiedGarbage.Proof.Bignum.X86_64.MontFnAdxCT
+public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_mont_mul_adx` as the Montgomery multiplication of the RSA code
@@ -7,6 +15,8 @@ import VerifiedGarbage.Proof.Framework.RelCTAssoc
 Calls of `vg_rsa_mont_mul_adx`, inlined (`Mont.fnAdx`), for the proofs of
 its callers (`Verified.of_inline`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64
 

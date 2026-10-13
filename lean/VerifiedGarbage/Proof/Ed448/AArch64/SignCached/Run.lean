@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Ed448.AArch64.SignCached.Correct
+module
+
+public import VerifiedGarbage.Proof.Ed448.AArch64.SignCached.Correct
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 signing with a cached public key on AArch64: the body's run
@@ -7,6 +13,8 @@ The body's steps in turn (`body_ok`), each keeping what later steps read
 (`s`, `r` and `R`, apart from what each step writes), and the signature
 `R ‖ S` in `out`: `Proof.Ed448.sign_pipeline`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.AArch64.SignCached
 

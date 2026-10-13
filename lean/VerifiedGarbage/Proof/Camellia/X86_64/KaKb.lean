@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Camellia.X86_64.KeyPair
-import VerifiedGarbage.Proof.Camellia.KeySched
+module
+
+public import VerifiedGarbage.Proof.Camellia.X86_64.KeyPair
+public import VerifiedGarbage.Proof.Camellia.KeySched
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `KA` and `KB` on x86-64
@@ -9,6 +15,8 @@ loop of three pairs of rounds (`pairPlain_ok`), with the XORs and copies
 between them on the plain words (`xorWords_ok`, `copyWords_ok`), leaves the
 halves of `KA` and `KB` in theirs (`Spec.Camellia.kakb`, by `kakb_halves`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Camellia.X86_64
 

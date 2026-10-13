@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.CallPack
+module
+
+public import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.CallPack
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on 32-bit ARM: calling the primitives only verification uses
@@ -8,6 +14,8 @@ As `ip_ok` and `ip_tr` (`KeyGen/Call.lean`), in the buffers of a `Site`:
 `vg_mldsa_sample_in_ball` (whose fifth argument is on the stack),
 `vg_mldsa_norm_lt`, `vg_mldsa_use_hint` and `vg_mldsa_unpack_t1`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Arm.KeyGen
 

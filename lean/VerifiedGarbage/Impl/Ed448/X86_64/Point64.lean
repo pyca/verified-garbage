@@ -1,6 +1,8 @@
-import VerifiedGarbage.Impl.X448.X86_64
-import VerifiedGarbage.Impl.Ed448.Formulas
-import VerifiedGarbage.Spec.Ed448.Point64
+module
+
+public import VerifiedGarbage.Impl.X448.X86_64
+public import VerifiedGarbage.Impl.Ed448.Formulas
+public import VerifiedGarbage.Spec.Ed448.Point64
 
 /-!
 # Ed448's point doubling and affine addition on x86-64, as functions
@@ -18,6 +20,8 @@ multiplier after negation, instead of a full field multiplication. Each keeps th
 them. It uses no stack and never writes `rdi`, every address is `rdi` plus a
 constant, and it has no branch: only the pointer may affect timing.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Ed448.X86_64
 
@@ -64,19 +68,25 @@ def mulD : List Instr :=
   Impl.X448.X86_64.baseline.a24 (slot 16) (slot 16)
 
 /-- Affine addition with the multiplication by `d` specialized. -/
-def addCode : List Instr :=
-  fieldCode Impl.X448.X86_64.baseline (addAffineOps.take 3) ++ mulD ++
-  fieldCode Impl.X448.X86_64.baseline (addAffineOps.drop 4)
+def addCodeWith (F : Field) : List Instr :=
+  fieldCode F (addAffineOps.take 3) ++ mulD ++
+  fieldCode F (addAffineOps.drop 4)
 
 /-- A function running the field program `ops`, with the baseline's multiplications. -/
-def fn (ops : List FOp) : Prog isa :=
-  .block (saves ++ fieldCode Impl.X448.X86_64.baseline ops ++ restores)
+def fnWith (F : Field) (ops : List FOp) : Prog isa :=
+  .block (saves ++ fieldCode F ops ++ restores)
+
+def addCode : List Instr := addCodeWith Impl.X448.X86_64.baseline
+def fn (ops : List FOp) : Prog isa := fnWith Impl.X448.X86_64.baseline ops
+
+def doubleFnWith (F : Field) : Prog isa := fnWith F doubleOps
+def addFnWith (F : Field) : Prog isa := .block (saves ++ addCodeWith F ++ restores)
 
 /-- `vg_ed448_r64_point_double`: slots 0–2 doubled. -/
 def doubleFn : Prog isa := fn doubleOps
 
 /-- `vg_ed448_r64_point_add_affine`: slots 0–2 plus `(x : y : 1)` from slots 8–9, into 3–5. -/
-def addFn : Prog isa := .block (saves ++ addCode ++ restores)
+def addFn : Prog isa := addFnWith Impl.X448.X86_64.baseline
 
 def doubleCall : Prog isa := .call Spec.Ed448.Point64.doubleApi.name doubleFn
 def addCall : Prog isa := .call Spec.Ed448.Point64.addAffineApi.name addFn

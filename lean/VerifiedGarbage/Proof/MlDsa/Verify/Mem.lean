@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.MlKem.Mem
-import VerifiedGarbage.Spec.MlDsa.Poly
+module
+
+public import VerifiedGarbage.Proof.MlKem.Mem
+public import VerifiedGarbage.Spec.MlDsa.Poly
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA: polynomials in memory, for every target
@@ -9,6 +15,8 @@ The stored polynomials of `Spec/MlDsa/Poly.lean` (`coeffAt`, `polyAt`,
 (`…_congr`, `…_frame`); a hint stored as `k` polynomials gives each of them to
 `vg_mldsa_use_hint` (`hintAt_row`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Verify
 

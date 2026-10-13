@@ -1,5 +1,11 @@
-import VerifiedGarbage.Impl.Ed448.X86_64.VerifyEquation
-import VerifiedGarbage.Proof.Ed448.X86_64.BaseBits
+module
+
+public import VerifiedGarbage.Impl.Ed448.X86_64.VerifyEquation
+public import VerifiedGarbage.Proof.Ed448.X86_64.BaseBits
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 verification's equation on x86-64: the bits of the scalars
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.Ed448.X86_64.BaseBits
 `o + 8i + j` of the working space: base-point multiplication's `bits`
 (`BaseBits.lean`) at any offset `o`, for `S` and `k`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.X86_64
 

@@ -1,9 +1,21 @@
-import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFnB
-import VerifiedGarbage.Proof.Mont.Read
-import VerifiedGarbage.Proof.Framework.X86_64.Abi
-import VerifiedGarbage.Proof.Framework.X86_64.Taint
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Spec.Weierstrass.Mont
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFnB
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFnB
+public import VerifiedGarbage.Proof.Mont.Read
+meta import VerifiedGarbage.Proof.Mont.Read
+public import VerifiedGarbage.Proof.Framework.X86_64.Abi
+meta import VerifiedGarbage.Proof.Framework.X86_64.Abi
+public import VerifiedGarbage.Proof.Framework.X86_64.Taint
+meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.Weierstrass.Mont
+meta import VerifiedGarbage.Spec.Weierstrass.Mont
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # P-521's product modulo `p` as a function, with BMI2 and ADX, on x86-64: verified
@@ -15,6 +27,8 @@ stack pointer, `ws` and the offsets' low halves are public; `o`, kept in the
 temporary area while the product runs, is a public slot there), and a state
 satisfying it.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.X86_64.Mont
 

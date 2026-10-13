@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.TailRounds
-import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Bulk
-import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.XorBufX
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2Tail.Out
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.Xor
+module
+
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.TailRounds
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Bulk
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.XorBufX
+public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2Tail.Out
+public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.Xor
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ChaCha20 and Poly1305 together (x86-64): the last bytes of `seal`
@@ -13,6 +19,8 @@ the last chunk (`trounds_ok`), the accumulator stored and the registers
 restored (`leaveT`), the keystream into `buf` (`Avx2Tail.last_ok`,
 `last1_ok`), and from there into the bytes left (`xorBufX_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.ChaCha20Poly1305.X86_64.Stitch
 

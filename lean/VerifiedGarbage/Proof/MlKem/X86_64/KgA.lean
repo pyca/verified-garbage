@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.MlKem.X86_64.KgBase
-import VerifiedGarbage.Proof.MlKem.X86_64.FragS4
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86_64.KgBase
+public import VerifiedGarbage.Proof.MlKem.X86_64.FragS4
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86-64: key generation, `G` and the matrix
@@ -10,6 +16,8 @@ at a time with `vg_mlkem_sample_ntt4` (`quad_step`) and the last `k² mod 4`
 on their own (`sample_step`), with `r15` the AND of the results: 1 exactly
 when all of them succeed within 280 iterations (`allOk`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.X86_64
 

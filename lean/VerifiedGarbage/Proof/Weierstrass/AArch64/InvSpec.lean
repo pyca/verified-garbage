@@ -1,8 +1,14 @@
-import VerifiedGarbage.Impl.Weierstrass.AArch64.Inv
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Chain
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Pow
-import VerifiedGarbage.Proof.Weierstrass.Law
-import Mathlib.Data.Nat.Prime.Defs
+module
+
+public import VerifiedGarbage.Impl.Weierstrass.AArch64.Inv
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Chain
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Pow
+public import VerifiedGarbage.Proof.Weierstrass.Law
+public import Mathlib.Data.Nat.Prime.Defs
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Inversion by divsteps on AArch64: what it computes
@@ -18,6 +24,8 @@ AArch64 (`HasLawInv`, `Variants/<Curve>/AArch64/Law.lean`) supplies it with
 its group law, as on x86-64. An inversion with a power's slots takes the
 power's place (`InvLay.of_chain`, `invW_eq`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.AArch64
 

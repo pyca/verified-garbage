@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Setup
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.Setup
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDSA on AArch64: field operations on numbered slots
@@ -9,6 +15,8 @@ operation writing slot `o` keeps every other slot but the temporary area's
 (`sv_keep`) and the moduli (`ModOkA.keepA64`); and what a slot stands for after
 a multiplication by `1` or by `R² mod m` (`toM_one_mul`, `toM_r2`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.AArch64
 

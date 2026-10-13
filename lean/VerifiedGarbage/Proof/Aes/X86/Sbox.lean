@@ -1,7 +1,13 @@
-import VerifiedGarbage.Impl.Aes.X86.Sbox
-import VerifiedGarbage.Proof.Aes.SboxSpec
-import VerifiedGarbage.Proof.Aes.Ct32.Bitsliced
-import VerifiedGarbage.Proof.Framework.X86.Straight
+module
+
+public import VerifiedGarbage.Impl.Aes.X86.Sbox
+public import VerifiedGarbage.Proof.Aes.SboxSpec
+public import VerifiedGarbage.Proof.Aes.Ct32.Bitsliced
+public import VerifiedGarbage.Proof.Framework.X86.Straight
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The bitsliced S-box on x86 (32-bit)
@@ -14,6 +20,8 @@ with the specification's S-box on the same tables (`sboxT`, proved right in
 `p`, the S-box of the byte formed by bit `p` of the eight words in slots
 `0 … 7`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Aes.X86
 

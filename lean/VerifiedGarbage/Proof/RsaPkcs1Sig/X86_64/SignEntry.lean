@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.SignBlocks
-import VerifiedGarbage.Proof.Rsa.X86_64.PrivCtx
+module
+
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.SignBlocks
+public import VerifiedGarbage.Proof.Rsa.X86_64.PrivCtx
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_pkcs1_sign` on x86-64: the entry of `vg_rsa_private_checked`
@@ -10,6 +16,8 @@ address (at `kb + stackBytes`), and the frame above (at
 `kb + stackBytes + 8`), which holds the call's stack arguments and `EM`. Its
 precondition at the call (`priv_pre`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPkcs1Sig.X86_64.Sgn
 

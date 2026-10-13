@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Rc2.AArch64.Block
+module
+
+public import VerifiedGarbage.Impl.Rc2.AArch64.Block
 
 /-! # RC2-CBC decryption on AArch64, eight blocks at a time
 
@@ -23,6 +25,8 @@ Only caller-saved vector registers (`v0`–`v7`, `v16`–`v31`) and `x6`,
 `x7`, `x9`–`x12` are used. The counts and the addresses depend only on the
 pointers and `n`; nothing secret is an address or a branch condition.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Rc2.AArch64.Vec
 

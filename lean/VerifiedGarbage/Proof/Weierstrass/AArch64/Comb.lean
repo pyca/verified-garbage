@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.Weierstrass.AArch64.AddCall
-import VerifiedGarbage.Proof.Weierstrass.AArch64.CombSelect
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Ladder
-import VerifiedGarbage.Proof.Weierstrass.CombLay
-import VerifiedGarbage.Proof.Weierstrass.Law3
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.AddCall
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.CombSelect
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Ladder
+public import VerifiedGarbage.Proof.Weierstrass.CombLay
+public import VerifiedGarbage.Proof.Weierstrass.Law3
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The fixed-base comb on AArch64: what its digits and additions share
@@ -13,6 +19,8 @@ negative digit (`signMask_ok`; `Rep.negY` is in `Law.lean`), where the selected 
 formulas (`combSum_ok`): what the comb from tables in memory
 (`Proof/Weierstrass/AArch64/TComb.lean`) and ECDH's window method use.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.AArch64
 

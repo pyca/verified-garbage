@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Polyval
+module
+
+public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Polyval
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM-SIV on x86-64: the tag (`tag`)
@@ -9,6 +15,8 @@ block at `W + o`, by `vg_aes_ctr32` of one zero block from a copy of it at
 `W + 112` (`tag_ok`); counter mode's last block uses the same code for the
 keystream block at `W + 128`.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

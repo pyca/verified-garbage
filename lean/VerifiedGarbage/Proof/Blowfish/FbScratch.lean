@@ -1,7 +1,13 @@
-import VerifiedGarbage.Spec.Blowfish.Ofb
-import VerifiedGarbage.Spec.Blowfish.Cfb
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Blowfish.Schedule
+module
+
+public import VerifiedGarbage.Spec.Blowfish.Ofb
+public import VerifiedGarbage.Spec.Blowfish.Cfb
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Blowfish.Schedule
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Blowfish-OFB and -CFB64 with their working space as an argument
@@ -13,6 +19,8 @@ target lays out its own), for the frame that keeps it on the stack
 memory on return only within the function's buffers (`ofbPostOut_local`,
 …).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Blowfish
 

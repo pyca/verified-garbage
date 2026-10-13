@@ -1,5 +1,7 @@
-import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Stream.ApplyCT
+module
+
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.ChaCha20.X86_64.Stream.ApplyCT
 
 /-!
 # Streaming ChaCha20 (RFC 8439) on x86-64: `vg_chacha20_apply`
@@ -18,6 +20,8 @@ adds the `# Safety` items that depend on the target (`Sig.layoutDoc`), from
 The stack is 24 bytes for every implementation: the return address of the
 call of `vg_chacha20_xor`, and up to 16 bytes for its own calls.
 -/
+
+@[expose] public section
 
 namespace VG.Generic.ChaCha20Xor.X86_64.ChaCha20
 

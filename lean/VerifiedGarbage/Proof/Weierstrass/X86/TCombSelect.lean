@@ -1,8 +1,17 @@
-import VerifiedGarbage.Proof.Weierstrass.X86.TCombOne
-import VerifiedGarbage.Proof.Framework.X86.SseDword
-import VerifiedGarbage.Proof.Framework.CallLay
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86.TCombOne
+public import VerifiedGarbage.Proof.Framework.X86.SseDword
+public import VerifiedGarbage.Proof.Framework.CallLay
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # Constant-time table selection for the x86 comb -/
+
+@[expose] public section
+
 namespace VG.Proof.Weierstrass.X86
 open VG VG.X86 VG.Impl.Mont.X86 VG.Impl.Mont VG.Impl.Weierstrass.X86 VG.Impl.Weierstrass
   VG.Proof.Mont.X86 VG.Proof.Mont

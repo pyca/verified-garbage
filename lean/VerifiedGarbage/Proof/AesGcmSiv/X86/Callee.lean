@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.AesGcmSiv.X86.Entry
-import VerifiedGarbage.Proof.AesGcm.X86.Callee
+module
+
+public import VerifiedGarbage.Proof.AesGcmSiv.X86.Entry
+meta import VerifiedGarbage.Proof.AesGcmSiv.X86.Entry
+public import VerifiedGarbage.Proof.AesGcm.X86.Callee
+meta import VerifiedGarbage.Proof.AesGcm.X86.Callee
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM-SIV on x86: the functions called
@@ -21,6 +29,8 @@ are built from the environment:
 
 Each call writes only parts of `mutR`, so `Env` holds after it.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

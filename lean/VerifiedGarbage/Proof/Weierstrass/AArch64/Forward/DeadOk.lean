@@ -1,10 +1,18 @@
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.FoldOk
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.FoldOk
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! `deadStores` keeps every word a block leaves in memory: it drops a store
 to a slot that a later store overwrites before any load reads it. Going
 forward, the two runs agree on the registers, the carry and every slot but
 those the rest of the block overwrites before reading (the `later` set
 `deadStores` computes backwards). At the end that set is empty. -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.AArch64.Forward
 open VG VG.AArch64 VG.Impl.Weierstrass.AArch64.Forward

@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Cast5.Arm.KeyStep
+module
+
+public import VerifiedGarbage.Proof.Cast5.Arm.KeyStep
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # CAST5 key expansion on ARMv7: the steps of a half, run
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.Cast5.Arm.KeyStep
 `half_ok`: the 40 steps of a half compute `halfImpl` (`runSteps_half`),
 writing its sixteen subkeys from `lr`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Cast5.Arm
 

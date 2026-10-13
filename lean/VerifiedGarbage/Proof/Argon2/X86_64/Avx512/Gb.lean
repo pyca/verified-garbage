@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Sym
-import VerifiedGarbage.Proof.Argon2.X86_64.Avx2.Gb
-import VerifiedGarbage.Impl.Argon2.X86_64.CompressAvx512
+module
+
+public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Sym
+public import VerifiedGarbage.Proof.Argon2.X86_64.Avx2.Gb
+public import VerifiedGarbage.Impl.Argon2.X86_64.CompressAvx512
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Argon2 on x86-64 with AVX-512: P on both halves of four registers
@@ -12,6 +18,8 @@ quadword `k` of a register), then GB (`gb_qz`), and P on the sixteen words
 in each half of `zmm0`–`zmm3` (`round_words`), through
 `Proof.Argon2.permute_lanes`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Argon2.X86_64.Avx512
 

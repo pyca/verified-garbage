@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesCbc.X86_64.Call
-import VerifiedGarbage.Proof.AesCbc.Mem
+module
+
+public import VerifiedGarbage.Proof.AesCbc.X86_64.Call
+public import VerifiedGarbage.Proof.AesCbc.Mem
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CBC on x86-64: the code between the calls
@@ -9,6 +15,8 @@ The straight-line pieces of `encBody` and `decBody`, run once each:
 `copy` (a block copied, as two words), with their memories as explicit
 writes (`xorMem`, `copyMem`, `Proof/AesCbc/Mem.lean`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesCbc.X86_64
 

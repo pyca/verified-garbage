@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesOcb.X86.HashFill
-import VerifiedGarbage.Proof.Ocb.Sum
+module
+
+public import VerifiedGarbage.Proof.AesOcb.X86.HashFill
+public import VerifiedGarbage.Proof.Ocb.Sum
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-OCB on x86: a chunk of `HASH` (`hashChunk`)
@@ -12,6 +18,8 @@ blocks of the associated data `a`, `HInv` holds: the sum and the offset of
 block XORed with its offset (`fill_ok`), enciphers the buffer, adds it to
 the sum (`hashSum_ok`), and leaves `HInv` at `j + c` (`hashChunk_ok`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

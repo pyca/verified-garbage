@@ -1,7 +1,13 @@
-import VerifiedGarbage.Spec.Seed.Ofb
-import VerifiedGarbage.Spec.Seed.Cfb
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Seed.Scratch
+module
+
+public import VerifiedGarbage.Spec.Seed.Ofb
+public import VerifiedGarbage.Spec.Seed.Cfb
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Seed.Scratch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # SEED-OFB and -CFB128 with their working space as an argument
@@ -14,6 +20,8 @@ memory on return only within the function's buffers (`ofbPostOut_local`,
 …), and, where the frame copies stack arguments (ARMv7), the memory on
 entry too (`ofbPost_local`, …).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Seed
 

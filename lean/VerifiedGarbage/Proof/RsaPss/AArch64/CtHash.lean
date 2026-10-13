@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.RsaPss.AArch64.CtPadEq
+module
+
+public import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.RsaPss.AArch64.CtPadEq
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSASSA-PSS on AArch64: hashing a message of secret length
@@ -10,6 +16,8 @@ followed by zeros up to `nbm` blocks, for a padding step that ORs `0x80`
 into byte `ℓ` (`pad80` or `fixedPad80`). It keeps everything but our part
 of the working space before `oEm` and from `oY` on.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPss.AArch64
 

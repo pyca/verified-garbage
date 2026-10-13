@@ -1,7 +1,17 @@
-import VerifiedGarbage.Proof.MlKem.Arm.Reduce
-import VerifiedGarbage.Proof.Framework.Arm.Taint
-import VerifiedGarbage.Proof.Framework.Arm.Contract
-import VerifiedGarbage.Proof.Framework.Contract
+module
+
+public import VerifiedGarbage.Proof.MlKem.Arm.Reduce
+meta import VerifiedGarbage.Proof.MlKem.Arm.Reduce
+public import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+public import VerifiedGarbage.Proof.Framework.Arm.Contract
+meta import VerifiedGarbage.Proof.Framework.Arm.Contract
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on 32-bit ARM: `vg_mlkem_ntt`
@@ -14,6 +24,8 @@ for any pointers (`bfly_ok`), and writes the coefficients `bfly` writes
 (`polyIs_bfly`); then the registers restored. Layer `ℓ` has `len = 128 / 2^ℓ`
 and `2^ℓ` blocks.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.Arm.Ntt
 

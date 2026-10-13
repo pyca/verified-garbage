@@ -1,8 +1,16 @@
-import VerifiedGarbage.Spec.Blake2
+module
+
+public import VerifiedGarbage.Spec.Blake2
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Facts about the BLAKE2 specification
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Blake2
 

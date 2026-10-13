@@ -1,7 +1,19 @@
-import VerifiedGarbage.Impl.Zeroize.AArch64
-import VerifiedGarbage.Proof.Zeroize.Common
-import VerifiedGarbage.Proof.Ct.AArch64
-import VerifiedGarbage.Spec.Zeroize.Contract
+module
+
+public import VerifiedGarbage.Impl.Zeroize.AArch64
+meta import VerifiedGarbage.Impl.Zeroize.AArch64
+public import VerifiedGarbage.Proof.Zeroize.Common
+meta import VerifiedGarbage.Proof.Zeroize.Common
+public import VerifiedGarbage.Proof.Ct.AArch64
+meta import VerifiedGarbage.Proof.Ct.AArch64
+public import VerifiedGarbage.Spec.Zeroize.Contract
+meta import VerifiedGarbage.Spec.Zeroize.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.Zeroize.AArch64
 open VG VG.AArch64 VG.Impl.Zeroize.AArch64 RegUpd

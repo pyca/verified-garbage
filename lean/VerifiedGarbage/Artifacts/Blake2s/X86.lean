@@ -1,7 +1,11 @@
-import VerifiedGarbage.TCB.X86.Target
-import VerifiedGarbage.Proof.Blake2.X86.Blake2s
+module
+
+public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Proof.Blake2.X86.Blake2s
 
 /-! # BLAKE2s (RFC 7693) on x86 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.Blake2s.X86
 

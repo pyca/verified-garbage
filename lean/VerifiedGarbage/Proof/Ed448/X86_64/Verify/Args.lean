@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Ed448.X86_64.Verify.Layout
+module
+
+public import VerifiedGarbage.Proof.Ed448.X86_64.Verify.Layout
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 verification on x86-64: the moves of a call's arguments
@@ -9,6 +15,8 @@ each argument register holds the argument's value in the state before the
 moves (`setArgs_ok`), and nothing else changed but those registers and the
 flags.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.X86_64.Verify
 

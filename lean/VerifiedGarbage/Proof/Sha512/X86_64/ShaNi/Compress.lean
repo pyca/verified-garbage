@@ -1,10 +1,23 @@
-import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.Proof.Framework.X86_64.Avx
-import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Spec
-import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Lit
-import VerifiedGarbage.Proof.Sha512.X86_64.Avx2.Compress
-import VerifiedGarbage.Impl.Sha512.X86_64.ShaNi
+module
+
+public import VerifiedGarbage.Proof.Framework.X86_64.Exec
+meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
+public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+public import VerifiedGarbage.Proof.Framework.X86_64.Avx
+meta import VerifiedGarbage.Proof.Framework.X86_64.Avx
+public import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Spec
+meta import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Spec
+public import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Lit
+meta import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Lit
+public import VerifiedGarbage.Proof.Sha512.X86_64.Avx2.Compress
+meta import VerifiedGarbage.Proof.Sha512.X86_64.Avx2.Compress
+public import VerifiedGarbage.Impl.Sha512.X86_64.ShaNi
+meta import VerifiedGarbage.Impl.Sha512.X86_64.ShaNi
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # SHA-512 compression function on x86-64 with the SHA512 extension
@@ -13,6 +26,8 @@ import VerifiedGarbage.Impl.Sha512.X86_64.ShaNi
 same contract as the scalar `vg_sha512_compress`, reusing its precondition
 (`Pre`) and block lemmas.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sha512.X86_64.ShaNi
 

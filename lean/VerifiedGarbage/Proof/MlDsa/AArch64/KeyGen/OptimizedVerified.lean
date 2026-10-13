@@ -1,6 +1,14 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedTiming
-import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedDepth
-import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedSat
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedTiming
+public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedDepth
+public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedSat
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.KeyGen.Optimized
 open VG VG.AArch64 VG.Spec.MlDsa

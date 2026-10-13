@@ -1,4 +1,6 @@
-import VerifiedGarbage.TCB.X86.Isa
+module
+
+public import VerifiedGarbage.TCB.X86.Isa
 
 /-!
 # x86 (32-bit): reading a state after a write, for symbolic execution
@@ -8,6 +10,8 @@ with `State.setReg`, `State.setFlags` and `arithFlags` kept folded, as in
 `VG.X86_64.RegUpd` (which explains why): `gpr_setReg` for registers that are
 literals, `gpr_setReg_self` and `gpr_setReg_of_ne` for variables.
 -/
+
+@[expose] public section
 
 namespace VG.X86.RegUpd
 

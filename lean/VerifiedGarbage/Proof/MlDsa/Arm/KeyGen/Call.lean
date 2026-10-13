@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Contracts
-import VerifiedGarbage.Proof.MlDsa.Verify.Mem
+module
+
+public import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Contracts
+public import VerifiedGarbage.Proof.MlDsa.Verify.Mem
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on 32-bit ARM: calling the primitives on the buffers of a `Site`
@@ -9,6 +15,8 @@ A call of each primitive, with its arguments pointers into the buffers of a
 what the call changes and what its postcondition says (`ip_ok`, …), and that
 two runs of it with the same pointers leak the same (`ip_tr`, …).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Arm.KeyGen
 

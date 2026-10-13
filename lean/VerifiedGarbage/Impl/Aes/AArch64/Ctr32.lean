@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Aes.AArch64.Linear
+module
+
+public import VerifiedGarbage.Impl.Aes.AArch64.Linear
 
 /-!
 # AES counter mode (GCM's `inc₃₂`), bitsliced, on AArch64
@@ -25,6 +27,8 @@ licence): four blocks at a time, bitsliced in eight 64-bit registers
   (the data), `x4` (the blocks left), `x5` and the loop tests (`t0`) hold
   public values; no address and no branch depends on anything else.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Aes.AArch64
 

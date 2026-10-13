@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Absorb
-import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Pad
-import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Squeeze
-import VerifiedGarbage.Proof.MlKem.X86_64.Wp
-import VerifiedGarbage.Proof.MlKem.Mem
+module
+
+public import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Absorb
+public import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Pad
+public import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Squeeze
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+public import VerifiedGarbage.Proof.MlKem.Mem
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86-64: calling the SHA-3 sponge
@@ -14,6 +20,8 @@ and what holds when it returns (`absorb_call`, `pad_call`, `squeeze_call`). A
 caller gives each call 16 bytes of stack below `rsp` (the return address and
 that of the permutation's call).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.X86_64
 

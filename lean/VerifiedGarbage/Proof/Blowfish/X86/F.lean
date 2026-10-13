@@ -1,10 +1,18 @@
-import VerifiedGarbage.Proof.Blowfish.X86.Lookup
+module
+
+public import VerifiedGarbage.Proof.Blowfish.X86.Lookup
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Blowfish on x86 (32-bit): F
 
 `f_run`: F of xL (at `ebp + 16`) into `ebp + 24`, one S-box at a time (`fAcc`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Blowfish.X86
 

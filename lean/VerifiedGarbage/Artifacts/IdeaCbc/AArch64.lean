@@ -1,6 +1,10 @@
-import VerifiedGarbage.Proof.Idea.AArch64.CbcVerified
+module
+
+public import VerifiedGarbage.Proof.Idea.AArch64.CbcVerified
 
 /-! # IDEA-CBC artifacts on baseline AArch64 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.IdeaCbc.AArch64
 

@@ -1,6 +1,14 @@
-import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.OptimizedMatrix
-import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedMatrixFour
-import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedMatrixTwo
+module
+
+public import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.OptimizedMatrix
+public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedMatrixFour
+public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedMatrixTwo
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.KeyGen.Optimized
 open VG VG.AArch64 VG.Impl.MlDsa.AArch64.KeyGen VG.Impl.MlDsa.AArch64.KeyGen.Optimized

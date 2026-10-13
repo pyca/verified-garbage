@@ -1,8 +1,16 @@
-import VerifiedGarbage.Spec.Rc2
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.PowLit
+module
+
+public import VerifiedGarbage.Spec.Rc2
+public import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Framework.PowLit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # Arithmetic selection lemmas for RC2's constant-time lookups -/
+
+@[expose] public section
 
 namespace VG.Proof.Rc2.Word32
 

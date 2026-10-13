@@ -1,13 +1,29 @@
-import VerifiedGarbage.Proof.Ecdsa.X86_64.Main
-import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.Contract
-import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.LitErase
-import VerifiedGarbage.Proof.P384.Point
-import VerifiedGarbage.Proof.Framework.X86_64.Taint
-import VerifiedGarbage.Proof.Framework.X86_64.Abi
-import VerifiedGarbage.Proof.Framework.X86_64.Inline
-import VerifiedGarbage.Proof.Framework.X86_64.TaintSym
-import VerifiedGarbage.Proof.P384.Prime
-import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.Main
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.Main
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.Contract
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.Contract
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.LitErase
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.LitErase
+public import VerifiedGarbage.Proof.P384.Point
+meta import VerifiedGarbage.Proof.P384.Point
+public import VerifiedGarbage.Proof.Framework.X86_64.Taint
+meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
+public import VerifiedGarbage.Proof.Framework.X86_64.Abi
+meta import VerifiedGarbage.Proof.Framework.X86_64.Abi
+public import VerifiedGarbage.Proof.Framework.X86_64.Inline
+meta import VerifiedGarbage.Proof.Framework.X86_64.Inline
+public import VerifiedGarbage.Proof.Framework.X86_64.TaintSym
+meta import VerifiedGarbage.Proof.Framework.X86_64.TaintSym
+public import VerifiedGarbage.Proof.P384.Prime
+meta import VerifiedGarbage.Proof.P384.Prime
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDSA over P-384 on x86-64: `Verified`
@@ -23,6 +39,8 @@ address of the comb's static public (`taintSym`): the only branches are on
 loop counters, and every address is an argument or the static's address
 plus a constant or a counter.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.X86_64.P384
 
@@ -94,7 +112,7 @@ theorem pre_of {s : State} (h : signX86_64.pre s) : Pre p384 s := by
 
 /-- `[k]G` is a call of `vg_p384_mul_base`, which calls no other function. -/
 theorem p384_mulBase : MulBaseOk p384 :=
-  ⟨fun _ => ⟨_, rfl, rfl, by decide, by lit_decide⟩, fun h => absurd h (by decide)⟩
+  ⟨fun _ => ⟨_, rfl, by decide, by lit_decide⟩, fun h => absurd h (by decide)⟩
 
 theorem sign_x86 (hL : Law Spec.P384.curve)
     (hT : CombOkW Spec.P384.curve 7 55 Impl.P384.p384Comb7 Impl.P384.p384Comb7Start)

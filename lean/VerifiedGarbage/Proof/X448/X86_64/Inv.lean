@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.X448.X86_64.Env
-import VerifiedGarbage.Proof.X448.Invert
+module
+
+public import VerifiedGarbage.Proof.X448.X86_64.Env
+public import VerifiedGarbage.Proof.X448.Invert
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 on x86-64: the inversion
@@ -10,6 +16,8 @@ the counter `rbx`; slot 21 (`T7`) ends as `VG.Proof.X448.invert` of slot 2
 (`Z2`). Each part of it is an `ISpec`: a change of the slots by a function of
 them, keeping everything else.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448.X86_64
 

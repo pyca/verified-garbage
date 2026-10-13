@@ -1,7 +1,16 @@
-import VerifiedGarbage.Proof.Weierstrass.X86_64.JointPrepTiming
-import VerifiedGarbage.Proof.Weierstrass.X86_64.JointGenerator
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointPrepTiming
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointGenerator
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! The recoders preserve the field inputs and the external generator table. -/
+
+@[expose] public section
+
 namespace VG.Proof.Weierstrass.X86_64
 open VG VG.X86_64 VG.Impl.Mont VG.Impl.Weierstrass VG.Impl.Weierstrass.X86_64
 open VG.Proof.Mont VG.Proof.Mont.X86_64 Spec.Weierstrass

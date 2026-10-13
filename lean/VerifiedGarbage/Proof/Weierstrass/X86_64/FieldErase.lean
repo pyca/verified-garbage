@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
-import VerifiedGarbage.Proof.Framework.KernelRfl
-import VerifiedGarbage.Impl.Weierstrass.X86_64
-import VerifiedGarbage.Impl.Weierstrass.X86_64.ForwardField
+module
+
+public import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
+public import VerifiedGarbage.Proof.Framework.X86_64.Lit
+public import VerifiedGarbage.Proof.Framework.KernelRfl
+public import VerifiedGarbage.Impl.Weierstrass.X86_64
+public import VerifiedGarbage.Impl.Weierstrass.X86_64.ForwardField
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Field arithmetic without its displacements, for constant time
@@ -18,6 +24,8 @@ displacements is then the templates one after the other
 again per operation: a constant-time check of it analyses each template once
 from the same taint (`Taint.constantTime_mapBlocks`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.X86_64
 
@@ -56,9 +64,11 @@ elab doc:(docComment)? "def_literal " id:ident " := " t:term : command => do
     let ty ← instantiateMVars (← inferType e)
     let inst ← synthInstance (mkApp (mkConst ``ToExpr [0]) ty)
     let l ← unsafe evalExpr Expr (mkConst ``Expr) (mkApp3 (mkConst ``ToExpr.toExpr [0]) ty inst e)
-    addAndCompile <| .defnDecl {
+    let d : Declaration := .defnDecl {
       name := N, levelParams := [], type := ty, value := ShareCommon.shareCommon' l
       hints := .abbrev, safety := .safe }
+    addDecl d (forceExpose := true)
+    compileDecl d
     if let some doc := doc then addDocStringCore N (← getDocStringText doc)
 
 /-- The erased code of a field operation, as the templates give it. -/

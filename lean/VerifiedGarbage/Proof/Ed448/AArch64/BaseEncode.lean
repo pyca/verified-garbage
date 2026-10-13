@@ -1,7 +1,13 @@
-import VerifiedGarbage.Impl.Ed448.AArch64.ScalarBase
-import VerifiedGarbage.Proof.X448.AArch64.Weak.Ops
-import VerifiedGarbage.Proof.Ed448.Formulas
-import VerifiedGarbage.Proof.X448.AArch64.Weak.Main
+module
+
+public import VerifiedGarbage.Impl.Ed448.AArch64.ScalarBase
+public import VerifiedGarbage.Proof.X448.AArch64.Weak.Ops
+public import VerifiedGarbage.Proof.Ed448.Formulas
+public import VerifiedGarbage.Proof.X448.AArch64.Weak.Main
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 on AArch64: the encoding's sign byte
@@ -10,6 +16,8 @@ The sign of `x` as the top bit of an encoding's byte 56 (`signByte_ok`), from
 the low bit of a fully reduced element (`valN_mod_two`), and an encoding's 57
 bytes as its first 56 and byte 56 (`bytesAt_57`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.AArch64
 

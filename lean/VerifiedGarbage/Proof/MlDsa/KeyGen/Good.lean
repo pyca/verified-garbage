@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.MlDsa.KeyGen.Rest
-import VerifiedGarbage.Proof.MlDsa.KeyGen.Leak
-import VerifiedGarbage.Proof.MlDsa.KeyGen.Masked
+module
+
+public import VerifiedGarbage.Proof.MlDsa.KeyGen.Rest
+public import VerifiedGarbage.Proof.MlDsa.KeyGen.Leak
+public import VerifiedGarbage.Proof.MlDsa.KeyGen.Masked
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA key generation: the result of the samplers, for every target
@@ -14,6 +20,8 @@ bounds. Each sampler's outcome, ANDed in, keeps it (`good_A`, `good_S`), with
 the entry stored masked by the result (`masked_one`, `masked_zero`); and at
 the end it is the outcome of key generation (`outcome_keyGen`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.KeyGen
 

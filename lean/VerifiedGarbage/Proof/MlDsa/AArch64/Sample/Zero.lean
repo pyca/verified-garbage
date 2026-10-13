@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Sponge
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Sponge
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on AArch64: the output polynomial set to zeros
@@ -6,6 +12,8 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Sponge
 `zeroPoly` stores zero to the 256 coefficients of the output polynomial
 (`zeroPoly_ok`), and writes nothing else but `x3`, `x4` and `x9`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Sample
 

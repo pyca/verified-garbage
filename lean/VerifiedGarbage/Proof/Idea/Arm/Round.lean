@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Idea.Arm.Mul
-import VerifiedGarbage.Proof.Idea.Memory32
+module
+
+public import VerifiedGarbage.Proof.Idea.Arm.Mul
+public import VerifiedGarbage.Proof.Idea.Memory32
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # IDEA on ARMv7: a round
@@ -9,6 +15,8 @@ in `r4`, `b`, `c`, `r7` (`Holds`) to `Spec.Idea.round` of them under subkeys
 `6j … 6j + 5`, each loaded from the schedule at `r0` (`KeyOk`) when it is
 used, and leaves the new middle words in `c` and `b`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Idea.Arm
 

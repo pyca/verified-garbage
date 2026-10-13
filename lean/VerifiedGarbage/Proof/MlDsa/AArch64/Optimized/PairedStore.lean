@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedState
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Loads
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedState
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Loads
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Optimized.Paired
 open VG VG.AArch64

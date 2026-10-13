@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Weierstrass.X86.Mont
-import VerifiedGarbage.Impl.Weierstrass.Slots
+module
+
+public import VerifiedGarbage.Impl.Weierstrass.X86.Mont
+public import VerifiedGarbage.Impl.Weierstrass.Slots
 
 /-!
 # Short Weierstrass curves on x86 (32-bit): points, scalar multiplication, powers
@@ -28,6 +30,8 @@ keep `edi`). The only branches are on it, and every address is `edi` plus a
 constant, or plus a counter, or `esp` plus a constant: nothing but `edi` and
 `esp` may affect timing.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Weierstrass.X86
 

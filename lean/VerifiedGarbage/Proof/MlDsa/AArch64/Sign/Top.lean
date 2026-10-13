@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.Blocks
-import VerifiedGarbage.Proof.MlDsa.Sign.Setup
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.Blocks
+public import VerifiedGarbage.Proof.MlDsa.Sign.Setup
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA signing on AArch64: the function's contract, layout, entry and exit
@@ -13,6 +19,8 @@ writes, and the caller's registers saved in `scratch`), the saves (`pro_ok`),
 the return (`epi_ok`), branches on `w24` (`ifOkElse_ok`, `ifOkElse_tr`) and
 sequences of pieces indexed by a number (`seqR_ok`, `seqR_tr`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Sign
 

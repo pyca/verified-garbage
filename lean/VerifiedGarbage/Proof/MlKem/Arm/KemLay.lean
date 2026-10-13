@@ -1,4 +1,10 @@
-import VerifiedGarbage.Impl.MlKem.Arm.Top
+module
+
+public import VerifiedGarbage.Impl.MlKem.Arm.Top
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on 32-bit ARM: what the proofs need of a parameter set
@@ -14,6 +20,8 @@ the immediates that depend on the parameters are encodable. Facts on the
 offsets in `scratch` that follow from `k ≤ 4` alone, the proofs decide by
 `omega` (`kdecide`, `Prf.lean`).
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlKem.Arm
 

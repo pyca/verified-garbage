@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx.Aes
-import VerifiedGarbage.Proof.Framework.X86_64.Lane0
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx.Reduction
+module
+
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx.Aes
+public import VerifiedGarbage.Proof.Framework.X86_64.Lane0
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx.Reduction
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Interleaved counter mode and GHASH in AVX: the GHASH work
@@ -17,6 +23,8 @@ batch is `gq ord base fin`; `QG` is what holds before the blocks after round
 Nothing here computes in the field: what the products add up to is
 `Proof/Gcm/X86_64/StitchAvx/Ok.lean`'s.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Gcm.X86_64.StitchAvx
 

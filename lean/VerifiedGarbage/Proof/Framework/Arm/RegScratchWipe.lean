@@ -1,5 +1,7 @@
-import VerifiedGarbage.Proof.Framework.Arm.RegScratch
-import VerifiedGarbage.Proof.Framework.Arm.Exec
+module
+
+public import VerifiedGarbage.Proof.Framework.Arm.RegScratch
+public import VerifiedGarbage.Proof.Framework.Arm.Exec
 
 /-!
 # A scratch buffer in a register, on the stack, wiped after use (ARMv7)
@@ -13,6 +15,8 @@ on the stack pointer. The postcondition holds of the memory after the wipe
 if it reads the memory on return only within the function's buffers
 (`hpost`), which are disjoint from the frame.
 -/
+
+@[expose] public section
 
 namespace VG.Arm
 

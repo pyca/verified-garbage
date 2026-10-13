@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.AesGcm.ScratchP
-import VerifiedGarbage.Proof.Framework.Scratch
-import VerifiedGarbage.Spec.Gcm.OutOfPlace
+module
+
+public import VerifiedGarbage.Proof.AesGcm.ScratchP
+public import VerifiedGarbage.Proof.Framework.Scratch
+public import VerifiedGarbage.Spec.Gcm.OutOfPlace
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM one-shot encryption out of place, from a list of slices: the conditions read only the buffers
@@ -15,6 +21,8 @@ additional data, and the descriptors and the slices they list
 number of slices cut to the width of a pointer, at most the one the list is
 made of, so this holds for any width.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesGcm
 

@@ -1,11 +1,19 @@
-import VerifiedGarbage.Proof.TripleDes.Bitslice.LayoutLit
-import VerifiedGarbage.Proof.Framework.PowLit
+module
+
+public import VerifiedGarbage.Proof.TripleDes.Bitslice.LayoutLit
+public import VerifiedGarbage.Proof.Framework.PowLit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Facts about where bitsliced DES keeps each bit
 
 Each fact is about a few small numbers, proved by evaluation.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.TripleDes.Bitslice
 

@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Bignum.Words
-import VerifiedGarbage.Impl.Bignum.Layout
+module
+
+public import VerifiedGarbage.Proof.Bignum.Words
+public import VerifiedGarbage.Impl.Bignum.Layout
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Multiword arithmetic: the working space's layout
@@ -12,6 +18,8 @@ some byte ranges (`Frm`, and the ranges each piece changes), only within the
 working space (`InScr`), or not the header slots that hold the arguments
 (`Fixed`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum
 

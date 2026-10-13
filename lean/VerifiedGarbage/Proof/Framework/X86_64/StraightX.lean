@@ -1,4 +1,6 @@
-import VerifiedGarbage.Proof.Framework.X86_64.StraightY
+module
+
+public import VerifiedGarbage.Proof.Framework.X86_64.StraightY
 
 /-!
 # x86-64: straight-line bitwise SSE2 code, quadword lane by lane
@@ -14,6 +16,8 @@ same quadword of its operands. `eval` runs it once over an abstract domain on
 instructions leave bits 511:128 of their registers alone, and the evaluator
 says nothing of them.
 -/
+
+@[expose] public section
 
 namespace VG.X86_64.StraightX
 

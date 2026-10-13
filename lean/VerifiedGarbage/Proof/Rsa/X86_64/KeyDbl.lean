@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.Double
-import VerifiedGarbage.Impl.Rsa.X86_64.CheckKey
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.Double
+public import VerifiedGarbage.Impl.Rsa.X86_64.CheckKey
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_check_key` on x86-64: doubling with a carry in
@@ -9,6 +15,8 @@ import VerifiedGarbage.Impl.Rsa.X86_64.CheckKey
 carry: the double into the accumulator (`w + 1` words), then `subMod` and
 `selectAcc`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.X86_64.Key
 

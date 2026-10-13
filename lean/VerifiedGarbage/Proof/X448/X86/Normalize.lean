@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.X448.X86.RowPass
-import VerifiedGarbage.Proof.X448.X86.Args
+module
+
+public import VerifiedGarbage.Proof.X448.X86.RowPass
+public import VerifiedGarbage.Proof.X448.X86.Args
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 on x86 (32-bit): modular reduction
@@ -9,6 +15,8 @@ The coefficients at `TMP` are carried, their carry folded with
 element at `ebp` (`outPass_ok`), which the field functions point at their
 result, the offset of their second argument (`normalize_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448.X86
 

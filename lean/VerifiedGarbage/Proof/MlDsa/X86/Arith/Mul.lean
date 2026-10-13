@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.MlDsa.X86.Arith.AddSub
-import VerifiedGarbage.Impl.MlDsa.X86.Arith.Mul
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86.Arith.AddSub
+meta import VerifiedGarbage.Proof.MlDsa.X86.Arith.AddSub
+public import VerifiedGarbage.Impl.MlDsa.X86.Arith.Mul
+meta import VerifiedGarbage.Impl.MlDsa.X86.Arith.Mul
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on x86 (32-bit): `vg_mldsa_multiply_ntt` and `vg_mldsa_multiply_add_ntt`
@@ -10,6 +18,8 @@ loop over the coefficients is proven once for both functions (`MulInv`,
 `step`), with the value `V a b c` of coefficient `i` from those of `f`, `g`
 and `h`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86.Arith
 

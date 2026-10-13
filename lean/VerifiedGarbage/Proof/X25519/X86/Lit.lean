@@ -1,5 +1,15 @@
-import VerifiedGarbage.Proof.Framework.X86.Lit
-import VerifiedGarbage.Impl.X25519.X86
+module
+
+public import VerifiedGarbage.Proof.Framework.X86.Lit
+meta import VerifiedGarbage.Proof.Framework.X86.Lit
+public import VerifiedGarbage.Impl.X25519.X86.Fn
+meta import VerifiedGarbage.Impl.X25519.X86.Fn
+public import VerifiedGarbage.Proof.X25519.X86.Field32.Lit
+meta import VerifiedGarbage.Proof.X25519.X86.Field32.Lit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X25519 on x86 (32-bit): the code as a literal
@@ -9,6 +19,8 @@ literal of the code (`materialize_code`, `Proof/Framework/Lit.lean`) spares
 the kernel building the instructions again in every check that evaluates the
 code (constant time, `spSafe`).
 -/
+
+@[expose] public section
 
 namespace VG.Impl.X25519.X86
 

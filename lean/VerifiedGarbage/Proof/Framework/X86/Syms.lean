@@ -1,5 +1,7 @@
-import VerifiedGarbage.Proof.Framework.X86.SseTaint
-import VerifiedGarbage.Proof.Framework.Semantics
+module
+
+public import VerifiedGarbage.Proof.Framework.X86.SseTaint
+public import VerifiedGarbage.Proof.Framework.Semantics
 
 /-!
 # x86 (32-bit): the addresses of statics never change
@@ -9,6 +11,8 @@ the statics the code names (`symPush`), so neither does a run (`Exec.syms`):
 `WP.mono_syms` lets a proof use that the state after some code names the
 same addresses as before it.
 -/
+
+@[expose] public section
 
 namespace VG.X86
 

@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Fprog
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Copy
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Impl.Weierstrass.AArch64.Comb
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Fprog
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Copy
+public import VerifiedGarbage.Proof.Framework.AArch64.Call
+public import VerifiedGarbage.Impl.Weierstrass.AArch64.Comb
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The complete addition by a call, on AArch64
@@ -17,6 +23,8 @@ of the state (`AddReady`): `b`, the number at `S.b3`, already at `bAt`. The
 caller puts it there once, and it survives what does not write `bAt` or
 `S.b3` (`AddReady.unch`, `AddFar`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.AArch64
 

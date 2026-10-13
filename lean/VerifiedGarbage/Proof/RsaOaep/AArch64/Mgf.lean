@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.RsaOaep.AArch64.Loops
-import VerifiedGarbage.Proof.Mgf1.Bytes
+module
+
+public import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.RsaOaep.AArch64.Loops
+public import VerifiedGarbage.Proof.Mgf1.Bytes
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-OAEP on AArch64: MGF1
@@ -14,6 +20,8 @@ by `init`, `update` absorbs `src` and then `I2OSP(c, 4)` (written to
 `scratch + oDig`, and the first `min(hLen, dstLen - c hLen)` bytes of the
 digest are XORed into `dst + c hLen` (`xorOut_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaOaep.AArch64
 

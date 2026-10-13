@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.X448.X86.ByteMem
-import VerifiedGarbage.Proof.X448.Radix16Bytes
+module
+
+public import VerifiedGarbage.Proof.X448.X86.ByteMem
+public import VerifiedGarbage.Proof.X448.Radix16Bytes
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 on x86 (32-bit): encoding a limb
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.X448.Radix16Bytes
 Two byte stores encode each 16-bit limb in little-endian order without
 requiring output alignment.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448.X86
 

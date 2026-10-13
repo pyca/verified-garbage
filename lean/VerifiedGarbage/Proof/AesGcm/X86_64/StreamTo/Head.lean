@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Rest
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Rest
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM streaming encryption out of place, x86-64: the head
@@ -10,6 +16,8 @@ bytes, copied from the plaintext to the output and encrypted there by
 `vg_aes_gcm_stream_encrypt` as the continuation of the text so far, leave
 `Mid s Hd`; otherwise nothing is done (`head_ok`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

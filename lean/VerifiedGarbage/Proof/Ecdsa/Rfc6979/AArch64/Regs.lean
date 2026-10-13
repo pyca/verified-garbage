@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Framework.AArch64.Syms
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Layout
-import VerifiedGarbage.Proof.Framework.AArch64.Inline
-import VerifiedGarbage.Proof.Framework.AddrArith
+module
+
+public import VerifiedGarbage.Proof.Framework.AArch64.Syms
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Layout
+public import VerifiedGarbage.Proof.Framework.AArch64.Inline
+public import VerifiedGarbage.Proof.Framework.AddrArith
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Deterministic ECDSA on AArch64: addresses and registers
@@ -10,6 +16,8 @@ The code that sets one register to an address in `scratch` or the frame or
 to a constant (`Upd`), the stack below `sp` the calls use, and the bytes of
 a region a frame of writes misses.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Rfc6979.AArch64
 

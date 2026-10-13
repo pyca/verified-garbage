@@ -1,9 +1,17 @@
+module
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
 /-!
 # Divsteps on 32-bit words: the definitions
 
 The word divstep `wstep` and its iterates, apart from their proofs
 (`Word.lean`), so that code proven to compute them needs no algebra.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Divstep.W32
 

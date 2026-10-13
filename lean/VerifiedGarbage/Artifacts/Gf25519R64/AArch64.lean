@@ -1,7 +1,11 @@
-import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.Ed25519.AArch64.Pow250Verified
+module
+
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Pow250Verified
 
 /-! # Powers in curve25519's field, in radix `2^64`, on AArch64 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.Gf25519R64.AArch64
 

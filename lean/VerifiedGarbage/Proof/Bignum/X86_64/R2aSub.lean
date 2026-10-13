@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.R2aWord
-import VerifiedGarbage.Proof.Bignum.X86_64.Loop
-import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.R2aWord
+public import VerifiedGarbage.Proof.Bignum.X86_64.Loop
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `R² mod m` by word steps with ADX: `t = x 2^64 + q̂ mc - q̂ R` in place
@@ -12,6 +18,8 @@ the mask in `r14`, the previous word of `x` in `r8`. Through every word `i`
 (`WI`): `T_i + 2^(64 i) (h + OF + CF + prev) = X_i 2^64 + q̂ C_i` for the low
 `i` words `X_i` of `x`, `C_i` of `mc` and `T_i` of `t` (`mulSub_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64.R2ax
 

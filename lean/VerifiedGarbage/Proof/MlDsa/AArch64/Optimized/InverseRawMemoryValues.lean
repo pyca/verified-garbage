@@ -1,7 +1,15 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseRawFinalLoop
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MemoryBank
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseRawFinalLoop
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MemoryBank
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## From `InverseRawMemory.lean` -/
+
+@[expose] public section
 
 section
 

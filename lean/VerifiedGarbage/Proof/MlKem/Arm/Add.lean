@@ -1,8 +1,19 @@
-import VerifiedGarbage.Proof.MlKem.Arm.Common
-import VerifiedGarbage.Proof.Framework.Arm.Taint
-import VerifiedGarbage.Proof.Framework.Arm.Contract
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Impl.MlKem.Arm.Poly
+module
+
+public import VerifiedGarbage.Proof.MlKem.Arm.Common
+meta import VerifiedGarbage.Proof.MlKem.Arm.Common
+public import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+public import VerifiedGarbage.Proof.Framework.Arm.Contract
+meta import VerifiedGarbage.Proof.Framework.Arm.Contract
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Impl.MlKem.Arm.Poly
+meta import VerifiedGarbage.Impl.MlKem.Arm.Poly
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on 32-bit ARM: `vg_mlkem_add` and `vg_mlkem_sub`
@@ -11,6 +22,8 @@ One symbolic execution of each loop body, for any pointers (`addBody_ok`,
 `subBody_ok`); the loop invariant says which coefficients of `f` are done
 (`Inv`); the arithmetic is `fixq_add` and `fixq_sub`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.Arm.Add
 

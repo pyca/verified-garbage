@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesGcmSiv.X86.Tag
+module
+
+public import VerifiedGarbage.Proof.AesGcmSiv.X86.Tag
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM-SIV on x86: counter mode (`crypt`)
@@ -12,6 +18,8 @@ block, computed at `W + 224` (`cryptTail_ok`). `crypt_ok`: the data becomes
 `ctr` of it (RFC 8452 §4). The pointer is in `esi` and the number of bytes
 left at `W + nO`.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

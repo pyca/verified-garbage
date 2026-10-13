@@ -1,10 +1,14 @@
-import VerifiedGarbage.TCB.X86_64.Isa
+module
+
+public import VerifiedGarbage.TCB.X86_64.Isa
 
 /-! Lane-major matrix addressing. The matrix base is in `r8`, the lane
 in `rax`, the column in `rcx`, and the lane length in `r12`. The resulting
 block pointer is returned in `rax`. Scalar multiplication and ten doublings
 work on the baseline ISA, including when the reference coordinates are secret.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Argon2.X86_64.BlockAddress
 

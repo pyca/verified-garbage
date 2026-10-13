@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.RsaPss.AArch64.SignPre
+module
+
+public import VerifiedGarbage.Proof.RsaPss.AArch64.SignPre
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSASSA-PSS signing on AArch64: the prologue
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.RsaPss.AArch64.SignPre
 of the frame (`Fr`), `scratch` in `x20`, `x19` and `x21` set, `k` in `x23`
 and `n₀` in `x10` (`AtChk`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPss.AArch64.Sgn
 

@@ -1,9 +1,21 @@
-import VerifiedGarbage.Proof.EcKey.X86_64.Verified
-import VerifiedGarbage.Proof.EcKey.X86_64.LitAdx
-import VerifiedGarbage.Proof.Ecdsa.X86_64.VerifiedAdx
-import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
-import VerifiedGarbage.Proof.Framework.LitShare
-import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
+module
+
+public import VerifiedGarbage.Proof.EcKey.X86_64.Verified
+meta import VerifiedGarbage.Proof.EcKey.X86_64.Verified
+public import VerifiedGarbage.Proof.EcKey.X86_64.LitAdx
+meta import VerifiedGarbage.Proof.EcKey.X86_64.LitAdx
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.VerifiedAdx
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.VerifiedAdx
+public import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
+meta import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
+public import VerifiedGarbage.Proof.Framework.LitShare
+meta import VerifiedGarbage.Proof.Framework.LitShare
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # P-256 public keys on x86-64 with BMI2 and ADX: `Verified`
@@ -11,6 +23,8 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 As `Verified.lean`, for `p256x` (`p256` multiplying with BMI2 and ADX): the
 same curve, so the same precondition and postcondition.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.EcKey.X86_64
 
@@ -22,7 +36,7 @@ theorem pk_x86_adx (hL : Weierstrass.Law Spec.P256.curve)
     (hI : Weierstrass.X86_64.InvSounds)
     (s : State) (hs : pkX86_64.pre s) :
     ∃ t s', Exec isa publicKeyP256Adx.inline s t s' ∧ abiPreserved s s' ∧ pkX86_64.post s s' :=
-  pk_x86_of (p256x_ok hI) hL (p256_tbls hL hT) ⟨fun h => absurd h (by decide), fun h => absurd h (by decide)⟩ (fun _ h => { pre_of h with }) (fun _ _ => post_of rfl) rfl
+  pk_x86_of (p256x_ok hI) hL (p256_tbls hL hT) p256x_mulBase (fun _ h => { pre_of h with }) (fun _ _ => post_of rfl) rfl
     (by lit_decide) (by lit_decide) (by lit_decide) s hs
 
 /-- `publicKeyP256Adx` without its displacements, as a literal of shared blocks

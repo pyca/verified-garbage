@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Rounds
-import VerifiedGarbage.Proof.Aes.InvBitsliced
-import VerifiedGarbage.Impl.Aes.X86_64.AesNiBlocks
+module
+
+public import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Rounds
+public import VerifiedGarbage.Proof.Aes.InvBitsliced
+public import VerifiedGarbage.Impl.Aes.X86_64.AesNiBlocks
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-NI: decryption
@@ -13,6 +19,8 @@ proves that `Impl.Aes.X86_64.AesNi.aesDec` decrypts each register of a
 list, from the round keys through `aesimc` that `imcKeys` leaves in the
 scratch buffer (`imcKeys_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Aes.X86_64.AesNi
 
@@ -241,12 +249,24 @@ structure ImcInv (s₀ : State) (S : List Nat) (s : State) : Prop where
   le : ∀ j ∈ S, j ≤ 13
   keys : ∀ j ∈ S, s.mem.readW (s₀.gpr .r8 + BitVec.ofInt 64 ((16 * j : Nat) : Int)) 128 =
     aesInvMixColumns (s₀.mem.readW (s₀.gpr .rdi + BitVec.ofInt 64 ((16 * j : Nat) : Int)) 128)
+  /-- Only the slots of the round keys are written. -/
+  lo : Frame [⟨s₀.gpr .r8, 224⟩] s₀.mem s.mem
 
 theorem ImcInv.refl (s₀ : State) : ImcInv s₀ [] s₀ :=
   ⟨rfl, rfl, rfl, fun _ _ => rfl, Frame.refl _ _, fun _ h => absurd h List.not_mem_nil,
-    fun _ h => absurd h List.not_mem_nil⟩
+    fun _ h => absurd h List.not_mem_nil, Frame.refl _ _⟩
 
-theorem imcKey_ok {s₀ : State} (hscr : (⟨s₀.gpr .r8, 2048⟩ : Region) ∈ s₀.wr)
+/-- A round key's slot in a region containing the 2048 bytes at `r8`. -/
+theorem scr_offset {X : List Region} {p : Addr} (h : InRegions X p 2048) {j : Nat} (hj : 16 * j + 16 ≤ 2048) :
+    InRegions X (p + BitVec.ofNat 64 (16 * j)) 16 := by
+  obtain ⟨r, hr, hc⟩ := h
+  refine ⟨r, hr, ?_⟩
+  simp only [Region.Contains] at hc ⊢
+  rw [Offset.add_sub_comm, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 16 * j) (by omega)]
+  have := Nat.mod_le ((p - r.base).toNat + 16 * j) (2 ^ 64)
+  omega
+
+theorem imcKey_ok {s₀ : State} (hscr : InRegions s₀.wr (s₀.gpr .r8) 2048)
     (hsch : (⟨s₀.gpr .rdi, 240⟩ : Region) ∈ s₀.rd ++ s₀.wr)
     (hsep : Region.Disjoint ⟨s₀.gpr .rdi, 240⟩ ⟨s₀.gpr .r8, 2048⟩) {S : List Nat} {s : State}
     (hI : ImcInv s₀ S s) {j : Nat} (hj : j ≤ 13) :
@@ -258,7 +278,7 @@ theorem imcKey_ok {s₀ : State} (hscr : (⟨s₀.gpr .r8, 2048⟩ : Region) ∈
     exact ⟨_, hsch, contains_offset (by omega) (by omega)⟩
   have hout : InRegions s.wr (s.gpr .r8 + BitVec.ofInt 64 ((16 * j : Nat) : Int)) 16 := by
     rw [hI.wr, hI.gpr, ofs]
-    exact ⟨_, hscr, contains_offset (by omega) (by omega)⟩
+    exact scr_offset hscr (by omega)
   -- The schedule's block is still `s₀`'s.
   have hk : s.mem.readW (s₀.gpr .rdi + BitVec.ofInt 64 ((16 * j : Nat) : Int)) 128 =
       s₀.mem.readW (s₀.gpr .rdi + BitVec.ofInt 64 ((16 * j : Nat) : Int)) 128 := by
@@ -270,7 +290,7 @@ theorem imcKey_ok {s₀ : State} (hscr : (⟨s₀.gpr .r8, 2048⟩ : Region) ∈
     isa, State.setXmm, State.load128, State.store128, ea_at, hin, hout, XBinOp.eval,
     Option.map_some, Option.some.injEq, exists_eq_left']
   refine ⟨hI.gpr, hI.rd, hI.wr, fun r hr => by simp [hr, hI.xmm r hr], ?_, fun j' hj' => ?_,
-    fun j' hj' => ?_⟩
+    fun j' hj' => ?_, ?_⟩
   · rw [hI.gpr]
     exact hI.frame.writeW (List.mem_singleton_self _) _
       (by rw [ofs]; exact contains_offset (by omega) (by omega))
@@ -289,15 +309,18 @@ theorem imcKey_ok {s₀ : State} (hscr : (⟨s₀.gpr .r8, 2048⟩ : Region) ∈
             rw [off_toNat _ _ (by omega)] at h₁ h₂
             have := (a - s₀.gpr .r8).isLt
             omega) (by decide), hI.keys j' hj']
+  · rw [hI.gpr]
+    exact hI.lo.writeW (List.mem_singleton_self _) _
+      (by rw [ofs]; exact contains_offset (by omega) (by omega))
 
 theorem ImcInv.of_frame {s₀ s s' : State} {S : List Nat} (h : ImcInv s₀ S s) (hf : XFrame [] s s') :
     ImcInv s₀ S s' :=
   ⟨hf.gpr.trans h.gpr, hf.rd.trans h.rd, hf.wr.trans h.wr,
     fun r hr => (hf.xmm r (by simp)).trans (h.xmm r hr), by rw [hf.mem]; exact h.frame, h.le,
-    by rw [hf.mem]; exact h.keys⟩
+    by rw [hf.mem]; exact h.keys, by rw [hf.mem]; exact h.lo⟩
 
 /-- Some round keys through `aesimc`, those of `js`. -/
-theorem imcRun_ok {s₀ : State} (hscr : (⟨s₀.gpr .r8, 2048⟩ : Region) ∈ s₀.wr)
+theorem imcRun_ok {s₀ : State} (hscr : InRegions s₀.wr (s₀.gpr .r8) 2048)
     (hsch : (⟨s₀.gpr .rdi, 240⟩ : Region) ∈ s₀.rd ++ s₀.wr)
     (hsep : Region.Disjoint ⟨s₀.gpr .rdi, 240⟩ ⟨s₀.gpr .r8, 2048⟩) (js : List Nat)
     (hjs : ∀ j ∈ js, j ≤ 13) {S : List Nat} {s : State} (hI : ImcInv s₀ S s) :
@@ -322,7 +345,7 @@ theorem cmpRsi_imc {s₀ s : State} {S : List Nat} (hI : ImcInv s₀ S s) (c : B
   WP.mono (cmpRsi_ok s c nr (by rw [hI.gpr, hrsi])) fun _ ⟨hz, hf⟩ => ⟨hz, hI.of_frame hf⟩
 
 theorem imcKeys_ok {s₀ : State} {nr : Nat} (hnr : nr = 10 ∨ nr = 12 ∨ nr = 14)
-    (hrsi : s₀.gpr .rsi = BitVec.ofNat 64 nr) (hscr : (⟨s₀.gpr .r8, 2048⟩ : Region) ∈ s₀.wr)
+    (hrsi : s₀.gpr .rsi = BitVec.ofNat 64 nr) (hscr : InRegions s₀.wr (s₀.gpr .r8) 2048)
     (hsch : (⟨s₀.gpr .rdi, 240⟩ : Region) ∈ s₀.rd ++ s₀.wr)
     (hsep : Region.Disjoint ⟨s₀.gpr .rdi, 240⟩ ⟨s₀.gpr .r8, 2048⟩) :
     WP isa imcKeys s₀ fun s => ∃ S, ImcInv s₀ S s ∧ ∀ j, 1 ≤ j → j < nr → j ∈ S := by
@@ -358,7 +381,7 @@ theorem imcKeys_ok {s₀ : State} {nr : Nat} (hnr : nr = 10 ∨ nr = 12 ∨ nr =
 
 /-- The round keys through `aesimc`, as decryption needs them. -/
 theorem dKeys_of_imc {s₀ s : State} {nr : Nat} {w : List Byte} (hK : Keys nr w s₀)
-    (hscr : (⟨s₀.gpr .r8, 2048⟩ : Region) ∈ s₀.wr)
+    (hscr : InRegions s₀.wr (s₀.gpr .r8) 2048)
     (hsep : Region.Disjoint ⟨s₀.gpr .rdi, 240⟩ ⟨s₀.gpr .r8, 2048⟩) {S : List Nat}
     (hI : ImcInv s₀ S s) (hS : ∀ j, 1 ≤ j → j < nr → j ∈ S) : DKeys nr w s := by
   have ofs : ∀ (p : Addr) (a : Nat), p + BitVec.ofInt 64 (a : Int) = p + BitVec.ofNat 64 a :=
@@ -375,7 +398,8 @@ theorem dKeys_of_imc {s₀ s : State} {nr : Nat} {w : List Byte} (hK : Keys nr w
   refine ⟨⟨by rw [hsched]; exact hK.sched, hle, by rw [hI.rd, hI.wr, hI.gpr]; exact hK.keys⟩,
     fun j h1 h2 => ⟨?_, ?_⟩⟩
   · rw [hI.rd, hI.wr, hI.gpr, ofs]
-    exact ⟨_, List.mem_append_right _ hscr, contains_offset (by omega) (by omega)⟩
+    obtain ⟨r, hr, hc⟩ := scr_offset hscr (j := j) (by omega)
+    exact ⟨r, List.mem_append_right _ hr, hc⟩
   · rw [hI.gpr, hI.keys j (hS j h1 h2), st_aesimc]
     refine congrArg invMixColumns ?_
     apply st_ext; intro i hi

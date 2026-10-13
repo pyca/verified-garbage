@@ -1,7 +1,16 @@
-import VerifiedGarbage.Proof.Dsa.X86_64.CheckCall
-import VerifiedGarbage.Proof.Dsa.X86_64.LoadOne
+module
+
+public import VerifiedGarbage.Proof.Dsa.X86_64.CheckCall
+public import VerifiedGarbage.Proof.Dsa.X86_64.LoadOne
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # Complete checks of DSA subgroup exponentiation results -/
+
+@[expose] public section
+
 namespace VG.Proof.Dsa.X86_64
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public
 open VG.Impl.Rsa.X86_64 VG.Impl.Dsa.Layout VG.Impl.Dsa.X86_64

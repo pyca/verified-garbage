@@ -1,8 +1,16 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourMaskFour
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourAdaptive
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejEpi
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourMaskFour
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourAdaptive
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejEpi
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## From `BoundedFourMasked.lean` -/
+
+@[expose] public section
 
 section
 

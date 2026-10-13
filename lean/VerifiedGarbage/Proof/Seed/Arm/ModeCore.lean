@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.Seed.Arm.Verified
-import VerifiedGarbage.Proof.Modes.Arm.Core
-import VerifiedGarbage.Impl.Seed.Arm.Modes
-import VerifiedGarbage.Proof.Seed.Scratch
-import VerifiedGarbage.Spec.Seed.Cbc
+module
+
+public import VerifiedGarbage.Proof.Seed.Arm.Verified
+public import VerifiedGarbage.Proof.Modes.Arm.Core
+public import VerifiedGarbage.Impl.Seed.Arm.Modes
+public import VerifiedGarbage.Proof.Seed.Scratch
+public import VerifiedGarbage.Spec.Seed.Cbc
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # SEED's ECB functions on ARMv7 as the modes' core
@@ -13,6 +19,8 @@ contract (`Spec.Seed.ecbContract`, with 752 bytes of stack) and its proof
 (`ecb_framed`): the schedule is SEED's 128-byte schedule, and the cipher on
 a block is `Spec.Seed.cipher` or `Spec.Seed.invCipher` of it.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Seed.Arm
 

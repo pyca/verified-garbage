@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesGcm.ScratchP
-import VerifiedGarbage.Spec.Gcm.OutOfPlace
+module
+
+public import VerifiedGarbage.Proof.AesGcm.ScratchP
+public import VerifiedGarbage.Spec.Gcm.OutOfPlace
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM streaming encryption out of place: the conditions read only the buffers
@@ -11,6 +17,8 @@ and postconditions of `vg_aes_gcm_stream_encrypt_to` and
 within their buffers: the key context, the streaming state (through
 `StreamRepr`, `streamRepr_congr`) and the input.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesGcm
 

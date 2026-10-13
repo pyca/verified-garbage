@@ -1,12 +1,27 @@
-import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-import VerifiedGarbage.Proof.Aes.AArch64.Group
-import VerifiedGarbage.Spec.Gcm
-import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.Framework.AArch64.Taint
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Spec.Gcm.Contract
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.AArch64.Spill
+module
+
+public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+meta import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+public import VerifiedGarbage.Proof.Aes.AArch64.Group
+meta import VerifiedGarbage.Proof.Aes.AArch64.Group
+public import VerifiedGarbage.Spec.Gcm
+meta import VerifiedGarbage.Spec.Gcm
+public import VerifiedGarbage.TCB.AArch64.Target
+meta import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.Framework.AArch64.Taint
+meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.Gcm.Contract
+meta import VerifiedGarbage.Spec.Gcm.Contract
+public import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.AArch64.Spill
+meta import VerifiedGarbage.Proof.Framework.AArch64.Spill
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES counter mode on AArch64: the whole function
@@ -16,6 +31,8 @@ naming domain, as is the epilogue restoring them), copies the counter block
 to its slots and writes back the final counter; the key loop and the
 group loop (`Group.lean`) do the rest.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Aes
 

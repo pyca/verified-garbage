@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Call
+module
+
+public import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Call
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on 32-bit ARM: calling `Power2Round` and the encodings of key generation
@@ -7,6 +13,8 @@ As `ip_ok` and `ip_tr` (`Call.lean`), for `vg_mldsa_power2round`,
 `vg_mldsa_simple_bit_pack` and `vg_mldsa_bit_pack`, whose fifth argument, the
 length, is on the stack.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Arm.KeyGen
 

@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Argon2.X86.Layout
-import VerifiedGarbage.Impl.Argon2.X86.Divide
+module
+
+public import VerifiedGarbage.Impl.Argon2.X86.Layout
+public import VerifiedGarbage.Impl.Argon2.X86.Divide
 
 /-!
 # Argon2 on x86 (32-bit): the parameters and H₀
@@ -15,6 +17,8 @@ import VerifiedGarbage.Impl.Argon2.X86.Divide
   and the input itself; the byte count (64 bits) is kept in the locals. The
   digest is copied to the first 64 bytes of the locals.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Argon2.X86.Derive
 

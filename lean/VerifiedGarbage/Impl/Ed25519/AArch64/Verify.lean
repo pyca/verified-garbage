@@ -1,9 +1,14 @@
-import VerifiedGarbage.Impl.Ed25519.AArch64.PointDecode
-import VerifiedGarbage.Impl.Ed25519.AArch64.ScalarBase
-import VerifiedGarbage.Impl.Ed25519.AArch64.VerifyWindow
+module
+
+public import VerifiedGarbage.Impl.Ed25519.AArch64.PointDecode
+public import VerifiedGarbage.Impl.Ed25519.AArch64.ScalarBase
+public import VerifiedGarbage.Impl.Ed25519.AArch64.VerifyWindow
 
 /-! Canonical point/scalar checks and the uncofactored verification equation
 with the caller's full 512-bit SHA-512 challenge. -/
+
+@[expose] public section
+
 namespace VG.Impl.Ed25519.AArch64
 open VG.AArch64
 
@@ -25,8 +30,8 @@ def pointEqual : Prog isa :=
 /-- Returns 1 in x8 if `[S]B = R + [k]A`, for `A` at byte 7424 and `R` at byte 7552. -/
 def verifyEquationPoints : Prog isa :=
   .seq (.block windowSetup) (.seq aTable (.seq (.block bTable) (.seq (.block windowInit)
-    (.seq skipZero (.seq windowsA (.seq (.loop byteStepAB (.nonzero .x .x19))
-      (.seq (.block negR) pointEqual)))))))
+    (.seq (.block nibbles) (.seq skipZero (.seq windowsA (.seq (.loop nibStepAB (.nonzero .x .x19))
+      (.seq (.block negR) pointEqual))))))))
 
 def decodedThen (next : Prog isa) : Prog isa := .ite (.nonzero .x .x8) next recoverInvalid
 

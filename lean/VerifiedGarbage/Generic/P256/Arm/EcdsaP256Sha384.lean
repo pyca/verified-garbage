@@ -1,6 +1,8 @@
-import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Proof.Weierstrass.Law
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Sha384
+module
+
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.Proof.Weierstrass.Law
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Sha384
 
 /-!
 # Deterministic ECDSA (RFC 6979) over P-256 with HMAC-SHA-384 on ARMv7
@@ -14,6 +16,8 @@ calls below them).
 A generic file (see `TCB/Emit.lean`) over P-256's group law `h`, the variant
 `Variants/P256/Arm/Law.lean`.
 -/
+
+@[expose] public section
 
 namespace VG.Generic.P256.Arm.EcdsaP256Sha384
 

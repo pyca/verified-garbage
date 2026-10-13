@@ -1,8 +1,12 @@
-import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Proof.Cast5.Arm.EcbVerified
-import VerifiedGarbage.Proof.Cast5.Arm.KeyVerified
+module
+
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.Proof.Cast5.Arm.EcbVerified
+public import VerifiedGarbage.Proof.Cast5.Arm.KeyVerified
 
 /-! CAST5 key expansion and ECB on baseline ARMv7. -/
+
+@[expose] public section
 
 namespace VG.Artifacts.Cast5.Arm
 
@@ -39,7 +43,7 @@ def artifacts : List Artifact := [
     code := Impl.Cast5.Arm.ecbEncrypt
     contract := Spec.Cast5.ecbEncryptContract Arm.abi
     stack := 0
-    ofSig := ⟨_, _, _, by unfold Spec.Cast5.ecbEncryptContract Spec.Cast5.ecbContract; rfl⟩
+    ofSig := by exact (⟨_, _, _, by unfold Spec.Cast5.ecbEncryptContract Spec.Cast5.ecbContract; rfl⟩)
     verified := Proof.Cast5.Arm.ecbEncrypt_verified
     spSafe := Code.all_of_forall (fun _ => rfl) _ },
   { Spec.Cast5.ecbDecryptApi with
@@ -48,7 +52,7 @@ def artifacts : List Artifact := [
     code := Impl.Cast5.Arm.ecbDecrypt
     contract := Spec.Cast5.ecbDecryptContract Arm.abi
     stack := 0
-    ofSig := ⟨_, _, _, by unfold Spec.Cast5.ecbDecryptContract Spec.Cast5.ecbContract; rfl⟩
+    ofSig := by exact (⟨_, _, _, by unfold Spec.Cast5.ecbDecryptContract Spec.Cast5.ecbContract; rfl⟩)
     verified := Proof.Cast5.Arm.ecbDecrypt_verified
     spSafe := Code.all_of_forall (fun _ => rfl) _ }]
 

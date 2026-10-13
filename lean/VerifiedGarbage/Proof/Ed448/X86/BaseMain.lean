@@ -1,9 +1,15 @@
-import VerifiedGarbage.Proof.Ed448.X86.BaseLocal
-import VerifiedGarbage.Proof.Ed448.X86.BaseSetup
-import VerifiedGarbage.Proof.Ed448.X86.BaseStep
-import VerifiedGarbage.Proof.Ed448.X86.BaseEncode
-import VerifiedGarbage.Proof.Ed448.X86.ScalarMain
-import VerifiedGarbage.Proof.X448.X86.Runs
+module
+
+public import VerifiedGarbage.Proof.Ed448.X86.BaseLocal
+public import VerifiedGarbage.Proof.Ed448.X86.BaseSetup
+public import VerifiedGarbage.Proof.Ed448.X86.BaseStep
+public import VerifiedGarbage.Proof.Ed448.X86.BaseEncode
+public import VerifiedGarbage.Proof.Ed448.X86.ScalarMain
+public import VerifiedGarbage.Proof.X448.X86.Runs
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 base-point multiplication on x86 (32-bit): the whole function
@@ -18,6 +24,8 @@ working space but the result's, so the arguments and the scalar are read
 unchanged; the callee-saved registers are restored from the working space,
 and the return address is kept.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.X86
 
@@ -106,8 +114,8 @@ theorem entry_stage {s₀ : State} (h : BasePre s₀) :
   have hA := h.args
   have hin : Input s₀ (bsB s₀) (arg s₀ 1) 57 :=
     Input.of_region h.scalar_fit (by rw [h.rd]; simp) h.scalar_sc
-  refine WP.seq (WP.block_append (WP.mono (save_ok hA) fun s₁ ⟨hs₁, sv₁, o₁, k₁⟩ => ?_))
-  refine WP.mono (initSlots_ok hs₁) fun s₂ ⟨l₂, o₂, k₂⟩ => ?_
+  refine WP.seq (WP.mono (save_ok hA) fun s₁ ⟨hs₁, sv₁, o₁, k₁⟩ => ?_)
+  refine WP.seq (WP.mono (initSlots_ok hs₁) fun s₂ ⟨l₂, o₂, k₂⟩ => ?_)
   have hs₂ := hs₁.of_keeps k₂ (by decide)
   have k02 : Keeps [.eax, .ebx, .ebp, .edi] s₀ s₂ := (k₁.mono (by decide)).trans (k₂.mono (by decide))
   have o02 : Outside (bsB s₀) 0 8192 s₀.mem s₂.mem :=

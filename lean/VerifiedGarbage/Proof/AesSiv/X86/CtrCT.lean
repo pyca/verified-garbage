@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.AesSiv.X86.Ctr
+module
+
+public import VerifiedGarbage.Proof.AesSiv.X86.Ctr
+meta import VerifiedGarbage.Proof.AesSiv.X86.Ctr
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-SIV on x86: CTR is constant time
@@ -8,6 +15,8 @@ the length of the data, and the addresses on `ebp` and the data's address
 (pinned where the XOR uses them); the calls of `vg_aes_ctr32` are constant
 time by their contract.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

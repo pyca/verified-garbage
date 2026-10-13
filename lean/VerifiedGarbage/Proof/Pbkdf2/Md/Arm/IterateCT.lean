@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Iterate
-import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
+module
+
+public import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Iterate
+public import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # PBKDF2-HMAC's iteration over a Merkle–Damgård hash function on ARMv7: constant time
@@ -16,6 +22,8 @@ that (`Checks`, evaluated for each hash function, since the code depends on
 its sizes); and the calls are constant time by the compression function's own
 proof (`compressBlock_rel`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Pbkdf2.Md.Arm.Iterate
 

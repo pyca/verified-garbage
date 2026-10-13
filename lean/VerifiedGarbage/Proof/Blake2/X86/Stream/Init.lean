@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Blake2.X86.Stream.Common
-import VerifiedGarbage.Proof.Framework.Range
-import VerifiedGarbage.Proof.Sha512.Word64
+module
+
+public import VerifiedGarbage.Proof.Blake2.X86.Stream.Common
+public import VerifiedGarbage.Proof.Framework.Range
+public import VerifiedGarbage.Proof.Sha512.Word64
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Streaming BLAKE2 on x86 (32-bit): `init`
@@ -9,6 +15,8 @@ import VerifiedGarbage.Proof.Sha512.Word64
 our caller's `ebx` in the first word of the hash value meanwhile, then stores
 the initial hash value (`initState_ok`), for either word size.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Blake2.X86.Stream.Init
 

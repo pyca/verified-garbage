@@ -1,11 +1,13 @@
-import VerifiedGarbage.Impl.Weierstrass.X86_64.Window
-import VerifiedGarbage.Impl.Weierstrass.X86_64.Inv
-import VerifiedGarbage.Impl.Weierstrass.X86_64.TCombJ
-import VerifiedGarbage.Spec.Weierstrass
-import VerifiedGarbage.Spec.Ecdsa
-import VerifiedGarbage.Spec.Weierstrass.MulBase
-import VerifiedGarbage.Spec.Weierstrass.Mul
-import VerifiedGarbage.Spec.Weierstrass.Inverse
+module
+
+public import VerifiedGarbage.Impl.Weierstrass.X86_64.Window
+public import VerifiedGarbage.Impl.Weierstrass.X86_64.Inv
+public import VerifiedGarbage.Impl.Weierstrass.X86_64.TCombJ
+public import VerifiedGarbage.Spec.Weierstrass
+public import VerifiedGarbage.Spec.Ecdsa
+public import VerifiedGarbage.Spec.Weierstrass.MulBase
+public import VerifiedGarbage.Spec.Weierstrass.Mul
+public import VerifiedGarbage.Spec.Weierstrass.Inverse
 
 /-!
 # ECDSA signing on x86-64
@@ -41,6 +43,8 @@ scratch = r8) -> eax`, for a curve whose field elements and scalars are `n`
 `r = 0`, as the specification says. Everything is computed whatever the
 flag, and only the pointers may affect timing.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Ecdsa.X86_64
 
@@ -215,7 +219,7 @@ def MP' : Mod :=
 def MH : Mod := { c.MP' with inl := c.hot }
 def MN' : Mod :=
   { n := c.n, mo := c.sl MN, tmp := c.sl TMP, minv := BitVec.ofNat 64 (minv c.C.n), adx := c.adx,
-    fnN := c.n == 9 }
+    fnN := c.n == 9 || c.n == 6 }
 
 def pt (x y z : Nat) : Pt := ⟨c.sl x, c.sl y, c.sl z⟩
 
@@ -463,8 +467,14 @@ def scalar : Prog isa :=
 def mulBaseBody : Prog isa := .seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) c.gMulK
 
 /-- Where `vg_<curve>_mul_base` keeps the callee-saved registers, which it
-changes: `ACC`'s slot, part of its own working space. -/
-def mulBaseSaved : List (Reg × Nat) := saved.map fun (r, d) => (r, c.sl ACC + d)
+changes: `ACC`'s slot, part of its own working space, and for fewer than six
+words, which it cannot hold, the rest in `TT`'s, also its own. -/
+def mulBaseSaved : List (Reg × Nat) :=
+  saved.map fun (r, d) => (r, if d < 8 * c.n then c.sl ACC + d else c.sl TT + (d - 8 * c.n))
+
+/-- The slots `vg_<curve>_mul_base` writes besides `gMulK`'s: where it keeps
+the callee-saved registers (`mulBaseSaved`). -/
+def mulBaseSlots : List Nat := if c.n < 6 then [ACC, TT] else [ACC]
 
 /-- `vg_<curve>_mul_base` (`_adx` with BMI2 and ADX): its body, between
 saving the callee-saved registers in `ACC`'s slot and restoring them. -/

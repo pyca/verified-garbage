@@ -1,8 +1,14 @@
-import VerifiedGarbage.Impl.Camellia.X86_64.Layers
-import VerifiedGarbage.Proof.Camellia.Bitsliced
-import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.Proof.Framework.Bitslice.Lanes
+module
+
+public import VerifiedGarbage.Impl.Camellia.X86_64.Layers
+public import VerifiedGarbage.Proof.Camellia.Bitsliced
+public import VerifiedGarbage.Proof.Framework.X86_64.Exec
+public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+public import VerifiedGarbage.Proof.Framework.Bitslice.Lanes
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # FL and FLINV on x86-64
@@ -14,6 +20,8 @@ induction over the planes. Each step reads planes as they were before the
 step (`flRot` saves plane 7 and updates the planes from 7 down), so the
 result is `RotStep` and `OrStep` of `Proof/Camellia/Bitsliced.lean`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Camellia.X86_64
 

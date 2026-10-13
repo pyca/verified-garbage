@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Ecdsa.Arm
+module
+
+public import VerifiedGarbage.Impl.Ecdsa.Arm
 
 /-!
 # Elliptic curve public keys on 32-bit ARM
@@ -22,6 +24,8 @@ the code of ECDSA's signature (`Impl/Ecdsa/Arm.lean`), as on x86
 Everything is computed whatever the flag, and only the pointers may affect
 timing.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.EcKey.Arm
 

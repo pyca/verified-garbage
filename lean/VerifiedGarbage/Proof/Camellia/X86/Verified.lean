@@ -1,9 +1,21 @@
-import VerifiedGarbage.Proof.Camellia.X86.Ecb
-import VerifiedGarbage.Proof.Camellia.X86.Lit
-import VerifiedGarbage.Proof.Camellia.Scratch
-import VerifiedGarbage.Proof.Framework.X86.Taint
-import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
-import VerifiedGarbage.Proof.Framework.Contract
+module
+
+public import VerifiedGarbage.Proof.Camellia.X86.Ecb
+meta import VerifiedGarbage.Proof.Camellia.X86.Ecb
+public import VerifiedGarbage.Proof.Camellia.X86.Lit
+meta import VerifiedGarbage.Proof.Camellia.X86.Lit
+public import VerifiedGarbage.Proof.Camellia.Scratch
+meta import VerifiedGarbage.Proof.Camellia.Scratch
+public import VerifiedGarbage.Proof.Framework.X86.Taint
+meta import VerifiedGarbage.Proof.Framework.X86.Taint
+public import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
+meta import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Camellia ECB on x86 (32-bit) meets its contracts
@@ -18,6 +30,8 @@ working space on the stack, zeroed on return: 2712 bytes, the 2688 of the
 scratch buffer, the copies of the four argument slots, the buffer's address
 and the return address of the call of the code, which uses no other stack.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Camellia.X86
 

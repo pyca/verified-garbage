@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.CmacTripleDes.X86_64.Save
-import VerifiedGarbage.Proof.CmacTripleDes.Cmac
-import VerifiedGarbage.Proof.Cmac.Frame
+module
+
+public import VerifiedGarbage.Proof.CmacTripleDes.X86_64.Save
+public import VerifiedGarbage.Proof.CmacTripleDes.Cmac
+public import VerifiedGarbage.Proof.Cmac.Frame
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # TDEA-CMAC on x86-64: `vg_cmac_triple_des_update`
@@ -10,6 +16,8 @@ slot 13 holds the blocks left, only the state, the block's slots and slots
 12–13 have changed since the registers were saved, and the state is the
 chaining value after the first `k` blocks.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.CmacTripleDes.X86_64
 

@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Ecdh.X86_64.Window
+module
+
+public import VerifiedGarbage.Proof.Ecdh.X86_64.Window
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDH on x86-64: what the whole function needs of its scalar multiplication
@@ -16,6 +22,8 @@ what the rest of the exchange needs of `W`: it keeps the constants
 `mulQ_ok` and `mulQ_w`: the window method (or the ladder, inline or by a call of
 `vg_<curve>_mul`), `mulPow_ok`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdh.X86_64
 

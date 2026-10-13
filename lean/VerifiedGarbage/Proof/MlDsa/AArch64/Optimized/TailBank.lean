@@ -1,9 +1,17 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.TailTraversal
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Residue
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InnerBank
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PackedBank
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.TailTraversal
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Residue
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InnerBank
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PackedBank
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## From `TailField.lean` -/
+
+@[expose] public section
 
 section
 

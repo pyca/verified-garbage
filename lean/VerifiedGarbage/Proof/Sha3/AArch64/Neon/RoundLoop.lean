@@ -1,5 +1,11 @@
-import VerifiedGarbage.Impl.Sha3.AArch64.Sha3.RoundLoop
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.HwRounds
+module
+
+public import VerifiedGarbage.Impl.Sha3.AArch64.Sha3.RoundLoop
+public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.HwRounds
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The rounds in a loop, on both lanes
@@ -10,6 +16,8 @@ of the round constants at `p` (`RcTable`), `roundsLoop core p` computes
 Keccak-f[1600] on both lanes, and changes only `x16` and vector registers.
 `rcStore_ok` stores the table.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sha3.AArch64.Neon.Hw
 open VG VG.AArch64

@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.Poly1305.X86_64.Blocks
-import VerifiedGarbage.Proof.Poly1305.X86_64.Lit
-import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Lit
-import VerifiedGarbage.Impl.Poly1305.X86_64.Callee
-import VerifiedGarbage.Proof.Framework.X86_64.Depth
+module
+
+public import VerifiedGarbage.Proof.Poly1305.X86_64.Blocks
+public import VerifiedGarbage.Proof.Poly1305.X86_64.Lit
+public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Lit
+public import VerifiedGarbage.Impl.Poly1305.X86_64.Callee
+public import VerifiedGarbage.Proof.Framework.X86_64.Depth
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Implementations of `vg_poly1305_blocks` on x86-64
@@ -19,6 +25,8 @@ below its return address (`stack_le`), and for two levels of calls
 implementation that goes with its implementation of `vg_chacha20_xor`,
 `Proof.ChaCha20.X86_64.XorImpl.poly`.)
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Poly1305
 

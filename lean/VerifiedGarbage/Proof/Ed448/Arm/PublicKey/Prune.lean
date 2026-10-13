@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.Ed448.Arm.PublicKey.Layout
-import VerifiedGarbage.Proof.Ed448.PruneBytes
-import VerifiedGarbage.Proof.Ed448.Scalar
-import VerifiedGarbage.Proof.X448.Arm.BitWrite
-import VerifiedGarbage.Proof.X25519.Arm.Instr
+module
+
+public import VerifiedGarbage.Proof.Ed448.Arm.PublicKey.Layout
+public import VerifiedGarbage.Proof.Ed448.PruneBytes
+public import VerifiedGarbage.Proof.Ed448.Scalar
+public import VerifiedGarbage.Proof.X448.Arm.BitWrite
+public import VerifiedGarbage.Proof.X25519.Arm.Instr
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 public-key derivation on ARMv7: pruning the hash in place
@@ -11,6 +17,8 @@ import VerifiedGarbage.Proof.X25519.Arm.Instr
 clears byte 56, from `r12`; the 57 bytes are then `Spec.Ed448.prune` of the
 hash (`prune_step`, by `Proof.Ed448.prune_bytes`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.Arm.PublicKey
 

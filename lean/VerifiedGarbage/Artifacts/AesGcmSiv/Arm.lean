@@ -1,5 +1,7 @@
-import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Proof.AesGcmSiv.Arm.Verified
+module
+
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.Proof.AesGcmSiv.Arm.Verified
 
 /-!
 # AES-GCM-SIV (RFC 8452) on ARMv7
@@ -16,6 +18,8 @@ Both functions run in a frame of 3792 bytes holding their working space
 `vg_ghash` in frames that push their two stack arguments
 (`vg_aes_expand_key` takes no stack arguments): 3800 bytes of stack in all.
 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.AesGcmSiv.Arm
 

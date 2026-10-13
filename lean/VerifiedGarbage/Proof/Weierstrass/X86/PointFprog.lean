@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Weierstrass.X86.PointCall
-import VerifiedGarbage.Proof.Weierstrass.X86.Fprog
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86.PointCall
+public import VerifiedGarbage.Proof.Weierstrass.X86.Fprog
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Field programs on slots at offsets known at run time, on x86 (32-bit)
@@ -12,6 +18,8 @@ follows `runOps ops` (`fprogB_ok`), and only the slots the program writes
 (`W`) must be apart from every other (`LayR`). `rcbB_ok` is the complete
 addition.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.X86.Point
 

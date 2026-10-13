@@ -1,7 +1,9 @@
-import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
-import VerifiedGarbage.Proof.P521.Comb7
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.P521Sha512
+module
+
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
+public import VerifiedGarbage.Proof.P521.Comb7
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.P521Sha512
 
 /-!
 # Deterministic ECDSA (RFC 6979) over P-521 with HMAC-SHA-512 on AArch64
@@ -21,6 +23,8 @@ none).
 It is generic over P-521's group law `h` too, the variant
 `Variants/P521/AArch64/Law.lean`.
 -/
+
+@[expose] public section
 
 namespace VG.Generic.MdHash.P521.AArch64.EcdsaP521Sha512
 

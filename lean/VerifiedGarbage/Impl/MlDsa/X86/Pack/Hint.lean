@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.MlKem.X86.Basic
+module
+
+public import VerifiedGarbage.Impl.MlKem.X86.Basic
 
 /-!
 # ML-DSA on x86 (32-bit): `vg_mldsa_hint_bit_pack` and `vg_mldsa_hint_bit_unpack`
@@ -28,6 +30,8 @@ are then a function of the hint alone. Both save the caller's `ebx`, `esi`,
   following bound; the return value is 1 if the index is at most `ω`, 0
   otherwise.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.X86.Pack
 

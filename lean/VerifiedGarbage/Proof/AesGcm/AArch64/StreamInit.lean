@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesGcm.AArch64.Fn
+module
+
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Fn
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on AArch64: `vg_aes_gcm_stream_init`
@@ -8,6 +14,8 @@ registers and sets up `j0`'s arguments (`siEntry_ok`); `j0` writes `J₀`, a
 zero accumulator and the first counter block, which is a state for the
 nonce, no additional data and no text.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

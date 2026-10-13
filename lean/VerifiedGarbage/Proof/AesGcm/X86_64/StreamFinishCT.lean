@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.StreamFinish
-import VerifiedGarbage.Proof.AesGcm.X86_64.FinTagCT
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamFinish
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.StreamFinish
+public import VerifiedGarbage.Proof.AesGcm.X86_64.FinTagCT
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.FinTagCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on x86-64: `vg_aes_gcm_stream_finish` is constant time
@@ -8,6 +16,8 @@ Untrusted: everything here is checked by Lean. After the entry, both runs
 compute the tag from the same lengths and number of rounds (`finTag_rel`),
 and copy it to the same address, kept in `W` (`finishEntry_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesGcm.X86_64
 

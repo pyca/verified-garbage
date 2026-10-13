@@ -1,5 +1,7 @@
-import VerifiedGarbage.Proof.Argon2.X86_64.Avx512.Compress
-import VerifiedGarbage.Proof.Argon2.X86_64.CompressImpl
+module
+
+public import VerifiedGarbage.Proof.Argon2.X86_64.Avx512.Compress
+public import VerifiedGarbage.Proof.Argon2.X86_64.CompressImpl
 
 /-!
 # Argon2's G on x86-64 with AVX-512
@@ -8,6 +10,8 @@ A variant of `Argon2Compress` on x86-64 (see `TCB/Emit.lean`):
 `vg_argon2_compress_avx512`, which needs AVX512F (and AVX, for its closing
 `vzeroupper`); the derivation calling it needs them too.
 -/
+
+@[expose] public section
 
 namespace VG.Variants.Argon2Compress.X86_64.Avx512
 

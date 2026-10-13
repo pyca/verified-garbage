@@ -1,8 +1,10 @@
-import VerifiedGarbage.Impl.Aes.AArch64.Ctr32
-import VerifiedGarbage.Impl.Aes.AArch64.ExpandKey
-import VerifiedGarbage.Impl.Aes.AArch64.Aese
-import VerifiedGarbage.Impl.Aes.AArch64.Blocks
-import VerifiedGarbage.Impl.Aes.AArch64.AeseBlocks
+module
+
+public import VerifiedGarbage.Impl.Aes.AArch64.Ctr32
+public import VerifiedGarbage.Impl.Aes.AArch64.ExpandKey
+public import VerifiedGarbage.Impl.Aes.AArch64.Aese
+public import VerifiedGarbage.Impl.Aes.AArch64.Blocks
+public import VerifiedGarbage.Impl.Aes.AArch64.AeseBlocks
 
 /-!
 # The implementations of `vg_aes_ctr32` on AArch64
@@ -15,6 +17,8 @@ A function that encrypts or decrypts whole blocks (AES-OCB's) calls an
 implementation of `vg_aes_encrypt_blocks` and `vg_aes_decrypt_blocks`, a
 pair of `Blocks`.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Aes.AArch64
 

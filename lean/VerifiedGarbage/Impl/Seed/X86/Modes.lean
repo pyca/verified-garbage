@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Seed.X86.Ecb
-import VerifiedGarbage.Impl.Modes.X86.Seq
+module
+
+public import VerifiedGarbage.Impl.Seed.X86.Ecb
+public import VerifiedGarbage.Impl.Modes.X86.Seq
 
 /-!
 # SEED's core for the modes on x86 (32-bit)
@@ -14,6 +16,8 @@ tail buffer. The modes' slots follow ECB's 206: 216 slots in all
 CBC runs in the core's direction; OFB and CFB128 run the cipher forwards
 (encryption) in both directions.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Seed.X86
 

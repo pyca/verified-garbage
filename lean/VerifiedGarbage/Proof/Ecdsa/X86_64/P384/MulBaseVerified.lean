@@ -1,9 +1,21 @@
-import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.Verified
-import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.VerifiedAdx
-import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.MulBaseLit
-import VerifiedGarbage.Proof.Weierstrass.PointFacts
-import VerifiedGarbage.Proof.Mont.Read
-import VerifiedGarbage.Spec.Weierstrass.MulBase
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.Verified
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.Verified
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.VerifiedAdx
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.VerifiedAdx
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.MulBaseLit
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.MulBaseLit
+public import VerifiedGarbage.Proof.Weierstrass.PointFacts
+meta import VerifiedGarbage.Proof.Weierstrass.PointFacts
+public import VerifiedGarbage.Proof.Mont.Read
+meta import VerifiedGarbage.Proof.Mont.Read
+public import VerifiedGarbage.Spec.Weierstrass.MulBase
+meta import VerifiedGarbage.Spec.Weierstrass.MulBase
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_p384_mul_base` on x86-64: `Verified`
@@ -19,6 +31,8 @@ proofs' (`dec_eq`, given Fermat's little theorem from the group law), and
 `Represents` is `Rep`. Constant time by taint tracking with the static's
 address public, as the signature (`mb_ct`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.X86_64.P384.MulBase
 
@@ -169,7 +183,7 @@ theorem mb_correct (hL : Law Spec.P384.curve)
     ∃ t s', Exec isa (cfg adx).mulBaseFn s t s' ∧ abiPreserved s s' ∧ mbK.post s s' := by
   obtain ⟨hrd, hwr, hret, hfit, ht, hmp, hz⟩ := hs
   have hc := cfg_ok hI adx
-  obtain ⟨d, hcd, hj, h6, hnc⟩ := (cfg_mulBase adx).1 (by cases adx <;> rfl)
+  obtain ⟨d, hcd, h6, hnc⟩ := (cfg_mulBase adx).1 (by cases adx <;> rfl)
   obtain rfl : d = comb7 := Option.some.inj (hcd.symm.trans (cfg_comb adx))
   have hS : Scr s (s.gpr .rdi) size := ⟨rfl, by rw [hwr]; simp, hfit⟩
   have hn := cfg_n adx
@@ -178,7 +192,7 @@ theorem mb_correct (hL : Law Spec.P384.curve)
   have hz' : wordsVal s.mem (s.gpr .rdi) ((cfg adx).sl ZERO) (cfg adx).n = 0 := by
     rw [hn, cfg_sl]; rw [coordAt_eq _ _ _ (by decide)] at hz; exact hz
   obtain ⟨hTM, hout⟩ := tbls_of adx hrd hwr ht
-  have W := mulBaseFn_ok hc.toBaseCfgOk h6 (cfg_C adx ▸ hL) (cfg_tbls hT adx) hcd hj hS hmp' hz' hTM hout
+  have W := mulBaseFn_ok hc.toBaseCfgOk h6 (cfg_C adx ▸ hL) (cfg_tbls hT adx) hcd hS hmp' hz' hTM hout
   rw [Code.inline_of_noCalls hnc] at W
   obtain ⟨t, s', he, g', sv', rd', wr', sy', U', M', L', R'⟩ := W
   refine ⟨t, s', he, abiPreserved_of_exec (mxcsr_ok adx) he ⟨fun r hr => ?_, ?_⟩, ?_⟩

@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesCcm.Arm.Tag
+module
+
+public import VerifiedGarbage.Proof.AesCcm.Arm.Tag
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CCM on ARMv7: a buffer padded, chained (`absorbPad y`)
@@ -13,6 +19,8 @@ blocks: its whole blocks in one call (`absorbWhole_ok`), then its last
 the blocks of the padded string (`absorbPad_ok`,
 `Proof.AesCcm.blocks_pad16`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

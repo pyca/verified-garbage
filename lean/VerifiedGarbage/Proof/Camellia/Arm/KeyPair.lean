@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Camellia.Arm.Crypt8
-import VerifiedGarbage.Proof.Camellia.Arm.KeyLin
+module
+
+public import VerifiedGarbage.Proof.Camellia.Arm.Crypt8
+public import VerifiedGarbage.Proof.Camellia.Arm.KeyLin
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Camellia's key schedule on ARMv7: a pair of rounds on one value
@@ -10,6 +16,8 @@ ECB loads a block), in all eight lanes (`bcast_step`), through two rounds
 with the next two entries of the table (`round_step`), and lane 0's words
 back (`unbcast_step`), is `pair` of it.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Camellia.Arm
 

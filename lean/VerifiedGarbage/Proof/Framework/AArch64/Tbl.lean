@@ -1,8 +1,10 @@
-import VerifiedGarbage.Impl.Tbl.AArch64
-import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import VerifiedGarbage.Proof.Framework.AArch64.Simd64
-import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+module
+
+public import VerifiedGarbage.Impl.Tbl.AArch64
+public import VerifiedGarbage.Proof.Framework.AArch64.Exec
+public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+public import VerifiedGarbage.Proof.Framework.AArch64.Simd64
+public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 
 /-!
 # AArch64: table lookups with `tbl`
@@ -12,6 +14,8 @@ Byte `k` of the table registers (`tbyte`) is lane `k % 16` of `treg (k / 16)`.
 and 192 in `v1`, `v2`, `v3`), `select` leaves the table's byte at each index
 in that lane of `v0`.
 -/
+
+@[expose] public section
 
 namespace VG.AArch64.Tbl
 

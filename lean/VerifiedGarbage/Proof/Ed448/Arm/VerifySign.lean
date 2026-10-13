@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Ed448.Arm.VerifyDecodeY
+module
+
+public import VerifiedGarbage.Proof.Ed448.Arm.VerifyDecodeY
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 verification's equation on ARMv7: the sign of a decoded point
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.Ed448.Arm.VerifyDecodeY
 (`SIGN`) is 0; and `x` swapped with `-x` under the mask of its low bit
 differing from the sign bit (RFC 8032 §5.2.3, step 4).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.Arm
 

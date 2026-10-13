@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.Rsa.AArch64.RpMain
-import VerifiedGarbage.Proof.Rsa.AArch64.CvCTMain
+module
+
+public import VerifiedGarbage.Proof.Rsa.AArch64.RpMain
+meta import VerifiedGarbage.Proof.Rsa.AArch64.RpMain
+public import VerifiedGarbage.Proof.Rsa.AArch64.CvCTMain
+meta import VerifiedGarbage.Proof.Rsa.AArch64.CvCTMain
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_recover_primes` on AArch64: constant time, the prefix
@@ -10,6 +18,8 @@ pointers and lengths, `n` and `e`, and the number of candidates tried).
 data `p`. The head, the loads, `-n⁻¹`, `M = d e` and the check of `M` leak
 the same in two runs from `GM p` (`prefix_ct`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.AArch64
 

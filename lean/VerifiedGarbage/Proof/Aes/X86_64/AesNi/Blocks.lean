@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Dec
-import VerifiedGarbage.Proof.Aes.X86_64.Blocks
+module
+
+public import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Dec
+meta import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Dec
+public import VerifiedGarbage.Proof.Aes.X86_64.Blocks
+meta import VerifiedGarbage.Proof.Aes.X86_64.Blocks
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-NI: encryption and decryption of whole blocks
@@ -15,6 +23,8 @@ given what it needs of the state (`KP`, which the loops keep): `aes` and
 original ones (`Inv`); the eight-block and one-block bodies are the same
 code for different lists of registers (`blocks_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Aes.X86_64.AesNi
 
@@ -552,9 +562,9 @@ theorem decrypt_correct {s₀ : State} (hp : Pre s₀) :
       gprPreserved s₀ s' ∧ (Proof.Aes.blocksX86_64 Spec.Aes.invCipher).post s₀ s' := by
   have hscr : (scrR s₀) ∈ s₀.wr := by rw [hp.wr]; simp
   have hsch : (sR s₀) ∈ s₀.rd ++ s₀.wr := List.mem_append_left _ (by rw [hp.rd]; simp)
-  refine WP.seq (WP.mono (imcKeys_ok hp.rounds (by simp) hscr hsch hp.s_scr)
+  refine WP.seq (WP.mono (imcKeys_ok hp.rounds (by simp) ⟨_, hscr, Region.contains_self _ _⟩ hsch hp.s_scr)
     fun s₁ ⟨S, hS₁, hcov⟩ => ?_)
-  have hK₁ := dKeys_of_imc (keys₀ hp) hscr hp.s_scr hS₁ hcov
+  have hK₁ := dKeys_of_imc (keys₀ hp) ⟨_, hscr, Region.contains_self _ _⟩ hp.s_scr hS₁ hcov
   refine WP.seq (WP.mono (blocksLoad_ok s₁) fun s₂ ⟨r10₂, g₂, m₂, rd₂, wr₂, _, cf₂⟩ => ?_)
   have g : ∀ r, r ≠ .r10 → s₂.gpr r = s₀.gpr r := fun r h => by rw [g₂ r h, hS₁.gpr]
   have hI₂ : Inv (KPd s₀) (Spec.Aes.invCipher (nr s₀) (sch s₀)) s₀ 0 0 s₂ :=

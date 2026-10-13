@@ -1,5 +1,7 @@
-import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.SignCT
+module
+
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.SignCT
 
 /-!
 # RSASSA-PKCS1-v1_5 signing on x86-64
@@ -10,6 +12,8 @@ is emitted once for each implementation (`Variants/RsaPrivateCrt/X86_64/`),
 named with its suffix (e.g. `vg_rsa_pkcs1_sign_adx`), and needs its CPU
 features.
 -/
+
+@[expose] public section
 
 namespace VG.Generic.RsaPrivateCrt.X86_64.RsaPkcs1Sig
 

@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtEntry
-import VerifiedGarbage.Impl.Rsa.X86_64.CheckKey
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtEntry
+public import VerifiedGarbage.Impl.Rsa.X86_64.CheckKey
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_check_key` on x86-64: the entry
@@ -8,6 +14,8 @@ import VerifiedGarbage.Impl.Rsa.X86_64.CheckKey
 stack) in the header of the working space, leaves its base in `rdi`, and
 `e` and its length in `r8` and `r9` for `expCheck` (`keyEntry_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.X86_64.Key
 

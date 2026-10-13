@@ -1,5 +1,7 @@
-import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.AesCtr.X86_64.Verified
+module
+
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.AesCtr.X86_64.Verified
 
 /-!
 # AES-CTR (NIST SP 800-38A §6.5) on x86-64
@@ -12,6 +14,8 @@ implementation (`Variants/AesCtr32/X86_64/`), named with its suffix (e.g.
 The stack is 8 bytes: the return address of the call of `vg_aes_ctr32`,
 which uses no stack.
 -/
+
+@[expose] public section
 
 namespace VG.Generic.AesCtr32.X86_64.AesCtr
 

@@ -1,10 +1,18 @@
-import VerifiedGarbage.Proof.Weierstrass.Words
-import VerifiedGarbage.Proof.P256.EcdhJac.Select
-import VerifiedGarbage.Proof.P256.EcdhJac.Frame
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowNeg
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Zero
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.Words
+public import VerifiedGarbage.Proof.P256.EcdhJac.Select
+public import VerifiedGarbage.Proof.P256.EcdhJac.Frame
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowNeg
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Zero
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## `Entry` -/
+
+@[expose] public section
 
 section
 

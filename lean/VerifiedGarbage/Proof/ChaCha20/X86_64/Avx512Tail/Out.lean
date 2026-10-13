@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512Tail.Sym
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Finish
+module
+
+public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512Tail.Sym
+public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Finish
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ChaCha20 on x86-64 with AVX-512, the last bytes: the input states and the output
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Finish
 The terms the code around the rounds leaves (`Sym`), compared by the kernel
 with the input states and the keystream blocks, and evaluated.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.ChaCha20.X86_64.Avx512Tail
 

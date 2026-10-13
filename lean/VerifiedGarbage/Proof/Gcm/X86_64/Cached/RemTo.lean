@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Rem
-import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Loop48To
+module
+
+public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Rem
+public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Loop48To
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The blocks after the last group, out of place
@@ -10,8 +16,10 @@ after the last group from the plaintext (at `rdx + r8`, `r8` holding
 blocks (`remSetup_ok`), the keystream of the `r` blocks while the last group
 of the output is hashed (`ksSel_ok`, on the in-place view `dst s₀`), the
 `r` blocks encrypted and their products with their powers added
-(`remLoop_ok`), and reduced into `Y`.
+(`remLoops_ok`), and reduced into `Y`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Gcm.X86_64.StitchZHTo
 
@@ -22,12 +30,12 @@ open VG.Proof.Gcm.X86_64.Pclmul (Prod prod reduceB)
 open VG.Impl.Gcm.X86_64.Pclmul (poly at_)
 open VG.Impl.Gcm.X86_64.Stitch (aregs storeCtr storeY)
 open VG.Impl.Gcm.X86_64.StitchZ (gq lastG)
-open VG.Impl.Gcm.X86_64.StitchZH (ksSel remWith remSetup remBody remNext tailR)
+open VG.Impl.Gcm.X86_64.StitchZH (ksSel remWith remSetup remBody tailR remLoops)
 open VG.Impl.Gcm.X86_64.StitchZHTo (remTo)
 open VG.Proof.Gcm.X86_64.StitchZ (GEnv QG gq_ok FinOk)
 open VG.Proof.Gcm.X86_64.StitchZTo (EInvTo dst dst_gpr_ne dst_mem sAddr oAddr ctbT blocks_ctr32To finalTo_ok)
-open VG.Proof.Gcm.X86_64.StitchZH (RemOk REnv RInv ksR ksSel_ok QG.ksR remSetup_ok remLoop_ok keys_of cmp16_ok
-  accR_congr)
+open VG.Proof.Gcm.X86_64.StitchZH (RemOk REnv RInv1 ksR ksSel_ok QG.ksR remSetup_ok remLoops_ok keys_of cmp16_ok
+  laneAcc_congr zeroZ_ok)
 open VG.Proof.Aes.X86_64.AesNi (blockAt_frame Keys)
 open VG.Proof.Gcm.X86_64 (revMask)
 open VG.Spec.Gcm (Block blockAt blocksAt ghashFrom inc32)
@@ -39,8 +47,9 @@ theorem remPreTo_ok (s : State) :
       ([.alu .add .r8 (.reg .rdx)] : List Instr) ++ Impl.Gcm.X86_64.StitchAvx.zero)) s
       fun s' => s'.gpr .rdx = s.gpr .rdx + 256 ∧ s'.gpr .r8 = s.gpr .r8 + (s.gpr .rdx + 256) ∧
         s'.gpr .r10 = BitVec.ofNat 64 (16 * 0) ∧
-        (∀ q, q ≠ .rdx → q ≠ .r10 → q ≠ .r8 → s'.gpr q = s.gpr q) ∧ prod (s'.proj 0) = Prod.zero ∧
-        (∀ x, x ≠ .xmm8 → x ≠ .xmm9 → x ≠ .xmm10 → s'.lane x 0 = s.lane x 0) ∧
+        (∀ q, q ≠ .rdx → q ≠ .r10 → q ≠ .r8 → s'.gpr q = s.gpr q) ∧
+        (∀ l < 4, s'.zlane .xmm8 l = 0 ∧ s'.zlane .xmm9 l = 0 ∧ s'.zlane .xmm10 l = 0) ∧
+        (∀ x, x ≠ .xmm8 → x ≠ .xmm9 → x ≠ .xmm10 → ∀ l < 4, s'.zlane x l = s.zlane x l) ∧
         s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   have e256 : BitVec.signExtend 64 (256 : BitVec 32) = 256 := by decide
   rw [WP.block_append_iff]
@@ -48,7 +57,7 @@ theorem remPreTo_ok (s : State) :
       ([.alu .add .r8 (.reg .rdx)] : List Instr))) s fun s₁ =>
       s₁.gpr .rdx = s.gpr .rdx + 256 ∧ s₁.gpr .r8 = s.gpr .r8 + (s.gpr .rdx + 256) ∧
       s₁.gpr .r10 = BitVec.ofNat 64 (16 * 0) ∧
-      (∀ q, q ≠ .rdx → q ≠ .r10 → q ≠ .r8 → s₁.gpr q = s.gpr q) ∧ (∀ x l, s₁.lane x l = s.lane x l) ∧
+      (∀ q, q ≠ .rdx → q ≠ .r10 → q ≠ .r8 → s₁.gpr q = s.gpr q) ∧ (∀ x l, s₁.zlane x l = s.zlane x l) ∧
       s₁.mem = s.mem ∧ s₁.rd = s.rd ∧ s₁.wr = s.wr := by
     apply WP.of_runBlock
     simp only [List.cons_append, List.nil_append, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu,
@@ -57,10 +66,10 @@ theorem remPreTo_ok (s : State) :
     exact ⟨trivial, trivial, rfl, fun q h1 h2 h3 => by simp only [h1, h2, h3, ↓reduceIte], fun _ _ => rfl, trivial,
       trivial, trivial⟩
   refine WP.mono hA fun s₁ ⟨d₁, r₁, z₁, g₁, l₁, m₁, rd₁, wr₁⟩ => ?_
-  refine WP.mono (Gcm.X86_64.StitchAvx.zero_ok s₁) fun s' ⟨p', f'⟩ =>
-    ⟨by rw [f'.gpr, d₁], by rw [f'.gpr, r₁], by rw [f'.gpr, z₁], fun q h1 h2 h3 => by rw [f'.gpr, g₁ q h1 h2 h3],
-      p', fun x h8 h9 h10 => by rw [f'.lane x (by simp [h8, h9, h10]) 0 (by decide), l₁], by rw [f'.mem, m₁],
-      by rw [f'.rd, rd₁], by rw [f'.wr, wr₁]⟩
+  refine WP.mono (zeroZ_ok s₁) fun s' ⟨zz, f', g', m', rd', wr'⟩ =>
+    ⟨by rw [g', d₁], by rw [g', r₁], by rw [g', z₁], fun q h1 h2 h3 => by rw [g', g₁ q h1 h2 h3],
+      zz, fun x h8 h9 h10 l hl => by rw [f' x h8 h9 h10 l hl, l₁], by rw [m', m₁],
+      by rw [rd', rd₁], by rw [wr', wr₁]⟩
 
 theorem remTo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {P : Nat → Nat → Block} (hf : FinOk (hk s₀) P)
     (hr : RemOk (hk s₀) P) {e : Nat} {s : State} (hI : EInvTo s₀ P e s) (hex : nb s₀ - 16 * (e - 1) < 32)
@@ -89,8 +98,7 @@ theorem remTo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {P : Nat → 
   rw [show remTo = .seq (.block remSetup) (.seq ksSel
       (.seq (.block (([.alu .add .rdx (.imm 256), .mov32 .r10 (.imm 0)] : List Instr) ++
           ([.alu .add .r8 (.reg .rdx)] : List Instr) ++ Impl.Gcm.X86_64.StitchAvx.zero))
-        (.seq (.loop (.block (remBody .r8 ++ remNext)) .ne)
-          (.block (Impl.Gcm.X86_64.StitchAvx.reduceHash ++ storeY))))) from rfl]
+        (.seq (remLoops .r8) (.block storeY)))) from rfl]
   -- The counter after all the blocks, and the powers of the `r` blocks.
   refine WP.seq (WP.mono (WP.hkeep (by decide) (remSetup_ok s hr1 hr15 hr9
     (by rw [← State.zlane_lt2 _ _ (by decide)]; exact hI.a.msk 0 (by decide))
@@ -211,7 +219,29 @@ theorem remTo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {P : Nat → 
           ⟨oAddr s₀ (16 * e), 16 * r⟩
         rw [Offset.add_add]
         exact (hp.o_p.symm.sub_left (Offset.sub_base _ (by omega))).sub_right (Offset.sub_base _ (by omega)) }
-  have hI₃ : RInv E 0 s₃ :=
+  have h4 : E.Ok4 :=
+    { inS4 := fun j (hj : j + 4 ≤ r) => by
+        show InRegions (s₃.rd ++ s₃.wr) (sAddr s₀ (16 * e) + BitVec.ofNat 64 (16 * j)) 64
+        rw [hrd₃, hwr₃, Offset.add_add, ← Nat.mul_add]
+        exact in_sub hp.s_in (by omega)
+      inK4 := fun j (hj : j + 4 ≤ r) => by
+        show InRegions (s₃.rd ++ s₃.wr) (pp s₀ + BitVec.ofNat 64 (768 + 16 * j)) 64
+        rw [hrd₃, hwr₃]
+        exact in_rdwr (in_sub hp.p_in (by omega))
+      inD4 := fun j (hj : j + 4 ≤ r) => by
+        show InRegions s₃.wr (oAddr s₀ (16 * e) + BitVec.ofNat 64 (16 * j)) 64
+        rw [hwr₃, Offset.add_add, ← Nat.mul_add]
+        exact in_sub hp.o_in (by omega)
+      inW4 := fun j (hj : j + 4 ≤ r) => by
+        show InRegions (s₃.rd ++ s₃.wr) (pp s₀ + BitVec.ofNat 64 (256 - 16 * r) + BitVec.ofNat 64 (16 * j)) 64
+        rw [hrd₃, hwr₃, Offset.add_add]
+        exact in_rdwr (in_sub hp.p_in (by omega))
+      dW4 := fun j (hj : j + 4 ≤ r) => by
+        show Region.Disjoint ⟨pp s₀ + BitVec.ofNat 64 (256 - 16 * r) + BitVec.ofNat 64 (16 * j), 64⟩
+          ⟨oAddr s₀ (16 * e), 16 * r⟩
+        rw [Offset.add_add]
+        exact (hp.o_p.symm.sub_left (Offset.sub_base _ (by omega))).sub_right (Offset.sub_base _ (by omega)) }
+  have hI₃ : RInv1 E 0 s₃ :=
     { le := Nat.zero_le _, r10 := z₃
       r9 := by
         show s₃.gpr .r9 = _
@@ -219,32 +249,37 @@ theorem remTo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {P : Nat → 
       gpr := fun _ _ _ => rfl, rd := rfl, wr := rfl
       frame := Frame.refl _ _
       ct := fun j hj => absurd hj (Nat.not_lt_zero _)
-      prod := p₃
-      y := rfl
-      m0 := by
-        rw [l₃ _ (by decide) (by decide) (by decide), ← State.zlane_lt2 _ _ (by decide),
-          l₂ _ (by decide) (by decide) (by decide) (by decide) 0 (by decide), z₁ _ (by decide) 0 (by decide)]
-        exact hI.a.msk 0 (by decide)
-      m1 := by
-        rw [l₃ _ (by decide) (by decide) (by decide), ← State.zlane_lt2 _ _ (by decide)]
-        exact h1₂ 0 (by decide) }
-  refine WP.seq (WP.mono (remLoop_ok hE hI₃) fun s₄ hI₄ => ?_)
-  -- The products reduced into `Y`, and `Y` stored.
-  rw [WP.block_append_iff]
-  refine WP.mono (Gcm.X86_64.StitchAvx.reduceHash_ok s₄ hI₄.m1) fun s₅ ⟨y₅, f₅⟩ => ?_
-  have hrcx : s₅.gpr .rcx = yp s₀ := by
-    rw [f₅.gpr, hI₄.gpr _ (by decide) (by decide)]
+      prod := by
+        obtain ⟨a, b, c⟩ := p₃ 0 (by decide)
+        simp only [prod, State.proj_xmm, ← State.zlane_lt2 _ _ (show 0 < 2 by decide), a, b, c]
+        rfl
+      zhi := fun l _ hl => p₃ l hl
+      y := fun l hl => by
+        rcases Nat.eq_zero_or_pos l with rfl | hl0
+        · rw [State.zlane_lt2 _ _ (by decide)]; rfl
+        · rw [ite_eq_right_iff.2 (fun h => absurd h (by omega)), l₃ _ (by decide) (by decide) (by decide) l hl]
+          exact y₂.2 l hl0 hl
+      m0 := fun l hl => by
+        rw [l₃ _ (by decide) (by decide) (by decide) l hl,
+          l₂ _ (by decide) (by decide) (by decide) (by decide) l hl, z₁ _ (by decide) l hl]
+        exact hI.a.msk l hl
+      m1 := fun l hl => by
+        rw [l₃ _ (by decide) (by decide) (by decide) l hl]
+        exact h1₂ l hl }
+  refine WP.seq (WP.mono (remLoops_ok hE h4 hI₃) fun s₄ hI₄ => ?_)
+  -- `Y` stored.
+  have hrcx : s₄.gpr .rcx = yp s₀ := by
+    rw [hI₄.gpr _ (by decide) (by decide)]
     show s₃.gpr .rcx = _
     rw [gk₃ _ (by decide) (by decide) (by decide) (by decide)]
     exact hI.gpr _ (by decide) (by decide) (by decide) (by decide) (by decide)
   rw [show storeY = [.vop (.vbin .vpshufb .l128 .xmm2 .xmm2 .xmm0),
     .vmovdquStore .l128 (at_ .rcx 0) .xmm2] ++ [.vop .vzeroupper] from rfl, WP.block_append_iff]
-  refine WP.mono (Gcm.X86_64.StitchZ.store16Z_ok .xmm2 .xmm2 .rcx s₅
-    (by rw [f₅.lane _ (by decide) 0 (by decide)]; exact hI₄.m0)
-    (by rw [hrcx, f₅.wr, hI₄.wr]; show InRegions s₃.wr _ _; rw [hwr₃]; exact hp.y_in))
+  refine WP.mono (Gcm.X86_64.StitchZ.store16Z_ok .xmm2 .xmm2 .rcx s₄ hI₄.m0
+    (by rw [hrcx, hI₄.wr]; show InRegions s₃.wr _ _; rw [hwr₃]; exact hp.y_in))
     fun s₆ ⟨m₆, g₆, rd₆, wr₆, _⟩ => ?_
   rw [WP.block_cons_iff]; refine ⟨_, rfl, WP.block_nil ?_⟩
-  rw [hrcx, f₅.mem] at m₆
+  rw [hrcx] at m₆
   have hnb : nb s₀ = 16 * e + r := by omega
   -- What the stages keep of the memory before them.
   have toS : ∀ p : Addr, Region.Disjoint ⟨p, 16⟩ (cR s₀) → Region.Disjoint ⟨p, 16⟩ (ksR s₀) →
@@ -315,8 +350,10 @@ theorem remTo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {P : Nat → 
     have hbl : blocksAt s₆.mem (op s₀) (nb s₀) = (List.range (nb s₀)).map (ctbT s₀) := by
       simp only [blocksAt]
       exact List.map_congr_left fun k hk => hb k (by simpa using hk)
-    rw [hbl, m₆, VG.Proof.Gcm.X86_64.blockAt_store, y₅, hI₄.prod, accR_congr _ r hX hT, hr r hr1 hr15,
-      show E.y = s₃.lane .xmm2 0 from rfl, l₃ _ (by decide) (by decide) (by decide), hY₂, hnb,
+    rw [hbl, m₆, VG.Proof.Gcm.X86_64.blockAt_store, hI₄.y, laneAcc_congr _ _ 0 r hX hT,
+      laneAcc_congr _ _ 1 r hX hT, laneAcc_congr _ _ 2 r hX hT, laneAcc_congr _ _ 3 r hX hT, hr r hr1 hr15,
+      show E.y = s₃.lane .xmm2 0 from rfl, ← State.zlane_lt2 _ _ (show 0 < 2 by decide),
+      l₃ _ (by decide) (by decide) (by decide) 0 (by decide), State.zlane_lt2 _ _ (show 0 < 2 by decide), hY₂, hnb,
       List.range_add, List.map_append, List.map_map]
     simp only [ghashFrom, List.foldl_append]
     rfl
@@ -340,14 +377,14 @@ theorem remTo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {P : Nat → 
     exact (((F0.trans F1).trans F2).trans F3).writeW (by simp) _ (Region.contains_self _ _)
   · intro q h1 h2 h3 h4 h5
     show s₆.gpr q = _
-    rw [g₆, f₅.gpr, hI₄.gpr q h4 h5]
+    rw [g₆, hI₄.gpr q h4 h5]
     show s₃.gpr q = _
     rw [gk₃ q h2 h5 h1 h3]
     exact hI.gpr q h1 h2 h3 h4 h5
   · show s₆.rd = _
-    rw [rd₆, f₅.rd, hI₄.rd]; exact hrd₃
+    rw [rd₆, hI₄.rd]; exact hrd₃
   · show s₆.wr = _
-    rw [wr₆, f₅.wr, hI₄.wr]; exact hwr₃
+    rw [wr₆, hI₄.wr]; exact hwr₃
 
 /-- The end of `encR`: the last group, and the blocks after it if any. -/
 theorem tailRTo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {P : Nat → Nat → Block} (hf : FinOk (hk s₀) P)

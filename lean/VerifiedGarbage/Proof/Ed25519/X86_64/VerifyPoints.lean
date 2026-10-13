@@ -1,11 +1,17 @@
-import VerifiedGarbage.Proof.Ed25519.X86_64.WindowSlide
-import VerifiedGarbage.Proof.Ed25519.X86_64.RecodeAll
-import VerifiedGarbage.Proof.Ed25519.X86_64.Bits
-import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulCounter
-import VerifiedGarbage.Proof.Ed25519.Window
-import VerifiedGarbage.Proof.Ed25519.X86_64.PointEqual
-import VerifiedGarbage.Proof.Ed25519.X86_64.PointMul
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
+module
+
+public import VerifiedGarbage.Proof.Ed25519.X86_64.WindowSlide
+public import VerifiedGarbage.Proof.Ed25519.X86_64.RecodeAll
+public import VerifiedGarbage.Proof.Ed25519.X86_64.Bits
+public import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulCounter
+public import VerifiedGarbage.Proof.Ed25519.Window
+public import VerifiedGarbage.Proof.Ed25519.X86_64.PointEqual
+public import VerifiedGarbage.Proof.Ed25519.X86_64.PointMul
+public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Verification's equation, from the windows
@@ -15,6 +21,8 @@ import VerifiedGarbage.Proof.Framework.RelCTAssoc
 with `-R`: they are equal exactly when `[S]B = R + [k]A`, which, as `A` and `R` represent points
 of the group, is the specification's comparison.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed25519.X86_64
 

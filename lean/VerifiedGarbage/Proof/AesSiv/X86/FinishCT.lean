@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.AesSiv.X86.Finish
+module
+
+public import VerifiedGarbage.Proof.AesSiv.X86.Finish
+meta import VerifiedGarbage.Proof.AesSiv.X86.Finish
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-SIV on x86: finishing S2V is constant time
@@ -8,6 +15,8 @@ block from `ebp`; the registers that hold addresses computed from the
 string's length (public) are pinned to their values where a block uses
 them, and the calls are constant time by their contracts.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

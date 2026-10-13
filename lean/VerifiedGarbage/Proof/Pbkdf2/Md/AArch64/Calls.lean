@@ -1,11 +1,17 @@
-import VerifiedGarbage.Spec.Pbkdf2.Generic
-import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.Framework.RelCT
-import VerifiedGarbage.Proof.Framework.AArch64.RelCT
-import VerifiedGarbage.Proof.Framework.AArch64.Taint
-import VerifiedGarbage.Impl.Pbkdf2.Md.AArch64
-import VerifiedGarbage.Proof.Framework.OmegaLit
-import VerifiedGarbage.Proof.Framework.AArch64.Syms
+module
+
+public import VerifiedGarbage.Spec.Pbkdf2.Generic
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+public import VerifiedGarbage.Proof.Framework.AArch64.Taint
+public import VerifiedGarbage.Impl.Pbkdf2.Md.AArch64
+public import VerifiedGarbage.Proof.Framework.OmegaLit
+public import VerifiedGarbage.Proof.Framework.AArch64.Syms
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # HMAC and PBKDF2-HMAC over any Merkle–Damgård hash function on AArch64: the calls
@@ -28,6 +34,8 @@ The contracts the proofs are written against, as on x86-64
 The return address is in `x30`, not on the stack, so no region needs to be
 kept disjoint from it.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Pbkdf2.Md.AArch64.Calls
 

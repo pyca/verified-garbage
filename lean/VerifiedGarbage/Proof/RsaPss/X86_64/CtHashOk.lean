@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.RsaPss.X86_64.CtComp
-import VerifiedGarbage.Proof.RsaPss.X86_64.FixedPad
+module
+
+public import VerifiedGarbage.Proof.RsaPss.X86_64.CtComp
+public import VerifiedGarbage.Proof.RsaPss.X86_64.FixedPad
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSASSA-PSS on x86-64: `ctHash`, verified
@@ -9,6 +15,8 @@ From a state whose `Y` holds a message of `ℓ` bytes followed by zeros up to
 message's digest at `scratch + oDig` (`ctHash_ok`), changing only the start
 of our working space, `Y`, and the slots of its counters.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPss.X86_64
 

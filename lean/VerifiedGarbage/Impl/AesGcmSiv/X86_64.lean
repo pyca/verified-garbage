@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.AesGcm.X86_64
+module
+
+public import VerifiedGarbage.Impl.AesGcm.X86_64
 
 /-!
 # AES-GCM-SIV: x86-64 implementation
@@ -13,11 +15,12 @@ implementations as AES-GCM is (`Impl.AesGcm.X86_64.Callees`: only `ctr`,
 `vg_aes_encrypt_blocks` that goes with `ctr` (`e`).
 
 * The message keys (RFC 8452 §4): `CIPH_K(little_endian_uint32(i) ‖ nonce)`
-  for `i` from 0 to `rounds / 2 - 2` (3 for 10 rounds, 5 for 14), each by
-  `vg_aes_ctr32` on a zero block, of which the first 8 bytes are kept, one
-  after the other from `W + 16` (`derive`): the authentication key at
-  `W + 16`, the encryption key at `W + 32`; the encryption key is expanded
-  by `vg_aes_expand_key`, for the same number of rounds (`expand`).
+  for `i` from 0 to `rounds / 2 - 2` (3 for 10 rounds, 5 for 14), all by one
+  call of `vg_aes_encrypt_blocks` on those blocks at `W + 488`, of which the
+  first 8 bytes are kept, one after the other from `W + 16` (`derive`): the
+  authentication key at `W + 16`, the encryption key at `W + 32`; the
+  encryption key is expanded by `vg_aes_expand_key`, for the same number of
+  rounds (`expand`).
 * POLYVAL (§3) is GHASH on the same bits (`Proof.GcmSiv.Polyval`) with the
   key `H · x` (`hkey`), on blocks in the other byte order: each block is
   copied to `W + 488` with its bytes reversed before `vg_ghash` absorbs it
@@ -58,6 +61,8 @@ preserve them, and `rbx`, `rbp`, `r12` and `r14`, which hold lengths,
 pointers and counts across calls. Only the pointers, the lengths and
 `rounds` (and for `open`, whether the tag is right) affect timing.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.AesGcmSiv.X86_64
 
@@ -119,21 +124,38 @@ def ctrArgs : List Instr :=
 
 /-! ## The keys -/
 
-/-- `little_endian_uint32(rbx) ‖ nonce` at `W + ccO`, and a zero block at
-`W + bO`. -/
+/-- `little_endian_uint32(rbx) ‖ nonce` at `rdi`. -/
 def deriveBlock : List Instr :=
-  ([.mov .rax (.mem (at_ .r15 nonceO)), .mov32 .rcx (.mem (at_ .rax 0)), .mov32 .rdx (.mem (at_ .rax 4)),
-    .mov32 .r8 (.mem (at_ .rax 8)), .store32 (at_ .r15 ccO) .rbx, .store32 (at_ .r15 (ccO + 4)) .rcx,
-    .store32 (at_ .r15 (ccO + 8)) .rdx, .store32 (at_ .r15 (ccO + 12)) .r8] : List Instr) ++ zero16 bO
+  [.mov .rax (.mem (at_ .r15 nonceO)), .mov32 .rcx (.mem (at_ .rax 0)), .mov32 .rdx (.mem (at_ .rax 4)),
+    .mov32 .r8 (.mem (at_ .rax 8)), .store32 (at_ .rdi 0) .rbx, .store32 (at_ .rdi 4) .rcx,
+    .store32 (at_ .rdi 8) .rdx, .store32 (at_ .rdi 12) .r8]
 
-/-- The message keys, 8 bytes per block, from `W + akO`. -/
-def derive : Prog isa :=
-  .seq (.block (([.mov32 .rbx (imm 0)] : List Instr) ++ ptr .r12 .r15 akO ++
+/-- The `rbp` blocks `little_endian_uint32(i) ‖ nonce` from `W + revO`, for
+`i` from 0. -/
+def deriveBlocks : Prog isa :=
+  .seq (.block (([.mov32 .rbx (imm 0)] : List Instr) ++ ptr .rdi .r15 revO ++
       ([.mov .rbp (.mem (at_ .r15 roundsO)), .shift .shr .rbp 1, .alu .sub .rbp (imm 1)] : List Instr)))
-    (.loop (.seq (.block (deriveBlock ++ ([.mov .rdi (.reg .r13)] : List Instr) ++ ctrArgs ++ ptr .rcx .r15 bO))
-      (.seq (callCtr c)
-        (.block [.mov .rax (.mem (at_ .r15 bO)), .store (at_ .r12 0) .rax, .alu .add .r12 (imm 8),
-          .alu .add .rbx (imm 1), .alu .cmp .rbx (.reg .rbp)]))) .ne)
+    (.loop (.block (deriveBlock ++ ([.alu .add .rdi (imm 16), .alu .add .rbx (imm 1), .alu .cmp .rbx (.reg .rbp)] :
+      List Instr))) .ne)
+
+/-- `vg_aes_encrypt_blocks`'s arguments for the message keys: the
+key-generating key's schedule, the `rbp` blocks at `W + revO` and the working
+space. -/
+def deriveArgs : List Instr :=
+  ([.mov .rdi (.reg .r13), .mov .rsi (.mem (at_ .r15 roundsO))] : List Instr) ++ ptr .rdx .r15 revO ++
+    ([.mov .rcx (.reg .rbp)] : List Instr) ++ ptr .r8 .r15 scrO
+
+/-- The first 8 bytes of each of the `rbp` encrypted blocks at `W + revO`,
+one after the other from `W + akO`. -/
+def deriveKeep : Prog isa :=
+  .seq (.block (ptr .rsi .r15 revO ++ ptr .rdi .r15 akO ++ ([.mov .rcx (.reg .rbp)] : List Instr)))
+    (.loop (.block [.mov .rax (.mem (at_ .rsi 0)), .store (at_ .rdi 0) .rax, .alu .add .rsi (imm 16),
+      .alu .add .rdi (imm 8), .alu .sub .rcx (imm 1)]) .ne)
+
+/-- The message keys (all their blocks encrypted by one call of
+`vg_aes_encrypt_blocks`), 8 bytes per block, from `W + akO`. -/
+def derive : Prog isa :=
+  .seq deriveBlocks (.seq (.block deriveArgs) (.seq (callEcb e) deriveKeep))
 
 /-- The encryption key's schedule at `W + skO`: its length is
 `4 (rounds − 6)`. -/
@@ -314,7 +336,7 @@ def tagOut : List Instr :=
 
 /-- The keys and POLYVAL's key. -/
 def keys : Prog isa :=
-  .seq (derive c) (.seq (expand c) (.block hkey))
+  .seq (derive e) (.seq (expand c) (.block hkey))
 
 /-- POLYVAL of the additional data, the data and the lengths, and the tag
 input. -/
@@ -327,12 +349,12 @@ def polyval : Prog isa :=
 
 /-- `vg_aes_gcm_siv_seal`. -/
 def «seal» : Prog isa :=
-  .seq (.block entry) (.seq (keys c) (.seq (polyval c) (.seq (tag c tagO) (.seq (crypt c e)
+  .seq (.block entry) (.seq (keys c e) (.seq (polyval c) (.seq (tag c tagO) (.seq (crypt c e)
     (.block (tagOut ++ restore))))))
 
 /-- `vg_aes_gcm_siv_open`. -/
 def «open» : Prog isa :=
-  .seq (.block entry) (.seq (.block recv) (.seq (keys c) (.seq (crypt c e) (.seq (polyval c) (.seq (tag c bO)
+  .seq (.block entry) (.seq (.block recv) (.seq (keys c e) (.seq (crypt c e) (.seq (polyval c) (.seq (tag c bO)
     (.seq (.block cmp) (.seq mask (.block (([.mov .rax (.mem (at_ .r15 okO))] : List Instr) ++ restore)))))))))
 
 end VG.Impl.AesGcmSiv.X86_64

@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.MlDsa.X86.Arith.Basic
-import VerifiedGarbage.Impl.MlKem.X86.Ntt
+module
+
+public import VerifiedGarbage.Impl.MlDsa.X86.Arith.Basic
+public import VerifiedGarbage.Impl.MlKem.X86.Ntt
 
 /-!
 # ML-DSA on x86 (32-bit): `vg_mldsa_ntt` and `vg_mldsa_inv_ntt`
@@ -28,6 +30,8 @@ times the zeta, reduced.
 
 Every address and branch depends only on the pointers.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.X86.Arith
 

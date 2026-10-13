@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Bignum.X86_64
+module
+
+public import VerifiedGarbage.Impl.Bignum.X86_64
 
 /-!
 # Montgomery multiplication as a function (x86-64)
@@ -14,6 +16,8 @@ store-to-load forwarding on some cores. It never writes `rdi`.
 
 `call o a b` is the call, with the indices in the argument registers.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Bignum.X86_64.MontFn
 

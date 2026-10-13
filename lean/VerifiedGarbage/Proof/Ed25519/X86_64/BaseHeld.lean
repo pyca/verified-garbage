@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Ed25519.X86_64.BaseOdd
-import VerifiedGarbage.Proof.Ed25519.X86_64.BaseEntry
-import VerifiedGarbage.Proof.Ed25519.X86_64.CombSelect
+module
+
+public import VerifiedGarbage.Proof.Ed25519.X86_64.BaseOdd
+public import VerifiedGarbage.Proof.Ed25519.X86_64.BaseEntry
+public import VerifiedGarbage.Proof.Ed25519.X86_64.CombSelect
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The static's words are its entries
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.Ed25519.X86_64.CombSelect
 Word `16 j + 4 f + w` of `baseOddWords` is word `w` of field `f` of entry `j`, so a memory
 holding the words at `T` holds entry `j` at `T + 128 j` (`baseTbl_entry`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed25519.X86_64
 

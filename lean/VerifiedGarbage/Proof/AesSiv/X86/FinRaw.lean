@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.CmacAes.Stream.X86.Call
-import VerifiedGarbage.Proof.AesSiv.X86.Contract
+module
+
+public import VerifiedGarbage.Proof.CmacAes.Stream.X86.Call
+public import VerifiedGarbage.Proof.AesSiv.X86.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-SIV on x86: calling `vg_cmac_aes_finalize` with any subkeys
@@ -14,6 +20,8 @@ with the subkeys its key context holds (`Spec.Siv.ctxMac`), so its calls use
 this (`finr_call`), with `WP.callWith` from this correctness of the same
 code.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesSiv.X86
 

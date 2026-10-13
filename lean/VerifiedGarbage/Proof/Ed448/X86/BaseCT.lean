@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.Ed448.X86.BaseMain
-import VerifiedGarbage.Proof.Ed448.X86.BaseLit
-import VerifiedGarbage.Proof.Ed448.X86.ScalarVerified
+module
+
+public import VerifiedGarbage.Proof.Ed448.X86.BaseMain
+meta import VerifiedGarbage.Proof.Ed448.X86.BaseMain
+public import VerifiedGarbage.Proof.Ed448.X86.BaseLit
+meta import VerifiedGarbage.Proof.Ed448.X86.BaseLit
+public import VerifiedGarbage.Proof.Ed448.X86.ScalarVerified
+meta import VerifiedGarbage.Proof.Ed448.X86.ScalarVerified
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 base-point multiplication on x86 (32-bit): constant time
@@ -13,6 +22,8 @@ block by the taint analysis from what each run's correctness says of its own
 state (`BaseMain.lean`'s stages), and the loop and the inversion's runs of
 squarings by `RelCT.loop`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.X86
 

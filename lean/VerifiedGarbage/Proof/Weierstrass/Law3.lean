@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Weierstrass.Law
-import VerifiedGarbage.Proof.Weierstrass.Env
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.Law
+public import VerifiedGarbage.Proof.Weierstrass.Env
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The group law for `a = -3`
@@ -12,6 +18,8 @@ and itself on the curve (`rcbDbl3_eq`), and a representative of a point of
 the curve satisfies the projective equation (`Rep.proj`), so it maps a
 representative of a point to one of its double (`Law.dbl3`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass
 

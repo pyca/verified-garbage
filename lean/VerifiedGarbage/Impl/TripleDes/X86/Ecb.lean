@@ -1,4 +1,9 @@
-import VerifiedGarbage.Impl.TripleDes.X86.Block
+module
+
+public import VerifiedGarbage.Impl.TripleDes.X86.Block
+
+@[expose] public section
+
 namespace VG.Impl.TripleDes.X86.Ecb
 open VG.X86 VG.Impl.TripleDes.X86
 open VG.Spec.TripleDes (Direction)

@@ -1,5 +1,13 @@
-import VerifiedGarbage.Impl.MlDsa.AArch64.Arith.AddSub
-import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
+module
+
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Arith.AddSub
+meta import VerifiedGarbage.Impl.MlDsa.AArch64.Arith.AddSub
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on AArch64: `vg_mldsa_add` and `vg_mldsa_sub`
@@ -7,6 +15,8 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
 The body stores the value `v i` to coefficient `i` of `f` (`addBody_ok`,
 `subBody_ok`); the loop is proven once for any such body (`AddSub.fn_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Arith
 

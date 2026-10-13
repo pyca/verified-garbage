@@ -1,9 +1,15 @@
-import VerifiedGarbage.Proof.AesSiv.X86_64.Init
-import VerifiedGarbage.Proof.AesSiv.X86_64.EncCT
-import VerifiedGarbage.Proof.CmacAes.X86_64.Verified
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Spec.Siv.Contract
-import VerifiedGarbage.Proof.AesSiv.Scratch
+module
+
+public import VerifiedGarbage.Proof.AesSiv.X86_64.Init
+public import VerifiedGarbage.Proof.AesSiv.X86_64.EncCT
+public import VerifiedGarbage.Proof.CmacAes.X86_64.Verified
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.Siv.Contract
+public import VerifiedGarbage.Proof.AesSiv.Scratch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-SIV on x86-64: `Verified`
@@ -14,6 +20,8 @@ contracts of `Spec/Siv/Contract.lean`, with 16 bytes of stack: the return
 addresses of the call of a CMAC function (or of `vg_aes_ctr32`) and of its
 call of `vg_aes_ctr32`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesSiv.X86_64
 

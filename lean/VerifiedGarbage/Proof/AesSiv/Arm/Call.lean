@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.CmacAes.Stream.Arm.Call
-import VerifiedGarbage.Proof.CmacAes.Arm.Verified
-import VerifiedGarbage.Impl.AesSiv.Arm
+module
+
+public import VerifiedGarbage.Proof.CmacAes.Stream.Arm.Call
+public import VerifiedGarbage.Proof.CmacAes.Arm.Verified
+public import VerifiedGarbage.Impl.AesSiv.Arm
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-SIV on ARMv7: the calls of `vg_cmac_aes_finalize`
@@ -14,6 +20,8 @@ arguments leak the same (`fin_rel`). The calls of `vg_cmac_aes_update` are
 AES-CCM's (`Proof.AesCcm.Arm.upd_call`, `upd_rel`), and those of
 `vg_aes_ctr32` AES-GCM's (`Proof.AesGcm.Arm.ctr_call`, `ctr_rel`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesSiv.Arm
 

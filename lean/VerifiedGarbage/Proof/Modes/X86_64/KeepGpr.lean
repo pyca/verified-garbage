@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Modes.X86_64.KeepIv
+module
+
+public import VerifiedGarbage.Proof.Modes.X86_64.KeepIv
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Code that keeps a general-purpose register
@@ -9,6 +15,8 @@ one other than `r` keeps `r`, whatever it does to the rest. A core whose
 block code needs every `xmm` register, `ivX` among them, keeps the IV's
 address in such a register around it (`Proof/Blowfish/X86_64/ModeCore.lean`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Modes.X86_64
 

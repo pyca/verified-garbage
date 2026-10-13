@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.Camellia.Arm.ExpandKey
-import VerifiedGarbage.Proof.Camellia.Arm.Verified
+module
+
+public import VerifiedGarbage.Proof.Camellia.Arm.ExpandKey
+meta import VerifiedGarbage.Proof.Camellia.Arm.ExpandKey
+public import VerifiedGarbage.Proof.Camellia.Arm.Verified
+meta import VerifiedGarbage.Proof.Camellia.Arm.Verified
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The Camellia key schedule on ARMv7 meets its contracts
@@ -11,6 +19,8 @@ code keeps in slots of the scratch buffer (stored through `sb`, the
 buffer's base). `expandKey_framed` runs it with its working space on the
 stack, zeroed on return, as `ecb_framed` does.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Camellia.Arm
 

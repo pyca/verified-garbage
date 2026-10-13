@@ -1,6 +1,8 @@
-import VerifiedGarbage.Proof.Framework.Arm.Frame
-import VerifiedGarbage.Proof.Framework.Arm.Exec
-import VerifiedGarbage.Proof.Framework.Offset
+module
+
+public import VerifiedGarbage.Proof.Framework.Arm.Frame
+public import VerifiedGarbage.Proof.Framework.Arm.Exec
+public import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # Calls of functions with frames (ARMv7)
@@ -12,6 +14,8 @@ the stack pointer: at most `armStack c` bytes of it (`Exec.frameSp`), which
 `WP.callF` lets the call change, as on AArch64 and x86
 (`Proof/Framework/AArch64/Call.lean`, `Proof/Framework/X86/Call.lean`).
 -/
+
+@[expose] public section
 
 namespace VG.Arm.FrameStack
 

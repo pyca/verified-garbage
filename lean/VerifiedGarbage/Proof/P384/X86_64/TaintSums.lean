@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
-import VerifiedGarbage.Impl.Ecdsa.P384.X86_64
+module
+
+public import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
+meta import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
+public import VerifiedGarbage.Impl.Ecdsa.P384.X86_64
+meta import VerifiedGarbage.Impl.Ecdsa.P384.X86_64
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # P-384 on x86-64: summaries of the shared loops, for constant time
@@ -19,6 +27,8 @@ summary costs more than their analysis in one more check (the kernel
 builds the code here, while the callers' checks read it from their
 literals), so they are analysed in full.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.P384.X86_64
 

@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.X25519.X86.Arith
-import Mathlib.Logic.Function.Basic
+module
+
+public import VerifiedGarbage.Proof.X25519.X86.Arith
+public import Mathlib.Logic.Function.Basic
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X25519 on x86 (32-bit): sequences of field operations
@@ -12,6 +18,8 @@ of the operations on the values of the slots (`run`), and changes no memory
 outside the slots and `T` (`[lo, T + 64)`). Also: `copy`, and `cswap` by a
 mask.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X25519.X86
 

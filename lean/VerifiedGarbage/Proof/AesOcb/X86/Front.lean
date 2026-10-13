@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesOcb.X86.TagIO
+module
+
+public import VerifiedGarbage.Proof.AesOcb.X86.TagIO
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-OCB on x86: up to the tag (`front`)
@@ -9,6 +15,8 @@ Untrusted: everything here is checked by Lean. `front` is the entry
 data (`bodySeal_ok`, `bodyOpen_ok`) and the tag at `W + d` (`tag_ok`)
 (`sealFront_ok`, `openFront_ok`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

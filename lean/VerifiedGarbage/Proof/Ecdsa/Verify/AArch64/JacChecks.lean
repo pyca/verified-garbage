@@ -1,13 +1,31 @@
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.CT
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacPrefix
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowTiming
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowStepTiming
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeTiming
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JacCombTiming
-import VerifiedGarbage.Impl.Ecdsa.Verify.P256.AArch64
-import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.Jacobian
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowFinish
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.CT
+meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.CT
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacPrefix
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacPrefix
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowTiming
+meta import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowTiming
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowStepTiming
+meta import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowStepTiming
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeTiming
+meta import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeTiming
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacCombTiming
+meta import VerifiedGarbage.Proof.Weierstrass.AArch64.JacCombTiming
+public import VerifiedGarbage.Impl.Ecdsa.Verify.P256.AArch64
+meta import VerifiedGarbage.Impl.Ecdsa.Verify.P256.AArch64
+public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.Jacobian
+meta import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.Jacobian
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowFinish
+meta import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowFinish
+public import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Verify.AArch64
 open VG VG.AArch64 VG.Impl.Ecdsa.AArch64 VG.Impl.Ecdsa.Verify.AArch64

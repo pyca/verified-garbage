@@ -1,4 +1,10 @@
-import VerifiedGarbage.Spec.Gcm
+module
+
+public import VerifiedGarbage.Spec.Gcm
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM-SIV: GHASH's product with `x`
@@ -8,6 +14,8 @@ GHASH computes POLYVAL (`Proof.GcmSiv.Polyval.polyvalFrom_eq`), in a module
 of its own, so that code computing it need not import the algebra that
 relates the two.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.GcmSiv.Polyval
 

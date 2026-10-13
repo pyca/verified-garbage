@@ -1,10 +1,12 @@
-import VerifiedGarbage.TCB.X86.Target
-import VerifiedGarbage.Proof.MlKem1024.X86.CompressEncode
-import VerifiedGarbage.Proof.MlKem1024.X86.DecodeDecompress
-import VerifiedGarbage.Proof.MlKem1024.X86.CheckEk
-import VerifiedGarbage.Proof.MlKem1024.X86.KeyGen
-import VerifiedGarbage.Proof.MlKem1024.X86.Encaps
-import VerifiedGarbage.Proof.MlKem1024.X86.Decaps
+module
+
+public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Proof.MlKem1024.X86.CompressEncode
+public import VerifiedGarbage.Proof.MlKem1024.X86.DecodeDecompress
+public import VerifiedGarbage.Proof.MlKem1024.X86.CheckEk
+public import VerifiedGarbage.Proof.MlKem1024.X86.KeyGen
+public import VerifiedGarbage.Proof.MlKem1024.X86.Encaps
+public import VerifiedGarbage.Proof.MlKem1024.X86.Decaps
 
 /-!
 # ML-KEM-1024 (FIPS 203) on x86
@@ -16,6 +18,8 @@ their caller's registers in 16 bytes, and call `vg_mlkem_sample_ntt` in a
 frame of its 3 arguments (12 bytes), with the return address and the
 callee's 56 bytes below it (`stack := 88`); their other calls use less.
 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.MlKem1024.X86
 

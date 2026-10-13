@@ -1,8 +1,16 @@
-import VerifiedGarbage.Proof.Scrypt.X86_64.Whole.Steps
-import VerifiedGarbage.Proof.Scrypt.X86_64.DirectFill
-import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Contract
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Spec.Pbkdf2.Generic
+module
+
+public import VerifiedGarbage.Proof.Scrypt.X86_64.Whole.Steps
+public import VerifiedGarbage.Proof.Scrypt.X86_64.DirectFill
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Contract
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.Pbkdf2.Generic
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 section
 

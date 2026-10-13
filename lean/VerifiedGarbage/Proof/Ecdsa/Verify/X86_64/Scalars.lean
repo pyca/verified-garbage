@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Front
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Front
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDSA verification on x86-64: `u` and `v`
@@ -9,6 +15,8 @@ power modulo `n` gives `w = s^(n-2)` (in Montgomery form), and `uv` computes
 `r R mod n` (`RM'`) and `u = e w` and `v = r w` modulo `n`, out of
 Montgomery's form (`U`, `V`), with the multiplications of `Proof/Mont`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Verify.X86_64
 
@@ -83,7 +91,7 @@ theorem mulN_ok (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s base si
       sv c base s' o * 2 ^ (64 * c.n) % c.C.n = sv c base s a * sv c base s b % c.C.n := by
   have h7 := hc.n10
   have hn := hs.nowrap
-  exact WP.mono (opMulN_ok hs hMN rfl rfl hB (slMul_ok (MN'_n c) (MN'_tmp c) (MN'_mo c) h7 hs hMN ho ha hb hS hB))
+  exact WP.mono (opMulN_ok hs hMN rfl rfl (sl_le c h7 ho) (sl_le c h7 ha) (sl_le c h7 hb) hB (slMul_ok (MN'_n c) (MN'_tmp c) (MN'_mo c) h7 hs hMN ho ha hb hS hB))
     fun s' ⟨k, lt, e⟩ =>
     ⟨k.scr hs, hMN.keep (j := MN) (by decide) rfl rfl rfl rfl h7 hn k (Ne.symm hoN) (by decide),
       k.gpr, k.rd, k.wr, unch_slots (MN'_n c) rfl k.unch (l := [o, TMP]) (by simp) (by simp),

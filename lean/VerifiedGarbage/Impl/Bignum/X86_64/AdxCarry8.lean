@@ -1,6 +1,11 @@
-import VerifiedGarbage.Impl.Bignum.X86_64.AdxRotate8
+module
+
+public import VerifiedGarbage.Impl.Bignum.X86_64.AdxRotate8
 
 /-! Propagate a raw-product carry through eight words at a time. -/
+
+@[expose] public section
+
 namespace VG.Impl.Bignum.X86_64.AdxCarry8
 open VG.X86_64
 

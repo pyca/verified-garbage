@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.AesGcmSiv.Arm.Fn
-import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
+module
+
+public import VerifiedGarbage.Proof.AesGcmSiv.Arm.Fn
+meta import VerifiedGarbage.Proof.AesGcmSiv.Arm.Fn
+public import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
+meta import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM-SIV on ARMv7: relating two runs, the keys and POLYVAL
@@ -15,6 +23,8 @@ runs agree on (`rel_ite`); a loop whose condition both runs agree on
 (`rel_loop`); and the next piece from the states the correctness proofs
 describe (`rel_seq`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesGcmSiv.Arm
 

@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombSelect
-import VerifiedGarbage.Proof.Weierstrass.TCombWords
-import VerifiedGarbage.Proof.Weierstrass.TCombLay
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombSelect
+public import VerifiedGarbage.Proof.Weierstrass.TCombWords
+public import VerifiedGarbage.Proof.Weierstrass.TCombLay
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The comb from tables in memory on AArch64: the tables
@@ -11,6 +17,8 @@ only (`TblMem.unch`). For the comb's words (`tcombWords`), the words of
 entry `m` of table `j` are its coordinates in Montgomery form
 (`tbl_entry`, `tcombWords_entry`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.AArch64
 

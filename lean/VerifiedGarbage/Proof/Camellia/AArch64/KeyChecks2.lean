@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Camellia.AArch64.KeyChecks
-import VerifiedGarbage.Impl.Camellia.AArch64.ExpandKey
+module
+
+public import VerifiedGarbage.Proof.Camellia.AArch64.KeyChecks
+public import VerifiedGarbage.Impl.Camellia.AArch64.ExpandKey
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The key schedule's evaluated facts on AArch64
@@ -9,6 +15,8 @@ import VerifiedGarbage.Impl.Camellia.AArch64.ExpandKey
 (`spread0_check`, `spread8_check`), and `sigmaStores x`, which stores the
 planes of a constant `x` to the entry at `kp` (`sigma_check`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Camellia.AArch64
 

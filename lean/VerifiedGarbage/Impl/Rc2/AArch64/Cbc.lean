@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Rc2.AArch64.CbcVec
+module
+
+public import VerifiedGarbage.Impl.Rc2.AArch64.CbcVec
 
 /-! # RC2-CBC on baseline AArch64
 
@@ -6,6 +8,8 @@ The caller saves its callee-saved registers and link register outside the
 block primitive's 256-byte scratch region. Decryption retains the input
 ciphertext at scratch + 256 before overwriting it.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Rc2.AArch64.Cbc
 

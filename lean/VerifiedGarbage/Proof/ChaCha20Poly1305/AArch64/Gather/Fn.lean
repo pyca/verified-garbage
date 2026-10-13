@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.AesGcm.AArch64.Gather.Loop
-import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Gather.Callee
-import VerifiedGarbage.Proof.ChaCha20Poly1305.Gathered
-import VerifiedGarbage.Proof.AesGcm.ScratchGather
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
+module
+
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Gather.Loop
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Gather.Callee
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.Gathered
+public import VerifiedGarbage.Proof.AesGcm.ScratchGather
+public import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ChaCha20-Poly1305 encryption out of place, from a list of slices, AArch64: the function
@@ -16,6 +22,8 @@ address at `B + 776` and `dst`, `len` and `tag` in `x8`, `x9` and `x10`
 `sealSpec_post`); the call keeps our frame, so the return address comes back
 from it (`sealGather_wp`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

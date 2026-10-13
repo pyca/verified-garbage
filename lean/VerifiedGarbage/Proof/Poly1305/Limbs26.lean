@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Poly1305.Spec
+module
+
+public import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Poly1305.Spec
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Poly1305 in 26-bit limbs
@@ -12,6 +18,8 @@ into limbs; the final reduction; and the interleaved Horner evaluation of four
 lanes. Each function sums in the order the code does, so that the terms the
 code computes are these functions by definition.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Poly1305.Limbs26
 

@@ -1,10 +1,19 @@
-import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Layout
-import VerifiedGarbage.Proof.Sha512.AArch64.Stream.Init
-import VerifiedGarbage.Proof.Sha512.AArch64.Variant
-import VerifiedGarbage.Spec.Ed25519.Contract
-import VerifiedGarbage.Spec.Sha512.Contract
+module
+
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Layout
+public import VerifiedGarbage.Proof.Sha512.AArch64.Stream.Init
+public import VerifiedGarbage.Proof.Sha512.AArch64.Variant
+public import VerifiedGarbage.Spec.Ed25519.Contract
+public import VerifiedGarbage.Spec.Sha512.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Ed25519.AArch64.Whole.Hash`. -/
+
+@[expose] public section
+
 section
 /-! SHA-512 calls parameterized by the verified compression backend. -/
 namespace VG.Proof.Ed25519.AArch64.Whole

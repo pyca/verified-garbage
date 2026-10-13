@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.MlKem.Arm.Ntt
+module
+
+public import VerifiedGarbage.Proof.MlKem.Arm.Ntt
+meta import VerifiedGarbage.Proof.MlKem.Arm.Ntt
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on 32-bit ARM: `vg_mlkem_inv_ntt`
@@ -10,6 +17,8 @@ symbolically executed once (`ibfly_ok`) writes the coefficients `bflyInv`
 writes (`polyIs_ibfly`); then the loop multiplying every coefficient by 3303
 (`sstep`). Layer `ℓ` has `len = 2^(ℓ+1)` and `64 / 2^ℓ` blocks.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.Arm.NttInv
 

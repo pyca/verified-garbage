@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.Ed448.AArch64.Window.Checks
-import VerifiedGarbage.Proof.X448.AArch64.Fast.Finish
-import VerifiedGarbage.Impl.Ed448.AArch64.VerifyWindow
-import VerifiedGarbage.Proof.Ed448.AArch64.Window.CopyK
-import VerifiedGarbage.Proof.Ed448.AArch64.VerifyEntry
+module
+
+public import VerifiedGarbage.Proof.Ed448.AArch64.Window.Checks
+public import VerifiedGarbage.Proof.X448.AArch64.Fast.Finish
+public import VerifiedGarbage.Impl.Ed448.AArch64.VerifyWindow
+public import VerifiedGarbage.Proof.Ed448.AArch64.Window.CopyK
+public import VerifiedGarbage.Proof.Ed448.AArch64.VerifyEntry
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 verification on AArch64: the result
@@ -13,6 +19,8 @@ ORed into `x20`, then slots 14 and 15 copied into 12 and 13; `wloop_ok`), the
 result `x0 = (x20 == 0)`, and the callee-saved registers restored
 (`wfinish_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.AArch64.Window
 
@@ -118,16 +126,16 @@ theorem decX19_ok (s : State) {n : Nat} (hn : n < 2) (hc : s.gpr .x19 = BitVec.o
 theorem wcmp_ok {s : State} {base : Addr} (hs : Scr s base) {n : Nat} (hn : n < 2)
     (hc : s.gpr .x19 = BitVec.ofNat 64 (n + 1))
     (hb : ∀ i : Index, 12 ≤ i.val → i.val < 16 → ∀ j < 8, limbs s.mem base (slot i.val) j < 2 ^ 118) :
-    WP isa (.block wcmp) s fun t =>
+    WP isa wcmp s fun t =>
       (∃ c : BitVec 64, (c = 0 ↔ EV s.mem base 12 = EV s.mem base 13) ∧ t.gpr .x20 = s.gpr .x20 ||| c) ∧
       t.gpr .x19 = BitVec.ofNat 64 n ∧ Keeps cmpRegs s t ∧ LFrame base s.mem t.mem ∧
       EV t.mem base 12 = EV s.mem base 14 ∧ EV t.mem base 13 = EV s.mem base 15 ∧
       (∀ i : Index, 12 ≤ i.val → i.val < 16 → ∀ j < 8, limbs t.mem base (slot i.val) j < 2 ^ 118) := by
-  rw [wcmp, List.append_assoc, List.append_assoc, WP.block_append_iff]
-  refine WP.mono (eqSlotsF_ok hs 12 13 (hb 12 (by decide) (by decide)) (hb 13 (by decide) (by decide))
-    (by decide) (by decide)) fun s1 ⟨cmp, k1, _⟩ => ?_
+  unfold wcmp
+  refine WP.seq (WP.mono (eqSlotsF_ok hs 12 13 (hb 12 (by decide) (by decide)) (hb 13 (by decide) (by decide))
+    (by decide) (by decide)) fun s1 ⟨cmp, k1, _⟩ => ?_)
   have hs1 := k1.scr hs
-  rw [WP.block_append_iff]
+  rw [List.append_assoc, WP.block_append_iff]
   refine WP.mono (VG.Proof.Curve448.AArch64.copy_ok hs1 (o := slot 12) (a := slot 14) (by decide) (by decide)
     (by decide) (by decide) (Or.inr (Or.inl (by decide)))) fun s2 ⟨v2, o2, k2⟩ => ?_
   have hs2 := hs1.of_keeps k2 (by decide)
@@ -173,7 +181,7 @@ theorem setX19_ok (s : State) :
 /-- **The comparisons**: two passes of `wcmp`. -/
 theorem wloop_ok {s : State} {base : Addr} (hs : Scr s base)
     (hb : ∀ i : Index, 12 ≤ i.val → i.val < 16 → ∀ j < 8, limbs s.mem base (slot i.val) j < 2 ^ 118) :
-    WP isa (.seq (.block [.movz .x .x19 2 0]) (.loop (.block wcmp) (.nonzero .x .x19))) s fun t =>
+    WP isa (.seq (.block [.movz .x .x19 2 0]) (.loop wcmp (.nonzero .x .x19))) s fun t =>
       Scr t base ∧ Keeps cmpRegs s t ∧ LFrame base s.mem t.mem ∧
       (t.gpr .x20 = 0 ↔ s.gpr .x20 = 0 ∧ EV s.mem base 12 = EV s.mem base 13 ∧ EV s.mem base 14 = EV s.mem base 15) := by
   refine WP.seq (WP.mono (setX19_ok s) fun s₁ ⟨c₁, k₁, m₁⟩ => ?_)

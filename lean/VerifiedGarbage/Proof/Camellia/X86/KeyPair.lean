@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Camellia.X86.Crypt8
-import VerifiedGarbage.Proof.Camellia.X86.KeyLin
+module
+
+public import VerifiedGarbage.Proof.Camellia.X86.Crypt8
+public import VerifiedGarbage.Proof.Camellia.X86.KeyLin
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Camellia's key schedule on x86 (32-bit): a pair of rounds on one value
@@ -12,6 +18,8 @@ entries of the table (`round_step`), and lane 0's words back
 (`unbcast_step`), is `pair` of it. The other values in the tail buffer are
 kept.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Camellia.X86
 

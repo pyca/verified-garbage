@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJStep
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJStep
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Windows in Jacobian coordinates on x86-64: the last iteration and the loop
@@ -10,6 +16,8 @@ formulas (`sumStep_ok`). The method (`windowJ_ok`): the table (`build_ok`)
 into affine coordinates (`normTbl_ok`), then from `R = O` the iterations of
 `winStepJ_ok` for the digits `J - 1` down to `1`, and the last.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.X86_64
 

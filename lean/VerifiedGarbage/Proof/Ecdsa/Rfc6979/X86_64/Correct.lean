@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Loop
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Loop
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Deterministic ECDSA on x86-64: correctness
@@ -9,6 +15,8 @@ steps a–g make them (`stageB_ok` … `stageE_ok`); and the signature of that
 candidate is RFC 6979's (`result_eq`), for the hash function `P`'s instance
 of the contract.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Rfc6979.X86_64
 

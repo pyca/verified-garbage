@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.RsaOaep.AArch64.Args
+module
+
+public import VerifiedGarbage.Proof.RsaOaep.AArch64.Args
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-OAEP encryption on AArch64: `EM` before masking
@@ -8,6 +14,8 @@ The pieces that write `EM` to our working space (as on x86-64,
 seed (`copySeed_ok`) and `lHash` (`copyLh_ok`) copied to it, and `0x01` and
 the message (`putMsg_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaOaep.AArch64
 

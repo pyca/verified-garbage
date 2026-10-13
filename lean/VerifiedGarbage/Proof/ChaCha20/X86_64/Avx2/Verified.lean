@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.Last8
+module
+
+public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.Last8
+meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.Last8
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_chacha20_xor_avx2` verified
@@ -7,6 +14,8 @@ The loop over 512-byte chunks (`Avx2/Xor.lean`), then the last bytes
 (`Avx2/Last8.lean`, `Avx2Tail/Tail.lean`); constant time and the calling
 convention.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.ChaCha20.X86_64.Avx2
 

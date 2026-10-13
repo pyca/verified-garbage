@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Seed.X86_64.KeyBody
-import VerifiedGarbage.Proof.Seed.X86_64.Ecb
+module
+
+public import VerifiedGarbage.Proof.Seed.X86_64.KeyBody
+public import VerifiedGarbage.Proof.Seed.X86_64.Ecb
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Key expansion on x86-64
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.Seed.X86_64.Ecb
 masks, `expandKey` loads the key, computes the schedule (`keyBody_ok`) and
 restores the registers.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Seed.X86_64
 

@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.Rsa.X86_64.RpCT2
+module
+
+public import VerifiedGarbage.Proof.Rsa.X86_64.RpCT2
+meta import VerifiedGarbage.Proof.Rsa.X86_64.RpCT2
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_recover_primes` on x86-64: constant time, Montgomery form
@@ -7,6 +14,8 @@ import VerifiedGarbage.Proof.Rsa.X86_64.RpCT2
 `n` (`r2_ct`, with `-n⁻¹`, a function of `n`, the same in both runs), and
 the other pieces' loops count `w` words (`mont_ct`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.X86_64
 

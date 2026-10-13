@@ -1,7 +1,16 @@
-import VerifiedGarbage.Proof.Ecdsa.X86.CombMain
-import VerifiedGarbage.Proof.Framework.X86.SymFrame
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.X86.CombMain
+public import VerifiedGarbage.Proof.Framework.X86.SymFrame
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # Public static tables at the x86 P-256 entry points -/
+
+@[expose] public section
+
 namespace VG.Proof.Ecdsa.X86
 open VG VG.X86 VG.Impl.Ecdsa.X86 VG.Proof.Mont.X86 VG.Proof.Mont
 open VG.Proof.Weierstrass.X86 VG.Proof.Weierstrass

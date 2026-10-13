@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.MlKem.X86.Encrypt
+module
+
+public import VerifiedGarbage.Impl.MlKem.X86.Encrypt
 
 /-!
 # ML-KEM on x86 (32-bit): encapsulation
@@ -10,6 +12,8 @@ the ciphertext computed by `encrypt` (`Encrypt.lean`), and `K` and the
 ciphertext copied into `key` and `ct`; `eACC` is returned.
 `vg_mlkem768_encaps` is `encaps` (`L768`).
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlKem.X86
 

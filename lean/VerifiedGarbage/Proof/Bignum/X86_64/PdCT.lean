@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.PdCode
-import VerifiedGarbage.Proof.Bignum.X86_64.PdCTExp
-import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
-import VerifiedGarbage.Proof.Bignum.X86_64.FoldedPublic
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.PdCode
+public import VerifiedGarbage.Proof.Bignum.X86_64.PdCTExp
+public import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
+public import VerifiedGarbage.Proof.Bignum.X86_64.FoldedPublic
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_public_precomputed` on x86-64: constant time but for `pre` and `e`
@@ -11,6 +17,8 @@ lengths, `pre` and `e`: `X := input R` (`pdMm_ct`), the exponentiation
 (`pdExp_ct`), the last multiplication (`pdFinal_ct`), and what the whole
 function's proof (`FoldedCTCode.lean`) needs of the entry and the load.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64
 

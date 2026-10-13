@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Ed25519.X86.Point32.Verified
+module
+
+public import VerifiedGarbage.Proof.Ed25519.X86.Point32.Verified
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Calls of `vg_ed25519_r32_point_add` on x86 (32-bit)
@@ -12,6 +18,8 @@ keeps (`Keep`), changes memory only in slots 0–3 and 8–15, bytes 864 to
 of the points in slots 0–3 and 4–7, if slot 16 holds `d`. The call's
 correctness is the function's own (`addFn_ok`, through `WP.callWith`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed25519.X86.Point32
 

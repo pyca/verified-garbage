@@ -1,11 +1,17 @@
-import VerifiedGarbage.Proof.Aes.X86_64.Ctr32
-import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Ctr32
-import VerifiedGarbage.Proof.Aes.X86_64.Vaes.Ctr32
-import VerifiedGarbage.Proof.Aes.X86_64.ExpandKey
-import VerifiedGarbage.Proof.Aes.X86_64.AesNi.ExpandKey
-import VerifiedGarbage.Impl.Aes.X86_64.Callee
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Framework.X86_64.Depth
+module
+
+public import VerifiedGarbage.Proof.Aes.X86_64.Ctr32
+public import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Ctr32
+public import VerifiedGarbage.Proof.Aes.X86_64.Vaes.Ctr32
+public import VerifiedGarbage.Proof.Aes.X86_64.ExpandKey
+public import VerifiedGarbage.Proof.Aes.X86_64.AesNi.ExpandKey
+public import VerifiedGarbage.Impl.Aes.X86_64.Callee
+public import VerifiedGarbage.Proof.Framework.X86_64.Call
+public import VerifiedGarbage.Proof.Framework.X86_64.Depth
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Implementations of `vg_aes_ctr32` on x86-64
@@ -20,6 +26,8 @@ implementation of `vg_aes_expand_key` that goes with it (with the same
 suffix and CPU features), for the callers that also expand the key, proven
 against `Proof.Aes.expandKeyX86_64`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Aes.X86_64
 

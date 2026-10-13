@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyCTBase
-import VerifiedGarbage.Proof.RsaPss.AArch64.MgfCT
+module
+
+public import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyCTBase
+meta import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyCTBase
+public import VerifiedGarbage.Proof.RsaPss.AArch64.MgfCT
+meta import VerifiedGarbage.Proof.RsaPss.AArch64.MgfCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSASSA-PSS verification on AArch64: the checks of `EM` are constant time
@@ -12,6 +20,8 @@ the taint analysis from the registers `VR` fixes; the loads of the digest's
 address and of `any_salt_len` are related by correctness; the hash is
 `ctHash_ct` and MGF1 is `mgfXor_ct`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPss.AArch64.Vfy
 

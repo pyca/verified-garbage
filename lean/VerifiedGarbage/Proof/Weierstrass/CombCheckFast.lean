@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Weierstrass.CombCheckW
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.CombCheckW
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Checking a comb's tables without indexing
@@ -9,6 +15,8 @@ instances: most of the time of its check, for large tables (14 s of P-521's
 20 s). `combChecksF` checks the same facts by walking each table, the
 tables and the partial sums once, and implies it (`combChecksW_of_fast`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass
 

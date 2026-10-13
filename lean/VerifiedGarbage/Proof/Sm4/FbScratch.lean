@@ -1,7 +1,13 @@
-import VerifiedGarbage.Spec.Sm4.Ofb
-import VerifiedGarbage.Spec.Sm4.Cfb
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Sm4.CtrCipher
+module
+
+public import VerifiedGarbage.Spec.Sm4.Ofb
+public import VerifiedGarbage.Spec.Sm4.Cfb
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Sm4.CtrCipher
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # SM4-OFB and SM4-CFB128 with their working space as an argument
@@ -13,6 +19,8 @@ target lays out its own), for the frame that keeps it on the stack
 memory on return only within the function's buffers (`ofbPostOut_local`,
 …), and the memory on entry only within them too (`ofbPost_local`, …).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sm4
 

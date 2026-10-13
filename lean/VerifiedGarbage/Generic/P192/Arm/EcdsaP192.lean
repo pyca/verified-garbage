@@ -1,9 +1,11 @@
-import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Proof.Weierstrass.Law
-import VerifiedGarbage.Impl.Ecdsa.P192.Arm
-import VerifiedGarbage.Proof.Ecdsa.Arm.P192.Verified
-import VerifiedGarbage.Impl.Ecdsa.Verify.P192.Arm
-import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.P192.Verified
+module
+
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.Proof.Weierstrass.Law
+public import VerifiedGarbage.Impl.Ecdsa.P192.Arm
+public import VerifiedGarbage.Proof.Ecdsa.Arm.P192.Verified
+public import VerifiedGarbage.Impl.Ecdsa.Verify.P192.Arm
+public import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.P192.Verified
 
 /-!
 # ECDSA over P-192 (FIPS 186-5) on 32-bit ARM
@@ -11,6 +13,8 @@ import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.P192.Verified
 A generic file (see `TCB/Emit.lean`) over P-192's group law `h`, the variant
 `Variants/P192/Arm/Law.lean`.
 -/
+
+@[expose] public section
 
 namespace VG.Generic.P192.Arm.EcdsaP192
 

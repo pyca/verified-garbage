@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Correct
-import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseLCT
-import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseDCT
+module
+
+public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Correct
+public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseLCT
+public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseDCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA signing on ARMv7: the signature leaks only the hint
@@ -9,6 +15,8 @@ Writing the signature leaks its pointers and the hint (`output_tr`), on which
 two runs whose loops leaked the same agree (`OX`); so all but `Â` leaks what
 `signLeakT` says (`rest_tr`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Arm.Sign
 

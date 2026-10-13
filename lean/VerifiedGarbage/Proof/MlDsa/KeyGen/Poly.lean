@@ -1,5 +1,11 @@
-import VerifiedGarbage.Spec.MlDsa.Poly
-import VerifiedGarbage.Proof.MlKem.Mem
+module
+
+public import VerifiedGarbage.Spec.MlDsa.Poly
+public import VerifiedGarbage.Proof.MlKem.Mem
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA key generation: coefficients and polynomials in memory
@@ -11,6 +17,8 @@ cast inverts `mod± q` (`ofInt_modPm`); the ranges of the coefficients
 (`Spec/MlDsa/Poly.lean`) depend only on their 1024 bytes (`polyAt_congr`,
 `polyIs_frame`, …).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.KeyGen
 

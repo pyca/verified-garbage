@@ -1,16 +1,35 @@
-import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-import VerifiedGarbage.Proof.Framework.Mem
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.AArch64.Taint
-import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Blake2.Spec
-import VerifiedGarbage.Impl.Blake2.AArch64
-import VerifiedGarbage.Spec.Blake2.Contract
-import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.Blake2.AArch64.Contract
-import VerifiedGarbage.Proof.Blake2.AArch64.Lit
+module
+
+public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+meta import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+public import VerifiedGarbage.Proof.Framework.Mem
+meta import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.AArch64.Taint
+meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
+public import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Blake2.Spec
+meta import VerifiedGarbage.Proof.Blake2.Spec
+public import VerifiedGarbage.Impl.Blake2.AArch64
+meta import VerifiedGarbage.Impl.Blake2.AArch64
+public import VerifiedGarbage.Spec.Blake2.Contract
+meta import VerifiedGarbage.Spec.Blake2.Contract
+public import VerifiedGarbage.TCB.AArch64.Target
+meta import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.Blake2.AArch64.Contract
+meta import VerifiedGarbage.Proof.Blake2.AArch64.Contract
+public import VerifiedGarbage.Proof.Blake2.AArch64.Lit
+meta import VerifiedGarbage.Proof.Blake2.AArch64.Lit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # BLAKE2 compression function on AArch64
@@ -27,6 +46,8 @@ for their calls; `compressB_verified` and `compressS_verified` move it to the
 shared contracts of `Spec/Blake2/Contract.lean`. Constant time is the taint
 analysis on the literal code (`Lit.lean`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Blake2.AArch64
 

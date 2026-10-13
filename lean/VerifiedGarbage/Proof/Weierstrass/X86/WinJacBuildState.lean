@@ -1,10 +1,18 @@
-import VerifiedGarbage.Impl.Weierstrass.X86.WinJac
-import VerifiedGarbage.Proof.Weierstrass.X86.Fprog
-import VerifiedGarbage.Proof.Weierstrass.X86.TCombSelect
-import VerifiedGarbage.Proof.Weierstrass.X86.NafAdjust
-import VerifiedGarbage.Proof.Weierstrass.X86.NafTableIO
+module
+
+public import VerifiedGarbage.Impl.Weierstrass.X86.WinJac
+public import VerifiedGarbage.Proof.Weierstrass.X86.Fprog
+public import VerifiedGarbage.Proof.Weierstrass.X86.TCombSelect
+public import VerifiedGarbage.Proof.Weierstrass.X86.NafAdjust
+public import VerifiedGarbage.Proof.Weierstrass.X86.NafTableIO
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## `WinJacLayout` -/
+
+@[expose] public section
 
 section
 

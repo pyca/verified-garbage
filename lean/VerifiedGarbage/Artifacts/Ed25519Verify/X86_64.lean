@@ -1,11 +1,15 @@
-import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyVerified
-import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.VerifyCT
-import VerifiedGarbage.Proof.Ed25519.X86_64.WindowSlideCT
-import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyCode
-import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyCall
+module
+
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyVerified
+public import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.VerifyCT
+public import VerifiedGarbage.Proof.Ed25519.X86_64.WindowSlideCT
+public import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyCode
+public import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyCall
 
 /-! Complete strict Ed25519 equation verification with a caller-supplied SHA-512 challenge. -/
+
+@[expose] public section
 
 namespace VG.Artifacts.Ed25519Verify.X86_64
 

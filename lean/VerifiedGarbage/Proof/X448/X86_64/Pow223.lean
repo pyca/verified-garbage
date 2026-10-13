@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.X448.X86_64.Inv
-import VerifiedGarbage.Proof.Framework.X86_64.Spill
-import VerifiedGarbage.Proof.Framework.X86_64.CallInline
+module
+
+public import VerifiedGarbage.Proof.X448.X86_64.Inv
+public import VerifiedGarbage.Proof.Framework.X86_64.Spill
+public import VerifiedGarbage.Proof.Framework.X86_64.CallInline
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 on x86-64: the addition chain as a function
@@ -12,6 +18,8 @@ restores them: it changes only `rax`, `rcx`, `rdx` and `r8`–`r11` and the
 bytes `[960, 1648)`, and the slots as `chain223` does (`pow223Fn_ok`): slots 20
 and 21 end as `c222` and `c223` of slot 12 (`chainEnv_20`, `chainEnv_21`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448.X86_64
 
@@ -31,8 +39,8 @@ theorem chainEnv_21 (e : Env) : chainEnv 12 e 21 = c223 (e 12) := by
   rfl
 
 /-- `vg_gf448_r64_pow223`: what it keeps and computes. -/
-theorem pow223Fn_ok {s : State} {base : Addr} (hs : Scr s base) :
-    WP isa pow223Fn s fun s' =>
+theorem pow223FnWith_ok {F : Field} (hf : FieldOk F) {s : State} {base : Addr} (hs : Scr s base) :
+    WP isa (pow223FnWith F) s fun s' =>
       (∀ r, r ∉ powClob → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
       Outside base 960 688 s.mem s'.mem ∧ E s'.mem base = chainEnv 12 (E s.mem base) := by
   refine WP.seq (WP.mono (Spill.save_ok .rdi powSaved s fun p hp => ?_) fun s₁ ⟨g₁, rd₁, wr₁, m₁⟩ => ?_)
@@ -53,7 +61,7 @@ theorem pow223Fn_ok {s : State} {base : Addr} (hs : Scr s base) :
     omega
   have sv₁ : Spill.Saved s₁.mem base s.gpr powSaved := by
     rw [m₁]; exact Spill.saveMem_saved _ _ _ _ (by decide)
-  refine WP.seq (WP.mono (chain223_spec baseline_ok base 12 s₁ hs₁) fun s₂ ⟨k₂, e₂⟩ => ?_)
+  refine WP.seq (WP.mono (chain223_spec hf base 12 s₁ hs₁) fun s₂ ⟨k₂, e₂⟩ => ?_)
   have hs₂ := k₂.scr hs₁
   have sv₂ : Spill.Saved s₂.mem base s.gpr powSaved := fun p hp => by
     have := powSaved_lt p hp
@@ -75,6 +83,12 @@ theorem pow223Fn_ok {s : State} {base : Addr} (hs : Scr s base) :
   · intro x hx
     rw [m₃, k₂.out x hx, o₁ x (by omega)]
   · rw [m₃, e₂, e₁]
+
+theorem pow223Fn_ok {s : State} {base : Addr} (hs : Scr s base) :
+    WP isa pow223Fn s fun s' =>
+      (∀ r, r ∉ powClob → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
+      Outside base 960 688 s.mem s'.mem ∧ E s'.mem base = chainEnv 12 (E s.mem base) :=
+  pow223FnWith_ok baseline_ok hs
 
 /-! ## Keeping words across the call -/
 
@@ -124,6 +138,10 @@ theorem storesAt_ok {base : Addr} : ∀ (l : List (Reg × Nat)) (s : State), Scr
       simp only [exec, ea_sc, hs.rdi, State.store64, hw, ite_true, hv, word, writeW_readW64], ?_⟩
     exact storesAt_ok l s hs fun p hp => hl p (List.mem_cons_of_mem _ hp)
 
+theorem pow223KeepWith_inline (F : Field) (name : String) (keep : List Nat) : (pow223KeepWith F name keep).inline =
+    .seq (.block ((keepRegs.zip keep).map fun (r, d) => .mov r (.mem (sc d))))
+      (.seq (pow223FnWith F) (.block ((keepRegs.zip keep).map fun (r, d) => .store (sc d) r))) := rfl
+
 theorem pow223Keep_inline (keep : List Nat) : (pow223Keep keep).inline =
     .seq (.block ((keepRegs.zip keep).map fun (r, d) => .mov r (.mem (sc d))))
       (.seq pow223Fn (.block ((keepRegs.zip keep).map fun (r, d) => .store (sc d) r))) := rfl
@@ -135,22 +153,22 @@ theorem keepRegs_zip_fst (keep : List Nat) : ∀ p ∈ keepRegs.zip keep, p.1 = 
 
 /-- The call, keeping the words at `keep` (outside the function's bytes): as `pow223Fn_ok`,
 but for `r12` and `r13`. -/
-theorem pow223Keep_ok (keep : List Nat) (hk : ∀ d ∈ keep, d + 8 ≤ 960 ∨ (1648 ≤ d ∧ d + 8 ≤ 8192))
+theorem pow223KeepWith_ok {F : Field} (hf : FieldOk F) (name : String) (keep : List Nat) (hk : ∀ d ∈ keep, d + 8 ≤ 960 ∨ (1648 ≤ d ∧ d + 8 ≤ 8192))
     {s : State} {base : Addr} (hs : Scr s base) :
-    WP isa (pow223Keep keep).inline s fun s' =>
+    WP isa (pow223KeepWith F name keep).inline s fun s' =>
       (∀ r, r ∉ powClob → r ≠ .r12 → r ≠ .r13 → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧
       s'.wr = s.wr ∧ Outside base 960 688 s.mem s'.mem ∧ E s'.mem base = chainEnv 12 (E s.mem base) := by
   have hl : ∀ p ∈ keepRegs.zip keep, p.2 + 8 ≤ 960 ∨ (1648 ≤ p.2 ∧ p.2 + 8 ≤ 8192) :=
     fun p hp => hk p.2 (List.of_mem_zip hp).2
   have hnd : ((keepRegs.zip keep).map Prod.fst).Nodup := by
     rcases keep with _ | ⟨d, _ | ⟨e, _⟩⟩ <;> simp [keepRegs]
-  rw [pow223Keep_inline]
+  rw [pow223KeepWith_inline]
   refine WP.seq (WP.mono (loadsAt_ok _ s hs (fun p hp => ⟨by rcases keepRegs_zip_fst keep p hp with h | h <;>
       rw [h] <;> decide, by rcases hl p hp with h | h <;> omega⟩) hnd)
     fun s₁ ⟨m₁, rd₁, wr₁, g₁, v₁⟩ => ?_)
   have hs₁ : Scr s₁ base := ⟨(g₁ _ (by rcases keep with _ | ⟨d, _ | ⟨e, _⟩⟩ <;> simp [keepRegs])).trans hs.rdi,
     wr₁ ▸ hs.wr, hs.nowrap⟩
-  refine WP.seq (WP.mono (pow223Fn_ok hs₁) fun s₂ ⟨g₂, rd₂, wr₂, o₂, e₂⟩ => ?_)
+  refine WP.seq (WP.mono (pow223FnWith_ok hf hs₁) fun s₂ ⟨g₂, rd₂, wr₂, o₂, e₂⟩ => ?_)
   have hs₂ : Scr s₂ base := ⟨(g₂ _ (by decide)).trans hs₁.rdi, wr₂ ▸ hs₁.wr, hs₁.nowrap⟩
   refine WP.mono (storesAt_ok _ s₂ hs₂ fun p hp => ⟨by rcases hl p hp with h | h <;> omega, ?_⟩)
     fun s₃ e₃ => ?_
@@ -165,5 +183,12 @@ theorem pow223Keep_ok (keep : List Nat) (hk : ∀ d ∈ keep, d + 8 ≤ 960 ∨ 
         · exact h13 h)]
     · rw [← m₁]; exact o₂
     · rw [e₂, m₁]
+
+theorem pow223Keep_ok (keep : List Nat) (hk : ∀ d ∈ keep, d + 8 ≤ 960 ∨ (1648 ≤ d ∧ d + 8 ≤ 8192))
+    {s : State} {base : Addr} (hs : Scr s base) :
+    WP isa (pow223Keep keep).inline s fun s' =>
+      (∀ r, r ∉ powClob → r ≠ .r12 → r ≠ .r13 → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧
+      s'.wr = s.wr ∧ Outside base 960 688 s.mem s'.mem ∧ E s'.mem base = chainEnv 12 (E s.mem base) :=
+  pow223KeepWith_ok baseline_ok Spec.X448.Field64.pow223Api.name keep hk hs
 
 end VG.Proof.X448.X86_64

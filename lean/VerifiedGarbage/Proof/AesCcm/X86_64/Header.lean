@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesCcm.X86_64.Absorb
+module
+
+public import VerifiedGarbage.Proof.AesCcm.X86_64.Absorb
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CCM on x86-64: the encoding of the length of the associated data
@@ -8,6 +14,8 @@ writes the encoding of the length `a > 0` (A.2.2) at its start: `[a]₁₆`,
 `0xff ‖ 0xfe ‖ [a]₃₂` or `0xff ‖ 0xff ‖ [a]₆₄`, by byte-swapping and
 shifting `a` (`header_ok`); its length is in `rbx`.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

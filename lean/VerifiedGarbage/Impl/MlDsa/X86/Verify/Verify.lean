@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.MlDsa.X86.KeyGen.Call
-import VerifiedGarbage.Spec.MlDsa
+module
+
+public import VerifiedGarbage.Impl.MlDsa.X86.KeyGen.Call
+public import VerifiedGarbage.Spec.MlDsa
 
 /-!
 # ML-DSA on x86 (32-bit): `vg_mldsa44_verify`, `vg_mldsa65_verify`, `vg_mldsa87_verify`
@@ -39,6 +41,8 @@ It returns the result. Every address and branch depends only on the pointers,
 the public key and the signature (which the function may leak), and not on
 the results of the samplers.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.X86.Verify
 

@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Camellia.AArch64.Linear
-import VerifiedGarbage.Proof.Camellia.AArch64.Sbox
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Camellia.AArch64.Fl
+module
+
+public import VerifiedGarbage.Proof.Camellia.AArch64.Linear
+public import VerifiedGarbage.Proof.Camellia.AArch64.Sbox
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Camellia.AArch64.Fl
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # A round of bitsliced Camellia on AArch64
@@ -13,6 +19,8 @@ keeping the masks and the first half's slots, and writing only the slots
 below the table. The layers are composed from their checks
 (`Linear.lean`, `Sbox.lean`) and `round_rel`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Camellia.AArch64
 

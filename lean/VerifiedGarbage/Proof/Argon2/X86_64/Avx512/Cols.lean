@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Argon2.X86_64.Avx512.Rows
+module
+
+public import VerifiedGarbage.Proof.Argon2.X86_64.Avx512.Rows
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Argon2 on x86-64 with AVX-512: P on two columns
@@ -7,6 +13,8 @@ The registers of columns `2c` and `2c + 1` are four consecutive 64-byte
 chunks of `cv` (`loadCols_ok`); P on both halves of them (`round_words`),
 stored back (`storeCols_ok`), is P on both columns (`cols_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Argon2.X86_64.Avx512
 

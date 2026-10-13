@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Bignum.AArch64.Bytes
-import VerifiedGarbage.Proof.Framework.WriteBytes
+module
+
+public import VerifiedGarbage.Proof.Bignum.AArch64.Bytes
+public import VerifiedGarbage.Proof.Framework.WriteBytes
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Multiword arithmetic on AArch64: words into big-endian bytes
@@ -10,6 +16,8 @@ ones or zero), as `k` bytes most significant first (`storeBE_ok`): after
 of the masked number `Y_m`, and `x3` holds the rest of the word being
 written (`SInv`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.AArch64
 

@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.RsaPkcs1Sig.X86_64.Verify
+module
+
+public import VerifiedGarbage.Impl.RsaPkcs1Sig.X86_64.Verify
 
 /-!
 # RSASSA-PKCS1-v1_5 recovery on x86-64
@@ -21,6 +23,8 @@ the stack. It recovers as OpenSSL's `ossl_rsa_verify` with `rm` does, which
 Everything is public, so it branches freely. The frame is
 `vg_rsa_pkcs1_verify`'s, with other slots.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.RsaPkcs1Sig.X86_64.Recover
 

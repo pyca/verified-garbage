@@ -1,7 +1,19 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledRawCT
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledMont
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8CT
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxCT
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledRawCT
+meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledRawCT
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledMont
+meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledMont
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8CT
+meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8CT
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxCT
+meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64.AdxTiledProduct
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public

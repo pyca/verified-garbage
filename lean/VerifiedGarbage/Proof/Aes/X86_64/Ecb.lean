@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Aes.X86_64.Ctr32
-import VerifiedGarbage.Proof.Aes.X86_64.Decrypt
-import VerifiedGarbage.Spec.Aes.Contract
+module
+
+public import VerifiedGarbage.Proof.Aes.X86_64.Ctr32
+public import VerifiedGarbage.Proof.Aes.X86_64.Decrypt
+public import VerifiedGarbage.Spec.Aes.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES on whole blocks on x86-64: the groups
@@ -14,6 +20,8 @@ registers held. The data's invariant (`EcbInv`) says that the first `k`
 blocks hold the transformation of the original ones, and the others are
 still the original ones.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

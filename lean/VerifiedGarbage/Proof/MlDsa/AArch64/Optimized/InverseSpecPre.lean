@@ -1,10 +1,18 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTableMemory
-import VerifiedGarbage.Proof.Framework.ConstMem
-import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.InverseTable
-import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Contracts
-import VerifiedGarbage.Spec.MlDsa.Montgomery
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTableMemory
+public import VerifiedGarbage.Proof.Framework.ConstMem
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.InverseTable
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Contracts
+public import VerifiedGarbage.Spec.MlDsa.Montgomery
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## From `InverseSat.lean` -/
+
+@[expose] public section
 
 section
 

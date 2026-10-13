@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Ed448.Arm.Verify.Entry
-import VerifiedGarbage.Proof.Ed448.Arm.Verify.CT
-import VerifiedGarbage.Proof.Ed25519.Arm.Whole.WrapCT
-import VerifiedGarbage.Proof.Framework.Arm.Contract
+module
+
+public import VerifiedGarbage.Proof.Ed448.Arm.Verify.Entry
+public import VerifiedGarbage.Proof.Ed448.Arm.Verify.CT
+public import VerifiedGarbage.Proof.Ed25519.Arm.Whole.WrapCT
+public import VerifiedGarbage.Proof.Framework.Arm.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 verification on ARMv7: constant time, and `Verified`
@@ -12,6 +18,8 @@ on a length; the frame around the body is constant time (`inner_ct`, from
 280`, for any code of `vg_ed448_verify_equation` meeting its contract
 (`EqOk`, `EqCT`): the registration file passes its own.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.Arm.Verify
 

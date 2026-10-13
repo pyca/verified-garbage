@@ -1,9 +1,15 @@
-import VerifiedGarbage.Proof.Sha512.Md
-import VerifiedGarbage.Proof.Sha512.Word64
-import VerifiedGarbage.Spec.Sha512.Contract
-import VerifiedGarbage.Proof.Sha512.Stream
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.MdStream.Prefix
+module
+
+public import VerifiedGarbage.Proof.Sha512.Md
+public import VerifiedGarbage.Proof.Sha512.Word64
+public import VerifiedGarbage.Spec.Sha512.Contract
+public import VerifiedGarbage.Proof.Sha512.Stream
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.MdStream.Prefix
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The truncated digests of the SHA-512 family, from the hash value in memory
@@ -15,6 +21,8 @@ SHA-512/256 are its first 48 and 32 bytes, the first 6 and 4 words
 and the high half of the fourth (`digest_take28`). Every target's
 `finalize` of those digests writes them so.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sha512
 

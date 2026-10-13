@@ -1,6 +1,8 @@
-import VerifiedGarbage.TCB.X86.Target
-import VerifiedGarbage.Proof.AesOcb.X86.Frame
-import VerifiedGarbage.Proof.CmacAes.Stream.X86.Frame
+module
+
+public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Proof.AesOcb.X86.Frame
+public import VerifiedGarbage.Proof.CmacAes.Stream.X86.Frame
 
 /-!
 # AES-OCB (RFC 7253) on x86
@@ -16,6 +18,8 @@ arguments (`Proof/AesOcb/X86/Frame.lean`): 2608 bytes for `seal` and `open`
 (ten arguments), 2580 bytes for `init` (three), below which its calls use 24
 bytes (their five arguments and return address; the callees use no stack).
 -/
+
+@[expose] public section
 
 namespace VG.Generic.AesBlocks.X86.AesOcb
 

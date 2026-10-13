@@ -1,9 +1,15 @@
-import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.Common
-import VerifiedGarbage.Proof.MlKem.AArch64.KeccakCall
-import VerifiedGarbage.Proof.MlKem.AArch64.Common
-import VerifiedGarbage.Proof.MlKem.KPke
-import VerifiedGarbage.Proof.MlDsa.Sample.Hash
-import VerifiedGarbage.Proof.MlDsa.Sample.Mem
+module
+
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.Common
+public import VerifiedGarbage.Proof.MlKem.AArch64.KeccakCall
+public import VerifiedGarbage.Proof.MlKem.AArch64.Common
+public import VerifiedGarbage.Proof.MlKem.KPke
+public import VerifiedGarbage.Proof.MlDsa.Sample.Hash
+public import VerifiedGarbage.Proof.MlDsa.Sample.Mem
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on AArch64: the sampling functions' SHAKE
@@ -18,6 +24,8 @@ output, the working space and the stack below `sp`. `sponge` then leaves
 `outlen` bytes of SHAKE of the message at `scratch + 840` (`sponge_ok`);
 `epi_ok` restores the registers.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Sample
 

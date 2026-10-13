@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Msg
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Msg
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Deterministic ECDSA on AArch64: the steps on `K` and `V`
@@ -9,6 +15,8 @@ make a candidate, `‖ d ‖ 0 0 ‖ digest`), then `V = HMAC_K(V)`
 then `V = HMAC_K(V)` (`rekey_ok`, step h.3). Each changes only `scratch`,
 the stack below the frame, and `K` and `V`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Rfc6979.AArch64
 

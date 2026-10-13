@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Env
-import VerifiedGarbage.Proof.GcmSiv.Spec
+module
+
+public import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Env
+public import VerifiedGarbage.Proof.GcmSiv.Spec
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM-SIV on AArch64: the message keys (`derive`)
@@ -11,6 +17,8 @@ Untrusted: everything here is checked by Lean. Each step of `derive` writes
 kept at `W + 16 + 8 i`: after the loop, the halves of `derive_keys`
 (`derive_ok`, `DInv.keys`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

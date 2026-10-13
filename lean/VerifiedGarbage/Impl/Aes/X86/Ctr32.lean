@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Aes.X86.Linear
+module
+
+public import VerifiedGarbage.Impl.Aes.X86.Linear
 
 /-!
 # AES counter mode (GCM's `inc₃₂`), bitsliced, on x86 (32-bit)
@@ -31,6 +33,8 @@ Every address is `esp` or a pointer plus a constant, or computed from the
 pointers and `rounds`, and every branch depends only on those and `n`, so
 only the pointers, `rounds` and `n` can affect timing.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Aes.X86
 

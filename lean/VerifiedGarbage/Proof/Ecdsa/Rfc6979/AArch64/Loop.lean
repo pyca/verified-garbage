@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Steps
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Core
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Reduce
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Wide
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Search
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Steps
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Core
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Reduce
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Wide
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Search
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Deterministic ECDSA on AArch64: the candidates
@@ -17,6 +23,8 @@ moves to candidate `i + 1`, branching back, or leaves the loop with the
 signature of candidate `i`, which is suitable or the last (`tryOne_ok`,
 `loop_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Rfc6979.AArch64
 

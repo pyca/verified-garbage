@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.Argon2.Arm.Derive.InitialCT
+module
+
+public import VerifiedGarbage.Proof.Argon2.Arm.Derive.InitialCT
+meta import VerifiedGarbage.Proof.Argon2.Arm.Derive.InitialCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Argon2 on ARMv7: memory initialization, in two runs
@@ -8,6 +15,8 @@ blocks of every lane leak the same trace in two runs with the same public
 data: the calls' arguments are H₀'s place in the locals and the blocks'
 addresses, which only the lane fixes.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Argon2.Arm.Derive
 

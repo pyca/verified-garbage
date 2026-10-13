@@ -1,6 +1,12 @@
-import VerifiedGarbage.Impl.Camellia.Arm.Ecb
-import VerifiedGarbage.Proof.Camellia.Bitsliced32
-import VerifiedGarbage.Proof.Sm4.Arm.LinG
+module
+
+public import VerifiedGarbage.Impl.Camellia.Arm.Ecb
+public import VerifiedGarbage.Proof.Camellia.Bitsliced32
+public import VerifiedGarbage.Proof.Sm4.Arm.LinG
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The linear layers of bitsliced Camellia on ARMv7, by evaluation
@@ -27,6 +33,8 @@ being `32 i + t`.
 Position `p = 8 i + b` of a plane of word `w` is byte `4 w + i` of the half
 of block `b`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Camellia.Arm
 

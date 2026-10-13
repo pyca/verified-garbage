@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Camellia.Arm.Crypt8
+module
+
+public import VerifiedGarbage.Proof.Camellia.Arm.Crypt8
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The table of bitsliced subkeys on ARMv7
@@ -9,6 +15,8 @@ into the table at slot 72, entry `i` holding the subkey word `perm i`:
 into its eight planes (`keyPlanes`, checked by evaluation), and
 `keyLoop_wp` the loop of them, counted down in `lr`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Camellia.Arm
 

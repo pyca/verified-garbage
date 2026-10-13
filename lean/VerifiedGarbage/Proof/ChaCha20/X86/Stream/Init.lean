@@ -1,7 +1,17 @@
-import VerifiedGarbage.Proof.ChaCha20.StreamBytes
-import VerifiedGarbage.Proof.ChaCha20.X86.Block
-import VerifiedGarbage.Impl.ChaCha20.X86.Stream
-import VerifiedGarbage.Proof.Framework.X86.SseTaint
+module
+
+public import VerifiedGarbage.Proof.ChaCha20.StreamBytes
+meta import VerifiedGarbage.Proof.ChaCha20.StreamBytes
+public import VerifiedGarbage.Proof.ChaCha20.X86.Block
+meta import VerifiedGarbage.Proof.ChaCha20.X86.Block
+public import VerifiedGarbage.Impl.ChaCha20.X86.Stream
+meta import VerifiedGarbage.Impl.ChaCha20.X86.Stream
+public import VerifiedGarbage.Proof.Framework.X86.SseTaint
+meta import VerifiedGarbage.Proof.Framework.X86.SseTaint
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Streaming ChaCha20 on x86 (32-bit): `init` and `set_nonce`
@@ -11,6 +21,8 @@ Untrusted: everything here is checked by Lean. Both load everything first
 and then store it (`nonceStores_ok`, `keyStores_ok`); `nonceMem` and
 `keyMem` are the memory they leave.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.ChaCha20
 

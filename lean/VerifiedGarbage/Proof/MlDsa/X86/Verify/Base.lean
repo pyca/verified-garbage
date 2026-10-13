@@ -1,13 +1,19 @@
-import VerifiedGarbage.Proof.MlDsa.X86.Verify.Prim
-import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.NoSp
-import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Samp
-import VerifiedGarbage.Impl.MlDsa.X86.Verify.Verify
-import VerifiedGarbage.Proof.MlDsa.Verify.Spec
-import VerifiedGarbage.Proof.MlDsa.Verify.Final
-import VerifiedGarbage.Proof.MlDsa.Verify.Bounds
-import VerifiedGarbage.Proof.MlDsa.Verify.Norm
-import VerifiedGarbage.Spec.MlDsa.Contract
-import VerifiedGarbage.Proof.MlDsa.KeyGen.Leak
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86.Verify.Prim
+public import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.NoSp
+public import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Samp
+public import VerifiedGarbage.Impl.MlDsa.X86.Verify.Verify
+public import VerifiedGarbage.Proof.MlDsa.Verify.Spec
+public import VerifiedGarbage.Proof.MlDsa.Verify.Final
+public import VerifiedGarbage.Proof.MlDsa.Verify.Bounds
+public import VerifiedGarbage.Proof.MlDsa.Verify.Norm
+public import VerifiedGarbage.Spec.MlDsa.Contract
+public import VerifiedGarbage.Proof.MlDsa.KeyGen.Leak
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA verification on x86 (32-bit): the setting
@@ -20,6 +26,8 @@ the arguments (`YV p`: `pk`, `mu`, `sig` and `scratch`, and 96 bytes of stack;
 `pub_of`). What the proof uses of a parameter set is `VFacts`; `layv` proves
 the checks of buffers against the layout.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86.Verify
 

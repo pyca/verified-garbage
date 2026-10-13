@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Sm3.AArch64
-import VerifiedGarbage.Impl.MdStream.AArch64
+module
+
+public import VerifiedGarbage.Impl.Sm3.AArch64
+public import VerifiedGarbage.Impl.MdStream.AArch64
 
 /-!
 # Streaming SM3: AArch64 implementation
@@ -13,6 +15,8 @@ The streaming state (96 bytes at `state`) is the hash value followed by a
   (`vg_sm3_compress`) with `scratch[0..64)` as its scratch space. The length
   field is big-endian, and so are the words of the hash value.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Sm3.AArch64.Stream
 

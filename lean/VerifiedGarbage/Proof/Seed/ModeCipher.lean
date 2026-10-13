@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Seed.ModeBytes
+module
+
+public import VerifiedGarbage.Proof.Seed.ModeBytes
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # SEED's cipher for the modes, on any target
@@ -8,6 +14,8 @@ What x86's core for the modes (`Proof/Seed/X86/ModeCore.lean`) adds to
 `Spec.Seed.crypt` with the schedule's round keys in that direction's order
 (`dirCipher_bytes`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Seed
 

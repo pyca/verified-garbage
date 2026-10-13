@@ -1,6 +1,10 @@
-import VerifiedGarbage.Proof.Cast5.X86_64.FbVerified
+module
+
+public import VerifiedGarbage.Proof.Cast5.X86_64.FbVerified
 
 /-! # CAST5-CFB64 artifacts on baseline x86-64 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.Cast5Cfb.X86_64
 

@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.RsaPss.AArch64.SignCTEnc
+module
+
+public import VerifiedGarbage.Proof.RsaPss.AArch64.SignCTEnc
+meta import VerifiedGarbage.Proof.RsaPss.AArch64.SignCTEnc
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSASSA-PSS signing on AArch64: constant time
@@ -9,6 +16,8 @@ lengths, public (`chk1_ok`, `chk2_ok`); a failure loads `out` from its slot,
 public by correctness (`fail_ct`); the encoding is `signEnc_ct`; the
 private-key operation is related by its callee's contract (`call_ct`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPss.AArch64.Sgn
 

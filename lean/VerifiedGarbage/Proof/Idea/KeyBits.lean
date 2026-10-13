@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Idea.Memory
-import VerifiedGarbage.Impl.Idea.Key
+module
+
+public import VerifiedGarbage.Proof.Idea.Memory
+public import VerifiedGarbage.Impl.Idea.Key
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # IDEA key expansion, bit by bit
@@ -10,6 +16,8 @@ one of the key's bytes (`keyValue_getLsbD`), at the bit `keyLoc` gives of one
 of the key's quadwords in memory (`keyLoc_spec`); and a subkey's bits are bits
 of a quadword of the schedule in memory (`scheduleAt_getLsbD`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Idea
 

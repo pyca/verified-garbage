@@ -1,9 +1,17 @@
-import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.CachedCommitment
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.Blocks
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackWritten
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedMasks
+module
+
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.CachedCommitment
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.Blocks
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackWritten
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedMasks
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## From `CachedCopyBody.lean` -/
+
+@[expose] public section
 
 section
 

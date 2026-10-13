@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Blowfish.Arm.KeyInit
+module
+
+public import VerifiedGarbage.Proof.Blowfish.Arm.KeyInit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Blowfish on ARMv7: the key into the P-array
@@ -6,6 +12,8 @@ import VerifiedGarbage.Proof.Blowfish.Arm.KeyInit
 `keyP_run`: Pᵢ ^= the `i`-th 32 bits of the key (at `r0`, `r1` bytes long),
 cycling through its bytes, for the 18 entries of the schedule at `r2`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Blowfish.Arm
 

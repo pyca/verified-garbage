@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Message.PairedVerified
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedVerified
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.PairedVerified
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedVerified
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Message.Cached
 open VG VG.AArch64 VG.Spec.MlDsa

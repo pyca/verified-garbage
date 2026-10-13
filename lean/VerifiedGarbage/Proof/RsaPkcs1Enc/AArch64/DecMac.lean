@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecHash
+module
+
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecHash
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-PKCS1-v1_5 decryption on AArch64: the HMACs
@@ -9,6 +15,8 @@ streaming `update` (`mac_upd`) and HMAC's `finalize` (`mac_fin`). They write
 the first 1024 bytes of `scratch` (the states and the working space) and the
 output; every other range of `scratch` keeps its bytes (`Keep`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPkcs1Enc.AArch64.Dec
 

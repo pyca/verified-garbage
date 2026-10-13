@@ -1,9 +1,15 @@
-import VerifiedGarbage.Proof.AesCcm.BytesAt
-import VerifiedGarbage.Proof.AesCcm.Ctr
-import VerifiedGarbage.Proof.AesCcm.Mac
-import VerifiedGarbage.Proof.Cmac.Mem32
-import VerifiedGarbage.Proof.Cmac.Stream
-import VerifiedGarbage.Proof.Framework.WriteBytes
+module
+
+public import VerifiedGarbage.Proof.AesCcm.BytesAt
+public import VerifiedGarbage.Proof.AesCcm.Ctr
+public import VerifiedGarbage.Proof.AesCcm.Mac
+public import VerifiedGarbage.Proof.Cmac.Mem32
+public import VerifiedGarbage.Proof.Cmac.Stream
+public import VerifiedGarbage.Proof.Framework.WriteBytes
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CCM: the bytes of a buffer after writes
@@ -15,6 +21,8 @@ so that the pieces of the 32-bit implementations build their blocks
 (`Ctr₀`, `B₀`, the first block of the associated data, a last block padded)
 as lists; and `[v]₈ₖ` split into zeros and `[v]₈q` (`be_split`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

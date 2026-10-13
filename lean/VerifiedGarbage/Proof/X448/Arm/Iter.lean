@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.X448.Arm.BitStep
-import VerifiedGarbage.Proof.X448.Arm.Counters
+module
+
+public import VerifiedGarbage.Proof.X448.Arm.BitStep
+public import VerifiedGarbage.Proof.X448.Arm.Counters
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 on ARMv7: the Montgomery ladder
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.X448.Arm.Counters
 Each iteration consumes one scalar bit and updates the five field slots
 according to `ladderStep`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448.Arm
 

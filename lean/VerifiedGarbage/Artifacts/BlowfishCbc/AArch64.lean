@@ -1,6 +1,10 @@
-import VerifiedGarbage.Proof.Blowfish.AArch64.CbcVerified
+module
+
+public import VerifiedGarbage.Proof.Blowfish.AArch64.CbcVerified
 
 /-! # Blowfish-CBC artifacts on baseline AArch64 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.BlowfishCbc.AArch64
 

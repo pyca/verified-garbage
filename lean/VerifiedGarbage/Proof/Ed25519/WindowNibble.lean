@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Ed25519.Window
+module
+
+public import VerifiedGarbage.Proof.Ed25519.Window
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Verification with windows, nibble by nibble
@@ -8,6 +14,8 @@ of a little-endian scalar is its base-16 digit `i`, read from byte `i / 2`
 (`decodeLE_nibble`), and a window takes the sum of the nibbles from `i + 1`
 up to that from `i` (`nibble_step`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed25519
 

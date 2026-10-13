@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Bignum.Layout
-import VerifiedGarbage.Impl.Bignum.CrtLayout
+module
+
+public import VerifiedGarbage.Proof.Bignum.Layout
+public import VerifiedGarbage.Impl.Bignum.CrtLayout
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Multiword arithmetic: workspaces within a working space
@@ -9,6 +15,8 @@ offsets of the first one's base `B`. What code in a workspace at `off B o`
 changes is stated at its own base (`Arrays`, `Outside`, `Frm`); these
 lemmas restate it at `B`, with the ranges moved by `o` (`Frm.rebase`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum
 

@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Divstep.Incl
-import VerifiedGarbage.Proof.Divstep.Steps
+module
+
+public import VerifiedGarbage.Proof.Divstep.Incl
+public import VerifiedGarbage.Proof.Divstep.Steps
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The hulls of the divstep bound: transitions
@@ -13,6 +19,8 @@ one of the checked inclusions (`Incl`), a scaling of `H1` towards its
 origin (`H1_shrink`), a convex combination of two inclusions
 (`H1_shear`), or an identity.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Divstep
 

@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Weierstrass.Env
-import VerifiedGarbage.Impl.Weierstrass.X86_64
-import VerifiedGarbage.Proof.Mont.X86_64.Ops
-import VerifiedGarbage.Proof.Weierstrass.X86_64.MontCall
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.Env
+public import VerifiedGarbage.Impl.Weierstrass.X86_64
+public import VerifiedGarbage.Proof.Mont.X86_64.Ops
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.MontCall
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Field programs on x86-64
@@ -18,6 +24,8 @@ area change (`ProgKeep`).
 The complete additions `rcb` and, for `a = -3`, `rcb3` are such programs,
 and compute `rcbAdd` and `rcbAdd3` (`rcb_ok`, `rcb3_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.X86_64
 
@@ -246,7 +254,16 @@ theorem opProg_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat �
           · rename_i hM
             obtain ⟨hn9, hf, ht⟩ := hM
             cases hcall
-            refine WP.mono (Mont.mulCallN_ok hI.scr hI.mod hf ht (hn9 ▸ hlow) (hI.lt b hR.2))
+            refine WP.mono (Mont.mulCallN_ok hI.scr hI.mod hf hn9 ht (hn9 ▸ hlow) (hI.lt b hR.2))
+              fun s' ⟨hk, hlt, heq⟩ => ⟨hk, hI.update hL hS.1 hk hlt ?_⟩
+            rw [toM_mul hm heq, hI.val a hR.1, hI.val b hR.2]
+          split at hcall
+          · rename_i hM
+            obtain ⟨hn6, hf, ht⟩ := hM
+            have hbody : body = Mont.mulFnN6 false ∨ body = Mont.mulFnN6 true := by
+              split at hcall <;> (cases hcall; simp)
+            refine WP.mono (Mont.mulCallN6_ok hbody hI.scr hI.mod hf hn6 ht (hn6 ▸ hlow) (hL.le o hS.1)
+              (hL.le a hS.2.1) (hL.le b hS.2.2) (hI.lt b hR.2))
               fun s' ⟨hk, hlt, heq⟩ => ⟨hk, hI.update hL hS.1 hk hlt ?_⟩
             rw [toM_mul hm heq, hI.val a hR.1, hI.val b hR.2]
           · cases hcall
@@ -254,10 +271,10 @@ theorem opProg_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat �
       · cases hc
 
 /-- A product modulo a modulus of general reduction (`opProg`), a call of
-P-521's `n`'s function or inline: as the inline product. -/
+P-521's or P-384's `n`'s function or inline: as the inline product. -/
 theorem opMulN_ok {M : Mod} {base : Addr} {Z m : Nat} {s : State} (hs : Scr s base Z)
     (hM : ModOkW M Z m s.mem base) (hred : M.red = .general) (hsp : M.sparse = false) {o a b : Nat}
-    (hB : wordsVal s.mem base b M.n < m)
+    (hoZ : o + 8 * M.n ≤ Z) (haZ : a + 8 * M.n ≤ Z) (hbZ : b + 8 * M.n ≤ Z) (hB : wordsVal s.mem base b M.n < m)
     (hin : WP isa (.block (VG.Impl.Mont.X86_64.mul M o a b)) s fun s' => OpKeep M base o s s' ∧
       wordsVal s'.mem base o M.n < m ∧
       wordsVal s'.mem base o M.n * 2 ^ (64 * M.n) % m = wordsVal s.mem base a M.n * wordsVal s.mem base b M.n % m) :
@@ -281,7 +298,13 @@ theorem opMulN_ok {M : Mod} {base : Addr} {Z m : Nat} {s : State} (hs : Scr s ba
       · rename_i h
         obtain ⟨hn9, hf, ht⟩ := h
         cases hcall
-        exact Mont.mulCallN_ok hs hM hf ht (hn9 ▸ hlow) hB
+        exact Mont.mulCallN_ok hs hM hf hn9 ht (hn9 ▸ hlow) hB
+      split at hcall
+      · rename_i h
+        obtain ⟨hn6, hf, ht⟩ := h
+        have hbody : body = Mont.mulFnN6 false ∨ body = Mont.mulFnN6 true := by
+          split at hcall <;> (cases hcall; simp)
+        exact Mont.mulCallN6_ok hbody hs hM hf hn6 ht (hn6 ▸ hlow) hoZ haZ hbZ hB
       · cases hcall
     · exact hin
 

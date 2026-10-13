@@ -1,8 +1,14 @@
-import VerifiedGarbage.Impl.Ed448.AArch64.Whole
-import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Spec.Sha3
+module
+
+public import VerifiedGarbage.Impl.Ed448.AArch64.Whole
+public import VerifiedGarbage.Proof.Framework.AArch64.Exec
+public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Spec.Sha3
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448's complete operations on AArch64: the Keccak state zeroed
@@ -10,6 +16,8 @@ import VerifiedGarbage.Spec.Sha3
 `zeroStores`, with `x15` the state's address: the 25 words zeroed
 (`zstores_ok`), so the state is `Spec.Sha3.zero` (`zero_state`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.AArch64.Whole
 

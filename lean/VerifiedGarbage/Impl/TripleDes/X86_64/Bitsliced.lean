@@ -1,5 +1,9 @@
-import VerifiedGarbage.Impl.TripleDes.BitsliceLayout
-import VerifiedGarbage.Impl.TripleDes.X86_64.BitsliceAlloc
+module
+
+public import VerifiedGarbage.Impl.TripleDes.BitsliceLayout
+meta import VerifiedGarbage.Impl.TripleDes.BitsliceLayout
+public import VerifiedGarbage.Impl.TripleDes.X86_64.BitsliceAlloc
+meta import VerifiedGarbage.Impl.TripleDes.X86_64.BitsliceAlloc
 
 /-!
 # Bitsliced Triple DES ECB on x86-64
@@ -32,6 +36,8 @@ the loop state.
 * Every address and branch depends only on the pointers, `n` and the loop
   counters.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.TripleDes.X86_64.Bitslice
 

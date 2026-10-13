@@ -1,9 +1,23 @@
-import VerifiedGarbage.Proof.Framework.X86_64.RelCT
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.Rc2.X86_64.Stream.Lit
-import VerifiedGarbage.Proof.Rc2.X86_64.Stream.Steps
-import VerifiedGarbage.Proof.Rc2.X86_64.Stream.Long
-import VerifiedGarbage.Proof.Rc2.Scratch
+module
+
+public import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+public import VerifiedGarbage.Proof.Rc2.X86_64.Stream.Lit
+meta import VerifiedGarbage.Proof.Rc2.X86_64.Stream.Lit
+public import VerifiedGarbage.Proof.Rc2.X86_64.Stream.Steps
+meta import VerifiedGarbage.Proof.Rc2.X86_64.Stream.Steps
+public import VerifiedGarbage.Proof.Rc2.X86_64.Stream.Long
+meta import VerifiedGarbage.Proof.Rc2.X86_64.Stream.Long
+public import VerifiedGarbage.Proof.Rc2.Scratch
+meta import VerifiedGarbage.Proof.Rc2.Scratch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 section
 

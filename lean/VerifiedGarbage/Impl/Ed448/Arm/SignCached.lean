@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Ed448.Arm.Shake
-import VerifiedGarbage.Impl.Ed448.Arm.Scalar
+module
+
+public import VerifiedGarbage.Impl.Ed448.Arm.Shake
+public import VerifiedGarbage.Impl.Ed448.Arm.Scalar
 
 /-!
 # Ed448 signing with a cached public key on ARMv7
@@ -30,6 +32,8 @@ Then (the hashes with the blocks of `Impl/Ed448/Arm/Shake`):
 
 Every address depends only on the pointers, the lengths and `sp`.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Ed448.Arm.SignCached
 

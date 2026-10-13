@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.MlDsa.X86.Message.Verify
-import VerifiedGarbage.Proof.MlDsa.X86.Sign.Verified
-import VerifiedGarbage.Proof.MlDsa.X86.Verify.Inst
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86.Message.Verify
+meta import VerifiedGarbage.Proof.MlDsa.X86.Message.Verify
+public import VerifiedGarbage.Proof.MlDsa.X86.Sign.Verified
+meta import VerifiedGarbage.Proof.MlDsa.X86.Sign.Verified
+public import VerifiedGarbage.Proof.MlDsa.X86.Verify.Inst
+meta import VerifiedGarbage.Proof.MlDsa.X86.Verify.Inst
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on x86 (32-bit), `sign_message` and `verify_message`: the functions
@@ -10,6 +19,8 @@ and `_verify_message`, calling `vg_mldsa{44,65,87}_sign` and `_verify`
 (`sign44Fn`, `verify44Fn`, …), meet `signMessageContract p X86.abi 136` and
 `verifyMessageContract p X86.abi 132` (`signMessage44_verified`, …).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86.Message
 

@@ -1,8 +1,13 @@
-import VerifiedGarbage.Impl.Weierstrass.X86_64.JointDouble
-import VerifiedGarbage.Impl.Ecdsa.P384.X86_64
-import VerifiedGarbage.Impl.Ecdh.X86_64
+module
+
+public import VerifiedGarbage.Impl.Weierstrass.X86_64.JointDouble
+public import VerifiedGarbage.Impl.Ecdsa.P384.X86_64
+public import VerifiedGarbage.Impl.Ecdh.X86_64
 
 /-! The x86-64 P-384 joint multiplication layout, for public verification. -/
+
+@[expose] public section
+
 namespace VG.Impl.P384.X86_64
 open VG VG.X86_64 VG.Impl.Weierstrass.X86_64 VG.Impl.Ecdsa.X86_64
 
@@ -19,7 +24,7 @@ def p384vx : Cfg := { p384x with pubVerify := true }
 pair at `6160`, and the generator's digits at `6400`. -/
 def publicJoint : Joint.Cfg :=
   ⟨p384v.winCfg Impl.Ecdh.X86_64.PX Impl.Ecdh.X86_64.PY Impl.Ecdh.X86_64.BP,
-    6400,"VG_P384_COMB",5392,6160,some Spec.Weierstrass.PointOps.p384,false⟩
+    6400,"VG_P384_COMB",5392,6160,some Spec.Weierstrass.PointOps.p384,false,false⟩
 
 /-- `publicJoint` with BMI2 and ADX. -/
 def publicJointAdx : Joint.Cfg :=

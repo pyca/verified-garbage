@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Fn
-import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.CT
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Fn
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Fn
+public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.CT
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.CT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM one-shot encryption out of place, from a list of slices, x86-64: constant time
@@ -14,6 +22,8 @@ the lengths, the slices done and the pointers, all functions of the public
 arguments and the descriptors (`Pub`); and the calls get the same public
 arguments.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

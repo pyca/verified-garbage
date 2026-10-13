@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.X448.X86.MulLoop
-import VerifiedGarbage.Proof.X448.X86.Reduce
-import VerifiedGarbage.Proof.X448.X86.FnCtx
+module
+
+public import VerifiedGarbage.Proof.X448.X86.MulLoop
+public import VerifiedGarbage.Proof.X448.X86.Reduce
+public import VerifiedGarbage.Proof.X448.X86.FnCtx
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 on x86 (32-bit): field multiplication
@@ -11,6 +17,8 @@ at `b` and `ebp` at `a`, and the 28 unrolled rows (`mulRowU_ok`, as
 the 56 limbs of the product, which are folded and normalized modulo the
 prime into the element at `o` (`mulTail_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448.X86
 

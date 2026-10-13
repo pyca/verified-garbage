@@ -1,4 +1,6 @@
-import Lean.ToExpr
+module
+
+public import Lean.ToExpr
 
 /-!
 # Public bytes of the writable regions, as bit masks
@@ -20,6 +22,8 @@ The lemmas state the operations in terms of `has`, whether a byte is public.
 Code and proofs write slots as lists of ranges `(i, o, n)` (the `n` bytes at
 offset `o` of region `i`), which `ofList` (a coercion) turns into masks.
 -/
+
+@[expose] public section
 
 namespace VG
 

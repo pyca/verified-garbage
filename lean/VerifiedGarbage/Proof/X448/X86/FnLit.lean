@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.Framework.X86.Lit
-import VerifiedGarbage.Impl.X448.X86
+module
+
+public import VerifiedGarbage.Proof.Framework.X86.Lit
+meta import VerifiedGarbage.Proof.Framework.X86.Lit
+public import VerifiedGarbage.Impl.X448.X86
+meta import VerifiedGarbage.Impl.X448.X86
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Curve448's field functions on x86 (32-bit): the code as literals
@@ -9,6 +17,8 @@ unrolled: the literals spare the kernel building the instructions again in
 every check that evaluates the code (constant time, the stack pointer,
 `spSafe`).
 -/
+
+@[expose] public section
 
 namespace VG.Impl.X448.X86
 

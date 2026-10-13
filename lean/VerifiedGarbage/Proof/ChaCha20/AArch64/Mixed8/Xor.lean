@@ -1,6 +1,17 @@
-import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Tail
-import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Lit
-import VerifiedGarbage.Proof.ChaCha20.AArch64.Rows6.Xor
+module
+
+public import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Tail
+meta import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Tail
+public import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Lit
+meta import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Lit
+public import VerifiedGarbage.Proof.ChaCha20.AArch64.Rows6.Xor
+meta import VerifiedGarbage.Proof.ChaCha20.AArch64.Rows6.Xor
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.ChaCha20.AArch64.Mixed8
 open VG VG.AArch64 VG.Impl.ChaCha20.AArch64.Mixed8

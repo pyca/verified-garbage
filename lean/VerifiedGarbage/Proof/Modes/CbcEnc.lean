@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Modes.Cbc
+module
+
+public import VerifiedGarbage.Proof.Modes.Cbc
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # CBC encryption's result, for any block cipher and target
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.Modes.Cbc
 `Cⱼ = CIPH_K(Pⱼ ⊕ Cⱼ₋₁)` (`cbcEncC`, with `C₋₁` the IV), the blocks are
 `Spec.Cbc.encrypt`'s. Nothing here depends on a cipher or a target.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Modes
 

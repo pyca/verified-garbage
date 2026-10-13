@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.MlKem.Encode
-import VerifiedGarbage.Proof.MlKem.Compress1024
+module
+
+public import VerifiedGarbage.Proof.MlKem.Encode
+public import VerifiedGarbage.Proof.MlKem.Compress1024
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM-1024: compressed encodings byte by byte, for every target
@@ -22,6 +28,8 @@ Byte `k` of a list `B` is written `B.getD k 0`, which `bytesAt_getD`
 (`Mem.lean`) reads from memory, and byte `k` of an encoding `L[k]!`, which
 `bytesAt_eq!` takes.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem
 

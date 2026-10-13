@@ -1,7 +1,16 @@
-import VerifiedGarbage.Proof.P256.X86_64.JointLayout
-import VerifiedGarbage.Proof.Weierstrass.X86_64.JointInitLayout
+module
+
+public import VerifiedGarbage.Proof.P256.X86_64.JointLayout
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointInitLayout
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! The actual baseline and ADX table initialization layouts satisfy the nine-point bounds. -/
+
+@[expose] public section
+
 namespace VG.Proof.P256.X86_64
 open VG VG.X86_64 VG.Impl.P256.X86_64 VG.Impl.Weierstrass
 open VG.Proof.Mont VG.Proof.Weierstrass.X86_64

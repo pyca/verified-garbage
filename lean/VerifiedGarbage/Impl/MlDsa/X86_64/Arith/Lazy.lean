@@ -1,6 +1,11 @@
-import VerifiedGarbage.Impl.MlDsa.X86_64.Arith.Avx2
+module
+
+public import VerifiedGarbage.Impl.MlDsa.X86_64.Arith.Avx2
 
 /-! Forward AVX2 NTT with a single canonical reduction after all eight layers. -/
+
+@[expose] public section
+
 namespace VG.Impl.MlDsa.X86_64.Arith
 open VG.X86_64
 open VG.Impl.MlKem.X86_64 (xb xmov withMxcsr rcxLoop toY yconst)

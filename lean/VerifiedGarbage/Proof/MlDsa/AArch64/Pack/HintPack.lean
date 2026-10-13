@@ -1,8 +1,19 @@
-import VerifiedGarbage.Impl.MlDsa.AArch64.Pack.Hint
-import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Contracts
-import VerifiedGarbage.Proof.MlDsa.Pack.HintMem
-import VerifiedGarbage.Proof.MlKem.AArch64.MemTaint
-import VerifiedGarbage.Proof.Framework.RelCT
+module
+
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Pack.Hint
+meta import VerifiedGarbage.Impl.MlDsa.AArch64.Pack.Hint
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Contracts
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Contracts
+public import VerifiedGarbage.Proof.MlDsa.Pack.HintMem
+meta import VerifiedGarbage.Proof.MlDsa.Pack.HintMem
+public import VerifiedGarbage.Proof.MlKem.AArch64.MemTaint
+meta import VerifiedGarbage.Proof.MlKem.AArch64.MemTaint
+public import VerifiedGarbage.Proof.Framework.RelCT
+meta import VerifiedGarbage.Proof.Framework.RelCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on AArch64: `vg_mldsa_hint_bit_pack`
@@ -16,6 +27,8 @@ Constant time but for the hint: once `y` is zeroed, the two runs agree on
 all the memory the function may access (the hint, which the contract lets
 it leak, and `y`), and `memTaint` proves the rest.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Pack
 

@@ -1,7 +1,13 @@
-import VerifiedGarbage.Impl.Weierstrass.AArch64.Inv
-import VerifiedGarbage.Proof.Mont.AArch64.Chain
-import VerifiedGarbage.Proof.Mont.AArch64.Csub
-import VerifiedGarbage.Proof.Weierstrass.InvMask
+module
+
+public import VerifiedGarbage.Impl.Weierstrass.AArch64.Inv
+public import VerifiedGarbage.Proof.Mont.AArch64.Chain
+public import VerifiedGarbage.Proof.Mont.AArch64.Csub
+public import VerifiedGarbage.Proof.Weierstrass.InvMask
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Inversion by divsteps on AArch64: numbers of several words
@@ -11,6 +17,8 @@ working space, as numbers: `w [src] mod 2^(64 K)` (`mulw_ok`), its
 accumulation (`mulAdd_ok`), the masked shifted subtraction (`subSh_ok`), the
 arithmetic shift by 59 (`shr59_ok`), and copies.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.AArch64
 

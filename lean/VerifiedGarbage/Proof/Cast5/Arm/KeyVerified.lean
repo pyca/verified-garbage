@@ -1,9 +1,21 @@
-import VerifiedGarbage.Proof.Cast5.Arm.Key
-import VerifiedGarbage.Proof.Cast5.Arm.Lit
-import VerifiedGarbage.Proof.Framework.Arm.Taint
-import VerifiedGarbage.Proof.Framework.Arm.Contract
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Spec.Cast5.Contract
+module
+
+public import VerifiedGarbage.Proof.Cast5.Arm.Key
+meta import VerifiedGarbage.Proof.Cast5.Arm.Key
+public import VerifiedGarbage.Proof.Cast5.Arm.Lit
+meta import VerifiedGarbage.Proof.Cast5.Arm.Lit
+public import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+public import VerifiedGarbage.Proof.Framework.Arm.Contract
+meta import VerifiedGarbage.Proof.Framework.Arm.Contract
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.Cast5.Contract
+meta import VerifiedGarbage.Spec.Cast5.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # CAST5 key expansion on ARMv7: verified
@@ -12,6 +24,8 @@ Constant time by the taint analysis: `r0`–`r3` (the pointers and the key's
 length) are public, `r3` the working space's base; the step and half counts
 and the schedule's pointer are computed from them.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Cast5.Arm
 

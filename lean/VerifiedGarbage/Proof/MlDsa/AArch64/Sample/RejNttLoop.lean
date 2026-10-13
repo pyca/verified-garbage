@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Zero
-import VerifiedGarbage.Proof.MlDsa.Sample.RejNtt
-import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.RejNtt
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Zero
+public import VerifiedGarbage.Proof.MlDsa.Sample.RejNtt
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.RejNtt
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on AArch64: the loop of `vg_mldsa_rej_ntt_poly`
@@ -12,6 +18,8 @@ coefficient is stored as coefficient `j` whether it is accepted or not
 (`Stored` constrains only the first `j`). The loop reads only the output, and
 writes only `a`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Sample.RejNtt
 

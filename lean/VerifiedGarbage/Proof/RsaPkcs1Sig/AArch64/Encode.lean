@@ -1,6 +1,12 @@
-import VerifiedGarbage.Impl.RsaPkcs1Sig.AArch64.Encode
-import VerifiedGarbage.Proof.MlKem.AArch64.Wp
-import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
+module
+
+public import VerifiedGarbage.Impl.RsaPkcs1Sig.AArch64.Encode
+public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # EMSA-PKCS1-v1_5 encoding on AArch64: correctness
@@ -12,6 +18,8 @@ the value (`Spec.RsaPkcs1Sig.encode`) to the buffer if it exists, and
 returns 0 and leaves memory as it was if not. `compare_ok`: `compare` leaves
 in `x12` a value that is zero exactly when its two buffers are equal.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPkcs1Sig.AArch64
 

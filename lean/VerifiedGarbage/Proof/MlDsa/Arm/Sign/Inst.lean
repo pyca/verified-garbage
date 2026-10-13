@@ -1,17 +1,23 @@
-import VerifiedGarbage.Proof.MlDsa.Arm.Sign.SignCT
-import VerifiedGarbage.Proof.MlDsa.Arm.Arith.AddSub
-import VerifiedGarbage.Proof.MlDsa.Arm.Arith.Mul
-import VerifiedGarbage.Proof.MlDsa.Arm.Arith.NttInv
-import VerifiedGarbage.Proof.MlDsa.Arm.Round.Bits
-import VerifiedGarbage.Proof.MlDsa.Arm.Round.NormLt
-import VerifiedGarbage.Proof.MlDsa.Arm.Round.MakeHint
-import VerifiedGarbage.Proof.MlDsa.Arm.Pack.SimpleBitPack
-import VerifiedGarbage.Proof.MlDsa.Arm.Pack.BitPack
-import VerifiedGarbage.Proof.MlDsa.Arm.Pack.Unpack
-import VerifiedGarbage.Proof.MlDsa.Arm.Pack.HintPackCT
-import VerifiedGarbage.Proof.MlDsa.Arm.Sample.RejNttCT
-import VerifiedGarbage.Proof.MlDsa.Arm.Sample.ExpandMask
-import VerifiedGarbage.Proof.MlDsa.Arm.Sample.BallCT
+module
+
+public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.SignCT
+public import VerifiedGarbage.Proof.MlDsa.Arm.Arith.AddSub
+public import VerifiedGarbage.Proof.MlDsa.Arm.Arith.Mul
+public import VerifiedGarbage.Proof.MlDsa.Arm.Arith.NttInv
+public import VerifiedGarbage.Proof.MlDsa.Arm.Round.Bits
+public import VerifiedGarbage.Proof.MlDsa.Arm.Round.NormLt
+public import VerifiedGarbage.Proof.MlDsa.Arm.Round.MakeHint
+public import VerifiedGarbage.Proof.MlDsa.Arm.Pack.SimpleBitPack
+public import VerifiedGarbage.Proof.MlDsa.Arm.Pack.BitPack
+public import VerifiedGarbage.Proof.MlDsa.Arm.Pack.Unpack
+public import VerifiedGarbage.Proof.MlDsa.Arm.Pack.HintPackCT
+public import VerifiedGarbage.Proof.MlDsa.Arm.Sample.RejNttCT
+public import VerifiedGarbage.Proof.MlDsa.Arm.Sample.ExpandMask
+public import VerifiedGarbage.Proof.MlDsa.Arm.Sample.BallCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA signing on ARMv7: the primitives it calls
@@ -25,6 +31,8 @@ result signing branches on, that it depends only on their public data and that
 they succeed only if the algorithm finishes within `maxBounds` (from what
 their own proofs say they return).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Arm.Sign
 
@@ -114,17 +122,17 @@ def prims_ok : PrimsOk prims signStack where
   bitPack := ⟨4, by decide, Proof.MlDsa.Arm.Pack.bitPack_verified, by decide +kernel⟩
   bitUnpack := ⟨4, by decide, Proof.MlDsa.Arm.Pack.bitUnpack_verified, by decide +kernel⟩
   hintBitPack := ⟨8, by decide, Proof.MlDsa.Arm.Pack.Hint.hintBitPack_verified, by decide +kernel⟩
-  rejRet := fun s₁ s₂ t₁ t₂ s₁' s₂' ⟨h₁, h₂, hp⟩ e₁ e₂ =>
+  rejRet := by exact (fun s₁ s₂ t₁ t₂ s₁' s₂' ⟨h₁, h₂, hp⟩ e₁ e₂ =>
     ⟨Proof.MlDsa.Arm.Sample.rejNTT_verified.2.1 s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hp e₁ e₂,
-      show _ = _ by rw [rn_ret h₁ e₁, rn_ret h₂ e₂, rn_pub s₁ s₂ hp]⟩
+      show _ = _ by rw [rn_ret h₁ e₁, rn_ret h₂ e₂, rn_pub s₁ s₂ hp]⟩)
   rejMax := fun s t s' h e h1 => by
     rw [rn_ret h e] at h1
     by_cases hf : (VG.Proof.MlDsa.Sample.rnFold [] (G (bytesAt s.mem (State.addr (s.gpr .r0)) 34) 1008)).length = 256
     · rw [rejNTTPoly_mono (show 1008 ≤ maxBounds.rejNTT by decide) (VG.Proof.MlDsa.Sample.rejNTT_some hf)]; rfl
     · rw [ifn hf] at h1; exact absurd h1.symm one_ne_zero32
-  ballRet := fun s₁ s₂ t₁ t₂ s₁' s₂' ⟨h₁, h₂, hp⟩ e₁ e₂ =>
+  ballRet := by exact (fun s₁ s₂ t₁ t₂ s₁' s₂' ⟨h₁, h₂, hp⟩ e₁ e₂ =>
     ⟨Proof.MlDsa.Arm.Sample.sampleInBall_verified.2.1 s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hp e₁ e₂,
-      show _ = _ by rw [sb_ret h₁ e₁, sb_ret h₂ e₂, (sb_pub s₁ s₂ hp).1, (sb_pub s₁ s₂ hp).2]⟩
+      show _ = _ by rw [sb_ret h₁ e₁, sb_ret h₂ e₂, (sb_pub s₁ s₂ hp).1, (sb_pub s₁ s₂ hp).2]⟩)
   ballMax := fun s t s' h e h1 => by
     rw [sb_ret h e] at h1
     by_cases hf : (VG.Proof.MlDsa.Sample.ballFold (s.gpr .r2).toNat

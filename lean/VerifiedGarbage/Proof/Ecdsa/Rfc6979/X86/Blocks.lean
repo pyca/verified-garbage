@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Copy
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Hmac
-import VerifiedGarbage.Proof.Weierstrass.Words32
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Copy
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Hmac
+public import VerifiedGarbage.Proof.Weierstrass.Words32
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Deterministic ECDSA on x86 (32-bit): the blocks between the calls
@@ -11,6 +17,8 @@ arguments of `core` (`coreArgs_ok`), whether to go on (`goOn_ok`,
 `again_ok`, `stop_ok`), and the wiping of the frame with our caller's
 registers restored (`wipe_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Rfc6979.X86
 

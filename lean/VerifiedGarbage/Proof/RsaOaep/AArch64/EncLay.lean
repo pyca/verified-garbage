@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.RsaOaep.AArch64.DecEntry
-import VerifiedGarbage.Proof.RsaOaep.AArch64.EncEm
+module
+
+public import VerifiedGarbage.Proof.RsaOaep.AArch64.DecEntry
+public import VerifiedGarbage.Proof.RsaOaep.AArch64.EncEm
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-OAEP encryption on AArch64: where everything is
@@ -10,6 +16,8 @@ contract says of them (`ELay.Ok`, `lay_ok`), `Ctx` between the frames'
 pushes and pops, the pieces' `Lay`, `LabAt` and `Apart` from it, and the
 prologue (`prologue_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaOaep.AArch64.Enc
 

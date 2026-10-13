@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.TripleDes.X86.CbcVerified
-import VerifiedGarbage.Proof.TripleDes.FbScratch
-import VerifiedGarbage.Proof.TripleDes.X86.FbLit
+module
+
+public import VerifiedGarbage.Proof.TripleDes.X86.CbcVerified
+meta import VerifiedGarbage.Proof.TripleDes.X86.CbcVerified
+public import VerifiedGarbage.Proof.TripleDes.FbScratch
+meta import VerifiedGarbage.Proof.TripleDes.FbScratch
+public import VerifiedGarbage.Proof.TripleDes.X86.FbLit
+meta import VerifiedGarbage.Proof.TripleDes.X86.FbLit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Triple DES-OFB, -CFB64 and -CFB8 on x86 (32-bit) meet their contracts
@@ -15,6 +24,8 @@ value and the scratch buffer as the base addresses of the writable regions,
 with room for the block function's call below `esp`. The `_framed` theorems
 run them with their working space on the stack, zeroed on return.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.TripleDes.X86.Fb
 

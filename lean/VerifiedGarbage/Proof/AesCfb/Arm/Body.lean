@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.AesCfb.Spec
-import VerifiedGarbage.Proof.AesOfb.Arm.Body
-import VerifiedGarbage.Impl.AesCfb.Arm
+module
+
+public import VerifiedGarbage.Proof.AesCfb.Spec
+meta import VerifiedGarbage.Proof.AesCfb.Spec
+public import VerifiedGarbage.Proof.AesOfb.Arm.Body
+meta import VerifiedGarbage.Proof.AesOfb.Arm.Body
+public import VerifiedGarbage.Impl.AesCfb.Arm
+meta import VerifiedGarbage.Impl.AesCfb.Arm
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CFB128 on ARMv7: one block, and constant time
@@ -11,6 +20,8 @@ AES-CBC's proofs share (`Proof/AesCbc/Arm/Loop.lean`) from `k` blocks to
 (`Proof/AesOfb/Arm/Body.lean`). `encBody_ct` and `decBody_ct`: they are
 constant time, by the shared framework, with the call on the block at `iv`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesCfb.Arm
 

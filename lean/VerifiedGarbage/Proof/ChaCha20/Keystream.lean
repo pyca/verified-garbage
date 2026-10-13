@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.ChaCha20.Spec
-import VerifiedGarbage.Proof.Framework.Mem
+module
+
+public import VerifiedGarbage.Proof.ChaCha20.Spec
+public import VerifiedGarbage.Proof.Framework.Mem
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Facts about the ChaCha20 keystream
@@ -8,6 +14,8 @@ The keystream byte by byte (`keystream_getD`), the bytes of a state in memory
 (`serialize_stateAt`), and incrementing the counter of a state in memory
 (`stateAt_writeW_counter`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.ChaCha20
 

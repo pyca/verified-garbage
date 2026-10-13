@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Samp4
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Samp4
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA verification on AArch64: `w′₁`, row by row
@@ -8,6 +14,8 @@ their result `q` (`SC`): `ẑ[i] = NTT(z[i])` (`nttZ_vpiece`), `ĉ`
 (`nttC_vpiece`), and each row `r` of `w′₁`, packed to `w1Encode(w′₁)`
 (`row_vpiece`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Verify
 

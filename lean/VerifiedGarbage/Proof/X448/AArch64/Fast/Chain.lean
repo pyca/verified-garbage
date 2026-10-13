@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.X448.AArch64.Fast.StepOps
-import VerifiedGarbage.Proof.X448.AArch64.Weak.Inv
-import VerifiedGarbage.Proof.X448.AArch64.Weak.Counters
-import VerifiedGarbage.Proof.Curve448.AArch64.Swap
+module
+
+public import VerifiedGarbage.Proof.X448.AArch64.Fast.StepOps
+public import VerifiedGarbage.Proof.X448.AArch64.Weak.Inv
+public import VerifiedGarbage.Proof.X448.AArch64.Weak.Counters
+public import VerifiedGarbage.Proof.Curve448.AArch64.Swap
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 on AArch64: chains of field operations
@@ -12,6 +18,8 @@ copies and repeated squarings with the faster field operations computes
 the ladder's proofs, so that other chains (Ed448's square root) do not import
 the ladder's AdvSIMD arithmetic.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448.AArch64.Fast
 

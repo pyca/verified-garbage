@@ -1,6 +1,14 @@
-import VerifiedGarbage.Proof.Weierstrass.X86_64.JointPrep
-import VerifiedGarbage.Proof.Weierstrass.X86_64.FastNafTiming
-import VerifiedGarbage.Proof.Framework.X86_64.Syms
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointPrep
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.FastNafTiming
+public import VerifiedGarbage.Proof.Framework.X86_64.Syms
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.X86_64
 open VG VG.X86_64 VG.Impl.Weierstrass.X86_64

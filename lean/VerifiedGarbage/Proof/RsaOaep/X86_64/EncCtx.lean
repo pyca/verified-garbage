@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Rsa.X86_64.PrivCtx
-import VerifiedGarbage.Proof.Bignum.X86_64.PubVerified
-import VerifiedGarbage.Spec.RsaOaep.Contract
-import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Hash
+module
+
+public import VerifiedGarbage.Proof.Rsa.X86_64.PrivCtx
+public import VerifiedGarbage.Proof.Bignum.X86_64.PubVerified
+public import VerifiedGarbage.Spec.RsaOaep.Contract
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Hash
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-OAEP encryption on x86-64: the contract on the registers
@@ -10,6 +16,8 @@ import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Hash
 frame and the calls use, `encStack`) on the registers and the stack
 (`enc_implies`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaOaep.X86_64
 

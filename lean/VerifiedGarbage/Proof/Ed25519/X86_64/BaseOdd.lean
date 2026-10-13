@@ -1,6 +1,12 @@
-import VerifiedGarbage.Impl.Ed25519.X86_64.BaseOdd
-import VerifiedGarbage.Proof.Ed25519.WindowConstants
-import VerifiedGarbage.Proof.Ed25519.Recode
+module
+
+public import VerifiedGarbage.Impl.Ed25519.X86_64.BaseOdd
+public import VerifiedGarbage.Proof.Ed25519.WindowConstants
+public import VerifiedGarbage.Proof.Ed25519.Recode
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The static odd multiples of `-B`
@@ -11,6 +17,8 @@ the kernel evaluates 64 additions; each static entry is the caching of the negat
 affine point by definition, so entry `e` represents `-[d]B` for the digit `d = dec (e + 1)`
 whose byte is `e + 1` (`baseOddCached_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed25519.X86_64
 

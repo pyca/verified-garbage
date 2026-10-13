@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Sm4.AArch64.Ctr
-import VerifiedGarbage.Impl.Modes.AArch64.Fb
+module
+
+public import VerifiedGarbage.Impl.Sm4.AArch64.Ctr
+public import VerifiedGarbage.Impl.Modes.AArch64.Fb
 
 /-!
 # SM4-OFB and SM4-CFB128, bitsliced, on AArch64
@@ -15,6 +17,8 @@ modes keep it in `x19` (a callee-saved register, which they restore), and
 block's input depends on the block before it, so each is enciphered alone,
 in a batch of sixteen.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Sm4.AArch64
 

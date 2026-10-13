@@ -1,8 +1,16 @@
-import VerifiedGarbage.Impl.Rc4.X86
-import VerifiedGarbage.Proof.Rc4.Scan32
-import VerifiedGarbage.Proof.MlDsa.X86.Pack.Run
+module
+
+public import VerifiedGarbage.Impl.Rc4.X86
+public import VerifiedGarbage.Proof.Rc4.Scan32
+public import VerifiedGarbage.Proof.MlDsa.X86.Pack.Run
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # RC4 on x86 (32-bit): the table lookup, a doubleword at a time -/
+
+@[expose] public section
 
 namespace VG.Proof.Rc4.X86
 open VG VG.X86 VG.Impl.Rc4.X86 VG.Proof.Rc4

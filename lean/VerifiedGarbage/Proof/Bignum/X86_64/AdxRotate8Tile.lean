@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8TileEdges
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8TileEdges
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## AdxRotate8Front -/
+
+@[expose] public section
+
 section
 
 /-! The first block determines the cancellation digits and starts the sweep. -/

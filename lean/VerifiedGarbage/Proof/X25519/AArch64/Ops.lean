@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.X25519.AArch64.Arith
-import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Impl.X25519.AArch64
+module
+
+public import VerifiedGarbage.Proof.X25519.AArch64.Arith
+public import VerifiedGarbage.Proof.Framework.AArch64.Exec
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Impl.X25519.AArch64
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X25519 on AArch64: the steps of the field operations
@@ -11,6 +17,8 @@ bytes) at constant offsets; each lemma here runs a few instructions and states
 their effect on the numbers in the registers and in the words of the working
 space.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X25519.AArch64
 

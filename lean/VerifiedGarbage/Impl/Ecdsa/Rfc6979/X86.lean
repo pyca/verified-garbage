@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Pbkdf2.Whole.X86
-import VerifiedGarbage.Impl.Weierstrass.X86
+module
+
+public import VerifiedGarbage.Impl.Pbkdf2.Whole.X86
+public import VerifiedGarbage.Impl.Weierstrass.X86
 
 /-!
 # Deterministic ECDSA (RFC 6979) on x86 (32-bit)
@@ -65,6 +67,8 @@ pointer an earlier block loaded from our arguments (`digestPtr`, `msgPtrs`,
 `scrPtr`), never one it loads itself, so that the taint analysis of each
 block knows its addresses are public.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Ecdsa.Rfc6979.X86
 

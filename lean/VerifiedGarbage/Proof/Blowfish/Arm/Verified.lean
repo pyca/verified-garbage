@@ -1,9 +1,21 @@
-import VerifiedGarbage.Proof.Blowfish.Arm.KeyMain
-import VerifiedGarbage.Proof.Blowfish.Arm.Lit
-import VerifiedGarbage.Proof.Blowfish.Scratch
-import VerifiedGarbage.Proof.Framework.Arm.Taint
-import VerifiedGarbage.Proof.Framework.Arm.Contract
-import VerifiedGarbage.Proof.Framework.Contract
+module
+
+public import VerifiedGarbage.Proof.Blowfish.Arm.KeyMain
+meta import VerifiedGarbage.Proof.Blowfish.Arm.KeyMain
+public import VerifiedGarbage.Proof.Blowfish.Arm.Lit
+meta import VerifiedGarbage.Proof.Blowfish.Arm.Lit
+public import VerifiedGarbage.Proof.Blowfish.Scratch
+meta import VerifiedGarbage.Proof.Blowfish.Scratch
+public import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+public import VerifiedGarbage.Proof.Framework.Arm.Contract
+meta import VerifiedGarbage.Proof.Framework.Arm.Contract
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Blowfish on ARMv7: the functions meet their contracts, with the working space as an argument
@@ -13,6 +25,8 @@ the count of blocks are public, and the working space (at `r3`) is a
 writable region whose public slots keep the pointer and the counter public
 through memory.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Blowfish.Arm
 

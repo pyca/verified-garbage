@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesGcm.Arm.Tag
+module
+
+public import VerifiedGarbage.Proof.AesGcm.Arm.Tag
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on ARMv7: the pre-counter block (`j0`)
@@ -11,6 +17,8 @@ accumulator at the state's first block (`j0hash_ok`), the nonce's length
 kept in `r7`. `initState` then zeroes the accumulator and writes the first
 counter block `inc₃₂(J₀)` (`initState_ok`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

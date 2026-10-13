@@ -1,13 +1,15 @@
-import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Impl.Poly1305.X86_64
-import VerifiedGarbage.Proof.Poly1305.X86_64.Blocks
-import VerifiedGarbage.Proof.Poly1305.X86_64.Finalize
-import VerifiedGarbage.Proof.Poly1305.X86_64.Init
-import VerifiedGarbage.Proof.Poly1305.X86_64.Lit
-import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Blocks
-import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Blocks
-import VerifiedGarbage.Proof.Poly1305.X86_64.Ifma.Blocks
-import VerifiedGarbage.Proof.Poly1305.X86_64.Frame
+module
+
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Impl.Poly1305.X86_64
+public import VerifiedGarbage.Proof.Poly1305.X86_64.Blocks
+public import VerifiedGarbage.Proof.Poly1305.X86_64.Finalize
+public import VerifiedGarbage.Proof.Poly1305.X86_64.Init
+public import VerifiedGarbage.Proof.Poly1305.X86_64.Lit
+public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Blocks
+public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Blocks
+public import VerifiedGarbage.Proof.Poly1305.X86_64.Ifma.Blocks
+public import VerifiedGarbage.Proof.Poly1305.X86_64.Frame
 
 /-!
 # Poly1305 (RFC 8439 §2.5) on x86-64
@@ -16,6 +18,8 @@ import VerifiedGarbage.Proof.Poly1305.X86_64.Frame
 in the generic file `Generic/Poly1305Blocks/X86_64/Poly1305.lean`, emitted
 once for each.
 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.Poly1305.X86_64
 

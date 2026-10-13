@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
-import VerifiedGarbage.Impl.X448.X86_64
+module
+
+public import VerifiedGarbage.Proof.Framework.X86_64.Lit
+meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
+public import VerifiedGarbage.Impl.X448.X86_64
+meta import VerifiedGarbage.Impl.X448.X86_64
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 on x86-64: the code as a literal
@@ -9,6 +17,8 @@ kernel-evaluated check. The field operations are templates
 (`materialize_template`), each evaluated once with its offsets free rather
 than once for every product, sum and swap of the code.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448.X86_64.Lit
 open VG.Impl.X448.X86_64

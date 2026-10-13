@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.AesSiv.Arm.CTMac
+module
+
+public import VerifiedGarbage.Proof.AesSiv.Arm.CTMac
+meta import VerifiedGarbage.Proof.AesSiv.Arm.CTMac
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-SIV on ARMv7: S2V's end is constant time
@@ -10,6 +17,8 @@ the taint analysis checks with the blocks between the calls; the calls get
 the same arguments in both runs, which the correctness lemmas give
 (`shortArgs_ok`, `longArgs₁_ok`, `longArgs₂_ok`, `longArgs₃_ok`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

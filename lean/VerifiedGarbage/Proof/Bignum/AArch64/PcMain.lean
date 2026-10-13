@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Bignum.AArch64.PubFail
+module
+
+public import VerifiedGarbage.Proof.Bignum.AArch64.PubFail
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_public_precompute` on AArch64: the computation for a valid modulus
@@ -6,6 +12,8 @@ import VerifiedGarbage.Proof.Bignum.AArch64.PubFail
 `main`, from the header that `entry` leaves, for a valid modulus `m` of `w`
 words: `m` and `R² mod m` to `pre`, and 1 returned (`pcMain_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.AArch64
 

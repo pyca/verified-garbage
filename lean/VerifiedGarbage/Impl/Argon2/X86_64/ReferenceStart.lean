@@ -1,4 +1,6 @@
-import VerifiedGarbage.TCB.X86_64.Isa
+module
+
+public import VerifiedGarbage.TCB.X86_64.Isa
 
 /-! Start of the chronological reference window.
 
@@ -6,6 +8,8 @@ The public pass, slice and segment length are in `r9`, `r14` and `r13`.
 `r10` receives zero on pass zero or the last slice, otherwise the column
 at the beginning of the next slice. No division is needed.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Argon2.X86_64.ReferenceStart
 

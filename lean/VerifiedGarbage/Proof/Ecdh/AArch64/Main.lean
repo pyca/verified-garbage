@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Ecdh.AArch64.Window
-import VerifiedGarbage.Proof.Ecdh.Exchange
+module
+
+public import VerifiedGarbage.Proof.Ecdh.AArch64.Window
+public import VerifiedGarbage.Proof.Ecdh.Exchange
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDH on AArch64: the result, and the whole function
@@ -11,6 +17,8 @@ Montgomery's form by a multiplication by 1, ands the masks of `d ∈ [1, n-1]`
 and `Z ≠ 0` into the flag, and writes `x` or zeros (`middle_ok`); `finish`
 writes the result as the signature's does (`ecFinish_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdh.AArch64
 
@@ -304,7 +312,7 @@ theorem exchange_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : EPre c s�
   have hq₂ : s₂.gpr .x6 = s₀.gpr .x2 := by rw [S₂.gpr _ (by decide), x6₁]
   have hrw₂ : s₂.rd ++ s₂.wr = s₀.rd ++ s₀.wr := by rw [S₂.rd, S₂.wr, hrd₁]
   -- The peer's key.
-  refine WP.seq (WP.mono (peer_ok hc S₂.scr hq₂ (by rw [hrw₂, hp.rd]; simp) hp.peer_sc S₂.fixed.mp)
+  refine WP.seq (WP.mono (peer_ok hc S₂.scr hq₂ (by rw [hrw₂, hp.rd]; simp) hp.peer_sc)
     fun s₃ ⟨hs₃, k₃, U₃, r2₃, bp₃, y₃, f₃⟩ => ?_)
   have F₃ := S₂.fixed.unch h7 hn ((fixedOk_slW (l := [R2P, BP, QY]) (by decide)).append fixedOk_flag) U₃
   have e₃ : ∀ {i}, i < 45 → i ∉ [R2P, BP, QY] → i ≠ FLAG →
@@ -318,9 +326,8 @@ theorem exchange_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : EPre c s�
     have := keep_of_disjoint' W₂ hp.peer_sc (by omega) (i := 0) (by omega) (by omega)
     rwa [BitVec.add_zero] at this
   -- What the code checks of the peer's key so far.
-  have hf₃ : word s₃.mem (s₀.gpr .x3) (c.sl FLAG) = mask (((s₀.mem (s₀.gpr .x2) = 4 ∧
-      sv c (s₀.gpr .x3) s₃ E < c.C.p) ∧ sv c (s₀.gpr .x3) s₃ QY < c.C.p)) := by
-    rw [f₃, S₂.flag, BitVec.allOnes_and, mask_and, mask_and, x₃, hq0]
+  have hf₃ : word s₃.mem (s₀.gpr .x3) (c.sl FLAG) = mask (s₀.mem (s₀.gpr .x2) = 4) := by
+    rw [f₃, S₂.flag, BitVec.allOnes_and, hq0]
   refine WP.seq (WP.mono (validate_ok hc hs₃ F₃ r2₃ bp₃ hf₃)
     fun s₄ ⟨hs₄, g₄, rd₄, wr₄, U₄, f₄, px_lt, py_lt, px, py⟩ => ?_)
   have F₄ := F₃.unch h7 hn ((fixedOk_slW (l := [QXM, QYM, TMP, W0, W1, W2, W3, PY]) (by decide)).append

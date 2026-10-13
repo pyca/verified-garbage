@@ -1,7 +1,16 @@
-import VerifiedGarbage.Proof.Weierstrass.X86.FieldTiming
-import VerifiedGarbage.Proof.Weierstrass.X86.JacAdd
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86.FieldTiming
+public import VerifiedGarbage.Proof.Weierstrass.X86.JacAdd
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Exact common field environments for the exceptional point-addition branches. -/
+
+@[expose] public section
+
 namespace VG.Proof.Weierstrass.X86
 open VG VG.X86 VG.Impl.Mont VG.Impl.Mont.X86 VG.Impl.Weierstrass
 open VG.Impl.Weierstrass.X86 VG.Proof.Mont VG.Proof.Mont.X86

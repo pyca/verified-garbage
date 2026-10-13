@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.X448.AArch64.Fast.Ladder
-import VerifiedGarbage.Proof.X448.AArch64.Fast.Chain
-import VerifiedGarbage.Proof.Ed448.AArch64.Point56.Call
+module
+
+public import VerifiedGarbage.Proof.X448.AArch64.Fast.Ladder
+public import VerifiedGarbage.Proof.X448.AArch64.Fast.Chain
+public import VerifiedGarbage.Proof.Ed448.AArch64.Point56.Call
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 on AArch64: inversion
@@ -11,6 +17,8 @@ lane of `v8` (`call_spec`), and the power squared twice and multiplied by `z`:
 slot 21 ends as `z^(p-2)` (`invEnv_eval`), since `z^(p-2) = (z^((p-3)/4))^4 z`
 (`invert_rootPow`). It keeps what the inlined chain did (`IKeep`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448.AArch64.Fast
 

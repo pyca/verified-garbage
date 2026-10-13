@@ -1,15 +1,34 @@
-import VerifiedGarbage.Proof.Scrypt.BlockMix
-import VerifiedGarbage.Proof.Scrypt.Spec
-import VerifiedGarbage.Spec.Scrypt.Contract
-import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Proof.Scrypt.Memory
-import VerifiedGarbage.Proof.Framework.Range
-import VerifiedGarbage.Proof.MdStream.Arm.Common
-import VerifiedGarbage.Proof.Hmac.Common
-import VerifiedGarbage.Impl.Scrypt.Arm.Salsa
-import VerifiedGarbage.Proof.Framework.Arm.Contract
-import VerifiedGarbage.Proof.Framework.Arm.RelCT
-import VerifiedGarbage.Impl.Scrypt.Arm.BlockMix
+module
+
+public import VerifiedGarbage.Proof.Scrypt.BlockMix
+meta import VerifiedGarbage.Proof.Scrypt.BlockMix
+public import VerifiedGarbage.Proof.Scrypt.Spec
+meta import VerifiedGarbage.Proof.Scrypt.Spec
+public import VerifiedGarbage.Spec.Scrypt.Contract
+meta import VerifiedGarbage.Spec.Scrypt.Contract
+public import VerifiedGarbage.TCB.Arm.Target
+meta import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.Proof.Scrypt.Memory
+meta import VerifiedGarbage.Proof.Scrypt.Memory
+public import VerifiedGarbage.Proof.Framework.Range
+meta import VerifiedGarbage.Proof.Framework.Range
+public import VerifiedGarbage.Proof.MdStream.Arm.Common
+meta import VerifiedGarbage.Proof.MdStream.Arm.Common
+public import VerifiedGarbage.Proof.Hmac.Common
+meta import VerifiedGarbage.Proof.Hmac.Common
+public import VerifiedGarbage.Impl.Scrypt.Arm.Salsa
+meta import VerifiedGarbage.Impl.Scrypt.Arm.Salsa
+public import VerifiedGarbage.Proof.Framework.Arm.Contract
+meta import VerifiedGarbage.Proof.Framework.Arm.Contract
+public import VerifiedGarbage.Proof.Framework.Arm.RelCT
+meta import VerifiedGarbage.Proof.Framework.Arm.RelCT
+public import VerifiedGarbage.Impl.Scrypt.Arm.BlockMix
+meta import VerifiedGarbage.Impl.Scrypt.Arm.BlockMix
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+import all Init.Data.Nat.Power2.Basic
 
 /-!
 # The Salsa20/8 Core on 32-bit ARM
@@ -18,6 +37,8 @@ The sixteen words live in `scratch`, word `k` at `4k`, and `b` keeps the input
 until the final addition. Each line of the rounds is proved once, for any
 indices (`line_ok`), and the lines are composed by induction.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Scrypt
 

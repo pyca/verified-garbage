@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlDsa.X86.Sign.Prims
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86.Sign.Prims
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA signing on x86 (32-bit): calls of the samplers
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.MlDsa.X86.Sign.Prims
 `SampleInBall` (`ball_piece`); the first and the last return whether they
 succeeded, as a function of their seeds, which they may leak.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86.Sign
 

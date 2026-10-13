@@ -132,7 +132,20 @@ runs:
       with:
         path: .lean-manifest
         key: ${{ steps.manifest.outputs.key }}
+    # The emitter's driver maps every module it imports, private parts
+    # included (lean/README.md): set the limit rather than rely on the
+    # runner's default.
+    - name: Allow the emitter's memory maps
+      shell: bash
+      run: |
+        sudo sysctl -w vm.max_map_count=262144
+        echo "vm.max_map_count=$(cat /proc/sys/vm/max_map_count)"
     - name: Check the generated Rust is up to date
       shell: bash
       working-directory: lean
       run: lake env lean --run Emit.lean --check
+    # Last, after the build is saved: it edits two files of the self-test,
+    # restores them, and leaves their modules built from the edited files.
+    - name: Check that the axiom audit sees through modules
+      shell: bash
+      run: python3 ci/audit_negative.py

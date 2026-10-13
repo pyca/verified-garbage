@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.MlKem.X86.Basic
+module
+
+public import VerifiedGarbage.Impl.MlKem.X86.Basic
 
 /-!
 # ML-KEM on x86 (32-bit): the encapsulation key check
@@ -12,6 +14,8 @@ borrow into the mask `0xffffffff` (or 0), which is ANDed into `ebx` (from
 only on the pointer. `vg_mlkem768_check_ek` is `checkEk`, over the 384 groups
 of `ek[0 : 1152]`.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlKem.X86
 

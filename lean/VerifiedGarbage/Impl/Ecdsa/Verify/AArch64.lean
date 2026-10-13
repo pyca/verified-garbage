@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Ecdh.AArch64
+module
+
+public import VerifiedGarbage.Impl.Ecdh.AArch64
 
 /-!
 # ECDSA signature verification on AArch64
@@ -32,6 +34,8 @@ All validity checks run regardless of earlier failures. P-256's comb
 addresses depend on its public scalar; the remaining memory accesses and
 branches depend only on pointers and fixed loop counters.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Ecdsa.Verify.AArch64
 
@@ -92,11 +96,21 @@ def save : List Instr :=
   copy c.n (c.sl UX) (c.sl RX) ++ copy c.n (c.sl UY) (c.sl RY) ++ copy c.n (c.sl UZ) (c.sl RZ) ++
   setConst c.n (c.sl RX) 0 ++ setConst c.n (c.sl RY) (c.mont 1) ++ setConst c.n (c.sl RZ) 0
 
-/-- `R = U + R`, through `D`. -/
+/-- `D` to `R`. -/
+def fromD : List Instr :=
+  copy c.n (c.sl RX) (c.sl DX) ++ copy c.n (c.sl RY) (c.sl DY) ++ copy c.n (c.sl RZ) (c.sl DZ)
+
+/-- `R = U + R`, through `D`: inline, or for a curve whose complete additions are a function
+(`padd`) a call of it, which adds `T` to `R` and reads `b` at `EM`'s slot (free here): `b` to `EM`,
+`R` to `T` and `U` to `R` before the call. -/
 def sum : Prog isa :=
-  .seq (fprogB c.MP' (rcb3 c.rcbSlots (c.pt UX UY UZ) (c.pt RX RY RZ) (c.pt DX DY DZ)))
-    (.block (copy c.n (c.sl RX) (c.sl DX) ++ copy c.n (c.sl RY) (c.sl DY) ++
-      copy c.n (c.sl RZ) (c.sl DZ)))
+  match c.padd with
+  | none =>
+    .seq (fprogB c.MP' (rcb3 c.rcbSlots (c.pt UX UY UZ) (c.pt RX RY RZ) (c.pt DX DY DZ))) (.block (fromD c))
+  | some f =>
+    .seq (.block (copy c.n (c.sl EM) (c.sl BM) ++ copyPt c.n (c.pt TX TY TZ) (c.pt RX RY RZ))) <|
+    .seq (.seq (.block (copyPt c.n (c.pt RX RY RZ) (c.pt UX UY UZ)))
+      (addP c.MP' c.rcbSlots (c.pt RX RY RZ) (c.pt TX TY TZ) (c.pt DX DY DZ) (some f))) (.block (fromD c))
 
 /-- `x19`–`x25` restored, and the flag's low bit to `x0`. -/
 def finish : List Instr :=

@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.Sm4.Arm.KeyEk
-import VerifiedGarbage.Proof.Sm4.Arm.Verified
-import VerifiedGarbage.Proof.Sm4.Arm.Lit
+module
+
+public import VerifiedGarbage.Proof.Sm4.Arm.KeyEk
+meta import VerifiedGarbage.Proof.Sm4.Arm.KeyEk
+public import VerifiedGarbage.Proof.Sm4.Arm.Verified
+meta import VerifiedGarbage.Proof.Sm4.Arm.Verified
+public import VerifiedGarbage.Proof.Sm4.Arm.Lit
+meta import VerifiedGarbage.Proof.Sm4.Arm.Lit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # SM4 key expansion on ARMv7 meets its contracts
@@ -12,6 +21,8 @@ through `sb`, the buffer's base, after each extraction). `expandKey_framed`
 runs it with its working space on the stack, zeroed on return, as
 `ecb_framed` does.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sm4.Arm
 

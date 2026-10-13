@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Camellia.X86.Copy
-import VerifiedGarbage.TCB.X86.Target
+module
+
+public import VerifiedGarbage.Proof.Camellia.X86.Copy
+public import VerifiedGarbage.TCB.X86.Target
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Slots, and saving and restoring registers, on x86 (32-bit)
@@ -10,6 +16,8 @@ and lists of them), and the prologue and epilogue's saving and restoring
 of the callee-saved registers (`save_ok`, `restore_ok`) in the slots from
 `savedSlot`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Camellia.X86
 

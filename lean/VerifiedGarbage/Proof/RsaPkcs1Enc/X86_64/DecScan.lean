@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecAl
+module
+
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecAl
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-PKCS1-v1_5 decryption on x86-64: the scan of `EM`
@@ -6,6 +12,8 @@ import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecAl
 The first zero of `EM` from index 2, found without branches on its bytes:
 whether there is one as a mask (`rdx`) and where (`r10`) (`scanPart_step`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPkcs1Enc.X86_64.Dec
 

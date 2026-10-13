@@ -1,15 +1,33 @@
-import VerifiedGarbage.Proof.ChaCha20.X86.Block
-import VerifiedGarbage.Proof.ChaCha20.X86.Quad
-import VerifiedGarbage.Proof.Framework.X86.SseTaint
-import VerifiedGarbage.Proof.Framework.X86.Spill
-import VerifiedGarbage.Proof.ChaCha20.Keystream
-import VerifiedGarbage.Proof.Framework.X86.Call
-import VerifiedGarbage.Impl.ChaCha20.X86.Xor
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.ChaCha20.X86.Lit
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.ChaCha20.X86.Bytes
-import VerifiedGarbage.Proof.ChaCha20.X86.Kernels
+module
+
+public import VerifiedGarbage.Proof.ChaCha20.X86.Block
+meta import VerifiedGarbage.Proof.ChaCha20.X86.Block
+public import VerifiedGarbage.Proof.ChaCha20.X86.Quad
+meta import VerifiedGarbage.Proof.ChaCha20.X86.Quad
+public import VerifiedGarbage.Proof.Framework.X86.SseTaint
+meta import VerifiedGarbage.Proof.Framework.X86.SseTaint
+public import VerifiedGarbage.Proof.Framework.X86.Spill
+meta import VerifiedGarbage.Proof.Framework.X86.Spill
+public import VerifiedGarbage.Proof.ChaCha20.Keystream
+meta import VerifiedGarbage.Proof.ChaCha20.Keystream
+public import VerifiedGarbage.Proof.Framework.X86.Call
+meta import VerifiedGarbage.Proof.Framework.X86.Call
+public import VerifiedGarbage.Impl.ChaCha20.X86.Xor
+meta import VerifiedGarbage.Impl.ChaCha20.X86.Xor
+public import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.ChaCha20.X86.Lit
+meta import VerifiedGarbage.Proof.ChaCha20.X86.Lit
+public import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.ChaCha20.X86.Bytes
+meta import VerifiedGarbage.Proof.ChaCha20.X86.Bytes
+public import VerifiedGarbage.Proof.ChaCha20.X86.Kernels
+meta import VerifiedGarbage.Proof.ChaCha20.X86.Kernels
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ChaCha20 keystream XOR on x86 (32-bit)
@@ -27,6 +45,8 @@ Constant time is the taint analysis's, which follows the frames and the
 calls into the block function. `xor_eax` states that `eax` holds `buf` on
 return.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.ChaCha20
 

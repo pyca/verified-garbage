@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.ChaCha20.AArch64.Rows6.CachedAdd
-import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Store
+module
+
+public import VerifiedGarbage.Proof.ChaCha20.AArch64.Rows6.CachedAdd
+public import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Store
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.ChaCha20.AArch64.Rows6
 open VG VG.AArch64 VG.Impl.ChaCha20.AArch64.Rows6

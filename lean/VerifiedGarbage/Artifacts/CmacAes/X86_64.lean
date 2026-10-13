@@ -1,5 +1,7 @@
-import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.CmacAes.X86_64.AesNi
+module
+
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.CmacAes.X86_64.AesNi
 
 /-!
 # AES-CMAC's chaining with AES-NI on x86-64
@@ -12,6 +14,8 @@ The other x86-64 CMAC functions are generic over `vg_aes_ctr32`
 (`Generic/CmacAesUpdate/X86_64/`), this one among them
 (`Variants/CmacAesUpdate/X86_64/AesNiCbc.lean`).
 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.CmacAes.X86_64
 

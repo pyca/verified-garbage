@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Weierstrass.X86.Window
-import VerifiedGarbage.Proof.Weierstrass.JacMul
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86.Window
+public import VerifiedGarbage.Proof.Weierstrass.JacMul
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The x86 window loop's frame and Jacobian doublings
@@ -8,6 +14,8 @@ The table survives each iteration's writes. The accumulator is converted
 from homogeneous to Jacobian coordinates for four doublings, then converted
 back. `WinFlags` and `WinFinish` handle the point at infinity.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.X86
 

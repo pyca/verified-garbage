@@ -1,12 +1,27 @@
-import VerifiedGarbage.Proof.MdStream.AArch64.Update
-import VerifiedGarbage.Proof.MdStream.AArch64.Finalize
-import VerifiedGarbage.Proof.MdStream.AArch64.Words
-import VerifiedGarbage.Proof.Sha256.Md
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Sha256.AArch64.Compress
-import VerifiedGarbage.Proof.Sha256.Stream
-import VerifiedGarbage.Impl.Sha256.AArch64.Stream
-import VerifiedGarbage.Proof.Sha256.AArch64.Lit
+module
+
+public import VerifiedGarbage.Proof.MdStream.AArch64.Update
+meta import VerifiedGarbage.Proof.MdStream.AArch64.Update
+public import VerifiedGarbage.Proof.MdStream.AArch64.Finalize
+meta import VerifiedGarbage.Proof.MdStream.AArch64.Finalize
+public import VerifiedGarbage.Proof.MdStream.AArch64.Words
+meta import VerifiedGarbage.Proof.MdStream.AArch64.Words
+public import VerifiedGarbage.Proof.Sha256.Md
+meta import VerifiedGarbage.Proof.Sha256.Md
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Sha256.AArch64.Compress
+meta import VerifiedGarbage.Proof.Sha256.AArch64.Compress
+public import VerifiedGarbage.Proof.Sha256.Stream
+meta import VerifiedGarbage.Proof.Sha256.Stream
+public import VerifiedGarbage.Impl.Sha256.AArch64.Stream
+meta import VerifiedGarbage.Impl.Sha256.AArch64.Stream
+public import VerifiedGarbage.Proof.Sha256.AArch64.Lit
+meta import VerifiedGarbage.Proof.Sha256.AArch64.Lit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Streaming SHA-256 on AArch64: `update` and `finalize`
@@ -18,6 +33,8 @@ given what SHA-256's own pieces do: its length field and digest (`shape`), that
 its compression function is verified (`callee`), and that the taint analysis
 accepts its code.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sha256.AArch64.Stream
 

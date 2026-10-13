@@ -1,6 +1,12 @@
-import VerifiedGarbage.Impl.Ed448.AArch64.VerifyEquation
-import VerifiedGarbage.Proof.X448.AArch64.BitBody
-import VerifiedGarbage.Proof.Ed448.Scalar
+module
+
+public import VerifiedGarbage.Impl.Ed448.AArch64.VerifyEquation
+public import VerifiedGarbage.Proof.X448.AArch64.BitBody
+public import VerifiedGarbage.Proof.Ed448.Scalar
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 verification's equation on AArch64: the scalars' bits
@@ -10,6 +16,8 @@ eight bits at `x3 + 8 x19 + d1 + d2` (X448's expansion, with the source and
 the destination as parameters): the bits of `S` at `BITS`, and those of `k`
 at `2 KOFF` (through `x11 + KOFF`, beyond `strb`'s immediates).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.AArch64
 

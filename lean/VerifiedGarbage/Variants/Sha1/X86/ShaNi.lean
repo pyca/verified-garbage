@@ -1,6 +1,11 @@
-import VerifiedGarbage.Proof.Sha1.X86.Variants.Interface
-import VerifiedGarbage.Proof.Sha1.X86.Shared
-import VerifiedGarbage.Proof.Sha1.X86.ShaNi.Compress
+module
+
+public import VerifiedGarbage.Proof.Sha1.X86.Variants.Interface
+meta import VerifiedGarbage.Proof.Sha1.X86.Variants.Interface
+public import VerifiedGarbage.Proof.Sha1.X86.Shared
+meta import VerifiedGarbage.Proof.Sha1.X86.Shared
+public import VerifiedGarbage.Proof.Sha1.X86.ShaNi.Compress
+meta import VerifiedGarbage.Proof.Sha1.X86.ShaNi.Compress
 
 /-!
 # SHA-1 on x86 with the SHA extensions
@@ -10,6 +15,9 @@ which needs the SHA extensions and SSSE3, and the streaming `update` and
 `finalize` made with it, which HMAC's and PBKDF2's functions call
 (`Generic/Sha1/X86/`).
 -/
+
+@[expose] public section
+
 namespace VG.Variants.Sha1.X86.ShaNi
 open VG VG.X86
 open VG.Proof.Sha1.X86.Stream (params dims)

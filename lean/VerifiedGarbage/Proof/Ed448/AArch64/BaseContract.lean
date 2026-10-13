@@ -1,8 +1,14 @@
-import VerifiedGarbage.Impl.Ed448.AArch64.ScalarBase
-import VerifiedGarbage.Proof.X448.AArch64.Base.Comb
-import VerifiedGarbage.Proof.Framework.Semantics
-import VerifiedGarbage.Spec.Ed448.Contract
-import VerifiedGarbage.TCB.AArch64.Target
+module
+
+public import VerifiedGarbage.Impl.Ed448.AArch64.ScalarBase
+public import VerifiedGarbage.Proof.X448.AArch64.Base.Comb
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Spec.Ed448.Contract
+public import VerifiedGarbage.TCB.AArch64.Target
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 base-point multiplication on AArch64: the contract its callers use
@@ -15,6 +21,8 @@ group law and the comb's arithmetic; the proofs of the functions that call
 `vg_ed448_scalar_base` take it as a hypothesis, which their registration files
 pass in, so that they do not import that algebra.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.AArch64
 

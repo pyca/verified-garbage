@@ -1,4 +1,6 @@
-import VerifiedGarbage.Proof.Framework.Bitslice.Dom
+module
+
+public import VerifiedGarbage.Proof.Framework.Bitslice.Dom
 
 /-!
 # The truth-table domain: bitwise circuits on all inputs at once
@@ -12,6 +14,8 @@ of a concrete word, so a check of the tables (one `decide`, on `Nat`
 bitwise operations that the kernel evaluates natively) proves what the
 code computes at every bit position, for every input.
 -/
+
+@[expose] public section
 
 namespace VG.Bitslice
 

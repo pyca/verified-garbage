@@ -1,9 +1,18 @@
-import VerifiedGarbage.Proof.Dsa.X86_64.SignBody
-import VerifiedGarbage.Proof.Dsa.X86_64.VerifyBody
-import VerifiedGarbage.Proof.Dsa.X86_64.ComputeCT
-import VerifiedGarbage.Proof.Dsa.X86_64.SignReleaseCT
+module
+
+public import VerifiedGarbage.Proof.Dsa.X86_64.SignBody
+public import VerifiedGarbage.Proof.Dsa.X86_64.VerifyBody
+public import VerifiedGarbage.Proof.Dsa.X86_64.ComputeCT
+public import VerifiedGarbage.Proof.Dsa.X86_64.SignReleaseCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # Constant time through validation, computation and the ABI return -/
+
+@[expose] public section
+
 namespace VG.Proof.Dsa.X86_64
 open VG VG.X86_64 VG.Impl.Bignum.X86_64
 open VG.Impl.Dsa.Layout VG.Impl.Dsa.X86_64

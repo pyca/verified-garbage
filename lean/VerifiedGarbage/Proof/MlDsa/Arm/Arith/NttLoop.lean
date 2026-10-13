@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.MlDsa.Arm.Arith.NttBfly
-import VerifiedGarbage.Proof.Framework.Range
+module
+
+public import VerifiedGarbage.Proof.MlDsa.Arm.Arith.NttBfly
+public import VerifiedGarbage.Proof.Framework.Range
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on 32-bit ARM: the table, blocks and layers of `NTT` and `NTT⁻¹`
@@ -11,6 +17,8 @@ runs `len` butterflies (`blockN`), and a layer its `128 / len` blocks
 (`layerN`), with the zetas `Z (zi c)`, whose values `tab` the table at `zB`
 holds.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Arm.Arith
 

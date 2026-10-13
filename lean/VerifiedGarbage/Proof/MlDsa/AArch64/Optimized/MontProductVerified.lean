@@ -1,7 +1,17 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MontProductLoop
-import VerifiedGarbage.Proof.MlDsa.Arith.Montgomery
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MontProductLoop
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MontProductLoop
+public import VerifiedGarbage.Proof.MlDsa.Arith.Montgomery
+meta import VerifiedGarbage.Proof.MlDsa.Arith.Montgomery
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## From `MontProductCorrect.lean` -/
+
+@[expose] public section
 
 section
 

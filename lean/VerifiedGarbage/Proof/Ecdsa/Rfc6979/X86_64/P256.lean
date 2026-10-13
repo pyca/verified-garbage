@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Curve
-import VerifiedGarbage.Proof.Ecdsa.X86_64.Verified
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Curve
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Curve
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.Verified
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.Verified
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Deterministic ECDSA on x86-64: P-256
@@ -9,6 +17,8 @@ exactly 256 bits with `2^256 < 2 n`, and `vg_ecdsa_p256_sign`, proven correct
 (given the group law and the comb's tables) and constant time against its
 contract (`coreK` at P-256's sizes, which is `Proof.Ecdsa.X86_64.signX86_64`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Rfc6979.X86_64
 
@@ -50,7 +60,7 @@ def p256 (hL : Weierstrass.Law Spec.P256.curve)
   coreSp := by lit_decide
   coreMx := by lit_decide
   coreD := by lit_decide
-  reduceT := Function.const _ ⟨_, by taint_decide⟩
+  reduceT := by exact (Function.const _ ⟨_, by taint_decide⟩)
   reduceSp := Function.const _ (by decide +kernel)
   reduceMx := Function.const _ (by decide +kernel)
 

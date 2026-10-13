@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Crypt
-import VerifiedGarbage.Proof.AesGcm.AArch64.Cmp
+module
+
+public import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Crypt
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Cmp
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM-SIV on AArch64: comparing the tags, and `vg_aes_gcm_siv_seal` and `vg_aes_gcm_siv_open`
@@ -10,6 +16,8 @@ without a branch (`cmp_ok`); `mask` ANDs every byte of the data with
 `0 − x27`, leaving it if the tags are equal and zeroing it if not
 (`mask_ok`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

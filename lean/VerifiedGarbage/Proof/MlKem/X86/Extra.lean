@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.MlKem.KPke
-import VerifiedGarbage.Proof.MlKem.Mem
+module
+
+public import VerifiedGarbage.Proof.MlKem.KPke
+public import VerifiedGarbage.Proof.MlKem.Mem
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM: lemmas the x86 (32-bit) proofs use that do not depend on the target
@@ -12,6 +18,8 @@ import VerifiedGarbage.Proof.MlKem.Mem
   unchanged or zero (`mask_poly`); the AND of such values (`acc_step`), and
   that the value a function returns with `Outcome` is 0 or 1 (`outcome_01`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem
 

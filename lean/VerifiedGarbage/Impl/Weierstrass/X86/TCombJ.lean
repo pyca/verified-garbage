@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Weierstrass.X86.TComb
+module
+
+public import VerifiedGarbage.Impl.Weierstrass.X86.TComb
 
 /-!
 # The fixed-base comb with Booth's digits and Jacobian mixed additions
@@ -21,6 +23,8 @@ At the end, `A = (XZ : Y : Z³)` in projective coordinates, with `Y = 1` where
 `Z = 0` (`outFix`, `outOps`). Every selection is by a mask, and the windows'
 order is public: the timing depends on `edi` and the tables' address only.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Weierstrass.X86
 

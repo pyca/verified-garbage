@@ -1,15 +1,21 @@
-import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Sym
-import VerifiedGarbage.Impl.Rsa.X86_64.Crt
-import VerifiedGarbage.Proof.Bignum.Amm52
-import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.Proof.Bignum.X86_64.Words
-import VerifiedGarbage.Impl.Rsa.X86_64.CrtIfma
-import VerifiedGarbage.Proof.Bignum.X86_64.Loop
-import VerifiedGarbage.Proof.Bignum.CrtFrame
-import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
-import VerifiedGarbage.Proof.Bignum.Math
-import VerifiedGarbage.Proof.Framework.X86_64.StraightY
-import VerifiedGarbage.Proof.Framework.AddrArith
+module
+
+public import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Sym
+public import VerifiedGarbage.Impl.Rsa.X86_64.Crt
+public import VerifiedGarbage.Proof.Bignum.Amm52
+public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+public import VerifiedGarbage.Proof.Bignum.X86_64.Words
+public import VerifiedGarbage.Impl.Rsa.X86_64.CrtIfma
+public import VerifiedGarbage.Proof.Bignum.X86_64.Loop
+public import VerifiedGarbage.Proof.Bignum.CrtFrame
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
+public import VerifiedGarbage.Proof.Bignum.Math
+public import VerifiedGarbage.Proof.Framework.X86_64.StraightY
+public import VerifiedGarbage.Proof.Framework.AddrArith
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSA with AVX512_IFMA on x86-64: lemmas
@@ -20,6 +26,8 @@ layout: symbolic execution of the vector instructions (the lanes of a
 writes of 32 bytes and of runs of `rax`, frames, MXCSR's bits, `2⁵²`-radix
 numbers in memory, and the conditional subtraction's result.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64.AmmSym
 

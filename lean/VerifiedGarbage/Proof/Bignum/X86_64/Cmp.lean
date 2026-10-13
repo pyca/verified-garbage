@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.Csub
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.Csub
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Multiword arithmetic on x86-64: comparison
@@ -6,6 +12,8 @@ import VerifiedGarbage.Proof.Bignum.X86_64.Csub
 `X - m` over `w` words, with the borrow kept in `rbp` as a mask and the
 difference discarded: `rbp` ends as the mask of `X < m` (`cmpLoop_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64
 

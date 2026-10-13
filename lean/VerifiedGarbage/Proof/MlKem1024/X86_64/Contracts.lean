@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.MlKem.X86_64.Contracts
-import VerifiedGarbage.Spec.MlKem.Contract1024
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86_64.Contracts
+public import VerifiedGarbage.Spec.MlKem.Contract1024
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM-1024 on x86-64: the contracts of the compressions the proofs are written against
@@ -8,6 +14,8 @@ As `Proof/MlKem/X86_64/Contracts.lean`, for `vg_mlkem1024_compress_encode` and
 `vg_mlkem1024_decode_decompress`, whose widths are ML-KEM-1024's
 (`Spec.MlKem1024.compressWidths`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem1024.X86_64
 

@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecCT2
-import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecLoops
+module
+
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecCT2
+meta import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecCT2
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecLoops
+meta import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecLoops
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-PKCS1-v1_5 decryption on x86-64: constant time, `CL` and `AM`
@@ -7,6 +15,8 @@ import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecLoops
 IRPRF's loops: each block's counter is public (a function of the block's
 index), and so are its number of blocks and every address (`prfLoop_ct`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPkcs1Enc.X86_64.Dec
 

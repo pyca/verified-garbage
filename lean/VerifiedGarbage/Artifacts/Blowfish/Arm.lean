@@ -1,4 +1,8 @@
-import VerifiedGarbage.Proof.Blowfish.Arm.Frame
+module
+
+public import VerifiedGarbage.Proof.Blowfish.Arm.Frame
+
+@[expose] public section
 
 namespace VG.Artifacts.Blowfish.Arm
 
@@ -26,7 +30,7 @@ def artifacts : List Artifact := [
     code := Impl.StackScratch.Arm.withRegScratchWiped 256 .r3 12 Impl.Blowfish.Arm.encrypt
     contract := Spec.Blowfish.ecbEncryptContract Arm.abi 256
     stack := 256
-    ofSig := ⟨_, _, _, by unfold Spec.Blowfish.ecbEncryptContract Spec.Blowfish.ecbContract; rfl⟩
+    ofSig := by exact (⟨_, _, _, by unfold Spec.Blowfish.ecbEncryptContract Spec.Blowfish.ecbContract; rfl⟩)
     verified := Proof.Blowfish.Arm.ecb_framed true
     spSafe := Code.all_of_forall (fun _ => rfl) _ },
   { Spec.Blowfish.ecbDecryptApi with
@@ -40,7 +44,7 @@ def artifacts : List Artifact := [
     code := Impl.StackScratch.Arm.withRegScratchWiped 256 .r3 12 Impl.Blowfish.Arm.decrypt
     contract := Spec.Blowfish.ecbDecryptContract Arm.abi 256
     stack := 256
-    ofSig := ⟨_, _, _, by unfold Spec.Blowfish.ecbDecryptContract Spec.Blowfish.ecbContract; rfl⟩
+    ofSig := by exact (⟨_, _, _, by unfold Spec.Blowfish.ecbDecryptContract Spec.Blowfish.ecbContract; rfl⟩)
     verified := Proof.Blowfish.Arm.ecb_framed false
     spSafe := Code.all_of_forall (fun _ => rfl) _ }]
 

@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecContract
-import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.Bytes
-import VerifiedGarbage.Proof.Bignum.X86_64.Loop
-import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
+module
+
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecContract
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.Bytes
+public import VerifiedGarbage.Proof.Bignum.X86_64.Loop
+public import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-PKCS1-v1_5 decryption on x86-64: the frame
@@ -11,6 +17,8 @@ The precondition by name (`DPre`), the frame of `frameBytes` bytes at
 (`setup_run`): the slots, the private-key operation's stack arguments in the
 frame, and its arguments in registers.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPkcs1Enc.X86_64.Dec
 

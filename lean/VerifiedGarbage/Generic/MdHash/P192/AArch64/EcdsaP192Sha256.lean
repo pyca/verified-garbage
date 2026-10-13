@@ -1,6 +1,8 @@
-import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.Weierstrass.Law
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.P192Sha256
+module
+
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.Weierstrass.Law
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.P192Sha256
 
 /-!
 # Deterministic ECDSA (RFC 6979) over p192 with HMAC-SHA-256 on AArch64
@@ -17,6 +19,8 @@ The stack is 256 bytes, including the saved link register and nested calls.
 It is generic over p192's group law and inversions `h` too, the variant
 `Variants/P192/AArch64/Law.lean`.
 -/
+
+@[expose] public section
 
 namespace VG.Generic.MdHash.P192.AArch64.EcdsaP192Sha256
 

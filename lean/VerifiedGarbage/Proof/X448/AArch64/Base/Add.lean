@@ -1,7 +1,13 @@
-import VerifiedGarbage.Impl.X448.AArch64.Base
-import VerifiedGarbage.Proof.X448.AArch64.Fast.Phases
-import VerifiedGarbage.Proof.X448.AArch64.Fast.StepOps
-import VerifiedGarbage.Proof.X448.AArch64.Base.AddDefs
+module
+
+public import VerifiedGarbage.Impl.X448.AArch64.Base
+public import VerifiedGarbage.Proof.X448.AArch64.Fast.Phases
+public import VerifiedGarbage.Proof.X448.AArch64.Fast.StepOps
+public import VerifiedGarbage.Proof.X448.AArch64.Base.AddDefs
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 of the base point on AArch64: the addition of an affine entry
@@ -13,6 +19,8 @@ then its pair of products in AdvSIMD (`WP.weave`, given that their footprints
 are independent, which the caller evaluates for its slots); the environment
 afterwards is `affEnv` of the one before.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448.AArch64.Base
 

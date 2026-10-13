@@ -1,10 +1,23 @@
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.MlKem1024.X86.Unpack
-import VerifiedGarbage.Proof.MlKem.Encode1024
-import VerifiedGarbage.Spec.MlKem.Contract1024
-import VerifiedGarbage.TCB.X86.Target
-import VerifiedGarbage.Proof.Framework.Sig
-import VerifiedGarbage.Proof.Framework.Contract
+module
+
+public import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.MlKem1024.X86.Unpack
+meta import VerifiedGarbage.Proof.MlKem1024.X86.Unpack
+public import VerifiedGarbage.Proof.MlKem.Encode1024
+meta import VerifiedGarbage.Proof.MlKem.Encode1024
+public import VerifiedGarbage.Spec.MlKem.Contract1024
+meta import VerifiedGarbage.Spec.MlKem.Contract1024
+public import VerifiedGarbage.TCB.X86.Target
+meta import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Proof.Framework.Sig
+meta import VerifiedGarbage.Proof.Framework.Sig
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM-1024 on x86 (32-bit): `vg_mlkem1024_decode_decompress`
@@ -16,6 +29,8 @@ groups of `d` bytes, loaded into `ebx` by `ldW` (`Unpack.lean`), whose fields
 k` is the state within group `t` of `b` bytes, after its first `k`
 coefficients.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem1024.X86.DecodeDecompress
 

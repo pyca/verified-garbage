@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Rsa.AArch64.PrivImpl
+module
+
+public import VerifiedGarbage.Proof.Rsa.AArch64.PrivImpl
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_private_checked` on AArch64: the contract on the registers
@@ -6,6 +12,8 @@ import VerifiedGarbage.Proof.Rsa.AArch64.PrivImpl
 `chkA` states the shared contract (with the stack the frames use,
 `stackBytes`) on the registers and the stack (`private_checked_implies`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.AArch64
 

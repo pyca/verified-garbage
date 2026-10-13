@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Entry
-import VerifiedGarbage.Proof.MlKem.AArch64.KgEnd
-import VerifiedGarbage.Proof.MlDsa.KeyGen.Mono
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Entry
+public import VerifiedGarbage.Proof.MlKem.AArch64.KgEnd
+public import VerifiedGarbage.Proof.MlDsa.KeyGen.Mono
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on AArch64: the blocks between calls
@@ -9,6 +15,8 @@ What the top-level functions' own instructions between their calls do, in
 their layout: byte stores (`setB_ok`), copies of 32 bytes (`copyP_ok`,
 ML-KEM's `copy32`), and the AND of a callee's result into `x24` (`and24_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64
 

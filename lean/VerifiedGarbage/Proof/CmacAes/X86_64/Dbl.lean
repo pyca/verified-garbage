@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Cmac.Dbl
-import VerifiedGarbage.Proof.Cmac.Mem
-import VerifiedGarbage.Proof.Gcm.X86_64.Bits
+module
+
+public import VerifiedGarbage.Proof.Cmac.Dbl
+public import VerifiedGarbage.Proof.Cmac.Mem
+public import VerifiedGarbage.Proof.Gcm.X86_64.Bits
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CMAC on x86-64: doubling a block in two 64-bit words
@@ -10,6 +16,8 @@ the block as a big-endian integer (`Proof.Gcm.X86_64.blockAt_bswap`), doubles
 the integer a word at a time (`dbl_words`), and stores the halves
 byte-reversed again (`le8_bswap`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.CmacAes.X86_64
 

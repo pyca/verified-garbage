@@ -1,7 +1,15 @@
-import VerifiedGarbage.Proof.Divstep.Packed
-import VerifiedGarbage.Proof.P256.EcdhInverse.Chunk
-import VerifiedGarbage.Proof.P256.EcdhInverse.MachineExtract
-import VerifiedGarbage.Proof.P256.EcdhInverse.LowUpdate
+module
+
+public import VerifiedGarbage.Proof.Divstep.Packed
+public import VerifiedGarbage.Proof.P256.EcdhInverse.Chunk
+public import VerifiedGarbage.Proof.P256.EcdhInverse.MachineExtract
+public import VerifiedGarbage.Proof.P256.EcdhInverse.LowUpdate
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.P256.EcdhInverse
 open VG VG.AArch64 VG.Proof.Weierstrass.AArch64 VG.Proof.Divstep

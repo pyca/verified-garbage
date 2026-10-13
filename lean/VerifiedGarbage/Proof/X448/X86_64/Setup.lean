@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.X448.X86_64.Freeze
-import VerifiedGarbage.Proof.X448.X86_64.Bits
-import VerifiedGarbage.Proof.Framework.X86_64.Spill
+module
+
+public import VerifiedGarbage.Proof.X448.X86_64.Freeze
+public import VerifiedGarbage.Proof.X448.X86_64.Bits
+public import VerifiedGarbage.Proof.Framework.X86_64.Spill
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 on x86-64: reading the arguments
@@ -9,6 +15,8 @@ import VerifiedGarbage.Proof.Framework.X86_64.Spill
 reads the u-coordinate (seven words: all 448 bits are used), and sets the
 ladder's variables to their initial values.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448.X86_64
 

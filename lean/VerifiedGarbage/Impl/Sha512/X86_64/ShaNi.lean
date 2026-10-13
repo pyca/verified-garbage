@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.Sha512
-import VerifiedGarbage.TCB.X86_64.Isa
+module
+
+public import VerifiedGarbage.Spec.Sha512
+public import VerifiedGarbage.TCB.X86_64.Isa
 
 /-!
 # SHA-512 compression function: x86-64 implementation with the SHA512 extension
@@ -26,6 +28,8 @@ with the contract of `vg_sha512_compress`, for CPUs with the SHA512 extension
   the caller's SSE code. `rdi, rsi, rdx` (the pointers and the block count)
   are public; no address and no branch depends on anything else.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Sha512.X86_64.ShaNi
 

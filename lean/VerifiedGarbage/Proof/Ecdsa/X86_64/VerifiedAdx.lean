@@ -1,8 +1,19 @@
-import VerifiedGarbage.Proof.Ecdsa.X86_64.Verified
-import VerifiedGarbage.Proof.Ecdsa.X86_64.LitAdx
-import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
-import VerifiedGarbage.Proof.Framework.LitShare
-import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.Verified
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.Verified
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.LitAdx
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.LitAdx
+public import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
+meta import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
+public import VerifiedGarbage.Proof.Framework.LitShare
+meta import VerifiedGarbage.Proof.Framework.LitShare
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDSA over P-256 on x86-64 with BMI2 and ADX: `Verified`
@@ -12,6 +23,8 @@ of `sign_ok` covers as it covers any multiplication (`Proof/Mont/X86_64/Adx.lean
 the same curve, so the same facts (`p256x_ok`, from `p256_ok` but for the
 inversions' constants, decided again) and the same precondition.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.X86_64
 
@@ -35,12 +48,16 @@ theorem p256x_ok (hI : InvSounds) : CfgOk p256x :=
       InvOk.ofMod (by decide +kernel) (by decide)⟩
     inv_n := fun _ _ => ⟨@hI _ p256.C.n_ne_zero Proof.P256.n_prime, InvOk.ofMod (by decide +kernel) (by decide)⟩ }
 
+/-- `[k]G` is a call of `vg_p256_mul_base_adx`, which calls no other function. -/
+theorem p256x_mulBase : MulBaseOk p256x :=
+  ⟨fun _ => ⟨_, rfl, by decide, by lit_decide⟩, fun h => absurd h (by decide)⟩
+
 theorem sign_x86_adx (hL : Law Spec.P256.curve)
     (hT : CombOkW Spec.P256.curve 7 37 Impl.P256.p256Comb7 Impl.P256.p256Comb7Start)
     (hI : InvSounds) (s : State)
     (hs : signX86_64.pre s) :
     ∃ t s', Exec isa signP256Adx.inline s t s' ∧ abiPreserved s s' ∧ signX86_64.post s s' :=
-  sign_x86_of (p256x_ok hI) hL (p256_tbls hL hT) ⟨fun h => absurd h (by decide), fun h => absurd h (by decide)⟩ (fun _ h => { pre_of h with }) (fun _ _ => id) rfl
+  sign_x86_of (p256x_ok hI) hL (p256_tbls hL hT) p256x_mulBase (fun _ h => { pre_of h with }) (fun _ _ => id) rfl
     (by lit_decide) (by lit_decide) (by lit_decide) s hs
 
 /-- `signP256Adx` without its displacements, as a literal of shared blocks

@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Weierstrass.Arm.PointFn
-import VerifiedGarbage.Proof.Weierstrass.Arm.Copy
-import VerifiedGarbage.Proof.Framework.Arm.RelCT
-import VerifiedGarbage.Impl.Weierstrass.Arm.LadderP
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.Arm.PointFn
+public import VerifiedGarbage.Proof.Weierstrass.Arm.Copy
+public import VerifiedGarbage.Proof.Framework.Arm.RelCT
+public import VerifiedGarbage.Impl.Weierstrass.Arm.LadderP
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The ladder by calls of the point functions, on 32-bit ARM: copies and calls
@@ -12,6 +18,8 @@ the working space at `r12` (`ptCall_ok`): it changes only `r0`–`r3` and
 `r10`, `O` and the point functions' own working space, and `O` then holds
 `rcbAdd` of what `a`, `3b`, `P` and `Q` (or `P`) stood for (`fn_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.Arm.Point
 

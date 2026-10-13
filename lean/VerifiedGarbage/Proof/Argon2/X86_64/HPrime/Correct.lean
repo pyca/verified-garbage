@@ -1,13 +1,22 @@
-import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Contract
-import VerifiedGarbage.Proof.Framework.X86_64.Abi
-import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Space
-import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Absorb
-import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Input
-import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Length
-import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Frame
-import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Setup
+module
+
+public import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Contract
+public import VerifiedGarbage.Proof.Framework.X86_64.Abi
+public import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Space
+public import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Absorb
+public import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Input
+public import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Length
+public import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Frame
+public import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Setup
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Argon2.X86_64.HPrime.Restore`. -/
+
+@[expose] public section
+
 section
 /-! # H′: restoring the caller's registers -/
 

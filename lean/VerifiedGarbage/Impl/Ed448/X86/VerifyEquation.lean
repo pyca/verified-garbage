@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Ed448.X86.ScalarBase
+module
+
+public import VerifiedGarbage.Impl.Ed448.X86.ScalarBase
 
 /-!
 # Ed448 verification's equation on x86 (32-bit)
@@ -46,6 +48,8 @@ reduction works on slot 1 alone, which comparisons and decoding use.
 The result is 1 if `BAD` is 0. Every address and branch depends only on the
 pointers.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Ed448.X86
 
@@ -216,10 +220,10 @@ def vbits : Prog isa :=
 
 /-- After the bits: `BAD = 0`, the check of `S`, and the slots initialized as for base-point
 multiplication. -/
-def vinit : List Instr := [.mov .eax (.imm 0), st .eax BAD] ++ sCheck ++ initSlots
+def vinit : Prog isa := .seq (.block ([.mov .eax (.imm 0), st .eax BAD] ++ sCheck)) initSlots
 
 /-- The callee-saved registers saved, the bits of `S` and `k`, and `vinit`. -/
-def ventry : Prog isa := .seq (.block (save 16)) (.seq vbits (.block vinit))
+def ventry : Prog isa := .seq (.block (save 16)) (.seq vbits vinit)
 
 /-- `Q` (slots 0, 6 and 2) and `R` (slots 8–10) doubled twice: a loop of two
 iterations, counted by `esi`, each doubling both. -/

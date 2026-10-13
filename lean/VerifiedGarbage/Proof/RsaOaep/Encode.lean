@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.RsaOaep.Decode
+module
+
+public import VerifiedGarbage.Proof.RsaOaep.Decode
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-OAEP: the encoding, on any target
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.RsaOaep.Decode
 (`EmAt.db`), `EM` masked (`emOf`), and `encrypt` as the public-key operation
 of it (`encrypt_some`) or the failure for a long message (`encrypt_none`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaOaep
 

@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.RsaOaep.X86_64.Label
+module
+
+public import VerifiedGarbage.Proof.RsaOaep.X86_64.Label
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-OAEP encryption on x86-64: `EM` before masking
@@ -9,6 +15,8 @@ copied to `EM + 1` (`copySeed_ok`), the label's hash copied to
 of `EM` (`putMsg_ok`); and MGF1's slots for masking `DB` and the seed
 (`dbArgs_ok`, `seedArgs_ok`), which decryption uses too.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaOaep.X86_64
 

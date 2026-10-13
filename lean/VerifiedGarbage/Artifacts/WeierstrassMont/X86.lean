@@ -1,8 +1,12 @@
-import VerifiedGarbage.TCB.X86.Target
-import VerifiedGarbage.Impl.Weierstrass.X86.Mont
-import VerifiedGarbage.Proof.Weierstrass.X86.MontVerified
+module
+
+public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Impl.Weierstrass.X86.Mont
+public import VerifiedGarbage.Proof.Weierstrass.X86.MontVerified
 
 /-! # Montgomery arithmetic modulo the curves' `p` and `n` on x86 (32-bit) -/
+
+@[expose] public section
 
 namespace VG.Artifacts.WeierstrassMont.X86
 

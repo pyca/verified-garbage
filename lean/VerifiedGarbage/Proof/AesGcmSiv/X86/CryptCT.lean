@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.AesGcmSiv.X86.PolyvalCT
+module
+
+public import VerifiedGarbage.Proof.AesGcmSiv.X86.PolyvalCT
+meta import VerifiedGarbage.Proof.AesGcmSiv.X86.PolyvalCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM-SIV on x86: the tag and counter mode are constant time
@@ -9,6 +16,8 @@ the data, through the pointer in `esi`, as many as its public length says
 (`crypt_ct`), and XORs the last bytes in a loop from public pointers and
 counts (`cryptTail_ct`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

@@ -1,8 +1,10 @@
-import VerifiedGarbage.Proof.P384.Curve
-import VerifiedGarbage.Proof.Weierstrass.X86_64.InvMain
-import VerifiedGarbage.Proof.Weierstrass.InvArith
-import VerifiedGarbage.Proof.Weierstrass.X86_64.InvInterface
-import VerifiedGarbage.Proof.P384.PrimeOrder
+module
+
+public import VerifiedGarbage.Proof.P384.Curve
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvMain
+public import VerifiedGarbage.Proof.Weierstrass.InvArith
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvInterface
+public import VerifiedGarbage.Proof.P384.PrimeOrder
 
 /-!
 # P-384's group law and inversions, on x86-64
@@ -16,6 +18,8 @@ algebra. Their registration files are generic over it
 implementation too), so that this file alone, of those that emit them,
 imports that algebra.
 -/
+
+@[expose] public section
 
 namespace VG.Variants.P384.X86_64.Law
 

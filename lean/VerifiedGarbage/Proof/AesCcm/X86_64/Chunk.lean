@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesCcm.X86_64.Tag
+module
+
+public import VerifiedGarbage.Proof.AesCcm.X86_64.Tag
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CCM on x86-64: a chunk of counter mode (`ctrChunk`)
@@ -8,6 +14,8 @@ Untrusted: everything here is checked by Lean. After `b` whole blocks
 more by `vg_aes_ctr32` from `Ctr₁₊ᵦ`, whose counters do not wrap around in
 their low 32 bits, so that they are CCM's (`chunk_ok`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

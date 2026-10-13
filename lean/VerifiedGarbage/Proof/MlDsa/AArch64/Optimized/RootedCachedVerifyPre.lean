@@ -1,6 +1,14 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Message.Pre
-import VerifiedGarbage.Proof.MlDsa.AArch64.Message.OptimizedRoots
-import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.CachedVerify
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.Pre
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.OptimizedRoots
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.CachedVerify
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Optimized.RootedCachedVerify
 open VG VG.AArch64 VG.Impl.MlDsa.AArch64.Message

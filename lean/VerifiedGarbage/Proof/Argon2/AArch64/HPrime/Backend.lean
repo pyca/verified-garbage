@@ -1,9 +1,18 @@
-import VerifiedGarbage.Proof.Blake2.AArch64.Stream.Verified
-import VerifiedGarbage.Impl.Argon2.AArch64.HPrime
-import VerifiedGarbage.Spec.Blake2.Contract
-import VerifiedGarbage.Proof.Framework.AArch64.Call
+module
+
+public import VerifiedGarbage.Proof.Blake2.AArch64.Stream.Verified
+public import VerifiedGarbage.Impl.Argon2.AArch64.HPrime
+public import VerifiedGarbage.Spec.Blake2.Contract
+public import VerifiedGarbage.Proof.Framework.AArch64.Call
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Argon2.AArch64.HPrime.Hash`. -/
+
+@[expose] public section
+
 section
 /-! # H′: requirements of its BLAKE2b streaming backend -/
 

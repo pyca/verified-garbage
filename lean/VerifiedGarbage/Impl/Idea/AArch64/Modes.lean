@@ -1,8 +1,10 @@
-import VerifiedGarbage.Impl.Idea.AArch64
-import VerifiedGarbage.Impl.Modes.AArch64.Cbc
-import VerifiedGarbage.Impl.Modes.AArch64.CbcEnc
-import VerifiedGarbage.Impl.Modes.AArch64.Fb
-import VerifiedGarbage.Impl.TripleDes.AArch64.Common
+module
+
+public import VerifiedGarbage.Impl.Idea.AArch64
+public import VerifiedGarbage.Impl.Modes.AArch64.Cbc
+public import VerifiedGarbage.Impl.Modes.AArch64.CbcEnc
+public import VerifiedGarbage.Impl.Modes.AArch64.Fb
+public import VerifiedGarbage.Impl.TripleDes.AArch64.Common
 
 /-!
 # IDEA-CBC, -OFB and -CFB64 on AArch64
@@ -23,6 +25,8 @@ overwrites) in `x2`. The block code writes only `x3`–`x14`: it keeps `x23`
 and `x24`, which carry the data's address and the blocks left, and `x25`,
 where the feedback modes keep the IV's address.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Idea.AArch64
 

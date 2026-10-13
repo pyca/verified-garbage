@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.Rsa.X86_64.KeyCTCode
-import VerifiedGarbage.Proof.Rsa.X86_64.CrtKeyCTMain
-import VerifiedGarbage.Proof.Rsa.X86_64.CrtKeyCode
+module
+
+public import VerifiedGarbage.Proof.Rsa.X86_64.KeyCTCode
+meta import VerifiedGarbage.Proof.Rsa.X86_64.KeyCTCode
+public import VerifiedGarbage.Proof.Rsa.X86_64.CrtKeyCTMain
+meta import VerifiedGarbage.Proof.Rsa.X86_64.CrtKeyCTMain
+public import VerifiedGarbage.Proof.Rsa.X86_64.CrtKeyCode
+meta import VerifiedGarbage.Proof.Rsa.X86_64.CrtKeyCode
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_check_crt_key` on x86-64: constant time
@@ -11,6 +20,8 @@ Runs that agree on the public data (the pointers, the lengths, `n` and
 the modulus' check from `n`'s pointer and length, the branch on its
 validity, and `main` (`ckCode_ct`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.X86_64.Key
 

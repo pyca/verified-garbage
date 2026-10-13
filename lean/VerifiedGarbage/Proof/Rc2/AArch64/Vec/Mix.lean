@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Rc2.AArch64.Vec.Lanes
+module
+
+public import VerifiedGarbage.Proof.Rc2.AArch64.Vec.Lanes
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # A reverse mix on four blocks at once
@@ -8,6 +14,8 @@ reverse mix leave in each lane of the word's register the lane's word
 rotated right, less the key word and the two composite terms
 (`Spec.Rc2.reverseMix`). `rmix_ok` instantiates it for word `i` of set `h`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rc2.AArch64.Vec
 

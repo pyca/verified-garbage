@@ -1,6 +1,14 @@
-import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.DotInverse
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.DotBank
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseFiveSlice
+module
+
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.DotInverse
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.DotBank
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseFiveSlice
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Optimized.Inverse
 open VG VG.AArch64

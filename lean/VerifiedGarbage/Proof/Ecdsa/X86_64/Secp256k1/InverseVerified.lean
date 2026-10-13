@@ -1,9 +1,21 @@
-import VerifiedGarbage.Proof.Ecdsa.X86_64.Secp256k1.Verified
-import VerifiedGarbage.Proof.Ecdsa.X86_64.InvFnX
-import VerifiedGarbage.Proof.Ecdsa.X86_64.Secp256k1.InverseLit
-import VerifiedGarbage.Proof.Framework.Pratt
-import VerifiedGarbage.Proof.Mont.Read
-import VerifiedGarbage.Spec.Weierstrass.Inverse
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.Secp256k1.Verified
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.Secp256k1.Verified
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.InvFnX
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.InvFnX
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.Secp256k1.InverseLit
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.Secp256k1.InverseLit
+public import VerifiedGarbage.Proof.Framework.Pratt
+meta import VerifiedGarbage.Proof.Framework.Pratt
+public import VerifiedGarbage.Proof.Mont.Read
+meta import VerifiedGarbage.Proof.Mont.Read
+public import VerifiedGarbage.Spec.Weierstrass.Inverse
+meta import VerifiedGarbage.Spec.Weierstrass.Inverse
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_secp256k1_inv_mod_p` and `_n` on x86-64: `Verified`
@@ -17,6 +29,8 @@ contracts decode a number `x` as `x R^(m-2)`, the proofs as `x R⁻¹` (`toM`):
 they agree as `R R^(m-2) = 1` modulo `p` and `n`, which the kernel computes
 (`dec_eq`). Constant time by taint tracking, `rdi` and `rsp` public.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.X86_64.Secp256k1.Inverse
 

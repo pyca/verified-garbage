@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Modes.X86_64.CbcGroup
-import VerifiedGarbage.Proof.Modes.X86_64.Ctr
+module
+
+public import VerifiedGarbage.Proof.Modes.X86_64.CbcGroup
+public import VerifiedGarbage.Proof.Modes.X86_64.Ctr
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # CBC decryption on x86-64, for any core: the whole function
@@ -12,6 +18,8 @@ the callee-saved registers, and writes nothing but the scratch buffer and
 the data. Each cipher's contract follows from it (with the constant-time
 check of its own code).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Modes.X86_64
 
