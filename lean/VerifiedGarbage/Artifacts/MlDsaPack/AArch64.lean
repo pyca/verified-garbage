@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackVerified
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Unpack
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.HintUnpack
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
 
 /-! # ML-DSA (FIPS 204) on AArch64: the encodings -/
 

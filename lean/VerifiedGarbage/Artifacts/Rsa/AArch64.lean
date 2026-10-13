@@ -10,6 +10,10 @@ public import VerifiedGarbage.Proof.Rsa.AArch64.CvVerified
 public import VerifiedGarbage.Proof.Rsa.AArch64.CkVerified
 public import VerifiedGarbage.Proof.Rsa.AArch64.CrtKeyVerified
 public import VerifiedGarbage.Proof.Rsa.AArch64.RpVerified
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTCode
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTN
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowRunContext
+import VerifiedGarbage.Proof.Bignum.AArch64.FoldedPhaseCT
 
 /-! # RSA (RFC 8017) on AArch64 -/
 

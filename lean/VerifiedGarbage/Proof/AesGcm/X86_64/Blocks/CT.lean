@@ -10,6 +10,8 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks.Full
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks.Full
+import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
 
 /-!
 # AES-GCM on whole blocks, x86-64: constant time

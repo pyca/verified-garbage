@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.Callees
 import VerifiedGarbage.Proof.Sha512.Word64
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
 
 /-! # RSAES-PKCS1-v1_5 encryption (RFC 8017 §7.2.1) on AArch64 -/
 

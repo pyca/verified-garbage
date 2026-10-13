@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.EcKey.X86.P521.Verified
 public import VerifiedGarbage.Proof.EcKey.X86.P521.Lit
 import VerifiedGarbage.Proof.Framework.TaintSum
 import VerifiedGarbage.Proof.X25519.X86.Column
+import VerifiedGarbage.Proof.Framework.X86.TaintMono
 
 /-!
 # P-521 public keys (FIPS 186-5 §A.2) on x86 (32-bit)

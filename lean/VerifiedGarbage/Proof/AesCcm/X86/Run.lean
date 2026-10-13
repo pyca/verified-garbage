@@ -6,6 +6,9 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.AesCcm.Ctr
+public import VerifiedGarbage.Proof.AesCcm.X86.Contract
+public import VerifiedGarbage.Proof.Cmac.Stream
 
 /-!
 # AES-CCM on x86: running straight-line blocks

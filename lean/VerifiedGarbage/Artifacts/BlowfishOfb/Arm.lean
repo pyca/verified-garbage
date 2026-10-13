@@ -7,6 +7,8 @@ import VerifiedGarbage.Proof.Blowfish.Arm.Run
 import VerifiedGarbage.Proof.Framework.Arm.Linear
 import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
 import VerifiedGarbage.Proof.Framework.TaintSum
+import VerifiedGarbage.Impl.Aes.Arm.Alloc
+import VerifiedGarbage.Spec.Rc4
 
 /-! # Blowfish-OFB artifacts on baseline ARMv7 -/
 

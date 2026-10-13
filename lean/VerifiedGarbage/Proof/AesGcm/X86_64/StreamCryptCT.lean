@@ -10,6 +10,12 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.AesGcm.X86_64.AbsorbCT
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.AbsorbCT
+import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks
+import VerifiedGarbage.Proof.AesGcm.X86_64.FinTagCT
+import VerifiedGarbage.Proof.AesGcm.X86_64.TagCT
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.FinTagCT
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.TagCT
 
 /-!
 # AES-GCM on x86-64: `vg_aes_gcm_stream_encrypt` and `_decrypt` are constant time

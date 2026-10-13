@@ -8,6 +8,7 @@ public import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Absorb
 public import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Pad
 public import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Squeeze
 import Mathlib.Tactic.IntervalCases
+import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.CoreExec
 
 /-! # SHA-3 and SHAKE (FIPS 202) on AArch64 -/
 

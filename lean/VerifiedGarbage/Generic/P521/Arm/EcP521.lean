@@ -4,6 +4,7 @@ public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.Weierstrass.Law
 public import VerifiedGarbage.Impl.EcKey.P521.Arm
 public import VerifiedGarbage.Proof.EcKey.Arm.P521.Verified
+import VerifiedGarbage.Proof.Framework.Arm.Lit
 
 /-!
 # P-521 public keys (FIPS 186-5 §A.2) on 32-bit ARM

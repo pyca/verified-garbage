@@ -4,6 +4,7 @@ public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.Ed448.Arm.Verify.Verified
 public import VerifiedGarbage.Proof.Ed448.Arm.VerifyVerified
 public import VerifiedGarbage.Proof.Ed448.Facts
+import VerifiedGarbage.Proof.Ed25519.Arm.Whole.CallCT
 
 /-!
 # Ed448 verification on ARMv7

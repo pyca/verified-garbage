@@ -10,6 +10,8 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.AesOcb.AArch64.CmpMask
 meta import VerifiedGarbage.Proof.AesOcb.AArch64.CmpMask
+import VerifiedGarbage.Proof.Ocb.Bytes
+meta import VerifiedGarbage.Proof.Ocb.Bytes
 
 /-!
 # AES-OCB on AArch64: `vg_aes_ocb_open` is constant time

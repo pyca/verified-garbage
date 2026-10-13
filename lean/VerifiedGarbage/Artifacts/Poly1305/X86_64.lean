@@ -10,6 +10,7 @@ public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Blocks
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Blocks
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Ifma.Blocks
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Frame
+public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Lit
 
 /-!
 # Poly1305 (RFC 8439 §2.5) on x86-64

@@ -5,6 +5,8 @@ public import VerifiedGarbage.Impl.X25519.AArch64.Word
 public import VerifiedGarbage.Proof.X25519.AArch64.Word.Verified
 public import VerifiedGarbage.Impl.X25519.AArch64.Base
 public import VerifiedGarbage.Proof.X25519.AArch64.Base.Verified
+import VerifiedGarbage.Impl.Mont.Mod
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
 
 /-! # X25519 (RFC 7748) on AArch64 -/
 

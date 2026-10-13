@@ -12,6 +12,7 @@ import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import Mathlib.Data.List.Induction
+import VerifiedGarbage.Proof.Cmac.Spec
 
 /-!
 # AES-GCM on x86-64: the byte loops

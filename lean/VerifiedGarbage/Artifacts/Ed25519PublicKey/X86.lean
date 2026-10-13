@@ -1,6 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.X86.PublicKey.Verified
+import VerifiedGarbage.Impl.Mont.Mod
+import VerifiedGarbage.Proof.MdStream.Spec
+import VerifiedGarbage.Spec.Rc2
 
 @[expose] public section
 

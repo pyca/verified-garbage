@@ -9,6 +9,7 @@ public import VerifiedGarbage.Impl.Ecdsa.Verify.P192.X86
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.P192.Verified
 import VerifiedGarbage.Proof.Framework.TaintSum
 import VerifiedGarbage.Proof.X25519.X86.Column
+import VerifiedGarbage.Proof.Framework.X86.TaintMono
 
 /-!
 # ECDSA over P-192 (FIPS 186-5) on x86 (32-bit)

@@ -11,6 +11,9 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.NafArithmeticTiming
 import VerifiedGarbage.Proof.Weierstrass.AArch64.NafEntryTiming
 import VerifiedGarbage.Proof.Weierstrass.AArch64.NafSum
 import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Front
+import VerifiedGarbage.Proof.P256.EcdhDouble.Certificate
+import VerifiedGarbage.Proof.P256.Prime
 
 /-!
 # ECDH over P-256 (SP 800-56A) on AArch64

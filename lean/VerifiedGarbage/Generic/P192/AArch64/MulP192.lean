@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Ecdsa.AArch64.P192.MulVerified
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
 
 /-!
 # P-192's point multiplication on AArch64

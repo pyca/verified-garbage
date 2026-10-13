@@ -10,6 +10,10 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.AesGcm.Arm.CTJ0
 meta import VerifiedGarbage.Proof.AesGcm.Arm.CTJ0
+import VerifiedGarbage.Proof.AesGcm.Arm.CTFn
+import VerifiedGarbage.Proof.AesGcm.Arm.FinTag
+meta import VerifiedGarbage.Proof.AesGcm.Arm.CTFn
+meta import VerifiedGarbage.Proof.AesGcm.Arm.FinTag
 
 /-!
 # AES-GCM on ARMv7: the pieces of `seal` and `open` are constant time

@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.Proof.Argon2.X86_64.Compress
 public import VerifiedGarbage.Proof.Argon2.X86_64.Avx2.Compress
 public import VerifiedGarbage.Proof.Argon2.X86_64.Avx512.Compress
+public import VerifiedGarbage.Proof.Argon2.X86_64.Avx2.Lit
+public import VerifiedGarbage.Proof.Argon2.X86_64.Avx512.Lit
 
 /-!
 # Argon2 compression on x86-64

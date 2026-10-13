@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.ChaCha20.AArch64.XorVariant
 public import VerifiedGarbage.Proof.ChaCha20.AArch64.Stream.ApplyCT
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
 
 /-!
 # ChaCha20 (RFC 8439) on AArch64: `vg_chacha20_xor` and `vg_chacha20_apply`

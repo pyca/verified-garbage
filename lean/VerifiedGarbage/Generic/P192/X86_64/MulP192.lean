@@ -9,6 +9,9 @@ import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
 import VerifiedGarbage.Proof.Mont.X86_64.Wide
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.P192.MulLit
+import VerifiedGarbage.Spec.EcKey.Generic
+import VerifiedGarbage.Spec.Weierstrass.PointOps
 
 /-!
 # P-192's point multiplication on x86-64

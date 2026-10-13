@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Impl.Argon2.AArch64.Instructions
 public import VerifiedGarbage.Impl.Argon2.AArch64.ReducePointers
 public import VerifiedGarbage.Impl.Argon2.AArch64.ReduceBlock
+import VerifiedGarbage.Spec.Argon2
 
 /-! Accumulate one lane's last block into matrix block zero. -/
 

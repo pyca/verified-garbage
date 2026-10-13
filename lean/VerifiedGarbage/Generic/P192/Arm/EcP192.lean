@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Weierstrass.Law
 public import VerifiedGarbage.Impl.EcKey.P192.Arm
 public import VerifiedGarbage.Proof.EcKey.Arm.P192.Verified
 import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Arm.Lit
 
 /-!
 # P-192 public keys (FIPS 186-5 §A.2) on 32-bit ARM

@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Cast5.Arm.ModesVerified
 import VerifiedGarbage.Proof.Aes.SboxSpec
 import VerifiedGarbage.Proof.Framework.Arm.Linear
 import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
+import VerifiedGarbage.Impl.Aes.Arm.Alloc
 
 /-! # CAST5-OFB artifacts on baseline ARMv7 -/
 

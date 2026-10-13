@@ -23,6 +23,7 @@ public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Verified
 public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Verified
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Verified
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Split.Verified
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.GatherSeal
 
 /-!
 # AES-GCM (NIST SP 800-38D) on x86-64

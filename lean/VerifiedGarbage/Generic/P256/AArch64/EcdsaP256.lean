@@ -11,6 +11,7 @@ import VerifiedGarbage.Proof.Divstep.Bound
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedFixedDigitTiming
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JointFixedDigitTiming
+import VerifiedGarbage.Proof.P256.Prime
 
 /-!
 # ECDSA over P-256 (FIPS 186-5) on AArch64

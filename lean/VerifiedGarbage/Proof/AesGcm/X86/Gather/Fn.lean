@@ -8,6 +8,7 @@ import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.AesGcm.X86.Gather.Callee
+import VerifiedGarbage.Proof.Cmac.Frame
 
 /-!
 # AES-GCM one-shot encryption out of place, from a list of slices, x86: the function

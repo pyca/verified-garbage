@@ -7,6 +7,8 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.AddSub
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Mul
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.NttInv
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversal
 
 /-! # ML-DSA (FIPS 204) on AArch64: the arithmetic of polynomials -/
 

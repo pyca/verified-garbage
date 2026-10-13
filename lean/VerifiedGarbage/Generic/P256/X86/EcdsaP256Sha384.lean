@@ -8,6 +8,7 @@ import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
 import VerifiedGarbage.Proof.Sha256.X86.Shared
 import VerifiedGarbage.Proof.X25519.X86.Column
+import VerifiedGarbage.Proof.Sha256.X86.Variants.Interface
 
 /-!
 # Deterministic ECDSA (RFC 6979) over P-256 with HMAC-SHA-384 on x86 (32-bit)

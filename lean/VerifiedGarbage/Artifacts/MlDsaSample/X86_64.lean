@@ -10,6 +10,8 @@ public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej5Verified
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.M4Verified
 import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
+import VerifiedGarbage.Impl.MlKem.X86_64.Frag
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
 
 /-! # ML-DSA (FIPS 204) on x86-64: the sampling primitives -/
 

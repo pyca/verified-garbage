@@ -6,6 +6,7 @@ import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Aes.X86.AesNi.Counters
+import VerifiedGarbage.Proof.Aes.X86.AesNi.Load
 
 @[expose] public section
 

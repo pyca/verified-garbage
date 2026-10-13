@@ -5,6 +5,7 @@ public import VerifiedGarbage.Impl.X448.X86
 public import VerifiedGarbage.Proof.X448.X86.Verified
 public import VerifiedGarbage.Proof.X448.X86.Lit
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Spec.X25519
 
 /-! # X448 (RFC 7748) on x86 (32-bit) -/
 

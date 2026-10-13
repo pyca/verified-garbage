@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Blake2.X86_64.BackendS
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.X86_64.Spill
 
 /-!
 # Streaming BLAKE2s on x86-64, for every compression backend
