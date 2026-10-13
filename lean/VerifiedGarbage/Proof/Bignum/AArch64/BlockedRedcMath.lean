@@ -1,11 +1,20 @@
-import VerifiedGarbage.Proof.Bignum.AArch64.SquareRedcMath
-import VerifiedGarbage.Proof.Bignum.Square
-import VerifiedGarbage.Proof.Ed25519.Word64
+module
+
+public import VerifiedGarbage.Proof.Bignum.AArch64.SquareRedcMath
+public import VerifiedGarbage.Proof.Bignum.Square
+public import VerifiedGarbage.Proof.Ed25519.Word64
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Arithmetic invariants for a register block of Montgomery multiply-adds.
 Low and high product halves use separate carry chains, as in the x86-64
 register-blocked arithmetic, but the AArch64 implementation serializes them.
 -/
+
+@[expose] public section
+
 namespace VG.Proof.Bignum.AArch64.BlockedRedc
 open VG.Proof.Bignum.Square
 

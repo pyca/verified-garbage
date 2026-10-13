@@ -1,5 +1,15 @@
-import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcCtSquare
-import VerifiedGarbage.Proof.Bignum.AArch64.SquareMont
+module
+
+public import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcCtSquare
+meta import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcCtSquare
+public import VerifiedGarbage.Proof.Bignum.AArch64.SquareMont
+meta import VerifiedGarbage.Proof.Bignum.AArch64.SquareMont
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.AArch64.BlockedRedc
 open VG VG.AArch64 VG.Impl.Bignum VG.Impl.Bignum.AArch64 VG.Impl.Bignum.Public VG.Proof.Bignum
