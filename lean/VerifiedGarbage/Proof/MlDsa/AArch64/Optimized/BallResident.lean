@@ -18,6 +18,10 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.ResidentLit
+meta import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.ResidentLit
 
 /-! ## From `BallSecondPrefix.lean` -/
 
