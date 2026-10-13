@@ -9,6 +9,7 @@ import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
+import VerifiedGarbage.Proof.MlKem.AArch64.Vec
 
 /-! ## From `ResidentRejWideStore.lean` -/
 

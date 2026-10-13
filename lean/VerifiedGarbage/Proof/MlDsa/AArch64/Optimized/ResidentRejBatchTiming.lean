@@ -34,6 +34,8 @@ import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.Conv
 meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 
 /-! ## From `ResidentRejScalarTiming.lean` -/
 

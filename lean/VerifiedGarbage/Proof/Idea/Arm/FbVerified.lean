@@ -18,6 +18,8 @@ import VerifiedGarbage.Proof.Aes.SboxSpec
 import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
 meta import VerifiedGarbage.Proof.Aes.SboxSpec
 meta import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
+import VerifiedGarbage.Impl.Aes.Arm.Alloc
+meta import VerifiedGarbage.Impl.Aes.Arm.Alloc
 
 /-!
 # IDEA-OFB and IDEA-CFB64 on ARMv7 meet their contracts

@@ -8,6 +8,7 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Impl.Gcm.X86_64.Stitch
 
 /-!
 # Interleaved counter mode and GHASH: the GHASH loads

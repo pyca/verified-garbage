@@ -10,6 +10,8 @@ import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.Conv
 meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.MlKem.AArch64.Sample
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Sample
 
 @[expose] public section
 

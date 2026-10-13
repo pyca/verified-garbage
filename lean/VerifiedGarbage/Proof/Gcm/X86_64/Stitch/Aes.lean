@@ -6,6 +6,7 @@ import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Aes.X86_64.Vaes.Ctr32
+public import VerifiedGarbage.Impl.Gcm.X86_64.Stitch
 
 /-!
 # Interleaved counter mode and GHASH: a batch of eight blocks

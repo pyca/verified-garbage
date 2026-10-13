@@ -16,6 +16,8 @@ import VerifiedGarbage.TCB.Axioms
 meta import Mathlib.Tactic.Conv
 meta import Mathlib.Tactic.SplitIfs
 meta import VerifiedGarbage.TCB.Axioms
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRate
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRate
 
 @[expose] public section
 

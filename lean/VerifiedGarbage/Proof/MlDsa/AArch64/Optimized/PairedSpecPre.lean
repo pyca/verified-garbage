@@ -11,6 +11,7 @@ import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
+import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Ntt
 
 @[expose] public section
 

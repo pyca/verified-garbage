@@ -16,6 +16,12 @@ import Mathlib.Tactic.SplitIfs
 meta import VerifiedGarbage.Spec.MlDsa.Poly
 meta import Mathlib.Tactic.Conv
 meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Impl.Sha3.AArch64.Callee
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentMaskBytes
+import VerifiedGarbage.Proof.Sha3.Arith
+meta import VerifiedGarbage.Impl.Sha3.AArch64.Callee
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentMaskBytes
+meta import VerifiedGarbage.Proof.Sha3.Arith
 
 /-! ## From `ResidentMaskDecode.lean` -/
 

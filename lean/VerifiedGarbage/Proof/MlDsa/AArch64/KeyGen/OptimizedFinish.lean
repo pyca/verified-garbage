@@ -18,6 +18,12 @@ meta import Mathlib.Tactic.SplitIfs
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFold
 meta import VerifiedGarbage.Proof.MlKem.AArch64.KgC
 meta import VerifiedGarbage.TCB.Axioms
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourSqueezeApart
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejBatchTiming
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejTailReadyTiming
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourSqueezeApart
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejBatchTiming
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejTailReadyTiming
 
 @[expose] public section
 

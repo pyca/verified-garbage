@@ -36,6 +36,8 @@ import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.Conv
 meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.MlDsa.KeyGen.Poly
+meta import VerifiedGarbage.Proof.MlDsa.KeyGen.Poly
 
 /-! ## From `BoundedFourSmall.lean` -/
 

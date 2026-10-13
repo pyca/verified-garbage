@@ -9,6 +9,48 @@ import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFold
 import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Compute
 import VerifiedGarbage.Proof.MlKem.AArch64.DecapsA
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Lit
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Lit
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Ntt
+public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedSecrets
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourStore
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackCall
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackDigits
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Indexed
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MemoryBank
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MemoryTraversal
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.NttTiming
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentMaskBytes
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejAdvance
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejBytes
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFourLoop
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejGuard
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejVerified
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejWideLoop
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.SliceFrame
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.StaticCore
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Table
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.TraversalChecked
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.HintUnpack
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Lit
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Unpack
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Round.UseHint
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.ExpandMask
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.AbsorbArgs
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Epi
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Squeeze
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Zero
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.RejBoundedCT
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseA4CT
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Final
+public import VerifiedGarbage.Proof.MlDsa.Sample.LeWord
+public import VerifiedGarbage.Proof.MlDsa.Sign.Mem
+public import VerifiedGarbage.Proof.MlKem.AArch64.DecapsCmp
+public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Lit
+public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.ResidentBulk
+public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Restore
+public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Save
+public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Store
 
 /-!
 # ML-DSA on AArch64: how deep the frames of signing and verification nest

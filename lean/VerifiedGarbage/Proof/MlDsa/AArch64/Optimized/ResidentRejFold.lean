@@ -8,6 +8,14 @@ import all Init.Data.Vector.Basic
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
+public import VerifiedGarbage.Proof.Framework.AArch64.Simd64
+public import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
+public import VerifiedGarbage.Proof.Framework.AArch64.Tbl
+public import VerifiedGarbage.Proof.Framework.Range
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Mem
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentUnpackWord
+public import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Absorb
+public import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Squeeze
 
 @[expose] public section
 

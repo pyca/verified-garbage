@@ -5,6 +5,7 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Group
 
 /-!
 # Interleaved counter mode and GHASH with AVX-512: the GHASH of 48 blocks

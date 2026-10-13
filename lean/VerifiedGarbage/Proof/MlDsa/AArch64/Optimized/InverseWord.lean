@@ -9,6 +9,9 @@ import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 import Mathlib.Util.CompileInductive
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Impl.MlKem.AArch64.Compress
+import VerifiedGarbage.Spec.MlKem
+import VerifiedGarbage.TCB.Artifact
 
 @[expose] public section
 

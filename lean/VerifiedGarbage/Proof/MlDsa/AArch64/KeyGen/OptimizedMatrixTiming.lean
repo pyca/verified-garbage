@@ -9,6 +9,10 @@ import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlKem.AArch64.KgC
 import VerifiedGarbage.TCB.Axioms
+import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Call4
+import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedMatrixFour
+import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Samp4
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRate
 
 @[expose] public section
 

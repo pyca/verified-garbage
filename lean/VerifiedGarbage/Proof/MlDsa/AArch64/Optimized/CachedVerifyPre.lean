@@ -9,6 +9,7 @@ import all Init.Data.Vector.Basic
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlKem.Encode
+public import VerifiedGarbage.Spec.MlDsa.CachedVerify
 
 @[expose] public section
 

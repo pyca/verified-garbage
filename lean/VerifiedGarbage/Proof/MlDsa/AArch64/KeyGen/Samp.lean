@@ -9,6 +9,7 @@ import all Init.Data.Vector.Basic
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlKem.AArch64.KgC
+import VerifiedGarbage.Proof.MlDsa.KeyGen.Leak
 
 /-!
 # ML-DSA key generation on AArch64: the samplers
