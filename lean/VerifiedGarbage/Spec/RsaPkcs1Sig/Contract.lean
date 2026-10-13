@@ -34,7 +34,7 @@ and the signature, and so whether the signature is valid, may all affect
 timing (`leak`), as in BoringSSL ("This is part of signature verification
 and thus does not need to run in constant-time", `padding.cc.inc`).
 
-`scratch` is working space of at least `16 n_len` `u64`s, whose contents on
+`scratch` is working space of at least `16 n_len + 32` `u64`s, whose contents on
 return are unspecified, and `stack` the number of bytes below the stack
 pointer that an implementation's calls and frames use, as for the RSA
 primitives. The functions may overwrite their arguments passed in memory,

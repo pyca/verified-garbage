@@ -67,7 +67,7 @@ structure PreV (D K : Nat) (s : State) : Prop where
   e1 : 1 ≤ (s.gpr .x3).toNat
   e2 : (s.gpr .x3).toNat ≤ (s.gpr .x1).toNat
   sgl : (s.gpr .x6).toNat = (s.gpr .x1).toNat
-  hs : 16 * (s.gpr .x1).toNat + 1024 ≤ (stackArg s 2).toNat
+  hs : 16 * (s.gpr .x1).toNat + 32 + 1024 ≤ (stackArg s 2).toNat
   hl : (stackArg s 4).toNat = Spec.Rsa.precomputedWords (s.gpr .x1).toNat
 
 theorem preV_of (G : Spec.Mgf1.Hash) {K : Nat} {s : State}

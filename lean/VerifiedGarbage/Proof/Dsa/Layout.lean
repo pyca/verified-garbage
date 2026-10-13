@@ -24,7 +24,7 @@ theorem workspace_bounds {pLen qLen : Nat} (h : Spec.Dsa.lengthsValid pLen qLen)
     slot outerWords 8 ≤ pWorkspace ∧
     pWorkspace + slot ((pLen + 7) / 8) 8 + tabBytes ((pLen + 7) / 8) ≤ qWorkspace ∧
     qWorkspace + slot ((qLen + 7) / 8) 8 + tabBytes ((qLen + 7) / 8) ≤ activeBytes ∧
-    usedBytes ≤ 8 * Spec.Rsa.scratchWords pLen := by
+    usedBytes ≤ 8 * Spec.Dsa.scratchWords pLen := by
   rcases h with ⟨rfl, rfl⟩ | ⟨rfl, rfl | rfl⟩ | ⟨rfl, rfl⟩ <;> decide
 
 /-- All local operands are outside the arithmetic prefix and mutually

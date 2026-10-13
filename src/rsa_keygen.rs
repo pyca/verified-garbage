@@ -227,7 +227,7 @@ fn prime_from(
         // `scratch` for writes), and none overlaps another or wraps around,
         // as they are distinct Rust allocations; `check` gives
         // `out_len = bits / 8`, a multiple of 8 in 32..=512, `e_len` in
-        // 1..=8 and `p_len` 0 or `out_len`; `scratch_len = 16 out_len`; and
+        // 1..=8 and `p_len` 0 or `out_len`; `scratch_len = 16 out_len + 32`; and
         // the CPU has the features of the function `select` chose.
         let status = unsafe {
             f(
@@ -296,7 +296,7 @@ pub fn key_from_primes(public_exponent: &[u8], p: &[u8], q: &[u8]) -> Result<Pri
     // and none overlaps another or wraps around, as they are distinct Rust
     // allocations; `p_len` is a multiple of 8 in 32..=512, `n_len` and
     // `d_len` are `2 p_len`, the other lengths `p_len`, `e_len` is in 1..=8,
-    // and `scratch_len` is `16 n_len`.
+    // and `scratch_len` is `16 n_len + 32`.
     let status = unsafe {
         vg_rsa_keygen_key(
             n.as_mut_ptr(),

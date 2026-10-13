@@ -136,7 +136,7 @@ impl PrivateKey {
         // distinct Rust allocations; `from_crt`'s checks give
         // `64 ≤ n_len ≤ 1024`, `1 ≤ e_len ≤ 5 ≤ n_len`, `1 ≤ p_len < n_len`,
         // `1 ≤ q_len < n_len`, `dp_len = qinv_len = p_len`, `dq_len = q_len`,
-        // and `scratch_len = 16 n_len`.
+        // and `scratch_len = 16 n_len + 32`.
         let r = unsafe {
             vg_rsa_check_crt_key(
                 self.n.as_ptr(),
@@ -199,7 +199,7 @@ impl PrivateKey {
         // around, as they are distinct Rust allocations; the checks above
         // give `64 ≤ n_len ≤ 1024`, `1 ≤ p_len < n_len`, `1 ≤ q_len < n_len`
         // and `1 ≤ d_len ≤ n_len`, and `dp_len = qinv_len = p_len`,
-        // `dq_len = q_len` and `scratch_len = 16 n_len`.
+        // `dq_len = q_len` and `scratch_len = 16 n_len + 32`.
         let r = unsafe {
             vg_rsa_crt_values(
                 dp.as_mut_ptr(),
@@ -264,7 +264,7 @@ impl PrivateKey {
         // `scratch` for writes), and none overlaps another or wraps around,
         // as they are distinct Rust allocations; the checks above give
         // `64 ≤ n_len ≤ 1024` and `1 ≤ e_len, d_len ≤ n_len`, and
-        // `p_len = q_len = n_len` and `scratch_len = 16 n_len`; and the CPU
+        // `p_len = q_len = n_len` and `scratch_len = 16 n_len + 32`; and the CPU
         // has the features of the function `select` chose.
         let r = unsafe {
             f(
@@ -332,7 +332,7 @@ impl PrivateKey {
         // above give `64 ≤ n_len ≤ 1024`, `1 ≤ e_len ≤ 5 ≤ n_len`,
         // `1 ≤ d_len ≤ n_len`, `1 ≤ p_len < n_len`, `1 ≤ q_len < n_len`,
         // `dp_len = qinv_len = p_len`, `dq_len = q_len`, and
-        // `scratch_len = 16 n_len`.
+        // `scratch_len = 16 n_len + 32`.
         let r = unsafe {
             vg_rsa_check_key(
                 self.n.as_ptr(),
@@ -389,7 +389,7 @@ impl PrivateKey {
         // above give `64 ≤ n_len ≤ 1024`, `out_len = input_len = n_len`,
         // `1 ≤ e_len ≤ 5 ≤ n_len`, `1 ≤ p_len < n_len`, `1 ≤ q_len < n_len`,
         // `dp_len = qinv_len = p_len`, `dq_len = q_len`, and
-        // `scratch_len = 16 n_len`; and the CPU has the features of the
+        // `scratch_len = 16 n_len + 32`; and the CPU has the features of the
         // function `select` chose.
         let r = unsafe {
             f(

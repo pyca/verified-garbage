@@ -107,7 +107,7 @@ structure PreS (K : Nat) (s : State) : Prop where
   hdp : (stackArg s 6).toNat = (stackArg s 2).toNat
   hqi : (stackArg s 10).toNat = (stackArg s 2).toNat
   hdq : (stackArg s 8).toNat = (stackArg s 4).toNat
-  hs : 16 * (s.gpr .x3).toNat ≤ (stackArg s 12).toNat
+  hs : 16 * (s.gpr .x3).toNat + 32 ≤ (stackArg s 12).toNat
 
 theorem preS_of {K : Nat} {s : State}
     (h : (Spec.RsaPkcs1Sig.signContract abi (stk K)).pre s) : PreS K s := by

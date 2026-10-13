@@ -107,7 +107,8 @@ def sigSatState : State where
   zf := none
   sf := none
   of := none
-  mem a := bif Nat.beq a.toNat 0x10011 then 0x40 else bif Nat.beq a.toNat 0x10018 then 1
+  mem a := bif Nat.beq a.toNat 0x10078 then 0x20
+    else bif Nat.beq a.toNat 0x10011 then 0x40 else bif Nat.beq a.toNat 0x10018 then 1
     else bif Nat.beq a.toNat 0x10021 then 0x41 else bif Nat.beq a.toNat 0x10028 then 1
     else bif Nat.beq a.toNat 0x10031 then 0x42 else bif Nat.beq a.toNat 0x10038 then 1
     else bif Nat.beq a.toNat 0x10041 then 0x43 else bif Nat.beq a.toNat 0x10048 then 1
@@ -116,7 +117,7 @@ def sigSatState : State where
     else bif Nat.beq a.toNat 0x10072 then 0x02 else bif Nat.beq a.toNat 0x10079 then 0x04 else 0
   rd := [⟨0x2000, 64⟩, ⟨0x3000, 1⟩, ⟨0x4000, 1⟩, ⟨0x4100, 1⟩, ⟨0x4200, 1⟩, ⟨0x4300, 1⟩, ⟨0x4400, 1⟩,
     ⟨0x4500, 1⟩, ⟨0x10008, 120⟩]
-  wr := [⟨0x1000, 64⟩, ⟨0x20000, 8192⟩]
+  wr := [⟨0x1000, 64⟩, ⟨0x20000, 8448⟩]
 
 theorem sign_implies : sigContract.Implies (Spec.RsaPkcs1Sig.signContract abi sigStack) where
   pre := by

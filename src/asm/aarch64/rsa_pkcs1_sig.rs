@@ -17,7 +17,7 @@
 /// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
 /// * `n_len` must be in 64..=1024.
 /// * `e_len` must be in 1..=`n_len`.
-/// * `scratch_len` must be at least `16 * n_len`.
+/// * `scratch_len` must be at least `16 * n_len + 32`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `scratch` must not overlap `n`, `e`, `digest`, `sig` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `n`, `e`, `digest`, `sig` and `scratch` may overlap the 2144 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
@@ -968,7 +968,7 @@ pub(crate) unsafe extern "C" fn vg_rsa_pkcs1_verify(n: *const u8, n_len: usize, 
 /// * `n_len` must be in 64..=1024.
 /// * `e_len` must be in 1..=`n_len`.
 /// * `hash` must be in 0..=11, and `out_len` the length of its hash function's values.
-/// * `scratch_len` must be at least `16 * n_len`.
+/// * `scratch_len` must be at least `16 * n_len + 32`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out` and `scratch` must not overlap each other, `n`, `e`, `sig` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `out`, `n`, `e`, `sig` and `scratch` may overlap the 2144 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
@@ -1973,7 +1973,7 @@ pub(crate) unsafe extern "C" fn vg_rsa_pkcs1_recover(out: *mut u8, out_len: usiz
 /// * `e_len` must be in 1..=`n_len`.
 /// * `p_len` and `q_len` must be in 1..`n_len`.
 /// * `dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`.
-/// * `scratch_len` must be at least `16 * n_len`.
+/// * `scratch_len` must be at least `16 * n_len + 32`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out` and `scratch` must not overlap each other, `n`, `e`, `digest`, `p`, `q`, `dp`, `dq`, `qinv` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `out`, `n`, `e`, `digest`, `p`, `q`, `dp`, `dq`, `qinv` and `scratch` may overlap the 4384 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
@@ -2925,7 +2925,7 @@ pub(crate) unsafe extern "C" fn vg_rsa_pkcs1_sign(out: *mut u8, out_len: usize, 
 /// * `pre` must be valid for reads of `8 * pre_len` bytes.
 /// * `n_len` must be in 64..=1024.
 /// * `e_len` must be in 1..=`n_len`.
-/// * `scratch_len` must be at least `16 * n_len`.
+/// * `scratch_len` must be at least `16 * n_len + 32`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `pre_len` must be `2 * ⌈n_len / 8⌉`.
 /// * For the result to be signature verification's, `pre` must hold what `vg_rsa_public_precompute` wrote for `n` (returning 1).

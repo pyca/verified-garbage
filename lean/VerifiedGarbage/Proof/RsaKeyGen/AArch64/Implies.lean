@@ -23,9 +23,9 @@ def candSat : State where
   gpr r := match r with
     | .x0 => 0x1000 | .x1 => 32 | .x2 => 0x2000 | .x3 => 0x3000 | .x4 => 1 | .x5 => 0x4000 | _ => 0
   sp := 0x6000
-  mem a := if a = 0x6009 then 0x80 else if a = 0x6010 then 0x00 else if a = 0x6011 then 0x02 else 0
+  mem a := if a = 0x6009 then 0x80 else if a = 0x6010 then 0x20 else if a = 0x6011 then 0x02 else 0
   rd := [⟨0x3000, 1⟩, ⟨0x4000, 0⟩, ⟨0, 0⟩, ⟨0x6000, 24⟩]
-  wr := [⟨0x1000, 32⟩, ⟨0x2000, 8⟩, ⟨0x8000, 4096⟩]
+  wr := [⟨0x1000, 32⟩, ⟨0x2000, 8⟩, ⟨0x8000, 4352⟩]
 
 theorem stackArgs_three (s : State) :
     List.map (stackArg s) (List.range 3) = [stackArg s 0, stackArg s 1, stackArg s 2] := rfl

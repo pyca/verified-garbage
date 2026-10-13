@@ -71,7 +71,7 @@ structure EPre (s : State) : Prop where
   L2 : (s.gpr .r9).toNat ≤ (s.gpr .rcx).toNat
   hml : (stackArg s 1).toNat + 11 ≤ (s.gpr .rcx).toNat
   hpl : (stackArg s 3).toNat = (s.gpr .rcx).toNat - (stackArg s 1).toNat - 3
-  hsl : 16 * (s.gpr .rcx).toNat ≤ (stackArg s 5).toNat
+  hsl : 16 * (s.gpr .rcx).toNat + 32 ≤ (stackArg s 5).toNat
 
 theorem ePre_of {s : State} (h : encK.pre s) : EPre s := by
   simp only [encK] at h

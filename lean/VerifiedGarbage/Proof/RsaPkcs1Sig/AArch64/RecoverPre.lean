@@ -62,7 +62,7 @@ structure PreR (K : Nat) (s : State) : Prop where
   e1 : 1 ≤ (s.gpr .x5).toNat
   e2 : (s.gpr .x5).toNat ≤ (s.gpr .x3).toNat
   hh : ∃ h, Spec.RsaPkcs1Sig.Hash.ofId ((s.gpr .x6).setWidth 32).toNat = some h ∧ (s.gpr .x1).toNat = h.len
-  hs : 16 * (s.gpr .x3).toNat ≤ (stackArg s 2).toNat
+  hs : 16 * (s.gpr .x3).toNat + 32 ≤ (stackArg s 2).toNat
 
 theorem preR_of {K : Nat} {s : State}
     (h : (Spec.RsaPkcs1Sig.recoverContract abi (stk K)).pre s) : PreR K s := by

@@ -46,7 +46,7 @@ fn precompute(n: &[u8], scratch: &mut [u64]) -> (Vec<u64>, u32) {
     // SAFETY: each pointer is valid for its length (`pre` and `scratch` for
     // writes), and none overlaps another or wraps around, as they are
     // distinct Rust allocations (`scratch` borrowed exclusively); the check
-    // above gives `64 ≤ n_len ≤ 1024` and `scratch_len ≥ 16 n_len`, and
+    // above gives `64 ≤ n_len ≤ 1024` and `scratch_len ≥ 16 n_len + 32`, and
     // `pre_len = 2 ⌈n_len / 8⌉`; and the CPU has the features of the
     // function `select` chose.
     let r = unsafe {

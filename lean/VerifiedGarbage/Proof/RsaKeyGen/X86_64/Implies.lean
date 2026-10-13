@@ -27,9 +27,9 @@ def candSat : State where
   zf := none
   sf := none
   of := none
-  mem a := if a = 0x6021 then 0x80 else if a = 0x6028 then 0x00 else if a = 0x6029 then 0x02 else 0
+  mem a := if a = 0x6021 then 0x80 else if a = 0x6028 then 0x20 else if a = 0x6029 then 0x02 else 0
   rd := [⟨0x3000, 1⟩, ⟨0x4000, 0⟩, ⟨0, 0⟩, ⟨0x6008, 40⟩]
-  wr := [⟨0x1000, 32⟩, ⟨0x2000, 8⟩, ⟨0x8000, 4096⟩]
+  wr := [⟨0x1000, 32⟩, ⟨0x2000, 8⟩, ⟨0x8000, 4352⟩]
 
 theorem stackArgs_five (s : State) :
     List.map (stackArg s) (List.range 5) = [stackArg s 0, stackArg s 1, stackArg s 2, stackArg s 3,
