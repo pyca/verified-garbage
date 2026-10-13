@@ -10,6 +10,8 @@ public import VerifiedGarbage.Proof.TripleDes.AArch64.Key.Load
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.TripleDes.AArch64.Key.Component
+import VerifiedGarbage.Proof.TripleDes.Schedule
 
 @[expose] public section
 

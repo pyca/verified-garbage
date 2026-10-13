@@ -8,6 +8,16 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.X86_64.PcCT
+import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.Rsa.X86_64.PrivImpl
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCall
+meta import VerifiedGarbage.Proof.Bignum.X86_64.PcCT
+meta import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
+meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
+meta import VerifiedGarbage.Proof.Rsa.X86_64.PrivImpl
+meta import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCall
 
 /-!
 # RSAES-OAEP encryption with a precomputed public key on x86-64: constant time

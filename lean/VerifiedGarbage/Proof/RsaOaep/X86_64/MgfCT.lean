@@ -14,6 +14,8 @@ import VerifiedGarbage.Proof.Framework.X86_64.Sse
 meta import Mathlib.Tactic.Conv
 meta import Mathlib.Tactic.SplitIfs
 meta import VerifiedGarbage.Proof.Framework.X86_64.Sse
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
 
 /-!
 # RSAES-OAEP on x86-64: MGF1 in constant time

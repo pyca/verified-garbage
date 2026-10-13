@@ -12,6 +12,16 @@ import Mathlib.Data.Int.ModEq
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 meta import Mathlib.Data.Int.ModEq
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxFused
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtExpL
+import VerifiedGarbage.Proof.Bignum.X86_64.PcCT
+import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCT
+meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxFused
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtExpL
+meta import VerifiedGarbage.Proof.Bignum.X86_64.PcCT
+meta import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
+meta import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCT
 
 /-!
 # `vg_rsa_pkcs1_sign` on x86-64: constant time

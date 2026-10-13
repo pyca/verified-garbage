@@ -12,6 +12,10 @@ import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyParts
 meta import Mathlib.Tactic.SplitIfs
 meta import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyParts
+import VerifiedGarbage.Proof.RsaPss.AArch64.SignEnc
+import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyB1
+meta import VerifiedGarbage.Proof.RsaPss.AArch64.SignEnc
+meta import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyB1
 
 /-!
 # RSASSA-PSS verification on AArch64: the checks of `EM` are constant time

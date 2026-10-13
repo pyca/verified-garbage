@@ -8,6 +8,8 @@ import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import Mathlib.Tactic.IntervalCases
+import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.CoreExec
 
 /-!
 # The scalar resident absorber: XORing a block into the lane registers

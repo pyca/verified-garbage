@@ -7,6 +7,7 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Sm4.Common
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
 
 /-!
 # A group of blocks of SM4 ECB on x86 (32-bit)

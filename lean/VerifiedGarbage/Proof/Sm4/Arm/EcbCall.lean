@@ -16,6 +16,8 @@ import VerifiedGarbage.Proof.MdStream.Arm.Common
 meta import VerifiedGarbage.Proof.MdStream.Arm.Common
 import VerifiedGarbage.Proof.Argon2.Arm.Push
 meta import VerifiedGarbage.Proof.Argon2.Arm.Push
+import Mathlib.Tactic.SplitIfs
+meta import Mathlib.Tactic.SplitIfs
 
 /-!
 # SM4 ECB on ARMv7: the functions of one direction

@@ -12,6 +12,10 @@ import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Sha256.Arm.Lit
 meta import Mathlib.Tactic.SplitIfs
 meta import VerifiedGarbage.Proof.Sha256.Arm.Lit
+import VerifiedGarbage.Proof.MdStream.Arm.Words
+import VerifiedGarbage.Proof.MdStream.Prefix
+meta import VerifiedGarbage.Proof.MdStream.Arm.Words
+meta import VerifiedGarbage.Proof.MdStream.Prefix
 
 /-!
 # Streaming SHA-224 on ARMv7: `finalize224`

@@ -6,6 +6,7 @@ import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Scrypt.X86_64.BlockMixCT
+import VerifiedGarbage.Proof.Scrypt.Memory
 
 @[expose] public section
 

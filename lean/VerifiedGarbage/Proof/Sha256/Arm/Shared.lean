@@ -15,6 +15,11 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Sha256.Digest
 import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Bswap
+public import VerifiedGarbage.Proof.MdStream.Arm.Words
+public import VerifiedGarbage.Proof.MdStream.Prefix
+public import VerifiedGarbage.Proof.Sha256.Arm.Lit
+public import VerifiedGarbage.Proof.Sha256.StateMem
 
 /-!
 # Sha256 on Arm: the shared contracts

@@ -13,6 +13,7 @@ import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Sha512.Digest
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
 
 /-!
 # Sha512 on AArch64: the shared contracts

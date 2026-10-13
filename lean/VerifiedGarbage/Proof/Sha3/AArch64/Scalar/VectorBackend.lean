@@ -20,6 +20,8 @@ import VerifiedGarbage.TCB.Axioms
 meta import Mathlib.Tactic.IntervalCases
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.UnrolledLit
 meta import VerifiedGarbage.TCB.Axioms
+import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.CoreExec
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.CoreExec
 
 @[expose] public section
 

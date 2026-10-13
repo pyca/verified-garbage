@@ -20,6 +20,8 @@ import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Sha256.X86_64.Lit
 meta import Mathlib.Tactic.SplitIfs
 meta import VerifiedGarbage.Proof.Sha256.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.Bswap
+meta import VerifiedGarbage.Proof.Framework.Bswap
 
 /-!
 # Streaming SHA-256 on x86-64: common lemmas
