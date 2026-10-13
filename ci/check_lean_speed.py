@@ -111,6 +111,12 @@ HEAVY_HUBS_ALLOWED = {
     "VerifiedGarbage.Proof.Ed448.Group.Projective",
     "VerifiedGarbage.Proof.Ed25519.Group.Extended",
 }
+# A Weierstrass curve's group law on a target, `Variants/<Curve>/<Target>/Law.lean`:
+# by design the only files that import the algebra of its proof (CLAUDE.md),
+# one per curve and target, and imported by nothing (the emitter takes them as
+# variants). Each pays the import once, for itself, so they are not counted
+# among a heavy module's importers.
+LAW_VARIANT = re.compile(r"^VerifiedGarbage\.Variants\.\w+\.\w+\.Law$")
 DECIDE_CONFIG = re.compile(r"\bdecide\s*:=\s*true\b")
 DECIDE_FLAG = re.compile(r"\b(?:simp|simp_all|simpa|dsimp)\b[^\n]*?\+decide\b")
 BARE_ASSUMPTION = re.compile(r"(?:<;>|\|)\s*(?:try\s+)?assumption\b")
@@ -294,6 +300,7 @@ def heavy_hubs(imports: dict[str, list[str]]) -> list[tuple[str, list[str], int]
                 if i not in seen:
                     seen.add(i)
                     todo.append(i)
+        seen = {i for i in seen if not (LAW_VARIANT.match(i) and not importers[i])}
         if len(seen) > HEAVY_IMPORTERS:
             out.append((m, heavy, len(seen)))
     return out
