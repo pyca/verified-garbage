@@ -1,7 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtChk
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtExpL
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtChk
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtExpL
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -186,6 +188,17 @@ def EPre (sp sl : Nat) (p : BPub) (s : State) : Prop :=
 def ExpCT (M : Mont) (S : CrtSel) (sp sl : Nat) : Prop :=
   RelCT isa (Two (EPre sp sl)) (seqs (Crt.expLoop M.mm S.code sp sl)) fun _ _ => True
 
+/-- `EPre` and the room for a table of 32 entries: what `CrtExpL.ok` needs. -/
+def EPre5 (sp sl : Nat) (p : BPub) (s : State) : Prop :=
+  EPre sp sl p s ∧ p.x.o + slot p.x.wx 8 + wsTab p.x.wx ≤ p.x.Z
+
+/-- The exponentiation `E.code sp sl` is constant time. -/
+def ExpCTL {M : Mont} (E : CrtExpL M) (sp sl : Nat) : Prop :=
+  RelCT isa (Two (EPre5 sp sl)) (seqs (E.code sp sl)) fun _ _ => True
+
+/-- The exponentiation is constant time for the primes' exponents. -/
+def CrtExpL.CT {M : Mont} (E : CrtExpL M) : Prop := ExpCTL E sDp sPlen ∧ ExpCTL E sDq sQlen
+
 /-- `primeLoad_ok`'s hypotheses. -/
 def LPre (j sp sl : Nat) (p : BPub) (s : State) : Prop :=
   ∃ (minv : BitVec 64) (bs : List Byte), SubCtx s p.x.B p.x.Z p.x.o p.x.w p.x.wx minv ∧ 2 ≤ p.x.wx ∧
@@ -287,9 +300,9 @@ def PwPre (sl sd slen : Nat) (p : BPub) (s : State) : Prop :=
     eb.length ≤ 1024 ∧ Src s p.x.B p.x.Z p.ptr eb
 
 /-- The phases' exponentiation (`powPhase_ok`) is constant time. -/
-def PowCT (M : Mont) (S : CrtSel) (sl sd slen : Nat) : Prop :=
+def PowCT (M : Mont) (E : CrtExpL M) (sl sd slen : Nat) : Prop :=
   RelCT isa (Two (PwPre sl sd slen)) (seqs ([.block [.mov .rdi (.mem (hdr sl))]] ++ redc M.mm Public.aY ++
-    Crt.expLoop M.mm S.code sd slen)) fun _ _ => True
+    E.code sd slen)) fun _ _ => True
 
 /-- The public data of a prime's phase: `n`'s workspace, `-n⁻¹`, `n`, the
 prime's workspace and the exponent's pointer and length. -/
@@ -315,7 +328,7 @@ def QPre (p : PhasePub) (s : State) : Prop :=
     eb.length ≤ 1024 ∧ Src s p.B p.Z p.ep eb
 
 /-- `qPhase M.mm` is constant time. -/
-def QPhaseCT (M : Mont) (S : CrtSel) : Prop := RelCT isa (Two QPre) (seqs (qPhase M.mm S.code)) fun _ _ => True
+def QPhaseCT (M : Mont) (E : CrtExpL M) : Prop := RelCT isa (Two QPre) (seqs (qPhase M.mm E.code)) fun _ _ => True
 
 /-- The public data of `p`'s phase: also `q`'s workspace and `qInv`'s
 pointer. -/
@@ -343,6 +356,6 @@ def PPre (p : PPhasePub) (s : State) : Prop :=
     (qib.length + 7) / 8 ≤ p.ph.wx ∧ (c = true → Spec.Rsa.os2ip qib < X)
 
 /-- `pPhase M.mm` is constant time. -/
-def PPhaseCT (M : Mont) (S : CrtSel) : Prop := RelCT isa (Two PPre) (seqs (pPhase M.mm S.code)) fun _ _ => True
+def PPhaseCT (M : Mont) (E : CrtExpL M) : Prop := RelCT isa (Two PPre) (seqs (pPhase M.mm E.code)) fun _ _ => True
 
 end VG.Proof.Bignum.X86_64

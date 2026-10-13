@@ -42,7 +42,7 @@ declassifies); of `vg_rsa_keygen_key`, only whether the primes gave a key,
 The public exponent is public; the primes, the private key and the octets of
 `rand` are secret.
 
-`scratch` is working space of at least `16 n_len` `u64`s (`16 out_len` for
+`scratch` is working space of at least `16 n_len + 32` `u64`s (`16 out_len + 32` for
 a candidate), whose contents on return are unspecified. `stack` is the
 number of bytes below the stack pointer that an implementation's calls and
 frames use. The functions may overwrite their arguments passed in memory,
@@ -153,7 +153,7 @@ def candidateApi : Api where
     on `p`, or on the candidate if it is accepted."
   safety := ["`out_len` must be a multiple of 8 in 32..=512.", "`e_len` must be in 1..=8.",
     "`p_len` must be 0 or `out_len`.",
-    "`scratch_len` must be at least `16 * out_len`.",
+    "`scratch_len` must be at least `16 * out_len + 32`.",
     "The contents of `scratch` on return are unspecified and may contain secrets; the caller \
       must destroy them after use."]
 

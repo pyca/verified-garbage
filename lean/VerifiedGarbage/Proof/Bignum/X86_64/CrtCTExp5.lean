@@ -27,11 +27,6 @@ namespace VG.Proof.Bignum.X86_64
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Rsa.X86_64 VG.Impl.Rsa.X86_64.Crt
 open VG.Proof.MlKem.X86_64
 
-/-- `crtExpLoop5_ok`'s hypotheses: `crtExpLoop_ok`'s and the room for a
-table of 32 entries. -/
-def EPre5 (sp sl : Nat) (p : BPub) (s : State) : Prop :=
-  EPre sp sl p s ∧ p.x.o + slot p.x.wx 8 + wsTab p.x.wx ≤ p.x.Z
-
 /-- `expLoop5 M.mm S.code sp sl` is constant time. -/
 def ExpCT5 (M : Mont) (S : CrtSel 32) (sp sl : Nat) : Prop :=
   RelCT isa (Two (EPre5 sp sl)) (seqs (Crt.expLoop5 M.mm S.code sp sl)) fun _ _ => True

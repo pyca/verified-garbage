@@ -193,18 +193,19 @@ end CrtCTQ
 
 open CrtCTQ in
 /-- The power in a prime's phase is constant time. -/
-theorem pow_ct (M : Mont) (S : CrtSel) {sl sd slen : Nat} (hR : RedcCT M Public.aY) (hE : ExpCT M S sd slen)
+theorem pow_ct (M : Mont) (E : CrtExpL M) {sl sd slen : Nat} (hR : RedcCT M Public.aY) (hE : ExpCTL E sd slen)
     {hc : VG.Taint.Hint VG.X86_64.Taint.T}
     (hT : (taint.check (Taint.ofRegs [.rdi]) (.block [.mov .rdi (.mem (hdr sl))]) hc).isSome = true) :
-    PowCT M S sl sd slen := by
+    PowCT M E sl sd slen := by
   unfold PowCT
   simp only [List.append_assoc]
   refine RelCT.seqs_append (by simp) (by simp [redc]) (RelCT.seq (two_piece (Ψ := P1 sd slen) [.rdi]
     (pinsRdi (fun p : BPub => p.x.B) fun _ _ ⟨_, _, _, _, _, _, hg, _⟩ => hg.rdi) hT
     fun _ _ h => blk_p1 h) ?_)
-  exact RelCT.seqs_append (by simp [redc]) (by simp [Crt.expLoop]) (RelCT.seq (two_post (Ψ := EPre sd slen)
+  exact RelCT.seqs_append (by simp [redc]) (E.ne _ _) (RelCT.seq (two_post (Ψ := EPre5 sd slen)
     (two_map BPub.x (fun _ _ ⟨mx, X, _, hc, _, hX, hwx2, hwx, hw28, hX1, _⟩ =>
-      ⟨mx, X, hc, hX, hwx2, hwx, by omega, hX1, by decide⟩) hR) fun _ _ h => redc_ePre M h) hE)
+      ⟨mx, X, hc, hX, hwx2, hwx, by omega, hX1, by decide⟩) hR)
+      fun _ _ h => WP.mono (redc_ePre M h) fun _ h' => ⟨h', let ⟨_, _, _, _, hT, _⟩ := h; hT⟩) hE)
 
 namespace CrtCTQ
 
@@ -278,11 +279,11 @@ def Q3 (p : PhasePub) (t : State) : Prop :=
   ∃ (mx : BitVec 64) (X : Nat), SubCtx t p.B p.Z p.o p.w p.wx mx ∧ XVals t p.B p.o p.wx mx X ∧ 1 < X ∧
     2 ≤ p.wx ∧ p.wx < 2 ^ 28
 
-theorem pow_q3 (M : Mont) (S : CrtSel) {p : PhasePub} {s : State} (h : PwPre sWsQ sDq sQlen (sp p) s) :
-    WP isa (seqs (powSteps M.mm S.code sWsQ sDq sQlen)) s (Q3 p) := by
+theorem pow_q3 (M : Mont) (E : CrtExpL M) {p : PhasePub} {s : State} (h : PwPre sWsQ sDq sQlen (sp p) s) :
+    WP isa (seqs (powSteps M.mm E.code sWsQ sDq sQlen)) s (Q3 p) := by
   obtain ⟨_, mx, _, X, _, eb, hg, hw28, hlo, hhi, hwx2, hwx, hsl, hslv, hws, hX, hX1, hXodd, hnY, hyl, hyc, hsd,
     hsln, hep, hel, _, hL1, hL2, he⟩ := h
-  exact WP.mono (powPhase_ok M S hg hw28 hlo hhi hwx2 hwx hsl hslv hws hX hX1 hXodd hnY hyl hyc hsd hsln hep hel
+  exact WP.mono (powPhase_ok M E hg hw28 hlo hhi hwx2 hwx hsl hslv hws hX hX1 hXodd hnY hyl hyc hsd hsln hep hel
     hL1 hL2 he) fun _ ⟨hc, hX', _⟩ => ⟨mx, X, hc, hX', hX1, hwx2, (by omega : (sp p).x.wx < 2 ^ 28)⟩
 
 /-- Back to `Y`'s value, and to the modulus' workspace. -/
@@ -302,7 +303,7 @@ end CrtCTQ
 
 open CrtCTQ in
 /-- `q`'s phase is constant time. -/
-theorem qPhase_ct (M : Mont) (S : CrtSel) (hU : UnitCT M sWsQ) (hP : PowCT M S sWsQ sDq sQlen) : QPhaseCT M S := by
+theorem qPhase_ct (M : Mont) (E : CrtExpL M) (hU : UnitCT M sWsQ) (hP : PowCT M E sWsQ sDq sQlen) : QPhaseCT M E := by
   unfold QPhaseCT
   rw [qPhase_eq]
   refine RelCT.seqs_append (by simp [unitSteps, Crt.gPow]) (by simp) (RelCT.seq (two_post (Ψ := Q1)
@@ -314,6 +315,6 @@ theorem qPhase_ct (M : Mont) (S : CrtSel) (hU : UnitCT M sWsQ) (hP : PowCT M S s
         ⟨_, hg, by dsimp only; omega⟩)
       (M.ct (by unfold MmUse; decide))) fun _ _ h => mm_pwPre M h) ?_)
   exact RelCT.seqs_append (by simp [powSteps]) (by simp) (RelCT.seq (two_post (Ψ := Q3)
-    (two_map sp (fun _ _ h => h) hP) fun _ _ h => pow_q3 M S h) (mmLeave_ct M))
+    (two_map sp (fun _ _ h => h) hP) fun _ _ h => pow_q3 M E h) (mmLeave_ct M))
 
 end VG.Proof.Bignum.X86_64

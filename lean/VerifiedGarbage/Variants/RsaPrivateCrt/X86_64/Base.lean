@@ -21,10 +21,11 @@ open VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.Rsa.X86_64
 
 def variant : CrtImpl where
   name := Spec.Rsa.privateCrtApi.name
-  code := Impl.Rsa.X86_64.Crt.code CallMont.base.mm Impl.Rsa.X86_64.Crt.tabSelect
+  code := Impl.Rsa.X86_64.Crt.code CallMont.base.mm
+    (Impl.Rsa.X86_64.Crt.expLoop CallMont.base.mm Impl.Rsa.X86_64.Crt.tabSelect)
   depth := by decide +kernel
-  ok := crt_call_ok (by decide +kernel) (crtCode_correct Mont.fnBase CrtSel.sse (by decide +kernel))
-  ct := crt_call_ct (by decide +kernel) (crtCode_correct Mont.fnBase CrtSel.sse (by decide +kernel)) (crtCode_constantTime Mont.fnBase CrtSel.sse CrtSel.sse_ct)
+  ok := crt_call_ok (by decide +kernel) (crtCode_correct Mont.fnBase (CrtExpL.w4 Mont.fnBase) (by decide +kernel))
+  ct := crt_call_ct (by decide +kernel) (crtCode_correct Mont.fnBase (CrtExpL.w4 Mont.fnBase) (by decide +kernel)) (crtCode_constantTime Mont.fnBase (CrtExpL.w4 Mont.fnBase) (CrtExpL.w4_ct Mont.fnBase))
   nosp := noSp_of (by decide +kernel)
   spSafe := Code.all_of_allInstrs (by decide +kernel)
   montSuffix := ""

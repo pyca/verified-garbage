@@ -34,9 +34,9 @@ def hSteps (mul : Nat → Nat → Nat → Prog isa) : List (Prog isa) :=
   [.block [.mov .rdi (.mem (hdr sWsP))]] ++ redc mul Public.aX ++ subModArr aT Public.aY aXc ++
     loadArr aChunk sQinv sPlen ++ maskArr aChunk ++ [mul Public.aY aT aChunk, .block [leave]]
 
-theorem pPhase_eq (mul : Nat → Nat → Nat → Prog isa) (sel : List (Prog isa)) : pPhase mul sel =
+theorem pPhase_eq (mul : Nat → Nat → Nat → Prog isa) (ex : Nat → Nat → List (Prog isa)) : pPhase mul ex =
     unitSteps mul sWsP ++ (mqSteps mul ++ ([mul Public.aY Public.aXm Public.aY] ++
-      (powSteps mul sel sWsP sDp sPlen ++ (([.block [leave]] : List (Prog isa)) ++ hSteps mul)))) := by
+      (powSteps mul ex sWsP sDp sPlen ++ (([.block [leave]] : List (Prog isa)) ++ hSteps mul)))) := by
   simp only [pPhase, unitSteps, powSteps, mqSteps, hSteps, enterP, List.append_assoc, List.cons_append,
     List.nil_append]
 
@@ -330,7 +330,7 @@ theorem hPart_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx : BitVec
 
 /-- `p`'s phase: `h = (m_p - m_q) qInv mod p` into `p`'s `Y` if `p` divides
 `N`, `X_m ≡ c R (mod N)`, `m_q` in `q`'s `Y` and `qInv` (masked by `c`). -/
-theorem pPhase_ok (M : Mont) (S : CrtSel) {s : State} {B : Addr} {Z w : Nat} {minv mx mq : BitVec 64}
+theorem pPhase_ok (M : Mont) (E : CrtExpL M) {s : State} {B : Addr} {Z w : Nat} {minv mx mq : BitVec 64}
     {N X C o wx oq wq : Nat} {ep qp : Addr} {eb qib : List Byte} {c : Bool}
     (hg : Good s B Z w minv) (hw : 8 ≤ w) (hw28 : w < 2 ^ 28) (hlo : slot w 8 ≤ o) (hhi : o + slot wx 8 + wsTab wx ≤ oq)
     (hqhi : oq + slot wq 8 + wsTab wq ≤ Z) (hwx2 : 2 ≤ wx) (hwx : wx ≤ w) (hwq : 1 ≤ wq) (hwq' : wq ≤ w)
@@ -344,7 +344,7 @@ theorem pPhase_ok (M : Mont) (S : CrtSel) {s : State} {B : Addr} {Z w : Nat} {mi
     (hL1 : 1 ≤ eb.length) (hL2 : eb.length ≤ 1024) (he : Src s B Z ep eb)
     (hqp : word s.mem B (8 * sQinv) = qp) (hql : qib.length = eb.length) (hqs : Src s B Z qp qib)
     (hqw : (qib.length + 7) / 8 ≤ wx) (hqi : c = true → Spec.Rsa.os2ip qib < X) :
-    WP isa (seqs (pPhase M.mm S.code)) s fun t => Good t B Z w minv ∧ WsAt t.mem B o wx mx ∧ XVals t B o wx mx X ∧
+    WP isa (seqs (pPhase M.mm E.code)) s fun t => Good t B Z w minv ∧ WsAt t.mem B o wx mx ∧ XVals t B o wx mx X ∧
       wv t.mem (off B o) (slot wx Public.aY) wx < X ∧
       (c = true → ∃ a b, a % X = C ^ Spec.Rsa.os2ip eb * 2 ^ (64 * wx) % X ∧
         b % X = wv s.mem (off B oq) (slot wq Public.aY) wq * 2 ^ (64 * wx) % X ∧ b < X ∧
@@ -442,7 +442,7 @@ theorem pPhase_ok (M : Mont) (S : CrtSel) {s : State} {B : Addr} {Z w : Nat} {mi
   have i03 : InScr B Z s.mem s₃.mem := InScr.of_frm f₀₃ fun r hr => by have := pxR_bound hlo r hr; omega_arith
   -- `c^dP R_p mod p`.
   refine wp_seqs_append (by simp [powSteps]) (by simp) ?_
-  refine WP.mono (powPhase_ok M S hg₃ hw28 hlo hhi' hwx2 hwx (sl := sWsP) (by decide)
+  refine WP.mono (powPhase_ok M E hg₃ hw28 hlo hhi' hwx2 hwx (sl := sWsP) (by decide)
     (by rw [f₀₃.px_hdr hlo (by decide) (by decide) (by decide)]; exact hslv) hws₃ hX₃ hX1 hXodd hcg
     (by rw [hpY₃]; exact hpl₁) (fun hd => by rw [hpY₃]; exact hpy₁ hd) (sd := sDp) (slen := sPlen) (by decide)
     (by decide) (by rw [f₀₃.px_hdr hlo (by decide) (by decide) (by decide)]; exact hep)

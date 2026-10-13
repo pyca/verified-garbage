@@ -461,11 +461,11 @@ theorem ifmaPart_ct (M : Mont) (hR2 : RedcCT M Public.aR2) (hXm : RedcCT M Publi
   exact postS_ct (layOf_ok p.w) M hR2 hL hpost s₁ s₂ t₁ t₂ s₁' s₂' ⟨p, h₁, h₂⟩ e₁ e₂
 
 /-- `anySizes` and the branch on it: the IFMA computation or the CRT one. -/
-theorem dispatch_ct (M : Mont) (hQ : QPhaseCT M CrtSel.sse) (hP : PPhaseCT M CrtSel.sse) (hR2 : RedcCT M Public.aR2)
+theorem dispatch_ct (M : Mont) (hQ : QPhaseCT M (CrtExpL.w4 M)) (hP : PPhaseCT M (CrtExpL.w4 M)) (hR2 : RedcCT M Public.aR2)
     (hXm : RedcCT M Public.aXm) (hL : LoadCT aChunk sQinv sPlen)
     (hpost : (seqs (CrtIfma.post M.mm)).allInstrs (fun i => !loadsMxcsr i) = true) :
     RelCT isa (Two (Stage R3)) (.seq CrtIfma.anySizes (.ite .e (seqs (CrtIfma.pre M.mm ++ ([CrtIfma.ifmaAny] : List (Prog isa)) ++
-      CrtIfma.post M.mm)) (seqs (qPhase M.mm CrtSel.sse.code ++ pPhase M.mm CrtSel.sse.code)))) (Two (Stage R5)) := by
+      CrtIfma.post M.mm)) (seqs (qPhase M.mm (CrtExpL.w4 M).code ++ pPhase M.mm (CrtExpL.w4 M).code)))) (Two (Stage R5)) := by
   refine RelCT.seq anySizes_ct (two_ite (fun p s₁ s₂ h₁ h₂ => ?_) ?_ ?_)
   · obtain ⟨_, _, _, _, _, _, _, _, _, _, z₁⟩ := h₁
     obtain ⟨_, _, _, _, _, _, _, _, _, _, z₂⟩ := h₂
@@ -476,7 +476,7 @@ theorem dispatch_ct (M : Mont) (hQ : QPhaseCT M CrtSel.sse) (hP : PPhaseCT M Crt
     have hs := sizesOf_layOf he
     obtain ⟨hW1, -⟩ := W_bounds (layOf_ok p.w)
     exact ⟨σ, xb, pb, qb, dpb, dqb, qib, hσ, hv, hr, hs.1, by unfold wsWords; omega, by unfold wsWords; omega⟩
-  · refine (RelCT.seqs_append (by simp [qPhase]) (by simp [pPhase]) (RelCT.seq (qS_ct M CrtSel.sse hQ) (pS_ct M CrtSel.sse hP))).mono
+  · refine (RelCT.seqs_append (by simp [qPhase]) (by simp [pPhase]) (RelCT.seq (qS_ct M (CrtExpL.w4 M) hQ) (pS_ct M (CrtExpL.w4 M) hP))).mono
       (fun _ _ h => two_mono (fun p s h => ?_) h) fun _ _ h => h
     obtain ⟨⟨σ, xb, pb, qb, dpb, dqb, qib, hσ, hv, hr, _⟩, _⟩ := h
     exact ⟨σ, xb, pb, qb, dpb, dqb, qib, hσ, hv, hr⟩
@@ -485,7 +485,7 @@ theorem dispatch_ct (M : Mont) (hQ : QPhaseCT M CrtSel.sse) (hP : PPhaseCT M Crt
 
 /-- `main` leaks the same in runs that agree on the public data, given that
 its parts do. -/
-theorem main_ct (M : Mont) (hS : SetupCT) (hC : ChecksCT) (hQ : QPhaseCT M CrtSel.sse) (hP : PPhaseCT M CrtSel.sse)
+theorem main_ct (M : Mont) (hS : SetupCT) (hC : ChecksCT) (hQ : QPhaseCT M (CrtExpL.w4 M)) (hP : PPhaseCT M (CrtExpL.w4 M))
     (hF : RelCT isa (Two (Stage R5)) (seqs finish) fun _ _ => True) (hR2 : RedcCT M Public.aR2)
     (hXm : RedcCT M Public.aXm) (hL : LoadCT aChunk sQinv sPlen)
     (hpost : (seqs (CrtIfma.post M.mm)).allInstrs (fun i => !loadsMxcsr i) = true) :

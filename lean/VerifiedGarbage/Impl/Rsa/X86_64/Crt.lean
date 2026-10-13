@@ -545,20 +545,21 @@ def expLoop5 (mul : Nat → Nat → Nat → Prog isa) (sel : List (Prog isa)) (s
 
 /-! ## The primes -/
 
-/-- `q`: `m_q = c^dQ mod q` into `q`'s `aY`. -/
-def qPhase (mul : Nat → Nat → Nat → Prog isa) (sel : List (Prog isa)) : List (Prog isa) :=
+/-- `q`: `m_q = c^dQ mod q` into `q`'s `aY`, by the exponentiation `ex`
+(`expLoop mul sel` or `expLoop5 mul sel`). -/
+def qPhase (mul : Nat → Nat → Nat → Prog isa) (ex : Nat → Nat → List (Prog isa)) : List (Prog isa) :=
   gPow mul sWsQ ++ [.block [enterQ]] ++ redc mul aY ++ copyArr aY aXc ++ [.block [leave], mul aY aXm aY,
-    .block [enterQ]] ++ redc mul aY ++ expLoop mul sel sDq sQlen ++ [mul aY aY aOne, .block [leave]]
+    .block [enterQ]] ++ redc mul aY ++ ex sDq sQlen ++ [mul aY aY aOne, .block [leave]]
 
 /-- `p`: `m_p R_p` into `p`'s `aY`, `m_q R_p` into its `aXc`, their
 difference into `aT`, `qInv` again (masked) into its chunk array, and
 `h = (m_p - m_q) qInv mod p` into its `aY`. -/
-def pPhase (mul : Nat → Nat → Nat → Prog isa) (sel : List (Prog isa)) : List (Prog isa) :=
+def pPhase (mul : Nat → Nat → Nat → Prog isa) (ex : Nat → Nat → List (Prog isa)) : List (Prog isa) :=
   gPow mul sWsP ++ [.block [enterP]] ++ redc mul aY ++ copyArr aY aXc ++ [.block [leave], zeroArr aX,
     .block [.mov .rax (.mem (hdr sWsQ)), .mov .rsi (.mem (ws .rax (sArr aY))), .mov .r12 (.mem (ws .rax sW)),
       .mov .rbx (.mem (hdr (sArr aX)))],
     copyWords, mul aX aX aR2, mul aX aX aY, mul aY aXm aY, .block [enterP]] ++
-  redc mul aY ++ expLoop mul sel sDp sPlen ++ [.block [leave]] ++ [.block [enterP]] ++ redc mul aX ++
+  redc mul aY ++ ex sDp sPlen ++ [.block [leave]] ++ [.block [enterP]] ++ redc mul aX ++
   subModArr aT aY aXc ++ loadArr aChunk sQinv sPlen ++ maskArr aChunk ++ [mul aY aT aChunk, .block [leave]]
 
 /-! ## The result -/
@@ -579,13 +580,14 @@ def finish : List (Prog isa) := zeroAccs ++ [
   .block (([.mov .rax (.mem (hdr sMask)), .alu .and .rax (.imm 1)] : List Instr) ++ exit)]
 
 /-- The computation, once `n` is known valid. -/
-def main (mul : Nat → Nat → Nat → Prog isa) (sel : List (Prog isa)) : Prog isa :=
-  seqs (nSetup mul ++ primesSetup ++ checks ++ qPhase mul sel ++ pPhase mul sel ++ finish)
+def main (mul : Nat → Nat → Nat → Prog isa) (ex : Nat → Nat → List (Prog isa)) : Prog isa :=
+  seqs (nSetup mul ++ primesSetup ++ checks ++ qPhase mul ex ++ pPhase mul ex ++ finish)
 
-/-- `vg_rsa_private_crt`, with the multiplication `mul` and the table's
-selection `sel` (`tabSelect`, or `tabSelectV` with AVX2). -/
-def code (mul : Nat → Nat → Nat → Prog isa) (sel : List (Prog isa)) : Prog isa :=
+/-- `vg_rsa_private_crt`, with the multiplication `mul` and the
+exponentiation `ex` (`expLoop mul tabSelect`, or `expLoop5 mul tabSelectV`
+with AVX2). -/
+def code (mul : Nat → Nat → Nat → Prog isa) (ex : Nat → Nat → List (Prog isa)) : Prog isa :=
   .seq (.block (entry ++ ([.mov .rdx (.mem (hdr sN)), .mov .rcx (.mem (hdr sK))] : List Instr) ++ invalid))
-    (.ite .ne fail (main mul sel))
+    (.ite .ne fail (main mul ex))
 
 end VG.Impl.Rsa.X86_64.Crt

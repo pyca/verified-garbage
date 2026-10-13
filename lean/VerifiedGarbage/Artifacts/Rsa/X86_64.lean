@@ -108,29 +108,32 @@ def artifacts : List Artifact := [
         over all their bits by a fixed window of 4 bits: four squares and a multiplication by the \
         window's power of the input, from a table of all 16 after the prime's working space, read \
         by a masked selection from every entry."])
-    code := Impl.Rsa.X86_64.Crt.code Proof.Rsa.X86_64.CallMont.base.mm Impl.Rsa.X86_64.Crt.tabSelect
+    code := Impl.Rsa.X86_64.Crt.code Proof.Rsa.X86_64.CallMont.base.mm
+      (Impl.Rsa.X86_64.Crt.expLoop Proof.Rsa.X86_64.CallMont.base.mm Impl.Rsa.X86_64.Crt.tabSelect)
     contract := Spec.Rsa.privateCrtContract X86_64.abi 8
     stack := 8
     verified := Proof.Rsa.X86_64.crt_call_verified (by decide +kernel)
-      (Proof.Bignum.X86_64.crtCode_correct Proof.Bignum.X86_64.Mont.fnBase Proof.Bignum.X86_64.CrtSel.sse (by decide +kernel))
-      (Proof.Bignum.X86_64.crtCode_constantTime Proof.Bignum.X86_64.Mont.fnBase Proof.Bignum.X86_64.CrtSel.sse
-        Proof.Bignum.X86_64.CrtSel.sse_ct)
+      (Proof.Bignum.X86_64.crtCode_correct Proof.Bignum.X86_64.Mont.fnBase (Proof.Bignum.X86_64.CrtExpL.w4 Proof.Bignum.X86_64.Mont.fnBase) (by decide +kernel))
+      (Proof.Bignum.X86_64.crtCode_constantTime Proof.Bignum.X86_64.Mont.fnBase (Proof.Bignum.X86_64.CrtExpL.w4 Proof.Bignum.X86_64.Mont.fnBase)
+        (Proof.Bignum.X86_64.CrtExpL.w4_ct Proof.Bignum.X86_64.Mont.fnBase))
     spSafe := Code.all_of_allInstrs (by decide +kernel) },
   { Spec.Rsa.privateCrtApi with
     target := X86_64.target
     name := Spec.Rsa.privateCrtApi.name ++ "_adx"
     doc := Spec.Rsa.privateCrtApi.doc
       (notes := ["`vg_rsa_private_crt`'s code, with Montgomery multiplication by calls of \
-        `vg_rsa_mont_mul_adx`, and the table's masked selection four words at a time in AVX2's 256-bit \
-        registers."])
-    code := Impl.Rsa.X86_64.Crt.code Proof.Rsa.X86_64.CallMont.adx.mm Impl.Rsa.X86_64.Crt.tabSelectV
+        `vg_rsa_mont_mul_adx`, and the exponents scanned by a fixed window of 5 bits: five squares and a \
+        multiplication by the window's power, from a table of all 32, read by a masked selection four \
+        words at a time in AVX2's 256-bit registers."])
+    code := Impl.Rsa.X86_64.Crt.code Proof.Rsa.X86_64.CallMont.adx.mm
+      (Impl.Rsa.X86_64.Crt.expLoop5 Proof.Rsa.X86_64.CallMont.adx.mm Impl.Rsa.X86_64.Crt.tabSelectV)
     contract := Spec.Rsa.privateCrtContract X86_64.abi 8
     stack := 8
     verified := Proof.Rsa.X86_64.crt_call_verified (by decide +kernel)
-      (Proof.Bignum.X86_64.crtCode_correct Proof.Bignum.X86_64.Mont.fnAdx Proof.Bignum.X86_64.CrtSel.avx
+      (Proof.Bignum.X86_64.crtCode_correct Proof.Bignum.X86_64.Mont.fnAdx (Proof.Bignum.X86_64.CrtExpL.w5 Proof.Bignum.X86_64.Mont.fnAdx)
         (by decide +kernel))
-      (Proof.Bignum.X86_64.crtCode_constantTime Proof.Bignum.X86_64.Mont.fnAdx Proof.Bignum.X86_64.CrtSel.avx
-        Proof.Bignum.X86_64.tabSelV_ct)
+      (Proof.Bignum.X86_64.crtCode_constantTime Proof.Bignum.X86_64.Mont.fnAdx (Proof.Bignum.X86_64.CrtExpL.w5 Proof.Bignum.X86_64.Mont.fnAdx)
+        (Proof.Bignum.X86_64.CrtExpL.w5_ct Proof.Bignum.X86_64.Mont.fnAdx))
     features := ["avx", "avx2", "bmi2", "adx"]
     spSafe := Code.all_of_allInstrs (by decide +kernel) },
   { Spec.Rsa.privateCrtApi with

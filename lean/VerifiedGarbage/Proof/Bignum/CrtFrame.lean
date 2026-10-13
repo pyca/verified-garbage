@@ -185,6 +185,17 @@ theorem Frm.to_xT {B : Addr} {o wx : Nat} {rs : List (Nat × Nat)} {m m' : Mem} 
   simp only [xRange]
   omega
 
+/-- `Frm.to_x` for changes that reach the whole room for a table. -/
+theorem Frm.to_xW {B : Addr} {o wx : Nat} {rs : List (Nat × Nat)} {m m' : Mem} (h : Frm (off B o) rs m m')
+    (hr : ∀ r ∈ rs, 8 * 17 ≤ r.1 ∧ r.1 + r.2 ≤ slot wx 8 + wsTab wx) (ho : o + (slot wx 8 + wsTab wx) ≤ 2 ^ 64)
+    {rs' : List (Nat × Nat)} (hx : xRange o wx ∈ rs') : Frm B rs' m m' := by
+  have h256 : 8 * 17 ≤ slot wx 8 := by unfold slot hdrBytes; omega
+  refine (h.rebase (by omega) fun r hr' => by have := hr r hr'; omega).widen fun r hr' => ⟨_, hx, ?_⟩
+  obtain ⟨r₀, hr₀, rfl⟩ := List.mem_map.mp hr'
+  have := hr r₀ hr₀
+  simp only [xRange]
+  omega
+
 theorem Outside.to_x {B : Addr} {o wx j : Nat} {m m' : Mem} (h : Outside (off B o) (slot wx j) (8 * (wx + 2)) m m')
     (hj : j < 8) (ho : o + slot wx 8 ≤ 2 ^ 64) {rs' : List (Nat × Nat)} (hx : xRange o wx ∈ rs') :
     Frm B rs' m m' :=
