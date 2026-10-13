@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.X86.Straight
 public import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # x86 (32-bit): linear layers of bitsliced code, by evaluation

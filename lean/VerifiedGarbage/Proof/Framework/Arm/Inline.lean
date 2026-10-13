@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Framework.Inline
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
+public import VerifiedGarbage.TCB.Arm.Target
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # Inlining verified code (ARMv7)

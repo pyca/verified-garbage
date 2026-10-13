@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # AArch64: interleaving independent code

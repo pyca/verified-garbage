@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.AArch64.Inline
+import Mathlib.Tactic.SplitIfs
 
 /-! Vector register preservation, including through calls and stack frames. -/
 

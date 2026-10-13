@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Framework.AArch64.Exec
 public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 public import VerifiedGarbage.Proof.Framework.Offset
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # AArch64: saving registers in memory and restoring them

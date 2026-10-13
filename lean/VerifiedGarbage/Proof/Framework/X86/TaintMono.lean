@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Framework.X86.Taint
 public import VerifiedGarbage.Proof.Framework.TaintSum
 public import VerifiedGarbage.Proof.Framework.RegSetOrder
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # Summaries for the x86 taint analysis

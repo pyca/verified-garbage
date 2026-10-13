@@ -8,6 +8,12 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.Conv
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Ed448.X86_64.PublicKey.Layout
+meta import Mathlib.Tactic.Conv
+meta import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Proof.Ed448.X86_64.PublicKey.Layout
 
 /-!
 # Ed448 signing with a cached public key on x86-64: the hashes leak only the layout

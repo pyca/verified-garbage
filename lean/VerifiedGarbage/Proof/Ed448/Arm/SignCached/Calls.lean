@@ -8,6 +8,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Ed448.Arm.BaseVerified
+import VerifiedGarbage.Proof.Ed25519.Arm.Whole.Wrap
 
 /-!
 # Ed448 signing with a cached public key on ARMv7: the scalar calls

@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.X86.SseTaint
 public import VerifiedGarbage.Proof.Framework.Semantics
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # x86 (32-bit): the addresses of statics never change

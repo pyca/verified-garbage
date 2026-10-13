@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Framework.AArch64.Simd64
 public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.Bitslice.Dom
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # AArch64: straight-line bitwise AdvSIMD code, doubleword lane by doubleword lane

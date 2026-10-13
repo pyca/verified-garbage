@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.X86.Exec
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # x86 (32-bit): weakest-precondition rules for single instructions

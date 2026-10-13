@@ -16,6 +16,12 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.FieldTheory.Finite.Basic
+import Mathlib.Tactic.NormNum.Prime
+import VerifiedGarbage.Proof.Edwards.Group
+meta import Mathlib.FieldTheory.Finite.Basic
+meta import Mathlib.Tactic.NormNum.Prime
+meta import VerifiedGarbage.Proof.Edwards.Group
 
 /-!
 # Ed448 base-point multiplication on x86-64: `Verified`

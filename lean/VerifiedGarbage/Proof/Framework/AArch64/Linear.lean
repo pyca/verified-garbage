@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.AArch64.Straight
 public import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # AArch64: linear layers of bitsliced code, by evaluation

@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Framework.X86.Taint
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # x86 (32-bit) code as literals

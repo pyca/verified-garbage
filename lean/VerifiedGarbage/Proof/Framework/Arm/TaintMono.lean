@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
 public import VerifiedGarbage.Proof.Framework.TaintSum
 public import VerifiedGarbage.Proof.Framework.RegSetOrder
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # Summaries for the ARMv7 taint analysis
