@@ -386,7 +386,24 @@ from 640 on), and from 768 on the AVX-512 code is, even with its lower clock
 code is the faster from 640 on. -/
 def smallLim (vl : Bool) : Nat := if vl then 768 else 640
 
-/-- `seal` for fewer than `smallLim` bytes of data (`len`, in `r9`) with the AVX2
+/-- The lengths from `winLo` to `winHi - 1` the AVX-512 instances (without
+IFMA) also seal and open with the AVX2 code: the AVX-512 code computes their
+keystream in two passes of sixteen blocks (the one-time key's, which the
+data's 961 bytes or more no longer fit after (`fold` 960), and the data's),
+the AVX2 code in fewer blocks. -/
+def winLo : Nat := 961
+def winHi : Nat := 1025
+
+/-- `CF` set if `len` (`r9`) is below `lim` or in `[winLo, winHi)`: `rax`
+is `len`, or 0 in the window (unsigned, `len - winLo < winHi - winLo`), and
+is compared with `lim`; `rax` and `r10` are scratch. -/
+def smallTest (lim : Nat) : List Instr :=
+  [.mov .rax (.reg .r9), .mov .r10 (.reg .r9), .alu .sub .r10 (.imm (BitVec.ofNat 32 winLo)),
+   .alu .cmp .r10 (.imm (BitVec.ofNat 32 (winHi - winLo))), .mov .r10 (.imm 0),
+   .cmov .b .rax (.reg .r10), .alu .cmp .rax (.imm (BitVec.ofNat 32 lim))]
+
+/-- `seal` for fewer than `smallLim` bytes of data (`len`, in `r9`), or from
+`winLo` to `winHi - 1`, with the AVX2
 code, `sealStitched` with the implementation `small` of `vg_chacha20_xor`
 (`vg_chacha20_xor_avx2`, or `vg_chacha20_xor_avx512vl`, which keeps that
 data in `ymm` registers) and `vg_poly1305_blocks_avx2`, which runs no
@@ -395,7 +412,7 @@ clock drops while they run 512-bit instructions (Skylake-SP, Cascade Lake:
 the AVX-512 implementations without IFMA), that slows the whole of `seal`
 for short data more than the 16-block keystream gains. -/
 def sealSmall (small : ChaCha20.X86_64.Callee) (big : Prog isa) : Prog isa :=
-  .seq (.block [.alu .cmp .r9 (.imm (BitVec.ofNat 32 (smallLim small.vl)))])
+  .seq (.block (smallTest (smallLim small.vl)))
     (.ite .b (sealStitched { small with pass := 512 } .avx2) big)
 
 /-- The `seal` an instance uses: with the AVX2 implementation of
@@ -478,12 +495,13 @@ bytes, from 3.8% to 8.5% from 640 on, and from 768 the AVX-512 code is;
 without them, the AVX-512 code is the faster from 640 on. -/
 def openLim (vl : Bool) : Nat := if vl then 768 else 640
 
-/-- `open` for fewer than `openLim` bytes of data (`len`, in `r9`) with the
+/-- `open` for fewer than `openLim` bytes of data (`len`, in `r9`), or from `winLo`
+to `winHi - 1`, with the
 AVX2 code, `openStitched` with the implementation `small` of
 `vg_chacha20_xor` and `vg_poly1305_blocks_avx2`, which runs no 512-bit
 instruction, and for more with `big`: as `sealSmall`. -/
 def openSmall (small : ChaCha20.X86_64.Callee) (big : Prog isa) : Prog isa :=
-  .seq (.block [.alu .cmp .r9 (.imm (BitVec.ofNat 32 (openLim small.vl)))])
+  .seq (.block (smallTest (openLim small.vl)))
     (.ite .b (openStitched small .avx2) big)
 
 /-- The `open` an instance uses, as `sealFor`: with the AVX2 implementation of
