@@ -68,13 +68,13 @@ theorem cc3_pre {p : CCPub} {t : State} (h : CC3 p t) :
   rw [hnb] at this
   exact ⟨_, _, _, _, _, _, this⟩
 
-variable (M : Mont)
+variable (M : Mont) (S : CrtSel)
 
 /-- `vg_rsa_private_crt` leaks the same in runs that agree on the public data,
 given that `main`'s parts do. -/
-theorem crtCode_ct (hS : SetupCT) (hC : ChecksCT) (hQ : QPhaseCT M) (hP : PPhaseCT M)
+theorem crtCode_ct (hS : SetupCT) (hC : ChecksCT) (hQ : QPhaseCT M S) (hP : PPhaseCT M S)
     (hF : RelCT isa (Two (Stage R5)) (seqs finish) fun _ _ => True) :
-    RelCT isa (Two CCRel) (Crt.code M.mm) fun _ _ => True := by
+    RelCT isa (Two CCRel) (Crt.code M.mm S.code) fun _ _ => True := by
   unfold Crt.code
   refine RelCT.seq (R := Two CC3) (RelCT.block_append (RelCT.seq (R := Two CC2) ?_ ?_)) ?_
   · rw [crtEntry_split]
@@ -148,7 +148,7 @@ theorem crtCode_ct (hS : SetupCT) (hC : ChecksCT) (hQ : QPhaseCT M) (hP : PPhase
       have hv : Spec.Rsa.modulusValid p.m.N p.m.k = true := by
         simp only [eval, hz] at he; simpa using he
       exact ⟨t, xb, pb, qb, dpb, dqb, qib, hpre, hv, rfl⟩
-    exact (crtMain_ct M hS hC hQ hP hF).mono (fun _ _ h => two_bind (fun p t₁ t₂ h₁ h₂ =>
+    exact (crtMain_ct M S hS hC hQ hP hF).mono (fun _ _ h => two_bind (fun p t₁ t₂ h₁ h₂ =>
       ⟨p.m, toM p t₁ h₁, toM p t₂ h₂⟩) h) fun _ _ h => h
 
 /-- The public data of a state. -/
@@ -159,10 +159,10 @@ def ccPubOf (s : State) : CCPub :=
 
 /-- `vg_rsa_private_crt` is constant time but for `n`, given that `main`'s
 parts are. -/
-theorem crtCode_constantTime_of (hS : SetupCT) (hC : ChecksCT) (hQ : QPhaseCT M) (hP : PPhaseCT M)
+theorem crtCode_constantTime_of (hS : SetupCT) (hC : ChecksCT) (hQ : QPhaseCT M S) (hP : PPhaseCT M S)
     (hF : RelCT isa (Two (Stage R5)) (seqs finish) fun _ _ => True) :
-    ConstantTime isa crtContract.pre crtContract.pub (Crt.code M.mm) := by
-  refine RelCT.constantTime ((crtCode_ct M hS hC hQ hP hF).mono (fun s₁ s₂ ⟨h₁, h₂, hp⟩ => ⟨ccPubOf s₁, ?_, ?_⟩)
+    ConstantTime isa crtContract.pre crtContract.pub (Crt.code M.mm S.code) := by
+  refine RelCT.constantTime ((crtCode_ct M S hS hC hQ hP hF).mono (fun s₁ s₂ ⟨h₁, h₂, hp⟩ => ⟨ccPubOf s₁, ?_, ?_⟩)
     fun _ _ h => h)
   · exact ⟨h₁, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩
   · obtain ⟨hr, a0, a1, a2, a3, a4, -, a6, -, a8, -, a10, a11, hn⟩ := hp

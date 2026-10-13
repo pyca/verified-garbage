@@ -57,7 +57,7 @@ variable (M : Mont)
 
 /-- `vg_rsa_private_crt_ifma` leaks the same in runs that agree on the public
 data, given that `main`'s parts do. -/
-theorem code_ct (hS : SetupCT) (hC : ChecksCT) (hQ : QPhaseCT M) (hP : PPhaseCT M)
+theorem code_ct (hS : SetupCT) (hC : ChecksCT) (hQ : QPhaseCT M CrtSel.sse) (hP : PPhaseCT M CrtSel.sse)
     (hF : RelCT isa (Two (Stage R5)) (seqs finish) fun _ _ => True) (hR2 : RedcCT M Public.aR2)
     (hXm : RedcCT M Public.aXm) (hL : LoadCT aChunk sQinv sPlen)
     (hpost : (seqs (CrtIfma.post M.mm)).allInstrs (fun i => !loadsMxcsr i) = true) :
@@ -139,7 +139,7 @@ theorem code_ct (hS : SetupCT) (hC : ChecksCT) (hQ : QPhaseCT M) (hP : PPhaseCT 
       ⟨p.m, toM p t₁ h₁, toM p t₂ h₂⟩) h) fun _ _ h => h
 
 /-- `vg_rsa_private_crt_ifma` is constant time but for `n`. -/
-theorem code_constantTime_of (hS : SetupCT) (hC : ChecksCT) (hQ : QPhaseCT M) (hP : PPhaseCT M)
+theorem code_constantTime_of (hS : SetupCT) (hC : ChecksCT) (hQ : QPhaseCT M CrtSel.sse) (hP : PPhaseCT M CrtSel.sse)
     (hF : RelCT isa (Two (Stage R5)) (seqs finish) fun _ _ => True) (hR2 : RedcCT M Public.aR2)
     (hXm : RedcCT M Public.aXm) (hL : LoadCT aChunk sQinv sPlen)
     (hpost : (seqs (CrtIfma.post M.mm)).allInstrs (fun i => !loadsMxcsr i) = true) :
@@ -160,10 +160,10 @@ theorem code_constantTime (M : Mont)
     (hpost : (seqs (CrtIfma.post M.mm)).allInstrs (fun i => !loadsMxcsr i) = true) :
     ConstantTime isa crtContract.pre crtContract.pub (CrtIfma.code M.mm) :=
   code_constantTime_of M setup_ct checks_ct
-    (qPhase_ct M (unit_ct M (gPow_ct_Q M) (redc_ct_Y M) (by taint_decide))
-      (pow_ct M (redc_ct_Y M) (expLoop_ct_Q M) (by taint_decide)))
-    (pPhase_ct M (unit_ct M (gPow_ct_P M) (redc_ct_Y M) (by taint_decide))
-      (pow_ct M (redc_ct_Y M) (expLoop_ct_P M) (by taint_decide)) (redc_ct_X M) loadArr_ct_pI)
+    (qPhase_ct M CrtSel.sse (unit_ct M (gPow_ct_Q M) (redc_ct_Y M) (by taint_decide))
+      (pow_ct M CrtSel.sse (redc_ct_Y M) (expLoop_ct_Q M CrtSel.sse CrtSel.sse_ct) (by taint_decide)))
+    (pPhase_ct M CrtSel.sse (unit_ct M (gPow_ct_P M) (redc_ct_Y M) (by taint_decide))
+      (pow_ct M CrtSel.sse (redc_ct_Y M) (expLoop_ct_P M CrtSel.sse CrtSel.sse_ct) (by taint_decide)) (redc_ct_X M) loadArr_ct_pI)
     crtFinish_ct (redc_ct_R2 M) (redc_ct_Xm M) loadArr_ct_pI hpost
 
 /-- `vg_rsa_private_crt_ifma` with Montgomery multiplication `M`, given that
@@ -173,7 +173,7 @@ theorem verified (M : Mont)
     (hfront : (seqs (nSetup M.mm ++ primesSetup ++ checks)).allInstrs (fun i => !loadsMxcsr i) = true)
     (hpre : (seqs (CrtIfma.pre M.mm)).allInstrs (fun i => !loadsMxcsr i) = true)
     (hpost : (seqs (CrtIfma.post M.mm)).allInstrs (fun i => !loadsMxcsr i) = true)
-    (hcrt : (seqs (qPhase M.mm ++ pPhase M.mm)).allInstrs (fun i => !loadsMxcsr i) = true) :
+    (hcrt : (seqs (qPhase M.mm CrtSel.sse.code ++ pPhase M.mm CrtSel.sse.code)).allInstrs (fun i => !loadsMxcsr i) = true) :
     Verified target (CrtIfma.code M.mm) (Spec.Rsa.privateCrtContract abi) :=
   Verified.of_correct (code_correct M hfront hpre hpost hcrt) (code_constantTime M hpost) crt_implies
 

@@ -38,7 +38,7 @@ theorem XVals.of_exp {s t : State} {B : Addr} {o wx : Nat} {mx : BitVec 64} {X :
 the prime's: the prime's `Y := c^d R_X mod X` if `X` divides `N`, `d` the
 bytes whose pointer and length are in the modulus' header slots `sd` and
 `slen`. Ends in the prime's workspace. -/
-theorem powPhase_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx : BitVec 64} {N X C : Nat}
+theorem powPhase_ok (M : Mont) (S : CrtSel) {s : State} {B : Addr} {Z w : Nat} {minv mx : BitVec 64} {N X C : Nat}
     {sl o wx sd slen : Nat} {ep : Addr} {eb : List Byte}
     (hg : Good s B Z w minv) (hw28 : w < 2 ^ 28) (hlo : slot w 8 ≤ o) (hhi : o + slot wx 8 + tabBytes wx ≤ Z)
     (hwx2 : 2 ≤ wx) (hwx : wx ≤ w) (hsl : sl < 32) (hslv : word s.mem B (8 * sl) = off B o)
@@ -49,7 +49,7 @@ theorem powPhase_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx : Bit
     (hsd : sd < 32) (hsln : slen < 32) (hep : word s.mem B (8 * sd) = ep)
     (hel : word s.mem B (8 * slen) = BitVec.ofNat 64 eb.length) (hL1 : 1 ≤ eb.length) (hL2 : eb.length ≤ 1024)
     (he : Src s B Z ep eb) :
-    WP isa (seqs (([.block [.mov .rdi (.mem (hdr sl))]] : List (Prog isa)) ++ redc M.mm Public.aY ++ Crt.expLoop M.mm sd slen)) s
+    WP isa (seqs (([.block [.mov .rdi (.mem (hdr sl))]] : List (Prog isa)) ++ redc M.mm Public.aY ++ Crt.expLoop M.mm S.code sd slen)) s
       fun t => SubCtx t B Z o w wx mx ∧ XVals t B o wx mx X ∧
         wv t.mem (off B o) (slot wx Public.aY) wx < X ∧
         (X ∣ N → wv t.mem (off B o) (slot wx Public.aY) wx % X = C ^ Spec.Rsa.os2ip eb * 2 ^ (64 * wx) % X) ∧
@@ -91,7 +91,7 @@ theorem powPhase_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx : Bit
     apply VG.Proof.Bignum.redc_cancel hR
     rw [Nat.pow_mul] at hv₂
     rw [hv₂, hm₁, ← Nat.mod_mod_of_dvd _ hd, hnY, Nat.mod_mod_of_dvd _ hd, ← Nat.pow_mul]
-  refine WP.mono (crtExpLoop_ok M (Q := X ∣ N) hc₂ hwx2 hwx (by omega) hX₂.n hX₂.inv hXodd hlt₂ hxc
+  refine WP.mono (crtExpLoop_ok M S (Q := X ∣ N) hc₂ hwx2 hwx (by omega) hX₂.n hX₂.inv hXodd hlt₂ hxc
     (by rw [hY₂]; exact hyl) (fun hd => by rw [hY₂]; exact hyc hd) hsd hsln (by rw [hb₂ _ (by omega)]; exact hep)
     (by rw [hb₂ _ (by omega)]; exact hel) hL1 hL2 hsrc₂) fun t ⟨hc, hlt, hv, f₃, k₃⟩ => ?_
   refine ⟨hc, hX₂.of_exp f₃ (by have := hc₂.good.scr.nowrap; omega), hlt, fun hd => ?_, ?_, ?_,

@@ -21,7 +21,7 @@ open VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.Rsa.X86_64
 
 def variant : CrtImpl where
   name := Spec.Rsa.privateCrtApi.name ++ "_adx"
-  code := Impl.Rsa.X86_64.Crt.code CallMont.adx.mm
+  code := Impl.Rsa.X86_64.Crt.code CallMont.adx.mm Impl.Rsa.X86_64.Crt.tabSelectV
   depth := by decide +kernel
   ok := crt_call_ok (by decide +kernel) (crtCode_correct Mont.fnAdx (by decide +kernel))
   ct := crt_call_ct (by decide +kernel) (crtCode_correct Mont.fnAdx (by decide +kernel)) (crtCode_constantTime Mont.fnAdx)
