@@ -28,4 +28,17 @@ def basesR : List Instr := zext ++ basesTail
 def mulBase : Prog isa :=
   .seq (.block basesR) (.seq zeroAcc (.seq rounds (.seq subMod selectAcc)))
 
+/-- Recognize the public in-place accumulator-square call used by FFDH.
+Only the low 32 bits of the indices belong to the ABI arguments. -/
+def squareTest : List Instr :=
+  [movi .x7 5, .logic .eor .w .x5 .x2 .x7, .logic .eor .w .x6 .x3 .x7,
+   .logic .orr .w .x5 .x5 .x6, .logic .eor .w .x6 .x4 .x7,
+   .logic .orr .w .x5 .x5 .x6]
+
+/-- Reuse RSA's default Montgomery implementation for accumulator squares;
+retain the general callable implementation for every other valid index tuple. -/
+def mul : Prog isa :=
+  .seq (.block squareTest)
+    (.ite (.zero .w .x5) (Public.mm 5 5 5) mulBase)
+
 end VG.Impl.Bignum.AArch64.MontFn
