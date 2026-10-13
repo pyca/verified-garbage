@@ -251,6 +251,33 @@ theorem ecbDirPostOut_local : ∀ vs m m₁ m₂ r,
       rw [BitVec.toNat_setWidth] at hi; have := Nat.mul_le_mul_right 16 this; omega)]
     exact h
 
+/-- `ecbDirPre` reads no memory. -/
+theorem ecbDirPre_local : ∀ vs m₁ m₂, vs.length = (ecbDirSig.words pb).length →
+    (∀ b ∈ Sig.bufs ecbDirSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (ecbDirSig.words pb) (ecbDirPre pb) vs m₁ → Curry.apply (ecbDirSig.words pb) (ecbDirPre pb) vs m₂
+  | [_, _, _, _], _, _, _, _, h => h
+
+/-- `ecbDirPost` reads the memory on entry only within the schedule and the data. -/
+theorem ecbDirPost_local : ∀ vs m₁ m₂ m' r,
+    vs.length = (ecbDirSig.words pb).length →
+    (∀ b ∈ Sig.bufs ecbDirSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (ecbDirSig.words pb) (ecbDirPost pb) vs m₁ m' r →
+      Curry.apply (ecbDirSig.words pb) (ecbDirPost pb) vs m₂ m' r
+  | [_, data, n, _], m₁, m₂, m', r, _, hb, h => by
+    simp only [ecbDirSig, ecbSig, List.cons_append, List.nil_append, Sig.bufs, List.mem_cons,
+      List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
+    have hs := agree_of hb.1
+    have hd := agree_of hb.2
+    change Curry.apply [ArgWord.addr, ArgWord.addr, ArgWord.int pb, ArgWord.int pb] (ecbDirPost pb) _
+      m₁ m' r at h
+    change Curry.apply [ArgWord.addr, ArgWord.addr, ArgWord.int pb, ArgWord.int pb] (ecbDirPost pb) _
+      m₂ m' r
+    dsimp only [Curry.apply, ecbDirPost, ArgWord.ofRaw] at h ⊢
+    have := Nat.mod_le n.toNat (2 ^ pb)
+    rw [scheduleAt_congr hs, blocksAt_congr (n := (n.setWidth pb).toNat) fun i hi => hd i (by
+      rw [BitVec.toNat_setWidth] at hi; have := Nat.mul_le_mul_right 16 this; omega)]
+    exact h
+
 /-- `expandKeyPost` reads the memory on entry only within the key. -/
 theorem expandKeyPost_local : ∀ vs m₁ m₂ m' r, vs.length = (expandKeySig.words pb).length →
     (∀ b ∈ Sig.bufs expandKeySig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
