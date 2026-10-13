@@ -20,6 +20,8 @@ import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
 meta import VerifiedGarbage.Proof.Aes.SboxSpec
 meta import VerifiedGarbage.Proof.Framework.Arm.Linear
 meta import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
+import VerifiedGarbage.Impl.Aes.Arm.Alloc
+meta import VerifiedGarbage.Impl.Aes.Arm.Alloc
 
 /-!
 # CAST5-CBC, CAST5-OFB and CAST5-CFB64 on ARMv7 meet their contracts

@@ -8,6 +8,7 @@ import all Init.Data.Vector.Basic
 import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Bignum.X86_64.Bytes
 
 /-!
 # Multiword arithmetic on x86-64: `vg_rsa_public`'s check of the modulus

@@ -8,6 +8,8 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.X86_64.Sse
+import VerifiedGarbage.Proof.Bignum.X86_64.WordIOBytes
+import VerifiedGarbage.Proof.Framework.CallLay
 
 @[expose] public section
 

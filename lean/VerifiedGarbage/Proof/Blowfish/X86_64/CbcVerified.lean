@@ -24,6 +24,10 @@ import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.X86_64.Words
 meta import Mathlib.Tactic.SplitIfs
 meta import VerifiedGarbage.Proof.Framework.X86_64.Words
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Spec.Rc2
+meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
+meta import VerifiedGarbage.Spec.Rc2
 
 /-!
 # Blowfish-CBC on x86-64 meets its contracts

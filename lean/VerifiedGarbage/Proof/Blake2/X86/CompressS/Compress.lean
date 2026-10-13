@@ -11,6 +11,7 @@ import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.X86.CallWith
 import VerifiedGarbage.Proof.Framework.X86.Sse
+import VerifiedGarbage.Proof.Blake2.X86.Stream.Common
 
 /-!
 # BLAKE2s on x86 (32-bit): the compression function

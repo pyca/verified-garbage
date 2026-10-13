@@ -16,6 +16,8 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
 meta import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
+import VerifiedGarbage.Proof.Cmac.Block
+meta import VerifiedGarbage.Proof.Cmac.Block
 
 @[expose] public section
 

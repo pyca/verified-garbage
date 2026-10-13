@@ -8,6 +8,7 @@ import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Poly1305.Limbs64
 
 /-!
 # `R² mod m` by word steps on x86-64: the estimate of the quotient

@@ -14,6 +14,8 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.X86_64.Words
+import VerifiedGarbage.Proof.Blowfish.Blocks
+import VerifiedGarbage.Spec.Rc2
 
 /-!
 # Blowfish's core for the modes on x86-64

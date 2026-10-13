@@ -10,6 +10,8 @@ import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Blowfish.Arm.Run
 import VerifiedGarbage.Proof.Framework.TaintSum
+import VerifiedGarbage.Proof.Framework.Arm.Spill
+import VerifiedGarbage.Spec.Rc4
 
 /-!
 # Blowfish on ARMv7, with the working space on the stack

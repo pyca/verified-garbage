@@ -16,6 +16,25 @@ import VerifiedGarbage.Proof.ChaCha20.AArch64.Lit
 import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitch.Body
 import VerifiedGarbage.Proof.Poly1305.AArch64.Lit
 import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Lit
+public import VerifiedGarbage.Proof.ChaCha20.AArch64.Backends
+public import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed5.Save
+public import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Xor
+public import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Lit
+public import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Xor
+public import VerifiedGarbage.Proof.ChaCha20.AArch64.Rows6.Lit
+public import VerifiedGarbage.Proof.ChaCha20.AArch64.Rows6.Xor
+public import VerifiedGarbage.Proof.ChaCha20.AArch64.Small.Lit
+public import VerifiedGarbage.Proof.ChaCha20.AArch64.Small.Xor
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Lit
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitch.Bulk
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.Spec
+public import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
+public import VerifiedGarbage.Proof.Framework.Bswap
+public import VerifiedGarbage.Proof.Framework.Range
+public import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Finalize
+public import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Reduce
+public import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Update
+public import VerifiedGarbage.Proof.Poly1305.Limbs64
 
 @[expose] public section
 

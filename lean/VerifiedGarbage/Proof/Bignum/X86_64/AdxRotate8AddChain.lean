@@ -8,6 +8,7 @@ import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+import VerifiedGarbage.Spec.Rsa
 
 /-! An eight-word addition with its exact final carry. -/
 

@@ -14,6 +14,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Weierstrass.Arm.MontModuli
+meta import VerifiedGarbage.Proof.Weierstrass.Arm.MontModuli
 
 /-!
 # ECDSA over P-384 on 32-bit ARM: `Verified`

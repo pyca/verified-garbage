@@ -7,6 +7,8 @@ import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Cmac.Stream
+import VerifiedGarbage.Proof.CmacAes.Stream.X86_64.Call
+import VerifiedGarbage.Proof.CmacAes.Stream.X86_64.Common
 
 @[expose] public section
 

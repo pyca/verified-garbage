@@ -9,6 +9,7 @@ import Mathlib.Algebra.Order.Ring.Abs
 import Mathlib.Data.BitVec
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Ring
+import VerifiedGarbage.Proof.Divstep.Tc32Words
 
 /-! # Signed Montgomery reduction on multiword values -/
 

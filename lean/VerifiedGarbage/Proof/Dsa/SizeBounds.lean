@@ -8,6 +8,8 @@ import all Init.Data.Vector.Basic
 import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.MdStream.Spec
+import VerifiedGarbage.TCB.Artifact
 
 /-! # Arithmetic bounds implied by DSA's supported actual bit lengths -/
 

@@ -26,6 +26,10 @@ meta import VerifiedGarbage.Proof.Framework.Arm.Linear
 meta import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
 import VerifiedGarbage.Proof.Framework.TaintSum
 meta import VerifiedGarbage.Proof.Framework.TaintSum
+import VerifiedGarbage.Impl.Aes.Arm.Alloc
+import VerifiedGarbage.Spec.Rc4
+meta import VerifiedGarbage.Impl.Aes.Arm.Alloc
+meta import VerifiedGarbage.Spec.Rc4
 
 /-!
 # Blowfish-OFB and Blowfish-CFB128 on ARMv7 meet their contracts

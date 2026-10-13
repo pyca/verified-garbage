@@ -16,6 +16,18 @@ public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.CTPre
 import VerifiedGarbage.Proof.Framework.X86_64.Call
 meta import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.CTPre
 meta import VerifiedGarbage.Proof.Framework.X86_64.Call
+public import VerifiedGarbage.Proof.Bignum.WordStep
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtArith
+public import VerifiedGarbage.Proof.Bignum.X86_64.R2wSub
+public import VerifiedGarbage.Proof.Framework.WriteBytes
+public import VerifiedGarbage.Proof.Framework.X86_64.VecKeep
+public import VerifiedGarbage.Proof.Rsa.Ranges
+meta import VerifiedGarbage.Proof.Bignum.WordStep
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtArith
+meta import VerifiedGarbage.Proof.Bignum.X86_64.R2wSub
+meta import VerifiedGarbage.Proof.Framework.WriteBytes
+meta import VerifiedGarbage.Proof.Framework.X86_64.VecKeep
+meta import VerifiedGarbage.Proof.Rsa.Ranges
 
 /-!
 # RSA with AVX512_IFMA on x86-64, any size: `main` in constant time

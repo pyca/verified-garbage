@@ -14,6 +14,8 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Rc4.Scan32
+meta import VerifiedGarbage.Proof.Rc4.Scan32
 
 /-!
 # Blowfish on x86 (32-bit): the functions meet their contracts, with the working space as an argument

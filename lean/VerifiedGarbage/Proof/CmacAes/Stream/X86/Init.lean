@@ -14,6 +14,8 @@ meta import VerifiedGarbage.Proof.Aes.KeyExp
 meta import VerifiedGarbage.Proof.Aes.SboxSpec
 meta import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
 meta import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.X86.Straight
+meta import VerifiedGarbage.Proof.Framework.X86.Straight
 
 /-!
 # Streaming AES-CMAC on x86: `vg_cmac_aes_init`

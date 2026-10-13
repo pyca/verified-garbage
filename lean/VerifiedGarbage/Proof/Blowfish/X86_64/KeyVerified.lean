@@ -11,6 +11,7 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.X86_64.Words
+import VerifiedGarbage.Spec.Rc2
 
 /-! # Key expansion meets its contract, with the working space as an argument -/
 

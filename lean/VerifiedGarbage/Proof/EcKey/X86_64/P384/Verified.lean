@@ -32,6 +32,10 @@ meta import VerifiedGarbage.Proof.Framework.TaintMap
 meta import VerifiedGarbage.Proof.Mont.X86_64.Wide
 meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
 meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+import VerifiedGarbage.Impl.Weierstrass.X86_64.DoubleCms
+import VerifiedGarbage.Proof.Framework.X86_64.KeepReg
+meta import VerifiedGarbage.Impl.Weierstrass.X86_64.DoubleCms
+meta import VerifiedGarbage.Proof.Framework.X86_64.KeepReg
 
 /-!
 # P-384 public keys on x86-64: `Verified`

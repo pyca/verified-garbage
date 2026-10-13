@@ -14,6 +14,8 @@ import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.X86_64.Call
 meta import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxFinish8
+meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxFinish8
 
 @[expose] public section
 

@@ -8,6 +8,7 @@ import all Init.Data.Vector.Basic
 import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Framework.WriteBytes
 
 /-!
 # `vg_rsa_public` on x86-64: an invalid modulus

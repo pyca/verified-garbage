@@ -8,6 +8,7 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Weierstrass.Law
 
 /-!
 # P-521 public keys on AArch64: the contract the proof is written against

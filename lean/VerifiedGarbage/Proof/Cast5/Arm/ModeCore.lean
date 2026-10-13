@@ -12,6 +12,7 @@ import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Aes.SboxSpec
 import VerifiedGarbage.Proof.Framework.Arm.Linear
 import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
+import VerifiedGarbage.Impl.Aes.Arm.Alloc
 
 /-!
 # CAST5's ECB functions as the ARMv7 modes' core

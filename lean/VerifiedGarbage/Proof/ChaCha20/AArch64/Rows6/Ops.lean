@@ -11,6 +11,8 @@ import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Spec.ChaCha20
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.Simd
 
 @[expose] public section
 
