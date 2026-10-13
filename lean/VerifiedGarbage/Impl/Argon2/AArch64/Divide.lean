@@ -5,9 +5,12 @@ public import VerifiedGarbage.TCB.AArch64.Isa
 /-! # Fixed-time division for ARM64 Argon2 reference indices
 
 The positive divisor in x1 and numerator in x0 fit in 32 bits. The
-quotient is returned in x5, remainder in x4. All 32 steps are unrolled;
-borrow selects the remainder through a mask, without variable-latency
-hardware division or branches on the address word.
+quotient is returned in x5, remainder in x4. Borrow selects the remainder
+through a mask, without variable-latency hardware division or branches on the
+address word. `code` unrolls all 32 steps, for the reference index of every
+block; `loopCode`, for code that divides once per derivation, runs the same
+step in a loop counted down in x15, taking bit 31 of x0 and doubling x0 after
+each step, so it consumes x0.
 -/
 
 @[expose] public section
@@ -31,4 +34,12 @@ def bit (j : Nat) : List Instr := subtract j ++ select
 def setup : List Instr := [.movz .x .x4 0 0, .movz .x .x5 0 0]
 
 def code : Prog isa := .block (setup ++ (List.range 32).reverse.flatMap bit)
+
+def loopSetup : List Instr := setup ++ [.movz .x .x15 32 0]
+
+def loopAdvance : List Instr := [.add .x .x0 .x0 .x0, .subImm .x .x15 .x15 1]
+
+def loopBody : Prog isa := .seq (.block (bit 31)) (.block loopAdvance)
+
+def loopCode : Prog isa := .seq (.block loopSetup) (.loop loopBody (.nonzero .x .x15))
 end VG.Impl.Argon2.AArch64.Divide
