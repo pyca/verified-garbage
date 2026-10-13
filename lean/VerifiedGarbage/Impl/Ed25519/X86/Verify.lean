@@ -18,9 +18,17 @@ open VG VG.X86 VG.Impl.X25519.X86
 def verifyScalar : List Instr := inputSliceWords 1 32 64 8 ++ scalarSubtract ++ [.alu .test .ebx (.reg .ebx)]
 
 def pointEqualOps : List FieldOp := [.mul 8 0 6, .mul 9 4 2, .mul 10 1 6, .mul 11 5 2]
+/-- Slots 8 and 9 compared: if equal, slots 10 and 11 copied into them, `eax = 1` and `esi`
+counted down; otherwise `eax = 0` and `esi = 0`. ZF is clear while another comparison follows. -/
+def equalStep : Prog isa :=
+  .seq (.block (fieldEqual 8 9)) (.ite .e
+    (.block (fieldCode [.copy 8 10, .copy 9 11] ++ [.mov .eax (.imm 1), .alu .sub .esi (.imm 1)]))
+    (.block [.mov .eax (.imm 0), .mov .esi (.imm 0), .alu .test .esi (.reg .esi)]))
+
+/-- `eax = 1` if the points in slots 0–3 and 4–7 are equal (`X₁Z₂ = X₂Z₁` and `Y₁Z₂ = Y₂Z₁`):
+the two comparisons, by two passes of `equalStep`. -/
 def pointEqual : Prog isa :=
-  .seq (.block (fieldCode pointEqualOps ++ fieldEqual 8 9)) (.ite .e
-    (.seq (.block (fieldEqual 10 11)) (.ite .e (.block [.mov .eax (.imm 1)]) recoverInvalid)) recoverInvalid)
+  .seq (.block (fieldCode pointEqualOps ++ [.mov .esi (.imm 2)])) (.loop equalStep .ne)
 
 /-- Returns 1 in `eax` if `[S]B = R + [k]A`, for `A` at byte 7680 and `R` at byte 7808: the
 windows' `[k]A - [S]B` compared with `-R`. -/

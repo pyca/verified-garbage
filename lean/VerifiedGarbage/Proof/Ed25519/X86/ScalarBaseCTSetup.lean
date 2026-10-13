@@ -52,7 +52,7 @@ def BaseCTReady (s₀ s : State) : Prop :=
     (TBL ((s₀.syms combSym).setWidth 64)).Disjoint (callStk s)
 
 theorem scalarBaseStart_ok {s : State} (h : BodyPre s) :
-    WP isa (.block (abiSave 2 ++ inputBits 1 32 ++ fieldCode baseSetupOps)) s (BaseCTReady s) := by
+    WP isa scalarBaseStart s (BaseCTReady s) := by
   obtain ⟨hr, hptr, htbl, hts⟩ := h
   obtain ⟨hp, hi, _⟩ := scalarBase_pre hr
   have scalar_bound : baseScalar s < 2 ^ (16 * 16) := by
@@ -61,9 +61,9 @@ theorem scalarBaseStart_ok {s : State} (h : BodyPre s) :
     change baseScalar s < 256 ^ 32 at hb
     rw [show 2 ^ (16 * 16) = 256 ^ 32 by decide]
     exact hb
-  simp only [List.append_assoc]
-  refine WP.block_append (WP.mono (abiSave_frame hp) fun a ⟨ha, fa⟩ => ?_)
-  refine WP.block_append (WP.mono (inputBits_frame hp hi ha (by decide) (by decide))
+  rw [scalarBaseStart]
+  refine WP.seq (WP.mono (abiSave_frame hp) fun a ⟨ha, fa⟩ => ?_)
+  refine WP.seq (WP.mono (inputBits_frame hp hi ha (by decide) (by decide) (by decide))
     fun b ⟨hb, fb, bits⟩ => ?_)
   have cb := hb.ctx hp.fit hp.wr hp.stk
   refine WP.mono (fieldCode_ok baseSetupOps cb) fun c ⟨kc, ec⟩ => ?_
@@ -88,7 +88,7 @@ theorem scalarBaseStart_ok {s : State} (h : BodyPre s) :
 
 theorem scalarBaseStart_ct : RelCT isa
     (fun s t => BodyPre s ∧ BodyPre t ∧ scalarBaseLocal.pub s t)
-    (.block (abiSave 2 ++ inputBits 1 32 ++ fieldCode baseSetupOps)) (fun _ _ => True) := by
+    scalarBaseStart (fun _ _ => True) := by
   apply VG.RelCT.taint (A := taint) (scalarTaint 2 3) _ (by taint_decide)
   intro s t ⟨hs, ht, hp⟩
   obtain ⟨sp, a0, a1, a2, _⟩ := hp
