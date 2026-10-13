@@ -21,7 +21,7 @@ namespace VG.Proof.X25519.X86
 open VG VG.X86 VG.Impl.X25519.X86 VG.Spec.X25519
 
 theorem x25519_code : Impl.X25519.X86.x25519 =
-    .seq (.block setup) (.seq (.seq (.block [.mov .esi (.imm 255)]) (.loop (.block step) .ne))
+    .seq setup (.seq (.seq (.block [.mov .esi (.imm 255)]) (.loop (.block step) .ne))
       (.seq (.block lastSwap) (.seq Impl.X25519.X86.invert (.block finish)))) := rfl
 
 theorem finish_eq : finish = ops ([.mul X2 X2 Field32.E1] : List Op) ++ (freeze X2 ++ (.mov .esi (.mem (at_ .esp 4)) ::

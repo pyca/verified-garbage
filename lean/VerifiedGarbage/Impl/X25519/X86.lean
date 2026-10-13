@@ -301,19 +301,27 @@ def loadPoint : List Instr :=
     [.mov .eax (.mem (at_ .esi (4 * k)))] ++ (if k = 7 then [.alu .and .eax (.imm low31)] else []) ++
       [.store (sc (X1 + 4 * k)) .eax]
 
-/-- Bit `j` of the byte in `eax` into `BITS + 8i + j`. -/
-def bitOf (i j : Nat) : List Instr :=
+/-- Bit `j` of the byte in `eax` into `[ebx + j]`. -/
+def bitOf (j : Nat) : List Instr :=
   [.mov .edx (.reg .eax)] ++ (if j = 0 then [] else [.shift .shr .edx j]) ++
-    [.alu .and .edx (.imm 1), .store8 (sc (BITS + 8 * i + j)) .dl]
+    [.alu .and .edx (.imm 1), .store8 (at_ .ebx j) .dl]
 
-/-- The bits of the scalar (`[esp + 8]`), clamped: bits 0, 1 and 2 cleared
-and bit 254 set. -/
-def loadScalar : List Instr :=
-  .mov .esi (.mem (at_ .esp 8)) ::
-  ((List.range 32).flatMap fun i =>
-    .movzx8 .eax (at_ .esi i) :: (List.range 8).flatMap fun j => bitOf i j) ++
+/-- The bits of the byte at `esi` into `[ebx]`, …, `[ebx + 7]`, and on to the
+next byte (`ecx` counts the bytes left). -/
+def scalarBitsByte : List Instr :=
+  .movzx8 .eax (at_ .esi 0) :: (List.range 8).flatMap bitOf ++
+    [.alu .add .esi (.imm 1), .alu .add .ebx (.imm 8), .alu .sub .ecx (.imm 1)]
+
+/-- Bits 0, 1 and 2 cleared and bit 254 set. -/
+def clampBits : List Instr :=
   [.mov .edx (.imm 0), .store8 (sc BITS) .dl, .store8 (sc (BITS + 1)) .dl,
     .store8 (sc (BITS + 2)) .dl, .mov .edx (.imm 1), .store8 (sc (BITS + 254)) .dl]
+
+/-- The bits of the scalar (`[esp + 8]`), a byte at a time, clamped. -/
+def loadScalar : Prog isa :=
+  .seq (.block [.mov .esi (.mem (at_ .esp 8)), .mov .ebx (.reg .edi), .alu .add .ebx (.imm (BitVec.ofNat 32 BITS)),
+      .mov .ecx (.imm 32)])
+    (.seq (.loop (.block scalarBitsByte) .ne) (.block clampBits))
 
 /-- `[o] = c`, for a one-word constant `c`. -/
 def setSmall (o : Nat) (c : BitVec 32) : List Instr :=
@@ -324,6 +332,6 @@ def initLadder : List Instr :=
   copy X3 X1 ++ setSmall X2 1 ++ setSmall Z2 0 ++ setSmall Z3 1 ++
     [.mov .eax (.imm 0), .store (sc SWAP) .eax]
 
-def setup : List Instr := save ++ loadPoint ++ loadScalar ++ initLadder
+def setup : Prog isa := .seq (.block (save ++ loadPoint)) (.seq loadScalar (.block initLadder))
 
 end VG.Impl.X25519.X86
