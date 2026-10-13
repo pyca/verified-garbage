@@ -279,11 +279,11 @@ structure DoneT (fold : Nat) (s₀ s : State) (key msg : List Byte) (s' : State)
   tail : TailLen fold (L s₀)
 
 /-- The whole chunks: `bulk`, with its permissions. -/
-theorem bulk_mid {fold : Nat} {s₀ : State} (hp : APre e s₀) {s s₂ : State} (hwr : s.wr = s₀.wr) (ha : Args s₀ s s₂)
+theorem bulk_mid (vl : Bool) {fold : Nat} {s₀ : State} (hp : APre e s₀) {s s₂ : State} (hwr : s.wr = s₀.wr) (ha : Args s₀ s s₂)
     (hf : fold < L s₀) (hnp : (L s₀ - 1) % 512 < fold) (hge : 512 ≤ L s₀)
     (hst : stateAt s.mem (off (cx s₀) 64) = initState (K s₀) 0 (N s₀))
     {key msg : List Byte} (hrep : Repr s.mem (off (cx s₀) 448) key msg) :
-    WP isa bulk s₂ fun s₃ => (∃ E a, Mid fold s₀ s key msg E a s₃) ∨ DoneT fold s₀ s key msg s₃ := by
+    WP isa (bulk vl) s₂ fun s₃ => (∃ E a, Mid fold s₀ s key msg E a s₃) ∨ DoneT fold s₀ s key msg s₃ := by
   have hL9 : L s₀ < 2 ^ 64 := (s₀.gpr .r9).isLt
   have hl : Lay (cx s₀) (dp s₀) (L s₀) := ⟨hL9, hp.wrap_d, hp.c_d.sub_left (Region.sub_prefix (by decide))⟩
   have st₂ : stateAt s₂.mem (stA (cx s₀)) = initState (K s₀) 1 (N s₀) := by
@@ -297,9 +297,9 @@ theorem bulk_mid {fold : Nat} {s₀ : State} (hp : APre e s₀) {s s₂ : State}
     · exact ⟨dR s₀, by rw [ha.wr, hwr]; exact hp.d_wr, 0, by simp, by simp⟩
     · exact ⟨ctxR s₀, by rw [ha.wr, hwr]; exact hp.ctx_wr, 128, rfl, by show 128 + 320 ≤ 1696; omega⟩
     · exact ⟨ctxR s₀, by rw [ha.wr, hwr]; exact hp.ctx_wr, 448, rfl, by show 448 + 128 ≤ 1696; omega⟩
-  have hn : bulk.noCalls = true := by decide +kernel
+  have hn : (bulk vl).noCalls = true := by cases vl <;> decide +kernel
   refine regionModel.wp_narrow (r := []) (w := bulkWr (cx s₀) (dp s₀) (L s₀))
-    (bulk_ok hl hge (s := s₂.withRegions [] (bulkWr (cx s₀) (dp s₀) (L s₀))) rfl rfl ha.rsi ha.rdx
+    (bulk_ok vl hl hge (s := s₂.withRegions [] (bulkWr (cx s₀) (dp s₀) (L s₀))) rfl rfl ha.rsi ha.rdx
       (by rw [State.withRegions_gpr, ha.rcx, off_eq])
       (by show Repr _ (cx s₀ + BitVec.ofNat 64 448) _ _
           rw [State.withRegions_mem, ha.mem, ← off_eq]; exact args_repr hrep))
@@ -515,7 +515,7 @@ theorem preS_mid (v : Proof.ChaCha20.X86_64.XorImpl) (hf448 : v.callee.fold = 44
     exact fin (by decide +kernel) (tailP_ok hl (by omega) (by omega) w₁ r₁ d₁ c₁ R₁)
   · simp only [decide_eq_false_iff_not] at hc
     obtain ⟨w₁, r₁, d₁, c₁, R₁⟩ := bp rfl
-    exact fin (by decide +kernel) (bulkP_ok hl (by omega) (by omega) w₁ r₁ d₁ c₁ R₁)
+    exact fin (by generalize v.callee.vl = vl; cases vl <;> decide +kernel) (bulkP_ok _ hl (by omega) (by omega) w₁ r₁ d₁ c₁ R₁)
 
 theorem beq_ofNat_zero {n : Nat} (h : n < 2 ^ 64) : (BitVec.ofNat 64 n == 0) = decide (n = 0) := by
   by_cases hn : n = 0
@@ -591,8 +591,8 @@ theorem avx2_of (v : Proof.ChaCha20.X86_64.XorImpl) (hv : v.poly = .avx2) :
 theorem cryptS_mx (v : Proof.ChaCha20.X86_64.XorImpl) (hv : v.poly = .avx2) :
     (cryptS { v.callee with pass := 512 }).allInstrs (fun i => !loadsMxcsr i) = true := by
   obtain ⟨hf, -, hw⟩ := avx2_of v hv
-  have hb : bigS.allInstrs (fun i => !loadsMxcsr i) = true := by decide +kernel
-  simp only [cryptS, Code.allInstrs, v.mxcsr, hb, hf, hw]; rfl
+  rcases Bool.eq_false_or_eq_true v.callee.vl with hl | hl <;>
+    (simp only [cryptS, Code.allInstrs, v.mxcsr, hf, hw, hl]; rfl)
 
 theorem prologueP_mx (v : Proof.ChaCha20.X86_64.XorImpl) (hv : v.poly = .avx2) :
     (prologue { v.callee with pass := 512 }).allInstrs (fun i => !loadsMxcsr i) = true := by
@@ -697,7 +697,7 @@ theorem cryptS_ok (v : Proof.ChaCha20.X86_64.XorImpl) (hv : v.poly = .avx2) {s�
         · simp only [decide_eq_true_eq] at hc'
           exact WP.mono (whole_mid hp ha (by omega) hnp hc' hst₃ hrep₃) fun s₄ hm₄ => .inl ⟨0, 0, hm₄⟩
         · simp only [decide_eq_false_iff_not] at hc'
-          exact bulk_mid hp (by rw [wr₃, wr₂, wr₁, h.wr]) ha (by omega) hnp (by omega) hst₃ hrep₃
+          exact bulk_mid _ hp (by rw [wr₃, wr₂, wr₁, h.wr]) ha (by omega) hnp (by omega) hst₃ hrep₃
       · -- 448: those by `cryptPre`, the rest by `bulkP` or `tailS`.
         simp only [decide_eq_false_iff_not] at hz
         have hpre : 448 ≤ (L s₀ - 1) % 512 := by

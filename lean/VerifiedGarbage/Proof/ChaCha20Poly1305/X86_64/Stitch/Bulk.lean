@@ -131,10 +131,10 @@ theorem tot_false : tot false = 512 := rfl
 theorem total_false : 16 * total false = 512 := rfl
 
 /-- A chunk: the loop invariant from `t` to `t + 1`. -/
-theorem chunk_ok {c dp : Addr} {L : Nat} (hl : Lay c dp L) {R0 R1 : BitVec 64} (hk : Key R0 R1) {A : Nat}
+theorem chunk_ok (vl : Bool) {c dp : Addr} {L : Nat} (hl : Lay c dp L) {R0 R1 : BitVec 64} (hk : Key R0 R1) {A : Nat}
     {m₀ : Mem} {sp : Addr} {t : Nat} (hge : 512 ≤ L - 512 * t) {s : State}
     (h : LI c dp L R0 R1 A m₀ sp t s) :
-    WP isa (chunk false) s fun s' => LI c dp L R0 R1 A m₀ sp (t + 1) s' ∧
+    WP isa (chunk vl false) s fun s' => LI c dp L R0 R1 A m₀ sp (t + 1) s' ∧
       s'.cf = some (decide (L - 512 * (t + 1) < 512)) := by
   have hLe := hl.L_lt
   have ht := h.t1
@@ -158,7 +158,7 @@ theorem chunk_ok {c dp : Addr} {L : Nat} (hl : Lay c dp L) {R0 R1 : BitVec 64} (
     rw [hq]; exact hl.win_cd hw (by decide)
   have dqs : (dR5 (dp + BitVec.ofNat 64 (512 * (t - 1)))).Disjoint (slotsR (bfA c)) :=
     ((hl.cd (d := 128) (n := 128) (by decide)).sub_right wsub).symm
-  refine WP.seq (WP.mono (chunkMain_ok false hk h.rdi h.rcx h.rsi mst mbf (by rw [tot_false]; exact hwd) hin
+  refine WP.seq (WP.mono (chunkMain_ok vl false hk h.rdi h.rcx h.rsi mst mbf (by rw [tot_false]; exact hwd) hin
     h.consts (by rw [tot_false]; exact dsd) st_bf (by rw [tot_false]; exact dbd) dqs h.acc)
     fun s₁ ⟨d₁, a₁, f₁, g₁, rsi₁, rd₁, wr₁⟩ => ?_)
   rw [tot_false, hq] at d₁ f₁ rsi₁
@@ -265,13 +265,13 @@ theorem chunk_ok {c dp : Addr} {L : Nat} (hl : Lay c dp L) {R0 R1 : BitVec 64} (
     · exact ⟨⟨slot (bfA c), 8⟩, by simp, fun _ h => h⟩
 
 /-- The first chunk, the kernel's: the loop invariant at 1. -/
-theorem firstChunk_ok {c dp : Addr} {L : Nat} (hl : Lay c dp L) {R0 R1 : BitVec 64} {A : Nat}
+theorem firstChunk_ok (vl : Bool) {c dp : Addr} {L : Nat} (hl : Lay c dp L) {R0 R1 : BitVec 64} {A : Nat}
     {m₀ : Mem} {sp : Addr} (hge : 512 ≤ L) {s : State} (hrd : s.rd = []) (hwr : s.wr = bulkWr c dp L)
     (hrdi : s.gpr .rdi = stA c) (hrcx : s.gpr .rcx = bfA c) (hrsi : s.gpr .rsi = dp) (hrsp : s.gpr .rsp = sp)
     (hslot : s.mem.readW (slot (bfA c)) 64 = BitVec.ofNat 64 L)
     (hm : s.mem = m₀)
     (hc : Consts s.mem (bfA c)) (hacc : Acc R0 R1 A s) :
-    WP isa firstChunk s fun s' => LI c dp L R0 R1 A m₀ sp 1 s' ∧
+    WP isa (firstChunk vl) s fun s' => LI c dp L R0 R1 A m₀ sp 1 s' ∧
       s'.cf = some (decide (L - 512 * 1 < 512)) := by
   have hLe := hl.L_lt
   have hcnt : stateAt s.mem (stA c) = stateAt m₀ (stA c) := by rw [hm]
@@ -287,8 +287,8 @@ theorem firstChunk_ok {c dp : Addr} {L : Nat} (hl : Lay c dp L) {R0 R1 : BitVec 
   have c₁ : Consts s₁.mem (bfA c) := by rw [m₁]; exact hc.w2 (by decide) y₁ y₂
   have F₁ : Frame [slotsR (bfA c)] s.mem s₁.mem := by
     rw [m₁]; exact Proof.ChaCha20.X86_64.Avx2.W2_frame _ (by decide) y₁ y₂ (Frame.refl _ _)
-  refine WP.seq (WP.mono (Proof.ChaCha20.X86_64.Avx2.rounds_ok hh h15 (by rw [g₁, hrcx])
-    (by rw [wr₁]; exact mbf) c₁.m8 10) fun s₂ hr => ?_)
+  refine WP.seq (WP.mono (Proof.ChaCha20.X86_64.Avx2.roundsFor_ok vl hh h15 (by rw [g₁, hrcx])
+    (by rw [wr₁]; exact mbf) c₁.m8 ⟨c₁.lo16, c₁.hi16⟩) fun s₂ hr => ?_)
   have F₂ := F₁.trans hr.frame
   have g₂ : s₂.gpr = s.gpr := hr.gpr.trans g₁
   have wr₂ : s₂.wr = s.wr := hr.wr.trans wr₁
@@ -386,10 +386,10 @@ theorem firstChunk_ok {c dp : Addr} {L : Nat} (hl : Lay c dp L) {R0 R1 : BitVec 
     · exact ⟨⟨slot (bfA c), 8⟩, by simp, fun _ h => h⟩
 
 /-- The later chunks, while at least 512 bytes remain. -/
-theorem chunks_ok {c dp : Addr} {L : Nat} (hl : Lay c dp L) {R0 R1 : BitVec 64} (hk : Key R0 R1) {A : Nat}
+theorem chunks_ok (vl : Bool) {c dp : Addr} {L : Nat} (hl : Lay c dp L) {R0 R1 : BitVec 64} (hk : Key R0 R1) {A : Nat}
     {m₀ : Mem} {sp : Addr} {t : Nat} {s : State} (h : LI c dp L R0 R1 A m₀ sp t s)
     (hcf : s.cf = some (decide (L - 512 * t < 512))) :
-    WP isa (.ite .b (.block []) (.loop (chunk false) .ae)) s fun s' =>
+    WP isa (.ite .b (.block []) (.loop (chunk vl false) .ae)) s fun s' =>
       ∃ T, LI c dp L R0 R1 A m₀ sp T s' ∧ L - 512 * T < 512 := by
   refine WP.ite (decide (L - 512 * t < 512)) (by simp only [eval, hcf]) (fun hb => ?_) (fun hb => ?_)
   · exact WP.block_nil ⟨t, h, by simpa using hb⟩
@@ -397,7 +397,7 @@ theorem chunks_ok {c dp : Addr} {L : Nat} (hl : Lay c dp L) {R0 R1 : BitVec 64} 
     let Inv : Nat → State → Prop := fun n s => ∃ u, n = L - 512 * u ∧ 512 ≤ L - 512 * u ∧
       LI c dp L R0 R1 A m₀ sp u s
     refine WP.loop (M := isa) Inv (fun n s ⟨u, hn, hu, hL⟩ => ?_) _ s ⟨t, rfl, hge, h⟩
-    refine WP.mono (chunk_ok hl hk hu hL) fun s' ⟨hL', cf'⟩ => ?_
+    refine WP.mono (chunk_ok vl hl hk hu hL) fun s' ⟨hL', cf'⟩ => ?_
     by_cases hlt : L - 512 * (u + 1) < 512
     · exact .inl ⟨by simp [eval, cf', hlt], u + 1, hL', hlt⟩
     · exact .inr ⟨by simp [eval, cf', hlt], L - 512 * (u + 1), by omega_arith, u + 1, rfl, by omega_arith, hL'⟩

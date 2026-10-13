@@ -189,22 +189,22 @@ def next : List Instr :=
    .alu .cmp .rdx (.imm 512)]
 
 /-- The first chunk, the kernel's (`rsi` stays at it), but for `next`. -/
-def firstMain : Prog isa :=
+def firstMain (vl : Bool) : Prog isa :=
   .seq (.block ChaCha20.X86_64.Avx2.setup)
-    (.seq (ChaCha20.X86_64.Avx2.rounds 10) (.block ChaCha20.X86_64.Avx2.finish))
+    (.seq (ChaCha20.X86_64.Avx2.roundsFor vl) (.block ChaCha20.X86_64.Avx2.finish))
 
-def firstChunk : Prog isa := .seq firstMain (.block next)
+def firstChunk (vl : Bool) : Prog isa := .seq (firstMain vl) (.block next)
 
 /-- A later chunk but for `next`: the 512 bytes at `rsi` (the chunk before)
 absorbed during the rounds, then the next 512 encrypted; or (`pre`) the 448
 bytes at `rsi` before the first chunk, then the first chunk. -/
-def chunkMain (pre : Bool) : Prog isa :=
+def chunkMain (vl pre : Bool) : Prog isa :=
   .seq (.block ChaCha20.X86_64.Avx2.setup)
-    (.seq (srounds pre 10)
+    (.seq (sroundsFor vl pre)
       (.block (([.alu .add .rsi (.imm (BitVec.ofNat 32 (16 * total pre)))] : List Instr) ++
         ChaCha20.X86_64.Avx2.finish)))
 
-def chunk (pre : Bool) : Prog isa := .seq (chunkMain pre) (.block next)
+def chunk (vl pre : Bool) : Prog isa := .seq (chunkMain vl pre) (.block next)
 
 /-- `r12`–`r14` and the length stashed, the kernel's constants stored, and
 the key and the accumulator loaded from the Poly1305 state (`ctx + 448`,
@@ -315,19 +315,19 @@ def restT : Prog isa :=
 
 /-- The whole chunks of at least 512 bytes of data, and the rest if at most
 256 bytes. -/
-def bulk : Prog isa :=
+def bulk (vl : Bool) : Prog isa :=
   .seq (.block enter)
-  (.seq firstChunk
-  (.seq (.ite .b (.block []) (.loop (chunk false) .ae))
+  (.seq (firstChunk vl)
+  (.seq (.ite .b (.block []) (.loop (chunk vl false) .ae))
     restT))
 
 /-- As `bulk`, after the first 448 bytes are encrypted from the prologue's
 keystream (`rsi` at them): the first chunk absorbs them, and the rest is as
 `bulk`'s. -/
-def bulkP : Prog isa :=
+def bulkP (vl : Bool) : Prog isa :=
   .seq (.block enter)
-  (.seq (chunk true)
-  (.seq (.ite .b (.block []) (.loop (chunk false) .ae))
+  (.seq (chunk vl true)
+  (.seq (.ite .b (.block []) (.loop (chunk vl false) .ae))
     restT))
 
 /-- The data and the ciphertext to absorb when there are no whole chunks:
@@ -336,9 +336,9 @@ def whole : List Instr := [.mov .rbx (.reg .r14), .mov .rbp (.reg .r13)]
 
 /-- More than `fold` bytes, none of whose keystream the prologue computed:
 the whole chunks, and the rest if at most 256 bytes, by `bulk`. -/
-def bigS : Prog isa :=
+def bigS (vl : Bool) : Prog isa :=
   .seq (.block (cryptArgs ++ ([.alu .cmp .rdx (.imm 512)] : List Instr)))
-    (.ite .b (.block whole) bulk)
+    (.ite .b (.block whole) (bulk vl))
 
 /-- More than `fold` bytes, the keystream of whose first `m` (448) the
 prologue computed: those by `cryptPre`, then the whole chunks after them by
@@ -347,7 +347,7 @@ absorbs the first 448. -/
 def preS (x : ChaCha20.X86_64.Callee) : Prog isa :=
   .seq (cryptPre x.fold x.pass x.wide)
   (.seq (.block [.mov .rsi (.reg .r14), .alu .cmp .rdx (.imm 512)])
-    (.ite .b (.seq (.block enter) (tailS false true)) bulkP))
+    (.ite .b (.seq (.block enter) (tailS false true)) (bulkP x.vl)))
 
 /-- `crypt`, with `rbx`, `rbp` set to the ciphertext not yet absorbed: the
 whole chunks are encrypted and absorbed by `bigS` or `preS`, with the rest if
@@ -360,7 +360,7 @@ def cryptS (x : ChaCha20.X86_64.Callee) : Prog isa :=
       (.seq (xorBufX x.wide .r14) (.block (ptr .rsi .r15 128 ++ whole))))
     (.seq (foldM x.fold x.pass)
     (.seq (.block [.alu .test .rdx (.reg .rdx)])
-      (.seq (.ite .e bigS (preS x))
+      (.seq (.ite .e (bigS x.vl) (preS x))
         (.seq (.block [.alu .test .rdx (.reg .rdx)])
           (.ite .e (.block [.mov .rsi (.reg .rcx)]) (.call x.name x.code)))))))
   (.seq (.block (anchor .rsi 128))
