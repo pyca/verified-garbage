@@ -24,8 +24,4 @@ jobs:
           persist-credentials: false
       - run: cd exp-bench && cargo build --release -q
       - run: cd exp-bench && grep -m1 "model name" /proc/cpuinfo && ./target/release/exp > /dev/null && ./target/release/exp | grep -E "^w=|ghz"
-      - run: |
-          F=$(for f in avx avx2 avx512f bmi1 bmi2 adx; do grep -qw $f /proc/cpuinfo && printf "%s," $f; done | sed "s/,$//")
-          cd op-bench && cargo build --release -q && cp target/release/op-bench /tmp/op_w5
-          cp ../src/asm/x86_64/rsa.rs /tmp/rsa_w5.rs && cp rsa_base.rs ../src/asm/x86_64/rsa.rs && cargo build --release -q && cp target/release/op-bench /tmp/op_base && cp /tmp/rsa_w5.rs ../src/asm/x86_64/rsa.rs
-          for i in 1 2 3; do VG_CPU_FEATURES=$F OPENSSL_ia32cap="~0x0:~0x200000" /tmp/op_base | sed 's/^/op base /'; VG_CPU_FEATURES=$F OPENSSL_ia32cap="~0x0:~0x200000" /tmp/op_w5 | sed 's/^/op w5 /'; done
+      - run: op-bench/ab.sh
