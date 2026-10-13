@@ -16,6 +16,8 @@ import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 meta import Mathlib.Data.Finset.Card
 meta import Mathlib.Data.Nat.Find
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Impl.P256.VerifyDouble
+meta import VerifiedGarbage.Impl.P256.VerifyDouble
 
 /-!
 # `vg_p256_check_point` on AArch64: `Verified`

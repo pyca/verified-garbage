@@ -9,6 +9,11 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
+import VerifiedGarbage.Proof.Dsa.X86_64.Equal
+import VerifiedGarbage.Proof.Dsa.X86_64.Range
+import VerifiedGarbage.Proof.Dsa.X86_64.Zero
 
 /-! # Validation effects shared by the DSA key-check schedules -/
 

@@ -20,6 +20,8 @@ meta import VerifiedGarbage.Proof.Weierstrass.X86_64.FieldErase
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.TComb
 meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
 meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+import VerifiedGarbage.Spec.EcKey.Generic
+meta import VerifiedGarbage.Spec.EcKey.Generic
 
 /-!
 # `vg_p521_check_point` on x86-64: `Verified`

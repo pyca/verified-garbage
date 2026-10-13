@@ -6,6 +6,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Spec.Dsa
+meta import VerifiedGarbage.Spec.Dsa
 
 /-! # Constant-time scanning of two equal-length exponents -/
 

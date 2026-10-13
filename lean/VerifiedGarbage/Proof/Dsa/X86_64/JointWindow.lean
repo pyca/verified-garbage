@@ -7,6 +7,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.Set
+import VerifiedGarbage.Proof.Dsa.Arithmetic
 
 /-! # Correctness of a joint two-bit exponentiation window -/
 

@@ -4,6 +4,8 @@ public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Variant
 public import VerifiedGarbage.TCB.Emit
 public import VerifiedGarbage.Proof.RsaPss.X86_64.PrecomputedCT
 import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import VerifiedGarbage.Proof.Bignum.X86_64.PcCT
+import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
 
 /-!
 # RSASSA-PSS verification using cached public-key values

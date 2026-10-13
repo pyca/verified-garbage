@@ -8,6 +8,10 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.X86_64.Call
 meta import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Dsa.X86_64.EqualCT
+import VerifiedGarbage.Proof.Dsa.X86_64.ZeroCT
+meta import VerifiedGarbage.Proof.Dsa.X86_64.EqualCT
+meta import VerifiedGarbage.Proof.Dsa.X86_64.ZeroCT
 
 /-! # Constant time of private-key consistency and nonce validation -/
 

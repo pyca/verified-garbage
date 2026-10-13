@@ -7,6 +7,8 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Dsa.DomainShape
 import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
+import VerifiedGarbage.Proof.MdStream.Spec
 
 /-! # Complete actual-width scanning for DSA's public moduli -/
 

@@ -10,6 +10,7 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Spec.Dsa
 
 /-! # Framing the DSA child workspaces -/
 

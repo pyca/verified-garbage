@@ -14,6 +14,10 @@ public import VerifiedGarbage.Proof.Dsa.X86_64.ShapeSizes
 import VerifiedGarbage.Proof.Framework.X86_64.Call
 meta import VerifiedGarbage.Proof.Dsa.X86_64.ShapeSizes
 meta import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.MdStream.Spec
+import VerifiedGarbage.Spec.Dsa.SignVerify
+meta import VerifiedGarbage.Proof.MdStream.Spec
+meta import VerifiedGarbage.Spec.Dsa.SignVerify
 
 /-! # Constant time of both public width scans and size selection -/
 

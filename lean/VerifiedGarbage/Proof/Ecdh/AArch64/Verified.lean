@@ -20,6 +20,8 @@ meta import Mathlib.Data.Finset.Card
 meta import Mathlib.Data.Nat.Find
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Impl.P256.VerifyDouble
+meta import VerifiedGarbage.Impl.P256.VerifyDouble
 
 /-!
 # ECDH over P-256 on AArch64: `Verified`
