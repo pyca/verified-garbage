@@ -58,7 +58,7 @@ theorem pPhase_ok (W : Window) (M : Mont) (S : Selector) {s : State} {B : Addr} 
           (a + X - b) % X * Spec.Rsa.os2ip qib % X) ∧
       Frm B (pRanges w ++ [xRange32 o wx]) s.mem t.mem ∧ Keep mmRegs s t := by
   have ht : tabBytes wx ≤ tabBytes32 wx := by unfold tabBytes tabBytes32; omega
-  have hhi16 : o + slot wx 8 + tabBytes wx ≤ Z := by omega
+  have hhi16 : o + slot wx 8 + tabBytes32 wx ≤ Z := by omega
   have hs := hg.scr
   have hn := hs.nowrap
   have h8 := hdr_lt_slot w 8 (show 31 < 32 by decide)
