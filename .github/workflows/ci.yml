@@ -435,7 +435,7 @@ jobs:
           path: bench-target
           key: ${{ steps.bench-cache-key.outputs.key }}
       - run: rustc -vV
-      - run: cargo test --locked ${{ env.TESTS != 'true' && '--no-run' || '' }}
+      - run: cargo test --locked ${{ case(env.TESTS == 'true', '', '--no-run') }}
       - name: Export coverage
         if: ${{ env.TESTS == 'true' }}
         shell: bash
@@ -492,7 +492,7 @@ jobs:
       - name: Lint
         if: ${{ matrix.rust == 'stable' }}
         run: cargo clippy --all-targets --locked
-      - run: cargo test --locked ${{ env.TESTS != 'true' && '--no-run' || '' }}
+      - run: cargo test --locked ${{ case(env.TESTS == 'true', '', '--no-run') }}
       # That the tests ran T32: the symbol of Thumb code has an odd address
       # (AAELF32 §5.5.3, "Symbol Values").
       - name: Check the verified functions are Thumb code
