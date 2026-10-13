@@ -469,9 +469,10 @@ def openStitched (x : ChaCha20.X86_64.Callee) (b : Poly1305.X86_64.Blocks) : Pro
   (.seq (finalizeTo 48)
     (.block (compare ++ restore)))))))
 
-/-- `openSmall`'s limit, as `smallLim` is `sealSmall`'s: `open`'s chunks
-and `seal`'s differ in cost. -/
-def openLim : Nat := 640
+/-- `openSmall`'s limit, as `smallLim` is `sealSmall`'s: on Cascade Lake,
+`open`'s AVX2 code (with `vg_chacha20_xor_avx512vl`'s rounds) is the faster
+below 768 bytes, from 3.8% to 8.5% from 640 on; from 768 the AVX-512 code is. -/
+def openLim : Nat := 768
 
 /-- `open` for fewer than `openLim` bytes of data (`len`, in `r9`) with the
 AVX2 code, `openStitched` with the implementation `small` of
