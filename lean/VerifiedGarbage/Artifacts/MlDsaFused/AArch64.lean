@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductVerified
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.CanonicalizeVerified
+import Mathlib.Tactic.SplitIfs
 
 /-! Fused internal ML-DSA arithmetic with explicit signed output contracts. -/
 

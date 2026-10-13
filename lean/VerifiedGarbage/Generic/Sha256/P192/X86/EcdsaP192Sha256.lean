@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Weierstrass.Law
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.P192Sha256
+import VerifiedGarbage.Proof.X25519.X86.Column
 
 /-!
 # Deterministic ECDSA (RFC 6979) over P-192 with HMAC-SHA-256 on x86, for every x86 SHA-256 backend

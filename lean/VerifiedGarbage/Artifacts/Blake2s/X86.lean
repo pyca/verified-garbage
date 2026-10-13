@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Blake2.X86.Blake2s
+import VerifiedGarbage.Proof.Framework.X86.Sse
+import VerifiedGarbage.Proof.Sha512.Word64
 
 /-! # BLAKE2s (RFC 7693) on x86 -/
 

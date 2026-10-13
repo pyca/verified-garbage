@@ -7,6 +7,8 @@ public import VerifiedGarbage.Impl.Scrypt.X86.RoMix
 public import VerifiedGarbage.Proof.Scrypt.X86.BlockMixVerified
 public import VerifiedGarbage.Proof.Scrypt.X86.RoMixCT
 public import VerifiedGarbage.Proof.Scrypt.X86.Salsa
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # scrypt (RFC 7914): Salsa20/8, scryptBlockMix and scryptROMix on x86 -/
 

@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.DotVerified
 public import VerifiedGarbage.TCB.AArch64.Target
+import Mathlib.Tactic.SplitIfs
 
 @[expose] public section
 

@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.PrecomputedCT
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # PKCS #1 v1.5 verification over precomputed RSA public variants -/
 

@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.TripleDes.Arm.Common
 public import VerifiedGarbage.Impl.TripleDes.Arm.Sbox
+public import VerifiedGarbage.Spec.TripleDes
 
 @[expose] public section
 

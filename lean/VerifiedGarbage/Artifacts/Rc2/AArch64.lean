@@ -4,6 +4,8 @@ public import VerifiedGarbage.Proof.Rc2.AArch64.Block
 public import VerifiedGarbage.Proof.Rc2.AArch64.Key
 public import VerifiedGarbage.Proof.Rc2.AArch64.Cbc.Verified
 public import VerifiedGarbage.Proof.Rc2.AArch64.Stream.Frame
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # RC2 artifacts on baseline AArch64 -/
 

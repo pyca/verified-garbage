@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseVerified
+import VerifiedGarbage.Proof.Framework.X86.CallWith
 
 @[expose] public section
 

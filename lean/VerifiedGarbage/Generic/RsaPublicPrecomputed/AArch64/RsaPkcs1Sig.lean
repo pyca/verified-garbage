@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.PrecomputedVerified
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Callees
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # PKCS #1 v1.5 verification over precomputed RSA public variants on AArch64 -/
 

@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Absorb
 public import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Pad
 public import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Squeeze
 public import VerifiedGarbage.Proof.Sha3.AArch64.Frame
+import Mathlib.Tactic.SplitIfs
 
 @[expose] public section
 

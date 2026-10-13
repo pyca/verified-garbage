@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Seed.AArch64.Frame
+import Mathlib.Tactic.SplitIfs
 
 /-! # SEED artifacts on baseline AArch64 -/
 

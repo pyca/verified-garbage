@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Ed448.AArch64.ScalarVerified
+import VerifiedGarbage.Proof.Framework.AArch64.Inline
 
 /-!
 # Ed448 scalar arithmetic on AArch64

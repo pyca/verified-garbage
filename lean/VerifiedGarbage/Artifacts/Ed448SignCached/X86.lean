@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Ed448.X86.SignCached.Verified
 public import VerifiedGarbage.Proof.Ed448.X86.BaseVerified
 public import VerifiedGarbage.Proof.Ed448.X86.BaseLit
 public import VerifiedGarbage.Proof.Ed448.Facts
+public import VerifiedGarbage.Proof.Sha3.X86.Lit
 
 /-!
 # Ed448 signing with a cached public key on x86 (32-bit)

@@ -17,6 +17,7 @@ public import VerifiedGarbage.Proof.MlKem.X86_64.DecMulV
 public import VerifiedGarbage.Proof.MlKem.X86_64.EncMulV
 public import VerifiedGarbage.Proof.MlKem.X86_64.SampleCT
 public import VerifiedGarbage.Proof.MlKem.X86_64.Sample4Impl
+import Mathlib.Tactic.Conv
 
 /-! # ML-KEM (FIPS 203) on x86-64: the polynomial primitives -/
 

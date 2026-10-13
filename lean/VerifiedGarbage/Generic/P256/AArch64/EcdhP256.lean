@@ -3,6 +3,14 @@ module
 public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvInterface
 public import VerifiedGarbage.Proof.P256.EcdhJac.Verified
+import VerifiedGarbage.Proof.Divstep.Bound
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowEntryTiming
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowSum
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowSumTiming
+import VerifiedGarbage.Proof.Weierstrass.AArch64.NafArithmeticTiming
+import VerifiedGarbage.Proof.Weierstrass.AArch64.NafEntryTiming
+import VerifiedGarbage.Proof.Weierstrass.AArch64.NafSum
+import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
 
 /-!
 # ECDH over P-256 (SP 800-56A) on AArch64

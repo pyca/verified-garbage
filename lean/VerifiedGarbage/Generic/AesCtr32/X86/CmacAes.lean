@@ -3,6 +3,10 @@ module
 public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.CmacAes.X86.Verified
 public import VerifiedGarbage.Proof.CmacAes.Stream.X86.Frame
+import VerifiedGarbage.Proof.Aes.KeyExp
+import VerifiedGarbage.Proof.Aes.SboxSpec
+import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # AES-CMAC (NIST SP 800-38B) on x86

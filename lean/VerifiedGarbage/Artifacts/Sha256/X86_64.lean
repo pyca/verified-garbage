@@ -2,6 +2,10 @@ module
 
 public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Sha256.X86_64.Shared
+public import VerifiedGarbage.Proof.Sha256.X86_64.Avx2.Lit
+public import VerifiedGarbage.Proof.Sha256.X86_64.Lit
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
 
 /-! # SHA-256 (FIPS 180-4) on x86-64 -/
 

@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Rsa.AArch64.PrivVerified
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # The checked RSA private-key operation on AArch64

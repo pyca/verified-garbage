@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Weierstrass.Law
 public import VerifiedGarbage.Impl.EcKey.P192.X86
 public import VerifiedGarbage.Proof.EcKey.X86.P192.Verified
 public import VerifiedGarbage.Proof.EcKey.X86.P192.Lit
+import VerifiedGarbage.Proof.X25519.X86.Column
 
 /-!
 # P-192 public keys (FIPS 186-5 §A.2) on x86 (32-bit)

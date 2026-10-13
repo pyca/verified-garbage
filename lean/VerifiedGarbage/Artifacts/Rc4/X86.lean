@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Rc4.X86.Frame
+import Mathlib.Tactic.SplitIfs
 
 /-! # Raw RC4 on baseline x86 -/
 

@@ -14,6 +14,8 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.Sample
 public import VerifiedGarbage.Proof.MlKem.AArch64.KeyGen
 public import VerifiedGarbage.Proof.MlKem.AArch64.Encaps
 public import VerifiedGarbage.Proof.MlKem.AArch64.Decaps
+import Mathlib.Tactic.Conv
+import Mathlib.Tactic.SplitIfs
 
 /-! # ML-KEM on AArch64 -/
 

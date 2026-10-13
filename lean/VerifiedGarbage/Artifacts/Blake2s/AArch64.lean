@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Blake2.AArch64.Compress
 public import VerifiedGarbage.Proof.Blake2.AArch64.Stream.Verified
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # BLAKE2s (RFC 7693) on AArch64 -/
 

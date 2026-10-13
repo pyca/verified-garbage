@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Blowfish.AArch64.CbcVerified
+import Mathlib.Tactic.SplitIfs
 
 /-! # Blowfish-CBC artifacts on baseline AArch64 -/
 

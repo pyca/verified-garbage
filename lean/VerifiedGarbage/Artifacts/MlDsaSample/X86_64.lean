@@ -8,6 +8,8 @@ public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.ExpandMask
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.BallCT
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej5Verified
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.M4Verified
+import Mathlib.Tactic.Conv
+import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
 
 /-! # ML-DSA (FIPS 204) on x86-64: the sampling primitives -/
 

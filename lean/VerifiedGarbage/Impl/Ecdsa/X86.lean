@@ -6,6 +6,7 @@ public import VerifiedGarbage.Impl.Weierstrass.X86.InvCfg
 public import VerifiedGarbage.Impl.Weierstrass.X86.ScalarPower
 public import VerifiedGarbage.Spec.Weierstrass
 public import VerifiedGarbage.Spec.Ecdsa
+public import VerifiedGarbage.Impl.Weierstrass.TCombWords
 
 /-!
 # ECDSA signing on x86 (32-bit)

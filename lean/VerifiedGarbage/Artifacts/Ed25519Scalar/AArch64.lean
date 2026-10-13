@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarVerified
+import VerifiedGarbage.Proof.Framework.AArch64.Inline
 
 /-!
 # Ed25519 scalar reduction on AArch64

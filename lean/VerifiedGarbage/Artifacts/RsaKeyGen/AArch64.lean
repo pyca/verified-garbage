@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Verified
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Verified
+import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTMs
 
 /-! # RSA key generation (FIPS 186-5 A.1.3) on AArch64 -/
 

@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Impl.Argon2.Arm.Layout
+public import VerifiedGarbage.TCB.Arm.Isa
+import VerifiedGarbage.Impl.Blake2.Arm.CompressB
 
 /-!
 # Fixed-time unsigned division on ARMv7

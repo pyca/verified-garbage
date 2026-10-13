@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Inst
 public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedVerified
+import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Compute
+import VerifiedGarbage.Proof.MlKem.AArch64.DecapsA
 
 /-! # ML-DSA (FIPS 204) key generation on AArch64 -/
 

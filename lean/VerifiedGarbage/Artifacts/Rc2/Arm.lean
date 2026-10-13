@@ -4,6 +4,9 @@ public import VerifiedGarbage.Proof.Rc2.Arm.Block
 public import VerifiedGarbage.Proof.Rc2.Arm.Key
 public import VerifiedGarbage.Proof.Rc2.Arm.Cbc.Verified
 public import VerifiedGarbage.Proof.Rc2.Arm.Stream.Frame
+import Mathlib.Tactic.Conv
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # RC2 artifacts on baseline ARMv7 -/
 

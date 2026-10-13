@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Argon2.X86_64.DeriveVerified
 public import VerifiedGarbage.TCB.Emit
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # Argon2 on x86-64, for every BLAKE2b backend and every implementation of G

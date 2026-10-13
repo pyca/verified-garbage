@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.Ed25519.Arm.Pow250Verified
 public import VerifiedGarbage.Proof.Ed25519.Arm.MulFnVerified
+import Mathlib.Tactic.SplitIfs
 
 /-! # Products and powers in curve25519's field, in radix `2^16`, on ARMv7 -/
 

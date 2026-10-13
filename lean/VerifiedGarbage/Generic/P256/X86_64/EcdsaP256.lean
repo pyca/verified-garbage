@@ -14,6 +14,14 @@ public import VerifiedGarbage.Proof.Ecdsa.X86_64.VerifiedAdx
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.LitAdx
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointVerified
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.LitAdx
+import Mathlib.Data.Finset.Card
+import Mathlib.Data.Nat.Find
+import VerifiedGarbage.Proof.Mont.X86_64.Wide
+import VerifiedGarbage.Proof.Weierstrass.X86_64.JointCachedDigitTiming
+import VerifiedGarbage.Proof.Weierstrass.X86_64.JointDoubler
+import VerifiedGarbage.Proof.Weierstrass.X86_64.JointFixedDigitTiming
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
 
 /-!
 # ECDSA over P-256 (FIPS 186-5) on x86-64

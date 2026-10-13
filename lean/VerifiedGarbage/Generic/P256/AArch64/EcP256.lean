@@ -5,6 +5,10 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvInterface
 public import VerifiedGarbage.Proof.P256.Comb7
 public import VerifiedGarbage.Impl.EcKey.P256.AArch64
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.BoothVerified
+import Mathlib.Data.Finset.Card
+import Mathlib.Data.Nat.Find
+import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowQuad
 
 /-!
 # P-256 public keys (FIPS 186-5 §A.2) on AArch64

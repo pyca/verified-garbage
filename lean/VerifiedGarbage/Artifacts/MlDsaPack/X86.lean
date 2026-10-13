@@ -4,6 +4,7 @@ public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.MlDsa.X86.Pack.Unpack
 public import VerifiedGarbage.Proof.MlDsa.X86.Pack.HintPack
 public import VerifiedGarbage.Proof.MlDsa.X86.Pack.HintUnpackEnd
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # ML-DSA (FIPS 204) on x86: the encodings

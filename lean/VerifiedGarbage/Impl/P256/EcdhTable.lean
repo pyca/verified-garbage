@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.P256.EcdhJac.Base
 public import VerifiedGarbage.Impl.P256.EcdhAllocatedCode
+public import VerifiedGarbage.Impl.P256.VerifySparse
 
 /-! Register allocation for the two co-Z table-construction kernels. -/
 

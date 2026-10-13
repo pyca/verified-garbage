@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.TripleDes.AArch64.Common
+public import VerifiedGarbage.Spec.TripleDes
 
 @[expose] public section
 

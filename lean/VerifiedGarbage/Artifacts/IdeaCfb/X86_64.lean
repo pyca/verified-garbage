@@ -1,6 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Idea.X86_64.FbVerified
+public import VerifiedGarbage.Proof.Idea.X86_64.ModesLit
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.TaintSum
 
 /-! # IDEA-CFB64 artifacts on baseline x86-64 -/
 

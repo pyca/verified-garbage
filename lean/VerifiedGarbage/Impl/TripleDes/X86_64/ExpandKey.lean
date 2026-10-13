@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.TripleDes.X86_64.Common
+public import VerifiedGarbage.Spec.TripleDes
 
 /-!
 # Scalar Triple DES key expansion on x86-64

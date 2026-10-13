@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.TripleDes.X86.Common
 public import VerifiedGarbage.Impl.TripleDes.X86.Sbox
+public import VerifiedGarbage.Spec.TripleDes
 
 /-! Baseline IA-32 Triple DES. ESI/EDI hold L/R, EBP holds scratch.
 Slots 0–3 save callee-saved registers, slot 4 holds the round-key pointer,

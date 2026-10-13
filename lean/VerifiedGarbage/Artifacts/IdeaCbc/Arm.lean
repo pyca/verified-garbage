@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Idea.Arm.CbcVerified
+import VerifiedGarbage.Proof.Aes.SboxSpec
+import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
 
 /-! # IDEA-CBC artifacts on baseline ARMv7 -/
 

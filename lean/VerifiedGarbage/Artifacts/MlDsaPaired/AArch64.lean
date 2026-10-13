@@ -4,6 +4,7 @@ public import VerifiedGarbage.Spec.MlDsa.PairedApi
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedHVerified
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedZVerified
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedLowCorrect
+import VerifiedGarbage.Proof.MlKem.Encode
 
 @[expose] public section
 

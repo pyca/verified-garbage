@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Argon2.AArch64.DeriveVerified
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Argon2 H′ for every ARM64 BLAKE2b backend -/
 
