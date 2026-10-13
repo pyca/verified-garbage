@@ -12,6 +12,10 @@ import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.X86_64.Call
 meta import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Bignum.X86_64.R2wDiv
+import VerifiedGarbage.Proof.Bignum.WordStep
+meta import VerifiedGarbage.Proof.Bignum.X86_64.R2wDiv
+meta import VerifiedGarbage.Proof.Bignum.WordStep
 
 /-!
 # `R² mod m` by word steps on x86-64: constant time but for `m`

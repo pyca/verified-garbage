@@ -24,6 +24,8 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Spec.Rc4
+meta import VerifiedGarbage.Spec.Rc4
 
 /-!
 # Blowfish on ARMv7: the functions meet their contracts, with the working space as an argument

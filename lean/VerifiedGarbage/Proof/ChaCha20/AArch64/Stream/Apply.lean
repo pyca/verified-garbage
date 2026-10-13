@@ -9,6 +9,7 @@ public import VerifiedGarbage.Impl.ChaCha20.AArch64.Stream
 public import VerifiedGarbage.Proof.ChaCha20.Stream
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Lit
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Stream.Bytes
 
 /-!
 # Streaming ChaCha20 on AArch64: `apply`, correctness

@@ -11,6 +11,8 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Math
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxRow
 
 /-! ## AdxRotate8Product -/
 

@@ -9,6 +9,7 @@ import Mathlib.Algebra.Order.Ring.Abs
 import Mathlib.Data.BitVec
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Ring
+import VerifiedGarbage.Proof.Divstep.Tc32Words
 
 /-! # Finishing a 32-bit divstep reduction with one conditional subtraction -/
 

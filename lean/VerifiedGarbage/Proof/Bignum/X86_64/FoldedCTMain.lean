@@ -16,6 +16,8 @@ meta import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Framework.X86_64.Call
 import VerifiedGarbage.Proof.Framework.X86_64.Sse
 meta import VerifiedGarbage.Proof.Framework.X86_64.Sse
+import VerifiedGarbage.Proof.Bignum.X86_64.FoldedExp
+meta import VerifiedGarbage.Proof.Bignum.X86_64.FoldedExp
 
 @[expose] public section
 

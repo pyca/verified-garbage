@@ -26,6 +26,18 @@ import VerifiedGarbage.Proof.Framework.X86.Sse
 import VerifiedGarbage.Proof.Poly1305.X86.Lit
 meta import VerifiedGarbage.Proof.Framework.X86.Sse
 meta import VerifiedGarbage.Proof.Poly1305.X86.Lit
+public import VerifiedGarbage.Proof.ChaCha20.X86.Kernels
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.Spec
+public import VerifiedGarbage.Proof.Framework.Bswap
+public import VerifiedGarbage.Proof.Framework.X86.SseTaint
+public import VerifiedGarbage.Proof.Poly1305.X86.Finalize
+public import VerifiedGarbage.Proof.Poly1305.X86.Init
+meta import VerifiedGarbage.Proof.ChaCha20.X86.Kernels
+meta import VerifiedGarbage.Proof.ChaCha20Poly1305.Spec
+meta import VerifiedGarbage.Proof.Framework.Bswap
+meta import VerifiedGarbage.Proof.Framework.X86.SseTaint
+meta import VerifiedGarbage.Proof.Poly1305.X86.Finalize
+meta import VerifiedGarbage.Proof.Poly1305.X86.Init
 
 @[expose] public section
 

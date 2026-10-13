@@ -8,6 +8,8 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.X86_64.Call
 meta import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledMontCT
+meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledMontCT
 
 /-!
 # `vg_rsa_mont_mul_adx`: constant time

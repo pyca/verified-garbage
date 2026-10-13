@@ -8,6 +8,7 @@ import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Camellia.Layout
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Camellia.Common
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 
 /-!
 # The head and tail of eight blocks of bitsliced Camellia on AArch64

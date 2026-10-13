@@ -8,6 +8,8 @@ import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 import Mathlib.Util.CompileInductive
 import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
+import VerifiedGarbage.TCB.Artifact
 
 /-!
 # Lanes of the AdvSIMD operations of `Neon.mul2`

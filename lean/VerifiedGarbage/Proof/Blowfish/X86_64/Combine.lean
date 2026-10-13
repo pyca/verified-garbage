@@ -9,6 +9,7 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.X86_64.Words
+import VerifiedGarbage.Spec.Rc2
 
 /-! # An S-box entry from its byte planes; the index in every lane -/
 

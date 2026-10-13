@@ -12,6 +12,8 @@ import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.X86_64.Call
 meta import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxFused
+meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxFused
 
 /-! Saving and restoring header words uses only the public scratch layout. -/
 

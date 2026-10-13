@@ -18,6 +18,8 @@ import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.X86_64.Avx512
+import VerifiedGarbage.Impl.ChaCha20Poly1305.X86_64.SealGather
+import VerifiedGarbage.Proof.Framework.X86_64.StraightZ
 
 /-!
 # ChaCha20-Poly1305 encryption out of place, from a list of slices, x86-64: the function called

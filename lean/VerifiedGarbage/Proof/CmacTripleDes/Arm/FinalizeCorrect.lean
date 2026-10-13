@@ -5,6 +5,7 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.CmacTripleDes.Cmac
 
 /-!
 # TDEA-CMAC on ARMv7: `vg_cmac_triple_des_finalize` is correct

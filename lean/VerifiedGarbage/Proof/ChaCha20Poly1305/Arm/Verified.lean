@@ -24,6 +24,10 @@ import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.ChaCha20Poly1305.Arm.Lit
 meta import Mathlib.Tactic.SplitIfs
 meta import VerifiedGarbage.Proof.ChaCha20Poly1305.Arm.Lit
+import VerifiedGarbage.Proof.ChaCha20Poly1305.Spec
+import VerifiedGarbage.Proof.Poly1305.Arm.Finalize
+meta import VerifiedGarbage.Proof.ChaCha20Poly1305.Spec
+meta import VerifiedGarbage.Proof.Poly1305.Arm.Finalize
 
 @[expose] public section
 

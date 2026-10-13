@@ -8,6 +8,7 @@ import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 import Mathlib.Util.CompileInductive
 import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.TCB.Artifact
 
 /-!
 # Byte and word lanes of AdvSIMD permutations

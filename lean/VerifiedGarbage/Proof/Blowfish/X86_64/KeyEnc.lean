@@ -8,6 +8,7 @@ import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Blowfish.KeyTable
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.X86_64.Words
+import VerifiedGarbage.Spec.Rc2
 
 /-!
 # Key expansion: the 521 encryptions

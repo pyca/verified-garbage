@@ -12,6 +12,8 @@ public import VerifiedGarbage.Proof.CmacAes.X86_64.Finalize
 meta import VerifiedGarbage.Proof.CmacAes.X86_64.Finalize
 public import VerifiedGarbage.Proof.CmacAes.Stream.X86_64.Call
 meta import VerifiedGarbage.Proof.CmacAes.Stream.X86_64.Call
+public import VerifiedGarbage.Impl.CmacAes.Stream.X86_64
+meta import VerifiedGarbage.Impl.CmacAes.Stream.X86_64
 
 /-!
 # Streaming AES-CMAC on x86-64: `vg_cmac_aes_init`

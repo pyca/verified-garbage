@@ -10,6 +10,10 @@ public import VerifiedGarbage.Proof.Framework.RelCT
 import Mathlib.Tactic.SplitIfs
 meta import VerifiedGarbage.Proof.Framework.RelCT
 meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Arm.Lit
+import VerifiedGarbage.Proof.Framework.Arm.RelCT
+meta import VerifiedGarbage.Proof.Framework.Arm.Lit
+meta import VerifiedGarbage.Proof.Framework.Arm.RelCT
 
 /-!
 # Streaming ChaCha20 on ARMv7: `apply`, constant time

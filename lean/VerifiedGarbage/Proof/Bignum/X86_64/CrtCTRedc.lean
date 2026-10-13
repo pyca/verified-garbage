@@ -8,6 +8,8 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.X86_64.Call
 meta import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtArith
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtArith
 
 /-!
 # RSA with the CRT on x86-64: `redc` is constant time

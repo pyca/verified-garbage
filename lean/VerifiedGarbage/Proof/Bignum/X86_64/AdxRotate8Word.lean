@@ -9,6 +9,7 @@ import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+import VerifiedGarbage.Spec.Rsa
 
 /-! Numeric equations for a rotating ADX column, including both live flags. -/
 
