@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Verified
 public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Stitch.Verified
+public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Stitch.SealVerified
 public import VerifiedGarbage.Generic.AesGcm.X86_64.AesGcm
 
 /-!
@@ -21,7 +22,9 @@ which keeps every instance of a combination callable together.
 `open` deciphers and computes POLYVAL in one interleaved loop
 (`Impl.AesGcmSiv.X86_64Stitch`) from 256 bytes of data on with
 the implementations whose `vg_aes_ctr32` uses VAES and whose `vg_ghash` uses
-VPCLMULQDQ (`sivStitch`), whose CPU features that loop needs.
+VPCLMULQDQ (`sivStitch`), whose CPU features that loop needs; with them,
+`seal` computes POLYVAL and enciphers the data's 256-byte groups in loops of
+its own.
 
 Each keeps its working space in a frame of 3848 bytes on the stack
 (`Proof/AesGcmSiv/X86_64/Verified.lean`), below which its calls use 8 bytes:
@@ -52,6 +55,23 @@ def openCode (v : GcmImpl) : Prog X86_64.isa :=
   if sivStitch v then Impl.AesGcmSiv.X86_64Stitch.«open» v.callees (ecbFn v) (sivWide v)
   else Impl.AesGcmSiv.X86_64.«open» v.callees (ecbFn v) (sivWide v)
 
+/-- The code of `seal` for `v`. -/
+def sealCode (v : GcmImpl) : Prog X86_64.isa :=
+  if sivStitch v then Impl.AesGcmSiv.X86_64Stitch.«seal» v.callees (ecbFn v) (sivWide v)
+  else Impl.AesGcmSiv.X86_64.«seal» v.callees (ecbFn v) (sivWide v)
+
+theorem sealCode_framed (v : GcmImpl) :
+    Verified X86_64.target (Impl.StackScratch.X86_64.withStackArgScratch 3848 2 (sealCode v))
+      (Spec.GcmSiv.sealContract X86_64.abi 3856) := by
+  unfold sealCode; split
+  · exact sealS_framed v (ecbOf v) (sivWide v)
+  · exact seal_framed v (ecbOf v) (sivWide v)
+
+theorem sealCode_spSafe (v : GcmImpl) : (sealCode v).all (fun i => !X86_64.isa.writesSp i) = true := by
+  unfold sealCode; split
+  · exact sealS_spSafe v (ecbOf v) (sivWide v)
+  · exact seal_spSafe v (ecbOf v) (sivWide v)
+
 theorem openCode_framed (v : GcmImpl) :
     Verified X86_64.target (Impl.StackScratch.X86_64.withStackArgScratch 3848 2 (openCode v))
       (Spec.GcmSiv.openContract X86_64.abi 3856) := by
@@ -70,11 +90,11 @@ def artifactsOf (v : GcmImpl) : List Artifact := [
     name := Spec.GcmSiv.sealApi.name ++ v.suffix
     target := X86_64.target
     doc := Spec.GcmSiv.sealApi.doc (notes := [note v])
-    code := Impl.StackScratch.X86_64.withStackArgScratch 3848 2 (Impl.AesGcmSiv.X86_64.«seal» v.callees (ecbFn v) (sivWide v))
+    code := Impl.StackScratch.X86_64.withStackArgScratch 3848 2 (sealCode v)
     contract := Spec.GcmSiv.sealContract X86_64.abi 3856
     stack := 3856
-    verified := seal_framed v (ecbOf v) (sivWide v)
-    spSafe := X86_64.withStackArgScratch_spSafe (seal_spSafe v (ecbOf v) (sivWide v))
+    verified := sealCode_framed v
+    spSafe := X86_64.withStackArgScratch_spSafe (sealCode_spSafe v)
     features := features v },
   { Spec.GcmSiv.openApi with
     name := Spec.GcmSiv.openApi.name ++ v.suffix
