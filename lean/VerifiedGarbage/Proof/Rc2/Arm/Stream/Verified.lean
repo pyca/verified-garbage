@@ -24,6 +24,12 @@ meta import Mathlib.Tactic.SplitIfs
 meta import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.TaintSum
 meta import VerifiedGarbage.Proof.Framework.TaintSum
+import VerifiedGarbage.Proof.MdStream.Arm.Common
+import VerifiedGarbage.Proof.Rc2.CbcMemory
+import VerifiedGarbage.Proof.Rc2.Stream
+meta import VerifiedGarbage.Proof.MdStream.Arm.Common
+meta import VerifiedGarbage.Proof.Rc2.CbcMemory
+meta import VerifiedGarbage.Proof.Rc2.Stream
 
 @[expose] public section
 

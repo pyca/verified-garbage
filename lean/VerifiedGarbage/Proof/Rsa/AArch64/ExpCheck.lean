@@ -9,6 +9,7 @@ import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.WriteBytes
 
 /-!
 # RSA on AArch64: BoringSSL's limits on the public exponent

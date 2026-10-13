@@ -7,6 +7,7 @@ import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Pbkdf2.Memory
 
 /-!
 # PBKDF2-HMAC's iteration over a Merkle–Damgård hash function on AArch64: constant time

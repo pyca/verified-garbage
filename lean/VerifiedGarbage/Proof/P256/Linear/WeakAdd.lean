@@ -8,6 +8,7 @@ import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 import Mathlib.Logic.Function.Basic
 import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Spec.Ecdsa.Generic
 
 @[expose] public section
 

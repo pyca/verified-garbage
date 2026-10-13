@@ -8,6 +8,8 @@ import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.P256.Linear.Arithmetic
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
+import VerifiedGarbage.Proof.P256.Linear.Linear41
+import VerifiedGarbage.Proof.Weierstrass.Booth
 
 @[expose] public section
 

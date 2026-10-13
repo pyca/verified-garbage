@@ -34,6 +34,22 @@ import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
 meta import Mathlib.Tactic.SplitIfs
 meta import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Framework.CallLay
+public import VerifiedGarbage.Proof.Framework.X86.SseTaint
+public import VerifiedGarbage.Proof.Rc2.CbcMemory
+public import VerifiedGarbage.Proof.Rc2.PairMem
+public import VerifiedGarbage.Proof.Rc2.Select
+public import VerifiedGarbage.Proof.Rc2.Word
+public import VerifiedGarbage.Proof.Rc2.Word32
+public import VerifiedGarbage.Proof.Rc2.X86.KeyLookup
+meta import VerifiedGarbage.Proof.Framework.CallLay
+meta import VerifiedGarbage.Proof.Framework.X86.SseTaint
+meta import VerifiedGarbage.Proof.Rc2.CbcMemory
+meta import VerifiedGarbage.Proof.Rc2.PairMem
+meta import VerifiedGarbage.Proof.Rc2.Select
+meta import VerifiedGarbage.Proof.Rc2.Word
+meta import VerifiedGarbage.Proof.Rc2.Word32
+meta import VerifiedGarbage.Proof.Rc2.X86.KeyLookup
 
 @[expose] public section
 

@@ -10,6 +10,7 @@ import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Impl.NatPairs
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 import VerifiedGarbage.Spec.Weierstrass.Point
+import VerifiedGarbage.Impl.P256.VerifyArithmetic
 
 @[expose] public section
 

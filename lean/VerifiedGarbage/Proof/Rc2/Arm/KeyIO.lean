@@ -12,6 +12,7 @@ public import VerifiedGarbage.Proof.Rc2.Expansion
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Arm.Syms
 
 @[expose] public section
 

@@ -18,6 +18,8 @@ meta import Mathlib.Tactic.SplitIfs
 meta import VerifiedGarbage.Proof.Mont.X86_64.Wide
 meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
 meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+import VerifiedGarbage.Spec.Ecdsa.Generic
+meta import VerifiedGarbage.Spec.Ecdsa.Generic
 
 /-! Concrete baseline checks for the public verifier's point operations (with
 BMI2 and ADX: `JacTimingAdx`, checked in parallel). -/

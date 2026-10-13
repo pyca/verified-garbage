@@ -17,6 +17,9 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.NafArithmeticTiming
 import VerifiedGarbage.Proof.Weierstrass.AArch64.NafEntryTiming
 import VerifiedGarbage.Proof.Weierstrass.AArch64.NafSum
 import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
+import VerifiedGarbage.Proof.Ecdsa.AArch64.Verified
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Front
+import VerifiedGarbage.Proof.P256.EcdhDouble.Certificate
 
 /-! Public ECDH contract and ABI, composed with a separately certified
 secret-scalar multiplication. -/

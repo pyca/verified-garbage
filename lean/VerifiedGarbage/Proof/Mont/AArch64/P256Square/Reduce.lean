@@ -8,6 +8,7 @@ import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Mont.AArch64.P256Square.Arithmetic
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Mont.AArch64.Row
+import VerifiedGarbage.Proof.Mont.AArch64.P256Square.Words
 
 @[expose] public section
 

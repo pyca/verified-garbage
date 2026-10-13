@@ -13,6 +13,8 @@ import VerifiedGarbage.Proof.Weierstrass.Layout
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
 import VerifiedGarbage.Spec.Weierstrass.Point
+import VerifiedGarbage.Impl.Ecdsa.X86_64
+import VerifiedGarbage.Spec.Ecdsa.Generic
 
 /-! Point correctness and a shared field environment for the joint loop's doubler. -/
 

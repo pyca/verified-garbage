@@ -16,6 +16,8 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.OptimizeK
 meta import Mathlib.Tactic.SplitIfs
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.OptimizeK
+import VerifiedGarbage.Spec.Ecdsa.Generic
+meta import VerifiedGarbage.Spec.Ecdsa.Generic
 
 @[expose] public section
 

@@ -19,6 +19,7 @@ import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.TaintSum
+import VerifiedGarbage.Proof.Rc2.CbcMemory
 
 @[expose] public section
 

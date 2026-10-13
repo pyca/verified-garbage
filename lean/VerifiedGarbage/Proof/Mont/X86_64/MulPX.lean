@@ -10,6 +10,10 @@ import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Mont.X86_64.Wide
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+public import VerifiedGarbage.Proof.Mont.X86_64.MulS
+public import VerifiedGarbage.Proof.Mont.X86_64.ProdX
+public import VerifiedGarbage.Proof.Mont.X86_64.SqrM
+public import VerifiedGarbage.Proof.Mont.X86_64.WideMul
 
 /-!
 # Montgomery arithmetic on x86-64: P-521's product by rows, with BMI2 and ADX

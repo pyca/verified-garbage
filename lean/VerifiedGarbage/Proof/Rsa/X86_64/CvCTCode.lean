@@ -10,6 +10,8 @@ import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.X86_64.Call
 meta import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Rsa.X86_64.CvFail
+meta import VerifiedGarbage.Proof.Rsa.X86_64.CvFail
 
 /-!
 # `vg_rsa_crt_values` on x86-64: constant time but for `n`

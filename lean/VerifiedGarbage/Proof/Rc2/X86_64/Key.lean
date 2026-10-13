@@ -12,6 +12,7 @@ import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Rc2.Expansion
 public import VerifiedGarbage.Proof.Rc2.X86_64.Save
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 
 @[expose] public section
 
