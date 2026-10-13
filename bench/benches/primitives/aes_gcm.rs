@@ -652,25 +652,25 @@ fn probe(c: &mut Criterion) {
             for _ in 0..64 {
                 k.encrypt(&nonce, &aad, &[&data, &ty], &mut out).unwrap();
             }
-            g.bench_function(BenchmarkId::new(VG, format!("two{size}")), |b| {
+            g.bench_function(BenchmarkId::new(VG, 1_000_000 + size), |b| {
                 b.iter(|| k.encrypt(black_box(&nonce), black_box(&aad), &[black_box(&data[..]), black_box(&ty[..])], black_box(&mut out)).unwrap())
             });
-            g.bench_function(BenchmarkId::new(VG, format!("split{size}")), |b| {
+            g.bench_function(BenchmarkId::new(VG, 2_000_000 + size), |b| {
                 b.iter(|| probe::split(&k, black_box(&nonce), black_box(&aad), &[black_box(&data[..]), black_box(&ty[..])], black_box(&mut out)))
             });
-            g.bench_function(BenchmarkId::new(VG, format!("inplace{size}")), |b| {
+            g.bench_function(BenchmarkId::new(VG, 3_000_000 + size), |b| {
                 b.iter(|| k.encrypt_in_place(black_box(&nonce), black_box(&aad), black_box(&mut buf)).unwrap())
             });
-            g.bench_function(BenchmarkId::new(VG, format!("blocks{size}")), |b| {
+            g.bench_function(BenchmarkId::new(VG, 4_000_000 + size), |b| {
                 b.iter(|| probe::blocks(&k, black_box(&data), black_box(&mut out)))
             });
         }
         let mut blk = [0u8; 16];
         let mut y = [0u8; 16];
         let bl = [[0u8; 16]; 2];
-        g.bench_function(BenchmarkId::new(VG, "ctr1"), |b| b.iter(|| probe::ctr1(&k, black_box(&mut blk))));
-        g.bench_function(BenchmarkId::new(VG, "gh1"), |b| b.iter(|| probe::gh(&k, black_box(&mut y), &bl[..1])));
-        g.bench_function(BenchmarkId::new(VG, "gh2"), |b| b.iter(|| probe::gh(&k, black_box(&mut y), &bl[..])));
+        g.bench_function(BenchmarkId::new(VG, 5), |b| b.iter(|| probe::ctr1(&k, black_box(&mut blk))));
+        g.bench_function(BenchmarkId::new(VG, 6), |b| b.iter(|| probe::gh(&k, black_box(&mut y), &bl[..1])));
+        g.bench_function(BenchmarkId::new(VG, 7), |b| b.iter(|| probe::gh(&k, black_box(&mut y), &bl[..])));
         g.finish();
     }
 }
