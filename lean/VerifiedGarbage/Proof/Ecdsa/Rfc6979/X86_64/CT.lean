@@ -8,6 +8,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
+meta import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
 
 /-!
 # Deterministic ECDSA on x86-64: constant time, up to the number of candidates
@@ -468,7 +470,7 @@ theorem tryOne_ct {i : Nat} :
   -- A run that goes on has a later candidate to stop at, so the other cannot have stopped.
   have mixed : ∀ (m m' : Mem) (u u' : State), exitAt P e.1 m = exitAt P e.1 m' → Exit P e.1 m i u →
       LoopInv P e.1 m' (i + 1) u' → False := fun _ m' _ _ hx' hE hI => by
-    have hgo : sigI P e.1 m' i = none ∧ i + 1 < 8 := ⟨hI.fails i (by omega), hI.lt⟩
+    have hgo : sigI P e.1 m' i = none ∧ i + 1 < P.I.tries := ⟨hI.fails i (by omega), hI.lt⟩
     rw [go_iff (by omega) (fun j hj => hI.fails j (by omega)), ← hx', ← go_iff hE.lt hE.fails] at hgo
     rcases hE.last with h | h
     · exact h hgo.1
@@ -481,22 +483,38 @@ theorem tryOne_ct {i : Nat} :
 
 /-! ## The loop -/
 
-theorem next_n {n : Nat} (h : 8 - n + 1 < 8) : 8 - (8 - n + 1) < n ∧ 8 - (8 - (8 - n + 1)) = 8 - n + 1 :=
+theorem next_n {T n : Nat} (h : T - n + 1 < T) : T - (T - n + 1) < n ∧ T - (T - (T - n + 1)) = T - n + 1 :=
   ⟨by omega, by omega⟩
 
 theorem loop_ct :
     RelCT isa (Two P fun L m₀ t => LoopInv P L m₀ 0 t) (.loop (cfgOf P).tryOne .ne)
+      (Two P fun L m₀ t => ∃ i, Exit P L m₀ i t) := by
+  have h : RelCT isa (Two P fun L m₀ t => LoopInv P L m₀ (P.I.tries - P.I.tries) t) (.loop (cfgOf P).tryOne .ne)
       (Two P fun L m₀ t => ∃ i, Exit P L m₀ i t) :=
-  VG.RelCT.loop (M := isa) (fun n => Two P fun L m₀ t => LoopInv P L m₀ (8 - n) t)
-    (fun n => tryOne_ct.mono (fun _ _ h => h) fun _ _ ⟨he, hf, ht⟩ =>
-      ⟨he, fun h => (hf h).mono fun _ _ _ hx => ⟨_, hx⟩, fun h => by
-        obtain ⟨e, hL, hk, hx, c₁, c₂, f₁, f₂⟩ := ht h
-        have hn := next_n f₁.lt
-        refine ⟨8 - (8 - n + 1), hn.1, e, hL, hk, hx, c₁, c₂, ?_, ?_⟩ <;> rwa [hn.2]⟩) 8
+    VG.RelCT.loop (M := isa) (fun n => Two P fun L m₀ t => LoopInv P L m₀ (P.I.tries - n) t)
+      (fun n => tryOne_ct.mono (fun _ _ h => h) fun _ _ ⟨he, hf, ht⟩ =>
+        ⟨he, fun h => (hf h).mono fun _ _ _ hx => ⟨_, hx⟩, fun h => by
+          obtain ⟨e, hL, hk, hx, c₁, c₂, f₁, f₂⟩ := ht h
+          have hn := next_n f₁.lt
+          refine ⟨P.I.tries - (P.I.tries - n + 1), hn.1, e, hL, hk, hx, c₁, c₂, ?_, ?_⟩ <;> rwa [hn.2]⟩)
+      P.I.tries
+  rwa [Nat.sub_self] at h
 
 /-! ## The frame's body -/
 
-theorem initCnt_blk : TaintOk [.rsp] (cfgC { n := 4, C := Spec.P256.curve }).initCnt := ⟨_, by taint_decide⟩
+theorem initCnt_blk₀ : TaintOk [.rsp] (cfgC { n := 4, C := Spec.P256.curve }).initCnt := ⟨_, by taint_decide⟩
+
+/-- The count's initial store, for any count: the analysis does not read
+immediates (`taint_eraseInv`), so it is that of one count's. -/
+theorem initCnt_blk (c : Cfg) : TaintOk [.rsp] c.initCnt := by
+  obtain ⟨h, hs⟩ := initCnt_blk₀
+  refine ⟨h, ?_⟩
+  have e := (taint_eraseInv.check (.block c.initCnt) (Taint.ofRegs [.rsp]) h rfl).1
+  have e₀ := (taint_eraseInv.check (.block (cfgC { n := 4, C := Spec.P256.curve }).initCnt)
+    (Taint.ofRegs [.rsp]) h rfl).1
+  rw [← e, show Code.mapBlocks Instr.erase (.block c.initCnt) =
+    Code.mapBlocks Instr.erase (.block (cfgC { n := 4, C := Spec.P256.curve }).initCnt) from rfl, e₀]
+  exact hs
 
 /-- `digest` in `rsi`, and, if two `V`s make a candidate, `scratch` in `rdi`. -/
 def DgIn (P : RfcHash) {dn : Nat} (L : Lay dn) (_ : Mem) (u : State) : Prop :=
@@ -528,7 +546,7 @@ theorem body_ct :
   refine (two_wp (Ψ := QB P) prep_ct fun _ _ _ _ hL hk hc h => stageB_ok (P := P) hL hk hc h.1 h.2).seq ?_
   refine (two_wp (Ψ := QC P) (rekeyFull_ct 0 (by omega)) fun _ _ _ _ hL hk hc h => stageC_ok (P := P) hL hk hc h).seq ?_
   refine (two_wp (Ψ := QD P) (rekeyFull_ct 1 (by omega)) fun _ _ _ _ hL hk hc h => stageD_ok (P := P) hL hk hc h).seq ?_
-  refine (two_wp (Ψ := fun L m₀ t => LoopInv P L m₀ 0 t) (two_blk [.rsp] rspOnly initCnt_blk)
+  refine (two_wp (Ψ := fun L m₀ t => LoopInv P L m₀ 0 t) (two_blk [.rsp] rspOnly (initCnt_blk _))
     fun _ _ _ _ hL hk hc h => stageE_ok (P := P) hL hk hc h).seq ?_
   refine loop_ct.seq ?_
   exact two_wp (two_blk [.rsp] rspOnly (wipe_blk P)) fun _ _ _ _ hL hk hc ⟨i, h⟩ =>
@@ -555,7 +573,7 @@ theorem sign_ct : ConstantTime isa (rfcX86_64 P.R.E.combConsts P.I (240 + 8 * P.
   have hr : (result P.I s₁.mem (s₁.gpr .rsi) (s₁.gpr .rdx)).2 = (result P.I s₂.mem (s₁.gpr .rsi) (s₁.gpr .rdx)).2 := by
     rw [hres, hsi, hdx]
   refine ⟨⟨lay P.I.hashLen P.I.ecdsa.curve.len P.e he P.R.E.combConsts s₁, s₁.gpr, s₂.gpr, s₁.mem, s₂.mem⟩,
-    lay_ok he p₁, coreOk_lay P he s₁, congrArg (fun x => if x = 0 then 7 else x - 1) hr, push_ctx he p₁,
+    lay_ok he p₁, coreOk_lay P he s₁, congrArg (fun x => if x = 0 then P.I.tries - 1 else x - 1) hr, push_ctx he p₁,
     by rw [hl]; exact push_ctx he p₂, trivial, trivial⟩
 
 end VG.Proof.Ecdsa.Rfc6979.X86_64
