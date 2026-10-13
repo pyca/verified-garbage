@@ -134,22 +134,7 @@ pub(super) fn probable_prime<E>(
             }
         }
         let a = witness.ok_or(Error::TooManyIterations)?;
-        let mut z = mont.power(&a, &d);
-        if value_cmp(&z, &[1]).is_eq() || value_cmp(&z, &p1).is_eq() {
-            continue;
-        }
-        let mut passed = false;
-        for _ in 1..s {
-            z = mont.power(&z, &[2]);
-            if value_cmp(&z, &p1).is_eq() {
-                passed = true;
-                break;
-            }
-            if value_cmp(&z, &[1]).is_eq() {
-                break;
-            }
-        }
-        if !passed {
+        if !mont.strong_probable_prime(&a, &d, s) {
             return Ok(false);
         }
     }

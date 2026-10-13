@@ -181,6 +181,11 @@ impl Montgomery {
     /// Variable-time exponentiation for public exponents only (e.g. subgroup
     /// orders). Never use this for a private scalar or a secret prime exponent.
     pub(super) fn power_public(&self, base: &[u8], exponent: &[u8]) -> Vec<u8> {
+        let mut ws = self.power_public_montgomery(base, exponent);
+        self.finish(&mut ws)
+    }
+
+    fn power_public_montgomery(&self, base: &[u8], exponent: &[u8]) -> Scratch {
         let exponent = canonical(exponent);
         let window = if exponent.len() > 32 {
             5
@@ -232,7 +237,40 @@ impl Montgomery {
             self.mul(&mut ws, 5, 5, 6);
             pos = end;
         }
-        self.finish(&mut ws)
+        ws
+    }
+
+    /// One strong probable-prime witness for a public candidate p, with
+    /// p-1 = d * 2^s. Keep every residue in Montgomery form until the test ends.
+    pub(super) fn strong_probable_prime(&self, base: &[u8], d: &[u8], s: usize) -> bool {
+        let w = self.modulus.len();
+        let at = |j| 32 + j * (w + 2);
+        let mut ws = self.power_public_montgomery(base, d);
+        self.mul(&mut ws, 6, 7, 1);
+        // Montgomery(-1) = p - Montgomery(1), since the latter is in 1..p.
+        let mut negative_one = self.modulus.clone();
+        let mut borrow = false;
+        for (dst, &one) in negative_one.iter_mut().zip(&ws[at(6)..at(6) + w]) {
+            let (v, b1) = dst.overflowing_sub(one);
+            let (v, b2) = v.overflowing_sub(u64::from(borrow));
+            *dst = v;
+            borrow = b1 | b2;
+        }
+        let is_one = |ws: &[u64]| ws[at(5)..at(5) + w] == ws[at(6)..at(6) + w];
+        let is_negative_one = |ws: &[u64]| ws[at(5)..at(5) + w] == negative_one;
+        if is_one(&ws) || is_negative_one(&ws) {
+            return true;
+        }
+        for _ in 1..s {
+            self.mul(&mut ws, 5, 5, 5);
+            if is_negative_one(&ws) {
+                return true;
+            }
+            if is_one(&ws) {
+                return false;
+            }
+        }
+        false
     }
 
     fn workspace(&self, base: &[u8], table_words: usize) -> Scratch {
@@ -309,6 +347,32 @@ fn double_mod(a: &mut [u64], m: &[u64]) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn strong_witness_matches_integer_arithmetic() {
+        // An independent small-integer oracle exercises early acceptance,
+        // rejection, and repeated squares, including nontrivial roots of one.
+        for p in (3u64..1024).step_by(2) {
+            let s = (p - 1).trailing_zeros() as usize;
+            let d = (p - 1) >> s;
+            let mont = Montgomery::new(&p.to_be_bytes());
+            for a in [2, p / 2, p - 2] {
+                let mut expected = 1;
+                for _ in 0..d {
+                    expected = expected * a % p;
+                }
+                let mut passes = expected == 1 || expected == p - 1;
+                for _ in 1..s {
+                    expected = expected * expected % p;
+                    passes |= expected == p - 1;
+                }
+                assert_eq!(
+                    mont.strong_probable_prime(&a.to_be_bytes(), &d.to_be_bytes(), s),
+                    passes
+                );
+            }
+        }
+    }
 
     #[test]
     fn public_and_secret_exponents_agree() {
