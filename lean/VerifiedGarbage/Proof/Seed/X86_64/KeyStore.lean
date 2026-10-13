@@ -5,6 +5,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Seed.X86_64.Copy
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # Copying `G`'s outputs on x86-64

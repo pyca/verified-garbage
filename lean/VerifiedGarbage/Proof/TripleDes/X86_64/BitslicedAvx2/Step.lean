@@ -6,6 +6,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx2.Sbox
+import VerifiedGarbage.Proof.Framework.X86_64.Taint
 
 /-!
 # One S-box of an AVX2 round, and the exchange of the halves

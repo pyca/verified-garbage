@@ -7,6 +7,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.SboxLit
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # The AdvSIMD S-box circuits' machine code
