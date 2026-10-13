@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Ed448.X86_64.Window.Scan
+public import VerifiedGarbage.Proof.Ed448.X86_64.Window.DirectKey
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -25,31 +25,23 @@ private theorem coord_keep {base : Addr} {s u : State} (h : Keep base s u) {i c 
 def KeyKeeps (e e' : Env) : Prop :=
   ∀ j : Index, j ≠ 3 → j ≠ 4 → j ≠ 5 → j ≠ 8 → j ≠ 9 → j ≠ 10 → e' j = e j
 
-private theorem key_pick (c : Nat) (hc : c < 3) :
-    PickOk (fun i => chooseMem (tabOffset i c)) (fun m b i => F m b (tabOffset i c)) := by
-  intro i hi s base hs sw hz
-  refine WP.mono (chooseMem_ok hs (by simp only [tabOffset, TAB]; omega) hz)
-    fun u ⟨eu, ku⟩ => ⟨?_, ku.mono (fun _ h => List.mem_cons_of_mem _ h)⟩
-  rw [eu]
-  cases sw <;> rfl
-
-/-- Every entry is read, with a mask deciding which one is retained. -/
+/-- Only the projective point selected by the public digit is read. -/
 theorem selectKey_ok {s : State} {base : Addr} (hs : Scr s base) {o k t : Nat}
     (ho : 2048 ≤ o) (hbnd : o + 460 ≤ 8192) (ht : t + 5 ≤ 460)
     (hb : s.gpr .rbx = BitVec.ofNat 64 t) (bs : Bits base o k s) :
     WP isa (.block (selectKey o)) s fun u => Keep base s u ∧
       pt (E u.mem base) 8 9 10 = tablePoint s.mem base (SignedWindow.magnitude k t) ∧
       KeyKeeps (E s.mem base) (E u.mem base) := by
-  rw [selectKey, List.append_assoc, List.append_assoc, WP.block_append_iff]
-  refine WP.mono (loadDigit_bits_ok hs hbnd (by omega) ht hb bs) fun v ⟨dv, kv⟩ => ?_
+  rw [selectKey, List.append_assoc, List.append_assoc, List.append_assoc, WP.block_append_iff]
+  refine WP.mono (loadDigit_bits_ok hs hbnd (by omega) ht hb bs) fun v0 ⟨dv0, kv0⟩ => ?_
   rw [WP.block_append_iff]
-  refine WP.mono (scanCoord_ok (key_pick 0 (by decide)) (hs.of_keeps kv (by decide)) 8
-    (SignedWindow.magnitude_lt k t) dv) fun w ⟨kw, dw, ew⟩ => ?_
+  refine WP.mono (keyAddress_ok v0 (SignedWindow.magnitude_lt k t) dv0) fun v ⟨dv, kva⟩ => ?_
+  have kv := kv0.trans kva
   rw [WP.block_append_iff]
-  refine WP.mono (scanCoord_ok (key_pick 1 (by decide)) (kw.scr (hs.of_keeps kv (by decide))) 9
-    (SignedWindow.magnitude_lt k t) (dw.trans dv)) fun x ⟨kx, dx, ex⟩ => ?_
-  refine WP.mono (scanCoord_ok (key_pick 2 (by decide)) (kx.scr (kw.scr (hs.of_keeps kv (by decide)))) 10
-    (SignedWindow.magnitude_lt k t) (dx.trans (dw.trans dv))) fun u ⟨ku, _, eu⟩ => ?_
+  refine WP.mono (directKeyCoord_ok (hs.of_keeps kv (by decide)) (SignedWindow.magnitude_lt k t) (by decide : 0 < 3) dv) fun w ⟨kw, dw, ew⟩ => ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (directKeyCoord_ok (kw.scr (hs.of_keeps kv (by decide))) (SignedWindow.magnitude_lt k t) (by decide : 1 < 3) (dw.trans dv)) fun x ⟨kx, dx, ex⟩ => ?_
+  refine WP.mono (directKeyCoord_ok (kx.scr (kw.scr (hs.of_keeps kv (by decide)))) (SignedWindow.magnitude_lt k t) (by decide : 2 < 3) (dx.trans (dw.trans dv))) fun u ⟨ku, _, eu⟩ => ?_
   have kv' : Keep base s v := ⟨fun r hr => kv.1 r (fun h => hr
     ((show ∀ r ∈ [Reg.rax, .rdx, .r15], r ∈ VG.Proof.X448.X86_64.clob from by decide) r h)),
     kv.2.2.1, kv.2.2.2, by rw [kv.2.1]; exact VG.Proof.X448.X86_64.Outside.refl _ _ _ _⟩
@@ -60,6 +52,6 @@ theorem selectKey_ok {s : State} {base : Addr} (hs : Scr s base) {o k t : Nat}
     rfl
   · intro j _ _ _ h8 h9 h10
     rw [eu, ex, ew, kv.2.1]
-    simp only [Function.update_of_ne h8, Function.update_of_ne h9, Function.update_of_ne h10]
+    simp only [Function.update_apply]; split_ifs <;> simp_all
 
 end VG.Proof.Ed448.X86_64.Window
