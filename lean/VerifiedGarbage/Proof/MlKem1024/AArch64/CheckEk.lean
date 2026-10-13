@@ -8,6 +8,10 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Spec.MlKem.Contract1024
+import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Spec.MlKem.Contract1024
+meta import Mathlib.Tactic.SplitIfs
 
 /-!
 # ML-KEM-1024 on AArch64: `vg_mlkem1024_check_ek`

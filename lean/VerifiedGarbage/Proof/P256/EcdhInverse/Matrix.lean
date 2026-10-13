@@ -6,6 +6,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Data.BitVec
+import VerifiedGarbage.Proof.Mont.AArch64.Row
 
 /-! Fixed matrix multiplication blocks in the packed divstep batch. -/
 

@@ -8,6 +8,10 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Impl.MlKem1024.AArch64.Compress
+import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Impl.MlKem1024.AArch64.Compress
+meta import Mathlib.Tactic.SplitIfs
 
 /-!
 # ML-KEM-1024 on AArch64: `vg_mlkem1024_decode_decompress`

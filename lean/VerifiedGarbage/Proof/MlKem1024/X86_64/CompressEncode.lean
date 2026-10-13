@@ -12,6 +12,14 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.MlKem.X86_64.CompressEncode
+import Mathlib.Tactic.Conv
+import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
+import VerifiedGarbage.Proof.Sha3.X86_64.X4.Wp
+meta import VerifiedGarbage.Proof.MlKem.X86_64.CompressEncode
+meta import Mathlib.Tactic.Conv
+meta import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
+meta import VerifiedGarbage.Proof.Sha3.X86_64.X4.Wp
 
 /-!
 # ML-KEM-1024 on x86-64: `vg_mlkem1024_compress_encode`

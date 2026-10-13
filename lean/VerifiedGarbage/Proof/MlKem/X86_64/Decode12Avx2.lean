@@ -10,6 +10,10 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.MlKem.X86_64.AddSub
+import Mathlib.Tactic.Conv
+meta import VerifiedGarbage.Proof.MlKem.X86_64.AddSub
+meta import Mathlib.Tactic.Conv
 
 /-!
 # ML-KEM on x86-64: `vg_mlkem_decode12_avx2`
