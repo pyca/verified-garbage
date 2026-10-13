@@ -184,13 +184,11 @@ def setup : List Instr :=
    .vop (.vpshufd .l256 .xmm15 .xmm14 0xff), .vmovdquStore .l256 (at_ .rcx (slotOff 11)) .xmm15,
    .vmovdquLoad .l256 .xmm15 (at_ .rcx rot16Off)] : List Instr)
 
-/-- Add row `row` of the input state (broadcast into `ymm14`, each word
-spread into `ymm15`) to the registers `xs`. -/
-def addRow (row : Nat) (xs : List XReg) : List Instr :=
-  ([.vbroadcasti128 .xmm14 (at_ .rdi (16 * row))] : List Instr) ++
-  (List.range 4).flatMap fun i =>
-    [.vop (.vpshufd .l256 .xmm15 .xmm14 (BitVec.ofNat 8 (0x55 * i))),
-     v .vpaddd (xs.getD i .xmm0) (xs.getD i .xmm0) .xmm15]
+/-- Add row `row` of the input state (broadcast into both lanes of `ymm14`) to
+the registers `xs`, which hold that row of the blocks, each in one 128-bit
+lane (`transpose`d). -/
+def addT (row : Nat) (xs : List XReg) : List Instr :=
+  ([.vbroadcasti128 .xmm14 (at_ .rdi (16 * row))] : List Instr) ++ xs.map fun x => v .vpaddd x x .xmm14
 
 /-- Transpose the doublewords of `x0 … x3` within each 128-bit lane, through
 `ymm12 … ymm15`: afterwards `xᵢ` holds, in lane `l`, doubleword `i + 4l` of
@@ -215,24 +213,25 @@ def xorRow (row : Nat) (xs : List XReg) : List Instr :=
     ([.vop (.vextracti128 .xmm13 (xs.getD i .xmm0) 1)] : List Instr) ++ xor16 .xmm13 (64 * (i + 4) + 16 * row)
 
 /-- The rounds' result plus the input state, each row transposed by
-`transpose` and written out by `out row` (from the four registers holding
-it). Words 8 and 9 are first stored to their slots, and the third row is
-then loaded from the slots into `ymm0 … ymm3` (free once the first row is
-done). -/
+`transpose`, the input state's row added (`addT`), and written out by
+`out row` (from the four registers holding it). Words 8 and 9 are first
+stored to their slots, the counter increments added to word 12 before its
+row is transposed, and the third row is then loaded from the slots into
+`ymm0 … ymm3` (free once the first row is done). -/
 def finishWith (out : Nat → List XReg → List Instr) : List Instr :=
   ([.vmovdquStore .l256 (at_ .rcx (slotOff 8)) .xmm12,
    .vmovdquStore .l256 (at_ .rcx (slotOff 9)) .xmm13] : List Instr) ++
-  addRow 0 [.xmm0, .xmm1, .xmm2, .xmm3] ++ transpose .xmm0 .xmm1 .xmm2 .xmm3 ++
+  transpose .xmm0 .xmm1 .xmm2 .xmm3 ++ addT 0 [.xmm0, .xmm1, .xmm2, .xmm3] ++
     out 0 [.xmm0, .xmm1, .xmm2, .xmm3] ++
-  addRow 1 [.xmm4, .xmm5, .xmm6, .xmm7] ++ transpose .xmm4 .xmm5 .xmm6 .xmm7 ++
+  transpose .xmm4 .xmm5 .xmm6 .xmm7 ++ addT 1 [.xmm4, .xmm5, .xmm6, .xmm7] ++
     out 1 [.xmm4, .xmm5, .xmm6, .xmm7] ++
-  addRow 3 [.xmm8, .xmm9, .xmm10, .xmm11] ++
-    ([.vmovdquLoad .l256 .xmm15 (at_ .rcx incOff), v .vpaddd .xmm8 .xmm8 .xmm15] : List Instr) ++
-    transpose .xmm8 .xmm9 .xmm10 .xmm11 ++ out 3 [.xmm8, .xmm9, .xmm10, .xmm11] ++
+  ([.vmovdquLoad .l256 .xmm15 (at_ .rcx incOff), v .vpaddd .xmm8 .xmm8 .xmm15] : List Instr) ++
+    transpose .xmm8 .xmm9 .xmm10 .xmm11 ++ addT 3 [.xmm8, .xmm9, .xmm10, .xmm11] ++
+    out 3 [.xmm8, .xmm9, .xmm10, .xmm11] ++
   ([.vmovdquLoad .l256 .xmm0 (at_ .rcx (slotOff 8)), .vmovdquLoad .l256 .xmm1 (at_ .rcx (slotOff 9)),
    .vmovdquLoad .l256 .xmm2 (at_ .rcx (slotOff 10)),
    .vmovdquLoad .l256 .xmm3 (at_ .rcx (slotOff 11))] : List Instr) ++
-  addRow 2 [.xmm0, .xmm1, .xmm2, .xmm3] ++ transpose .xmm0 .xmm1 .xmm2 .xmm3 ++
+  transpose .xmm0 .xmm1 .xmm2 .xmm3 ++ addT 2 [.xmm0, .xmm1, .xmm2, .xmm3] ++
     out 2 [.xmm0, .xmm1, .xmm2, .xmm3]
 
 /-- The rounds' result plus the input state, XORed into the next 512 bytes of

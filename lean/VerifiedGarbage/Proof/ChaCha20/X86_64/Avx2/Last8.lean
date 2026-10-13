@@ -253,35 +253,30 @@ def Eff8 (a buf : Addr) (row : Nat) (B : Nat → CState) (m m' : Mem) : Prop :=
 
 theorem xorRow8_out {a buf : Addr} {g : Reg → BitVec 64} {w : List Region} (hrsi : g .rsi = a)
     (hrcx : g .rcx = buf) (hw : DWin3 w a) (hb : bufR buf ∈ w) (hd : (dR3 a).Disjoint (bufR buf))
-    {row : Nat} (hrow : row < 4) {x0 x1 x2 x3 : XReg} (e01 : x0 ≠ x1) (e02 : x0 ≠ x2)
-    (e03 : x0 ≠ x3) (e12 : x1 ≠ x2) (e13 : x1 ≠ x3) (e23 : x2 ≠ x3)
+    {row : Nat} (hrow : row < 4) {x0 x1 x2 x3 : XReg}
     (h0 : x0 ≠ .xmm12 ∧ x0 ≠ .xmm13 ∧ x0 ≠ .xmm14 ∧ x0 ≠ .xmm15)
     (h1 : x1 ≠ .xmm12 ∧ x1 ≠ .xmm13 ∧ x1 ≠ .xmm14 ∧ x1 ≠ .xmm15)
     (h2 : x2 ≠ .xmm12 ∧ x2 ≠ .xmm13 ∧ x2 ≠ .xmm14 ∧ x2 ≠ .xmm15)
     (h3 : x3 ≠ .xmm12 ∧ x3 ≠ .xmm13 ∧ x3 ≠ .xmm14 ∧ x3 ≠ .xmm15) :
     OutOk xorRow8 (Eff8 a buf) [dR3 a, bR buf 0, bR buf 1] g w row x0 x1 x2 x3 := by
   intro B s hB hg hws
-  refine WP.block_append (WP.mono (transpose_ok e01 e02 e03 e12 e13 e23 h0 h1 h2 h3)
-    fun s₁ ⟨lt, lo, g₁, m₁, r₁, w₁⟩ => ?_)
   refine WP.mono (xorRow8_ok hrow (a := a) (buf := buf) ⟨h0.1, h0.2.1⟩ ⟨h1.1, h1.2.1⟩ ⟨h2.1, h2.2.1⟩
-    ⟨h3.1, h3.2.1⟩ (by rw [g₁, hg]; exact hrsi) (by rw [g₁, hg]; exact hrcx) (by rw [w₁, hws]; exact hw)
-    (by rw [w₁, hws]; exact hb) hd) fun s₂ ⟨d₂, b₂, f₂, l₂, g₂, r₂, w₂⟩ => ?_
-  rw [m₁] at d₂ b₂ f₂
+    ⟨h3.1, h3.2.1⟩ (by rw [hg]; exact hrsi) (by rw [hg]; exact hrcx) (by rw [hws]; exact hw)
+    (by rw [hws]; exact hb) hd) fun s₂ ⟨d₂, b₂, f₂, l₂, g₂, r₂, w₂⟩ => ?_
   -- Row `row` of block `4 l + q`, from lane `l` of the `q`th register.
   have blk : ∀ l q, l < 2 → q < 4 → ∀ k, k % 64 / 16 = row →
-      byte (s₁.lane ([x0, x1, x2, x3].getD q .xmm0) l) (k % 16) =
+      byte (s.lane ([x0, x1, x2, x3].getD q .xmm0) l) (k % 16) =
         (serialize (B (4 * l + q))).getD (k % 64) 0 := by
     intro l q hl hq k hr
     rw [serialize_row _ hrow hr]
-    obtain ⟨b0, b1, b2, b3⟩ := hB l q hl hq hrow
+    obtain ⟨b0, b1, b2, b3⟩ := hB l hl hrow
     rcases (by omega : q = 0 ∨ q = 1 ∨ q = 2 ∨ q = 3) with rfl | rfl | rfl | rfl
-    · rw [List.getD_cons_zero, (lt l).1, b0, b1, b2, b3]
-    · rw [List.getD_cons_succ, List.getD_cons_zero, (lt l).2.1, b0, b1, b2, b3]
-    · rw [List.getD_cons_succ, List.getD_cons_succ, List.getD_cons_zero, (lt l).2.2.1, b0, b1, b2, b3]
-    · rw [List.getD_cons_succ, List.getD_cons_succ, List.getD_cons_succ, List.getD_cons_zero,
-        (lt l).2.2.2, b0, b1, b2, b3]
-  refine ⟨⟨fun k hk => ?_, fun j hj k hk => ?_⟩, f₂, fun r l n0 n1 n2 n3 n12 n13 n14 n15 => ?_,
-    g₂.trans g₁, r₂.trans r₁, w₂.trans w₁⟩
+    · rw [List.getD_cons_zero, b0]
+    · rw [List.getD_cons_succ, List.getD_cons_zero, b1]
+    · rw [List.getD_cons_succ, List.getD_cons_succ, List.getD_cons_zero, b2]
+    · rw [List.getD_cons_succ, List.getD_cons_succ, List.getD_cons_succ, List.getD_cons_zero, b3]
+  refine ⟨⟨fun k hk => ?_, fun j hj k hk => ?_⟩, f₂, fun r l _ _ _ _ n12 n13 _ _ => l₂ r l n12 n13,
+    g₂, r₂, w₂⟩
   · rw [d₂ k hk]
     by_cases hr : k % 64 / 16 = row
     · rw [ite_eq_left hr, ite_eq_left hr, blk _ _ (by omega) (by omega) k hr,
@@ -294,7 +289,6 @@ theorem xorRow8_out {a buf : Addr} {g : Reg → BitVec 64} {w : List Region} (hr
       rw [ite_eq_left hr, ite_eq_left hr, ← e]
       rcases (by omega : j = 0 ∨ j = 1) with rfl | rfl <;> rfl
     · rw [ite_eq_right hr, ite_eq_right hr]
-  · rw [l₂ r l n12 n13, lo r l n0 n1 n2 n3 n12 n13 n14 n15]
 
 /-! ## Moving blocks 6 and 7 -/
 
@@ -465,8 +459,7 @@ theorem last8_ok (vl : Bool) {s₀ : State} (hp : APre s₀) {t : Nat} (hge : 38
     intro off n hn
     refine ⟨edR s₀, by rw [wr₂]; exact hd, ?_⟩
     rw [Offset.add_add]; exact Offset.contains_base _ (by lit_omega) (by lit_omega)
-  have o : ∀ {row : Nat} {x0 x1 x2 x3 : XReg}, row < 4 → x0 ≠ x1 → x0 ≠ x2 → x0 ≠ x3 → x1 ≠ x2 →
-      x1 ≠ x3 → x2 ≠ x3 → (x0 ≠ .xmm12 ∧ x0 ≠ .xmm13 ∧ x0 ≠ .xmm14 ∧ x0 ≠ .xmm15) →
+  have o : ∀ {row : Nat} {x0 x1 x2 x3 : XReg}, row < 4 → (x0 ≠ .xmm12 ∧ x0 ≠ .xmm13 ∧ x0 ≠ .xmm14 ∧ x0 ≠ .xmm15) →
       (x1 ≠ .xmm12 ∧ x1 ≠ .xmm13 ∧ x1 ≠ .xmm14 ∧ x1 ≠ .xmm15) →
       (x2 ≠ .xmm12 ∧ x2 ≠ .xmm13 ∧ x2 ≠ .xmm14 ∧ x2 ≠ .xmm15) →
       (x3 ≠ .xmm12 ∧ x3 ≠ .xmm13 ∧ x3 ≠ .xmm14 ∧ x3 ≠ .xmm15) →
@@ -477,14 +470,10 @@ theorem last8_ok (vl : Bool) {s₀ : State} (hp : APre s₀) {t : Nat} (hge : 38
   refine WP.seq (WP.block_append (WP.mono (finishWith_ok (out := xorRow8) hr.holds (st := est s₀)
     (by rw [g₂]; exact h.rdi) (by rw [g₂]; exact h.rcx) (by rw [wr₂]; exact hst) (by rw [wr₂]; exact hb)
     (incs_frame c₁.inc hr.frame hsl) hp.st_b hR
-    (o (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-      (by decide) (by decide) (by decide))
-    (o (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-      (by decide) (by decide) (by decide))
-    (o (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-      (by decide) (by decide) (by decide))
-    (o (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-      (by decide) (by decide) (by decide)))
+    (o (by decide) (by decide) (by decide) (by decide) (by decide))
+    (o (by decide) (by decide) (by decide) (by decide) (by decide))
+    (o (by decide) (by decide) (by decide) (by decide) (by decide))
+    (o (by decide) (by decide) (by decide) (by decide) (by decide)))
     fun s₃ ⟨n₀, n₁, n₂, n₃, f₀, e₀, e₁, e₃, e₂, F₃, g₃, rd₃, wr₃⟩ => ?_))
   rw [hS₂] at e₀ e₁ e₂ e₃
   -- The keystream of block `j` of the eight.
