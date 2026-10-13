@@ -12,6 +12,14 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Aes.KeyExp
+import VerifiedGarbage.Proof.Aes.SboxSpec
+import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
+import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.Aes.KeyExp
+meta import VerifiedGarbage.Proof.Aes.SboxSpec
+meta import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
+meta import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # AES-SIV on x86: `vg_aes_siv_init`'s code

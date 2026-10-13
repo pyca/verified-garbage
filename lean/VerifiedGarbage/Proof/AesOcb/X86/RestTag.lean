@@ -5,6 +5,7 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.AesOcb.X86.PadTo
 
 /-!
 # AES-OCB on x86: the rest of the data and the tag (`rest`, `tag`)
