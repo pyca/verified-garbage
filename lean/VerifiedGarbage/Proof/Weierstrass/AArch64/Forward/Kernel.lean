@@ -9,6 +9,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 
 /-! Kernel-evaluated twins of the certificate checks. The kernel reduces a
 recursor (`Tree.rec`, `List.rec`, `Nat.rec`) directly, several times faster
