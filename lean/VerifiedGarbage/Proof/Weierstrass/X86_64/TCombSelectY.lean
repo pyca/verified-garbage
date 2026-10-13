@@ -444,37 +444,38 @@ theorem qY_cover {n j : Nat} (hn : 2 ≤ n) (hj : j < n) : ∃ c < (n + 1) / 2, 
   · refine ⟨(n + 1) / 2 - 1, by omega, j - (n - 2), by omega, ?_⟩
     unfold qY; rw [ifF (by omega)]; omega
 
-/-- `selPassY`: `selPass_ok`'s postcondition, 32 bytes at a time, from a
-table in one region. -/
-theorem selPassY_ok (K : TCombCfg) {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
-    {X : Addr} {a : Nat} (hn : K.M.n ≤ 22) (h2 : 2 ≤ K.M.n) (hH : K.H < 2 ^ 31) (ha : a < 2 ^ 31)
-    (htb : 16 * K.M.n * K.H < 2 ^ 31) (h8 : s.gpr .r8 = BitVec.ofNat 64 a) (hx : s.gpr .rdx = X)
-    (hreg : InRegions (s.rd ++ s.wr) X (16 * K.M.n * K.H)) (hE : K.E.x + 16 * K.M.n ≤ size) :
-    WP isa (.block (selPassY K.E.x K.H (16 * K.M.n) ((K.M.n + 1) / 2) (qY K.M.n))) s fun t =>
-      (∀ c < K.M.n, t.mem.readW (off base (K.E.x + 16 * c)) 128 = accVal s.mem X (16 * K.M.n) (16 * ·) a K.H c) ∧
-      Outside base K.E.x (16 * K.M.n) s.mem t.mem ∧ KeepRegs [.rcx] s t := by
-  have hnp : (K.M.n + 1) / 2 ≤ 11 := by omega
+/-- `selPassY` of the first `16 n` bytes of entries `st` bytes apart:
+`selPassAt_ok`'s postcondition, 32 bytes at a time, from a table in one
+region. -/
+theorem selPassYSt_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
+    {X : Addr} {a o n st H : Nat} (hn : n ≤ 22) (h2 : 2 ≤ n) (hH : H < 2 ^ 31) (ha : a < 2 ^ 31)
+    (hst : 16 * n ≤ st) (htb : st * H < 2 ^ 31) (h8 : s.gpr .r8 = BitVec.ofNat 64 a) (hx : s.gpr .rdx = X)
+    (hreg : InRegions (s.rd ++ s.wr) X (st * H)) (hE : o + 16 * n ≤ size) :
+    WP isa (.block (selPassY o H st ((n + 1) / 2) (qY n))) s fun t =>
+      (∀ c < n, t.mem.readW (off base (o + 16 * c)) 128 = accVal s.mem X st (16 * ·) a H c) ∧
+      Outside base o (16 * n) s.mem t.mem ∧ KeepRegs [.rcx] s t := by
+  have hnp : (n + 1) / 2 ≤ 11 := by omega
   unfold selPassY
   simp only [List.append_assoc]
   rw [WP.block_append_iff]
   refine WP.mono (selSetY_ok s ha h8) fun s₁ ⟨b13, b12, b14, k₁⟩ => ?_
   rw [WP.block_append_iff]
-  refine WP.mono (clearAccY_ok ((K.M.n + 1) / 2) hnp s₁) fun s₂ ⟨z₂, k₂⟩ => ?_
-  have n12 : ¬ ∃ c < (K.M.n + 1) / 2, XReg.xmm12 = selAcc c := fun ⟨c, hc, h⟩ =>
+  refine WP.mono (clearAccY_ok ((n + 1) / 2) hnp s₁) fun s₂ ⟨z₂, k₂⟩ => ?_
+  have n12 : ¬ ∃ c < (n + 1) / 2, XReg.xmm12 = selAcc c := fun ⟨c, hc, h⟩ =>
     (selAcc_neY c (by omega)).2.1 h.symm
-  have n13 : ¬ ∃ c < (K.M.n + 1) / 2, XReg.xmm13 = selAcc c := fun ⟨c, hc, h⟩ =>
+  have n13 : ¬ ∃ c < (n + 1) / 2, XReg.xmm13 = selAcc c := fun ⟨c, hc, h⟩ =>
     (selAcc_neY c (by omega)).2.2.1 h.symm
-  have n14 : ¬ ∃ c < (K.M.n + 1) / 2, XReg.xmm14 = selAcc c := fun ⟨c, hc, h⟩ =>
+  have n14 : ¬ ∃ c < (n + 1) / 2, XReg.xmm14 = selAcc c := fun ⟨c, hc, h⟩ =>
     (selAcc_neY c (by omega)).2.2.2.1 h.symm
   rw [WP.block_append_iff]
-  refine WP.mono (selEntriesY_ok (X := X) (st := 16 * K.M.n) (q := qY K.M.n) hnp ha K.H hH s₂
+  refine WP.mono (selEntriesY_ok (X := X) (st := st) (q := qY n) hnp ha H hH s₂
     (by rw [k₂.gpr _ List.not_mem_nil, k₁.gpr _ (by decide), hx])
     (fun l hl => by rw [k₂.lane _ n13 l, b13 l hl]) (fun l hl => by rw [k₂.lane _ n12 l, b12 l hl])
     (fun l hl => by rw [k₂.lane _ n14 l, b14 l hl])
     (fun e he c hc => by
       rw [k₂.rd, k₂.wr, k₁.rd, k₁.wr]
       refine VG.CallLay.inRegions_sub hreg ?_ (by omega)
-      have := Nat.mul_le_mul_left (16 * K.M.n) (show e + 1 ≤ K.H by omega)
+      have := Nat.mul_le_mul_left st (show e + 1 ≤ H by omega)
       rw [Nat.mul_succ] at this
       have := qY_le c h2
       omega)
@@ -483,8 +484,8 @@ theorem selPassY_ok (K : TCombCfg) {s : State} {base : Addr} {size : Nat} (hs : 
     ⟨by rw [k₃.gpr _ List.not_mem_nil, k₂.gpr _ List.not_mem_nil, k₁.gpr _ (by decide)]; exact hs.rdi,
       by rw [k₃.wr, k₂.wr, k₁.wr]; exact hs.wr, hs.nowrap⟩
   rw [WP.block_append_iff]
-  refine WP.mono (storeAccY_ok (o := K.E.x) (n := K.M.n) (q := qY K.M.n)
-    (V := accVal s.mem X (16 * K.M.n) (16 * ·) a K.H) hE ((K.M.n + 1) / 2) s₃ hs₃
+  refine WP.mono (storeAccY_ok (o := o) (n := n) (q := qY n)
+    (V := accVal s.mem X st (16 * ·) a H) hE ((n + 1) / 2) s₃ hs₃
     (fun c hc => qY_le c h2) (fun c hc l hl => by rw [a₃ c hc l hl, k₂.mem, k₁.mem]))
     fun s₄ ⟨a₄, O₄, g₄, r₄, w₄, _⟩ => ?_
   refine WP.mono (vzeroupper_ok s₄) fun t ⟨m₅, g₅, r₅, w₅⟩ => ⟨fun j hj => ?_, ?_, ?_⟩
@@ -498,6 +499,17 @@ theorem selPassY_ok (K : TCombCfg) {s : State} {base : Addr} {size : Nat} (hs : 
     exact O₄
   · exact ⟨fun r hr => by rw [g₅, g₄, k₃.gpr r List.not_mem_nil, k₂.gpr r List.not_mem_nil, k₁.gpr r hr],
       by rw [r₅, r₄, k₃.rd, k₂.rd, k₁.rd], by rw [w₅, w₄, k₃.wr, k₂.wr, k₁.wr]⟩
+
+/-- `selPassY`: `selPass_ok`'s postcondition, 32 bytes at a time, from a
+table in one region. -/
+theorem selPassY_ok (K : TCombCfg) {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
+    {X : Addr} {a : Nat} (hn : K.M.n ≤ 22) (h2 : 2 ≤ K.M.n) (hH : K.H < 2 ^ 31) (ha : a < 2 ^ 31)
+    (htb : 16 * K.M.n * K.H < 2 ^ 31) (h8 : s.gpr .r8 = BitVec.ofNat 64 a) (hx : s.gpr .rdx = X)
+    (hreg : InRegions (s.rd ++ s.wr) X (16 * K.M.n * K.H)) (hE : K.E.x + 16 * K.M.n ≤ size) :
+    WP isa (.block (selPassY K.E.x K.H (16 * K.M.n) ((K.M.n + 1) / 2) (qY K.M.n))) s fun t =>
+      (∀ c < K.M.n, t.mem.readW (off base (K.E.x + 16 * c)) 128 = accVal s.mem X (16 * K.M.n) (16 * ·) a K.H c) ∧
+      Outside base K.E.x (16 * K.M.n) s.mem t.mem ∧ KeepRegs [.rcx] s t :=
+  selPassYSt_ok hs hn h2 hH ha (Nat.le_refl _) htb h8 hx hreg hE
 
 /-- The selection's pass (`selPassV`): with AVX2 or not, `selPass_ok`'s
 postcondition. -/

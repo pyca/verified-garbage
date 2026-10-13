@@ -20,10 +20,11 @@ which, for `m = 16` down to `2`, `D.x = c_m^(p-2) c_{m-1} = Z_m^(p-2)`,
 `E.x = c_m^(p-2) Z_m = c_{m-1}^(p-2)`, and entry `m`'s `X`, `Y` are
 multiplied by `D.x²` and `D.x³`; entry `1`'s by `E.x`'s. Then every entry's `Z`, `Z²` and `Z³` is set to Montgomery's one
 (`ones`), so that the table still holds Jacobian triples with their powers,
-which the selection and the first digit's entry read as before.
+which the first digit's entry reads as before.
 
-The iterations (`stepA`) are `JacWinCfg.step`'s, with `D = R + T` by the
-mixed addition: it is right unless `R = T` (the Jacobian addition's
+The iterations (`stepA`) are `JacWinCfg.step`'s, but selecting only the
+entry's `X` and `Y` (`selectA`, `T`'s `Z` set to one), with `D = R + T` by
+the mixed addition: it is right unless `R = T` (the Jacobian addition's
 exception, which the recoding rules out) or `R = O` (where `D = T`, as
 before).
 -/
@@ -71,12 +72,22 @@ one. -/
 def normA (inv : Prog isa) : Prog isa :=
   .seq (fprogB K.M K.prodOps) <| .seq inv <| .seq (fprogB K.M K.normOps) (.block K.ones)
 
+/-- An iteration's selection: `select`, but of the entry's `X` and `Y` alone
+(`2n` words, the first `n` 16-byte pieces), and `T`'s `Z` set to one, which
+every entry's is: the mixed addition reads neither `Z²` nor `Z³`. For
+`a = 0`, `T = (0, 0, 1)`, which the iteration does not keep. -/
+def selectA : List Instr :=
+  [.mov .rdx (.reg .rdi), .alu .add .rdx (.imm (BitVec.ofNat 32 K.tbl))] ++
+  (if K.avx2 then selPassY K.T 16 K.st ((K.M.n + 1) / 2) (qY K.M.n)
+  else selPassAt K.T 16 K.st K.M.n (16 * ·)) ++
+  setConst K.M.n K.E.z K.one
+
 /-- Iteration `j = rbx - 1` (with `rbx` counting down from `J - 1`):
 `R = 32 R + [d_j]P`, adding the affine entry by the mixed addition. -/
 def stepA (dbl : Pt → Prog isa) : Prog isa :=
   .seq (.block [.alu .sub .rbx (.imm 1)]) <|
   .seq (K.dbls dbl) <|
-  .seq (.block (K.tc.digit ++ K.select)) <|
+  .seq (.block (K.tc.digit ++ K.selectA)) <|
   .seq (.block K.tc.negY) <|
   .seq (.block (fprog K.M (maddJ K.S K.R K.E K.D))) <|
   .block (nzMask K.M.n K.R.z ++ selPt K.M.n K.D K.E K.D ++
