@@ -1,7 +1,9 @@
-import VerifiedGarbage.TCB.X86.Target
-import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Sha384
-import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Instances
-import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Frame
+module
+
+public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Sha384
+public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Instances
+public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Frame
 
 /-!
 # PBKDF2-HMAC-SHA-384 (RFC 8018) on x86: the iteration and the whole derivation
@@ -20,6 +22,8 @@ that of the shared contracts: 48 bytes for the iteration, and 76 for
 `pbkdf2`'s code, which pushes up to 24 bytes of arguments for the functions
 it calls, and their return address, then its frame.
 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.Pbkdf2Sha384.X86
 

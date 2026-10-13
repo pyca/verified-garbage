@@ -1,8 +1,12 @@
-import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Proof.Cast5.Arm.EcbVerified
-import VerifiedGarbage.Proof.Cast5.Arm.KeyVerified
+module
+
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.Proof.Cast5.Arm.EcbVerified
+public import VerifiedGarbage.Proof.Cast5.Arm.KeyVerified
 
 /-! CAST5 key expansion and ECB on baseline ARMv7. -/
+
+@[expose] public section
 
 namespace VG.Artifacts.Cast5.Arm
 

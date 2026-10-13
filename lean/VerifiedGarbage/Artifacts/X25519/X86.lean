@@ -1,10 +1,14 @@
-import VerifiedGarbage.TCB.X86.Target
-import VerifiedGarbage.Impl.X25519.X86
-import VerifiedGarbage.Proof.X25519.X86.Verified
-import VerifiedGarbage.Proof.X25519.X86.Lit
-import VerifiedGarbage.Proof.X25519.X86.Base.Verified
+module
+
+public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Impl.X25519.X86
+public import VerifiedGarbage.Proof.X25519.X86.Verified
+public import VerifiedGarbage.Proof.X25519.X86.Lit
+public import VerifiedGarbage.Proof.X25519.X86.Base.Verified
 
 /-! # X25519 (RFC 7748) on x86 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.X25519.X86
 

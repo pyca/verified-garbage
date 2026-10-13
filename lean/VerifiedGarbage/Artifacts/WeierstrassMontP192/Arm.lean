@@ -1,11 +1,15 @@
-import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Impl.Weierstrass.Arm.Mont
-import VerifiedGarbage.Proof.Weierstrass.Arm.MontP192
+module
+
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.Impl.Weierstrass.Arm.Mont
+public import VerifiedGarbage.Proof.Weierstrass.Arm.MontP192
 
 /-! # Montgomery arithmetic modulo P-192's `p` and `n` on ARMv7
 
 The functions of `Artifacts/WeierstrassMont/Arm.lean` for P-192's moduli,
 in three 64-bit words. -/
+
+@[expose] public section
 
 namespace VG.Artifacts.WeierstrassMontP192.Arm
 

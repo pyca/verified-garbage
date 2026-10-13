@@ -1,5 +1,9 @@
-import VerifiedGarbage.Proof.Camellia.X86_64.Verified
-import VerifiedGarbage.Proof.Camellia.X86_64.KeyVerified
+module
+
+public import VerifiedGarbage.Proof.Camellia.X86_64.Verified
+public import VerifiedGarbage.Proof.Camellia.X86_64.KeyVerified
+
+@[expose] public section
 
 namespace VG.Artifacts.Camellia.X86_64
 

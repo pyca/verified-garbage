@@ -1,8 +1,10 @@
-import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.Weierstrass.X86_64.InvInterface
-import VerifiedGarbage.Proof.Weierstrass.Law
-import VerifiedGarbage.Proof.P521.Comb7
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.P521Sha512
+module
+
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvInterface
+public import VerifiedGarbage.Proof.Weierstrass.Law
+public import VerifiedGarbage.Proof.P521.Comb7
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.P521Sha512
 
 /-!
 # Deterministic ECDSA (RFC 6979) over P-521 with HMAC-SHA-512 on x86-64
@@ -24,6 +26,8 @@ It is generic over P-521's group law and inversions `h` too, the variant
 `vg_ecdsa_p521_sign`: the baseline's, and BMI2's and ADX's with AVX2's selection
 (`vg_ecdsa_p521_sign_adx`, which the instance with the suffix `_adx` calls).
 -/
+
+@[expose] public section
 
 namespace VG.Generic.MdHash.P521.X86_64.EcdsaP521Sha512
 

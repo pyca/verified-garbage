@@ -1,6 +1,8 @@
-import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
-import VerifiedGarbage.Proof.Ecdsa.AArch64.P224.InverseVerified
+module
+
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.P224.InverseVerified
 
 /-!
 # P-224's inversions modulo `p` and `n` on AArch64
@@ -11,6 +13,8 @@ A generic file (see `TCB/Emit.lean`) over P-224's group law and inversions
 `h`, the variant `Variants/P224/AArch64/Law.lean`, whose inversions'
 soundness the proofs take.
 -/
+
+@[expose] public section
 
 namespace VG.Generic.P224.AArch64.InverseP224
 

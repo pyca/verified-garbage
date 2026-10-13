@@ -1,11 +1,13 @@
-import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Impl.Scrypt.Arm.Salsa
-import VerifiedGarbage.Impl.Scrypt.Arm.BlockMix
-import VerifiedGarbage.Impl.Scrypt.Arm.RoMix
-import VerifiedGarbage.Proof.Scrypt.Arm.BlockMixVerified
-import VerifiedGarbage.Proof.Scrypt.Arm.RoMixCT
-import VerifiedGarbage.Proof.Scrypt.Arm.Lit
-import VerifiedGarbage.Proof.Scrypt.Arm.Whole.Verified
+module
+
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.Impl.Scrypt.Arm.Salsa
+public import VerifiedGarbage.Impl.Scrypt.Arm.BlockMix
+public import VerifiedGarbage.Impl.Scrypt.Arm.RoMix
+public import VerifiedGarbage.Proof.Scrypt.Arm.BlockMixVerified
+public import VerifiedGarbage.Proof.Scrypt.Arm.RoMixCT
+public import VerifiedGarbage.Proof.Scrypt.Arm.Lit
+public import VerifiedGarbage.Proof.Scrypt.Arm.Whole.Verified
 
 /-!
 # scrypt (RFC 7914): Salsa20/8, scryptBlockMix, scryptROMix and scrypt on 32-bit ARM
@@ -15,6 +17,8 @@ import VerifiedGarbage.Proof.Scrypt.Arm.Whole.Verified
 on this target, and `vg_scrypt_romix`. Its `stack` is the 40 bytes the frame
 of PBKDF2's stack arguments and PBKDF2's own frames use.
 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.Scrypt.Arm
 

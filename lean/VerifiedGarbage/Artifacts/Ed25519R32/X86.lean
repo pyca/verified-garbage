@@ -1,8 +1,12 @@
-import VerifiedGarbage.TCB.X86.Target
-import VerifiedGarbage.Impl.Ed25519.X86.Point32
-import VerifiedGarbage.Proof.Ed25519.X86.Point32.Verified
+module
+
+public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Impl.Ed25519.X86.Point32
+public import VerifiedGarbage.Proof.Ed25519.X86.Point32.Verified
 
 /-! # Ed25519's point additions and doubling, in radix `2^32`, on x86 (32-bit) -/
+
+@[expose] public section
 
 namespace VG.Artifacts.Ed25519R32.X86
 

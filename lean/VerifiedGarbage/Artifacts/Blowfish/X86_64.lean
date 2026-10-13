@@ -1,4 +1,8 @@
-import VerifiedGarbage.Proof.Blowfish.X86_64.Frame
+module
+
+public import VerifiedGarbage.Proof.Blowfish.X86_64.Frame
+
+@[expose] public section
 
 namespace VG.Artifacts.Blowfish.X86_64
 

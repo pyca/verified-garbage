@@ -1,7 +1,9 @@
-import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.Ed448.X86_64.Verify.Verified
-import VerifiedGarbage.Proof.Ed448.X86_64.VerifyVerified
-import VerifiedGarbage.Proof.Ed448.Facts
+module
+
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.Ed448.X86_64.Verify.Verified
+public import VerifiedGarbage.Proof.Ed448.X86_64.VerifyVerified
+public import VerifiedGarbage.Proof.Ed448.Facts
 
 /-!
 # Ed448 verification on x86-64
@@ -11,6 +13,8 @@ of `vg_ed448_verify_equation` is passed to the caller's here, so that only
 this file imports it, with the reference computations' agreement with the
 specification (`Proof/Ed448/Facts.lean`).
 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.Ed448Verify.X86_64
 

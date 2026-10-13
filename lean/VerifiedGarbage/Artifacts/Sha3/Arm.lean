@@ -1,8 +1,12 @@
-import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Proof.Sha3.Arm.Shared
-import VerifiedGarbage.Proof.Sha3.Arm.Frame
+module
+
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.Proof.Sha3.Arm.Shared
+public import VerifiedGarbage.Proof.Sha3.Arm.Frame
 
 /-! # SHA-3 and SHAKE (FIPS 202) on 32-bit ARM -/
+
+@[expose] public section
 
 namespace VG.Artifacts.Sha3.Arm
 

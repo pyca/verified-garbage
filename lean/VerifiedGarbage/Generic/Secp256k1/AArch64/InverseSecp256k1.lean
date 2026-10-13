@@ -1,6 +1,8 @@
-import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Secp256k1.InverseVerified
+module
+
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.Secp256k1.InverseVerified
 
 /-!
 # secp256k1's inversions modulo `p` and `n` on AArch64
@@ -11,6 +13,8 @@ A generic file (see `TCB/Emit.lean`) over secp256k1's group law and inversions
 `h`, the variant `Variants/Secp256k1/AArch64/Law.lean`, whose inversions'
 soundness the proofs take.
 -/
+
+@[expose] public section
 
 namespace VG.Generic.Secp256k1.AArch64.InverseSecp256k1
 

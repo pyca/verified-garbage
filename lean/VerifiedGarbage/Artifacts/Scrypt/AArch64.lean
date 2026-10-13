@@ -1,15 +1,19 @@
-import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Impl.Scrypt.AArch64.Salsa
-import VerifiedGarbage.Impl.Scrypt.AArch64.BlockMix
-import VerifiedGarbage.Impl.Scrypt.AArch64.RoMix
-import VerifiedGarbage.Proof.Scrypt.AArch64.BlockMixVerified
-import VerifiedGarbage.Proof.Scrypt.AArch64.RoMixCT
-import VerifiedGarbage.Proof.Scrypt.AArch64.Salsa
-import VerifiedGarbage.Proof.Scrypt.AArch64.Lit
+module
+
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Impl.Scrypt.AArch64.Salsa
+public import VerifiedGarbage.Impl.Scrypt.AArch64.BlockMix
+public import VerifiedGarbage.Impl.Scrypt.AArch64.RoMix
+public import VerifiedGarbage.Proof.Scrypt.AArch64.BlockMixVerified
+public import VerifiedGarbage.Proof.Scrypt.AArch64.RoMixCT
+public import VerifiedGarbage.Proof.Scrypt.AArch64.Salsa
+public import VerifiedGarbage.Proof.Scrypt.AArch64.Lit
 
 /-!
 # scrypt (RFC 7914): Salsa20/8, scryptBlockMix and scryptROMix on AArch64
 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.Scrypt.AArch64
 

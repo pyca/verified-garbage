@@ -1,5 +1,7 @@
-import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Proof.AesCfb8.Arm.Verified
+module
+
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.Proof.AesCfb8.Arm.Verified
 
 /-!
 # AES-CFB8 (NIST SP 800-38A §6.3, with 8-bit segments) on ARMv7
@@ -12,6 +14,8 @@ Each function calls `vg_aes_encrypt_blocks` (both directions use the
 forward cipher) in a frame that pushes its stack argument and `lr`, so uses
 8 bytes of stack.
 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.AesCfb8.Arm
 

@@ -1,6 +1,10 @@
-import VerifiedGarbage.Proof.Camellia.X86_64.CbcVerified
+module
+
+public import VerifiedGarbage.Proof.Camellia.X86_64.CbcVerified
 
 /-! # Camellia-CBC artifacts on baseline x86-64 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.CamelliaCbc.X86_64
 

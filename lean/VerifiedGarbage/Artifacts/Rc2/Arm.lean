@@ -1,9 +1,13 @@
-import VerifiedGarbage.Proof.Rc2.Arm.Block
-import VerifiedGarbage.Proof.Rc2.Arm.Key
-import VerifiedGarbage.Proof.Rc2.Arm.Cbc.Verified
-import VerifiedGarbage.Proof.Rc2.Arm.Stream.Frame
+module
+
+public import VerifiedGarbage.Proof.Rc2.Arm.Block
+public import VerifiedGarbage.Proof.Rc2.Arm.Key
+public import VerifiedGarbage.Proof.Rc2.Arm.Cbc.Verified
+public import VerifiedGarbage.Proof.Rc2.Arm.Stream.Frame
 
 /-! # RC2 artifacts on baseline ARMv7 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.Rc2.Arm
 

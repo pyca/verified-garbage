@@ -1,4 +1,8 @@
-import VerifiedGarbage.Proof.Zeroize.Arm
+module
+
+public import VerifiedGarbage.Proof.Zeroize.Arm
+
+@[expose] public section
 
 namespace VG.Artifacts.Zeroize.Arm
 open VG.Arm

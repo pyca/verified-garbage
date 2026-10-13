@@ -1,6 +1,8 @@
-import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Instances
-import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Frame
+module
+
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Instances
+public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Frame
 
 /-!
 # PBKDF2-HMAC-SHA-1 (RFC 8018) on ARMv7: the iteration and the whole derivation
@@ -19,6 +21,8 @@ stack arguments, or 8 bytes around a call of a function that uses 16. It
 runs in a frame holding its working space
 (`Proof.Pbkdf2.Whole.Arm.pbkFramed`).
 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.Pbkdf2Sha1.Arm
 

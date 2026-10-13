@@ -1,6 +1,8 @@
-import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.Weierstrass.X86_64.InvInterface
-import VerifiedGarbage.Proof.Ecdsa.X86_64.P256.InverseVerified
+module
+
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvInterface
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.P256.InverseVerified
 
 /-!
 # P-256's inversions modulo `p` and `n` on x86-64
@@ -11,6 +13,8 @@ and their `_adx` forms with BMI2's and ADX's products. A generic file (see
 `TCB/Emit.lean`) over P-256's group law and inversions `h`, the variant
 `Variants/P256/X86_64/Law.lean`, whose inversions' soundness the proofs take.
 -/
+
+@[expose] public section
 
 namespace VG.Generic.P256.X86_64.InverseP256
 

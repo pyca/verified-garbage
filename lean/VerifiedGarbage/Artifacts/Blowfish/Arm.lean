@@ -1,4 +1,8 @@
-import VerifiedGarbage.Proof.Blowfish.Arm.Frame
+module
+
+public import VerifiedGarbage.Proof.Blowfish.Arm.Frame
+
+@[expose] public section
 
 namespace VG.Artifacts.Blowfish.Arm
 

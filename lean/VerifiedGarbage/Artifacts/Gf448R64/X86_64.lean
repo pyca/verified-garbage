@@ -1,9 +1,13 @@
-import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Impl.X448.X86_64
-import VerifiedGarbage.Proof.X448.X86_64.Pow223Verified
-import VerifiedGarbage.Proof.X448.X86_64.Lit
+module
+
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Impl.X448.X86_64
+public import VerifiedGarbage.Proof.X448.X86_64.Pow223Verified
+public import VerifiedGarbage.Proof.X448.X86_64.Lit
 
 /-! # Curve448's addition chain, in radix `2^64`, on x86-64 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.Gf448R64.X86_64
 

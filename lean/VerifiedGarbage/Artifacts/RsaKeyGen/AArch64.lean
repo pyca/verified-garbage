@@ -1,8 +1,12 @@
-import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Verified
-import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Verified
+module
+
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Verified
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Verified
 
 /-! # RSA key generation (FIPS 186-5 A.1.3) on AArch64 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.RsaKeyGen.AArch64
 

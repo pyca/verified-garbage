@@ -1,7 +1,11 @@
-import VerifiedGarbage.Proof.TripleDes.Arm.VerifiedBlock
-import VerifiedGarbage.Proof.TripleDes.Arm.Key.Verified
-import VerifiedGarbage.Proof.TripleDes.Arm.Ecb.Verified
-import VerifiedGarbage.Proof.TripleDes.Arm.Frame
+module
+
+public import VerifiedGarbage.Proof.TripleDes.Arm.VerifiedBlock
+public import VerifiedGarbage.Proof.TripleDes.Arm.Key.Verified
+public import VerifiedGarbage.Proof.TripleDes.Arm.Ecb.Verified
+public import VerifiedGarbage.Proof.TripleDes.Arm.Frame
+
+@[expose] public section
 
 namespace VG.Artifacts.TripleDes.Arm
 

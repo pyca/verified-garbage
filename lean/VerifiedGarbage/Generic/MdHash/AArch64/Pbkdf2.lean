@@ -1,5 +1,7 @@
-import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Variant
+module
+
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Variant
 
 /-!
 # PBKDF2-HMAC (RFC 8018) over a Merkle–Damgård hash function on AArch64
@@ -22,6 +24,8 @@ working space (`Verified.stackScratch`). For SHA-256, whose `pbkdf2` scrypt's
 code calls with its own working space, the code is also emitted on its own,
 as `vg_pbkdf2_hmac_sha256_scratch`.
 -/
+
+@[expose] public section
 
 namespace VG.Generic.MdHash.AArch64.Pbkdf2
 

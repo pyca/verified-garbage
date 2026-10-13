@@ -1,12 +1,16 @@
-import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Permute
-import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.Sha3.AArch64.Permute
-import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Unrolled
-import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Absorb
-import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Pad
-import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Squeeze
+module
+
+public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Permute
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.Sha3.AArch64.Permute
+public import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Unrolled
+public import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Absorb
+public import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Pad
+public import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Squeeze
 
 /-! # SHA-3 and SHAKE (FIPS 202) on AArch64 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.Sha3.AArch64
 

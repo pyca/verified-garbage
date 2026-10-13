@@ -1,5 +1,7 @@
-import VerifiedGarbage.TCB.X86.Target
-import VerifiedGarbage.Proof.MlDsa.X86.Message.Verified
+module
+
+public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Proof.MlDsa.X86.Message.Verified
 
 /-!
 # ML-DSA (FIPS 204) on x86 (32-bit): signing messages
@@ -18,6 +20,8 @@ return address; below that, its calls push at most 5 arguments and the return
 address, and the signing function on `μ` uses 96 bytes
 (`stack := 16 + 20 + 4 + 96 = 136`).
 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.MlDsaSignMessage.X86
 

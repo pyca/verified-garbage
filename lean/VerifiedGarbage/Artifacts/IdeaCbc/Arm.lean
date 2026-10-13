@@ -1,6 +1,10 @@
-import VerifiedGarbage.Proof.Idea.Arm.CbcVerified
+module
+
+public import VerifiedGarbage.Proof.Idea.Arm.CbcVerified
 
 /-! # IDEA-CBC artifacts on baseline ARMv7 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.IdeaCbc.Arm
 

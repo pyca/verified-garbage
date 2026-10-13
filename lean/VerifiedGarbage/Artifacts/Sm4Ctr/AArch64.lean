@@ -1,6 +1,10 @@
-import VerifiedGarbage.Proof.Sm4.AArch64.CtrVerified
+module
+
+public import VerifiedGarbage.Proof.Sm4.AArch64.CtrVerified
 
 /-! # SM4-CTR artifacts on baseline AArch64 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.Sm4Ctr.AArch64
 

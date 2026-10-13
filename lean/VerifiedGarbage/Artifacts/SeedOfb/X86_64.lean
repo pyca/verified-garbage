@@ -1,6 +1,10 @@
-import VerifiedGarbage.Proof.Seed.X86_64.FbVerified
+module
+
+public import VerifiedGarbage.Proof.Seed.X86_64.FbVerified
 
 /-! # SEED-OFB artifacts on baseline x86-64 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.SeedOfb.X86_64
 

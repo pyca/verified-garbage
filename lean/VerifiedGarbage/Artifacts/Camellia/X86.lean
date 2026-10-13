@@ -1,7 +1,11 @@
-import VerifiedGarbage.Proof.Camellia.X86.Verified
-import VerifiedGarbage.Proof.Camellia.X86.KeyVerified
+module
+
+public import VerifiedGarbage.Proof.Camellia.X86.Verified
+public import VerifiedGarbage.Proof.Camellia.X86.KeyVerified
 
 /-! # Camellia artifacts on baseline x86 (32-bit) -/
+
+@[expose] public section
 
 namespace VG.Artifacts.Camellia.X86
 

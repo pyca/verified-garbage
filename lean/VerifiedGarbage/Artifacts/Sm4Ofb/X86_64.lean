@@ -1,6 +1,10 @@
-import VerifiedGarbage.Proof.Sm4.X86_64.FbVerified
+module
+
+public import VerifiedGarbage.Proof.Sm4.X86_64.FbVerified
 
 /-! # SM4-OFB artifacts on baseline x86-64 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.Sm4Ofb.X86_64
 

@@ -1,6 +1,10 @@
-import VerifiedGarbage.Proof.Idea.AArch64.Invert
+module
+
+public import VerifiedGarbage.Proof.Idea.AArch64.Invert
 
 /-! # IDEA artifacts on baseline AArch64 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.Idea.AArch64
 

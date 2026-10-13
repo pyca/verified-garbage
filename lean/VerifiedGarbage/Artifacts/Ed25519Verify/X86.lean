@@ -1,7 +1,12 @@
-import VerifiedGarbage.TCB.X86.Target
-import VerifiedGarbage.Proof.Ed25519.X86.VerifyVerified
+module
+
+public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Proof.Ed25519.X86.VerifyVerified
 
 /-! The complete strict verification equation on baseline i686. -/
+
+@[expose] public section
+
 namespace VG.Artifacts.Ed25519Verify.X86
 
 def artifacts : List Artifact := [

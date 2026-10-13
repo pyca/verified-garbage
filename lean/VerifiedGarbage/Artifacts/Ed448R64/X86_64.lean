@@ -1,7 +1,13 @@
-import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.Ed448.X86_64.Point64.Verified
+module
+
+public import VerifiedGarbage.TCB.X86_64.Target
+meta import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.Ed448.X86_64.Point64.Verified
+meta import VerifiedGarbage.Proof.Ed448.X86_64.Point64.Verified
 
 /-! # Ed448's point doubling and affine addition, in radix `2^64`, on x86-64 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.Ed448R64.X86_64
 

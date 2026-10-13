@@ -1,4 +1,8 @@
-import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.ResidentBackend
+module
+
+public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.ResidentBackend
+
+@[expose] public section
 
 namespace VG.Variants.Keccak.AArch64.Sha3
 

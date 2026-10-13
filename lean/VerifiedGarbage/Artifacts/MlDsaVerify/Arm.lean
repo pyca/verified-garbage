@@ -1,7 +1,11 @@
-import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Proof.MlDsa.Arm.Verify.Inst
+module
+
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.Proof.MlDsa.Arm.Verify.Inst
 
 /-! # ML-DSA (FIPS 204) verification on 32-bit ARM -/
+
+@[expose] public section
 
 namespace VG.Artifacts.MlDsaVerify.Arm
 

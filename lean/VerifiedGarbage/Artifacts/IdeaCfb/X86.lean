@@ -1,6 +1,10 @@
-import VerifiedGarbage.Proof.Idea.X86.FbVerified
+module
+
+public import VerifiedGarbage.Proof.Idea.X86.FbVerified
 
 /-! # IDEA-CFB artifacts on baseline x86 (32-bit) -/
+
+@[expose] public section
 
 namespace VG.Artifacts.IdeaCfb.X86
 

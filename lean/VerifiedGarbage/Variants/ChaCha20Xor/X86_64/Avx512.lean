@@ -1,4 +1,6 @@
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Variant
+module
+
+public import VerifiedGarbage.Proof.ChaCha20.X86_64.Variant
 
 /-!
 # `vg_chacha20_xor` on x86-64: with AVX-512
@@ -6,6 +8,8 @@ import VerifiedGarbage.Proof.ChaCha20.X86_64.Variant
 A variant of `ChaCha20Xor` on x86-64 (see `TCB/Emit.lean`):
 `vg_chacha20_xor_avx512`, which needs AVX and AVX-512F.
 -/
+
+@[expose] public section
 
 namespace VG.Variants.ChaCha20Xor.X86_64.Avx512
 

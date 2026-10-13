@@ -1,11 +1,15 @@
-import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Power2Round
-import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Bits
-import VerifiedGarbage.Proof.MlDsa.AArch64.Round.NormLt
-import VerifiedGarbage.Proof.MlDsa.AArch64.Round.UseHint
-import VerifiedGarbage.Proof.MlDsa.AArch64.Round.MakeHint
+module
+
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Power2Round
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Bits
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Round.NormLt
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Round.UseHint
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Round.MakeHint
 
 /-! # ML-DSA (FIPS 204) on AArch64: rounding and hints -/
+
+@[expose] public section
 
 namespace VG.Artifacts.MlDsaRound.AArch64
 

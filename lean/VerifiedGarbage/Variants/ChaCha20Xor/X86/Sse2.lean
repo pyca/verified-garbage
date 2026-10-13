@@ -1,4 +1,6 @@
-import VerifiedGarbage.Proof.ChaCha20.X86.Variant
+module
+
+public import VerifiedGarbage.Proof.ChaCha20.X86.Variant
 
 /-!
 # `vg_chacha20_xor` on x86: with SSE2
@@ -6,6 +8,8 @@ import VerifiedGarbage.Proof.ChaCha20.X86.Variant
 A variant of `ChaCha20Xor` on x86 (see `TCB/Emit.lean`): `vg_chacha20_xor`,
 in the baseline ISA.
 -/
+
+@[expose] public section
 
 namespace VG.Variants.ChaCha20Xor.X86.Sse2
 

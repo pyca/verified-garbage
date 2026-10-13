@@ -1,4 +1,8 @@
-import VerifiedGarbage.Proof.Zeroize.X86
+module
+
+public import VerifiedGarbage.Proof.Zeroize.X86
+
+@[expose] public section
 
 namespace VG.Artifacts.Zeroize.X86
 open VG.X86

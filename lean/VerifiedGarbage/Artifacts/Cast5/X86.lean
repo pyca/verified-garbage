@@ -1,8 +1,12 @@
-import VerifiedGarbage.TCB.X86.Target
-import VerifiedGarbage.Proof.Cast5.X86.EcbVerified
-import VerifiedGarbage.Proof.Cast5.X86.KeyVerified
+module
+
+public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Proof.Cast5.X86.EcbVerified
+public import VerifiedGarbage.Proof.Cast5.X86.KeyVerified
 
 /-! CAST5 key expansion and ECB on baseline 32-bit x86. -/
+
+@[expose] public section
 
 namespace VG.Artifacts.Cast5.X86
 

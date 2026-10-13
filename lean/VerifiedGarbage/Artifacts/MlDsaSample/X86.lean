@@ -1,8 +1,10 @@
-import VerifiedGarbage.TCB.X86.Target
-import VerifiedGarbage.Proof.MlDsa.X86.Sample.RejNtt
-import VerifiedGarbage.Proof.MlDsa.X86.Sample.RejBounded
-import VerifiedGarbage.Proof.MlDsa.X86.Sample.ExpandMask
-import VerifiedGarbage.Proof.MlDsa.X86.Sample.BallTop
+module
+
+public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Proof.MlDsa.X86.Sample.RejNtt
+public import VerifiedGarbage.Proof.MlDsa.X86.Sample.RejBounded
+public import VerifiedGarbage.Proof.MlDsa.X86.Sample.ExpandMask
+public import VerifiedGarbage.Proof.MlDsa.X86.Sample.BallTop
 
 /-!
 # ML-DSA (FIPS 204) on x86: the sampling primitives
@@ -12,6 +14,8 @@ return address, and calls the Keccak functions, each in a frame of its 5 or
 6 arguments (at most 24 bytes), with the return address and the callee's 12
 bytes below it (`stack := 56`), as `vg_mlkem_sample_ntt` does.
 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.MlDsaSample.X86
 

@@ -1,5 +1,7 @@
-import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Variant
+module
+
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Variant
 
 /-!
 # Streaming Merkle–Damgård hash functions on X86_64
@@ -14,6 +16,8 @@ The variant supplies each function's `Api` and its verified code
 (`MdHash.stream`, a `StreamFn`), whose contract is the one the `Api` gives it
 (`StreamFn.ofApi`, which this file passes on as the artifact's `ofApi`).
 -/
+
+@[expose] public section
 
 namespace VG.Generic.MdHash.X86_64.Stream
 

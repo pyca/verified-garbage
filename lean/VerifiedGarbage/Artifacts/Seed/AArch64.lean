@@ -1,6 +1,10 @@
-import VerifiedGarbage.Proof.Seed.AArch64.Frame
+module
+
+public import VerifiedGarbage.Proof.Seed.AArch64.Frame
 
 /-! # SEED artifacts on baseline AArch64 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.Seed.AArch64
 

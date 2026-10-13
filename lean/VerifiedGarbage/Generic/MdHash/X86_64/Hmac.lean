@@ -1,5 +1,7 @@
-import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Variant
+module
+
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Variant
 
 /-!
 # HMAC (RFC 2104) over a Merkle–Damgård hash function on x86-64
@@ -15,6 +17,8 @@ working space in a frame of their own; `init_scratch` and `finalize_scratch`,
 the same code with it as an argument, are what PBKDF2's and ECDSA's code
 calls.
 -/
+
+@[expose] public section
 
 namespace VG.Generic.MdHash.X86_64.Hmac
 

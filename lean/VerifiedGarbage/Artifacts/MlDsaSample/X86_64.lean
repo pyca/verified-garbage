@@ -1,13 +1,17 @@
-import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.Framework.Lit
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejNttCT
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejBoundedCT
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.ExpandMask
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.BallCT
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej5Verified
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.M4Verified
+module
+
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejNttCT
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejBoundedCT
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.ExpandMask
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.BallCT
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej5Verified
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.M4Verified
 
 /-! # ML-DSA (FIPS 204) on x86-64: the sampling primitives -/
+
+@[expose] public section
 
 namespace VG.Artifacts.MlDsaSample.X86_64
 

@@ -1,7 +1,11 @@
-import VerifiedGarbage.Proof.TripleDes.AArch64.VerifiedBlock
-import VerifiedGarbage.Proof.TripleDes.AArch64.Key.Verified
-import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.Verified
-import VerifiedGarbage.Proof.TripleDes.AArch64.Frame
+module
+
+public import VerifiedGarbage.Proof.TripleDes.AArch64.VerifiedBlock
+public import VerifiedGarbage.Proof.TripleDes.AArch64.Key.Verified
+public import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.Verified
+public import VerifiedGarbage.Proof.TripleDes.AArch64.Frame
+
+@[expose] public section
 
 namespace VG.Artifacts.TripleDes.AArch64
 

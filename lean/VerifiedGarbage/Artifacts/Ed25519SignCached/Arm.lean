@@ -1,4 +1,8 @@
-import VerifiedGarbage.Proof.Ed25519.Arm.SignCached.Verified
+module
+
+public import VerifiedGarbage.Proof.Ed25519.Arm.SignCached.Verified
+
+@[expose] public section
 
 namespace VG.Artifacts.Ed25519SignCached.Arm
 

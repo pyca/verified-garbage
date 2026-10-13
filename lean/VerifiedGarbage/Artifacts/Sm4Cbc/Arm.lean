@@ -1,6 +1,10 @@
-import VerifiedGarbage.Proof.Sm4.Arm.CbcVerified
+module
+
+public import VerifiedGarbage.Proof.Sm4.Arm.CbcVerified
 
 /-! # SM4-CBC artifacts on baseline ARMv7 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.Sm4Cbc.Arm
 

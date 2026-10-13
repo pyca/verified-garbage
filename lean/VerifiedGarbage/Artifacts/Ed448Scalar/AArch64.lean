@@ -1,5 +1,7 @@
-import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.Ed448.AArch64.ScalarVerified
+module
+
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.Ed448.AArch64.ScalarVerified
 
 /-!
 # Ed448 scalar arithmetic on AArch64
@@ -9,6 +11,8 @@ building blocks reduce and combine scalars modulo the subgroup order with
 baseline integer instructions; they neither hash messages nor implement
 signing by themselves.
 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.Ed448Scalar.AArch64
 

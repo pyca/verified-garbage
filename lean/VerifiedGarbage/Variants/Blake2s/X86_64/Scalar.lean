@@ -1,6 +1,10 @@
-import VerifiedGarbage.Proof.Blake2.X86_64.BackendS
+module
+
+public import VerifiedGarbage.Proof.Blake2.X86_64.BackendS
 
 /-! # BLAKE2s on baseline x86-64 -/
+
+@[expose] public section
 
 namespace VG.Variants.Blake2s.X86_64.Scalar
 

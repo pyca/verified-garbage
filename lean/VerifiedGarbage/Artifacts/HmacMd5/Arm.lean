@@ -1,6 +1,8 @@
-import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Instances
-import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Frame
+module
+
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Instances
+public import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Frame
 
 /-!
 # HMAC-MD5 (RFC 2104) on ARMv7
@@ -21,6 +23,8 @@ function (`vg_md5_compress`), on a block laid out at fixed offsets in
 (`Proof/Pbkdf2/Md/Arm/Frame.lean`); `init_scratch` and `finalize_scratch`, the
 same code with it as an argument, are what PBKDF2's code calls.
 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.HmacMd5.Arm
 

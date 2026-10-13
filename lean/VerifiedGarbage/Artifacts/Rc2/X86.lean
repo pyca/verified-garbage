@@ -1,11 +1,15 @@
-import VerifiedGarbage.Proof.Rc2.X86.Cbc.Lit
-import VerifiedGarbage.Proof.Rc2.X86.Block
-import VerifiedGarbage.Proof.Rc2.X86.Key
-import VerifiedGarbage.Proof.Rc2.X86.Cbc.Verified
-import VerifiedGarbage.Proof.Rc2.X86.Stream.Lit
-import VerifiedGarbage.Proof.Rc2.X86.Stream.Frame
+module
+
+public import VerifiedGarbage.Proof.Rc2.X86.Cbc.Lit
+public import VerifiedGarbage.Proof.Rc2.X86.Block
+public import VerifiedGarbage.Proof.Rc2.X86.Key
+public import VerifiedGarbage.Proof.Rc2.X86.Cbc.Verified
+public import VerifiedGarbage.Proof.Rc2.X86.Stream.Lit
+public import VerifiedGarbage.Proof.Rc2.X86.Stream.Frame
 
 /-! # RC2 artifacts on baseline x86 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.Rc2.X86
 

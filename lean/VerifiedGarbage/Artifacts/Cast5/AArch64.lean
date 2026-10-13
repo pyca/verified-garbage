@@ -1,8 +1,12 @@
-import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.Cast5.AArch64.EcbVerified
-import VerifiedGarbage.Proof.Cast5.AArch64.KeyVerified
+module
+
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.Cast5.AArch64.EcbVerified
+public import VerifiedGarbage.Proof.Cast5.AArch64.KeyVerified
 
 /-! CAST5 key expansion and ECB on baseline AArch64. -/
+
+@[expose] public section
 
 namespace VG.Artifacts.Cast5.AArch64
 

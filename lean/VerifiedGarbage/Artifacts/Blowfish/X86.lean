@@ -1,7 +1,12 @@
-import VerifiedGarbage.TCB.X86.Target
-import VerifiedGarbage.Proof.Blowfish.X86.Frame
+module
+
+public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Proof.Blowfish.X86.Frame
 
 /-! # Blowfish on baseline x86 -/
+
+@[expose] public section
+
 namespace VG.Artifacts.Blowfish.X86
 
 def artifacts : List Artifact := [

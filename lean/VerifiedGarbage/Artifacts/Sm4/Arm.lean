@@ -1,6 +1,10 @@
-import VerifiedGarbage.Proof.Sm4.Arm.KeyVerified
+module
+
+public import VerifiedGarbage.Proof.Sm4.Arm.KeyVerified
 
 /-! # SM4 artifacts on baseline ARMv7 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.Sm4.Arm
 

@@ -1,6 +1,8 @@
-import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.Ed448.X86_64.BaseVerified
-import VerifiedGarbage.Proof.Ed448.Facts
+module
+
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.Ed448.X86_64.BaseVerified
+public import VerifiedGarbage.Proof.Ed448.Facts
 
 /-!
 # Ed448 base-point multiplication on x86-64
@@ -9,6 +11,8 @@ The signature and documentation come from the reviewed Ed448 API. The
 reference ladder's agreement with the specification (`Proof/Ed448/Facts.lean`)
 is passed to the proof here, so that only registration files import it.
 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.Ed448ScalarBase.X86_64
 

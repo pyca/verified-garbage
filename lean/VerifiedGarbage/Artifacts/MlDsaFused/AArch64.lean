@@ -1,7 +1,12 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductVerified
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.CanonicalizeVerified
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductVerified
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.CanonicalizeVerified
 
 /-! Fused internal ML-DSA arithmetic with explicit signed output contracts. -/
+
+@[expose] public section
+
 namespace VG.Artifacts.MlDsaFused.AArch64
 
 def artifacts : List Artifact := [

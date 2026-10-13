@@ -1,11 +1,15 @@
-import VerifiedGarbage.Proof.Sha512.AArch64.ScalarBackend
-import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Hashes.Sha512
+module
+
+public import VerifiedGarbage.Proof.Sha512.AArch64.ScalarBackend
+public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Hashes.Sha512
 
 /-!
 # SHA-512/224 on AArch64
 
 A variant of `MdHash` on AArch64 (see `TCB/Emit.lean`): SHA-512/224, with `vg_sha512_compress`, in the baseline ISA.
 -/
+
+@[expose] public section
 
 namespace VG.Variants.MdHash.AArch64.Sha512_224
 

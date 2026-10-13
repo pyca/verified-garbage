@@ -1,11 +1,13 @@
-import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.Weierstrass.Law
-import VerifiedGarbage.Proof.Weierstrass.X86_64.InvInterface
-import VerifiedGarbage.Impl.Ecdh.P256.X86_64
-import VerifiedGarbage.Proof.Ecdh.X86_64.Verified
-import VerifiedGarbage.Proof.Ecdh.X86_64.Lit
-import VerifiedGarbage.Proof.Ecdh.X86_64.VerifiedAdx
-import VerifiedGarbage.Proof.Ecdh.X86_64.LitAdx
+module
+
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.Weierstrass.Law
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvInterface
+public import VerifiedGarbage.Impl.Ecdh.P256.X86_64
+public import VerifiedGarbage.Proof.Ecdh.X86_64.Verified
+public import VerifiedGarbage.Proof.Ecdh.X86_64.Lit
+public import VerifiedGarbage.Proof.Ecdh.X86_64.VerifiedAdx
+public import VerifiedGarbage.Proof.Ecdh.X86_64.LitAdx
 
 /-!
 # ECDH over P-256 (SP 800-56A) on x86-64
@@ -14,6 +16,8 @@ A generic file (see `TCB/Emit.lean`) over P-256's group law,
 inversions and prime order `h`, the variant `Variants/P256/X86_64/Law.lean`, for each
 multiplication: the baseline's, and BMI2's and ADX's (`_adx`).
 -/
+
+@[expose] public section
 
 namespace VG.Generic.P256.X86_64.EcdhP256
 

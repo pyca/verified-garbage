@@ -1,6 +1,8 @@
-import VerifiedGarbage.Proof.P521.Curve
-import VerifiedGarbage.Proof.Weierstrass.AArch64.InvMain
-import VerifiedGarbage.Proof.Weierstrass.InvArith
+module
+
+public import VerifiedGarbage.Proof.P521.Curve
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvMain
+public import VerifiedGarbage.Proof.Weierstrass.InvArith
 
 /-!
 # P-521's group law, on AArch64
@@ -14,6 +16,8 @@ Their registration files are generic over them
 implementation too), so that this file alone, of those that emit them,
 imports that algebra.
 -/
+
+@[expose] public section
 
 namespace VG.Variants.P521.AArch64.Law
 

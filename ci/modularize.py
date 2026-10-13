@@ -394,7 +394,10 @@ CONVERTED = ["VerifiedGarbage/TCB", "VerifiedGarbage/Spec", "VerifiedGarbage/Imp
              "VerifiedGarbage/Proof/TripleDes/Bitslice",
              "VerifiedGarbage/Proof/TripleDes/X86",
              "VerifiedGarbage/Proof/TripleDes/X86_64",
-             "VerifiedGarbage/Proof/X25519/AArch64"]
+             "VerifiedGarbage/Proof/X25519/AArch64",
+             "VerifiedGarbage/Artifacts",
+             "VerifiedGarbage/Generic",
+             "VerifiedGarbage/Variants"]
 
 IMPORT = re.compile(r"^import\s+(\S+)\s*$")
 META_DECL = re.compile(r"^(elab|syntax|macro|macro_rules|simproc|dsimproc|elab_rules)\b", re.M)
