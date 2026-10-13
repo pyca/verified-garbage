@@ -1,6 +1,6 @@
 # rustls benchmarks: verified-garbage vs aws-lc-rs
 
-The run at 7c42c0e1, in detail (a refresh at ecd4fc1e follows first): measured with `bench/run.sh 5`
+The run at 7c42c0e1, in detail (a native Cascade Lake run at f4f61d14 and a refresh at ecd4fc1e come first): measured with `bench/run.sh 5`
 on a 2.1 GHz Intel Xeon (Emerald Rapids) with SHA-NI, AVX-512 (IFMA, VAES,
 VPCLMULQDQ) and ADX, with rustls 91aebe5d and aws-lc-rs 1.18.1, each
 benchmark on one core (`taskset -c 2`). The a70d41fa run before it had the same
@@ -34,6 +34,48 @@ The provider seals every record of both AEADs out of place, at every length:
 `AesGcm::encrypt` and `ChaCha20Poly1305::encrypt` read the payload's chunks
 and the content type byte where they are and write only the record. Only a
 payload of 64 chunks or more is copied first.
+
+## Native Cascade Lake at f4f61d14 (noisy host)
+
+Measured with `bench/run.sh 5` on main f4f61d14 (with #1776, #1790, #1792,
+#1845, #1924 and the other merges since ecd4fc1e), on a 2.8 GHz Intel Xeon
+**Cascade Lake**: AVX-512F/BW/VL/VNNI, ADX, AES-NI and PCLMULQDQ, but no
+IFMA, VAES, VPCLMULQDQ or SHA-NI. So this is the class the masked runs below
+emulated, natively, with no `VG_CPU_FEATURES` or `OPENSSL_ia32cap`. The host
+was noisy (single rows move by ±5–10% between rounds); read the geometric
+means and ranges rather than single rows.
+
+| rustls-bench | client, full | server, full | client, mutual | server, mutual | resumed (TLS 1.3) | resumed (TLS 1.2) |
+|---|---:|---:|---:|---:|---:|---:|
+| ECDSA P-256 | 1.03–1.20 | 0.98–1.18 | 1.07–1.21 | 1.03–1.22 | 1.11–1.27 | 1.02–1.49 |
+| ECDSA P-384 (TLS 1.2 only) | 1.24 | 1.37 | 1.27 | 1.22 | | 1.19–1.79 |
+| RSA-2048 | 0.98–1.03 | 0.86–0.90 | 0.89–0.95 | 0.86–0.97 | 1.06–1.24 | 1.02–1.56 |
+| Ed25519 | 1.14–1.32 | 1.13 | 1.11–1.24 | 1.10–1.21 | 1.14–1.26 | 1.09–1.51 |
+
+| Bulk, send / receive | 16 KiB records | 10000 B records |
+|---|---:|---:|
+| TLS 1.3 AES-128-GCM | 0.85 / 0.90 | 0.94 / 0.99 |
+| TLS 1.3 AES-256-GCM | 0.88 / 0.92 | 0.93 / 0.97 |
+| TLS 1.3 ChaCha20-Poly1305 | 1.13 / 1.11 | 1.17 / 1.24 |
+| TLS 1.2 AES-GCM | 0.89–0.96 / 0.95–1.02 | 0.84–1.01 / 0.90–1.03 |
+| TLS 1.2 ChaCha20-Poly1305 | 1.11–1.14 / 1.09–1.12 | 1.04–1.11 / 1.12–1.16 |
+
+What remains below parity on this class:
+
+* **AES-128-GCM sealing at 4–16 KiB: 0.83–0.93** (aws-lc-compare in place
+  16384 B 0.83, out of place 16384+1 B 0.92, 4096+1 B 0.93), so bulk sending
+  at 0.84–0.95. AES-256 in place is 1.02 at 16384 B, so AES-128's loop or its
+  dispatch is the suspect. Everything at or under 1 KiB is 1.03–1.8.
+* **RSA-2048 signing: 0.78–0.85** (3072 and 4096 are 0.95–1.03), so RSA-2048
+  server handshakes at 0.86–0.97. Lazy Montgomery reduction (a Spec change,
+  approved) is the main lever.
+* **ChaCha20-Poly1305 below 1 KiB: 0.66–0.86** (in place 0 B 259 vs 186 ns,
+  opening 1 KiB 0.80) on the AVX-512 path without IFMA, a fixed cost; bulk
+  is 1.11–1.29.
+* **Key exchange:** secp256r1 server start_and_complete 0.82 and keygen 0.88,
+  ECDSA P-256 signing 0.87 (1.08 in aws-lc-compare: noisy), X25519 0.94–0.95,
+  P-384 ECDH 0.80.
+* **HKDF-SHA-384 extract + expand: 0.91–0.94** (no SHA-NI; HMAC-SHA-384 alone is 1.23).
 
 ## Refresh at ecd4fc1e (noisy host)
 
