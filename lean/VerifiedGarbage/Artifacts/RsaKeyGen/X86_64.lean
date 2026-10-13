@@ -20,11 +20,15 @@ def artifacts : List Artifact := [
         by Montgomery reduction of `c`'s 32-bit halves modulo each small prime, the masks of all \
         primes or'ed; `gcd(c − 1, e)` by `(c − 1) mod e` bit by bit and 128 steps of a binary gcd \
         with masks; and Miller–Rabin with `vg_rsa_public`'s Montgomery multiplication (by calls of \
-        `vg_rsa_mont_mul`), a \
-        witness outside `[2, c − 2]` given bit 1 and cleared its top bit by masks, and each \
-        exponentiated over all the bits of `c − 1` but the lowest, a square per bit and the \
-        factor chosen by the bit's mask, with the flag of a passing witness kept by masks. The \
-        code branches only on what the leak allows: the result of each check, and whether each \
+        `vg_rsa_mont_mul`), a witness outside `[2, c − 2]` given bit 1 and cleared its top bit by \
+        masks, and each exponentiated by `E = (c − 1) / 2^σ` (`σ ∈ [1, 4]`, `σ` congruent to the \
+        exponent of 2 in `c − 1` mod 4, so that `E`'s lowest set bit ends a window; `E` by halvings \
+        under masks from the lowest set bit of `c − 1`) in fixed windows of 4 bits: four squarings \
+        (multiplications of `y` by itself), the table entry of the window's digit selected from all \
+        16 powers of the witness with SSE2 masks, and a multiplication; then three more squarings. \
+        The flag of a passing witness is kept by masks: or'ed with `y = −1` after each squaring \
+        (under the masks of the last three's count), and reset to `y = ±1` after a nonzero digit. \
+        The code branches only on what the leak allows: the result of each check, and whether each \
         witness passed."])
     code := Impl.RsaKeyGen.X86_64.Candidate.code Proof.Rsa.X86_64.CallMont.base.mm
     contract := Spec.RsaKeyGen.candidateContract X86_64.abi 8
@@ -37,7 +41,8 @@ def artifacts : List Artifact := [
     name := Spec.RsaKeyGen.candidateApi.name ++ "_adx"
     doc := Spec.RsaKeyGen.candidateApi.doc
       (notes := ["`vg_rsa_keygen_candidate`'s code, with Montgomery multiplication by calls of \
-        `vg_rsa_mont_mul_adx`."])
+        `vg_rsa_mont_mul_adx`, which squares (the squarings of `y`, its operands the same array) \
+        by triangular tiles."])
     code := Impl.RsaKeyGen.X86_64.Candidate.code Proof.Rsa.X86_64.CallMont.adx.mm
     contract := Spec.RsaKeyGen.candidateContract X86_64.abi 8
     stack := 8

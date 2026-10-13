@@ -92,6 +92,7 @@ theorem avs_le {q : FPub} : ∀ e ∈ avs q, e.1 ≤ 25 := by
 /-- The public bounds. -/
 structure FDims (q : FPub) : Prop where
   z : slot q.w aTab + 2048 ≤ q.Z
+  zx : slot q.w aRm1 + 8 * (q.w + 2) ≤ q.Z
   w4 : 4 ≤ q.w
   w64 : q.w ≤ 64
   rl : q.rl < 2 ^ 64
@@ -101,8 +102,7 @@ structure FDims (q : FPub) : Prop where
   pl : q.pl = 0 ∨ q.pl = 8 * q.w
 
 theorem FDims.td {q : FPub} (h : FDims q) : TDims q.tp :=
-  ⟨by have := h.z; unfold slot aTab at *; dsimp only; omega_arith, by have := h.z; unfold slot aTab aRm1 at *; dsimp only; omega_arith,
-    h.w4, h.w64⟩
+  ⟨by have := h.z; unfold slot aTab at *; dsimp only; omega_arith, h.zx, h.w4, h.w64⟩
 
 /-- Between the stages: `Good`, the header words, the candidate in `aN`, the
 buffers, and the schedule. -/
@@ -471,7 +471,7 @@ theorem finUsed3_ct {Φ : FPub → State → Prop} (hΦ : ∀ q s, Φ q s → KS
 data and the schedule. -/
 theorem afterLoad_ct (M : Mont) : RelCT isa (Two KSt) (seqs (closeCheck ++ ([.ite .ne (finUsed 2) (seqs (trial ++
     ([.ite .ne (finUsed 3) (seqs (gcdCheck ++
-      ([.ite .ne (finUsed 3) (seqs (montSetup M.mm ++ millerRabin M.mm ++ [mrResult]))] : List (Prog isa))))] : List (Prog isa))))] : List (Prog isa)))) fun _ _ => True := by
+      ([.ite .ne (finUsed 3) (seqs (montSetup M.mm ++ expSetup ++ millerRabin M.mm ++ [mrResult]))] : List (Prog isa))))] : List (Prog isa))))] : List (Prog isa)))) fun _ _ => True := by
   refine RelCT.seqs_app (by simp [closeCheck]) (by simp) (RelCT.seq (R := Two fun q s => KSt q s ∧
     s.zf = some (!q.sch.close)) (two_post closeCheck_ct fun _ _ h => closeStage_ok h) ?_)
   simp only [seqs]

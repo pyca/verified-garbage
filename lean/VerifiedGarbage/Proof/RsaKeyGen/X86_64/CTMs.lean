@@ -7,6 +7,7 @@ import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Bignum.X86_64.R2
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrShift
 import VerifiedGarbage.Proof.Framework.X86_64.Call
 meta import VerifiedGarbage.Proof.Bignum.X86_64.R2
 meta import VerifiedGarbage.Proof.Framework.X86_64.Call
@@ -203,6 +204,20 @@ def MsPre (q : TPub) (s : State) : Prop :=
     word s.mem q.B (8 * kUsed) = BitVec.ofNat 64 (8 * q.w) ∧ Src s q.B q.Z q.rP r ∧ r.length = q.rl ∧
     8 * q.w ≤ r.length ∧ VG.Proof.RsaKeyGen.shapeOf (mrRest c (Proof.RsaKeyGen.checksW q.w) r 1 0 (8 * q.w)) = q.S
 
+/-- What `montSetup` leaves for `expSetup`: `millerRabin`'s needs but the
+exponent. -/
+def MrPre0 (a : LPub) (s : State) : Prop :=
+  KW a.p.B a.p.wr ∧ HP a.p.B a.p.wr [] s ∧ MrDims a.p.B a.p.Z a.p.w ∧ a.p.ch < 2 ^ 62 ∧ a.p.rl < 2 ^ 64 ∧
+    ∃ (mi : BitVec 64) (c bm : Nat) (r : List Byte), MrCtx s a.p.B a.p.Z a.p.w mi c bm ∧
+      wv s.mem a.p.B (slot a.p.w aR2) a.p.w = 2 ^ (64 * a.p.w) * 2 ^ (64 * a.p.w) % c ∧ 1 < c ∧
+      VG.Proof.RsaKeyGen.PrimeShape (64 * a.p.w) c ∧ word s.mem a.p.B (8 * kOut) = a.p.op ∧
+      word s.mem a.p.B (8 * kUsedP) = a.p.up ∧ word s.mem a.p.B (8 * kRand) = a.p.rP ∧
+      word s.mem a.p.B (8 * kLen) = BitVec.ofNat 64 (8 * a.p.w) ∧
+      word s.mem a.p.B (8 * kRandLen) = BitVec.ofNat 64 r.length ∧ r.length = a.p.rl ∧
+      word s.mem a.p.B (8 * kChecks) = BitVec.ofNat 64 a.p.ch ∧ Src s a.p.B a.p.Z a.p.rP r ∧
+      word s.mem a.p.B (8 * kUsed) = BitVec.ofNat 64 a.u0 ∧ 8 * a.p.w ≤ a.u0 ∧ a.u0 ≤ r.length ∧
+      shapeOf (mrRest c a.p.ch r 1 0 a.u0) = a.S
+
 theorem montSetup_eq' (mul : Nat → Nat → Nat → Prog isa) : montSetup mul =
     ([.block (([.mov .r10 (.mem (hdr (sArr aN))), .mov .r12 (.mem (hdr sW)), .mov .rbx (.mem (at0 .r10))] :
       List Instr) ++ minv ++ ([.store (hdr sMinv) .r15, .mov32 .rdx (.imm 1), .mov32 .rcx (.imm 0)] : List Instr)),
@@ -241,7 +256,7 @@ theorem msRanges_hdr (w : Nat) : ∀ k ∈ [kOut, kUsedP, kRand, kLen, kRandLen,
 
 /-- `montSetup` leaks the same in runs that agree on the public data. -/
 theorem montSetup_ct (M : Mont) :
-    RelCT isa (Two MsPre) (seqs (montSetup M.mm)) (Two fun (q : TPub) s => MrPre q.lp s) := by
+    RelCT isa (Two MsPre) (seqs (montSetup M.mm)) (Two fun (q : TPub) s => MrPre0 q.lp s) := by
   rw [montSetup_eq']
   refine two_post ?_ ?_
   refine RelCT.seqs_app (by simp) (by simp)
@@ -314,8 +329,9 @@ theorem montSetup_ct (M : Mont) :
     have hn' : wv t.mem q.B (slot q.w aN) q.w = c := by
       rw [hf.wv_eq (d := slot q.w aN) (k := q.w) (by simp only [msRanges]; rng_disj)
         (by have := slot_le (w := q.w) (show aN < 8 by decide); have := hd.z; omega_arith)]; exact hn
-    have hle : ∀ r ∈ msRanges q.w, r.1 + r.2 ≤ q.Z := by
-      have h1 := hd.x; simp only [slot, aRm1, hdrBytes] at h1; simp only [msRanges]; rng_le
+    have hle : ∀ r ∈ msRanges q.w, r.1 + r.2 ≤ q.Z := fun r hr => by
+      have : r.1 + r.2 ≤ slot q.w aRm1 + 8 * (q.w + 2) := by revert r hr; simp only [msRanges]; rng_le
+      have := hd.x; omega_arith
     have hc1 : 1 < c := by have := Nat.two_pow_pos (64 * q.w - 2); omega_arith
     have hch : Proof.RsaKeyGen.checksW q.w < 2 ^ 62 := by
       unfold Proof.RsaKeyGen.checksW; split <;> (try split) <;> (try split) <;> (try split) <;> (try split) <;>
@@ -327,6 +343,38 @@ theorem montSetup_ct (M : Mont) :
       by rw [e _ (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl rfl)))))]; exact hRL, hrlen, hchk,
       hsrc.congrK (InScr.of_frm hf hle) k, by rw [e _ (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr rfl)))))]; exact hUs,
       Nat.le_refl _, hrk, hS⟩
+
+/-! ## The exponent -/
+
+/-- `expSetup` keeps what `montSetup` left, and adds the exponent. -/
+theorem expSetup_pre {a : LPub} {s : State} (h : MrPre0 a s) : WP isa (seqs expSetup) s (MrPre a) := by
+  obtain ⟨hk, hp, hd, hch, hrl, mi, c, bm, r, hc, hr2, hc1, hsh, ho, hup, hR, hK, hRL, hrlen, hC, hsrc, hU, hu1, hu2,
+    hS⟩ := h
+  have hn := hc.good.scr.nowrap
+  have hEZ := aE_fits hd
+  refine WP.mono (expSetup_ok hc.good hd hc.n hsh.1 hc1) fun t ⟨hE, hf, hg, k⟩ => ?_
+  have hd8 : ∀ i, i < 32 → ∀ r ∈ [(slot a.p.w aE, 8 * (a.p.w + 1))], 8 * i + 8 ≤ r.1 ∨ r.1 + r.2 ≤ 8 * i :=
+    fun i hi r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; left; dsimp only
+      have := hdr_lt_slot a.p.w aE hi; omega_arith
+  have hw : ∀ {i}, i < 32 → word t.mem a.p.B (8 * i) = word s.mem a.p.B (8 * i) := fun hi =>
+    hf.word_eq (hd8 _ hi) (by omega_arith)
+  have hsl : ∀ r ∈ [(slot a.p.w aE, 8 * (a.p.w + 1))], r.1 + r.2 ≤ a.p.Z := fun r hr => by
+    simp only [List.mem_singleton] at hr; subst hr; dsimp only; omega_arith
+  refine ⟨hk, ⟨hg.rdi, k.2.2.trans hp.wr, fun _ he => absurd he List.not_mem_nil⟩, hd, hch, hrl, mi, c, bm, r,
+    hc.of_frm hd hf hg.scr hg.rdi (by rng_disj) (by rng_disj) (by rng_disj) (by rng_disj) (by rng_disj), hE, ?_, hc1, hsh,
+    by rw [hw (by decide)]; exact ho, by rw [hw (by decide)]; exact hup, by rw [hw (by decide)]; exact hR,
+    by rw [hw (by decide)]; exact hK, by rw [hw (by decide)]; exact hRL, hrlen, by rw [hw (by decide)]; exact hC,
+    hsrc.congrK (InScr.of_frm hf hsl) k,
+    by rw [hw (by decide)]; exact hU, hu1, hu2, hS⟩
+  rw [hf.wv_eq (d := slot a.p.w aR2) (k := a.p.w) (by rng_disj)
+    (by have := slot_le (w := a.p.w) (show aR2 < 8 by decide); have := hd.z; omega_arith)]; exact hr2
+
+/-- `expSetup` leaks the same in runs that agree on the public data. -/
+theorem expSetup_ct : RelCT isa (Two MrPre0) (seqs expSetup) (Two MrPre) :=
+  kt_piece (fun a : LPub => a.p.B) (fun a => a.p.wr) gS (fun a => gvs a.p.B a.p.w) [] (by decide)
+    (fun a => gvs_fst _ _) (fun _ _ h => ⟨h.1, let ⟨_, _, hd, _, _, mi, _, _, _, hc, _⟩ := h;
+      good_hp hc.good ((h.2.1.wr))⟩) (pins_nil _) (by taint_decide) fun _ _ h => expSetup_pre h
 
 /-! ## The result -/
 
@@ -421,11 +469,13 @@ theorem mrResult_ct : RelCT isa (Two LoopEnd) mrResult fun _ _ => True := by
 
 /-- The tail, from `montSetup` to the result. -/
 theorem tail_ct (M : Mont) :
-    RelCT isa (Two MsPre) (seqs (montSetup M.mm ++ millerRabin M.mm ++ [mrResult])) fun _ _ => True :=
+    RelCT isa (Two MsPre) (seqs (montSetup M.mm ++ expSetup ++ millerRabin M.mm ++ [mrResult])) fun _ _ => True :=
   RelCT.seqs_app (by simp [montSetup]) (List.cons_ne_nil _ _)
     (RelCT.seq (RelCT.seqs_app (by simp [montSetup]) (by simp [millerRabin])
-      (RelCT.seq (montSetup_ct M) ((millerRabin_ct M).mono (fun _ _ h => two_bind (fun q _ _ h₁ h₂ => ⟨q.lp, h₁, h₂⟩) h)
-        fun _ _ h => h)))
+      (RelCT.seq (RelCT.seqs_app (by simp [montSetup]) (by simp [expSetup, lowWord])
+        (RelCT.seq (montSetup_ct M) ((expSetup_ct).mono (fun _ _ h => two_bind (fun q _ _ h₁ h₂ => ⟨q.lp, h₁, h₂⟩) h)
+          fun _ _ h => h)))
+        (millerRabin_ct M)))
       mrResult_ct)
 
 end VG.Proof.RsaKeyGen.X86_64

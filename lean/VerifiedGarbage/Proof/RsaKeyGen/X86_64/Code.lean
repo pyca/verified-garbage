@@ -218,7 +218,8 @@ theorem mainCtx_of {s t₁ t₃ : State} {w : Nat} (c : KCtx s) (he : EntryPost 
       (∀ i < bs.length, ∀ j < (s.gpr .rsi).toNat, p + BitVec.ofNat 64 i ≠ s.gpr .rdi + BitVec.ofNat 64 j) →
       Src t₃ (arg s 3) ((arg s 4).toNat * 8) p bs := fun {p bs} h hd =>
     VG.Proof.RsaKeyGen.X86_64.Src.congr' h (fun i hi => hhi _ (by have := h.out i hi; omega) (hd i hi)) k13.2.1 k13.2.2
-  refine ⟨hs₃, hdi₃, by rw [show 8 * w / 8 = w by omega]; unfold slot aTab hdrBytes; omega, by omega,
+  refine ⟨hs₃, hdi₃, by rw [show 8 * w / 8 = w by omega]; unfold slot aTab hdrBytes; omega,
+    by rw [show 8 * w / 8 = w by omega]; unfold slot aRm1 hdrBytes; omega, by omega,
     by omega, by omega, by rw [hrs _ (by decide)]; exact he.out, ?_, by rw [hrs _ (by decide)]; exact he.usedP,
     by rw [hrs _ (by decide)]; exact he.e, ?_, by rw [hrs _ (by decide)]; exact he.p, ?_,
     by rw [hrs _ (by decide)]; exact he.rand, ?_, hsrc c.esrc (fun i hi => c.doe i (by rwa [bytesAt_length] at hi)),

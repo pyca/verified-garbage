@@ -37,6 +37,7 @@ structure MainCtx (s : State) (B : Addr) (Z k : Nat) (op up eP pP rP : Addr) (eB
   scr : Scr s B Z
   rdi : s.gpr .rdi = B
   z : slot (k / 8) aTab + 2048 ≤ Z
+  zx : slot (k / 8) aRm1 + 8 * (k / 8 + 2) ≤ Z
   k1 : 32 ≤ k
   k2 : k ≤ 512
   k8 : k % 8 = 0
@@ -62,7 +63,7 @@ structure MainCtx (s : State) (B : Addr) (Z k : Nat) (op up eP pP rP : Addr) (eB
 theorem kMain_eq (mul : Nat → Nat → Nat → Prog isa) : kMain mul =
     seqs (loadC ++ (closeCheck ++ ([.ite .ne (finUsed 2) (seqs (trial ++
       ([.ite .ne (finUsed 3) (seqs (gcdCheck ++
-        ([.ite .ne (finUsed 3) (seqs (montSetup mul ++ millerRabin mul ++ [mrResult]))] : List (Prog isa))))] : List (Prog isa))))] : List (Prog isa)))) := by
+        ([.ite .ne (finUsed 3) (seqs (montSetup mul ++ expSetup ++ millerRabin mul ++ [mrResult]))] : List (Prog isa))))] : List (Prog isa))))] : List (Prog isa)))) := by
   unfold kMain; rw [List.append_assoc]
 
 theorem seg_zero (r : List Byte) (n : Nat) : VG.Proof.RsaKeyGen.seg r 0 n = r.take n := by
@@ -216,7 +217,9 @@ theorem kMain_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {op up eP pP rP :
       i = kRandLen → word s₄.mem B (8 * i) = word s.mem B (8 * i) := fun {i} hi => by
     have : i ≤ 25 := by rcases hi with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
     rw [st₄.1 i this, hh₁ hi]
-  refine WP.mono (kTail_ok M hg₄ hZ hTZ (by omega_arith) (by omega_arith) hc₄ hsh (h.ou.congr k14.2.2)
+  have hXZ := h.zx
+  rw [hw8] at hXZ
+  refine WP.mono (kTail_ok M hg₄ hZ hXZ (by omega_arith) (by omega_arith) hc₄ hsh (h.ou.congr k14.2.2)
     (by rw [hk₄ (by simp)]; exact h.out) (by rw [hk₄ (by simp)]; exact h.len) (by rw [hk₄ (by simp)]; exact h.usedP)
     (by rw [hk₄ (by simp)]; exact h.rand) (by rw [hk₄ (by simp)]; exact h.rlen)
     (by rw [st₄.1 kUsed (by decide), hus₁]) (h.rsrc.congrK (hin₁.trans st₄.2) k14) h.rl h.rk) fun t ht => ?_

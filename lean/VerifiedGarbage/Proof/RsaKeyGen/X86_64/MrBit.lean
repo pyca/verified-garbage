@@ -14,8 +14,8 @@ import VerifiedGarbage.Proof.Framework.X86_64.Call
 # A candidate on x86-64: one bit of Miller–Rabin's exponentiation
 
 `MrCtx`: what Miller–Rabin keeps, `-c⁻¹` and `c`, the witness in Montgomery
-form in `aB`, and `R mod c`, `c − R mod c` in `aR1`, `aRm1`. `mrExpBit_ok`:
-`y := y² b^bit`, and the flag, from the top bit of `kV`.
+form in `aB`, and `R mod c`, `c − R mod c` in `aR1`, `aRm1`; `MrDims`: the
+bounds of the working space it needs.
 -/
 
 @[expose] public section
@@ -43,49 +43,7 @@ structure MrDims (B : Addr) (Z w : Nat) : Prop where
   w4 : 4 ≤ w
   w64 : w ≤ 64
 
-theorem shr63_ofNat (b : Bool) : BitVec.ofNat 64 b.toNat = BitVec.ofNat 64 b.toNat := rfl
-
-theorem neg_bit (b : Bool) : BitVec.setWidth 64 (0 : BitVec 32) - BitVec.ofNat 64 b.toNat = mask b := by
-  cases b <;> decide
-
 theorem sxm1' : BitVec.signExtend 64 (BitVec.ofInt 32 (-1)) = BitVec.allOnes 64 := by decide
-
-/-- The flag's update. -/
-theorem flag_mask (P m e bt : Bool) :
-    (mask P ||| mask m) &&& (mask bt ^^^ BitVec.allOnes 64) ||| (mask e ||| mask m) &&& mask bt =
-      mask (if bt then e || m else P || m) := by
-  cases P <;> cases m <;> cases e <;> cases bt <;> decide
-
-/-- The end of `mrExpBit`: the flag, `kV := 2 kV`, `kBits := kBits − 1`. -/
-theorem bitTail_ok {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 64} (hg : Good s B Z w mi) (hZ : slot w 8 ≤ Z)
-    {V : BitVec 64} {bt m e P : Bool} {n : Nat} (hV : word s.mem B (8 * kV) = V)
-    (hbt : V >>> 63 = BitVec.ofNat 64 bt.toNat) (hG : word s.mem B (8 * kG) = mask m) (hbp : s.gpr .rbp = mask e)
-    (hP : word s.mem B (8 * kFlag) = mask P) (hnb : word s.mem B (8 * kBits) = BitVec.ofNat 64 n) (hn1 : 1 ≤ n)
-    (hn' : n < 2 ^ 64) :
-    WP isa (.block [.mov .rax (.mem (hdr kV)), .shift .shr .rax 63, .mov32 .r15 (.imm 0), .alu .sub .r15 (.reg .rax),
-      .mov .rdx (.mem (hdr kG)), .alu .or .rbp (.reg .rdx), .alu .and .rbp (.reg .r15),
-      .mov .rax (.mem (hdr kFlag)), .alu .or .rax (.reg .rdx), .alu .xor .r15 (.imm (BitVec.ofInt 32 (-1))),
-      .alu .and .rax (.reg .r15), .alu .or .rax (.reg .rbp), .store (hdr kFlag) .rax,
-      .mov .rax (.mem (hdr kV)), .alu .add .rax (.reg .rax), .store (hdr kV) .rax,
-      .mov .rax (.mem (hdr kBits)), .alu .sub .rax (.imm 1), .store (hdr kBits) .rax]) s fun t =>
-      t.mem = ((s.mem.writeW (off B (8 * kFlag)) (mask (if bt then e || m else P || m))).writeW (off B (8 * kV))
-        (V + V)).writeW (off B (8 * kBits)) (BitVec.ofNat 64 (n - 1)) ∧ t.zf = some (decide (n - 1 = 0)) ∧
-      Keep [.rax, .rdx, .rbp, .r15] s t := by
-  have := hg.scr.nowrap
-  have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off B (8 * i)) 8 := fun i hi =>
-    hg.scr.ld (by have := hdr_lt_slot w 8 hi; omega)
-  have hs : ∀ i < 32, InRegions s.wr (off B (8 * i)) 8 := fun i hi =>
-    hg.scr.st (by have := hdr_lt_slot w 8 hi; omega)
-  refine WP.mono (WP.keep [.rax, .rdx, .rbp, .r15] (Q := fun t => t.mem = ((s.mem.writeW (off B (8 * kFlag))
-      (mask (if bt then e || m else P || m))).writeW (off B (8 * kV)) (V + V)).writeW (off B (8 * kBits))
-      (BitVec.ofNat 64 (n - 1)) ∧ t.zf = some (decide (n - 1 = 0))) (by
-    xrun [State.ea, hdr, hg.rdi, hdrOff, hl kV (by decide), hl kG (by decide), hl kFlag (by decide),
-      hl kBits (by decide), hs kV (by decide), hs kFlag (by decide), hs kBits (by decide), hV, hG, hP, hbp, hbt,
-      neg_bit, sxm1', flag_mask, fun X => (hdrStore_hdr s.mem B X (show kFlag < 32 by decide) (show kV < 32 by decide)
-        (by decide)).trans hV,
-      fun X Y => (hdrStore_hdr _ B Y (show kV < 32 by decide) (show kBits < 32 by decide) (by decide)).trans
-        ((hdrStore_hdr s.mem B X (show kFlag < 32 by decide) (show kBits < 32 by decide) (by decide)).trans hnb),
-      ofNat64_pred hn1 hn', ofNat64_beq_zero (show n - 1 < 2 ^ 64 by omega)]) rfl) fun t ⟨⟨hm, hz⟩, k⟩ => ⟨hm, hz, k⟩
 
 /-- The header survives changes away from its first 16 words. -/
 theorem _root_.VG.Proof.Bignum.Hdr.of_frm {m m' : Mem} {B : Addr} {w : Nat} {mi : BitVec 64} {rs : List (Nat × Nat)} (hH : Hdr m B w mi)
