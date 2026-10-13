@@ -51,7 +51,7 @@ theorem verifyComputeInputs_stable (p : SchedulePublic) (a : Operand × Nat)
     decide
   · exact verifyInputs_stable p a ha
 
-theorem signCompute_ct (M : Mont) : RelCT isa (Two (ScheduleState signComputeInputs))
+theorem signCompute_ct (M : Mont) : RelCT isa (Two (PublicKeyPre signComputeInputs))
     (signCompute M.mm) (Two (ScheduleState signComputeInputs)) := by
   have h1 := publicKey_ct M signComputeInputs signComputeInputs_stable
     (by intro p; simp [signComputeInputs, signInputs])
@@ -74,7 +74,7 @@ theorem signCompute_ct (M : Mont) : RelCT isa (Two (ScheduleState signComputeInp
   · exact two_map (fun p => p) (fun p st h =>
       ⟨h, h.1.availableLocal .q s (by decide) (scalar_space (by decide) p)⟩) h5
 
-theorem verifyCompute_ct (M : Mont) : RelCT isa (Two (ScheduleState verifyComputeInputs))
+theorem verifyCompute_ct (M : Mont) : RelCT isa (Two (PublicKeyPre verifyComputeInputs))
     (verifyCompute M.mm) (Two (ScheduleState verifyComputeInputs)) := by
   have h1 := publicKey_ct M verifyComputeInputs verifyComputeInputs_stable
     (by intro p; simp [verifyComputeInputs, verifyInputs])
