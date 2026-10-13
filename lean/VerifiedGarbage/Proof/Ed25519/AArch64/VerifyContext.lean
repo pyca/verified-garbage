@@ -30,8 +30,8 @@ structure VerifyContext (s : State) (base pk sig challenge : Addr) : Prop where
   pkRead : ∀ d, d + 8 ≤ 32 → InRegions (s.rd ++ s.wr) (off pk d) 8
   rRead : ∀ d, d + 8 ≤ 32 → InRegions (s.rd ++ s.wr) (off sig d) 8
   scalarRead : ∀ d, d + 8 ≤ 32 → InRegions (s.rd ++ s.wr) (off (off sig 32) d) 8
-  scalarBytes : ∀ i < 32, InRegions (s.rd ++ s.wr) (off (off sig 32) i) 1
-  challengeRead : ∀ i < 64, InRegions (s.rd ++ s.wr) (off challenge i) 1
+  scalarQ : ∀ d, d + 16 ≤ 32 → InRegions (s.rd ++ s.wr) (off (off sig 32) d) 16
+  challengeQ : ∀ d, d + 16 ≤ 64 → InRegions (s.rd ++ s.wr) (off challenge d) 16
   pkFar : ∀ i < 32, 8192 ≤ ofs base (off pk i)
   rFar : ∀ i < 32, 8192 ≤ ofs base (off sig i)
   scalarFar : ∀ i < 32, 8192 ≤ ofs base (off (off sig 32) i)
@@ -49,8 +49,8 @@ theorem VerifyContext.of_keep {s t : State} {base pk sig challenge : Addr}
   · exact h.pkRead _ ‹_›
   · exact h.rRead _ ‹_›
   · exact h.scalarRead _ ‹_›
-  · exact h.scalarBytes _ ‹_›
-  · exact h.challengeRead _ ‹_›
+  · exact h.scalarQ _ ‹_›
+  · exact h.challengeQ _ ‹_›
 
 theorem verifyKeep_bytes {base p : Addr} {len : Nat} {s t : State}
     (h : VerifyKeep base s t) (hf : ∀ i < len, 8192 ≤ ofs base (off p i)) :

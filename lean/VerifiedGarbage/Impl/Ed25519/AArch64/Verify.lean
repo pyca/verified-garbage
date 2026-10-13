@@ -30,8 +30,8 @@ def pointEqual : Prog isa :=
 /-- Returns 1 in x8 if `[S]B = R + [k]A`, for `A` at byte 7424 and `R` at byte 7552. -/
 def verifyEquationPoints : Prog isa :=
   .seq (.block windowSetup) (.seq aTable (.seq (.block bTable) (.seq (.block windowInit)
-    (.seq skipZero (.seq windowsA (.seq (.loop byteStepAB (.nonzero .x .x19))
-      (.seq (.block negR) pointEqual)))))))
+    (.seq (.block nibbles) (.seq skipZero (.seq windowsA (.seq (.loop nibStepAB (.nonzero .x .x19))
+      (.seq (.block negR) pointEqual))))))))
 
 def decodedThen (next : Prog isa) : Prog isa := .ite (.nonzero .x .x8) next recoverInvalid
 
