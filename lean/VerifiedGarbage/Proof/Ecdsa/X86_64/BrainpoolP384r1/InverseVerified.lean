@@ -94,7 +94,7 @@ theorem dec_eq_p (x : Nat) : C.dec Spec.BrainpoolP384r1.p x = toM Spec.Brainpool
 theorem dec_eq_n (x : Nat) : C.dec Spec.BrainpoolP384r1.n x = toM Spec.BrainpoolP384r1.n (2 ^ (64 * C.k)) x :=
   dec_eq (by decide +kernel) (by decide +kernel) (by decide +kernel) x
 
-theorem cfg_ok (hI : InvSounds) : CfgOk cfg := brainpoolp384r1_ok hI
+theorem cfg_ok (hI : InvSounds) : BaseCfgOk cfg := brainpoolp384r1_ok hI
 
 theorem cfg_n : cfg.n = 6 := rfl
 theorem cfg_C : cfg.C = Spec.BrainpoolP384r1.curve := rfl
@@ -180,7 +180,7 @@ abbrev nK : Contract isa := invK Spec.BrainpoolP384r1.n C.nAt C.xAt
 theorem p_correct (hI : InvSounds) (s : State) (hs : pK.pre s) :
     ∃ t s', Exec isa (cfg.invFn cfg.pPowI) s t s' ∧ abiPreserved s s' ∧ pK.post s s' := by
   obtain ⟨-, hwr, hret, hfit, hm, hz⟩ := hs
-  have hc := (cfg_ok hI).toBaseCfgOk
+  have hc := cfg_ok hI
   have hS : Scr s (s.gpr .rdi) size := ⟨rfl, by rw [hwr]; simp, hfit⟩
   have hn := cfg_n
   have hk : cfg.n = C.k := by rw [cfg_n]; rfl
@@ -202,7 +202,7 @@ theorem p_correct (hI : InvSounds) (s : State) (hs : pK.pre s) :
 theorem n_correct (hI : InvSounds) (s : State) (hs : nK.pre s) :
     ∃ t s', Exec isa (cfg.invFn cfg.nPowI) s t s' ∧ abiPreserved s s' ∧ nK.post s s' := by
   obtain ⟨-, hwr, hret, hfit, hm, hx⟩ := hs
-  have hc := (cfg_ok hI).toBaseCfgOk
+  have hc := cfg_ok hI
   have hS : Scr s (s.gpr .rdi) size := ⟨rfl, by rw [hwr]; simp, hfit⟩
   have hn := cfg_n
   have hk : cfg.n = C.k := by rw [cfg_n]; rfl

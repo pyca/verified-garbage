@@ -603,7 +603,7 @@ theorem points_eqM {C : Spec.Weierstrass.Mul.Curve} (hm : c.mul = some C) :
 
 /-- `[u]G + [v]Q`, into `R`, by calls of `vg_<curve>_mul`: `r` is kept in
 `D` while `K` holds `u`, then `v`. -/
-theorem pointsM_ok {C : Spec.Weierstrass.Mul.Curve} (hm : c.mul = some C) (h4 : c.n = 4)
+theorem pointsM_ok {C : Spec.Weierstrass.Mul.Curve} (hm : c.mul = some C) (h4 : c.n = 4 ∨ c.n = 6)
     (hnc : c.mulFn.noCalls = true) (hc : BaseCfgOk c) (hC : Law c.C) {s₀ : State} {base : Addr}
     {g : Reg → BitVec 64} {s : State} (hM : Mid c s₀ base g s)
     {P : Point c.C} (hP : onCurve c.C P = true)
