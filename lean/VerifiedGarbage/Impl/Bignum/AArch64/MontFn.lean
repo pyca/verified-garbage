@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Bignum.AArch64
 public import VerifiedGarbage.Impl.Bignum.AArch64.SquareEightDispatch
+public import VerifiedGarbage.Impl.Bignum.AArch64.ProductDispatch
 
 @[expose] public section
 
@@ -41,5 +42,16 @@ retain the general callable implementation for every other valid index tuple. -/
 def mul : Prog isa :=
   .seq (.block squareTest)
     (.ite (.zero .w .x5) (SquareEightDispatch.mm 5 5 5) mulBase)
+
+/-- Recognize the public accumulator-times-window tuple. -/
+def productTest : List Instr :=
+  [movi .x7 5, .logic .eor .w .x5 .x2 .x7, .logic .eor .w .x6 .x3 .x7,
+   .logic .orr .w .x5 .x5 .x6, movi .x7 6, .logic .eor .w .x6 .x4 .x7,
+   .logic .orr .w .x5 .x5 .x6]
+
+/-- Scheduled products for window multiplication; preserve all other paths. -/
+def mulProduct : Prog isa :=
+  .seq (.block productTest)
+    (.ite (.zero .w .x5) (ProductDispatch.mm 5 5 6) mul)
 
 end VG.Impl.Bignum.AArch64.MontFn
