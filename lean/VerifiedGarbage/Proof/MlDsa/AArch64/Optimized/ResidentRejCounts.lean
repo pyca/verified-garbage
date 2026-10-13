@@ -12,6 +12,7 @@ import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Zero
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.AbsorbArgs
 
 /-! ## From `ResidentRejAbsorb.lean` -/
 

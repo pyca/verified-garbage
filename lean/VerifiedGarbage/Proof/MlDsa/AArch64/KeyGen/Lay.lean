@@ -11,6 +11,12 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Base
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlKem.AArch64.KgC
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Hash
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Inline
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Round
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Sample
+public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.CallPack
+public import VerifiedGarbage.Proof.MlKem.AArch64.KgEnd
 
 /-!
 # ML-DSA key generation on AArch64: parameters and buffers

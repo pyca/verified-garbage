@@ -12,6 +12,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Idea.Memory32
+meta import VerifiedGarbage.Proof.Idea.Memory32
 
 /-!
 # IDEA decryption subkeys on x86 (32-bit)

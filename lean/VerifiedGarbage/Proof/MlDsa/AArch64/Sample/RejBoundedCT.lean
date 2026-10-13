@@ -12,6 +12,8 @@ import Mathlib.Tactic.SplitIfs
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rel
 meta import Mathlib.Tactic.Conv
 meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.RejNttCT
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.RejNttCT
 
 /-!
 # ML-DSA on AArch64: `vg_mldsa_rej_bounded_poly`, constant time but for which half-bytes it accepts

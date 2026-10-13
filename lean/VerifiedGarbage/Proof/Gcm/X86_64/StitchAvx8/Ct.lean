@@ -12,6 +12,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Spec.TripleDes
+meta import VerifiedGarbage.Spec.TripleDes
 
 /-!
 # Stack safety and constant-time checks for the eight-block pipeline

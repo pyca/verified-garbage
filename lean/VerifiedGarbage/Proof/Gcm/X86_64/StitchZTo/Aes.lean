@@ -6,6 +6,7 @@ import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Aes.X86_64.VaesZ.Ctr
+import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Aes
 
 /-!
 # The out-of-place AVX-512 loop: a batch of sixteen blocks

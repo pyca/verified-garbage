@@ -12,6 +12,8 @@ import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.Conv
 meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.MlKem.AArch64.Sample
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Sample
 
 /-!
 # ML-DSA on AArch64: `vg_mldsa_sample_in_ball`

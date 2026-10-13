@@ -8,6 +8,7 @@ import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourAdvance
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourRead
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourStore
 
 /-! ## From `BoundedFourSelectMachine.lean` -/
 

@@ -8,6 +8,8 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Lit
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Lit
 
 /-!
 # ML-DSA on AArch64: `vg_mldsa_inv_ntt`

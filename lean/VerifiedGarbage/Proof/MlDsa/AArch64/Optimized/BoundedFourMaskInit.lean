@@ -10,6 +10,7 @@ import all Init.Data.Vector.Basic
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.TCB.Axioms
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRate
 
 /-! ## From `BoundedFourMaskLoop.lean` -/
 

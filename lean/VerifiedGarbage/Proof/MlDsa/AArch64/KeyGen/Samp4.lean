@@ -8,6 +8,8 @@ import all Init.Data.Vector.Basic
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlKem.AArch64.KgC
+import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Call4
+import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Mask4
 
 @[expose] public section
 

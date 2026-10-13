@@ -14,6 +14,7 @@ import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Framework.TaintSumGeneric
 import VerifiedGarbage.Proof.MlKem.Encode
 import VerifiedGarbage.Proof.Sha3.AArch64.Sums
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Sponge
 
 /-! ## From `BoundedFourLeak.lean` -/
 

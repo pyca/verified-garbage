@@ -22,6 +22,10 @@ import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.ResidentLit
 meta import Mathlib.Tactic.SplitIfs
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.ResidentLit
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Lit
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Lit
 
 /-! ## From `BallSecondPrefix.lean` -/
 

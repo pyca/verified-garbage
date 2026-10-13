@@ -10,6 +10,7 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Sha256.Stream
 
 /-!
 # HMAC's postconditions read memory only within the buffers

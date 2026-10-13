@@ -8,6 +8,7 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.MlKem.Mem
 
 /-!
 # ML-DSA on AArch64, `sign_message` and `verify_message`: `μ` and `tr`
