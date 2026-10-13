@@ -40,7 +40,7 @@ structure SigningABI (s : State) : Prop where
   lengths : Spec.Dsa.lengthsValid (s.gpr .r8).toNat (stackArg s 0).toNat
   outLength : (s.gpr .rsi).toNat = 2 * (stackArg s 0).toNat
   keyLength : (s.gpr .rcx).toNat = 3 * (s.gpr .r8).toNat + 2 * (stackArg s 0).toNat
-  scratchLength : Spec.Rsa.scratchWords (s.gpr .r8).toNat ≤ (stackArg s 4).toNat
+  scratchLength : Spec.Dsa.scratchWords (s.gpr .r8).toNat ≤ (stackArg s 4).toNat
 
 theorem signingABI_of {s : State} (h : (Spec.Dsa.signContract abi).pre s) : SigningABI s := by
   sig_pre [Spec.Dsa.signContract, Spec.Dsa.signSig, abi, argRegs, stackArgs_five] at h
@@ -65,7 +65,7 @@ theorem SigningABI.used {s : State} (h : SigningABI s) : usedBytes ≤ (stackArg
   have hl := h.lengths
   have hs := h.scratchLength
   unfold Spec.Dsa.lengthsValid at hl
-  unfold Spec.Rsa.scratchWords at hs
+  unfold Spec.Dsa.scratchWords at hs
   change 15712 ≤ _
   omega
 

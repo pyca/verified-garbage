@@ -130,6 +130,22 @@ theorem wsWords_le {len w : Nat} (h : len < 8 * w) (hw : 2 ≤ w) : wsWords len 
 def offP (w : Nat) : Nat := slot w 8
 def offQ (w pl : Nat) : Nat := slot w 8 + slot (wsWords pl) 8 + wsTab (wsWords pl)
 
+/-- The three workspaces fit in `16 k + 32` words for a modulus of `k ≥ 64`
+bytes and primes shorter than it. -/
+theorem crt_room {k pl ql Z : Nat} (hk : 64 ≤ k) (hp : pl < k) (hq : ql < k) (hZ : 128 * k + 256 ≤ Z) :
+    offQ ((k + 7) / 8) pl + slot (wsWords ql) 8 + wsTab (wsWords ql) ≤ Z := by
+  have hW : 8 * ((k + 7) / 8) ≤ k + 7 := Nat.mul_div_le _ _
+  have hP : 8 * wsWords pl ≤ k + 6 := by
+    have := Nat.mul_div_le (pl + 7) 8; unfold wsWords; omega
+  have hQ : 8 * wsWords ql ≤ k + 6 := by
+    have := Nat.mul_div_le (ql + 7) 8; unfold wsWords; omega
+  unfold offQ wsTab tabBytes slot hdrBytes
+  generalize (k + 7) / 8 = W at *
+  generalize wsWords pl = P at *
+  generalize wsWords ql = Q at *
+  calc _ = 2176 + 64 * W + 320 * P + 320 * Q := by omega
+    _ ≤ Z := by omega
+
 /-- A prime's workspace at `off B o`: its header and its link to `B`. -/
 structure WsAt (m : Mem) (B : Addr) (o wx : Nat) (minv : BitVec 64) : Prop where
   hdr : Hdr m (off B o) wx minv

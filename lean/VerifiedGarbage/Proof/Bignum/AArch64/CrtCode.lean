@@ -146,8 +146,8 @@ theorem crtPre_of {s t₁ t : State} (c : CrtCtx s) (h : CrtHeadPost s t₁) (hm
   have hql2 := c.hql2
   have h0 : t.gpr .x0 = stackArg s 8 := (k.gpr .x0 (by decide)).trans h.x0
   have hz : offQ (((s.gpr .x3).toNat + 7) / 8) (s.gpr .x7).toNat + slot (wsWords (stackArg s 1).toNat) 8 +
-      wsTab (wsWords (stackArg s 1).toNat) ≤ (stackArg s 9).toNat * 8 := by
-    unfold offQ slot wsWords hdrBytes wsTab tabBytes; omega
+      wsTab (wsWords (stackArg s 1).toNat) ≤ (stackArg s 9).toNat * 8 :=
+    crt_room hk1 hpl2 hql2 hZ
   exact
     { scr := h.scr.congr k.wr, x0 := h0, z := hz, zk := (by omega), k1 := hk1, k2 := hk2, hO := (by rw [hm]; exact h.hO),
       hN := (by rw [hm]; exact h.hN), hK := (by rw [hm]; exact h.hK), hIn := (by rw [hm]; exact h.hIn),

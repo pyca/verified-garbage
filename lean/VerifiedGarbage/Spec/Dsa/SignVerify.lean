@@ -29,7 +29,10 @@ the wrapper. Stack-argument writes follow the existing RSA contracts.
 
 namespace VG.Spec.Dsa
 
-open VG.Spec.Rsa (bytesAt scratchWords)
+open VG.Spec.Rsa (bytesAt)
+
+/-- The least working space, in `u64`s, for a `p` of `pLen` octets. -/
+def scratchWords (pLen : Nat) : Nat := 16 * pLen
 
 /-- Supported external widths, in bytes. 224-bit q is import-only. -/
 def lengthsValid (pLen qLen : Nat) : Prop :=
