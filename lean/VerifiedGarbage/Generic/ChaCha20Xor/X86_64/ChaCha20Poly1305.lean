@@ -90,7 +90,7 @@ CPUs (Skylake-SP, Cascade Lake) run slower while they run 512-bit
 instructions (`Stitch.sealSmall`). -/
 def sealNotes (v : Proof.ChaCha20.X86_64.XorImpl) : List String :=
   match v.poly with
-  | .avx512 => [xorNote v, "For fewer than " ++ toString Impl.ChaCha20Poly1305.X86_64.Stitch.smallLim ++
+  | .avx512 => [xorNote v, "For fewer than " ++ toString (Impl.ChaCha20Poly1305.X86_64.Stitch.smallLim v.callee.vl) ++
       " bytes of data, it runs the code of `vg_chacha20_poly1305_seal_avx2` instead, with no 512-bit \
       instruction: the CPUs with AVX-512 but not IFMA (Skylake-SP, Cascade Lake) lower their clock while \
       they run 512-bit instructions, which costs short data more than the wider keystream saves."]
