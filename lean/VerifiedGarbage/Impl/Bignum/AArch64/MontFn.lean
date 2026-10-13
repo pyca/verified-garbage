@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.AArch64
+public import VerifiedGarbage.Impl.Bignum.AArch64.SquareEightDispatch
 
 @[expose] public section
 
@@ -35,10 +36,10 @@ def squareTest : List Instr :=
    .logic .orr .w .x5 .x5 .x6, .logic .eor .w .x6 .x4 .x7,
    .logic .orr .w .x5 .x5 .x6]
 
-/-- Reuse RSA's default Montgomery implementation for accumulator squares;
+/-- Reuse RSA's scheduled eight-limb kernel for accumulator squares;
 retain the general callable implementation for every other valid index tuple. -/
 def mul : Prog isa :=
   .seq (.block squareTest)
-    (.ite (.zero .w .x5) (Public.mm 5 5 5) mulBase)
+    (.ite (.zero .w .x5) (SquareEightDispatch.mm 5 5 5) mulBase)
 
 end VG.Impl.Bignum.AArch64.MontFn
