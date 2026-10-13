@@ -1,10 +1,11 @@
 //! ECDSA (FIPS 186-5 §6.4) with deterministic signatures (RFC 6979 §3.2).
 //!
 //! A [`SigningKey<C>`] holds a private key on the curve `C` (so far
-//! [`P256`], [`P384`], `P521`, `P192` and, on x86-64 and AArch64, `P224` and `Secp256k1`), and signs with a hash
+//! [`P256`], [`P384`], `P521`, `P192` and, on x86-64 and AArch64, `P224` and `Secp256k1`, and on x86-64,
+//! `BrainpoolP256r1`), and signs with a hash
 //! function `H` that the curve has signatures with ([`SignatureHash<C>`]: for
 //! P-192, SHA-256; for P-224, SHA-224; for P-256, SHA-256 and SHA-384; for P-384, SHA-384; for
-//! P-521, SHA-512; for secp256k1, SHA-256), as in
+//! P-521, SHA-512; for secp256k1 and brainpoolP256r1, SHA-256), as in
 //! `key.sign::<Sha256>(message)`. Each signature is one call of
 //! verified code, for the curve and the hash function
 //! (`vg_ecdsa_<curve>_<hash>_sign`, contract
@@ -39,6 +40,7 @@
     target_arch = "arm"
 ))]
 
+mod brainpoolp256r1;
 mod p192;
 mod p224;
 mod p256;
@@ -46,6 +48,8 @@ mod p384;
 mod p521;
 mod secp256k1;
 
+#[cfg(target_arch = "x86_64")]
+pub use crate::ec::BrainpoolP256r1;
 #[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
 pub use crate::ec::P224;
 #[cfg(any(
@@ -87,7 +91,8 @@ mod sealed {
 /// the curve `C`: for P-224, [`Sha224`](crate::hashes::sha224::Sha224); for
 /// P-256, [`Sha256`](crate::hashes::sha256::Sha256) and
 /// [`Sha384`](crate::hashes::sha384::Sha384); for P-384, `Sha384`; for
-/// P-521, [`Sha512`](crate::hashes::sha512::Sha512); for secp256k1, `Sha256`.
+/// P-521, [`Sha512`](crate::hashes::sha512::Sha512); for secp256k1 and
+/// brainpoolP256r1, `Sha256`.
 pub trait SignatureHash<C: Curve>: sealed::Functions<C> {}
 
 /// Why signing, deriving the public key, or verifying a signature failed.

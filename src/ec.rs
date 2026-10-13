@@ -132,6 +132,21 @@ impl Curve for Secp256k1 {
     type Signature = [u8; 64];
 }
 
+/// The curve brainpoolP256r1 (RFC 5639 §3.4).
+#[cfg(target_arch = "x86_64")]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum BrainpoolP256r1 {}
+
+#[cfg(target_arch = "x86_64")]
+impl sealed::Sealed for BrainpoolP256r1 {}
+
+#[cfg(target_arch = "x86_64")]
+impl Curve for BrainpoolP256r1 {
+    type PrivateKey = [u8; 32];
+    type PublicKey = [u8; 65];
+    type Signature = [u8; 64];
+}
+
 /// The curve P-192 (NIST SP 800-186, §3.2.1.1).
 #[cfg(any(
     target_arch = "x86_64",

@@ -56,6 +56,15 @@ pub(crate) mod blowfish_cfb;
 pub(crate) mod blowfish_ofb;
 
 #[rustfmt::skip]
+pub(crate) mod brainpoolp256r1_check_point;
+
+#[rustfmt::skip]
+pub(crate) mod brainpoolp256r1_inverse;
+
+#[rustfmt::skip]
+pub(crate) mod brainpoolp256r1_mul;
+
+#[rustfmt::skip]
 pub(crate) mod camellia;
 
 #[rustfmt::skip]
@@ -104,6 +113,9 @@ pub(crate) mod ct;
 pub(crate) mod dsa;
 
 #[rustfmt::skip]
+pub(crate) mod ec_brainpoolp256r1;
+
+#[rustfmt::skip]
 pub(crate) mod ec_p192;
 
 #[rustfmt::skip]
@@ -122,6 +134,9 @@ pub(crate) mod ec_p521;
 pub(crate) mod ec_secp256k1;
 
 #[rustfmt::skip]
+pub(crate) mod ecdh_brainpoolp256r1;
+
+#[rustfmt::skip]
 pub(crate) mod ecdh_p192;
 
 #[rustfmt::skip]
@@ -138,6 +153,12 @@ pub(crate) mod ecdh_p521;
 
 #[rustfmt::skip]
 pub(crate) mod ecdh_secp256k1;
+
+#[rustfmt::skip]
+pub(crate) mod ecdsa_brainpoolp256r1;
+
+#[rustfmt::skip]
+pub(crate) mod ecdsa_brainpoolp256r1_sha256;
 
 #[rustfmt::skip]
 pub(crate) mod ecdsa_p192;
