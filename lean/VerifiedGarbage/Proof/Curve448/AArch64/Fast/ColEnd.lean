@@ -54,22 +54,23 @@ theorem carryIn_ok (s : State) (a : Acc) (c : Reg) (h₁ : a.lo ≠ a.hi) (h₂ 
 
 /-- Store the low 56 bits of `a` at `d` and carry the rest into `c`. -/
 theorem stage_ok {s : State} {base : Addr} (hs : Scr s base) (t : Reg) (a : Acc) (c : Reg)
-    {d : Nat} (hd8 : d % 8 = 0) (hd : d + 8 ≤ 8192) (h₁ : t ≠ a.lo) (h₂ : t ≠ a.hi) (h₄ : t ≠ .x3)
+    {ro : Reg} {D d : Nat} (hD : s.gpr ro + BitVec.ofNat 64 D = off base d) (hD8 : D % 8 = 0)
+    (hDlt : D < 32768) (hd : d + 8 ≤ 8192) (h₁ : t ≠ a.lo) (h₂ : t ≠ a.hi) (h₄ : t ≠ ro)
     (hm : s.gpr MASK = BitVec.ofNat 64 (2 ^ 56 - 1)) (hlt : accVal s a < 2 ^ 120) :
-    WP isa (.block [.logic .and .x t a.lo MASK, st t d, .extr .x c a.hi a.lo 56]) s
+    WP isa (.block [.logic .and .x t a.lo MASK, .str .x t ro D, .extr .x c a.hi a.lo 56]) s
       fun u => u.mem = s.mem.writeW (off base d) (BitVec.ofNat 64 (accVal s a % radix)) ∧
         (u.gpr c).toNat = accVal s a / radix ∧ Keeps [t, c] s u := by
   have w := hs.write (d := d) (n := 8) hd
-  have oe : d % 8 = 0 ∧ d < 32768 := ⟨hd8, by omega⟩
+  have oe : D % 8 = 0 ∧ D < 32768 := ⟨hD8, hDlt⟩
   have hv : (s.gpr a.lo &&& s.gpr MASK) = BitVec.ofNat 64 (accVal s a % radix) := by
     apply BitVec.eq_of_toNat_eq
     rw [hm, low56 (s.gpr a.lo) (s.gpr a.hi), BitVec.toNat_ofNat,
       Nat.mod_eq_of_lt (Nat.lt_trans (Nat.mod_lt _ (by decide)) (by decide))]
     rfl
   refine WP.of_runBlock ⟨_, by
-    simp only [st, runBlock_cons, runStep_some, runBlock_nil, exec, addr, Size.bytes, Size.bits,
+    simp only [runBlock_cons, runStep_some, runBlock_nil, exec, addr, Size.bytes, Size.bits,
       read_x, State.store, RegUpd.gpr_write, RegUpd.wr_write, oe, and_self, Ne.symm h₄,
-      ite_false, hs.x3, w, ite_true, Option.bind_some, show 56 < 64 from by decide]; rfl, ?_⟩
+      ite_false, hD, w, ite_true, Option.bind_some, show 56 < 64 from by decide]; rfl, ?_⟩
   refine ⟨?_, ?_, fun q hq => ?_, rfl, rfl⟩
   · simp only [RegUpd.mem_write, BitVec.setWidth_eq, write8_eq, hv]
   · simp only [RegUpd.gpr_write, ite_true, Ne.symm h₁, Ne.symm h₂, ite_false]

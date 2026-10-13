@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.X448.AArch64.Fast.Setup
 public import VerifiedGarbage.Proof.X448.AArch64.Weak.Finish
+public import VerifiedGarbage.Proof.Ed448.AArch64.Point56.MulSlots
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -63,10 +64,9 @@ theorem finish_ok {s : State} {base p : Addr} (hs : Scr s base) (hb : BEnv s.mem
         (gv (VG.Impl.Curve448.AArch64.Neon.V (8 + k))).extractLsb' 0 64) ∧
       Keeps finishRegs s t ∧ Frame [⟨base, 8192⟩, ⟨p, 56⟩] s.mem t.mem ∧
       Spec.X448.bytesAt t.mem p 56 = Spec.X448.encodeUCoordinate (EV s.mem base 1 * EV s.mem base 21) := by
-  rw [Impl.X448.AArch64.Fast.finish]
-  simp only [List.append_assoc]
-  rw [WP.block_append_iff]
-  refine WP.mono (fmulE hs hb 1 1 21 (by decide)) fun u ⟨uk, ub, um, us, ue⟩ => ?_
+  rw [Impl.X448.AArch64.Fast.finish, WP.seq_iff]
+  refine WP.mono (VG.Proof.Ed448.AArch64.Point56.mulCallKE hs hb 1 1 21 (by decide))
+    fun u ⟨uk, ub, um, us, ue⟩ => ?_
   have us₀ := uk.scr hs
   rw [WP.block_append_iff]
   refine WP.mono (VG.Proof.Curve448.AArch64.toLegacy_ok' us₀ (o := X2) (by decide) (by decide)

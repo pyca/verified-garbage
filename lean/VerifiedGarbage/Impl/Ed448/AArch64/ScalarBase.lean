@@ -51,20 +51,20 @@ def bits : Prog isa :=
 
 /-! ## The encoding -/
 
-/-- With `1/Z` in `T7`: `Y` kept in slot 3, and `x = X/Z` into `X2` (slot 1),
-fully reduced; its low bit, as the top bit of the output's 57th byte; then `Y`
-back in `X2`. -/
-def sign : List Instr :=
-  .addImm .x .x1 .x20 0 ::
-    Impl.X448.AArch64.Fast.codeOf [.copy (slot 3) X2, .mul X2 (slot 0) Impl.X448.AArch64.T7] ++
-    Curve448.AArch64.toLegacy X2 ++ Impl.X448.AArch64.freeze ++
-    [ld .x4 X2, .lsl .x .x4 .x4 63, .lsr .x .x4 .x4 56, .strb .x4 .x1 56] ++
-    Impl.X448.AArch64.Fast.codeOf [.copy X2 (slot 3)]
+/-- With `1/Z` in `T7`: `Y` kept in slot 3, and `x = X/Z` into `X2` (slot 1, a call of
+`vg_gf448_r56_mul`), fully reduced; its low bit, as the top bit of the output's 57th byte; then
+`Y` back in `X2`. -/
+def sign : Prog isa :=
+  .seq (.block (.addImm .x .x1 .x20 0 :: Impl.X448.AArch64.Fast.codeOf [.copy (slot 3) X2])) <|
+  .seq (Point56.mulCallK X2 (slot 0) Impl.X448.AArch64.T7) <|
+  .block (Curve448.AArch64.toLegacy X2 ++ (Impl.X448.AArch64.freeze ++
+    ([ld .x4 X2, .lsl .x .x4 .x4 63, .lsr .x .x4 .x4 56, .strb .x4 .x1 56] ++
+    Impl.X448.AArch64.Fast.codeOf [.copy X2 (slot 3)])))
 
 /-- `Z` (slot 2) inverted into `T7`, the sign of `x`, and `y = Y/Z` written as
 X448 writes its result, the registers restored. -/
 def encode : Prog isa :=
-  .seq Impl.X448.AArch64.Fast.invert <| .seq (.block sign) Impl.X448.AArch64.Fast.finish
+  .seq Impl.X448.AArch64.Fast.invert <| .seq sign Impl.X448.AArch64.Fast.finish
 
 /-! ## The function -/
 

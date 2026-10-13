@@ -38,7 +38,7 @@ theorem tail_ct :
       (.seq wcross wfinish) h).isSome = true := by
   apply exists_isSome_of_eraseT
   simp only [Code.eraseT, wcross, wfinish, wcmp, wresult, Point56.doubleCall, Point56.addCall, fnCall, Point56.doubleFn,
-    Point56.addFn, asFn, ops_eraseT, List.map_append, codeOf_eraseT, eqSlots_eraseT]
+    Point56.addFn, asFn, ops_eraseT, List.map_append, eqSlots_eraseT]
   refine ⟨?h, ?g⟩
   case g => taint_decide
 

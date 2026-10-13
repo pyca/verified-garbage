@@ -37,7 +37,7 @@ namespace VG.Impl.Ed448.AArch64
 
 open VG.AArch64
 open VG.Impl.X448.AArch64 (ld st slot BITS)
-open VG.Impl.X448.AArch64.Fast (codeOf)
+open VG.Impl.X448.AArch64.Fast (codeOf opsK)
 open VG.Impl.X448.AArch64.Base (constSlot)
 
 /-! ## The working space -/
@@ -166,8 +166,8 @@ def wcross : Prog isa :=
     Curve448.AArch64.copy (slot 2) (slot 5) ++ Curve448.AArch64.copy (slot 3) RX ++
     Curve448.AArch64.copy (slot 4) RY ++ constSlot (slot 5) 1)) <|
   .seq Point56.doubleCall <| .seq Point56.doubleCall <|
-  .block (codeOf [.mul (slot 12) (slot 0) (slot 5), .mul (slot 13) (slot 3) (slot 2),
-     .mul (slot 14) (slot 1) (slot 5), .mul (slot 15) (slot 4) (slot 2)])
+  opsK [.mul (slot 12) (slot 0) (slot 5), .mul (slot 13) (slot 3) (slot 2),
+     .mul (slot 14) (slot 1) (slot 5), .mul (slot 15) (slot 4) (slot 2)]
 
 /-- One comparison: slots 12 and 13 compared (`eqSlots`), then slots 14 and 15 copied into
 them, for the second pass, and `x19` counted down. -/

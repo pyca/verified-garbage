@@ -94,13 +94,23 @@ theorem dblOk_written : ∀ d, dblOk d = true → d + 8 ≤ 8192 ∧ ∃ r ∈ w
     Spec.X448.Field56.accEnd]
   omega
 
-theorem powOk_written : ∀ d, powOk d = true → d + 8 ≤ 8192 ∧
-    ∃ r ∈ Spec.X448.Field56.powSlots :: Spec.X448.Field56.own, r.1 ≤ d ∧ d + 8 ≤ r.2 := by
-  intro d hd
-  simp only [powOk, Bool.or_eq_true, Bool.and_eq_true, decide_eq_true_eq] at hd
-  simp only [Spec.X448.Field56.powSlots, Spec.X448.Field56.own, List.mem_cons, List.not_mem_nil, or_false,
-    exists_eq_or_imp, exists_eq_left, slotAt, Spec.X448.Field56.accAt, Spec.X448.Field56.accEnd]
-  omega
+/-- `Field56.Keeps` of the power's slots and the products' coefficients, from the bytes kept
+outside them. -/
+theorem keeps_of_outside2 {ws : Addr} {m m' : Mem}
+    (h : VG.Proof.X448.AArch64.Outside2 ws 1856 1024 VG.Impl.X448.AArch64.ACC 1152 m m') :
+    Spec.X448.Field56.Keeps ws (Spec.X448.Field56.powSlots :: Spec.X448.Field56.own) m m' := by
+  intro i hi hr
+  have h1 := hr _ List.mem_cons_self
+  have h2 := hr _ (List.mem_cons_of_mem _ List.mem_cons_self)
+  have hW : Spec.X448.Field56.wsBytes = 8192 := rfl
+  simp only [Spec.X448.Field56.powSlots, slotAt] at h1
+  simp only [Spec.X448.Field56.accAt, Spec.X448.Field56.accEnd] at h2
+  rw [hW] at hi
+  have ho : VG.Proof.X448.AArch64.ofs ws (ws + BitVec.ofNat 64 i) = i := by
+    have := VG.Proof.X448.AArch64.ofs_off ws (d := 0) (i := i) (by omega)
+    simp only [VG.Proof.X448.AArch64.off, BitVec.add_zero, Nat.zero_add] at this
+    exact this
+  exact h _ (by rw [ho]; omega) (by rw [ho]; simp only [VG.Impl.X448.AArch64.ACC]; omega)
 
 theorem abi_of {c : Bool} {rs : List Reg} {s u : State} {Q : Mem → Prop} (h : FnPost c rs s u Q)
     (hr : ∀ r ∈ preserved, (r ∉ rs ∨ r ∈ (keptRegs c).map Prod.fst) ∧ r ≠ .x3 ∧ r ≠ .x12) :
@@ -141,7 +151,7 @@ theorem pow_arm (s : State) (hs : powF.pre s) :
   obtain ⟨t, u, he, hpost, hv⟩ := WP.preservedV (powFn_ok (fnPre_of hp hb)) powFn_keepsV
   obtain ⟨b, e, hf⟩ := hpost.2.2.2.2.2.2
   obtain ⟨hg, hsp⟩ := abi_of hpost (by decide)
-  refine ⟨t, u, he, ⟨hg, hsp, hv⟩, (bounded_iff _ _).mpr b, ?_, keeps_of_unstored powOk_written hf⟩
+  refine ⟨t, u, he, ⟨hg, hsp, hv⟩, (bounded_iff _ _).mpr b, ?_, keeps_of_outside2 hf⟩
   rw [show (21 : Nat) = (21 : Index).val from rfl, show (12 : Nat) = (12 : Index).val from rfl,
     elemAt_eq, elemAt_eq, e, rootEnv_eval, VG.Proof.Ed448.rootPow_eq]
 

@@ -31,6 +31,7 @@ open VG.Impl.X448.AArch64.Fast (ops codeOf)
 open VG.Proof.X448.AArch64 (Scr Keeps off word limbs Outside Outside2 ofs)
 open VG.Proof.X448.AArch64.Weak (Index Env)
 open VG.Proof.X448.AArch64.Fast (BEnv Bnd FKeep Same block_codeOf ops_append mulOp)
+open VG.Proof.Ed448.AArch64.Point56 (mulOpK)
 open VG.Proof.Curve448.AArch64.Fast (Mb Ib)
 open VG.Proof.X448.AArch64.Base (pt genEnv genPt temps addOps_ok zero_env constSlot_ok bnd_of_words F_of_words)
 open VG.Spec.Ed448 (Point)
@@ -254,14 +255,13 @@ theorem wcross_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BEnv s.mem b
     rw [Same.env s10 (i := 0) (by decide), Same.env s10 (i := 1) (by decide), Same.env s10 (i := 2) (by decide),
       Same.env s9 (i := 0) (by decide), Same.env s9 (i := 1) (by decide), Same.env s9 (i := 2) (by decide)]
   -- The products.
-  refine block_codeOf ?_
-  refine mulOp hs10 b10 12 0 5 (Or.inr (by decide)) fun t11 k11 b11 m12 s11 e11 => ?_
+  refine mulOpK hs10 b10 12 0 5 (Or.inr (by decide)) fun t11 k11 b11 m12 s11 e11 => ?_
   have hs11 := k11.scr hs10
-  refine mulOp hs11 b11 13 3 2 (Or.inr (by decide)) fun t12 k12 b12 m13 s12 e12 => ?_
+  refine mulOpK hs11 b11 13 3 2 (Or.inr (by decide)) fun t12 k12 b12 m13 s12 e12 => ?_
   have hs12 := k12.scr hs11
-  refine mulOp hs12 b12 14 1 5 (Or.inr (by decide)) fun t13 k13 b13 m14 s13 e13 => ?_
+  refine mulOpK hs12 b12 14 1 5 (Or.inr (by decide)) fun t13 k13 b13 m14 s13 e13 => ?_
   have hs13 := k13.scr hs12
-  refine mulOp hs13 b13 15 4 2 (Or.inr (by decide)) fun t k14 b14 m15 s14 e14 => WP.block_nil ?_
+  refine mulOpK hs13 b13 15 4 2 (Or.inr (by decide)) fun t k14 b14 m15 s14 e14 => WP.block_nil ?_
   have qx : EV t10.mem base 0 = (dbl2 (addPt (pt (EV s.mem base) 0 1 2) (pt (EV s.mem base) 3 4 5))).X :=
     congrArg Point.X q10
   have qy : EV t10.mem base 1 = (dbl2 (addPt (pt (EV s.mem base) 0 1 2) (pt (EV s.mem base) 3 4 5))).Y :=
