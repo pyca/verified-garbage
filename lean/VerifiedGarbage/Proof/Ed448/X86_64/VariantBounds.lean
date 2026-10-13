@@ -6,6 +6,7 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Ed448.X86_64.BaseLit
 
 /-! Stack and register bounds shared by callers of every field backend. -/
 

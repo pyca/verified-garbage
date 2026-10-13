@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWs
 public import VerifiedGarbage.Proof.Bignum.CrtWindowFiveLayout
 public import VerifiedGarbage.Impl.Rsa.AArch64.WindowFive
+import Mathlib.Data.Int.ModEq
 
 @[expose] public section
 

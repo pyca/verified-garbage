@@ -6,6 +6,7 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! Eight-limb decomposition of a triangular square. The decomposition
 uses the same target-independent triangular identities as the x86-64 tiles. -/

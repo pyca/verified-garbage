@@ -7,6 +7,7 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # Ed25519 verification on AArch64: the cached `-[1]B … -[15]B` in a static

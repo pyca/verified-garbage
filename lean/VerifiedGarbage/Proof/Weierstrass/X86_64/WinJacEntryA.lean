@@ -7,6 +7,9 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Mont.X86_64.Wide
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
 
 /-!
 # 5-bit windows with an affine table on x86-64: the entry of a digit

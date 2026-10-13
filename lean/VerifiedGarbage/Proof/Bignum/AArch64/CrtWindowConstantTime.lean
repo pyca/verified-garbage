@@ -9,6 +9,8 @@ public import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTSetupFix
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowFinCT
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTNSetup
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTSetupFix
+import Mathlib.Data.Int.ModEq
+meta import Mathlib.Data.Int.ModEq
 
 /-! Complete constant-time composition of the wider-window CRT computation. -/
 

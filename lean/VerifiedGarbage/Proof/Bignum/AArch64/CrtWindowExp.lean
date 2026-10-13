@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowFrameContext
+import Mathlib.Data.Int.ModEq
 
 /-! Five-bit prime exponentiation with an explicitly bounded wider table. -/
 

@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Bignum.AArch64.WindowHelperContract
 public import VerifiedGarbage.Proof.Bignum.AArch64.SquareHelper
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowRawBody
+import Mathlib.Data.Int.ModEq
 
 /-! Memory and arithmetic context for the callable window. -/
 

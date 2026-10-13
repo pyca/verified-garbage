@@ -4,6 +4,8 @@ public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorBody
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowTableCT
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorBody
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowTableCT
+import Mathlib.Data.Int.ModEq
+meta import Mathlib.Data.Int.ModEq
 
 /-! A vector tile leaks only public addresses; the table digit remains secret. -/
 

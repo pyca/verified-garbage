@@ -11,6 +11,7 @@ import all Init.Data.Vector.Basic
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.TaintSum
 
 /-!
 # RC2-CBC's streaming functions on ARMv7, with their working space on the stack

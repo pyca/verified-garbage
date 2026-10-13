@@ -7,6 +7,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Impl.StackScratch.X86_64
+import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
 
 /-!
 # ChaCha20-Poly1305 with the data's first bytes from `src`, x86-64: `Verified`

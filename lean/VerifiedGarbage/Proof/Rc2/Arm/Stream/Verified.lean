@@ -22,6 +22,8 @@ import VerifiedGarbage.Proof.Framework.Omega
 meta import Mathlib.Tactic.Conv
 meta import Mathlib.Tactic.SplitIfs
 meta import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.TaintSum
+meta import VerifiedGarbage.Proof.Framework.TaintSum
 
 @[expose] public section
 

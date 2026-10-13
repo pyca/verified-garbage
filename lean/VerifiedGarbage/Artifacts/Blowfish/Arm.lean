@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Blowfish.Arm.Frame
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Blowfish.Arm.Run
+import VerifiedGarbage.Proof.Framework.TaintSum
 
 @[expose] public section
 

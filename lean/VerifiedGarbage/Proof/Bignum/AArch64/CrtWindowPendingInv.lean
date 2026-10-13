@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowPendingMath
+import Mathlib.Data.Int.ModEq
 
 /-! The completed exponent prefix and bounded pending bits form one integer. -/
 

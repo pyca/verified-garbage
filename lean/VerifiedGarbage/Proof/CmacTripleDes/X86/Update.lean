@@ -7,6 +7,7 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.CmacTripleDes.X86.Block
 
 /-!
 # TDEA-CMAC on x86: `vg_cmac_triple_des_update`

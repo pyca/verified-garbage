@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorHead
+import Mathlib.Data.Int.ModEq
 
 /-! Initialize the complete invariant for a 32-row vector scan. -/
 

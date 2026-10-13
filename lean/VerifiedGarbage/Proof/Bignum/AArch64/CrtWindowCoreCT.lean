@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowCore
+import Mathlib.Data.Int.ModEq
 
 /-! Constant-time composition of a five-bit window. Only workspace layout
 is shared between runs; the modulus, table and selected digit are secret. -/

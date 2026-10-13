@@ -8,6 +8,7 @@ import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Rc2.AArch64.Lookup
 
 @[expose] public section
 

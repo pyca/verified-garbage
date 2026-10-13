@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowPendingInv
+import Mathlib.Data.Int.ModEq
 
 /-! Composition of tail bits into complete source bytes. -/
 

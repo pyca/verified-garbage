@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowGroupsCT
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowGroupsCT
 public meta import VerifiedGarbage.Impl.Rsa.AArch64.WindowLoop
+import Mathlib.Data.Int.ModEq
+meta import Mathlib.Data.Int.ModEq
 
 /-! The trailing-byte loop depends on public length, never exponent bits. -/
 

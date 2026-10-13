@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Words
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! Append a contiguous block of exponent bytes without padding. -/
 

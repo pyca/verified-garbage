@@ -4,6 +4,10 @@ public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowConstantTime
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowDispatch
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowConstantTime
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowDispatch
+import Mathlib.Data.Int.ModEq
+import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
+meta import Mathlib.Data.Int.ModEq
+meta import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
 
 @[expose] public section
 namespace VG.Proof.Bignum.AArch64.WindowFive

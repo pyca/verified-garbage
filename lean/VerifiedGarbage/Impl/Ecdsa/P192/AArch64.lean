@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Ecdsa.AArch64
 public import VerifiedGarbage.Spec.P192
+public import VerifiedGarbage.Spec.Weierstrass.Mul
 
 /-! # p192 on AArch64, using complete general addition -/
 

@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowPrefixInv
+import Mathlib.Data.Int.ModEq
 
 /-! Loading a trailing byte preserves its pending exponent and table. -/
 

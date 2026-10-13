@@ -5,6 +5,8 @@ public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowCore
 import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcGuard
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorCT
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowCore
+import Mathlib.Data.Int.ModEq
+meta import Mathlib.Data.Int.ModEq
 
 /-! Select SIMD only for complete public-width tiles, with a scalar fallback. -/
 

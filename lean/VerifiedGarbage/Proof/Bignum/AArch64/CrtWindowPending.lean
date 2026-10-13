@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowTailBit
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowReset
+import Mathlib.Data.Int.ModEq
 
 /-! Tail-bit preparation preserves the Montgomery context and all source bytes. -/
 

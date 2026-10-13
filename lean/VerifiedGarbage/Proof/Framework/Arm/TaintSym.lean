@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.Arm.TaintMono
 public import VerifiedGarbage.Proof.Framework.Arm.Syms
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # ARMv7 taint tracking with the addresses of statics

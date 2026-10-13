@@ -14,6 +14,12 @@ import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 meta import Mathlib.Tactic.SplitIfs
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import Mathlib.Logic.Function.Basic
+import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Mont.AArch64.Row
+meta import Mathlib.Logic.Function.Basic
+meta import VerifiedGarbage.Proof.Framework.AArch64.Call
+meta import VerifiedGarbage.Proof.Mont.AArch64.Row
 
 @[expose] public section
 

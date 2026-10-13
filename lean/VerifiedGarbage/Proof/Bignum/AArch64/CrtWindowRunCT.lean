@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowTailsCT
+import Mathlib.Data.Int.ModEq
 
 /-! Constant time for the complete exponent, including both tails. -/
 

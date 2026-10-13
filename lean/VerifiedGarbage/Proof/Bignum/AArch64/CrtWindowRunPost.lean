@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowRunContext
+import Mathlib.Data.Int.ModEq
 
 /-! Functional postconditions used to carry the constant-time loop invariants. -/
 

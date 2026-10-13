@@ -14,6 +14,8 @@ import VerifiedGarbage.Proof.Ed448.X86_64.Window.SelectBase
 import VerifiedGarbage.Proof.Ed448.X86_64.Window.SelectKey
 meta import VerifiedGarbage.Proof.Ed448.X86_64.Window.SelectBase
 meta import VerifiedGarbage.Proof.Ed448.X86_64.Window.SelectKey
+import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+meta import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 
 /-! Verification lookups reveal only public scalar digits. -/
 

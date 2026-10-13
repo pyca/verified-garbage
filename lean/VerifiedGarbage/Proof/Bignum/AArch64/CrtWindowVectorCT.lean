@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorStepCT
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorStepCT
+import Mathlib.Data.Int.ModEq
+meta import Mathlib.Data.Int.ModEq
 
 /-! The number of tiles and all table addresses depend only on public widths. -/
 

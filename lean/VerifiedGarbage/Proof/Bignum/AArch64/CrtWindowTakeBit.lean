@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowPending
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowBody
+import Mathlib.Data.Int.ModEq
 
 /-! A tail bit either extends the pending digit or executes one complete window. -/
 

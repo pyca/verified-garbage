@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowHeadCT
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowRunContext
+import Mathlib.Data.Int.ModEq
 
 /-! Constant time for wider-table prime exponentiation under the existing key bounds. -/
 

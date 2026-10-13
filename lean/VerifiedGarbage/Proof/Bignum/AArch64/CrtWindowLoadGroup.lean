@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowGroup
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowCore
+import Mathlib.Data.Int.ModEq
 
 /-! Read five exponent bytes while preserving the complete precomputed table. -/
 

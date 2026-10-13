@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorScan
+import Mathlib.Data.Int.ModEq
 
 /-! Store a selected 64-byte block while preserving its source snapshot. -/
 

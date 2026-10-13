@@ -12,6 +12,7 @@ import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.MlKem.AArch64.KgC
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedPairedChecks
 
 /-! ## From `CachedLoopFrame.lean` -/
 

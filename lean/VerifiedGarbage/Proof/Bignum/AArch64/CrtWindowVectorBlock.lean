@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorStore
+import Mathlib.Data.Int.ModEq
 
 /-! A full table scan followed by the four stores of one selected block. -/
 

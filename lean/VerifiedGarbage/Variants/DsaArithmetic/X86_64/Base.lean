@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Backend
 public import VerifiedGarbage.Proof.Dsa.X86_64.Calls
+import VerifiedGarbage.Proof.Framework.X86_64.Call
 
 /-! # Baseline x86-64 Montgomery arithmetic for DSA
 

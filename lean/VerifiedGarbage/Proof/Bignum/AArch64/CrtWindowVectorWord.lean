@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Impl.Rsa.AArch64.WindowSelectVector
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowTable
 public import VerifiedGarbage.Proof.Framework.AArch64.SimdMem64
+import Mathlib.Data.Int.ModEq
 
 /-! A table row's SIMD comparison and masked insertion. -/
 

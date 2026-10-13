@@ -5,6 +5,13 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Bignum.AArch64.MontMul
+public import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightRows
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightSave
+import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightRows
+import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Framework.TaintBatch
 
 @[expose] public section
 namespace VG.Proof.Bignum.AArch64.SquareEight

@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Rc2.Arm.Lookup
+public import VerifiedGarbage.Spec.Rc2
 
 /-! # RC2 block encryption and decryption on baseline Arm -/
 

@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowGroups
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowTails
+import Mathlib.Data.Int.ModEq
 
 /-! Complete exponentiation through shared five-bit windows and exact tails. -/
 

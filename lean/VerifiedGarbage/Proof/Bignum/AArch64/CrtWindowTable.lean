@@ -7,6 +7,7 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Data.Int.ModEq
 
 /-! Safety and correctness of the 32-entry scalar selection fallback,
 including full-table reads and preservation of the Montgomery context. -/

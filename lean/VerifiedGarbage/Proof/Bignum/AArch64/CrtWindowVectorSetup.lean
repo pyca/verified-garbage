@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorClear
+import Mathlib.Data.Int.ModEq
 
 /-! Resolve the workspace addresses and public block count for SIMD selection. -/
 

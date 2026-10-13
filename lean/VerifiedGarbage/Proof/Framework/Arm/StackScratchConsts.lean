@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
 public import VerifiedGarbage.Proof.Framework.Arm.Syms
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # A scratch buffer on the stack, for code that reads tables of constants (ARMv7)
