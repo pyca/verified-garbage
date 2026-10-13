@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtSelV
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtRedc
 public import VerifiedGarbage.Proof.Framework.X86_64.VecKeep
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
@@ -174,10 +175,6 @@ theorem gathHeadV_ok {t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc 
     · rw [show gX 7 = .xmm15 from rfl, l₉, y₈ _ (by decide)]; exact q₇ l hl q hq
   exact ⟨hG, h14, by rw [kA.gpr (by decide)]; exact h11, by rw [kA.gpr (by decide)]; exact h15,
     by rw [m₉, m₈, m₇], (k₁.trans kA).mono (by decide)⟩
-
-theorem ofNat_beq_zero {a : Nat} (ha : a < 2 ^ 64) : (BitVec.ofNat 64 a == 0) = decide (a = 0) := by
-  have := ofNat_sub_beq (j := a) (N := 0) ha (by decide)
-  rwa [show BitVec.ofNat 64 a - BitVec.ofNat 64 0 = BitVec.ofNat 64 a from BitVec.sub_zero _] at this
 
 /-- The words of `[aT]` below `2 ⌈w / 2⌉` after a pass's chunks: the four-word
 loop if any, then the last two words if left. -/

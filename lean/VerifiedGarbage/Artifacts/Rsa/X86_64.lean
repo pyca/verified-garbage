@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Rsa.X86_64.PubChecked
 public import VerifiedGarbage.Proof.Bignum.X86_64.PcVerified
 public import VerifiedGarbage.Proof.Bignum.X86_64.FoldedBackend
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtVerified
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSelV
 public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Verified
 public import VerifiedGarbage.Proof.Rsa.X86_64.CvVerified
 public import VerifiedGarbage.Proof.Rsa.X86_64.RpVerified
@@ -120,14 +121,17 @@ def artifacts : List Artifact := [
     name := Spec.Rsa.privateCrtApi.name ++ "_adx"
     doc := Spec.Rsa.privateCrtApi.doc
       (notes := ["`vg_rsa_private_crt`'s code, with Montgomery multiplication by calls of \
-        `vg_rsa_mont_mul_adx`."])
+        `vg_rsa_mont_mul_adx`, and the table's masked selection four words at a time in AVX2's 256-bit \
+        registers."])
     code := Impl.Rsa.X86_64.Crt.code Proof.Rsa.X86_64.CallMont.adx.mm Impl.Rsa.X86_64.Crt.tabSelectV
     contract := Spec.Rsa.privateCrtContract X86_64.abi 8
     stack := 8
     verified := Proof.Rsa.X86_64.crt_call_verified (by decide +kernel)
-      (Proof.Bignum.X86_64.crtCode_correct Proof.Bignum.X86_64.Mont.fnAdx (by decide +kernel))
-      (Proof.Bignum.X86_64.crtCode_constantTime Proof.Bignum.X86_64.Mont.fnAdx)
-    features := ["bmi2", "adx"]
+      (Proof.Bignum.X86_64.crtCode_correct Proof.Bignum.X86_64.Mont.fnAdx Proof.Bignum.X86_64.CrtSel.avx
+        (by decide +kernel))
+      (Proof.Bignum.X86_64.crtCode_constantTime Proof.Bignum.X86_64.Mont.fnAdx Proof.Bignum.X86_64.CrtSel.avx
+        Proof.Bignum.X86_64.tabSelV_ct)
+    features := ["avx", "avx2", "bmi2", "adx"]
     spSafe := Code.all_of_allInstrs (by decide +kernel) },
   { Spec.Rsa.privateCrtApi with
     target := X86_64.target
