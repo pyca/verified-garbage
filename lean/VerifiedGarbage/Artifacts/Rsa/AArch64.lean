@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Bignum.AArch64.SquareHelper
 public import VerifiedGarbage.Proof.Rsa.AArch64.PubChecked
 public import VerifiedGarbage.Proof.Rsa.AArch64.FoldedChecked
 public import VerifiedGarbage.Proof.Bignum.AArch64.PcVerified
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtVerified
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowBase
 public import VerifiedGarbage.Proof.Rsa.AArch64.CvVerified
 public import VerifiedGarbage.Proof.Rsa.AArch64.CkVerified
 public import VerifiedGarbage.Proof.Rsa.AArch64.CrtKeyVerified
@@ -32,7 +32,20 @@ def squareHelper (slot : Spec.Rsa.MontSquare.Slot) : Artifact :=
     verified := Proof.Bignum.AArch64.SquareHelper.verified M slot
     spSafe := Code.all_of_forall (fun _ => rfl) _ }
 
-def artifacts : List Artifact := [squareHelper .r2, squareHelper .y,
+/-- Share the repeated five-square window body across all CRT callers. -/
+def windowHelper : Artifact :=
+  { Spec.Rsa.MontWindow.windowApi with
+    target := AArch64.target
+    doc := Spec.Rsa.MontWindow.windowApi.doc
+      (notes := ["Baseline AArch64: calls the verified accumulator square, with a constant-time \
+        four-vector table scan and scalar fallback for unsupported widths."])
+    code := Proof.Bignum.AArch64.WindowFive.body.code
+    contract := Spec.Rsa.MontWindow.windowContract AArch64.abi
+    verified := Proof.Bignum.AArch64.WindowHelper.verified Proof.Bignum.AArch64.Mont.base
+      Proof.Bignum.AArch64.WindowVector.selector
+    spSafe := Code.all_of_forall (fun _ => rfl) _ }
+
+def artifacts : List Artifact := [squareHelper .r2, squareHelper .y, windowHelper,
   { Spec.Rsa.publicCheckedApi with
     target := AArch64.target
     doc := Spec.Rsa.publicCheckedApi.doc
@@ -80,12 +93,13 @@ def artifacts : List Artifact := [squareHelper .r2, squareHelper .y,
         the result is stored masked. Each prime has its own working space, with its own \
         Montgomery multiplication (`vg_rsa_public_checked`'s); the input is reduced modulo it by \
         Montgomery reduction of chunks of its size, and the exponents are scanned left to right \
-        over all their bits by a fixed window of 4 bits: four squares and a multiplication by the \
-        window's power of the input, from a table of all 16 after the prime's working space, read \
-        by a masked selection from every entry."])
-    code := Impl.Rsa.AArch64.Crt.code Proof.Bignum.AArch64.Mont.base.mm
+        over all their bits. Moduli of at least 128 bytes use shared five-bit windows and \
+        32-entry tables within the existing scratch allocation, with a four-vector masked scan \
+        when the public width permits it. Other widths use scalar selection; smaller moduli \
+        retain the four-bit window. The final partial window consumes exactly its remaining bits."])
+    code := Proof.Bignum.AArch64.WindowFive.code
     contract := Spec.Rsa.privateCrtContract AArch64.abi
-    verified := Proof.Bignum.AArch64.crt_verified _
+    verified := Proof.Bignum.AArch64.WindowFive.base_verified
     spSafe := Code.all_of_forall (fun _ => rfl) _ },
   { Spec.Rsa.crtValuesApi with
     target := AArch64.target

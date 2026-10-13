@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.AArch64.PrivImpl
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtVerified
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowBase
 public import VerifiedGarbage.Proof.Bignum.AArch64.PcVerified
 public import VerifiedGarbage.Proof.Rsa.AArch64.FoldedChecked
 
@@ -21,8 +21,8 @@ open VG.AArch64 VG.Proof.Bignum VG.Proof.Bignum.AArch64
 
 def variant : Proof.Rsa.AArch64.CrtImpl where
   name := Spec.Rsa.privateCrtApi.name
-  code := Impl.Rsa.AArch64.Crt.code Mont.base.mm
-  verified := crt_verified Mont.base
+  code := WindowFive.code
+  verified := WindowFive.base_verified
   noFrames := by decide +kernel
   pcName := Spec.Rsa.publicPrecomputeApi.name
   pc := Impl.Rsa.AArch64.Precompute.code Mont.base.mm
