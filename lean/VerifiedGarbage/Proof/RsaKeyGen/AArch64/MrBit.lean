@@ -46,6 +46,7 @@ public import VerifiedGarbage.Proof.Bignum.AArch64.WideDiagonalStep
 public import VerifiedGarbage.Proof.Bignum.CrtMath
 public import VerifiedGarbage.Proof.Framework.Range
 public import VerifiedGarbage.Proof.Framework.WriteBytes
+public import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightInternal
 
 /-!
 # A candidate on AArch64: one bit of Miller–Rabin's exponentiation

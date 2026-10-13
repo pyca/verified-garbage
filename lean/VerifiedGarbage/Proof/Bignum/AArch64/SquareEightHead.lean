@@ -11,6 +11,8 @@ import VerifiedGarbage.Proof.Framework.TaintBatch
 public import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightRows
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightSetup
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareLayout
+public import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightTile
+import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightInternal
 
 @[expose] public section
 namespace VG.Proof.Bignum.AArch64.SquareEight
