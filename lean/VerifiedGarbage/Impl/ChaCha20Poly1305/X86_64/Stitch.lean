@@ -396,9 +396,14 @@ def winHi : Nat := 1025
 
 /-- `CF` set if `len` (`r9`) is below `lim` or in `[winLo, winHi)`: `rax`
 is `len`, or 0 in the window (unsigned, `len - winLo < winHi - winLo`), and
-is compared with `lim`; `rax` and `r10` are scratch. -/
+is compared with `lim`; `rax` and `r10` are scratch. The first instruction,
+`mov eax, 0` (5 bytes), only pads the test to 39 bytes, 32 more than the
+`cmp r9, lim` it replaced, so that the code after it, and every function
+after it, keeps its offsets modulo 32: on Cascade Lake (whose microcode
+mitigates the JCC erratum), moving the AVX-512 code by 27 bytes made seal
+1-2.6% slower at 896 to 960 bytes. -/
 def smallTest (lim : Nat) : List Instr :=
-  [.mov .rax (.reg .r9), .mov .r10 (.reg .r9), .alu .sub .r10 (.imm (BitVec.ofNat 32 winLo)),
+  [.mov32 .rax (.imm 0), .mov .rax (.reg .r9), .mov .r10 (.reg .r9), .alu .sub .r10 (.imm (BitVec.ofNat 32 winLo)),
    .alu .cmp .r10 (.imm (BitVec.ofNat 32 (winHi - winLo))), .mov .r10 (.imm 0),
    .cmov .b .rax (.reg .r10), .alu .cmp .rax (.imm (BitVec.ofNat 32 lim))]
 

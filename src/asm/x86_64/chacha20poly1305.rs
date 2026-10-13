@@ -43771,6 +43771,7 @@ pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_seal_avx512(key: *cons
         "mov rax, rsp",
         "add rax, 24",
         "mov QWORD PTR [rsp+16], rax",
+        "mov eax, 0",
         "mov rax, r9",
         "mov r10, r9",
         "sub r10, 961",
@@ -64240,6 +64241,7 @@ pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_open_avx512(key: *cons
         "mov rax, rsp",
         "add rax, 24",
         "mov QWORD PTR [rsp+16], rax",
+        "mov eax, 0",
         "mov rax, r9",
         "mov r10, r9",
         "sub r10, 961",
@@ -71376,7 +71378,7 @@ pub(crate) const VG_CHACHA20_POLY1305_SEAL_GATHER_AVX512_FEATURES: crate::cpu::F
 pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_seal_gather_avx512(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         "mov rax, QWORD PTR [rsp+16]",
-        "cmp rax, 961",
+        "cmp rax, 1025",
         "jb 20f",
         "push rdi",
         "push rsi",
@@ -71669,6 +71671,7 @@ pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_seal_avx512vl(key: *co
         "mov rax, rsp",
         "add rax, 24",
         "mov QWORD PTR [rsp+16], rax",
+        "mov eax, 0",
         "mov rax, r9",
         "mov r10, r9",
         "sub r10, 961",
@@ -90237,6 +90240,7 @@ pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_open_avx512vl(key: *co
         "mov rax, rsp",
         "add rax, 24",
         "mov QWORD PTR [rsp+16], rax",
+        "mov eax, 0",
         "mov rax, r9",
         "mov r10, r9",
         "sub r10, 961",
@@ -96898,7 +96902,7 @@ pub(crate) const VG_CHACHA20_POLY1305_SEAL_GATHER_AVX512VL_FEATURES: crate::cpu:
 pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_seal_gather_avx512vl(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         "mov rax, QWORD PTR [rsp+16]",
-        "cmp rax, 961",
+        "cmp rax, 1025",
         "jb 20f",
         "push rdi",
         "push rsi",

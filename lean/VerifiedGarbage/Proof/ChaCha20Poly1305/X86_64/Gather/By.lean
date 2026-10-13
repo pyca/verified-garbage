@@ -12,7 +12,7 @@ import all Init.Data.Vector.Basic
 # ChaCha20-Poly1305 encryption out of place, from a list of slices, x86-64: by length
 
 Untrusted: everything here is checked by Lean. `sealGatherBy` compares
-`len` with 961 (`lenCmp_ok`, through `rax`) and runs, for less, the code that
+`len` with `lim`, 961 or 1025 (`lenCmp_ok`, through `rax`) and runs, for less, the code that
 gathers every slice and calls `seal` (`Whole`), else the code that calls
 `seal_split` (`Gather/Fn.lean`). Each is proven from its own precondition,
 which `gatherPre` (with the 1880 bytes of stack the second needs) gives in
@@ -34,8 +34,8 @@ open VG.Impl.AesGcm.X86_64 (at_ imm)
 open VG.Proof.AesGcm.X86_64 (imm_eq)
 open VG.Impl.ChaCha20Poly1305.X86_64.SealGather (Width sealGather sealGatherWhole sealGatherBy)
 
-/-- The comparison of `len` with 961. -/
-abbrev lenCmp : List Instr := [.mov .rax (.mem (at_ .rsp 16)), .alu .cmp .rax (imm 961)]
+/-- The comparison of `len` with `lim`. -/
+abbrev lenCmp (lim : Nat) : List Instr := [.mov .rax (.mem (at_ .rsp 16)), .alu .cmp .rax (imm lim)]
 
 /-- A state that differs from `s` at most in `rax` and the flags. -/
 structure CmpSame (s e : State) : Prop where
@@ -45,15 +45,17 @@ structure CmpSame (s e : State) : Prop where
   wr : e.wr = s.wr
   mx : e.mxcsr = s.mxcsr
 
-theorem lenCmp_ok (s : State) (hin : InRegions (s.rd ++ s.wr) (s.gpr .rsp + BitVec.ofNat 64 16) 8) :
-    WP isa (.block lenCmp) s fun e => isa.eval .b e = some (decide (L s < 961)) ∧ CmpSame s e := by
-  have i961 := imm_eq (n := 961) (by decide)
+theorem lenCmp_ok {lim : Nat} (hlim : lim < 2 ^ 31) (s : State)
+    (hin : InRegions (s.rd ++ s.wr) (s.gpr .rsp + BitVec.ofNat 64 16) 8) :
+    WP isa (.block (lenCmp lim)) s fun e => isa.eval .b e = some (decide (L s < lim)) ∧ CmpSame s e := by
+  have il := imm_eq hlim
   apply WP.of_runBlock
-  refine ⟨_, by xrun [lenCmp, hin, i961], ?_⟩
+  refine ⟨_, by xrun [lenCmp, hin, il], ?_⟩
   refine ⟨?_, ⟨fun r hr => by simp [gpr_setReg, gpr_arithFlags, hr], rfl, rfl, rfl, rfl⟩⟩
   show (State.cf _) = _
   simp only [cf_arithFlags, gpr_setReg, ↓reduceIte, BitVec.toNat_ofNat]
-  show some (decide ((s.mem.readW (s.gpr .rsp + BitVec.ofNat 64 16) 64).toNat < 961 % 2 ^ 64)) = _
+  show some (decide ((s.mem.readW (s.gpr .rsp + BitVec.ofNat 64 16) 64).toNat < lim % 2 ^ 64)) = _
+  rw [Nat.mod_eq_of_lt (by omega)]
   rfl
 
 section
@@ -171,12 +173,14 @@ theorem len_in {s : State} (hs : gatherPre s) :
     rw [Offset.add_ofNat_add_ofNat]]
   exact Offset.contains_base _ (by decide) (by decide)
 
-theorem sealGatherBy_correct (w : Width) (F : Whole.SealFn) (G : SealSplitFn) (s : State) (hs : gatherPre s) :
-    ∃ t s', Exec isa (sealGatherBy w F.name F.code G.name G.code) s t s' ∧ abiPreserved s s' ∧
+theorem sealGatherBy_correct {lim : Nat} (hlim : lim < 2 ^ 31) (w : Width) (F : Whole.SealFn) (G : SealSplitFn)
+    (s : State) (hs : gatherPre s) :
+    ∃ t s', Exec isa (sealGatherBy lim w F.name F.code G.name G.code) s t s' ∧ abiPreserved s s' ∧
       gatherPost s s' := by
-  have hw : WP isa (sealGatherBy w F.name F.code G.name G.code) s fun z => abiPreserved s z ∧ gatherPost s z := by
-    refine WP.seq (WP.mono (lenCmp_ok s (len_in hs)) fun e ⟨hb, he⟩ => ?_)
-    refine WP.ite (decide (L s < 961)) hb (fun _ => ?_) (fun _ => ?_)
+  have hw : WP isa (sealGatherBy lim w F.name F.code G.name G.code) s fun z =>
+      abiPreserved s z ∧ gatherPost s z := by
+    refine WP.seq (WP.mono (lenCmp_ok hlim s (len_in hs)) fun e ⟨hb, he⟩ => ?_)
+    refine WP.ite (decide (L s < lim)) hb (fun _ => ?_) (fun _ => ?_)
     · exact WP.mono (Whole.sealGather_wp w F (whole_pre he hs)) fun z ⟨ha, hp⟩ =>
         ⟨abi_same he ha, (whole_post he).mp hp⟩
     · exact WP.mono (sealGather_wp w G (pre_same he hs)) fun z ⟨ha, hp⟩ =>
@@ -193,22 +197,28 @@ theorem rel_of_ct {pre : State → Prop} {pub : State → State → Prop} {c : P
   subst ea eb
   exact ⟨hc _ _ _ _ _ _ h₁ h₂ hp e₁ e₂, trivial⟩
 
-theorem sealGatherBy_ct (w : Width) (F : Whole.SealFn) (G : SealSplitFn) :
-    ConstantTime isa gatherPre gatherPub (sealGatherBy w F.name F.code G.name G.code) := by
+theorem sealGatherBy_ct {lim : Nat} (hlim : lim = 961 ∨ lim = 1025) (w : Width) (F : Whole.SealFn)
+    (G : SealSplitFn) :
+    ConstantTime isa gatherPre gatherPub (sealGatherBy lim w F.name F.code G.name G.code) := by
+  have hl : lim < 2 ^ 31 := by omega
+  have ht : ∃ h, (taint.check (Taint.ofRegs [.rsp]) (.block (lenCmp lim)) h).isSome = true := by
+    rcases hlim with rfl | rfl <;> exact ⟨_, by taint_decide⟩
   refine ct_of fun σ₁ σ₂ p₁ p₂ hq => ?_
   have hsp : σ₁.gpr .rsp = σ₂.gpr .rsp := hq.2.2.2.2.2.2.1
   have hL : L σ₂ = L σ₁ := congrArg BitVec.toNat hq.2.2.2.2.2.2.2.2.1.symm
-  refine rel_seq (rel_regs [.rsp] (by simp [hsp]) ⟨_, by taint_decide⟩)
-    (lenCmp_ok σ₁ (len_in p₁)) (lenCmp_ok σ₂ (len_in p₂)) fun e₁ e₂ ⟨b₁, h₁⟩ ⟨b₂, h₂⟩ => ?_
+  refine rel_seq (rel_regs [.rsp] (by simp [hsp]) ht)
+    (lenCmp_ok hl σ₁ (len_in p₁)) (lenCmp_ok hl σ₂ (len_in p₂)) fun e₁ e₂ ⟨b₁, h₁⟩ ⟨b₂, h₂⟩ => ?_
   rw [hL] at b₂
   refine rel_ite b₁ b₂ (fun _ => ?_) (fun _ => ?_)
   · exact rel_of_ct (Whole.sealGather_ct w F) (whole_pre h₁ p₁) (whole_pre h₂ p₂) (whole_pub h₁ h₂ hq)
   · exact rel_of_ct (sealGather_ct w G) (pre_same h₁ p₁) (pre_same h₂ p₂) (pub_same h₁ h₂ hq)
 
-theorem sealGatherBy_verified (w : Width) (F : Whole.SealFn) (G : SealSplitFn) :
-    Verified X86_64.target (sealGatherBy w F.name F.code G.name G.code)
+theorem sealGatherBy_verified {lim : Nat} (hlim : lim = 961 ∨ lim = 1025) (w : Width) (F : Whole.SealFn)
+    (G : SealSplitFn) :
+    Verified X86_64.target (sealGatherBy lim w F.name F.code G.name G.code)
       (Spec.ChaCha20Poly1305.sealGatherContract X86_64.abi 1880) :=
-  Verified.of_correct (k := gatherX86_64) (sealGatherBy_correct w F G) (sealGatherBy_ct w F G) gather_implies
+  Verified.of_correct (k := gatherX86_64) (sealGatherBy_correct (by omega) w F G) (sealGatherBy_ct hlim w F G)
+    gather_implies
 
 /-- `Whole` alone, from `gatherPre` (with 1880 bytes of stack). -/
 theorem sealGatherWhole_verified (w : Width) (F : Whole.SealFn) :

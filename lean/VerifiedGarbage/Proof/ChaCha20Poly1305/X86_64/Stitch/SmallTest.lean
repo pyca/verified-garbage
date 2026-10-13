@@ -49,7 +49,7 @@ theorem smallTest_ok {lim : Nat} (hl : BitVec.signExtend 64 (BitVec.ofNat 32 lim
   have el : (BitVec.ofNat 64 lim).toNat = lim := by rw [BitVec.toNat_ofNat]; omega
   have e64 : (64#64).toNat = 64 := rfl
   have e0 : (0#64).toNat = 0 := rfl
-  rw [show smallTest lim = [.mov .rax (.reg .r9), .mov .r10 (.reg .r9),
+  rw [show smallTest lim = [.mov32 .rax (.imm 0), .mov .rax (.reg .r9), .mov .r10 (.reg .r9),
     .alu .sub .r10 (.imm (BitVec.ofNat 32 961)), .alu .cmp .r10 (.imm (BitVec.ofNat 32 64)),
     .mov .r10 (.imm (BitVec.ofNat 32 0)), .cmov .b .rax (.reg .r10), .alu .cmp .rax (.imm (BitVec.ofNat 32 lim))]
     from rfl]
@@ -59,6 +59,7 @@ theorem smallTest_ok {lim : Nat} (hl : BitVec.signExtend 64 (BitVec.ofNat 32 lim
       simp only [winLo, winHi]; omega
     simp only [runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, execCmov, readSrc, x961, x64, x0, hl,
       Option.bind_some, Option.map_some, gpr_arithFlags, cf_arithFlags, cf_setReg, gpr_setReg, eval, h, hc,
+      readSrc32, State.setReg32,
       decide_true, Option.some.injEq, exists_eq_left', ↓reduceIte, reduceCtorEq, e64, el, e0, hl0]
     exact ⟨trivial, fun r h1 h2 => by simp only [h1, h2, ite_false], rfl, rfl, rfl, rfl⟩
   · have hc : ((s.gpr .r9).toNat < lim ∨ winLo ≤ (s.gpr .r9).toNat ∧ (s.gpr .r9).toNat < winHi) ↔
@@ -66,6 +67,7 @@ theorem smallTest_ok {lim : Nat} (hl : BitVec.signExtend 64 (BitVec.ofNat 32 lim
       simp only [winLo, winHi]; omega
     simp only [runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, execCmov, readSrc, x961, x64, x0, hl,
       Option.bind_some, Option.map_some, gpr_arithFlags, cf_arithFlags, cf_setReg, gpr_setReg, eval, h, hc,
+      readSrc32, State.setReg32,
       decide_false, Bool.false_eq_true, Option.some.injEq, exists_eq_left', ↓reduceIte, reduceCtorEq, e64, el]
     exact ⟨trivial, fun r h1 h2 => by simp only [h1, h2, ite_false], rfl, rfl, rfl, rfl⟩
 
