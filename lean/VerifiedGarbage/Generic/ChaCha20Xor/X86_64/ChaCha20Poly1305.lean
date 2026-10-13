@@ -32,11 +32,13 @@ and up to 16 bytes for its own calls; 1744 bytes in all. `seal_split` keeps
 its working space as `seal` does, in a frame of 1736 bytes (which also holds
 copies of `dst`, `len` and `tag`), and runs `seal`'s code in a frame of 40
 bytes laid out as `seal`'s entry, whose calls use 24 bytes below it: 1800
-bytes in all. `seal_gather` gathers its slices but the first to its output,
-after the first's length, and calls the instance of `seal_split` on them
-there with the first slice as `src`, with the six argument registers pushed
-in a frame of 48 bytes and `dst`, `len` and `tag` pushed for the call: 1880
-bytes in all.
+bytes in all. `seal_gather` gathers its slices to its output and calls the
+instance of `seal` on them there, with the six argument registers pushed in
+a frame of 48 bytes and `tag` pushed for the call (1808 bytes); or, with the
+AVX-512 implementations for more than 960 bytes, gathers its slices but the
+first, after the first's length, and calls the instance of `seal_split` with
+the first slice as `src`, with `dst`, `len` and `tag` pushed for the call:
+1880 bytes in all.
 -/
 
 @[expose] public section
@@ -51,17 +53,23 @@ def xorNote (v : Proof.ChaCha20.X86_64.XorImpl) : String :=
   "This implementation encrypts with `" ++ v.callee.name ++ "` and authenticates with `" ++
     v.poly.name ++ "`."
 
-/-- What `vg_chacha20_poly1305_seal_gather` does: it copies the slices but
-the first, as many bytes at a time as `w` says, and calls
-`vg_chacha20_poly1305_seal_split` with the first. -/
-def gatherNote (w : Impl.ChaCha20Poly1305.X86_64.SealGather.Width) (fn : String) : String :=
-  let how := match w with
+/-- What `vg_chacha20_poly1305_seal_gather` does: it copies the slices, as
+many bytes at a time as the instance's CPUs allow, and calls
+`vg_chacha20_poly1305_seal`; with the AVX-512 implementations of
+`vg_poly1305_blocks`, for more than 960 bytes of data, it copies the slices
+but the first and calls `vg_chacha20_poly1305_seal_split` with the first. -/
+def gatherNote (v : Proof.ChaCha20.X86_64.XorImpl) : String :=
+  let how := match Gather.width v with
     | .x16 => "16 bytes at a time"
     | .y32 => "32 bytes at a time with AVX"
     | .z64 => "64 bytes at a time with AVX-512"
-  "This implementation copies the slices but the first, " ++ how ++ ", one after the other to `dst` \
-    after the first slice's length, and encrypts the data there, its first slice read from where it is, \
-    with `" ++ fn ++ "`."
+  let whole := "copies the slices, " ++ how ++ ", one after the other to `dst`, and encrypts them there in \
+    place with `" ++ (Gather.Whole.sealFn v).name ++ "`"
+  match v.poly with
+  | .avx512 | .ifma => "For at most 960 bytes of data, this implementation " ++ whole ++ ". For more, it \
+      copies the slices but the first to `dst` after the first slice's length, and encrypts the data there, \
+      its first slice read from where it is, with `" ++ (Gather.sealSplitFn v).name ++ "`."
+  | _ => "This implementation " ++ whole ++ "."
 
 /-- What `vg_chacha20_poly1305_seal_split` does: with the AVX-512
 implementations of `vg_poly1305_blocks`, it copies only the bytes of `src`
@@ -117,14 +125,12 @@ def artifacts (v : Proof.ChaCha20.X86_64.XorImpl) : List Artifact := [
   { Spec.ChaCha20Poly1305.sealGatherApi with
     name := Spec.ChaCha20Poly1305.sealGatherApi.name ++ v.suffix
     target := X86_64.target
-    doc := Spec.ChaCha20Poly1305.sealGatherApi.doc
-      (notes := [gatherNote (Gather.width v) (Gather.sealSplitFn v).name])
-    code := Impl.ChaCha20Poly1305.X86_64.SealGather.sealGather (Gather.width v) (Gather.sealSplitFn v).name
-      (Gather.sealSplitFn v).code
+    doc := Spec.ChaCha20Poly1305.sealGatherApi.doc (notes := [gatherNote v])
+    code := Gather.gatherCode v
     contract := Spec.ChaCha20Poly1305.sealGatherContract X86_64.abi 1880
     stack := 1880
-    verified := Gather.sealGather_verified (Gather.width v) (Gather.sealSplitFn v)
-    spSafe := Gather.sealGather_spSafe v
+    verified := Gather.gather_verified v
+    spSafe := Gather.gather_spSafe v
     features := features v }]
 
 end VG.Generic.ChaCha20Xor.X86_64.ChaCha20Poly1305

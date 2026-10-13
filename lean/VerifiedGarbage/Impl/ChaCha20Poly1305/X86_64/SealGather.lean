@@ -213,4 +213,32 @@ def sealGather (w : Width) (name : String) (code : Prog isa) : Prog isa :=
       (.frame (.push [.rax, .r10, .r11]) (.call name code) (.pop .rax 3)))))))
     (.pop .rax 6)
 
+/-- For `sealGatherWhole`, the call's arguments: `key`, `nonce`, `aad` and
+`aad_len` back from the frame, `dst` and `len`, and `tag` in `rax`, to push. -/
+def callArgsWhole : List Instr :=
+  [.mov .rdi (.mem (at_ .rsp 40)), .mov .rsi (.mem (at_ .rsp 32)), .mov .rdx (.mem (at_ .rsp 24)),
+    .mov .rcx (.mem (at_ .rsp 16)), .mov .r8 (.mem (at_ .rsp 56)), .mov .r9 (.mem (at_ .rsp 64)),
+    .mov .rax (.mem (at_ .rsp 72))]
+
+/-- `vg_chacha20_poly1305_seal_gather` copying all of the slices, `2 ^ w.log`
+bytes at a time, and calling `vg_chacha20_poly1305_seal` (`name`, `code`)
+on them in place. -/
+def sealGatherWhole (w : Width) (name : String) (code : Prog isa) : Prog isa :=
+  .frame (.push [.rdi, .rsi, .rdx, .rcx, .r8, .r9])
+    (.seq (.block entry)
+    (.seq (gather w)
+    (.seq (.block callArgsWhole)
+      (.frame (.push [.rax]) (.call name code) (.pop .rax 1)))))
+    (.pop .rax 6)
+
+/-- `vg_chacha20_poly1305_seal_gather` calling `seal` (`sealName`,
+`sealCode`) for at most 960 bytes of data, which the first keystream of
+`seal_split` with `vg_chacha20_xor_avx512` would cover and copy anyway
+(`sealGatherWhole`), and `seal_split` (`splitName`, `splitCode`) for more
+(`sealGather`), branching on `len` (`[rsp + 16]`) in `rax`. -/
+def sealGatherBy (w : Width) (sealName : String) (sealCode : Prog isa) (splitName : String)
+    (splitCode : Prog isa) : Prog isa :=
+  .seq (.block [.mov .rax (.mem (at_ .rsp 16)), .alu .cmp .rax (imm 961)])
+    (.ite .b (sealGatherWhole w sealName sealCode) (sealGather w splitName splitCode))
+
 end VG.Impl.ChaCha20Poly1305.X86_64.SealGather
