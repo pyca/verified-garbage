@@ -45,10 +45,14 @@ open VG.X86_64
 open VG.Impl.ChaCha20.X86_64 (at_)
 open VG.Impl.ChaCha20Poly1305.X86_64.SealGather (Width copyBytes)
 
-/-- `key`, `nonce`, `aad_len` and `src` into `work[0, 32)` (through `rax`). -/
+/-- `work` into `rax`. A block of its own, so that the constant-time
+analysis of the next, which addresses `work` through `rax`, starts from it
+public. -/
+def loadW : List Instr := [.mov .rax (.mem (at_ .rsp 32))]
+
+/-- `key`, `nonce`, `aad_len` and `src` into `work[0, 32)` (at `rax`). -/
 def stash : List Instr :=
-  [.mov .rax (.mem (at_ .rsp 32)), .store (at_ .rax 0) .rdi, .store (at_ .rax 8) .rsi,
-   .store (at_ .rax 16) .rcx, .store (at_ .rax 24) .r8]
+  [.store (at_ .rax 0) .rdi, .store (at_ .rax 8) .rsi, .store (at_ .rax 16) .rcx, .store (at_ .rax 24) .r8]
 
 /-- `rcx` = the number of bytes of `src` to copy: all of them (`whole`), or
 at most `m`, the bytes the prologue's keystream covers for the `len` bytes
@@ -66,17 +70,18 @@ def prefixLen : Bool → List Instr
 /-- The copy's source and destination: `src` and `dst`. -/
 def copyArgs : List Instr := [.mov .rsi (.reg .r8), .mov .rdi (.mem (at_ .rsp 8))]
 
-/-- `key`, `nonce`, `aad_len` and `src` back from `work`; then `work`,
-`tag` and `dst` into `r10`, `r11` and `rax`, for the frame. -/
+/-- `key`, `nonce`, `aad_len` and `src` back from `work` (at `rax`); then
+`work`, `tag` and `dst` into `r10`, `r11` and `rax`, for the frame. -/
 def unstash : List Instr :=
-  [.mov .rax (.mem (at_ .rsp 32)), .mov .rdi (.mem (at_ .rax 0)), .mov .rsi (.mem (at_ .rax 8)),
+  [.mov .rdi (.mem (at_ .rax 0)), .mov .rsi (.mem (at_ .rax 8)),
    .mov .rcx (.mem (at_ .rax 16)), .mov .r8 (.mem (at_ .rax 24)),
    .mov .r10 (.mem (at_ .rsp 32)), .mov .r11 (.mem (at_ .rsp 24)), .mov .rax (.mem (at_ .rsp 8))]
 
 /-- The bytes of `src` to copy copied to `dst`, `w` bytes at a time, and the
 values the frame pushes in registers. -/
 def head (whole : Bool) (w : Width) : Prog isa :=
-  .seq (.block (stash ++ prefixLen whole ++ copyArgs)) (.seq (copyBytes w) (.block unstash))
+  .seq (.block loadW) (.seq (.block (stash ++ prefixLen whole ++ copyArgs))
+  (.seq (copyBytes w) (.seq (.block loadW) (.block unstash))))
 
 /-- `seal`'s data and its length into `r8` and `r9`: `dst`, and `len`, the
 caller's second stack argument, above the frame. -/

@@ -108,20 +108,30 @@ structure FPre (s : State) : Prop where
 
 /-! ## Steps -/
 
+/-- `loadW`: `work` into `rax`. -/
+theorem loadW_ok {a : State} {W : Addr} (hW : a.mem.readW (off (a.gpr .rsp) 32) 64 = W)
+    (r₃₂ : InRegions (a.rd ++ a.wr) (off (a.gpr .rsp) 32) 8) :
+    WP isa (.block loadW) a fun e => e.gpr .rax = W ∧ (∀ r, r ≠ .rax → e.gpr r = a.gpr r) ∧
+      e.mem = a.mem ∧ e.rd = a.rd ∧ e.wr = a.wr := by
+  apply WP.of_runBlock
+  simp only [loadW, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, State.load64, ea_at,
+    gpr_setReg, mem_setReg, rd_setReg, wr_setReg, ↓reduceIte, r₃₂, hW, Option.map_some, Option.some.injEq,
+    exists_eq_left']
+  exact ⟨by simp, fun r h => by simp [h], by simp, by simp, by simp⟩
+
 /-- `stash`: `key`, `nonce`, `aad_len` and `src` into `work[0, 32)`. -/
-theorem stash_ok {a : State} {W : Addr} (hW : a.mem.readW (off (a.gpr .rsp) 32) 64 = W)
-    (r₃₂ : InRegions (a.rd ++ a.wr) (off (a.gpr .rsp) 32) 8)
+theorem stash_ok {a : State} {W : Addr} (hrax : a.gpr .rax = W)
     (w₀ : InRegions a.wr (off W 0) 8) (w₈ : InRegions a.wr (off W 8) 8)
     (w₁₆ : InRegions a.wr (off W 16) 8) (w₂₄ : InRegions a.wr (off W 24) 8) :
-    WP isa (.block stash) a fun e => e.gpr .rax = W ∧ (∀ r, r ≠ .rax → e.gpr r = a.gpr r) ∧
+    WP isa (.block stash) a fun e => e.gpr = a.gpr ∧
       e.mem = (((a.mem.writeW (off W 0) (a.gpr .rdi)).writeW (off W 8) (a.gpr .rsi)).writeW
         (off W 16) (a.gpr .rcx)).writeW (off W 24) (a.gpr .r8) ∧
       e.rd = a.rd ∧ e.wr = a.wr := by
+  subst hrax
   apply WP.of_runBlock
-  simp only [stash, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, State.load64, State.store64, ea_at,
-    gpr_setReg, mem_setReg, rd_setReg, wr_setReg, reduceCtorEq, ↓reduceIte, r₃₂, hW, w₀, w₈, w₁₆, w₂₄,
-    Option.map_some, Option.some.injEq, exists_eq_left']
-  exact ⟨by simp, fun r h => by simp [h], trivial, trivial, trivial⟩
+  simp only [stash, runBlock_cons, runStep_some, runBlock_nil, exec, State.store64, ea_at,
+    ↓reduceIte, w₀, w₈, w₁₆, w₂₄, Option.some.injEq, exists_eq_left']
+  exact ⟨trivial, trivial, trivial, trivial⟩
 
 /-- `cmp x, src; cmovb rcx, r`. -/
 theorem cmpB_ok {t : State} {x r : Reg} {src : VG.X86_64.Src} {b : BitVec 64} (hs : readSrc t src = some b) :
@@ -366,7 +376,8 @@ theorem copyArgs_ok {a : State} {D : Addr} (hD : a.mem.readW (off (a.gpr .rsp) 8
   exact ⟨by simp, by simp, fun r h₁ h₂ => by simp [h₁, h₂], by simp, by simp, by simp⟩
 
 /-- `unstash`. -/
-theorem unstash_ok {a : State} {W T D : Addr} (hW : a.mem.readW (off (a.gpr .rsp) 32) 64 = W)
+theorem unstash_ok {a : State} {W T D : Addr} (hrax : a.gpr .rax = W)
+    (hW : a.mem.readW (off (a.gpr .rsp) 32) 64 = W)
     (hT : a.mem.readW (off (a.gpr .rsp) 24) 64 = T) (hD : a.mem.readW (off (a.gpr .rsp) 8) 64 = D)
     (r₃₂ : InRegions (a.rd ++ a.wr) (off (a.gpr .rsp) 32) 8)
     (r₂₄ : InRegions (a.rd ++ a.wr) (off (a.gpr .rsp) 24) 8)
@@ -378,6 +389,7 @@ theorem unstash_ok {a : State} {W T D : Addr} (hW : a.mem.readW (off (a.gpr .rsp
       e.gpr .r8 = a.mem.readW (off W 24) 64 ∧ e.gpr .r10 = W ∧ e.gpr .r11 = T ∧ e.gpr .rax = D ∧
       (∀ r, r ≠ .rax → r ≠ .rcx → r ≠ .rdi → r ≠ .rsi → r ≠ .r8 → r ≠ .r10 → r ≠ .r11 → e.gpr r = a.gpr r) ∧
       e.mem = a.mem ∧ e.rd = a.rd ∧ e.wr = a.wr := by
+  subst hrax
   apply WP.of_runBlock
   simp only [unstash, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, State.load64, ea_at,
     gpr_setReg, mem_setReg, rd_setReg, wr_setReg, reduceCtorEq, ↓reduceIte, r₃₂, r₂₄, r₈, hW, hT, hD, w₀, w₈,
@@ -395,20 +407,31 @@ theorem prefixT_ok (a : State) :
     rd_setReg, wr_setReg, Option.map_some, Option.some.injEq, exists_eq_left']
   exact ⟨by simp, fun q h₁ _ _ => by simp [h₁], by simp, by simp, by simp⟩
 
+/-- After the first `loadW`. -/
+def Loaded (s a : State) : Prop :=
+  a.gpr .rax = eW s ∧ (∀ r, r ≠ .rax → a.gpr r = s.gpr r) ∧ a.mem = s.mem ∧ a.rd = s.rd ∧ a.wr = s.wr
+
+theorem loaded_ok {s : State} (hs : FPre s) : WP isa (.block loadW) s (Loaded s) :=
+  loadW_ok (hs.arg_eq (Frame.refl _ _) (j := 3) (by decide)) (hs.arg_in (j := 3) (by decide))
+
 /-- After `stash`, `prefixLen` and `copyArgs`: ready for the copy. -/
 def Ready (whole : Bool) (s b : State) : Prop :=
   b.mem = stashM s ∧ b.gpr .rsi = eSrc s ∧ b.gpr .rdi = eDst s ∧
     b.gpr .rcx = BitVec.ofNat 64 (cntOf s whole) ∧
     (∀ r, r ≠ .rax → r ≠ .rcx → r ≠ .rdi → r ≠ .rsi → r ≠ .r10 → b.gpr r = s.gpr r) ∧ b.rd = s.rd ∧ b.wr = s.wr
 
-theorem ready_ok (whole : Bool) {s : State} (hs : FPre s) :
-    WP isa (.block (stash ++ prefixLen whole ++ copyArgs)) s (Ready whole s) := by
+theorem ready_ok (whole : Bool) {s a : State} (hs : FPre s) (ha : Loaded s a) :
+    WP isa (.block (stash ++ prefixLen whole ++ copyArgs)) a (Ready whole s) := by
+  obtain ⟨rax₀, g₀, m₀, rd₀, wr₀⟩ := ha
   have fS : Frame [ewR s, edR s] s.mem (stashM s) := (stashM_frame s).mono (by simp)
-  have win : ∀ {k : Nat}, k + 8 ≤ 1696 → InRegions s.wr (off (eW s) k) 8 :=
-    fun hk => ⟨ewR s, by rw [hs.wr]; simp, w_in s hk⟩
-  refine WP.block_append (WP.block_append (WP.mono (stash_ok (hs.arg_eq (Frame.refl _ _) (j := 3) (by decide))
-    (hs.arg_in (j := 3) (by decide)) (win (by decide)) (win (by decide)) (win (by decide)) (win (by decide)))
-    fun e₁ ⟨_, g₁, m₁, rd₁, wr₁⟩ => ?_))
+  have win : ∀ {k : Nat}, k + 8 ≤ 1696 → InRegions a.wr (off (eW s) k) 8 :=
+    fun hk => ⟨ewR s, by rw [wr₀, hs.wr]; simp, w_in s hk⟩
+  refine WP.block_append (WP.block_append (WP.mono (stash_ok rax₀ (win (by decide)) (win (by decide))
+    (win (by decide)) (win (by decide))) fun e₁ ⟨g₁', m₁, rd₁, wr₁⟩ => ?_))
+  have g₁ : ∀ r, r ≠ .rax → e₁.gpr r = s.gpr r := fun r h => by rw [g₁', g₀ r h]
+  rw [m₀, g₀ _ (by decide), g₀ _ (by decide), g₀ _ (by decide), g₀ _ (by decide)] at m₁
+  rw [rd₀] at rd₁
+  rw [wr₀] at wr₁
   have sp₁ : e₁.gpr .rsp = s.gpr .rsp := g₁ _ (by decide)
   have in₁ : ∀ {j}, j < 4 → InRegions (e₁.rd ++ e₁.wr) (off (e₁.gpr .rsp) (8 * (j + 1))) 8 := fun hj => by
     rw [rd₁, wr₁, sp₁]; exact hs.arg_in hj
@@ -436,6 +459,48 @@ theorem ready_ok (whole : Bool) {s : State} (hs : FPre s) :
       fun e₂ ⟨rcx₂, g₂, m₂, rd₂, wr₂⟩ =>
         post e₂ (by rw [rcx₂, g₁ _ (by decide)]; rfl) g₂ m₂ rd₂ wr₂
 
+/-- After the copy. -/
+def Copied (whole : Bool) (s c : State) : Prop :=
+  c.mem = headM s (cntOf s whole) ∧
+    (∀ r, r ≠ .rax → r ≠ .rcx → r ≠ .rdi → r ≠ .rsi → r ≠ .r8 → r ≠ .r10 → c.gpr r = s.gpr r) ∧
+    c.rd = s.rd ∧ c.wr = s.wr
+
+theorem ready_copy (whole : Bool) {s b : State} (hs : FPre s) (hb : Ready whole s b) :
+    Proof.AesGcm.X86_64.Short.CopyPre b (eSrc s) (eDst s) (cntOf s whole) := by
+  obtain ⟨_, rsi, rdi, rcx, _, rd, wr⟩ := hb
+  have hc := FPre.cnt_le (s := s) whole
+  have hle := hs.le
+  refine ⟨rsi, rdi, rcx, hs.cnt_lt whole, ?_, ?_, ?_⟩
+  · exact Covers.of_sub fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact ⟨esR s, by rw [rd, hs.rd]; simp, 0, by simp, by simp only; omega⟩
+  · exact Covers.of_sub fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact ⟨edR s, by rw [wr, hs.wr]; simp, 0, by simp, by simp only; omega⟩
+  · exact (hs.s_d.sub_left (Region.sub_prefix hc)).sub_right (Region.sub_prefix (by omega))
+
+theorem copied_ok (whole : Bool) (w : Width) {s b : State} (hs : FPre s) (hb : Ready whole s b) :
+    WP isa (copyBytes w) b (Copied whole s) :=
+  WP.mono (Gather.copyBytes_ok (ready_copy whole hs hb) w) fun c ⟨mc, gc, rdc, wrc⟩ => by
+    obtain ⟨m, _, _, _, g, rd, wr⟩ := hb
+    exact ⟨by rw [mc, m]; rfl, fun r a c' d e f t => by rw [gc r a f t, g r a c' d e t], by rw [rdc, rd],
+      by rw [wrc, wr]⟩
+
+/-- After the second `loadW`. -/
+def Loaded2 (whole : Bool) (s d : State) : Prop :=
+  d.gpr .rax = eW s ∧ Copied whole s d
+
+theorem loaded2_ok (whole : Bool) {s c : State} (hs : FPre s) (hc : Copied whole s c) :
+    WP isa (.block loadW) c (Loaded2 whole s) := by
+  obtain ⟨mc, gc, rdc, wrc⟩ := hc
+  have spc : c.gpr .rsp = s.gpr .rsp :=
+    gc _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+  have fH := hs.headM_frame (cntOf s whole) (FPre.cnt_le whole)
+  exact WP.mono (loadW_ok (by rw [mc, spc]; exact hs.arg_eq fH (j := 3) (by decide))
+      (by rw [rdc, wrc, spc]; exact hs.arg_in (j := 3) (by decide)))
+    fun d ⟨rax, g, m, rd, wr⟩ => ⟨rax, by rw [m, mc], fun r a b' c' e f t => by rw [g r a, gc r a b' c' e f t],
+      by rw [rd, rdc], by rw [wr, wrc]⟩
+
 /-- After `head`. -/
 structure Headed (whole : Bool) (s h : State) : Prop where
   mem : h.mem = headM s (cntOf s whole)
@@ -451,46 +516,42 @@ structure Headed (whole : Bool) (s h : State) : Prop where
   wr : h.wr = s.wr
   mx : h.mxcsr = s.mxcsr
 
+theorem headed_ok (whole : Bool) {s d : State} (hs : FPre s) (hd : Loaded2 whole s d) :
+    WP isa (.block unstash) d fun h => h.mxcsr = s.mxcsr → Headed whole s h := by
+  obtain ⟨rax, mc, gc, rdc, wrc⟩ := hd
+  have hc := FPre.cnt_le (s := s) whole
+  have win : ∀ {k : Nat}, k + 8 ≤ 1696 → InRegions (s.rd ++ s.wr) (off (eW s) k) 8 :=
+    fun hk => ⟨ewR s, by rw [hs.wr]; simp, w_in s hk⟩
+  have spc : d.gpr .rsp = s.gpr .rsp :=
+    gc _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+  have fH := hs.headM_frame (cntOf s whole) hc
+  have at₁ : ∀ {j}, j < 4 → d.mem.readW (off (d.gpr .rsp) (8 * (j + 1))) 64 = stackArg s j := fun hj => by
+    rw [mc, spc]; exact hs.arg_eq fH hj
+  have in₁ : ∀ {j}, j < 4 → InRegions (d.rd ++ d.wr) (off (d.gpr .rsp) (8 * (j + 1))) 8 := fun hj => by
+    rw [rdc, wrc, spc]; exact hs.arg_in hj
+  have rw' : d.rd ++ d.wr = s.rd ++ s.wr := by rw [rdc, wrc]
+  refine WP.mono (unstash_ok rax (at₁ (j := 3) (by decide)) (at₁ (j := 2) (by decide))
+    (at₁ (j := 0) (by decide)) (in₁ (j := 3) (by decide)) (in₁ (j := 2) (by decide)) (in₁ (j := 0) (by decide))
+    (by rw [rw']; exact win (by decide)) (by rw [rw']; exact win (by decide))
+    (by rw [rw']; exact win (by decide)) (by rw [rw']; exact win (by decide)))
+    fun h ⟨rdi', rsi', rcx', r8', r10', r11', rax', g', m', rd', wr'⟩ mxh => ?_
+  refine ⟨by rw [m', mc], ?_, ?_, ?_, ?_, r10', r11', rax', fun r a b' c' e f t u => ?_,
+    by rw [rd', rdc], by rw [wr', wrc], mxh⟩
+  · rw [rdi', mc, hs.headM_w _ hc (by decide), stashM_rdi]
+  · rw [rsi', mc, hs.headM_w _ hc (by decide), stashM_rsi]
+  · rw [rcx', mc, hs.headM_w _ hc (by decide), stashM_rcx]
+  · rw [r8', mc, hs.headM_w _ hc (by decide), stashM_r8]
+  · rw [g' r a b' c' e f t u, gc r a b' c' e f t]
+
 theorem head_mx (whole : Bool) (w : Width) : (head whole w).allInstrs (fun i => !loadsMxcsr i) = true := by
   cases whole <;> cases w <;> decide +kernel
 
-theorem head_ok (whole : Bool) (w : Width) {s : State} (hs : FPre s) : WP isa (head whole w) s (Headed whole s) := by
-  have hc := FPre.cnt_le (s := s) whole
-  have hle := hs.le
-  have win : ∀ {k : Nat}, k + 8 ≤ 1696 → InRegions (s.rd ++ s.wr) (off (eW s) k) 8 :=
-    fun hk => ⟨ewR s, by rw [hs.wr]; simp, w_in s hk⟩
-  refine WP.mono_mx (Q := fun h => h.mxcsr = s.mxcsr → Headed whole s h) (head_mx whole w)
-    (WP.seq (WP.mono (ready_ok whole hs) fun b ⟨m, rsi, rdi, rcx, g, rd, wr⟩ =>
-    WP.seq (WP.mono (Gather.copyBytes_ok ⟨rsi, rdi, rcx, hs.cnt_lt whole, ?_, ?_, ?_⟩ w)
-      fun c ⟨mc, gc, rdc, wrc⟩ => ?_))) fun h hh mx => hh mx
-  · exact Covers.of_sub fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr
-      exact ⟨esR s, by rw [rd, hs.rd]; simp, 0, by simp, by simp only; omega⟩
-  · exact Covers.of_sub fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr
-      exact ⟨edR s, by rw [wr, hs.wr]; simp, 0, by simp, by simp only; omega⟩
-  · exact (hs.s_d.sub_left (Region.sub_prefix hc)).sub_right (Region.sub_prefix (by omega))
-  rw [m] at mc
-  have spc : c.gpr .rsp = s.gpr .rsp := by
-    rw [gc _ (by decide) (by decide) (by decide), g _ (by decide) (by decide) (by decide) (by decide) (by decide)]
-  have fH := hs.headM_frame (cntOf s whole) hc
-  have at₁ : ∀ {j}, j < 4 → c.mem.readW (off (c.gpr .rsp) (8 * (j + 1))) 64 = stackArg s j := fun hj => by
-    rw [mc, spc]; exact hs.arg_eq fH hj
-  have in₁ : ∀ {j}, j < 4 → InRegions (c.rd ++ c.wr) (off (c.gpr .rsp) (8 * (j + 1))) 8 := fun hj => by
-    rw [rdc, wrc, rd, wr, spc]; exact hs.arg_in hj
-  have rw' : c.rd ++ c.wr = s.rd ++ s.wr := by rw [rdc, wrc, rd, wr]
-  refine WP.mono (unstash_ok (at₁ (j := 3) (by decide)) (at₁ (j := 2) (by decide)) (at₁ (j := 0) (by decide))
-    (in₁ (j := 3) (by decide)) (in₁ (j := 2) (by decide)) (in₁ (j := 0) (by decide))
-    (by rw [rw']; exact win (by decide)) (by rw [rw']; exact win (by decide))
-    (by rw [rw']; exact win (by decide)) (by rw [rw']; exact win (by decide)))
-    fun h ⟨rdi', rsi', rcx', r8', r10', r11', rax', g', m', rd', wr'⟩ => ?_
-  have hm : c.mem = headM s (cntOf s whole) := mc
-  refine fun mxh => ⟨by rw [m', hm], ?_, ?_, ?_, ?_, r10', r11', rax', fun r a b' c' d e f t => ?_,
-    by rw [rd', rdc, rd], by rw [wr', wrc, wr], mxh⟩
-  · rw [rdi', hm, hs.headM_w _ hc (by decide), stashM_rdi]
-  · rw [rsi', hm, hs.headM_w _ hc (by decide), stashM_rsi]
-  · rw [rcx', hm, hs.headM_w _ hc (by decide), stashM_rcx]
-  · rw [r8', hm, hs.headM_w _ hc (by decide), stashM_r8]
-  · rw [g' r a b' c' d e f t, gc r a e f, g r a b' c' d f]
+theorem head_ok (whole : Bool) (w : Width) {s : State} (hs : FPre s) : WP isa (head whole w) s (Headed whole s) :=
+  WP.mono_mx (Q := fun h => h.mxcsr = s.mxcsr → Headed whole s h) (head_mx whole w)
+    (WP.seq (WP.mono (loaded_ok hs) fun _ ha =>
+      WP.seq (WP.mono (ready_ok whole hs ha) fun _ hb =>
+      WP.seq (WP.mono (copied_ok whole w hs hb) fun _ hc =>
+      WP.seq (WP.mono (loaded2_ok whole hs hc) fun _ hd => headed_ok whole hs hd)))))
+    fun _ hh mx => hh mx
 
 end VG.Proof.ChaCha20Poly1305.X86_64.Split
