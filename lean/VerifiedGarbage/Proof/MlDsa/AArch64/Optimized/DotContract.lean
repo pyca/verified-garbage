@@ -12,6 +12,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InnerBank
+import Mathlib.Tactic.SplitIfs
 
 /-! ## From `DotStatic.lean` -/
 
