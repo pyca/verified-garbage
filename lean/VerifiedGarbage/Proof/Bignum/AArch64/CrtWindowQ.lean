@@ -128,7 +128,7 @@ theorem qPhase_ok (W : Window) (M : Mont) (S : Selector) {s : State} {B : Addr} 
   rw [qPhase_eq]
   -- `R_q mod q`.
   refine wp_seqs_append (by simp [unitSteps]) (by simp) ?_
-  refine WP.mono (unitPhase_ok M hg hw hw28 hlo hhi16 hwx2 hwx (by decide) (by decide) (by decide) hslv hws hN
+  refine WP.mono (unitPhase_ok M hg hw hw28 hlo hhi hwx2 hwx (by decide) (by decide) (by decide) hslv hws hN
     hodd hN1 hX hX1 hXodd) fun s₁ ⟨hg₁, hws₁, hX₁, hlt₁, hG₁, hlq₁, hyq₁, _, fOld₁, k₁⟩ => ?_
   have f₁ : Frm B (gRanges w ++ [xRange32 o wx]) s.mem s₁.mem := by
     apply fOld₁.widen
@@ -138,8 +138,7 @@ theorem qPhase_ok (W : Window) (M : Mont) (S : Selector) {s : State} {B : Addr} 
     · rw [List.mem_singleton.mp hr]
       refine ⟨xRange32 o wx,by simp,le_rfl,?_⟩
       simp only [VG.Proof.Bignum.xRange,xRange32]
-      have : tabBytes wx ≤ tabBytes32 wx := by unfold tabBytes tabBytes32; omega
-      omega
+      unfold wsTab tabBytes tabBytes32; omega
   have hN₁ := NVals.of_frm hN f₁ hlo hz (by omega_arith)
   have hXm₁ : wv s₁.mem B (slot w Public.aXm) w = wv s.mem B (slot w Public.aXm) w :=
     gx_wv32 f₁ hlo hz (by decide) (by decide) (by decide) (by decide)
