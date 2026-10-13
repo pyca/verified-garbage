@@ -43,10 +43,10 @@ def AC : Nat := 640
 /-- Where the function saves `ebx`, `esi`, `edi` and `ebp`. -/
 def SAVE : Nat := 928
 
-/-- `[o] = [a]^(2^n)`, for `n ≥ 2`: a squaring from `a`, then `n - 1` in
-place, counted by `esi`. -/
+/-- `[o] = [a]^(2^n)`, for `n ≥ 1`: `a` copied to `o` (unless they are the
+same element), then `n` squarings in place, counted by `esi`. -/
 def sqn (o a n : Nat) : Prog isa :=
-  .seq (.block (mul o a a ++ [.mov .esi (.imm (BitVec.ofNat 32 (n - 1)))]))
+  .seq (.block ((if o = a then [] else copy o a) ++ [.mov .esi (.imm (BitVec.ofNat 32 n))]))
     (.loop (.block (mul o o o ++ [.alu .sub .esi (.imm 1)])) .ne)
 
 /-- From `a` at `AC`, `a^(2^250 - 1)` in `E1` and `a^11` in `E0`. -/

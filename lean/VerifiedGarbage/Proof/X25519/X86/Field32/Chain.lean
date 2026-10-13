@@ -110,13 +110,13 @@ theorem opMul_update (o : Cs) (e : CEnv) (v : Fe) :
 
 theorem sqLoop_ok {x : BitVec 32} {s₀ : State} (hc₀ : Ctx 4096 x s₀) (o : Cs) (v : Fe) (n : Nat)
     (hn : n < 2 ^ 32) :
-    ∀ m s, 1 ≤ m → m < n → CKeep x s₀ s → s.gpr .esi = BitVec.ofNat 32 m →
+    ∀ m s, 1 ≤ m → m ≤ n → CKeep x s₀ s → s.gpr .esi = BitVec.ofNat 32 m →
       cenv s.mem x = Function.update (cenv s₀.mem x) o (sqn v (n - m)) →
       WP isa (.loop (.block (mul (coff o) (coff o) (coff o) ++
         ([.alu .sub .esi (.imm 1)] : List Instr))) .ne) s fun t =>
         CKeep x s₀ t ∧ cenv t.mem x = Function.update (cenv s₀.mem x) o (sqn v n) := by
   intro m s h1 h2 hk hb he
-  refine WP.loop (M := isa) (Inv := fun m (s : State) => 1 ≤ m ∧ m < n ∧ CKeep x s₀ s ∧
+  refine WP.loop (M := isa) (Inv := fun m (s : State) => 1 ≤ m ∧ m ≤ n ∧ CKeep x s₀ s ∧
     s.gpr .esi = BitVec.ofNat 32 m ∧
     cenv s.mem x = Function.update (cenv s₀.mem x) o (sqn v (n - m))) ?_ m s ⟨h1, h2, hk, hb, he⟩
   intro m s ⟨h1, h2, hk, hb, he⟩
@@ -139,16 +139,39 @@ theorem sqLoop_ok {x : BitVec 32} {s₀ : State} (hc₀ : Ctx 4096 x s₀) (o : 
   · exact .inr ⟨by rw [ev]; simp only [show m - 1 ≠ 0 by omega, decide_false]; rfl,
       m - 1, by omega, by omega, by omega, ku, bu, eu⟩
 
-theorem sqnC (x : BitVec 32) (o a : Cs) (n : Nat) (hn : 2 ≤ n) (hn' : n < 2 ^ 32) :
+/-- `a` copied to `o`, unless they are the same slot. -/
+theorem copyC {x : BitVec 32} {s : State} (hc : Ctx 4096 x s) (o a : Cs) :
+    WP isa (.block (if coff o = coff a then [] else copy (coff o) (coff a))) s fun t =>
+      CKeep x s t ∧ cenv t.mem x = Function.update (cenv s.mem x) o (cenv s.mem x a) := by
+  by_cases h : o = a
+  · subst h
+    simp only [↓reduceIte]
+    exact WP.block_nil ⟨CKeep.refl x s, (Function.update_eq_self o _).symm⟩
+  · have hfit := hc.fit
+    have ho := coff_slot o
+    have hb : 512 ≤ coff o ∧ coff o + 32 ≤ 928 := (by decide : ∀ i : Cs, 512 ≤ coff i ∧ coff i + 32 ≤ 928) o
+    simp only [show (coff o = coff a) = False from eq_false fun e => h (coff_inj e), ↓reduceIte]
+    refine WP.mono (copy_ok hc (slot_below ho) (slot_below (coff_slot a))
+      (slot_apart ho (coff_slot a))) fun t ⟨k, f, e⟩ =>
+      ⟨⟨k.edi, k.esp, k.rd, k.wr, frameWiden f hfit hb.1 (by omega_using [hb]) (by omega_using [hb])⟩,
+        funext fun i => ?_⟩
+    by_cases hi : i = o
+    · subst hi; rw [Function.update_self]; exact congrArg toFe e
+    · rw [Function.update_of_ne hi]
+      have hib : coff i + 32 ≤ 928 := (by decide : ∀ i : Cs, coff i + 32 ≤ 928) i
+      exact congrArg toFe (fe_frame1 f hfit (by omega_using [hb]) (by omega_using [hib])
+        (slot_ne ho (coff_slot i) fun e => hi (coff_inj e)))
+
+theorem sqnC (x : BitVec 32) (o a : Cs) (n : Nat) (hn : 1 ≤ n) (hn' : n < 2 ^ 32) :
     CSpec x (Impl.X25519.X86.Field32.sqn (coff o) (coff a) n) (opSqn o a n) := by
   intro s hc
   refine WP.seq ?_
   rw [WP.block_append_iff]
-  refine WP.mono (mul_keep hc o a a) fun t ⟨_, ht, et⟩ => ?_
+  refine WP.mono (copyC hc o a) fun t ⟨ht, et⟩ => ?_
   refine Wp.wp_movi fun u hu => WP.block_nil ?_
-  refine sqLoop_ok hc o (cenv s.mem x a) n hn' (n - 1) u (by omega) (by omega)
+  refine sqLoop_ok hc o (cenv s.mem x a) n hn' n u hn (Nat.le_refl _)
     (ht.trans (CKeep.of_counter hu)) hu.gpr ?_
-  rw [hu.mem, et, show n - (n - 1) = 1 by omega]
+  rw [hu.mem, et, Nat.sub_self]
   rfl
 
 /-- The slots after the chain. -/
