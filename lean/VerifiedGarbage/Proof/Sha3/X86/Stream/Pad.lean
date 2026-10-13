@@ -8,6 +8,12 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Sha3.Stream
+import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Sha3.X86.Lit
+meta import VerifiedGarbage.Proof.Sha3.Stream
+meta import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.Sha3.X86.Lit
 
 /-!
 # The SHA-3 sponge on x86 (32-bit): `pad`
