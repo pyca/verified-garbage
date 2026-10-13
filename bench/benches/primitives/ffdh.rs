@@ -60,17 +60,12 @@ pub fn bench(c: &mut Criterion) {
             aws_key.exchange(&aws_peer),
             key.exchange(peer.public_key()).unwrap()
         );
-        group.bench_function(
-            BenchmarkId::new(format!("{AWS_LC}/exchange"), size / 8),
-            |b| b.iter(|| black_box(&aws_key).exchange(black_box(&aws_peer))),
-        );
-        group.bench_function(
-            BenchmarkId::new(format!("{AWS_LC}/generate"), size / 8),
-            |b| b.iter(|| aws_lc::Dh::parameters(&p, &g, q.as_deref()).generate()),
-        );
         // OpenSSL's compute_key strips leading zero bytes; pad explicitly
         // to compare the complete operation cryptography needs.
         let mut group = c.benchmark_group("ffdh_exchange");
+        group.bench_function(BenchmarkId::new(AWS_LC, size / 8), |b| {
+            b.iter(|| black_box(&aws_key).exchange(black_box(&aws_peer)))
+        });
         group.bench_function(BenchmarkId::new(VG, size / 8), |b| {
             b.iter(|| {
                 black_box(&key)
@@ -108,6 +103,9 @@ pub fn bench(c: &mut Criterion) {
         });
         group.finish();
         let mut group = c.benchmark_group("ffdh_generate");
+        group.bench_function(BenchmarkId::new(AWS_LC, size / 8), |b| {
+            b.iter(|| aws_lc::Dh::parameters(&p, &g, q.as_deref()).generate())
+        });
         group.bench_function(BenchmarkId::new(VG, size / 8), |b| {
             b.iter(|| black_box(&params).generate_private_key().unwrap())
         });
