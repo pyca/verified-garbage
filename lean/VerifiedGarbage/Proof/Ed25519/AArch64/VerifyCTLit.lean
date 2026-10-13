@@ -35,7 +35,7 @@ materialize_code verifyScalarTail := (.block (loadScalarWords ++ scalarSubtract 
 materialize_code verifyFinishBlock :=
   (.block (([mov .x2 .x0, mov .x0 .x8] : List Instr) ++ scalarRestore) : Prog isa)
 materialize_code windowPrepLit :=
-  (.seq (.seq (.seq (.block windowSetup) aTable) (.block bTable)) (.block windowInit) : Prog isa)
+  (.seq (.seq (.seq (.block windowSetup) aTable) bTable) (.block windowInit) : Prog isa)
 materialize_code doubleWindow
 materialize_code addDigitA :=
   (.block (([.subImm .x .x19 .x19 1] : List Instr) ++ tableAddr 5376 ++ pointFromTableQ ++

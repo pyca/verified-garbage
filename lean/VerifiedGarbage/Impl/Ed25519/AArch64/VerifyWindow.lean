@@ -10,9 +10,9 @@ Verification may leak its inputs, so its scalars `S` and `k` are public. It
 computes `[k]A - [S]B` with one chain of doublings (`dblOps`), four per 4-bit window
 of the scalars, from the top: each window adds `[a]A` for `k`'s digit `a`
 from a table of `[1]A … [15]A` built at run time (byte 5376, cached), and `[-b]B`
-for `S`'s digit `b` from constants (`negBaseCached`, byte 2048). A zero
-digit adds nothing. The digits are first split out of the inputs with vector
-instructions (`nibbles`), one per byte of the workspace: `k`'s 128 at byte 768
+for `S`'s digit `b` from a table copied from the static `bSym` (`negBaseCached`,
+byte 2048). A zero digit adds nothing. The digits are first split out of the
+inputs with vector instructions (`nibbles`), one per byte of the workspace: `k`'s 128 at byte 768
 and `S`'s 64 at byte 896, nibble `j` at offset `j`. A window is then one
 iteration of a loop over the nibbles left (the counter at byte 56), from the
 top: `k`'s 128, of which only the low 64 have a nibble of `S` beside them. The
@@ -66,9 +66,41 @@ def aTableBody : List Instr :=
 /-- Entries `j < 15` of the table at byte 5376 are cached `[j + 1]A`. -/
 def aTable : Prog isa := .seq (.block aTableInit) (.loop (.block aTableBody) (.nonzero .x .x8))
 
-/-- Entries `j < 15` of the table at byte 2048 are cached `-[j + 1]B`. -/
-def bTable : List Instr :=
-  (List.range 15).flatMap fun i => cachedPointStore (negBaseCached i) (2048 + 128 * i)
+/-- The static holding the cached `-[1]B … -[15]B` (`bWords`). -/
+def bSym : String := "VG_ED25519_VERIFY_NEG_BASE"
+
+/-- Coordinate `c` of a point: `X`, `Y`, `Z`, `T` for `c = 0, 1, 2, 3`. -/
+def pointCoord (q : Spec.Ed25519.Point) : Nat → Spec.X25519.Fe
+  | 0 => q.X
+  | 1 => q.Y
+  | 2 => q.Z
+  | _ => q.T
+
+/-- Word `i` of the static: word `i % 4` of coordinate `i / 4 % 4` of `negBaseCached (i / 16)`,
+128 bytes an entry, as a table entry holds it. -/
+def bWord (i : Nat) : BitVec 64 :=
+  BitVec.ofNat 64 ((pointCoord (negBaseCached (i / 16)) (i / 4 % 4)).val / 2 ^ (64 * (i % 4)))
+
+/-- The words of the 15 entries, as the static `bSym` holds them. -/
+def bWords : List (BitVec 64) := (List.range 240).map bWord
+
+/-- The static verification reads. -/
+def bConsts : List (String × List (BitVec 64)) := [(bSym, bWords)]
+
+/-- Coordinate `c` of the static's entry at `x9` to the table entry at `x8`. -/
+def bCopyCoord (c : Nat) : List Instr :=
+  [.ldr .x .x4 .x9 (32 * c), .ldr .x .x5 .x9 (32 * c + 8), .ldr .x .x6 .x9 (32 * c + 16),
+    .ldr .x .x7 .x9 (32 * c + 24)] ++ tableWords (32 * c)
+
+/-- The static's entry at `x9` to entry `x19` of the table at byte 2048; `x9` moves to the next
+entry, and `x8` is nonzero while another entry follows. -/
+def bTableBody : List Instr :=
+  tableAddr 2048 ++ (List.range 4).flatMap bCopyCoord ++
+    [.addImm .x .x9 .x9 128, .addImm .x .x19 .x19 1, .subImm .x .x8 .x19 15]
+
+/-- Entries `j < 15` of the table at byte 2048 are cached `-[j + 1]B`, copied from the static. -/
+def bTable : Prog isa :=
+  .seq (.block [.adrSym .x9 bSym, .movz .w .x19 0 0]) (.loop (.block bTableBody) (.nonzero .x .x8))
 
 /-- 16 bytes at `x2 + src` split into their nibbles at `x0 + dst`, the low nibble of each byte
 first, with 15 in every byte of `v7`. -/
