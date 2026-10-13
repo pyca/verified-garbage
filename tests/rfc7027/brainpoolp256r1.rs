@@ -1,6 +1,6 @@
 //! RFC 7027 §A.1: brainpoolP256r1.
 
-#![cfg(target_arch = "x86_64")]
+#![cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
 
 use verified_garbage::ecdh::{BrainpoolP256r1, PrivateKey};
 use verified_garbage::ecdsa::{Error, SigningKey, VerifyingKey};

@@ -133,14 +133,14 @@ impl Curve for Secp256k1 {
 }
 
 /// The curve brainpoolP256r1 (RFC 5639 §3.4).
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum BrainpoolP256r1 {}
 
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
 impl sealed::Sealed for BrainpoolP256r1 {}
 
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
 impl Curve for BrainpoolP256r1 {
     type PrivateKey = [u8; 32];
     type PublicKey = [u8; 65];
