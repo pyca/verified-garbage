@@ -358,24 +358,49 @@ def MidRel (M : CtxMode) (mid : Prog isa) : Prop :=
     RelCT isa (fun s₁ s₂ => SEntry s₀ Ctx W SP A D S n sl s₁ ∧ SEntry s₀' Ctx W SP A D S n sl s₂) mid
       fun _ _ => True
 
-/-- After the entry, `seal_split` up to the tag at `W`, in two runs. -/
-theorem splitRun_rel (v : GcmImpl) {M : CtxMode} (B : BlkFn M) (T : BlkToFn M) {fin : Prog isa} (hfr : FinRel M fin) :
-    MidRel M (SealSplit.run (v.withBlk B) T.fn fin) := by
-  intro s₀ s₀' Ctx W SP Np A D S T' nl al n sl R C C' X X' kM hNp hnl hal hR hNp' hnl' hal' hR'
-  unfold SealSplit.run SealSplit.body
+/-- What `body` needs of the additional data's code: what `oneAad` leaves. -/
+theorem oneS_ofMid {M : CtxMode} {s₀ s₁ s₂ : State} {Ctx W SP Np A D S T' : Addr} {nl al n sl R : Nat}
+    {H : Block} {iv a : List Byte} (C : SplitCtx s₀ Ctx W SP Np A D S T' nl al n sl)
+    (X : CtxExt M Ctx (W + BitVec.ofNat 64 16) W SP D n s₀) (E : SEntry s₀ Ctx W SP A D S n sl s₁)
+    (hNp : s₀.gpr .rdx = Np) (hnl : (s₀.gpr .rcx).toNat = nl) (hal : (s₀.gpr .r9).toNat = al)
+    (hR : (s₀.gpr .rsi).toNat = R) (M₂ : OneMid s₀ Ctx W SP D n H iv a s₁.mem s₂) :
+    OneS M Ctx W SP R A al D n none s₂ :=
+  (E.toOneEntry.aadPre C.toOneCtx X hNp hnl hal hR).1.frame C.lay M₂.env (M₂.rd.trans E.rd.symm)
+    (M₂.wr.trans E.wr.symm) C.dE (wFrame_one (o := 0) (.inl rfl) (wFrame_cons M₂.fr))
+
+/-- After the entry, `seal_split` up to the tag at `W`, in two runs: additional
+data `aadP` that leaves what `oneAad` does (`OneMid`) and takes the same
+branches in both, `prefix` and `body`. -/
+theorem splitRun_rel_of_mid (v : GcmImpl) {M : CtxMode} (B : BlkFn M) (T : BlkToFn M) {fin : Prog isa}
+    (hfr : FinRel M fin) {aadP : Prog isa} {s₀ s₀' : State} {Ctx W SP Np A D S T' : Addr} {nl al n sl R : Nat}
+    (C : SplitCtx s₀ Ctx W SP Np A D S T' nl al n sl) (C' : SplitCtx s₀' Ctx W SP Np A D S T' nl al n sl)
+    (X : CtxExt M Ctx (W + BitVec.ofNat 64 16) W SP D n s₀) (X' : CtxExt M Ctx (W + BitVec.ofNat 64 16) W SP D n s₀')
+    (kM : (below SP 56).Disjoint ⟨Ctx, M.len⟩)
+    (hNp : s₀.gpr .rdx = Np) (hnl : (s₀.gpr .rcx).toNat = nl) (hal : (s₀.gpr .r9).toNat = al)
+    (hR : (s₀.gpr .rsi).toNat = R)
+    (hNp' : s₀'.gpr .rdx = Np) (hnl' : (s₀'.gpr .rcx).toNat = nl) (hal' : (s₀'.gpr .r9).toNat = al)
+    (hR' : (s₀'.gpr .rsi).toNat = R)
+    (ha : RelCT isa (fun s₁ s₂ => SEntry s₀ Ctx W SP A D S n sl s₁ ∧ SEntry s₀' Ctx W SP A D S n sl s₂) aadP
+      fun _ _ => True)
+    (hm : ∀ s, SEntry s₀ Ctx W SP A D S n sl s → WP isa aadP s
+      (OneMid s₀ Ctx W SP D n (ctxH s₀.mem Ctx) (bytesAt s₀.mem Np nl) (bytesAt s₀.mem A al) s.mem))
+    (hm' : ∀ s, SEntry s₀' Ctx W SP A D S n sl s → WP isa aadP s
+      (OneMid s₀' Ctx W SP D n (ctxH s₀'.mem Ctx) (bytesAt s₀'.mem Np nl) (bytesAt s₀'.mem A al) s.mem)) :
+    RelCT isa (fun s₁ s₂ => SEntry s₀ Ctx W SP A D S n sl s₁ ∧ SEntry s₀' Ctx W SP A D S n sl s₂)
+      (.seq aadP (.seq (SealSplit.prefix T.fn) (SealSplit.body (v.withBlk B) fin))) fun _ _ => True := by
+  unfold SealSplit.body
   have L := C.lay
   have hsl := C.sl_le
-  have a := (oneAad_rel v L C.dE (T := none) (R := R) (Np := Np) (nl := nl)).mono
-    (P' := fun (s₁ s₂ : State) => SEntry s₀ Ctx W SP A D S n sl s₁ ∧ SEntry s₀' Ctx W SP A D S n sl s₂)
-    (fun _ _ g => ⟨g.1.toOneEntry.aadPre C.toOneCtx X hNp hnl hal hR,
-      g.2.toOneEntry.aadPre C'.toOneCtx X' hNp' hnl' hal' hR'⟩) fun _ _ g => g
   have hw : ∀ {s₀ : State} (C : SplitCtx s₀ Ctx W SP Np A D S T' nl al n sl)
       (X : CtxExt M Ctx (W + BitVec.ofNat 64 16) W SP D n s₀), s₀.gpr .rdx = Np → (s₀.gpr .rcx).toNat = nl →
-      (s₀.gpr .r9).toNat = al → (s₀.gpr .rsi).toNat = R → ∀ s, SEntry s₀ Ctx W SP A D S n sl s →
-      WP isa (oneAad v.callees) s (PP M Ctx W SP D S R n sl) :=
-    fun C X hNp hnl hal hR s E => WP.mono (oneMid_ok v C.toOneCtx E.toOneEntry hNp hnl hal) fun _ M₂ =>
-      PP.ofMid C X kM hR M₂ (mid_slots C E M₂).1 (mid_slots C E M₂).2
-  refine RelCT.seq (rel_wp a (fun _ _ g => g) (hw C X hNp hnl hal hR) (hw C' X' hNp' hnl' hal' hR')) ?_
+      (s₀.gpr .r9).toNat = al → (s₀.gpr .rsi).toNat = R →
+      (∀ s, SEntry s₀ Ctx W SP A D S n sl s → WP isa aadP s
+        (OneMid s₀ Ctx W SP D n (ctxH s₀.mem Ctx) (bytesAt s₀.mem Np nl) (bytesAt s₀.mem A al) s.mem)) →
+      ∀ s, SEntry s₀ Ctx W SP A D S n sl s →
+      WP isa aadP s fun t => OneS M Ctx W SP R A al D n none t ∧ PP M Ctx W SP D S R n sl t :=
+    fun C X hNp hnl hal hR hm s E => WP.mono (hm s E) fun _ M₂ =>
+      ⟨oneS_ofMid C X E hNp hnl hal hR M₂, PP.ofMid C X kM hR M₂ (mid_slots C E M₂).1 (mid_slots C E M₂).2⟩
+  refine RelCT.seq (rel_wp ha (fun _ _ g => g) (hw C X hNp hnl hal hR hm) (hw C' X' hNp' hnl' hal' hR' hm')) ?_
   have sD' : Region.Sub ⟨D + BitVec.ofNat 64 (16 * (sl / 16)), n - 16 * (sl / 16)⟩ ⟨D, n⟩ :=
     Offset.sub_base D (by omega)
   let G : State → Prop := fun a =>
@@ -383,11 +408,24 @@ theorem splitRun_rel (v : GcmImpl) {M : CtxMode} (B : BlkFn M) (T : BlkToFn M) {
       a.mem.readW (W + BitVec.ofNat 64 216) 64 = BitVec.ofNat 64 n
   refine RelCT.seq (R := fun a b => G a ∧ G b)
     (rel_each fun σ σ' g => ?_) (body_ct L C.kw (C.kd.sub_right sD') kM C.ka C.sp56 B hfr (N := n))
-  obtain ⟨⟨O, O'⟩, P, P'⟩ := g
+  obtain ⟨-, ⟨O, P⟩, O', P'⟩ := g
   exact (rel_wp (prefix_ct P P' T) (F₁ := (· = σ)) (F₂ := (· = σ')) (fun _ _ g => g) (G₁ := G) (G₂ := G)
     (fun _ hs => by rw [hs]; exact WP.mono (prefix_ok P T) fun _ Q => ⟨oneS_after O P Q, Q.aux⟩)
     (fun _ hs => by rw [hs]; exact WP.mono (prefix_ok P' T) fun _ Q => ⟨oneS_after O' P' Q, Q.aux⟩)).mono
     (fun _ _ g => g) fun _ _ g => g.2
+
+/-- After the entry, `seal_split` up to the tag at `W`, in two runs. -/
+theorem splitRun_rel (v : GcmImpl) {M : CtxMode} (B : BlkFn M) (T : BlkToFn M) {fin : Prog isa} (hfr : FinRel M fin) :
+    MidRel M (SealSplit.run (v.withBlk B) T.fn fin) := by
+  intro s₀ s₀' Ctx W SP Np A D S T' nl al n sl R C C' X X' kM hNp hnl hal hR hNp' hnl' hal' hR'
+  have L := C.lay
+  have a := (oneAad_rel v L C.dE (T := none) (R := R) (Np := Np) (nl := nl)).mono
+    (P' := fun (s₁ s₂ : State) => SEntry s₀ Ctx W SP A D S n sl s₁ ∧ SEntry s₀' Ctx W SP A D S n sl s₂)
+    (fun _ _ g => ⟨g.1.toOneEntry.aadPre C.toOneCtx X hNp hnl hal hR,
+      g.2.toOneEntry.aadPre C'.toOneCtx X' hNp' hnl' hal' hR'⟩) fun _ _ _ => trivial
+  exact splitRun_rel_of_mid v B T hfr C C' X X' kM hNp hnl hal hR hNp' hnl' hal' hR' a
+    (fun s E => oneMid_ok v C.toOneCtx E.toOneEntry hNp hnl hal)
+    (fun s E => oneMid_ok v C'.toOneCtx E.toOneEntry hNp' hnl' hal')
 
 /-- After the entry, `seal_split` up to the tag copied to `tag`, in two runs. -/
 theorem splitTag_rel {M : CtxMode} {mid : Prog isa} (hmid : MidOk M mid) (hrel : MidRel M mid) {s₀ s₀' : State}

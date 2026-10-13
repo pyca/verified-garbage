@@ -8,6 +8,7 @@ public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.StreamCallee
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.GatherCallee
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.GatherSplit
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.Short
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.Verified
 public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Frame
 public import VerifiedGarbage.Proof.AesGcm.X86_64.VerifiedP
@@ -873,11 +874,11 @@ def sealFnR (v : GcmVariant) : Gather.SealFn Proof.Gcm.X86_64.Stitch.CtxMode.pre
 def splitFnR (v : GcmVariant) : Gather.SplitFn Proof.Gcm.X86_64.Stitch.CtxMode.prepared :=
   .ofPrepared ⟨Spec.Gcm.sealSplitPreparedApi.name ++ v.impl.suffix,
       Impl.StackScratch.X86_64.withStackArgScratch 2616 5
-        (Impl.AesGcm.X86_64.SealSplit.«seal» (v.impl.splitMid (v.impl.withBlk (blkR v)) (blkToR v).fn))⟩
-    (Split.sealSplitPrepared_framed v.impl Short.shortFacts (blkR v) (blkToR v))
-    (X86_64.withStackArgScratch_spSafe (Split.sealSplit_spSafe v.impl (blkR v) (blkToR v)))
-    (StreamTo.framed_xdepth (Split.sealSplit_xdepth v.impl (blkR v) (blkToR v)))
-    (StreamTo.framed_mx (Split.sealSplit_mx v.impl (blkR v) (blkToR v)))
+        (Impl.AesGcm.X86_64.SealSplit.«seal» (v.impl.splitMidR (v.impl.withBlk (blkR v)) (blkToR v).fn))⟩
+    (Split.sealSplitPrepared_framed v.impl (blkR v) (blkToR v) Short.shortFacts)
+    (X86_64.withStackArgScratch_spSafe (Split.sealSplitR_spSafe v.impl (blkR v) (blkToR v)))
+    (StreamTo.framed_xdepth (Split.sealSplitR_xdepth v.impl (blkR v) (blkToR v)))
+    (StreamTo.framed_mx (Split.sealSplitR_mx v.impl (blkR v) (blkToR v)))
 
 /-- The short path of `vg_aes_gcm_seal_gather_prepared` of a variant. -/
 def shortFnR (v : GcmVariant) : Gather.ShortFn Proof.Gcm.X86_64.Stitch.CtxMode.prepared :=
@@ -907,6 +908,14 @@ def splitNote (blk : String) : String :=
   "This implementation encrypts the whole blocks at `src` straight to `dst` with `" ++ blk ++ "`, copies \
     the bytes of `src` left after them to `dst`, and goes on as `vg_aes_gcm_seal` does from there: it \
     encrypts the rest in place, then the bytes left after its whole blocks, and computes the tag."
+
+/-- How an instance of `seal_split_prepared` works, besides `note` and `splitNote`. -/
+def fastNote (v : GcmImpl) : List String :=
+  if v.short then
+    ["For a 12-byte nonce, at most 16 bytes of additional data and at least 256 bytes of text, this \
+      implementation multiplies the additional data by the prepared power of the hash subkey in the key \
+      context, without calls."]
+  else []
 
 /-- `vg_aes_gcm_seal_split` of a variant, and the `_precomputed` or
 `_prepared` one for the key context its loops read the powers from. -/
@@ -939,13 +948,14 @@ def artifactsSplit (v : GcmVariant) : List Artifact :=
     [{ Spec.Gcm.sealSplitPreparedApi with
       name := Spec.Gcm.sealSplitPreparedApi.name ++ v.impl.suffix
       target := X86_64.target
-      doc := Spec.Gcm.sealSplitPreparedApi.doc (notes := [note v.impl, splitNote (blkToR v).fn.name])
+      doc := Spec.Gcm.sealSplitPreparedApi.doc
+        (notes := [note v.impl, splitNote (blkToR v).fn.name] ++ fastNote v.impl)
       code := Impl.StackScratch.X86_64.withStackArgScratch 2616 5
-        (Impl.AesGcm.X86_64.SealSplit.«seal» (v.impl.splitMid (v.impl.withBlk (blkR v)) (blkToR v).fn))
+        (Impl.AesGcm.X86_64.SealSplit.«seal» (v.impl.splitMidR (v.impl.withBlk (blkR v)) (blkToR v).fn))
       contract := Spec.Gcm.sealSplitPreparedContract X86_64.abi 2672
       stack := 2672
-      verified := Split.sealSplitPrepared_framed v.impl Short.shortFacts (blkR v) (blkToR v)
-      spSafe := X86_64.withStackArgScratch_spSafe (Split.sealSplit_spSafe v.impl (blkR v) (blkToR v))
+      verified := Split.sealSplitPrepared_framed v.impl (blkR v) (blkToR v) Short.shortFacts
+      spSafe := X86_64.withStackArgScratch_spSafe (Split.sealSplitR_spSafe v.impl (blkR v) (blkToR v))
       features := v.impl.features }]
   else [])
 
