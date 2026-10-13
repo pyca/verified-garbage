@@ -545,12 +545,27 @@ mod tests {
                 Backend::Avx512 => vg_chacha20_poly1305_seal_split_avx512,
                 Backend::Ifma => vg_chacha20_poly1305_seal_split_ifma,
             };
-            for len in [0, 1, 63, 64, 65, 959, 960, 961, 1024, 1025, 1985, 2049, 3073, 4097] {
+            for len in [
+                0, 1, 63, 64, 65, 959, 960, 961, 1024, 1025, 1985, 2049, 3073, 4097,
+            ] {
                 let mut want = msg;
                 let want_tag = aead
                     .encrypt_in_place(&nonce, &aad, &mut want[..len])
                     .unwrap();
-                for src_len in [0, 1, 63, 64, 65, 448, 960, 961, 1025, len / 2, len - len.min(1), len] {
+                for src_len in [
+                    0,
+                    1,
+                    63,
+                    64,
+                    65,
+                    448,
+                    960,
+                    961,
+                    1025,
+                    len / 2,
+                    len.saturating_sub(1),
+                    len,
+                ] {
                     if src_len > len {
                         continue;
                     }
@@ -581,7 +596,11 @@ mod tests {
                             &mut tag,
                         )
                     };
-                    assert_eq!((&dst[..len], tag), (&want[..len], want_tag), "{len} {src_len}");
+                    assert_eq!(
+                        (&dst[..len], tag),
+                        (&want[..len], want_tag),
+                        "{len} {src_len}"
+                    );
                 }
             }
         }
