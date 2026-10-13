@@ -8,6 +8,8 @@ import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Spec.X25519
 
 /-!
 # X448 on x86-64: carry chains, loads and stores

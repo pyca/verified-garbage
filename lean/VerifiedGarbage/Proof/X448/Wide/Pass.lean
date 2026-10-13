@@ -7,6 +7,7 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.X448.Wide.CarryStep
+import VerifiedGarbage.Proof.Framework.Range
 
 /-! Untrusted: in-place or disjoint wide carry propagation. -/
 

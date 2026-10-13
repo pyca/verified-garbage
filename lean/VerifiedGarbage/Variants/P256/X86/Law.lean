@@ -8,6 +8,7 @@ public import VerifiedGarbage.Proof.P256.Curve
 import VerifiedGarbage.Proof.Divstep.Bound
 import VerifiedGarbage.Proof.Weierstrass.X86.InvBatch
 import VerifiedGarbage.Proof.X25519.X86.Column
+import VerifiedGarbage.Proof.Weierstrass.Booth
 
 /-!
 # P-256's group law, on x86 (32-bit)

@@ -8,6 +8,10 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Impl.X25519.X86
+import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.X86.Lit
+import VerifiedGarbage.Spec.X25519
 
 /-!
 # X448 on x86 (32-bit): expanding a scalar byte

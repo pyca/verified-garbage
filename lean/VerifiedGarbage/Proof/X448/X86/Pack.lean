@@ -7,6 +7,8 @@ import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Impl.X25519.X86
+import VerifiedGarbage.Proof.Framework.X86.Lit
 
 /-!
 # X448 on x86 (32-bit): encoding a limb

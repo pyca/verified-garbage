@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvMain
 public import VerifiedGarbage.Proof.Weierstrass.InvArith
 import VerifiedGarbage.Proof.Divstep.Bound
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Weierstrass.Booth
 
 /-!
 # P-256's group law, on AArch64

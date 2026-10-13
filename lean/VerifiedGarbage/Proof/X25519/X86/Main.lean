@@ -7,6 +7,9 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.X25519.X86.Invert
+import VerifiedGarbage.Proof.X25519.Bytes
+import VerifiedGarbage.Proof.X25519.X86.Freeze
+import VerifiedGarbage.Spec.Rc2
 
 /-!
 # X25519 on x86 (32-bit): the whole function

@@ -9,6 +9,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Ed25519.Recode
+import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Ops
 
 /-! Fixed-base X25519 satisfies the reviewed contract, with either field backend, with 8 bytes
 of stack for its call of `vg_gf25519_r64_invert`: correct and constant time as its code with the

@@ -13,6 +13,8 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.X448.X86.Setup
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.X448.X86.FnLit
+import VerifiedGarbage.Spec.X25519
 
 /-!
 # X448 on x86 (32-bit): the whole function

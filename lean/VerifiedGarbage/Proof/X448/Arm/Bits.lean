@@ -9,6 +9,7 @@ import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Spec.X448.Contract
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Arm.Call
+import VerifiedGarbage.Proof.X448.Bytes
 
 /-!
 # X448 on ARMv7: the scalar's decoded bits

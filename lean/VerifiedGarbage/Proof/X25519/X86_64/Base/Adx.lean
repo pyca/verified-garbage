@@ -9,6 +9,9 @@ import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Lit
 import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulCTLit
 import VerifiedGarbage.Spec.Weierstrass
+import VerifiedGarbage.Proof.Ed25519.Recode
+import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Ops
+import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 
 /-!
 # Fixed-base X25519 with BMI2 and ADX: `Verified`

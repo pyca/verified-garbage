@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Hashes.Sha224
 public import VerifiedGarbage.Variants.MdHash.X86_64.Sha256Avx2
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
 
 /-!
 # SHA-224 on x86-64 with AVX2 and BMI

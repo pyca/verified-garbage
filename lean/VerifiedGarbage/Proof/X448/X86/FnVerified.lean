@@ -20,6 +20,8 @@ import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
 meta import Mathlib.Tactic.SplitIfs
 meta import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Impl.X25519.X86
+meta import VerifiedGarbage.Impl.X25519.X86
 
 /-!
 # X448 on x86 (32-bit): the field functions' `Verified`

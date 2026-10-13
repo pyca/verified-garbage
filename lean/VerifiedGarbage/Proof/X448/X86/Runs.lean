@@ -12,6 +12,10 @@ import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
 meta import Mathlib.Tactic.SplitIfs
 meta import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Impl.X25519.X86
+import VerifiedGarbage.Proof.X448.X86.FnLit
+meta import VerifiedGarbage.Impl.X25519.X86
+meta import VerifiedGarbage.Proof.X448.X86.FnLit
 
 /-!
 # Field arithmetic on x86 (32-bit): two runs, piece by piece

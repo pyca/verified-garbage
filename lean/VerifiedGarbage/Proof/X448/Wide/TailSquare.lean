@@ -10,6 +10,9 @@ import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.X448.Wide.Bridge
 import VerifiedGarbage.Proof.X448.Wide.CarryStep
+import VerifiedGarbage.Proof.X448.Wide.Encoded
+import VerifiedGarbage.Proof.X448.Wide.Reduce
+import VerifiedGarbage.Proof.X448.Wide.TailNormalize
 
 /-! Untrusted: cached-input squaring behind the unchanged field-slot contract. -/
 

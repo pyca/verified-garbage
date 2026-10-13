@@ -12,6 +12,10 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.X25519.X86_64.Setup
 meta import VerifiedGarbage.Proof.X25519.X86_64.Setup
+import VerifiedGarbage.Proof.Ed25519.Recode
+import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Ops
+meta import VerifiedGarbage.Proof.Ed25519.Recode
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Ops
 
 /-! Public pointers survive the secret fixed-base arithmetic. -/
 

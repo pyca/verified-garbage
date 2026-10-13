@@ -7,6 +7,7 @@ import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.X448.Wide.CoefficientIO
 
 /-! Untrusted: narrow carry steps whose input coefficient already fits in one word. -/
 
