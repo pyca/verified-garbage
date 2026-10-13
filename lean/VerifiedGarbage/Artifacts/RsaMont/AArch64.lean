@@ -12,8 +12,8 @@ def artifacts : List Artifact := [
   { Spec.Rsa.Mont.mulApi with
     target := target
     doc := Spec.Rsa.Mont.mulApi.doc
-      (notes := ["Baseline AArch64: in-place squares of array 5 share RSA's verified symmetric \
-        Montgomery squaring kernel, including eight-limb blocked reduction when the public \
+      (notes := ["Baseline AArch64: in-place squares of array 5 share RSA's verified scheduled eight-limb \
+        Montgomery squaring kernel and blocked reduction when the public \
         width allows it. Other public \
         index tuples use coarsely integrated operand scanning. Preserves callee-saved \
         registers using the existing workspace, with no stack."])

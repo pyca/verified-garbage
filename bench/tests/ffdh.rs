@@ -116,7 +116,10 @@ fn generated_safe_primes_match_openssl_checks() {
 #[test]
 fn partial_words_and_arbitrary_exponents_match_openssl() {
     use openssl::bn::MsbOption;
-    for bits in [512, 513, 520, 577, 1023, 2049, 4095, 8191] {
+    // Cover both sides of the 16-limb minimum and subsequent eight-limb boundaries.
+    for bits in [
+        512, 513, 520, 577, 960, 961, 1023, 1024, 1025, 1472, 1473, 1536, 1537, 2049, 4095, 8191,
+    ] {
         let mut p = BigNum::new().unwrap();
         p.rand(bits, MsbOption::ONE, true).unwrap();
         let p_bytes = p.to_vec();

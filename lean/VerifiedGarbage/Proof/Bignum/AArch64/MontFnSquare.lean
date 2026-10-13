@@ -66,11 +66,11 @@ theorem TestView.post {s t u : State} (v : TestView s t)
 
 theorem square_correct (s : State) (h : fnContract.pre s)
     (ho : idx s .x2 = 5) (ha : idx s .x3 = 5) (hb : idx s .x4 = 5) :
-    ∃ tr t, Exec isa (Public.mm 5 5 5) s tr t ∧ abiPreserved s t ∧ fnContract.post s t := by
+    ∃ tr t, Exec isa (VG.Impl.Bignum.AArch64.SquareEightDispatch.mm 5 5 5) s tr t ∧ abiPreserved s t ∧ fnContract.post s t := by
   obtain ⟨hs, hH, hZ, hw, hw'⟩ := fn_good h
   obtain ⟨-, -, hnw, -, -, -, -, hinv, hB⟩ := h
   rw [hb, numAt_eq, numAt_eq] at hB
-  have hp := Mont.base.ok ⟨hs, rfl, hH⟩ hZ hw hw'
+  have hp := Mont.squareEight.ok ⟨hs, rfl, hH⟩ hZ hw hw'
     (o := 5) (a := 5) (b := 5) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) hinv hB
   obtain ⟨tr, t, he, _, hlt, heq, har, hk⟩ := hp
@@ -125,11 +125,7 @@ theorem row_square_rel : RelCT isa (Two GoodW) (VG.Impl.Bignum.AArch64.Square.mo
       (mm_ct (by decide) (by decide) (by decide) (by taint_decide))
 
 /-- The published blocked reducer shares the same workspace and slot contract. -/
-theorem square_rel : RelCT isa (Two GoodW) (Public.mm 5 5 5) (fun _ _ => True) := by
-  unfold Public.mm VG.Impl.Bignum.AArch64.SquareEightCall.mm
-  rw [ite_eq_right (by decide)]
-  unfold VG.Impl.Bignum.AArch64.SquareCall.mm
-  rw [ite_eq_right (by decide)]
+theorem blocked_square_rel : RelCT isa (Two GoodW) (VG.Impl.Bignum.AArch64.BlockedRedc.mm 5 5 5) (fun _ _ => True) := by
   unfold VG.Impl.Bignum.AArch64.BlockedRedc.mm
   rw [ite_eq_left (by decide)]
   refine RelCT.seq (two_piece _ pins_goodW (by taint_decide) BlockedRedc.guard_ctx) ?_
@@ -145,6 +141,27 @@ theorem square_rel : RelCT isa (Two GoodW) (Public.mm 5 5 5) (fun _ _ => True) :
           (by taint_decide) (by taint_decide) (by taint_decide))
     · exact two_map id (fun _ _ h => h.1.1.good) row_square_rel
   · exact two_map id (fun _ _ h => h.1.good) row_square_rel
+
+/-- Slot 5 uses the scheduled square under the same public width guards. -/
+theorem square_rel : RelCT isa (Two GoodW)
+    (VG.Impl.Bignum.AArch64.SquareEightDispatch.mm 5 5 5) (fun _ _ => True) := by
+  unfold VG.Impl.Bignum.AArch64.SquareEightDispatch.mm
+  rw [ite_eq_left (by decide)]
+  unfold VG.Impl.Bignum.AArch64.SquareEightDispatch.guarded
+  refine RelCT.seq (two_piece _ pins_goodW (by taint_decide) BlockedRedc.guard_ctx) ?_
+  refine two_ite (Φ := BlockedRedc.GuardCtx) ?_ ?_ ?_
+  · intro L s t hs ht
+    rw [VG.Proof.MlKem.AArch64.eval_nonzero, VG.Proof.MlKem.AArch64.eval_nonzero, hs.width, ht.width]
+  · refine two_ite ?_ ?_ ?_
+    · intro L s t hs ht
+      rw [VG.Proof.MlKem.AArch64.eval_zero, VG.Proof.MlKem.AArch64.eval_zero, hs.1.rem, ht.1.rem]
+    · exact two_map id (fun _ _ h => ⟨h.1.1.good, BlockedRedc.guard_width h.1.1 h.1.2,
+        BlockedRedc.guard_rem h.1.1 h.2⟩)
+        (SquareEight.square_ct (by decide) (by decide) (by decide) (by decide)
+          (by taint_decide) (by taint_decide) (by taint_decide) (by taint_decide)
+          (by taint_decide) (by taint_decide) (by taint_decide))
+    · exact two_map id (fun _ _ h => h.1.1.good) blocked_square_rel
+  · exact two_map id (fun _ _ h => h.1.good) blocked_square_rel
 
 def Ready (d : FnData) (s : State) : Prop :=
   FnPhi d s ∧ (s.gpr .x5).setWidth 32 = tag d.o d.a d.b
