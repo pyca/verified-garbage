@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.Framework.Mem
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.PowLit
-import VerifiedGarbage.Proof.Poly1305.Limbs64
-import VerifiedGarbage.Spec.Rsa
+module
+
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.Proof.Poly1305.Limbs64
+public import VerifiedGarbage.Spec.Rsa
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Multiword arithmetic: words in memory
@@ -19,6 +25,8 @@ And the arithmetic of words: carries (`addc_toNat`, `adc_toNat`), borrows
 (`sbb_toNat`, `lt_of_borrow`), products (`mul_toNat`) and masks (`mask`,
 `select_mask`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum
 

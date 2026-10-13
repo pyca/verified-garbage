@@ -1,8 +1,12 @@
-import VerifiedGarbage.Impl.Argon2.AArch64.Instructions
-import VerifiedGarbage.Impl.Argon2.AArch64.FillIterations
-import VerifiedGarbage.Impl.Argon2.AArch64.Finish
+module
+
+public import VerifiedGarbage.Impl.Argon2.AArch64.Instructions
+public import VerifiedGarbage.Impl.Argon2.AArch64.FillIterations
+public import VerifiedGarbage.Impl.Argon2.AArch64.Finish
 
 /-! Complete all filling passes, reduce the lane endings, and compute the final tag. -/
+
+@[expose] public section
 
 namespace VG.Impl.Argon2.AArch64.FillFinish
 

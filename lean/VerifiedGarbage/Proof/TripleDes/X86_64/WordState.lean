@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.TripleDes.X86_64.Pass
-import VerifiedGarbage.Proof.TripleDes.Word
+module
+
+public import VerifiedGarbage.Proof.TripleDes.X86_64.Pass
+public import VerifiedGarbage.Proof.TripleDes.Word
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.TripleDes.X86_64
 
@@ -12,8 +20,8 @@ structure WordState (x : BitVec 64) (s : State) : Prop where
   right : s.gpr .r13 = (x.setWidth 32).setWidth 64
 
 theorem PassPost.wordState {keys : Spec.TripleDes.DesSchedule}
-    {direction : Spec.TripleDes.Direction} {origin s : State} {x : BitVec 64}
-    (hs : PassPost keys direction origin ((x >>> 32).setWidth 32, x.setWidth 32) s) :
+    {direction : Spec.TripleDes.Direction} {origin s : State} {x : BitVec 64} {n : Nat}
+    (hs : PassPost keys direction origin ((x >>> 32).setWidth 32, x.setWidth 32) n s) :
     WordState (desCore keys direction x) s := by
   have hcore := VG.Proof.TripleDes.desCore_roundPrefix keys direction x
   let halves := roundPrefix keys direction 16 ((x >>> 32).setWidth 32, x.setWidth 32)

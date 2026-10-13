@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Front
-import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Lcm
-import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.DPart
-import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Small
+module
+
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Front
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Lcm
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.DPart
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Small
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # An RSA key from its primes on AArch64: from the primes to `smallMask`
@@ -9,6 +15,8 @@ import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Small
 `front2_k`: after `p − 1` and `q − 1` (`KPrimes`), `L = lcm(p − 1, q − 1)`,
 `d` and `x15` the mask of `d` too small (`KFront`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaKeyGen.AArch64.Key
 

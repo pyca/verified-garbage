@@ -1,7 +1,12 @@
-import VerifiedGarbage.Impl.Ed25519.X86.FieldMemory
-import VerifiedGarbage.Impl.Ed25519.X86.Power
+module
+
+public import VerifiedGarbage.Impl.Ed25519.X86.FieldMemory
+public import VerifiedGarbage.Impl.Ed25519.X86.Power
 
 /-! Canonical Edwards encoding is left in the eight words of slot1. -/
+
+@[expose] public section
+
 namespace VG.Impl.Ed25519.X86
 open VG.X86
 open VG.Impl.X25519.X86 (sc freeze)

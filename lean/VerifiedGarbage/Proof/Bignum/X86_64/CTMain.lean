@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.CTSetup
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.CTSetup
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CTSetup
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_public` on x86-64: constant time but for `n` and `e`
@@ -6,6 +13,8 @@ import VerifiedGarbage.Proof.Bignum.X86_64.CTSetup
 The result's store (`out_ct`), `main` (`main_ct`) and the whole function
 (`code_ct`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64
 

@@ -1,4 +1,7 @@
-import VerifiedGarbage.Proof.Framework.Lit
+module
+
+public import VerifiedGarbage.Proof.Framework.Lit
+public meta import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # Code as literals with shared blocks, for the kernel
@@ -21,6 +24,8 @@ code. Unlike `materialize_code`, calls are written out in full, not as the
 literals of their callees.
 -/
 
+public meta section
+
 namespace VG
 
 open Lean Meta Elab Command
@@ -29,12 +34,12 @@ namespace LitShare
 
 /-- `e` (a code literal) with the list of each block replaced by a constant
 `N.block<k>`, one for each distinct list. -/
-partial def shareBlocks (N : Name) (e : Expr) : StateT (Std.HashMap Expr Name) MetaM Expr := do
+meta partial def shareBlocks (N : Name) (e : Expr) : StateT (Std.HashMap Expr Name) MetaM Expr := do
   if e.isAppOfArity ``Code.block 3 then
     let l := e.appArg!
     if let some n := (← get)[l]? then return mkApp e.appFn! (mkConst n)
     let n := N ++ Name.mkSimple s!"block{(← get).size}"
-    addDecl <| .defnDecl {
+    addDecl (forceExpose := true) <| .defnDecl {
       name := n, levelParams := [], type := ← inferType l, value := l
       hints := .abbrev, safety := .safe }
     modify (·.insert l n)
@@ -45,7 +50,7 @@ partial def shareBlocks (N : Name) (e : Expr) : StateT (Std.HashMap Expr Name) M
   | _ => return e
 
 /-- Defines the blocks `N.block<k>`, `N.lit` and `N.lit_eq : code = N.lit`. -/
-def materializeShared (N : Name) (code : Expr) : MetaM Unit := do
+meta def materializeShared (N : Name) (code : Expr) : MetaM Unit := do
   let ty ← inferType code
   let codeTy ← whnfD ty
   unless codeTy.isAppOfArity ``Code 2 do
@@ -54,7 +59,7 @@ def materializeShared (N : Name) (code : Expr) : MetaM Unit := do
   let inst ← synthInstance (mkApp (mkConst ``ToExpr [0]) codeTy)
   let v ← unsafe evalExpr Expr (mkConst ``Expr) (mkApp3 (mkConst ``ToExpr.toExpr [0]) codeTy inst code)
   let (litV, _) ← (shareBlocks N (ShareCommon.shareCommon' v)).run {}
-  addDecl <| .defnDecl {
+  addDecl (forceExpose := true) <| .defnDecl {
     name := N ++ `lit, levelParams := [], type := ty, value := litV
     hints := .abbrev, safety := .safe }
   -- `code = N.lit` by evaluation, of `code` with the literals it reaches if any.

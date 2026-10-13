@@ -1,14 +1,16 @@
-import VerifiedGarbage.Impl.MlDsa.AArch64.Verify.Verify
-import VerifiedGarbage.Impl.MlDsa.AArch64.Arith.Neon.Ntt
-import VerifiedGarbage.Impl.MlDsa.AArch64.Arith.Mul
-import VerifiedGarbage.Impl.MlDsa.AArch64.Arith.AddSub
-import VerifiedGarbage.Impl.MlDsa.AArch64.Round.Round
-import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.ResidentRejSelected
-import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.RejNtt
-import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.RejBounded
-import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.BallDispatch
-import VerifiedGarbage.Impl.MlDsa.AArch64.Pack.Encode
-import VerifiedGarbage.Impl.MlDsa.AArch64.Pack.Hint
+module
+
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Verify.Verify
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Arith.Neon.Ntt
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Arith.Mul
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Arith.AddSub
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Round.Round
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.ResidentRejSelected
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.RejNtt
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.RejBounded
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.BallDispatch
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Pack.Encode
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Pack.Hint
 
 /-!
 # ML-DSA on AArch64: key generation and verification with this library's primitives
@@ -16,6 +18,8 @@ import VerifiedGarbage.Impl.MlDsa.AArch64.Pack.Hint
 `vg_mldsa{44,65,87}_keygen` and `vg_mldsa{44,65,87}_verify`, calling the
 AArch64 implementations of the primitives (`prims`).
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.AArch64.KeyGen
 

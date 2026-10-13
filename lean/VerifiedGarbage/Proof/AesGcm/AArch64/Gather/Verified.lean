@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesGcm.AArch64.Gather.CT
-import VerifiedGarbage.Impl.StackScratch.AArch64
+module
+
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Gather.CT
+public import VerifiedGarbage.Impl.StackScratch.AArch64
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM one-shot encryption out of place, from a list of slices, AArch64: `Verified`
@@ -12,6 +18,8 @@ implies the one the proof is written against (`gatherAArch64`,
 `vg_aes_gcm_seal` by its shared contract, is `Verified` against it
 (`sealGather_verified`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 
@@ -105,7 +113,7 @@ open VG.Impl.AesGcm.AArch64 in
 /-- The frames of `vg_aes_gcm_seal`, in its frame of 2576 bytes, use at most those. -/
 theorem seal_depth (v : GcmImpl) :
     16 * (Impl.StackScratch.AArch64.withStackArgScratch 2576 1 («seal» v.callees)).aarch64Depth ≤ 2576 := by
-  simp only [Impl.StackScratch.AArch64.withStackArgScratch, «seal», j0, j0hash, oneAad, encBody, fo, textAbs,
+  simp only [Impl.StackScratch.AArch64.withStackArgScratch, «seal», j0, j0hash, oneAad, absorbAl, encBody, fo, textAbs,
     finBody, tag, crypt, crSeg1, crSeg2, crTail, ctrCall, ghCall, absorb, absSeg1, absTail, minK, copy,
     Impl.AesGcm.AArch64.xor, padSeg, flush, lens, GcmImpl.callees, Code.aarch64Depth, Instr.frameUnits,
     depth_of_noFrames v.ctr.noFrames, depth_of_noFrames v.key.noFrames, depth_of_noFrames v.gh.noFrames]

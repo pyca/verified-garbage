@@ -1,10 +1,23 @@
-import VerifiedGarbage.Proof.Ed25519.AArch64.Power
-import VerifiedGarbage.Proof.X25519.Chain250
-import VerifiedGarbage.Proof.Mont.Read
-import VerifiedGarbage.Proof.Framework.AArch64.Taint
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Spec.X25519.Field64
+module
+
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Power
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.Power
+public import VerifiedGarbage.Proof.X25519.Chain250
+meta import VerifiedGarbage.Proof.X25519.Chain250
+public import VerifiedGarbage.Proof.Mont.Read
+meta import VerifiedGarbage.Proof.Mont.Read
+public import VerifiedGarbage.Proof.Framework.AArch64.Taint
+meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.TCB.AArch64.Target
+meta import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Spec.X25519.Field64
+meta import VerifiedGarbage.Spec.X25519.Field64
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_gf25519_r64_pow250` on AArch64, verified
@@ -19,6 +32,8 @@ their lanes, and no instruction writes `v8`–`v15`. Constant time by taint
 tracking: only the pointer, in `x0`, is public, and every address is `ws` plus
 a constant.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed25519.AArch64.Pow250
 

@@ -1,4 +1,8 @@
-import VerifiedGarbage.Impl.Sha3.AArch64.Sha3.Vector
+module
+
+public import VerifiedGarbage.Impl.Sha3.AArch64.Sha3.Vector
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.AArch64.Optimized.KeccakMix
 open VG VG.AArch64 VG.Impl.Sha3.AArch64.Sha3.Vector
@@ -45,4 +49,7 @@ def round (r : Nat) : List Instr :=
   constant (Spec.Sha3.RC r) ++ theta.map Op.instr ++ rhoPi.map Op.instr ++ chi.map Op.instr ++ iota
 
 def rounds : List Instr := (List.range 24).flatMap round
+
+/-- The vector operations of a round before iota. -/
+def core : List Instr := (theta ++ rhoPi ++ chi).map Op.instr
 end VG.Impl.MlDsa.AArch64.Optimized.KeccakMix

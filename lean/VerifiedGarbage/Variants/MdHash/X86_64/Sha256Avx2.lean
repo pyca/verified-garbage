@@ -1,11 +1,15 @@
-import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Hashes.Sha256
-import VerifiedGarbage.Proof.Sha256.X86_64.Avx2.Compress
+module
+
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Hashes.Sha256
+public import VerifiedGarbage.Proof.Sha256.X86_64.Avx2.Compress
 
 /-!
 # SHA-256 on x86-64 with AVX2 and BMI
 
 A variant of `MdHash` on x86-64 (see `TCB/Emit.lean`): SHA-256, with `vg_sha256_compress_avx2`, which needs AVX, AVX2, BMI1 and BMI2.
 -/
+
+@[expose] public section
 
 namespace VG.Variants.MdHash.X86_64.Sha256Avx2
 

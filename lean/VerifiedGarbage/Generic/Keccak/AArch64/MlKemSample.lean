@@ -1,4 +1,8 @@
-import VerifiedGarbage.Proof.MlKem.AArch64.Sample
+module
+
+public import VerifiedGarbage.Proof.MlKem.AArch64.Sample
+
+@[expose] public section
 
 namespace VG.Generic.Keccak.AArch64.MlKemSample
 

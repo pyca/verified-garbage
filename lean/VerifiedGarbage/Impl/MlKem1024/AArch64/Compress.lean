@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.MlKem.AArch64.Compress
+module
+
+public import VerifiedGarbage.Impl.MlKem.AArch64.Compress
 
 /-!
 # ML-KEM-1024 on AArch64: compression with encoding, and decoding with decompression
@@ -27,6 +29,8 @@ The width is chosen by `len` (160 or 352 bytes), which is public: the
 contracts require `len = 32 d`. Every address and branch depends only on
 the pointers and `len`.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlKem1024.AArch64
 

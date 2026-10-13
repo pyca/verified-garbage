@@ -1,8 +1,19 @@
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Secp256k1.Main
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Secp256k1.Contract
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Secp256k1.Lit
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Secp256k1.Config
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Secp256k1.Main
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Secp256k1.Main
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Secp256k1.Contract
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Secp256k1.Contract
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Secp256k1.Lit
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Secp256k1.Lit
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.Secp256k1.Config
+meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Secp256k1.Config
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
+meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDSA verification over secp256k1 on AArch64: `Verified`
@@ -16,6 +27,8 @@ loop counters, and every address is an argument plus a constant or a counter,
 so only the pointers affect timing (the contract would let the key, the hash
 and the signature affect it too).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Verify.AArch64.Secp256k1
 

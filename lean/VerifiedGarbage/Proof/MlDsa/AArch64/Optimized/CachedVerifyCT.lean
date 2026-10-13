@@ -1,7 +1,15 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.CachedVerifyCorrect
-import VerifiedGarbage.Proof.MlDsa.AArch64.Message.VerifyCT
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.CachedVerifyCorrect
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.VerifyCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## From `CachedVerifyRel.lean` -/
+
+@[expose] public section
 
 section
 

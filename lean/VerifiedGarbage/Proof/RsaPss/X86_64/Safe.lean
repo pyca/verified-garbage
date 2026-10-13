@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.RsaPss.X86_64.Mgf
-import VerifiedGarbage.Proof.RsaPss.X86_64.SignEnc
-import VerifiedGarbage.Proof.Framework.X86_64.CallFrame
+module
+
+public import VerifiedGarbage.Proof.RsaPss.X86_64.Mgf
+public import VerifiedGarbage.Proof.RsaPss.X86_64.SignEnc
+public import VerifiedGarbage.Proof.Framework.X86_64.CallFrame
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSASSA-PSS on x86-64: no writes to `rsp`, no loads of MXCSR
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.Framework.X86_64.CallFrame
 Every instruction of `ctHash` (and of what it calls) neither writes `rsp`
 (`SpSafe`) nor loads MXCSR (`ctHash_safe`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPss.X86_64
 

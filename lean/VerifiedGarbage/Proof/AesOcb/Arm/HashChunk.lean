@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesOcb.Arm.HashFill
-import VerifiedGarbage.Proof.AesOcb.Arm.Mut
+module
+
+public import VerifiedGarbage.Proof.AesOcb.Arm.HashFill
+public import VerifiedGarbage.Proof.AesOcb.Arm.Mut
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-OCB on ARMv7: a chunk of `HASH` (`hashChunk`)
@@ -13,6 +19,8 @@ offset (`fill_ok`), enciphers the buffer, adds it to the sum (`sum_ok`), and
 leaves `HInv` at `j + c` (`hashChunk_ok`), as on AArch64
 (`Proof.AesOcb.AArch64.hashChunk_ok`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

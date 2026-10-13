@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.RsaPss.X86_64.SaltBackCT
+module
+
+public import VerifiedGarbage.Proof.RsaPss.X86_64.SaltBackCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSASSA-PSS verification on x86-64: constant time, and `Verified`
@@ -10,6 +16,8 @@ two runs whose entry states agree on the public data (`verify_ct`). With
 `verify_correct`, `verify` meets `Spec.RsaPss.verifyContract`
 (`verify_verified`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPss.X86_64
 

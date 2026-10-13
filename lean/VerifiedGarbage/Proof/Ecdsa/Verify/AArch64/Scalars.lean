@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Front
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Front
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDSA verification on AArch64: `u` and `v`
@@ -9,6 +15,8 @@ power modulo `n` gives `w = s^(n-2)` (in Montgomery form), and `uv` computes
 `r R mod n` (`RM'`) and `u = e w` and `v = r w` modulo `n`, out of
 Montgomery's form (`U`, `V`), with the multiplications of `Proof/Mont`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Verify.AArch64
 
@@ -55,22 +63,23 @@ structure Mid (c : Cfg) (s₀ : State) (base : Addr) (g : Reg → BitVec 64) (s 
 
 theorem scalars_eq (c : Cfg) : Impl.Ecdsa.Verify.AArch64.Cfg.scalars c =
     .seq (.block (c.checkRange (c.sl K) ++ c.checkRange (c.sl PT)))
-      (.block (Impl.Mont.AArch64.mul c.MN' (c.sl SM') (c.sl PT) (c.sl R2N))) := rfl
+      (c.mulNP (c.sl SM') (c.sl PT) (c.sl R2N)) := rfl
 
 theorem uv_eq (c : Cfg) : Impl.Ecdsa.Verify.AArch64.Cfg.uv c =
-    .seq (.block (Impl.Mont.AArch64.mul c.MN' (c.sl EM') (c.sl D) (c.sl R2N)))
-    (.seq (.block (Impl.Mont.AArch64.mul c.MN' (c.sl RM') (c.sl K) (c.sl R2N)))
-    (.seq (.block (Impl.Mont.AArch64.mul c.MN' (c.sl UM) (c.sl EM') (c.sl ACC)))
-    (.seq (.block (Impl.Mont.AArch64.mul c.MN' (c.sl VM) (c.sl RM') (c.sl ACC)))
-    (.seq (.block (Impl.Mont.AArch64.mul c.MN' (c.sl U) (c.sl UM) (c.sl ONE)))
-      (.block (Impl.Mont.AArch64.mul c.MN' (c.sl V) (c.sl VM) (c.sl ONE))))))) := rfl
+    .seq (c.mulNP (c.sl EM') (c.sl D) (c.sl R2N))
+    (.seq (c.mulNP (c.sl RM') (c.sl K) (c.sl R2N))
+    (.seq (c.mulNP (c.sl UM) (c.sl EM') (c.sl ACC))
+    (.seq (c.mulNP (c.sl VM) (c.sl RM') (c.sl ACC))
+    (.seq (c.mulNP (c.sl U) (c.sl UM) (c.sl ONE))
+      (c.mulNP (c.sl V) (c.sl VM) (c.sl ONE)))))) := rfl
 
 /-- One multiplication modulo `n`, on numbered slots: it keeps the modulus and
 every other slot but the temporary area's. -/
 theorem mulN_ok (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s base size)
     (hMN : ModOkA c.MN' size c.C.n s.mem base) {o a b : Nat} (ho : o < 45) (ha : a < 45) (hb : b < 45)
-    (hB : sv c base s b < c.C.n) (hoN : o ≠ MN) :
-    WP isa (.block (Impl.Mont.AArch64.mul c.MN' (c.sl o) (c.sl a) (c.sl b))) s fun s' =>
+    (hB : sv c base s b < c.C.n) (hoN : o ≠ MN)
+    (hoT : o ≠ TMP := by decide) (haT : a ≠ TMP := by decide) (hbT : b ≠ TMP := by decide) :
+    WP isa (c.mulNP (c.sl o) (c.sl a) (c.sl b)) s fun s' =>
       Scr s' base size ∧ ModOkA c.MN' size c.C.n s'.mem base ∧
       (∀ r, r ∉ clob c.n → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
       Unch base (slW c [o, TMP]) s.mem s'.mem ∧
@@ -79,7 +88,7 @@ theorem mulN_ok (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s base si
       sv c base s' o * 2 ^ (64 * c.n) % c.C.n = sv c base s a * sv c base s b % c.C.n := by
   have h7 := hc.n10
   have hn := hs.nowrap
-  exact WP.mono (slMul_ok (MN'_n c) h7 hs hMN (MN'_A c) ho ha hb hB) fun s' ⟨k, lt, e⟩ =>
+  exact WP.mono (slMulN_ok hc hs hMN ho ha hb hoT haT hbT hB) fun s' ⟨k, lt, e⟩ =>
     ⟨k.scr hs, hMN.keepA64 (j := MN) (by decide) rfl rfl rfl rfl h7 hn k (Ne.symm hoN) (by decide),
       k.gpr, k.rd, k.wr, unch_slots (MN'_n c) rfl k.unch (l := [o, TMP]) (by simp) (by simp),
       fun hi h₁ h₂ => sv_keep (MN'_n c) rfl h7 hn k hi h₁ h₂, lt, e⟩
@@ -135,9 +144,9 @@ theorem mid_ok (hc : BaseCfgOk c) {s₀ : State} {base : Addr} {g : Reg → BitV
   refine WP.seq (WP.mono_syms (nPow_ok hc hs₃ M₃ lt₃)
     fun s₄ ⟨K₄, U₄, lt₄, v₄⟩ sy₄ => ?_)
   have hs₄ := hs₃.of_keepRegs K₄ (x0_not_powClob h7)
-  have F₄ := F₃.unch h7 hn fixedOk_chainWc U₄
+  have F₄ := F₃.unch h7 hn (fixedOk_chainWc hc) U₄
   have e₄ : ∀ {i}, i < 45 → i ∉ [ACC, TMP] → sv c base s₄ i = sv c base s₃ i := fun hi hl =>
-    sv_unch U₄ h7 hn hi (apart_chainWc hi hl)
+    sv_unch U₄ h7 hn hi (apart_chainWc hc hi hl)
   have w₄ : toM c.C.n (2 ^ (64 * c.n)) (sv c base s₄ ACC) = Fin.ofNat c.C.n (sigS c s₀) ^ (c.C.n - 2) := by
     rw [← sm₃]; exact v₄
   -- `u` and `v`.
@@ -179,7 +188,7 @@ theorem mid_ok (hc : BaseCfgOk c) {s₀ : State} {base : Addr} {g : Reg → BitV
     simp only [List.mem_cons, List.not_mem_nil, or_false] at h
     rcases h with rfl | rfl <;> decide)
   have a : ∀ {i}, i < 45 → i ∉ midW → i ≠ FLAG → sv c base s₁₀ i = sv c base s i := fun hi hl hf =>
-    sv_unch UW h7 hn hi (apart_append (apart_append (apart_flag h0 hf) (apart_chainWc hi (hmw _ hl)))
+    sv_unch UW h7 hn hi (apart_append (apart_append (apart_flag h0 hf) (apart_chainWc hc hi (hmw _ hl)))
       (apart_slW hl))
   -- The values.
   have d₄ : sv c base s₄ D = dig c s₀ >>> c.sh := by
@@ -228,7 +237,7 @@ theorem mid_ok (hc : BaseCfgOk c) {s₀ : State} {base : Addr} {g : Reg → BitV
       v₉ (i := VM) (by decide) (by decide) (by decide), vm₈], ?_,
     by rw [sy₁₀, sy₉, sy₈, sy₇, sy₆, sy₅, sy₄, sy₃, sy₂, sy₁, hF.syms],
     by rw [a (i := K) (by decide) (by decide) (by decide), hF.k]⟩
-  · rw [flag_unch_cw U' h7 h0 hn (by decide)]
+  · rw [flag_unch_cw hc U' h7 h0 hn (by decide)]
     exact flag₂
   · refine unch_whole (hF.unch.trans UW) fun w hw => ?_
     simp only [List.mem_append] at hw
@@ -238,8 +247,8 @@ theorem mid_ok (hc : BaseCfgOk c) {s₀ : State} {base : Addr} {g : Reg → BitV
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
       rcases hw with rfl | rfl | rfl
       · exact sl_le c h7 (i := ACC) (by decide)
-      · exact ct_le c h7
-      · exact sl_le c h7 (i := TMP) (by decide)
+      · exact invTbl_le8 hc
+      · exact invTmp_le hc
     · exact slW_le h7 (by decide) w hw
 
 end VG.Proof.Ecdsa.Verify.AArch64

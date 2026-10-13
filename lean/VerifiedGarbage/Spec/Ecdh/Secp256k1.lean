@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.Ecdh.Generic
-import VerifiedGarbage.Spec.EcKey.Secp256k1
+module
+
+public import VerifiedGarbage.Spec.Ecdh.Generic
+public import VerifiedGarbage.Spec.EcKey.Secp256k1
 
 /-!
 # ECDH over secp256k1: the contracts, on every target
@@ -7,6 +9,8 @@ import VerifiedGarbage.Spec.EcKey.Secp256k1
 **Trusted** (as every file in `Spec/`). `vg_ecdh_secp256k1`, in the module
 `ecdh_secp256k1`, for secp256k1's `EcKey.Instance`.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Ecdh.Secp256k1
 

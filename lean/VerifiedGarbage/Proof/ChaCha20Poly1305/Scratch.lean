@@ -1,6 +1,12 @@
-import VerifiedGarbage.Spec.ChaCha20Poly1305.Contract
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.Sig
+module
+
+public import VerifiedGarbage.Spec.ChaCha20Poly1305.Contract
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.Sig
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ChaCha20-Poly1305 with its working space as an argument
@@ -17,6 +23,8 @@ and on return only within the functions' buffers (`sealPost_local`,
 `openPost_local`, `sealPost_out`, `openPost_out`): the key, the nonce, the
 additional data, the data and the tag.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.ChaCha20Poly1305
 

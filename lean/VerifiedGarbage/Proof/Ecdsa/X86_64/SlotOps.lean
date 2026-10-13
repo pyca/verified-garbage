@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.Ecdsa.X86_64.Layout
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.Layout
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.Fprog
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDSA on x86-64: field operations on numbered slots
@@ -9,6 +16,8 @@ operation writing slot `o` keeps every other slot but the temporary area's
 (`sv_keep`) and the moduli (`ModOkW.keep`); and what a slot stands for after
 a multiplication by `1` or by `R² mod m` (`toM_one_mul`, `toM_r2`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.X86_64
 
@@ -74,6 +83,15 @@ theorem slMul_ok {M : Mod} {m : Nat} (hMn : M.n = c.n) (hMt : M.tmp = c.sl TMP) 
     (by rw [hMn]; exact hB)
   rw [hMn] at this
   exact this
+
+/-- A product modulo `n` on numbered slots, a call of P-521's `n`'s function
+or inline (`opProg`). -/
+theorem slMulN_ok (h7 : c.n < 10) {base : Addr} {s : State}
+    (hs : Scr s base size) (hM : ModOkW c.MN' size c.C.n s.mem base) {o a b : Nat} (ho : o < 45)
+    (ha : a < 45) (hb : b < 45) (hS : SlotsOk o a b MN) (hB : sv c base s b < c.C.n) :
+    WP isa (opProg c.MN' (.mul (c.sl o) (c.sl a) (c.sl b))).inline s fun s' => OpKeep c.MN' base (c.sl o) s s' ∧
+      sv c base s' o < c.C.n ∧ sv c base s' o * 2 ^ (64 * c.n) % c.C.n = sv c base s a * sv c base s b % c.C.n :=
+  opMulN_ok hs hM rfl rfl hB (slMul_ok (MN'_n c) (MN'_tmp c) (MN'_mo c) h7 hs hM ho ha hb hS hB)
 
 /-- `[o] = ([a] + [b]) mod m`, on slots. -/
 theorem slAdd_ok {M : Mod} {m : Nat} (hMn : M.n = c.n) (hMt : M.tmp = c.sl TMP) {jm : Nat}

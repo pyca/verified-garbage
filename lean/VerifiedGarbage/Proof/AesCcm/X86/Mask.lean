@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.AesCcm.X86.Top
+module
+
+public import VerifiedGarbage.Proof.AesCcm.X86.Top
+meta import VerifiedGarbage.Proof.AesCcm.X86.Top
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CCM on x86: masking the data, and the tag copied out
@@ -8,6 +15,8 @@ data with `0 − ok`: the data if `ok = 1`, zeros if `ok = 0` (`mask_ok`).
 `tagOut` copies the first `tag_len` bytes of the tag at `W` to `tag`
 (`tagOut_ok`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

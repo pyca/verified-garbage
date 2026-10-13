@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Front
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Front
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDSA verification on 32-bit ARM: `u` and `v`
@@ -11,6 +17,8 @@ power modulo `n` gives `w = s^(n-2)` (in Montgomery form), and `uv` computes
 `r R mod n` (`RM'`) and `u = e w` and `v = r w` modulo `n`, out of
 Montgomery's form (`U`, `V`), with the multiplications of `Proof/Mont`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Verify.Arm
 

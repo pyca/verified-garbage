@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlKem.X86_64.EncRest
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86_64.EncRest
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86-64: K-PKE.Encrypt
@@ -9,6 +15,8 @@ import VerifiedGarbage.Proof.MlKem.X86_64.EncRest
 Every check of the pieces is one Boolean (`encChk`), which the callers
 evaluate in their layouts, for each parameter set.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.X86_64
 

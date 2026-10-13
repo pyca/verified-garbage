@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Ed25519.X86_64.CombSelect
-import VerifiedGarbage.Proof.Ed25519.X86_64.PointSelect
+module
+
+public import VerifiedGarbage.Proof.Ed25519.X86_64.CombSelect
+public import VerifiedGarbage.Proof.Ed25519.X86_64.PointSelect
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The comb's sign: the exchange in `xmm`, and the negation in one correction
@@ -9,6 +15,8 @@ so one mask applies to half a field element at once (`swapFieldX_ok`, which is
 `cswap_ok`'s statement), and `negField` negates a slot as `2p - [x]`, which
 needs one correction whatever the four words are (`negField_ok`).
 -/
+
+@[expose] public section
 
 -- The symbolic execution's `simp only` sets include register inequalities that
 -- close conjuncts of the postcondition rather than rewrite the state.

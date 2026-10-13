@@ -1,13 +1,26 @@
-import VerifiedGarbage.Proof.X25519.X86.Lit
-import VerifiedGarbage.Proof.Framework.X86.Lit
-import VerifiedGarbage.Impl.Ed25519.X86.Point32
+module
 
-/-! `vg_ed25519_r32_point_add`'s code as a literal (`materialize_code`), which
+public import VerifiedGarbage.Proof.X25519.X86.Lit
+meta import VerifiedGarbage.Proof.X25519.X86.Lit
+public import VerifiedGarbage.Proof.Framework.X86.Lit
+meta import VerifiedGarbage.Proof.Framework.X86.Lit
+public import VerifiedGarbage.Impl.Ed25519.X86.Point32
+meta import VerifiedGarbage.Impl.Ed25519.X86.Point32
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+/-! The point functions' code as literals (`materialize_code`), which
 its checks, and those of the code that calls it, read rather than build each
 field multiplication again. -/
+
+@[expose] public section
 
 namespace VG.Impl.Ed25519.X86.Point32
 
 materialize_code addFn
+materialize_code affFn
+materialize_code doubleFn
 
 end VG.Impl.Ed25519.X86.Point32

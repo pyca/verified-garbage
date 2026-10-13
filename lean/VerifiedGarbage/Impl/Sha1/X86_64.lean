@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.Sha1
-import VerifiedGarbage.TCB.X86_64.Isa
+module
+
+public import VerifiedGarbage.Spec.Sha1
+public import VerifiedGarbage.TCB.X86_64.Isa
 
 /-!
 # SHA-1 compression function: x86-64 implementation
@@ -15,6 +17,8 @@ import VerifiedGarbage.TCB.X86_64.Isa
 * `rdi, rsi, rdx, rcx` (the pointers and the block count) are public; no
   address and no branch depends on anything else.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Sha1.X86_64
 

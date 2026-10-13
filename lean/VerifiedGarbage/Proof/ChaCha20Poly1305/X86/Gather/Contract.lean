@@ -1,7 +1,13 @@
-import VerifiedGarbage.Spec.ChaCha20Poly1305.OutOfPlace
-import VerifiedGarbage.Proof.AesGcm.X86.Gather.Loop
-import VerifiedGarbage.TCB.X86.Target
-import VerifiedGarbage.Proof.Framework.PowLit
+module
+
+public import VerifiedGarbage.Spec.ChaCha20Poly1305.OutOfPlace
+public import VerifiedGarbage.Proof.AesGcm.X86.Gather.Loop
+public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Proof.Framework.PowLit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ChaCha20-Poly1305 encryption out of place, from a list of slices, x86: the contract
@@ -13,6 +19,8 @@ below the stack pointer that its frame and its call use) implies
 (`Gather/Verified.lean`): cdecl, `(key, nonce, aad, aad_len, src, src_count,
 dst, len, tag)` at `[esp + 4]` on, which the function may overwrite.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.ChaCha20Poly1305.X86.Gather
 

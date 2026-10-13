@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Rounds
-import VerifiedGarbage.Proof.Aes.InvBitsliced
-import VerifiedGarbage.Impl.Aes.X86_64.AesNiBlocks
+module
+
+public import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Rounds
+public import VerifiedGarbage.Proof.Aes.InvBitsliced
+public import VerifiedGarbage.Impl.Aes.X86_64.AesNiBlocks
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-NI: decryption
@@ -13,6 +19,8 @@ proves that `Impl.Aes.X86_64.AesNi.aesDec` decrypts each register of a
 list, from the round keys through `aesimc` that `imcKeys` leaves in the
 scratch buffer (`imcKeys_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Aes.X86_64.AesNi
 

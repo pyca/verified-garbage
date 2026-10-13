@@ -1,12 +1,20 @@
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256RD
-import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.Allocated
+module
+
+public import VerifiedGarbage.Proof.Framework.AArch64.Lit
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256RD
+public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.Allocated
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! The forwarded point doubling of P-256 verification (`VerifyDouble.double`) as a
 literal, checked once for the joint and allocated verifications, which call it
 from their table, cached additions and mixed additions (`Proof/Framework/Lit.lean`):
 `Forward.P256RD`'s, by rewriting, rather than the kernel running the optimizer
 again. -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Verify.AArch64.JointLit
 open VG VG.AArch64 VG.Impl.Ecdsa.Verify.AArch64 VG.Impl.Weierstrass VG.Impl.Weierstrass.AArch64 VG.Impl.P256

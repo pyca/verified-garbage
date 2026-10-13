@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.MlDsa.X86.Sign.PhaseA
-import VerifiedGarbage.Proof.MlDsa.X86.Sign.PrimA
-import VerifiedGarbage.Proof.MlDsa.X86.Sign.PrimD
-import VerifiedGarbage.Proof.MlDsa.Sample.Hash
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86.Sign.PhaseA
+public import VerifiedGarbage.Proof.MlDsa.X86.Sign.PrimA
+public import VerifiedGarbage.Proof.MlDsa.X86.Sign.PrimD
+public import VerifiedGarbage.Proof.MlDsa.Sample.Hash
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA signing on x86 (32-bit): the private key, and `ρ″`
@@ -11,6 +17,8 @@ import VerifiedGarbage.Proof.MlDsa.Sample.Hash
 (`DK`); then `K ‖ rnd` is copied to `HIN`, and `ρ″ = H(K ‖ rnd ‖ μ, 64)`
 hashed to `MS` (`KD`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86.Sign
 

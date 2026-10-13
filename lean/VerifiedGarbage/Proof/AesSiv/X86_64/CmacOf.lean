@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.AesSiv.X86_64.Env
-import VerifiedGarbage.Proof.Siv.Spec
-import VerifiedGarbage.Proof.Framework.X86_64.Taint
+module
+
+public import VerifiedGarbage.Proof.AesSiv.X86_64.Env
+meta import VerifiedGarbage.Proof.AesSiv.X86_64.Env
+public import VerifiedGarbage.Proof.Siv.Spec
+meta import VerifiedGarbage.Proof.Siv.Spec
+public import VerifiedGarbage.Proof.Framework.X86_64.Taint
+meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-SIV on x86-64: the CMAC of the data (`cmacOf`)
@@ -11,6 +20,8 @@ whole blocks before the last 1 to 16 (`Spec.Cmac.chainedLen`), stores it at
 `W + 144`, chains the `nb` blocks with `vg_cmac_aes_update` and finalizes the
 rest with `vg_cmac_aes_finalize` (`Siv.cmacWith_chained`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesSiv.X86_64
 

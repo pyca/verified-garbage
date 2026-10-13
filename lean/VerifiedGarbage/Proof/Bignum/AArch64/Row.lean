@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Bignum.AArch64.MulAdd
+module
+
+public import VerifiedGarbage.Proof.Bignum.AArch64.MulAdd
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Multiword arithmetic on AArch64: `acc += a_i B`
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.Bignum.AArch64.MulAdd
 words of `B`, then the last carry into words `w` and `w + 1`
 (`mulAddRow_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.AArch64
 
@@ -26,7 +34,7 @@ theorem dec_ok (s : State) (cnt : Reg)
 /-! ## The loop of `mulAddRow` -/
 
 /-- After `j` steps of `mulAddRow`'s loop from the state `s₀`: the
-accumulator's low `j` words and the carry `x2` hold its low `j` words plus
+accumulator's low `j` words and the carry `x2 + C` hold its low `j` words plus
 `x1` times those of `B`. -/
 structure RowInv (s₀ : State) (B : Addr) (Z eA eb : Nat) (j : Nat) (t : State) : Prop where
   scr : Scr t B Z
@@ -34,8 +42,9 @@ structure RowInv (s₀ : State) (B : Addr) (Z eA eb : Nat) (j : Nat) (t : State)
   x16 : t.gpr .x16 = off B (eA + 8 * j)
   x17 : t.gpr .x17 = off B (eb + 8 * j)
   out : Outside B eA (8 * j) s₀.mem t.mem
-  val : wv t.mem B eA j + 2 ^ (64 * j) * (t.gpr .x2).toNat =
+  val : wv t.mem B eA j + 2 ^ (64 * j) * carry t =
     wv s₀.mem B eA j + (s₀.gpr .x1).toNat * wv s₀.mem B eb j
+  carry_lt : carry t < 2 ^ 64
 
 theorem rowStep_ok {s₀ : State} {B : Addr} {Z w eA eb : Nat} (h7 : s₀.gpr .x7 = 0)
     (hA : eA + 8 * w ≤ Z) (hb : eb + 8 * w ≤ Z)
@@ -48,9 +57,12 @@ theorem rowStep_ok {s₀ : State} {B : Addr} {Z w eA eb : Nat} (h7 : s₀.gpr .x
   have t1 : t.gpr .x1 = s₀.gpr .x1 := hI.keep.gpr .x1 (by decide)
   rw [WP.block_append_iff]
   refine WP.mono (WP.keep [.x2, .x3, .x4, .x16, .x17] (mac_ok t false hI.scr hI.x16 hI.x17 t7
-    (by omega) (by simp only [Bool.false_eq_true, ite_false]; omega) (by omega))
-    (by decide) (by decide) (by decide +kernel)) fun t₁ ⟨⟨lo, hm, hv, h16, h17⟩, k₁⟩ => ?_
-  refine WP.mono (dec_ok t₁ .x14) fun t' ⟨⟨h14, hm', _⟩, k'⟩ => ⟨?_, by rw [h14, k₁.gpr .x14 (by decide)]⟩
+    (by omega) (by simp only [Bool.false_eq_true, ite_false]; omega) (by omega) hI.carry_lt)
+    (by decide) (by decide) (by decide +kernel)) fun t₁ ⟨⟨lo, hm, hv, h16, h17, hcarry⟩, k₁⟩ => ?_
+  refine WP.mono (dec_ok t₁ .x14) fun t' ⟨⟨h14, hm', hcf⟩, k'⟩ => ⟨?_, by rw [h14, k₁.gpr .x14 (by decide)]⟩
+  have hcar : carry t' = carry t₁ := by
+    unfold carry
+    rw [k'.gpr .x2 (by decide), hcf]
   simp only [Bool.false_eq_true, ite_false, Nat.add_zero] at hv
   have hmem : t'.mem = t.mem.writeW (off B (eA + 8 * j)) lo := hm'.trans hm
   -- The words read: `x` of the accumulator and `y` of `B`, both as on entry.
@@ -60,17 +72,18 @@ theorem rowStep_ok {s₀ : State} {B : Addr} {Z w eA eb : Nat} (h7 : s₀.gpr .x
     hI.out.word (by omega) (by omega)
   refine ⟨hI.scr.congr (k'.wr.trans k₁.wr), (hI.keep.trans (k₁.trans k')).mono (by decide),
     by rw [k'.gpr .x16 (by decide), h16, Nat.mul_succ, Nat.add_assoc],
-    by rw [k'.gpr .x17 (by decide), h17, Nat.mul_succ, Nat.add_assoc], ?_, ?_⟩
+    by rw [k'.gpr .x17 (by decide), h17, Nat.mul_succ, Nat.add_assoc], ?_, ?_, ?_⟩
   · rw [hmem]
     refine fun x hx' => ?_
     rw [writeW_outside t.mem B lo (by omega) x (by omega)]
     exact hI.out x (by omega)
-  · rw [hmem, wv_writeW_top _ _ _ _ _ (by omega), k'.gpr .x2 (by decide)]
+  · rw [hmem, wv_writeW_top _ _ _ _ _ (by omega), hcar]
     simp only [wv]
     rw [hx, hy, t1] at hv
     have hval := hI.val
     rw [pow64_succ]
     grind
+  · rw [hcar]; exact hcarry
 
 /-! ## The top words -/
 
@@ -137,25 +150,29 @@ theorem mulAddRow_ok {s : State} {B : Addr} {Z w eA eb : Nat} (hs : Scr s B Z)
   have hn := hs.nowrap
   unfold mulAddRow
   refine WP.seq (WP.mono (WP.keep [.x2, .x14, .x16, .x17] (Q := fun t => t.gpr .x16 = off B eA ∧
-    t.gpr .x17 = off B eb ∧ t.gpr .x14 = BitVec.ofNat 64 w ∧ t.gpr .x2 = 0 ∧ t.mem = s.mem)
-    (by brun [h8, h9, h12]) (by decide) (by decide) (by decide +kernel))
-    fun s₁ ⟨⟨h16, h17, h14, h2, hm₁⟩, k₁⟩ => ?_)
+    t.gpr .x17 = off B eb ∧ t.gpr .x14 = BitVec.ofNat 64 w ∧ t.gpr .x2 = 0 ∧ t.c = false ∧ t.mem = s.mem)
+    (by brun [h8, h9, h12, h7]) (by decide) (by decide) (by decide +kernel))
+    fun s₁ ⟨⟨h16, h17, h14, h2, hcf, hm₁⟩, k₁⟩ => ?_)
   have s₁7 : s₁.gpr .x7 = 0 := (k₁.gpr .x7 (by decide)).trans h7
   have s₁1 : s₁.gpr .x1 = s.gpr .x1 := k₁.gpr .x1 (by decide)
   have h0 : RowInv s₁ B Z eA eb 0 s₁ :=
     ⟨hs.congr k₁.wr, Keep.refl _ _, by rw [h16]; rfl, by rw [h17]; rfl, Outside.refl _ _ _ _,
-      by rw [h2]; rfl⟩
+      by simp only [carry, h2, hcf, Bool.toNat_false]; rfl,
+      by simp only [carry, h2, hcf, Bool.toNat_false]; decide⟩
   refine WP.seq (WP.mono (wp_countdown (N := w) (by omega) (by omega) (RowInv s₁ B Z eA eb)
-    (fun j hj t hI _ => rowStep_ok s₁7 (by omega) hb (by omega) hj hI) h0 h14) fun t hI => ?_)
-  have t7 : t.gpr .x7 = 0 := (hI.keep.gpr .x7 (by decide)).trans s₁7
-  refine WP.mono (rowTop_ok hI.scr hI.x16 t7 (by omega)) fun t' ⟨hm', k'⟩ => ?_
+    (fun j hj t hI _ => rowStep_ok s₁7 (by omega) hb (by omega) hj hI) h0 h14) fun u hI => ?_)
+  have u7 : u.gpr .x7 = 0 := (hI.keep.gpr .x7 (by decide)).trans s₁7
+  refine WP.seq (WP.mono (carryOut_ok u u7 hI.carry_lt) fun t ⟨⟨hm, hcarry⟩, kc⟩ => ?_)
+  have t7 : t.gpr .x7 = 0 := (kc.gpr .x7 (by decide)).trans u7
+  refine WP.mono (rowTop_ok (hI.scr.congr kc.wr)
+    ((kc.gpr .x16 (by decide)).trans hI.x16) t7 (by omega)) fun t' ⟨hm', k'⟩ => ?_
   -- The words above the loop's, as on entry.
   have hX : word t.mem B (eA + 8 * w) = word s.mem B (eA + 8 * w) := by
-    rw [hI.out.word (Or.inr (Nat.le_refl _)) (by omega), hm₁]
+    rw [hm, hI.out.word (Or.inr (Nat.le_refl _)) (by omega), hm₁]
   have hY : word t.mem B (eA + 8 * w + 8) = word s.mem B (eA + 8 * w + 8) := by
-    rw [hI.out.word (Or.inr (by omega)) (by omega), hm₁]
+    rw [hm, hI.out.word (Or.inr (by omega)) (by omega), hm₁]
   have hval := hI.val
-  rw [hm₁, s₁1] at hval
+  rw [hm₁, s₁1, ← hcarry, ← hm] at hval
   have e2 := wv_top2 s.mem B eA w
   -- The sum fits: `X + c + 2⁶⁴ Y < 2¹²⁸`.
   have hfit : (word t.mem B (eA + 8 * w)).toNat + (t.gpr .x2).toNat +
@@ -167,12 +184,13 @@ theorem mulAddRow_ok {s : State} {B : Addr} {Z w eA eb : Nat} (hs : Scr s B Z)
       have := wv_lt t.mem B eA w
       grind
     exact Nat.lt_of_mul_lt_mul_left hlt
-  refine ⟨?_, ?_, ((k₁.trans hI.keep).trans k').mono (by decide)⟩
+  refine ⟨?_, ?_, (((k₁.trans hI.keep).trans kc).trans k').mono (by decide)⟩
   · rw [hm', rowTop_val t.mem B hn (show eA + 8 * w + 16 ≤ Z by omega) _ hfit, hX, hY, e2]
     grind
   · rw [hm']
     intro x hx
     rw [writeW_outside _ B _ (by omega) x (by omega), writeW_outside _ B _ (by omega) x (by omega)]
+    rw [hm]
     exact (hI.out x (by omega)).trans (by rw [hm₁])
 
 end VG.Proof.Bignum.AArch64

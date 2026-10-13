@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.RsaKeyGen.Bits
-import VerifiedGarbage.Proof.RsaKeyGen.X86_64.TrialLoop
+module
+
+public import VerifiedGarbage.Proof.RsaKeyGen.Bits
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.TrialLoop
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # A candidate on x86-64: the candidate
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.RsaKeyGen.X86_64.TrialLoop
 `out_len` octets of `rand` into `aN`, sets its two top bits and its low bit
 (`wv_candidate`), and `used := out_len` (`loadC_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaKeyGen.X86_64
 

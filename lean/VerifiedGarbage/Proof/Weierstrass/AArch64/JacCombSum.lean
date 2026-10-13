@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JacCombOut
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JacMixedAdd
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacCombOut
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacMixedAdd
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.AArch64
 open VG VG.AArch64 VG.Impl.Mont.AArch64 VG.Impl.Mont VG.Impl.Weierstrass.AArch64 VG.Impl.Weierstrass

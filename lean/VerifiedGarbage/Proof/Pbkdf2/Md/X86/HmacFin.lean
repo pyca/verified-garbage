@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Block
-import VerifiedGarbage.Proof.Pbkdf2.Stream.X86.Finalize
-import VerifiedGarbage.Proof.Framework.Omega
+module
+
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Block
+public import VerifiedGarbage.Proof.Pbkdf2.Stream.X86.Finalize
+public import VerifiedGarbage.Proof.Framework.Omega
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # HMAC over a Merkle–Damgård hash function on x86 (32-bit): `finalize`, correct
@@ -13,6 +19,8 @@ and, in its buffer, the digest and the padding (`mid_ok`); one compression
 (`cmpF_ok`) gives the outer hash value, whose digest is the MAC (`out_ok`):
 `Md.Link.hmac_outer`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Pbkdf2.Md.X86.HmacFin
 

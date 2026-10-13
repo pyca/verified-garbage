@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.CmacAes.Stream.AArch64.Common
-import VerifiedGarbage.Proof.Framework.AArch64.Spill
+module
+
+public import VerifiedGarbage.Proof.CmacAes.Stream.AArch64.Common
+public import VerifiedGarbage.Proof.Framework.AArch64.Spill
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Streaming AES-CMAC on AArch64: `vg_cmac_aes_absorb`'s straight-line code
@@ -11,6 +17,8 @@ chain the block held back (`b1`), the blocks chained after it (`nb`), and the
 rest (`rest`); and the registers `absorb` saves at `scratch + 2176`, where the
 functions it calls do not write, and restores at the end.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.CmacAes.Stream.AArch64
 

@@ -1,0 +1,23 @@
+module
+
+public import VerifiedGarbage.Proof.Dsa.PackedBytes
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+/-! # Equality of public domain slices does not equate private key material -/
+
+@[expose] public section
+
+namespace VG.Proof.Dsa.X86_64
+open VG
+
+theorem prefix_component_eq {a b : List Byte} {n offset len : Nat}
+    (h : a.take n = b.take n) (hbound : offset + len ≤ n) :
+    (a.drop offset).take len = (b.drop offset).take len := by
+  have hh := congrArg (fun bs : List Byte => (bs.drop offset).take len) h
+  simp only [List.drop_take, List.take_take, Nat.min_eq_left (by omega : len ≤ n - offset)] at hh
+  exact hh
+
+end VG.Proof.Dsa.X86_64

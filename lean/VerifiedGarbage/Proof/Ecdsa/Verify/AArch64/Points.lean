@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Scalars
-import VerifiedGarbage.Proof.Ecdsa.AArch64.CombLays
-import VerifiedGarbage.Proof.Ecdh.AArch64.Window
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Scalars
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.CombLays
+public import VerifiedGarbage.Proof.Ecdh.AArch64.Window
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDSA verification on AArch64: `[u]G + [v]Q`
@@ -11,6 +17,8 @@ window method (`[v]Q`, from the key's point) and `sum` (the complete
 addition of `U` and `R`, into `R`): `R` holds `rcbAdd` of representatives of
 `[u]G` and `[v]Q`, as `Q₁ 0` and `Q₂ 0` accept them.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Verify.AArch64
 
@@ -302,7 +310,7 @@ theorem points_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {g : Reg → BitVe
       show s₁.mem (off base (bitsAt c.n 0 + t)) = _
       rw [b₁ t ht]
   have WC := tcomb_ok (publicLookup := c.C.len == 32) (tcombLay hc) (combA hc) hC hc.am3 hc.onG (tcombVals hc hC hT) hc.p_lt hs₁
-    (modP_of hc F₁.mp) hF
+    (modP_of hc F₁.mp) hF (pa := none) trivial trivial trivial
   refine WP.seq (WP.mono WC fun s₂ h₂ => ?_)
   obtain ⟨K₂, U₂, M₂, L₂, R₂⟩ := h₂
   have q₂ := hQ₁ _ _ _ R₂
@@ -326,7 +334,8 @@ theorem points_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {g : Reg → BitVe
   refine winMul_ok hc hC hs₃ F₃ hP (by rw [W₃ (by decide) (by decide)]; exact hM.px_lt)
     (by rw [W₃ (by decide) (by decide)]; exact hM.py_lt)
     (by rw [tv₃ (by decide) (by decide), tv₃ (by decide) (by decide), tv₃ (by decide) (by decide)]
-        exact hrep) (ks := V) (by decide) fun s₅ W => ?_
+        exact hrep) (ks := V) (by decide) (hpa := (trivial : AddOk _ _ _ _ _ _ _ none)) (hr := trivial)
+    (hfar := trivial) fun s₅ W => ?_
   have hs₅ := W.scr
   have F₅ := F₃.unch h7 hn (fixedOk_winX.append (fixedOk_slW (by decide))) W.unch
   have nw : ∀ i < 45, i ∉ ptsW → i ∉ otherI ++ tblI ++ [TMP] := by decide

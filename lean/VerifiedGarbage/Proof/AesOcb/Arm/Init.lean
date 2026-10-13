@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesGcm.Arm.Frame
-import VerifiedGarbage.Spec.Ocb.Contract
+module
+
+public import VerifiedGarbage.Proof.AesGcm.Arm.Frame
+public import VerifiedGarbage.Spec.Ocb.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-OCB on ARMv7: the key setup
@@ -10,6 +16,8 @@ AES-GCM one: the key schedule, then `ENCIPHER(K, zeros(128))` at byte 240
 `vg_aes_gcm_init`'s code (`Impl.AesGcm.Arm.init`), whose proof
 (`Proof.AesGcm.Arm.init_framed`) gives OCB's contract too.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesOcb.Arm
 

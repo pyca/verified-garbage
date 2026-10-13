@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.ChaCha20.X86_64.Callee
+module
+
+public import VerifiedGarbage.Impl.ChaCha20.X86_64.Callee
 
 /-!
 # Streaming ChaCha20: x86-64 implementation
@@ -34,6 +36,8 @@ address is a pointer plus a constant, those two or a count: only the
 pointers, the length and the number of bytes left (which the contract lets
 `apply` leak) can affect timing.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.ChaCha20.X86_64.Stream
 

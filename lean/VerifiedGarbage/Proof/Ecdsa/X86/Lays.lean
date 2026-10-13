@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Ecdsa.X86.SlotOps
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.X86.SlotOps
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDSA on x86 (32-bit): where the ladder's and the powers' slots are
@@ -9,6 +15,8 @@ for distinct `i`, so they are apart as `ladder_ok` and `pow_ok` need
 which `decide` checks. The functions' own working space `c.wk` is above them
 all, and below the tables of bits (`ladWk`, `powWkP`, `powWkN`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.X86
 
@@ -125,12 +133,12 @@ theorem powLay_of (hc : CfgOk c) {jm : Nat} (hjm : jm ∉ [ACC, PT, TMP])
     (minv : BitVec 64) {red : Red}
     {base one j : Nat} (hj : j < 3) (hb : base ∉ [ACC, PT, TMP]) (hb45 : base < 45) (ho : one ≠ ACC)
     (ho45 : one < 45) :
-    PowLay ⟨⟨c.n, c.sl jm, c.sl TMP, minv, red, false, false, false, false⟩, c.sl ACC, c.sl PT, c.sl base, c.sl one, bitsAt c.n j,
+    PowLay ⟨⟨c.n, c.sl jm, c.sl TMP, minv, red, false, false, false, false, false⟩, c.sl ACC, c.sl PT, c.sl base, c.sl one, bitsAt c.n j,
       64 * c.n⟩ size := by
   have hn := hc.n0
   have h7 := hc.n10
   have hw : ∀ i, i ∉ [ACC, PT, TMP] →
-      ∀ w ∈ powW ⟨⟨c.n, c.sl jm, c.sl TMP, minv, red, false, false, false, false⟩, c.sl ACC, c.sl PT, c.sl base, c.sl one,
+      ∀ w ∈ powW ⟨⟨c.n, c.sl jm, c.sl TMP, minv, red, false, false, false, false, false⟩, c.sl ACC, c.sl PT, c.sl base, c.sl one,
         bitsAt c.n j, 64 * c.n⟩, c.sl i + 8 * c.n ≤ w.1 ∨ w.1 + w.2 ≤ c.sl i := by
     intro i hi w hw
     simp only [powW, List.mem_cons, List.not_mem_nil, or_false] at hw
@@ -160,7 +168,7 @@ theorem powWk_of (hc : CfgOk c) {F : Spec.Weierstrass.Mont.Modulus} {m : Nat}
     (hF : F.k = c.n ∧ F.m = m ∧ Mont.FnOk F) {jm : Nat} (hjm : jm < 45) (minv : BitVec 64) {red : Red}
     {base one j : Nat}
     (hj : j < 3) (hb45 : base < 45) :
-    PowWk ⟨⟨c.n, c.sl jm, c.sl TMP, minv, red, false, false, false, false⟩, c.sl ACC, c.sl PT, c.sl base, c.sl one, bitsAt c.n j,
+    PowWk ⟨⟨c.n, c.sl jm, c.sl TMP, minv, red, false, false, false, false, false⟩, c.sl ACC, c.sl PT, c.sl base, c.sl one, bitsAt c.n j,
       64 * c.n⟩ F m size c.wk where
   fn := hF.2.2
   k := hF.1

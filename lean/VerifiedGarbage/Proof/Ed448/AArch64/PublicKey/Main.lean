@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Ed448.AArch64.PublicKey.Base
-import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Wrap
-import VerifiedGarbage.Proof.Framework.Contract
+module
+
+public import VerifiedGarbage.Proof.Ed448.AArch64.PublicKey.Base
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Wrap
+public import VerifiedGarbage.Proof.Framework.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 public-key derivation on AArch64: the whole function
@@ -14,6 +20,8 @@ implementation `v` of the Keccak permutation, given that
 frame (`Proof.Ed25519.AArch64.Whole.wrap_ok`) restores `x30` and the stack
 pointer, and the callee-saved registers are never written.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.AArch64.PublicKey
 

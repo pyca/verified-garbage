@@ -1,8 +1,19 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedZ
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedRootsTiming
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedZTiming
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedZ
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedZ
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedRootsTiming
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedRootsTiming
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedZTiming
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedZTiming
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## From `OptimizedPairedZVector.lean` -/
+
+@[expose] public section
 
 section
 

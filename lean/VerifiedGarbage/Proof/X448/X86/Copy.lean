@@ -1,10 +1,18 @@
-import VerifiedGarbage.Proof.X448.X86.Field
+module
+
+public import VerifiedGarbage.Proof.X448.X86.Field
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 on x86 (32-bit): copying field elements
 
 Equal or disjoint source and destination slots preserve the original limbs.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448.X86
 

@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Region
-import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Lemmas
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Region
+public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Lemmas
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSA with AVX512_IFMA on x86-64, any size: from the regions back to the workspaces
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Lemmas
 `p`'s region, below `2 X`, into `W + 1` 64-bit words at `aAcc` (`to64`),
 and `aY := Y mod X` by a conditional subtraction (`subMod`, `selectAcc`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64.Ifma
 

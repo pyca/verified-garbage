@@ -1,7 +1,17 @@
-import VerifiedGarbage.Proof.AesOcb.AArch64.NonceCT
-import VerifiedGarbage.Proof.AesOcb.AArch64.HashCT
-import VerifiedGarbage.Proof.AesOcb.AArch64.BodyCT
-import VerifiedGarbage.Proof.AesOcb.AArch64.Seal
+module
+
+public import VerifiedGarbage.Proof.AesOcb.AArch64.NonceCT
+meta import VerifiedGarbage.Proof.AesOcb.AArch64.NonceCT
+public import VerifiedGarbage.Proof.AesOcb.AArch64.HashCT
+meta import VerifiedGarbage.Proof.AesOcb.AArch64.HashCT
+public import VerifiedGarbage.Proof.AesOcb.AArch64.BodyCT
+meta import VerifiedGarbage.Proof.AesOcb.AArch64.BodyCT
+public import VerifiedGarbage.Proof.AesOcb.AArch64.Seal
+meta import VerifiedGarbage.Proof.AesOcb.AArch64.Seal
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-OCB on AArch64: `vg_aes_ocb_seal` is constant time
@@ -14,6 +24,8 @@ block is split after the load, and the rest runs from `x9`, which holds
 block loads the tag's address from the stack and is split there
 (`tagOut_rel`), and `restore`.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

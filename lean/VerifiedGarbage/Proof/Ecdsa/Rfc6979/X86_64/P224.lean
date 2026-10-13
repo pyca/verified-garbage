@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Curve
-import VerifiedGarbage.Proof.Ecdsa.X86_64.P224.Verified
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Curve
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Curve
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.P224.Verified
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P224.Verified
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Deterministic ECDSA on x86-64: P-224
@@ -10,6 +18,8 @@ proven correct (given the group law, the comb's tables and the inversions'
 soundness) and constant time against its contract (`coreK` at P-224's sizes,
 which is `Proof.Ecdsa.X86_64.P224.signX86_64`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Rfc6979.X86_64
 
@@ -39,13 +49,13 @@ def p224 (hL : Weierstrass.Law Spec.P224.curve)
   sh_eq := Proof.Ecdsa.X86_64.P224.p224_sh
   coreN := Spec.Ecdsa.P224.signApi.name
   coreC := Impl.Ecdsa.X86_64.signP224
-  coreX := by rw [coreK_p224]; exact fun s h _ => Proof.Ecdsa.X86_64.P224.sign_x86 hL hT hI s h
+  coreX := by rw [coreK_p224]; exact Proof.Ecdsa.X86_64.P224.sign_call_x86 hL hT hI
   coreCT := by rw [coreK_p224]; exact Proof.Ecdsa.X86_64.P224.sign_ct
   coreNs := by lit_decide
   coreSp := by lit_decide
   coreMx := by lit_decide
   coreD := by lit_decide
-  reduceT := Function.const _ ⟨_, by taint_decide⟩
+  reduceT := by exact (Function.const _ ⟨_, by taint_decide⟩)
   reduceSp := Function.const _ (by decide +kernel)
   reduceMx := Function.const _ (by decide +kernel)
 

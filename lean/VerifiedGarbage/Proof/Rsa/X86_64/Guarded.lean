@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.Rsa.X86_64.ExpCheck
-import VerifiedGarbage.Proof.Framework.X86_64.RelCT
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
+module
+
+public import VerifiedGarbage.Proof.Rsa.X86_64.ExpCheck
+meta import VerifiedGarbage.Proof.Rsa.X86_64.ExpCheck
+public import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSA on x86-64: a function guarded by the check of its public exponent
@@ -12,6 +21,8 @@ state on its arguments, memory and permissions (`Same`): for a contract `k`
 of `c` that depends only on those, `guarded c` is correct
 (`guarded_correct`) and constant time (`guarded_ct`) whenever `c` is.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.X86_64
 
@@ -57,6 +68,9 @@ structure Geom (s : State) : Prop where
 theorem ofNat_toNat (x : BitVec 64) : BitVec.ofNat 64 x.toNat = x := by
   rw [BitVec.ofNat_toNat, BitVec.setWidth_eq]
 
+theorem eValid_same {s t : State} (h : Same s t) : eValid t = eValid s := by
+  simp only [eValid, eBytes, h.mem, h.r8, h.r9]
+
 /-- `expCheck`, from the entry state. -/
 theorem expCheck_entry {s : State} (g : Geom s) :
     WP isa expCheck s fun t => t.zf = some (eValid s) ∧ Same s t ∧ (∀ r ∈ calleeSaved, t.gpr r = s.gpr r) ∧
@@ -66,11 +80,11 @@ theorem expCheck_entry {s : State} (g : Geom s) :
       simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide), hmx⟩
 
-/-- `guarded c` is correct if `c` is, from states agreeing with the entry
-state (`hpre`): with `c`'s postcondition if `e` is valid (`hok`), with zeros
-and 0 if not (`hfail`). -/
+/-- `guarded c` is correct if `c` is for a valid `e`, from states agreeing
+with the entry state (`hpre`): with `c`'s postcondition if `e` is valid
+(`hok`), with zeros and 0 if not (`hfail`). -/
 theorem guarded_correct {c : Prog isa} {k : Contract isa} {post : State → State → Prop}
-    (hc : ∀ s, k.pre s → ∃ t s', Exec isa c s t s' ∧ abiPreserved s s' ∧ k.post s s')
+    (hc : ∀ s, k.pre s → eValid s = true → ∃ t s', Exec isa c s t s' ∧ abiPreserved s s' ∧ k.post s s')
     (hgeom : ∀ s, k.pre s → Geom s) (hpre : ∀ s t, Same s t → k.pre s → k.pre t)
     (hok : ∀ s t s', k.pre s → Same s t → eValid s = true → k.post t s' → post s s')
     (hfail : ∀ s s', k.pre s → eValid s = false →
@@ -90,7 +104,7 @@ theorem guarded_correct {c : Prog isa} {k : Contract isa} {post : State → Stat
     · refine Mem.readW_congr fun b hb => ?_
       rw [hfr _ fun j hj => g.ret b hb j hj, hs.mem]
   · have hv : eValid s = true := by simpa using hb
-    obtain ⟨tr, s', he, habi, hp⟩ := hc t (hpre s t hs h)
+    obtain ⟨tr, s', he, habi, hp⟩ := hc t (hpre s t hs h) (by rw [← hv]; exact eValid_same hs)
     refine ⟨tr, s', he, ⟨fun r hr => (habi.1 r hr).trans (hcs r hr), ?_, ?_⟩, hok s t s' h hs hv hp⟩
     · rw [← hs.rsp, ← hs.mem]; exact habi.2.1
     · rw [habi.2.2, hmx]
@@ -102,10 +116,11 @@ theorem relCT_of_ct {c : Prog isa} {pre : State → Prop} {pub : State → State
     RelCT isa (fun s₁ s₂ => pre s₁ ∧ pre s₂ ∧ pub s₁ s₂) c fun _ _ => True :=
   fun _ _ _ _ _ _ ⟨p₁, p₂, hp⟩ e₁ e₂ => ⟨h _ _ _ _ _ _ p₁ p₂ hp e₁ e₂, trivial⟩
 
-/-- `guarded c` is constant time if `c` is: `expCheck` and `failOut` by the
-taint analysis, from the pointers and lengths, and the branch on public
-data. -/
-theorem guarded_ct {c : Prog isa} {k : Contract isa} (hct : ConstantTime isa k.pre k.pub c)
+/-- `guarded c` is constant time if `c` is for a valid `e`: `expCheck` and
+`failOut` by the taint analysis, from the pointers and lengths, and the
+branch on public data. -/
+theorem guarded_ct {c : Prog isa} {k : Contract isa}
+    (hct : ConstantTime isa (fun s => k.pre s ∧ eValid s = true) k.pub c)
     (hgeom : ∀ s, k.pre s → Geom s) (hpre : ∀ s t, Same s t → k.pre s → k.pre t)
     (hpub : ∀ s₁ s₂, k.pre s₁ → k.pre s₂ → k.pub s₁ s₂ →
       (∀ r ∈ [Reg.rdi, .rsi, .r8, .r9], s₁.gpr r = s₂.gpr r) ∧ eBytes s₁ = eBytes s₂)
@@ -132,7 +147,11 @@ theorem guarded_ct {c : Prog isa} {k : Contract isa} (hct : ConstantTime isa k.p
     · rw [s₁.rdi, s₂.rdi]; exact hr _ (by simp)
     · rw [s₁.rsi, s₂.rsi]; exact hr _ (by simp)
   · refine (relCT_of_ct hct).mono (fun u₁ u₂ hu => ?_) fun _ _ _ => trivial
-    obtain ⟨⟨-, σ₁, σ₂, ⟨p₁, p₂, hp⟩, ⟨-, s₁⟩, ⟨-, s₂⟩⟩, -⟩ := hu
-    exact ⟨hpre _ _ s₁ p₁, hpre _ _ s₂ p₂, hpubS _ _ _ _ s₁ s₂ hp⟩
+    obtain ⟨⟨-, σ₁, σ₂, ⟨p₁, p₂, hp⟩, ⟨z₁, s₁⟩, ⟨-, s₂⟩⟩, hz⟩ := hu
+    have v₁ : eValid σ₁ = true := by simpa [eval, z₁] using hz
+    have v₂ : eValid σ₂ = true := by
+      rw [← v₁]; simp only [eValid, (hpub _ _ p₁ p₂ hp).2]
+    exact ⟨⟨hpre _ _ s₁ p₁, (eValid_same s₁).trans v₁⟩, ⟨hpre _ _ s₂ p₂, (eValid_same s₂).trans v₂⟩,
+      hpubS _ _ _ _ s₁ s₂ hp⟩
 
 end VG.Proof.Rsa.X86_64

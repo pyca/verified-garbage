@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.MlDsa.X86_64.Sample.RejNtt
-import VerifiedGarbage.Impl.MlKem.X86_64.Sample4
+module
+
+public import VerifiedGarbage.Impl.MlDsa.X86_64.Sample.RejNtt
+public import VerifiedGarbage.Impl.MlKem.X86_64.Sample4
 
 /-!
 # ML-DSA on x86-64: `vg_mldsa_rej_ntt_poly4` and `vg_mldsa_rej_ntt_poly4_avx2`
@@ -31,11 +33,13 @@ output, a function of the seeds, and on nothing else; every other address
 and branch depends only on the pointers.
 -/
 
+@[expose] public section
+
 namespace VG.Impl.MlDsa.X86_64.Sample.Rej4
 
 open VG.X86_64
 open VG.Impl.MlKem.X86_64 (at_)
-open VG.Impl.MlKem.X86_64.Sample4 (absorb4 squeeze4 oRc oBuf oScalar)
+open VG.Impl.MlKem.X86_64.Sample4 (absorb4 squeezes oRc oBuf oScalar)
 open VG.Impl.Sha3.X86_64.X4 (rcTable)
 
 /-- Where `j` of seed `k` is kept, at `scratch + oJ + 8 k`. -/
@@ -64,10 +68,10 @@ def second (k : Nat) : Prog isa :=
 the vector registers after the last permutation. -/
 def rejNTT4Avx2 : Prog isa :=
   .seq (.block (VG.Impl.MlKem.X86_64.Sample4.pro ++ rcTable .rbx (oRc / 32) ++ absorb4))
-    (.seq (squeeze4 0) (.seq (squeeze4 1) (.seq (squeeze4 2) (.seq (.block zeroJ)
+    (.seq (squeezes 0 3) (.seq (.block zeroJ)
       (.seq (first 0) (.seq (first 1) (.seq (first 2) (.seq (first 3)
-        (.seq (squeeze4 0) (.seq (squeeze4 1) (.seq (squeeze4 2) (.seq (.block [.vop .vzeroupper])
-          (.seq (second 0) (.seq (second 1) (.seq (second 2) (.seq (second 3) (.block VG.Impl.MlKem.X86_64.Sample4.epi)))))))))))))))))
+        (.seq (squeezes 0 3) (.seq (.block [.vop .vzeroupper])
+          (.seq (second 0) (.seq (second 1) (.seq (second 2) (.seq (second 3) (.block VG.Impl.MlKem.X86_64.Sample4.epi)))))))))))))
 
 /-- `vg_mldsa_rej_ntt_poly` on seed `k`, and `r14 ← r14 ∧ result`. -/
 def callK (k : Nat) : Prog isa :=

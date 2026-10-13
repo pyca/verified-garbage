@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.AesCbc.Arm.CT
+module
+
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.AesCbc.Arm.CT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CBC on ARMv7: `Verified`
@@ -8,6 +14,8 @@ Correctness and constant time, a state satisfying the precondition, and the
 shared contracts of `Spec/Cbc/Contract.lean`, with 8 bytes of stack: each
 call of a block function pushes its stack argument and `lr`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesCbc.Arm
 

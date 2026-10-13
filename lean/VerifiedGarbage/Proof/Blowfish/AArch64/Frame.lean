@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Blowfish.AArch64.Verified
-import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
+module
+
+public import VerifiedGarbage.Proof.Blowfish.AArch64.Verified
+public import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Blowfish ECB on AArch64, with its working space on the stack
@@ -8,6 +14,8 @@ ECB runs its code, proved with the working space as an argument, in a frame
 that allocates it and zeroes it after the code (`Verified.stackScratchWiped`),
 since it may hold the data: 256 bytes. The code uses no other stack.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Blowfish.AArch64
 

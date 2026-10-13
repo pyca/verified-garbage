@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.AesSiv.CtrPart
-import VerifiedGarbage.Proof.AesSiv.Words
-import VerifiedGarbage.Proof.AesCcm.Ctr
-import VerifiedGarbage.Proof.Cmac.Dbl32
+module
+
+public import VerifiedGarbage.Proof.AesSiv.CtrPart
+public import VerifiedGarbage.Proof.AesSiv.Words
+public import VerifiedGarbage.Proof.AesCcm.Ctr
+public import VerifiedGarbage.Proof.Cmac.Dbl32
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-SIV: CTR with `vg_aes_ctr32`
@@ -14,6 +20,8 @@ never wrap around: they add to `Q` as a 128-bit integer
 CTR's output on them (`ctr32_ctrPart`), with the counter `Q + k` it leaves
 for the next block. Nothing here depends on a target.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesSiv
 

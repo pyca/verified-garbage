@@ -1,18 +1,40 @@
-import VerifiedGarbage.Proof.Gcm.AArch64.Pmull.Arith
-import VerifiedGarbage.Proof.Gcm.AArch64.Ghash
-import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-import VerifiedGarbage.Proof.Framework.Range
-import VerifiedGarbage.Proof.Framework.AArch64.Taint
-import VerifiedGarbage.Proof.Framework.AArch64.Inline
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Spec.Gcm.Contract
-import VerifiedGarbage.TCB.AArch64.Target
-import Mathlib.Tactic.LinearCombination
-import Mathlib.Tactic.Ring.RingNF
+module
+
+public import VerifiedGarbage.Proof.Gcm.AArch64.Pmull.Arith
+meta import VerifiedGarbage.Proof.Gcm.AArch64.Pmull.Arith
+public import VerifiedGarbage.Proof.Gcm.AArch64.Ghash
+meta import VerifiedGarbage.Proof.Gcm.AArch64.Ghash
+public import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+meta import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+public import VerifiedGarbage.Proof.Framework.Range
+meta import VerifiedGarbage.Proof.Framework.Range
+public import VerifiedGarbage.Proof.Framework.AArch64.Taint
+meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
+public import VerifiedGarbage.Proof.Framework.AArch64.Inline
+meta import VerifiedGarbage.Proof.Framework.AArch64.Inline
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.Gcm.Contract
+meta import VerifiedGarbage.Spec.Gcm.Contract
+public import VerifiedGarbage.TCB.AArch64.Target
+meta import VerifiedGarbage.TCB.AArch64.Target
+public import Mathlib.Tactic.LinearCombination
+meta import Mathlib.Tactic.LinearCombination
+public import Mathlib.Tactic.Ring.RingNF
+meta import Mathlib.Tactic.Ring.RingNF
 
 -- Formerly the module `VerifiedGarbage.Proof.Gcm.AArch64.Pmull.Groups`.
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
+
 section
 
 /-!

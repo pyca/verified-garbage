@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.X448.AArch64.Base.Select
-import VerifiedGarbage.Proof.X448.AArch64.Base.Add
-import VerifiedGarbage.Proof.X448.AArch64.Fast.Ladder
+module
+
+public import VerifiedGarbage.Proof.X448.AArch64.Base.Select
+public import VerifiedGarbage.Proof.X448.AArch64.Base.Add
+public import VerifiedGarbage.Proof.X448.AArch64.Fast.Ladder
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 of the base point on AArch64: negating an entry for a negative digit
@@ -10,6 +16,8 @@ Untrusted: everything here is checked by Lean. `negate ox o w` computes
 if it is clear) as a mask, and swaps `x` with `0 - x` under it, as Ed25519's
 comb negates its cached entries.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448.AArch64.Base
 

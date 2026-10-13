@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Ecdh.AArch64
+module
+
+public import VerifiedGarbage.Impl.Ecdh.AArch64
 
 /-!
 # ECDSA signature verification on AArch64
@@ -32,6 +34,8 @@ All validity checks run regardless of earlier failures. P-256's comb
 addresses depend on its public scalar; the remaining memory accesses and
 branches depend only on pointers and fixed loop counters.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Ecdsa.Verify.AArch64
 
@@ -77,17 +81,15 @@ def loadS : List Instr := loadBytes c.C.len c.n (c.sl PT) .x8
 
 /-- The checks of `r` and `s`, and `s R mod n`. -/
 def scalars : Prog isa :=
-  blocks [c.checkRange (c.sl K) ++ c.checkRange (c.sl PT),
-    Mont.AArch64.mul c.MN' (c.sl SM') (c.sl PT) (c.sl R2N)]
+  .seq (.block (c.checkRange (c.sl K) ++ c.checkRange (c.sl PT))) (c.mulNP (c.sl SM') (c.sl PT) (c.sl R2N))
 
 /-- `u` and `v`, from `w R mod n` in `ACC`. -/
 def uv : Prog isa :=
-  blocks [Mont.AArch64.mul c.MN' (c.sl EM') (c.sl D) (c.sl R2N),
-    Mont.AArch64.mul c.MN' (c.sl RM') (c.sl K) (c.sl R2N),
-    Mont.AArch64.mul c.MN' (c.sl UM) (c.sl EM') (c.sl ACC),
-    Mont.AArch64.mul c.MN' (c.sl VM) (c.sl RM') (c.sl ACC),
-    Mont.AArch64.mul c.MN' (c.sl U) (c.sl UM) (c.sl ONE),
-    Mont.AArch64.mul c.MN' (c.sl V) (c.sl VM) (c.sl ONE)]
+  .seq (c.mulNP (c.sl EM') (c.sl D) (c.sl R2N)) <|
+  .seq (c.mulNP (c.sl RM') (c.sl K) (c.sl R2N)) <|
+  .seq (c.mulNP (c.sl UM) (c.sl EM') (c.sl ACC)) <|
+  .seq (c.mulNP (c.sl VM) (c.sl RM') (c.sl ACC)) <|
+  .seq (c.mulNP (c.sl U) (c.sl UM) (c.sl ONE)) (c.mulNP (c.sl V) (c.sl VM) (c.sl ONE))
 
 /-- `U = R`, then `R = O = (0 : 1 : 0)`. -/
 def save : List Instr :=
@@ -108,11 +110,11 @@ def finish : List Instr :=
 /-- `x = X Z⁻¹`, with `Z⁻¹ R` in `ACC`, out of Montgomery form, `x R mod n`
 and `x R - r R mod n`, the checks of `Z` and of `x ≡ r`, and the result. -/
 def final : Prog isa :=
-  blocks [Mont.AArch64.mul c.MP' (c.sl XM) (c.sl RX) (c.sl ACC),
-    Mont.AArch64.mul c.MP' (c.sl X) (c.sl XM) (c.sl ONE),
-    Mont.AArch64.mul c.MN' (c.sl XN) (c.sl X) (c.sl R2N),
-    Mont.AArch64.sub c.MN' (c.sl W) (c.sl XN) (c.sl RM'),
-    c.checkNonzero (c.sl RZ) ++ Impl.Ecdh.AArch64.Cfg.checkZero c (c.sl W) ++ finish c]
+  .seq (.block (Mont.AArch64.mul c.MP' (c.sl XM) (c.sl RX) (c.sl ACC))) <|
+  .seq (.block (Mont.AArch64.mul c.MP' (c.sl X) (c.sl XM) (c.sl ONE))) <|
+  .seq (c.mulNP (c.sl XN) (c.sl X) (c.sl R2N)) <|
+  .seq (.block (Mont.AArch64.sub c.MN' (c.sl W) (c.sl XN) (c.sl RM')))
+    (.block (c.checkNonzero (c.sl RZ) ++ Impl.Ecdh.AArch64.Cfg.checkZero c (c.sl W) ++ finish c))
 
 /-- `[u]G + [v]Q`, into `R`: `[u]G` by the comb from the table of the bits of
 `u`, `[v]Q` by ECDH's window method. P-256 verification selects its public

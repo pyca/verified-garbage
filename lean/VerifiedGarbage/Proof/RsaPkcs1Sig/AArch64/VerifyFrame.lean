@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.VerifyPre
-import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Wp
+module
+
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.VerifyPre
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Wp
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_pkcs1_verify` on AArch64: the frame and the call's arguments
@@ -9,6 +15,8 @@ callee uses `K` bytes: all of it is the stack the function uses, `kR K s`,
 from `kb K s`. `pubArgs_ok`: the first block saves the registers, keeps the
 values needed after the call, and sets up the call (`AtCall`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPkcs1Sig.AArch64.Ver
 

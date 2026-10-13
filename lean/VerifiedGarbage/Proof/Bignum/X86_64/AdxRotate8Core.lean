@@ -1,8 +1,17 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Word
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Math
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareDiagonalStep
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Word
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Math
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareDiagonalStep
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Eight rotating columns compute an exact multiply-add and one-word shift. -/
+
+@[expose] public section
+
 namespace VG.Proof.Bignum.X86_64.AdxRotate8
 open VG VG.X86_64 VG.Impl.Bignum.X86_64
 open VG.Proof.Bignum.X86_64

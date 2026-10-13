@@ -1,7 +1,17 @@
-import VerifiedGarbage.Proof.Ed25519.X86.PointCTSupport
-import VerifiedGarbage.Proof.Ed25519.X86.PointCTLit
-import VerifiedGarbage.Proof.Framework.X86.TaintMono
-import VerifiedGarbage.Proof.X25519.X86.Field32.Pow250Sum
+module
+
+public import VerifiedGarbage.Proof.Ed25519.X86.PointCTSupport
+meta import VerifiedGarbage.Proof.Ed25519.X86.PointCTSupport
+public import VerifiedGarbage.Proof.Ed25519.X86.PointCTLit
+meta import VerifiedGarbage.Proof.Ed25519.X86.PointCTLit
+public import VerifiedGarbage.Proof.Framework.X86.TaintMono
+meta import VerifiedGarbage.Proof.Framework.X86.TaintMono
+public import VerifiedGarbage.Proof.X25519.X86.Field32.Pow250Sum
+meta import VerifiedGarbage.Proof.X25519.X86.Field32.Pow250Sum
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Constant time of the point arithmetic blocks
@@ -11,6 +21,8 @@ import VerifiedGarbage.Proof.X25519.X86.Field32.Pow250Sum
 The point encoding's inversion calls `vg_gf25519_r32_pow250`, which the
 analysis follows (`callTaint₀`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed25519.X86
 

@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.AesCcm.Arm.Header
-import VerifiedGarbage.Proof.AesGcm.Arm.Args
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
+module
+
+public import VerifiedGarbage.Proof.AesCcm.Arm.Header
+public import VerifiedGarbage.Proof.AesGcm.Arm.Args
+public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CCM on ARMv7: the associated data (`aad y`)
@@ -12,6 +18,8 @@ encoding of its length followed by as many of its bytes as fit, padded
 (`aadHead_ok`); `aad y` that block and the rest of the associated data,
 padded, if there is any (`aad_ok`): the blocks `adataBlocks`.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

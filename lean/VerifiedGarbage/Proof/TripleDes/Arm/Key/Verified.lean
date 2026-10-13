@@ -1,6 +1,14 @@
-import VerifiedGarbage.Proof.TripleDes.Arm.Key.Correct
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.TripleDes.Scratch
+module
+
+public import VerifiedGarbage.Proof.TripleDes.Arm.Key.Correct
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.TripleDes.Scratch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.TripleDes.Arm.Key
 

@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlKem.AArch64.KgA
+module
+
+public import VerifiedGarbage.Proof.MlKem.AArch64.KgA
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on AArch64: `keygen`, the matrix `Â`
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.MlKem.AArch64.KgA
 stronger contract: it is reduced, and the result is 1 exactly when `SampleNTT`
 with 280 iterations succeeds; `x24` is the AND of the results.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.AArch64.KeyGen
 

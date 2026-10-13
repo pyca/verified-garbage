@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.RsaPkcs1Enc.Steps
+module
+
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.Steps
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-PKCS1-v1_5 decryption with implicit rejection: the selection
@@ -10,6 +16,8 @@ alternative length as a fold of masked candidates (`altFold_le`,
 and the output, byte by byte (`outByte`), which is the message
 `implicitDecode` returns after zeros (`sel_eq`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPkcs1Enc
 

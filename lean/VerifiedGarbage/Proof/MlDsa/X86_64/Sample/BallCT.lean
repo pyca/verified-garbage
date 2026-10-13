@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Ball
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejNttCT
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Ball
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Ball
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejNttCT
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejNttCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on x86-64: `vg_mldsa_sample_in_ball`, constant time but for `c̃`
@@ -12,6 +20,8 @@ on the SHAKE256 output, by relating the two runs iteration by iteration
 byte to read, so each branch goes the same way and each access goes to the
 same address.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86_64.Sample
 

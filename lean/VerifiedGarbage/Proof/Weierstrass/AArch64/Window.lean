@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowSum
-import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowTable
-import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowEntry
-import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowQuad
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowSum
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowTable
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowEntry
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowQuad
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The window method on AArch64
@@ -16,6 +22,8 @@ all `J` digits `R` represents `[k - 8 Σ_{i<J} 16^i]P` (`window_ok`), for
 `k < 16^J` whose bits are the table at `K.bits`.
 -/
 
+@[expose] public section
+
 namespace VG.Proof.Weierstrass.AArch64
 
 open VG VG.AArch64 VG.Impl.Mont.AArch64 VG.Impl.Mont VG.Impl.Weierstrass.AArch64 VG.Impl.Weierstrass
@@ -29,8 +37,10 @@ theorem winStep_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : W
     (hP : onCurve C P = true) (hpn : C.p < 2 ^ (64 * K.M.n)) (hone_lt : K.one < C.p)
     (hone : toM C.p (2 ^ (64 * K.M.n)) K.one = 1) {s₀ : State} (hF : WinFixed K C base s₀ P k)
     (hk8 : 8 * geom K.J ≤ k) {j : Nat} {s : State} (hj : 1 ≤ j) (hjn : j ≤ K.J)
-    (hI : WinInv K C base size k P s₀ s j) :
-    WP isa (WinCfg.step K) s fun s' =>
+    (hI : WinInv K C base size k P s₀ s j) {pa : Option (String × Nat)}
+    (hpa : AddOk K.M size (· ∈ winSlots K) K.S K.R K.E K.D pa)
+    (hr : AddReady base K.M s₀.mem K.S pa) (hfar : AddFar K.M K.S (winW K) pa) :
+    WP isa (WinCfg.step K pa) s fun s' =>
       WinInv K C base size k P s₀ s' (j - 1) ∧ s'.gpr .x19 = BitVec.ofNat 64 (j - 1) := by
   have hJ := hL.J
   rw [WinCfg.step]
@@ -45,7 +55,7 @@ theorem winStep_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : W
     have e : ∀ x, tmv C K.M.n base s₁ x = tmv C K.M.n base s x := fun x => by
       show toM _ _ _ = toM _ _ _; rw [k₁.mem]
     rw [e, e, e]; exact hI.rep
-  refine WP.seq (WP.mono (quad_ok hL hA hp hC hM3 hP hpn hone_lt hone hF hS₁ lt₁ rep₁)
+  refine WP.seq (WP.mono (quad_ok hL hA hp hC hM3 hP hpn hone_lt hone hF hS₁ (by omega_using [hjn, hJ]) b₁ lt₁ rep₁)
     fun s₅ ⟨S₅, x₅, l₅, r₅⟩ => ?_)
   have hx₅ : s₅.gpr .x19 = BitVec.ofNat 64 (j - 1) := by rw [x₅, b₁]
   obtain ⟨-, -, -, hz₅⟩ := S₅.ro_tmv hL hF
@@ -96,7 +106,7 @@ theorem winStep_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : W
       show toM _ _ _ = toM _ _ _; rw [eR x hx]
     rw [e _ (by simp), e _ (by simp), e _ (by simp)]; exact r₅
   refine WP.mono (sumStep_ok hL hA hp hC hM3 hF S₆ (hC.onCurve_mul hP _)
-    (onCurve_winPt hC hP k (j - 1)) lt₆ E₆.lt rep₆ E₆.rep) fun s₇ ⟨S₇, x₇, l₇, r₇⟩ => ?_
+    (onCurve_winPt hC hP k (j - 1)) lt₆ E₆.lt rep₆ E₆.rep hpa hr hfar) fun s₇ ⟨S₇, x₇, l₇, r₇⟩ => ?_
   have hadd := win_add hC hP (k := k) (J := K.J) (j := j - 1) hk8 (by omega_using [hjn, hJ])
   rw [Nat.sub_add_cancel hj] at hadd
   rw [hadd] at r₇
@@ -110,8 +120,10 @@ theorem window_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : Wi
     (hP : onCurve C P = true) (hpn : C.p < 2 ^ (64 * K.M.n)) (hone_lt : K.one < C.p)
     (hone : toM C.p (2 ^ (64 * K.M.n)) K.one = 1) {s : State} (hs : Scr s base size)
     (hM : ModOkA K.M size C.p s.mem base) (hF : WinFixed K C base s P k) (hk : k < 16 ^ K.J)
-    (hk8 : 8 * geom K.J ≤ k) :
-    WP isa (WinCfg.window K) s fun s' => KeepRegs (combClob K.M.n) s s' ∧
+    (hk8 : 8 * geom K.J ≤ k) {pa : Option (String × Nat)}
+    (hpa : AddOk K.M size (· ∈ winSlots K) K.S K.R K.E K.D pa)
+    (hr : AddReady base K.M s.mem K.S pa) (hfar : AddFar K.M K.S (winW K) pa) :
+    WP isa (WinCfg.window K pa) s fun s' => KeepRegs (combClob K.M.n) s s' ∧
       Unch base (winW K) s.mem s'.mem ∧ ModOkA K.M size C.p s'.mem base ∧
       (∀ x ∈ [K.R.x, K.R.y, K.R.z], wordsVal s'.mem base x K.M.n < C.p) ∧
       Rep C (tmv C K.M.n base s' K.R.x) (tmv C K.M.n base s' K.R.y) (tmv C K.M.n base s' K.R.z)
@@ -119,7 +131,7 @@ theorem window_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : Wi
   have hn := hs.nowrap
   have hJ := hL.J
   rw [WinCfg.window]
-  refine WP.seq (WP.mono (build_ok hL hA hp hC hM3 hP hs hM hF) fun s₁ B => ?_)
+  refine WP.seq (WP.mono (build_ok hL hA hp hC hM3 hP hs hM hF hpa hr hfar) fun s₁ B => ?_)
   have S₁ : WinSt K C base size P s s₁ :=
     ⟨B.scr, B.keep.mono fun r hr => by
       rcases List.mem_cons.mp hr with rfl | hr
@@ -190,7 +202,7 @@ theorem window_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : Wi
       rw [vx, vy, vz, toM_zero, hone, winE_top hk, mul_zero_pt']
       exact rep_infinity' hC
   exact countLoop_ok (Inv := fun j s' => WinInv K C base size k P s s' j) (n := K.J) (by omega_using [hJ])
-    (fun j s' h1 h2 hi => winStep_ok hL hA hp hC hM3 hP hpn hone_lt hone hF hk8 h1 h2 hi)
+    (fun j s' h1 h2 hi => winStep_ok hL hA hp hC hM3 hP hpn hone_lt hone hF hk8 h1 h2 hi hpa hr hfar)
     (fun s' hi => ⟨hi.st.keep, hi.st.unch, hi.st.mod, hi.lt, by rw [← winE_zero]; exact hi.rep⟩)
     hJ.1 I₅
 

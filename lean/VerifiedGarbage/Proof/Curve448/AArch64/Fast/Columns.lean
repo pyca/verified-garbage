@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Curve448.AArch64.Fast.MOp
+module
+
+public import VerifiedGarbage.Proof.Curve448.AArch64.Fast.MOp
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Karatsuba's columns are the reduced product's coefficients
@@ -8,6 +14,8 @@ multiplication (or a square), the signed sums of products that `sem`
 accumulates in `L` and `H` are the coefficients `d` and `d + 4` of the
 schoolbook product folded with `2⁴⁴⁸ = 2²²⁴ + 1`, `reduced (rows f g 8)`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Curve448.AArch64.Fast
 

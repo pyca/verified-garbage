@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.Loop
-import VerifiedGarbage.Proof.Poly1305.Limbs64
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.Loop
+public import VerifiedGarbage.Proof.Poly1305.Limbs64
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Multiword arithmetic on x86-64: multiply-accumulate steps
@@ -10,6 +16,8 @@ accumulator at `aA`, a word `y` of the operand at `aB`, the multiplier
 `aA'` (`aA` itself, or the word below) and leaves its high word in `rbp`
 (`macStep_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64
 

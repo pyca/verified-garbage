@@ -1,13 +1,29 @@
-import VerifiedGarbage.Proof.Ecdsa.X86_64.Main
-import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.Contract
-import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.Lit
-import VerifiedGarbage.Proof.P521.Point
-import VerifiedGarbage.Proof.Framework.X86_64.Taint
-import VerifiedGarbage.Proof.Framework.X86_64.Abi
-import VerifiedGarbage.Proof.Framework.X86_64.Inline
-import VerifiedGarbage.Proof.P521.X86_64.TaintSums
-import VerifiedGarbage.Proof.P521.Prime
-import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.Main
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.Main
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.Contract
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.Contract
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.Lit
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.Lit
+public import VerifiedGarbage.Proof.P521.Point
+meta import VerifiedGarbage.Proof.P521.Point
+public import VerifiedGarbage.Proof.Framework.X86_64.Taint
+meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
+public import VerifiedGarbage.Proof.Framework.X86_64.Abi
+meta import VerifiedGarbage.Proof.Framework.X86_64.Abi
+public import VerifiedGarbage.Proof.Framework.X86_64.Inline
+meta import VerifiedGarbage.Proof.Framework.X86_64.Inline
+public import VerifiedGarbage.Proof.P521.X86_64.TaintSums
+meta import VerifiedGarbage.Proof.P521.X86_64.TaintSums
+public import VerifiedGarbage.Proof.P521.Prime
+meta import VerifiedGarbage.Proof.P521.Prime
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDSA over P-521 on x86-64: `Verified`
@@ -23,6 +39,8 @@ comb's static public (`taintSym`): the only branches are on loop counters,
 and every address is an argument or the static's address plus a constant or
 a counter.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.X86_64.P521
 
@@ -56,6 +74,7 @@ theorem p521_ok (hI : InvSounds) : CfgOk p521 where
   p_lt_2n := by decide +kernel
   minv_p := by decide +kernel
   red_p := by decide +kernel
+  red_n := by decide +kernel
   minv_n := by decide +kernel
   len8 := by decide
   len_lo := by decide
@@ -78,6 +97,7 @@ theorem p521_ok (hI : InvSounds) : CfgOk p521 where
   comb_am3 := fun _ _ => by unfold AM3; decide +kernel
   am3 := by unfold AM3; decide +kernel
   even h := absurd h (by decide)
+  inverse _ := ⟨by decide, rfl⟩
 
 theorem p521_tbls (hT : CombOkW Spec.P521.curve 7 83 Impl.P521.p521Comb7 Impl.P521.p521Comb7Start) :
     CombTbls p521 := fun d h => by cases h; exact ⟨hT, fun h => absurd h (by decide)⟩

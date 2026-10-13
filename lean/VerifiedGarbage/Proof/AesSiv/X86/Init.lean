@@ -1,7 +1,17 @@
-import VerifiedGarbage.Proof.CmacAes.Stream.X86.Common
-import VerifiedGarbage.Proof.AesSiv.X86.Contract
-import VerifiedGarbage.Proof.AesSiv.Key
-import VerifiedGarbage.Impl.AesSiv.X86
+module
+
+public import VerifiedGarbage.Proof.CmacAes.Stream.X86.Common
+meta import VerifiedGarbage.Proof.CmacAes.Stream.X86.Common
+public import VerifiedGarbage.Proof.AesSiv.X86.Contract
+meta import VerifiedGarbage.Proof.AesSiv.X86.Contract
+public import VerifiedGarbage.Proof.AesSiv.Key
+meta import VerifiedGarbage.Proof.AesSiv.Key
+public import VerifiedGarbage.Impl.AesSiv.X86
+meta import VerifiedGarbage.Impl.AesSiv.X86
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-SIV on x86: `vg_aes_siv_init`'s code
@@ -15,6 +25,8 @@ between the calls is constant time by the taint analysis (from `esp` and the
 stack arguments), and the calls by their own proofs (`ek_rel`, `sub_rel`),
 their arguments pinned by `IMid₁`, `IMid₂` and `IMid₃`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesSiv.X86
 

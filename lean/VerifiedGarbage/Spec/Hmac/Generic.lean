@@ -1,9 +1,11 @@
-import VerifiedGarbage.Spec.Hmac
-import VerifiedGarbage.Spec.Sha256
-import VerifiedGarbage.Spec.Sha1
-import VerifiedGarbage.Spec.Md5
-import VerifiedGarbage.Spec.Sha512
-import VerifiedGarbage.TCB.Artifact
+module
+
+public import VerifiedGarbage.Spec.Hmac
+public import VerifiedGarbage.Spec.Sha256
+public import VerifiedGarbage.Spec.Sha1
+public import VerifiedGarbage.Spec.Md5
+public import VerifiedGarbage.Spec.Sha512
+public import VerifiedGarbage.TCB.Artifact
 
 /-!
 # HMAC over any streaming hash function: the contracts, on every target
@@ -48,6 +50,8 @@ ECDSA's). The functions may overwrite their arguments passed in memory, where
 the calling convention allows it (`writeArgs`), to pass arguments to the
 functions they call.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Hmac
 

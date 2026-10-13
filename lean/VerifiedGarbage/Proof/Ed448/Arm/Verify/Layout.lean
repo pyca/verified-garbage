@@ -1,7 +1,13 @@
-import VerifiedGarbage.Impl.Ed448.Arm.Verify
-import VerifiedGarbage.Proof.Ed448.Arm.Shake.Layout
-import VerifiedGarbage.Proof.Ed25519.Arm.Whole.Layout
-import VerifiedGarbage.Spec.Ed448.Contract
+module
+
+public import VerifiedGarbage.Impl.Ed448.Arm.Verify
+public import VerifiedGarbage.Proof.Ed448.Arm.Shake.Layout
+public import VerifiedGarbage.Proof.Ed25519.Arm.Whole.Layout
+public import VerifiedGarbage.Spec.Ed448.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 verification on ARMv7: the layout
@@ -12,6 +18,8 @@ the frame's base `E`; the inputs are the buffers, the caller's stack
 arguments (`ORIG`, which hold `scratch`) and the saved arguments, and the
 only output is `scratch`. `setup_ok` sets a call's arguments from them.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.Arm.Verify
 

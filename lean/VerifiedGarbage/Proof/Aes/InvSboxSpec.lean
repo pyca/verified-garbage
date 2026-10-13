@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Aes.SboxSpec
+module
+
+public import VerifiedGarbage.Proof.Aes.SboxSpec
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The specification's inverse S-box, on all 256 inputs at once
@@ -9,6 +15,8 @@ multiplicative inverse as `b²⁵⁴`) transcribed on truth tables
 (`invSboxT`), and proved right input by input (`row_invSboxT`), so that
 the kernel evaluates it on the 256 bytes at once.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Aes
 

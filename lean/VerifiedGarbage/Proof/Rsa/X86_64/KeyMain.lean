@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Rsa.X86_64.KeyPhases
-import VerifiedGarbage.Proof.Bignum.X86_64.PubOut
-import VerifiedGarbage.Proof.Rsa.KeyParts
-import VerifiedGarbage.Proof.Bignum.X86_64.R2
+module
+
+public import VerifiedGarbage.Proof.Rsa.X86_64.KeyPhases
+public import VerifiedGarbage.Proof.Bignum.X86_64.PubOut
+public import VerifiedGarbage.Proof.Rsa.KeyParts
+public import VerifiedGarbage.Proof.Bignum.X86_64.R2
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_check_key` on x86-64: the checks
@@ -10,6 +16,8 @@ import VerifiedGarbage.Proof.Bignum.X86_64.R2
 the workspace (`setupK_ok`), then each check, and'ed into `sMask`; it
 returns `keyValid` as 1 or 0 (`main_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.X86_64.Key
 

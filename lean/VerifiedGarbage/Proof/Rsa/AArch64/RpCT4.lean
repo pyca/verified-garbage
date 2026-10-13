@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.Rsa.AArch64.RpCT3
+module
+
+public import VerifiedGarbage.Proof.Rsa.AArch64.RpCT3
+meta import VerifiedGarbage.Proof.Rsa.AArch64.RpCT3
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_recover_primes` on AArch64: constant time, the squarings
@@ -9,6 +16,8 @@ Pieces of a candidate leak the same in runs whose working spaces agree:
 public `64 Bw` (`sqLoop_ct`): their counter in `sC1` is pinned by
 correctness.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.AArch64
 

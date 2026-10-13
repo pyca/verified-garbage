@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.X448.X86
+module
+
+public import VerifiedGarbage.Impl.X448.X86
 
 /-!
 # Ed448 scalar arithmetic on x86 (32-bit)
@@ -31,6 +33,8 @@ counter. The working space's base is in `edi` (as for X448), the input's in
 space's first 16 bytes (as X448 saves them), and the chunk `w` at `W`. The
 arguments stay on the stack (cdecl), read when needed.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Ed448.X86
 

@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Weierstrass.Arm.Mont
-import VerifiedGarbage.Impl.Weierstrass.Slots
+module
+
+public import VerifiedGarbage.Impl.Weierstrass.Arm.Mont
+public import VerifiedGarbage.Impl.Weierstrass.Slots
 
 /-!
 # Short Weierstrass curves on 32-bit ARM: points, scalar multiplication, powers
@@ -28,6 +30,8 @@ branches are on it and on the multiplications' counter, and every
 address is `r12` plus a constant, or plus a counter: nothing but `r12` may
 affect timing.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Weierstrass.Arm
 

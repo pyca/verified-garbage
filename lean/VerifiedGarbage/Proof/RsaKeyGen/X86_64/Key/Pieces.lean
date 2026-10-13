@@ -1,9 +1,18 @@
-import VerifiedGarbage.Proof.Rsa.X86_64.Pieces
-import VerifiedGarbage.Impl.RsaKeyGen.X86_64.Key
-import VerifiedGarbage.Proof.Rsa.X86_64.CvLoad
-import VerifiedGarbage.Proof.Bignum.X86_64.Cmp
+module
+
+public import VerifiedGarbage.Proof.Rsa.X86_64.Pieces
+public import VerifiedGarbage.Impl.RsaKeyGen.X86_64.Key
+public import VerifiedGarbage.Proof.Rsa.X86_64.CvLoad
+public import VerifiedGarbage.Proof.Bignum.X86_64.Cmp
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## State -/
+
+@[expose] public section
+
 section
 
 /-!

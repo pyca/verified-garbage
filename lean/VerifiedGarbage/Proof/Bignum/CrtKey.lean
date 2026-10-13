@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Bignum.Words
+module
+
+public import VerifiedGarbage.Proof.Bignum.Words
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSA with the CRT: the mask of the private key's checks
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.Bignum.Words
 and into `sMask` one at a time (`mask_and`); a factor of the odd `n` is odd
 (`odd_of_mul_odd`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum
 

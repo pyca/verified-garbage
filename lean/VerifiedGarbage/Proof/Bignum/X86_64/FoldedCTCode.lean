@@ -1,4 +1,15 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.FoldedCTMain
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.FoldedCTMain
+meta import VerifiedGarbage.Proof.Bignum.X86_64.FoldedCTMain
+public import VerifiedGarbage.Proof.Rsa.X86_64.Guarded
+meta import VerifiedGarbage.Proof.Rsa.X86_64.Guarded
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64.FoldedPublic
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public
@@ -58,10 +69,13 @@ theorem code_ct (M : Mont)
   · -- `rest`.
     exact two_map (fun p => p.d) (fun _ _ h => cl_rest h.1 h.2) (rest_ct M hfinal)
 
+/-- The code after the check of `e` is constant time, for valid `e`s. -/
 theorem code_constantTime (M : Mont)
-    (hfinal : RelCT isa (Two GoodL) (M.mm aY aX aY) (fun _ _ => True)) : ConstantTime isa pdContract.pre pdContract.pub (Folded.code M.mm) := by
-  refine RelCT.constantTime ((code_ct M hfinal).mono (fun s₁ s₂ ⟨h₁, h₂, hp⟩ => ⟨cpubOfD s₁, ?_, ?_⟩) fun _ _ h => h)
-  · exact ⟨h₁, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩
+    (hfinal : RelCT isa (Two GoodL) (M.mm aY aX aY) (fun _ _ => True)) :
+    ConstantTime isa (fun s => pdContract.pre s ∧ Rsa.X86_64.eValid s = true) pdContract.pub (Folded.code M.mm) := by
+  refine RelCT.constantTime ((code_ct M hfinal).mono (fun s₁ s₂ ⟨⟨h₁, v₁⟩, ⟨h₂, _⟩, hp⟩ => ⟨cpubOfD s₁, ?_, ?_⟩)
+    fun _ _ h => h)
+  · exact ⟨h₁, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, v₁⟩
   · obtain ⟨hr, a0, -, a2, a3, hw, he⟩ := hp
     have r : ∀ r ∈ [Reg.rdi, .rsi, .rdx, .rcx, .r8, .r9, .rsp], s₂.gpr r = s₁.gpr r := fun r h => (hr r h).symm
     have c := pdCtx_of h₂
@@ -69,7 +83,7 @@ theorem code_constantTime (M : Mont)
     rw [r .rcx (by decide), r .rsi (by decide)] at hpl
     rw [r .rdx (by decide), r .rcx (by decide)] at hw
     refine ⟨h₂, r .rsp (by decide), a2.symm, by rw [← a3]; rfl, by rw [r .rsi (by decide)]; rfl, r .rdi (by decide),
-      r .rdx (by decide), r .r8 (by decide), a0.symm, by rw [r .r9 (by decide)]; rfl, he.symm, ?_, ?_⟩
+      r .rdx (by decide), r .r8 (by decide), a0.symm, by rw [r .r9 (by decide)]; rfl, he.symm, ?_, ?_, v₁⟩
     · rw [r .rdx (by decide), r .rsi (by decide), show (0 : Nat) = 8 * 0 from rfl]
       exact (wv_of_wordsAt hw (by omega)).symm
     · rw [r .rdx (by decide), r .rsi (by decide)]

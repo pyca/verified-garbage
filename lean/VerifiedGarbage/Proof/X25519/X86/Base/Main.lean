@@ -1,9 +1,15 @@
-import VerifiedGarbage.Impl.X25519.X86.Base
-import VerifiedGarbage.Proof.X25519.Edwards.Ladder
-import VerifiedGarbage.Proof.Ed25519.Bytes
-import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseVerified
-import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseEntry
-import VerifiedGarbage.Spec.X25519.Contract
+module
+
+public import VerifiedGarbage.Impl.X25519.X86.Base
+public import VerifiedGarbage.Proof.X25519.Edwards.Ladder
+public import VerifiedGarbage.Proof.Ed25519.Bytes
+public import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseVerified
+public import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseEntry
+public import VerifiedGarbage.Spec.X25519.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X25519 of the base point on x86: correctness
@@ -13,6 +19,8 @@ The scalar's bits are expanded and clamped (`clampBits_ok`: the bits of
 (`combMultiply_ok`), and `uEncode` its u-coordinate `(Z + Y) / (Z - Y)`,
 which is `X25519(k, 9)` (`Proof/X25519/Edwards/Ladder.lean`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X25519.X86.Base
 
@@ -177,12 +185,12 @@ theorem scalar_lt (s : State) : Spec.X25519.decodeScalar25519
   exact Nat.lt_trans e (by decide)
 
 theorem start_ok {s : State} (h : BodyPre s) :
-    WP isa (.block x25519BaseStart) s (Ready s) := by
+    WP isa x25519BaseStart s (Ready s) := by
   obtain ⟨hr, hptr, htbl, hts⟩ := h
   obtain ⟨hp, hi, _⟩ := scalarBase_pre hr
-  simp only [x25519BaseStart, List.append_assoc]
-  refine WP.block_append (WP.mono (abiSave_frame hp) fun a ⟨ha, fa⟩ => ?_)
-  refine WP.block_append (WP.mono (inputBits_frame hp hi ha (by decide) (by decide))
+  rw [x25519BaseStart]
+  refine WP.seq (WP.mono (abiSave_frame hp) fun a ⟨ha, fa⟩ => ?_)
+  refine WP.seq (WP.mono (inputBits_frame hp hi ha (by decide) (by decide) (by decide))
     fun b ⟨hb, fb, bits⟩ => ?_)
   refine WP.block_append (WP.mono (clampBits_ok hb hp.fit hp.wr
     (fun k hk => bits k (by omega_using [hk]))) fun b' ⟨hb', fb', bits'⟩ => ?_)

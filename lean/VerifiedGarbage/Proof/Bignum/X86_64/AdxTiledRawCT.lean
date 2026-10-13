@@ -1,6 +1,17 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledRowsCT
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxHeaderCT
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledRaw
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledRowsCT
+meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledRowsCT
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxHeaderCT
+meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxHeaderCT
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledRaw
+meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledRaw
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64.AdxTiledProduct
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public
@@ -23,6 +34,16 @@ theorem GoodV.of_outside {ps : List (Nat × Nat)} {L : Layout} {s t : State} (h 
   obtain ⟨⟨mi,hg⟩,hv⟩ := h
   exact ⟨⟨mi,hg.scr.congr k.2.2,(k.gpr (by decide)).trans hg.rdi,hg.hdr.of_outside o (by unfold slot; omega)⟩,
     hv.of_outside o (by unfold slot sFn hdrBytes; omega)⟩
+
+/-- `GoodV` after code that changed the borrowed header words, then only the
+accumulator. -/
+theorem GoodV.of_bare {ps : List (Nat × Nat)} {L : Layout} {s t : State} (h : GoodV ps L s) {m : Mem}
+    (o₁ : Outside L.B (8*sFn 12) 32 s.mem m) (o₂ : Outside L.B (slot L.w aAcc) (16*L.w+32) m t.mem)
+    (k : VG.Proof.MlKem.X86_64.Keep mmRegs s t) : GoodV ps L t := by
+  obtain ⟨⟨mi,hg⟩,hv⟩ := h
+  exact ⟨⟨mi,hg.scr.congr k.2.2,(k.gpr (by decide)).trans hg.rdi,
+    (hg.hdr.of_outside_fn o₁ (by unfold sFn; omega)).of_outside o₂ (by unfold slot; omega)⟩,
+    (hv.of_outside o₁ (Nat.le_refl _)).of_outside o₂ (by unfold slot sFn hdrBytes; omega)⟩
 
 theorem setup_fw {ps : List (Nat × Nat)} {cb b : Nat} (pb : (cb, b) ∈ ps) (L : Layout) (s : State)
     (h : GoodV ps L s) : WP isa (.block (Adx.setup cb)) s (Ready ps L) := by
@@ -73,5 +94,25 @@ theorem raw_ct {ps : List (Nat × Nat)} {ca cb a b : Nat} (pa : (ca, a) ∈ ps) 
   refine RelCT.seq (two_post (two_map (fun L : Layout => (⟨L.B,L.Z,L.w⟩ : Ws)) mapGood AdxHeader.save_ct) save_fw) ?_
   exact RelCT.seq (rows_ct pa pb ha hb ha1 ha2 hb1 hb2 hR)
     (two_map (fun L : Layout => (⟨L.B,L.Z,L.w⟩ : Ws)) mapGood AdxHeader.restore_ct)
+
+theorem rawBare_ct {ps : List (Nat × Nat)} {ca cb a b : Nat} (pa : (ca, a) ∈ ps) (pb : (cb, b) ∈ ps)
+    (ha : a<8) (hb : b<8)
+    (ha1 : a≠aAcc) (ha2 : a≠aTmp) (hb1 : b≠aAcc) (hb2 : b≠aTmp)
+    {h₁ h₂ : VG.Taint.Hint VG.X86_64.Taint.T}
+    (hS : (taint.check (Taint.ofRegs [.rdi]) (.block (Adx.setup cb)) h₁).isSome=true)
+    (hR : (taint.check (Taint.ofRegs [.rdi]) (.block (AdxRect8.setup ca cb)) h₂).isSome=true) :
+    RelCT isa (Two (GoodV ps)) (AdxTiledProduct.rawProductBare ca cb) (fun _ _ => True) := by
+  unfold AdxTiledProduct.rawProductBare
+  refine RelCT.seq (two_piece [.rdi] (pins_goodV ps) hS (setup_fw pb)) ?_
+  refine RelCT.seq (two_piece [.r8,.rbx] ?_ (by taint_decide) zero_fw) ?_
+  · intro L s t hs ht r hr
+    simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
+    rcases hr with rfl | rfl
+    · exact hs.2.1.trans ht.2.1.symm
+    · exact hs.2.2.trans ht.2.2.symm
+  have mapGood : ∀ L s, GoodV ps L s → GoodW ⟨L.B,L.Z,L.w⟩ s := by
+    rintro L s ⟨⟨mi,hg⟩,_⟩; exact ⟨mi,hg,L.hZ⟩
+  exact RelCT.seq (rows_ct pa pb ha hb ha1 ha2 hb1 hb2 hR)
+    (two_map (fun L : Layout => (⟨L.B,L.Z,L.w⟩ : Ws)) mapGood AdxHeader.clear_ct)
 
 end VG.Proof.Bignum.X86_64.AdxTiledProduct

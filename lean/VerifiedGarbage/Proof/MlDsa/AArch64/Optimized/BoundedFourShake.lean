@@ -1,8 +1,16 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourFinish
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentBytes
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentSeed
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourFinish
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentBytes
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentSeed
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## From `BoundedFourCore.lean` -/
+
+@[expose] public section
 
 section
 

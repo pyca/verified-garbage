@@ -1,8 +1,19 @@
-import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-import VerifiedGarbage.Proof.X448.AArch64.Base.Main
-import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
-import VerifiedGarbage.Proof.X448.AArch64.Base.Erase
-import VerifiedGarbage.Proof.Framework.Contract
+module
+
+public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+meta import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+public import VerifiedGarbage.Proof.X448.AArch64.Base.Main
+meta import VerifiedGarbage.Proof.X448.AArch64.Base.Main
+public import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
+meta import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
+public import VerifiedGarbage.Proof.X448.AArch64.Base.Erase
+meta import VerifiedGarbage.Proof.X448.AArch64.Base.Erase
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 of the base point on AArch64: `Verified`
@@ -13,6 +24,8 @@ or the static's address plus a constant or a counter, and the digits' masks
 only select), and the shared contract of `Spec/`, under the calling convention
 with the comb's tables (`Abi.withConsts combConsts`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448.AArch64.Base
 
@@ -26,8 +39,8 @@ theorem x448Base_check :
   apply exists_isSome_of_eraseT
   refine Split.exists_isSome (c' := ?c') ?s ⟨?h, ?g⟩
   case s =>
-    simp only [x448Base, step, finish, Code.eraseT, Impl.X448.AArch64.Fast.invert, ops_eraseT, sqn_eraseT]
-    exact .seq (.refl _) (.seq (.loop _ (stepN_split 56)) (.seq combine_split (.refl _)))
+    simp only [x448Base, finish, Code.eraseT, Impl.X448.AArch64.Fast.invert, ops_eraseT, sqn_eraseT]
+    exact .refl _
   case g => taint_decide
 
 theorem x448Base_ct : ConstantTime isa Proof.X448.x448BaseAArch64.pre Proof.X448.x448BaseAArch64.pub

@@ -1,8 +1,14 @@
-import VerifiedGarbage.Impl.X25519.X86_64
-import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.X25519.Field
+module
+
+public import VerifiedGarbage.Impl.X25519.X86_64
+public import VerifiedGarbage.Proof.Framework.X86_64.Exec
+public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+public import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.X25519.Field
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X25519 on x86-64: the steps of the field arithmetic
@@ -11,6 +17,8 @@ The small blocks the field operations are made of (see
 `Impl/X25519/X86_64.lean`), each run symbolically once, for any registers: a
 multiply-accumulate step, and the carry of a 38-fold into four words.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X25519.X86_64
 

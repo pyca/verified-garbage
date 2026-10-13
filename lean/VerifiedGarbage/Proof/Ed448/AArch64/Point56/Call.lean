@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Ed448.AArch64.Point56.Body
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Proof.Framework.Covers
+module
+
+public import VerifiedGarbage.Proof.Ed448.AArch64.Point56.Body
+public import VerifiedGarbage.Proof.Framework.AArch64.Call
+public import VerifiedGarbage.Proof.Framework.Covers
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 on AArch64: calls of the functions
@@ -15,6 +21,8 @@ space alone (`WP.call`, with the function's own proof as its contract, `fnK`).
 `doubleCall_ok`, `addCall_ok` and `powCall_ok`: the calls, as the inlined code
 (`dblOps_ok`, `addOps_ok`, `root_spec`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.AArch64.Point56
 

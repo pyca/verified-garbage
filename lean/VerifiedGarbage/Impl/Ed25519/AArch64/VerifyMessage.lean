@@ -1,12 +1,17 @@
-import VerifiedGarbage.Impl.Ed25519.AArch64.Scalar
-import VerifiedGarbage.Impl.Ed25519.AArch64.Verify
-import VerifiedGarbage.Impl.Ed25519.AArch64.Whole.Setup
-import VerifiedGarbage.Impl.Ed25519.AArch64.Whole.Entry
-import VerifiedGarbage.Impl.Ed25519.AArch64.Whole.Wipe
-import VerifiedGarbage.Impl.Sha512.AArch64.Stream
-import VerifiedGarbage.Spec.Sha512.Contract
+module
+
+public import VerifiedGarbage.Impl.Ed25519.AArch64.Scalar
+public import VerifiedGarbage.Impl.Ed25519.AArch64.Verify
+public import VerifiedGarbage.Impl.Ed25519.AArch64.Whole.Setup
+public import VerifiedGarbage.Impl.Ed25519.AArch64.Whole.Entry
+public import VerifiedGarbage.Impl.Ed25519.AArch64.Whole.Wipe
+public import VerifiedGarbage.Impl.Sha512.AArch64.Stream
+public import VerifiedGarbage.Spec.Sha512.Contract
 
 /-! Whole-message verification with every SHA-512 backend. -/
+
+@[expose] public section
+
 namespace VG.Impl.Ed25519.AArch64.VerifyMessage
 open VG.AArch64 VG.Impl.Ed25519.AArch64.Whole
 

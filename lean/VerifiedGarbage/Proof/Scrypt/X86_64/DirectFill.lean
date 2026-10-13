@@ -1,7 +1,18 @@
-import VerifiedGarbage.Proof.Scrypt.X86_64.RoMixCT
-import VerifiedGarbage.Impl.Scrypt.X86_64.RoMixDirect
+module
+
+public import VerifiedGarbage.Proof.Scrypt.X86_64.RoMixCT
+meta import VerifiedGarbage.Proof.Scrypt.X86_64.RoMixCT
+public import VerifiedGarbage.Impl.Scrypt.X86_64.RoMixDirect
+meta import VerifiedGarbage.Impl.Scrypt.X86_64.RoMixDirect
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Direct V-table filling, keeping the intermediate X in V[i]. -/
+
+@[expose] public section
+
 namespace VG.Proof.Scrypt.X86_64.RoMix.DirectFill
 open VG VG.X86_64 VG.Impl.Scrypt.X86_64
 open VG.Proof.Scrypt.X86_64.RoMix

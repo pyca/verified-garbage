@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Blake2.X86.Stream.Common
+module
+
+public import VerifiedGarbage.Proof.Blake2.X86.Stream.Common
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Streaming BLAKE2 on x86 (32-bit): `update`
@@ -6,6 +12,8 @@ import VerifiedGarbage.Proof.Blake2.X86.Stream.Common
 The functional correctness of `update`, for either word size and any correct
 compression function (`CalleeOk`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Blake2.X86.Stream.Update
 

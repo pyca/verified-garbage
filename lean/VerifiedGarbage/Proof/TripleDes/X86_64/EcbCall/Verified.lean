@@ -1,9 +1,21 @@
-import VerifiedGarbage.Proof.TripleDes.X86_64.EcbCall.Lit
-import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedSse.Verified
-import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx2.Verified
-import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx512.Verified
-import VerifiedGarbage.Proof.TripleDes.X86_64.SpSafe
-import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
+module
+
+public import VerifiedGarbage.Proof.TripleDes.X86_64.EcbCall.Lit
+meta import VerifiedGarbage.Proof.TripleDes.X86_64.EcbCall.Lit
+public import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedSse.Verified
+meta import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedSse.Verified
+public import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx2.Verified
+meta import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx2.Verified
+public import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx512.Verified
+meta import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx512.Verified
+public import VerifiedGarbage.Proof.TripleDes.X86_64.SpSafe
+meta import VerifiedGarbage.Proof.TripleDes.X86_64.SpSafe
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Triple DES ECB on x86-64, calling the core, verified
@@ -16,6 +28,8 @@ body), and verified against the contract with the working space as an
 argument and 8 bytes of stack, for the call's return address, which no
 buffer overlaps (`Verified.of_inline_ct`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.TripleDes.X86_64.EcbCall
 

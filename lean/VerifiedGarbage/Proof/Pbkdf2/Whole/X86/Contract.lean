@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Hmac.Generic.Implies
-import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Calls
+module
+
+public import VerifiedGarbage.Proof.Hmac.Generic.Implies
+public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Calls
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # PBKDF2-HMAC on x86 (32-bit), the whole derivation: the contract
@@ -10,6 +16,8 @@ out, which it implies for any streaming hash function and scratch space
 (`pbkImp`). Every argument is on the stack (cdecl): `password`,
 `password_len`, `salt`, `salt_len`, `c`, `out`, `out_len`, `scratch`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Pbkdf2.Whole.X86
 

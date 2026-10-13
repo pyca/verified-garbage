@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Ed448.AArch64.SignCached.Run
+module
+
+public import VerifiedGarbage.Proof.Ed448.AArch64.SignCached.Run
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 signing with a cached public key on AArch64: the whole function
@@ -9,6 +15,8 @@ implementation `v` of the Keccak permutation, given that
 (`Proof.Ed25519.AArch64.Whole.wrap_ok`) runs the body, whose signature is
 RFC 8032's for the inputs as on entry.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.AArch64.SignCached
 

@@ -1,0 +1,5 @@
+name = "3DES-CBC"
+family = "Ciphers"
+specs = ["TripleDes", "Cbc"]
+modules = ["src/triple_des_cbc.rs"]
+asm = ["triple_des_cbc"]

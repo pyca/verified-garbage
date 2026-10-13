@@ -1,9 +1,16 @@
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Flags
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Ladder
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Chain
-import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
-import VerifiedGarbage.Proof.Weierstrass.Law3
-import VerifiedGarbage.Proof.Framework.AArch64.Spill
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.Flags
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Ladder
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Chain
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
+public import VerifiedGarbage.Proof.Weierstrass.Law3
+public import VerifiedGarbage.Proof.Framework.AArch64.Spill
+public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDSA on AArch64: the curve, the arguments and the working space
@@ -21,6 +28,8 @@ slots `nslots + 8 j` to `nslots + 8 j + 7`. Every offset the scalar's table
 (`j = 0`) is read at is below `4096`, as `ldrb` needs.
 -/
 
+@[expose] public section
+
 namespace VG.Proof.Ecdsa.AArch64
 
 open VG VG.AArch64 VG.Impl.Mont.AArch64 VG.Impl.Mont VG.Impl.Weierstrass.AArch64 VG.Impl.Weierstrass
@@ -29,6 +38,15 @@ open VG.Proof.Mont.AArch64 VG.Proof.Mont VG.Proof.Weierstrass.AArch64 VG.Proof.W
 
 /-- The size of the working space, in bytes. -/
 abbrev size : Nat := 8192
+
+/-- What the calls of the complete addition's function need of the curve
+(`Cfg.pointOps`): at most four words, a callee keeping the callee-saved
+registers, writing no vector register and with no frames. -/
+structure PaddOk (c : Cfg) : Prop where
+  n4 : c.n ≤ 4
+  pres : ∀ r ∈ preserved, r ∉ clob c.n
+  vec : (instrs c.projAddFn).all (fun i => (vdstOf i).isNone) = true
+  nf : c.projAddFn.noFrames = true
 
 /-- What the proof of the code needs of a curve: its field and order are odd
 and fit in `n` words (`n < 10`: the multiplications accumulate in
@@ -69,11 +87,32 @@ structure BaseCfgOk (c : Cfg) : Prop where
   inv_p : InvOk c.invP c.C.p
   inv_n : c.fastN = true → InvSound c.C.n ∧ InvOk c.invN c.C.n
   chain_n : c.fastN = false → chainCheck (slide (c.C.n - 2)).1 (slide (c.C.n - 2)).2 (c.C.n - 2) = true
-  /-- If the products modulo `p` are calls of a function (`Mont.callOf`), it
-  computes them modulo `p`; those modulo `n` are inline. -/
+  /-- If the products modulo `p` or `n` are calls of a function
+  (`Mont.callOf`), it computes them modulo `p` or `n`. -/
   call_p : ∀ f m', Mont.callOf c.MP' = some (f, m') → m' = c.C.p ∧
     VG.Proof.Weierstrass.AArch64.Mont.ModOk c.n m'
-  call_n : Mont.callOf c.MN' = none
+  call_n : ∀ f m', Mont.callOf c.MN' = some (f, m') → m' = c.C.n ∧
+    VG.Proof.Weierstrass.AArch64.Mont.ModOk c.n m'
+  /-- The powers' working slots and temporary area (`invTbl`, `invTmp`):
+  `CT`'s and `TMP`'s, or, for inversions as functions (`inverse`), past
+  `CT`, with room for the registers they keep (`invSaveLen`) after the
+  slots, in the working space, and the temporary area either `TMP`'s, below
+  `CT`, or past the registers or between the numbered slots and the working
+  slots, in the working space and not the products' (`moAt`). -/
+  inv_at : c.inverse = none ∨ (c.sl CT ≤ c.invTbl ∧ c.invTbl % 8 = 0 ∧
+    c.invTbl + 9 * (8 * c.n) + c.invSaveLen ≤ size ∧
+    ((c.invTmp = c.sl TMP ∧ c.invTmp + 8 * c.n ≤ c.sl CT) ∨
+      ((c.invTbl + 9 * (8 * c.n) + c.invSaveLen ≤ c.invTmp ∨
+          (c.sl nslots ≤ c.invTmp ∧ c.invTmp + 8 * c.n ≤ c.invTbl)) ∧
+        c.invTmp + 8 * c.n ≤ size ∧ c.invTmp % 8 = 0 ∧ c.invTmp ≠ Mont.moAt c.n)))
+  /-- The functions keep the callee-saved registers but those they save
+  (`invKept`) and `x30`, and their code writes no vector register and opens
+  no frame. -/
+  inv_fn : c.inverse ≠ none → (∀ r ∈ preserved, r ∉ clob c.n ∨ r ∈ c.invKept) ∧
+    (c.invFn c.pPowI).allInstrs (fun i => (vdstOf i).isNone) = true ∧
+    (c.invFn c.nPowI).allInstrs (fun i => (vdstOf i).isNone) = true ∧
+    (c.invFn c.pPowI).noFrames = true ∧ (c.invFn c.nPowI).noFrames = true
+  padd : c.pointOps ≠ none → PaddOk c
 
 /-- The optimized comb and window formulas additionally require `a = -3`. -/
 structure CfgOk (c : Cfg) : Prop extends BaseCfgOk c where

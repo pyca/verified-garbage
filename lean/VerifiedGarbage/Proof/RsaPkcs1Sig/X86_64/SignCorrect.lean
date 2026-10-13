@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.SignCall
+module
+
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.SignCall
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_pkcs1_sign` on x86-64: correctness
@@ -7,6 +13,8 @@ The encoding into `EM`, then zeros to `out` if it fails, or the private
 operation on `EM` and zeros to `EM` (`afterEnc_ok`); the whole function
 (`code_correct`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPkcs1Sig.X86_64.Sgn
 

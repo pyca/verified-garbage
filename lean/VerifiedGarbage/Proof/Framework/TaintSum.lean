@@ -1,4 +1,6 @@
-import VerifiedGarbage.Proof.Framework.Taint
+module
+
+public import VerifiedGarbage.Proof.Framework.Taint
 
 /-!
 # Summaries of called functions, for the constant-time analysis
@@ -24,6 +26,8 @@ kernel checks by definitional unfolding (`Eq.refl`), says that it was the
 right code. `taint_decide_sum` and `taint_summary` compute the hints (in
 compiled code, which need not be sound) and prove both.
 -/
+
+@[expose] public section
 
 namespace VG
 
@@ -689,7 +693,7 @@ open Lean Meta Elab Tactic
 
 /-- The summaries `ls` (theorems `Taint.SumOk A s`): the list of their `s`, and a
 proof that they hold (`Taint.AllOk A`). -/
-def summaries (M A : Expr) (ls : Array Name) : MetaM (Expr × Expr) := do
+meta def summaries (M A : Expr) (ls : Array Name) : MetaM (Expr × Expr) := do
   let T := mkApp2 (mkConst ``Taint.T) M A
   let sTy := mkApp2 (mkConst ``Taint.Summary) M T
   let mut ss := #[]
@@ -708,7 +712,7 @@ def summaries (M A : Expr) (ls : Array Name) : MetaM (Expr × Expr) := do
 
 /-- The equality of the code of `M` (`Taint.CodeEq`), for the hints, if it
 has one; otherwise none. -/
-def sameFn (M : Expr) : MetaM Expr := do
+meta def sameFn (M : Expr) : MetaM Expr := do
   try
     let inst ← synthInstance (mkApp (mkConst ``Taint.CodeEq) M)
     return mkApp2 (mkConst ``Taint.CodeEq.same) M inst
@@ -718,7 +722,7 @@ def sameFn (M : Expr) : MetaM Expr := do
 
 /-- Structural equality of the code of `M` (`Taint.codeBeq`), with its
 instructions' and conditions' `BEq`, if it has them; otherwise none. -/
-def bodyFn (M : Expr) : MetaM Expr := do
+meta def bodyFn (M : Expr) : MetaM Expr := do
   let P := mkApp (mkConst ``Prog) M
   try
     let I ← whnfD (mkApp (mkConst ``ISA.Instr) M)
@@ -735,7 +739,7 @@ It fails if the hint analyses in full a call of a function that one of the
 summaries is of (by its name or its code: `Taint.missedCalls`), which would
 otherwise only cost time, silently. (A summary that is never used is not an
 error: callers share one list of summaries among several checks.) -/
-def hintChecked (who : String) (M A fr S τ c : Expr) : MetaM (Expr × Expr) := do
+meta def hintChecked (who : String) (M A fr S τ c : Expr) : MetaM (Expr × Expr) := do
   let T' ← whnfD (mkApp2 (mkConst ``Taint.T) M A)
   let phTy ← mkAppM ``Prod #[T', mkApp (mkConst ``Taint.SHint) T']
   let repTy := mkApp (mkConst ``List [0]) (mkConst ``String)
@@ -755,7 +759,7 @@ def hintChecked (who : String) (M A fr S τ c : Expr) : MetaM (Expr × Expr) := 
 /-- Proves the main goal `fill S c h = c` by the kernel's unfolding. The code
 is not rewritten to its literals: `fill` only unfolds `c` down to where the
 summaries are, whose code is then the same term in both. -/
-def fillRfl : TacticM Unit := do
+meta def fillRfl : TacticM Unit := do
   let g ← getMainGoal
   let ty ← instantiateMVars (← g.getType)
   let some (α, _, rhs) := ty.eq? | throwError "taint summaries: not an equation: {ty}"
@@ -767,7 +771,7 @@ def fillRfl : TacticM Unit := do
 /-- Proves `p` (with summaries `S`, which `hS` proves): `p` applied to the
 hint (`hintChecked`), then to proofs of `check` (by `lit_decide`) and of
 `fill` (`fillRfl`). -/
-def proveWith (M A S hS c : Expr) (p : Name) (extra : Array Expr) (hint : Expr) :
+meta def proveWith (M A S hS c : Expr) (p : Name) (extra : Array Expr) (hint : Expr) :
     TacticM Unit := do
   let g ← getMainGoal
   let mono ← synthInstance (mkApp2 (mkConst ``Taint.Frame) M A)
@@ -828,7 +832,7 @@ elab "taint_decide_sum " "[" ls:ident,* "]" : tactic => withMainContext do
 
 open Lean Meta Elab Term Tactic TaintSum in
 /-- The theorem `N : Taint.SumOk A (c, τ, post)` of `taint_summary`. -/
-def TaintSum.summaryCmd (id : Ident) (a τ c : Term) (f : Option Term) (ls : Array Ident) :
+meta def TaintSum.summaryCmd (id : Ident) (a τ c : Term) (f : Option Term) (ls : Array Ident) :
     TermElabM Unit := do
   let A ← instantiateMVars (← elabTerm a none)
   let aTy ← whnf (← inferType A)

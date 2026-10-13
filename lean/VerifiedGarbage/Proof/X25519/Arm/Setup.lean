@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.X25519.Arm.Freeze
+module
+
+public import VerifiedGarbage.Proof.X25519.Arm.Freeze
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X25519 on 32-bit ARM: the setup
@@ -8,6 +14,8 @@ modulo `2²⁵⁵`), and the setup of the working space: the saved registers, `x
 x3 = u`, `x2 = z3 = 1`, `z2 = 0` and `a24` (`setup_ok`); the bits of the
 scalar (`bits_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X25519.Arm
 

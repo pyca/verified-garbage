@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.RsaPss.AArch64.SignTop
-import VerifiedGarbage.Proof.RsaPss.VerifyCases
+module
+
+public import VerifiedGarbage.Proof.RsaPss.AArch64.SignTop
+public import VerifiedGarbage.Proof.RsaPss.VerifyCases
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSASSA-PSS verification on AArch64: the first nonzero byte of `DB`
@@ -9,6 +15,8 @@ the value of the first nonzero one, and a mask of all ones while there is
 none (`posScan_ok`), which is the number of leading zero octets `lz`
 (`lz_of_nz`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPss.AArch64
 

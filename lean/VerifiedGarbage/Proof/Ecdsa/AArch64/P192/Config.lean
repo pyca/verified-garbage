@@ -1,10 +1,18 @@
-import VerifiedGarbage.Impl.Ecdsa.P192.AArch64
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Layout
-import VerifiedGarbage.Proof.P192.Point
-import VerifiedGarbage.Proof.P192.OrderPrime
-import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
+module
+
+public import VerifiedGarbage.Impl.Ecdsa.P192.AArch64
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.Layout
+public import VerifiedGarbage.Proof.P192.Point
+public import VerifiedGarbage.Proof.P192.OrderPrime
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # p192 parameters for the AArch64 arithmetic -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.AArch64.P192
 
@@ -51,6 +59,9 @@ theorem p192_ok (hI : Weierstrass.AArch64.InvSounds) : BaseCfgOk p192 where
   inv_n := fun _ => ⟨hI Proof.P192.n_prime, InvOk.ofMod (by decide +kernel) (by decide)⟩
   chain_n := fun h => absurd h (by decide)
   call_p := fun _ _ h => nomatch (callOf_small (by decide)).symm.trans h
-  call_n := callOf_small (by decide)
+  call_n := fun _ _ h => nomatch (callOf_small (by decide)).symm.trans h
+  inv_at := .inr (by decide +kernel)
+  inv_fn := fun _ => ⟨by decide, by lit_decide, by lit_decide, by lit_decide, by lit_decide⟩
+  padd := fun h => absurd rfl h
 
 end VG.Proof.Ecdsa.AArch64.P192

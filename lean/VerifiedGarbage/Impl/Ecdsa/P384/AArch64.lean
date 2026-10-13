@@ -1,15 +1,20 @@
-import VerifiedGarbage.Impl.Ecdsa.AArch64
-import VerifiedGarbage.Spec.P384
-import VerifiedGarbage.Impl.P384.CombTable7
+module
+
+public import VerifiedGarbage.Impl.Ecdsa.AArch64
+public import VerifiedGarbage.Spec.P384
+public import VerifiedGarbage.Impl.P384.CombTable7
 
 /-! # ECDSA over P-384 on AArch64: six-word field elements and scalars -/
+
+@[expose] public section
 
 namespace VG.Impl.Ecdsa.AArch64
 
 open VG.AArch64
 
 /-- P-384 as the code has it. -/
-def p384 : Cfg := ⟨6, Spec.P384.curve, Impl.P384.p384Comb7, Impl.P384.p384Comb7Start, "VG_P384_COMB", true⟩
+def p384 : Cfg := ⟨6, Spec.P384.curve, Impl.P384.p384Comb7, Impl.P384.p384Comb7Start, "VG_P384_COMB", true,
+  some Spec.Weierstrass.Inverse.p384, none⟩
 
 /-- `vg_ecdsa_p384_sign`. -/
 def signP384 : Prog isa := p384.sign

@@ -1,8 +1,12 @@
-import VerifiedGarbage.Impl.Ecdsa.X86_64
-import VerifiedGarbage.Spec.P256
-import VerifiedGarbage.Impl.P256.CombTable7
+module
+
+public import VerifiedGarbage.Impl.Ecdsa.X86_64
+public import VerifiedGarbage.Spec.P256
+public import VerifiedGarbage.Impl.P256.CombTable7
 
 /-! # ECDSA over P-256 on x86-64: four-word field elements and scalars -/
+
+@[expose] public section
 
 namespace VG.Impl.Ecdsa.X86_64
 
@@ -15,6 +19,7 @@ def p256 : Cfg where
   comb := some ⟨7, Impl.P256.p256Comb7, Impl.P256.p256Comb7Start, "VG_P256_COMB", true⟩
   fastN := true
   pubVerify := true
+  inverse := some Spec.Weierstrass.Inverse.p256
 
 /-- P-256, multiplying with BMI2 and ADX. -/
 def p256x : Cfg := { p256 with adx := true, avx2 := true }

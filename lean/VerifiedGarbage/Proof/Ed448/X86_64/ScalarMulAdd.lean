@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Ed448.X86_64.ScalarMain
-import VerifiedGarbage.Proof.X448.X86_64.Field
+module
+
+public import VerifiedGarbage.Proof.Ed448.X86_64.ScalarMain
+public import VerifiedGarbage.Proof.X448.X86_64.Field
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 scalar multiply-add on x86-64
@@ -9,6 +15,8 @@ import VerifiedGarbage.Proof.X448.X86_64.Field
 with X448's product scanning (`columns`) into `ACC`, reduces the product's
 fourteen words with the same loop, adds the third and reduces once more.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.X86_64
 

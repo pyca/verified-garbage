@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Rc2.AArch64.Stream.Copy
+module
+
+public import VerifiedGarbage.Proof.Rc2.AArch64.Stream.Copy
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Streaming RC2-CBC on AArch64: the copies before CBC
@@ -7,6 +13,8 @@ With complete blocks, the update copies the `p` pending bytes and the first
 `out_len - p` bytes of data to `out`, and the rest of the data to `ctx + 136`,
 then sets up the CBC call's arguments (`prep_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rc2.AArch64.Stream
 

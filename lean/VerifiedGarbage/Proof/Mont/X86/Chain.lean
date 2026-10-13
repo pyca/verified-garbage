@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Mont.X86.Step
+module
+
+public import VerifiedGarbage.Proof.Mont.X86.Step
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Montgomery arithmetic on x86 (32-bit): chains of additions and subtractions
@@ -9,6 +15,8 @@ import VerifiedGarbage.Proof.Mont.X86.Step
 `chainSub_ok`); `csub`'s difference with the modulus (`diffs`) is the
 latter.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Mont.X86
 

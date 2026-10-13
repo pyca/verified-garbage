@@ -1,8 +1,21 @@
-import VerifiedGarbage.Impl.Ct.Arm
-import VerifiedGarbage.Proof.Ct.Common32
-import VerifiedGarbage.Proof.Zeroize.Arm
-import VerifiedGarbage.Proof.Framework.Arm.Frame
-import VerifiedGarbage.Spec.Ct.Contract
+module
+
+public import VerifiedGarbage.Impl.Ct.Arm
+meta import VerifiedGarbage.Impl.Ct.Arm
+public import VerifiedGarbage.Proof.Ct.Common32
+meta import VerifiedGarbage.Proof.Ct.Common32
+public import VerifiedGarbage.Proof.Zeroize.Arm
+meta import VerifiedGarbage.Proof.Zeroize.Arm
+public import VerifiedGarbage.Proof.Framework.Arm.Frame
+meta import VerifiedGarbage.Proof.Framework.Arm.Frame
+public import VerifiedGarbage.Spec.Ct.Contract
+meta import VerifiedGarbage.Spec.Ct.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.Ct.Arm
 open VG VG.Arm VG.Impl.Ct.Arm RegUpd

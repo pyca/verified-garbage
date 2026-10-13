@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Common
+module
+
+public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Common
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # PBKDF2-HMAC on x86 (32-bit), the whole derivation: the prologue and the key
@@ -8,6 +14,8 @@ The prologue saves our caller's registers in `scratch` (`save_ok`, which is
 save area); then the key is the password, or its digest if it is longer than a
 block (`key_ok`): either gives the same `K₀` (`KeyAt`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Pbkdf2.Whole.X86
 

@@ -1,7 +1,13 @@
-import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJac
-import VerifiedGarbage.Proof.Weierstrass.Env
-import VerifiedGarbage.Proof.Mont.Words
-import VerifiedGarbage.Proof.Weierstrass.Unch
+module
+
+public import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJac
+public import VerifiedGarbage.Proof.Weierstrass.Env
+public import VerifiedGarbage.Proof.Mont.Words
+public import VerifiedGarbage.Proof.Weierstrass.Unch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The Jacobian window method: where it keeps its numbers
@@ -15,6 +21,8 @@ coordinate `c` slot `5 (m - 1) + c`, then the selected entry `T`, slots
 `80 … 84`. `JacWinLay` is what the proof needs of them, as `WinLay` for the
 window method of `Window.lean`, for numbers of four or six words.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.X86_64
 

@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Divstep.Hull
+module
+
+public import VerifiedGarbage.Proof.Divstep.Hull
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The divstep bound: runs of the relaxed iteration
@@ -12,6 +18,8 @@ bounds `u s^(m + n)` below by `L = 3047/2048` (`lattice`), and a nonzero `g`
 until `m` bounds `u s^m` (`sizeBound`), so `g` reaches zero once
 `M s^m ≤ 2753/4096 · L` for `0 ≤ g 0 ≤ f 0 ≤ M` (`endToEnd`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Divstep
 

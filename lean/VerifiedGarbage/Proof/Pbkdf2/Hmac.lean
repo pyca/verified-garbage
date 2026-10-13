@@ -1,5 +1,11 @@
-import VerifiedGarbage.Spec.Pbkdf2
-import VerifiedGarbage.Proof.Sha256.Stream
+module
+
+public import VerifiedGarbage.Spec.Pbkdf2
+public import VerifiedGarbage.Proof.Sha256.Stream
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # PBKDF2-HMAC-SHA-256: one step as two compressions
@@ -10,6 +16,8 @@ the state `vg_hmac_sha256_init` leaves, then 32 bytes, which the padding
 completes to a second block (`block96`). So a step of PBKDF2's iteration is
 two compressions, whatever the target.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Pbkdf2
 

@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Weierstrass.CombLay
-import VerifiedGarbage.Proof.Weierstrass.Unch
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.CombLay
+public import VerifiedGarbage.Proof.Weierstrass.Unch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The fixed-base comb: what its steps leave unchanged
@@ -11,6 +17,8 @@ writing `D`; the selections writing `D` and `A`), proven once from the layout
 unchanged, the apartness the selections need, and that each step writes
 within what the comb writes (`combW`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass
 

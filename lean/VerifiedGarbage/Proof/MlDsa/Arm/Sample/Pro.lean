@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlDsa.Arm.Sample.Sponge
+module
+
+public import VerifiedGarbage.Proof.MlDsa.Arm.Sample.Sponge
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on 32-bit ARM: the sampling functions' prologue and epilogue
@@ -12,6 +18,8 @@ also returns `j >> 8`). The pieces of the loops: `storeJ` stores the next
 coefficient `a[j]` (`storeJ_ok`), `jFull` tests `j ≥ 256` (`jFull_ok`), `step`
 advances (`step_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Arm.Sample
 

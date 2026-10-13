@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Ed448.Arm.VerifySign
-import VerifiedGarbage.Proof.Ed448.Arm.VerifyRoot
-import VerifiedGarbage.Proof.Ed448.Recover
+module
+
+public import VerifiedGarbage.Proof.Ed448.Arm.VerifySign
+public import VerifiedGarbage.Proof.Ed448.Arm.VerifyRoot
+public import VerifiedGarbage.Proof.Ed448.Recover
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 verification's equation on ARMv7: decoding a point
@@ -11,6 +17,8 @@ import VerifiedGarbage.Proof.Ed448.Recover
 given `RecoverOk`). The steps' field values: `u = y² - 1`, `v = d y² - 1`,
 `t = u³v`, `x = t (t (uv)²)^((p-3)/4)`, the check `v x² = u`, and the sign.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.Arm
 
@@ -111,7 +119,7 @@ theorem decode_ok (hR : RecoverOk) {s : State} {base q : Addr} (hs : Scr s base)
   have hs4 := k4.scr hs3
   -- `v x² = u`
   refine WP.seq (WP.mono (eqSlots_ok hs4 b4 12 13 (by decide) (by decide) (by decide))
-    fun s5 ⟨k5, b5, e5, c5⟩ => ?_)
+    fun s5 ⟨k5, b5, e5, c5, _⟩ => ?_)
   have hs5 := k5.scr hs4
   -- `-x`
   rw [← negXF_impl]

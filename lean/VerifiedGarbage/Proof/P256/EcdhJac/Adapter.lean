@@ -1,11 +1,19 @@
-import VerifiedGarbage.Proof.P256.EcdhJac.State
-import VerifiedGarbage.Proof.Ecdh.AArch64.Window
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.P256.EcdhJac.Finish
-import VerifiedGarbage.Proof.P256.EcdhJac.Multiply
-import VerifiedGarbage.Proof.P256.EcdhJac.Lit
+module
+
+public import VerifiedGarbage.Proof.P256.EcdhJac.State
+public import VerifiedGarbage.Proof.Ecdh.AArch64.Window
+public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+public import VerifiedGarbage.Proof.P256.EcdhJac.Finish
+public import VerifiedGarbage.Proof.P256.EcdhJac.Multiply
+public import VerifiedGarbage.Proof.P256.EcdhJac.Lit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## `Prep` -/
+
+@[expose] public section
 
 section
 
@@ -16,7 +24,7 @@ open VG.Impl.Ecdsa.AArch64 (p256)
 open VG.Proof.Ecdsa.AArch64 (CfgOk sv)
 open Spec.Weierstrass
 
-private abbrev c := VG.Impl.Ecdsa.AArch64.p256
+abbrev c := VG.Impl.Ecdsa.AArch64.p256
 
 def prepWrites : List (Nat×Nat) := [(c.winK,40),(c.winBits,320)]
 
@@ -132,7 +140,7 @@ theorem mul_of_window (hc : CfgOk p256)
     (hw : ∀ {base : Addr} {P : Point C} {k : Nat} {s : State},onCurve C P=true → k<2^256 →
       Fixed base P k s → WP isa Impl.P256.EcdhJac.window s (WindowPost base P k s)) :
     MulOk p256 mq :=
-  mulWithInverse_of_window hc fixedOk_chainWc (fun _ hi hn => apart_chainWc hi hn)
+  mulWithInverse_of_window hc (fixedOk_chainWc hc) (fun _ hi hn => apart_chainWc hc hi hn)
     (by decide) (pPow_ok hc) hw
 
 end VG.Proof.P256.EcdhJac

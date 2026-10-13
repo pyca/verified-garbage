@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesOcb.AArch64.RestTag
+module
+
+public import VerifiedGarbage.Proof.AesOcb.AArch64.RestTag
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-OCB on AArch64: the data (`body`)
@@ -8,6 +14,8 @@ Untrusted: everything here is checked by Lean. `body` takes the whole blocks
 the result is `OCB-ENCRYPT`'s ciphertext, offset and checksum
 (`bodySeal_ok`), for `open` `OCB-DECRYPT`'s (`bodyOpen_ok`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

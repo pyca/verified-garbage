@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Scrypt.X86_64.BlockMixFused
+module
+
+public import VerifiedGarbage.Impl.Scrypt.X86_64.BlockMixFused
 
 /-!
 # scryptROMix: x86-64 implementation
@@ -23,6 +25,8 @@ preserve them, `rbx` is `b`, `r12` is `v`, `r13` is `scratch`, `r14` is
 Every branch and address depends only on the pointers, `r`, `N` and the
 indices `j`: the contract declares that the function leaks the `j`.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Scrypt.X86_64
 

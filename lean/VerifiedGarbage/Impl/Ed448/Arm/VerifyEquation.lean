@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Ed448.Arm.ScalarBase
-import VerifiedGarbage.Impl.Ed448.Arm.Scalar
+module
+
+public import VerifiedGarbage.Impl.Ed448.Arm.ScalarBase
+public import VerifiedGarbage.Impl.Ed448.Arm.Scalar
 
 /-!
 # Ed448 verification's equation on ARMv7
@@ -15,8 +17,8 @@ the 128-byte slots of the working space, with `r0` the working space and
 `r6` the limb mask; multiplications, additions and subtractions are calls of
 the `vg_gf448_r16_*` functions, which change `r1`–`r3`, `r12` and `lr` (and
 so the link register is kept at `LR`) but keep `r8`, `r10` and `r11`. The
-pointer to the public key stays in `r8`; the one to the signature is in
-`r12`, which is read only before the first call.
+pointer to the public key stays in `r8` until the decoding loop; the one to the
+signature is in `r12`, which `decode` reads only before its first call.
 
 Everything is computed whatever the inputs, and the checks are accumulated
 in `r10` (`BAD`), which stays 0 exactly when every one passes: each check
@@ -46,6 +48,8 @@ works on slot 1 alone, which is kept free for it: `Q`'s `Y` is in slot 21.
 The result is 1 if `BAD` is 0. Every address and branch depends only on the
 pointers.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Ed448.Arm
 
@@ -251,28 +255,40 @@ def vdouble : Prog isa :=
     (.loop (.seq (ops (doubleAt 0 21 2 ++ doubleAt 8 9 10))
       (.block [.dp .sub .r11 .r11 (.imm 1), .cmp .r11 (.imm 0)])) .ne)
 
-/-- One decoding, of the point at `p` into slots 6–7, after slots 6–7 are kept at `RX` and
-`RY`. -/
-def vdecodeBody (p : Reg) : Prog isa :=
-  .seq (.block (copy RX (slot 6) ++ copy RY (slot 7))) (decode p 6 7)
+/-- One decoding, of the point at `r12` into slots 6–7 (which `decode` reads only before its first
+call), after slots 6–7 are kept at `RX` and `RY`; then `r12 := r8`, `r8 := r0`, and `Z` set
+exactly when `r8` was the working space. -/
+def vdecodeBody : Prog isa :=
+  .seq (.block (copy RX (slot 6) ++ copy RY (slot 7))) <| .seq (decode .r12 6 7) <|
+    .block [.mov .r12 (.reg .r8), .mov .r11 (.reg .r8), .mov .r8 (.reg .r0), .subs .r11 .r11 (.reg .r0)]
 
-/-- `R` (at `r12`) decoded, then `A` (at `r8`, which the field arithmetic preserves; `r12`
-is read only before the first call). `A` ends in slots 6–7 and `R` at `RX` and `RY`. -/
-def vdecode : Prog isa := .seq (vdecodeBody .r12) (vdecodeBody .r8)
+/-- `R` (at `r12`) decoded, then `A` (at `r8`, which the field arithmetic preserves): one copy of
+`decode`, in a loop whose first pass moves `A`'s pointer into `r12` and the working space's into
+`r8`, which is not the working space before it (`A` lies outside it) and is after: `Z` ends the
+loop after the second. `A` ends in slots 6–7 and `R` at `RX` and `RY`. -/
+def vdecode : Prog isa := .loop vdecodeBody .ne
 
 /-- `R` into slots 8–9 (`B` is no longer needed). -/
 def vR : List Instr := copy (slot 8) RX ++ copy (slot 9) RY
 
-/-- `[4]Q` and `[4]R` compared (`BAD |= 0` exactly when they are the same
-point), the callee-saved registers restored, and `r0 = (BAD == 0)`. -/
-def vfinish : Prog isa :=
-  .seq vdouble <|
+/-- One comparison: slot 0 times slot 10 against slot 8 times slot 2 (`BAD |= 0` exactly when they
+are equal); then slots 21 and 9 copied into 0 and 8, for the second pass, and `r11` moved down. -/
+def vcmp : Prog isa :=
   .seq (ops [.mul (slot 12) (slot 0) (slot 10), .mul (slot 13) (slot 8) (slot 2)]) <|
   .seq (.block (eqSlots (slot 12) (slot 13))) <|
-  .seq (ops [.mul (slot 12) (slot 21) (slot 10), .mul (slot 13) (slot 9) (slot 2)]) <|
-  .block (eqSlots (slot 12) (slot 13) ++
-    [.dp .sub .r1 .r10 (.imm 1), .mov .r1 (.shifted .r1 .lsr 31)] ++
-    (List.range 8).map (fun i => ld (saved[i]!) (4 * i)) ++ [ld .lr LR, .mov .r0 (.reg .r1)])
+  .seq (ops [.copy (slot 0) (slot 21), .copy (slot 8) (slot 9)])
+    (.block [.dp .sub .r11 .r11 (.imm 1), .cmp .r11 (.imm 0)])
+
+/-- `r0 = (BAD == 0)`, and the callee-saved registers and the link register restored. -/
+def vresult : List Instr :=
+  [.dp .sub .r1 .r10 (.imm 1), .mov .r1 (.shifted .r1 .lsr 31)] ++
+    (List.range 8).map (fun i => ld (saved[i]!) (4 * i)) ++ [ld .lr LR, .mov .r0 (.reg .r1)]
+
+/-- `[4]Q` and `[4]R` compared (`BAD |= 0` exactly when they are the same
+point): `X_Q Z_R = X_R Z_Q`, then `Y_Q Z_R = Y_R Z_Q`, by two passes of `vcmp`,
+counted by `r11`; then `vresult`. -/
+def vfinish : Prog isa :=
+  .seq vdouble <| .seq (.block [.movw .r11 2]) <| .seq (.loop vcmp .ne) (.block vresult)
 
 /-- `vg_ed448_verify_equation(pk = r0, signature = r1, challenge = r2, scratch = r3) -> r0`. -/
 def verifyEquation : Prog isa :=

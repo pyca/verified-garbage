@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.MlKem.Arm.Add
-import VerifiedGarbage.Proof.MlKem.Encode
+module
+
+public import VerifiedGarbage.Proof.MlKem.Arm.Add
+meta import VerifiedGarbage.Proof.MlKem.Arm.Add
+public import VerifiedGarbage.Proof.MlKem.Encode
+meta import VerifiedGarbage.Proof.MlKem.Encode
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on 32-bit ARM: `vg_mlkem_cbd2`
@@ -9,6 +17,8 @@ invariant says which coefficients are written (`Inv`); their values are
 `samplePolyCBD2_val`: the number of bits set in a 2-bit field `v` is `v - ⌊v /
 2⌋`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.Arm.Cbd2
 

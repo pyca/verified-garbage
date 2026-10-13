@@ -1,11 +1,20 @@
-import VerifiedGarbage.Proof.P256.EcdhJac.Timing
-import VerifiedGarbage.Proof.P256.EcdhJac.Adapter
-import VerifiedGarbage.Proof.P256.EcdhJac.Window
-import VerifiedGarbage.Proof.P256.EcdhJac.Exchange
-import VerifiedGarbage.Proof.P256.EcdhInverse.Inverse
+module
+
+public import VerifiedGarbage.Proof.P256.EcdhJac.Timing
+public import VerifiedGarbage.Proof.P256.EcdhJac.Adapter
+public import VerifiedGarbage.Proof.P256.EcdhJac.Window
+public import VerifiedGarbage.Proof.P256.EcdhJac.Exchange
+public import VerifiedGarbage.Proof.P256.EcdhInverse.Inverse
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Public ECDH contract and ABI, composed with a separately certified
 secret-scalar multiplication. -/
+
+@[expose] public section
+
 namespace VG.Proof.P256.EcdhJac
 open VG VG.AArch64 VG.Impl.Ecdsa.AArch64
 open VG.Proof.Ecdsa.AArch64 VG.Proof.Ecdh.AArch64 VG.Proof.Mont
@@ -55,7 +64,8 @@ theorem verified (hL : Weierstrass.Law Spec.P256.curve)
   verified_of_mul hL hI (mulWithInverse_of_window (p256_ok hI)
     (W:=EcdhInverse.inverseMemory) (by unfold FixedOk; decide +kernel) (by decide +kernel) (by decide +kernel)
     (fun hs hm hx => EcdhInverse.inverse_ok VG.Proof.P256.p_prime hT
-      (invLayP (p256_ok hI)) (by decide) (Weierstrass.unitMod_pow_two (p256_ok hI).p_odd _) hs hm hx
+      (invLayP (p256_ok hI)) (by decide) (Weierstrass.unitMod_pow_two (p256_ok hI).p_odd _) hs
+      (modOkA_inv (p256_ok hI) hm (.inl rfl) rfl rfl) hx
       (p256_ok hI).inv_p)
     (window_ok hL (p256_ok hI).am3 hO))
 

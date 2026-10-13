@@ -1,6 +1,14 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.RootedCachedVerifyPre
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.CachedVerifyVerified
-import VerifiedGarbage.Proof.MlDsa.AArch64.Message.OptimizedVerifySat
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.RootedCachedVerifyPre
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.CachedVerifyVerified
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.OptimizedVerifySat
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Optimized.RootedCachedVerify
 open VG VG.AArch64 VG.Spec.MlDsa
@@ -24,7 +32,7 @@ theorem cachedPre_spec {p : Params} {s : State} (h : CachedPre p s) :
   · rw [h.rd];rfl
   · rw [h.rd];rfl
 
-private def tableMem : Mem := (Sign.optimizedSignSat mlDsa44).mem
+def tableMem : Mem := (Sign.optimizedSignSat mlDsa44).mem
 
 def satMem (p : Params) : Mem := fun a=>
   if a.toNat<1048576 then CachedVerify.satMem p a else tableMem a

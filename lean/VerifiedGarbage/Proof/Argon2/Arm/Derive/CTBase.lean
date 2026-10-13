@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Argon2.Arm.Derive.Correct
-import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
+module
+
+public import VerifiedGarbage.Proof.Argon2.Arm.Derive.Correct
+public import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Argon2 on ARMv7: the derivation's taint analysis
@@ -12,6 +18,8 @@ the memory matrix, `scratch` and the output (`wide`). `τB sl rs` makes `r11`,
 the registers `rs`, the arguments and the locals' slots `sl` public;
 `agreeB` gives it from what two runs of the body are known to share.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Argon2.Arm.Derive
 

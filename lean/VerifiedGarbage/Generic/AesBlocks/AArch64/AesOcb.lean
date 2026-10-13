@@ -1,5 +1,7 @@
-import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.AesOcb.AArch64.Frame
+module
+
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.AesOcb.AArch64.Frame
 
 /-!
 # AES-OCB (RFC 7253) on AArch64
@@ -18,6 +20,8 @@ working space, its last argument, in a frame on the stack: of 2560 bytes for
 `init` (`Verified.stackScratch`), and of 2592 bytes for `seal` and `open`,
 which also holds a copy of `tag` and `tag_len` (`Verified.stackArgScratch`).
 -/
+
+@[expose] public section
 
 namespace VG.Generic.AesBlocks.AArch64.AesOcb
 

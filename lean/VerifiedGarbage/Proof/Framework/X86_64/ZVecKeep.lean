@@ -1,4 +1,6 @@
-import VerifiedGarbage.Proof.Framework.X86_64.VecKeep
+module
+
+public import VerifiedGarbage.Proof.Framework.X86_64.VecKeep
 
 /-!
 # x86-64: scalar code keeps the `zmm` registers
@@ -6,6 +8,8 @@ import VerifiedGarbage.Proof.Framework.X86_64.VecKeep
 `VecKeep.lean`'s lemmas with bits 511:256 of `zmm0`–`zmm15` too: scalar code
 (`scalCode`) leaves `xmm`, `ymmHi` and `zmmHi` as they are (`WP.zvecKeep`).
 -/
+
+@[expose] public section
 
 namespace VG.X86_64
 
@@ -20,7 +24,8 @@ theorem exec_zvec {i : Instr} (hi : scalarI i = true) {s t : State} (h : exec i 
     | exact execAdox_vec h
     | exact execCmov_vec h
     | (obtain ⟨v, -, rfl⟩ := h; exact ⟨rfl, rfl, rfl⟩)
-    | (simp only [State.store64, State.store8] at h; split at h <;> [(cases h; exact ⟨rfl, rfl, rfl⟩); cases h])
+    | (simp only [Option.some.injEq] at h; subst h; exact ⟨rfl, rfl, rfl⟩)
+    | (simp only [State.store64, State.store8, State.store32] at h; split at h <;> [(cases h; exact ⟨rfl, rfl, rfl⟩); cases h])
     | (unfold execAlu at h
        simp only [Option.bind_eq_some_iff] at h
        obtain ⟨b, -, h⟩ := h

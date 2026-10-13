@@ -1,5 +1,11 @@
-import VerifiedGarbage.Spec.Sha256
-import VerifiedGarbage.TCB.X86_64.Target
+module
+
+public import VerifiedGarbage.Spec.Sha256
+public import VerifiedGarbage.TCB.X86_64.Target
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # SHA-256: the x86-64 contract
@@ -9,6 +15,8 @@ shared contracts of `Spec/`, which imply these (`Contract.Implies`). The
 contracts of the x86-64 implementations of the compression function and the
 streaming interface, in terms of `Spec/Sha256.lean`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sha256
 

@@ -1,10 +1,22 @@
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.Lit
-import VerifiedGarbage.Impl.X25519.X86_64.Adx
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
-import VerifiedGarbage.Impl.Ed25519.X86_64.Point64
+module
+
+public import VerifiedGarbage.Proof.X25519.X86_64.Adx.Lit
+meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.Lit
+public import VerifiedGarbage.Impl.X25519.X86_64.Adx
+meta import VerifiedGarbage.Impl.X25519.X86_64.Adx
+public import VerifiedGarbage.Proof.Framework.X86_64.Lit
+meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
+public import VerifiedGarbage.Impl.Ed25519.X86_64.Point64
+meta import VerifiedGarbage.Impl.Ed25519.X86_64.Point64
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! The point functions' code as literals (`materialize_code`), which their checks, and those
 of the code that calls them, read rather than build each field multiplication again. -/
+
+@[expose] public section
 
 namespace VG.Impl.Ed25519.X86_64.Point64
 
@@ -18,5 +30,7 @@ materialize_code doubleExtAdxLit := doubleFn adx true
 materialize_code doubleProjAdxLit := doubleFn adx false
 materialize_code addExtAdxLit := addFn adx true
 materialize_code addProjAdxLit := addFn adx false
+materialize_code addAffineLit := addAffineFn baseline
+materialize_code addAffineAdxLit := addAffineFn adx
 
 end VG.Impl.Ed25519.X86_64.Point64

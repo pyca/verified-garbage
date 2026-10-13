@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Ed448.X86.ScalarBase
+module
+
+public import VerifiedGarbage.Impl.Ed448.X86.ScalarBase
 
 /-!
 # Ed448 verification's equation on x86 (32-bit)
@@ -21,7 +23,8 @@ in the word at `BAD`, which stays 0 exactly when every one passes: each
 check ORs into it a word that is 0 if and only if it passes. X448's full
 reduction works on slot 1 alone, which comparisons and decoding use.
 
-* The bits: byte `t` at `BITS` is bit `t` of `S` plus twice bit `t` of `k`.
+* The bits: byte `t` at `BITS` is bit `t` of `S`, and byte `t` at `KBITS` bit `t` of `k`, by
+  X448's `bitsLoop`.
 * `S < L`: its byte 56 is 0 and its low 448 bits plus `2^448 - L` (the
   limbs `kLimb` of scalar reduction) do not carry out of 448 bits.
 * Decoding a point (RFC 8032 §5.2.3) at `esi` into the slots `xo` and `yo`: the twenty-eight limbs of `y`, which must be below `p`
@@ -46,10 +49,12 @@ The result is 1 if `BAD` is 0. Every address and branch depends only on the
 pointers.
 -/
 
+@[expose] public section
+
 namespace VG.Impl.Ed448.X86
 
 open VG.X86
-open VG.Impl.X448.X86 (at_ sc ld st slot BITS TMP X2 Op ops cswap freeze copy pass sqn T0 T1 T2 T3
+open VG.Impl.X448.X86 (at_ sc ld st slot BITS bitsLoop TMP X2 Op ops cswap freeze copy pass sqn T0 T1 T2 T3
   T4 T5 T6 T7 restore)
 
 /-! ## The working space -/
@@ -65,6 +70,9 @@ def RY : Nat := 4224
 /-- The pointer to the point the decoding loop decodes next, and the decodings left. -/
 def PCUR : Nat := 4352
 def CNT : Nat := 4356
+
+/-- The bits of `k`, one per byte. -/
+def KBITS : Nat := 4608
 
 /-! ## Checks -/
 
@@ -183,8 +191,8 @@ def vR : List Instr := copy (slot 8) RX ++ copy (slot 9) RY
 
 /-- `ebx = -bit`, for bit `esi` of `S` (`hi = false`) or of `k` (`hi = true`). -/
 def vmask (hi : Bool) : List Instr :=
-  [.mov .ebp (.reg .edi), .alu .add .ebp (.reg .esi), .movzx8 .eax (at_ .ebp BITS),
-    if hi then .shift .shr .eax 1 else .alu .and .eax (.imm 1), .mov .ebx (.imm 0),
+  [.mov .ebp (.reg .edi), .alu .add .ebp (.reg .esi),
+    .movzx8 .eax (at_ .ebp (if hi then KBITS else BITS)), .alu .and .eax (.imm 1), .mov .ebx (.imm 0),
     .alu .sub .ebx (.reg .eax)]
 
 /-- `T` (slots 3–5) swapped into `Q` (slots 0–2) by the mask `ebx`. -/
@@ -202,28 +210,20 @@ def vloop : Prog isa := .seq (.block [.mov .esi (.imm 456)]) (.loop vstep .ne)
 
 /-! ## The function -/
 
-/-- Bit `j` of the bytes of `S` (in `eax`) and `k` (in `ecx`) to
-`BITS + 8 i + j`, as bit 0 and bit 1. -/
-def vbitJ (i j : Nat) : List Instr :=
-  [.mov .edx (.reg .eax)] ++ (if j = 0 then [] else [.shift .shr .edx j]) ++
-    [.alu .and .edx (.imm 1), .mov .ebx (.reg .ecx)] ++
-    (if j = 0 then [] else [.shift .shr .ebx j]) ++
-    [.alu .and .ebx (.imm 1), .alu .add .edx (.reg .ebx), .alu .add .edx (.reg .ebx),
-      .store8 (sc (BITS + 8 * i + j)) .dl]
+/-- The bits of `k` (the challenge) at `KBITS` and those of `S` (the signature's last 57 bytes) at
+`BITS`, by `bitsLoop`, with the signature's pointer kept in `ebx`; then `esi` back at the
+signature. -/
+def vbits : Prog isa :=
+  .seq (.block [.mov .esi (.mem (at_ .esp 12)), .mov .ebx (.mem (at_ .esp 8))]) <|
+  .seq (bitsLoop KBITS 57) <| .seq (.block [.mov .esi (.reg .ebx), .alu .add .esi (.imm 57)]) <|
+  .seq (bitsLoop BITS 57) (.block [.alu .sub .esi (.imm 114)])
 
-/-- Byte `i` of `S` (at `esi + 57`) and of `k` (at `ebp`) expanded to bytes
-`BITS + 8 i + j`. -/
-def vbyte (i : Nat) : List Instr :=
-  [.movzx8 .eax (at_ .esi (57 + i)), .movzx8 .ecx (at_ .ebp i)] ++ (List.range 8).flatMap (vbitJ i)
+/-- After the bits: `BAD = 0`, the check of `S`, and the slots initialized as for base-point
+multiplication. -/
+def vinit : List Instr := [.mov .eax (.imm 0), st .eax BAD] ++ sCheck ++ initSlots
 
-/-- All 456 bits of `S` and `k`. -/
-def vbits : List Instr :=
-  [.mov .esi (.mem (at_ .esp 8)), .mov .ebp (.mem (at_ .esp 12))] ++ (List.range 57).flatMap vbyte
-
-/-- The callee-saved registers saved, the bits of `S` and `k`, `BAD = 0`, the
-check of `S`, and the slots initialized as for base-point multiplication. -/
-def ventry : List Instr :=
-  save 16 ++ vbits ++ [.mov .eax (.imm 0), st .eax BAD] ++ sCheck ++ initSlots
+/-- The callee-saved registers saved, the bits of `S` and `k`, and `vinit`. -/
+def ventry : Prog isa := .seq (.block (save 16)) (.seq vbits (.block vinit))
 
 /-- `Q` (slots 0, 6 and 2) and `R` (slots 8–10) doubled twice: a loop of two
 iterations, counted by `esi`, each doubling both. -/
@@ -231,14 +231,19 @@ def vdouble : Prog isa :=
   .seq (.block [.mov .esi (.imm 2)])
     (.loop (.seq (field (doubleAt 0 6 2 ++ doubleAt 8 9 10)) (.block [.alu .sub .esi (.imm 1)])) .ne)
 
+/-- One comparison: slot 0 times slot 10 against slot 8 times slot 2 (`BAD |= 0` exactly when they
+are equal); then slots 6 and 9 copied into 0 and 8, for the second pass, and `esi` moved down. -/
+def vcmp : Prog isa :=
+  .seq (field [.mul 12 0 10, .mul 13 8 2]) <| .seq (.block (eqSlots (slot 12) (slot 13))) <|
+  .seq (ops [.copy (slot 0) (slot 6), .copy (slot 8) (slot 9)]) (.block [.alu .sub .esi (.imm 1)])
+
 /-- `[4]Q` and `[4]R` compared (`Q` in slots 0, 6 and 2, `R` in 8–10;
-`BAD |= 0` exactly when they are the same point), the callee-saved
-registers restored, and `eax = (BAD == 0)`. -/
+`BAD |= 0` exactly when they are the same point): `X_Q Z_R = X_R Z_Q`, then
+`Y_Q Z_R = Y_R Z_Q`, by two passes of `vcmp`, counted by `esi`; then the
+callee-saved registers restored, and `eax = (BAD == 0)`. -/
 def vfinish : Prog isa :=
-  .seq vdouble <| .seq (field [.mul 12 0 10, .mul 13 8 2]) <|
-  .seq (.block (eqSlots (slot 12) (slot 13))) <| .seq (field [.mul 12 6 10, .mul 13 9 2]) <|
-  .block (eqSlots (slot 12) (slot 13) ++
-    [ld .ecx BAD, .alu .sub .ecx (.imm 1), .shift .shr .ecx 31] ++ restore ++ [.mov .eax (.reg .ecx)])
+  .seq vdouble <| .seq (.block [.mov .esi (.imm 2)]) <| .seq (.loop vcmp .ne) <|
+  .block ([ld .ecx BAD, .alu .sub .ecx (.imm 1), .shift .shr .ecx 31] ++ restore ++ [.mov .eax (.reg .ecx)])
 
 /-- After the decodings: `A` negated, `Q`, `R` copied back, and the comparison. -/
 def vafter : Prog isa :=
@@ -247,6 +252,6 @@ def vafter : Prog isa :=
 
 /-- `vg_ed448_verify_equation(pk = [esp + 4], signature = [esp + 8],
 challenge = [esp + 12], scratch = [esp + 16]) -> eax`. -/
-def verifyEquation : Prog isa := .seq (.block ventry) (.seq vdecode vafter)
+def verifyEquation : Prog isa := .seq ventry (.seq vdecode vafter)
 
 end VG.Impl.Ed448.X86

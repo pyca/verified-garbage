@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlKem.AArch64.KgC2
+module
+
+public import VerifiedGarbage.Proof.MlKem.AArch64.KgC2
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on AArch64: `keygen`, `t̂`
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.MlKem.AArch64.KgC2
 before (`TL`), which every buffer the step writes is apart from (`Apart`).
 The sum of products in `t̂[i]` is a loop over `j < k` (`WPs.dot`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.AArch64.KeyGen
 

@@ -1,7 +1,16 @@
-import VerifiedGarbage.Impl.Ed25519.AArch64.PointTable
-import VerifiedGarbage.Proof.Ed25519.AArch64.PointLoop
+module
+
+public import VerifiedGarbage.Impl.Ed25519.AArch64.PointTable
+public import VerifiedGarbage.Proof.Ed25519.AArch64.PointLoop
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Ed25519.AArch64.PointTable`. -/
+
+@[expose] public section
+
 section
 /-! Point table accesses remain within the caller's scratch argument. -/
 

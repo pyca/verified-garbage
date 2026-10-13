@@ -1,8 +1,20 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledSquareRow
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledTailCT
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledRowsCT
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledSquareRow
+meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledSquareRow
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledTailCT
+meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledTailCT
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledRowsCT
+meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledRowsCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## AdxTiledSquareRowCT -/
+
+@[expose] public section
+
 section
 
 namespace VG.Proof.Bignum.X86_64.AdxTiledSquare
@@ -56,7 +68,7 @@ theorem row_ct {ps : List (Nat × Nat)} {ca a : Nat} (pa : (ca, a) ∈ ps) (ha :
   · rintro L s t ⟨_,_,⟨mi,hs⟩,_,_⟩ ⟨_,_,⟨mj,ht⟩,_,_⟩ r hr
     simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
     subst r; exact hs.rdi.trans ht.rdi.symm
-  refine RelCT.seq (two_post (two_map id (fun _ _ h => h.2.2.1)
+  refine RelCT.seq (two_post (two_map id (fun _ _ h => ⟨h.2.2.1,h.2.2.2⟩)
     ((AdxRect8.row_ct pa pa ha ha ha1 ha2 ha1 ha2 hS).mono (fun _ _ h => h) (fun _ _ _ => True.intro)))
     (inner_fw pa ha ha1 ha2)) ?_
   refine RelCT.seq (two_post (two_map id (fun _ _ h => h.1) tail_ct)

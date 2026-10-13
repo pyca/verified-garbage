@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.X448.X86.RowTail
+module
+
+public import VerifiedGarbage.Proof.X448.X86.RowTail
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 on x86 (32-bit): one multiplication row
@@ -8,6 +14,8 @@ a 32-bit word. The row reads `a_i` with code `ldA` and `b_j` at `mb j`
 (`rowWith_ok`): X448's own rows read both at constant offsets of `edi`
 (`row_ok`), the field function's through its operand pointers.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448.X86
 

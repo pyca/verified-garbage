@@ -1,5 +1,11 @@
-import VerifiedGarbage.Impl.X448.AArch64.Base
-import VerifiedGarbage.Proof.Framework.ConstMem
+module
+
+public import VerifiedGarbage.Impl.X448.AArch64.Base
+public import VerifiedGarbage.Proof.Framework.ConstMem
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 of the base point on AArch64: the comb's tables in a static
@@ -9,6 +15,8 @@ Untrusted: everything here is checked by Lean. The words of the static
 contracts' witnesses (`satMem`). Kept apart from the selection's proof, so that
 the callers' contracts need none of its algebra.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448.AArch64.Base
 

@@ -1,9 +1,15 @@
-import VerifiedGarbage.Proof.Scrypt.X86_64.SimdMem
-import VerifiedGarbage.Proof.Scrypt.X86_64.Memory128
-import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.Proof.Scrypt.X86_64.Common
-import VerifiedGarbage.Impl.Scrypt.X86_64.RoMix
-import VerifiedGarbage.Proof.Scrypt.X86_64.Lit
+module
+
+public import VerifiedGarbage.Proof.Scrypt.X86_64.SimdMem
+public import VerifiedGarbage.Proof.Scrypt.X86_64.Memory128
+public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+public import VerifiedGarbage.Proof.Scrypt.X86_64.Common
+public import VerifiedGarbage.Impl.Scrypt.X86_64.RoMix
+public import VerifiedGarbage.Proof.Scrypt.X86_64.Lit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # scryptROMix on x86-64: the small loops
@@ -12,6 +18,8 @@ The word copy (`copyLoop`), the word exclusive-or (`xorLoop`), the
 direct address multiplication (`mulLoop`) and the computation of `2 N` by
 doubling (`nLoop`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Scrypt.X86_64.RoMix
 

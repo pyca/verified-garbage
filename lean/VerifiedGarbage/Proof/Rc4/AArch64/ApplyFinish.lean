@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Rc4.AArch64.ApplySetup
+module
+
+public import VerifiedGarbage.Proof.Rc4.AArch64.ApplySetup
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The PRGA's finish
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.Rc4.AArch64.ApplySetup
 `i` and `j = (j - B) + B`, and the callee-saved vector registers are
 restored.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rc4.AArch64
 open VG VG.AArch64 VG.AArch64.RegUpd VG.Impl.Rc4.AArch64 VG.Spec.Rc4 VG.Proof.Rc4

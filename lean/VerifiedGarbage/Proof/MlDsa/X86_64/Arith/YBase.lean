@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.VLay
-import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
-import VerifiedGarbage.Impl.MlDsa.X86_64.Arith.Avx2
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.VLay
+public import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
+public import VerifiedGarbage.Impl.MlDsa.X86_64.Arith.Avx2
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on x86-64: coefficients in the lanes of AVX2 registers
@@ -13,6 +19,8 @@ of coefficient `j` puts coefficients `j + 4l` to `j + 4l + 3` in lane `l`
 (· + 4)` puts `a` at coefficients `j` to `j + 7` (`polyIs_write2Y`,
 `ylanes_ymm`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86_64.Arith
 

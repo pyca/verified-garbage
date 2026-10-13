@@ -1,8 +1,17 @@
-import VerifiedGarbage.Impl.Weierstrass.X86_64.Naf
-import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombSelectPass
-import VerifiedGarbage.Proof.Weierstrass.X86_64.NafArith
+module
+
+public import VerifiedGarbage.Impl.Weierstrass.X86_64.Naf
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombSelectPass
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafArith
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Direct copies of public Jacobian table entries. -/
+
+@[expose] public section
+
 namespace VG.Proof.Weierstrass.X86_64
 open VG VG.X86_64 VG.Impl.Weierstrass.X86_64
 open VG.Proof.Mont.X86_64 VG.Proof.Mont
@@ -138,6 +147,16 @@ theorem nafCopyPiecesAt_ok {base : Addr} {size a o L : Nat} {p : Nat → Nat} {s
         · exact Or.inl (by omega_arith)
         · exact Or.inr (by have := Nat.not_lt.mp (fun h' => hc ⟨h,h'⟩); omega_arith)
       rw [ot.word ho' (by omega_arith),eu k ⟨i,hi',hk⟩]
+
+/-- `w` words from word `d` on, each of them covered by a copied piece. -/
+theorem nafCopyAt_wordsAt {mem mem' : Mem} {base : Addr} {m a o d w : Nat} {p : Nat → Nat}
+    (h : ∀ k,(∃ i<m,p i≤8*k ∧ 8*k<p i+16) → word mem' base (o+8*k)=word mem base (a+8*k))
+    (hc : ∀ k,d≤k → k<d+w → ∃ i<m,p i≤8*k ∧ 8*k<p i+16) :
+    wordsVal mem' base (o+8*d) w=wordsVal mem base (a+8*d) w := by
+  apply words_eq_of_words
+  intro i hi
+  rw [show o+8*d+8*i=o+8*(d+i) from by omega_arith,show a+8*d+8*i=a+8*(d+i) from by omega_arith]
+  exact h _ (hc _ (by omega_arith) (by omega_arith))
 
 /-- The pieces of a Jacobian entry of `n` words (`Naf.pieceOff`) are words
 of the entry. -/

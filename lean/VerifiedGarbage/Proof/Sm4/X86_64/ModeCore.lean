@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.Sm4.X86_64.GroupStep
-import VerifiedGarbage.Proof.Modes.X86_64.Core
-import VerifiedGarbage.Impl.Sm4.X86_64.Ctr
-import VerifiedGarbage.Proof.Sm4.CtrCipher
-import VerifiedGarbage.Spec.Sm4.Cbc
+module
+
+public import VerifiedGarbage.Proof.Sm4.X86_64.GroupStep
+public import VerifiedGarbage.Proof.Modes.X86_64.Core
+public import VerifiedGarbage.Impl.Sm4.X86_64.Ctr
+public import VerifiedGarbage.Proof.Sm4.CtrCipher
+public import VerifiedGarbage.Spec.Sm4.Cbc
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # SM4's core for the modes on x86-64
@@ -14,6 +20,8 @@ import VerifiedGarbage.Spec.Sm4.Cbc
 and the key ready when the masks and the table of round keys in `d`'s
 order are in the scratch buffer. `modeCoreSpec` is encryption's, for CTR.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sm4.X86_64
 
@@ -152,6 +160,9 @@ theorem crypt_wp (d : Dir) {s : State} {B : Addr} {k : Spec.Sm4.Schedule} (hB : 
     have ha : bufAddr (dirCore d) B j = B + BitVec.ofNat 64 (8 * tailSlot + 16 * j) := rfl
     rw [ha, dirCipher_bytes, bytesAt_eq_blockAt, ← m₁, e₁]
 
+/-- The core's blocks are two words. -/
+@[simp] theorem dirCore_bw (d : Dir) : (dirCore d).bw = 2 := rfl
+
 /-- SM4's core for the direction `d` meets what the modes need. -/
 def dirCoreSpec (d : Dir) : CoreSpec (dirCore d) where
   Key := Spec.Sm4.Schedule
@@ -163,8 +174,8 @@ def dirCoreSpec (d : Dir) : CoreSpec (dirCore d) where
     by simp only [dirCore]; decide⟩
   keyRegs_ok := by simp only [dirCore]; decide
   regs_ok := by simp only [dirCore, Modes.X86_64.regsOk]; decide
-  keyArgs_congr := keyArgs_congr
-  ready_frame h hf hd _ := readyAt_frame h hf hd
+  keyArgs_congr h hr hrd hwr _ hf := keyArgs_congr h hr hrd hwr hf
+  ready_frame h hf hd _ _ := readyAt_frame h hf hd
   prepare_wp := prepare_wp d
   crypt_wp := crypt_wp d
 

@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Argon2.X86.Derive.Initial
+module
+
+public import VerifiedGarbage.Proof.Argon2.X86.Derive.Initial
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Argon2 on x86 (32-bit): calls of H′ in the derivation
@@ -10,6 +16,8 @@ first blocks of a lane, `esi` for the tag), from the body (`Inv`).
 output in the memory matrix or `out`, and `scratch` is its working space. The
 call writes only the output, `scratch` and the 84 bytes below the locals.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Argon2.X86.Derive
 

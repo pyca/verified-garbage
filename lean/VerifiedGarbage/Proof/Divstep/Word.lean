@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Divstep.WordBasic
-import VerifiedGarbage.Proof.Divstep.BatchBasic
-import VerifiedGarbage.Proof.Divstep.WordDef
-import Mathlib.Data.BitVec
+module
+
+public import VerifiedGarbage.Proof.Divstep.WordBasic
+public import VerifiedGarbage.Proof.Divstep.BatchBasic
+public import VerifiedGarbage.Proof.Divstep.WordDef
+public import Mathlib.Data.BitVec
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Divsteps on 64-bit words
@@ -14,6 +20,8 @@ masks `B` (all ones if `g` is odd) and `S = B` and `d ≥ 0`, `(x ^ S) - S` is
 `k` bits (`wstep_rel`); so `n ≤ 64` steps from the low words of `f` and `g`
 give `d` and the matrix of `n` divsteps (`wsteps_rel`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Divstep
 

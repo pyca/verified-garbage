@@ -1,9 +1,18 @@
-import VerifiedGarbage.Impl.Ecdsa.Verify.P224.X86_64
-import VerifiedGarbage.Proof.Weierstrass.X86_64.JointCachedDigit
-import VerifiedGarbage.Proof.Weierstrass.X86_64.JointInitLayout
-import VerifiedGarbage.Proof.Weierstrass.X86_64.JointPrepFields
+module
+
+public import VerifiedGarbage.Impl.Ecdsa.Verify.P224.X86_64
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointCachedDigit
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointInitLayout
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointPrepFields
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Concrete separation checks for P-224's joint verifier's scratch allocation. -/
+
+@[expose] public section
+
 namespace VG.Proof.P224.X86_64
 open VG VG.X86_64 VG.Impl.P224.X86_64 VG.Impl.Weierstrass
 open VG.Proof.Mont VG.Proof.Weierstrass.X86_64
@@ -22,7 +31,7 @@ theorem joint_lookup_layout : JointLookupLayout publicJoint 8192 :=
     by decide,by decide,by decide,by decide⟩
 
 theorem joint_add_layout : JointAddLayout publicJoint 8192 := by
-  refine ⟨joint_lookup_layout,?_,by decide,by decide,by decide,by decide⟩
+  refine ⟨joint_lookup_layout,?_,by decide,by decide,by decide,by decide,⟨fun _ h => by cases h⟩⟩
   constructor <;> decide +kernel
 
 private theorem naf_lay : Lay publicJoint.K.M 8192 (·∈nafSlots publicJoint.K) := by
@@ -37,7 +46,8 @@ theorem joint_naf_layout : NafLay publicJoint.K 8192 :=
     by decide +kernel,by decide,rfl,rfl,rfl,rfl⟩
 
 theorem joint_init_layout : JointInitLayout publicJoint 8192 :=
-  ⟨joint_layout,joint_naf_layout,by decide,by decide,by decide,by decide,by decide,by decide +kernel⟩
+  ⟨joint_layout,joint_naf_layout,by decide,by decide,by decide,by decide,by decide,by decide +kernel,
+    by decide,by decide⟩
 
 theorem joint_prep_layout : JointPrepLayout publicJoint 8192
     (p224v.sl Impl.Ecdsa.Verify.X86_64.U)

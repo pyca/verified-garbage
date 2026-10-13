@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.WriteBytes
+module
+
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.WriteBytes
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA: bytes written one at a time, for every target
@@ -10,6 +16,8 @@ and how a loop that writes its output `c` bytes at a time extends what it has
 written (`Written.step`). (The same as ML-KEM's on x86-64, which a module of
 another target may not import, with distances computed by `VG.Offset`.)
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Pack
 

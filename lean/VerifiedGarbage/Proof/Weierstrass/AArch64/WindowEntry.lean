@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowBase
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowBase
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The window method on AArch64: the entry of a digit
@@ -6,6 +12,8 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowBase
 The entry of a digit, selected in constant time, its `y` negated for a negative digit
 (`winEntry_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.AArch64
 

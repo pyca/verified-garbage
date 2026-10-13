@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitch.Phase
-import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Chunk
+module
+
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitch.Phase
+public import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Chunk
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ChaCha20 and Poly1305 together (AArch64): a chunk
@@ -15,6 +21,8 @@ which the kernel does not use, so after a phase the kernel's stages are
 applied relative to `rebase s₀ u`: `s₀` with the accumulator's registers of
 `u`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.ChaCha20Poly1305.AArch64.Stitch
 

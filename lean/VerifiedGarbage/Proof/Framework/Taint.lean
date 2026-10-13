@@ -1,9 +1,13 @@
-import VerifiedGarbage.Proof.Framework.Semantics
-import VerifiedGarbage.Proof.Framework.KernelList
-import Mathlib.Util.CompileInductive
-import Lean.Elab.Tactic.Basic
-import Lean.Meta.Eval
-import VerifiedGarbage.Proof.Framework.Lit
+module
+
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Framework.KernelList
+public import Mathlib.Util.CompileInductive
+public import Lean.Elab.Tactic.Basic
+public meta import Lean.Elab.Tactic.Basic
+public import Lean.Meta.Eval
+public meta import Lean.Meta.Eval
+public import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # Constant time by taint tracking
@@ -24,6 +28,8 @@ checks that they are sound (`le`). `Taint.hint` computes such a hint by
 running the search in compiled code, and `taint_decide` has the kernel check
 the analysis with it. A wrong hint can only make the check fail.
 -/
+
+@[expose] public section
 
 namespace VG
 
@@ -378,7 +384,7 @@ end Taint
 
 open Lean Meta Elab Tactic in
 /-- `taint_decide`, with the taints of the hint weakened by `w`, if given. -/
-def taintDecideAt (chunkSize : Nat) (name : String) (w : Option Term) : TacticM Unit := do
+meta def taintDecideAt (chunkSize : Expr) (name : String) (w : Option Term) : TacticM Unit := do
   let g ← getMainGoal
   let some (_, lhs, _) := (← instantiateMVars (← g.getType)).eq?
     | throwError "{name}: the goal is not an equation about `Taint.check A τ c h`"
@@ -389,7 +395,7 @@ def taintDecideAt (chunkSize : Nat) (name : String) (w : Option Term) : TacticM 
   let tT ← whnfD (mkApp2 (mkConst ``Taint.T) m a)
   let hty := mkApp (mkConst ``Taint.Hint) tT
   let inst ← synthInstance (mkApp (mkConst ``ToExpr [0]) hty)
-  let mut hint := mkApp5 (mkConst ``Taint.hintOfSize) m a (mkNatLit chunkSize) τ c
+  let mut hint := mkApp5 (mkConst ``Taint.hintOfSize) m a chunkSize τ c
   if let some w := w then
     unless h.isMVar do throwError "{name}: the hint is already given"
     let wv ← Term.elabTermEnsuringType w (← mkArrow tT tT)
@@ -402,14 +408,14 @@ def taintDecideAt (chunkSize : Nat) (name : String) (w : Option Term) : TacticM 
 
 open Lean Elab Tactic in
 /-- Try larger hint intervals, retaining the original bounded check as a fallback. -/
-def taintDecide (name : String) (w : Option Term) : TacticM Unit := do
+meta def taintDecide (name : String) (w : Option Term) : TacticM Unit := do
   let saved ← saveState
   try
-    taintDecideAt 1024 name w
+    taintDecideAt (mkNatLit 1024) name w
   catch _ =>
     -- Discard the failed attempt's hint assignment before constructing another.
     saved.restore
-    taintDecideAt Taint.chunk name w
+    taintDecideAt (mkConst ``Taint.chunk) name w
 
 /-- Proves `(Taint.check A τ c ?hint).isSome = true`, or any decidable
 equation whose left side contains `Taint.check A τ c ?hint` (e.g. a property of

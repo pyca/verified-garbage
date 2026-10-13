@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.AesGcm.AArch64.StreamCryptCT
-import VerifiedGarbage.Proof.AesGcm.AArch64.FinCT
+module
+
+public import VerifiedGarbage.Proof.AesGcm.AArch64.StreamCryptCT
+meta import VerifiedGarbage.Proof.AesGcm.AArch64.StreamCryptCT
+public import VerifiedGarbage.Proof.AesGcm.AArch64.FinCT
+meta import VerifiedGarbage.Proof.AesGcm.AArch64.FinCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on AArch64: what `seal` and `open` share, in two runs
@@ -10,6 +18,8 @@ block is split after the load (`RelCT.block_split`), and the rest runs from
 `x9`, which holds `work` (public) in both runs. Then `j0`, `oneAad` and
 `encPrep` (`front_rel`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 
@@ -129,8 +139,8 @@ theorem front_rel (v : GcmImpl) {k₁ k₂ : Reg → BitVec 64} {Np A D : Addr} 
   have a₂ : AbsIn Ctx St W SP k₂ (blockAt s₂'.mem (Ctx + BitVec.ofNat 64 240)) [] A al 0 s₂' :=
     ⟨o₂.env.of_regs r₂, o₂.kept.of_others r₂.others, x23₂, x24₂, x25₂, rfl,
       h₂.aad.of_eq (by rw [r₂.rd, rd₂]) (by rw [r₂.wr, wr₂]), rfl⟩
-  refine rel_seq (absorb_rel L v (.inr rfl) a₁ a₂) (WP.with_rdwr (absorb_ok L (.inr rfl) v a₁))
-    (WP.with_rdwr (absorb_ok L (.inr rfl) v a₂)) fun t₁ t₂ ⟨b₁, brd₁, bwr₁⟩ ⟨b₂, brd₂, bwr₂⟩ => ?_
+  refine rel_seq (absorbAl_rel L v (.inr rfl) a₁ a₂) (WP.with_rdwr (absorbAl_ok L (.inr rfl) v a₁))
+    (WP.with_rdwr (absorbAl_ok L (.inr rfl) v a₂)) fun t₁ t₂ ⟨b₁, brd₁, bwr₁⟩ ⟨b₂, brd₂, bwr₂⟩ => ?_
   have f₁ : Frame (frontFrame St W) σ₁.mem t₁.mem :=
     (o₁.frame.sub fun r hr => ⟨r, List.mem_append_left _ hr, fun _ h => h⟩).trans
       (by rw [← r₁.mem]; exact b₁.frame.sub fun r hr => ⟨r, List.mem_append_right _ hr, fun _ h => h⟩)

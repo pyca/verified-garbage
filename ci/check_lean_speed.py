@@ -77,7 +77,7 @@ LEAN = ROOT / "lean"
 LIMITS = r"(?:maxHeartbeats|maxRecDepth|synthInstance\.maxHeartbeats|synthInstance\.maxSize)"
 SET_LIMIT = re.compile(rf"\bset_option\s+{LIMITS}\b")
 LAKEFILE_LIMIT = re.compile(rf"^\s*{LIMITS}\s*=", re.M)
-BIG_IMPORT = re.compile(r"^\s*import\s+(Mathlib|Mathlib\.Tactic)\s*$", re.M)
+BIG_IMPORT = re.compile(r"^\s*(?:public\s+)?(?:meta\s+)?import\s+(?:all\s+)?(Mathlib|Mathlib\.Tactic)\s*$", re.M)
 SIMP_ARGS = re.compile(r"\bsimp(?:_all|a)?\b[^\[\n]*\[([^\]]*)\]")
 UNFOLD = re.compile(r"(?<![\w.])(runBlock|runStep)(?![\w.])")
 THEOREM = re.compile(r"^(?:private |protected )?(?:theorem|lemma) ", re.M)
@@ -89,7 +89,8 @@ META = re.compile(
     re.M,
 )
 META_WORDS = ("elab", "simproc", "CoreM", "MetaM", "SimpM", "TermElabM", "TacticM", "CommandElabM")
-IMPORT = re.compile(r"^import\s+([\w.]+)", re.M)
+# `import`, and in a module `public`, `meta` and `all` imports.
+IMPORT = re.compile(r"^(?:public\s+)?(?:meta\s+)?import\s+(?:all\s+)?([\w.]+)", re.M)
 TAUTO = re.compile(r"(?<![\w.])tauto(?![\w.])")
 # `set_option profiler false` on a line of its own (for the whole module).
 PROFILER_OFF = re.compile(r"^set_option profiler false[ \t]*$", re.M)

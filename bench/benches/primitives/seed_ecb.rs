@@ -7,7 +7,12 @@ use criterion::Criterion;
 /// The library modules whose code these benchmarks run.
 pub const USES: &[&str] = &["seed_ecb", "seed"];
 
-#[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
+#[cfg(any(
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    target_arch = "arm",
+    target_arch = "x86"
+))]
 pub fn bench(c: &mut Criterion) {
     use std::hint::black_box;
 
@@ -32,7 +37,7 @@ pub fn bench(c: &mut Criterion) {
         for size in SIZES {
             group.throughput(Throughput::Bytes(size as u64));
             let data = vec![0x5a; size];
-            let mut buffer = vec![0; size];
+            let mut buffer = crate::InPlace::new(size, &data);
             group.bench_function(BenchmarkId::new(VG, size), |b| {
                 b.iter(|| {
                     let ctx = SeedEcb::new(black_box(&key));
@@ -60,5 +65,10 @@ pub fn bench(c: &mut Criterion) {
     }
 }
 
-#[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
+#[cfg(not(any(
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    target_arch = "arm",
+    target_arch = "x86"
+)))]
 pub fn bench(_: &mut Criterion) {}

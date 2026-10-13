@@ -1,4 +1,12 @@
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej5Flags
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej5Flags
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86_64.Rej4.Segment
 
@@ -133,20 +141,18 @@ theorem finish_ok {s : State} (h : Batch σ 2 0 112 4 s) :
 
 /-- Everything after the prologue, the round constants and the padded seeds. -/
 theorem body_ok {s : State} (h : SqInv σ 0 s) :
-    WP isa (.seq (squeeze4 0) (.seq (squeeze4 1) (.seq (squeeze4 2) (.seq (.block zeroJ)
+    WP isa (.seq (squeezes 0 3) (.seq (.block zeroJ)
       (.seq (first 0) (.seq (first 1) (.seq (first 2) (.seq (first 3)
-        (.seq (squeeze4 0) (.seq (squeeze4 1) (.seq (VG.Impl.MlDsa.X86_64.Sample.Rej5.batch 0 112) finish))))))))))) s
+        (.seq (squeezes 0 2) (.seq (VG.Impl.MlDsa.X86_64.Sample.Rej5.batch 0 112) finish)))))))) s
       fun s' => r4K.post σ s' ∧ gprPreserved σ s' := by
-  refine WP.seq (WP.mono (sqT_ok hp (by decide) (sqT_of h)) fun s₁ ⟨q₁, _⟩ => WP.seq (WP.mono
-    (sqT_ok hp (by decide) q₁) fun s₂ ⟨q₂, _⟩ => WP.seq (WP.mono (sqT_ok hp (by decide) q₂) fun s₃ ⟨q₃, _⟩ =>
-      WP.seq (WP.mono (zeroJ_ok hp q₃) fun s₄ p₀ => ?_))))
+  refine WP.seq (WP.mono (sqTs_ok hp (by decide) (by decide) (sqT_of h)) fun s₃ ⟨q₃, _⟩ =>
+      WP.seq (WP.mono (zeroJ_ok hp q₃) fun s₄ p₀ => ?_))
   refine WP.seq (WP.mono (first_ok hp (by decide) p₀) fun _ p₁ => WP.seq (WP.mono (first_ok hp (by decide) p₁)
     fun _ p₂ => WP.seq (WP.mono (first_ok hp (by decide) p₂) fun _ p₃ =>
       WP.seq (WP.mono (first_ok hp (by decide) p₃) fun _ p₄ => ?_))))
-  exact WP.seq (WP.mono (sqM_ok hp (by decide) (m2_of p₄)) fun _ m₁ =>
-    WP.seq (WP.mono (sqM_ok hp (by decide) m₁) fun _ m₂ =>
+  exact WP.seq (WP.mono (sqM_ok hp (by decide) (by decide) (m2_of p₄)) fun _ m₂ =>
       WP.seq (WP.mono (batch_ok hp (by decide) (by decide) (by decide) (by decide) (batch_of_m2 m₂))
-        fun _ b => finish_ok hp b)))
+        fun _ b => finish_ok hp b))
 
 end
 theorem correct (σ : State) (hs : r4K.pre σ) :

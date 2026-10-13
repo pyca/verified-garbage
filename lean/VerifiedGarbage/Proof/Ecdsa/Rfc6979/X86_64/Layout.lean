@@ -1,10 +1,16 @@
-import VerifiedGarbage.Impl.Ecdsa.Rfc6979.X86_64
-import VerifiedGarbage.Proof.Framework.X86_64.Frame
-import VerifiedGarbage.Proof.Framework.X86_64.Syms
-import VerifiedGarbage.Proof.Framework.X86_64.Abi
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.Covers
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Contract
+module
+
+public import VerifiedGarbage.Impl.Ecdsa.Rfc6979.X86_64
+public import VerifiedGarbage.Proof.Framework.X86_64.Frame
+public import VerifiedGarbage.Proof.Framework.X86_64.Syms
+public import VerifiedGarbage.Proof.Framework.X86_64.Abi
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.Covers
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Deterministic ECDSA on x86-64: where everything is
@@ -23,6 +29,8 @@ registers, the pointers in the frame, that memory changed only in `out`,
 (`TBLs`, the comb's). Code that writes only regions apart from the
 pointers (`Safe`) keeps it (`Ctx.keep`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Rfc6979.X86_64
 

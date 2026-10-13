@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Inline
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.Base
-import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Pack
-import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Sample
-import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Round
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Inline
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.Base
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Pack
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Sample
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Round
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA signing on AArch64: calls of the other primitives
@@ -18,6 +24,8 @@ result is public in its own runs (`RetPub`) returns the same in both
 finishes within them: a fact of each run of the callee added to its
 postcondition (`withPost`, `CalleeOk.withPost`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Sign
 

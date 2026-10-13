@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Blowfish.X86_64.Block
+module
+
+public import VerifiedGarbage.Proof.Blowfish.X86_64.Block
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The ECB functions
@@ -6,6 +12,8 @@ import VerifiedGarbage.Proof.Blowfish.X86_64.Block
 `ecb_correct`: every block becomes its encryption or decryption, one at a
 time, through the working space.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Blowfish.X86_64
 

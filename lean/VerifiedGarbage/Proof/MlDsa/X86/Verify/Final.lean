@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.MlDsa.X86.Verify.Row
-import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Seeds
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86.Verify.Row
+meta import VerifiedGarbage.Proof.MlDsa.X86.Verify.Row
+public import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Seeds
+meta import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Seeds
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA verification on x86 (32-bit): `c̃′` and the result
@@ -10,6 +18,8 @@ bounds `b`, the result is 1 exactly when `verifyMu` is true for `b`
 (`verifyMu_rows`), and it stays 0 if verification is not true within the least
 bounds, which is the contract's postcondition (`VFin`, `compute_piece`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86.Verify
 

@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.DBase
-import VerifiedGarbage.Proof.RsaKeyGen.KeyMath
+module
+
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.DBase
+public import VerifiedGarbage.Proof.RsaKeyGen.KeyMath
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # An RSA key from its primes on AArch64: `d` for an odd `e`
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.RsaKeyGen.KeyMath
 `L = e Q + R`, `x = R⁻¹ mod e`, `t = e − x` (in `x1`) and `d = Q t + c` with
 `c = (1 + R t) e⁻¹ mod 2⁶⁴` (in `x10`) (`dOdd_k`, `inverse_odd`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaKeyGen.AArch64.Key
 

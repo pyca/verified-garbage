@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesCcm.AArch64.Open
-import VerifiedGarbage.Proof.AesGcm.AArch64.Rel
+module
+
+public import VerifiedGarbage.Proof.AesCcm.AArch64.Open
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Rel
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CCM on AArch64: relating two runs
@@ -11,6 +17,8 @@ analysis, from the registers the environment pins to the same public values
 in both runs and those the correctness proofs pin (`rel_env`); each call by
 its callee's proof (`rel_upd`, `Proof.AesGcm.AArch64.rel_ctr`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

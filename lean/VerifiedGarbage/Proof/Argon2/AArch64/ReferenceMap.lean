@@ -1,9 +1,18 @@
-import VerifiedGarbage.Proof.Argon2.AArch64.Wrap
-import VerifiedGarbage.Proof.Argon2.AArch64.Relative
-import VerifiedGarbage.Proof.Argon2.AArch64.ReferenceMapLane
-import VerifiedGarbage.Proof.Argon2.AArch64.ReferenceStart
+module
+
+public import VerifiedGarbage.Proof.Argon2.AArch64.Wrap
+public import VerifiedGarbage.Proof.Argon2.AArch64.Relative
+public import VerifiedGarbage.Proof.Argon2.AArch64.ReferenceMapLane
+public import VerifiedGarbage.Proof.Argon2.AArch64.ReferenceStart
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Argon2.AArch64.ReferenceMapWindow`. -/
+
+@[expose] public section
+
 section
 /-! The selected eligible window and its chronological starting column. -/
 

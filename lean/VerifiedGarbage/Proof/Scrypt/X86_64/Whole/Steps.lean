@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Scrypt.X86_64.Whole.Layout
-import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.Proof.Framework.X86_64.Exec
+module
+
+public import VerifiedGarbage.Proof.Scrypt.X86_64.Whole.Layout
+public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+public import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # scrypt on x86-64: the blocks between the calls
@@ -9,6 +15,8 @@ The parameters as numbers (`Lay.Ok`), and what each block between the calls
 does: it keeps `Ctx`, and sets up the next call's arguments (`PbkArgs`,
 `RomixArgs`) or the next block.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Scrypt.X86_64.Whole
 

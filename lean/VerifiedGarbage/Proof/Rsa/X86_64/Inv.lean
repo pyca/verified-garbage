@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Rsa.X86_64.Div
+module
+
+public import VerifiedGarbage.Proof.Rsa.X86_64.Div
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSA private keys on x86-64: the binary extended Euclidean algorithm
@@ -10,6 +16,8 @@ swaps (`invSwap_ok`), the subtractions (`invSub_ok`) and the halvings
 (`invHalf_ok`). `inverse` is `KeyMath.invIter` for `128 w` steps from
 `(a, m, 1, 0)` (`inverse_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.X86_64
 

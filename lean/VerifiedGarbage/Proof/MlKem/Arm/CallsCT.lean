@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.MlKem.Arm.HashCT
+module
+
+public import VerifiedGarbage.Proof.MlKem.Arm.HashCT
+meta import VerifiedGarbage.Proof.MlKem.Arm.HashCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on 32-bit ARM: calling the primitives in constant time
@@ -9,6 +16,8 @@ same arguments leak the same trace (`RelCT.callT`), whatever else holds of
 them. `vg_mlkem_sample_ntt` leaks its seed, so two runs that call it must also
 have the same seed (`sample_ct`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.Arm
 

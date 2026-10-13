@@ -1,7 +1,16 @@
-import VerifiedGarbage.Proof.Weierstrass.X86.InvHalf
-import VerifiedGarbage.Proof.Weierstrass.X86.InvState
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86.InvHalf
+public import VerifiedGarbage.Proof.Weierstrass.X86.InvState
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # Initial state of the 256-bit divstep inversion -/
+
+@[expose] public section
+
 namespace VG.Proof.Weierstrass.X86.Inv
 open VG VG.X86 VG.X86.Wp VG.Impl.Mont.X86 VG.Impl.Weierstrass.X86
   VG.Proof.Mont.X86 VG.Proof.Mont

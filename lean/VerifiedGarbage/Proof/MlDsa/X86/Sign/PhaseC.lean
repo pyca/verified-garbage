@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.MlDsa.X86.Sign.PhaseD
-import VerifiedGarbage.Proof.MlDsa.X86.Sign.PrimC
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86.Sign.PhaseD
+public import VerifiedGarbage.Proof.MlDsa.X86.Sign.PrimC
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA signing on x86 (32-bit): the commitment of an iteration
@@ -9,6 +15,8 @@ Iteration `t` of the loop (`IT`: the setup, `κ = ℓt` at `KAP` and `814 - t` a
 NTT⁻¹(Â ŷ)` (`rowW_piece`), the encoding of `w₁ = HighBits(w)` at `W1`
 (`w1R_piece`), and `c̃ = H(μ ‖ w1Encode(w₁), λ/4)` at `CT` (`commit_piece`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86.Sign
 

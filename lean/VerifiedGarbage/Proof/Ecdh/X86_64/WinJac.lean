@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Ecdh.X86_64.MulOk
-import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJac
+module
+
+public import VerifiedGarbage.Proof.Ecdh.X86_64.MulOk
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJac
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDH on x86-64: `[d]P` by 5-bit windows in Jacobian coordinates
@@ -14,6 +20,8 @@ window method on the peer's point (or `G`), then the signature's power: `R`
 represents `[d]P` for `d < n` (`MulOk`), with any doubling that doubles a
 Jacobian triple in place (`DblOk`). It writes only `mulQJW` (`mulQJ_w`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdh.X86_64
 

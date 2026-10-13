@@ -1,7 +1,13 @@
-import VerifiedGarbage.Impl.MlKem.X86_64.Compress
-import VerifiedGarbage.Proof.MlKem.X86_64.Bytes
-import VerifiedGarbage.Proof.MlKem.Bits
-import VerifiedGarbage.Proof.Framework.Range
+module
+
+public import VerifiedGarbage.Impl.MlKem.X86_64.Compress
+public import VerifiedGarbage.Proof.MlKem.X86_64.Bytes
+public import VerifiedGarbage.Proof.MlKem.Bits
+public import VerifiedGarbage.Proof.Framework.Range
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86-64: segments of groups of values and their bytes
@@ -15,6 +21,8 @@ o + b - 1` loaded into `r10` from the last (`ddLd_ok`, the number whose bytes
 they are), and values taken from the bottom of `r10` (`ddVals_ok`). A segment
 is a chunk of the number of the group (`chunk_eq`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.X86_64
 

@@ -1,9 +1,15 @@
-import VerifiedGarbage.Proof.Ed448.Arm.PublicKey.Base
-import VerifiedGarbage.Proof.Ed25519.Arm.Whole.CallCT
-import VerifiedGarbage.Proof.Ed25519.Arm.Whole.WrapCT
-import VerifiedGarbage.Proof.Ed25519.Arm.Whole.BlocksCT
-import VerifiedGarbage.Proof.Framework.Arm.Inline
-import VerifiedGarbage.Spec.Ed448.Contract
+module
+
+public import VerifiedGarbage.Proof.Ed448.Arm.PublicKey.Base
+public import VerifiedGarbage.Proof.Ed25519.Arm.Whole.CallCT
+public import VerifiedGarbage.Proof.Ed25519.Arm.Whole.WrapCT
+public import VerifiedGarbage.Proof.Ed25519.Arm.Whole.BlocksCT
+public import VerifiedGarbage.Proof.Framework.Arm.Inline
+public import VerifiedGarbage.Spec.Ed448.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 public-key derivation on ARMv7: constant time, and `Verified`
@@ -16,6 +22,8 @@ call (`setup_ct`), each callee is constant time under its own contract
 `publicKey_verified` takes the reference ladder's agreement with the
 specification (`BaseLadderOk`) as a hypothesis.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.Arm.PublicKey
 

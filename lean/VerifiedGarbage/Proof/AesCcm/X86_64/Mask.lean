@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesCcm.X86_64.Run
-import VerifiedGarbage.Proof.AesGcm.X86_64.Mask
+module
+
+public import VerifiedGarbage.Proof.AesCcm.X86_64.Run
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Mask
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CCM on x86-64: masking the data (`mask`)
@@ -10,6 +16,8 @@ and is zeroed if not (`mask_ok`): its first block loads the data, its
 length and the mask, and `maskTail` (`Proof/AesGcm/X86_64/Mask.lean`) masks
 the data.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

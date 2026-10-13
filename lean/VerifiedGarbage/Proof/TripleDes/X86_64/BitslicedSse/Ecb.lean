@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedSse.Wide
+module
+
+public import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedSse.Wide
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The SSE2 function
@@ -7,6 +13,8 @@ The batches of 128 blocks (`wide_ok`), then the 64-block code on the blocks
 left (`Bitsliced.ecb_ok`): every block becomes its encryption or decryption
 (`ecb_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.TripleDes.X86_64.BitslicedSse
 
@@ -79,7 +87,7 @@ theorem ecb_post (d : Direction) {s : State} (E : WideEnv s)
     simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
     · exact w.rbx
-    all_goals exact g _ (by simp [WideRegs, PassRegs])
+    all_goals first | exact w.r12 | exact w.r13 | exact g _ (by simp [WideRegs, PassRegs])
   · rw [← hsp, t.gpr.2, hsp]
     refine w.frame.readW (r := ⟨s.gpr .rsp, 8⟩) (Region.contains_self _ _) ?_ (by decide)
     intro r hr

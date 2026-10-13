@@ -1,14 +1,31 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedRestTiming
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedRestCorrect
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedLoopTiming
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedRootsForget
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedLoopTiming
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedRestCorrect
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedInitializationTiming
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedOutputTiming
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedSignTiming
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedRestTiming
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedRestTiming
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedRestCorrect
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedRestCorrect
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedLoopTiming
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedLoopTiming
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedRootsForget
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedRootsForget
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedLoopTiming
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedLoopTiming
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedRestCorrect
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedRestCorrect
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedInitializationTiming
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedInitializationTiming
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedOutputTiming
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedOutputTiming
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedSignTiming
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedSignTiming
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## From `OptimizedPairedRestTiming.lean` -/
+
+@[expose] public section
 
 section
 

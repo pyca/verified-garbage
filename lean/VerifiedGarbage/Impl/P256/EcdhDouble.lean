@@ -1,9 +1,14 @@
-import VerifiedGarbage.Impl.P256.Linear
-import VerifiedGarbage.Impl.P256.VerifySparse
-import VerifiedGarbage.Impl.P256.EcdhAllocatedCode
+module
+
+public import VerifiedGarbage.Impl.P256.Linear
+public import VerifiedGarbage.Impl.P256.VerifySparse
+public import VerifiedGarbage.Impl.P256.EcdhAllocatedCode
 
 /-! Five-square, three-multiply Jacobian doubling with fused linear reductions.
 The scheduler is untrusted; its output is certified against the raw arithmetic. -/
+
+@[expose] public section
+
 namespace VG.Impl.P256.EcdhDouble
 open VG VG.AArch64 VG.Impl.Weierstrass.AArch64
 def raw : List Instr :=

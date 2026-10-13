@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Enc
+module
+
+public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Enc
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Interleaved counter mode and GHASH: decryption
@@ -11,6 +17,8 @@ it overwrites them, and blocks 8–15 during those of the second.
 `decTail_ok`: the decryption after the setup, for any powers whose products
 add up to `GHASH` (`FinOk`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Gcm.X86_64.Stitch
 

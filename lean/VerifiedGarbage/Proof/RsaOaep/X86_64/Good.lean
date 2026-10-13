@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.RsaOaep.X86_64.Stack
-import VerifiedGarbage.Proof.RsaOaep.X86_64.Label
-import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Core
+module
+
+public import VerifiedGarbage.Proof.RsaOaep.X86_64.Stack
+public import VerifiedGarbage.Proof.RsaOaep.X86_64.Label
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Core
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-OAEP on x86-64: the pieces that keep `rsp`, MXCSR and the stack
@@ -9,6 +15,8 @@ Each piece but the RSA operation's call is `Good` (`Stack.lean`): its
 instructions, and those of the streaming hash functions it calls, never
 write `rsp` or load MXCSR, and its calls nest at most two deep.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaOaep.X86_64
 

@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.Facts
-import VerifiedGarbage.Proof.AesGcm.X86_64.OneCT
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.Facts
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.Facts
+public import VerifiedGarbage.Proof.AesGcm.X86_64.OneCT
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.OneCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on x86-64: `oneBlocks` in two runs
@@ -10,6 +18,8 @@ length, branch the same way on it, and call `vg_aes_gcm_encrypt_blocks` or
 the same; after it, what stays in `W` is the data left and its length, and
 the total length (`oneBlocks_oneS`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesGcm.X86_64
 

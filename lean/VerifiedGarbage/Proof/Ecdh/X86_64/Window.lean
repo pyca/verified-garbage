@@ -1,8 +1,15 @@
-import VerifiedGarbage.Proof.Ecdh.X86_64.Validate
-import VerifiedGarbage.Proof.Weierstrass.X86_64.WinLoop
-import VerifiedGarbage.Proof.Weierstrass.X86_64.AddConst
-import VerifiedGarbage.Proof.Weierstrass.X86_64.Bits
-import VerifiedGarbage.Proof.Weierstrass.X86_64.Rep
+module
+
+public import VerifiedGarbage.Proof.Ecdh.X86_64.Validate
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.MulFn
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinLoop
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.AddConst
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.Bits
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.Rep
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDH on x86-64: `[d]P` by windows, and `Z^(p-2)`
@@ -14,9 +21,11 @@ of points slots `WT … WT + 23` past the tables of bits
 `winMul_ok` recodes `d` into `d + 8 Σ_{j<J} 16^j` and its bits (`winPrep`)
 and runs the window method on the peer's point (or `G`), with `b R` in the
 slot `BP` for the complete addition for `a = -3`. `mulPow_ok` is `mulQ`, the
-window method or (for more words) the ladder, and the signature's power: it
-leaves `R` representing `[d]P`.
+window method or (for more words) the ladder, inline or by a call of
+`vg_<curve>_mul`, and the signature's power: it leaves `R` representing `[d]P`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdh.X86_64
 
@@ -451,16 +460,25 @@ theorem mulI_idx : ∀ i ∈ mulI, i = TMP ∨ 12 ≤ i := by decide
 
 /-- A numbered slot below the tables not in `mulI`, apart from what it writes. -/
 theorem apart_mulW {i : Nat} (hi : i < 45) (h₁ : i ∉ mulI) (h₂ : i ∉ [ACC, PT, TMP]) :
-    ∀ w ∈ winX c ++ slW c mulI ++ pwW c, c.sl i + 8 * c.n ≤ w.1 ∨ w.1 + w.2 ≤ c.sl i :=
-  apart_append (apart_append (apart_winX hi) (apart_slW h₁)) (apart_pwW hi h₂)
+    ∀ w ∈ winX c ++ slW c mulI ++ pwW c ++ [(bitsAt c.n 0, 64 * c.n + 8)],
+      c.sl i + 8 * c.n ≤ w.1 ∨ w.1 + w.2 ≤ c.sl i :=
+  apart_append (apart_append (apart_append (apart_winX hi) (apart_slW h₁)) (apart_pwW hi h₂))
+    fun w hw => by
+      rw [List.mem_singleton.mp hw]
+      exact Or.inl (sl_below_bits c hi 0 0 (.inl fun h => h₂ (by subst h; decide)))
 
-theorem fixedOk_mulW : FixedOk c (winX c ++ slW c mulI ++ pwW c) :=
-  (fixedOk_winX.append (fixedOk_slW mulI_idx)).append fixedOk_pwW
+theorem fixedOk_mulW : FixedOk c (winX c ++ slW c mulI ++ pwW c ++ [(bitsAt c.n 0, 64 * c.n + 8)]) :=
+  ((fixedOk_winX.append (fixedOk_slW mulI_idx)).append fixedOk_pwW).append fun w hw => by
+    rw [List.mem_singleton.mp hw]
+    exact Or.inr (Nat.le_trans (Nat.le_add_right _ _) (sl_below_bits c (i := 12) (by decide) 0 0))
 
 theorem slW_mono {l l' : List Nat} (h : ∀ i ∈ l, i ∈ l') {w : Nat × Nat} (hw : w ∈ slW c l) :
     w ∈ slW c l' := by
   obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hw
   exact List.mem_map.mpr ⟨i, h i hi, rfl⟩
+
+/-- What `mulQ` and the power may write. -/
+abbrev mulQW' (c : Cfg) : List (Nat × Nat) := winX c ++ slW c mulI ++ pwW c ++ [(bitsAt c.n 0, 64 * c.n + 8)]
 
 /-- What `mulQ` and the power leave: `R` represents `[k]P` (for `k < 2^nbits`;
 for more words, any `k`). -/
@@ -469,7 +487,7 @@ structure MulPost (c : Cfg) (base : Addr) (P : Point c.C) (k : Nat) (s s' : Stat
   gpr : ∀ r, r ∉ invClob c.n → s'.gpr r = s.gpr r
   rd : s'.rd = s.rd
   wr : s'.wr = s.wr
-  unch : Unch base (winX c ++ slW c mulI ++ pwW c) s.mem s'.mem
+  unch : Unch base (mulQW' c) s.mem s'.mem
   q : k < 2 ^ c.nbits → Rep c.C (tmv c.C c.n base s' (c.sl RX)) (tmv c.C c.n base s' (c.sl RY))
     (tmv c.C c.n base s' (c.sl RZ)) (mul k P)
   acc_lt : sv c base s' ACC < c.C.p
@@ -487,8 +505,9 @@ theorem mulPow_ok (hc : BaseCfgOk c) (hC : Law c.C) {base : Addr} {s : State} (h
     {k : Nat} (hk : sv c base s K = k) (hk8 : k < 2 ^ (8 * c.C.len))
     (ht₀ : ∀ t < 64 * c.n, s.mem (off base (bitsAt c.n 0 + t)) = if k.testBit t then 1 else 0)
     (ht₁ : ¬ c.n ≤ 9 → ∀ t < 64 * c.n, s.mem (off base (bitsAt c.n 1 + t)) = if (c.C.p - 2).testBit t then 1 else 0)
+    (hm : c.mul.isSome = true → c.n = 4 ∧ c.mulFn.noCalls = true)
     {rest : Prog isa} {R : State → Prop} (h : ∀ s', MulPost c base P k s s' → WP isa rest s' R) :
-    WP isa (.seq (Impl.Ecdh.X86_64.Cfg.mulQ c).inline (.seq c.pPow rest)) s R := by
+    WP isa (.seq (Impl.Ecdh.X86_64.Cfg.mulQ c).inline (.seq c.pPow.inline rest)) s R := by
   have h0 := hc.n0
   have h7 := hc.n10
   have hn := hs.nowrap
@@ -522,6 +541,7 @@ theorem mulPow_ok (hc : BaseCfgOk c) (hC : Law c.C) {base : Addr} {s : State} (h
           rw [List.mem_singleton.mp h]
           exact List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (r8_mem_clob _))))]
     · intro w hw
+      refine List.mem_append_left _ ?_
       rcases List.mem_append.mp hw with hw | hw
       · rcases List.mem_append.mp hw with hw | hw
         · exact List.mem_append_left _ (List.mem_append_right _ (slW_mono (by decide) hw))
@@ -539,25 +559,112 @@ theorem mulPow_ok (hc : BaseCfgOk c) (hC : Law c.C) {base : Addr} {s : State} (h
       rw [r₄ (i := RZ) (by decide) (by decide)]
       exact v₄
     · rw [r₄ (i := RZ) (by decide) (by decide)]; exact rz₃
-  · have hk' : k < 2 ^ (64 * c.n) := hk ▸ wordsVal_lt _ _ _ _
-    have hstep := step_rep (L := Impl.Ecdh.X86_64.Cfg.ladderQ c) (k := k) hC hP
-      (by
-        show toM c.C.p (2 ^ (64 * c.n)) (wordsVal s.mem _ (c.sl AP) c.n) = _
-        rw [F.ap]; exact toM_cmont hc _)
-      (by
-        show toM c.C.p (2 ^ (64 * c.n)) (wordsVal s.mem _ (c.sl B3P) c.n) = _
-        rw [F.b3p]; exact toM_cmont hc _)
-      hrep
-    refine ladPow_ok hc hs F hstep (by rw [shiftRight_eq_zero hk', mul_zero_pt]; exact rep_infinity' hC)
-      hpx hpy hrx hry hrz ht₀ ht₁ fun s₅ L => h s₅ ?_
-    refine ⟨L.scr, L.gpr, L.rd, L.wr, L.unch.mono ?_, fun _ => by have := L.q; rwa [Nat.shiftRight_zero] at this,
-      L.acc_lt, L.acc, L.rz_lt⟩
-    intro w hw
-    simp only [mulI, slW, List.map_append, List.mem_append] at hw ⊢
-    rcases hw with hw | hw
-    · exact Or.inl (Or.inr (Or.inr (slW_mono (c := c) (l := [RX, RY, RZ, T0, T1, T2, T3, T4, T5, DX, DY, DZ, T0, T1,
-        T2, T3, T4, T5, TX, TY, TZ, TMP]) (l' := [RX, RY, RZ, T0, T1, T2, T3, T4, T5, DX, DY, DZ, T0, T1,
-        T2, T3, T4, T5, TX, TY, TZ, TMP, K]) (by decide) hw)))
-    · exact Or.inr hw
+  · cases hm₂ : c.mul with
+    | none =>
+      have hk' : k < 2 ^ (64 * c.n) := hk ▸ wordsVal_lt _ _ _ _
+      have hstep := step_rep (L := Impl.Ecdh.X86_64.Cfg.ladderQ c) (k := k) hC hP
+        (by
+          show toM c.C.p (2 ^ (64 * c.n)) (wordsVal s.mem _ (c.sl AP) c.n) = _
+          rw [F.ap]; exact toM_cmont hc _)
+        (by
+          show toM c.C.p (2 ^ (64 * c.n)) (wordsVal s.mem _ (c.sl B3P) c.n) = _
+          rw [F.b3p]; exact toM_cmont hc _)
+        hrep
+      refine ladPow_ok hc hs F hstep (by rw [shiftRight_eq_zero hk', mul_zero_pt]; exact rep_infinity' hC)
+        hpx hpy hrx hry hrz ht₀ ht₁ fun s₅ L => h s₅ ?_
+      refine ⟨L.scr, L.gpr, L.rd, L.wr, L.unch.mono ?_, fun _ => by have := L.q; rwa [Nat.shiftRight_zero] at this,
+        L.acc_lt, L.acc, L.rz_lt⟩
+      intro w hw
+      refine List.mem_append_left _ ?_
+      simp only [mulI, slW, List.map_append, List.mem_append] at hw ⊢
+      rcases hw with hw | hw
+      · exact Or.inl (Or.inr (Or.inr (slW_mono (c := c) (l := [RX, RY, RZ, T0, T1, T2, T3, T4, T5, DX, DY, DZ, T0, T1,
+          T2, T3, T4, T5, TX, TY, TZ, TMP]) (l' := [RX, RY, RZ, T0, T1, T2, T3, T4, T5, DX, DY, DZ, T0, T1,
+          T2, T3, T4, T5, TX, TY, TZ, TMP, K]) (by decide) hw)))
+      · exact Or.inr hw
+    | some C =>
+      obtain ⟨h4, hnc⟩ := hm (by rw [hm₂]; rfl)
+      have hp3 := hc.p_ge
+      have hmont : ∀ x, c.mont x < c.C.p := fun x => Nat.mod_lt _ (by omega)
+      have sz : ∀ {i}, i < 45 → c.sl i + 8 * c.n ≤ size := fun hi => sl_le c h7 hi
+      show WP isa (.seq (.seq (.block (copy c.n (c.sl RX) (c.sl PX) ++ copy c.n (c.sl RY) (c.sl PY))) c.mulFn)
+        (.seq c.pPow.inline rest)) s R
+      rw [← Code.inline_of_noCalls hnc]
+      refine WP.seq (WP.seq ?_)
+      rw [WP.block_append_iff]
+      refine WP.mono (copy_ok (size := size) c.n hs (o := c.sl RX) (a := c.sl PX)
+        (sz (by decide)) (sz (by decide)) (by rcases sl_apart c (i := RX) (j := PX) (by decide) with h | h <;> omega))
+        fun s₁ ⟨v₁, k₁, O₁⟩ => ?_
+      have hs₁ := hs.of_keepRegs k₁ (by decide)
+      refine WP.mono (copy_ok (size := size) c.n hs₁ (o := c.sl RY) (a := c.sl PY)
+        (sz (by decide)) (sz (by decide)) (by rcases sl_apart c (i := RY) (j := PY) (by decide) with h | h <;> omega))
+        fun s₂ ⟨v₂, k₂, O₂⟩ => ?_
+      have hs₂ := hs₁.of_keepRegs k₂ (by decide)
+      have U₂ : Unch base (slW c [RX, RY]) s.mem s₂.mem := O₁.unch.trans O₂.unch
+      have e₂ := fun {i} (hi : i < 45) (hl : i ∉ [RX, RY]) => sv_unch U₂ h7 hn hi (apart_slW hl)
+      have O₁' : Unch base (slW c [RX]) s.mem s₁.mem := O₁.unch
+      have O₂' : Unch base (slW c [RY]) s₁.mem s₂.mem := O₂.unch
+      have rx₂ : sv c base s₂ RX = sv c base s PX :=
+        (sv_unch O₂' h7 hn (i := RX) (by decide) (apart_slW (by decide))).trans v₁
+      have ry₂ : sv c base s₂ RY = sv c base s PY :=
+        v₂.trans (sv_unch O₁' h7 hn (i := PY) (by decide) (apart_slW (by decide)))
+      have hz : tmv c.C c.n base s (c.sl ONEP) = 1 := by
+        change toM _ _ (wordsVal s.mem base (c.sl ONEP) c.n) = 1
+        rw [F.onep]
+        exact toM_one (unitMod_pow_two hc.p_odd _)
+      have eP : ptQ c base s₂ = P := by
+        show Point.affine (toM _ _ (sv c base s₂ RX)) (toM _ _ (sv c base s₂ RY)) = _
+        have hrep₁ : Rep c.C (tmv c.C c.n base s (c.sl PX)) (tmv c.C c.n base s (c.sl PY)) 1 P := by
+          rw [← hz]; exact hrep
+        rw [rx₂, ry₂]; exact (Rep.eq_affine hC hrep₁).symm
+      refine WP.mono (mulFn_ok hc h4 hC hs₂ ((e₂ (by decide) (by decide)).trans F.mp)
+        ((e₂ (by decide) (by decide)).trans F.zero) ((e₂ (by decide) (by decide)).trans F.onep)
+        ((e₂ (by decide) (by decide)).trans F.ap) ((e₂ (by decide) (by decide)).trans F.b3p)
+        (by rw [rx₂]; exact hpx) (by rw [ry₂]; exact hpy) (by rw [eP]; exact hP))
+        fun s₃ ⟨K₃, U₃, M₃, L₃, R₃⟩ => ?_
+      have kk₂ : sv c base s₂ K = sv c base s K := e₂ (by decide) (by decide)
+      rw [eP, kk₂, hk] at R₃
+      have U₃' := U₂.trans U₃
+      have one₃ : wordsVal s₃.mem base (c.sl ONEP) c.n = 2 ^ (64 * c.n) % c.C.p :=
+        (sv_unch U₃' h7 hn (i := ONEP) (by decide) (apart_append (apart_slW (by decide))
+          (apart_append (apart_slW (by decide)) fun w hw => apart_bits_slW (i := ONEP) (l := []) (by decide)
+            (by decide) w (List.mem_append_left _ hw)))).trans F.onep
+      have rz₃ : wordsVal s₃.mem base (c.sl RZ) c.n < c.C.p := L₃ _ (by simp)
+      refine WP.seq (WP.mono (pPow_ok hc (hs₂.of_keepRegs K₃ (rdi_not_powClob _)) M₃ rz₃ one₃
+        (fun h9' => absurd (by omega) h9')) fun s₄ ⟨K₄, U₄, lt₄, v₄⟩ => h s₄ ?_)
+      have r₄ : ∀ {i}, i < 45 → i ∉ [ACC, PT, TMP] → sv c base s₄ i = sv c base s₃ i := fun hi h₁ =>
+        sv_unch U₄ h7 hn hi (apart_pwW hi h₁)
+      have hk₁ : ∀ r ∈ [Reg.rax], r ∈ powClob c.n := fun r hr => by
+        simp only [List.mem_singleton] at hr; simp [hr, powClob, clob]
+      have K₃' := ((k₁.mono hk₁).trans (k₂.mono hk₁)).trans K₃
+      refine ⟨(hs₂.of_keepRegs K₃ (rdi_not_powClob _)).of_keepRegs K₄ (rdi_not_invClob _),
+        fun r hr => ?_, by rw [K₄.rd, K₃'.rd], by rw [K₄.wr, K₃'.wr],
+        (U₃'.trans U₄).cover (W' := mulQW' c) ?_, fun _ => ?_, lt₄, ?_, ?_⟩
+      · rw [K₄.gpr r hr, K₃'.gpr r (fun h => hr (List.mem_cons_of_mem _ h))]
+      · intro w hw
+        refine ⟨w, ?_, Nat.le_refl _, Nat.le_refl _⟩
+        have inI : w ∈ slW c mulI → w ∈ mulQW' c := fun h =>
+          List.mem_append_left _ (List.mem_append_left _ (List.mem_append_right (winX c) h))
+        have inP : w ∈ pwW c → w ∈ mulQW' c := fun h => List.mem_append_left _ (List.mem_append_right _ h)
+        rcases List.mem_append.mp hw with hw | hw
+        · rcases List.mem_append.mp hw with hw | hw
+          · exact inI (slW_mono (by decide) hw)
+          · rcases List.mem_append.mp hw with hw | hw
+            · obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hw
+              have key : ∀ i ∈ [RX, RY, RZ, ACC, PT, TX, TY, TZ, T0, T1, T2, T3, T4, T5, DX, DY, DZ, TMP],
+                  i = ACC ∨ i ∈ mulI := by decide
+              rcases key i hi with rfl | h
+              · exact inP (List.mem_append_left _ (List.mem_map_of_mem (by decide)))
+              · exact inI (List.mem_map_of_mem h)
+            · exact List.mem_append_right _ hw
+        · exact inP hw
+      · show Rep _ (toM _ _ (sv c base s₄ RX)) (toM _ _ (sv c base s₄ RY)) (toM _ _ (sv c base s₄ RZ)) _
+        rw [r₄ (i := RX) (by decide) (by decide), r₄ (i := RY) (by decide) (by decide),
+          r₄ (i := RZ) (by decide) (by decide)]
+        exact R₃
+      · show _ = toM _ _ (sv c base s₄ RZ) ^ _
+        rw [r₄ (i := RZ) (by decide) (by decide)]
+        exact v₄
+      · rw [r₄ (i := RZ) (by decide) (by decide)]; exact rz₃
 
 end VG.Proof.Ecdh.X86_64

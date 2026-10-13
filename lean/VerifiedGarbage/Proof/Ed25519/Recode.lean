@@ -1,3 +1,9 @@
+module
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
 /-!
 # Signed sliding-window digits
 
@@ -12,6 +18,8 @@ whose entries `2m` and `2m + 1` are `[2m + 1]` and `-[2m + 1]` of a point.
 `digits_sum`: the digits, weighted by powers of two (`hsum`), sum to `K`; `digits_le`: each byte
 is at most `2 ^ (w - 1)`; `digits_zero`: they are zero from bit `n + w` on.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed25519.Recode
 

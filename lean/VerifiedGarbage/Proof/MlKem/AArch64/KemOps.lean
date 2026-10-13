@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlKem.AArch64.KemCommon
+module
+
+public import VerifiedGarbage.Proof.MlKem.AArch64.KemCommon
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on AArch64: the building blocks of `encaps` and `decaps`
@@ -10,6 +16,8 @@ widths `d_u` and `d_v`): what it needs, what it computes, what it keeps (`KB`,
 established before it survive it. The functions at the widths `d_u` and `d_v`
 are a parameter set's own (`KemLay.Calls`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.AArch64.Kem
 

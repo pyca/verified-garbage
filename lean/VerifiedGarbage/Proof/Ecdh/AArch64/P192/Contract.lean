@@ -1,6 +1,12 @@
-import VerifiedGarbage.Spec.Ecdh.P192
-import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.Framework.Contract
+module
+
+public import VerifiedGarbage.Spec.Ecdh.P192
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.Framework.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDH over p192 on AArch64: the contract the proof is written against
@@ -9,6 +15,8 @@ The facts of `Spec.Ecdh.P192.exchangeApi`'s contract for AArch64, by name:
 `vg_ecdh_p192(out = x0, d = x1, peer = x2, scratch = x3)`, the result in
 `w0`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdh.AArch64.P192
 

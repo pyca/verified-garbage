@@ -236,6 +236,22 @@ yours to keep:
 
 </tr>
 
+<tr>
+
+<td>SM3</td>
+
+<td>✅</td>
+
+<td>✅</td>
+
+<td>✅</td>
+
+<td>✅</td>
+
+<td>✅</td>
+
+</tr>
+
 </table>
 
 ### MACs
@@ -424,7 +440,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ AVX-512F, AVX2</td>
+<td>✅ AVX-512F, AVX-512 IFMA, AVX2</td>
 
 <td>✅ NEON, four blocks at a time, on Apple's cores</td>
 
@@ -458,6 +474,54 @@ yours to keep:
 
 <tr>
 
+<td>3DES-CBC</td>
+
+<td>✅</td>
+
+<td>✅</td>
+
+<td>✅</td>
+
+<td>✅</td>
+
+<td>✅</td>
+
+</tr>
+
+<tr>
+
+<td>3DES-CFB64</td>
+
+<td>✅</td>
+
+<td>✅</td>
+
+<td>✅</td>
+
+<td>✅</td>
+
+<td>✅</td>
+
+</tr>
+
+<tr>
+
+<td>3DES-CFB8</td>
+
+<td>✅</td>
+
+<td>✅</td>
+
+<td>✅</td>
+
+<td>✅</td>
+
+<td>✅</td>
+
+</tr>
+
+<tr>
+
 <td>3DES-ECB</td>
 
 <td>✅</td>
@@ -465,6 +529,22 @@ yours to keep:
 <td>✅ AVX-512F, AVX2; bitsliced, 64, 128, 256 or 512 blocks at a time</td>
 
 <td>✅ bitsliced, 128 blocks at a time</td>
+
+<td>✅</td>
+
+<td>✅</td>
+
+</tr>
+
+<tr>
+
+<td>3DES-OFB</td>
+
+<td>✅</td>
+
+<td>✅</td>
+
+<td>✅</td>
 
 <td>✅</td>
 
@@ -586,6 +666,38 @@ yours to keep:
 
 <tr>
 
+<td>Blowfish-CBC</td>
+
+<td>✅</td>
+
+<td>✅</td>
+
+<td>✅</td>
+
+<td>✅</td>
+
+<td>✅</td>
+
+</tr>
+
+<tr>
+
+<td>Blowfish-CFB64</td>
+
+<td>✅</td>
+
+<td>✅</td>
+
+<td>✅</td>
+
+<td>✅</td>
+
+<td>✅</td>
+
+</tr>
+
+<tr>
+
 <td>Blowfish-ECB</td>
 
 <td>✅</td>
@@ -594,9 +706,25 @@ yours to keep:
 
 <td>✅</td>
 
-<td>❌</td>
+<td>✅</td>
 
-<td>❌</td>
+<td>✅</td>
+
+</tr>
+
+<tr>
+
+<td>Blowfish-OFB</td>
+
+<td>✅</td>
+
+<td>✅</td>
+
+<td>✅</td>
+
+<td>✅</td>
+
+<td>✅</td>
 
 </tr>
 
@@ -610,9 +738,25 @@ yours to keep:
 
 <td>✅</td>
 
-<td>❌</td>
+<td>✅</td>
 
-<td>❌</td>
+<td>✅</td>
+
+</tr>
+
+<tr>
+
+<td>Camellia-CFB128 (128-, 192- and 256-bit keys)</td>
+
+<td>✅</td>
+
+<td>✅</td>
+
+<td>✅</td>
+
+<td>✅</td>
+
+<td>✅</td>
 
 </tr>
 
@@ -642,9 +786,57 @@ yours to keep:
 
 <td>✅ bitsliced, 8 blocks at a time</td>
 
-<td>❌</td>
+<td>✅ bitsliced, 8 blocks at a time</td>
 
-<td>❌</td>
+<td>✅ bitsliced, 8 blocks at a time</td>
+
+</tr>
+
+<tr>
+
+<td>Camellia-OFB (128-, 192- and 256-bit keys)</td>
+
+<td>✅</td>
+
+<td>✅</td>
+
+<td>✅</td>
+
+<td>✅</td>
+
+<td>✅</td>
+
+</tr>
+
+<tr>
+
+<td>CAST5-CBC</td>
+
+<td>✅</td>
+
+<td>✅</td>
+
+<td>✅</td>
+
+<td>✅</td>
+
+<td>✅</td>
+
+</tr>
+
+<tr>
+
+<td>CAST5-CFB64</td>
+
+<td>✅</td>
+
+<td>✅</td>
+
+<td>✅</td>
+
+<td>✅</td>
+
+<td>✅</td>
 
 </tr>
 
@@ -658,9 +850,25 @@ yours to keep:
 
 <td>✅</td>
 
-<td>❌</td>
+<td>✅</td>
 
-<td>❌</td>
+<td>✅</td>
+
+</tr>
+
+<tr>
+
+<td>CAST5-OFB</td>
+
+<td>✅</td>
+
+<td>✅</td>
+
+<td>✅</td>
+
+<td>✅</td>
+
+<td>✅</td>
 
 </tr>
 
@@ -682,6 +890,38 @@ yours to keep:
 
 <tr>
 
+<td>IDEA-CBC</td>
+
+<td>✅</td>
+
+<td>✅</td>
+
+<td>✅</td>
+
+<td>✅</td>
+
+<td>✅</td>
+
+</tr>
+
+<tr>
+
+<td>IDEA-CFB64</td>
+
+<td>✅</td>
+
+<td>✅</td>
+
+<td>✅</td>
+
+<td>✅</td>
+
+<td>✅</td>
+
+</tr>
+
+<tr>
+
 <td>IDEA-ECB</td>
 
 <td>✅</td>
@@ -690,9 +930,25 @@ yours to keep:
 
 <td>✅</td>
 
-<td>❌</td>
+<td>✅</td>
 
-<td>❌</td>
+<td>✅</td>
+
+</tr>
+
+<tr>
+
+<td>IDEA-OFB</td>
+
+<td>✅</td>
+
+<td>✅</td>
+
+<td>✅</td>
+
+<td>✅</td>
+
+<td>✅</td>
 
 </tr>
 
@@ -730,6 +986,38 @@ yours to keep:
 
 <tr>
 
+<td>SEED-CBC</td>
+
+<td>✅</td>
+
+<td>✅</td>
+
+<td>✅</td>
+
+<td>✅</td>
+
+<td>✅</td>
+
+</tr>
+
+<tr>
+
+<td>SEED-CFB128</td>
+
+<td>✅</td>
+
+<td>✅</td>
+
+<td>✅</td>
+
+<td>✅</td>
+
+<td>✅</td>
+
+</tr>
+
+<tr>
+
 <td>SEED-ECB</td>
 
 <td>✅</td>
@@ -738,9 +1026,25 @@ yours to keep:
 
 <td>✅</td>
 
-<td>❌</td>
+<td>✅</td>
 
-<td>❌</td>
+<td>✅</td>
+
+</tr>
+
+<tr>
+
+<td>SEED-OFB</td>
+
+<td>✅</td>
+
+<td>✅</td>
+
+<td>✅</td>
+
+<td>✅</td>
+
+<td>✅</td>
 
 </tr>
 
@@ -754,9 +1058,25 @@ yours to keep:
 
 <td>✅</td>
 
-<td>❌</td>
+<td>✅</td>
 
-<td>❌</td>
+<td>✅</td>
+
+</tr>
+
+<tr>
+
+<td>SM4-CFB128</td>
+
+<td>✅</td>
+
+<td>✅</td>
+
+<td>✅</td>
+
+<td>✅</td>
+
+<td>✅</td>
 
 </tr>
 
@@ -779,6 +1099,22 @@ yours to keep:
 <tr>
 
 <td>SM4-ECB</td>
+
+<td>✅</td>
+
+<td>✅</td>
+
+<td>✅</td>
+
+<td>✅</td>
+
+<td>✅</td>
+
+</tr>
+
+<tr>
+
+<td>SM4-OFB</td>
 
 <td>✅</td>
 
@@ -900,7 +1236,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ AVX-512F, AVX2</td>
+<td>✅ AVX-512F, AVX-512 IFMA, AVX2</td>
 
 <td>✅ SVE2; NEON</td>
 
@@ -1346,6 +1682,22 @@ yours to keep:
 
 <tr>
 
+<td>Finite-field Diffie–Hellman (FFDH)</td>
+
+<td>✅</td>
+
+<td>✅ BMI2, ADX</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+</tr>
+
+<tr>
+
 <td>X25519</td>
 
 <td>✅</td>
@@ -1404,7 +1756,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>❌</td>
+<td>✅ BMI2, ADX</td>
 
 <td>❌</td>
 
@@ -1580,7 +1932,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅</td>
+<td>✅ BMI2, ADX</td>
 
 <td>✅ SHA extensions; keys and signatures by a fixed-base comb, verification by a comb and 4-bit windows</td>
 

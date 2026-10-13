@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.Framework.PowLit
-import Mathlib.FieldTheory.Finite.Basic
-import Mathlib.Tactic.LinearCombination
-import VerifiedGarbage.Spec.Weierstrass
-import VerifiedGarbage.Proof.Weierstrass.Complete
+module
+
+public import VerifiedGarbage.Proof.Framework.PowLit
+public import Mathlib.FieldTheory.Finite.Basic
+public import Mathlib.Tactic.LinearCombination
+public import VerifiedGarbage.Spec.Weierstrass
+public import VerifiedGarbage.Proof.Weierstrass.Complete
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Certificates that a cubic has no root modulo a prime
@@ -17,6 +23,8 @@ The kernel computes `g` and checks `v h ≡ 1` (`decide +kernel`) in
 triples of `Nat`s `c₀ + c₁ x + c₂ x²` (`mulT`, `powT`); evaluating at a root
 of `x³ - A x - B` is a ring homomorphism (`evalT_mulT`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass
 

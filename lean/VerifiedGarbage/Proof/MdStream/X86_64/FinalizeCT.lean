@@ -1,7 +1,17 @@
-import VerifiedGarbage.Proof.MdStream.X86_64.Common
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Framework.Omega
+module
+
+public import VerifiedGarbage.Proof.MdStream.X86_64.Common
+meta import VerifiedGarbage.Proof.MdStream.X86_64.Common
+public import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.Framework.Omega
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Streaming Merkle–Damgård hash functions on x86-64: `finalize`
@@ -10,6 +20,8 @@ The functional correctness of `finalize`, for any hash function (`Md`) whose
 code stores the length field and writes the digest as `Shape` says, and any
 correct compression function (`CalleeOk`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MdStream.X86_64.Finalize
 

@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Curve448.AArch64.Neon.Arith
-import VerifiedGarbage.Proof.Framework.Range
+module
+
+public import VerifiedGarbage.Proof.Curve448.AArch64.Neon.Arith
+public import VerifiedGarbage.Proof.Framework.Range
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Combining the halves' coefficients
@@ -8,6 +14,8 @@ Untrusted: everything here is checked by Lean. `foldS` turns the coefficients
 `S_q` into `S_d - S_{d+8}` (in `v_d`) and `-S_d` (in `v_{d+8}`); `foldU` adds
 `U_{d+8}` (in `v_{16+d}`) to both.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Curve448.AArch64.Neon
 

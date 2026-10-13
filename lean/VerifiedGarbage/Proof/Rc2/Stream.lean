@@ -1,6 +1,12 @@
-import VerifiedGarbage.Spec.Rc2.Contract
-import VerifiedGarbage.Proof.Rc2.CbcMemory
-import VerifiedGarbage.Proof.Framework.WriteBytes
+module
+
+public import VerifiedGarbage.Spec.Rc2.Contract
+public import VerifiedGarbage.Proof.Rc2.CbcMemory
+public import VerifiedGarbage.Proof.Framework.WriteBytes
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Streaming RC2-CBC: the contracts from memory facts
@@ -18,6 +24,8 @@ leaves, for implementations that
   the data to `ctx + 136`, and run CBC on `out` in place, with the schedule
   at `ctx` and the chaining value at `ctx + 128` (`update_post_long`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rc2
 

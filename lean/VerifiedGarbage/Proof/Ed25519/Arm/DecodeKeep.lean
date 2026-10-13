@@ -1,7 +1,16 @@
-import VerifiedGarbage.Proof.Ed25519.Arm.RecoverPoint
-import VerifiedGarbage.Proof.Ed25519.Arm.MulKeep
+module
+
+public import VerifiedGarbage.Proof.Ed25519.Arm.RecoverPoint
+public import VerifiedGarbage.Proof.Ed25519.Arm.MulKeep
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Decoding writes the saved sign and field workspace only. -/
+
+@[expose] public section
+
 namespace VG.Proof.Ed25519.Arm
 open VG VG.Arm VG.Impl.Ed25519.Arm VG.Proof.X25519.Arm
 

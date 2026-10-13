@@ -1,11 +1,19 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedPassOutput
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedCheckOutput
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseHintField
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseZ
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedCoordinates
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedRawField
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedPassOutput
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedCheckOutput
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseHintField
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseZ
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedCoordinates
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedRawField
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## From `PairedZUnused.lean` -/
+
+@[expose] public section
 
 section
 

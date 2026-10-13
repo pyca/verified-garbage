@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.AesGcm.X86_64
-import VerifiedGarbage.Impl.Poly1305.X86_64.Callee
+module
+
+public import VerifiedGarbage.Impl.AesGcm.X86_64
+public import VerifiedGarbage.Impl.Poly1305.X86_64.Callee
 
 /-!
 # ChaCha20-Poly1305 encryption out of place, from a list of slices: x86-64 implementation
@@ -32,6 +34,8 @@ branches are on `src_count`, the slices' lengths and the addresses in `dst`
 they go to alone.
 -/
 
+@[expose] public section
+
 namespace VG.Impl.ChaCha20Poly1305.X86_64.SealGather
 
 open VG.X86_64
@@ -53,6 +57,7 @@ def Width.ofBlocks : Impl.Poly1305.X86_64.Blocks → Width
   | .scalar => .x16
   | .avx2 => .y32
   | .avx512 => .z64
+  | .ifma => .z64
 
 /-- The number of bytes, a power of two. -/
 def Width.log : Width → Nat

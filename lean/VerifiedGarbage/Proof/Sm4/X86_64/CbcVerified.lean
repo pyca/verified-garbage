@@ -1,11 +1,25 @@
-import VerifiedGarbage.Proof.Sm4.X86_64.ModeCore
-import VerifiedGarbage.Proof.Modes.X86_64.CbcDecrypt
-import VerifiedGarbage.Proof.Modes.X86_64.CbcEncrypt
-import VerifiedGarbage.Proof.Sm4.CbcScratch
-import VerifiedGarbage.Impl.Sm4.X86_64.Cbc
-import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
-import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
-import VerifiedGarbage.Proof.Framework.Contract
+module
+
+public import VerifiedGarbage.Proof.Sm4.X86_64.ModeCore
+meta import VerifiedGarbage.Proof.Sm4.X86_64.ModeCore
+public import VerifiedGarbage.Proof.Modes.X86_64.CbcDecrypt
+meta import VerifiedGarbage.Proof.Modes.X86_64.CbcDecrypt
+public import VerifiedGarbage.Proof.Modes.X86_64.CbcEncrypt
+meta import VerifiedGarbage.Proof.Modes.X86_64.CbcEncrypt
+public import VerifiedGarbage.Proof.Sm4.CbcScratch
+meta import VerifiedGarbage.Proof.Sm4.CbcScratch
+public import VerifiedGarbage.Impl.Sm4.X86_64.Cbc
+meta import VerifiedGarbage.Impl.Sm4.X86_64.Cbc
+public import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
+meta import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
+public import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
+meta import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # SM4-CBC on x86-64 meets its contracts
@@ -19,6 +33,8 @@ everything the code computes from them; the IV is secret. `cbcEncrypt_framed`
 and `cbcDecrypt_framed` run them with their working space on the stack,
 zeroed on return: 3144 bytes, the 392 words of the scratch buffer and 8 more.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sm4
 
@@ -64,13 +80,13 @@ open VG.Proof.Sm4 (cbcDecX86_64 cbcEncX86_64)
 
 attribute [local irreducible] Spec.Sm4.invCipher in
 /-- The core's cipher is the contract's, without unfolding it (as `cipher_eq`). -/
-theorem invCipher_eq (k : Spec.Sm4.Schedule) : (dirCoreSpec .decrypt).cipher k = Spec.Sm4.invCipher k := rfl
+theorem invCipher_eq (k : Spec.Sm4.Schedule) : ((dirCoreSpec .decrypt).toBlock rfl).cipher k = Spec.Sm4.invCipher k := rfl
 
 theorem cbcDecrypt_wp {s₀ : State} (hp : cbcDecX86_64.pre s₀) :
     WP isa cbcDecrypt s₀ fun s' => gprPreserved s₀ s' ∧ cbcDecX86_64.post s₀ s' := by
   obtain ⟨hrd, hwr, dKD, dKS, dVD, dVS, dDS, dRD, dRS, fitK, fitV, fitD, fitB⟩ := hp
   have hwS : (⟨s₀.gpr .r8, 8 * slots⟩ : Region) ∈ s₀.wr := by rw [hwr]; simp
-  refine WP.mono (Proof.Modes.X86_64.cbcDecrypt_wp (dirCoreSpec .decrypt) (r := ⟨.rsi, .rdx, .rcx, .r8⟩)
+  refine WP.mono (Proof.Modes.X86_64.cbcDecrypt_wp ((dirCoreSpec .decrypt).toBlock rfl) (r := ⟨.rsi, .rdx, .rcx, .r8⟩)
     ⟨by decide, by decide, by decide⟩ (by decide)
     (B := s₀.gpr .r8) (P := s₀.gpr .rsi) (D := s₀.gpr .rdx) (n := (s₀.gpr .rcx).toNat)
     (k := Spec.Sm4.scheduleAt s₀.mem (s₀.gpr .rdi)) rfl rfl rfl rfl ⟨hwS, fitB⟩
@@ -176,13 +192,13 @@ theorem cbcDecrypt_framed :
 
 attribute [local irreducible] Spec.Sm4.cipher in
 /-- The core's cipher is the contract's, without unfolding it (as `cipher_eq`). -/
-theorem encCipher_eq (k : Spec.Sm4.Schedule) : (dirCoreSpec .encrypt).cipher k = Spec.Sm4.cipher k := rfl
+theorem encCipher_eq (k : Spec.Sm4.Schedule) : ((dirCoreSpec .encrypt).toBlock rfl).cipher k = Spec.Sm4.cipher k := rfl
 
 theorem cbcEncrypt_wp {s₀ : State} (hp : cbcEncX86_64.pre s₀) :
     WP isa cbcEncrypt s₀ fun s' => gprPreserved s₀ s' ∧ cbcEncX86_64.post s₀ s' := by
   obtain ⟨hrd, hwr, dKD, dKS, dVD, dVS, dDS, dRD, dRS, fitK, fitV, fitD, fitB⟩ := hp
   have hwS : (⟨s₀.gpr .r8, 8 * slots⟩ : Region) ∈ s₀.wr := by rw [hwr]; simp
-  refine WP.mono (Proof.Modes.X86_64.cbcEncrypt_wp (dirCoreSpec .encrypt) (r := ⟨.rsi, .rdx, .rcx, .r8⟩)
+  refine WP.mono (Proof.Modes.X86_64.cbcEncrypt_wp ((dirCoreSpec .encrypt).toBlock rfl) (r := ⟨.rsi, .rdx, .rcx, .r8⟩)
     ⟨by decide, by decide, by decide⟩ (by decide)
     (B := s₀.gpr .r8) (P := s₀.gpr .rsi) (D := s₀.gpr .rdx) (n := (s₀.gpr .rcx).toNat)
     (k := Spec.Sm4.scheduleAt s₀.mem (s₀.gpr .rdi)) rfl rfl rfl rfl ⟨hwS, fitB⟩

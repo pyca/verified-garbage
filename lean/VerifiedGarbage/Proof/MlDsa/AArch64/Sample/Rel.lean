@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Sponge
-import VerifiedGarbage.Proof.MlKem.AArch64.MemTaint
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Sponge
+public import VerifiedGarbage.Proof.MlKem.AArch64.MemTaint
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on AArch64: constant time of the sampling functions, piece by piece
@@ -13,6 +19,8 @@ analysis proves it constant time from registers that `J` makes equal
 `memTaint` does (`relMem`); by determinism, the runs then end in states that
 correctness describes (`relStep`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Sample
 

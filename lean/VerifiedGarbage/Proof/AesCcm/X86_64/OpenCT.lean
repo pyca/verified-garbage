@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.AesCcm.X86_64.SealCT
-import VerifiedGarbage.Proof.AesCcm.X86_64.Open
+module
+
+public import VerifiedGarbage.Proof.AesCcm.X86_64.SealCT
+meta import VerifiedGarbage.Proof.AesCcm.X86_64.SealCT
+public import VerifiedGarbage.Proof.AesCcm.X86_64.Open
+meta import VerifiedGarbage.Proof.AesCcm.X86_64.Open
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CCM on x86-64: `vg_aes_ccm_open` is constant time
@@ -11,6 +19,8 @@ the public arguments, between which correctness says each run keeps them
 (`openCmp_ok`), and the received tag is read from the same address `tag`,
 which correctness says is still on the stack (`loadTag_ok`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Setup
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.Setup
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDSA on AArch64: field operations on numbered slots
@@ -9,6 +15,8 @@ operation writing slot `o` keeps every other slot but the temporary area's
 (`sv_keep`) and the moduli (`ModOkA.keepA64`); and what a slot stands for after
 a multiplication by `1` or by `R² mod m` (`toM_one_mul`, `toM_r2`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.AArch64
 
@@ -72,5 +80,35 @@ theorem slAdd_ok {M : Mod} {m : Nat} (hMn : M.n = c.n) (h7 : c.n < 10) {base : A
     (by rw [hMn]; exact sl_le c h7 ha) (by rw [hMn]; exact sl_le c h7 hb) (sl_mod8 c o) (sl_mod8 c a) (sl_mod8 c b) (by rw [hMn]; exact hAB)
   rw [hMn] at this
   exact this
+
+/-- A slot but `TMP`'s is below the products' functions' own working space. -/
+theorem sl_own_fn (c : Cfg) (h7 : c.n < 10) {i : Nat} (hi : i < 45) (hT : i ≠ TMP) :
+    c.sl i + 8 * c.n ≤ VG.Proof.Weierstrass.AArch64.Mont.own c.n := by
+  rw [sl_eq c i hT]
+  have := Nat.mul_le_mul_left (8 * c.n) (show i ≤ 44 by omega)
+  simp only [VG.Proof.Weierstrass.AArch64.Mont.own, Spec.Weierstrass.Mont.ownAt,
+    Spec.Weierstrass.Mont.ownBytes]
+  omega
+
+/-- `[o] = [a] [b] R⁻¹ mod n`, on slots, by a call or inline (`Cfg.mulNP`). -/
+theorem slMulN_ok (hc : BaseCfgOk c) {base : Addr} {s : State}
+    (hs : Scr s base size) (hM : ModOkA c.MN' size c.C.n s.mem base) {o a b : Nat} (ho : o < 45)
+    (ha : a < 45) (hb : b < 45) (hoT : o ≠ TMP) (haT : a ≠ TMP) (hbT : b ≠ TMP)
+    (hB : sv c base s b < c.C.n) :
+    WP isa (c.mulNP (c.sl o) (c.sl a) (c.sl b)) s fun s' => OpKeep c.MN' base (c.sl o) s s' ∧
+      sv c base s' o < c.C.n ∧ sv c base s' o * 2 ^ (64 * c.n) % c.C.n = sv c base s a * sv c base s b % c.C.n := by
+  have h7 := hc.n10
+  unfold Cfg.mulNP
+  split
+  · next f m h =>
+    obtain ⟨rfl, hH⟩ := hc.call_n f m h
+    have htmp : c.MN'.tmp = VG.Impl.Weierstrass.AArch64.Mont.moAt c.MN'.n := by
+      unfold VG.Impl.Weierstrass.AArch64.Mont.callOf at h
+      split at h
+      · assumption
+      · cases h
+    exact VG.Proof.Weierstrass.AArch64.Mont.mulCall_ok (M := c.MN') hs hM hH htmp
+      (sl_own_fn c h7 ho hoT) (sl_own_fn c h7 ha haT) (sl_own_fn c h7 hb hbT) hB
+  · exact slMul_ok (MN'_n c) h7 hs hM (MN'_A c) ho ha hb hB
 
 end VG.Proof.Ecdsa.AArch64

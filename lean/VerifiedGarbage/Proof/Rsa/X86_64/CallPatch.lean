@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.CallPost
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtContract
-import VerifiedGarbage.Proof.Bignum.X86_64.PcCode
-import VerifiedGarbage.Proof.Rsa.X86_64.PubChecked
-import VerifiedGarbage.Proof.Rsa.X86_64.RpCode
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.CallPost
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtContract
+public import VerifiedGarbage.Proof.Bignum.X86_64.PcCode
+public import VerifiedGarbage.Proof.Rsa.X86_64.PubChecked
+public import VerifiedGarbage.Proof.Rsa.X86_64.RpCode
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The RSA functions' postconditions do not read the return address
@@ -12,6 +18,8 @@ x86-64 RSA functions that call `vg_rsa_mont_mul`: their postconditions read
 memory only in their writable buffers, which a precondition with `Clear`
 keeps off the 8 bytes below `rsp`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64
 

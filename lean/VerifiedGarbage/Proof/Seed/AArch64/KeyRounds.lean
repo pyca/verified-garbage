@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Seed.AArch64.KeyRound
-import VerifiedGarbage.Proof.Seed.KeySchedule
+module
+
+public import VerifiedGarbage.Proof.Seed.AArch64.KeyRound
+public import VerifiedGarbage.Proof.Seed.KeySchedule
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The sixteen rounds of the key schedule on AArch64
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.Seed.KeySchedule
 round `n + 1` (`keyWords`), and the lanes of `G`'s first `2 * n` inputs hold
 them (`gInput`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Seed.AArch64
 

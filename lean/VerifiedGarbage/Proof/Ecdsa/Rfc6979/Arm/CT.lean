@@ -1,7 +1,17 @@
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Correct
-import VerifiedGarbage.Proof.Framework.Arm.RelCT
-import VerifiedGarbage.Proof.Framework.Arm.Taint
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Correct
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Correct
+public import VerifiedGarbage.Proof.Framework.Arm.RelCT
+meta import VerifiedGarbage.Proof.Framework.Arm.RelCT
+public import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Deterministic ECDSA on 32-bit ARM: constant time, up to the number of candidates
@@ -20,6 +30,8 @@ iff `i` is before the candidate it stops at (`go_iff`). The prologue's first
 instruction reads `sp`, which agrees (`start_blk`), and the frame's
 allocation and release access no memory (`alloc_ct`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Rfc6979.Arm
 

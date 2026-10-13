@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Ecdh.Arm
+module
+
+public import VerifiedGarbage.Impl.Ecdh.Arm
 
 /-!
 # ECDSA signature verification on 32-bit ARM
@@ -35,6 +37,8 @@ through `r2` and `r0` after them. Everything is computed whatever the flag,
 and only the pointers affect timing, although the contract would let every
 input affect it.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Ecdsa.Verify.Arm
 

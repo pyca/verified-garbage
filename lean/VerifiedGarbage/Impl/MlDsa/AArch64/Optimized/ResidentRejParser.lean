@@ -1,7 +1,12 @@
-import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.RejNtt4
+module
+
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.RejNtt4
 
 /-! Fixed-address vector parsing for the matrix sampler. Failed vector
 acceptance falls back to the existing ordered scalar acceptance operation. -/
+
+@[expose] public section
+
 namespace VG.Impl.MlDsa.AArch64.Optimized.ResidentRej
 open VG VG.AArch64 VG.Impl.MlDsa.AArch64.Sample
 open VG.Impl.MlKem.AArch64 (mov)
@@ -15,9 +20,10 @@ def scalarChunk : List Instr :=
 def scalarLoop : Prog isa :=
  .loop (.block (scalarChunk ++ rnAccept ++ ([.mul .x .x16 .x4 .x5] : List Instr))) (.nonzero .x .x16)
 
-def setup (k off n : Nat) : List Instr :=
-  ([.addImm .x .x2 .x19 (840+1008*k),.addImm .x .x2 .x2 off,
-   .addImm .x .x3 .x21 (1024*k),.ldr .x .x4 .x19 (counts+8*k),
+-- A segment's input, output and count slot are in x24, x25 and x26, which
+-- `segments` advances from one stream to the next.
+def setup (n : Nat) : List Instr :=
+  ([mov .x2 .x24,mov .x3 .x25,.ldr .x .x4 .x26 0,
    .movz .x .x6 256 0,.sub .x .x6 .x6 .x4,.lsl .x .x6 .x6 2,
    .add .x .x3 .x3 .x6,.movz .x .x5 n 0] : List Instr) ++ movQ .x9 ++ ([.movz .x .x10 127 0] : List Instr)
 
@@ -81,9 +87,20 @@ def parse (v : Nat) : Prog isa :=
  .seq (.block (vectorSetup++([.movz .x .x17 16 0] : List Instr)++wideGuard)) <|
  .seq (.ite (.zero .x .x16) (.block []) (.loop wideBody (.nonzero .x .x16))) (parse4 v)
 
-def segment (v k off n : Nat) : Prog isa :=
- .seq (.block (setup k off n)) <| .seq (parse v) <|
- .block [.str .x .x4 .x19 (counts+8*k)]
+def segmentNext : List Instr :=
+ [.str .x .x4 .x26 0,.addImm .x .x24 .x24 1008,.addImm .x .x25 .x25 1024,
+  .addImm .x .x26 .x26 8,.subImm .x .x27 .x27 1]
 
+def segment (v n : Nat) : Prog isa :=
+ .seq (.block (setup n)) <| .seq (parse v) <| .block segmentNext
+
+def segmentsInit (off count : Nat) : List Instr :=
+ [.addImm .x .x24 .x19 (840+off),mov .x25 .x21,
+  .addImm .x .x26 .x19 (counts/2),.addImm .x .x26 .x26 (counts/2),.movz .x .x27 count 0]
+
+/-- Parses `n` candidates at offset `off` of each of the first `count`
+streams' buffers, one stream per iteration. -/
+def segments (v off n count : Nat) : Prog isa :=
+ .seq (.block (segmentsInit off count)) (.loop (segment v n) (.nonzero .x .x27))
 
 end VG.Impl.MlDsa.AArch64.Optimized.ResidentRej

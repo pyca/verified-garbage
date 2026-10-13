@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Sha512.Arm
-import VerifiedGarbage.Impl.MdStream.Arm
+module
+
+public import VerifiedGarbage.Impl.Sha512.Arm
+public import VerifiedGarbage.Impl.MdStream.Arm
 
 /-!
 # Streaming SHA-512: 32-bit ARM implementation
@@ -17,6 +19,8 @@ value is stored little-endian, so as its low half followed by its high half.
   then `count << 3` (modulo 2⁶⁴); the words of the final hash value are
   big-endian.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Sha512.Arm.Stream
 

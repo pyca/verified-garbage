@@ -1,7 +1,15 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareCross
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareDiagonalChoice
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareCross
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareDiagonalChoice
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! The full, unreduced ADX square in the Montgomery working space. -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64.AdxSquare
 
@@ -23,13 +31,32 @@ theorem square_decomposition (m : Mem) (B : Addr) (eb w : Nat) :
   rw [value_words] at h
   exact (Nat.add_comm _ _).trans h.symm
 
+/-- A diagonal: doubles the cross products at `A` and adds the squares of
+the words at `eb`, for sizes `w` with `P w`. -/
+structure DiagOk (diag : Prog isa) (P : Nat → Prop) : Prop where
+  ok : ∀ {s : State} {B : Addr} {Z A eb w : Nat}, Scr s B Z →
+    s.gpr .r8 = off B A → s.gpr .r9 = off B eb → s.gpr .r10 = BitVec.ofNat 64 w → 0 < w → w < 2^60 →
+    P w → A+16*w ≤ Z → eb+8*w ≤ Z → (eb+8*w ≤ A ∨ A+16*w ≤ eb) →
+    WP isa diag s fun t =>
+      wv t.mem B A (2*w) + 2^(128*w)*(t.gpr .r15).toNat =
+        2*wv s.mem B A (2*w) + diagonalValue s.mem B eb w ∧
+      Outside B A (16*w) s.mem t.mem ∧
+      Keep [.rdx,.r11,.r12,.rsi,.rbx,.rax,.rcx,.r15,.rbp,.r14] s t
+
+theorem diagonalChoice_diag : DiagOk AdxSquare.diagonalChoice (fun _ => True) :=
+  ⟨fun hs h8 h9 h10 h0 hw _ hA hb sep => diagonalChoice_ok hs h8 h9 h10 h0 hw hA hb sep⟩
+
+theorem diagonal4_diag : DiagOk AdxSquareGrouped.diagonal (fun w => w % 4 = 0) :=
+  ⟨fun hs h8 h9 h10 h0 hw h4 hA hb sep => AdxSquareGrouped.diagonal_ok hs h8 h9 h10 h0 hw h4 hA hb sep⟩
+
 /-- All `2 w` product words are the exact square; the two high padding
 words are zero. The input and header are preserved. -/
-theorem rawSquare_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64}
+theorem rawSquareWith_ok {diag : Prog isa} {P : Nat → Prop} (hd : DiagOk diag P)
+    {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64}
     (hs : Scr s B Z) (hdi : s.gpr .rdi = B) (hH : Hdr s.mem B w minv)
-    (hZ : slot w 8 ≤ Z) (hw1 : 2 ≤ w) (hw : w < 2 ^ 31)
+    (hZ : slot w 8 ≤ Z) (hw1 : 2 ≤ w) (hw : w < 2 ^ 31) (hP : P w)
     {a : Nat} (ha : a < 8) (ha1 : a ≠ aAcc) (ha2 : a ≠ aTmp) :
-    WP isa (AdxSquare.rawSquare a) s fun t =>
+    WP isa (AdxSquare.rawSquareWith diag a) s fun t =>
       wv t.mem B (slot w aAcc + 16) (2 * w + 2) =
         wv s.mem B (slot w a) w * wv s.mem B (slot w a) w ∧
       wv t.mem B (slot w aAcc + 16) (2 * w) =
@@ -49,7 +76,7 @@ theorem rawSquare_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64}
     unfold A eb slot aAcc aTmp at *
     omega
   have hg : hdrBytes ≤ A := by unfold A slot; omega
-  unfold AdxSquare.rawSquare
+  unfold AdxSquare.rawSquareWith
   refine WP.seq (WP.mono (adxSetup_ok hs hdi hH hZ ha) fun s₁ ⟨h9₁, _, h8₁, hbx₁, hm₁, k₁⟩ => ?_)
   refine WP.seq (WP.mono (cross_ok (hs.congr k₁.2.2) h8₁ h9₁ hbx₁ hw1 (by omega) hA hb sb)
     fun s₂ ⟨hv₂, ho₂, hz₂, k₂⟩ => ?_)
@@ -73,8 +100,8 @@ theorem rawSquare_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64}
       (by xrun [hbx₃]) rfl) fun t ⟨h, k⟩ => ⟨h.1, h.2, k⟩
   refine WP.seq (WP.mono mov fun s₄ ⟨h10₄, hm₄, k₄⟩ => ?_)
   have k14 := (k12.trans k₃).trans k₄
-  refine WP.mono (diagonalChoice_ok (hs.congr k14.2.2) ((k₄.gpr (by decide)).trans h8₃)
-    ((k₄.gpr (by decide)).trans h9₃) h10₄ (by omega) (by omega) (by omega) hb (by omega))
+  refine WP.mono (hd.ok (hs.congr k14.2.2) ((k₄.gpr (by decide)).trans h8₃)
+    ((k₄.gpr (by decide)).trans h9₃) h10₄ (by omega) (by omega) hP (by omega) hb (by omega))
     fun t ⟨hv, ho, kt⟩ => ?_
   rw [hm₄, hm₃] at hv ho
   rw [lo₂, diagonalValue_congr read₂, square_decomposition] at hv
@@ -100,5 +127,17 @@ theorem rawSquare_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64}
     (k14.trans kt).mono (by decide)⟩
   rw [wv_add, high, Nat.mul_zero, Nat.add_zero]
   exact low
+
+theorem rawSquare_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64}
+    (hs : Scr s B Z) (hdi : s.gpr .rdi = B) (hH : Hdr s.mem B w minv)
+    (hZ : slot w 8 ≤ Z) (hw1 : 2 ≤ w) (hw : w < 2 ^ 31)
+    {a : Nat} (ha : a < 8) (ha1 : a ≠ aAcc) (ha2 : a ≠ aTmp) :
+    WP isa (AdxSquare.rawSquare a) s fun t =>
+      wv t.mem B (slot w aAcc + 16) (2 * w + 2) =
+        wv s.mem B (slot w a) w * wv s.mem B (slot w a) w ∧
+      wv t.mem B (slot w aAcc + 16) (2 * w) =
+        wv s.mem B (slot w a) w * wv s.mem B (slot w a) w ∧
+      Outside B (slot w aAcc + 16) (8 * (2 * w + 2)) s.mem t.mem ∧ Keep mmRegs s t :=
+  rawSquareWith_ok diagonalChoice_diag hs hdi hH hZ hw1 hw trivial ha ha1 ha2
 
 end VG.Proof.Bignum.X86_64.AdxSquare

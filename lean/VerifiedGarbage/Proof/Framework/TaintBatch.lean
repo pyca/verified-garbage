@@ -1,4 +1,7 @@
-import VerifiedGarbage.Proof.Framework.Taint
+module
+
+public import VerifiedGarbage.Proof.Framework.Taint
+public meta import VerifiedGarbage.Proof.Framework.Taint
 
 /-!
 # Many decidable checks in one kernel evaluation
@@ -17,13 +20,15 @@ The goals may be any decidable propositions (e.g. `allInstrs` checks or
 hypotheses.
 -/
 
+public meta section
+
 namespace VG
 
 open Lean Meta Elab Tactic
 
 /-- The applications `Taint.check M A τ c ?h` of `e`, whose hint `?h` is an
 unassigned metavariable. -/
-private partial def checksWithHole (e : Expr) (acc : Array Expr) : Array Expr :=
+private meta partial def checksWithHole (e : Expr) (acc : Array Expr) : Array Expr :=
   let acc := e.getAppArgs.foldl (fun acc a => checksWithHole a acc) acc
   let acc := match e.getAppFn with
     | .lam _ t b _ | .forallE _ t b _ => checksWithHole b (checksWithHole t acc)
@@ -33,7 +38,7 @@ private partial def checksWithHole (e : Expr) (acc : Array Expr) : Array Expr :=
   if e.isAppOfArity ``Taint.check 5 && e.getAppArgs[4]!.isMVar then acc.push e else acc
 
 /-- A `Decidable` instance of `t`, built conjunct by conjunct. -/
-private partial def decAnd (t : Expr) : MetaM Expr := do
+private meta partial def decAnd (t : Expr) : MetaM Expr := do
   if t.isAppOfArity ``And 2 then
     let p := t.appFn!.appArg!
     let q := t.appArg!

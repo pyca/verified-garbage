@@ -1,6 +1,12 @@
-import VerifiedGarbage.TCB.X86_64.Isa
-import VerifiedGarbage.Proof.Framework.X86_64.Frame
-import VerifiedGarbage.Spec.Gcm
+module
+
+public import VerifiedGarbage.TCB.X86_64.Isa
+public import VerifiedGarbage.Proof.Framework.X86_64.Frame
+public import VerifiedGarbage.Spec.Gcm
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Interleaved counter mode and GHASH: what the loops need and do
@@ -17,6 +23,8 @@ algebra their proofs need (`Proof/Gcm/Poly.lean`), so that the functions
 calling the loops are proven for any loops and proof of `StitchOk`, which
 only the instances that use them import.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Gcm.X86_64.Stitch
 

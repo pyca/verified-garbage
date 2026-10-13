@@ -1,6 +1,12 @@
-import VerifiedGarbage.Impl.Seed.AArch64.Ecb
-import VerifiedGarbage.Proof.Seed.AArch64.G16
-import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+module
+
+public import VerifiedGarbage.Impl.Seed.AArch64.Ecb
+public import VerifiedGarbage.Proof.Seed.AArch64.G16
+public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The arrays of 32-bit words in the scratch buffer
@@ -13,6 +19,8 @@ instructions' effects on them, and `lanes_ok`, which runs a step written for
 one lane (`lanes16 f`, `f b` touching only lane `b` of each array) on all
 sixteen.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Seed.AArch64
 
@@ -209,15 +217,28 @@ theorem sp_setMem (s : State) (m : Mem) : (setMem s m).sp = s.sp := rfl
 
 /-! ## Instructions on lanes -/
 
-/-- The scratch buffer is writable. -/
-def Room (s : State) : Prop := scratchR s ∈ s.wr
+/-- The scratch buffer is writable: a writable region at `x5` holds it (and
+may hold more, such as the modes' slots after it). -/
+def Room (s : State) : Prop := ∃ n, 8 * scratchSlots ≤ n ∧ (⟨s.gpr .x5, n⟩ : Region) ∈ s.wr
+
+/-- What the scratch buffer contains is writable. -/
+theorem Room.wr {s : State} (h : Room s) {a : Addr} {m : Nat} (hc : (scratchR s).Contains a m) :
+    InRegions s.wr a m := by
+  obtain ⟨n, hn, hm⟩ := h
+  exact ⟨_, hm, by simp only [Region.Contains, scratchR] at hc ⊢; omega⟩
+
+theorem Room.rw {s : State} (h : Room s) {a : Addr} {m : Nat} (hc : (scratchR s).Contains a m) :
+    InRegions (s.rd ++ s.wr) a m :=
+  let ⟨r, hr, hc'⟩ := h.wr hc; ⟨r, List.mem_append_right _ hr, hc'⟩
+
+/-- The scratch buffer is exactly a writable region. -/
+theorem Room.of_mem {s : State} (h : scratchR s ∈ s.wr) : Room s := ⟨_, Nat.le_refl _, h⟩
 
 theorem lane_wr {s : State} (h : Room s) {k b : Nat} (hk : k ∈ arrays) (hb : b < 16) :
-    InRegions s.wr (laneA s k b) 4 := ⟨_, h, lane_in hk hb s⟩
+    InRegions s.wr (laneA s k b) 4 := h.wr (lane_in hk hb s)
 
 theorem lane_rw {s : State} (h : Room s) {k b : Nat} (hk : k ∈ arrays) (hb : b < 16) :
-    InRegions (s.rd ++ s.wr) (laneA s k b) 4 :=
-  ⟨_, List.mem_append_right _ h, lane_in hk hb s⟩
+    InRegions (s.rd ++ s.wr) (laneA s k b) 4 := h.rw (lane_in hk hb s)
 
 theorem laneOff_ok {k b : Nat} (hk : k ∈ arrays) (hb : b < 16) :
     laneOff k b % 4 = 0 ∧ laneOff k b < 16384 := by

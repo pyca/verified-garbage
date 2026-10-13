@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Ecdh.X86_64.Window
+module
+
+public import VerifiedGarbage.Proof.Ecdh.X86_64.Window
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDH on x86-64: what the whole function needs of its scalar multiplication
@@ -13,8 +19,11 @@ bits in the first table, and those of `p - 2` in the second. `MulW c W` is
 what the rest of the exchange needs of `W`: it keeps the constants
 (`FixedOk`), `d` (`D`) and the flag.
 
-`mulQ_ok` and `mulQ_w`: the window method (or the ladder), `mulPow_ok`.
+`mulQ_ok` and `mulQ_w`: the window method (or the ladder, inline or by a call of
+`vg_<curve>_mul`), `mulPow_ok`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdh.X86_64
 
@@ -54,7 +63,7 @@ def MulOk (c : Cfg) (mq : Prog isa) (W : List (Nat × Nat)) : Prop :=
     (∀ t < 64 * c.n, s.mem (off base (bitsAt c.n 0 + t)) = if k.testBit t then 1 else 0) →
     (¬ c.n ≤ 9 → ∀ t < 64 * c.n, s.mem (off base (bitsAt c.n 1 + t)) = if (c.C.p - 2).testBit t then 1 else 0) →
     ∀ {rest : Prog isa} {R : State → Prop}, (∀ s', MulPostW c W base P k s s' → WP isa rest s' R) →
-    WP isa (.seq mq.inline (.seq c.pPow rest)) s R
+    WP isa (.seq mq.inline (.seq c.pPow.inline rest)) s R
 
 /-- What the exchange needs of the areas `W` the multiplication writes: they
 keep the constants, `d` and the flag. -/
@@ -64,11 +73,13 @@ structure MulW (c : Cfg) (W : List (Nat × Nat)) : Prop where
   flag : ∀ w ∈ W, c.sl FLAG + 8 ≤ w.1 ∨ w.1 + w.2 ≤ c.sl FLAG
 
 /-- What `mulQ` (the window method or the ladder) and the power may write. -/
-abbrev mulQW (c : Cfg) : List (Nat × Nat) := winX c ++ slW c mulI ++ pwW c
+abbrev mulQW (c : Cfg) : List (Nat × Nat) :=
+  winX c ++ slW c mulI ++ pwW c ++ [(bitsAt c.n 0, 64 * c.n + 8)]
 
-theorem mulQ_ok (hc : BaseCfgOk c) (hC : Law c.C) : MulOk c (Impl.Ecdh.X86_64.Cfg.mulQ c) (mulQW c) :=
+theorem mulQ_ok (hc : BaseCfgOk c) (hC : Law c.C) (hm : c.mul.isSome = true → c.n = 4 ∧ c.mulFn.noCalls = true) :
+    MulOk c (Impl.Ecdh.X86_64.Cfg.mulQ c) (mulQW c) :=
   fun hs _ F hbp _ hP hpx hpy hrep hrx hry hrz _ hk hk8 ht₀ ht₁ _ _ h =>
-    mulPow_ok hc hC hs F hbp hP hpx hpy hrep hrx hry hrz hk hk8 ht₀ ht₁ fun s' L =>
+    mulPow_ok hc hC hs F hbp hP hpx hpy hrep hrx hry hrz hk hk8 ht₀ ht₁ hm fun s' L =>
       h s' ⟨L.scr, L.gpr _ (rsi_not_invClob _), L.rd, L.wr, L.unch,
         fun _ hn => L.q (Nat.lt_of_lt_of_le hn hc.n_bits), L.acc_lt, L.acc, L.rz_lt⟩
 

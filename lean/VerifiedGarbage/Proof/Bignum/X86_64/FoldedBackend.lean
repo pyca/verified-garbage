@@ -1,5 +1,15 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.FoldedCTChecked
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareBackend
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.FoldedCTChecked
+meta import VerifiedGarbage.Proof.Bignum.X86_64.FoldedCTChecked
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareBackend
+meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareBackend
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64.FoldedPublic
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public
@@ -10,8 +20,15 @@ theorem adx_final_ct : RelCT isa (Two GoodL) (Mont.adxSquare.mm aY aX aY) (fun _
     (by decide) (by decide) (by taint_decide) (by taint_decide) (by taint_decide)
     (by taint_decide) (by taint_decide) (by taint_decide) (by taint_decide))
 
+theorem base_final_ct : RelCT isa (Two GoodL) (Mont.base.mm aY aX aY) (fun _ _ => True) :=
+  RelCT.ofW (mm_ct (o := aY) (a := aX) (b := aY) (by decide) (by decide) (by decide) (by taint_decide))
+
 theorem adx_verified : Verified target (Impl.Rsa.X86_64.Folded.checked Mont.adxSquare.mm)
     (Spec.Rsa.publicPrecomputedCheckedContract abi) :=
-  checked_verified Mont.adxSquare (by decide +kernel) (by decide +kernel) adx_final_ct
+  checked_verified Mont.adxSquare (by decide +kernel) adx_final_ct
+
+theorem base_verified : Verified target (Impl.Rsa.X86_64.Folded.checked Mont.base.mm)
+    (Spec.Rsa.publicPrecomputedCheckedContract abi) :=
+  checked_verified Mont.base (by decide +kernel) base_final_ct
 
 end VG.Proof.Bignum.X86_64.FoldedPublic

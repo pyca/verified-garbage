@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.X25519.X86_64
-import VerifiedGarbage.Spec.Ed25519
+module
+
+public import VerifiedGarbage.Impl.X25519.X86_64
+public import VerifiedGarbage.Spec.Ed25519
 
 /-!
 # Ed25519 field operations on x86-64
@@ -8,6 +10,8 @@ Field elements reuse X25519's four-word representation and arithmetic.
 Slots 2 through 23 occupy bytes [64, 768) of the scratch buffer; the
 first 64 bytes are reserved for saved registers and pointers.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Ed25519.X86_64
 
@@ -102,9 +106,6 @@ def fieldCodeFrom (fld : Arith) : (Slot → Bool) → List FieldOp → List Inst
 /-- The field program `ops`, its sums and differences of products folded once
 (`fieldCodeFrom`, from no slot bounded). -/
 def fieldCode (fld : Arith) (ops : List FieldOp) : List Instr := fieldCodeFrom fld (fun _ => false) ops
-
-/-- `fieldCode` with the sums and differences folded once (`FieldOp.codeB`). -/
-def fieldCodeL (fld : Arith) (ops : List FieldOp) : List Instr := ops.flatMap (FieldOp.codeB fld true)
 
 /-- Add the points in slots 0–3 and 4–7 into slots 0–3. The coordinates
 are X,Y,Z,T. Slot 16 holds d; slots 8–15 are temporary. Both points are

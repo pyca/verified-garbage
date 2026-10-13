@@ -1,6 +1,14 @@
-import VerifiedGarbage.Proof.Rc2.X86.Save
-import VerifiedGarbage.TCB.X86.Target
-import VerifiedGarbage.Proof.Rc2.X86.KeyLoop
+module
+
+public import VerifiedGarbage.Proof.Rc2.X86.Save
+public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Proof.Rc2.X86.KeyLoop
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 section
 
@@ -163,6 +171,7 @@ theorem descendLoop_ok (s : State) (l : KeyBytes) (t8 : Nat) (ht : 1 ≤ t8) (ht
     (outFit : (s.gpr .edi).toNat + 128 ≤ 2 ^ 32)
     (len : s.gpr .esi = BitVec.ofNat 32 t8) (start : s.gpr .ecx = BitVec.ofNat 32 (128 - t8))
     (writable : ∀ i < 128, InRegions s.wr (addr32 (s.gpr .edi) + BitVec.ofNat 64 i) 1)
+    (lanes : InRegions s.wr (addr32 (s.gpr .edi)) 16)
     (initialPrefix : BytesPrefix s.mem (addr32 (s.gpr .edi)) l 128) :
     WP isa (.loop (.block descendKey) .ne) s (fun s' =>
       s'.gpr .ecx = 0 ∧ KeyFrame s s' ∧
@@ -203,7 +212,7 @@ theorem descendLoop_ok (s : State) (l : KeyBytes) (t8 : Nat) (ht : 1 ≤ t8) (ht
     rw [loAddr]; exact read₁ _ (by omega)
   have readHi : InRegions (s₁.rd ++ s₁.wr) (addr32 (s₁.gpr .edi + (s₁.gpr .ecx - 1 + s₁.gpr .esi))) 1 := by
     rw [hiAddr]; exact read₁ _ (by omega)
-  apply WP.mono (descendKey_ok s₁ readLo readHi write₁)
+  apply WP.mono (descendKey_ok s₁ readLo readHi write₁ (by rw [frame₁.wr, outPtr]; exact lanes))
   intro s₂ h₂
   let b := Spec.Rc2.pi ((descend l t8 j).getD (127 - t8 - j + 1) 0 ^^^
     (descend l t8 j).getD (127 - t8 - j + t8) 0)
@@ -245,6 +254,7 @@ theorem fillLoop_ok (s : State) (key : List Byte) (ht : 1 ≤ key.length) (ht' :
     (outFit : (s.gpr .edi).toNat + 128 ≤ 2 ^ 32)
     (len : s.gpr .esi = BitVec.ofNat 32 key.length) (start : s.gpr .ecx = BitVec.ofNat 32 key.length)
     (writable : ∀ i < 128, InRegions s.wr (addr32 (s.gpr .edi) + BitVec.ofNat 64 i) 1)
+    (lanes : InRegions s.wr (addr32 (s.gpr .edi)) 16)
     (initialPrefix : BytesPrefix s.mem (addr32 (s.gpr .edi)) (fill key 0) key.length) :
     WP isa (.loop (.block fillKey) .ne) s (fun s' =>
       s'.gpr .ecx = 128 ∧ KeyFrame s s' ∧
@@ -282,7 +292,7 @@ theorem fillLoop_ok (s : State) (key : List Byte) (ht : 1 ≤ key.length) (ht' :
     rw [loAddr]; exact read₁ _ (by omega)
   have readHi : InRegions (s₁.rd ++ s₁.wr) (addr32 (s₁.gpr .edi + (s₁.gpr .ecx - s₁.gpr .esi))) 1 := by
     rw [hiAddr]; exact read₁ _ (by omega)
-  apply WP.mono (fillKey_ok s₁ readLo readHi write₁)
+  apply WP.mono (fillKey_ok s₁ readLo readHi write₁ (by rw [frame₁.wr, outPtr]; exact lanes))
   intro s₂ h₂
   let b := Spec.Rc2.pi ((fill key j).getD (key.length + j - 1) 0 + (fill key j).getD j 0)
   have keep₂ : Keep keyTemps {s₁ with
@@ -382,6 +392,7 @@ theorem maybeFill_ok (s : State) (key : List Byte) (ht : 1 ≤ key.length) (ht' 
     (outFit : (s.gpr .edi).toNat + 128 ≤ 2 ^ 32)
     (len : s.gpr .esi = BitVec.ofNat 32 key.length) (start : s.gpr .ecx = BitVec.ofNat 32 key.length)
     (writable : ∀ i < 128, InRegions s.wr (addr32 (s.gpr .edi) + BitVec.ofNat 64 i) 1)
+    (lanes : InRegions s.wr (addr32 (s.gpr .edi)) 16)
     (initialPrefix : BytesPrefix s.mem (addr32 (s.gpr .edi)) (fill key 0) key.length) :
     WP isa (.seq (.block [.alu .cmp .ecx (.imm 128)])
       (.ite .ne (.loop (.block fillKey) .ne) (.block []))) s (fun s' =>
@@ -411,7 +422,8 @@ theorem maybeFill_ok (s : State) (key : List Byte) (ht : 1 ≤ key.length) (ht' 
       have initial : BytesPrefix s₁.mem (addr32 (s₁.gpr .edi)) (fill key 0) key.length := by
         rw [keep₁.mem, ptr₁]; exact initialPrefix
       apply WP.mono (fillLoop_ok s₁ key ht (by omega) (by rw [ptr₁]; exact outFit)
-        ((keep₁.reg .esi (by simp)).trans len) ((keep₁.reg .ecx (by simp)).trans start) writes initial)
+        ((keep₁.reg .esi (by simp)).trans len) ((keep₁.reg .ecx (by simp)).trans start) writes
+        (by rw [keep₁.wr, ptr₁]; exact lanes) initial)
       intro s₂ h₂
       exact ⟨h₂.1, frame₁.trans h₂.2.1, by rw [ptr₁] at h₂; exact h₂.2.2⟩
     · simp
@@ -453,6 +465,7 @@ theorem maybeDescend_ok (s : State) (l : KeyBytes) (t8 : Nat) (ht : 1 ≤ t8) (h
     (outFit : (s.gpr .edi).toNat + 128 ≤ 2 ^ 32)
     (len : s.gpr .esi = BitVec.ofNat 32 t8) (start : s.gpr .ecx = BitVec.ofNat 32 (128 - t8))
     (writable : ∀ i < 128, InRegions s.wr (addr32 (s.gpr .edi) + BitVec.ofNat 64 i) 1)
+    (lanes : InRegions s.wr (addr32 (s.gpr .edi)) 16)
     (initialPrefix : BytesPrefix s.mem (addr32 (s.gpr .edi)) l 128) :
     WP isa (.seq (.block [.alu .cmp .ecx (.imm 0)])
       (.ite .ne (.loop (.block descendKey) .ne) (.block []))) s (fun s' =>
@@ -485,7 +498,8 @@ theorem maybeDescend_ok (s : State) (l : KeyBytes) (t8 : Nat) (ht : 1 ≤ t8) (h
       have initial : BytesPrefix s₁.mem (addr32 (s₁.gpr .edi)) l 128 := by
         rw [keep₁.mem, ptr₁]; exact initialPrefix
       apply WP.mono (descendLoop_ok s₁ l t8 ht (by omega) (by rw [ptr₁]; exact outFit)
-        ((keep₁.reg .esi (by simp)).trans len) ((keep₁.reg .ecx (by simp)).trans start) writes initial)
+        ((keep₁.reg .esi (by simp)).trans len) ((keep₁.reg .ecx (by simp)).trans start) writes
+        (by rw [keep₁.wr, ptr₁]; exact lanes) initial)
       intro s₂ h₂
       exact ⟨frame₁.trans h₂.2.1, by rw [ptr₁] at h₂; exact h₂.2.2⟩
     · simp
@@ -533,6 +547,7 @@ theorem expandCopyFill_ok (s : State) (t : Nat) (ht : 1 ≤ t) (ht' : t ≤ 128)
     (len : s.gpr .esi = BitVec.ofNat 32 t) (zero : s.gpr .ecx = 0)
     (readable : ∀ i < t, InRegions (s.rd ++ s.wr) (addr32 (s.gpr .ebp) + BitVec.ofNat 64 i) 1)
     (writable : ∀ i < 128, InRegions s.wr (addr32 (s.gpr .edi) + BitVec.ofNat 64 i) 1)
+    (lanes : InRegions s.wr (addr32 (s.gpr .edi)) 16)
     (sep : (Region.mk (addr32 (s.gpr .ebp)) t).Disjoint ⟨addr32 (s.gpr .edi), 128⟩) :
     WP isa expandCopyFill s (fun s' => KeyFrame s s' ∧
       BytesPrefix s'.mem (addr32 (s.gpr .edi)) (fill (Spec.Rc2.bytesAt s.mem (addr32 (s.gpr .ebp)) t) (128 - t)) 128) := by
@@ -548,7 +563,8 @@ theorem expandCopyFill_ok (s : State) (t : Nat) (ht : 1 ≤ t) (ht' : t ≤ 128)
   apply WP.mono (maybeFill_ok s₁ (Spec.Rc2.bytesAt s.mem (addr32 (s.gpr .ebp)) t)
     (by rw [length]; exact ht) (by rw [length]; exact ht') (by rw [ptr₁]; exact outFit)
     (by rw [length]; exact (h₁.2.1.reg .esi (by decide)).trans len)
-    (by rw [length]; exact h₁.1) writes (by rw [ptr₁, length]; exact h₁.2.2))
+    (by rw [length]; exact h₁.1) writes (by rw [h₁.2.1.wr, ptr₁]; exact lanes)
+    (by rw [ptr₁, length]; exact h₁.2.2))
   intro s₂ h₂
   exact ⟨h₁.2.1.trans h₂.2.1, by rw [length, ptr₁] at h₂; exact h₂.2.2⟩
 
@@ -558,6 +574,7 @@ theorem reduceDescend_ok (s : State) (l : KeyBytes) (bits : Nat) (hb : 1 ≤ bit
     (index : s.gpr .ecx = BitVec.ofNat 32 (128 - (bits + 7) / 8))
     (mask : (s.gpr .ebx).setWidth 8 = BitVec.ofNat 8 (255 % 2 ^ (8 + bits - 8 * ((bits + 7) / 8))))
     (writable : ∀ i < 128, InRegions s.wr (addr32 (s.gpr .edi) + BitVec.ofNat 64 i) 1)
+    (lanes : InRegions s.wr (addr32 (s.gpr .edi)) 16)
     (initialPrefix : BytesPrefix s.mem (addr32 (s.gpr .edi)) l 128) :
     WP isa (.seq (.block reduceKey) (.seq (.block [.alu .cmp .ecx (.imm 0)])
       (.ite .ne (.loop (.block descendKey) .ne) (.block [])))) s (fun s' =>
@@ -570,7 +587,7 @@ theorem reduceDescend_ok (s : State) (l : KeyBytes) (bits : Nat) (hb : 1 ≤ bit
     obtain ⟨r, hr, hc⟩ := writes
     exact ⟨r, List.mem_append_right _ hr, hc⟩
   apply WP.seq
-  apply WP.mono (reduceKey_ok s reads writes)
+  apply WP.mono (reduceKey_ok s reads writes lanes)
   intro s₁ h₁
   have keep₁ := h₁.2
   rw [index, addr_add (by omega), initialPrefix _ (by omega), mask] at keep₁
@@ -583,6 +600,7 @@ theorem reduceDescend_ok (s : State) (l : KeyBytes) (bits : Nat) (hb : 1 ≤ bit
     rw [keep₁.wr, ptr₁]; exact writable
   apply WP.mono (maybeDescend_ok s₁ (reduce l bits) ((bits + 7) / 8) bound.1 bound.2 (by rw [ptr₁]; exact outFit)
     ((keep₁.reg .esi (by decide)).trans len) (h₁.1.trans index) write₁
+    (by rw [keep₁.wr, ptr₁]; exact lanes)
     (by rw [ptr₁]; exact prefix₁))
   intro s₂ h₂
   exact ⟨frame₁.trans h₂.1, by rw [ptr₁] at h₂; exact h₂.2⟩
@@ -592,6 +610,7 @@ theorem expandReduce_ok (s : State) (l : KeyBytes) (bits : Nat) (hb : 1 ≤ bits
     (readable : InRegions (s.rd ++ s.wr) (addr32 (s.gpr .esp + 12)) 4)
     (input : s.mem.readW (addr32 (s.gpr .esp + 12)) 32 = BitVec.ofNat 32 bits)
     (writable : ∀ i < 128, InRegions s.wr (addr32 (s.gpr .edi) + BitVec.ofNat 64 i) 1)
+    (lanes : InRegions s.wr (addr32 (s.gpr .edi)) 16)
     (initialPrefix : BytesPrefix s.mem (addr32 (s.gpr .edi)) l 128) :
     WP isa expandReduce s (fun s' => CoreFrame s s' ∧ BytesPrefix s'.mem (addr32 (s.gpr .edi))
       (descend (reduce l bits) ((bits + 7) / 8) (128 - (bits + 7) / 8)) 128) := by
@@ -613,6 +632,7 @@ theorem expandReduce_ok (s : State) (l : KeyBytes) (bits : Nat) (hb : 1 ≤ bits
     rw [frame.wr, ptr₂]; exact writable
   apply WP.mono (reduceDescend_ok s₂ l bits hb hb' (by rw [ptr₂]; exact outFit)
     ((h₂.2.reg .esi (by decide)).trans len₁) ((h₂.2.reg .ecx (by decide)).trans index₁) h₂.1 writes
+    (by rw [frame.wr, ptr₂]; exact lanes)
     (by rw [ptr₂, h₂.2.mem, keep₁.mem]; exact initialPrefix))
   intro s₃ h₃
   exact ⟨frame.trans (CoreFrame.of_key h₃.1), by rw [ptr₂] at h₃; exact h₃.2⟩

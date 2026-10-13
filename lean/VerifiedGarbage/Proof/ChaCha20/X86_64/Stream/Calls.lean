@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Stream.Bytes
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Variant
+module
+
+public import VerifiedGarbage.Proof.ChaCha20.X86_64.Stream.Bytes
+public import VerifiedGarbage.Proof.ChaCha20.X86_64.Variant
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Streaming ChaCha20 on x86-64: the calls
@@ -8,6 +14,8 @@ Untrusted: everything here is checked by Lean. The calls of
 `vg_chacha20_block` and of an implementation of `vg_chacha20_xor`, from their
 proofs of correctness (with `WP.call`), as ChaCha20-Poly1305 makes them.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.ChaCha20.X86_64.Stream
 

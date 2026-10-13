@@ -1,7 +1,16 @@
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointPublic
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointMain
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointPublic
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointMain
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Split the public joint verifier at the scalar and point-operation boundaries. -/
+
+@[expose] public section
+
 namespace VG.Proof.Ecdsa.Verify.X86_64
 open VG VG.X86_64 VG.Impl.Ecdsa.X86_64 VG.Impl.Weierstrass.X86_64
 open VG.Proof.Ecdsa.X86_64 VG.Proof.Weierstrass.X86_64
@@ -12,8 +21,8 @@ def jointPrefix (c : Cfg) : Prog isa :=
   .seq (.block (Impl.Ecdsa.Verify.X86_64.Cfg.loadS c)) <|
   .seq (.block (Impl.Ecdh.X86_64.Cfg.peer c)) <|
   .seq (Impl.Ecdh.X86_64.Cfg.validate c) <|
-  .seq (Impl.Ecdsa.Verify.X86_64.Cfg.scalars c) <| .seq c.nPow <|
-  .seq (Impl.Ecdsa.Verify.X86_64.Cfg.uv c) (.block [])
+  .seq (Impl.Ecdsa.Verify.X86_64.Cfg.scalars c).inline <| .seq c.nPow.inline <|
+  .seq (Impl.Ecdsa.Verify.X86_64.Cfg.uv c).inline (.block [])
 
 theorem jointPrefix_ok {c : Cfg} (hc : CfgOk c) {s₀ : State} (hp : VPre c s₀) :
     WP isa (jointPrefix c) s₀ fun s => ∃ g,Mid c s₀ (s₀.gpr .rcx) g s := by

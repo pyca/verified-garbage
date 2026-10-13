@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.MontFnAdx
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontFnAdx
+meta import VerifiedGarbage.Proof.Bignum.X86_64.MontFnAdx
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_mont_mul_adx`: constant time
@@ -10,6 +17,8 @@ tiles are constant time for the slots the head wrote (`Ops`), and the
 baseline's rounds from the bases; the tail addresses only from `rdi`, which
 no instruction of the body writes.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64
 
@@ -110,9 +119,9 @@ theorem tiled_ct : RelCT isa (Two fun d s => (AdxMid d s ∧ s.zf = some (decide
     obtain ⟨-, ha, -, -, -, ha1, ha2, -⟩ := h₁.1.2.2.2.2.1
     obtain ⟨ht, -, u₁, u₂⟩ := two_post (α := Unit)
       (two_map (fun _ => adxLayout d hZ hA) (fun _ _ h => h)
-        (AdxTiledSquare.raw_ct (ps := adxOps d.o d.a d.b) (mem_adxOps_a _ _ _) ha ha1 ha2
+        (AdxTiledSquare.rawBare_ct (ps := adxOps d.o d.a d.b) (mem_adxOps_a _ _ _) ha ha1 ha2
           (by taint_decide) (by taint_decide) (by taint_decide)))
-      (fun _ s h => AdxTiledSquare.raw_fw (mem_adxOps_a _ _ _) ha ha1 ha2 (adxLayout d hZ hA) s h)
+      (fun _ s h => AdxTiledSquare.rawBare_fw (mem_adxOps_a _ _ _) ha ha1 ha2 (adxLayout d hZ hA) s h)
       _ _ _ _ _ _ ⟨(), goodV_of_mid h₁ hZ hA, goodV_of_mid h₂ hZ hA⟩ e₁' e₂'
     exact ⟨ht, ⟨d, hZ, hA⟩, u₁, u₂⟩
   · rintro s₁ s₂ t₁ t₂ s₁' s₂' ⟨d, ⟨⟨⟨h₁, hA⟩, -⟩, -⟩, ⟨⟨h₂, -⟩, -⟩, -⟩ e₁' e₂'
@@ -120,9 +129,9 @@ theorem tiled_ct : RelCT isa (Two fun d s => (AdxMid d s ∧ s.zf = some (decide
     obtain ⟨-, ha, hb, -, -, ha1, ha2, hb1, hb2⟩ := h₁.1.2.2.2.2.1
     obtain ⟨ht, -, u₁, u₂⟩ := two_post (α := Unit)
       (two_map (fun _ => adxLayout d hZ hA) (fun _ _ h => h)
-        (AdxTiledProduct.raw_ct (ps := adxOps d.o d.a d.b) (mem_adxOps_a _ _ _) (mem_adxOps_b _ _ _) ha hb
+        (AdxTiledProduct.rawBare_ct (ps := adxOps d.o d.a d.b) (mem_adxOps_a _ _ _) (mem_adxOps_b _ _ _) ha hb
           ha1 ha2 hb1 hb2 (by taint_decide) (by taint_decide)))
-      (fun _ s h => AdxTiledProduct.raw_fw (mem_adxOps_a _ _ _) (mem_adxOps_b _ _ _) ha hb ha1 ha2 hb1 hb2
+      (fun _ s h => AdxTiledProduct.rawBare_fw (mem_adxOps_a _ _ _) (mem_adxOps_b _ _ _) ha hb ha1 ha2 hb1 hb2
         (adxLayout d hZ hA) s h)
       _ _ _ _ _ _ ⟨(), goodV_of_mid h₁ hZ hA, goodV_of_mid h₂ hZ hA⟩ e₁' e₂'
     exact ⟨ht, ⟨d, hZ, hA⟩, u₁, u₂⟩

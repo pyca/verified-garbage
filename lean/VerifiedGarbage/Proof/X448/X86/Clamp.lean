@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.X448.X86.BitWrite
+module
+
+public import VerifiedGarbage.Proof.X448.X86.BitWrite
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 on x86 (32-bit): clamping the scalar bits
@@ -6,13 +12,11 @@ import VerifiedGarbage.Proof.X448.X86.BitWrite
 Clear bits zero and one, and set bit 447, as RFC 7748 requires.
 -/
 
+@[expose] public section
+
 namespace VG.Proof.X448.X86
 
 open VG VG.X86 VG.Impl.X448.X86
-
-def clamp : List Instr :=
-  [.mov .edx (.imm 0), .store8 (sc BITS) .dl, .store8 (sc (BITS + 1)) .dl,
-    .mov .edx (.imm 1), .store8 (sc (BITS + 447)) .dl]
 
 def clampMem (m : Mem) (base : Addr) : Mem :=
   ((m.writeW (off base BITS) (0 : BitVec 8)).writeW (off base (BITS + 1))

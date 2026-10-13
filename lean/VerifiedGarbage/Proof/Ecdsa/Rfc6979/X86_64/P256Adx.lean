@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.P256
-import VerifiedGarbage.Proof.Ecdsa.X86_64.VerifiedAdx
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.P256
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.P256
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.VerifiedAdx
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.VerifiedAdx
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Deterministic ECDSA on x86-64: P-256 with BMI2 and ADX
@@ -8,6 +16,8 @@ As `P256.lean`, with `vg_ecdsa_p256_sign_adx` (`p256x`, P-256 multiplying
 with BMI2 and ADX), proven correct and constant time against the same
 contract; `p256Of` is either.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Rfc6979.X86_64
 
@@ -31,13 +41,13 @@ def p256x (hL : Weierstrass.Law Spec.P256.curve)
   sh_eq := Proof.Ecdsa.X86_64.p256_sh
   coreN := Spec.Ecdsa.P256.signApi.name ++ "_adx"
   coreC := Impl.Ecdsa.X86_64.signP256Adx
-  coreX := by rw [coreK_p256x]; exact fun s h _ => Proof.Ecdsa.X86_64.sign_x86_adx hL hT hI s h
+  coreX := by rw [coreK_p256x]; exact Proof.Ecdsa.X86_64.sign_call_x86_adx hL hT hI
   coreCT := by rw [coreK_p256x]; exact Proof.Ecdsa.X86_64.sign_ct_adx
   coreNs := by lit_decide
   coreSp := by lit_decide
   coreMx := by lit_decide
   coreD := by lit_decide
-  reduceT := Function.const _ ⟨_, by taint_decide⟩
+  reduceT := by exact (Function.const _ ⟨_, by taint_decide⟩)
   reduceSp := Function.const _ (by decide +kernel)
   reduceMx := Function.const _ (by decide +kernel)
 

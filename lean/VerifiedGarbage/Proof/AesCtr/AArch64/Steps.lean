@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.AesCtr.Ctr32
-import VerifiedGarbage.Proof.AesCbc.AArch64.Body
-import VerifiedGarbage.Impl.AesCtr.AArch64
+module
+
+public import VerifiedGarbage.Proof.AesCtr.Ctr32
+public import VerifiedGarbage.Proof.AesCbc.AArch64.Body
+public import VerifiedGarbage.Impl.AesCtr.AArch64
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CTR on AArch64: the code between the calls
@@ -11,6 +17,8 @@ blocks of the call (`count`, `min left (2³² − lo32 t)`), its arguments
 (`adv`), and the carry into the first 96 bits (`carry`, whose block is
 `t + 2³²`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesCtr.AArch64
 

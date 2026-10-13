@@ -1,10 +1,19 @@
-import VerifiedGarbage.Proof.P521.X86_64.TaintSumsBase
+module
+
+public import VerifiedGarbage.Proof.P521.X86_64.TaintSumsBase
+meta import VerifiedGarbage.Proof.P521.X86_64.TaintSumsBase
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # P-521 on x86-64 with BMI2 and ADX: summaries of ECDH's window method
 
 As `TaintSumsWin.lean`, for `p521x`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.P521.X86_64
 
@@ -26,7 +35,8 @@ theorem winKX_ok : p521XT.Ok winKX.M := p521XHT_ok
 
 taint_summary winBuildJXSum : taintS τB winBuildJX
 taint_summary_map winNormJXSum : taintS τB winNormJX via taintS_eraseInv
-  (by simp only [winNormJX, WinCfg.normTbl, Code.mapBlocks, winKX_ok.fprogB]; rfl :
+  (by simp only [winNormJX, WinCfg.normTbl, WinCfg.seqRange, WinCfg.prodStep, WinCfg.backStep,
+    WinCfg.backOne, WinCfg.mulTb, WinCfg.mulTx, Code.mapBlocks, winKX_ok.fprogB]; rfl :
     Code.mapBlocks Instr.erase winNormJX = _)
 taint_summary_map winLoopJXSum : taintS τL winLoopJX via taintS_eraseInv
   (by simp only [winLoopJX, WinCfg.stepJ, WinCfg.quadJ, WinCfg.jacPairOn, WinCfg.sumJ, Code.mapBlocks,

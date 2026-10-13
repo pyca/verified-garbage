@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Wide
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Core
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Reduce
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Search
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Wide
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Core
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Reduce
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Search
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Deterministic ECDSA on x86 (32-bit): the candidates
@@ -15,6 +21,8 @@ the digest's (`DgOk`). One iteration either moves to candidate `i + 1`,
 branching back, or leaves the loop with the signature of candidate `i`,
 which is suitable or the last (`tryOne_ok`, `loop_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Rfc6979.X86
 

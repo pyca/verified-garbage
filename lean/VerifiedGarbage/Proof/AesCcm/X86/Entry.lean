@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesCcm.X86.Crypt
-import VerifiedGarbage.Proof.AesGcm.X86.Top
+module
+
+public import VerifiedGarbage.Proof.AesCcm.X86.Crypt
+public import VerifiedGarbage.Proof.AesGcm.X86.Top
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CCM on x86: the entry and the exit
@@ -9,6 +15,8 @@ our caller's registers in `W` (AES-GCM's `save_ok`), copies the stack
 arguments into their slots (`keeps_ok`): the slots (`Slots`) hold the
 arguments. The exit is AES-GCM's (`exit_ok`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

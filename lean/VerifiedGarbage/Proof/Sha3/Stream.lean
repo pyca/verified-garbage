@@ -1,5 +1,11 @@
-import VerifiedGarbage.Spec.Sha3
-import VerifiedGarbage.Proof.Framework.Mem
+module
+
+public import VerifiedGarbage.Spec.Sha3
+public import VerifiedGarbage.Proof.Framework.Mem
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The SHA-3 sponge: facts about the specification
@@ -8,6 +14,8 @@ The state byte by byte, how the streaming representation `Repr` evolves as
 bytes are absorbed one at a time, how padding is absorbed, and the output of
 `squeeze` byte by byte, independently of any target.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sha3
 
@@ -108,7 +116,7 @@ theorem length_toBytes (A : State) : (toBytes A).length = 200 := by
 
 theorem toBytes_getElem (A : State) {j : Nat} (hj : j < 200) :
     (toBytes A)[j]'(by rw [length_toBytes]; exact hj) = byteOf A j := by
-  unfold toBytes
+  simp only [toBytes]
   rw [getElem_flatMap8 _ (fun _ => by simp)]
   simp only [List.getElem_map, List.getElem_range, Vector.getElem_toList]
   exact (byteOf_eq' A hj).symm

@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.Double
-import VerifiedGarbage.Spec.Rsa
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.Double
+public import VerifiedGarbage.Spec.Rsa
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Multiword arithmetic on x86-64: bytes and words
@@ -7,6 +13,8 @@ import VerifiedGarbage.Spec.Rsa
 `loadBE` reads `k` bytes, most significant first, into the `⌈k / 8⌉` words of
 an array: as a number, OS2IP of the bytes (`loadBE_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64
 

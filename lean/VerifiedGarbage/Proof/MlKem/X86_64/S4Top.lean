@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlKem.X86_64.S4Loop
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86_64.S4Loop
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86-64: `vg_mlkem_sample_ntt4_avx2`, correctness
@@ -8,6 +14,8 @@ The pieces, in order: the prologue, the round constants and the padded seeds
 the four polynomials (`S4Loop.lean`), and the epilogue, which returns whether
 every seed sampled its polynomial.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.X86_64.S4
 
@@ -76,12 +84,11 @@ theorem end_ok {X : Mem → Prop} {s : State} (h : PC X σ 4 s) :
 
 /-- The three squeezes, the table and the four polynomials. -/
 theorem squeezes_ok {fast : Bool} {s : State} (h : SqInv σ 0 s) :
-    WP isa (.seq (squeeze4 0 fast) (.seq (squeeze4 1 fast) (.seq (squeeze4 2 fast) (.seq (.block tabBuild)
-      (.seq (parse 0) (.seq (parse 1) (.seq (parse 2) (.seq (parse 3) (.block epi))))))))) s fun s' =>
+    WP isa (.seq (squeezes 0 3 fast) (.seq (.block tabBuild)
+      (.seq (parse 0) (.seq (parse 1) (.seq (parse 2) (.seq (parse 3) (.block epi))))))) s fun s' =>
       sample4K.post σ s' ∧ gprPreserved σ s' := by
-  refine WP.seq (WP.mono (sq_ok (fast := fast) hp (by decide) h) fun s₁ h₁ => WP.seq (WP.mono (sq_ok (fast := fast) hp (by decide) h₁)
-    fun s₂ h₂ => WP.seq (WP.mono (sq_ok (fast := fast) hp (by decide) h₂) fun s₃' h₃' =>
-      WP.seq (WP.mono (pinv0_ok hp h₃') fun s₃ p₀ => ?_))))
+  refine WP.seq (WP.mono (sqs_ok (fast := fast) hp (by decide) (by decide) h) fun s₃' h₃' =>
+    WP.seq (WP.mono (pinv0_ok hp h₃') fun s₃ p₀ => ?_))
   refine WP.seq (WP.mono (parse_ok hp (by decide) p₀) fun s₄ p₁ => WP.seq (WP.mono (parse_ok hp (by decide) p₁)
     fun s₅ p₂ => WP.seq (WP.mono (parse_ok hp (by decide) p₂) fun s₆ p₃ =>
       WP.seq (WP.mono (parse_ok hp (by decide) p₃) fun s₇ p₄ => end_ok hp p₄))))

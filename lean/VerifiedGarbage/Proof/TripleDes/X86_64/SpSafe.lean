@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx512.Lit
-import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
+module
+
+public import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx512.Lit
+public import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The bitsliced ECB code on x86-64 writes `rsp` only in its frame
@@ -10,6 +16,8 @@ to the general-purpose registers' code), so the kernel checks each level's
 own batches once here, for both `Artifact.spSafe` and the frame's
 hypothesis, rather than every level below it again in each of them.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.TripleDes.X86_64
 

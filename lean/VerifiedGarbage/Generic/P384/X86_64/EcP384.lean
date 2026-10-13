@@ -1,12 +1,14 @@
-import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.Weierstrass.X86_64.InvInterface
-import VerifiedGarbage.Proof.Weierstrass.Law
-import VerifiedGarbage.Proof.P384.Comb7
-import VerifiedGarbage.Impl.EcKey.P384.X86_64
-import VerifiedGarbage.Proof.EcKey.X86_64.P384.Verified
-import VerifiedGarbage.Proof.EcKey.X86_64.P384.Lit
-import VerifiedGarbage.Proof.EcKey.X86_64.P384.VerifiedAdx
-import VerifiedGarbage.Proof.EcKey.X86_64.P384.LitAdx
+module
+
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvInterface
+public import VerifiedGarbage.Proof.Weierstrass.Law
+public import VerifiedGarbage.Proof.P384.Comb7
+public import VerifiedGarbage.Impl.EcKey.P384.X86_64
+public import VerifiedGarbage.Proof.EcKey.X86_64.P384.Verified
+public import VerifiedGarbage.Proof.EcKey.X86_64.P384.Lit
+public import VerifiedGarbage.Proof.EcKey.X86_64.P384.VerifiedAdx
+public import VerifiedGarbage.Proof.EcKey.X86_64.P384.LitAdx
 
 /-!
 # P-384 public keys (FIPS 186-5 §A.2) on x86-64
@@ -15,6 +17,8 @@ A generic file (see `TCB/Emit.lean`) over P-384's group law and
 inversions `h`, the variant `Variants/P384/X86_64/Law.lean`, for each
 multiplication: the baseline's, and BMI2's and ADX's (`_adx`).
 -/
+
+@[expose] public section
 
 namespace VG.Generic.P384.X86_64.EcP384
 
@@ -33,9 +37,11 @@ def publicKey (adx : Bool) (code : Prog X86_64.isa)
       code up to the inversion of `Z`, with `d` as both the key and the secret number: it saves \
       its caller's callee-saved registers in `scratch`; field elements are six 64-bit words in \
       Montgomery form, " ++ Proof.Ecdsa.X86_64.P384.mulNote adx ++ "; `[d]G` is the \
-      signature's comb over the 7-bit windows of `d`, from the static `VG_P384_COMB`, each entry \
-      selected by loading every entry of its table, " ++ Proof.Ecdsa.X86_64.P384.selNote adx ++ " \
-      the one of the digit's magnitude; and `Z⁻¹` is by the signature's divsteps. The result (or zeros) is selected by a mask of `d ∈ [1, n-1]` and `Z ≠ 0`, \
+      signature's call of `vg_p384_mul_base" ++ (if adx then "_adx" else "") ++ "`, a comb over \
+      the 7-bit windows of `d`, from the static `VG_P384_COMB`, each entry selected by loading \
+      every entry of its table, " ++ Proof.Ecdsa.X86_64.P384.selNote adx ++ " the one of the \
+      digit's magnitude; and `Z⁻¹` is the signature's call of `vg_p384_inv_mod_p" ++
+      (if adx then "_adx" else "") ++ "`. The result (or zeros) is selected by a mask of `d ∈ [1, n-1]` and `Z ≠ 0`, \
       so the time depends only on the pointers."])
     consts := Impl.Ecdsa.X86_64.p384.combConsts
     code

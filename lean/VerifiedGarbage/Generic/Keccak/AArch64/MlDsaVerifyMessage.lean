@@ -1,5 +1,7 @@
-import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedSelected
+module
+
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedSelected
 
 /-!
 # ML-DSA (FIPS 204) on AArch64: verifying messages
@@ -16,6 +18,8 @@ emitter adds the `# Safety` items that depend on the target
 (`Sig.layoutDoc`), from `stack` and `writeArgs`, which `ofSig` checks
 against the contract.
 -/
+
+@[expose] public section
 
 namespace VG.Generic.Keccak.AArch64.MlDsaVerifyMessage
 

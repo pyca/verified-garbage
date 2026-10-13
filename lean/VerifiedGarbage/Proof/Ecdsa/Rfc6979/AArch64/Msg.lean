@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Blocks
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Blocks
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Deterministic ECDSA on AArch64: the messages of steps d, f and h.3
@@ -13,6 +19,8 @@ digest` instead, `d`'s 66 bytes through `x12` and its last eight through
 `x13` and `x14` (`copyBytes`), a zero word, then the digest over all but its
 first two bytes.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Rfc6979.AArch64
 

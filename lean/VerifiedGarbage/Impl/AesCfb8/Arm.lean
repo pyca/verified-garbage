@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.AesCbc.Arm
+module
+
+public import VerifiedGarbage.Impl.AesCbc.Arm
 
 /-!
 # AES-CFB8: 32-bit ARM implementation
@@ -22,6 +24,8 @@ input when decrypting, in `r12`) shifted in.
 Only the pointers, `rounds` and `len` can affect timing: the only branches
 are on `len`.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.AesCfb8.Arm
 

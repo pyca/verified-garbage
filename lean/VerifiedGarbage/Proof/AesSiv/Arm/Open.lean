@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesSiv.Arm.Seal
-import VerifiedGarbage.Proof.AesCcm.Arm.Mask
+module
+
+public import VerifiedGarbage.Proof.AesSiv.Arm.Seal
+public import VerifiedGarbage.Proof.AesCcm.Arm.Mask
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-SIV on ARMv7: `vg_aes_siv_decrypt`
@@ -11,6 +17,8 @@ associated data (`s2v_ok`), copies the received IV from `siv` to `W`
 without a branch (`compare_ok`), ANDs every byte of the plaintext with
 `0 − r0` (`maskData_ok`) and restores the registers (`decrypt_wp`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

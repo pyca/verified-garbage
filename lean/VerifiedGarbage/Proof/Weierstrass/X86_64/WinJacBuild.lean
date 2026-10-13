@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacState
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacState
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The Jacobian window method on x86-64: the table
@@ -10,6 +16,8 @@ which leaves `D = P` with the sum's `Z` and is never exceptional for
 `2 ≤ m ≤ 15` (`zaddu_x`, from `tbl_noexc`), stored as entry `m + 1`
 (`jbuildStep_ok`), to entry 16 (`jbuild_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.X86_64
 

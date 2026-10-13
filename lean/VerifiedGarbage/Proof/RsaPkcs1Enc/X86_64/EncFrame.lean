@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.EncContract
-import VerifiedGarbage.Proof.Bignum.X86_64.Loop
-import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
-import VerifiedGarbage.Proof.Framework.WriteBytes
-import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.Bytes
+module
+
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.EncContract
+public import VerifiedGarbage.Proof.Bignum.X86_64.Loop
+public import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
+public import VerifiedGarbage.Proof.Framework.WriteBytes
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.Bytes
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-PKCS1-v1_5 encryption on x86-64: the frame
@@ -12,6 +18,8 @@ The precondition by name (`EPre`), the frame of `frameBytes` bytes at
 (`setup_ok`): the slots, the call's stack arguments and the first two bytes
 of `EM`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPkcs1Enc.X86_64
 

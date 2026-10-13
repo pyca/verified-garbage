@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Ecdh.X86_64
+module
+
+public import VerifiedGarbage.Impl.Ecdh.X86_64
 
 /-!
 # ECDSA signature verification on x86-64
@@ -25,7 +27,8 @@ ECDSA's signature (`Impl/Ecdsa/X86_64.lean`) and of ECDH
    to `U`, and `R` reset to `O`; then `[v]Q` by ECDH's window method (for
    up to nine words, with `b R mod p` set again in ECDH's slot of it), or
    its ladder (from the table of `v`'s bits), and `[u]G + [v]Q` by the
-   complete addition, into `R`;
+   complete addition, into `R`; a curve with `vg_<curve>_mul` computes
+   both by its calls instead;
 6. for a curve with `pubVerify` (P-256, P-384 and P-521, where `n < p ≤ 2n`),
    compare `X` with `r Z` and, when `r + n < p`, `(r + n) Z`; other curves
    invert `Z` and compare the affine x-coordinate modulo `n`.
@@ -36,6 +39,8 @@ indexes the fixed-base table using the public verification scalar. The shared co
 the public key, digest and signature public; secret signing scalars continue
 to use constant-time table scans.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Ecdsa.Verify.X86_64
 
@@ -79,17 +84,17 @@ def loadS : List Instr := loadBytes c.C.len c.n (c.sl PT) .r10
 
 /-- The checks of `r` and `s`, and `s R mod n`. -/
 def scalars : Prog isa :=
-  blocks [c.checkRange (c.sl K) ++ c.checkRange (c.sl PT),
-    Mont.X86_64.mul c.MN' (c.sl SM') (c.sl PT) (c.sl R2N)]
+  progs [.block (c.checkRange (c.sl K) ++ c.checkRange (c.sl PT)),
+    opProg c.MN' (.mul (c.sl SM') (c.sl PT) (c.sl R2N))]
 
 /-- `u` and `v`, from `w R mod n` in `ACC`. -/
 def uv : Prog isa :=
-  blocks [Mont.X86_64.mul c.MN' (c.sl EM') (c.sl D) (c.sl R2N),
-    Mont.X86_64.mul c.MN' (c.sl RM') (c.sl K) (c.sl R2N),
-    Mont.X86_64.mul c.MN' (c.sl UM) (c.sl EM') (c.sl ACC),
-    Mont.X86_64.mul c.MN' (c.sl VM) (c.sl RM') (c.sl ACC),
-    Mont.X86_64.mul c.MN' (c.sl U) (c.sl UM) (c.sl ONE),
-    Mont.X86_64.mul c.MN' (c.sl V) (c.sl VM) (c.sl ONE)]
+  progs [opProg c.MN' (.mul (c.sl EM') (c.sl D) (c.sl R2N)),
+    opProg c.MN' (.mul (c.sl RM') (c.sl K) (c.sl R2N)),
+    opProg c.MN' (.mul (c.sl UM) (c.sl EM') (c.sl ACC)),
+    opProg c.MN' (.mul (c.sl VM) (c.sl RM') (c.sl ACC)),
+    opProg c.MN' (.mul (c.sl U) (c.sl UM) (c.sl ONE)),
+    opProg c.MN' (.mul (c.sl V) (c.sl VM) (c.sl ONE))]
 
 /-- `U = R`, then `R = O = (0 : 1 : 0)`. -/
 def save : List Instr :=
@@ -110,11 +115,11 @@ def finish : List Instr :=
 /-- `x = X Z⁻¹`, with `Z⁻¹ R` in `ACC`, out of Montgomery form, `x R mod n`
 and `x R - r R mod n`, the checks of `Z` and of `x ≡ r`, and the result. -/
 def final : Prog isa :=
-  blocks [Mont.X86_64.mul c.MP' (c.sl XM) (c.sl RX) (c.sl ACC),
-    Mont.X86_64.mul c.MP' (c.sl X) (c.sl XM) (c.sl ONE),
-    Mont.X86_64.mul c.MN' (c.sl XN) (c.sl X) (c.sl R2N),
-    Mont.X86_64.sub c.MN' (c.sl W) (c.sl XN) (c.sl RM'),
-    c.checkNonzero (c.sl RZ) ++ Impl.Ecdh.X86_64.Cfg.checkZero c (c.sl W) ++ finish c]
+  progs [.block (Mont.X86_64.mul c.MP' (c.sl XM) (c.sl RX) (c.sl ACC)),
+    .block (Mont.X86_64.mul c.MP' (c.sl X) (c.sl XM) (c.sl ONE)),
+    opProg c.MN' (.mul (c.sl XN) (c.sl X) (c.sl R2N)),
+    .block (Mont.X86_64.sub c.MN' (c.sl W) (c.sl XN) (c.sl RM')),
+    .block (c.checkNonzero (c.sl RZ) ++ Impl.Ecdh.X86_64.Cfg.checkZero c (c.sl W) ++ finish c)]
 
 /-- Constants for comparison in projective coordinates. `MN` is no longer
 needed for arithmetic modulo the group order. -/
@@ -161,10 +166,21 @@ def mulV : Prog isa :=
         Impl.Ecdh.X86_64.BP)))
   else .seq (bits (c.sl V) (bitsAt c.n 0) (8 * c.n)) (ladder (Impl.Ecdh.X86_64.Cfg.ladderQ c))
 
-/-- `[u]G + [v]Q`, into `R`, from `u` and `v`. -/
+/-- `[u]G + [v]Q`, into `R`, from `u` and `v`; for a curve with
+`vg_<curve>_mul`, by its calls, each from `K` and `R`'s first two slots, `r`
+kept meanwhile in `D` (the hash's slot, which `uv` has read). -/
 def points : Prog isa :=
-  .seq (bits (c.sl U) (bitsAt c.n 0) (8 * c.n)) <| .seq (c.gMul c.pubVerify) <| .seq (.block (save c)) <|
-  .seq (mulV c) (sum c)
+  match c.mul with
+  | some C =>
+    .seq (.block (copy c.n (c.sl D) (c.sl K) ++ copy c.n (c.sl K) (c.sl U) ++
+      copy c.n (c.sl RX) (c.sl GX) ++ copy c.n (c.sl RY) (c.sl GY))) <|
+    .seq (.call C.mulApi.name c.mulFn) <| .seq (.block (save c)) <|
+    .seq (.block (copy c.n (c.sl K) (c.sl V) ++ copy c.n (c.sl RX) (c.sl Impl.Ecdh.X86_64.PX) ++
+      copy c.n (c.sl RY) (c.sl Impl.Ecdh.X86_64.PY))) <|
+    .seq (.call C.mulApi.name c.mulFn) <| .seq (sum c) (.block (copy c.n (c.sl K) (c.sl D)))
+  | none =>
+    .seq (bits (c.sl U) (bitsAt c.n 0) (8 * c.n)) <| .seq (c.gMul c.pubVerify) <| .seq (.block (save c)) <|
+    .seq (mulV c) (sum c)
 
 /-- Everything after the checks of the key. -/
 def back : Prog isa :=

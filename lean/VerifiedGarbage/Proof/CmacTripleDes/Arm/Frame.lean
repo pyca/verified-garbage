@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.CmacTripleDes.Arm.Verified
-import VerifiedGarbage.Proof.CmacTripleDes.Scratch
-import VerifiedGarbage.Proof.Framework.Arm.StackScratch
-import VerifiedGarbage.Proof.Framework.Arm.RegScratch
+module
+
+public import VerifiedGarbage.Proof.CmacTripleDes.Arm.Verified
+public import VerifiedGarbage.Proof.CmacTripleDes.Scratch
+public import VerifiedGarbage.Proof.Framework.Arm.StackScratch
+public import VerifiedGarbage.Proof.Framework.Arm.RegScratch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # TDEA-CMAC on ARMv7, with its working space on the stack
@@ -13,6 +19,8 @@ frame is the 640 bytes of working space (`Verified.regScratch`). That of
 `update` and `finalize` is their fifth, on the stack: their frames hold the
 saved registers too, 648 bytes (`Verified.stackScratch`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.CmacTripleDes.Arm
 

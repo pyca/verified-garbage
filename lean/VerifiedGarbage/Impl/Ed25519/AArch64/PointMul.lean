@@ -1,6 +1,11 @@
-import VerifiedGarbage.Impl.Ed25519.AArch64.PointTable
+module
+
+public import VerifiedGarbage.Impl.Ed25519.AArch64.PointTable
 
 /-! A descending byte counter at workspace byte 56. -/
+
+@[expose] public section
+
 namespace VG.Impl.Ed25519.AArch64
 open VG.AArch64
 

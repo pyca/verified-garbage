@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Poly1305.X86_64.UpdateVerified
-import VerifiedGarbage.Proof.Poly1305.X86_64.Finalize
-import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
+module
+
+public import VerifiedGarbage.Proof.Poly1305.X86_64.UpdateVerified
+public import VerifiedGarbage.Proof.Poly1305.X86_64.Finalize
+public import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Streaming Poly1305 on x86-64, with its working space on the stack
@@ -10,6 +16,8 @@ argument, in a frame of 136 bytes that allocates it (`Verified.stackScratch`):
 the 128 bytes of working space, and 8 more to keep `rsp` aligned. `update`'s
 call of `vg_poly1305_blocks` uses 24 bytes below it, as before.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Poly1305.X86_64
 

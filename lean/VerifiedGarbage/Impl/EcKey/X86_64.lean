@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Ecdsa.X86_64
+module
+
+public import VerifiedGarbage.Impl.Ecdsa.X86_64
 
 /-!
 # Elliptic curve public keys on x86-64
@@ -23,6 +25,8 @@ Everything is computed whatever the flag, and only the pointers may affect
 timing.
 -/
 
+@[expose] public section
+
 namespace VG.Impl.EcKey.X86_64
 
 open VG.X86_64 VG.Impl.Mont.X86_64 VG.Impl.Mont VG.Impl.Weierstrass.X86_64 VG.Impl.Weierstrass VG.Impl.Ecdsa.X86_64
@@ -45,10 +49,10 @@ def args : List Instr := [.mov .r8 (.reg .rdx), .mov .rcx (.reg .rsi), .mov .rdx
 /-- The signature's code up to `Z^(p-2)`. -/
 def upToPow : Prog isa :=
   .seq (.block (c.setupWith none)) <|
-  .seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) <|
+  .seq c.kBits <|
   .seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n)) <|
   .seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n)) <|
-  .seq c.gMulK <|
+  .seq c.gMulKC <|
   .seq c.pPow (.block [])
 
 /-- `04 ‖ x ‖ y` (or zeros) to `out`, the flag's low bit to `rax`, and the

@@ -1,7 +1,17 @@
-import VerifiedGarbage.Proof.X25519.AArch64.Base.Main
-import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseVerified
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Framework.ConstMem
+module
+
+public import VerifiedGarbage.Proof.X25519.AArch64.Base.Main
+meta import VerifiedGarbage.Proof.X25519.AArch64.Base.Main
+public import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseVerified
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseVerified
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.ConstMem
+meta import VerifiedGarbage.Proof.Framework.ConstMem
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X25519 of the base point on AArch64: constant time and the contract
@@ -11,6 +21,8 @@ have a public trace (one taint check of the engine, whose addresses are the
 working space `x0` plus constants or public counters), and so do the setup and
 the finish.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X25519.AArch64.Base
 

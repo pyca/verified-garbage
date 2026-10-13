@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.AesOcb.X86_64.Args
-import VerifiedGarbage.Proof.Ocb.LowBit
-import VerifiedGarbage.Proof.Gcm.X86_64.Rev
+module
+
+public import VerifiedGarbage.Proof.AesOcb.X86_64.Args
+public import VerifiedGarbage.Proof.Ocb.LowBit
+public import VerifiedGarbage.Proof.Gcm.X86_64.Rev
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-OCB on x86-64: the table of `L_j` (`table`, `lAddr`)
@@ -17,6 +23,8 @@ A block in an SSE register is the 16 bytes in memory order, the first in
 the least significant byte: `rv` byte-reverses it to OCB's block
 (`blockAtMem_eq`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

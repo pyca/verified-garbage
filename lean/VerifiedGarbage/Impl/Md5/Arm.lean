@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.Md5
-import VerifiedGarbage.TCB.Arm.Isa
+module
+
+public import VerifiedGarbage.Spec.Md5
+public import VerifiedGarbage.TCB.Arm.Isa
 
 /-!
 # MD5 compression function: ARMv7 implementation
@@ -21,6 +23,8 @@ The same structure as the AArch64 implementation:
 * `r0`–`r3` (the pointers and the block count) are public; no address and
   no branch depends on anything else.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Md5.Arm
 

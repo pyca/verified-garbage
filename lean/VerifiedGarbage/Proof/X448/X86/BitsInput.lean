@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.X448.X86.Bits
-import VerifiedGarbage.Proof.X448.X86.Frame
+module
+
+public import VerifiedGarbage.Proof.X448.X86.Bits
+public import VerifiedGarbage.Proof.X448.X86.Frame
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 on x86 (32-bit): loading the scalar argument
@@ -8,11 +14,11 @@ Scratch-only setup leaves the scalar pointer and input bytes available for
 expansion.
 -/
 
+@[expose] public section
+
 namespace VG.Proof.X448.X86
 
 open VG VG.X86 VG.Impl.X448.X86 VG.Proof.X448
-
-def bitsRegs : List Reg := [.esi, .eax, .edx]
 
 theorem bits_ok {s₀ s : State} (pre : Pre s₀)
     (hsp : s.gpr .esp = s₀.gpr .esp) (hr : s.rd = s₀.rd) (hw : s.wr = s₀.wr)
@@ -20,19 +26,19 @@ theorem bits_ok {s₀ s : State} (pre : Pre s₀)
     (hm : Outside base 0 8192 s₀.mem s.mem) (hs : Scr s base)
     (hkd : ∀ i < 56, 8192 ≤ ofs base (off ((arg s₀ 1).setWidth 64) i)) :
     WP isa bits s fun t =>
-      Keeps bitsRegs s t ∧ Outside base BITS 448 s.mem t.mem ∧
+      Keeps bitRegs s t ∧ Outside base BITS 448 s.mem t.mem ∧
       ∀ j < 448, t.mem (off base (BITS + j)) =
         BitVec.ofNat 8 (bit (Spec.X448.decodeScalar448
           (Spec.X448.bytesAt s.mem ((arg s₀ 1).setWidth 64) 56)) j) := by
-  change WP isa (.block (.mov .esi (.mem (at_ .esp 8)) :: (expandBits ++ clamp))) s _
-  refine loadArg_ok pre hsp hr hw (XFrame.of_outside (hbase ▸ hm)) (by decide : 1 < 4) fun u hu => ?_
+  unfold bits
+  refine WP.seq (loadArg_ok pre hsp hr hw (XFrame.of_outside (hbase ▸ hm)) (by decide : 1 < 4)
+    fun u hu => WP.block_nil ?_)
   refine WP.mono (bitsData_ok (hs.of_upd hu (by decide)) (by rw [hu.gpr])
     (by rw [hu.gpr]; exact pre.scalar_fit)
     (by intro i hi; rw [hu.rd, hu.wr, hr, hw]; exact ⟨scalarR s₀,
       by rw [pre.rd]; simp, Offset.contains_base _ (by omega) (by omega)⟩)
-    hkd) fun t ⟨tg, tr, tw, tm, tb⟩ => ?_
+    hkd) fun t ⟨tk, tm, tb⟩ => ?_
   rw [hu.mem] at tm tb
-  exact ⟨(hu.rest (by decide)).trans ((show Keeps bitRegs u t from ⟨tg, tr, tw⟩).mono
-    (by simp [bitRegs, bitsRegs])), tm, tb⟩
+  exact ⟨(hu.rest (by decide)).trans tk, tm, tb⟩
 
 end VG.Proof.X448.X86

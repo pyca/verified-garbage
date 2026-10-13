@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Sha3.X86_64.Permute
-import VerifiedGarbage.Proof.Framework.X86_64.Avx
-import VerifiedGarbage.Impl.Sha3.X86_64.X4
+module
+
+public import VerifiedGarbage.Proof.Sha3.X86_64.Permute
+public import VerifiedGarbage.Proof.Framework.X86_64.Avx
+public import VerifiedGarbage.Impl.Sha3.X86_64.X4
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Keccak-f[1600] four times at once on x86-64: one instruction at a time
@@ -8,6 +14,8 @@ import VerifiedGarbage.Impl.Sha3.X86_64.X4
 Weakest-precondition rules for the AVX2 instructions of `permute4`, in terms
 of the four 64-bit elements of each `ymm` register (`q4`), one per state.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sha3.X86_64.X4
 

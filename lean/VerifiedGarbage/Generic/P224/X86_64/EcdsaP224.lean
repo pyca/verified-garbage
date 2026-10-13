@@ -1,11 +1,13 @@
-import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.Weierstrass.Law
-import VerifiedGarbage.Proof.P224.Comb7
-import VerifiedGarbage.Impl.Ecdsa.P224.X86_64
-import VerifiedGarbage.Proof.Ecdsa.X86_64.P224.Verified
-import VerifiedGarbage.Proof.Ecdsa.X86_64.P224.Lit
-import VerifiedGarbage.Impl.Ecdsa.Verify.P224.X86_64
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P224.JointVerified
+module
+
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.Weierstrass.Law
+public import VerifiedGarbage.Proof.P224.Comb7
+public import VerifiedGarbage.Impl.Ecdsa.P224.X86_64
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.P224.Verified
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.P224.Lit
+public import VerifiedGarbage.Impl.Ecdsa.Verify.P224.X86_64
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P224.JointVerified
 
 /-!
 # ECDSA over P-224 (FIPS 186-5) on x86-64
@@ -13,6 +15,8 @@ import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P224.JointVerified
 A generic file (see `TCB/Emit.lean`) over P-224's group law and
 inversions `h`, the variant `Variants/P224/X86_64/Law.lean`.
 -/
+
+@[expose] public section
 
 namespace VG.Generic.P224.X86_64.EcdsaP224
 
@@ -32,19 +36,20 @@ def artifacts (h : Proof.Weierstrass.X86_64.HasLawInv Spec.P224.curve) : List Ar
       of the digit's magnitude (or the point at infinity for a zero digit), negated by a mask of \
       its sign, and added by the mixed complete addition formulas of Renes, Costello and Batina \
       for `a = -3` (Algorithm 5: the entry's `Z` is 1), the sum replacing the accumulator unless \
-      the digit is zero; the inversion modulo `p` is by divsteps (Bernstein and Yang's safegcd, half-delta form): \
-      10 batches of 59 divsteps on the low 64-bit words of `f` and `g` (from `f = p`, `g = Z`), \
+      the digit is zero; the inversion modulo `p` is a call of `vg_p224_inv_mod_p`, by divsteps \
+      (Bernstein and Yang's safegcd, half-delta form): 10 batches of 59 divsteps on the low 64-bit words of `f` and `g` (from `f = p`, `g = Z`), \
       each giving a matrix of 64-bit entries that updates `f`, `g` (divided by 2⁵⁹) and the \
       coefficients `a`, `b` (divided by 2⁶⁴ modulo `p`, as in Montgomery reduction), 590 \
       divsteps in all, enough for 256-bit moduli by Bernstein and Yang's bound (which the proof \
       checks); then `f = ±1`, and `Z⁻¹` is `a` times a constant or its negation by `f`'s sign. \
       The number of steps is fixed, so the time does not depend on `Z`. `k⁻¹` modulo `n` is by \
-      the same divsteps, from `f = n`, `g = k`. The signature (or \
+      the same divsteps, from `f = n`, `g = k`, a call of `vg_p224_inv_mod_n`. The signature (or \
       zeros) is selected by a mask, so the time depends only on the pointers."])
     consts := Impl.Ecdsa.X86_64.p224.combConsts
     code := Impl.Ecdsa.X86_64.signP224
     contract := Spec.Ecdsa.P224.inst.signContract
-      (X86_64.abi.withConsts Impl.Ecdsa.X86_64.p224.combConsts)
+      (X86_64.abi.withConsts Impl.Ecdsa.X86_64.p224.combConsts) 8
+    stack := 8
     verified := Proof.Ecdsa.X86_64.P224.sign_verified h.law (Proof.P224.combOk7 h.law) h.inv
     spSafe := Code.all_of_allInstrs (by lit_decide) },
   { Spec.Ecdsa.P224.verifyApi with
@@ -71,7 +76,8 @@ def artifacts (h : Proof.Weierstrass.X86_64.HasLawInv Spec.P224.curve) : List Ar
     consts := Impl.Ecdsa.X86_64.p224.combConsts
     code := Impl.Ecdsa.Verify.X86_64.jointVerifyP224
     contract := Spec.Ecdsa.P224.inst.verifyContract
-      (X86_64.abi.withConsts Impl.Ecdsa.X86_64.p224.combConsts)
+      (X86_64.abi.withConsts Impl.Ecdsa.X86_64.p224.combConsts) 8
+    stack := 8
     verified := Proof.Ecdsa.Verify.X86_64.P224.jointVerify_verified h.law (Proof.P224.combOk7 h.law) h.inv
     spSafe := Code.all_of_allInstrs (by lit_decide) }]
 

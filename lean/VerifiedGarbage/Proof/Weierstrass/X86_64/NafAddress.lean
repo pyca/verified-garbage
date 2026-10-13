@@ -1,32 +1,47 @@
-import VerifiedGarbage.Proof.Weierstrass.X86_64.NafCopy
-import VerifiedGarbage.Proof.Weierstrass.X86_64.NafDigitRead
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafCopy
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafDigitRead
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Bounds and addresses of the eight public odd-multiple table entries. -/
+
+@[expose] public section
+
 namespace VG.Proof.Weierstrass.X86_64
 open VG VG.X86_64 VG.Impl.Weierstrass.X86_64 VG.Impl.Weierstrass
 open VG.Proof.Mont.X86_64 VG.Proof.Mont VG.Proof.X25519.X86_64
 
-theorem nafAddress_ok (s : State) {base : Addr} {n tbl j : Nat}
-    (hb : s.gpr .rdi=base) (hj : s.gpr .rax=BitVec.ofNat 64 j) (ht : tbl<2^31) (hn : 24*n<2^32) :
-    WP isa (.block (Naf.tableAddress n tbl)) s fun t =>
-      t.gpr .rdx=off base (tbl+24*n*j) ∧ Keeps [.rax,.rcx,.rdx] s t := by
+theorem stridedAddress_ok (s : State) {base : Addr} {d tbl j : Nat}
+    (hb : s.gpr .rdi=base) (hj : s.gpr .rax=BitVec.ofNat 64 j) (ht : tbl<2^31) (hn : d<2^32) :
+    WP isa (.block (Naf.stridedAddress d tbl)) s fun t =>
+      t.gpr .rdx=off base (tbl+d*j) ∧ Keeps [.rax,.rcx,.rdx] s t := by
   apply WP.of_runBlock
-  simp only [Naf.tableAddress,runBlock_cons,runStep_some,runBlock_nil,exec,readSrc,readSrc32,
+  simp only [Naf.stridedAddress,runBlock_cons,runStep_some,runBlock_nil,exec,readSrc,readSrc32,
     execAlu,execMul,State.setReg32,imm32_sext ht,hj,hb,RegUpd.gpr_setReg,RegUpd.gpr_arithFlags,
     RegUpd.gpr_setFlags,Option.map_some,Option.bind_some,ite_true,ite_false,reduceCtorEq,
     Option.some.injEq,exists_eq_left']
   refine ⟨?_,fun r hr => ?_,rfl,rfl,rfl⟩
-  · have hm : BitVec.ofNat 64 ((BitVec.ofNat 64 j).toNat*((BitVec.ofNat 32 (24*n)).setWidth 64).toNat)=
-        BitVec.ofNat 64 (24*n*j) := by
+  · have hm : BitVec.ofNat 64 ((BitVec.ofNat 64 j).toNat*((BitVec.ofNat 32 d).setWidth 64).toNat)=
+        BitVec.ofNat 64 (d*j) := by
       apply BitVec.eq_of_toNat_eq
       simp only [BitVec.toNat_ofNat,BitVec.toNat_setWidth,Nat.mod_eq_of_lt hn]
-      rw [Nat.mod_mul_mod,Nat.mul_comm j,Nat.mod_eq_of_lt (show 24*n<2^64 by omega)]
+      rw [Nat.mod_mul_mod,Nat.mul_comm j,Nat.mod_eq_of_lt (show d<2^64 by omega)]
     change base+BitVec.ofNat 64 tbl+BitVec.ofNat 64 ((BitVec.ofNat 64 j).toNat*
-      ((BitVec.ofNat 32 (24*n)).setWidth 64).toNat)=_
+      ((BitVec.ofNat 32 d).setWidth 64).toNat)=_
     rw [hm,Offset.add_add]
   · simp only [List.mem_cons,List.not_mem_nil,or_false,not_or] at hr
     simp only [RegUpd.gpr_setReg,RegUpd.gpr_arithFlags,RegUpd.gpr_setFlags,
       hr.1,hr.2.1,hr.2.2,ite_false]
+
+theorem nafAddress_ok (s : State) {base : Addr} {n tbl j : Nat}
+    (hb : s.gpr .rdi=base) (hj : s.gpr .rax=BitVec.ofNat 64 j) (ht : tbl<2^31) (hn : 24*n<2^32) :
+    WP isa (.block (Naf.tableAddress n tbl)) s fun t =>
+      t.gpr .rdx=off base (tbl+24*n*j) ∧ Keeps [.rax,.rcx,.rdx] s t :=
+  stridedAddress_ok s hb hj ht hn
 
 theorem nafIndex_ok (s : State) {a : Nat} (ha : 1≤a) (ha' : a≤15)
     (hr : s.gpr .r8=BitVec.ofNat 64 a) :

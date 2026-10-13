@@ -1,8 +1,19 @@
-import VerifiedGarbage.Proof.Poly1305.Arm.Bytes
-import VerifiedGarbage.Proof.Framework.Arm.Taint
-import VerifiedGarbage.Proof.Framework.Arm.Contract
-import VerifiedGarbage.Spec.Poly1305.Contract
-import VerifiedGarbage.Proof.Framework.PowLit
+module
+
+public import VerifiedGarbage.Proof.Poly1305.Arm.Bytes
+meta import VerifiedGarbage.Proof.Poly1305.Arm.Bytes
+public import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+public import VerifiedGarbage.Proof.Framework.Arm.Contract
+meta import VerifiedGarbage.Proof.Framework.Arm.Contract
+public import VerifiedGarbage.Spec.Poly1305.Contract
+meta import VerifiedGarbage.Spec.Poly1305.Contract
+public import VerifiedGarbage.Proof.Framework.PowLit
+meta import VerifiedGarbage.Proof.Framework.PowLit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Poly1305 on 32-bit ARM: `init`
@@ -10,6 +21,8 @@ import VerifiedGarbage.Proof.Framework.PowLit
 The key is copied to `[24, 56)` of the state, a word at a time, and the
 accumulator's six words are zeroed.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Poly1305.Arm
 

@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.TripleDes.SboxTables
-import VerifiedGarbage.Proof.CmacTripleDes.AArch64.RoundLit
-import VerifiedGarbage.Proof.CmacTripleDes.Des
-import VerifiedGarbage.Proof.Framework.Bitslice.Table
+module
+
+public import VerifiedGarbage.Proof.TripleDes.SboxTables
+public import VerifiedGarbage.Proof.CmacTripleDes.AArch64.RoundLit
+public import VerifiedGarbage.Proof.CmacTripleDes.Des
+public import VerifiedGarbage.Proof.Framework.Bitslice.Table
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # DES on AArch64: the spread words and the tables
@@ -13,6 +19,8 @@ S-boxes' index, `spread k ⊕ spreadW r`, is the input of box `boxOf l`, with
 its table in the top two bits (`index_byte`); and the tables hold the
 S-boxes' outputs at `posOf` (`sTable_bit`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.CmacTripleDes.AArch64
 

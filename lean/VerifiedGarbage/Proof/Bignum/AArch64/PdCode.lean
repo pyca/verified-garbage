@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Bignum.AArch64.PdRest
+module
+
+public import VerifiedGarbage.Proof.Bignum.AArch64.PdRest
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_public_precomputed` on AArch64: correctness
@@ -7,6 +13,8 @@ The entry (`pdEntry_ok`), and the whole function without the check of `e`
 (`pdCode_correct`), against `pdContract`, which states the shared contract's
 precondition on the registers and the stack.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.AArch64
 
@@ -183,17 +191,28 @@ theorem pdPre_of {s t₁ t₂ : State} (c : PdCtx s) (h0 : t₁.gpr .x0 = stackA
       el := bytesAt_length _ _ _, L1 := c.hL1, L2 := c.hL2, out := fun j hj => by rw [kk.wr]; exact c.hout j hj,
       outSep := c.houts }
 
-theorem pdCode_correct (M : Mont) (s : State) (h : pdContract.pre s) :
-    ∃ t s', Exec isa (Precomputed.code M.mm) s t s' ∧ abiPreserved s s' ∧ pdContract.post s s' := by
+/-- Reuse entry, cache validation, and output-contract reasoning for any
+public exponentiation body satisfying the same memory and result obligations. -/
+theorem pdCodeWith_correct (rest : Prog isa)
+    (rest_ok : ∀ {s : State} {B : Addr} {Z k : Nat} {op ep ip : Addr} {L : Nat}
+      {eb xb : List Byte} {N R : Nat}, PdPre s B Z k op ep ip L eb xb N R →
+      WP isa rest s fun t => ∃ y : Nat,
+        (R % N = 2^(64*((k+7)/8)) * 2^(64*((k+7)/8)) % N →
+          y = Spec.Rsa.os2ip xb ^ Spec.Rsa.os2ip eb % N) ∧
+        MainPost s t B Z k op (if Spec.Rsa.os2ip xb < N then y else 0)
+          (decide (Spec.Rsa.os2ip xb < N)))
+    (s : State) (h : pdContract.pre s) :
+    ∃ t s', Exec isa (.seq (.block (Precomputed.entry false)) (.seq (seqs Precomputed.load)
+      (.ite (.zero .x .x9) Precomputed.fail rest))) s t s' ∧ abiPreserved s s' ∧ pdContract.post s s' := by
   have c := pdCtx_of h
   have hZ' := c.hZ
   have hk1 := c.hk1
   have hk2 := c.hk2
   have hn := c.hs.nowrap
-  suffices hwp : WP isa (Precomputed.code M.mm) s fun s' => abiPreserved s s' ∧ pdContract.post s s' by
+  suffices hwp : WP isa (.seq (.block (Precomputed.entry false)) (.seq (seqs Precomputed.load)
+      (.ite (.zero .x .x9) Precomputed.fail rest))) s fun s' => abiPreserved s s' ∧ pdContract.post s s' by
     obtain ⟨t, s', he, hg, hp⟩ := hwp
     exact ⟨t, s', he, hg, hp⟩
-  unfold Precomputed.code
   have hw : ∀ i < 22, InRegions s.wr (off (stackArg s 0) (8 * i)) 8 := fun i hi => c.hs.st (by omega)
   refine WP.seq (WP.mono (pdEntry_ok rfl hw c.ha0) fun t₁ ⟨h0, hO, hN, hK, hE, hL, hIn, ho₁, k₁⟩ => ?_)
   have i₁ : InScr (stackArg s 0) ((stackArg s 1).toNat * 8) s.mem t₁.mem := InScr.of_outside ho₁ (by omega)
@@ -255,12 +274,19 @@ theorem pdCode_correct (M : Mont) (s : State) (h : pdContract.pre s) :
     rw [hct] at hcb
     obtain ⟨hodd, hN1, hRN⟩ := checks_facts (by omega) hcb
     have hpre := pdPre_of c h0 hO hK hE hL hIn ho₁ k₁ hW₂ hb₂ f₂ k₂ hodd hN1 hRN
-    refine WP.mono (pdRest_ok (M := M) hpre) fun t ⟨x, hx, hp⟩ => fin t _ _ hp fun nB hl hv hNv hRv => ?_
+    refine WP.mono (rest_ok hpre) fun t ⟨x, hx, hp⟩ => fin t _ _ hp fun nB hl hv hNv hRv => ?_
     rw [hN₂.trans hNv] at hx hp ⊢
     have hxX := hx (by
       rw [hR₂, hRv, Nat.mod_mod, ← Nat.pow_add, show 128 * (((s.gpr .x1).toNat + 7) / 8) =
         64 * (((s.gpr .x1).toNat + 7) / 8) + 64 * (((s.gpr .x1).toNat + 7) / 8) by omega])
     refine ⟨rfl, ?_⟩
-    rw [Nat.pow_mod, hxX, ← Nat.pow_mod]
+    rw [hxX]
+
+theorem pdCode_correct (M : Mont) (s : State) (h : pdContract.pre s) :
+    ∃ t s', Exec isa (Precomputed.code M.mm) s t s' ∧ abiPreserved s s' ∧ pdContract.post s s' := by
+  apply pdCodeWith_correct (Precomputed.rest M.mm) ?_ s h
+  intro a B Z k op ep ip L eb xb N R ha
+  exact WP.mono (pdRest_ok (M := M) ha) fun t ⟨x,hx,hp⟩ =>
+    ⟨x^Spec.Rsa.os2ip eb % N,fun hr => by rw [Nat.pow_mod,hx hr,← Nat.pow_mod],hp⟩
 
 end VG.Proof.Bignum.AArch64

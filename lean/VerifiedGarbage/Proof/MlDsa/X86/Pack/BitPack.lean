@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.MlDsa.X86.Pack.SimpleBitPack
-import VerifiedGarbage.Proof.MlDsa.Pack.Arith
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86.Pack.SimpleBitPack
+meta import VerifiedGarbage.Proof.MlDsa.X86.Pack.SimpleBitPack
+public import VerifiedGarbage.Proof.MlDsa.Pack.Arith
+meta import VerifiedGarbage.Proof.MlDsa.Pack.Arith
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on x86 (32-bit): `vg_mldsa_bit_pack`
@@ -10,6 +18,8 @@ into `eax`, and branches on `b` to the pack loop for its width
 that borrows (`subModQ`), which is `b - (x mod± q)` for a reduced `x`
 (`Pack/Arith.lean`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86.Pack.BitPack
 

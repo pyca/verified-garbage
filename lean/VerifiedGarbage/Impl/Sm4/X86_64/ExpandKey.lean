@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Sm4.X86_64.Ecb
-import VerifiedGarbage.Impl.Sm4.Planes
+module
+
+public import VerifiedGarbage.Impl.Sm4.X86_64.Ecb
+public import VerifiedGarbage.Impl.Sm4.Planes
 
 /-!
 # The SM4 key schedule on x86-64
@@ -22,6 +24,8 @@ Only `rdi`, `rsi` (the table's end, and the round key's entry), `r8` (the
 schedule) and `r9` hold public values; no address and no branch depends on
 anything else.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Sm4.X86_64
 

@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlDsa.X86.Verify.Compute
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86.Verify.Compute
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA verification on x86 (32-bit): a row of `w′₁`
@@ -8,6 +14,8 @@ Row `r`, step by step, with what the temporaries hold (`RI`): `w′ = Σₛ Â[r
 t̂₁[r])` (`wRow`), its `UseHint`s with `h[r]` (`w1Row`), and their
 `SimpleBitPack` to row `r` of `w1Encode(w′₁)` (`row_piece`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86.Verify
 

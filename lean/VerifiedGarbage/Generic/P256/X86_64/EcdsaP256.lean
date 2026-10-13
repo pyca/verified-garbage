@@ -1,17 +1,19 @@
-import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.Weierstrass.Law
-import VerifiedGarbage.Proof.Weierstrass.X86_64.InvInterface
-import VerifiedGarbage.Proof.P256.Comb7
-import VerifiedGarbage.Impl.Ecdsa.P256.X86_64
-import VerifiedGarbage.Proof.Ecdsa.X86_64.Verified
-import VerifiedGarbage.Proof.Ecdsa.X86_64.Lit
-import VerifiedGarbage.Impl.Ecdsa.Verify.P256.X86_64
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Verified
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Lit
-import VerifiedGarbage.Proof.Ecdsa.X86_64.VerifiedAdx
-import VerifiedGarbage.Proof.Ecdsa.X86_64.LitAdx
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointVerified
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.LitAdx
+module
+
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.Weierstrass.Law
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvInterface
+public import VerifiedGarbage.Proof.P256.Comb7
+public import VerifiedGarbage.Impl.Ecdsa.P256.X86_64
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.Verified
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.Lit
+public import VerifiedGarbage.Impl.Ecdsa.Verify.P256.X86_64
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Verified
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Lit
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.VerifiedAdx
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.LitAdx
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointVerified
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.LitAdx
 
 /-!
 # ECDSA over P-256 (FIPS 186-5) on x86-64
@@ -22,6 +24,8 @@ multiplication: the baseline's, and BMI2's and ADX's, with the comb's
 selection by AVX2 (`_adx`).
 -/
 
+@[expose] public section
+
 namespace VG.Generic.P256.X86_64.EcdsaP256
 
 /-- The function of `Spec.Ecdsa.P256.signApi`, multiplying with BMI2 and ADX
@@ -29,7 +33,7 @@ namespace VG.Generic.P256.X86_64.EcdsaP256
 `rsp` (`hsp`). -/
 def sign (adx : Bool) (code : Prog X86_64.isa)
     (hv : Verified X86_64.target code
-      (Spec.Ecdsa.P256.inst.signContract (X86_64.abi.withConsts Impl.Ecdsa.X86_64.p256.combConsts)))
+      (Spec.Ecdsa.P256.inst.signContract (X86_64.abi.withConsts Impl.Ecdsa.X86_64.p256.combConsts) 8))
     (hsp : code.all (fun i => !X86_64.isa.writesSp i) = true) : Artifact :=
   { Spec.Ecdsa.P256.signApi with
     name := Spec.Ecdsa.P256.signApi.name ++ (if adx then "_adx" else "")
@@ -52,8 +56,10 @@ def sign (adx : Bool) (code : Prog X86_64.isa)
       modulo `n`. The entry replaces the sum where the accumulator is the point at infinity \
       (`Z = 0`), and the sum replaces the accumulator unless the digit is zero; the result is \
       `(XZ : Y : Z³)` in projective coordinates (with `Y = 1` for the point at infinity); the \
-      inversions modulo `p` and `n` are by divsteps (Bernstein and Yang's safegcd, half-delta \
-      form): 10 batches of 59 divsteps on the low 64-bit words of `f` and `g` (from `f = p`, \
+      inversions modulo `p` and `n` are calls of `vg_p256_inv_mod_p" ++
+      (if adx then "_adx" else "") ++ "` and `vg_p256_inv_mod_n" ++ (if adx then "_adx" else "") ++
+      "`, by divsteps (Bernstein and Yang's safegcd, half-delta form): 10 batches of 59 divsteps \
+      on the low 64-bit words of `f` and `g` (from `f = p`, \
       `g = Z`, or `n` and `k`), each giving a matrix of 64-bit entries that updates `f`, `g` \
       (divided by 2⁵⁹) and the coefficients `a`, `b` (divided by 2⁶⁴ modulo `p` or `n`, as in \
       Montgomery reduction), 590 divsteps in all, enough for 256-bit moduli by Bernstein and \
@@ -64,7 +70,8 @@ def sign (adx : Bool) (code : Prog X86_64.isa)
     consts := Impl.Ecdsa.X86_64.p256.combConsts
     code
     contract := Spec.Ecdsa.P256.inst.signContract
-      (X86_64.abi.withConsts Impl.Ecdsa.X86_64.p256.combConsts)
+      (X86_64.abi.withConsts Impl.Ecdsa.X86_64.p256.combConsts) 8
+    stack := 8
     verified := hv
     spSafe := hsp
     features := if adx then ["bmi2", "adx", "avx", "avx2"] else [] }
@@ -74,7 +81,7 @@ def sign (adx : Bool) (code : Prog X86_64.isa)
 `rsp` (`hsp`). -/
 def verify (adx : Bool) (code : Prog X86_64.isa)
     (hv : Verified X86_64.target code
-      (Spec.Ecdsa.P256.inst.verifyContract (X86_64.abi.withConsts Impl.Ecdsa.X86_64.p256.combConsts)))
+      (Spec.Ecdsa.P256.inst.verifyContract (X86_64.abi.withConsts Impl.Ecdsa.X86_64.p256.combConsts) 8))
     (hsp : code.all (fun i => !X86_64.isa.writesSp i) = true) : Artifact :=
   { Spec.Ecdsa.P256.verifyApi with
     name := Spec.Ecdsa.P256.verifyApi.name ++ (if adx then "_adx" else "")
@@ -83,7 +90,8 @@ def verify (adx : Bool) (code : Prog X86_64.isa)
       registers in `scratch`. Field elements and scalars are four 64-bit words in Montgomery form, \
       " ++ Proof.Ecdsa.X86_64.mulNote adx ++ ". The public key is checked without branches; an invalid \
       key is replaced with `G` for the point operations and rejected by the final validity flag. \
-      Divsteps computes `s⁻¹` modulo `n`, then `u = e/s` and `v = r/s`. Both public scalars are \
+      Divsteps computes `s⁻¹` modulo `n`, a call of `vg_p256_inv_mod_n" ++
+      (if adx then "_adx" else "") ++ "`, then `u = e/s` and `v = r/s`. Both public scalars are \
       recoded as non-adjacent signed digits, width seven for `u` and width five for `v`. A single \
       Jacobian accumulator computes `[u]G + [v]Q` with 256 doublings, adding only nonzero digits. \
       Generator digits directly index odd multiples in the first row of the existing static \
@@ -98,7 +106,8 @@ def verify (adx : Bool) (code : Prog X86_64.isa)
     consts := Impl.Ecdsa.X86_64.p256.combConsts
     code
     contract := Spec.Ecdsa.P256.inst.verifyContract
-      (X86_64.abi.withConsts Impl.Ecdsa.X86_64.p256.combConsts)
+      (X86_64.abi.withConsts Impl.Ecdsa.X86_64.p256.combConsts) 8
+    stack := 8
     verified := hv
     spSafe := hsp
     features := if adx then ["bmi2", "adx"] else [] }

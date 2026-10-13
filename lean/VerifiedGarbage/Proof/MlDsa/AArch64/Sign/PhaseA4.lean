@@ -1,7 +1,15 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.Seed4
-import VerifiedGarbage.Proof.MlDsa.Sample.Rej4
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.Seed4
+public import VerifiedGarbage.Proof.MlDsa.Sample.Rej4
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Signing matrix expansion in batches of four: sampler outcomes, bounded failure, and the single-stream remainder. -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Sign
 open VG.Impl.MlDsa.AArch64.Call

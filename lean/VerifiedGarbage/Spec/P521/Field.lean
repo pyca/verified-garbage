@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.P521
-import VerifiedGarbage.TCB.Artifact
+module
+
+public import VerifiedGarbage.Spec.P521
+public import VerifiedGarbage.TCB.Artifact
 
 /-!
 # P-521's field arithmetic: the contracts, on every target
@@ -22,6 +24,8 @@ any number below `2⁵⁷⁶`, of which the functions take the second operand
 below `p` and return their result below `p`. Everything but the pointers is
 secret, and the functions are constant time.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.P521
 

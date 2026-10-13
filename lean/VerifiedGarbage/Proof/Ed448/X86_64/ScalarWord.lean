@@ -1,6 +1,12 @@
-import VerifiedGarbage.Impl.Ed448.X86_64.Scalar
-import VerifiedGarbage.Proof.Ed448.Scalar
-import VerifiedGarbage.Proof.X448.X86_64.Freeze
+module
+
+public import VerifiedGarbage.Impl.Ed448.X86_64.Scalar
+public import VerifiedGarbage.Proof.Ed448.Scalar
+public import VerifiedGarbage.Proof.X448.X86_64.Freeze
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 scalar arithmetic on x86-64: one word
@@ -11,6 +17,8 @@ import VerifiedGarbage.Proof.X448.X86_64.Freeze
 the numbers it computes, with X448's carry chains, multiply-accumulate steps
 and selection.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.X86_64
 

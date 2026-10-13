@@ -1,7 +1,15 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejStart
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejSqueeze
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejStart
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejSqueeze
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## From `ResidentRejFiveFrame.lean` -/
+
+@[expose] public section
 
 section
 
@@ -11,13 +19,13 @@ open VG.Proof.Sha3.AArch64.Neon
 
 /-- Exact writes of one resident five-block pair, excluding other streams and counts. -/
 def fiveWrites (σ : State) (p : Nat) : List Region :=
-  [⟨bufP σ (2*p),840⟩,⟨bufP σ (2*p+1),840⟩,pairR (stateP σ p)]
+  [⟨bufP σ (2*p),840⟩,⟨bufP σ (2*p+1),840⟩,pairR (stateP σ p),⟨scr σ+BitVec.ofNat 64 7296,384⟩]
 
 theorem fiveWrites_low {σ : State} {p : Nat} (hp : p<2) :
     ∀r∈fiveWrites σ p,Region.Sub r (lowR σ) := by
   intro r hr
   simp only [fiveWrites,List.mem_cons,List.not_mem_nil,or_false] at hr
-  rcases hr with rfl | rfl | rfl
+  rcases hr with rfl | rfl | rfl | rfl
   · exact Offset.sub_base (scr σ) (by
       unfold Impl.MlDsa.AArch64.Sample.Rej4.oBuf Impl.MlDsa.AArch64.Sample.Rej4.oSave
       omega)
@@ -27,42 +35,51 @@ theorem fiveWrites_low {σ : State} {p : Nat} (hp : p<2) :
   · exact Offset.sub_base (scr σ) (by
       unfold Impl.MlDsa.AArch64.Sample.Rej4.oSave
       omega)
+  · exact Offset.sub_base (scr σ) (by
+      unfold Impl.MlDsa.AArch64.Sample.Rej4.oSave
+      omega)
 
 theorem fiveWrites_count {σ : State} {p : Nat} (hp : p<2) :
     ∀r∈fiveWrites σ p,(countR σ).Disjoint r := by
   intro r hr
   simp only [fiveWrites,List.mem_cons,List.not_mem_nil,or_false] at hr
-  rcases hr with rfl | rfl | rfl
+  rcases hr with rfl | rfl | rfl | rfl
   · exact Offset.disjoint (scr σ) (d := 7904) (e := 840+1008*(2*p))
       (n := 32) (k := 840) (by omega) (by decide) (by omega)
   · exact Offset.disjoint (scr σ) (d := 7904) (e := 840+1008*(2*p+1))
       (n := 32) (k := 840) (by omega) (by decide) (by omega)
   · exact (pair_count_disjoint σ hp).symm
+  · exact Offset.disjoint (scr σ) (d := 7904) (e := 7296)
+      (n := 32) (k := 384) (by omega) (by decide) (by decide)
 
 theorem fiveWrites_other {σ : State} {p q : Nat} (hp : p<2) (hq : q<2) (hne : p≠q) :
     ∀r∈fiveWrites σ p,(pairR (stateP σ q)).Disjoint r := by
   intro r hr
   simp only [fiveWrites,List.mem_cons,List.not_mem_nil,or_false] at hr
-  rcases hr with rfl | rfl | rfl
+  rcases hr with rfl | rfl | rfl | rfl
   · exact Offset.disjoint (scr σ) (d := 400*q) (e := 840+1008*(2*p))
       (n := 400) (k := 840) (by omega) (by omega) (by omega)
   · exact Offset.disjoint (scr σ) (d := 400*q) (e := 840+1008*(2*p+1))
       (n := 400) (k := 840) (by omega) (by omega) (by omega)
   · exact Offset.disjoint (scr σ) (d := 400*q) (e := 400*p)
       (n := 400) (k := 400) (by omega) (by omega) (by omega)
+  · exact Offset.disjoint (scr σ) (d := 400*q) (e := 7296)
+      (n := 400) (k := 384) (by omega) (by omega) (by omega)
 
 theorem fiveWrites_buffer {σ : State} {p k : Nat} (hp : p<2) (hk : k<4)
     (h0 : k≠2*p) (h1 : k≠2*p+1) :
     ∀r∈fiveWrites σ p,(Region.mk (bufP σ k) 840).Disjoint r := by
   intro r hr
   simp only [fiveWrites,List.mem_cons,List.not_mem_nil,or_false] at hr
-  rcases hr with rfl | rfl | rfl
+  rcases hr with rfl | rfl | rfl | rfl
   · exact Offset.disjoint (scr σ) (d := 840+1008*k) (e := 840+1008*(2*p))
       (n := 840) (k := 840) (by omega) (by omega) (by omega)
   · exact Offset.disjoint (scr σ) (d := 840+1008*k) (e := 840+1008*(2*p+1))
       (n := 840) (k := 840) (by omega) (by omega) (by omega)
   · exact Offset.disjoint (scr σ) (d := 840+1008*k) (e := 400*p)
       (n := 840) (k := 400) (by omega) (by omega) (by omega)
+  · exact Offset.disjoint (scr σ) (d := 840+1008*k) (e := 7296)
+      (n := 840) (k := 384) (by omega) (by omega) (by omega)
 
 theorem five_pair_keep {σ : State} {p q : Nat} {s t : State} {A B : Spec.Sha3.State}
     (hp : p<2) (hq : q<2) (hne : p≠q) (hf : Frame (fiveWrites σ p) s.mem t.mem)
@@ -111,6 +128,9 @@ structure FiveRegisters (rp ra rb : Reg) : Prop where
   p6 : rp≠.x6
   p7 : rp≠.x7
   p16 : rp≠.x16
+  p15 : rp≠.x15
+  a15 : ra≠.x15
+  b15 : rb≠.x15
   a6 : ra≠.x6
   a7 : ra≠.x7
   a16 : ra≠.x16
@@ -139,7 +159,7 @@ theorem fiveEnv_ok {v p : Nat} {σ s : State} {rp ra rb : Reg}
       StreamOutput t.mem (bufP σ (2*p)) 10 5 (A0 σ (2*p)) ∧
       StreamOutput t.mem (bufP σ (2*p+1)) 10 5 (A0 σ (2*p+1)) ∧
       Frame (fiveWrites σ p) s.mem t.mem ∧
-      (∀r,r≠ra → r≠rb → r≠.x28 → r≠.x6 → r≠.x7 → r≠.x16 → t.gpr r=s.gpr r) := by
+      (∀r,r≠ra → r≠rb → r≠.x28 → r≠.x6 → r≠.x7 → r≠.x16 → r≠.x15 → t.gpr r=s.gpr r) := by
   have hp2 : p<2 := by have:=hp.streams; omega
   have hword (i : Nat) (hi : i<25) :
       InRegions s.wr (wordAddr (stateP σ p) i) 16 := by
@@ -152,7 +172,7 @@ theorem fiveEnv_ok {v p : Nat} {σ s : State} {rp ra rb : Reg}
       BitVec.ofNat 64 d) n
     rw [Offset.add_add,Offset.add_add]
     exact in_scr hp he.wr (by omega)
-  refine WP.mono (five_ok hpair hrp ha hb hr.pa hr.pb hr.p28 hr.p6 hr.p7 hr.p16
+  refine WP.mono (fiveWith_ok Resident.originalCore hpair hrp ha hb hr.pa hr.pb hr.p28 hr.p6 hr.p7 hr.p16
     hr.a6 hr.a7 hr.a16 hr.a28 hr.b6 hr.b7 hr.b16 hr.b28 hr.ab
     (Offset.disjoint (scr σ) (d := 840+1008*(2*p)) (e := 840+1008*(2*p+1))
       (n := 840) (k := 840) (by omega) (by omega) (by omega))
@@ -166,7 +186,14 @@ theorem fiveEnv_ok {v p : Nat} {σ s : State} {rp ra rb : Reg}
     (fun j hj i hi => hbuf (2*p) (by omega) j (16*i) 16 hj (by omega))
     (fun j hj i hi => hbuf (2*p+1) (by omega) j (16*i) 16 hj (by omega))
     (fun j hj => hbuf (2*p) (by omega) j 160 8 hj (by decide))
-    (fun j hj => hbuf (2*p+1) (by omega) j 160 8 hj (by decide)))
+    (fun j hj => hbuf (2*p+1) (by omega) j 160 8 hj (by decide))
+    hr.p15 hr.a15 hr.b15 (by decide) (by rw [he.x19])
+    (fun i hi => by rw [Offset.add_add]; exact in_scr hp he.wr (by omega))
+    (fun r hr => by rw [Offset.add_add]; exact in_scr hp he.wr (by omega))
+    (Offset.disjoint (scr σ) (d := 7296) (e := 840+1008*(2*p))
+      (n := 384) (k := 840) (by omega) (by omega) (by omega))
+    (Offset.disjoint (scr σ) (d := 7296) (e := 840+1008*(2*p+1))
+      (n := 384) (k := 840) (by omega) (by omega) (by omega)))
     fun t ⟨ht,oa,ob,hf,hg,hrd,hwr,hsp⟩ => ?_
   refine ⟨he.lowStep hf (fiveWrites_low hp2) hrd hwr hsp ?_,ht,oa,ob,hf,hg⟩
   intro r hrmem

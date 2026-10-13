@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Halves
-import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Digits
-import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.CombLoop
+module
+
+public import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Halves
+public import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Digits
+public import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.CombLoop
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The `zmm` comb: an addition in each half
@@ -11,6 +17,8 @@ of `ymm5–ymm9` (`esplit`, translated), the masks of the signs set
 point (`vnegBody`, the carry and `vadd`, translated): what `ventryN_wp` says
 of each half.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed25519.X86_64.Zmm
 

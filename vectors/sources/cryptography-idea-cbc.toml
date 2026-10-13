@@ -1,0 +1,5 @@
+name = "pyca/cryptography IDEA-CBC vectors (derived from the AESVS MMT data, verified against Botan; idea-cbc.txt)"
+directories = ["cryptography-idea-cbc"]
+url = "https://raw.githubusercontent.com/pyca/cryptography/dd22989f9594704bfef2ea3a8b08b40774a06a23/vectors/cryptography_vectors/ciphers/IDEA/idea-cbc.txt"
+sha256 = "7b8cf6f6791424409eb954a5cf02badf6d3ac4238d84cdbefd381d7214993a37"
+retrieved = 2026-10-11

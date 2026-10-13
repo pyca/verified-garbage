@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.MdStream.Spec
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Impl.MdStream.AArch64
-import VerifiedGarbage.Proof.Framework.Offset
+module
+
+public import VerifiedGarbage.Proof.MdStream.Spec
+public import VerifiedGarbage.Proof.Framework.AArch64.Call
+public import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Impl.MdStream.AArch64
+public import VerifiedGarbage.Proof.Framework.Offset
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Streaming Merkle–Damgård hash functions on AArch64: common lemmas
@@ -13,6 +19,8 @@ the call of the compression function (`compressAt`), saving and restoring the
 caller's registers, and weakest-precondition rules for the instruction forms
 used (which the proofs of other AArch64 code use too).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MdStream.AArch64
 

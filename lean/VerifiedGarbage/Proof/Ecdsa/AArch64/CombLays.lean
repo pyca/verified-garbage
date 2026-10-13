@@ -1,6 +1,13 @@
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Lays
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Stages
-import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.Lays
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.Stages
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.Padd
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDSA on AArch64: the fixed-base comb's slots and constants
@@ -11,6 +18,8 @@ next), and its constants, the curve's tables, are what `tcomb_ok` needs
 (`tcombVals`) if the tables are right (`CombOkW`, which a curve's own facts
 prove).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.AArch64
 
@@ -56,6 +65,15 @@ theorem combLay (hc : BaseCfgOk c) : CombLay c.combCfg.toComb size := by
     have hl : ∀ i ∈ [RX, RY, RZ, TX, TY, TZ, PT, T0, T1, T2, T3, T4, T5, DX, DY, DZ, TMP], i < 45 := by
       decide
     exact sl_bits0 c (hl i hi) (by rw [hJ]; unfold Cfg.combJ; omega_arith)
+
+/-- The comb's additions, inline or by calls. -/
+theorem combAddOk (hc : BaseCfgOk c) :
+    AddOk c.combCfg.M size (· ∈ combSlots c.combCfg.toComb) c.combCfg.S c.combCfg.A c.combCfg.E
+      c.combCfg.D c.padd :=
+  addOk_of hc (by
+    rw [combSlots_eq]
+    exact lay_map_em hc rfl rfl rfl (l := [AP, BM, ZERO, RX, RY, RZ, TX, TY, TZ, PT, T0, T1, T2, T3,
+      T4, T5, DX, DY, DZ]) (by decide))
 
 theorem tcombLay (hc : BaseCfgOk c) : TCombLay c.combCfg size := by
   have hn := hc.n0
@@ -201,6 +219,35 @@ theorem sv_unch_tcomb {base : Addr} {m m' : Mem} (hu : Unch base (tcombW c.combC
     wordsVal m' base (c.sl i) c.n = wordsVal m base (c.sl i) c.n := by
   rw [tcombW_eq] at hu
   exact sv_unch hu h7 hn hi (apart_append (apart_slW hl) (apart_zw hi))
+
+/-- What the signature's comb (`Cfg.combP`) writes: the comb's ranges, and
+`EM`'s slot, where it may copy `b`. -/
+def combPW (c : Cfg) : List (Nat × Nat) := tcombW c.combCfg ++ slW c [EM]
+
+theorem fixedOk_combPW : FixedOk c (combPW c) := fixedOk_tcombW.append (fixedOk_slW (by decide))
+
+/-- The flag word apart from what the signature's comb writes. -/
+theorem flag_unch_combP {base : Addr} {m m' : Mem} (hu : Unch base (combPW c) m m')
+    (h7 : c.n < 10) (h0 : 0 < c.n) (hn : base.toNat + size ≤ 2 ^ 64) :
+    word m' base (c.sl FLAG) = word m base (c.sl FLAG) := by
+  have hF := sl_le c h7 (i := FLAG) (by decide)
+  rw [combPW, tcombW_eq] at hu
+  refine hu.word (fun w hw => ?_) (by omega_arith)
+  rcases apart_append (apart_append (apart_slW (c := c) (i := FLAG) (by decide))
+    (apart_zw (c := c) (i := FLAG) (by decide))) (apart_slW (c := c) (i := FLAG) (l := [EM]) (by decide))
+    w hw with h | h
+  · exact Or.inl (by omega_arith)
+  · exact Or.inr h
+
+/-- A slot apart from what the signature's comb writes. -/
+theorem sv_unch_combP {base : Addr} {m m' : Mem} (hu : Unch base (combPW c) m m')
+    (h7 : c.n < 10) (hn : base.toNat + size ≤ 2 ^ 64) {i : Nat} (hi : i < 45)
+    (hl : i ∉ [RX, RY, RZ, TX, TY, TZ, PT, T0, T1, T2, T3, T4, T5, DX, DY, DZ, TMP, EM]) :
+    wordsVal m' base (c.sl i) c.n = wordsVal m base (c.sl i) c.n := by
+  rw [combPW, tcombW_eq] at hu
+  simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hl
+  exact sv_unch hu h7 hn hi (apart_append (apart_append (apart_slW (by simp [hl]))
+    (apart_zw hi)) (apart_slW (l := [EM]) (by simp [hl])))
 
 theorem combClob_regs : ∀ n < 10, Reg.x0 ∉ combClob n ∧ Reg.x20 ∉ combClob n := by
   unfold combClob maskRegs clob acc; decide

@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.MlDsa.X86.Round.Arith
-import VerifiedGarbage.Proof.MlKem.X86.Leaf
-import VerifiedGarbage.TCB.X86.Target
-import VerifiedGarbage.Proof.Framework.Sig
-import VerifiedGarbage.Proof.Framework.Contract
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86.Round.Arith
+public import VerifiedGarbage.Proof.MlKem.X86.Leaf
+public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Proof.Framework.Sig
+public import VerifiedGarbage.Proof.Framework.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on x86 (32-bit): what the rounding functions share
@@ -12,6 +18,8 @@ coefficients of the polynomials at pointers advanced by 4 per iteration
 (`ea_cf`), and the coefficients of input polynomials, which the functions
 never write (`in_keep`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86.Round
 

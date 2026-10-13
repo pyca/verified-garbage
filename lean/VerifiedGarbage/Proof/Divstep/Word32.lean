@@ -1,9 +1,15 @@
-import VerifiedGarbage.Proof.Divstep.BatchBasic
-import Mathlib.Tactic.Linarith
-import Mathlib.Tactic.NormNum
-import Mathlib.Tactic.Ring
-import VerifiedGarbage.Proof.Divstep.Word32Bits
-import Mathlib.Data.BitVec
+module
+
+public import VerifiedGarbage.Proof.Divstep.BatchBasic
+public import Mathlib.Tactic.Linarith
+public import Mathlib.Tactic.NormNum
+public import Mathlib.Tactic.Ring
+public import VerifiedGarbage.Proof.Divstep.Word32Bits
+public import Mathlib.Data.BitVec
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Divsteps on 32-bit words
@@ -16,6 +22,8 @@ masks `B` (all ones if `g` is odd) and `S = B` and `d ≥ 0`, `(x ^ S) - S` is
 `k` bits (`wstep_rel`); so `n ≤ 32` steps from the low words of `f` and `g`
 give `d` and the matrix of `n` divsteps (`wsteps_rel`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Divstep.W32
 

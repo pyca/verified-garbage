@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.Bignum.AArch64.PubCode
-import VerifiedGarbage.Proof.Bignum.AArch64.PcCT
-import VerifiedGarbage.Proof.Bignum.AArch64.PdCTRest
+module
+
+public import VerifiedGarbage.Proof.Bignum.AArch64.PubCode
+meta import VerifiedGarbage.Proof.Bignum.AArch64.PubCode
+public import VerifiedGarbage.Proof.Bignum.AArch64.PcCT
+meta import VerifiedGarbage.Proof.Bignum.AArch64.PcCT
+public import VerifiedGarbage.Proof.Bignum.AArch64.PdCTRest
+meta import VerifiedGarbage.Proof.Bignum.AArch64.PdCTRest
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAEP from the modulus on AArch64: constant time but for `n` and `e`
@@ -11,6 +20,8 @@ lengths, `n` and `e`: its entry and the check of the modulus, the load of
 (`pdRest_ct`), for the values of `m` and `R² mod m` that `n` determines
 (`pubCode_constantTime`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.AArch64
 

@@ -1,7 +1,15 @@
-import VerifiedGarbage.Impl.TripleDes.Arm.ExpandKey
-import VerifiedGarbage.Proof.TripleDes.Arm.Word
-import VerifiedGarbage.Proof.Framework.Arm.Exec
-import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+module
+
+public import VerifiedGarbage.Impl.TripleDes.Arm.ExpandKey
+public import VerifiedGarbage.Proof.TripleDes.Arm.Word
+public import VerifiedGarbage.Proof.Framework.Arm.Exec
+public import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.TripleDes.Arm
 open VG VG.Arm VG.Arm.RegUpd VG.Impl.TripleDes.Arm

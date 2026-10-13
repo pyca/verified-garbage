@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.MlKem.X86.Leaf
-import VerifiedGarbage.Proof.MlKem.Mem
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86.Leaf
+public import VerifiedGarbage.Proof.MlKem.Mem
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86 (32-bit): common lemmas
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.MlKem.Mem
 Addresses of coefficients and bytes at a 32-bit pointer, the states a
 straight-line block leaves (`Only`), and the arithmetic of `condSub`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.X86
 

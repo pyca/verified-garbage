@@ -1,7 +1,11 @@
-import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Verified
+module
+
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Verified
 
 /-! # ML-DSA (FIPS 204) signing on 32-bit ARM -/
+
+@[expose] public section
 
 namespace VG.Artifacts.MlDsaSign.Arm
 

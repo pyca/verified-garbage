@@ -1,6 +1,14 @@
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Points
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Points
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## `FinalState` -/
+
+@[expose] public section
 
 section
 
@@ -109,11 +117,11 @@ theorem slSub_ok {M : Mod} {m : Nat} (hMn : M.n = c.n) (h7 : c.n < 10) {base : A
 theorem final_eq (c : Cfg) : Impl.Ecdsa.Verify.AArch64.Cfg.final c =
     .seq (.block (Impl.Mont.AArch64.mul c.MP' (c.sl XM) (c.sl RX) (c.sl ACC)))
     (.seq (.block (Impl.Mont.AArch64.mul c.MP' (c.sl X) (c.sl XM) (c.sl ONE)))
-    (.seq (.block (Impl.Mont.AArch64.mul c.MN' (c.sl XN) (c.sl X) (c.sl R2N)))
+    (.seq (c.mulNP (c.sl XN) (c.sl X) (c.sl R2N))
     (.seq (.block (Impl.Mont.AArch64.sub c.MN' (c.sl W) (c.sl XN) (c.sl RM')))
       (.block (c.checkNonzero (c.sl RZ) ++ (Impl.Ecdh.AArch64.Cfg.checkZero c (c.sl W) ++
         Impl.Ecdsa.Verify.AArch64.Cfg.finish c)))))) := by
-  simp only [Impl.Ecdsa.Verify.AArch64.Cfg.final, blocks, List.append_assoc]
+  simp only [Impl.Ecdsa.Verify.AArch64.Cfg.final, List.append_assoc]
 
 /-- `Z^(p-2)`, `x`, the last checks and the result. -/
 theorem tail_ok (hc : BaseCfgOk c) {s₀ : State} {base : Addr} {g : Reg → BitVec 64}
@@ -137,9 +145,9 @@ theorem tail_ok (hc : BaseCfgOk c) {s₀ : State} {base : Addr} {g : Reg → Bit
   refine WP.seq (WP.mono (pPow_ok hc hP.scr (modP_of hc F.mp) hP.rz_lt)
     fun s₁ ⟨K₁, U₁, lt₁, v₁⟩ => ?_)
   have hs₁ := hP.scr.of_keepRegs K₁ (x0_not_powClob h7)
-  have F₁ := F.unch h7 hn fixedOk_chainWc U₁
+  have F₁ := F.unch h7 hn (fixedOk_chainWc hc) U₁
   have e₁ : ∀ {i}, i < 45 → i ∉ [ACC, TMP] → sv c base s₁ i = sv c base s i := fun hi hl =>
-    sv_unch U₁ h7 hn hi (apart_chainWc hi hl)
+    sv_unch U₁ h7 hn hi (apart_chainWc hc hi hl)
   rw [final_eq]
   -- `XM = X · ACC`.
   have hM₁ := modP_of hc F₁.mp
@@ -170,8 +178,8 @@ theorem tail_ok (hc : BaseCfgOk c) {s₀ : State} {base : Addr} {g : Reg → Bit
   have r2₃ : sv c base s₃ R2N = 2 ^ (64 * c.n) * 2 ^ (64 * c.n) % c.C.n :=
     (v₃ (by decide) (by decide) (by decide)).trans ((v₂ (by decide) (by decide) (by decide)).trans
       ((e₁ (by decide) (by decide)).trans F.r2n))
-  refine WP.seq (WP.mono (slMul_ok (MN'_n c) h7 hs₃ hMN₃ (MN'_A c) (o := XN) (a := X) (b := R2N) (by decide)
-    (by decide) (by decide) (by rw [r2₃]; exact Nat.mod_lt _ (by omega))) fun s₄ ⟨k₄, lt₄, e₄⟩ => ?_)
+  refine WP.seq (WP.mono (slMulN_ok hc hs₃ hMN₃ (o := XN) (a := X) (b := R2N) (by decide)
+    (by decide) (by decide) (by decide) (by decide) (by decide) (by rw [r2₃]; exact Nat.mod_lt _ (by omega))) fun s₄ ⟨k₄, lt₄, e₄⟩ => ?_)
   have hs₄ := k₄.scr hs₃
   have M₄ := hMN₃.keepA64 (j := MN) (by decide) rfl rfl rfl rfl h7 hn k₄ (by decide) (by decide)
   have v₄ : ∀ {i}, i < 45 → i ≠ XN → i ≠ TMP → sv c base s₄ i = sv c base s₃ i := fun hi h₁ h₂ =>
@@ -223,7 +231,7 @@ theorem tail_ok (hc : BaseCfgOk c) {s₀ : State} {base : Addr} {g : Reg → Bit
       · rcases List.mem_append.mp hw with hw | hw
         · simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
           rcases hw with rfl | rfl | rfl
-          exacts [sl_ge64 c ACC, sl_ge64 c CT, sl_ge64 c TMP]
+          exacts [sl_ge64 c ACC, Nat.le_trans (sl_ge64 c CT) (invTbl_ge hc), invTmp_ge64 hc]
         · obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hw
           exact sl_ge64 c i
       · rw [List.mem_singleton.mp hw]
@@ -255,7 +263,7 @@ theorem tail_ok (hc : BaseCfgOk c) {s₀ : State} {base : Addr} {g : Reg → Bit
       · exact sl (by decide) hw
       · exact sl (by decide) hw
     have z₆' : wordsVal s₅.mem base (c.sl RZ) c.n = sv c base s RZ := z₆
-    rw [f₇, f₆, hW₆, flag_unch_cw U₅ h7 h0 hn (by decide), hP.flag, z₆', mask_and, mask_and]
+    rw [f₇, f₆, hW₆, flag_unch_cw hc U₅ h7 h0 hn (by decide), hP.flag, z₆', mask_and, mask_and]
     simp only [mask, w₅, decide_eq_true_eq, and_assoc]
   refine WP.mono (vfinish_ok hc hs₇ hsv _ hflag) fun s' ⟨ret, saved⟩ => ⟨saved, _, lt₃, x₃, ?_⟩
   rw [ret]

@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlKem.Bits
+module
+
+public import VerifiedGarbage.Proof.MlKem.Bits
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA: streaming `d`-bit fields through an accumulator, for every target
@@ -21,6 +27,8 @@ taking the low `d` bits. The accumulator is always a slice of the number:
   field `j` (`unpack_field`) and the rest the accumulator of field `j + 1`
   (`unpack_shift`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Pack
 

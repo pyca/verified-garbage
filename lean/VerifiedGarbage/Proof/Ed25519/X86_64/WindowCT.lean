@@ -1,10 +1,24 @@
-import VerifiedGarbage.Proof.Ed25519.X86_64.RecoverCTBlocks
-import VerifiedGarbage.Proof.Ed25519.X86_64.PointEqual
-import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyPoints
-import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyCTLit
-import VerifiedGarbage.Proof.Ed25519.X86_64.CTSupport
+module
+
+public import VerifiedGarbage.Proof.Ed25519.X86_64.RecoverCTBlocks
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.RecoverCTBlocks
+public import VerifiedGarbage.Proof.Ed25519.X86_64.PointEqual
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.PointEqual
+public import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyPoints
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyPoints
+public import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyCTLit
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyCTLit
+public import VerifiedGarbage.Proof.Ed25519.X86_64.CTSupport
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.CTSupport
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Ed25519.X86_64.PointEqualCT`. -/
+
+@[expose] public section
+
 section
 /-! Point comparison branches only on the two public projective points. -/
 

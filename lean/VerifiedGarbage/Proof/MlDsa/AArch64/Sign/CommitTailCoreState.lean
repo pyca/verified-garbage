@@ -1,11 +1,19 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CommitTailModel
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CommitTailModel
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Sign.CommitTail
 open VG VG.AArch64
 open VG.Proof.Sha3.AArch64.Neon
 open VG.Proof.MlDsa.AArch64.Optimized.Resident (permuted StreamOutput)
 
-def coreRegs : List Reg := [.x5,.x6,.x7,.x10,.x16]
+def coreRegs : List Reg := [.x5,.x6,.x7,.x10,.x11,.x12,.x13,.x16]
 def bufferBase (work : Addr) : Addr := work+256
 def bufferRegion (work : Addr) : Region := ⟨bufferBase work,680⟩
 

@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.Verified
-import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.LitAdx
-import VerifiedGarbage.Proof.P521.X86_64.TaintSumsAdx
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.Verified
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.Verified
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.LitAdx
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.LitAdx
+public import VerifiedGarbage.Proof.P521.X86_64.TaintSumsAdx
+meta import VerifiedGarbage.Proof.P521.X86_64.TaintSumsAdx
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDSA over P-521 on x86-64 with BMI2 and ADX: `Verified`
@@ -11,6 +20,8 @@ as it covers any multiplication (`Proof/Mont/X86_64/MulPX.lean`) and either
 selection (`selPassV_ok`): the same curve, so the same facts
 (`p521x_ok`, from `p521_ok`) and the same precondition.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.X86_64.P521
 
@@ -76,6 +87,7 @@ theorem p521x_ok (hI : InvSounds) : CfgOk p521x where
   p_lt_2n := by decide +kernel
   minv_p := by decide +kernel
   red_p := by decide +kernel
+  red_n := by decide +kernel
   minv_n := by decide +kernel
   len8 := by decide
   len_lo := by decide
@@ -98,6 +110,7 @@ theorem p521x_ok (hI : InvSounds) : CfgOk p521x where
   comb_am3 := fun _ _ => by unfold AM3; decide +kernel
   am3 := by unfold AM3; decide +kernel
   even h := absurd h (by decide)
+  inverse _ := ⟨by decide, rfl⟩
 
 theorem p521x_tbls (hT : CombOkW Spec.P521.curve 7 83 Impl.P521.p521Comb7 Impl.P521.p521Comb7Start) :
     CombTbls p521x := fun d h => by cases h; exact ⟨hT, fun h => absurd h (by decide)⟩

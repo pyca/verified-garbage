@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.Ed448
-import VerifiedGarbage.TCB.Artifact
+module
+
+public import VerifiedGarbage.Spec.Ed448
+public import VerifiedGarbage.TCB.Artifact
 
 /-!
 # Ed448: contracts on every target
@@ -26,6 +28,8 @@ the space used below the stack pointer. `writeArgs` allows calls to reuse
 the ABI's argument slots, including on 32-bit targets.
 -/
 
+@[expose] public section
+
 namespace VG.Spec.Ed448
 
 /-- Bytes in a buffer, in increasing address order. -/
@@ -35,11 +39,11 @@ def bytesAt (m : Mem) (p : Addr) (n : Nat) : List Byte :=
 /-- Working space in `u64`s, shared by all target signatures. -/
 def scratchWords : Nat := 1024
 
-private def scratchSafety : String :=
+def scratchSafety : String :=
   "The contents of `scratch` on return are unspecified and may contain secrets; the caller \
     must destroy them after use."
 
-private def seedSafety : String :=
+def seedSafety : String :=
   "`seed` must originate from a cryptographically secure random generator."
 
 /-! ## Scalar and group primitives -/

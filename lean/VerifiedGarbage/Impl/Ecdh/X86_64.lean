@@ -1,6 +1,8 @@
-import VerifiedGarbage.Impl.Ecdsa.X86_64
-import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
-import VerifiedGarbage.Impl.Weierstrass.X86_64.WindowJ
+module
+
+public import VerifiedGarbage.Impl.Ecdsa.X86_64
+public import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
+public import VerifiedGarbage.Impl.Weierstrass.X86_64.WindowJ
 
 /-!
 # ECDH on x86-64
@@ -32,6 +34,8 @@ for a curve of `n` 64-bit words, from the code of ECDSA's signature
 Everything is computed whatever the flag, and only the pointers may affect
 timing (the contract would let the peer's public key affect it too).
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Ecdh.X86_64
 
@@ -143,10 +147,14 @@ def maskK : List Instr :=
   else []
 
 /-- `[d]P` into `R`, for `d` at `K` and `P` at `PX`, `PY`, `ONEP`: by windows for
-up to nine words when enabled (`d` reduced below `2^nbits` first), else by the ladder. -/
+up to nine words when enabled (`d` reduced below `2^nbits` first), else by the ladder,
+calling `vg_<curve>_mul` if the curve has it. -/
 def mulQ : Prog isa :=
   if c.n ≤ 9 ∧ c.windows = true then .seq (.block (maskK c)) (.seq (c.winPrep (c.sl K)) (WinCfg.window (c.winCfg PX PY BP)))
-  else ladder (ladderQ c)
+  else match c.mul with
+    | some C => .seq (.block (copy c.n (c.sl RX) (c.sl PX) ++ copy c.n (c.sl RY) (c.sl PY)))
+        (.call C.mulApi.name c.mulFn)
+    | none => ladder (ladderQ c)
 
 /-- `x` (or zeros) to `out`, the flag's low bit to `rax`, and the
 callee-saved registers restored. -/
@@ -200,10 +208,33 @@ def mulQJ (dbl : Pt → Prog isa) : Prog isa :=
 `X` (`E.x`), its working area that of `invWin`. -/
 def invJA : InvCfg := .ofMod c.MP' (jwinCfg c).E.x (c.sl RZ) (bitsAt c.n 2) c.C.p
 
+/-- The words of the window's table of bits within the working area of
+`vg_<curve>_inv_mod_p` (`bitsAt c.n 3`, `64 n + 64` bytes), which the call
+keeps in the table of the bits of `n - 2`, which ECDH does not read. -/
+def invJAWords : Nat := (bitsAt c.n 3 + (64 * c.n + 64) - c.sl WB) / 8
+
+/-- Where the call keeps `PT`'s slot, which `vg_<curve>_inv_mod_p` writes:
+past those words. -/
+def invJAPt : Nat := bitsAt c.n 2 + 8 * invJAWords c
+
+/-- `invJA` by a call of `vg_<curve>_inv_mod_p` (`Cfg.pPow`, `[ACC] =
+[RZ]^(p-2)`), keeping the bytes of the window's slots and table of bits that
+the function's own working space covers, then `ACC` into `E.x`. -/
+def invJACall : Prog isa :=
+  .seq (.block (copy (invJAWords c) (bitsAt c.n 2) (c.sl WB) ++ copy c.n (invJAPt c) (c.sl PT))) <|
+  .seq c.pPow <|
+  .block (copy c.n (jwinCfg c).E.x (c.sl ACC) ++ copy c.n (c.sl PT) (invJAPt c) ++
+    copy (invJAWords c) (c.sl WB) (bitsAt c.n 2))
+
+/-- The inversion of `mulQJA`'s table: a call if the curve has six words and
+inversion functions (`Cfg.inverse`), else written out. -/
+def invJAProg : Prog isa :=
+  if c.n = 6 ∧ c.inverse.isSome then invJACall c else InvCfg.inv (invJA c)
+
 /-- `[d]P` into `R` by the Jacobian window method with the table made affine
 (`JacWinCfg.windowA`), `dbl` doubling a point in place. -/
 def mulQJA (dbl : Pt → Prog isa) : Prog isa :=
-  .seq (.block (maskK c)) (.seq (jwinPrep c) ((jwinCfg c).windowA (InvCfg.inv (invJA c)) dbl))
+  .seq (.block (maskK c)) (.seq (jwinPrep c) ((jwinCfg c).windowA (invJAProg c) dbl))
 
 /-! ## Windows of 4 bits in Jacobian coordinates, for a curve of prime order
 

@@ -1,6 +1,12 @@
-import VerifiedGarbage.Spec.Ccm.Contract
-import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.Framework.PowLit
+module
+
+public import VerifiedGarbage.Spec.Ccm.Contract
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.Framework.PowLit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CCM on AArch64: the contracts the proofs are written against
@@ -12,6 +18,8 @@ the shared ones of `Spec/Ccm/Contract.lean`, which imply these
 stack is used; `seal` and `open` read their last three arguments from the
 stack, which they may only read.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesCcm.AArch64
 

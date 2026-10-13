@@ -1,14 +1,33 @@
-import VerifiedGarbage.Proof.Ecdsa.X86_64.Main
-import VerifiedGarbage.Proof.Ecdsa.X86_64.Secp256k1.Contract
-import VerifiedGarbage.Proof.Ecdsa.X86_64.Secp256k1.Lit
-import VerifiedGarbage.Proof.Secp256k1.Point
-import VerifiedGarbage.Proof.Framework.X86_64.Taint
-import VerifiedGarbage.Proof.Framework.X86_64.Abi
-import VerifiedGarbage.Proof.Framework.X86_64.Inline
-import VerifiedGarbage.Proof.Framework.X86_64.TaintSym
-import VerifiedGarbage.Proof.Secp256k1.Prime
-import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
-import VerifiedGarbage.Proof.Framework.LitShare
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.Main
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.Main
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.Secp256k1.Contract
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.Secp256k1.Contract
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.Secp256k1.Lit
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.Secp256k1.Lit
+public import VerifiedGarbage.Proof.Secp256k1.Point
+meta import VerifiedGarbage.Proof.Secp256k1.Point
+public import VerifiedGarbage.Proof.Framework.X86_64.Taint
+meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
+public import VerifiedGarbage.Proof.Framework.X86_64.Abi
+meta import VerifiedGarbage.Proof.Framework.X86_64.Abi
+public import VerifiedGarbage.Proof.Framework.X86_64.Inline
+meta import VerifiedGarbage.Proof.Framework.X86_64.Inline
+public import VerifiedGarbage.Proof.Framework.X86_64.TaintSym
+meta import VerifiedGarbage.Proof.Framework.X86_64.TaintSym
+public import VerifiedGarbage.Proof.Secp256k1.Prime
+meta import VerifiedGarbage.Proof.Secp256k1.Prime
+public import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
+meta import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
+public import VerifiedGarbage.Proof.Framework.LitShare
+meta import VerifiedGarbage.Proof.Framework.LitShare
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # secp256k1 signing on x86-64: correctness, memory safety and constant time
 
@@ -16,6 +35,8 @@ The general complete-addition ladder works with `a = 0`. Field and scalar
 inversions use the existing divsteps implementation, instantiated with
 kernel-checked primality certificates.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.X86_64.Secp256k1
 
@@ -49,6 +70,7 @@ theorem secp256k1_ok (hI : InvSounds) : BaseCfgOk secp256k1 where
   p_lt_2n := by decide +kernel
   minv_p := by decide +kernel
   red_p := by decide +kernel
+  red_n := by decide +kernel
   minv_n := by decide +kernel
   len8 := by decide
   len_lo := by decide
@@ -68,6 +90,7 @@ theorem secp256k1_ok (hI : InvSounds) : BaseCfgOk secp256k1 where
   window_am3 := fun h => by cases h
   comb_am3 := fun _ h => by cases h
   even _ := by decide
+  inverse _ := ⟨by decide, rfl⟩
 
 theorem secp256k1_tbls : CombTbls secp256k1 := fun _ h => by cases h
 
@@ -75,19 +98,24 @@ theorem pre_of {s : State} (h : signX86_64.pre s) : Pre secp256k1 s := by
   obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, -, -, h12, h13⟩ := h
   exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h12, h13, by simp [TblsHeld, Cfg.combConsts, secp256k1, Abi.constsHeld, Abi.constRegions]⟩
 
+/-- `[k]G` is a call of `vg_secp256k1_mul`, which calls no other function. -/
+theorem secp256k1_mulBase : MulBaseOk secp256k1 :=
+  ⟨fun h => absurd h (by decide), fun _ => ⟨rfl, by lit_decide⟩⟩
+
 theorem sign_x86 (hL : Law Spec.Secp256k1.curve)
     (hI : InvSounds) (s : State)
     (hs : signX86_64.pre s) :
-    ∃ t s', Exec isa signSecp256k1 s t s' ∧ abiPreserved s s' ∧ signX86_64.post s s' := by
-  obtain ⟨t, s', he, hsv, hpost⟩ := sign_ok (secp256k1_ok hI) hL secp256k1_tbls (pre_of hs)
-  have hsp : ∀ i ∈ instrs signSecp256k1, Taint.clobbers i .rsp = false := by
+    ∃ t s', Exec isa signSecp256k1.inline s t s' ∧ abiPreserved s s' ∧ signX86_64.post s s' := by
+  obtain ⟨t, s', he, hsv, hpost⟩ := sign_ok (secp256k1_ok hI) hL secp256k1_tbls (pre_of hs) secp256k1_mulBase
+  have hsp : ∀ i ∈ instrs signSecp256k1.inline, Taint.clobbers i .rsp = false := by
     have h : signSecp256k1.allInstrs (fun i => !Taint.clobbers i .rsp) = true := by lit_decide
-    rw [Code.allInstrs_eq, List.all_eq_true] at h
+    rw [← Code.allInstrs_inline, Code.allInstrs_eq, List.all_eq_true] at h
     intro i hi
     simpa using h i hi
-  have F := (Exec.regions he (by lit_decide)).2.2
+  have F := (Exec.regions he (Code.noCalls_inline (by lit_decide))).2.2
   obtain ⟨-, hwr, -, -, -, -, -, -, -, hro, hrs, -, -⟩ := hs
-  refine ⟨t, s', he, abiPreserved_of_exec (by lit_decide) he ⟨fun r hr => ?_, ?_⟩, hpost⟩
+  refine ⟨t, s', he, abiPreserved_of_exec (by rw [Code.allInstrs_inline]; lit_decide) he
+    ⟨fun r hr => ?_, ?_⟩, hpost⟩
   · simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
     · exact hsv _ (by decide)
@@ -113,20 +141,52 @@ materialize_shared signSecp256k1Erased
 
 theorem sign_ct : ConstantTime isa signX86_64.pre signX86_64.pub signSecp256k1 :=
   VG.Taint.constantTime_mapBlocks (c' := signSecp256k1Erased) taintS_eraseInv
-    (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx, .r8]) rfl
-    (fun _ _ _ _ ⟨_, h1, h2, h3, h4, h5⟩ => Taint.agree_ofRegs fun r hr => by
+    (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx, .r8, .rsp]) rfl
+    (fun _ _ _ _ ⟨h0, h1, h2, h3, h4, h5⟩ => Taint.agree_ofRegs fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl | rfl
+      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
       · exact h1
       · exact h2
       · exact h3
       · exact h4
-      · exact h5) rfl (by taint_decide)
+      · exact h5
+      · exact h0) rfl (by taint_decide)
+
+/-- The contract with 8 bytes of stack, for the calls' return address. -/
+theorem implies8 : signX86_64.Implies (Spec.Ecdsa.Secp256k1.inst.signContract X86_64.abi 8) :=
+  implies.stack8_abi (by
+    sig_implies_sat [Spec.Ecdsa.Secp256k1.inst, Spec.Ecdsa.Instance.signContract,
+      Spec.Ecdsa.Instance.signSig, Spec.Secp256k1.curve, Spec.Ecdsa.scratchWords, X86_64.abi,
+      X86_64.argRegs, satState] [satState] using satState)
+
+/-- The output is apart from the calls' return address. -/
+theorem post_patch (s b : State) (hv : Mem) (u : Nat → BitVec 64) (hs : signX86_64.pre s)
+    (hc : Clear (hole (s.gpr .rsp)) s) (hp : signX86_64.post s b) :
+    signX86_64.post s (b.patch (hole (s.gpr .rsp)) hv u) := by
+  have hb := Clear.wr_bytes hc (p := s.gpr .rdi) (n := 64) (by rw [hs.2.1]; simp) (by decide)
+  simpa only [signX86_64, State.patch_gpr, bytesAt_patch hb] using hp
+
+/-- The function with its calls, for a caller (RFC 6979's) that keeps its
+buffers off the 8 bytes below `rsp`. -/
+theorem sign_call_x86 (hL : Law Spec.Secp256k1.curve) (hI : InvSounds) (s : State) (hs : signX86_64.pre s)
+    (hc : Clear (hole (s.gpr .rsp)) s) :
+    ∃ t s', Exec isa signSecp256k1 s t s' ∧ abiPreserved s s' ∧ signX86_64.post s s' :=
+  ok_of_inline (k := signX86_64) (by lit_decide) (sign_x86 hL hI)
+    (fun s b hv u hs hc hp => post_patch s b hv u hs hc hp) s ⟨hs, hc⟩
+
+theorem sign_patch (s b : State) (hv : Mem) (u : Nat → BitVec 64)
+    (hs : (Spec.Ecdsa.Secp256k1.inst.signContract X86_64.abi 8).pre s)
+    (hp : signX86_64.post s b) : signX86_64.post s (b.patch (hole (s.gpr .rsp)) hv u) := by
+  obtain ⟨-, hwr, -⟩ := implies8.pre s hs
+  have hb := Clear.wr_bytes (Sig.clear_of_pre hs) (p := s.gpr .rdi) (n := 64)
+    (by rw [hwr]; simp) (by decide)
+  simpa only [signX86_64, State.patch_gpr, bytesAt_patch hb] using hp
 
 theorem sign_verified (hL : Law Spec.Secp256k1.curve)
     (hI : InvSounds) :
     Verified X86_64.target signSecp256k1
-      (Spec.Ecdsa.Secp256k1.inst.signContract X86_64.abi) :=
-  Verified.of_correct (sign_x86 hL hI) sign_ct implies
+      (Spec.Ecdsa.Secp256k1.inst.signContract X86_64.abi 8) :=
+  Verified.of_inline_ct (by lit_decide) (sign_x86 hL hI) sign_ct implies8
+    (fun _ h => Sig.clear_of_pre h) sign_patch
 
 end VG.Proof.Ecdsa.X86_64.Secp256k1

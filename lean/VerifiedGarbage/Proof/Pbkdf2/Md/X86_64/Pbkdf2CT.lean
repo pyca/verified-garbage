@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.PbkLoop
+module
+
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.PbkLoop
+meta import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.PbkLoop
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # PBKDF2-HMAC over any Merkle–Damgård hash function on x86-64: `pbkdf2`, constant time
@@ -11,6 +18,8 @@ time by their callees' proofs (`RelCT.call`, with arguments the correctness
 proof fixes to the same values), and the branches and the loop go the same way
 in both runs, by the facts the correctness proof gives about their flags.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Pbkdf2.Md.X86_64.Pbk
 

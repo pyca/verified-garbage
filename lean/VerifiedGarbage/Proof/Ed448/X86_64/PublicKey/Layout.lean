@@ -1,10 +1,16 @@
-import VerifiedGarbage.Impl.Ed448.X86_64.PublicKey
-import VerifiedGarbage.Proof.Framework.X86_64.Frame
-import VerifiedGarbage.Proof.Framework.X86_64.Abi
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.Spec.Ed448.Contract
+module
+
+public import VerifiedGarbage.Impl.Ed448.X86_64.PublicKey
+public import VerifiedGarbage.Proof.Framework.X86_64.Frame
+public import VerifiedGarbage.Proof.Framework.X86_64.Abi
+public import VerifiedGarbage.Proof.Framework.X86_64.Call
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+public import VerifiedGarbage.Spec.Ed448.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 public-key derivation on x86-64: where everything is
@@ -17,6 +23,8 @@ frame's push and pop: the permissions, `rsp`, the callee-saved registers, the
 pointers in the frame, and that memory changed only in `out`, `scratch` and
 the stack. `call_ok` runs a call of verified code in such a state.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.X86_64.PublicKey
 

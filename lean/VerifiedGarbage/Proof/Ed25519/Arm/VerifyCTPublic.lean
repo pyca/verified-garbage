@@ -1,14 +1,23 @@
-import VerifiedGarbage.Proof.Ed25519.Arm.VerifyHeaders
-import VerifiedGarbage.Proof.Ed25519.Arm.PointDecode
-import VerifiedGarbage.Proof.Ed25519.Arm.ScalarCodec
-import VerifiedGarbage.Proof.Ed25519.Arm.InitFields
-import VerifiedGarbage.Proof.Ed25519.VerifyBytes
-import VerifiedGarbage.Proof.Ed25519.Arm.ScalarABI
-import VerifiedGarbage.Spec.Ed25519.Contract
-import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTFrom
+module
+
+public import VerifiedGarbage.Proof.Ed25519.Arm.VerifyHeaders
+public import VerifiedGarbage.Proof.Ed25519.Arm.PointDecode
+public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarCodec
+public import VerifiedGarbage.Proof.Ed25519.Arm.InitFields
+public import VerifiedGarbage.Proof.Ed25519.VerifyBytes
+public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarABI
+public import VerifiedGarbage.Spec.Ed25519.Contract
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTFrom
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Ed25519.Arm.VerifyBody`. -/
+
+@[expose] public section
+
 section
 /-! Merged from `Proof.Ed25519.Arm.VerifyDecodeR`. -/
 section
@@ -110,7 +119,7 @@ theorem verifyLhs_ok {b pk sig challenge : BitVec 32} {s : State}
   refine WP.mono (addInput32_ok a) fun c ⟨cr, cm, cp⟩ => ?_
   have kc : PointKeep b s c := ⟨(ar.mono (by decide)).trans (cr.mono (by decide)), by
     rw [cm, am]; exact Frame.refl _ _⟩
-  refine WP.seq (WP.mono (fieldCodeFree_ok (constPointOps Spec.Ed25519.basePoint) (kc.ctx hc.ctx)
+  refine WP.seq (WP.mono (fieldCodeFree_ok (constPointOps Spec.Ed25519.basePoint) rfl (kc.ctx hc.ctx)
     (by rw [cm, am]; exact hl)) fun d ⟨dk, dr, _, dl, de⟩ => ?_)
   have kd := kc.trans (PointKeep.of_keep dk)
   have dc := hc.keep (VerifyKeep.of_point kd)

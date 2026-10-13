@@ -1,7 +1,18 @@
-import VerifiedGarbage.Proof.Ed25519.AArch64.PublicKey.CTCommon
-import VerifiedGarbage.Proof.Framework.ConstMem
+module
+
+public import VerifiedGarbage.Proof.Ed25519.AArch64.PublicKey.CTCommon
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.PublicKey.CTCommon
+public import VerifiedGarbage.Proof.Framework.ConstMem
+meta import VerifiedGarbage.Proof.Framework.ConstMem
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Ed25519.AArch64.PublicKey.CT`. -/
+
+@[expose] public section
+
 section
 /-! Merged from `Proof.Ed25519.AArch64.PublicKey.CTReady`. -/
 section

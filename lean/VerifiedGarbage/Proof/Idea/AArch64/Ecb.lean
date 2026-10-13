@@ -1,9 +1,15 @@
-import VerifiedGarbage.Proof.Idea.AArch64.Block
-import VerifiedGarbage.Proof.Idea.AArch64.ConstantTime
-import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-import VerifiedGarbage.Proof.Framework.AArch64.Inline
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Spec.Idea.Contract
+module
+
+public import VerifiedGarbage.Proof.Idea.AArch64.Block
+public import VerifiedGarbage.Proof.Idea.AArch64.ConstantTime
+public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+public import VerifiedGarbage.Proof.Framework.AArch64.Inline
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.Idea.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # IDEA ECB on AArch64
@@ -13,6 +19,8 @@ no stack. The blocks are transformed in a loop (`loop_ok`) whose invariant
 (`LoopInv`) says how many remain, that the ones before are transformed and
 the ones after not yet; each iteration is `cryptBlock_run`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Idea.AArch64
 
@@ -82,7 +90,7 @@ theorem step_ok {z : Spec.Idea.Schedule} {a : Addr} {n : Nat} {m₀ : Mem} {o : 
   have hwrite : BlockWrite t (a + BitVec.ofNat 64 (8 * (n - r))) := fun i hi' =>
     ⟨_, by rw [hwr]; exact hc.data, block_contains hj (by omega) (by decide) hc.bound⟩
   have hk : KeyOk z t := by
-    refine ⟨by rw [hx0, hrd, hwr]; exact hc.sched, ?_⟩
+    refine ⟨by rw [hx0, hrd, hwr]; exact ⟨_, hc.sched, Region.contains_self _ _⟩, ?_⟩
     rw [hx0, ← hc.z]
     exact scheduleAt_congr (frame_bytes hi.frame (by simpa using hc.sep) (by decide))
   have hm : MaskOk t := (hi.keep.reg .x15 (by decide)).trans hc.mask

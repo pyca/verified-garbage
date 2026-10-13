@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Weierstrass.Env
-import VerifiedGarbage.Impl.Weierstrass.X86_64
-import VerifiedGarbage.Proof.Mont.X86_64.Ops
-import VerifiedGarbage.Proof.Weierstrass.X86_64.MontCall
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.Env
+public import VerifiedGarbage.Impl.Weierstrass.X86_64
+public import VerifiedGarbage.Proof.Mont.X86_64.Ops
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.MontCall
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Field programs on x86-64
@@ -18,6 +24,8 @@ area change (`ProgKeep`).
 The complete additions `rcb` and, for `a = -3`, `rcb3` are such programs,
 and compute `rcbAdd` and `rcbAdd3` (`rcb_ok`, `rcb3_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.X86_64
 
@@ -199,7 +207,8 @@ theorem fprog_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat →
       k₁.mem x (hx _ (List.mem_cons_self ..)) ht]
 
 /-- One operation, a call for a product modulo P-521's or P-384's `p` with the
-functions' temporary area (`opProg`), inlined (`Code.inline`). -/
+functions' temporary area, or P-521's `n` (`opProg`), inlined
+(`Code.inline`). -/
 theorem opProg_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat → Prop} (hL : Lay M size Sl)
     (hm : UnitMod m (2 ^ (64 * M.n))) {V : List Nat} {E : Nat → Fin m} {s : State}
     (hI : Inv M base size m Sl V E s) {op : FOp} (hS : ∀ x ∈ op.out :: op.ins, Sl x)
@@ -241,9 +250,48 @@ theorem opProg_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat �
               (hL.le a hS.2.1) (hL.le b hS.2.2) (hI.lt b hR.2))
               fun s' ⟨hk, hlt, heq⟩ => ⟨hk, hI.update hL hS.1 hk hlt ?_⟩
             rw [toM_mul hm heq, hI.val a hR.1, hI.val b hR.2]
+          split at hcall
+          · rename_i hM
+            obtain ⟨hn9, hf, ht⟩ := hM
+            cases hcall
+            refine WP.mono (Mont.mulCallN_ok hI.scr hI.mod hf ht (hn9 ▸ hlow) (hI.lt b hR.2))
+              fun s' ⟨hk, hlt, heq⟩ => ⟨hk, hI.update hL hS.1 hk hlt ?_⟩
+            rw [toM_mul hm heq, hI.val a hR.1, hI.val b hR.2]
           · cases hcall
         · cases hc
       · cases hc
+
+/-- A product modulo a modulus of general reduction (`opProg`), a call of
+P-521's `n`'s function or inline: as the inline product. -/
+theorem opMulN_ok {M : Mod} {base : Addr} {Z m : Nat} {s : State} (hs : Scr s base Z)
+    (hM : ModOkW M Z m s.mem base) (hred : M.red = .general) (hsp : M.sparse = false) {o a b : Nat}
+    (hB : wordsVal s.mem base b M.n < m)
+    (hin : WP isa (.block (VG.Impl.Mont.X86_64.mul M o a b)) s fun s' => OpKeep M base o s s' ∧
+      wordsVal s'.mem base o M.n < m ∧
+      wordsVal s'.mem base o M.n * 2 ^ (64 * M.n) % m = wordsVal s.mem base a M.n * wordsVal s.mem base b M.n % m) :
+    WP isa (opProg M (.mul o a b)).inline s fun s' => OpKeep M base o s s' ∧
+      wordsVal s'.mem base o M.n < m ∧
+      wordsVal s'.mem base o M.n * 2 ^ (64 * M.n) % m = wordsVal s.mem base a M.n * wordsVal s.mem base b M.n % m := by
+  simp only [opProg, opCall?]
+  cases hcall : Mont.callOf M with
+  | none => exact hin
+  | some p =>
+    obtain ⟨f, body⟩ := p
+    simp only
+    split
+    · rename_i hlow
+      unfold Mont.callOf at hcall
+      split at hcall
+      · rename_i h; rw [hred] at h; exact absurd h.2.1 (by simp)
+      split at hcall
+      · rename_i h; rw [hsp] at h; exact absurd h.2.1 (by simp)
+      split at hcall
+      · rename_i h
+        obtain ⟨hn9, hf, ht⟩ := h
+        cases hcall
+        exact Mont.mulCallN_ok hs hM hf ht (hn9 ▸ hlow) hB
+      · cases hcall
+    · exact hin
 
 /-- A field program, its products calls where `opProg` makes them, inlined. -/
 theorem fprogB_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat → Prop} (hL : Lay M size Sl)

@@ -1,11 +1,13 @@
-import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.Weierstrass.Law
-import VerifiedGarbage.Proof.Weierstrass.X86_64.InvInterface
-import VerifiedGarbage.Impl.Ecdh.P256.X86_64
-import VerifiedGarbage.Proof.Ecdh.X86_64.Verified
-import VerifiedGarbage.Proof.Ecdh.X86_64.Lit
-import VerifiedGarbage.Proof.Ecdh.X86_64.VerifiedAdx
-import VerifiedGarbage.Proof.Ecdh.X86_64.LitAdx
+module
+
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.Weierstrass.Law
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvInterface
+public import VerifiedGarbage.Impl.Ecdh.P256.X86_64
+public import VerifiedGarbage.Proof.Ecdh.X86_64.Verified
+public import VerifiedGarbage.Proof.Ecdh.X86_64.Lit
+public import VerifiedGarbage.Proof.Ecdh.X86_64.VerifiedAdx
+public import VerifiedGarbage.Proof.Ecdh.X86_64.LitAdx
 
 /-!
 # ECDH over P-256 (SP 800-56A) on x86-64
@@ -15,6 +17,8 @@ inversions and prime order `h`, the variant `Variants/P256/X86_64/Law.lean`, for
 multiplication: the baseline's, and BMI2's and ADX's (`_adx`).
 -/
 
+@[expose] public section
+
 namespace VG.Generic.P256.X86_64.EcdhP256
 
 /-- The function of `Spec.Ecdh.P256.exchangeApi`, multiplying with BMI2 and ADX
@@ -22,7 +26,7 @@ namespace VG.Generic.P256.X86_64.EcdhP256
 `rsp` (`hsp`). -/
 def exchange (adx : Bool) (code : Prog X86_64.isa)
     (hv : Verified X86_64.target code
-      (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P256.inst X86_64.abi))
+      (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P256.inst X86_64.abi 8))
     (hsp : code.all (fun i => !X86_64.isa.writesSp i) = true) : Artifact :=
   { Spec.Ecdh.P256.exchangeApi with
     name := Spec.Ecdh.P256.exchangeApi.name ++ (if adx then "_adx" else "")
@@ -49,7 +53,8 @@ def exchange (adx : Bool) (code : Prog X86_64.isa)
       `Z⁻¹` is by the signature's divsteps. The result (or zeros) is selected by a mask of the \
       checks, `d` in `[1, n-1]` and `Z ≠ 0`, so the time depends only on the pointers."])
     code
-    contract := Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P256.inst X86_64.abi
+    contract := Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P256.inst X86_64.abi 8
+    stack := 8
     verified := hv
     spSafe := hsp
     features := if adx then ["bmi2", "adx", "avx", "avx2"] else [] }

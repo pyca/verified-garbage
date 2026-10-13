@@ -1,7 +1,16 @@
-import VerifiedGarbage.Impl.Argon2.X86_64.FillSlice
-import VerifiedGarbage.Proof.Argon2.X86_64.FillLanes
+module
+
+public import VerifiedGarbage.Impl.Argon2.X86_64.FillSlice
+public import VerifiedGarbage.Proof.Argon2.X86_64.FillLanes
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Argon2.X86_64.FillSlicePrepare`. -/
+
+@[expose] public section
+
 section
 /-! Merged from `Proof.Argon2.X86_64.FillHeader`. -/
 section

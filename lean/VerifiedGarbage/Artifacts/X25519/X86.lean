@@ -1,10 +1,14 @@
-import VerifiedGarbage.TCB.X86.Target
-import VerifiedGarbage.Impl.X25519.X86
-import VerifiedGarbage.Proof.X25519.X86.Verified
-import VerifiedGarbage.Proof.X25519.X86.Lit
-import VerifiedGarbage.Proof.X25519.X86.Base.Verified
+module
+
+public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Impl.X25519.X86
+public import VerifiedGarbage.Proof.X25519.X86.Verified
+public import VerifiedGarbage.Proof.X25519.X86.Lit
+public import VerifiedGarbage.Proof.X25519.X86.Base.Verified
 
 /-! # X25519 (RFC 7748) on x86 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.X25519.X86
 
@@ -27,8 +31,9 @@ def artifacts : List Artifact := [
       with one inversion: RFC 7748 §4.1's birational map, which takes edwards25519's base point to \
       `u = 9` and its group law to the ladder's (`VG.Proof.X25519.Edwards.x25519_basePoint`). \
       The tables are the static `VG_ED25519_COMB`, whose address the function obtains with a \
-      position-independent four-byte CALL frame and keeps in `scratch`. The comb's final point \
-      addition calls `vg_ed25519_r32_point_add`, and the inversion's addition chain \
+      position-independent four-byte CALL frame and keeps in `scratch`. The comb's odd digits' \
+      additions call `vg_ed25519_r32_add_affine`, its doublings `vg_ed25519_r32_double` and its \
+      final point addition `vg_ed25519_r32_point_add`, and the inversion's addition chain \
       `vg_gf25519_r32_pow250`. Callee-saved registers are saved in the first 16 bytes of `scratch`."])
     consts := Impl.Ed25519.X86.combConsts
     code := Impl.X25519.X86.Base.x25519Base

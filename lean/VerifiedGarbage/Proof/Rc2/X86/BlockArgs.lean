@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.Rc2.Memory32
-import VerifiedGarbage.Proof.Rc2.Memory
-import VerifiedGarbage.Proof.Rc2.X86.RoundSteps
+module
+
+public import VerifiedGarbage.Proof.Rc2.Memory32
+public import VerifiedGarbage.Proof.Rc2.Memory
+public import VerifiedGarbage.Proof.Rc2.X86.RoundSteps
+public import VerifiedGarbage.Proof.Rc2.X86.KeyLookup
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 section
 
@@ -302,26 +311,45 @@ namespace VG.Proof.Rc2.X86
 
 open VG VG.X86 VG.Impl.Rc2.X86
 
+/-- The 32 bytes of scratch the rounds write: the schedule lookup's lanes
+(`keyLookup`, at 48), then the words (at 64). -/
+def areaBase (s : State) : Addr := addr32 (s.gpr .ebp) + BitVec.ofNat 64 48
+
+theorem wordBase_eq (s : State) : wordBase s = areaBase s + BitVec.ofNat 64 16 := by
+  unfold wordBase areaBase
+  rw [Offset.add_add]; rfl
+
+theorem words_sub (s : State) : Region.Sub ⟨wordBase s, 16⟩ ⟨areaBase s, 32⟩ := by
+  rw [wordBase_eq]; exact Offset.sub_base _ (by decide)
+
+theorem lanes_sub (s : State) : Region.Sub ⟨areaBase s, 16⟩ ⟨areaBase s, 32⟩ :=
+  fun _ h => by simp only [Region.Contains] at h ⊢; omega
+
 structure RoundEnv (s : State) : Prop where
   scratchFit : (s.gpr .ebp).toNat + 256 ≤ 2 ^ 32
   keyFit : (arg s 0).toNat + 128 ≤ 2 ^ 32
   stackRead : InRegions (s.rd ++ s.wr) (argAddr s 0) 4
   keyRead : ∀ i < 128, InRegions (s.rd ++ s.wr) (addr32 (arg s 0) + BitVec.ofNat 64 i) 1
+  keyAll : InRegions (s.rd ++ s.wr) (addr32 (arg s 0)) 128
   wordWrite : ∀ i < 4, InRegions s.wr (wordBase s + BitVec.ofNat 64 (4 * i)) 4
-  keySep : (Region.mk (addr32 (arg s 0)) 128).Disjoint ⟨wordBase s, 16⟩
-  argSep : (Region.mk (argAddr s 0) 4).Disjoint ⟨wordBase s, 16⟩
+  laneWrite : InRegions s.wr (areaBase s) 16
+  keySep : (Region.mk (addr32 (arg s 0)) 128).Disjoint ⟨areaBase s, 32⟩
+  argSep : (Region.mk (argAddr s 0) 4).Disjoint ⟨areaBase s, 32⟩
 
 structure RoundFrame (s₀ s : State) : Prop where
   reg : ∀ r, r ∉ roundWrites → s.gpr r = s₀.gpr r
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
-  mem : Frame [⟨wordBase s₀, 16⟩] s₀.mem s.mem
+  mem : Frame [⟨areaBase s₀, 32⟩] s₀.mem s.mem
 
 theorem RoundFrame.refl (s : State) : RoundFrame s s :=
   ⟨fun _ _ => rfl, rfl, rfl, Frame.refl _ _⟩
 
 theorem RoundFrame.base {s s' : State} (h : RoundFrame s s') : wordBase s' = wordBase s := by
   unfold wordBase; rw [h.reg .ebp (by decide)]
+
+theorem RoundFrame.area {s s' : State} (h : RoundFrame s s') : areaBase s' = areaBase s := by
+  unfold areaBase; rw [h.reg .ebp (by decide)]
 
 theorem RoundFrame.argAddr {s s' : State} (h : RoundFrame s s') (i : Nat) : argAddr s' i = argAddr s i := by
   unfold VG.X86.argAddr; rw [h.reg .esp (by decide)]
@@ -338,9 +366,11 @@ theorem RoundFrame.env {s s' : State} (h : RoundFrame s s') (env : RoundEnv s) :
   · rw [args]; exact env.keyFit
   · rw [h.rd, h.wr, h.argAddr]; exact env.stackRead
   · rw [h.rd, h.wr, args]; exact env.keyRead
+  · rw [h.rd, h.wr, args]; exact env.keyAll
   · rw [h.wr, h.base]; exact env.wordWrite
-  · rw [args, h.base]; exact env.keySep
-  · rw [h.argAddr, h.base]; exact env.argSep
+  · rw [h.wr, h.area]; exact env.laneWrite
+  · rw [args, h.area]; exact env.keySep
+  · rw [h.argAddr, h.area]; exact env.argSep
 
 theorem RoundFrame.schedule {s s' : State} (h : RoundFrame s s') (env : RoundEnv s) :
     Spec.Rc2.scheduleAt s'.mem (addr32 (VG.X86.arg s' 0)) = Spec.Rc2.scheduleAt s.mem (addr32 (VG.X86.arg s 0)) := by
@@ -352,7 +382,7 @@ theorem RoundFrame.trans {s₀ s₁ s₂ : State} (h₁ : RoundFrame s₀ s₁) 
   refine ⟨fun r hr => (h₂.reg r hr).trans (h₁.reg r hr), h₂.rd.trans h₁.rd,
     h₂.wr.trans h₁.wr, ?_⟩
   have frame := h₂.mem
-  rw [h₁.base] at frame
+  rw [h₁.area] at frame
   exact h₁.mem.trans frame
 
 theorem RoundFrame.of_keep {s s' : State} (h : Keep roundWrites s s') : RoundFrame s s' := by
@@ -390,7 +420,10 @@ theorem storeWord32_ok (s : State) (r : Reg) (i : Nat) (hi : i < 4) (env : Round
   · rw [wordOff_eq s i hi]
   · refine ⟨fun _ _ => rfl, rfl, rfl, ?_⟩
     rw [wordOff_eq s i hi]
-    exact (Frame.refl _ _).writeW List.mem_cons_self _ (Offset.contains_base _ (by omega) (by omega))
+    refine (Frame.refl _ _).writeW List.mem_cons_self _ ?_
+    unfold areaBase wordBase
+    rw [show (64 : Addr) = BitVec.ofNat 64 64 from rfl, Offset.add_add]
+    exact Offset.contains _ (by omega) (by omega) (by omega)
 
 end VG.Proof.Rc2.X86
 
@@ -559,28 +592,44 @@ theorem mash_ok (d : Spec.Rc2.Direction) (s : State) (v : Spec.Rc2.State)
   rw [mash, List.append_assoc, List.append_assoc, WP.block_append_iff]
   apply WP.mono (mashInput_ok s v hv env i)
   intro s₁ ⟨index₁, key₁, keep₁⟩
+  have k₁ : Keep roundWrites s s₁ := keep₁.weaken (by decide)
+  have f₁ := RoundFrame.of_keep k₁
+  have e₁ := f₁.env env
+  have bp₁ : s₁.gpr .ebp = s.gpr .ebp := keep₁.reg .ebp (by decide)
+  have lanes : addr (s₁.gpr .ebp) 48 = areaBase s₁ := by
+    unfold areaBase; rw [addr_eq (by have := e₁.scratchFit; omega)]; rfl
   rw [WP.block_append_iff]
   apply WP.mono (keyLookup_ok s₁ (by rw [key₁]; exact env.keyFit)
-    (by rw [keep₁.rd, keep₁.wr, key₁]; exact env.keyRead))
-  intro s₂ h₂
-  have k₁ : Keep roundWrites s s₁ := keep₁.weaken (by decide)
-  have k₂ : Keep roundWrites s₁ s₂ := h₂.2.weaken (by decide)
-  have keep := k₁.trans k₂
-  have frame := RoundFrame.of_keep keep
+    (by rw [key₁, ← f₁.arg env]; exact e₁.keyAll) (by have := e₁.scratchFit; omega)
+    (by rw [lanes]; exact e₁.laneWrite))
+  intro s₂ ⟨h₂, g₂, rd₂, wr₂, m₂⟩
+  rw [lanes] at m₂
+  have f₂ : RoundFrame s₁ s₂ := ⟨fun r hr => g₂ r (by rintro rfl; exact hr (by decide))
+      (by rintro rfl; exact hr (by decide)) (by rintro rfl; exact hr (by decide)), rd₂, wr₂,
+    m₂.sub fun r hr => ⟨_, List.mem_cons_self, by
+      rw [List.mem_singleton] at hr; subst hr; exact lanes_sub s₁⟩⟩
+  have frame := f₁.trans f₂
   have env₂ := frame.env env
-  have words₂ : MemWords s₂.mem (wordBase s₂) v := by rw [keep.mem, frame.base]; exact hv
+  have words₂ : MemWords s₂.mem (wordBase s) v := by
+    intro j hj
+    rw [← hv j hj, ← keep₁.mem]
+    refine m₂.readW (Region.contains_self _ _) (fun r hr => ?_) (by decide)
+    rw [List.mem_singleton] at hr; subst hr
+    unfold areaBase wordBase
+    rw [bp₁, show (64 : Addr) = BitVec.ofNat 64 64 from rfl, Offset.add_add]
+    exact Offset.disjoint _ (by omega) (by omega) (by omega)
   have key₂ : s₂.gpr .eax = ((Spec.Rc2.scheduleAt s.mem (addr32 (arg s 0))).getD
       ((v.getD ((i + 3) % 4) 0 &&& 63).toNat) 0).setWidth 32 := by
-    rw [h₂.1, keep₁.mem, key₁, index₁, indexWord]
+    rw [h₂, keep₁.mem, key₁, index₁, indexWord]
   rw [WP.block_append_iff]
-  apply WP.mono (mashAdjust_ok d s₂ v words₂ env₂ i hi _ key₂)
+  apply WP.mono (mashAdjust_ok d s₂ v (by rw [frame.base]; exact words₂) env₂ i hi _ key₂)
   intro s₃ h₃
   have k₃ : Keep roundWrites s₂ s₃ := h₃.2.weaken (by decide)
   have frame₃ := frame.trans (RoundFrame.of_keep k₃)
   obtain ⟨s₄, run₄, mem₄, frame₄⟩ := storeWord32_ok s₃ .edx i hi (frame₃.env env)
   refine WP.of_runBlock ⟨s₄, run₄, ?_, frame₃.trans frame₄⟩
-  rw [frame₄.base, frame₃.base, mem₄, frame₃.base, h₃.1, h₃.2.mem, keep.mem, mashSpec_eq]
-  exact hv.update i hi _
+  rw [frame₄.base, frame₃.base, mem₄, frame₃.base, h₃.1, h₃.2.mem, mashSpec_eq]
+  exact words₂.update i hi _
 
 end VG.Proof.Rc2.X86
 
@@ -820,9 +869,10 @@ theorem blockLoad_ok (s : State)
   · refine ⟨fun r hr => h.reg r (fun hm => hr ((by decide : ∀ r ∈ [.eax, .edx], r ∈ roundWrites) r hm)),
       h.rd, h.wr, ?_⟩
     rw [h.mem]
-    exact saveMem_frame s.mem (wordBase s)
+    exact (saveMem_frame s.mem (wordBase s)
       (fun j => ((Spec.Rc2.decodeBlock (Spec.Rc2.blockAt s.mem (addr32 (s.gpr .edi)))).getD j 0).setWidth 32)
-      4 (by decide)
+      4 (by decide)).sub fun r hr => ⟨_, List.mem_cons_self, by
+        rw [List.mem_singleton] at hr; subst hr; exact words_sub s⟩
 
 end VG.Proof.Rc2.X86
 

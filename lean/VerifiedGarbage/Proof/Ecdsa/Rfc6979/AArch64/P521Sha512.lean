@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Verified
-import VerifiedGarbage.Proof.Ecdsa.AArch64.P521.Tables
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.P521
-import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Hashes.Sha512
-import VerifiedGarbage.Spec.Ecdsa.Rfc6979.P521Sha512
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Verified
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.P521.Tables
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.P521
+public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Hashes.Sha512
+public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.P521Sha512
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Deterministic ECDSA over P-521 with HMAC-SHA-512 on AArch64
@@ -14,6 +20,8 @@ the comb's tables,
 which implies the one the proof is written against (`implies`):
 `vg_ecdsa_p521_sha512_sign` is verified (`sign_verified`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Rfc6979.AArch64.P521Sha512
 

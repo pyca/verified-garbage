@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Ed25519.ScalarBytes
-import VerifiedGarbage.Proof.Ed25519.Group.Double
-import Mathlib.Tactic.Module
+module
+
+public import VerifiedGarbage.Proof.Ed25519.ScalarBytes
+public import VerifiedGarbage.Proof.Ed25519.Group.Double
+public import Mathlib.Tactic.Module
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Verification with windows: the arithmetic of the digits and the equation
@@ -10,6 +16,8 @@ of a little-endian scalar are its base-256 digits, each splits into two
 nibbles, and the windows' result `[k]A - [S]B` equals `-R` exactly when the
 specification's equation `[S]B = R + [k]A` holds.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed25519
 

@@ -1,6 +1,14 @@
-import VerifiedGarbage.Proof.Weierstrass.AArch64.ArithmeticTable
-import VerifiedGarbage.Proof.Weierstrass.AArch64.ArithmeticAddTiming
-import VerifiedGarbage.Proof.Weierstrass.AArch64.NafTableTimingStep
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.ArithmeticTable
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.ArithmeticAddTiming
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafTableTimingStep
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.AArch64
 open VG VG.AArch64 VG.Impl.Mont VG.Impl.Mont.AArch64 VG.Impl.Weierstrass

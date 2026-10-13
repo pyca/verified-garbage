@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Stream
-import VerifiedGarbage.Proof.MlDsa.Pack.Bits
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Stream
+public import VerifiedGarbage.Proof.MlDsa.Pack.Bits
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on AArch64: the loops over the groups
@@ -9,6 +15,8 @@ import VerifiedGarbage.Proof.MlDsa.Pack.Bits
 each field of the bytes at `v`, `fin`'s coefficient of it. Both for any width
 and any `ld` or `fin`, from the group lemmas of `Stream.lean`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Pack
 

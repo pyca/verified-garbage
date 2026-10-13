@@ -1,8 +1,19 @@
-import VerifiedGarbage.Proof.TripleDes.Bitslice.LayoutLit
-import VerifiedGarbage.Impl.TripleDes.AArch64.Bitsliced
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
+module
+
+public import VerifiedGarbage.Proof.TripleDes.Bitslice.LayoutLit
+meta import VerifiedGarbage.Proof.TripleDes.Bitslice.LayoutLit
+public import VerifiedGarbage.Impl.TripleDes.AArch64.Bitsliced
+meta import VerifiedGarbage.Impl.TripleDes.AArch64.Bitsliced
+public import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # The AdvSIMD S-box circuits' and transposition's code, and the circuits' output registers, as literals -/
+
+@[expose] public section
 
 namespace VG.Impl.TripleDes.AArch64.BitsliceNeon
 
@@ -12,9 +23,6 @@ open VG.AArch64
 -- table, which the literals below, `outRegsTable` and the functions' literals
 -- (`Lit`) read.
 materialize_table sboxCompiled 8
-
--- The transposition, once.
-materialize_value transpose
 
 -- Pairs of rounds and the exchange of the halves, once.
 materialize_value roundPairEncrypt := roundPair .encrypt
@@ -39,9 +47,8 @@ materialize_code sbox5
 materialize_code sbox6
 materialize_code sbox7
 
-def transposeProg : Prog isa := .block transpose
-
-materialize_code transposeProg
+-- The transposition, once.
+materialize_code transpose
 
 end VG.Impl.TripleDes.AArch64.BitsliceNeon
 

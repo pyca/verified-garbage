@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.CTUnits
-import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Lcm
-import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Front
+module
+
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.CTUnits
+meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.CTUnits
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Lcm
+meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Lcm
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Front
+meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Front
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # An RSA key from its primes on AArch64: constant time, `lcm(p − 1, q − 1)`
@@ -16,6 +25,8 @@ and the division; the facts after `lcmPart` from `lcm_k` (`lcmPart_ct`, to
 from `KG`, the second from `KS` after the first (`shrHalf_k`), and the
 facts after both come from `halfIf_k`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaKeyGen.AArch64.Key
 

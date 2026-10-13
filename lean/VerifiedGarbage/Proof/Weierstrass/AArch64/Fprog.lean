@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.Weierstrass.Env
-import VerifiedGarbage.Impl.Weierstrass.AArch64
-import VerifiedGarbage.Proof.Mont.AArch64.Ops
-import VerifiedGarbage.Proof.Mont.AArch64.P256Square.Core
-import VerifiedGarbage.Proof.Weierstrass.AArch64.MontCall
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.Env
+public import VerifiedGarbage.Impl.Weierstrass.AArch64
+public import VerifiedGarbage.Proof.Mont.AArch64.Ops
+public import VerifiedGarbage.Proof.Mont.AArch64.P256Square.Core
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.MontCall
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Field programs on AArch64
@@ -20,6 +26,8 @@ The complete addition `rcb` is such a program, and computes `rcbAdd`
 (`rcb_ok`).
 -/
 
+@[expose] public section
+
 namespace VG.Proof.Weierstrass.AArch64
 
 open VG VG.AArch64 VG.Impl.Mont.AArch64 VG.Impl.Mont VG.Impl.Weierstrass.AArch64 VG.Impl.Weierstrass VG.Proof.Mont.AArch64 VG.Proof.Mont
@@ -30,7 +38,8 @@ theorem callOf_small {M : Mod} (h : M.n ≤ 4) : Mont.callOf M = none := by
   · have h6 : (6 == M.n) = false := by simp only [beq_eq_false_iff_ne]; omega
     have h9 : (9 == M.n) = false := by simp only [beq_eq_false_iff_ne]; omega
     simp only [Mont.fns, List.find?_cons, List.find?_nil, Spec.Weierstrass.Mont.p384p,
-      Spec.Weierstrass.Mont.p521p, h6, h9, Bool.false_and, Option.map_none]
+      Spec.Weierstrass.Mont.p521p, Spec.Weierstrass.Mont.p384n, Spec.Weierstrass.Mont.p521n, h6, h9,
+      Bool.false_and, Option.map_none]
   · rfl
 
 /-- The slots `Sl`, the modulus and the temporary area are at offsets that

@@ -1,6 +1,8 @@
-import VerifiedGarbage.Impl.Ed448.X86_64.VerifyEquation
-import VerifiedGarbage.Impl.Ed448.X86_64.Scalar
-import VerifiedGarbage.Impl.Sha3.X86_64.Stream
+module
+
+public import VerifiedGarbage.Impl.Ed448.X86_64.VerifyEquation
+public import VerifiedGarbage.Impl.Ed448.X86_64.Scalar
+public import VerifiedGarbage.Impl.Sha3.X86_64.Stream
 
 /-!
 # Ed448 verification on x86-64
@@ -27,6 +29,8 @@ Each call's arguments are moved into their registers from the frame (a slot,
 or a slot plus an offset), as immediates, from `rsp` plus an offset, or from
 `rax`. Every address and branch depends only on the pointers and the lengths.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Ed448.X86_64.Verify
 
@@ -128,16 +132,19 @@ def hash : Prog isa :=
 /-! ## The function -/
 
 /-- The frame's body. -/
-def body : Prog isa :=
+def bodyFor (v : FieldVariant) : Prog isa :=
   .seq (.block hdr) <| .seq hash <|
     .seq (callA "vg_ed448_scalar_reduce" scalarReduce [.sp fK, .sp fH, .slot fScr])
-      (callA "vg_ed448_verify_equation" verifyEquation [.slot fPk, .slot fSig, .sp fK, .slot fScr])
+      (callA ("vg_ed448_verify_equation" ++ v.suffix) (verifyEquationFor v) [.slot fPk, .slot fSig, .sp fK, .slot fScr])
 
 /-- `vg_ed448_verify`. -/
-def verify : Prog isa :=
+def verifyFor (v : FieldVariant) : Prog isa :=
   .seq (.block [.alu .cmp .rdx (.imm 256)])
     (.ite .b (.seq (.block [.mov .r11 (.mem (stk 8)), .mov32 .rax (.imm 0)])
-        (.frame (.push regs) body (.pop .r11 32)))
+        (.frame (.push regs) (bodyFor v) (.pop .r11 32)))
       (.block [.mov32 .rax (.imm 0)]))
+
+def body : Prog isa := bodyFor .scalar
+def verify : Prog isa := verifyFor .scalar
 
 end VG.Impl.Ed448.X86_64.Verify

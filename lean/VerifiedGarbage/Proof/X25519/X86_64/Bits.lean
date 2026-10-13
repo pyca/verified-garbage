@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.X25519.X86_64.Iter
-import VerifiedGarbage.Proof.X25519.Bytes
+module
+
+public import VerifiedGarbage.Proof.X25519.X86_64.Iter
+public import VerifiedGarbage.Proof.X25519.Bytes
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X25519 on x86-64: the bits of the scalar
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.X25519.Bytes
 then the clamped bits; so byte `t` of `BITS` is bit `t` of the decoded scalar
 (`scalar_bit`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X25519.X86_64
 

@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.X448.Wide.UnpackRegs
+module
+
+public import VerifiedGarbage.Proof.X448.Wide.UnpackRegs
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Untrusted: one wide carry step and its optional interface conversion. -/
+
+@[expose] public section
+
 namespace VG.Proof.X448.Wide
 
 open VG VG.AArch64

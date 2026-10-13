@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.Ghash1
-import VerifiedGarbage.Proof.Gcm.Stream
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Ghash1
+public import VerifiedGarbage.Proof.Gcm.Stream
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on x86-64: GHASH absorbing a piece (`absorb`)
@@ -10,6 +16,8 @@ Untrusted: everything here is checked by Lean. `absorb yo` absorbs the
 (`head_ok`), absorbs whole blocks (`whole_ok`) and buffers the rest
 (`tail_ok`), by the steps of `Proof/Gcm/Stream.lean`.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 
@@ -450,6 +458,13 @@ theorem absorb_ok {H : Block} {x : List Byte} {D : Addr} {n : Nat} {s : State}
     · obtain ⟨j, hj⟩ := hj
       refine WP.seq (WP.mono (whole_ok v L hyo hj (hj.data_eq hyo)) fun s'' hj' => ?_)
       exact tail_ok L hyo hj' (by have := hj.le; omega) (hj'.data_eq hyo)
+
+omit L hyo in
+/-- With nothing buffered, nothing absorbed yet. -/
+theorem AbsIn.mid {H : Block} {x : List Byte} {D : Addr} {n : Nat} {s : State}
+    (h : AbsIn Ctx St W SP yo H x D n s) (hx : x.length % 16 = 0) : AbsMid Ctx St W SP yo H x D n s.mem 0 s :=
+  ⟨h.env, Nat.zero_le _, by rw [h.r12]; simp, by rw [h.rbp, Nat.sub_zero], h.data, h.hH,
+    fun ha => by simpa [bytesAt] using ha, .inr (by omega), Frame.refl _ _⟩
 
 end
 

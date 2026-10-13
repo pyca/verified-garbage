@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Rc2.AArch64.Vec.Group
-import VerifiedGarbage.Proof.Rc2.CbcList
+module
+
+public import VerifiedGarbage.Proof.Rc2.AArch64.Vec.Group
+public import VerifiedGarbage.Proof.Rc2.CbcList
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The loop over groups
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.Rc2.CbcList
 `loopV_ok`: `j` groups of eight blocks at `x1`, decrypted in CBC mode from the
 chaining value in `x11`, which is left the last ciphertext block.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rc2.AArch64.Vec
 

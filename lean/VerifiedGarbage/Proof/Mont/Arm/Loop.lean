@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Mont.Arm.Row
+module
+
+public import VerifiedGarbage.Proof.Mont.Arm.Row
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Montgomery arithmetic on 32-bit ARM: the loop of the multiplication
@@ -10,6 +16,8 @@ zero, so the window one digit up holds `(T + u B + q m) / 2¹⁶`, below `2m`
 again (`digitRow_ok`). An iteration of the loop (`row`) does the rows of
 the two digits of a word of `[a]` (`row_ok`); `Z` is whether it was the last.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Mont.Arm
 

@@ -1,4 +1,8 @@
-import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Dot
+module
+
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Dot
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.AArch64.Optimized.DotInverse
 open VG VG.AArch64

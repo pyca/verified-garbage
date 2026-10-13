@@ -1,7 +1,11 @@
-import VerifiedGarbage.Impl.EcKey.Arm
-import VerifiedGarbage.Impl.Ecdsa.P256.Arm
+module
+
+public import VerifiedGarbage.Impl.EcKey.Arm
+public import VerifiedGarbage.Impl.Ecdsa.P256.Arm
 
 /-! # P-256 public keys on 32-bit ARM: four-word field elements and scalars -/
+
+@[expose] public section
 
 namespace VG.Impl.EcKey.Arm
 

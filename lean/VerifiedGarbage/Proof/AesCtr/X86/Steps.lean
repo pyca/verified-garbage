@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.AesCtr.Inc
-import VerifiedGarbage.Proof.AesCtr.Spec
-import VerifiedGarbage.Proof.AesCbc.X86.Body
-import VerifiedGarbage.Proof.Framework.X86.RegUpd
-import VerifiedGarbage.Impl.AesCtr.X86
+module
+
+public import VerifiedGarbage.Proof.AesCtr.Inc
+public import VerifiedGarbage.Proof.AesCtr.Spec
+public import VerifiedGarbage.Proof.AesCbc.X86.Body
+public import VerifiedGarbage.Proof.Framework.X86.RegUpd
+public import VerifiedGarbage.Impl.AesCtr.X86
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CTR on x86: the increment
@@ -12,6 +18,8 @@ words, loaded and byte-reversed, the last plus 1 and each other plus the
 carry out of the one after it, reversed again and stored. `incMem_bytes`:
 the block it writes is `Spec.Ctr.inc` of the one it read.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesCtr.X86
 

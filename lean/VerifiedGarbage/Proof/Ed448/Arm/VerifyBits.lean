@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Ed448.Arm.BaseBits
-import VerifiedGarbage.Impl.Ed448.Arm.VerifyEquation
+module
+
+public import VerifiedGarbage.Proof.Ed448.Arm.BaseBits
+public import VerifiedGarbage.Impl.Ed448.Arm.VerifyEquation
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 verification's equation on ARMv7: the bits of `S` and `k`
@@ -7,6 +13,8 @@ import VerifiedGarbage.Impl.Ed448.Arm.VerifyEquation
 `vbits_ok`: byte `t` at `VBITS` is bit `t` of `S` (the signature's last 57
 bytes) plus twice bit `t` of `k` (the challenge), for `t < 456`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.Arm
 

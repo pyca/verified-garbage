@@ -1,4 +1,12 @@
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafSetupTiming
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafSetupTiming
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Verify.X86
 open VG VG.X86 VG.Impl.Mont VG.Impl.Weierstrass VG.Impl.Weierstrass.X86

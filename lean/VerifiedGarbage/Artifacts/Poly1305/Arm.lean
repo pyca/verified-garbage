@@ -1,12 +1,16 @@
-import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Impl.Poly1305.Arm
-import VerifiedGarbage.Proof.Poly1305.Arm.Init
-import VerifiedGarbage.Proof.Poly1305.Arm.Update
-import VerifiedGarbage.Proof.Poly1305.Arm.Finalize
-import VerifiedGarbage.Proof.Poly1305.Arm.Lit
-import VerifiedGarbage.Proof.Poly1305.Arm.Frame
+module
+
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.Impl.Poly1305.Arm
+public import VerifiedGarbage.Proof.Poly1305.Arm.Init
+public import VerifiedGarbage.Proof.Poly1305.Arm.Update
+public import VerifiedGarbage.Proof.Poly1305.Arm.Finalize
+public import VerifiedGarbage.Proof.Poly1305.Arm.Lit
+public import VerifiedGarbage.Proof.Poly1305.Arm.Frame
 
 /-! # Poly1305 (RFC 8439 §2.5) on 32-bit ARM -/
+
+@[expose] public section
 
 namespace VG.Artifacts.Poly1305.Arm
 

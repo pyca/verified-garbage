@@ -1,15 +1,26 @@
-import VerifiedGarbage.Proof.Ed25519.WindowConstants
-import VerifiedGarbage.Proof.Ed25519.X86_64.CombSelect
+module
+
+public import VerifiedGarbage.Proof.Ed25519.WindowConstants
+public import VerifiedGarbage.Proof.Ed25519.X86_64.CombSelect
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
-# The comb's tables represent `[k 1024^j]B`, and `combG` represents `[G]B`
+# The comb's tables represent `[k 1024^j]B`, `combG` represents `[G]B`, and `combStart` `[G']B`
 
 Each entry is turned back into affine `(x, y)` (`uncache`, which the kernel
 checks inverts the caching) and `checkTables` walks the tables once: within
 table `j`, each entry is the previous one plus the first, with the
 specification's addition, compared projectively; the first entry of table `j +
-1` is `[1024]` of table `j`'s, with the specification's `pointMul`.
+1` is `[1024]` of table `j`'s, with the specification's `pointMul`. `combG` and
+`combStart b` are compared with `pointMul` of the base point, and `[32]` of the
+start with `[W b]B` (`combStart_32`), `W b = 33 G + 32^51 (b - 16)`: the start is
+`W b / 32` modulo the group's order.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed25519.X86_64
 
@@ -149,5 +160,54 @@ theorem combG_ok : Rep combG (combGVal • baseAff) := by
     rw [toZ_mul, toZ_one, mul_one]
 
 theorem combGCached_eq : combGCached = cache combG := by decide +kernel
+
+/-- The multiple of `B` the comb starts at, for bit 255 `b`: `(W b) / 32` modulo the group's order
+(`combStartW`), so that its five doublings give `[W b]B`. -/
+def combStartVal (b : Bool) : Nat :=
+  if b then 6361561354267875655831268833642632034291304792232850229338932348362443402247
+  else 4552309959934810102337972192881883474083961281832216416222407598238800751623
+
+/-- `33 G + 32 (b - 16) 1024^25`: the offset `33 G` of the digits, and `32^51` times the top
+chunk's digit, `b - 16`. -/
+def combStartW (b : Bool) : Nat := 33 * combGVal + 32 * (if b then 1 else 0) * 1024 ^ 25 - 512 * 1024 ^ 25
+
+private def combStartCheck (b : Bool) (p : Point) : Bool :=
+  (combStart b).X * p.Z == p.X && (combStart b).Y * p.Z == p.Y && p.Z != 0
+
+private theorem combStart_check : ∀ b, combStartCheck b (pointMul (combStartVal b) basePoint) = true := by
+  decide +kernel
+
+theorem combStart_ok (b : Bool) : Rep (combStart b) (combStartVal b • baseAff) := by
+  have hp := pointMul_rep (combStartVal b) basePoint_rep
+  have hc := combStart_check b
+  simp only [combStartCheck, Bool.and_eq_true, beq_iff_eq, bne_iff_ne, ne_eq] at hc
+  obtain ⟨⟨hx, hy⟩, _⟩ := hc
+  refine hp.of_proj (show toZ 1 ≠ 0 by decide) ?_ ?_ ?_
+  · show toZ (combStart b).X * toZ _ = toZ _ * toZ 1
+    rw [toZ_one, mul_one, ← toZ_mul, hx]
+  · show toZ (combStart b).Y * toZ _ = toZ _ * toZ 1
+    rw [toZ_one, mul_one, ← toZ_mul, hy]
+  · show toZ ((combStartAff b).1 * (combStartAff b).2) * toZ 1 = toZ (combStartAff b).1 * toZ (combStartAff b).2
+    rw [toZ_mul, toZ_one, mul_one]
+
+private theorem combStart_32_check : ∀ b,
+    pointEqual (pointMul (32 * combStartVal b) basePoint) (pointMul (combStartW b) basePoint) = true := by
+  decide +kernel
+
+/-- Five doublings of the start give `[W b]B`: `32 (combStartVal b) ≡ W b` modulo the group's
+order. -/
+theorem combStart_32 (b : Bool) : (32 * combStartVal b) • baseAff = (combStartW b) • baseAff := by
+  have hp := pointMul_rep (32 * combStartVal b) basePoint_rep
+  have hq := pointMul_rep (combStartW b) basePoint_rep
+  have h := combStart_32_check b
+  simp only [pointEqual, Bool.and_eq_true, beq_iff_eq] at h
+  have e1 := congrArg toZ h.1
+  have e2 := congrArg toZ h.2
+  rw [toZ_mul, toZ_mul, hp.x, hq.x] at e1
+  rw [toZ_mul, toZ_mul, hp.y, hq.y] at e2
+  have hz := mul_ne_zero hp.z hq.z
+  ext
+  · exact mul_right_cancel₀ hz (by rw [← mul_assoc, e1, mul_assoc]; exact congrArg _ (mul_comm _ _))
+  · exact mul_right_cancel₀ hz (by rw [← mul_assoc, e2, mul_assoc]; exact congrArg _ (mul_comm _ _))
 
 end VG.Proof.Ed25519.X86_64

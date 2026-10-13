@@ -1,10 +1,19 @@
-import VerifiedGarbage.Impl.Ed25519.Arm.Recover
-import VerifiedGarbage.Proof.Ed25519.Arm.Power
-import VerifiedGarbage.Proof.Ed25519.Arm.PointAffine
-import VerifiedGarbage.Proof.Ed25519.Recover
-import VerifiedGarbage.Proof.Ed25519.Arm.RecoverSign
+module
+
+public import VerifiedGarbage.Impl.Ed25519.Arm.Recover
+public import VerifiedGarbage.Proof.Ed25519.Arm.Power
+public import VerifiedGarbage.Proof.Ed25519.Arm.PointAffine
+public import VerifiedGarbage.Proof.Ed25519.Recover
+public import VerifiedGarbage.Proof.Ed25519.Arm.RecoverSign
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Ed25519.Arm.RecoverCandidate`. -/
+
+@[expose] public section
+
 section
 /-! Candidate root and its square check agree with the decoding specification. -/
 namespace VG.Proof.Ed25519.Arm
@@ -147,7 +156,7 @@ theorem recoverPoint_ok {s : State} {base : BitVec 32} (hc : Ctx base s) (hl : A
       0 - rootU (env s.mem base 1))) (by simp only [VG.Arm.eval, dz, ce 11 (by decide), ce 12 (by decide), avx, anu])
     · intro ht
       have ht' := of_decide_eq_true ht
-      refine WP.seq (WP.mono (fieldCode_ok [.const 18 Spec.Ed25519.sqrtM1, .mul 0 0 18] (kacd.ctx hc) ld)
+      refine WP.seq (WP.mono (fieldCode_ok [.const 18 Spec.Ed25519.sqrtM1, .mulc 0 0 18] (kacd.ctx hc) ld)
         fun e ⟨ke, le, ve⟩ => ?_)
       have ex : env e.mem base 0 = rootX (env s.mem base 1) * Spec.Ed25519.sqrtM1 := by
         rw [ve]; change env d.mem base 0 * Spec.Ed25519.sqrtM1 = _; rw [dx]

@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.MlKem.Arm.Sample
-import VerifiedGarbage.Spec.MlKem
+module
+
+public import VerifiedGarbage.Impl.MlKem.Arm.Sample
+public import VerifiedGarbage.Spec.MlKem
 
 /-!
 # ML-KEM on 32-bit ARM: key generation, encapsulation, decapsulation
@@ -52,6 +54,8 @@ contracts let the functions leak) and two indices. Decapsulation compares
 `c` and `c'` by the OR of the XORs of their bytes, and selects `K'` or `K̄`
 by a mask, in constant time.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlKem.Arm
 

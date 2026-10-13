@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Sm4.X86.Group
-import VerifiedGarbage.Proof.Sm4.Common
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.TCB.X86.Target
+module
+
+public import VerifiedGarbage.Proof.Sm4.X86.Group
+public import VerifiedGarbage.Proof.Sm4.Common
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.TCB.X86.Target
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # SM4 ECB on x86 (32-bit): the whole function
@@ -12,6 +18,8 @@ order `dir` uses them, keeps the data pointer and the count in their slots,
 transforms the blocks a group at a time (`dataLoop_wp`) and restores the
 registers.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sm4
 
@@ -95,7 +103,7 @@ theorem ecb_wp (dir : Dir) {s₀ : State} (hp : (ecbX86 dir).pre s₀) :
   let n := (arg s₀ 2).toNat
   let b := arg s₀ 3
   have hfit' : b.toNat + 4 * slots ≤ 2 ^ 32 := fitB
-  have hwS : ScrIn s₀.wr b := ⟨by rw [hwr]; simp [b], fitB⟩
+  have hwS : ScrIn s₀.wr b := .exact (by rw [hwr]; simp [b]) fitB
   have hwD : (⟨D.setWidth 64, 16 * n⟩ : Region) ∈ s₀.wr := by rw [hwr]; simp [D, n]
   have hrK : (⟨sched.setWidth 64, 128⟩ : Region) ∈ s₀.rd := by rw [hrd]; simp [sched]
   have hrA : (⟨argAddr s₀ 0, 16⟩ : Region) ∈ s₀.rd := by rw [hrd]; simp

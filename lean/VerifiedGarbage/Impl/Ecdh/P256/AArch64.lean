@@ -1,7 +1,11 @@
-import VerifiedGarbage.Impl.Ecdh.AArch64
-import VerifiedGarbage.Impl.Ecdsa.P256.AArch64
+module
+
+public import VerifiedGarbage.Impl.Ecdh.AArch64
+public import VerifiedGarbage.Impl.Ecdsa.P256.AArch64
 
 /-! # ECDH over P-256 on AArch64: four-word field elements and scalars -/
+
+@[expose] public section
 
 namespace VG.Impl.Ecdh.AArch64
 

@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Ed448.Arm.PublicKey
+module
+
+public import VerifiedGarbage.Impl.Ed448.Arm.PublicKey
 
 /-!
 # Ed448 on ARMv7: SHAKE256 of `dom4(0, C) ‖ …` in Ed25519's frame
@@ -20,6 +22,8 @@ SHAKE's suffix): the Keccak state at `scratch` and their working space at
 
 Every address depends only on `sp` and `scratch`.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Ed448.Arm.Shake
 

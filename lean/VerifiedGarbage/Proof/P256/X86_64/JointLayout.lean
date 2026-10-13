@@ -1,7 +1,16 @@
-import VerifiedGarbage.Impl.P256.X86_64.Joint
-import VerifiedGarbage.Proof.Weierstrass.X86_64.JointCachedDigit
+module
+
+public import VerifiedGarbage.Impl.P256.X86_64.Joint
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointCachedDigit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Concrete separation checks for the measured joint verifier's scratch allocation. -/
+
+@[expose] public section
+
 namespace VG.Proof.P256.X86_64
 open VG VG.X86_64 VG.Impl.P256.X86_64 VG.Impl.Weierstrass
 open VG.Proof.Mont VG.Proof.Weierstrass.X86_64
@@ -20,7 +29,7 @@ theorem joint_lookup_layout : JointLookupLayout publicJoint 8192 :=
     by decide,by decide,by decide,by decide⟩
 
 theorem joint_add_layout : JointAddLayout publicJoint 8192 := by
-  refine ⟨joint_lookup_layout,?_,by decide,by decide,by decide,by decide⟩
+  refine ⟨joint_lookup_layout,?_,by decide,by decide,by decide,by decide,⟨fun _ h => by cases h⟩⟩
   constructor <;> decide +kernel
 
 theorem joint_adx_layout : JointLayout publicJointAdx 8192 :=
@@ -33,6 +42,7 @@ theorem joint_adx_lookup_layout : JointLookupLayout publicJointAdx 8192 :=
 
 theorem joint_adx_add_layout : JointAddLayout publicJointAdx 8192 :=
   ⟨joint_adx_lookup_layout,joint_add_layout.addApart,joint_add_layout.cache2Apart,
-    joint_add_layout.cache3Apart,joint_add_layout.accumNodup,joint_add_layout.copyApart⟩
+    joint_add_layout.cache3Apart,joint_add_layout.accumNodup,joint_add_layout.copyApart,
+    ⟨fun _ h => by cases h⟩⟩
 
 end VG.Proof.P256.X86_64

@@ -1,7 +1,12 @@
-import VerifiedGarbage.Impl.Ecdsa.P256.X86
-import VerifiedGarbage.Impl.P256.CombTable7
+module
+
+public import VerifiedGarbage.Impl.Ecdsa.P256.X86
+public import VerifiedGarbage.Impl.P256.CombTable7
 
 /-! # P-256's seven-bit fixed-base comb on 32-bit x86 -/
+
+@[expose] public section
+
 namespace VG.Impl.Ecdsa.X86
 open VG.X86
 

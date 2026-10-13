@@ -1,7 +1,15 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductVerified
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.NttCallTiming
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductVerified
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.NttCallTiming
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## From `ProductCall.lean` -/
+
+@[expose] public section
 
 section
 

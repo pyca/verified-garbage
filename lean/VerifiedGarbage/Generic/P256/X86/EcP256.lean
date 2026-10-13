@@ -1,9 +1,11 @@
-import VerifiedGarbage.Proof.Weierstrass.X86.InvInterface
-import VerifiedGarbage.TCB.X86.Target
-import VerifiedGarbage.Proof.Weierstrass.Law
-import VerifiedGarbage.Impl.EcKey.P256.X86
-import VerifiedGarbage.Proof.EcKey.X86.CombVerified
-import VerifiedGarbage.Proof.EcKey.X86.Lit
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86.InvInterface
+public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Proof.Weierstrass.Law
+public import VerifiedGarbage.Impl.EcKey.P256.X86
+public import VerifiedGarbage.Proof.EcKey.X86.CombVerified
+public import VerifiedGarbage.Proof.EcKey.X86.Lit
 
 /-!
 # P-256 public keys (FIPS 186-5 §A.2) on x86 (32-bit)
@@ -11,6 +13,8 @@ import VerifiedGarbage.Proof.EcKey.X86.Lit
 A generic file (see `TCB/Emit.lean`) over P-256's group law `h`, the variant
 `Variants/P256/X86/Law.lean`.
 -/
+
+@[expose] public section
 
 namespace VG.Generic.P256.X86.EcP256
 

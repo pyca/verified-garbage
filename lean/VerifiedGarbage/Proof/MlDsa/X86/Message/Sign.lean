@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.MlDsa.X86.Message.SignCall
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86.Message.SignCall
+meta import VerifiedGarbage.Proof.MlDsa.X86.Message.SignCall
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on x86 (32-bit), `sign_message`: correct and constant time
@@ -9,6 +16,8 @@ Untrusted: everything here is checked by Lean. The body past the entry:
 leaf, after the check (`signMessage_piece`); and what that says of the
 contract's postcondition (`signMessage_post`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86.Message
 

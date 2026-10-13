@@ -1,6 +1,12 @@
-import VerifiedGarbage.Spec.Ccm
-import VerifiedGarbage.Proof.Cmac.Spec
-import VerifiedGarbage.Proof.Cmac.Stream
+module
+
+public import VerifiedGarbage.Spec.Ccm
+public import VerifiedGarbage.Proof.Cmac.Spec
+public import VerifiedGarbage.Proof.Cmac.Stream
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CCM: the MAC as chaining over pieces
@@ -15,6 +21,8 @@ length followed by its first bytes, then the rest of it padded,
 padded to whole blocks is its whole blocks followed, unless there are none
 left, by its last bytes padded (`blocks_pad16`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesCcm
 

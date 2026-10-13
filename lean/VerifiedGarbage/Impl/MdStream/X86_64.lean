@@ -1,4 +1,6 @@
-import VerifiedGarbage.TCB.X86_64.Isa
+module
+
+public import VerifiedGarbage.TCB.X86_64.Isa
 
 /-!
 # Streaming Merkle–Damgård hash functions: x86-64 implementation
@@ -28,6 +30,8 @@ of those registers are saved in `scratch[so..so+48)`. The call stores its
 return address in the 8 bytes below `rsp`. Every address and branch depends
 only on the pointers, `count` and `len`.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MdStream.X86_64
 

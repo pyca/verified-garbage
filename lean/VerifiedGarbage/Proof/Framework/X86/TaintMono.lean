@@ -1,6 +1,8 @@
-import VerifiedGarbage.Proof.Framework.X86.Taint
-import VerifiedGarbage.Proof.Framework.TaintSum
-import VerifiedGarbage.Proof.Framework.RegSetOrder
+module
+
+public import VerifiedGarbage.Proof.Framework.X86.Taint
+public import VerifiedGarbage.Proof.Framework.TaintSum
+public import VerifiedGarbage.Proof.Framework.RegSetOrder
 
 /-!
 # Summaries for the x86 taint analysis
@@ -20,6 +22,8 @@ itself.
 A frame of a summary (what the summarized code does not write, `keeps`) is a
 set of registers (`Fr` compares only registers and flags).
 -/
+
+@[expose] public section
 
 namespace VG.X86.Taint
 

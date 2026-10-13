@@ -1,4 +1,8 @@
-import VerifiedGarbage.Proof.Ed25519.X86.SignCached.Verified
+module
+
+public import VerifiedGarbage.Proof.Ed25519.X86.SignCached.Verified
+
+@[expose] public section
 
 namespace VG.Artifacts.Ed25519SignCached.X86
 

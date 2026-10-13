@@ -1,9 +1,15 @@
-import VerifiedGarbage.Impl.Rsa.X86_64.Keys
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtArith
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
-import VerifiedGarbage.Proof.Bignum.X86_64.Cmp
-import VerifiedGarbage.Proof.Bignum.X86_64.Copy
-import VerifiedGarbage.Proof.Bignum.X86_64.Double
+module
+
+public import VerifiedGarbage.Impl.Rsa.X86_64.Keys
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtArith
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
+public import VerifiedGarbage.Proof.Bignum.X86_64.Cmp
+public import VerifiedGarbage.Proof.Bignum.X86_64.Copy
+public import VerifiedGarbage.Proof.Bignum.X86_64.Double
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSA private keys on x86-64: bases and loops over the words
@@ -16,6 +22,8 @@ in place (`shl_ok`), a selection in place (`sel_ok`), a masked subtraction
 and the masked addition (`addM_ok`) and subtraction (`sub_ok`) of
 `subModArr` and `subMod`, as loops.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.X86_64
 
@@ -35,12 +43,63 @@ theorem only_of {r : Reg} {s s' : State} (h : ∀ r', r' ≠ r → s'.gpr r' = s
     (hwr : s'.wr = s.wr) : Keep [r] s s' :=
   ⟨fun r' hr' => h r' (by simpa using hr'), hrd, hwr⟩
 
-/-- `base j r`: `r := rdi + 256 + j · r9`, the base of array `j`. -/
-theorem base_ok {s : State} {B : Addr} {w : Nat} (j : Nat) {r : Reg} (hr' : r ≠ .r9)
+/-- `mulBitsF r f j`: `r := j · S`, from `r = S` and `r9 = S`, for `1 ≤ j ≤ f`. -/
+theorem mulBitsF_ok {r : Reg} (hr' : r ≠ .r9) {S : Nat} :
+    ∀ f j, 1 ≤ j → j ≤ f → ∀ t : State, t.gpr r = BitVec.ofNat 64 S → t.gpr .r9 = BitVec.ofNat 64 S →
+      WP isa (.block (mulBitsF r f j)) t fun t' =>
+        t'.gpr r = BitVec.ofNat 64 (j * S) ∧ t'.mem = t.mem ∧ Keep [r] t t'
+  | 0, _, hj, hf, _, _, _ => absurd (Nat.le_trans hj hf) (by decide)
+  | f + 1, j, hj, hf, t, hr, h9 => by
+    rw [mulBitsF]
+    by_cases hj2 : j < 2
+    · simp only [hj2, ↓reduceIte]
+      exact WP.block_nil ⟨by rw [hr, show j = 1 by omega, Nat.one_mul], rfl, Keep.refl _ _⟩
+    simp only [hj2, ↓reduceIte]
+    rw [WP.block_append_iff, WP.block_append_iff]
+    refine WP.mono (mulBitsF_ok hr' f (j / 2) (by omega) (by omega) t hr h9) fun t₁ ⟨h₁, m₁, k₁⟩ => ?_
+    have h9₁ : t₁.gpr .r9 = BitVec.ofNat 64 S := (k₁.gpr (by simp [hr'.symm])).trans h9
+    have e₂ : WP isa (.block [.alu .add r (.reg r)]) t₁ fun (t₂ : State) =>
+        t₂.gpr r = BitVec.ofNat 64 (2 * (j / 2) * S) ∧ t₂.mem = t₁.mem ∧ Keep [r] t₁ t₂ := by
+      xrun [h₁]
+      refine ⟨?_, only_of (fun r' h => by simp [setReg_gpr, setFlags_gpr, h]) rfl rfl⟩
+      rw [BitVec.ofNat_add_ofNat, show j / 2 * S + j / 2 * S = 2 * (j / 2) * S by rw [Nat.mul_assoc, Nat.two_mul]]
+    refine WP.mono e₂ fun t₂ ⟨h₂, m₂, k₂⟩ => ?_
+    have h9₂ : t₂.gpr .r9 = BitVec.ofNat 64 S := (k₂.gpr (by simp [hr'.symm])).trans h9₁
+    by_cases hb : j % 2 = 1
+    · simp only [hb, ↓reduceIte]
+      have e₃ : WP isa (.block [.alu .add r (.reg .r9)]) t₂ fun (t₃ : State) =>
+          t₃.gpr r = BitVec.ofNat 64 (j * S) ∧ t₃.mem = t₂.mem ∧ Keep [r] t₂ t₃ := by
+        xrun [h₂, h9₂]
+        refine ⟨?_, only_of (fun r' h => by simp [setReg_gpr, setFlags_gpr, h]) rfl rfl⟩
+        rw [BitVec.ofNat_add_ofNat]
+        congr 1
+        have := Nat.div_add_mod j 2
+        rw [hb] at this
+        calc 2 * (j / 2) * S + S = (2 * (j / 2) + 1) * S := by rw [Nat.add_mul, Nat.one_mul]
+          _ = j * S := by rw [this]
+      exact WP.mono e₃ fun t₃ ⟨h₃, m₃, k₃⟩ =>
+        ⟨h₃, m₃.trans (m₂.trans m₁), ((k₁.trans k₂).trans k₃).mono (by simp)⟩
+    · simp only [hb, ↓reduceIte]
+      refine WP.block_nil ⟨?_, m₂.trans m₁, (k₁.trans k₂).mono (by simp)⟩
+      rw [h₂]
+      congr 1
+      have := Nat.div_add_mod j 2
+      rw [show j % 2 = 0 by omega, Nat.add_zero] at this
+      rw [this]
+
+/-- `mulBits r j`: `r := j · S`, from `r = S` and `r9 = S`. -/
+theorem mulBits_ok {r : Reg} (hr' : r ≠ .r9) {S : Nat} (j : Nat) (hj : 1 ≤ j) (t : State)
+    (hr : t.gpr r = BitVec.ofNat 64 S) (h9 : t.gpr .r9 = BitVec.ofNat 64 S) :
+    WP isa (.block (mulBits r j)) t fun t' =>
+      t'.gpr r = BitVec.ofNat 64 (j * S) ∧ t'.mem = t.mem ∧ Keep [r] t t' :=
+  mulBitsF_ok hr' j j hj (Nat.le_refl _) t hr h9
+
+/-- `baseRep j r`: `r := rdi + 256 + j · r9`. -/
+theorem baseRep_ok {s : State} {B : Addr} {w : Nat} (j : Nat) {r : Reg} (hr' : r ≠ .r9)
     (hdi : s.gpr .rdi = B) (h9 : s.gpr .r9 = BitVec.ofNat 64 (8 * (w + 2))) :
-    WP isa (.block (base j r)) s fun t =>
+    WP isa (.block (baseRep j r)) s fun t =>
       t.gpr r = off B (slot w j) ∧ t.mem = s.mem ∧ Keep [r] s t := by
-  unfold base
+  unfold baseRep
   rw [WP.block_append_iff]
   have e₀ : WP isa (.block [.mov r (.reg .rdi), .alu .add r (.imm (BitVec.ofNat 32 hdrBytes))]) s
       fun (t₁ : State) => t₁.gpr r = off B (slot w 0) ∧ t₁.mem = s.mem ∧ Keep [r] s t₁ := by
@@ -68,6 +127,38 @@ theorem base_ok {s : State} {B : Addr} {w : Nat} (j : Nat) {r : Reg} (hr' : r �
     refine WP.mono e₁ fun t₁ ⟨h₁, m₁, k₁⟩ => ?_
     refine WP.mono (ih t₁ h₁ ((k₁.gpr (by simp [hr'.symm])).trans h9t) (by omega_using [hn]))
       fun t' ⟨h', m', k'⟩ => ⟨h', m'.trans m₁, (k₁.trans k').mono (by simp)⟩
+
+/-- `base j r`: `r := rdi + 256 + j · r9`, the base of array `j`. -/
+theorem base_ok {s : State} {B : Addr} {w : Nat} (j : Nat) {r : Reg} (hr' : r ≠ .r9)
+    (hdi : s.gpr .rdi = B) (h9 : s.gpr .r9 = BitVec.ofNat 64 (8 * (w + 2))) :
+    WP isa (.block (base j r)) s fun t =>
+      t.gpr r = off B (slot w j) ∧ t.mem = s.mem ∧ Keep [r] s t := by
+  unfold base
+  by_cases hj : j = 0 ∨ r = .rdi
+  · simp only [hj, ↓reduceIte]
+    exact baseRep_ok j hr' hdi h9
+  have hrdi : r ≠ .rdi := fun h => hj (.inr h)
+  have hj0 : j ≠ 0 := fun h => hj (.inl h)
+  simp only [hj, ↓reduceIte]
+  rw [WP.block_append_iff, WP.block_append_iff]
+  have e₀ : WP isa (.block [.mov r (.reg .r9)]) s fun (t₁ : State) =>
+      t₁.gpr r = BitVec.ofNat 64 (8 * (w + 2)) ∧ t₁.mem = s.mem ∧ Keep [r] s t₁ := by
+    xrun [h9]
+    exact only_of (fun r' h => by simp [setReg_gpr, h]) rfl rfl
+  refine WP.mono e₀ fun t₁ ⟨h₁, m₁, k₁⟩ => ?_
+  have h9₁ : t₁.gpr .r9 = BitVec.ofNat 64 (8 * (w + 2)) := (k₁.gpr (by simp [hr'.symm])).trans h9
+  refine WP.mono (mulBits_ok hr' j (by omega_using [hj0]) t₁ h₁ h9₁) fun t₂ ⟨h₂, m₂, k₂⟩ => ?_
+  have hdi₂ : t₂.gpr .rdi = B := (k₂.gpr (by simp [hrdi.symm])).trans ((k₁.gpr (by simp [hrdi.symm])).trans hdi)
+  have e₃ : WP isa (.block [.alu .add r (.reg .rdi), .alu .add r (.imm (BitVec.ofNat 32 hdrBytes))]) t₂
+      fun (t₃ : State) => t₃.gpr r = off B (slot w j) ∧ t₃.mem = t₂.mem ∧ Keep [r] t₂ t₃ := by
+    xrun [h₂, hdi₂, sx_ofNat (show hdrBytes < 2 ^ 31 by decide)]
+    refine ⟨?_, only_of (fun r' h => by simp [setReg_gpr, setFlags_gpr, h]) rfl rfl⟩
+    simp only [off, slot]
+    rw [BitVec.add_comm (BitVec.ofNat 64 (j * (8 * (w + 2)))) B, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
+    congr 2
+    omega
+  exact WP.mono e₃ fun t₃ ⟨h₃, m₃, k₃⟩ =>
+    ⟨h₃, m₃.trans (m₂.trans m₁), ((k₁.trans k₂).trans k₃).mono (by simp)⟩
 
 /-- `ws`: `w` and the stride from the header. -/
 theorem ws_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z) (hdi : s.gpr .rdi = B) (hZ : 8 * 32 ≤ Z)

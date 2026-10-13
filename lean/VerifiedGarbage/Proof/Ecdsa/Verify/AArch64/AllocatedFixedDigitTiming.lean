@@ -1,9 +1,17 @@
-import VerifiedGarbage.Proof.P256.VerifyAllocated.Timing
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedArithmetic
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JointMixedTiming
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JointEntryTiming
+module
+
+public import VerifiedGarbage.Proof.P256.VerifyAllocated.Timing
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedArithmetic
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JointMixedTiming
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JointEntryTiming
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## `AllocatedMixedTiming` -/
+
+@[expose] public section
 
 section
 

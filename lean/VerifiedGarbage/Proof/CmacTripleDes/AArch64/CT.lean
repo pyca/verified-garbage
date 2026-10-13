@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Lit
-import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Contract
-import VerifiedGarbage.Proof.Framework.AArch64.Taint
+module
+
+public import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Lit
+meta import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Lit
+public import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Contract
+meta import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Contract
+public import VerifiedGarbage.Proof.Framework.AArch64.Taint
+meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # TDEA-CMAC on AArch64: constant time
@@ -9,6 +18,8 @@ The taint analysis (`Framework/AArch64/Taint.lean`) checks that only the
 arguments, which are public, decide branches and addresses: the functions keep
 their pointers and counts in registers.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.CmacTripleDes.AArch64
 

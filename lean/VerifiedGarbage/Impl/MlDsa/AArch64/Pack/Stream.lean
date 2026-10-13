@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.MlKem.AArch64.Compress
+module
+
+public import VerifiedGarbage.Impl.MlKem.AArch64.Compress
 
 /-!
 # ML-DSA on AArch64: packing and unpacking `d`-bit fields
@@ -26,6 +28,8 @@ only on `d`:
 `x9` never holds more than `d + 7` bits. Every address and branch depends
 only on the pointers and `d`.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.AArch64.Pack
 

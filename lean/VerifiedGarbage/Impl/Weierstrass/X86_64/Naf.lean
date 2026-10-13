@@ -1,6 +1,11 @@
-import VerifiedGarbage.Impl.Weierstrass.X86_64.NafPrep
+module
+
+public import VerifiedGarbage.Impl.Weierstrass.X86_64.NafPrep
 
 /-! Width-five NAF multiplication for public verification scalars. -/
+
+@[expose] public section
+
 namespace VG.Impl.Weierstrass.X86_64.Naf
 open VG VG.X86_64 VG.Impl.Mont VG.Impl.Mont.X86_64 VG.Impl.Weierstrass
 open Jacobian
@@ -15,11 +20,15 @@ def copyPieces (n : Nat) (src dst : Nat → MemOp) : List Instr :=
 /-- Piece `i` of a `24 n`-byte entry: `16 i`, but the last at its last 16 bytes. -/
 def pieceOff (n i : Nat) : Nat := if i + 1 < (3 * n + 1) / 2 then 16 * i else 24 * n - 16
 
+/-- Address of entry `rax`, indexed from zero, of a table of `stride`-byte
+entries, in `rdx`. -/
+def stridedAddress (stride tbl : Nat) : List Instr :=
+  [.mov32 .rcx (.imm (BitVec.ofNat 32 stride)),.mul .rcx,.mov .rdx (.reg .rdi),
+   .alu .add .rdx (.imm (BitVec.ofNat 32 tbl)),.alu .add .rdx (.reg .rax)]
+
 /-- Address of entry `rax`, indexed from zero, of a table of `24 n`-byte
 entries, in `rdx`. -/
-def tableAddress (n tbl : Nat) : List Instr :=
-  [.mov32 .rcx (.imm (BitVec.ofNat 32 (24*n))),.mul .rcx,.mov .rdx (.reg .rdi),
-   .alu .add .rdx (.imm (BitVec.ofNat 32 tbl)),.alu .add .rdx (.reg .rax)]
+def tableAddress (n tbl : Nat) : List Instr := stridedAddress (24*n) tbl
 
 /-- Store `R` in entry `rbx`, indexed from zero. -/
 def tableStore (K : WinCfg) : List Instr :=

@@ -1,0 +1,5 @@
+name = "Blowfish-CBC"
+family = "Ciphers"
+specs = ["Blowfish", "Cbc"]
+modules = ["src/blowfish_cbc.rs"]
+asm = ["blowfish_cbc"]

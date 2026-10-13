@@ -1,7 +1,15 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedSignContract
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedConcreteCorrect
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedSignTiming
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedSelectedTiming
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedSignContract
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedConcreteCorrect
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedSignTiming
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedSelectedTiming
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Sign
 open VG VG.AArch64 VG.Spec.MlDsa

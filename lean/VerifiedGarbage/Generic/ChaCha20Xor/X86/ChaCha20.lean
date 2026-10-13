@@ -1,5 +1,7 @@
-import VerifiedGarbage.TCB.X86.Target
-import VerifiedGarbage.Proof.ChaCha20.X86.Stream.ApplyCT
+module
+
+public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Proof.ChaCha20.X86.Stream.ApplyCT
 
 /-!
 # Streaming ChaCha20 (RFC 8439) on x86: `vg_chacha20_apply`
@@ -19,6 +21,8 @@ The stack is 32 bytes for every implementation: the arguments and return
 address of the call of `vg_chacha20_xor`, and the 12 bytes below them that
 it uses.
 -/
+
+@[expose] public section
 
 namespace VG.Generic.ChaCha20Xor.X86.ChaCha20
 

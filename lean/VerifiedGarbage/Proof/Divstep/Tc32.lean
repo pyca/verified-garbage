@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Divstep.Alg32
-import VerifiedGarbage.Proof.Divstep.Tc32Red
+module
+
+public import VerifiedGarbage.Proof.Divstep.Alg32
+public import VerifiedGarbage.Proof.Divstep.Tc32Red
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Inversion by batches of divsteps: words in two's complement
@@ -9,6 +15,8 @@ if negative (`tc_eq`); the reduction `mred` on such words, as the code does
 it (`mred_words`): sign-extend `t` by a word, add `k p`, take the words above
 the lowest, add `p` if negative, subtract `p`, and add `p` back if negative.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Divstep.W32
 

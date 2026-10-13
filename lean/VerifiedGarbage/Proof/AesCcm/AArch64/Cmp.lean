@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesCcm.AArch64.Env
-import VerifiedGarbage.Proof.AesGcm.AArch64.Cmp
+module
+
+public import VerifiedGarbage.Proof.AesCcm.AArch64.Env
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Cmp
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CCM on AArch64: checking a received tag (`cmp`, `mask`)
@@ -12,6 +18,8 @@ leaves 0 in `x10` if they are equal, 1 if not (`cmp_ok`), as AES-GCM's
 the data if the tags are equal, and overwrites it with zeros if not
 (`mask_ok`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

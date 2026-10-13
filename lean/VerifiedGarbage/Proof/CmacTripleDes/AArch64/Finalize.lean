@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Update
-import VerifiedGarbage.Proof.Framework.WriteBytes
+module
+
+public import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Update
+public import VerifiedGarbage.Proof.Framework.WriteBytes
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # TDEA-CMAC on AArch64: `vg_cmac_triple_des_finalize`
@@ -10,6 +16,8 @@ copied a byte at a time onto the zeroed slot 6, `0x80` after it, XORed with
 `K2`. The function then XORs in the chaining value `C`, encrypts it and stores
 `CIPH_K(C ⊕ Mₙ)` as the state, the MAC (`macFull_split8`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.CmacTripleDes.AArch64
 

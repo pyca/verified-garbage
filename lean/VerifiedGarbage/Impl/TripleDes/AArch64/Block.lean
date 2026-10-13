@@ -1,5 +1,9 @@
-import VerifiedGarbage.Impl.TripleDes.AArch64.Common
-import VerifiedGarbage.Impl.TripleDes.AArch64.Sbox
+module
+
+public import VerifiedGarbage.Impl.TripleDes.AArch64.Common
+public import VerifiedGarbage.Impl.TripleDes.AArch64.Sbox
+
+@[expose] public section
 
 namespace VG.Impl.TripleDes.AArch64
 
@@ -36,22 +40,49 @@ def swapHalves : List Instr := [rr .x3 .x19, rr .x19 .x20, rr .x20 .x3]
 
 def roundBody : List Instr := (List.range 8).flatMap box ++ swapHalves
 
-def roundAdvance (d : Direction) : List Instr :=
-  [if d = .encrypt then .addImm .x .x22 .x22 8 else .subImm .x .x22 .x22 8,
-    .subImm .x .x21 .x21 1]
+/-! One loop runs the three passes. The key step of the pass (8 or −8) is in
+the low lane of `v0` and the passes left in that of `v1`, which the rounds
+never touch; the pass's first key and its step are chosen by the passes
+left. -/
+
+/-- The next round key, `v0.d[0]` bytes on, and the round counted. -/
+def roundAdvance : List Instr :=
+  [.umov .x .x3 .v0 0, .add .x .x22 .x22 .x3, .subImm .x .x21 .x21 1]
 
 def passStart (component : Nat) (d : Direction) : List Instr :=
   [.addImm .x .x22 .x0 (128 * component + if d = .encrypt then 0 else 120),
-    imm .x21 16]
+    imm .x21 16, .sub .x .x3 .x0 .x0,
+    if d = .encrypt then .addImm .x .x3 .x3 8 else .subImm .x .x3 .x3 8,
+    .vop (.dup .d2 .v0 .x3)]
 
-def pass (component : Nat) (d : Direction) : Prog isa :=
-  .seq (.block (passStart component d))
-    (.seq (.loop (.block (roundBody ++ roundAdvance d)) (.nonzero .x .x21)) (.block swapHalves))
+/-- The component and direction of the pass with `left` passes left (3, 2, 1). -/
+def passOf (d : Direction) (left : Nat) : Nat × Direction :=
+  match d, left with
+  | .encrypt, 3 => (0, .encrypt)
+  | .encrypt, 2 => (1, .decrypt)
+  | .encrypt, _ => (2, .encrypt)
+  | .decrypt, 3 => (2, .decrypt)
+  | .decrypt, 2 => (1, .encrypt)
+  | .decrypt, _ => (0, .decrypt)
+
+/-- Choose the pass's first key and step by the passes left. -/
+def passSelect (d : Direction) : Prog isa :=
+  .seq (.block [.umov .x .x3 .v1 0, .subImm .x .x4 .x3 3])
+    (.ite (.zero .x .x4) (.block (passStart (passOf d 3).1 (passOf d 3).2))
+      (.seq (.block [.subImm .x .x4 .x3 2])
+        (.ite (.zero .x .x4) (.block (passStart (passOf d 2).1 (passOf d 2).2))
+          (.block (passStart (passOf d 1).1 (passOf d 1).2)))))
+
+def passCountAdvance : List Instr :=
+  [.umov .x .x3 .v1 0, .subImm .x .x3 .x3 1, .vop (.dup .d2 .v1 .x3)]
+
+def pass (d : Direction) : Prog isa :=
+  .seq (passSelect d)
+    (.seq (.loop (.block (roundBody ++ roundAdvance)) (.nonzero .x .x21))
+      (.block (swapHalves ++ passCountAdvance)))
 
 def blockBody (d : Direction) : Prog isa :=
-  match d with
-  | .encrypt => .seq (pass 0 .encrypt) (.seq (pass 1 .decrypt) (pass 2 .encrypt))
-  | .decrypt => .seq (pass 2 .decrypt) (.seq (pass 1 .encrypt) (pass 0 .decrypt))
+  .seq (.block [imm .x3 3, .vop (.dup .d2 .v1 .x3)]) (.loop (pass d) (.nonzero .x .x3))
 
 def blockStore : List Instr :=
   ([.lsl .x .x3 .x19 32, .logic .eor .x .x3 .x3 .x20] : List Instr) ++

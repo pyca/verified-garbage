@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Tail
-import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.CombMul
+module
+
+public import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Tail
+public import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.CombMul
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The `zmm` comb: the multiplication
@@ -9,6 +15,8 @@ constants (`zConstOps`, `vload`'s, and the rows of the `zmm` code, `zconsts`,
 which also puts `[G]B` into both halves of the lanes), the 26 steps
 (`zstep_ok`) with MXCSR `0x1FBF`, and `32 A + B` (`ztail_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed25519.X86_64.Zmm
 

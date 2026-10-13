@@ -1,15 +1,21 @@
-import Mathlib.Data.List.Dedup
-import VerifiedGarbage.Proof.AesGcm.AArch64.Init
-import VerifiedGarbage.Proof.AesGcm.AArch64.InitCT
-import VerifiedGarbage.Proof.AesGcm.AArch64.StreamInitCT
-import VerifiedGarbage.Proof.AesGcm.AArch64.StreamAadCT
-import VerifiedGarbage.Proof.AesGcm.AArch64.StreamCryptCT
-import VerifiedGarbage.Proof.AesGcm.AArch64.FinCT
-import VerifiedGarbage.Proof.AesGcm.AArch64.SealCT
-import VerifiedGarbage.Proof.AesGcm.AArch64.OpenCT
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Spec.Gcm.Contract
-import VerifiedGarbage.Proof.AesGcm.Scratch
+module
+
+public import Mathlib.Data.List.Dedup
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Init
+public import VerifiedGarbage.Proof.AesGcm.AArch64.InitCT
+public import VerifiedGarbage.Proof.AesGcm.AArch64.StreamInitCT
+public import VerifiedGarbage.Proof.AesGcm.AArch64.StreamAadCT
+public import VerifiedGarbage.Proof.AesGcm.AArch64.StreamCryptCT
+public import VerifiedGarbage.Proof.AesGcm.AArch64.FinCT
+public import VerifiedGarbage.Proof.AesGcm.AArch64.SealCT
+public import VerifiedGarbage.Proof.AesGcm.AArch64.OpenCT
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.Gcm.Contract
+public import VerifiedGarbage.Proof.AesGcm.Scratch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on AArch64: `Verified`
@@ -21,6 +27,8 @@ Untrusted: everything here is checked by Lean. Correctness and constant time
 (`Proof/AesGcm/Scratch.lean`; with no stack: the calls keep the return
 address in `x30`, which each function saves in the working space).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 
@@ -66,12 +74,12 @@ theorem streamVerify_keepsV (v : GcmImpl) : (streamVerify v.callees).allInstrs k
     v.ctr.keepsV, v.key.keepsV, v.gh.keepsV]; decide +kernel
 
 theorem seal_keepsV (v : GcmImpl) : («seal» v.callees).allInstrs keepsV = true := by
-  simp only [«seal», j0, j0hash, oneAad, encBody, fo, textAbs, finBody, tag, crypt, crSeg1, crSeg2, crTail,
+  simp only [«seal», j0, j0hash, oneAad, absorbAl, encBody, fo, textAbs, finBody, tag, crypt, crSeg1, crSeg2, crTail,
     ctrCall, ghCall, absorb, absSeg1, absTail, minK, copy, Impl.AesGcm.AArch64.xor, padSeg, flush, lens, GcmImpl.callees,
     Code.allInstrs, v.ctr.keepsV, v.key.keepsV, v.gh.keepsV]; decide +kernel
 
 theorem open_keepsV (v : GcmImpl) : («open» v.callees).allInstrs keepsV = true := by
-  simp only [«open», openMain, oneCrypt, tagLenOk, tlTest, tagIn, cmpSeg, j0, j0hash, oneAad, decAbs, fo, textAbs,
+  simp only [«open», openMain, oneCrypt, cryptAl, crArgs, tagLenOk, tlTest, tagIn, cmpSeg, j0, j0hash, oneAad, absorbAl, decAbs, fo, textAbs,
     finBody, tag, crypt, crSeg1, crSeg2, crTail, ctrCall, ghCall, absorb, absSeg1, absTail, minK, copy, Impl.AesGcm.AArch64.xor,
     padSeg, flush, lens, GcmImpl.callees, Code.allInstrs, v.ctr.keepsV, v.key.keepsV, v.gh.keepsV]
   decide +kernel

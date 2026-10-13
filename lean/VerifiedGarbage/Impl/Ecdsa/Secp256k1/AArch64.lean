@@ -1,14 +1,19 @@
-import VerifiedGarbage.Impl.Ecdsa.AArch64
-import VerifiedGarbage.Spec.Secp256k1
+module
+
+public import VerifiedGarbage.Impl.Ecdsa.AArch64
+public import VerifiedGarbage.Spec.Secp256k1
 
 /-! # secp256k1 on AArch64, using complete general addition -/
+
+@[expose] public section
 
 namespace VG.Impl.Ecdsa.AArch64
 
 open VG VG.AArch64 VG.Impl.Weierstrass VG.Impl.Weierstrass.AArch64
 
 /-- Four-word arithmetic without a precomputed comb table. -/
-def secp256k1 : Cfg := ⟨4, Spec.Secp256k1.curve, [], (0, 0), "", true⟩
+def secp256k1 : Cfg := ⟨4, Spec.Secp256k1.curve, [], (0, 0), "", true,
+  some Spec.Weierstrass.Inverse.secp256k1, none⟩
 
 namespace Secp256k1
 

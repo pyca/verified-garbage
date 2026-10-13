@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesCtr.X86_64.Steps
-import VerifiedGarbage.Proof.AesGcm.X86_64.Callee
+module
+
+public import VerifiedGarbage.Proof.AesCtr.X86_64.Steps
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Callee
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CTR on x86-64: one call
@@ -12,6 +18,8 @@ blocks (`AesCtr.ctr32_crypt`), and the counter block it leaves, with the
 carry into the first 96 bits if its last 32 bits wrapped around, is CTR's
 (`AesCtr.ctr32_next`, `AesCtr.ctr32_wrap`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesCtr.X86_64
 

@@ -1,11 +1,27 @@
-import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Store
-import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Group
-import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Gpr
-import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Lit
-import VerifiedGarbage.Proof.Poly1305.X86_64.Blocks
-import VerifiedGarbage.Proof.Poly1305.X86_64.Lit
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Framework.X86_64.Inline
+module
+
+public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Store
+meta import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Store
+public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Group
+meta import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Group
+public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Gpr
+meta import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Gpr
+public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Lit
+meta import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Lit
+public import VerifiedGarbage.Proof.Poly1305.X86_64.Blocks
+meta import VerifiedGarbage.Proof.Poly1305.X86_64.Blocks
+public import VerifiedGarbage.Proof.Poly1305.X86_64.Lit
+meta import VerifiedGarbage.Proof.Poly1305.X86_64.Lit
+public import VerifiedGarbage.Proof.Poly1305.X86_64.Variant
+meta import VerifiedGarbage.Proof.Poly1305.X86_64.Variant
+public import VerifiedGarbage.Proof.Framework.X86_64.Call
+meta import VerifiedGarbage.Proof.Framework.X86_64.Call
+public import VerifiedGarbage.Proof.Framework.X86_64.Inline
+meta import VerifiedGarbage.Proof.Framework.X86_64.Inline
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Poly1305 on x86-64 with AVX2: `vg_poly1305_blocks_avx2`
@@ -21,6 +37,8 @@ registers as the proofs of its blocks say, whatever the state holds. So each
 block's effect on the vector registers is established under that
 assumption (`hA`), and its execution without it (`guard`).
 -/
+
+@[expose] public section
 
 open VG.Proof.Poly1305.Limbs64
 
@@ -137,16 +155,6 @@ theorem ret_frame {s₀ : State} (hp : APre s₀) : ∀ r ∈ [hR (st s₀), wR 
 theorem done_ok {s₀ : State} (hp : APre s₀) {s : State} (h : TailPre s₀ (nb s₀) s) : Post s₀ s :=
   ⟨⟨h.keep, h.frame.readW (Region.contains_self _ _) (ret_frame hp) (by decide), h.mxcsr⟩,
     fun key msg hr => h.repr key msg hr⟩
-
-theorem blocks_keeps :
-    ((instrs Impl.Poly1305.X86_64.blocks).all fun i => !Taint.clobbers i .rsp) = true := by
-  rw [← Code.allInstrs_eq]; lit_decide
-
-theorem blocks_nosp : NoSp Impl.Poly1305.X86_64.blocks := by
-  intro i hi
-  simpa using List.all_eq_true.mp blocks_keeps i hi
-
-theorem blocks_depth : Impl.Poly1305.X86_64.blocks.depth = 0 := by lit_decide
 
 theorem blocks_mx : ((instrs Impl.Poly1305.X86_64.blocks).all fun i => !loadsMxcsr i) = true := by
   rw [← Code.allInstrs_eq]; lit_decide

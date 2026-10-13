@@ -1,7 +1,13 @@
-import Mathlib.Tactic.ClearExcept
-import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombTbl
-import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombPublic
-import VerifiedGarbage.Proof.Weierstrass.CombW
+module
+
+public import Mathlib.Tactic.ClearExcept
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombTbl
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombPublic
+public import VerifiedGarbage.Proof.Weierstrass.CombW
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The fixed-base comb from tables in memory on AArch64
@@ -15,6 +21,8 @@ comb's, on `toComb`), so that `A`, which represented `[combEW (j+1)]G`,
 represents `[combEW j]G` (`combW_add`, `tstep_ok`); after the `J` digits,
 `[k]G` (`tcomb_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.AArch64
 
@@ -460,8 +468,10 @@ theorem tstep_ok {publicLookup : Bool} {K : TCombCfg} {C : Curve} {base : Addr} 
     (hpn : C.p < 2 ^ (64 * K.M.n)) {s₀ : State}
     (hF : TCombFixed K C base size s₀ k T (tcombWords K.M.n (2 ^ (64 * K.M.n)) C.p tbl))
     {j : Nat} {s : State} (hj : 1 ≤ j) (hjn : j ≤ K.J)
-    (hI : TCombInv K C base size k T (tcombWords K.M.n (2 ^ (64 * K.M.n)) C.p tbl) s₀ s j) :
-    WP isa (K.step publicLookup) s fun s' =>
+    (hI : TCombInv K C base size k T (tcombWords K.M.n (2 ^ (64 * K.M.n)) C.p tbl) s₀ s j)
+    {pa : Option (String × Nat)} (hpa : AddOk K.M size (· ∈ combSlots K.toComb) K.S K.A K.E K.D pa)
+    (hr : AddReady base K.M s₀.mem K.S pa) (hfar : AddFar K.M K.S (tcombW K) pa) :
+    WP isa (K.step publicLookup pa) s fun s' =>
       TCombInv K C base size k T (tcombWords K.M.n (2 ^ (64 * K.M.n)) C.p tbl) s₀ s' (j - 1) ∧
         s'.gpr .x19 = BitVec.ofNat 64 (j - 1) := by
   have hn := hI.scr.nowrap
@@ -535,7 +545,8 @@ theorem tstep_ok {publicLookup : Bool} {K : TCombCfg} {C : Curve} {base : Addr} 
     · exact E₃.lt _ (by simp)
     · exact E₃.lt _ (by simp)
     · exact E₃.lt _ (by simp)
-  refine WP.mono (combSum_ok hL.comb hA hV.unit E₃.scr hM₃ hlt₃) fun s₄ S₄ => ?_
+  refine WP.mono (combSum_ok hL.comb hA hV.unit E₃.scr hM₃ hlt₃ hpa
+    (hr.unch hpa (by simp [combSlots, TCombCfg.toComb]) (by omega_using [hn]) U₃ hfar)) fun s₄ S₄ => ?_
   dsimp only [TCombCfg.toComb] at S₄
   have tb : tmv C K.M.n base s₃ K.S.b3 = Fin.ofNat C.p C.b := by
     show toM _ _ _ = _; rw [hro _ (by simp [combRo, TCombCfg.toComb])]; exact hF.b
@@ -757,8 +768,10 @@ theorem tcomb_ok {publicLookup : Bool} {K : TCombCfg} {C : Curve} {base : Addr} 
     (hM3 : AM3 C) (hG : onCurve C (G C) = true) (hV : TCombVals K C tbl)
     (hpn : C.p < 2 ^ (64 * K.M.n)) {s : State} (hs : Scr s base size)
     (hM : ModOkA K.M size C.p s.mem base)
-    (hF : TCombFixed K C base size s k T (tcombWords K.M.n (2 ^ (64 * K.M.n)) C.p tbl)) :
-    WP isa (K.comb publicLookup) s fun s' => KeepRegs (tcombClob K.M.n) s s' ∧ Unch base (tcombW K) s.mem s'.mem ∧
+    (hF : TCombFixed K C base size s k T (tcombWords K.M.n (2 ^ (64 * K.M.n)) C.p tbl))
+    {pa : Option (String × Nat)} (hpa : AddOk K.M size (· ∈ combSlots K.toComb) K.S K.A K.E K.D pa)
+    (hr : AddReady base K.M s.mem K.S pa) (hfar : AddFar K.M K.S (tcombW K) pa) :
+    WP isa (K.comb publicLookup pa) s fun s' => KeepRegs (tcombClob K.M.n) s s' ∧ Unch base (tcombW K) s.mem s'.mem ∧
       ModOkA K.M size C.p s'.mem base ∧
       (∀ x ∈ [K.A.x, K.A.y, K.A.z], wordsVal s'.mem base x K.M.n < C.p) ∧
       Rep C (tmv C K.M.n base s' K.A.x) (tmv C K.M.n base s' K.A.y) (tmv C K.M.n base s' K.A.z)
@@ -772,7 +785,7 @@ theorem tcomb_ok {publicLookup : Bool} {K : TCombCfg} {C : Curve} {base : Addr} 
 
   exact countLoop_ok (Inv := fun j s' =>
       TCombInv K C base size k T (tcombWords K.M.n (2 ^ (64 * K.M.n)) C.p tbl) s s' j) (n := K.J)
-    (by omega_using [hJ]) (fun j s' h1 h2 hi => tstep_ok (publicLookup := publicLookup) hL hA hC hM3 hG hV hpn hF h1 h2 hi)
+    (by omega_using [hJ]) (fun j s' h1 h2 hi => tstep_ok (publicLookup := publicLookup) hL hA hC hM3 hG hV hpn hF h1 h2 hi hpa hr hfar)
     (fun s' hi => ⟨hi.keep, hi.unch, hi.mod, hi.lt, by rw [← combEW_zero hk]; exact hi.rep⟩)
     hJ.1 I₆
 

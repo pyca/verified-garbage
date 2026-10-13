@@ -1,7 +1,9 @@
-import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Proof.Weierstrass.Law
-import VerifiedGarbage.Impl.Ecdh.P521.Arm
-import VerifiedGarbage.Proof.Ecdh.Arm.P521.Verified
+module
+
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.Proof.Weierstrass.Law
+public import VerifiedGarbage.Impl.Ecdh.P521.Arm
+public import VerifiedGarbage.Proof.Ecdh.Arm.P521.Verified
 
 /-!
 # ECDH over P-521 (SP 800-56A) on 32-bit ARM
@@ -9,6 +11,8 @@ import VerifiedGarbage.Proof.Ecdh.Arm.P521.Verified
 A generic file (see `TCB/Emit.lean`) over P-521's group law `h`, the variant
 `Variants/P521/Arm/Law.lean`.
 -/
+
+@[expose] public section
 
 namespace VG.Generic.P521.Arm.EcdhP521
 

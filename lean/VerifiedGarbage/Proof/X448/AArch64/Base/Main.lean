@@ -1,7 +1,16 @@
-import VerifiedGarbage.Proof.X448.AArch64.Base.Finish
-import VerifiedGarbage.Proof.X448.Edwards.Ladder
-import VerifiedGarbage.Spec.X448.Contract
-import VerifiedGarbage.TCB.AArch64.Target
+module
+
+public import VerifiedGarbage.Proof.X448.AArch64.Base.Finish
+public import VerifiedGarbage.Proof.Ed448.AArch64.CombBase
+public import VerifiedGarbage.Proof.Ed448.AArch64.Point56.Combine
+public import VerifiedGarbage.Impl.X448.AArch64.BaseFn
+public import VerifiedGarbage.Proof.X448.Edwards.Ladder
+public import VerifiedGarbage.Spec.X448.Contract
+public import VerifiedGarbage.TCB.AArch64.Target
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 of the base point on AArch64: the whole function
@@ -11,6 +20,8 @@ written against (the facts of `Spec.X448.x448BaseContract` it uses, stated for
 AArch64), and `vg_x448_base`'s correctness against it: the comb leaves `[k] B`
 on edwards448, whose `y² / x²` is `X448(k, 5)` (`x448_basePoint`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448
 
@@ -94,9 +105,11 @@ theorem correct {sE : State} (hp : Pre sE) :
   set k := Spec.X448.decodeScalar448 kb
   unfold x448Base
   refine WP.seq (WP.mono (setup_ok rfl hw hn rfl kr kd hp.tbl) fun s1 R => ?_)
-  refine WP.seq (WP.mono (loop_ok (by decide) (s₀ := s1) 56 s1 (by decide) le_rfl
-    (by rw [Nat.sub_self]; exact R.inv) rfl) fun s2 h2 => ?_)
-  refine WP.seq (WP.mono (combine_ok (decodeScalar448_lt kb) h2) fun s3 ⟨f3, r3⟩ => ?_)
+  have f1 : Frame s1 base s1 :=
+    ⟨R.pre.scr, R.pre.env, R.pre.zero, rfl, rfl, rfl, rfl, Outside2.refl _ _ _ _ _ _⟩
+  refine WP.seq (WP.mono (Ed448.AArch64.CombBase.call_ok (Or.inl rfl) f1 R.pre) fun s2 ⟨f2, a2, c2⟩ => ?_)
+  refine WP.seq (WP.mono (Ed448.AArch64.Point56.combineCall_frame f2 a2 c2) fun s3 ⟨f3, r3⟩ => ?_)
+  rw [VG.Proof.X448.comb_total (decodeScalar448_lt kb)] at r3
   unfold VG.Impl.X448.AArch64.Base.finish
   refine WP.seq (WP.mono (squares_ok f3.scr f3.env) fun s4 ⟨k4, b4, e4⟩ => ?_)
   have hs4 := k4.scr f3.scr

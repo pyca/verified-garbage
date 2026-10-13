@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.P521.X86_64.TaintSumsBase
+module
+
+public import VerifiedGarbage.Proof.P521.X86_64.TaintSumsBase
+meta import VerifiedGarbage.Proof.P521.X86_64.TaintSumsBase
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # P-521 on x86-64: summaries of the shared loops, for constant time
@@ -34,6 +41,8 @@ product; the table's products are calls, whose code is shared already.
 The summaries of the comb and the inversion are here; those of ECDH's window
 method in `TaintSumsWin`, checked in parallel.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.P521.X86_64
 

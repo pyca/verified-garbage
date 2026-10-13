@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.Facts
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.Facts
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on x86-64: the body of `vg_aes_gcm_seal`
@@ -8,6 +14,8 @@ data: the whole blocks encrypted and absorbed (`oneBlocks`), the rest
 encrypted (`oneCrypt`), and the tag of the ciphertext (`oneTag 0`):
 `sealBody_ok`.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

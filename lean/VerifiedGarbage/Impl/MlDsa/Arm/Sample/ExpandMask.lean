@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.MlDsa.Arm.Sample.Common
-import VerifiedGarbage.Impl.MlDsa.Arm.Pack.Encode
+module
+
+public import VerifiedGarbage.Impl.MlDsa.Arm.Sample.Common
+public import VerifiedGarbage.Impl.MlDsa.Arm.Pack.Encode
 
 /-!
 # ML-DSA on 32-bit ARM: `vg_mldsa_expand_mask_poly`
@@ -14,6 +16,8 @@ on the public `γ₁`), with the loop of `vg_mldsa_bit_unpack` for
 the data, and the addresses depend only on the pointers and `γ₁`: it is
 constant time.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.Arm.Sample
 

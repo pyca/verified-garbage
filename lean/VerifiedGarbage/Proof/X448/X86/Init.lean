@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.X448.X86.Fill
-import VerifiedGarbage.Proof.X448.X86.RowMem
+module
+
+public import VerifiedGarbage.Proof.X448.X86.Fill
+public import VerifiedGarbage.Proof.X448.X86.RowMem
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 on x86 (32-bit): initializing multiplication
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.X448.X86.RowMem
 The initial 28 zero digits represent the empty product prefix; each row adds
 its final carry word.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448.X86
 

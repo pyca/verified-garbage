@@ -1,6 +1,8 @@
-import VerifiedGarbage.Spec.Blowfish
-import VerifiedGarbage.TCB.X86_64.Isa
-import VerifiedGarbage.Impl.Blowfish.Table
+module
+
+public import VerifiedGarbage.Spec.Blowfish
+public import VerifiedGarbage.TCB.X86_64.Isa
+public import VerifiedGarbage.Impl.Blowfish.Table
 
 /-!
 # Blowfish on baseline x86-64
@@ -23,6 +25,8 @@ every word in `xmm13`–`xmm15`. The schedule is at `sch`; `rax` holds the
 offset of the next P-array entry, `r8` the row's offset and `r9` the rows
 left, `r10` the rounds left, and `r11` is a temporary.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Blowfish.X86_64
 

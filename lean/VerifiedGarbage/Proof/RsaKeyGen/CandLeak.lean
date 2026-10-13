@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.RsaKeyGen.CandSpec
-import VerifiedGarbage.Spec.RsaKeyGen.Contract
+module
+
+public import VerifiedGarbage.Proof.RsaKeyGen.CandSpec
+public import VerifiedGarbage.Spec.RsaKeyGen.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # A candidate: the branches its leak determines
@@ -10,6 +16,8 @@ too close to `p`; then whether it is obviously composite; then whether
 it leaves. Two candidates with the same leak (`candidateLeak`) and as many
 random octets take the same branches (`schedOf_eq`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaKeyGen
 

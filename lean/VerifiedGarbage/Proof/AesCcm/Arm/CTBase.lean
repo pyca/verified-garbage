@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.AesCcm.Arm.Open
-import VerifiedGarbage.Proof.AesGcm.Arm.CTBase
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
+module
+
+public import VerifiedGarbage.Proof.AesCcm.Arm.Open
+public import VerifiedGarbage.Proof.AesGcm.Arm.CTBase
+public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CCM on ARMv7: constant time, the invariants
@@ -14,6 +20,8 @@ taint analysis of blocks reading them needs, `CT.args`). Each piece's
 correctness lemma, in each run, gives the invariant of the next
 (`One.next`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesCcm.Arm
 

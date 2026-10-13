@@ -1,15 +1,21 @@
-import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Sym
-import VerifiedGarbage.Impl.Rsa.X86_64.Crt
-import VerifiedGarbage.Proof.Bignum.Amm52
-import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.Proof.Bignum.X86_64.Words
-import VerifiedGarbage.Impl.Rsa.X86_64.CrtIfma
-import VerifiedGarbage.Proof.Bignum.X86_64.Loop
-import VerifiedGarbage.Proof.Bignum.CrtFrame
-import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
-import VerifiedGarbage.Proof.Bignum.Math
-import VerifiedGarbage.Proof.Framework.X86_64.StraightY
-import VerifiedGarbage.Proof.Framework.AddrArith
+module
+
+public import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Sym
+public import VerifiedGarbage.Impl.Rsa.X86_64.Crt
+public import VerifiedGarbage.Proof.Bignum.Amm52
+public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+public import VerifiedGarbage.Proof.Bignum.X86_64.Words
+public import VerifiedGarbage.Impl.Rsa.X86_64.CrtIfma
+public import VerifiedGarbage.Proof.Bignum.X86_64.Loop
+public import VerifiedGarbage.Proof.Bignum.CrtFrame
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
+public import VerifiedGarbage.Proof.Bignum.Math
+public import VerifiedGarbage.Proof.Framework.X86_64.StraightY
+public import VerifiedGarbage.Proof.Framework.AddrArith
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSA with AVX512_IFMA on x86-64: lemmas
@@ -20,6 +26,8 @@ layout: symbolic execution of the vector instructions (the lanes of a
 writes of 32 bytes and of runs of `rax`, frames, MXCSR's bits, `2⁵²`-radix
 numbers in memory, and the conditional subtraction's result.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64.AmmSym
 
@@ -441,7 +449,7 @@ open VG.Proof.Bignum (off word ofs Outside off_off ofs_off writeW_outside)
 open VG.Proof.Bignum.X86_64 (Scr)
 
 /-- The squarings' count down, `ZF` at 0. -/
-theorem r15Dec_ok {s : State} {n : Nat} (hn : 1 ≤ n) (hn' : n ≤ 4) (h15 : s.gpr .r15 = BitVec.ofNat 64 n) :
+theorem r15Dec_ok {s : State} {n : Nat} (hn : 1 ≤ n) (hn' : n ≤ 5) (h15 : s.gpr .r15 = BitVec.ofNat 64 n) :
     WP isa (.block [.alu .sub .r15 (.imm 1)]) s fun s' =>
       s'.gpr .r15 = BitVec.ofNat 64 (n - 1) ∧ s'.zf = some (decide (n - 1 = 0)) ∧
       VG.Proof.MlKem.X86_64.Keep [.r15] s s' ∧ s'.mem = s.mem ∧ s'.mxcsr = s.mxcsr := by

@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.X25519.AArch64.Final
-import VerifiedGarbage.Proof.X25519.Bytes
+module
+
+public import VerifiedGarbage.Proof.X25519.AArch64.Final
+public import VerifiedGarbage.Proof.X25519.Bytes
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X25519 on AArch64: the setup
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.X25519.Bytes
 `x3` (`decode`), stores the bits of the scalar, clamped, at `BITS` (`bits`),
 and sets `x2 = 1`, `z2 = 0`, `z3 = 1` (`initSlots`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X25519.AArch64
 

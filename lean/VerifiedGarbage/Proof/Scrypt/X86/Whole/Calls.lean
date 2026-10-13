@@ -1,13 +1,21 @@
-import VerifiedGarbage.Proof.Scrypt.X86.RoMixCT
-import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Contract
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Spec.Pbkdf2.Generic
-import VerifiedGarbage.Proof.Framework.X86.RegUpd
-import VerifiedGarbage.Impl.Scrypt.X86.Scrypt
-import VerifiedGarbage.Proof.Framework.X86.CallWith
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Scrypt.Whole
-import VerifiedGarbage.Spec.Scrypt.Contract
+module
+
+public import VerifiedGarbage.Proof.Scrypt.X86.RoMixCT
+public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Contract
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.Pbkdf2.Generic
+public import VerifiedGarbage.Proof.Framework.X86.RegUpd
+public import VerifiedGarbage.Impl.Scrypt.X86.Scrypt
+public import VerifiedGarbage.Proof.Framework.X86.CallWith
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Scrypt.Whole
+public import VerifiedGarbage.Spec.Scrypt.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 section
 

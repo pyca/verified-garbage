@@ -1,10 +1,24 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareMont
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxCT
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareRedcFrame
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareRedcChoice
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8CT
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareMont
+meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareMont
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxCT
+meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxCT
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareRedcFrame
+meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareRedcFrame
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareRedcChoice
+meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareRedcChoice
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8CT
+meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8CT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## AdxSquareCtRaw -/
+
+@[expose] public section
+
 section
 
 /-! Constant-time composition of the raw square's header loads and loops. -/
@@ -54,21 +68,24 @@ theorem cross_gw {a : Nat} (ha : a < 8) (ha1 : a ≠ aAcc) (ha2 : a ≠ aTmp)
   exact ⟨⟨mi, ⟨hg.scr.congr k.2.2, (k.gpr (by decide)).trans hg.rdi,
     hg.hdr.of_outside ho (by unfold slot; omega)⟩, hZ⟩, hsz⟩
 
-theorem raw_ct {a : Nat} (ha : a < 8) (ha1 : a ≠ aAcc) (ha2 : a ≠ aTmp)
-    {hc : VG.Taint.Hint VG.X86_64.Taint.T}
-    (hS : (taint.check (Taint.ofRegs [.rdi]) (.block (Adx.setup a)) hc).isSome = true) :
-    RelCT isa (Two GW) (AdxSquare.rawSquare a) (fun _ _ => True) := by
-  unfold AdxSquare.rawSquare
+theorem rawWith_ct {diag : Prog isa} {a : Nat} (ha : a < 8) (ha1 : a ≠ aAcc) (ha2 : a ≠ aTmp)
+    {hc hd : VG.Taint.Hint VG.X86_64.Taint.T}
+    (hS : (taint.check (Taint.ofRegs [.rdi]) (.block (Adx.setup a)) hc).isSome = true)
+    (hD : (taint.check (Taint.ofRegs [.rdi, .r8, .r9, .rbx])
+      (.seq (.block [.mov .r10 (.reg .rbx)]) diag) hd).isSome = true) :
+    RelCT isa (Two GW) (AdxSquare.rawSquareWith diag a) (fun _ _ => True) := by
+  unfold AdxSquare.rawSquareWith
   refine RelCT.seq (two_piece [.rdi] pins_gw hS (setup_ready ha)) ?_
   refine RelCT.seq (two_piece [.rdi, .r8, .r9, .rbx] (pins_ready a) (by taint_decide) (cross_gw ha ha1 ha2)) ?_
   refine RelCT.seq (two_piece [.rdi] pins_gw hS (setup_ready ha)) ?_
-  exact two_taint [.rdi, .r8, .r9, .rbx] (pins_ready a) (by taint_decide)
+  exact two_taint [.rdi, .r8, .r9, .rbx] (pins_ready a) hD
 
-theorem raw_gw {a : Nat} (ha : a < 8) (ha1 : a ≠ aAcc) (ha2 : a ≠ aTmp)
-    (L : Ws) (s : State) (h : GW L s) : WP isa (AdxSquare.rawSquare a) s (GW L) := by
+theorem rawWith_gw {diag : Prog isa} {P : Nat → Prop} (hd : DiagOk diag P) (hP : ∀ w, SizeOk w → P w)
+    {a : Nat} (ha : a < 8) (ha1 : a ≠ aAcc) (ha2 : a ≠ aTmp)
+    (L : Ws) (s : State) (h : GW L s) : WP isa (AdxSquare.rawSquareWith diag a) s (GW L) := by
   obtain ⟨⟨mi, hg, hZ⟩, hsz⟩ := h
-  refine WP.mono (rawSquare_ok hg.scr hg.rdi hg.hdr hZ (by have := hsz.2.1; omega) hsz.lt ha ha1 ha2)
-    fun t ⟨_, _, ho, k⟩ => ?_
+  refine WP.mono (rawSquareWith_ok hd hg.scr hg.rdi hg.hdr hZ (by have := hsz.2.1; omega) hsz.lt
+    (hP _ hsz) ha ha1 ha2) fun t ⟨_, _, ho, k⟩ => ?_
   exact ⟨⟨mi, ⟨hg.scr.congr k.2.2, (k.gpr (by decide)).trans hg.rdi,
     hg.hdr.of_outside ho (by unfold slot; omega)⟩, hZ⟩, hsz⟩
 
@@ -197,15 +214,16 @@ namespace VG.Proof.Bignum.X86_64.AdxSquare
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public
 open VG.Proof.Bignum.X86_64
 
-theorem montSquare_ct {o a : Nat} (ho : o < 8) (ha : a < 8)
-    (ha1 : a ≠ aAcc) (ha2 : a ≠ aTmp)
-    {hc₁ hc₂ : VG.Taint.Hint VG.X86_64.Taint.T}
-    (hS : (taint.check (Taint.ofRegs [.rdi]) (.block (Adx.setup a)) hc₁).isSome = true)
+theorem montSquareWith_ct {diag red : Prog isa} {o a : Nat} (ho : o < 8)
+    (hraw : RelCT isa (Two GW) (AdxSquare.rawSquareWith diag a) (fun _ _ => True))
+    (hgw : ∀ L s, GW L s → WP isa (AdxSquare.rawSquareWith diag a) s (GW L))
+    (hred : RelCT isa (Two GW) red (Two GW))
+    {hc₂ : VG.Taint.Hint VG.X86_64.Taint.T}
     (hF : (taint.check (Taint.ofRegs [.rdi]) (.block (Adx.finishBases o)) hc₂).isSome = true) :
-    RelCT isa (Two GW) (AdxSquare.montSquare o a) (fun _ _ => True) := by
-  unfold AdxSquare.montSquare
-  refine RelCT.seq (two_post (raw_ct ha ha1 ha2 hS) (raw_gw ha ha1 ha2)) ?_
-  refine RelCT.seq redcChoice_ct ?_
+    RelCT isa (Two GW) (AdxSquare.montSquareWith diag red o a) (fun _ _ => True) := by
+  unfold AdxSquare.montSquareWith
+  refine RelCT.seq (two_post hraw hgw) ?_
+  refine RelCT.seq hred ?_
   refine RelCT.seq (two_piece (Ψ := fun L s => GW L s ∧ s.gpr .r10 = off L.B (slot L.w aN))
     [.rdi] pins_gw (by taint_decide) ?_) ?_
   · intro L s h
@@ -224,6 +242,24 @@ theorem montSquare_ct {o a : Nat} (ho : o < 8) (ha : a < 8)
   obtain ⟨⟨⟨mi, hg, hZ⟩, _⟩, h10⟩ := h
   exact WP.mono (finishBases_ok hg.scr hg.rdi hg.hdr hZ ho) fun t ⟨h12, h8, hsi, hbx, _, k⟩ =>
     ⟨h12, h8, hsi, hbx, (k.gpr (by decide)).trans h10⟩
+
+theorem montSquare_ct {o a : Nat} (ho : o < 8) (ha : a < 8)
+    (ha1 : a ≠ aAcc) (ha2 : a ≠ aTmp)
+    {hc₁ hc₂ : VG.Taint.Hint VG.X86_64.Taint.T}
+    (hS : (taint.check (Taint.ofRegs [.rdi]) (.block (Adx.setup a)) hc₁).isSome = true)
+    (hF : (taint.check (Taint.ofRegs [.rdi]) (.block (Adx.finishBases o)) hc₂).isSome = true) :
+    RelCT isa (Two GW) (AdxSquare.montSquare o a) (fun _ _ => True) :=
+  montSquareWith_ct ho (rawWith_ct ha ha1 ha2 hS (by taint_decide))
+    (rawWith_gw diagonalChoice_diag (fun _ _ => trivial) ha ha1 ha2) redcChoice_ct hF
+
+theorem montSquare4_ct {o a : Nat} (ho : o < 8) (ha : a < 8)
+    (ha1 : a ≠ aAcc) (ha2 : a ≠ aTmp)
+    {hc₁ hc₂ : VG.Taint.Hint VG.X86_64.Taint.T}
+    (hS : (taint.check (Taint.ofRegs [.rdi]) (.block (Adx.setup a)) hc₁).isSome = true)
+    (hF : (taint.check (Taint.ofRegs [.rdi]) (.block (Adx.finishBases o)) hc₂).isSome = true) :
+    RelCT isa (Two GW) (AdxSquare.montSquare4 o a) (fun _ _ => True) :=
+  montSquareWith_ct ho (rawWith_ct ha ha1 ha2 hS (by taint_decide))
+    (rawWith_gw diagonal4_diag (fun _ h => h.1) ha ha1 ha2) redc_ct hF
 end VG.Proof.Bignum.X86_64.AdxSquare
 
 end

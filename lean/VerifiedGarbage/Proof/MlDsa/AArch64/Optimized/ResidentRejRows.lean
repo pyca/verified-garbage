@@ -1,8 +1,16 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFirstBlocks
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentBytes
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejSegmentLayout
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFirstBlocks
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentBytes
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejSegmentLayout
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## From `ResidentRejFirstBytes.lean` -/
+
+@[expose] public section
 
 section
 
@@ -61,34 +69,58 @@ theorem segmentWrites_save {v k : Nat} {σ : State} (hp : Pre v σ) (hk : k<v) :
   · exact Offset.disjoint (scr σ) (d := 7968) (e := 7904+8*k) (n := 144) (k := 8)
       (by have:=hp.streams; omega) (by decide) (by have:=hp.streams; omega)
 
+/-- The segment loop's pointers at stream `k`: its input (at offset `off`),
+output and count slot. -/
+def Ptrs (σ : State) (off k : Nat) (s : State) : Prop :=
+  s.gpr .x24=bufP σ k+BitVec.ofNat 64 off ∧ s.gpr .x25=polyP σ k ∧ s.gpr .x26=countP σ k
+
+theorem Ptrs.next {σ t : State} {off k : Nat}
+    (h24 : t.gpr .x24=(bufP σ k+BitVec.ofNat 64 off)+BitVec.ofNat 64 1008)
+    (h25 : t.gpr .x25=polyP σ k+BitVec.ofNat 64 1024)
+    (h26 : t.gpr .x26=countP σ k+BitVec.ofNat 64 8) : Ptrs σ off (k+1) t := by
+  refine ⟨?_,?_,?_⟩
+  · rw [h24]
+    change ((scr σ+BitVec.ofNat 64 (840+1008*k))+BitVec.ofNat 64 off)+BitVec.ofNat 64 1008=
+      (scr σ+BitVec.ofNat 64 (840+1008*(k+1)))+BitVec.ofNat 64 off
+    rw [Offset.add_add,Offset.add_add,Offset.add_add]
+    exact congrArg (fun d => scr σ+BitVec.ofNat 64 d) (by omega)
+  · rw [h25]
+    change (aP σ+BitVec.ofNat 64 (1024*k))+BitVec.ofNat 64 1024=aP σ+BitVec.ofNat 64 (1024*(k+1))
+    rw [Offset.add_add]
+    exact congrArg (fun d => aP σ+BitVec.ofNat 64 d) (by omega)
+  · rw [h26]
+    change (scr σ+BitVec.ofNat 64 (Impl.MlDsa.AArch64.Optimized.ResidentRej.counts+8*k))+
+      BitVec.ofNat 64 8=
+      scr σ+BitVec.ofNat 64 (Impl.MlDsa.AArch64.Optimized.ResidentRej.counts+8*(k+1))
+    rw [Offset.add_add]
+    exact congrArg (fun d => scr σ+BitVec.ofNat 64 d) (by omega)
+
 theorem segmentEnv_ok {streams k off n : Nat} {σ s : State} {L : List Zq}
-    (hp : Pre streams σ) (he : Env streams σ s) (hk : k<streams)
+    (hp : Pre streams σ) (he : Env streams σ s) (hk : k<streams) (hptr : Ptrs σ off k s)
     (hn : off+3*n≤1008) (hmod : n%4=0) (hL : L.length≤256)
     (hc : (s.mem.readW (countP σ k) 64).toNat=256-L.length)
     (hs : Stored s.mem (polyP σ k) L) (variant : Nat) :
-    WP isa (Impl.MlDsa.AArch64.Optimized.ResidentRej.segment variant k off n) s fun t =>
+    WP isa (Impl.MlDsa.AArch64.Optimized.ResidentRej.segment variant n) s fun t =>
       Env streams σ t ∧ Frame (segmentWrites σ k) s.mem t.mem ∧
-      (t.mem.readW (countP σ k) 64).toNat=256-(segmentResult s k off n L).length ∧
-      Stored t.mem (polyP σ k) (segmentResult s k off n L) := by
-  have hk4 : k<4 := by have:=hp.streams; omega
+      (t.mem.readW (countP σ k) 64).toNat=
+        256-(segmentResult s (bufP σ k+BitVec.ofNat 64 off) n L).length ∧
+      Stored t.mem (polyP σ k) (segmentResult s (bufP σ k+BitVec.ofNat 64 off) n L) ∧
+      Ptrs σ off (k+1) t ∧ t.gpr .x27=s.gpr .x27-BitVec.ofNat 64 1 := by
   have hcount : InRegions s.wr (countP σ k) 8 :=
-    in_scr hp he.wr (by unfold Impl.MlDsa.AArch64.Optimized.ResidentRej.counts; omega)
+    in_scr hp he.wr (by unfold Impl.MlDsa.AArch64.Optimized.ResidentRej.counts; have:=hp.streams; omega)
   have hread : InRegions (s.rd++s.wr) (countP σ k) 8 := by
     obtain ⟨r,hr,hc⟩ := hcount
     exact ⟨r,List.mem_append.mpr (Or.inr hr),hc⟩
-  refine WP.mono (segment_ok variant k off n hk4 (by omega) (by omega) hL hmod
-    (segment_layout hp he hk hn) (by rw [segment_count_eq he]; exact hread)
-    (by rw [segment_count_eq he]; exact hcount) (by rw [segment_count_eq he]; exact hc)
-    (by rw [segment_output_eq he]; exact hs) (by
-      rw [segment_output_eq he,segment_count_eq he]
+  have hl := segment_layout hp he hk hn
+  rw [segment_input_eq he,segment_output_eq he] at hl
+  refine WP.mono (segment_ok variant n (by omega) hL hmod hptr.1 hptr.2.1 hptr.2.2
+    hl hread hcount hc hs (by
       exact (hp.a_scr.sub_left (poly_sub hk)).sub_right
-        (Offset.sub_base (scr σ) (by unfold Impl.MlDsa.AArch64.Optimized.ResidentRej.counts; omega))))
-    fun t ⟨ht,hf,hc,hs⟩ => ?_
-  rw [segment_output_eq he,segment_count_eq he] at hf
-  rw [segment_count_eq he] at hc
-  rw [segment_output_eq he] at hs
+        (Offset.sub_base (scr σ) (by
+          unfold Impl.MlDsa.AArch64.Optimized.ResidentRej.counts; have:=hp.streams; omega))))
+    fun t ⟨ht,h24,h25,h26,h27,hf,hc,hs⟩ => ?_
   refine ⟨he.frameStep hf (segmentWrites_sub hk (by have:=hp.streams; omega))
-    (segmentWrites_save hp hk) ht.rd ht.wr ht.sp ?_,hf,hc,hs⟩
+    (segmentWrites_save hp hk) ht.rd ht.wr ht.sp ?_,hf,hc,hs,Ptrs.next h24 h25 h26,h27⟩
   intro r hr
   exact ht.get r (by
     simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
@@ -201,10 +233,9 @@ def rowResult (σ : State) (k off n : Nat) (L : List Zq) : List Zq :=
 
 theorem segmentResult_rows {v blocks k off n : Nat} {σ s : State} {L : Nat → List Zq}
     (h : Rows v blocks σ L s) (hk : k<v) (hn : off+3*n≤168*blocks) :
-    segmentResult s k off n (L k)=rowResult σ k off n (L k) := by
+    segmentResult s (bufP σ k+BitVec.ofNat 64 off) n (L k)=rowResult σ k off n (L k) := by
   unfold segmentResult rowResult
   congr 1
-  rw [segment_input_eq h.env]
   unfold Spec.Sha3.bytesAt streamBytes
   apply List.map_congr_left
   intro j hj

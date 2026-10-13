@@ -1,11 +1,15 @@
-import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Proof.MlDsa.Arm.Round.Power2Round
-import VerifiedGarbage.Proof.MlDsa.Arm.Round.Bits
-import VerifiedGarbage.Proof.MlDsa.Arm.Round.NormLt
-import VerifiedGarbage.Proof.MlDsa.Arm.Round.MakeHint
-import VerifiedGarbage.Proof.MlDsa.Arm.Round.UseHint
+module
+
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.Proof.MlDsa.Arm.Round.Power2Round
+public import VerifiedGarbage.Proof.MlDsa.Arm.Round.Bits
+public import VerifiedGarbage.Proof.MlDsa.Arm.Round.NormLt
+public import VerifiedGarbage.Proof.MlDsa.Arm.Round.MakeHint
+public import VerifiedGarbage.Proof.MlDsa.Arm.Round.UseHint
 
 /-! # ML-DSA (FIPS 204) on 32-bit ARM: rounding and hints -/
+
+@[expose] public section
 
 namespace VG.Artifacts.MlDsaRound.Arm
 

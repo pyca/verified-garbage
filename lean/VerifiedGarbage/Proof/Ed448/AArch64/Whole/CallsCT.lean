@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.Ed448.AArch64.Whole.CT
-import VerifiedGarbage.Proof.Ed448.AArch64.Whole.Sponge
+module
+
+public import VerifiedGarbage.Proof.Ed448.AArch64.Whole.CT
+meta import VerifiedGarbage.Proof.Ed448.AArch64.Whole.CT
+public import VerifiedGarbage.Proof.Ed448.AArch64.Whole.Sponge
+meta import VerifiedGarbage.Proof.Ed448.AArch64.Whole.Sponge
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448's complete operations on AArch64: each call in constant time
@@ -10,6 +18,8 @@ calls of the Ed448 primitives (`reduce_ct`, `base_ct`, `mulAdd_ct`,
 both runs (`val`, or the sponge's positions), which are the callee's public
 data, and each run has the effect its correctness lemma gives (`hok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.AArch64.Whole
 

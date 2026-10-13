@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.TripleDes.X86_64.Head
-import VerifiedGarbage.Proof.TripleDes.X86_64.Tail
+module
+
+public import VerifiedGarbage.Proof.TripleDes.X86_64.Head
+public import VerifiedGarbage.Proof.TripleDes.X86_64.Tail
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.TripleDes.X86_64
 
@@ -70,7 +78,7 @@ theorem block_ok (keys : Schedule) (base : Addr) (direction : Direction) (s : St
       obtain rfl := List.mem_singleton.mp hr
       refine ⟨⟨s.gpr .rdx, 512⟩, by simp [blockRegions], ?_⟩
       have hbase := hs₁.regs .rdx (by decide)
-      change Region.Sub ⟨s₁.gpr .rdx + BitVec.ofNat 64 56, 392⟩ ⟨s.gpr .rdx, 512⟩
+      change Region.Sub ⟨s₁.gpr .rdx + BitVec.ofNat 64 56, 408⟩ ⟨s.gpr .rdx, 512⟩
       rw [hbase]
       exact Offset.sub_base _ (by decide))
     have hf₃ : Frame (blockRegions s) s₂.mem s₃.mem := hs₃.frame.sub (by

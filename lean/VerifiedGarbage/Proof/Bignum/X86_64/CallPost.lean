@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
-import VerifiedGarbage.Spec.Rsa.Contract
+module
+
+public import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
+public import VerifiedGarbage.Spec.Rsa.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSA's postconditions do not read the return address below `rsp`
@@ -9,6 +15,8 @@ buffers (`Spec.Rsa.bytesAt`, `wordsAt`, `written`, `writtenAll`), which no
 call's return address overlaps: so they hold of a run with calls if they do
 of its inlined form (`Verified.of_inline`'s `hpost`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64
 

@@ -1,5 +1,8 @@
-import VerifiedGarbage.Spec.Sha1
-import VerifiedGarbage.Spec.Sha256
+module
+
+public import VerifiedGarbage.Spec.RsaKeyGen
+public import VerifiedGarbage.Spec.Sha1
+public import VerifiedGarbage.Spec.Sha256
 
 /-!
 # DSA — FIPS 186-4 §§4.1–4.7 and Appendices A.1.1.2, A.2.1, B.1.2, B.2.2
@@ -12,8 +15,10 @@ pairs `(r,s)`; DER encoding and hashing a message are separate layers.
 Randomized operations take finite tapes of independent random candidates:
 a Rust wrapper must supply OS randomness and retry on exhaustion (`none`).
 They must never derive a nonce from a digest or reuse a nonce. This spec
-makes no timing claim about its mathematical computations. Exact primality
-is intentional; it is not an executable primality-testing implementation.
+makes no timing claim about its mathematical computations. Parameter generation
+also takes a tape of random octets for Miller–Rabin, consumed from the front
+as in `RsaKeyGen`. Its result is deterministic given all these tapes.
+Primality is probable: acceptance does not prove that p and q are prime.
 
 Parameter generation chooses (1024,160), (2048,256), or (3072,256) for
 `generate_parameters(bits)`. Imported (2048,224) parameters are also accepted.
@@ -22,13 +27,19 @@ SHA-1 for N=160 and SHA-256 for N=256. Generator construction is A.2.1's
 unverifiable generation, with a separate random h tape (not the verifiable
 generator construction). Parameter provenance certificates are not modeled.
 
-`sign` and `verify` require `parametersValid key.params`; `fromComponents`
-and `generateParameters` establish it. Their cheap checks additionally
-reject invalid scalar ranges, public subgroup membership, and inconsistent
-private/public components. This avoids repeating exact primality on every
-signature. All digest lengths, including zero, have mathematical meaning;
-checking a caller's chosen hash length belongs to a prehash wrapper.
+Like RSA's `checkKey`, `fromComponents` checks algebraic consistency, not
+primality. `parametersValid` checks sizes, oddness, divisibility and the
+order relation for g; it is not a proof of domain validity. `keyValid` checks
+scalar ranges, the public order relation, and private/public consistency.
+The caller is responsible for the provenance of imported parameters.
+`sign` and `verify` compute the formulas below even for composite parameters;
+Fermat exponentiation is an inverse only under the usual prime-q assumption.
+Their cryptographic interpretation requires valid DSA domain parameters.
+All digest lengths, including zero, have mathematical meaning; checking a
+caller's chosen hash length belongs to a prehash wrapper.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Dsa
 
@@ -76,23 +87,37 @@ instance (l n : Nat) : Decidable (supportedSizes l n) := by
   unfold supportedSizes
   infer_instance
 
-/-- Exact primality: n ≥ 2 and no divisor strictly between 1 and n.
-The finite quantifier makes this decidable using Lean core alone. This is a
-mathematical specification, not a practical large-integer primality test. -/
-def prime (n : Nat) : Prop := 2 ≤ n ∧ ∀ d : Fin n, 1 < d.val → n % d.val ≠ 0
-
-instance (n : Nat) : Decidable (prime n) := by
-  unfold prime
-  infer_instance
-
-/-- Full domain validation: prime p,q, q divides p-1, and g has order q. -/
+/-- Structural and algebraic domain checks, without primality testing,
+as RSA's `keyValid` checks key consistency without certifying its factors.
+For prime q, g's range and order relation establish order q; for composite
+q they need not. No mathematical primality claim follows from this predicate. -/
 def parametersValid (a : Params) : Prop :=
-  supportedSizes (bitLength a.p) (bitLength a.q) ∧ prime a.p ∧ prime a.q ∧
-    (a.p - 1) % a.q = 0 ∧ 1 < a.g ∧ a.g < a.p ∧ powMod a.g a.q a.p = 1
+  supportedSizes (bitLength a.p) (bitLength a.q) ∧ a.p % 2 = 1 ∧ a.q % 2 = 1 ∧
+    a.q < a.p ∧ (a.p - 1) % a.q = 0 ∧ 1 < a.g ∧ a.g < a.p ∧ powMod a.g a.q a.p = 1
 
 instance (a : Params) : Decidable (parametersValid a) := by
   unfold parametersValid
   infer_instance
+
+/-- Miller–Rabin round policy: 64 uniform witnesses through 2048 bits,
+128 above that, as OpenSSL's `BN_check_prime` policy. This deliberately does
+not use RSA's random-prime-generation-specific `checksForSize` table.
+The witness sampler and iteration are shared with `RsaKeyGen`; the random
+octets must be independent and uniform for the probabilistic interpretation. -/
+def primeChecks (bits : Nat) : Nat := if bits ≤ 2048 then 64 else 128
+
+/-- Trial division followed by RSA's blinded Miller–Rabin loop, with DSA's
+round policy. `none` means the random tape was exhausted, not composite.
+A successful test returns the unconsumed suffix. `true` is probable primality,
+not a certificate; this specification does not prove an error bound. -/
+def probablePrime (w : Nat) (rand : RsaKeyGen.Rand) : Option (Bool × RsaKeyGen.Rand) :=
+  if w ≤ 1 then some (false, rand)
+  else if w % 2 = 0 then some (w == 2, rand)
+  else if w == 3 then some (true, rand)
+  else if RsaKeyGen.obviouslyComposite (bitLength w) w then some (false, rand)
+  else
+    let (a, m) := Rsa.splitTwos (w - 1)
+    RsaKeyGen.loop (RsaKeyGen.mrStep w (primeChecks (bitLength w)) a m) (1, 0) rand
 
 /-- Public subgroup membership and optional private/public consistency. -/
 def keyValid (key : Key) : Bool :=
@@ -102,7 +127,8 @@ def keyValid (key : Key) : Bool :=
     | none => true
     | some x => 0 < x && x < a.q && powMod a.g x a.p == key.y
 
-/-- Import public (x=none) or private components, with full validation.
+/-- Import public (x=none) or private components, with consistency checks.
+Like RSA import, this does not test primality.
 No private key is manufactured by silently reducing x modulo q. -/
 def fromComponents (p q g y : Nat) (x : Option Nat := none) : Option Key :=
   let key : Key := ⟨⟨p, q, g⟩, y, x⟩
@@ -130,7 +156,8 @@ def generate (a : Params) (candidates : List Nat) : Option Key := do
 
 /-- One signing attempt with an explicitly supplied ephemeral k (§4.6).
 A zero r or s is a retry, never a valid signature. Fermat inversion applies
-because the caller has validated that q is prime. -/
+when q is prime; on other inputs this specifies the exponentiation itself,
+without claiming it is an inverse. -/
 def signWithNonce (key : Key) (digest : List Byte) (k : Nat) : Option Signature := do
   let x ← key.x
   if !keyValid key || !(0 < k && k < key.params.q) then none else do
@@ -149,8 +176,9 @@ def sign (key : Key) (digest : List Byte) : List Nat → Option Signature
     | none => sign key digest ks
 
 /-- §4.7: reject out-of-range r,s before inversion. A private key's public
-projection can verify too, without consulting x. Validated parameters are a
-precondition; the signature and digest need not be trusted. -/
+projection can verify too, without consulting x. The signature and digest
+need not be trusted. As with signing, the mathematical DSA interpretation
+requires prime domain parameters; this function does not establish primality. -/
 def verify (key : Key) (sig : Signature) (digest : List Byte) : Bool :=
   let a := key.params
   let publicKey := { key with x := none }
@@ -185,12 +213,19 @@ def pCandidate (l n q : Nat) (seed : List Byte) (offset : Nat) : Nat :=
   let x := w + 2 ^ (l - 1)
   x + 1 - x % (2 * q)
 
-/-- A.1.1.2 step 11 through 4*L attempts. Exact primality specifies the
-mathematical result, without prescribing a probabilistic primality tester. -/
-def primeFromSeed (l n q : Nat) (seed : List Byte) : Option Nat :=
-  ((List.range (4 * l)).map fun counter =>
-    pCandidate l n q seed (1 + counter * ((l - 1) / n + 1))).find?
-      fun p => decide (2 ^ (l - 1) ≤ p ∧ prime p)
+/-- A.1.1.2 step 11 through 4*L attempts, consuming fresh primality-test
+randomness for each candidate. `some (none, rest)` means no candidate passed;
+outer `none` means the witness tape ran out. -/
+def primeFromSeed (l n q : Nat) (seed : List Byte) (rand : RsaKeyGen.Rand) :
+    Option (Option Nat × RsaKeyGen.Rand) :=
+  let rec search : List Nat → RsaKeyGen.Rand → Option (Option Nat × RsaKeyGen.Rand)
+    | [], rand => some (none, rand)
+    | counter :: counters, rand => do
+      let p := pCandidate l n q seed (1 + counter * ((l - 1) / n + 1))
+      if p < 2 ^ (l - 1) then search counters rand else do
+        let (accepted, rest) ← probablePrime p rand
+        if accepted then return (some p, rest) else search counters rest
+  search (List.range (4 * l)) rand
 
 /-- A.2.1 generator search with independent random h candidates. -/
 def generator (p q : Nat) (hs : List Nat) : Option Nat :=
@@ -198,22 +233,29 @@ def generator (p q : Nat) (hs : List Nat) : Option Nat :=
     fun g => 1 < g
 
 /-- Parameter generation from finite randomness tapes. Seeds must have at
-least N bits (A.1.1.2 step 3); an exhausted tape or unsupported size fails.
-The final validation is an explicit guarantee of the domain invariants. -/
-def generateParameters (bits : Nat) (seeds : List (List Byte)) (hs : List Nat) : Option Params := do
+least N bits (A.1.1.2 step 3). An exhausted tape, exhausted search or unsupported
+size fails. The independent witness tape is threaded through q and every p
+candidate, including across rejected seeds; witnesses are never restarted.
+The output passes `parametersValid` and probable-prime tests for p and q,
+not an exact primality predicate. -/
+def generateParameters (bits : Nat) (seeds : List (List Byte)) (hs : List Nat)
+    (rand : RsaKeyGen.Rand) : Option Params := do
   let n ← subgroupBits bits
-  let rec attempt : List (List Byte) → Option Params
-    | [] => none
-    | seed :: rest =>
-      if 8 * seed.length < n then attempt rest else
-      let q := qCandidate n seed
-      if !decide (prime q) then attempt rest else
-      match primeFromSeed bits n q seed with
-      | some p => match generator p q hs with
-        | some g => let a : Params := ⟨p, q, g⟩
-                    if parametersValid a then some a else attempt rest
-        | none => attempt rest
-      | none => attempt rest
-  attempt seeds
+  let rec attempt : List (List Byte) → RsaKeyGen.Rand → Option Params
+    | [], _ => none
+    | seed :: rest, rand => do
+      if 8 * seed.length < n then attempt rest rand else do
+        let q := qCandidate n seed
+        let (accepted, rand) ← probablePrime q rand
+        if !accepted then attempt rest rand else do
+          let (p, rand) ← primeFromSeed bits n q seed rand
+          match p with
+          | some p => match generator p q hs with
+            | some g =>
+              let a : Params := ⟨p, q, g⟩
+              if parametersValid a then some a else attempt rest rand
+            | none => attempt rest rand
+          | none => attempt rest rand
+  attempt seeds rand
 
 end VG.Spec.Dsa

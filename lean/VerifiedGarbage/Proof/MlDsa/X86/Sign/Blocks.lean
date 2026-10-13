@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.MlDsa.X86.Sign.Local
-import VerifiedGarbage.Proof.MlDsa.X86.Sign.Params
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86.Sign.Local
+public import VerifiedGarbage.Proof.MlDsa.X86.Sign.Params
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA signing on x86 (32-bit): the blocks between calls
@@ -8,6 +14,8 @@ Loads and stores of words and bytes of `scratch` from `Ctx` (`wp_ldsc`,
 `wp_stsc`, `wp_st8sc`), and the pieces made of them: sequences (`seqR_piece`),
 the empty block (`nil_piece`), and the branch on `OK` (`okIte_piece`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86.Sign
 

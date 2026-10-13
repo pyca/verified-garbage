@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlDsa.Arith.Zq
+module
+
+public import VerifiedGarbage.Proof.MlDsa.Arith.Zq
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA: Montgomery reduction with 32-bit words, for every target
@@ -18,6 +24,8 @@ uses, for `R = 2³²`:
   `mont (mont x · (2⁶⁴ mod q)) ≡ x` (`mont_mont_R2`), which multiplies two
   values without a constant in Montgomery form.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Arith
 

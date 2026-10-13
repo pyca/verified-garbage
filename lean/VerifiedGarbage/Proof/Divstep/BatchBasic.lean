@@ -1,7 +1,16 @@
-import VerifiedGarbage.Proof.Divstep.Steps
-import Mathlib.Data.Int.ModEq
+module
+
+public import VerifiedGarbage.Proof.Divstep.Steps
+public import Mathlib.Data.Int.ModEq
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # Divstep matrices and their scalar state -/
+
+@[expose] public section
+
 namespace VG.Proof.Divstep
 
 /-- A divstep state and its transition matrix. -/
@@ -66,7 +75,7 @@ theorem msteps_d (t : MSt) : ∀ n, |(msteps n t).d| ≤ |t.d| + 2 * n
     rw [msteps_succ]
     have := mstep_d (msteps n t)
     have := msteps_d t n
-    simp only [Nat.cast_add, Nat.cast_one]
+    push_cast
     omega
 
 /-- Halving congruent even numbers. -/

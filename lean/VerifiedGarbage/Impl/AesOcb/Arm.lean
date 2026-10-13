@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Aes.Arm.Blocks
-import VerifiedGarbage.Impl.AesGcm.Arm
+module
+
+public import VerifiedGarbage.Impl.Aes.Arm.Blocks
+public import VerifiedGarbage.Impl.AesGcm.Arm
 
 /-!
 # AES-OCB: 32-bit ARM implementation
@@ -69,6 +71,8 @@ bytes are copied and XORed through advancing pointers, counting down with
 `subs`. Only the pointers, the lengths, `rounds` and `tag_len` (and for
 `open`, whether the tag is right) affect timing.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.AesOcb.Arm
 

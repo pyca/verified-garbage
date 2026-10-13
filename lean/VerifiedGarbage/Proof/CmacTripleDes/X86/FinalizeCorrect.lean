@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.CmacTripleDes.X86.Finalize
+module
+
+public import VerifiedGarbage.Proof.CmacTripleDes.X86.Finalize
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # TDEA-CMAC on x86: `vg_cmac_triple_des_finalize` is correct
@@ -8,6 +14,8 @@ length, `eax:edx` holds `Mₙ` (`BPost`); the function XORs in the chaining
 value `C`, encrypts it and stores `CIPH_K(C ⊕ Mₙ)` as the state, the MAC
 (`macFull_split8`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.CmacTripleDes.X86
 

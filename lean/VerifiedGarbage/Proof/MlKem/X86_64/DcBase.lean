@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.MlKem.X86_64.EncTop
-import VerifiedGarbage.Proof.MlKem.X86_64.DcSel
-import VerifiedGarbage.Proof.MlKem.X86_64.FragDM
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86_64.EncTop
+public import VerifiedGarbage.Proof.MlKem.X86_64.DcSel
+public import VerifiedGarbage.Proof.MlKem.X86_64.FragDM
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86-64: decapsulation, its contract, layout, checks and entry
@@ -12,6 +18,8 @@ other; `scratch` and `key` in `rbx` and `r12`), what holds throughout (`DC`:
 `Top`, and `dk` and `c` at their pointers), the checks of the layout every
 piece needs (`DcWf L`), and the prologue.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.X86_64
 

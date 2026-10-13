@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Mont.X86_64.SqrPX
-import VerifiedGarbage.Proof.Mont.X86_64.Chain
-import VerifiedGarbage.Impl.Weierstrass.X86_64.Mont
-import VerifiedGarbage.Proof.Framework.X86_64.VecKeep
+module
+
+public import VerifiedGarbage.Proof.Mont.X86_64.SqrPX
+public import VerifiedGarbage.Proof.Mont.X86_64.Chain
+public import VerifiedGarbage.Impl.Weierstrass.X86_64.Mont
+public import VerifiedGarbage.Proof.Framework.X86_64.VecKeep
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # P-521's product modulo `p` as a function, with BMI2 and ADX, on x86-64
@@ -17,6 +23,8 @@ area at `fnTmp`, then the reduction and `xCanon` with `rdi` moved to `[o]`
 space. The product reads `[a]` from a copy in the temporary area (`copyW`),
 each word before the row that stores over it, as `rdi` addresses it.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.X86_64.Mont
 

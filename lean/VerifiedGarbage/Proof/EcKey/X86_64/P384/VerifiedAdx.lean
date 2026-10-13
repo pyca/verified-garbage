@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.EcKey.X86_64.P384.Verified
-import VerifiedGarbage.Proof.EcKey.X86_64.P384.LitAdx
-import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.VerifiedAdx
+module
+
+public import VerifiedGarbage.Proof.EcKey.X86_64.P384.Verified
+meta import VerifiedGarbage.Proof.EcKey.X86_64.P384.Verified
+public import VerifiedGarbage.Proof.EcKey.X86_64.P384.LitAdx
+meta import VerifiedGarbage.Proof.EcKey.X86_64.P384.LitAdx
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.VerifiedAdx
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.VerifiedAdx
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # P-384 public keys on x86-64 with BMI2 and ADX: `Verified`
@@ -9,6 +18,8 @@ As `Verified.lean`, for `p384x` (`p384` multiplying modulo `p` with BMI2 and
 ADX and selecting the comb's entries with AVX2): the same curve, so the same
 precondition and postcondition.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.EcKey.X86_64.P384
 
@@ -43,7 +54,7 @@ theorem pk_x86_adx (hL : Weierstrass.Law Spec.P384.curve)
     (hI : Weierstrass.X86_64.InvSounds)
     (s : State) (hs : pkX86_64.pre s) :
     ∃ t s', Exec isa publicKeyP384Adx.inline s t s' ∧ abiPreserved s s' ∧ pkX86_64.post s s' := by
-  obtain ⟨t, s', he, hsv, hpost⟩ := publicKey_ok (p384x_ok hI) hL (p384x_tbls hT) (pre_of_x hs)
+  obtain ⟨t, s', he, hsv, hpost⟩ := publicKey_ok (p384x_ok hI) hL (p384x_tbls hT) (pre_of_x hs) p384x_mulBase
   have hsp : ∀ i ∈ instrs publicKeyP384Adx.inline, Taint.clobbers i .rsp = false := by
     have h : publicKeyP384Adx.allInstrs (fun i => !Taint.clobbers i .rsp) = true := by lit_decide
     rw [← Code.allInstrs_inline, Code.allInstrs_eq, List.all_eq_true] at h

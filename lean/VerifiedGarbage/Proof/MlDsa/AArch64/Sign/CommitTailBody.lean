@@ -1,14 +1,22 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CommitTailSeed
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CommitTailInitial
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentMaskBytes
-import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Unpack
-import VerifiedGarbage.Proof.Framework.AArch64.Inline
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CommitTailOutput
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CommitTailHash
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentBytes
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CommitTailSaved
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CommitTailSeed
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CommitTailInitial
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentMaskBytes
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Unpack
+public import VerifiedGarbage.Proof.Framework.AArch64.Inline
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CommitTailOutput
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CommitTailHash
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentBytes
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CommitTailSaved
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## From `CommitTailSponge.lean` -/
+
+@[expose] public section
 
 section
 
@@ -17,7 +25,7 @@ open VG VG.AArch64
 open VG.Proof.Sha3.AArch64.Neon
 open VG.Impl.MlDsa.AArch64.Sign.CommitTail
 
-def spongeRegs : List Reg := [.x5,.x6,.x7,.x8,.x10,.x16]
+def spongeRegs : List Reg := [.x5,.x6,.x7,.x8,.x10,.x11,.x12,.x13,.x16]
 
 theorem sponge_ok {s : State} {wlen : Nat} (hc : CoreConfig s wlen (s.gpr .x1) (s.gpr .x19))
     (hmu : ∀j<4,InRegions (s.rd++s.wr) (s.gpr .x0+BitVec.ofNat 64 (16*j)) 16)
@@ -240,7 +248,7 @@ open VG VG.AArch64
 open VG.Proof.Sha3.AArch64.Neon
 open VG.Impl.MlDsa.AArch64.Sign.CommitTail
 
-def frontRegs : List Reg := [.x5,.x6,.x7,.x8,.x10,.x16,.x19,.x20,.x21]
+def frontRegs : List Reg := [.x5,.x6,.x7,.x8,.x10,.x11,.x12,.x13,.x16,.x19,.x20,.x21]
 
 structure FrontPre (wlen : Nat) (s : State) : Prop where
   length : wlen=768 ∨ wlen=1024

@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Weierstrass.Layout
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.Layout
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The fixed-base comb: where it keeps its numbers
@@ -9,6 +15,8 @@ apart from what it reads, the slots read only not written, and the table of
 bits apart from what is written. Facts about offsets, as for the ladder
 (`LadLay`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass
 

@@ -1,9 +1,11 @@
-import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.Weierstrass.Law
-import VerifiedGarbage.Proof.P224.Comb7
-import VerifiedGarbage.Impl.EcKey.P224.X86_64
-import VerifiedGarbage.Proof.EcKey.X86_64.P224.Verified
-import VerifiedGarbage.Proof.EcKey.X86_64.P224.Lit
+module
+
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.Weierstrass.Law
+public import VerifiedGarbage.Proof.P224.Comb7
+public import VerifiedGarbage.Impl.EcKey.P224.X86_64
+public import VerifiedGarbage.Proof.EcKey.X86_64.P224.Verified
+public import VerifiedGarbage.Proof.EcKey.X86_64.P224.Lit
 
 /-!
 # P-224 public keys (FIPS 186-5 §A.2) on x86-64
@@ -12,6 +14,8 @@ A generic file (see `TCB/Emit.lean`) over P-224's group law and
 inversions `h`, the variant
 `Variants/P224/X86_64/Law.lean`.
 -/
+
+@[expose] public section
 
 namespace VG.Generic.P224.X86_64.EcP224
 
@@ -28,7 +32,8 @@ def artifacts (h : Proof.Weierstrass.X86_64.HasLawInv Spec.P224.curve) : List Ar
     consts := Impl.Ecdsa.X86_64.p224.combConsts
     code := Impl.EcKey.X86_64.publicKeyP224
     contract := Spec.EcKey.P224.inst.publicKeyContract
-      (X86_64.abi.withConsts Impl.Ecdsa.X86_64.p224.combConsts)
+      (X86_64.abi.withConsts Impl.Ecdsa.X86_64.p224.combConsts) 8
+    stack := 8
     verified := Proof.EcKey.X86_64.P224.pk_verified h.law (Proof.P224.combOk7 h.law) h.inv
     spSafe := Code.all_of_allInstrs (by lit_decide) }]
 

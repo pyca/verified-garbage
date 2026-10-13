@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.AesSiv.AArch64.Open
-import VerifiedGarbage.Proof.AesSiv.AArch64.S2vAd
-import VerifiedGarbage.Proof.AesSiv.AArch64.Call
-import VerifiedGarbage.Spec.Siv.Contract
+module
+
+public import VerifiedGarbage.Proof.AesSiv.AArch64.Open
+public import VerifiedGarbage.Proof.AesSiv.AArch64.S2vAd
+public import VerifiedGarbage.Proof.AesSiv.AArch64.Call
+public import VerifiedGarbage.Spec.Siv.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-SIV on AArch64: `vg_aes_siv_encrypt` and `vg_aes_siv_decrypt`
@@ -20,6 +26,8 @@ The proofs are on the state whose writable regions are the data, `siv` for
 `Verified.lean` moves them to the shared contracts with the working space as
 an argument, one region of 2576 bytes.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesSiv.AArch64
 

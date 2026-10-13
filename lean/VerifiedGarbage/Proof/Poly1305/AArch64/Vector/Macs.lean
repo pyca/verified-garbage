@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Poly1305.AArch64.Vector.Lanes
+module
+
+public import VerifiedGarbage.Proof.Poly1305.AArch64.Vector.Lanes
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Poly1305 on AArch64 in AdvSIMD: rows of products
@@ -7,6 +13,8 @@ Untrusted: everything here is checked by Lean. A row multiplies one operand
 vector `iV i` by five multipliers `M k`, into the products `dV k`, with
 `umull` (a fresh row) or `umlal`, on words 0–1 or (`hi`) 2–3.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Poly1305.AArch64.Vector
 

@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.RsaKeyGen.X86_64.ModE
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
-import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
-import VerifiedGarbage.Proof.Bignum.X86_64.Bytes
+module
+
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.ModE
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
+public import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
+public import VerifiedGarbage.Proof.Bignum.X86_64.Bytes
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # A candidate on x86-64: `gcd(c − 1, e)` for an odd `e > 1`
@@ -10,6 +16,8 @@ import VerifiedGarbage.Proof.Bignum.X86_64.Bytes
 bit cleared), reduces it modulo `e` (`modWords_ok`), runs the binary gcd
 (`gcdLoop_ok`) and leaves `gcd(c − 1, e)` in `kG` (`gcdE_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaKeyGen.X86_64
 

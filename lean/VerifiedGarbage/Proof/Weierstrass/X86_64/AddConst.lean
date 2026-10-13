@@ -1,6 +1,12 @@
-import VerifiedGarbage.Impl.Weierstrass.X86_64.Window
-import VerifiedGarbage.Proof.Weierstrass.X86_64.Copy
-import VerifiedGarbage.Proof.Mont.X86_64.WideOps
+module
+
+public import VerifiedGarbage.Impl.Weierstrass.X86_64.Window
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.Copy
+public import VerifiedGarbage.Proof.Mont.X86_64.WideOps
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The window method on x86-64: the recoded scalar
@@ -10,6 +16,8 @@ low `n` words of `dst` by the carry chain (`chainWAdd_ok`), and adds the carry
 to its top word (`adcTop_ok`): `[dst] = [src] + c` when the sum fits
 (`addConst_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.X86_64
 

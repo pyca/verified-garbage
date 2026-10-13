@@ -1,8 +1,10 @@
-import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
-import VerifiedGarbage.Proof.P224.Comb7
-import VerifiedGarbage.Impl.EcKey.P224.AArch64
-import VerifiedGarbage.Proof.EcKey.AArch64.P224.Verified
+module
+
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
+public import VerifiedGarbage.Proof.P224.Comb7
+public import VerifiedGarbage.Impl.EcKey.P224.AArch64
+public import VerifiedGarbage.Proof.EcKey.AArch64.P224.Verified
 
 /-!
 # P-224 public keys (FIPS 186-5 §A.2) on AArch64
@@ -10,6 +12,8 @@ import VerifiedGarbage.Proof.EcKey.AArch64.P224.Verified
 A generic file (see `TCB/Emit.lean`) over P-224's group law `h`, the variant
 `Variants/P224/AArch64/Law.lean`.
 -/
+
+@[expose] public section
 
 namespace VG.Generic.P224.AArch64.EcP224
 
@@ -25,7 +29,7 @@ def artifacts (h : Proof.Weierstrass.AArch64.HasLawInv Spec.P224.curve) : List A
       conditional subtraction; `[d]G` is `vg_ecdsa_p224_sign`'s fixed-base comb of 7-bit signed \
       digits from the 37 tables of `[m 2^(7j)]G` (`m = 1 … 64`) in the static `VG_P224_COMB`, \
       each entry selected in constant time by loading the whole table, with no doublings; and \
-      `Z⁻¹` is by divsteps (Bernstein and Yang's safegcd, half-delta form): 10 batches of 59 \
+      `Z⁻¹` is a call of `vg_p224_inv_mod_p`, by divsteps (Bernstein and Yang's safegcd, half-delta form): 10 batches of 59 \
       divsteps on the low 64-bit words of `f` and `g` (from `f = p`, `g = Z`), each giving a \
       matrix of 64-bit entries that updates `f`, `g` (divided by 2⁵⁹) and the coefficients `a`, \
       `b` (divided by 2⁶⁴ modulo `p`, as in Montgomery reduction), 590 divsteps in all, enough \

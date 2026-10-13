@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlKem.X86.TopSeq
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86.TopSeq
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86 (32-bit): the calls of three and four arguments, with their arguments
@@ -6,6 +12,8 @@ import VerifiedGarbage.Proof.MlKem.X86.TopSeq
 As `TopSeq.lean`, for `vg_mlkem_multiply_ntts`, `vg_mlkem_sample_ntt`, and
 the leaves that compress and decompress (`CeFn`, `DdFn`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.X86.Top
 

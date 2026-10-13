@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej4Parse
-import VerifiedGarbage.Proof.MlKem.X86_64.S4Top
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej4Parse
+public import VerifiedGarbage.Proof.MlKem.X86_64.S4Top
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on x86-64: `vg_mldsa_rej_ntt_poly4_avx2`, correctness
@@ -12,6 +18,8 @@ seed, which leaves the coefficients of its 1008 bytes of output and the AND of
 whether each has 256 in `r14` (`P2`); and the epilogue, which returns it
 (`r4K`, as `vg_mldsa_rej_ntt_poly`'s contract `rnK` for each seed).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86_64.Rej4
 
@@ -292,9 +300,10 @@ theorem m2_of {s : State} (h : P1 σ 4 s) : M2 σ 0 s :=
   ⟨⟨h.sq.env, h.sq.r14, h.sq.rc, h.sq.lanes, fun _ _ p hp' => absurd hp' (by omega)⟩,
     fun k hk => by rw [h.j k hk, ite_eq_left hk], fun k hk => by have := h.st k hk; rwa [ite_eq_left hk] at this⟩
 
-/-- A second squeeze. -/
-theorem sqM_ok {n : Nat} (hn : n < 3) {s : State} (h : M2 σ n s) : WP isa (squeeze4 n) s (M2 σ (n + 1)) := by
-  refine WP.mono (sqT_ok hp hn h.sq) fun s' ⟨q, hf⟩ => ⟨q, fun k hk => ?_, fun k hk => ?_⟩
+/-- The second squeezes. -/
+theorem sqM_ok {b n : Nat} (hn : 0 < n) (hbn : b + n ≤ 3) {s : State} (h : M2 σ b s) :
+    WP isa (squeezes b n) s (M2 σ (b + n)) := by
+  refine WP.mono (sqTs_ok hp hn hbn h.sq) fun s' ⟨q, hf⟩ => ⟨q, fun k hk => ?_, fun k hk => ?_⟩
   · rw [hf.readW (Region.contains_self _ _) (fun r hr => by
       rw [List.mem_singleton.mp hr]
       exact (Offset.base_disjoint (scr σ) (k := oSave) (e := oJ + 8 * k) (n := 8) (by simp only [oSave, oJ]; omega)
@@ -384,19 +393,18 @@ theorem end_ok {s : State} (h : P2 σ 4 s) :
 
 /-- Everything after the prologue, the round constants and the padded seeds. -/
 theorem body_ok {s : State} (h : SqInv σ 0 s) :
-    WP isa (.seq (squeeze4 0) (.seq (squeeze4 1) (.seq (squeeze4 2) (.seq (.block zeroJ)
+    WP isa (.seq (squeezes 0 3) (.seq (.block zeroJ)
       (.seq (first 0) (.seq (first 1) (.seq (first 2) (.seq (first 3)
-        (.seq (squeeze4 0) (.seq (squeeze4 1) (.seq (squeeze4 2) (.seq (.block [.vop .vzeroupper])
-          (.seq (second 0) (.seq (second 1) (.seq (second 2) (.seq (second 3) (.block epi))))))))))))))))) s
+        (.seq (squeezes 0 3) (.seq (.block [.vop .vzeroupper])
+          (.seq (second 0) (.seq (second 1) (.seq (second 2) (.seq (second 3) (.block epi))))))))))))) s
       fun s' => r4K.post σ s' ∧ gprPreserved σ s' := by
-  refine WP.seq (WP.mono (sqT_ok hp (by decide) (sqT_of h)) fun s₁ ⟨q₁, _⟩ => WP.seq (WP.mono
-    (sqT_ok hp (by decide) q₁) fun s₂ ⟨q₂, _⟩ => WP.seq (WP.mono (sqT_ok hp (by decide) q₂) fun s₃ ⟨q₃, _⟩ =>
-      WP.seq (WP.mono (zeroJ_ok hp q₃) fun s₄ p₀ => ?_))))
+  refine WP.seq (WP.mono (sqTs_ok hp (by decide) (by decide) (sqT_of h)) fun s₃ ⟨q₃, _⟩ =>
+      WP.seq (WP.mono (zeroJ_ok hp q₃) fun s₄ p₀ => ?_))
   refine WP.seq (WP.mono (first_ok hp (by decide) p₀) fun _ p₁ => WP.seq (WP.mono (first_ok hp (by decide) p₁)
     fun _ p₂ => WP.seq (WP.mono (first_ok hp (by decide) p₂) fun _ p₃ =>
       WP.seq (WP.mono (first_ok hp (by decide) p₃) fun _ p₄ => ?_))))
-  refine WP.seq (WP.mono (sqM_ok hp (by decide) (m2_of p₄)) fun _ m₁ => WP.seq (WP.mono (sqM_ok hp (by decide) m₁)
-    fun _ m₂ => WP.seq (WP.mono (sqM_ok hp (by decide) m₂) fun _ m₃ => WP.seq (WP.mono (vz_ok m₃) fun _ r₀ => ?_))))
+  refine WP.seq (WP.mono (sqM_ok hp (by decide) (by decide) (m2_of p₄)) fun _ m₃ =>
+    WP.seq (WP.mono (vz_ok m₃) fun _ r₀ => ?_))
   exact WP.seq (WP.mono (second_ok hp (by decide) r₀) fun _ r₁ => WP.seq (WP.mono (second_ok hp (by decide) r₁)
     fun _ r₂ => WP.seq (WP.mono (second_ok hp (by decide) r₂) fun _ r₃ =>
       WP.seq (WP.mono (second_ok hp (by decide) r₃) fun _ r₄ => end_ok hp r₄))))

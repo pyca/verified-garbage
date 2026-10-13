@@ -1,23 +1,31 @@
-import VerifiedGarbage.Proof.X448.X86.Env
-import VerifiedGarbage.Proof.X448.X86.RowMem
-import VerifiedGarbage.Proof.X448.X86.BitWrite
-import VerifiedGarbage.Proof.Ed448.Scalar
-import VerifiedGarbage.Impl.Ed448.X86.ScalarBase
+module
+
+public import VerifiedGarbage.Proof.X448.X86.Env
+public import VerifiedGarbage.Proof.X448.X86.RowMem
+public import VerifiedGarbage.Proof.X448.X86.Bits
+public import VerifiedGarbage.Proof.Ed448.Scalar
+public import VerifiedGarbage.Impl.Ed448.X86.ScalarBase
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 base-point multiplication on x86 (32-bit): the entry
 
 Every slot set to its initial value (`initSlots_ok`): `R = (0 : 1 : 1)`, `B`
 the base point, `d`, and zero elsewhere, every limb below `2¹⁶`. Then the
-scalar's 57 bytes expanded into its 456 bits at `BITS` (`baseBytes_ok`), as
-X448 expands its scalar (`bitJ`).
+scalar's 57 bytes expanded into its 456 bits at `BITS` (`baseBytes_ok`), by
+X448's `bitsLoop`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.X86
 
 open VG VG.X86 VG.Proof.X448.X86 VG.Proof.X448.Radix16
-open VG.Impl.Ed448.X86 (initVal initLimb initStep initSlot initSlots baseByte)
-open VG.Impl.X448.X86 (slot ACC st BITS bitJ at_)
+open VG.Impl.Ed448.X86 (initVal initLimb initStep initSlot initSlots)
+open VG.Impl.X448.X86 (slot ACC st BITS bitsLoop at_)
 open VG.Spec.Ed448 (bytesAt decodeLE)
 
 /-! ## The slots -/
@@ -119,87 +127,16 @@ theorem initSlots_bounded {m : Mem} {base : Addr}
 
 /-! ## The scalar's bits -/
 
-/-- `bitJ i j` for the 57 bytes of a scalar (X448's `bitJ_ok`, which is for
-56). -/
-theorem bitJ57_ok {s : State} {base : Addr} (hs : Scr s base) {i : Nat} (hi : i < 57)
-    {b : BitVec 8} (ha : s.gpr .eax = b.setWidth 32) {j : Nat} (hj : j < 8) :
-    WP isa (.block (bitJ i j)) s fun t =>
-      t.mem = s.mem.writeW (off base (BITS + (8 * i + j)))
-        (BitVec.ofNat 8 ((b.toNat >>> j) &&& 1)) ∧ Keeps [.edx] s t := by
-  rw [Impl.X448.X86.bitJ, WP.block_append_iff]
-  refine WP.mono (bitShift_ok hj) fun t ⟨tv, tm, tk⟩ => ?_
-  refine wp_alu (by simp [plain]) rfl fun u hu _ => ?_
-  have us := (hs.of_keeps tk (by decide)).of_upd hu (by decide)
-  have ea := us.ea (d := BITS + 8 * i + j) (by simp only [BITS]; omega)
-  have wr := us.write (d := BITS + 8 * i + j) (n := 1) (by simp only [BITS]; omega)
-  refine wp_store8 ea wr fun v hv => WP.block_nil ⟨?_, tk.trans ?_⟩
-  · rw [hv.mem, hu.mem, tm, Reg8.reg, hu.gpr]
-    change s.mem.writeW _ ((t.gpr .edx &&& (1 : BitVec 32)).setWidth 8) = _
-    rw [tv, ha, bit_byte b j hj, Nat.add_assoc]
-  · exact (hu.rest (by decide)).trans (hv.rest _)
-
-theorem byteBits57_ok {s : State} {base : Addr} (hs : Scr s base) {i : Nat} (hi : i < 57)
-    {b : BitVec 8} (ha : s.gpr .eax = b.setWidth 32) :
-    WP isa (.block ((List.range 8).flatMap (bitJ i))) s fun t =>
-      (∀ j < 8, t.mem (off base (BITS + (8 * i + j))) = BitVec.ofNat 8 ((b.toNat >>> j) &&& 1)) ∧
-      Outside base (BITS + 8 * i) 8 s.mem t.mem ∧ Keeps [.edx] s t := by
-  let inv := fun n (t : State) =>
-    (∀ j < n, t.mem (off base (BITS + (8 * i + j))) = BitVec.ofNat 8 ((b.toNat >>> j) &&& 1)) ∧
-    Outside base (BITS + 8 * i) 8 s.mem t.mem ∧ Keeps [.edx] s t
-  have step : ∀ n t, n < 8 → inv n t → WP isa (.block (bitJ i n)) t (inv (n + 1)) := by
-    intro n t hn ⟨tf, tm, tk⟩
-    refine WP.mono (bitJ57_ok (hs.of_keeps tk (by decide)) hi
-      ((tk.1 _ (by decide)).trans ha) hn) fun u ⟨um, uk⟩ => ?_
-    refine ⟨?_, tm.trans ?_, tk.trans uk⟩
-    · intro j hj
-      rw [um, writeW8_apply]
-      have eq : off base (BITS + (8 * i + j)) = off base (BITS + (8 * i + n)) ↔ j = n := by
-        rw [off_eq_iff base (by simp only [BITS]; omega) (by simp only [BITS]; omega)]
-        omega
-      by_cases he : j = n
-      · rw [ite_eq_left (eq.mpr he), he]
-      · rw [ite_eq_right (fun h => he (eq.mp h))]; exact tf j (by omega)
-    · intro x hx
-      rw [um]
-      exact writeW8_outside _ _ _ (by simp only [BITS]; omega) (by omega)
-  exact wp_range_flatMap (M := isa) (N := 8) inv step 8 (by decide) s
-    ⟨fun _ hj => by omega, Outside.refl _ _ _ _, Keeps.refl _ _⟩
-
-/-- The 57 bytes at `esi` expanded into their bits at `BITS`. -/
+/-- The 57 bytes at `esi` expanded into their bits at `BITS` (X448's `bitsLoop_ok`). -/
 theorem baseBytes_ok {s : State} {base k : Addr} (hs : Scr s base)
     (hk : (s.gpr .esi).setWidth 64 = k) (hfit : (s.gpr .esi).toNat + 57 ≤ 2 ^ 32)
     (hr : ∀ i < 57, InRegions (s.rd ++ s.wr) (off k i) 1)
     (hd : ∀ i < 57, 8192 ≤ ofs base (off k i)) :
-    WP isa (.block ((List.range 57).flatMap baseByte)) s fun t =>
-      Keeps [.eax, .edx] s t ∧ Outside base BITS 456 s.mem t.mem ∧
+    WP isa (bitsLoop BITS 57) s fun t =>
+      Keeps bitRegs s t ∧ Outside base BITS 456 s.mem t.mem ∧
       ∀ j < 456, t.mem (off base (BITS + j)) =
-        BitVec.ofNat 8 ((decodeLE (bytesAt s.mem k 57) >>> j) &&& 1) := by
-  let inv := fun n (t : State) => Keeps [.eax, .edx] s t ∧ Outside base BITS (8 * n) s.mem t.mem ∧
-    ∀ j < 8 * n, t.mem (off base (BITS + j)) =
-      BitVec.ofNat 8 (((s.mem (off k (j / 8))).toNat >>> (j % 8)) &&& 1)
-  have step : ∀ n t, n < 57 → inv n t → WP isa (.block (baseByte n)) t (inv (n + 1)) := by
-    intro n t hn ⟨tk, tm, tb⟩
-    have ea : t.ea (at_ .esi n) = off k n := by
-      change addr (t.gpr .esi) n = _
-      rw [tk.1 _ (by decide), addr_eq (by omega), hk]
-    unfold baseByte
-    refine wp_load8 ea (by rw [tk.2.1, tk.2.2]; exact hr n hn) fun u hu => ?_
-    have us := (hs.of_keeps tk (by decide)).of_upd hu (by decide)
-    refine WP.mono (byteBits57_ok us hn hu.gpr) fun v ⟨vb, vm, vk⟩ => ?_
-    have byte : t.mem (off k n) = s.mem (off k n) :=
-      tm _ (Or.inr (by have := hd n hn; simp only [BITS]; omega))
-    refine ⟨tk.trans ((hu.rest (by decide)).trans (vk.mono (by simp))), ?_, ?_⟩
-    · rw [hu.mem] at vm
-      exact (tm.mono (by omega) (by omega)).trans (vm.mono (by omega) (by omega))
-    · intro j hj
-      rcases Nat.lt_or_ge j (8 * n) with h | h
-      · rw [vm _ (Or.inl (by rw [ofs_off' base (by simp only [BITS]; omega)]; omega)), hu.mem]
-        exact tb j h
-      · have e := vb (j - 8 * n) (by omega)
-        rw [show 8 * n + (j - 8 * n) = j by omega, byte] at e
-        rw [e, show j / 8 = n by omega, show j % 8 = j - 8 * n by omega]
-  refine WP.mono (wp_range_flatMap (M := isa) (N := 57) inv step 57 (by decide) s
-    ⟨Keeps.refl _ _, Outside.refl _ _ _ _, fun _ hj => by omega⟩) fun t ⟨tk, tm, tb⟩ =>
+        BitVec.ofNat 8 ((decodeLE (bytesAt s.mem k 57) >>> j) &&& 1) :=
+  WP.mono (bitsLoop_ok hs (by decide) (by decide) (by decide) hk hfit hr hd) fun t ⟨tk, tm, tb, _⟩ =>
     ⟨tk, tm, fun j hj => by rw [tb j hj, Proof.Ed448.scalar_bit _ _ hj]⟩
 
 end VG.Proof.Ed448.X86

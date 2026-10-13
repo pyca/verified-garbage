@@ -1,7 +1,17 @@
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Curve
-import VerifiedGarbage.Proof.Ecdsa.Arm.P384.Verified
-import VerifiedGarbage.Proof.Ecdsa.Arm.P384.Lit
-import VerifiedGarbage.Proof.Framework.Arm.Lit
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Curve
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Curve
+public import VerifiedGarbage.Proof.Ecdsa.Arm.P384.Verified
+meta import VerifiedGarbage.Proof.Ecdsa.Arm.P384.Verified
+public import VerifiedGarbage.Proof.Ecdsa.Arm.P384.Lit
+meta import VerifiedGarbage.Proof.Ecdsa.Arm.P384.Lit
+public import VerifiedGarbage.Proof.Framework.Arm.Lit
+meta import VerifiedGarbage.Proof.Framework.Arm.Lit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Deterministic ECDSA on 32-bit ARM: P-384
@@ -11,6 +21,8 @@ P-384 as the proof's curve (`p384`): scalars of 6 64-bit words, the order
 correct (given the group law) and constant time against its contract
 (`coreK` at P-384's sizes, which is `Proof.Ecdsa.Arm.P384.signArm`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Rfc6979.Arm
 
@@ -37,6 +49,6 @@ def p384 (hL : Weierstrass.Law Spec.P384.curve) : RfcCurve where
   coreX := Proof.Ecdsa.Arm.P384.sign_arm hL
   coreCT := Proof.Ecdsa.Arm.P384.sign_ct
   coreStack := by lit_decide
-  reduceT := Function.const _ ⟨_, by taint_decide⟩
+  reduceT := by exact (Function.const _ ⟨_, by taint_decide⟩)
 
 end VG.Proof.Ecdsa.Rfc6979.Arm

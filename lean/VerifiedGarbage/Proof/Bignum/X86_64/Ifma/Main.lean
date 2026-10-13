@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Branch
-import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Ws
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtCode
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Branch
+public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Ws
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCode
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSA with AVX512_IFMA on x86-64, any size: the computation
@@ -10,6 +16,8 @@ front, then the IFMA branch of the first layout whose sizes the key has
 (`branch`, `sizes`), the CRT one if none, and its finish (`main_ok`); `code`
 writes `privateCrt` of its inputs (`code_correct`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64.Ifma
 

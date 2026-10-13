@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.PrimsOk
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.PrimsOk
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA verification on x86-64: the hint and `z`
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.PrimsOk
 (`hint_ok`); then, if it is, `z[i]` (polynomial `8 + i`) and `r15` whether
 each norm so far is small (`zOne_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86_64.Verify
 

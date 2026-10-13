@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Framework.PowLit
+module
+
+public import VerifiedGarbage.Proof.Framework.PowLit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Reordering schedules of commuting operations
@@ -13,6 +19,8 @@ disjoint as wholes, are merged without checks. The insertion is quadratic in
 the length of a slice, the rest linear in the whole schedule, where sorting
 all of it by insertion would be quadratic in its length.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Schedule
 

@@ -1,9 +1,21 @@
-import VerifiedGarbage.Proof.Ed25519.X86.WindowLoop
-import VerifiedGarbage.Proof.Ed25519.X86.VerifyCTBytes
-import VerifiedGarbage.Proof.Ed25519.X86.VerifyCTLit
-import VerifiedGarbage.Proof.Ed25519.X86.PointCTSupport
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.Ed25519.X86.Point32.AddSum
+module
+
+public import VerifiedGarbage.Proof.Ed25519.X86.WindowLoop
+meta import VerifiedGarbage.Proof.Ed25519.X86.WindowLoop
+public import VerifiedGarbage.Proof.Ed25519.X86.VerifyCTBytes
+meta import VerifiedGarbage.Proof.Ed25519.X86.VerifyCTBytes
+public import VerifiedGarbage.Proof.Ed25519.X86.VerifyCTLit
+meta import VerifiedGarbage.Proof.Ed25519.X86.VerifyCTLit
+public import VerifiedGarbage.Proof.Ed25519.X86.PointCTSupport
+meta import VerifiedGarbage.Proof.Ed25519.X86.PointCTSupport
+public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+public import VerifiedGarbage.Proof.Ed25519.X86.Point32.AddSum
+meta import VerifiedGarbage.Proof.Ed25519.X86.Point32.AddSum
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Verification's windows: what their traces depend on
@@ -16,6 +28,8 @@ runs by correctness; everything else is public by the taint analysis, with
 the workspace pointer `edi`. The skipped bytes of `k` are its leading zeros,
 the same in both runs.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed25519.X86
 

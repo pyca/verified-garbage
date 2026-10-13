@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacIter
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacIter
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Scalar multiplication by 5-bit windows in Jacobian coordinates on x86-64
@@ -15,6 +21,8 @@ exceptional for `k < n` (`Window5.loop_noexc`), and `R = (XZ : Y : Z³)` with
 runs the same way and writes the same places, and `R` is a triple of some
 point of the curve.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.X86_64
 

@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesGcm.AArch64.Seal
+module
+
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Seal
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on AArch64: `vg_aes_gcm_open`
@@ -12,6 +18,8 @@ state and absorbs the additional data,
 decrypted only if they are equal (`open_wp`), which is the one secret the
 code branches on, as the contract allows.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 
@@ -433,8 +441,8 @@ theorem omIte_ok (v : GcmImpl) {Ctx W SP D Np A : Addr} {R nl al n tl : Nat}
       rw [r₈.mem, mo.cb]
     have hc₈ : ciphOf s₈.mem Ctx R = ciphOf s.mem Ctx R := ciph_frame F₈ dC hR
     have hD₈ : bytesAt s₈.mem D n = bytesAt s.mem D n := bytesAt_frame F₈ dD (by omega)
-    refine WP.mono (crypt_ok L v (icb := inc32 (Spec.Gcm.j0 (blockAt s.mem (Ctx + BitVec.ofNat 64 240))
-      (bytesAt s.mem Np nl))) (oc_in hR mo h₈)) fun s₉ h₉ => ⟨h₉.env, ?_, by rw [← r₈.mem]; exact h₉.frame, ?_⟩
+    refine WP.mono (cryptAl_ok L v (icb := inc32 (Spec.Gcm.j0 (blockAt s.mem (Ctx + BitVec.ofNat 64 240))
+      (bytesAt s.mem Np nl))) (oc_in hR mo h₈) rfl) fun s₉ h₉ => ⟨h₉.env, ?_, by rw [← r₈.mem]; exact h₉.frame, ?_⟩
     · rw [h₉.kept .x27 (by decide), r₈.others _ (by decide)]
     · rw [h₉.out (Proof.Gcm.ctr_zero _ _ _ _ hcb₈), hc₈, hD₈, Proof.Gcm.gctr_eq]
       rfl

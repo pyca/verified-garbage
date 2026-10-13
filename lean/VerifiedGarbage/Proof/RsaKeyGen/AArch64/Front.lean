@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Base
-import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Entry
-import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Contract
-import VerifiedGarbage.Proof.Rsa.AArch64.CvFail
+module
+
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Base
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Entry
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Contract
+public import VerifiedGarbage.Proof.Rsa.AArch64.CvFail
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # A candidate on AArch64: the precondition, the zeros to `out`, and the ends
@@ -12,6 +18,8 @@ zeros to `out` and the check that `rand` has a candidate's octets.
 the octets read to `used` and, for a prime, the prime to `out`; and the
 postcondition follows (`candEnd_post`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaKeyGen.AArch64
 

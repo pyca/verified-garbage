@@ -1,8 +1,17 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareRedcRow
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareDiagonalStep
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8TileEdges
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareRedcRow
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareDiagonalStep
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8TileEdges
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## AdxSquareRedcLoop -/
+
+@[expose] public section
+
 section
 
 /-! The invariant of Montgomery reduction of an unreduced square. -/

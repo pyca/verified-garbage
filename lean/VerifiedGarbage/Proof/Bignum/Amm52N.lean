@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Bignum.Amm52
+module
+
+public import VerifiedGarbage.Proof.Bignum.Amm52
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Almost Montgomery multiplication in radix `2⁵²`, of any number of limbs
@@ -10,6 +16,8 @@ give `(a b + Q m) / 2^(52 N)` for some `Q < 2^(52 N)` (`amm_val`), below
 `2 m` for `a, b < 2 m` and `4 m ≤ 2^(52 N)` (`Amm52.amm_lt`). The low halves
 and `u` (`Amm52.low`, `Amm52.stepU`) do not depend on `N`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.Amm52N
 

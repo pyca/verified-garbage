@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.Tag
-import VerifiedGarbage.Proof.Cmac.Mem32
-import VerifiedGarbage.Proof.Cmac.Dbl32
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Tag
+public import VerifiedGarbage.Proof.Cmac.Mem32
+public import VerifiedGarbage.Proof.Cmac.Dbl32
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on x86-64: the pre-counter block (`j0`)
@@ -13,6 +19,8 @@ accumulator at the state's first block (`j0hash_ok`). `initState` then
 zeroes the accumulator and writes the first counter block `inc₃₂(J₀)`
 (`initState_ok`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 
@@ -333,37 +341,15 @@ theorem j0hash_ok {H : Block} {Np : Addr} {n : Nat} {s : State} (h : J0In Ctx St
   have hai : AbsIn Ctx St W SP 0 H [] Np n s₁ :=
     ⟨he₁, by rw [hg₁ _ (by decide) (by decide), h.r12], by rw [hg₁ _ (by decide) (by decide), h.rbp],
       by rw [hbx₁]; rfl, hd.of_eq hrd₁ hwr₁, hH₁⟩
-  refine WP.seq (WP.mono (absorb_ok v L (yo := 0) (.inl rfl) hai) fun s₂ ho => ?_)
-  rw [List.nil_append, hiv] at ho
-  have hab₂ := ho.abs (Proof.Gcm.absorbed_nil H hY₁)
-  have he₂ := ho.env
-  have hn₂ : s₂.mem.readW (W + BitVec.ofNat 64 216) 64 = BitVec.ofNat 64 n := by
-    rw [ho.frame.readW (r := ⟨W + BitVec.ofNat 64 216, 8⟩) (Region.contains_self _ _) (aux_absFrame L) (by decide),
-      hm₁, Mem.readW_writeW_self64]
-  have hH₂ : blockAt s₂.mem (Ctx + BitVec.ofNat 64 240) = H := by
-    rw [blockAt_frame ho.frame (ctx_absFrame L (.inl rfl)), hH₁]
-  have ra := he₂.perm.wR (show 216 + 8 ≤ 2560 by decide)
-  obtain ⟨s₃, run₃, hbx₃, hg₃, hm₃, hrd₃, hwr₃⟩ : ∃ s₃, runBlock isa [.mov .rbx (.mem (at_ .r15 auxO)),
-      .alu .and .rbx (imm 15)] s₂ = some s₃ ∧
-      s₃.gpr .rbx = BitVec.ofNat 64 (n % 16) ∧ (∀ r, r ≠ .rbx → s₃.gpr r = s₂.gpr r) ∧ s₃.mem = s₂.mem ∧
-      s₃.rd = s₂.rd ∧ s₃.wr = s₂.wr := by
-    have hand := and15 (BitVec.ofNat 64 n)
-    rw [toNat_ofNat_of_lt hlt, imm_eq (by decide)] at hand
-    refine ⟨_, by xrun [he₂.r15, ra], ?_, ?_, ?_, ?_, ?_⟩
-    · simp only [gpr_setReg, gpr_arithFlags, ite_true, hn₂, hand]
-    · intro r a; simp [gpr_setReg, gpr_arithFlags, a]
-    all_goals rfl
-  refine WP.seq (WP.of_runBlock ⟨s₃, run₃, ?_⟩)
-  have he₃ : Env Ctx St W SP s₃ := he₂.keep (fun r hr => by
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl <;> exact hg₃ _ (by decide)) hrd₃ hwr₃
-  have hfi : FlIn Ctx St W SP 0 H (bytesAt s.mem Np n) s₃ :=
-    ⟨he₃, by rw [hm₃, hH₂]⟩
-  refine WP.seq (WP.mono (flush_ok v L (yo := 0) (.inl rfl) hfi (by rw [hbx₃, length_bytesAt])) fun s₄ hf => ?_)
+  refine WP.seq (WP.mono (absorbPad_ok v L (yo := 0) (.inl rfl) hai rfl) fun s₄ hf => ?_)
+  rw [List.nil_append, hiv] at hf
+  have hab₂ := Proof.Gcm.absorbed_nil (m := s₁.mem) (y := St + BitVec.ofNat 64 0) (b := St + BitVec.ofNat 64 32) H hY₁
+  obtain ⟨m₂, fa, ft⟩ := hf.frame
   have he₄ := hf.env
   have hn₄ : s₄.mem.readW (W + BitVec.ofNat 64 216) 64 = BitVec.ofNat 64 n := by
-    rw [hf.frame.readW (r := ⟨W + BitVec.ofNat 64 216, 8⟩) (Region.contains_self _ _) (aux_tFrame L) (by decide),
-      hm₃, hn₂]
+    rw [ft.readW (r := ⟨W + BitVec.ofNat 64 216, 8⟩) (Region.contains_self _ _) (aux_tFrame L) (by decide),
+      fa.readW (r := ⟨W + BitVec.ofNat 64 216, 8⟩) (Region.contains_self _ _) (aux_absFrame L) (by decide),
+      hm₁, Mem.readW_writeW_self64]
   have ra₄ := he₄.perm.wR (show 216 + 8 ≤ 2560 by decide)
   obtain ⟨s₅, run₅, hbx₅, hbp₅, hg₅, hm₅, hrd₅, hwr₅⟩ : ∃ s₅, runBlock isa [.mov32 .rbx (imm 0),
       .mov .rbp (.mem (at_ .r15 auxO))] s₄ = some s₅ ∧
@@ -380,7 +366,7 @@ theorem j0hash_ok {H : Block} {Np : Addr} {n : Nat} {s : State} (h : J0In Ctx St
     rcases hr with rfl | rfl | rfl | rfl <;> exact hg₅ _ (by decide) (by decide)) hrd₅ hwr₅
   refine WP.mono (lens_ok v L (yo := 0) (.inl rfl) (H := H) he₅ (by rw [hm₅]; exact hf.hH)) fun s₆ ⟨he₆, hH₆, hY₆, f₆⟩ => ?_
   refine ⟨he₆, hH₆, ?_, ?_⟩
-  · have hw := (hf.abs (by rw [hm₃]; exact hab₂)).whole_eq (by
+  · have hw := (hf.abs hab₂).whole_eq (by
       simp only [List.length_append, length_bytesAt, Proof.Gcm.length_zeros]; exact Proof.Gcm.length_pad_mod n)
     rw [Proof.Gcm.j0_eq H (by rw [length_bytesAt]; exact hn), length_bytesAt, ← hw, ← hm₅,
       hbx₅, hbp₅, toNat_ofNat_of_lt (by decide), toNat_ofNat_of_lt hlt] at *
@@ -390,11 +376,10 @@ theorem j0hash_ok {H : Block} {Np : Addr} {n : Nat} {s : State} (h : J0In Ctx St
       rcases hr with rfl | rfl
       · exact ⟨_, List.mem_cons_self .., Lay.stSub (by decide)⟩
       · exact ⟨_, by simp, fun _ h => h⟩
-    have g₄ := t_j0Frame hf.frame
+    have g₄ := t_j0Frame ft
     have g₆ := t_j0Frame f₆
-    rw [hm₃] at g₄
     rw [hm₅] at g₆
-    exact ((g₁.trans (abs_j0Frame ho.frame)).trans g₄).trans g₆
+    exact ((g₁.trans (abs_j0Frame fa)).trans g₄).trans g₆
 
 /-- `j0`: the streaming state's `J₀`, accumulator and first counter block. -/
 theorem j0_ok {H : Block} {Np : Addr} {n : Nat} {s : State} (h : J0In Ctx St W SP H Np n s) :

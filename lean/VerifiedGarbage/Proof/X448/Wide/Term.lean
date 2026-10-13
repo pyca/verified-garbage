@@ -1,8 +1,17 @@
-import VerifiedGarbage.Impl.X448.AArch64.Wide
-import VerifiedGarbage.Proof.X448.Wide.Word
-import VerifiedGarbage.Proof.X448.AArch64.Mem
+module
+
+public import VerifiedGarbage.Impl.X448.AArch64.Wide
+public import VerifiedGarbage.Proof.X448.Wide.Word
+public import VerifiedGarbage.Proof.X448.AArch64.Mem
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Untrusted: the register-only multiply-add used by wide X448 columns. -/
+
+@[expose] public section
+
 namespace VG.Proof.X448.Wide
 
 open VG VG.AArch64 VG.Impl.X448.AArch64.Wide VG.Proof.Ed25519.Word64

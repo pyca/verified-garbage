@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.Ecdh.AArch64.MulOk
-import VerifiedGarbage.Proof.P256.EcdhJac.Extra
+module
+
+public import VerifiedGarbage.Proof.Ecdh.AArch64.MulOk
+public import VerifiedGarbage.Proof.P256.EcdhJac.Extra
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.P256.EcdhJac
 open VG VG.AArch64 VG.Impl.Mont VG.Impl.Weierstrass VG.Impl.Weierstrass.AArch64
@@ -68,7 +76,7 @@ theorem finishPow_ok (hc : CfgOk p256) {base : Addr} {g : Reg → BitVec 64}
     {rest : Prog isa} {R : State → Prop}
     (h : ∀ u,MulPost p256 base g P k s u → WP isa rest u R) :
     WP isa (.seq p256.pPow rest) t R :=
-  finishInverse_ok hc fixedOk_chainWc (fun _ hi hn => apart_chainWc hi hn)
+  finishInverse_ok hc (fixedOk_chainWc hc) (fun _ hi hn => apart_chainWc hc hi hn)
     (by decide) hw (pPow_ok hc hw.scr (modP_of hc.toBaseCfgOk hw.fixed.mp) hw.rz_lt) h
 
 end VG.Proof.P256.EcdhJac

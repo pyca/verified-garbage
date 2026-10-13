@@ -1,7 +1,16 @@
-import VerifiedGarbage.Impl.Argon2.AArch64.Instructions
-import VerifiedGarbage.Proof.Argon2.AArch64.DivideStep
+module
+
+public import VerifiedGarbage.Impl.Argon2.AArch64.Instructions
+public import VerifiedGarbage.Proof.Argon2.AArch64.DivideStep
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # Fixed scaling by public powers of two on ARM64 -/
+
+@[expose] public section
+
 namespace VG.Proof.Argon2.AArch64.MemoryInit
 open VG VG.AArch64 VG.Impl.Argon2.AArch64
 

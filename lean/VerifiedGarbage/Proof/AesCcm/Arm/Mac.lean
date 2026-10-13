@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesCcm.Arm.B0
+module
+
+public import VerifiedGarbage.Proof.AesCcm.Arm.B0
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CCM on ARMv7: the MAC (`mac y`)
@@ -8,6 +14,8 @@ zeroed MAC state at `W + y` (`b0_ok`); `mac y` then chains the formatted
 associated data and the payload padded: CBC-MAC of the formatted blocks
 (`mac_ok`), whose first `t` bytes are CCM's MAC (`Proof.AesCcm.mac_eq`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

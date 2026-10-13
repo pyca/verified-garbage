@@ -1,7 +1,17 @@
-import VerifiedGarbage.Proof.Rc4.Arm.Contract
-import VerifiedGarbage.Proof.Rc4.Arm.Lit
-import VerifiedGarbage.Proof.Rc4.Arm.Apply
-import VerifiedGarbage.Proof.Framework.RelCT
+module
+
+public import VerifiedGarbage.Proof.Rc4.Arm.Contract
+meta import VerifiedGarbage.Proof.Rc4.Arm.Contract
+public import VerifiedGarbage.Proof.Rc4.Arm.Lit
+meta import VerifiedGarbage.Proof.Rc4.Arm.Lit
+public import VerifiedGarbage.Proof.Rc4.Arm.Apply
+meta import VerifiedGarbage.Proof.Rc4.Arm.Apply
+public import VerifiedGarbage.Proof.Framework.RelCT
+meta import VerifiedGarbage.Proof.Framework.RelCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # RC4 on ARMv7: constant time
 
@@ -10,6 +20,8 @@ first loads the PRGA index `i` from the context, which the analysis takes
 for secret: the contract lets it leak, so the proof makes it public by hand
 (`entry_ct`) and the analysis checks the rest.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rc4.Arm
 

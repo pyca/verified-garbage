@@ -1,5 +1,7 @@
-import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.AesCtr.AArch64.Verified
+module
+
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.AesCtr.AArch64.Verified
 
 /-!
 # AES-CTR (NIST SP 800-38A §6.5) on AArch64
@@ -12,6 +14,8 @@ implementation (`Variants/AesCtr32/AArch64/`), named with its suffix (e.g.
 No stack is used: the calls keep the return address in `x30`, which the
 function saves in the scratch buffer.
 -/
+
+@[expose] public section
 
 namespace VG.Generic.AesCtr32.AArch64.AesCtr
 

@@ -1,14 +1,19 @@
-import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Xor
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.Verified
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Xor
-import VerifiedGarbage.Impl.ChaCha20.X86_64.Xor
-import VerifiedGarbage.Impl.ChaCha20.X86_64.Avx2
-import VerifiedGarbage.Impl.ChaCha20.X86_64.Avx512
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Lit
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Stream.Init
+module
+
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.ChaCha20.X86_64.Xor
+public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.Verified
+public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Xor
+public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.XorSplitVerified
+public import VerifiedGarbage.Impl.ChaCha20.X86_64.Xor
+public import VerifiedGarbage.Impl.ChaCha20.X86_64.Avx2
+public import VerifiedGarbage.Impl.ChaCha20.X86_64.Avx512
+public import VerifiedGarbage.Proof.ChaCha20.X86_64.Lit
+public import VerifiedGarbage.Proof.ChaCha20.X86_64.Stream.Init
 
 /-! # The ChaCha20 block function (RFC 8439) on x86-64 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.ChaCha20.X86_64
 
@@ -69,6 +74,22 @@ def artifacts : List Artifact := [
     code := Impl.ChaCha20.X86_64.Stream.setNonce
     contract := Spec.ChaCha20.setNonceContract X86_64.abi
     verified := Proof.ChaCha20.X86_64.Stream.setNonce_verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel) }]
+    spSafe := Code.all_of_allInstrs (by decide +kernel) },
+  { Spec.ChaCha20.xorSplitApi with
+    name := "vg_chacha20_xor_split_avx512"
+    target := X86_64.target
+    doc := Spec.ChaCha20.xorSplitApi.doc
+      (notes := ["Uses AVX-512, as `vg_chacha20_xor_avx512` does on `dst`, but each block of 64 \
+        bytes of the input within the first `src_len` bytes, rounded down to a multiple of 64, is \
+        loaded from `src`, by a comparison of lengths; the bytes of `src` after them (or, when \
+        fewer than 513 bytes follow the whole 1024-byte passes, those from the last pass on) are \
+        first copied to `dst`. Fewer than 513 bytes left after the whole 1024-byte passes are \
+        XORed in place by a call of `vg_chacha20_xor_avx512`."])
+    code := Impl.ChaCha20.X86_64.Avx512.xorSplit
+    contract := Spec.ChaCha20.xorSplitContract X86_64.abi 24
+    stack := 24
+    verified := Proof.ChaCha20.X86_64.Avx512Split.xorSplit_verified
+    features := ["avx", "avx512f"]
+    spSafe := Code.all_of_allInstrs (by lit_decide) }]
 
 end VG.Artifacts.ChaCha20.X86_64

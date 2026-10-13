@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Camellia.KeySched
+module
+
+public import VerifiedGarbage.Proof.Camellia.KeySched
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Camellia's proofs: what every target uses
@@ -10,6 +16,8 @@ result (`blocksAt_of_dinv`), the planes of the key schedule's constants
 (`sigma_planes`), its values (`kaD_eq`) and its stores
 (`schedule_of_stores`). Nothing here depends on a target.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Camellia
 
@@ -302,5 +310,14 @@ theorem schedule_of_stores {m : Mem} {S : Addr} {ks : List (Nat × Nat × Bool)}
   rw [hk, h4.1, h4.2]
   simp only [subkeyWords, List.getD_eq_getElem?_getD, List.getElem?_map,
     List.getElem?_eq_getElem hi, Option.map_some, Option.getD_some]
+
+/-- The values `[KL, KR, KA, KB]` of a key. -/
+def keyVals (key : List Byte) : List (BitVec 128) :=
+  [(Spec.Camellia.klkr key).1, (Spec.Camellia.klkr key).2,
+    (Spec.Camellia.kakb (Spec.Camellia.klkr key).1 (Spec.Camellia.klkr key).2).1,
+    (Spec.Camellia.kakb (Spec.Camellia.klkr key).1 (Spec.Camellia.klkr key).2).2]
+
+/-- The value `v` as a number, from its halves. -/
+def valNum (key : List Byte) (v : Nat) : BitVec 128 := hiW ((keyVals key).getD v 0) ++ loW ((keyVals key).getD v 0)
 
 end VG.Proof.Camellia

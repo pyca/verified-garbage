@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Ed448.AArch64.Verify.Hash
+module
+
+public import VerifiedGarbage.Proof.Ed448.AArch64.Verify.Hash
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 verification on AArch64: the frame's body
@@ -7,6 +13,8 @@ After the hash: `k`, the hash reduced modulo `L` (`reduce_step`), and the
 verification equation's result in `x0` (`equation_step`), for the inputs as
 on entry (`body_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.AArch64.Verify
 

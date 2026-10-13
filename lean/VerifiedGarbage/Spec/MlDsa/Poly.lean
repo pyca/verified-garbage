@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.MlDsa
-import VerifiedGarbage.TCB.Artifact
+module
+
+public import VerifiedGarbage.Spec.MlDsa
+public import VerifiedGarbage.TCB.Artifact
 
 /-!
 # ML-DSA: the contracts of the polynomial primitives, on every target
@@ -33,6 +35,8 @@ arguments passed in memory, where the calling convention allows it
 that their calls and frames use (`stack`, see `Sig.contract`), which
 depends on the target.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.MlDsa
 
@@ -535,23 +539,23 @@ def hintBitUnpackContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M 
 
 /-- The `# Safety` item of a polynomial argument whose coefficients must be
 reduced. -/
-private def reducedSafety (name : String) : String :=
+def reducedSafety (name : String) : String :=
   s!"Each of the 256 `u32`s of `{name}` must be less than `q` = 8380417."
 
 /-- The `# Safety` item of `scratch`. -/
-private def scratchSafety : String :=
+def scratchSafety : String :=
   "`scratch` is working space: on return it may hold intermediate values, which the caller must \
     destroy (FIPS 204 §3.6.3)."
 
 /-- What the documentation says of the return value of a function whose loop
 is bounded. -/
-private def boundDoc (what min : String) : String :=
+def boundDoc (what min : String) : String :=
   s!"Returns 0 if the loop reaches its bound, which is at least {min} (FIPS 204 Appendix C; \
     this happens with probability about 2^-256 or less): `*{what}` is then unspecified, and the \
     caller must destroy it and treat the operation as failed."
 
 /-- A constant-time polynomial primitive: the sentence that says so. -/
-private def ctDoc (contract : String) (args : String := "the pointers") : String :=
+def ctDoc (contract : String) (args : String := "the pointers") : String :=
   s!"\n\nContract: `VG.Spec.MlDsa.{contract}`. Constant time: only {args} may affect timing, \
     not the data."
 

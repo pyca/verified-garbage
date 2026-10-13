@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Loop
-import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
-import VerifiedGarbage.Proof.Framework.Scratch
+module
+
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Loop
+meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Loop
+public import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
+public import VerifiedGarbage.Proof.Framework.Scratch
+meta import VerifiedGarbage.Proof.Framework.Scratch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ChaCha20-Poly1305 encryption out of place, from a list of slices, x86-64: gathering in constant time
@@ -15,6 +24,8 @@ proof describes with the same arguments (`GatherPre`), leak the same trace
 (`rcx`, `r9`), registers the correctness proof pins to the same values in
 both runs, from which the taint analysis checks each block.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

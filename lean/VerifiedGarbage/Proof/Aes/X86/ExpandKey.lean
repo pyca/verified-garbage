@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.Aes.X86.Ctr32
-import VerifiedGarbage.Proof.Aes.X86.ExpandKeyCT
-import VerifiedGarbage.Proof.Aes.KeyExp
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Spec.Aes.Contract
+module
+
+public import VerifiedGarbage.Proof.Aes.X86.Ctr32
+public import VerifiedGarbage.Proof.Aes.X86.ExpandKeyCT
+public import VerifiedGarbage.Proof.Aes.KeyExp
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.Aes.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The AES key expansion on x86 (32-bit)
@@ -14,6 +20,8 @@ instructions around it (`word_ok`), and the loop over the words keeps the
 schedule's bytes so far equal to the specification's (`WInv`). Constant
 time is `ExpandKeyCT.lean`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Aes.X86
 

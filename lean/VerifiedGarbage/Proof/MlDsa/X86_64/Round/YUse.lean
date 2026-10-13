@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
-import VerifiedGarbage.Proof.MlDsa.X86_64.Round.YBits
-import VerifiedGarbage.Proof.MlDsa.X86_64.Round.UseHint
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
+meta import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Round.YBits
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Round.YBits
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Round.UseHint
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Round.UseHint
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on x86-64: `vg_mldsa_use_hint_avx2`
@@ -10,6 +19,8 @@ computes `uhL` of the hint and the coefficient of `r` (`uhX_ok`), which is
 the value `vg_mldsa_use_hint` stores (`uhL_toNat`, as `uhS_toNat`); the loop
 stores eight of them in each iteration (`YUseL.step`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86_64.Round
 

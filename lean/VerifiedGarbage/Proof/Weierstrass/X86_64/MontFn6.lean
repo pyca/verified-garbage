@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.Weierstrass.X86_64.Reloc
-import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFnX
-import VerifiedGarbage.Proof.Mont.X86_64.SqrM
-import VerifiedGarbage.Proof.Mont.X86_64.MulS
-import VerifiedGarbage.Proof.Mont.X86_64.CsubR
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.Reloc
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFnX
+public import VerifiedGarbage.Proof.Mont.X86_64.SqrM
+public import VerifiedGarbage.Proof.Mont.X86_64.MulS
+public import VerifiedGarbage.Proof.Mont.X86_64.CsubR
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # P-384's product modulo `p` as a function, on x86-64
@@ -17,6 +23,8 @@ code at the offsets `a`, `b` and `o` (`wp_unptr`, with `sqrSA_reloc`,
 modulus in memory. The function changes only `fnClob`, `[o]` and its
 temporary area, bytes `fnTmp6` to 4095 (`mulFn6_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.X86_64.Mont
 

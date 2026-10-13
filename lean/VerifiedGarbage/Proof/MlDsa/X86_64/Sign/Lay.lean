@@ -1,7 +1,13 @@
-import VerifiedGarbage.Impl.MlDsa.X86_64.Sign.Sign
-import VerifiedGarbage.Proof.MlKem.X86_64.Wp
-import VerifiedGarbage.Proof.MlKem.X86_64.Rel
-import VerifiedGarbage.Proof.MlDsa.Sign.Mem
+module
+
+public import VerifiedGarbage.Impl.MlDsa.X86_64.Sign.Sign
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+public import VerifiedGarbage.Proof.MlKem.X86_64.Rel
+public import VerifiedGarbage.Proof.MlDsa.Sign.Mem
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA signing on x86-64: the buffers of the function
@@ -20,6 +26,8 @@ was (`Lay.post`), and the bytes of a region apart from those it writes
 (As ML-KEM's `Proof/MlKem/X86_64/Lay.lean`, with the stack below `rsp` a
 parameter: the primitives' own calls may nest.)
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86_64.Sign
 

@@ -1,10 +1,19 @@
-import VerifiedGarbage.Proof.P521.X86_64.TaintSumsBase
+module
+
+public import VerifiedGarbage.Proof.P521.X86_64.TaintSumsBase
+meta import VerifiedGarbage.Proof.P521.X86_64.TaintSumsBase
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # P-521 on x86-64: summaries of ECDH's window method, for constant time
 
 See `TaintSums`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.P521.X86_64
 
@@ -24,7 +33,8 @@ theorem winK_ok : p521T.Ok winK.M := p521HT_ok
 
 taint_summary winBuildJSum : taintS τB winBuildJ
 taint_summary_map winNormJSum : taintS τB winNormJ via taintS_eraseInv
-  (by simp only [winNormJ, WinCfg.normTbl, Code.mapBlocks, winK_ok.fprogB]; rfl :
+  (by simp only [winNormJ, WinCfg.normTbl, WinCfg.seqRange, WinCfg.prodStep, WinCfg.backStep,
+    WinCfg.backOne, WinCfg.mulTb, WinCfg.mulTx, Code.mapBlocks, winK_ok.fprogB]; rfl :
     Code.mapBlocks Instr.erase winNormJ = _)
 taint_summary_map winLoopJSum : taintS τL winLoopJ via taintS_eraseInv
   (by simp only [winLoopJ, WinCfg.stepJ, WinCfg.quadJ, WinCfg.jacPairOn, WinCfg.sumJ, Code.mapBlocks,

@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Ed448.AArch64.ScalarOperands
+module
+
+public import VerifiedGarbage.Proof.Ed448.AArch64.ScalarOperands
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 scalar multiply-add on AArch64: product scanning
@@ -9,6 +15,8 @@ and the sixteen columns (`columns_ok`), by induction on the columns, each
 storing its low word at `ACC` and passing the rest of its accumulator on, in
 `x5–x7` rotated. The columns of `r + k s` sum to it (`mulCols_sum`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.AArch64
 

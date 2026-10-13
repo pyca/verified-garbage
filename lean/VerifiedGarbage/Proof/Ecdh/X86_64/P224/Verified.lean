@@ -1,9 +1,23 @@
-import VerifiedGarbage.Proof.Ecdh.X86_64.Main
-import VerifiedGarbage.Proof.Ecdh.X86_64.P224.Contract
-import VerifiedGarbage.Proof.Ecdh.X86_64.P224.Lit
-import VerifiedGarbage.Proof.Ecdsa.X86_64.P224.Verified
-import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
-import VerifiedGarbage.Proof.Framework.LitShare
+module
+
+public import VerifiedGarbage.Proof.Ecdh.X86_64.Main
+meta import VerifiedGarbage.Proof.Ecdh.X86_64.Main
+public import VerifiedGarbage.Proof.Ecdh.X86_64.P224.Contract
+meta import VerifiedGarbage.Proof.Ecdh.X86_64.P224.Contract
+public import VerifiedGarbage.Proof.Ecdh.X86_64.P224.Lit
+meta import VerifiedGarbage.Proof.Ecdh.X86_64.P224.Lit
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.P224.Verified
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P224.Verified
+public import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
+meta import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
+public import VerifiedGarbage.Proof.Framework.LitShare
+meta import VerifiedGarbage.Proof.Framework.LitShare
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDH over P-224 on x86-64: `Verified`
@@ -18,6 +32,8 @@ tracking: the only branches are on loop counters, and every address is an
 argument plus a constant or a counter, so not even the peer's key (which the
 contract would let leak) affects timing.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdh.X86_64.P224
 
@@ -42,16 +58,17 @@ theorem post_of {s s' : State} (h : EPost p224 s s') : ecdhX86_64.post s s' := b
 
 theorem ecdh_x86 (hL : Weierstrass.Law Spec.P224.curve) (hI : Weierstrass.X86_64.InvSounds)
     (s : State) (hs : ecdhX86_64.pre s) :
-    ∃ t s', Exec isa exchangeP224 s t s' ∧ abiPreserved s s' ∧ ecdhX86_64.post s s' := by
-  obtain ⟨t, s', he, hsv, hpost⟩ := wp_of_inline (by lit_decide) <| exchange_ok (p224_ok hI) hL (pre_of hs)
-  have hsp : ∀ i ∈ instrs exchangeP224, Taint.clobbers i .rsp = false := by
+    ∃ t s', Exec isa exchangeP224.inline s t s' ∧ abiPreserved s s' ∧ ecdhX86_64.post s s' := by
+  obtain ⟨t, s', he, hsv, hpost⟩ := exchange_ok (p224_ok hI) hL (pre_of hs)
+  have hsp : ∀ i ∈ instrs exchangeP224.inline, Taint.clobbers i .rsp = false := by
     have h : exchangeP224.allInstrs (fun i => !Taint.clobbers i .rsp) = true := by lit_decide
-    rw [Code.allInstrs_eq, List.all_eq_true] at h
+    rw [← Code.allInstrs_inline, Code.allInstrs_eq, List.all_eq_true] at h
     intro i hi
     simpa using h i hi
-  have F := (Exec.regions he (by lit_decide)).2.2
+  have F := (Exec.regions he (Code.noCalls_inline (by lit_decide))).2.2
   obtain ⟨-, hwr, -, -, -, -, -, hro, hrs, -, -⟩ := hs
-  refine ⟨t, s', he, abiPreserved_of_exec (by lit_decide) he ⟨fun r hr => ?_, ?_⟩, post_of hpost⟩
+  refine ⟨t, s', he, abiPreserved_of_exec (by rw [Code.allInstrs_inline]; lit_decide) he
+    ⟨fun r hr => ?_, ?_⟩, post_of hpost⟩
   · simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
     · exact hsv _ (by decide)
@@ -77,18 +94,37 @@ materialize_shared exchangeP224Erased
 
 theorem ecdh_ct : ConstantTime isa ecdhX86_64.pre ecdhX86_64.pub exchangeP224 := by
   refine VG.Taint.constantTime_mapBlocks (c' := exchangeP224Erased) taintS_eraseInv
-    (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx]) rfl ?_ rfl (by taint_decide)
-  intro s₁ s₂ _ _ ⟨_, h1, h2, h3, h4⟩
+    (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx, .rsp]) rfl ?_ rfl (by taint_decide)
+  intro s₁ s₂ _ _ ⟨h0, h1, h2, h3, h4⟩
   refine Taint.agree_ofRegs fun r hr => ?_
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl
+  rcases hr with rfl | rfl | rfl | rfl | rfl
   · exact h1
   · exact h2
   · exact h3
   · exact h4
+  · exact h0
+
+/-- The contract with 8 bytes of stack, for the calls' return address. -/
+theorem implies8 :
+    ecdhX86_64.Implies (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P224.inst X86_64.abi 8) :=
+  implies.stack8_abi (by
+    sig_implies_sat [Spec.EcKey.P224.inst, Spec.Ecdh.Instance.exchangeContract,
+      Spec.Ecdh.Instance.exchangeSig, Spec.P224.curve, Spec.EcKey.scratchWords, X86_64.abi,
+      X86_64.argRegs, satState] [satState] using satState)
+
+/-- The output is apart from the calls' return address. -/
+theorem ecdh_patch (s b : State) (hv : Mem) (u : Nat → BitVec 64)
+    (hs : (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P224.inst X86_64.abi 8).pre s)
+    (hp : ecdhX86_64.post s b) : ecdhX86_64.post s (b.patch (hole (s.gpr .rsp)) hv u) := by
+  obtain ⟨-, hwr, -⟩ := implies8.pre s hs
+  have hb := Clear.wr_bytes (Sig.clear_of_pre hs) (p := s.gpr .rdi) (n := 28)
+    (by rw [hwr]; simp) (by decide)
+  simpa only [ecdhX86_64, State.patch_gpr, EcKey.bytesAt_patch hb] using hp
 
 theorem ecdh_verified (hL : Weierstrass.Law Spec.P224.curve) (hI : Weierstrass.X86_64.InvSounds) :
-    Verified X86_64.target exchangeP224 (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P224.inst X86_64.abi) :=
-  Verified.of_correct (ecdh_x86 hL hI) ecdh_ct implies
+    Verified X86_64.target exchangeP224 (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P224.inst X86_64.abi 8) :=
+  Verified.of_inline_ct (by lit_decide) (ecdh_x86 hL hI) ecdh_ct implies8
+    (fun _ h => Sig.clear_of_pre h) ecdh_patch
 
 end VG.Proof.Ecdh.X86_64.P224

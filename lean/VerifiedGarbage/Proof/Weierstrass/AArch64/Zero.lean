@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Bytes
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Bytes
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Short Weierstrass curves on AArch64: masks of zero
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.Bytes
 (`zeroMask_ok`): the `orr` of its words (`ors_ok`), and whether that is below
 one (`isZeroMask_ok`), by the borrow of a subtraction as a mask (`sbcMask2_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.AArch64
 

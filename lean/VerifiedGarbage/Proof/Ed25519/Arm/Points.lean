@@ -1,15 +1,23 @@
-import VerifiedGarbage.Impl.Ed25519.Arm.FieldMemory
-import VerifiedGarbage.Proof.Ed25519.Arm.FnCall
+module
+
+public import VerifiedGarbage.Impl.Ed25519.Arm.FieldMemory
+public import VerifiedGarbage.Proof.Ed25519.Arm.FnCall
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Exact extended-coordinate operations, by calls of the functions of point
 arithmetic, and the slots they preserve. -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed25519.Arm
 
 open VG VG.Arm VG.Impl.Ed25519.Arm
 
 def fieldDest : FieldOp → Slot
-  | .copy o _ | .const o _ | .mul o _ _ | .add o _ _ | .sub o _ _ => o
+  | .copy o _ | .const o _ | .mul o _ _ | .mulc o _ _ | .add o _ _ | .sub o _ _ => o
 
 theorem evalOp_unchanged (op : FieldOp) (e : Env) (i : Slot) (hi : i ≠ fieldDest op) :
     evalOp op e i = e i := by

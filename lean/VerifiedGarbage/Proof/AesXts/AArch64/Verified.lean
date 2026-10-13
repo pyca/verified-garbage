@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesCbc.AArch64.Verified
-import VerifiedGarbage.Proof.AesXts.AArch64.CT
+module
+
+public import VerifiedGarbage.Proof.AesCbc.AArch64.Verified
+public import VerifiedGarbage.Proof.AesXts.AArch64.CT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # XTS-AES on AArch64: `Verified`
@@ -10,6 +16,8 @@ precondition, and the shared contracts of `Spec/Xts/Contract.lean` (with no
 stack: the call keeps the return address in `x30`, which the functions save
 in the scratch buffer).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesXts.AArch64
 

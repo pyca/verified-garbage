@@ -2,10 +2,11 @@
 
     python3 ci/bench_compare.py BASE HEAD [--summary FILE] [--openssl]
 
-Both are built with HEAD's `bench/` crate (copied into BASE, so the two run
-the same benchmark code against different library code); if that doesn't
-build against BASE (it benchmarks an API BASE doesn't have yet), BASE uses
-its own `bench/` crate, and HEAD's other benchmarks show as new. Their benchmark
+Both are built with HEAD's `bench/` crate (so the two run the same
+benchmark code against different library code), each at the same path
+(`STAGE`); if that doesn't build against BASE (it benchmarks an API BASE
+doesn't have yet), BASE uses its own `bench/` crate, and HEAD's other
+benchmarks show as new. Their benchmark
 binaries are run on this machine one after the other, `--rounds` times each
 (alternately, keeping the fastest time of each benchmark on each side, if
 more than one): one round, with a short warm-up and measurement, is the
@@ -39,6 +40,19 @@ configuration's code under its name): the report then says what was not
 measured, with a warning, and the exit status is 0, since another runner,
 from a re-run, may have the feature.
 
+The groups that read a large table of constants (`FRESH_COPIES`: the
+combs of hundreds of kilobytes) are slower or faster by up to about 7%
+depending on which physical pages hold the table, which the kernel picks
+when it first reads that file into its page cache, and keeps until it drops
+it: identical copies of one binary measured 104.5–110.4 µs for a P-521
+signature, each copy within 0.3% of itself from run to run. So one run of
+each side would compare two draws of that, not the code; these groups also
+run from `--copies - 1` fresh copies of each side's binary (each a new
+file, so new pages), and each of their times is the fastest of the copies
+(as of the rounds): the time with the table where it collides least, which
+the code decides, while the median of five draws still moved by 1–2%
+between two sides of the same code. The report shows the spread.
+
 `--modules` runs only the benchmarks of those library modules (see
 `bench_arches.py`), and `--shard i/n` only the i-th of n shares of them,
 whose groups (`<primitive>`s) are dealt out by HEAD's list of them, balanced
@@ -68,6 +82,16 @@ REFERENCES = {"openssl": "OpenSSL", "aws-lc-rs": "aws-lc-rs"}
 # only once.
 TARGET = pathlib.Path("bench-target").resolve()
 
+# The benchmark groups (`<primitive>`s) that read a comb's table of hundreds
+# of kilobytes, whose time depends on the physical pages that hold it (see
+# the module docstring), so they run from `--copies` copies of each binary.
+FRESH_COPIES = re.compile(r"^(?:ec_p521_public_key|ecdsa_p521_)")
+# The `VG_BENCH_MODULES` of the copies' runs: the module whose benchmarks
+# hold those groups. The binary sets up every selected benchmark before
+# criterion's filter applies (RSA keys of up to 4096 bits among them),
+# which took about 110 s of each copy's run with every module.
+FRESH_COPIES_MODULES = "ecdsa_p521"
+
 # How src/cpu.rs stops a run whose `VG_CPU_FEATURES` names features this CPU
 # does not have.
 LACKING = re.compile(r"VG_CPU_FEATURES names (\S+), which this CPU does not have")
@@ -77,8 +101,34 @@ class Lacking(Exception):
     """A run stopped by `LACKING`, with the features the CPU lacks."""
 
 
-def build(bench):
-    """Builds the benchmark crate `bench`, returning the binary's path."""
+# Where each side is built, one after the other: the same path for both,
+# since Cargo derives the library's symbol hashes from its path, and with
+# them the order the linker lays out its code and tables in, so the same
+# code built in two checkouts put P-521's comb table at a different offset
+# in a page (0x700 and 0x740 on x86-64), and an A/A run measured P-521
+# signatures 5% slower on one side.
+STAGE = pathlib.Path("bench-src").resolve()
+
+
+def stage(checkout, bench=None):
+    """Copies what building `checkout`'s benchmarks reads to `STAGE`, with
+    the benchmark crate `bench` (`checkout`'s own by default), returning
+    the staged crate. Copies get new modification times, so Cargo rebuilds
+    the library, which the last side's build would otherwise seem to be."""
+    shutil.rmtree(STAGE, ignore_errors=True)
+    # (Run from a checkout, as `bench_compare.py main-checkout .`, STAGE,
+    # TARGET and the work directory are in it.)
+    top = {".git", "lean", "target", "bench", "bench-head", STAGE.name, TARGET.name, "bench-compare"}
+    skip = lambda d, names: top & set(names) if pathlib.Path(d) == pathlib.Path(checkout) else []
+    shutil.copytree(checkout, STAGE, ignore=skip, copy_function=shutil.copy)
+    shutil.copytree(bench or checkout / "bench", STAGE / "bench",
+                    ignore=shutil.ignore_patterns("target"), copy_function=shutil.copy)
+    return STAGE / "bench"
+
+
+def build(checkout, bench=None):
+    """Builds `checkout`'s library with the benchmark crate `bench`
+    (`checkout`'s own by default) at `STAGE`, returning the binary's path."""
     out = subprocess.run(
         [
             "cargo",
@@ -86,7 +136,7 @@ def build(bench):
             "--no-run",
             "--message-format=json-render-diagnostics",
         ],
-        cwd=bench,
+        cwd=stage(checkout, bench),
         env={**os.environ, "CARGO_TARGET_DIR": str(TARGET)},
         check=True,
         stdout=subprocess.PIPE,
@@ -100,7 +150,16 @@ def build(bench):
                 binary = TARGET / f"primitives-{len(list(TARGET.glob('primitives-*')))}"
                 shutil.copy2(msg["executable"], binary)
                 return str(binary)
-    raise RuntimeError(f"no benchmark binary built in {bench}")
+    raise RuntimeError(f"no benchmark binary built for {checkout}")
+
+
+def fresh_copy(binary, i):
+    """A copy of `binary` in a new file: the page cache holds a file's pages
+    by inode, so the copy's table is read into newly chosen physical pages."""
+    copy = TARGET / f"{pathlib.Path(binary).name}-copy-{i}"
+    shutil.copyfile(binary, copy)
+    copy.chmod(0o755)
+    return copy
 
 
 def build_base(base, head):
@@ -108,18 +167,14 @@ def build_base(base, head):
     binary's path and a note on which benchmark code it runs, or no path
     if neither builds."""
     if base == head:
-        return build(head / "bench"), None, head
-    # A sibling of BASE's own `bench/`, so its `path = ".."` is BASE too.
-    copy = base / "bench-head"
-    shutil.rmtree(copy, ignore_errors=True)
-    shutil.copytree(head / "bench", copy, ignore=shutil.ignore_patterns("target"))
+        return build(head), None, head
     try:
-        return build(copy), None, head
+        return build(base, head / "bench"), None, head
     except subprocess.CalledProcessError:
         pass
     if (base / "bench").is_dir():
         try:
-            return build(base / "bench"), "Head's benchmarks don't build against base, so base ran its own.", base
+            return build(base), "Head's benchmarks don't build against base, so base ran its own.", base
         except subprocess.CalledProcessError:
             pass
     return None, "Base has no benchmarks that build, so head ran alone.", base
@@ -150,9 +205,13 @@ def selected_modules(checkout, requested):
 def list_groups(binary, modules):
     """The benchmark groups (`<primitive>`s) of verified-garbage that
     `binary` runs for `modules`, with how many benchmarks each has."""
+    # Without `VG_CPU_FEATURES`: listing runs no benchmark, and the library
+    # stops at its start if this CPU lacks a feature it names, which the
+    # runs report.
+    env = {k: v for k, v in os.environ.items() if k != "VG_CPU_FEATURES"}
     out = subprocess.run(
         [binary, "--bench", "--list", f"/{VG}/"],
-        env={**os.environ, "VG_BENCH_MODULES": modules},
+        env={**env, "VG_BENCH_MODULES": modules},
         check=True,
         stdout=subprocess.PIPE,
         text=True,
@@ -269,6 +328,8 @@ def main():
     p.add_argument("head", type=pathlib.Path)
     p.add_argument("--summary", type=pathlib.Path)
     p.add_argument("--rounds", type=int, default=1)
+    p.add_argument("--copies", type=int, default=8,
+                   help="copies of each binary that run the groups of FRESH_COPIES (1: only the binary)")
     p.add_argument("--confirm", type=int, default=2,
                    help="runs of each side again for the benchmarks over the threshold")
     p.add_argument("--threshold", type=float, default=0.35)
@@ -288,7 +349,7 @@ def main():
     modules = {"head": selected_modules(head, args.modules), "base": selected_modules(base, args.modules)}
     if modules["head"] is None or (args.modules and set(modules["head"].split()) != set(args.modules.split())):
         p.error("head's benchmark registry does not use the selected modules")
-    binaries = {"head": build(head / "bench"), "base": None}
+    binaries = {"head": build(head), "base": None}
     note = "Base has no selected benchmarks; head's and the references' results are new."
     if not base.is_dir():
         note = "No base to compare with, so head ran alone."
@@ -326,6 +387,35 @@ def main():
                 f.write(report)
         return 0
 
+    # The groups that depend on where the kernel puts their table run again
+    # from fresh copies of each binary, alternately, and keep the fastest
+    # time of the copies (the rounds above counting as the first copy).
+    copied = []
+    if args.copies > 1:
+        listed = groups if groups is not None else list_groups(binaries["head"], modules["head"])
+        copied = sorted(g for g in listed if FRESH_COPIES.match(g))
+    spread = {"base": {}, "head": {}}
+    if copied:
+        for side in spread:
+            spread[side] = {i: [t] for i, t in best[side].items() if i[0] in copied}
+        for c in range(1, args.copies):
+            for side in ("head", "base") if c % 2 else ("base", "head"):
+                if binaries[side] is None:
+                    continue
+                print(f"copy {c + 1}/{args.copies} of {len(copied)} group(s): {side}", file=sys.stderr)
+                checkout = base if side == "base" else head
+                copy = fresh_copy(binaries[side], c)
+                try:
+                    times = run(str(copy), args.work_dir.resolve() / f"{side}-copy-{c}", VG, args, checkout,
+                                FRESH_COPIES_MODULES, copied)
+                finally:
+                    copy.unlink()
+                for bench_id, t in times.items():
+                    spread[side].setdefault(bench_id, []).append(t)
+        for side, times in spread.items():
+            for bench_id, ts in times.items():
+                best[side][bench_id] = min(ts)
+
     def suspects():
         """The groups (`<primitive>`s) of the benchmarks over the threshold."""
         return sorted({p for (p, size), h in best["head"].items()
@@ -333,7 +423,9 @@ def main():
 
     # A slowdown over the threshold is confirmed: its groups run again on
     # both sides, alternately, and keep their fastest times.
-    confirmed = suspects() if binaries["base"] is not None else []
+    # (Not the groups that ran from copies, already the fastest of as many
+    # runs.)
+    confirmed = [g for g in suspects() if g not in copied] if binaries["base"] is not None else []
     for r in range(args.confirm if confirmed else 0):
         for side in ("head", "base") if r % 2 == 0 else ("base", "head"):
             print(f"confirming {len(confirmed)} group(s), {r + 1}/{args.confirm}: {side}", file=sys.stderr)
@@ -373,6 +465,16 @@ def main():
         *([f"{note}"] if note else []),
         *(
             [
+                f"From {args.copies} copies of each binary (each a new file, so the kernel reads it into new"
+                " physical pages, on which these groups' tables of constants make them up to about 7% faster or"
+                f" slower), the fastest of the copies: {', '.join(f'`{g}`' for g in copied)}."
+                " Their spread is below the table."
+            ]
+            if copied
+            else []
+        ),
+        *(
+            [
                 f"Over the threshold after the first run, so run {args.confirm} more time(s) on each side,"
                 f" alternately, keeping the fastest: {', '.join(f'`{g}`' for g in confirmed)}."
             ]
@@ -401,6 +503,14 @@ def main():
             o = times.get((primitive, size))
             row += f" {fmt_time(o) if o else '–'} | {vs_reference(h, o) if o else '–'} |"
         lines.append(row)
+    if copied:
+        lines += ["", "| Benchmark | Base copies | Head copies |", "|---|--:|--:|"]
+        for bench_id in sorted(spread["head"]):
+            cells = []
+            for side in ("base", "head"):
+                ts = spread[side].get(bench_id)
+                cells.append(f"{fmt_time(min(ts))} – {fmt_time(max(ts))} ({max(ts) / min(ts) - 1:.1%})" if ts else "–")
+            lines.append(f"| `{bench_id[0]}/{bench_id[1]}` | {cells[0]} | {cells[1]} |")
     lines.append("")
     if regressions:
         lines.append(f"🚨 {len(regressions)} benchmark(s) slowed down by more than {args.threshold:.0%}.")

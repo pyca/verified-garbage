@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.X448.AArch64.Init
-import VerifiedGarbage.Proof.Curve448.AArch64.Fast.MOp
-import VerifiedGarbage.Proof.Curve448.AArch64.Swap
-import VerifiedGarbage.Impl.Ed448.AArch64.VerifyWindow
+module
+
+public import VerifiedGarbage.Proof.X448.AArch64.Init
+public import VerifiedGarbage.Proof.Curve448.AArch64.Fast.MOp
+public import VerifiedGarbage.Proof.Curve448.AArch64.Swap
+public import VerifiedGarbage.Impl.Ed448.AArch64.VerifyWindow
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 verification on AArch64: the constant-time selection of a table entry
@@ -12,6 +18,8 @@ Untrusted: everything here is checked by Lean. For the digit `n < 16` in
 entries of the table at `TAB`, ANDs it with its mask and ORs it into `x9`, so
 only entry `n`'s survives, and stores it into slots 6–8 (`selectEntry_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.AArch64.Window
 

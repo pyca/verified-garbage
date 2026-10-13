@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesCfb8.X86_64.Steps
+module
+
+public import VerifiedGarbage.Proof.AesCfb8.X86_64.Steps
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CFB8 on x86-64: one byte
@@ -9,6 +15,8 @@ of the block functions (`BlocksImpl`). The input block is copied to the
 scratch buffer and enciphered there (`call_ok`), the data byte is replaced,
 and the input block is shifted (`finish_wp`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesCfb8.X86_64
 

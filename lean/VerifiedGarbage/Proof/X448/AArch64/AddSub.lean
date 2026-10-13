@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.X448.AArch64.Columns
-import VerifiedGarbage.Proof.X448.Difference
+module
+
+public import VerifiedGarbage.Proof.X448.AArch64.Columns
+public import VerifiedGarbage.Proof.X448.Difference
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 on AArch64: addition and subtraction
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.X448.Difference
 Subtraction adds twice the prime limbwise before subtracting, so every
 intermediate remains nonnegative.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448.AArch64
 

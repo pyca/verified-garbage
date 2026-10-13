@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Seed.X86_64.Lanes
+module
+
+public import VerifiedGarbage.Proof.Seed.X86_64.Lanes
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The steps of a round, lane by lane
@@ -6,6 +12,8 @@ import VerifiedGarbage.Proof.Seed.X86_64.Lanes
 Each step of the round (`step1` … `step4`) on one lane meets its `LaneSpec`
 (`LaneOk`); `lanes_ok` then gives it on all sixteen.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Seed.X86_64
 
@@ -25,7 +33,7 @@ theorem mem_R1 : arrSlot 3 ∈ arrays := by decide
 
 theorem room_congr {s s' : State} (h : Room s) (hr : s'.gpr .r9 = s.gpr .r9) (hw : s'.wr = s.wr) :
     Room s' := by
-  unfold Room scratchR at *; rw [hr, hw]; exact h
+  unfold Room at *; rw [hr, hw]; exact h
 
 /-- Reading a lane after a write to another. -/
 theorem readW_writeW_lane {m : Mem} {s : State} {k b k' b' : Nat} (hk : k ∈ arrays) (hb : b < 16)

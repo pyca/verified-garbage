@@ -1,15 +1,25 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.VecR
-import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Pre
-import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Lemmas
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.VecR
+public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Pre
+public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Lemmas
+public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.ArrSel
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSA with AVX512_IFMA on x86-64, any size: a prime's region
 
 `region` fills prime `p`'s region of the IFMA
-area from its workspace: the modulus, `2^dbls R_X mod X`, the base and
-`R_X` in the stride layout (`arr52_ok`), `k₀` (`k0St_ok`), the last
-multiplier, and the exponent's bytes after zeros (`eCopy_ok`).
+area from its workspace: the modulus, `2^dbls R_X mod X`, the base, and
+`R_X` as `Y` and as the last multiplier, in the stride layout (`arrLoop_ok`),
+`k₀` (`k0St_ok`), for `q` the last multiplier 1 instead (`finOne_ok`), and
+the exponent's bytes after zeros (`eCopy_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64.Ifma
 
@@ -56,7 +66,7 @@ theorem arr52_ok (hl : LayOk l) {s : State} {W A Aj : Addr} {p j o : Nat} (hdi :
       Outside (off A (l.D * p + o)) 0 l.NB s.mem s'.mem ∧
       VG.Proof.MlKem.X86_64.Keep [.rax, .rcx, .rbp, .rsi, .r11, .r12] s s' ∧ s'.gpr .r12 = mask52 ∧
       s'.mxcsr = s.mxcsr := by
-  unfold arr52
+  unfold arr52 arrPtrs
   rw [WP.block_append_iff]
   have l1 := hH _ hjs
   have l2 := hH sIfma (by decide)
@@ -434,6 +444,52 @@ theorem arrA_ok (hl : LayOk l) {s₁ t : State} {B : Addr} {Z o a p j c : Nat} {
   · rw [k.2.2, hwr]
   · rw [k.gpr (by decide), hdt]
 
+/-- `arrLoop`: each array of `arrs` into region `p`, from `s₁`. -/
+theorem arrLoop_ok (hl : LayOk l) {s₁ : State} {B : Addr} {Z o a p : Nat} {mx : BitVec 64} (hs : Scr s₁ B Z)
+    (hdi : s₁.gpr .rdi = off B o) (hH : Hdr s₁.mem (off B o) l.W mx)
+    (hia : word s₁.mem (off B o) (8 * sIfma) = off B a) (hoa : o + slot l.W 8 + tabBytes l.W ≤ a)
+    (haZ : a + 2 * l.D + 8 ≤ Z) (hp : p < 2) :
+    WP isa (arrLoop l p) s₁ fun t =>
+      Frm B [(a + l.D * p, l.D)] s₁.mem t.mem ∧ t.wr = s₁.wr ∧ t.gpr .rdi = s₁.gpr .rdi ∧
+      Keep [.r8, .rax, .rcx, .rbp, .rsi, .r11, .r12] s₁ t ∧ t.gpr .r12 = mask52 ∧
+      ∀ k < 5, Limbs l t.mem (off B a) (l.D * p + arrC l k) (wv s₁.mem (off B o) (slot l.W (arrJ l k)) l.W) := by
+  have hn := hs.nowrap
+  have hDp : l.D * p ≤ l.D := by rcases D_mul (l := l) hp with h | h <;> omega_using [h]
+  unfold arrLoop
+  refine WP.seq (WP.mono (VG.Proof.MlKem.X86_64.WP.keep [.r8] (Q := fun t => t.gpr .r8 = BitVec.ofNat 64 5 ∧
+    t.mem = s₁.mem) (by xrun) rfl) fun u ⟨⟨h8, hm⟩, ku⟩ => ?_)
+  refine VG.Proof.MlKem.X86_64.wp_countdown (cnt := .r8) (N := 5) (by decide) (by decide)
+    (fun i t => Frm B [(a + l.D * p, l.D)] s₁.mem t.mem ∧ t.wr = s₁.wr ∧ t.gpr .rdi = s₁.gpr .rdi ∧
+      Keep [.r8, .rax, .rcx, .rbp, .rsi, .r11, .r12] s₁ t ∧ (0 < i → t.gpr .r12 = mask52) ∧
+      ∀ k < i, Limbs l t.mem (off B a) (l.D * p + arrC l k) (wv s₁.mem (off B o) (slot l.W (arrJ l k)) l.W))
+    ?_ (fun t ⟨f, w, d, k, h12, hL⟩ => ⟨f, w, d, k, h12 (by decide), hL⟩)
+    ⟨by rw [hm]; exact Frm.refl _ _ _, ku.2.2, ku.gpr (by decide), ku.mono (by decide), fun h => absurd h (by decide),
+      fun _ h => absurd h (Nat.not_lt_zero _)⟩ h8
+  intro i hi t ⟨f, w, d, k, _, hL⟩ hr8
+  have hj := arrs_ok hl i hi
+  refine WP.seq (arrSel_ok (l := l) (p := p) (arrs l) i t hi (show 5 < 2 ^ 31 by decide) (by rw [hr8]; rfl)
+    fun s' hg hm' hrd hwr _ => ?_)
+  have A := arrA_ok hl hs hdi hH hia hoa haZ hp (t := s') (j := arrJ l i) (c := arrC l i) hj.2 hj.1
+    (by rw [hm']; exact f) (by rw [hwr]; exact w) (by rw [hg]; exact d)
+  rw [arr52, WP.block_append_iff] at A
+  refine WP.mono A fun u hu => ?_
+  rw [WP.block_append_iff]
+  refine WP.mono hu fun v ⟨lv, fv, ev, wv', dv, kv, h12v⟩ => ?_
+  refine WP.mono (subR8_ok v) fun x ⟨x8, xz, kx, xm, _⟩ => ?_
+  have v8 : v.gpr .r8 = t.gpr .r8 := by rw [kv.gpr (by decide), hg]
+  have kt : Keep [] t s' := ⟨fun r _ => by rw [hg], hrd, hwr⟩
+  rw [hm'] at ev
+  refine ⟨⟨by rw [xm]; exact fv, by rw [kx.2.2]; exact wv', by rw [kx.gpr (by decide)]; exact dv,
+    (((k.trans kt).trans kv).trans kx).mono (by decide), fun _ => by rw [kx.gpr (by decide)]; exact h12v,
+    fun k' hk' => ?_⟩, by rw [x8, v8], by rw [xz, v8]⟩
+  rw [xm]
+  by_cases e : k' = i
+  · subst e; exact lv
+  · have hk := arrs_ok hl k' (by omega_using [hk', hi])
+    have hs' := arrs_sep hl k' (by omega_using [hk', hi]) i hi e
+    exact (hL k' (by omega_using [hk', e])).of_frm hl ev (fun r hr => by
+      rw [List.mem_singleton.mp hr]; simp only; omega_using [hs']) (by omega_using [haZ, hn, hDp, hk])
+
 /-- `k1`'s ranges miss an array of the prime but `aAcc`, `aTmp`, `aT`. -/
 theorem k1Ranges_arr {j : Nat} (h1 : j ≠ Public.aAcc) (h2 : j ≠ Public.aTmp) (h3 : j ≠ aT) :
     ∀ r ∈ k1Ranges l.W, slot l.W j + 8 * l.W ≤ r.1 ∨ r.1 + r.2 ≤ slot l.W j := by
@@ -450,13 +506,12 @@ theorem regionA_ok (hl : LayOk l) {s : State} {B : Addr} {Z o w a p X : Nat} {mx
     (hia : word s.mem (off B o) (8 * sIfma) = off B a) (hoa : o + slot l.W 8 + tabBytes l.W ≤ a)
     (haZ : a + 2 * l.D + 8 ≤ Z) (hp : p < 2) (hN : wv s.mem (off B o) (slot l.W Public.aN) l.W = X)
     (hY : wv s.mem (off B o) (slot l.W Public.aY) l.W < X) :
-    WP isa (VG.Impl.Bignum.X86_64.seqs (k1 l ++ ([.block (arr52 l p Public.aN oM),
-      .block (arr52 l p aT l.oK1), .block (arr52 l p aXc l.oX),
-      .block (arr52 l p Public.aY l.oY)] : List (Prog isa)))) s fun t =>
+    WP isa (VG.Impl.Bignum.X86_64.seqs (k1 l ++ ([arrLoop l p] : List (Prog isa)))) s fun t =>
       Limbs l t.mem (off B a) (l.D * p + oM) X ∧
       Limbs l t.mem (off B a) (l.D * p + l.oK1) (2 ^ l.dbls * wv s.mem (off B o) (slot l.W Public.aY) l.W % X) ∧
       Limbs l t.mem (off B a) (l.D * p + l.oX) (wv s.mem (off B o) (slot l.W aXc) l.W) ∧
       Limbs l t.mem (off B a) (l.D * p + l.oY) (wv s.mem (off B o) (slot l.W Public.aY) l.W) ∧
+      Limbs l t.mem (off B a) (l.D * p + l.oFin) (wv s.mem (off B o) (slot l.W Public.aY) l.W) ∧
       Frm B (shiftRanges o (k1Ranges l.W) ++ [(a + l.D * p, l.D)]) s.mem t.mem ∧
       t.wr = s.wr ∧ t.gpr .rdi = off B o ∧ Keep mmRegs s t ∧ t.gpr .r12 = mask52 ∧
       Hdr t.mem (off B o) l.W mx ∧ word t.mem (off B o) (8 * sIfma) = off B a := by
@@ -495,29 +550,17 @@ theorem regionA_ok (hl : LayOk l) {s : State} {B : Addr} {Z o w a p X : Nat} {mx
   have f₁' : Frm B (shiftRanges o (k1Ranges l.W)) s.mem s₁.mem :=
     f₁.rebase (by omega_using [hoa, haZ, hn]) fun r hr => by have := hk1 r hr; omega_using [hoa, haZ, hn, this]
   simp only [VG.Impl.Bignum.X86_64.seqs]
-  refine WP.seq (WP.mono (arrA_ok hl hs₁ hdi₁ hH₁ hia₁ hoa haZ hp (j := Public.aN) (c := oM) (by omega_using [hDb1, hoM])
-    (by decide) (Frm.refl _ _ _) rfl rfl) fun t₁ ⟨lM, g₁, _, w₁, d₁, k₁', _⟩ => ?_)
-  refine WP.seq (WP.mono (arrA_ok hl hs₁ hdi₁ hH₁ hia₁ hoa haZ hp (j := aT) (c := l.oK1) (by omega_using [o7, o10]) (by decide)
-    g₁ w₁ d₁) fun t₂ ⟨lK, g₂, e₂, w₂, d₂, k₂, _⟩ => ?_)
-  refine WP.seq (WP.mono (arrA_ok hl hs₁ hdi₁ hH₁ hia₁ hoa haZ hp (j := aXc) (c := l.oX) (by omega_using [o3, o10]) (by decide)
-    g₂ w₂ d₂) fun t₃ ⟨lX, g₃, e₃, w₃, d₃, k₃, _⟩ => ?_)
-  refine WP.mono (arrA_ok hl hs₁ hdi₁ hH₁ hia₁ hoa haZ hp (j := Public.aY) (c := l.oY) (by omega_using [o2, o10]) (by decide)
-    g₃ w₃ d₃) fun t ⟨lY, g₄, e₄, w₄, d₄, k₄, h12⟩ => ?_
-  have sep : ∀ {c c' : Nat}, c + l.NB ≤ c' ∨ c' + l.NB ≤ c → ∀ r ∈ [(a + (l.D * p + c'), l.NB)],
-      a + (l.D * p + c) + l.NB ≤ r.1 ∨ r.1 + r.2 ≤ a + (l.D * p + c) := fun h r hr => by
-    rw [List.mem_singleton.mp hr]; simp only; omega_using [h]
+  refine WP.mono (arrLoop_ok hl hs₁ hdi₁ hH₁ hia₁ hoa haZ hp) fun t ⟨g₄, w₄, d₄, kL, h12, hL⟩ => ?_
+  have lM : Limbs l t.mem (off B a) (l.D * p + oM) (wv s₁.mem (off B o) (slot l.W Public.aN) l.W) := hL 0 (by decide)
+  have lK : Limbs l t.mem (off B a) (l.D * p + l.oK1) (wv s₁.mem (off B o) (slot l.W aT) l.W) := hL 1 (by decide)
+  have lX : Limbs l t.mem (off B a) (l.D * p + l.oX) (wv s₁.mem (off B o) (slot l.W aXc) l.W) := hL 2 (by decide)
+  have lY : Limbs l t.mem (off B a) (l.D * p + l.oY) (wv s₁.mem (off B o) (slot l.W Public.aY) l.W) := hL 3 (by decide)
+  have lF : Limbs l t.mem (off B a) (l.D * p + l.oFin) (wv s₁.mem (off B o) (slot l.W Public.aY) l.W) := hL 4 (by decide)
   rw [(hwv _ (by decide) (by decide) (by decide) (by decide)).trans hN] at lM
   rw [hT₁] at lK
-  rw [hwv _ (by decide) (by decide) (by decide) (by decide)] at lX lY
-  refine ⟨((lM.of_frm hl e₂ (sep (by omega_using [o7, hoM])) (by omega_using [haZ, hn, hDb1, hoM, hDp])).of_frm hl e₃
-      (sep (by omega_using [o3, hoM])) (by omega_using [haZ, hn, hDb1, hoM, hDp])).of_frm hl e₄
-      (sep (by omega_using [o2, hoM])) (by omega_using [haZ, hn, hDb1, hoM, hDp]),
-          (lK.of_frm hl e₃ (sep (by omega_using [o3, o7])) (by omega_using [haZ, hn, o7, o10, hDp])).of_frm hl e₄ (sep
-          (by omega_using [o2, o7]))
-      (by omega_using [haZ, hn, o7, o10, hDp]),
-          lX.of_frm hl e₄ (sep (by omega_using [o2, o3])) (by omega_using [haZ, hn, o3, o10, hDp]), lY, f₁'.append g₄,
-    w₄.trans k₁.2.2, d₄.trans hdi₁, ?_, h12, ?_, ?_⟩
-  · exact (k₁.trans (((k₁'.trans k₂).trans k₃).trans k₄)).mono (by decide)
+  rw [hwv _ (by decide) (by decide) (by decide) (by decide)] at lX lY lF
+  refine ⟨lM, lK, lX, lY, lF, f₁'.append g₄, w₄.trans k₁.2.2, d₄.trans hdi₁, ?_, h12, ?_, ?_⟩
+  · exact (k₁.trans kL).mono (by decide)
   · exact hH₁.of_below g₄ (fun r hr => by
       rw [List.mem_singleton.mp hr]; unfold hdrBytes; unfold slot hdrBytes at h8; simp only; omega_using [hoa, hT])
       (by unfold hdrBytes; unfold slot hdrBytes at h8; omega_using [hoa, haZ, hn, hT])
@@ -674,14 +717,15 @@ structure TCtx (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (u : State) (B : Addr) (Z o 
 theorem TCtx.of_frm {u u' : State} {B : Addr} {Z o a : Nat} {mx : BitVec 64} {sp sl : Nat} {ep : Addr}
     {eb : List Byte} (h : TCtx l u B Z o a mx sp sl ep eb) {rs : List (Nat × Nat)} (hf : Frm B rs u.mem u'.mem)
     (hr : ∀ r ∈ rs, a ≤ r.1 ∧ r.1 + r.2 ≤ Z) (hoa : o + slot l.W 8 + tabBytes l.W ≤ a) (haZ : a ≤ Z) (hsp : sp < 32)
-    (hsl : sl < 32) (k : Keep [.rax, .rcx, .rbp, .rsi, .r11, .r12] u u') : TCtx l u' B Z o a mx sp sl ep eb := by
+    (hsl : sl < 32) {ks : List Reg} (k : Keep ks u u') (hk : Reg.rdi ∉ ks := by decide) :
+    TCtx l u' B Z o a mx sp sl ep eb := by
   have hn := h.scr.nowrap
   have h8 := hdr_lt_slot l.W 8 (show 31 < 32 by decide)
   have hT : tabBytes l.W = 128 * (l.W + 2) := by unfold tabBytes; omega_using []
   have hr' : ∀ r ∈ rs, a ≤ r.1 := fun r hr' => (hr r hr').1
   have hw : ∀ d, d + 8 ≤ a → word u'.mem B d = word u.mem B d := fun d hd =>
     word_below_frm hf hr' hd (by unfold slot hdrBytes at h8; omega_using [haZ, hn])
-  refine ⟨h.scr.congr k.2.2, (k.gpr (by decide)).trans h.rdi,
+  refine ⟨h.scr.congr k.2.2, (k.gpr hk).trans h.rdi,
     h.hdr.of_below hf (fun r hr'' => by have := hr' r hr''; unfold hdrBytes; unfold slot hdrBytes at h8; omega_using [hoa, hT, this])
       (by unfold hdrBytes; unfold slot hdrBytes at h8; omega_using [hoa, haZ, hn, hT]), ?_, ?_, ?_, ?_, ?_⟩
   · rw [word_off, hw _ (by unfold sIfma sFn; omega_using [hoa, hT]), ← word_off]; exact h.ia
@@ -713,13 +757,14 @@ theorem tailR_bound (hl : LayOk l) {a p Z : Nat} (hp : p < 2) (haZ : a + 2 * l.D
   simp only [tailR, List.mem_cons, List.not_mem_nil, or_false]
   rintro _ (rfl | rfl | rfl) <;> constructor <;> simp only <;> omega_using [haZ, o9, o10, hDp, o1, o6]
 
-/-- `p`'s tail: `R mod p` as the last multiplier, `k₀`, and the exponent. -/
-theorem regionB0_ok (hl : LayOk l) {u : State} {B : Addr} {Z o a sp sl : Nat} {mx : BitVec 64} {ep : Addr} {eb : List Byte}
+/-- `p`'s tail: `k₀` and the exponent, after `R mod p` as the last multiplier. -/
+theorem regionB0_ok (hl : LayOk l) {u : State} {B : Addr} {Z o a sp sl V : Nat} {mx : BitVec 64} {ep : Addr} {eb : List Byte}
     (hc : TCtx l u B Z o a mx sp sl ep eb) (hoa : o + slot l.W 8 + tabBytes l.W ≤ a) (haZ : a + 2 * l.D + 8 ≤ Z)
-    (hsp : sp < 32) (hsl : sl < 32) (hL1 : 1 ≤ eb.length) (hL2 : eb.length ≤ l.E) :
-    WP isa (VG.Impl.Bignum.X86_64.seqs (([.block (arr52 l 0 Public.aY l.oFin), .block (k0St l 0),
-      .block (eZero l)] : List (Prog isa)) ++ eCopy l sp sl)) u fun u' =>
-      Limbs l u'.mem (off B a) (l.D * 0 + l.oFin) (wv u.mem (off B o) (slot l.W Public.aY) l.W) ∧
+    (hsp : sp < 32) (hsl : sl < 32) (hL1 : 1 ≤ eb.length) (hL2 : eb.length ≤ l.E) (h12 : u.gpr .r12 = mask52)
+    (lF : Limbs l u.mem (off B a) (l.D * 0 + l.oFin) V) :
+    WP isa (VG.Impl.Bignum.X86_64.seqs (([.block (k0St l 0), .block (eZero l)] : List (Prog isa)) ++
+      eCopy l sp sl)) u fun u' =>
+      Limbs l u'.mem (off B a) (l.D * 0 + l.oFin) V ∧
       (∀ t < 4, word u'.mem (off B a) (l.D * 0 + l.oK0 + 8 * t) = mx &&& mask52) ∧
       (∀ i, i < l.E → u'.mem (off (off B a) (l.D * 0 + l.oE + i)) = (padE l eb).getD i 0) ∧
       Frm B (tailR l a 0) u.mem u'.mem ∧ Keep mmRegs u u' := by
@@ -730,17 +775,13 @@ theorem regionB0_ok (hl : LayOk l) {u : State} {B : Addr} {Z o a sp sl : Nat} {m
   have hB := tailR_bound hl (a := a) (p := 0) (by decide) haZ
   refine wp_seqs_append (by simp) (by simp [eCopy]) ?_
   simp only [VG.Impl.Bignum.X86_64.seqs]
-  refine WP.seq (WP.mono (arr52r_ok hl hc.scr hc.rdi hc.hdr hc.ia hoa haZ (p := 0) (c := l.oFin) (j := Public.aY)
-    (by decide) (by omega_using [o9, o10]) (by decide)) fun u₁ ⟨lF, f₁, k₁, r12₁, _⟩ => ?_)
-  have c₁ := hc.of_frm f₁ (fun r hr => by rw [List.mem_singleton.mp hr]; simp only; omega_using [haZ, o9, o10]) hoa (by omega_using [haZ])
-    hsp hsl k₁
-  refine WP.seq (WP.mono (k0r_ok hl c₁.scr c₁.rdi c₁.hdr c₁.ia hoa haZ (p := 0) (by decide) r12₁)
+  refine WP.seq (WP.mono (k0r_ok hl hc.scr hc.rdi hc.hdr hc.ia hoa haZ (p := 0) (by decide) h12)
     fun u₂ ⟨hk, f₂, r11₂, k₂⟩ => ?_)
-  have c₂ := c₁.of_frm f₂ (fun r hr => by rw [List.mem_singleton.mp hr]; simp only; omega_using [haZ, o1, o10]) hoa (by omega_using [haZ])
-    hsp hsl (k₂.mono (by decide))
+  have c₂ := hc.of_frm f₂ (fun r hr => by rw [List.mem_singleton.mp hr]; simp only; omega_using [haZ, o1, o10]) hoa (by omega_using [haZ])
+    hsp hsl k₂
   refine WP.mono (eZr_ok hl c₂.scr haZ (p := 0) (by decide) r11₂) fun u₃ ⟨hz, f₃, _, k₃⟩ => ?_
   have c₃ := c₂.of_frm f₃ (fun r hr => by rw [List.mem_singleton.mp hr]; simp only; omega_using [haZ, o6, o10]) hoa (by omega_using [haZ])
-    hsp hsl (k₃.mono (by decide))
+    hsp hsl k₃
   have r11₃ : u₃.gpr .r11 = off (off B a) (l.D * 0) := by rw [k₃.gpr (by decide)]; exact r11₂
   refine WP.mono (eCr_ok hl c₃.scr c₃.rdi c₃.lk hoa haZ (p := 0) (by decide) hsp hsl c₃.pv c₃.lv c₃.src rfl hL1 hL2
     r11₃) fun u' ⟨hb, f₄, k₄⟩ => ?_
@@ -762,14 +803,13 @@ theorem regionB0_ok (hl : LayOk l) {u : State} {B : Addr} {Z o a sp sl : Nat} {m
     · rw [padE_hi (by omega_using [hlo]) hi hL2, show l.D * 0 + l.oE + i = l.D * 0 + l.oE + (l.E - eb.length + (i - (l.E - eb.length)))
         by omega_using [hlo]]
       exact hb _ (by omega_using [hi, hlo])
-  · refine (((f₁.append f₂).append f₃).append f₄).widen fun r hr => ?_
+  · refine ((f₂.append f₃).append f₄).widen fun r hr => ?_
     simp only [List.mem_append, List.mem_singleton] at hr
-    rcases hr with ((rfl | rfl) | rfl) | rfl
-    · exact ⟨_, List.mem_cons_self .., by simp only; omega_using []⟩
+    rcases hr with (rfl | rfl) | rfl
     · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..), by simp only; omega_using []⟩
     · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_self ..)), by simp only; omega_using []⟩
     · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_self ..)), by simp only; omega_using [hL2]⟩
-  · exact (((k₁.trans k₂).trans k₃).trans k₄).mono (by decide)
+  · exact ((k₂.trans k₃).trans k₄).mono (by decide)
 
 /-- `q`'s tail: `k₀`, 1 as the last multiplier, and the exponent. -/
 theorem regionB1_ok (hl : LayOk l) {u : State} {B : Addr} {Z o a sp sl : Nat} {mx : BitVec 64} {ep : Addr} {eb : List Byte}
@@ -790,14 +830,14 @@ theorem regionB1_ok (hl : LayOk l) {u : State} {B : Addr} {Z o a sp sl : Nat} {m
   refine WP.seq (WP.mono (k0r_ok hl hc.scr hc.rdi hc.hdr hc.ia hoa haZ (p := 1) (by decide) h12)
     fun u₁ ⟨hk, f₁, r11₁, k₁⟩ => ?_)
   have c₁ := hc.of_frm f₁ (fun r hr => by rw [List.mem_singleton.mp hr]; simp only; omega_using [haZ, o1, o10]) hoa (by omega_using [haZ])
-    hsp hsl (k₁.mono (by decide))
+    hsp hsl k₁
   refine WP.seq (WP.mono (eZr_ok hl c₁.scr haZ (p := 1) (by decide) r11₁) fun u₂ ⟨hz, f₂, ra₂, k₂⟩ => ?_)
   have c₂ := c₁.of_frm f₂ (fun r hr => by rw [List.mem_singleton.mp hr]; simp only; omega_using [haZ, o6, o10]) hoa (by omega_using [haZ])
-    hsp hsl (k₂.mono (by decide))
+    hsp hsl k₂
   have r11₂ : u₂.gpr .r11 = off (off B a) (l.D * 1) := by rw [k₂.gpr (by decide)]; exact r11₁
   refine WP.mono (finr_ok hl c₂.scr haZ r11₂ ra₂) fun u₃ ⟨lF, f₃, k₃⟩ => ?_
   have c₃ := c₂.of_frm f₃ (fun r hr => by rw [List.mem_singleton.mp hr]; simp only; omega_using [haZ, o9, o10]) hoa (by omega_using [haZ])
-    hsp hsl (k₃.mono (by decide))
+    hsp hsl k₃
   have r11₃ : u₃.gpr .r11 = off (off B a) (l.D * 1) := by rw [k₃.gpr (by decide)]; exact r11₂
   refine WP.mono (eCr_ok hl c₃.scr c₃.rdi c₃.lk hoa haZ (p := 1) (by decide) hsp hsl c₃.pv c₃.lv c₃.src rfl hL1 hL2
     r11₃) fun u' ⟨hb, f₄, k₄⟩ => ?_
@@ -941,41 +981,26 @@ theorem region_ok (hl : LayOk l) {s : State} {B : Addr} {Z o w a p X sp sl : Nat
       have hDq : l.D * q ≤ l.D := by rcases D_mul (l := l) hq with h | h <;> omega_using [h]
       simp only [tailR, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl <;> simp only <;> omega_using [o9, o10, o1, o6]⟩
-  have hY' : ∀ {t : State}, Frm B (shiftRanges o (k1Ranges l.W) ++ [(a + l.D * p, l.D)]) s.mem t.mem →
-      wv t.mem (off B o) (slot l.W Public.aY) l.W = wv s.mem (off B o) (slot l.W Public.aY) l.W := fun hf => by
-    have hDp : l.D * p ≤ l.D := by rcases D_mul (l := l) hp with h | h <;> omega_using [h]
-    have lY := slot_le (w := l.W) (show Public.aY < 8 by decide)
-    rw [wv_off, wv_off]
-    refine hf.wv_eq (fun r hr => ?_) (by omega_using [hoa, haZ, hn, lY])
-    rcases List.mem_append.mp hr with hr | hr
-    · obtain ⟨r', hr', rfl⟩ := List.mem_map.mp hr
-      rcases k1Ranges_arr (j := Public.aY) (by decide) (by decide) (by decide) r' hr' with h | h <;>
-        simp only <;> omega_using [h]
-    · rw [List.mem_singleton.mp hr]; exact .inl (by simp only; omega_using [hoa, lY])
   rcases (by omega_using [hp] : p = 0 ∨ p = 1) with rfl | rfl
-  · rw [show region l 0 sp sl = (k1 l ++ [.block (arr52 l 0 Public.aN oM),
-      .block (arr52 l 0 aT l.oK1), .block (arr52 l 0 aXc l.oX), .block (arr52 l 0 Public.aY l.oY)]) ++
-      ([.block (arr52 l 0 Public.aY l.oFin), .block (k0St l 0), .block (eZero l)] ++
-      eCopy l sp sl) from rfl]
+  · rw [show region l 0 sp sl = (k1 l ++ [arrLoop l 0]) ++
+      ([.block (k0St l 0), .block (eZero l)] ++ eCopy l sp sl) from rfl]
     refine wp_seqs_append (by simp [k1, copyArr]) (by simp) (WP.mono (regionA_ok hl hc hia hoa haZ hp hN hY)
-      fun t ⟨lM, lK, lX, lY, fA, wA, dA, kA, _, hHA, iaA⟩ => ?_)
+      fun t ⟨lM, lK, lX, lY, lF₀, fA, wA, dA, kA, r12, hHA, iaA⟩ => ?_)
     refine WP.mono (regionB0_ok hl (TCtx.of_regionA hl hc hoa haZ hp hsp hsl hpv hlv he fA wA kA.2.1 dA hHA iaA) hoa haZ
-      hsp hsl hL1 hL2) fun t' ⟨lF, hk, hE, fB, kB⟩ => ⟨⟨?_, ?_, ?_, ?_, ?_, hk, hE⟩,
+      hsp hsl hL1 hL2 r12 lF₀) fun t' ⟨lF, hk, hE, fB, kB⟩ => ⟨⟨?_, ?_, ?_, ?_, ?_, hk, hE⟩,
         fA.trans (fB.widen (hwide _ hp)), ?_, ?_, kA.trans kB |>.mono (by decide)⟩
     · exact lM.of_frm hl fB (tailR_disj hl (by omega_using [o1, hoM])) (by omega_using [haZ, hn, hDb1, hoM])
     · exact lK.of_frm hl fB (tailR_disj hl (by omega_using [o6, o7, o9])) (by omega_using [haZ, hn, o7, o10])
     · exact lX.of_frm hl fB (tailR_disj hl (by omega_using [o1, o3, o6])) (by omega_using [haZ, hn, o3, o10])
     · exact lY.of_frm hl fB (tailR_disj hl (by omega_using [o1, o2, o6])) (by omega_using [haZ, hn, o2, o10])
-    · rw [hY' fA] at lF
-      rw [ite_eq_left_of_eq_true _ _ (eq_true (rfl : (0 : Nat) = 0))]
+    · rw [ite_eq_left_of_eq_true _ _ (eq_true (rfl : (0 : Nat) = 0))]
       exact lF
     · rw [kB.2.2, wA]
     · rw [kB.gpr (by decide), dA]
-  · rw [show region l 1 sp sl = (k1 l ++ [.block (arr52 l 1 Public.aN oM),
-      .block (arr52 l 1 aT l.oK1), .block (arr52 l 1 aXc l.oX), .block (arr52 l 1 Public.aY l.oY)]) ++
+  · rw [show region l 1 sp sl = (k1 l ++ [arrLoop l 1]) ++
       ([.block (k0St l 1), .block (eZero l), .block (finOne l)] ++ eCopy l sp sl) from rfl]
     refine wp_seqs_append (by simp [k1, copyArr]) (by simp) (WP.mono (regionA_ok hl hc hia hoa haZ hp hN hY)
-      fun t ⟨lM, lK, lX, lY, fA, wA, dA, kA, r12, hHA, iaA⟩ => ?_)
+      fun t ⟨lM, lK, lX, lY, _, fA, wA, dA, kA, r12, hHA, iaA⟩ => ?_)
     refine WP.mono (regionB1_ok hl (TCtx.of_regionA hl hc hoa haZ hp hsp hsl hpv hlv he fA wA kA.2.1 dA hHA iaA) hoa haZ
       hsp hsl hL1 hL2 r12) fun t' ⟨lF, hk, hE, fB, kB⟩ => ⟨⟨?_, ?_, ?_, ?_, lF, hk, hE⟩,
         fA.trans (fB.widen (hwide _ hp)), ?_, ?_, kA.trans kB |>.mono (by decide)⟩

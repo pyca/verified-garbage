@@ -1,14 +1,32 @@
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointPointsTiming
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointTiming
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P224.JointContract
-import VerifiedGarbage.Proof.P224.X86_64.JointTiming
-import VerifiedGarbage.Proof.P224.X86_64.NafTableTiming
-import VerifiedGarbage.Proof.P224.X86_64.JointLayout
-import VerifiedGarbage.Proof.P224.X86_64.JointFrame
-import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
-import VerifiedGarbage.Proof.Framework.LitShare
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointPointsTiming
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointPointsTiming
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointTiming
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointTiming
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P224.JointContract
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P224.JointContract
+public import VerifiedGarbage.Proof.P224.X86_64.JointTiming
+meta import VerifiedGarbage.Proof.P224.X86_64.JointTiming
+public import VerifiedGarbage.Proof.P224.X86_64.NafTableTiming
+meta import VerifiedGarbage.Proof.P224.X86_64.NafTableTiming
+public import VerifiedGarbage.Proof.P224.X86_64.JointLayout
+meta import VerifiedGarbage.Proof.P224.X86_64.JointLayout
+public import VerifiedGarbage.Proof.P224.X86_64.JointFrame
+meta import VerifiedGarbage.Proof.P224.X86_64.JointFrame
+public import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
+meta import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
+public import VerifiedGarbage.Proof.Framework.LitShare
+meta import VerifiedGarbage.Proof.Framework.LitShare
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Concrete timing checks and the doubler of P-224's joint verification. -/
+
+@[expose] public section
+
 namespace VG.Proof.Ecdsa.Verify.X86_64.P224
 open VG VG.X86_64 VG.Impl.Ecdsa.X86_64 VG.Impl.P224.X86_64 VG.Impl.Weierstrass.X86_64
 open VG.Proof.P224.X86_64 VG.Proof.Weierstrass.X86_64 VG.Proof.Ecdsa.X86_64 VG.Proof.Mont

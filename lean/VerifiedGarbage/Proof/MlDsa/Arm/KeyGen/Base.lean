@@ -1,7 +1,13 @@
-import VerifiedGarbage.Impl.MlDsa.Arm.KeyGen.Frag
-import VerifiedGarbage.Proof.MlKem.Arm.HashCT
-import VerifiedGarbage.Proof.MlKem.Arm.CallF
-import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+module
+
+public import VerifiedGarbage.Impl.MlDsa.Arm.KeyGen.Frag
+public import VerifiedGarbage.Proof.MlKem.Arm.HashCT
+public import VerifiedGarbage.Proof.MlKem.Arm.CallF
+public import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on 32-bit ARM: the primitives, and calling them
@@ -18,6 +24,8 @@ pointer (`Kept`, as ML-KEM's), and the callee's postcondition holds. Two runs
 of a call leak the same if the callee's preconditions hold and its public
 data agree (`callV_tr`, `callVS_tr`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Arm.KeyGen
 

@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.M4Squeeze
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.M4Squeeze
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on x86-64: `vg_mldsa_expand_mask_poly4_avx2`, correctness
@@ -10,6 +16,8 @@ each seed in its buffer, the branch on `γ₁`, the four unpackings, each the
 loop of `vg_mldsa_expand_mask_poly` (`emBody_ok`) on the output of a seed
 (`unpack_ok`), and the epilogue.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86_64.Mask4
 
@@ -212,9 +220,7 @@ theorem correct (σ : State) (hs : em4K.pre σ) :
     ∃ t s', Exec isa expandMask4Avx2 σ t s' ∧ abiPreserved σ s' ∧ em4K.post σ s' := by
   have hp := pre_of hs
   obtain ⟨t, s', he, hF⟩ := WP.seq (WP.mono (start_ok hp) fun _ h₀ =>
-    WP.seq (WP.mono (sq_ok hp (by decide) h₀) fun _ h₁ => WP.seq (WP.mono (sq_ok hp (by decide) h₁) fun _ h₂ =>
-      WP.seq (WP.mono (sq_ok hp (by decide) h₂) fun _ h₃ => WP.seq (WP.mono (sq_ok hp (by decide) h₃) fun _ h₄ =>
-        WP.seq (WP.mono (sq_ok hp (by decide) h₄) fun _ h₅ => sel_ok hp h₅ fun _ hu => end_ok hp hu))))))
+    WP.seq (WP.mono (sqs_ok hp h₀) fun _ h₅ => sel_ok hp h₅ fun _ hu => end_ok hp hu))
   exact ⟨t, s', he, abiPreserved_of_exec (by decide +kernel) he hF.2, hF.1⟩
 
 end VG.Proof.MlDsa.X86_64.Mask4

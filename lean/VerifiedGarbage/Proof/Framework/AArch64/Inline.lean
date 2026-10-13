@@ -1,6 +1,8 @@
-import VerifiedGarbage.Proof.Framework.Inline
-import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Framework.AArch64.Taint
+module
+
+public import VerifiedGarbage.Proof.Framework.Inline
+public import VerifiedGarbage.Proof.Framework.AArch64.Exec
+public import VerifiedGarbage.Proof.Framework.AArch64.Taint
 
 /-!
 # Inlining verified code (AArch64)
@@ -12,6 +14,8 @@ state permits (`Exec.regions`) and never changes the stack pointer
 (`Exec.sp`), and `WP.inline` combines these with the correctness part of the
 inlined function's `Verified` proof.
 -/
+
+@[expose] public section
 
 namespace VG.AArch64
 

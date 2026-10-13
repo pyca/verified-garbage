@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Seed.AArch64.KeyBody
-import VerifiedGarbage.Proof.Seed.AArch64.Ecb
+module
+
+public import VerifiedGarbage.Proof.Seed.AArch64.KeyBody
+public import VerifiedGarbage.Proof.Seed.AArch64.Ecb
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Key expansion on AArch64
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.Seed.AArch64.Ecb
 `expandKey_ok`: after saving the callee-saved registers, `expandKey` loads
 the key, computes the schedule (`keyBody_ok`) and restores the registers.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Seed.AArch64
 
@@ -44,7 +52,7 @@ theorem expandKey_ok {s : State} (h : KeyPre s) : WP isa expandKey s (KeyPost s)
   have r9₁ : s₁.gpr .x5 = s.gpr .x2 := by simp [s₁, gpr_write]
   have g₁ : ∀ r, r ≠ .x5 → s₁.gpr r = s.gpr r := fun r hr => gpr_write_of_ne _ _ _ hr
   have scr₁ : scratchR s₁ = ⟨s.gpr .x2, 8 * scratchSlots⟩ := by simp only [scratchR, r9₁]
-  have room₁ : Room s₁ := by unfold Room; rw [scr₁]; exact h.scratch
+  have room₁ : Room s₁ := .of_mem (by rw [scr₁]; exact h.scratch)
   -- the saved registers
   obtain ⟨s₂, e₂, g₂, rd₂, wr₂, -, f₂, set₂, -⟩ := stores_ok room₁
     (Impl.Seed.AArch64.savedRegs.map fun p => (p.2, p.1)) (by decide) (by decide)
@@ -78,7 +86,7 @@ theorem expandKey_ok {s : State} (h : KeyPre s) : WP isa expandKey s (KeyPost s)
   have wr₄' : s₄.wr = s.wr := by rw [wr₄, wr₃, wr₂']
   have mem₄ : s₄.mem = s₂.mem := by rw [m₄, m₃]
   have scr₄ : scratchR s₄ = ⟨s.gpr .x2, 8 * scratchSlots⟩ := by simp only [scratchR, r9₄]
-  have room₄ : Room s₄ := by unfold Room; rw [scr₄, wr₄']; exact h.scratch
+  have room₄ : Room s₄ := .of_mem (by rw [scr₄, wr₄']; exact h.scratch)
   have x1₄ : s₄.gpr .x1 = s.gpr .x1 := by rw [G₄ _ (by decide) (by decide) (by decide), G₂ _ (by decide)]
   -- the schedule
   obtain ⟨s₆, e₆, v₆, g₆, rd₆, wr₆, f₆⟩ := keyBody_ok key room₄ h3 h4

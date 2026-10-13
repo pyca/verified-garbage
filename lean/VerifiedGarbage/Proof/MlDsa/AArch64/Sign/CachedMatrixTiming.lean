@@ -1,10 +1,23 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedMatrixCall
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseA4CT
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedMatrixBatch
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedMatrixRoots
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedSignTiming
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedMatrixCall
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedMatrixCall
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseA4CT
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseA4CT
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedMatrixBatch
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedMatrixBatch
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedMatrixRoots
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedMatrixRoots
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedSignTiming
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedSignTiming
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## From `CachedMatrixCallTiming.lean` -/
+
+@[expose] public section
 
 section
 

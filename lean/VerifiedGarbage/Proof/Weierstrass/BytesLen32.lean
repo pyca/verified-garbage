@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Weierstrass.Words32
-import VerifiedGarbage.Proof.Weierstrass.BytesLen
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.Words32
+public import VerifiedGarbage.Proof.Weierstrass.BytesLen
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Short Weierstrass curves: numbers of `len` bytes in 32-bit words
@@ -14,6 +20,8 @@ and those past `len` zero, are the `len` bytes big-endian
 (`val32_shr`); and the bytes of a number written a word at a time, and a
 word of fewer bytes a byte at a time (`bytesAt_eq_toBytes_len32`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass
 

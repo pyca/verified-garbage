@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Weierstrass.X86_64.JointDoubler
-import VerifiedGarbage.Proof.Weierstrass.X86_64.JointSeed
-import VerifiedGarbage.Proof.Weierstrass.X86_64.JointPrepFields
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointDoubler
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointSeed
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointPrepFields
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The joint two-scalar multiplication
@@ -9,6 +15,9 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.JointPrepFields
 table of odd multiples of `Q` with its cached `Z²`, `Z³`, then the loop with
 the curve's doubler (`JointDoubler`), for any curve and number of words.
 -/
+
+@[expose] public section
+
 namespace VG.Proof.Weierstrass.X86_64
 open VG VG.X86_64 VG.Impl.Weierstrass VG.Impl.Weierstrass.X86_64
 open VG.Proof.Mont VG.Proof.Mont.X86_64
@@ -33,7 +42,7 @@ theorem jointMulRun_ok {c : Joint.Cfg} {C : Curve} {double : Prog isa} {base T :
     (hG : onCurve C G=true) (hQ : onCurve C Q=true)
     (hu : u<2^(64*c.K.M.n)) (hv : v<2^(64*c.K.M.n))
     (h : JointCore c C base size Q u v (JointGenerator c C base T size row) .infinity s)
-    (hb : s.gpr .rbx=BitVec.ofNat 64 (64*c.K.M.n)) :
+    (hb : s.gpr .rbx=BitVec.ofNat 64 (Joint.top c)) :
     WP isa (Joint.run c double).inline s fun t =>
       JointLoopKeep c.K.M base (jointWork c) s t ∧
       JointCore c C base size Q u v (JointGenerator c C base T size row) (add (mul u G) (mul v Q)) t ∧

@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Cast5.AArch64.Block
-import VerifiedGarbage.Proof.Cast5.KeyMem
+module
+
+public import VerifiedGarbage.Proof.Cast5.AArch64.Block
+public import VerifiedGarbage.Proof.Cast5.KeyMem
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # CAST5 key expansion on AArch64: a line
@@ -9,6 +15,8 @@ lanes of `v0` (`gather_ok`), scans `VG_CAST5_S5678`, and XORs the four
 values, the group's extra lookup (a lane of `v6`) and the quadruple, if any
 (`line_ok`). It writes no memory.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Cast5.AArch64
 

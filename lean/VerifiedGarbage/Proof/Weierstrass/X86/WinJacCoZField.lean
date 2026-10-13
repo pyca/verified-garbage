@@ -1,7 +1,16 @@
-import VerifiedGarbage.Proof.Weierstrass.X86.WinJacBuildState
-import VerifiedGarbage.Proof.Weierstrass.JacCoZ
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86.WinJacBuildState
+public import VerifiedGarbage.Proof.Weierstrass.JacCoZ
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Co-Z table arithmetic in the existing x86 scratch layout. -/
+
+@[expose] public section
+
 namespace VG.Proof.Weierstrass.X86.JWin
 open VG VG.X86 VG.Impl.Weierstrass VG.Impl.Weierstrass.X86 VG.Impl.Mont
 open VG.Proof.Mont VG.Proof.Mont.X86 Spec.Weierstrass

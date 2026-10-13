@@ -1,8 +1,23 @@
-import VerifiedGarbage.Proof.Rc2.X86.Lit
-import VerifiedGarbage.Proof.Framework.X86.Taint
-import VerifiedGarbage.Proof.Rc2.X86.BlockArgs
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Spec.Rc2.Contract
+module
+
+public import VerifiedGarbage.Proof.Rc2.X86.Lit
+meta import VerifiedGarbage.Proof.Rc2.X86.Lit
+public import VerifiedGarbage.Proof.Framework.X86.Taint
+meta import VerifiedGarbage.Proof.Framework.X86.Taint
+public import VerifiedGarbage.Proof.Framework.X86.SseTaint
+meta import VerifiedGarbage.Proof.Framework.X86.SseTaint
+public import VerifiedGarbage.Proof.Rc2.X86.BlockArgs
+meta import VerifiedGarbage.Proof.Rc2.X86.BlockArgs
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.Rc2.Contract
+meta import VerifiedGarbage.Spec.Rc2.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 section
 
@@ -84,6 +99,9 @@ theorem block_correct (d : Spec.Rc2.Direction) (s : State) (hs : (blockContract 
   have base₂ : wordBase s₂ = addr32 (arg s 2) + 64 := by unfold wordBase; rw [scratch₂]
   have wordsSub : Region.Sub ⟨wordBase s₂, 16⟩ ⟨addr32 (arg s 2), 256⟩ := by
     rw [base₂]; exact Offset.sub_base (addr32 (arg s 2)) (d := 64) (n := 16) (k := 256) (by decide)
+  have area₂ : areaBase s₂ = addr32 (arg s 2) + BitVec.ofNat 64 48 := by unfold areaBase; rw [scratch₂]
+  have areaSub : Region.Sub ⟨areaBase s₂, 32⟩ ⟨addr32 (arg s 2), 256⟩ := by
+    rw [area₂]; exact Offset.sub_base (addr32 (arg s 2)) (d := 48) (n := 32) (k := 256) (by decide)
   have dataWords : (Region.mk (addr32 (arg s 1)) 8).Disjoint ⟨wordBase s₂, 16⟩ := by
     intro a ha hb; exact dataSep a ha (wordsSub a hb)
   have env₂ : RoundEnv s₂ := by
@@ -94,15 +112,19 @@ theorem block_correct (d : Spec.Rc2.Direction) (s : State) (hs : (blockContract 
     · intro i hi
       rw [args₂ 0 (by decide), rd₂, wr₂, hrd, hwr]
       exact ⟨⟨addr32 (arg s 0), 128⟩, by simp, Offset.contains_base _ (by omega) (by omega)⟩
+    · rw [args₂ 0 (by decide), rd₂, wr₂, hrd, hwr]
+      exact ⟨⟨addr32 (arg s 0), 128⟩, by simp, Region.contains_self _ _⟩
     · intro i hi
       rw [wr₂, hwr, base₂, BitVec.add_assoc, show (64 : Addr) = BitVec.ofNat 64 64 from rfl, ← BitVec.ofNat_add]
       exact ⟨⟨addr32 (arg s 2), 256⟩, by simp, Offset.contains_base _ (by omega) (by omega)⟩
+    · rw [wr₂, hwr, area₂]
+      exact ⟨⟨addr32 (arg s 2), 256⟩, by simp, Offset.contains_base _ (by omega) (by omega)⟩
     · rw [args₂ 0 (by decide)]
-      intro a ha hb; exact keySep a ha (wordsSub a hb)
+      intro a ha hb; exact keySep a ha (areaSub a hb)
     · have ae : argAddr s₂ 0 = argAddr s 0 := by unfold argAddr; rw [sp₂]
       rw [ae]
       intro a ha hb
-      exact argsScratch a (Region.sub_prefix (by decide : 4 ≤ 12) a ha) (wordsSub a hb)
+      exact argsScratch a (Region.sub_prefix (by decide : 4 ≤ 12) a ha) (areaSub a hb)
   have input₂ : Spec.Rc2.blockAt s₂.mem (addr32 (s₂.gpr .edi)) = Spec.Rc2.blockAt s.mem (addr32 (arg s 1)) := by
     rw [data₂]; exact blockAt_frame frame₂ _ (by simpa using dataSep)
   have schedule₂ : Spec.Rc2.scheduleAt s₂.mem (addr32 (arg s₂ 0)) = Spec.Rc2.scheduleAt s.mem (addr32 (arg s 0)) := by
@@ -127,7 +149,7 @@ theorem block_correct (d : Spec.Rc2.Direction) (s : State) (hs : (blockContract 
   have frame₄ : Frame [⟨addr32 (arg s 2), 256⟩] s.mem s₄.mem :=
     frame₂.trans (core.mem.sub (by
       intro r hr; simp only [List.mem_singleton] at hr; subst r
-      exact ⟨_, List.mem_cons_self, wordsSub⟩))
+      exact ⟨_, List.mem_cons_self, areaSub⟩))
   have args₄ := arguments_frame 3 frame₄ sp₄ spFit (by simpa using argsScratch)
   let v := (List.range 16).foldl (fun v j => roundSpec d
     (Spec.Rc2.scheduleAt s.mem (addr32 (arg s 0))) j v) (Spec.Rc2.decodeBlock (Spec.Rc2.blockAt s.mem (addr32 (arg s 1))))
@@ -169,8 +191,8 @@ theorem block_correct (d : Spec.Rc2.Direction) (s : State) (hs : (blockContract 
     have bound := List.mem_range.mp hi
     rw [keep₇.mem, mem₆, base₇, Mem.readW_writeW_sep
       (dataSep.symm.sep (Offset.contains_base _ (by omega) (by omega)) (Region.contains_self _ _)) (by decide)]
-    have sep : (Region.mk (addr32 (arg s 2)) 20).Disjoint ⟨wordBase s₂, 16⟩ := by
-      rw [base₂]; exact (Offset.disjoint_base (addr32 (arg s 2)) (d := 64) (n := 16) (k := 20) (by decide) (by decide)).symm
+    have sep : (Region.mk (addr32 (arg s 2)) 20).Disjoint ⟨areaBase s₂, 32⟩ := by
+      rw [area₂]; exact (Offset.disjoint_base (addr32 (arg s 2)) (d := 48) (n := 32) (k := 20) (by decide) (by decide)).symm
     rw [core.mem.readW (r := ⟨addr32 (arg s 2), 20⟩)
       (Offset.contains_base _ (by omega) (by omega)) (by simpa using sep) (by decide),
       keep₂.mem, h₁.2.2.2, scratch₀, saveMem_read _ _ _ 5 (by decide) i bound]
@@ -235,11 +257,11 @@ theorem blockTaint_agree {d : Spec.Rc2.Direction} {s₁ s₂ : State} (h₁ : (b
     exact congrArg _ (args ((k - 4) / 4) (by omega))
 
 theorem encryptBlock_constantTime : ConstantTime isa (blockContract .encrypt).pre (blockContract .encrypt).pub encryptBlock := by
-  exact VG.Taint.constantTime (A := taint) blockTaint (fun _ _ h₁ h₂ hp => blockTaint_agree h₁ h₂ hp)
+  exact VG.Taint.constantTime (A := VG.X86.sseTaint) blockTaint (fun _ _ h₁ h₂ hp => blockTaint_agree h₁ h₂ hp)
     (by taint_decide)
 
 theorem decryptBlock_constantTime : ConstantTime isa (blockContract .decrypt).pre (blockContract .decrypt).pub decryptBlock := by
-  exact VG.Taint.constantTime (A := taint) blockTaint (fun _ _ h₁ h₂ hp => blockTaint_agree h₁ h₂ hp)
+  exact VG.Taint.constantTime (A := VG.X86.sseTaint) blockTaint (fun _ _ h₁ h₂ hp => blockTaint_agree h₁ h₂ hp)
     (by taint_decide)
 
 def blockSatState : State where

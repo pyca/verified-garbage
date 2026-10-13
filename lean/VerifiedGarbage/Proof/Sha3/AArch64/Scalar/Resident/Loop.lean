@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Resident.Xor
-import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Resident.Advance
-import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.ResidentLoop
+module
+
+public import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Resident.Xor
+public import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Resident.Advance
+public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.ResidentLoop
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The scalar resident absorber: the loop over whole blocks
@@ -9,6 +15,8 @@ Each iteration XORs a block into the lanes, runs the unrolled rounds of the
 permutation (`unrolled_rounds_ok`) and advances; the lanes then represent
 the message followed by one more block (`rep_whole`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sha3.AArch64.Scalar.Resident
 

@@ -1,7 +1,13 @@
-import VerifiedGarbage.Spec.Pbkdf2.Generic
-import VerifiedGarbage.Proof.Pbkdf2.Stream.X86.Hash
-import VerifiedGarbage.Proof.Framework.Sig
-import VerifiedGarbage.Proof.Framework.OmegaLit
+module
+
+public import VerifiedGarbage.Spec.Pbkdf2.Generic
+public import VerifiedGarbage.Proof.Pbkdf2.Stream.X86.Hash
+public import VerifiedGarbage.Proof.Framework.Sig
+public import VerifiedGarbage.Proof.Framework.OmegaLit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # PBKDF2-HMAC on x86 (32-bit), the whole derivation: the calls of HMAC's functions and of `iterate`
@@ -20,6 +26,8 @@ Our frames hold at most six words, so with the return address and the 48
 bytes the callee uses, a call writes only the 76 bytes below `esp` (`stk`),
 which `After` lets change.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Pbkdf2.Whole.X86
 

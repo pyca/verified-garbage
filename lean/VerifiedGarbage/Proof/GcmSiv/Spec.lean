@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.Cmac.Mem
-import VerifiedGarbage.Proof.Cmac.Mem32
-import VerifiedGarbage.Spec.GcmSiv
-import VerifiedGarbage.Spec.Gcm
-import VerifiedGarbage.Proof.GcmSiv.MulX
+module
+
+public import VerifiedGarbage.Proof.Cmac.Mem
+public import VerifiedGarbage.Proof.Cmac.Mem32
+public import VerifiedGarbage.Spec.GcmSiv
+public import VerifiedGarbage.Spec.Gcm
+public import VerifiedGarbage.Proof.GcmSiv.MulX
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM-SIV: lemmas on the specification
@@ -13,6 +19,8 @@ strings is CMAC's (`aesWith_eq`), whose relation to GCM's on blocks, as
 a counter (`le4_le32`); and the message keys of `derive_keys` as the first
 8 bytes of each block, one after the other (`halves`, `deriveKeys_eq`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

@@ -1,11 +1,26 @@
-import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyMessage.Args
-import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarVerified
-import VerifiedGarbage.Proof.Ed25519.X86_64.PublicKey.Base
-import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarMain
-import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyCall
-import VerifiedGarbage.Proof.Framework.X86_64.Taint
+module
+
+public import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyMessage.Args
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyMessage.Args
+public import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarVerified
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarVerified
+public import VerifiedGarbage.Proof.Ed25519.X86_64.PublicKey.Base
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.PublicKey.Base
+public import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarMain
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarMain
+public import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyCall
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyCall
+public import VerifiedGarbage.Proof.Framework.X86_64.Taint
+meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Ed25519.X86_64.VerifyMessage.Body`. -/
+
+@[expose] public section
+
 section
 /-! Merged from `Proof.Ed25519.X86_64.VerifyMessage.Reduce`. -/
 section

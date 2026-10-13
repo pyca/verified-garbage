@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesOcb.Arm.HashChunk
-import VerifiedGarbage.Proof.AesOcb.Arm.PadTo
+module
+
+public import VerifiedGarbage.Proof.AesOcb.Arm.HashChunk
+public import VerifiedGarbage.Proof.AesOcb.Arm.PadTo
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-OCB on ARMv7: `HASH` (`hash`)
@@ -11,6 +17,8 @@ enciphered and added to the sum (`hashRest`): `HASH(K, A)` at `W + sumO`
 (`hash_ok`, `Proof.Ocb.hash_eq`), as on AArch64
 (`Proof.AesOcb.AArch64.hash_ok`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

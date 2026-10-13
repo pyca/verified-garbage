@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.AesCcm.X86.Mac
-import VerifiedGarbage.Proof.AesCcm.X86.AadCT
+module
+
+public import VerifiedGarbage.Proof.AesCcm.X86.Mac
+meta import VerifiedGarbage.Proof.AesCcm.X86.Mac
+public import VerifiedGarbage.Proof.AesCcm.X86.AadCT
+meta import VerifiedGarbage.Proof.AesCcm.X86.AadCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CCM on x86: the CBC-MAC and the tag in constant time
@@ -8,6 +16,8 @@ Untrusted: everything here is checked by Lean. `b0`, `mac` and `tag` branch
 and address memory only by the slots, the lengths and `W`: all public
 (`b0_ct`, `mac_ct`, `tag_ct`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

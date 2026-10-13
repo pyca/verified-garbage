@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlDsa.X86.Sign.Final
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86.Sign.Final
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA signing on x86 (32-bit): the contract
@@ -7,6 +13,8 @@ The contract's precondition implies the layout `Y p` of the arguments
 (`pre_of`); its public data are the pointers and `signLeak`, which is
 `signLeakT` (`pub_of`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86.Sign
 

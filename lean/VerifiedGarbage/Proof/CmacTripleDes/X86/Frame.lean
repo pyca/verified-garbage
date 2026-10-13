@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.CmacTripleDes.X86.Verified
-import VerifiedGarbage.Proof.CmacTripleDes.Scratch
-import VerifiedGarbage.Proof.Framework.X86.StackScratch
+module
+
+public import VerifiedGarbage.Proof.CmacTripleDes.X86.Verified
+public import VerifiedGarbage.Proof.CmacTripleDes.Scratch
+public import VerifiedGarbage.Proof.Framework.X86.StackScratch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # TDEA-CMAC on x86, with its working space on the stack
@@ -12,6 +18,8 @@ copied arguments (three for `init`, four for the others) and the 640 bytes
 of working space. The copies are read only where the pre- and
 postconditions read the buffers (`Proof/CmacTripleDes/Scratch.lean`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.CmacTripleDes.X86
 

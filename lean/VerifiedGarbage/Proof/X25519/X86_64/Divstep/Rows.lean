@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.X25519.X86_64.Ops
-import VerifiedGarbage.Proof.X25519.X86_64.Divstep.Spec
-import VerifiedGarbage.Proof.X25519.X86_64.Divstep.Step
+module
+
+public import VerifiedGarbage.Proof.X25519.X86_64.Ops
+public import VerifiedGarbage.Proof.X25519.X86_64.Divstep.Spec
+public import VerifiedGarbage.Proof.X25519.X86_64.Divstep.Step
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X25519 on x86-64, inversion by divsteps: the products
@@ -10,6 +16,8 @@ words at `x`, each xored with `r15`, modulo `2³²⁰` (`dsRow_ok`), from
 multiply-accumulate steps (`mulStepX_ok`); `|m|` and the mask of `m`'s sign
 (`absM_ok`); and a product of a signed word by four words (`prod_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X25519.X86_64
 

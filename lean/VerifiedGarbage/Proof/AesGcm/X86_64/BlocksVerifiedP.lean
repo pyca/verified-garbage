@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksVerified
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksVerified
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on whole blocks, x86-64: the `_precomputed` functions
@@ -11,6 +17,8 @@ The states satisfying them are those of `vg_aes_gcm_encrypt_blocks` with a
 key context of 1024 bytes, all zero: its hash subkey is zero, and so are its
 powers (`powersRepr_zero`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesGcm.X86_64
 

@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.Blowfish
-import VerifiedGarbage.TCB.Artifact
+module
+
+public import VerifiedGarbage.Spec.Blowfish
+public import VerifiedGarbage.TCB.Artifact
 
 /-!
 # Blowfish ECB: contracts on every target
@@ -21,6 +23,8 @@ The Rust wrapper buffers partial blocks, rejects invalid key lengths
 before key expansion, and rejects incomplete input at finalization. It
 does not add or remove padding. Empty ECB input is supported.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Blowfish
 

@@ -1,7 +1,17 @@
-import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Instances
-import VerifiedGarbage.Proof.Pbkdf2.Stream.X86.Sha1
-import VerifiedGarbage.Proof.Sha1.X86.Stream.Md
-import VerifiedGarbage.Proof.Framework.TaintBatch
+module
+
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Instances
+meta import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Instances
+public import VerifiedGarbage.Proof.Pbkdf2.Stream.X86.Sha1
+meta import VerifiedGarbage.Proof.Pbkdf2.Stream.X86.Sha1
+public import VerifiedGarbage.Proof.Sha1.X86.Stream.Md
+meta import VerifiedGarbage.Proof.Sha1.X86.Stream.Md
+public import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # HMAC-SHA-1 and PBKDF2-HMAC-SHA-1 over the compression function on x86 (32-bit), for every backend
@@ -16,6 +26,8 @@ generic proofs of HMAC's `init` and `finalize` and PBKDF2's iteration
 shared contracts of `Spec.Hmac.sha1I`. Their taint checks depend only on the
 sizes, so they are evaluated once, for every backend (`sha1Shape`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Pbkdf2.Md.X86
 

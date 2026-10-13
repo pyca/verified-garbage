@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.CryptOk
-import VerifiedGarbage.Proof.AesGcm.X86_64.AbsorbCT
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.CryptOk
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.CryptOk
+public import VerifiedGarbage.Proof.AesGcm.X86_64.AbsorbCT
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.AbsorbCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on x86-64: `crypt` in two runs
@@ -11,6 +19,8 @@ between the calls of `vg_aes_ctr32` is checked by the taint analysis, from
 the registers `CrIn` and `CrMid` fix, and each call has the same arguments
 in both runs.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesGcm.X86_64
 
@@ -263,6 +273,21 @@ theorem crypt_rel {R : Nat} {icb₁ icb₂ : Block} {P₁ P₂ : Nat} {D : Addr}
   refine RelCT.exists_ fun j => RelCT.exists_ fun m₁ => RelCT.exists_ fun m₂ => ?_
   have hw := rel_wp (cryptWhole_rel v L (R := R) (icb₁ := icb₁) (icb₂ := icb₂) (P₁ := P₁) (P₂ := P₂) (D := D)
       (n := n) (m₁ := m₁) (m₂ := m₂) (j := j)) (fun _ _ h => h)
+    (fun s h => cryptWhole_ok v L h (h.ciph L)) (fun s h => cryptWhole_ok v L h (h.ciph L))
+  exact RelCT.seq hw ((cryptTail_rel v L).mono (fun _ _ h => h.2) fun _ _ h => h)
+
+/-- `cryptAl`, for data at the same address, of the same length, from the
+start of a keystream block. -/
+theorem cryptAl_rel {R : Nat} {icb₁ icb₂ : Block} {P₁ P₂ : Nat} {D : Addr} {n : Nat} (hP₁ : P₁ % 16 = 0)
+    (hP₂ : P₂ % 16 = 0) :
+    RelCT isa (fun s₁ s₂ => CrIn Ctx St W SP R icb₁ P₁ D n s₁ ∧ CrIn Ctx St W SP R icb₂ P₂ D n s₂)
+      (cryptAl v.callees) fun _ _ => True := by
+  suffices k : RelCT isa (fun s₁ s₂ => ∃ m₁ m₂ : Mem, CrMid Ctx St W SP R icb₁ P₁ D n m₁ 0 s₁ ∧
+      CrMid Ctx St W SP R icb₂ P₂ D n m₂ 0 s₂) (cryptAl v.callees) fun _ _ => True from
+    k.mono (fun s₁ s₂ h => ⟨s₁.mem, s₂.mem, h.1.mid hP₁, h.2.mid hP₂⟩) fun _ _ h => h
+  refine RelCT.exists_ fun m₁ => RelCT.exists_ fun m₂ => ?_
+  have hw := rel_wp (cryptWhole_rel v L (R := R) (icb₁ := icb₁) (icb₂ := icb₂) (P₁ := P₁) (P₂ := P₂) (D := D)
+      (n := n) (m₁ := m₁) (m₂ := m₂) (j := 0)) (fun _ _ h => h)
     (fun s h => cryptWhole_ok v L h (h.ciph L)) (fun s h => cryptWhole_ok v L h (h.ciph L))
   exact RelCT.seq hw ((cryptTail_rel v L).mono (fun _ _ h => h.2) fun _ _ h => h)
 

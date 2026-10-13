@@ -1,4 +1,6 @@
-import VerifiedGarbage.Spec.Cbc
+module
+
+public import VerifiedGarbage.Spec.Cbc
 
 /-!
 # CFB with 128-bit segments (NIST SP 800-38A §6.3)
@@ -18,6 +20,8 @@ the first piece (`Cbc.next`). The functions implemented in assembly take a
 piece and the block to start from, and leave the one to continue from;
 their contracts are in `Spec/Cfb/Contract.lean`.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Cfb
 

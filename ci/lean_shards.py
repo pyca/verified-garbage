@@ -101,7 +101,8 @@ PARALLELISM = 5.4
 # manifest has no time for when it has none at all.
 UP_TO_DATE = 0.02
 DEFAULT_TIME = 3.0
-IMPORT = re.compile(r"^\s*import\s+(\S+)", re.M)
+# `import`, and in a module `public`, `meta` and `all` imports.
+IMPORT = re.compile(r"^\s*(?:public\s+)?(?:meta\s+)?import\s+(?:all\s+)?(\S+)", re.M)
 BUILT = re.compile(r"\bBuilt (\S+) \((\d+(?:\.\d+)?)(ms|s)\)")
 
 

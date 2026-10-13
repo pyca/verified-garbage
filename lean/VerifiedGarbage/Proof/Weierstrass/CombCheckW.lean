@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Weierstrass.Law
-import VerifiedGarbage.Proof.Weierstrass.CombW
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.Law
+public import VerifiedGarbage.Proof.Weierstrass.CombW
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Checking a `w`-bit comb's tables against the group law
@@ -11,6 +17,8 @@ entry `0` (by the tangent for `m = 0`, else by the chord); entry `0` of table
 the start is the sum of the entries `H - 1`, through the given partial sums
 (`combOkW_of_check`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass
 

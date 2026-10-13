@@ -1,4 +1,10 @@
-import VerifiedGarbage.Spec.Camellia
+module
+
+public import VerifiedGarbage.Spec.Camellia
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Camellia in terms of the words of a table of subkeys
@@ -15,6 +21,8 @@ and the postwhitening with `E (8 g)` and `E (8 g + 1)`.
 `cryptWords` on its words, and `decryptWith_eq` that decryption is
 `cryptWords` on them in the order `decPerm` (RFC 3713 §2.3.3's swaps).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Camellia
 

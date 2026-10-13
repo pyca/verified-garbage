@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Curve448.AArch64.Fast.Mul
+module
+
+public import VerifiedGarbage.Proof.Curve448.AArch64.Fast.Mul
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Squaring
@@ -6,6 +12,8 @@ import VerifiedGarbage.Proof.Curve448.AArch64.Fast.Mul
 Untrusted: everything here is checked by Lean. `sqr o a` writes the same
 limbs as `mul o a a`, from 30 products.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Curve448.AArch64.Fast
 

@@ -1,10 +1,23 @@
-import VerifiedGarbage.Proof.Sha512.Md
-import VerifiedGarbage.Proof.MdStream.X86.Update
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Sha512.X86.Compress
-import VerifiedGarbage.Impl.Sha512.X86.Stream
-import VerifiedGarbage.Proof.Sha512.X86.Lit
-import VerifiedGarbage.Proof.Framework.X86.SseTaint
+module
+
+public import VerifiedGarbage.Proof.Sha512.Md
+meta import VerifiedGarbage.Proof.Sha512.Md
+public import VerifiedGarbage.Proof.MdStream.X86.Update
+meta import VerifiedGarbage.Proof.MdStream.X86.Update
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Sha512.X86.Compress
+meta import VerifiedGarbage.Proof.Sha512.X86.Compress
+public import VerifiedGarbage.Impl.Sha512.X86.Stream
+meta import VerifiedGarbage.Impl.Sha512.X86.Stream
+public import VerifiedGarbage.Proof.Sha512.X86.Lit
+meta import VerifiedGarbage.Proof.Sha512.X86.Lit
+public import VerifiedGarbage.Proof.Framework.X86.SseTaint
+meta import VerifiedGarbage.Proof.Framework.X86.SseTaint
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Streaming SHA-512 on x86 (32-bit): `update`
@@ -17,6 +30,8 @@ compression function is verified (`callee`) and that the taint analysis
 accepts its code (which it checks together with the compression function's).
 `Finalize.lean` adds what the family's length field and digest do.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sha512.X86.Stream
 

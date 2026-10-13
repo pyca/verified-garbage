@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Weierstrass.AArch64
-import VerifiedGarbage.Impl.Weierstrass.TCombWords
+module
+
+public import VerifiedGarbage.Impl.Weierstrass.AArch64
+public import VerifiedGarbage.Impl.Weierstrass.TCombWords
 
 /-!
 # Short Weierstrass curves on AArch64: a fixed-base comb
@@ -28,6 +30,8 @@ selects it by the mask of the digit's sign. The table's code is chosen by
 the iteration's counter `x19`, which is public, as are every address and
 branch.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Weierstrass.AArch64
 
@@ -81,6 +85,19 @@ def negY (M : Mod) (neg z y bits : Nat) : List Instr :=
 
 /-- `[o] = [a]`, a point. -/
 def copyPt (n : Nat) (o a : Pt) : List Instr := copy n o.x a.x ++ copy n o.y a.y ++ copy n o.z a.z
+
+/-- `o = p + q` by Algorithm 4 (`rcb3`): inline, or for `fn = some (name, bAt)`
+a call of the function `name`, whose code is Algorithm 4 reading `b` (and
+`a`, which it does not read) at `bAt`, where the caller keeps `b` (the
+number at `S.b3`). `x30`, which the call changes, is kept in lane 0 of
+`v29`: the function writes no vector register, and the memory it changes is
+the inline code's. -/
+def addP (M : Mod) (S : RcbSlots) (p q o : Pt) : Option (String × Nat) → Prog isa
+  | none => fprogB M (rcb3 S p q o)
+  | some (name, bAt) =>
+    .seq (.block [.vop (.ins .d2 .v29 0 .x30)]) <|
+    .seq (.call name (fprogB M (rcb3 { S with a := bAt, b3 := bAt } p q o)))
+      (.block [.umov .x .x30 .v29 0])
 
 namespace CombCfg
 

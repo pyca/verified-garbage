@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Weierstrass.AArch64.MontSaves
-import VerifiedGarbage.Proof.Weierstrass.AArch64.MontRound
-import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-import VerifiedGarbage.TCB.AArch64.Target
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.MontSaves
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.MontRound
+public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+public import VerifiedGarbage.TCB.AArch64.Target
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Montgomery products modulo a curve's `p` or `n`, as functions, on AArch64
@@ -13,11 +19,13 @@ offsets (`zext_ok`), saves the callee-saved registers it writes in vector
 lanes (`saves_ok`) and computes its pointers (`ptrsF_ok`); its body
 (`bodyF_ok`) loads `[b]` and the modulus into registers, runs the rounds
 (`roundsG_ok`), reduces the result against the modulus in registers
-(`csubM_ok`) and stores it; then it restores the registers (`mulFn_ok`). The
+(`csubM_ok`) and stores it; then it restores the registers (`mulFnS_ok`). The
 function keeps the callee-saved registers, `x30`, `sp` and the low halves of
 `v8`–`v15` (`abiPreserved`), changes the memory only at `[o]` (`Kept`), and
 leaves `x0 = ws`, `x19` and `x20`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.AArch64.Mont
 
@@ -63,7 +71,7 @@ constant says) or a friendly modulus, `x6` free for `[b]` only where the
 reduction needs no constant, each word of `m` in the register `mReg` once
 `mLoadCode` builds them (in distinct registers), and code that writes no
 vector register but the lanes'. -/
-structure ModOk (n m : Nat) : Prop where
+structure ModOkS (n m : Nat) : Prop where
   hn : n = 6 ∨ n = 9
   m_lt : m < 2 ^ (64 * n)
   inv : (m * minv m + 1) % 2 ^ 64 = 0
@@ -94,9 +102,9 @@ def Kept (n : Nat) (base : Addr) (o : Nat) (m m' : Mem) : Prop :=
 theorem own_eq {n : Nat} (h : n ≤ 9) : own n + 64 * n = 4096 := by
   simp only [own, Spec.Weierstrass.Mont.ownAt, Spec.Weierstrass.Mont.ownBytes]; omega
 
-theorem ModOk.n9 {n m : Nat} (h : ModOk n m) : n ≤ 9 := by rcases h.hn with h | h <;> omega
-theorem ModOk.n4 {n m : Nat} (h : ModOk n m) : 4 ≤ n := by rcases h.hn with h | h <;> omega
-theorem ModOk.hn' {n m : Nat} (h : ModOk n m) : n = 4 ∨ n = 6 ∨ n = 9 := .inr h.hn
+theorem ModOkS.n9 {n m : Nat} (h : ModOkS n m) : n ≤ 9 := by rcases h.hn with h | h <;> omega
+theorem ModOkS.n4 {n m : Nat} (h : ModOkS n m) : 4 ≤ n := by rcases h.hn with h | h <;> omega
+theorem ModOkS.hn' {n m : Nat} (h : ModOkS n m) : n = 4 ∨ n = 6 ∨ n = 9 := .inr h.hn
 
 theorem minv_lt (m : Nat) : minv m < 2 ^ 64 := Nat.mod_lt _ (by decide)
 
@@ -223,7 +231,7 @@ theorem regsVal_of_loads {s : State} {mem : Mem} {p : Addr} : ∀ (ts : List Reg
 theorem mLoads_fst {n m : Nat} {p : Reg × BitVec 64} (hp : p ∈ mLoads n m) : p.1 ∈ mPool n :=
   (List.of_mem_zip hp).1
 
-theorem mRegs_sub {n m : Nat} (hM : ModOk n m) : ∀ r ∈ mRegs n m, r ∈ mPool n := by
+theorem mRegs_sub {n m : Nat} (hM : ModOkS n m) : ∀ r ∈ mRegs n m, r ∈ mPool n := by
   intro r hr
   obtain ⟨j, hj, rfl⟩ := List.mem_map.mp hr
   exact mLoads_fst (hM.loads j (List.mem_range.mp hj))
@@ -231,7 +239,7 @@ theorem mRegs_sub {n m : Nat} (hM : ModOk n m) : ∀ r ∈ mRegs n m, r ∈ mPoo
 theorem mRegs_length (n m : Nat) : (mRegs n m).length = n := by simp [mRegs]
 
 /-- The modulus's words into their registers. -/
-theorem mLoad_ok {n m : Nat} (hM : ModOk n m) (s : State) :
+theorem mLoad_ok {n m : Nat} (hM : ModOkS n m) (s : State) :
     WP isa (.block (mLoadCode n m)) s fun s' => regsVal s' (mRegs n m) = m ∧ Keeps (mPool n) s s' := by
   rw [mLoadCode]
   refine WP.mono (constLoads_ok (mLoads n m) hM.lnd) fun s' ⟨e, k⟩ => ⟨?_, k.mono fun r hr => by
@@ -296,7 +304,7 @@ theorem mem_bodyW_round {n : Nat} {r : Reg} (h : r ∈ Reg.x1 :: .x2 :: .x3 :: .
 
 /-- The body: `[po] = [pa] [pb] R⁻¹ mod m`, changing only the registers
 `bodyW` and the memory at `[po]`. -/
-theorem bodyF_ok {n m : Nat} (hM : ModOk n m) {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
+theorem bodyF_ok {n m : Nat} (hM : ModOkS n m) {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
     {pa pb po : Addr} (hpa : Ptr s (raF n) pa (8 * n)) (hpb : Ptr s .x3 pb (8 * n))
     (hpo : PtrW s (roF n) po (8 * n)) (hB : wordsVal s.mem pb 0 n < m) :
     WP isa (.block (bodyCode n m)) s fun s' =>
@@ -472,15 +480,15 @@ theorem moAt_facts {n : Nat} (h : n ≤ 9) (h4 : 4 ≤ n) :
     own n ≤ moAt n ∧ moAt n + 16 * n = 4096 ∧ moAt n % 8 = 0 := by
   simp only [own, moAt, Spec.Weierstrass.Mont.ownAt, Spec.Weierstrass.Mont.ownBytes]; omega
 
-theorem mulFn_wp (n m : Nat) {s : State} {Q : State → Prop} : WP isa (mulFn n m) s Q ↔
+theorem mulFnS_wp (n m : Nat) {s : State} {Q : State → Prop} : WP isa (mulFnS n m) s Q ↔
     WP isa (.block (zextCode ++ (saveCode n ++ (ptrsCode n ++ (bodyCode n m ++ restoreCode n))))) s Q := by
-  rw [mulFn, WP.seq_iff, ← WP.block_append_iff]
+  rw [mulFnS, WP.seq_iff, ← WP.block_append_iff]
   simp only [entryRest, exitCode, bodyCode, ptrsCode, List.append_assoc, List.cons_append, List.nil_append]
 
 /-- `vg_<curve>_mul_mod_<p|n>`: `[o] = [a] [b] R⁻¹ mod m`. -/
-theorem mulFn_ok {n m W : Nat} (hM : ModOk n m) {s : State} (hp : Pre n W s)
+theorem mulFnS_ok {n m W : Nat} (hM : ModOkS n m) {s : State} (hp : Pre n W s)
     (hb : wordsVal s.mem (s.gpr .x0) (arg s .x3) n < m) :
-    WP isa (mulFn n m) s fun s' => abiPreserved s s' ∧ Kept n (s.gpr .x0) (arg s .x1) s.mem s'.mem ∧
+    WP isa (mulFnS n m) s fun s' => abiPreserved s s' ∧ Kept n (s.gpr .x0) (arg s .x1) s.mem s'.mem ∧
       (wordsVal s'.mem (s.gpr .x0) (arg s .x1) n < m ∧
       wordsVal s'.mem (s.gpr .x0) (arg s .x1) n * 2 ^ (64 * n) % m =
         wordsVal s.mem (s.gpr .x0) (arg s .x2) n * wordsVal s.mem (s.gpr .x0) (arg s .x3) n % m) ∧
@@ -498,7 +506,7 @@ theorem mulFn_ok {n m W : Nat} (hM : ModOk n m) {s : State} (hp : Pre n W s)
   have k0 := R.keep0 .x0 (by simp)
   have hn4 := hM.n4
   obtain ⟨hmo1, hmo2, hmo8⟩ := moAt_facts hn9 hM.n4
-  rw [mulFn_wp, WP.block_append_iff]
+  rw [mulFnS_wp, WP.block_append_iff]
   refine WP.mono (zext_ok s) fun s₁ ⟨g1, g2, g3, K₁, V₁⟩ => ?_
   rw [WP.block_append_iff, saveCode_eq]
   refine WP.mono (saves_ok (saved n) 0 (s := s₁) (by have := R.slen; omega)) fun s₂ ⟨K₂, L₂, _, V₂⟩ => ?_

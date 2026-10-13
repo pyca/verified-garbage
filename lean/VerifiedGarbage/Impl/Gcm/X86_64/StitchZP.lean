@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Gcm.X86_64.StitchZ
+module
+
+public import VerifiedGarbage.Impl.Gcm.X86_64.StitchZ
 
 /-!
 # The AVX-512 interleaved loops, with the powers of the hash subkey in the key context
@@ -17,6 +19,8 @@ shifted out was set. The rest is `StitchZ`'s.
 pairs `H'¹⁶⁻²ᵏ`, `H'¹⁵⁻²ᵏ` in `ymm3`–`ymm6`, `ymm12`–`ymm15`, stored at
 `scratch + 32 k`), and `powP48` the tables of `StitchZ.pow48`.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Gcm.X86_64.StitchZP
 

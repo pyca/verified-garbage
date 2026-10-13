@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.Ofb
-import VerifiedGarbage.Spec.Cbc.Contract
+module
+
+public import VerifiedGarbage.Spec.Ofb
+public import VerifiedGarbage.Spec.Cbc.Contract
 
 /-!
 # AES-OFB: the contract, on every target
@@ -25,6 +27,8 @@ room for the working space of `vg_aes_encrypt_blocks` (`[u64; 256]`) and
 pointer that an implementation's calls and frames use (see
 `Sig.contract`).
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Ofb
 

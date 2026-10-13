@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitched.Rest
-import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Correct
+module
+
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitched.Rest
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Correct
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ChaCha20-Poly1305 on AArch64, stitched: `seal`
@@ -8,6 +14,8 @@ The chunks encrypt the data's whole chunks and absorb all but the last of
 them; the rest is encrypted by `vg_chacha20_xor`, and absorbed with the last
 chunk.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.ChaCha20Poly1305.AArch64
 

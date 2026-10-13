@@ -1,12 +1,16 @@
-import VerifiedGarbage.Proof.MlKem.AArch64.KeyGen
-import VerifiedGarbage.Proof.MlKem.AArch64.Encaps
-import VerifiedGarbage.Proof.MlKem.AArch64.Decaps
-import VerifiedGarbage.Proof.MlKem1024.AArch64.KeyGen
-import VerifiedGarbage.Proof.MlKem1024.AArch64.Encaps
-import VerifiedGarbage.Proof.MlKem1024.AArch64.Decaps
+module
+
+public import VerifiedGarbage.Proof.MlKem.AArch64.KeyGen
+public import VerifiedGarbage.Proof.MlKem.AArch64.Encaps
+public import VerifiedGarbage.Proof.MlKem.AArch64.Decaps
+public import VerifiedGarbage.Proof.MlKem1024.AArch64.KeyGen
+public import VerifiedGarbage.Proof.MlKem1024.AArch64.Encaps
+public import VerifiedGarbage.Proof.MlKem1024.AArch64.Decaps
 
 /-! `keygen`, `encaps` and `decaps` of ML-KEM-768 and ML-KEM-1024, for each
 Keccak implementation: the same code and proofs, for each parameter set. -/
+
+@[expose] public section
 
 namespace VG.Generic.Keccak.AArch64.MlKem
 

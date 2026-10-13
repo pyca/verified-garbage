@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.Camellia
-import VerifiedGarbage.TCB.Artifact
+module
+
+public import VerifiedGarbage.Spec.Camellia
+public import VerifiedGarbage.TCB.Artifact
 
 /-!
 # Camellia ECB: contracts on every target
@@ -23,6 +25,8 @@ The Rust API rejects keys of other lengths before key expansion, and input
 that is not whole blocks. It adds and removes no padding. Empty ECB input
 is supported.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Camellia
 

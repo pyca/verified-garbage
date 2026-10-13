@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Argon2.X86_64.Avx512.Gb
-import VerifiedGarbage.Proof.Argon2.X86_64.Avx2.Rows
+module
+
+public import VerifiedGarbage.Proof.Argon2.X86_64.Avx512.Gb
+public import VerifiedGarbage.Proof.Argon2.X86_64.Avx2.Rows
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Argon2 on x86-64 with AVX-512: 64-byte loads and stores
@@ -10,6 +16,8 @@ as a stored value (`zmm_qz`), and a word of memory after a 64-byte store
 columns (`cv`, with the word of each quadword of each 64-byte chunk:
 `cvIdx`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Argon2.X86_64.Avx512
 

@@ -1,9 +1,13 @@
-import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackVerified
-import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Unpack
-import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.HintUnpack
+module
+
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackVerified
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Unpack
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.HintUnpack
 
 /-! # ML-DSA (FIPS 204) on AArch64: the encodings -/
+
+@[expose] public section
 
 namespace VG.Artifacts.MlDsaPack.AArch64
 

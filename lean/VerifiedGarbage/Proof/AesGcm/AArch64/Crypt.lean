@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesGcm.AArch64.Flush
-import VerifiedGarbage.Proof.Gcm.Ctr
+module
+
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Flush
+public import VerifiedGarbage.Proof.Gcm.Ctr
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on AArch64: counter mode over a piece (`crypt`)
@@ -13,6 +19,8 @@ arguments for the whole blocks (`crSeg1_ok`), the whole blocks with
 (`crSeg2_ok`), a new keystream block if there are bytes left (`ctrCall2_ok`),
 and the last bytes (`crTail_ok`); `crypt_ok` puts them together.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 
@@ -689,6 +697,73 @@ theorem crTail_ok {k : Reg → BitVec 64} {R : Nat} {icb : Block} {P : Nat} {D :
   · exact h.frame.trans (fw.sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact ⟨_, List.mem_cons_self .., Offset.sub_base D (by omega_arith)⟩)
+
+omit L in
+/-- From the start of a keystream block, nothing done yet. -/
+theorem CrIn.mid {k : Reg → BitVec 64} {R P : Nat} {icb : Block} {D : Addr} {n : Nat} {s : State}
+    (h : CrIn Ctx St W SP k R P D n s) (hP : P % 16 = 0) : CrMid Ctx St W SP k R icb P D n s.mem 0 s :=
+  ⟨h.env, h.kept, h.x22, h.rounds, Nat.zero_le _, by rw [h.x23]; simp, by rw [h.x24, Nat.sub_zero], h.x25,
+    h.data, fun hc => by simpa using hc, fun _ => by simp [bytesAt, Proof.Gcm.xorKs_nil], rfl,
+    .inr (by omega_arith), Frame.refl _ _⟩
+
+/-- The arguments for the whole blocks, from part of the way. -/
+theorem crArgs_ok {k : Reg → BitVec 64} {R : Nat} {icb : Block} {P : Nat} {D : Addr} {n : Nat}
+    {m₀ : Mem} {j : Nat} {s : State} (h : CrMid Ctx St W SP k R icb P D n m₀ j s) :
+    WP isa (.block crArgs) s (Cr1 Ctx St W SP k R icb P D n m₀ j) := by
+  have hn' := h.data.ok.lt
+  have he := h.env
+  have hle := h.le
+  generalize hnb : (n - j) / 16 = nb
+  have h16 : 16 * nb ≤ n - j := by omega_arith
+  obtain ⟨s₄, run₄, x3₄, x4₄, x0₄, x1₄, x2₄, x5₄, x23₄, x24₄, r₄⟩ : ∃ s₄, runBlock isa crArgs s = some s₄ ∧
+      s₄.gpr .x3 = D + BitVec.ofNat 64 j ∧ s₄.gpr .x4 = BitVec.ofNat 64 nb ∧ s₄.gpr .x0 = Ctx ∧
+      s₄.gpr .x1 = BitVec.ofNat 64 R ∧ s₄.gpr .x2 = St + BitVec.ofNat 64 48 ∧
+      s₄.gpr .x5 = W + BitVec.ofNat 64 512 ∧ s₄.gpr .x23 = D + BitVec.ofNat 64 (j + 16 * nb) ∧
+      s₄.gpr .x24 = BitVec.ofNat 64 (n - (j + 16 * nb)) ∧
+      Regs [.x4, .x3, .x0, .x1, .x2, .x5, .x9, .x23, .x24] s s₄ := by
+    refine ⟨_, by rw [crArgs, List.append_assoc, ctrArgs_eq]; arun [], ?_⟩
+    refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ⟨by others_tac, rfl, rfl, rfl, rfl⟩⟩
+    · simp [gpr_write, h.x23]
+    · simp [gpr_write, h.x24, lsr_ofNat _ _ (show n - j < 2 ^ 64 by omega_arith), hnb]
+    · simp [gpr_write, he.x21]
+    · simp [gpr_write, h.x22]
+    · simp [gpr_write, he.x20]
+    · simp [gpr_write, he.x19]
+    · simp [gpr_write, h.x23, h.x24, lsr_ofNat _ _ (show n - j < 2 ^ 64 by omega_arith), hnb, lsl4_ofNat,
+        add_ofNat_assoc]
+    · simp only [gpr_write, ite_true, ite_false, reduceCtorEq, h.x24, BitVec.setWidth_eq,
+        lsr_ofNat _ _ (show n - j < 2 ^ 64 by omega_arith), hnb, lsl4_ofNat]
+      rw [ofNat_sub (by omega_arith) (by omega_arith)]
+      congr 1
+      omega_arith
+  refine WP.of_runBlock ⟨s₄, run₄, ?_⟩
+  have he₄ : Env Ctx St W SP s₄ := he.keep (fun r hr => r₄.others r (by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl <;> decide)) r₄.sp r₄.rd r₄.wr
+  have hd₄ : DataW Ctx St W s₄ D n := h.data.of_eq r₄.rd r₄.wr
+  have hdj := (hd₄.drop hle).take (k := 16 * nb) h16
+  refine ⟨he₄, h.kept.of_eq fun r hr => r₄.others r (by
+      simp only [keptRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl <;> decide),
+    by rw [r₄.others _ (by decide), h.x22], h.rounds, hle, by rw [hnb]; exact x23₄, by rw [hnb]; exact x24₄,
+    by rw [r₄.others _ (by decide), h.x25], hd₄, fun hc => by rw [r₄.mem]; exact h.ctr hc,
+    fun hc => by rw [r₄.mem]; exact h.done hc, by rw [r₄.mem]; exact h.rest, h.whole,
+    by rw [r₄.mem]; exact h.frame, ?_⟩
+  rw [hnb]
+  exact ctrCall_of L he₄ h.rounds x0₄ x1₄ x2₄ x3₄ x4₄ x5₄ hdj.ok.wrap
+    (hdj.ctx.sub_left (Region.sub_prefix (by decide))) (hdj.ok.st.sub_right (Lay.stSub (by decide))).symm
+    (hdj.ok.w.sub_right (Lay.wSub (by decide))) hdj.wr
+
+/-- `cryptAl`: `crypt` from the start of a keystream block. -/
+theorem cryptAl_ok (v : GcmImpl) {k : Reg → BitVec 64} {R P : Nat} {icb : Block} {D : Addr} {n : Nat}
+    {s : State} (h : CrIn Ctx St W SP k R P D n s) (hP : P % 16 = 0) :
+    WP isa (cryptAl v.callees) s (CrOut Ctx St W SP k R icb P D n s.mem) := by
+  have hc : ∀ {m' : Mem}, Frame (crFrame St W D n) s.mem m' → ciphOf m' Ctx R = ciphOf s.mem Ctx R :=
+    fun hf => ciph_frame hf (ctx_crFrame L h.data) h.rounds
+  exact WP.seq (WP.mono (crArgs_ok L (h.mid (icb := icb) hP)) fun s₁ h₁ =>
+    WP.seq (WP.mono (ctrCall1_ok L v h₁ (hc h₁.frame)) fun s₂ ⟨h₂, hlt⟩ =>
+    WP.seq (WP.mono (crSeg2_ok L h₂ hlt) fun s₃ h₃ =>
+    WP.seq (WP.mono (ctrCall2_ok L v h₃ (hc h₃.frame)) fun s₄ h₄ => crTail_ok h₄))))
 
 /-- `crypt`. -/
 theorem crypt_ok (v : GcmImpl) {k : Reg → BitVec 64} {R P : Nat} {icb : Block} {D : Addr} {n : Nat} {s : State}

@@ -1,9 +1,18 @@
-import VerifiedGarbage.Proof.Weierstrass.X86_64.JointDigitTiming
-import VerifiedGarbage.Proof.Weierstrass.X86_64.JointFixedTiming
-import VerifiedGarbage.Proof.Weierstrass.X86_64.JointFixedDigit
-import VerifiedGarbage.Proof.Weierstrass.X86_64.JacMixedTiming
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointDigitTiming
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointFixedTiming
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointFixedDigit
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.JacMixedTiming
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Timing of a complete fixed-generator digit, including its public zero case. -/
+
+@[expose] public section
+
 namespace VG.Proof.Weierstrass.X86_64
 open VG VG.X86_64 VG.Impl.Mont VG.Impl.Weierstrass VG.Impl.Weierstrass.X86_64
 open VG.Proof.Mont VG.Proof.Mont.X86_64 Spec.Weierstrass
@@ -22,8 +31,10 @@ theorem jointFixedSum_relCT {c : Joint.Cfg} {C : Curve} {base : Addr} {size : Na
     (hL : JointAddLayout c size) (hm : UnitMod C.p (2^(64*c.K.M.n)))
     (hOne : c.K.one<C.p) (hc : JointFixedChecks c) :
     RelCT isa (FieldPair c.K.M base size C.p (·∈jointSlots c) (jacCoords c.K.E++jointLive c) E)
-      (Code.seq (Jacobian.jacMixedForward c.K c.K.R c.K.E c.K.D) (.block (copyPt c.K.M.n c.K.R c.K.D))).inline
+      (Joint.fixedAdd c).inline
       (fun s t => ∃ E',FieldPair c.K.M base size C.p (·∈jointSlots c) (jointLive c) E' s t) := by
+  refine jointAdd_relCT_dispatch (body := PointOps.addAffineBody c.K) rfl (fun _ => rfl)
+    (fun C' hp => (hL.calls.ok C' hp).2.1) ?_
   have sl : ∀ x∈rcbW c.K.S c.K.D++rcbR c.K.S c.K.R c.K.E,x∈jointSlots c := by intro x hx; jslots
   have vr : ∀ x∈rcbR c.K.S c.K.R c.K.E,x∈jacCoords c.K.E++jointLive c := by intro x hx; jslots
   apply RelCT.seq (jacMixedForward_relCT hL.lookup.layout.lay hm hc.add hL.addApart sl vr hOne)

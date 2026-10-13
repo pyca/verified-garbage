@@ -1,9 +1,15 @@
-import VerifiedGarbage.Impl.Gcm.X86_64
-import VerifiedGarbage.Proof.Framework.X86_64.Bswap
-import VerifiedGarbage.Proof.Gcm.Bits
-import VerifiedGarbage.Proof.Gcm.Spec
-import VerifiedGarbage.Proof.Framework.PowLit
-import VerifiedGarbage.Proof.Framework.Omega
+module
+
+public import VerifiedGarbage.Impl.Gcm.X86_64
+public import VerifiedGarbage.Proof.Framework.X86_64.Bswap
+public import VerifiedGarbage.Proof.Gcm.Bits
+public import VerifiedGarbage.Proof.Gcm.Spec
+public import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.Proof.Framework.Omega
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # GHASH on x86-64: shifting a block left, and loading blocks
@@ -11,6 +17,8 @@ import VerifiedGarbage.Proof.Framework.Omega
 What `add`, `adc` and `sbb` compute on the two halves of a 128-bit value
 (`Impl.Gcm.X86_64.hInv`), and big-endian blocks as two `bswap`ped loads.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Gcm.X86_64
 

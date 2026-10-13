@@ -1,11 +1,13 @@
-import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.X25519.X86_64.Divstep.Sound
-import VerifiedGarbage.Proof.Ed25519.X86_64.PublicKey.Verified
-import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyMessage.Verified
-import VerifiedGarbage.Proof.Ed25519.X86_64.SignCached.Verified
-import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyCode
-import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.VerifyCT
-import VerifiedGarbage.Proof.Ed25519.X86_64.WindowSlideCT
+module
+
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.X25519.X86_64.Divstep.Sound
+public import VerifiedGarbage.Proof.Ed25519.X86_64.PublicKey.Verified
+public import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyMessage.Verified
+public import VerifiedGarbage.Proof.Ed25519.X86_64.SignCached.Verified
+public import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyCode
+public import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.VerifyCT
+public import VerifiedGarbage.Proof.Ed25519.X86_64.WindowSlideCT
 
 /-!
 # Ed25519 (RFC 8032) on x86-64, over SHA-512
@@ -18,6 +20,8 @@ its windows, key derivation and signing for its comb (`vg_ed25519_scalar_base_if
 carries the backend's suffix and CPU features, then the field's.
 Other hash families emit no Ed25519 artifacts.
 -/
+
+@[expose] public section
 
 namespace VG.Generic.MdHash.X86_64.Ed25519
 

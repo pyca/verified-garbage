@@ -1,6 +1,12 @@
-import VerifiedGarbage.Impl.Ed25519.Arm.Point16
-import VerifiedGarbage.Proof.Ed25519.Arm.FieldOn
-import VerifiedGarbage.Proof.Framework.Arm.Spill
+module
+
+public import VerifiedGarbage.Impl.Ed25519.Arm.Point16
+public import VerifiedGarbage.Proof.Ed25519.Arm.FieldOn
+public import VerifiedGarbage.Proof.Framework.Arm.Spill
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed25519 on ARMv7: field code as a function
@@ -11,11 +17,11 @@ it changes at `SAVE` and restoring them (`Spill`), computes what it computed
 inline, and changes no register but `r1`–`r3`.
 -/
 
+@[expose] public section
+
 namespace VG.Proof.Ed25519.Arm
 
 open VG VG.Arm VG.Impl.Ed25519.Arm VG.Proof.X25519.Arm
-
-theorem SAVE_eq : SAVE = 1600 := rfl
 
 theorem regSlots_ok (c : Bool) : Spill.Slots SAVE (SAVE + 28) (regSlots c) := by
   cases c <;> decide

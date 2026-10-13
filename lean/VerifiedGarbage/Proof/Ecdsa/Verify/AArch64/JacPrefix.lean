@@ -1,11 +1,19 @@
-import VerifiedGarbage.Proof.Framework.AArch64.RelCT
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Main
-import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombTiming
-import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.Jacobian
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTiming
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacPoints
+module
+
+public import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Main
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombTiming
+public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.Jacobian
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTiming
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacPoints
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## `Timing` -/
+
+@[expose] public section
 
 section
 
@@ -168,7 +176,7 @@ theorem verify_public_ct (hc : CfgOk c) (hC : Law c.C)
     ⟨ready₁.1, second.1, sp, ready₁.2.1, second.2.1, ready₁.2.2, second.2.2⟩ ec₁ ec₂
   have wpComb := fun {s₀ a : State} (h : CombReady c s₀ a) =>
     tcomb_ok (publicLookup := true) (tcombLay hc.toBaseCfgOk) (combA hc.toBaseCfgOk) hC hc.am3 hc.onG
-      (tcombVals hc.toBaseCfgOk hC hT) hc.p_lt h.1 h.2.1 h.2.2
+      (tcombVals hc.toBaseCfgOk hC hT) hc.p_lt h.1 h.2.1 h.2.2 (pa := none) trivial trivial trivial
   obtain ⟨_, _, wc₁, keep₁, _⟩ := wpComb ready₁
   obtain ⟨_, _, wc₂, keep₂, _⟩ := wpComb ready₂
   obtain ⟨_, rfl⟩ := Exec.det ec₁ wc₁

@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.Verified
-import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
-import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Verified
+public import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
+public import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on x86-64, with its working space on the stack
@@ -21,6 +27,8 @@ frames (`Verified.stackArgScratch`) also hold a copy of those, 2584 bytes for
 `openLeak_local`).
 -/
 
+@[expose] public section
+
 set_option linter.unusedSimpArgs false
 
 namespace VG.Proof.AesGcm.X86_64
@@ -30,19 +38,19 @@ open VG VG.X86_64 VG.Impl.AesGcm.X86_64
 variable (v : GcmImpl)
 
 theorem init_xdepth : (init v.callees).x86_64Depth ≤ 8 := by
-  simp only [init, streamInit, streamAad, ghash1, absorbHead, absorbWhole, absorbTail, absorb,
+  simp only [init, streamInit, streamAad, ghash1, absorbHead, absorbWhole, absorbTail, absorb, absorbPad, padTail,
     flush, lens, j0hash, j0, firstFlush, oneAad, Code.x86_64Depth, GcmImpl.callees, v.ctr.noStack,
     v.key.noStack, v.gh.noStack, Nat.max_le]
   decide +kernel
 
 theorem streamInit_xdepth : (streamInit v.callees).x86_64Depth ≤ 8 := by
-  simp only [init, streamInit, streamAad, ghash1, absorbHead, absorbWhole, absorbTail, absorb,
+  simp only [init, streamInit, streamAad, ghash1, absorbHead, absorbWhole, absorbTail, absorb, absorbPad, padTail,
     flush, lens, j0hash, j0, firstFlush, oneAad, Code.x86_64Depth, GcmImpl.callees, v.ctr.noStack,
     v.key.noStack, v.gh.noStack, Nat.max_le]
   decide +kernel
 
 theorem streamAad_xdepth : (streamAad v.callees).x86_64Depth ≤ 8 := by
-  simp only [init, streamInit, streamAad, ghash1, absorbHead, absorbWhole, absorbTail, absorb,
+  simp only [init, streamInit, streamAad, ghash1, absorbHead, absorbWhole, absorbTail, absorb, absorbPad, padTail,
     flush, lens, j0hash, j0, firstFlush, oneAad, Code.x86_64Depth, GcmImpl.callees, v.ctr.noStack,
     v.key.noStack, v.gh.noStack, Nat.max_le]
   decide +kernel
@@ -101,7 +109,7 @@ theorem streamEncrypt_xdepth : (streamEncrypt v.callees).x86_64Depth ≤ 24 := b
   have e := encryptBlocks_xdepthB v v.stitch
   have d := decryptBlocks_xdepthB v v.stitch
   simp only [GcmImpl.callees] at e d
-  simp only [init, streamInit, streamAad, streamEncrypt, streamDecrypt, ghash1, absorbHead, absorbWhole, absorbTail, absorb, flush, lens, cryptHead, cryptWhole, cryptTail, crypt, j0hash, j0, firstFlush, streamText, streamLoad, streamSmall, streamHead, streamNext, streamBlocks, oneAad, copyLoop, xorLoop, minLen, j012, initState, Code.x86_64Depth, X86_64.Instr.frameBytes, List.length_cons, List.length_nil, GcmImpl.callees,
+  simp only [init, streamInit, streamAad, streamEncrypt, streamDecrypt, ghash1, absorbHead, absorbWhole, absorbTail, absorb, absorbPad, padTail, flush, lens, cryptHead, cryptWhole, cryptTail, crypt, cryptAl, j0hash, j0, firstFlush, streamText, streamLoad, streamSmall, streamHead, streamNext, streamBlocks, oneAad, copyLoop, xorLoop, minLen, j012, initState, Code.x86_64Depth, X86_64.Instr.frameBytes, List.length_cons, List.length_nil, GcmImpl.callees,
     v.ctr.noStack, v.key.noStack, v.gh.noStack, Nat.max_le, ↓reduceIte, Bool.false_eq_true]
   omega
 
@@ -109,7 +117,7 @@ theorem streamDecrypt_xdepth : (streamDecrypt v.callees).x86_64Depth ≤ 24 := b
   have e := encryptBlocks_xdepthB v v.stitch
   have d := decryptBlocks_xdepthB v v.stitch
   simp only [GcmImpl.callees] at e d
-  simp only [init, streamInit, streamAad, streamEncrypt, streamDecrypt, ghash1, absorbHead, absorbWhole, absorbTail, absorb, flush, lens, cryptHead, cryptWhole, cryptTail, crypt, j0hash, j0, firstFlush, streamText, streamLoad, streamSmall, streamHead, streamNext, streamBlocks, oneAad, copyLoop, xorLoop, minLen, j012, initState, Code.x86_64Depth, X86_64.Instr.frameBytes, List.length_cons, List.length_nil, GcmImpl.callees,
+  simp only [init, streamInit, streamAad, streamEncrypt, streamDecrypt, ghash1, absorbHead, absorbWhole, absorbTail, absorb, absorbPad, padTail, flush, lens, cryptHead, cryptWhole, cryptTail, crypt, cryptAl, j0hash, j0, firstFlush, streamText, streamLoad, streamSmall, streamHead, streamNext, streamBlocks, oneAad, copyLoop, xorLoop, minLen, j012, initState, Code.x86_64Depth, X86_64.Instr.frameBytes, List.length_cons, List.length_nil, GcmImpl.callees,
     v.ctr.noStack, v.key.noStack, v.gh.noStack, Nat.max_le, ↓reduceIte, Bool.false_eq_true]
   omega
 
@@ -151,14 +159,14 @@ theorem streamDecrypt_framed :
 
 theorem streamFinish_xdepth : (streamFinish v.callees).x86_64Depth ≤ 8 := by
   simp only [init, streamInit, streamAad, streamEncrypt, streamDecrypt, streamFinish, streamVerify,
-    ghash1, absorbHead, absorbWhole, absorbTail, absorb, flush, lens, cryptHead, cryptWhole, cryptTail,
+    ghash1, absorbHead, absorbWhole, absorbTail, absorb, absorbPad, padTail, flush, lens, cryptHead, cryptWhole, cryptTail,
     crypt, tag, j0hash, j0, firstFlush, finTag, tagLenOk, recv, cmp, tagOut, Code.x86_64Depth, GcmImpl.callees, v.ctr.noStack,
     v.key.noStack, v.gh.noStack, Nat.max_le]
   decide +kernel
 
 theorem streamVerify_xdepth : (streamVerify v.callees).x86_64Depth ≤ 8 := by
   simp only [init, streamInit, streamAad, streamEncrypt, streamDecrypt, streamFinish, streamVerify,
-    ghash1, absorbHead, absorbWhole, absorbTail, absorb, flush, lens, cryptHead, cryptWhole, cryptTail,
+    ghash1, absorbHead, absorbWhole, absorbTail, absorb, absorbPad, padTail, flush, lens, cryptHead, cryptWhole, cryptTail,
     crypt, tag, j0hash, j0, firstFlush, finTag, tagLenOk, recv, cmp, tagOut, Code.x86_64Depth, GcmImpl.callees, v.ctr.noStack,
     v.key.noStack, v.gh.noStack, Nat.max_le]
   decide +kernel
@@ -167,7 +175,7 @@ theorem seal_xdepth : («seal» v.callees).x86_64Depth ≤ 24 := by
   have e := encryptBlocks_xdepthB v v.stitch
   have d := decryptBlocks_xdepthB v v.stitch
   simp only [GcmImpl.callees] at e d
-  simp only [init, streamInit, streamAad, streamEncrypt, streamDecrypt, «seal», «open», ghash1, absorbHead, absorbWhole, absorbTail, absorb, flush, lens, cryptHead, cryptWhole, cryptTail, crypt, tag, j0hash, j0, firstFlush, streamText, streamLoad, streamSmall, streamHead, streamNext, streamBlocks, finTag, oneAad, oneBlocks, oneTag, oneCrypt, oneUndo, tagLenOk, recv, cmp, tagOut, copyLoop, xorLoop, minLen, j012, initState, Code.x86_64Depth, X86_64.Instr.frameBytes, List.length_cons, List.length_nil, GcmImpl.callees,
+  simp only [init, streamInit, streamAad, streamEncrypt, streamDecrypt, «seal», «open», ghash1, absorbHead, absorbWhole, absorbTail, absorb, absorbPad, padTail, flush, lens, cryptHead, cryptWhole, cryptTail, crypt, cryptAl, tag, j0hash, j0, firstFlush, streamText, streamLoad, streamSmall, streamHead, streamNext, streamBlocks, finTag, oneAad, oneBlocks, oneTag, oneCrypt, oneUndo, tagLenOk, recv, cmp, tagOut, copyLoop, xorLoop, minLen, j012, initState, Code.x86_64Depth, X86_64.Instr.frameBytes, List.length_cons, List.length_nil, GcmImpl.callees,
     v.ctr.noStack, v.key.noStack, v.gh.noStack, Nat.max_le, ↓reduceIte, Bool.false_eq_true]
   omega
 
@@ -175,7 +183,7 @@ theorem open_xdepth : («open» v.callees).x86_64Depth ≤ 24 := by
   have e := encryptBlocks_xdepthB v v.stitch
   have d := decryptBlocks_xdepthB v v.stitch
   simp only [GcmImpl.callees] at e d
-  simp only [init, streamInit, streamAad, streamEncrypt, streamDecrypt, «seal», «open», ghash1, absorbHead, absorbWhole, absorbTail, absorb, flush, lens, cryptHead, cryptWhole, cryptTail, crypt, tag, j0hash, j0, firstFlush, streamText, streamLoad, streamSmall, streamHead, streamNext, streamBlocks, finTag, oneAad, oneBlocks, oneTag, oneCrypt, oneUndo, tagLenOk, recv, cmp, tagOut, copyLoop, xorLoop, minLen, j012, initState, Code.x86_64Depth, X86_64.Instr.frameBytes, List.length_cons, List.length_nil, GcmImpl.callees,
+  simp only [init, streamInit, streamAad, streamEncrypt, streamDecrypt, «seal», «open», ghash1, absorbHead, absorbWhole, absorbTail, absorb, absorbPad, padTail, flush, lens, cryptHead, cryptWhole, cryptTail, crypt, cryptAl, tag, j0hash, j0, firstFlush, streamText, streamLoad, streamSmall, streamHead, streamNext, streamBlocks, finTag, oneAad, oneBlocks, oneTag, oneCrypt, oneUndo, tagLenOk, recv, cmp, tagOut, copyLoop, xorLoop, minLen, j012, initState, Code.x86_64Depth, X86_64.Instr.frameBytes, List.length_cons, List.length_nil, GcmImpl.callees,
     v.ctr.noStack, v.key.noStack, v.gh.noStack, Nat.max_le, ↓reduceIte, Bool.false_eq_true]
   omega
 

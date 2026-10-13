@@ -1,4 +1,12 @@
-import VerifiedGarbage.Proof.Rc2.X86.KeySteps
+module
+
+public import VerifiedGarbage.Proof.Rc2.X86.KeySteps
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 section
 
@@ -9,7 +17,8 @@ open VG VG.X86 VG.Impl.Rc2.X86
 theorem fillKey_ok (s : State)
     (readLo : InRegions (s.rd ++ s.wr) (addr32 (s.gpr .edi + s.gpr .ecx - 1)) 1)
     (readHi : InRegions (s.rd ++ s.wr) (addr32 (s.gpr .edi + (s.gpr .ecx - s.gpr .esi))) 1)
-    (writable : InRegions s.wr (addr32 (s.gpr .edi + s.gpr .ecx)) 1) :
+    (writable : InRegions s.wr (addr32 (s.gpr .edi + s.gpr .ecx)) 1)
+    (lanes : InRegions s.wr (addr32 (s.gpr .edi)) 16) :
     WP isa (.block fillKey) s (fun s' =>
       s'.gpr .ecx = s.gpr .ecx + 1 ∧
       zeroFlag s' = some ((s.gpr .ecx + 1 - 128) == 0) ∧
@@ -21,7 +30,7 @@ theorem fillKey_ok (s : State)
   obtain ⟨s₁, run₁, out₁, keep₁⟩ := fillInput_ok s readLo readHi
   refine WP.of_runBlock ⟨s₁, run₁, ?_⟩
   rw [WP.block_append_iff]
-  apply WP.mono (piLookup_ok s₁)
+  apply WP.mono (piLookup_ok s₁ (by rw [keep₁.wr, keep₁.reg .edi (by decide)]; exact lanes))
   intro s₂ h₂
   have k₁ : Keep keyTemps s s₁ := keep₁.weaken (by
     intro r hr
@@ -48,13 +57,14 @@ theorem fillKey_ok (s : State)
   · exact keep₃.rd.trans keep.rd
   · exact keep₃.wr.trans keep.wr
 
-theorem piStore_ok (s : State) (writable : InRegions s.wr (addr32 (s.gpr .edi + s.gpr .ecx)) 1) :
+theorem piStore_ok (s : State) (writable : InRegions s.wr (addr32 (s.gpr .edi + s.gpr .ecx)) 1)
+    (lanes : InRegions s.wr (addr32 (s.gpr .edi)) 16) :
     WP isa (.block (piLookup ++ storeKey)) s (fun s' =>
       s'.gpr .ecx = s.gpr .ecx ∧
       Keep keyTemps {s with
         mem := s.mem.writeW (addr32 (s.gpr .edi + s.gpr .ecx)) (Spec.Rc2.pi ((s.gpr .eax).setWidth 8))} s') := by
   rw [WP.block_append_iff]
-  apply WP.mono (piLookup_ok s)
+  apply WP.mono (piLookup_ok s lanes)
   intro s₁ h₁
   have ptr := h₁.2.reg .edi (by decide)
   have index := h₁.2.reg .ecx (by decide)
@@ -75,7 +85,8 @@ theorem piStore_ok (s : State) (writable : InRegions s.wr (addr32 (s.gpr .edi + 
 
 theorem reduceKey_ok (s : State)
     (readable : InRegions (s.rd ++ s.wr) (addr32 (s.gpr .edi + s.gpr .ecx)) 1)
-    (writable : InRegions s.wr (addr32 (s.gpr .edi + s.gpr .ecx)) 1) :
+    (writable : InRegions s.wr (addr32 (s.gpr .edi + s.gpr .ecx)) 1)
+    (lanes : InRegions s.wr (addr32 (s.gpr .edi)) 16) :
     WP isa (.block reduceKey) s (fun s' => s'.gpr .ecx = s.gpr .ecx ∧
       Keep keyTemps {s with
         mem := s.mem.writeW (addr32 (s.gpr .edi + s.gpr .ecx))
@@ -87,7 +98,7 @@ theorem reduceKey_ok (s : State)
   have index := keep₁.reg .ecx (by decide)
   have valid : InRegions s₁.wr (addr32 (s₁.gpr .edi + s₁.gpr .ecx)) 1 := by
     rw [keep₁.wr, ptr, index]; exact writable
-  apply WP.mono (piStore_ok s₁ valid)
+  apply WP.mono (piStore_ok s₁ valid (by rw [keep₁.wr, ptr]; exact lanes))
   intro s₂ h₂
   refine ⟨h₂.1.trans index, ?_⟩
   constructor
@@ -104,7 +115,8 @@ theorem reduceKey_ok (s : State)
 theorem descendKey_ok (s : State)
     (readLo : InRegions (s.rd ++ s.wr) (addr32 (s.gpr .edi + (s.gpr .ecx - 1) + 1)) 1)
     (readHi : InRegions (s.rd ++ s.wr) (addr32 (s.gpr .edi + (s.gpr .ecx - 1 + s.gpr .esi))) 1)
-    (writable : InRegions s.wr (addr32 (s.gpr .edi + (s.gpr .ecx - 1))) 1) :
+    (writable : InRegions s.wr (addr32 (s.gpr .edi + (s.gpr .ecx - 1))) 1)
+    (lanes : InRegions s.wr (addr32 (s.gpr .edi)) 16) :
     WP isa (.block descendKey) s (fun s' =>
       s'.gpr .ecx = s.gpr .ecx - 1 ∧ zeroFlag s' = some ((s.gpr .ecx - 1) == 0) ∧
       Keep keyTemps {s with
@@ -118,7 +130,7 @@ theorem descendKey_ok (s : State)
   have valid : InRegions s₁.wr (addr32 (s₁.gpr .edi + s₁.gpr .ecx)) 1 := by
     rw [keep₁.wr, ptr, index₁]; exact writable
   rw [← List.append_assoc, WP.block_append_iff]
-  apply WP.mono (piStore_ok s₁ valid)
+  apply WP.mono (piStore_ok s₁ valid (by rw [keep₁.wr, ptr]; exact lanes))
   intro s₂ h₂
   obtain ⟨s₃, run₃, flag₃, keep₃⟩ := cmpZero_ok s₂
   refine WP.of_runBlock ⟨s₃, run₃, ?_⟩

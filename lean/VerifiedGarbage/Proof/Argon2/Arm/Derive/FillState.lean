@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Argon2.Arm.Derive.FillSteps
-import VerifiedGarbage.Proof.Argon2.FillStep
-import VerifiedGarbage.Proof.Argon2.FillPositions
+module
+
+public import VerifiedGarbage.Proof.Argon2.Arm.Derive.FillSteps
+public import VerifiedGarbage.Proof.Argon2.FillStep
+public import VerifiedGarbage.Proof.Argon2.FillPositions
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Argon2 on ARMv7: the state of the filling loops
@@ -11,6 +17,8 @@ cached in `scratch[6144, 7168)` that of the counter in the locals, if it is
 not zero (`CacheOk`). `addressMode_ok`: `addressMode` sets Z for
 data-dependent addressing.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Argon2.Arm.Derive
 

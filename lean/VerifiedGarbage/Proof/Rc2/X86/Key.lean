@@ -1,8 +1,21 @@
-import VerifiedGarbage.Proof.Rc2.X86.KeyCorrect
-import VerifiedGarbage.Proof.Framework.X86.Taint
-import VerifiedGarbage.Proof.Rc2.X86.KeyLit
+module
+
+public import VerifiedGarbage.Proof.Rc2.X86.KeyCorrect
+meta import VerifiedGarbage.Proof.Rc2.X86.KeyCorrect
+public import VerifiedGarbage.Proof.Framework.X86.Taint
+meta import VerifiedGarbage.Proof.Framework.X86.Taint
+public import VerifiedGarbage.Proof.Framework.X86.SseTaint
+meta import VerifiedGarbage.Proof.Framework.X86.SseTaint
+public import VerifiedGarbage.Proof.Rc2.X86.KeyLit
+meta import VerifiedGarbage.Proof.Rc2.X86.KeyLit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # RC2 key expansion against the shared API contract -/
+
+@[expose] public section
 
 namespace VG.Proof.Rc2.X86
 
@@ -38,7 +51,7 @@ theorem keyTaint_agree {s₁ s₂ : State} (h₁ : keyContract.pre s₁) (h₂ :
     exact congrArg _ (args ((k - 4) / 4) (by omega))
 
 theorem expandKey_constantTime : ConstantTime isa keyContract.pre keyContract.pub expandKey := by
-  exact VG.Taint.constantTime (A := taint) keyTaint (fun _ _ h₁ h₂ hp => keyTaint_agree h₁ h₂ hp)
+  exact VG.Taint.constantTime (A := VG.X86.sseTaint) keyTaint (fun _ _ h₁ h₂ hp => keyTaint_agree h₁ h₂ hp)
     (by taint_decide)
 
 def keySatState : State where

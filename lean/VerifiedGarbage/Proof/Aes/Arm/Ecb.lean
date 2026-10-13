@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Aes.Arm.Decrypt
-import VerifiedGarbage.Spec.Aes.Contract
+module
+
+public import VerifiedGarbage.Proof.Aes.Arm.Decrypt
+public import VerifiedGarbage.Spec.Aes.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES on whole blocks on ARMv7: the groups
@@ -13,6 +19,8 @@ block is whatever the registers held. The data's invariant (`EcbInv`) says
 that the first `k` words hold the transformation of the original blocks,
 and the others are still the original ones.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Aes.Arm.Ecb
 

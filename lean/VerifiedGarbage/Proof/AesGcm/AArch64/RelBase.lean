@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Framework.AArch64.Taint
-import VerifiedGarbage.Proof.Framework.RelCT
+module
+
+public import VerifiedGarbage.Proof.Framework.AArch64.Taint
+public import VerifiedGarbage.Proof.Framework.RelCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Relating two runs on AArch64
@@ -12,6 +18,8 @@ runs agree on (`rel_ite`); and the next piece from the states the correctness
 proofs describe (`rel_seq`). A block may be split where the taint analysis
 needs a register pinned anew (`RelCT.block_split`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesGcm.AArch64
 

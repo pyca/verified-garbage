@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Bignum.Math
+module
+
+public import VerifiedGarbage.Proof.Bignum.Math
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSA: octet strings, and the checked private operation from its parts
@@ -12,6 +18,8 @@ Target-independent facts about `Spec/Rsa.lean` that need no algebra:
   (`publicOpChecked`) compared with the input: what an implementation
   computes, from the results of the functions it calls.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa
 

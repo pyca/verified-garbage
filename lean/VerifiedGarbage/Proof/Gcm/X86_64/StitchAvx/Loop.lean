@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx.Gh
+module
+
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx.Gh
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Interleaved counter mode and GHASH in AVX: the loops
@@ -19,6 +25,8 @@ stores), from the state the setup leaves (`Ready`):
   hashes while it decrypts it, each batch reading its own blocks before
   overwriting them (`dbody_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Gcm.X86_64.StitchAvx
 

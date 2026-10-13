@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.X448.AArch64.Field56
-import VerifiedGarbage.Impl.X448.BaseTable
+module
+
+public import VerifiedGarbage.Impl.X448.AArch64.Field56
+public import VerifiedGarbage.Impl.X448.BaseTable
 
 /-!
 # X448 of the base point on AArch64: a fixed-base multiplication on edwards448
@@ -43,6 +45,8 @@ word is loaded from the table and ORed in under each mask: every entry of
 the table is read, at addresses from the static's and the loop's counter
 `x19`, the table index, which is public; the branches are on it alone.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.X448.AArch64.Base
 
@@ -198,17 +202,14 @@ def negate (ox o w : Nat) : List Instr :=
 
 /-! ## The function -/
 
-/-- Step `x19 = j` of a comb of `n` tables: both digits' entries of table `j`, negated for
+/-- Step `x19 = j` of a comb of `x30` tables: both digits' entries of table `j`, negated for
 negative digits, added to their accumulators. `x9` is nonzero while another step follows. -/
-def stepN (n : Nat) : Prog isa :=
+def stepR : Prog isa :=
   .seq (.block digits) <|
   .seq (.block select) <|
   .block (negate OX (BITS + 4) (t 0) ++ addAffine AX AY AZ OX OY ++
     negate EX BITS (t 0) ++ addAffine BX BY BZ EX EY ++
-    [.addImm .x .x19 .x19 1, .subImm .x .x9 .x19 n])
-
-/-- X448's step: 56 tables, for its 448-bit scalars. -/
-def step : Prog isa := stepN 56
+    [.addImm .x .x19 .x19 1, .sub .x .x9 .x19 .x30])
 
 /-- Save the registers, keep the output pointer in `x20`, set `x12` to `2²⁸ - 1` and every slot to
 zero. -/
@@ -222,16 +223,9 @@ def accs (g : Spec.X448.Fe × Spec.X448.Fe) : List Instr :=
   constSlot AX g.1 ++ constSlot AY g.2 ++ constSlot AZ 1 ++
     constSlot BX g.1 ++ constSlot BY g.2 ++ constSlot BZ 1 ++ [.movz .x .x19 0 0]
 
-/-- `entry`, the clamped scalar's bits, and both accumulators at `[G] B`. -/
+/-- `entry` and the clamped scalar's bits. -/
 def setup : Prog isa :=
-  .seq (.block entry) <| .seq AArch64.bits <| .block (accs baseG)
-
-/-- `A := 16 A + B`. -/
-def combine : Prog isa :=
-  .seq (.block [.movz .x .x19 4 0]) <|
-  .seq (.loop (.block (codeOf (addOps AX AY AZ AX AY AZ) ++ [.subImm .x .x19 .x19 1]))
-    (.nonzero .x .x19)) <|
-  .block (codeOf (addOps AX AY AZ BX BY BZ))
+  .seq (.block entry) AArch64.bits
 
 /-- `Y²` to `X2` and `X²` to `Z2`, as the ladder leaves `x₂` and `z₂`, then `Y² / X²`,
 frozen and packed to the output, and the registers restored. -/
@@ -241,8 +235,5 @@ def finish : Prog isa :=
   .block (.addImm .x .x1 .x20 0 :: Fast.fmul X2 X2 T7 ++ Curve448.AArch64.toLegacy X2 ++
     AArch64.freeze ++ (List.range 8).flatMap AArch64.packPair ++ [ld .x19 0, ld .x20 8] ++
     restore ++ Fast.vrestore)
-
-def x448Base : Prog isa :=
-  .seq setup <| .seq (.loop step (.nonzero .x .x9)) <| .seq combine finish
 
 end VG.Impl.X448.AArch64.Base

@@ -1,6 +1,14 @@
-import VerifiedGarbage.Impl.TripleDes.X86.ExpandKey
-import VerifiedGarbage.Proof.TripleDes.X86.Word
-import VerifiedGarbage.Proof.Rc2.X86.RoundSteps
+module
+
+public import VerifiedGarbage.Impl.TripleDes.X86.ExpandKey
+public import VerifiedGarbage.Proof.TripleDes.X86.Word
+public import VerifiedGarbage.Proof.Rc2.X86.RoundSteps
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.TripleDes.X86.Key
 open VG VG.X86 VG.X86.RegUpd VG.Impl.TripleDes.X86

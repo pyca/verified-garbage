@@ -1,8 +1,19 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentMaskAccess
-import VerifiedGarbage.Proof.Framework.AArch64.Taint
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentMaskAccess
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentMaskAccess
+public import VerifiedGarbage.Proof.Framework.AArch64.Taint
+meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
+public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## From `ResidentMaskDecode.lean` -/
+
+@[expose] public section
 
 section
 
@@ -133,7 +144,7 @@ def beforeDispatch (core : Prog isa) : Prog isa :=
   .seq (.block (pro ++ zero ++ absorb 0 ++
     ([Impl.MlKem.AArch64.mov .x23 .x19,.addImm .x .x24 .x19 840,
       .addImm .x .x25 .x19 1520] : List Instr)))
-    (Impl.MlDsa.AArch64.Optimized.Resident.maskPairWith core .x23 .x24 .x25)
+    (Impl.MlDsa.AArch64.Optimized.Resident.maskPairWith core .x23 .x24 .x25 .x19)
 
 theorem beforeDispatch_ok (core : Resident.Core) (σ : State) (hp : Pre σ) :
     WP isa (beforeDispatch core.code) σ (SpongePost σ) := by

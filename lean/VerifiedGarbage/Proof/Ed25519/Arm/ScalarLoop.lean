@@ -1,10 +1,19 @@
-import VerifiedGarbage.Proof.Ed25519.Arm.ScalarPass
-import VerifiedGarbage.Proof.Ed25519.Arm.Field
-import VerifiedGarbage.Proof.X25519.Arm.Cswap
-import VerifiedGarbage.Proof.Ed25519.Arm.InitFields
-import VerifiedGarbage.Spec.Ed25519.Contract
+module
+
+public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarPass
+public import VerifiedGarbage.Proof.Ed25519.Arm.Field
+public import VerifiedGarbage.Proof.X25519.Arm.Cswap
+public import VerifiedGarbage.Proof.Ed25519.Arm.InitFields
+public import VerifiedGarbage.Spec.Ed25519.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Ed25519.Arm.ScalarByte`. -/
+
+@[expose] public section
+
 section
 /-! Merged from `Proof.Ed25519.Arm.ScalarStep`. -/
 section

@@ -1,4 +1,8 @@
-import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedMasks
+module
+
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedMasks
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.AArch64.Sign.Optimized
 open VG VG.AArch64 VG.Impl.MlDsa.AArch64.Call

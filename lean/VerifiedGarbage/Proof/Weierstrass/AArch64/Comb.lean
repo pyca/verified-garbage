@@ -1,7 +1,14 @@
-import VerifiedGarbage.Proof.Weierstrass.AArch64.CombSelect
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Ladder
-import VerifiedGarbage.Proof.Weierstrass.CombLay
-import VerifiedGarbage.Proof.Weierstrass.Law3
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.AddCall
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.CombSelect
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Ladder
+public import VerifiedGarbage.Proof.Weierstrass.CombLay
+public import VerifiedGarbage.Proof.Weierstrass.Law3
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The fixed-base comb on AArch64: what its digits and additions share
@@ -12,6 +19,8 @@ negative digit (`signMask_ok`; `Rep.negY` is in `Law.lean`), where the selected 
 formulas (`combSum_ok`): what the comb from tables in memory
 (`Proof/Weierstrass/AArch64/TComb.lean`) and ECDH's window method use.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.AArch64
 
@@ -82,14 +91,6 @@ theorem signMask_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size
 theorem _root_.VG.Proof.Mont.OpKeep.unch {M : Mod} {base : Addr} {o : Nat} {s s' : State}
     (h : OpKeep M base o s s') : Unch base [(o, 8 * M.n), (M.tmp, 8 * M.n)] s.mem s'.mem :=
   fun x hx => h.mem x (hx (o, 8 * M.n) (by simp)) (hx (M.tmp, 8 * M.n) (by simp))
-
-/-- The modulus survives a change of memory apart from it. -/
-theorem _root_.VG.Proof.Mont.AArch64.ModOkA.unch {M : Mod} {size m : Nat} {base : Addr} {mem mem' : Mem}
-    (hM : ModOkA M size m mem base) {W : List (Nat × Nat)} (hU : Unch base W mem mem')
-    (hW : ∀ w ∈ W, M.mo + 8 * M.n ≤ w.1 ∨ w.1 + w.2 ≤ M.mo) (hn : base.toNat + size ≤ 2 ^ 64) :
-    ModOkA M size m mem' base :=
-  ⟨hM.n0, hM.n10, hM.mo, hM.tmp, hM.sep,
-    by rw [hU.wordsVal hW (by have := hM.mo; omega)]; exact hM.val, hM.inv, hM.red, hM.call⟩
 
 /-- The comb's slots and modulus at offsets that loads and stores can encode. -/
 structure CombA (K : CombCfg) : Prop where
@@ -164,8 +165,9 @@ structure SumPost (K : CombCfg) (C : Curve) (base : Addr) (size : Nat) (s s' : S
 theorem combSum_ok {K : CombCfg} {C : Curve} {base : Addr} {size : Nat} (hL : CombLay K size)
     (hA : CombA K) (hp : UnitMod C.p (2 ^ (64 * K.M.n))) {s : State} (hs : Scr s base size)
     (hM : ModOkA K.M size C.p s.mem base)
-    (hlt : ∀ x ∈ rcbR K.S K.A K.E, wordsVal s.mem base x K.M.n < C.p) :
-    WP isa (.seq (fprogB K.M (rcb3 K.S K.A K.E K.D)) (.block (copyPt K.M.n K.A K.D))) s
+    (hlt : ∀ x ∈ rcbR K.S K.A K.E, wordsVal s.mem base x K.M.n < C.p) {pa : Option (String × Nat)}
+    (hpa : AddOk K.M size (· ∈ combSlots K) K.S K.A K.E K.D pa) (hr : AddReady base K.M s.mem K.S pa) :
+    WP isa (.seq (addP K.M K.S K.A K.E K.D pa) (.block (copyPt K.M.n K.A K.D))) s
       (SumPost K C base size s) := by
   have hn := hs.nowrap
   have hR : ∀ x ∈ rcbR K.S K.A K.E, x ∈ combSlots K := by
@@ -180,8 +182,8 @@ theorem combSum_ok {K : CombCfg} {C : Curve} {base : Addr} {size : Nat} (hL : Co
       or_false] at hx
     rcases hx with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
       rfl | rfl | rfl | rfl <;> comb_mem
-  have W := rcb3_ok hL.lay ⟨hA.sl, hA.mod, fun f m' h => (hA.call f m' h).1⟩ hp hL.add hSl
-    (Low.of_call fun f m' h x hx => (hA.call f m' h).2 x (hSl x hx)) hI (fun x hx => hx)
+  have W := addP_ok hL.lay ⟨hA.sl, hA.mod, fun f m' h => (hA.call f m' h).1⟩ hp hL.add hSl
+    (Low.of_call fun f m' h x hx => (hA.call f m' h).2 x (hSl x hx)) hpa hI (fun x hx => hx) hr
   refine WP.seq (WP.mono W fun s₁ h₁ => ?_)
   obtain ⟨k₁, I₁, v₁⟩ := h₁
   have hnd := hL.nodup

@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Weierstrass.Layout
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Bits
-import VerifiedGarbage.Proof.Weierstrass.Pow
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.Layout
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Bits
+public import VerifiedGarbage.Proof.Weierstrass.Pow
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Short Weierstrass curves on AArch64: the registers powers and loops change
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.Weierstrass.Pow
 `powClob`: the registers the counted loops (the ladder, powers by chains) may
 change, the Montgomery operations' and the counter `x19`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.AArch64
 

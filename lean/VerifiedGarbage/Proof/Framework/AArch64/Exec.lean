@@ -1,11 +1,15 @@
-import VerifiedGarbage.Proof.Framework.Mem
-import VerifiedGarbage.Proof.Framework.Bswap
-import VerifiedGarbage.TCB.AArch64.Isa
-import VerifiedGarbage.Proof.Framework.Block
+module
+
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.Bswap
+public import VerifiedGarbage.TCB.AArch64.Isa
+public import VerifiedGarbage.Proof.Framework.Block
 
 /-!
 # AArch64: instruction-level rewrite lemmas for symbolic execution
 -/
+
+@[expose] public section
 
 namespace VG.AArch64
 

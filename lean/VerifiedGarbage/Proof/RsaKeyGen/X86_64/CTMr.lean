@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.RsaKeyGen.X86_64.CTBase
-import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrMain
+module
+
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.CTBase
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrMain
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # A candidate on x86-64: constant time of Miller–Rabin, its header
@@ -9,6 +15,8 @@ What Miller–Rabin keeps public in the header of the scratch space
 the uniform witnesses needed, the witnesses so far and the octets read,
 `w` and the arrays' bases (`MrH` and `mr_hp`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaKeyGen.X86_64
 

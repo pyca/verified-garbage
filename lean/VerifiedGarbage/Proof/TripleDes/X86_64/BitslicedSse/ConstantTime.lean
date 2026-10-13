@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedSse.Lit
-import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.ConstantTime
+module
+
+public import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedSse.Lit
+meta import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedSse.Lit
+public import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.ConstantTime
+meta import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.ConstantTime
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Constant time
@@ -9,6 +17,8 @@ pointer are public, and so is everything the function computes from them
 (the batches, the counts of passes and rounds, the addresses of the round
 keys), which the batches of 128 blocks keep in registers.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.TripleDes.X86_64.BitslicedSse
 

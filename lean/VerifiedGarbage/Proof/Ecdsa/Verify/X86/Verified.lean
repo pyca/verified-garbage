@@ -1,11 +1,25 @@
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86.Main
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86.Contract
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86.Lit
-import VerifiedGarbage.Proof.Ecdsa.X86.Verified
-import VerifiedGarbage.Proof.Framework.X86.Taint
-import VerifiedGarbage.Proof.Framework.X86.Inline
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CallSumsP256P
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CallSumsP256N
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.Main
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.Main
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.Contract
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.Contract
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.Lit
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.Lit
+public import VerifiedGarbage.Proof.Ecdsa.X86.Verified
+meta import VerifiedGarbage.Proof.Ecdsa.X86.Verified
+public import VerifiedGarbage.Proof.Framework.X86.Taint
+meta import VerifiedGarbage.Proof.Framework.X86.Taint
+public import VerifiedGarbage.Proof.Framework.X86.Inline
+meta import VerifiedGarbage.Proof.Framework.X86.Inline
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CallSumsP256P
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CallSumsP256P
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CallSumsP256N
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CallSumsP256N
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDSA verification over P-256 on x86 (32-bit): `Verified`
@@ -20,6 +34,8 @@ the signature affect it too). The proof is against `verifyX86`, whose
 arguments' slots are readable, and moves to the shared contract, which makes
 them writable, by `Verified.narrowTo`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Verify.X86
 

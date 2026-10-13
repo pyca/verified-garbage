@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Callee
-import VerifiedGarbage.Proof.ChaCha20Poly1305.Gathered
-import VerifiedGarbage.Proof.AesGcm.ScratchGather
-import VerifiedGarbage.Proof.Framework.X86_64.Frame
-import VerifiedGarbage.Proof.Framework.X86_64.Abi
+module
+
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Callee
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.Gathered
+public import VerifiedGarbage.Proof.AesGcm.ScratchGather
+public import VerifiedGarbage.Proof.Framework.X86_64.Frame
+public import VerifiedGarbage.Proof.Framework.X86_64.Abi
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ChaCha20-Poly1305 encryption out of place, from a list of slices, x86-64: the function
@@ -17,6 +23,8 @@ loads the call's arguments from the frame and the stack arguments
 `tag` pushed at `B + 1752` (`called_wp`, by its shared contract); the call
 keeps our frame and the return address above it.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

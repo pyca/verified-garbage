@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.Ed448.X86.BaseMain
-import VerifiedGarbage.Proof.Ed448.X86.BaseLit
-import VerifiedGarbage.Proof.Ed448.X86.ScalarVerified
+module
+
+public import VerifiedGarbage.Proof.Ed448.X86.BaseMain
+meta import VerifiedGarbage.Proof.Ed448.X86.BaseMain
+public import VerifiedGarbage.Proof.Ed448.X86.BaseLit
+meta import VerifiedGarbage.Proof.Ed448.X86.BaseLit
+public import VerifiedGarbage.Proof.Ed448.X86.ScalarVerified
+meta import VerifiedGarbage.Proof.Ed448.X86.ScalarVerified
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 base-point multiplication on x86 (32-bit): constant time
@@ -14,10 +23,12 @@ state (`BaseMain.lean`'s stages), and the loop and the inversion's runs of
 squarings by `RelCT.loop`.
 -/
 
+@[expose] public section
+
 namespace VG.Proof.Ed448.X86
 
 open VG VG.X86 VG.Proof.X448.X86 VG.Proof.X448.Radix16
-open VG.Impl.Ed448.X86 (scalarBase baseLoop baseStep baseSwap baseEncode toOp field initSlots baseBits)
+open VG.Impl.Ed448.X86 (scalarBase baseLoop baseStep baseSwap baseEncode toOp field initSlots baseEntry)
 open VG.Impl.Ed448 (doubleOps addOps)
 
 /-- Two entry states the constant-time statement relates. -/
@@ -103,7 +114,7 @@ theorem baseLoop_rel : ∀ n, RelCT isa (Runs BP₀ (LadB n)) (.loop baseStep .n
 
 theorem baseEntry_rel :
     RelCT isa (Runs BP₀ fun σ s => s = σ ∧ BasePre σ)
-      (.block (Impl.Ed448.X86.save 12 ++ initSlots ++ baseBits)) (Runs BP₀ BMid) := by
+      baseEntry (Runs BP₀ BMid) := by
   refine Runs.step (RelCT.taint (A := taint) (scalarTaint 2 3) ?_ (by taint_decide))
     fun σ s ⟨e, h⟩ => by subst e; exact entry_stage h
   rintro s₁ s₂ ⟨σ₁, σ₂, hP, ⟨rfl, -⟩, ⟨rfl, -⟩⟩

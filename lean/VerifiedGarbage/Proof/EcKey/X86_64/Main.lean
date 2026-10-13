@@ -1,9 +1,15 @@
-import VerifiedGarbage.Proof.Ecdsa.X86_64.Finish
-import VerifiedGarbage.Impl.EcKey.X86_64
-import VerifiedGarbage.Proof.Ecdsa.X86_64.Middle
-import VerifiedGarbage.Proof.Ecdsa.X86_64.Main
-import VerifiedGarbage.Proof.EcKey.PublicKey
-import VerifiedGarbage.Proof.Framework.X86_64.Inline
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.Finish
+public import VerifiedGarbage.Impl.EcKey.X86_64
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.Middle
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.Main
+public import VerifiedGarbage.Proof.EcKey.PublicKey
+public import VerifiedGarbage.Proof.Framework.X86_64.Inline
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Elliptic curve public keys on x86-64: the result, and the whole function
@@ -15,6 +21,8 @@ mask, returns the flag's low bit, and restores the callee-saved registers
 (`finish_ok`): the leading byte (`lead_ok`), then the two coordinates as
 the signature's `finish` writes `r ‖ s`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.EcKey.X86_64
 
@@ -397,20 +405,22 @@ theorem args_ok (s : State) :
   simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
   simp only [RegUpd.gpr_setReg, hr.1, hr.2.1, hr.2.2, ite_false]
 
-/-- The public key inlined: only `[k]G` calls functions. -/
+/-- The public key inlined: only `[k]G` and the inversion call functions. -/
 theorem publicKey_inline (c : Cfg) : (Impl.EcKey.X86_64.Cfg.publicKey c).inline =
     .seq (.block Impl.EcKey.X86_64.Cfg.args) (.seq (.seq (.block (c.setupWith none))
-      (.seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) (.seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n))
-      (.seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n)) (.seq c.gMulK.inline (.seq c.pPow (.block [])))))))
+      (.seq c.kBits (.seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n))
+      (.seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n)) (.seq c.gMulKC.inline (.seq c.pPow.inline (.block [])))))))
       (Impl.EcKey.X86_64.Cfg.middle c)) := by
-  show Code.seq _ (Code.seq (Code.seq _ (Code.seq _ (Code.seq _ (Code.seq _ (Code.seq _
+  show Code.seq _ (Code.seq (Code.seq _ (Code.seq c.kBits.inline (Code.seq _ (Code.seq _ (Code.seq _
     (Code.seq c.pPow.inline _)))))) (Impl.EcKey.X86_64.Cfg.middle c).inline) = _
-  rw [pPow_inline, show (Impl.EcKey.X86_64.Cfg.middle c).inline = _ from blocks_inline _]
+  rw [show (Impl.EcKey.X86_64.Cfg.middle c).inline = _ from blocks_inline _, Cfg.kBits,
+    kBitsIf_inline]
   rfl
 
 /-- `vg_ec_<curve>_public_key` computes the specification's public key and
 restores the callee-saved registers. -/
-theorem publicKey_ok (hc : BaseCfgOk c) (hC : Law c.C) (hT : CombTbls c) {s₀ : State} (hp : PkPre c s₀) :
+theorem publicKey_ok (hc : BaseCfgOk c) (hC : Law c.C) (hT : CombTbls c) {s₀ : State} (hp : PkPre c s₀)
+    (hmb : MulBaseOk c := by exact ⟨fun h => absurd h (by decide), fun h => absurd h (by decide)⟩) :
     WP isa (Impl.EcKey.X86_64.Cfg.publicKey c).inline s₀ fun s' =>
       (∀ r ∈ Cfg.saved.map Prod.fst, s'.gpr r = s₀.gpr r) ∧ PkPost c s₀ s' := by
   rw [publicKey_inline]
@@ -457,8 +467,8 @@ theorem publicKey_ok (hc : BaseCfgOk c) (hC : Law c.C) (hT : CombTbls c) {s₀ :
       · exact f2 _ (by rw [hp.wr]; simp)
   have hb : sN.gpr .r8 = s₀.gpr .rdx := by rw [g, r8₁]
   obtain ⟨t, s₂N, ex, S₂⟩ := stage₁ hc (hs := none) (Or.inl rfl) hpN.setup
-    (rest := .seq c.gMulK.inline (.seq c.pPow (.block [])))
-    (Q := St₂ c none sN (sN.gpr .r8)) fun _ S₁ => stage₂ hc hC hT hpN rfl S₁ fun _ S₂ => WP.block_nil S₂
+    (rest := .seq c.gMulKC.inline (.seq c.pPow.inline (.block [])))
+    (Q := St₂ c none sN (sN.gpr .r8)) fun _ S₁ => stage₂ hc hmb hC hT hpN rfl S₁ fun _ S₂ => WP.block_nil S₂
   rw [hb] at S₂
   -- The same run, with the public key's regions.
   have hrd₁ : s₁.rd = [⟨s₀.gpr .rsi, c.C.len⟩] ++ Abi.constRegions (fun n => s₀.syms n) c.combConsts := by

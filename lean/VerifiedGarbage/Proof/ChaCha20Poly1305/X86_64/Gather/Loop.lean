@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Copy
-import VerifiedGarbage.Proof.Gcm.SealGather
+module
+
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Copy
+public import VerifiedGarbage.Proof.Gcm.SealGather
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ChaCha20-Poly1305 encryption out of place, from a list of slices, x86-64: gathering the slices
@@ -13,6 +19,8 @@ written at `dst`. The descriptors and the slices are apart from `dst`, so
 they are what they were on entry. Descriptor `i` is at `Src + 16i`: the
 slice's address (`sb`), then its length (`sl`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

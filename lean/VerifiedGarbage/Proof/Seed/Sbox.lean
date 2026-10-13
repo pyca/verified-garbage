@@ -1,7 +1,13 @@
-import VerifiedGarbage.Spec.Seed
-import VerifiedGarbage.Impl.Seed.Layers
-import VerifiedGarbage.Proof.Aes.SboxSpec
-import VerifiedGarbage.Proof.Seed.SboxLit
+module
+
+public import VerifiedGarbage.Spec.Seed
+public import VerifiedGarbage.Impl.Seed.Layers
+public import VerifiedGarbage.Proof.Aes.SboxSpec
+public import VerifiedGarbage.Proof.Seed.SboxLit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # SEED's S-boxes through the AES S-box
@@ -12,6 +18,8 @@ import VerifiedGarbage.Proof.Seed.SboxLit
 truth tables of the 256 inputs at once (`sboxes_table`), and `row` reads
 off each input.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Seed
 

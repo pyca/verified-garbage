@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesOcb.AArch64.Whole
+module
+
+public import VerifiedGarbage.Proof.AesOcb.AArch64.Whole
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-OCB on AArch64: the rest of the data XORed with `Pad` (`xorPad`)
@@ -7,6 +13,8 @@ Untrusted: everything here is checked by Lean. `xorPad` XORs the `r` bytes
 at `x23` with the first `r` bytes at `W + tmpO`, with AES-GCM's `xorLoop`
 (`xorPad_ok`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

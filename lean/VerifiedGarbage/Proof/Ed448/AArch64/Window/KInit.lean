@@ -1,18 +1,26 @@
-import VerifiedGarbage.Proof.Ed448.AArch64.Window.KLoop
-import VerifiedGarbage.Proof.Ed448.AArch64.Window.CopyK
+module
+
+public import VerifiedGarbage.Proof.Ed448.AArch64.Window.KLoop
+public import VerifiedGarbage.Proof.Ed448.AArch64.Window.CopyK
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 verification on AArch64: the windows
 
 Untrusted: everything here is checked by Lean. `kInit`: `Q` (slots 3–5) the
-neutral point, 1 in slot 20 and the counter at 57 (`kInit_ok`); then the
-loop over the challenge's bytes (`kWindows_ok`).
+neutral point, 1 in slot 20 and the counter at 114 (`kInit_ok`), keeping the
+challenge's nibbles at `BITS`, for the loop over them (`kLoop_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.AArch64.Window
 
 open VG VG.AArch64 VG.Impl.Ed448.AArch64
-open VG.Impl.X448.AArch64 (ld st slot ACC)
+open VG.Impl.X448.AArch64 (ld st slot ACC BITS)
 open VG.Impl.X448.AArch64.Base (constSlot limb)
 open VG.Proof.X448.AArch64 (Scr Keeps off word limbs Outside Outside2 ofs)
 open VG.Proof.X448.AArch64.Weak (Index Env)
@@ -25,13 +33,17 @@ local notation "EV" => VG.Proof.X448.AArch64.Weak.E
 local notation "FV" => VG.Proof.X448.AArch64.Weak.F
 
 theorem kInit_eq : kInit = constSlot (slot 3) 0 ++ (constSlot (slot 4) 1 ++ (constSlot (slot 5) 1 ++
-    (constSlot (slot 20) 1 ++ ([.movz .x .x19 (BitVec.ofNat 16 57) 0] : List Instr)))) := by
+    (constSlot (slot 20) 1 ++ ([.movz .x .x19 (BitVec.ofNat 16 114) 0] : List Instr)))) := by
   simp only [kInit, List.append_assoc]; rfl
 
 theorem kInit_ok {s : State} {base : Addr} {P S : Point} (hs : Scr s base) (hb : BEnv s.mem base)
     (hz : ∀ w < 8, limbs s.mem base (slot (19 : Index).val) w = 0) (ht : TabOk s.mem base P 16)
-    (hS : pt (EV s.mem base) 0 1 2 = S) :
-    WP isa (.block kInit) s fun t => KInv t base P S 57 t ∧ Outside2 base 64 2816 ACC 1152 s.mem t.mem ∧
+    (hS : pt (EV s.mem base) 0 1 2 = S)
+    (hN : ∀ i < 57, NibsAt base (fun i => s.mem (off base (KB + i))) s.mem i) :
+    WP isa (.block kInit) s fun t => KInvN t base P S 114 t ∧
+      (∀ i < 57, nibs t base (2 * i) = nibOf (t.mem (off base (KB + i))) 0 ∧
+        nibs t base (2 * i + 1) = nibOf (t.mem (off base (KB + i))) 4) ∧
+      Outside2 base 64 2816 ACC 1152 s.mem t.mem ∧
       t.gpr .x20 = s.gpr .x20 ∧ t.rd = s.rd ∧ t.wr = s.wr := by
   rw [kInit_eq, WP.block_append_iff]
   refine WP.mono (constSlot_ok hs (o := slot 3) (by decide) (by decide) 0) fun t1 ⟨v1, o1, k1⟩ => ?_
@@ -45,7 +57,7 @@ theorem kInit_ok {s : State} {base : Addr} {P S : Point} (hs : Scr s base) (hb :
   rw [WP.block_append_iff]
   refine WP.mono (constSlot_ok h3 (o := slot 20) (by decide) (by decide) 1) fun t4 ⟨v4, o4, k4⟩ => ?_
   have h4 := h3.of_keeps k4 (by decide)
-  refine WP.mono (VG.Proof.X448.AArch64.Weak.setCounter_ok t4 57 (by decide)) fun t ⟨ct, gt, mt, rdt, wrt⟩ => ?_
+  refine WP.mono (VG.Proof.X448.AArch64.Weak.setCounter_ok t4 114 (by decide)) fun t ⟨ct, gt, mt, rdt, wrt⟩ => ?_
   have hst : Scr t base := ⟨(gt _ (by decide)).trans h4.x3, (gt _ (by decide)).trans h4.mask, wrt ▸ h4.wr, h4.nowrap⟩
   -- Which slots each store keeps.
   have O : ∀ i : Index, i ≠ 3 → i ≠ 4 → i ≠ 5 → i ≠ 20 → ∀ j < 8,
@@ -90,8 +102,27 @@ theorem kInit_ok {s : State} {base : Addr} {P S : Point} (hs : Scr s base) (hb :
       · exact bnd_of_words w20
   have z19 : ∀ w < 8, limbs t.mem base (slot (19 : Index).val) w = 0 := fun w hw => by
     rw [O 19 (by decide) (by decide) (by decide) (by decide) w hw]; exact hz w hw
+  -- The nibbles and the challenge's copy, kept.
+  have hn := hs.nowrap
+  have keepB : ∀ d, 2880 ≤ d → d < 3584 → t.mem (off base d) = s.mem (off base d) := fun d h1 h2 => by
+    have ho : ofs base (off base d) = d := ofs_off0' base (by omega)
+    exact oSt _ (Or.inr (by rw [ho]; omega)) (Or.inl (by rw [ho]; simp only [ACC]; omega))
+  have hNt : ∀ i < 57, nibs t base (2 * i) = nibOf (t.mem (off base (KB + i))) 0 ∧
+      nibs t base (2 * i + 1) = nibOf (t.mem (off base (KB + i))) 4 := fun i hi => by
+    obtain ⟨n0, n1⟩ := hN i hi
+    have eK := keepB (KB + i) (by simp only [KB]; omega) (by simp only [KB]; omega)
+    unfold nibs
+    rw [keepB (BITS + 2 * i) (by simp only [BITS]; omega) (by simp only [BITS]; omega),
+      keepB (BITS + (2 * i + 1)) (by simp only [BITS]; omega) (by simp only [BITS]; omega), eK,
+      ← Nat.add_assoc, n0, n1]
+    exact ⟨Nat.mod_eq_of_lt (Nat.lt_trans (nibOf_lt _ _) (by decide)),
+      Nat.mod_eq_of_lt (Nat.lt_trans (nibOf_lt _ _) (by decide))⟩
+  have hnib : ∀ i < 114, nibs t base i < 16 := fun i hi => by
+    rcases Nat.even_or_odd' i with ⟨k, rfl | rfl⟩
+    · rw [(hNt k (by omega)).1]; exact nibOf_lt _ _
+    · rw [(hNt k (by omega)).2]; exact nibOf_lt _ _
   refine ⟨⟨by decide, ⟨hst, benv, z19, F_of_words w20, fun w hw => ?_, ht.of_outside2 oSt (by decide), rfl, rfl, rfl,
-      Outside2.refl _ _ _ _ _ _⟩, ct, ?_, ?_⟩, oSt, ?_, ?_, ?_⟩
+      Outside2.refl _ _ _ _ _ _⟩, ct, ?_, ?_, hnib⟩, hNt, oSt, ?_, ?_, ?_⟩
   · show (word t.mem base (slot 5 + 8 * w)).toNat < Mb
     rw [w5 w hw]; exact Nat.lt_of_lt_of_le (limb_lt _ _) (by decide)
   · show (⟨FV t.mem base (slot 3), FV t.mem base (slot 4), FV t.mem base (slot 5)⟩ : Point) = ⟨0, 1, 1⟩

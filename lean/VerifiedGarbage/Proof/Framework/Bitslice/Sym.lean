@@ -1,4 +1,6 @@
-import VerifiedGarbage.Proof.Framework.Bitslice.Dom
+module
+
+public import VerifiedGarbage.Proof.Framework.Bitslice.Dom
 
 /-!
 # The naming domain: moves of words
@@ -8,6 +10,8 @@ register copies) is tracked by naming each word: an abstract value `a` is
 the word `V a`. No operation is supported, so the evaluator accepts only
 moves; a check then says where each named word ends up.
 -/
+
+@[expose] public section
 
 namespace VG.Bitslice
 

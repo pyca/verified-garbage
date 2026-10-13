@@ -1,14 +1,32 @@
-import VerifiedGarbage.Impl.Argon2.X86_64.ReferenceCount
-import VerifiedGarbage.Proof.Argon2.Reference
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Argon2.X86_64.CountCandidates
-import VerifiedGarbage.Proof.Framework.X86_64.RelCT
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
-import VerifiedGarbage.Impl.Argon2.X86_64.CountCandidates
-import VerifiedGarbage.Impl.Argon2.X86_64.SelectWindow
-import VerifiedGarbage.Proof.Argon2.X86_64.DivideStep
+module
+
+public import VerifiedGarbage.Impl.Argon2.X86_64.ReferenceCount
+meta import VerifiedGarbage.Impl.Argon2.X86_64.ReferenceCount
+public import VerifiedGarbage.Proof.Argon2.Reference
+meta import VerifiedGarbage.Proof.Argon2.Reference
+public import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Argon2.X86_64.CountCandidates
+meta import VerifiedGarbage.Proof.Argon2.X86_64.CountCandidates
+public import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+public import VerifiedGarbage.Proof.Framework.X86_64.Lit
+meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
+public import VerifiedGarbage.Impl.Argon2.X86_64.CountCandidates
+meta import VerifiedGarbage.Impl.Argon2.X86_64.CountCandidates
+public import VerifiedGarbage.Impl.Argon2.X86_64.SelectWindow
+meta import VerifiedGarbage.Impl.Argon2.X86_64.SelectWindow
+public import VerifiedGarbage.Proof.Argon2.X86_64.DivideStep
+meta import VerifiedGarbage.Proof.Argon2.X86_64.DivideStep
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Argon2.X86_64.SelectWindow`. -/
+
+@[expose] public section
+
 section
 /-! # Same-lane window selection with no leakage from the equality test -/
 

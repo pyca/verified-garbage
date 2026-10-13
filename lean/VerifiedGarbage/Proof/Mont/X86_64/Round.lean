@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Mont.X86_64.Blocks
+module
+
+public import VerifiedGarbage.Proof.Mont.X86_64.Blocks
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Montgomery arithmetic on x86-64: a round of the multiplication
@@ -8,6 +14,8 @@ round to the next, and a round (`round_ok`): the accumulator `T < 2m`
 becomes `(T + a_i B + u m) / 2⁶⁴ < 2m` for some `u`, with the low word of
 `T + a_i B + u m` zero.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Mont.X86_64
 

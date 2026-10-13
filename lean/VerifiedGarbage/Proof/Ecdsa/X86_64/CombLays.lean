@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Ecdsa.X86_64.Stages
-import VerifiedGarbage.Proof.Weierstrass.X86_64.TComb
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.Stages
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.TComb
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDSA on x86-64: the fixed-base comb's slots and constants
@@ -12,6 +18,8 @@ right (`CombOk`), and the tables the calling convention gives are where the
 comb reads them (`tbl_of`).
 -/
 
+@[expose] public section
+
 namespace VG.Proof.Ecdsa.X86_64
 
 open VG VG.X86_64 VG.Impl.Mont.X86_64 VG.Impl.Mont VG.Impl.Weierstrass.X86_64 VG.Impl.Weierstrass
@@ -23,7 +31,7 @@ variable {c : Cfg}
 theorem combW_eq (c : Cfg) (d : CombData) : combW (c.combCfg d).toComb = slW c [RX, RY, RZ, TX, TY, TZ, PT,
     T0, T1, T2, T3, T4, T5, DX, DY, DZ, TMP] := rfl
 
-theorem combSlots_eq (c : Cfg) (d : CombData) : combSlots (c.combCfg d).toComb = [AP, EM, ZERO, RX, RY,
+theorem combSlots_eq (c : Cfg) (d : CombData) : combSlots (c.combCfg d).toComb = [EM, EM, ZERO, RX, RY,
     RZ, TX, TY, TZ, PT, T0, T1, T2, T3, T4, T5, DX, DY, DZ].map c.sl := rfl
 
 theorem tcombW_eq (c : Cfg) (d : CombData) : tcombW (c.combCfg d) = slW c [RX, RY, RZ, TX, TY, TZ, PT,
@@ -68,12 +76,12 @@ theorem combLay {d : CombData} (hc : BaseCfgOk c) (hd : CombOk c d) : CombLay (c
   have hJ : (c.combCfg d).toComb.J = c.combJ d.w := by rw [TCombCfg.toComb_J]; rfl
   have hJb := combJ_bounds hc hd
   refine ⟨?_, rcbApart_of hn (lw := [T0, T1, T2, T3, T4, T5, DX, DY, DZ])
-      (lr := [AP, EM, RX, RY, RZ, TX, TY, TZ]) rfl rfl (by decide) (by decide), ?_,
+      (lr := [EM, EM, RX, RY, RZ, TX, TY, TZ]) rfl rfl (by decide) (by decide), ?_,
     map_sl_nodup hn (l := [RX, RY, RZ, TX, TY, TZ, PT, T0, T1, T2, T3, T4, T5, DX, DY, DZ])
       (by decide), ⟨by rw [hJ]; omega, by rw [hJ]; omega⟩, ?_, ?_, ?_⟩
-  · exact lay_map hc rfl rfl rfl (l := [AP, EM, ZERO, RX, RY, RZ, TX, TY, TZ, PT, T0, T1, T2, T3,
+  · exact lay_map hc rfl rfl rfl (l := [EM, EM, ZERO, RX, RY, RZ, TX, TY, TZ, PT, T0, T1, T2, T3,
       T4, T5, DX, DY, DZ]) (by decide)
-  · exact map_sl_disj hn (l₁ := [AP, EM, ZERO])
+  · exact map_sl_disj hn (l₁ := [EM, EM, ZERO])
       (l₂ := [RX, RY, RZ, TX, TY, TZ, PT, T0, T1, T2, T3, T4, T5, DX, DY, DZ]) (by decide)
   · rw [hJ]; show bitsAt c.n 0 + 4 * c.combJ d.w ≤ 8192; rw [bitsAt_eq]; omega
   · show bitsAt c.n 0 + 3 < 4096; rw [bitsAt_eq]; omega
@@ -117,7 +125,7 @@ theorem tcombLay {d : CombData} (hc : BaseCfgOk c) (hd : CombOk c d) : TCombLay 
     · exact Or.inr (sl_below_bits c (i := MP) (by decide) 0 _)
     · rw [combSlots_eq] at hx
       obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hx
-      have : ∀ i ∈ [AP, EM, ZERO, RX, RY, RZ, TX, TY, TZ, PT, T0, T1, T2, T3, T4, T5, DX, DY, DZ],
+      have : ∀ i ∈ [EM, EM, ZERO, RX, RY, RZ, TX, TY, TZ, PT, T0, T1, T2, T3, T4, T5, DX, DY, DZ],
         i < 45 := by decide
       exact Or.inr (sl_below_bits c (this i hi) 0 _ (.inl fun h => by subst h; exact absurd hi (by decide)))
   · show c.sl 21 = c.sl 20 + 8 * c.n

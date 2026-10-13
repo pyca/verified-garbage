@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Mont.X86.Chain
+module
+
+public import VerifiedGarbage.Proof.Mont.X86.Chain
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Montgomery arithmetic on x86 (32-bit): the conditional subtraction
@@ -9,6 +15,8 @@ borrow (`diffs`, a chain), then the top word minus the borrow, whose own
 borrow makes the mask `eax` (all ones if `T ≥ m`, `mask_ok`), which
 selects `[tmp]` or `[src]` word by word (`selects_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Mont.X86
 

@@ -1,16 +1,27 @@
-import VerifiedGarbage.Proof.Weierstrass.AArch64.MontContract
-import VerifiedGarbage.Proof.Weierstrass.AArch64.MontModuli
-import VerifiedGarbage.Proof.Framework.Contract
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.MontContract
+meta import VerifiedGarbage.Proof.Weierstrass.AArch64.MontContract
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.MontModuli
+meta import VerifiedGarbage.Proof.Weierstrass.AArch64.MontModuli
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
-# Montgomery products modulo the curves' `p`, as functions, on AArch64: verified
+# Montgomery products modulo the curves' `p` and `n`, as functions, on AArch64: verified
 
-The prime `p` of P-384 and of P-521 is one the functions support
-(`ModOk`), so each of its products meets the contract of its `Api`: the
+The prime `p` of P-384 and of P-521, and P-384's and P-521's orders `n`, are moduli the
+functions support (`ModOk`), so each of its products meets the contract of its `Api`: the
 proof against `mulA`, which it implies, constant time by `ct_zext` and taint
 tracking (only the pointer and the offsets are public), and a state
 satisfying it (`sat`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.AArch64.Mont
 
@@ -53,8 +64,9 @@ theorem m_pos_of_inv {m x : Nat} (h : (m * x + 1) % 2 ^ 64 = 0) : 0 < m := by
   · simp at h
   · exact h'
 
-theorem p384p_mul_ct : ConstantTime isa (mulA p384p).pre (mulA p384p).pub (mulFn p384p.k p384p.m) :=
-  ct_zext (VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3])
+theorem p384p_mul_ct : ConstantTime isa (mulA p384p).pre (mulA p384p).pub (mulFn p384p.k p384p.m) := by
+  rw [p384p_fn]
+  exact ct_zext (VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3])
     (fun _ _ _ _ hp => hp) (by taint_decide))
 
 theorem p384p_mul_verified : Verified AArch64.target (mulFn p384p.k p384p.m) (p384p.mulContract AArch64.abi) :=
@@ -67,8 +79,9 @@ theorem p384p_mul_verified : Verified AArch64.target (mulFn p384p.k p384p.m) (p3
         AArch64.argRegs]
       sat := ⟨sat, mul_sat p384p (by decide) (m_pos_of_inv p384p_ok.inv)⟩ }
 
-theorem p521p_mul_ct : ConstantTime isa (mulA p521p).pre (mulA p521p).pub (mulFn p521p.k p521p.m) :=
-  ct_zext (VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3])
+theorem p521p_mul_ct : ConstantTime isa (mulA p521p).pre (mulA p521p).pub (mulFn p521p.k p521p.m) := by
+  rw [p521p_fn]
+  exact ct_zext (VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3])
     (fun _ _ _ _ hp => hp) (by taint_decide))
 
 theorem p521p_mul_verified : Verified AArch64.target (mulFn p521p.k p521p.m) (p521p.mulContract AArch64.abi) :=
@@ -80,5 +93,35 @@ theorem p521p_mul_verified : Verified AArch64.target (mulFn p521p.k p521p.m) (p5
       pub := by sig_implies_pub [Modulus.mulContract, sig, argNum, mulA, aPre, aPub, AArch64.abi,
         AArch64.argRegs]
       sat := ⟨sat, mul_sat p521p (by decide) (m_pos_of_inv p521p_ok.inv)⟩ }
+
+theorem p384n_mul_ct : ConstantTime isa (mulA p384n).pre (mulA p384n).pub (mulFn p384n.k p384n.m) := by
+  rw [p384n_fn]
+  exact ct_zext (VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3])
+    (fun _ _ _ _ hp => hp) (by taint_decide))
+
+theorem p384n_mul_verified : Verified AArch64.target (mulFn p384n.k p384n.m) (p384n.mulContract AArch64.abi) :=
+  Verified.of_correct (mul_a p384n_ok) p384n_mul_ct
+    { pre := by sig_implies_pre [Modulus.mulContract, sig, argNum, mulA, aPre, aPub, AArch64.abi,
+        AArch64.argRegs]
+      post := by sig_implies_post [Modulus.mulContract, sig, argNum, mulA, aPre, aPub, AArch64.abi,
+        AArch64.argRegs]
+      pub := by sig_implies_pub [Modulus.mulContract, sig, argNum, mulA, aPre, aPub, AArch64.abi,
+        AArch64.argRegs]
+      sat := ⟨sat, mul_sat p384n (by decide) (m_pos_of_inv p384n_ok.inv)⟩ }
+
+theorem p521n_mul_ct : ConstantTime isa (mulA p521n).pre (mulA p521n).pub (mulFn p521n.k p521n.m) := by
+  rw [p521n_fn]
+  exact ct_zext (VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3])
+    (fun _ _ _ _ hp => hp) (by taint_decide))
+
+theorem p521n_mul_verified : Verified AArch64.target (mulFn p521n.k p521n.m) (p521n.mulContract AArch64.abi) :=
+  Verified.of_correct (mul_a p521n_ok) p521n_mul_ct
+    { pre := by sig_implies_pre [Modulus.mulContract, sig, argNum, mulA, aPre, aPub, AArch64.abi,
+        AArch64.argRegs]
+      post := by sig_implies_post [Modulus.mulContract, sig, argNum, mulA, aPre, aPub, AArch64.abi,
+        AArch64.argRegs]
+      pub := by sig_implies_pub [Modulus.mulContract, sig, argNum, mulA, aPre, aPub, AArch64.abi,
+        AArch64.argRegs]
+      sat := ⟨sat, mul_sat p521n (by decide) (m_pos_of_inv p521n_ok.inv)⟩ }
 
 end VG.Proof.Weierstrass.AArch64.Mont

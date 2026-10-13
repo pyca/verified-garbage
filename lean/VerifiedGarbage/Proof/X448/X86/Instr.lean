@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.X448.X86.Mem
-import VerifiedGarbage.Proof.Framework.X86.RegUpd
+module
+
+public import VerifiedGarbage.Proof.X448.X86.Mem
+public import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 on x86 (32-bit): instruction rules
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.Framework.X86.RegUpd
 Single-step rules expose register and memory updates while keeping the rest of
 each state folded.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448.X86
 

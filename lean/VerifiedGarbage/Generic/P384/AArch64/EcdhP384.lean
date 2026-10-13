@@ -1,7 +1,9 @@
-import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
-import VerifiedGarbage.Impl.Ecdh.P384.AArch64
-import VerifiedGarbage.Proof.Ecdh.AArch64.P384.Verified
+module
+
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
+public import VerifiedGarbage.Impl.Ecdh.P384.AArch64
+public import VerifiedGarbage.Proof.Ecdh.AArch64.P384.Verified
 
 /-!
 # ECDH over P-384 (SP 800-56A) on AArch64
@@ -9,6 +11,8 @@ import VerifiedGarbage.Proof.Ecdh.AArch64.P384.Verified
 A generic file (see `TCB/Emit.lean`) over P-384's group law `h`, the variant
 `Variants/P384/AArch64/Law.lean`.
 -/
+
+@[expose] public section
 
 namespace VG.Generic.P384.AArch64.EcdhP384
 
@@ -30,7 +34,7 @@ def artifacts (h : Proof.Weierstrass.AArch64.HasLawInv Spec.P384.curve) : List A
       coordinates, dbl-2001-b, with `Y = 1` where the result is the point at infinity) and the \
       addition of its entry, every entry loaded and masked and `y` negated by a mask of the \
       digit's sign, by the complete formula of Renes, Costello and Batina for `a = -3` \
-      (Algorithm 4); `Z⁻¹` is by divsteps (Bernstein and Yang's safegcd, half-delta form): 15 batches of 59 \
+      (Algorithm 4); `Z⁻¹` is a call of `vg_p384_inv_mod_p`, by divsteps (Bernstein and Yang's safegcd, half-delta form): 15 batches of 59 \
       divsteps on the low 64-bit words of `f` and `g` (from `f = p`, `g = Z`), each giving a matrix of \
       64-bit entries that updates `f`, `g` (divided by 2⁵⁹) and the coefficients `a`, `b` \
       (divided by 2⁶⁴ modulo `p`, as in Montgomery reduction), 885 divsteps in all, enough for \

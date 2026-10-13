@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Framework.Pratt
-import VerifiedGarbage.Spec.P256
+module
+
+public import VerifiedGarbage.Proof.Framework.Pratt
+public import VerifiedGarbage.Spec.P256
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The P-256 field prime `p` and group order `n` are prime
@@ -8,6 +14,8 @@ Pratt certificates (`Proof/Framework/Pratt.lean`), one theorem per prime of
 the trees, for `p` and for `n`. Factors below `2^16` are prime by trial
 division (`prime_small`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.P256
 

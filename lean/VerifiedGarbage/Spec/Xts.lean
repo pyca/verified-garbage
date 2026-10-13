@@ -1,4 +1,6 @@
-import VerifiedGarbage.Spec.Cbc
+module
+
+public import VerifiedGarbage.Spec.Cbc
 
 /-!
 # XTS-AES (IEEE Std 1619-2007, NIST SP 800-38E)
@@ -25,6 +27,8 @@ continue from (`next`): XTS of the first `k + 1` blocks is XTS of the first
 `Spec/Xts/Contract.lean`; computing `T` and ciphertext stealing are the
 caller's.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Xts
 

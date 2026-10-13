@@ -1,14 +1,23 @@
-import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBaseCT
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Framework.ConstMem
-import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBasePrecomputedCT
-import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
-import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
+module
+
+public import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBaseCT
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.ConstMem
+public import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBasePrecomputedCT
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
+public import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! The precomputed variant satisfies the same reviewed ABI contract, with 8 bytes of stack for
 its call of `vg_gf25519_r64_invert`: correct and constant time as its code with the inversion
 inlined (`Verified.of_inline`); callers get its correctness and constant time for states that
 keep their buffers off those 8 bytes (`scalarBase_precomputed_ok`, `scalarBaseLocal.clear`). -/
+
+@[expose] public section
+
 namespace VG.Proof.Ed25519.X86_64
 open VG VG.X86_64 VG.Impl.Ed25519.X86_64
 

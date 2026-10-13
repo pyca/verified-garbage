@@ -1,7 +1,19 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledRawCT
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledMont
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8CT
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxCT
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledRawCT
+meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledRawCT
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledMont
+meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledMont
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8CT
+meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8CT
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxCT
+meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64.AdxTiledProduct
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public
@@ -15,6 +27,15 @@ theorem raw_fw {ps : List (Nat × Nat)} {ca cb a b : Nat} (pa : (ca, a) ∈ ps) 
   obtain ⟨⟨mi,hg⟩,hv⟩ := h
   exact WP.mono (rawProduct_ok hg.scr hg.rdi hg.hdr hv pa pb L.hZ L.hw L.hwN L.hn ha hb ha1 ha2 hb1 hb2)
     fun _ ⟨_,_,o,k⟩ => GoodV.of_outside ⟨⟨mi,hg⟩,hv⟩ o k
+
+theorem rawBare_fw {ps : List (Nat × Nat)} {ca cb a b : Nat} (pa : (ca, a) ∈ ps) (pb : (cb, b) ∈ ps)
+    (ha : a<8) (hb : b<8)
+    (ha1 : a≠aAcc) (ha2 : a≠aTmp) (hb1 : b≠aAcc) (hb2 : b≠aTmp)
+    (L : Layout) (s : State) (h : GoodV ps L s) :
+    WP isa (AdxTiledProduct.rawProductBare ca cb) s (GoodV ps L) := by
+  obtain ⟨⟨mi,hg⟩,hv⟩ := h
+  exact WP.mono (rawProductBare_ok hg.scr hg.rdi hg.hdr hv pa pb L.hZ L.hw L.hwN L.hn ha hb ha1 ha2 hb1 hb2)
+    fun _ ⟨_,o₁,_,o₂,k⟩ => GoodV.of_bare ⟨⟨mi,hg⟩,hv⟩ o₁ o₂ k
 
 theorem redc_ct : RelCT isa (Two GoodL) AdxRotate8.redc (Two GoodL) := by
   apply two_post ?_ ?_

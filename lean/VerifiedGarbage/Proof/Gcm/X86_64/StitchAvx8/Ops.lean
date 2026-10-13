@@ -1,8 +1,17 @@
-import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Aes
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.Buffers
-import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Base
+module
+
+public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Aes
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.Buffers
+public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Base
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## Env -/
+
+@[expose] public section
+
 section
 
 /-!
@@ -38,6 +47,9 @@ structure Env (s₀ : State) (P : Nat → Block) (s : State) : Prop where
   poly : s.mem.readW (pp s₀ + 784) 128 = poly
   rounds : s.mem.readW (pp s₀ + 800) 64 = s₀.gpr .rsi
   data : s.mem.readW (pp s₀ + 808) 64 = dp s₀
+  /-- The 8 bytes at `scratch + 816`, which nothing writes after entry:
+  out of place, the saved `rbx`. -/
+  saved : s.mem.readW (pp s₀ + 816) 64 = s₀.mem.readW (pp s₀ + 816) 64
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
 
@@ -63,6 +75,7 @@ theorem Env.yframe {s₀ s t : State} {P : Nat → Block} {rs : List XReg}
   · rw [f.mem]; exact h.poly
   · rw [f.mem]; exact h.rounds
   · rw [f.mem]; exact h.data
+  · rw [f.mem]; exact h.saved
   · exact f.rd.trans h.rd
   · exact f.wr.trans h.wr
 
@@ -100,6 +113,7 @@ theorem Env.buffer {s₀ s t : State} {P : Nat → Block}
   · exact (work_read hm 784 16 (by omega) (by omega)).trans h.poly
   · exact (work_read hm 800 8 (by omega) (by omega)).trans h.rounds
   · exact (work_read hm 808 8 (by omega) (by omega)).trans h.data
+  · exact (work_read hm 816 8 (by omega) (by omega)).trans h.saved
   · exact f.rd.trans h.rd
   · exact f.wr.trans h.wr
 
@@ -312,6 +326,14 @@ theorem meta_poly (s : State) :
 theorem meta_rounds (s : State) :
     (metaMem s).readW (s.gpr .r11 + BitVec.ofNat 64 800) 64 = s.gpr .rsi := by
   rw [metaMem, Mem.readW_writeW_self64]
+
+theorem meta_saved (s : State) :
+    (metaMem s).readW (s.gpr .r11 + BitVec.ofNat 64 816) 64 = s.mem.readW (s.gpr .r11 + BitVec.ofNat 64 816) 64 := by
+  rw [metaMem,
+    Mem.readW_writeW_sep (Offset.sep (s.gpr .r11) (d := 816) (n := 8) (e := 800) (k := 8) (by decide) (by decide) (by decide)) (by decide),
+    Mem.readW_writeW_sep (Offset.sep (s.gpr .r11) (d := 816) (n := 8) (e := 808) (k := 8) (by decide) (by decide) (by decide)) (by decide),
+    Mem.readW_writeW_sep (Offset.sep (s.gpr .r11) (d := 816) (n := 8) (e := 784) (k := 16) (by decide) (by decide) (by decide)) (by decide),
+    Mem.readW_writeW_sep (Offset.sep (s.gpr .r11) (d := 816) (n := 8) (e := 768) (k := 16) (by decide) (by decide) (by decide)) (by decide)]
 
 theorem meta_data (s : State) :
     (metaMem s).readW (s.gpr .r11 + BitVec.ofNat 64 808) 64 = s.gpr .rdx := by

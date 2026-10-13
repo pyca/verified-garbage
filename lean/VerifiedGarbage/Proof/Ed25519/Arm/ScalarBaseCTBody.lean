@@ -1,9 +1,22 @@
-import VerifiedGarbage.Proof.Ed25519.Arm.BatchBits
-import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTSupport
-import VerifiedGarbage.Proof.Ed25519.Arm.PointMulBody
-import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTLit
+module
+
+public import VerifiedGarbage.Proof.Ed25519.Arm.BatchBits
+meta import VerifiedGarbage.Proof.Ed25519.Arm.BatchBits
+public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTSupport
+meta import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTSupport
+public import VerifiedGarbage.Proof.Ed25519.Arm.PointMulBody
+meta import VerifiedGarbage.Proof.Ed25519.Arm.PointMulBody
+public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTLit
+meta import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTLit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Ed25519.Arm.ScalarBaseCTBits`. -/
+
+@[expose] public section
+
 section
 /-! Reloading the scalar pointer and batch index restores their public values. -/
 namespace VG.Proof.Ed25519.Arm

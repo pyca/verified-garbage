@@ -1,7 +1,9 @@
-import VerifiedGarbage.Proof.Rsa.AArch64.PrivImpl
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtVerified
-import VerifiedGarbage.Proof.Bignum.AArch64.PcVerified
-import VerifiedGarbage.Proof.Rsa.AArch64.PdChecked
+module
+
+public import VerifiedGarbage.Proof.Rsa.AArch64.PrivImpl
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtVerified
+public import VerifiedGarbage.Proof.Bignum.AArch64.PcVerified
+public import VerifiedGarbage.Proof.Rsa.AArch64.FoldedChecked
 
 /-!
 # `vg_rsa_private_crt` on AArch64: the baseline
@@ -10,6 +12,8 @@ A variant of `RsaPrivateCrt` on AArch64 (see `TCB/Emit.lean`):
 `vg_rsa_private_crt`, checked with `vg_rsa_public_precompute` and
 `vg_rsa_public_precomputed_checked`. Its callers keep their plain names.
 -/
+
+@[expose] public section
 
 namespace VG.Variants.RsaPrivateCrt.AArch64.Base
 
@@ -25,8 +29,8 @@ def variant : Proof.Rsa.AArch64.CrtImpl where
   pcVerified := precompute_verified Mont.base
   pcNoFrames := by decide +kernel
   pdName := Spec.Rsa.publicPrecomputedCheckedApi.name
-  pd := Impl.Rsa.AArch64.Checked.precomputedChecked Mont.base.mm
-  pdVerified := Proof.Rsa.AArch64.precomputedChecked_verified Mont.base
+  pd := Impl.Rsa.AArch64.Folded.checked Mont.base.mm
+  pdVerified := Proof.Rsa.AArch64.FoldedPublic.checked_verified Mont.base
   pdNoFrames := by decide +kernel
   suffix := ""
   features := []

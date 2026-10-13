@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.AesCcm.X86_64.Seal
-import VerifiedGarbage.Proof.AesCcm.X86_64.Cmp
-import VerifiedGarbage.Proof.AesCcm.X86_64.Mask
+module
+
+public import VerifiedGarbage.Proof.AesCcm.X86_64.Seal
+public import VerifiedGarbage.Proof.AesCcm.X86_64.Cmp
+public import VerifiedGarbage.Proof.AesCcm.X86_64.Mask
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CCM on x86-64: `vg_aes_ccm_open`
@@ -11,6 +17,8 @@ plaintext at `W + 96`, then the comparison of its first `t` bytes with the
 received tag at `T`, whose address is on the stack, the mask of the data and
 `restore` (`openTail_ok`, `open_wp`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

@@ -1,6 +1,8 @@
-import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Sha224
-import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Frame
+module
+
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Sha224
+public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Frame
 
 /-!
 # PBKDF2-HMAC-SHA-224 (RFC 8018) on ARMv7: the iteration and the whole derivation
@@ -20,6 +22,8 @@ runs in a frame holding its working space
 (`Proof.Pbkdf2.Whole.Arm.pbkFramed`).
 -/
 
+@[expose] public section
+
 namespace VG.Artifacts.Pbkdf2Sha224.Arm
 
 def artifacts : List Artifact := [
@@ -28,7 +32,7 @@ def artifacts : List Artifact := [
     doc := Spec.Hmac.sha224I.iterateApi.doc
     code := Proof.Pbkdf2.Md.Arm.sha224Md.iterate
     contract := Spec.Hmac.sha224I.iterateContract Arm.abi 16
-    ofSig := ⟨_, _, _, by unfold Spec.Hmac.Instance.iterateContract; rfl⟩
+    ofSig := by exact (⟨_, _, _, by unfold Spec.Hmac.Instance.iterateContract; rfl⟩)
     writeArgs := true
     stack := 16
     verified := Proof.Pbkdf2.Md.Arm.Instances.sha224_iterate
@@ -39,7 +43,7 @@ def artifacts : List Artifact := [
     code := Impl.StackScratch.Arm.withStackScratch (Proof.Pbkdf2.Whole.Arm.pbkFrame Spec.Hmac.sha224I) 3
       Proof.Pbkdf2.Whole.Arm.sha224F.pbkdf2
     contract := Spec.Hmac.sha224I.pbkdf2Contract Arm.abi (24 + Proof.Pbkdf2.Whole.Arm.pbkFrame Spec.Hmac.sha224I)
-    ofSig := ⟨_, _, _, by unfold Spec.Hmac.Instance.pbkdf2Contract Spec.Pbkdf2.pbkdf2Contract; rfl⟩
+    ofSig := by exact (⟨_, _, _, by unfold Spec.Hmac.Instance.pbkdf2Contract Spec.Pbkdf2.pbkdf2Contract; rfl⟩)
     stack := 24 + Proof.Pbkdf2.Whole.Arm.pbkFrame Spec.Hmac.sha224I
     verified := Proof.Pbkdf2.Whole.Arm.pbkFramed Proof.Pbkdf2.Whole.Arm.sha224 (by decide)
       Proof.Pbkdf2.Whole.Arm.sha224_pbkFrameSat

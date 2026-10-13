@@ -1,8 +1,10 @@
-import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
-import VerifiedGarbage.Proof.P521.Comb7
-import VerifiedGarbage.Impl.EcKey.P521.AArch64
-import VerifiedGarbage.Proof.EcKey.AArch64.P521.Verified
+module
+
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
+public import VerifiedGarbage.Proof.P521.Comb7
+public import VerifiedGarbage.Impl.EcKey.P521.AArch64
+public import VerifiedGarbage.Proof.EcKey.AArch64.P521.Verified
 
 /-!
 # P-521 public keys (FIPS 186-5 §A.2) on AArch64
@@ -10,6 +12,8 @@ import VerifiedGarbage.Proof.EcKey.AArch64.P521.Verified
 A generic file (see `TCB/Emit.lean`) over P-521's group law `h`, the variant
 `Variants/P521/AArch64/Law.lean`.
 -/
+
+@[expose] public section
 
 namespace VG.Generic.P521.AArch64.EcP521
 

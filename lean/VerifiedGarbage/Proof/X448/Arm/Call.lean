@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.X448.Arm.Fn
-import VerifiedGarbage.Proof.Framework.Arm.Call
+module
+
+public import VerifiedGarbage.Proof.X448.Arm.Fn
+public import VerifiedGarbage.Proof.Framework.Arm.Call
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 on ARMv7: calls of the field functions
@@ -11,6 +17,8 @@ the function is called on the working space at `r0` (`callFn_ok`,
 `mulA24Call_ok`); the call changes only the registers `clob` and the memory
 `FieldMem` allows (`Op`), as the operations did when they were inlined.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448.Arm
 

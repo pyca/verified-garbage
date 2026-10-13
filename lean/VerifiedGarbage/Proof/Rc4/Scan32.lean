@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Rc4.Dword
+module
+
+public import VerifiedGarbage.Proof.Rc4.Dword
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RC4: a doubleword scan of the table, step by step
@@ -8,6 +14,8 @@ doublewords or lanes of a scan (`gather`, `pick`, `spread`, `scatter`), and
 facts about bytes in 32-bit registers and about the memory around the table
 that their proofs share.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rc4
 open VG VG.Spec.Rc4

@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Open
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Open
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM's short path on x86-64: what each piece keeps
@@ -11,6 +17,8 @@ first) and, after `powers`, the constants in every lane of `xmm0` and
 piece leaves, from which the rest of it addresses memory and counts
 (`lensHead_ok`, `tagMov_ok`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

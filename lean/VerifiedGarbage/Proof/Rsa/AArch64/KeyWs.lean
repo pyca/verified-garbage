@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Rsa.AArch64.KeyLoops
-import VerifiedGarbage.Proof.Bignum.AArch64.PubSetup
-import VerifiedGarbage.Proof.Bignum.AArch64.Store
-import VerifiedGarbage.Proof.Rsa.Ranges
+module
+
+public import VerifiedGarbage.Proof.Rsa.AArch64.KeyLoops
+public import VerifiedGarbage.Proof.Bignum.AArch64.PubSetup
+public import VerifiedGarbage.Proof.Bignum.AArch64.Store
+public import VerifiedGarbage.Proof.Rsa.Ranges
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSA private keys on AArch64: the working space and its pieces
@@ -12,6 +18,8 @@ arrays fitting in it; kept by code that changes only arrays and the header
 slot `sMask` (`Ws.congr`). The pieces of the functions that load, clear,
 copy and store arrays (`zeroA_ok`, `copyA_ok`, `loadA_ok`, `storeA_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.AArch64
 

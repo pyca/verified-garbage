@@ -1,14 +1,16 @@
-import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.Weierstrass.X86_64.InvInterface
-import VerifiedGarbage.Proof.Weierstrass.Law
-import VerifiedGarbage.Proof.P521.Comb7
-import VerifiedGarbage.Impl.Ecdsa.P521.X86_64
-import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.Verified
-import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.Lit
-import VerifiedGarbage.Impl.Ecdsa.Verify.P521.X86_64
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P521.JointVerified
-import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.VerifiedAdx
-import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.LitAdx
+module
+
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvInterface
+public import VerifiedGarbage.Proof.Weierstrass.Law
+public import VerifiedGarbage.Proof.P521.Comb7
+public import VerifiedGarbage.Impl.Ecdsa.P521.X86_64
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.Verified
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.Lit
+public import VerifiedGarbage.Impl.Ecdsa.Verify.P521.X86_64
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P521.JointVerified
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.VerifiedAdx
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.LitAdx
 
 /-!
 # ECDSA over P-521 (FIPS 186-5) on x86-64
@@ -18,6 +20,8 @@ inversions `h`, the variant
 `Variants/P521/X86_64/Law.lean`, for each multiplication modulo `p`: the
 baseline's, and BMI2's and ADX's (`_adx`).
 -/
+
+@[expose] public section
 
 namespace VG.Generic.P521.X86_64.EcdsaP521
 

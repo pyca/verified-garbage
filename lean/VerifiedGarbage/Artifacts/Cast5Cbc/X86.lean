@@ -1,0 +1,37 @@
+module
+
+public import VerifiedGarbage.Proof.Cast5.X86.ModesVerified
+
+/-! # CAST5-CBC artifacts on baseline x86 (32-bit) -/
+
+@[expose] public section
+
+namespace VG.Artifacts.Cast5Cbc.X86
+
+/-- How the functions compute CAST5, and the mode. -/
+def note : String :=
+  "Baseline IA-32: one block at a time, through the generic CBC of `Impl/Modes/X86/` over CAST5's ECB \
+  block code: each S-box lookup is a scan of the whole table in the static `VG_CAST5_S1234`, \
+  so no secret is an address. The subkeys and the number of rounds are reloaded from the arguments for each block."
+
+def artifacts : List Artifact := [
+  { Spec.Cast5.cbcEncryptApi with
+    target := X86.target
+    doc := Spec.Cast5.cbcEncryptApi.doc (notes := [note])
+    consts := Impl.Cast5.ecbConsts
+    code := Impl.StackScratch.X86.withStackScratchWiped 332 5 76 Impl.Cast5.X86.Modes.cbcEncrypt
+    contract := Spec.Cast5.cbcEncryptContract (X86.abi.withConsts Impl.Cast5.ecbConsts) 336
+    stack := 336
+    verified := Proof.Cast5.X86.ModeFns.cbcEncrypt_framed
+    spSafe := Code.all_of_allInstrs (by lit_decide) },
+  { Spec.Cast5.cbcDecryptApi with
+    target := X86.target
+    doc := Spec.Cast5.cbcDecryptApi.doc (notes := [note])
+    consts := Impl.Cast5.ecbConsts
+    code := Impl.StackScratch.X86.withStackScratchWiped 332 5 76 Impl.Cast5.X86.Modes.cbcDecrypt
+    contract := Spec.Cast5.cbcDecryptContract (X86.abi.withConsts Impl.Cast5.ecbConsts) 336
+    stack := 336
+    verified := Proof.Cast5.X86.ModeFns.cbcDecrypt_framed
+    spSafe := Code.all_of_allInstrs (by lit_decide) }]
+
+end VG.Artifacts.Cast5Cbc.X86

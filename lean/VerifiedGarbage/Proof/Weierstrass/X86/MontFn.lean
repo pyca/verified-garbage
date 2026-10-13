@@ -1,7 +1,12 @@
-import VerifiedGarbage.Proof.Weierstrass.X86.MontTail
-import VerifiedGarbage.Proof.Weierstrass.X86.MontBody
-import VerifiedGarbage.TCB.X86.Target
+module
 
+public import VerifiedGarbage.Proof.Weierstrass.X86.MontTail
+public import VerifiedGarbage.Proof.Weierstrass.X86.MontBody
+public import VerifiedGarbage.TCB.X86.Target
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Montgomery arithmetic as functions on x86 (32-bit): the functions
@@ -14,6 +19,8 @@ that has their arguments on the stack (`Pre`): the working space `ws`
 and `ebp`, writes only `[o]` and its own working space (`Outs`), and leaves
 the number the contract says at `[o]`: `mulFn_ok`, `addFn_ok`, `subFn_ok`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.X86.Mont
 

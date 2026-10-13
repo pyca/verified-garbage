@@ -1,6 +1,17 @@
-import VerifiedGarbage.Impl.Ed25519.Arm.PointDecode
-import VerifiedGarbage.Impl.Ed25519.Arm.PointEqual
-import VerifiedGarbage.Proof.Framework.Arm.Lit
+module
+
+public import VerifiedGarbage.Impl.Ed25519.Arm.PointDecode
+meta import VerifiedGarbage.Impl.Ed25519.Arm.PointDecode
+public import VerifiedGarbage.Impl.Ed25519.Arm.PointEqual
+meta import VerifiedGarbage.Impl.Ed25519.Arm.PointEqual
+public import VerifiedGarbage.Proof.Framework.Arm.Lit
+meta import VerifiedGarbage.Proof.Framework.Arm.Lit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.Ed25519.Arm
 open VG VG.Arm VG.Impl.Ed25519.Arm
@@ -15,5 +26,5 @@ materialize_code equalOpsCT := fieldCode pointEqualOps
 materialize_code zero0CT := fieldZero 0
 materialize_code parityCT := (.block (freeze 0 ++ recoverParity) : Prog isa)
 materialize_code negateCT := fieldCode [.const 5 0, .sub 0 5 0]
-materialize_code rootAdjustCT := fieldCode [.const 18 Spec.Ed25519.sqrtM1, .mul 0 0 18]
+materialize_code rootAdjustCT := fieldCode [.const 18 Spec.Ed25519.sqrtM1, .mulc 0 0 18]
 end VG.Proof.Ed25519.Arm

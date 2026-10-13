@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.AesOcb.X86_64.CTBase
-import VerifiedGarbage.Proof.AesOcb.X86_64.Whole
+module
+
+public import VerifiedGarbage.Proof.AesOcb.X86_64.CTBase
+meta import VerifiedGarbage.Proof.AesOcb.X86_64.CTBase
+public import VerifiedGarbage.Proof.AesOcb.X86_64.Whole
+meta import VerifiedGarbage.Proof.AesOcb.X86_64.Whole
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-OCB on x86-64: the whole blocks are constant time
@@ -11,6 +19,8 @@ analysis from the public slots and the number of blocks in `r13`
 (`callBlocks_rel`). A pass keeps the public arguments, whatever the offsets
 and the checksum (`pass_one`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

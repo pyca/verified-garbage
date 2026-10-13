@@ -1,4 +1,8 @@
-import VerifiedGarbage.Proof.Ct.Arm
+module
+
+public import VerifiedGarbage.Proof.Ct.Arm
+
+@[expose] public section
 
 namespace VG.Artifacts.Ct.Arm
 open VG.Arm

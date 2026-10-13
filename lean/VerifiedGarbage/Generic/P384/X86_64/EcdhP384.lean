@@ -1,11 +1,13 @@
-import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.Weierstrass.X86_64.InvInterface
-import VerifiedGarbage.Proof.Weierstrass.Law
-import VerifiedGarbage.Impl.Ecdh.P384.X86_64
-import VerifiedGarbage.Proof.Ecdh.X86_64.P384.Verified
-import VerifiedGarbage.Proof.Ecdh.X86_64.P384.Lit
-import VerifiedGarbage.Proof.Ecdh.X86_64.P384.VerifiedAdx
-import VerifiedGarbage.Proof.Ecdh.X86_64.P384.LitAdx
+module
+
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvInterface
+public import VerifiedGarbage.Proof.Weierstrass.Law
+public import VerifiedGarbage.Impl.Ecdh.P384.X86_64
+public import VerifiedGarbage.Proof.Ecdh.X86_64.P384.Verified
+public import VerifiedGarbage.Proof.Ecdh.X86_64.P384.Lit
+public import VerifiedGarbage.Proof.Ecdh.X86_64.P384.VerifiedAdx
+public import VerifiedGarbage.Proof.Ecdh.X86_64.P384.LitAdx
 
 /-!
 # ECDH over P-384 (SP 800-56A) on x86-64
@@ -14,6 +16,8 @@ A generic file (see `TCB/Emit.lean`) over P-384's group law,
 inversions and prime order `h`, the variant `Variants/P384/X86_64/Law.lean`, for each
 multiplication: the baseline's, and BMI2's and ADX's (`_adx`).
 -/
+
+@[expose] public section
 
 namespace VG.Generic.P384.X86_64.EcdhP384
 
@@ -46,7 +50,8 @@ def exchange (adx : Bool) (code : Prog X86_64.isa)
       sign, by Jacobian addition with the entry's `Z²` and `Z³`, whose exceptional cases (equal \
       or opposite points) do not arise for `d < n`; the sum is kept, by masks, unless the digit \
       is zero, and the entry in its place where the accumulator is the point at infinity; \
-      `Z⁻¹` is by the signature's divsteps. The result (or zeros) is selected by a mask of the \
+      `Z⁻¹` is the signature's call of `vg_p384_inv_mod_p" ++
+      (if adx then "_adx" else "") ++ "`. The result (or zeros) is selected by a mask of the \
       checks, `d` in `[1, n-1]` and `Z ≠ 0`, so the time depends only on the pointers."])
     code
     contract := Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P384.inst X86_64.abi 8

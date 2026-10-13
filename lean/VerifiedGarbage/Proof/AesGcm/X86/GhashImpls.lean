@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesGcm.X86.Callee
-import VerifiedGarbage.Proof.Gcm.X86.Pclmul.Ghash
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86.Callee
+public import VerifiedGarbage.Proof.Gcm.X86.Pclmul.Ghash
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on x86: `vg_ghash_pclmul`
@@ -10,6 +16,8 @@ variants need it, and its proof imports the algebra of
 `Proof/Gcm/Poly.lean`, which the rest of the AES-GCM proofs then need not
 import.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesGcm.X86
 

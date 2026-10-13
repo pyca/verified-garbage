@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.Aes.X86.ExpandKey
-import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyBlocks
-import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyVerified
-import VerifiedGarbage.Proof.Aes.Scratch
-import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
+module
+
+public import VerifiedGarbage.Proof.Aes.X86.ExpandKey
+public import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyBlocks
+public import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyVerified
+public import VerifiedGarbage.Proof.Aes.Scratch
+public import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The AES key expansion on x86, with its working space on the stack
@@ -17,6 +23,8 @@ the call of the code, which uses no other stack. The copies are read only
 where the pre- and postcondition read the buffers
 (`Proof/Aes/Scratch.lean`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Aes.X86
 

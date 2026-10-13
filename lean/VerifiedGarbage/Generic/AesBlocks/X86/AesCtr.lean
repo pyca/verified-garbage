@@ -1,5 +1,7 @@
-import VerifiedGarbage.TCB.X86.Target
-import VerifiedGarbage.Proof.AesCtr.X86.Verified
+module
+
+public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Proof.AesCtr.X86.Verified
 
 /-!
 # AES-CTR (NIST SP 800-38A §6.5) on x86
@@ -12,6 +14,8 @@ implementation (`Variants/AesBlocks/X86/`), named with its suffix (e.g.
 The stack is 24 bytes: the five arguments of the block function and the
 return address of its call.
 -/
+
+@[expose] public section
 
 namespace VG.Generic.AesBlocks.X86.AesCtr
 

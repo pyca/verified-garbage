@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx2.Wide
-import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedSse.Ecb
+module
+
+public import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx2.Wide
+public import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedSse.Ecb
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The AVX2 function
@@ -8,6 +14,8 @@ The batches of 256 blocks (`wide_ok`), then the SSE2 code on the blocks
 left (`BitslicedSse.ecb_post`): every block becomes its encryption or
 decryption (`ecb_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.TripleDes.X86_64.BitslicedAvx2
 
@@ -76,7 +84,7 @@ theorem ecb_post (d : Direction) {s : State} (E : WideEnv s)
     simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
     · exact w.rbx
-    all_goals exact g _ (by simp [WideRegs, PassRegs])
+    all_goals first | exact w.r12 | exact w.r13 | exact g _ (by simp [WideRegs, PassRegs])
   · rw [← hsp, t.gpr.2, hsp]
     refine w.frame.readW (r := ⟨s.gpr .rsp, 8⟩) (Region.contains_self _ _) ?_ (by decide)
     intro r hr

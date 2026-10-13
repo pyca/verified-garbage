@@ -1,11 +1,25 @@
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Main
-import VerifiedGarbage.Proof.Ecdsa.AArch64.P224.Contract
-import VerifiedGarbage.Proof.Ecdsa.AArch64.P224.Lit
-import VerifiedGarbage.Proof.P224.Point
-import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
-import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
-import VerifiedGarbage.Proof.P224.Prime
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.Main
+meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Main
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.P224.Contract
+meta import VerifiedGarbage.Proof.Ecdsa.AArch64.P224.Contract
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.P224.Lit
+meta import VerifiedGarbage.Proof.Ecdsa.AArch64.P224.Lit
+public import VerifiedGarbage.Proof.P224.Point
+meta import VerifiedGarbage.Proof.P224.Point
+public import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
+meta import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
+meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
+meta import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
+public import VerifiedGarbage.Proof.P224.Prime
+meta import VerifiedGarbage.Proof.P224.Prime
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDSA over P-224 on AArch64: `Verified`
@@ -17,6 +31,8 @@ writes the other callee-saved registers, `sp` or a SIMD register
 (`abiPreserved_of`). Constant time by taint tracking: the only branches are on
 loop counters, and every address is an argument plus a constant or a counter.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.AArch64.P224
 
@@ -70,7 +86,10 @@ theorem p224_ok (hI : Weierstrass.AArch64.InvSounds) : CfgOk p224 where
   chain_n := fun h => absurd h (by decide)
   am3 := by unfold AM3; decide +kernel
   call_p := fun _ _ h => nomatch (callOf_small (by decide)).symm.trans h
-  call_n := callOf_small (by decide)
+  call_n := fun _ _ h => nomatch (callOf_small (by decide)).symm.trans h
+  inv_at := .inr (by decide +kernel)
+  inv_fn := fun _ => ⟨by decide, by lit_decide, by lit_decide, by lit_decide, by lit_decide⟩
+  padd := fun _ => ⟨by decide, by decide, by rw [← Code.allInstrs_eq]; decide +kernel, by decide +kernel⟩
 
 theorem pre_of {s : State} (h : signAArch64.pre s) : Pre p224 s := by
   obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, held, fit, hdw⟩ := h

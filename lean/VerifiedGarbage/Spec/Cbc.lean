@@ -1,4 +1,6 @@
-import VerifiedGarbage.Spec.Aes
+module
+
+public import VerifiedGarbage.Spec.Aes
 
 /-!
 # CBC (NIST SP 800-38A §6.2)
@@ -23,6 +25,8 @@ A message may be encrypted or decrypted in pieces of whole blocks: CBC of
 in assembly take a piece and the chaining value to start from, and leave
 the one to continue from; their contracts are in `Spec/Cbc/Contract.lean`.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Cbc
 

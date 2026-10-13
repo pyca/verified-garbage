@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlDsa.Sign.Setup
+module
+
+public import VerifiedGarbage.Proof.MlDsa.Sign.Setup
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA: signing's values, from its inputs
@@ -15,6 +21,8 @@ Two runs whose `signLeakT` agree agree on `ρ` (`rho_of_leak`), and, once
 `ExpandA` finishes, on what each iteration they both reach leaks
 (`leak_iter`): its `c̃`, whether its checks passed, and then its hint.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Sign
 

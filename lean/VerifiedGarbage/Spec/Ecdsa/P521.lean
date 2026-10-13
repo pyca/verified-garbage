@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.Ecdsa.Generic
-import VerifiedGarbage.Spec.P521
+module
+
+public import VerifiedGarbage.Spec.Ecdsa.Generic
+public import VerifiedGarbage.Spec.P521
 
 /-!
 # ECDSA over P-521: the contracts, on every target
@@ -7,6 +9,8 @@ import VerifiedGarbage.Spec.P521
 **Trusted** (as every file in `Spec/`). The `Instance` of P-521
 (`Spec/P521.lean`): `vg_ecdsa_p521_sign`, in the module `ecdsa_p521`.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Ecdsa.P521
 

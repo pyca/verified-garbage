@@ -5,9 +5,10 @@ trustworthy. Read `lean/README.md` first.
 
 For a fast Lean bootstrap on Linux x86-64, restore the prebuilt GHCR cache
 before compiling proofs; see [Restoring the CI build cache](lean/README.md#restoring-the-ci-build-cache).
-Docker is not required: the README shows how to stream it straight from the
-registry API with `curl`. Either way needs `zstd` to decompress it; without
-the command, `pip install zstandard` and use the README's Python one-liner.
+The README streams it straight from the registry API with
+`ci/fetch_lean_cache.py`, which resumes a dropped connection, and needs
+`zstd` to decompress it; without the command, `pip install zstandard` and use
+the README's Python one-liner.
 Restoring takes the whole cache (about 10.5 GB unpacked), since optimizing a
 proof means rebuilding it.
 
@@ -210,6 +211,62 @@ should add files, not edit lists that every other PR edits too.
   `src/<family>/<hash>.rs` (the generic code stays in `src/<family>/mod.rs`),
   and its tests, benchmarks and `docs/algorithms/` row are
   `<family>_<hash>.rs` and `<family>-<hash>.toml`.
+
+## Lean modules
+
+Every file under `lean/VerifiedGarbage/` is a module of Lean's module
+system, except `Artifacts.lean`; `python3 ci/check_lean_modules.py` checks
+it. Write a new file's header by hand:
+
+```lean
+/- Copyright notice, if any. -/
+module
+
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Spec.Md5
+import all Init.Data.Array.Basic        -- proofs only: see below
+
+/-! # What the file is -/
+
+@[expose] public section
+
+namespace VG.Proof.Md5.X86_64
+…
+```
+
+* `public import` what the file's statements and definitions mention
+  (importers see it too); a plain `import` gives the file something for its
+  proofs only, and importers do not see it. `@[expose] public section`
+  keeps every definition unfoldable by importers, as the proofs need.
+* A file that only defines tactics, elaborators or commands is a
+  `public meta section`, and imports each module both ways
+  (`public import X` and `public meta import X`; `Lean` only as
+  `public meta import Lean`), so that its code runs at elaboration time in
+  the files that use it. Mark `meta` the helpers a tactic runs, in a file
+  that also has definitions or theorems.
+* A file that evaluates code while it is elaborated (`#guard`, `#eval`,
+  `run_cmd`, `materialize_*`, `taint_decide`, `taint_summary`) also has a
+  `meta import` of each of its imports, so that what it evaluates is
+  available to the compiler.
+* A proof (under `Proof/`, not the framework) has `import all` of the core
+  modules whose definitions proofs evaluate (`decide`, `rfl`, the kernel)
+  but core does not expose to modules: `Init.Data.Array.Basic`,
+  `Init.Data.Array.DecidableEq`, `Init.Data.Nat.Bitwise.Basic` and
+  `Init.Data.Vector.Basic`, and `Init.Data.Nat.Power2.Basic` if it unfolds
+  `Nat.isPowerOfTwo`.
+* The audits (`#assert_standard_axioms`, `#assert_no_compiler_overrides`,
+  `#assert_spec_origin`) run only in files that are not modules (the
+  emitter's drivers, `Artifacts.lean`, `VerifiedGarbageTest/`), and refuse
+  to run in a module: a module sees the theorems it imports as axioms,
+  without their proofs. A file that is not a module sees every module's
+  private imports too.
+* In a structure instance, a field proven by a tactic inside a term
+  (`ofSig := ⟨_, _, _, by …⟩`) is elaborated after the other fields, and
+  a tactic run before its goal is known is stuck: write the field
+  `by exact (…)`.
+* An exposed definition may not refer to a private declaration of its file,
+  and the auxiliary declarations of a theorem's proof are private to it:
+  a lemma another file uses is a top-level theorem, not a `where` lemma.
 
 ## Stacking PRs
 
@@ -589,6 +646,15 @@ VG_CPU_FEATURES=avx,avx2 python3 ci/bench_compare.py --modules chacha20 path/to/
 (cd bench && VG_CPU_FEATURES=none VG_BENCH_MODULES=chacha20 cargo bench -- '^chacha20/verified-garbage/')
 ```
 
+A benchmark whose code reads a comb's table of hundreds of kilobytes
+(P-521's) is up to about 7% faster or slower depending on which physical
+pages the kernel gives the table when it first reads the binary, a draw
+fixed for each binary file: comparing one run of each side compares two
+draws, not the code. So `ci/bench_compare.py` runs those groups
+(`FRESH_COPIES`) from `--copies` fresh copies of each side's binary and
+compares the fastest of each; add a group there when its code reads such a
+table.
+
 For another architecture, or features this CPU lacks, run the Benchmarks
 workflow by hand on a pushed branch (`workflow_dispatch` on `bench.yml`)
 with `base_commit` (empty to run the branch alone, next to OpenSSL and
@@ -602,6 +668,7 @@ runs every benchmark in about thirty jobs: never do that for one change.
 ```sh
 (cd lean && lake build --log-level=warning && lake env lean --run Emit.lean --check)
 python3 ci/check_lean_imports.py
+python3 ci/check_lean_modules.py
 python3 ci/check_lean_speed.py
 python3 ci/check_vectors.py
 python3 ci/check_arch_gates.py

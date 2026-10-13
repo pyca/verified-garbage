@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.MlKem.X86_64.S4Scalar
-import VerifiedGarbage.Proof.MlKem.X86_64.FragPrim
-import VerifiedGarbage.Proof.MlKem.X86_64.Prfs
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86_64.S4Scalar
+public import VerifiedGarbage.Proof.MlKem.X86_64.FragPrim
+public import VerifiedGarbage.Proof.MlKem.X86_64.Prfs
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Implementations of `vg_mlkem_sample_ntt4` on x86-64
@@ -17,6 +23,8 @@ Each also comes with the computation of several outputs of `PRF₂` that its
 callers inline (`Callee4.prfs`): one at a time for the baseline, and four
 at a time with AVX2 for `vg_mlkem_sample_ntt4_avx2` (`Prfs.lean`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.X86_64
 

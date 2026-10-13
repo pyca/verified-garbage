@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.CT
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.CT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Deterministic ECDSA on 32-bit ARM: `Verified`
@@ -8,6 +14,8 @@ keeps the callee-saved registers and the stack pointer (`abiPreserved`), and
 `sign_ct` constant time up to the number of candidates. Each instance's file
 shows that its contract implies `rfcArm` (`sign_verified`'s `himp`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Rfc6979.Arm
 

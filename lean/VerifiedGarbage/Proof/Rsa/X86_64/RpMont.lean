@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Rsa.X86_64.RpFrame
-import VerifiedGarbage.Proof.Bignum.X86_64.PubR2
+module
+
+public import VerifiedGarbage.Proof.Rsa.X86_64.RpFrame
+public import VerifiedGarbage.Proof.Bignum.X86_64.PubR2
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_recover_primes` on x86-64: Montgomery form
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.Bignum.X86_64.PubR2
 as `vg_rsa_public` computes it, 1, `R mod n` and `n - R mod n`, the
 Montgomery forms of 1 and `-1` (`mont_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.X86_64
 

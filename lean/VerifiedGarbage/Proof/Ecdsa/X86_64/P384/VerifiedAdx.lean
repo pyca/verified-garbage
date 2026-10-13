@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.Verified
-import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.LitEraseAdx
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.Verified
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.Verified
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.LitEraseAdx
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.LitEraseAdx
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDSA over P-384 on x86-64 with BMI2 and ADX: `Verified`
@@ -10,6 +18,8 @@ import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.LitEraseAdx
 and either selection (`selPassV_ok`): the same curve, so the same facts
 (`p384x_ok`, from `p384_ok`) and the same precondition.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.X86_64.P384
 
@@ -67,6 +77,7 @@ theorem p384x_ok (hI : InvSounds) : CfgOk p384x where
   p_lt_2n := by decide +kernel
   minv_p := by decide +kernel
   red_p := by decide +kernel
+  red_n := by decide +kernel
   minv_n := by decide +kernel
   len8 := by decide
   len_lo := by decide
@@ -89,6 +100,11 @@ theorem p384x_ok (hI : InvSounds) : CfgOk p384x where
   comb_am3 := fun _ _ => by unfold AM3; decide +kernel
   am3 := by unfold AM3; decide +kernel
   even _ := by decide
+  inverse _ := ⟨by decide, rfl⟩
+
+/-- `[k]G` is a call of `vg_p384_mul_base_adx`, which calls no other function. -/
+theorem p384x_mulBase : MulBaseOk p384x :=
+  ⟨fun _ => ⟨_, rfl, rfl, by decide, by lit_decide⟩, fun h => absurd h (by decide)⟩
 
 theorem p384x_tbls (hT : CombOkW Spec.P384.curve 7 55 Impl.P384.p384Comb7 Impl.P384.p384Comb7Start) :
     CombTbls p384x := fun d h => by cases h; exact ⟨hT, fun h => absurd h (by decide)⟩
@@ -109,7 +125,7 @@ theorem sign_x86_adx (hL : Law Spec.P384.curve)
     (hI : InvSounds) (s : State)
     (hs : signX86_64.pre s) :
     ∃ t s', Exec isa signP384Adx.inline s t s' ∧ abiPreserved s s' ∧ signX86_64.post s s' := by
-  obtain ⟨t, s', he, hsv, hpost⟩ := sign_ok (p384x_ok hI) hL (p384x_tbls hT) (pre_of_x hs)
+  obtain ⟨t, s', he, hsv, hpost⟩ := sign_ok (p384x_ok hI) hL (p384x_tbls hT) (pre_of_x hs) p384x_mulBase
   have hsp : ∀ i ∈ instrs signP384Adx.inline, Taint.clobbers i .rsp = false := by
     have h : signP384Adx.allInstrs (fun i => !Taint.clobbers i .rsp) = true := by lit_decide
     rw [← Code.allInstrs_inline, Code.allInstrs_eq, List.all_eq_true] at h

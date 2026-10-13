@@ -1,8 +1,17 @@
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointMain
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointChecks
-import VerifiedGarbage.Proof.Ecdsa.X86_64.VerifiedAdx
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointMain
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointChecks
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.VerifiedAdx
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Baseline and ADX joint verification satisfy the existing functional specification. -/
+
+@[expose] public section
+
 namespace VG.Proof.Ecdsa.Verify.X86_64
 open VG VG.X86_64 VG.Impl.Ecdsa.X86_64 VG.Impl.P256.X86_64
 open VG.Proof.Ecdsa.X86_64 VG.Proof.P256.X86_64 VG.Proof.Weierstrass VG.Proof.Weierstrass.X86_64

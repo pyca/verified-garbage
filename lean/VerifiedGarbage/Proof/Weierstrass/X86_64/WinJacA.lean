@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacNorm
-import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJac
-import VerifiedGarbage.Proof.Weierstrass.JacMadd
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacNorm
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJac
+public import VerifiedGarbage.Proof.Weierstrass.JacMadd
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # 5-bit windows with an affine table on x86-64
@@ -13,6 +19,8 @@ adds the selected entry by the mixed addition (`madd_ok`, `jstepA_pt`): right
 unless `R = T` (excluded for `k < n` by `Window5.loop_noexc`, as the Jacobian
 addition's exceptions) or `R = O` (where `T` is kept, as before).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.X86_64
 

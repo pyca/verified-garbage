@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.AesGcm.AArch64.Rel
+module
+
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Rel
+meta import VerifiedGarbage.Proof.AesGcm.AArch64.Rel
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on AArch64: the pieces are constant time
@@ -9,6 +16,8 @@ addresses, lengths and offsets) leaks the same: its code between calls by the
 taint analysis, from the registers those proofs pin, and its calls by their
 callees' proofs.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 
@@ -38,6 +47,25 @@ theorem absorb_rel (v : GcmImpl) {yo : Nat} (hyo : yo = 0 ∨ yo = 16) {k₁ k�
     (absSeg1_ok L hyo h₁) (absSeg1_ok L hyo h₂) fun τ₁ τ₂ a₁ a₂ => ?_
   refine rel_seq (rel_gh v.gh a₁.call a₂.call (by rw [a₁.env.sp, a₂.env.sp]))
     (absCall1_ok L hyo v a₁ h₁.ho h₁.hH) (absCall1_ok L hyo v a₂ h₂.ho h₂.hH) fun τ₁ τ₂ b₁ b₂ => ?_
+  refine rel_seq (rel_taint [.x19, .x20, .x21, .x23, .x24] (by rw [b₁.env.sp, b₂.env.sp])
+      (by agree_tac [b₁.env.x19, b₂.env.x19, b₁.env.x20, b₂.env.x20, b₁.env.x21, b₂.env.x21, b₁.x23, b₂.x23,
+        b₁.x24, b₂.x24]) t₂)
+    (absSeg2_ok L hyo b₁) (absSeg2_ok L hyo b₂) fun τ₁ τ₂ c₁ c₂ => ?_
+  refine rel_seq (rel_gh v.gh c₁.call c₂.call (by rw [c₁.env.sp, c₂.env.sp]))
+    (absCall2_ok L hyo v c₁) (absCall2_ok L hyo v c₂) fun τ₁ τ₂ d₁ d₂ => ?_
+  exact rel_taint [.x20, .x23, .x24] (by rw [d₁.1.env.sp, d₂.1.env.sp])
+    (by agree_tac [d₁.1.env.x20, d₂.1.env.x20, d₁.1.x23, d₂.1.x23, d₁.1.x24, d₂.1.x24]) ⟨_, by taint_decide⟩
+
+/-- `absorbAl yo`: `absorb yo` with nothing buffered. -/
+theorem absorbAl_rel (v : GcmImpl) {yo : Nat} (hyo : yo = 0 ∨ yo = 16) {k₁ k₂ : Reg → BitVec 64} {H₁ H₂ : Block}
+    {x₁ x₂ : List Byte} {D : Addr} {n : Nat} {σ₁ σ₂ : State}
+    (h₁ : AbsIn Ctx St W SP k₁ H₁ x₁ D n 0 σ₁) (h₂ : AbsIn Ctx St W SP k₂ H₂ x₂ D n 0 σ₂) :
+    RelCT isa (Eq2 σ₁ σ₂) (absorbAl v.callees yo) TT := by
+  have t₂ : ∃ h, (taint.check (Taint.ofRegs [.x19, .x20, .x21, .x23, .x24]) (.block (absSeg2 yo)) h).isSome =
+      true := by
+    rcases hyo with rfl | rfl <;> exact ⟨_, by taint_decide⟩
+  have b₁ := h₁.mid (yo := yo)
+  have b₂ := h₂.mid (yo := yo)
   refine rel_seq (rel_taint [.x19, .x20, .x21, .x23, .x24] (by rw [b₁.env.sp, b₂.env.sp])
       (by agree_tac [b₁.env.x19, b₂.env.x19, b₁.env.x20, b₂.env.x20, b₁.env.x21, b₂.env.x21, b₁.x23, b₂.x23,
         b₁.x24, b₂.x24]) t₂)
@@ -88,6 +116,30 @@ theorem crypt_rel (v : GcmImpl) {k₁ k₂ : Reg → BitVec 64} {R P : Nat} {D :
       (by agree_tac [h₁.env.x19, h₂.env.x19, h₁.env.x20, h₂.env.x20, h₁.env.x21, h₂.env.x21, h₁.x22, h₂.x22,
         h₁.x23, h₂.x23, h₁.x24, h₂.x24, h₁.x25, h₂.x25]) ⟨_, by taint_decide⟩)
     (crSeg1_ok L (icb := 0) h₁) (crSeg1_ok L (icb := 0) h₂) fun τ₁ τ₂ a₁ a₂ => ?_
+  refine rel_seq (rel_ctr v.ctr a₁.call a₂.call (by rw [a₁.env.sp, a₂.env.sp]))
+    (ctrCall1_ok L v a₁ (hc h₁ a₁.frame)) (ctrCall1_ok L v a₂ (hc h₂ a₂.frame)) fun τ₁ τ₂ b₁ b₂ => ?_
+  refine rel_seq (rel_taint [.x19, .x20, .x21, .x22, .x23, .x24, .x25] (by rw [b₁.1.env.sp, b₂.1.env.sp])
+      (by agree_tac [b₁.1.env.x19, b₂.1.env.x19, b₁.1.env.x20, b₂.1.env.x20, b₁.1.env.x21, b₂.1.env.x21,
+        b₁.1.x22, b₂.1.x22, b₁.1.x23, b₂.1.x23, b₁.1.x24, b₂.1.x24, b₁.1.x25, b₂.1.x25]) ⟨_, by taint_decide⟩)
+    (crSeg2_ok L b₁.1 b₁.2) (crSeg2_ok L b₂.1 b₂.2) fun τ₁ τ₂ c₁ c₂ => ?_
+  refine rel_seq (rel_ctr v.ctr c₁.call c₂.call (by rw [c₁.env.sp, c₂.env.sp]))
+    (ctrCall2_ok L v c₁ (hc h₁ c₁.frame)) (ctrCall2_ok L v c₂ (hc h₂ c₂.frame)) fun τ₁ τ₂ d₁ d₂ => ?_
+  exact rel_taint [.x20, .x23, .x24] (by rw [d₁.env.sp, d₂.env.sp])
+    (by agree_tac [d₁.env.x20, d₂.env.x20, d₁.x23, d₂.x23, d₁.x24, d₂.x24]) ⟨_, by taint_decide⟩
+
+/-- `cryptAl`: `crypt` from the start of a keystream block. -/
+theorem cryptAl_rel (v : GcmImpl) {k₁ k₂ : Reg → BitVec 64} {R P : Nat} {D : Addr} {n : Nat} {σ₁ σ₂ : State}
+    (h₁ : CrIn Ctx St W SP k₁ R P D n σ₁) (h₂ : CrIn Ctx St W SP k₂ R P D n σ₂) (hP : P % 16 = 0) :
+    RelCT isa (Eq2 σ₁ σ₂) (cryptAl v.callees) TT := by
+  have hc : ∀ {σ : State} {k : Reg → BitVec 64} (h : CrIn Ctx St W SP k R P D n σ) {m' : Mem},
+      Frame (crFrame St W D n) σ.mem m' → ciphOf m' Ctx R = ciphOf σ.mem Ctx R :=
+    fun h _ hf => ciph_frame hf (ctx_crFrame L h.data) h.rounds
+  have m₁ := h₁.mid (icb := 0) hP
+  have m₂ := h₂.mid (icb := 0) hP
+  refine rel_seq (rel_taint [.x19, .x20, .x21, .x22, .x23, .x24] (by rw [h₁.env.sp, h₂.env.sp])
+      (by agree_tac [h₁.env.x19, h₂.env.x19, h₁.env.x20, h₂.env.x20, h₁.env.x21, h₂.env.x21, h₁.x22, h₂.x22,
+        h₁.x23, h₂.x23, h₁.x24, h₂.x24]) ⟨_, by taint_decide⟩)
+    (crArgs_ok L m₁) (crArgs_ok L m₂) fun τ₁ τ₂ a₁ a₂ => ?_
   refine rel_seq (rel_ctr v.ctr a₁.call a₂.call (by rw [a₁.env.sp, a₂.env.sp]))
     (ctrCall1_ok L v a₁ (hc h₁ a₁.frame)) (ctrCall1_ok L v a₂ (hc h₂ a₂.frame)) fun τ₁ τ₂ b₁ b₂ => ?_
   refine rel_seq (rel_taint [.x19, .x20, .x21, .x22, .x23, .x24, .x25] (by rw [b₁.1.env.sp, b₂.1.env.sp])

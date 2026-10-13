@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesGcm.AArch64.OneEntry
+module
+
+public import VerifiedGarbage.Proof.AesGcm.AArch64.OneEntry
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on AArch64: `J₀` and the additional data of `seal` and `open`
@@ -8,6 +14,8 @@ the state at `W + 16` for the nonce, `oneAad` absorbs the additional data and
 `encPrep` sets up the text's arguments from the slots the entry wrote
 (`front_ok`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 
@@ -113,7 +121,7 @@ theorem front_ok (v : GcmImpl) {s₀ : State} {k : Reg → BitVec 64} {H : Block
   have hd₂ : DataOk St W s₂ A al := haad.of_eq (by rw [r₂.rd, rd₁]) (by rw [r₂.wr, wr₁])
   have hIn : AbsIn Ctx St W SP k H [] A al 0 s₂ :=
     ⟨he₂, hk₂, x23₂, x24₂, x25₂, rfl, hd₂, by rw [r₂.mem]; exact h₁.hH⟩
-  refine WP.mono (WP.with_rdwr (absorb_ok L (.inr rfl) v hIn)) fun s₃ ⟨h₃, rd₃, wr₃⟩ => ?_
+  refine WP.mono (WP.with_rdwr (absorbAl_ok L (.inr rfl) v hIn)) fun s₃ ⟨h₃, rd₃, wr₃⟩ => ?_
   have f₃ : Frame (frontFrame St W) s₀.mem s₃.mem :=
     (h₁.frame.sub fun r hr => ⟨r, List.mem_append_left _ hr, fun _ h => h⟩).trans
       (by rw [← r₂.mem]; exact h₃.frame.sub fun r hr => ⟨r, List.mem_append_right _ hr, fun _ h => h⟩)

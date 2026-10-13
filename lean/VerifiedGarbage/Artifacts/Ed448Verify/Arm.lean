@@ -1,7 +1,9 @@
-import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Proof.Ed448.Arm.Verify.Verified
-import VerifiedGarbage.Proof.Ed448.Arm.VerifyVerified
-import VerifiedGarbage.Proof.Ed448.Facts
+module
+
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.Proof.Ed448.Arm.Verify.Verified
+public import VerifiedGarbage.Proof.Ed448.Arm.VerifyVerified
+public import VerifiedGarbage.Proof.Ed448.Facts
 
 /-!
 # Ed448 verification on ARMv7
@@ -11,6 +13,8 @@ of `vg_ed448_verify_equation` is passed to the caller's here, so that only
 this file imports it, with the reference computations' agreement with the
 specification (`Proof/Ed448/Facts.lean`).
 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.Ed448Verify.Arm
 

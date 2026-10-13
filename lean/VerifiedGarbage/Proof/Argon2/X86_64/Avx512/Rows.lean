@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Argon2.X86_64.Avx512.Mem
-import VerifiedGarbage.Proof.Argon2.PermuteMany
-import VerifiedGarbage.Proof.Argon2.X86_64.Compress
-import VerifiedGarbage.Proof.Framework.Omega
+module
+
+public import VerifiedGarbage.Proof.Argon2.X86_64.Avx512.Mem
+public import VerifiedGarbage.Proof.Argon2.PermuteMany
+public import VerifiedGarbage.Proof.Argon2.X86_64.Compress
+public import VerifiedGarbage.Proof.Framework.Omega
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Argon2 on x86-64 with AVX-512: P on two rows
@@ -11,6 +17,8 @@ into the halves of `zmm0`–`zmm3` (`loadRows_ok`), permuted (`round_words`)
 and stored to their places in the block P permutes, as scratch holds it by
 pairs of columns (`cv`, `storeRows_ok`): `rows_ok`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Argon2.X86_64.Avx512
 

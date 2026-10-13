@@ -1,8 +1,14 @@
-import Lean.Elab.Command
-import Lean.Elab.Tactic.Rewrite
-import Lean.Meta.Eval
-import Lean.Util.ShareCommon
-import VerifiedGarbage.TCB.Code
+module
+
+public import Lean.Elab.Command
+public meta import Lean.Elab.Command
+public import Lean.Elab.Tactic.Rewrite
+public meta import Lean.Elab.Tactic.Rewrite
+public import Lean.Meta.Eval
+public meta import Lean.Meta.Eval
+public import Lean.Util.ShareCommon
+public meta import Lean.Util.ShareCommon
+public import VerifiedGarbage.TCB.Code
 
 /-!
 # Code as literals, for the kernel
@@ -25,6 +31,8 @@ instructions once for every caller (in `g.lit_eq`).
 it that has a literal (`rw_lit`); `taint_decide` does the same.
 -/
 
+@[expose] public section
+
 namespace VG
 
 deriving instance Lean.ToExpr for Code
@@ -38,7 +46,7 @@ literals of their callers refer to: each `N` with a theorem `N.lit_eq`, in the
 modules of this project (`VerifiedGarbage…`) and the current one. They are
 found by name rather than recorded in an environment extension, whose
 `initialize` the emitter's audit refuses (`TCB/Audit.lean`). -/
-def litNames (env : Environment) : Array Name := Id.run do
+meta def litNames (env : Environment) : Array Name := Id.run do
   let add (acc : Array Name) (n : Name) : Array Name :=
     match n with
     | .str p "lit_eq" => if env.contains (.str p "lit") then acc.push p else acc
@@ -54,7 +62,7 @@ def litNames (env : Environment) : Array Name := Id.run do
 /-- Replaces each body of a call in `e` (a literal `Code`) that is the literal of a
 materialized function by a free variable, returning the abstracted literal and the
 functions, in the order of the free variables. -/
-partial def abstractCalls (lits : Array (Name × Expr)) (e : Expr) :
+meta partial def abstractCalls (lits : Array (Name × Expr)) (e : Expr) :
     StateT (Array Name) MetaM Expr := do
   if e.isAppOfArity ``Code.call 4 then
     let body := e.appArg!
@@ -72,7 +80,7 @@ partial def abstractCalls (lits : Array (Name × Expr)) (e : Expr) :
 /-- The literal `g.lit` written out in full: with the literal of each
 materialized function it calls (`h.lit`) replaced by its own, in turn. This is
 the value of `g`, as `materialize` evaluated it. -/
-partial def expandLit (g : Name) : StateT (Std.HashMap Name Expr) MetaM Expr := do
+meta partial def expandLit (g : Name) : StateT (Std.HashMap Name Expr) MetaM Expr := do
   if let some e := (← get)[g]? then return e
   let env ← getEnv
   let some v := (env.find? (g ++ `lit)).bind (·.value?)
@@ -90,14 +98,14 @@ partial def expandLit (g : Name) : StateT (Std.HashMap Name Expr) MetaM Expr := 
   return e
 
 /-- The code `lhs` of `N.lit_eq : lhs = N.lit`. -/
-def lhsOf (N : Name) : MetaM Expr := do
+meta def lhsOf (N : Name) : MetaM Expr := do
   let some (_, lhs, _) := (← getConstInfo (N ++ `lit_eq)).type.eq?
     | throwError "{N ++ `lit_eq} is not an equation"
   return lhs
 
 /-- The constants `c` with a literal (`c.lit_eq : c = c.lit`), from
 `materialize_code c` or `materialize_table c`. -/
-def litConsts (env : Environment) : Array Name :=
+meta def litConsts (env : Environment) : Array Name :=
   (litNames env).filter fun N => match env.find? (N ++ `lit_eq) with
     | some ci => match ci.type.eq? with
       | some (_, .const c _, _) => c == N
@@ -105,7 +113,7 @@ def litConsts (env : Environment) : Array Name :=
     | none => false
 
 /-- Whether `S` is a structure with a field that is a proof. -/
-def hasProofFields (S : Expr) : MetaM Bool := do
+meta def hasProofFields (S : Expr) : MetaM Bool := do
   let .const S _ := S | return false
   let env ← getEnv
   unless isStructure env S do return false
@@ -116,7 +124,7 @@ def hasProofFields (S : Expr) : MetaM Bool := do
 not the trusted base, the specifications or this framework, whose
 definitions (the ISA models, ...) never lead to code with a literal, and
 which `reaches` would otherwise search on every call. -/
-def codeModule (env : Environment) (mods : Array Name) (c : Name) : Bool :=
+meta def codeModule (env : Environment) (mods : Array Name) (c : Name) : Bool :=
   match env.getModuleIdxFor? c with
   | none => true
   | some i => match mods[i.toNat]?.map (·.components) with
@@ -126,7 +134,7 @@ def codeModule (env : Environment) (mods : Array Name) (c : Name) : Bool :=
 
 /-- Whether the definition `c` uses one of `targets`, directly or through
 definitions of this project, memoized in the state. -/
-partial def reaches (targets : NameSet) (mods : Array Name) (c : Name) :
+meta partial def reaches (targets : NameSet) (mods : Array Name) (c : Name) :
     StateT (NameMap Bool) MetaM Bool := do
   if let some b := (← get).find? c then return b
   modify (·.insert c false)
@@ -154,7 +162,7 @@ partial def reaches (targets : NameSet) (mods : Array Name) (c : Name) :
 in what they unfold to. A plain `Expr.replace`, which visits each shared
 subterm once: the goals of `rw_lit` carry large literals (a hint of
 `taint_decide`) that have nothing to unfold. -/
-partial def unfoldWhere (env : Environment) (p : Name → Bool) (e : Expr)
+meta partial def unfoldWhere (env : Environment) (p : Name → Bool) (e : Expr)
     (stop : Expr → Bool := fun _ => false) : Expr :=
   e.replace fun t => if stop t then some t else match t.getAppFn with
     | .const c ls =>
@@ -168,7 +176,7 @@ partial def unfoldWhere (env : Environment) (p : Name → Bool) (e : Expr)
 
 /-- The maximal closed subterms of `e` whose head is a definition that leads
 to constants with a literal (`reaches`), or one of them. -/
-def reachingSubterms (e : Expr) : MetaM (Array Expr) := do
+meta def reachingSubterms (e : Expr) : MetaM (Array Expr) := do
   let targets := (litConsts (← getEnv)).foldl (fun s c => s.insert c) ({} : NameSet)
   if targets.isEmpty then return #[]
   let mods := (← getEnv).header.moduleNames
@@ -205,7 +213,7 @@ then, evaluating `x'`, reads each literal rather than running again the
 functions it was evaluated from: functions that build code (a register
 allocator, tables of constants) are evaluated once, in their own `lit_eq`,
 rather than in every literal or check of the code that uses them. -/
-def unfoldToLits (N : Name) (x : Expr) : MetaM (Option (Expr × Expr)) := do
+meta def unfoldToLits (N : Name) (x : Expr) : MetaM (Option (Expr × Expr)) := do
   let env ← getEnv
   let targets := (litConsts env).foldl (fun s c => if c == N then s else s.insert c) {}
   -- The code with a literal that is an application (`materialize_code M := f a`):
@@ -315,7 +323,7 @@ equality (the modulus is reached by many paths: `p384.MP'`,
 
 /-- `(T, n)` if `e` is the literal `OfNat.ofNat T n _` (`ToExpr` of `Nat`
 and of a nonnegative `Int`). -/
-def natLitOf? (e : Expr) : Option (Expr × Nat) :=
+meta def natLitOf? (e : Expr) : Option (Expr × Nat) :=
   if e.isAppOfArity ``OfNat.ofNat 3 then
     match e.appFn!.appArg! with
     | .lit (.natVal n) => some (e.appFn!.appFn!.appArg!, n)
@@ -325,13 +333,13 @@ def natLitOf? (e : Expr) : Option (Expr × Nat) :=
 /-- The offsets a template is evaluated at: sample `j`'s offset `i` is
 `2⁴⁰ (1 + j (i + 1)) + 2³⁶ i`, so that no two offsets differ by the same
 amount in every sample. -/
-def tplSamples (k : Nat) : Array (Array Nat) :=
+meta def tplSamples (k : Nat) : Array (Array Nat) :=
   (Array.range 3).map fun j => (Array.range k).map fun i => 0x10000000000 * (1 + j * (i + 1)) + 0x1000000000 * i
 
 /-- The value at the same place in the samples `es` of a template (of the
 parameters `xs`), the same in each, but for each number that differs between
 them, which is `xᵢ + c` for one `xᵢ` and `c < 2³²` in every sample. -/
-partial def antiUnify (xs : Array Expr) (samples : Array (Array Nat)) (es : Array Expr) :
+meta partial def antiUnify (xs : Array Expr) (samples : Array (Array Nat)) (es : Array Expr) :
     StateT (Std.HashMap (Array Expr) Expr) MetaM Expr := do
   let e0 := es[0]!
   if es.all (· == e0) then return e0
@@ -368,7 +376,7 @@ partial def antiUnify (xs : Array Expr) (samples : Array (Array Nat)) (es : Arra
 
 /-- `materialize_template N := f`: `N.lit` and `N.lit_eq : f = N.lit`, for `f`
 a function of offsets (`Nat`), as above. -/
-def materializeTemplate (N : Name) (f : Expr) : MetaM Unit := do
+meta def materializeTemplate (N : Name) (f : Expr) : MetaM Unit := do
   if f.hasMVar || f.hasFVar then throwError "materialize_template: {f} is not closed"
   let ty ← inferType f
   forallTelescopeReducing ty fun xs body => do
@@ -381,7 +389,7 @@ def materializeTemplate (N : Name) (f : Expr) : MetaM Unit := do
     let es ← samples.mapM fun s => unsafe evalExpr Expr (mkConst ``Expr)
       (mkApp3 (mkConst ``ToExpr.toExpr [0]) body inst (mkAppN f (Array.map mkNatLit s)))
     let (b, _) ← (antiUnify xs samples es).run {}
-    addDecl <| .defnDecl {
+    addDecl (forceExpose := true) <| .defnDecl {
       name := N ++ `lit, levelParams := [], type := ty
       value := ← mkLambdaFVars xs (ShareCommon.shareCommon' b)
       hints := .abbrev, safety := .safe }
@@ -429,25 +437,25 @@ theorem Code.frame_congr {I C : Type} {p q : I} {a a' : Code I C} (ha : a = a') 
     Code.frame p a q = .frame p a' q := ha ▸ rfl
 
 /-- `++`, which `whnfNoAppend` never unfolds. -/
-def appendConsts : NameSet := NameSet.empty |>.insert ``HAppend.hAppend |>.insert ``Append.append
+meta def appendConsts : NameSet := NameSet.empty |>.insert ``HAppend.hAppend |>.insert ``Append.append
   |>.insert ``List.append |>.insert ``instHAppendOfAppend |>.insert ``List.instAppend
 
 /-- `whnf`, but never through `++`: a list built with `++` is left an append. -/
-def whnfNoAppend (e : Expr) : MetaM Expr :=
+meta def whnfNoAppend (e : Expr) : MetaM Expr :=
   withCanUnfoldPred (fun cfg ci => do
     if appendConsts.contains ci.name then return false else canUnfoldDefault cfg ci) (whnf e)
 
 /-- `whnfNoAppend`, or `none` where it fails (a number past the threshold of
 `Nat.pow`'s evaluation, …): such a term is left for the kernel. Its messages
 (that threshold's warning) are dropped: it only looks ahead. -/
-def whnfNoAppend? (e : Expr) : MetaM (Option Expr) := do
+meta def whnfNoAppend? (e : Expr) : MetaM (Option Expr) := do
   let msgs := (← getThe Core.State).messages
   let r ← tryCatchRuntimeEx (some <$> whnfNoAppend e) fun _ => pure none
   modifyThe Core.State fun s => { s with messages := msgs }
   return r
 
 /-- The elements of the cons prefix of `l`, and its tail. -/
-def consPrefix (l : Expr) : Array Expr × Expr := Id.run do
+meta def consPrefix (l : Expr) : Array Expr × Expr := Id.run do
   let mut xs := #[]
   let mut t := l
   while t.isAppOfArity ``List.cons 3 do
@@ -458,24 +466,24 @@ def consPrefix (l : Expr) : Array Expr × Expr := Id.run do
 /-- What `flatList` and `flattenCode` have done so far: the calls of `whnf`
 (within a budget, past which they give up), and the deepest nesting of `++`
 to the left that they have undone. -/
-structure FlatState where
+meta structure FlatState where
   whnfs : Nat := 0
   leftDepth : Nat := 0
   /-- Whether a definition may build a list with `++` (memoized). -/
   appends : NameMap Bool := {}
 
-abbrev FlatM := StateT FlatState MetaM
+meta abbrev FlatM := StateT FlatState MetaM
 
 /-- The calls of `whnf` `flattenCode` may make, a bound on its time. -/
-def flatBudget : Nat := 100000
+meta def flatBudget : Nat := 100000
 
 /-- The functions that build lists with `++`. -/
-def appendBuilders : NameSet := appendConsts |>.insert ``List.flatten |>.insert ``List.flatMap
+meta def appendBuilders : NameSet := appendConsts |>.insert ``List.flatten |>.insert ``List.flatMap
 
 /-- Whether the definition `c` may build a list with `++`, directly or through
 the definitions it uses: a list whose term uses none is left to the kernel
 whole, without unfolding it at the meta level. -/
-partial def mayAppend (c : Name) : FlatM Bool := do
+meta partial def mayAppend (c : Name) : FlatM Bool := do
   if appendBuilders.contains c then return true
   if let some b := (← get).appends.find? c then return b
   modify fun s => { s with appends := s.appends.insert c false }
@@ -487,7 +495,7 @@ partial def mayAppend (c : Name) : FlatM Bool := do
   return r
 
 /-- `whnfNoAppend?`, counted against the budget (an exception past it). -/
-def flatWhnf (e : Expr) : FlatM (Option Expr) := do
+meta def flatWhnf (e : Expr) : FlatM (Option Expr) := do
   let s ← get
   if s.whnfs ≥ flatBudget then throwError "flattenCode: over budget"
   set { s with whnfs := s.whnfs + 1 }
@@ -499,7 +507,7 @@ evaluating the pieces), and the depth of `++` nested to the left in `l`.
 Below `depth` nested appends (a long chain nested to the right, which the
 kernel evaluates in linear time anyway), the list is one piece: the proof
 stays shallow enough for the kernel. -/
-partial def flatList (α : Expr) (l : Expr) (depth : Nat := 64) :
+meta partial def flatList (α : Expr) (l : Expr) (depth : Nat := 64) :
     FlatM (Array Expr × Expr × Nat) := do
   let lα := mkApp (mkConst ``List [0]) α
   let toL (cs : Array Expr) : Expr :=
@@ -532,7 +540,7 @@ partial def flatList (α : Expr) (l : Expr) (depth : Nat := 64) :
 (`flatList`), and a proof of `c = c'`; the bodies of calls are left as they
 are (the literals of their callees, or code the kernel compares as it is).
 Code nested deeper than `depth` is left as it is, as `flatList` leaves lists. -/
-partial def flattenCode (I C : Expr) (c : Expr) (depth : Nat := 64) : FlatM (Expr × Expr) := do
+meta partial def flattenCode (I C : Expr) (c : Expr) (depth : Nat := 64) : FlatM (Expr × Expr) := do
   let codeTy := mkApp2 (mkConst ``Code) I C
   let refl (x : Expr) := (x, mkApp2 (mkConst ``Eq.refl [1]) codeTy x)
   if depth == 0 then return refl c
@@ -569,10 +577,10 @@ partial def flattenCode (I C : Expr) (c : Expr) (depth : Nat := 64) : FlatM (Exp
 /-- The depth of `++` nested to the left from which flattening pays: below
 it, the kernel's evaluation of the code as it is costs little more than its
 evaluation flattened, and the unfolding is extra work. -/
-def flatMinDepth : Nat := 4
+meta def flatMinDepth : Nat := 4
 
 /-- `flattenCode`, if it pays (`flatMinDepth`) and stays within its budget. -/
-def flattenCode? (I C c : Expr) : MetaM (Option (Expr × Expr)) := do
+meta def flattenCode? (I C c : Expr) : MetaM (Option (Expr × Expr)) := do
   let r ← tryCatch (some <$> (flattenCode I C c).run {}) fun _ => pure none
   let some ((c', prf), s) := r | return none
   if s.leftDepth < flatMinDepth then return none
@@ -581,7 +589,7 @@ def flattenCode? (I C c : Expr) : MetaM (Option (Expr × Expr)) := do
 /-- Defines `N.lit`, the value of the closed code term `code` as a literal
 (calling the literals of the code materialized so far), and
 `N.lit_eq : code = N.lit`. -/
-def materialize (N : Name) (code : Expr) (flat : Bool := false) : MetaM Unit := do
+meta def materialize (N : Name) (code : Expr) (flat : Bool := false) : MetaM Unit := do
   let ty ← inferType code
   let codeTy ← whnfD ty
   unless codeTy.isAppOfArity ``Code 2 do
@@ -608,7 +616,7 @@ def materialize (N : Name) (code : Expr) (flat : Bool := false) : MetaM Unit := 
       | .bvar k => if 1000000 ≤ k then some (f (k - 1000000)) else none
       | _ => none
   let litV := ShareCommon.shareCommon' (inst fun i => mkConst (gs[i]! ++ `lit))
-  addDecl <| .defnDecl {
+  addDecl (forceExpose := true) <| .defnDecl {
     name := N ++ `lit, levelParams := [], type := ty, value := litV
     hints := .abbrev, safety := .safe }
   let eqTy (rhs : Expr) := mkApp3 (mkConst ``Eq [1]) ty code rhs
@@ -764,7 +772,7 @@ elab "materialize_table " id:ident n:num m:(num)? : command => liftTermElabM do
     let prf := mkApp (lemma (mkConst f)) h
     let some (_, _, litV) := (← inferType prf).eq?
       | throwError "materialize_table: unexpected {← inferType prf}"
-    addDecl <| .defnDecl {
+    addDecl (forceExpose := true) <| .defnDecl {
       name := f ++ `lit, levelParams := [], type := fty, value := litV
       hints := .abbrev, safety := .safe }
     addDecl <| .thmDecl {
@@ -792,7 +800,7 @@ elab "materialize_table " id:ident n:num m:(num)? : command => liftTermElabM do
   let prf := match m with
     | none => mkApp5 (mkConst ``Lit.table_eq) β (mkConst f) (mkNatLit n.getNat) l hvals
     | some m => mkApp6 (mkConst ``Lit.table2_eq) β (mkConst f) (mkNatLit n.getNat) (mkNatLit m.getNat) l hvals
-  addDecl <| .defnDecl {
+  addDecl (forceExpose := true) <| .defnDecl {
     name := f ++ `lit, levelParams := [], type := fty, value := litV
     hints := .abbrev, safety := .safe }
   addDecl <| .thmDecl {
@@ -804,12 +812,12 @@ namespace Lit
 /-- Defines `N.lit`, the value of the closed term `v` (of a type with a
 `ToExpr` instance) as a literal, and `N.lit_eq : v = N.lit`, by evaluation
 (reading the literals `v` reaches). -/
-def materializeValue (N : Name) (v : Expr) : MetaM Unit := do
+meta def materializeValue (N : Name) (v : Expr) : MetaM Unit := do
   let ty ← instantiateMVars (← inferType v)
   if ty.hasLevelParam || ty.hasMVar then throwError "materialize_value: {v} is universe polymorphic"
   let inst ← synthInstance (mkApp (mkConst ``ToExpr [0]) ty)
   let l ← unsafe evalExpr Expr (mkConst ``Expr) (mkApp3 (mkConst ``ToExpr.toExpr [0]) ty inst v)
-  addDecl <| .defnDecl {
+  addDecl (forceExpose := true) <| .defnDecl {
     name := N ++ `lit, levelParams := [], type := ty, value := ShareCommon.shareCommon' l
     hints := .abbrev, safety := .safe }
   -- By evaluation, of `v` with the literals it reaches (`unfoldToLits`) if any.
@@ -903,7 +911,7 @@ few definitions deep (each with its head unfolded, while that is a definition
 of this project's code): a goal can name any of them for the constant, as a
 generic proof's `exchangeWith c mq` for `exchangeP256 := Cfg.exchangeJA p256 …`,
 which unfolds to it. -/
-def unfoldChain (env : Environment) (mods : Array Name) (v : Expr) (depth : Nat := 4) :
+meta def unfoldChain (env : Environment) (mods : Array Name) (v : Expr) (depth : Nat := 4) :
     Array Expr := Id.run do
   let ok (e : Expr) := e.isApp && e.getAppFn.isConst && !e.hasLooseBVars
   unless ok v do return #[]
@@ -923,7 +931,7 @@ def unfoldChain (env : Environment) (mods : Array Name) (v : Expr) (depth : Nat 
 head and number of arguments, each argument the same, or (an argument that is
 not code, whose comparison could build it) definitionally equal by the
 kernel's check (a configuration written another way). -/
-def unfoldedOccurrences (tgt v : Expr) : MetaM (Array Expr) := do
+meta def unfoldedOccurrences (tgt v : Expr) : MetaM (Array Expr) := do
   let f := v.getAppFn
   let n := v.getAppNumArgs
   let found ← IO.mkRef (#[] : Array Expr)
@@ -949,7 +957,7 @@ def unfoldedOccurrences (tgt v : Expr) : MetaM (Array Expr) := do
 /-- With `VG_RW_LIT_REPORT` set to a file, a line there for each code that
 `rw_lit` found unfolded (`unfoldChain`) rather than named: where a proof
 names the code by its generator. -/
-def reportUnfolded (N : Name) (v : Expr) : MetaM Unit := do
+meta def reportUnfolded (N : Name) (v : Expr) : MetaM Unit := do
   let some path ← IO.getEnv "VG_RW_LIT_REPORT" | return
   let h ← IO.FS.Handle.mk path .append
   h.putStrLn s!"{← getMainModule} {N} {v.getAppFn.constName!}"

@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.X448.AArch64.Init
-import VerifiedGarbage.Proof.X448.AArch64.MulLoop
-import VerifiedGarbage.Proof.X448.AArch64.Reduce
+module
+
+public import VerifiedGarbage.Proof.X448.AArch64.Init
+public import VerifiedGarbage.Proof.X448.AArch64.MulLoop
+public import VerifiedGarbage.Proof.X448.AArch64.Reduce
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 on AArch64: field multiplication
@@ -9,6 +15,8 @@ The row loop, coefficient folds and carry passes together compute
 multiplication modulo the field prime, with bounded output limbs. Either input
 may also be the output.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448.AArch64
 

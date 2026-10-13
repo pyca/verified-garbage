@@ -1,11 +1,16 @@
-import VerifiedGarbage.Impl.Ed25519.Arm.Power
-import VerifiedGarbage.Impl.Ed25519.Arm.Freeze
+module
+
+public import VerifiedGarbage.Impl.Ed25519.Arm.Power
+public import VerifiedGarbage.Impl.Ed25519.Arm.Freeze
 
 /-! Normalize extended coordinates, then form the compressed point in FR. -/
+
+@[expose] public section
+
 namespace VG.Impl.Ed25519.Arm
 open VG.Arm
 
-def affineOps : List FieldOp := [.mul 0 0 15, .mul 1 1 15]
+def affineOps : List FieldOp := [.mulc 0 0 15, .mulc 1 1 15]
 def pointAffine : Prog isa := .seq invert (fieldCode affineOps)
 
 def pointSign : List Instr :=

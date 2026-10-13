@@ -1,4 +1,6 @@
-import VerifiedGarbage.Spec.ChaCha20Poly1305.Contract
+module
+
+public import VerifiedGarbage.Spec.ChaCha20Poly1305.Contract
 
 /-!
 # ChaCha20-Poly1305 encryption out of place
@@ -24,6 +26,8 @@ are secret; the pointers, the lengths, the number of slices and where they
 are (their addresses and lengths) are public. Existing contracts are
 unchanged.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.ChaCha20Poly1305
 

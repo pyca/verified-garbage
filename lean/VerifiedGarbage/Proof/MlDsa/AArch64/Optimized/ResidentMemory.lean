@@ -1,7 +1,15 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentBlock
-import VerifiedGarbage.Proof.MlKem.AArch64.Wp
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentBlock
+public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## From `ResidentStep.lean` -/
+
+@[expose] public section
 
 section
 
@@ -36,7 +44,8 @@ theorem block_ok {s : State} {a b : Addr} {ra rb : Reg} {n : Nat}
     (hwa : ∀ i < n, InRegions s.wr (a+BitVec.ofNat 64 (16*i)) 16)
     (hwb : ∀ i < n, InRegions s.wr (b+BitVec.ofNat 64 (16*i)) 16)
     (hwal : InRegions s.wr (a+BitVec.ofNat 64 (16*n)) 8)
-    (hwbl : InRegions s.wr (b+BitVec.ofNat 64 (16*n)) 8) :
+    (hwbl : InRegions s.wr (b+BitVec.ofNat 64 (16*n)) 8)
+    (htab : VG.Proof.Sha3.AArch64.Neon.Hw.RcTable s (s.gpr .x15)) :
     WP isa (.seq Impl.MlDsa.AArch64.Optimized.Resident.permute
       (.block (Impl.MlDsa.AArch64.Optimized.Resident.squeeze (2*n+1) ra rb))) s fun t =>
       StepKeep s t ∧ Pairs t (Spec.Sha3.keccakF A) (Spec.Sha3.keccakF B) ∧
@@ -44,7 +53,7 @@ theorem block_ok {s : State} {a b : Addr} {ra rb : Reg} {n : Nat}
       RateBlock t.mem b n (Spec.Sha3.keccakF B) ∧
       Frame [⟨a,16*n+8⟩,⟨b,16*n+8⟩] s.mem t.mem := by
   apply WP.seq
-  refine WP.mono (permute_ok hp) ?_
+  refine WP.mono (permute_ok hp htab) ?_
   intro u hu
   refine WP.mono (squeeze_ok hn hu.2
     ((hu.1.gpr ra ha16).trans ha) ((hu.1.gpr rb hb16).trans hb)

@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Sha3.X86_64.X4R.Loop
+module
+
+public import VerifiedGarbage.Proof.Sha3.X86_64.X4R.Loop
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Keccak-f[1600] four times at once on x86-64: the states byte by byte
@@ -7,6 +13,8 @@ Byte `q` of state `k` of the four interleaved at `p` is at `ba p k q` (byte `q
 % 8` of lane `q / 8`); the lanes hold the states exactly when these bytes are
 theirs (`lanes4_of_bytes`, `byte_of_lanes4`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sha3.X86_64.X4
 

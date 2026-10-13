@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Ed448.Arm.Verify.Body
-import VerifiedGarbage.Proof.Ed448.Arm.Shake.CT
-import VerifiedGarbage.Proof.Framework.Arm.Inline
+module
+
+public import VerifiedGarbage.Proof.Ed448.Arm.Verify.Body
+public import VerifiedGarbage.Proof.Ed448.Arm.Shake.CT
+public import VerifiedGarbage.Proof.Framework.Arm.Inline
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 verification on ARMv7: constant time
@@ -13,6 +19,8 @@ memory only through `sp`, `r12` and `scratch`. The positions the
 absorptions return, which the next ones start from, depend only on the
 lengths.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.Arm.Verify
 

@@ -1,3 +1,5 @@
+module
+
 /-!
 # DSA big-integer arithmetic: 64-bit limb primitives
 
@@ -5,6 +7,9 @@
 implementation, not DSA operations on 64-bit domains. DSA p and q span
 multiple limbs. The arithmetic uses all 64 bits; no limb is public.
 -/
+
+@[expose] public section
+
 namespace VG.Spec.Dsa.Limb
 
 /-- Low half of the unsigned 128-bit product. -/

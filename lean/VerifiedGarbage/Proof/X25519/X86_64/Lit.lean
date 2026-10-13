@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
-import VerifiedGarbage.Impl.X25519.X86_64
+module
+
+public import VerifiedGarbage.Proof.Framework.X86_64.Lit
+meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
+public import VerifiedGarbage.Impl.X25519.X86_64
+meta import VerifiedGarbage.Impl.X25519.X86_64
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X25519 on x86-64: the code as a literal
@@ -10,6 +18,8 @@ properties of every instruction): the literal of the code (`materialize_code`,
 `Proof/Framework/Lit.lean`) is checked once here instead.
 -/
 
+@[expose] public section
+
 namespace VG.Proof.X25519.X86_64.Lit
 open VG.Impl.X25519.X86_64
 
@@ -19,7 +29,7 @@ and swap of the code. -/
 
 materialize_template mulT := mul
 materialize_template sqrT := sqr
-materialize_template a24T := Field.a24 baseline
+materialize_template a24T := Field.a24add baseline
 materialize_template mul2T := Field.mul2 baseline
 materialize_template sqr2T := Field.sqr2 baseline
 materialize_template addT := add

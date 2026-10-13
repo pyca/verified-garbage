@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.Idea.AArch64.Mul
+module
+
+public import VerifiedGarbage.Proof.Idea.AArch64.Mul
+public import VerifiedGarbage.Proof.Framework.CallLay
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # IDEA on AArch64: a round
@@ -7,6 +14,8 @@ import VerifiedGarbage.Proof.Idea.AArch64.Mul
 (`Holds`) to `Spec.Idea.round` of them under subkeys `6j … 6j + 5`, loaded
 two at a time from the schedule at `x0` (`KeyOk`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Idea.AArch64
 
@@ -21,7 +30,7 @@ structure Holds (x : Spec.Idea.State) (s : State) : Prop where
 
 /-- The schedule `z` is at `x0`, readable. -/
 structure KeyOk (z : Spec.Idea.Schedule) (s : State) : Prop where
-  read : ⟨s.gpr .x0, 104⟩ ∈ s.rd ++ s.wr
+  read : InRegions (s.rd ++ s.wr) (s.gpr .x0) 104
   sched : Spec.Idea.scheduleAt s.mem (s.gpr .x0) = z
 
 theorem KeyOk.keep {z : Spec.Idea.Schedule} {rs : List Reg} {s s' : State} (h : KeyOk z s)
@@ -37,7 +46,7 @@ theorem KeyOk.pair {z : Spec.Idea.Schedule} {s : State} (h : KeyOk z s) {k : Nat
         z.getD (2 * k) 0 ∧
       (((s.mem.readW (s.gpr .x0 + BitVec.ofNat 64 (4 * k)) 32).setWidth 64) >>> 16).setWidth 16 =
         z.getD (2 * k + 1) 0 := by
-  refine ⟨⟨_, h.read, Offset.contains_base _ (by omega) (by omega)⟩, ?_, ?_⟩
+  refine ⟨CallLay.inRegions_sub h.read (by omega) (by decide), ?_, ?_⟩
   · have e := subkey_read32 s.mem (s.gpr .x0) hk (h := 0) (by decide)
     rw [Nat.mul_zero, BitVec.ushiftRight_zero, Nat.add_zero, h.sched] at e
     exact e
@@ -50,7 +59,7 @@ theorem KeyOk.last {z : Spec.Idea.Schedule} {s : State} (h : KeyOk z s) :
     InRegions (s.rd ++ s.wr) (s.gpr .x0 + BitVec.ofNat 64 96) 8 ∧
       ∀ j < 4, ((s.mem.readW (s.gpr .x0 + BitVec.ofNat 64 96) 64) >>> (16 * j)).setWidth 16 =
         z.getD (48 + j) 0 :=
-  ⟨⟨_, h.read, Offset.contains_base _ (by decide) (by decide)⟩, fun j hj => by
+  ⟨CallLay.inRegions_sub h.read (by decide) (by decide), fun j hj => by
     rw [subkey_read96 _ _ hj, h.sched]⟩
 
 macro "keep_tac" : tactic => `(tactic| (

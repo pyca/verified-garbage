@@ -173,17 +173,46 @@ def featureCheck (name doc : String) (required declared : List String) :
     | parts => unless parts.getLast!.startsWith "Safety\n" do
         throw s!"{name} needs CPU features but its doc does not end with its `# Safety` section"
 
+/-- The features that the instructions of `c`, and of the functions it
+calls, require (`Code.requires`), each once, in first-seen order: what
+`dedup (c.requires req)` gives, without building the list with repetitions
+(which holds a function's requirements once per call of it, and was most of
+this check's time). -/
+def requiresDedup {I C : Type} (req : I → List String) (c : Code I C) : List String :=
+  go [] c
+where
+  add (acc fs : List String) : List String :=
+    fs.foldl (fun acc f => if acc.contains f then acc else acc ++ [f]) acc
+  go : List String → Code I C → List String
+    | acc, .block is => is.foldl (fun acc i => add acc (req i)) acc
+    | acc, .seq a b => go (go acc a) b
+    | acc, .ite _ t e => go (go acc t) e
+    | acc, .loop b _ => go acc b
+    | acc, .call _ b => go acc b
+    | acc, .frame i b j => add (go (add acc (req i)) b) (req j)
+
+/-- The first `some` of `f` over the instructions of `c`, and of the
+functions it calls, in `Code.requires`'s order: the head of
+`c.requires fun i => (f i).toList`, found without building that list. -/
+def firstSome? {I C : Type} (f : I → Option String) : Code I C → Option String
+  | .block is => is.findSome? f
+  | .seq a b => firstSome? f a <|> firstSome? f b
+  | .ite _ t e => firstSome? f t <|> firstSome? f e
+  | .loop b _ => firstSome? f b
+  | .call _ b => firstSome? f b
+  | .frame i b j => f i <|> firstSome? f b <|> f j
+
 /-- `a` declares exactly the CPU features its code requires (`featureCheck`). -/
 def checkFeatures (a : Artifact) : Except String Unit :=
-  featureCheck s!"{a.target.name}: {a.name}" a.doc (a.code.requires a.target.isa.requires)
+  featureCheck s!"{a.target.name}: {a.name}" a.doc (requiresDedup a.target.isa.requires a.code)
     a.features
 
 /-- The target's printer can encode every instruction of `a`'s code, and of
 the functions it calls, as the model describes it (`Printer.unencodable`). -/
 def checkEncodable (a : Artifact) : Except String Unit :=
-  match a.code.requires fun i => (a.target.printer.unencodable i).toList with
-  | [] => pure ()
-  | e :: _ => throw s!"{a.target.name}: {a.name}: {e}"
+  match firstSome? a.target.printer.unencodable a.code with
+  | none => pure ()
+  | some e => throw s!"{a.target.name}: {a.name}: {e}"
 
 /-- `doc` with the paragraphs `notes` inserted before its `# Safety` section. -/
 def insertNotes (doc : String) : List String → String
@@ -393,6 +422,29 @@ def modDecls (ms : List String) (cfg : String → Option String) : String :=
       | none => ""
     s!"\n{c}#[rustfmt::skip]\npub(crate) mod {m};\n")
 
+/-- How many tasks `files` checks the artifacts on: the CPUs of CI's
+runners. The checks, and `render`, are pure functions of the artifacts, so
+running them on tasks (`Task.spawn`) changes how long they take, never what
+they return. -/
+def tasks : Nat := 4
+
+/-- `as.forM check` on `tasks` tasks, each checking every `tasks`-th
+artifact: the error of the first artifact of `as` that fails, as `forM`
+gives it, or none. -/
+def forMPar (as : List Artifact) (check : Artifact → Except String Unit) : Except String Unit :=
+  let indexed := as.zipIdx
+  let parts := (List.range tasks).map fun j => Task.spawn fun _ =>
+    (indexed.filter (·.2 % tasks == j)).findSome? fun (a, i) =>
+      match check a with
+      | .error e => some (i, e)
+      | .ok _ => none
+  let first := (parts.filterMap Task.get).foldl (init := none) fun
+    | some m, e => if e.1 < m.1 then some e else some m
+    | none, e => some e
+  match first with
+  | some (_, e) => throw e
+  | none => pure ()
+
 /-- The generated files, given the module of each function each artifact calls. -/
 def render (as : List Artifact) (moduleOf : Artifact → String → String) : List (String × String) :=
   let targets := distinct as (·.target.name)
@@ -420,7 +472,8 @@ def render (as : List Artifact) (moduleOf : Artifact → String → String) : Li
         header ++ s!"//! Verified `{m}` functions for `{t}`.\n" ++
         "#![allow(dead_code)]\n" ++
         String.join ((arts.filter (·.module == m)).map fun a => "\n" ++ function a (moduleOf a)))
-  ("mod.rs", root) :: (targets.map perTarget).flatten
+  -- Each target's files on a task of their own (`tasks`).
+  ("mod.rs", root) :: ((targets.map fun t => Task.spawn fun _ => perTarget t).map Task.get).flatten
 
 /-- The generated files, as paths relative to `src/asm/` and their contents:
 `mod.rs`, and for each target `<target>/mod.rs` and one `<target>/<module>.rs`
@@ -431,15 +484,17 @@ tables of constants are not as `checkConsts` requires, an
 artifact's features are not those its code requires (`checkFeatures`), its
 code has an instruction its target's printer cannot encode
 (`checkEncodable`) or its doc has no `# Safety` section at its end for what
-`fullDoc` adds to it (`checkLayout`). -/
+`fullDoc` adds to it (`checkLayout`). Each check of every artifact runs on
+`tasks` tasks (`forMPar`), one check after the other, so the error is the
+one checking them in order would give. -/
 def files (as : List Artifact) : Except String (List (String × String)) := do
-  as.forM checkApi
+  forMPar as checkApi
   checkUnique as
-  as.forM (checkCalls as)
-  as.forM (checkConsts as)
-  as.forM checkFeatures
-  as.forM checkEncodable
-  as.forM checkLayout
+  forMPar as (checkCalls as)
+  forMPar as (checkConsts as)
+  forMPar as checkFeatures
+  forMPar as checkEncodable
+  forMPar as checkLayout
   return render as fun a n => ((callee as a n).map (·.module)).getD ""
 
 end VG.Rust

@@ -1,6 +1,12 @@
-import VerifiedGarbage.Impl.Seed.X86_64.Ecb
-import VerifiedGarbage.Proof.Seed.X86_64.G16
-import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+module
+
+public import VerifiedGarbage.Impl.Seed.X86_64.Ecb
+public import VerifiedGarbage.Proof.Seed.X86_64.G16
+public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The arrays of 32-bit words in the scratch buffer
@@ -12,6 +18,8 @@ This file has the 32-bit instructions' effects on them, and `lanes16_ok`,
 which runs a step written for one lane (`lanes16 f`, `f b` touching only
 lane `b` of each array) on all sixteen.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Seed.X86_64
 
@@ -245,15 +253,31 @@ theorem wr_setMem (s : State) (m : Mem) : (setMem s m).wr = s.wr := rfl
 
 /-! ## Instructions on lanes -/
 
-/-- The scratch buffer is writable. -/
-def Room (s : State) : Prop := scratchR s ∈ s.wr
+/-- The scratch buffer is writable: it begins a writable region (which a
+caller's larger working space may extend). -/
+def Room (s : State) : Prop := ∃ n, 8 * scratchSlots ≤ n ∧ (⟨s.gpr .r9, n⟩ : Region) ∈ s.wr
+
+/-- An access within the scratch buffer is writable. -/
+theorem Room.wr {s : State} (h : Room s) {a : Addr} {k : Nat} (hc : (scratchR s).Contains a k) :
+    InRegions s.wr a k := by
+  obtain ⟨n, hn, hm⟩ := h
+  refine ⟨_, hm, ?_⟩
+  unfold scratchR Region.Contains at hc
+  unfold Region.Contains
+  simp only at hc ⊢
+  omega
+
+/-- An access within the scratch buffer is readable. -/
+theorem Room.rw {s : State} (h : Room s) {a : Addr} {k : Nat} (hc : (scratchR s).Contains a k) :
+    InRegions (s.rd ++ s.wr) a k := by
+  obtain ⟨r, hr, hc'⟩ := h.wr hc
+  exact ⟨r, List.mem_append_right _ hr, hc'⟩
 
 theorem lane_wr {s : State} (h : Room s) {k b : Nat} (hk : k ∈ arrays) (hb : b < 16) :
-    InRegions s.wr (laneA s k b) 4 := ⟨_, h, lane_in hk hb s⟩
+    InRegions s.wr (laneA s k b) 4 := h.wr (lane_in hk hb s)
 
 theorem lane_rw {s : State} (h : Room s) {k b : Nat} (hk : k ∈ arrays) (hb : b < 16) :
-    InRegions (s.rd ++ s.wr) (laneA s k b) 4 :=
-  ⟨_, List.mem_append_right _ h, lane_in hk hb s⟩
+    InRegions (s.rd ++ s.wr) (laneA s k b) 4 := h.rw (lane_in hk hb s)
 
 theorem exec_mov32_lane {s : State} (h : Room s) {k b : Nat} (hk : k ∈ arrays) (hb : b < 16) (d : Reg) :
     exec (.mov32 d (.mem (lane .r9 k b))) s = some (s.setReg32 d (lv s k b)) := by

@@ -1,14 +1,23 @@
-import VerifiedGarbage.Proof.Ed448.Arm.VerifyDecode
+module
+
+public import VerifiedGarbage.Proof.Ed448.Arm.VerifyDecode
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 verification's equation on ARMv7: decoding `R` and `A`
 
 `vdecode_ok`: `vdecode` decodes the point at `r12` (`R`), then the one at
-`r8` (`A`), each into slots 6–7 (`decode_ok`),
+`r8` (`A`), each into slots 6–7 (`decode_ok`), with one copy of `decode` in a
+loop of two passes,
 after keeping slots 6–7 at `RX` and `RY` (`stash_ok`): `A` ends in slots 6–7
 and `R` at `RX` and `RY`, and `BAD` records both checks. Its writes are in the
 working space below `VBITS` or in the multiplication's area (`DFrame`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.Arm
 
@@ -16,6 +25,7 @@ open VG VG.Arm VG.Impl.Ed448.Arm VG.Proof.X448.Arm VG.Proof.X448.Radix16
 open VG.Proof.Ed448 (RecoverOk)
 open VG.Impl.X448.Arm (slot ACC copy)
 open VG.Spec.Ed448 (bytesAt decodePoint)
+open VG.Proof.X25519.Arm (wp_mov wp_subs op2_reg)
 
 /-- Writes only in the working space below `VBITS` (from the saved registers on) or in the
 multiplication's area. -/
@@ -84,13 +94,31 @@ theorem DFrame.bytes {base q : Addr} {m m' : Mem} (h : DFrame base m m')
     have := hf j (List.mem_range.mp hj)
     exact h _ (Or.inr (by omega)) (Or.inr (by simp only [ACC]; omega))
 
-/-- One decoding: slots 6–7 kept at `RX` and `RY`, the point at `p` decoded into them. -/
+/-- The end of an iteration: `r12 := r8`, `r8 := r0`, and `Z` set exactly when `r8` was `r0`. -/
+theorem vnext_ok (s : State) :
+    WP isa (.block [.mov .r12 (.reg .r8), .mov .r11 (.reg .r8), .mov .r8 (.reg .r0),
+      .subs .r11 .r11 (.reg .r0)]) s fun t =>
+      t.gpr .r12 = s.gpr .r8 ∧ t.gpr .r8 = s.gpr .r0 ∧ t.z = (s.gpr .r8 - s.gpr .r0 == 0) ∧
+      t.mem = s.mem ∧ Keeps [.r8, .r11, .r12] s t := by
+  refine wp_mov (op2_reg _ _) fun t ht => wp_mov (op2_reg _ _) fun u hu => ?_
+  refine wp_mov (op2_reg _ _) fun v hv => wp_subs (op2_reg _ _) fun w hw hz => WP.block_nil ⟨?_, ?_, ?_, ?_, ?_⟩
+  · rw [hw.other _ (by decide), hv.other _ (by decide), hu.other _ (by decide), ht.gpr]
+  · rw [hw.other _ (by decide), hv.gpr, hu.other _ (by decide), ht.other _ (by decide)]
+  · rw [hz, hv.other .r11 (by decide), hu.gpr, hv.other .r0 (by decide), hu.other .r0 (by decide),
+      ht.other .r8 (by decide), ht.other .r0 (by decide)]
+  · rw [hw.mem, hv.mem, hu.mem, ht.mem]
+  · exact rest_keeps ((ht.rest (by decide)).trans ((hu.rest (by decide)).trans ((hv.rest (by decide)).trans
+      (hw.rest (by decide)))))
+
+/-- One decoding: slots 6–7 kept at `RX` and `RY`, the point at `r12` decoded into them, and
+`vnext_ok`. -/
 theorem vdecodeBody_ok (hR : RecoverOk) {s : State} {base q : Addr} (hs : Scr s base)
-    (hb : BoundedEnv s.mem base) {p : Reg} (hp : p = .r8 ∨ p = .r12) (hin : DecIn s base q p)
+    (hb : BoundedEnv s.mem base) (hin : DecIn s base q .r12)
     (h10 : E s.mem base 10 = 1) (h11 : E s.mem base 11 = Spec.Ed448.d) :
-    WP isa (vdecodeBody p) s fun t =>
-      Keeps (.r10 :: .r11 :: workRegs) s t ∧ DFrame base s.mem t.mem ∧
+    WP isa vdecodeBody s fun t =>
+      Keeps (.r8 :: .r10 :: .r11 :: workRegs) s t ∧ DFrame base s.mem t.mem ∧
       BoundedEnv t.mem base ∧
+      t.gpr .r12 = s.gpr .r8 ∧ t.gpr .r8 = s.gpr .r0 ∧ t.z = (s.gpr .r8 - s.gpr .r0 == 0) ∧
       (∀ i < 28, limbs t.mem base RX i = limbs s.mem base (slot 6) i) ∧
       (∀ i < 28, limbs t.mem base RY i = limbs s.mem base (slot 7) i) ∧
       BadUpd ((decodePoint (bytesAt s.mem q 57)).isSome) (s.gpr .r10) (t.gpr .r10) ∧
@@ -98,37 +126,53 @@ theorem vdecodeBody_ok (hR : RecoverOk) {s : State} {base q : Addr} (hs : Scr s 
         E t.mem base 6 = a.X ∧ E t.mem base 7 = a.Y ∧ a.Z = 1) ∧
       (∀ i : Index, i ≠ 6 → i ≠ 7 → (i.val = 0 ∨ i.val = 2 ∨ (8 ≤ i.val ∧ i.val ≤ 11) ∨ i.val = 21) →
         E t.mem base i = E s.mem base i) := by
-  have hpc : p ∉ [.r3] := by rcases hp with rfl | rfl <;> decide
   unfold vdecodeBody
   -- slots 6–7 kept
   refine WP.seq (WP.mono (stash_ok hs) fun s1 ⟨k1, o1, x1, y1⟩ => ?_)
   have hs1 := hs.of_keeps k1 (by decide)
   have e1 : ∀ i : Index, E s1.mem base i = E s.mem base i := stash_E o1
-  have in1 := hin.keep k1 hpc
+  have in1 := hin.keep k1 (by decide)
   have byt1 : bytesAt s1.mem q 57 = bytesAt s.mem q 57 := by
     simp only [bytesAt]
     exact List.map_congr_left fun j hj => o1 _ (Or.inr (by
       have := hin.far j (List.mem_range.mp hj); simp only [RX]; omega))
   -- the decoding
-  refine WP.mono (decode_ok hR hs1 (stash_bounded o1 hb) (p := p) hp in1.addr in1.fit
+  refine WP.seq (WP.mono (decode_ok hR hs1 (stash_bounded o1 hb) (p := .r12) (.inr rfl) in1.addr in1.fit
     in1.rd in1.far 6 7 (Or.inl ⟨rfl, rfl⟩) (by rw [e1]; exact h10) (by rw [e1]; exact h11))
-    fun t ⟨k2, b2, c2, v2, e2⟩ => ?_
+    fun s2 ⟨k2, b2, c2, v2, e2⟩ => ?_)
   rw [byt1] at c2 v2
-  refine ⟨(k1.mono (by decide)).trans (k2.regs.mono (by decide)), ?_, b2, fun i hi => ?_, fun i hi => ?_,
-    ?_, v2, fun i h6 h7 hi => ?_⟩
-  · exact Outside2.trans (show DFrame base s.mem s1.mem from fun p h1 _ => o1 p (by unfold RX; omega))
+  -- the pointers
+  refine WP.mono (vnext_ok s2) fun t ⟨t12, t8, tz, tm, tk⟩ => ?_
+  have k12 : Keeps (.r8 :: .r10 :: .r11 :: workRegs) s s2 :=
+    (k1.mono (by decide)).trans (k2.regs.mono (by decide))
+  have r8₂ : s2.gpr .r8 = s.gpr .r8 := (k2.regs.1 _ (by decide)).trans (k1.1 _ (by decide))
+  have r0₂ : s2.gpr .r0 = s.gpr .r0 := k12.1 _ (by decide)
+  refine ⟨k12.trans (tk.mono (by decide)), ?_, by rw [tm]; exact b2, by rw [t12, r8₂], by rw [t8, r0₂],
+    by rw [tz, r8₂, r0₂], fun i hi => ?_, fun i hi => ?_, ?_, fun a ha => by rw [tm]; exact v2 a ha,
+    fun i h6 h7 hi => ?_⟩
+  · rw [tm]
+    exact Outside2.trans (show DFrame base s.mem s1.mem from fun p h1 _ => o1 p (by unfold RX; omega))
       (VKeep.dframe k2)
-  · rw [limbs_above k2.mem (by decide) (by decide) hi]; exact x1 i hi
-  · rw [limbs_above k2.mem (by decide) (by decide) hi]; exact y1 i hi
-  · rw [← k1.1 .r10 (by decide)]; exact c2
-  · rw [e2 i h6 h7 (by omega), e1]
+  · rw [tm, limbs_above k2.mem (by decide) (by decide) hi]; exact x1 i hi
+  · rw [tm, limbs_above k2.mem (by decide) (by decide) hi]; exact y1 i hi
+  · rw [tk.1 _ (by decide), ← k1.1 .r10 (by decide)]; exact c2
+  · rw [tm, e2 i h6 h7 (by omega), e1]
 
-/-- `R` (at `r12`) and then `A` (at `r8`) decoded: `A` into slots 6–7, `R` at `RX` and `RY`. -/
+/-- A loop whose body runs twice. -/
+theorem WP.loop2 {M : ISA} {b : Prog M} {c : M.Cond} {s : M.State} {Q : M.State → Prop}
+    (h : WP M b s fun t => M.eval c t = some true ∧
+      WP M b t fun u => M.eval c u = some false ∧ Q u) : WP M (.loop b c) s Q := by
+  obtain ⟨t₁, s₁, e₁, hc₁, t₂, s₂, e₂, hc₂, q⟩ := h
+  exact ⟨_, _, Exec.loopNext e₁ hc₁ (Exec.loopExit e₂ hc₂), q⟩
+
+/-- `R` (at `r12`) and then `A` (at `r8`) decoded: `A` into slots 6–7, `R` at `RX` and `RY`. The
+loop's first pass ends with `Z` clear, since `A` lies outside the working space, and the second
+with `Z` set. -/
 theorem vdecode_ok (hR : RecoverOk) {s : State} {base qR qA : Addr} (hs : Scr s base)
     (hb : BoundedEnv s.mem base) (inR : DecIn s base qR .r12) (inA : DecIn s base qA .r8)
     (h10 : E s.mem base 10 = 1) (h11 : E s.mem base 11 = Spec.Ed448.d) :
     WP isa vdecode s fun t =>
-      Keeps (.r10 :: .r11 :: workRegs) s t ∧ DFrame base s.mem t.mem ∧
+      Keeps (.r8 :: .r10 :: .r11 :: workRegs) s t ∧ DFrame base s.mem t.mem ∧
       BoundedEnv t.mem base ∧
       BadUpd ((decodePoint (bytesAt s.mem qR 57)).isSome ∧ (decodePoint (bytesAt s.mem qA 57)).isSome)
         (s.gpr .r10) (t.gpr .r10) ∧
@@ -139,16 +183,28 @@ theorem vdecode_ok (hR : RecoverOk) {s : State} {base qR qA : Addr} (hs : Scr s 
       Bounded t.mem base RX ∧ Bounded t.mem base RY ∧
       (∀ i : Index, i ≠ 6 → i ≠ 7 → (i.val = 0 ∨ i.val = 2 ∨ (8 ≤ i.val ∧ i.val ≤ 11) ∨ i.val = 21) →
         E t.mem base i = E s.mem base i) := by
+  have hne : (s.gpr .r8 - s.gpr .r0 == 0) = false := by
+    have hf := inA.far 0 (by decide)
+    rw [BitVec.add_zero, ← inA.addr, ← hs.r0] at hf
+    simp only [beq_eq_false_iff_ne, ne_eq]
+    intro h
+    have e : s.gpr .r8 = s.gpr .r0 := by
+      have h' : s.gpr .r8 - s.gpr .r0 = 0 := by simpa using h
+      bv_omega
+    simp only [ofs, e, BitVec.sub_self] at hf
+    exact absurd hf (by decide)
   unfold vdecode
+  refine WP.loop2 ?_
   -- `R`
-  refine WP.seq (WP.mono (vdecodeBody_ok hR hs hb (.inr rfl) inR h10 h11)
-    fun t ⟨kt, ft, bt, _, _, ct, vt, et⟩ => ?_)
+  refine WP.mono (vdecodeBody_ok hR hs hb inR h10 h11)
+    fun t ⟨kt, ft, bt, t12, t8, tz, _, _, ct, vt, et⟩ => ⟨by simp only [eval, tz, hne]; rfl, ?_⟩
   have ht := hs.of_keeps kt (by decide)
   have h10' : E t.mem base 10 = 1 := by rw [et 10 (by decide) (by decide) (by decide)]; exact h10
   have h11' : E t.mem base 11 = Spec.Ed448.d := by rw [et 11 (by decide) (by decide) (by decide)]; exact h11
+  have r0t : t.gpr .r0 = s.gpr .r0 := kt.1 _ (by decide)
   -- `A`
-  refine WP.mono (vdecodeBody_ok hR ht bt (.inl rfl) (inA.keep kt (by decide)) h10' h11')
-    fun u ⟨ku, fu, bu, xu, yu, cu, vu, eu⟩ => ?_
+  refine WP.mono (vdecodeBody_ok hR ht bt (inA.move t12 (by rw [kt.2.1, kt.2.2])) h10' h11')
+    fun u ⟨ku, fu, bu, _, _, uz, xu, yu, cu, vu, eu⟩ => ⟨by simp only [eval, uz, t8, r0t, BitVec.sub_self]; rfl, ?_⟩
   have byA : bytesAt t.mem qA 57 = bytesAt s.mem qA 57 := ft.bytes inA.far
   rw [byA] at cu vu
   refine ⟨kt.trans ku, ft.trans fu, bu, ct.trans cu, vu, fun r hr => ?_,

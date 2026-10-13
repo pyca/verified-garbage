@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.ChaCha20.AArch64.Stream.Bytes
-import VerifiedGarbage.Proof.ChaCha20.AArch64.XorVariant
+module
+
+public import VerifiedGarbage.Proof.ChaCha20.AArch64.Stream.Bytes
+public import VerifiedGarbage.Proof.ChaCha20.AArch64.XorVariant
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Streaming ChaCha20 on AArch64: the calls
@@ -10,6 +16,8 @@ proofs of correctness (with `WP.call`), as ChaCha20-Poly1305 makes them. A
 call stores nothing in memory, so the callee changes memory only within the
 regions it may write.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.ChaCha20.AArch64.Stream
 

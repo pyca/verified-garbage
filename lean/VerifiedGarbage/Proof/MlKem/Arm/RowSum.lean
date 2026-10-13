@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlKem.Arm.Prf
+module
+
+public import VerifiedGarbage.Proof.MlKem.Arm.Prf
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on 32-bit ARM: a row of `Â ∘ v̂`
@@ -10,6 +16,8 @@ seed `ρ ‖ j ‖ i` (`ρ ‖ i ‖ j`) at 1216. If a `SampleNTT` does not fini
 product uses polynomial `k + j` in its place (`effA`), and the flag in `r11`
 becomes 0 (`rowSum_ok`). The sum is `KPke.dotK` (`rowAcc_eq`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.Arm
 

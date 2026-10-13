@@ -1,9 +1,15 @@
-import VerifiedGarbage.Impl.MlDsa.X86.Sign.Sign
-import VerifiedGarbage.Proof.MlKem.X86.TopKeep
-import VerifiedGarbage.Proof.Framework.X86.Inline
-import VerifiedGarbage.Proof.MlDsa.Sign.Vals
-import VerifiedGarbage.Proof.MlDsa.Sign.Mem
-import VerifiedGarbage.Spec.MlDsa.Contract
+module
+
+public import VerifiedGarbage.Impl.MlDsa.X86.Sign.Sign
+public import VerifiedGarbage.Proof.MlKem.X86.TopKeep
+public import VerifiedGarbage.Proof.Framework.X86.Inline
+public import VerifiedGarbage.Proof.MlDsa.Sign.Vals
+public import VerifiedGarbage.Proof.MlDsa.Sign.Mem
+public import VerifiedGarbage.Spec.MlDsa.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA signing on x86 (32-bit): the setting of the proof
@@ -22,6 +28,8 @@ moves of a call's arguments (`setArgs`, `setup_piece`) and the stores to
 `scratch`. A loop runs a number of iterations that depends on the initial
 state, the same in related runs (`loopN`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86.Sign
 

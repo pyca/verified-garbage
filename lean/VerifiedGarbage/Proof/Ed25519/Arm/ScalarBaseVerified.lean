@@ -1,19 +1,42 @@
-import VerifiedGarbage.Impl.Ed25519.Arm.ScalarBase
-import VerifiedGarbage.Proof.Ed25519.Arm.PointFromScalar
-import VerifiedGarbage.Proof.Ed25519.Arm.PointEncode
-import VerifiedGarbage.Proof.Ed25519.Arm.InitFields
-import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTFrom
-import VerifiedGarbage.Proof.Ed25519.Arm.ScalarABI
-import VerifiedGarbage.Spec.Ed25519.Contract
-import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Proof.Ed25519.Arm.ScalarFinish
-import VerifiedGarbage.Proof.Ed25519.Arm.ScalarCodec
-import VerifiedGarbage.Proof.Framework.Arm.Lit
-import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTLit
-import VerifiedGarbage.Proof.Framework.Arm.Contract
-import VerifiedGarbage.Proof.Ed25519.Arm.LrSlot
+module
+
+public import VerifiedGarbage.Impl.Ed25519.Arm.ScalarBase
+meta import VerifiedGarbage.Impl.Ed25519.Arm.ScalarBase
+public import VerifiedGarbage.Proof.Ed25519.Arm.PointFromScalar
+meta import VerifiedGarbage.Proof.Ed25519.Arm.PointFromScalar
+public import VerifiedGarbage.Proof.Ed25519.Arm.PointEncode
+meta import VerifiedGarbage.Proof.Ed25519.Arm.PointEncode
+public import VerifiedGarbage.Proof.Ed25519.Arm.InitFields
+meta import VerifiedGarbage.Proof.Ed25519.Arm.InitFields
+public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTFrom
+meta import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTFrom
+public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarABI
+meta import VerifiedGarbage.Proof.Ed25519.Arm.ScalarABI
+public import VerifiedGarbage.Spec.Ed25519.Contract
+meta import VerifiedGarbage.Spec.Ed25519.Contract
+public import VerifiedGarbage.TCB.Arm.Target
+meta import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarFinish
+meta import VerifiedGarbage.Proof.Ed25519.Arm.ScalarFinish
+public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarCodec
+meta import VerifiedGarbage.Proof.Ed25519.Arm.ScalarCodec
+public import VerifiedGarbage.Proof.Framework.Arm.Lit
+meta import VerifiedGarbage.Proof.Framework.Arm.Lit
+public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTLit
+meta import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTLit
+public import VerifiedGarbage.Proof.Framework.Arm.Contract
+meta import VerifiedGarbage.Proof.Framework.Arm.Contract
+public import VerifiedGarbage.Proof.Ed25519.Arm.LrSlot
+meta import VerifiedGarbage.Proof.Ed25519.Arm.LrSlot
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Ed25519.Arm.ScalarBaseEngine`. -/
+
+@[expose] public section
+
 section
 /-! All input scalar bits, exact point multiplication, and canonical encoding compose. -/
 namespace VG.Proof.Ed25519.Arm
@@ -34,7 +57,7 @@ theorem scalarBaseEngine_ok {s : State} {base ptr : BitVec 32} (hc : Ctx base s)
       V t.mem (State.addr base) FR = encodedValue
         (Spec.Ed25519.pointMul (Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem (State.addr ptr) 32)) Spec.Ed25519.basePoint) := by
   refine WP.seq (WP.mono (initFields_rest hc) fun a ⟨ak, ar, al, _⟩ => ?_)
-  refine WP.seq (WP.mono (fieldCodeFree_ok (constPointOps Spec.Ed25519.basePoint) (ak.ctx hc) al)
+  refine WP.seq (WP.mono (fieldCodeFree_ok (constPointOps Spec.Ed25519.basePoint) rfl (ak.ctx hc) al)
     fun u ⟨uk, ur', _, ul, ue⟩ => ?_)
   have ku := ak.trans uk
   have up : u.gpr .r12 = ptr := (ur'.gpr _ (by decide)).trans ((ar.gpr _ (by decide)).trans hp)
@@ -81,7 +104,7 @@ theorem basePrepareCT_ok {s : State} {base ptr : BitVec 32} (h : BaseCTPre base 
     WP isa basePrepareCT s (FromCTPre base ptr 16) := by
   obtain ⟨hc, hp, hfit, hr, hsep⟩ := h
   refine WP.seq (WP.mono (initFields_rest hc) fun a ⟨ak, ar, al, _⟩ => ?_)
-  refine WP.mono (fieldCodeFree_ok (constPointOps Spec.Ed25519.basePoint) (ak.ctx hc) al)
+  refine WP.mono (fieldCodeFree_ok (constPointOps Spec.Ed25519.basePoint) rfl (ak.ctx hc) al)
     fun u ⟨uk, ur', _, ul, _⟩ => ?_
   have ku := ak.trans uk
   refine ⟨ku.ctx hc, ul, (ur'.gpr _ (by decide)).trans ((ar.gpr _ (by decide)).trans hp), hfit, ?_, hsep⟩

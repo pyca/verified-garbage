@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTDefs
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtFront
+module
+
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTDefs
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTDefs
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtFront
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtFront
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSA with the CRT on AArch64: the input in constant time
@@ -10,6 +18,8 @@ loads from the header, which the taint analysis takes as secret, are pinned
 by the steps of `nInput_ok`, and the input's bytes, a secret, flow only into
 data.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.AArch64
 

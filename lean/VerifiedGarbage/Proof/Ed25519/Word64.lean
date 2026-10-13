@@ -1,7 +1,16 @@
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.PowLit
+module
+
+public import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Framework.PowLit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Target-independent unsigned word arithmetic for the Ed25519 ports. -/
+
+@[expose] public section
+
 namespace VG.Proof.Ed25519.Word64
 
 abbrev Word := BitVec 64

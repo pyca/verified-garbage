@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.Aes.X86.Blocks
-import VerifiedGarbage.Spec.Aes.Contract
+module
+
+public import VerifiedGarbage.Proof.Aes.X86.Blocks
+meta import VerifiedGarbage.Proof.Aes.X86.Blocks
+public import VerifiedGarbage.Spec.Aes.Contract
+meta import VerifiedGarbage.Spec.Aes.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES on whole blocks on x86 (32-bit): constant time, and `Verified`
@@ -11,6 +19,8 @@ pointer and the count round-trip through public slots of the scratch
 buffer; the stores of the blocks through the data pointer forget them, and
 the code stores them again from the registers.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Aes.X86
 

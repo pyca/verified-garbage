@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.CT
-import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.CT
+public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Deterministic ECDSA on AArch64: `Verified`
@@ -15,6 +21,8 @@ hash function and of scalars. Each instance's file shows that its contract impli
 `rfcAArch64` (`sign_verified`'s `himp`).
 -/
 
+@[expose] public section
+
 namespace VG.Proof.Ecdsa.Rfc6979.AArch64
 
 open VG VG.AArch64 VG.Impl.Ecdsa.Rfc6979.AArch64
@@ -23,7 +31,7 @@ variable (P : RfcHash)
 
 theorem cfgOf_H : (cfgOf P).H = P.H := rfl
 theorem reduce_eq : (cfgOf P).reduce = (cfgC P.R.E).reduce := rfl
-theorem initCnt_eq : (cfgOf P).initCnt = (cfgC ⟨4, Spec.P256.curve, [], (0, 0), "", true⟩).initCnt := rfl
+theorem initCnt_eq : (cfgOf P).initCnt = (cfgC ⟨4, Spec.P256.curve, [], (0, 0), "", true, none, none⟩).initCnt := rfl
 theorem coreC_eq : (cfgOf P).coreC = P.R.coreC := rfl
 
 /-- No instruction writes a callee-saved SIMD register: not those of the

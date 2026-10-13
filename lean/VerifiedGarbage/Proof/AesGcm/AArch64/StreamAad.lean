@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesGcm.AArch64.StreamInit
+module
+
+public import VerifiedGarbage.Proof.AesGcm.AArch64.StreamInit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on AArch64: `vg_aes_gcm_stream_aad`
@@ -9,6 +15,8 @@ buffered (`aadEntry_ok`); `absorb` takes the data into GHASH and touches
 nothing else of the state (`aad_run`), for any additional data so far of
 that length (`WP.forall_det`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

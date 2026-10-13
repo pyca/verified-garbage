@@ -32,15 +32,24 @@ mod aes_xts;
 mod argon2;
 mod blake2b;
 mod blake2s;
+mod blowfish_cbc;
+mod blowfish_cfb;
 mod blowfish_ecb;
+mod blowfish_ofb;
 mod camellia_cbc;
+mod camellia_cfb;
 mod camellia_ctr;
 mod camellia_ecb;
+mod camellia_ofb;
+mod cast5_cbc;
+mod cast5_cfb;
 mod cast5_ecb;
+mod cast5_ofb;
 mod chacha20;
 mod chacha20poly1305;
 mod cmac_aes;
 mod cmac_triple_des;
+mod dsa;
 mod ecdh_p192;
 mod ecdh_p224;
 mod ecdh_p256;
@@ -55,6 +64,7 @@ mod ecdsa_p521;
 mod ecdsa_secp256k1;
 mod ed25519;
 mod ed448;
+mod ffdh;
 mod hmac_md5;
 mod hmac_sha1;
 mod hmac_sha224;
@@ -63,7 +73,10 @@ mod hmac_sha384;
 mod hmac_sha512;
 mod hmac_sha512_224;
 mod hmac_sha512_256;
+mod idea_cbc;
+mod idea_cfb;
 mod idea_ecb;
+mod idea_ofb;
 mod md5;
 mod mldsa44;
 mod mldsa65;
@@ -90,7 +103,10 @@ mod rsa_pkcs1_sig;
 mod rsa_pss;
 mod rsa_public;
 mod scrypt;
+mod seed_cbc;
+mod seed_cfb;
 mod seed_ecb;
+mod seed_ofb;
 mod sha1;
 mod sha224;
 mod sha256;
@@ -99,14 +115,62 @@ mod sha384;
 mod sha512;
 mod sha512_224;
 mod sha512_256;
+mod sm3;
 mod sm4_cbc;
+mod sm4_cfb;
 mod sm4_ctr;
 mod sm4_ecb;
+mod sm4_ofb;
+mod triple_des_cbc;
+mod triple_des_cfb;
+mod triple_des_cfb8;
 mod triple_des_ecb;
+mod triple_des_ofb;
 mod x25519;
 mod x448;
 
 const SIZES: [usize; 3] = [64, 1024, 16384];
+
+/// A buffer of `len` bytes for an operation in place, into which each
+/// iteration first copies `source`.
+///
+/// Its first byte is 2 KiB past `source`'s modulo 4 KiB. Two `Vec`s of the
+/// same size allocated one after the other start a few bytes apart modulo
+/// 4 KiB. At 16 KiB, glibc copies with `rep movsb`, which on Zen 3 (EPYC
+/// 7763) is 20 to 40 times slower at that distance (5.4 µs where other CPUs
+/// take 0.1–0.3 µs). That made every such benchmark measure the copy rather
+/// than the library.
+pub(crate) struct InPlace {
+    storage: Vec<u8>,
+    start: usize,
+    len: usize,
+}
+
+impl InPlace {
+    pub(crate) fn new(len: usize, source: &[u8]) -> Self {
+        let storage = vec![0; len + 4096];
+        let start =
+            (source.as_ptr() as usize + 2048).wrapping_sub(storage.as_ptr() as usize) % 4096;
+        Self {
+            storage,
+            start,
+            len,
+        }
+    }
+}
+
+impl std::ops::Deref for InPlace {
+    type Target = [u8];
+    fn deref(&self) -> &[u8] {
+        &self.storage[self.start..self.start + self.len]
+    }
+}
+
+impl std::ops::DerefMut for InPlace {
+    fn deref_mut(&mut self) -> &mut [u8] {
+        &mut self.storage[self.start..self.start + self.len]
+    }
+}
 
 const VG: &str = "verified-garbage";
 const OPENSSL: &str = "openssl";
@@ -345,11 +409,19 @@ const BENCHES: &[Bench] = &[
     (aes_xts::USES, aes_xts::bench),
     (blake2b::USES, blake2b::bench),
     (blake2s::USES, blake2s::bench),
+    (blowfish_cbc::USES, blowfish_cbc::bench),
+    (blowfish_cfb::USES, blowfish_cfb::bench),
     (blowfish_ecb::USES, blowfish_ecb::bench),
+    (blowfish_ofb::USES, blowfish_ofb::bench),
     (camellia_cbc::USES, camellia_cbc::bench),
+    (camellia_cfb::USES, camellia_cfb::bench),
     (camellia_ctr::USES, camellia_ctr::bench),
     (camellia_ecb::USES, camellia_ecb::bench),
+    (camellia_ofb::USES, camellia_ofb::bench),
+    (cast5_cbc::USES, cast5_cbc::bench),
+    (cast5_cfb::USES, cast5_cfb::bench),
     (cast5_ecb::USES, cast5_ecb::bench),
+    (cast5_ofb::USES, cast5_ofb::bench),
     (chacha20::USES, chacha20::bench),
     (chacha20poly1305::USES, chacha20poly1305::bench),
     (cmac_aes::USES, cmac_aes::bench),
@@ -362,7 +434,10 @@ const BENCHES: &[Bench] = &[
     (hmac_sha512::USES, hmac_sha512::bench),
     (hmac_sha512_224::USES, hmac_sha512_224::bench),
     (hmac_sha512_256::USES, hmac_sha512_256::bench),
+    (idea_cbc::USES, idea_cbc::bench),
+    (idea_cfb::USES, idea_cfb::bench),
     (idea_ecb::USES, idea_ecb::bench),
+    (idea_ofb::USES, idea_ofb::bench),
     (md5::USES, md5::bench),
     (mldsa44::USES, mldsa44::bench),
     (mldsa65::USES, mldsa65::bench),
@@ -381,17 +456,27 @@ const BENCHES: &[Bench] = &[
     (rc2_cbc::USES, rc2_cbc::bench),
     (rc4::USES, rc4::bench),
     (rsa::USES, rsa::bench),
+    (ffdh::USES, ffdh::bench),
     (rsa_keygen::USES, rsa_keygen::bench),
     (rsa_oaep::USES, rsa_oaep::bench),
     (rsa_pkcs1_enc::USES, rsa_pkcs1_enc::bench),
     (rsa_pkcs1_sig::USES, rsa_pkcs1_sig::bench),
     (rsa_pss::USES, rsa_pss::bench),
     (rsa_public::USES, rsa_public::bench),
+    (triple_des_cbc::USES, triple_des_cbc::bench),
+    (triple_des_cfb::USES, triple_des_cfb::bench),
+    (triple_des_cfb8::USES, triple_des_cfb8::bench),
     (triple_des_ecb::USES, triple_des_ecb::bench),
+    (triple_des_ofb::USES, triple_des_ofb::bench),
+    (seed_cbc::USES, seed_cbc::bench),
+    (seed_cfb::USES, seed_cfb::bench),
     (seed_ecb::USES, seed_ecb::bench),
+    (seed_ofb::USES, seed_ofb::bench),
     (sm4_cbc::USES, sm4_cbc::bench),
+    (sm4_cfb::USES, sm4_cfb::bench),
     (sm4_ctr::USES, sm4_ctr::bench),
     (sm4_ecb::USES, sm4_ecb::bench),
+    (sm4_ofb::USES, sm4_ofb::bench),
     (argon2::USES, argon2::bench),
     (scrypt::USES, scrypt::bench),
     (sha1::USES, sha1::bench),
@@ -402,6 +487,7 @@ const BENCHES: &[Bench] = &[
     (sha512::USES, sha512::bench),
     (sha512_224::USES, sha512_224::bench),
     (sha512_256::USES, sha512_256::bench),
+    (sm3::USES, sm3::bench),
     (x25519::USES, x25519::bench),
     (x448::USES, x448::bench),
     (ed25519::USES, ed25519::bench),
@@ -409,6 +495,7 @@ const BENCHES: &[Bench] = &[
     (ecdsa_p192::USES, ecdsa_p192::bench),
     (ecdsa_p224::USES, ecdsa_p224::bench),
     (ecdsa_secp256k1::USES, ecdsa_secp256k1::bench),
+    (dsa::USES, dsa::bench),
     (ecdsa_p256::USES, ecdsa_p256::bench),
     (ecdsa_p384::USES, ecdsa_p384::bench),
     (ecdsa_p521::USES, ecdsa_p521::bench),

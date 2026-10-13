@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Top
-import VerifiedGarbage.Proof.MlKem.X86_64.FragBase
-import VerifiedGarbage.Proof.Framework.X86_64.Avx
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Top
+public import VerifiedGarbage.Proof.MlKem.X86_64.FragBase
+public import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA signing on x86-64: the blocks between the calls
@@ -12,6 +18,8 @@ into `r15` (`and15_ok`), the counters `κ` and `CNT` and the bytes of `κ + r`
 for `ExpandMask` (`kapAdd_ok`, `cntDec_ok`, `setKappa_ok`), the sum of the 1s
 of the hint (`onesAdd_ok`) and its check (`onesOk_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86_64.Sign
 

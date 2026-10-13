@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Pbkdf2.Md.X86_64
+module
+
+public import VerifiedGarbage.Impl.Pbkdf2.Md.X86_64
 
 /-!
 # RSAES-PKCS1-v1_5 decryption with implicit rejection on x86-64
@@ -39,6 +41,8 @@ the streaming state (also HMAC's inner state), HMAC's outer state, the
 working space, the message of an IRPRF block, `DH`, `KDK`, `CL`, `AM` and
 `D`.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.RsaPkcs1Enc.X86_64.Decrypt
 

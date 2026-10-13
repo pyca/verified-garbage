@@ -1,6 +1,8 @@
-import VerifiedGarbage.Impl.Ed448.Formulas
-import VerifiedGarbage.Impl.Ed448.X86.Scalar
-import VerifiedGarbage.Spec.Ed448
+module
+
+public import VerifiedGarbage.Impl.Ed448.Formulas
+public import VerifiedGarbage.Impl.Ed448.X86.Scalar
+public import VerifiedGarbage.Spec.Ed448
 
 /-!
 # Ed448 base-point multiplication on x86 (32-bit)
@@ -37,10 +39,12 @@ The only branches are on the loop counters, and every address is a pointer
 plus a constant or a counter, so only the pointers can affect timing.
 -/
 
+@[expose] public section
+
 namespace VG.Impl.Ed448.X86
 
 open VG.X86
-open VG.Impl.X448.X86 (at_ ld st slot BITS X2 Op ops cswap freeze invert bitJ copy)
+open VG.Impl.X448.X86 (at_ ld st slot BITS X2 Op ops cswap freeze invert bitsLoop copy)
 
 /-! ## Field programs on the slots -/
 
@@ -88,13 +92,11 @@ def initSlots : List Instr :=
 
 /-! ## The scalar's bits -/
 
-/-- Byte `i` of the scalar (at `esi`) expanded to bytes `BITS + 8 i + j`. -/
-def baseByte (i : Nat) : List Instr :=
-  [.movzx8 .eax (at_ .esi i)] ++ (List.range 8).flatMap (bitJ i)
+/-- All 456 bits of the scalar (the argument at `[esp + 8]`), by `bitsLoop`. -/
+def baseBits : Prog isa := .seq (.block [.mov .esi (.mem (at_ .esp 8))]) (bitsLoop BITS 57)
 
-/-- All 456 bits of the scalar (the argument at `[esp + 8]`). -/
-def baseBits : List Instr :=
-  .mov .esi (.mem (at_ .esp 8)) :: (List.range 57).flatMap baseByte
+/-- The callee-saved registers saved, the slots initialized and the scalar's bits. -/
+def baseEntry : Prog isa := .seq (.block (save 12 ++ initSlots)) baseBits
 
 /-! ## The loop over the bits -/
 
@@ -136,7 +138,6 @@ def baseEncode : Prog isa :=
       (List.range 28).flatMap Impl.X448.X86.packLimb ++ Impl.X448.X86.restore)
 
 /-- `vg_ed448_scalar_base(out = [esp + 4], scalar = [esp + 8], scratch = [esp + 12])`. -/
-def scalarBase : Prog isa :=
-  .seq (.block (save 12 ++ initSlots ++ baseBits)) <| .seq baseLoop baseEncode
+def scalarBase : Prog isa := .seq baseEntry (.seq baseLoop baseEncode)
 
 end VG.Impl.Ed448.X86

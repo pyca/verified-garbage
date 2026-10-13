@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.MlKem.X86_64.DcDec
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86_64.DcDec
+meta import VerifiedGarbage.Proof.MlKem.X86_64.DcDec
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86-64: decapsulation
@@ -11,6 +18,8 @@ of the key (`select_okD`). The function returns 1 with
 only the pointers and `ρ` (`kemDecaps_ct`). Each parameter set's file moves
 this to its shared contract.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.X86_64
 

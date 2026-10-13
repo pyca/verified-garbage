@@ -1,4 +1,10 @@
-import VerifiedGarbage.Spec.Seed
+module
+
+public import VerifiedGarbage.Spec.Seed
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Sixteen rounds
@@ -8,6 +14,8 @@ L = T`) sixteen times, the last one included, and then takes the halves in
 the other order: `crypt_eq` says that this is `crypt`, which does fifteen and
 then `L = L ^ F(K16, R)` without the swap.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Seed
 

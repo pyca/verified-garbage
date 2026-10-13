@@ -1,0 +1,5 @@
+name = "pyca/cryptography FFDH vectors (KASValidityTest_FFCStatic_NOKC_ZZOnly_resp.fax)"
+directories = ["cryptography-ffdh/KASValidityTest_FFCStatic_NOKC_ZZOnly_resp"]
+url = "https://raw.githubusercontent.com/pyca/cryptography/874145c30c2143546ce30c38eccd88f3bae3425c/vectors/cryptography_vectors/asymmetric/DH/KASValidityTest_FFCStatic_NOKC_ZZOnly_resp.fax"
+sha256 = "e27eb3657be3f80b5feca13f00bb20bd6c0440f8ca75ed9c5022a1e9d8dee43a"
+retrieved = 2026-10-12

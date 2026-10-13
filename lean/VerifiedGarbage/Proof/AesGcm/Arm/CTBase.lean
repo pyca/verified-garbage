@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesGcm.Arm.Open
-import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
+module
+
+public import VerifiedGarbage.Proof.AesGcm.Arm.Open
+public import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on ARMv7: constant time, the combinators
@@ -15,6 +21,8 @@ blocks are checked by the taint analysis from registers the invariants fix
 calls are constant time by their own proofs, with the same arguments in both
 runs (`CT.gh`, `CT.ctr`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesGcm.Arm
 

@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.EcKey.Generic
-import VerifiedGarbage.Spec.P224
+module
+
+public import VerifiedGarbage.Spec.EcKey.Generic
+public import VerifiedGarbage.Spec.P224
 
 /-!
 # P-224 keys: the contracts, on every target
@@ -7,6 +9,8 @@ import VerifiedGarbage.Spec.P224
 **Trusted** (as every file in `Spec/`). The `Instance` of P-224
 (`Spec/P224.lean`): `vg_ec_p224_public_key`, in the module `ec_p224`.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.EcKey.P224
 

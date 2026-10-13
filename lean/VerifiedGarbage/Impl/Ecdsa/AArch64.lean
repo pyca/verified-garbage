@@ -1,9 +1,13 @@
-import VerifiedGarbage.Impl.Weierstrass.AArch64.Window
-import VerifiedGarbage.Impl.Weierstrass.AArch64.TComb
-import VerifiedGarbage.Impl.Weierstrass.AArch64.Chain
-import VerifiedGarbage.Impl.Weierstrass.AArch64.Inv
-import VerifiedGarbage.Spec.Weierstrass
-import VerifiedGarbage.Spec.Ecdsa
+module
+
+public import VerifiedGarbage.Impl.Weierstrass.AArch64.Window
+public import VerifiedGarbage.Impl.Weierstrass.AArch64.TComb
+public import VerifiedGarbage.Impl.Weierstrass.AArch64.Chain
+public import VerifiedGarbage.Impl.Weierstrass.AArch64.Inv
+public import VerifiedGarbage.Spec.Weierstrass
+public import VerifiedGarbage.Spec.Ecdsa
+public import VerifiedGarbage.Spec.Weierstrass.Inverse
+public import VerifiedGarbage.Spec.Weierstrass.PointOps
 
 /-!
 # ECDSA signing on AArch64
@@ -31,6 +35,8 @@ scratch = x4) -> w0`, for a curve whose field elements and scalars are `n`
 `r = 0`, as the specification says. Everything is computed whatever the
 flag, and only the pointers may affect timing.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Ecdsa.AArch64
 
@@ -111,6 +117,16 @@ def WT : Nat := 87
 /-- The powers' tables (nine slots). -/
 def CT : Nat := 69
 
+/-- Store the registers `rs` in consecutive words from `d`. -/
+def stAll : List Reg → Nat → List Instr
+  | [], _ => []
+  | r :: rs, d => st r d :: stAll rs (d + 8)
+
+/-- Load the registers `rs` from consecutive words from `d`. -/
+def ldAll : List Reg → Nat → List Instr
+  | [], _ => []
+  | r :: rs, d => ld r d :: ldAll rs (d + 8)
+
 /-- A curve as the code has it: `n` words, its parameters, the fixed-base
 comb's tables for `G` (`tbl[j][k - 1]` is `[k 2^(7j)]G`, affine, for
 `j < combJ n` and `k = 1 … 64`) and starting point `[64 Σ_j 2^(7j)]G`, and
@@ -123,6 +139,15 @@ structure Cfg where
   tsym : String
   /-- Whether `k⁻¹ mod n` is by divsteps (the proofs need `n` prime), else by a chain. -/
   fastN : Bool
+  /-- The curve whose functions `vg_<curve>_inv_mod_p` and
+  `vg_<curve>_inv_mod_n` (`Spec/Weierstrass/Inverse.lean`) compute `Z^(p-2)`
+  and `k^(n-2)` (`invFn`), which every function calls (`pPow`, `nPow`);
+  else they run them inline. -/
+  inverse : Option Spec.Weierstrass.Inverse.Curve := none
+  /-- The curve whose function `vg_<curve>_proj_add`
+  (`Spec/Weierstrass/PointOps.lean`) the complete additions call (`padd`);
+  else they run inline. -/
+  pointOps : Option Spec.Weierstrass.PointOps.Curve := none
 
 namespace Cfg
 
@@ -163,6 +188,18 @@ def pt (x y z : Nat) : Pt := ⟨c.sl x, c.sl y, c.sl z⟩
 
 def rcbSlots : RcbSlots := ⟨c.sl AP, c.sl BM, c.sl T0, c.sl T1, c.sl T2, c.sl T3, c.sl T4, c.sl T5⟩
 
+/-- The complete additions' function, if any: its name and where it reads
+`b` (`EM`'s slot, `PointOps.Curve.bAt`). The signature and the public key
+copy `b` there once, before the comb (`combP`): `EM` is free until the
+signature computes `e mod n` there, after the comb. ECDH's constant `b`
+(`BP`) is already there. -/
+def padd : Option (String × Nat) := c.pointOps.map fun C => (C.projAddApi.name, c.sl EM)
+
+/-- `vg_<curve>_proj_add`: `D = R + T` by Algorithm 4, `b` at `EM`'s slot. -/
+def projAddFn : Prog isa :=
+  fprogB c.MP' (rcb3 { c.rcbSlots with a := c.sl EM, b3 := c.sl EM } (c.pt RX RY RZ) (c.pt TX TY TZ)
+    (c.pt DX DY DZ))
+
 /-- The comb's digits: `combJ n` of 7 bits cover the scalar's `64 n`. -/
 def combW : Nat := 7
 def combJ (n : Nat) : Nat := (64 * n + 6) / 7
@@ -184,6 +221,13 @@ def combCfg : TCombCfg where
   J := combJ c.n
   start := (c.mont c.start.1, c.mont c.start.2)
   one := c.mont 1
+
+/-- The signature's and the public key's comb: for calls of the complete
+additions' function, `b` copied to where it reads it first. -/
+def combP : Prog isa :=
+  match c.padd with
+  | none => TCombCfg.comb c.combCfg false none
+  | some (name, bAt) => .seq (.block (copy c.n bAt (c.sl BM))) (TCombCfg.comb c.combCfg false (some (name, bAt)))
 
 /-- The comb's tables, in memory (`Artifact.consts`). -/
 def combWords : List (BitVec 64) := tcombWords c.n c.R c.C.p c.tbl
@@ -217,15 +261,59 @@ def winPrep (k : Nat) : Prog isa :=
   .seq (.block (WinCfg.addConst c.n k c.winK (WinCfg.offset (16 * c.n + 1))))
     (bits c.winK c.winBits (8 * (c.n + 1)))
 
-/-- `Z^(p-2)` and `k^(n-2)` into `ACC`, by divsteps (`k^(n-2)` by sliding
-windows unless `fastN`), their working slots at `CT …` (the window method's,
-which no power overlaps in time). -/
-def invP : InvCfg := .ofMod c.MP' (c.sl ACC) (c.sl RZ) (c.sl CT) c.C.p
-def invN : InvCfg := .ofMod c.MN' (c.sl ACC) (c.sl KM) (c.sl CT) c.C.n
-def powN : Weierstrass.ChainCfg := .ofExp c.MN' (c.sl ACC) (c.sl KM) (c.sl CT) (c.C.n - 2)
+/-- The powers' temporary area and working slots: for a curve whose
+inversions are functions (`inverse`), the functions' own (`tmpAt`, whose
+products are then written out, and `workAt`); else `TMP`'s and `CT …` (the
+window method's, which no power overlaps in time). -/
+def invTmp : Nat := match c.inverse with | some C => C.tmpAt | none => c.sl TMP
+def invTbl : Nat := match c.inverse with | some C => C.workAt | none => c.sl CT
 
-def pPow : Prog isa := InvCfg.inv c.invP
-def nPow : Prog isa := if c.fastN then InvCfg.inv c.invN else ChainCfg.pow c.powN
+/-- `Z^(p-2)` and `k^(n-2)` into `ACC`, by divsteps (`k^(n-2)` by sliding
+windows unless `fastN`), in `invTmp` and `invTbl`. -/
+def invP : InvCfg := .ofMod { c.MP' with tmp := c.invTmp } (c.sl ACC) (c.sl RZ) c.invTbl c.C.p
+def invN : InvCfg := .ofMod { c.MN' with tmp := c.invTmp } (c.sl ACC) (c.sl KM) c.invTbl c.C.n
+def powN : Weierstrass.ChainCfg :=
+  .ofExp { c.MN' with tmp := c.invTmp } (c.sl ACC) (c.sl KM) c.invTbl (c.C.n - 2)
+
+/-- The powers, inline. -/
+def pPowI : Prog isa := InvCfg.inv c.invP
+def nPowI : Prog isa := if c.fastN then InvCfg.inv c.invN else ChainCfg.pow c.powN
+
+/-- Where `vg_<curve>_inv_mod_p` and `_n` keep `x19` and `invRegs`, which
+the powers change: past the powers' working slots, in the functions' working
+area. -/
+def invSave : Nat := c.invTbl + 9 * (8 * c.n)
+
+/-- The callee-saved registers but `x19` that the powers change: those of
+nine-word products (`x21`–`x25`). -/
+def invRegs : List Reg := if c.n = 9 then [.x21, .x22, .x23, .x24, .x25] else []
+
+/-- `x19` and `invRegs`, kept in consecutive words from `invSave`. -/
+def invKept : List Reg := .x19 :: c.invRegs
+
+/-- The bytes where the functions keep the registers. -/
+def invSaveLen : Nat := 8 * c.invKept.length
+
+/-- `vg_<curve>_inv_mod_p` or `_n`: the power `body` between saving `x19`
+and `invRegs` and restoring them. -/
+def invFn (body : Prog isa) : Prog isa :=
+  .seq (.block (stAll c.invKept c.invSave)) (.seq body (.block (ldAll c.invKept c.invSave)))
+
+/-- A call of the function `name`, whose code is `fn`: `x30`, which the call
+changes, kept in `v29`, which the function does not write. -/
+def invCall (name : String) (fn : Prog isa) : Prog isa :=
+  .seq (.block [.vop (.ins .d2 .v29 0 .x30)]) (.seq (.call name fn) (.block [.umov .x .x30 .v29 0]))
+
+/-- `Z^(p-2)` and `k^(n-2)` into `ACC`: calls of `vg_<curve>_inv_mod_p` and
+`_n` (`invFn`), else inline (`pPowI`, `nPowI`). -/
+def pPow : Prog isa :=
+  match c.inverse with
+  | some C => invCall C.invPApi.name (c.invFn c.pPowI)
+  | none => c.pPowI
+def nPow : Prog isa :=
+  match c.inverse with
+  | some C => invCall C.invNApi.name (c.invFn c.nPowI)
+  | none => c.nPowI
 
 /-- The callee-saved registers the code uses (`x21`–`x25` by the
 multiplications of more than six words), and where they are saved. -/
@@ -287,13 +375,20 @@ def checkRange (a : Nat) : List Instr :=
 /-- `[a] ≠ 0`: the flag `&=` its mask. -/
 def checkNonzero (a : Nat) : List Instr := c.nonzero a ++ c.andFlag
 
+/-- `[o] = [a] [b] R⁻¹ mod n`: a call of `vg_<curve>_mul_mod_n` for a curve
+whose products modulo `n` are a function (`Mont.callOf`), else inline. -/
+def mulNP (o a b : Nat) : Prog isa :=
+  match Mont.callOf c.MN' with
+  | some (f, m) => mulCall f c.n m o a b
+  | none => .block (Mont.AArch64.mul c.MN' o a b)
+
 /-- `x = X Z⁻¹`, `r = x mod n`, `k R mod n`, and the checks of `d`, `k`, `r`. -/
 def middle : Prog isa :=
-  blocks [Mont.AArch64.mul c.MP' (c.sl XM) (c.sl RX) (c.sl ACC),
-    Mont.AArch64.mul c.MP' (c.sl X) (c.sl XM) (c.sl ONE),
-    Mont.AArch64.add c.MN' (c.sl RR) (c.sl X) (c.sl ZERO),
-    Mont.AArch64.mul c.MN' (c.sl KM) (c.sl K) (c.sl R2N),
-    c.checkRange (c.sl D) ++ c.checkRange (c.sl K) ++ c.checkNonzero (c.sl RR)]
+  .seq (.block (Mont.AArch64.mul c.MP' (c.sl XM) (c.sl RX) (c.sl ACC))) <|
+  .seq (.block (Mont.AArch64.mul c.MP' (c.sl X) (c.sl XM) (c.sl ONE))) <|
+  .seq (.block (Mont.AArch64.add c.MN' (c.sl RR) (c.sl X) (c.sl ZERO))) <|
+  .seq (c.mulNP (c.sl KM) (c.sl K) (c.sl R2N))
+    (.block (c.checkRange (c.sl D) ++ c.checkRange (c.sl K) ++ c.checkNonzero (c.sl RR)))
 
 /-- `r ‖ s` (or zeros) to `out`, the callee-saved registers restored, and
 the flag's low bit to `x0`. -/
@@ -305,14 +400,13 @@ def finish : List Instr :=
 
 /-- `s = k⁻¹ (e + r d) mod n`, with `k⁻¹ R` in `ACC`, and its check. -/
 def scalar : Prog isa :=
-  blocks [Mont.AArch64.mul c.MN' (c.sl RM) (c.sl RR) (c.sl R2N),
-    Mont.AArch64.mul c.MN' (c.sl DM) (c.sl D) (c.sl R2N),
-    Mont.AArch64.mul c.MN' (c.sl EM) (c.sl E) (c.sl R2N),
-    Mont.AArch64.mul c.MN' (c.sl TT) (c.sl RM) (c.sl DM),
-    Mont.AArch64.add c.MN' (c.sl TT) (c.sl TT) (c.sl EM),
-    Mont.AArch64.mul c.MN' (c.sl SM) (c.sl ACC) (c.sl TT),
-    Mont.AArch64.mul c.MN' (c.sl SS) (c.sl SM) (c.sl ONE),
-    c.checkNonzero (c.sl SS) ++ c.finish]
+  .seq (c.mulNP (c.sl RM) (c.sl RR) (c.sl R2N)) <|
+  .seq (c.mulNP (c.sl DM) (c.sl D) (c.sl R2N)) <|
+  .seq (c.mulNP (c.sl EM) (c.sl E) (c.sl R2N)) <|
+  .seq (c.mulNP (c.sl TT) (c.sl RM) (c.sl DM)) <|
+  .seq (.block (Mont.AArch64.add c.MN' (c.sl TT) (c.sl TT) (c.sl EM))) <|
+  .seq (c.mulNP (c.sl SM) (c.sl ACC) (c.sl TT)) <|
+  .seq (c.mulNP (c.sl SS) (c.sl SM) (c.sl ONE)) (.block (c.checkNonzero (c.sl SS) ++ c.finish))
 
 /-- `vg_ecdsa_<curve>_sign`. -/
 def signWith (comb : Prog isa) : Prog isa :=
@@ -324,7 +418,7 @@ def signWith (comb : Prog isa) : Prog isa :=
   .seq c.nPow c.scalar
 
 /-- Signing with the original complete-addition comb. -/
-def sign : Prog isa := c.signWith (TCombCfg.comb c.combCfg)
+def sign : Prog isa := c.signWith c.combP
 
 end Cfg
 

@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Argon2.Arm.Derive.Frame
-import VerifiedGarbage.Proof.Argon2.Arm.Divide
+module
+
+public import VerifiedGarbage.Proof.Argon2.Arm.Derive.Frame
+public import VerifiedGarbage.Proof.Argon2.Arm.Divide
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Argon2 on ARMv7: the state of the derivation's body
@@ -14,6 +20,8 @@ The regions all lie at 32-bit addresses, so whether they are disjoint,
 contain an access or lie in one another is a question about the addresses'
 values (`disj32`, `contains32`, `sub32`), for `omega`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Argon2.Arm.Derive
 

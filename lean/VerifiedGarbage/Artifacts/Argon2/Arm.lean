@@ -1,9 +1,13 @@
-import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Proof.Argon2.Arm.CompressVerified
-import VerifiedGarbage.Proof.Argon2.Arm.HPrime.Verified
-import VerifiedGarbage.Proof.Argon2.Arm.Derive.Verified
+module
+
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.Proof.Argon2.Arm.CompressVerified
+public import VerifiedGarbage.Proof.Argon2.Arm.HPrime.Verified
+public import VerifiedGarbage.Proof.Argon2.Arm.Derive.Verified
 
 /-! # Argon2 (RFC 9106) on ARMv7 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.Argon2.Arm
 

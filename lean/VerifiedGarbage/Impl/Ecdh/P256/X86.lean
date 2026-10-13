@@ -1,7 +1,11 @@
-import VerifiedGarbage.Impl.Ecdh.X86.WinJac
-import VerifiedGarbage.Impl.Ecdsa.P256.X86
+module
+
+public import VerifiedGarbage.Impl.Ecdh.X86.WinJac
+public import VerifiedGarbage.Impl.Ecdsa.P256.X86
 
 /-! # ECDH over P-256 on x86 (32-bit): four-word field elements and scalars -/
+
+@[expose] public section
 
 namespace VG.Impl.Ecdh.X86
 

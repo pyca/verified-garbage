@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.CallPost
-import VerifiedGarbage.Proof.Bignum.X86_64.MontFnAdxMont
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.CallPost
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontFnAdxMont
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Montgomery multiplication by calls, on x86-64
@@ -9,6 +15,8 @@ What the x86-64 functions that call `vg_rsa_mont_mul` or
 `vg_rsa_keygen_candidate`): the calls, and `Verified.of_inline` for a
 contract `Sig.contract` builds.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.X86_64
 

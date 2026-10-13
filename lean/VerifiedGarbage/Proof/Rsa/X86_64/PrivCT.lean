@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.Rsa.X86_64.PrivCorrect
+module
+
+public import VerifiedGarbage.Proof.Rsa.X86_64.PrivCorrect
+meta import VerifiedGarbage.Proof.Rsa.X86_64.PrivCorrect
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_private_checked` on x86-64: constant time
@@ -11,6 +18,8 @@ run's entry state, which agrees with an anchor `a` on the public data
 from the registers this fixes, and each call is constant time for its
 callee's contract, whose public data it fixes too (`body_ct`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.X86_64
 

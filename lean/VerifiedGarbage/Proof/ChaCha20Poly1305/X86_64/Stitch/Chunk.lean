@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.Poly1305.X86_64.Setup
-import VerifiedGarbage.Proof.Poly1305.Spec
-import VerifiedGarbage.Proof.Framework.X86_64.VecKeep
-import VerifiedGarbage.Impl.ChaCha20Poly1305.X86_64.Stitch
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.Xor
+module
+
+public import VerifiedGarbage.Proof.Poly1305.X86_64.Setup
+public import VerifiedGarbage.Proof.Poly1305.Spec
+public import VerifiedGarbage.Proof.Framework.X86_64.VecKeep
+public import VerifiedGarbage.Impl.ChaCha20Poly1305.X86_64.Stitch
+public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.Xor
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ChaCha20 and Poly1305 together (x86-64): the blocks of Poly1305
@@ -17,6 +23,8 @@ and no vector register (`WP.vecKeep`), so ChaCha20's quarter rounds, which
 they run between, keep their state; `Acc` and `Half` read only registers,
 which the quarter rounds keep.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.ChaCha20Poly1305.X86_64.Stitch
 
@@ -166,14 +174,29 @@ open VG.Spec.Poly1305 (P bytesAt)
 open VG.Proof.Poly1305 (absorbAll)
 
 /-- Blocks absorbed after `n` double rounds. -/
-theorem firstBlock_succ (n : Nat) : firstBlock (n + 1) = firstBlock n + blocks n := by
-  unfold firstBlock blocks; split <;> split <;> omega
+theorem firstBlock_succ (pre : Bool) (n : Nat) : firstBlock pre (n + 1) = firstBlock pre n + blocks pre n := by
+  unfold firstBlock blocks
+  cases pre
+  · simp only [Bool.false_eq_true, ite_false]; split <;> split <;> omega
+  · simp only [ite_true]
+    by_cases h0 : n = 0
+    · subst h0; rfl
+    · simp only [show n + 1 ≠ 0 by omega, h0, ite_false]; split <;> omega
 
-theorem firstBlock_ten : firstBlock 10 = 32 := rfl
+theorem firstBlock_ten (pre : Bool) : firstBlock pre 10 = total pre := by cases pre <;> rfl
+
+theorem total_le (pre : Bool) : total pre ≤ 32 := by cases pre <;> decide
+
+theorem firstBlock_le (pre : Bool) {n : Nat} (hn : n ≤ 10) : firstBlock pre n ≤ total pre := by
+  unfold firstBlock total; cases pre <;> simp only [Bool.false_eq_true, ite_true, ite_false] <;> split <;> omega
+
+theorem blocks_cases (pre : Bool) (n : Nat) : blocks pre n = 4 ∨ blocks pre n = 3 ∨ blocks pre n = 0 := by
+  unfold blocks; cases pre <;> simp only [Bool.false_eq_true, ite_true, ite_false] <;> split <;>
+    (try split) <;> simp
 
 /-- The registers of the kernel and the reads of Poly1305 during the rounds,
 relative to the state `s₁` after the kernel's setup. -/
-structure SR (buf q : Addr) (R0 R1 : BitVec 64) (X : Nat) (V : Nat → CState) (s₁ : State)
+structure SR (pre : Bool) (buf q : Addr) (R0 R1 : BitVec 64) (X : Nat) (V : Nat → CState) (s₁ : State)
     (n : Nat) (s : State) : Prop where
   holds : Holds buf false (fun j => Nat.repeat innerBlock n (V j)) s
   m16 : ∀ l, s.lane .xmm15 l = rot16Mask
@@ -181,7 +204,7 @@ structure SR (buf q : Addr) (R0 R1 : BitVec 64) (X : Nat) (V : Nat → CState) (
   gpr : ∀ r, r ∉ absorbRegs → s.gpr r = s₁.gpr r
   rd : s.rd = s₁.rd
   wr : s.wr = s₁.wr
-  acc : Acc R0 R1 (absorbAll (rN R0 R1) X (bytesAt s₁.mem q (16 * firstBlock n))) s
+  acc : Acc R0 R1 (absorbAll (rN R0 R1) X (bytesAt s₁.mem q (16 * firstBlock pre n))) s
 
 section
 variable {buf q : Addr} {R0 R1 : BitVec 64} {X : Nat} {V : Nat → CState} {s₁ : State}
@@ -358,27 +381,57 @@ theorem sround3_ok {j : Nat} (hj : j + 3 ≤ 32) {vs : Nat → CState} {s : Stat
     (by decide) (by decide) (by decide) half_gpr hrcx hb h8 h₁₄) fun t₁₅ h₁₅ => ?_)
   exact carry_si hk h₁₅
 
-theorem srounds_ok : ∀ n, n ≤ 10 → SR buf q R0 R1 X V s₁ 0 s₁ → WP isa (srounds n) s₁ (SR buf q R0 R1 X V s₁ n)
+omit hk hrsi hd hin in
+/-- A double round absorbing nothing. -/
+theorem sround0_ok {j : Nat} {vs : Nat → CState} {s : State}
+    (h : SI buf s₁ false vs (AccTo q R0 R1 X s₁ j) s) :
+    WP isa Impl.ChaCha20.X86_64.Avx2.doubleRound s
+      (SI buf s₁ false (fun i => innerBlock (vs i)) (AccTo q R0 R1 X s₁ j)) := by
+  unfold Impl.ChaCha20.X86_64.Avx2.doubleRound
+  refine WP.seq (WP.mono (quarter_si (x := 0) (y := 4) (z := 8) (w := 12) (by decide) (by decide)
+    (by decide) (by decide) (by decide) acc_gpr hrcx hb h8 h) fun t₁ h₁ => ?_)
+  refine WP.seq (WP.mono (quarter_si (x := 1) (y := 5) (z := 9) (w := 13) (by decide) (by decide)
+    (by decide) (by decide) (by decide) acc_gpr hrcx hb h8 h₁) fun t₂ h₂ => ?_)
+  refine WP.seq (WP.mono (swap_si (p := false) acc_gpr hrcx hb h₂) fun t₄ h₄ => ?_)
+  refine WP.seq (WP.mono (quarter_si (x := 2) (y := 6) (z := 10) (w := 14) (by decide) (by decide)
+    (by decide) (by decide) (by decide) acc_gpr hrcx hb h8 h₄) fun t₅ h₅ => ?_)
+  refine WP.seq (WP.mono (quarter_si (x := 3) (y := 7) (z := 11) (w := 15) (by decide) (by decide)
+    (by decide) (by decide) (by decide) acc_gpr hrcx hb h8 h₅) fun t₇ h₇ => ?_)
+  refine WP.seq (WP.mono (quarter_si (x := 0) (y := 5) (z := 10) (w := 15) (by decide) (by decide)
+    (by decide) (by decide) (by decide) acc_gpr hrcx hb h8 h₇) fun t₉ h₉ => ?_)
+  refine WP.seq (WP.mono (quarter_si (x := 1) (y := 6) (z := 11) (w := 12) (by decide) (by decide)
+    (by decide) (by decide) (by decide) acc_gpr hrcx hb h8 h₉) fun t₁₀ h₁₀ => ?_)
+  refine WP.seq (WP.mono (swap_si (p := true) acc_gpr hrcx hb h₁₀) fun t₁₂ h₁₂ => ?_)
+  refine WP.seq (WP.mono (quarter_si (x := 2) (y := 7) (z := 8) (w := 13) (by decide) (by decide)
+    (by decide) (by decide) (by decide) acc_gpr hrcx hb h8 h₁₂) fun t₁₃ h₁₃ => ?_)
+  exact quarter_si (x := 3) (y := 4) (z := 9) (w := 14) (by decide) (by decide)
+    (by decide) (by decide) (by decide) acc_gpr hrcx hb h8 h₁₃
+
+theorem srounds_ok (pre : Bool) : ∀ n, n ≤ 10 → SR pre buf q R0 R1 X V s₁ 0 s₁ →
+    WP isa (srounds pre n) s₁ (SR pre buf q R0 R1 X V s₁ n)
   | 0, _, h => WP.block_nil h
   | n + 1, hn, h => by
-    refine WP.seq (WP.mono (srounds_ok n (by omega) h) fun s hs => ?_)
-    have hs' : SI buf s₁ false (fun j => Nat.repeat innerBlock n (V j)) (AccTo q R0 R1 X s₁ (firstBlock n)) s :=
+    refine WP.seq (WP.mono (srounds_ok pre n (by omega) h) fun s hs => ?_)
+    have hs' : SI buf s₁ false (fun j => Nat.repeat innerBlock n (V j))
+        (AccTo q R0 R1 X s₁ (firstBlock pre n)) s :=
       ⟨hs.holds, hs.m16, hs.frame, hs.gpr, hs.rd, hs.wr, hs.acc⟩
-    have hb' : firstBlock n + blocks n ≤ 32 := by
-      rw [← firstBlock_succ]; unfold firstBlock; split <;> omega
+    have hb' : firstBlock pre n + blocks pre n ≤ 32 := by
+      rw [← firstBlock_succ]; exact Nat.le_trans (firstBlock_le pre (by omega)) (total_le pre)
     have fin : ∀ {s'}, SI buf s₁ false (fun j => Nat.repeat innerBlock (n + 1) (V j))
-        (AccTo q R0 R1 X s₁ (firstBlock n + blocks n)) s' → SR buf q R0 R1 X V s₁ (n + 1) s' :=
+        (AccTo q R0 R1 X s₁ (firstBlock pre n + blocks pre n)) s' → SR pre buf q R0 R1 X V s₁ (n + 1) s' :=
       fun h' => ⟨h'.holds, h'.m16, h'.frame, h'.gpr, h'.rd, h'.wr, by rw [firstBlock_succ]; exact h'.poly⟩
-    show WP isa (if n < 2 then sround4 (firstBlock n) else sround3 (firstBlock n)) s _
-    split
-    · rename_i hn2
-      have e : blocks n = 4 := by unfold blocks; exact ite_eq_left_iff.mpr fun h => absurd hn2 h
+    show WP isa (sround pre n) s _
+    unfold sround
+    rcases blocks_cases pre n with e | e | e
+    · rw [ite_eq_left e]
       rw [e] at hb' fin
       exact WP.mono (sround4_ok hk hrcx hrsi hb h8 hd hin hb' hs') fun _ h' => fin h'
-    · rename_i hn2
-      have e : blocks n = 3 := by unfold blocks; exact ite_eq_right_iff.mpr fun h => absurd h hn2
+    · rw [ite_eq_right (by omega), ite_eq_left e]
       rw [e] at hb' fin
       exact WP.mono (sround3_ok hk hrcx hrsi hb h8 hd hin hb' hs') fun _ h' => fin h'
+    · rw [ite_eq_right (by omega), ite_eq_right (by omega)]
+      rw [e, Nat.add_zero] at fin
+      exact WP.mono (sround0_ok hrcx hb h8 hs') fun _ h' => fin h'
 
 end
 
@@ -408,44 +461,62 @@ theorem addRsi_ok (s : State) :
   refine ⟨?_, fun r hr => by simp [hr], trivial, trivial, trivial, trivial, trivial⟩
   rfl
 
-/-- The 512 bytes after `q` XORed with eight blocks of keystream from the
-state at `st`, while the 512 bytes at `q` are absorbed. -/
-theorem chunkMain_ok {R0 R1 : BitVec 64} (hk : Key R0 R1) {X : Nat} {st buf q : Addr} {s : State}
+/-- The bytes a chunk's rounds absorb, as an address offset. -/
+abbrev tot (pre : Bool) : Addr := BitVec.ofNat 64 (16 * total pre)
+
+theorem se_tot (pre : Bool) : BitVec.signExtend 64 (BitVec.ofNat 32 (16 * total pre)) = tot pre := by
+  cases pre <;> decide
+
+set_option simprocs false in
+theorem addRsiP_ok (pre : Bool) (s : State) :
+    WP isa (.block [.alu .add .rsi (.imm (BitVec.ofNat 32 (16 * total pre)))]) s fun s' =>
+      s'.gpr .rsi = s.gpr .rsi + tot pre ∧ (∀ r, r ≠ .rsi → s'.gpr r = s.gpr r) ∧
+      s'.xmm = s.xmm ∧ s'.ymmHi = s.ymmHi ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execAlu, arithFlags, State.setFlags,
+    State.setReg, Option.bind_some, Option.some.injEq, exists_eq_left', ite_true, se_tot]
+  exact ⟨trivial, fun r hr => by simp [hr], trivial, trivial, trivial, trivial, trivial⟩
+
+/-- The `16 total` bytes after the `16 total` bytes at `q` (the chunk before,
+or with `pre` the 448 bytes before the first chunk) XORed with eight blocks
+of keystream from the state at `st`, while those at `q` are absorbed. -/
+theorem chunkMain_ok (pre : Bool) {R0 R1 : BitVec 64} (hk : Key R0 R1) {X : Nat} {st buf q : Addr} {s : State}
     (hrdi : s.gpr .rdi = st) (hrcx : s.gpr .rcx = buf) (hrsi : s.gpr .rsi = q)
-    (hst : stR st ∈ s.wr) (hb : bufR buf ∈ s.wr) (hwd : DWin s.wr (q + 512))
+    (hst : stR st ∈ s.wr) (hb : bufR buf ∈ s.wr) (hwd : DWin s.wr (q + tot pre))
     (hin : ∀ off n, off + n ≤ 512 → InRegions (s.rd ++ s.wr) (q + BitVec.ofNat 64 off) n)
-    (hc : Consts s.mem buf) (dsd : (stR st).Disjoint (dR5 (q + 512))) (dsb : (stR st).Disjoint (bufR buf))
-    (dbd : (bufR buf).Disjoint (dR5 (q + 512))) (dqs : (dR5 q).Disjoint (slotsR buf))
+    (hc : Consts s.mem buf) (dsd : (stR st).Disjoint (dR5 (q + tot pre))) (dsb : (stR st).Disjoint (bufR buf))
+    (dbd : (bufR buf).Disjoint (dR5 (q + tot pre))) (dqs : (dR5 q).Disjoint (slotsR buf))
     (hacc : Acc R0 R1 X s) :
-    WP isa chunkMain s fun s' =>
-        (∀ k < 512, s'.mem (q + 512 + BitVec.ofNat 64 k) = s.mem (q + 512 + BitVec.ofNat 64 k) ^^^
+    WP isa (chunkMain pre) s fun s' =>
+        (∀ k < 512, s'.mem (q + tot pre + BitVec.ofNat 64 k) = s.mem (q + tot pre + BitVec.ofNat 64 k) ^^^
           (serialize (plus (fun j => Nat.repeat innerBlock 10 (ctr (stateAt s.mem st) j))
             (stateAt s.mem st) (k / 64))).getD (k % 64) 0) ∧
-        Acc R0 R1 (absorbAll (rN R0 R1) X (bytesAt s.mem q 512)) s' ∧
-        Frame [slotsR buf, dR5 (q + 512)] s.mem s'.mem ∧
-        (∀ r, r ∉ absorbRegs → r ≠ .rsi → s'.gpr r = s.gpr r) ∧ s'.gpr .rsi = q + 512 ∧
+        Acc R0 R1 (absorbAll (rN R0 R1) X (bytesAt s.mem q (16 * total pre))) s' ∧
+        Frame [slotsR buf, dR5 (q + tot pre)] s.mem s'.mem ∧
+        (∀ r, r ∉ absorbRegs → r ≠ .rsi → s'.gpr r = s.gpr r) ∧ s'.gpr .rsi = q + tot pre ∧
         s'.rd = s.rd ∧ s'.wr = s.wr := by
+  have ht := total_le pre
   unfold chunkMain
   refine WP.seq (WP.mono (setup_ok hrdi hrcx hst hb hc)
     fun s₁ ⟨hh, h15, g₁, rd₁, wr₁, y₁, y₂, m₁⟩ => ?_)
   have c₁ : Consts s₁.mem buf := by rw [m₁]; exact hc.w2 (by decide) y₁ y₂
   have F₁ : Frame [slotsR buf] s.mem s₁.mem := by
     rw [m₁]; exact W2_frame _ (by decide) y₁ y₂ (Frame.refl _ _)
-  have q₁ : bytesAt s₁.mem q 512 = bytesAt s.mem q 512 := by
-    have := bytes_frame F₁ dqs (j := 0) (n := 512) (by decide)
+  have q₁ : bytesAt s₁.mem q (16 * total pre) = bytesAt s.mem q (16 * total pre) := by
+    have := bytes_frame F₁ dqs (j := 0) (n := 16 * total pre) (by omega)
     simpa using this
-  have h0 : SR buf q R0 R1 X (fun j => ctr (stateAt s.mem st) j) s₁ 0 s₁ :=
+  have h0 : SR pre buf q R0 R1 X (fun j => ctr (stateAt s.mem st) j) s₁ 0 s₁ :=
     ⟨hh, h15, Frame.refl _ _, fun _ _ => rfl, rfl, rfl, by
-      rw [show 16 * firstBlock 0 = 0 from rfl, show bytesAt s₁.mem q 0 = [] from rfl,
+      rw [show 16 * firstBlock pre 0 = 0 by cases pre <;> rfl, show bytesAt s₁.mem q 0 = [] from rfl,
         VG.Proof.Poly1305.absorbAll_nil]
       exact ⟨by rw [g₁]; exact hacc.r8, by rw [g₁]; exact hacc.r9, by rw [g₁]; exact hacc.r10,
         by rw [g₁]; exact hacc.h2, by simp only [hval, g₁]; exact hacc.val⟩⟩
   refine WP.seq (WP.mono (srounds_ok hk (by rw [g₁, hrcx]) (by rw [g₁, hrsi]) (by rw [wr₁]; exact hb) c₁.m8 dqs
-    (by rw [rd₁, wr₁]; exact hin) 10 (by decide) h0) fun s₂ h₂ => ?_)
-  refine WP.block_append (WP.mono (addRsi_ok s₂) fun s₃ ⟨rsi₃, g₃, x₃, y₃, m₃, rd₃, wr₃⟩ => ?_)
+    (by rw [rd₁, wr₁]; exact hin) pre 10 (by decide) h0) fun s₂ h₂ => ?_)
+  refine WP.block_append (WP.mono (addRsiP_ok pre s₂) fun s₃ ⟨rsi₃, g₃, x₃, y₃, m₃, rd₃, wr₃⟩ => ?_)
   have gk : ∀ r, r ∉ absorbRegs → r ≠ .rsi → s₃.gpr r = s.gpr r := fun r hr hs => by
     rw [g₃ r hs, h₂.gpr r hr, g₁]
-  have rsi₃' : s₃.gpr .rsi = q + 512 := by rw [rsi₃, h₂.gpr _ (by decide), g₁, hrsi]
+  have rsi₃' : s₃.gpr .rsi = q + tot pre := by rw [rsi₃, h₂.gpr _ (by decide), g₁, hrsi]
   have F₃ : Frame [slotsR buf] s.mem s₃.mem := by rw [m₃]; exact F₁.trans h₂.frame
   have hh₃ : Holds buf false (fun j => Nat.repeat innerBlock 10 (ctr (stateAt s.mem st) j)) s₃ := by
     intro k hk' l q' hl hq
@@ -465,13 +536,13 @@ theorem chunkMain_ok {R0 R1 : BitVec 64} (hk : Key R0 R1) {X : Nat} {st buf q : 
     (by rw [wr₃']; exact hwd) inc₃ dsd dsb dbd) fun s₄ ⟨d₄, f₄, g₄, rd₄, wr₄⟩ => ?_
   have hS : stateAt s₃.mem st = stateAt s.mem st :=
     Proof.ChaCha20.X86_64.Xor.stateAt_frame F₃ (by simpa using dsb.sub_right (slotsR_sub buf))
-  have hq₃ : ∀ k < 512, s₃.mem (q + 512 + BitVec.ofNat 64 k) = s.mem (q + 512 + BitVec.ofNat 64 k) := by
+  have hq₃ : ∀ k < 512, s₃.mem (q + tot pre + BitVec.ofNat 64 k) = s.mem (q + tot pre + BitVec.ofNat 64 k) := by
     intro k hk'
     refine F₃ _ ?_
     simp only [List.mem_singleton, forall_eq]
     intro hc'
-    exact dbd _ ((slotsR_sub buf) _ hc') (Offset.contains_base (q + 512) (d := k) (n := 1) (k := 512) (by omega)
-      (by lit_omega))
+    exact dbd _ ((slotsR_sub buf) _ hc') (Offset.contains_base (q + tot pre) (d := k) (n := 1) (k := 512)
+      (by omega) (by lit_omega))
   refine ⟨fun k hk' => by rw [d₄ k hk', hS, hq₃ k hk'], ?_, (F₃.mono (by simp)).trans f₄,
     fun r hr hs => by rw [g₄, gk r hr hs], by rw [g₄, rsi₃'], by rw [rd₄, rd₃, h₂.rd, rd₁],
     by rw [wr₄, wr₃']⟩

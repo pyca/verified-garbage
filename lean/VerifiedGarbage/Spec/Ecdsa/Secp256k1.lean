@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.Ecdsa.Generic
-import VerifiedGarbage.Spec.Secp256k1
+module
+
+public import VerifiedGarbage.Spec.Ecdsa.Generic
+public import VerifiedGarbage.Spec.Secp256k1
 
 /-!
 # ECDSA over secp256k1: the contracts, on every target
@@ -8,6 +10,8 @@ import VerifiedGarbage.Spec.Secp256k1
 (`Spec/Secp256k1.lean`): `vg_ecdsa_secp256k1_sign`, in the module
 `ecdsa_secp256k1`.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Ecdsa.Secp256k1
 

@@ -1,9 +1,21 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedMaskCopy
-import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.CachedCommitment
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedCommitmentTiming
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedMaskTail
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedMaskCopy
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedMaskCopy
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.CachedCommitment
+meta import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.CachedCommitment
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedCommitmentTiming
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedCommitmentTiming
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedMaskTail
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedMaskTail
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## From `CachedMaskPrefix.lean` -/
+
+@[expose] public section
 
 section
 

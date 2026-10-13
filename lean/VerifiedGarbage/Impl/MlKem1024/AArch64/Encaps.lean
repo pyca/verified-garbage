@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.MlKem.AArch64.Encaps
-import VerifiedGarbage.Impl.MlKem1024.AArch64.KeyGen
+module
+
+public import VerifiedGarbage.Impl.MlKem.AArch64.Encaps
+public import VerifiedGarbage.Impl.MlKem1024.AArch64.KeyGen
 
 /-!
 # ML-KEM-1024 on AArch64: `vg_mlkem1024_encaps`
@@ -7,6 +9,8 @@ import VerifiedGarbage.Impl.MlKem1024.AArch64.KeyGen
 ML-KEM-768's code (`Impl/MlKem/AArch64/Encaps.lean`) for the parameters of
 ML-KEM-1024 (`lay1024`).
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlKem1024.AArch64
 

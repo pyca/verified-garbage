@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.HmacFin
-import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
+module
+
+public import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.HmacFin
+public import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # HMAC's `finalize` over a Merkle–Damgård hash function on ARMv7: constant time
@@ -12,6 +18,8 @@ analysis proves the blocks between the calls constant time from them
 `Proof/Pbkdf2/Stream/Arm/Hash.lean`), and the call of the compression function
 by its own (`compressBlock_rel`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Pbkdf2.Md.Arm.Fin
 

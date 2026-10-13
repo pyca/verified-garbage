@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.AesGcm.AArch64
+module
+
+public import VerifiedGarbage.Impl.AesGcm.AArch64
 
 /-!
 # AES-GCM one-shot encryption out of place, from a list of slices: AArch64 implementation
@@ -19,6 +21,8 @@ its length and `x11` where it goes; `x6` and `x7` step through the
 descriptors. Every register the copy writes is caller-saved, and the
 branches are on `src_count` and the slices' lengths alone.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.AesGcm.AArch64.SealGather
 

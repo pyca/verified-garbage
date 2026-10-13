@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Keys
-import VerifiedGarbage.Proof.Gcm.Stream
+module
+
+public import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Keys
+public import VerifiedGarbage.Proof.Gcm.Stream
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM-SIV on AArch64: POLYVAL (`chunk`, `absorb`)
@@ -11,6 +17,8 @@ reads each copy as POLYVAL reads the original (`revLoop_ok`), and `vg_ghash`
 absorbs them (`chunk_ok`); `absorb` absorbs the padded string so, its last
 bytes padded with zeros in the block at `W + 224` (`absorb_ok`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

@@ -1,7 +1,12 @@
-import VerifiedGarbage.Impl.Ed25519.X86.PointSelect
-import VerifiedGarbage.Impl.Ed25519.X86.PointTable
+module
+
+public import VerifiedGarbage.Impl.Ed25519.X86.PointSelect
+public import VerifiedGarbage.Impl.Ed25519.X86.PointTable
 
 /-! A descending scalar bit adds its exact power before masked selection. -/
+
+@[expose] public section
+
 namespace VG.Impl.Ed25519.X86
 open VG.X86
 open VG.Impl.X25519.X86 (sc at_)

@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Curve448.AArch64.Fast.Butterfly
+module
+
+public import VerifiedGarbage.Proof.Curve448.AArch64.Fast.Butterfly
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `a + 39081 e`
@@ -7,6 +13,8 @@ Untrusted: everything here is checked by Lean. Limb `i` of the result is
 `a_i + (39081 e_i mod 2⁵⁶) + c_{i-1}` (and `+ c₇` for limb 4), with
 `c_i = ⌊39081 e_i / 2⁵⁶⌋` and `c_{-1} = c₇`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Curve448.AArch64.Fast
 

@@ -1,10 +1,19 @@
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.Buffers
-import VerifiedGarbage.Proof.Aes.X86_64.Ctr32
-import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Ctr32
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.Ops
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.AesHash
+module
+
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.Buffers
+public import VerifiedGarbage.Proof.Aes.X86_64.Ctr32
+public import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Ctr32
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.Ops
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.AesHash
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## Counter -/
+
+@[expose] public section
+
 section
 
 /-!
@@ -562,6 +571,7 @@ theorem Env.writeData {s₀ s t : State} {P : Nat → Block} (hp : SPre s₀)
   · exact (data_read hp hm 784 16 (by decide)).trans h.poly
   · exact (data_read hp hm 800 8 (by decide)).trans h.rounds
   · exact (data_read hp hm 808 8 (by decide)).trans h.data
+  · exact (data_read hp hm 816 8 (by decide)).trans h.saved
   · exact hr.trans h.rd
   · exact hw.trans h.wr
 
@@ -582,6 +592,7 @@ theorem Env.move {s₀ s t : State} {P : Nat → Block} (h : Env s₀ P s)
   · rw [hm]; exact h.poly
   · rw [hm]; exact h.rounds
   · rw [hm]; exact h.data
+  · rw [hm]; exact h.saved
   · exact hr.trans h.rd
   · exact hw.trans h.wr
 

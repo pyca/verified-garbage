@@ -1,4 +1,6 @@
-import VerifiedGarbage.TCB.AArch64.Isa
+module
+
+public import VerifiedGarbage.TCB.AArch64.Isa
 
 /-!
 # Poly1305 in nine registers (AArch64)
@@ -29,6 +31,8 @@ Only flags and the registers above are written, and memory is only read.
 The addresses are `x20` and `x0` plus constants, so only those pointers can
 affect timing.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.ChaCha20Poly1305.AArch64.Poly
 

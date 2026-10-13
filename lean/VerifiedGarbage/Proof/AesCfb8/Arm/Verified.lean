@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesCbc.Arm.Verified
-import VerifiedGarbage.Proof.AesCfb8.Arm.CT
+module
+
+public import VerifiedGarbage.Proof.AesCbc.Arm.Verified
+public import VerifiedGarbage.Proof.AesCfb8.Arm.CT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CFB8 on ARMv7: `Verified`
@@ -9,6 +15,8 @@ precondition, and the shared contracts of `Spec/Cfb8/Contract.lean`, with 8
 bytes of stack: each call of the block
 function pushes its stack argument and `lr`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesCfb8.Arm
 

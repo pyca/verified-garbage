@@ -1,10 +1,18 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.Run
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Run
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on x86-64: small blocks shared by the pieces
 
 Untrusted: everything here is checked by Lean.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

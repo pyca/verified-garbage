@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.ProjectiveArithmetic
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.ProjectiveFlags
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.ProjectiveArithmetic
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.ProjectiveFlags
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Verify.X86_64
 open VG VG.X86_64 VG.Impl.Mont.X86_64 VG.Impl.Mont VG.Impl.Weierstrass.X86_64 VG.Impl.Weierstrass
@@ -100,7 +108,6 @@ theorem tail_dispatch_ok (hc : BaseCfgOk c) (hC : Law c.C) {s₀ : State} {base 
   · rename_i h
     exact projectiveFinal_ok hc hC h.2.1 h.2.2 hP
   · show WP isa (Code.seq c.pPow.inline (Impl.Ecdsa.Verify.X86_64.Cfg.final c).inline) s _
-    rw [pPow_inline, show (Impl.Ecdsa.Verify.X86_64.Cfg.final c).inline = _ from blocks_inline _]
     exact tail_ok hc hP
 
 end VG.Proof.Ecdsa.Verify.X86_64

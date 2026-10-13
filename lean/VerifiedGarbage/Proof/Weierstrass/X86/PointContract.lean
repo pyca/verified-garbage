@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Weierstrass.X86.PointFn
-import VerifiedGarbage.Proof.Weierstrass.X86.MontContract
-import VerifiedGarbage.Proof.Weierstrass.PointFacts
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86.PointFn
+public import VerifiedGarbage.Proof.Weierstrass.X86.MontContract
+public import VerifiedGarbage.Proof.Weierstrass.PointFacts
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Complete point addition and doubling as functions, on x86 (32-bit): the contracts
@@ -12,6 +18,8 @@ apart from it), and `fn (modP C) dbl` meets them (`sum_x86`), given that
 `C.p` is odd and Fermat's little theorem holds in `Fin C.p` (`Fermat`,
 `Proof/Weierstrass/PointFacts.lean`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.X86.Point
 

@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacDbls
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacDbls
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The Jacobian window method on x86-64: the entry of a digit
@@ -9,6 +15,8 @@ table into `T` (`jselect_ok`, zeros for `a = 0`), whose `Y` is negated for a
 negative digit (`negY`, as the comb's), so that `T` holds digit `j`'s point
 `winPt` with its powers, or `Z = 0` for the digit zero (`jentry_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.X86_64
 

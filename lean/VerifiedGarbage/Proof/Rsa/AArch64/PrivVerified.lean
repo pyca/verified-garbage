@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Rsa.AArch64.PrivCT
+module
+
+public import VerifiedGarbage.Proof.Rsa.AArch64.PrivCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_private_checked` on AArch64: the shared contract
@@ -9,6 +15,8 @@ import VerifiedGarbage.Proof.Rsa.AArch64.PrivCT
 frames use (`code_verified`); its frames nest `stackBytes / 16` units deep
 (`privCode_depth`), which its callers need.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.AArch64
 

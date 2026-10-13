@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Cmac.Frame
+module
+
+public import VerifiedGarbage.Proof.Cmac.Frame
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # CMAC: blocks in memory as 32-bit words
@@ -10,6 +16,8 @@ little-endian 32-bit words: `le4 w` is the bytes of the word `w`, and storing
 word at a time (the block written may be one of those read), `zero4` zeroes
 a block, and `chainMem4` forms a counter block `C = P ⊕ Q` and zeroes `P`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Cmac
 

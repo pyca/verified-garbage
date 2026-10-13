@@ -1,14 +1,16 @@
-import VerifiedGarbage.Impl.MlKem.X86_64.Arith
-import VerifiedGarbage.Impl.MlKem.X86_64.KpkeMul
-import VerifiedGarbage.Impl.MlKem.X86_64.Encode12
-import VerifiedGarbage.Impl.MlKem.X86_64.Decode12Avx2
-import VerifiedGarbage.Impl.MlKem.X86_64.Cbd
-import VerifiedGarbage.Impl.MlKem.X86_64.Compress
-import VerifiedGarbage.Impl.MlKem.X86_64.MulAvx2
-import VerifiedGarbage.Impl.MlKem.X86_64.NttAvx2
-import VerifiedGarbage.Impl.MlKem.X86_64.Ntt
-import VerifiedGarbage.Impl.MlKem.X86_64.Sample
-import VerifiedGarbage.Impl.MlKem.X86_64.Sample4
+module
+
+public import VerifiedGarbage.Impl.MlKem.X86_64.Arith
+public import VerifiedGarbage.Impl.MlKem.X86_64.KpkeMul
+public import VerifiedGarbage.Impl.MlKem.X86_64.Encode12
+public import VerifiedGarbage.Impl.MlKem.X86_64.Decode12Avx2
+public import VerifiedGarbage.Impl.MlKem.X86_64.Cbd
+public import VerifiedGarbage.Impl.MlKem.X86_64.Compress
+public import VerifiedGarbage.Impl.MlKem.X86_64.MulAvx2
+public import VerifiedGarbage.Impl.MlKem.X86_64.NttAvx2
+public import VerifiedGarbage.Impl.MlKem.X86_64.Ntt
+public import VerifiedGarbage.Impl.MlKem.X86_64.Sample
+public import VerifiedGarbage.Impl.MlKem.X86_64.Sample4
 
 /-!
 # ML-KEM on x86-64: the pieces of the top-level functions
@@ -33,6 +35,8 @@ of the primitives at 2048 (2048 bytes); and polynomials of 1024 bytes from
 4096 (`P k`), where each parameter set places the matrix, the outputs of
 `PRF₂` and the working space of their computation (`Kem`).
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlKem.X86_64
 
@@ -238,10 +242,10 @@ def sigLanes (wl : Nat) : List Instr :=
   (List.range 4).flatMap fun i => .mov .rax (.mem (at_ .rbx (oG + 32 + 8 * i))) ::
     (List.range 4).flatMap fun k => [.store (at_ .rbx (32 * (wl + i) + 8 * k)) .rax]
 
-/-- Byte 32 of state `k`: the index `N₀ + k`. -/
-def nonces (N₀ wl : Nat) : List Instr :=
-  (List.range 4).flatMap fun k =>
-    [.mov32 .rax (.imm (BitVec.ofNat 32 (N₀ + k))), .store8 (at_ .rbx (32 * (wl + 4) + 8 * k)) .rax]
+/-- Byte 32 of state `k`: the index `N₀ + k`, for `N₀` in `r9`. -/
+def nonces (wl : Nat) : List Instr :=
+  .mov .rax (.reg .r9) :: (List.range 4).flatMap fun k =>
+    [.store8 (at_ .rbx (32 * (wl + 4) + 8 * k)) .rax, .alu .add .rax (.imm 1)]
 
 /-- SHAKE's suffix `0x1f` at byte 33 of each state, and the last bit of the
 padding (`0x80`) at byte 135. -/
@@ -256,32 +260,44 @@ def args (wl : Nat) : List Instr :=
     .alu .add .rdx (.imm (BitVec.ofNat 32 (32 * (wl + 50)))), .mov .rcx (.reg .rbx),
     .alu .add .rcx (.imm (BitVec.ofNat 32 (32 * (wl + 74))))]
 
-/-- The first 128 bytes of states `0, …, m - 1` to `scratch + o + 128 k`. -/
-def extract (m o wl : Nat) : List Instr :=
+/-- The first 128 bytes of states `0, …, m - 1` to `r8 + 128 k`. -/
+def extract (m wl : Nat) : List Instr :=
   (List.range m).flatMap fun k => (List.range 16).flatMap fun i =>
-    [.mov .rax (.mem (at_ .rbx (32 * (wl + i) + 8 * k))), .store (at_ .rbx (o + 128 * k + 8 * i)) .rax]
+    [.mov .rax (.mem (at_ .rbx (32 * (wl + i) + 8 * k))), .store (at_ .r8 (128 * k + 8 * i)) .rax]
 
 /-- The table, the padded inputs and the arguments of the permutation. -/
-def setup (N₀ wl : Nat) : List Instr :=
-  rcTable .rbx (wl + 50) ++ zero wl ++ sigLanes wl ++ nonces N₀ wl ++ pads wl ++ args wl
+def setup (wl : Nat) : List Instr :=
+  rcTable .rbx (wl + 50) ++ zero wl ++ sigLanes wl ++ nonces wl ++ pads wl ++ args wl
 
-/-- `PRF₂(σ, N₀ + k)` to `scratch + o + 128 k` for each `k < m` (at most
-four), at once. After the copies, `vzeroupper` clears the upper halves of
-the vector registers, so that the SSE code that runs next does not pay for
-mixing them. -/
-def batch (N₀ m o wl : Nat) (fast : Bool := false) : Prog isa :=
-  .seq (.block (setup N₀ wl)) (.seq (permute4 fast) (.block (extract m o wl ++ [.vop .vzeroupper])))
+/-- `PRF₂(σ, N₀ + k)` to `r8 + 128 k` for each `k < m` (at most four), at
+once, for `N₀` in `r9` (the permutation keeps `r8`–`r10`). After the
+copies, `vzeroupper` clears the upper halves of the vector registers, so
+that the SSE code that runs next does not pay for mixing them. -/
+def batch (m wl : Nat) (fast : Bool := false) : Prog isa :=
+  .seq (.block (setup wl)) (.seq (permute4 fast) (.block (extract m wl ++ [.vop .vzeroupper])))
+
+/-- `r8 := scratch + o` and `r9 := N₀`. -/
+def regs (N₀ o : Nat) : List Instr :=
+  [.mov .r8 (.reg .rbx), .alu .add .r8 (.imm (BitVec.ofNat 32 o)), .mov32 .r9 (.imm (BitVec.ofNat 32 N₀))]
+
+/-- The next four: `r8 += 512`, `r9 += 4`, `r10 -= 1` (ZF set at 0). -/
+def next : List Instr := [.alu .add .r8 (.imm 512), .alu .add .r9 (.imm 4), .alu .sub .r10 (.imm 1)]
+
+/-- `q` batches of four from `N₀` (`q ≥ 1`), to `scratch + o + 512 i`, in a
+loop, which leaves `r8` and `r9` at the next. -/
+def quads (N₀ q o wl : Nat) (fast : Bool := false) : Prog isa :=
+  .seq (.block (regs N₀ o ++ [.mov32 .r10 (.imm (BitVec.ofNat 32 q))]))
+    (.loop (.seq (batch 4 wl fast) (.block next)) .ne)
 
 end Prf4
 
 /-- `PRF₂(σ, N₀ + i)` to `scratch + o + 128 i` for each `i < n`, four at a
-time (the last `n mod 4` with lanes whose outputs are not copied). -/
-def prfsX4 (fast : Bool := false) : Nat → Nat → Nat → Nat → Prog isa
-  | _, 0, _, _ => .block []
-  | N₀, 1, o, wl => Prf4.batch (fast := fast) N₀ 1 o wl
-  | N₀, 2, o, wl => Prf4.batch (fast := fast) N₀ 2 o wl
-  | N₀, 3, o, wl => Prf4.batch (fast := fast) N₀ 3 o wl
-  | N₀, n + 4, o, wl => .seq (Prf4.batch (fast := fast) N₀ 4 o wl) (prfsX4 (fast := fast) (N₀ + 4) n (o + 512) wl)
+time: the batches of four in a loop (`quads`), then the last `n mod 4`
+with lanes whose outputs are not copied. -/
+def prfsX4 (fast : Bool := false) (N₀ n o wl : Nat) : Prog isa :=
+  .seq (if n / 4 = 0 then .block [] else Prf4.quads N₀ (n / 4) o wl fast)
+    (if n % 4 = 0 then .block []
+      else .seq (.block (Prf4.regs (N₀ + 4 * (n / 4)) (o + 512 * (n / 4)))) (Prf4.batch (n % 4) wl fast))
 
 /-- How many of `n` outputs `prfsAvx2` computes one at a time, first:
 `n mod 4` when it is 1 or 2. (Four instances at once cost about as much as
@@ -292,7 +308,7 @@ def prfsLead (n : Nat) : Nat := if n % 4 = 1 ∨ n % 4 = 2 then n % 4 else 0
 /-- `PRF₂(σ, N₀ + i)` to `scratch + o + 128 i` for each `i < n`, with AVX2:
 the first `prfsLead n` one at a time, and the others four at a time. -/
 def prfsAvx2 (N₀ n o wl : Nat) (fast : Bool := false) : Prog isa :=
-  .seq (prfsScalar N₀ (prfsLead n) o wl) (prfsX4 (fast := fast) (N₀ + prfsLead n) (n - prfsLead n) (o + 128 * prfsLead n) wl)
+  .seq (prfsScalar N₀ (prfsLead n) o wl) (prfsX4 fast (N₀ + prfsLead n) (n - prfsLead n) (o + 128 * prfsLead n) wl)
 
 /-- An implementation of `vg_mlkem_sample_ntt4` to call (its symbol and its
 code), and of the computation of several outputs of `PRF₂` that goes with

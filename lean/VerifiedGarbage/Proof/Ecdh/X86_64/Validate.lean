@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.Ecdh.X86_64.Peer
-import VerifiedGarbage.Proof.Ecdsa.X86_64.Lays
-import VerifiedGarbage.Proof.Ecdsa.X86_64.SlotOps
-import VerifiedGarbage.Proof.Ecdsa.X86_64.Stages
-import VerifiedGarbage.Proof.Ecdsa.X86_64.Inv
+module
+
+public import VerifiedGarbage.Proof.Ecdh.X86_64.Peer
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.Lays
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.SlotOps
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.Stages
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.Inv
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDH on x86-64: the peer's point, `[d]P` and `Z^(p-2)`
@@ -15,6 +21,8 @@ a field program, by `fprog_ok`), ands the mask of its being zero into the
 flag, and selects for the ladder the peer's point if the flag is set, else
 `G` (`validate_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdh.X86_64
 
@@ -372,7 +380,7 @@ theorem ladPow_ok (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s base 
     (ht₀ : ∀ t < 64 * c.n, s.mem (off base (bitsAt c.n 0 + t)) = if k.testBit t then 1 else 0)
     (ht₁ : ¬ c.n ≤ 9 → ∀ t < 64 * c.n, s.mem (off base (bitsAt c.n 1 + t)) = if (c.C.p - 2).testBit t then 1 else 0)
     {rest : Prog isa} {R : State → Prop} (h : ∀ s', LadPost c base Q s s' → WP isa rest s' R) :
-    WP isa (.seq (ladder (Impl.Ecdh.X86_64.Cfg.ladderQ c)).inline (.seq c.pPow rest)) s R := by
+    WP isa (.seq (ladder (Impl.Ecdh.X86_64.Cfg.ladderQ c)).inline (.seq c.pPow.inline rest)) s R := by
   have h0 := hc.n0
   have h7 := hc.n10
   have hn := hs.nowrap

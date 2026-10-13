@@ -1,4 +1,7 @@
-import VerifiedGarbage.Impl.Ed448.AArch64.VerifyEquation
+module
+
+public import VerifiedGarbage.Impl.Ed448.AArch64.VerifyEquation
+public import VerifiedGarbage.Impl.Ed448.AArch64.CombBase
 
 /-!
 # Ed448 verification's equation on AArch64, by a comb and 4-bit windows
@@ -9,9 +12,10 @@ are `VerifyEquation.lean`'s (with X448's memory-resident arithmetic), as is the
 comparison of `[4]Q` with `[4]R`; but `Q = [S]B + [k](-A)` is computed with the
 register-resident arithmetic (`Impl/Curve448/AArch64/Fast.lean`):
 
-* `[S]B` by `vg_ed448_scalar_base`'s comb of 57 tables (`stepN 57`, `combine`),
+* `[S]B` by `vg_ed448_scalar_base`'s comb of 57 tables (`vg_ed448_r56_comb_base`, `CombBase.call 57`),
   from the bits of `S` at `BITS`.
-* `[k](-A)` by 4-bit windows from the top, each four doublings and the
+* `[k](-A)` by 4-bit windows from the top (the challenge's nibbles, expanded into bytes at
+  `BITS` once `[S]B` no longer needs it), each four doublings and the
   addition of `[n](-A)` for the window's digit `n`, selected in constant time
   with a mask for each of the 16 entries of a table of `[n](-A)` built at run
   time (`TAB`, entry `n` at `TAB + 192 n`: `X`, `Y` and `Z`, eight words each).
@@ -26,6 +30,8 @@ register that could keep its pointer; `R`, once decoded, is kept at `RX` and
 the working space and restores them. Every address and branch depends only on
 the pointers and counters.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Ed448.AArch64
 
@@ -80,11 +86,9 @@ def table : Prog isa := .seq (.block tabInit) (.loop tabBody (.nonzero .x .x9))
 
 /-! ## `[S]B` -/
 
-/-- Both accumulators at `[G] B`, the comb's steps over the bits of `S` (at `BITS`), and
-`16 A + B`: `[S]B` in slots 0–2. -/
-def sBase : Prog isa :=
-  .seq (.block (Impl.X448.AArch64.Base.accs Impl.X448.baseG57)) <|
-  .seq (.loop (Impl.X448.AArch64.Base.stepN 57) (.nonzero .x .x9)) Impl.X448.AArch64.Base.combine
+/-- The comb over the bits of `S` (at `BITS`), by a call of `vg_ed448_r56_comb_base`, and `16 A + C`
+by calls of `vg_ed448_r56_point_add`: `[S]B` in slots 0–2. -/
+def sBase : Prog isa := .seq (CombBase.call 57) Point56.combineCall
 
 /-! ## `[k](-A)` -/
 
@@ -113,10 +117,20 @@ def selectEntryWord (w : Nat) : List Instr :=
 /-- The entry for the digit in `x11` to slots 6–8. -/
 def selectEntry : List Instr := digitMasks ++ (List.range 24).flatMap selectEntryWord
 
-/-- `x11` = byte `x19` of `k` (from `KB`), shifted right by `sh` and masked to 4 bits. -/
-def digitOf (sh : Nat) : List Instr :=
-  [.add .x .x2 .x3 .x19, .ldrb .x11 .x2 KB, .movz .x .x10 15 0] ++
-  (if sh = 0 then [] else [.lsr .x .x11 .x11 sh]) ++ [.logic .and .x .x11 .x11 .x10]
+/-- Byte `x19 - 1` of the challenge's copy at `KB` (`x19` counted down first), split into its
+nibbles: the low at `BITS + 2 (x19 - 1)`, the high after it. `S`'s bits there are not used
+after `[S]B`. -/
+def nibBody : List Instr :=
+  [.subImm .x .x19 .x19 1, .add .x .x2 .x3 .x19, .ldrb .x4 .x2 KB, .lsr .x .x5 .x4 4,
+    .movz .x .x6 15 0, .logic .and .x .x4 .x4 .x6, .lsl .x .x2 .x19 1, .add .x .x2 .x3 .x2,
+    .strb .x4 .x2 BITS, .strb .x5 .x2 (BITS + 1)]
+
+/-- The challenge's 114 nibbles at `BITS`, nibble `i` of `k` at `BITS + i`. -/
+def nibbles : Prog isa :=
+  .seq (.block [.movz .x .x19 57 0]) (.loop (.block nibBody) (.nonzero .x .x19))
+
+/-- `x11` = nibble `x19` of `k` (from `BITS`). -/
+def digitOf : List Instr := [.add .x .x2 .x3 .x19, .ldrb .x11 .x2 BITS]
 
 /-- `Q` (slots 3–5) doubled four times: a loop counted by `x1`, which the doubling keeps. -/
 def dbl4Loop : Prog isa :=
@@ -124,20 +138,20 @@ def dbl4Loop : Prog isa :=
     (.loop (.seq Point56.doubleCall (.block [.subImm .x .x1 .x1 1])) (.nonzero .x .x1))
 
 /-- A window: `Q` (slots 3–5) doubled four times, and the entry of the digit
-(`digitOf sh`) added. -/
-def window (sh : Nat) : Prog isa :=
-  .seq dbl4Loop (.seq (.block (digitOf sh ++ selectEntry)) Point56.addCall)
+(`digitOf`) added. -/
+def window : Prog isa :=
+  .seq dbl4Loop (.seq (.block (digitOf ++ selectEntry)) Point56.addCall)
 
-/-- Byte `x19 - 1` of `k` (`x19` counts down to it): its high and its low digit. -/
-def kByte : Prog isa := .seq (.block [.subImm .x .x19 .x19 1]) (.seq (window 4) (window 0))
+/-- Nibble `x19 - 1` of `k` (`x19` counts down to it). -/
+def kNib : Prog isa := .seq (.block [.subImm .x .x19 .x19 1]) window
 
-/-- `Q` the neutral point, 1 in slot 20 (for `dblOps`), and the counter at 57. -/
+/-- `Q` the neutral point, 1 in slot 20 (for `dblOps`), and the counter at 114. -/
 def kInit : List Instr :=
   constSlot (slot 3) 0 ++ constSlot (slot 4) 1 ++ constSlot (slot 5) 1 ++ constSlot (slot 20) 1 ++
-    [.movz .x .x19 57 0]
+    [.movz .x .x19 114 0]
 
-/-- `kInit`, then the 57 bytes of `k`, from the top. -/
-def kWindows : Prog isa := .seq (.block kInit) (.loop kByte (.nonzero .x .x19))
+/-- The nibbles, `kInit`, then the 114 nibbles of `k`, from the top. -/
+def kWindows : Prog isa := .seq nibbles (.seq (.block kInit) (.loop kNib (.nonzero .x .x19)))
 
 /-! ## The comparison -/
 
@@ -155,19 +169,30 @@ def wcross : Prog isa :=
   .block (codeOf [.mul (slot 12) (slot 0) (slot 5), .mul (slot 13) (slot 3) (slot 2),
      .mul (slot 14) (slot 1) (slot 5), .mul (slot 15) (slot 4) (slot 2)])
 
-/-- The comparisons, the result `x0 = (x20 == 0)`, and the registers restored. -/
-def wfinish : List Instr :=
-  eqSlots 12 13 ++ eqSlots 14 15 ++ [.addImm .x .x5 .x20 0] ++ isZero ++
+/-- One comparison: slots 12 and 13 compared (`eqSlots`), then slots 14 and 15 copied into
+them, for the second pass, and `x19` counted down. -/
+def wcmp : List Instr :=
+  eqSlots 12 13 ++ Curve448.AArch64.copy (slot 12) (slot 14) ++ Curve448.AArch64.copy (slot 13) (slot 15) ++
+    [.subImm .x .x19 .x19 1]
+
+/-- The result `x0 = (x20 == 0)`, and the registers restored. -/
+def wresult : List Instr :=
+  [.addImm .x .x5 .x20 0] ++ isZero ++
   [.addImm .x .x0 .x5 0, ld .x19 0, ld .x20 8, ld .x30 LRS] ++ Impl.X448.AArch64.Fast.restore ++
   Impl.X448.AArch64.Fast.vrestore
 
+/-- The comparisons of slots 12 and 13, then 14 and 15: two passes of `wcmp`, counted by
+`x19`; then `wresult`. -/
+def wfinish : Prog isa :=
+  .seq (.seq (.block [.movz .x .x19 2 0]) (.loop (.block wcmp) (.nonzero .x .x19))) (.block wresult)
+
 /-- The entry, the bits of `S`, its check, and the decodings of `A` (negated, into slots 6–7) and
-`R` (into slots 8–9). -/
+`R` (into slots 8–9), by one copy of `decode` (`decodes`). -/
 def wfront : Prog isa :=
   .seq (.block (ventry ++ wsave)) <| .seq (bitsAt .x1 57 0 BITS) <| .seq (.block sCheck) <|
-  .seq vdecodeA (decode .x1 8 9)
+  decodes
 
 def verifyEquation : Prog isa :=
-  .seq wfront <| .seq table <| .seq sBase <| .seq kWindows <| .seq wcross (.block wfinish)
+  .seq wfront <| .seq table <| .seq sBase <| .seq kWindows <| .seq wcross wfinish
 
 end VG.Impl.Ed448.AArch64

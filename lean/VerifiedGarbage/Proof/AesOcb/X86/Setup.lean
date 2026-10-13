@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesOcb.X86.LNtz
+module
+
+public import VerifiedGarbage.Proof.AesOcb.X86.LNtz
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-OCB on x86: `L_$`, `L_0` and the checksum (`setup`)
@@ -7,6 +13,8 @@ Untrusted: everything here is checked by Lean. `setup` doubles `L_*` (bytes
 240–255 of the key context) to `L_$` at `W + ldO`, doubles that to `L_0` at
 `W + l0O`, and zeroes the checksum at `W + ckO` (`setup_ok`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

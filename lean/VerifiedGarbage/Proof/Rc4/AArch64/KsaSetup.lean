@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Rc4.AArch64.KsaGroup
+module
+
+public import VerifiedGarbage.Proof.Rc4.AArch64.KsaGroup
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The key schedule's setup
@@ -8,6 +14,8 @@ leaves the constants, the identity table in `v16`–`v31` (lane numbers, and
 their XORs with 64, 128 and 192), `j = 0`, `S[0] = 0`, the key pointer and
 length, sixteen groups to go and the base `0`: the first group's `KsaInv`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rc4.AArch64
 open VG VG.AArch64 VG.AArch64.RegUpd VG.Impl.Rc4.AArch64 VG.Spec.Rc4 VG.Proof.Rc4

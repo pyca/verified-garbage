@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.RsaOaep.X86_64.DecLoops
+module
+
+public import VerifiedGarbage.Proof.RsaOaep.X86_64.DecLoops
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-OAEP decryption on x86-64: the masks and the decoding
@@ -8,6 +14,8 @@ branches is zero iff they are equal and `EM[0]` is zero (`accL_eq_zero`).
 The scan's masks are `Proof/RsaOaep/Scan.lean`'s (`scanS`): `rdx`, `rsi` and
 `rcx` after the scan of `T`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaOaep.X86_64
 

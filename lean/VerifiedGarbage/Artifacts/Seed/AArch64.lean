@@ -1,6 +1,10 @@
-import VerifiedGarbage.Proof.Seed.AArch64.Frame
+module
+
+public import VerifiedGarbage.Proof.Seed.AArch64.Frame
 
 /-! # SEED artifacts on baseline AArch64 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.Seed.AArch64
 
@@ -21,7 +25,7 @@ def artifacts : List Artifact := [
     code := Impl.StackScratch.AArch64.withStackScratchWiped 976 .x3 122 Impl.Seed.AArch64.encrypt
     contract := Spec.Seed.ecbEncryptContract AArch64.abi 976
     stack := 976
-    ofSig := ⟨_, _, _, by unfold Spec.Seed.ecbEncryptContract Spec.Seed.ecbContract; rfl⟩
+    ofSig := by exact (⟨_, _, _, by unfold Spec.Seed.ecbEncryptContract Spec.Seed.ecbContract; rfl⟩)
     verified := Proof.Seed.AArch64.encrypt_framed
     spSafe := Code.all_of_forall (fun _ => rfl) _ },
   { Spec.Seed.ecbDecryptApi with
@@ -31,7 +35,7 @@ def artifacts : List Artifact := [
     code := Impl.StackScratch.AArch64.withStackScratchWiped 976 .x3 122 Impl.Seed.AArch64.decrypt
     contract := Spec.Seed.ecbDecryptContract AArch64.abi 976
     stack := 976
-    ofSig := ⟨_, _, _, by unfold Spec.Seed.ecbDecryptContract Spec.Seed.ecbContract; rfl⟩
+    ofSig := by exact (⟨_, _, _, by unfold Spec.Seed.ecbDecryptContract Spec.Seed.ecbContract; rfl⟩)
     verified := Proof.Seed.AArch64.decrypt_framed
     spSafe := Code.all_of_forall (fun _ => rfl) _ }]
 

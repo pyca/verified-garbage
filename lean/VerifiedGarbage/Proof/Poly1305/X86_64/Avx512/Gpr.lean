@@ -1,5 +1,12 @@
-import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Powers
-import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Gpr
+module
+
+public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Powers
+public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.VKeep
+public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Gpr
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Poly1305 on x86-64 with AVX-512: the integer instructions
@@ -10,6 +17,8 @@ registers matter: they leave the whole vector registers as they were (`VKeep`,
 unlike `Avx2.VKeep`, includes bits 511:256).
 -/
 
+@[expose] public section
+
 namespace VG.Proof.Poly1305.X86_64.Avx512
 
 open VG VG.X86_64 VG.Impl.Poly1305.X86_64.Avx512
@@ -17,34 +26,8 @@ open VG.Impl.Poly1305.X86_64 (at_)
 open VG.Proof.Poly1305.X86_64 (off off_eq M0 M1)
 open VG.Proof.Poly1305.X86_64.Avx2 (vec vec_gpr vec_mem vec_rd vec_wr ea_at se1 se3)
 
-/-- What a block of integer instructions leaves as it was: the vector
-registers, MXCSR and the regions. -/
-structure VKeep (s s' : State) : Prop where
-  xmm : s'.xmm = s.xmm
-  ymmHi : s'.ymmHi = s.ymmHi
-  zmmHi : s'.zmmHi = s.zmmHi
-  mxcsr : s'.mxcsr = s.mxcsr
-  rd : s'.rd = s.rd
-  wr : s'.wr = s.wr
-
-theorem VKeep.qz_eq {s s' : State} (h : VKeep s s') (r : XReg) (k : Nat) : qz s' r k = qz s r k := by
-  unfold qz State.zlane State.lane; rw [h.xmm, h.ymmHi, h.zmmHi]
-
-theorem VKeep.trans {s₁ s₂ s₃ : State} (h₁ : VKeep s₁ s₂) (h₂ : VKeep s₂ s₃) : VKeep s₁ s₃ :=
-  ⟨h₂.xmm.trans h₁.xmm, h₂.ymmHi.trans h₁.ymmHi, h₂.zmmHi.trans h₁.zmmHi, h₂.mxcsr.trans h₁.mxcsr,
-    h₂.rd.trans h₁.rd, h₂.wr.trans h₁.wr⟩
-
 theorem VKeep.avx2 {s s' : State} (h : VKeep s s') : Avx2.VKeep s s' :=
   ⟨h.xmm, h.ymmHi, h.mxcsr, h.rd, h.wr⟩
-
-/-- Closes what `simp` leaves of a block of integer instructions. -/
-macro "finish_gpr8" : tactic => `(tactic| (
-  all_goals repeat' first | apply And.intro | apply VKeep.mk
-  all_goals first | trivial | rfl | (intros; simp [*])))
-
-theorem se40 : BitVec.signExtend 64 (BitVec.ofNat 32 40) = 40 := by decide
-theorem se128 : BitVec.signExtend 64 (128 : BitVec 32) = 128 := by decide
-theorem se7 : BitVec.signExtend 64 (7 : BitVec 32) = 7 := by decide
 
 set_option simprocs false in
 theorem cmp_ok (s : State) :

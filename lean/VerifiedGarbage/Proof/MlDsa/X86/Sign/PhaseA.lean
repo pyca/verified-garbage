@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.MlDsa.X86.Sign.Words
-import VerifiedGarbage.Proof.MlDsa.X86.Sign.PrimB
-import VerifiedGarbage.Proof.MlDsa.X86.Sign.Local
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86.Sign.Words
+public import VerifiedGarbage.Proof.MlDsa.X86.Sign.PrimB
+public import VerifiedGarbage.Proof.MlDsa.X86.Sign.Local
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA signing on x86 (32-bit): `ExpandA`
@@ -11,6 +17,8 @@ with `OK` the AND of the results (`okE`). After entry `e` (`IA e`): if every
 entry so far succeeded, their slots hold them, within `maxBounds` (`aVal`);
 otherwise one of them fails within `minBounds`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86.Sign
 

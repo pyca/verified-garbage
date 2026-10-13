@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.AesCcm.X86.Absorb
+module
+
+public import VerifiedGarbage.Proof.AesCcm.X86.Absorb
+meta import VerifiedGarbage.Proof.AesCcm.X86.Absorb
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CCM on x86: `absorbPad y` is constant time
@@ -8,6 +15,8 @@ Untrusted: everything here is checked by Lean. What `absorbPad` starts from
 slots holding them; its pieces are constant time from it (`absorbWhole_ct`,
 `absorbTail_ct`, `absorbPad_ct`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

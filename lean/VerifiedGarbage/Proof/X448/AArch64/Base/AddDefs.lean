@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.X448.AArch64.Fast.StepOps
-import VerifiedGarbage.Proof.X448.BaseAdd
-import VerifiedGarbage.Proof.X448.AArch64.Base.Const
+module
+
+public import VerifiedGarbage.Proof.X448.AArch64.Fast.StepOps
+public import VerifiedGarbage.Proof.X448.BaseAdd
+public import VerifiedGarbage.Proof.X448.AArch64.Base.Const
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 of the base point on AArch64: what the additions' proofs share
@@ -11,6 +17,8 @@ the bound of a constant, apart from the proofs of the
 additions with AdvSIMD (`Add.lean`), so that the scalar addition
 (`AddGen.lean`) does not import them.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448.AArch64.Base
 
@@ -59,6 +67,21 @@ theorem next_ok (s : State) {n j : Nat} (hn : n ≤ 57) (hj : j < n) (hc : s.gpr
     show (1 : Nat) < 4096 from by decide, show n < 4096 by omega, ite_true,
     RegUpd.gpr_write, BitVec.setWidth_eq, hc, (next_fact hn hj).1, ite_false, reduceCtorEq,
     Option.some.injEq, exists_eq_left']
+  refine ⟨trivial, (next_fact hn hj).2, ⟨fun r hr => ?_, rfl, rfl⟩, rfl⟩
+  simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+  simp only [RegUpd.gpr_write, hr.1, hr.2, ite_false]
+
+/-- The counter's step, the comb's end at `x30 = n`. -/
+theorem nextR_ok (s : State) {n j : Nat} (hn : n ≤ 57) (hj : j < n) (hc : s.gpr .x19 = BitVec.ofNat 64 j)
+    (h1 : s.gpr .x30 = BitVec.ofNat 64 n) :
+    WP isa (.block ([.addImm .x .x19 .x19 1, .sub .x .x9 .x19 .x30] : List Instr)) s fun t =>
+      t.gpr .x19 = BitVec.ofNat 64 (j + 1) ∧ (t.gpr .x9 != 0) = decide (j + 1 ≠ n) ∧
+      Keeps [.x19, .x9] s t ∧ t.mem = s.mem := by
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, State.read, Size.bits,
+    show (1 : Nat) < 4096 from by decide, ite_true,
+    RegUpd.gpr_write, BitVec.setWidth_eq, hc, (next_fact hn hj).1, ite_false, reduceCtorEq,
+    Option.some.injEq, exists_eq_left', h1]
   refine ⟨trivial, (next_fact hn hj).2, ⟨fun r hr => ?_, rfl, rfl⟩, rfl⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
   simp only [RegUpd.gpr_write, hr.1, hr.2, ite_false]

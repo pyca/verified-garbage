@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.X448.X86_64.Chain
+module
+
+public import VerifiedGarbage.Proof.X448.X86_64.Chain
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 on x86-64: products by columns
@@ -10,6 +16,8 @@ storing its low word at `ACC` and passing the rest of its accumulator on, in
 the registers `accR` rotated. Then the columns of `mul` and `sqr` sum to the
 product and the square (`mulCols_sum`, `sqrCols_sum`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448.X86_64
 

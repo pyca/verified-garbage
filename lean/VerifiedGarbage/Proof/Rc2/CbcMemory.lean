@@ -1,7 +1,15 @@
-import VerifiedGarbage.Proof.Rc2.Memory
-import VerifiedGarbage.Proof.Framework.Offset
+module
+
+public import VerifiedGarbage.Proof.Rc2.Memory
+public import VerifiedGarbage.Proof.Framework.Offset
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # CBC block copying, XOR, and consecutive-block memory layouts -/
+
+@[expose] public section
 
 namespace VG.Proof.Rc2
 

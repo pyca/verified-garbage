@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.ChaCha20.Stream
+module
+
+public import VerifiedGarbage.Proof.ChaCha20.Stream
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Streaming ChaCha20: words in memory, byte by byte
@@ -8,6 +14,8 @@ the 32-bit targets, which store the 64-bit number of bytes left as two
 32-bit words and copy 16 bytes at a time: the bytes of a write and of a
 read of any width, and a 64-bit word from its two halves.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.ChaCha20
 

@@ -1,8 +1,17 @@
-import VerifiedGarbage.Impl.Weierstrass.X86_64.Joint
-import VerifiedGarbage.Proof.Weierstrass.X86_64.FastNafPrep
-import VerifiedGarbage.Proof.Weierstrass.Unch
+module
+
+public import VerifiedGarbage.Impl.Weierstrass.X86_64.Joint
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.FastNafPrep
+public import VerifiedGarbage.Proof.Weierstrass.Unch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Both scalar recoders retain the second input and the first digit buffer. -/
+
+@[expose] public section
+
 namespace VG.Proof.Weierstrass.X86_64
 open VG VG.X86_64 VG.Impl.Weierstrass.X86_64
 open VG.Proof.Mont.X86_64 VG.Proof.Mont

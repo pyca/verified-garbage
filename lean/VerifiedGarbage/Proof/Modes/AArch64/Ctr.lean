@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Modes.AArch64.Group
+module
+
+public import VerifiedGarbage.Proof.Modes.AArch64.Group
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # CTR on AArch64, for any core: the whole function
@@ -11,6 +17,8 @@ it keeps the callee-saved registers `x19`–`x28`, and writes nothing but
 the scratch buffer, the counter block and the data. Each cipher's contract follows
 from it (with the constant-time check of its own code).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Modes.AArch64
 
@@ -34,12 +42,16 @@ theorem ctrLoop_wp (cs : CoreSpec c) {s₀ : State} {B D : Addr} {n : Nat} {k : 
       by have := d.lt; have := hg.lt; rw [Nat.mul_succ] at *; omega, g + 1, rfl, d⟩
 
 /-- The blocks at `D` outside a frame. -/
-theorem cbcBlocks_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {D : Addr} {n : Nat}
-    (hd : ∀ r ∈ rs, Region.Disjoint ⟨D, 16 * n⟩ r) : Spec.Cbc.blocksAt m' D n = Spec.Cbc.blocksAt m D n := by
-  simp only [Spec.Cbc.blocksAt]
+theorem blocksOf_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {L : Nat} (hL : L ≤ 2 ^ 64)
+    {D : Addr} {n : Nat} (hd : ∀ r ∈ rs, Region.Disjoint ⟨D, L * n⟩ r) : blocksOf L m' D n = blocksOf L m D n := by
+  simp only [blocksOf]
   refine List.map_congr_left fun j hj => ?_
-  have hj := List.mem_range.mp hj
-  exact bytesAt_frame hf (fun r hr => (hd r hr).sub_left (VG.Offset.sub_base D (by omega))) (by omega)
+  have hj := idx_lt (L := L) (List.mem_range.mp hj)
+  exact bytesAt_frame hf (fun r hr => (hd r hr).sub_left (VG.Offset.sub_base D hj)) hL
+
+theorem cbcBlocks_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {D : Addr} {n : Nat}
+    (hd : ∀ r ∈ rs, Region.Disjoint ⟨D, 16 * n⟩ r) : Spec.Cbc.blocksAt m' D n = Spec.Cbc.blocksAt m D n :=
+  blocksOf_frame hf (by decide) hd
 
 theorem keyRegs_ne {c : Core} (h : c.keyRegs.all (fun r => r != sb && r != .x6 && r != .x7 && r != .x10) = true) :
     ∀ x ∈ c.keyRegs, x ∉ SetupRegs := fun x hx => by
@@ -88,7 +100,8 @@ theorem ctr_wp (cs : CoreSpec c) {r : CtrRegs} (hr : RegsOk r) (hdn : c.dataReg 
       · exact ⟨_, List.mem_cons_self, subMode⟩
       · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, fun _ h => h⟩
   have hk₁ : cs.KeyArgs s₁ [⟨B, 8 * c.total⟩, ⟨P, 16⟩] k :=
-    cs.keyArgs_congr hk (fun x hx => g₁ x (kr x hx) (fun e => dk (e ▸ hx)) (fun e => lk (e ▸ hx))) rd₁ wr₁ f₁'
+    cs.keyArgs_congr hk (fun x hx => g₁ x (kr x hx) (fun e => dk (e ▸ hx)) (fun e => lk (e ▸ hx))) rd₁ wr₁
+      (by rw [runBlock_syms e₁b, runBlock_syms e₁a]) f₁'
   -- The key.
   refine WP.seq (WP.mono (cs.prepare_wp b₁ ⟨by rw [wr₁]; exact hs.wr, hs.fit⟩ List.mem_cons_self hk₁)
     fun s₂ ⟨ready₂, b₂, dr₂, lr₂, f₂, rd₂, wr₂⟩ => ?_)

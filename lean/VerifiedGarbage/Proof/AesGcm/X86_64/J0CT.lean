@@ -1,15 +1,25 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.J0
-import VerifiedGarbage.Proof.AesGcm.X86_64.TagCT
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.J0
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.J0
+public import VerifiedGarbage.Proof.AesGcm.X86_64.TagCT
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.TagCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on x86-64: `j0` in two runs
 
 Untrusted: everything here is checked by Lean. Two runs of `j0` for nonces
 at the same address, of the same length, leak the same: the branch is on the
-length, and the GHASH of a nonce of any other length is `absorb`, `flush`
-and `lens` (`absorb_rel`, `flush_rel`, `lens_rel`), with the length kept at
+length, and the GHASH of a nonce of any other length is `absorbPad` and
+`lens` (`absorbPad_rel`, `lens_rel`), with the length kept at
 `W + 216` between them.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesGcm.X86_64
 
@@ -52,24 +62,6 @@ theorem j0hashA_ok {H : Block} {Np : Addr} {n : Nat} {s : State} (h : J0In Ctx S
     by rw [hg₁ _ (by decide) (by decide), h.rbp], by rw [hbx₁]; rfl, h.data.of_eq hrd₁ hwr₁, rfl⟩, he₁, hm₁⟩
 
 omit L in
-theorem auxLoad_ok {n : Nat} {s : State} (h : AuxN Ctx St W SP n s) (hn : n < 2 ^ 64) :
-    WP isa (.block [.mov .rbx (.mem (at_ .r15 auxO)), .alu .and .rbx (imm 15)]) s fun s₁ =>
-      AuxN Ctx St W SP n s₁ ∧ s₁.gpr .rbx = BitVec.ofNat 64 (n % 16) := by
-  have ra := h.1.perm.wR (show 216 + 8 ≤ 2560 by decide)
-  have hand := and15 (BitVec.ofNat 64 n)
-  rw [toNat_ofNat_of_lt hn, imm_eq (by decide)] at hand
-  obtain ⟨s₁, run₁, hbx, hg, hm, hrd, hwr⟩ : ∃ s₁, runBlock isa [.mov .rbx (.mem (at_ .r15 auxO)),
-      .alu .and .rbx (imm 15)] s = some s₁ ∧ s₁.gpr .rbx = BitVec.ofNat 64 (n % 16) ∧
-      (∀ r, r ≠ .rbx → s₁.gpr r = s.gpr r) ∧ s₁.mem = s.mem ∧ s₁.rd = s.rd ∧ s₁.wr = s.wr := by
-    refine ⟨_, by xrun [h.1.r15, ra], ?_, ?_, ?_, ?_, ?_⟩
-    · simp only [gpr_setReg, gpr_arithFlags, ite_true, h.2, hand]
-    · intro r a; simp [gpr_setReg, a]
-    all_goals rfl
-  refine WP.of_runBlock ⟨s₁, run₁, ⟨h.1.keep (fun r hr => ?_) hrd hwr, by rw [hm]; exact h.2⟩, hbx⟩
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl <;> exact hg _ (by decide)
-
-omit L in
 theorem auxLens_ok {n : Nat} {s : State} (h : AuxN Ctx St W SP n s) :
     WP isa (.block [.mov32 .rbx (imm 0), .mov .rbp (.mem (at_ .r15 auxO))]) s fun s₁ =>
       Env Ctx St W SP s₁ ∧ s₁.gpr .rbx = BitVec.ofNat 64 0 ∧ s₁.gpr .rbp = BitVec.ofNat 64 n := by
@@ -95,18 +87,15 @@ theorem j0hash_rel {H₁ H₂ : Block} {Np : Addr} {n : Nat} :
   by_cases hlt : n < 2 ^ 64
   swap
   · exact RelCT.of_false fun _ _ h => hlt h.1.data.lt
-  -- After `absorb` and `flush`, the length is still kept.
+  -- After `absorbPad`, the length is still kept.
   have hA : ∀ s, (∃ H', AbsIn Ctx St W SP 0 H' [] Np n s) ∧ AuxN Ctx St W SP n s →
-      WP isa (absorb v.callees 0) s (AuxN Ctx St W SP n) := fun s ⟨⟨_, h⟩, ha⟩ =>
-    WP.mono (absorb_ok v L (.inl rfl) h) fun _ o =>
-      ⟨o.env, by rw [o.frame.readW (r := ⟨W + BitVec.ofNat 64 216, 8⟩) (Region.contains_self _ _) (aux_absFrame L)
-        (by decide), ha.2]⟩
-  have hF : ∀ s, AuxN Ctx St W SP n s ∧ s.gpr .rbx = BitVec.ofNat 64 (n % 16) →
-      WP isa (flush v.callees 0) s (AuxN Ctx St W SP n) := fun s ⟨ha, hbx⟩ =>
-    WP.mono (flush_ok v L (yo := 0) (.inl rfl) (x := List.replicate n 0) ⟨ha.1, rfl⟩ (by simpa using hbx))
-      fun _ o => ⟨o.env, by
-        rw [o.frame.readW (r := ⟨W + BitVec.ofNat 64 216, 8⟩) (Region.contains_self _ _) (aux_tFrame L)
-          (by decide), ha.2]⟩
+      WP isa (absorbPad v.callees 0) s (AuxN Ctx St W SP n) := fun s ⟨⟨_, h⟩, ha⟩ =>
+    WP.mono (absorbPad_ok v L (.inl rfl) h rfl) fun _ o => by
+      obtain ⟨m, fa, ft⟩ := o.frame
+      exact ⟨o.env, by
+        rw [ft.readW (r := ⟨W + BitVec.ofNat 64 216, 8⟩) (Region.contains_self _ _) (aux_tFrame L) (by decide),
+          fa.readW (r := ⟨W + BitVec.ofNat 64 216, 8⟩) (Region.contains_self _ _) (aux_absFrame L) (by decide),
+          ha.2]⟩
   have r₀ := rel_wp (rel_taint (P := fun s₁ s₂ => J0In Ctx St W SP H₁ Np n s₁ ∧ J0In Ctx St W SP H₂ Np n s₂)
       [.r12, .rbp, .r13, .r14, .r15, .rsp] (fun _ _ h r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -121,23 +110,12 @@ theorem j0hash_rel {H₁ H₂ : Block} {Np : Addr} {n : Nat} :
   let PA : State → State → Prop := fun s₁ s₂ => True ∧
     ((∃ H', AbsIn Ctx St W SP 0 H' [] Np n s₁) ∧ AuxN Ctx St W SP n s₁) ∧
     ((∃ H', AbsIn Ctx St W SP 0 H' [] Np n s₂) ∧ AuxN Ctx St W SP n s₂)
-  have a₁ : RelCT isa PA (absorb v.callees 0) fun _ _ => True :=
+  have a₁ : RelCT isa PA (absorbPad v.callees 0) fun _ _ => True :=
     (RelCT.exists_ fun H₁' => RelCT.exists_ fun H₂' =>
-      absorb_rel v L (.inl rfl) (H₁ := H₁') (H₂ := H₂') (x₁ := []) (x₂ := []) (D := Np) (n := n) rfl).mono
+      absorbPad_rel v L (.inl rfl) (H₁ := H₁') (H₂ := H₂') (x₁ := []) (x₂ := []) (D := Np) (n := n) rfl rfl).mono
       (fun s₁ s₂ (h : PA s₁ s₂) => by
         obtain ⟨_, ⟨⟨H₁', h₁⟩, _⟩, ⟨⟨H₂', h₂⟩, _⟩⟩ := h; exact ⟨H₁', H₂', h₁, h₂⟩) fun _ _ h => h
   have r₁ := rel_wp a₁ (fun _ _ h => h.2) hA hA
-  have r₂ := rel_wp (rel_taint (P := fun s₁ s₂ => True ∧ AuxN Ctx St W SP n s₁ ∧ AuxN Ctx St W SP n s₂)
-      (c := .block [.mov .rbx (.mem (at_ .r15 auxO)), .alu .and .rbx (imm 15)])
-      [.r13, .r14, .r15, .rsp] (fun _ _ h => EnvAgree.regs (rs := []) ⟨h.2.1.1, h.2.2.1, fun _ h => by cases h⟩)
-      ⟨_, by taint_decide⟩)
-    (fun _ _ h => h.2) (fun s h => auxLoad_ok h hlt) (fun s h => auxLoad_ok h hlt)
-  have r₃ := rel_wp ((flush_rel v L (yo := 0) (.inl rfl)).mono (P' := fun (s₁ s₂ : State) => True ∧
-      (AuxN Ctx St W SP n s₁ ∧ s₁.gpr .rbx = BitVec.ofNat 64 (n % 16)) ∧
-      (AuxN Ctx St W SP n s₂ ∧ s₂.gpr .rbx = BitVec.ofNat 64 (n % 16)))
-      (fun _ _ h => ⟨h.2.1.1.1, h.2.2.1.1, fun r hr => by
-        simp only [List.mem_singleton] at hr; subst hr; rw [h.2.1.2, h.2.2.2]⟩) fun _ _ h => h)
-    (fun _ _ h => h.2) hF hF
   have r₄ := rel_wp (rel_taint (P := fun s₁ s₂ => True ∧ AuxN Ctx St W SP n s₁ ∧ AuxN Ctx St W SP n s₂)
       (c := .block [.mov32 .rbx (imm 0), .mov .rbp (.mem (at_ .r15 auxO))])
       [.r13, .r14, .r15, .rsp] (fun _ _ h => EnvAgree.regs (rs := []) ⟨h.2.1.1, h.2.2.1, fun _ h => by cases h⟩)
@@ -151,7 +129,7 @@ theorem j0hash_rel {H₁ H₂ : Block} {Np : Addr} {n : Nat} :
       rcases hr with rfl | rfl
       · rw [h.2.1.2.1, h.2.2.2.1]
       · rw [h.2.1.2.2, h.2.2.2.2]⟩) fun _ _ h => h
-  exact RelCT.seq r₀ (RelCT.seq r₁ (RelCT.seq r₂ (RelCT.seq r₃ (RelCT.seq r₄ r₅))))
+  exact RelCT.seq r₀ (RelCT.seq r₁ (RelCT.seq r₄ r₅))
 
 /-- `j0`, for nonces at the same address, of the same length. -/
 theorem j0_rel {H₁ H₂ : Block} {Np : Addr} {n : Nat} :

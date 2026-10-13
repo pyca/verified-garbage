@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesOcb.X86_64.Callee
+module
+
+public import VerifiedGarbage.Proof.AesOcb.X86_64.Callee
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-OCB on x86-64: the calls of the block functions
@@ -9,6 +15,8 @@ key schedule of the key context, the rounds kept in `W`, the `n` blocks at
 `D` that `args` sets (`Dst`: blocks of `W` below 512, `dstW`, or the data,
 `dstD`) and the working space at `W + 512` (`callBlocks_ok`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

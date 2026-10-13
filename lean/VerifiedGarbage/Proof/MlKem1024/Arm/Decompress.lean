@@ -1,8 +1,19 @@
-import VerifiedGarbage.Proof.MlKem.Arm.Decompress
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.MlKem.Encode1024
-import VerifiedGarbage.Impl.MlKem1024.Arm.Poly
-import VerifiedGarbage.Spec.MlKem.Contract1024
+module
+
+public import VerifiedGarbage.Proof.MlKem.Arm.Decompress
+meta import VerifiedGarbage.Proof.MlKem.Arm.Decompress
+public import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.MlKem.Encode1024
+meta import VerifiedGarbage.Proof.MlKem.Encode1024
+public import VerifiedGarbage.Impl.MlKem1024.Arm.Poly
+meta import VerifiedGarbage.Impl.MlKem1024.Arm.Poly
+public import VerifiedGarbage.Spec.MlKem.Contract1024
+meta import VerifiedGarbage.Spec.MlKem.Contract1024
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM-1024 on 32-bit ARM: `vg_mlkem1024_decode_decompress`
@@ -16,6 +27,8 @@ from the steps of its code: the first byte of the field shifted down
 that it is field `e` of `ByteDecode_d` is `decodeDecompress5_0` …
 `decodeDecompress11_7`, one `omega` for each (`fieldVal5`, `fieldVal11`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem1024.Arm.Decompress
 

@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Argon2.Arm.Derive.FillRef
+module
+
+public import VerifiedGarbage.Proof.Argon2.Arm.Derive.FillRef
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Argon2 on ARMv7: the reference window's size
@@ -6,6 +12,8 @@ import VerifiedGarbage.Proof.Argon2.Arm.Derive.FillRef
 `countSelect_ok`: the number of eligible reference blocks, chosen between
 the current lane's and another lane's by a mask (`sel`), to the locals.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Argon2.Arm.Derive
 

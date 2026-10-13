@@ -1,8 +1,19 @@
-import VerifiedGarbage.Proof.TripleDes.Bitslice.LayoutLit
-import VerifiedGarbage.Impl.TripleDes.X86_64.BitslicedAvx512
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
+module
+
+public import VerifiedGarbage.Proof.TripleDes.Bitslice.LayoutLit
+meta import VerifiedGarbage.Proof.TripleDes.Bitslice.LayoutLit
+public import VerifiedGarbage.Impl.TripleDes.X86_64.BitslicedAvx512
+meta import VerifiedGarbage.Impl.TripleDes.X86_64.BitslicedAvx512
+public import VerifiedGarbage.Proof.Framework.X86_64.Lit
+meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # The AVX-512 S-box circuits' and transposition's code, as literals -/
+
+@[expose] public section
 
 namespace VG.Impl.TripleDes.X86_64.BitsliceAvx512
 
@@ -12,11 +23,8 @@ open VG.X86_64
 -- below and the functions' literals (`Lit`) read.
 materialize_table sboxCode 8
 
--- The transposition, once.
-materialize_value transpose
-
--- A pair of rounds and the exchange of the halves, once for both directions.
-materialize_value roundPair
+-- A round and the exchange of the halves, once for both directions.
+materialize_value round
 materialize_value swapHalves
 
 def sbox0 : Prog isa := .block (sboxCode 0)
@@ -37,8 +45,7 @@ materialize_code sbox5
 materialize_code sbox6
 materialize_code sbox7
 
-def transposeProg : Prog isa := .block transpose
-
-materialize_code transposeProg
+-- The transposition, once.
+materialize_code transpose
 
 end VG.Impl.TripleDes.X86_64.BitsliceAvx512

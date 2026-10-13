@@ -1,6 +1,8 @@
-import VerifiedGarbage.Variants.RsaPublicPrecomputed.X86_64.Adx
-import VerifiedGarbage.Proof.Rsa.X86_64.PrivImpl
-import VerifiedGarbage.Proof.Rsa.X86_64.IfmaLit
+module
+
+public import VerifiedGarbage.Variants.RsaPublicPrecomputed.X86_64.Adx
+public import VerifiedGarbage.Proof.Rsa.X86_64.PrivImpl
+public import VerifiedGarbage.Proof.Rsa.X86_64.IfmaLit
 
 /-!
 # `vg_rsa_private_crt` on x86-64: with AVX512_IFMA
@@ -12,6 +14,8 @@ AVX512_IFMA), which need AVX512_IFMA, AVX512F, AVX512VL, AVX, BMI2 and ADX;
 its Montgomery multiplications outside the vector code are calls of
 `vg_rsa_mont_mul_adx`.
 -/
+
+@[expose] public section
 
 namespace VG.Variants.RsaPrivateCrt.X86_64.Ifma
 

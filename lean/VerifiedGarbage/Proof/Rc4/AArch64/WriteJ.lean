@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Rc4.AArch64.Lookup
+module
+
+public import VerifiedGarbage.Proof.Rc4.AArch64.Lookup
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # A write at a secret index
@@ -8,6 +14,8 @@ broadcast in `v0`–`v3` and the value `V` broadcast in `v4`, the sixteen
 `cmeq`/`bit` pairs replace byte `J` of the table registers by `V`, and leave
 the others.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rc4.AArch64
 open VG VG.AArch64 VG.AArch64.RegUpd VG.Impl.Rc4.AArch64

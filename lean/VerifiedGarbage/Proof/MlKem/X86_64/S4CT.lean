@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.MlKem.X86_64.S4Top
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.MlKem.X86_64.SampleCT
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86_64.S4Top
+meta import VerifiedGarbage.Proof.MlKem.X86_64.S4Top
+public import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.MlKem.X86_64.SampleCT
+meta import VerifiedGarbage.Proof.MlKem.X86_64.SampleCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86-64: `vg_mlkem_sample_ntt4_avx2`, constant time but for the seeds
@@ -17,6 +26,8 @@ the same (the taint analysis, from `rax`, `rbx`, `rbp`, `rdi` and `rsi`), and
 fallbacks take the same branch, and call `vg_mlkem_sample_ntt` on the same
 seed.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.X86_64.S4
 
@@ -63,25 +74,17 @@ theorem start_ct : RelCT isa (R4 fun σ s => s = σ)
 theorem env_rbx {σ₁ σ₂ s₁ s₂ : State} (hq : sample4K.pub σ₁ σ₂) (e₁ : Env σ₁ s₁) (e₂ : Env σ₂ s₂) :
     s₁.gpr .rbx = s₂.gpr .rbx := by rw [e₁.rbx, e₂.rbx, pub_scr hq]
 
-/-- `squeeze4 n`, given its taint analysis. -/
-theorem sq_ct {fast : Bool} (n : Nat) (hn : n < 3) {hc : VG.Taint.Hint X86_64.Taint.T}
-    (c : (taint.check (X86_64.Taint.ofRegs [.rbx]) (squeeze4 n fast) hc).isSome = true) :
-    RelCT isa (R4 fun σ s => SqInv σ n s) (squeeze4 n fast) (R4 fun σ s => SqInv σ (n + 1) s) :=
-  relInv (fun σ s hp h => sq_ok (fast := fast) (pre_of hp) hn h)
+/-- `squeezes b n`, given its taint analysis. -/
+theorem sqs_ct {fast : Bool} {b n : Nat} (hn : 0 < n) (hbn : b + n ≤ 3) {hc : VG.Taint.Hint X86_64.Taint.T}
+    (c : (taint.check (X86_64.Taint.ofRegs [.rbx]) (squeezes b n fast) hc).isSome = true) :
+    RelCT isa (R4 fun σ s => SqInv σ b s) (squeezes b n fast) (R4 fun σ s => SqInv σ (b + n) s) :=
+  relInv (fun σ s hp h => sqs_ok (fast := fast) (pre_of hp) hn hbn h)
     (taintRel [.rbx] (fun x y ⟨σ₁, σ₂, _, _, hq, h₁, h₂⟩ r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact env_rbx hq h₁.env h₂.env) c)
 
-theorem sq0_ct {fast : Bool} : RelCT isa (R4 fun σ s => SqInv σ 0 s)
-    (squeeze4 0 fast) (R4 fun σ s => SqInv σ 1 s) := by
-  cases fast <;> exact sq_ct 0 (by decide) (by taint_decide)
-
-theorem sq1_ct {fast : Bool} : RelCT isa (R4 fun σ s => SqInv σ 1 s)
-    (squeeze4 1 fast) (R4 fun σ s => SqInv σ 2 s) := by
-  cases fast <;> exact sq_ct 1 (by decide) (by taint_decide)
-
-theorem sq2_ct {fast : Bool} : RelCT isa (R4 fun σ s => SqInv σ 2 s)
-    (squeeze4 2 fast) (R4 fun σ s => SqInv σ 3 s) := by
-  cases fast <;> exact sq_ct 2 (by decide) (by taint_decide)
+theorem sq_ct {fast : Bool} : RelCT isa (R4 fun σ s => SqInv σ 0 s)
+    (squeezes 0 3 fast) (R4 fun σ s => SqInv σ 3 s) := by
+  cases fast <;> exact sqs_ct (by decide) (by decide) (by taint_decide)
 
 /-! ## The groups of four iterations -/
 
@@ -348,9 +351,8 @@ theorem tab_ct : RelCT isa (R4 fun σ s => SqInv σ 3 s) (.block tabBuild) (R4 f
       simp only [List.mem_singleton] at hr; subst hr; exact env_rbx hq h₁.env h₂.env) (by taint_decide))
 
 theorem ct {fast : Bool} : ConstantTime isa sample4K.pre sample4K.pub (Impl.MlKem.X86_64.Sample4.sampleNTT4Avx2 fast) := by
-  refine relStart (Q := fun _ _ => True) (RelCT.seq start_ct (RelCT.seq (sq0_ct (fast := fast))
-    (RelCT.seq (sq1_ct (fast := fast)) (RelCT.seq (sq2_ct (fast := fast))
-      (RelCT.seq tab_ct ?_)))))
+  refine relStart (Q := fun _ _ => True) (RelCT.seq start_ct (RelCT.seq (sq_ct (fast := fast))
+    (RelCT.seq tab_ct ?_)))
   refine RelCT.seq (parse_ct (K := 0) (by decide) (by taint_decide) (by taint_decide)) ?_
   refine RelCT.seq (parse_ct (K := 1) (by decide) (by taint_decide) (by taint_decide)) ?_
   refine RelCT.seq (parse_ct (K := 2) (by decide) (by taint_decide) (by taint_decide)) ?_

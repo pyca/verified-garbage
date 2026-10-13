@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.VLay
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.VLay
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on x86-64: the layers of the NTT and its inverse with `len` = 2 and 1
@@ -9,6 +15,8 @@ halves of their coefficients gathered into `xmm0` and the upper ones into
 runs four blocks at a time (`vstep1`): their coefficients gathered by `pshufd`
 and `punpck{l,h}qdq`, and interleaved back by `punpck{l,h}dq`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86_64.Arith
 

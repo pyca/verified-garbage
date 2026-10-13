@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
-import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
+public import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSA with the CRT on x86-64: `G = 2^E mod n` is constant time
@@ -9,6 +17,8 @@ hence `K`, `D` and the bits of `D` the loop branches on, are the same in
 both runs (`gPow_ct`). Its loads through the prime's base (in a header slot)
 are pinned by correctness, the bits of `D` from `gBit_ok`'s invariant.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64
 

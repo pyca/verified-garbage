@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.Zeroize
-import VerifiedGarbage.TCB.Artifact
+module
+
+public import VerifiedGarbage.Spec.Zeroize
+public import VerifiedGarbage.TCB.Artifact
 
 /-!
 # Zeroization: the contract, on every target
@@ -20,6 +22,8 @@ The contract takes the number of bytes of stack below the stack pointer that
 an implementation's frames use (`stack`, see `Sig.contract`), 0 for one that
 uses none.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Zeroize
 

@@ -1,12 +1,14 @@
-import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.Weierstrass.Law
-import VerifiedGarbage.Proof.Weierstrass.X86_64.InvInterface
-import VerifiedGarbage.Proof.P256.Comb7
-import VerifiedGarbage.Impl.EcKey.P256.X86_64
-import VerifiedGarbage.Proof.EcKey.X86_64.Verified
-import VerifiedGarbage.Proof.EcKey.X86_64.Lit
-import VerifiedGarbage.Proof.EcKey.X86_64.VerifiedAdx
-import VerifiedGarbage.Proof.EcKey.X86_64.LitAdx
+module
+
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.Weierstrass.Law
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvInterface
+public import VerifiedGarbage.Proof.P256.Comb7
+public import VerifiedGarbage.Impl.EcKey.P256.X86_64
+public import VerifiedGarbage.Proof.EcKey.X86_64.Verified
+public import VerifiedGarbage.Proof.EcKey.X86_64.Lit
+public import VerifiedGarbage.Proof.EcKey.X86_64.VerifiedAdx
+public import VerifiedGarbage.Proof.EcKey.X86_64.LitAdx
 
 /-!
 # P-256 public keys (FIPS 186-5 §A.2) on x86-64
@@ -17,6 +19,8 @@ multiplication: the baseline's, and BMI2's and ADX's, with the comb's
 selection by AVX2 (`_adx`).
 -/
 
+@[expose] public section
+
 namespace VG.Generic.P256.X86_64.EcP256
 
 /-- The function of `Spec.EcKey.P256.publicKeyApi`, multiplying with BMI2 and ADX
@@ -24,7 +28,7 @@ namespace VG.Generic.P256.X86_64.EcP256
 `rsp` (`hsp`). -/
 def publicKey (adx : Bool) (code : Prog X86_64.isa)
     (hv : Verified X86_64.target code
-      (Spec.EcKey.P256.inst.publicKeyContract (X86_64.abi.withConsts Impl.Ecdsa.X86_64.p256.combConsts)))
+      (Spec.EcKey.P256.inst.publicKeyContract (X86_64.abi.withConsts Impl.Ecdsa.X86_64.p256.combConsts) 8))
     (hsp : code.all (fun i => !X86_64.isa.writesSp i) = true) : Artifact :=
   { Spec.EcKey.P256.publicKeyApi with
     name := Spec.EcKey.P256.publicKeyApi.name ++ (if adx then "_adx" else "")
@@ -38,7 +42,8 @@ def publicKey (adx : Bool) (code : Prog X86_64.isa)
     consts := Impl.Ecdsa.X86_64.p256.combConsts
     code
     contract := Spec.EcKey.P256.inst.publicKeyContract
-      (X86_64.abi.withConsts Impl.Ecdsa.X86_64.p256.combConsts)
+      (X86_64.abi.withConsts Impl.Ecdsa.X86_64.p256.combConsts) 8
+    stack := 8
     verified := hv
     spSafe := hsp
     features := if adx then ["bmi2", "adx", "avx", "avx2"] else [] }

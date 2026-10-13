@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.AesGcm.AArch64.SealCT
+module
+
+public import VerifiedGarbage.Proof.AesGcm.AArch64.SealCT
+meta import VerifiedGarbage.Proof.AesGcm.AArch64.SealCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on AArch64: `vg_aes_gcm_open` leaks only whether the tag is right
@@ -9,6 +16,8 @@ with the received tag copied in and compared, and the text decrypted, by
 the tag length is an argument, and whether the tag is right is what
 `openAArch64.pub` leaks.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 
@@ -115,7 +124,7 @@ theorem omB_rel (v : GcmImpl) {Ctx W SP D Np A : Addr} {R nl al n tl : Nat}
   · refine rel_seq (rel_taint [.x19] (by rw [mo₁.env.sp, mo₂.env.sp]) (by agree_tac [mo₁.env.x19, mo₂.env.x19])
       ⟨_, by taint_decide⟩) (ocLdr_ok mo₁.env mo₁.sD mo₁.sN) (ocLdr_ok mo₂.env mo₂.sD mo₂.sN)
       fun c₁ c₂ h₁ h₂ => ?_
-    exact crypt_rel L v (oc_in hR mo₁ h₁) (oc_in hR mo₂ h₂)
+    exact cryptAl_rel L v (oc_in hR mo₁ h₁) (oc_in hR mo₂ h₂) rfl
 
 theorem open_ct (v : GcmImpl) : ConstantTime isa openAArch64.pre openAArch64.pub («open» v.callees) := by
   refine ct_of fun σ₁ σ₂ h₁ h₂ hq => ?_

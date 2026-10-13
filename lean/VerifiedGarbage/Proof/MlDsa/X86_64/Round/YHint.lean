@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
-import VerifiedGarbage.Proof.MlDsa.X86_64.Round.YNorm
-import VerifiedGarbage.Proof.MlDsa.X86_64.Round.MakeHint
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
+meta import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Round.YNorm
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Round.YNorm
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Round.MakeHint
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Round.MakeHint
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on x86-64: `vg_mldsa_make_hint_avx2`
@@ -10,6 +19,8 @@ stores the eight hints of an iteration and adds their count, the sum of the
 nibbles of the byte mask of the hints shifted to bit 7 (`cntH_ok`, `nib_sp`),
 to `r9`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86_64.Round
 

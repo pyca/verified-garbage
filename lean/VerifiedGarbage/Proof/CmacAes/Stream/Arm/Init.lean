@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.CmacAes.Stream.Arm.Common
-import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
+module
+
+public import VerifiedGarbage.Proof.CmacAes.Stream.Arm.Common
+meta import VerifiedGarbage.Proof.CmacAes.Stream.Arm.Common
+public import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
+meta import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Streaming AES-CMAC on ARMv7: `vg_cmac_aes_init`
@@ -11,6 +19,8 @@ code between the calls is constant time by the taint analysis, and the calls
 by their own proofs (`ek_rel`, `sub_rel`), their arguments pinned by `IMid₁`
 and `IMid₂`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.CmacAes.Stream.Arm
 

@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Framework.X86_64.Avx512
+module
+
+public import VerifiedGarbage.Proof.Framework.X86_64.Avx512
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The `zmm` comb: what the vector instructions keep
@@ -9,6 +15,8 @@ definition), make the unifier compare the states field by field before it
 reduces the projection, for seconds; `zkeep` rewrites with the frame lemmas
 instead.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed25519.X86_64.Zmm
 

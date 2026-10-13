@@ -1,12 +1,27 @@
-import VerifiedGarbage.Proof.MlKem.Arm.SampleCT
-import VerifiedGarbage.Proof.MlKem.Arm.NttInv
-import VerifiedGarbage.Proof.MlKem.Arm.Mul
-import VerifiedGarbage.Proof.MlKem.Arm.Cbd2
-import VerifiedGarbage.Proof.MlKem.Arm.Encode12
-import VerifiedGarbage.Proof.MlKem.Arm.Decode12
-import VerifiedGarbage.Proof.MlKem.Arm.CompressEncode
-import VerifiedGarbage.Proof.MlKem.Arm.Decompress
-import VerifiedGarbage.Proof.MlKem.Arm.CallF
+module
+
+public import VerifiedGarbage.Proof.MlKem.Arm.SampleCT
+meta import VerifiedGarbage.Proof.MlKem.Arm.SampleCT
+public import VerifiedGarbage.Proof.MlKem.Arm.NttInv
+meta import VerifiedGarbage.Proof.MlKem.Arm.NttInv
+public import VerifiedGarbage.Proof.MlKem.Arm.Mul
+meta import VerifiedGarbage.Proof.MlKem.Arm.Mul
+public import VerifiedGarbage.Proof.MlKem.Arm.Cbd2
+meta import VerifiedGarbage.Proof.MlKem.Arm.Cbd2
+public import VerifiedGarbage.Proof.MlKem.Arm.Encode12
+meta import VerifiedGarbage.Proof.MlKem.Arm.Encode12
+public import VerifiedGarbage.Proof.MlKem.Arm.Decode12
+meta import VerifiedGarbage.Proof.MlKem.Arm.Decode12
+public import VerifiedGarbage.Proof.MlKem.Arm.CompressEncode
+meta import VerifiedGarbage.Proof.MlKem.Arm.CompressEncode
+public import VerifiedGarbage.Proof.MlKem.Arm.Decompress
+meta import VerifiedGarbage.Proof.MlKem.Arm.Decompress
+public import VerifiedGarbage.Proof.MlKem.Arm.CallF
+meta import VerifiedGarbage.Proof.MlKem.Arm.CallF
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on 32-bit ARM: calling the primitives
@@ -20,6 +35,8 @@ that call it with the same pointers leak the same trace (`add_ct`, …, by
 `RelCT.call`, with constant time from the taint analysis of its code, or from
 `Sample.all_ct`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.Arm
 

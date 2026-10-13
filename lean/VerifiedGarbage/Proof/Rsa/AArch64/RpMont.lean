@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Rsa.AArch64.RpHalf
-import VerifiedGarbage.Proof.Bignum.AArch64.PubR2
-import VerifiedGarbage.Proof.Bignum.AArch64.Csub
+module
+
+public import VerifiedGarbage.Proof.Rsa.AArch64.RpHalf
+public import VerifiedGarbage.Proof.Bignum.AArch64.PubR2
+public import VerifiedGarbage.Proof.Bignum.AArch64.Csub
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_recover_primes` on AArch64: Montgomery form
@@ -9,6 +15,8 @@ import VerifiedGarbage.Proof.Bignum.AArch64.Csub
 as `vg_rsa_public` computes it, 1, `R mod n` and `n - R mod n`, the
 Montgomery forms of 1 and `-1` (`mont_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.AArch64
 

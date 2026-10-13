@@ -1,9 +1,18 @@
-import VerifiedGarbage.Impl.Ecdsa.Verify.P521.X86_64
-import VerifiedGarbage.Proof.Weierstrass.X86_64.JointCachedDigit
-import VerifiedGarbage.Proof.Weierstrass.X86_64.JointInitLayout
-import VerifiedGarbage.Proof.Weierstrass.X86_64.JointPrepFields
+module
+
+public import VerifiedGarbage.Impl.Ecdsa.Verify.P521.X86_64
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointCachedDigit
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointInitLayout
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointPrepFields
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Concrete separation checks for P-521's joint verifier's scratch allocation. -/
+
+@[expose] public section
+
 namespace VG.Proof.P521.X86_64
 open VG VG.X86_64 VG.Impl.P521.X86_64 VG.Impl.Weierstrass VG.Impl.Ecdsa.X86_64
 open VG.Proof.Mont VG.Proof.Weierstrass.X86_64
@@ -22,7 +31,7 @@ theorem joint_lookup_layout : JointLookupLayout publicJoint 8192 :=
     by decide,by decide,by decide,by decide⟩
 
 theorem joint_add_layout : JointAddLayout publicJoint 8192 := by
-  refine ⟨joint_lookup_layout,?_,by decide,by decide,by decide,by decide⟩
+  refine ⟨joint_lookup_layout,?_,by decide,by decide,by decide,by decide,⟨fun _ h => by cases h⟩⟩
   constructor <;> decide +kernel
 
 theorem joint_adx_layout : JointLayout publicJointAdx 8192 :=
@@ -35,7 +44,8 @@ theorem joint_adx_lookup_layout : JointLookupLayout publicJointAdx 8192 :=
 
 theorem joint_adx_add_layout : JointAddLayout publicJointAdx 8192 :=
   ⟨joint_adx_lookup_layout,joint_add_layout.addApart,joint_add_layout.cache2Apart,
-    joint_add_layout.cache3Apart,joint_add_layout.accumNodup,joint_add_layout.copyApart⟩
+    joint_add_layout.cache3Apart,joint_add_layout.accumNodup,joint_add_layout.copyApart,
+    ⟨fun _ h => by cases h⟩⟩
 
 private theorem naf_lay : Lay publicJoint.K.M 8192 (·∈nafSlots publicJoint.K) := by
   have hs : ∀ x∈nafSlots publicJoint.K,x∈jointSlots publicJoint := fun _ hx =>
@@ -49,7 +59,8 @@ theorem joint_naf_layout : NafLay publicJoint.K 8192 :=
     by decide +kernel,by decide,rfl,rfl,rfl,rfl⟩
 
 theorem joint_init_layout : JointInitLayout publicJoint 8192 :=
-  ⟨joint_layout,joint_naf_layout,by decide,by decide,by decide,by decide,by decide,by decide +kernel⟩
+  ⟨joint_layout,joint_naf_layout,by decide,by decide,by decide,by decide,by decide,by decide +kernel,
+    by decide,by decide⟩
 
 theorem joint_adx_naf_layout : NafLay publicJointAdx.K 8192 :=
   ⟨Or.inr (Or.inr rfl),⟨naf_lay.le,naf_lay.apart,naf_lay.mo,naf_lay.tmp⟩,
@@ -58,7 +69,7 @@ theorem joint_adx_naf_layout : NafLay publicJointAdx.K 8192 :=
 
 theorem joint_adx_init_layout : JointInitLayout publicJointAdx 8192 :=
   ⟨joint_adx_layout,joint_adx_naf_layout,by decide,by decide,by decide,by decide,by decide,
-    joint_init_layout.bitsSep⟩
+    joint_init_layout.bitsSep,joint_init_layout.cacheSmall,joint_init_layout.cacheFar⟩
 
 theorem joint_prep_layout : JointPrepLayout publicJoint 8192
     (p521.sl Impl.Ecdsa.Verify.X86_64.U)

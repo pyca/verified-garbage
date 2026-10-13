@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Ecdsa.X86_64.Lays
-import VerifiedGarbage.Proof.Ecdsa.X86_64.Setup
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.Lays
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.Setup
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDSA on x86-64: what every phase keeps
@@ -11,6 +17,8 @@ and the tables (`FixedOk`), so it keeps them (`Fixed.unch`). A slot or a
 table byte apart from what a phase writes keeps its value too (`sv_unch`,
 `tbl_unch`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.X86_64
 
@@ -181,7 +189,7 @@ theorem modP_of (hc : BaseCfgOk c) {base : Addr} {m : Mem} (h : wordsVal m base 
 theorem modN_of (hc : BaseCfgOk c) {base : Addr} {m : Mem} (h : wordsVal m base (c.sl MN) c.n = c.C.n) :
     ModOkW c.MN' size c.C.n m base :=
   ⟨hc.n0, sl_le c hc.n10 (by decide), sl_le c hc.n10 (by decide), sl_apart c (by decide), h,
-    hc.minv_n, rfl⟩
+    hc.minv_n, hc.red_n⟩
 
 theorem rsi_not_clob (n : Nat) : Reg.rsi ∉ clob n := by
   intro h

@@ -1,10 +1,25 @@
-import VerifiedGarbage.Proof.EcKey.X86_64.Main
-import VerifiedGarbage.Proof.EcKey.X86_64.P224.Contract
-import VerifiedGarbage.Proof.EcKey.X86_64.P224.Lit
-import VerifiedGarbage.Proof.Ecdsa.X86_64.P224.Verified
-import VerifiedGarbage.Proof.Framework.X86_64.TaintSym
-import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
-import VerifiedGarbage.Proof.Framework.LitShare
+module
+
+public import VerifiedGarbage.Proof.EcKey.X86_64.Main
+meta import VerifiedGarbage.Proof.EcKey.X86_64.Main
+public import VerifiedGarbage.Proof.EcKey.X86_64.P224.Contract
+meta import VerifiedGarbage.Proof.EcKey.X86_64.P224.Contract
+public import VerifiedGarbage.Proof.EcKey.X86_64.P224.Lit
+meta import VerifiedGarbage.Proof.EcKey.X86_64.P224.Lit
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.P224.Verified
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P224.Verified
+public import VerifiedGarbage.Proof.Framework.X86_64.TaintSym
+meta import VerifiedGarbage.Proof.Framework.X86_64.TaintSym
+public import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
+meta import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
+public import VerifiedGarbage.Proof.Framework.LitShare
+meta import VerifiedGarbage.Proof.Framework.LitShare
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # P-224 public keys on x86-64: `Verified`
@@ -20,6 +35,8 @@ the address of the comb's static public (`taintSym`): the only branches are
 on loop counters, and every address is an argument or the static's address
 plus a constant or a counter.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.EcKey.X86_64.P224
 
@@ -53,16 +70,17 @@ theorem pk_x86 (hL : Weierstrass.Law Spec.P224.curve)
     (hT : Weierstrass.CombOkW Spec.P224.curve 7 37 Impl.P224.p224Comb7 Impl.P224.p224Comb7Start)
     (hI : Weierstrass.X86_64.InvSounds)
     (s : State) (hs : pkX86_64.pre s) :
-    ∃ t s', Exec isa publicKeyP224 s t s' ∧ abiPreserved s s' ∧ pkX86_64.post s s' := by
-  obtain ⟨t, s', he, hsv, hpost⟩ := wp_of_inline (by lit_decide) <| publicKey_ok (p224_ok hI) hL (p224_tbls hT) (pre_of hs)
-  have hsp : ∀ i ∈ instrs publicKeyP224, Taint.clobbers i .rsp = false := by
+    ∃ t s', Exec isa publicKeyP224.inline s t s' ∧ abiPreserved s s' ∧ pkX86_64.post s s' := by
+  obtain ⟨t, s', he, hsv, hpost⟩ := publicKey_ok (p224_ok hI) hL (p224_tbls hT) (pre_of hs)
+  have hsp : ∀ i ∈ instrs publicKeyP224.inline, Taint.clobbers i .rsp = false := by
     have h : publicKeyP224.allInstrs (fun i => !Taint.clobbers i .rsp) = true := by lit_decide
-    rw [Code.allInstrs_eq, List.all_eq_true] at h
+    rw [← Code.allInstrs_inline, Code.allInstrs_eq, List.all_eq_true] at h
     intro i hi
     simpa using h i hi
-  have F := (Exec.regions he (by lit_decide)).2.2
+  have F := (Exec.regions he (Code.noCalls_inline (by lit_decide))).2.2
   obtain ⟨-, hwr, -, -, -, hro, hrs, -, -, -⟩ := hs
-  refine ⟨t, s', he, abiPreserved_of_exec (by lit_decide) he ⟨fun r hr => ?_, ?_⟩, post_of hpost⟩
+  refine ⟨t, s', he, abiPreserved_of_exec (by rw [Code.allInstrs_inline]; lit_decide) he
+    ⟨fun r hr => ?_, ?_⟩, post_of hpost⟩
   · simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
     · exact hsv _ (by decide)
@@ -88,20 +106,46 @@ materialize_shared publicKeyP224Erased
 
 theorem pk_ct : ConstantTime isa pkX86_64.pre pkX86_64.pub publicKeyP224 :=
   VG.Taint.constantTime_mapBlocks (c' := publicKeyP224Erased) (taintSym_eraseInv ["VG_P224_COMB"])
-    (Taint.ofRegs [.rdi, .rsi, .rdx]) rfl
-    (fun _ _ _ _ ⟨_, h1, h2, h3, hsy⟩ => ⟨Taint.agree_ofRegs fun r hr => by
+    (Taint.ofRegs [.rdi, .rsi, .rdx, .rsp]) rfl
+    (fun _ _ _ _ ⟨h0, h1, h2, h3, hsy⟩ => ⟨Taint.agree_ofRegs fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl
+      rcases hr with rfl | rfl | rfl | rfl
       · exact h1
       · exact h2
-      · exact h3, fun n hn => by simp only [List.mem_singleton] at hn; subst hn; exact hsy⟩)
+      · exact h3
+      · exact h0, fun n hn => by simp only [List.mem_singleton] at hn; subst hn; exact hsy⟩)
     rfl (by taint_decide)
+
+theorem sat_spec8 :
+    (Spec.EcKey.P224.inst.publicKeyContract (X86_64.abi.withConsts p224.combConsts) 8).pre satState := by
+  have held : ∀ i < p224W.length, satState.mem.readW (satState.syms "VG_P224_COMB" +
+      BitVec.ofNat 64 (8 * i)) 64 = p224W.getD i 0 := satMem_held
+  sig_pre [Spec.EcKey.P224.inst, Spec.EcKey.Instance.publicKeyContract,
+    Spec.EcKey.Instance.publicKeySig, Spec.P224.curve, Spec.EcKey.scratchWords, X86_64.abi,
+    X86_64.argRegs, p224_combConsts, Abi.withConsts, p224_constRegions, Abi.constsHeld, stackBelow]
+  sig_and_intros
+  all_goals first | exact Region.disjoint_of_sep (by decide) | rfl | exact held | decide
+
+/-- The contract with 8 bytes of stack, for the calls' return address. -/
+theorem implies8 :
+    pkX86_64.Implies (Spec.EcKey.P224.inst.publicKeyContract (X86_64.abi.withConsts p224.combConsts) 8) :=
+  implies.stack8 ⟨satState, sat_spec8⟩
+
+/-- The output is apart from the calls' return address. -/
+theorem pk_patch (s b : State) (hv : Mem) (u : Nat → BitVec 64)
+    (hs : (Spec.EcKey.P224.inst.publicKeyContract (X86_64.abi.withConsts p224.combConsts) 8).pre s)
+    (hp : pkX86_64.post s b) : pkX86_64.post s (b.patch (hole (s.gpr .rsp)) hv u) := by
+  obtain ⟨-, hwr, -⟩ := implies8.pre s hs
+  have hb := Clear.wr_bytes (Sig.clear_of_pre_consts hs) (p := s.gpr .rdi) (n := 57)
+    (by rw [hwr]; simp) (by decide)
+  simpa only [pkX86_64, State.patch_gpr, EcKey.bytesAt_patch hb] using hp
 
 theorem pk_verified (hL : Weierstrass.Law Spec.P224.curve)
     (hT : Weierstrass.CombOkW Spec.P224.curve 7 37 Impl.P224.p224Comb7 Impl.P224.p224Comb7Start)
     (hI : Weierstrass.X86_64.InvSounds) :
     Verified X86_64.target publicKeyP224
-      (Spec.EcKey.P224.inst.publicKeyContract (X86_64.abi.withConsts p224.combConsts)) :=
-  Verified.of_correct (pk_x86 hL hT hI) pk_ct implies
+      (Spec.EcKey.P224.inst.publicKeyContract (X86_64.abi.withConsts p224.combConsts) 8) :=
+  Verified.of_inline_ct (by lit_decide) (pk_x86 hL hT hI) pk_ct implies8
+    (fun _ h => Sig.clear_of_pre_consts h) pk_patch
 
 end VG.Proof.EcKey.X86_64.P224

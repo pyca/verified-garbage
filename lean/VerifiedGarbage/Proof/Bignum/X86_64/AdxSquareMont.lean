@@ -1,8 +1,16 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareRaw
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareRedcChoice
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareFinish
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareRaw
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareRedcChoice
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareFinish
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Correctness of Montgomery squaring with BMI2 and ADX. -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64.AdxSquare
 
@@ -23,14 +31,15 @@ theorem redc_lt {R T X q m : Nat} (hm : 0 < m) (hq : q < R)
 
 /-- Squaring has the same reduced-result, congruence and memory contract as
 Montgomery multiplication with equal operands. -/
-theorem montSquare_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64}
+theorem montSquareWith_ok {diag red : Prog isa} {P : Nat → Prop} (hd : DiagOk diag P) (hr : RedOk red P)
+    {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64}
     (hs : Scr s B Z) (hdi : s.gpr .rdi = B) (hH : Hdr s.mem B w minv)
-    (hZ : slot w 8 ≤ Z) (hw1 : 2 ≤ w) (hw : w < 2 ^ 31)
+    (hZ : slot w 8 ≤ Z) (hw1 : 2 ≤ w) (hw : w < 2 ^ 31) (hP : P w)
     {o a : Nat} (ho : o < 8) (ha : a < 8) (ho1 : o ≠ aAcc) (ho2 : o ≠ aTmp)
     (ha1 : a ≠ aAcc) (ha2 : a ≠ aTmp)
     (hinv : ((word s.mem B (slot w aN)).toNat * minv.toNat + 1) % 2 ^ 64 = 0)
     (hA : wv s.mem B (slot w a) w < wv s.mem B (slot w aN) w) :
-    WP isa (AdxSquare.montSquare o a) s fun t =>
+    WP isa (AdxSquare.montSquareWith diag red o a) s fun t =>
       wv t.mem B (slot w o) w < wv s.mem B (slot w aN) w ∧
       wv t.mem B (slot w o) w * 2 ^ (64 * w) % wv s.mem B (slot w aN) w =
         wv s.mem B (slot w a) w * wv s.mem B (slot w a) w % wv s.mem B (slot w aN) w ∧
@@ -40,12 +49,12 @@ theorem montSquare_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64}
   have hg : hdrBytes ≤ slot w aAcc + 16 := by unfold slot; omega
   have hsep : slot w aN + 8 * (w + 2) ≤ slot w aAcc := by unfold slot aN aAcc; omega
   have hmpos : 0 < wv s.mem B (slot w aN) w := by omega
-  unfold AdxSquare.montSquare
-  refine WP.seq (WP.mono (rawSquare_ok hs hdi hH hZ hw1 hw ha ha1 ha2) fun s₁ ⟨_, hv₁, ho₁, k₁⟩ => ?_)
+  unfold AdxSquare.montSquareWith
+  refine WP.seq (WP.mono (rawSquareWith_ok hd hs hdi hH hZ hw1 hw hP ha ha1 ha2) fun s₁ ⟨_, hv₁, ho₁, k₁⟩ => ?_)
   have hH₁ := hH.of_outside ho₁ hg
   have hn₁ : word s₁.mem B (slot w aN) = word s.mem B (slot w aN) := ho₁.word (by omega) (by omega)
-  refine WP.seq (WP.mono (redcChoice_ok (hs.congr k₁.2.2) ((k₁.gpr (by decide)).trans hdi) hH₁ hZ hw1 hw
-    (by rw [hn₁]; exact hinv)) fun s₂ ⟨⟨q, hq, heq⟩, ho₂, k₂⟩ => ?_)
+  refine WP.seq (WP.mono (hr.ok (hs.congr k₁.2.2) ((k₁.gpr (by decide)).trans hdi) hH₁ hZ hw1 hw
+    (by rw [hn₁]; exact hinv) hP) fun s₂ ⟨⟨q, hq, heq⟩, ho₂, k₂⟩ => ?_)
   have hN₁ : wv s₁.mem B (slot w aN) w = wv s.mem B (slot w aN) w := ho₁.wv (by omega) (by omega)
   rw [hv₁, hN₁] at heq
   have ho12 := (ho₁.mono (o' := slot w aAcc) (n' := 16 * w + 32) (by omega) (by omega)).trans ho₂
@@ -81,5 +90,35 @@ theorem montSquare_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64}
     exact ho12 x (by
       have hAT : slot w aAcc + 8 * (w + 2) = slot w aTmp := by unfold slot aAcc aTmp; omega
       omega_using [h1, h2, hAT])
+
+
+theorem montSquare_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64}
+    (hs : Scr s B Z) (hdi : s.gpr .rdi = B) (hH : Hdr s.mem B w minv)
+    (hZ : slot w 8 ≤ Z) (hw1 : 2 ≤ w) (hw : w < 2 ^ 31)
+    {o a : Nat} (ho : o < 8) (ha : a < 8) (ho1 : o ≠ aAcc) (ho2 : o ≠ aTmp)
+    (ha1 : a ≠ aAcc) (ha2 : a ≠ aTmp)
+    (hinv : ((word s.mem B (slot w aN)).toNat * minv.toNat + 1) % 2 ^ 64 = 0)
+    (hA : wv s.mem B (slot w a) w < wv s.mem B (slot w aN) w) :
+    WP isa (AdxSquare.montSquare o a) s fun t =>
+      wv t.mem B (slot w o) w < wv s.mem B (slot w aN) w ∧
+      wv t.mem B (slot w o) w * 2 ^ (64 * w) % wv s.mem B (slot w aN) w =
+        wv s.mem B (slot w a) w * wv s.mem B (slot w a) w % wv s.mem B (slot w aN) w ∧
+      Arrays B w [aAcc, aTmp, o] s.mem t.mem ∧ Keep mmRegs s t :=
+  montSquareWith_ok diagonalChoice_diag (redcChoice_red _) hs hdi hH hZ hw1 hw trivial ho ha ho1 ho2 ha1 ha2 hinv hA
+
+/-- `montSquare4`: `montSquare` for `w` a multiple of 4. -/
+theorem montSquare4_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64}
+    (hs : Scr s B Z) (hdi : s.gpr .rdi = B) (hH : Hdr s.mem B w minv)
+    (hZ : slot w 8 ≤ Z) (hw1 : 2 ≤ w) (hw : w < 2 ^ 31)
+    {o a : Nat} (ho : o < 8) (ha : a < 8) (ho1 : o ≠ aAcc) (ho2 : o ≠ aTmp)
+    (ha1 : a ≠ aAcc) (ha2 : a ≠ aTmp)
+    (hinv : ((word s.mem B (slot w aN)).toNat * minv.toNat + 1) % 2 ^ 64 = 0)
+    (hA : wv s.mem B (slot w a) w < wv s.mem B (slot w aN) w) (h4 : w % 4 = 0) :
+    WP isa (AdxSquare.montSquare4 o a) s fun t =>
+      wv t.mem B (slot w o) w < wv s.mem B (slot w aN) w ∧
+      wv t.mem B (slot w o) w * 2 ^ (64 * w) % wv s.mem B (slot w aN) w =
+        wv s.mem B (slot w a) w * wv s.mem B (slot w a) w % wv s.mem B (slot w aN) w ∧
+      Arrays B w [aAcc, aTmp, o] s.mem t.mem ∧ Keep mmRegs s t :=
+  montSquareWith_ok diagonal4_diag (redc_red _) hs hdi hH hZ hw1 hw h4 ho ha ho1 ho2 ha1 ha2 hinv hA
 
 end VG.Proof.Bignum.X86_64.AdxSquare

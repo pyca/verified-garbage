@@ -1,6 +1,17 @@
-import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.KeccakMix
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.HwRounds
-import VerifiedGarbage.Proof.Framework.AArch64.Taint
+module
+
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.KeccakMix
+meta import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.KeccakMix
+public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.RoundLoop
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Neon.RoundLoop
+public import VerifiedGarbage.Proof.Framework.AArch64.Taint
+meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Optimized.KeccakMix
 open VG VG.AArch64
@@ -69,6 +80,8 @@ theorem rounds2_ok {s : State} {A B : Spec.Sha3.State} (hp : Pairs s A B) :
     (fun k t hk ⟨ht,hpt⟩ => ?_) 24 (Nat.le_refl _) s ⟨CoreKeep.refl _,hp⟩
   refine WP.mono (round2_ok hpt hk) fun u ⟨hu,hpu⟩ => ⟨ht.trans hu,?_⟩
   simpa only [List.range_succ,List.foldl_append,List.foldl_cons,List.foldl_nil] using hpu
+
+theorem core_ok : Core2 Impl.MlDsa.AArch64.Optimized.KeccakMix.core := fun hp => core2_ok hp
 
 /-- Neither SIMD lane is public; the fixed unrolled rounds have no data-dependent trace. -/
 theorem rounds_ct :

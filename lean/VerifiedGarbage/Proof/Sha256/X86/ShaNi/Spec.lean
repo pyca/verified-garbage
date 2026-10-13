@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Framework.X86.Sse
-import VerifiedGarbage.Proof.Sha256.Spec
+module
+
+public import VerifiedGarbage.Proof.Framework.X86.Sse
+public import VerifiedGarbage.Proof.Sha256.Spec
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # SHA-256 with the SHA extensions: the values in the SSE registers
@@ -8,6 +14,8 @@ How the working variables, the message schedule and the constants are laid out
 in SSE registers, and that `sha256rnds2` and `sha256msg1`/`sha256msg2` compute
 rounds and schedule words of `Spec/Sha256.lean`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sha256.X86.ShaNi
 

@@ -1,6 +1,11 @@
-import VerifiedGarbage.Impl.Bignum.X86_64.AdxRect8
+module
+
+public import VerifiedGarbage.Impl.Bignum.X86_64.AdxRect8
 
 /-! Save borrowed header words in the raw-product buffer's padding. -/
+
+@[expose] public section
+
 namespace VG.Impl.Bignum.X86_64.AdxHeader
 open VG.X86_64
 open VG.Impl.Bignum.X86_64.AdxRotate8 (at_)
@@ -24,5 +29,8 @@ def clearHigh : List Instr :=
 def restore : Prog isa := .seq (.block bases)
   (.seq (copyPair .r8 .rdi 0 (8*sFn 12))
     (.seq (copyPair .r9 .rdi 0 (8*sFn 14)) (.block clearHigh)))
+
+/-- The high pad cleared, for callers that keep the borrowed words elsewhere. -/
+def clear : Prog isa := .seq (.block bases) (.block clearHigh)
 
 end VG.Impl.Bignum.X86_64.AdxHeader

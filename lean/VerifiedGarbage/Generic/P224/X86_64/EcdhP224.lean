@@ -1,8 +1,10 @@
-import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.Weierstrass.Law
-import VerifiedGarbage.Impl.Ecdh.P224.X86_64
-import VerifiedGarbage.Proof.Ecdh.X86_64.P224.Verified
-import VerifiedGarbage.Proof.Ecdh.X86_64.P224.Lit
+module
+
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.Weierstrass.Law
+public import VerifiedGarbage.Impl.Ecdh.P224.X86_64
+public import VerifiedGarbage.Proof.Ecdh.X86_64.P224.Verified
+public import VerifiedGarbage.Proof.Ecdh.X86_64.P224.Lit
 
 /-!
 # ECDH over P-224 (SP 800-56A) on x86-64
@@ -11,6 +13,8 @@ A generic file (see `TCB/Emit.lean`) over P-224's group law and
 inversions `h`, the variant
 `Variants/P224/X86_64/Law.lean`.
 -/
+
+@[expose] public section
 
 namespace VG.Generic.P224.X86_64.EcdhP224
 
@@ -34,7 +38,8 @@ def artifacts (h : Proof.Weierstrass.X86_64.HasLawInv Spec.P224.curve) : List Ar
       is by the signature's divsteps. The result (or zeros) is selected by a mask of the checks, \
       `d` in `[1, n-1]` and `Z ≠ 0`, so the time depends only on the pointers."])
     code := Impl.Ecdh.X86_64.exchangeP224
-    contract := Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P224.inst X86_64.abi
+    contract := Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P224.inst X86_64.abi 8
+    stack := 8
     verified := Proof.Ecdh.X86_64.P224.ecdh_verified h.law h.inv
     spSafe := Code.all_of_allInstrs (by lit_decide) }]
 

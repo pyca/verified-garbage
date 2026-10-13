@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Hash
-import VerifiedGarbage.Proof.MlDsa.Sign.Setup
+module
+
+public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Hash
+public import VerifiedGarbage.Proof.MlDsa.Sign.Setup
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA signing on ARMv7: the function's contract, layout, entry and exit
@@ -13,6 +19,8 @@ stack pointer of entry, the pointers in their registers, and the caller's
 (`topEnd_ok`), branches on `r11` (`ifOkElse_ok`, `ifOkElse_tr`) and sequences
 of pieces indexed by a number (`seqR_ok`, `seqR_tr`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Arm.Sign
 

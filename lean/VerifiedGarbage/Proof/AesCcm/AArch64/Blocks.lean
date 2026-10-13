@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesCcm.AArch64.Entry
+module
+
+public import VerifiedGarbage.Proof.AesCcm.AArch64.Entry
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CCM on AArch64: `Ctr₀`, counter blocks and chaining a block
@@ -9,6 +15,8 @@ after it: `Ctr₀` (`ctrs_ok`). `ctrAt` makes `Ctrᵢ` at `W + 64` from `Ctr₀`
 (`ctrAt_ok`); `updBlock y` chains the block `B` at `W + 32` into the MAC
 state at `W + y` (`updBlock_ok`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

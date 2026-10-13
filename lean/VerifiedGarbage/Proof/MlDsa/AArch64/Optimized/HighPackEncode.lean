@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackDigits
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackCoefficients
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackDigits
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackCoefficients
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Optimized.HighPack
 open VG VG.AArch64 VG.Spec.MlDsa

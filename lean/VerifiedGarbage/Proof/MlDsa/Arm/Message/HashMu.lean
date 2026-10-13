@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.MlDsa.Arm.Message.Hash
-import VerifiedGarbage.Proof.MlKem.KPke
+module
+
+public import VerifiedGarbage.Proof.MlDsa.Arm.Message.Hash
+public import VerifiedGarbage.Proof.MlKem.KPke
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on ARMv7, `sign_message` and `verify_message`: `μ` and `tr`
@@ -9,6 +15,8 @@ Untrusted: everything here is checked by Lean. In `Ctx`, `muHash` leaves
 `trHash` leaves `H(pk, 64)` there (`trHash_ok`): from the zeroed state, each
 absorb continues the message from the position the previous one returned.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Arm.Message
 

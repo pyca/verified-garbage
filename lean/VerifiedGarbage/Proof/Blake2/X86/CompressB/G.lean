@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Sha512.X86.Rounds
-import VerifiedGarbage.Proof.Blake2.Spec
-import VerifiedGarbage.Impl.Blake2.X86.CompressB
+module
+
+public import VerifiedGarbage.Proof.Sha512.X86.Rounds
+public import VerifiedGarbage.Proof.Blake2.Spec
+public import VerifiedGarbage.Impl.Blake2.X86.CompressB
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # BLAKE2b on x86 (32-bit): `G`
@@ -10,6 +16,8 @@ The weakest-precondition rules for the 64-bit operations of
 have (the exclusive or of two pairs, and the rotations), and `g_ok`: one
 symbolic execution of `G` for any offsets of its words in `scratch`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Blake2.X86.CompressB
 

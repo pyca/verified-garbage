@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.RsaOaep.X86_64.EncCtx
-import VerifiedGarbage.Impl.RsaOaep.X86_64
-import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.Callees
+module
+
+public import VerifiedGarbage.Proof.RsaOaep.X86_64.EncCtx
+public import VerifiedGarbage.Impl.RsaOaep.X86_64
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.Callees
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-OAEP decryption on x86-64: the contract on the registers
@@ -10,6 +16,8 @@ frame and the calls use, `decStack`) on the registers and the stack
 (`dec_implies`); `DPre` is its precondition by name. The callee
 `vg_rsa_private_checked` is a `PrivImpl` (`Proof/RsaPkcs1Enc/X86_64/`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaOaep.X86_64
 

@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Rsa.AArch64.CvHead
+module
+
+public import VerifiedGarbage.Proof.Rsa.AArch64.CvHead
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_crt_values` on AArch64: what the pieces keep, and the masks
@@ -9,6 +15,8 @@ ranges `Mut` allows (`CvS.step`). The pieces that compare arrays and and
 masks into `sMask` (`eqA_ok`, `andZero_ok`, `andOdd_ok`), and that set and
 decrement words (`setOneA_ok`, `decA_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.AArch64
 

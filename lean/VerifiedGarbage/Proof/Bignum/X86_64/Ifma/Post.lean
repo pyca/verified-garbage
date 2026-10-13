@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Lemmas
-import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Pre
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtP
-import VerifiedGarbage.Impl.Rsa.X86_64.CrtIfma
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Lemmas
+public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Pre
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtP
+public import VerifiedGarbage.Impl.Rsa.X86_64.CrtIfma
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSA with AVX512_IFMA on x86-64: after the exponentiations
@@ -10,6 +16,8 @@ import VerifiedGarbage.Impl.Rsa.X86_64.CrtIfma
 `R_p² mod p` from `n`'s `R_n² mod n` (`redc`), `m_q R_p mod p` from `q`'s
 result, and `h = (m_p - m_q) qInv mod p` (`hTail_ok`, as `pPhase`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64
 

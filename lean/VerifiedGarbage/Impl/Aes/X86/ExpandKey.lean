@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Aes.X86.Ctr32
+module
+
+public import VerifiedGarbage.Impl.Aes.X86.Ctr32
 
 /-!
 # The AES key expansion on x86 (32-bit)
@@ -24,6 +26,8 @@ which depend only on `key_len`; the key's bytes only ever reach the S-box's
 registers and memory. The counters are in `ecx`, `edx` and `ebp` while
 `w[i]` is written, and stored back after.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Aes.X86
 

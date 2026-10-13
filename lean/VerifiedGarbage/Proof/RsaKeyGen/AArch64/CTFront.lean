@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTBase
+module
+
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTBase
+meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTBase
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # A candidate on AArch64: constant time, the stages before Montgomery setup
@@ -23,6 +30,8 @@ without a correctness proof of its own (`two_mid`); what holds there follows
 from a correctness proof of the piece (`Mid.prop`), and what the rest does
 from one of the whole (`Mid.wp`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaKeyGen.AArch64
 

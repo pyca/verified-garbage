@@ -1,8 +1,21 @@
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafLayout
-import VerifiedGarbage.Proof.Ecdsa.X86.CombLit
-import VerifiedGarbage.Proof.Weierstrass.X86.NafPrepTiming
-import VerifiedGarbage.Proof.Framework.X86.TaintSym
-import VerifiedGarbage.Proof.Framework.X86.RelCT
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafLayout
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafLayout
+public import VerifiedGarbage.Proof.Ecdsa.X86.CombLit
+meta import VerifiedGarbage.Proof.Ecdsa.X86.CombLit
+public import VerifiedGarbage.Proof.Weierstrass.X86.NafPrepTiming
+meta import VerifiedGarbage.Proof.Weierstrass.X86.NafPrepTiming
+public import VerifiedGarbage.Proof.Framework.X86.TaintSym
+meta import VerifiedGarbage.Proof.Framework.X86.TaintSym
+public import VerifiedGarbage.Proof.Framework.X86.RelCT
+meta import VerifiedGarbage.Proof.Framework.X86.RelCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Verify.X86
 open VG VG.X86 VG.Impl.Ecdsa.X86 VG.Impl.Ecdsa.Verify.X86 VG.Impl.Weierstrass.X86

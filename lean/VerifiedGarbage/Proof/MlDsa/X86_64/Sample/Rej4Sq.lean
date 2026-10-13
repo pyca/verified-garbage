@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.MlKem.X86_64.S4Squeeze
-import VerifiedGarbage.Impl.MlDsa.X86_64.Sample.RejNtt4
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86_64.S4Squeeze
+public import VerifiedGarbage.Impl.MlDsa.X86_64.Sample.RejNtt4
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on x86-64: `vg_mldsa_rej_ntt_poly4_avx2`, squeezing
@@ -12,6 +18,8 @@ squeezed before: the states are permuted `t + n` times, and the buffers hold
 bytes `168 t` to `168 (t + n)` of each seed's output. A squeeze writes only
 below the saved registers (`sqT_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86_64.Rej4
 
@@ -44,7 +52,7 @@ theorem permT_ok {σ : State} (hp : Pre σ) {t n : Nat} (hn : n < 3) {s : State}
       (∀ r < 24, ∀ k < 4, s'.mem.readW (la (scr σ) (50 + r) k) 64 = RC r) ∧
       Lanes4 s'.mem (scr σ) (fun k => iterF (t + n + 1) (A0 (B σ k))) ∧
       (∀ k < 4, ∀ p < 168 * n, s'.mem (at' σ (oBuf + 504 * k + p)) = xofByte (B σ k) (168 * t + p)) ∧
-      Frame [lowR σ] s.mem s'.mem → WP isa rest s' Q) :
+      Frame [lowR σ] s.mem s'.mem ∧ s'.gpr .rbp = s.gpr .rbp ∧ s'.gpr .r10 = s.gpr .r10 → WP isa rest s' Q) :
     WP isa (.seq (.block permArgs) (.seq Impl.Sha3.X86_64.X4.permute4 rest)) s Q := by
   refine WP.seq (WP.mono (args_ok h.env) fun s₁ ⟨⟨hm, hdi, hsi, hdx, hcx⟩, k₁⟩ => ?_)
   have hrd : s₁.rd = σ.rd := k₁.2.1.trans h.env.rd
@@ -62,7 +70,8 @@ theorem permT_ok {σ : State} (hp : Pre σ) {t n : Nat} (hn : n < 3) {s : State}
       (by simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; rcases hr with rfl | rfl | rfl | rfl | rfl <;> decide)
       (by simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; rcases hr with rfl | rfl | rfl | rfl | rfl <;> decide),
     by rw [hg _ (by decide) (by decide), k₁.gpr (by decide), h.r14], fun r hr k hk => ?_, ?_, fun k hk p hp' => ?_,
-    by rw [← hm]; exact hf.sub fun r hr => ⟨lowR σ, List.mem_singleton_self _, hsub r hr⟩⟩
+    by rw [← hm]; exact hf.sub fun r hr => ⟨lowR σ, List.mem_singleton_self _, hsub r hr⟩,
+    by rw [hg _ (by decide) (by decide), k₁.gpr (by decide)], by rw [hg _ (by decide) (by decide), k₁.gpr (by decide)]⟩
   · rw [hf.readW (Region.contains_self _ _) (by
         simpa using ⟨Offset.disjoint_base (scr σ) (k := 800) (d := 32 * (50 + r) + 8 * k) (n := 8) (by omega) (by omega),
           Offset.disjoint (scr σ) (d := 32 * (50 + r) + 8 * k) (n := 8) (e := 800) (k := 800) (by omega) (by omega)
@@ -86,15 +95,18 @@ structure EXT (σ : State) (m₀ : Mem) (t n K I : Nat) (s : State) : Prop where
   buf : ∀ k < 4, ∀ p < 504, (p < 168 * n ∨ (168 * n ≤ p ∧ p < 168 * n + 168 ∧ (k < K ∨ (k = K ∧ p < 168 * n + 8 * I)))) →
     s.mem (at' σ (oBuf + 504 * k + p)) = xofByte (B σ k) (168 * t + p)
   fr : Frame [lowR σ] m₀ s.mem
+  rbp : s.gpr .rbp = at' σ (oBuf + 168 * n)
 
 open VG.Proof.Sha3.X86_64 (wp_movm wp_store wp_nil) in
 theorem extT_step {σ : State} (hp : Pre σ) {m₀ : Mem} {t n K I : Nat} (hn : n < 3) (hK : K < 4) (hI : I < 21)
     {s : State} (h : EXT σ m₀ t n K I s) :
     WP isa (.block [.mov .rax (.mem (at_ .rbx (32 * I + 8 * K))),
-      .store (at_ .rbx (oBuf + 504 * K + 168 * n + 8 * I)) .rax]) s (EXT σ m₀ t n K (I + 1)) := by
+      .store (at_ .rbp (504 * K + 8 * I)) .rax]) s (EXT σ m₀ t n K (I + 1)) := by
   refine wp_movm (a := at' σ (32 * I + 8 * K)) (by rw [ea_at, h.env.rbx])
     (in_scr' hp h.env.rd h.env.wr (by omega)) fun s₁ u₁ => wp_store (a := at' σ (oBuf + 504 * K + 168 * n + 8 * I))
-      (by rw [ea_at, u₁.other _ (by decide), h.env.rbx]) (by rw [u₁.wr]; exact in_scr hp h.env.wr (by simp only [oBuf]; omega))
+      (by rw [ea_at, u₁.other _ (by decide), h.rbp, at', at', Offset.add_add,
+        show oBuf + 168 * n + (504 * K + 8 * I) = oBuf + 504 * K + 168 * n + 8 * I by omega])
+      (by rw [u₁.wr]; exact in_scr hp h.env.wr (by simp only [oBuf]; omega))
       fun s₂ g₂ m₂ r₂ w₂ => wp_nil ?_
   have hm : s₂.mem = s.mem.writeW (at' σ (oBuf + 504 * K + 168 * n + 8 * I)) (s.mem.readW (at' σ (32 * I + 8 * K)) 64) := by
     rw [m₂, u₁.mem, u₁.gpr]
@@ -110,7 +122,7 @@ theorem extT_step {σ : State} (hp : Pre σ) {m₀ : Mem} {t n K I : Nat} (hn : 
           rcases hr with rfl | rfl | rfl | rfl | rfl <;> decide)],
     by rw [g₂, u₁.other _ (by decide), h.r14], fun r hr k hk => ?_, fun i hi k hk => ?_, fun k hk p hp' hc => ?_,
     h.fr.trans (hf.sub fun r hr => ⟨lowR σ, List.mem_singleton_self _, by
-      simp only [List.mem_singleton] at hr; subst hr; exact hsub⟩)⟩
+      simp only [List.mem_singleton] at hr; subst hr; exact hsub⟩), by rw [g₂, u₁.other _ (by decide), h.rbp]⟩
   · have e := readW_writeW_off s.mem (scr σ) (s.mem.readW (at' σ (32 * I + 8 * K)) 64) (d := 32 * (50 + r) + 8 * k)
       (e := oBuf + 504 * K + 168 * n + 8 * I) (n := 8) (by omega) (by simp only [oBuf]; omega)
       (by simp only [oBuf]; omega)
@@ -136,20 +148,46 @@ theorem extT_step {σ : State} (hp : Pre σ) {m₀ : Mem} {t n K I : Nat} (hn : 
 /-- Block `n` of each state's output. -/
 theorem extractT_ok {σ : State} (hp : Pre σ) {m₀ : Mem} {t n : Nat} (hn : n < 3) {s : State}
     (h : EXT σ m₀ t n 0 0 s) :
-    WP isa (.block (extract n)) s fun s' => SqT σ t (n + 1) s' ∧ Frame [lowR σ] m₀ s'.mem := by
+    WP isa (.block extract) s fun s' => SqT σ t (n + 1) s' ∧ Frame [lowR σ] m₀ s'.mem := by
   rw [extract_eq]
   refine WP.mono (wp_range_flatMap (M := isa) (fun K s => EXT σ m₀ t n K 0 s) (fun K s hK h => ?_) 4 (Nat.le_refl _)
     s h) fun s' h' => ⟨⟨h'.env, h'.r14, h'.rc, h'.lanes, fun k hk p hp' => h'.buf k hk p (by omega) (by omega)⟩, h'.fr⟩
   refine WP.mono (wp_range_flatMap (M := isa) (fun I s => EXT σ m₀ t n K I s) (fun I s hI h => extT_step hp hn hK hI h)
     21 (Nat.le_refl _) s h) fun s' h' =>
-      ⟨h'.env, h'.r14, h'.rc, h'.lanes, fun k hk p hp' hc => h'.buf k hk p hp' (by omega), h'.fr⟩
+      ⟨h'.env, h'.r14, h'.rc, h'.lanes, fun k hk p hp' hc => h'.buf k hk p hp' (by omega), h'.fr, h'.rbp⟩
 
-/-- `squeeze4 n`: after `n + 1` squeezes; it writes only below the saved
+/-- `squeeze`, to block `n`: after `n + 1` squeezes, with `rbp` and `r10`
+kept; it writes only below the saved registers. -/
+theorem sqT_ok {σ : State} (hp : Pre σ) {t n : Nat} (hn : n < 3) {s : State} (h : SqT σ t n s)
+    (hbp : s.gpr .rbp = at' σ (oBuf + 168 * n)) :
+    WP isa squeeze s fun s' => (SqT σ t (n + 1) s' ∧ Frame [lowR σ] s.mem s'.mem) ∧
+      s'.gpr .rbp = s.gpr .rbp ∧ s'.gpr .r10 = s.gpr .r10 := by
+  unfold squeeze
+  exact permT_ok hp hn h fun s' ⟨he, h14, hrc, hl, hb, hf, h₁, h₂⟩ =>
+    WP.mono (Proof.MlKem.X86_64.WP.keep [.rax] (extractT_ok hp hn ⟨he, h14, hrc, hl, fun k hk p _ hc => hb k hk p (by omega), hf,
+      by rw [h₁, hbp]⟩) (by decide)) fun s'' ⟨h', k⟩ =>
+        ⟨h', by rw [k.gpr (by decide), h₁], by rw [k.gpr (by decide), h₂]⟩
+
+/-- `SqT` does not depend on `rbp`, `r10` or the flags. -/
+theorem SqT.frame {σ : State} {t n : Nat} {s s' : State} (h : SqT σ t n s) (hm : s'.mem = s.mem)
+    (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) (hg : ∀ r, r ≠ .rbp → r ≠ .r10 → s'.gpr r = s.gpr r) :
+    SqT σ t n s' := by
+  have k : Keep [.rbp, .r10] s s' := ⟨fun r hr => hg r (fun e => hr (by simp [e])) (fun e => hr (by simp [e])), hrd, hwr⟩
+  exact ⟨h.env.keep hm k (by decide), by rw [k.gpr (by decide), h.r14], by rw [hm]; exact h.rc,
+    by rw [hm]; exact h.lanes, by rw [hm]; exact h.buf⟩
+
+/-- `squeezes b n`: after `b + n` squeezes; it writes only below the saved
 registers. -/
-theorem sqT_ok {σ : State} (hp : Pre σ) {t n : Nat} (hn : n < 3) {s : State} (h : SqT σ t n s) :
-    WP isa (squeeze4 n) s fun s' => SqT σ t (n + 1) s' ∧ Frame [lowR σ] s.mem s'.mem := by
-  unfold squeeze4
-  exact permT_ok hp hn h fun s' ⟨he, h14, hrc, hl, hb, hf⟩ =>
-    extractT_ok hp hn ⟨he, h14, hrc, hl, fun k hk p _ hc => hb k hk p (by omega), hf⟩
+theorem sqTs_ok {σ : State} (hp : Pre σ) {t b n : Nat} (hn : 0 < n) (hbn : b + n ≤ 3) {s : State}
+    (h : SqT σ t b s) :
+    WP isa (squeezes b n) s fun s' => SqT σ t (b + n) s' ∧ Frame [lowR σ] s.mem s'.mem := by
+  unfold squeezes
+  refine blocks_ok (P := fun i s' => SqT σ t i s' ∧ Frame [lowR σ] s.mem s'.mem) hn (by omega)
+    (by simp only [oBuf]; omega) (by decide)
+    (fun _ _ _ ⟨h', hf⟩ hm hrd hwr hg => ⟨h'.frame hm hrd hwr hg, by rw [hm]; exact hf⟩)
+    (fun i u hb hi ⟨hi', hf⟩ hbp => WP.mono (sqT_ok hp (by omega) hi' ?_)
+      fun _ ⟨⟨h', hf'⟩, k⟩ => ⟨⟨h', hf.trans hf'⟩, k⟩) ⟨h, Frame.refl _ _⟩
+  rw [hbp, h.env.rbx, Offset.add_add, at', show oBuf + 168 * b + 168 * (i - b) = oBuf + 168 * i by
+    rw [Nat.add_assoc, ← Nat.mul_add, Nat.add_sub_cancel' hb]]
 
 end VG.Proof.MlDsa.X86_64.Rej4

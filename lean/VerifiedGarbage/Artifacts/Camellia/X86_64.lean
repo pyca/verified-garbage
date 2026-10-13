@@ -1,5 +1,9 @@
-import VerifiedGarbage.Proof.Camellia.X86_64.Verified
-import VerifiedGarbage.Proof.Camellia.X86_64.KeyVerified
+module
+
+public import VerifiedGarbage.Proof.Camellia.X86_64.Verified
+public import VerifiedGarbage.Proof.Camellia.X86_64.KeyVerified
+
+@[expose] public section
 
 namespace VG.Artifacts.Camellia.X86_64
 
@@ -21,7 +25,7 @@ def artifacts : List Artifact := [
       (Impl.Camellia.X86_64.ecb .encrypt)
     contract := Spec.Camellia.ecbEncryptContract X86_64.abi 3216
     stack := 3216
-    ofSig := ⟨_, _, _, by unfold Spec.Camellia.ecbEncryptContract Spec.Camellia.ecbContract; rfl⟩
+    ofSig := by exact (⟨_, _, _, by unfold Spec.Camellia.ecbEncryptContract Spec.Camellia.ecbContract; rfl⟩)
     verified := Proof.Camellia.X86_64.ecb_framed .encrypt
     spSafe := Code.all_of_allInstrs (by lit_decide) },
   { Spec.Camellia.ecbDecryptApi with
@@ -32,7 +36,7 @@ def artifacts : List Artifact := [
       (Impl.Camellia.X86_64.ecb .decrypt)
     contract := Spec.Camellia.ecbDecryptContract X86_64.abi 3216
     stack := 3216
-    ofSig := ⟨_, _, _, by unfold Spec.Camellia.ecbDecryptContract Spec.Camellia.ecbContract; rfl⟩
+    ofSig := by exact (⟨_, _, _, by unfold Spec.Camellia.ecbDecryptContract Spec.Camellia.ecbContract; rfl⟩)
     verified := Proof.Camellia.X86_64.ecb_framed .decrypt
     spSafe := Code.all_of_allInstrs (by lit_decide) }]
 

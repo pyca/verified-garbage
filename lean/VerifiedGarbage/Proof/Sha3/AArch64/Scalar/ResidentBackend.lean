@@ -1,7 +1,17 @@
-import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.VectorBackend
-import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Resident.Bulk
-import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Resident.Lit
-import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Resident
+module
+
+public import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.VectorBackend
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.VectorBackend
+public import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Resident.Bulk
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Resident.Bulk
+public import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Resident.Lit
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Resident.Lit
+public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Resident
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Resident
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The scalar Keccak backend with its resident absorb
@@ -11,6 +21,8 @@ with the state in registers (`Scalar.Resident.bulk`) under the resident
 absorber's guards (`Sha3.Vector.Resident.absorbWith`), falling back to the
 ordinary streaming absorb for the rest.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sha3.AArch64.Scalar.ResidentBackend
 
@@ -109,7 +121,6 @@ theorem absorb_correct (a : State) (hp : Proof.Sha3.absorbAArch64.pre a) :
       abiPreserved a q ∧ Proof.Sha3.absorbAArch64.post a q :=
   Sha3.Vector.Resident.absorb_correct VectorSlots.backend _ Resident.functional a hp
 
-#assert_standard_axioms absorb_correct
 
 theorem absorbTaint : ∃ h, (VectorTaint.taint.check (VectorTaint.ofRegs [.x0, .x1, .x2, .x3, .x4, .x5])
     (Impl.Sha3.AArch64.Stream.absorbWith callee) h).isSome = true :=

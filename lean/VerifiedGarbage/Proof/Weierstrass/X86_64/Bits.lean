@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Weierstrass.X86_64.Copy
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.Copy
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Short Weierstrass curves on x86-64: tables of bits, and masks of bits
@@ -9,6 +15,8 @@ eight bytes of the table (`bitsBody_ok`). `bitMask d` makes the mask `rcx`
 of the byte `rbx` of the table at `d` (`bitMask_ok`): all ones for a 1, zero
 for a 0 (`bitMask_bool_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.X86_64
 

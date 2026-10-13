@@ -1,4 +1,6 @@
-import VerifiedGarbage.TCB.Mem
+module
+
+public import VerifiedGarbage.TCB.Mem
 
 /-!
 # SM4 and ECB
@@ -17,6 +19,8 @@ round keys are stored as 32 little-endian 32-bit words for the contracts.
 All key bytes, round keys and data are secret. The specification's S-box
 lookup does not permit secret-dependent memory accesses in implementations.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Sm4
 

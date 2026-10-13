@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.RsaOaep.X86_64.Mgf
+module
+
+public import VerifiedGarbage.Proof.RsaOaep.X86_64.Mgf
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-OAEP decryption on x86-64: the loops of the decoding
@@ -9,6 +15,8 @@ bytes (`V`) and the frame's words: the comparison of `lHash'` with `lHash`
 cleared (`clearBuf_ok`), `T` copied to it (`copyT_ok`), one pass of the
 shift (`shiftPass_ok`), and `out` (`outLoop_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaOaep.X86_64
 

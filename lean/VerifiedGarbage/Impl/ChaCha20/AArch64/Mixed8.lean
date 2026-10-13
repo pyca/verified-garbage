@@ -1,10 +1,15 @@
-import VerifiedGarbage.Impl.ChaCha20.AArch64.Rows6
-import VerifiedGarbage.Impl.ChaCha20.AArch64.Mixed5
+module
+
+public import VerifiedGarbage.Impl.ChaCha20.AArch64.Rows6
+public import VerifiedGarbage.Impl.ChaCha20.AArch64.Mixed5
 
 /-! Six row-vector blocks share execution with two integer blocks.
 Each phase performs one vector double round and two integer double rounds.
 Five phases finish one integer block and half of the vector rounds. With
 SVE2 (`sve`), each vector XOR and rotation is one XAR. -/
+
+@[expose] public section
+
 namespace VG.Impl.ChaCha20.AArch64.Mixed8
 open VG VG.AArch64
 

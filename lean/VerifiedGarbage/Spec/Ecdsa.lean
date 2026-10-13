@@ -1,4 +1,6 @@
-import VerifiedGarbage.Spec.Weierstrass
+module
+
+public import VerifiedGarbage.Spec.Weierstrass
 
 /-!
 # ECDSA signature generation (FIPS 186-5)
@@ -16,6 +18,8 @@ bits of `H`, `N` being the bit length of `n` (`hashToInt`). The inverse
 pair `(r, s)`; `encode` gives its usual fixed-length encoding, `r` then `s`,
 each in `len` octets.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Ecdsa
 

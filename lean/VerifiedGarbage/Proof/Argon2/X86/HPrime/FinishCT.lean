@@ -1,6 +1,17 @@
-import VerifiedGarbage.Proof.Argon2.X86.HPrime.Finish
-import VerifiedGarbage.Proof.Argon2.X86.HPrime.Output
-import VerifiedGarbage.Proof.Argon2.X86.HPrime.HashCT
+module
+
+public import VerifiedGarbage.Proof.Argon2.X86.HPrime.Finish
+meta import VerifiedGarbage.Proof.Argon2.X86.HPrime.Finish
+public import VerifiedGarbage.Proof.Argon2.X86.HPrime.Output
+meta import VerifiedGarbage.Proof.Argon2.X86.HPrime.Output
+public import VerifiedGarbage.Proof.Argon2.X86.HPrime.HashCT
+meta import VerifiedGarbage.Proof.Argon2.X86.HPrime.HashCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 section
 

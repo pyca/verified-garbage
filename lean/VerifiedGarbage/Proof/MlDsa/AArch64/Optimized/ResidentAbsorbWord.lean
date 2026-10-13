@@ -1,6 +1,13 @@
-import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.ResidentMask
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Keep
+module
 
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.ResidentMask
+public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Keep
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Optimized.ResidentMask
 open VG VG.AArch64

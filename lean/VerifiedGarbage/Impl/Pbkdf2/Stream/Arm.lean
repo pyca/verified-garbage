@@ -1,4 +1,6 @@
-import VerifiedGarbage.TCB.Arm.Isa
+module
+
+public import VerifiedGarbage.TCB.Arm.Isa
 
 /-!
 # Calls of a streaming hash function: 32-bit ARM
@@ -31,6 +33,8 @@ as `[r2, #off]` with `r2 = base + r8`, and counts down in `r9` (`subs` and
 instruction cannot encode as an immediate are formed with `movw r12` and an
 `add`.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Pbkdf2.Stream.Arm
 

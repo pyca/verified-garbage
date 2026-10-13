@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Compress
-import VerifiedGarbage.Proof.Pbkdf2.MdStep
-import VerifiedGarbage.Proof.Pbkdf2.Stream.Arm.Common
+module
+
+public import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Compress
+public import VerifiedGarbage.Proof.Pbkdf2.MdStep
+public import VerifiedGarbage.Proof.Pbkdf2.Stream.Arm.Common
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # HMAC and PBKDF2-HMAC over any Merkle–Damgård hash function on ARMv7: the hash function
@@ -17,6 +23,8 @@ has it exactly when it does as `md` has it: `repr`, `back`), with the digest
 the first `D` bytes of `md`'s; and
 its sizes fit (`Sizes`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Pbkdf2.Md.Arm
 

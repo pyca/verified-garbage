@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Setup
+module
+
+public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Setup
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Interleaved counter mode and GHASH: encryption
@@ -10,6 +16,8 @@ the field). `first_ok`: the first group is encrypted (`EInv s₀ P 1`).
 `encTail_ok`: the encryption after the setup, for any powers whose products
 add up to `GHASH` (`FinOk`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Gcm.X86_64.Stitch
 

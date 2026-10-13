@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.Argon2.Arm.Derive.MemCT
+module
+
+public import VerifiedGarbage.Proof.Argon2.Arm.Derive.MemCT
+meta import VerifiedGarbage.Proof.Argon2.Arm.Derive.MemCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Argon2 on ARMv7: the random word, in two runs
@@ -11,6 +18,8 @@ the pieces are cut after such stores (and around the calls of G), and the
 runs related again from what correctness says the locals and registers hold.
 `randomSource_rel`: the random word's trace depends only on the position.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Argon2.Arm.Derive
 

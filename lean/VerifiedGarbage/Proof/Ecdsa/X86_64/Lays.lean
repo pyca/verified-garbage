@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Ecdsa.X86_64.SlotOps
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.SlotOps
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDSA on x86-64: where the ladder's and the powers' slots are
@@ -8,6 +14,8 @@ for distinct `i`, so they are apart as `ladder_ok` and `pow_ok` need
 (`ladLay`, `powLayP`, `powLayN`): each fact is one about the numbers `i`,
 which `decide` checks.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.X86_64
 
@@ -163,15 +171,15 @@ theorem ladLay (hc : BaseCfgOk c) : LadLay c.ladderCfg size := by
       have := tmp_apart_bits c (j := 0) (.inl (by decide)) (by decide) (64 * c.n) (by omega); omega
 
 theorem powLay_of (hc : BaseCfgOk c) {jm : Nat} (hjm : jm ∉ [ACC, PT, TMP])
-    (minv : BitVec 64) {red : Red} {adx sparse : Bool}
+    (minv : BitVec 64) {red : Red} {adx sparse fnN : Bool}
     {base one j : Nat} (hj : j < 3) (hb : base ∉ [ACC, PT, TMP]) (hb45 : base < 45) (ho : one ≠ ACC)
     (ho45 : one < 45) {nb : Nat} (hnb : 1 ≤ nb ∧ nb ≤ 64 * c.n) (hjT : j ≠ 1 ∨ c.n ≠ 9) :
-    PowLay ⟨⟨c.n, c.sl jm, c.sl TMP, minv, red, false, adx, sparse, false⟩, c.sl ACC, c.sl PT, c.sl base, c.sl one, bitsAt c.n j,
+    PowLay ⟨⟨c.n, c.sl jm, c.sl TMP, minv, red, false, adx, sparse, false, fnN⟩, c.sl ACC, c.sl PT, c.sl base, c.sl one, bitsAt c.n j,
       nb⟩ size := by
   have hn := hc.n0
   have h7 := hc.n10
   have hw : ∀ i, i ∉ [ACC, PT, TMP] →
-      ∀ w ∈ powW ⟨⟨c.n, c.sl jm, c.sl TMP, minv, red, false, adx, sparse, false⟩, c.sl ACC, c.sl PT, c.sl base, c.sl one,
+      ∀ w ∈ powW ⟨⟨c.n, c.sl jm, c.sl TMP, minv, red, false, adx, sparse, false, fnN⟩, c.sl ACC, c.sl PT, c.sl base, c.sl one,
         bitsAt c.n j, nb⟩, c.sl i + 8 * c.n ≤ w.1 ∨ w.1 + w.2 ≤ c.sl i := by
     intro i hi w hw
     simp only [powW, List.mem_cons, List.not_mem_nil, or_false] at hw

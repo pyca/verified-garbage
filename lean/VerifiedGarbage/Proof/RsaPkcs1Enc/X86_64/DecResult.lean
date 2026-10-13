@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecSel
+module
+
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecSel
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-PKCS1-v1_5 decryption on x86-64: the selected message
@@ -7,6 +13,8 @@ What the output loop writes, for the validity, length and message the scan
 and the derivation found, is the message `implicitDecode` returns, after
 zeros (`sel_eq`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPkcs1Enc.X86_64.Dec
 

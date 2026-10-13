@@ -1,5 +1,12 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.Exp
-import VerifiedGarbage.Proof.Bignum.X86_64.Copy
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.Exp
+public import VerifiedGarbage.Proof.Bignum.X86_64.Copy
+public import VerifiedGarbage.Proof.Bignum.EvenLast
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_public_precomputed` on x86-64: the exponentiation
@@ -7,9 +14,11 @@ import VerifiedGarbage.Proof.Bignum.X86_64.Copy
 The exponentiation of `vg_rsa_public_precomputed` starts at the first set bit
 of `e`: until then `Y` is not used (`YSt`); at that bit `Y := X`, and after
 it each bit squares `Y` and multiplies it by `X` if set (`pExpBit_ok`, over
-the bits and bytes of `e` in `pExpLoop_ok`). `finish` leaves `x^e mod N`
-(`pFinish_ok`).
+the bits and bytes of `e` in `pExpLoop_ok`), which are read with bit 0 of
+the last cleared (`evenLast`): the exponent is `e - 1` for an odd `e`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64
 
@@ -297,34 +306,67 @@ theorem pByteHead1_ok {t₀ t : State} {B : Addr} {Z w : Nat} {minv : BitVec 64}
   exact ⟨hc.mem hm k (by decide), hm ▸ hI.y, hm ▸ hI.idx, hm ▸ hI.e, hm ▸ hI.len, hm ▸ hI.frm,
     (hI.keep.trans k).mono (by decide)⟩
 
-/-- `byteHead`'s byte of `e` into `sV`, and the bit count 8: the start of the
-bits. -/
+theorem clear0_mask : ∀ b : Byte, BitVec.setWidth 64 b &&&
+    (0#64 - BitVec.setWidth 64 (BitVec.ofBool true) - 1) = BitVec.setWidth 64 (b &&& 0xFE) := by decide
+
+theorem keep_mask : ∀ b : Byte, BitVec.setWidth 64 b &&&
+    (0#64 - BitVec.setWidth 64 (BitVec.ofBool false) - 1) = BitVec.setWidth 64 b := by decide
+
+/-- `byteHeadEven`'s mask of byte `i` of `L`: bit 0 cleared if it is the last. -/
+theorem evenLast_mask {eb : List Byte} {i L : Nat} (hL : eb.length = L) (hL' : L < 2 ^ 31) (hi : i < L) :
+    BitVec.setWidth 64 (eb[i]'(by omega_using [hL, hi])) &&&
+      (0#64 - BitVec.setWidth 64
+        (BitVec.ofBool (decide ((BitVec.ofNat 64 i + 1 - BitVec.ofNat 64 L).toNat < BitVec.toNat (1 : BitVec 64)))) - 1) =
+      BitVec.setWidth 64 ((evenLast eb)[i]'(by rw [evenLast_length]; omega_using [hL, hi])) := by
+  have hd : decide ((BitVec.ofNat 64 i + 1 - BitVec.ofNat 64 L).toNat < BitVec.toNat (1 : BitVec 64)) =
+      decide (i + 1 = eb.length) := by
+    apply decide_eq_decide.mpr
+    rw [BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
+      show BitVec.toNat (1 : BitVec 64) = 1 from rfl]
+    omega_using [hL, hL', hi]
+  rw [hd, evenLast_getElem eb (by omega_using [hL, hi])]
+  by_cases h : i + 1 = eb.length
+  · simp only [h, decide_true, ↓reduceIte]; exact clear0_mask _
+  · simp only [h, decide_false, ↓reduceIte]; exact keep_mask _
+
+theorem byteHeadEven_eq : byteHeadEven = ([.mov .rax (.mem (hdr sE)), .mov .rcx (.mem (hdr sI))] : List Instr) ++
+    ([.movzx8 .rax { base := .rax, index := some .rcx }, .alu .add .rcx (.imm 1),
+      .alu .sub .rcx (.mem (hdr sElen)), .alu .cmp .rcx (.imm 1), .alu .sbb .rcx (.reg .rcx),
+      .alu .sub .rcx (.imm 1), .alu .and .rax (.reg .rcx), .store (hdr sV) .rax, .mov32 .rax (.imm 8),
+      .store (hdr sBit) .rax] : List Instr) := rfl
+
+/-- `byteHeadEven`'s byte of `e`, bit 0 cleared if it is the last, into
+`sV`, and the bit count 8: the start of the bits. -/
 theorem pByteHead2_ok {t₀ t : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} {N X x : Nat} {ep : Addr}
-    {L : Nat} {eb : List Byte} {i : Nat} (hZ : slot w 8 ≤ Z) (hL : eb.length = L) (hi : i < L)
+    {L : Nat} {eb : List Byte} {i : Nat} (hZ : slot w 8 ≤ Z) (hL : eb.length = L) (hL' : L < 2 ^ 31) (hi : i < L)
     (hrd : ∀ i < L, InRegions (t₀.rd ++ t₀.wr) (ep + BitVec.ofNat 64 i) 1)
     (hbytes : ∀ i (h : i < L), t₀.mem (ep + BitVec.ofNat 64 i) = eb[i]'(by omega_using [hL, h]))
     (hout : ∀ i < L, Z ≤ ofs B (ep + BitVec.ofNat 64 i))
-    (hI : PByteInv t₀ B Z w minv N X x ep L eb i t) (hax : t.gpr .rax = ep)
+    (hI : PByteInv t₀ B Z w minv N X x ep L (evenLast eb) i t) (hax : t.gpr .rax = ep)
     (hcx : t.gpr .rcx = BitVec.ofNat 64 i) :
-    WP isa (.block [.movzx8 .rax { base := .rax, index := some .rcx }, .store (hdr sV) .rax,
-      .mov32 .rax (.imm 8), .store (hdr sBit) .rax]) t fun t₁ =>
-      t₁.mem = (t.mem.writeW (off B (8 * sV)) ((eb[i]'(by omega_using [hL, hi])).setWidth 64)).writeW (off B (8 * sBit))
-        (BitVec.setWidth 64 (8 : BitVec 32)) ∧ Keep [.rax] t t₁ ∧
-      PBitInv t₁ B Z w minv N X x (pre eb i) (eb[i]'(by omega_using [hL, hi])).toNat 0 t₁ := by
+    WP isa (.block [.movzx8 .rax { base := .rax, index := some .rcx }, .alu .add .rcx (.imm 1),
+      .alu .sub .rcx (.mem (hdr sElen)), .alu .cmp .rcx (.imm 1), .alu .sbb .rcx (.reg .rcx),
+      .alu .sub .rcx (.imm 1), .alu .and .rax (.reg .rcx), .store (hdr sV) .rax, .mov32 .rax (.imm 8),
+      .store (hdr sBit) .rax]) t fun t₁ =>
+      t₁.mem = (t.mem.writeW (off B (8 * sV)) (((evenLast eb)[i]'(by rw [evenLast_length]; omega_using [hL, hi])).setWidth 64)).writeW (off B (8 * sBit))
+        (BitVec.setWidth 64 (8 : BitVec 32)) ∧ Keep [.rax, .rcx] t t₁ ∧
+      PBitInv t₁ B Z w minv N X x (pre (evenLast eb) i) ((evenLast eb)[i]'(by rw [evenLast_length]; omega_using [hL, hi])).toNat 0 t₁ := by
   have hc := hI.ctx
   have hn := hc.good.scr.nowrap
   have hn' : B.toNat + slot w 8 ≤ 2 ^ 64 := by omega_using [hZ, hn]
   have hs : ∀ i < 32, InRegions t.wr (off B (8 * i)) 8 := fun i hi =>
     hc.good.scr.st (by have := hdr_lt_slot w 8 hi; omega_using [hZ, this])
+  have hl : ∀ i < 32, InRegions (t.rd ++ t.wr) (off B (8 * i)) 8 := fun i hi =>
+    hc.good.scr.ld (by have := hdr_lt_slot w 8 hi; omega_using [hZ, this])
   have hrdi : InRegions (t.rd ++ t.wr) (ep + BitVec.ofNat 64 i) 1 := by
     rw [hI.keep.2.1, hI.keep.2.2]; exact hrd i hi
   have hbi : t.mem (ep + BitVec.ofNat 64 i) = eb[i]'(by omega_using [hL, hi]) := by
     rw [hI.frm _ fun r hr => Or.inr (by have := pExpRanges_le w r hr; have := hout i hi; omega_arith)]
     exact hbytes i hi
-  refine WP.mono (WP.keep [.rax] (Q := fun t₁ => t₁.mem = (t.mem.writeW (off B (8 * sV))
-      ((eb[i]'(by omega_using [hL, hi])).setWidth 64)).writeW (off B (8 * sBit)) (BitVec.setWidth 64 (8 : BitVec 32))) (by
+  refine WP.mono (WP.keep [.rax, .rcx] (Q := fun t₁ => t₁.mem = (t.mem.writeW (off B (8 * sV))
+      (((evenLast eb)[i]'(by rw [evenLast_length]; omega_using [hL, hi])).setWidth 64)).writeW (off B (8 * sBit)) (BitVec.setWidth 64 (8 : BitVec 32))) (by
     xrun [State.ea, hdr, hc.good.rdi, hdrOff, hax, hcx, byteRead, hrdi, hbi, hs sV (by decide),
-      hs sBit (by decide)]) rfl)
+      hs sBit (by decide), hl sElen (by decide), hI.len, evenLast_mask hL hL' hi]) rfl)
     fun t₁ ⟨hm₁, k₁⟩ => ⟨hm₁, k₁, ?_⟩
   have hc₁ : ExpCtx t₁ B Z w minv N X := ⟨⟨hc.good.scr.congr k₁.2.2, (k₁.gpr (by decide)).trans hc.good.rdi,
     by rw [hm₁]; exact Hdr.store (Hdr.store hc.good.hdr (by decide) (by decide) _) (by decide) (by decide) _⟩,
@@ -334,7 +376,8 @@ theorem pByteHead2_ok {t₀ t : State} {B : Addr} {Z w : Nat} {minv : BitVec 64}
       hdrStore_word (i := sV) (j := aN) _ _ _ (by decide) (by decide) hn']; exact hc.inv,
     by rw [hm₁, hdrStore_wv (i := sBit) (j := aXm) _ _ _ (by decide) (by decide) hn',
       hdrStore_wv (i := sV) (j := aXm) _ _ _ (by decide) (by decide) hn']; exact hc.x⟩
-  have hv : (eb[i]'(by omega_using [hL, hi])).toNat < 256 := (eb[i]'(by omega_using [hL, hi])).isLt
+  have hv : ((evenLast eb)[i]'(by rw [evenLast_length]; omega_using [hL, hi])).toNat < 256 :=
+    ((evenLast eb)[i]'(by rw [evenLast_length]; omega_using [hL, hi])).isLt
   refine ⟨hc₁, ?_, ?_, ?_, Frm.refl _ _ _, Keep.refl _ _⟩
   · rw [Nat.pow_zero, Nat.mul_one, Nat.sub_zero, Nat.div_eq_of_lt (show _ < 2 ^ 8 from hv), Nat.add_zero]
     exact YSt.congr hI.y (by rw [hm₁, hdrStore_hdr (i := sBit) _ _ _ (by decide) (by decide) (by decide),
@@ -353,15 +396,16 @@ theorem pByte_ok {t₀ t : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} {N X
     (hrd : ∀ i < L, InRegions (t₀.rd ++ t₀.wr) (ep + BitVec.ofNat 64 i) 1)
     (hbytes : ∀ i (h : i < L), t₀.mem (ep + BitVec.ofNat 64 i) = eb[i]'(by omega_using [hL, h]))
     (hout : ∀ i < L, Z ≤ ofs B (ep + BitVec.ofNat 64 i))
-    (hI : PByteInv t₀ B Z w minv N X x ep L eb i t) :
-    WP isa (.seq (.block byteHead) (.seq (.loop (Precomputed.expBit M.mm) .ne) (.block byteNext))) t fun t' =>
-      t'.zf = some (decide (i + 1 = L)) ∧ PByteInv t₀ B Z w minv N X x ep L eb (i + 1) t' := by
+    (hI : PByteInv t₀ B Z w minv N X x ep L (evenLast eb) i t) :
+    WP isa (.seq (.block byteHeadEven) (.seq (.loop (Precomputed.expBit M.mm) .ne) (.block byteNext))) t fun t' =>
+      t'.zf = some (decide (i + 1 = L)) ∧ PByteInv t₀ B Z w minv N X x ep L (evenLast eb) (i + 1) t' := by
   have hn := hI.ctx.good.scr.nowrap
   have hn' : B.toNat + slot w 8 ≤ 2 ^ 64 := by omega_using [hZ, hn]
-  rw [byteHead_eq]
+  rw [byteHeadEven_eq]
   refine WP.seq ((WP.block_append_iff).mpr (WP.mono (pByteHead1_ok hZ hI) fun tₐ ⟨hax, hcx, hIₐ⟩ =>
-    WP.mono (pByteHead2_ok hZ hL hi hrd hbytes hout hIₐ hax hcx) fun t₁ ⟨hm₁, k₁, hB0⟩ => ?_))
-  have hv : (eb[i]'(by omega_using [hL, hi])).toNat < 256 := (eb[i]'(by omega_using [hL, hi])).isLt
+    WP.mono (pByteHead2_ok hZ hL hL' hi hrd hbytes hout hIₐ hax hcx) fun t₁ ⟨hm₁, k₁, hB0⟩ => ?_))
+  have hv : ((evenLast eb)[i]'(by rw [evenLast_length]; omega_using [hL, hi])).toNat < 256 :=
+    ((evenLast eb)[i]'(by rw [evenLast_length]; omega_using [hL, hi])).isLt
   refine WP.seq (WP.mono (pBits_ok hZ hw hw' hR hXN hXc hv hB0) fun t₂ h₂ => ?_)
   -- The next byte.
   have hc₂ := h₂.ctx
@@ -390,8 +434,9 @@ theorem pByte_ok {t₀ t : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} {N X
   refine ⟨ExpCtx.store hc₂ hZ (i := sI) (by decide) (by decide) hm' k'.2.2 ((k'.gpr (by decide)).trans
     hc₂.good.rdi), ?_, ?_, ?_, ?_, ?_, ?_⟩
   · have hy := h₂.y
-    rw [show pre eb i * 2 ^ 8 + (eb[i]'(by omega_using [hL, hi])).toNat / 2 ^ (8 - 8) = pre eb (i + 1) by
-      rw [pre_succ eb (by omega_using [hL, hi])]; omega_using []] at hy
+    rw [show pre (evenLast eb) i * 2 ^ 8 + ((evenLast eb)[i]'(by rw [evenLast_length]; omega_using [hL, hi])).toNat /
+        2 ^ (8 - 8) = pre (evenLast eb) (i + 1) by
+      rw [pre_succ (evenLast eb) (by rw [evenLast_length]; omega_using [hL, hi])]; omega_using []] at hy
     exact YSt.congr hy (by rw [hm', hdrStore_hdr (i := sI) _ _ _ (by decide) (by decide) (by decide)])
       (by rw [hm', hdrStore_wv (i := sI) (j := aY) _ _ _ (by decide) (by decide) hn'])
   · rw [hm', word_writeW_self]
@@ -454,54 +499,12 @@ theorem pExpLoop_ok {t : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} {N X x
     (hbytes : ∀ i (h : i < L), t.mem (ep + BitVec.ofNat 64 i) = eb[i]'(by omega_using [hL, h]))
     (hout : ∀ i < L, Z ≤ ofs B (ep + BitVec.ofNat 64 i)) :
     WP isa (Precomputed.expLoop M.mm) t fun t' => ExpCtx t' B Z w minv N X ∧
-      YSt t'.mem B w N x (Spec.Rsa.os2ip eb) ∧ Frm B (pExpRanges w) t.mem t'.mem ∧ Keep mmRegs t t' := by
+      YSt t'.mem B w N x (Spec.Rsa.os2ip (evenLast eb)) ∧ Frm B (pExpRanges w) t.mem t'.mem ∧ Keep mmRegs t t' := by
   unfold Precomputed.expLoop
-  refine WP.seq (WP.mono (pExpInit_ok (x := x) (eb := eb) hc hZ he hlen) fun t₁ h₁ => ?_)
-  refine wp_upto (a := 0) (N := L) (by omega_using [hL1]) (PByteInv t B Z w minv N X x ep L eb)
+  refine WP.seq (WP.mono (pExpInit_ok (x := x) (eb := evenLast eb) hc hZ he hlen) fun t₁ h₁ => ?_)
+  refine wp_upto (a := 0) (N := L) (by omega_using [hL1]) (PByteInv t B Z w minv N X x ep L (evenLast eb))
     (fun i _ hi s hI => pByte_ok hZ hw hw' hR hXN hXc hL hL' hi hrd hbytes hout hI)
     (fun s hI => ?_) h₁
-  exact ⟨hI.ctx, by rw [← pre_len, hL]; exact hI.y, hI.frm, hI.keep⟩
-
-/-! ## The result -/
-
-/-- `finish`: `Y R⁻¹`, which is `x^E mod N`, or 1 if `E = 0`. -/
-theorem pFinish_ok {t : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} {N X x E : Nat}
-    (hc : ExpCtx t B Z w minv N X) (hZ : slot w 8 ≤ Z) (hw : 2 ≤ w) (hw' : w < 2 ^ 31)
-    (hR : Nat.Coprime (2 ^ (64 * w)) N) (hN1 : 1 < N) (hone : wv t.mem B (slot w aOne) w = 1)
-    (hy : YSt t.mem B w N x E) :
-    WP isa (finish M.mm) t fun t' => Good t' B Z w minv ∧ wv t'.mem B (slot w aY) w = x ^ E % N ∧
-      Frm B (finRanges w) t.mem t'.mem ∧ Keep mmRegs t t' := by
-  have hn := hc.good.scr.nowrap
-  have hn' : B.toNat + slot w 8 ≤ 2 ^ 64 := by omega_using [hZ, hn]
-  unfold finish
-  refine WP.seq (WP.mono (startedTest_ok hc.good hZ hy) fun t₁ ⟨hz₁, hm₁, k₁⟩ => ?_)
-  have hc₁ := hc.mem hm₁ k₁ (by decide)
-  rcases hy with ⟨h0, -⟩ | ⟨h0, -, Y, hY, hYN, hYc⟩
-  · refine WP.ite false (by simp [eval, hz₁, h0]) (by simp) (fun _ => ?_)
-    have hl : ∀ i < 32, InRegions (t₁.rd ++ t₁.wr) (off B (8 * i)) 8 := fun i hi =>
-      hc₁.good.scr.ld (by have := hdr_lt_slot w 8 hi; omega_using [hZ, this])
-    refine WP.seq (WP.mono (WP.keep [.r12, .rdx, .rcx] (Q := fun t₂ => t₂.gpr .r12 = BitVec.ofNat 64 w ∧
-        t₂.gpr .rdx = 1 ∧ t₂.gpr .rcx = BitVec.ofNat 64 0 ∧ t₂.mem = t₁.mem) (by
-      xrun [State.ea, hdr, hc₁.good.rdi, hdrOff, hl sW (by decide), hc₁.good.hdr.hw]) rfl)
-      fun t₂ ⟨⟨h12, hdx, hcx, hm₂⟩, k₂⟩ => ?_)
-    have hc₂ := hc₁.mem hm₂ k₂ (by decide)
-    refine WP.mono (setWord_ok hc₂.good.scr hc₂.good.rdi hc₂.good.hdr hZ h12 (by omega_using [hw]) hw' (o := aY) (by decide)
-      (ri := .rcx) (by decide) (i := 0) (by omega_using [hw]) hcx) fun t' ⟨hv, ho, k₃⟩ => ?_
-    have ha : Arrays B w [aY] t₂.mem t'.mem := Arrays.of_outside (j := aY) (by simp) ho (Nat.le_refl _) (Nat.le_refl _)
-    refine ⟨⟨hc₂.good.scr.congr k₃.2.2, (k₃.gpr (by decide)).trans hc₂.good.rdi, ha.hdr hc₂.good.hdr⟩, ?_, ?_,
-      ((k₁.trans k₂).trans k₃).mono (by decide)⟩
-    · rw [hv, hdx, h0]
-      simp only [Nat.pow_zero, Nat.mul_zero, Nat.mod_eq_of_lt hN1]; rfl
-    · rw [hm₂, hm₁] at ha
-      exact Frm.of_arrays ha (by simp [finRanges])
-  · refine WP.ite true (by simp [eval, hz₁, h0]) (fun _ => ?_) (by simp)
-    refine WP.mono (M.mm_ok (o := aY) (a := aY) (b := aOne) hc₁.good hZ hw hw' (by decide) (by decide)
-      (by decide) (by decide) (by decide) (by decide) (by decide) hc₁.inv
-      (by rw [hc₁.n, hm₁, hone]; exact hN1)) fun t' ⟨hg', hlt, hmm, ha, k₂⟩ => ?_
-    rw [hc₁.n] at hlt
-    rw [hc₁.n, hm₁, hY, hone, Nat.mul_one] at hmm
-    refine ⟨hg', ?_, by rw [hm₁] at ha; exact Frm.of_arrays ha (by simp [finRanges]), (k₁.trans k₂).mono (by decide)⟩
-    rw [← Nat.mod_eq_of_lt hlt]
-    exact VG.Proof.Bignum.mont_cancel hR (by rw [hmm, hYc])
+  exact ⟨hI.ctx, by rw [← pre_len, evenLast_length, hL]; exact hI.y, hI.frm, hI.keep⟩
 
 end VG.Proof.Bignum.X86_64

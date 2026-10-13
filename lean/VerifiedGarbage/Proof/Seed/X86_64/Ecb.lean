@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Seed.X86_64.Setup
-import VerifiedGarbage.Proof.Framework.X86_64.Abi
+module
+
+public import VerifiedGarbage.Proof.Seed.X86_64.Setup
+public import VerifiedGarbage.Proof.Framework.X86_64.Abi
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The function on x86-64
@@ -8,6 +14,8 @@ After saving the callee-saved registers and writing the masks to the
 scratch buffer, the function runs batches of up to 16 blocks until none are
 left (`loop_ok`), then restores the registers (`ecb_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Seed.X86_64
 
@@ -289,7 +297,7 @@ theorem ecb_ok (d : Spec.Seed.Direction) {s : State} (h : EcbPre s) : WP isa (ec
   have r9₁ : s₁.gpr .r9 = s.gpr .rcx := gpr_setReg_self (s := s) _ _
   have g₁ : ∀ r, r ≠ .r9 → s₁.gpr r = s.gpr r := fun r hr => gpr_setReg_of_ne (s := s) _ hr
   have scr₁ : scratchR s₁ = ⟨s.gpr .rcx, 8 * scratchSlots⟩ := by simp only [scratchR, r9₁]
-  have room₁ : Room s₁ := by unfold Room; rw [scr₁]; exact h.scratch
+  have room₁ : Room s₁ := ⟨_, Nat.le_refl _, by rw [r9₁]; exact h.scratch⟩
   -- the saved registers
   obtain ⟨s₂, e₂, g₂, rd₂, wr₂, f₂, set₂, keep₂⟩ := stores_ok room₁ (Impl.Seed.X86_64.savedRegs.map fun p => (p.2, p.1))
     (by decide) (by decide)
@@ -321,7 +329,7 @@ theorem ecb_ok (d : Spec.Seed.Direction) {s : State} (h : EcbPre s) : WP isa (ec
     show s₅.mem.readW (Straight.wordAddr (s₅.gpr .r9) k) 64 = s₃.mem.readW (Straight.wordAddr (s₃.gpr .r9) k) 64
     rw [mem₅, r9₅, r9₃]
   have scr₅ : scratchR s₅ = ⟨s.gpr .rcx, 8 * scratchSlots⟩ := by simp only [scratchR, r9₅]
-  have room₅ : Room s₅ := by unfold Room; rw [scr₅, wr₅]; exact h.scratch
+  have room₅ : Room s₅ := ⟨_, Nat.le_refl _, by rw [r9₅, wr₅]; exact h.scratch⟩
   have masks₅ : MasksIn s₅ := fun kv hkv => by rw [slot₅]; exact set₃ kv hkv
   have f₅ : Frame [⟨s.gpr .rcx, 8 * scratchSlots⟩] s.mem s₅.mem := by
     rw [mem₅, ← scr₁]

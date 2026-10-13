@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.AesSiv.X86.Run
-import VerifiedGarbage.Proof.AesSiv.X86.FinRaw
+module
+
+public import VerifiedGarbage.Proof.AesSiv.X86.Run
+meta import VerifiedGarbage.Proof.AesSiv.X86.Run
+public import VerifiedGarbage.Proof.AesSiv.X86.FinRaw
+meta import VerifiedGarbage.Proof.AesSiv.X86.FinRaw
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-SIV on x86: the functions called
@@ -13,6 +21,8 @@ them (`ctrCall_ok`). Their arguments are built from the environment: the key
 context, a block of `W` as the state or the counter block, the data or
 blocks of `W` as the data (`Src`), and the working space at `W + 256`.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

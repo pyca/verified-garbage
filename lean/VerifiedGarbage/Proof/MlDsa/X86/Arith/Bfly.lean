@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.MlDsa.X86.Arith.Basic
-import VerifiedGarbage.Proof.MlDsa.Arith.Ntt
-import VerifiedGarbage.Impl.MlDsa.X86.Arith.Ntt
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86.Arith.Basic
+public import VerifiedGarbage.Proof.MlDsa.Arith.Ntt
+public import VerifiedGarbage.Impl.MlDsa.X86.Arith.Ntt
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on x86 (32-bit): the butterflies
@@ -11,6 +17,8 @@ polynomial `G` stored at `p` and `ebp` at the zeta `z` in Montgomery form (`z
 leaves `bflyInv G j len z` (`BOut`), both advancing `esi` and `edi` by 4 and
 counting `ecx` down.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86.Arith
 

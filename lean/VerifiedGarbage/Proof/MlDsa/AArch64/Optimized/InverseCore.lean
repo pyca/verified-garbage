@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseMiddle
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseFinalLoop
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseMiddle
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseFinalLoop
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Optimized.Inverse
 open VG VG.AArch64

@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlKem.AArch64.KgB
+module
+
+public import VerifiedGarbage.Proof.MlKem.AArch64.KgB
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on AArch64: `keygen`, the calls of phase C
@@ -8,6 +14,8 @@ keccak.callee)`, `kgEnc`, `kgMul`, `kgAdd`): what it needs, what it computes,
 what it keeps (`KB`), and the only memory it changes (`Frame`), so that the
 facts established before it survive it.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.AArch64.KeyGen
 

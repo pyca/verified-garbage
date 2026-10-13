@@ -1,10 +1,19 @@
-import VerifiedGarbage.Proof.ChaCha20.AArch64.Variant
+module
+
+public import VerifiedGarbage.Proof.ChaCha20.AArch64.Variant
+meta import VerifiedGarbage.Proof.ChaCha20.AArch64.Variant
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.ChaCha20.AArch64
 
 open VG VG.AArch64
 
-private theorem keeps_of_check {c : Prog isa} {rs : List Reg}
+theorem keeps_of_check {c : Prog isa} {rs : List Reg}
     (h : (c.allInstrs fun i => rs.all fun r => dstOf i != some r) = true) :
     ∀ r ∈ rs, ∀ i ∈ instrs c, dstOf i ≠ some r := by
   rw [Code.allInstrs_eq] at h
@@ -23,7 +32,7 @@ def scalar : BlockImpl where
   xorKeeps := keeps_of_check (by lit_decide)
   xorKeepsV := by lit_decide
   xorNoFrames := by lit_decide
-  xorTaint := ⟨_, by taint_decide⟩
+  xorTaint := by exact ⟨_, by taint_decide⟩
 
 end BlockImpl
 end VG.Proof.ChaCha20.AArch64

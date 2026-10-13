@@ -1,4 +1,6 @@
-import VerifiedGarbage.TCB.Mem
+module
+
+public import VerifiedGarbage.TCB.Mem
 
 /-!
 # Elliptic curves in short Weierstrass form over prime fields (SEC 1)
@@ -22,6 +24,8 @@ This is a mathematical specification. Its branches on secret values are not
 an implementation or a claim about timing: the contracts say what may
 affect timing.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Weierstrass
 

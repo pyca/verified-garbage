@@ -1,7 +1,13 @@
-import VerifiedGarbage.Impl.Aes.X86.Linear
-import VerifiedGarbage.Proof.Framework.X86.Linear
-import VerifiedGarbage.Proof.Aes.X86.Sbox
-import VerifiedGarbage.Proof.Aes.Ct32.Layers
+module
+
+public import VerifiedGarbage.Impl.Aes.X86.Linear
+public import VerifiedGarbage.Proof.Framework.X86.Linear
+public import VerifiedGarbage.Proof.Aes.X86.Sbox
+public import VerifiedGarbage.Proof.Aes.Ct32.Layers
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The linear layers of bitsliced AES on x86 (32-bit)
@@ -13,6 +19,8 @@ compares every output bit with the XOR of input bits given in
 `Proof/Aes/Ct32/Layers.lean`. Position `p = 8r + 2c + b` of a word of the
 bitsliced state is byte `r + 4c` of block `b`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Aes.X86
 

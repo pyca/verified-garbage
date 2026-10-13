@@ -1,6 +1,14 @@
-import VerifiedGarbage.Impl.P256.VerifyAllocated
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Observed
-import VerifiedGarbage.Proof.Weierstrass.AArch64.AllocatedFrame
+module
+
+public import VerifiedGarbage.Impl.P256.VerifyAllocated
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Observed
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.AllocatedFrame
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.P256.VerifyAllocated
 open VG VG.AArch64 VG.Proof.Mont VG.Proof.Mont.AArch64

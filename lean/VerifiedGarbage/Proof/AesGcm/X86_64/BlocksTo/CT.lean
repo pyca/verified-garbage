@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Fn
-import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Piece
-import VerifiedGarbage.Proof.AesGcm.X86_64.FnCT
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Fn
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Fn
+public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Piece
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Piece
+public import VerifiedGarbage.Proof.AesGcm.X86_64.FnCT
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.FnCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on whole blocks out of place, x86-64: constant time
@@ -14,6 +23,8 @@ the blocks left agrees (`tailHead_ok`); and the copy and the call get the same
 pointers and lengths (`blkE_rel`), from what correctness says of each run
 (`rel_wp`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

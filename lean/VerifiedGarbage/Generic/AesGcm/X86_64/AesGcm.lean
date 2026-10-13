@@ -1,24 +1,26 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.InitVerified
-import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.BlocksTo
-import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.StreamTo
-import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.Gather
-import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.StreamCallee
-import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.GatherCallee
-import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.Short
-import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.AesGcm.X86_64.Frame
-import VerifiedGarbage.Proof.AesGcm.X86_64.VerifiedP
-import VerifiedGarbage.Proof.AesGcm.X86_64.Variant
-import VerifiedGarbage.Proof.AesGcm.X86_64.GhashImpls
-import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Ok
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Ok
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.OkP
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.Ok
-import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Verified
-import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Field
-import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Verified
-import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Verified
-import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Verified
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.InitVerified
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.BlocksTo
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.StreamTo
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.Gather
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.StreamCallee
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.GatherCallee
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.Short
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Frame
+public import VerifiedGarbage.Proof.AesGcm.X86_64.VerifiedP
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Variant
+public import VerifiedGarbage.Proof.AesGcm.X86_64.GhashImpls
+public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Ok
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Ok
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.OkP
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.Ok
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Verified
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Field
+public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Verified
+public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Verified
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Verified
 
 /-!
 # AES-GCM (NIST SP 800-38D) on x86-64
@@ -94,6 +96,8 @@ and `stream_finish` (`Impl/AesGcm/X86_64/SealGather.lean`), in a frame of
 5128 bytes of stack in all.
 -/
 
+@[expose] public section
+
 /-! The interleaved loops a variant names, with their proofs (which import the
 algebra of `Proof/Gcm/Poly.lean`, so that the variants need not), and the
 implementations a variant names, resolved. -/
@@ -134,9 +138,10 @@ def StitchPart.implP (p : StitchPart) : Option (StitchCode Proof.Gcm.X86_64.Stit
 /-- The out-of-place loops named `n` interleave counter mode and GHASH
 correctly. -/
 theorem StitchToName.ok : (n : StitchToName) → (M : Proof.Gcm.X86_64.Stitch.CtxMode) →
-    Proof.Gcm.X86_64.Stitch.StitchToOkM M n.enc
+    Proof.Gcm.X86_64.Stitch.StitchToOkM M n.enc (if n.full then 1 else 16)
   | .vaes, M => Proof.Gcm.X86_64.StitchTo.stitchTo_ok M
   | .vaesAvx512, M => Proof.Gcm.X86_64.StitchZTo.stitchTo_ok M
+  | .aesniAvx, M => Proof.Gcm.X86_64.StitchAvx8.stitchTo_ok M
 
 /-- The out-of-place loops named `n` for a key context of
 `vg_aes_gcm_init_precomputed` interleave counter mode and GHASH correctly. -/
@@ -144,10 +149,11 @@ theorem StitchToName.okP : (n : StitchToName) →
     Proof.Gcm.X86_64.Stitch.StitchToOkM Proof.Gcm.X86_64.Stitch.CtxMode.powers n.encP
   | .vaes => Proof.Gcm.X86_64.StitchTo.stitchTo_ok _
   | .vaesAvx512 => Proof.Gcm.X86_64.StitchZTo.stitchToP_ok
+  | .aesniAvx => fun s₀ hp _ => Proof.Gcm.X86_64.StitchAvx8.stitchTo_ok _ s₀ hp (Nat.mod_one _)
 
 /-- The out-of-place loops a variant names, with their proof. -/
 def GcmVariant.stitchTo (v : GcmVariant) : Option (StitchToCode Proof.Gcm.X86_64.Stitch.CtxMode.base) :=
-  (v.stitch.bind (·.toPart)).map fun p => ⟨p.name.enc, false, p.name.ok _, p.piece⟩
+  (v.stitch.bind (·.toPart)).map fun p => ⟨p.name.enc, p.name.full, p.name.ok _, p.piece⟩
 
 /-- The out-of-place loops a variant names for a key context of
 `vg_aes_gcm_init_precomputed`, with their proof. -/
@@ -166,7 +172,7 @@ theorem StitchName.okR : (n : StitchName) →
       (if n.fullR then 1 else 16)
   | .vaes => Proof.Gcm.X86_64.Stitch.stitch_ok.toM _
   | .vaesAvx512 => Proof.Gcm.X86_64.StitchZH.stitchR_ok
-  | .aesniAvx => Proof.Gcm.X86_64.StitchAvx8.stitch_ok.toM _
+  | .aesniAvx => Proof.Gcm.X86_64.StitchAvx8.stitchR_ok
 
 def GcmVariant.stitchR (v : GcmVariant) : Option (StitchCode Proof.Gcm.X86_64.Stitch.CtxMode.prepared true) :=
   v.stitch.bind fun p => p.pieceR.map fun q => ⟨p.name.encR, p.name.decR, p.name.fullR, p.name.okR, q.enc, q.dec⟩
@@ -176,6 +182,7 @@ theorem StitchToName.okR : (n : StitchToName) →
       (if n.fullR then 1 else 16)
   | .vaes => Proof.Gcm.X86_64.StitchTo.stitchTo_ok _
   | .vaesAvx512 => Proof.Gcm.X86_64.StitchZHTo.stitchToR_ok
+  | .aesniAvx => Proof.Gcm.X86_64.StitchAvx8.stitchToR_ok
 
 def GcmVariant.stitchToR (v : GcmVariant) : Option (StitchToCode Proof.Gcm.X86_64.Stitch.CtxMode.prepared true) :=
   (v.stitch.bind (·.toPart)).bind fun p => p.pieceR.map fun q => ⟨p.name.encR, p.name.fullR, p.name.okR, q.enc⟩
@@ -530,14 +537,17 @@ by the out-of-place interleaved loops a variant has (`GcmVariant.stitchTo`),
 as measured on a VAES and AVX-512 Xeon: on 512-bit registers, below 48
 blocks, where the streaming functions' calls cost more than the copy saves;
 on 256-bit registers, below 16 KiB, where a slice ending within a block,
-which the streaming functions buffer, costs more than the copy saves.
-Without them, the streaming path copies the blocks too, so all texts but
+which the streaming functions buffer, costs more than the copy saves; and
+on 128-bit registers (AES-NI and AVX), below 3 KiB, as measured on an AMD
+EPYC 7763 and a Xeon, where a text of two slices, the first ending within a
+block, gains from the streaming functions from about 3 KiB on. Without them, the streaming path copies the blocks too, so all texts but
 those of 2 GiB or more (where the cost of its calls is negligible) take the
 copy. -/
 def copyBelow (v : GcmVariant) : Nat :=
   match ((v.stitch.bind (·.toPart)).map (·.name) : Option StitchToName) with
   | some .vaesAvx512 => 768
   | some .vaes => 16384
+  | some .aesniAvx => 3072
   | none => 2 ^ 31 - 1
 
 theorem copyBelow_lt (v : GcmVariant) : copyBelow v < 2 ^ 31 := by
@@ -667,7 +677,7 @@ def artifactsR (v : GcmVariant) : List Artifact := [
     stack := 2576
     verified := initPrepared_framed v.impl
     spSafe := X86_64.withStackScratch_spSafe (by decide) (initPrepared_spSafe v.impl)
-    features := (v.impl.ctr.features ++ v.impl.key.features ++ v.impl.gh.features ++ ["avx2"]).dedup },
+    features := (v.impl.ctr.features ++ v.impl.key.features ++ v.impl.gh.features ++ ["avx", "avx2"]).dedup },
   { Spec.Gcm.encryptBlocksPreparedApi with
     name := Spec.Gcm.encryptBlocksPreparedApi.name ++ v.impl.suffix
     target := X86_64.target

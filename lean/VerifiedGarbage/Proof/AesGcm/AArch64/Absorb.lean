@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesGcm.AArch64.Loops
+module
+
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Loops
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on AArch64: GHASH absorbing a piece (`absorb`)
@@ -12,6 +18,8 @@ rest (`absTail_ok`), by the steps of `Proof/Gcm/Stream.lean`; `absorb_ok`
 puts them together. The pieces are proven separately, between the calls, so
 that the proof of constant time can use them.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 
@@ -519,6 +527,20 @@ theorem absorb_ok (v : GcmImpl) {k : Reg → BitVec 64} {H : Block} {x : List By
   WP.seq (WP.mono (absCall1_ok L hyo v h₁ h.ho h.hH) fun _ h₂ =>
   WP.seq (WP.mono (absSeg2_ok L hyo h₂) fun _ h₃ =>
   WP.seq (WP.mono (absCall2_ok L hyo v h₃) fun _ ⟨h₄, hlt⟩ => absTail_ok L hyo h₄ hlt))))
+
+omit L hyo in
+/-- With nothing buffered, nothing absorbed yet. -/
+theorem AbsIn.mid {k : Reg → BitVec 64} {H : Block} {x : List Byte} {D : Addr} {n : Nat} {s : State}
+    (h : AbsIn Ctx St W SP k H x D n 0 s) : AbsMid Ctx St W SP k yo H x D n 0 s.mem 0 s :=
+  ⟨h.env, h.kept, Nat.zero_le _, by rw [h.x23]; simp, by rw [h.x24, Nat.sub_zero], h.x25, h.data, h.hH,
+    fun ha => by simpa [bytesAt] using ha, .inr (by have := h.ho; omega_arith), Frame.refl _ _⟩
+
+/-- `absorbAl yo`: `absorb yo` with nothing buffered. -/
+theorem absorbAl_ok (v : GcmImpl) {k : Reg → BitVec 64} {H : Block} {x : List Byte} {D : Addr} {n : Nat}
+    {s : State} (h : AbsIn Ctx St W SP k H x D n 0 s) :
+    WP isa (absorbAl v.callees yo) s (AbsOut Ctx St W SP k yo H x (x ++ bytesAt s.mem D n) 0 s.mem) :=
+  WP.seq (WP.mono (absSeg2_ok L hyo (h.mid (yo := yo))) fun _ h₃ =>
+  WP.seq (WP.mono (absCall2_ok L hyo v h₃) fun _ ⟨h₄, hlt⟩ => absTail_ok L hyo h₄ hlt))
 
 end
 

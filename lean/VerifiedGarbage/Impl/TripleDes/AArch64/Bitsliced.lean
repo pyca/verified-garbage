@@ -1,5 +1,9 @@
-import VerifiedGarbage.Impl.TripleDes.BitsliceLayout
-import VerifiedGarbage.Impl.TripleDes.AArch64.BitsliceAlloc
+module
+
+public import VerifiedGarbage.Impl.TripleDes.BitsliceLayout
+meta import VerifiedGarbage.Impl.TripleDes.BitsliceLayout
+public import VerifiedGarbage.Impl.TripleDes.AArch64.BitsliceAlloc
+meta import VerifiedGarbage.Impl.TripleDes.AArch64.BitsliceAlloc
 
 /-!
 # Bitsliced Triple DES ECB on AArch64 with AdvSIMD
@@ -32,6 +36,8 @@ words (Biham's bitslicing; the S-box circuits are Rusakov's,
 * Every address and branch depends only on the pointers, `n` and the loop
   counters. Only caller-saved registers are used.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.TripleDes.AArch64.BitsliceNeon
 
@@ -349,17 +355,29 @@ def masks (unit : Nat) : List Instr :=
   bcast .v16 (swapMask (4 * unit)) ++ bcast .v17 (swapMask (2 * unit)) ++
   bcast .v18 (swapMask unit)
 
+/-- One group of a stage of the transposition, the eight words `w k` from
+`x4`, with its masks; then `x4` advances by `step` bytes to the next group,
+and the count of groups in `x9` goes down. -/
+def stageBody (w : Nat → Nat) (unit step : Nat) : List Instr :=
+  masks unit ++ group w unit ++ ([.addImm .x .x4 .x4 step, .subImm .x .x9 .x9 1] : List Instr)
+
+/-- The eight groups of a stage, in a loop. -/
+def stage (w : Nat → Nat) (unit step : Nat) : Prog isa :=
+  .seq (.block [.movz .x .x9 8 0]) (.loop (.block (stageBody w unit step)) (.nonzero .x .x9))
+
 /-- Transpose each doubleword lane of the 64 state words in place: stages
-32, 16, 8, then 4, 2, 1. -/
-def transpose : List Instr :=
-  masks 8 ++ (List.range 8).flatMap (fun i => group (fun k => i + 8 * k) 8) ++
-  masks 1 ++ (List.range 8).flatMap (fun g => group (fun k => 8 * g + k) 1)
+32, 16, 8 on the words `i + 8 k` of each `i`, then 4, 2, 1 on the words
+`8 g + k` of each `g`; `x4` is back at the state words after each. -/
+def transpose : Prog isa :=
+  .seq (stage (fun k => 8 * k) 8 16)
+    (.seq (.block [.subImm .x .x4 .x4 128])
+      (.seq (stage (fun k => k) 1 128) (.block [.subImm .x .x4 .x4 1024])))
 
 /-! ## Batches -/
 
 /-- Three passes on the 128 blocks at `x4`. -/
 def batch (d : Direction) : Prog isa :=
-  .seq (.block (transpose ++ ([.vop (.movi0 zeroReg)] : List Instr))) (.seq (passes d) (.block transpose))
+  .seq transpose (.seq (.block [.vop (.movi0 zeroReg)]) (.seq (passes d) transpose))
 
 /-- `x10 := n / 128`, whether a whole batch is left. -/
 def wholeLeft : Instr := .lsr .x .x10 .x2 7

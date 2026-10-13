@@ -1,16 +1,30 @@
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointPointsTiming
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointTiming
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P521.JointContract
-import VerifiedGarbage.Proof.P521.X86_64.JointTiming
-import VerifiedGarbage.Proof.P521.X86_64.NafTableTiming
-import VerifiedGarbage.Proof.P521.X86_64.JointLayout
-import VerifiedGarbage.Proof.P521.X86_64.JointFrame
-import VerifiedGarbage.Proof.P521.X86_64.FieldTmpl
+module
 
-/-! Concrete timing checks and the doubler of P-521's baseline and ADX joint verification.
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointPointsTiming
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointPointsTiming
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointTiming
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointTiming
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P521.JointContract
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P521.JointContract
+public import VerifiedGarbage.Proof.P521.X86_64.JointTiming
+meta import VerifiedGarbage.Proof.P521.X86_64.JointTiming
+public import VerifiedGarbage.Proof.P521.X86_64.NafTableTiming
+meta import VerifiedGarbage.Proof.P521.X86_64.NafTableTiming
+public import VerifiedGarbage.Proof.P521.X86_64.JointLayout
+meta import VerifiedGarbage.Proof.P521.X86_64.JointLayout
+public import VerifiedGarbage.Proof.P521.X86_64.JointFrame
+meta import VerifiedGarbage.Proof.P521.X86_64.JointFrame
+public import VerifiedGarbage.Proof.P521.X86_64.FieldTmpl
+meta import VerifiedGarbage.Proof.P521.X86_64.FieldTmpl
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
-The prefix's products modulo `n` are checked without their displacements, as
-one template (`p521NMul`), analysed once. -/
+/-! Concrete timing checks and the doubler of P-521's baseline and ADX joint verification. -/
+
+@[expose] public section
+
 namespace VG.Proof.Ecdsa.Verify.X86_64.P521
 open VG VG.X86_64 VG.Impl.Ecdsa.X86_64 VG.Impl.P521.X86_64 VG.Impl.Weierstrass.X86_64
 open VG.Proof.P521.X86_64 VG.Proof.Weierstrass.X86_64 VG.Proof.Ecdsa.X86_64 VG.Proof.Mont
@@ -39,8 +53,7 @@ theorem joint_before_ct : ConstantTime isa (fun _ => True)
   refine VG.Taint.constantTime_mapBlocks taint_eraseInv (Taint.ofRegs [.rdi,.rsi,.rdx,.rcx]) rfl
     (fun _ _ _ _ h => h) rfl (hc := ?hc) ?h
   case h =>
-    simp only [jointPrefix, Cfg.uv, Cfg.scalars, Impl.Weierstrass.X86_64.blocks, Code.mapBlocks,
-      p521NMul_ok]
+    simp only [jointPrefix, Cfg.uv, Cfg.scalars, Code.mapBlocks]
     taint_decide
 
 open Impl.Ecdsa.Verify.X86_64 in
@@ -49,8 +62,7 @@ theorem joint_adx_before_ct : ConstantTime isa (fun _ => True)
   refine VG.Taint.constantTime_mapBlocks taint_eraseInv (Taint.ofRegs [.rdi,.rsi,.rdx,.rcx]) rfl
     (fun _ _ _ _ h => h) rfl (hc := ?hc) ?h
   case h =>
-    simp only [jointPrefix, Cfg.uv, Cfg.scalars, Impl.Weierstrass.X86_64.blocks, Code.mapBlocks,
-      p521XNMul_ok]
+    simp only [jointPrefix, Cfg.uv, Cfg.scalars, Code.mapBlocks]
     taint_decide
 
 theorem joint_after_ct : ScratchCT (Impl.Ecdsa.Verify.X86_64.Cfg.jointTail p521).inline :=

@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
-import VerifiedGarbage.Proof.Framework.X86_64.RelCT
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
+meta import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
+public import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Multiword arithmetic on x86-64: constant time
@@ -13,6 +22,8 @@ correctness (`two_post`). Branches and loops whose conditions come from
 public data the taint analysis cannot track (it is loaded from memory) agree
 since `Φ a` fixes them (`two_ite`, `two_loop`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64
 

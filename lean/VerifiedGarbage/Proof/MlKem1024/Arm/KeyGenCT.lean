@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.MlKem.Arm.KeyGenCT
-import VerifiedGarbage.Proof.MlKem1024.Arm.Calls
+module
+
+public import VerifiedGarbage.Proof.MlKem.Arm.KeyGenCT
+public import VerifiedGarbage.Proof.MlKem1024.Arm.Calls
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM-1024 on 32-bit ARM: `vg_mlkem1024_keygen`, `Verified`
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.MlKem1024.Arm.Calls
 The key generation of `Proof/MlKem/Arm/KeyGenCT.lean` for `kl1024`: its precondition
 from the contract's, and the contract's postcondition from what it shows.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem1024.Arm.KeyGen
 

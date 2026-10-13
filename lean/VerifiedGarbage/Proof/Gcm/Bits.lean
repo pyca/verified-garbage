@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Framework.Bswap
+module
+
+public import VerifiedGarbage.Proof.Framework.Bswap
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # GHASH: byte reversal of 64-bit halves
@@ -7,6 +13,8 @@ The GHASH implementations load the big-endian halves of a block with a byte
 reversal (`bswap`, `rev`), and store them back with another: `byteRev64` is an
 involution.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Gcm
 

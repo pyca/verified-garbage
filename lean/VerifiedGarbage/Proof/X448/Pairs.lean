@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.X448.Bytes
-import VerifiedGarbage.Proof.X448.Limbs
+module
+
+public import VerifiedGarbage.Proof.X448.Bytes
+public import VerifiedGarbage.Proof.X448.Limbs
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448: seven-byte chunks and limb pairs
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.X448.Limbs
 A seven-byte chunk contains exactly two 28-bit limbs. Reading eight chunks
 uses all 56 input bytes.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448
 

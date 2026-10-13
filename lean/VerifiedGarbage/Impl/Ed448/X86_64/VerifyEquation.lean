@@ -1,4 +1,7 @@
-import VerifiedGarbage.Impl.Ed448.X86_64.ScalarBase
+module
+
+public import VerifiedGarbage.Impl.Ed448.X86_64.Wnaf.Joint
+public import VerifiedGarbage.Impl.Ed448.X86_64.Window
 
 /-!
 # Ed448 verification's equation on x86-64
@@ -22,16 +25,22 @@ passes: each check ORs into it a word that is 0 if and only if it passes.
   negated (swapped with `-x` by a mask) if its low bit is not the sign bit.
 * `R` and then `A` are decoded into slots 6–7 by one loop (`vdecode`), `R`
   kept at `RX` and `RY` (`Z = 1` in slot 10). `A` is negated, and
-  `Q = [S]B + [k](-A)` computed from the top bit down, as `[s]B` is: `Q`
-  doubled, `B` added and swapped into `Q` by bit `t` of `S`, then `-A` added
-  and swapped in by bit `t` of `k`.
-* `R` is copied into slots 8–9 (`B` is no longer needed), `Q` and `R` are
-  doubled twice, and compared: `X_Q Z_R = X_R Z_Q` and `Y_Q Z_R = Y_R Z_Q`,
-  fully reduced.
+  `Q = [S]B + [k](-A)` uses width-five non-adjacent form digits, with
+  461 shared doublings and additions only for nonzero public digits.
+  The signed byte streams occupy scratch 3072–3532 and 3536–3996.
+  Fixed-base selection scans seventeen affine entries; public-key selection
+  directly indexes seventeen projective entries. The public-key table is
+  built with sixteen affine additions, without inversions, at scratch
+  offsets 4096–7359. Doublings and affine additions call the existing
+  point functions; projective addition uses the same field operations.
+* `Q` is doubled twice and copied into slots 3–5, `R` into slots 0–2 (with
+  `Z = 1`) and doubled twice, and they are compared: `X_Q Z_R = X_R Z_Q` and
+  `Y_Q Z_R = Y_R Z_Q`, fully reduced.
 
-The result is 1 if `BAD` is 0. Every address and branch depends only on the
-pointers.
+The result is 1 if `BAD` is 0. Addresses and branches depend only on public verification inputs.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Ed448.X86_64
 
@@ -105,6 +114,9 @@ def root (F : Field) (z : Nat) : Prog isa := .seq (chain223 F (slot z)) (rootTai
 public words, `PPK` and `CNT`. -/
 def rootCall (F : Field) : Prog isa := .seq (pow223Keep [PPK, CNT]) (rootTail F)
 
+def rootCallFor (v : FieldVariant) : Prog isa :=
+  .seq (Impl.X448.X86_64.pow223KeepWith v.field v.powName [PPK, CNT]) (rootTail v.field)
+
 /-- The 57 bytes at `rsi`: `y`'s seven words into slot `yo`, the sign bit
 into `SIGN`, and `BAD |= 0` exactly when bits 448–454 are 0 and `y < p`. -/
 def decodeY (yo : Nat) : List Instr :=
@@ -145,16 +157,24 @@ def maskAt (o : Nat) : List Instr :=
 /-- `T` swapped into `R` by the mask `rcx`. -/
 def swapT : List Instr := cswap (slot 0) (slot 3) ++ cswap (slot 1) (slot 4) ++ cswap (slot 2) (slot 5)
 
-/-- One bit `t = rbx - 1`, from the top (in three blocks, each short enough
-for the kernel to check as a literal). -/
-def vstep (F : Field) : Prog isa :=
-  .seq (.block ([.alu .sub .rbx (.imm 1)] ++ fieldCode F (doubleAt 0 1 2))) <|
-  .seq (.block (fieldCode F (addAt 8 9) ++ (maskAt BITS ++ swapT))) <|
-    .block (fieldCode F (addAt 6 7) ++ (maskAt KBITS ++ (swapT ++ [.alu .test .rbx (.reg .rbx)])))
+/-- `-A` (slots 6–7) into slots 8–9, where the affine addition reads its second point. -/
+def stageA : List Instr := copyOut (slot 8) (slot 6) ++ copyOut (slot 9) (slot 7)
+
+/-- `B` back into slots 8–9. -/
+def restoreB : List Instr :=
+  constSlot 8 Spec.Ed448.basePoint.X ++ constSlot 9 Spec.Ed448.basePoint.Y
+
+/-- One bit `t = rbx - 1`, from the top, with the point operations `P`: `Q` doubled, `B` (in
+slots 8–9) added and swapped in by bit `t` of `S`, `-A` (copied into slots 8–9) added and
+swapped in by bit `t` of `k`, and `B` restored. -/
+def vstep (P : Point64.Ops) : Prog isa :=
+  .seq (.block [.alu .sub .rbx (.imm 1)]) <| .seq P.dbl <| .seq P.add <|
+  .seq (.block (maskAt BITS ++ (swapT ++ stageA))) <| .seq P.add <|
+    .block (maskAt KBITS ++ (swapT ++ (restoreB ++ [.alu .test .rbx (.reg .rbx)])))
 
 /-- The 456 bits, from 455 down to 0. -/
-def vloop (F : Field) : Prog isa :=
-  .seq (.block [.mov32 .rbx (.imm 456)]) (.loop (vstep F) .ne)
+def vloop (P : Point64.Ops) : Prog isa :=
+  .seq (.block [.mov32 .rbx (.imm 456)]) (.loop (vstep P) .ne)
 
 /-! ## The function -/
 
@@ -169,6 +189,13 @@ def bitsBodyAt (o : Nat) : List Instr :=
 
 def bitsAt (o : Nat) : Prog isa := .seq (.block [.mov32 .rbx (.imm 0)]) (.loop (.block (bitsBodyAt o)) .ne)
 
+/-- Five high zero bits for full-width signed scalar recoding. -/
+def bitPadding (o : Nat) : List Instr :=
+  [.mov32 .rdx (.imm 0)] ++
+    ([o - 1, o + 456, o + 457, o + 458, o + 459].map fun d => .store8 (sc d) .rdx)
+
+def bitsAtPadded (o : Nat) : Prog isa := .seq (bitsAt o) (.block (bitPadding o))
+
 /-- The callee-saved registers saved at the working space `rcx`, the
 pointers to `A` and the signature kept in `r8` and `r9`, the working space
 into `rdi`, and the challenge's into `rsi`. -/
@@ -178,7 +205,7 @@ def ventry : List Instr :=
 /-- The bits of `k` and `S`, before anything is stored that is read back as
 an address: their stores are at a counter's offset. -/
 def vbits : Prog isa :=
-  .seq (bitsAt KBITS) <| .seq (.block [.mov .rsi (.reg .r9), .alu .add .rsi (.imm 57)]) (bitsAt BITS)
+  .seq (bitsAtPadded KBITS) <| .seq (.block [.mov .rsi (.reg .r9), .alu .add .rsi (.imm 57)]) (bitsAtPadded BITS)
 
 /-- The pointers to `A` and the signature saved, `BAD = 0`, and the check of
 `S` (at `rsi`). -/
@@ -202,32 +229,35 @@ def vdecode (F : Field) (rt : Prog isa := root F 12) : Prog isa :=
 /-- `A` negated, with the constants. -/
 def vnegA (F : Field) : List Instr := consts ++ fieldCode F [.sub 6 0 6]
 
-/-- `R` into slots 8–9 (`B` is no longer needed). -/
-def vR : List Instr := copyOut (slot 8) RX ++ copyOut (slot 9) RY
+/-- `[4]Q` into slots 3–5, and `R` (`Z = 1`) into slots 0–2. -/
+def vR : List Instr :=
+  copyOut (slot 3) (slot 0) ++ (copyOut (slot 4) (slot 1) ++ (copyOut (slot 5) (slot 2) ++
+    (copyOut (slot 0) RX ++ (copyOut (slot 1) RY ++ constSlot 2 1))))
 
-/-- `Q` (slots 0–2) and `R` (slots 8–10) doubled twice: a loop of two
-iterations, counted by `rbx`, each doubling both. -/
-def vdouble (F : Field) : Prog isa :=
-  .seq (.block [.mov32 .rbx (.imm 2)])
-    (.loop (.block (fieldCode F (doubleAt 0 1 2 ++ doubleAt 8 9 10) ++ [.alu .sub .rbx (.imm 1)])) .ne)
+/-- The point in slots 0–2 doubled twice: a loop of two iterations, counted by `rbx`. -/
+def vdouble (P : Point64.Ops) : Prog isa :=
+  .seq (.block [.mov32 .rbx (.imm 2)]) (.loop (.seq P.dbl (.block [.alu .sub .rbx (.imm 1)])) .ne)
 
 /-- `[4]Q` and `[4]R` compared (`BAD |= 0` exactly when they are the same
 point), the result `eax = (BAD == 0)`, and the callee-saved registers
 restored. -/
-def vfinish (F : Field) : Prog isa :=
-  .seq (vdouble F) <|
-  .block (fieldCode F [.mul 12 0 10, .mul 13 8 2] ++ (eqSlots 12 13 ++
-    (fieldCode F [.mul 12 1 10, .mul 13 9 2] ++ (eqSlots 12 13 ++
+def vfinish (F : Field) (P : Point64.Ops) : Prog isa :=
+  .seq (vdouble P) <| .seq (.block vR) <| .seq (vdouble P) <|
+  .block (fieldCode F [.mul 12 3 2, .mul 13 0 5] ++ (eqSlots 12 13 ++
+    (fieldCode F [.mul 12 4 2, .mul 13 1 5] ++ (eqSlots 12 13 ++
     ([.mov .rdx (.mem (sc BAD))] ++ (isZero ++ ([.mov .rax (.reg .rdx)] ++
       Impl.X448.X86_64.restore)))))))
 
-/-- `vg_ed448_verify_equation` with the field multiplications `F` and the square root's
-power `rt`. -/
-def verifyEquationWith (F : Field) (rt : Prog isa := root F 12) : Prog isa :=
+/-- `vg_ed448_verify_equation` with the field multiplications `F`, the point operations `P`
+and the square root's power `rt`. -/
+def verifyEquationWith (F : Field) (P : Point64.Ops) (rt : Prog isa := root F 12) : Prog isa :=
   .seq (.block ventry) <| .seq vbits <| .seq (.block vstart) <| .seq (vdecode F rt) <|
-    .seq (.block (vnegA F)) <| .seq (vloop F) <| .seq (.block vR) (vfinish F)
+    .seq (.block (vnegA F)) <| .seq (Wnaf.joint F P KBITS) (vfinish F P)
 
-def verifyEquation : Prog isa :=
-  verifyEquationWith Impl.X448.X86_64.baseline (rootCall Impl.X448.X86_64.baseline)
+def verifyEquationFor (v : FieldVariant) : Prog isa :=
+  verifyEquationWith v.field v.calls (rootCallFor v)
+
+def verifyEquation : Prog isa := verifyEquationFor .scalar
+def verifyEquationAdx : Prog isa := verifyEquationFor .adx
 
 end VG.Impl.Ed448.X86_64

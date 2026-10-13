@@ -1,4 +1,13 @@
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej5ParseCT
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej5ParseCT
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej5ParseCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86_64.Rej4.Segment
 
@@ -64,10 +73,9 @@ theorem reset_ok {σ s : State} (h : Checked σ s) :
 
 theorem fallback_ct : RelCT isa (R4 Checked) fallback (R4 Done) := by
   refine RelCT.seq (relInv (fun σ s _ h => reset_ok h) (taintRel [] nil_regs (by taint_decide))) ?_
-  obtain ⟨_, c⟩ := sqTaint2
   refine RelCT.seq (relInv (fun σ s hp h => squeeze_last_ok (pre_of hp) h)
     (taintRel [.rbx] (fun x y ⟨σ₁, σ₂, _, _, hq, h₁, h₂⟩ r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact env_rbx hq h₁.sq.env h₂.sq.env) c)) ?_
+      simp only [List.mem_singleton] at hr; subst hr; exact env_rbx hq h₁.sq.env h₂.sq.env) (by taint_decide))) ?_
   refine RelCT.seq batch3_ct ?_
   exact relInv (fun σ s hp h => last_flags_ok (pre_of hp) h)
     (taintRel [.rbx] (fun x y ⟨σ₁, σ₂, _, _, hq, h₁, h₂⟩ r hr => by
@@ -101,9 +109,9 @@ theorem finish_ct : RelCT isa (R4 fun σ s => Batch σ 2 0 112 4 s) finish (fun 
       simp only [List.mem_singleton] at hr; subst hr; exact env_rbx hq h₁.env h₂.env) (by taint_decide)))
 
 theorem ct : ConstantTime isa r4K.pre r4K.pub VG.Impl.MlDsa.X86_64.Sample.Rej5.rejNTT4Avx2 := by
-  refine relStart (Q := fun _ _ => True) (RelCT.seq start_ct (RelCT.seq (RelCT.mono (sqT_ct (t := 0) (by decide) sqTaint0)
-    (fun _ _ ⟨σ₁, σ₂, p₁, p₂, hq, h₁, h₂⟩ => ⟨σ₁, σ₂, p₁, p₂, hq, sqT_of h₁, sqT_of h₂⟩) fun _ _ h => h)
-    (RelCT.seq (sqT_ct (by decide) sqTaint1) (RelCT.seq (sqT_ct (by decide) sqTaint2) ?_))))
+  refine relStart (Q := fun _ _ => True) (RelCT.seq start_ct (RelCT.seq (RelCT.mono
+    (sqT_ct (t := 0) (by decide) (by decide) sqTaint)
+    (fun _ _ ⟨σ₁, σ₂, p₁, p₂, hq, h₁, h₂⟩ => ⟨σ₁, σ₂, p₁, p₂, hq, sqT_of h₁, sqT_of h₂⟩) fun _ _ h => h) ?_))
   refine RelCT.seq (relInv (fun σ s hp h => zeroJ_ok (pre_of hp) h)
     (taintRel [.rbx] (fun x y ⟨σ₁, σ₂, _, _, hq, h₁, h₂⟩ r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact env_rbx hq h₁.env h₂.env) (by taint_decide))) ?_
@@ -111,9 +119,8 @@ theorem ct : ConstantTime isa r4K.pre r4K.pub VG.Impl.MlDsa.X86_64.Sample.Rej5.r
   refine RelCT.seq (first_ct (K := 1) (by decide) (by taint_decide) (by taint_decide)) ?_
   refine RelCT.seq (first_ct (K := 2) (by decide) (by taint_decide) (by taint_decide)) ?_
   refine RelCT.seq (first_ct (K := 3) (by decide) (by taint_decide) (by taint_decide)) ?_
-  refine RelCT.seq (RelCT.mono (sqM_ct (by decide) sqTaint0)
-    (fun _ _ ⟨σ₁, σ₂, p₁, p₂, hq, h₁, h₂⟩ => ⟨σ₁, σ₂, p₁, p₂, hq, m2_of h₁, m2_of h₂⟩) fun _ _ h => h)
-    (RelCT.seq (sqM_ct (by decide) sqTaint1) ?_)
+  refine RelCT.seq (RelCT.mono (sqM_ct (by decide) (by decide) ⟨_, by taint_decide⟩)
+    (fun _ _ ⟨σ₁, σ₂, p₁, p₂, hq, h₁, h₂⟩ => ⟨σ₁, σ₂, p₁, p₂, hq, m2_of h₁, m2_of h₂⟩) fun _ _ h => h) ?_
   exact RelCT.seq (RelCT.mono batch2_ct
     (fun _ _ ⟨σ₁, σ₂, p₁, p₂, hq, h₁, h₂⟩ =>
       ⟨σ₁, σ₂, p₁, p₂, hq, batch_of_m2 h₁, batch_of_m2 h₂⟩) (fun _ _ h => h)) finish_ct

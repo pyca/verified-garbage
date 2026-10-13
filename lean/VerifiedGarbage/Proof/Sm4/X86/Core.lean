@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.Sm4.X86.Round
-import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.Framework.X86.RegUpd
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Impl.Sm4.X86.Ecb
+module
+
+public import VerifiedGarbage.Proof.Sm4.X86.Round
+public import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.Framework.X86.RegUpd
+public import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Impl.Sm4.X86.Ecb
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Eight blocks of bitsliced SM4 on x86 (32-bit): the rounds
@@ -14,6 +20,8 @@ round keys `E 0 … E 31` in the scratch buffer (`KeyCtx`), the rounds are
 is that loop for either linear transformation, which the key schedule
 runs too.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sm4.X86
 
@@ -35,10 +43,15 @@ theorem nSlot_eq : nSlot = 357 := rfl
 def entryW (m : Mem) (b : BitVec 32) (e j : Nat) : BitVec 32 :=
   m.readW (wordAddr b (tableSlot + 8 * e + j)) 32
 
-/-- The scratch buffer at `b`, in the regions `rs`. -/
+/-- The scratch buffer at `b`, of `slots` slots or more (a mode keeps its
+own after them), in the regions `rs`. -/
 structure ScrIn (rs : List Region) (b : BitVec 32) : Prop where
-  mem : (⟨b.setWidth 64, 4 * slots⟩ : Region) ∈ rs
+  mem : ∃ n, slots ≤ n ∧ b.toNat + 4 * n ≤ 2 ^ 32 ∧ (⟨b.setWidth 64, 4 * n⟩ : Region) ∈ rs
   fit : b.toNat + 4 * slots ≤ 2 ^ 32
+
+/-- A scratch buffer of exactly `slots` slots. -/
+theorem ScrIn.exact {rs : List Region} {b : BitVec 32} (hr : (⟨b.setWidth 64, 4 * slots⟩ : Region) ∈ rs)
+    (hfit : b.toNat + 4 * slots ≤ 2 ^ 32) : ScrIn rs b := ⟨⟨slots, Nat.le_refl _, hfit, hr⟩, hfit⟩
 
 /-- What the rounds need: the scratch buffer, writable, and a table of 32
 round keys. -/
@@ -85,7 +98,9 @@ theorem slot_in {rs : List Region} {b : BitVec 32} {n k : Nat} (hr : (⟨b.setWi
     exact VG.Offset.contains_base _ (by omega) (by omega)⟩
 
 theorem ScrIn.slot {rs : List Region} {b : BitVec 32} (h : ScrIn rs b) {k : Nat} (hk : k < slots) :
-    InRegions rs (wordAddr b k) 4 := slot_in h.mem h.fit hk
+    InRegions rs (wordAddr b k) 4 :=
+  let ⟨_, hn, hf, hr⟩ := h.mem
+  slot_in hr hf (Nat.lt_of_lt_of_le hk hn)
 
 /-- `kp` at entry `m` of the table. -/
 def AtEntry (s : State) (b : BitVec 32) (m : Nat) : Prop :=

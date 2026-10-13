@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.MlKem.AArch64.SampleLoop
-import VerifiedGarbage.Proof.MlKem.AArch64.KeccakCall
-import VerifiedGarbage.Proof.MlKem.KPke
+module
+
+public import VerifiedGarbage.Proof.MlKem.AArch64.SampleLoop
+public import VerifiedGarbage.Proof.MlKem.AArch64.KeccakCall
+public import VerifiedGarbage.Proof.MlKem.KPke
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on AArch64: `SampleNTT` up to its loop
@@ -12,6 +18,8 @@ with the verified Keccak functions from the all-zero state
 what the loop needs (`LPre`), and either the registers restored
 (`sampleSqueeze`, `rest_ok`) or still saved (`sampleFast`'s, `restN_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem
 

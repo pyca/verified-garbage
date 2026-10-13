@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.EcKey.PublicKey
-import VerifiedGarbage.Spec.Ecdh
+module
+
+public import VerifiedGarbage.Proof.EcKey.PublicKey
+public import VerifiedGarbage.Spec.Ecdh
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDH from a projective representative
@@ -13,6 +19,8 @@ of the key is stated as the code checks it: the first octet is `04`, both
 coordinates are below `p`, and `y² - (x³ + a x + b) = 0` in `Fin p`
 (`onCurve_iff`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdh
 

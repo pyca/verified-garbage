@@ -1,6 +1,8 @@
-import VerifiedGarbage.Impl.MlDsa.AArch64.Call
-import VerifiedGarbage.Impl.MlKem.AArch64.Compress
-import VerifiedGarbage.Spec.MlDsa
+module
+
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Call
+public import VerifiedGarbage.Impl.MlKem.AArch64.Compress
+public import VerifiedGarbage.Spec.MlDsa
 
 /-!
 # ML-DSA on AArch64: the pieces of the top-level functions
@@ -21,6 +23,8 @@ Each call is preceded by the moves of its arguments into their registers
 The code is generic in the primitives it calls (`Prims`, their code), so
 that it can be proven for any implementations of them.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.AArch64.KeyGen
 

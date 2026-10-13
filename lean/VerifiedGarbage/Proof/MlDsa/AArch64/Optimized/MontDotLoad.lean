@@ -1,8 +1,16 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.DotVec
-import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.MontDot
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductLoad
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.DotVec
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.MontDot
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductLoad
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## From `MontDotVec.lean` -/
+
+@[expose] public section
 
 section
 

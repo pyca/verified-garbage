@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Bignum.X86_64
-import VerifiedGarbage.Impl.Bignum.X86_64.R2Words
+module
+
+public import VerifiedGarbage.Impl.Bignum.X86_64
+public import VerifiedGarbage.Impl.Bignum.X86_64.R2Words
 
 /-!
 # RSA with a precomputed modulus on x86-64
@@ -11,6 +13,8 @@ computes RSAEP from them. Both use the working space, header and arrays of
 `mul o a b` (`[o] = [a] [b] R⁻¹ mod m`): the baseline `mm`, or one for other
 CPU features (`Impl/Bignum/X86_64/Adx.lean`).
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Rsa.X86_64
 
@@ -116,9 +120,6 @@ def loadWith (cmp : Prog isa) : List (Prog isa) := [
     .mov .rdx (.mem (ix .r10 .r12 (-8))), .alu .cmp .rdx (.imm 1), .alu .sbb .rdx (.reg .rdx),
     .alu .add .rdx (.imm 1), .alu .and .rax (.reg .rdx), .alu .test .rax (.reg .rax)]]
 
-def load : List (Prog isa) := loadWith (wordLoop 0
-  [cfFromRbp, .mov .rax (.mem (ix .rbx .r14)), .alu .sbb .rax (.mem (ix .r10 .r14)), cfToRbp])
-
 /-- Whether the exponentiation has started, into ZF (clear if it has). -/
 def startedTest : List Instr := [.mov .rax (.mem (hdr sStarted)), .alu .test .rax (.reg .rax)]
 
@@ -136,41 +137,22 @@ def expBit : Prog isa :=
       (.seq (.ite .ne (.seq (.block startedTest) (.ite .ne (mul aY aY aXm) start)) (.block []))
         (.block bitNext))))
 
-/-- The exponentiation, over the bytes of `e` and their bits, most
-significant first. -/
+/-- `byteHead` (`Impl/Bignum/X86_64.lean`), with bit 0 of the last byte of
+`e` cleared, by the mask `-1`, or `-2` for the last byte, without a branch:
+the exponentiation is by `e - 1` for an odd `e`, and the last
+multiplication, by the input itself, both adds the last bit and leaves
+Montgomery form (`Folded.lean`). -/
+def byteHeadEven : List Instr :=
+  [.mov .rax (.mem (hdr sE)), .mov .rcx (.mem (hdr sI)), .movzx8 .rax { base := .rax, index := some .rcx },
+    .alu .add .rcx (.imm 1), .alu .sub .rcx (.mem (hdr sElen)), .alu .cmp .rcx (.imm 1),
+    .alu .sbb .rcx (.reg .rcx), .alu .sub .rcx (.imm 1), .alu .and .rax (.reg .rcx),
+    .store (hdr sV) .rax, .mov32 .rax (.imm 8), .store (hdr sBit) .rax]
+
+/-- The exponentiation by `e` with bit 0 of its last byte cleared, over the
+bytes of `e` and their bits, most significant first. -/
 def expLoop : Prog isa :=
   .seq (.block [.mov32 .rax (.imm 0), .store (hdr sI) .rax, .store (hdr sStarted) .rax])
-    (.loop (.seq (.block byteHead) (.seq (.loop (expBit mul) .ne) (.block byteNext))) .ne)
-
-/-- `Y R⁻¹`, or 1 if `e = 0`. -/
-def finish : Prog isa :=
-  .seq (.block startedTest)
-    (.ite .ne (mul aY aY aOne)
-      (.seq (.block [.mov .r12 (.mem (hdr sW)), .mov32 .rdx (.imm 1), .mov32 .rcx (.imm 0)]) (setWord aY .rcx)))
-
-/-- The computation, once the values are accepted. -/
-def rest : Prog isa := seqs [
-  .block [.mov .rsi (.mem (hdr sIn)), .mov .rcx (.mem (hdr sK)), .mov .rbx (.mem (hdr (sArr aX)))],
-  loadBE,
-  -- The mask of `input < m`.
-  .block [.mov .r12 (.mem (hdr sW)), .mov .rbx (.mem (hdr (sArr aX))),
-    .mov .r10 (.mem (hdr (sArr aN))), .mov32 .rbp (.imm 0)],
-  wordLoop 0 [cfFromRbp, .mov .rax (.mem (ix .rbx .r14)), .alu .sbb .rax (.mem (ix .r10 .r14)),
-    cfToRbp],
-  -- `-m⁻¹`, and the number 1.
-  .block (([.store (hdr sMask) .rbp, .mov .rbx (.mem (at0 .r10))] : List Instr) ++ minv ++
-    ([.store (hdr sMinv) .r15, .mov32 .rdx (.imm 1), .mov32 .rcx (.imm 0)] : List Instr)),
-  setWord aOne .rcx,
-  -- `X = input R mod m`, the exponentiation, and the result.
-  mul aXm aX aR2, expLoop mul, finish mul,
-  .block [.mov .rbx (.mem (hdr (sArr aY))), .mov .rsi (.mem (hdr sOut)), .mov .rcx (.mem (hdr sK)),
-    .mov .r15 (.mem (hdr sMask))],
-  storeBE,
-  .block (([.mov .rax (.mem (hdr sMask)), .alu .and .rax (.imm 1)] : List Instr) ++ exit)]
-
-/-- `vg_rsa_public_precomputed`. -/
-def code : Prog isa :=
-  .seq (.block entry) (.seq (seqs load) (.ite .e fail (rest mul)))
+    (.loop (.seq (.block byteHeadEven) (.seq (.loop (expBit mul) .ne) (.block byteNext))) .ne)
 
 end Precomputed
 

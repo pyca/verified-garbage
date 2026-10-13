@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Weierstrass.X86_64.Loop
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.Loop
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # A public counter for pairs of window doublings
@@ -7,6 +13,8 @@ The low 12 bits of `rbx` retain the window index; the next bits count the
 two pairs. Subtracting 4096 consumes one pair. Comparing with 4096 sets
 carry exactly when the inner count reaches zero, leaving the index intact.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.X86_64
 

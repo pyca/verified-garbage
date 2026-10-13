@@ -1,5 +1,7 @@
-import VerifiedGarbage.Proof.Framework.SigEval
-import VerifiedGarbage.TCB.Artifact
+module
+
+public import VerifiedGarbage.Proof.Framework.SigEval
+public import VerifiedGarbage.TCB.Artifact
 
 /-!
 # Proving code against a contract built with `Sig.contract`
@@ -27,6 +29,8 @@ calling convention and its helpers. Each runs one `sig_reduce` and one
 `simp only` with a fixed set of lemmas, and no search over
 hypotheses.
 -/
+
+@[expose] public section
 
 namespace VG
 
@@ -281,7 +285,8 @@ elab_rules : tactic
       unless t.isIdent do continue
       let cs ← try realizeGlobalConstWithInfos t catch _ => pure []
       let env ← getEnv
-      if cs.any fun c => (env.find? c).any (· matches .thmInfo _) then args := args.push l
+      -- In a module, a theorem imported from another module is an axiom.
+      if cs.any fun c => (env.find? c).any (· matches .thmInfo _ | .axiomInfo _) then args := args.push l
     if args.isEmpty then return
     evalTactic (← `(tactic|
       set_option linter.unusedSimpArgs false in simp -failIfUnchanged only [$args,*] $[$loc]?))

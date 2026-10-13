@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Bignum.AArch64.Row
-import VerifiedGarbage.Impl.Rsa.AArch64.Crt
+module
+
+public import VerifiedGarbage.Proof.Bignum.AArch64.Row
+public import VerifiedGarbage.Impl.Rsa.AArch64.Crt
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Multiword arithmetic on AArch64: a product by rows
@@ -9,6 +15,8 @@ import VerifiedGarbage.Impl.Rsa.AArch64.Crt
 accumulator (`mulAddRow`, at `x8`), for an accumulator of `w_a + w_b + 2`
 words that starts below `2^(64 (w_b + 1))` (`mulRows_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.AArch64
 

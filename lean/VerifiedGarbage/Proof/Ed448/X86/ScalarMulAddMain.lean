@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Ed448.X86.ScalarMulAdd
+module
+
+public import VerifiedGarbage.Proof.Ed448.X86.ScalarMulAdd
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 scalar multiply-add on x86 (32-bit): the whole function
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.Ed448.X86.ScalarMulAdd
 s = [esp + 16], scratch = [esp + 20])` against a local contract
 (`scalarMulAddLocal`: the arguments only read), the ABI included.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.X86
 

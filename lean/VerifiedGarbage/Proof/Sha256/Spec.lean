@@ -1,9 +1,17 @@
-import VerifiedGarbage.Spec.Sha256
-import VerifiedGarbage.Proof.Framework.GetElem
+module
+
+public import VerifiedGarbage.Spec.Sha256
+public import VerifiedGarbage.Proof.Framework.GetElem
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # SHA-256: lemmas about the specification
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sha256
 

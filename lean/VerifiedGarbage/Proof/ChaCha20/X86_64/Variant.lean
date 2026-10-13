@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.Verified
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Xor
-import VerifiedGarbage.Impl.ChaCha20.X86_64.Callee
-import VerifiedGarbage.Impl.Poly1305.X86_64.Callee
-import VerifiedGarbage.Proof.Framework.X86_64.Depth
+module
+
+public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.Verified
+public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Xor
+public import VerifiedGarbage.Impl.ChaCha20.X86_64.Callee
+public import VerifiedGarbage.Impl.Poly1305.X86_64.Callee
+public import VerifiedGarbage.Proof.Framework.X86_64.Depth
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Implementations of `vg_chacha20_xor` on x86-64
@@ -19,6 +25,8 @@ An implementation also names the implementation of `vg_poly1305_blocks` for
 the same CPUs (`poly`), which ChaCha20-Poly1305's instance for it calls: so
 each instance needs the CPU features of both.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.ChaCha20.X86_64
 
@@ -56,13 +64,14 @@ structure XorImpl where
   which also call `vg_poly1305_blocks` (ChaCha20-Poly1305) call: the one
   for the same CPUs. -/
   poly : Impl.Poly1305.X86_64.Blocks
-  /-- Its `fold` and `pass` with the implementation of `vg_poly1305_blocks`
-  it comes with: one of the triples whose ChaCha20-Poly1305 the
-  constant-time analysis checks (it runs on code with the comparisons
-  against `fold` and the mask `pass - 1` in it). -/
-  fold_poly : (callee.fold = 0 ∧ callee.pass = 0 ∧ poly = .scalar) ∨
-    (callee.fold = 448 ∧ callee.pass = 0 ∧ poly = .avx2) ∨
-    (callee.fold = 960 ∧ callee.pass = 1024 ∧ poly = .avx512)
+  /-- Its `fold`, `pass` and `wide` with the implementation of
+  `vg_poly1305_blocks` it comes with: one of the combinations whose
+  ChaCha20-Poly1305 the constant-time analysis checks (it runs on code with
+  the comparisons against `fold`, the mask `pass - 1` and the loops of
+  `2 ^ wide` bytes in it). -/
+  fold_poly : (callee.fold = 0 ∧ callee.pass = 0 ∧ callee.wide = 4 ∧ poly = .scalar) ∨
+    (callee.fold = 448 ∧ callee.pass = 0 ∧ callee.wide = 5 ∧ poly = .avx2) ∨
+    (callee.fold = 960 ∧ callee.pass = 1024 ∧ callee.wide = 6 ∧ (poly = .avx512 ∨ poly = .ifma))
 
 namespace XorImpl
 
@@ -89,7 +98,7 @@ def scalar : XorImpl where
   suffix := ""
   features := []
   poly := .scalar
-  fold_poly := Or.inl ⟨rfl, rfl, rfl⟩
+  fold_poly := Or.inl ⟨rfl, rfl, rfl, rfl⟩
 
 theorem avx2_ok : ∀ s, (xorStack 16).pre s → ∃ t s', Exec isa Impl.ChaCha20.X86_64.Callee.avx2.code s t s' ∧
     abiPreserved s s' ∧ (xorStack 16).post s s' :=
@@ -119,7 +128,7 @@ def avx2 : XorImpl where
   suffix := "_avx2"
   features := ["avx", "avx2"]
   poly := .avx2
-  fold_poly := Or.inr (Or.inl ⟨rfl, rfl, rfl⟩)
+  fold_poly := Or.inr (Or.inl ⟨rfl, rfl, rfl, rfl⟩)
 
 theorem avx512_ok : ∀ s, (xorStack 16).pre s → ∃ t s', Exec isa Impl.ChaCha20.X86_64.Callee.avx512.code s t s' ∧
     abiPreserved s s' ∧ (xorStack 16).post s s' :=
@@ -149,7 +158,27 @@ def avx512 : XorImpl where
   suffix := "_avx512"
   features := ["avx", "avx512f"]
   poly := .avx512
-  fold_poly := Or.inr (Or.inr ⟨rfl, rfl, rfl⟩)
+  fold_poly := Or.inr (Or.inr ⟨rfl, rfl, rfl, .inl rfl⟩)
+
+/-- `vg_chacha20_xor_avx512`, for CPUs with AVX-512 IFMA too: its callers
+that also call `vg_poly1305_blocks` (ChaCha20-Poly1305) call
+`vg_poly1305_blocks_ifma`. -/
+def ifma : XorImpl where
+  callee := .avx512
+  fold_le := by decide
+  stack := 16
+  stack_le := by decide
+  depth_le := by lit_decide
+  xdepth := by lit_decide
+  ok := avx512_ok
+  ct := avx512_ct
+  nosp := avx512_nosp
+  mxcsr := by lit_decide
+  spSafe := Code.all_of_allInstrs (by lit_decide)
+  suffix := "_ifma"
+  features := ["avx", "avx512f"]
+  poly := .ifma
+  fold_poly := Or.inr (Or.inr ⟨rfl, rfl, rfl, .inr rfl⟩)
 
 end XorImpl
 

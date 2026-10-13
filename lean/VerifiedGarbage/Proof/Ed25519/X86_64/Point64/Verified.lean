@@ -1,9 +1,15 @@
-import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Fn
-import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Lit
-import VerifiedGarbage.Proof.Mont.Read
-import VerifiedGarbage.Proof.Framework.X86_64.Abi
-import VerifiedGarbage.Proof.Framework.X86_64.Taint
-import VerifiedGarbage.Proof.Framework.Contract
+module
+
+public import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Fn
+public import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Lit
+public import VerifiedGarbage.Proof.Mont.Read
+public import VerifiedGarbage.Proof.Framework.X86_64.Abi
+public import VerifiedGarbage.Proof.Framework.X86_64.Taint
+public import VerifiedGarbage.Proof.Framework.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed25519's point functions on x86-64: their `Verified`
@@ -16,6 +22,8 @@ slots' field elements (`elemAt_eq`). Constant time by taint tracking (only
 `rsp` and `ws` are public, and every address is `ws` plus a constant), and a
 state satisfying the precondition.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed25519.X86_64.Point64
 
@@ -78,6 +86,17 @@ def addK (ext : Bool) : Contract isa where
   pre := fnPre
   post s s' := (∀ q, pointAt s.mem (s.gpr .rdi) qAt = Spec.Ed25519.Point64.cache q →
       PointIs ext s'.mem (s.gpr .rdi) pAt (Spec.Ed25519.pointAdd (pointAt s.mem (s.gpr .rdi) pAt) q)) ∧
+    Keeps (s.gpr .rdi) s.mem s'.mem
+  pub := fnPub
+
+/-- The affine addition's contract on x86-64. -/
+def addAffK : Contract isa where
+  pre := fnPre
+  post s s' := (∀ q : Spec.Ed25519.Point, q.Z = 1 →
+      elemAt s.mem (s.gpr .rdi) qAt = q.Y - q.X →
+      elemAt s.mem (s.gpr .rdi) (qAt + Spec.Ed25519.Point64.elemBytes) = q.Y + q.X →
+      elemAt s.mem (s.gpr .rdi) (qAt + 2 * Spec.Ed25519.Point64.elemBytes) = q.T * 2 * Spec.Ed25519.d →
+      PointIs true s'.mem (s.gpr .rdi) pAt (Spec.Ed25519.pointAdd (pointAt s.mem (s.gpr .rdi) pAt) q)) ∧
     Keeps (s.gpr .rdi) s.mem s'.mem
   pub := fnPub
 
@@ -151,6 +170,31 @@ theorem add_correct (t : Bool) (hk : ∀ r ∈ keptRegs, KeepReg.keeps r (addFn 
   · rw [hv, e2, show pAt = 64 from rfl, hp]; rfl
   · intro ht; rw [hv, e3 ht, show pAt = 64 from rfl, hp]; rfl
 
+theorem pointAddAffineOps_outs : OutsOk pointAddAffineOps := by decide
+
+/-- The affine addition meets `addAffK`. -/
+theorem addAffine_correct (hk : ∀ r ∈ keptRegs, KeepReg.keeps r (addAffineFn fld) = true)
+    (hmx : (addAffineFn fld).allInstrs (fun i => !loadsMxcsr i) = true) (s : State) (hs : addAffK.pre s) :
+    ∃ tr s', Exec isa (addAffineFn fld) s tr s' ∧ abiPreserved s s' ∧ addAffK.post s s' := by
+  obtain ⟨tr, s', he, ha, hv, hk'⟩ := fn_correct pointAddAffineOps hk hmx pointAddAffineOps_outs s hs
+  have hp := pointAt_eq s.mem (s.gpr .rdi) 0 (by decide)
+  simp only [Nat.mul_zero, Nat.add_zero] at hp
+  refine ⟨tr, s', he, ha, fun q hz h4 h5 h6 => ?_, hk'⟩
+  rw [elemAt_eq] at h4 h5 h6
+  have h4' : env s.mem (s.gpr .rdi) 4 = q.Y - q.X := h4
+  have h5' : env s.mem (s.gpr .rdi) 5 = q.Y + q.X := h5
+  have h6' : env s.mem (s.gpr .rdi) 6 = q.T * 2 * Spec.Ed25519.d := h6
+  have h7 : q.Z * 2 = 2 := by rw [hz]; grind
+  have hq : (⟨env s.mem (s.gpr .rdi) 4, env s.mem (s.gpr .rdi) 5, env s.mem (s.gpr .rdi) 6, 2⟩ :
+      Spec.Ed25519.Point) = cache q := by
+    simp only [cache]; rw [h4', h5', h6', h7]
+  have e := pointAddAffine_eval (env s.mem (s.gpr .rdi)) q hq
+  refine pointIs_of true _ _ _ ?_ ?_ ?_ ?_
+  · rw [hv, show pAt = 64 from rfl, hp]; exact congrArg Spec.Ed25519.Point.X e
+  · rw [hv, show pAt = 64 from rfl, hp]; exact congrArg Spec.Ed25519.Point.Y e
+  · rw [hv, show pAt = 64 from rfl, hp]; exact congrArg Spec.Ed25519.Point.Z e
+  · intro _; rw [hv, show pAt = 64 from rfl, hp]; exact congrArg Spec.Ed25519.Point.T e
+
 /-! ## Constant time -/
 
 theorem fnPub_agree {s₁ s₂ : State} (hp : fnPub s₁ s₂) :
@@ -186,5 +230,9 @@ theorem addK_implies (ext : Bool) :
   cases ext <;>
   sig_implies [Spec.Ed25519.Point64.addCachedContract, Spec.Ed25519.Point64.sig, X86_64.abi, X86_64.argRegs,
     addK, fnPre, fnPub] [fnSat] using fnSat
+
+theorem addAffK_implies : addAffK.Implies (Spec.Ed25519.Point64.addAffineContract X86_64.abi true) := by
+  sig_implies [Spec.Ed25519.Point64.addAffineContract, Spec.Ed25519.Point64.sig, X86_64.abi, X86_64.argRegs,
+    addAffK, fnPre, fnPub] [fnSat] using fnSat
 
 end VG.Proof.Ed25519.X86_64.Point64

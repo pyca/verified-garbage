@@ -1,5 +1,11 @@
-import VerifiedGarbage.Spec.Gcm.Contract
-import VerifiedGarbage.Proof.Framework.Offset
+module
+
+public import VerifiedGarbage.Spec.Gcm.Contract
+public import VerifiedGarbage.Proof.Framework.Offset
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM's key setup and streaming start with their working space as an argument
@@ -18,6 +24,8 @@ only within the function's buffers (`initPost_local`, `streamInitPost_local`,
 subkey (`ctxH_congr`) and the streaming state, through `StreamRepr`, which
 reads only the state's 80 bytes (`streamRepr_congr`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesGcm
 

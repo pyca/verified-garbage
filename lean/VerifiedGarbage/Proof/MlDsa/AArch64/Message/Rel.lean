@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Message.VerifyCorrect
-import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.VerifyCorrect
+public import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on AArch64, `sign_message` and `verify_message`: two runs
@@ -11,6 +17,8 @@ are such (`setArgs_xOnly`). Two runs with the same layout, each in `Ctx`
 with inputs related by `I` (`Two`), and a call in them of verified code
 whose public data agree (`call_tr`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Message
 

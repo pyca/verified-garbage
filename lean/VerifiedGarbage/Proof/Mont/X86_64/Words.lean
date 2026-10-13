@@ -1,6 +1,12 @@
-import VerifiedGarbage.Impl.Mont.X86_64
-import VerifiedGarbage.Proof.X25519.X86_64.Step
-import VerifiedGarbage.Proof.Mont.Words
+module
+
+public import VerifiedGarbage.Impl.Mont.X86_64
+public import VerifiedGarbage.Proof.X25519.X86_64.Step
+public import VerifiedGarbage.Proof.Mont.Words
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Montgomery arithmetic on x86-64: words in registers and in the working space
@@ -10,6 +16,8 @@ of registers) and in the working space (`wordsVal`), which is `size` bytes at
 `base`, the value of `rdi` (`Scr`). The loads and stores of the arithmetic,
 and what they leave unchanged.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Mont.X86_64
 

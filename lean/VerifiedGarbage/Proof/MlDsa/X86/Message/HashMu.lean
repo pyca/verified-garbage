@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.MlDsa.X86.Message.Hash
-import VerifiedGarbage.Proof.MlKem.KPke
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86.Message.Hash
+meta import VerifiedGarbage.Proof.MlDsa.X86.Message.Hash
+public import VerifiedGarbage.Proof.MlKem.KPke
+meta import VerifiedGarbage.Proof.MlKem.KPke
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on x86 (32-bit), `sign_message` and `verify_message`: `μ` and `tr`
@@ -10,6 +18,8 @@ Untrusted: everything here is checked by Lean. In the body, `muHash` leaves
 each absorb continues the message from the position the previous one
 returned, which is public, as the lengths are.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86.Message
 

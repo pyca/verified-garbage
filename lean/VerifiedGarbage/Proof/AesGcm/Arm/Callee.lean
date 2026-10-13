@@ -1,12 +1,18 @@
-import VerifiedGarbage.Proof.Aes.Arm.Ctr32
-import VerifiedGarbage.Proof.Aes.Arm.ExpandKey
-import VerifiedGarbage.Proof.Gcm.Arm.Ghash
-import VerifiedGarbage.Proof.Cmac.Frame
-import VerifiedGarbage.Proof.Gcm.Stream
-import VerifiedGarbage.Proof.Framework.Arm.Frame
-import VerifiedGarbage.Proof.Framework.Arm.RelCT
-import VerifiedGarbage.Proof.Framework.Arm.RegUpd
-import VerifiedGarbage.Impl.AesGcm.Arm
+module
+
+public import VerifiedGarbage.Proof.Aes.Arm.Ctr32
+public import VerifiedGarbage.Proof.Aes.Arm.ExpandKey
+public import VerifiedGarbage.Proof.Gcm.Arm.Ghash
+public import VerifiedGarbage.Proof.Cmac.Frame
+public import VerifiedGarbage.Proof.Gcm.Stream
+public import VerifiedGarbage.Proof.Framework.Arm.Frame
+public import VerifiedGarbage.Proof.Framework.Arm.RelCT
+public import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+public import VerifiedGarbage.Impl.AesGcm.Arm
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on ARMv7: the functions called
@@ -18,6 +24,8 @@ contract (with `WP.call`), with the regions it is given: what it needs
 `vg_aes_ctr32` and `vg_ghash` are called in a frame that pushes their stack
 arguments (`push {r12, lr}`) in the 8 bytes below the stack pointer.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

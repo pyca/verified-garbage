@@ -47,16 +47,40 @@ pub(crate) mod blake2s;
 pub(crate) mod blowfish;
 
 #[rustfmt::skip]
+pub(crate) mod blowfish_cbc;
+
+#[rustfmt::skip]
+pub(crate) mod blowfish_cfb;
+
+#[rustfmt::skip]
+pub(crate) mod blowfish_ofb;
+
+#[rustfmt::skip]
 pub(crate) mod camellia;
 
 #[rustfmt::skip]
 pub(crate) mod camellia_cbc;
 
 #[rustfmt::skip]
+pub(crate) mod camellia_cfb;
+
+#[rustfmt::skip]
 pub(crate) mod camellia_ctr;
 
 #[rustfmt::skip]
+pub(crate) mod camellia_ofb;
+
+#[rustfmt::skip]
 pub(crate) mod cast5;
+
+#[rustfmt::skip]
+pub(crate) mod cast5_cbc;
+
+#[rustfmt::skip]
+pub(crate) mod cast5_cfb;
+
+#[rustfmt::skip]
+pub(crate) mod cast5_ofb;
 
 #[rustfmt::skip]
 pub(crate) mod chacha20;
@@ -155,6 +179,9 @@ pub(crate) mod ecdsa_secp256k1_sha256;
 pub(crate) mod ed25519;
 
 #[rustfmt::skip]
+pub(crate) mod ed25519_r64;
+
+#[rustfmt::skip]
 pub(crate) mod ed448;
 
 #[rustfmt::skip]
@@ -197,6 +224,15 @@ pub(crate) mod hmac_sha512_256;
 pub(crate) mod idea;
 
 #[rustfmt::skip]
+pub(crate) mod idea_cbc;
+
+#[rustfmt::skip]
+pub(crate) mod idea_cfb;
+
+#[rustfmt::skip]
+pub(crate) mod idea_ofb;
+
+#[rustfmt::skip]
 pub(crate) mod md5;
 
 #[rustfmt::skip]
@@ -221,7 +257,22 @@ pub(crate) mod mlkem1024;
 pub(crate) mod mlkem768;
 
 #[rustfmt::skip]
+pub(crate) mod p192_inverse;
+
+#[rustfmt::skip]
+pub(crate) mod p224_inverse;
+
+#[rustfmt::skip]
+pub(crate) mod p224_point_ops;
+
+#[rustfmt::skip]
+pub(crate) mod p384_inverse;
+
+#[rustfmt::skip]
 pub(crate) mod p384_mont;
+
+#[rustfmt::skip]
+pub(crate) mod p521_inverse;
 
 #[rustfmt::skip]
 pub(crate) mod p521_mont;
@@ -338,7 +389,19 @@ pub(crate) mod rsa_pss_sha512_mgf1_sha512;
 pub(crate) mod scrypt;
 
 #[rustfmt::skip]
+pub(crate) mod secp256k1_inverse;
+
+#[rustfmt::skip]
 pub(crate) mod seed;
+
+#[rustfmt::skip]
+pub(crate) mod seed_cbc;
+
+#[rustfmt::skip]
+pub(crate) mod seed_cfb;
+
+#[rustfmt::skip]
+pub(crate) mod seed_ofb;
 
 #[rustfmt::skip]
 pub(crate) mod sha1;
@@ -353,16 +416,37 @@ pub(crate) mod sha3;
 pub(crate) mod sha512;
 
 #[rustfmt::skip]
+pub(crate) mod sm3;
+
+#[rustfmt::skip]
 pub(crate) mod sm4;
 
 #[rustfmt::skip]
 pub(crate) mod sm4_cbc;
 
 #[rustfmt::skip]
+pub(crate) mod sm4_cfb;
+
+#[rustfmt::skip]
 pub(crate) mod sm4_ctr;
 
 #[rustfmt::skip]
+pub(crate) mod sm4_ofb;
+
+#[rustfmt::skip]
 pub(crate) mod triple_des;
+
+#[rustfmt::skip]
+pub(crate) mod triple_des_cbc;
+
+#[rustfmt::skip]
+pub(crate) mod triple_des_cfb;
+
+#[rustfmt::skip]
+pub(crate) mod triple_des_cfb8;
+
+#[rustfmt::skip]
+pub(crate) mod triple_des_ofb;
 
 #[rustfmt::skip]
 pub(crate) mod x25519;

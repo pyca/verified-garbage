@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.CT
-import VerifiedGarbage.Proof.Framework.X86.Inline
-import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Frame
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.CT
+public import VerifiedGarbage.Proof.Framework.X86.Inline
+public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Frame
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Deterministic ECDSA on x86 (32-bit): `Verified`
@@ -15,6 +21,8 @@ them writable as the shared contract does, by `Verified.narrowTo`; each
 instance's file shows that the shared contract implies `rfcWide`
 (`sign_verified`'s `himp`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Rfc6979.X86
 

@@ -1,6 +1,10 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackVerified
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenRoundVerified
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.AddSubVerified
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackVerified
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenRoundVerified
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.AddSubVerified
+
+@[expose] public section
 
 namespace VG.Artifacts.MlDsaKeygenHelpers.AArch64
 

@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.VerifyAdd
-import VerifiedGarbage.Proof.Ed25519.X86_64.WindowCT
+module
+
+public import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.VerifyAdd
+public import VerifiedGarbage.Proof.Ed25519.X86_64.WindowCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed25519 verification with AVX512_IFMA: the windows in the lanes
@@ -8,6 +14,8 @@ A position of `Ifma.windows` is a doubling (`vdbl`) and its digits' additions (`
 `vaddBase`), as one of `windows` is, with the point in the lanes, where every doubling
 computes `T`: the invariants are `windows`' (`WindowSlide`), with the point in the lanes.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed25519.X86_64.Ifma
 

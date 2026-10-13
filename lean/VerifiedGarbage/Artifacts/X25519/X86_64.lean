@@ -1,19 +1,23 @@
-import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Impl.X25519.X86_64
-import VerifiedGarbage.Proof.X25519.X86_64.Verified
-import VerifiedGarbage.Proof.X25519.X86_64.Lit
-import VerifiedGarbage.Impl.X25519.X86_64.Adx
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.Verified
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.Lit
-import VerifiedGarbage.Impl.X25519.X86_64.Ifma
-import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Verified
-import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Lit
-import VerifiedGarbage.Proof.X25519.X86_64.Base.Verified
-import VerifiedGarbage.Proof.X25519.X86_64.Base.Ifma
-import VerifiedGarbage.Proof.X25519.X86_64.Base.Adx
-import VerifiedGarbage.Proof.X25519.X86_64.Divstep.Sound
+module
+
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Impl.X25519.X86_64
+public import VerifiedGarbage.Proof.X25519.X86_64.Verified
+public import VerifiedGarbage.Proof.X25519.X86_64.Lit
+public import VerifiedGarbage.Impl.X25519.X86_64.Adx
+public import VerifiedGarbage.Proof.X25519.X86_64.Adx.Verified
+public import VerifiedGarbage.Proof.X25519.X86_64.Adx.Lit
+public import VerifiedGarbage.Impl.X25519.X86_64.Ifma
+public import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Verified
+public import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Lit
+public import VerifiedGarbage.Proof.X25519.X86_64.Base.Verified
+public import VerifiedGarbage.Proof.X25519.X86_64.Base.Ifma
+public import VerifiedGarbage.Proof.X25519.X86_64.Base.Adx
+public import VerifiedGarbage.Proof.X25519.X86_64.Divstep.Sound
 
 /-! # X25519 (RFC 7748) on x86-64 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.X25519.X86_64
 
@@ -64,7 +68,9 @@ def artifacts : List Artifact := [
     doc := Spec.X25519.x25519BaseApi.doc (notes := ["Ed25519's fixed-base comb, from its \
       tables in the static `VG_ED25519_COMB`, with the scalar clamped as RFC 7748 specifies and \
       the point mapped to `(Z + Y) / (Z - Y)`, inverting with a call of `vg_gf25519_r64_invert`. \
-      The table selection is constant time; the callee-saved registers are saved in `scratch`."])
+      The table selection is constant time; the callee-saved registers are saved in `scratch`. \
+      The comb's five doublings and 51 additions are calls of `vg_ed25519_r64_double_ext` and \
+      `vg_ed25519_r64_add_affine_ext`."])
     consts := Impl.Ed25519.X86_64.combConsts
     code := Impl.X25519.X86_64.Base.x25519Base Impl.X25519.X86_64.baseline
     contract := Spec.X25519.x25519BaseContract (X86_64.abi.withConsts Impl.Ed25519.X86_64.combConsts) 8
@@ -76,7 +82,8 @@ def artifacts : List Artifact := [
     name := "vg_x25519_base_adx"
     doc := Spec.X25519.x25519BaseApi.doc (notes := ["The same fixed-base comb as \
       `vg_x25519_base`, with BMI2 and ADX field arithmetic, its table entries selected 32 bytes \
-      at a time with AVX2."])
+      at a time with AVX2, and its doublings and additions calls of \
+      `vg_ed25519_r64_double_ext_adx` and `vg_ed25519_r64_add_affine_ext_adx`."])
     consts := Impl.Ed25519.X86_64.combConsts
     code := Impl.X25519.X86_64.Base.x25519BaseAdx
     contract := Spec.X25519.x25519BaseContract (X86_64.abi.withConsts Impl.Ed25519.X86_64.combConsts) 8

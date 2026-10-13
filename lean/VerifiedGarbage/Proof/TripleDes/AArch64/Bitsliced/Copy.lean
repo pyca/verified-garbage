@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.Batch
+module
+
+public import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.Batch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Copying words
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.Batch
 (in `x12`), where the two areas do not overlap, and changes nothing else in
 memory. `x13` counts the words left, and `x10` holds each word.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.TripleDes.AArch64.BitslicedNeon
 

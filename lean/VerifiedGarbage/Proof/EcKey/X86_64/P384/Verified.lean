@@ -1,9 +1,21 @@
-import VerifiedGarbage.Proof.EcKey.X86_64.Main
-import VerifiedGarbage.Proof.EcKey.X86_64.P384.Contract
-import VerifiedGarbage.Proof.EcKey.X86_64.P384.Lit
-import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.Verified
-import VerifiedGarbage.Proof.Framework.X86_64.TaintSym
-import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
+module
+
+public import VerifiedGarbage.Proof.EcKey.X86_64.Main
+meta import VerifiedGarbage.Proof.EcKey.X86_64.Main
+public import VerifiedGarbage.Proof.EcKey.X86_64.P384.Contract
+meta import VerifiedGarbage.Proof.EcKey.X86_64.P384.Contract
+public import VerifiedGarbage.Proof.EcKey.X86_64.P384.Lit
+meta import VerifiedGarbage.Proof.EcKey.X86_64.P384.Lit
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.Verified
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.Verified
+public import VerifiedGarbage.Proof.Framework.X86_64.TaintSym
+meta import VerifiedGarbage.Proof.Framework.X86_64.TaintSym
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # P-384 public keys on x86-64: `Verified`
@@ -19,6 +31,8 @@ the address of the comb's static public (`taintSym`): the only branches are
 on loop counters, and every address is an argument or the static's address
 plus a constant or a counter.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.EcKey.X86_64.P384
 
@@ -53,7 +67,7 @@ theorem pk_x86 (hL : Weierstrass.Law Spec.P384.curve)
     (hI : Weierstrass.X86_64.InvSounds)
     (s : State) (hs : pkX86_64.pre s) :
     ∃ t s', Exec isa publicKeyP384.inline s t s' ∧ abiPreserved s s' ∧ pkX86_64.post s s' := by
-  obtain ⟨t, s', he, hsv, hpost⟩ := publicKey_ok (p384_ok hI) hL (p384_tbls hT) (pre_of hs)
+  obtain ⟨t, s', he, hsv, hpost⟩ := publicKey_ok (p384_ok hI) hL (p384_tbls hT) (pre_of hs) p384_mulBase
   have hsp : ∀ i ∈ instrs publicKeyP384.inline, Taint.clobbers i .rsp = false := by
     have h : publicKeyP384.allInstrs (fun i => !Taint.clobbers i .rsp) = true := by lit_decide
     rw [← Code.allInstrs_inline, Code.allInstrs_eq, List.all_eq_true] at h

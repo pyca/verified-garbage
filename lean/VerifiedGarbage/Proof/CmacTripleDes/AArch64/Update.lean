@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Block
-import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Contract
-import VerifiedGarbage.Proof.CmacTripleDes.Cmac
-import VerifiedGarbage.Proof.Cmac.Frame
+module
+
+public import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Block
+public import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Contract
+public import VerifiedGarbage.Proof.CmacTripleDes.Cmac
+public import VerifiedGarbage.Proof.Cmac.Frame
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # TDEA-CMAC on AArch64: `vg_cmac_triple_des_update`
@@ -10,6 +16,8 @@ The invariant after `k` blocks (`LInv`): `x2` points to the next block, `x3`
 holds the blocks left, only the state and the block's slots have changed, and
 the state is the chaining value after the first `k` blocks.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.CmacTripleDes.AArch64
 

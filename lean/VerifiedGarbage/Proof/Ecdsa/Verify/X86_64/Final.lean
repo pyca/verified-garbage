@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Points
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Points
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDSA verification on x86-64: `x` and the result
@@ -9,6 +15,8 @@ import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Points
 difference being zero (`x ≡ r` modulo `n`) into the flag, returns its low
 bit and restores the callee-saved registers (`vfinish_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Verify.X86_64
 
@@ -68,19 +76,18 @@ theorem slSub_ok {M : Mod} {m : Nat} (hMn : M.n = c.n) (hMt : M.tmp = c.sl TMP) 
   rw [hMn] at this
   exact this
 
-theorem final_eq (c : Cfg) : Impl.Ecdsa.Verify.X86_64.Cfg.final c =
+theorem final_eq (c : Cfg) : (Impl.Ecdsa.Verify.X86_64.Cfg.final c).inline =
     .seq (.block (Impl.Mont.X86_64.mul c.MP' (c.sl XM) (c.sl RX) (c.sl ACC)))
     (.seq (.block (Impl.Mont.X86_64.mul c.MP' (c.sl X) (c.sl XM) (c.sl ONE)))
-    (.seq (.block (Impl.Mont.X86_64.mul c.MN' (c.sl XN) (c.sl X) (c.sl R2N)))
+    (.seq (mulN c XN X R2N)
     (.seq (.block (Impl.Mont.X86_64.sub c.MN' (c.sl W) (c.sl XN) (c.sl RM')))
-      (.block (c.checkNonzero (c.sl RZ) ++ (Impl.Ecdh.X86_64.Cfg.checkZero c (c.sl W) ++
-        Impl.Ecdsa.Verify.X86_64.Cfg.finish c)))))) := by
-  simp only [Impl.Ecdsa.Verify.X86_64.Cfg.final, blocks, List.append_assoc]
+      (.block (c.checkNonzero (c.sl RZ) ++ Impl.Ecdh.X86_64.Cfg.checkZero c (c.sl W) ++
+        Impl.Ecdsa.Verify.X86_64.Cfg.finish c))))) := rfl
 
 /-- `Z^(p-2)`, `x`, the last checks and the result. -/
 theorem tail_ok (hc : BaseCfgOk c) {s₀ : State} {base : Addr} {g : Reg → BitVec 64}
     {u v : Nat} {P : Point c.C} {s : State} (hP : Pts c s₀ base g u v P s) :
-    WP isa (.seq c.pPow (Impl.Ecdsa.Verify.X86_64.Cfg.final c)) s fun s' =>
+    WP isa (.seq c.pPow.inline (Impl.Ecdsa.Verify.X86_64.Cfg.final c).inline) s fun s' =>
       (∀ r ∈ Cfg.saved.map Prod.fst, s'.gpr r = g r) ∧ ∃ xo, xo < c.C.p ∧
         Fin.ofNat c.C.p xo = tmv c.C c.n base s (c.sl RX) * tmv c.C c.n base s (c.sl RZ) ^ (c.C.p - 2) ∧
         (s'.gpr .rax).setWidth 32 = if (KeyOk c s₀ ∧ (0 < sigR c s₀ ∧ sigR c s₀ < c.C.n) ∧
@@ -102,7 +109,7 @@ theorem tail_ok (hc : BaseCfgOk c) {s₀ : State} {base : Addr} {g : Reg → Bit
   have F₁ := F.unch h7 hn fixedOk_pwW U₁
   have e₁ : ∀ {i}, i < 45 → i ∉ [ACC, PT, TMP] → sv c base s₁ i = sv c base s i := fun hi hl =>
     sv_unch U₁ h7 hn hi (apart_pwW hi hl)
-  rw [final_eq]
+  rw [final_eq, List.append_assoc]
   -- `XM = X · ACC`.
   have hM₁ := modP_of hc F₁.mp
   refine WP.seq (WP.mono (slMul_ok (MP'_n c) (MP'_tmp c) (MP'_mo c) h7 hs₁ hM₁ (o := XM) (a := RX) (b := ACC) (by decide)
@@ -132,12 +139,9 @@ theorem tail_ok (hc : BaseCfgOk c) {s₀ : State} {base : Addr} {g : Reg → Bit
   have r2₃ : sv c base s₃ R2N = 2 ^ (64 * c.n) * 2 ^ (64 * c.n) % c.C.n :=
     (v₃ (by decide) (by decide) (by decide)).trans ((v₂ (by decide) (by decide) (by decide)).trans
       ((e₁ (by decide) (by decide)).trans F.r2n))
-  refine WP.seq (WP.mono (slMul_ok (MN'_n c) (MN'_tmp c) (MN'_mo c) h7 hs₃ hMN₃ (o := XN) (a := X) (b := R2N) (by decide)
-    (by decide) (by decide) (by decide) (by rw [r2₃]; exact Nat.mod_lt _ (by omega))) fun s₄ ⟨k₄, lt₄, e₄⟩ => ?_)
-  have hs₄ := k₄.scr hs₃
-  have M₄ := hMN₃.keep (j := MN) (by decide) rfl rfl rfl rfl h7 hn k₄ (by decide) (by decide)
-  have v₄ : ∀ {i}, i < 45 → i ≠ XN → i ≠ TMP → sv c base s₄ i = sv c base s₃ i := fun hi h₁ h₂ =>
-    sv_keep (MN'_n c) rfl h7 hn k₄ hi h₁ h₂
+  refine WP.seq (WP.mono (mulN_ok hc hs₃ hMN₃ (o := XN) (a := X) (b := R2N) (by decide)
+    (by decide) (by decide) (by decide) (by rw [r2₃]; exact Nat.mod_lt _ (by omega)) (by decide))
+    fun s₄ ⟨hs₄, M₄, _, _, _, U₄, v₄, lt₄, e₄⟩ => ?_)
   have rm₄ : sv c base s₄ RM' = sv c base s RM' := by
     rw [v₄ (by decide) (by decide) (by decide), v₃ (by decide) (by decide) (by decide),
       v₂ (by decide) (by decide) (by decide), e₁ (by decide) (by decide)]
@@ -162,7 +166,7 @@ theorem tail_ok (hc : BaseCfgOk c) {s₀ : State} {base : Addr} {g : Reg → Bit
       [(bitsAt c.n 3, 64 * c.n + 64)])) s.mem s₇.mem := by
     refine (U₁.trans ((unch_slots (MP'_n c) rfl k₂.unch (l := [XM, TMP]) (by simp) (by simp)).trans
       ((unch_slots (MP'_n c) rfl k₃.unch (l := [X, TMP]) (by simp) (by simp)).trans
-      ((unch_slots (MN'_n c) rfl k₄.unch (l := [XN, TMP]) (by simp) (by simp)).trans
+      (U₄.trans
       ((unch_slots (MN'_n c) rfl k₅.unch (l := [W, TMP]) (by simp) (by simp)).trans
       (O₆.unch.trans O₇.unch)))))).mono fun w hw => ?_
     have sl : ∀ {l : List Nat}, (∀ i ∈ l, i ∈ [ACC, PT, TMP, XM, X, XN, W]) → w ∈ slW c l →
@@ -206,7 +210,7 @@ theorem tail_ok (hc : BaseCfgOk c) {s₀ : State} {base : Addr} {g : Reg → Bit
     have U₅ : Unch base (slW c [ACC, PT, TMP, XM, X, XN, W] ++ [(bitsAt c.n 3, 64 * c.n + 64)]) s.mem s₅.mem := by
       refine (U₁.trans ((unch_slots (MP'_n c) rfl k₂.unch (l := [XM, TMP]) (by simp) (by simp)).trans
         ((unch_slots (MP'_n c) rfl k₃.unch (l := [X, TMP]) (by simp) (by simp)).trans
-        ((unch_slots (MN'_n c) rfl k₄.unch (l := [XN, TMP]) (by simp) (by simp)).trans
+        (U₄.trans
         (unch_slots (MN'_n c) rfl k₅.unch (l := [W, TMP]) (by simp) (by simp)))))).mono fun w hw => ?_
       have sl : ∀ {l : List Nat}, (∀ i ∈ l, i ∈ [ACC, PT, TMP, XM, X, XN, W]) → w ∈ slW c l →
           w ∈ slW c [ACC, PT, TMP, XM, X, XN, W] ++ [(bitsAt c.n 3, 64 * c.n + 64)] := fun hl hw => by

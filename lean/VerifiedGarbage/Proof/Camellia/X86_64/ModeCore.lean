@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.Camellia.X86_64.Ecb
-import VerifiedGarbage.Proof.Modes.X86_64.Core
-import VerifiedGarbage.Impl.Camellia.X86_64.Ctr
-import VerifiedGarbage.Proof.Camellia.CtrCipher
-import VerifiedGarbage.Spec.Camellia.Cbc
+module
+
+public import VerifiedGarbage.Proof.Camellia.X86_64.Ecb
+public import VerifiedGarbage.Proof.Modes.X86_64.Core
+public import VerifiedGarbage.Impl.Camellia.X86_64.Ctr
+public import VerifiedGarbage.Proof.Camellia.CtrCipher
+public import VerifiedGarbage.Spec.Camellia.Cbc
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Camellia's core for the modes on x86-64
@@ -15,6 +21,8 @@ table of subkeys in encryption order are in the scratch buffer and `rdi`
 holds the address of the postwhitening's entry (which the modes do not
 write).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Camellia.X86_64
 
@@ -52,7 +60,7 @@ theorem word_disjoint {dir : Dir} {B : Addr} {d : Nat} (hd : d + 8 ≤ 8 * tailS
 theorem ready_frame {d : Dir} {s s' : State} {B : Addr} {k : Nat × List (BitVec 64)} {rs : List Region}
     (h : Ready d s B k) (hf : Frame rs s.mem s'.mem)
     (hd : ∀ r ∈ rs, Region.Disjoint (coreRegion (dirCore d) B) r ∨ Region.Sub r (bufRegion (dirCore d) B))
-    (hg : ∀ r, r ∉ modeRegs (dirCore d) → s'.gpr r = s.gpr r) : Ready d s' B k := by
+    (_ : Modes.X86_64.WrIn rs s s') (hg : ∀ r, r ∉ modeRegs (dirCore d) → s'.gpr r = s.gpr r) : Ready d s' B k := by
   obtain ⟨hR, hm, he, hrdi⟩ := h
   have hR' : ∀ d, d + 8 ≤ 8 * tailSlot →
       s'.mem.readW (B + BitVec.ofNat 64 d) 64 = s.mem.readW (B + BitVec.ofNat 64 d) 64 := fun d h1 =>
@@ -341,6 +349,9 @@ theorem crypt_wp (d : Dir) {s : State} {B : Addr} {k : Nat × List (BitVec 64)} 
     simp only [Proof.Camellia.X86_64.blk, rdx₅, rdx₄] at e5
     rw [ha, dirCipher_bytes d hRr, bytesAt_eq_blockAt, mem₆, e5, tail₄ j hj8]
 
+/-- The core's blocks are two words. -/
+@[simp] theorem dirCore_bw (d : Dir) : (dirCore d).bw = 2 := rfl
+
 /-- Camellia's core for the direction `d` meets what the modes need. -/
 def dirCoreSpec (d : Dir) : CoreSpec (dirCore d) where
   Key := Nat × List (BitVec 64)
@@ -352,7 +363,7 @@ def dirCoreSpec (d : Dir) : CoreSpec (dirCore d) where
     by simp only [dirCore]; decide⟩
   keyRegs_ok := by simp only [dirCore]; decide
   regs_ok := by simp only [dirCore, Modes.X86_64.regsOk]; decide
-  keyArgs_congr := keyArgs_congr
+  keyArgs_congr h hr hrd hwr _ hf := keyArgs_congr h hr hrd hwr hf
   ready_frame := ready_frame
   prepare_wp := prepare_wp d
   crypt_wp := crypt_wp d

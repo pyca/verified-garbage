@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Sha256.X86.Shared
+module
+
+public import VerifiedGarbage.Proof.Sha256.X86.Shared
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Streaming SHA-256 parameterized by compression on x86
@@ -7,6 +13,9 @@ The functional and ABI proofs hold once for every verified compression
 function. Each backend supplies constant-time certificates for its emitted
 streaming code, checked against the same streaming contracts.
 -/
+
+@[expose] public section
+
 namespace VG.Proof.Sha256.X86.Stream
 
 open VG.X86

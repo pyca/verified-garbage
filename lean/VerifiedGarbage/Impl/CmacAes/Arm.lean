@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Aes.Arm.Ctr32
+module
+
+public import VerifiedGarbage.Impl.Aes.Arm.Ctr32
 
 /-!
 # AES-CMAC: 32-bit ARM implementation
@@ -38,6 +40,8 @@ through advancing pointers, counting down with `subs`. Only the pointers,
 `rounds`, `n` and `last_len` can affect timing: the branches are on `n` and
 `last_len`, and the doubling is masked.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.CmacAes.Arm
 

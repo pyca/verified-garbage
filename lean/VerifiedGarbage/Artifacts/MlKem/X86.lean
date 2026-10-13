@@ -1,17 +1,19 @@
-import VerifiedGarbage.TCB.X86.Target
-import VerifiedGarbage.Proof.MlKem.X86.AddSub
-import VerifiedGarbage.Proof.MlKem.X86.Encode12
-import VerifiedGarbage.Proof.MlKem.X86.Decode12
-import VerifiedGarbage.Proof.MlKem.X86.Cbd
-import VerifiedGarbage.Proof.MlKem.X86.CompressEncode
-import VerifiedGarbage.Proof.MlKem.X86.DecodeDecompress
-import VerifiedGarbage.Proof.MlKem.X86.NttInv
-import VerifiedGarbage.Proof.MlKem.X86.Mul
-import VerifiedGarbage.Proof.MlKem.X86.CheckEk
-import VerifiedGarbage.Proof.MlKem.X86.Sample
-import VerifiedGarbage.Proof.MlKem.X86.KeyGen
-import VerifiedGarbage.Proof.MlKem.X86.Encaps
-import VerifiedGarbage.Proof.MlKem.X86.Decaps
+module
+
+public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Proof.MlKem.X86.AddSub
+public import VerifiedGarbage.Proof.MlKem.X86.Encode12
+public import VerifiedGarbage.Proof.MlKem.X86.Decode12
+public import VerifiedGarbage.Proof.MlKem.X86.Cbd
+public import VerifiedGarbage.Proof.MlKem.X86.CompressEncode
+public import VerifiedGarbage.Proof.MlKem.X86.DecodeDecompress
+public import VerifiedGarbage.Proof.MlKem.X86.NttInv
+public import VerifiedGarbage.Proof.MlKem.X86.Mul
+public import VerifiedGarbage.Proof.MlKem.X86.CheckEk
+public import VerifiedGarbage.Proof.MlKem.X86.Sample
+public import VerifiedGarbage.Proof.MlKem.X86.KeyGen
+public import VerifiedGarbage.Proof.MlKem.X86.Encaps
+public import VerifiedGarbage.Proof.MlKem.X86.Decaps
 
 /-!
 # ML-KEM (FIPS 203) on x86
@@ -26,6 +28,8 @@ below it (`stack := 56`). `vg_mlkem768_keygen`, `vg_mlkem768_encaps` and
 return address and the callee's 56 bytes below it (`stack := 88`); their
 other calls use less.
 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.MlKem.X86
 
@@ -94,7 +98,7 @@ def artifacts : List Artifact := [
     stack := 16
     verified := Proof.MlKem.X86.NttFwd.verified
     spSafe := Code.all_of_allInstrs (by lit_decide)
-    ofSig := ⟨_, _, _, by unfold Spec.MlKem.nttContract Spec.MlKem.inPlaceContract; rfl⟩ },
+    ofSig := by exact (⟨_, _, _, by unfold Spec.MlKem.nttContract Spec.MlKem.inPlaceContract; rfl⟩) },
   { Spec.MlKem.nttInvApi with
     target := X86.target
     doc := Spec.MlKem.nttInvApi.doc
@@ -103,7 +107,7 @@ def artifacts : List Artifact := [
     stack := 16
     verified := Proof.MlKem.X86.NttInvP.verified
     spSafe := Code.all_of_allInstrs (by lit_decide)
-    ofSig := ⟨_, _, _, by unfold Spec.MlKem.nttInvContract Spec.MlKem.inPlaceContract; rfl⟩ },
+    ofSig := by exact (⟨_, _, _, by unfold Spec.MlKem.nttInvContract Spec.MlKem.inPlaceContract; rfl⟩) },
   { Spec.MlKem.mulApi with
     target := X86.target
     doc := Spec.MlKem.mulApi.doc

@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.Weierstrass.X86_64.InvRed
-import VerifiedGarbage.Proof.Weierstrass.X86_64.InvPacked
-import VerifiedGarbage.Proof.Weierstrass.X86_64.InvSpec
-import VerifiedGarbage.Proof.Weierstrass.Unch
-import VerifiedGarbage.Proof.Framework.Omega
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvRed
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvPacked
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvSpec
+public import VerifiedGarbage.Proof.Weierstrass.Unch
+public import VerifiedGarbage.Proof.Framework.Omega
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Inversion by divsteps on x86-64: a batch
@@ -12,6 +18,8 @@ range (`linM_ok`), the shift by 59 of a multiple of `2^59` (`shrM_ok`), and a
 batch: `59` divsteps on the low words, then `f`, `g`, `a`, `b` updated by
 their matrix, as `Divstep.batch` (`batch_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.X86_64
 

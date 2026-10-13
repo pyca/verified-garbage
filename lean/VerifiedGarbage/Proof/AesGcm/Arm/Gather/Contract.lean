@@ -1,6 +1,12 @@
-import VerifiedGarbage.Spec.Gcm.OutOfPlace
-import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Proof.Framework.PowLit
+module
+
+public import VerifiedGarbage.Spec.Gcm.OutOfPlace
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.Proof.Framework.PowLit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM one-shot encryption out of place, from a list of slices, ARMv7: the contract
@@ -14,6 +20,8 @@ aad_len = [sp + 4], src = [sp + 8], src_count = [sp + 12], dst = [sp + 16],
 len = [sp + 20], tag = [sp + 24])`, 32-bit pointers widened to addresses by
 `State.addr`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesGcm.Arm.Gather
 

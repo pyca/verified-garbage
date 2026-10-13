@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Rsa.X86_64.CvCheck
-import VerifiedGarbage.Proof.Rsa.X86_64.CvStore
-import VerifiedGarbage.Proof.Rsa.KeyMath
+module
+
+public import VerifiedGarbage.Proof.Rsa.X86_64.CvCheck
+public import VerifiedGarbage.Proof.Rsa.X86_64.CvStore
+public import VerifiedGarbage.Proof.Rsa.KeyMath
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_crt_values` on x86-64: `main`
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.Rsa.KeyMath
 From a valid modulus, `main` writes `dP`, `dQ` and `qInv` if `p q = n`
 and `gcd(q, p) = 1`, and zeros otherwise (`cvMain_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.X86_64
 

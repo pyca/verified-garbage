@@ -1,4 +1,6 @@
-import VerifiedGarbage.Proof.Poly1305.X86_64.Variant
+module
+
+public import VerifiedGarbage.Proof.Poly1305.X86_64.Variant
 
 /-!
 # `vg_poly1305_blocks` on x86-64: the scalar implementation
@@ -6,6 +8,8 @@ import VerifiedGarbage.Proof.Poly1305.X86_64.Variant
 A variant of `Poly1305Blocks` on x86-64 (see `TCB/Emit.lean`):
 `vg_poly1305_blocks`, in the baseline ISA.
 -/
+
+@[expose] public section
 
 namespace VG.Variants.Poly1305Blocks.X86_64.Scalar
 

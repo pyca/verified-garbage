@@ -1,7 +1,16 @@
-import VerifiedGarbage.Proof.Ecdsa.X86.Lays
-import VerifiedGarbage.Proof.Ecdsa.X86.Stages
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.X86.Lays
+public import VerifiedGarbage.Proof.Ecdsa.X86.Stages
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # Working space for P-256 divstep inversion -/
+
+@[expose] public section
+
 namespace VG.Proof.Ecdsa.X86
 open VG VG.X86 VG.Impl.Mont VG.Impl.Mont.X86 VG.Impl.Weierstrass.X86 VG.Impl.Ecdsa.X86
   VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Weierstrass VG.Proof.Weierstrass.X86 VG.Proof.Weierstrass.X86.Inv

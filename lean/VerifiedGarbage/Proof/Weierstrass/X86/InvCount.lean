@@ -1,9 +1,17 @@
-import VerifiedGarbage.Proof.Weierstrass.X86.InvHalf
-import VerifiedGarbage.Proof.Weierstrass.X86.InvLoop
-import VerifiedGarbage.Proof.Weierstrass.X86.InvState
-import VerifiedGarbage.Proof.Divstep.Word32
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86.InvHalf
+public import VerifiedGarbage.Proof.Weierstrass.X86.InvLoop
+public import VerifiedGarbage.Proof.Weierstrass.X86.InvState
+public import VerifiedGarbage.Proof.Divstep.Word32
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## `InvStart` -/
+
+@[expose] public section
 
 section
 

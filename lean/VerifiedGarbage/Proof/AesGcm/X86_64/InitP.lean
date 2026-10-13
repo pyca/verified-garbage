@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.Init
-import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksContract
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Init
+public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksContract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on x86-64: `vg_aes_gcm_init_precomputed`
@@ -9,6 +15,8 @@ then the hash subkey `H` copied to `ctx + 256` (`powStart_ok`), which is
 `H¹` (`hpow_one`), and `H²`–`H⁴⁸` after it, each `vg_ghash` from a zero
 block over the one before it: `(0 ⊕ Hᵏ) • H = Hᵏ⁺¹` (`powStep_ok`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 
@@ -273,13 +281,67 @@ theorem powStep_ok {rd wr : List Region} (pC : Covers [⟨Ctx, 1024⟩] wr) (pW 
       exact congrArg (mul · _) BitVec.zero_xor
 
 
-/-- `n` more powers. -/
-theorem powSteps_ok {rd wr : List Region} (pC : Covers [⟨Ctx, 1024⟩] wr) (pW : Covers [⟨W, 2560⟩] wr)
-    {m₅ : Mem} : ∀ (n : Nat), n ≤ 47 → ∀ {t : State}, PowInv Ctx W SP rd wr m₅ 0 t →
-      WP isa (powSteps v.callees n) t (PowInv Ctx W SP rd wr m₅ n)
-  | 0, _, _, h => WP.block_nil h
-  | n + 1, hn, _, h => WP.seq (WP.mono (powSteps_ok pC pW n (by omega) h) fun _ h' =>
-      powStep_ok v L pC pW (by omega) h')
+omit L in
+theorem pow_zf (Ctx : Addr) {k : Nat} (hk : k ≤ 47) :
+    ((Ctx + BitVec.ofNat 64 (272 + 16 * k)) - (Ctx + BitVec.ofNat 64 1024) == 0) = decide (k = 47) := by
+  by_cases h : k = 47
+  · subst h; simp
+  · simp only [h, decide_false, beq_eq_false_iff_ne, ne_eq]
+    intro e
+    have e2 := congrArg (· + (Ctx + BitVec.ofNat 64 1024)) e
+    simp only [BitVec.sub_add_cancel] at e2
+    have e3 : BitVec.ofNat 64 (272 + 16 * k) = BitVec.ofNat 64 1024 :=
+      (BitVec.add_right_inj Ctx).mp (by simpa using e2)
+    have := congrArg BitVec.toNat e3
+    simp at this; omega
+
+omit L in
+/-- The loop's test: `rbp` against the end of the table, `r13 + 1024`. -/
+theorem powEnd_run {k : Nat} (hk : k ≤ 47) {t : State} (h13 : t.gpr .r13 = Ctx)
+    (hbp : t.gpr .rbp = Ctx + BitVec.ofNat 64 (272 + 16 * k)) :
+    ∃ t', runBlock isa (ptr .rax .r13 1024 ++ ([.alu .cmp .rbp (.reg .rax)] : List Instr)) t = some t' ∧
+      (∀ r, r ≠ .rax → t'.gpr r = t.gpr r) ∧ t'.mem = t.mem ∧ t'.rd = t.rd ∧ t'.wr = t.wr ∧
+      isa.eval .ne t' = some (decide (k ≠ 47)) := by
+  refine ⟨_, by xrun [], ?_, ?_, ?_, ?_, ?_⟩
+  · intro r hr; simp [gpr_setReg, gpr_arithFlags, hr]
+  all_goals try simp [mem_arithFlags, mem_setReg, rd_setReg, rd_arithFlags, wr_setReg, wr_arithFlags]
+  show Option.map (!·) (some _) = _
+  simp only [gpr_setReg, gpr_arithFlags, ite_true, h13, hbp, imm_eq (show 1024 < 2 ^ 31 by decide),
+    Option.map_some, reduceCtorEq, ite_false]
+  rw [pow_zf Ctx hk]
+
+omit L in
+theorem powEnd_ok {rd wr : List Region} {m₅ : Mem} {k : Nat} (hk : k ≤ 47) {t : State}
+    (h : PowInv Ctx W SP rd wr m₅ k t) :
+    WP isa (.block (ptr .rax .r13 1024 ++ ([.alu .cmp .rbp (.reg .rax)] : List Instr))) t fun t' =>
+      PowInv Ctx W SP rd wr m₅ k t' ∧ isa.eval .ne t' = some (decide (k ≠ 47)) := by
+  obtain ⟨t', run, hg, hm, hrd, hwr, he⟩ := powEnd_run hk h.r13 h.rbp
+  refine WP.of_runBlock ⟨t', run, ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, he⟩
+  · rw [hg _ (by decide)]; exact h.r13
+  · rw [hg _ (by decide)]; exact h.r15
+  · rw [hg _ (by decide)]; exact h.rbp
+  · rw [hg _ (by decide)]; exact h.rsp
+  · rw [hrd]; exact h.rd
+  · rw [hwr]; exact h.wr
+  · rw [hm]; exact h.frame
+  · intro j hj; rw [hm]; exact h.pows j hj
+
+/-- The 47 powers, one per iteration. -/
+theorem powLoop_ok {rd wr : List Region} (pC : Covers [⟨Ctx, 1024⟩] wr) (pW : Covers [⟨W, 2560⟩] wr)
+    {m₅ : Mem} {t : State} (h : PowInv Ctx W SP rd wr m₅ 0 t) :
+    WP isa (powLoop v.callees) t (PowInv Ctx W SP rd wr m₅ 47) := by
+  refine WP.loop (M := isa) (fun m t => ∃ j, j < 47 ∧ m = 47 - j ∧ PowInv Ctx W SP rd wr m₅ j t)
+    (fun m t ⟨j, hj, hm, ht⟩ => ?_) 47 t ⟨0, by decide, rfl, h⟩
+  subst hm
+  refine WP.seq (WP.mono (powStep_ok v L pC pW hj ht) fun t₁ h₁ => ?_)
+  refine WP.mono (powEnd_ok (k := j + 1) (by omega) h₁) fun t₂ ⟨h₂, he⟩ => ?_
+  rw [he]
+  by_cases hl : j + 1 = 47
+  · left
+    rw [hl] at h₂
+    exact ⟨by simp [hl], h₂⟩
+  · right
+    exact ⟨by simp [hl], 47 - (j + 1), by omega, j + 1, by omega, rfl, h₂⟩
 
 end
 
@@ -307,7 +369,7 @@ theorem initP_wp (v : GcmImpl) {s : State} (hp : Proof.AesGcm.initPrecomputedX86
   have pC₅ : Covers [⟨s.gpr .rdx, 1024⟩] s₅.wr := by rw [D.wr]; exact pC
   have pW₅ : Covers [⟨s.gpr .rcx, 2560⟩] s₅.wr := by rw [D.wr]; exact pW
   refine WP.seq (WP.mono (powStart_ok L pC₅ D.r13 D.r15 D.rsp) fun t I => ?_)
-  refine WP.seq (WP.mono (powSteps_ok v L pC₅ pW₅ 47 (Nat.le_refl _) I) fun t' I' => ?_)
+  refine WP.seq (WP.mono (powLoop_ok v L pC₅ pW₅ I) fun t' I' => ?_)
   have dS : ∀ r ∈ [(⟨s.gpr .rdx + BitVec.ofNat 64 256, 768⟩ : Region), ⟨s.gpr .rcx + BitVec.ofNat 64 512, 256⟩,
       below (s.gpr .rsp) 8], (savedR (s.gpr .rcx)).Disjoint r := by
     intro r hr

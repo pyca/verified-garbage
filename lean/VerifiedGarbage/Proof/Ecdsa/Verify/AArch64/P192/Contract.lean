@@ -1,6 +1,12 @@
-import VerifiedGarbage.Spec.Ecdsa.Verify.P192
-import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.Framework.Contract
+module
+
+public import VerifiedGarbage.Spec.Ecdsa.Verify.P192
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.Framework.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDSA verification over p192 on AArch64: the contract the proof is written against
@@ -11,6 +17,8 @@ the result in `w0`. Only the pointers are public here: the proof shows that
 nothing else affects timing, although the contract would let the contents of
 the three buffers.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Verify.AArch64.P192
 

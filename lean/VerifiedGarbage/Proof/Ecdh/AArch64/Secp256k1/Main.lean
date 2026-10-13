@@ -1,7 +1,15 @@
-import VerifiedGarbage.Proof.Ecdh.AArch64.Main
-import VerifiedGarbage.Proof.Ecdh.AArch64.Secp256k1.MulPow
+module
+
+public import VerifiedGarbage.Proof.Ecdh.AArch64.Main
+public import VerifiedGarbage.Proof.Ecdh.AArch64.Secp256k1.MulPow
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # secp256k1 ECDH with the general ladder -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdh.AArch64.Secp256k1
 
@@ -97,18 +105,18 @@ theorem exchange_ok (hc : BaseCfgOk secp256k1) (hC : Law secp256k1.C) {s₀ : St
     (by rw [r₄ (by decide) (by decide) (by decide) (by decide)]; exact S₂.rz)
     ht₄ fun s₅ L => ?_
   have hs₅ := L.scr
-  have F₅ := F₄.unch h7 hn ((fixedOk_slW (l := gSlots) (by decide)).append fixedOk_chainWc)
+  have F₅ := F₄.unch h7 hn ((fixedOk_slW (l := gSlots) (by decide)).append (fixedOk_chainWc hc))
     L.unch
   have e₅ : ∀ {i}, i < 45 → i ∉ gSlots → i ∉ [ACC, TMP] →
       sv secp256k1 (s₀.gpr .x3) s₅ i = sv secp256k1 (s₀.gpr .x3) s₄ i :=
     fun hi h₁ h₂ => sv_unch L.unch h7 hn hi
-      (apart_append (apart_slW h₁) (apart_chainWc hi h₂))
+      (apart_append (apart_slW h₁) (apart_chainWc hc hi h₂))
   have hflag₅ := f₄
   have hf₅ : word s₅.mem (s₀.gpr .x3) (secp256k1.sl FLAG) = word s₄.mem (s₀.gpr .x3) (secp256k1.sl FLAG) := by
     have hF := sl_le secp256k1 h7 (i := FLAG) (by decide)
     refine L.unch.word (fun w hw => ?_) (by omega)
     have ha := apart_append (apart_slW (c := secp256k1) (i := FLAG) (l := gSlots) (by decide))
-      (apart_chainWc (i := FLAG) (by decide) (by decide)) w hw
+      (apart_chainWc hc (i := FLAG) (by decide) (by decide)) w hw
     rcases ha with ha | ha
     · exact .inl (by omega)
     · exact .inr ha

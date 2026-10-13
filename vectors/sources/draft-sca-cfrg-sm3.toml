@@ -1,0 +1,5 @@
+name = "The SM3 Cryptographic Hash Function, draft-sca-cfrg-sm3-02 (GB/T 32905-2016 transcription and Appendix A examples)"
+directories = ["draft-sca-cfrg-sm3"]
+url = "https://www.ietf.org/archive/id/draft-sca-cfrg-sm3-02.txt"
+sha256 = "095dfb60526d1dc1d32be64577ba730da75aa3ef7b43fc72dcb016ee7e3afcd2"
+retrieved = 2026-10-10

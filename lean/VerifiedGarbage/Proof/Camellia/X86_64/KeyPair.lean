@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Camellia.X86_64.KeyStore
-import VerifiedGarbage.Proof.Camellia.X86_64.KeyChecks2
+module
+
+public import VerifiedGarbage.Proof.Camellia.X86_64.KeyStore
+public import VerifiedGarbage.Proof.Camellia.X86_64.KeyChecks2
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # A pair of rounds of the key schedule on x86-64
@@ -9,6 +15,8 @@ and `kp` at entry `m` of a table of the subkeys `E`, `pairPlain` leaves
 `pair (E m) (E (m + 1))` of them there, and `kp` at entry `m + 2`. The
 rounds are ECB's (`round_step`), on eight copies of the value.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Camellia.X86_64
 

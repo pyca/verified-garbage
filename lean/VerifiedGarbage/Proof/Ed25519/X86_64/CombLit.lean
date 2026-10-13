@@ -1,16 +1,35 @@
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.Lit
-import VerifiedGarbage.Impl.X25519.X86_64.Adx
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
-import VerifiedGarbage.Impl.Ed25519.X86_64.Comb
-import VerifiedGarbage.Impl.Ed25519.X86_64.ScalarBasePrecomputed
-import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulCTLit
+module
 
-/-! Checked literals for the comb variant and its constant-time proof. -/
+public import VerifiedGarbage.Proof.X25519.X86_64.Adx.Lit
+meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.Lit
+public import VerifiedGarbage.Impl.X25519.X86_64.Adx
+meta import VerifiedGarbage.Impl.X25519.X86_64.Adx
+public import VerifiedGarbage.Proof.Framework.X86_64.Lit
+meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
+public import VerifiedGarbage.Impl.Ed25519.X86_64.Comb
+meta import VerifiedGarbage.Impl.Ed25519.X86_64.Comb
+public import VerifiedGarbage.Impl.Ed25519.X86_64.ScalarBasePrecomputed
+meta import VerifiedGarbage.Impl.Ed25519.X86_64.ScalarBasePrecomputed
+public import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulCTLit
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulCTLit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+/-! Checked literals for the comb variant (its doublings' calls inlined, as its constant-time proof
+reads it) and the registered code. -/
+
+@[expose] public section
+
 namespace VG.Proof.Ed25519.X86_64
 open VG VG.X86_64 VG.Impl.Ed25519.X86_64
-materialize_code combMultiplyLit := (combMultiply Impl.X25519.X86_64.baseline)
-materialize_code combMultiplyAdxLit := (combMultiply Impl.X25519.X86_64.adx)
-materialize_code combMultiplyAdxYLit := (combMultiply Impl.X25519.X86_64.adx combSelectY)
+materialize_code combMultiplyLit :=
+  (combMultiply Impl.X25519.X86_64.baseline combSelect (Point64.bodies Impl.X25519.X86_64.baseline))
+materialize_code combMultiplyAdxLit :=
+  (combMultiply Impl.X25519.X86_64.adx combSelect (Point64.bodies Impl.X25519.X86_64.adx))
+materialize_code combMultiplyAdxYLit :=
+  (combMultiply Impl.X25519.X86_64.adx combSelectY (Point64.bodies Impl.X25519.X86_64.adx))
 end VG.Proof.Ed25519.X86_64
 
 namespace VG

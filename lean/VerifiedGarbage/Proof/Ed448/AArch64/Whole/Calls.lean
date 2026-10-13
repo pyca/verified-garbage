@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Ed448.AArch64.Whole.Ctx
-import VerifiedGarbage.Proof.Ed448.AArch64.ScalarVerified
-import VerifiedGarbage.Proof.Ed448.AArch64.BaseContract
-import VerifiedGarbage.Proof.Ed448.AArch64.VerifyLocal
+module
+
+public import VerifiedGarbage.Proof.Ed448.AArch64.Whole.Ctx
+public import VerifiedGarbage.Proof.Ed448.AArch64.ScalarVerified
+public import VerifiedGarbage.Proof.Ed448.AArch64.BaseContract
+public import VerifiedGarbage.Proof.Ed448.AArch64.VerifyLocal
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448's complete operations on AArch64: calls of the Ed448 primitives
@@ -11,6 +17,8 @@ import VerifiedGarbage.Proof.Ed448.AArch64.VerifyLocal
 in their registers: the callee's precondition (`*_pre`), and its
 postcondition after the call (`*_call`), which keeps `WCtx`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.AArch64.Whole
 

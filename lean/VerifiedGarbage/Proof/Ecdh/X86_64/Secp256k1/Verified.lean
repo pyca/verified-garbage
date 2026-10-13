@@ -1,9 +1,23 @@
-import VerifiedGarbage.Proof.Ecdh.X86_64.Main
-import VerifiedGarbage.Proof.Ecdh.X86_64.Secp256k1.Contract
-import VerifiedGarbage.Proof.Ecdh.X86_64.Secp256k1.Lit
-import VerifiedGarbage.Proof.Ecdsa.X86_64.Secp256k1.Verified
-import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
-import VerifiedGarbage.Proof.Framework.LitShare
+module
+
+public import VerifiedGarbage.Proof.Ecdh.X86_64.Main
+meta import VerifiedGarbage.Proof.Ecdh.X86_64.Main
+public import VerifiedGarbage.Proof.Ecdh.X86_64.Secp256k1.Contract
+meta import VerifiedGarbage.Proof.Ecdh.X86_64.Secp256k1.Contract
+public import VerifiedGarbage.Proof.Ecdh.X86_64.Secp256k1.Lit
+meta import VerifiedGarbage.Proof.Ecdh.X86_64.Secp256k1.Lit
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.Secp256k1.Verified
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.Secp256k1.Verified
+public import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
+meta import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
+public import VerifiedGarbage.Proof.Framework.LitShare
+meta import VerifiedGarbage.Proof.Framework.LitShare
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDH over secp256k1 on x86-64: `Verified`
@@ -17,6 +31,8 @@ tracking: the only branches are on loop counters, and every address is an
 argument plus a constant or a counter, so not even the peer's key (which the
 contract would let leak) affects timing.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdh.X86_64.Secp256k1
 
@@ -40,16 +56,17 @@ theorem post_of {s s' : State} (h : EPost secp256k1 s s') : ecdhX86_64.post s s'
   rcases q with _ | z <;> exact id
 
 theorem ecdh_x86 (hL : Weierstrass.Law Spec.Secp256k1.curve) (hI : Weierstrass.X86_64.InvSounds) (s : State) (hs : ecdhX86_64.pre s) :
-    ∃ t s', Exec isa exchangeSecp256k1 s t s' ∧ abiPreserved s s' ∧ ecdhX86_64.post s s' := by
-  obtain ⟨t, s', he, hsv, hpost⟩ := exchange_ok (secp256k1_ok hI) hL (pre_of hs)
-  have hsp : ∀ i ∈ instrs exchangeSecp256k1, Taint.clobbers i .rsp = false := by
+    ∃ t s', Exec isa exchangeSecp256k1.inline s t s' ∧ abiPreserved s s' ∧ ecdhX86_64.post s s' := by
+  obtain ⟨t, s', he, hsv, hpost⟩ := exchange_ok (secp256k1_ok hI) hL (pre_of hs) secp256k1_mulBase.2
+  have hsp : ∀ i ∈ instrs exchangeSecp256k1.inline, Taint.clobbers i .rsp = false := by
     have h : exchangeSecp256k1.allInstrs (fun i => !Taint.clobbers i .rsp) = true := by lit_decide
-    rw [Code.allInstrs_eq, List.all_eq_true] at h
+    rw [← Code.allInstrs_inline, Code.allInstrs_eq, List.all_eq_true] at h
     intro i hi
     simpa using h i hi
-  have F := (Exec.regions he (by lit_decide)).2.2
+  have F := (Exec.regions he (Code.noCalls_inline (by lit_decide))).2.2
   obtain ⟨-, hwr, -, -, -, -, -, hro, hrs, -, -⟩ := hs
-  refine ⟨t, s', he, abiPreserved_of_exec (by lit_decide) he ⟨fun r hr => ?_, ?_⟩, post_of hpost⟩
+  refine ⟨t, s', he, abiPreserved_of_exec (by rw [Code.allInstrs_inline]; lit_decide) he
+    ⟨fun r hr => ?_, ?_⟩, post_of hpost⟩
   · simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
     · exact hsv _ (by decide)
@@ -75,18 +92,36 @@ materialize_shared exchangeSecp256k1Erased
 
 theorem ecdh_ct : ConstantTime isa ecdhX86_64.pre ecdhX86_64.pub exchangeSecp256k1 := by
   refine VG.Taint.constantTime_mapBlocks (c' := exchangeSecp256k1Erased) taintS_eraseInv
-    (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx]) rfl ?_ rfl (by taint_decide)
-  intro s₁ s₂ _ _ ⟨_, h1, h2, h3, h4⟩
+    (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx, .rsp]) rfl ?_ rfl (by taint_decide)
+  intro s₁ s₂ _ _ ⟨h0, h1, h2, h3, h4⟩
   refine Taint.agree_ofRegs fun r hr => ?_
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl
+  rcases hr with rfl | rfl | rfl | rfl | rfl
   · exact h1
   · exact h2
   · exact h3
   · exact h4
+  · exact h0
+
+/-- The contract with 8 bytes of stack, for the calls' return address. -/
+theorem implies8 : ecdhX86_64.Implies (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.Secp256k1.inst X86_64.abi 8) :=
+  implies.stack8_abi (by
+    sig_implies_sat [Spec.EcKey.Secp256k1.inst, Spec.Ecdh.Instance.exchangeContract,
+      Spec.Ecdh.Instance.exchangeSig, Spec.Secp256k1.curve, Spec.EcKey.scratchWords, X86_64.abi,
+      X86_64.argRegs, satState] [satState] using satState)
+
+/-- The output is apart from the calls' return address. -/
+theorem ecdh_patch (s b : State) (hv : Mem) (u : Nat → BitVec 64)
+    (hs : (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.Secp256k1.inst X86_64.abi 8).pre s)
+    (hp : ecdhX86_64.post s b) : ecdhX86_64.post s (b.patch (hole (s.gpr .rsp)) hv u) := by
+  obtain ⟨-, hwr, -⟩ := implies8.pre s hs
+  have hb := Clear.wr_bytes (Sig.clear_of_pre hs) (p := s.gpr .rdi) (n := 32)
+    (by rw [hwr]; simp) (by decide)
+  simpa only [ecdhX86_64, State.patch_gpr, EcKey.bytesAt_patch hb] using hp
 
 theorem ecdh_verified (hL : Weierstrass.Law Spec.Secp256k1.curve) (hI : Weierstrass.X86_64.InvSounds) :
-    Verified X86_64.target exchangeSecp256k1 (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.Secp256k1.inst X86_64.abi) :=
-  Verified.of_correct (ecdh_x86 hL hI) ecdh_ct implies
+    Verified X86_64.target exchangeSecp256k1 (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.Secp256k1.inst X86_64.abi 8) :=
+  Verified.of_inline_ct (by lit_decide) (ecdh_x86 hL hI) ecdh_ct implies8
+    (fun _ h => Sig.clear_of_pre h) ecdh_patch
 
 end VG.Proof.Ecdh.X86_64.Secp256k1

@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Ecdh.X86_64.MulOk
-import VerifiedGarbage.Proof.Ecdh.Exchange
-import VerifiedGarbage.Proof.Weierstrass.X86_64.Rep
+module
+
+public import VerifiedGarbage.Proof.Ecdh.X86_64.MulOk
+public import VerifiedGarbage.Proof.Ecdh.Exchange
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.Rep
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDH on x86-64: the result, and the whole function
@@ -12,6 +18,8 @@ Montgomery's form by a multiplication by 1, ands the masks of `d ∈ [1, n-1]`
 and `Z ≠ 0` into the flag, and writes `x` or zeros (`middle_ok`); `finish`
 writes the result as the signature's does (`ecFinish_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdh.X86_64
 
@@ -282,17 +290,17 @@ theorem exchangeWith_eq' (c : Cfg) (mq : Prog isa) : Impl.Ecdh.X86_64.Cfg.exchan
     (.seq (.block (Impl.Ecdh.X86_64.Cfg.peer c)) (.seq (Impl.Ecdh.X86_64.Cfg.validate c)
     (.seq mq (.seq c.pPow (Impl.Ecdh.X86_64.Cfg.middle c)))))) := rfl
 
-/-- The exchange inlined: only `mq` calls functions. -/
+/-- The exchange inlined: only `mq` and the inversion call functions. -/
 theorem exchangeWith_inline (c : Cfg) (mq : Prog isa) : (Impl.Ecdh.X86_64.Cfg.exchangeWith c mq).inline =
     .seq (.block Impl.Ecdh.X86_64.Cfg.args) (.seq (.seq (.block (c.setupWith none))
       (.seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) (.seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n))
       (.seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n)) (.block [])))))
     (.seq (.block (Impl.Ecdh.X86_64.Cfg.peer c)) (.seq (Impl.Ecdh.X86_64.Cfg.validate c)
-    (.seq mq.inline (.seq c.pPow (Impl.Ecdh.X86_64.Cfg.middle c)))))) := by
+    (.seq mq.inline (.seq c.pPow.inline (Impl.Ecdh.X86_64.Cfg.middle c)))))) := by
   rw [exchangeWith_eq']
   show Code.seq _ (Code.seq _ (Code.seq _ (Code.seq (Impl.Ecdh.X86_64.Cfg.validate c).inline
     (Code.seq _ (Code.seq c.pPow.inline (Impl.Ecdh.X86_64.Cfg.middle c).inline))))) = _
-  rw [pPow_inline c, show (Impl.Ecdh.X86_64.Cfg.validate c).inline = _ from blocks_inline _,
+  rw [show (Impl.Ecdh.X86_64.Cfg.validate c).inline = _ from blocks_inline _,
     show (Impl.Ecdh.X86_64.Cfg.middle c).inline = _ from blocks_inline _]
   rfl
 
@@ -383,7 +391,7 @@ theorem exchangeWith_ok (hc : BaseCfgOk c) (hC : Law c.C) {mq : Prog isa} {W : L
     (by rw [e₄ (by decide) (by decide) (by decide), e₃ (by decide) (by decide) (by decide)]; exact S₂.rz)
     hk₄
     (by rw [S₂.k]; exact ofBytes_bytesAt_lt _ _ _)
-    (fun t ht => by rw [t₄ (j := 0) (by decide) (.inl (by decide)) t ht, S₂.t₀ t ht, S₂.k])
+    (fun t ht => by rw [t₄ (j := 0) (by decide) (.inl (by decide)) t ht, S₂.t₀ rfl t ht, S₂.k])
     (fun h9 t ht => by rw [t₄ (j := 1) (by decide) (.inr (by omega_arith)) t ht, S₂.t₁ h9 t ht]) fun s₅ L => ?_
   have hs₅ := L.scr
   have F₅ := F₄.unch h7 hn hW.fixed L.unch
@@ -450,10 +458,12 @@ theorem exchangeWith_ok (hc : BaseCfgOk c) (hC : Law c.C) {mq : Prog isa} {W : L
     rw [ite_eq_right hcond]
     exact ⟨by rw [rax, hok]; rfl, by rw [bytes, hok]; rfl⟩
 
-/-- `vg_ecdh_<curve>`, by the window method or the ladder (`mulQ_ok`). -/
-theorem exchange_ok (hc : BaseCfgOk c) (hC : Law c.C) {s₀ : State} (hp : EPre c s₀) :
+/-- `vg_ecdh_<curve>`, by the window method or the ladder (`mulQ_ok`), given
+that a curve calling `vg_<curve>_mul` has four words and that function no calls. -/
+theorem exchange_ok (hc : BaseCfgOk c) (hC : Law c.C) {s₀ : State} (hp : EPre c s₀)
+    (hm : c.mul.isSome = true → c.n = 4 ∧ c.mulFn.noCalls = true := by exact fun h => absurd h (by decide)) :
     WP isa (Impl.Ecdh.X86_64.Cfg.exchange c).inline s₀ fun s' =>
       (∀ r ∈ Cfg.saved.map Prod.fst, s'.gpr r = s₀.gpr r) ∧ EPost c s₀ s' :=
-  exchangeWith_ok hc hC (mulQ_ok hc hC) (mulQ_w hc) hp
+  exchangeWith_ok hc hC (mulQ_ok hc hC hm) (mulQ_w hc) hp
 
 end VG.Proof.Ecdh.X86_64

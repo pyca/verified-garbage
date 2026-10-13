@@ -1,10 +1,18 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.Crypt
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Crypt
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on x86-64: `crypt`
 
 Untrusted: everything here is checked by Lean (see `Crypt.lean`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 
@@ -512,6 +520,21 @@ theorem crypt_ok {R : Nat} {icb : Block} {P : Nat} {D : Addr} {n : Nat} {s : Sta
     · obtain ⟨j, hj⟩ := hj
       refine WP.seq (WP.mono (cryptWhole_ok v L hj (hj.ciph L)) fun s'' hj' => ?_)
       exact cryptTail_ok v L hj' (by have := hj.le; omega_arith) (hj'.ciph L)
+
+omit L in
+/-- From the start of a keystream block, nothing done yet. -/
+theorem CrIn.mid {R : Nat} {icb : Block} {P : Nat} {D : Addr} {n : Nat} {s : State}
+    (h : CrIn Ctx St W SP R icb P D n s) (hP : P % 16 = 0) : CrMid Ctx St W SP R icb P D n s.mem 0 s :=
+  ⟨h.env, Nat.zero_le _, by rw [h.r12]; simp, by rw [h.rbp, Nat.sub_zero], h.data, h.rounds,
+    fun hc₀ => by simpa using hc₀, fun _ => by simp [bytesAt]; rfl, rfl, .inr (by omega_arith), Frame.refl _ _⟩
+
+/-- `cryptAl`: `crypt` from the start of a keystream block. -/
+theorem cryptAl_ok {R : Nat} {icb : Block} {P : Nat} {D : Addr} {n : Nat} {s : State}
+    (h : CrIn Ctx St W SP R icb P D n s) (hP : P % 16 = 0) :
+    WP isa (cryptAl v.callees) s (CrOut Ctx St W SP R icb P D n s.mem) := by
+  have h₀ := h.mid hP
+  refine WP.seq (WP.mono (cryptWhole_ok v L h₀ rfl) fun s' hj => ?_)
+  exact cryptTail_ok v L hj (by omega_arith) (hj.ciph L)
 
 end
 

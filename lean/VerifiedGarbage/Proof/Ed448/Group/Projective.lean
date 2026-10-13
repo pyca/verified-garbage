@@ -1,10 +1,16 @@
-import VerifiedGarbage.Proof.Edwards.Group
-import VerifiedGarbage.Proof.Framework.Pratt
-import Mathlib.Tactic.NormNum.Prime
-import VerifiedGarbage.Spec.X448
-import VerifiedGarbage.Proof.Ed448.Ref
-import VerifiedGarbage.Spec.Ed448
-import Mathlib.FieldTheory.Finite.Basic
+module
+
+public import VerifiedGarbage.Proof.Edwards.Group
+public import VerifiedGarbage.Proof.Framework.Pratt
+public import Mathlib.Tactic.NormNum.Prime
+public import VerifiedGarbage.Spec.X448
+public import VerifiedGarbage.Proof.Ed448.Ref
+public import VerifiedGarbage.Spec.Ed448
+public import Mathlib.FieldTheory.Finite.Basic
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The specification's projective points represent points of the group
@@ -27,6 +33,8 @@ only depend on the points represented, which is what lets an implementation
 compute other representatives of the same points. `double` (RFC 8032
 §5.2.4's doubling formulas, `Ref.lean`) doubles the point represented.
 -/
+
+@[expose] public section
 
 /-! ## The field prime `2^448 - 2^224 - 1` is prime
 
@@ -625,7 +633,7 @@ private theorem base_fe :
         Spec.Ed448.basePoint.Y * Spec.Ed448.basePoint.Y := by
   decide +kernel
 
-private theorem base_on :
+theorem base_on :
     OnCurve dZ (toZ Spec.Ed448.basePoint.X) (toZ Spec.Ed448.basePoint.Y) := by
   have e := congrArg toZ base_fe
   simp only [toZ_add, toZ_mul, toZ_one] at e

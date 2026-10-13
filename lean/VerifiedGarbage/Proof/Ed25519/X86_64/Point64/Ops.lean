@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Fn
-import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Lit
+module
+
+public import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Fn
+public import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Lit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The point operations a caller runs
@@ -11,6 +17,8 @@ point operations `pt` that change what the field programs `dblOps` and
 functions' bodies, which calls of them run as (`Code.inline`), are such
 operations (`bodies_ok`, from `fn_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed25519.X86_64
 
@@ -39,6 +47,12 @@ theorem addFn_keeps (t : Bool) : ∀ r ∈ keptRegs, KeepReg.keeps r (addFn fld 
   intro r hr
   simp only [keptRegs, kept, List.map_cons, List.map_nil, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases EdArith.known (fld := fld) with rfl | rfl <;> cases t <;>
+    rcases hr with rfl | rfl | rfl | rfl | rfl <;> lit_decide
+
+theorem addAffineFn_keeps : ∀ r ∈ keptRegs, KeepReg.keeps r (addAffineFn fld) = true := by
+  intro r hr
+  simp only [keptRegs, kept, List.map_cons, List.map_nil, List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases EdArith.known (fld := fld) with rfl | rfl <;>
     rcases hr with rfl | rfl | rfl | rfl | rfl <;> lit_decide
 
 /-- A body's `Keep`, from `fn_ok`: its results are in slots 0–15. -/

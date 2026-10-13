@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx2.Sbox
-import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx2.Transpose
-import VerifiedGarbage.Proof.Framework.Bitslice.Vars
-import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.Proof.Framework.Offset
+module
+
+public import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx2.Sbox
+public import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx2.Transpose
+public import VerifiedGarbage.Proof.Framework.Bitslice.Vars
+public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+public import VerifiedGarbage.Proof.Framework.Offset
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The AVX2 machine state of a batch
@@ -13,6 +19,8 @@ spills (`Room`). Code that only moves and XORs whole words (the S-box
 outputs, the exchange of the halves) is checked on the variable domain,
 quadword lane by quadword lane (`varsRun`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.TripleDes.X86_64.BitslicedAvx2
 
@@ -110,6 +118,47 @@ theorem varsRun {is : List Instr} (regs : List XReg) {post : Env Nat → Bool}
         (fun r => (is.all fun i => i.dst != some r) = false) := by
   obtain ⟨e', he, hpost⟩ := of_check _ _ hchk
   obtain ⟨s', hs', p⟩ := run (fun q _ => vars_sound _ _) h.state (varEnv_rel regs) he
+  exact ⟨e', s', hpost, hs', p⟩
+
+/-! ## Words above another register -/
+
+/-- The 32-byte words above register `b`. -/
+def wordsB (b : Reg) (s : State) (j : Nat) : BitVec 256 := s.mem.readW (yAddr (s.gpr b) j) 256
+
+/-- The values of the variables, the slots above `b`. -/
+def varValsB (b : Reg) (s : State) (regs : List XReg) (q v : Nat) : BitVec 64 :=
+  if v < 64 then qw (wordsB b s v) q else qw (s.ymm (regs.getD (v - 64) .xmm0)) q
+
+theorem varEnv_relB (b : Reg) {n : Nat} (hn : n ≤ 64) {s : State} (regs : List XReg) :
+    Rel (fun q => VarRel (varValsB b s regs q) (varN regs)) ⟨b, n⟩ (varEnv regs) s where
+  reg r a h q hq := by
+    simp only [varEnv, Option.map_eq_some_iff] at h
+    obtain ⟨i, hi, rfl⟩ := h
+    obtain ⟨hlt, heq, -⟩ := List.idxOf?_eq_some_iff.mp hi
+    simp only [VarRel, varN]
+    rw [xorSet_two_pow _ (by omega)]
+    simp only [varValsB, show ¬ 64 + i < 64 by omega, ite_false, Nat.add_sub_cancel_left]
+    simp [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hlt, heq]
+  slot k a hk h q hq := by
+    have hk' : k < 64 := Nat.lt_of_lt_of_le hk hn
+    simp only [varEnv, hk', ite_true, Option.some.injEq] at h
+    subst h
+    simp only [VarRel, varN]
+    rw [xorSet_two_pow _ (by omega)]
+    simp only [varValsB, hk', ite_true, wordsB]
+  gc _ _ h := by cases h
+  xc _ _ h := by cases h
+
+/-- Run a block that the variable domain accepts on the words above `b`. -/
+theorem varsRunB {is : List Instr} (regs : List XReg) {post : Env Nat → Bool} (b : Reg) {n : Nat}
+    (hn : n ≤ 64) (hchk : check (vars 64) ⟨b, n⟩ is (varEnv regs) post = true) {s : State}
+    (h : Ok ⟨b, n⟩ s) :
+    ∃ e' s', post e' = true ∧ runBlock isa is s = some s' ∧
+      Post (fun q => VarRel (varValsB b s regs q) (varN regs)) ⟨b, n⟩ e' s s'
+        (fun r => (is.all fun i => ydst i != some r) = false)
+        (fun r => (is.all fun i => i.dst != some r) = false) := by
+  obtain ⟨e', he, hpost⟩ := of_check _ _ hchk
+  obtain ⟨s', hs', p⟩ := run (fun q _ => vars_sound _ _) h (varEnv_relB b hn regs) he
   exact ⟨e', s', hpost, hs', p⟩
 
 theorem xorSet_two_pow_xor {V : Nat → BitVec 64} {a b N : Nat} (ha : a < N) (hb : b < N) :

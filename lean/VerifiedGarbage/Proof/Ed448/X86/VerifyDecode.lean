@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Ed448.X86.VerifySign
-import VerifiedGarbage.Proof.Ed448.X86.VerifyRoot
-import VerifiedGarbage.Proof.Ed448.Recover
+module
+
+public import VerifiedGarbage.Proof.Ed448.X86.VerifySign
+public import VerifiedGarbage.Proof.Ed448.X86.VerifyRoot
+public import VerifiedGarbage.Proof.Ed448.Recover
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 verification's equation on x86 (32-bit): decoding a point
@@ -12,6 +18,8 @@ the point is `(x : y : 1)` with `x` in slot `xo` and `y` in slot `yo` (by
 (`Proof/Ed448/VerifyFormulas.lean`): `u = y² - 1`, `v = d y² - 1`, `t = u³v`,
 `x = t (t (uv)²)^((p-3)/4)`, the check `v x² = u`, and the sign.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.X86
 
@@ -85,7 +93,7 @@ theorem decode_ok (hR : RecoverOk) {s : State} {base : Addr} (hs : Scr s base) (
   have hc4 := k4.ctx hc3
   -- `v x² = u`
   refine WP.seq (WP.mono (eqSlots_ok hs4 b4 12 13 (by decide) (by decide) (by decide))
-    fun s5 ⟨k5, b5, e5, c5⟩ => ?_)
+    fun s5 ⟨k5, b5, e5, c5, _⟩ => ?_)
   have hs5 := k5.scr hs4
   have hc5 := k5.ctx hc4
   -- `-x`

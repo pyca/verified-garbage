@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Argon2.AArch64.Instructions
-import VerifiedGarbage.Impl.Argon2.AArch64.Divide
+module
+
+public import VerifiedGarbage.Impl.Argon2.AArch64.Instructions
+public import VerifiedGarbage.Impl.Argon2.AArch64.Divide
 
 /-! # Selecting a lane from J₂ with fixed-time division
 
@@ -8,6 +10,8 @@ import VerifiedGarbage.Impl.Argon2.AArch64.Divide
 for the subsequent J₁ mapping. The first slice of pass zero instead uses
 the current lane; the enclosing public loop selects that case separately.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Argon2.AArch64.ReferenceLane
 

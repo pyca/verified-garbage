@@ -1,7 +1,13 @@
-import VerifiedGarbage.Impl.Weierstrass.X86_64.JointDouble
-import VerifiedGarbage.Proof.Weierstrass.X86_64.JointCachedDigit
-import VerifiedGarbage.Proof.Weierstrass.X86_64.JacDouble
-import VerifiedGarbage.Proof.Weierstrass.X86_64.JacAddTiming
+module
+
+public import VerifiedGarbage.Impl.Weierstrass.X86_64.JointDouble
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointCachedDigit
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.JacDouble
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.JacAddTiming
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The joint loop's doubler
@@ -11,6 +17,9 @@ What the joint loop needs of the curve's doubling of its accumulator
 and its timing depends on nothing but the working space's address. Any
 number of words can use `Joint.jacDouble` (`jacDouble_doubler`).
 -/
+
+@[expose] public section
+
 namespace VG.Proof.Weierstrass.X86_64
 open VG VG.X86_64 VG.Impl.Mont VG.Impl.Weierstrass VG.Impl.Weierstrass.X86_64
 open VG.Proof.Mont VG.Proof.Mont.X86_64 Spec.Weierstrass
@@ -69,5 +78,27 @@ theorem jacDouble_doubler {c : Joint.Cfg} {C : Curve} {size : Nat}
       (V:=[c.K.D.x,c.K.D.y,c.K.D.z]++jointLive c) (by intro x hx; exact List.mem_append_left _ hx) hcp
     exact cp.mono (fun _ _ h => h) (fun _ _ h => ⟨_,h.sub (fun _ hx =>
       List.mem_append_right _ (List.mem_append_right _ hx))⟩)
+
+/-- A call of a doubler that calls nothing, between `saves` and `restores`
+(`PointOps.wrap`), is a doubler. -/
+theorem call_doubler {c : Joint.Cfg} {C : Curve} {size : Nat} {d : Prog isa}
+    (h : JointDoubler c C size d) (hnc : d.noCalls = true)
+    (hclob : ∀ r ∈ Proof.Weierstrass.X86_64.PointOps.keptRegs, r ∈ clob c.K.M.n) (n : String) :
+    JointDoubler c C size (.call n (PointOps.wrap d)) := by
+  have hi := Code.inline_of_noCalls hnc
+  constructor
+  · intro base u v Q A External s hExt hA hs
+    show WP isa (PointOps.wrap d) s _
+    refine Proof.Weierstrass.X86_64.PointOps.wrap_keep_ok hclob
+      (fun x y pk k sy hx => hx.of_keeps k (by simp) (hExt x y pk sy hx.external))
+      (fun x y pk k sy hx => hx.of_keeps k (by decide) (hExt x y pk sy hx.external)) hs
+      fun x hx => ?_
+    have := h.ok hExt hA hx
+    rwa [hi] at this
+  · intro base E
+    show RelCT isa _ (PointOps.wrap d) _
+    have := h.ct (base := base) (E := E)
+    rw [hi] at this
+    exact Proof.Weierstrass.X86_64.PointOps.wrap_relCT this
 
 end VG.Proof.Weierstrass.X86_64

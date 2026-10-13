@@ -1,7 +1,15 @@
-import VerifiedGarbage.Proof.Ecdsa.AArch64.BoothContract
-import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombJ
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.CombProduction
-import VerifiedGarbage.Proof.P256.Order
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.BoothContract
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombJ
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.CombProduction
+public import VerifiedGarbage.Proof.P256.Order
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.AArch64
 open VG VG.AArch64 VG.Impl.Ecdsa.AArch64
@@ -13,9 +21,10 @@ theorem booth_comb_correct (hL : Law Spec.P256.curve) (hI : InvSounds)
     CombCorrect p256 Impl.P256.Booth.comb := by
   intro base k T s hs hm hf
   have hc := p256_ok hI
-  exact tcombJWith_ok (tcombLay hc.toBaseCfgOk) (combA hc.toBaseCfgOk)
+  exact WP.mono (tcombJWith_ok (tcombLay hc.toBaseCfgOk) (combA hc.toBaseCfgOk)
     (Forward.CombArithmetic.compiler_correct (by decide)) (by decide) hL hc.am3 hc.onG
-    (tcombVals hc.toBaseCfgOk hL hT) hc.p_lt (by decide) (Proof.P256.booth hL) hf.k_lt hs hm hf
+    (tcombVals hc.toBaseCfgOk hL hT) hc.p_lt (by decide) (Proof.P256.booth hL) hf.k_lt hs hm hf)
+    fun _ ⟨K, U, M, L, R⟩ => ⟨K, U.mono fun w hw => List.mem_append_left _ hw, M, L, R⟩
 
 theorem booth_sign_verified (hL : Law Spec.P256.curve) (hI : InvSounds)
     (hT : CombOkW Spec.P256.curve 7 37 Impl.P256.p256Comb7 Impl.P256.p256Comb7Start) :

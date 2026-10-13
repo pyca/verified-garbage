@@ -1,9 +1,17 @@
-import VerifiedGarbage.Proof.AesSiv.X86.EncCT
-import VerifiedGarbage.Proof.AesSiv.X86.Init
-import VerifiedGarbage.Proof.AesSiv.Scratch
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Framework.X86.StackScratch
-import VerifiedGarbage.Proof.Framework.X86.Inline
+module
+
+public import VerifiedGarbage.Proof.AesSiv.X86.EncCT
+public import VerifiedGarbage.Proof.AesSiv.X86.Init
+public import VerifiedGarbage.Proof.AesSiv.Scratch
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.X86.StackScratch
+public import VerifiedGarbage.Proof.Framework.X86.Inline
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.AesSiv.X86
 

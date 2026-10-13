@@ -1,5 +1,11 @@
-import VerifiedGarbage.Spec.X25519
-import VerifiedGarbage.Proof.Framework.PowLit
+module
+
+public import VerifiedGarbage.Spec.X25519
+public import VerifiedGarbage.Proof.Framework.PowLit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X25519: field elements as natural numbers
@@ -10,6 +16,8 @@ element of `GF(p)`, and the lemmas here turn what an implementation proves
 about its numbers (modulo `p`) into the operations of `Spec/X25519.lean`, in
 the order the spec writes them.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X25519
 
@@ -54,6 +62,12 @@ theorem toFe_sub {a b c : Nat} (h : (c + b) % P = a % P) : toFe c = toFe a - toF
       show P - y + (x + y - P) = x by omega, Nat.mod_eq_of_lt hx]
 
 /-- A multiplication by `a24`, written as the spec writes it. -/
+theorem toFe_addA24 {a b c : Nat} (h : c % P = (b + 121665 * a) % P) :
+    toFe c = toFe b + a24 * toFe a := by
+  apply Fin.ext
+  show c % P = (b % P + (121665 % P) * (a % P) % P) % P
+  rw [h, Nat.add_mod, Nat.mul_mod]
+
 theorem toFe_a24 {a c : Nat} (h : c % P = 121665 * a % P) : toFe c = a24 * toFe a := by
   apply Fin.ext
   show c % P = (121665 % P) * (a % P) % P

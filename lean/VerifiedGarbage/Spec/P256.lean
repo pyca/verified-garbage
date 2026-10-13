@@ -1,4 +1,6 @@
-import VerifiedGarbage.Spec.Weierstrass
+module
+
+public import VerifiedGarbage.Spec.Weierstrass
 
 /-!
 # The curve P-256 (NIST SP 800-186)
@@ -10,6 +12,8 @@ Domain Parameters* (February 2023), §3.2.1.3, where they are given in
 decimal (`p`, `n`) and hexadecimal (`b`, `G`). The coefficient `a` is
 `-3`, that is `p - 3`. The cofactor is 1.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.P256
 

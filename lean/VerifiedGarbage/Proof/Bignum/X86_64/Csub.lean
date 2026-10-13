@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.Rounds
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.Rounds
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Multiword arithmetic on x86-64: the conditional subtraction
@@ -9,6 +15,8 @@ then the borrow of `T - m` with the top word of `T` counted: `rbp` all
 ones iff `T < m` (`subMod_ok`). `selectAcc` then stores `T` or `T - m` by
 the mask (`selectAcc_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64
 

@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Setup
-import VerifiedGarbage.Impl.Ed25519.X86_64.Ifma
+module
+
+public import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Setup
+public import VerifiedGarbage.Impl.Ed25519.X86_64.Ifma
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed25519 doublings with AVX512_IFMA: the blocks, run symbolically
@@ -8,6 +14,8 @@ The vector blocks of the lanes' doublings, loading and storing but X25519's prod
 symbolically (`Proof/X25519/X86_64/Ifma/Sym.lean`): each output limb, lane by
 lane, as a number (`rfl`), and its bounds (`decide`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed25519.X86_64.Ifma
 

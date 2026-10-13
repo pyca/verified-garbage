@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Ed25519.Group.Extended
-import VerifiedGarbage.Proof.Ed25519.DblPoint
+module
+
+public import VerifiedGarbage.Proof.Ed25519.Group.Extended
+public import VerifiedGarbage.Proof.Ed25519.DblPoint
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Doubling with the dedicated formula
@@ -9,6 +15,8 @@ for `a = -1`, with the signs of `F` and `H` flipped, which scales the result
 by `-1` (the same point). It reads only `X : Y : Z` (`RepP`), so a chain of
 doublings need not compute `T` but at its end.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed25519
 

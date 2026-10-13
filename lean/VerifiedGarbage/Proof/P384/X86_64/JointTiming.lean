@@ -1,16 +1,34 @@
-import VerifiedGarbage.Impl.Ecdsa.Verify.P384.X86_64
-import VerifiedGarbage.Proof.P384.X86_64.JacTiming
-import VerifiedGarbage.Proof.Weierstrass.X86_64.JointCachedDigitTiming
-import VerifiedGarbage.Proof.Weierstrass.X86_64.JointFixedDigitTiming
-import VerifiedGarbage.Proof.Weierstrass.X86_64.JointFixedTiming
-import VerifiedGarbage.Proof.Weierstrass.X86_64.FastNafTiming
-import VerifiedGarbage.Proof.Framework.X86_64.TaintSym
-import VerifiedGarbage.Proof.P384.X86_64.JointPartsLit
-import VerifiedGarbage.Proof.P384.X86_64.JointPartsLitAdx
+module
+
+public import VerifiedGarbage.Impl.Ecdsa.Verify.P384.X86_64
+meta import VerifiedGarbage.Impl.Ecdsa.Verify.P384.X86_64
+public import VerifiedGarbage.Proof.P384.X86_64.JacTiming
+meta import VerifiedGarbage.Proof.P384.X86_64.JacTiming
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointCachedDigitTiming
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.JointCachedDigitTiming
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointFixedDigitTiming
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.JointFixedDigitTiming
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointFixedTiming
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.JointFixedTiming
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.FastNafTiming
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.FastNafTiming
+public import VerifiedGarbage.Proof.Framework.X86_64.TaintSym
+meta import VerifiedGarbage.Proof.Framework.X86_64.TaintSym
+public import VerifiedGarbage.Proof.P384.X86_64.JointPartsLit
+meta import VerifiedGarbage.Proof.P384.X86_64.JointPartsLit
+public import VerifiedGarbage.Proof.P384.X86_64.JointPartsLitAdx
+meta import VerifiedGarbage.Proof.P384.X86_64.JointPartsLitAdx
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Baseline and ADX taint checks of the rest of P-384's joint loop: its digits'
 reads and entries, the cache of `Z²`, `Z³`, the seed, the counter, the
 recoders and the doubler. -/
+
+@[expose] public section
+
 namespace VG.Proof.P384.X86_64
 open VG VG.X86_64 VG.Impl.P384.X86_64 VG.Impl.Weierstrass VG.Impl.Weierstrass.X86_64
 open VG.Impl.Ecdsa.X86_64 VG.Impl.Ecdsa.Verify.X86_64 VG.Proof.Weierstrass.X86_64
@@ -47,11 +65,11 @@ theorem joint_adx_fixed_checks : JointFixedChecks publicJointAdx := by
   · exact VG.Taint.constantTime (A:=taintSym ["VG_P384_COMB"]) (Taint.ofRegs [.rdi,.r8])
       (fun _ _ _ _ h => h) (by taint_decide)
 
-theorem nafCacheTable_ct : ScratchCT (Naf.cacheTable publicJoint.K.M publicJoint.K.tbl publicJoint.cache 8).inline :=
+theorem nafCacheTable_ct : ScratchCT (Joint.cacheCode publicJoint).inline :=
   VG.Taint.constantTime (A:=taint) (Taint.ofRegs [.rdi]) (fun _ _ _ _ h => h) (by taint_decide)
 
 theorem nafCacheTable_adx_ct :
-    ScratchCT (Naf.cacheTable publicJointAdx.K.M publicJointAdx.K.tbl publicJointAdx.cache 8).inline :=
+    ScratchCT (Joint.cacheCode publicJointAdx).inline :=
   VG.Taint.constantTime (A:=taint) (Taint.ofRegs [.rdi]) (fun _ _ _ _ h => h) (by taint_decide)
 
 theorem joint_infinity_ct : ScratchCT (.block (Jacobian.infinity publicJoint.K publicJoint.K.R)) :=
@@ -61,11 +79,11 @@ theorem joint_adx_infinity_ct : ScratchCT (.block (Jacobian.infinity publicJoint
   VG.Taint.constantTime (A:=taint) (Taint.ofRegs [.rdi]) (fun _ _ _ _ h => h) (by taint_decide)
 
 theorem joint_counter_ct :
-    ScratchCT (.block [.mov32 .rbx (.imm (BitVec.ofNat 32 (64*publicJoint.K.M.n)))]) :=
+    ScratchCT (.block [.mov32 .rbx (.imm (BitVec.ofNat 32 (Joint.top publicJoint)))]) :=
   VG.Taint.constantTime (A:=taint) (Taint.ofRegs [.rdi]) (fun _ _ _ _ h => h) (by taint_decide)
 
 theorem joint_adx_counter_ct :
-    ScratchCT (.block [.mov32 .rbx (.imm (BitVec.ofNat 32 (64*publicJointAdx.K.M.n)))]) :=
+    ScratchCT (.block [.mov32 .rbx (.imm (BitVec.ofNat 32 (Joint.top publicJointAdx)))]) :=
   VG.Taint.constantTime (A:=taint) (Taint.ofRegs [.rdi]) (fun _ _ _ _ h => h) (by taint_decide)
 
 theorem fastPeer_checks : FastPrepChecks 6 (p384v.sl V) p384v.winBits 5 := by

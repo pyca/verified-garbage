@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJac
-import VerifiedGarbage.Proof.P256.X86_64.DoubleHalfPublic
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJac
+public import VerifiedGarbage.Proof.P256.X86_64.DoubleHalfPublic
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # P-256 on x86-64: the Jacobian window method with the doubling by halving
@@ -9,6 +15,8 @@ doubling the Jacobian window method can use (`doubleHalfPublic_dblOk`), and
 P-256's order is `17 (mod 32)` (`n_mod32`), at least `17`, so `winJac_ok` gives `[k]P` for
 `k < n` (`winJacP256_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.P256.X86_64
 

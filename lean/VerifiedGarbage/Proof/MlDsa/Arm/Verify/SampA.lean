@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlDsa.Arm.Verify.Z
+module
+
+public import VerifiedGarbage.Proof.MlDsa.Arm.Verify.Z
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA verification on 32-bit ARM: the entries of `Â`
@@ -9,6 +15,8 @@ after the entries before `(r, c)` in row order (`VS`), each is reduced, and
 `r11` is 1 if every sampler succeeded, with the entries those of the standard
 for some bound, and 0 if one of them fails within the least bound.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Arm.Verify
 

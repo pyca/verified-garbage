@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxRow
-import VerifiedGarbage.Proof.Bignum.X86_64.OpAt
+module
+
+public import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRow
+public import VerifiedGarbage.Proof.Bignum.X86_64.OpAt
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Multiword arithmetic on x86-64: the BMI2/ADX Montgomery multiplication
@@ -10,6 +16,8 @@ the rows (`rows_ok`) keep the window `T < 2m` and
 `2^(64 i) T ≡ (a mod 2^(64 i)) b (mod m)`, as the baseline's rounds do, the
 window moving up a word a row; `montMulAdx_ok` is `montMul_ok` for it.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64
 

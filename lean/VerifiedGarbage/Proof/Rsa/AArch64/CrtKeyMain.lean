@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Rsa.AArch64.CkMain
-import VerifiedGarbage.Proof.Rsa.AArch64.CrtKeyPhase
+module
+
+public import VerifiedGarbage.Proof.Rsa.AArch64.CkMain
+public import VerifiedGarbage.Proof.Rsa.AArch64.CrtKeyPhase
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_check_crt_key` on AArch64: `main`
@@ -10,6 +16,8 @@ shortened remainders (`phModC_ok`, `phQIC_ok`): the mask they leave is
 The inputs are `CkIn`'s, with `p` as `d` (the entry stores `p` in `d`'s
 slots, which nothing reads).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.AArch64
 

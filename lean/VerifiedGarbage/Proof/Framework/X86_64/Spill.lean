@@ -1,7 +1,9 @@
-import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.TCB.X86_64.Target
+module
+
+public import VerifiedGarbage.Proof.Framework.X86_64.Exec
+public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.TCB.X86_64.Target
 
 /-!
 # x86-64: saving registers in memory and restoring them
@@ -29,6 +31,8 @@ buffer, or the stack) and loads them back before returning. Given the list
 
 Everything is proven once, by induction on `l`.
 -/
+
+@[expose] public section
 
 namespace VG.X86_64.Spill
 

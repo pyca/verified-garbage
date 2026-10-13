@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecValid
+module
+
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecValid
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-PKCS1-v1_5 decryption on x86-64: the output
@@ -6,6 +12,8 @@ import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecValid
 `*msg_len` and each byte of `out` selected without branches, reading both
 `EM` and `AM` (`selLoop_ok`), and the result (`selPart_step`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPkcs1Enc.X86_64.Dec
 

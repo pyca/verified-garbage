@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Mont.Arm.Words
+module
+
+public import VerifiedGarbage.Proof.Mont.Arm.Words
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Montgomery arithmetic on 32-bit ARM: a multiply-accumulate step
@@ -10,6 +16,8 @@ operand below `2¹⁶`, `x = u d + t + c` is below `2³²`; its low half is
 stored and its high half is the carry. `carryUp` adds the carry into the
 digits `D` and `D + 1` (`carryUp_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Mont.Arm
 

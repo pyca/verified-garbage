@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedSse.Passes
-import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Batch
+module
+
+public import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedSse.Passes
+public import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Batch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # An SSE2 batch
@@ -10,6 +16,8 @@ the words is IP of block `2 i + q`; the three passes run; the lanes are
 transposed back, and each block becomes its TDEA encryption or decryption
 (`batch_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.TripleDes.X86_64.BitslicedSse
 
@@ -73,24 +81,24 @@ theorem batch_ok (d : Direction) {s : State} (h : BatchPre s) : WP isa (batch d)
   let S := s.gpr .rdi
   let D := s.gpr .rsi
   rw [batch]
-  apply WP.seq
   -- the transposition, all ones, and the count of passes
-  obtain ⟨s₁, run₁, w₁, g₁, -, -, rd₁, wr₁, f₁⟩ := transpose_ok h.room.state
+  refine WP.seq (WP.mono (transpose_ok h.room.state) fun s₁ ⟨w₁, g₁, rd₁, wr₁, f₁⟩ => ?_)
+  apply WP.seq
   let t₁ := s₁.setReg .rbx (BitVec.allOnes 64)
   let t₂ := (XOp.movq ones .rbx).exec t₁
   let t₃ := (XOp.bin .punpcklqdq ones ones).exec t₂
   let s₂ := t₃.setReg .r11 ((3 : BitVec 32).signExtend 64)
-  refine WP.of_runBlock ⟨s₂, runBlock_cat_some (runBlock_cat_some run₁ (by
+  refine WP.of_runBlock ⟨s₂, runBlock_cat_some (by
     rw [bcast, runBlock_cons, show exec (.movImm64 .rbx (BitVec.allOnes 64)) s₁ = some t₁ from rfl,
       runStep_some, runBlock_cons, show exec (.xop (.movq ones .rbx)) t₁ = some t₂ from rfl,
       runStep_some, runBlock_cons,
       show exec (xbin .punpcklqdq ones ones) t₂ = some t₃ from rfl, runStep_some,
-      runBlock_nil])) (by rw [runBlock_cons]; rfl), ?_⟩
+      runBlock_nil]) (by rw [runBlock_cons]; rfl), ?_⟩
   have ones₂ : s₂.xmm ones = BitVec.allOnes 128 :=
     bcast_mask t₁ ones .rbx true (by simp [t₁, gpr_setReg, maskVal])
   have g₂ : ∀ r, r ≠ .rbx → r ≠ .r11 → s₂.gpr r = s.gpr r := by
     intro r a b
-    simp [s₂, t₃, t₂, t₁, XOp.exec, State.setXmm, gpr_setReg, a, b, g₁ r a]
+    simp [s₂, t₃, t₂, t₁, XOp.exec, State.setXmm, gpr_setReg, a, b, g₁ r a b]
   have m₂ : s₂.mem = s₁.mem := by simp [s₂, t₃, t₂, t₁, XOp.exec, State.setXmm, mem_setReg]
   have rd₂ : s₂.rd = s.rd := by simp [s₂, t₃, t₂, t₁, XOp.exec, State.setXmm, rd_setReg, rd₁]
   have wr₂ : s₂.wr = s.wr := by simp [s₂, t₃, t₂, t₁, XOp.exec, State.setXmm, wr_setReg, wr₁]
@@ -99,7 +107,7 @@ theorem batch_ok (d : Direction) {s : State} (h : BatchPre s) : WP isa (batch d)
   have di₂ := g₂ .rdi (by decide) (by decide)
   have h₂ : Room s₂ := h.room.congr c₂ si₂ wr₂
   have words₂ : ∀ j, words s₂ j = words s₁ j := fun j => by
-    simp only [words, m₂, si₂, g₁ .rsi (by decide)]
+    simp only [words, m₂, si₂, g₁ .rsi (by decide) (by decide)]
   have scr₂ : spillR s₂ = spillR s := by simp only [spillR, c₂]
   have st₂ : stateR s₂ = stateR s := by simp only [stateR, si₂]
   have f₂ : Frame [spillR s, stateR s] s.mem s₂.mem := by
@@ -114,14 +122,14 @@ theorem batch_ok (d : Direction) {s : State} (h : BatchPre s) : WP isa (batch d)
   apply WP.mono (passes_ok d hS₂ 3 s₂ inv)
   intro s₃ q₃
   have g₃ : ∀ r, PassRegs r → s₃.gpr r = s.gpr r := by
-    intro r hr; rw [q₃.gpr r hr, g₂ r hr.2.1 hr.2.2.2.2.2]
+    intro r hr; rw [q₃.gpr r hr, g₂ r hr.2.1 hr.2.2.2.2.2.1]
   have si₃ := g₃ .rsi (by simp [PassRegs])
   have c₃ := g₃ .rcx (by simp [PassRegs])
   have rdx₃ := g₃ .rdx (by simp [PassRegs])
   -- the transposition back, and the next batch
-  obtain ⟨s₄, run₄, w₄, g₄, -, -, rd₄, wr₄, f₄⟩ := transpose_ok q₃.room.state
-  have si₄ : s₄.gpr .rsi = D := (g₄ .rsi (by decide)).trans si₃
-  have rdx₄ : s₄.gpr .rdx = s.gpr .rdx := (g₄ .rdx (by decide)).trans rdx₃
+  refine WP.seq (WP.mono (transpose_ok q₃.room.state) fun s₄ ⟨w₄, g₄, rd₄, wr₄, f₄⟩ => ?_)
+  have si₄ : s₄.gpr .rsi = D := (g₄ .rsi (by decide) (by decide)).trans si₃
+  have rdx₄ : s₄.gpr .rdx = s.gpr .rdx := (g₄ .rdx (by decide) (by decide)).trans rdx₃
   let u₁ := (arithFlags s₄ (s₄.gpr .rsi + (1024 : BitVec 32).signExtend 64)
     (decide (2 ^ 64 ≤ (s₄.gpr .rsi).toNat + ((1024 : BitVec 32).signExtend 64).toNat))
     (addOverflow (s₄.gpr .rsi) ((1024 : BitVec 32).signExtend 64)
@@ -131,7 +139,7 @@ theorem batch_ok (d : Direction) {s : State} (h : BatchPre s) : WP isa (batch d)
   let u₂ := (arithFlags u₁ v (decide ((u₁.gpr .rdx).toNat < ((128 : BitVec 32).signExtend 64).toNat))
     (subOverflow (u₁.gpr .rdx) ((128 : BitVec 32).signExtend 64) v)).setReg .rdx v
   let s₅ := cmpState u₂ .rdx 128
-  refine WP.of_runBlock ⟨s₅, runBlock_cat_some run₄ (by
+  refine WP.of_runBlock ⟨s₅, (by
     rw [runBlock_cons, show exec (.alu .add .rsi (.imm 1024)) s₄ = some u₁ from rfl, runStep_some,
       runBlock_cons, show exec (.alu .sub .rdx (.imm 128)) u₁ = some u₂ from rfl, runStep_some,
       cmp_run]), ?_⟩
@@ -175,7 +183,7 @@ theorem batch_ok (d : Direction) {s : State} (h : BatchPre s) : WP isa (batch d)
       simp [u₂, u₁, gpr_setReg, v, rdx₄]
     simp only [s₅, cmpState, cf_arithFlags, u₂d,
       show ((128 : BitVec 32).signExtend 64).toNat = 128 by decide]
-  · rw [g₅ r a c, g₄ r hr.2.1, g₃ r hr]
+  · rw [g₅ r a c, g₄ r hr.2.1 hr.2.2.2.2.2.1, g₃ r hr]
   · simp [s₅, cmpState, u₂, u₁, rd_setReg, rd_arithFlags, rd₄, q₃.rd, rd₂]
   · simp [s₅, cmpState, u₂, u₁, wr_setReg, wr_arithFlags, wr₄, q₃.wr, wr₂]
   · have a := q₃.frame

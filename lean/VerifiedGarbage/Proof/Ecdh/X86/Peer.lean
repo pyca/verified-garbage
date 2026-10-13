@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.Ecdsa.X86.Setup
-import VerifiedGarbage.Impl.Ecdh.X86
-import VerifiedGarbage.Proof.Ecdsa.X86.Finish
-import VerifiedGarbage.Proof.Ecdsa.X86.Fixed
-import VerifiedGarbage.Proof.Weierstrass.X86.Copy
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.X86.Setup
+public import VerifiedGarbage.Impl.Ecdh.X86
+public import VerifiedGarbage.Proof.Ecdsa.X86.Finish
+public import VerifiedGarbage.Proof.Ecdsa.X86.Fixed
+public import VerifiedGarbage.Proof.Weierstrass.X86.Copy
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDH on x86 (32-bit): reading and checking the peer's key
@@ -18,6 +24,8 @@ comparison with `MP` for `MN`) and a number is zero (`checkZero_ok`, the
 complement of `nonzero`'s mask). A register is zero iff subtracting 1
 borrows.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdh.X86
 

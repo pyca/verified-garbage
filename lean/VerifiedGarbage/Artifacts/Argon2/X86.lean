@@ -1,9 +1,13 @@
-import VerifiedGarbage.TCB.X86.Target
-import VerifiedGarbage.Proof.Argon2.X86.CompressVerified
-import VerifiedGarbage.Proof.Argon2.X86.HPrime.Verified
-import VerifiedGarbage.Proof.Argon2.X86.Derive.Verified
+module
+
+public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Proof.Argon2.X86.CompressVerified
+public import VerifiedGarbage.Proof.Argon2.X86.HPrime.Verified
+public import VerifiedGarbage.Proof.Argon2.X86.Derive.Verified
 
 /-! # Argon2 (RFC 9106) on x86 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.Argon2.X86
 

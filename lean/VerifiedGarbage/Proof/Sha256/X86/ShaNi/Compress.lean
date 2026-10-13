@@ -1,11 +1,19 @@
-import VerifiedGarbage.Proof.Framework.X86.Exec
-import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
-import VerifiedGarbage.Proof.Sha256.X86.ShaNi.Spec
-import VerifiedGarbage.Impl.Sha256.X86.ShaNi
-import VerifiedGarbage.Proof.Sha256.X86.Compress
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Sha256.X86.ShaNi.Memory
-import VerifiedGarbage.Proof.Sha256.X86.ShaNi.Const
+module
+
+public import VerifiedGarbage.Proof.Framework.X86.Exec
+public import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
+public import VerifiedGarbage.Proof.Sha256.X86.ShaNi.Spec
+public import VerifiedGarbage.Impl.Sha256.X86.ShaNi
+public import VerifiedGarbage.Proof.Sha256.X86.Compress
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Sha256.X86.ShaNi.Memory
+public import VerifiedGarbage.Proof.Sha256.X86.ShaNi.Const
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.Sha256.X86.ShaNi
 open VG VG.X86 VG.Impl.Sha256.X86.ShaNi

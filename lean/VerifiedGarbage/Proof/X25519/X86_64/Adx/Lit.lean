@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
-import VerifiedGarbage.Impl.X25519.X86_64.Adx
-import VerifiedGarbage.Proof.X25519.X86_64.Lit
+module
+
+public import VerifiedGarbage.Proof.Framework.X86_64.Lit
+meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
+public import VerifiedGarbage.Impl.X25519.X86_64.Adx
+meta import VerifiedGarbage.Impl.X25519.X86_64.Adx
+public import VerifiedGarbage.Proof.X25519.X86_64.Lit
+meta import VerifiedGarbage.Proof.X25519.X86_64.Lit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X25519 on x86-64 with BMI2 and ADX: the code as a literal
@@ -8,6 +17,8 @@ import VerifiedGarbage.Proof.X25519.X86_64.Lit
 As for `vg_x25519` (`Proof/X25519/X86_64/Lit.lean`): the literal of the
 unrolled code, checked once here, for the checks that evaluate it.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X25519.X86_64.Adx.Lit
 open VG.Impl.X25519.X86_64
@@ -18,7 +29,7 @@ beside the baseline's additions, subtractions and swaps
 
 materialize_template mulXT := mulX
 materialize_template sqrXT := sqrX
-materialize_template a24XT := a24X
+materialize_template a24XT := a24addX
 materialize_template mul2XT := mul2X
 materialize_template sqr2XT := sqr2X
 

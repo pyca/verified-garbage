@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.CmacAes.X86_64
-import VerifiedGarbage.Impl.CmacAes.X86_64.AesNi
+module
+
+public import VerifiedGarbage.Impl.CmacAes.X86_64
+public import VerifiedGarbage.Impl.CmacAes.X86_64.AesNi
 
 /-!
 # The implementations of `vg_cmac_aes_update` on x86-64
@@ -11,6 +13,8 @@ the chaining by calls of an implementation of `vg_aes_ctr32`
 (`Impl.CmacAes.X86_64.update`), or the one in AES-NI registers
 (`AesNi.update`).
 -/
+
+@[expose] public section
 
 namespace VG.Impl.CmacAes.X86_64
 

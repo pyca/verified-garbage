@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Modes.X86_64.Setup
-import VerifiedGarbage.Proof.Modes.X86_64.Xor
-import VerifiedGarbage.Proof.Modes.Ctr
+module
+
+public import VerifiedGarbage.Proof.Modes.X86_64.Setup
+public import VerifiedGarbage.Proof.Modes.X86_64.Xor
+public import VerifiedGarbage.Proof.Modes.Ctr
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # One group of blocks of CTR on x86-64, for any core
@@ -12,6 +18,8 @@ counter blocks to the core's buffer (`ctrBlocks_ok`), encrypts them there
 CTR's output block `j` (`ctrOut`).
 -/
 
+@[expose] public section
+
 namespace VG.Proof.Modes.X86_64
 
 open VG VG.X86_64 VG.X86_64.Straight VG.Impl.Modes.X86_64
@@ -21,12 +29,10 @@ open VG.Spec.Aes (bytesAt)
 variable {c : Core}
 
 /-- `rcx := min(left, G)`. -/
-theorem groupCount_wp (hL : Layout c) (hlc : c.leftReg ≠ .rcx) {s : State} {v : Nat}
+theorem groupCount_wp (hG : c.G < 2 ^ 31) (hlc : c.leftReg ≠ .rcx) {s : State} {v : Nat}
     (hv : s.gpr c.leftReg = BitVec.ofNat 64 v) (hv64 : v < 2 ^ 64) :
     WP isa c.groupCount s fun s' => s'.gpr .rcx = BitVec.ofNat 64 (min v c.G) ∧
       (∀ r, r ≠ .rcx → s'.gpr r = s.gpr r) ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
-  have hs := hL.small
-  have hG : c.G < 2 ^ 31 := by have := hL.buf_le; have := hL.room; omega
   obtain ⟨s₂, e₂, r₂, o₂, m₂, rd₂, wr₂⟩ := movImm_ok s .rcx (BitVec.ofNat 64 c.G)
   obtain ⟨s₃, e₃, f₃, g₃, m₃, rd₃, wr₃⟩ := cmpImm_ok s₂ c.leftReg (BitVec.ofNat 32 c.G) (v := v) (K := c.G)
     (by rw [o₂ _ hlc, hv]) hv64 (by rw [signExtend_small hG, BitVec.toNat_ofNat]; omega)
@@ -46,14 +52,11 @@ theorem groupCount_wp (hL : Layout c) (hlc : c.leftReg ≠ .rcx) {s : State} {v 
     · rw [g₃, o₂ r h1]
 
 /-- The buffer's address to `rax`, the data's to `rbx`, the count to `r10`. -/
-theorem xorArgs_ok (hL : Layout c) (hda : c.dataReg ≠ .rax) (s : State) {B : Addr} (hB : s.gpr sb = B) :
+theorem xorArgs_ok (hb : 8 * c.buf < 2 ^ 31) (hda : c.dataReg ≠ .rax) (s : State) {B : Addr} (hB : s.gpr sb = B) :
     ∃ s', runBlock isa c.xorArgs s = some s' ∧ s'.gpr .rax = B + BitVec.ofNat 64 (8 * c.buf) ∧
       s'.gpr .rbx = s.gpr c.dataReg ∧ s'.gpr .r10 = s.gpr .rcx ∧
       (∀ r, r ≠ .rax → r ≠ .rbx → r ≠ .r10 → s'.gpr r = s.gpr r) ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧
       s'.wr = s.wr := by
-  have hs := hL.small
-  have hb := hL.buf_le
-  have hroom := hL.room
   obtain ⟨s₁, e₁, r₁, o₁, m₁, rd₁, wr₁⟩ := movR_ok s .rax sb
   obtain ⟨s₂, e₂, r₂, o₂, m₂, rd₂, wr₂⟩ := addImm_ok s₁ .rax (BitVec.ofNat 32 (8 * c.buf))
   obtain ⟨s₃, e₃, r₃, o₃, m₃, rd₃, wr₃⟩ := movR_ok s₂ .rbx c.dataReg
@@ -88,11 +91,11 @@ theorem advance_ok (hdl : c.dataReg ≠ c.leftReg) (hd10 : c.dataReg ≠ .r10) (
 
 /-- What the data loop works on: the scratch buffer at `B`, the `n` blocks at
 `D`. -/
-structure GPre (c : Core) (s₀ : State) (B D : Addr) (n : Nat) : Prop where
+structure GPre (c : Core) (s₀ : State) (B D : Addr) (n : Nat) (L : Nat := 16) : Prop where
   scr : ScrIn s₀ B c.ctrSlots
-  dat : (⟨D, 16 * n⟩ : Region) ∈ s₀.wr
-  sep : Region.Disjoint ⟨D, 16 * n⟩ ⟨B, 8 * c.ctrSlots⟩
-  fitD : D.toNat + 16 * n ≤ 2 ^ 64
+  dat : (⟨D, L * n⟩ : Region) ∈ s₀.wr
+  sep : Region.Disjoint ⟨D, L * n⟩ ⟨B, 8 * c.ctrSlots⟩
+  fitD : D.toNat + L * n ≤ 2 ^ 64
 
 /-- The data loop, before group `g`, from the counter block `V` with the key
 `k`. -/
@@ -107,7 +110,7 @@ structure GInv (cs : CoreSpec c) (s₀ : State) (B D : Addr) (n : Nat) (k : cs.K
   lt : c.G * g < n
   hi : s.mem.readW (wordAddr B c.hiSlot) 64 = hiOf (V + c.G * g)
   lo : s.mem.readW (wordAddr B c.loSlot) 64 = loOf (V + c.G * g)
-  data : DInv s₀.mem s.mem D n (c.G * g) (ctrOut (cs.cipher k) s₀.mem D V)
+  data : DInv 16 s₀.mem s.mem D n (c.G * g) (ctrOut (cs.cipher k) s₀.mem D V)
   frame : Frame [⟨B, 8 * c.ctrSlots⟩, ⟨D, 16 * n⟩] s₀.mem s.mem
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
@@ -118,14 +121,14 @@ structure GDone (cs : CoreSpec c) (s₀ : State) (B D : Addr) (n : Nat) (k : cs.
   base : s.gpr sb = B
   rsp : s.gpr .rsp = s₀.gpr .rsp
   saved : ∀ i < 6, s.mem.readW (wordAddr B (c.slots + i)) 64 = s₀.mem.readW (wordAddr B (c.slots + i)) 64
-  data : DInv s₀.mem s.mem D n n (ctrOut (cs.cipher k) s₀.mem D V)
+  data : DInv 16 s₀.mem s.mem D n n (ctrOut (cs.cipher k) s₀.mem D V)
   frame : Frame [⟨B, 8 * c.ctrSlots⟩, ⟨D, 16 * n⟩] s₀.mem s.mem
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
 
-/-- Byte `u` of the 16 at `p`. -/
-theorem bytesAt_getD (m : Mem) (p : Addr) {u : Nat} (hu : u < 16) :
-    (bytesAt m p 16).getD u 0 = m (p + BitVec.ofNat 64 u) := by
+/-- Byte `u` of the `L` at `p`. -/
+theorem bytesAt_getD (m : Mem) (p : Addr) {L u : Nat} (hu : u < L) :
+    (bytesAt m p L).getD u 0 = m (p + BitVec.ofNat 64 u) := by
   simp [bytesAt, hu]
 
 theorem ctrGroup_wp (cs : CoreSpec c) {s₀ : State} {B D : Addr} {n : Nat} {k : cs.Key} {V : Nat}
@@ -186,7 +189,7 @@ theorem ctrGroup_wp (cs : CoreSpec c) {s₀ : State} {B D : Addr} {n : Nat} {k :
     rcases hr with rfl | rfl
     · exact .inr fun _ h => h
     · exact .inl (VG.Offset.disjoint_base B (by simp only [Core.hiSlot]; omega)
-        (by simp only [Core.hiSlot]; omega)).symm) fun r hr => by
+        (by simp only [Core.hiSlot]; omega)).symm) ⟨fun r hr => ⟨_, hwS, subBC r hr⟩, rd₁, wr₁, runBlock_syms e₁⟩ fun r hr => by
     obtain ⟨h1, h2, h3, -⟩ := of_not_modeRegs hr
     exact o₁ r h1 h2 h3
   -- The keystream.
@@ -208,20 +211,20 @@ theorem ctrGroup_wp (cs : CoreSpec c) {s₀ : State} {B D : Addr} {n : Nat} {k :
   have data₂ : s₂.gpr c.dataReg = A := by rw [dr₂, o₁ _ da db dc, hi.dataR]
   have wr₂' : s₂.wr = s.wr := by rw [wr₂, wr₁]
   have rd₂' : s₂.rd = s.rd := by rw [rd₂, rd₁]
-  refine WP.seq (WP.mono (groupCount_wp hL lc left₂ hv) fun s₃ ⟨c₃, o₃, m₃, rd₃, wr₃⟩ => ?_)
+  refine WP.seq (WP.mono_syms (groupCount_wp (by omega) lc left₂ hv) fun s₃ ⟨c₃, o₃, m₃, rd₃, wr₃⟩ sy₃ => ?_)
   have base₃ : s₃.gpr sb = B := by rw [o₃ _ (by decide), base₂]
-  obtain ⟨s₄, e₄, a₄, b₄, t₄, o₄, m₄, rd₄, wr₄⟩ := xorArgs_ok hL da s₃ base₃
+  obtain ⟨s₄, e₄, a₄, b₄, t₄, o₄, m₄, rd₄, wr₄⟩ := xorArgs_ok (by omega) da s₃ base₃
   refine WP.seq (WP.of_runBlock ⟨s₄, e₄, ?_⟩)
   have mem₄ : s₄.mem = s₂.mem := by rw [m₄, m₃]
   have wr₄' : s₄.wr = s.wr := by rw [wr₄, wr₃, wr₂']
   have rd₄' : s₄.rd = s.rd := by rw [rd₄, rd₃, rd₂']
   -- The keystream XORed into the group's blocks.
-  refine WP.seq (WP.mono (xorBlocks_wp (A := T) (B := A) hc0 (by omega)
+  refine WP.seq (WP.mono_syms (xorBlocks_wp (A := T) (B := A) hc0 (by omega)
     (fun t ht => by rw [rd₄', wr₄']; exact inRd (inT t (by omega)))
     (fun t ht => by rw [wr₄']; exact inA t ht) sepAT.symm
     ⟨by rw [a₄]; simp [T], by rw [b₄, o₃ _ dc, data₂]; simp [A],
       by rw [o₄ _ (by decide) (by decide) (by decide), c₃, Nat.sub_zero], fun t ht => by omega, fun t _ _ => rfl,
-      Frame.refl _ _, fun _ _ _ _ _ => rfl, rfl, rfl⟩) fun s₅ h₅ => ?_)
+      Frame.refl _ _, fun _ _ _ _ _ => rfl, rfl, rfl⟩) fun s₅ h₅ sy₅ => ?_)
   have f₅ : Frame [⟨A, 16 * cc⟩] s₂.mem s₅.mem := by rw [← mem₄]; exact h₅.frame
   have g₅ : ∀ r, r ≠ .rax → r ≠ .rbx → r ≠ .rcx → r ≠ .rbp → s₅.gpr r = s₄.gpr r :=
     fun r h1 h2 h3 h4 => h₅.regs r h1 h2 h3 h4
@@ -248,9 +251,14 @@ theorem ctrGroup_wp (cs : CoreSpec c) {s₀ : State} {B D : Addr} {n : Nat} {k :
   have hz : s₆.zf = some (decide (v = cc)) := by
     rw [z₆, left₅, r10₅, VG.Offset.ofNat_sub_ofNat_beq hv (by omega)]
   have ready₆ : cs.Ready s₆ B k := by
-    refine cs.ready_frame ready₂ (by rw [m₆]; exact f₅) (fun r hr => ?_) fun r hr => ?_
+    refine cs.ready_frame ready₂ (by rw [m₆]; exact f₅) (fun r hr => ?_) ⟨fun r hr => ?_, ?_, ?_, ?_⟩ fun r hr => ?_
     · simp only [List.mem_singleton] at hr; subst hr
       exact .inl (((hp.sep.sub_left (VG.Offset.sub_base D (by omega))).sub_right subCore).symm)
+    · simp only [List.mem_singleton] at hr; subst hr
+      exact ⟨_, by rw [wr₂, wr₁]; exact hwD, VG.Offset.sub_base D (by omega)⟩
+    · rw [rd₆, rd₅', rd₂, rd₁]
+    · rw [wr₆, wr₅', wr₂, wr₁]
+    · rw [runBlock_syms e₆, sy₅, runBlock_syms e₄, sy₃]
     · obtain ⟨h1, h2, h3, h4, h5, h6, h7⟩ := of_not_modeRegs hr
       rw [o₆ r h6 h7, keep₄ r h1 h2 h3 h4 h5]
   -- The data.
@@ -261,7 +269,7 @@ theorem ctrGroup_wp (cs : CoreSpec c) {s₀ : State} {B D : Addr} {n : Nat} {k :
   have hn64 : 16 * n ≤ 2 ^ 64 := by omega
   have via₁₂ : ∀ i < 16 * n, s₂.mem (D + BitVec.ofNat 64 i) = s.mem (D + BitVec.ofNat 64 i) := fun i hin => by
     rw [f₂.bytes (R := ⟨D, 16 * n⟩) dCore hn64 hin, f₁.bytes (R := ⟨D, 16 * n⟩) (hdS subBC) hn64 hin]
-  have hdata : DInv s₀.mem s₆.mem D n (c.G * g + cc) (ctrOut (cs.cipher k) s₀.mem D V) := by
+  have hdata : DInv 16 s₀.mem s₆.mem D n (c.G * g + cc) (ctrOut (cs.cipher k) s₀.mem D V) := by
     intro i hin
     rw [m₆]
     by_cases hin1 : 16 * (c.G * g) ≤ i ∧ i < 16 * (c.G * g) + 16 * cc

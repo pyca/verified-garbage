@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Ecdsa.AArch64
+module
+
+public import VerifiedGarbage.Impl.Ecdsa.AArch64
 
 /-!
 # ECDH on AArch64
@@ -30,6 +32,8 @@ on x86-64 (`Impl/Ecdh/X86_64.lean`):
 Everything is computed whatever the flag, and only the pointers may affect
 timing (the contract would let the peer's public key affect it too).
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Ecdh.AArch64
 
@@ -149,7 +153,7 @@ def middle : Prog isa :=
 /-- `vg_ecdh_<curve>`. -/
 def exchange : Prog isa :=
   .seq (.block (args)) <| .seq (prefix' c) <| .seq (.block (peer c)) <| .seq (validate c) <|
-  .seq (c.winPrep (c.sl K)) <| .seq (WinCfg.window (c.winCfg PX PY)) <| .seq c.pPow (middle c)
+  .seq (c.winPrep (c.sl K)) <| .seq (WinCfg.window (c.winCfg PX PY) c.padd) <| .seq c.pPow (middle c)
 
 end Cfg
 

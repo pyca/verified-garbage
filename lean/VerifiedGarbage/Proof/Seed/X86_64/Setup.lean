@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Seed.X86_64.Batch
+module
+
+public import VerifiedGarbage.Proof.Seed.X86_64.Batch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Storing to scratch slots
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.Seed.X86_64.Batch
 constants through `t0` to distinct slots. Both write only the scratch
 buffer.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Seed.X86_64
 
@@ -21,7 +29,7 @@ def stMem (s : State) (k : Nat) (v : BitVec 64) : Mem := s.mem.writeW (wordAddr 
 
 theorem exec_st {s : State} (h : Room s) {k : Nat} (hk : k < scratchSlots) (r : Reg) :
     exec (st k r) s = some (setMem s (stMem s k (s.gpr r))) := by
-  have hw : InRegions s.wr (wordAddr (s.gpr .r9) k) 8 := ⟨scratchR s, h, slot_in_scratch s hk⟩
+  have hw : InRegions s.wr (wordAddr (s.gpr .r9) k) 8 := h.wr (slot_in_scratch s hk)
   have hea : s.ea (slotAt sb k) = wordAddr (s.gpr .r9) k := rfl
   simp only [st, exec, State.store64, hea, hw, ite_true, stMem]
   rfl
@@ -120,8 +128,7 @@ theorem masks_ok {s : State} (h : Room s) (l : List (Nat × BitVec 64))
 
 theorem exec_ld {s : State} (h : Room s) {k : Nat} (hk : k < scratchSlots) (r : Reg) :
     exec (movS r k) s = some (s.setReg r (slotW s k)) := by
-  have hr : InRegions (s.rd ++ s.wr) (wordAddr (s.gpr .r9) k) 8 :=
-    ⟨scratchR s, List.mem_append_right _ h, slot_in_scratch s hk⟩
+  have hr : InRegions (s.rd ++ s.wr) (wordAddr (s.gpr .r9) k) 8 := h.rw (slot_in_scratch s hk)
   have hea : s.ea (slotAt sb k) = wordAddr (s.gpr .r9) k := rfl
   simp only [movS, exec, readSrc, State.load64, hea, hr, ite_true, Option.map_some]
   rfl

@@ -1,7 +1,13 @@
-import VerifiedGarbage.Impl.ChaCha20Poly1305.AArch64.Stitch
-import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Poly
-import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.LoopRounds
-import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed5.Scalar
+module
+
+public import VerifiedGarbage.Impl.ChaCha20Poly1305.AArch64.Stitch
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Poly
+public import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.LoopRounds
+public import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed5.Scalar
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ChaCha20 and Poly1305 together (AArch64): a counted phase
@@ -12,6 +18,8 @@ from `W`. The rounds write only the vector registers, the registers of the
 integer block (`Words`) and `x1`; the blocks only `Poly.regs`; neither
 writes memory, so each preserves what the other computes.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.ChaCha20Poly1305.AArch64.Stitch
 

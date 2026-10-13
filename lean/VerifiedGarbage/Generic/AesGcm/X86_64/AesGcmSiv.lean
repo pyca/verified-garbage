@@ -1,6 +1,8 @@
-import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Verified
-import VerifiedGarbage.Generic.AesGcm.X86_64.AesGcm
+module
+
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Verified
+public import VerifiedGarbage.Generic.AesGcm.X86_64.AesGcm
 
 /-!
 # AES-GCM-SIV (RFC 8452) on x86-64
@@ -19,6 +21,8 @@ Each keeps its working space in a frame of 3848 bytes on the stack
 (`Proof/AesGcmSiv/X86_64/Verified.lean`), below which its calls use 8 bytes:
 the return address of a call of one of the four, which make no calls.
 -/
+
+@[expose] public section
 
 namespace VG.Generic.AesGcm.X86_64.AesGcmSiv
 

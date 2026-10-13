@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Ed25519.X86_64.CachedPoint
-import VerifiedGarbage.Proof.Framework.X86_64.KeepReg
-import VerifiedGarbage.Impl.Ed25519.X86_64.Point64
-import VerifiedGarbage.Spec.Ed25519.Point64
+module
+
+public import VerifiedGarbage.Proof.Ed25519.X86_64.CachedPoint
+public import VerifiedGarbage.Proof.Framework.X86_64.KeepReg
+public import VerifiedGarbage.Impl.Ed25519.X86_64.Point64
+public import VerifiedGarbage.Spec.Ed25519.Point64
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed25519's point functions on x86-64: what they compute
@@ -16,6 +22,8 @@ The program's values are `evalOps ops` of the slots', and it changes only the
 bytes of its results (`fieldCode_frame`). The doubling's values are RFC
 8032's (`dblOps_eval`), the cached addition's `pointAdd`'s (`addCachedOps_eval`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed25519.X86_64.Point64
 

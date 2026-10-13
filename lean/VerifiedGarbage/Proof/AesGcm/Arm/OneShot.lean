@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesGcm.Arm.StreamVerify
-import VerifiedGarbage.Proof.AesGcm.Arm.Init
+module
+
+public import VerifiedGarbage.Proof.AesGcm.Arm.StreamVerify
+public import VerifiedGarbage.Proof.AesGcm.Arm.Init
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on ARMv7: the pieces of `vg_aes_gcm_seal` and `vg_aes_gcm_open`
@@ -11,6 +17,8 @@ counter mode over the data from the first counter block (`oneCrypt_ok`), and
 `oneTag o` absorbs the data as ciphertext, padded, then the lengths block,
 and writes the tag to `W + o` (`oneTag_ok`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

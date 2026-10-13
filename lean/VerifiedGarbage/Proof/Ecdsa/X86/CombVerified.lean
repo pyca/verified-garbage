@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.Ecdsa.X86.CombSat
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.X86.CombSat
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # The comb signing implementation satisfies the shared API contract -/
+
+@[expose] public section
+
 namespace VG.Proof.Ecdsa.X86
 open VG VG.X86 VG.Impl.Ecdsa.X86 VG.Proof.Weierstrass
 

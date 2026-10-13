@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.RsaKeyGen.AArch64.KTail
-import VerifiedGarbage.Proof.RsaKeyGen.AArch64.GcdE
-import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Trial
+module
+
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.KTail
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.GcdE
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Trial
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # A candidate on AArch64: once `rand` has the candidate's octets
@@ -9,6 +15,8 @@ import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Trial
 `8 w` octets of `rand` (`CandEnd`): too close to `p` (status 2), obviously
 composite or sharing a factor with `e − 1` (3), or Miller–Rabin's result.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaKeyGen.AArch64
 

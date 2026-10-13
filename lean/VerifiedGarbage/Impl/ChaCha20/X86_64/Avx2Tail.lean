@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.ChaCha20.X86_64.Xor
-import VerifiedGarbage.Impl.ChaCha20.X86_64.XorBuf
+module
+
+public import VerifiedGarbage.Impl.ChaCha20.X86_64.Xor
+public import VerifiedGarbage.Impl.ChaCha20.X86_64.XorBuf
 
 /-!
 # ChaCha20 keystream XOR with AVX2: the last bytes
@@ -41,6 +43,8 @@ callee-saved register is written. The branches are on the length only,
 and every address is a pointer plus a constant or a count, so only the
 pointers and the length can affect timing.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.ChaCha20.X86_64.Avx2Tail
 

@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.X25519.AArch64.Word.Step
+module
+
+public import VerifiedGarbage.Proof.X25519.AArch64.Word.Step
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! The 255 public-count ladder iterations and the final conditional swaps. -/
+
+@[expose] public section
+
 namespace VG.Proof.X25519.AArch64.Word
 open VG VG.AArch64 VG.Spec.X25519 VG.Proof.X25519
 open VG.Impl.Ed25519.AArch64 VG.Proof.Ed25519.AArch64

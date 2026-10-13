@@ -1,14 +1,31 @@
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejTailHead
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejScalarStep
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejTail
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejTailLoop
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejTimingDone
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejTailAdjust
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejEnvTiming
+module
+
+public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+public import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejTailHead
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejTailHead
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejScalarStep
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejScalarStep
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejTail
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejTail
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejTailLoop
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejTailLoop
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejTimingDone
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejTimingDone
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejTailAdjust
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejTailAdjust
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejEnvTiming
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejEnvTiming
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## From `ResidentRejTimingBlocks.lean` -/
+
+@[expose] public section
 
 section
 
@@ -307,14 +324,14 @@ open VG.Impl.MlDsa.AArch64.Optimized.ResidentRej
 
  def tailChecks (k : Nat) (hk : k<4) : TailChecks k := by
   by_cases h0 : k=0
-  · subst k; exact ⟨_,_,by taint_decide,by taint_decide⟩
+  · subst k; constructor <;> taint_decide
   by_cases h1 : k=1
-  · subst k; exact ⟨_,_,by taint_decide,by taint_decide⟩
+  · subst k; constructor <;> taint_decide
   by_cases h2 : k=2
-  · subst k; exact ⟨_,_,by taint_decide,by taint_decide⟩
+  · subst k; constructor <;> taint_decide
   have h3 : k=3 := by omega
   subst k
-  exact ⟨_,_,by taint_decide,by taint_decide⟩
+  constructor <;> taint_decide
 
 private theorem tail_candidate_eq {v k : Nat} {σ τ s t : State}
     (pub : Pub v σ τ) (hs : TailReady v σ s) (ht : TailReady v τ t) (hk : k<v) :

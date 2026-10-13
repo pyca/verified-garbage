@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.StreamRun
-import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.CT
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamRun
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.StreamRun
+public import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.CT
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.CT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on x86-64: `vg_aes_gcm_stream_encrypt` and `_decrypt` are constant time
@@ -12,6 +20,8 @@ of the same length (`part_rel`, `blocks_rel`, `start_rel`); between them,
 each run keeps `SInv` (with no hypotheses: `SI`), from the correctness
 proofs.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 
@@ -424,9 +434,6 @@ theorem streamText_rel (enc : Bool) (hP : P₀ < 2 ^ 64) :
       WP isa (if enc then .seq (crypt v.callees) (.seq (.block streamLoad) (absorb v.callees 16))
         else .seq (absorb v.callees 16) (.seq (.block streamLoad) (crypt v.callees))) s (Env Ctx St W SP) :=
     fun s h => WP.mono (si_part v enc h) fun _ h' => h'.1.env
-  have sm := (rel_both (part_rel v L enc (j := 0) (k := n)) gsm gsm).mono (P' := fun (s₁ s₂ : State) =>
-    ((G₃ s₁ ∧ s₁.cf = some (decide (n < 256))) ∧ (G₃ s₂ ∧ s₂.cf = some (decide (n < 256)))) ∧
-      isa.eval .b s₁ = some true) (fun _ _ h => ⟨pp _ h.1.1.1, pp _ h.1.2.1⟩) fun _ _ h => h
   -- The head's length.
   let G₄ : State → Prop := fun s => PartPre M Ctx St W SP R P₀ enc D n 0 k s ∧
     s.mem.readW (W + BitVec.ofNat 64 216) 64 = BitVec.ofNat 64 n
@@ -509,12 +516,22 @@ theorem streamText_rel (enc : Bool) (hP : P₀ < 2 ^ 64) :
   simp only [streamText]
   refine RelCT.seq a (rel_ite_e (fun _ _ h => by rw [h.1.2, h.2.2])
     (RelCT.block_nil fun _ _ h => ⟨h.1.1.1.env, h.1.2.1.env⟩) ?_)
-  have big := (RelCT.seq d (RelCT.seq e (RelCT.seq f (RelCT.seq g (RelCT.seq i j))))).mono
-    (P' := fun (s₁ s₂ : State) => ((G₃ s₁ ∧ s₁.cf = some (decide (n < 256))) ∧ (G₃ s₂ ∧ s₂.cf = some (decide (n < 256)))) ∧
-      isa.eval .b s₁ = some false) (fun _ _ h => ⟨h.1.1.1, h.1.2.1⟩) fun _ _ h => h
-  refine rel_reassoc2 ((RelCT.seq b (RelCT.seq c (RelCT.seq cs
-    (RelCT.ite (fun _ _ h => by show _ = _; exact h.1.2.trans h.2.2.symm) sm big)))).mono
-    (fun _ _ h => ⟨⟨h.1.1, h.2⟩, ⟨h.1.2, by rw [h.1.2.2, ← h.1.1.2, h.2]⟩⟩) fun _ _ h => h)
+  by_cases hs : n < 256
+  · -- All of it is the rest.
+    refine rel_reassoc2 ((RelCT.seq b (RelCT.seq c (RelCT.seq cs (RelCT.seq
+      (RelCT.ite (M := isa) (c := .b) (fun _ _ h => by show _ = _; exact h.1.2.trans h.2.2.symm)
+        (RelCT.block_nil fun _ _ h => ⟨pp _ h.1.1.1, pp _ h.1.2.1⟩)
+        (RelCT.of_false fun _ _ h => by have := h.1.1.2.symm.trans h.2; simp [hs] at this))
+      (rel_both (part_rel v L enc (j := 0) (k := n)) gsm gsm))))).mono
+      (fun _ _ h => ⟨⟨h.1.1, h.2⟩, ⟨h.1.2, by rw [h.1.2.2, ← h.1.1.2, h.2]⟩⟩) fun _ _ h => h)
+  · -- The head and the whole blocks first.
+    refine rel_reassoc2 ((RelCT.seq b (RelCT.seq c (RelCT.seq cs (RelCT.seq
+      (RelCT.ite (M := isa) (c := .b) (fun _ _ h => by show _ = _; exact h.1.2.trans h.2.2.symm)
+        (RelCT.of_false fun _ _ h => by have := h.1.1.2.symm.trans h.2; simp [hs] at this)
+        ((RelCT.seq d (RelCT.seq e (RelCT.seq f (RelCT.seq g i)))).mono
+          (fun _ _ h => ⟨h.1.1.1, h.1.2.1⟩) fun _ _ h => h))
+      j)))).mono
+      (fun _ _ h => ⟨⟨h.1.1, h.2⟩, ⟨h.1.2, by rw [h.1.2.2, ← h.1.1.2, h.2]⟩⟩) fun _ _ h => h)
 
 end
 

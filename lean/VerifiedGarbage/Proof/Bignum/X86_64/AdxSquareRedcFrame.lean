@@ -1,8 +1,16 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareRedcStep
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareWideRow
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareRedcStep
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareWideRow
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! The reduction row's memory and public-control behavior, even when the
 header's inverse does not match the modulus. -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64.AdxSquare
 

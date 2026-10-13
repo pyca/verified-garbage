@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.X448.Arm.MulLoop
-import VerifiedGarbage.Proof.X448.Arm.Reduce
+module
+
+public import VerifiedGarbage.Proof.X448.Arm.MulLoop
+public import VerifiedGarbage.Proof.X448.Arm.Reduce
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 on ARMv7: field multiplication
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.X448.Arm.Reduce
 The row loop produces the 56 limbs of the product, which are folded and
 normalized modulo the prime.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448.Arm
 

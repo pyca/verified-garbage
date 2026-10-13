@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxHeaderSave
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxHeaderSave
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## AdxHeaderRestore -/
+
+@[expose] public section
+
 section
 
 namespace VG.Proof.Bignum.X86_64.AdxHeader
@@ -157,6 +166,53 @@ theorem restored_frame {m₀ m₁ m₂ m₃ : Mem} {B : Addr} {w : Nat}
       simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
       rcases hr with rfl | rfl <;> simp only [] <;> unfold highPad at * <;> omega)
     exact (r3.trans r2).trans r1
+
+end VG.Proof.Bignum.X86_64.AdxHeader
+
+end
+
+/-! ## AdxHeaderClear -/
+section
+
+/-! Clearing the high pad, for callers that keep the borrowed words elsewhere. -/
+namespace VG.Proof.Bignum.X86_64.AdxHeader
+open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public
+open VG.Proof.Bignum.X86_64
+open VG.Proof.MlKem.X86_64 (Keep)
+
+theorem clear_ok {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 64}
+    (hs : Scr s B Z) (hd : s.gpr .rdi = B) (hh : Hdr s.mem B w mi) (hZ : slot w 8 ≤ Z) :
+    WP isa AdxHeader.clear s fun t =>
+      (∀ q < 2, word t.mem B (highPad w+8*q) = 0) ∧
+      Outside B (highPad w) 16 s.mem t.mem ∧ Keep [.rax,.r8,.r9] s t := by
+  have pads := pads_bound hZ
+  unfold AdxHeader.clear
+  refine WP.seq (WP.mono (bases_ok hs hd hh hZ) fun a ⟨_,hi,ma,ka⟩ => ?_)
+  refine WP.mono (clearHigh_ok (hs.congr ka.2.2) hi pads.2) fun t ⟨zt,ot,kt⟩ => ?_
+  rw [ma] at ot
+  exact ⟨zt,ot,(ka.trans kt).mono (by simp)⟩
+
+/-- A change in two ranges, as one in the second followed by one in the first. -/
+theorem frm_split {B : Addr} {a n b k : Nat} {m m' : Mem} (h : Frm B [(a,n),(b,k)] m m') :
+    ∃ m₁, Outside B b k m m₁ ∧ Outside B a n m₁ m' := by
+  refine ⟨fun x => if b ≤ ofs B x ∧ ofs B x < b+k then m' x else m x, fun x hx => ?_, fun x hx => ?_⟩
+  · simp only []
+    split
+    · rename_i hc; exact absurd hc (by omega)
+    · rfl
+  · simp only []
+    split
+    · rfl
+    · exact h x fun r hr => by
+        simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
+        rcases hr with rfl | rfl <;> simp only [] <;> omega
+
+/-- The header, after changes from `sFn 0` on. -/
+theorem _root_.VG.Proof.Bignum.Hdr.of_outside_fn {m m' : Mem} {B : Addr} {w : Nat} {minv : BitVec 64}
+    (hH : Hdr m B w minv) {o n : Nat} (h : Outside B o n m m') (ho : 8 * sFn 0 ≤ o) : Hdr m' B w minv :=
+  ⟨(h.word (Or.inl (by unfold sW sFn at *; omega)) (by unfold sW; omega)).trans hH.hw,
+    (h.word (Or.inl (by unfold sMinv sFn at *; omega)) (by unfold sMinv; omega)).trans hH.hminv,
+    fun j hj => (h.word (Or.inl (by unfold sArr sFn at *; omega)) (by unfold sArr; omega)).trans (hH.harr j hj)⟩
 
 end VG.Proof.Bignum.X86_64.AdxHeader
 

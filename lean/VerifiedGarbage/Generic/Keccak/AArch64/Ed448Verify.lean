@@ -1,7 +1,9 @@
-import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.Ed448.AArch64.Verify.Verified
-import VerifiedGarbage.Proof.Ed448.AArch64.VerifyVerified
-import VerifiedGarbage.Proof.Ed448.Facts
+module
+
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.Ed448.AArch64.Verify.Verified
+public import VerifiedGarbage.Proof.Ed448.AArch64.VerifyVerified
+public import VerifiedGarbage.Proof.Ed448.Facts
 
 /-!
 # Ed448 verification on AArch64
@@ -16,6 +18,8 @@ decoding's agreement with the specification (`Proof/Ed448/Facts.lean`), is
 passed to the proof here, so that only registration and generic files import
 its algebra.
 -/
+
+@[expose] public section
 
 namespace VG.Generic.Keccak.AArch64.Ed448Verify
 

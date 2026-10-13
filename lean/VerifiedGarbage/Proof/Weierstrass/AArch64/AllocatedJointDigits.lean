@@ -1,11 +1,20 @@
-import VerifiedGarbage.Proof.Weierstrass.AArch64.AllocatedFrame
-import VerifiedGarbage.Proof.Weierstrass.AArch64.CachedDigit
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JointFixedDigit
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.AllocatedFrame
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.CachedDigit
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JointFixedDigit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Digit selection remains unchanged while point arithmetic uses a wider frame.
 The callbacks include the final coordinate copy, so no intermediate scratch
 or register agreement is imposed beyond what the next point operation reads.
 -/
+
+@[expose] public section
+
 namespace VG.Proof.Weierstrass.AArch64.CachedField
 open VG VG.AArch64 VG.Impl.Mont VG.Impl.Mont.AArch64 VG.Impl.Weierstrass VG.Impl.Weierstrass.AArch64
 open VG.Proof.Mont VG.Proof.Mont.AArch64 Spec.Weierstrass

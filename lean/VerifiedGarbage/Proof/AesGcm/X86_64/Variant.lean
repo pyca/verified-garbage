@@ -1,11 +1,17 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.Callee
-import VerifiedGarbage.Impl.Gcm.X86_64.Stitch
-import VerifiedGarbage.Impl.Gcm.X86_64.StitchZHTo
-import VerifiedGarbage.Impl.Gcm.X86_64.StitchZP
-import VerifiedGarbage.Impl.Gcm.X86_64.StitchAvx8
-import VerifiedGarbage.Impl.Gcm.X86_64.StitchZTo
-import VerifiedGarbage.Impl.Gcm.X86_64.StitchTo
-import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Piece
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Callee
+public import VerifiedGarbage.Impl.Gcm.X86_64.Stitch
+public import VerifiedGarbage.Impl.Gcm.X86_64.StitchZHTo
+public import VerifiedGarbage.Impl.Gcm.X86_64.StitchZP
+public import VerifiedGarbage.Impl.Gcm.X86_64.StitchAvx8
+public import VerifiedGarbage.Impl.Gcm.X86_64.StitchZTo
+public import VerifiedGarbage.Impl.Gcm.X86_64.StitchTo
+public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Piece
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on x86-64: the variants
@@ -17,6 +23,8 @@ proofs that import the algebra of `Proof/Gcm/Poly.lean` (those of
 variants need not import that algebra. The generic file
 (`Generic/AesGcm/X86_64/AesGcm.lean`) resolves the names (`GcmVariant.impl`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesGcm.X86_64
 
@@ -64,6 +72,7 @@ def decP : StitchName → Prog isa
 /-- Encryption using a prepared context, if supported by the variant. -/
 def encR : StitchName → Prog isa
   | .vaesAvx512 => Impl.Gcm.X86_64.StitchZH.encR
+  | .aesniAvx => Impl.Gcm.X86_64.StitchAvx8.encR
   | n => n.enc
 
 /-- Whether the encryption loop named `n` for a prepared context takes all
@@ -71,6 +80,7 @@ the blocks, from 16 on (`Blocks.stitchPart`'s `full`), and not only the
 first `16 ⌊n / 16⌋`. -/
 def fullR : StitchName → Bool
   | .vaesAvx512 => true
+  | .aesniAvx => true
   | _ => false
 
 /-- Whether `seal` calling the loops named `n` ends without calls
@@ -89,6 +99,7 @@ def full : StitchName → Bool
 /-- Decryption using a prepared context. -/
 def decR : StitchName → Prog isa
   | .vaesAvx512 => Impl.Gcm.X86_64.StitchZH.dec
+  | .aesniAvx => Impl.Gcm.X86_64.StitchAvx8.decR
   | n => n.dec
 
 /-- Whether `seal` and `open` calling the loops named `n` take the short path
@@ -119,6 +130,8 @@ inductive StitchToName where
   | vaes
   /-- `Impl.Gcm.X86_64.StitchZTo`: VAES and VPCLMULQDQ on 512-bit registers. -/
   | vaesAvx512
+  /-- `Impl.Gcm.X86_64.StitchAvx8.encTo`: AES-NI and PCLMULQDQ in `VEX.128`. -/
+  | aesniAvx
 
 namespace StitchToName
 
@@ -126,22 +139,32 @@ namespace StitchToName
 def enc : StitchToName → Prog isa
   | .vaes => Impl.Gcm.X86_64.StitchTo.enc
   | .vaesAvx512 => Impl.Gcm.X86_64.StitchZTo.enc
+  | .aesniAvx => Impl.Gcm.X86_64.StitchAvx8.encTo
 
 /-- The loop named `n`, for a key context of `vg_aes_gcm_init_precomputed`. -/
 def encP : StitchToName → Prog isa
   | .vaes => Impl.Gcm.X86_64.StitchTo.enc
   | .vaesAvx512 => Impl.Gcm.X86_64.StitchZTo.encP
+  | .aesniAvx => Impl.Gcm.X86_64.StitchAvx8.encTo
 
 /-- Out-of-place encryption using a prepared context. -/
 def encR : StitchToName → Prog isa
   | .vaes => Impl.Gcm.X86_64.StitchTo.enc
   | .vaesAvx512 => Impl.Gcm.X86_64.StitchZHTo.encR
+  | .aesniAvx => Impl.Gcm.X86_64.StitchAvx8.encToR
+
+/-- Whether the loop named `n` takes all the blocks, from 16 on
+(`BlocksTo.stitchPart`'s `full`), and not only the first `16 ⌊n / 16⌋`. -/
+def full : StitchToName → Bool
+  | .aesniAvx => true
+  | _ => false
 
 /-- Whether the loop named `n` for a prepared context takes all the blocks,
 from 16 on (`BlocksTo.stitchPart`'s `full`), and not only the first
 `16 ⌊n / 16⌋`. -/
 def fullR : StitchToName → Bool
   | .vaesAvx512 => true
+  | .aesniAvx => true
   | _ => false
 
 end StitchToName
@@ -160,7 +183,7 @@ of those for a key context of `vg_aes_gcm_init_precomputed`, if they read
 the powers of the hash subkey from it). -/
 structure StitchToPart where
   name : StitchToName
-  piece : PieceTo name.enc
+  piece : PieceTo name.enc false name.full
   pieceP : Option (PieceToP name) := none
   pieceR : Option (PieceToR name) := none
 

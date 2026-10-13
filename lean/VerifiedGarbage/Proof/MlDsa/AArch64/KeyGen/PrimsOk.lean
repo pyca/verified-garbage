@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Top
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Top
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on AArch64: what the proofs need of the primitives
@@ -10,6 +16,8 @@ is at least the 16 bytes the sponge functions' frames use. The proofs of
 `vg_mldsa*_keygen` and `vg_mldsa*_verify` hold for any such `P`, with their
 contracts' stack `S`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.KeyGen
 

@@ -1,5 +1,7 @@
-import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.AesOfb.AArch64.Verified
+module
+
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.AesOfb.AArch64.Verified
 
 /-!
 # AES-OFB (NIST SP 800-38A §6.4) on AArch64
@@ -12,6 +14,8 @@ implementation (`Variants/AesBlocks/AArch64/`), named with its suffix (e.g.
 No stack is used: the calls keep the return address in `x30`, which the
 function saves in the scratch buffer.
 -/
+
+@[expose] public section
 
 namespace VG.Generic.AesBlocks.AArch64.AesOfb
 

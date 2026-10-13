@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Rsa.X86_64.CvStore
-import VerifiedGarbage.Proof.Bignum.X86_64.PubFail
+module
+
+public import VerifiedGarbage.Proof.Rsa.X86_64.CvStore
+public import VerifiedGarbage.Proof.Bignum.X86_64.PubFail
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_crt_values` on x86-64: an invalid modulus
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.Bignum.X86_64.PubFail
 `zeroOut` writes zeros to an output (`zeroOut_ok`); `fail` to all three,
 returns 0 and restores the saved registers (`cvFail_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.X86_64
 

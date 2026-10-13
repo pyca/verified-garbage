@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.CmacTripleDes.X86.Round
-import VerifiedGarbage.Proof.CmacTripleDes.Block
-import VerifiedGarbage.Proof.CmacTripleDes.Words
-import VerifiedGarbage.Proof.Framework.X86.Wp
+module
+
+public import VerifiedGarbage.Proof.CmacTripleDes.X86.Round
+public import VerifiedGarbage.Proof.CmacTripleDes.Block
+public import VerifiedGarbage.Proof.CmacTripleDes.Words
+public import VerifiedGarbage.Proof.Framework.X86.Wp
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # TDEA on x86 (32-bit): the passes and the block
@@ -17,6 +23,8 @@ the block, `esi` points to slot `kpos p j` of the key schedule before round
 counters and the step. The block changes only its words of the scratch
 buffer (bytes `[0, 84)`) and the registers but `esp` and `ebp`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.CmacTripleDes.X86
 

@@ -1,10 +1,23 @@
-import VerifiedGarbage.Proof.Ed448.X86.ScalarMain
-import VerifiedGarbage.Proof.Ed448.X86.ScalarMulAddMain
-import VerifiedGarbage.Proof.Ed448.X86.ScalarLit
-import VerifiedGarbage.Proof.Framework.X86.Taint
-import VerifiedGarbage.Proof.Framework.X86.Inline
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Spec.Ed448.Contract
+module
+
+public import VerifiedGarbage.Proof.Ed448.X86.ScalarMain
+meta import VerifiedGarbage.Proof.Ed448.X86.ScalarMain
+public import VerifiedGarbage.Proof.Ed448.X86.ScalarMulAddMain
+meta import VerifiedGarbage.Proof.Ed448.X86.ScalarMulAddMain
+public import VerifiedGarbage.Proof.Ed448.X86.ScalarLit
+meta import VerifiedGarbage.Proof.Ed448.X86.ScalarLit
+public import VerifiedGarbage.Proof.Framework.X86.Taint
+meta import VerifiedGarbage.Proof.Framework.X86.Taint
+public import VerifiedGarbage.Proof.Framework.X86.Inline
+meta import VerifiedGarbage.Proof.Framework.X86.Inline
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.Ed448.Contract
+meta import VerifiedGarbage.Spec.Ed448.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 scalar arithmetic on x86 (32-bit): `Verified`
@@ -16,6 +29,8 @@ The local contracts only read the arguments; the shared contract of `Spec/`
 lets the code write them too (`writeArgs`), which it does not
 (`Verified.narrowTo`). A concrete witness proves it satisfiable.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.X86
 

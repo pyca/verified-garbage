@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Aes.X86_64.Linear
+module
+
+public import VerifiedGarbage.Impl.Aes.X86_64.Linear
 
 /-!
 # The inverse round transformations of bitsliced AES on x86-64
@@ -21,6 +23,8 @@ Each uses the state registers, the temporaries `t0` and `t1`, and slots of
 the scratch buffer at `r9`: the all-ones slot, 20–27 and those of the
 layers it reuses.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Aes.X86_64
 

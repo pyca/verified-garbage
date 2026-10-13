@@ -1,14 +1,20 @@
-import VerifiedGarbage.Proof.Aes.X86.Ctr32
-import VerifiedGarbage.Proof.Aes.X86.Ctr32CT
-import VerifiedGarbage.Proof.Aes.X86.ExpandKey
-import VerifiedGarbage.Proof.Aes.X86.ExpandKeyCT
-import VerifiedGarbage.Proof.Gcm.X86.Ghash
-import VerifiedGarbage.Proof.Gcm.X86.GhashCT
-import VerifiedGarbage.Proof.Aes.X86.VariantProof
-import VerifiedGarbage.Proof.Framework.X86.CallWith
-import VerifiedGarbage.Proof.AesGcm.X86.CT
-import VerifiedGarbage.Impl.AesGcm.X86
-import VerifiedGarbage.Proof.Gcm.Compose
+module
+
+public import VerifiedGarbage.Proof.Aes.X86.Ctr32
+public import VerifiedGarbage.Proof.Aes.X86.Ctr32CT
+public import VerifiedGarbage.Proof.Aes.X86.ExpandKey
+public import VerifiedGarbage.Proof.Aes.X86.ExpandKeyCT
+public import VerifiedGarbage.Proof.Gcm.X86.Ghash
+public import VerifiedGarbage.Proof.Gcm.X86.GhashCT
+public import VerifiedGarbage.Proof.Aes.X86.VariantProof
+public import VerifiedGarbage.Proof.Framework.X86.CallWith
+public import VerifiedGarbage.Proof.AesGcm.X86.CT
+public import VerifiedGarbage.Impl.AesGcm.X86
+public import VerifiedGarbage.Proof.Gcm.Compose
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on x86: the calls
@@ -21,6 +27,8 @@ what it leaves (`GhPost`, `CtrPost`, `KeyPost`), in terms of the memory
 before the call; and that it is constant time (`gh_ct`, `ctr_ct`, `key_ct`)
 by the callee's own proof, when the arguments are the same in both runs.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesGcm.X86
 

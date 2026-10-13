@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Rsa.X86_64
-import VerifiedGarbage.Impl.RsaKeyGen.Primes
+module
+
+public import VerifiedGarbage.Impl.Rsa.X86_64
+public import VerifiedGarbage.Impl.RsaKeyGen.Primes
 
 /-!
 # A candidate for a prime of an RSA key on x86-64
@@ -52,6 +54,8 @@ Header words that address memory or decide a branch are loaded into a
 register before they are compared or added, and before anything secret is
 stored into the arrays, so the taint analysis knows them public.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.RsaKeyGen.X86_64.Candidate
 

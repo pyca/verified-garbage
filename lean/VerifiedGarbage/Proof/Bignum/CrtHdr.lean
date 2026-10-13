@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Bignum.CrtGPow
+module
+
+public import VerifiedGarbage.Proof.Bignum.CrtGPow
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSA with the CRT: the header's arguments
@@ -7,6 +13,8 @@ The modulus' header slots that `entry` fills and nothing else writes: the
 saved registers, `out`, `n`, `k`, the input and the private key's pointers
 and lengths (`hFixed`). Each part's changes keep them (`HFix`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum
 

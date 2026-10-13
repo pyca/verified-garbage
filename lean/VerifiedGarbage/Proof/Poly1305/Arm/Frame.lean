@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Poly1305.Arm.Update
-import VerifiedGarbage.Proof.Poly1305.Arm.Finalize
-import VerifiedGarbage.Proof.Poly1305.Scratch
-import VerifiedGarbage.Proof.Framework.Arm.StackScratch
+module
+
+public import VerifiedGarbage.Proof.Poly1305.Arm.Update
+public import VerifiedGarbage.Proof.Poly1305.Arm.Finalize
+public import VerifiedGarbage.Proof.Poly1305.Scratch
+public import VerifiedGarbage.Proof.Framework.Arm.StackScratch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Streaming Poly1305 on ARMv7, with its working space on the stack
@@ -13,6 +19,8 @@ argument, in a frame of 144 bytes that allocates it
 saved `lr` and the 128 bytes of working space. The copies are read only
 where the postconditions read the buffers (`Proof/Poly1305/Scratch.lean`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Poly1305.Arm
 

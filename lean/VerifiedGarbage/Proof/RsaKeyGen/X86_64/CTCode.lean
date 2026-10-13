@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.RsaKeyGen.X86_64.CTFront
-import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Code
+module
+
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.CTFront
+meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.CTFront
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Code
+meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Code
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # A candidate on x86-64: constant time
@@ -9,6 +17,8 @@ import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Code
 length check depend on the arguments alone, and `kMain` on the schedule the
 leak fixes (`schedOf_eq`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaKeyGen.X86_64
 

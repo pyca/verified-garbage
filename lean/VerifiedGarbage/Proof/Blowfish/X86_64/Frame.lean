@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Blowfish.X86_64.Verified
-import VerifiedGarbage.Proof.Blowfish.X86_64.KeyVerified
-import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
+module
+
+public import VerifiedGarbage.Proof.Blowfish.X86_64.Verified
+public import VerifiedGarbage.Proof.Blowfish.X86_64.KeyVerified
+public import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Blowfish on x86-64, with its working space on the stack
@@ -12,6 +18,8 @@ schedule's intermediate blocks and the data: 40 bytes for key expansion (32
 of working space) and 264 for ECB (256, of which it uses 16), with 8 more to
 keep `rsp` aligned. The code uses no other stack.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Blowfish.X86_64
 

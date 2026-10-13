@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Cast5.AArch64.Round
-import VerifiedGarbage.Proof.Cast5.Memory
+module
+
+public import VerifiedGarbage.Proof.Cast5.AArch64.Round
+public import VerifiedGarbage.Proof.Cast5.Memory
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # CAST5 on AArch64: a block
@@ -8,6 +14,8 @@ The rounds of a block, three at a time (`group`), and the block functions
 `encryptBlock` and `decryptBlock`: from the block at `x2` to its encryption
 or decryption there.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Cast5.AArch64
 

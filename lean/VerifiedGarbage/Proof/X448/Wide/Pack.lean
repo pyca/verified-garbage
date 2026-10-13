@@ -1,7 +1,16 @@
-import VerifiedGarbage.Proof.X448.Wide.Columns
-import VerifiedGarbage.Proof.X448.Wide.Bridge
+module
+
+public import VerifiedGarbage.Proof.X448.Wide.Columns
+public import VerifiedGarbage.Proof.X448.Wide.Bridge
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Untrusted: staging normalized 28-bit field slots for the wide kernel. -/
+
+@[expose] public section
+
 namespace VG.Proof.X448.Wide
 
 open VG VG.AArch64

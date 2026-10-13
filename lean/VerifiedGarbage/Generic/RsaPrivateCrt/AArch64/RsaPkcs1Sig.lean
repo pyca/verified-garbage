@@ -1,8 +1,12 @@
-import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.SignVerified
-import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Callees
+module
+
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.SignVerified
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Callees
 
 /-! # RSASSA-PKCS1-v1_5 signing on AArch64, for each implementation of the CRT -/
+
+@[expose] public section
 
 namespace VG.Generic.RsaPrivateCrt.AArch64.RsaPkcs1Sig
 

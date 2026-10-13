@@ -1,7 +1,11 @@
-import VerifiedGarbage.Impl.Ecdsa.X86_64
-import VerifiedGarbage.Spec.Secp256k1
+module
+
+public import VerifiedGarbage.Impl.Ecdsa.X86_64
+public import VerifiedGarbage.Spec.Secp256k1
 
 /-! # secp256k1 signing on x86-64, using the general complete-addition ladder -/
+
+@[expose] public section
 
 namespace VG.Impl.Ecdsa.X86_64
 
@@ -12,6 +16,8 @@ def secp256k1 : Cfg where
   C := Spec.Secp256k1.curve
   fastN := true
   windows := false
+  mul := some Spec.Weierstrass.Mul.secp256k1
+  inverse := some Spec.Weierstrass.Inverse.secp256k1
 
 def signSecp256k1 : Prog isa := secp256k1.sign
 

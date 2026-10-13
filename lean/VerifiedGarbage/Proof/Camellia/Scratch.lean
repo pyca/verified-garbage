@@ -1,6 +1,12 @@
-import VerifiedGarbage.Spec.Camellia.Contract
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.Scratch
+module
+
+public import VerifiedGarbage.Spec.Camellia.Contract
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.Scratch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Camellia with its working space as an argument
@@ -16,6 +22,8 @@ The frame zeroes the buffer after the code, which needs the postconditions
 to read the memory on return only within the function's buffers
 (`expandKeyPostOut_local`, `ecbPostOut_local`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Camellia
 
@@ -107,6 +115,28 @@ theorem expandKeyPostOut_local : ∀ vs m m₁ m₂ r, vs.length = (expandKeySig
       omega)]
     exact h hk
 
+theorem expandKeyPre_local : ∀ vs m₁ m₂, vs.length = (expandKeySig.words pb).length →
+    (∀ b ∈ Sig.bufs expandKeySig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (expandKeySig.words pb) (expandKeyPre pb) vs m₁ →
+      Curry.apply (expandKeySig.words pb) (expandKeyPre pb) vs m₂
+  | [_, _, _], _, _, _, _, h => h
+
+theorem expandKeyPost_local : ∀ vs m₁ m₂ m' r, vs.length = (expandKeySig.words pb).length →
+    (∀ b ∈ Sig.bufs expandKeySig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (expandKeySig.words pb) (expandKeyPost pb) vs m₁ m' r →
+      Curry.apply (expandKeySig.words pb) (expandKeyPost pb) vs m₂ m' r
+  | [_, _, _], m₁, m₂, m', r, _, hb, h => by
+    simp only [expandKeySig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+      forall_eq, Elem.size, Nat.mul_one] at hb
+    have hk := agree_of hb.1
+    change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr] (expandKeyPost pb) _ m₁ m' r at h
+    change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr] (expandKeyPost pb) _ m₂ m' r
+    dsimp only [Curry.apply, expandKeyPost, ArgWord.ofRaw] at h hk ⊢
+    intro hl
+    rw [bytesAt_congr fun i hi => hk i (by
+      rw [BitVec.toNat_setWidth] at hi; exact Nat.lt_of_lt_of_le hi (Nat.mod_le _ _))]
+    exact h hl
+
 theorem ecbPostOut_local (direction : Direction) : ∀ vs m m₁ m₂ r,
     vs.length = (ecbSig.words pb).length →
     (∀ b ∈ Sig.bufs ecbSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
@@ -125,6 +155,44 @@ theorem ecbPostOut_local (direction : Direction) : ∀ vs m m₁ m₂ r,
     intro hR
     rw [blocksAt_congr (n := (n.setWidth pb).toNat) fun i hi => hd i (by
       rw [BitVec.toNat_setWidth] at hi; omega)]
+    exact h hR
+
+theorem subkeysAt_congr {m₁ m₂ : Mem} {p : Addr} {R : Nat} (hR : scheduleLength R ≤ 34)
+    (h : ∀ i < 272, m₂ (p + BitVec.ofNat 64 i) = m₁ (p + BitVec.ofNat 64 i)) :
+    subkeysAt m₂ p R = subkeysAt m₁ p R := by
+  simp only [subkeysAt]
+  congr 1
+  refine List.map_congr_left fun i hi => ?_
+  have := List.mem_range.mp hi
+  simp only [wordAt]
+  congr 1
+  exact bytesAt_congr fun j hj => by rw [Offset.add_add]; exact h _ (by omega)
+
+theorem ecbPre_local : ∀ vs m₁ m₂, vs.length = (ecbSig.words pb).length →
+    (∀ b ∈ Sig.bufs ecbSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (ecbSig.words pb) (ecbPre pb) vs m₁ → Curry.apply (ecbSig.words pb) (ecbPre pb) vs m₂
+  | [_, _, _, _], _, _, _, _, h => h
+
+theorem ecbPost_local (direction : Direction) : ∀ vs m₁ m₂ m' r,
+    vs.length = (ecbSig.words pb).length →
+    (∀ b ∈ Sig.bufs ecbSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (ecbSig.words pb) (ecbPost direction pb) vs m₁ m' r →
+      Curry.apply (ecbSig.words pb) (ecbPost direction pb) vs m₂ m' r
+  | [_, rounds, _, n], m₁, m₂, m', r, _, hb, h => by
+    simp only [ecbSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+      forall_eq, Elem.size, Nat.mul_one] at hb
+    have hs := agree_of hb.1
+    have hd := agree_of hb.2
+    change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb]
+      (ecbPost direction pb) _ m₁ m' r at h
+    change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb]
+      (ecbPost direction pb) _ m₂ m' r
+    dsimp only [Curry.apply, ecbPost, ArgWord.ofRaw] at h ⊢
+    have := Nat.mod_le n.toNat (2 ^ pb)
+    intro hR
+    rw [subkeysAt_congr (by simp only [scheduleLength]; omega) fun i hi => hs i (by omega),
+      blocksAt_congr (n := (n.setWidth pb).toNat) fun i hi => hd i (by
+        rw [BitVec.toNat_setWidth] at hi; omega)]
     exact h hR
 
 end VG.Proof.Camellia

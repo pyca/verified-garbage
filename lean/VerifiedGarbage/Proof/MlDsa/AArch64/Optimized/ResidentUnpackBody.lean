@@ -1,8 +1,16 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentUnpackOne
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentUnpackValue
-import VerifiedGarbage.Proof.Framework.Offset
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentUnpackOne
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentUnpackValue
+public import VerifiedGarbage.Proof.Framework.Offset
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## From `ResidentUnpackLoad.lean` -/
+
+@[expose] public section
 
 section
 

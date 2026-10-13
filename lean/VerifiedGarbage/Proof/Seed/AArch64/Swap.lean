@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Seed.AArch64.Steps
-import VerifiedGarbage.Proof.Framework.Bitslice.Sym
-import VerifiedGarbage.Proof.Framework.ReadHalves
+module
+
+public import VerifiedGarbage.Proof.Seed.AArch64.Steps
+public import VerifiedGarbage.Proof.Framework.Bitslice.Sym
+public import VerifiedGarbage.Proof.Framework.ReadHalves
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Lanes and slots; exchanging the halves
@@ -10,6 +16,8 @@ A lane is half of a 64-bit slot (`lv_slot`), so `g16`'s words are lanes of
 `L` (`arrSlot 0`, `arrSlot 1`) with those of `R` (`arrSlot 2`, `arrSlot 3`),
 checked by evaluating its moves over named words (`Bitslice.names`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Seed.AArch64
 
@@ -47,8 +55,8 @@ theorem swap_check : check (names 64) swapCfg (fun _ => none) swapHalves swapEnv
 
 theorem ok_of_room {s : State} (h : Room s) {c : Cfg} (hb : c.base = .x5) (hs : c.slots ≤ 122)
     (he : c.exts = 0) : Ok c s :=
-  ⟨fun k hk => ⟨_, h, by
-      rw [hb]; exact Offset.contains_base _ (by unfold scratchSlots; omega) (by omega)⟩,
+  ⟨fun k hk => h.wr (by
+      rw [hb]; exact Offset.contains_base _ (by unfold scratchSlots; omega) (by omega)),
     fun k hk => by omega, by omega, fun _ _ j hj => by omega⟩
 
 theorem swap_writes (r : Reg) (h1 : r ≠ .x14) (h2 : r ≠ .x15) :

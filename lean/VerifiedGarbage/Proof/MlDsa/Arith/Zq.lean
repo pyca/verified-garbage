@@ -1,5 +1,11 @@
-import VerifiedGarbage.Spec.MlDsa
-import VerifiedGarbage.Proof.Framework.PowLit
+module
+
+public import VerifiedGarbage.Spec.MlDsa
+public import VerifiedGarbage.Proof.Framework.PowLit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA: arithmetic modulo `q`, for every target
@@ -21,6 +27,8 @@ It also has the coefficients of polynomials (`getElem!_eq`, `ext_getElem!`)
 and of their sums, differences and products (`add_get`, `sub_get`,
 `mul_get`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Arith
 

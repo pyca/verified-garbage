@@ -1,12 +1,27 @@
-import VerifiedGarbage.Proof.Weierstrass.AArch64.MontModuli
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Main
-import VerifiedGarbage.Proof.Ecdsa.AArch64.P521.Contract
-import VerifiedGarbage.Proof.Ecdsa.AArch64.P521.Lit
-import VerifiedGarbage.Proof.P521.Point
-import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
-import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
-import VerifiedGarbage.Proof.P521.Prime
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.MontModuli
+meta import VerifiedGarbage.Proof.Weierstrass.AArch64.MontModuli
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.Main
+meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Main
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.P521.Contract
+meta import VerifiedGarbage.Proof.Ecdsa.AArch64.P521.Contract
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.P521.Lit
+meta import VerifiedGarbage.Proof.Ecdsa.AArch64.P521.Lit
+public import VerifiedGarbage.Proof.P521.Point
+meta import VerifiedGarbage.Proof.P521.Point
+public import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
+meta import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
+meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
+meta import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
+public import VerifiedGarbage.Proof.P521.Prime
+meta import VerifiedGarbage.Proof.P521.Prime
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDSA over P-521 on AArch64: `Verified`
@@ -18,6 +33,8 @@ writes the other callee-saved registers, `sp` or a SIMD register
 (`abiPreserved_of`). Constant time by taint tracking: the only branches are on
 loop counters, and every address is an argument plus a constant or a counter.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.AArch64.P521
 
@@ -74,7 +91,13 @@ theorem p521_ok (hI : Weierstrass.AArch64.InvSounds) : CfgOk p521 where
     have e : (Mont.callOf p521.MP').map Prod.snd = some p521.C.p := by decide +kernel
     obtain rfl : _ = _ := Option.some.inj (e.symm.trans (congrArg (Option.map Prod.snd) h))
     exact ⟨rfl, Mont.p521p_ok⟩
-  call_n := by decide +kernel
+  call_n := fun _ _ h => by
+    have e : (Mont.callOf p521.MN').map Prod.snd = some p521.C.n := by decide +kernel
+    obtain rfl : _ = _ := Option.some.inj (e.symm.trans (congrArg (Option.map Prod.snd) h))
+    exact ⟨rfl, Mont.p521n_ok⟩
+  inv_at := .inr (by decide +kernel)
+  inv_fn := fun _ => ⟨by decide, by lit_decide, by lit_decide, by lit_decide, by lit_decide⟩
+  padd := fun h => absurd rfl h
 
 theorem pre_of {s : State} (h : signAArch64.pre s) : Pre p521 s := by
   obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, held, fit, hdw⟩ := h

@@ -1,6 +1,14 @@
-import VerifiedGarbage.Proof.TripleDes.X86_64.RoundStep
-import VerifiedGarbage.Proof.TripleDes.Core
-import VerifiedGarbage.Proof.Framework.Omega
+module
+
+public import VerifiedGarbage.Proof.TripleDes.X86_64.RoundStep
+public import VerifiedGarbage.Proof.TripleDes.Core
+public import VerifiedGarbage.Proof.Framework.Omega
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.TripleDes.X86_64
 
@@ -11,17 +19,19 @@ open VG.Proof.TripleDes (roundKey roundPrefix feistelStep)
 def keyAddr (base : Addr) (direction : Direction) (j : Nat) : Addr :=
   base + BitVec.ofNat 64 (8 * (if direction = .encrypt then j else 15 - j))
 
+/-- The key step of a pass, in scratch slot 56. -/
+def stepVal (direction : Direction) : BitVec 64 := if direction = .encrypt then 8 else -8
+
 theorem keyAddr_step (base : Addr) (direction : Direction) (j : Nat) (hj : j < 15) :
-    (if direction = .encrypt then keyAddr base direction j + 8
-      else keyAddr base direction j - 8) = keyAddr base direction (j + 1) := by
+    keyAddr base direction j + stepVal direction = keyAddr base direction (j + 1) := by
   cases direction
   · change base + BitVec.ofNat 64 (8 * j) + BitVec.ofNat 64 8 =
       base + BitVec.ofNat 64 (8 * (j + 1))
     rw [Offset.add_ofNat_add_ofNat]
     exact congrArg (fun i => base + BitVec.ofNat 64 i) (by omega)
-  · change base + BitVec.ofNat 64 (8 * (15 - j)) - BitVec.ofNat 64 8 =
+  · change base + BitVec.ofNat 64 (8 * (15 - j)) + -BitVec.ofNat 64 8 =
       base + BitVec.ofNat 64 (8 * (15 - (j + 1)))
-    rw [Offset.add_ofNat_sub _ (by omega)]
+    rw [← BitVec.sub_eq_add_neg, Offset.add_ofNat_sub _ (by omega)]
     exact congrArg (fun i => base + BitVec.ofNat 64 i) (by omega)
 
 structure LoopInv (keys : DesSchedule) (direction : Direction) (base : Addr)
@@ -32,10 +42,11 @@ structure LoopInv (keys : DesSchedule) (direction : Direction) (base : Addr)
   right : s.gpr .r13 = (roundPrefix keys direction (16 - n) v).2.setWidth 64
   counter : s.mem.readW (countAddr s) 64 = BitVec.ofNat 64 n
   pointer : s.gpr .rdi = keyAddr base direction (16 - n)
+  step : s.mem.readW (stepAddr s) 64 = stepVal direction
   rd : s.rd = origin.rd
   wr : s.wr = origin.wr
   regs : ∀ q ∈ [Reg.rsi, .rdx, .rsp], s.gpr q = origin.gpr q
-  frame : Frame [workRegion origin] origin.mem s.mem
+  frame : Frame [roundRegion origin] origin.mem s.mem
 
 structure LoopPost (keys : DesSchedule) (direction : Direction)
     (origin : State) (v : BitVec 32 × BitVec 32) (s : State) : Prop where
@@ -45,26 +56,31 @@ structure LoopPost (keys : DesSchedule) (direction : Direction)
   rd : s.rd = origin.rd
   wr : s.wr = origin.wr
   regs : ∀ q ∈ [Reg.rsi, .rdx, .rsp], s.gpr q = origin.gpr q
-  frame : Frame [workRegion origin] origin.mem s.mem
+  frame : Frame [roundRegion origin] origin.mem s.mem
 
 theorem loopStep (keys : DesSchedule) (direction : Direction) (base : Addr)
     (origin : State) (v : BitVec 32 × BitVec 32)
     (hok : Ok sboxCfg origin)
     (hcountRead : InRegions (origin.rd ++ origin.wr) (countAddr origin) 8)
     (hcountWrite : InRegions origin.wr (countAddr origin) 8)
+    (hstepRead : InRegions (origin.rd ++ origin.wr) (stepAddr origin) 8)
     (hread : ∀ j < 16, InRegions (origin.rd ++ origin.wr) (keyAddr base direction j) 8)
-    (hsep : ∀ j < 16, (⟨keyAddr base direction j, 8⟩ : Region).Disjoint (workRegion origin))
+    (hsep : ∀ j < 16, (⟨keyAddr base direction j, 8⟩ : Region).Disjoint (roundRegion origin))
     (hkeys : ∀ j < 16, (origin.mem.readW (keyAddr base direction j) 64).setWidth 48 =
       roundKey keys direction j)
     (n : Nat) (s : State) (hs : LoopInv keys direction base origin v n s) :
-    WP isa (.block (roundBody ++ roundAdvance direction)) s (fun s' =>
+    WP isa (.block (roundBody ++ roundAdvance)) s (fun s' =>
       (isa.eval .ne s' = some false ∧ LoopPost keys direction origin v s') ∨
       (isa.eval .ne s' = some true ∧ ∃ m < n, LoopInv keys direction base origin v m s')) := by
   have hj : 16 - n < 16 := by omega_using [hs.positive]
   have haddr : countAddr s = countAddr origin := by
     simp only [countAddr, hs.regs .rdx (by decide)]
-  have hwork : workRegion s = workRegion origin := by
-    simp only [workRegion, hs.regs .rdx (by decide)]
+  have hwork : roundRegion s = roundRegion origin := by
+    simp only [roundRegion, hs.regs .rdx (by decide)]
+  have hstepAddr : stepAddr s = stepAddr origin := by
+    simp only [stepAddr, hs.regs .rdx (by decide)]
+  have hstepS : InRegions (s.rd ++ s.wr) (stepAddr s) 8 := by
+    rw [hs.rd, hs.wr, hstepAddr]; exact hstepRead
   have hokS : Ok sboxCfg s := hok.congr
     (hs.regs .rdx (by decide)) (hs.regs .rdx (by decide)) hs.rd hs.wr
   have hreadS : InRegions (s.rd ++ s.wr) (s.gpr .rdi) 8 := by
@@ -88,9 +104,17 @@ theorem loopStep (keys : DesSchedule) (direction : Direction) (base : Addr)
         exact hsep _ hj) (by decide)
     exact (congrArg (BitVec.setWidth 48) hmem).trans (hkeys _ hj)
   obtain ⟨s', run, left, right, ptr, count, flag, rd, wr, regs, frame⟩ :=
-    roundStep_ok direction s _ _ (s.mem.readW (s.gpr .rdi) 64) n hs.positive
+    roundStep_ok s _ _ (s.mem.readW (s.gpr .rdi) 64) n hs.positive
       (by omega_using [hs.bounded]) hs.left hs.right rfl hokS hreadS hsepS
-      hs.counter hreadCountS hwriteCountS
+      hs.counter hreadCountS hwriteCountS hstepS
+  have hstep' : s'.mem.readW (stepAddr s') 64 = stepVal direction := by
+    have hsa : stepAddr s' = stepAddr s := by
+      simp only [stepAddr, regs .rdx (by decide)]
+    rw [hsa]
+    refine Eq.trans (frame.readW (r := ⟨stepAddr s, 8⟩) (Region.contains_self _ _) ?_ (by decide)) hs.step
+    intro q hq
+    obtain rfl := List.mem_singleton.mp hq
+    exact step_round_disjoint s
   have hidx : 16 - (n - 1) = 16 - n + 1 := by
     omega_using [hs.positive, hs.bounded]
   have hleft : s'.gpr .r12 = (roundPrefix keys direction (16 - (n - 1)) v).1.setWidth 64 := by
@@ -104,7 +128,7 @@ theorem loopStep (keys : DesSchedule) (direction : Direction) (base : Addr)
         Spec.TripleDes.roundFunction (roundPrefix keys direction (16 - n) v).2 key).setWidth 64) hk
     exact (right.trans hval).trans (congrArg (fun pair => pair.2.setWidth 64)
       (VG.Proof.TripleDes.roundPrefix_succ keys direction (16 - n) v).symm)
-  have hframe : Frame [workRegion origin] origin.mem s'.mem := by
+  have hframe : Frame [roundRegion origin] origin.mem s'.mem := by
     rw [hwork] at frame
     exact hs.frame.trans frame
   have hregs : ∀ q ∈ [Reg.rsi, .rdx, .rsp], s'.gpr q = origin.gpr q :=
@@ -120,8 +144,8 @@ theorem loopStep (keys : DesSchedule) (direction : Direction) (base : Addr)
     refine ⟨?_, n - 1, by omega_using [hs.positive], ?_⟩
     · simpa only [hlast, ne_eq, not_false_eq_true, decide_true] using flag
     · refine ⟨by omega_using [hs.positive, hlast], by omega_using [hs.bounded],
-        hleft, hright, count, ?_, rd.trans hs.rd, wr.trans hs.wr, hregs, hframe⟩
-      rw [ptr, hs.pointer, keyAddr_step base direction (16 - n) (by
+        hleft, hright, count, ?_, hstep', rd.trans hs.rd, wr.trans hs.wr, hregs, hframe⟩
+      rw [ptr, hs.pointer, hs.step, keyAddr_step base direction (16 - n) (by
         omega_using [hs.positive, hlast]), ← hidx]
 
 /-- The complete sixteen-round loop, in either key order. -/
@@ -133,17 +157,19 @@ theorem roundsLoop_ok (keys : DesSchedule) (direction : Direction) (base : Addr)
     (hcount : origin.mem.readW (countAddr origin) 64 = BitVec.ofNat 64 16)
     (hcountRead : InRegions (origin.rd ++ origin.wr) (countAddr origin) 8)
     (hcountWrite : InRegions origin.wr (countAddr origin) 8)
+    (hstep : origin.mem.readW (stepAddr origin) 64 = stepVal direction)
+    (hstepRead : InRegions (origin.rd ++ origin.wr) (stepAddr origin) 8)
     (hread : ∀ j < 16, InRegions (origin.rd ++ origin.wr) (keyAddr base direction j) 8)
-    (hsep : ∀ j < 16, (⟨keyAddr base direction j, 8⟩ : Region).Disjoint (workRegion origin))
+    (hsep : ∀ j < 16, (⟨keyAddr base direction j, 8⟩ : Region).Disjoint (roundRegion origin))
     (hkeys : ∀ j < 16, (origin.mem.readW (keyAddr base direction j) 64).setWidth 48 =
       roundKey keys direction j) :
-    WP isa (.loop (.block (roundBody ++ roundAdvance direction)) .ne)
+    WP isa (.loop (.block (roundBody ++ roundAdvance)) .ne)
       origin (LoopPost keys direction origin v) := by
-  apply WP.loop (M := isa) (body := .block (roundBody ++ roundAdvance direction))
+  apply WP.loop (M := isa) (body := .block (roundBody ++ roundAdvance))
     (c := .ne) (Q := LoopPost keys direction origin v) (LoopInv keys direction base origin v)
-    (loopStep keys direction base origin v hok hcountRead hcountWrite hread hsep hkeys)
+    (loopStep keys direction base origin v hok hcountRead hcountWrite hstepRead hread hsep hkeys)
     16 origin
-  exact ⟨by decide, by decide, hl, hr, hcount, hptr, rfl, rfl,
+  exact ⟨by decide, by decide, hl, hr, hcount, hptr, hstep, rfl, rfl,
     fun _ _ => rfl, Frame.refl _ _⟩
 
 end VG.Proof.TripleDes.X86_64

@@ -48,8 +48,9 @@
 
 #[cfg(target_arch = "x86_64")]
 use crate::arch::chacha20::{
-    VG_CHACHA20_APPLY_AVX2_FEATURES, VG_CHACHA20_APPLY_AVX512_FEATURES, vg_chacha20_apply_avx2,
-    vg_chacha20_apply_avx512,
+    VG_CHACHA20_APPLY_AVX2_FEATURES, VG_CHACHA20_APPLY_AVX512_FEATURES,
+    VG_CHACHA20_APPLY_IFMA_FEATURES, vg_chacha20_apply_avx2, vg_chacha20_apply_avx512,
+    vg_chacha20_apply_ifma,
 };
 #[cfg(target_arch = "x86")]
 use crate::arch::chacha20::{VG_CHACHA20_APPLY_SSSE3_FEATURES, vg_chacha20_apply_ssse3};
@@ -83,10 +84,20 @@ pub(crate) enum Backend {
     /// AVX-512F, sixteen blocks at a time.
     #[cfg(target_arch = "x86_64")]
     Avx512,
+    /// The same, on CPUs with AVX512_IFMA too, whose ChaCha20-Poly1305
+    /// authenticates with `vg_poly1305_blocks_ifma`.
+    #[cfg(target_arch = "x86_64")]
+    Ifma,
     /// SSSE3: the SSE2 code with the rotations by 16 and 8 bits `pshufb`.
     #[cfg(target_arch = "x86")]
     Ssse3,
 }
+
+/// AVX512_IFMA, which `vg_chacha20_apply_ifma` (the code of
+/// `vg_chacha20_apply_avx512`) does not use: it is chosen on the CPUs whose
+/// ChaCha20-Poly1305 runs its `_ifma` instances, which need it.
+#[cfg(target_arch = "x86_64")]
+const IFMA: Features = Features::of(&["avx512ifma"]);
 
 impl Backend {
     /// AdvSIMD is part of our AArch64 baseline. Tracking it also lets
@@ -111,18 +122,26 @@ impl Backend {
     pub(crate) fn select(f: Features) -> Backend {
         Backend::select_for(
             f,
+            Features::all(&[VG_CHACHA20_APPLY_IFMA_FEATURES, IFMA]),
             VG_CHACHA20_APPLY_AVX512_FEATURES,
             VG_CHACHA20_APPLY_AVX2_FEATURES,
         )
     }
 
     /// The best implementation a CPU with the features `f` can run, for
-    /// functions whose instances for AVX-512 and AVX2 need the features
-    /// `avx512` and `avx2` (ChaCha20-Poly1305's, which also call Poly1305
-    /// with AVX2, need more than `vg_chacha20_apply`'s).
+    /// functions whose instances for AVX512_IFMA, AVX-512 and AVX2 need the
+    /// features `ifma`, `avx512` and `avx2` (ChaCha20-Poly1305's, which also
+    /// call Poly1305 with AVX2, need more than `vg_chacha20_apply`'s).
     #[cfg(target_arch = "x86_64")]
-    pub(crate) fn select_for(f: Features, avx512: Features, avx2: Features) -> Backend {
-        if f.contains(avx512) {
+    pub(crate) fn select_for(
+        f: Features,
+        ifma: Features,
+        avx512: Features,
+        avx2: Features,
+    ) -> Backend {
+        if f.contains(ifma) {
+            Backend::Ifma
+        } else if f.contains(avx512) {
             Backend::Avx512
         } else if f.contains(avx2) {
             Backend::Avx2
@@ -225,6 +244,8 @@ impl ChaCha20 {
             Backend::Avx2 => vg_chacha20_apply_avx2,
             #[cfg(target_arch = "x86_64")]
             Backend::Avx512 => vg_chacha20_apply_avx512,
+            #[cfg(target_arch = "x86_64")]
+            Backend::Ifma => vg_chacha20_apply_ifma,
             #[cfg(target_arch = "x86")]
             Backend::Ssse3 => vg_chacha20_apply_ssse3,
         };
@@ -441,6 +462,71 @@ mod tests {
         }
     }
 
+    /// `vg_chacha20_xor_split_avx512` XORs the keystream into the first
+    /// `src_len` bytes of `src` and the bytes of `dst` after them, writing to
+    /// `dst` and nothing around it, as the scalar keystream does into their
+    /// concatenation: for lengths around its passes (whole, last of 513 to
+    /// 1023 bytes, and fewer), and `src_len` around blocks and passes.
+    #[cfg(target_arch = "x86_64")]
+    #[test]
+    fn xor_split() {
+        use crate::arch::chacha20::{
+            VG_CHACHA20_XOR_SPLIT_AVX512_FEATURES, vg_chacha20_xor_split_avx512,
+        };
+        use alloc::vec::Vec;
+        if !detected().contains(VG_CHACHA20_XOR_SPLIT_AVX512_FEATURES) {
+            return;
+        }
+        let key = key();
+        let n = nonce(7, &[9; 12]);
+        let word = |b: &[u8], i: usize| {
+            u32::from_le_bytes([b[4 * i], b[4 * i + 1], b[4 * i + 2], b[4 * i + 3]])
+        };
+        let state0: [u32; 16] = core::array::from_fn(|i| match i {
+            0..4 => [0x6170_7865, 0x3320_646e, 0x7962_2d32, 0x6b20_6574][i],
+            4..12 => word(&key, i - 4),
+            _ => word(&n, i - 12),
+        });
+        for len in [
+            0usize, 1, 63, 64, 65, 256, 300, 511, 512, 513, 960, 961, 1023, 1024, 1025, 1088, 1500,
+            1536, 1537, 2047, 2048, 2049, 3000, 16385,
+        ] {
+            let mut lens = Vec::from([
+                0, 1, 63, 64, 65, 128, 512, 1023, 1024, 1025, 1088, 2047, 2048,
+            ]);
+            lens.extend([
+                len / 2,
+                len.saturating_sub(65),
+                len.saturating_sub(64),
+                len.saturating_sub(1),
+                len,
+            ]);
+            for src_len in lens.into_iter().filter(|&s| s <= len) {
+                let src: Vec<u8> = (0..src_len).map(|i| (i * 7 + 3) as u8).collect();
+                let init: Vec<u8> = (0..len + 32).map(|i| (i * 13 + 5) as u8).collect();
+                let mut expected = init.clone();
+                expected[16..16 + src_len].copy_from_slice(&src);
+                let mut scalar = ChaCha20::new(&key, &n);
+                scalar.backend = Backend::Scalar;
+                scalar.apply_keystream(&mut expected[16..16 + len]);
+                let mut dst = init;
+                let mut state = state0;
+                let mut buf = [0u32; 80];
+                let (s, d) = (src.as_ptr(), dst[16..].as_mut_ptr());
+                // SAFETY: `state` and `buf` are valid for reads and writes of
+                // 64 and 320 bytes, `s` for reads of `src_len` and `d` for
+                // reads and writes of `len ≥ src_len`; they are distinct
+                // objects, so they do not overlap each other or the stack, and
+                // do not wrap around the end of the address space. The CPU has
+                // the features the function needs. (One line: newer rustc
+                // counts the closing line of a call spread over several on its
+                // own, which only AVX-512 runners execute.)
+                unsafe { vg_chacha20_xor_split_avx512(&mut state, s, src_len, d, len, &mut buf) };
+                assert_eq!(dst, expected, "len {len}, src_len {src_len}");
+            }
+        }
+    }
+
     /// The implementation chosen for each set of features.
     #[test]
     fn select() {
@@ -461,12 +547,18 @@ mod tests {
         {
             use crate::arch::chacha20::{
                 VG_CHACHA20_APPLY_AVX2_FEATURES, VG_CHACHA20_APPLY_AVX512_FEATURES,
+                VG_CHACHA20_APPLY_IFMA_FEATURES,
             };
             use crate::cpu::Features;
             let avx2 = VG_CHACHA20_APPLY_AVX2_FEATURES;
             let avx512 = VG_CHACHA20_APPLY_AVX512_FEATURES;
             assert_eq!(Backend::select(avx2), Backend::Avx2);
             assert_eq!(Backend::select(avx512), Backend::Avx512);
+            assert_eq!(VG_CHACHA20_APPLY_IFMA_FEATURES, avx512);
+            assert_eq!(
+                Backend::select(Features::all(&[avx512, super::IFMA])),
+                Backend::Ifma
+            );
             assert_eq!(
                 Backend::select(Features::all(&[
                     VG_CHACHA20_APPLY_AVX2_FEATURES,

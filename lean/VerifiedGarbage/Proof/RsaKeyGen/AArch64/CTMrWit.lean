@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTMrExp
-import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrRound
+module
+
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTMrExp
+meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTMrExp
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrRound
+meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrRound
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # A candidate on AArch64: constant time of Miller–Rabin's witness
@@ -9,6 +17,8 @@ octets read (`mrWitness_ct`): the block before `loadBE` pins its pointers
 and count (`witBlk_ok`), the block before the comparison is split after
 `ws`, and the forcing block runs from the registers the comparison keeps.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaKeyGen.AArch64
 

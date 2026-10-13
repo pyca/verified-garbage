@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.MlKem.Arm.Common
-import VerifiedGarbage.Proof.MlDsa.Arith.Mul32
-import VerifiedGarbage.Proof.MlDsa.Arith.Mem
-import VerifiedGarbage.Impl.MlDsa.Arm.Arith.Common
+module
+
+public import VerifiedGarbage.Proof.MlKem.Arm.Common
+public import VerifiedGarbage.Proof.MlDsa.Arith.Mul32
+public import VerifiedGarbage.Proof.MlDsa.Arith.Mem
+public import VerifiedGarbage.Impl.MlDsa.Arm.Arith.Common
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on 32-bit ARM: the values of the arithmetic modulo `q`
@@ -12,6 +18,8 @@ functions on words (`bred`, `bfix`, `bcsub`, `bmulz`), and their values
 arithmetic of `Proof/MlDsa/Arith/Mul32.lean`; and the symbolic execution of
 `mulz`, once for any state (`mulz_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Arm.Arith
 

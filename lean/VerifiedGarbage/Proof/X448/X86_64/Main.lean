@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.X448.X86_64.Finish
-import VerifiedGarbage.Proof.X448.X86_64.InvCall
-import VerifiedGarbage.Spec.X448.Contract
-import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.Framework.X86_64.Abi
+module
+
+public import VerifiedGarbage.Proof.X448.X86_64.Finish
+public import VerifiedGarbage.Proof.X448.X86_64.InvCall
+public import VerifiedGarbage.Spec.X448.Contract
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.Framework.X86_64.Abi
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 on x86-64: the whole function
@@ -13,6 +19,8 @@ The contract the proof is written against (the facts of
 the arguments are read unchanged, the callee-saved registers restored from the
 working space, and the return address kept.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448
 

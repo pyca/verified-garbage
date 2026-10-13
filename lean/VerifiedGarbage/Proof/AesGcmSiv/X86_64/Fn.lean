@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Crypt
-import VerifiedGarbage.Proof.AesGcm.X86_64.Mask
+module
+
+public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Crypt
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Mask
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM-SIV on x86-64: comparing the tags, and `vg_aes_gcm_siv_seal` and `vg_aes_gcm_siv_open`
@@ -11,6 +17,8 @@ without a branch (`cmp_ok`); `mask` ANDs every byte of the data with
 (`mask_ok`). `recv` copies the received tag to `W` (`recv_ok`), and
 `tagOut` the computed one from `W` to `tag` (`tagOut_ok`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 
@@ -285,16 +293,16 @@ structure KeysPost (K W SP : Addr) (R : Nat) (N : Addr) (σ t : State) : Prop wh
     GcmSiv.Polyval.mulXG (Spec.GcmSiv.ofBytes (bytesAt t.mem (W + BitVec.ofNat 64 16) 16))
   acc : Spec.Gcm.blockAt t.mem (W + BitVec.ofNat 64 80) = 0
 
-theorem keys_ok (v : GcmImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R = 14)
+theorem keys_ok (v : GcmImpl) (eb : Proof.Aes.X86_64.BlocksImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R = 14)
     {N A D : Addr} {al n : Nat} {σ : State} (E : Env K W SP σ) (S : Slots W R N A D al n σ.mem)
     (hN : Buf K W SP σ N 12) (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 3816⟩) :
-    WP isa (keys v.callees) σ (KeysPost K W SP R N σ) := by
-  refine WP.seq (WP.mono (derive_ok v L hR E S hN hDW) fun t₂ I => ?_)
+    WP isa (keys v.callees ⟨eb.enc.name, eb.enc.code⟩) σ (KeysPost K W SP R N σ) := by
+  refine WP.seq (WP.mono (derive_ok eb L hR E S hN hDW) fun t₂ I => ?_)
   have f₂ : Frame (keyR W SP) σ.mem t₂.mem := I.frame.sub fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
     · exact ⟨⟨W + BitVec.ofNat 64 16, 128⟩, by simp, Offset.sub W (by decide) (by decide)⟩
-    · exact ⟨⟨W + BitVec.ofNat 64 16, 128⟩, by simp, Offset.sub W (by decide) (by decide)⟩
+    · exact ⟨wC W, by simp, Offset.sub W (by decide) (by decide)⟩
     · exact ⟨wC W, by simp, Offset.sub W (by decide) (by decide)⟩
     · exact ⟨_, by simp, fun _ h => h⟩
   have S₂ := slots_mut L hDW ((f₂.sub (keyR_mutW W SP)).sub (mutW_mut W SP D n)) S
@@ -445,7 +453,7 @@ theorem seal_wp' (v : GcmImpl) (eb : Proof.Aes.X86_64.BlocksImpl) (hpv : GcmSiv.
   have bA₁ := Ar.aad.of_eq rd₁ wr₁
   have bD₁ := Ar.data.of_eq rd₁ wr₁
   -- The keys.
-  refine WP.seq (WP.mono (keys_ok v L Ar.rounds E₁ S₁ bN₁ Ar.data.w) fun s₂ Ky => ?_)
+  refine WP.seq (WP.mono (keys_ok v eb L Ar.rounds E₁ S₁ bN₁ Ar.data.w) fun s₂ Ky => ?_)
   have fK : Frame (mutW W SP) s₁.mem s₂.mem := Ky.frame.sub (keyR_mutW W SP)
   have S₂ := slots_mut L Ar.data.w (fK.sub (mutW_mut W SP D n)) S₁
   -- POLYVAL and the tag input.
@@ -660,7 +668,7 @@ theorem open_wp' (v : GcmImpl) (eb : Proof.Aes.X86_64.BlocksImpl) (hpv : GcmSiv.
   have bA₁ := Ar.aad.of_eq rd₁ wr₁
   have bD₁ := Ar.data.of_eq rd₁ wr₁
   -- The keys.
-  refine WP.seq (WP.mono (keys_ok v L Ar.rounds E₁ S₁ bN₁ Ar.data.w) fun s₂ Ky => ?_)
+  refine WP.seq (WP.mono (keys_ok v eb L Ar.rounds E₁ S₁ bN₁ Ar.data.w) fun s₂ Ky => ?_)
   have fK : Frame (mutW W SP) s₁.mem s₂.mem := Ky.frame.sub (keyR_mutW W SP)
   have S₂ := slots_mut L Ar.data.w (fK.sub (mutW_mut W SP D n)) S₁
   -- Counter mode from the received tag.

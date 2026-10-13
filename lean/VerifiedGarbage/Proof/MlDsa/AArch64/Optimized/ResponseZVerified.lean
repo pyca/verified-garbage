@@ -1,14 +1,22 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseZMemory
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLoop
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseZFlags
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Residue
-import VerifiedGarbage.Spec.MlDsa.ResponseZ
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseTiming
-import VerifiedGarbage.Proof.MlKem.AArch64.Common
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Contracts
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseZMemory
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLoop
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseZFlags
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Residue
+public import VerifiedGarbage.Spec.MlDsa.ResponseZ
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseTiming
+public import VerifiedGarbage.Proof.MlKem.AArch64.Common
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Contracts
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## From `ResponseZLoop.lean` -/
+
+@[expose] public section
 
 section
 

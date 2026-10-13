@@ -1,13 +1,29 @@
-import VerifiedGarbage.Proof.Scrypt.X86_64.Common
-import VerifiedGarbage.Proof.Scrypt.X86_64.Salsa
-import VerifiedGarbage.Proof.Framework.X86_64.Inline
-import VerifiedGarbage.Proof.Framework.X86_64.Abi
-import VerifiedGarbage.Proof.Framework.X86_64.RelCT
-import Mathlib.Tactic.DefEqTransformations
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Spec.Scrypt.Contract
-import VerifiedGarbage.Proof.Framework.X86_64.Spill
-import VerifiedGarbage.Proof.Framework.Omega
+module
+
+public import VerifiedGarbage.Proof.Scrypt.X86_64.Common
+meta import VerifiedGarbage.Proof.Scrypt.X86_64.Common
+public import VerifiedGarbage.Proof.Scrypt.X86_64.Salsa
+meta import VerifiedGarbage.Proof.Scrypt.X86_64.Salsa
+public import VerifiedGarbage.Proof.Framework.X86_64.Inline
+meta import VerifiedGarbage.Proof.Framework.X86_64.Inline
+public import VerifiedGarbage.Proof.Framework.X86_64.Abi
+meta import VerifiedGarbage.Proof.Framework.X86_64.Abi
+public import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+public import Mathlib.Tactic.DefEqTransformations
+meta import Mathlib.Tactic.DefEqTransformations
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.Scrypt.Contract
+meta import VerifiedGarbage.Spec.Scrypt.Contract
+public import VerifiedGarbage.Proof.Framework.X86_64.Spill
+meta import VerifiedGarbage.Proof.Framework.X86_64.Spill
+public import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.Framework.Omega
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # scryptBlockMix on x86-64: correctness
@@ -15,6 +31,8 @@ import VerifiedGarbage.Proof.Framework.Omega
 The inlined Salsa20/8 cores are used through `SalsaSpec`; the functional
 proof holds for any code meeting that specification.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Scrypt.X86_64.BlockMix
 

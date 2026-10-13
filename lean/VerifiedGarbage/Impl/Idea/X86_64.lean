@@ -1,5 +1,7 @@
-import VerifiedGarbage.TCB.X86_64.Isa
-import VerifiedGarbage.Impl.Idea.Key
+module
+
+public import VerifiedGarbage.TCB.X86_64.Isa
+public import VerifiedGarbage.Impl.Idea.Key
 
 /-!
 # IDEA on baseline x86-64
@@ -39,6 +41,8 @@ the code uses the low 16 bits (or, for the last three, shifts).
 
 The only branches are on `n` and the loop counts.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Idea.X86_64
 

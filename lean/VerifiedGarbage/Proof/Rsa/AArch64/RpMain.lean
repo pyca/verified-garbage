@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Rsa.AArch64.RpRest
-import VerifiedGarbage.Proof.Rsa.AArch64.CvMain
-import VerifiedGarbage.Proof.Bignum.Octets
+module
+
+public import VerifiedGarbage.Proof.Rsa.AArch64.RpRest
+public import VerifiedGarbage.Proof.Rsa.AArch64.CvMain
+public import VerifiedGarbage.Proof.Bignum.Octets
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_recover_primes` on AArch64: `main`
@@ -9,6 +15,8 @@ From a valid modulus, `main` loads `n`, `e` and `d`, computes `-n⁻¹` and
 `M = d e`, and either writes zeros (`d e - 1` odd or not positive) or runs
 `rest` (`rpMain_ok`): `recoverPrimes`'s result, written.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.AArch64
 

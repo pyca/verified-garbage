@@ -1,7 +1,16 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.VerifiedP
-import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.InitCT
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.VerifiedP
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.InitCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # Prepared key setup satisfies the shared contract -/
+
+@[expose] public section
+
 namespace VG.Proof.AesGcm
 open VG.Spec.Gcm
 
@@ -17,27 +26,27 @@ open VG VG.X86_64 VG.Impl.AesGcm.X86_64
 variable (v : GcmImpl)
 
 theorem initPrepared_mx : (Prepared.init v.callees).allInstrs (fun i => !loadsMxcsr i) = true := by
-  have hs : (powSteps v.callees 47).allInstrs (fun i => !loadsMxcsr i) = true := powSteps_allInstrs v (by
-    simp only [powStep, Code.allInstrs, GcmImpl.callees, v.gh.mxcsr, Bool.true_and, Bool.and_true]
-    decide +kernel) 47
+  have hs : (powLoop v.callees).allInstrs (fun i => !loadsMxcsr i) = true := by
+    simp only [powLoop, powStep, Code.allInstrs, GcmImpl.callees, v.gh.mxcsr, Bool.true_and, Bool.and_true]
+    decide +kernel
   simp only [Prepared.init, initWith, Code.allInstrs]
   rw [hs]
   simp only [GcmImpl.callees, v.ctr.mxcsr, v.key.mxcsr, Bool.true_and]
   decide +kernel
 
 theorem initPrepared_spSafe : (Prepared.init v.callees).all (fun i => !X86_64.isa.writesSp i) = true := by
-  have hs : (powSteps v.callees 47).all (fun i => !X86_64.isa.writesSp i) = true := powSteps_all v (by
-    simp only [powStep, Code.all, GcmImpl.callees, v.gh.spSafe, Bool.true_and]
-    decide +kernel) 47
+  have hs : (powLoop v.callees).all (fun i => !X86_64.isa.writesSp i) = true := by
+    simp only [powLoop, powStep, Code.all, GcmImpl.callees, v.gh.spSafe, Bool.true_and]
+    decide +kernel
   simp only [Prepared.init, initWith, Code.all]
   rw [hs]
   simp only [GcmImpl.callees, v.ctr.spSafe, v.key.spSafe, Bool.true_and]
   decide +kernel
 
 theorem initPrepared_xdepth : (Prepared.init v.callees).x86_64Depth ≤ 8 := by
-  have hs : (powSteps v.callees 47).x86_64Depth ≤ 8 := powSteps_xdepth v (by
-    simp only [powStep, Code.x86_64Depth, GcmImpl.callees, v.gh.noStack, Nat.max_le]
-    decide +kernel) 47
+  have hs : (powLoop v.callees).x86_64Depth ≤ 8 := by
+    simp only [powLoop, powStep, Code.x86_64Depth, GcmImpl.callees, v.gh.noStack, Nat.max_le]
+    decide +kernel
   simp only [Prepared.init, initWith, Code.x86_64Depth, Nat.max_le]
   refine ⟨?_, ?_, ?_, ?_, ?_, hs, ?_⟩
   all_goals first | decide +kernel | (simp only [GcmImpl.callees, v.ctr.noStack, v.key.noStack]; decide +kernel)

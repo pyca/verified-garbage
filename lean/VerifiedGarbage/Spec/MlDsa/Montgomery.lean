@@ -1,4 +1,6 @@
-import VerifiedGarbage.Spec.MlDsa.Poly
+module
+
+public import VerifiedGarbage.Spec.MlDsa.Poly
 
 /-!
 # ML-DSA: contracts for Montgomery-scaled polynomial arithmetic
@@ -19,6 +21,8 @@ every term in a sum or difference.
 The new functions have distinct names and contracts. They are not variants
 of the ordinary-representation functions, whose contracts are unchanged.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.MlDsa
 
@@ -60,13 +64,6 @@ def montgomeryMulAddContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract
 /-- A reduced input, transformed in place to `R * NTT⁻¹(f)`, reduced. -/
 def montgomeryNttInvContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   inPlaceContract A montgomeryNttInv stack
-
-private def reducedSafety (name : String) : String :=
-  s!"Each of the 256 `u32`s of `{name}` must be less than `q` = 8380417."
-
-private def ctDoc (contract : String) : String :=
-  s!"\n\nContract: `VG.Spec.MlDsa.{contract}`. Constant time: only the pointers may affect \
-    timing, not the data."
 
 /-- A distinct API: its result is not the ordinary coefficientwise product. -/
 def montgomeryMulApi : Api where

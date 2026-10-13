@@ -1,11 +1,20 @@
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.Pipeline
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.AesHash
-import Mathlib.Tactic.IntervalCases
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.Data
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.Buffers
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.SetupDispatch
+module
+
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.Pipeline
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.AesHash
+public import Mathlib.Tactic.IntervalCases
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.Data
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.Buffers
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.SetupDispatch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## Schedule -/
+
+@[expose] public section
+
 section
 
 /-! # Connecting the hash and counter work to the fixed AES schedules -/
@@ -217,10 +226,42 @@ theorem Templates.read {s₀ : State} {c : Nat} {m : Mem}
   simp only [Nat.not_lt_zero, ite_false, Nat.add_zero] at ht
   rw [← ht, blockAt_eq, pshufb_rev_rev]
 
-/-- The first two phases of `batch`: load the counters, then encrypt them
+theorem StageInv.ldframe {s₀ start s t : State} {P X Y : Nat → Block} {y : Block}
+    {c nc nh : Nat} {finished : Bool} (h : StageInv s₀ start P X Y y c nc nh finished s)
+    (hf : LdFrame s t) : StageInv s₀ start P X Y y c nc nh finished t := by
+  refine ⟨h.env.move (fun r hr _ _ _ => hf.gpr r hr) hf.mem hf.rd hf.wr, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · rw [hf.mem]; exact h.templates
+  · rw [hf.mem]; exact h.prepared
+  · rw [hf.lane .xmm2 (by decide) 0 (by decide)]; exact h.hash
+  · intro hfin hn
+    have hp := h.product hfin hn
+    simpa only [VG.Proof.Gcm.X86_64.Pclmul.prod, State.proj_xmm,
+      hf.lane .xmm8 (by decide) 0 (by decide), hf.lane .xmm9 (by decide) 0 (by decide),
+      hf.lane .xmm10 (by decide) 0 (by decide)] using hp
+  · intro r hr; rw [hf.gpr r hr]; exact h.regs r hr
+  · rw [hf.mem]; exact h.frame
+
+/-- What the code that starts a batch must leave: the counter blocks
+`c` to `c + 7`, byte-reversed, in `aregs`. -/
+def CountersIn (s₀ : State) (c : Nat) (s t : State) : Prop :=
+  (∀ i < 8, t.lane (aregs.getD i .xmm3) 0 =
+    XBinOp.eval .pshufb (Nat.repeat inc32 (c + i) (cb s₀)) revMask) ∧ LdFrame s t
+
+/-- Loading the counter blocks from their templates. -/
+theorem loads_ok {s₀ s : State} {P : Nat → Block} {c : Nat} (hp : SPre s₀) (hE : Env s₀ P s)
+    (hT : Templates s₀ c 0 s.mem) :
+    WP isa (.block (Impl.Gcm.X86_64.StitchAvx8.loads 8)) s (CountersIn s₀ c s) :=
+  WP.mono (loadCounters_ok s (fun i hi => by
+    rw [ea_at, BitVec.ofInt_natCast, hE.rd, hE.wr, hE.r11]
+    exact in_rdwr (in_sub hp.p_in (by omega))) 8 (by decide)) fun t ⟨ht, hf⟩ =>
+    ⟨fun i hi => by rw [ht i hi, ea_at, BitVec.ofInt_natCast, hE.r11]; exact hT.read i hi,
+      LdFrame.of_yframe hf⟩
+
+/-- The first two phases of `batchL ld`: the counters from `ld`, then encrypt them
 while refreshing the next counters and, optionally, hashing eight inputs. -/
 theorem cipherBatch_ok {s₀ s : State} {P X Y : Nat → Block} {y : Block} {c : Nat}
-    (hp : SPre s₀) (hashing more : Bool) (hE : Env s₀ P s)
+    (hp : SPre s₀) (hashing more : Bool) (hE : Env s₀ P s) {ld : List Instr}
+    (hld : WP isa (.block ld) s (CountersIn s₀ c s))
     (hT : Templates s₀ c 0 s.mem) (hB : Prepared s₀ X Y 0 s.mem) (hy : s.lane .xmm2 0 = y)
     (hv : (s.gpr .r8).setWidth 32 = (cb s₀).extractLsb' 0 32 + BitVec.ofNat 32 (c + 8))
     (hr : hashing = true → more = true → ∀ k < 16, InRegions (s₀.rd ++ s₀.wr)
@@ -230,25 +271,20 @@ theorem cipherBatch_ok {s₀ s : State} {P X Y : Nat → Block} {y : Block} {c :
     (hx : hashing = true → more = true → ∀ k < 16, Spec.Gcm.blockAt s.mem
       (s.gpr .rdx + BitVec.ofNat 64 (16 * k)) = X k)
     (hY : hashing = true → ∀ i < 8, Y i = if more then X (8 + i) else X i) :
-    WP isa (.seq (.block ((List.range 8).map fun i =>
-      .vmovdquLoad .l128 (aregs.getD i .xmm3) (at_ .r11 (640 + 16 * i))))
+    WP isa (.seq (.block ld)
       (aesFixed (nr s₀) aregs (roundWork (nr s₀) hashing more))) s fun t =>
       (∀ i < 8, XBinOp.eval .pshufb (t.lane (aregs.getD i .xmm3) 0) revMask =
         ciph s₀ (Nat.repeat inc32 (c + i) (cb s₀))) ∧
       StageInv s₀ s P X Y y c 8 (if hashing then 8 else 0) hashing t := by
   have h0 : StageInv s₀ s P X Y y c 0 0 false s :=
     ⟨hE, hT, hB, hy, fun _ h => (h rfl).elim, fun _ _ => rfl, Frame.refl _ _⟩
-  refine WP.seq (WP.mono (loadCounters_ok s (fun i hi => by
-    rw [ea_at, BitVec.ofInt_natCast, hE.rd, hE.wr, hE.r11]
-    exact in_rdwr (in_sub hp.p_in (by omega))) 8 (by decide)) fun t ⟨ht, hf⟩ => ?_)
+  refine WP.seq (WP.mono hld fun t ⟨ht, hf⟩ => ?_)
   refine WP.mono (aesPipeline_ok hp hashing more (RoundInv.first hp hashing
-    (h0.yframe (hf.mono (fun _ hr => List.mem_cons_of_mem _ hr)))) hv hr hs hx hY) fun u ⟨hu, hQ⟩ => ?_
+    (h0.ldframe hf)) hv hr hs hx hY) fun u ⟨hu, hQ⟩ => ?_
   refine ⟨fun i hi => ?_, hQ.last hp⟩
   apply Eq.symm
   apply aesWith_eq
-  rw [hu _ (aregs_member i hi), ht i hi, ea_at, BitVec.ofInt_natCast, hE.r11]
-  exact congrArg (fun x => Spec.Aes.cipher (nr s₀) (sch s₀)
-    (VG.Proof.Aes.X86_64.AesNi.st x)) (hT.read i hi)
+  rw [hu _ (aregs_member i hi), ht i hi]
 
 end VG.Proof.Gcm.X86_64.StitchAvx8
 
@@ -262,7 +298,7 @@ section
 namespace VG.Proof.Gcm.X86_64.StitchAvx8
 open VG VG.X86_64
 open VG.Proof.Gcm.X86_64.Stitch
-open VG.Impl.Gcm.X86_64.StitchAvx8 (aregs batch xorData)
+open VG.Impl.Gcm.X86_64.StitchAvx8 (aregs batch batchL xorData)
 open VG.Spec.Gcm (Block inc32 blockAt)
 open VG.Proof.Gcm.X86_64.Pclmul (reduceB)
 open VG.Proof.Gcm.X86_64 (revMask)
@@ -270,14 +306,14 @@ open VG.Proof.Gcm.X86_64 (revMask)
 def batchR (s : State) (j : Nat) : Region :=
   ⟨s.gpr .rdx + BitVec.ofNat 64 (16 * j), 128⟩
 
-structure BatchPost (s₀ start : State) (P X Y : Nat → Block) (y : Block)
+structure BatchPost (s₀ start : State) (ix : Bool) (P X Y : Nat → Block) (y : Block)
     (c j : Nat) (hashing : Bool) (s : State) : Prop where
   env : Env s₀ P s
   templates : Templates s₀ (c + 8) 0 s.mem
   prepared : Prepared s₀ X Y (if hashing then 8 else 0) s.mem
   hash : s.lane .xmm2 0 = if hashing then reduceB (accN X P y 8) else y
   data : ∀ k < 8, blockAt s.mem (start.gpr .rdx + BitVec.ofNat 64 (16 * (j + k))) =
-    blockAt start.mem (start.gpr .rdx + BitVec.ofNat 64 (16 * (j + k))) ^^^
+    blockAt start.mem (srcAddr start ix (16 * (j + k))) ^^^
       ciph s₀ (Nat.repeat inc32 (c + k) (cb s₀))
   frame : Frame [batchR start j, workR s₀] start.mem s.mem
   regs : ∀ r, r ≠ .rax → r ≠ .r8 → s.gpr r = start.gpr r
@@ -287,13 +323,18 @@ private theorem seq_assoc {a b c : Prog isa} {s : State} {Q : State → Prop}
     (h : WP isa (.seq (.seq a b) c) s Q) : WP isa (.seq a (.seq b c)) s Q :=
   WP.seq (WP.mono (WP.seq_iff.mp (WP.seq_iff.mp h)) fun _ h => WP.seq h)
 
-theorem batch_ok {s₀ s : State} {P X Y : Nat → Block} {y : Block} {c : Nat}
-    (hp : SPre s₀) (hashing more : Bool) (j : Nat) (hE : Env s₀ P s)
+theorem batchL_ok {s₀ s : State} {P X Y : Nat → Block} {y : Block} {c : Nat}
+    (hp : SPre s₀) (ix hashing more : Bool) (j : Nat) (hE : Env s₀ P s)
     (hT : Templates s₀ c 0 s.mem) (hB : Prepared s₀ X Y 0 s.mem) (hy : s.lane .xmm2 0 = y)
     (hv : (s.gpr .r8).setWidth 32 = (cb s₀).extractLsb' 0 32 + BitVec.ofNat 32 (c + 8))
+    {ld : List Instr} (hld : WP isa (.block ld) s (CountersIn s₀ c s))
     (hw : ∀ k < 8, InRegions s₀.wr (s.gpr .rdx + BitVec.ofNat 64 (16 * (j + k))) 16)
     (hwrap : (s.gpr .rdx).toNat + 16 * (j + 8) ≤ 2 ^ 64)
     (hsub : Region.Sub (batchR s j) (dR s₀))
+    (hsr : ∀ k < 8, InRegions (s₀.rd ++ s₀.wr) (srcAddr s ix (16 * (j + k))) 16)
+    (hss : ∀ a b, a < b → b < 8 → Region.Disjoint
+      ⟨s.gpr .rdx + BitVec.ofNat 64 (16 * (j + a)), 16⟩ ⟨srcAddr s ix (16 * (j + b)), 16⟩)
+    (hsw : ∀ k < 8, Region.Disjoint ⟨srcAddr s ix (16 * (j + k)), 16⟩ (pR s₀))
     (hr : hashing = true → more = true → ∀ k < 16, InRegions (s₀.rd ++ s₀.wr)
       (s.gpr .rdx + BitVec.ofNat 64 (16 * k)) 16)
     (hs : hashing = true → more = true → ∀ k < 16, Region.Disjoint
@@ -301,20 +342,25 @@ theorem batch_ok {s₀ s : State} {P X Y : Nat → Block} {y : Block} {c : Nat}
     (hx : hashing = true → more = true → ∀ k < 16, blockAt s.mem
       (s.gpr .rdx + BitVec.ofNat 64 (16 * k)) = X k)
     (hY : hashing = true → ∀ i < 8, Y i = if more then X (8 + i) else X i) :
-    WP isa (batch (nr s₀) 8 j (fun r => if hashing then
-      VG.Impl.Gcm.X86_64.StitchAvx8.q8 (nr s₀) more r else [])) s
-      (BatchPost s₀ s P X Y y c j hashing) := by
+    WP isa (batchL ld (nr s₀) 8 j (fun r => if hashing then
+      VG.Impl.Gcm.X86_64.StitchAvx8.q8 (nr s₀) more r else []) ix) s
+      (BatchPost s₀ s ix P X Y y c j hashing) := by
   have hsep : (batchR s j).Disjoint (pR s₀) := hp.d_p.sub_left hsub
-  simp only [batch, show aregs.take 8 = aregs from rfl]
+  simp only [batchL, show aregs.take 8 = aregs from rfl]
   apply seq_assoc
-  refine WP.seq (WP.mono (cipherBatch_ok hp hashing more hE hT hB hy hv hr hs hx hY)
+  refine WP.seq (WP.mono (cipherBatch_ok hp hashing more hE hld hT hB hy hv hr hs hx hY)
     fun t ⟨hks, ht⟩ => ?_)
   rw [WP.block_append_iff]
   have hrdx : t.gpr .rdx = s.gpr .rdx := ht.regs _ (by decide)
-  refine WP.mono (xorData_ok aregs j t (by decide) (fun k hk => by
+  have hsa : ∀ d, srcAddr t ix d = srcAddr s ix d := fun d => by
+    simp only [srcAddr, hrdx, ht.regs .rbx (by decide)]
+  refine WP.mono (xorData_ok ix aregs j t (by decide) (fun k hk => by
     rw [ht.env.wr, hrdx, BitVec.ofInt_natCast]; exact hw k hk)
+    (fun k hk => by rw [ht.env.rd, ht.env.wr, hsa]; exact hsr k hk)
+    (fun a b hab hb => by rw [hrdx, hsa]; exact hss a b hab hb)
     (by rw [hrdx]; exact hwrap)) fun u ⟨hdata, hm, hg, hrd, hwr, hlanes⟩ => ?_
   rw [hrdx] at hdata hm
+  simp only [hsa] at hdata
   have hmD : Frame [dR s₀] t.mem u.mem := hm.sub fun r hr' => by
     simp only [List.mem_singleton] at hr'
     subst r
@@ -327,7 +373,7 @@ theorem batch_ok {s₀ s : State} {P X Y : Nat → Block} {y : Block} {c : Nat}
     intro r hr'; simp only [List.mem_singleton] at hr'; subst r
     exact hsep.symm.sub_left (Offset.sub_base (pp s₀) (d := 512) (n := 128) (k := 1024) (by decide)))
   have hDu : ∀ k < 8, blockAt u.mem (s.gpr .rdx + BitVec.ofNat 64 (16 * (j + k))) =
-      blockAt s.mem (s.gpr .rdx + BitVec.ofNat 64 (16 * (j + k))) ^^^
+      blockAt s.mem (srcAddr s ix (16 * (j + k))) ^^^
         ciph s₀ (Nat.repeat inc32 (c + k) (cb s₀)) := by
     intro k hk
     have hks' := hks k hk
@@ -336,10 +382,7 @@ theorem batch_ok {s₀ s : State} {P X Y : Nat → Block} {y : Block} {c : Nat}
     refine congrArg₂ (fun a b : Block => a ^^^ b) ?_ hks'
     exact VG.Proof.Aes.X86_64.AesNi.blockAt_frame ht.frame (by
       intro r hr'; simp only [List.mem_singleton] at hr'; subst r
-      exact (hsep.sub_left (by
-        simpa only [batchR, ← Offset.add_add, Nat.mul_add] using
-          (Offset.sub (s.gpr .rdx) (d := 16 * (j + k)) (e := 16 * j)
-            (n := 16) (k := 128) (by omega) (by omega)))).sub_right (work_sub_p s₀))
+      exact (hsw k hk).sub_right (work_sub_p s₀))
   have hFu : Frame [batchR s j, workR s₀] s.mem u.mem :=
     (ht.frame.mono (by simp)).trans (hm.mono (by simp [batchR, aregs]))
   refine WP.mono (bump_ok u) fun v ⟨hv8, hvg, hvm, hvl, hvrd, hvwr⟩ => ?_
@@ -353,6 +396,29 @@ theorem batch_ok {s₀ s : State} {P X Y : Nat → Block} {y : Block} {c : Nat}
     change BitVec.ofNat 32 (c + 8) + BitVec.ofNat 32 8 = BitVec.ofNat 32 (c + 16)
     rw [← BitVec.ofNat_add]
 
+
+theorem batch_ok {s₀ s : State} {P X Y : Nat → Block} {y : Block} {c : Nat}
+    (hp : SPre s₀) (ix hashing more : Bool) (j : Nat) (hE : Env s₀ P s)
+    (hT : Templates s₀ c 0 s.mem) (hB : Prepared s₀ X Y 0 s.mem) (hy : s.lane .xmm2 0 = y)
+    (hv : (s.gpr .r8).setWidth 32 = (cb s₀).extractLsb' 0 32 + BitVec.ofNat 32 (c + 8))
+    (hw : ∀ k < 8, InRegions s₀.wr (s.gpr .rdx + BitVec.ofNat 64 (16 * (j + k))) 16)
+    (hwrap : (s.gpr .rdx).toNat + 16 * (j + 8) ≤ 2 ^ 64)
+    (hsub : Region.Sub (batchR s j) (dR s₀))
+    (hsr : ∀ k < 8, InRegions (s₀.rd ++ s₀.wr) (srcAddr s ix (16 * (j + k))) 16)
+    (hss : ∀ a b, a < b → b < 8 → Region.Disjoint
+      ⟨s.gpr .rdx + BitVec.ofNat 64 (16 * (j + a)), 16⟩ ⟨srcAddr s ix (16 * (j + b)), 16⟩)
+    (hsw : ∀ k < 8, Region.Disjoint ⟨srcAddr s ix (16 * (j + k)), 16⟩ (pR s₀))
+    (hr : hashing = true → more = true → ∀ k < 16, InRegions (s₀.rd ++ s₀.wr)
+      (s.gpr .rdx + BitVec.ofNat 64 (16 * k)) 16)
+    (hs : hashing = true → more = true → ∀ k < 16, Region.Disjoint
+      ⟨s.gpr .rdx + BitVec.ofNat 64 (16 * k), 16⟩ (pR s₀))
+    (hx : hashing = true → more = true → ∀ k < 16, blockAt s.mem
+      (s.gpr .rdx + BitVec.ofNat 64 (16 * k)) = X k)
+    (hY : hashing = true → ∀ i < 8, Y i = if more then X (8 + i) else X i) :
+    WP isa (batch (nr s₀) 8 j (fun r => if hashing then
+      VG.Impl.Gcm.X86_64.StitchAvx8.q8 (nr s₀) more r else []) ix) s
+      (BatchPost s₀ s ix P X Y y c j hashing) :=
+  batchL_ok hp ix hashing more j hE hT hB hy hv (loads_ok hp hE hT) hw hwrap hsub hsr hss hsw hr hs hx hY
 end VG.Proof.Gcm.X86_64.StitchAvx8
 
 end
@@ -367,8 +433,25 @@ open VG VG.X86_64
 open VG.Proof.Gcm.X86_64.Stitch
 open VG.Spec.Gcm (Block blockAt)
 
-def DataInv (s₀ : State) (c : Nat) (m : Mem) : Prop :=
-  ∀ k < nb s₀, blockAt m (bAddr s₀ k) = if k < c then ctb s₀ k else blk s₀ k
+/-- How far past block `k` of the output its data is read: nothing in place,
+`rbx` (`src - dst`) out of place (`ix`). -/
+def off (s₀ : State) (ix : Bool) : Addr := if ix then s₀.gpr .rbx else BitVec.ofNat 64 0
+
+/-- Where the data of block `k` is read. -/
+abbrev srcBlk (s₀ : State) (ix : Bool) (k : Nat) : Addr := bAddr s₀ k + off s₀ ix
+
+/-- The blocks of the data, as the loop reads them: readable, apart from the
+working space, and each apart from the output blocks before it. -/
+structure SrcOk (s₀ : State) (ix : Bool) : Prop where
+  rd : ∀ k < nb s₀, InRegions (s₀.rd ++ s₀.wr) (srcBlk s₀ ix k) 16
+  sep : ∀ k < nb s₀, Region.Disjoint ⟨dp s₀, 16 * k⟩ ⟨srcBlk s₀ ix k, 16⟩
+  p : ∀ k < nb s₀, Region.Disjoint ⟨srcBlk s₀ ix k, 16⟩ (pR s₀)
+
+/-- Blocks before `c` of the output hold the ciphertext; the data of the
+others is still there to be read. -/
+def DataInv (s₀ : State) (ix : Bool) (c : Nat) (m : Mem) : Prop :=
+  ∀ k < nb s₀, (k < c → blockAt m (bAddr s₀ k) = ctb s₀ k) ∧
+    (c ≤ k → blockAt m (srcBlk s₀ ix k) = blk s₀ k)
 
 theorem bAddr_add (s₀ : State) (g k : Nat) :
     bAddr s₀ g + BitVec.ofNat 64 (16 * k) = bAddr s₀ (g + k) := by
@@ -382,45 +465,114 @@ theorem bAddr_toNat {s₀ : State} (hp : SPre s₀) (k : Nat) (hk : k < nb s₀)
   rw [bAddr, BitVec.toNat_add, BitVec.toNat_ofNat,
     Nat.mod_eq_of_lt (by omega : 16 * k < 2 ^ 64), Nat.mod_eq_of_lt (by omega)]
 
-theorem DataInv.frame {s₀ : State} {c : Nat} {m m' : Mem} {rs : List Region}
-    (h : DataInv s₀ c m) (hf : Frame rs m m')
-    (hs : ∀ r ∈ rs, (dR s₀).Disjoint r) : DataInv s₀ c m' := by
+theorem srcBlk_false (s₀ : State) (k : Nat) : srcBlk s₀ false k = bAddr s₀ k := by
+  simp only [srcBlk, off, Bool.false_eq_true, ite_false, BitVec.add_zero]
+
+/-- In place, the data is the output. -/
+theorem SrcOk.inplace {s₀ : State} (hp : SPre s₀) : SrcOk s₀ false where
+  rd k hk := by rw [srcBlk_false]; exact in_rdwr (in_sub hp.d_in (by omega))
+  sep k hk := by
+    rw [srcBlk_false]; have hw := hp.wrap_d
+    exact Offset.base_disjoint (dp s₀) (by omega) (by omega)
+  p k hk := by
+    rw [srcBlk_false]
+    exact hp.d_p.sub_left (Offset.sub_base (dp s₀) (d := 16 * k) (n := 16) (k := 16 * nb s₀) (by omega))
+
+/-- The data of block `g + j`, at `rdx` at block `g`, and `rbx` as at the start. -/
+theorem srcAddr_eq {s₀ s : State} (ix : Bool) {g : Nat} (hrdx : s.gpr .rdx = bAddr s₀ g)
+    (hrbx : s.gpr .rbx = s₀.gpr .rbx) (j : Nat) : srcAddr s ix (16 * j) = srcBlk s₀ ix (g + j) := by
+  cases ix
+  · rw [srcAddr_false, srcBlk_false, hrdx, bAddr_add]
+  · simp only [srcAddr, srcBlk, off, ite_true, hrdx, hrbx]
+    rw [BitVec.add_assoc, BitVec.add_comm (s₀.gpr .rbx), ← BitVec.add_assoc, bAddr_add]
+
+/-- The data of block `c + i`, at `rdx + 16 j` at block `c`, and `rbx` as at
+the start. -/
+theorem srcAddr_eq' {s₀ s : State} (ix : Bool) {c j : Nat}
+    (ha : s.gpr .rdx + BitVec.ofNat 64 (16 * j) = bAddr s₀ c)
+    (hrbx : s.gpr .rbx = s₀.gpr .rbx) (i : Nat) : srcAddr s ix (16 * (j + i)) = srcBlk s₀ ix (c + i) := by
+  have e : s.gpr .rdx + BitVec.ofNat 64 (16 * (j + i)) = bAddr s₀ (c + i) := by
+    rw [show 16 * (j + i) = 16 * j + 16 * i by omega, ← Offset.add_add, ha, bAddr_add]
+  cases ix
+  · rw [srcAddr_false, srcBlk_false, e]
+  · simp only [srcAddr, srcBlk, off, ite_true, hrbx]
+    rw [BitVec.add_assoc, BitVec.add_comm (s₀.gpr .rbx), ← BitVec.add_assoc, e]
+
+/-- Output blocks `j + a` and data blocks `j + b` for `a < b < n`, from block
+`c` on, are apart. -/
+theorem SrcOk.sepAt {s₀ s : State} {ix : Bool} (hp : SPre s₀) (hS : SrcOk s₀ ix) {c j n : Nat}
+    (hcn : c + n ≤ nb s₀) (ha : s.gpr .rdx + BitVec.ofNat 64 (16 * j) = bAddr s₀ c)
+    (hrbx : s.gpr .rbx = s₀.gpr .rbx) :
+    ∀ a b, a < b → b < n → Region.Disjoint
+      ⟨s.gpr .rdx + BitVec.ofNat 64 (16 * (j + a)), 16⟩ ⟨srcAddr s ix (16 * (j + b)), 16⟩ := by
+  intro a b hab hb
+  have e : s.gpr .rdx + BitVec.ofNat 64 (16 * (j + a)) = bAddr s₀ (c + a) := by
+    rw [show 16 * (j + a) = 16 * j + 16 * a by omega, ← Offset.add_add, ha, bAddr_add]
+  rw [e, srcAddr_eq' ix ha hrbx]
+  have hw := hp.wrap_d
+  exact (hS.sep (c + b) (by omega)).sub_left (Offset.sub_base (dp s₀) (by omega))
+
+/-- Writes apart from the output and the data keep `DataInv`. -/
+theorem DataInv.frame {s₀ : State} {ix : Bool} {c : Nat} {m m' : Mem} {rs : List Region}
+    (h : DataInv s₀ ix c m) (hf : Frame rs m m')
+    (hs : ∀ r ∈ rs, (dR s₀).Disjoint r)
+    (hsrc : ∀ r ∈ rs, ∀ k < nb s₀, c ≤ k → Region.Disjoint ⟨srcBlk s₀ ix k, 16⟩ r) : DataInv s₀ ix c m' := by
   intro k hk
-  exact (VG.Proof.Aes.X86_64.AesNi.blockAt_frame hf (fun r hr =>
-    (hs r hr).sub_left (Offset.sub_base (dp s₀) (d := 16 * k) (n := 16) (k := 16 * nb s₀) (by omega)))).trans (h k hk)
+  refine ⟨fun hc => ?_, fun hc => ?_⟩
+  · exact (VG.Proof.Aes.X86_64.AesNi.blockAt_frame hf (fun r hr =>
+      (hs r hr).sub_left (Offset.sub_base (dp s₀) (d := 16 * k) (n := 16) (k := 16 * nb s₀) (by omega)))).trans
+      ((h k hk).1 hc)
+  · exact (VG.Proof.Aes.X86_64.AesNi.blockAt_frame hf (fun r hr => hsrc r hr k hk hc)).trans ((h k hk).2 hc)
 
-theorem DataInv.initial {s₀ s : State} {P : Nat → Block} (hp : SPre s₀)
-    (h : Ready s₀ P s) : DataInv s₀ 0 s.mem :=
-  (show DataInv s₀ 0 s₀.mem from fun _ _ => rfl).frame h.frame (by
-    intro r hr; simp only [List.mem_singleton] at hr; subst r; exact hp.d_p)
+/-- Writes within the working space keep `DataInv`. -/
+theorem DataInv.frameP {s₀ : State} {ix : Bool} {c : Nat} {m m' : Mem} {rs : List Region}
+    (hp : SPre s₀) (hS : SrcOk s₀ ix) (h : DataInv s₀ ix c m) (hf : Frame rs m m')
+    (hs : ∀ r ∈ rs, Region.Sub r (pR s₀)) : DataInv s₀ ix c m' :=
+  h.frame hf (fun r hr => hp.d_p.sub_right (hs r hr)) (fun r hr k hk _ => (hS.p k hk).sub_right (hs r hr))
 
-theorem DataInv.batch {s₀ s t : State} {P X Y : Nat → Block} {y : Block}
-    {c j : Nat} {hashing : Bool} (hp : SPre s₀) (h : DataInv s₀ c s.mem)
+/-- All the blocks done: the output is the ciphertext. -/
+theorem DataInv.done {s₀ : State} {ix : Bool} {m : Mem} (h : DataInv s₀ ix (nb s₀) m) :
+    ∀ k < nb s₀, blockAt m (bAddr s₀ k) = ctb s₀ k := fun k hk => (h k hk).1 hk
+
+/-- At the start, from the data where the loop reads it. -/
+theorem DataInv.initial {s₀ : State} {ix : Bool} {m : Mem}
+    (h : ∀ k < nb s₀, blockAt m (srcBlk s₀ ix k) = blk s₀ k) : DataInv s₀ ix 0 m :=
+  fun k hk => ⟨fun h0 => absurd h0 (Nat.not_lt_zero _), fun _ => h k hk⟩
+
+theorem DataInv.batch {s₀ s t : State} {ix : Bool} {P X Y : Nat → Block} {y : Block}
+    {c j : Nat} {hashing : Bool} (hp : SPre s₀) (hS : SrcOk s₀ ix) (h : DataInv s₀ ix c s.mem)
     (hc : c + 8 ≤ nb s₀) (ha : s.gpr .rdx + BitVec.ofNat 64 (16 * j) = bAddr s₀ c)
-    (hb : BatchPost s₀ s P X Y y c j hashing t) : DataInv s₀ (c + 8) t.mem := by
+    (hbx : s.gpr .rbx = s₀.gpr .rbx)
+    (hb : BatchPost s₀ s ix P X Y y c j hashing t) : DataInv s₀ ix (c + 8) t.mem := by
   have addr : ∀ i, s.gpr .rdx + BitVec.ofNat 64 (16 * (j + i)) = bAddr s₀ (c + i) := by
     intro i
     rw [show 16 * (j + i) = 16 * j + 16 * i by omega, ← Offset.add_add, ha, bAddr_add]
   have hm : Frame [⟨bAddr s₀ c, 128⟩, workR s₀] s.mem t.mem := by
     simpa only [batchR, ha] using hb.frame
   intro k hk
-  by_cases hin : c ≤ k ∧ k < c + 8
-  · have hi : k - c < 8 := by omega
-    have hv := hb.data (k - c) hi
-    rw [addr, show c + (k - c) = k by omega] at hv
-    rw [hv, h k hk, ite_eq_right (by omega : ¬k < c), ite_eq_left hin.2]
-  · have he : (if k < c + 8 then ctb s₀ k else blk s₀ k) =
-        (if k < c then ctb s₀ k else blk s₀ k) := by
-      split_ifs <;> first | rfl | omega
-    rw [VG.Proof.Aes.X86_64.AesNi.blockAt_frame hm (by
+  refine ⟨fun hk8 => ?_, fun hk8 => ?_⟩
+  · by_cases hin : c ≤ k
+    · have hi : k - c < 8 := by omega
+      have hv := hb.data (k - c) hi
+      rw [addr, show c + (k - c) = k by omega] at hv
+      rw [hv, srcAddr_eq' ix ha hbx, show c + (k - c) = k by omega, (h k hk).2 hin]
+    · rw [VG.Proof.Aes.X86_64.AesNi.blockAt_frame hm (by
+        intro r hr
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl
+        · have hw := hp.wrap_d
+          exact Offset.disjoint (dp s₀) (d := 16 * k) (n := 16) (e := 16 * c) (k := 128)
+            (by omega) (by omega) (by omega)
+        · exact (hp.d_p.sub_left (Offset.sub_base (dp s₀) (d := 16 * k) (n := 16) (k := 16 * nb s₀) (by omega))).sub_right (work_sub_p s₀))]
+      exact (h k hk).1 (by omega)
+  · rw [VG.Proof.Aes.X86_64.AesNi.blockAt_frame hm (by
       intro r hr
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · have hw := hp.wrap_d
-        exact Offset.disjoint (dp s₀) (d := 16 * k) (n := 16) (e := 16 * c) (k := 128)
-          (by omega) (by omega) (by omega)
-      · exact (hp.d_p.sub_left (Offset.sub_base (dp s₀) (d := 16 * k) (n := 16) (k := 16 * nb s₀) (by omega))).sub_right (work_sub_p s₀)), he]
-    exact h k hk
+        exact (hS.sep k hk).symm.sub_right (Offset.sub_base (dp s₀) (by omega))
+      · exact (hS.p k hk).sub_right (work_sub_p s₀))]
+    exact (h k hk).2 (by omega)
 
 end VG.Proof.Gcm.X86_64.StitchAvx8
 
@@ -434,8 +586,9 @@ section
 namespace VG.Proof.Gcm.X86_64.StitchAvx8
 open VG VG.X86_64
 open VG.Proof.Gcm.X86_64.Stitch
-open VG.Spec.Gcm (Block ghashFrom)
+open VG.Spec.Gcm (Block ghashFrom blockAt)
 open VG.Proof.Gcm.X86_64.Pclmul (reduceB)
+open VG.Proof.Gcm.X86_64 (revMask)
 
 def hashBlock (s₀ : State) (dec : Bool) (k : Nat) : Block := if dec then blk s₀ k else ctb s₀ k
 
@@ -452,9 +605,9 @@ theorem ghash_append8 (h y : Block) (f : Nat → Block) (g : Nat) :
   simp only [ghashFrom, List.foldl_append]
   rfl
 
-structure CoreInv (s₀ : State) (P : Nat → Block) (dec : Bool) (c g : Nat) (s : State) : Prop where
+structure CoreInv (s₀ : State) (ix : Bool) (P : Nat → Block) (dec : Bool) (c g : Nat) (s : State) : Prop where
   env : Env s₀ P s
-  data : DataInv s₀ c s.mem
+  data : DataInv s₀ ix c s.mem
   templates : Templates s₀ c 0 s.mem
   counter : (s.gpr .r8).setWidth 32 = (cb s₀).extractLsb' 0 32 + BitVec.ofNat 32 (c + 8)
   cursor : s.gpr .rdx = bAddr s₀ g
@@ -463,19 +616,48 @@ structure CoreInv (s₀ : State) (P : Nat → Block) (dec : Bool) (c g : Nat) (s
   c_le : c ≤ nb s₀
   g_le : g ≤ nb s₀
 
-theorem CoreInv.initial {s₀ s : State} {P : Nat → Block} (hp : SPre s₀)
-    (h : Ready s₀ P s) (dec : Bool) : CoreInv s₀ P dec 0 0 s := by
-  refine ⟨h.env, DataInv.initial hp h, h.templates, h.counter, ?_, ?_, ?_, Nat.zero_le _, Nat.zero_le _⟩
+/-- What the setup leaves, but where the data is: the state before the
+first batch. -/
+structure ReadyC (s₀ : State) (P : Nat → Block) (s : State) : Prop where
+  env : Env s₀ P s
+  templates : Templates s₀ 0 0 s.mem
+  counter : (s.gpr .r8).setWidth 32 = (cb s₀).extractLsb' 0 32 + 8
+  cursor : s.gpr .rdx = dp s₀
+  remaining : s.gpr .r9 = s₀.gpr .r9
+  hash : s.lane .xmm2 0 = y₀ s₀
+  mask : s.lane .xmm0 0 = revMask
+  base : XBinOp.eval .pshufb (s.lane .xmm7 0) revMask = cb s₀
+
+theorem Ready.toC {s₀ s : State} {P : Nat → Block} (h : Ready s₀ P s) : ReadyC s₀ P s :=
+  ⟨h.env, h.templates, h.counter, h.cursor, h.remaining, h.hash, h.mask, h.base⟩
+
+/-- In place, the data is where the setup found it. -/
+theorem Ready.src {s₀ s : State} {P : Nat → Block} (hp : SPre s₀) (h : Ready s₀ P s) :
+    ∀ k < nb s₀, blockAt s.mem (srcBlk s₀ false k) = blk s₀ k := fun k hk => by
+  rw [srcBlk_false]
+  exact VG.Proof.Aes.X86_64.AesNi.blockAt_frame h.frame (fun r hr => by
+    simp only [List.mem_singleton] at hr; subst r
+    exact hp.d_p.sub_left (Offset.sub_base (dp s₀) (d := 16 * k) (n := 16) (k := 16 * nb s₀) (by omega)))
+
+theorem CoreInv.initial {s₀ s : State} {ix : Bool} {P : Nat → Block}
+    (h : ReadyC s₀ P s) (hsrc : ∀ k < nb s₀, blockAt s.mem (srcBlk s₀ ix k) = blk s₀ k) (dec : Bool) :
+    CoreInv s₀ ix P dec 0 0 s := by
+  refine ⟨h.env, DataInv.initial hsrc, h.templates, h.counter, ?_, ?_, ?_, Nat.zero_le _, Nat.zero_le _⟩
   · simpa only [bAddr, Nat.mul_zero, BitVec.add_zero] using h.cursor
   · simpa only [Nat.sub_zero, BitVec.ofNat_toNat, BitVec.setWidth_eq] using h.remaining
   · exact h.hash
 
-theorem CoreInv.addr {s₀ s : State} {P : Nat → Block} {dec : Bool} {c g : Nat}
-    (h : CoreInv s₀ P dec c g s) (k : Nat) :
+theorem CoreInv.addr {s₀ s : State} {ix : Bool} {P : Nat → Block} {dec : Bool} {c g : Nat}
+    (h : CoreInv s₀ ix P dec c g s) (k : Nat) :
     s.gpr .rdx + BitVec.ofNat 64 (16 * k) = bAddr s₀ (g + k) := by rw [h.cursor, bAddr_add]
 
-theorem CoreInv.batchBounds {s₀ s : State} {P : Nat → Block} {dec : Bool} {c g : Nat}
-    (hp : SPre s₀) (h : CoreInv s₀ P dec c g s) (j : Nat) (hj : g + j = c) (hc : c + 8 ≤ nb s₀) :
+/-- `rbx` is as at the start. -/
+theorem CoreInv.rbx {s₀ s : State} {ix : Bool} {P : Nat → Block} {dec : Bool} {c g : Nat}
+    (h : CoreInv s₀ ix P dec c g s) : s.gpr .rbx = s₀.gpr .rbx :=
+  h.env.other _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+
+theorem CoreInv.batchBounds {s₀ s : State} {ix : Bool} {P : Nat → Block} {dec : Bool} {c g : Nat}
+    (hp : SPre s₀) (h : CoreInv s₀ ix P dec c g s) (j : Nat) (hj : g + j = c) (hc : c + 8 ≤ nb s₀) :
     (∀ k < 8, InRegions s₀.wr (s.gpr .rdx + BitVec.ofNat 64 (16 * (j + k))) 16) ∧
     (s.gpr .rdx).toNat + 16 * (j + 8) ≤ 2 ^ 64 ∧ Region.Sub (batchR s j) (dR s₀) := by
   refine ⟨fun k hk => ?_, ?_, ?_⟩
@@ -488,21 +670,43 @@ theorem CoreInv.batchBounds {s₀ s : State} {P : Nat → Block} {dec : Bool} {c
     rw [h.addr, hj]
     exact Offset.sub_base (dp s₀) (d := 16 * c) (n := 128) (k := 16 * nb s₀) (by omega)
 
-theorem CoreInv.bareBatch {s₀ s : State} {P : Nat → Block} {dec : Bool} {c g : Nat}
-    (hp : SPre s₀) (h : CoreInv s₀ P dec c g s) (j : Nat) (hj : g + j = c) (hc : c + 8 ≤ nb s₀) :
-    WP isa (Impl.Gcm.X86_64.StitchAvx8.batch (nr s₀) 8 j (fun _ => [])) s
-      (CoreInv s₀ P dec (c + 8) g) := by
+/-- What a batch at block `c` needs of its data. -/
+theorem CoreInv.srcBounds {s₀ s : State} {ix : Bool} {P : Nat → Block} {dec : Bool} {c g : Nat}
+    (hp : SPre s₀) (hS : SrcOk s₀ ix) (h : CoreInv s₀ ix P dec c g s) (j : Nat) (hj : g + j = c)
+    (hc : c + 8 ≤ nb s₀) :
+    (∀ k < 8, InRegions (s₀.rd ++ s₀.wr) (srcAddr s ix (16 * (j + k))) 16) ∧
+    (∀ a b, a < b → b < 8 → Region.Disjoint
+      ⟨s.gpr .rdx + BitVec.ofNat 64 (16 * (j + a)), 16⟩ ⟨srcAddr s ix (16 * (j + b)), 16⟩) ∧
+    (∀ k < 8, Region.Disjoint ⟨srcAddr s ix (16 * (j + k)), 16⟩ (pR s₀)) := by
+  have ha : s.gpr .rdx + BitVec.ofNat 64 (16 * j) = bAddr s₀ c := by rw [h.addr, hj]
+  refine ⟨fun k hk => ?_, hS.sepAt hp hc ha h.rbx, fun k hk => ?_⟩
+  · rw [srcAddr_eq' ix ha h.rbx]; exact hS.rd _ (by omega)
+  · rw [srcAddr_eq' ix ha h.rbx]; exact hS.p _ (by omega)
+
+theorem CoreInv.bareBatchL {s₀ s : State} {ix : Bool} {P : Nat → Block} {dec : Bool} {c g : Nat}
+    (hp : SPre s₀) (hS : SrcOk s₀ ix) (h : CoreInv s₀ ix P dec c g s) (j : Nat) (hj : g + j = c)
+    (hc : c + 8 ≤ nb s₀) {ld : List Instr} (hld : WP isa (.block ld) s (CountersIn s₀ c s)) :
+    WP isa (Impl.Gcm.X86_64.StitchAvx8.batchL ld (nr s₀) 8 j (fun _ => []) ix) s
+      (CoreInv s₀ ix P dec (c + 8) g) := by
   let X : Nat → Block := fun i => s.mem.readW (hashAddr s₀ i) 128
   have hB : Prepared s₀ X X 0 s.mem := fun _ _ => rfl
   obtain ⟨hw, hwrap, hsub⟩ := h.batchBounds hp j hj hc
-  refine WP.mono (batch_ok hp false false j h.env h.templates hB h.hash h.counter hw hwrap hsub
-    (fun he => Bool.noConfusion he) (fun he => Bool.noConfusion he)
+  obtain ⟨hsr, hss, hsw⟩ := h.srcBounds hp hS j hj hc
+  refine WP.mono (batchL_ok hp ix false false j h.env h.templates hB h.hash h.counter hld hw hwrap hsub
+    hsr hss hsw (fun he => Bool.noConfusion he) (fun he => Bool.noConfusion he)
     (fun he => Bool.noConfusion he) (fun he => Bool.noConfusion he)) fun t ht => ?_
-  refine ⟨ht.env, h.data.batch hp hc (by rw [h.addr, hj]) ht, ht.templates, ?_,
+  refine ⟨ht.env, h.data.batch hp hS hc (by rw [h.addr, hj]) h.rbx ht, ht.templates, ?_,
     (ht.regs _ (by decide) (by decide)).trans h.cursor,
     (ht.regs _ (by decide) (by decide)).trans h.remaining, ht.hash, hc, h.g_le⟩
   simpa only [Nat.add_assoc, Nat.reduceAdd] using ht.counter
 
+
+theorem CoreInv.bareBatch {s₀ s : State} {ix : Bool} {P : Nat → Block} {dec : Bool} {c g : Nat}
+    (hp : SPre s₀) (hS : SrcOk s₀ ix) (h : CoreInv s₀ ix P dec c g s) (j : Nat) (hj : g + j = c)
+    (hc : c + 8 ≤ nb s₀) :
+    WP isa (Impl.Gcm.X86_64.StitchAvx8.batch (nr s₀) 8 j (fun _ => []) ix) s
+      (CoreInv s₀ ix P dec (c + 8) g) :=
+  h.bareBatchL hp hS j hj hc (loads_ok hp h.env h.templates)
 end VG.Proof.Gcm.X86_64.StitchAvx8
 
 end

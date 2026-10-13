@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.R2wSub
-import VerifiedGarbage.Proof.Bignum.X86_64.Copy
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.R2wSub
+public import VerifiedGarbage.Proof.Bignum.X86_64.Copy
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `R² mod m` by word steps on x86-64: adding `m` back
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.Bignum.X86_64.Copy
 `addBack` adds `m` to `t` (`w + 1` words) if `t`'s top bit is set, modulo
 `2^(64 (w + 1))` (`addBack_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64.R2w
 

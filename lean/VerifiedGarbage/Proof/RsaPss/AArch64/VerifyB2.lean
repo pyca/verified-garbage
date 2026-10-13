@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyB1
+module
+
+public import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyB1
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSASSA-PSS verification on AArch64: hashing `M'` and comparing
@@ -8,6 +14,8 @@ After `posCheck`: `M' = (0x00)⁸ ‖ mHash ‖ salt` in `Y` (`clearY`,
 hash compared with `H` into `acc`, `x0 = 1` exactly when `acc = 0` (`cmpH`):
 `b2_ok`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPss.AArch64
 

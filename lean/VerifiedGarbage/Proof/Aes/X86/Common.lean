@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Framework.X86.Wp
-import VerifiedGarbage.Proof.Framework.Mem
-import Mathlib.Tactic.SplitIfs
+module
+
+public import VerifiedGarbage.Proof.Framework.X86.Wp
+public import VerifiedGarbage.Proof.Framework.Mem
+public import Mathlib.Tactic.SplitIfs
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES and GHASH on x86 (32-bit): regions of 32-bit buffers
@@ -10,6 +16,8 @@ Parts of a buffer at a 32-bit address `b` that does not wrap around the
 disjoint. The single-instruction weakest-precondition rules are
 `Proof/Framework/X86/Wp.lean`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Aes.X86
 

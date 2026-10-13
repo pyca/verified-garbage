@@ -1,6 +1,13 @@
-import VerifiedGarbage.Proof.Modes.X86_64.Steps
-import VerifiedGarbage.Proof.Framework.Semantics
-import VerifiedGarbage.Spec.Cbc
+module
+
+public import VerifiedGarbage.Proof.Modes.X86_64.Steps
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Framework.X86_64.Syms
+public import VerifiedGarbage.Spec.Cbc
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # What the modes need of a block cipher's core, on x86-64
@@ -18,14 +25,18 @@ else: the modes are proven once, for any core, and each cipher proves
   `prepare` (`keyArgs_congr`): changing no register of `keyRegs`, nothing
   outside `rs` in memory.
 * `Ready s B k`: the key `k` is ready in the state `s`, with the scratch
-  buffer at `B`. It depends only on the core's slots outside its buffer and
-  on the registers the modes do not write (`modeRegs`, `ready_frame`), so a
-  core may keep part of it in registers (e.g. a pointer it saves and
-  restores around its rounds).
+  buffer at `B`. It depends only on the core's slots outside its buffer, on
+  memory outside every writable region, on the statics' addresses, and on
+  the registers the modes do not write (`modeRegs`, `ready_frame`, `WrIn`),
+  so a core may keep part of it in registers (e.g. a pointer it saves and
+  restores around its rounds), read a key too large for its slots where the
+  caller passed it, or read a table among the statics.
 * `prepare_wp`, `crypt_wp`: with the scratch buffer of `total` slots, each
   changes only the core's slots in memory, and keeps `sb`, `rsp`,
   `dataReg` and `leftReg`; every other register may change.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Modes.X86_64
 
@@ -38,6 +49,22 @@ wrap around. -/
 structure ScrIn (s : State) (B : Addr) (n : Nat) : Prop where
   wr : (⟨B, 8 * n⟩ : Region) ∈ s.wr
   fit : B.toNat + 8 * n ≤ 2 ^ 64
+
+/-- A straight-line block names the same addresses of statics after it as before. -/
+theorem runBlock_syms : ∀ {is : List Instr} {s s' : State}, runBlock isa is s = some s' → s'.syms = s.syms
+  | [], _, _, h => by cases h; rfl
+  | i :: is, s, s', h => by
+    obtain ⟨s₁, h₁, h₂⟩ := Option.bind_eq_some_iff.mp h
+    exact (runBlock_syms h₂).trans (exec_syms h₁)
+
+/-- What the modes did between two states: written only within the writable
+regions `rs`, which with the readable ones and the statics' addresses have
+not changed. -/
+structure WrIn (rs : List Region) (s s' : State) : Prop where
+  sub : ∀ r ∈ rs, ∃ w ∈ s.wr, Region.Sub r w
+  rd : s'.rd = s.rd
+  wr : s'.wr = s.wr
+  syms : s'.syms = s.syms
 
 /-- Block `j` of the core's buffer, with the scratch buffer at `B`. -/
 abbrev bufAddr (c : Core) (B : Addr) (j : Nat) : Addr := B + BitVec.ofNat 64 (8 * c.buf + 16 * j)
@@ -89,10 +116,10 @@ structure CoreSpec (c : Core) where
   keyRegs_ok : c.keyRegs.all (fun r => r != .rax && r != .rbx && r != sb) = true
   regs_ok : regsOk c = true
   keyArgs_congr : ∀ {s s' : State} {rs : List Region} {k : Key}, KeyArgs s rs k →
-    (∀ r ∈ c.keyRegs, s'.gpr r = s.gpr r) → s'.rd = s.rd → s'.wr = s.wr → Frame rs s.mem s'.mem →
-    KeyArgs s' rs k
+    (∀ r ∈ c.keyRegs, s'.gpr r = s.gpr r) → s'.rd = s.rd → s'.wr = s.wr → s'.syms = s.syms →
+    Frame rs s.mem s'.mem → KeyArgs s' rs k
   ready_frame : ∀ {s s' : State} {B : Addr} {k : Key} {rs : List Region}, Ready s B k → Frame rs s.mem s'.mem →
-    (∀ r ∈ rs, Region.Disjoint (coreRegion c B) r ∨ Region.Sub r (bufRegion c B)) →
+    (∀ r ∈ rs, Region.Disjoint (coreRegion c B) r ∨ Region.Sub r (bufRegion c B)) → WrIn rs s s' →
     (∀ r, r ∉ modeRegs c → s'.gpr r = s.gpr r) → Ready s' B k
   prepare_wp : ∀ {s : State} {B : Addr} {rs : List Region} {k : Key}, s.gpr sb = B →
     ScrIn s B c.total → (⟨B, 8 * c.total⟩ : Region) ∈ rs → KeyArgs s rs k →
@@ -105,6 +132,75 @@ structure CoreSpec (c : Core) where
       Frame [coreRegion c B] s.mem s'.mem ∧
       (∀ j < c.G, bytesAt s'.mem (bufAddr c B j) 16 = cipher k (bytesAt s.mem (bufAddr c B j) 16)) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr
+
+/-! ## Blocks of `bw` words, for CBC
+
+CTR's counter blocks are 16 bytes, and `CoreSpec` states the core's blocks
+as 16 bytes; CBC works on blocks of any `bw` words. `BlockSpec` is
+`CoreSpec` with blocks of `8 bw` bytes, which a core of 16-byte blocks has
+(`CoreSpec.toBlock`). -/
+
+/-- Block `j` of the core's buffer, of `bw` words. -/
+abbrev blkAddr (c : Core) (B : Addr) (j : Nat) : Addr := B + BitVec.ofNat 64 (8 * c.buf + 8 * c.bw * j)
+
+/-- The core's buffer, of `G` blocks of `bw` words. -/
+abbrev blkRegion (c : Core) (B : Addr) : Region := ⟨B + BitVec.ofNat 64 (8 * c.buf), 8 * c.bw * c.G⟩
+
+/-- `Layout` for blocks of `bw` words, at most the 2 of the chaining
+value's slots. -/
+structure BLayout (c : Core) : Prop where
+  G_pos : 0 < c.G
+  bw_pos : 0 < c.bw
+  bw_le : c.bw ≤ 2
+  buf_le : c.buf + c.bw * c.G ≤ c.slots
+  room : c.slots + 8 ≤ c.total
+  small : 8 * c.total < 2 ^ 31
+
+/-- `CoreSpec` for blocks of `bw` words. -/
+structure BlockSpec (c : Core) where
+  Key : Type
+  cipher : Key → Spec.Cbc.Cipher
+  KeyArgs : State → List Region → Key → Prop
+  Ready : State → Addr → Key → Prop
+  cipher_len : ∀ k b, (cipher k b).length = 8 * c.bw
+  layout : BLayout c
+  keyRegs_ok : c.keyRegs.all (fun r => r != .rax && r != .rbx && r != sb) = true
+  regs_ok : regsOk c = true
+  keyArgs_congr : ∀ {s s' : State} {rs : List Region} {k : Key}, KeyArgs s rs k →
+    (∀ r ∈ c.keyRegs, s'.gpr r = s.gpr r) → s'.rd = s.rd → s'.wr = s.wr → s'.syms = s.syms →
+    Frame rs s.mem s'.mem → KeyArgs s' rs k
+  ready_frame : ∀ {s s' : State} {B : Addr} {k : Key} {rs : List Region}, Ready s B k → Frame rs s.mem s'.mem →
+    (∀ r ∈ rs, Region.Disjoint (coreRegion c B) r ∨ Region.Sub r (blkRegion c B)) → WrIn rs s s' →
+    (∀ r, r ∉ modeRegs c → s'.gpr r = s.gpr r) → Ready s' B k
+  prepare_wp : ∀ {s : State} {B : Addr} {rs : List Region} {k : Key}, s.gpr sb = B →
+    ScrIn s B c.total → (⟨B, 8 * c.total⟩ : Region) ∈ rs → KeyArgs s rs k →
+    WP isa c.prepare s fun s' => Ready s' B k ∧ s'.gpr sb = B ∧ s'.gpr .rsp = s.gpr .rsp ∧
+      s'.gpr c.dataReg = s.gpr c.dataReg ∧ s'.gpr c.leftReg = s.gpr c.leftReg ∧
+      Frame [coreRegion c B] s.mem s'.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr
+  crypt_wp : ∀ {s : State} {B : Addr} {k : Key}, s.gpr sb = B → ScrIn s B c.total → Ready s B k →
+    WP isa c.crypt s fun s' => s'.gpr sb = B ∧ s'.gpr .rsp = s.gpr .rsp ∧
+      s'.gpr c.dataReg = s.gpr c.dataReg ∧ s'.gpr c.leftReg = s.gpr c.leftReg ∧ Ready s' B k ∧
+      Frame [coreRegion c B] s.mem s'.mem ∧
+      (∀ j < c.G, bytesAt s'.mem (blkAddr c B j) (8 * c.bw) =
+        cipher k (bytesAt s.mem (blkAddr c B j) (8 * c.bw))) ∧
+      s'.rd = s.rd ∧ s'.wr = s.wr
+
+/-- A core of 16-byte blocks, as one of blocks of `bw = 2` words. -/
+def CoreSpec.toBlock {c : Core} (cs : CoreSpec c) (h : c.bw = 2) : BlockSpec c where
+  Key := cs.Key
+  cipher := cs.cipher
+  KeyArgs := cs.KeyArgs
+  Ready := cs.Ready
+  cipher_len k b := by rw [h, cs.cipher_len]
+  layout := ⟨cs.layout.G_pos, by omega, by omega, by have := cs.layout.buf_le; rw [h]; omega, cs.layout.room,
+    cs.layout.small⟩
+  keyRegs_ok := cs.keyRegs_ok
+  regs_ok := cs.regs_ok
+  keyArgs_congr := cs.keyArgs_congr
+  ready_frame hr hf hd hw hg := cs.ready_frame hr hf (by simpa only [blkRegion, h] using hd) hw hg
+  prepare_wp := cs.prepare_wp
+  crypt_wp hB hs hr := WP.mono (cs.crypt_wp hB hs hr) fun _ ⟨b, sp, d, l, r, f, e, rd, wr⟩ =>
+    ⟨b, sp, d, l, r, f, by simpa only [blkAddr, bufAddr, h] using e, rd, wr⟩
 
 /-- What `regsOk` says, one register at a time. -/
 theorem regsOk_ne {c : Core} (h : regsOk c = true) :
