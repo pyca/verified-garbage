@@ -8,6 +8,12 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Hash
+import Mathlib.Tactic.Conv
+import VerifiedGarbage.Proof.MlKem.AArch64.DecapsA
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Hash
+meta import Mathlib.Tactic.Conv
+meta import VerifiedGarbage.Proof.MlKem.AArch64.DecapsA
 
 /-!
 # ML-DSA verification on AArch64: `vg_mldsa44_verify`, `vg_mldsa65_verify`, `vg_mldsa87_verify`

@@ -12,6 +12,10 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.MlDsa.Arm.Arith.AddSub
+import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Proof.MlDsa.Arm.Arith.AddSub
+meta import Mathlib.Tactic.SplitIfs
 
 /-!
 # ML-DSA on 32-bit ARM: `vg_mldsa_high_bits` and `vg_mldsa_low_bits`

@@ -5,6 +5,10 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Hash
+import Mathlib.Tactic.Conv
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.MlKem.AArch64.KgC
 
 /-!
 # ML-DSA signing on AArch64: the private key and `ρ″`
