@@ -30,7 +30,10 @@ def clearSetup : List Instr :=
   ([.mov .edi (fr (argOff memoryArg)), .mov .ecx (fr (argOff blocksArg))] : List Instr) ++
     List.replicate 8 (.alu .add .ecx (.reg .ecx)) ++ ([.mov .eax (.imm 0)] : List Instr)
 
-def clearWord : List Instr := [.store (at_ .edi 0) .eax, .alu .add .edi (.imm 4), .alu .sub .ecx (.imm 1)]
+/-- `[r] = eax`, on to the next word, and one fewer word left in `ecx`. -/
+def clearWordAt (r : Reg) : List Instr := [.store (at_ r 0) .eax, .alu .add r (.imm 4), .alu .sub .ecx (.imm 1)]
+
+def clearWord : List Instr := clearWordAt .edi
 
 def clear : Prog isa := .seq (.block clearSetup) (.loop (.block clearWord) .ne)
 
