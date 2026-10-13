@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Weierstrass.X86_64.PointOpsMixed
-import VerifiedGarbage.Proof.Weierstrass.X86_64.CachedJacTiming
-import VerifiedGarbage.Proof.Weierstrass.X86_64.JacMixedTiming
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.PointOpsMixed
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.CachedJacTiming
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.JacMixedTiming
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Point operations as functions on x86-64: the additions' timing
@@ -12,6 +18,8 @@ verifier, here for any values (`CachedLay`, `MixedLay`: the programs read
 only `V` or what they wrote), with the pieces' taint checks
 (`CachedJacChecks`, `JacMixedChecks`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.X86_64.PointOps
 

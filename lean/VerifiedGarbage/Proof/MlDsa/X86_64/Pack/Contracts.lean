@@ -1,7 +1,13 @@
-import VerifiedGarbage.Spec.MlDsa.Poly
-import VerifiedGarbage.Impl.MlDsa.X86_64.Pack.Encode
-import VerifiedGarbage.Proof.MlKem.X86_64.Contracts
-import VerifiedGarbage.Proof.MlKem.X86_64.CompressEncode
+module
+
+public import VerifiedGarbage.Spec.MlDsa.Poly
+public import VerifiedGarbage.Impl.MlDsa.X86_64.Pack.Encode
+public import VerifiedGarbage.Proof.MlKem.X86_64.Contracts
+public import VerifiedGarbage.Proof.MlKem.X86_64.CompressEncode
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on x86-64: the contracts of the encodings, for the proofs
@@ -13,6 +19,8 @@ postcondition. The proofs are written against these, and `Verified.of_correct`
 moves them to the shared contracts, which imply them. Also: `sel_ok`, the
 branch of `sel` on a 32-bit argument.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86_64.Pack
 

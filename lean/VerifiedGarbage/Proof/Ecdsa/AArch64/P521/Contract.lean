@@ -1,7 +1,13 @@
-import VerifiedGarbage.Spec.Ecdsa.P521
-import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Ecdsa.AArch64.P521.Tables
+module
+
+public import VerifiedGarbage.Spec.Ecdsa.P521
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.P521.Tables
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDSA over P-521 on AArch64: the contract the proof is written against
@@ -12,6 +18,8 @@ by name: `vg_ecdsa_p521_sign(out = x0, d = x1, digest = x2, k = x3,
 scratch = x4)`, the result in `w0`, and the tables at the address of the
 static `p521.tsym`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.AArch64.P521
 

@@ -1,10 +1,16 @@
-import VerifiedGarbage.Proof.Idea.Arm.ConstantTime
-import VerifiedGarbage.Proof.Idea.Arm.Mul
-import VerifiedGarbage.Proof.Idea.KeyBits32
-import VerifiedGarbage.Proof.Framework.Arm.Linear
-import VerifiedGarbage.Proof.Framework.Arm.Contract
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Spec.Idea.Contract
+module
+
+public import VerifiedGarbage.Proof.Idea.Arm.ConstantTime
+public import VerifiedGarbage.Proof.Idea.Arm.Mul
+public import VerifiedGarbage.Proof.Idea.KeyBits32
+public import VerifiedGarbage.Proof.Framework.Arm.Linear
+public import VerifiedGarbage.Proof.Framework.Arm.Contract
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.Idea.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # IDEA key expansion on ARMv7
@@ -16,6 +22,8 @@ of the key's four 32-bit words, checked by evaluation over the lane domain
 subkey bit is then the key bit `Spec.Idea.expandKey` takes
 (`expandKey_getLsbD`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Idea.Arm
 

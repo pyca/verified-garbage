@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Sym
-import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Bound
+module
+
+public import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Sym
+public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Bound
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X25519 on x86-64 with AVX512_IFMA: terms as numbers
@@ -14,6 +20,8 @@ proves that a term is `T.nat` and within its bounds where the kernel evaluates
 `T.ok` of concrete terms to `true`, so the number a block computes is `nat` of
 its term, which unfolds to the arithmetic of the ladder by definition.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X25519.X86_64.Ifma
 

@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesOcb.Arm.Calls
+module
+
+public import VerifiedGarbage.Proof.AesOcb.Arm.Calls
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-OCB on ARMv7: what the pieces write
@@ -10,6 +16,8 @@ associated data, the tag (`open`'s received one), the stack arguments and the
 saved registers: those are the same in every state after the entry
 (`sched_mut`, `lstar_mut`, `bytes_mut`, `Args.mut`, `saved_mut`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

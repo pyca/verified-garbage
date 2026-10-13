@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesOcb.Arm.Nonce
+module
+
+public import VerifiedGarbage.Proof.AesOcb.Arm.Nonce
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-OCB on ARMv7: filling the buffer of `HASH` (`hashFill`)
@@ -9,6 +15,8 @@ offset of `HASH`, `Offset_{i+1} = Offset_i ⊕ L_{ntz(i+1)}` (`lNtz_ok`,
 to the next slot of the buffer at `W + bufO` (`hashFill_ok`), as on AArch64
 (`Proof.AesOcb.AArch64.hashFill_ok`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

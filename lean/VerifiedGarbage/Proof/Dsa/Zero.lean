@@ -1,7 +1,16 @@
-import VerifiedGarbage.Proof.Dsa.Arithmetic
-import VerifiedGarbage.Proof.RsaPss.Params
+module
+
+public import VerifiedGarbage.Proof.Dsa.Arithmetic
+public import VerifiedGarbage.Proof.RsaPss.Params
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # The bytewise zero predicate agrees with DSA's integer decoder -/
+
+@[expose] public section
+
 namespace VG.Proof.Dsa
 open VG
 

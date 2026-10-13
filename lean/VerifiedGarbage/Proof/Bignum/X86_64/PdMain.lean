@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.PdExp
-import VerifiedGarbage.Proof.Bignum.X86_64.PcMain
-import Mathlib.Data.Int.GCD
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.PdExp
+public import VerifiedGarbage.Proof.Bignum.X86_64.PcMain
+public import Mathlib.Data.Int.GCD
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_public_precomputed` on x86-64: the computation
@@ -9,6 +15,8 @@ The load of `m` and `R² mod m` from `pre`, and the checks that refuse values
 no modulus has (`pdLoadWith_ok`); then what the computation starts from for
 values that pass them (`PdPre`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64
 

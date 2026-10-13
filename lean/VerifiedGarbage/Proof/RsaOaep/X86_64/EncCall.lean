@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.RsaOaep.X86_64.EncFrame
-import VerifiedGarbage.Proof.RsaOaep.X86_64.EncEm
-import VerifiedGarbage.Proof.RsaOaep.X86_64.Stack
-import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.Pub
+module
+
+public import VerifiedGarbage.Proof.RsaOaep.X86_64.EncFrame
+public import VerifiedGarbage.Proof.RsaOaep.X86_64.EncEm
+public import VerifiedGarbage.Proof.RsaOaep.X86_64.Stack
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.Pub
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-OAEP encryption on x86-64: the call of `vg_rsa_public_checked`
@@ -11,6 +17,8 @@ RSAEP of `EM` (the first `k` bytes of our working space), or zeros. Memory
 outside the stack the function uses, `out` and the working space reads as
 on entry (`FrE`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaOaep.X86_64
 

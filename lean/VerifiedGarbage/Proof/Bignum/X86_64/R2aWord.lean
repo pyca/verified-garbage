@@ -1,6 +1,12 @@
-import VerifiedGarbage.Impl.Bignum.X86_64.R2Adx
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxStep
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxBlock
+module
+
+public import VerifiedGarbage.Impl.Bignum.X86_64.R2Adx
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxStep
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxBlock
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `R² mod m` by word steps with ADX: a word of `t = x 2^64 + q̂ mc`
@@ -9,6 +15,8 @@ import VerifiedGarbage.Proof.Bignum.X86_64.AdxBlock
 `lo + hiP + OF` by `adox` and `prev + lo + CF` by `adcx`, stored over word
 `i` of `x` once that word is read into `next` (`word_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64.R2ax
 

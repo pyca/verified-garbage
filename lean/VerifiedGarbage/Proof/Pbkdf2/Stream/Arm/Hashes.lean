@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.Pbkdf2.Stream.Arm.Hash
-import VerifiedGarbage.Proof.Sha1.Arm.Shared
-import VerifiedGarbage.Proof.Md5.Arm.Shared
-import VerifiedGarbage.Proof.Sha512.Arm.Shared
-import VerifiedGarbage.Proof.Hmac.Generic.Common
+module
+
+public import VerifiedGarbage.Proof.Pbkdf2.Stream.Arm.Hash
+public import VerifiedGarbage.Proof.Sha1.Arm.Shared
+public import VerifiedGarbage.Proof.Md5.Arm.Shared
+public import VerifiedGarbage.Proof.Sha512.Arm.Shared
+public import VerifiedGarbage.Proof.Hmac.Generic.Common
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # HMAC over any streaming hash function on 32-bit ARM: the hash functions
@@ -13,6 +19,8 @@ x86 (`Proof/Pbkdf2/Stream/X86/Hashes.lean`). Their contracts are `initK`,
 MD5's `finK`, and for the SHA-512 family's, which hold from any initial hash
 value. SHA-256's and SHA-224's are in `Sha256.lean` and `Sha224.lean`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Pbkdf2.Stream.Arm
 

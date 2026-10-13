@@ -1,7 +1,15 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourLoad
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourRead
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourStore
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourAdvance
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourLoad
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourRead
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourStore
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourAdvance
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Optimized.BoundedFour
 open VG VG.AArch64

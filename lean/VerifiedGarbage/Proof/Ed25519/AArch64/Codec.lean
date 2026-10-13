@@ -1,8 +1,17 @@
-import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
-import VerifiedGarbage.Proof.X25519.Bytes
-import VerifiedGarbage.Spec.Ed25519.Contract
+module
+
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
+public import VerifiedGarbage.Proof.X25519.Bytes
+public import VerifiedGarbage.Spec.Ed25519.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! The four-word output representation and its memory frame. -/
+
+@[expose] public section
+
 namespace VG.Proof.Ed25519.AArch64
 open VG VG.AArch64 Word64 VG.Proof.X25519
 

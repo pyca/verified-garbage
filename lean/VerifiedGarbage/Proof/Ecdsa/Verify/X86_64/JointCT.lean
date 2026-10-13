@@ -1,8 +1,17 @@
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointChecks
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointCorrect
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointContract
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointChecks
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointCorrect
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointContract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Whole-function timing follows the public-input contract for baseline and ADX. -/
+
+@[expose] public section
+
 namespace VG.Proof.Ecdsa.Verify.X86_64
 open VG VG.X86_64 VG.Impl.Ecdsa.X86_64 VG.Impl.P256.X86_64
 open VG.Proof.Ecdsa.X86_64 VG.Proof.P256.X86_64 VG.Proof.Weierstrass VG.Proof.Weierstrass.X86_64

@@ -1,4 +1,12 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourBatchGeometry
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourBatchGeometry
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Optimized.BoundedFour
 open VG VG.AArch64 VG.Spec.MlDsa VG.Proof.MlDsa.Sample
@@ -39,7 +47,7 @@ structure BatchFields (m : Mem) (b p : Addr) (L : Nat→List Zq) : Prop where
  count : ∀i<4,m.readW (countAt b i) 64=BitVec.ofNat 64 (256-(L i).length)
 
 structure BatchInv (σ s : State) (b p : Addr) (L : Nat→List Zq) : Prop where
- keep : Keep (.x0::parserRegs) σ s
+ keep : Keep batchRegs σ s
  frame : Frame (batchWrites b p) σ.mem s.mem
  base : s.gpr .x19=b
  output : s.gpr .x21=p

@@ -1,4 +1,13 @@
-import VerifiedGarbage.Proof.Scrypt.X86_64.FusedHalf
+module
+
+public import VerifiedGarbage.Proof.Scrypt.X86_64.FusedHalf
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
+
 namespace VG.Proof.Scrypt.X86_64.Retained
 open VG VG.X86_64 VG.Impl.Scrypt.X86_64
 open VG.Proof.MdStream.X86_64 (wp_movm wp_addi wp_subi wp_store)

@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.TripleDes.X86_64.Bytes
+module
+
+public import VerifiedGarbage.Proof.TripleDes.X86_64.Bytes
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Blocks as little-endian words
@@ -6,6 +12,8 @@ import VerifiedGarbage.Proof.TripleDes.X86_64.Bytes
 A block's little-endian word holds bit `i` of the block (big-endian, as
 `decodeBlock` reads it) at bit `i ^^^ 56`: the byte order is reversed.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.TripleDes.X86_64.Bitsliced
 

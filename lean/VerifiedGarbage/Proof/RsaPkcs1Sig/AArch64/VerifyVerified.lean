@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.VerifyCT
-import VerifiedGarbage.Proof.Framework.Contract
+module
+
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.VerifyCT
+public import VerifiedGarbage.Proof.Framework.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_pkcs1_verify` on AArch64: `Verified`
@@ -8,6 +14,8 @@ The shared contract (`Spec.RsaPkcs1Sig.verifyContract`, with the stack of
 the frame and the callee, `stk`) from correctness (`code_ok`), constant time
 (`code_ct`) and a state meeting the precondition (`sat`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPkcs1Sig.AArch64.Ver
 

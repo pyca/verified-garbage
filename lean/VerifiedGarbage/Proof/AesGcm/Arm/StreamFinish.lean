@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesGcm.Arm.FinTag
-import VerifiedGarbage.Proof.AesGcm.Arm.StreamCrypt
+module
+
+public import VerifiedGarbage.Proof.AesGcm.Arm.FinTag
+public import VerifiedGarbage.Proof.AesGcm.Arm.StreamCrypt
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on ARMv7: `vg_aes_gcm_stream_finish`
@@ -10,6 +16,8 @@ with `finTag` and copies it to `tag` (`tagOut_ok`, `streamFinish_wp`). The
 entry is shared with `stream_verify` (`fin1_wp`, for `n` words of stack
 arguments, `work` the `wi`-th).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

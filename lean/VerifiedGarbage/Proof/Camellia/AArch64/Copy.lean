@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Camellia.AArch64.Keys
+module
+
+public import VerifiedGarbage.Proof.Camellia.AArch64.Keys
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Copying blocks on AArch64
@@ -7,6 +13,8 @@ As on x86-64: `copyBlocks_wp`: the loop `copyBlocks` copies `c ≥ 1` blocks
 of 16 bytes from `x14` to `x15` (areas that do not overlap), through `t0`,
 counting down `x17`, and changes nothing else in memory.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Camellia.AArch64
 

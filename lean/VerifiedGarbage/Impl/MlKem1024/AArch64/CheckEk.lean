@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.MlKem.AArch64.Encode
+module
+
+public import VerifiedGarbage.Impl.MlKem.AArch64.Encode
 
 /-!
 # ML-KEM-1024 on AArch64: the encapsulation key check
@@ -7,6 +9,8 @@ import VerifiedGarbage.Impl.MlKem.AArch64.Encode
 (`checkEkWith`) for the 512 groups of 3 bytes of `ek[0 : 1536]`. Every
 address and branch depends only on the pointer.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlKem1024.AArch64
 

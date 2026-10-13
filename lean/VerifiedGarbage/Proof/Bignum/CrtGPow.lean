@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Bignum.CrtFrame
-import VerifiedGarbage.Impl.Bignum.CrtLayout
+module
+
+public import VerifiedGarbage.Proof.Bignum.CrtFrame
+public import VerifiedGarbage.Impl.Bignum.CrtLayout
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSA with the CRT: `G = 2^E mod n`
@@ -10,6 +16,8 @@ import VerifiedGarbage.Impl.Bignum.CrtLayout
 from the top (`and_pow_beq`, `div_bit`). These are its facts that do not
 depend on the target.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum
 

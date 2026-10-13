@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.MlDsa.X86.Arith.Basic
+module
+
+public import VerifiedGarbage.Impl.MlDsa.X86.Arith.Basic
 
 /-!
 # ML-DSA on x86 (32-bit): `vg_mldsa_multiply_ntt` and `vg_mldsa_multiply_add_ntt`
@@ -12,6 +14,8 @@ coefficients with `ebp`, `esi` and `edi` pointing at coefficient `i` of `h`,
 `multiplyAddNTT`, `h[i]` is added and the sum reduced. Every address and
 branch depends only on the pointers.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.X86.Arith
 

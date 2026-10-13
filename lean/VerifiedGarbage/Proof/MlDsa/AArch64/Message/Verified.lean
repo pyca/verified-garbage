@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Message.VerifyCT
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.VerifyCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on AArch64, `sign_message` and `verify_message`: verified
@@ -10,6 +16,8 @@ AArch64.abi 16` and `verifyMessageContract p AArch64.abi 16`; the functions
 on `μ` with the Keccak permutation of `v` are such functions (`signFn`,
 `verifyFn`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Message
 

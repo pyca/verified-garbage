@@ -1,6 +1,11 @@
-import VerifiedGarbage.Impl.Bignum.X86_64.Adx
+module
+
+public import VerifiedGarbage.Impl.Bignum.X86_64.Adx
 
 /-! Keep the doubling and diagonal-addition carries live across square words. -/
+
+@[expose] public section
+
 namespace VG.Impl.Bignum.X86_64.AdxSquareGrouped
 open VG VG.X86_64 VG.Impl.Bignum.X86_64
 

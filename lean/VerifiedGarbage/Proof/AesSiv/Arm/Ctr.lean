@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.AesSiv.Arm.FinishLong
-import VerifiedGarbage.Proof.AesGcm.Arm.Compare
-import VerifiedGarbage.Proof.AesGcm.Arm.Tag
-import VerifiedGarbage.Proof.AesGcm.Arm.Flush
+module
+
+public import VerifiedGarbage.Proof.AesSiv.Arm.FinishLong
+public import VerifiedGarbage.Proof.AesGcm.Arm.Compare
+public import VerifiedGarbage.Proof.AesGcm.Arm.Tag
+public import VerifiedGarbage.Proof.AesGcm.Arm.Flush
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-SIV on ARMv7: CTR (`ctr`)
@@ -17,6 +23,8 @@ keystream block of that counter, which `vg_aes_ctr32` computes on a zero
 block at `W + 80` (`ctrTail_ok`). Together, CTR's output on the data
 (`ctr_ok`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

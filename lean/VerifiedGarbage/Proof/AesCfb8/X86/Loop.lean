@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.AesCfb8.Mem
-import VerifiedGarbage.Proof.AesCbc.X86.Loop
-import VerifiedGarbage.Impl.AesCfb8.X86
+module
+
+public import VerifiedGarbage.Proof.AesCfb8.Mem
+public import VerifiedGarbage.Proof.AesCbc.X86.Loop
+public import VerifiedGarbage.Impl.AesCfb8.X86
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CFB8 on x86: the contracts, and the loop
@@ -23,6 +29,8 @@ writes.
 bytes and sets ZF when none are left (`BodyOk`), `whole body` meets the
 contract.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesCfb8.X86
 

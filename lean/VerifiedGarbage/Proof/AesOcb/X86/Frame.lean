@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesOcb.X86.Verified
-import VerifiedGarbage.Proof.Framework.X86.StackScratch
+module
+
+public import VerifiedGarbage.Proof.AesOcb.X86.Verified
+public import VerifiedGarbage.Proof.Framework.X86.StackScratch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-OCB on x86, with its working space on the stack
@@ -13,6 +19,8 @@ bytes below it. The copies are read only where the pre- and postconditions
 read the buffers, and `open`'s leak, whether it succeeds, reads only its
 buffers (`Proof/AesOcb/Scratch.lean`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

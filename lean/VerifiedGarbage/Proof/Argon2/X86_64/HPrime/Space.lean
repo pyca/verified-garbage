@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Chain
+module
+
+public import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Chain
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Argon2.X86_64.HPrime.Written`. -/
+
+@[expose] public section
+
 section
 /-! # H′: composing output fragments -/
 

@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Ed25519.X86.Whole.Setup
-import VerifiedGarbage.Proof.Ed25519.X86.Whole.Hash
-import VerifiedGarbage.Spec.Ed448.Contract
+module
+
+public import VerifiedGarbage.Proof.Ed25519.X86.Whole.Setup
+public import VerifiedGarbage.Proof.Ed25519.X86.Whole.Hash
+public import VerifiedGarbage.Spec.Ed448.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 on x86 (32-bit): what a complete operation's calls need of its layout
@@ -19,6 +25,8 @@ everything written. `Args` gives the argument words' values (`val`), and
 that a call writes besides its own buffers (the outgoing arguments, its
 return address and its stack).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.X86.Shake
 

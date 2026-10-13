@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Cast5.Arm.Run
+module
+
+public import VerifiedGarbage.Proof.Cast5.Arm.Run
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # CAST5 on ARMv7: the scan of a table
@@ -6,6 +12,8 @@ import VerifiedGarbage.Proof.Cast5.Arm.Run
 `scan tab` visits the 256 entries of `tab`, in order, and leaves in
 `r8 + k` word `k` of the entry whose number is in `r4 + k` (`scan_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Cast5.Arm
 

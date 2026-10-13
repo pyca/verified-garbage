@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Rsa.X86_64.Pieces
-import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
+module
+
+public import VerifiedGarbage.Proof.Rsa.X86_64.Pieces
+public import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_crt_values` on x86-64: the arguments and the head
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
 (`CvArgs.congr`). `cvHead_ok`: `head` sets up the working space (`Ws`) for
 `w = ⌈k / 8⌉` and the mask all ones.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.X86_64
 

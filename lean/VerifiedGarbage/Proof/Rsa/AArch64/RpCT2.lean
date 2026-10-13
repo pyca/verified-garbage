@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.Rsa.AArch64.RpCT1
+module
+
+public import VerifiedGarbage.Proof.Rsa.AArch64.RpCT1
+meta import VerifiedGarbage.Proof.Rsa.AArch64.RpCT1
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_recover_primes` on AArch64: constant time, the halvings
@@ -8,6 +15,8 @@ pinned by correctness. Each halving reloads `w` and `Bw` from the header
 twice, so it is checked in two parts, the registers they need pinned after
 each block of bases (`halfA_ct`, `halfC_ct`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.AArch64
 

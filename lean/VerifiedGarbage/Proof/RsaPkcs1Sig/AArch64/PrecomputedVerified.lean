@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.PrecomputedCorrect
-import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.VerifyVerified
-import VerifiedGarbage.Proof.Framework.Contract
+module
+
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.PrecomputedCorrect
+meta import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.PrecomputedCorrect
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.VerifyVerified
+meta import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.VerifyVerified
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_pkcs1_verify_precomputed` on AArch64: `Verified`
@@ -10,6 +19,8 @@ with the precomputed operation's call, and the padding check and the mask
 checked by the taint analysis at once, since no branch reads the status)
 and a state meeting the precondition.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPkcs1Sig.AArch64.Pc
 

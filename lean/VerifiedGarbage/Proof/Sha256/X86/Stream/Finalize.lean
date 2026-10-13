@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Sha256.X86.Stream.Common
-import VerifiedGarbage.Proof.Sha256.X86.Contract
+module
+
+public import VerifiedGarbage.Proof.Sha256.X86.Stream.Common
+public import VerifiedGarbage.Proof.Sha256.X86.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Streaming SHA-256 on x86 (32-bit): the loop of `finalize`
@@ -10,6 +16,8 @@ is in `ebx`, scratch in `ebp`, buffered bytes in `edi`, and the padding-loop
 flag in `esi`; count and output are in `scratch[128..140)`. Each compression
 call uses the 20 bytes below `esp`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sha256.X86.Stream.Finalize
 

@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesSiv.Arm.S2vLoop
+module
+
+public import VerifiedGarbage.Proof.AesSiv.Arm.S2vLoop
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-SIV on ARMv7: finishing S2V with a string shorter than a block
@@ -10,6 +16,8 @@ and XORs it into the tail (`shortTail_ok`); `shortMac out` finalizes the
 tail, one complete block, from a zero state at `W + out`
 (`shortMac_ok`), which is S2V's end (`Siv.s2vFinish_short`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

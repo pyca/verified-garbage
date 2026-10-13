@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Argon2.Arm.HPrime.Calls
+module
+
+public import VerifiedGarbage.Proof.Argon2.Arm.HPrime.Calls
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Argon2 H′ on ARMv7: hashing in `scratch`
@@ -8,6 +14,8 @@ permissions, and the memory outside `scratch[0, 832)` and the 32 bytes below
 the stack pointer), and the hash of a fixed `scratch` buffer
 (`absorbFixed_ok`) and of the 64-byte digest (`next_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Argon2.Arm.HPrime
 

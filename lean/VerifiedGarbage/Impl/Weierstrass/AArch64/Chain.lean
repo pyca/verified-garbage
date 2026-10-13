@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Weierstrass.AArch64
-import VerifiedGarbage.Impl.Weierstrass.Chain
+module
+
+public import VerifiedGarbage.Impl.Weierstrass.AArch64
+public import VerifiedGarbage.Impl.Weierstrass.Chain
 
 /-!
 # Short Weierstrass curves on AArch64: powers by sliding windows
@@ -10,6 +12,8 @@ power, then each step's squarings, by a loop counting `x19` down, and its
 multiplication by the table. The exponent is the code's, so nothing depends on
 the numbers.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Weierstrass.AArch64
 

@@ -1,7 +1,13 @@
-import VerifiedGarbage.Impl.Ed25519.X86_64.VerifyWindow
-import VerifiedGarbage.Proof.Ed25519.X86_64.FieldWide
-import VerifiedGarbage.Proof.Ed25519.Recode
-import VerifiedGarbage.Proof.Framework.WriteBytes
+module
+
+public import VerifiedGarbage.Impl.Ed25519.X86_64.VerifyWindow
+public import VerifiedGarbage.Proof.Ed25519.X86_64.FieldWide
+public import VerifiedGarbage.Proof.Ed25519.Recode
+public import VerifiedGarbage.Proof.Framework.WriteBytes
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The recoding's step on x86-64
@@ -10,6 +16,8 @@ import VerifiedGarbage.Proof.Framework.WriteBytes
 reads the bits from `rsi` (the bit) with a word load at its byte and conditional moves for the
 shift within the byte, the carry is `r8`, and the digit's byte goes to the array `dst` (`dig`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed25519.X86_64
 

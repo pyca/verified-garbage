@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.RsaPss.X86_64.Safe
-import VerifiedGarbage.Proof.RsaPss.EncBytes
+module
+
+public import VerifiedGarbage.Proof.RsaPss.X86_64.Safe
+public import VerifiedGarbage.Proof.RsaPss.EncBytes
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSASSA-PSS on x86-64: the encoding
@@ -8,6 +14,8 @@ After the checks, `signEnc` leaves `EM` (`k` bytes, `emT`) at
 `scratch + oEm` (`signEnc_ok`), from the digest and the salt, which it
 reads where nothing it writes is.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPss.X86_64
 

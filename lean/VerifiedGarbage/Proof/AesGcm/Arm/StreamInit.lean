@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesGcm.Arm.Entry
+module
+
+public import VerifiedGarbage.Proof.AesGcm.Arm.Entry
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on ARMv7: `vg_aes_gcm_stream_init`
@@ -7,6 +13,8 @@ Untrusted: everything here is checked by Lean. `stream_init` saves our
 caller's registers in `scratch` (`W`) and writes the state's `J₀`, its zero
 accumulator and its first counter block with `j0` (`streamInit_wp`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

@@ -1,8 +1,16 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Message.PairedCorrect
-import VerifiedGarbage.Proof.MlDsa.AArch64.Message.PairedTopTiming
-import VerifiedGarbage.Proof.MlDsa.AArch64.Message.PairedSat
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedVerified
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedArtifactDepth
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.PairedCorrect
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.PairedTopTiming
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.PairedSat
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedVerified
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedArtifactDepth
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Message.Paired
 open VG VG.AArch64 VG.Spec.MlDsa

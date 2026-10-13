@@ -1,5 +1,9 @@
-import VerifiedGarbage.Proof.AesOcb.X86_64.Env
-import VerifiedGarbage.Proof.AesCcm.X86_64.Run
+module
+
+public import VerifiedGarbage.Proof.AesOcb.X86_64.Env
+public meta import VerifiedGarbage.Proof.AesOcb.X86_64.Env
+public import VerifiedGarbage.Proof.AesCcm.X86_64.Run
+public meta import VerifiedGarbage.Proof.AesCcm.X86_64.Run
 
 /-!
 # AES-OCB on x86-64: running straight-line blocks
@@ -8,6 +12,8 @@ Untrusted: everything here is checked by Lean. `orun [facts]` runs a block
 symbolically (`runBlock_cons`, `runStep_some`, the semantics of the
 instructions the code uses, and reads through the writes with `RegUpd`).
 -/
+
+public meta section
 
 set_option linter.unusedSimpArgs false
 

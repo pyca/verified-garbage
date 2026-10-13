@@ -1,4 +1,12 @@
-import VerifiedGarbage.Proof.Rc2.X86.Cbc.Body
+module
+
+public import VerifiedGarbage.Proof.Rc2.X86.Cbc.Body
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 section
 

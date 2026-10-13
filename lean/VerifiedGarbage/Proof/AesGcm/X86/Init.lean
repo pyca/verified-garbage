@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.AesGcm.X86.Top
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86.Top
+meta import VerifiedGarbage.Proof.AesGcm.X86.Top
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on x86: `vg_aes_gcm_init`
@@ -8,6 +15,8 @@ Untrusted: everything here is checked by Lean. The key schedule
 on a zero block, with a zero counter block at `T`), as one `Pc`
 (`init_pc`): correct (`init_correct`) and constant time (`init_ct`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

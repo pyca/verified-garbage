@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlKem.X86.DecapsPre
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86.DecapsPre
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86 (32-bit): K-PKE.Decrypt in decapsulation
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.MlKem.X86.DecapsPre
 and `ŝ[i]` decoded from `dk` (`term0_piece`, `term_piece`), then `m' =
 ByteEncode₁(Compress₁(v' - NTT⁻¹(w)))` (`decrypt_piece`), which is `mD`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.X86.Decaps
 

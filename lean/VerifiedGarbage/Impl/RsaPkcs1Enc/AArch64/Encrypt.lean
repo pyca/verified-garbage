@@ -1,4 +1,6 @@
-import VerifiedGarbage.TCB.AArch64.Isa
+module
+
+public import VerifiedGarbage.TCB.AArch64.Isa
 
 /-!
 # RSAES-PKCS1-v1_5 encryption on AArch64
@@ -30,6 +32,8 @@ the slots from `oOut`, and `EM` (up to 1024 bytes) from `oEM`. Our own stack
 arguments are above both frames, from `sp + frameBytes + 16`. The call uses
 the stack below the frames.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.RsaPkcs1Enc.AArch64.Encrypt
 

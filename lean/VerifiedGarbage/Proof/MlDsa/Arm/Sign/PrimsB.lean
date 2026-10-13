@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Prims
+module
+
+public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Prims
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA signing on ARMv7: calls of the NTTs, products and two samplers
@@ -9,6 +15,8 @@ and `vg_mldsa_expand_mask_poly`. `RejNTTPoly`'s result is public in two runs
 whose seeds agree (`rejCall_tr`), and it succeeds only if the algorithm
 finishes within `maxBounds` (`rejCall_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Arm.Sign
 

@@ -1,6 +1,14 @@
-import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Finalize
+module
+
+public import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Finalize
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # H′: the memory changed by hashing a workspace buffer -/
+
+@[expose] public section
 
 namespace VG.Proof.Argon2.X86_64.HPrime
 

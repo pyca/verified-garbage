@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Ecdsa.AArch64.SlotOps
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.SlotOps
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDSA on AArch64: where the powers' slots are
@@ -9,6 +15,8 @@ them (`CT`), so they are apart as `chainPow_ok` and `InvSound` need
 (`invLayP`, `invLayN`, `chainLayN`): each fact is one about the numbers `i`,
 which `decide` checks.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.AArch64
 

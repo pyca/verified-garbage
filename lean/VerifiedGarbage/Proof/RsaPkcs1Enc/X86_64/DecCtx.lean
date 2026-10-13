@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecPriv
+module
+
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecPriv
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-PKCS1-v1_5 decryption on x86-64: after the private-key operation
@@ -10,6 +16,8 @@ result `R` in its slot and `EM` in `out` stay as they are (`Ctx`,
 `Ctx.step`). What it computes in `scratch` is tracked with the regions each
 step writes (`bytes_keep`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPkcs1Enc.X86_64.Dec
 

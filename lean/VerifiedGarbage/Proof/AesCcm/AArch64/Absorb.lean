@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesCcm.AArch64.B0
+module
+
+public import VerifiedGarbage.Proof.AesCcm.AArch64.B0
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CCM on AArch64: a buffer padded, chained (`absorbPad y`)
@@ -10,6 +16,8 @@ there are none (`absWhole_ok`), then its last `len mod 16` bytes copied into
 the zeroed block `B` (`absTail_ok`); together, the blocks of the padded
 string (`absorbPad_ok`, `Proof.AesCcm.blocks_pad16`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

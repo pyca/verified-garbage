@@ -1,5 +1,15 @@
-import VerifiedGarbage.Proof.TripleDes.X86.FunctionsLit
-import VerifiedGarbage.Proof.Framework.X86.TaintMono
+module
+
+public import VerifiedGarbage.Proof.TripleDes.X86.FunctionsLit
+meta import VerifiedGarbage.Proof.TripleDes.X86.FunctionsLit
+public import VerifiedGarbage.Proof.Framework.X86.TaintMono
+meta import VerifiedGarbage.Proof.Framework.X86.TaintMono
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.TripleDes.X86
 open VG VG.X86 VG.Impl.TripleDes.X86

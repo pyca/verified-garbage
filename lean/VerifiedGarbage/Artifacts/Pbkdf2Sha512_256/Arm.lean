@@ -28,7 +28,7 @@ def artifacts : List Artifact := [
     doc := Spec.Hmac.sha512_256I.iterateApi.doc
     code := Proof.Pbkdf2.Md.Arm.sha512_256Md.iterate
     contract := Spec.Hmac.sha512_256I.iterateContract Arm.abi 16
-    ofSig := ⟨_, _, _, by unfold Spec.Hmac.Instance.iterateContract; rfl⟩
+    ofSig := by exact (⟨_, _, _, by unfold Spec.Hmac.Instance.iterateContract; rfl⟩)
     stack := 16
     verified := Proof.Pbkdf2.Md.Arm.Instances.sha512_256_iterate
     spSafe := Code.all_of_forall (fun _ => rfl) _ },
@@ -38,7 +38,7 @@ def artifacts : List Artifact := [
     code := Impl.StackScratch.Arm.withStackScratch (Proof.Pbkdf2.Whole.Arm.pbkFrame Spec.Hmac.sha512_256I) 3
       Proof.Pbkdf2.Whole.Arm.sha512_256F.pbkdf2
     contract := Spec.Hmac.sha512_256I.pbkdf2Contract Arm.abi (24 + Proof.Pbkdf2.Whole.Arm.pbkFrame Spec.Hmac.sha512_256I)
-    ofSig := ⟨_, _, _, by unfold Spec.Hmac.Instance.pbkdf2Contract Spec.Pbkdf2.pbkdf2Contract; rfl⟩
+    ofSig := by exact (⟨_, _, _, by unfold Spec.Hmac.Instance.pbkdf2Contract Spec.Pbkdf2.pbkdf2Contract; rfl⟩)
     stack := 24 + Proof.Pbkdf2.Whole.Arm.pbkFrame Spec.Hmac.sha512_256I
     verified := Proof.Pbkdf2.Whole.Arm.pbkFramed Proof.Pbkdf2.Whole.Arm.sha512_256 (by decide)
       Proof.Pbkdf2.Whole.Arm.sha512_256_pbkFrameSat

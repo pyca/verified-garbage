@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.MlKem.X86_64.S4Squeeze
-import VerifiedGarbage.Impl.MlDsa.X86_64.Sample.RejNtt4
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86_64.S4Squeeze
+public import VerifiedGarbage.Impl.MlDsa.X86_64.Sample.RejNtt4
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on x86-64: `vg_mldsa_rej_ntt_poly4_avx2`, squeezing
@@ -12,6 +18,8 @@ squeezed before: the states are permuted `t + n` times, and the buffers hold
 bytes `168 t` to `168 (t + n)` of each seed's output. A squeeze writes only
 below the saved registers (`sqT_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86_64.Rej4
 

@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.R2aFast
-import VerifiedGarbage.Proof.Bignum.X86_64.R2wCT
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.R2aFast
+meta import VerifiedGarbage.Proof.Bignum.X86_64.R2aFast
+public import VerifiedGarbage.Proof.Bignum.X86_64.R2wCT
+meta import VerifiedGarbage.Proof.Bignum.X86_64.R2wCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `R² mod m` by word steps with ADX: constant time but for `m`
@@ -11,6 +19,8 @@ steps, `x` is `(R - m) 2^(64 j) mod m` after `j` of them, a function of `m`,
 which is public (`SPub`, `step_ct`). The steps' count is `w` (`steps_ct`),
 and `choice` branches on the top bit of `m` and on `w` (`choice_ct`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64.R2ax
 

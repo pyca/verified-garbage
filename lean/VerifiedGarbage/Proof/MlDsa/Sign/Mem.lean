@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.MlKem.Mem
-import VerifiedGarbage.Spec.MlDsa.Poly
+module
+
+public import VerifiedGarbage.Proof.MlKem.Mem
+public import VerifiedGarbage.Spec.MlDsa.Poly
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA: polynomials in memory, for every target
@@ -8,6 +14,8 @@ The stored polynomials of `Spec/MlDsa/Poly.lean` (`coeffAt`, `polyAt`,
 `natPolyAt`, `hintAt`, `Reduced`, `PolyIs`) depend only on the 1024 bytes of
 the polynomial, so they survive writes elsewhere (`…_frame`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Sign
 

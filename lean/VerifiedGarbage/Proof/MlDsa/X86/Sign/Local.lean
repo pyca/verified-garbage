@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.MlDsa.X86.Sign.Call
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86.Sign.Call
+meta import VerifiedGarbage.Proof.MlDsa.X86.Sign.Call
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA signing on x86 (32-bit): copies and hashes
@@ -8,6 +15,8 @@ as ML-KEM's `copyW_piece` and `hash2_piece`, but with the moves of their
 arguments proven constant time by `esOk` rather than the taint analysis, so
 that their buffers may be at offsets that depend on the parameter set.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86.Sign
 

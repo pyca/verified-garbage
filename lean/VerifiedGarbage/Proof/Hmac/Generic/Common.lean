@@ -1,9 +1,15 @@
-import VerifiedGarbage.Proof.Hmac.Common
-import VerifiedGarbage.Spec.Pbkdf2
-import VerifiedGarbage.Spec.Sha1
-import VerifiedGarbage.Spec.Md5
-import VerifiedGarbage.Spec.Sha512
-import VerifiedGarbage.Proof.Framework.OmegaLit
+module
+
+public import VerifiedGarbage.Proof.Hmac.Common
+public import VerifiedGarbage.Spec.Pbkdf2
+public import VerifiedGarbage.Spec.Sha1
+public import VerifiedGarbage.Spec.Md5
+public import VerifiedGarbage.Spec.Sha512
+public import VerifiedGarbage.Proof.Framework.OmegaLit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # HMAC over any streaming hash function: lemmas shared by every target
@@ -13,6 +19,8 @@ states of SHA-256, SHA-1, MD5 and the SHA-512 family moved between
 addresses, about memory alone: every target's proof uses them, so they
 import no target's ISA or proofs.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Hmac.Generic.Common
 

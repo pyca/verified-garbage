@@ -1,7 +1,16 @@
-import VerifiedGarbage.Impl.X25519.AArch64.Small
-import VerifiedGarbage.Proof.X25519.AArch64.Word.Slots
+module
+
+public import VerifiedGarbage.Impl.X25519.AArch64.Small
+public import VerifiedGarbage.Proof.X25519.AArch64.Word.Slots
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! The single-row constant multiplication shares the checked carry fold. -/
+
+@[expose] public section
+
 namespace VG.Proof.X25519.AArch64.Word
 open VG VG.AArch64 VG.Spec.X25519 VG.Proof.X25519
 open VG.Impl.Ed25519.AArch64 VG.Proof.Ed25519.AArch64

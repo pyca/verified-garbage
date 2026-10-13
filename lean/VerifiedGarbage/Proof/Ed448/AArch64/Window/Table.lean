@@ -1,9 +1,15 @@
-import VerifiedGarbage.Proof.Ed448.AArch64.Window.Store
-import VerifiedGarbage.Proof.Ed448.AArch64.Window.Select
-import VerifiedGarbage.Proof.X448.AArch64.Base.AddGen
-import VerifiedGarbage.Proof.Ed448.AArch64.Window.Dbl
-import VerifiedGarbage.Proof.X448.AArch64.Fast.Weave
-import VerifiedGarbage.Proof.Ed448.AArch64.Point56.Call
+module
+
+public import VerifiedGarbage.Proof.Ed448.AArch64.Window.Store
+public import VerifiedGarbage.Proof.Ed448.AArch64.Window.Select
+public import VerifiedGarbage.Proof.X448.AArch64.Base.AddGen
+public import VerifiedGarbage.Proof.Ed448.AArch64.Window.Dbl
+public import VerifiedGarbage.Proof.X448.AArch64.Fast.Weave
+public import VerifiedGarbage.Proof.Ed448.AArch64.Point56.Call
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 verification on AArch64: the table of `[n](-A)`
@@ -14,6 +20,8 @@ each later entry the one before (in slots 3–5) plus `P`, by a call of
 `vg_ed448_r56_point_add` (`tabPts`, with the specification's `addPt`). `TInv` holds after each entry is stored
 (`tabBody_ok`), and after the loop for all 16 (`tabLoop_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.AArch64.Window
 

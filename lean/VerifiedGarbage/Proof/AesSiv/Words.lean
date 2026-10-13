@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Siv.Spec
-import VerifiedGarbage.Proof.Cmac.Mem
+module
+
+public import VerifiedGarbage.Proof.Siv.Spec
+public import VerifiedGarbage.Proof.Cmac.Mem
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-SIV: words and bits
@@ -14,6 +20,8 @@ Facts about 64-bit words that implementations on any target use:
 * The comparison of the IVs: the OR of the XORs of the halves is 0 exactly if
   the IVs are equal (`or_xor_eq_zero`, `le8_append_eq`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesSiv
 

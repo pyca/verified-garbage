@@ -1,9 +1,18 @@
-import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleReduceCT
-import VerifiedGarbage.Proof.Dsa.X86_64.ReadyRangeCT
-import VerifiedGarbage.Proof.Dsa.X86_64.ReadyByteChecksCT
-import VerifiedGarbage.Proof.Dsa.X86_64.ReadyMinusCT
+module
+
+public import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleReduceCT
+public import VerifiedGarbage.Proof.Dsa.X86_64.ReadyRangeCT
+public import VerifiedGarbage.Proof.Dsa.X86_64.ReadyByteChecksCT
+public import VerifiedGarbage.Proof.Dsa.X86_64.ReadyMinusCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # Validation timing steps that preserve the complete schedule state -/
+
+@[expose] public section
+
 namespace VG.Proof.Dsa.X86_64
 open VG VG.X86_64 VG.Impl.Bignum.X86_64
 open VG.Impl.Dsa.Layout VG.Impl.Dsa.X86_64

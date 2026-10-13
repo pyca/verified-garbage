@@ -1,5 +1,11 @@
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.EncLoops
+module
+
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.EncLoops
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-PKCS1-v1_5 encryption on x86-64: the encoded message
@@ -9,6 +15,8 @@ The separator and the zero test's slot (`sep_run`), the copy of `M`
 (`em_eq`): after the first four pieces, the frame holds
 `EM = 0x00 ‖ 0x02 ‖ PS ‖ 0x00 ‖ M` (`em_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPkcs1Enc.X86_64
 

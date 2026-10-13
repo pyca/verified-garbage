@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlDsa.X86.Sign.Prims
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86.Sign.Prims
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA signing on x86 (32-bit): calls of the encodings
@@ -6,6 +12,8 @@ import VerifiedGarbage.Proof.MlDsa.X86.Sign.Prims
 `SimpleBitPack` (`sbp_piece`), `BitPack` (`bp_piece`), `BitUnpack`
 (`bu_piece`) and `HintBitPack` (`hbp_piece`, which may leak the hint).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86.Sign
 

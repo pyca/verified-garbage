@@ -1,8 +1,14 @@
-import VerifiedGarbage.Impl.MlDsa.AArch64.Pack.Stream
-import VerifiedGarbage.Proof.MlKem.AArch64.Common
-import VerifiedGarbage.Proof.MlDsa.Pack.Stream
-import VerifiedGarbage.Proof.MlDsa.Pack.Coeffs
-import VerifiedGarbage.Proof.Framework.Range
+module
+
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Pack.Stream
+public import VerifiedGarbage.Proof.MlKem.AArch64.Common
+public import VerifiedGarbage.Proof.MlDsa.Pack.Stream
+public import VerifiedGarbage.Proof.MlDsa.Pack.Coeffs
+public import VerifiedGarbage.Proof.Framework.Range
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on AArch64: streaming fields through `x9`
@@ -20,6 +26,8 @@ value (`LdOk`) or `fin` that stores a coefficient from it (`FinOk`):
 
 The accumulator is a slice of the number throughout (`Pack/Stream.lean`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Pack
 

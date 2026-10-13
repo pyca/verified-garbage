@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncCT
-import VerifiedGarbage.Proof.Framework.Contract
+module
+
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncCT
+public import VerifiedGarbage.Proof.Framework.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-PKCS1-v1_5 encryption on AArch64: the shared contract
@@ -10,6 +16,8 @@ and the callee's: `vg_rsa_pkcs1_encrypt`, calling any implementation `v` of
 `vg_rsa_public_checked`, is verified against it (`enc_verified`), given that
 it is satisfiable for `v`'s stack (which the registration file checks).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPkcs1Enc.AArch64.Enc
 

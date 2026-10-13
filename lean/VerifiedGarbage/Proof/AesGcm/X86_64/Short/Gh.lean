@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Ks
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Ks
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM's short path on x86-64: GHASH of the buffer
@@ -10,6 +16,8 @@ products (`StitchZ.ghLoad_ok`), and then reduces and adds the four lanes'
 sums into `xmm2` (`StitchZ.fin_ok`): `ghash_ok`. What that is in the field
 is in `Short/Field.lean`.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

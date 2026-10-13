@@ -1,8 +1,16 @@
-import VerifiedGarbage.Proof.Rc2.X86_64.Sse2Vector
-import VerifiedGarbage.Proof.Rc2.RestoreMemory
-import VerifiedGarbage.Proof.Rc2.Word
+module
+
+public import VerifiedGarbage.Proof.Rc2.X86_64.Sse2Vector
+public import VerifiedGarbage.Proof.Rc2.RestoreMemory
+public import VerifiedGarbage.Proof.Rc2.Word
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # Reducing a scan and restoring its temporary memory -/
+
+@[expose] public section
 
 namespace VG.Proof.Rc2.X86_64.Sse2
 

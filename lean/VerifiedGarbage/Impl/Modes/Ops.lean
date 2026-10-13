@@ -1,3 +1,5 @@
+module
+
 /-!
 # Block cipher modes, one step at a time, for any target
 
@@ -11,6 +13,8 @@ operations and runs the steps (`Impl/Modes/X86/Seq.lean`); the modes'
 correctness is proven of the operations, for any target
 (`Proof/Modes/Ops.lean`, `Proof/Modes/Steps.lean`).
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Modes
 

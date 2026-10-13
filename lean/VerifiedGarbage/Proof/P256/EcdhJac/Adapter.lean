@@ -1,11 +1,19 @@
-import VerifiedGarbage.Proof.P256.EcdhJac.State
-import VerifiedGarbage.Proof.Ecdh.AArch64.Window
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.P256.EcdhJac.Finish
-import VerifiedGarbage.Proof.P256.EcdhJac.Multiply
-import VerifiedGarbage.Proof.P256.EcdhJac.Lit
+module
+
+public import VerifiedGarbage.Proof.P256.EcdhJac.State
+public import VerifiedGarbage.Proof.Ecdh.AArch64.Window
+public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+public import VerifiedGarbage.Proof.P256.EcdhJac.Finish
+public import VerifiedGarbage.Proof.P256.EcdhJac.Multiply
+public import VerifiedGarbage.Proof.P256.EcdhJac.Lit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## `Prep` -/
+
+@[expose] public section
 
 section
 
@@ -16,7 +24,7 @@ open VG.Impl.Ecdsa.AArch64 (p256)
 open VG.Proof.Ecdsa.AArch64 (CfgOk sv)
 open Spec.Weierstrass
 
-private abbrev c := VG.Impl.Ecdsa.AArch64.p256
+abbrev c := VG.Impl.Ecdsa.AArch64.p256
 
 def prepWrites : List (Nat×Nat) := [(c.winK,40),(c.winBits,320)]
 

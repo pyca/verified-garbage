@@ -1,7 +1,16 @@
-import VerifiedGarbage.Proof.RsaPss.X86_64.BufferCopy
-import VerifiedGarbage.Proof.RsaPss.X86_64.CtHashOk
+module
+
+public import VerifiedGarbage.Proof.RsaPss.X86_64.BufferCopy
+public import VerifiedGarbage.Proof.RsaPss.X86_64.CtHashOk
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Direct, word-sized placement of a public one-block hash length field. -/
+
+@[expose] public section
+
 namespace VG.Proof.RsaPss.X86_64
 open VG VG.X86_64 VG.Impl.RsaPss.X86_64
 open VG.Proof.MlKem.X86_64 (Keep WP.keep ifp ifn)

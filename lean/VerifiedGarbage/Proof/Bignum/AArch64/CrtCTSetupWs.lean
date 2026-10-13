@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTSetupLoad
+module
+
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTSetupLoad
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTSetupLoad
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSA with the CRT on AArch64: constant time of the primes' setup
@@ -9,6 +16,8 @@ the modulus' workspace, then in the primes'; between its pieces, what the
 next one reads from the headers (`SSt`, the primes' links, sizes and bases
 `WsF`) is kept by the frames of the pieces before it.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.AArch64
 

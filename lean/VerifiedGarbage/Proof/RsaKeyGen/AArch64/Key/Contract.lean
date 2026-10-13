@@ -1,6 +1,12 @@
-import VerifiedGarbage.Spec.RsaKeyGen.Contract
-import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.Framework.PowLit
+module
+
+public import VerifiedGarbage.Spec.RsaKeyGen.Contract
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.Framework.PowLit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # An RSA key from its primes on AArch64: the contract the proofs use
@@ -13,6 +19,8 @@ dq = [sp + 16], dq_len = [sp + 24], qinv = [sp + 32], qinv_len = [sp + 40],
 e = [sp + 48], e_len = [sp + 56], scratch = [sp + 64],
 scratch_len = [sp + 72])`. The shared contract implies it (`Implies.lean`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaKeyGen.AArch64.Key
 

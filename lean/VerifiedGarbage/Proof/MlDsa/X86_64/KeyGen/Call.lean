@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.Lay
-import VerifiedGarbage.Proof.MlDsa.KeyGen.Poly
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.Lay
+public import VerifiedGarbage.Proof.MlDsa.KeyGen.Poly
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA key generation on x86-64: calling the primitives
@@ -9,6 +15,8 @@ A call of a primitive (`primOk`, `primTr`), with the moves of its arguments
 `ceD2`, `ceWf` for the stack, and the memory of the callee's entry,
 `ce_polyAt`, …), and what its postcondition says once it returns.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86_64.KeyGen
 

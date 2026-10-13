@@ -1,9 +1,21 @@
-import VerifiedGarbage.Proof.X448.X86.FnContract
-import VerifiedGarbage.Proof.Framework.X86.Taint
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Framework.X86.CallWith
-import VerifiedGarbage.Spec.X448.Field16
-import VerifiedGarbage.Proof.X448.X86.FnLit
+module
+
+public import VerifiedGarbage.Proof.X448.X86.FnContract
+meta import VerifiedGarbage.Proof.X448.X86.FnContract
+public import VerifiedGarbage.Proof.Framework.X86.Taint
+meta import VerifiedGarbage.Proof.Framework.X86.Taint
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.X86.CallWith
+meta import VerifiedGarbage.Proof.Framework.X86.CallWith
+public import VerifiedGarbage.Spec.X448.Field16
+meta import VerifiedGarbage.Spec.X448.Field16
+public import VerifiedGarbage.Proof.X448.X86.FnLit
+meta import VerifiedGarbage.Proof.X448.X86.FnLit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 on x86 (32-bit): the field functions' `Verified`
@@ -14,6 +26,8 @@ by taint tracking (every branch is on the row pointer and every address is
 arguments, which are public, and `esp` need be), satisfiability, and the
 shared contracts of `Spec/X448/Field16.lean`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448.X86
 

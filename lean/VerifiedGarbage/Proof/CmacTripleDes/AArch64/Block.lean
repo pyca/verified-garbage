@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Spread
-import VerifiedGarbage.Proof.CmacTripleDes.Block
-import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.AArch64.Spill
+module
+
+public import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Spread
+public import VerifiedGarbage.Proof.CmacTripleDes.Block
+public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.AArch64.Spill
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # TDEA on AArch64: the passes and the block
@@ -16,6 +22,8 @@ keys from `x10`, moving down in the middle pass, the halves exchanged after
 the first two), and applies `IP⁻¹`. Only the scratch buffer's first 384
 bytes change.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.CmacTripleDes.AArch64
 

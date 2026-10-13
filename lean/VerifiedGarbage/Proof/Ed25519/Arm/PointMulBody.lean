@@ -1,8 +1,17 @@
-import VerifiedGarbage.Impl.Ed25519.Arm.PointMul
-import VerifiedGarbage.Proof.Ed25519.Arm.MulKeep
-import VerifiedGarbage.Proof.Ed25519.Arm.MulInput
+module
+
+public import VerifiedGarbage.Impl.Ed25519.Arm.PointMul
+public import VerifiedGarbage.Proof.Ed25519.Arm.MulKeep
+public import VerifiedGarbage.Proof.Ed25519.Arm.MulInput
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Ed25519.Arm.BatchFrame`. -/
+
+@[expose] public section
+
 section
 /-! Merged from `Proof.Ed25519.Arm.BatchCounter`. -/
 section

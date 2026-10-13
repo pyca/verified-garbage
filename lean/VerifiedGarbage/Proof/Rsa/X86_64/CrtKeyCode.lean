@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Rsa.X86_64.KeyCode
-import VerifiedGarbage.Proof.Rsa.X86_64.CrtKeyMain
-import VerifiedGarbage.Proof.Rsa.X86_64.CrtKeyEntry
+module
+
+public import VerifiedGarbage.Proof.Rsa.X86_64.KeyCode
+public import VerifiedGarbage.Proof.Rsa.X86_64.CrtKeyMain
+public import VerifiedGarbage.Proof.Rsa.X86_64.CrtKeyEntry
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_check_crt_key` on x86-64: correctness
@@ -9,6 +15,8 @@ import VerifiedGarbage.Proof.Rsa.X86_64.CrtKeyEntry
 inputs as 1 or 0 (`ckCode_correct`), against `ckContract`, which states the
 shared contract's precondition on the registers and the stack.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.X86_64.Key
 

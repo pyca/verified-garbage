@@ -1,16 +1,24 @@
-import VerifiedGarbage.Proof.Framework.KernelRfl
-import VerifiedGarbage.Proof.Framework.X86.Taint
-import VerifiedGarbage.Proof.Sha512.X86.Compress
-import VerifiedGarbage.Proof.Sha512.Stream
-import VerifiedGarbage.Impl.Sha512.X86.Stream
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Sha512.X86.Lit
+module
+
+public import VerifiedGarbage.Proof.Framework.KernelRfl
+public import VerifiedGarbage.Proof.Framework.X86.Taint
+public import VerifiedGarbage.Proof.Sha512.X86.Compress
+public import VerifiedGarbage.Proof.Sha512.Stream
+public import VerifiedGarbage.Impl.Sha512.X86.Stream
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Sha512.X86.Lit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Streaming SHA-512 on x86 (32-bit): `init`
 
 One proof for every initial hash value `iv`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sha512.X86.Stream
 

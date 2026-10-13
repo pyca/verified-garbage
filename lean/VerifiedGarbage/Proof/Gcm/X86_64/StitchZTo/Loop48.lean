@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchZTo.Loop
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Loop48
+module
+
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZTo.Loop
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Loop48
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The out-of-place AVX-512 loop: 48 blocks at a time
@@ -14,6 +20,8 @@ three groups left one at a time, back to `EInvTo`). `encTailGTo_ok` is the
 loop after the setup, for any code `bigC` of 256 blocks on that ends in
 `EInvTo` (`bigTo_ok`, and `bigPTo_ok` in `StitchZTo/LoopP.lean`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Gcm.X86_64.StitchZTo
 

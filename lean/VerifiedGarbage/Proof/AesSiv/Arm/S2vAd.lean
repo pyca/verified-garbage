@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesSiv.Arm.CmacOf
+module
+
+public import VerifiedGarbage.Proof.AesSiv.Arm.CmacOf
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-SIV on ARMv7: a step of S2V over the associated data
@@ -9,6 +15,8 @@ component into the state at `W + 176` (`cmacOf_ok`), the code doubles `D`
 `dbl(D) ⊕ CMAC(S)` (`Spec.Siv.s2vStep`); then it moves to the next
 descriptor and counts one fewer left (`adStep_ok`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

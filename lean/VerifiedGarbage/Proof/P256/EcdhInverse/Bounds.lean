@@ -1,4 +1,12 @@
-import VerifiedGarbage.Proof.Divstep.BatchBasic
+module
+
+public import VerifiedGarbage.Proof.Divstep.BatchBasic
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.P256.EcdhInverse
 open VG.Proof.Divstep
@@ -14,7 +22,7 @@ theorem rowBounds_step {t : MSt} (h : rowBounds t) : rowBounds (mstep t) := by
   · simp only
     omega
   · rcases Int.emod_two_eq_zero_or_one t.g with hz|ho
-    · simp only [hz,zero_mul,add_zero]
+    · simp only [hz,Int.zero_mul,Int.add_zero]
       omega
     · simp only [ho,one_mul]
       omega
@@ -39,7 +47,7 @@ theorem row_numerator_bound {t : MSt} (h : rowBounds t) :
   split
   · omega
   · rcases Int.emod_two_eq_zero_or_one t.g with hz|ho
-    · simp only [hz,zero_mul,add_zero]
+    · simp only [hz,Int.zero_mul,Int.add_zero]
       omega
     · simp only [ho,one_mul]
       omega

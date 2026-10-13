@@ -1,7 +1,15 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedVectors
-import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedPiece
-import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedRowTiming
-import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedFinish
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedVectors
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedPiece
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedRowTiming
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedFinish
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Verify.Optimized
 open VG VG.AArch64 VG.Spec.MlDsa

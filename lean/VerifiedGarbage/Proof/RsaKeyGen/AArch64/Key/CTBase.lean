@@ -1,7 +1,17 @@
-import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Pieces
-import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Ctx
-import VerifiedGarbage.Proof.Rsa.AArch64.CTBase
-import VerifiedGarbage.Proof.Bignum.AArch64.CTR2
+module
+
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Pieces
+meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Pieces
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Ctx
+meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Ctx
+public import VerifiedGarbage.Proof.Rsa.AArch64.CTBase
+meta import VerifiedGarbage.Proof.Rsa.AArch64.CTBase
+public import VerifiedGarbage.Proof.Bignum.AArch64.CTR2
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CTR2
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # An RSA key from its primes on AArch64: constant time, the relation
@@ -25,6 +35,8 @@ the whole, for code whose parts have no correctness proof of their own.
 and `kg_ite` a branch on a register both runs agree on (`kg_zero_eq`,
 `kg_nonzero_eq`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaKeyGen.AArch64.Key
 

@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.MlKem.AArch64.KemOps
+module
+
+public import VerifiedGarbage.Proof.MlKem.AArch64.KemOps
+meta import VerifiedGarbage.Proof.MlKem.AArch64.KemOps
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on AArch64: the matrix `Â` of `encaps` and `decaps`
@@ -14,6 +21,8 @@ Constant time, relating two runs with the same pointers and the same `ρ`:
 the arguments of each call by the taint analysis, and the calls by
 `sample_ntt`'s own constant time (`matrix_rct`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.AArch64.Kem
 

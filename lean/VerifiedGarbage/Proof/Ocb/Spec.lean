@@ -1,6 +1,12 @@
-import VerifiedGarbage.Spec.Ocb
-import VerifiedGarbage.Proof.Cmac.Spec
-import VerifiedGarbage.Proof.Cmac.Dbl32
+module
+
+public import VerifiedGarbage.Spec.Ocb
+public import VerifiedGarbage.Proof.Cmac.Spec
+public import VerifiedGarbage.Proof.Cmac.Dbl32
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # OCB: the algorithm as the implementations compute it
@@ -18,6 +24,8 @@ about `Spec/Ocb.lean`:
   `decryptWith_eq`), which the implementations compute in passes;
 * the blocks of bytes in memory (`blockAt_bytesAt`, `bytesAt_blocks`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ocb
 

@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Weierstrass.AArch64.MontSaves
-import VerifiedGarbage.Proof.Weierstrass.AArch64.MontRound
-import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-import VerifiedGarbage.TCB.AArch64.Target
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.MontSaves
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.MontRound
+public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+public import VerifiedGarbage.TCB.AArch64.Target
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Montgomery products modulo a curve's `p` or `n`, as functions, on AArch64
@@ -18,6 +24,8 @@ function keeps the callee-saved registers, `x30`, `sp` and the low halves of
 `v8`–`v15` (`abiPreserved`), changes the memory only at `[o]` (`Kept`), and
 leaves `x0 = ws`, `x19` and `x20`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.AArch64.Mont
 

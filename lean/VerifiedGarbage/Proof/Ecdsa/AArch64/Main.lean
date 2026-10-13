@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Stages
-import VerifiedGarbage.Proof.Ecdsa.AArch64.CombLays
-import VerifiedGarbage.Proof.Ecdsa.Sign
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.Stages
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.CombLays
+public import VerifiedGarbage.Proof.Ecdsa.Sign
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDSA on AArch64: the whole function
@@ -13,6 +19,8 @@ registers. Four stages, each a lemma: the setup and the tables of bits
 checks and `k^(n-2)` (`stage₃`), and `s`, its check and the result
 (`stage₄`); `signWith_eq` connects what they compute to the specification.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.AArch64
 

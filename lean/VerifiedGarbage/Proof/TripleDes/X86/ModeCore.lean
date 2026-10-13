@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.TripleDes.X86.Ecb.Verified
-import VerifiedGarbage.Proof.Modes.X86.Core
-import VerifiedGarbage.Impl.TripleDes.X86.Modes
-import VerifiedGarbage.Spec.TripleDes.Cbc
-import VerifiedGarbage.Proof.TripleDes.CbcBlocks
+module
+
+public import VerifiedGarbage.Proof.TripleDes.X86.Ecb.Verified
+public import VerifiedGarbage.Proof.Modes.X86.Core
+public import VerifiedGarbage.Impl.TripleDes.X86.Modes
+public import VerifiedGarbage.Spec.TripleDes.Cbc
+public import VerifiedGarbage.Proof.TripleDes.CbcBlocks
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Triple DES's core for the modes on x86 (32-bit)
@@ -16,6 +22,8 @@ the schedule in the core's slots is the key. The block function's call
 (`cryptCall_ok`) is ECB's (`Ecb.call_ok`) with its arguments in other
 registers.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.TripleDes.X86.Mode
 

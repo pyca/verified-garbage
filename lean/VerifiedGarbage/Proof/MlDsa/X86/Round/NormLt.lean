@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.MlDsa.X86.Round.Bits
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86.Round.Bits
+meta import VerifiedGarbage.Proof.MlDsa.X86.Round.Bits
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on x86 (32-bit): `vg_mldsa_norm_lt`
@@ -7,6 +14,8 @@ import VerifiedGarbage.Proof.MlDsa.X86.Round.Bits
 < bound`, and zero otherwise (`NInv`): each comparison borrows into a mask
 (`nl_step`). Its low bit is the result (`normZq_lt`, `normRq_lt`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86.Round
 

@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.CT
-import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Verified
-import VerifiedGarbage.Proof.AesGcm.X86_64.Frame
-import VerifiedGarbage.Proof.AesGcm.X86_64.VerifiedP
-import VerifiedGarbage.Proof.AesGcm.ScratchTo
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.CT
+public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Verified
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Frame
+public import VerifiedGarbage.Proof.AesGcm.X86_64.VerifiedP
+public import VerifiedGarbage.Proof.AesGcm.ScratchTo
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM streaming encryption out of place, x86-64: `Verified`
@@ -18,6 +24,8 @@ space (`Verified.stackArgScratch`): its 2192 bytes, a copy of the three
 other stack arguments, and 16 more, for 4856 bytes of stack in all; for the
 key contexts of `vg_aes_gcm_init` and `vg_aes_gcm_init_precomputed`.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

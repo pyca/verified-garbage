@@ -1,11 +1,17 @@
-import Mathlib.Tactic.ClearExcept
-import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombPublic
-import VerifiedGarbage.Proof.Weierstrass.X86_64.Ladder
-import VerifiedGarbage.Proof.Weierstrass.X86_64.Unch
-import VerifiedGarbage.Proof.Weierstrass.CombW
-import VerifiedGarbage.Proof.Weierstrass.Law3
-import VerifiedGarbage.Proof.Framework.X86_64.Syms
-import VerifiedGarbage.Proof.Weierstrass.CombFrame
+module
+
+public import Mathlib.Tactic.ClearExcept
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombPublic
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.Ladder
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.Unch
+public import VerifiedGarbage.Proof.Weierstrass.CombW
+public import VerifiedGarbage.Proof.Weierstrass.Law3
+public import VerifiedGarbage.Proof.Framework.X86_64.Syms
+public import VerifiedGarbage.Proof.Weierstrass.CombFrame
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The fixed-base comb from tables in memory on x86-64
@@ -21,6 +27,8 @@ is zero (`selPtKeep_ok`), when the entry is the point at infinity and the sum
 represents `[combEW j]G` (`combW_add`, `tstep_ok`); after the `J` digits,
 `[k]G` (`tcomb_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.X86_64
 

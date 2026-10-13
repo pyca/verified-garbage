@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Weierstrass.X86_64.Window
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.Window
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The window method on x86-64: the entry of a digit
@@ -11,6 +17,8 @@ comb selects one (`selLoad_ok`), its `⌈3 n / 2⌉` 16-byte pieces stored to `E
 (`ySel0_ok`, so that `E` is `(0 : 1 : 0)`), and negates `y` for a negative
 digit as the comb does (`winEntry_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.X86_64
 

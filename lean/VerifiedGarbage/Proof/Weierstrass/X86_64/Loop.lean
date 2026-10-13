@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Mont.X86_64.Ops
+module
+
+public import VerifiedGarbage.Proof.Mont.X86_64.Ops
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Short Weierstrass curves on x86-64: loops counted down in `rbx`
@@ -8,6 +14,8 @@ The ladder and the powers loop with `rbx` counting down: the body starts with
 `countLoop_ok` runs such a loop `n ≥ 1` times from an invariant indexed by
 `rbx`; `decRbx_ok` and `testRbx_ok` are its first and last instruction.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.X86_64
 

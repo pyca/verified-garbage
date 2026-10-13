@@ -1,15 +1,33 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFinish
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Verified
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejOutcome
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejEnvTiming
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFirstBlocks
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejBatchTiming
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejAdaptive
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejTimingDone
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejTailReadyTiming
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFinish
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFinish
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Verified
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Verified
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejOutcome
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejOutcome
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejEnvTiming
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejEnvTiming
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFirstBlocks
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFirstBlocks
+public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejBatchTiming
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejBatchTiming
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejAdaptive
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejAdaptive
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejTimingDone
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejTimingDone
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejTailReadyTiming
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejTailReadyTiming
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## From `ResidentRejContract.lean` -/
+
+@[expose] public section
 
 section
 
@@ -151,38 +169,16 @@ section
 namespace VG.Proof.MlDsa.AArch64.Optimized.ResidentRej
 open VG VG.AArch64
 
- def firstChecks (k : Nat) (hk : k<4) : SegmentChecks k 0 168 := by
-  by_cases h0 : k=0
-  · subst k; constructor <;> taint_decide
-  by_cases h1 : k=1
-  · subst k; constructor <;> taint_decide
-  by_cases h2 : k=2
-  · subst k; constructor <;> taint_decide
-  have h3 : k=3 := by omega
-  subst k
-  constructor <;> taint_decide
+def firstChecks : SegmentChecks 168 := by apply SegmentChecks.mk; taint_decide
+def secondChecks : SegmentChecks 112 := by apply SegmentChecks.mk; taint_decide
+def lastChecks : SegmentChecks 56 := by apply SegmentChecks.mk; taint_decide
 
- def secondChecks (k : Nat) (hk : k<4) : SegmentChecks k 504 112 := by
-  by_cases h0 : k=0
-  · subst k; constructor <;> taint_decide
-  by_cases h1 : k=1
-  · subst k; constructor <;> taint_decide
-  by_cases h2 : k=2
-  · subst k; constructor <;> taint_decide
-  have h3 : k=3 := by omega
-  subst k
-  constructor <;> taint_decide
-
- def lastChecks (k : Nat) (hk : k<4) : SegmentChecks k 840 56 := by
-  by_cases h0 : k=0
-  · subst k; constructor <;> taint_decide
-  by_cases h1 : k=1
-  · subst k; constructor <;> taint_decide
-  by_cases h2 : k=2
-  · subst k; constructor <;> taint_decide
-  have h3 : k=3 := by omega
-  subst k
-  constructor <;> taint_decide
+def firstInit4 : InitCheck 0 4 := by apply InitCheck.mk; taint_decide
+def secondInit4 : InitCheck 504 4 := by apply InitCheck.mk; taint_decide
+def lastInit4 : InitCheck 840 4 := by apply InitCheck.mk; taint_decide
+def firstInit2 : InitCheck 0 2 := by apply InitCheck.mk; taint_decide
+def secondInit2 : InitCheck 504 2 := by apply InitCheck.mk; taint_decide
+def lastInit2 : InitCheck 840 2 := by apply InitCheck.mk; taint_decide
 
 end VG.Proof.MlDsa.AArch64.Optimized.ResidentRej
 
@@ -203,10 +199,10 @@ abbrev PrefixPair (v blocks n : Nat) (σ τ s t : State) :=
 theorem prefixFour_relCT {blocks off n : Nat} {σ τ : State}
     (hp : Pre 4 σ) (hq : Pre 4 τ) (pub : Pub 4 σ τ)
     (hn : off+3*n≤168*blocks) (hmod : n%4=0) (ho : off%3=0)
-    (checks : ∀k<4,SegmentChecks k off n) :
+    (checks : SegmentChecks n) (init : InitCheck off 4) :
     RelCT isa (PrefixPair 4 blocks off σ τ) (Four.batch 0 off n)
       (PrefixPair 4 blocks (off+3*n) σ τ) := by
-  refine (batchFour_relCT (L := fun k => prefixRow σ k off) hp hq pub hn hmod 0 checks).mono ?_ ?_
+  refine (batchFour_relCT (L := fun k => prefixRow σ k off) hp hq pub hn hmod 0 checks init).mono ?_ ?_
   · intro s t h
     exact ⟨h.1,h.2.congr (fun k hk => (pub.prefix hk off).symm)⟩
   · intro s t h
@@ -216,10 +212,10 @@ theorem prefixFour_relCT {blocks off n : Nat} {σ τ : State}
 theorem prefixTwo_relCT {blocks off n : Nat} {σ τ : State}
     (hp : Pre 2 σ) (hq : Pre 2 τ) (pub : Pub 2 σ τ)
     (hn : off+3*n≤168*blocks) (hmod : n%4=0) (ho : off%3=0)
-    (checks : ∀k<2,SegmentChecks k off n) :
+    (checks : SegmentChecks n) (init : InitCheck off 2) :
     RelCT isa (PrefixPair 2 blocks off σ τ) (Two.batch 0 off n)
       (PrefixPair 2 blocks (off+3*n) σ τ) := by
-  refine (batchTwo_relCT (L := fun k => prefixRow σ k off) hp hq pub hn hmod 0 checks).mono ?_ ?_
+  refine (batchTwo_relCT (L := fun k => prefixRow σ k off) hp hq pub hn hmod 0 checks init).mono ?_ ?_
   · intro s t h
     exact ⟨h.1,h.2.congr (fun k hk => (pub.prefix hk off).symm)⟩
   · intro s t h
@@ -233,10 +229,10 @@ theorem parseFiveFour_relCT {σ τ : State}
       (PrefixPair 4 5 840 σ τ) := by
   apply RelCT.seq (R := PrefixPair 4 5 504 σ τ)
   · exact (prefixFour_relCT hp hq pub (by decide : 0+3*168≤168*5)
-      (by decide) (by decide) firstChecks).mono
+      (by decide) (by decide) firstChecks firstInit4).mono
       (fun _ _ h => ⟨h.1.rows,h.2.rows⟩) (fun _ _ h => h)
   · exact prefixFour_relCT hp hq pub (by decide : 504+3*112≤168*5)
-      (by decide) (by decide) secondChecks
+      (by decide) (by decide) secondChecks secondInit4
 
 theorem parseFiveTwo_relCT {σ τ : State}
     (hp : Pre 2 σ) (hq : Pre 2 τ) (pub : Pub 2 σ τ) :
@@ -245,10 +241,10 @@ theorem parseFiveTwo_relCT {σ τ : State}
       (PrefixPair 2 5 840 σ τ) := by
   apply RelCT.seq (R := PrefixPair 2 5 504 σ τ)
   · exact (prefixTwo_relCT hp hq pub (by decide : 0+3*168≤168*5)
-      (by decide) (by decide) (fun k hk => firstChecks k (by omega))).mono
+      (by decide) (by decide) firstChecks firstInit2).mono
       (fun _ _ h => ⟨h.1.rows,h.2.rows⟩) (fun _ _ h => h)
   · exact prefixTwo_relCT hp hq pub (by decide : 504+3*112≤168*5)
-      (by decide) (by decide) (fun k hk => secondChecks k (by omega))
+      (by decide) (by decide) secondChecks secondInit2
 
 end VG.Proof.MlDsa.AArch64.Optimized.ResidentRej
 
@@ -306,7 +302,7 @@ theorem adaptiveFour_relCT {σ τ : State}
           (fun _ h => sixthFour_ok hp h) (fun _ h => sixthFour_ok hq h)).mono
           (fun _ _ h => ⟨h.1.1.1,h.1.2.1⟩) (fun _ _ h => h)
       · apply RelCT.seq (prefixFour_relCT hp hq pub (by decide : 840+3*56≤168*6)
-          (by decide) (by decide) lastChecks)
+          (by decide) (by decide) lastChecks lastInit4)
         exact (flagsFour_relCT hp hq pub).mono (fun _ _ h => h) (fun _ _ _ => True.intro)
   exact (ct.wp (fun _ _ h => ⟨adaptiveFour_timingDone hp h.1.1 h.1.2,
     adaptiveFour_timingDone hq h.2.1 h.2.2⟩)).mono
@@ -341,7 +337,7 @@ theorem adaptiveTwo_relCT {σ τ : State}
           (fun _ h => sixthTwo_ok hp h) (fun _ h => sixthTwo_ok hq h)).mono
           (fun _ _ h => ⟨h.1.1.1,h.1.2.1⟩) (fun _ _ h => h)
       · apply RelCT.seq (prefixTwo_relCT hp hq pub (by decide : 840+3*56≤168*6)
-          (by decide) (by decide) (fun k hk => lastChecks k (by omega)))
+          (by decide) (by decide) lastChecks lastInit2)
         exact (flagsTwo_relCT hp hq pub).mono (fun _ _ h => h) (fun _ _ _ => True.intro)
   exact (ct.wp (fun _ _ h => ⟨adaptiveTwo_timingDone hp h.1.1 h.1.2,
     adaptiveTwo_timingDone hq h.2.1 h.2.2⟩)).mono

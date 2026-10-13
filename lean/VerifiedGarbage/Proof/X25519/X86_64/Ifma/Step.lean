@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Part2
+module
+
+public import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Part2
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X25519 on x86-64 with AVX512_IFMA: the ladder's loop
@@ -9,6 +15,8 @@ of `ymm0–ymm4` hold the ladder's `(x₂, z₂, x₃, z₃)` after the bits 254
 `rbx`, `rcx`, `rdx`, the vector registers, `swap` and the operand slots
 changed.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X25519.X86_64.Ifma
 

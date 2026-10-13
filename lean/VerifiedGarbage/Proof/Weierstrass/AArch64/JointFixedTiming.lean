@@ -1,6 +1,14 @@
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JointFixedDigit
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JointMixedTiming
-import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JointFixedDigit
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JointMixedTiming
+public import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.AArch64
 open VG VG.AArch64 VG.Impl.Weierstrass.AArch64

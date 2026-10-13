@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Aes.X86.Common
-import VerifiedGarbage.TCB.X86.Target
-import VerifiedGarbage.Proof.Framework.X86.Taint
-import VerifiedGarbage.Spec.Aes.Contract
+module
+
+public import VerifiedGarbage.Proof.Aes.X86.Common
+public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Proof.Framework.X86.Taint
+public import VerifiedGarbage.Spec.Aes.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES on whole blocks on x86 (32-bit): the contract
@@ -10,6 +16,8 @@ The per-target contract both implementations of `vg_aes_encrypt_blocks` and
 `vg_aes_decrypt_blocks` on x86 are proven against (`blocksX86`), and its
 precondition by name (`BPre`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Aes
 

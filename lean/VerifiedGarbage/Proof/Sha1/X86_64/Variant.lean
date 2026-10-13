@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Sha1.X86_64.Stream.Md
-import VerifiedGarbage.Proof.Framework.X86_64.Depth
+module
+
+public import VerifiedGarbage.Proof.Sha1.X86_64.Stream.Md
+public import VerifiedGarbage.Proof.Framework.X86_64.Depth
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Implementations of the SHA-1 compression function on x86-64
@@ -15,6 +21,8 @@ what callers of those need (their call depth, that they keep `rsp` and never
 load MXCSR), so that a caller of them is proven once for every
 implementation.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sha1.X86_64
 

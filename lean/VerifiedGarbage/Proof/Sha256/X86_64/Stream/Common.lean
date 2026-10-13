@@ -1,9 +1,21 @@
-import VerifiedGarbage.Proof.Sha256.X86_64.Compress
-import VerifiedGarbage.Proof.Sha256.X86_64.ShaNi.Compress
-import VerifiedGarbage.Proof.Sha256.Stream
-import VerifiedGarbage.Proof.Framework.X86_64.RelCT
-import VerifiedGarbage.Impl.Sha256.X86_64.Stream
-import Mathlib.Tactic.Conv
+module
+
+public import VerifiedGarbage.Proof.Sha256.X86_64.Compress
+meta import VerifiedGarbage.Proof.Sha256.X86_64.Compress
+public import VerifiedGarbage.Proof.Sha256.X86_64.ShaNi.Compress
+meta import VerifiedGarbage.Proof.Sha256.X86_64.ShaNi.Compress
+public import VerifiedGarbage.Proof.Sha256.Stream
+meta import VerifiedGarbage.Proof.Sha256.Stream
+public import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+public import VerifiedGarbage.Impl.Sha256.X86_64.Stream
+meta import VerifiedGarbage.Impl.Sha256.X86_64.Stream
+public import Mathlib.Tactic.Conv
+meta import Mathlib.Tactic.Conv
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Streaming SHA-256 on x86-64: common lemmas
@@ -11,6 +23,8 @@ import Mathlib.Tactic.Conv
 The call of the compression function (`compressAt`), for either `Callee`, and
 memory written byte by byte.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sha256.X86_64.Stream
 

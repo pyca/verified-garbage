@@ -1,6 +1,8 @@
-import VerifiedGarbage.Proof.Framework.Taint
-import VerifiedGarbage.Proof.Framework.RegSet
-import VerifiedGarbage.TCB.AArch64.Target
+module
+
+public import VerifiedGarbage.Proof.Framework.Taint
+public import VerifiedGarbage.Proof.Framework.RegSet
+public import VerifiedGarbage.TCB.AArch64.Target
 
 /-!
 # Taint tracking for AArch64
@@ -13,6 +15,8 @@ general-purpose register (`umov`) is secret. The flags are not tracked: an
 instruction that reads them (`adcs`, `csel`, `csneg`, …) writes a secret
 value, and branches never read them.
 -/
+
+@[expose] public section
 
 namespace VG.AArch64.Taint
 

@@ -1,6 +1,14 @@
-import VerifiedGarbage.Proof.Weierstrass.X86.TComb
-import VerifiedGarbage.Proof.Weierstrass.X86.TCombJEntry
-import VerifiedGarbage.Proof.Weierstrass.X86.FprogJ
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86.TComb
+public import VerifiedGarbage.Proof.Weierstrass.X86.TCombJEntry
+public import VerifiedGarbage.Proof.Weierstrass.X86.FprogJ
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.X86
 open VG VG.X86 VG.Impl.Mont.X86 VG.Impl.Mont VG.Impl.Weierstrass.X86 VG.Impl.Weierstrass

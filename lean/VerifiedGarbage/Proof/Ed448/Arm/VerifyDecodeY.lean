@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Ed448.Arm.VerifyS
+module
+
+public import VerifiedGarbage.Proof.Ed448.Arm.VerifyS
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 verification's equation on ARMv7: the `y` of a point
@@ -8,6 +14,8 @@ of the first 56 (`y₀`) into slot `yo`, the sign bit (bit 7 of the last byte
 `b`) to `SIGN`, and `BAD |= 0` exactly when bits 0–6 of `b` are 0 and
 `y₀ < p` (`y₀` is equal to its full reduction, in slot 1).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.Arm
 

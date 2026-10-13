@@ -1,7 +1,15 @@
-import VerifiedGarbage.Proof.Argon2.X86_64.FillSegmentBody
-import VerifiedGarbage.Proof.Argon2.Segment
+module
+
+public import VerifiedGarbage.Proof.Argon2.X86_64.FillSegmentBody
+public import VerifiedGarbage.Proof.Argon2.Segment
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Termination and correctness of the active suffix of one segment. -/
+
+@[expose] public section
 
 namespace VG.Proof.Argon2.X86_64.FillSegment
 

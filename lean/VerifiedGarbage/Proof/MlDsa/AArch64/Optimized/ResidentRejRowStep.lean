@@ -1,4 +1,12 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejRows
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejRows
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Optimized.ResidentRej
 open VG VG.AArch64
@@ -9,14 +17,16 @@ def updateRow (L : Nat → List Zq) (k : Nat) (R : List Zq) : Nat → List Zq :=
   fun j => if j=k then R else L j
 
 theorem rowStep_ok {v blocks k off n : Nat} {σ s : State} {L : Nat → List Zq}
-    (hp : Pre v σ) (h : Rows v blocks σ L s) (hk : k<v)
+    (hp : Pre v σ) (h : Rows v blocks σ L s) (hk : k<v) (hptr : Ptrs σ off k s)
     (hn : off+3*n≤168*blocks) (hmod : n%4=0) (variant : Nat) :
-    WP isa (Impl.MlDsa.AArch64.Optimized.ResidentRej.segment variant k off n) s
-      (Rows v blocks σ (updateRow L k (rowResult σ k off n (L k)))) := by
-  refine WP.mono (segmentEnv_ok hp h.env hk (by have:=h.blockBound; omega) hmod
-    (h.length k hk) (h.counts k hk) (h.stored k hk) variant) fun t ⟨he,hf,hc,hs⟩ => ?_
+    WP isa (Impl.MlDsa.AArch64.Optimized.ResidentRej.segment variant n) s fun t =>
+      Rows v blocks σ (updateRow L k (rowResult σ k off n (L k))) t ∧
+      Ptrs σ off (k+1) t ∧ t.gpr .x27=s.gpr .x27-BitVec.ofNat 64 1 := by
+  refine WP.mono (segmentEnv_ok hp h.env hk hptr (by have:=h.blockBound; omega) hmod
+    (h.length k hk) (h.counts k hk) (h.stored k hk) variant)
+    fun t ⟨he,hf,hc,hs,hptr',h27⟩ => ?_
   rw [segmentResult_rows h hk hn] at hc hs
-  refine ⟨he,h.blockBound,?_,?_,?_,?_,?_⟩
+  refine ⟨⟨he,h.blockBound,?_,?_,?_,?_,?_⟩,hptr',h27⟩
   · intro p hpv
     exact segment_pair_keep hp hk hpv hf (h.pairs p hpv)
   · intro j hj d hd

@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.MlKem.AArch64.NttVec
+module
+
+public import VerifiedGarbage.Proof.MlKem.AArch64.NttVec
+meta import VerifiedGarbage.Proof.MlKem.AArch64.NttVec
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on AArch64: `vg_mlkem_add` and `vg_mlkem_sub`
@@ -6,6 +13,8 @@ import VerifiedGarbage.Proof.MlKem.AArch64.NttVec
 Both are `mapLoop` around an arithmetic step; the loop is proven once for any
 step that computes a function `F` of the two coefficients (`OpSpec`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem
 

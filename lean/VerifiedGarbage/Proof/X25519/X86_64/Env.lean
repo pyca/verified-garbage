@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.X25519.X86_64.Small
-import VerifiedGarbage.Proof.X25519.X86_64.Sqr
-import Mathlib.Logic.Function.Basic
+module
+
+public import VerifiedGarbage.Proof.X25519.X86_64.Small
+public import VerifiedGarbage.Proof.X25519.X86_64.Sqr
+public import Mathlib.Logic.Function.Basic
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X25519 on x86-64: the working space as slots
@@ -12,6 +18,8 @@ evaluates at any slot. The ladder's variables and temporaries are in the slots
 2–19 (bytes 64–639), so the field operations change no byte outside `[64,
 640)`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X25519.X86_64
 

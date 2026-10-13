@@ -1,7 +1,15 @@
-import VerifiedGarbage.Proof.Blowfish.X86_64.Scan
-import VerifiedGarbage.Proof.Framework.X86_64.Sse
+module
+
+public import VerifiedGarbage.Proof.Blowfish.X86_64.Scan
+public import VerifiedGarbage.Proof.Framework.X86_64.Sse
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # The OR of a plane accumulator's words -/
+
+@[expose] public section
 
 namespace VG.Proof.Blowfish.X86_64
 

@@ -1,8 +1,17 @@
-import VerifiedGarbage.Proof.Dsa.Layout
-import VerifiedGarbage.Impl.Dsa.X86_64.Core
-import VerifiedGarbage.Proof.Dsa.X86_64.Prepare
+module
+
+public import VerifiedGarbage.Proof.Dsa.Layout
+public import VerifiedGarbage.Impl.Dsa.X86_64.Core
+public import VerifiedGarbage.Proof.Dsa.X86_64.Prepare
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # Passing DSA operands through the parent workspace's call header -/
+
+@[expose] public section
+
 namespace VG.Proof.Dsa.X86_64
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public
 open VG.Impl.Rsa.X86_64 VG.Impl.Dsa.Layout

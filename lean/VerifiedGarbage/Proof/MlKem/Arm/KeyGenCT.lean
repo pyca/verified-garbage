@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.MlKem.Arm.KeyGen
-import VerifiedGarbage.Proof.MlKem.Arm.RowCT
+module
+
+public import VerifiedGarbage.Proof.MlKem.Arm.KeyGen
+meta import VerifiedGarbage.Proof.MlKem.Arm.KeyGen
+public import VerifiedGarbage.Proof.MlKem.Arm.RowCT
+meta import VerifiedGarbage.Proof.MlKem.Arm.RowCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on 32-bit ARM: key generation, constant time and `Verified`
@@ -18,6 +26,8 @@ immediates depend on it are facts of `KemLay.CallsOk`, which the parameter set
 checks by evaluation. Its `outcome` is the contract's, which ML-KEM-768's
 `verified` (below) and ML-KEM-1024's (`Proof/MlKem1024/Arm/`) use.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.Arm.KeyGen
 

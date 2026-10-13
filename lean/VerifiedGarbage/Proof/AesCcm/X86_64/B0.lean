@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesCcm.X86_64.Blocks
+module
+
+public import VerifiedGarbage.Proof.AesCcm.X86_64.Blocks
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CCM on x86-64: `B₀` (`b0 y`)
@@ -8,6 +14,8 @@ Untrusted: everything here is checked by Lean. `b0 y` computes the flags
 `B₀` to `W + 32` from `Ctr₀`, zeroes the MAC state at `W + y` and chains
 `B₀` into it (`b0_ok`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

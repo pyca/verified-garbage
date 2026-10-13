@@ -1,5 +1,7 @@
-import VerifiedGarbage.Proof.Framework.AArch64.Straight
-import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
+module
+
+public import VerifiedGarbage.Proof.Framework.AArch64.Straight
+public import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
 
 /-!
 # AArch64: linear layers of bitsliced code, by evaluation
@@ -13,6 +15,8 @@ each output register with the XOR of the atoms `g p` at each bit position
 `p`, and `linear_ok` turns a successful check into a statement about the
 machine: bit `p` of the output register is the XOR of the input bits `g p`.
 -/
+
+@[expose] public section
 
 namespace VG.AArch64.Straight
 

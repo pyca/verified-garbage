@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowSum
-import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowTable
-import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowEntry
-import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowQuad
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowSum
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowTable
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowEntry
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowQuad
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The window method on AArch64
@@ -15,6 +21,8 @@ represented `[winE k J (j+1)]P`, represents `[winE k J j]P` (`win_add`). After
 all `J` digits `R` represents `[k - 8 Σ_{i<J} 16^i]P` (`window_ok`), for
 `k < 16^J` whose bits are the table at `K.bits`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.AArch64
 

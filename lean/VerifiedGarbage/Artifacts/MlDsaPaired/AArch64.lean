@@ -15,7 +15,7 @@ def artifacts : List Artifact := [
       (AArch64.abi.withConsts Impl.MlDsa.AArch64.Optimized.Paired.pairedConsts)
     verified := Proof.MlDsa.AArch64.Optimized.Paired.pairedZ_verified
     spSafe := Code.all_of_forall (fun _ => rfl) _
-    ofSig := ⟨_,_,_,by unfold Spec.MlDsa.pairedZContract; rfl⟩ },
+    ofSig := by exact (⟨_,_,_,by unfold Spec.MlDsa.pairedZContract; rfl⟩) },
   { Spec.MlDsa.pairedLowApi with
     target := AArch64.target
     doc := Spec.MlDsa.pairedLowApi.doc
@@ -25,7 +25,7 @@ def artifacts : List Artifact := [
       (AArch64.abi.withConsts Impl.MlDsa.AArch64.Optimized.Paired.pairedConsts)
     verified := Proof.MlDsa.AArch64.Optimized.Paired.pairedLow_verified
     spSafe := Code.all_of_forall (fun _ => rfl) _
-    ofSig := ⟨_,_,_,by unfold Spec.MlDsa.pairedLowContract; rfl⟩ },
+    ofSig := by exact (⟨_,_,_,by unfold Spec.MlDsa.pairedLowContract; rfl⟩) },
   { Spec.MlDsa.pairedHintApi with
     target := AArch64.target
     doc := Spec.MlDsa.pairedHintApi.doc
@@ -35,6 +35,6 @@ def artifacts : List Artifact := [
       (AArch64.abi.withConsts Impl.MlDsa.AArch64.Optimized.Paired.pairedConsts)
     verified := Proof.MlDsa.AArch64.Optimized.Paired.pairedHint_verified
     spSafe := Code.all_of_forall (fun _ => rfl) _
-    ofSig := ⟨_,_,_,by unfold Spec.MlDsa.pairedHintContract; rfl⟩ }]
+    ofSig := by exact (⟨_,_,_,by unfold Spec.MlDsa.pairedHintContract; rfl⟩) }]
 
 end VG.Artifacts.MlDsaPaired.AArch64

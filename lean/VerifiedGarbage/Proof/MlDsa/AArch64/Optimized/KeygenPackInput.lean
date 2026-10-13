@@ -1,6 +1,14 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackLoads
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackFields
-import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Mem
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackLoads
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackFields
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Mem
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Optimized.KeygenPack
 open VG VG.AArch64 VG.Spec.MlDsa

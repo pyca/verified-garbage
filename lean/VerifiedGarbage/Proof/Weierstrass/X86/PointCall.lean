@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Weierstrass.X86.MontCall
-import VerifiedGarbage.Impl.Weierstrass.X86.Point
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86.MontCall
+public import VerifiedGarbage.Impl.Weierstrass.X86.Point
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Calls of the Montgomery functions from a point function, on x86 (32-bit)
@@ -16,6 +22,8 @@ outside the working space, but none of it outside the working space and the
 `mulCallB_ok`, `addCallB_ok` and `subCallB_ok` are the calls of `mulFn`,
 `addFn` and `subFn`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.X86.Point
 

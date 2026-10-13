@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesOcb.X86.Dbl
-import VerifiedGarbage.Proof.Cmac.Block32
+module
+
+public import VerifiedGarbage.Proof.AesOcb.X86.Dbl
+public import VerifiedGarbage.Proof.Cmac.Block32
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-OCB on x86: blocks copied and XORed a word at a time
@@ -11,6 +17,8 @@ block written is the one read (`copyMem16_block`), or the XOR of the two
 (`xorMem16_block`). The runs are within `W` (`copy16_ok`, `xor16W_ok`) or
 read another buffer, apart from `W` (`xor16R_ok`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

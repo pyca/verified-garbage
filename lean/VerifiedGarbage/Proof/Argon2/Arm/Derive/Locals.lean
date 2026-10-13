@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Argon2.Arm.Derive.Body
+module
+
+public import VerifiedGarbage.Proof.Argon2.Arm.Derive.Body
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Argon2 on ARMv7: the derivation's locals
@@ -8,6 +14,8 @@ the invariant and every other word (`Inv.store_loc`); writes to the memory
 matrix, `scratch`, the output or the stack below the locals keep all of them
 (`lw_keep`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Argon2.Arm.Derive
 

@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Rsa.X86_64.KeyCTCode
-import VerifiedGarbage.Proof.Rsa.X86_64.KeyImplies
+module
+
+public import VerifiedGarbage.Proof.Rsa.X86_64.KeyCTCode
+public import VerifiedGarbage.Proof.Rsa.X86_64.KeyImplies
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_check_key` on x86-64: verified against the shared contract
@@ -8,6 +14,8 @@ Correct (`keyCode_correct`), constant time (`keyCode_constantTime`), and the
 contract on the registers and the stack implies the shared one
 (`key_implies`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.X86_64.Key
 

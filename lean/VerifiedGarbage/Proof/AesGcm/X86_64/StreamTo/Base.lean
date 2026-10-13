@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Contract
-import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks.Base
-import VerifiedGarbage.Impl.AesGcm.X86_64.StreamTo
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Contract
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks.Base
+public import VerifiedGarbage.Impl.AesGcm.X86_64.StreamTo
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM streaming encryption out of place, x86-64: the setting
@@ -10,6 +16,8 @@ state `s` (`K`, `St`, `AL`, `TL`, `Src`, `L`, `Dst`, `W`), their regions, and
 the facts of `streamToPreM` by name (`SP'`); the entry, which keeps the
 arguments in `work` (`entry_ok`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

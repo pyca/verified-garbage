@@ -1,5 +1,11 @@
-import VerifiedGarbage.Spec.Cmac.TripleDesContract
-import VerifiedGarbage.Proof.Framework.Offset
+module
+
+public import VerifiedGarbage.Spec.Cmac.TripleDesContract
+public import VerifiedGarbage.Proof.Framework.Offset
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # TDEA-CMAC with its working space as an argument
@@ -15,6 +21,8 @@ stack, which needs the pre- and postconditions to read the memory on entry
 only within the function's buffers (`initPost_local`, `updatePost_local`,
 `finalizePost_local`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.CmacTripleDes
 

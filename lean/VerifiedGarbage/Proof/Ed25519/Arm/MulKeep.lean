@@ -1,9 +1,18 @@
-import VerifiedGarbage.Proof.Ed25519.Arm.PointPowers
-import VerifiedGarbage.Proof.Ed25519.Arm.AccumulateStep
-import VerifiedGarbage.Impl.Ed25519.Arm.PointBatch
-import VerifiedGarbage.Proof.Ed25519.Arm.BatchBits
+module
+
+public import VerifiedGarbage.Proof.Ed25519.Arm.PointPowers
+public import VerifiedGarbage.Proof.Ed25519.Arm.AccumulateStep
+public import VerifiedGarbage.Impl.Ed25519.Arm.PointBatch
+public import VerifiedGarbage.Proof.Ed25519.Arm.BatchBits
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Ed25519.Arm.PointPowersLoop`. -/
+
+@[expose] public section
+
 section
 /-! Checkpoint-loop termination and exact table contents. -/
 namespace VG.Proof.Ed25519.Arm

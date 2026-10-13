@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.TripleDes.AArch64.Key.Copy
-import VerifiedGarbage.Proof.TripleDes.KeyMemory
+module
+
+public import VerifiedGarbage.Proof.TripleDes.AArch64.Key.Copy
+public import VerifiedGarbage.Proof.TripleDes.KeyMemory
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.TripleDes.AArch64.Key
 

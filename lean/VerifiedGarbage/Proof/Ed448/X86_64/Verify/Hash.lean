@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Ed448.X86_64.Verify.Args
-import VerifiedGarbage.Proof.Ed448.X86_64.PublicKey.Hash
-import VerifiedGarbage.Proof.X25519.Bytes
+module
+
+public import VerifiedGarbage.Proof.Ed448.X86_64.Verify.Args
+public import VerifiedGarbage.Proof.Ed448.X86_64.PublicKey.Hash
+public import VerifiedGarbage.Proof.X25519.Bytes
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 verification on x86-64: the hash
@@ -12,6 +18,8 @@ Between the frame's push and pop (`Ctx`): the first ten bytes of
 `scratch + 256` (`kabs_ok`, `kpad_ok`, `ksqz_ok`); then `hash`, which leaves
 `SHAKE256(dom4(0, C) ‖ R ‖ A ‖ M, 114)` in the frame (`hash_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.X86_64.Verify
 

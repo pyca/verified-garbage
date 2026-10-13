@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Blowfish.X86_64.Block
-import VerifiedGarbage.Proof.Blowfish.KeyTable
+module
+
+public import VerifiedGarbage.Proof.Blowfish.X86_64.Block
+public import VerifiedGarbage.Proof.Blowfish.KeyTable
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Key expansion: the initial schedule
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.Blowfish.KeyTable
 `initSchedule_run`: the 521 quadwords of the initial schedule's image, as
 immediates, into the schedule at `rdx`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Blowfish.X86_64
 

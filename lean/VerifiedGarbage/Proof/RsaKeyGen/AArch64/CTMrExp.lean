@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTMrBit
+module
+
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTMrBit
+meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTMrBit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # A candidate on AArch64: constant time of Miller–Rabin's exponentiation
@@ -9,6 +16,8 @@ correctness pins (`mrWord_ok`, `mrBitStep_ok`); the start of each word loads
 `kWords` and `c`'s base, which are pinned before the word's load
 (`wordHead_ct`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaKeyGen.AArch64
 

@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.P256.Prime
-import VerifiedGarbage.Proof.P256.Point
-import VerifiedGarbage.Proof.Weierstrass.Order
-import VerifiedGarbage.Proof.Weierstrass.Booth
+module
+
+public import VerifiedGarbage.Proof.P256.Prime
+public import VerifiedGarbage.Proof.P256.Point
+public import VerifiedGarbage.Proof.Weierstrass.Order
+public import VerifiedGarbage.Proof.Weierstrass.Booth
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # P-256: `G` has order `n`
@@ -10,6 +16,8 @@ The kernel evaluates the ladder for `n` (`ladRep_n`), whose `Z` is zero, so
 `[n]G = O` (`mul_n`); `n` is prime (`Prime.lean`), so the multiples of `G`
 below `n` are coprime to it (`n_cop`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.P256
 

@@ -1,9 +1,15 @@
-import VerifiedGarbage.Proof.Idea.X86_64.Ecb
-import VerifiedGarbage.Proof.Modes.X86_64.Core
-import VerifiedGarbage.Proof.Modes.X86_64.Words
-import VerifiedGarbage.Impl.Idea.X86_64.Modes
-import VerifiedGarbage.Spec.Idea.Cbc
-import VerifiedGarbage.Proof.Idea.ModeBytes
+module
+
+public import VerifiedGarbage.Proof.Idea.X86_64.Ecb
+public import VerifiedGarbage.Proof.Modes.X86_64.Core
+public import VerifiedGarbage.Proof.Modes.X86_64.Words
+public import VerifiedGarbage.Impl.Idea.X86_64.Modes
+public import VerifiedGarbage.Spec.Idea.Cbc
+public import VerifiedGarbage.Proof.Idea.ModeBytes
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # IDEA's core for the modes on x86-64
@@ -15,6 +21,8 @@ with the key a schedule (of encryption or decryption subkeys), its cipher
 the schedule. `crypt` is `vg_idea_ecb`'s block code (`cryptBlock_run`) on the
 buffer.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Idea.X86_64
 

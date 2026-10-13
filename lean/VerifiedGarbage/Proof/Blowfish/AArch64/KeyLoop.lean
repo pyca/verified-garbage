@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Blowfish.AArch64.Ecb
-import VerifiedGarbage.Proof.Blowfish.KeyTable
+module
+
+public import VerifiedGarbage.Proof.Blowfish.AArch64.Ecb
+public import VerifiedGarbage.Proof.Blowfish.KeyTable
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Key expansion: the 521 encryptions
@@ -10,6 +16,8 @@ next two entries (`replace`): the P-array's, as words, then the S-boxes',
 a byte per plane. `encryptions_run`: after the 521, the schedule is
 `expandKey`'s.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Blowfish.AArch64
 

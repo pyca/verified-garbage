@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
-import VerifiedGarbage.Proof.Bignum.X86_64.PubVerified
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
+public import VerifiedGarbage.Proof.Bignum.X86_64.PubVerified
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAEP from precomputed values on x86-64: helpers for the shared contracts
@@ -8,6 +14,8 @@ What the proofs of `pdContract`'s callers against their shared contracts
 (`vg_rsa_public_precomputed_checked`'s, `PubChecked.lean`) share: a state
 meeting `pdContract.pre`, and the leak of `pre` and `e`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64
 

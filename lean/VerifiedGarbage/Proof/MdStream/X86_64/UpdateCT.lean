@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.MdStream.X86_64.Common
-import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+module
+
+public import VerifiedGarbage.Proof.MdStream.X86_64.Common
+meta import VerifiedGarbage.Proof.MdStream.X86_64.Common
+public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Streaming Merkle–Damgård hash functions on x86-64: `update`
@@ -7,6 +15,8 @@ import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 The functional correctness of `update`, for any hash function (`Md`) and any
 correct compression function (`CalleeOk`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MdStream.X86_64.Update
 

@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Mont.AArch64.Ops
-import VerifiedGarbage.Impl.Weierstrass.AArch64
+module
+
+public import VerifiedGarbage.Proof.Mont.AArch64.Ops
+public import VerifiedGarbage.Impl.Weierstrass.AArch64
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Short Weierstrass curves on AArch64: loops counted down in `x19`
@@ -9,6 +15,8 @@ the body starts with `sub x19, x19, #1`, and the loop runs while `x19 ≠ 0`
 (`cbnz`). `countLoop_ok` runs such a loop `n ≥ 1` times from an invariant
 indexed by `x19`; `decCounter_ok` is the body's first instruction.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.AArch64
 

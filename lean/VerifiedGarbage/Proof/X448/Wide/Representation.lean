@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.X448.Wide.Limbs
-import Batteries.Logic
+module
+
+public import VerifiedGarbage.Proof.X448.Wide.Limbs
+public import Batteries.Logic
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Headroom-aware X448 field representation
@@ -9,6 +15,9 @@ A representative has a value modulo p and a separate, explicit coefficient
 bound. Weak reduction need not normalize every coefficient below the radix.
 The public RFC 7748 contract and existing backend contract are unchanged.
 -/
+
+@[expose] public section
+
 namespace VG.Proof.X448.Wide.Representation
 open VG.Spec.X448
 open VG.Proof.X448 (toFe)

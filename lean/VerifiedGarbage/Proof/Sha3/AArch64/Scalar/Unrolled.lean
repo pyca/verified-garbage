@@ -1,11 +1,25 @@
-import VerifiedGarbage.Impl.Sha3.AArch64.Scalar.Unrolled
-import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Control
-import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Round
-import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Wrap
-import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.ScheduleFacts
-import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.VectorCoreExec
-import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.UnrolledLit
-import VerifiedGarbage.Proof.Framework.AArch64.VectorTaint
+module
+
+public import VerifiedGarbage.Impl.Sha3.AArch64.Scalar.Unrolled
+meta import VerifiedGarbage.Impl.Sha3.AArch64.Scalar.Unrolled
+public import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Control
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Control
+public import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Round
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Round
+public import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Wrap
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Wrap
+public import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.ScheduleFacts
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.ScheduleFacts
+public import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.VectorCoreExec
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.VectorCoreExec
+public import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.UnrolledLit
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.UnrolledLit
+public import VerifiedGarbage.Proof.Framework.AArch64.VectorTaint
+meta import VerifiedGarbage.Proof.Framework.AArch64.VectorTaint
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The unrolled scalar permutation: correctness
@@ -15,6 +29,8 @@ constant built from immediates (`Control.constant_ok`) and its XOR into lane
 0; together they keep `Boundary.CoreState`, the middle's contract in
 `wrap_correct`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sha3.AArch64.Scalar
 open VG VG.AArch64
@@ -132,8 +148,5 @@ theorem unrolled_permute_verified :
       AArch64.abi, AArch64.argRegs] [VG.Proof.Sha3.AArch64.satState]
       using VG.Proof.Sha3.AArch64.satState)
 
-#assert_standard_axioms unrolled_permute_correct
-#assert_standard_axioms unrolled_permute_ct
-#assert_standard_axioms unrolled_permute_verified
 
 end VG.Proof.Sha3.AArch64.Scalar

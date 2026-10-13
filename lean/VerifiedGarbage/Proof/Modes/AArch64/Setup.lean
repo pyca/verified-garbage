@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Modes.AArch64.Counter
+module
+
+public import VerifiedGarbage.Proof.Modes.AArch64.Counter
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # CTR on AArch64: entry and exit
@@ -9,6 +15,8 @@ block `T₁` at `r.ctr` (a number `V`, big-endian) into the running counter's
 slots, as `hiOf V` and `loOf V`, and writes `T₁ + n` back. `ctrArgs_ok`:
 the data's address and `n` to the registers the core keeps.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Modes.AArch64
 

@@ -1,8 +1,17 @@
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointPublic
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointPoints
-import VerifiedGarbage.Proof.Weierstrass.X86_64.JointMulTiming
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointPublic
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointPoints
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointMulTiming
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! The two-scalar multiplication leaks only the public verification inputs. -/
+
+@[expose] public section
+
 namespace VG.Proof.Ecdsa.Verify.X86_64
 open VG VG.X86_64 VG.Impl.Mont VG.Impl.Weierstrass VG.Impl.Weierstrass.X86_64 VG.Impl.Ecdsa.X86_64
 open VG.Proof.Mont VG.Proof.Mont.X86_64 VG.Proof.Weierstrass VG.Proof.Weierstrass.X86_64

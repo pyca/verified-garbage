@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.ChaCha20.X86.Stream.Init
-import VerifiedGarbage.Proof.ChaCha20.X86.Variant
-import VerifiedGarbage.Proof.Framework.X86.CallWith
+module
+
+public import VerifiedGarbage.Proof.ChaCha20.X86.Stream.Init
+public import VerifiedGarbage.Proof.ChaCha20.X86.Variant
+public import VerifiedGarbage.Proof.Framework.X86.CallWith
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Streaming ChaCha20 on x86 (32-bit): the entry state and the calls
@@ -12,6 +18,8 @@ their proofs of correctness, as ChaCha20-Poly1305 makes them: what they need
 of the state they are called from (`CallPre`), and what holds when they
 return.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.ChaCha20
 

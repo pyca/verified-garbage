@@ -1,8 +1,17 @@
-import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Aes
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.Buffers
-import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Base
+module
+
+public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Aes
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.Buffers
+public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Base
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## Env -/
+
+@[expose] public section
+
 section
 
 /-!

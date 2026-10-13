@@ -1,6 +1,8 @@
-import VerifiedGarbage.Impl.Ed448.Arm.Shake
-import VerifiedGarbage.Impl.Ed448.Arm.Scalar
-import VerifiedGarbage.Impl.Ed448.Arm.VerifyEquation
+module
+
+public import VerifiedGarbage.Impl.Ed448.Arm.Shake
+public import VerifiedGarbage.Impl.Ed448.Arm.Scalar
+public import VerifiedGarbage.Impl.Ed448.Arm.VerifyEquation
 
 /-!
 # Ed448 verification on ARMv7
@@ -29,6 +31,8 @@ the 114-byte hash (at `HASH`) and the challenge `k` (at `K`). Then:
 
 Every address and branch depends only on the pointers and the lengths.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Ed448.Arm.Verify
 

@@ -1,11 +1,19 @@
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtFront
-import VerifiedGarbage.Proof.Bignum.CrtResult
+module
+
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtFront
+public import VerifiedGarbage.Proof.Bignum.CrtResult
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSA with the CRT on AArch64: from the checks to the result
 
 `q`'s phase, `p`'s, and `m = m_q + q h` written out masked (`back_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.AArch64
 

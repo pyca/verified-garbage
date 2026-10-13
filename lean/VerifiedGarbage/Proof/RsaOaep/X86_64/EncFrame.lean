@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.RsaOaep.X86_64.EncCtx
-import VerifiedGarbage.Proof.RsaOaep.X86_64.Mgf
-import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
+module
+
+public import VerifiedGarbage.Proof.RsaOaep.X86_64.EncCtx
+public import VerifiedGarbage.Proof.RsaOaep.X86_64.Mgf
+public import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-OAEP encryption on x86-64: the precondition by name, and the frame
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 `EPre` names the facts of `encK.pre`; the frame is the `frameBytes` bytes
 below `rsp` (`fb`), within the stack the function uses (`stkR`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaOaep.X86_64
 

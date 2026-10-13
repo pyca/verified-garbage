@@ -1,13 +1,22 @@
-import VerifiedGarbage.Proof.Ed25519.Arm.VerifyMessage.Calls
-import VerifiedGarbage.Proof.Sha512.Stream
-import VerifiedGarbage.Proof.Ed25519.Arm.Whole.HashPre
-import VerifiedGarbage.Proof.Ed25519.Arm.VerifyMessage.Args
-import VerifiedGarbage.Impl.Ed25519.Arm.VerifyMessage
-import VerifiedGarbage.Proof.Ed25519.Arm.Whole.Wipe
-import VerifiedGarbage.Proof.X25519.Bytes
-import VerifiedGarbage.Proof.Ed25519.Arm.VerifyMessage.Equation
+module
+
+public import VerifiedGarbage.Proof.Ed25519.Arm.VerifyMessage.Calls
+public import VerifiedGarbage.Proof.Sha512.Stream
+public import VerifiedGarbage.Proof.Ed25519.Arm.Whole.HashPre
+public import VerifiedGarbage.Proof.Ed25519.Arm.VerifyMessage.Args
+public import VerifiedGarbage.Impl.Ed25519.Arm.VerifyMessage
+public import VerifiedGarbage.Proof.Ed25519.Arm.Whole.Wipe
+public import VerifiedGarbage.Proof.X25519.Bytes
+public import VerifiedGarbage.Proof.Ed25519.Arm.VerifyMessage.Equation
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Ed25519.Arm.VerifyMessage.HashSteps`. -/
+
+@[expose] public section
+
 section
 /-! Merged from `Proof.Ed25519.Arm.VerifyMessage.HashReady`. -/
 section

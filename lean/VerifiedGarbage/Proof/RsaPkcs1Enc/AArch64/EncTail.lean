@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncCall
+module
+
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncCall
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-PKCS1-v1_5 encryption on AArch64: the mask
@@ -7,6 +13,8 @@ After the call, `maskArgs` masks the result with the zero test of `PS`, and
 `maskLoop` masks each byte of `out` with it, overwriting `EM` with zeros
 (`maskLoop_ok`): if `PS` has a zero byte, `out` is zeros and the result 0.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPkcs1Enc.AArch64.Enc
 

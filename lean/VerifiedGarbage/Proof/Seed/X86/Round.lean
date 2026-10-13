@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Seed.X86.Steps
+module
+
+public import VerifiedGarbage.Proof.Seed.X86.Steps
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # A round on x86 (32-bit)
@@ -11,6 +17,8 @@ on every lane, `round l r`, with `L` at `l` and `R` at `r`, does RFC 4269
 `kp`: the new `L` is the old `R`, at `r`, and the new `R` is at `l`
 (`quadAt`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Seed.X86
 

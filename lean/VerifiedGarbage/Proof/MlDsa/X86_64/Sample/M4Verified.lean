@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.M4Scalar
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.M4Scalar
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.M4Scalar
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on x86-64: `vg_mldsa_expand_mask_poly4` and `vg_mldsa_expand_mask_poly4_avx2`, verified
@@ -7,6 +14,8 @@ Untrusted: everything here is checked by Lean. The baseline implementation
 is constant time as the calls are (`expandMask_ct`, from their pointers and
 `γ₁`), and the contract of the proofs (`em4K`) is the shared one of `Spec/`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86_64.Mask4
 

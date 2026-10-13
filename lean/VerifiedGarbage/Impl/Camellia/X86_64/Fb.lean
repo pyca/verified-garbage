@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Camellia.X86_64.Ctr
-import VerifiedGarbage.Impl.Modes.X86_64.Fb
+module
+
+public import VerifiedGarbage.Impl.Camellia.X86_64.Ctr
+public import VerifiedGarbage.Impl.Modes.X86_64.Fb
 
 /-!
 # Camellia-OFB and Camellia-CFB128, bitsliced, on x86-64
@@ -11,6 +13,8 @@ generic OFB and CFB (`Impl/Modes/X86_64/Fb.lean`) over Camellia's core with
 its subkeys in encryption order (`dirCore .encrypt`). Each block's input
 depends on the block before it, so each is enciphered alone, in a batch.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Camellia.X86_64
 

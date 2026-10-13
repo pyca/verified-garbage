@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Poly1305.X86_64.Ifma.Bound
+module
+
+public import VerifiedGarbage.Proof.Poly1305.X86_64.Ifma.Bound
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Poly1305 on x86-64 with AVX-512 IFMA: the product
@@ -8,6 +14,8 @@ with `S` twenty times limbs 1 and 2 of `Y`, and carries: `Limbs44.mul`, with
 the limbs small enough that nothing wraps and the multiply-adds take them
 whole.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Poly1305.X86_64.Ifma
 

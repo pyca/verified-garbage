@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Camellia.X86.Round
-import VerifiedGarbage.Proof.Framework.X86.Exec
-import VerifiedGarbage.Proof.Framework.X86.RegUpd
+module
+
+public import VerifiedGarbage.Proof.Camellia.X86.Round
+public import VerifiedGarbage.Proof.Framework.X86.Exec
+public import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # FL and FLINV on x86 (32-bit)
@@ -11,6 +17,8 @@ and are run symbolically: one plane's instructions for any plane
 (`flRotStep_ok`, `flOrStep_ok`), composed by induction over the planes.
 Every plane stays in its slot; each step computes one in `eax`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Camellia.X86
 

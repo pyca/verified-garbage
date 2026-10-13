@@ -1,7 +1,17 @@
-import VerifiedGarbage.Proof.Ed448.AArch64.Point56.Call
-import VerifiedGarbage.Proof.Framework.AArch64.Taint
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.TCB.AArch64.Target
+module
+
+public import VerifiedGarbage.Proof.Ed448.AArch64.Point56.Call
+meta import VerifiedGarbage.Proof.Ed448.AArch64.Point56.Call
+public import VerifiedGarbage.Proof.Framework.AArch64.Taint
+meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.TCB.AArch64.Target
+meta import VerifiedGarbage.TCB.AArch64.Target
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_ed448_r56_point_add`, `vg_ed448_r56_point_double` and `vg_gf448_r56_pow_p34` on AArch64, verified
@@ -16,6 +26,8 @@ covers (`keeps_of_unstored`). The callee-saved registers are restored (`FnPost`)
 and no instruction writes `v8`–`v15`. Constant time by taint tracking: only the
 pointer, in `x0`, is public, and every address is `ws` plus a constant.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.AArch64.Point56
 

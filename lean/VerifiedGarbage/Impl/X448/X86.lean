@@ -1,5 +1,7 @@
-import VerifiedGarbage.TCB.X86.Isa
-import VerifiedGarbage.Spec.X448.Field16
+module
+
+public import VerifiedGarbage.TCB.X86.Isa
+public import VerifiedGarbage.Spec.X448.Field16
 
 /-!
 # X448: x86 (32-bit) implementation
@@ -17,6 +19,8 @@ of the field functions, whose arguments take the 20 bytes below the return
 address. `edi` holds the working space and `esi` the ladder or squaring
 counter.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.X448.X86
 

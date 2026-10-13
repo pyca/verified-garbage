@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Rc4.AArch64.ApplyFinish
-import VerifiedGarbage.TCB.AArch64.Target
+module
+
+public import VerifiedGarbage.Proof.Rc4.AArch64.ApplyFinish
+public import VerifiedGarbage.TCB.AArch64.Target
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The PRGA
@@ -8,6 +14,8 @@ import VerifiedGarbage.TCB.AArch64.Target
 data and leaves the context `len` steps on, preserving the low halves of
 `v8`–`v15`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rc4.AArch64
 open VG VG.AArch64 VG.AArch64.RegUpd VG.Impl.Rc4.AArch64 VG.Spec.Rc4 VG.Proof.Rc4

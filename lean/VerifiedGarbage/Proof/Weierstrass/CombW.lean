@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Weierstrass.Comb
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.Comb
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The fixed-base comb with `w`-bit digits, on any target
@@ -14,6 +20,8 @@ takes `[combEW w k J (j+1)]G` to `[combEW w k J j]G` (`combW_add`).
 `CombOkW` is what the code needs of its tables: entry `m` of table `j` is
 `[(m + 1) B^j]G` for `m < H`, and the start is `[H Σ_{i<J} B^i]G`, affine.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass
 

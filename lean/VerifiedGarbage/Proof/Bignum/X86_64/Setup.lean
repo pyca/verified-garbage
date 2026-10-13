@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.Store
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.Store
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Multiword arithmetic on x86-64: setting up
@@ -6,6 +12,8 @@ import VerifiedGarbage.Proof.Bignum.X86_64.Store
 `minv`: `-m₀⁻¹ mod 2⁶⁴` for an odd `m₀` (`minv_ok`), by five steps of
 Newton's iteration from `x = m₀`, which is right modulo 8.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64
 

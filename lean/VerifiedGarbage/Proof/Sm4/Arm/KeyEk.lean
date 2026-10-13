@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Sm4.Arm.KeyLoop
+module
+
+public import VerifiedGarbage.Proof.Sm4.Arm.KeyLoop
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The SM4 key schedule on ARMv7: the whole function
@@ -9,6 +15,8 @@ in its slot, stores the table of `CK`'s planes, bitslices eight copies of
 `MK ⊕ FK`, runs the loop (`ekIter_ok`) and restores the registers; the
 schedule is the specification's `expandKey`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sm4
 

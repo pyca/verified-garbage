@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.RsaPss.Verify
-import VerifiedGarbage.Proof.Rsa.Checked
+module
+
+public import VerifiedGarbage.Proof.RsaPss.Verify
+public import VerifiedGarbage.Proof.Rsa.Checked
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSASSA-PSS: every signature verifies
@@ -11,6 +17,8 @@ verification accepts every encoding (`verify_iff`). This needs nothing of
 the key: for a key `checkKey` accepts with prime factors, `sign` never
 faults (`Proof.Rsa.privateChecked_ne_fault`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPss
 

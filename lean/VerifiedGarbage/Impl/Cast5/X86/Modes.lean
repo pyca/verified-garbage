@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Cast5.X86
-import VerifiedGarbage.Impl.Modes.X86.Seq
+module
+
+public import VerifiedGarbage.Impl.Cast5.X86
+public import VerifiedGarbage.Impl.Modes.X86.Seq
 
 /-!
 # CAST5's core for the modes on x86 (32-bit)
@@ -21,6 +23,8 @@ holds; `store` therefore reads the modes' data pointer and steps left
 (`Core.dSlot`, `Core.nSlot`) before it and writes them back, unchanged,
 after, as ECB's `store` does for its own slots.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Cast5.X86.Modes
 

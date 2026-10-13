@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.Framework.Arm.Lit
-import VerifiedGarbage.Impl.Camellia.Arm.Ecb
-import VerifiedGarbage.Impl.Camellia.Arm.ExpandKey
+module
+
+public import VerifiedGarbage.Proof.Framework.Arm.Lit
+meta import VerifiedGarbage.Proof.Framework.Arm.Lit
+public import VerifiedGarbage.Impl.Camellia.Arm.Ecb
+meta import VerifiedGarbage.Impl.Camellia.Arm.Ecb
+public import VerifiedGarbage.Impl.Camellia.Arm.ExpandKey
+meta import VerifiedGarbage.Impl.Camellia.Arm.ExpandKey
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Camellia on ARMv7: the code as literals
@@ -10,6 +19,8 @@ The code of the key expansion and of ECB in both directions as literals
 whole functions (`taint_decide`, `lit_decide`) read rather than build the
 code again in each of them.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Camellia.Arm
 

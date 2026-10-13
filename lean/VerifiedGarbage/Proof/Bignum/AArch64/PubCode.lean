@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Bignum.AArch64.PdCode
+module
+
+public import VerifiedGarbage.Proof.Bignum.AArch64.PdCode
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAEP from the modulus on AArch64: correctness
@@ -8,6 +14,8 @@ runs `Precompute`'s steps but for writing the values out, and
 `Precomputed.rest` (`pubCode_correct`), against `pubContract`, which states
 the shared contract's precondition on the registers and the stack.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.AArch64
 

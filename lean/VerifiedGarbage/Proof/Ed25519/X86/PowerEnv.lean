@@ -1,8 +1,17 @@
-import VerifiedGarbage.Impl.Ed25519.X86.Power
-import VerifiedGarbage.Proof.Ed25519.X86.Field
-import VerifiedGarbage.Proof.X25519.Invert
+module
+
+public import VerifiedGarbage.Impl.Ed25519.X86.Power
+public import VerifiedGarbage.Proof.Ed25519.X86.Field
+public import VerifiedGarbage.Proof.X25519.Invert
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Fixed-count squaring and compositional field exponentiation. -/
+
+@[expose] public section
+
 namespace VG.Proof.Ed25519.X86
 open VG VG.X86 VG.Impl.Ed25519.X86
 open VG.Impl.X25519.X86 (mul)

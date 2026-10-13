@@ -1,6 +1,14 @@
-import VerifiedGarbage.Proof.TripleDes.X86_64.KeySteps
-import VerifiedGarbage.Proof.TripleDes.KeySchedule
-import VerifiedGarbage.Proof.Rc2.X86_64.Lookup
+module
+
+public import VerifiedGarbage.Proof.TripleDes.X86_64.KeySteps
+public import VerifiedGarbage.Proof.TripleDes.KeySchedule
+public import VerifiedGarbage.Proof.Rc2.X86_64.Lookup
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.TripleDes.X86_64.Key
 

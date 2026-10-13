@@ -1,13 +1,19 @@
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx.Dec
-import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Ghash
-import VerifiedGarbage.Impl.Gcm.X86_64.StitchAvx8
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.AesHash
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.SetupDispatch
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.Tail
-import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Load
-import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Context
-import VerifiedGarbage.Proof.Gcm.Powers
-import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.SpecTo
+module
+
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx.Dec
+public import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Ghash
+public import VerifiedGarbage.Impl.Gcm.X86_64.StitchAvx8
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.AesHash
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.SetupDispatch
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.Tail
+public import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Load
+public import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Context
+public import VerifiedGarbage.Proof.Gcm.Powers
+public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.SpecTo
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # Eight-state AES-NI/GHASH correctness
 
@@ -15,6 +21,8 @@ Field algebra is confined to this boundary module. The power-tree helpers
 are reused from the retired sixteen-state AVX proof; loop modules use the
 abstract `HashLaw` and never import polynomial algebra.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Gcm.X86_64.StitchAvx
 

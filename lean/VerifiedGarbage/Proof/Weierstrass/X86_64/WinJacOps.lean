@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Weierstrass.X86_64.CachedJacOps
-import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacLay
-import VerifiedGarbage.Proof.Weierstrass.JacCoZ
-import VerifiedGarbage.Proof.Weierstrass.Layout
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.CachedJacOps
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacLay
+public import VerifiedGarbage.Proof.Weierstrass.JacCoZ
+public import VerifiedGarbage.Proof.Weierstrass.Layout
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The Jacobian window method on x86-64: its field programs
@@ -11,6 +17,8 @@ The table's co-Z formulas, DBLU and ZADDU, as numbered programs (`dbluN`,
 `tblProg_ok`); and the loop's addition `D = R + T` with `T`'s powers
 (`cadd_ok`, from `CachedJac`'s numbering).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.X86_64
 

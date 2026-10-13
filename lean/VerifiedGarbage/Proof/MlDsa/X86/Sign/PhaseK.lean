@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlDsa.X86.Sign.Run
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86.Sign.Run
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA signing on x86 (32-bit): the checks of an iteration
@@ -9,6 +15,8 @@ in place of `y` (`zR_piece`), `w - cs₂` in place of `w` and the norm of its
 `LowBits` (`r0R_piece`), and `ct₀`, `w - cs₂ + ct₀` and the hint (`hR_piece`);
 `OK` is then 1 exactly when the checks pass (`onesOk_piece`, `pass_iff`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86.Sign
 

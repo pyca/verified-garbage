@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.X448.X86_64.Adx.Mul
+module
+
+public import VerifiedGarbage.Proof.X448.X86_64.Adx.Mul
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 on x86-64: squaring with BMI2 and ADX
@@ -7,6 +13,8 @@ The rows of cross products (`sqRow_ok`, for any row: the window shrinks by
 one word a row), the doubling and the squares (`dblRow_ok`, two words a
 step, the carries in CF and OF), and `sqrX`, which ends with `reduce`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448.X86_64
 

@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Modes.X86_64.Group
-import VerifiedGarbage.Proof.Modes.X86_64.Unchain
-import VerifiedGarbage.Proof.Modes.Cbc
+module
+
+public import VerifiedGarbage.Proof.Modes.X86_64.Group
+public import VerifiedGarbage.Proof.Modes.X86_64.Unchain
+public import VerifiedGarbage.Proof.Modes.Cbc
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # CBC on x86-64, for any core: the entry and one group of decryption
@@ -13,6 +19,8 @@ the core's cipher being the inverse cipher), unchains them into the data
 (`unchainBlocks_wp`) and steps to the next group. Block `j` of the data
 becomes CBC's plaintext block `j` (`cbcOut`). Blocks are `8 bw` bytes.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Modes.X86_64
 

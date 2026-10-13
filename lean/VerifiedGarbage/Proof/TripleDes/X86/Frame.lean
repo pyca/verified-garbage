@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.TripleDes.X86.Key.Verified
-import VerifiedGarbage.Proof.TripleDes.X86.Ecb.Verified
-import VerifiedGarbage.Proof.TripleDes.Scratch
-import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
+module
+
+public import VerifiedGarbage.Proof.TripleDes.X86.Key.Verified
+public import VerifiedGarbage.Proof.TripleDes.X86.Ecb.Verified
+public import VerifiedGarbage.Proof.TripleDes.Scratch
+public import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Triple DES key expansion and ECB on x86, with their working space on the stack
@@ -13,6 +19,8 @@ hold the key schedule and the data: 532 bytes for key expansion (512 of
 working space) and 1044 for ECB (1024). The copies are read only where the
 postconditions read the buffers (`Proof/TripleDes/Scratch.lean`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.TripleDes.X86
 

@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Scrypt.BlockMix
-import VerifiedGarbage.Spec.Scrypt.Contract
-import VerifiedGarbage.Proof.Framework.PowLit
+module
+
+public import VerifiedGarbage.Proof.Scrypt.BlockMix
+public import VerifiedGarbage.Spec.Scrypt.Contract
+public import VerifiedGarbage.Proof.Framework.PowLit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # scryptROMix: facts about the specification
@@ -10,6 +16,8 @@ writes (`vList`), step 3 one iteration at a time (`mixLoop_succ_fst`,
 `mixLoop_succ_snd`), the lengths of the blocks, and `Integerify (X) mod 2^e`
 as a little-endian word read from memory (`integerify_mod`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Scrypt
 

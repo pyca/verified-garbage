@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.AesCbc.Arm.Loop
-import VerifiedGarbage.Proof.CmacAes.Arm.Words
-import VerifiedGarbage.Proof.AesOcb.Arm.Callee
+module
+
+public import VerifiedGarbage.Proof.AesCbc.Arm.Loop
+public import VerifiedGarbage.Proof.CmacAes.Arm.Words
+public import VerifiedGarbage.Proof.AesOcb.Arm.Callee
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CBC on ARMv7: one block
@@ -10,6 +16,8 @@ loop invariant from `k` blocks to `k + 1` (`BodyOk`). The block functions are
 called as AES-OCB calls them (`Proof.AesOcb.Arm.blk_call`), in a frame that
 pushes the working space.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesCbc.Arm
 

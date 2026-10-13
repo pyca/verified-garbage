@@ -1,22 +1,28 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackVerified
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentMaskCall
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallSelected
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejSelected
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Depth
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.SignCT
-import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.AddSub
-import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Mul
-import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.NttInv
-import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Bits
-import VerifiedGarbage.Proof.MlDsa.AArch64.Round.NormLt
-import VerifiedGarbage.Proof.MlDsa.AArch64.Round.MakeHint
-import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.SimpleBitPack
-import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.BitPack
-import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Unpack
-import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.HintPack
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.RejNttCT
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.ExpandMask
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Ball
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackVerified
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentMaskCall
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallSelected
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejSelected
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Depth
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.SignCT
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.AddSub
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Mul
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.NttInv
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Bits
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Round.NormLt
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Round.MakeHint
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.SimpleBitPack
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.BitPack
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Unpack
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.HintPack
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.RejNttCT
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.ExpandMask
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Ball
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA signing on AArch64: the primitives it calls
@@ -29,6 +35,8 @@ their public data and that they succeed only if the algorithm finishes within
 `maxBounds` (from what their own proofs say they return, `RejNtt.correct` and
 `Ball.correct`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Sign
 

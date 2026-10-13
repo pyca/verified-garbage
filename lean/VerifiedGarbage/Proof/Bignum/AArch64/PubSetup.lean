@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Bignum.AArch64.PubR2
+module
+
+public import VerifiedGarbage.Proof.Bignum.AArch64.PubR2
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSA on AArch64: the setup
@@ -8,6 +14,8 @@ From a header holding `k` (slot `sK`): `w = ⌈k / 8⌉` and the arrays' bases
 (`loadArr_ok`); and `pcLoad`, the modulus into array `aN` and `-m⁻¹` into
 its slot (`pcLoad_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.AArch64
 

@@ -1,11 +1,17 @@
-import VerifiedGarbage.Impl.Pbkdf2.Md.X86_64
-import VerifiedGarbage.Proof.MdStream.X86_64.UpdateCT
-import VerifiedGarbage.Proof.MdStream.X86_64.FinalizeCT
-import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Calls
-import VerifiedGarbage.Proof.Hmac.Generic.Common
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Pbkdf2.X86_64.Iterate
-import VerifiedGarbage.Spec.Mgf1
+module
+
+public import VerifiedGarbage.Impl.Pbkdf2.Md.X86_64
+public import VerifiedGarbage.Proof.MdStream.X86_64.UpdateCT
+public import VerifiedGarbage.Proof.MdStream.X86_64.FinalizeCT
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Calls
+public import VerifiedGarbage.Proof.Hmac.Generic.Common
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Pbkdf2.X86_64.Iterate
+public import VerifiedGarbage.Spec.Mgf1
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # HMAC and PBKDF2-HMAC over any Merkle–Damgård hash function on x86-64: the hash function
@@ -21,6 +27,8 @@ verified; and its sizes fit.
 From it, the streaming functions are verified against the contracts HMAC's
 and PBKDF2's proofs call them with (`HashOK.stream`, `Calls.lean`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Pbkdf2.Md.X86_64
 

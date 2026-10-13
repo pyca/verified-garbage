@@ -1,11 +1,17 @@
-import VerifiedGarbage.Proof.Ed448.X86_64.VerifyDecode
-import VerifiedGarbage.Proof.Ed448.X86_64.Window.Joint
-import VerifiedGarbage.Proof.Ed448.X86_64.VerifyBits
-import VerifiedGarbage.Proof.Ed448.X86_64.BaseConst
-import VerifiedGarbage.Proof.Ed448.X86_64.BaseMain
-import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.Framework.X86_64.Abi
-import VerifiedGarbage.Proof.Ed448.X86_64.VerifyLocal
+module
+
+public import VerifiedGarbage.Proof.Ed448.X86_64.VerifyDecode
+public import VerifiedGarbage.Proof.Ed448.X86_64.Window.Joint
+public import VerifiedGarbage.Proof.Ed448.X86_64.VerifyBits
+public import VerifiedGarbage.Proof.Ed448.X86_64.BaseConst
+public import VerifiedGarbage.Proof.Ed448.X86_64.BaseMain
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.Framework.X86_64.Abi
+public import VerifiedGarbage.Proof.Ed448.X86_64.VerifyLocal
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 verification's equation on x86-64: the whole function
@@ -19,6 +25,8 @@ points decode; malformed inputs still execute safely and are rejected;
 every write is in the working space, so the inputs are read unchanged, the
 callee-saved registers are restored from it, and the return address is kept.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.X86_64
 

@@ -1,7 +1,12 @@
-import VerifiedGarbage.Impl.Ed25519.Arm.Scalar
-import VerifiedGarbage.Impl.Ed25519.Arm.Packed
+module
+
+public import VerifiedGarbage.Impl.Ed25519.Arm.Scalar
+public import VerifiedGarbage.Impl.Ed25519.Arm.Packed
 
 /-! The zero-stack ARM ABI wrappers for scalar arithmetic. -/
+
+@[expose] public section
+
 namespace VG.Impl.Ed25519.Arm
 open VG VG.Arm
 

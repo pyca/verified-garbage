@@ -1,13 +1,22 @@
-import VerifiedGarbage.Impl.Gcm.X86_64.StitchAvx8
-import VerifiedGarbage.Proof.Aes.X86_64.Vaes.Rounds
-import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Exec
-import VerifiedGarbage.Proof.Framework.X86_64.Lane0
-import VerifiedGarbage.Proof.Framework.X86_64.YFrame
-import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Ctr32
-import VerifiedGarbage.Proof.Gcm.X86_64.Rev
+module
+
+public import VerifiedGarbage.Impl.Gcm.X86_64.StitchAvx8
+public import VerifiedGarbage.Proof.Aes.X86_64.Vaes.Rounds
+public import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Exec
+public import VerifiedGarbage.Proof.Framework.X86_64.Lane0
+public import VerifiedGarbage.Proof.Framework.X86_64.YFrame
+public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+public import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Ctr32
+public import VerifiedGarbage.Proof.Gcm.X86_64.Rev
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## Aes -/
+
+@[expose] public section
+
 section
 
 /-!

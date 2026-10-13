@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.MlDsa.Arith.VectorNtt
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.VMem
-import VerifiedGarbage.Proof.MlKem.X86_64.VLay
+module
+
+public import VerifiedGarbage.Proof.MlDsa.Arith.VectorNtt
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.VMem
+public import VerifiedGarbage.Proof.MlKem.X86_64.VLay
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on x86-64: the layers of the NTT and its inverse with `len ≥ 4`
@@ -11,6 +17,8 @@ registers (`VBflyOk`), and any block of the specification whose butterflies do
 of a block (`vblock_ok`), and the `128 / len` blocks of a layer (`vlay_ok`),
 on the polynomial at `fP`, with the zetas from the table at `sP`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86_64.Arith
 

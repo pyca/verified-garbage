@@ -1,9 +1,17 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejSqueeze
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Call
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Keep
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFive
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejSqueeze
+public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Call
+public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Keep
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFive
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## From `ResidentRejPair.lean` -/
+
+@[expose] public section
 
 section
 

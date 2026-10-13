@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.AesGcm.Arm
+module
+
+public import VerifiedGarbage.Impl.AesGcm.Arm
 
 /-!
 # AES-GCM one-shot encryption out of place, from a list of slices: 32-bit ARM implementation
@@ -22,6 +24,8 @@ one at a time (`copyLoop`). Every register the function writes is
 caller-saved, and the branches are on `src_count` and the slices' lengths
 alone.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.AesGcm.Arm.SealGather
 

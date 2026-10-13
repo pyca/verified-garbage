@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Ctx
-import VerifiedGarbage.Proof.RsaKeyGen.AArch64.LoadC
-import VerifiedGarbage.Proof.Bignum.AArch64.HdrPairs
+module
+
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Ctx
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.LoadC
+public import VerifiedGarbage.Proof.Bignum.AArch64.HdrPairs
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # An RSA key from its primes on AArch64: the entry and the head
@@ -9,6 +15,8 @@ import VerifiedGarbage.Proof.Bignum.AArch64.HdrPairs
 (`keyEntry_ok`); `Keys.head` sets up the working space for `W = n_len / 8`
 (`kHead_ok`); together they leave `KS` (`keyStart_k`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaKeyGen.AArch64.Key
 

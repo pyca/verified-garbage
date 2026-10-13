@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Ed448.Arm.ScalarMulAdd
+module
+
+public import VerifiedGarbage.Proof.Ed448.Arm.ScalarMulAdd
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 scalar multiply-add on ARMv7: the whole function
@@ -6,6 +12,8 @@ import VerifiedGarbage.Proof.Ed448.Arm.ScalarMulAdd
 `vg_ed448_scalar_mul_add(out = r0, r = r1, k = r2, s = r3, scratch = [sp])`
 against a local contract (`scalarMulAddLocal`), the ABI included.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.Arm
 

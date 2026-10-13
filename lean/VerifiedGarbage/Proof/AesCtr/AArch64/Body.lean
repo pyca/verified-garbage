@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesCtr.AArch64.Steps
-import VerifiedGarbage.Proof.AesGcm.AArch64.Callee
+module
+
+public import VerifiedGarbage.Proof.AesCtr.AArch64.Steps
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Callee
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CTR on AArch64: the code before the call
@@ -10,6 +16,8 @@ set up a call of `vg_aes_ctr32` (AES-GCM's `CtrCall`) on the next
 `mOf s₀ k` blocks: what is left, but no further than where the last 32
 bits of the counter block wrap around.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesCtr.AArch64
 

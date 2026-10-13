@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Gh
-import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Aes
+module
+
+public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Gh
+public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Aes
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Interleaved counter mode and GHASH: hashing a group between the rounds
@@ -14,6 +20,8 @@ The GHASH work between the rounds of a batch is `gq ord base fin`: loads
 reduction after round 5. `QG` is what holds before the blocks after round
 `j`, and `gq_ok` is the obligation of `batch_ok` for it.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Gcm.X86_64.Stitch
 

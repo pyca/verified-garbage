@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.MlDsa.X86_64.Pack.Stream
+module
+
+public import VerifiedGarbage.Impl.MlDsa.X86_64.Pack.Stream
 
 /-!
 # ML-DSA on x86-64: `vg_mldsa_hint_bit_pack` and `vg_mldsa_hint_bit_unpack`
@@ -25,6 +27,8 @@ function of the hint alone.
   (more than `ω`, and than any byte), which ends the loop it is in and skips
   the rest; the return value is 1 if the index is at most `ω`, 0 otherwise.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.X86_64.Pack
 

@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Framework.Arm.Linear
+module
+
+public import VerifiedGarbage.Proof.Framework.Arm.Linear
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Linear blocks with words in slots, on ARMv7
@@ -8,6 +14,8 @@ slots as well as registers, constants in slots, and output slots (and the
 slots kept), as Camellia's on AArch64
 (`Proof/Camellia/AArch64/Linear.lean`), for 32-bit words.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sm4.Arm
 

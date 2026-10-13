@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Argon2.Arm.Derive.BodyCT
+module
+
+public import VerifiedGarbage.Proof.Argon2.Arm.Derive.BodyCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Argon2 on ARMv7: the derivation is verified
@@ -8,6 +14,8 @@ time, and satisfiable: `satState`). `deriveShared_verified`: against the
 shared contract `Spec.Argon2.deriveContract`, through `deriveFlat`, whose
 precondition spells `DPre` out as `Sig.contract` lays the regions out.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Argon2.Arm.Derive
 

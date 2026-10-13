@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.TripleDes.X86_64.Cbc
-import VerifiedGarbage.Impl.Modes.X86_64.Cfb8
+module
+
+public import VerifiedGarbage.Impl.TripleDes.X86_64.Cbc
+public import VerifiedGarbage.Impl.Modes.X86_64.Cfb8
 
 /-!
 # Triple DES-OFB, -CFB64 and -CFB8 on x86-64
@@ -11,6 +13,8 @@ CBC encryption's core (`dirCore .encrypt`, the scalar block function, one
 8-byte block at a time), with the working space in the scratch buffer, which
 the artifact allocates on the stack.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.TripleDes.X86_64
 

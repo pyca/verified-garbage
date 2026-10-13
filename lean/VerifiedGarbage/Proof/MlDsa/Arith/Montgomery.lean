@@ -1,7 +1,15 @@
-import VerifiedGarbage.Proof.MlDsa.Arith.Ntt
-import VerifiedGarbage.Spec.MlDsa.Montgomery
+module
+
+public import VerifiedGarbage.Proof.MlDsa.Arith.Ntt
+public import VerifiedGarbage.Spec.MlDsa.Montgomery
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # Representation identities for Montgomery-scaled ML-DSA callers -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Arith.Montgomery
 

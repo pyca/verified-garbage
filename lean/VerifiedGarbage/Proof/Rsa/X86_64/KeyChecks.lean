@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Rsa.X86_64.KeyReduce
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtRows
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxFused
-import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
+module
+
+public import VerifiedGarbage.Proof.Rsa.X86_64.KeyReduce
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtRows
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxFused
+public import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_check_key` on x86-64: the pieces of the checks
@@ -11,6 +17,8 @@ In the workspace at `B` (`Good`): `loadNum` loads a number (`loadNum_ok`),
 `decM` subtracts 1 from `m` (`decM_ok`), and `mulE` and `mulXR` compute the
 products the reductions start from (`mulE_ok`, `mulXR_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.X86_64.Key
 

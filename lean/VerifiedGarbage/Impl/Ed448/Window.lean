@@ -1,6 +1,11 @@
-import VerifiedGarbage.Spec.X448
+module
+
+public import VerifiedGarbage.Spec.X448
 
 /-! Affine multiples `[i]B`, kernel-checked by `Proof/Ed448/Window.lean`. -/
+
+@[expose] public section
+
 namespace VG.Impl.Ed448.Window
 
 def rows : List (Spec.X448.Fe × Spec.X448.Fe) := [

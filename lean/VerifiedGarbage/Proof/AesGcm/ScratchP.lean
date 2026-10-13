@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesGcm.Scratch
-import VerifiedGarbage.Spec.Gcm.Precomputed
+module
+
+public import VerifiedGarbage.Proof.AesGcm.Scratch
+public import VerifiedGarbage.Spec.Gcm.Precomputed
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM's `_precomputed` functions with their working space as an argument
@@ -11,6 +17,8 @@ pre- and postconditions read the memory on entry only within the function's
 buffers: the key context's powers of its hash subkey are in its 1024 bytes
 (`powersRepr_congr`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesGcm
 

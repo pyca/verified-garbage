@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Hash
-import VerifiedGarbage.Proof.Pbkdf2.MdKeys
-import VerifiedGarbage.Proof.Framework.Omega
+module
+
+public import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Hash
+public import VerifiedGarbage.Proof.Pbkdf2.MdKeys
+public import VerifiedGarbage.Proof.Framework.Omega
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # HMAC's `init` over a Merkle–Damgård hash function on ARMv7: correct
@@ -15,6 +21,8 @@ start (`keys_ok`), the outer buffer from the inner one, word by word
 (`Md.repr_block`). The contract is `initG`
 (`Proof/Pbkdf2/Stream/Arm/Hash.lean`), the shared one's at 16 bytes of stack.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Pbkdf2.Md.Arm
 

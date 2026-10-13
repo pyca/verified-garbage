@@ -1,8 +1,21 @@
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
-import VerifiedGarbage.Proof.Framework.AArch64.Taint
-import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.Allocated
-import VerifiedGarbage.Proof.Weierstrass.AArch64.AllocatedFrame
-import VerifiedGarbage.Proof.Framework.AArch64.Spill
+module
+
+public import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
+public import VerifiedGarbage.Proof.Framework.AArch64.Taint
+meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
+public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.Allocated
+meta import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.Allocated
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.AllocatedFrame
+meta import VerifiedGarbage.Proof.Weierstrass.AArch64.AllocatedFrame
+public import VerifiedGarbage.Proof.Framework.AArch64.Spill
+meta import VerifiedGarbage.Proof.Framework.AArch64.Spill
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.AArch64
 open VG VG.AArch64 VG.Proof.Mont VG.Proof.Mont.AArch64 VG.Proof.Weierstrass

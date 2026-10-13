@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyFrame
-import VerifiedGarbage.Proof.RsaPss.AArch64.SignCall
-import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Callee
+module
+
+public import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyFrame
+public import VerifiedGarbage.Proof.RsaPss.AArch64.SignCall
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Callee
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSASSA-PSS verification on AArch64: the call of the public operation
@@ -9,6 +15,8 @@ import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Callee
 registers (`AtCall`); `call_ok`: the call writes RSAVP1 of the signature (or
 zeros) to `EM` and keeps the frame and our registers (`AfterCall`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPss.AArch64.Vfy
 

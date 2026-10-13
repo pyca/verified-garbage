@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MdStream.Spec
+module
+
+public import VerifiedGarbage.Proof.MdStream.Spec
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Streaming Merkle–Damgård hash functions: prefixes of the digest
@@ -7,6 +13,8 @@ A truncated digest (SHA-224's, SHA-384's, …) is the first words of the final
 hash value, each written as the same number of bytes: these facts take the
 first of them, and the regions holding them.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MdStream
 

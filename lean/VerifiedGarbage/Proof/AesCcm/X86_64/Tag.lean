@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesCcm.X86_64.Blocks
+module
+
+public import VerifiedGarbage.Proof.AesCcm.X86_64.Blocks
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CCM on x86-64: the tag (`tag y`)
@@ -8,6 +14,8 @@ Untrusted: everything here is checked by Lean. `tag y` makes `Ctr₀` at
 the state XORed with `CIPH_K(Ctr₀)`, CCM's keystream from `Ctr₀` (`tag_ok`),
 whose first `t` bytes are the MAC encrypted (`Proof.AesCcm.take_xorFrom_zero`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

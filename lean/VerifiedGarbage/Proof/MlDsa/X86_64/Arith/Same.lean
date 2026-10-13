@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
-import VerifiedGarbage.Impl.MlDsa.X86_64.Sign.Frag
-import VerifiedGarbage.Impl.MlDsa.X86_64.Verify.Frag
-import VerifiedGarbage.Impl.MlKem.X86_64.Frag
+module
+
+public import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
+public import VerifiedGarbage.Impl.MlDsa.X86_64.Sign.Frag
+public import VerifiedGarbage.Impl.MlDsa.X86_64.Verify.Frag
+public import VerifiedGarbage.Impl.MlKem.X86_64.Frag
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on x86-64: checks of code, but for the functions it calls
@@ -16,6 +22,8 @@ for any implementation of the polynomial arithmetic, are checked once with
 every function of it empty, so that the kernel evaluates no implementation of
 it.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86_64
 

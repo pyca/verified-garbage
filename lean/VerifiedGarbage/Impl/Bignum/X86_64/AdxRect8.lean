@@ -1,6 +1,11 @@
-import VerifiedGarbage.Impl.Bignum.X86_64.AdxRotate8
+module
+
+public import VerifiedGarbage.Impl.Bignum.X86_64.AdxRotate8
 
 /-! Register-resident rectangular products for the raw multiplication kernel. -/
+
+@[expose] public section
+
 namespace VG.Impl.Bignum.X86_64.AdxRect8
 open VG.X86_64
 

@@ -1,6 +1,17 @@
-import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Wrap
-import VerifiedGarbage.Proof.Framework.AArch64.RelCT
-import VerifiedGarbage.Proof.Framework.AArch64.Taint
+module
+
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Wrap
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Wrap
+public import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+meta import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+public import VerifiedGarbage.Proof.Framework.AArch64.Taint
+meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.Ed25519.AArch64.Whole
 open VG VG.AArch64 VG.Impl.Ed25519.AArch64.Whole

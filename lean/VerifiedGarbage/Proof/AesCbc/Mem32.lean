@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesCbc.Spec
-import VerifiedGarbage.Proof.Cmac.Block32
+module
+
+public import VerifiedGarbage.Proof.AesCbc.Spec
+public import VerifiedGarbage.Proof.Cmac.Block32
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # CBC: blocks moved as 32-bit words
@@ -8,6 +14,8 @@ On the 32-bit targets, a block is XORed into another in place, a word at a
 time (`Cmac.xor4Mem m c c q`), and copied as a zeroed block XORed with the
 source (`copy4Mem`), on every 32-bit target.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesCbc
 

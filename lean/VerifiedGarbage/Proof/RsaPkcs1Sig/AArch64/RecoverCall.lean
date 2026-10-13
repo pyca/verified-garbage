@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.RecoverFrame
-import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.VerifyCall
+module
+
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.RecoverFrame
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.VerifyCall
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_pkcs1_recover` on AArch64: the call of `vg_rsa_public_checked`
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.VerifyCall
 `EM₁`, and keeps the values in `x19`–`x22` and the saved slots
 (`AfterCall`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPkcs1Sig.AArch64.Rec
 

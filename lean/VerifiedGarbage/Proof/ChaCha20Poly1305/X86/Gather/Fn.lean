@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.ChaCha20Poly1305.X86.Gather.Callee
-import VerifiedGarbage.Proof.ChaCha20Poly1305.Gathered
-import VerifiedGarbage.Proof.AesGcm.ScratchGather
+module
+
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86.Gather.Callee
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.Gathered
+public import VerifiedGarbage.Proof.AesGcm.ScratchGather
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ChaCha20-Poly1305 encryption out of place, from a list of slices, x86: the function
@@ -13,6 +19,8 @@ gathering), calls `vg_chacha20_poly1305_seal` on them in place (`called_wp`,
 by its shared contract), which keeps our frame above its arguments, and
 restores the registers (`ret_wp`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

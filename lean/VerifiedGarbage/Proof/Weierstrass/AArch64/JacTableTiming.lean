@@ -1,7 +1,16 @@
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAddTiming
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeStore
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAddTiming
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeStore
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Exact field equality through public in-scratch table transfers. -/
+
+@[expose] public section
+
 namespace VG.Proof.Weierstrass.AArch64
 open VG VG.AArch64 VG.Impl.Mont VG.Impl.Mont.AArch64 VG.Impl.Weierstrass
 open VG.Impl.Weierstrass.AArch64 VG.Proof.Mont VG.Proof.Mont.AArch64 Spec.Weierstrass

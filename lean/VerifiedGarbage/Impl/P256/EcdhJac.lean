@@ -1,7 +1,11 @@
-import VerifiedGarbage.Impl.P256.EcdhJac.Base
-import VerifiedGarbage.Impl.P256.EcdhTable
-import VerifiedGarbage.Impl.P256.EcdhInverse
-import VerifiedGarbage.Impl.P256.EcdhDouble
+module
+
+public import VerifiedGarbage.Impl.P256.EcdhJac.Base
+public import VerifiedGarbage.Impl.P256.EcdhTable
+public import VerifiedGarbage.Impl.P256.EcdhInverse
+public import VerifiedGarbage.Impl.P256.EcdhDouble
+
+@[expose] public section
 
 namespace VG.Impl.P256.EcdhJac
 open VG VG.AArch64 VG.Impl.Mont VG.Impl.Mont.AArch64 VG.Impl.Weierstrass

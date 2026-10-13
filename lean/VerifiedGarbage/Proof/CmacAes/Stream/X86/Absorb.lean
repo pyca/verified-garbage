@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.CmacAes.Stream.X86.AbsorbBlocks
+module
+
+public import VerifiedGarbage.Proof.CmacAes.Stream.X86.AbsorbBlocks
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Streaming AES-CMAC on x86: `vg_cmac_aes_absorb` around the calls
@@ -9,6 +15,8 @@ min(len, 16 - h)` bytes after them, and sets up the first call of
 (`AMid₁`); after each call, what the code that follows needs (`AAft₁`,
 `AAft₂`), and what `chain2` leaves for the second call (`AMid₂`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.CmacAes.Stream.X86
 

@@ -1,6 +1,11 @@
-import VerifiedGarbage.Impl.Weierstrass.X86_64.NafPrep
+module
+
+public import VerifiedGarbage.Impl.Weierstrass.X86_64.NafPrep
 
 /-! Public width-five/width-seven recoding, skipping known zero digits. -/
+
+@[expose] public section
+
 namespace VG.Impl.Weierstrass.X86_64.FastNaf
 open VG VG.X86_64 VG.Impl.Mont.X86_64
 

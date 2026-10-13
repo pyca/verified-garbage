@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Framework.AArch64.Simd
-import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+module
+
+public import VerifiedGarbage.Proof.Framework.AArch64.Simd
+public import VerifiedGarbage.Proof.Framework.AArch64.Exec
+public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Byte lanes of the RC4 code's vectors
@@ -9,6 +15,8 @@ The RC4 code's vectors are byte tables (the permutation, sixteen bytes per
 register) and bytes broadcast to every lane (`bc`). These are the byte-lane
 facts about the AdvSIMD instructions it uses.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rc4.AArch64
 open VG VG.AArch64

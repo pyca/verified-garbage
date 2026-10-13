@@ -1,22 +1,47 @@
-import VerifiedGarbage.Proof.Ed448.AArch64.Point56.AsFn
-import VerifiedGarbage.Proof.X448.AArch64.Base.Step
-import VerifiedGarbage.Proof.X448.AArch64.Base.Setup
-import VerifiedGarbage.Proof.X448.AArch64.Init
-import VerifiedGarbage.Proof.Framework.AArch64.StoreFrame
-import VerifiedGarbage.Proof.Framework.AArch64.LaneSave
-import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Impl.Ed448.AArch64.CombBase
-import VerifiedGarbage.Proof.Ed448.AArch64.Point56.Call
-import VerifiedGarbage.Proof.X448.AArch64.Base.AddGen
-import VerifiedGarbage.Proof.X448.AArch64.Weak.Counters
-import VerifiedGarbage.Proof.Ed448.AArch64.Point56.Conv
-import VerifiedGarbage.Proof.Ed448.Group.Projective
-import VerifiedGarbage.Proof.X448.AArch64.Base.Comb
-import VerifiedGarbage.Proof.X448.AArch64.Base.Erase
-import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.TCB.AArch64.Target
+module
+
+public import VerifiedGarbage.Proof.Ed448.AArch64.Point56.AsFn
+meta import VerifiedGarbage.Proof.Ed448.AArch64.Point56.AsFn
+public import VerifiedGarbage.Proof.X448.AArch64.Base.Step
+meta import VerifiedGarbage.Proof.X448.AArch64.Base.Step
+public import VerifiedGarbage.Proof.X448.AArch64.Base.Setup
+meta import VerifiedGarbage.Proof.X448.AArch64.Base.Setup
+public import VerifiedGarbage.Proof.X448.AArch64.Init
+meta import VerifiedGarbage.Proof.X448.AArch64.Init
+public import VerifiedGarbage.Proof.Framework.AArch64.StoreFrame
+meta import VerifiedGarbage.Proof.Framework.AArch64.StoreFrame
+public import VerifiedGarbage.Proof.Framework.AArch64.LaneSave
+meta import VerifiedGarbage.Proof.Framework.AArch64.LaneSave
+public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+meta import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+public import VerifiedGarbage.Impl.Ed448.AArch64.CombBase
+meta import VerifiedGarbage.Impl.Ed448.AArch64.CombBase
+public import VerifiedGarbage.Proof.Ed448.AArch64.Point56.Call
+meta import VerifiedGarbage.Proof.Ed448.AArch64.Point56.Call
+public import VerifiedGarbage.Proof.X448.AArch64.Base.AddGen
+meta import VerifiedGarbage.Proof.X448.AArch64.Base.AddGen
+public import VerifiedGarbage.Proof.X448.AArch64.Weak.Counters
+meta import VerifiedGarbage.Proof.X448.AArch64.Weak.Counters
+public import VerifiedGarbage.Proof.Ed448.AArch64.Point56.Conv
+meta import VerifiedGarbage.Proof.Ed448.AArch64.Point56.Conv
+public import VerifiedGarbage.Proof.Ed448.Group.Projective
+meta import VerifiedGarbage.Proof.Ed448.Group.Projective
+public import VerifiedGarbage.Proof.X448.AArch64.Base.Comb
+meta import VerifiedGarbage.Proof.X448.AArch64.Base.Comb
+public import VerifiedGarbage.Proof.X448.AArch64.Base.Erase
+meta import VerifiedGarbage.Proof.X448.AArch64.Base.Erase
+public import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
+meta import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.TCB.AArch64.Target
+meta import VerifiedGarbage.TCB.AArch64.Target
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448's fixed-base comb on AArch64, as a function
@@ -43,6 +68,8 @@ products' algebra (`ci/check_lean_speed.py`).
   time by taint tracking: only the pointer and `n` are public, every address is `ws` or the
   static plus a constant or the counter, and the branches are on `n` and the counter.
 -/
+
+@[expose] public section
 
 /-! # The function -/
 

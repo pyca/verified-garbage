@@ -1,10 +1,16 @@
-import VerifiedGarbage.Spec.GcmSiv.Contract
-import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Impl.AesGcmSiv.X86_64
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
+module
+
+public import VerifiedGarbage.Spec.GcmSiv.Contract
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.Framework.X86_64.Call
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
+public import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Impl.AesGcmSiv.X86_64
+public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM-SIV on x86-64: the contracts, where everything is and running blocks
@@ -16,6 +22,8 @@ Untrusted: everything here is checked by Lean. The shared contracts of
 is in the 8 bytes below the stack pointer (`stk8`), which no buffer
 overlaps, nor the return address (`ret`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesGcmSiv
 

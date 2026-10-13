@@ -1,9 +1,21 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenRoundMemory
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLoop
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackInit
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenRoundSemantic
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenRoundMemory
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenRoundMemory
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLoop
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLoop
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackInit
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackInit
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenRoundSemantic
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenRoundSemantic
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## From `KeygenRoundLoop.lean` -/
+
+@[expose] public section
 
 section
 

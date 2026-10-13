@@ -1,4 +1,6 @@
-import VerifiedGarbage.TCB.X86_64.Isa
+module
+
+public import VerifiedGarbage.TCB.X86_64.Isa
 
 /-!
 # ML-KEM on x86-64: common code
@@ -8,6 +10,8 @@ for a 32-bit `r < 2q`, without a branch: `sub r, q` sets CF exactly when
 `r < q`, `sbb m, m` turns it into a mask (all ones or zero), and `q` masked
 with it is added back.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlKem.X86_64
 

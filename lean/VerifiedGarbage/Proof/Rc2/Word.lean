@@ -1,6 +1,14 @@
-import VerifiedGarbage.Proof.Rc2.Select
+module
+
+public import VerifiedGarbage.Proof.Rc2.Select
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # RC2 word arithmetic in 64-bit registers -/
+
+@[expose] public section
 
 namespace VG.Proof.Rc2
 

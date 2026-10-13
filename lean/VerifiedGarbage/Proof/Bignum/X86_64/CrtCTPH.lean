@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTPMq
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTPMq
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTPMq
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSA with the CRT on x86-64: constant time, `h = (m_p - m_q) qInv mod p`
@@ -8,6 +15,8 @@ carries, before each piece, its claim's hypotheses and what correctness
 gives after it; `h_chain` proves it from `hPart_ok`'s hypotheses, as
 `hPart_ok` runs the pieces.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64
 

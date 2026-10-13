@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Ed448.AArch64.VerifyBytes
+module
+
+public import VerifiedGarbage.Proof.Ed448.AArch64.VerifyBytes
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 verification's equation on AArch64: the sign of `x`
@@ -8,6 +14,8 @@ fully reduced into `X2`; `x20 |= c`, `c = 0` exactly when `x ≠ 0` or the sign
 bit (`x17`) is 0. `negSwap`: `x` swapped with `-x` (slot 12)
 by the mask of `x`'s low bit (from `X2`) differing from the sign bit.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.AArch64
 

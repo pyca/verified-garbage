@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.X25519.X86.Field32.Verified
+module
+
+public import VerifiedGarbage.Proof.X25519.X86.Field32.Verified
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Calls of `vg_gf25519_r32_pow250` on x86 (32-bit)
@@ -12,6 +18,8 @@ working space and that stack, and leaves `a^(2^250 - 1)` at byte 544 and
 `a^11` at byte 512, for `a` the element at byte 128. The call's correctness
 is the function's own (`pow250Fn_ok`, through `WP.callWith`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X25519.X86.Field32
 

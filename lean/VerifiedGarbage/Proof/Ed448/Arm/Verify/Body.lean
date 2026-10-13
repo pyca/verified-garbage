@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Ed448.Arm.Verify.Hash
-import VerifiedGarbage.Proof.Ed448.Arm.ScalarVerified
-import VerifiedGarbage.Proof.Ed448.Arm.VerifyLocal
-import VerifiedGarbage.Proof.Ed448.Arm.VerifyLit
+module
+
+public import VerifiedGarbage.Proof.Ed448.Arm.Verify.Hash
+public import VerifiedGarbage.Proof.Ed448.Arm.ScalarVerified
+public import VerifiedGarbage.Proof.Ed448.Arm.VerifyLocal
+public import VerifiedGarbage.Proof.Ed448.Arm.VerifyLit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 verification on ARMv7: the challenge, the equation, and the body
@@ -11,6 +17,8 @@ in the frame at `K`. `equation_step`: `vg_ed448_verify_equation`'s result,
 for any code meeting its contract (`EqOk`, a hypothesis: only the
 registration file imports the proof). `body_ok`: the whole body.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.Arm.Verify
 

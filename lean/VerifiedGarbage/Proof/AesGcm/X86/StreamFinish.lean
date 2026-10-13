@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.AesGcm.X86.FinTag
-import VerifiedGarbage.Proof.AesGcm.X86.Cmp
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86.FinTag
+meta import VerifiedGarbage.Proof.AesGcm.X86.FinTag
+public import VerifiedGarbage.Proof.AesGcm.X86.Cmp
+meta import VerifiedGarbage.Proof.AesGcm.X86.Cmp
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on x86: `vg_aes_gcm_stream_finish`
@@ -11,6 +19,8 @@ Untrusted: everything here is checked by Lean. The entry, the tag
 (`finEntry_pc`), whose `W` is its last argument too: the pieces find it at 7
 in the public data (`pubSw`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

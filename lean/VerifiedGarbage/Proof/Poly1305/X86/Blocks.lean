@@ -1,17 +1,37 @@
-import VerifiedGarbage.Spec.Poly1305
-import VerifiedGarbage.Proof.Framework.PowLit
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.X86.Exec
-import VerifiedGarbage.Impl.Poly1305.X86
-import VerifiedGarbage.Proof.Poly1305.X86.Lit
-import Mathlib.Tactic.Set
-import VerifiedGarbage.Proof.Poly1305.Spec
-import VerifiedGarbage.Proof.Framework.X86.Inline
-import VerifiedGarbage.TCB.X86.Target
-import VerifiedGarbage.Proof.Framework.X86.Taint
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Spec.Poly1305.Contract
+module
+
+public import VerifiedGarbage.Spec.Poly1305
+meta import VerifiedGarbage.Spec.Poly1305
+public import VerifiedGarbage.Proof.Framework.PowLit
+meta import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.X86.Exec
+meta import VerifiedGarbage.Proof.Framework.X86.Exec
+public import VerifiedGarbage.Impl.Poly1305.X86
+meta import VerifiedGarbage.Impl.Poly1305.X86
+public import VerifiedGarbage.Proof.Poly1305.X86.Lit
+meta import VerifiedGarbage.Proof.Poly1305.X86.Lit
+public import Mathlib.Tactic.Set
+meta import Mathlib.Tactic.Set
+public import VerifiedGarbage.Proof.Poly1305.Spec
+meta import VerifiedGarbage.Proof.Poly1305.Spec
+public import VerifiedGarbage.Proof.Framework.X86.Inline
+meta import VerifiedGarbage.Proof.Framework.X86.Inline
+public import VerifiedGarbage.TCB.X86.Target
+meta import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Proof.Framework.X86.Taint
+meta import VerifiedGarbage.Proof.Framework.X86.Taint
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.Poly1305.Contract
+meta import VerifiedGarbage.Spec.Poly1305.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Poly1305 on x86: carries and digits, for `omega` on small linear problems
@@ -24,6 +44,8 @@ certificate). Name each carry once instead: `divMod` states
 are linear in `c`; `eq_of_mod` drops a `% m` that does not wrap; `digit`
 reads a digit off a sum without `omega`.
 -/
+
+@[expose] public section
 
 namespace VG.Carry
 

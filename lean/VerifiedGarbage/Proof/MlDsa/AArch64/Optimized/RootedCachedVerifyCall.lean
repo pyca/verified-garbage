@@ -1,7 +1,15 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.RootedCachedVerifyPre
-import VerifiedGarbage.Proof.MlDsa.AArch64.Message.OptimizedVerifyCallPre
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.RootedCachedVerifyPre
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.OptimizedVerifyCallPre
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## From `RootedCachedVerifyRoots.lean` -/
+
+@[expose] public section
 
 section
 

@@ -1,6 +1,11 @@
-import VerifiedGarbage.Impl.Weierstrass.JacAdd
+module
+
+public import VerifiedGarbage.Impl.Weierstrass.JacAdd
 
 /-! Jacobian addition using the selected point's cached powers of Z. -/
+
+@[expose] public section
+
 namespace VG.Impl.Weierstrass.X86.CachedJac
 open VG VG.Impl.Weierstrass
 

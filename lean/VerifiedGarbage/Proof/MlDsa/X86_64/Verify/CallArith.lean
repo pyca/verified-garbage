@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.MlDsa.Arith.Representation
-import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Entry
+module
+
+public import VerifiedGarbage.Proof.MlDsa.Arith.Representation
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Entry
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA verification on x86-64: calls of the arithmetic primitives
@@ -10,6 +16,8 @@ it needs of the layout (a check evaluated on the pointers, `…Chk`), what it
 does (`…_ok`), and that two runs whose layout registers agree leak the same
 (`…_tr`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86_64.Verify
 

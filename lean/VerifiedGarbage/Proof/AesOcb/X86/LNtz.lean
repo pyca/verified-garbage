@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesOcb.X86.Blk
+module
+
+public import VerifiedGarbage.Proof.AesOcb.X86.Blk
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-OCB on x86: `L_{ntz(i)}` (`lNtz`)
@@ -9,6 +15,8 @@ once more each time (at `W + kO`), is even: `ntz(i)` times (`lNtz_ok`). The
 invariant: after `j` doublings, `W + lO` holds `L_j`, `W + kO` holds
 `i / 2^j`, which is positive, and `ntz(i) = j + ntz(i / 2^j)`.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

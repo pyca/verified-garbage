@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Rsa.X86_64.Inv
-import VerifiedGarbage.Proof.Bignum.X86_64.Store
+module
+
+public import VerifiedGarbage.Proof.Rsa.X86_64.Inv
+public import VerifiedGarbage.Proof.Bignum.X86_64.Store
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSA private keys on x86-64: the working space and its pieces
@@ -11,6 +17,8 @@ slots `sMask` and `sMo` (`Ws.congr`). The pieces of the functions that load,
 clear, copy and store arrays (`zeroA_ok`, `copyA_ok`, `loadA_ok`,
 `storeA_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.X86_64
 

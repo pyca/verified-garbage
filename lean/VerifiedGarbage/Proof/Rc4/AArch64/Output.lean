@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Rc4.AArch64.Step
+module
+
+public import VerifiedGarbage.Proof.Rc4.AArch64.Step
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # A keystream byte
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.Rc4.AArch64.Step
 the keystream byte `S[X]` is looked up and XORed into the data byte at `x1`;
 `x1` and `x2` advance.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rc4.AArch64
 open VG VG.AArch64 VG.AArch64.RegUpd VG.Impl.Rc4.AArch64

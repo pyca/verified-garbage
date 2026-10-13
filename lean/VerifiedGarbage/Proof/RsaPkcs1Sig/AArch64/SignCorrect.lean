@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.SignCall
-import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.RecoverCorrect
+module
+
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.SignCall
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.RecoverCorrect
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_pkcs1_sign` on AArch64: correctness
@@ -8,6 +14,8 @@ The encoding into `EM` (`enc_ok`), then zeros to `out` if it fails, or the
 private operation on `EM` and zeros to `EM` (`afterEnc_ok`), which is
 RFC 8017 §8.2.1 (`signId_eq`); the whole function (`code_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPkcs1Sig.AArch64.Sgn
 

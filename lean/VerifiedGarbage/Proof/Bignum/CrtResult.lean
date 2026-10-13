@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Bignum.CrtKey
-import VerifiedGarbage.Proof.Bignum.CrtHdr
-import VerifiedGarbage.Proof.Bignum.CrtPRanges
-import VerifiedGarbage.Proof.Bignum.Octets
+module
+
+public import VerifiedGarbage.Proof.Bignum.CrtKey
+public import VerifiedGarbage.Proof.Bignum.CrtHdr
+public import VerifiedGarbage.Proof.Bignum.CrtPRanges
+public import VerifiedGarbage.Proof.Bignum.Octets
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSA with the CRT: the result
@@ -12,6 +18,8 @@ written (`crtWritten_of`); what a valid modulus and the key's lengths give
 that `p`'s phase keeps the header's arguments (`keepsHdr_pRanges`,
 `keepsHdr_x`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum
 

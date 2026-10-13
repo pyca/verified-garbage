@@ -1,6 +1,8 @@
-import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import VerifiedGarbage.Proof.Framework.Offset
+module
+
+public import VerifiedGarbage.Proof.Framework.AArch64.Exec
+public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+public import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # AArch64: saving registers in memory and restoring them
@@ -25,6 +27,8 @@ register, `str x<r>, [x<b>, #d]`, and later loads them back,
 `Restorable` (the loads restore distinct registers, the base register last if
 at all) are side conditions on a literal list, which `decide` proves.
 -/
+
+@[expose] public section
 
 namespace VG.AArch64.Spill
 

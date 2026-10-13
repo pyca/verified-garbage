@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.RsaOaep.AArch64.DecEntry
-import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncCall
+module
+
+public import VerifiedGarbage.Proof.RsaOaep.AArch64.DecEntry
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncCall
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-OAEP decryption on AArch64: the private-key operation
@@ -10,6 +16,8 @@ the start of our working space (`k` bytes), `n`, `e` and the ciphertext.
 `priv_call` runs it: `Ctx` holds again, the frame's words are as they were,
 and `EM`'s place holds `EM` (or zeros) as `privOut` says.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaOaep.AArch64.Dec
 

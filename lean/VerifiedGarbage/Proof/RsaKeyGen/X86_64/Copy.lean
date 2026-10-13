@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.RsaKeyGen.X86_64.TrialLoop
-import VerifiedGarbage.Proof.Bignum.X86_64.Copy
-import VerifiedGarbage.Proof.Bignum.X86_64.Csub
+module
+
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.TrialLoop
+public import VerifiedGarbage.Proof.Bignum.X86_64.Copy
+public import VerifiedGarbage.Proof.Bignum.X86_64.Csub
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # A candidate on x86-64: copies and differences of arrays
@@ -9,6 +15,8 @@ import VerifiedGarbage.Proof.Bignum.X86_64.Csub
 `copyToExt_ok` and `copyFromExt_ok` with the bases loaded, from an array to
 an extra one and back; `subB_ok`: the borrow loop `[t] := [a] − [n]`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaKeyGen.X86_64
 

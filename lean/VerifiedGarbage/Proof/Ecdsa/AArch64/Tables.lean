@@ -1,7 +1,13 @@
-import VerifiedGarbage.Impl.Ecdsa.P256.AArch64
-import VerifiedGarbage.Proof.Framework.ConstMem
-import VerifiedGarbage.Proof.Weierstrass.TCombWords
-import VerifiedGarbage.Proof.P256.Comb7Shape
+module
+
+public import VerifiedGarbage.Impl.Ecdsa.P256.AArch64
+public import VerifiedGarbage.Proof.Framework.ConstMem
+public import VerifiedGarbage.Proof.Weierstrass.TCombWords
+public import VerifiedGarbage.Proof.P256.Comb7Shape
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDSA over P-256 on AArch64: the comb's tables in a static
@@ -12,6 +18,8 @@ around, and apart from the writable regions; their length
 (`p256_combWords_length`, from the tables' shape alone); and a memory
 holding them, for the contracts' witnesses (`satMem`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.AArch64
 

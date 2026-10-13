@@ -1,8 +1,14 @@
-import VerifiedGarbage.Impl.Weierstrass.AArch64.Mont
-import VerifiedGarbage.Proof.Ed25519.AArch64.Step
-import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+module
+
+public import VerifiedGarbage.Impl.Weierstrass.AArch64.Mont
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Step
+public import VerifiedGarbage.Proof.Framework.AArch64.Exec
+public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Montgomery products as functions on AArch64: registers saved in vector lanes
@@ -13,6 +19,8 @@ of `v16`–`v20` (`slot i`: the `i`-th register in lane `i % 2` of the
 lanes and every general-purpose register, and `restores_ok` writes each
 register back from its lane.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.AArch64.Mont
 

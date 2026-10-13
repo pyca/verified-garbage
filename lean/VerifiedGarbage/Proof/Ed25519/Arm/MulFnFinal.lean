@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Ed25519.Arm.MulFnRow
+module
+
+public import VerifiedGarbage.Proof.Ed25519.Arm.MulFnRow
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_gf25519_r16_mul` on ARMv7: the result
@@ -8,6 +14,8 @@ stores `lo + 38 hi` at the result through `r9` and folds the carry out in
 twice (`mulFinal_ok`), as X25519's `passTail'_ok` and `tail_ok` do at an
 offset of `r0`; the product of `mulBody` (`mulBody_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed25519.Arm
 

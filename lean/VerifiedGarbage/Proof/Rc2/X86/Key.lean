@@ -1,9 +1,21 @@
-import VerifiedGarbage.Proof.Rc2.X86.KeyCorrect
-import VerifiedGarbage.Proof.Framework.X86.Taint
-import VerifiedGarbage.Proof.Framework.X86.SseTaint
-import VerifiedGarbage.Proof.Rc2.X86.KeyLit
+module
+
+public import VerifiedGarbage.Proof.Rc2.X86.KeyCorrect
+meta import VerifiedGarbage.Proof.Rc2.X86.KeyCorrect
+public import VerifiedGarbage.Proof.Framework.X86.Taint
+meta import VerifiedGarbage.Proof.Framework.X86.Taint
+public import VerifiedGarbage.Proof.Framework.X86.SseTaint
+meta import VerifiedGarbage.Proof.Framework.X86.SseTaint
+public import VerifiedGarbage.Proof.Rc2.X86.KeyLit
+meta import VerifiedGarbage.Proof.Rc2.X86.KeyLit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # RC2 key expansion against the shared API contract -/
+
+@[expose] public section
 
 namespace VG.Proof.Rc2.X86
 

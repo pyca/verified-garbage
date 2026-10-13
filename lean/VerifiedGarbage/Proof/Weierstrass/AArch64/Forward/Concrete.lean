@@ -1,11 +1,19 @@
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Refine
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Certificate
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Refine
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Certificate
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! The abstract interpreter over concrete words: every operation is evaluated,
 so the domain is sound with no certificate. Two environments are `Equiv` when
 their registers and slots hold the same words and their carries the same flag,
 which is all the interpreter's steps read; a step from equivalent environments
 gives equivalent environments. -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.AArch64.Forward
 open VG VG.AArch64 VG.Proof.Mont VG.Proof.Mont.AArch64

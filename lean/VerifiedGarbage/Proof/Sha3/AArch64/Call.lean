@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.Sha3.AArch64.Variant
-import VerifiedGarbage.Proof.Framework.AArch64.Spill
+module
+
+public import VerifiedGarbage.Proof.Sha3.AArch64.Variant
+public import VerifiedGarbage.Proof.Framework.AArch64.Spill
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 section
 

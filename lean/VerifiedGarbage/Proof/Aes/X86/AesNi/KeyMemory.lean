@@ -1,6 +1,14 @@
-import VerifiedGarbage.Proof.Aes.X86.AesNi.KeySteps
-import VerifiedGarbage.Proof.Aes.X86.ExpandKeyCT
-import VerifiedGarbage.Proof.Framework.Offset
+module
+
+public import VerifiedGarbage.Proof.Aes.X86.AesNi.KeySteps
+public import VerifiedGarbage.Proof.Aes.X86.ExpandKeyCT
+public import VerifiedGarbage.Proof.Framework.Offset
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.Aes.X86.AesNi
 open VG VG.X86 VG.X86.RegUpd

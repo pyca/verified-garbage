@@ -18,7 +18,7 @@ def artifacts : List Artifact := [
     contract := Spec.MlDsa.montgomeryNttInvContract (AArch64.abi.withConsts Impl.MlDsa.AArch64.Optimized.Inverse.inverseConsts)
     verified := Proof.MlDsa.AArch64.Optimized.Inverse.inverse_verified
     spSafe := Code.all_of_forall (fun _ => rfl) _
-    ofSig := ⟨_,_,_,by unfold Spec.MlDsa.montgomeryNttInvContract Spec.MlDsa.inPlaceContract; rfl⟩ },
+    ofSig := by exact (⟨_,_,_,by unfold Spec.MlDsa.montgomeryNttInvContract Spec.MlDsa.inPlaceContract; rfl⟩) },
   { Spec.MlDsa.positiveNttApi with
     target := AArch64.target
     doc := Spec.MlDsa.positiveNttApi.doc
@@ -43,7 +43,7 @@ def artifacts : List Artifact := [
     contract := Spec.MlDsa.nttContract AArch64.abi
     verified := Proof.MlDsa.AArch64.Arith.Neon.ntt_verified
     spSafe := Code.all_of_forall (fun _ => rfl) _
-    ofSig := ⟨_, _, _, by unfold Spec.MlDsa.nttContract Spec.MlDsa.inPlaceContract; rfl⟩ },
+    ofSig := by exact (⟨_, _, _, by unfold Spec.MlDsa.nttContract Spec.MlDsa.inPlaceContract; rfl⟩) },
   { Spec.MlDsa.nttInvApi with
     target := AArch64.target
     doc := Spec.MlDsa.nttInvApi.doc
@@ -52,7 +52,7 @@ def artifacts : List Artifact := [
     contract := Spec.MlDsa.nttInvContract AArch64.abi
     verified := Proof.MlDsa.AArch64.Arith.Neon.nttInv_verified
     spSafe := Code.all_of_forall (fun _ => rfl) _
-    ofSig := ⟨_, _, _, by unfold Spec.MlDsa.nttInvContract Spec.MlDsa.inPlaceContract; rfl⟩ },
+    ofSig := by exact (⟨_, _, _, by unfold Spec.MlDsa.nttInvContract Spec.MlDsa.inPlaceContract; rfl⟩) },
   { Spec.MlDsa.mulApi with
     target := AArch64.target
     doc := Spec.MlDsa.mulApi.doc

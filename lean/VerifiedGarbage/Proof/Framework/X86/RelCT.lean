@@ -1,5 +1,7 @@
-import VerifiedGarbage.Proof.Framework.RelCT
-import VerifiedGarbage.Proof.Framework.X86.CallWith
+module
+
+public import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.Proof.Framework.X86.CallWith
 
 /-!
 # Constant time of calls, by relating two runs (x86, 32-bit)
@@ -23,6 +25,8 @@ condition that agrees in both runs.
 `τr rs` is the taint state in which only the registers `rs` are public, for
 the pieces the taint analysis proves (`RelCT.taint`).
 -/
+
+@[expose] public section
 
 namespace VG.X86
 

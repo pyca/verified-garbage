@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Base
+module
+
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Base
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # A candidate on AArch64: what Miller–Rabin keeps
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Base
 `b R mod c` in `aB`, `R mod c` and `c − R mod c`; `MrCtx.of_frm` keeps it
 across changes elsewhere.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaKeyGen.AArch64
 

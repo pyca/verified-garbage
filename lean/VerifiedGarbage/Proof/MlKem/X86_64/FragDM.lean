@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.MlKem.X86_64.FragL
-import VerifiedGarbage.Impl.MlKem.X86_64.Kem
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86_64.FragL
+public import VerifiedGarbage.Impl.MlKem.X86_64.Kem
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86-64: the call of `vg_mlkem*_decrypt_mul`
@@ -10,6 +16,8 @@ As the calls of the polynomial primitives (`FragPrim.lean`, `FragOf.lean`,
 the state (`DecMulH`), of a layout (`dmChk`, `DecMulH.of`), what it
 computes (`decMulAt_ok`) and that two runs leak the same (`decMulAt_tr`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.X86_64
 

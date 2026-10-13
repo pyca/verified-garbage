@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Tail
+module
+
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Tail
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ChaCha20 and Poly1305 together (x86-64): the 448 bytes before the chunks
@@ -12,6 +18,8 @@ on narrower permissions), whose accumulator on entry is the 448 bytes'
 absorbed. Without whole chunks, `tailS` encrypts the rest while it absorbs
 the 448 bytes (`tailP_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.ChaCha20Poly1305.X86_64.Stitch
 

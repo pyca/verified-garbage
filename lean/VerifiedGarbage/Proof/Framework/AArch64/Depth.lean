@@ -1,7 +1,12 @@
-import VerifiedGarbage.TCB.AArch64.Isa
-import VerifiedGarbage.Proof.Framework.Semantics
+module
+
+public import VerifiedGarbage.TCB.AArch64.Isa
+public import VerifiedGarbage.Proof.Framework.Semantics
 
 /-! Stack consumption in 16-byte units, including contiguous allocations. -/
+
+@[expose] public section
+
 namespace VG
 
 def AArch64.Instr.frameUnits : AArch64.Instr → Nat

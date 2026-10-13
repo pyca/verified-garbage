@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.AesSiv.Arm.CTFinish
+module
+
+public import VerifiedGarbage.Proof.AesSiv.Arm.CTFinish
+meta import VerifiedGarbage.Proof.AesSiv.Arm.CTFinish
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-SIV on ARMv7: CTR is constant time
@@ -10,6 +17,8 @@ the same in both runs; the branches are on the length, and so are the
 numbers of blocks and bytes; the calls of `vg_aes_ctr32` get the same
 arguments in both runs (`ctrWholeArgs_ok`, `ctrTailArgs_ok`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

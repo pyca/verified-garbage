@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.CmacTripleDes.Block
-import VerifiedGarbage.Proof.CmacTripleDes.IndexLit
+module
+
+public import VerifiedGarbage.Proof.CmacTripleDes.Block
+public import VerifiedGarbage.Proof.CmacTripleDes.IndexLit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # DES's key schedule, bit by bit
@@ -10,6 +16,8 @@ compute it. The proof follows `C` and `D` through the specification's loop
 as maps of bit indices (`cIdx`), and compares the result with `rkSrc` by
 `decide`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.CmacTripleDes
 

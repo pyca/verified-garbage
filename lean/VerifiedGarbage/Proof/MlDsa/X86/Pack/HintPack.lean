@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.MlDsa.X86.Pack.HintBase
-import VerifiedGarbage.Impl.MlDsa.X86.Pack.Hint
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86.Pack.HintBase
+meta import VerifiedGarbage.Proof.MlDsa.X86.Pack.HintBase
+public import VerifiedGarbage.Impl.MlDsa.X86.Pack.Hint
+meta import VerifiedGarbage.Impl.MlDsa.X86.Pack.Hint
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on x86 (32-bit): `vg_mldsa_hint_bit_pack`
@@ -15,6 +23,8 @@ code branches on or addresses memory with as a function of the entry state
 agree on (`PPub`); so the branches (`Piece.ite`) and the addresses (the
 taint analysis, `Piece.taint`) agree.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86.Pack.Hint
 

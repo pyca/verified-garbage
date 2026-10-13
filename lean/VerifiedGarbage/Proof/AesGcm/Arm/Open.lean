@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesGcm.Arm.Seal
+module
+
+public import VerifiedGarbage.Proof.AesGcm.Arm.Seal
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on ARMv7: `vg_aes_gcm_open`
@@ -9,6 +15,8 @@ if it is allowed, it computes the tag of the ciphertext into `W + 112`
 the first `tag_len` bytes of each, and decrypts the data in place only if
 they are equal; `r0` is the result (`open_wp`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

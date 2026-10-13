@@ -1,7 +1,17 @@
-import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Ladder
-import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Lit
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.Verified
-import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
+module
+
+public import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Ladder
+meta import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Ladder
+public import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Lit
+meta import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Lit
+public import VerifiedGarbage.Proof.X25519.X86_64.Adx.Verified
+meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.Verified
+public import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
+meta import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X25519 on x86-64 with AVX512_IFMA: `Verified`
@@ -16,6 +26,8 @@ branches are on the loop counters, and every address is an argument plus a
 constant or a counter); satisfiability, and the shared contract with 8 bytes
 of stack, for the call's return address.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X25519.X86_64
 

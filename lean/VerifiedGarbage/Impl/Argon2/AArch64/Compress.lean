@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.Argon2
-import VerifiedGarbage.TCB.AArch64.Isa
+module
+
+public import VerifiedGarbage.Spec.Argon2
+public import VerifiedGarbage.TCB.AArch64.Isa
 
 /-!
 # Argon2 compression G on ARM64
@@ -10,6 +12,8 @@ permuted copy at offset 1024. GB uses x4-x7, with x8-x10 as temporaries.
 Every address is a public pointer plus a fixed offset; there are no branches,
 calls, stack accesses, or writes to callee-saved or vector registers.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Argon2.AArch64
 

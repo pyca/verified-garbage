@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesCcm.Arm.Mac
+module
+
+public import VerifiedGarbage.Proof.AesCcm.Arm.Mac
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CCM on ARMv7: counter mode (`ctr`)
@@ -11,6 +17,8 @@ first bytes of `CIPH_K(Ctrⱼ)` for the block `j` after them, computed by
 `vg_aes_ctr32` on a zero block at `W + 80` (`ctrTail_ok`). Together, the
 data XORed with CCM's keystream from `Ctr₁` (`ctr_ok`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlKem.X86_64.S4Parse
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86_64.S4Parse
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86-64: `vg_mlkem_sample_ntt4_avx2`, the table
@@ -8,6 +14,8 @@ constants of the vector code over the states, quadword by quadword (`tab_ok`);
 with the output of the squeezes, which it does not touch, they make `PInv σ 0`
 (`pinv0_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.X86_64.S4
 

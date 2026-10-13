@@ -1,7 +1,9 @@
-import VerifiedGarbage.Impl.Seed.Arm.Ecb
-import VerifiedGarbage.Impl.StackScratch.Arm
-import VerifiedGarbage.Impl.Modes.Arm.Seq
-import VerifiedGarbage.Spec.Seed.Contract
+module
+
+public import VerifiedGarbage.Impl.Seed.Arm.Ecb
+public import VerifiedGarbage.Impl.StackScratch.Arm
+public import VerifiedGarbage.Impl.Modes.Arm.Seq
+public import VerifiedGarbage.Spec.Seed.Contract
 
 /-!
 # SEED-CBC, SEED-OFB and SEED-CFB128 on ARMv7
@@ -11,6 +13,8 @@ generic modes one block at a time (`Impl/Modes/Arm/Seq.lean`) over SEED's
 ECB functions, `vg_seed_ecb_encrypt` and `vg_seed_ecb_decrypt`, which they
 call once per block (`ecbCore`).
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Seed.Arm
 

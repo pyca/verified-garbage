@@ -1,12 +1,20 @@
-import VerifiedGarbage.Impl.X448.Arm
-import VerifiedGarbage.Proof.X448.Radix16
-import VerifiedGarbage.Proof.Framework.Arm.Exec
-import VerifiedGarbage.Proof.Framework.Mem
-import VerifiedGarbage.Proof.Framework.Offset
+module
+
+public import VerifiedGarbage.Impl.X448.Arm
+public import VerifiedGarbage.Proof.X448.Radix16
+public import VerifiedGarbage.Proof.Framework.Arm.Exec
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.Offset
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 on ARMv7: the working space
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448.Arm
 

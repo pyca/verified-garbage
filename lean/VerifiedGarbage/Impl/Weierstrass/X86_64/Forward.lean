@@ -1,6 +1,11 @@
-import VerifiedGarbage.TCB.X86_64.Isa
+module
+
+public import VerifiedGarbage.TCB.X86_64.Isa
 
 /-! Forward known scratch words through registers, invalidating stale entries. -/
+
+@[expose] public section
+
 namespace VG.Impl.Weierstrass.X86_64.Forward
 open VG.X86_64
 

@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.RsaOaep.AArch64.EncCall
+module
+
+public import VerifiedGarbage.Proof.RsaOaep.AArch64.EncCall
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-OAEP encryption on AArch64: correctness
@@ -9,6 +15,8 @@ of it into `out`. The frames, the prologue and the checks of `k` and the
 message's length, with zeros to `out` if either fails: `enc_ok`, against the
 shared contract.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaOaep.AArch64.Enc
 

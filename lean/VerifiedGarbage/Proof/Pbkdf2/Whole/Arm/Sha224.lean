@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Instances
-import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Sha224
-import VerifiedGarbage.Proof.Framework.TaintBatch
+module
+
+public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Instances
+meta import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Instances
+public import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Sha224
+meta import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Sha224
+public import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # PBKDF2-HMAC-SHA-224 on 32-bit ARM, the whole derivation
@@ -9,6 +18,8 @@ The generic proof (`CT.lean`) at SHA-224
 (`Proof/Pbkdf2/Stream/Arm/Sha224.lean`), as for the other hash functions
 (`Instances.lean`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Pbkdf2.Whole.Arm
 

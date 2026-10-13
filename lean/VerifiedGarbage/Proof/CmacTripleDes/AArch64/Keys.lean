@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Round
-import VerifiedGarbage.Proof.CmacTripleDes.KeySchedule
-import VerifiedGarbage.Proof.CmacTripleDes.AArch64.KeysLit
+module
+
+public import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Round
+public import VerifiedGarbage.Proof.CmacTripleDes.KeySchedule
+public import VerifiedGarbage.Proof.CmacTripleDes.AArch64.KeysLit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # DES's key schedule on AArch64
@@ -9,6 +15,8 @@ import VerifiedGarbage.Proof.CmacTripleDes.AArch64.KeysLit
 stores: the kernel checks it over the lane domain (`roundKeys_check`), and
 `getLsbD_expandDesKey` says the bits are the specification's.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.CmacTripleDes.AArch64
 

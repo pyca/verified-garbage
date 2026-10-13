@@ -1,7 +1,16 @@
-import VerifiedGarbage.Impl.Bignum.X86_64.AdxHeader
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8ProductStep
+module
+
+public import VerifiedGarbage.Impl.Bignum.X86_64.AdxHeader
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8ProductStep
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Scalar copies preserve every byte outside their destination. -/
+
+@[expose] public section
+
 namespace VG.Proof.Bignum.X86_64.AdxHeader
 open VG VG.X86_64 VG.Impl.Bignum.X86_64
 open VG.Proof.Bignum.X86_64

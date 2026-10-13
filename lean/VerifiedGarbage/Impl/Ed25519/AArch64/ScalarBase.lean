@@ -1,10 +1,15 @@
-import VerifiedGarbage.Impl.Ed25519.AArch64.Scalar
-import VerifiedGarbage.Impl.Ed25519.AArch64.Bits
-import VerifiedGarbage.Impl.Ed25519.AArch64.Comb
-import VerifiedGarbage.Impl.Ed25519.AArch64.PointEncode
+module
+
+public import VerifiedGarbage.Impl.Ed25519.AArch64.Scalar
+public import VerifiedGarbage.Impl.Ed25519.AArch64.Bits
+public import VerifiedGarbage.Impl.Ed25519.AArch64.Comb
+public import VerifiedGarbage.Impl.Ed25519.AArch64.PointEncode
 
 /-! Base-point multiplication for the full unsigned 256-bit input scalar, with the comb of
 `Comb.lean` over the scalar's expanded bits. -/
+
+@[expose] public section
+
 namespace VG.Impl.Ed25519.AArch64
 open VG.AArch64
 

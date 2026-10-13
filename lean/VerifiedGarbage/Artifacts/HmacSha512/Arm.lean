@@ -30,7 +30,7 @@ def artifacts : List Artifact := [
     doc := Spec.Hmac.sha512I.initApi.doc
     code := Impl.StackScratch.Arm.withStackScratch (Proof.Pbkdf2.Md.Arm.frame Spec.Hmac.sha512I) 0 Proof.Pbkdf2.Md.Arm.sha512Md'.hmacInit
     contract := Spec.Hmac.sha512I.initContract Arm.abi (16 + Proof.Pbkdf2.Md.Arm.frame Spec.Hmac.sha512I)
-    ofSig := ⟨_, _, _, by unfold Spec.Hmac.Instance.initContract; rfl⟩
+    ofSig := by exact (⟨_, _, _, by unfold Spec.Hmac.Instance.initContract; rfl⟩)
     stack := 16 + Proof.Pbkdf2.Md.Arm.frame Spec.Hmac.sha512I
     verified := Proof.Pbkdf2.Md.Arm.initFramed Proof.Pbkdf2.Md.Arm.Instances.sha512_init (by decide)
       Proof.Pbkdf2.Md.Arm.sha512_initFrameSat
@@ -40,7 +40,7 @@ def artifacts : List Artifact := [
     doc := Spec.Hmac.sha512I.finalizeApi.doc
     code := Impl.StackScratch.Arm.withStackScratch (Proof.Pbkdf2.Md.Arm.frame Spec.Hmac.sha512I) 1 Proof.Pbkdf2.Md.Arm.sha512Md'.hmacFin
     contract := Spec.Hmac.sha512I.finalizeContract Arm.abi (16 + Proof.Pbkdf2.Md.Arm.frame Spec.Hmac.sha512I)
-    ofSig := ⟨_, _, _, by unfold Spec.Hmac.Instance.finalizeContract; rfl⟩
+    ofSig := by exact (⟨_, _, _, by unfold Spec.Hmac.Instance.finalizeContract; rfl⟩)
     stack := 16 + Proof.Pbkdf2.Md.Arm.frame Spec.Hmac.sha512I
     verified := Proof.Pbkdf2.Md.Arm.finFramed Proof.Pbkdf2.Md.Arm.Instances.sha512_finalize (by decide)
       Proof.Hmac.sha512_local (by decide) Proof.Pbkdf2.Md.Arm.sha512_finFrameSat
@@ -50,7 +50,7 @@ def artifacts : List Artifact := [
     doc := Spec.Hmac.sha512I.initScratchApi.doc
     code := Proof.Pbkdf2.Md.Arm.sha512Md'.hmacInit
     contract := Spec.Hmac.sha512I.initScratchContract Arm.abi 16
-    ofSig := ⟨_, _, _, by unfold Spec.Hmac.Instance.initScratchContract; rfl⟩
+    ofSig := by exact (⟨_, _, _, by unfold Spec.Hmac.Instance.initScratchContract; rfl⟩)
     stack := 16
     verified := Proof.Pbkdf2.Md.Arm.Instances.sha512_init
     spSafe := Code.all_of_forall (fun _ => rfl) _ },
@@ -59,7 +59,7 @@ def artifacts : List Artifact := [
     doc := Spec.Hmac.sha512I.finalizeScratchApi.doc
     code := Proof.Pbkdf2.Md.Arm.sha512Md'.hmacFin
     contract := Spec.Hmac.sha512I.finalizeScratchContract Arm.abi 16
-    ofSig := ⟨_, _, _, by unfold Spec.Hmac.Instance.finalizeScratchContract; rfl⟩
+    ofSig := by exact (⟨_, _, _, by unfold Spec.Hmac.Instance.finalizeScratchContract; rfl⟩)
     stack := 16
     verified := Proof.Pbkdf2.Md.Arm.Instances.sha512_finalize
     spSafe := Code.all_of_forall (fun _ => rfl) _ }]

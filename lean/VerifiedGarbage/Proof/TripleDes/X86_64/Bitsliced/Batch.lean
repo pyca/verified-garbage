@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Passes
-import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.BatchIO
-import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Bytes
-import VerifiedGarbage.Proof.TripleDes.Core
+module
+
+public import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Passes
+public import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.BatchIO
+public import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Bytes
+public import VerifiedGarbage.Proof.TripleDes.Core
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # A batch
@@ -11,6 +17,8 @@ transposed (lane `b` is then IP of block `b`), put through the three
 passes, transposed back and copied out: each block becomes its TDEA
 encryption or decryption (`batch_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.TripleDes.X86_64.Bitsliced
 

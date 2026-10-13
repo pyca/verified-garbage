@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.MlKem.X86_64.Ntt
-import VerifiedGarbage.Impl.MlKem.X86_64.Avx
+module
+
+public import VerifiedGarbage.Impl.MlKem.X86_64.Ntt
+public import VerifiedGarbage.Impl.MlKem.X86_64.Avx
 
 /-!
 # ML-KEM on x86-64: `vg_mlkem_ntt_avx2` and `vg_mlkem_inv_ntt_avx2`
@@ -35,6 +37,8 @@ each a pass over `S` with `rdx` at the words it loads:
 the upper halves of the vector registers before returning (`vzeroupper`).
 Every address and branch depends only on the pointers.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlKem.X86_64
 

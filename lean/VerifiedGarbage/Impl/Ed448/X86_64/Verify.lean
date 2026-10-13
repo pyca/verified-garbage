@@ -1,6 +1,8 @@
-import VerifiedGarbage.Impl.Ed448.X86_64.VerifyEquation
-import VerifiedGarbage.Impl.Ed448.X86_64.Scalar
-import VerifiedGarbage.Impl.Sha3.X86_64.Stream
+module
+
+public import VerifiedGarbage.Impl.Ed448.X86_64.VerifyEquation
+public import VerifiedGarbage.Impl.Ed448.X86_64.Scalar
+public import VerifiedGarbage.Impl.Sha3.X86_64.Stream
 
 /-!
 # Ed448 verification on x86-64
@@ -27,6 +29,8 @@ Each call's arguments are moved into their registers from the frame (a slot,
 or a slot plus an offset), as immediates, from `rsp` plus an offset, or from
 `rax`. Every address and branch depends only on the pointers and the lengths.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Ed448.X86_64.Verify
 

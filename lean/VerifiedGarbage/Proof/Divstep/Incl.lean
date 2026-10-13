@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Divstep.HullData
+module
+
+public import VerifiedGarbage.Proof.Divstep.HullData
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The hulls of the divstep bound: the inclusions
@@ -6,6 +12,8 @@ import VerifiedGarbage.Proof.Divstep.HullData
 Each of the ten inclusions between the hulls, checked by the kernel
 (`Incl.ok`, sound by `Incl.ok_sound`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Divstep
 

@@ -1,13 +1,17 @@
-import VerifiedGarbage.Impl.Argon2.AArch64.Instructions
-import VerifiedGarbage.Impl.Argon2.AArch64.AddressHeader
-import VerifiedGarbage.Impl.Argon2.AArch64.ClearBlock
-import VerifiedGarbage.Spec.Argon2.Contract
+module
+
+public import VerifiedGarbage.Impl.Argon2.AArch64.Instructions
+public import VerifiedGarbage.Impl.Argon2.AArch64.AddressHeader
+public import VerifiedGarbage.Impl.Argon2.AArch64.ClearBlock
+public import VerifiedGarbage.Spec.Argon2.Contract
 
 /-! Independent-address generation in the shared 16 KiB scratch allocation.
 G uses `[0,4096)`, temporary output `[4096,5120)`, input `[5120,6144)`,
 address output `[6144,7168)`, and the zero block `[7168,8192)`. Every stage
 reloads the scratch pointer from frame offset 248 after a compression call.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Argon2.AArch64.AddressCalls
 

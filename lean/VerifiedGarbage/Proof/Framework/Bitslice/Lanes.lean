@@ -1,4 +1,6 @@
-import VerifiedGarbage.Proof.Framework.Bitslice.Dom
+module
+
+public import VerifiedGarbage.Proof.Framework.Bitslice.Dom
 
 /-!
 # The lane domain: linear layers as XORs of input bits
@@ -19,6 +21,8 @@ and `or` need one side to be a constant word.
 `LaneRel w k A` relates abstract to concrete words, for the assignment `A`
 of the `2 ^ k` atoms (bit `a` of `A` is the value of atom `a`).
 -/
+
+@[expose] public section
 
 namespace VG.Bitslice
 

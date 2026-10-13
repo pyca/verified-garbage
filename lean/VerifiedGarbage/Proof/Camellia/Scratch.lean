@@ -1,6 +1,12 @@
-import VerifiedGarbage.Spec.Camellia.Contract
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.Scratch
+module
+
+public import VerifiedGarbage.Spec.Camellia.Contract
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.Scratch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Camellia with its working space as an argument
@@ -16,6 +22,8 @@ The frame zeroes the buffer after the code, which needs the postconditions
 to read the memory on return only within the function's buffers
 (`expandKeyPostOut_local`, `ecbPostOut_local`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Camellia
 

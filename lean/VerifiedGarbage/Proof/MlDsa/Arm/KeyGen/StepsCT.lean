@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Steps
-import VerifiedGarbage.Proof.MlKem.Arm.CallsCT
+module
+
+public import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Steps
+public import VerifiedGarbage.Proof.MlKem.Arm.CallsCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on 32-bit ARM: two runs in the buffers of a `Site`
@@ -9,6 +15,8 @@ leaks the same, and changes only what `Kept` allows, leaves two runs in it
 (`RelCT.two`); and two runs of a part leak the same by taint analysis from
 the pointers (`taint7`, `taint4`), or, for the sponge, by `hashS_tr`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Arm.KeyGen
 

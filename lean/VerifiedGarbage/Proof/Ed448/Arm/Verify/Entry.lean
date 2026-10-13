@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Ed448.Arm.Verify.Body
-import VerifiedGarbage.Proof.Ed25519.Arm.Whole.Wrap
+module
+
+public import VerifiedGarbage.Proof.Ed448.Arm.Verify.Body
+public import VerifiedGarbage.Proof.Ed25519.Arm.Whole.Wrap
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 verification on ARMv7: the contract, and the frame
@@ -9,6 +15,8 @@ frame (`Whole.wrap_ok`) around the body for a context of fewer than 256
 bytes; `verify_ok`, the whole function, with the check of the context's
 length before it.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.Arm.Verify
 

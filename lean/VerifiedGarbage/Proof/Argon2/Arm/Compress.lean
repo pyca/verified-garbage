@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Argon2.Arm.CompressContract
+module
+
+public import VerifiedGarbage.Proof.Argon2.Arm.CompressContract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Argon2 compression on ARMv7: correctness
@@ -8,6 +14,8 @@ initialization of both halves of scratch with X XOR Y (`init_ok`, one word at
 a time), the rows and columns (`Proof/Argon2/Arm/Rounds.lean`), and the
 epilogue writing the output and restoring the registers: `correct`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Argon2.Arm
 

@@ -1,8 +1,16 @@
-import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedPairedChecks
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedChecksPrefix
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedHints
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedHintEnd
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedRootsExec
+module
+
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedPairedChecks
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedChecksPrefix
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedHints
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedHintEnd
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedRootsExec
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Sign
 open VG VG.AArch64 VG.Spec.MlDsa

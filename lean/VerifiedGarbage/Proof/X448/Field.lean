@@ -1,4 +1,10 @@
-import VerifiedGarbage.Spec.X448
+module
+
+public import VerifiedGarbage.Spec.X448
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448: field elements as natural numbers
@@ -9,6 +15,8 @@ element of `GF(p)`, and the lemmas here turn what an implementation proves
 about its numbers (modulo `p`) into the operations of `Spec/X448.lean`, in the
 order the spec writes them.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448
 

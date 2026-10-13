@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Close
-import VerifiedGarbage.Proof.Bignum.AArch64.PubR2
-import VerifiedGarbage.Proof.RsaKeyGen.MrMont
+module
+
+public import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Close
+public import VerifiedGarbage.Proof.Bignum.AArch64.PubR2
+public import VerifiedGarbage.Proof.RsaKeyGen.MrMont
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # A candidate on AArch64: Montgomery arithmetic modulo `c`
@@ -11,6 +17,8 @@ the number 1 (`aOne`), `R² mod c` (`aR2`, `vg_rsa_public_precompute`'s
 `r2Steps`, `r2_ok`), `R mod c` (`aY`, then `aR1`), `c − R mod c` (`aRm1`)
 and the number of uniform witnesses needed, `checksW w` (`kChecks`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaKeyGen.AArch64
 

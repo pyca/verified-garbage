@@ -1,5 +1,11 @@
-import VerifiedGarbage.Impl.Weierstrass.X86_64.Inv
-import VerifiedGarbage.Proof.Weierstrass.X86_64.Loop
+module
+
+public import VerifiedGarbage.Impl.Weierstrass.X86_64.Inv
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.Loop
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Inversion by divsteps on x86-64: running blocks
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.Loop
 `irun`, which runs a block of register and memory instructions by symbolic
 execution, reading registers through the writes, for the inversion's proofs.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.X86_64
 

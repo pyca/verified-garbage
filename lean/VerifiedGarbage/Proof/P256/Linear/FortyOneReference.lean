@@ -1,4 +1,12 @@
-import VerifiedGarbage.Proof.P256.Linear.FortyOneCore
+module
+
+public import VerifiedGarbage.Proof.P256.Linear.FortyOneCore
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.P256.Linear.FortyOne
 open VG VG.AArch64 VG.Impl.Mont.AArch64 VG.Proof.Mont VG.Proof.Mont.AArch64

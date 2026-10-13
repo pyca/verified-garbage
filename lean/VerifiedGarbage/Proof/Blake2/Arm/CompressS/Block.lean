@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Blake2.Arm.CompressS.Rounds
+module
+
+public import VerifiedGarbage.Proof.Blake2.Arm.CompressS.Rounds
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # BLAKE2s on ARMv7: one block
@@ -7,6 +13,8 @@ Setting up the work vector (`init_ok`): copying the block to `scratch`,
 loading the state into registers and the IV words; and XORing the work vector
 into the state (`fin_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Blake2.ArmS
 

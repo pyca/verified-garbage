@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.MlDsa.KeyGen.Mono
-import VerifiedGarbage.Proof.MlDsa.KeyGen.Poly
-import VerifiedGarbage.Proof.MlDsa.KeyGen.Leak
+module
+
+public import VerifiedGarbage.Proof.MlDsa.KeyGen.Mono
+public import VerifiedGarbage.Proof.MlDsa.KeyGen.Poly
+public import VerifiedGarbage.Proof.MlDsa.KeyGen.Leak
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA key generation: the samplers' results, and masked polynomials
@@ -11,6 +17,8 @@ sampler succeeded is kept (`masked_one`), and one whose sampler failed is zero
 (`masked_zero`), so reduced and small (`small_zero`). The seeds of the
 samplers as bytes (`seedA_eq`, `seedS_eq`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.KeyGen
 

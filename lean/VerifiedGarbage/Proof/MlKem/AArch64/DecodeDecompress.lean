@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.MlKem.AArch64.Width
-import VerifiedGarbage.Proof.Framework.Range
+module
+
+public import VerifiedGarbage.Proof.MlKem.AArch64.Width
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Width
+public import VerifiedGarbage.Proof.Framework.Range
+meta import VerifiedGarbage.Proof.Framework.Range
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on AArch64: `vg_mlkem_decode_decompress`
@@ -8,6 +16,8 @@ Group `g` of the input is the number whose bytes are its bytes (`num g nb`,
 built byte by byte, `byte_step`), and coefficient `e` of the group is its
 base-`2ᵈ` digit `e` (`byteDecode_group`), decompressed (`coeff_step`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem
 

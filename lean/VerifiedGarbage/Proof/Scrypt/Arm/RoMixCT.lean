@@ -1,13 +1,30 @@
-import VerifiedGarbage.Proof.Scrypt.RoMix
-import VerifiedGarbage.Impl.Scrypt.Arm.RoMix
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.Set
-import VerifiedGarbage.Proof.Scrypt.Arm.BlockMixVerified
-import Mathlib.Tactic.DefEqTransformations
-import VerifiedGarbage.Proof.Framework.Arm.Contract
-import VerifiedGarbage.Spec.Scrypt.Contract
-import VerifiedGarbage.Proof.Scrypt.Arm.Lit
-import VerifiedGarbage.Proof.Framework.Omega
+module
+
+public import VerifiedGarbage.Proof.Scrypt.RoMix
+meta import VerifiedGarbage.Proof.Scrypt.RoMix
+public import VerifiedGarbage.Impl.Scrypt.Arm.RoMix
+meta import VerifiedGarbage.Impl.Scrypt.Arm.RoMix
+public import Mathlib.Tactic.Conv
+meta import Mathlib.Tactic.Conv
+public import Mathlib.Tactic.Set
+meta import Mathlib.Tactic.Set
+public import VerifiedGarbage.Proof.Scrypt.Arm.BlockMixVerified
+meta import VerifiedGarbage.Proof.Scrypt.Arm.BlockMixVerified
+public import Mathlib.Tactic.DefEqTransformations
+meta import Mathlib.Tactic.DefEqTransformations
+public import VerifiedGarbage.Proof.Framework.Arm.Contract
+meta import VerifiedGarbage.Proof.Framework.Arm.Contract
+public import VerifiedGarbage.Spec.Scrypt.Contract
+meta import VerifiedGarbage.Spec.Scrypt.Contract
+public import VerifiedGarbage.Proof.Scrypt.Arm.Lit
+meta import VerifiedGarbage.Proof.Scrypt.Arm.Lit
+public import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.Framework.Omega
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+import all Init.Data.Nat.Power2.Basic
 
 /-!
 # scryptROMix on 32-bit ARM: the precondition
@@ -18,6 +35,8 @@ The regions the function works on, and `BlockMixSpec`: what a call of
 (`Proof/Scrypt/AArch64/RoMixCT.lean`), with 32-bit pointers, whose zero
 extensions (`State.addr`) address memory and do not wrap.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Scrypt.Arm.RoMix
 

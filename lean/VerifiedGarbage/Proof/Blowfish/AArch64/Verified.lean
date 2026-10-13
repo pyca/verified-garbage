@@ -1,10 +1,18 @@
-import VerifiedGarbage.Proof.Blowfish.AArch64.EcbMain
-import VerifiedGarbage.Proof.Blowfish.AArch64.ConstantTime
-import VerifiedGarbage.Proof.Blowfish.Scratch
-import VerifiedGarbage.Proof.Framework.AArch64.Inline
-import VerifiedGarbage.Proof.Framework.Contract
+module
+
+public import VerifiedGarbage.Proof.Blowfish.AArch64.EcbMain
+public import VerifiedGarbage.Proof.Blowfish.AArch64.ConstantTime
+public import VerifiedGarbage.Proof.Blowfish.Scratch
+public import VerifiedGarbage.Proof.Framework.AArch64.Inline
+public import VerifiedGarbage.Proof.Framework.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # The ECB functions meet their contracts, with the working space as an argument -/
+
+@[expose] public section
 
 namespace VG.Proof.Blowfish.AArch64
 

@@ -1,17 +1,23 @@
-import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Verified
-import VerifiedGarbage.Proof.MlKem.X86_64.FragPrim
-import VerifiedGarbage.Proof.Framework.Lit
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.AddSub
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Mul
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.NttInv
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejNttCT
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.BallCT
-import VerifiedGarbage.Proof.MlDsa.X86_64.Round.NormLt
-import VerifiedGarbage.Proof.MlDsa.X86_64.Round.UseHint
-import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.SimpleBitPack
-import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.Unpack
-import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.HintUnpack
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Backend
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Verified
+public import VerifiedGarbage.Proof.MlKem.X86_64.FragPrim
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.AddSub
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Mul
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.NttInv
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejNttCT
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.BallCT
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Round.NormLt
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Round.UseHint
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.SimpleBitPack
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.Unpack
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.HintUnpack
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Backend
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA verification on x86-64: the primitives it calls
@@ -22,6 +28,8 @@ and call at most two deep, with any implementation `v` of the polynomial
 arithmetic (`prims_okWith`), so `verify (primsWith v.code) p` meets
 `verifyContract p`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86_64.Verify
 

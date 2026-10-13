@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.Cast5.AArch64.CbcVerified
-import VerifiedGarbage.Proof.Modes.AArch64.Fb
+module
+
+public import VerifiedGarbage.Proof.Cast5.AArch64.CbcVerified
+meta import VerifiedGarbage.Proof.Cast5.AArch64.CbcVerified
+public import VerifiedGarbage.Proof.Modes.AArch64.Fb
+meta import VerifiedGarbage.Proof.Modes.AArch64.Fb
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # CAST5-OFB and -CFB64 on AArch64 meet their contracts
@@ -17,6 +25,8 @@ subkeys, the IV and the data are secret. `ofb_framed`, … run them with their
 working space on the stack, zeroed on return: 112 bytes, the 13 words of the
 scratch buffer and 8 more.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Cast5.AArch64
 

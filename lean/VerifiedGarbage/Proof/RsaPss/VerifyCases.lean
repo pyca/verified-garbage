@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.RsaPss.SignCases
+module
+
+public import VerifiedGarbage.Proof.RsaPss.SignCases
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSASSA-PSS verification, byte by byte
@@ -8,6 +14,8 @@ top bits are zero, the first nonzero octet of `DB` (after `lz DB` zeros) is
 `0x01`, the salt after it has the expected length, and its `H'` is `H`
 (`verifyEncoding_bytes`): what the implementations check, a byte at a time.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPss
 

@@ -1,5 +1,7 @@
-import VerifiedGarbage.Proof.Framework.Slots
-import VerifiedGarbage.Proof.Framework.KernelList
+module
+
+public import VerifiedGarbage.Proof.Framework.Slots
+public import VerifiedGarbage.Proof.Framework.KernelList
 
 /-!
 # `Slots` operations for the kernel
@@ -10,6 +12,8 @@ for the precompiled hint search, which cannot compile `List.rec`; here are the
 operations a taint domain's kernel-evaluated step uses, written with
 `List.rec`, each proven equal to `Slots`'.
 -/
+
+@[expose] public section
 
 namespace VG.Slots
 

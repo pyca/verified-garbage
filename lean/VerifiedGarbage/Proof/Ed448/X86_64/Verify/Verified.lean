@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Ed448.X86_64.Verify.CT
+module
+
+public import VerifiedGarbage.Proof.Ed448.X86_64.Verify.CT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 verification on x86-64: `Verified`
@@ -9,6 +15,8 @@ satisfying the precondition, for any proof of `vg_ed448_verify_equation`
 (`EqOk`, `EqCT`): the registration file passes its own, so that only it
 imports that proof and the group theory it imports.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.X86_64.Verify
 

@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlKem.Arith
+module
+
+public import VerifiedGarbage.Proof.MlKem.Arith
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM: bit arrays as numbers, for every target
@@ -16,6 +22,8 @@ little-endian number in base `2ʷ` (`digits w`), and
   (`byteEncode_group`, `byteDecode_group`), from which `Encode.lean`
   derives the formulas an implementation computes.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem
 

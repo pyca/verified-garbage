@@ -1,10 +1,18 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFirst
-import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFirstMemory
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFirstRoots
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseFirstLoop
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFirst
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFirstMemory
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFirstRoots
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseFirstLoop
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## From `PairedAdvance.lean` -/
+
+@[expose] public section
 
 section
 

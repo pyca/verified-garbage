@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Dsa.X86_64.Core
+module
+
+public import VerifiedGarbage.Impl.Dsa.X86_64.Core
 
 /-! # DSA input checks and result masks
 
@@ -6,6 +8,9 @@ All checks accumulate an all-ones/zero mask. Only the initial checks of
 public modulus sizes and oddness branch before arithmetic. In particular,
 private-key consistency and signature scalar checks never skip arithmetic.
 -/
+
+@[expose] public section
+
 namespace VG.Impl.Dsa.X86_64.Checks
 
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public

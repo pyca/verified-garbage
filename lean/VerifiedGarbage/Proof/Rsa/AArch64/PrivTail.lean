@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Rsa.AArch64.PrivPub
-import VerifiedGarbage.Proof.Rsa.PrivCheck
+module
+
+public import VerifiedGarbage.Proof.Rsa.AArch64.PrivPub
+public import VerifiedGarbage.Proof.Rsa.PrivCheck
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_private_checked` on AArch64: the check and the release
@@ -9,6 +15,8 @@ compared with the input without branches (`cmpLoop_ok`), and `M` is
 released to `out` under the mask of `r₁ = r₂ = r₃ = 1` and their equality,
 and zeroed (`releaseLoop_ok`), whatever `M` and `out` hold (`tail_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.AArch64
 

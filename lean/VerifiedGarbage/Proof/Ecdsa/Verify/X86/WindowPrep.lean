@@ -1,8 +1,16 @@
-import VerifiedGarbage.Impl.Ecdsa.Verify.X86
-import VerifiedGarbage.Proof.Ecdsa.X86.Stages
-import VerifiedGarbage.Proof.Mont.X86.Chain
+module
+
+public import VerifiedGarbage.Impl.Ecdsa.Verify.X86
+public import VerifiedGarbage.Proof.Ecdsa.X86.Stages
+public import VerifiedGarbage.Proof.Mont.X86.Chain
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # Scalar recoding for the x86 P-256 variable-base window -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Verify.X86
 open VG VG.X86 VG.Impl.Mont.X86 VG.Impl.Mont VG.Impl.Weierstrass.X86 VG.Impl.Weierstrass

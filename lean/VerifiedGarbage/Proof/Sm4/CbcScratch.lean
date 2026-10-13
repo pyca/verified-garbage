@@ -1,6 +1,12 @@
-import VerifiedGarbage.Spec.Sm4.Cbc
-import VerifiedGarbage.Proof.Sm4.CtrCipher
-import VerifiedGarbage.Proof.Framework.Offset
+module
+
+public import VerifiedGarbage.Spec.Sm4.Cbc
+public import VerifiedGarbage.Proof.Sm4.CtrCipher
+public import VerifiedGarbage.Proof.Framework.Offset
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # SM4-CBC with its working space as an argument
@@ -12,6 +18,8 @@ the frame that keeps it on the stack (`Verified.stackScratchWiped`), which
 needs `cbcEncPost` and `cbcDecPost` to read the memory on return only
 within the function's buffers (`cbcEncPostOut_local`, `cbcDecPostOut_local`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sm4
 

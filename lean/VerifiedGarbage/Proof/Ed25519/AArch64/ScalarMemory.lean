@@ -1,8 +1,17 @@
-import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarWord
-import VerifiedGarbage.Spec.Ed25519.Contract
-import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
+module
+
+public import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarWord
+public import VerifiedGarbage.Spec.Ed25519.Contract
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Ed25519.AArch64.ScalarLoop`. -/
+
+@[expose] public section
+
 section
 /-!
 # Scalar reduction: the eight-word loop

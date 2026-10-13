@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Checked
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
-import VerifiedGarbage.Proof.Framework.AArch64.Taint
-import VerifiedGarbage.Proof.Framework.AllBelow
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.OptimizeK
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Checked
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
+public import VerifiedGarbage.Proof.Framework.AArch64.Taint
+public import VerifiedGarbage.Proof.Framework.AllBelow
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.OptimizeK
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Kernel-evaluated twins of the certificate checks. The kernel reduces a
 recursor (`Tree.rec`, `List.rec`, `Nat.rec`) directly, several times faster
@@ -11,6 +17,8 @@ blocks and derived `DecidableEq` instances (and a `decide` over `Fin n` is
 quadratic in `n`: see `Framework/AllBelow.lean`). Each twin is proved equal to
 (or to imply) the definition it replaces, so the certificate's statements are
 unchanged; the twins are only ever evaluated by the kernel. -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.AArch64.Forward
 open VG VG.AArch64

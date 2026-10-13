@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.MlDsa.X86.Sample.RejNtt
-import VerifiedGarbage.Proof.MlDsa.Sample.Signs
-import VerifiedGarbage.Impl.MlDsa.X86.Sample.Ball
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86.Sample.RejNtt
+meta import VerifiedGarbage.Proof.MlDsa.X86.Sample.RejNtt
+public import VerifiedGarbage.Proof.MlDsa.Sample.Signs
+meta import VerifiedGarbage.Proof.MlDsa.Sample.Signs
+public import VerifiedGarbage.Impl.MlDsa.X86.Sample.Ball
+meta import VerifiedGarbage.Impl.MlDsa.X86.Sample.Ball
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on x86 (32-bit): `vg_mldsa_sample_in_ball`, the state of the loop
@@ -15,6 +24,8 @@ iterations of the loop (`BallLoop.lean`). Iteration `k` starts from the state
 `i` in `edi`, and the `t = i + τ - 256` signs used shifted out of the words
 (`BI`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86.Sample.Ball
 

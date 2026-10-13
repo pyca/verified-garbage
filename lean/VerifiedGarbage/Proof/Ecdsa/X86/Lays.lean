@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Ecdsa.X86.SlotOps
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.X86.SlotOps
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDSA on x86 (32-bit): where the ladder's and the powers' slots are
@@ -9,6 +15,8 @@ for distinct `i`, so they are apart as `ladder_ok` and `pow_ok` need
 which `decide` checks. The functions' own working space `c.wk` is above them
 all, and below the tables of bits (`ladWk`, `powWkP`, `powWkN`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.X86
 

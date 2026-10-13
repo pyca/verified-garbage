@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Bits
-import VerifiedGarbage.Proof.MlDsa.Round.Ones
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Bits
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Bits
+public import VerifiedGarbage.Proof.MlDsa.Round.Ones
+meta import VerifiedGarbage.Proof.MlDsa.Round.Ones
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on AArch64: `vg_mldsa_make_hint`
@@ -7,6 +15,8 @@ import VerifiedGarbage.Proof.MlDsa.Round.Ones
 The hint is whether `r₁` of `r` and of `r + z mod q` differ: their xor, less
 than 64, is nonzero (`hbit_toNat`); `x8` counts the 1s (`J`, `onesTo`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Round
 

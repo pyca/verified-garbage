@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.Rc2
-import VerifiedGarbage.TCB.X86_64.Isa
+module
+
+public import VerifiedGarbage.Spec.Rc2
+public import VerifiedGarbage.TCB.X86_64.Isa
 
 /-!
 # Constant-time RC2 selection on baseline x86-64
@@ -9,6 +11,8 @@ with each public candidate using arithmetic, never used as an address or
 branch condition. Subtracting one from `x XOR i` borrows exactly when
 `x = i`; `sbb r10, r10` turns that borrow into the selection mask.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Rc2.X86_64
 

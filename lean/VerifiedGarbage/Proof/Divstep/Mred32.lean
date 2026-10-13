@@ -1,7 +1,16 @@
-import VerifiedGarbage.Proof.Divstep.Tc32Words
-import VerifiedGarbage.Proof.Divstep.Alg32Def
+module
+
+public import VerifiedGarbage.Proof.Divstep.Tc32Words
+public import VerifiedGarbage.Proof.Divstep.Alg32Def
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # One-word signed Montgomery reduction -/
+
+@[expose] public section
+
 namespace VG.Proof.Divstep.W32
 
 /-- `mredRaw` is exact: `2^32 · mredRaw t = t + k p`, with `k = t m mod 2^32`. -/

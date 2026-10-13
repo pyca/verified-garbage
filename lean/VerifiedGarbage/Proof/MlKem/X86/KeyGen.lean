@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.MlKem.X86.KeyGenBody
-import VerifiedGarbage.Spec.MlKem.Contract
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86.KeyGenBody
+public import VerifiedGarbage.Spec.MlKem.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM-768 on x86 (32-bit): `vg_mlkem768_keygen`
@@ -9,6 +15,8 @@ layout (`GOK`, `PrfOK`, `KgRowOK`, `FinOK`), computed from its offsets; the
 contract's precondition implies `TPre (Y L768)` (`pre_of`) and its public data
 `TPub`, which includes `ρ` (`pub_of`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.X86.KeyGen
 

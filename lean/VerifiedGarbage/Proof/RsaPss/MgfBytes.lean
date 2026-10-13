@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Mgf1.Basic
-import VerifiedGarbage.Proof.RsaPss.CtPad
+module
+
+public import VerifiedGarbage.Proof.Mgf1.Basic
+public import VerifiedGarbage.Proof.RsaPss.CtPad
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # MGF1, a byte at a time
@@ -8,6 +14,8 @@ Byte `p` of `MGF1(seed, n)` is byte `p mod hLen` of the digest of
 `seed ‖ I2OSP(⌊p / hLen⌋, 4)` (`mgf1_getD`): what the implementations
 compute, a counter at a time.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPss
 

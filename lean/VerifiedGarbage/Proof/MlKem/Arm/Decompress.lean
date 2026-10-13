@@ -1,7 +1,17 @@
-import VerifiedGarbage.Proof.MlKem.Arm.Add
-import VerifiedGarbage.Proof.MlKem.Encode
-import VerifiedGarbage.Proof.MlKem.Compress
-import VerifiedGarbage.Proof.Framework.Range
+module
+
+public import VerifiedGarbage.Proof.MlKem.Arm.Add
+meta import VerifiedGarbage.Proof.MlKem.Arm.Add
+public import VerifiedGarbage.Proof.MlKem.Encode
+meta import VerifiedGarbage.Proof.MlKem.Encode
+public import VerifiedGarbage.Proof.MlKem.Compress
+meta import VerifiedGarbage.Proof.MlKem.Compress
+public import VerifiedGarbage.Proof.Framework.Range
+meta import VerifiedGarbage.Proof.Framework.Range
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on 32-bit ARM: `vg_mlkem_decode_decompress`
@@ -12,6 +22,8 @@ for any bit, `bit_ok`). The invariant says which coefficients are written
 (`Inv`); their values are `decompress_val` of the fields of
 `decodeDecompress1`, `decodeDecompress4_even`, … .
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.Arm.Decompress
 

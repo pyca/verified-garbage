@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Rc4.AArch64.Consts
-import VerifiedGarbage.Proof.Rc4.AArch64.Group
+module
+
+public import VerifiedGarbage.Proof.Rc4.AArch64.Consts
+public import VerifiedGarbage.Proof.Rc4.AArch64.Group
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The PRGA's setup
@@ -10,6 +16,8 @@ group's base `B = (i + 1) mod 256` rounded down to 16 and the lanes to skip
 `sk = (i + 1) mod 16`; loads the table from `B`; and leaves the constants,
 `j - B`, `-B` and `S[i + 1]` broadcast: the first group's `LaneInv`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rc4.AArch64
 open VG VG.AArch64 VG.AArch64.RegUpd VG.Impl.Rc4.AArch64 VG.Spec.Rc4 VG.Proof.Rc4

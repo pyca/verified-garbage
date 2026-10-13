@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Mont.AArch64.Words
-import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+module
+
+public import VerifiedGarbage.Proof.Mont.AArch64.Words
+public import VerifiedGarbage.Proof.Framework.AArch64.Exec
+public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Montgomery arithmetic on AArch64: rows of products
@@ -12,6 +18,8 @@ adds pieces to consecutive words with the carry flag between them
 words `ts` with two chains, whose pieces add up to `x W`
 (`pieceAB`, `pieces_sum`), if the sum fits.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Mont.AArch64
 

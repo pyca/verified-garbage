@@ -1,4 +1,6 @@
-import VerifiedGarbage.TCB.X86_64.Isa
+module
+
+public import VerifiedGarbage.TCB.X86_64.Isa
 
 /-!
 # Argon2 H′ on x86-64
@@ -10,6 +12,8 @@ The caller's 16 KiB scratch contains the 192-byte hash state at offset 0,
 length prefix at 832, and saved registers at 840. The remaining scratch
 is available to the enclosing Argon2 derivation.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Argon2.X86_64.HPrime
 

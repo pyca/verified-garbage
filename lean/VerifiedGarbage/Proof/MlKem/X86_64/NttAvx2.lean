@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.MlKem.X86_64.YNttPack
-import VerifiedGarbage.Proof.MlKem.X86_64.NttInv
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86_64.YNttPack
+meta import VerifiedGarbage.Proof.MlKem.X86_64.YNttPack
+public import VerifiedGarbage.Proof.MlKem.X86_64.NttInv
+meta import VerifiedGarbage.Proof.MlKem.X86_64.NttInv
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86-64: `vg_mlkem_ntt_avx2` and `vg_mlkem_inv_ntt_avx2`
@@ -10,6 +18,8 @@ the layers read it) and `f` as words in `scratch` (`ypro_ok`), each layer is
 `nttLayer` or `nttInvLayer` (`ylay_ok`, `ylay8_ok`, `ylay4_ok`, `ylay2_ok`),
 and the epilogue unpacks `S` into `f` (`yepi_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.X86_64
 

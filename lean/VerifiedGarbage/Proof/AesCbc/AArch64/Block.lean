@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesCbc.AArch64.Call
+module
+
+public import VerifiedGarbage.Proof.AesCbc.AArch64.Call
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CBC on AArch64: the code between the calls
@@ -9,6 +15,8 @@ block at `x22` XORed with the chaining value), `copy` (a block copied, as two
 words) and `advance`, with their memories as explicit writes (`savedMem`,
 `xorMem`, `copyMem`). `crun` runs a block symbolically.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesCbc.AArch64
 

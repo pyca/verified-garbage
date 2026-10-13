@@ -1,14 +1,31 @@
-import VerifiedGarbage.Proof.Weierstrass.X86.PointVerified
-import VerifiedGarbage.Proof.Weierstrass.X86.MontP192
-import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P192
-import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P224
-import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P256
-import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P384
-import VerifiedGarbage.Proof.Framework.X86.Taint
-import VerifiedGarbage.Spec.P192
-import VerifiedGarbage.Spec.P224
-import VerifiedGarbage.Spec.P256
-import VerifiedGarbage.Spec.P384
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86.PointVerified
+meta import VerifiedGarbage.Proof.Weierstrass.X86.PointVerified
+public import VerifiedGarbage.Proof.Weierstrass.X86.MontP192
+meta import VerifiedGarbage.Proof.Weierstrass.X86.MontP192
+public import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P192
+meta import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P192
+public import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P224
+meta import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P224
+public import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P256
+meta import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P256
+public import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P384
+meta import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P384
+public import VerifiedGarbage.Proof.Framework.X86.Taint
+meta import VerifiedGarbage.Proof.Framework.X86.Taint
+public import VerifiedGarbage.Spec.P192
+meta import VerifiedGarbage.Spec.P192
+public import VerifiedGarbage.Spec.P224
+meta import VerifiedGarbage.Spec.P224
+public import VerifiedGarbage.Spec.P256
+meta import VerifiedGarbage.Spec.P256
+public import VerifiedGarbage.Spec.P384
+meta import VerifiedGarbage.Spec.P384
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Complete point addition and doubling as functions, on x86 (32-bit): the curves
@@ -20,6 +37,8 @@ holding `ws` the base address of the writable region, the 20 bytes below
 `esp` outside it). Fermat's little theorem in `Fin p` follows from the
 curve's group law (`fermat_of_law`), which the registration files supply.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.X86.Point
 

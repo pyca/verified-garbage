@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.ProjectiveFinal
-import VerifiedGarbage.Proof.Ecdsa.Verify
-import VerifiedGarbage.Proof.Ecdh.X86_64.Main
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.ProjectiveFinal
+public import VerifiedGarbage.Proof.Ecdsa.Verify
+public import VerifiedGarbage.Proof.Ecdh.X86_64.Main
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDSA verification on x86-64: the whole function
@@ -12,6 +18,8 @@ comb's tables, if any, right (`CombTbls`), and restores the callee-saved
 registers. `front_ok`, `mid_ok`, `points_ok` and `tail_ok` compute what `verify_eq`
 connects to the specification.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Verify.X86_64
 

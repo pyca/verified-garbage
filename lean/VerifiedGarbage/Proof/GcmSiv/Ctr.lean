@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.GcmSiv.Spec
-import VerifiedGarbage.Proof.Siv.Spec
+module
+
+public import VerifiedGarbage.Proof.GcmSiv.Spec
+public import VerifiedGarbage.Proof.Siv.Spec
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM-SIV: counter mode a block at a time
@@ -15,6 +21,8 @@ The counter blocks: the first is the tag with the top bit of its last byte
 set (`initialCounter_words`), and block `j` is the first with its first word
 (little-endian) plus `j` (`counterBlock_word`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.GcmSiv
 

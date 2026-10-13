@@ -1,6 +1,14 @@
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowEntryTiming
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowSumTiming
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowStep
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowEntryTiming
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowSumTiming
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowStep
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.AArch64
 open VG VG.AArch64 VG.Impl.Mont.AArch64 VG.Impl.Mont VG.Impl.Weierstrass.AArch64 VG.Impl.Weierstrass

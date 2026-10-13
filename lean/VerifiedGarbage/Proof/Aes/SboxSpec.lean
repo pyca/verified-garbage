@@ -1,6 +1,12 @@
-import VerifiedGarbage.Spec.Aes
-import VerifiedGarbage.Proof.Framework.Bitslice.Table
-import VerifiedGarbage.Proof.Framework.PowLit
+module
+
+public import VerifiedGarbage.Spec.Aes
+public import VerifiedGarbage.Proof.Framework.Bitslice.Table
+public import VerifiedGarbage.Proof.Framework.PowLit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The specification's S-box, on all 256 inputs at once
@@ -15,6 +21,8 @@ input; the kernel then evaluates it on the 256 bytes at once (in each
 target's proof of its S-box, e.g. `Proof/Aes/X86/Sbox.lean`) in a fraction
 of a second.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Aes
 

@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Ed448.X86_64.PublicKey.Hash
-import VerifiedGarbage.Proof.Ed448.Prune
-import VerifiedGarbage.Proof.Ed448.X86_64.Words57
-import VerifiedGarbage.Proof.Ed448.X86_64.BaseVerified
+module
+
+public import VerifiedGarbage.Proof.Ed448.X86_64.PublicKey.Hash
+public import VerifiedGarbage.Proof.Ed448.Prune
+public import VerifiedGarbage.Proof.Ed448.X86_64.Words57
+public import VerifiedGarbage.Proof.Ed448.X86_64.BaseVerified
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 public-key derivation on x86-64: pruning and the base point
@@ -10,6 +16,8 @@ The first 57 bytes of the hash, pruned, are stored in the frame
 (`prune_ok`), `[s]B` is encoded into `out` (`base_ok`), and the frame's copy
 of `s` is cleared (`wipe_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.X86_64.PublicKey
 

@@ -1,7 +1,13 @@
-import VerifiedGarbage.Spec.Idea.Ofb
-import VerifiedGarbage.Spec.Idea.Cfb
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Idea.Arith
+module
+
+public import VerifiedGarbage.Spec.Idea.Ofb
+public import VerifiedGarbage.Spec.Idea.Cfb
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Idea.Arith
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # IDEA-OFB and -CFB64 with their working space as an argument
@@ -13,6 +19,8 @@ target lays out its own), for the frame that keeps it on the stack
 memory on return only within the function's buffers (`ofbPostOut_local`,
 …).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Idea
 

@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.X448.X86.Counters
-import VerifiedGarbage.Proof.X448.Invert
+module
+
+public import VerifiedGarbage.Proof.X448.X86.Counters
+public import VerifiedGarbage.Proof.X448.Invert
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 on x86 (32-bit): runs of squarings
@@ -8,6 +14,8 @@ The inversion reuses field multiplication in a loop with its own counter. The
 field slots and memory frame compose exactly as they do for straight-line
 operation lists.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448.X86
 

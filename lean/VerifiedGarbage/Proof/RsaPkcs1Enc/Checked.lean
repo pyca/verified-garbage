@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.RsaPkcs1Enc.Decrypt
-import VerifiedGarbage.Proof.Rsa.Checked
-import Mathlib.Data.Fintype.Card
+module
+
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.Decrypt
+public import VerifiedGarbage.Proof.Rsa.Checked
+public import Mathlib.Data.Fintype.Card
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-PKCS1-v1_5 decryption with RSADP checked against `e`
@@ -25,6 +31,8 @@ and `q` are prime:
 * `decrypt_encrypt`: decrypting what `encrypt` gives with the public key
   `(n, e)` returns the message.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPkcs1Enc
 

@@ -1,7 +1,16 @@
-import VerifiedGarbage.Proof.Ed448.X86_64.Window.Loop
-import VerifiedGarbage.Proof.X448.X86_64.Inv
+module
+
+public import VerifiedGarbage.Proof.Ed448.X86_64.Window.Loop
+public import VerifiedGarbage.Proof.X448.X86_64.Inv
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! End-to-end joint multiplication, including runtime table construction. -/
+
+@[expose] public section
+
 namespace VG.Proof.Ed448.X86_64.Window
 set_option exponentiation.threshold 1024
 

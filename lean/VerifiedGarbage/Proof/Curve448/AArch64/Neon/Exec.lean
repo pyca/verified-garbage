@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Curve448.AArch64.Neon.Lanes
-import VerifiedGarbage.Proof.X448.AArch64.Mem
-import VerifiedGarbage.Impl.Curve448.AArch64.Neon
-import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+module
+
+public import VerifiedGarbage.Proof.Curve448.AArch64.Neon.Lanes
+public import VerifiedGarbage.Proof.X448.AArch64.Mem
+public import VerifiedGarbage.Impl.Curve448.AArch64.Neon
+public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The vector loads and stores of `Neon.mul2`
@@ -10,6 +16,8 @@ Untrusted: everything here is checked by Lean. `nw m base d` is the 32-bit
 word at offset `d` of the working space; vector loads and stores move four of
 them at once.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Curve448.AArch64.Neon
 

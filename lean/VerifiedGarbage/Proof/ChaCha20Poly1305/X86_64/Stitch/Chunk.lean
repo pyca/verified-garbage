@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.Poly1305.X86_64.Setup
-import VerifiedGarbage.Proof.Poly1305.Spec
-import VerifiedGarbage.Proof.Framework.X86_64.VecKeep
-import VerifiedGarbage.Impl.ChaCha20Poly1305.X86_64.Stitch
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.Xor
+module
+
+public import VerifiedGarbage.Proof.Poly1305.X86_64.Setup
+public import VerifiedGarbage.Proof.Poly1305.Spec
+public import VerifiedGarbage.Proof.Framework.X86_64.VecKeep
+public import VerifiedGarbage.Impl.ChaCha20Poly1305.X86_64.Stitch
+public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.Xor
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ChaCha20 and Poly1305 together (x86-64): the blocks of Poly1305
@@ -17,6 +23,8 @@ and no vector register (`WP.vecKeep`), so ChaCha20's quarter rounds, which
 they run between, keep their state; `Acc` and `Half` read only registers,
 which the quarter rounds keep.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.ChaCha20Poly1305.X86_64.Stitch
 

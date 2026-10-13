@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Camellia.Bytes
-import VerifiedGarbage.Proof.Aes.Bitsliced
+module
+
+public import VerifiedGarbage.Proof.Camellia.Bytes
+public import VerifiedGarbage.Proof.Aes.Bitsliced
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Bitsliced Camellia: the layout and the layers
@@ -17,6 +23,8 @@ RFC 3713 it computes on the halves: a round (`round_rel`), FL and FLINV
 output bits to input bits (`toBsG`, `keyInG`, `outPG`, …) are what each
 target's checks compare its code with.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Camellia
 

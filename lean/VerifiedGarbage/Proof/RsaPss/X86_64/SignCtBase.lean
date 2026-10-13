@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.RsaPss.X86_64.SignVerified
-import VerifiedGarbage.Proof.RsaPss.X86_64.SignFixed
-import VerifiedGarbage.Proof.RsaPss.X86_64.MgfCT
+module
+
+public import VerifiedGarbage.Proof.RsaPss.X86_64.SignVerified
+public import VerifiedGarbage.Proof.RsaPss.X86_64.SignFixed
+public import VerifiedGarbage.Proof.RsaPss.X86_64.MgfCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSASSA-PSS signing on x86-64: two runs
@@ -14,6 +20,8 @@ between two pieces is described by `SS`; both runs then start the next
 piece's taint analysis from the same public values (`stwo`). The writable
 regions after the frame are `out` and the working space.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPss.X86_64
 

@@ -1,13 +1,22 @@
-import VerifiedGarbage.Proof.Dsa.X86_64.FinishCT
-import VerifiedGarbage.Proof.Dsa.X86_64.PowerCallCT
-import VerifiedGarbage.Proof.Dsa.X86_64.ProductCallCT
-import VerifiedGarbage.Proof.Dsa.X86_64.ReduceCallCT
-import VerifiedGarbage.Proof.Dsa.X86_64.AddCallCT
-import VerifiedGarbage.Proof.Dsa.X86_64.Add
-import VerifiedGarbage.Proof.Dsa.X86_64.Multiply
-import VerifiedGarbage.Proof.Dsa.X86_64.Reduce
+module
+
+public import VerifiedGarbage.Proof.Dsa.X86_64.FinishCT
+public import VerifiedGarbage.Proof.Dsa.X86_64.PowerCallCT
+public import VerifiedGarbage.Proof.Dsa.X86_64.ProductCallCT
+public import VerifiedGarbage.Proof.Dsa.X86_64.ReduceCallCT
+public import VerifiedGarbage.Proof.Dsa.X86_64.AddCallCT
+public import VerifiedGarbage.Proof.Dsa.X86_64.Add
+public import VerifiedGarbage.Proof.Dsa.X86_64.Multiply
+public import VerifiedGarbage.Proof.Dsa.X86_64.Reduce
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # Retaining public result bindings across arithmetic calls -/
+
+@[expose] public section
+
 namespace VG.Proof.Dsa.X86_64
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public
 open VG.Impl.Dsa.Layout VG.Impl.Dsa.X86_64

@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.X25519.X86_64.Step
-import VerifiedGarbage.Impl.X25519.X86_64.Adx
+module
+
+public import VerifiedGarbage.Proof.X25519.X86_64.Step
+public import VerifiedGarbage.Impl.X25519.X86_64.Adx
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X25519 on x86-64: the steps of the BMI2/ADX field arithmetic
@@ -12,6 +18,8 @@ word doubled through CF while another is added through OF (`dblAdd`), and the
 instructions around them. Each states what it computes as an equation on
 numbers, the carries in and out included, which `omega` composes.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X25519.X86_64
 

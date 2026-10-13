@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Message.SignCall
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.SignCall
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on AArch64, `sign_message`: correctness
@@ -10,6 +16,8 @@ computes `μ` of the formatted message and calls the signing function on `μ`
 `c`, which gives the signature of `ML-DSA.Sign_internal` on the formatted
 message (`signMessage_wp`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Message
 

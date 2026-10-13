@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512Tail.Out
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.Xor
-import VerifiedGarbage.Proof.ChaCha20.X86_64.XorBuf
+module
+
+public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512Tail.Out
+public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.Xor
+public import VerifiedGarbage.Proof.ChaCha20.X86_64.XorBuf
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ChaCha20 on x86-64 with AVX-512, the last bytes
@@ -9,6 +15,8 @@ import VerifiedGarbage.Proof.ChaCha20.X86_64.XorBuf
 `vg_chacha20_xor_avx512` (`TInv`: the first `p` bytes of data done, `p` a
 multiple of 64, fewer than 1024 left), to the end of the function.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.ChaCha20.X86_64.Avx512Tail
 

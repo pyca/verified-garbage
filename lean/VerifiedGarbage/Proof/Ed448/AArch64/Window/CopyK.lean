@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.X448.AArch64.Init
-import VerifiedGarbage.Proof.X448.AArch64.BitWrite
-import VerifiedGarbage.Impl.Ed448.AArch64.VerifyWindow
+module
+
+public import VerifiedGarbage.Proof.X448.AArch64.Init
+public import VerifiedGarbage.Proof.X448.AArch64.BitWrite
+public import VerifiedGarbage.Impl.Ed448.AArch64.VerifyWindow
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 verification on AArch64: the challenge copied
@@ -10,6 +16,8 @@ challenge's 57 bytes (at `x2`) to `KB` in the working space, byte by byte
 (`copyK_ok`), so that the windows read them at addresses from public
 registers.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.AArch64.Window
 

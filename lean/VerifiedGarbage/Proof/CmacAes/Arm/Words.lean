@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.CmacAes.Arm.Call
-import VerifiedGarbage.Proof.Cmac.Block32
-import VerifiedGarbage.Proof.MdStream.Arm.Common
+module
+
+public import VerifiedGarbage.Proof.CmacAes.Arm.Call
+public import VerifiedGarbage.Proof.Cmac.Block32
+public import VerifiedGarbage.Proof.MdStream.Arm.Common
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CMAC on ARMv7: blocks formed a word at a time
@@ -10,6 +16,8 @@ with: the XOR of the blocks at `pb + pd` and `qb + qd` stored at `cb + cd`
 through two temporaries (`xorBlk`, which leaves `Cmac.xor4Mem`), and four
 stores of a zero register (`zeroBlk`, which leaves `Cmac.zero4`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.CmacAes.Arm
 

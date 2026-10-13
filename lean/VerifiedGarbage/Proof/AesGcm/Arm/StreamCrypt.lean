@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesGcm.Arm.TextAbsorb
+module
+
+public import VerifiedGarbage.Proof.AesGcm.Arm.TextAbsorb
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on ARMv7: `vg_aes_gcm_stream_encrypt` and `vg_aes_gcm_stream_decrypt`
@@ -8,6 +14,8 @@ registers in `scratch` (`W`); `encrypt` XORs the keystream into the data
 (`crypt`) and then absorbs the ciphertext into GHASH (`textAbsorb`), and
 `decrypt` the other way round (`streamEncrypt_wp`, `streamDecrypt_wp`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

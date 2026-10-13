@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.RsaOaep.Mask
-import VerifiedGarbage.Proof.RsaOaep.Scan
-import VerifiedGarbage.Spec.Rsa.Contract
+module
+
+public import VerifiedGarbage.Proof.RsaOaep.Mask
+public import VerifiedGarbage.Proof.RsaOaep.Scan
+public import VerifiedGarbage.Spec.Rsa.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-OAEP: the decoding, on any target
@@ -10,6 +16,8 @@ and the lemmas that read it from a working space: `EM` unmasked by MGF1
 twice (`chain_eq`), `decode` with `DB` read from it (`decode_eq`), and the
 output written under a mask (`out_list`, `out_zero`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaOaep
 

@@ -1,19 +1,41 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourSpec
-import VerifiedGarbage.Proof.MlDsa.KeyGen.Masked
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourShake
-import VerifiedGarbage.Proof.MlDsa.KeyGen.Leak
-import VerifiedGarbage.Spec.MlDsa.BoundedFour
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourParseTiming
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourBatch
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourOuterTaint
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourRound
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourAdaptive
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourFinish
-import VerifiedGarbage.Proof.MlKem.AArch64.Common
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Verified
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourSpec
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourSpec
+public import VerifiedGarbage.Proof.MlDsa.KeyGen.Masked
+meta import VerifiedGarbage.Proof.MlDsa.KeyGen.Masked
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourShake
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourShake
+public import VerifiedGarbage.Proof.MlDsa.KeyGen.Leak
+meta import VerifiedGarbage.Proof.MlDsa.KeyGen.Leak
+public import VerifiedGarbage.Spec.MlDsa.BoundedFour
+meta import VerifiedGarbage.Spec.MlDsa.BoundedFour
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourParseTiming
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourParseTiming
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourBatch
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourBatch
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourOuterTaint
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourOuterTaint
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourRound
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourRound
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourAdaptive
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourAdaptive
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourFinish
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourFinish
+public import VerifiedGarbage.Proof.MlKem.AArch64.Common
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Common
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Verified
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Verified
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## From `BoundedFourSmall.lean` -/
+
+@[expose] public section
 
 section
 
@@ -85,47 +107,43 @@ section
 namespace VG.Proof.MlDsa.AArch64.Optimized.BoundedFour
 open VG VG.AArch64 VG.Spec.MlDsa VG.Proof.MlDsa.Sample
 
-theorem BatchInv.parseReady {σ s : State} {b p : Addr} {i off : Nat}
+theorem BatchAt.parseReady {σ s : State} {b p : Addr} {η i off : Nat}
     {L : Nat→List Zq} {X : Nat→List Byte} (hi : i<4)
-    (hy : BatchLayout σ b p off X) (hs : BatchInv σ s b p L) :
-    ParseReady i off (b+6000) (outputAt p i) (inputAt b i off) (countAt b i) (L i) (X i) s :=
-  ⟨hs.fields.bound i hi,hy.length i hi,
+    (hy : BatchLayout σ b p off X) (h : BatchAt σ b p η off L X i s) :
+    ParseReady (b+6000) (outputAt p i) (inputAt b i off) (countAt b i) (L i) (X i) s := by
+  have hd : doneBatch η i L X i=L i := by simp [doneBatch]
+  have hs := h.1
+  have hb := hs.fields.bound i hi
+  have hst := hs.fields.stored i hi
+  have hc := hs.fields.count i hi
+  rw [hd] at hb hst hc
+  exact ⟨hb,hy.length i hi,
     (hy.vector i hi).frame hs.keep hs.frame (hy.streamsApart i hi),
-    (hy.scalar i hi).frame hs.keep hs.frame (hy.streamsApart i hi),hs.table,hs.fields.stored i hi,
-    by rw [hs.base]; rfl,by rw [hs.output]; rfl,by rw [hs.base]; rfl,
-    by rw [hs.base],hs.fields.count i hi,
+    (hy.scalar i hi).frame hs.keep hs.frame (hy.streamsApart i hi),hs.table,hst,
+    h.2.1,h.2.2.1,h.2.2.2.1,by rw [hs.base],hc,
     by rw [hs.keep.rd,hs.keep.wr]; exact hy.countRead i hi⟩
 
-theorem updateBatch_length {η i : Nat} {L M : Nat→List Zq} {X Y : Nat→List Byte}
-    (hi : i<4) (hl : ∀j<4,(L j).length=(M j).length)
-    (hx : ∀j<4,(X j).map (hbOks η)=(Y j).map (hbOks η)) :
-    ∀j<4,(updateBatch η i L X j).length=(updateBatch η i M Y j).length := by
-  intro j hj
-  unfold updateBatch
-  by_cases he : j=i
-  · rw [ite_eq_left he,ite_eq_left he]
-    exact rbFold_length_congr (hl i hi) (hx i hi)
-  · rw [ite_eq_right he,ite_eq_right he]
-    exact hl j hj
-
-theorem batchStep_relCT {σ τ : State} {b p : Addr} {η i off : Nat}
-    (hη : η=2∨η=4) (hi : i<4) (ho : off=0∨off=272)
+theorem batchAt_relCT {σ τ : State} {b p : Addr} {η i off : Nat}
+    (hη : η=2∨η=4) (hi : i<4)
     {L M : Nat→List Zq} {X Y : Nat→List Byte}
     (sx : BatchLayout σ b p off X) (sy : BatchLayout τ b p off Y) (hsp : σ.sp=τ.sp)
     (hl : ∀j<4,(L j).length=(M j).length)
     (hx : ∀j<4,(X j).map (hbOks η)=(Y j).map (hbOks η)) :
-    RelCT isa (fun s t=>BatchInv σ s b p L ∧ BatchInv τ t b p M)
-      (Impl.MlDsa.AArch64.Optimized.BoundedFour.parse true η i off)
-      (fun s t=>BatchInv σ s b p (updateBatch η i L X) ∧ BatchInv τ t b p (updateBatch η i M Y)) := by
-  have hc := (parse_relCT hη hi ho (hl i hi) (hx i hi)).mono
-    (fun s t (h : BatchInv σ s b p L ∧ BatchInv τ t b p M)=>
+    RelCT isa (fun s t=>BatchAt σ b p η off L X i s ∧ BatchAt τ b p η off M Y i t)
+      (Impl.MlDsa.AArch64.Optimized.BoundedFour.parse true η)
+      (fun s t=>BatchAt σ b p η off L X (i+1) s ∧ BatchAt τ b p η off M Y (i+1) t) := by
+  have hc := (parse_relCT hη (hl i hi) (hx i hi)).mono
+    (fun s t (h : BatchAt σ b p η off L X i s ∧ BatchAt τ b p η off M Y i t)=>
       ⟨h.1.parseReady hi sx,h.2.parseReady hi sy,
-        by rw [h.1.keep.sp,h.2.keep.sp]; exact hsp,
-        by rw [h.1.base,h.2.base],by rw [h.1.output,h.2.output]⟩)
+        by rw [h.1.1.keep.sp,h.2.1.keep.sp]; exact hsp⟩)
     (fun _ _ _=>True.intro)
-  exact (hc.wp (fun _ _ h=>⟨batchStep_ok hη hi (by omega) sx h.1,
-      batchStep_ok hη hi (by omega) sy h.2⟩)).mono
+  exact (hc.wp (fun _ _ h=>⟨batchAt_step hη hi sx h.1,batchAt_step hη hi sy h.2⟩)).mono
     (fun _ _ h=>h) (fun _ _ h=>h.2)
+
+theorem batchInit_taint {off : Nat} (ho : off=0∨off=272) : ∃h,
+    (taint.check (Taint.ofRegs [])
+      (.block (Impl.MlDsa.AArch64.Optimized.BoundedFour.batchInit off)) h).isSome=true := by
+  rcases ho with rfl|rfl <;> exact ⟨_,by taint_decide⟩
 
 theorem batch_relCT {σ τ : State} {b p : Addr} {η off : Nat}
     (hη : η=2∨η=4) (ho : off=0∨off=272)
@@ -137,17 +155,33 @@ theorem batch_relCT {σ τ : State} {b p : Addr} {η off : Nat}
       (Impl.MlDsa.AArch64.Optimized.BoundedFour.batch true η off)
       (fun s t=>BatchInv σ s b p (fun i=>rbFold η (L i) (X i)) ∧
         BatchInv τ t b p (fun i=>rbFold η (M i) (Y i))) := by
-  have h0:=updateBatch_length (η := η) (i := 0) (by decide) hl hx
-  have h1:=updateBatch_length (η := η) (i := 1) (by decide) h0 hx
-  have h2:=updateBatch_length (η := η) (i := 2) (by decide) h1 hx
+  obtain ⟨_,hi⟩:=batchInit_taint ho
   unfold Impl.MlDsa.AArch64.Optimized.BoundedFour.batch
-  refine RelCT.seq (batchStep_relCT hη (by decide : 0<4) ho sx sy hsp hl hx) ?_
-  refine RelCT.seq (batchStep_relCT hη (by decide : 1<4) ho sx sy hsp h0 hx) ?_
-  refine RelCT.seq (batchStep_relCT hη (by decide : 2<4) ho sx sy hsp h1 hx) ?_
-  exact (batchStep_relCT hη (by decide : 3<4) ho sx sy hsp h2 hx).mono
-    (fun _ _ h=>h) (fun _ _ h=>
-      ⟨h.1.congr (fun _ hi=>updateBatch_four η L X hi),
-       h.2.congr (fun _ hi=>updateBatch_four η M Y hi)⟩)
+  apply RelCT.seq (R := fun s t=>BatchAt σ b p η off L X 0 s ∧ BatchAt τ b p η off M Y 0 t)
+  · have hc : RelCT isa (fun s t=>BatchInv σ s b p L ∧ BatchInv τ t b p M)
+        (.block (Impl.MlDsa.AArch64.Optimized.BoundedFour.batchInit off)) (fun _ _=>True) :=
+      RelCT.taint (A := taint) _ (fun _ _ h=>VG.Proof.MlKem.AArch64.agree_of
+        (by rw [h.1.keep.sp,h.2.keep.sp]; exact hsp) (fun r hr=>by simp at hr)) hi
+    exact (hc.wp (fun s t h=>⟨batchAt_init (by omega) h.1,batchAt_init (by omega) h.2⟩)).mono
+      (fun _ _ h=>h) (fun _ _ h=>h.2)
+  · refine (RelCT.loop (M := isa) (fun m s t=>∃ i,i<4 ∧ m=4-i ∧
+        BatchAt σ b p η off L X i s ∧ BatchAt τ b p η off M Y i t)
+      (fun m=>?_) 4).mono (fun s t h=>⟨0,by decide,rfl,h⟩) (fun _ _ h=>h)
+    apply RelCT.exists_
+    intro i
+    intro s t tr ur s' t' ⟨hi,hm,h⟩ es et
+    obtain ⟨htr,h1,h2⟩ := batchAt_relCT hη hi sx sy hsp hl hx s t tr ur s' t' h es et
+    refine ⟨htr,?_,?_,?_⟩
+    · rw [batchAt_eval h1,batchAt_eval h2]
+    · intro he
+      rw [batchAt_eval h1] at he
+      have hl4 : i+1=4 := by simp at he; omega
+      rw [hl4] at h1 h2
+      exact ⟨h1.last,h2.last⟩
+    · intro he
+      rw [batchAt_eval h1] at he
+      have hl4 : i+1<4 := by simp at he; omega
+      exact ⟨4-(i+1),by omega,i+1,hl4,rfl,h1,h2⟩
 
 end VG.Proof.MlDsa.AArch64.Optimized.BoundedFour
 

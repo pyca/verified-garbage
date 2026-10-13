@@ -1,11 +1,19 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseAdd
-import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.MatrixMask
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourMaskStep
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourMaskMemory
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourMaskInit
-import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Blocks
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseAdd
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.MatrixMask
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourMaskStep
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourMaskMemory
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourMaskInit
+public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Blocks
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## From `MatrixMaskGroup.lean` -/
+
+@[expose] public section
 
 section
 

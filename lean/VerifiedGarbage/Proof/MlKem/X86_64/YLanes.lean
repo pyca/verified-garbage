@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.MlKem.X86_64.VLay
-import VerifiedGarbage.Proof.Framework.X86_64.LaneSse
-import VerifiedGarbage.Impl.MlKem.X86_64.Avx
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86_64.VLay
+public import VerifiedGarbage.Proof.Framework.X86_64.LaneSse
+public import VerifiedGarbage.Impl.MlKem.X86_64.Avx
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86-64: coefficients in the lanes of AVX2 registers
@@ -12,6 +18,8 @@ they say of lane `l` of `ymm r` in `s`. `YOnly rs` is `XOnly rs` for both
 lanes, and `YConsts` is `VConsts` for both lanes; `yld_ok` is a 256-bit load,
 `yconsts_ok` the constants.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.X86_64
 

@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Shared
-import VerifiedGarbage.Proof.Bignum.AArch64.Setup
+module
+
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Shared
+public import VerifiedGarbage.Proof.Bignum.AArch64.Setup
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # An RSA key from its primes on AArch64: the pieces of `d`
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.Bignum.AArch64.Setup
 `[aE] := e` (`loadEv_k`), the mask of `L ≥ 2` into `kOk` (`lGe2_k`), and
 `minv`'s inverse of `e` modulo `2⁶⁴`, left in `x4` (`minvX4_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaKeyGen.AArch64.Key
 

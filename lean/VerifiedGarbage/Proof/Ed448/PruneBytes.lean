@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Ed448.Prune
+module
+
+public import VerifiedGarbage.Proof.Ed448.Prune
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448: pruning a scalar, on bytes
@@ -8,6 +14,8 @@ given as its first byte, the 54 bytes after it (`M`), and its bytes 55 and
 56: byte 0 with bits 0–1 cleared, byte 55 with bit 7 set, and byte 56 zero
 (`prune_bytes`). Like `Prune.lean`, this module imports only Lean core.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448
 

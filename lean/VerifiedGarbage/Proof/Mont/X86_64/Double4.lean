@@ -1,7 +1,16 @@
-import VerifiedGarbage.Impl.Mont.X86_64.Double4
-import VerifiedGarbage.Proof.Mont.X86_64.OpsReg
+module
+
+public import VerifiedGarbage.Impl.Mont.X86_64.Double4
+public import VerifiedGarbage.Proof.Mont.X86_64.OpsReg
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Register-only four-limb doubling and its canonical memory result. -/
+
+@[expose] public section
+
 namespace VG.Proof.Mont.X86_64
 open VG VG.X86_64 VG.Impl.Mont VG.Impl.Mont.X86_64 VG.Proof.Mont
 open VG.Proof.X25519.X86_64

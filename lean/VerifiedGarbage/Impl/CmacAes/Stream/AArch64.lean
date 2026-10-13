@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.CmacAes.AArch64.Callee
+module
+
+public import VerifiedGarbage.Impl.CmacAes.AArch64.Callee
 
 /-!
 # Streaming AES-CMAC: AArch64 implementation
@@ -46,6 +48,8 @@ most 16. Only the pointers, the key length, `count` and `len` can affect
 timing: the branches are on them, and so are the number of bytes copied and
 of blocks chained.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.CmacAes.Stream.AArch64
 

@@ -1,7 +1,16 @@
-import VerifiedGarbage.Proof.MlDsa.Arith.Mem
+module
+
+public import VerifiedGarbage.Proof.MlDsa.Arith.Mem
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Internal storage relations for lazy arithmetic. The canonical public
 `Reduced` and `PolyIs` predicates retain their original meanings. -/
+
+@[expose] public section
+
 namespace VG.Proof.MlDsa.AArch64.Optimized
 open VG.Spec.MlDsa
 

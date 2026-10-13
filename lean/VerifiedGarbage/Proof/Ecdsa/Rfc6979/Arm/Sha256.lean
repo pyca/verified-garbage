@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Verified
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.P256
-import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Sha256
-import VerifiedGarbage.Spec.Ecdsa.Rfc6979.P256Sha256
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Verified
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.P256
+public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Sha256
+public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.P256Sha256
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Deterministic ECDSA over P-256 with HMAC-SHA-256 on 32-bit ARM
@@ -11,6 +17,8 @@ code calls (`Proof.Pbkdf2.Whole.Arm.sha256OKF`), and `vg_ecdsa_p256_sign`,
 with P-256's group law (`hL`, which the registration file supplies). The
 shared contract implies `rfcArm` (`implies`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Rfc6979.Arm.Sha256
 

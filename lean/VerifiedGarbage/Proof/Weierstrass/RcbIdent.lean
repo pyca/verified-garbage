@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Framework.PowLit
-import Mathlib.Tactic.LinearCombination
-import Mathlib.Tactic.Ring
-import VerifiedGarbage.Proof.Weierstrass.Rcb
+module
+
+public import VerifiedGarbage.Proof.Framework.PowLit
+public import Mathlib.Tactic.LinearCombination
+public import Mathlib.Tactic.Ring
+public import VerifiedGarbage.Proof.Weierstrass.Rcb
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Polynomial identities of the complete addition formulas
@@ -16,6 +22,8 @@ of the tangent's for doubling (scaled by `2y`), and `(0 : Y₃ : 0)` for
 polynomial division (computer algebra) and are checked by
 `linear_combination`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass
 

@@ -1,5 +1,11 @@
-import VerifiedGarbage.Impl.X448.X86_64.Adx
-import VerifiedGarbage.Proof.X448.X86_64.Env
+module
+
+public import VerifiedGarbage.Impl.X448.X86_64.Adx
+public import VerifiedGarbage.Proof.X448.X86_64.Env
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 on x86-64: multiplication with BMI2 and ADX
@@ -9,6 +15,8 @@ row (`madds_ok`, by induction on the registers), a row (`rowX_ok`, for any
 row of the rotating window), the rows (`rowsX_ok`, by induction on them), and
 the multiplication `mulX o a b`, which ends with `reduce` (`reduce_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448.X86_64
 

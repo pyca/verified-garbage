@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlDsa.Arm.Verify.Row
+module
+
+public import VerifiedGarbage.Proof.MlDsa.Arm.Verify.Row
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA verification on 32-bit ARM: `c̃′ = H(μ ‖ w1Encode(w′₁), λ/4)`
@@ -6,6 +12,8 @@ import VerifiedGarbage.Proof.MlDsa.Arm.Verify.Row
 Once every row of `w′₁` is packed to `B`, the commitment hash of `μ` and `B`,
 to `CT` (`vhash_piece`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Arm.Verify
 

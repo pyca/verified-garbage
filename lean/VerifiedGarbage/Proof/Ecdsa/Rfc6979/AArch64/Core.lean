@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Blocks
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Bytes
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Blocks
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Bytes
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Deterministic ECDSA on AArch64: signing with a candidate
@@ -11,6 +17,8 @@ zeros, as `Spec.Ecdsa.signWith` gives for `d` and `Q` bytes of the digest
 and of `k`, and changes only `out` and `scratch` (it pushes no frame: its
 return address is in `x30`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Rfc6979.AArch64
 

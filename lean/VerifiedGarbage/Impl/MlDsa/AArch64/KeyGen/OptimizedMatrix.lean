@@ -1,5 +1,9 @@
-import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.Prims
-import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.MatrixMask
+module
+
+public import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.Prims
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.MatrixMask
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.AArch64.KeyGen.Optimized
 open VG VG.AArch64 VG.Impl.MlDsa.AArch64.Call

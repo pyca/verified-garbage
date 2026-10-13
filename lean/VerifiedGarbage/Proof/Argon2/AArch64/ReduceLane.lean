@@ -1,11 +1,20 @@
-import VerifiedGarbage.Impl.Argon2.AArch64.ReduceLane
-import VerifiedGarbage.Proof.Argon2.AArch64.FillCompressSetup
-import VerifiedGarbage.Proof.Argon2.AArch64.ReducePointers
-import VerifiedGarbage.Impl.Argon2.AArch64.ReduceBlock
-import VerifiedGarbage.Proof.Argon2.AArch64.FillWriteCover
-import VerifiedGarbage.Proof.Argon2.FinalReduction
+module
+
+public import VerifiedGarbage.Impl.Argon2.AArch64.ReduceLane
+public import VerifiedGarbage.Proof.Argon2.AArch64.FillCompressSetup
+public import VerifiedGarbage.Proof.Argon2.AArch64.ReducePointers
+public import VerifiedGarbage.Impl.Argon2.AArch64.ReduceBlock
+public import VerifiedGarbage.Proof.Argon2.AArch64.FillWriteCover
+public import VerifiedGarbage.Proof.Argon2.FinalReduction
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Argon2.AArch64.ReductionState`. -/
+
+@[expose] public section
+
 section
 /-! Merged from `Proof.Argon2.AArch64.ReduceBlock`. -/
 section

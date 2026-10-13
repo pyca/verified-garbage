@@ -1,7 +1,17 @@
-import VerifiedGarbage.Proof.Ecdsa.AArch64.P521.Verified
-import VerifiedGarbage.Proof.Framework.Pratt
-import VerifiedGarbage.Proof.Mont.Read
-import VerifiedGarbage.Spec.Weierstrass.Inverse
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.P521.Verified
+meta import VerifiedGarbage.Proof.Ecdsa.AArch64.P521.Verified
+public import VerifiedGarbage.Proof.Framework.Pratt
+meta import VerifiedGarbage.Proof.Framework.Pratt
+public import VerifiedGarbage.Proof.Mont.Read
+meta import VerifiedGarbage.Proof.Mont.Read
+public import VerifiedGarbage.Spec.Weierstrass.Inverse
+meta import VerifiedGarbage.Spec.Weierstrass.Inverse
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_p521_inv_mod_p` and `_n` on AArch64: `Verified`
@@ -16,6 +26,8 @@ working space (`keeps_of_unch`). The contracts decode a number `x` as
 modulo `p` and `n`, which the kernel computes (`dec_eq`). Constant time by
 taint tracking, `x0` and `sp` public.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.AArch64.P521.Inverse
 

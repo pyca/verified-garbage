@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Post
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtBack
-import Mathlib.Data.Int.GCD
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtMain
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Post
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtBack
+public import Mathlib.Data.Int.GCD
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtMain
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSA with AVX512_IFMA on x86-64: the workspaces around the IFMA branch
@@ -10,6 +16,8 @@ Lemmas for `CrtIfma`'s branch (`Branch.lean`, `Main.lean`): what stays
 of `n`'s workspace below the primes' (`NSafe`), what `pre` leaves (`APost`),
 and the checks' state after the sizes' test (`CrtReady.of_regs`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64
 

@@ -1,7 +1,17 @@
-import VerifiedGarbage.Proof.Ecdh.X86_64.P384.Verified
-import VerifiedGarbage.Proof.Ecdh.X86_64.P384.LitEraseAdx
-import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.VerifiedAdx
-import VerifiedGarbage.Proof.Weierstrass.X86_64.DoubleCms
+module
+
+public import VerifiedGarbage.Proof.Ecdh.X86_64.P384.Verified
+meta import VerifiedGarbage.Proof.Ecdh.X86_64.P384.Verified
+public import VerifiedGarbage.Proof.Ecdh.X86_64.P384.LitEraseAdx
+meta import VerifiedGarbage.Proof.Ecdh.X86_64.P384.LitEraseAdx
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.VerifiedAdx
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.VerifiedAdx
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.DoubleCms
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.DoubleCms
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDH over P-384 on x86-64 with BMI2 and ADX: `Verified`
@@ -10,6 +20,8 @@ As `Verified.lean`, for `p384x` (`p384` multiplying modulo `p` with BMI2 and
 ADX): the same curve, so the same precondition and postcondition, with the
 doubling whose small multiples are fused (`doubleCms_dblOk`, `mulQJP384Cms_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdh.X86_64.P384
 

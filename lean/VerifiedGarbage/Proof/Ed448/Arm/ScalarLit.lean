@@ -1,11 +1,21 @@
-import VerifiedGarbage.Proof.Framework.Arm.Lit
-import VerifiedGarbage.Impl.Ed448.Arm.Scalar
+module
+
+public import VerifiedGarbage.Proof.Framework.Arm.Lit
+meta import VerifiedGarbage.Proof.Framework.Arm.Lit
+public import VerifiedGarbage.Impl.Ed448.Arm.Scalar
+meta import VerifiedGarbage.Impl.Ed448.Arm.Scalar
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 scalar arithmetic on ARMv7: the code as literals
 
 The kernel checks each literal once; the taint checks reuse it.
 -/
+
+@[expose] public section
 
 namespace VG
 

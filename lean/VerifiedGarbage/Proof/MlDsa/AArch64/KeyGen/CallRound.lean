@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.CallSample
-import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Round
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.CallSample
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Round
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA key generation and verification on AArch64: calls of the rounding primitives
@@ -9,6 +15,8 @@ in `Proof/MlDsa/AArch64/Call/Round.lean`): what it needs of the layout
 (`…Chk`), what it does (`…_ok`), and that two runs whose layout registers
 agree leak the same (`…_tr`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.KeyGen
 

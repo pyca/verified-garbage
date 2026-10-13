@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.AesSiv.AArch64.Enc
-import VerifiedGarbage.Proof.AesSiv.AArch64.CtrCT
+module
+
+public import VerifiedGarbage.Proof.AesSiv.AArch64.Enc
+meta import VerifiedGarbage.Proof.AesSiv.AArch64.Enc
+public import VerifiedGarbage.Proof.AesSiv.AArch64.CtrCT
+meta import VerifiedGarbage.Proof.AesSiv.AArch64.CtrCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-SIV on AArch64: `encrypt` and `decrypt` are constant time
@@ -12,6 +20,8 @@ descriptor (`adNext_wp`), the same in both runs since the descriptors are.
 The calls are related by their callees' contracts (`fin_rel`, `cmacOf_rel`,
 `finish_rel`, `ctr_rel'`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesSiv.AArch64
 

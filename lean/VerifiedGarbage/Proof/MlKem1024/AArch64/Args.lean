@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.MlKem.AArch64.TopArgs
-import VerifiedGarbage.Proof.MlKem1024.AArch64.CompressEncode
-import VerifiedGarbage.Proof.MlKem1024.AArch64.DecodeDecompress
+module
+
+public import VerifiedGarbage.Proof.MlKem.AArch64.TopArgs
+public import VerifiedGarbage.Proof.MlKem1024.AArch64.CompressEncode
+public import VerifiedGarbage.Proof.MlKem1024.AArch64.DecodeDecompress
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM-1024 on AArch64: the calls of the compression functions
@@ -9,6 +15,8 @@ The calls of ML-KEM-1024's compression functions, from their proofs (as
 `PrimCall.lean` of ML-KEM-768), which the top-level functions make at the
 widths `d_u` and `d_v`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem1024.AArch64
 

@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlKem.Arm.PrfCT
+module
+
+public import VerifiedGarbage.Proof.MlKem.Arm.PrfCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on 32-bit ARM: a row of `Â ∘ v̂` in constant time
@@ -10,6 +16,8 @@ on which the selection of the entry branches; every other address is `scratch`
 plus an offset of the indices. What each run is at each step comes from its
 correctness (`rowA_ok`, …).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.Arm
 

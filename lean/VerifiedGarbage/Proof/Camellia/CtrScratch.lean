@@ -1,5 +1,11 @@
-import VerifiedGarbage.Spec.Camellia.Ctr
-import VerifiedGarbage.Proof.Camellia.Scratch
+module
+
+public import VerifiedGarbage.Spec.Camellia.Ctr
+public import VerifiedGarbage.Proof.Camellia.Scratch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Camellia-CTR with its working space as an argument
@@ -10,6 +16,8 @@ frame that keeps it on the stack (`Verified.stackScratchWiped`), which
 needs `ctrPost` to read the memory on return only within the function's
 buffers (`ctrPostOut_local`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Camellia
 

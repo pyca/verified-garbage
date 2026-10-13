@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Step
+module
+
+public import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Step
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X25519 on x86-64 with AVX512_IFMA: after the loop
@@ -6,6 +12,8 @@ import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Step
 `vfinish` carries the lanes twice, then from the lowest limb up, and stores
 each lane as four 64-bit words: the same number modulo `p`, below `2²⁵⁶`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X25519.X86_64.Ifma
 

@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.EncCall
-import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Copy
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.EncCall
+public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Copy
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM streaming encryption out of place, x86-64: the bytes left
@@ -9,6 +15,8 @@ Untrusted: everything here is checked by Lean. `rest` from `Mid s o`: the
 encrypted there by `vg_aes_gcm_stream_encrypt` as the continuation of the
 text so far and the first `o` bytes, make the whole encryption (`rest_ok`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

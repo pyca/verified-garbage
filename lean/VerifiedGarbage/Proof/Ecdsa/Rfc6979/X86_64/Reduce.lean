@@ -1,9 +1,15 @@
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Hmac
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Bytes
-import VerifiedGarbage.Proof.X25519.X86_64.Step
-import VerifiedGarbage.Proof.Weierstrass.Words
-import VerifiedGarbage.Proof.Weierstrass.BytesLen
-import VerifiedGarbage.Proof.Framework.Omega
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Hmac
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Bytes
+public import VerifiedGarbage.Proof.X25519.X86_64.Step
+public import VerifiedGarbage.Proof.Weierstrass.Words
+public import VerifiedGarbage.Proof.Weierstrass.BytesLen
+public import VerifiedGarbage.Proof.Framework.Omega
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Deterministic ECDSA on x86-64: `h = bits2octets(digest)`
@@ -17,6 +23,8 @@ bytes at `h` (`sels_ok`), the top word's zero bytes below them. The number
 is below `2^(8 Q) < 2n`, so this is it modulo `n` (`mod_mathK`,
 `reduce_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Rfc6979.X86_64
 

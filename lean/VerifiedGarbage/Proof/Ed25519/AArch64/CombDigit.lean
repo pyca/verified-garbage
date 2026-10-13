@@ -1,8 +1,14 @@
-import VerifiedGarbage.Impl.Ed25519.AArch64.Comb
-import VerifiedGarbage.Proof.Ed25519.CombDigits
-import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
-import VerifiedGarbage.Proof.Ed25519.Canonical64
-import VerifiedGarbage.Proof.Ed25519.AArch64.Ops
+module
+
+public import VerifiedGarbage.Impl.Ed25519.AArch64.Comb
+public import VerifiedGarbage.Proof.Ed25519.CombDigits
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
+public import VerifiedGarbage.Proof.Ed25519.Canonical64
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Ops
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The comb's digits, signs and masks
@@ -13,6 +19,8 @@ expanded one per byte at byte 768 of the workspace, by Horner's rule;
 `combMasks` sets the register for `k` to all ones exactly if the magnitude is
 `k`, for `k = 1 … 8`, and another to `1` exactly if it is `0`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed25519.AArch64
 

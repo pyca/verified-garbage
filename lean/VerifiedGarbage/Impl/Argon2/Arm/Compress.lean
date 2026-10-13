@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.Argon2
-import VerifiedGarbage.Impl.Blake2.Arm.CompressB
+module
+
+public import VerifiedGarbage.Spec.Argon2
+public import VerifiedGarbage.Impl.Blake2.Arm.CompressB
 
 /-!
 # Argon2 compression G on ARMv7
@@ -21,6 +23,8 @@ import VerifiedGarbage.Impl.Blake2.Arm.CompressB
   (`r0`–`r2`, `lr` and one of `r6`, `r11`, `r12`) hold the partial products.
 * Every address is `r0`–`r3` plus a constant, and there are no branches.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Argon2.Arm
 

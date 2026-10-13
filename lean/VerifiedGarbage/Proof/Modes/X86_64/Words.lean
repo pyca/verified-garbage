@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Modes.X86_64.Setup
-import VerifiedGarbage.Proof.Modes.Words
-import VerifiedGarbage.Proof.Framework.Range
+module
+
+public import VerifiedGarbage.Proof.Modes.X86_64.Setup
+public import VerifiedGarbage.Proof.Modes.Words
+public import VerifiedGarbage.Proof.Framework.Range
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Copying and XORing blocks a word at a time, on x86-64
@@ -11,6 +17,8 @@ through the register `t`, change no other register, and leave memory
 `over` the `8 k` bytes at `P`. Every block the modes move (the IV, a block
 of the data or of the core's buffer) is one of these.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Modes.X86_64
 

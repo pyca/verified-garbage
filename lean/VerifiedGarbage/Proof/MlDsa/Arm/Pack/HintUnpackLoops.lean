@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlDsa.Arm.Pack.HintUnpack
+module
+
+public import VerifiedGarbage.Proof.MlDsa.Arm.Pack.HintUnpack
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on 32-bit ARM: `vg_mldsa_hint_bit_unpack`, the loops
@@ -8,6 +14,8 @@ polynomial (`coefs_ok`), the polynomials (`main_ok`), each an iteration of the
 fold `huPoly` of the spec, and the bytes after the last index (`trail_ok`),
 from any state that permits reading `y` and writing `h` (`MainPre`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Arm.Pack.Hint.Unpack
 

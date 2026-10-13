@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Conv
-import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Lemmas
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Conv
+public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Lemmas
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSA with AVX512_IFMA on x86-64, any size: the vector code from the regions
@@ -9,6 +15,8 @@ hold: each number as the `4 R` limbs `to52` writes, `k₀` as the low 52 bits
 of the inverse, and the bases' values with `R_X = 2^(64 w)` for `w = W`.
 The powers of two keep variable exponents.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64.Ifma
 

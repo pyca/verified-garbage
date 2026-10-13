@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesOcb.Arm.Hash
+module
+
+public import VerifiedGarbage.Proof.AesOcb.Arm.Hash
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-OCB on ARMv7: a pass over the whole blocks (`pass`)
@@ -11,6 +17,8 @@ them (`BodyOk`: `xorOfs`, `addCk ++ xorOfs`, `xorOfs ++ addCk`); `pass_ok`
 gives the blocks and the checksum after all `m`, as on AArch64
 (`Proof.AesOcb.AArch64.pass_ok`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

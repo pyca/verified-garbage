@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitched.Crypted
-import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Tail
+module
+
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitched.Crypted
+public import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Tail
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ChaCha20-Poly1305 on AArch64, stitched: the rest of the data
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Tail
 `vg_chacha20_xor` (any backend) on the data after the chunks, from the
 counter after them: the whole data encrypted from counter 1.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.ChaCha20Poly1305.AArch64
 

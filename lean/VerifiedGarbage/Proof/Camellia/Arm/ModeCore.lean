@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.Camellia.Arm.Verified
-import VerifiedGarbage.Proof.Modes.Arm.Core
-import VerifiedGarbage.Impl.Camellia.Arm.Cbc
-import VerifiedGarbage.Proof.Camellia.CtrCipher
-import VerifiedGarbage.Spec.Camellia.Cbc
+module
+
+public import VerifiedGarbage.Proof.Camellia.Arm.Verified
+public import VerifiedGarbage.Proof.Modes.Arm.Core
+public import VerifiedGarbage.Impl.Camellia.Arm.Cbc
+public import VerifiedGarbage.Proof.Camellia.CtrCipher
+public import VerifiedGarbage.Spec.Camellia.Cbc
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Camellia's ECB functions on ARMv7 as the modes' core
@@ -15,6 +21,8 @@ number of rounds is 18 or 24, and the cipher on a block is
 `Spec.Camellia.cipher` or `Spec.Camellia.invCipher` of the subkeys of that
 many rounds (`rsel`, which reads 18 or 24 whatever the number is).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Camellia.Arm
 

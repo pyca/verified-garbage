@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Cast5.AArch64.Run
-import VerifiedGarbage.Proof.Cast5.Table
-import VerifiedGarbage.Proof.Framework.CallLay
+module
+
+public import VerifiedGarbage.Proof.Cast5.AArch64.Run
+public import VerifiedGarbage.Proof.Cast5.Table
+public import VerifiedGarbage.Proof.Framework.CallLay
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # CAST5 on AArch64: the scan of a table
@@ -10,6 +16,8 @@ address of `sym`), in order, and leaves in each lane `k` of `v1` word `k` of
 the entry whose number is in lane `k` of `v0` (`scan_ok`). Vector values
 are kept as their four lanes (`L`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Cast5.AArch64
 

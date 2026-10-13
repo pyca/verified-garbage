@@ -1,6 +1,12 @@
-import VerifiedGarbage.Spec.TripleDes.Cbc
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.TripleDes.CbcBlocks
+module
+
+public import VerifiedGarbage.Spec.TripleDes.Cbc
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.TripleDes.CbcBlocks
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Triple DES-CBC with its working space as an argument
@@ -13,6 +19,8 @@ needs `cbcEncPost` and `cbcDecPost` to read the memory on entry and on
 return only within the function's buffers (`cbcEncPost_local`,
 `cbcDecPost_local`, `cbcEncPostOut_local`, `cbcDecPostOut_local`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.TripleDes
 

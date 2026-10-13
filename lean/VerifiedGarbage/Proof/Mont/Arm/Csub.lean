@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Mont.Arm.Loop
+module
+
+public import VerifiedGarbage.Proof.Mont.Arm.Loop
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Montgomery arithmetic on 32-bit ARM: the conditional subtraction
@@ -10,6 +16,8 @@ are packed into `[tmp]` with the carry out (`diffs_ok`), which plus the top
 digit is 1 exactly when `V ≥ m`; its negation is the mask that selects
 `V - m` or `V`, packed, into `[o]` (`sels_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Mont.Arm
 

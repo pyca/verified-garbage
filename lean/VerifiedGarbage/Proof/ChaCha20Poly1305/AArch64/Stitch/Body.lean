@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitch.Chunk
-import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Save
+module
+
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitch.Chunk
+public import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Save
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ChaCha20 and Poly1305 together (AArch64): a chunk of the loop
@@ -9,6 +15,8 @@ import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Save
 entry state `rebase s₀ u`, since the chunk changes the accumulator's
 registers.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.ChaCha20Poly1305.AArch64.Stitch
 

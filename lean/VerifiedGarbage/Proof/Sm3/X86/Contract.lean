@@ -1,6 +1,12 @@
-import VerifiedGarbage.Spec.Sm3
-import VerifiedGarbage.TCB.X86.Target
-import VerifiedGarbage.Proof.Framework.PowLit
+module
+
+public import VerifiedGarbage.Spec.Sm3
+public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Proof.Framework.PowLit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # SM3: the x86 (32-bit) contracts
@@ -18,6 +24,8 @@ contract here says so; `finalize`'s lets it write them. `update` and
 `finalize` call the compression function, using the 20 bytes of stack below
 the return address.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sm3
 

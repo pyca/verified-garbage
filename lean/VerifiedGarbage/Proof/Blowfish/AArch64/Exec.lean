@@ -1,6 +1,12 @@
-import VerifiedGarbage.Impl.Blowfish.AArch64
-import VerifiedGarbage.Proof.Blowfish.AArch64.Lanes
-import VerifiedGarbage.Proof.Framework.AArch64.Tbl
+module
+
+public import VerifiedGarbage.Impl.Blowfish.AArch64
+public import VerifiedGarbage.Proof.Blowfish.AArch64.Lanes
+public import VerifiedGarbage.Proof.Framework.AArch64.Tbl
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Instructions of the batch code, one at a time
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.Framework.AArch64.Tbl
 What each kind of instruction of `Impl/Blowfish/AArch64.lean` does to a
 state (`exec_*`), and which vector registers a block may change (`VOnly`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Blowfish.AArch64
 

@@ -1,9 +1,21 @@
-import VerifiedGarbage.Proof.MdStream.X86_64.UpdateCT
-import VerifiedGarbage.Proof.MdStream.X86_64.FinalizeCT
-import VerifiedGarbage.Proof.MdStream.X86_64.Words
-import VerifiedGarbage.Proof.Sha256.Md
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Sha256.X86_64.Stream.Common
+module
+
+public import VerifiedGarbage.Proof.MdStream.X86_64.UpdateCT
+meta import VerifiedGarbage.Proof.MdStream.X86_64.UpdateCT
+public import VerifiedGarbage.Proof.MdStream.X86_64.FinalizeCT
+meta import VerifiedGarbage.Proof.MdStream.X86_64.FinalizeCT
+public import VerifiedGarbage.Proof.MdStream.X86_64.Words
+meta import VerifiedGarbage.Proof.MdStream.X86_64.Words
+public import VerifiedGarbage.Proof.Sha256.Md
+meta import VerifiedGarbage.Proof.Sha256.Md
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Sha256.X86_64.Stream.Common
+meta import VerifiedGarbage.Proof.Sha256.X86_64.Stream.Common
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Streaming SHA-256 on x86-64: `update` and `finalize`
@@ -15,6 +27,8 @@ for any implementation `f` of the compression function (`Callee.Ok`), given
 what SHA-256's own pieces do: its length field and digest (`shape`) and that
 the taint analysis accepts its code between the calls (`taints`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sha256.X86_64.Stream
 

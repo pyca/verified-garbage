@@ -1,9 +1,17 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedVerified
-import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedDepth
-import VerifiedGarbage.Proof.MlDsa.AArch64.Message.OptimizedVerifyVerified
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.RootedCachedVerifyVerified
-import VerifiedGarbage.Proof.MlDsa.AArch64.Message.Verified
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.CachedVerifyVerified
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedVerified
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedDepth
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.OptimizedVerifyVerified
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.RootedCachedVerifyVerified
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.Verified
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.CachedVerifyVerified
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Verify.OptimizedSelected
 open VG VG.AArch64 VG.Spec.MlDsa

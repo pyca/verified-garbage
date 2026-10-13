@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Bignum.AArch64.R2
+module
+
+public import VerifiedGarbage.Proof.Bignum.AArch64.R2
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Multiword arithmetic on AArch64: copies and comparisons
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.Bignum.AArch64.R2
 (`copyWords_ok`); `cmpLoop` computes the borrow of `X - N` over `w` words in
 the carry flag, which ends clear iff `X < N` (`cmpLoop_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.AArch64
 

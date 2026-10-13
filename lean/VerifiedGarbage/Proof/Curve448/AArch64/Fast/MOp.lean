@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Curve448.AArch64.Fast.Word
-import VerifiedGarbage.Impl.Curve448.AArch64.Fast
-import VerifiedGarbage.Proof.X448.AArch64.Mem
+module
+
+public import VerifiedGarbage.Proof.Curve448.AArch64.Fast.Word
+public import VerifiedGarbage.Impl.Curve448.AArch64.Fast
+public import VerifiedGarbage.Proof.X448.AArch64.Mem
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Product accumulation, for any list of steps
@@ -12,6 +18,8 @@ initial state. The registers are checked once (`Good`, by `decide`): the
 temporaries and accumulators are distinct, and no multiplicand is one of them
 (`MOp.ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Curve448.AArch64.Fast
 

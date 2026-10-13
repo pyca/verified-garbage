@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.VecR
-import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Pre
-import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Lemmas
-import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.ArrSel
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.VecR
+public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Pre
+public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Lemmas
+public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.ArrSel
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSA with AVX512_IFMA on x86-64, any size: a prime's region
@@ -12,6 +18,8 @@ area from its workspace: the modulus, `2^dbls R_X mod X`, the base, and
 `k₀` (`k0St_ok`), for `q` the last multiplier 1 instead (`finOne_ok`), and
 the exponent's bytes after zeros (`eCopy_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64.Ifma
 

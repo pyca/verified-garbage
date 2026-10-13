@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Rsa.X86_64.Crt
-import VerifiedGarbage.Impl.Rsa.X86_64.Checked
+module
+
+public import VerifiedGarbage.Impl.Rsa.X86_64.Crt
+public import VerifiedGarbage.Impl.Rsa.X86_64.Checked
 
 /-!
 # BoringSSL's `RSA_check_key` on x86-64
@@ -29,6 +31,8 @@ header's `sMask`, which is returned as 0 or 1 at the end.
 `p < n` and `q < n` need no computation: `p` and `q` are shorter than `n`,
 which is at least `256^(n_len - 1)`.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Rsa.X86_64.CheckKey
 

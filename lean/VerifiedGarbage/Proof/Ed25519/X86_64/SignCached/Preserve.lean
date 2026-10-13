@@ -1,12 +1,21 @@
-import VerifiedGarbage.Proof.Ed25519.X86_64.SignCached.Layout
-import VerifiedGarbage.Proof.Ed25519.X86_64.PublicKey.Base
-import VerifiedGarbage.Proof.Ed25519.X86_64.SignCached.Args
-import VerifiedGarbage.Proof.Ed25519.X86_64.MulAddVerified
-import VerifiedGarbage.Proof.Ed25519.Signing
-import VerifiedGarbage.Proof.Ed25519.VerifyBytes
-import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarVerified
+module
+
+public import VerifiedGarbage.Proof.Ed25519.X86_64.SignCached.Layout
+public import VerifiedGarbage.Proof.Ed25519.X86_64.PublicKey.Base
+public import VerifiedGarbage.Proof.Ed25519.X86_64.SignCached.Args
+public import VerifiedGarbage.Proof.Ed25519.X86_64.MulAddVerified
+public import VerifiedGarbage.Proof.Ed25519.Signing
+public import VerifiedGarbage.Proof.Ed25519.VerifyBytes
+public import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarVerified
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Ed25519.X86_64.SignCached.Prune`. -/
+
+@[expose] public section
+
 section
 /-! Pruning and saving the expanded signing scalar. -/
 namespace VG.Proof.Ed25519.X86_64.SignCached

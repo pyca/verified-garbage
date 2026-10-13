@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Pbkdf2
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
+module
+
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Pbkdf2
+public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # PBKDF2-HMAC over any Merkle–Damgård hash function on x86-64: `pbkdf2`'s loop
@@ -9,6 +15,8 @@ out_len` bytes of `T₁ ‖ … ‖ T_k`; a step computes `T_{k+1}` (`U₁` by `
 with `INT (k + 1)` and HMAC's `finalize`, then `iterate`) and copies as much
 of it as the output still needs.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Pbkdf2.Md.X86_64.Pbk
 

@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Ed448.AArch64.VerifyChecks
-import VerifiedGarbage.Proof.Ed448.Scalar
+module
+
+public import VerifiedGarbage.Proof.Ed448.AArch64.VerifyChecks
+public import VerifiedGarbage.Proof.Ed448.Scalar
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 verification's equation on AArch64: checks of the encodings' bytes
@@ -9,6 +15,8 @@ byte 56). `decodeY`: the 56 bytes of `y` as eight seven-byte chunks in a
 slot, `y < p` (`carryK` of `2^224 + 1`), bits 448–454 zero, and the sign bit
 in `x17`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.AArch64
 

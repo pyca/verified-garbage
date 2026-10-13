@@ -1,4 +1,6 @@
-import VerifiedGarbage.TCB.AArch64.Isa
+module
+
+public import VerifiedGarbage.TCB.AArch64.Isa
 
 /-!
 # ChaCha20 block function: AArch64 implementation
@@ -14,6 +16,8 @@ import VerifiedGarbage.TCB.AArch64.Isa
 * Every address is `x0` or `x1` plus a constant, and there are no branches,
   so only the pointers can affect timing.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.ChaCha20.AArch64
 

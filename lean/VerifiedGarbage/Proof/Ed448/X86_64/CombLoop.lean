@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.Ed448.X86_64.CombSelect
+module
+
+public import VerifiedGarbage.Proof.Ed448.X86_64.CombSelect
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! The 114 iterations of the four-column Ed448 fixed-base comb. -/
+
+@[expose] public section
+
 namespace VG.Proof.Ed448.X86_64.Comb
 
 open VG VG.X86_64 VG.Impl.Ed448 VG.Impl.Ed448.X86_64 VG.Proof.Ed448 VG.Proof.Ed448.X86_64

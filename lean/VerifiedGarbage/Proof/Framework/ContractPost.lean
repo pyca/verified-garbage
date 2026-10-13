@@ -1,4 +1,6 @@
-import VerifiedGarbage.TCB.Artifact
+module
+
+public import VerifiedGarbage.TCB.Artifact
 
 /-!
 # Unfolding a contract's postcondition, for the kernel
@@ -12,6 +14,8 @@ a second or more. Rewriting with the contract's equation and `post_mk`
 (`rw [c, Contract.post_mk]`, then `dsimp only` to beta-reduce) instead leaves
 the kernel only syntactically equal terms to compare.
 -/
+
+@[expose] public section
 
 namespace VG
 

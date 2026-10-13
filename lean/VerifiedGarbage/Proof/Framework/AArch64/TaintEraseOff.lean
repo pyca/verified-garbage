@@ -1,5 +1,7 @@
-import VerifiedGarbage.Proof.Framework.AArch64.Taint
-import VerifiedGarbage.Proof.Framework.AArch64.TaintErase
+module
+
+public import VerifiedGarbage.Proof.Framework.AArch64.Taint
+public import VerifiedGarbage.Proof.Framework.AArch64.TaintErase
 
 /-!
 # Taint tracking for AArch64: code without its immediates and offsets
@@ -12,6 +14,8 @@ working space differ only in their offsets: without them they are the same
 code (proven once for any slots), and the kernel, which caches the analysis
 of the same code from the same taint, analyses each once.
 -/
+
+@[expose] public section
 
 namespace VG.AArch64
 

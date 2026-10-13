@@ -1,8 +1,20 @@
-import VerifiedGarbage.Proof.Dsa.X86_64.PowerCT
-import VerifiedGarbage.Proof.Dsa.X86_64.SetupCT
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetupLoad
+module
+
+public import VerifiedGarbage.Proof.Dsa.X86_64.PowerCT
+meta import VerifiedGarbage.Proof.Dsa.X86_64.PowerCT
+public import VerifiedGarbage.Proof.Dsa.X86_64.SetupCT
+meta import VerifiedGarbage.Proof.Dsa.X86_64.SetupCT
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetupLoad
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetupLoad
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # Constant time of setup, load and complete DSA exponentiation -/
+
+@[expose] public section
+
 namespace VG.Proof.Dsa.X86_64
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public
 open VG.Impl.Dsa.Layout VG.Impl.Dsa.X86_64

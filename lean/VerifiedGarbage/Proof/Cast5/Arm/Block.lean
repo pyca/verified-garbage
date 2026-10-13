@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Cast5.Arm.Round
-import VerifiedGarbage.Proof.Cast5.Memory
+module
+
+public import VerifiedGarbage.Proof.Cast5.Arm.Round
+public import VerifiedGarbage.Proof.Cast5.Memory
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # CAST5 on ARMv7: the block function
@@ -10,6 +16,8 @@ number of rounds in their slots (`crypt_ok`). Besides the block it writes
 only the slots of the count and type of rounds (`cntOff`, `typeOff`), and it
 keeps `r12`: this is the block function a mode reuses.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Cast5.Arm
 

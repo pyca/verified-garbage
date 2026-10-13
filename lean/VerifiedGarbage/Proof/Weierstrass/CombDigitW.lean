@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Weierstrass.CombW
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.CombW
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # A `w`-bit comb's digits from a table of bits, on any target
@@ -8,6 +14,8 @@ byte per bit: Horner's rule over the bytes (`hornerVal`) gives the window
 (`hornerVal_eq`), `|k_j - H|` is its digit's magnitude (`magH`), and its top
 bit says whether the digit is not negative (`testBit_top`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass
 

@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Idea.Arith
+module
+
+public import VerifiedGarbage.Proof.Idea.Arith
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # IDEA: word arithmetic on 32-bit registers
@@ -9,6 +15,8 @@ multiplication keeps only the low 32 bits of a product of residues (up to
 halves of the product less one (`reduce32`), which no wrap-around changes;
 ⊞, XOR and the bytes of words on zero-extended words.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Idea
 

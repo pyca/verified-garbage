@@ -1,6 +1,11 @@
-import VerifiedGarbage.Impl.Ed25519.AArch64.Recover
+module
+
+public import VerifiedGarbage.Impl.Ed25519.AArch64.Recover
 
 /-! Check negative zero and choose the public sign of a decoded point. -/
+
+@[expose] public section
+
 namespace VG.Impl.Ed25519.AArch64
 open VG.AArch64
 

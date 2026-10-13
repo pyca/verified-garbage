@@ -1,7 +1,16 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.PubCode
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtEntry
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.PubCode
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtEntry
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # Scratch prefixes and stack-argument regions used by the DSA ABI -/
+
+@[expose] public section
+
 namespace VG.Proof.Dsa.X86_64
 open VG VG.X86_64
 open VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.MlKem.X86_64

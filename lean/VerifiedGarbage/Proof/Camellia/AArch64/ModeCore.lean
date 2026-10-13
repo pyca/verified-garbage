@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.Camellia.AArch64.Ecb
-import VerifiedGarbage.Proof.Modes.AArch64.Core
-import VerifiedGarbage.Impl.Camellia.AArch64.Ctr
-import VerifiedGarbage.Proof.Camellia.CtrCipher
-import VerifiedGarbage.Spec.Camellia.Cbc
+module
+
+public import VerifiedGarbage.Proof.Camellia.AArch64.Ecb
+public import VerifiedGarbage.Proof.Modes.AArch64.Core
+public import VerifiedGarbage.Impl.Camellia.AArch64.Ctr
+public import VerifiedGarbage.Proof.Camellia.CtrCipher
+public import VerifiedGarbage.Spec.Camellia.Cbc
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Camellia's core for the modes on AArch64
@@ -16,6 +22,8 @@ when the masks and the table of subkeys in `d`'s order are in the scratch
 buffer and `x4` holds the address of the postwhitening's entry (which the
 modes do not write). `modeCoreSpec` is encryption's, for CTR.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Camellia.AArch64
 

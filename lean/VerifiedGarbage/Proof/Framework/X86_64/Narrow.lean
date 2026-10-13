@@ -1,5 +1,7 @@
-import VerifiedGarbage.Proof.Framework.X86_64.Inline
-import VerifiedGarbage.Proof.Framework.RelCT
+module
+
+public import VerifiedGarbage.Proof.Framework.X86_64.Inline
+public import VerifiedGarbage.Proof.Framework.RelCT
 
 /-!
 # Relating runs with fewer writable regions (x86-64)
@@ -10,6 +12,8 @@ the regions they read only (`Exec.widen`, `Exec.det`). A taint analysis that
 knows the writable regions by their index (`Taint.T.lens`, `bases`) can then
 check code shared by functions whose other writable regions differ.
 -/
+
+@[expose] public section
 
 namespace VG.X86_64
 

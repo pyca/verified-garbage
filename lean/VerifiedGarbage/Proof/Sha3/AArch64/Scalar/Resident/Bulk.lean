@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Resident.Loop
+module
+
+public import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Resident.Loop
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The scalar resident absorber: whole blocks
@@ -9,6 +15,8 @@ state in memory and the arguments as that absorber's contract for it says
 (`BulkPost`), which `Sha3.Vector.Resident.correct` completes with the
 ordinary streaming absorb.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sha3.AArch64.Scalar.Resident
 
@@ -139,6 +147,5 @@ theorem functional (b : State) (hp : BulkPre b) : WP isa bulk b (BulkPost b) := 
   refine (loop_ok b hp _ s₀ h₀).mono fun s ⟨c, A, h⟩ => ?_
   exact finish_ok b hp c A s h
 
-#assert_standard_axioms functional
 
 end VG.Proof.Sha3.AArch64.Scalar.Resident

@@ -1,10 +1,18 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseStaticCore
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseSpecPre
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTiming
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseMemoryCorrect
-import VerifiedGarbage.Proof.Framework.Contract
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseStaticCore
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseSpecPre
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTiming
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseMemoryCorrect
+public import VerifiedGarbage.Proof.Framework.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## From `InverseContract.lean` -/
+
+@[expose] public section
 
 section
 

@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.MlKem.X86.KeyGenRow
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86.KeyGenRow
+meta import VerifiedGarbage.Proof.MlKem.X86.KeyGenRow
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86 (32-bit): the keys in key generation
@@ -8,6 +15,8 @@ into `dk` (`dk_PKE`, `enc_piece`), `ek` copied into `dk`, `H(ek)` hashed into
 `dk`, `z` copied into `dk`, and `kgACC` loaded to be returned (`fin_piece`).
 `F n` is what holds after `n` of these steps.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.X86.KeyGen
 

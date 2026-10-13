@@ -1,8 +1,19 @@
-import VerifiedGarbage.Proof.Ecdh.Arm.Main
-import VerifiedGarbage.Proof.Ecdh.Arm.P192.Contract
-import VerifiedGarbage.Proof.Ecdh.Arm.P192.Lit
-import VerifiedGarbage.Proof.Ecdsa.Arm.P192.Verified
-import VerifiedGarbage.Impl.Ecdh.P192.Arm
+module
+
+public import VerifiedGarbage.Proof.Ecdh.Arm.Main
+meta import VerifiedGarbage.Proof.Ecdh.Arm.Main
+public import VerifiedGarbage.Proof.Ecdh.Arm.P192.Contract
+meta import VerifiedGarbage.Proof.Ecdh.Arm.P192.Contract
+public import VerifiedGarbage.Proof.Ecdh.Arm.P192.Lit
+meta import VerifiedGarbage.Proof.Ecdh.Arm.P192.Lit
+public import VerifiedGarbage.Proof.Ecdsa.Arm.P192.Verified
+meta import VerifiedGarbage.Proof.Ecdsa.Arm.P192.Verified
+public import VerifiedGarbage.Impl.Ecdh.P192.Arm
+meta import VerifiedGarbage.Impl.Ecdh.P192.Arm
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDH over P-192 on 32-bit ARM: `Verified`
@@ -15,6 +26,8 @@ by taint tracking from the arguments' registers, as for the public key
 and every address is `r12` (`scratch`), `lr` (`out`) or `r2` (`peer`) plus a
 constant or a counter.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdh.Arm.P192
 

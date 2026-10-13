@@ -1,10 +1,23 @@
-import VerifiedGarbage.Proof.Idea.X86.Lit
-import VerifiedGarbage.Proof.Idea.X86.Round
-import VerifiedGarbage.Proof.Idea.KeyBits32
-import VerifiedGarbage.Proof.Framework.X86.Linear
-import VerifiedGarbage.Proof.Framework.X86.Taint
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Spec.Idea.Contract
+module
+
+public import VerifiedGarbage.Proof.Idea.X86.Lit
+meta import VerifiedGarbage.Proof.Idea.X86.Lit
+public import VerifiedGarbage.Proof.Idea.X86.Round
+meta import VerifiedGarbage.Proof.Idea.X86.Round
+public import VerifiedGarbage.Proof.Idea.KeyBits32
+meta import VerifiedGarbage.Proof.Idea.KeyBits32
+public import VerifiedGarbage.Proof.Framework.X86.Linear
+meta import VerifiedGarbage.Proof.Framework.X86.Linear
+public import VerifiedGarbage.Proof.Framework.X86.Taint
+meta import VerifiedGarbage.Proof.Framework.X86.Taint
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.Idea.Contract
+meta import VerifiedGarbage.Spec.Idea.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # IDEA key expansion on x86 (32-bit)
@@ -17,6 +30,8 @@ the schedule's (at `ecx`) as slots: bit `p` of schedule word `w` is the key
 bit `expandSrc32 w p`, and every subkey bit is then the key bit
 `Spec.Idea.expandKey` takes (`expandKey_getLsbD`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Idea.X86
 

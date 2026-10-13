@@ -1,10 +1,18 @@
-import VerifiedGarbage.Impl.Weierstrass.X86.InvMemory
-import VerifiedGarbage.Proof.Weierstrass.X86.Copy
-import VerifiedGarbage.Proof.Weierstrass.X86.InvUnsigned
-import VerifiedGarbage.Proof.Mont.X86.Ops
-import VerifiedGarbage.Proof.Weierstrass.X86.InvShiftMath
+module
+
+public import VerifiedGarbage.Impl.Weierstrass.X86.InvMemory
+public import VerifiedGarbage.Proof.Weierstrass.X86.Copy
+public import VerifiedGarbage.Proof.Weierstrass.X86.InvUnsigned
+public import VerifiedGarbage.Proof.Mont.X86.Ops
+public import VerifiedGarbage.Proof.Weierstrass.X86.InvShiftMath
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## `InvMaskCopy` -/
+
+@[expose] public section
 
 section
 

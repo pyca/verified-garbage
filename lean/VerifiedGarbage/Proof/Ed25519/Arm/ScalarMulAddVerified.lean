@@ -1,20 +1,44 @@
-import VerifiedGarbage.Impl.Ed25519.Arm.Scalar
-import VerifiedGarbage.Proof.Ed25519.Arm.Field
-import VerifiedGarbage.Proof.X25519.Arm.Mul
-import VerifiedGarbage.Impl.Ed25519.Arm.ScalarMulAdd
-import VerifiedGarbage.Proof.X25519.Arm.AddSub
-import VerifiedGarbage.Proof.Ed25519.Arm.ScalarCodec
-import VerifiedGarbage.Proof.Ed25519.Arm.ScalarLoop
-import VerifiedGarbage.Proof.Ed25519.Arm.ScalarABI
-import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Proof.Ed25519.Arm.UnpackField
-import VerifiedGarbage.Proof.Ed25519.Arm.ScalarFinish
-import VerifiedGarbage.Spec.Ed25519.Contract
-import VerifiedGarbage.Proof.Framework.Arm.Lit
-import VerifiedGarbage.Proof.Framework.Arm.Taint
-import VerifiedGarbage.Proof.Framework.Arm.Contract
+module
+
+public import VerifiedGarbage.Impl.Ed25519.Arm.Scalar
+meta import VerifiedGarbage.Impl.Ed25519.Arm.Scalar
+public import VerifiedGarbage.Proof.Ed25519.Arm.Field
+meta import VerifiedGarbage.Proof.Ed25519.Arm.Field
+public import VerifiedGarbage.Proof.X25519.Arm.Mul
+meta import VerifiedGarbage.Proof.X25519.Arm.Mul
+public import VerifiedGarbage.Impl.Ed25519.Arm.ScalarMulAdd
+meta import VerifiedGarbage.Impl.Ed25519.Arm.ScalarMulAdd
+public import VerifiedGarbage.Proof.X25519.Arm.AddSub
+meta import VerifiedGarbage.Proof.X25519.Arm.AddSub
+public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarCodec
+meta import VerifiedGarbage.Proof.Ed25519.Arm.ScalarCodec
+public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarLoop
+meta import VerifiedGarbage.Proof.Ed25519.Arm.ScalarLoop
+public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarABI
+meta import VerifiedGarbage.Proof.Ed25519.Arm.ScalarABI
+public import VerifiedGarbage.TCB.Arm.Target
+meta import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.Proof.Ed25519.Arm.UnpackField
+meta import VerifiedGarbage.Proof.Ed25519.Arm.UnpackField
+public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarFinish
+meta import VerifiedGarbage.Proof.Ed25519.Arm.ScalarFinish
+public import VerifiedGarbage.Spec.Ed25519.Contract
+meta import VerifiedGarbage.Spec.Ed25519.Contract
+public import VerifiedGarbage.Proof.Framework.Arm.Lit
+meta import VerifiedGarbage.Proof.Framework.Arm.Lit
+public import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+public import VerifiedGarbage.Proof.Framework.Arm.Contract
+meta import VerifiedGarbage.Proof.Framework.Arm.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Ed25519.Arm.ScalarMulAddEngine`. -/
+
+@[expose] public section
+
 section
 /-! Merged from `Proof.Ed25519.Arm.ScalarWideAdd`. -/
 section

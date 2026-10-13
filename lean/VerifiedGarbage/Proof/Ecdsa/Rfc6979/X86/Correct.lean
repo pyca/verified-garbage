@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Loop
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Loop
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Deterministic ECDSA on x86 (32-bit): correctness
@@ -11,6 +17,8 @@ at a candidate that is suitable or the last (`loop_ok`); before it, `h`, `K`,
 The frame's allocation, our caller's registers saved and restored, and the
 return address kept give the whole function (`sign_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Rfc6979.X86
 

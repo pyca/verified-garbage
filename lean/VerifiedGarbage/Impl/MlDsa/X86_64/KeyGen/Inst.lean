@@ -1,9 +1,11 @@
-import VerifiedGarbage.Impl.MlDsa.X86_64.KeyGen.KeyGen
-import VerifiedGarbage.Impl.MlDsa.X86_64.Arith.Backend
-import VerifiedGarbage.Impl.MlDsa.X86_64.Sample.RejNtt
-import VerifiedGarbage.Impl.MlDsa.X86_64.Sample.RejBounded
-import VerifiedGarbage.Impl.MlDsa.X86_64.Round.Round
-import VerifiedGarbage.Impl.MlDsa.X86_64.Pack.Encode
+module
+
+public import VerifiedGarbage.Impl.MlDsa.X86_64.KeyGen.KeyGen
+public import VerifiedGarbage.Impl.MlDsa.X86_64.Arith.Backend
+public import VerifiedGarbage.Impl.MlDsa.X86_64.Sample.RejNtt
+public import VerifiedGarbage.Impl.MlDsa.X86_64.Sample.RejBounded
+public import VerifiedGarbage.Impl.MlDsa.X86_64.Round.Round
+public import VerifiedGarbage.Impl.MlDsa.X86_64.Pack.Encode
 
 /-!
 # ML-DSA key generation on x86-64, with this library's primitives
@@ -12,6 +14,8 @@ import VerifiedGarbage.Impl.MlDsa.X86_64.Pack.Encode
 primitives it calls (`Arith/`, `Sample/`, `Round/`, `Pack/`), with the
 polynomial arithmetic of a `Backend` (`primsWith`).
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.X86_64.KeyGen
 

@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.TripleDes.X86_64.Common
+module
+
+public import VerifiedGarbage.Impl.TripleDes.X86_64.Common
 
 /-!
 # Scalar Triple DES key expansion on x86-64
@@ -9,6 +11,8 @@ selected by FIPS 46-3's schedule; no secret-indexed table is read. Registers
 r12/r13 hold C/D; r14 is the round counter and r15 the output pointer.
 The three schedules are stored in the specification's canonical layout.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.TripleDes.X86_64.Key
 

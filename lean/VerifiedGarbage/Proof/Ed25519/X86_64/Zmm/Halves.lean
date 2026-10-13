@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Entry
-import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Select
+module
+
+public import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Entry
+public import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Select
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The `zmm` comb: what the `ymm` lemmas say of the halves
@@ -10,6 +16,8 @@ rows of the window: its lanes, its point (`lanePt`), the bounds of its limbs
 (`Small`) and its constants (`EConsts`) are the half's. `sim_wp2` runs two
 translated blocks, the second from the junk of the first.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed25519.X86_64.Zmm
 

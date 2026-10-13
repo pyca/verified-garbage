@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlDsa.X86.Verify.Top
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86.Verify.Top
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA verification on x86 (32-bit): the contract
@@ -9,6 +15,8 @@ of the primitives it calls (`PrimsOk`): the body, as a leaf (`topLeaf`), from
 the contract's precondition and public data (`pre_of`, `pub_of`), to its
 postcondition (`VFin`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86.Verify
 

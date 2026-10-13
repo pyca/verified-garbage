@@ -1,10 +1,16 @@
-import VerifiedGarbage.Proof.Blowfish.AArch64.EcbMain
-import VerifiedGarbage.Proof.Blowfish.AArch64.KeepV
-import VerifiedGarbage.Proof.Blowfish.AArch64.ModesLit
-import VerifiedGarbage.Proof.Blowfish.ModeBytes
-import VerifiedGarbage.Proof.Modes.AArch64.Core
-import VerifiedGarbage.Proof.Modes.AArch64.FbLoop
-import VerifiedGarbage.Impl.Blowfish.AArch64.Modes
+module
+
+public import VerifiedGarbage.Proof.Blowfish.AArch64.EcbMain
+public import VerifiedGarbage.Proof.Blowfish.AArch64.KeepV
+public import VerifiedGarbage.Proof.Blowfish.AArch64.ModesLit
+public import VerifiedGarbage.Proof.Blowfish.ModeBytes
+public import VerifiedGarbage.Proof.Modes.AArch64.Core
+public import VerifiedGarbage.Proof.Modes.AArch64.FbLoop
+public import VerifiedGarbage.Impl.Blowfish.AArch64.Modes
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Blowfish's core for the modes on AArch64
@@ -22,6 +28,8 @@ which it keeps in `x8`–`x15` across the batch, which does not write them;
 `crypt_keeps`: it keeps `x25`, where the feedback modes keep the IV's
 address.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Blowfish.AArch64
 

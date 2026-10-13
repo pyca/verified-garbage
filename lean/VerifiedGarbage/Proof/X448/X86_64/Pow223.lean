@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.X448.X86_64.Inv
-import VerifiedGarbage.Proof.Framework.X86_64.Spill
-import VerifiedGarbage.Proof.Framework.X86_64.CallInline
+module
+
+public import VerifiedGarbage.Proof.X448.X86_64.Inv
+public import VerifiedGarbage.Proof.Framework.X86_64.Spill
+public import VerifiedGarbage.Proof.Framework.X86_64.CallInline
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 on x86-64: the addition chain as a function
@@ -12,6 +18,8 @@ restores them: it changes only `rax`, `rcx`, `rdx` and `r8`–`r11` and the
 bytes `[960, 1648)`, and the slots as `chain223` does (`pow223Fn_ok`): slots 20
 and 21 end as `c222` and `c223` of slot 12 (`chainEnv_20`, `chainEnv_21`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448.X86_64
 

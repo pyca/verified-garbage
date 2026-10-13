@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Idea.X86.Round
-import VerifiedGarbage.Proof.Framework.Bswap
+module
+
+public import VerifiedGarbage.Proof.Idea.X86.Round
+public import VerifiedGarbage.Proof.Framework.Bswap
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # IDEA on x86 (32-bit): a block
@@ -11,6 +17,8 @@ of it under the subkeys at `esi`, writing no memory but the block and
 `eax` and what `pre` reads in `edx`: the interface a mode reuses it
 through.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Idea.X86
 

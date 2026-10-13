@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Ed448.AArch64.ScalarLoop
-import VerifiedGarbage.Proof.Ed448.AArch64.MemWords
+module
+
+public import VerifiedGarbage.Proof.Ed448.AArch64.ScalarLoop
+public import VerifiedGarbage.Proof.Ed448.AArch64.MemWords
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 scalar arithmetic on AArch64: entry and exit
@@ -8,6 +14,8 @@ The callee-saved registers saved in the working space and restored, the
 constants set up, the remainder of the top bytes of a 114-byte input, and
 the remainder written out as 57 bytes.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.AArch64
 

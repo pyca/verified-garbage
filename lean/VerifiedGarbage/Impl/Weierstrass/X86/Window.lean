@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Weierstrass.X86.TComb
-import VerifiedGarbage.Impl.Weierstrass.JacMul
+module
+
+public import VerifiedGarbage.Impl.Weierstrass.X86.TComb
+public import VerifiedGarbage.Impl.Weierstrass.JacMul
 
 /-!
 # Signed four-bit variable-base multiplication on 32-bit x86
@@ -9,6 +11,8 @@ doublings, a constant-time scan of all eight projective points, conditional
 negation, and a complete addition. The scalar is recoded by adding
 `8 * ((16^J - 1) / 15)` before producing its table of bits.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Weierstrass.X86
 

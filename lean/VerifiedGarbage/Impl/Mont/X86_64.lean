@@ -1,6 +1,8 @@
-import VerifiedGarbage.TCB.X86_64.Isa
-import VerifiedGarbage.Impl.Mont.Mod
-import VerifiedGarbage.Impl.X25519.X86_64.Adx
+module
+
+public import VerifiedGarbage.TCB.X86_64.Isa
+public import VerifiedGarbage.Impl.Mont.Mod
+public import VerifiedGarbage.Impl.X25519.X86_64.Adx
 
 /-!
 # Montgomery arithmetic modulo an odd multiword modulus, on x86-64
@@ -86,6 +88,8 @@ may affect timing. The operations use the registers `rax`, `rcx`, `rdx`,
 `r8`–`r15` from `n = 6`), and
 write only `[o]` and `[M.tmp]`.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Mont.X86_64
 

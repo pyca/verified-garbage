@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.RsaOaep.X86_64.DecLoops
-import VerifiedGarbage.Proof.RsaOaep.X86_64.Out
+module
+
+public import VerifiedGarbage.Proof.RsaOaep.X86_64.DecLoops
+public import VerifiedGarbage.Proof.RsaOaep.X86_64.Out
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-OAEP decryption on x86-64: the outputs
@@ -8,6 +14,8 @@ The mask `ok` (`okMask_ok`), the buffer ANDed with it to `out`
 (`outLoop_ok`), the length and the result (`decRet_ok`), and the failure
 before decoding (`decFail_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaOaep.X86_64
 

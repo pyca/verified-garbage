@@ -1,6 +1,12 @@
-import VerifiedGarbage.Impl.Camellia.X86.Ecb
-import VerifiedGarbage.Proof.Camellia.Bitsliced32
-import VerifiedGarbage.Proof.Framework.X86.Linear
+module
+
+public import VerifiedGarbage.Impl.Camellia.X86.Ecb
+public import VerifiedGarbage.Proof.Camellia.Bitsliced32
+public import VerifiedGarbage.Proof.Framework.X86.Linear
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The linear layers of bitsliced Camellia on x86 (32-bit), by evaluation
@@ -29,6 +35,8 @@ block must keep are outputs too, each the input word it held.
 Position `p = 8 i + b` of a plane of word `w` is byte `4 w + i` of the half
 of block `b`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Camellia.X86
 

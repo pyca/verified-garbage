@@ -1,6 +1,12 @@
-import VerifiedGarbage.Spec.Ecdsa.Secp256k1
-import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.Framework.Contract
+module
+
+public import VerifiedGarbage.Spec.Ecdsa.Secp256k1
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.Framework.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDSA over secp256k1 on x86-64: the contract the proof is written against
@@ -9,6 +15,8 @@ The facts of `Spec.Ecdsa.Secp256k1.inst.signContract` for x86-64, by name:
 `vg_ecdsa_secp256k1_sign(out = rdi, d = rsi, digest = rdx, k = rcx, scratch = r8)`,
 the result in `eax`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.X86_64.Secp256k1
 

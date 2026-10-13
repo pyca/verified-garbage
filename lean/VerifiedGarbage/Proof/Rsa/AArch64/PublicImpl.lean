@@ -1,6 +1,14 @@
-import VerifiedGarbage.Proof.Rsa.AArch64.PdChecked
+module
+
+public import VerifiedGarbage.Proof.Rsa.AArch64.PdChecked
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # A precomputed public operation for verified RSA callers on AArch64 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.AArch64
 

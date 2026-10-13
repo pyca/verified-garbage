@@ -1,6 +1,12 @@
-import VerifiedGarbage.Impl.Aes.Arm.Sbox
-import VerifiedGarbage.Proof.Aes.SboxSpec
-import VerifiedGarbage.Proof.Aes.Arm.Bitsliced
+module
+
+public import VerifiedGarbage.Impl.Aes.Arm.Sbox
+public import VerifiedGarbage.Proof.Aes.SboxSpec
+public import VerifiedGarbage.Proof.Aes.Arm.Bitsliced
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The bitsliced S-box on ARMv7
@@ -14,6 +20,8 @@ on the same tables (`sboxT`, proved right in `Proof/Aes/SboxSpec.lean`).
 `sbox_ok` then gives, at every bit position `p`, the S-box of the byte
 formed by bit `p` of the eight words.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Aes.Arm
 

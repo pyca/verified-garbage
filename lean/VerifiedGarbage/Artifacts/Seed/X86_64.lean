@@ -21,7 +21,7 @@ def artifacts : List Artifact := [
     code := Impl.StackScratch.X86_64.withStackScratchWiped 1064 .rcx 132 Impl.Seed.X86_64.encrypt
     contract := Spec.Seed.ecbEncryptContract X86_64.abi 1064
     stack := 1064
-    ofSig := ⟨_, _, _, by unfold Spec.Seed.ecbEncryptContract Spec.Seed.ecbContract; rfl⟩
+    ofSig := by exact (⟨_, _, _, by unfold Spec.Seed.ecbEncryptContract Spec.Seed.ecbContract; rfl⟩)
     verified := Proof.Seed.X86_64.encrypt_framed
     spSafe := Code.all_of_allInstrs (by lit_decide) },
   { Spec.Seed.ecbDecryptApi with
@@ -31,7 +31,7 @@ def artifacts : List Artifact := [
     code := Impl.StackScratch.X86_64.withStackScratchWiped 1064 .rcx 132 Impl.Seed.X86_64.decrypt
     contract := Spec.Seed.ecbDecryptContract X86_64.abi 1064
     stack := 1064
-    ofSig := ⟨_, _, _, by unfold Spec.Seed.ecbDecryptContract Spec.Seed.ecbContract; rfl⟩
+    ofSig := by exact (⟨_, _, _, by unfold Spec.Seed.ecbDecryptContract Spec.Seed.ecbContract; rfl⟩)
     verified := Proof.Seed.X86_64.decrypt_framed
     spSafe := Code.all_of_allInstrs (by lit_decide) }]
 

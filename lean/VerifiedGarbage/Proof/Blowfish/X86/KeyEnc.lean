@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Blowfish.X86.KeyP
-import VerifiedGarbage.Proof.Blowfish.KeySched
-import VerifiedGarbage.Proof.Rc4.Scan32
+module
+
+public import VerifiedGarbage.Proof.Blowfish.X86.KeyP
+public import VerifiedGarbage.Proof.Blowfish.KeySched
+public import VerifiedGarbage.Proof.Rc4.Scan32
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Blowfish on x86 (32-bit): key expansion's 521 encryptions
@@ -11,6 +17,8 @@ far, and its output replaces the next two entries: the P-array's, as words
 pointer to the next entries and the encryptions left are in the working
 space, at `ebp + 32` and `ebp + 36`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Blowfish.X86
 

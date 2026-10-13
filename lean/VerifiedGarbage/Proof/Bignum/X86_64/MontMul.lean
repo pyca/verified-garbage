@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.Csub
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.Csub
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Multiword arithmetic on x86-64: Montgomery multiplication
@@ -9,6 +15,8 @@ arrays of `w + 2` words (`slot w j`). The header (`Hdr`) gives `w`,
 `[o] < m` with `[o] R ≡ [a] [b] (mod m)` for `R = 2^(64 w)` and `m = [mo]`
 (`montMul_ok`), changing only the arrays `acc`, `tmp` and `o`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64
 

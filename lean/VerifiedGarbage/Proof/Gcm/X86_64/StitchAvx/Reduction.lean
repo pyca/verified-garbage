@@ -1,7 +1,13 @@
-import VerifiedGarbage.Impl.Gcm.X86_64.StitchAvx
-import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Exec
-import VerifiedGarbage.Proof.Framework.X86_64.Lane0
-import VerifiedGarbage.Proof.Framework.X86_64.YFrame
+module
+
+public import VerifiedGarbage.Impl.Gcm.X86_64.StitchAvx
+public import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Exec
+public import VerifiedGarbage.Proof.Framework.X86_64.Lane0
+public import VerifiedGarbage.Proof.Framework.X86_64.YFrame
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Folding the three GHASH product words directly
@@ -11,6 +17,8 @@ The AVX-512 path's reduction also works on a single 128-bit lane. It folds
 The field interpretation is established when the loop is connected to GHASH
 in `Ok.lean`, keeping the algebra out of the instruction proofs.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Gcm.X86_64.StitchAvx
 

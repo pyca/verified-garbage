@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Idea.AArch64.Mul
-import VerifiedGarbage.Proof.Framework.CallLay
+module
+
+public import VerifiedGarbage.Proof.Idea.AArch64.Mul
+public import VerifiedGarbage.Proof.Framework.CallLay
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # IDEA on AArch64: a round
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.Framework.CallLay
 (`Holds`) to `Spec.Idea.round` of them under subkeys `6j … 6j + 5`, loaded
 two at a time from the schedule at `x0` (`KeyOk`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Idea.AArch64
 

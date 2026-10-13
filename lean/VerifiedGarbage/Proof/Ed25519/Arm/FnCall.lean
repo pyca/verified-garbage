@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Ed25519.Arm.AsFn
-import VerifiedGarbage.Proof.Framework.Arm.Call
-import VerifiedGarbage.Proof.Framework.Covers
+module
+
+public import VerifiedGarbage.Proof.Ed25519.Arm.AsFn
+public import VerifiedGarbage.Proof.Framework.Arm.Call
+public import VerifiedGarbage.Proof.Framework.Covers
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed25519 on ARMv7: calls of field code made a function
@@ -15,6 +21,8 @@ call runs on the working space alone (`WP.call`).
 `addCall_ok` and `doubleCall_ok`: the calls of point addition and doubling,
 as the inlined formulas (`fieldCode_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed25519.Arm
 

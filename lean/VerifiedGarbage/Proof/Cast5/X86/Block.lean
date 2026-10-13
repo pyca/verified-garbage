@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Cast5.X86.Round
-import VerifiedGarbage.Proof.Cast5.Memory
+module
+
+public import VerifiedGarbage.Proof.Cast5.X86.Round
+public import VerifiedGarbage.Proof.Cast5.Memory
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # CAST5 on 32-bit x86: a block
@@ -8,6 +14,8 @@ The rounds of a block, three at a time (`group`), and `crypt`: from the block
 at the data slot of the working space to its encryption or decryption there,
 under the subkeys and the number of rounds in their slots.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Cast5.X86
 

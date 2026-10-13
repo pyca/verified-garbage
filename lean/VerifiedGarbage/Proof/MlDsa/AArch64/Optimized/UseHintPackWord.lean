@@ -1,6 +1,14 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackMath
-import VerifiedGarbage.Proof.MlDsa.AArch64.Round.UseHint
-import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.UseHintPack
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackMath
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Round.UseHint
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.UseHintPack
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Optimized.UseHintPack
 open VG VG.AArch64 VG.Spec.MlDsa

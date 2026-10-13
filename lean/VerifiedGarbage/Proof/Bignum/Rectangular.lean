@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.Bignum.Square
+module
+
+public import VerifiedGarbage.Proof.Bignum.Square
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Positional arithmetic for rows of rectangular multiplication tiles. -/
+
+@[expose] public section
+
 namespace VG.Proof.Bignum.Rectangular
 
 /-- Append one tile to a row. The incoming carry belongs to the tile's high

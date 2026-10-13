@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.MlKem.X86.Piece
-import VerifiedGarbage.Impl.MlKem.X86.Basic
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86.Piece
+public import VerifiedGarbage.Impl.MlKem.X86.Basic
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86 (32-bit): calls that return a value
@@ -8,6 +14,8 @@ import VerifiedGarbage.Impl.MlKem.X86.Basic
 returns its value; `callRet` pops it into `ecx` instead, and `WP.callRet` also
 gives the value in `eax` of the state the callee's postcondition holds of.
 -/
+
+@[expose] public section
 
 namespace VG.X86
 

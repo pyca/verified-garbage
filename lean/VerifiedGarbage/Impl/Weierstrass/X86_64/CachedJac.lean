@@ -1,7 +1,12 @@
-import VerifiedGarbage.Impl.Weierstrass.X86_64.Jacobian
-import VerifiedGarbage.Impl.Weierstrass.X86_64.ForwardField
+module
+
+public import VerifiedGarbage.Impl.Weierstrass.X86_64.Jacobian
+public import VerifiedGarbage.Impl.Weierstrass.X86_64.ForwardField
 
 /-! Jacobian addition using the selected point's cached powers of Z. -/
+
+@[expose] public section
+
 namespace VG.Impl.Weierstrass.X86_64.CachedJac
 open VG VG.X86_64 VG.Impl.Weierstrass
 

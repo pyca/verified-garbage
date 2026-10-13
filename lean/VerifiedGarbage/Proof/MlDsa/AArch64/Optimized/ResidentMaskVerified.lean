@@ -1,8 +1,16 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentMaskTiming
-import VerifiedGarbage.Spec.MlDsa.ResidentMask
-import VerifiedGarbage.Proof.Framework.Contract
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentMaskTiming
+public import VerifiedGarbage.Spec.MlDsa.ResidentMask
+public import VerifiedGarbage.Proof.Framework.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## From `ResidentMaskContract.lean` -/
+
+@[expose] public section
 
 section
 

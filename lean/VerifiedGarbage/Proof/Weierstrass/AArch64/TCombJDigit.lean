@@ -1,7 +1,15 @@
-import VerifiedGarbage.Impl.Weierstrass.AArch64.TCombJ
-import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombDigit
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Zero
-import VerifiedGarbage.Proof.Weierstrass.Booth
+module
+
+public import VerifiedGarbage.Impl.Weierstrass.AArch64.TCombJ
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombDigit
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Zero
+public import VerifiedGarbage.Proof.Weierstrass.Booth
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.AArch64
 open VG VG.AArch64 VG.Impl.Mont.AArch64 VG.Impl.Mont VG.Impl.Weierstrass.AArch64 VG.Impl.Weierstrass

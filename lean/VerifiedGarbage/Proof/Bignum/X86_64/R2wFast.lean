@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Rsa.Ranges
-import VerifiedGarbage.Proof.Bignum.X86_64.R2wStep
-import VerifiedGarbage.Proof.Bignum.X86_64.PubR2
+module
+
+public import VerifiedGarbage.Proof.Rsa.Ranges
+public import VerifiedGarbage.Proof.Bignum.X86_64.R2wStep
+public import VerifiedGarbage.Proof.Bignum.X86_64.PubR2
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `R² mod m` by word steps on x86-64
@@ -12,6 +18,8 @@ squarings, `R² mod m` (`fast_ok`); and
 `vg_rsa_public`'s computation otherwise (`choice_ok`, with `r2_ok`'s
 result).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64.R2w
 

@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Cmac.Frame
-import VerifiedGarbage.Proof.Framework.WriteBytes
+module
+
+public import VerifiedGarbage.Proof.Cmac.Frame
+public import VerifiedGarbage.Proof.Framework.WriteBytes
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # CMAC: forming the last block in memory
@@ -8,6 +14,8 @@ What `finalize`'s stores leave, on any target: the XOR of two blocks stored a
 word at a time (`xor2Mem`), a zeroed block (`zero2`), and a partial last
 block copied onto zeros and padded with `0x80` (`padded_bytes`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Cmac
 

@@ -1,19 +1,43 @@
-import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.ChaCha20.Spec
-import VerifiedGarbage.Impl.ChaCha20.AArch64
-import VerifiedGarbage.Proof.Framework.AArch64.Taint
-import VerifiedGarbage.Proof.Framework.Range
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Spec.ChaCha20.Contract
-import VerifiedGarbage.Proof.ChaCha20.Keystream
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Impl.ChaCha20.AArch64.Xor
-import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.ChaCha20.AArch64.Lit
-import VerifiedGarbage.Proof.Framework.Omega
+module
+
+public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+meta import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+public import VerifiedGarbage.Proof.Framework.Block
+meta import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+public import VerifiedGarbage.Proof.ChaCha20.Spec
+meta import VerifiedGarbage.Proof.ChaCha20.Spec
+public import VerifiedGarbage.Impl.ChaCha20.AArch64
+meta import VerifiedGarbage.Impl.ChaCha20.AArch64
+public import VerifiedGarbage.Proof.Framework.AArch64.Taint
+meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
+public import VerifiedGarbage.Proof.Framework.Range
+meta import VerifiedGarbage.Proof.Framework.Range
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.ChaCha20.Contract
+meta import VerifiedGarbage.Spec.ChaCha20.Contract
+public import VerifiedGarbage.Proof.ChaCha20.Keystream
+meta import VerifiedGarbage.Proof.ChaCha20.Keystream
+public import VerifiedGarbage.Proof.Framework.AArch64.Call
+meta import VerifiedGarbage.Proof.Framework.AArch64.Call
+public import VerifiedGarbage.Impl.ChaCha20.AArch64.Xor
+meta import VerifiedGarbage.Impl.ChaCha20.AArch64.Xor
+public import Mathlib.Tactic.Conv
+meta import Mathlib.Tactic.Conv
+public import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.ChaCha20.AArch64.Lit
+meta import VerifiedGarbage.Proof.ChaCha20.AArch64.Lit
+public import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.Framework.Omega
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 section
 

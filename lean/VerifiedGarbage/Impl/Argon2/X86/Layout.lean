@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Argon2.X86.HPrime
+module
+
+public import VerifiedGarbage.Impl.Argon2.X86.HPrime
 
 /-!
 # Argon2 derivation on x86 (32-bit): the frame
@@ -18,6 +20,8 @@ The locals are:
 Every value in the locals but H₀, the random word and the reference block
 is public.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Argon2.X86.Derive
 

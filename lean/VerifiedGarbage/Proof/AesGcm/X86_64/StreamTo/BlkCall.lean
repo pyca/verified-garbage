@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Steps
-import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Callee
-import VerifiedGarbage.Proof.Framework.X86_64.CallSp
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Steps
+public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Callee
+public import VerifiedGarbage.Proof.Framework.X86_64.CallSp
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM streaming encryption out of place, x86-64: the call of the whole blocks
@@ -10,6 +16,8 @@ Untrusted: everything here is checked by Lean. The call of
 the working space pushed for it (`blkCall_ok`): what it needs, from the
 layout of `s` (`blkPre`), and what it leaves.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

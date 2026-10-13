@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.VerifyCall
-import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Encode
-import VerifiedGarbage.Proof.RsaPkcs1Sig.Verify
+module
+
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.VerifyCall
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Encode
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.Verify
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_pkcs1_verify` on AArch64: correctness
@@ -10,6 +16,8 @@ failed, 0; otherwise `encode` writes the encoding of the hash value to
 `EM₂`, and the result is whether it is `EM₁` (`compare`), which is
 RFC 8017 §8.2.2 (`verifyId_true_iff`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPkcs1Sig.AArch64.Ver
 

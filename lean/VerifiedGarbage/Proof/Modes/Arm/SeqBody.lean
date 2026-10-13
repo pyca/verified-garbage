@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Modes.Arm.Seq
+module
+
+public import VerifiedGarbage.Proof.Modes.Arm.Seq
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The modes one block at a time on ARMv7: one block
@@ -11,6 +17,8 @@ call of the core on the mode's block (`call_wp`), the operations after it,
 and the step to the next block. Block `k` is then `stepOf`'s data block,
 and the others are unchanged.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Modes.Arm
 

@@ -1,4 +1,8 @@
-import VerifiedGarbage.Impl.CmacAes.AArch64
+module
+
+public import VerifiedGarbage.Impl.CmacAes.AArch64
+
+@[expose] public section
 
 namespace VG.Impl.CmacAes.AArch64
 open VG.AArch64

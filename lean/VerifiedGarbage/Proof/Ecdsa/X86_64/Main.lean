@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Ecdsa.X86_64.MulFn
-import VerifiedGarbage.Proof.Ecdsa.X86_64.Inv
-import VerifiedGarbage.Proof.Ecdsa.Sign
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.MulFn
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.Inv
+public import VerifiedGarbage.Proof.Ecdsa.Sign
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDSA on x86-64: the whole function
@@ -14,6 +20,8 @@ stages, each a lemma: the setup and the tables of bits (`stage₁`, in
 `r`, the checks and `k^(n-2)` (`stage₃`, `nPow_ok`), and `s`, its check and the result
 (`stage₄`); `signWith_eq` connects what they compute to the specification.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.X86_64
 

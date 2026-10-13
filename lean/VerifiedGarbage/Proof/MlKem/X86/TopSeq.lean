@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.MlKem.X86.TopPrim2
-import VerifiedGarbage.Proof.MlKem.X86.TopPrim3
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86.TopPrim2
+public import VerifiedGarbage.Proof.MlKem.X86.TopPrim3
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86 (32-bit): the calls of the top-level functions, with their arguments
@@ -10,6 +16,8 @@ whose addresses depend only on `esp` and `esi`); and each call with it
 (`nttC_piece`, …), whose postcondition relates the state before the block to
 the state after the call.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.X86.Top
 

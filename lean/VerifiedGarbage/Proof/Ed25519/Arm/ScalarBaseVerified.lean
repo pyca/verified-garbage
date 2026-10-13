@@ -1,19 +1,42 @@
-import VerifiedGarbage.Impl.Ed25519.Arm.ScalarBase
-import VerifiedGarbage.Proof.Ed25519.Arm.PointFromScalar
-import VerifiedGarbage.Proof.Ed25519.Arm.PointEncode
-import VerifiedGarbage.Proof.Ed25519.Arm.InitFields
-import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTFrom
-import VerifiedGarbage.Proof.Ed25519.Arm.ScalarABI
-import VerifiedGarbage.Spec.Ed25519.Contract
-import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Proof.Ed25519.Arm.ScalarFinish
-import VerifiedGarbage.Proof.Ed25519.Arm.ScalarCodec
-import VerifiedGarbage.Proof.Framework.Arm.Lit
-import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTLit
-import VerifiedGarbage.Proof.Framework.Arm.Contract
-import VerifiedGarbage.Proof.Ed25519.Arm.LrSlot
+module
+
+public import VerifiedGarbage.Impl.Ed25519.Arm.ScalarBase
+meta import VerifiedGarbage.Impl.Ed25519.Arm.ScalarBase
+public import VerifiedGarbage.Proof.Ed25519.Arm.PointFromScalar
+meta import VerifiedGarbage.Proof.Ed25519.Arm.PointFromScalar
+public import VerifiedGarbage.Proof.Ed25519.Arm.PointEncode
+meta import VerifiedGarbage.Proof.Ed25519.Arm.PointEncode
+public import VerifiedGarbage.Proof.Ed25519.Arm.InitFields
+meta import VerifiedGarbage.Proof.Ed25519.Arm.InitFields
+public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTFrom
+meta import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTFrom
+public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarABI
+meta import VerifiedGarbage.Proof.Ed25519.Arm.ScalarABI
+public import VerifiedGarbage.Spec.Ed25519.Contract
+meta import VerifiedGarbage.Spec.Ed25519.Contract
+public import VerifiedGarbage.TCB.Arm.Target
+meta import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarFinish
+meta import VerifiedGarbage.Proof.Ed25519.Arm.ScalarFinish
+public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarCodec
+meta import VerifiedGarbage.Proof.Ed25519.Arm.ScalarCodec
+public import VerifiedGarbage.Proof.Framework.Arm.Lit
+meta import VerifiedGarbage.Proof.Framework.Arm.Lit
+public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTLit
+meta import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTLit
+public import VerifiedGarbage.Proof.Framework.Arm.Contract
+meta import VerifiedGarbage.Proof.Framework.Arm.Contract
+public import VerifiedGarbage.Proof.Ed25519.Arm.LrSlot
+meta import VerifiedGarbage.Proof.Ed25519.Arm.LrSlot
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Ed25519.Arm.ScalarBaseEngine`. -/
+
+@[expose] public section
+
 section
 /-! All input scalar bits, exact point multiplication, and canonical encoding compose. -/
 namespace VG.Proof.Ed25519.Arm

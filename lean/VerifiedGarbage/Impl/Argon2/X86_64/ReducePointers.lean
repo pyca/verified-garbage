@@ -1,7 +1,11 @@
-import VerifiedGarbage.Impl.Argon2.X86_64.BlockAddress
-import VerifiedGarbage.Impl.Argon2.X86_64.Compress
+module
+
+public import VerifiedGarbage.Impl.Argon2.X86_64.BlockAddress
+public import VerifiedGarbage.Impl.Argon2.X86_64.Compress
 
 /-! Select block zero and the last block of the current public lane. -/
+
+@[expose] public section
 
 namespace VG.Impl.Argon2.X86_64.ReducePointers
 

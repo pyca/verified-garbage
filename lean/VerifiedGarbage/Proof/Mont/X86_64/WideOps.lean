@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Mont.X86_64.WideMul
-import VerifiedGarbage.Proof.Mont.X86_64.OpsReg
+module
+
+public import VerifiedGarbage.Proof.Mont.X86_64.WideMul
+public import VerifiedGarbage.Proof.Mont.X86_64.OpsReg
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Montgomery arithmetic on x86-64: the operations with the accumulator in memory
@@ -12,6 +18,8 @@ subtraction (`csubW_ok`); and `mulW_ok`, `addW_ok` and `subW_ok`, which are
 `mulR_ok`, `addR_ok` and `subR_ok` for any number of words, given that the
 operands and the result are apart from the temporary area.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Mont.X86_64
 

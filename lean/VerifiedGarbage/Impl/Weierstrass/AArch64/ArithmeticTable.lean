@@ -1,5 +1,9 @@
-import VerifiedGarbage.Impl.Weierstrass.AArch64.ArithmeticAdd
-import VerifiedGarbage.Impl.Weierstrass.AArch64.Naf
+module
+
+public import VerifiedGarbage.Impl.Weierstrass.AArch64.ArithmeticAdd
+public import VerifiedGarbage.Impl.Weierstrass.AArch64.Naf
+
+@[expose] public section
 
 namespace VG.Impl.Weierstrass.AArch64.ArithmeticTable
 open VG VG.AArch64 VG.Impl.Mont VG.Impl.Mont.AArch64 VG.Impl.Weierstrass

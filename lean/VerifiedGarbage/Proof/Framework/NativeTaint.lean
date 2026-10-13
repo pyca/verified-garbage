@@ -1,8 +1,15 @@
-import VerifiedGarbage.Proof.Framework.X86.Taint
-import VerifiedGarbage.Proof.Framework.X86.NativeHintData
+module
+
+public import VerifiedGarbage.Proof.Framework.X86.Taint
+public meta import VerifiedGarbage.Proof.Framework.X86.Taint
+public import VerifiedGarbage.Proof.Framework.X86.NativeHintData
+public meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
 
 /-! Optional native hint search. The original taint domain and checker stay
 unchanged: generated expressions must pass the same kernel check. -/
+
+public meta section
+
 namespace VG.NativeHints
 open Lean Meta Elab Tactic
 

@@ -1,5 +1,9 @@
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Framework.OmegaLit
+module
+
+public import VerifiedGarbage.Proof.Framework.Contract
+public meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.OmegaLit
+public meta import VerifiedGarbage.Proof.Framework.OmegaLit
 
 /-!
 # Moving the generic proofs to the shared contracts, once for every hash function
@@ -13,6 +17,8 @@ scratch space `W` as parameters, and the implication between them holds for any
 the satisfiability of the shared contract, which each instance proves at its own
 sizes with `sig_implies_sat`.
 -/
+
+public meta section
 
 namespace VG
 

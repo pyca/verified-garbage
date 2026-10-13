@@ -1,6 +1,11 @@
-import VerifiedGarbage.Impl.Weierstrass.X86
+module
+
+public import VerifiedGarbage.Impl.Weierstrass.X86
 
 /-! # Batched divsteps on 32-bit x86 -/
+
+@[expose] public section
+
 namespace VG.Impl.Weierstrass.X86.Inv
 open VG.X86 VG.Impl.Mont.X86
 

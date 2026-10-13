@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyB2
+module
+
+public import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyB2
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSASSA-PSS verification on AArch64: what the result means
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyB2
 `M'`) is 1 exactly when the encoding is valid, byte by byte
 (`VerifyCases.lean`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPss.AArch64
 

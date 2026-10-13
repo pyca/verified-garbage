@@ -1,10 +1,18 @@
-import VerifiedGarbage.Proof.Weierstrass.X86.WinJacNeg
-import VerifiedGarbage.Proof.Weierstrass.X86.WinJacChoosePoint
-import VerifiedGarbage.Proof.Weierstrass.X86.WinJacAddMath
-import VerifiedGarbage.Proof.Weierstrass.X86.WinJacEntryState
-import VerifiedGarbage.Proof.Weierstrass.X86.WinJacFinish
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86.WinJacNeg
+public import VerifiedGarbage.Proof.Weierstrass.X86.WinJacChoosePoint
+public import VerifiedGarbage.Proof.Weierstrass.X86.WinJacAddMath
+public import VerifiedGarbage.Proof.Weierstrass.X86.WinJacEntryState
+public import VerifiedGarbage.Proof.Weierstrass.X86.WinJacFinish
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## `WinJacFirst` -/
+
+@[expose] public section
 
 section
 

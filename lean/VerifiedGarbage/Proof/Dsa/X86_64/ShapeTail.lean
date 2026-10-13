@@ -1,7 +1,16 @@
-import VerifiedGarbage.Proof.Dsa.X86_64.OddCheck
-import VerifiedGarbage.Proof.Dsa.X86_64.ShapeFinish
+module
+
+public import VerifiedGarbage.Proof.Dsa.X86_64.OddCheck
+public import VerifiedGarbage.Proof.Dsa.X86_64.ShapeFinish
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # Composition of domain masks, parity, and digest-prefix selection -/
+
+@[expose] public section
+
 namespace VG.Proof.Dsa.X86_64
 open VG VG.X86_64 VG.Impl.Bignum.X86_64
 open VG.Impl.Dsa.Layout VG.Impl.Dsa.X86_64

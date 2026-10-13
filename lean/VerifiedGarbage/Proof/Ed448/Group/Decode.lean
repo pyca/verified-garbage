@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Ed448.Group.Projective
+module
+
+public import VerifiedGarbage.Proof.Ed448.Group.Projective
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Decoded points are on the curve
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.Ed448.Group.Projective
 curve's equation; so a decoded point, with `Z = 1`, represents a point of the
 group (RFC 8032 §5.2.3).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448
 

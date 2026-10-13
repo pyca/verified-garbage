@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Sha1.AArch64
-import VerifiedGarbage.Impl.MdStream.AArch64
+module
+
+public import VerifiedGarbage.Impl.Sha1.AArch64
+public import VerifiedGarbage.Impl.MdStream.AArch64
 
 /-!
 # Streaming SHA-1: AArch64 implementation
@@ -12,6 +14,8 @@ The streaming state (84 bytes at `state`) is the hash value followed by a
   (`Impl/MdStream/AArch64.lean`), calling the compression function
   (`vg_sha1_compress`).
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Sha1.AArch64.Stream
 

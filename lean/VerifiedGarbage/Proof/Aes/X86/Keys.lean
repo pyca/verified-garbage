@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Aes.X86.Encrypt
-import VerifiedGarbage.Proof.Framework.Bitslice.Sym
-import VerifiedGarbage.Proof.Framework.Omega
+module
+
+public import VerifiedGarbage.Proof.Aes.X86.Encrypt
+public import VerifiedGarbage.Proof.Framework.Bitslice.Sym
+public import VerifiedGarbage.Proof.Framework.Omega
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Bitslicing the round keys, on x86 (32-bit)
@@ -11,6 +17,8 @@ loads and stores are checked by evaluation over the naming domain
 (`Bitslice.names`), `ortho` by its proof (`Linear.lean`), and the address
 computations by symbolic execution.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Aes.X86
 

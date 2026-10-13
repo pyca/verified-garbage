@@ -1,10 +1,19 @@
-import VerifiedGarbage.Proof.Argon2.X86_64.FillCompressCall
-import VerifiedGarbage.Proof.Argon2.X86_64.FillWriteCover
-import VerifiedGarbage.Impl.Argon2.X86_64.FillCompress
-import VerifiedGarbage.Proof.Argon2.X86_64.Memory
-import VerifiedGarbage.Proof.Argon2.X86_64.DivideStep
+module
+
+public import VerifiedGarbage.Proof.Argon2.X86_64.FillCompressCall
+public import VerifiedGarbage.Proof.Argon2.X86_64.FillWriteCover
+public import VerifiedGarbage.Impl.Argon2.X86_64.FillCompress
+public import VerifiedGarbage.Proof.Argon2.X86_64.Memory
+public import VerifiedGarbage.Proof.Argon2.X86_64.DivideStep
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Argon2.X86_64.FillCompressArgs`. -/
+
+@[expose] public section
+
 section
 /-! Save the current cell across G and reload the block-write arguments. -/
 

@@ -1,6 +1,8 @@
-import VerifiedGarbage.Spec.Blowfish
-import VerifiedGarbage.TCB.Arm.Isa
-import VerifiedGarbage.Impl.Blowfish.Table
+module
+
+public import VerifiedGarbage.Spec.Blowfish
+public import VerifiedGarbage.TCB.Arm.Isa
+public import VerifiedGarbage.Impl.Blowfish.Table
 
 /-!
 # Blowfish on ARMv7
@@ -34,6 +36,8 @@ constant time; it forgets them at a store of a secret through another
 register (the data, the schedule's entries), so they are read before such
 stores and written after.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Blowfish.Arm
 

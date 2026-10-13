@@ -1,4 +1,6 @@
-import VerifiedGarbage.Spec.Sm4
+module
+
+public import VerifiedGarbage.Spec.Sm4
 
 /-!
 # Constants of the SM4 key schedule as bitsliced planes
@@ -6,6 +8,8 @@ import VerifiedGarbage.Spec.Sm4
 The planes of `CK`'s words and `FK`'s words as the key schedule's code
 stores them on every target, computed from the specification's constants.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Sm4
 

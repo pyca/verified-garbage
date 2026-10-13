@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseKCT
-import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseL
+module
+
+public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseKCT
+public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseL
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA signing on ARMv7: the loop leaks what `signLeakT` says
@@ -10,6 +16,8 @@ if it does (`leq_hints`), and, if it is rejected, on what the rest leaks
 (`leq_succ`); so they agree on the branches of each iteration, and leak the
 same (`iter_tr`, `signLoop_tr`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Arm.Sign
 

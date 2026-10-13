@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Curve
-import VerifiedGarbage.Proof.Ecdsa.X86.P521.Verified
-import VerifiedGarbage.Proof.Ecdsa.X86.P521.Lit
-import VerifiedGarbage.Proof.Framework.X86.Lit
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Curve
+public import VerifiedGarbage.Proof.Ecdsa.X86.P521.Verified
+public import VerifiedGarbage.Proof.Ecdsa.X86.P521.Lit
+public import VerifiedGarbage.Proof.Framework.X86.Lit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Deterministic ECDSA on x86 (32-bit): P-521
@@ -14,11 +20,13 @@ against its contract (`coreK` at P-521's sizes, which is
 `Proof.Ecdsa.X86.P521.signX86`).
 -/
 
+@[expose] public section
+
 namespace VG.Proof.Ecdsa.Rfc6979.X86
 
 open VG VG.X86
 
-private theorem core_pre_521 {s : State} (h : (coreK Impl.Ecdsa.X86.p521).pre s) :
+theorem core_pre_521 {s : State} (h : (coreK Impl.Ecdsa.X86.p521).pre s) :
     Proof.Ecdsa.X86.P521.signX86.pre s := by
   obtain ⟨rd, wr, oc, od, og, ok, dc, gc, kc, ao, ac, ro, rc, no, nd, ng, nk, nc, sp, lo, so, ss, _⟩ := h
   exact ⟨rd, wr, oc, od, og, ok, dc, gc, kc, ao, ac, ro, rc, no, nd, ng, nk, nc, sp, lo, so, ss⟩

@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Framework.Pratt
-import VerifiedGarbage.Spec.P384
+module
+
+public import VerifiedGarbage.Proof.Framework.Pratt
+public import VerifiedGarbage.Spec.P384
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The P-384 field prime `p` and group order `n` are prime
@@ -11,6 +17,8 @@ below `2^16` are prime by trial division (`prime_small`). The group law
 needs only `p` prime (`Weierstrass.Good`); the inversion modulo `n` by
 divsteps needs `n` prime (`InvSound`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.P384
 

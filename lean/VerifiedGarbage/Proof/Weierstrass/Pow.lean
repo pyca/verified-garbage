@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.Framework.PowLit
+module
+
+public import VerifiedGarbage.Proof.Framework.PowLit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
 /-!
 # Square-and-multiply from the top bit
 
@@ -6,6 +13,8 @@ The invariant of a loop over the bits of `e` from the top: after the bits
 `t - 1 … j`, the accumulator is `b^(e >>> j)`, in any semiring of Lean's core
 (`Lean.Grind.Semiring`, such as `Fin m`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass
 

@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.Callee
-import VerifiedGarbage.Proof.Gcm.X86_64.Ghash
-import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Ghash
-import VerifiedGarbage.Proof.Gcm.X86_64.Vpclmul.Ghash
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Callee
+public import VerifiedGarbage.Proof.Gcm.X86_64.Ghash
+public import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Ghash
+public import VerifiedGarbage.Proof.Gcm.X86_64.Vpclmul.Ghash
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on x86-64: the implementations of `vg_ghash`
@@ -12,6 +18,8 @@ apart from `Callee.lean`: only the variants need them, and their proofs import t
 algebra of `Proof/Gcm/Poly.lean`, which the rest of the AES-GCM proofs then
 need not import.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesGcm.X86_64
 

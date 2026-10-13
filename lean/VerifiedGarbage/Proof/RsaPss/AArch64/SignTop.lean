@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.RsaPss.AArch64.SignBody
+module
+
+public import VerifiedGarbage.Proof.RsaPss.AArch64.SignBody
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSASSA-PSS signing on AArch64: the whole function
@@ -7,6 +13,8 @@ The restores and the frame's release (`restore_ok`), and the function
 (`code_ok`): the calling convention, and `out` and the result as
 `RsaPss.sign` says (`Post`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPss.AArch64.Sgn
 

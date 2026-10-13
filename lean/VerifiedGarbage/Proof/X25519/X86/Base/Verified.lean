@@ -1,10 +1,23 @@
-import VerifiedGarbage.Proof.X25519.X86.Base.Main
-import VerifiedGarbage.Proof.X25519.X86.Base.Lit
-import VerifiedGarbage.Proof.Ed25519.X86.CombCT
-import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseCTSetup
-import VerifiedGarbage.Proof.Ed25519.X86.PointCTBlocks
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Framework.X86.Inline
+module
+
+public import VerifiedGarbage.Proof.X25519.X86.Base.Main
+meta import VerifiedGarbage.Proof.X25519.X86.Base.Main
+public import VerifiedGarbage.Proof.X25519.X86.Base.Lit
+meta import VerifiedGarbage.Proof.X25519.X86.Base.Lit
+public import VerifiedGarbage.Proof.Ed25519.X86.CombCT
+meta import VerifiedGarbage.Proof.Ed25519.X86.CombCT
+public import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseCTSetup
+meta import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseCTSetup
+public import VerifiedGarbage.Proof.Ed25519.X86.PointCTBlocks
+meta import VerifiedGarbage.Proof.Ed25519.X86.PointCTBlocks
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.X86.Inline
+meta import VerifiedGarbage.Proof.Framework.X86.Inline
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X25519 of the base point on x86: constant time, and the shared contract
@@ -16,6 +29,8 @@ the inversion use only the workspace pointer and the static's address
 (`combMultiply_ct`, `uEncode_ct`), and the output
 reloads its pointer from the stack.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X25519.X86.Base
 

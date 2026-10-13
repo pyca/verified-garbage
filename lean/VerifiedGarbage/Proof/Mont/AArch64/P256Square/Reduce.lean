@@ -1,4 +1,12 @@
-import VerifiedGarbage.Proof.Mont.AArch64.P256Square.Product
+module
+
+public import VerifiedGarbage.Proof.Mont.AArch64.P256Square.Product
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.Mont.AArch64.P256Square
 open VG VG.AArch64 VG.Impl.Mont.AArch64.P256Square

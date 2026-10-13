@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx512.Round
-import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Keys
+module
+
+public import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx512.Round
+public import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Keys
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # An AVX-512 DES pass on the machine
@@ -12,6 +18,8 @@ words what `swapW (pairs …)` does, with the keys read at
 the addresses `a₀ + r δ`, which are apart from the scratch buffer and the
 state words.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.TripleDes.X86_64.BitslicedAvx512
 

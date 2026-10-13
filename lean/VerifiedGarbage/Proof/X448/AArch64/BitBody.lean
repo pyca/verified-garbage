@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.X448.AArch64.BitWrite
+module
+
+public import VerifiedGarbage.Proof.X448.AArch64.BitWrite
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 on AArch64: one scalar byte
@@ -6,6 +12,8 @@ import VerifiedGarbage.Proof.X448.AArch64.BitWrite
 The public byte counter selects a scalar byte, expands it, and advances the
 loop.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448.AArch64
 

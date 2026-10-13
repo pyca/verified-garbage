@@ -1,5 +1,11 @@
-import VerifiedGarbage.Spec.Dsa
-import VerifiedGarbage.Proof.Bignum.Math
+module
+
+public import VerifiedGarbage.Spec.Dsa
+public import VerifiedGarbage.Proof.Bignum.Math
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # DSA's arithmetic and the shared RSA arithmetic
@@ -8,6 +14,8 @@ These identities require no primality assumption. In particular, the
 exponent q - 2 denotes the specified power even for composite q; none of
 these lemmas treats it as a multiplicative inverse.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Dsa
 

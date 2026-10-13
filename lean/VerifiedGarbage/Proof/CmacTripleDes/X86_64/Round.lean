@@ -1,9 +1,15 @@
-import VerifiedGarbage.Proof.CmacTripleDes.X86_64.RoundLit
-import VerifiedGarbage.Proof.TripleDes.SboxTables
-import VerifiedGarbage.Proof.CmacTripleDes.Des
-import VerifiedGarbage.Proof.CmacTripleDes.Rows
-import VerifiedGarbage.Proof.Framework.X86_64.Linear
-import VerifiedGarbage.Proof.Framework.Bitslice.Rows
+module
+
+public import VerifiedGarbage.Proof.CmacTripleDes.X86_64.RoundLit
+public import VerifiedGarbage.Proof.TripleDes.SboxTables
+public import VerifiedGarbage.Proof.CmacTripleDes.Des
+public import VerifiedGarbage.Proof.CmacTripleDes.Rows
+public import VerifiedGarbage.Proof.Framework.X86_64.Linear
+public import VerifiedGarbage.Proof.Framework.Bitslice.Rows
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # A DES round on x86-64
@@ -15,6 +21,8 @@ combine words bitwise with constants that differ by position, over the row
 domain (`Bitslice.rows`), on all 64 values of a box's input at once.
 `round_ok` composes them: `R` and `L ⊕ f(R, K)`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.CmacTripleDes.X86_64
 

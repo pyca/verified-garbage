@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Ed448.X86_64.SignCached.CT
+module
+
+public import VerifiedGarbage.Proof.Ed448.X86_64.SignCached.CT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 signing with a cached public key on x86-64: `Verified`
@@ -10,6 +16,8 @@ matching the private key, for any proof of `vg_ed448_scalar_base` (`BaseOk`,
 `BaseCT`): the registration file passes its own, so that only it imports that
 proof and the group theory it imports.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.X86_64.SignCached
 

@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.EncContract
-import VerifiedGarbage.Impl.RsaPkcs1Enc.X86_64.Decrypt
-import VerifiedGarbage.Proof.Framework.X86_64.CallSp
+module
+
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.EncContract
+public import VerifiedGarbage.Impl.RsaPkcs1Enc.X86_64.Decrypt
+public import VerifiedGarbage.Proof.Framework.X86_64.CallSp
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-PKCS1-v1_5 decryption on x86-64: the contracts on the registers
@@ -14,6 +20,8 @@ stack (`decrypt_implies`).
 `PrivImpl` is an implementation of it, which the proof of decryption is
 written for.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPkcs1Enc.X86_64
 

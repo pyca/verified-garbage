@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.X448.AArch64.Carry
+module
+
+public import VerifiedGarbage.Proof.X448.AArch64.Carry
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 on AArch64: modular reduction
@@ -6,6 +12,8 @@ import VerifiedGarbage.Proof.X448.AArch64.Carry
 Untrusted: everything here is checked by Lean. Three carry passes and two
 folds normalize coefficients bounded by 2⁶², preserving their value modulo p.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448.AArch64
 

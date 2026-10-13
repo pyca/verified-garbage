@@ -1,5 +1,11 @@
-import VerifiedGarbage.Spec.RsaPss
-import VerifiedGarbage.Proof.Mgf1.Basic
+module
+
+public import VerifiedGarbage.Spec.RsaPss
+public import VerifiedGarbage.Proof.Mgf1.Basic
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # EMSA-PSS: verification accepts exactly the encodings
@@ -10,6 +16,8 @@ when it is `EMSA-PSS-ENCODE` of the digest with some salt of the expected
 length (`verifyEncoding_iff`): every encoding verifies (the round trip,
 `verifyEncoding_encode`), and nothing else does.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPss
 

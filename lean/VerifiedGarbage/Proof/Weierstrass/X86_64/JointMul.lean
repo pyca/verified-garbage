@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Weierstrass.X86_64.JointDoubler
-import VerifiedGarbage.Proof.Weierstrass.X86_64.JointSeed
-import VerifiedGarbage.Proof.Weierstrass.X86_64.JointPrepFields
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointDoubler
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointSeed
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointPrepFields
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The joint two-scalar multiplication
@@ -9,6 +15,9 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.JointPrepFields
 table of odd multiples of `Q` with its cached `Z²`, `Z³`, then the loop with
 the curve's doubler (`JointDoubler`), for any curve and number of words.
 -/
+
+@[expose] public section
+
 namespace VG.Proof.Weierstrass.X86_64
 open VG VG.X86_64 VG.Impl.Weierstrass VG.Impl.Weierstrass.X86_64
 open VG.Proof.Mont VG.Proof.Mont.X86_64

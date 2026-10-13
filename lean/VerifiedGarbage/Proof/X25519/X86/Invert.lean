@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.X25519.X86.Step
+module
+
+public import VerifiedGarbage.Proof.X25519.X86.Step
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X25519 on x86 (32-bit): the inversion
@@ -8,6 +14,8 @@ The inversion is a sequence of blocks of operations and runs of squarings
 evaluation of it (`runI`), which for the inversion's steps is `invert` of `Z2`
 in `T1`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X25519.X86
 

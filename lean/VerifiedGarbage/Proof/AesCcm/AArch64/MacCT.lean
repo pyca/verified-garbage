@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.AesCcm.AArch64.Rel
+module
+
+public import VerifiedGarbage.Proof.AesCcm.AArch64.Rel
+meta import VerifiedGarbage.Proof.AesCcm.AArch64.Rel
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CCM on AArch64: the CBC-MAC in two runs
@@ -10,6 +17,8 @@ values, leaks the same: the code between calls by the taint analysis
 proofs pin (the pointer and the length in `x23` and `x24`), and each call of
 `vg_cmac_aes_update` by its proof (`rel_upd`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

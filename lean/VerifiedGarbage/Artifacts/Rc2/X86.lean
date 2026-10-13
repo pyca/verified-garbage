@@ -17,7 +17,7 @@ def artifacts : List Artifact := [
     code := Impl.StackScratch.X86.withStackScratchWiped 608 6 144 Impl.Rc2.X86.Stream.init
     contract := Spec.Rc2.cbcInitContract X86.abi 632
     stack := 632
-    ofSig := ⟨_, _, _, by unfold Spec.Rc2.cbcInitContract; rfl⟩
+    ofSig := by exact (⟨_, _, _, by unfold Spec.Rc2.cbcInitContract; rfl⟩)
     verified := Proof.Rc2.X86.Stream.init_framed
     spSafe := Code.all_of_allInstrs (by lit_decide) },
   { Spec.Rc2.cbcEncryptUpdateApi with
@@ -27,7 +27,7 @@ def artifacts : List Artifact := [
     code := Impl.StackScratch.X86.withStackScratchWiped 608 6 144 Impl.Rc2.X86.Stream.encryptUpdate
     contract := Spec.Rc2.cbcEncryptUpdateContract X86.abi 648
     stack := 648
-    ofSig := ⟨_, _, _, by unfold Spec.Rc2.cbcEncryptUpdateContract Spec.Rc2.cbcUpdateContract; rfl⟩
+    ofSig := by exact (⟨_, _, _, by unfold Spec.Rc2.cbcEncryptUpdateContract Spec.Rc2.cbcUpdateContract; rfl⟩)
     verified := Proof.Rc2.X86.Stream.encryptUpdate_framed
     spSafe := Code.all_of_allInstrs (by lit_decide) },
   { Spec.Rc2.cbcDecryptUpdateApi with
@@ -37,7 +37,7 @@ def artifacts : List Artifact := [
     code := Impl.StackScratch.X86.withStackScratchWiped 608 6 144 Impl.Rc2.X86.Stream.decryptUpdate
     contract := Spec.Rc2.cbcDecryptUpdateContract X86.abi 648
     stack := 648
-    ofSig := ⟨_, _, _, by unfold Spec.Rc2.cbcDecryptUpdateContract Spec.Rc2.cbcUpdateContract; rfl⟩
+    ofSig := by exact (⟨_, _, _, by unfold Spec.Rc2.cbcDecryptUpdateContract Spec.Rc2.cbcUpdateContract; rfl⟩)
     verified := Proof.Rc2.X86.Stream.decryptUpdate_framed
     spSafe := Code.all_of_allInstrs (by lit_decide) },
   { Spec.Rc2.cbcEncryptApi with
@@ -47,7 +47,7 @@ def artifacts : List Artifact := [
     code := Impl.Rc2.X86.Cbc.encrypt
     contract := Spec.Rc2.cbcEncryptContract X86.abi 16
     stack := 16
-    ofSig := ⟨_, _, _, by unfold Spec.Rc2.cbcEncryptContract Spec.Rc2.cbcContract; rfl⟩
+    ofSig := by exact (⟨_, _, _, by unfold Spec.Rc2.cbcEncryptContract Spec.Rc2.cbcContract; rfl⟩)
     verified := Proof.Rc2.X86.Cbc.encrypt_verified
     spSafe := Code.all_of_allInstrs (by lit_decide) },
   { Spec.Rc2.cbcDecryptApi with
@@ -57,7 +57,7 @@ def artifacts : List Artifact := [
     code := Impl.Rc2.X86.Cbc.decrypt
     contract := Spec.Rc2.cbcDecryptContract X86.abi 16
     stack := 16
-    ofSig := ⟨_, _, _, by unfold Spec.Rc2.cbcDecryptContract Spec.Rc2.cbcContract; rfl⟩
+    ofSig := by exact (⟨_, _, _, by unfold Spec.Rc2.cbcDecryptContract Spec.Rc2.cbcContract; rfl⟩)
     verified := Proof.Rc2.X86.Cbc.decrypt_verified
     spSafe := Code.all_of_allInstrs (by lit_decide) },
   { Spec.Rc2.expandKeyApi with

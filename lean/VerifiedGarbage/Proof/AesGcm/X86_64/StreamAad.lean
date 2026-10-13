@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.Contract
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on x86-64: `vg_aes_gcm_stream_aad`
@@ -8,6 +14,8 @@ into GHASH (`absorb 16`), for any additional data so far of the length
 `aad_len` gives modulo 16 (`streamAad_run`), and so for all of them
 (`streamAad_wp`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

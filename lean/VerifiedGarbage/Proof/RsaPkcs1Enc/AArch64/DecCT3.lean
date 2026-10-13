@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecCT2
+module
+
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecCT2
+meta import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecCT2
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-PKCS1-v1_5 decryption on AArch64: constant time, `CL` and `AM`
@@ -7,6 +14,8 @@ A block of IRPRF (`prfBody_tr`) from two runs with the same counter, whose
 slot fixes the block's address, and the loops of blocks (`prfLoop_tr`),
 whose counters agree: `clLoop_ct`, `amLoop_ct`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPkcs1Enc.AArch64.Dec
 

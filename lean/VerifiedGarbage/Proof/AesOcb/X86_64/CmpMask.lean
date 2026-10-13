@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesOcb.X86_64.XorPad
+module
+
+public import VerifiedGarbage.Proof.AesOcb.X86_64.XorPad
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-OCB on x86-64: checking the tag and masking the data (`cmp`, `mask`)
@@ -12,6 +18,8 @@ time, with `0 − ok` in both halves of `xmm6` (`maskBlocks_wp`), the rest one
 at a time (`maskBytes_wp`); both loops keep the first `j` bytes masked
 (`MInv`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

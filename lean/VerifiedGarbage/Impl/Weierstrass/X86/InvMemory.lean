@@ -1,6 +1,11 @@
-import VerifiedGarbage.Impl.Weierstrass.X86.Inv
+module
+
+public import VerifiedGarbage.Impl.Weierstrass.X86.Inv
 
 /-! # Multiword helpers for the 32-bit divstep matrix updates -/
+
+@[expose] public section
+
 namespace VG.Impl.Weierstrass.X86.Inv
 open VG.X86 VG.Impl.Mont.X86
 

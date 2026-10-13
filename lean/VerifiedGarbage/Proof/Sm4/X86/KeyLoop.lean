@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Sm4.X86.KeyInit
+module
+
+public import VerifiedGarbage.Proof.Sm4.X86.KeyInit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The loop of the SM4 key schedule on x86 (32-bit)
@@ -10,6 +16,8 @@ of the key schedule, puts the state's words in the tail buffer as a block
 (`bswap`). The schedule's pointer waits in slot `nSlot` (the rounds use
 every register).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sm4.X86
 

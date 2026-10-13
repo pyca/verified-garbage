@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.RsaKeyGen.Table
-import VerifiedGarbage.Proof.Framework.PowLit
+module
+
+public import VerifiedGarbage.Proof.RsaKeyGen.Table
+public import VerifiedGarbage.Proof.Framework.PowLit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # A candidate for an RSA prime: trial division's arithmetic
@@ -11,6 +17,8 @@ mod s` (`redc_math`): after all its words, `acc < 2 s` and
 `acc` is 0 or `s` (`trial_div`). `tabWord_entry`: the entries of a word of
 the table.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaKeyGen
 

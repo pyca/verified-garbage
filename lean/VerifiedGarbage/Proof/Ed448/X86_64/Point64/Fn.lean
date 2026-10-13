@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Ed448.X86_64.BaseField
-import VerifiedGarbage.Proof.Framework.X86_64.KeepReg
+module
+
+public import VerifiedGarbage.Proof.Ed448.X86_64.BaseField
+public import VerifiedGarbage.Proof.Framework.X86_64.KeepReg
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448's point functions on x86-64: what they compute
@@ -14,6 +20,8 @@ change only in the slots its operations write and in the product's words
 values are RFC 8032's (`doubleOps_eval`), the affine addition's `addOps`'s
 for a second point with `Z = 1` (`addAffineOps_eval`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.X86_64.Point64
 

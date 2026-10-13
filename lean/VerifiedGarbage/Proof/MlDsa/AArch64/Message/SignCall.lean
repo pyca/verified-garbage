@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Message.Pre
-import VerifiedGarbage.Proof.MlDsa.AArch64.Message.Depth
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.Pre
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.Depth
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on AArch64, `sign_message`: the call of the signing function on `μ`
@@ -10,6 +16,8 @@ its call on the key, `μ` at `X + 840`, `rnd`, `sig` and the first
 `scratchWords p` words of `scratch` (`signCall_ok`), after which the saves
 are intact (`Fin`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Message
 

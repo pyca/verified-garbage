@@ -41,7 +41,9 @@ jobs:
       # The commit CI checked (GITHUB_SHA is main's head when this started).
       HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
       # Bump if the archive format or compression settings change.
-      CACHE_FORMAT: zstd5-uncompressed-v2
+      CACHE_FORMAT: zstd5-oras-v3
+      ORAS_VERSION: 1.3.2
+      ORAS_SHA256: 9229ccc6d17bb282039ad4a69abb16dcb887a5bce567c075d731d9b3c7ad8eaf
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -50,6 +52,16 @@ jobs:
       # The keys CI saved this commit's build under.
       - uses: ./.github/actions/lean-keys
         id: keys
+      # One static binary, checked against the release's checksum.
+      - name: Install oras
+        run: |
+          tarball="oras_${ORAS_VERSION}_linux_amd64.tar.gz"
+          curl -fsSLo "$RUNNER_TEMP/$tarball" \
+            "https://github.com/oras-project/oras/releases/download/v$ORAS_VERSION/$tarball"
+          echo "$ORAS_SHA256  $RUNNER_TEMP/$tarball" | sha256sum -c -
+          mkdir -p "$RUNNER_TEMP/oras"
+          tar -xzf "$RUNNER_TEMP/$tarball" -C "$RUNNER_TEMP/oras" oras
+          echo "$RUNNER_TEMP/oras" >> "$GITHUB_PATH"
       - name: Decide whether the cache needs publishing
         id: publish
         env:
@@ -61,13 +73,11 @@ jobs:
             echo "Main has advanced: its newer run will publish the cache."
             exit 0
           fi
-          # Log out on every exit, so later steps find no stored credential.
-          printf '%s' "$GH_TOKEN" | docker login ghcr.io --username "$GITHUB_ACTOR" --password-stdin
-          trap 'docker logout ghcr.io' EXIT
-          # Read the registry's small image config, without pulling any layers.
-          if docker buildx imagetools inspect "$IMAGE" --format '{{json .Image.Config.Labels}}' \
-              > "$RUNNER_TEMP/lean-cache-labels.json" 2> "$RUNNER_TEMP/lean-cache-inspect.log"; then
-            key=$(jq -r '.["io.pyca.lean.cache-key"] // empty' "$RUNNER_TEMP/lean-cache-labels.json")
+          # Read the manifest's annotations, without pulling the archive. The
+          # token goes on stdin to this command alone: nothing stores it.
+          if printf '%s' "$GH_TOKEN" | oras manifest fetch --username "$GITHUB_ACTOR" --password-stdin "$IMAGE" \
+              > "$RUNNER_TEMP/lean-cache-manifest.json" 2> "$RUNNER_TEMP/lean-cache-fetch.log"; then
+            key=$(jq -r '.annotations["io.pyca.lean.cache-key"] // empty' "$RUNNER_TEMP/lean-cache-manifest.json")
             if [ "$key" = "$CACHE_KEY" ]; then
               echo "The checked Lean cache is already published."
               exit 0
@@ -75,8 +85,8 @@ jobs:
           else
             # A missing image is expected on the first publish. Other registry
             # errors must fail rather than hiding a broken comparison.
-            if ! grep -qiE 'manifest unknown|not found' "$RUNNER_TEMP/lean-cache-inspect.log"; then
-              cat "$RUNNER_TEMP/lean-cache-inspect.log" >&2
+            if ! grep -qiE 'manifest unknown|not found' "$RUNNER_TEMP/lean-cache-fetch.log"; then
+              cat "$RUNNER_TEMP/lean-cache-fetch.log" >&2
               exit 1
             fi
           fi
@@ -97,12 +107,6 @@ jobs:
           mkdir -p "$RUNNER_TEMP/lean-cache-image"
           tar -C lean -cf - .lake/build .lake/packages \
             | zstd -T0 -5 -o "$RUNNER_TEMP/lean-cache-image/lean-cache.tar.zst"
-      # `docker build` with the default driver cannot choose a layer's
-      # compression.
-      - uses: docker/setup-buildx-action@594f3bf4285d9ea8dc53c9a0c9c4092420091003 # v4.4.0
-        if: ${{ steps.publish.outputs.needed == 'true' }}
-        with:
-          cache-binary: false
       - name: Upload the cache image
         id: upload
         if: ${{ steps.publish.outputs.needed == 'true' }}
@@ -116,20 +120,17 @@ jobs:
             echo "Main has advanced: its newer run will publish the cache."
             exit 0
           fi
-          printf '%s' "$GH_TOKEN" | docker login ghcr.io --username "$GITHUB_ACTOR" --password-stdin
-          trap 'docker logout ghcr.io' EXIT
-          # One plain manifest: with attestations, the push would be an index
-          # whose untagged children the cleanup below would delete. The layer
-          # holds the zstd archive uncompressed: gzip cannot shrink it, and
-          # gzipping it again doubled the time to publish and cost every
-          # restore a pass over 2.5 GB.
-          docker buildx build -f ci/lean-cache.Dockerfile --provenance=false --sbom=false \
-            --label "org.opencontainers.image.source=https://github.com/$GH_REPO" \
-            --label "org.opencontainers.image.revision=$HEAD_SHA" \
-            --label "io.pyca.lean.toolchain=$(cat lean/lean-toolchain)" \
-            --label "io.pyca.lean.cache-key=$CACHE_KEY" \
-            --output "type=image,name=$IMAGE,push=true,compression=uncompressed,force-compression=true" \
-            "$RUNNER_TEMP/lean-cache-image"
+          # The archive is the one layer, as it is: the README's restore
+          # streams it from the registry API into `zstd -dc | tar -x`.
+          toolchain=$(cat lean/lean-toolchain)
+          cd "$RUNNER_TEMP/lean-cache-image"
+          printf '%s' "$GH_TOKEN" | oras push --username "$GITHUB_ACTOR" --password-stdin \
+            --artifact-type application/vnd.pyca.lean-cache.v1 \
+            --annotation "org.opencontainers.image.source=https://github.com/$GH_REPO" \
+            --annotation "org.opencontainers.image.revision=$HEAD_SHA" \
+            --annotation "io.pyca.lean.toolchain=$toolchain" \
+            --annotation "io.pyca.lean.cache-key=$CACHE_KEY" \
+            "$IMAGE" lean-cache.tar.zst:application/vnd.oci.image.layer.v1.tar+zstd
           echo "published=true" >> "$GITHUB_OUTPUT"
       # Only `latest` is published, so replacing it leaves old images untagged.
       - name: Delete old cache versions

@@ -1,7 +1,12 @@
-import VerifiedGarbage.Impl.Weierstrass.AArch64.Naf
-import VerifiedGarbage.Impl.Weierstrass.AArch64.FastNaf
+module
+
+public import VerifiedGarbage.Impl.Weierstrass.AArch64.Naf
+public import VerifiedGarbage.Impl.Weierstrass.AArch64.FastNaf
 
 /-! Interleaved public multiplication with five-bit peer and seven-bit generator digits. -/
+
+@[expose] public section
+
 namespace VG.Impl.Weierstrass.AArch64.Joint
 open VG VG.AArch64 VG.Impl.Mont VG.Impl.Mont.AArch64 VG.Impl.Weierstrass
 open Jacobian

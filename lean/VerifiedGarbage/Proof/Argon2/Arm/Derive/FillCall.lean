@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Argon2.Arm.Derive.FillState
-import VerifiedGarbage.Proof.Argon2.Arm.CompressVerified
-import VerifiedGarbage.Proof.Argon2.Arm.CompressLit
+module
+
+public import VerifiedGarbage.Proof.Argon2.Arm.Derive.FillState
+public import VerifiedGarbage.Proof.Argon2.Arm.CompressVerified
+public import VerifiedGarbage.Proof.Argon2.Arm.CompressLit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Argon2 on ARMv7: calls of G in the filling loops
@@ -11,6 +17,8 @@ the memory matrix or a block of `scratch` from offset 4096 on (`GArg`), to
 `scratch + o` (`r2`), with `scratch[0, 4096)` (`r3`) as its working space
 (`ccall_ok`). It uses no stack.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Argon2.Arm.Derive
 

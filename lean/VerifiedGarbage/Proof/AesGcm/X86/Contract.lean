@@ -1,6 +1,12 @@
-import VerifiedGarbage.Spec.Gcm.Contract
-import VerifiedGarbage.TCB.X86.Target
-import VerifiedGarbage.Proof.Framework.PowLit
+module
+
+public import VerifiedGarbage.Spec.Gcm.Contract
+public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Proof.Framework.PowLit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on x86: the contracts the proofs are written against
@@ -13,6 +19,8 @@ arguments and the return address below `esp`: 28 bytes for
 `vg_aes_ctr32`, 24 for `vg_ghash` (all `stream_init` and `stream_aad`
 call), which no buffer overlaps, nor the return address.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesGcm.X86
 

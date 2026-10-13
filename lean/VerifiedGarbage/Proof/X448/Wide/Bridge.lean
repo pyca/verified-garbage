@@ -1,7 +1,16 @@
-import VerifiedGarbage.Proof.X448.Wide.Limbs
-import VerifiedGarbage.Proof.X448.Limbs
+module
+
+public import VerifiedGarbage.Proof.X448.Wide.Limbs
+public import VerifiedGarbage.Proof.X448.Limbs
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Untrusted: the exact-value bridge between the old and wide limb layouts. -/
+
+@[expose] public section
+
 namespace VG.Proof.X448.Wide
 
 /-- Combine two neighboring 28-bit limbs. -/

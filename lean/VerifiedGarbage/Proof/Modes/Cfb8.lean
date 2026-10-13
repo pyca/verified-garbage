@@ -1,5 +1,11 @@
-import VerifiedGarbage.Spec.Cfb8
-import VerifiedGarbage.Spec.Aes
+module
+
+public import VerifiedGarbage.Spec.Cfb8
+public import VerifiedGarbage.Spec.Aes
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # CFB8's result, for any block cipher and target
@@ -13,6 +19,8 @@ or `Spec.Cfb8.decrypt`'s, and the input block after the last is the one to
 continue from (`cfb8Enc_of`, `cfb8Dec_of`). Nothing here depends on a
 cipher or a target.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Modes
 

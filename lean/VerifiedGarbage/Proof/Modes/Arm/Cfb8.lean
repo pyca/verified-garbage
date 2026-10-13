@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Modes.Arm.OfbCfb
-import VerifiedGarbage.Spec.Cfb8
+module
+
+public import VerifiedGarbage.Proof.Modes.Arm.OfbCfb
+public import VerifiedGarbage.Spec.Cfb8
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # CFB8 as a mode a byte at a time on ARMv7
@@ -11,6 +17,8 @@ one-byte elements) gives `Spec.Cfb8.encrypt` and `Spec.Cfb8.decrypt`, and
 leaves in the chaining block the input block to continue from
 (`Spec.Cfb8.next`), which they return in the IV.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Modes.Arm
 

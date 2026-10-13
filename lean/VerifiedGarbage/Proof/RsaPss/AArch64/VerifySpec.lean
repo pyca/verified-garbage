@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyMain
-import VerifiedGarbage.Proof.RsaPss.AArch64.SignSpec
+module
+
+public import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyMain
+public import VerifiedGarbage.Proof.RsaPss.AArch64.SignSpec
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSASSA-PSS verification on AArch64: the result, by cases
@@ -9,6 +15,8 @@ if the modulus' first byte is zero (`verifyOut_zero`) or the salt does not
 fit (`verifyOut_short`), and otherwise the checks of the encoding in RSAVP1's
 result (`verifyOut_iff`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPss.AArch64.Vfy
 

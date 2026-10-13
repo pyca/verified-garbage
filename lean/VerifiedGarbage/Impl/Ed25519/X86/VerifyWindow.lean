@@ -1,6 +1,8 @@
-import VerifiedGarbage.Impl.Ed25519.BaseMultiples
-import VerifiedGarbage.Impl.Ed25519.X86.PointTable
-import VerifiedGarbage.Impl.Ed25519.X86.Point32
+module
+
+public import VerifiedGarbage.Impl.Ed25519.BaseMultiples
+public import VerifiedGarbage.Impl.Ed25519.X86.PointTable
+public import VerifiedGarbage.Impl.Ed25519.X86.Point32
 
 /-!
 # Verification's equation with 4-bit windows
@@ -22,6 +24,8 @@ projective comparison `pointEqual` checks.
 
 `A` is at byte 7680 of the workspace and `R` at byte 7808, as decoded.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Ed25519.X86
 

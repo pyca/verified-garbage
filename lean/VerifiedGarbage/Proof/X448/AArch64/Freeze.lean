@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.X448.AArch64.FreezePrep
-import VerifiedGarbage.Proof.X448.AArch64.Select
-import VerifiedGarbage.Proof.X448.AArch64.Env
+module
+
+public import VerifiedGarbage.Proof.X448.AArch64.FreezePrep
+public import VerifiedGarbage.Proof.X448.AArch64.Select
+public import VerifiedGarbage.Proof.X448.AArch64.Env
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 on AArch64: canonical reduction
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.X448.AArch64.Env
 The final carry selects the unique representative below the prime, using only
 a mask on secret data.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448.AArch64
 

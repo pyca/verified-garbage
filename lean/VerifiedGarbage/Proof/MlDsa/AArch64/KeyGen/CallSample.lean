@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Base
-import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Sample
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Base
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Sample
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA key generation on AArch64: calls of `RejBoundedPoly`
@@ -9,6 +15,8 @@ For each call of `vg_mldsa_rej_bounded_poly` (the other samplers are in
 (`rejBChk`), what it does (`rejBAt_ok`), and that two runs whose layout
 registers agree, and whose sampler leaks the same, leak the same (`rejBAt_tr`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.KeyGen
 

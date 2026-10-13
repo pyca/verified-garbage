@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesGcmSiv.X86.Seal
+module
+
+public import VerifiedGarbage.Proof.AesGcmSiv.X86.Seal
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM-SIV on x86: `vg_aes_gcm_siv_open` (correctness)
@@ -8,6 +14,8 @@ copied to `W`, the keys, counter mode on the data from it, POLYVAL of the
 result and the tag input, its tag at `W + 240`, the comparison, the mask and
 the restore compute `decryptWith` (RFC 8452 §5) of the arguments (`open_wp`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

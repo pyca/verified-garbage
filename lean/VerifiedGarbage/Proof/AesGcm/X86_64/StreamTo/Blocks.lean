@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.BlkCall
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.BlkCall
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM streaming encryption out of place, x86-64: the whole blocks
@@ -12,6 +18,8 @@ the bytes done and they do not exceed 2⁶⁴ bytes), the call of
 (`call_mid`, from `Proof.Gcm.streamRepr_blocksTo`); otherwise nothing is
 done (`blocks_ok`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

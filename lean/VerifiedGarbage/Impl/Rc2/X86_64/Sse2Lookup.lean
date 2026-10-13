@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Rc2.X86_64.Lookup
+module
+
+public import VerifiedGarbage.Impl.Rc2.X86_64.Lookup
 
 /-! # Eight-way constant-time RC2 scans on baseline x86-64
 
@@ -7,6 +9,8 @@ subtracting one and shifting arithmetically produces a full equality mask.
 The scans visit every candidate in order, eight candidates per vector.
 The temporary vector store is restored before returning.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Rc2.X86_64.Sse2
 

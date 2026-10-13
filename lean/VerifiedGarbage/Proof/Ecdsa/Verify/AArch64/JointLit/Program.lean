@@ -1,10 +1,18 @@
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Arithmetic
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Arithmetic
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! The forwarded field programs of P-256 verification are the optimizer's
 output (`Forward.Arithmetic.optimized`), whose literals the Forward framework
 (`Proof/Weierstrass/AArch64/Forward/`) checks: the literals of `JointLit/`
 are those, by rewriting, rather than the kernel running the optimizer
 again. -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Verify.AArch64.JointLit
 open VG VG.Impl.P256

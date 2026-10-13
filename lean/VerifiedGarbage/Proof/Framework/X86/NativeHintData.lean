@@ -1,9 +1,14 @@
-import VerifiedGarbage.Proof.Framework.RegSet
-import VerifiedGarbage.Proof.Framework.Slots
-import VerifiedGarbage.Proof.Framework.NativeHintOps
-import VerifiedGarbage.TCB.X86.Target
+module
+
+public import VerifiedGarbage.Proof.Framework.RegSet
+public import VerifiedGarbage.Proof.Framework.Slots
+public import VerifiedGarbage.Proof.Framework.NativeHintOps
+public import VerifiedGarbage.TCB.X86.Target
 
 /-! Executable x86 taint operations, separated from their soundness proofs. -/
+
+@[expose] public section
+
 namespace VG.NativeHints.X86
 open VG.X86
 

@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTRedc
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTRedc
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # Timing-preserving composition of adjacent DSA instruction blocks -/
+
+@[expose] public section
+
 namespace VG.Proof.Dsa.X86_64
 open VG VG.X86_64 VG.Proof.Bignum.X86_64
 

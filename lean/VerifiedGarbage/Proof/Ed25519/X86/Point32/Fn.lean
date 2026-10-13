@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Ed25519.X86.Points
-import VerifiedGarbage.Impl.Ed25519.X86.Point32
-import VerifiedGarbage.TCB.X86.Target
+module
+
+public import VerifiedGarbage.Proof.Ed25519.X86.Points
+public import VerifiedGarbage.Impl.Ed25519.X86.Point32
+public import VerifiedGarbage.TCB.X86.Target
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_ed25519_r32_point_add` on x86 (32-bit): what it computes
@@ -15,6 +21,8 @@ the function keeps the callee-saved registers, changes memory only in slots
 0–3 and 8–15 and bytes 864 to 1023, and leaves in slots 0–3 the sum of the
 points in slots 0–3 and 4–7, if slot 16 holds `d`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed25519.X86.Point32
 

@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesOcb.X86.Body
+module
+
+public import VerifiedGarbage.Proof.AesOcb.X86.Body
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-OCB on x86: the tag in and out, checking it and masking the data
@@ -9,6 +15,8 @@ received tag to `W` (`recv_ok`); `cmp` ORs the XORs of the first `tag_len`
 bytes at `W` and `W + t2O` and leaves 1 at `W + okO` if the OR is 0, else 0
 (`cmp_ok`); `mask` ANDs every byte of the data with `0 − ok` (`mask_ok`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

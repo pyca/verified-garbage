@@ -1,8 +1,17 @@
-import VerifiedGarbage.Proof.Argon2.AArch64.RandomSourcePrepare
-import VerifiedGarbage.Proof.Argon2.AArch64.DependentWord
-import VerifiedGarbage.Proof.Argon2.AArch64.FillKernelStable
+module
+
+public import VerifiedGarbage.Proof.Argon2.AArch64.RandomSourcePrepare
+public import VerifiedGarbage.Proof.Argon2.AArch64.DependentWord
+public import VerifiedGarbage.Proof.Argon2.AArch64.FillKernelStable
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Argon2.AArch64.DependentWordState`. -/
+
+@[expose] public section
+
 section
 /-! The dependent source hands the filling step its random word and unchanged matrix. -/
 

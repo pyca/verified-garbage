@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.RsaPss.EncBytes
+module
+
+public import VerifiedGarbage.Proof.RsaPss.EncBytes
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSASSA-PSS signing, by cases
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.RsaPss.EncBytes
 that does not fit (`sign_long`), and is otherwise the checked private-key
 operation on the encoding, byte by byte (`sign_eq`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPss
 

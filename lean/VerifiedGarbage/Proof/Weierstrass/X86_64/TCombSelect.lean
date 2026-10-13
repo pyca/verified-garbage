@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombSelectY
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombSelectY
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The comb from tables in memory on x86-64: the selection
@@ -9,6 +15,8 @@ pass over the table (`selPass_ok`, `TCombSelectPass.lean`, or with AVX2
 `a` (zero for `a = 0`) at `E.x + 16 c`, then `selOne_ok` sets `y = R` for
 `a = 0` and `Z = R` unless `a = 0` (`select_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.X86_64
 

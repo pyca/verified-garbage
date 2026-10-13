@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Blocks
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Bytes
-import VerifiedGarbage.Proof.Framework.X86.CallWith
-import VerifiedGarbage.Proof.Framework.X86.Lit
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Blocks
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Bytes
+public import VerifiedGarbage.Proof.Framework.X86.CallWith
+public import VerifiedGarbage.Proof.Framework.X86.Lit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Deterministic ECDSA on x86 (32-bit): signing with a candidate
@@ -13,6 +19,8 @@ writes zeros, as `Spec.Ecdsa.signWith` gives for `d`, the leftmost `8 w`
 bytes of the digest and of `V`, and changes only `out`, `scratch` and the 76
 bytes below the frame.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Rfc6979.X86
 

@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedRootsTiming
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedRootsExec
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedRootsTiming
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedRootsExec
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Sign
 open VG VG.AArch64 VG.Spec.MlDsa

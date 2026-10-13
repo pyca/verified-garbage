@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.AesOcb.Arm.Body
-import VerifiedGarbage.Proof.AesOcb.Arm.Nonce
-import VerifiedGarbage.Proof.AesGcm.Arm.Entry
+module
+
+public import VerifiedGarbage.Proof.AesOcb.Arm.Body
+public import VerifiedGarbage.Proof.AesOcb.Arm.Nonce
+public import VerifiedGarbage.Proof.AesGcm.Arm.Entry
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-OCB on ARMv7: before the data
@@ -12,6 +18,8 @@ the key context and the rounds in registers, and computes `L_$` and `L_0`
 (`entry_wp`); and the entry, `Offset_0` (`nonce`) and `HASH` (`hash`)
 together (`pre_wp`), as on AArch64 (`Proof.AesOcb.AArch64.pre_wp`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

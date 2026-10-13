@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.Blake2
-import VerifiedGarbage.TCB.Arm.Isa
+module
+
+public import VerifiedGarbage.Spec.Blake2
+public import VerifiedGarbage.TCB.Arm.Isa
 
 /-!
 # Streaming BLAKE2: 32-bit ARM implementation
@@ -46,6 +48,8 @@ comparison is a shift or a subtraction tested with `cmp`/`subs` and
 `eq`/`ne`. Every address and branch depends only on `sp`, the pointers,
 `count`, `len`, `outlen` and `keylen`.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Blake2.Arm.Stream
 

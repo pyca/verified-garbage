@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.X448.AArch64.Copy
-import VerifiedGarbage.Proof.X448.Freeze
+module
+
+public import VerifiedGarbage.Proof.X448.AArch64.Copy
+public import VerifiedGarbage.Proof.X448.Freeze
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 on AArch64: preparing canonical reduction
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.X448.Freeze
 Adding one in limbs zero and eight implements the addition of 1 + 2²²⁴ before
 carry propagation.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448.AArch64
 

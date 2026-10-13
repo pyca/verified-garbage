@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.CTLcm
+module
+
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.CTLcm
+meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.CTLcm
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # An RSA key from its primes on x86-64: constant time, `d`
@@ -7,6 +14,8 @@ import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.CTLcm
 the key routines: `loadEv`, `lGe2`, `gcdIsOne`, `inverse` from `invFrom`,
 and `dOdd`'s blocks.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaKeyGen.X86_64.Key
 

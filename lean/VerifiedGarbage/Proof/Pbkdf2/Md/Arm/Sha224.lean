@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Sha256
-import VerifiedGarbage.Proof.Pbkdf2.Stream.Arm.Sha224
+module
+
+public import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Sha256
+meta import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Sha256
+public import VerifiedGarbage.Proof.Pbkdf2.Stream.Arm.Sha224
+meta import VerifiedGarbage.Proof.Pbkdf2.Stream.Arm.Sha224
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # HMAC-SHA-224 and PBKDF2-HMAC-SHA-224 over the compression function on ARMv7
@@ -12,6 +20,8 @@ value and the digest its first 28 bytes; and the generic proofs at it, moved
 to the shared contracts of `Spec.Hmac.sha224I` (as for the hash functions of
 `Instances.lean`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Pbkdf2.Md.Arm
 

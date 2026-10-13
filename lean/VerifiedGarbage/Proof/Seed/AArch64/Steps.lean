@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Seed.AArch64.Lanes
+module
+
+public import VerifiedGarbage.Proof.Seed.AArch64.Lanes
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The steps of a round, lane by lane
@@ -6,6 +12,8 @@ import VerifiedGarbage.Proof.Seed.AArch64.Lanes
 As on x86-64: each step of the round (`step1` … `step4`) on one lane meets
 its `LaneSpec` (`LaneOk`); `lanes_ok` then gives it on all sixteen.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Seed.AArch64
 

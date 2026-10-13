@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.CTLcm
-import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.DPart
+module
+
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.CTLcm
+meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.CTLcm
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.DPart
+meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.DPart
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # An RSA key from its primes on AArch64: constant time, `d`
@@ -11,6 +19,8 @@ checked with no postcondition (`…_ct0`), the facts between its pieces from
 their correctness; the facts after `dPart` come from `dPart_k`
 (`dPart_ct`, to `KG DF`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaKeyGen.AArch64.Key
 

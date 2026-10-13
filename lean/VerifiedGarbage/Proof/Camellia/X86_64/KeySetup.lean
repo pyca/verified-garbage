@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Camellia.X86_64.KaKb
-import VerifiedGarbage.Proof.Camellia.X86_64.KeyContract
+module
+
+public import VerifiedGarbage.Proof.Camellia.X86_64.KaKb
+public import VerifiedGarbage.Proof.Camellia.X86_64.KeyContract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The Camellia key schedule on x86-64: the whole function
@@ -11,6 +17,8 @@ and `KR` (`loadKey_wp`), computes `KA` and `KB` (`kaKb_wp`), and stores the
 subkeys, halves of their rotations (`storeSubkeys_ok`), before restoring the
 registers.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Camellia.X86_64
 

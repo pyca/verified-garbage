@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Weierstrass.X86.InvInterface
-import VerifiedGarbage.Proof.Ecdsa.X86.Flags
-import VerifiedGarbage.Proof.Weierstrass.X86.Ladder
-import VerifiedGarbage.TCB.X86.Target
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86.InvInterface
+public import VerifiedGarbage.Proof.Ecdsa.X86.Flags
+public import VerifiedGarbage.Proof.Weierstrass.X86.Ladder
+public import VerifiedGarbage.TCB.X86.Target
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDSA on x86 (32-bit): the curve, the arguments and the working space
@@ -18,6 +24,8 @@ functions' own working space at `c.wk`, the `64 n` bytes below byte 4096,
 and the tables of bits `bitsAt n j` (`64 n` bytes each, `j < 3`) past byte
 4096.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.X86
 

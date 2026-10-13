@@ -1,10 +1,16 @@
-import VerifiedGarbage.Proof.Framework.X86.Exec
-import VerifiedGarbage.Proof.Framework.X86.Wp
-import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
-import VerifiedGarbage.Proof.Framework.X86.SseDword
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Impl.ChaCha20.X86.Xor
+module
+
+public import VerifiedGarbage.Proof.Framework.X86.Exec
+public import VerifiedGarbage.Proof.Framework.X86.Wp
+public import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
+public import VerifiedGarbage.Proof.Framework.X86.SseDword
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Impl.ChaCha20.X86.Xor
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ChaCha20 on x86 (32-bit): XORing keystream into data
@@ -13,6 +19,8 @@ import VerifiedGarbage.Impl.ChaCha20.X86.Xor
 advancing both (`xorLoop` reads the keystream a word at a time and uses its
 low byte); `xorWide` does the same 16 bytes at a time first.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.ChaCha20.X86.Bytes
 

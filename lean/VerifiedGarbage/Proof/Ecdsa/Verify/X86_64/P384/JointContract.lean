@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.Contract
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointPublic
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.PubVerify
-import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.VerifiedAdx
-import VerifiedGarbage.Impl.P384.X86_64.Joint
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.Contract
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointPublic
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.PubVerify
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.VerifiedAdx
+public import VerifiedGarbage.Impl.P384.X86_64.Joint
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDSA verification over P-384 on x86-64: the joint verifier's curve and contract
@@ -13,6 +19,8 @@ facts (`p384v_ok`, from `p384_ok`), and the contract's precondition gives
 theirs (`pre_of`). The shared contract makes the key, the digest and the
 signature public (`jointPublic_of_spec`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Verify.X86_64.P384
 

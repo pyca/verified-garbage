@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.X448.X86.Bits
-import VerifiedGarbage.Proof.X448.X86.Frame
+module
+
+public import VerifiedGarbage.Proof.X448.X86.Bits
+public import VerifiedGarbage.Proof.X448.X86.Frame
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 on x86 (32-bit): loading the scalar argument
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.X448.X86.Frame
 Scratch-only setup leaves the scalar pointer and input bytes available for
 expansion.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448.X86
 

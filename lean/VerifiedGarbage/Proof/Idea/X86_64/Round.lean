@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Idea.X86_64.Mul
+module
+
+public import VerifiedGarbage.Proof.Idea.X86_64.Mul
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # IDEA on x86-64: a round
@@ -9,6 +15,8 @@ subkeys `6j … 6j + 5`, read from the schedule at `rdi` (`KeyOk`). It is
 composed of runs of its pieces: ⊙ and ⊞ with a subkey (`mulKey_run`,
 `addKey_run`), and the multiplication–addition structure.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Idea.X86_64
 

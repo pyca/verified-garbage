@@ -1,4 +1,8 @@
-import VerifiedGarbage.Impl.Ed25519.X86.Scalar
+module
+
+public import VerifiedGarbage.Impl.Ed25519.X86.Scalar
+
+@[expose] public section
 
 namespace VG.Impl.Ed25519.X86
 open VG.X86 VG.Impl.X25519.X86

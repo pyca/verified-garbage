@@ -1,13 +1,30 @@
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointPointsTiming
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointTiming
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P521.JointContract
-import VerifiedGarbage.Proof.P521.X86_64.JointTiming
-import VerifiedGarbage.Proof.P521.X86_64.NafTableTiming
-import VerifiedGarbage.Proof.P521.X86_64.JointLayout
-import VerifiedGarbage.Proof.P521.X86_64.JointFrame
-import VerifiedGarbage.Proof.P521.X86_64.FieldTmpl
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointPointsTiming
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointPointsTiming
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointTiming
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointTiming
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P521.JointContract
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P521.JointContract
+public import VerifiedGarbage.Proof.P521.X86_64.JointTiming
+meta import VerifiedGarbage.Proof.P521.X86_64.JointTiming
+public import VerifiedGarbage.Proof.P521.X86_64.NafTableTiming
+meta import VerifiedGarbage.Proof.P521.X86_64.NafTableTiming
+public import VerifiedGarbage.Proof.P521.X86_64.JointLayout
+meta import VerifiedGarbage.Proof.P521.X86_64.JointLayout
+public import VerifiedGarbage.Proof.P521.X86_64.JointFrame
+meta import VerifiedGarbage.Proof.P521.X86_64.JointFrame
+public import VerifiedGarbage.Proof.P521.X86_64.FieldTmpl
+meta import VerifiedGarbage.Proof.P521.X86_64.FieldTmpl
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Concrete timing checks and the doubler of P-521's baseline and ADX joint verification. -/
+
+@[expose] public section
+
 namespace VG.Proof.Ecdsa.Verify.X86_64.P521
 open VG VG.X86_64 VG.Impl.Ecdsa.X86_64 VG.Impl.P521.X86_64 VG.Impl.Weierstrass.X86_64
 open VG.Proof.P521.X86_64 VG.Proof.Weierstrass.X86_64 VG.Proof.Ecdsa.X86_64 VG.Proof.Mont

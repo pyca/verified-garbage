@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.MlKem.X86_64.EncTop
-import VerifiedGarbage.Impl.MlKem.X86_64.EncapsH
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86_64.EncTop
+public import VerifiedGarbage.Impl.MlKem.X86_64.EncapsH
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86-64: encapsulation, its contract, layout, entry and hashes
@@ -14,6 +20,8 @@ piece needs (`EcWf L`), the prologue, `h` copied to `H` (`hCopy_ok`) and
 `G(m ‖ H(ek))` (`hashes_ok`), and the context `K-PKE.Encrypt` runs in
 (`ecC`, which also keeps `K`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.X86_64
 

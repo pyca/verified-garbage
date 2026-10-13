@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Scrypt.X86.BlockMix
+module
+
+public import VerifiedGarbage.Impl.Scrypt.X86.BlockMix
 
 /-!
 # scryptROMix: x86 (32-bit) implementation
@@ -29,6 +31,8 @@ stores and the stack scryptBlockMix uses, it uses the 36 bytes below `esp`.
 Every branch and address depends only on `esp`, the pointers, `r`, `N` and
 the indices `j`: the contract declares that the function leaks the `j`.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Scrypt.X86
 

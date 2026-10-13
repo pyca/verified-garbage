@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecPrf
+module
+
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecPrf
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-PKCS1-v1_5 decryption on AArch64: `CL` and `AM`
@@ -7,6 +13,8 @@ The loops of IRPRF's blocks (`prfLoop_ok`): `CL = IRPRF(KDK, "length", 256)`
 at `scratch + sCL` (`clLoop_ok`) and `AM = IRPRF(KDK, "message", k)` at
 `scratch + sAM` (`amLoop_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPkcs1Enc.AArch64.Dec
 

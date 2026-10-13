@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej4Top
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejNttCT
-import VerifiedGarbage.Proof.MlKem.X86_64.S4CT
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej4Top
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej4Top
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejNttCT
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejNttCT
+public import VerifiedGarbage.Proof.MlKem.X86_64.S4CT
+meta import VerifiedGarbage.Proof.MlKem.X86_64.S4CT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on x86-64: `vg_mldsa_rej_ntt_poly4_avx2`, constant time but for the seeds
@@ -13,6 +22,8 @@ output, so in each half's loop they are at the same iteration with the same
 coefficients sampled, and each iteration runs as in `vg_mldsa_rej_ntt_poly`
 (`RejNttCT.body_ct`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86_64.Rej4
 

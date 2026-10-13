@@ -1,9 +1,15 @@
-import VerifiedGarbage.Proof.AesSiv.AArch64.Init
-import VerifiedGarbage.Proof.CmacAes.AArch64.Finalize
-import VerifiedGarbage.Proof.CmacAes.Stream.AArch64.Finish
-import VerifiedGarbage.Proof.Cmac.Block
-import VerifiedGarbage.Proof.AesSiv.Words
-import VerifiedGarbage.Proof.Framework.AArch64.Taint
+module
+
+public import VerifiedGarbage.Proof.AesSiv.AArch64.Init
+public import VerifiedGarbage.Proof.CmacAes.AArch64.Finalize
+public import VerifiedGarbage.Proof.CmacAes.Stream.AArch64.Finish
+public import VerifiedGarbage.Proof.Cmac.Block
+public import VerifiedGarbage.Proof.AesSiv.Words
+public import VerifiedGarbage.Proof.Framework.AArch64.Taint
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-SIV on AArch64: the regions of `encrypt` and `decrypt`
@@ -19,6 +25,8 @@ working space (`Env.cargs`). `Env` names what their contracts say about the
 regions, whichever of them are writable; `Regs` the registers that hold the
 arguments while the code runs.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesSiv.AArch64
 

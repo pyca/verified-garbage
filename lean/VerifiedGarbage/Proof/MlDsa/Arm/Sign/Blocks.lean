@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Top
-import VerifiedGarbage.Proof.MlKem.Arm.Loops
+module
+
+public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Top
+public import VerifiedGarbage.Proof.MlKem.Arm.Loops
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA signing on ARMv7: the blocks between the calls
@@ -9,6 +15,8 @@ As on x86-64: what the function's own instructions do, in its layout: copies
 (`setB_okB`, `setW_okB`), the AND of a result into `r11` (`and11_ok`), and the
 counters in `scratch` (`addW_ok`, `decW_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Arm.Sign
 

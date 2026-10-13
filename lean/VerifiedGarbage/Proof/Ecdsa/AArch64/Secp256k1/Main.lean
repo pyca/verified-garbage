@@ -1,7 +1,15 @@
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Secp256k1.GMul
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Main
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.Secp256k1.GMul
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.Main
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # secp256k1 signing with the general ladder -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.AArch64.Secp256k1
 

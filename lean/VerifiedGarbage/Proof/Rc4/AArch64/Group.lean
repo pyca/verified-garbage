@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Rc4.AArch64.Lanes
+module
+
+public import VerifiedGarbage.Proof.Rc4.AArch64.Lanes
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The groups
@@ -8,6 +14,8 @@ starts after `p` bytes to the next group, with base `B + 16`, after
 `min N (p + 16 - sk)` bytes and no lanes to skip. `loop_ok`: the groups run
 until the data has ended.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rc4.AArch64
 open VG VG.AArch64 VG.AArch64.RegUpd VG.Impl.Rc4.AArch64 VG.Spec.Rc4 VG.Proof.Rc4

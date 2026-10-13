@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.AesGcmSiv.Arm.Env
-import VerifiedGarbage.Proof.GcmSiv.Ctr
-import VerifiedGarbage.Proof.Cmac.Block32
+module
+
+public import VerifiedGarbage.Proof.AesGcmSiv.Arm.Env
+public import VerifiedGarbage.Proof.GcmSiv.Ctr
+public import VerifiedGarbage.Proof.Cmac.Block32
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM-SIV on ARMv7: the message keys (`derive`)
@@ -12,6 +18,8 @@ Untrusted: everything here is checked by Lean. Each step of `derive` writes
 kept at `W + 16 + 8 i` (`derPost_ok`): after the loop, the halves of
 `derive_keys` (`derive_ok`, `DInv.keys`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

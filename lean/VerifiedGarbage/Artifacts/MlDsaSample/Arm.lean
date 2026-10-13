@@ -11,7 +11,7 @@ namespace VG.Artifacts.MlDsaSample.Arm
 open VG
 
 /-- The note shared by the four functions. -/
-private def saveNote : String :=
+def saveNote : String :=
   "The function saves `r4`–`r11` and its return address in `scratch`; the 8 bytes of stack below the stack \
     pointer hold the stack arguments of the SHA-3 functions it calls."
 

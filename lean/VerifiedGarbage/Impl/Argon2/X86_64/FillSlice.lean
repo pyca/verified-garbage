@@ -1,6 +1,10 @@
-import VerifiedGarbage.Impl.Argon2.X86_64.FillLanes
+module
+
+public import VerifiedGarbage.Impl.Argon2.X86_64.FillLanes
 
 /-! Reset the lane coordinate and fill every lane of one slice. -/
+
+@[expose] public section
 
 namespace VG.Impl.Argon2.X86_64.FillSlice
 

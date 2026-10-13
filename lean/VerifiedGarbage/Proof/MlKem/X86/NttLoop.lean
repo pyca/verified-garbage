@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.MlKem.X86.Bfly
-import VerifiedGarbage.Proof.MlKem.X86.Table
-import VerifiedGarbage.Proof.MlKem.X86.Leaf
-import VerifiedGarbage.Spec.MlKem.Poly
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86.Bfly
+public import VerifiedGarbage.Proof.MlKem.X86.Table
+public import VerifiedGarbage.Proof.MlKem.X86.Leaf
+public import VerifiedGarbage.Spec.MlKem.Poly
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86 (32-bit): the layers of the NTT and its inverse
@@ -22,6 +28,8 @@ that stores the table in `scratch` and `f + 1024` in the argument slot of
   in the argument slots, and differs from the entry only in `f`, `scratch`
   and the arguments.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.X86.NttLoop
 

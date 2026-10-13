@@ -1,7 +1,11 @@
-import VerifiedGarbage.Proof.Framework.AArch64.Simd64
-import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
+module
+
+public import VerifiedGarbage.Proof.Framework.AArch64.Simd64
+public import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
 
 /-! Loads, stores and byte reversal for pairs of 64-bit lanes. -/
+
+@[expose] public section
 
 namespace VG.AArch64
 

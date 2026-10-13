@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Modes.X86_64.Group
-import VerifiedGarbage.TCB.X86_64.Target
+module
+
+public import VerifiedGarbage.Proof.Modes.X86_64.Group
+public import VerifiedGarbage.TCB.X86_64.Target
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # CTR on x86-64, for any core: the whole function
@@ -12,6 +18,8 @@ it keeps the callee-saved registers, and writes nothing but the scratch
 buffer, the counter block and the data. Each cipher's contract follows
 from it (with the constant-time check of its own code).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Modes.X86_64
 

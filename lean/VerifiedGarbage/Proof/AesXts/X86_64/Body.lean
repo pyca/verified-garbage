@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.AesXts.X86_64.Steps
-import VerifiedGarbage.Proof.AesXts.Batch
-import VerifiedGarbage.Proof.AesCbc.X86_64.CT
-import VerifiedGarbage.Proof.AesOcb.X86_64.Callee
+module
+
+public import VerifiedGarbage.Proof.AesXts.X86_64.Steps
+public import VerifiedGarbage.Proof.AesXts.Batch
+public import VerifiedGarbage.Proof.AesCbc.X86_64.CT
+public import VerifiedGarbage.Proof.AesOcb.X86_64.Callee
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # XTS-AES on x86-64: all the blocks in one call
@@ -16,6 +22,8 @@ restored and the block function called on all the blocks (`callArgs_wp`,
 `call_wp`, from AES-OCB's `BCall`); and a second pass XORs the tweaks in
 again (`AesXts.crypt_eq`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesXts.X86_64
 

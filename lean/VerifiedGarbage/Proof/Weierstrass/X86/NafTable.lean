@@ -1,9 +1,17 @@
-import VerifiedGarbage.Proof.Weierstrass.X86.NafLayout
-import VerifiedGarbage.Proof.Weierstrass.X86.NafPoint
-import VerifiedGarbage.Proof.Weierstrass.X86.JacAdd
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86.NafLayout
+public import VerifiedGarbage.Proof.Weierstrass.X86.NafPoint
+public import VerifiedGarbage.Proof.Weierstrass.X86.JacAdd
+public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## `NafTableState` -/
+
+@[expose] public section
 
 section
 

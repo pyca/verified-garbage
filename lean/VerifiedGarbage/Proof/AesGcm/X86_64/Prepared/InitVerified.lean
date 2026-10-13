@@ -1,7 +1,16 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.VerifiedP
-import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.InitCT
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.VerifiedP
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.InitCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # Prepared key setup satisfies the shared contract -/
+
+@[expose] public section
+
 namespace VG.Proof.AesGcm
 open VG.Spec.Gcm
 

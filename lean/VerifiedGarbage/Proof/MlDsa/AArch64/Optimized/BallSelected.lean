@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallResident
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Depth
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallResident
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Depth
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Optimized.Ball
 open VG VG.AArch64

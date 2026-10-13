@@ -1,8 +1,19 @@
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Timing
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Lit
-import VerifiedGarbage.Impl.P256.CombTable7
-import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
-import VerifiedGarbage.Proof.Framework.LitShare
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Timing
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Timing
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Lit
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Lit
+public import VerifiedGarbage.Impl.P256.CombTable7
+meta import VerifiedGarbage.Impl.P256.CombTable7
+public import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
+meta import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
+public import VerifiedGarbage.Proof.Framework.LitShare
+meta import VerifiedGarbage.Proof.Framework.LitShare
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDSA verification over P-256 on x86-64: the checked code without its displacements
@@ -14,6 +25,8 @@ comb's tail, analyse it with them erased. Its field arithmetic is then the
 same few blocks again and again: with each a constant (`materialize_shared`),
 the kernel analyses each once from the same taint.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Verify.X86_64
 

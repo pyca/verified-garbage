@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtChk
-import VerifiedGarbage.Proof.Bignum.AArch64.PcCT
+module
+
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtChk
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtChk
+public import VerifiedGarbage.Proof.Bignum.AArch64.PcCT
+meta import VerifiedGarbage.Proof.Bignum.AArch64.PcCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSA with the CRT on AArch64: constant time, the pieces
@@ -13,6 +21,8 @@ the arrays) existential (a `…Pre` predicate).
 The small pieces are proven here; the others are stated (`…CT`) so that
 the phases can be proven from them before them.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.AArch64
 

@@ -1,9 +1,15 @@
-import VerifiedGarbage.Proof.Sm4.Arm.Round
-import VerifiedGarbage.Proof.Sm4.Layout
-import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.Framework.Arm.RegUpd
-import VerifiedGarbage.Proof.Framework.Arm.Exec
-import VerifiedGarbage.Proof.Framework.AddrArith
+module
+
+public import VerifiedGarbage.Proof.Sm4.Arm.Round
+public import VerifiedGarbage.Proof.Sm4.Layout
+public import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+public import VerifiedGarbage.Proof.Framework.Arm.Exec
+public import VerifiedGarbage.Proof.Framework.AddrArith
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Eight blocks of bitsliced SM4 on ARMv7: the rounds
@@ -15,6 +21,8 @@ round keys `E 0 … E 31` in the scratch buffer (`KeyCtx`), the rounds are
 is that loop for either linear transformation, which the key schedule
 runs too.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sm4.Arm
 

@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.Row
-import VerifiedGarbage.Impl.Rsa.X86_64
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.Row
+public import VerifiedGarbage.Impl.Rsa.X86_64
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Multiword arithmetic on x86-64: copying words
@@ -7,6 +13,8 @@ import VerifiedGarbage.Impl.Rsa.X86_64
 `copyWords` copies `w` words from `rsi` to `rbx` (`copyWords_ok`), between
 the working space and a buffer outside it, either way.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64
 

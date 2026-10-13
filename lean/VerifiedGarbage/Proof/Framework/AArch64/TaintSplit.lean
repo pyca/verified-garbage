@@ -1,6 +1,8 @@
-import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
-import VerifiedGarbage.Proof.Framework.AArch64.TaintMono
-import VerifiedGarbage.Proof.Framework.KernelList
+module
+
+public import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
+public import VerifiedGarbage.Proof.Framework.AArch64.TaintMono
+public import VerifiedGarbage.Proof.Framework.KernelList
 
 /-!
 # AArch64 taint tracking with statics: code without what the analysis does not read, in pieces
@@ -23,6 +25,8 @@ operations on the working space's slots differ only in offsets the analysis
   block's analysis succeeds too, with more public after it (the analysis is
   monotone, `checkBlockS_mono`): `Split.le`.
 -/
+
+@[expose] public section
 
 namespace VG.AArch64
 

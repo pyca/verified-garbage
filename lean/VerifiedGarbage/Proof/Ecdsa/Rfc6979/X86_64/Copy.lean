@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Regs
-import VerifiedGarbage.Proof.Hmac.Common
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Regs
+public import VerifiedGarbage.Proof.Hmac.Common
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Deterministic ECDSA on x86-64: copying words
@@ -10,6 +16,8 @@ written is the word read (`copyW_ok`), so the bytes written are the bytes
 read (`copyN_ok`, by induction on the words). `copyBytes Q` copies `Q ≥ 8`
 bytes: the whole words, then the last eight bytes again (`copyBytes_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Rfc6979.X86_64
 

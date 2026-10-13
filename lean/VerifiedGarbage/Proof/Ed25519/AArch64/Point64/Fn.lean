@@ -1,7 +1,13 @@
-import VerifiedGarbage.Impl.Ed25519.AArch64.Point64
-import VerifiedGarbage.Proof.Ed25519.AArch64.Points
-import VerifiedGarbage.Proof.Framework.AArch64.LaneSave
-import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+module
+
+public import VerifiedGarbage.Impl.Ed25519.AArch64.Point64
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Points
+public import VerifiedGarbage.Proof.Framework.AArch64.LaneSave
+public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed25519's point functions on AArch64: their bodies
@@ -13,6 +19,8 @@ lanes. The doubling's program computes RFC 8032's doubling
 (`doubleRfcOps_eval`), the affine addition's `pointAdd` of an entry with
 `Z = 1` (`addAffineOps_eval`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed25519.AArch64.Point64
 

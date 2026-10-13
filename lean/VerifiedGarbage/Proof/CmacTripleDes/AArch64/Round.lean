@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Layout
-import VerifiedGarbage.Proof.Framework.AArch64.Tbl
-import VerifiedGarbage.Proof.Framework.AArch64.Linear
+module
+
+public import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Layout
+public import VerifiedGarbage.Proof.Framework.AArch64.Tbl
+public import VerifiedGarbage.Proof.Framework.AArch64.Linear
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # A DES round on AArch64
@@ -12,6 +18,8 @@ XORed with groups of them (`pOut_ok`), checked by evaluation over the lane
 domain (`Straight.check`). `round_ok` composes them: the spread
 `L ⊕ f(R, K)`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.CmacTripleDes.AArch64
 

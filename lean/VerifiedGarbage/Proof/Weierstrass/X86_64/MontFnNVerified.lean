@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFnN
-import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFnXVerified
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFnN
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFnN
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFnXVerified
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFnXVerified
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # P-521's product modulo `n` as a function, on x86-64: verified
@@ -9,6 +17,8 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFnXVerified
 tracking (only the stack pointer, `ws` and the offsets' low halves are
 public), and a state satisfying it (`mul_implies`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.X86_64.Mont
 

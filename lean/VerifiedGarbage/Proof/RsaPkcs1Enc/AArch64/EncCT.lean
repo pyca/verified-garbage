@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncCorrect
-import VerifiedGarbage.Proof.Framework.AArch64.RelCT
-import VerifiedGarbage.Proof.Framework.AArch64.Taint
+module
+
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncCorrect
+meta import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncCorrect
+public import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+meta import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+public import VerifiedGarbage.Proof.Framework.AArch64.Taint
+meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-PKCS1-v1_5 encryption on AArch64: constant time
@@ -15,6 +24,8 @@ runs agree on there (pointers and counters, which the layout fixes; never
 (`two_wp`); the call is constant time for its callee's contract, whose
 public data agree too (`RelCT.call`). The frames leak only `sp`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPkcs1Enc.AArch64.Enc
 

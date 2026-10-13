@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.RsaOaep.X86_64.DecCorrect
-import VerifiedGarbage.Proof.RsaOaep.X86_64.LabelCT
+module
+
+public import VerifiedGarbage.Proof.RsaOaep.X86_64.DecCorrect
+public import VerifiedGarbage.Proof.RsaOaep.X86_64.LabelCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-OAEP decryption on x86-64: the points between the pieces
@@ -9,6 +15,8 @@ What the constant-time proof needs to know of one run between the pieces of
 (`DW`), and MGF1's slots too before MGF1 (`DWM`). Each piece's step is its
 correctness lemma, of which only this is kept.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaOaep.X86_64
 

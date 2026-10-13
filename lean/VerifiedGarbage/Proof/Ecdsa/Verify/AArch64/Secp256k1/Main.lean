@@ -1,7 +1,15 @@
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Main
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Secp256k1.Points
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Main
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Secp256k1.Points
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # secp256k1 signature verification -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Verify.AArch64.Secp256k1
 

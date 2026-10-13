@@ -1,9 +1,18 @@
-import VerifiedGarbage.Proof.Argon2.AArch64.Finish
-import VerifiedGarbage.Impl.Argon2.AArch64.FillWrite
-import VerifiedGarbage.Proof.Argon2.AArch64.Memory
-import VerifiedGarbage.Proof.Argon2.AArch64.DivideStep
+module
+
+public import VerifiedGarbage.Proof.Argon2.AArch64.Finish
+public import VerifiedGarbage.Impl.Argon2.AArch64.FillWrite
+public import VerifiedGarbage.Proof.Argon2.AArch64.Memory
+public import VerifiedGarbage.Proof.Argon2.AArch64.DivideStep
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Argon2.AArch64.FillWriteWord`. -/
+
+@[expose] public section
+
 section
 /-! One output word, keeping register writes folded during execution. -/
 

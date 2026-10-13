@@ -1,7 +1,16 @@
-import VerifiedGarbage.Impl.Ed25519.Arm.PointEncode
-import VerifiedGarbage.Proof.Ed25519.Arm.Power
+module
+
+public import VerifiedGarbage.Impl.Ed25519.Arm.PointEncode
+public import VerifiedGarbage.Proof.Ed25519.Arm.Power
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Affine conversion using the verified inversion chain. -/
+
+@[expose] public section
+
 namespace VG.Proof.Ed25519.Arm
 open VG VG.Arm VG.Impl.Ed25519.Arm
 

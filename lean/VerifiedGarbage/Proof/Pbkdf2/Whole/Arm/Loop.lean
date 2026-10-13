@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Block
-import VerifiedGarbage.Proof.Framework.Omega
+module
+
+public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Block
+public import VerifiedGarbage.Proof.Framework.Omega
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # PBKDF2-HMAC on 32-bit ARM, the whole derivation: the rest of a block, the loop, and `pbkdf2`
@@ -11,6 +17,8 @@ to the next block; after the last one, `out` holds the derived key, and the
 caller's registers are restored (`restore_ok`, HMAC's for any working space an
 immediate offset reaches).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Pbkdf2.Whole.Arm
 

@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Fin
-import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MontSetup
-import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrMain
+module
+
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Fin
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MontSetup
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrMain
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # A candidate on AArch64: Montgomery setup, Miller–Rabin and the result
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrMain
 `kTail_ok`: `montSetup`, `millerRabin` and `mrResult` end as
 `primalityTest c` on the octets after the candidate.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaKeyGen.AArch64
 

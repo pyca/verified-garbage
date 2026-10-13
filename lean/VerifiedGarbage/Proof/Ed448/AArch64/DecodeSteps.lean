@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Ed448.AArch64.Window.Checks
-import VerifiedGarbage.Proof.Ed448.AArch64.VerifySign
-import VerifiedGarbage.Proof.Ed448.AArch64.DecodeOps
-import VerifiedGarbage.Proof.X448.AArch64.Fast.Chain
+module
+
+public import VerifiedGarbage.Proof.Ed448.AArch64.Window.Checks
+public import VerifiedGarbage.Proof.Ed448.AArch64.VerifySign
+public import VerifiedGarbage.Proof.Ed448.AArch64.DecodeOps
+public import VerifiedGarbage.Proof.X448.AArch64.Fast.Chain
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 verification's equation on AArch64: decoding's blocks
@@ -13,6 +19,8 @@ the sign bit read back (`signLoad_ok`), and the check of `x = 0` for `x` below
 `2^118` (`zeroSignF_ok`). The slots stay below the products' operand bound
 (`BEnv`), which a check keeps (`bnd_check`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.AArch64
 

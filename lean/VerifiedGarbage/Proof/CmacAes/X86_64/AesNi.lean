@@ -1,9 +1,21 @@
-import VerifiedGarbage.Impl.CmacAes.X86_64.AesNi
-import VerifiedGarbage.Proof.CmacAes.X86_64.UpdateCorrect
-import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Rounds
-import VerifiedGarbage.Proof.Framework.X86_64.Taint
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Spec.Cmac.Contract
+module
+
+public import VerifiedGarbage.Impl.CmacAes.X86_64.AesNi
+meta import VerifiedGarbage.Impl.CmacAes.X86_64.AesNi
+public import VerifiedGarbage.Proof.CmacAes.X86_64.UpdateCorrect
+meta import VerifiedGarbage.Proof.CmacAes.X86_64.UpdateCorrect
+public import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Rounds
+meta import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Rounds
+public import VerifiedGarbage.Proof.Framework.X86_64.Taint
+meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.Cmac.Contract
+meta import VerifiedGarbage.Spec.Cmac.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CMAC's chaining with AES-NI on x86-64: `vg_cmac_aes_update_aesni_cbc`
@@ -21,6 +33,8 @@ contract with no stack (the code uses none) and than `updateX86_64`, the
 contract callers of `vg_cmac_aes_update` are proven with
 (`Proof/CmacAes/X86_64/Variant.lean`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.CmacAes.X86_64.AesNi
 

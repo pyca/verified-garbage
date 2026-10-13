@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Sha1.Arm
-import VerifiedGarbage.Impl.MdStream.Arm
+module
+
+public import VerifiedGarbage.Impl.Sha1.Arm
+public import VerifiedGarbage.Impl.MdStream.Arm
 
 /-!
 # Streaming SHA-1: 32-bit ARM implementation
@@ -13,6 +15,8 @@ The streaming state (84 bytes at `state`) is the hash value followed by a
   (`vg_sha1_compress`) with `scratch[0..112)` as its scratch space, and saving our
   caller's `r4`–`r11` and `lr` in `scratch[112..148)`.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Sha1.Arm.Stream
 

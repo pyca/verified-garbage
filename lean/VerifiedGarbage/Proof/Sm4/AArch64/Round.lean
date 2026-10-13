@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Sm4.AArch64.Linear
-import VerifiedGarbage.Proof.Sm4.AArch64.Sbox
-import VerifiedGarbage.Proof.Sm4.Rounds
-import VerifiedGarbage.Proof.Framework.Offset
+module
+
+public import VerifiedGarbage.Proof.Sm4.AArch64.Linear
+public import VerifiedGarbage.Proof.Sm4.AArch64.Sbox
+public import VerifiedGarbage.Proof.Sm4.Rounds
+public import VerifiedGarbage.Proof.Framework.Offset
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # A round of bitsliced SM4 on AArch64
@@ -13,6 +19,8 @@ state with its new value (`sround`), keeping the other words and the masks,
 and writing only the slots below the table. The layers are composed from
 their checks (`Linear.lean`, `Sbox.lean`) and `round_rel`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sm4.AArch64
 

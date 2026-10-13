@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Mont.Words128
-import VerifiedGarbage.Proof.Weierstrass.X86.TCombDigit
-import VerifiedGarbage.Proof.Weierstrass.Unch
-import VerifiedGarbage.Proof.Framework.CallLay
+module
+
+public import VerifiedGarbage.Proof.Mont.Words128
+public import VerifiedGarbage.Proof.Weierstrass.X86.TCombDigit
+public import VerifiedGarbage.Proof.Weierstrass.Unch
+public import VerifiedGarbage.Proof.Framework.CallLay
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The comb from tables in memory on x86 (32-bit): the selection
@@ -15,6 +21,8 @@ accumulator `c` holds piece `c` of entry `a` if `1 ≤ a ≤ m`, else zero
 adjacent. `selOne_ok` then sets `y = R` for `a = 0` and `Z = R` unless
 `a = 0`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.X86
 

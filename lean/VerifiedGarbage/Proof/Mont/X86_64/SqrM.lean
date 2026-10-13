@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Mont.X86_64.SqrS
-import VerifiedGarbage.Proof.Mont.X86_64.Rounds
-import VerifiedGarbage.Proof.Mont.X86_64.Friendly
+module
+
+public import VerifiedGarbage.Proof.Mont.X86_64.SqrS
+public import VerifiedGarbage.Proof.Mont.X86_64.Rounds
+public import VerifiedGarbage.Proof.Mont.X86_64.Friendly
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Montgomery arithmetic on x86-64: P-384's squaring
@@ -23,6 +29,8 @@ postcondition of its BMI2 and ADX counterpart (`SqrS.lean`), so either way:
   leave `(L + U p) / 2³⁸⁴ ≤ p` for the low half `L`, and with the high half
   `H < p` added, below `2p`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Mont.X86_64
 

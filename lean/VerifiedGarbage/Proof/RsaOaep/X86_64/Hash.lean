@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.RsaOaep.X86_64.Loops
-import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Calls
+module
+
+public import VerifiedGarbage.Proof.RsaOaep.X86_64.Loops
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Calls
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-OAEP on x86-64: calling the streaming hash functions
@@ -11,6 +17,8 @@ the digest to `scratch + o`: what each leaves of the frame and the working
 space (`Lay`, `Rep`, with the ranges it writes read again), and what it
 computes. A register `d` is set to `scratch + o` by `scr_ok`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaOaep.X86_64
 

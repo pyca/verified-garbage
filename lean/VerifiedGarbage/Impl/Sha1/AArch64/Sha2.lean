@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.Sha1
-import VerifiedGarbage.TCB.AArch64.Isa
+module
+
+public import VerifiedGarbage.Spec.Sha1
+public import VerifiedGarbage.TCB.AArch64.Isa
 
 /-!
 # SHA-1 compression with AArch64 SHA instructions
@@ -12,6 +14,8 @@ group executes four rounds with SHA1C/P/M, using SHA1H to retain the next E
 before overwriting ABCD. Only caller-saved registers are used. Scratch is
 unused; all addresses and branches are public.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Sha1.AArch64.Sha2
 

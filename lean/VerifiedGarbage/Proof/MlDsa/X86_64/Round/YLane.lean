@@ -1,6 +1,12 @@
-import VerifiedGarbage.Impl.MlDsa.X86_64.Round.Avx2
-import VerifiedGarbage.Proof.MlDsa.Round.Decompose
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.VArith
+module
+
+public import VerifiedGarbage.Impl.MlDsa.X86_64.Round.Avx2
+public import VerifiedGarbage.Proof.MlDsa.Round.Decompose
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.VArith
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on x86-64: what the AVX2 rounding code computes in a doubleword
@@ -9,6 +15,8 @@ What `hbX` and `lbX` (`Impl/MlDsa/X86_64/Round/Avx2.lean`) compute in each
 doubleword (`hbL`, `lbL`), and that it is `r₁` and `r₀` of `Decompose`
 (`hbL_toNat`, `lbL_toNat`): every intermediate value fits in 32 bits.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86_64.Round
 

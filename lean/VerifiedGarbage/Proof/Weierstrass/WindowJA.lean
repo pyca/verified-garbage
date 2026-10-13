@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Weierstrass.WindowJ
-import VerifiedGarbage.Proof.Weierstrass.JacMadd
-import VerifiedGarbage.Proof.Weierstrass.JacAdd
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.WindowJ
+public import VerifiedGarbage.Proof.Weierstrass.JacMadd
+public import VerifiedGarbage.Proof.Weierstrass.JacAdd
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Signed windows in Jacobian coordinates with an affine table, on any target
@@ -13,6 +19,8 @@ entries are then representatives with `Z = 1`, or `(0 : 1 : 0)` for digit `0`
 (`RepA`), and the iterations add them by the mixed addition (`maddJF`,
 `InvJ.sumSelM`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass
 

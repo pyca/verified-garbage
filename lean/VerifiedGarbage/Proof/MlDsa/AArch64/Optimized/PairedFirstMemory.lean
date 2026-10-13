@@ -1,9 +1,17 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedStore
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.SliceFrame
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFirst
-import VerifiedGarbage.Proof.Framework.Offset
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedStore
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.SliceFrame
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFirst
+public import VerifiedGarbage.Proof.Framework.Offset
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## From `PairedStoreMemory.lean` -/
+
+@[expose] public section
 
 section
 

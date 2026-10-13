@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseA4
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PrimsD
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Hash
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseA4
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PrimsD
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Hash
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA signing on x86-64: the private key and `ρ″`
@@ -9,6 +15,8 @@ Once `Â` is sampled (`IM`), `ŝ₁[r]`, `ŝ₂[i]` and `t̂₀[i]`, each the `N
 the `BitUnpack` of its piece of `sk` (`dec_ok`), in their slots (`ID`), and
 `ρ″ = H(K ‖ rnd ‖ μ, 64)` at `MS` (`decode_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86_64.Sign
 

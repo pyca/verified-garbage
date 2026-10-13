@@ -31,7 +31,7 @@ def artifacts : List Artifact := [
     doc := Spec.Hmac.sha512_224I.iterateApi.doc
     code := Proof.Pbkdf2.Md.X86.sha512_224M.iterate
     contract := Spec.Hmac.sha512_224I.iterateContract X86.abi 48
-    ofSig := ⟨_, _, _, by unfold Spec.Hmac.Instance.iterateContract; rfl⟩
+    ofSig := by exact (⟨_, _, _, by unfold Spec.Hmac.Instance.iterateContract; rfl⟩)
     stack := 48
     verified := Proof.Pbkdf2.Md.X86.Instances.sha512_224_iterate
     spSafe := Code.all_of_allInstrs (by lit_decide) },
@@ -41,7 +41,7 @@ def artifacts : List Artifact := [
     code := Impl.StackScratch.X86.withStackScratch (Proof.Pbkdf2.Whole.X86.pbkFrame Spec.Hmac.sha512_224I) 7
       Proof.Pbkdf2.Whole.X86.sha512_224F.pbkdf2
     contract := Spec.Hmac.sha512_224I.pbkdf2Contract X86.abi (76 + Proof.Pbkdf2.Whole.X86.pbkFrame Spec.Hmac.sha512_224I)
-    ofSig := ⟨_, _, _, by unfold Spec.Hmac.Instance.pbkdf2Contract Spec.Pbkdf2.pbkdf2Contract; rfl⟩
+    ofSig := by exact (⟨_, _, _, by unfold Spec.Hmac.Instance.pbkdf2Contract Spec.Pbkdf2.pbkdf2Contract; rfl⟩)
     stack := 76 + Proof.Pbkdf2.Whole.X86.pbkFrame Spec.Hmac.sha512_224I
     verified := Proof.Pbkdf2.Whole.X86.pbkFramed Proof.Pbkdf2.Whole.X86.sha512_224 (by decide) (by lit_decide)
       (by lit_decide) Proof.Pbkdf2.Whole.X86.sha512_224_pbkFrameSat

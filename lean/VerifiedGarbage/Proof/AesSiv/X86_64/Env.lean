@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesSiv.X86_64.Common
+module
+
+public import VerifiedGarbage.Proof.AesSiv.X86_64.Common
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-SIV on x86-64: the regions of `s2v_ad`, `seal` and `open`
@@ -12,6 +18,8 @@ theirs (`Env.uargs`, `Env.fargs`); and `vg_aes_ctr32` with `K2`'s schedule
 and blocks of the working space (`Env.cargs`). `Env` names what their
 contracts say about the regions, whichever of them are writable.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesSiv.X86_64
 

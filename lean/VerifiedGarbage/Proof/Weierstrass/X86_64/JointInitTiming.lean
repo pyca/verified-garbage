@@ -1,8 +1,17 @@
-import VerifiedGarbage.Proof.Weierstrass.X86_64.JointSeed
-import VerifiedGarbage.Proof.Weierstrass.X86_64.NafTableTiming
-import VerifiedGarbage.Proof.Weierstrass.X86_64.NafCacheBuildTiming
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointSeed
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafTableTiming
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafCacheBuildTiming
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Shared field values through odd-table setup, cache construction and the seed. -/
+
+@[expose] public section
+
 namespace VG.Proof.Weierstrass.X86_64
 open VG VG.X86_64 VG.Impl.Mont VG.Impl.Weierstrass VG.Impl.Weierstrass.X86_64
 open VG.Proof.Mont VG.Proof.Mont.X86_64 Spec.Weierstrass

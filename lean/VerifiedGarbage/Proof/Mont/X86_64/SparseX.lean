@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Mont.X86_64.Sparse
+module
+
+public import VerifiedGarbage.Proof.Mont.X86_64.Sparse
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Montgomery arithmetic on x86-64: P-384's reduction with BMI2
@@ -10,6 +16,8 @@ one carry chain (`prodSparseX_ok`), then subtracted (`subSparseX_ok`):
 `redSX_ok` is `redS_ok` for `redSparseX`. `redShortX_ok` is the round on six
 words holding `T < 2³⁸⁴`, whose result needs no seventh word.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Mont.X86_64
 

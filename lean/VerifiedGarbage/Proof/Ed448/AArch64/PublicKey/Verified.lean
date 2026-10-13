@@ -1,7 +1,17 @@
-import VerifiedGarbage.Proof.Ed448.AArch64.PublicKey.Main
-import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.CallCT
-import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.WrapCT
-import VerifiedGarbage.Proof.Framework.Contract
+module
+
+public import VerifiedGarbage.Proof.Ed448.AArch64.PublicKey.Main
+meta import VerifiedGarbage.Proof.Ed448.AArch64.PublicKey.Main
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.CallCT
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.CallCT
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.WrapCT
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.WrapCT
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 public-key derivation on AArch64: `Verified`
@@ -16,6 +26,8 @@ with that layout (and what the next block or call needs of the registers,
 constant-time code (the sponge functions for `v`, `vg_ed448_scalar_base`)
 whose public data, its pointers and lengths, agree (`Whole.callEx`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.AArch64.PublicKey
 

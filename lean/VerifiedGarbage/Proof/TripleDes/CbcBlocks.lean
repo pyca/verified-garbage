@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.TripleDes.Schedule
-import VerifiedGarbage.Proof.Modes.Ctr
-import VerifiedGarbage.Spec.TripleDes.Cbc
+module
+
+public import VerifiedGarbage.Proof.TripleDes.Schedule
+public import VerifiedGarbage.Proof.Modes.Ctr
+public import VerifiedGarbage.Spec.TripleDes.Cbc
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Triple DES-CBC's blocks, for every target's core
@@ -10,6 +16,8 @@ the cipher of each direction (`dirCipher`), Triple DES's blocks as the
 modes' (`bytesAt_eq`, `cbcBlocksAt_eq`), and a copy of the schedule as the
 schedule (`scheduleAt_copy`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.TripleDes
 

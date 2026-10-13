@@ -1,6 +1,12 @@
-import VerifiedGarbage.Impl.Ed25519.Arm.PointTableIO
-import VerifiedGarbage.Proof.Ed25519.Arm.PointTableLoad
-import VerifiedGarbage.Proof.Ed25519.Arm.PointPowers
+module
+
+public import VerifiedGarbage.Impl.Ed25519.Arm.PointTableIO
+public import VerifiedGarbage.Proof.Ed25519.Arm.PointTableLoad
+public import VerifiedGarbage.Proof.Ed25519.Arm.PointPowers
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed25519 on ARMv7: addresses past 4096, and `lr` saved
@@ -10,6 +16,8 @@ immediate cannot reach. The functions that call `vg_gf25519_r16_mul`, which
 overwrites `lr`, save it at `LRS` on entry (`saveLr_ok`) and reload it before
 returning (`loadLr_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed25519.Arm
 

@@ -1,8 +1,17 @@
-import VerifiedGarbage.Proof.Weierstrass.X86.InvFg
-import VerifiedGarbage.Proof.Weierstrass.X86.InvAb
-import VerifiedGarbage.Proof.Weierstrass.X86.InvCount
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86.InvFg
+public import VerifiedGarbage.Proof.Weierstrass.X86.InvAb
+public import VerifiedGarbage.Proof.Weierstrass.X86.InvCount
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # A complete thirty-step inversion batch -/
+
+@[expose] public section
+
 namespace VG.Proof.Weierstrass.X86.Inv
 open VG VG.X86 VG.X86.Wp VG.Impl.Mont.X86 VG.Impl.Weierstrass.X86
   VG.Proof.Mont.X86 VG.Proof.Mont VG.Proof.Weierstrass

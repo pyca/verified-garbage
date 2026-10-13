@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.MlDsa.Sign.Loop
-import VerifiedGarbage.Proof.MlDsa.Round.Decompose
+module
+
+public import VerifiedGarbage.Proof.MlDsa.Sign.Loop
+public import VerifiedGarbage.Proof.MlDsa.Round.Decompose
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA: signing polynomial by polynomial
@@ -14,6 +20,8 @@ norm checked polynomial by polynomial, `passF`) and `signIteration`
 `r₀`, a vector of `R` of `LowBits`, is that of its image in `R_q`
 (`normR_lowBits`), which the implementation stores.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Sign
 

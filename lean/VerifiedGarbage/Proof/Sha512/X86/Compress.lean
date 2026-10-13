@@ -1,17 +1,35 @@
-import VerifiedGarbage.Proof.Sha512.X86.Steps
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86.RegUpd
-import VerifiedGarbage.Proof.Framework.X86.Spill
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Spec.Sha512
-import VerifiedGarbage.TCB.X86.Target
-import VerifiedGarbage.Proof.Sha512.X86.Lit
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.X86.SseTaint
+module
+
+public import VerifiedGarbage.Proof.Sha512.X86.Steps
+meta import VerifiedGarbage.Proof.Sha512.X86.Steps
+public import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Framework.X86.RegUpd
+meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
+public import VerifiedGarbage.Proof.Framework.X86.Spill
+meta import VerifiedGarbage.Proof.Framework.X86.Spill
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.Sha512
+meta import VerifiedGarbage.Spec.Sha512
+public import VerifiedGarbage.TCB.X86.Target
+meta import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Proof.Sha512.X86.Lit
+meta import VerifiedGarbage.Proof.Sha512.X86.Lit
+public import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.X86.SseTaint
+meta import VerifiedGarbage.Proof.Framework.X86.SseTaint
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # SHA-512 compression function on x86 (32-bit): the whole function
 -/
+
+@[expose] public section
 
 /-!
 ## SHA-512: the x86 (32-bit) contracts

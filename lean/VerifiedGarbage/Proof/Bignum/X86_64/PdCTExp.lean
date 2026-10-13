@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.PdExp
-import VerifiedGarbage.Proof.Bignum.X86_64.CTExp
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.PdExp
+meta import VerifiedGarbage.Proof.Bignum.X86_64.PdExp
+public import VerifiedGarbage.Proof.Bignum.X86_64.CTExp
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CTExp
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_public_precomputed` on x86-64: the exponentiation is constant time but for `e`
@@ -9,6 +17,8 @@ whether it has started, which is whether the prefix of `e` so far is
 nonzero: the runs agree on it because they agree on `e` (`pExpBit_ct`,
 `pExpLoop_ct`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64
 

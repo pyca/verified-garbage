@@ -1,8 +1,14 @@
-import VerifiedGarbage.Spec.TripleDes.Ofb
-import VerifiedGarbage.Spec.TripleDes.Cfb
-import VerifiedGarbage.Spec.TripleDes.Cfb8
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.TripleDes.CbcBlocks
+module
+
+public import VerifiedGarbage.Spec.TripleDes.Ofb
+public import VerifiedGarbage.Spec.TripleDes.Cfb
+public import VerifiedGarbage.Spec.TripleDes.Cfb8
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.TripleDes.CbcBlocks
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Triple DES-OFB, -CFB64 and -CFB8 with their working space as an argument
@@ -16,6 +22,8 @@ memory on return only within the function's buffers (`ofbPostOut_local`,
 …), and, where the frame copies stack arguments (ARMv7), on entry too
 (`ofbPost_local`, …).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.TripleDes
 

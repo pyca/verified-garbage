@@ -1,10 +1,23 @@
-import VerifiedGarbage.Proof.Sm4.Arm.Ecb
-import VerifiedGarbage.Proof.Sm4.Scratch
-import VerifiedGarbage.Proof.Framework.Arm.Inline
-import VerifiedGarbage.Proof.Framework.Arm.Taint
-import VerifiedGarbage.Proof.Framework.Arm.RegScratchWipe
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Sm4.Arm.Lit
+module
+
+public import VerifiedGarbage.Proof.Sm4.Arm.Ecb
+meta import VerifiedGarbage.Proof.Sm4.Arm.Ecb
+public import VerifiedGarbage.Proof.Sm4.Scratch
+meta import VerifiedGarbage.Proof.Sm4.Scratch
+public import VerifiedGarbage.Proof.Framework.Arm.Inline
+meta import VerifiedGarbage.Proof.Framework.Arm.Inline
+public import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+public import VerifiedGarbage.Proof.Framework.Arm.RegScratchWipe
+meta import VerifiedGarbage.Proof.Framework.Arm.RegScratchWipe
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Sm4.Arm.Lit
+meta import VerifiedGarbage.Proof.Sm4.Arm.Lit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # SM4 ECB on ARMv7 meets its contracts
@@ -16,6 +29,8 @@ public, in registers or, during the rounds, in the scratch buffer's slots
 runs it with its working space on the stack, zeroed on return: 1456 bytes,
 the 364 words of the scratch buffer.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sm4.Arm
 

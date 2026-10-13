@@ -1,5 +1,7 @@
-import VerifiedGarbage.Proof.Framework.RelCT
-import VerifiedGarbage.Proof.Framework.Block
+module
+
+public import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.Proof.Framework.Block
 
 /-!
 # Regrouping sequences in relational constant-time proofs
@@ -12,6 +14,8 @@ regroups `a; (b; c)` as `(a; b); c`, which runs the same and leaks the same
 trace, and `RelCT.block_append` splits a block in two; `WP.assoc` does the same for the correctness proofs, and `WP.ite_true`
 and `WP.ite_false` take the branch a relational proof is in.
 -/
+
+@[expose] public section
 
 namespace VG
 

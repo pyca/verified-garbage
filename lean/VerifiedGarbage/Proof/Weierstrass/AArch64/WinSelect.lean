@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Weierstrass.AArch64.CombSelect
-import VerifiedGarbage.Impl.Weierstrass.AArch64.Window
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.CombSelect
+public import VerifiedGarbage.Impl.Weierstrass.AArch64.Window
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The window method on AArch64: the constant-time selection
@@ -10,6 +16,8 @@ its mask and ORs it into `x4`, so that the word of `[a]P` survives
 (`winSelectWord_ok`); `select` writes the entry's `X`, `Y` and `Z`
 (`select_ok`): `(0 : R : 0)` for `a = 0`, else `[a]P`'s coordinates.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.AArch64
 

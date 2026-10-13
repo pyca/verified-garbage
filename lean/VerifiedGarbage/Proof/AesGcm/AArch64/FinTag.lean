@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesGcm.AArch64.Body
+module
+
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Body
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on AArch64: the tag of a whole message (`finBody`)
@@ -8,6 +14,8 @@ the buffered bytes (of the text, or of the additional data if there is no
 text), and writes `GHASH(…, lengths) ⊕ CIPH_K(J₀)` to `W + o`: the tag of the
 message (`finBody_ok`, `Proof.Gcm.fullTag_eq`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

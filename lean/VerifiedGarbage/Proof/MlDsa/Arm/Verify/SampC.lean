@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.MlDsa.Arm.Verify.SampA
+module
+
+public import VerifiedGarbage.Proof.MlDsa.Arm.Verify.SampA
+meta import VerifiedGarbage.Proof.MlDsa.Arm.Verify.SampA
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA verification on 32-bit ARM: `c`, and the samplers
@@ -9,6 +16,8 @@ and `c` are reduced, and `r11` is 1 if every sampler succeeded, with them
 those of the standard for some bounds, and 0 if one fails within the least
 bounds.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Arm.Verify
 

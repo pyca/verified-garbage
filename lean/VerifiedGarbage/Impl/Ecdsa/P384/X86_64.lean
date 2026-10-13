@@ -1,8 +1,12 @@
-import VerifiedGarbage.Impl.Ecdsa.X86_64
-import VerifiedGarbage.Spec.P384
-import VerifiedGarbage.Impl.P384.CombTable7
+module
+
+public import VerifiedGarbage.Impl.Ecdsa.X86_64
+public import VerifiedGarbage.Spec.P384
+public import VerifiedGarbage.Impl.P384.CombTable7
 
 /-! # ECDSA over P-384 on x86-64: six-word field elements and scalars -/
+
+@[expose] public section
 
 namespace VG.Impl.Ecdsa.X86_64
 

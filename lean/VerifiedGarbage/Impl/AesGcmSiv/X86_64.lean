@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.AesGcm.X86_64
+module
+
+public import VerifiedGarbage.Impl.AesGcm.X86_64
 
 /-!
 # AES-GCM-SIV: x86-64 implementation
@@ -58,6 +60,8 @@ preserve them, and `rbx`, `rbp`, `r12` and `r14`, which hold lengths,
 pointers and counts across calls. Only the pointers, the lengths and
 `rounds` (and for `open`, whether the tag is right) affect timing.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.AesGcmSiv.X86_64
 

@@ -1,12 +1,20 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedLowPair
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedCheckStep
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedCallFrame
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedStageRun
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFinalCheck
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFinalAdvance
-import VerifiedGarbage.Proof.Framework.Offset
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedLowPair
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedCheckStep
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedCallFrame
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedStageRun
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFinalCheck
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFinalAdvance
+public import VerifiedGarbage.Proof.Framework.Offset
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## `PairedLowStep` -/
+
+@[expose] public section
 
 section
 

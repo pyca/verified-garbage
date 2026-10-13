@@ -1,4 +1,6 @@
-import VerifiedGarbage.Proof.Framework.Arm.Inline
+module
+
+public import VerifiedGarbage.Proof.Framework.Arm.Inline
 
 /-!
 # Calls (ARMv7)
@@ -10,6 +12,8 @@ called function from there (`State.callEntry`); it does not touch the stack.
 verified code from the callee's `Verified` proof, as `WP.inline` does for
 inlined code.
 -/
+
+@[expose] public section
 
 namespace VG.Arm
 

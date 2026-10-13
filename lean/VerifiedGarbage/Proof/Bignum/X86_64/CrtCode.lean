@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtEntry
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtMain
-import VerifiedGarbage.Proof.Bignum.X86_64.PubCode
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtContract
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtEntry
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtMain
+public import VerifiedGarbage.Proof.Bignum.X86_64.PubCode
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtContract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSA with the CRT on x86-64: correctness
@@ -11,6 +17,8 @@ inputs (`crtCode_correct`), against `crtContract` (`CrtContract.lean`),
 which states the shared contract's precondition on the registers and the
 stack.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64
 

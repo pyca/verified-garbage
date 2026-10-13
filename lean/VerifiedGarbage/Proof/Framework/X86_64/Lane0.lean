@@ -1,4 +1,6 @@
-import VerifiedGarbage.Proof.Framework.X86_64.LaneSse
+module
+
+public import VerifiedGarbage.Proof.Framework.X86_64.LaneSse
 
 /-!
 # x86-64: VEX.128 blocks as SSE blocks on the lower lanes
@@ -11,6 +13,8 @@ registers, memory and flags, is what the corresponding SSE block leaves from
 `s.proj 0` (`WP.lane0`), so that proofs about SSE code hold of the `VEX.128`
 code that does the same with three operands.
 -/
+
+@[expose] public section
 
 namespace VG.X86_64
 

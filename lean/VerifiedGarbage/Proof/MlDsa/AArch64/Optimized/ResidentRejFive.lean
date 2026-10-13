@@ -1,7 +1,15 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejStart
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejSqueeze
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejStart
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejSqueeze
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## From `ResidentRejFiveFrame.lean` -/
+
+@[expose] public section
 
 section
 

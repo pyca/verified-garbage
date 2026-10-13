@@ -1,7 +1,17 @@
-import VerifiedGarbage.Proof.Framework.Arm.Lit
-import VerifiedGarbage.Proof.Framework.Arm.TaintErase
-import VerifiedGarbage.Proof.X448.Arm.FnLit
-import VerifiedGarbage.Impl.Ed448.Arm.VerifyEquation
+module
+
+public import VerifiedGarbage.Proof.Framework.Arm.Lit
+meta import VerifiedGarbage.Proof.Framework.Arm.Lit
+public import VerifiedGarbage.Proof.Framework.Arm.TaintErase
+meta import VerifiedGarbage.Proof.Framework.Arm.TaintErase
+public import VerifiedGarbage.Proof.X448.Arm.FnLit
+meta import VerifiedGarbage.Proof.X448.Arm.FnLit
+public import VerifiedGarbage.Impl.Ed448.Arm.VerifyEquation
+meta import VerifiedGarbage.Impl.Ed448.Arm.VerifyEquation
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 verification's equation on ARMv7: the code as a literal
@@ -16,6 +26,8 @@ slots (some 150 multiplications) are the same code, which its literal
 shares, and the kernel analyses each once from the same taint rather than
 every copy.
 -/
+
+@[expose] public section
 
 namespace VG
 

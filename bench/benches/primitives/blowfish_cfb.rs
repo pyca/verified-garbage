@@ -36,7 +36,7 @@ pub fn bench(c: &mut Criterion) {
         for size in SIZES {
             group.throughput(Throughput::Bytes(size as u64));
             let data = vec![0x5a; size];
-            let mut buffer = vec![0; size];
+            let mut buffer = crate::InPlace::new(size, &data);
             group.bench_function(BenchmarkId::new(VG, size), |b| {
                 b.iter(|| {
                     let ctx = BlowfishCfb64::new(black_box(&key)).unwrap();

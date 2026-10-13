@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.MlKem.X86.Piece
-import VerifiedGarbage.Impl.MlKem.X86.Basic
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86.Piece
+meta import VerifiedGarbage.Proof.MlKem.X86.Piece
+public import VerifiedGarbage.Impl.MlKem.X86.Basic
+meta import VerifiedGarbage.Impl.MlKem.X86.Basic
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86 (32-bit): leaf functions
@@ -10,6 +18,8 @@ A function that calls no other one (`Impl.MlKem.X86.leaf`) pushes its caller's
 body changes memory only within regions `W` apart from the frame and the
 return address, the function meets the calling convention (`Piece.leaf`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.X86
 

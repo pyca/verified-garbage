@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Ed25519.X86_64.WindowStep
-import VerifiedGarbage.Proof.Ed25519.X86_64.RecodeStep
+module
+
+public import VerifiedGarbage.Proof.Ed25519.X86_64.WindowStep
+public import VerifiedGarbage.Proof.Ed25519.X86_64.RecodeStep
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Verification's digits at the counter's position
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.Ed25519.X86_64.RecodeStep
 `digitAt dst` loads the digit's byte at the counter's position `p` (byte `2048 + 2p + dst`) into
 `rbx` and tests it; `digitsAt` tests both digits at once (`rbx` = their bytes' `or`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed25519.X86_64
 

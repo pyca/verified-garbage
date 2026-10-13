@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.MlDsa.X86.Verify.Samp
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86.Verify.Samp
+meta import VerifiedGarbage.Proof.MlDsa.X86.Verify.Samp
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA verification on x86 (32-bit): `Â` and `c`
@@ -7,6 +14,8 @@ import VerifiedGarbage.Proof.MlDsa.X86.Verify.Samp
 SampleInBall(c̃)` masked with its result (`samples_piece`): from the result 1
 to `SC`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86.Verify
 

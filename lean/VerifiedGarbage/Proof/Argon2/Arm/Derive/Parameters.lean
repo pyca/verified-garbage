@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Argon2.Arm.Derive.Locals
+module
+
+public import VerifiedGarbage.Proof.Argon2.Arm.Derive.Locals
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Argon2 on ARMv7: the parameters
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.Argon2.Arm.Derive.Locals
 store there `4 · lanes` (the divisor), the segment length (by the fixed-time
 division), the lane length and its size in bytes (`Prm`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Argon2.Arm.Derive
 

@@ -1,8 +1,17 @@
-import VerifiedGarbage.Proof.Weierstrass.X86_64.NafSubtract
-import VerifiedGarbage.Proof.Weierstrass.FastNaf
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafSubtract
+public import VerifiedGarbage.Proof.Weierstrass.FastNaf
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Signed-digit subtraction shares the same x86-64 implementation at both widths, for scalars of
 four words (five registers), six words (seven registers) and nine words (ten registers). -/
+
+@[expose] public section
+
 namespace VG.Proof.Weierstrass.X86_64
 open VG VG.X86_64 VG.Impl.Weierstrass.X86_64
 open VG.Proof.X25519.X86_64

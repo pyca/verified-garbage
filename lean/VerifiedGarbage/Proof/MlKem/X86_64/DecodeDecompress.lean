@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.MlKem.X86_64.CompressEncode
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86_64.CompressEncode
+meta import VerifiedGarbage.Proof.MlKem.X86_64.CompressEncode
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86-64: `vg_mlkem_decode_decompress`
@@ -6,6 +13,8 @@ import VerifiedGarbage.Proof.MlKem.X86_64.CompressEncode
 The loop is proven once for every width (`DD.loop_ok`), and the function by
 its three cases.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.X86_64
 

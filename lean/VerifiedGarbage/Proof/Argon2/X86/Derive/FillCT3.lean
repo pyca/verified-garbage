@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.Argon2.X86.Derive.FillCT2
-import VerifiedGarbage.Proof.Argon2.IterationsIndices
+module
+
+public import VerifiedGarbage.Proof.Argon2.X86.Derive.FillCT2
+meta import VerifiedGarbage.Proof.Argon2.X86.Derive.FillCT2
+public import VerifiedGarbage.Proof.Argon2.IterationsIndices
+meta import VerifiedGarbage.Proof.Argon2.IterationsIndices
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Argon2 on x86 (32-bit): the filling loops, in two runs
@@ -10,6 +18,8 @@ references still to be made (the rest of `Spec.Argon2.references`), from
 which each block's reference agrees (`ref_same`). `passes_rel`: the filling
 loops leak the same trace in two runs whose references agree.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Argon2.X86.Derive
 

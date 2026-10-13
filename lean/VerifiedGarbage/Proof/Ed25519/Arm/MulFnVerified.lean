@@ -1,7 +1,17 @@
-import VerifiedGarbage.Proof.Ed25519.Arm.MulFnFn
-import VerifiedGarbage.Proof.Ed25519.Arm.SpecConv
-import VerifiedGarbage.Proof.Framework.Arm.Taint
-import VerifiedGarbage.Proof.Framework.Arm.Contract
+module
+
+public import VerifiedGarbage.Proof.Ed25519.Arm.MulFnFn
+meta import VerifiedGarbage.Proof.Ed25519.Arm.MulFnFn
+public import VerifiedGarbage.Proof.Ed25519.Arm.SpecConv
+meta import VerifiedGarbage.Proof.Ed25519.Arm.SpecConv
+public import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+public import VerifiedGarbage.Proof.Framework.Arm.Contract
+meta import VerifiedGarbage.Proof.Framework.Arm.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_gf25519_r16_mul` on ARMv7, verified
@@ -13,6 +23,8 @@ facts by register): its limbs and values are the proofs' (`limbAt_eq`,
 offsets, in `r0`–`r3`, are public, and every address is `ws` plus a constant,
 or an offset plus a constant or the rows' counter.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed25519.Arm
 

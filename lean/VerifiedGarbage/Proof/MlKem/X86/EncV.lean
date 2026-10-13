@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlKem.X86.EncRow
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86.EncRow
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86 (32-bit): the ciphertext of K-PKE.Encrypt
@@ -12,6 +18,8 @@ ciphertext is K-PKE.Encrypt's for the matrix `aE` sampled (`ct_eq`), each of
 whose entries was sampled within some bound (`samples`); if 0, one sample
 failed within `minIterations`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.X86.Enc
 

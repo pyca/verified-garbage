@@ -1,4 +1,10 @@
-import VerifiedGarbage.Spec.Ecdsa.Rfc6979
+module
+
+public import VerifiedGarbage.Spec.Ecdsa.Rfc6979
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Deterministic ECDSA: the search for a candidate, step by step
@@ -11,6 +17,8 @@ search is the one from candidate `i`, `i` candidates later (`search_shift`).
 The same for candidates of `b` `V`s each, `b = blocks` (`kvAtB`, `candAtB`,
 `searchB_ok`, `searchB_fail`, `searchB_shift`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Rfc6979
 

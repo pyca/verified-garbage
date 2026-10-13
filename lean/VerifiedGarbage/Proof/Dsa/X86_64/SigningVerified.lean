@@ -1,7 +1,16 @@
-import VerifiedGarbage.Proof.Dsa.X86_64.SigningABIPost
-import VerifiedGarbage.Proof.Dsa.X86_64.SigningAgreement
+module
+
+public import VerifiedGarbage.Proof.Dsa.X86_64.SigningABIPost
+public import VerifiedGarbage.Proof.Dsa.X86_64.SigningAgreement
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # DSA signing verified against the shared contract -/
+
+@[expose] public section
+
 namespace VG.Proof.Dsa.X86_64
 open VG VG.X86_64 VG.Impl.Dsa.X86_64
 open VG.Proof.Bignum.X86_64

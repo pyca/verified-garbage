@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Modes.X86_64.Copy
+module
+
+public import VerifiedGarbage.Proof.Modes.X86_64.Copy
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Unchaining CBC blocks on x86-64
@@ -11,6 +17,8 @@ value (the `L` bytes at `H`) for `j = 0`, and with ciphertext block `j - 1`
 otherwise; the chaining value becomes the last ciphertext block. Each block
 is a XOR and two copies (`xorN_wp`, `copyN_wp`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Modes.X86_64
 

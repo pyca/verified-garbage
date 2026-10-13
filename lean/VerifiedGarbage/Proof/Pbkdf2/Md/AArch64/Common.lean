@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Calls
-import VerifiedGarbage.Proof.Sha256.AArch64.Stream.Common
-import VerifiedGarbage.Proof.Hmac.Generic.Common
-import VerifiedGarbage.Proof.Framework.OmegaLit
+module
+
+public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Calls
+public import VerifiedGarbage.Proof.Sha256.AArch64.Stream.Common
+public import VerifiedGarbage.Proof.Hmac.Generic.Common
+public import VerifiedGarbage.Proof.Framework.OmegaLit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # HMAC and PBKDF2-HMAC over any Merkle–Damgård hash function on AArch64: what the proofs share
@@ -12,6 +18,8 @@ branches; the registers of our caller and our return address, stored in
 `scratch` after the working space of the functions we call (`Stream.saved`)
 and loaded back at the end; and facts about two runs.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Pbkdf2.Md.AArch64.Calls
 

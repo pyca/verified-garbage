@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.Dsa.DomainShape
+module
+
+public import VerifiedGarbage.Proof.Dsa.DomainShape
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # Relating public width scans to the DSA parameter-size predicate -/
+
+@[expose] public section
+
 namespace VG.Proof.Dsa
 open VG
 

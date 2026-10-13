@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.MlDsa.X86.Verify.Final
-import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.NoSp
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86.Verify.Final
+meta import VerifiedGarbage.Proof.MlDsa.X86.Verify.Final
+public import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.NoSp
+meta import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.NoSp
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA verification on x86 (32-bit): the body
@@ -10,6 +18,8 @@ its result (which depends only on the signature), `z` and its norms, a branch
 on them (which depend only on the signature), the samplers and the rest; it
 returns the result, as the contract says (`VFin`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86.Verify
 

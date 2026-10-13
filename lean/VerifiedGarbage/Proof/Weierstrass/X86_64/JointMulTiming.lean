@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.Weierstrass.X86_64.JointMul
-import VerifiedGarbage.Proof.Weierstrass.X86_64.JointPairedTiming
-import VerifiedGarbage.Proof.Weierstrass.X86_64.JointCachedDigitTiming
-import VerifiedGarbage.Proof.Weierstrass.X86_64.JointFixedDigitTiming
-import VerifiedGarbage.Proof.Weierstrass.X86_64.JointInitTiming
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointMul
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointPairedTiming
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointCachedDigitTiming
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointFixedDigitTiming
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointInitTiming
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The joint two-scalar multiplication: timing
@@ -11,6 +17,9 @@ Two runs from equal public scalars and field inputs take the same branches
 and addresses: the joint multiplication of `JointMul.lean` with the curve's
 doubler (`JointDoubler.ct`), given the taint checks of its parts.
 -/
+
+@[expose] public section
+
 namespace VG.Proof.Weierstrass.X86_64
 open VG VG.X86_64 VG.Impl.Weierstrass VG.Impl.Weierstrass.X86_64
 open VG.Proof.Mont VG.Proof.Mont.X86_64

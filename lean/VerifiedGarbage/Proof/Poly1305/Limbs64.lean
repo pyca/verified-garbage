@@ -1,6 +1,12 @@
-import VerifiedGarbage.Spec.Poly1305
-import VerifiedGarbage.Proof.Framework.PowLit
-import VerifiedGarbage.Proof.Framework.Omega
+module
+
+public import VerifiedGarbage.Spec.Poly1305
+public import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.Proof.Framework.Omega
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Poly1305 arithmetic in radix 2^64
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.Framework.Omega
 Target-independent bounds, modular reduction and word-carry identities for
 three-word accumulators and two-word clamped keys.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Poly1305.Limbs64
 open VG.Spec.Poly1305 (P)

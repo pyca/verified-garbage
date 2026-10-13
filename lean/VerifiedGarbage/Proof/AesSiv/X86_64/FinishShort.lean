@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesSiv.X86_64.CmacOf
-import VerifiedGarbage.Proof.CmacAes.Stream.X86_64.Copy
+module
+
+public import VerifiedGarbage.Proof.AesSiv.X86_64.CmacOf
+public import VerifiedGarbage.Proof.CmacAes.Stream.X86_64.Copy
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-SIV on x86-64: finishing S2V with a string shorter than a block
@@ -12,6 +18,8 @@ block. `shortMac` finalizes that one complete block from a zero state at
 `W + out`, which is then the CMAC of `dbl(D) xor pad(P)`
 (`Siv.s2vFinish_short`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesSiv.X86_64
 

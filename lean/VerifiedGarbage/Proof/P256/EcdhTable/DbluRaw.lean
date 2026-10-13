@@ -1,6 +1,14 @@
-import VerifiedGarbage.Proof.P256.EcdhTable.RawField
-import VerifiedGarbage.Proof.P256.EcdhJac.Dblu
-import VerifiedGarbage.Proof.P256.EcdhJac.BuildState
+module
+
+public import VerifiedGarbage.Proof.P256.EcdhTable.RawField
+public import VerifiedGarbage.Proof.P256.EcdhJac.Dblu
+public import VerifiedGarbage.Proof.P256.EcdhJac.BuildState
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.P256.EcdhJac
 open VG VG.AArch64 VG.Impl.Mont VG.Impl.Weierstrass VG.Impl.Weierstrass.AArch64

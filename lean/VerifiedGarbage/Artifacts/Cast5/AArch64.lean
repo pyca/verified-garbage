@@ -31,7 +31,7 @@ def artifacts : List Artifact := [
     code := Impl.Cast5.AArch64.expandKey
     contract := Spec.Cast5.expandKeyContract (AArch64.abi.withConsts Impl.Cast5.keyConsts)
     stack := 0
-    ofSig := ⟨_, _, _, by unfold Spec.Cast5.expandKeyContract; rfl⟩
+    ofSig := by exact (⟨_, _, _, by unfold Spec.Cast5.expandKeyContract; rfl⟩)
     verified := Proof.Cast5.AArch64.expandKey_verified
     spSafe := Code.all_of_forall (fun _ => rfl) _ },
   { Spec.Cast5.ecbEncryptApi with
@@ -41,7 +41,7 @@ def artifacts : List Artifact := [
     code := Impl.Cast5.AArch64.ecbEncrypt
     contract := Spec.Cast5.ecbEncryptContract (AArch64.abi.withConsts Impl.Cast5.ecbConsts)
     stack := 0
-    ofSig := ⟨_, _, _, by unfold Spec.Cast5.ecbEncryptContract Spec.Cast5.ecbContract; rfl⟩
+    ofSig := by exact (⟨_, _, _, by unfold Spec.Cast5.ecbEncryptContract Spec.Cast5.ecbContract; rfl⟩)
     verified := Proof.Cast5.AArch64.ecbEncrypt_verified
     spSafe := Code.all_of_forall (fun _ => rfl) _ },
   { Spec.Cast5.ecbDecryptApi with
@@ -51,7 +51,7 @@ def artifacts : List Artifact := [
     code := Impl.Cast5.AArch64.ecbDecrypt
     contract := Spec.Cast5.ecbDecryptContract (AArch64.abi.withConsts Impl.Cast5.ecbConsts)
     stack := 0
-    ofSig := ⟨_, _, _, by unfold Spec.Cast5.ecbDecryptContract Spec.Cast5.ecbContract; rfl⟩
+    ofSig := by exact (⟨_, _, _, by unfold Spec.Cast5.ecbDecryptContract Spec.Cast5.ecbContract; rfl⟩)
     verified := Proof.Cast5.AArch64.ecbDecrypt_verified
     spSafe := Code.all_of_forall (fun _ => rfl) _ }]
 

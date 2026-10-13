@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Rc2.AArch64.Vec.Load
-import VerifiedGarbage.Proof.Rc2.CbcMemory
-import VerifiedGarbage.Proof.Framework.Omega
+module
+
+public import VerifiedGarbage.Proof.Rc2.AArch64.Vec.Load
+public import VerifiedGarbage.Proof.Rc2.CbcMemory
+public import VerifiedGarbage.Proof.Framework.Omega
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Storing a group of eight blocks
@@ -9,6 +15,8 @@ import VerifiedGarbage.Proof.Framework.Omega
 2 k` and `4 h + 2 k + 1` into `v(2 h + k)` (`outIndex`). `xorStore_ok`: each
 XORed with the ciphertext block before it and stored in place.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rc2.AArch64.Vec
 

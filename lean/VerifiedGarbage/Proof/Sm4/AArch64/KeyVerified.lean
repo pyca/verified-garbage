@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.Sm4.AArch64.KeyEk
-import VerifiedGarbage.Proof.Sm4.AArch64.Verified
-import VerifiedGarbage.Proof.Sm4.AArch64.Lit
+module
+
+public import VerifiedGarbage.Proof.Sm4.AArch64.KeyEk
+meta import VerifiedGarbage.Proof.Sm4.AArch64.KeyEk
+public import VerifiedGarbage.Proof.Sm4.AArch64.Verified
+meta import VerifiedGarbage.Proof.Sm4.AArch64.Verified
+public import VerifiedGarbage.Proof.Sm4.AArch64.Lit
+meta import VerifiedGarbage.Proof.Sm4.AArch64.Lit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # SM4 key expansion on AArch64 meets its contracts
@@ -10,6 +19,8 @@ time, by the taint analysis with the pointers and the stack pointer public.
 `expandKey_framed` runs it with its working space on the stack, zeroed on
 return, as `ecb_framed` does.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sm4.AArch64
 

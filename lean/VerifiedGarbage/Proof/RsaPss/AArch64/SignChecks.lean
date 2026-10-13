@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.RsaPss.AArch64.SignFrame
-import VerifiedGarbage.Proof.RsaPss.Params
+module
+
+public import VerifiedGarbage.Proof.RsaPss.AArch64.SignFrame
+public import VerifiedGarbage.Proof.RsaPss.Params
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSASSA-PSS on AArch64: the encoding's parameters
@@ -11,6 +17,8 @@ mask `0xFF >>> z` and `lo = k - emLen` to their slots and leaves `emLen` in
 `emLen - hLen - 2` in `x9`, `x10` nonzero iff the salt is longer
 (`saltFits_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPss.AArch64
 

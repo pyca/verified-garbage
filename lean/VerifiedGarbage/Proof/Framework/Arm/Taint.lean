@@ -1,10 +1,12 @@
-import VerifiedGarbage.Proof.Framework.Taint
-import VerifiedGarbage.Proof.Framework.RegSet
-import VerifiedGarbage.Proof.Framework.KernelList
-import VerifiedGarbage.Proof.Framework.Mem
-import VerifiedGarbage.Proof.Framework.Arm.Exec
-import VerifiedGarbage.TCB.Arm.Target
-import Batteries.Logic
+module
+
+public import VerifiedGarbage.Proof.Framework.Taint
+public import VerifiedGarbage.Proof.Framework.RegSet
+public import VerifiedGarbage.Proof.Framework.KernelList
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.Arm.Exec
+public import VerifiedGarbage.TCB.Arm.Target
+public import Batteries.Logic
 
 /-!
 # Taint tracking for ARMv7
@@ -33,6 +35,8 @@ address in both runs, and outside every writable region, so no store changes
 them; `argBases` records which of those words are the base address of a
 writable region.
 -/
+
+@[expose] public section
 
 namespace VG.Arm.Taint
 

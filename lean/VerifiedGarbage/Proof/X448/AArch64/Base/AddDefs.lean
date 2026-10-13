@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.X448.AArch64.Fast.StepOps
-import VerifiedGarbage.Proof.X448.BaseAdd
-import VerifiedGarbage.Proof.X448.AArch64.Base.Const
+module
+
+public import VerifiedGarbage.Proof.X448.AArch64.Fast.StepOps
+public import VerifiedGarbage.Proof.X448.BaseAdd
+public import VerifiedGarbage.Proof.X448.AArch64.Base.Const
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 of the base point on AArch64: what the additions' proofs share
@@ -11,6 +17,8 @@ the bound of a constant, apart from the proofs of the
 additions with AdvSIMD (`Add.lean`), so that the scalar addition
 (`AddGen.lean`) does not import them.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448.AArch64.Base
 

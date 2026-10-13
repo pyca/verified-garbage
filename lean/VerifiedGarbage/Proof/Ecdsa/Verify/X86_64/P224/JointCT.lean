@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P224.JointChecks
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P224.JointChecks
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Whole-function timing of P-224's joint verification follows the public-input contract. -/
+
+@[expose] public section
+
 namespace VG.Proof.Ecdsa.Verify.X86_64.P224
 open VG VG.X86_64 VG.Impl.Ecdsa.X86_64 VG.Impl.P224.X86_64 VG.Impl.Weierstrass.X86_64
 open VG.Proof.Ecdsa.X86_64 VG.Proof.P224.X86_64 VG.Proof.Weierstrass VG.Proof.Weierstrass.X86_64

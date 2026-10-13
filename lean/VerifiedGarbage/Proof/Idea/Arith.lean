@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Idea.KeyBits
+module
+
+public import VerifiedGarbage.Proof.Idea.KeyBits
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # IDEA: word arithmetic the implementations share
@@ -10,6 +16,8 @@ residues (`prep_toNat`) and its reduction from the product's halves
 two bytes as a big-endian word (`bytes16`) and back (`lo8`, `hi8`); and what
 each decryption subkey is (`invertKey_getD`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Idea
 

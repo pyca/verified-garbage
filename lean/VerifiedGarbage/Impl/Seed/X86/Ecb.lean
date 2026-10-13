@@ -1,6 +1,8 @@
-import VerifiedGarbage.Impl.Seed.X86.G8
-import VerifiedGarbage.Impl.Aes.X86.Ctr32
-import VerifiedGarbage.Spec.Seed
+module
+
+public import VerifiedGarbage.Impl.Seed.X86.G8
+public import VerifiedGarbage.Impl.Aes.X86.Ctr32
+public import VerifiedGarbage.Spec.Seed
 
 /-!
 # SEED ECB on x86 (32-bit)
@@ -45,6 +47,8 @@ Only the pointers, `n`, and what is computed from them (the copies'
 pointers and counts, `kp`, the loop tests, and the slots holding them) are
 public; no address and no branch depends on anything else.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Seed.X86
 
