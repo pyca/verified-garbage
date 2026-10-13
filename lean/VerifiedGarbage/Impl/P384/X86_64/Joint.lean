@@ -24,7 +24,7 @@ def p384vx : Cfg := { p384x with pubVerify := true }
 pair at `6160`, and the generator's digits at `6400`. -/
 def publicJoint : Joint.Cfg :=
   ⟨p384v.winCfg Impl.Ecdh.X86_64.PX Impl.Ecdh.X86_64.PY Impl.Ecdh.X86_64.BP,
-    6400,"VG_P384_COMB",5392,6160,some Spec.Weierstrass.PointOps.p384,false⟩
+    6400,"VG_P384_COMB",5392,6160,some Spec.Weierstrass.PointOps.p384,false,false⟩
 
 /-- `publicJoint` with BMI2 and ADX. -/
 def publicJointAdx : Joint.Cfg :=

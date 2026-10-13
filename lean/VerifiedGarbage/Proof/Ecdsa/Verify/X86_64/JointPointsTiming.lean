@@ -25,7 +25,7 @@ structure JointMulChecks (c : Cfg) (j : Joint.Cfg) : Prop where
   table : NafTableChecks j.K
   cache : ScratchCT (Joint.cacheCode j).inline
   seed : ScratchCT (.block (Jacobian.infinity j.K j.K.R))
-  counter : ScratchCT (.block [.mov32 .rbx (.imm (BitVec.ofNat 32 (64*j.K.M.n)))])
+  counter : ScratchCT (.block [.mov32 .rbx (.imm (BitVec.ofNat 32 (Joint.top j)))])
   prepG : FastPrepChecks j.K.M.n (c.sl U) j.gBits 7
   prepQ : FastPrepChecks j.K.M.n (c.sl V) j.K.bits 5
 

@@ -50,7 +50,7 @@ theorem jointMulRun_relCT {c : Joint.Cfg} {C : Curve} {double : Prog isa} {base 
     (hc : JointCachedChecks c) (hf : JointFixedChecks c)
     (hu : u<2^(64*c.K.M.n)) (hv : v<2^(64*c.K.M.n)) :
     RelCT isa (JointPair c C base size
-      (JointCore c C base size Q u v (JointGenerator c C base T size row)) .infinity (64*c.K.M.n))
+      (JointCore c C base size Q u v (JointGenerator c C base T size row)) .infinity (Joint.top c))
       (Joint.run c double).inline
       (JointPair c C base size
         (JointCore c C base size Q u v (JointGenerator c C base T size row))
@@ -67,7 +67,7 @@ theorem jointMulWindow_relCT {c : Joint.Cfg} {C : Curve} {double : Prog isa} {ba
     (hc : JointCachedChecks c) (hf : JointFixedChecks c)
     (ht : NafTableChecks c.K) (hcache : ScratchCT (Joint.cacheCode c).inline)
     (hseed : ScratchCT (.block (Jacobian.infinity c.K c.K.R)))
-    (hctr : ScratchCT (.block [.mov32 .rbx (.imm (BitVec.ofNat 32 (64*c.K.M.n)))]))
+    (hctr : ScratchCT (.block [.mov32 .rbx (.imm (BitVec.ofNat 32 (Joint.top c)))]))
     (hu : u<2^(64*c.K.M.n)) (hv : v<2^(64*c.K.M.n)) :
     RelCT isa (fun s t => FieldPair c.K.M base size C.p (·∈nafSlots c.K) (winRo c.K) E s t ∧
       JointWindowInput c C base T size u v Q row s ∧ JointWindowInput c C base T size u v Q row t)
@@ -96,7 +96,7 @@ theorem jointMulWindow_relCT {c : Joint.Cfg} {C : Curve} {double : Prog isa} {ba
     (fun _ _ ⟨⟨E',hp⟩,ps,pt⟩ => ⟨E',hp,ps,pt⟩))
   apply RelCT.seq (R:=JointPair c C base size
     (JointCore c C base size Q u v (JointGenerator c C base T size row))
-      .infinity (64*c.K.M.n))
+      .infinity (Joint.top c))
   · apply RelCT.exists_
     intro E'
     have seed := (jointSeed_relCT (C:=C) (base:=base) (E:=E') hL.lookup.layout hOne hseed hctr).mono
@@ -148,7 +148,7 @@ theorem jointMul_relCT {C : Curve} {c : Joint.Cfg} {double : Prog isa} {base T :
     (hc : JointCachedChecks c) (hf : JointFixedChecks c)
     (ht : NafTableChecks c.K) (hcache : ScratchCT (Joint.cacheCode c).inline)
     (hseed : ScratchCT (.block (Jacobian.infinity c.K c.K.R)))
-    (hctr : ScratchCT (.block [.mov32 .rbx (.imm (BitVec.ofNat 32 (64*c.K.M.n)))]))
+    (hctr : ScratchCT (.block [.mov32 .rbx (.imm (BitVec.ofNat 32 (Joint.top c)))]))
     (hcG : FastPrepChecks c.K.M.n srcU c.gBits 7) (hcQ : FastPrepChecks c.K.M.n srcV c.K.bits 5) :
     RelCT isa (fun s t => FieldPair c.K.M base size C.p (·∈nafSlots c.K) (winRo c.K) E s t ∧
       JointGenerator c C base T size row s ∧ JointGenerator c C base T size row t ∧
