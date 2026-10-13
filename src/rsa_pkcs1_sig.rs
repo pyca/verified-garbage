@@ -140,7 +140,7 @@ pub fn sign(key: &PrivateKey, digest: &[u8], hash: Hash) -> Result<Vec<u8>, Erro
     // distinct Rust allocations; `PrivateKey::from_crt` gives
     // `64 ≤ n_len ≤ 1024`, `1 ≤ e_len ≤ 5 ≤ n_len`, `1 ≤ p_len < n_len`,
     // `1 ≤ q_len < n_len`, `dp_len = qinv_len = p_len` and `dq_len = q_len`;
-    // `out_len = n_len` and `scratch_len = 16 n_len`; and the CPU has the
+    // `out_len = n_len` and `scratch_len = 16 n_len + 32`; and the CPU has the
     // features of the function `select` chose.
     let r = unsafe {
         f(
@@ -192,7 +192,7 @@ pub fn verify(key: &PublicKey, signature: &[u8], digest: &[u8], hash: Hash) -> b
     // SAFETY: each pointer is valid for its length (`scratch` for writes),
     // and none overlaps another or wraps around, as they are distinct Rust
     // allocations; `PublicKey::new` gives `64 ≤ n_len ≤ 1024` and
-    // `1 ≤ e_len ≤ 5 ≤ n_len`; `scratch_len = 16 n_len`; and `pre`
+    // `1 ≤ e_len ≤ 5 ≤ n_len`; `scratch_len = 16 n_len + 32`; and `pre`
     // holds the verified precomputation for `key.n`, with `2 * ceil(n_len / 8)`
     // words. The CPU supports the selected function's features.
     let r = unsafe {
@@ -226,7 +226,7 @@ pub fn recover(key: &PublicKey, signature: &[u8], hash: Hash) -> Result<Vec<u8>,
     // writes), and none overlaps another or wraps around, as they are
     // distinct Rust allocations; `PublicKey::new` gives `64 ≤ n_len ≤ 1024`
     // and `1 ≤ e_len ≤ 5 ≤ n_len`; `hash` is in `0..=11` and `out_len` is the
-    // length of its values; and `scratch_len = 16 n_len`.
+    // length of its values; and `scratch_len = 16 n_len + 32`.
     let r = unsafe {
         vg_rsa_pkcs1_recover(
             out.as_mut_ptr(),

@@ -145,7 +145,7 @@ fn encrypt_with(key: &PublicKey, plaintext: &[u8], ps: &[u8]) -> Vec<u8> {
     // distinct Rust allocations; `PublicKey::new` and `encrypt` give
     // `64 ≤ n_len ≤ 1024`, `out_len = n_len`, `1 ≤ e_len ≤ 5 ≤ n_len`,
     // `msg_len + 11 ≤ n_len`, `ps_len = n_len - msg_len - 3` and
-    // `scratch_len = 16 n_len`. It needs no CPU feature.
+    // `scratch_len = 16 n_len + 32`. It needs no CPU feature.
     let r = unsafe {
         vg_rsa_pkcs1_encrypt(
             out.as_mut_ptr(),
@@ -286,7 +286,7 @@ pub fn decrypt(key: &PrivateKey, ciphertext: &[u8]) -> Result<Vec<u8>, Error> {
     // checks above give `64 ≤ n_len ≤ 1024`, `out_len = input_len = n_len`,
     // `1 ≤ e_len ≤ 5 ≤ n_len`, `1 ≤ d_len ≤ n_len`, `1 ≤ p_len < n_len`,
     // `1 ≤ q_len < n_len`, `dp_len = qinv_len = p_len`, `dq_len = q_len`
-    // and `scratch_len = 16 n_len`; and the CPU has the features of the
+    // and `scratch_len = 16 n_len + 32`; and the CPU has the features of the
     // implementations of SHA-256 and of the private-key operation that
     // `Sha256Backend::select` and `Backend::select` chose, which are those
     // of `f`.

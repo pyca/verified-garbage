@@ -185,7 +185,7 @@ impl core::error::Error for Error {}
 /// The words of working space the operations need for an `n_len`-byte
 /// modulus (`VG.Spec.Rsa.scratchWords`).
 pub(crate) fn scratch_words(n_len: usize) -> usize {
-    16 * n_len
+    16 * n_len + 32
 }
 
 /// `x` without its leading zero bytes.
@@ -274,7 +274,7 @@ impl PublicKey {
         // are distinct Rust allocations; `PublicKey::new` and the check above
         // give `64 ≤ out_len ≤ 1024`, `input_len = out_len`,
         // `pre_len = 2 ⌈out_len / 8⌉`, `1 ≤ e_len ≤ 5 ≤ out_len`, and
-        // `scratch_len = 16 out_len`; `pre` holds what
+        // `scratch_len = 16 out_len + 32`; `pre` holds what
         // `vg_rsa_public_precompute` (or its variant, with the same contract)
         // wrote for the modulus, returning 1; and the CPU has the features of
         // the function `select` chose.
