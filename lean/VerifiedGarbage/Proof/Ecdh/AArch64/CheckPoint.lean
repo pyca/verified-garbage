@@ -1,10 +1,4 @@
 module
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-
-@[expose] public section
 
 public import VerifiedGarbage.Proof.Ecdh.AArch64.Validate
 public import VerifiedGarbage.Proof.Mont.Read
@@ -28,6 +22,8 @@ callee-saved registers, and `post_of_raw` states the result as the
 contract does: `x R mod p` from `toM`, the flag's mask from `PeerOk`, and
 every byte kept but those of the own working space and of the results.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdh.AArch64.CheckPoint
 
