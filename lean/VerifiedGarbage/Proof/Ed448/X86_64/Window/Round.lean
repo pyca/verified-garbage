@@ -3,11 +3,12 @@ module
 public import VerifiedGarbage.Proof.Ed448.X86_64.Window.Table
 public import VerifiedGarbage.Proof.Ed448.X86_64.Window.SignedSelect
 
-/-! One joint window: five doublings followed by two selected additions. -/
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+
+/-! One joint window: five doublings followed by two selected additions. -/
 
 @[expose] public section
 

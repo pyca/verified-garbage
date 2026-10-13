@@ -22,6 +22,7 @@ symbolically, keeping the register writes folded.
 @[expose] public section
 
 namespace VG.Proof.Ed448.X86_64
+set_option exponentiation.threshold 1024
 open VG VG.X86_64 VG.Impl.Ed448.X86_64
 open VG.Proof.X448.X86_64 (Scr word off Outside ofs writeW_outside word_writeW_self contains_sc)
 open VG.Impl.X448.X86_64 (W w sc at_)

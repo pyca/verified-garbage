@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.X86_64.Point64.Fn
-public import Mathlib.Data.ZMod.Defs
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
