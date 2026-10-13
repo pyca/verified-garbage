@@ -1,6 +1,8 @@
-import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
-import VerifiedGarbage.Proof.Ecdh.AArch64.Secp256k1.CheckVerified
+module
+
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
+public import VerifiedGarbage.Proof.Ecdh.AArch64.Secp256k1.CheckVerified
 
 /-!
 # secp256k1's check of a public point on AArch64
@@ -11,6 +13,8 @@ signature verification call to check the public point. A generic file (see
 `Variants/Secp256k1/AArch64/Law.lean`, whose inversions' soundness the proof of the
 configuration takes.
 -/
+
+@[expose] public section
 
 namespace VG.Generic.Secp256k1.AArch64.CheckPointSecp256k1
 
