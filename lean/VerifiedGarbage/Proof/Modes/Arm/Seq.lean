@@ -77,6 +77,17 @@ def argBytes : Nat := if c.rounds then 8 else 4
 
 end
 
+/-- What a mode needs of the tables `K` its core reads: held, readable,
+within the address space and apart from the writable regions and the `st`
+bytes of stack below the stack pointer. -/
+def TabsOk (K : List (String × List (BitVec 64))) (st : Nat) (s : State) : Prop :=
+  Abi.constsHeld s.mem (fun n => State.addr (s.syms n)) K ∧
+    ∀ t ∈ tabRegs K s, t ∈ s.rd ∧ t.base.toNat + t.len ≤ 2 ^ 32 ∧ (∀ r ∈ s.wr, t.Disjoint r) ∧
+      t.Disjoint ⟨State.addr s.sp - BitVec.ofNat 64 st, st⟩
+
+theorem tabsOk_nil (st : Nat) (s : State) : TabsOk [] st s :=
+  ⟨fun _ h => absurd h List.not_mem_nil, fun _ h => absurd h List.not_mem_nil⟩
+
 section
 variable (c : Core) (S : CoreSpec c)
 
@@ -97,7 +108,8 @@ def seqArm (M : Mode) : Contract isa where
       below.Disjoint key ∧ below.Disjoint data ∧ below.Disjoint scr ∧
       (s.gpr .r0).toNat + S.keyLen ≤ 2 ^ 32 ∧ (ivArg c s).toNat + c.bs ≤ 2 ^ 32 ∧
       (dArg c s).toNat + (nArg c s).toNat * c.ds M ≤ 2 ^ 32 ∧ (scArg c s).toNat + c.scratchBytes ≤ 2 ^ 32 ∧
-      (M.finish = true → iv ∈ s.wr) ∧ (∀ r ∈ s.wr, arg.Disjoint r) ∧ (c.rounds = true → S.rok (s.gpr .r1))
+      (M.finish = true → iv ∈ s.wr) ∧ (∀ r ∈ s.wr, arg.Disjoint r) ∧ (c.rounds = true → S.rok (s.gpr .r1)) ∧
+      TabsOk S.consts S.stack s
   post s s' :=
     let r := runSeq M (S.ciphAt s.mem (State.addr (s.gpr .r0)) (s.gpr .r1))
       ⟨[], bytesAt s.mem (State.addr (ivArg c s)) c.bs,
@@ -107,7 +119,8 @@ def seqArm (M : Mode) : Contract isa where
       (M.finish = true → bytesAt s'.mem (State.addr (ivArg c s)) c.bs = r.2.o)
   pub s₁ s₂ :=
     s₁.sp = s₂.sp ∧ s₁.gpr .r0 = s₂.gpr .r0 ∧ s₁.gpr .r1 = s₂.gpr .r1 ∧ s₁.gpr .r2 = s₂.gpr .r2 ∧
-      s₁.gpr .r3 = s₂.gpr .r3 ∧ stackArg s₁ 0 = stackArg s₂ 0 ∧ (c.rounds = true → stackArg s₁ 1 = stackArg s₂ 1)
+      s₁.gpr .r3 = s₂.gpr .r3 ∧ stackArg s₁ 0 = stackArg s₂ 0 ∧ (c.rounds = true → stackArg s₁ 1 = stackArg s₂ 1) ∧
+      ∀ x ∈ S.consts, s₁.syms x.1 = s₂.syms x.1
 
 end
 
@@ -172,11 +185,12 @@ structure UPre (c : Core) (S : CoreSpec c) (M : Mode) (s₀ : State) : Prop wher
   fin : M.finish = true → ivR c s₀ ∈ s₀.wr
   arg_wr : ∀ r ∈ s₀.wr, (argR c s₀).Disjoint r
   rok : c.rounds = true → S.rok (Rp s₀)
+  tabs : TabsOk S.consts S.stack s₀
 
 theorem UPre.of {c : Core} {S : CoreSpec c} {M : Mode} {s₀ : State} (h : (seqArm c S M).pre s₀) :
     UPre c S M s₀ :=
-  let ⟨a, b, d, e, f, g, i, j, k, l, m, n, o, p, q, r, t, u, v, w, x, y⟩ := h
-  ⟨a, b, d, e, f, g, i, j, k, l, m, n, o, p, q, r, t, u, v, w, x, y⟩
+  let ⟨a, b, d, e, f, g, i, j, k, l, m, n, o, p, q, r, t, u, v, w, x, y, z⟩ := h
+  ⟨a, b, d, e, f, g, i, j, k, l, m, n, o, p, q, r, t, u, v, w, x, y, z⟩
 
 /-- The loop invariant, after `k` blocks. -/
 structure LInv (c : Core) (S : CoreSpec c) (M : Mode) (s₀ : State) (k : Nat) (s : State) : Prop where

@@ -7,28 +7,29 @@ public import VerifiedGarbage.TCB.Arm.Isa
 /-!
 # CAST5 on baseline ARMv7
 
-The ARMv7 model has no SIMD and no way to address a static table, so a
-lookup in an S-box is a *scan* of the whole table written into the code: for
-each of the 256 entries `j`, in order, and each of the four lookups `k` a
-round function (or a line of key expansion) makes, the index in `r4 + k` is
-compared with `j` (`eor`, then `(x - 1) >> 8` widened to a mask that is all
-ones exactly if they are equal), and the entry's value, built with `movw` and
-`movt`, is ANDed with the mask and ORed into `r8 + k`. No secret is an
-address or a branch condition.
+A lookup in an S-box never uses a secret as an address: the four lookups a
+round function (or a line of key expansion) makes are made at once by a
+*scan* of the static table `VG_CAST5_S1234` (or `VG_CAST5_S5678` in key
+expansion, `Impl/Cast5/Tables.lean`), 256 entries of four words: a loop over
+the entries `j`, in order, whose address it forms with `adrSym`, loading each
+of the entry's words `k` and keeping it under a mask that is all ones exactly
+if the index in `r4 + k` is `j` (`eor`, then `(x - 1) >> 8` widened), ORed
+into `r8 + k`. No secret is an address or a branch condition.
 
-The scan is 8192 instructions, so each function has it once: encryption and
-decryption run their rounds in a loop whose body is one round, choosing the
-round's type (1, 2 or 3, a public count kept in the working space) by a
-branch; key expansion runs each half of §2.4 as a loop of 40 steps, each one
-scan, choosing the step's bytes and what it does with the four values by a
-chain of branches on the step's number (public).
+Each function has the scan once: encryption and decryption run their rounds
+in a loop whose body is one round, choosing the round's type (1, 2 or 3, a
+public count kept in the working space) by a branch; key expansion runs each
+half of §2.4 as a loop of 40 steps, each one scan, choosing the step's bytes
+and what it does with the four values by a chain of branches on the step's
+number (public).
 
 The rotation by the secret amount `Kr` (§2.2) is five rotations by 1, 2, 4,
 8 and 16, each kept or not by a mask made from a bit of `Kr` (`rotate`).
 
 The working space `scratch` (`r3` for key expansion, the stack argument for
 ECB) is in `r12` throughout; the
-callee-saved registers `r4`–`r11` and `lr` are saved in it at `savedOff`.
+callee-saved registers `r4`–`r11` and `lr` are saved in it at `savedOff`, and
+`r2` and `r3` during a scan at `spillEcb` or `spillKey`.
 -/
 
 @[expose] public section
@@ -47,62 +48,41 @@ def idxReg : Nat → Reg
 def accReg : Nat → Reg
   | 0 => .r8 | 1 => .r9 | 2 => .r10 | _ => .r11
 
-/-- `d := v`, by its halves. -/
-def movImm (d : Reg) (v : BitVec 32) : List Instr :=
-  [.movw d (v.extractLsb' 0 16), .movt d (v.extractLsb' 16 16)]
+/-- Lookup `k` at the entry whose number is in `r2` and whose words are at
+`r3`: `r1` := word `k` of the entry, `r0` := the mask (all ones iff index `k`
+is the entry's number), and `r1` under it ORed into value `k`. -/
+def look (k : Nat) : List Instr :=
+  [.ldr .r1 .r3 (4 * k), .dp .eor .r0 (idxReg k) (.reg .r2), .dp .sub .r0 .r0 (.imm 1),
+   .mov .r0 (.shifted .r0 .lsr 8), .dp .orr .r0 .r0 (.shifted .r0 .lsl 8), .dp .and .r1 .r1 (.reg .r0),
+   .dp .orr (accReg k) (accReg k) (.reg .r1)]
 
-/-- Lookup `k` at entry `j`, whose value is `v`: `r0` := the mask (all ones
-iff index `k` is `j`), `r1` := `v` under it, ORed into value `k`. -/
-def scanBox (j k : Nat) (v : BitVec 32) : List Instr :=
-  [.dp .eor .r0 (idxReg k) (.imm (BitVec.ofNat 32 j)), .dp .sub .r0 .r0 (.imm 1),
-   .mov .r0 (.shifted .r0 .lsr 8), .dp .orr .r0 .r0 (.shifted .r0 .lsl 8)] ++ movImm .r1 v ++
-  [.dp .and .r1 .r1 (.reg .r0), .dp .orr (accReg k) (accReg k) (.reg .r1)]
+/-- The four lookups at an entry. -/
+def scanEntry : List Instr := (List.range 4).flatMap look
 
-/-- Entry `j` of the table whose entry `j` holds `tab j 0 … tab j 3`. -/
-def scanEntry (tab : Nat → Nat → BitVec 32) (j : Nat) : List Instr :=
-  (List.range 4).flatMap fun k => scanBox j k (tab j k)
+/-- An entry, then on to the next (Z set after the last, number 255). -/
+def scanBody : List Instr :=
+  scanEntry ++ ([.dp .add .r3 .r3 (.imm 16), .cmp .r2 (.imm 255), .dp .add .r2 .r2 (.imm 1)] : List Instr)
 
-/-- Entries `j … j + cnt - 1`, one block each. -/
-def scanFrom (tab : Nat → Nat → BitVec 32) : Nat → Nat → Prog isa
-  | _, 0 => .block []
-  | j, cnt + 1 => .seq (.block (scanEntry tab j)) (scanFrom tab (j + 1) cnt)
+/-- The scan of the table `sym` (256 entries of four words) at the indices
+in `r4`–`r7` (each below 256), into `r8`–`r11`: every entry in turn, its
+number in `r2` and its address in `r3`, which are saved at `o` and `o + 4`
+in the working space at `r12` meanwhile. Clobbers `r0` and `r1`. -/
+def scan (sym : String) (o : Nat) : Prog isa :=
+  .seq (.block [.str .r2 .r12 o, .str .r3 .r12 (o + 4), .adrSym .r3 sym, .mov .r2 (.imm 0),
+      .mov .r8 (.imm 0), .mov .r9 (.imm 0), .mov .r10 (.imm 0), .mov .r11 (.imm 0)])
+    (.seq (.loop (.block scanBody) .ne) (.block [.ldr .r2 .r12 o, .ldr .r3 .r12 (o + 4)]))
 
-/-- The scan of `tab` at the indices in `r4`–`r7` (each below 256), into
-`r8`–`r11`. Clobbers `r0` and `r1`. -/
-def scan (tab : Nat → Nat → BitVec 32) : Prog isa :=
-  .seq (.block [.mov .r8 (.imm 0), .mov .r9 (.imm 0), .mov .r10 (.imm 0), .mov .r11 (.imm 0)])
-    (scanFrom tab 0 256)
+/-- Where encryption and decryption save `r2` and `r3` during a scan. -/
+def spillEcb : Nat := 24
 
-/-- Word `k` of entry `j` of `table a b c d`: `a j, b j, c j, d j`. -/
-def tabOf (a b c d : Byte → Spec.Cast5.Word) (j k : Nat) : BitVec 32 :=
-  let x := BitVec.ofNat 8 j
-  match k with | 0 => a x | 1 => b x | 2 => c x | _ => d x
+/-- Where key expansion saves `r2` and `r3` during a scan. -/
+def spillKey : Nat := 0
 
-/-- The S-boxes as lists (each lookup into a `Vector` of the specification
-would build it again in the kernel). -/
-def sL : Nat → List Spec.Cast5.Word
-  | 1 => Spec.Cast5.s1.toList | 2 => Spec.Cast5.s2.toList | 3 => Spec.Cast5.s3.toList
-  | 4 => Spec.Cast5.s4.toList | 5 => Spec.Cast5.s5.toList | 6 => Spec.Cast5.s6.toList
-  | 7 => Spec.Cast5.s7.toList | _ => Spec.Cast5.s8.toList
+/-- The scan of encryption and decryption: `VG_CAST5_S1234`. -/
+def scan1234 : Prog isa := scan s1234Sym spillEcb
 
-/-- Word `i % 4` of entry `i / 4`: `S4[j], S3[j], S2[j], S1[j]`, as a number
-(a table the kernel reads in constant time once materialized). -/
-def tab1234Nat (i : Nat) : Nat := ((sL (4 - i % 4)).getD (i / 4) 0).toNat
-
-/-- The same for `S8[j], S7[j], S6[j], S5[j]`. -/
-def tab5678Nat (i : Nat) : Nat := ((sL (8 - i % 4)).getD (i / 4) 0).toNat
-
-/-- Entry `j`: `S4[j], S3[j], S2[j], S1[j]`. -/
-def tab1234 (j k : Nat) : BitVec 32 := BitVec.ofNat 32 (tab1234Nat (4 * j + k))
-
-/-- Entry `j`: `S8[j], S7[j], S6[j], S5[j]`. -/
-def tab5678 (j k : Nat) : BitVec 32 := BitVec.ofNat 32 (tab5678Nat (4 * j + k))
-
-/-- The scan of encryption and decryption. -/
-def scan1234 : Prog isa := scan tab1234
-
-/-- The scan of key expansion. -/
-def scan5678 : Prog isa := scan tab5678
+/-- The scan of key expansion: `VG_CAST5_S5678`. -/
+def scan5678 : Prog isa := scan s5678Sym spillKey
 
 /-! ## The working space -/
 
@@ -267,7 +247,7 @@ def halfSteps : List Step :=
   groupSteps dLines (fun k => .key (12 + k))
 
 /-- The bytes at `d, c, b, a` into `r4`–`r7`, the indices of a scan of
-`tab5678` (`S8, S7, S6, S5`). -/
+`VG_CAST5_S5678` (`S8, S7, S6, S5`). -/
 def gather (a b c d : Pos) : List Instr :=
   [.ldrb .r4 .r12 (srcOff d), .ldrb .r5 .r12 (srcOff c), .ldrb .r6 .r12 (srcOff b),
    .ldrb .r7 .r12 (srcOff a)]

@@ -114,9 +114,14 @@ def keyArm : Contract isa where
   pub s₁ s₂ := s₁.sp = s₂.sp ∧ s₁.gpr .r0 = s₂.gpr .r0 ∧ s₁.gpr .r1 = s₂.gpr .r1 ∧
     s₁.gpr .r2 = s₂.gpr .r2 ∧ s₁.gpr .r3 = s₂.gpr .r3
 
-theorem key_correct (s : State) (hs : keyArm.pre s) :
+theorem key_correct (s : State) (hs : keyArm.pre (stripConsts keyConsts s)) (hkc : ConstsOk keyConsts 0 s) :
     WP isa expandKey s fun s' => (∀ r ∈ preserved, s'.gpr r = s.gpr r) ∧ keyArm.post s s' := by
   obtain ⟨hrd, hwr, dkK, dkS, dKS, hkf, hKf, hcf, hn⟩ := hs
+  simp only [stripConsts_gpr, stripConsts_wr] at hrd hwr dkK dkS dKS hkf hKf hcf hn
+  have tfit : (s.syms s5678Sym).toNat + 4096 ≤ 2 ^ 32 := s5678_len ▸ hkc.fit List.mem_cons_self
+  have trd : (⟨State.addr (s.syms s5678Sym), 4096⟩ : Region) ∈ s.rd := s5678_len ▸ ConstsOk.rd1 hkc
+  have twr : ∀ r ∈ s.wr, Region.Disjoint ⟨State.addr (s.syms s5678Sym), 4096⟩ r := s5678_len ▸ ConstsOk.wr1 hkc
+  have held : Held s.mem (State.addr (s.syms s5678Sym)) s5678 := ConstsOk.held1 hkc
   obtain ⟨n, hnn⟩ : ∃ n, (s.gpr .r1).toNat = n := ⟨_, rfl⟩
   obtain ⟨kp, hkp⟩ : ∃ kp, s.gpr .r0 = kp := ⟨_, rfl⟩
   obtain ⟨kb, hkb⟩ : ∃ kb, s.gpr .r2 = kb := ⟨_, rfl⟩
@@ -137,9 +142,9 @@ theorem key_correct (s : State) (hs : keyArm.pre s) :
   refine WP.mono h1 fun s₁ e₁ => ?_
   subst e₁
   rw [WP.block_append_iff, save_eq]
-  refine WP.mono (WP.keep [] (Spill.save_block_ok savedSlots_ok (s := s.setReg .r12 cb)
+  refine VG.Arm.WP.mono_syms (WP.keep [] (Spill.save_block_ok savedSlots_ok (s := s.setReg .r12 cb)
     (by simp only [gpr_setReg_self]; omega) fun d _ hd => by simp only [gpr_setReg_self, wr_setReg]; exact inC (by omega))
-    (by decide)) fun s₂ ⟨⟨g₂, rd₂, wr₂, m₂⟩, k₂⟩ => ?_
+    (by decide)) fun s₂ ⟨⟨g₂, rd₂, wr₂, m₂⟩, k₂⟩ sy₂ => ?_
   simp only [gpr_setReg_self] at m₂
   obtain ⟨M, hM⟩ : ∃ M, s₂.mem = M := ⟨_, rfl⟩
   have c₂ : s₂.gpr .r12 = cb := by rw [g₂, gpr_setReg_self]
@@ -149,12 +154,13 @@ theorem key_correct (s : State) (hs : keyArm.pre s) :
   have hkM (j : Nat) (hj : j < n) : M (State.addr kp + BitVec.ofNat 64 j) = s.mem (State.addr kp + BitVec.ofNat 64 j) :=
     hMf.bytes (R := ⟨State.addr kp, n⟩) (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact dkS)
       (by show n ≤ 2 ^ 64; omega) hj
-  refine WP.mono (zero_ok s₂ c₂ hcf (fun hw => by rw [wr₂]; exact inC hw) (State.addr kp))
-    fun s₃ ⟨ci₃, r3₃, k₃⟩ => ?_
+  refine VG.Arm.WP.mono_syms (zero_ok s₂ c₂ hcf (fun hw => by rw [wr₂]; exact inC hw) (State.addr kp))
+    fun s₃ ⟨ci₃, r3₃, k₃⟩ sy₃ => ?_
   rw [hM] at ci₃
   -- The key, copied.
   have hrK : ∀ j < n, InRegions (s.rd ++ s.wr) (State.addr kp + BitVec.ofNat 64 j) 1 := fun j hj =>
-    ⟨⟨State.addr kp, n⟩, by rw [hrd]; simp, Offset.contains_base _ (by omega) (by omega)⟩
+    ⟨⟨State.addr kp, n⟩, List.mem_append_left _ (stripConsts_rd_mem (by rw [hrd]; simp)),
+      Offset.contains_base _ (by omega) (by omega)⟩
   have dkC : Region.Disjoint ⟨State.addr kp, n⟩ ⟨State.addr cb, 64⟩ := dkS.sub_right (Region.sub_prefix (by decide))
   have r0₃ : s₃.gpr .r0 = kp := by rw [k₃.gpr _ (by decide), g₂' _ (by decide), hkp]
   have r1₃ : s₃.gpr .r1 = BitVec.ofNat 32 n := by
@@ -183,7 +189,7 @@ theorem key_correct (s : State) (hs : keyArm.pre s) :
         rw [BitVec.toNat_ofNat, show (0 : BitVec 32).toNat = 0 from rfl] at this
         omega
       rw [wz]; simpa using this
-  refine WP.seq (WP.mono copy fun v ⟨cv, kv⟩ => ?_)
+  refine WP.seq (VG.Arm.WP.mono_syms copy fun v ⟨cv, kv⟩ syv => ?_)
   have r2v : v.gpr .r2 = kb := by rw [kv.gpr _ (by decide), k₃.gpr _ (by decide), g₂' _ (by decide), hkb]
   have r12v : v.gpr .r12 = cb := by rw [kv.gpr _ (by decide), k₃.gpr _ (by decide), c₂]
   have rdv : v.rd = s.rd := by rw [kv.rd, k₃.rd, rd₂]; rfl
@@ -198,6 +204,7 @@ theorem key_correct (s : State) (hs : keyArm.pre s) :
   have wm : w.mem = v.mem := by rw [← hw]; rfl
   have wwr : w.wr = s.wr := by rw [← hw]; exact wrv
   have wrd : w.rd = s.rd := by rw [← hw]; exact rdv
+  have hsw : w.syms = s.syms := by rw [← hw]; exact syv.trans (sy₃.trans sy₂)
   -- The state of key expansion: `x` the padded key, no subkeys yet.
   let st0 : XZ := ⟨fun j => (Spec.Cast5.bytesAt s.mem (State.addr kp) n).getD j 0,
     fun j => M (State.addr cb + BitVec.ofNat 64 (32 + j))⟩
@@ -211,7 +218,18 @@ theorem key_correct (s : State) (hs : keyArm.pre s) :
       kfit := hKf
       scr := by rw [wwr, hwr]; simp
       sch := by rw [wwr, hwr]; simp
-      dKS := dKS }
+      dKS := dKS
+      tfit := by rw [hsw]; exact tfit
+      trd := by rw [hsw, wrd]; exact List.mem_append_left _ trd
+      held0 := by
+        rw [hsw]
+        refine held_frame hMf (fun r hr => ?_) (by rw [s5678_len]; decide) held
+        simp only [List.mem_singleton] at hr; subst hr
+        rw [s5678_len]; exact twr _ (by rw [hwr]; simp)
+      dTS := by
+        rw [hsw]
+        exact (twr ⟨State.addr cb, 256⟩ (by rw [hwr]; simp)).sub_right (Region.sub_prefix (by decide))
+      dTK := by rw [hsw]; exact twr _ (by rw [hwr]; simp) }
   case refine_1 =>
     rw [wm]
     cases a with
