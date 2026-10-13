@@ -54,6 +54,30 @@ theorem small_10453 : Nat.Prime 10453 := prime_small _ (by decide +kernel)
 theorem small_11131 : Nat.Prime 11131 := prime_small _ (by decide +kernel)
 theorem small_11393 : Nat.Prime 11393 := prime_small _ (by decide +kernel)
 theorem small_37967 : Nat.Prime 37967 := prime_small _ (by decide +kernel)
+theorem small_19 : Nat.Prime 19 := prime_small _ (by decide +kernel)
+theorem small_53 : Nat.Prime 53 := prime_small _ (by decide +kernel)
+theorem small_59 : Nat.Prime 59 := prime_small _ (by decide +kernel)
+theorem small_103 : Nat.Prime 103 := prime_small _ (by decide +kernel)
+theorem small_109 : Nat.Prime 109 := prime_small _ (by decide +kernel)
+theorem small_179 : Nat.Prime 179 := prime_small _ (by decide +kernel)
+theorem small_241 : Nat.Prime 241 := prime_small _ (by decide +kernel)
+theorem small_347 : Nat.Prime 347 := prime_small _ (by decide +kernel)
+theorem small_349 : Nat.Prime 349 := prime_small _ (by decide +kernel)
+theorem small_617 : Nat.Prime 617 := prime_small _ (by decide +kernel)
+theorem small_1049 : Nat.Prime 1049 := prime_small _ (by decide +kernel)
+theorem small_1709 : Nat.Prime 1709 := prime_small _ (by decide +kernel)
+theorem small_2083 : Nat.Prime 2083 := prime_small _ (by decide +kernel)
+theorem small_2377 : Nat.Prime 2377 := prime_small _ (by decide +kernel)
+theorem small_2593 : Nat.Prime 2593 := prime_small _ (by decide +kernel)
+theorem small_4273 : Nat.Prime 4273 := prime_small _ (by decide +kernel)
+theorem small_5413 : Nat.Prime 5413 := prime_small _ (by decide +kernel)
+theorem small_5743 : Nat.Prime 5743 := prime_small _ (by decide +kernel)
+theorem small_6997 : Nat.Prime 6997 := prime_small _ (by decide +kernel)
+theorem small_9341 : Nat.Prime 9341 := prime_small _ (by decide +kernel)
+theorem small_18947 : Nat.Prime 18947 := prime_small _ (by decide +kernel)
+theorem small_28817 : Nat.Prime 28817 := prime_small _ (by decide +kernel)
+theorem small_43397 : Nat.Prime 43397 := prime_small _ (by decide +kernel)
+theorem small_60901 : Nat.Prime 60901 := prime_small _ (by decide +kernel)
 
 theorem prime_734647 : Nat.Prime 734647 := by
   refine prime_of_cert 734647 3 20 [2, 3, 11, 11131] (by decide) (by decide +kernel) ?_
@@ -331,5 +355,273 @@ theorem prime_216592707701193161730692368423326049797961163870176486000816185038
 theorem p_prime : Nat.Prime Spec.BrainpoolP384r1.p := by
   rw [show Spec.BrainpoolP384r1.p = 21659270770119316173069236842332604979796116387017648600081618503821089934025961822236561982844534088440708417973331 by decide +kernel]
   exact prime_21659270770119316173069236842332604979796116387017648600081618503821089934025961822236561982844534088440708417973331
+
+theorem prime_4977439 : Nat.Prime 4977439 := by
+  refine prime_of_cert 4977439 6 23 [2, 3, 349, 2377] (by decide) (by decide +kernel) ?_
+    (by decide +kernel) (by decide +kernel) (by decide +kernel)
+  intro f hf
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hf
+  rcases hf with rfl | rfl | rfl | rfl
+  · exact small_2
+  · exact small_3
+  · exact small_349
+  · exact small_2377
+
+theorem prime_657021949 : Nat.Prime 657021949 := by
+  refine prime_of_cert 657021949 2 30 [2, 2, 3, 11, 4977439] (by decide) (by decide +kernel) ?_
+    (by decide +kernel) (by decide +kernel) (by decide +kernel)
+  intro f hf
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hf
+  rcases hf with rfl | rfl | rfl | rfl | rfl
+  · exact small_2
+  · exact small_2
+  · exact small_3
+  · exact small_11
+  · exact prime_4977439
+
+theorem prime_124822877 : Nat.Prime 124822877 := by
+  refine prime_of_cert 124822877 2 27 [2, 2, 67, 109, 4273] (by decide) (by decide +kernel) ?_
+    (by decide +kernel) (by decide +kernel) (by decide +kernel)
+  intro f hf
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hf
+  rcases hf with rfl | rfl | rfl | rfl | rfl
+  · exact small_2
+  · exact small_2
+  · exact small_67
+  · exact small_109
+  · exact small_4273
+
+theorem prime_119087 : Nat.Prime 119087 := by
+  refine prime_of_cert 119087 5 17 [2, 11, 5413] (by decide) (by decide +kernel) ?_
+    (by decide +kernel) (by decide +kernel) (by decide +kernel)
+  intro f hf
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hf
+  rcases hf with rfl | rfl | rfl
+  · exact small_2
+  · exact small_11
+  · exact small_5413
+
+theorem prime_27678676889 : Nat.Prime 27678676889 := by
+  refine prime_of_cert 27678676889 6 35 [2, 2, 2, 17, 1709, 119087] (by decide) (by decide +kernel) ?_
+    (by decide +kernel) (by decide +kernel) (by decide +kernel)
+  intro f hf
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hf
+  rcases hf with rfl | rfl | rfl | rfl | rfl | rfl
+  · exact small_2
+  · exact small_2
+  · exact small_2
+  · exact small_17
+  · exact small_1709
+  · exact prime_119087
+
+theorem prime_288135026414491 : Nat.Prime 288135026414491 := by
+  refine prime_of_cert 288135026414491 2 49 [2, 3, 5, 347, 27678676889] (by decide) (by decide +kernel) ?_
+    (by decide +kernel) (by decide +kernel) (by decide +kernel)
+  intro f hf
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hf
+  rcases hf with rfl | rfl | rfl | rfl | rfl
+  · exact small_2
+  · exact small_3
+  · exact small_5
+  · exact small_347
+  · exact prime_27678676889
+
+theorem prime_8067780739605749 : Nat.Prime 8067780739605749 := by
+  refine prime_of_cert 8067780739605749 3 53 [2, 2, 7, 288135026414491] (by decide) (by decide +kernel) ?_
+    (by decide +kernel) (by decide +kernel) (by decide +kernel)
+  intro f hf
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hf
+  rcases hf with rfl | rfl | rfl | rfl
+  · exact small_2
+  · exact small_2
+  · exact small_7
+  · exact prime_288135026414491
+
+theorem prime_53014379452169 : Nat.Prime 53014379452169 := by
+  refine prime_of_cert 53014379452169 3 46 [2, 2, 2, 5743, 18947, 60901] (by decide) (by decide +kernel) ?_
+    (by decide +kernel) (by decide +kernel) (by decide +kernel)
+  intro f hf
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hf
+  rcases hf with rfl | rfl | rfl | rfl | rfl | rfl
+  · exact small_2
+  · exact small_2
+  · exact small_2
+  · exact small_5743
+  · exact small_18947
+  · exact small_60901
+
+theorem prime_1866961 : Nat.Prime 1866961 := by
+  refine prime_of_cert 1866961 13 21 [2, 2, 2, 2, 3, 3, 5, 2593] (by decide) (by decide +kernel) ?_
+    (by decide +kernel) (by decide +kernel) (by decide +kernel)
+  intro f hf
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hf
+  rcases hf with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+  · exact small_2
+  · exact small_2
+  · exact small_2
+  · exact small_2
+  · exact small_3
+  · exact small_3
+  · exact small_5
+  · exact small_2593
+
+theorem prime_11201767 : Nat.Prime 11201767 := by
+  refine prime_of_cert 11201767 3 24 [2, 3, 1866961] (by decide) (by decide +kernel) ?_
+    (by decide +kernel) (by decide +kernel) (by decide +kernel)
+  intro f hf
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hf
+  rcases hf with rfl | rfl | rfl
+  · exact small_2
+  · exact small_3
+  · exact prime_1866961
+
+theorem prime_1559777 : Nat.Prime 1559777 := by
+  refine prime_of_cert 1559777 3 21 [2, 2, 2, 2, 2, 79, 617] (by decide) (by decide +kernel) ?_
+    (by decide +kernel) (by decide +kernel) (by decide +kernel)
+  intro f hf
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hf
+  rcases hf with rfl | rfl | rfl | rfl | rfl | rfl | rfl
+  · exact small_2
+  · exact small_2
+  · exact small_2
+  · exact small_2
+  · exact small_2
+  · exact small_79
+  · exact small_617
+
+theorem prime_11594917 : Nat.Prime 11594917 := by
+  refine prime_of_cert 11594917 5 24 [2, 2, 3, 3, 53, 59, 103] (by decide) (by decide +kernel) ?_
+    (by decide +kernel) (by decide +kernel) (by decide +kernel)
+  intro f hf
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hf
+  rcases hf with rfl | rfl | rfl | rfl | rfl | rfl | rfl
+  · exact small_2
+  · exact small_2
+  · exact small_3
+  · exact small_3
+  · exact small_53
+  · exact small_59
+  · exact small_103
+
+theorem prime_5071793 : Nat.Prime 5071793 := by
+  refine prime_of_cert 5071793 3 23 [2, 2, 2, 2, 11, 28817] (by decide) (by decide +kernel) ?_
+    (by decide +kernel) (by decide +kernel) (by decide +kernel)
+  intro f hf
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hf
+  rcases hf with rfl | rfl | rfl | rfl | rfl | rfl
+  · exact small_2
+  · exact small_2
+  · exact small_2
+  · exact small_2
+  · exact small_11
+  · exact small_28817
+
+theorem prime_11543603 : Nat.Prime 11543603 := by
+  refine prime_of_cert 11543603 2 24 [2, 7, 19, 43397] (by decide) (by decide +kernel) ?_
+    (by decide +kernel) (by decide +kernel) (by decide +kernel)
+  intro f hf
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hf
+  rcases hf with rfl | rfl | rfl | rfl
+  · exact small_2
+  · exact small_7
+  · exact small_19
+  · exact small_43397
+
+theorem prime_1454493979 : Nat.Prime 1454493979 := by
+  refine prime_of_cert 1454493979 7 31 [2, 3, 3, 7, 11543603] (by decide) (by decide +kernel) ?_
+    (by decide +kernel) (by decide +kernel) (by decide +kernel)
+  intro f hf
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hf
+  rcases hf with rfl | rfl | rfl | rfl | rfl
+  · exact small_2
+  · exact small_3
+  · exact small_3
+  · exact small_7
+  · exact prime_11543603
+
+theorem prime_2520431 : Nat.Prime 2520431 := by
+  refine prime_of_cert 2520431 7 22 [2, 5, 11, 11, 2083] (by decide) (by decide +kernel) ?_
+    (by decide +kernel) (by decide +kernel) (by decide +kernel)
+  intro f hf
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hf
+  rcases hf with rfl | rfl | rfl | rfl | rfl
+  · exact small_2
+  · exact small_5
+  · exact small_11
+  · exact small_11
+  · exact small_2083
+
+theorem prime_49393939847159 : Nat.Prime 49393939847159 := by
+  refine prime_of_cert 49393939847159 13 46 [2, 1049, 9341, 2520431] (by decide) (by decide +kernel) ?_
+    (by decide +kernel) (by decide +kernel) (by decide +kernel)
+  intro f hf
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hf
+  rcases hf with rfl | rfl | rfl | rfl
+  · exact small_2
+  · exact small_1049
+  · exact small_9341
+  · exact prime_2520431
+
+theorem prime_2788900573532341797131599550190476443808598899 : Nat.Prime 2788900573532341797131599550190476443808598899 := by
+  refine prime_of_cert 2788900573532341797131599550190476443808598899 2 151 [2, 7, 179, 241, 1093, 5071793, 11594917, 1454493979, 49393939847159] (by decide) (by decide +kernel) ?_
+    (by decide +kernel) (by decide +kernel) (by decide +kernel)
+  intro f hf
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hf
+  rcases hf with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+  · exact small_2
+  · exact small_7
+  · exact small_179
+  · exact small_241
+  · exact small_1093
+  · exact prime_5071793
+  · exact prime_11594917
+  · exact prime_1454493979
+  · exact prime_49393939847159
+
+theorem prime_669909697361913545660898382546007419518544524592370543 : Nat.Prime 669909697361913545660898382546007419518544524592370543 := by
+  refine prime_of_cert 669909697361913545660898382546007419518544524592370543 5 179 [2, 7, 11, 1559777, 2788900573532341797131599550190476443808598899] (by decide) (by decide +kernel) ?_
+    (by decide +kernel) (by decide +kernel) (by decide +kernel)
+  intro f hf
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hf
+  rcases hf with rfl | rfl | rfl | rfl | rfl
+  · exact small_2
+  · exact small_7
+  · exact small_11
+  · exact prime_1559777
+  · exact prime_2788900573532341797131599550190476443808598899
+
+theorem prime_90050068090664042551646936303486902724615855323314057604193773 : Nat.Prime 90050068090664042551646936303486902724615855323314057604193773 := by
+  refine prime_of_cert 90050068090664042551646936303486902724615855323314057604193773 2 206 [2, 2, 3, 11201767, 669909697361913545660898382546007419518544524592370543] (by decide) (by decide +kernel) ?_
+    (by decide +kernel) (by decide +kernel) (by decide +kernel)
+  intro f hf
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hf
+  rcases hf with rfl | rfl | rfl | rfl | rfl
+  · exact small_2
+  · exact small_2
+  · exact small_3
+  · exact prime_11201767
+  · exact prime_669909697361913545660898382546007419518544524592370543
+
+theorem prime_21659270770119316173069236842332604979796116387017648600075645274821611501358515537962695117368903252229601718723941 : Nat.Prime 21659270770119316173069236842332604979796116387017648600075645274821611501358515537962695117368903252229601718723941 := by
+  refine prime_of_cert 21659270770119316173069236842332604979796116387017648600075645274821611501358515537962695117368903252229601718723941 2 384 [2, 2, 5, 7, 7, 6997, 124822877, 657021949, 53014379452169, 8067780739605749, 90050068090664042551646936303486902724615855323314057604193773] (by decide) (by decide +kernel) ?_
+    (by decide +kernel) (by decide +kernel) (by decide +kernel)
+  intro f hf
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hf
+  rcases hf with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+  · exact small_2
+  · exact small_2
+  · exact small_5
+  · exact small_7
+  · exact small_7
+  · exact small_6997
+  · exact prime_124822877
+  · exact prime_657021949
+  · exact prime_53014379452169
+  · exact prime_8067780739605749
+  · exact prime_90050068090664042551646936303486902724615855323314057604193773
+
+theorem n_prime : Nat.Prime Spec.BrainpoolP384r1.n := by
+  rw [show Spec.BrainpoolP384r1.n = 21659270770119316173069236842332604979796116387017648600075645274821611501358515537962695117368903252229601718723941 by decide +kernel]
+  exact prime_21659270770119316173069236842332604979796116387017648600075645274821611501358515537962695117368903252229601718723941
 
 end VG.Proof.BrainpoolP384r1

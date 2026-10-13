@@ -8,13 +8,15 @@ public import VerifiedGarbage.Spec.P256
 public import VerifiedGarbage.Spec.Secp256k1
 public import VerifiedGarbage.Spec.P521
 public import VerifiedGarbage.Spec.BrainpoolP256r1
+public import VerifiedGarbage.Spec.BrainpoolP384r1
 
 /-!
 # Inverses modulo a curve's prime and order, in its working space, as functions
 
 **Trusted** (as every file in `Spec/`). The contracts of two functions for
 each curve of `curves` (so far P-192, P-224, P-256, secp256k1, P-384,
-P-521 and brainpoolP256r1), on the working space where the x86-64 code of
+P-521, brainpoolP256r1 and brainpoolP384r1), on the working space where the
+x86-64 code of
 the curve's ECDSA signature, verification and public key derivation keeps
 its numbers, so that they can call one copy of each inversion instead of
 repeating it:
@@ -212,7 +214,11 @@ def brainpoolp256r1 : Curve :=
   { W := Spec.BrainpoolP256r1.curve, curve := "brainpoolp256r1", k := 4, desc := "brainpoolP256r1",
     tmp := 2 }
 
+def brainpoolp384r1 : Curve :=
+  { W := Spec.BrainpoolP384r1.curve, curve := "brainpoolp384r1", k := 6, desc := "brainpoolP384r1",
+    tmp := 83 }
+
 /-- Every curve. -/
-def curves : List Curve := [p192, p224, p256, secp256k1, p384, p521, brainpoolp256r1]
+def curves : List Curve := [p192, p224, p256, secp256k1, p384, p521, brainpoolp256r1, brainpoolp384r1]
 
 end VG.Spec.Weierstrass.Inverse

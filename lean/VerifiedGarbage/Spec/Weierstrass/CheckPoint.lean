@@ -6,8 +6,8 @@ public import VerifiedGarbage.Spec.Weierstrass.Mont
 # The check of a public point, in a curve's working space, as a function
 
 **Trusted** (as every file in `Spec/`). The contract of one function for
-each curve of `curves` (P-192, P-224, P-256, secp256k1, P-384, P-521 and
-brainpoolP256r1), on the working space where the code of the curve's ECDH
+each curve of `curves` (P-192, P-224, P-256, secp256k1, P-384, P-521,
+brainpoolP256r1 and brainpoolP384r1), on the working space where the code of the curve's ECDH
 and ECDSA verification keeps the public point it checks, so that both can
 call one copy of the check instead of repeating it:
 
@@ -218,8 +218,11 @@ def p384 : Curve := { W := Spec.P384.curve, curve := "p384", k := 6, desc := "P-
 def p521 : Curve := { W := Spec.P521.curve, curve := "p521", k := 9, desc := "P-521" }
 def brainpoolp256r1 : Curve :=
   { W := Spec.BrainpoolP256r1.curve, curve := "brainpoolp256r1", k := 4, desc := "brainpoolP256r1" }
+def brainpoolp384r1 : Curve :=
+  { W := Spec.BrainpoolP384r1.curve, curve := "brainpoolp384r1", k := 6, desc := "brainpoolP384r1" }
 
 /-- Every curve. -/
-def curves : List Curve := [p192, p224, p256, secp256k1, p384, p521, brainpoolp256r1]
+def curves : List Curve := [p192, p224, p256, secp256k1, p384, p521, brainpoolp256r1,
+  brainpoolp384r1]
 
 end VG.Spec.Weierstrass.CheckPoint
