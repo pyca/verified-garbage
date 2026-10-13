@@ -477,6 +477,7 @@ pub fn bench(c: &mut Criterion) {
     });
     g.finish();
     tls_records(c);
+    probe(c);
 }
 
 /// TLS records, as a TLS library seals and opens them with a key reused for
@@ -631,6 +632,50 @@ fn tls_records(c: &mut Criterion) {
         }
     }
 }
+
+#[cfg(target_arch = "x86_64")]
+fn probe(c: &mut Criterion) {
+    use std::hint::black_box;
+    use criterion::BenchmarkId;
+    use verified_garbage::aes_gcm::{AesGcm, probe};
+    use crate::VG;
+    let nonce = [0x24; 12];
+    let aad = [0x17, 0x03, 0x03, 0x40, 0x11];
+    let ty = [0x17u8];
+    for (bits, key) in [(128, &[0x42u8; 16][..]), (256, &[0x42u8; 32][..])] {
+        let k = AesGcm::new(key).unwrap();
+        let mut g = c.benchmark_group(format!("aes-{bits}-gcm-probe"));
+        for size in [256usize, 1024, 16384] {
+            let data = vec![0u8; size];
+            let mut out = vec![0u8; size + 1];
+            let mut buf = vec![0u8; size + 1];
+            for _ in 0..64 {
+                k.encrypt(&nonce, &aad, &[&data, &ty], &mut out).unwrap();
+            }
+            g.bench_function(BenchmarkId::new(VG, format!("two{size}")), |b| {
+                b.iter(|| k.encrypt(black_box(&nonce), black_box(&aad), &[black_box(&data[..]), black_box(&ty[..])], black_box(&mut out)).unwrap())
+            });
+            g.bench_function(BenchmarkId::new(VG, format!("split{size}")), |b| {
+                b.iter(|| probe::split(&k, black_box(&nonce), black_box(&aad), &[black_box(&data[..]), black_box(&ty[..])], black_box(&mut out)))
+            });
+            g.bench_function(BenchmarkId::new(VG, format!("inplace{size}")), |b| {
+                b.iter(|| k.encrypt_in_place(black_box(&nonce), black_box(&aad), black_box(&mut buf)).unwrap())
+            });
+            g.bench_function(BenchmarkId::new(VG, format!("blocks{size}")), |b| {
+                b.iter(|| probe::blocks(&k, black_box(&data), black_box(&mut out)))
+            });
+        }
+        let mut blk = [0u8; 16];
+        let mut y = [0u8; 16];
+        let bl = [[0u8; 16]; 2];
+        g.bench_function(BenchmarkId::new(VG, "ctr1"), |b| b.iter(|| probe::ctr1(&k, black_box(&mut blk))));
+        g.bench_function(BenchmarkId::new(VG, "gh1"), |b| b.iter(|| probe::gh(&k, black_box(&mut y), &bl[..1])));
+        g.bench_function(BenchmarkId::new(VG, "gh2"), |b| b.iter(|| probe::gh(&k, black_box(&mut y), &bl[..])));
+        g.finish();
+    }
+}
+#[cfg(not(target_arch = "x86_64"))]
+fn probe(_: &mut Criterion) {}
 
 #[cfg(not(any(
     target_arch = "x86_64",

@@ -2488,3 +2488,43 @@ mod tests {
         assert_eq!(d.update_aad(&[1]), Err(Error::InvalidAadLength));
     }
 }
+
+/// Measurement probes (never merged).
+#[cfg(all(target_arch = "x86_64", feature = "alloc"))]
+#[doc(hidden)]
+#[allow(missing_docs, clippy::missing_safety_doc)]
+pub mod probe {
+    use super::*;
+    pub fn split(k: &AesGcm, nonce: &[u8], aad: &[u8], p: &[&[u8]], out: &mut [u8]) -> Block {
+        let mut descs = [[0usize; 2]; 2];
+        for (d, x) in descs.iter_mut().zip(p) {
+            *d = [x.as_ptr() as usize, x.len()];
+        }
+        k.seal_gather_prepared(nonce, aad, descs.as_ptr(), p.len(), out).unwrap()
+    }
+    pub fn ctx(k: &AesGcm) -> *const [u64; 128] {
+        k.powers.ctx.load(Ordering::Acquire)
+    }
+    pub fn blocks(k: &AesGcm, src: &[u8], dst: &mut [u8]) {
+        use crate::arch::gcm::vg_aes_gcm_encrypt_blocks_to_prepared_vaes_vpclmul_avx512 as f;
+        let mut scratch = MaybeUninit::<[u64; 264]>::uninit();
+        let mut counter = [0u8; 16];
+        let mut y = [0u8; 16];
+        let n = src.len() / 16;
+        unsafe { f(ctx(k), k.rounds, &mut counter, &mut y, src.as_ptr().cast(), n, dst.as_mut_ptr().cast(), n, scratch.as_mut_ptr()) }
+    }
+    pub fn ctr1(k: &AesGcm, b: &mut [u8; 16]) {
+        use crate::arch::aes::vg_aes_ctr32_vaes as f;
+        let mut scratch = MaybeUninit::<[u64; 264]>::uninit();
+        let mut counter = [0u8; 16];
+        unsafe { f(ctx(k).cast(), k.rounds, &mut counter, b, 1, scratch.as_mut_ptr().cast()) }
+    }
+    pub fn gh(k: &AesGcm, y: &mut [u8; 16], b: &[[u8; 16]]) {
+        use crate::arch::gcm::vg_ghash_vpclmul as f;
+        let mut scratch = MaybeUninit::<[u64; 264]>::uninit();
+        unsafe {
+            let h = ctx(k).cast::<u8>().add(240).cast::<[u8; 16]>();
+            f(h, y, b.as_ptr(), b.len(), scratch.as_mut_ptr().cast())
+        }
+    }
+}
