@@ -240,11 +240,13 @@ def encMain : Prog isa :=
   seqs [encEm H, .block (dbArgs H), mgfXor lay G, .block (seedArgs H), mgfXor lay G, .block pubArgs,
     .call pubN pubC]
 
-/-- The inner frame's body. -/
-def encBody : Prog isa :=
+/-- The prologue and the checks, then `main`. -/
+def encBodyWith (main : Prog isa) : Prog isa :=
   seqs [.block (encPrologue ++ chkK H),
-    .ite (.nonzero .x .x11) encFail (seqs [.block (chkMsg H), .ite (.nonzero .x .x11) encFail
-      (encMain H G pubN pubC)])]
+    .ite (.nonzero .x .x11) encFail (seqs [.block (chkMsg H), .ite (.nonzero .x .x11) encFail main])]
+
+/-- The inner frame's body. -/
+def encBody : Prog isa := encBodyWith H (encMain H G pubN pubC)
 
 /-- `vg_rsa_oaep_<H>_mgf1_<G>_encrypt`. -/
 def encrypt : Prog isa :=

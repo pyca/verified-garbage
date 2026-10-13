@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.RsaOaep.AArch64.EncLay
+public import VerifiedGarbage.Spec.RsaOaep.Precomputed
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -26,13 +27,17 @@ open VG.Proof.RsaOaep.AArch64.Dec (moveMem MoveOk moveMem_frame moveMem_read mov
 
 /-- The shared contract, with `P + 288` bytes of stack. -/
 abbrev encSpec (H G : Spec.Mgf1.Hash) (P : Nat) : Contract isa :=
-  Spec.RsaOaep.encryptContract H G AArch64.abi (P + 288)
+  Spec.RsaOaep.encryptPrecomputedContract H G AArch64.abi (P + 288)
+
+/-- `pre`, the only buffer the function reads beyond its other arguments. -/
+def preX (s : State) : List Region := [⟨stackArg s 5, (stackArg s 6).toNat * 8⟩]
 
 /-- The layout of a call from `s`, with `D` bytes of seed and `P` bytes of
-stack for the calls. -/
+stack for the calls: 56 bytes of stack arguments. -/
 def lay (D P : Nat) (s : State) : ELay :=
   ⟨s.gpr .x0, s.gpr .x1, s.gpr .x2, s.gpr .x3, s.gpr .x4, s.gpr .x5, s.gpr .x6, s.gpr .x7,
-    stackArg s 0, stackArg s 1, stackArg s 2, stackArg s 3, stackArg s 4, D, s.sp - BitVec.ofNat 64 288, P⟩
+    stackArg s 0, stackArg s 1, stackArg s 2, stackArg s 3, stackArg s 4, D, s.sp - BitVec.ofNat 64 288, P,
+    preX s, 56⟩
 
 theorem lay_Q (D P : Nat) (s : State) : (lay D P s).Q + BitVec.ofNat 64 288 = s.sp := BitVec.sub_add_cancel _ _
 
@@ -51,25 +56,44 @@ theorem forall_ro {L : ELay} {F : Region → Prop} (h : F L.N ∧ F L.E ∧ F L.
   obtain ⟨a, b, c, d, e⟩ := h
   rcases hR with rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
 
-theorem lay_ok {H G : Spec.Mgf1.Hash} {P : Nat} {s : State} (h : (encSpec H G P).pre s) :
-    (lay H.len P s).Ok := by
-  sig_pre [Spec.RsaOaep.encryptContract, Spec.RsaOaep.encryptSig, AArch64.abi, AArch64.argRegs,
-    _root_.List.range, _root_.List.range.loop, List.append_eq] at h
-  obtain ⟨hsp, hsp2, -, -,
-    oN, oE, oL, oM, oSd, oS, oA,
-    nS, eS, lS, mS, sdS, sA,
-    kO, kN, kE, kL, kM, kSd, kS, -,
-    bO, bN, bE, bL, bM, bSd, bS,
-    kv, hk1, el1, elk, slk⟩ := h
-  simp only [hk1] at oA oN oE oL oM oSd oS kO bO
-  have eA : (lay H.len P s).ARGS = ⟨stackArgAddr s 0, 40⟩ := by simp only [ELay.ARGS, lay_args]
+/-- What the shared contract says of the layout, the regions, `pre_len` and
+the stack. -/
+theorem lay_pre {H G : Spec.Mgf1.Hash} {P : Nat} {s : State} (h : (encSpec H G P).pre s) :
+    (lay H.len P s).Ok ∧
+      s.rd = [(lay H.len P s).N, (lay H.len P s).E, (lay H.len P s).LAB, (lay H.len P s).MSG,
+        (lay H.len P s).SD] ++ preX s ++ [(lay H.len P s).ARGS] ∧
+      s.wr = [(lay H.len P s).OUT, (lay H.len P s).SCR] ∧
+      (stackArg s 6).toNat = Spec.Rsa.precomputedWords (s.gpr .x3).toNat ∧ P + 288 ≤ s.sp.toNat := by
+  sig_pre [Spec.RsaOaep.encryptPrecomputedContract, Spec.RsaOaep.encryptPrecomputedSig, AArch64.abi,
+    AArch64.argRegs, _root_.List.range, _root_.List.range.loop, List.append_eq] at h
+  obtain ⟨hsp, hsp2, hrd, hwr,
+    oN, oE, oL, oM, oSd, oS, oQ, oA,
+    nS, eS, lS, mS, sdS, sQ, sA,
+    kO, kN, kE, kL, kM, kSd, kS, kQ, -,
+    bO, bN, bE, bL, bM, bSd, bS, bQ,
+    kv, hk1, el1, elk, slk, pl⟩ := h
+  simp only [hk1] at oA oN oE oL oM oSd oS oQ kO bO hwr
+  have eA : (lay H.len P s).ARGS = ⟨stackArgAddr s 0, 56⟩ := by simp only [ELay.ARGS, lay_args]; rfl
   have eK : (lay H.len P s).STK = ⟨s.sp - BitVec.ofNat 64 (P + 287 + 1), P + 287 + 1⟩ := by
     show (⟨(lay H.len P s).Q - BitVec.ofNat 64 P, P + 288⟩ : Region) = _
     rw [lay_stk]
   have hQ : (lay H.len P s).Q.toNat = s.sp.toNat - 288 := toNat_sub_k (by omega)
-  refine ⟨oS, forall_ro ⟨oN, oE, oL, oM, oSd⟩, forall_ro ⟨nS.symm, eS.symm, lS.symm, mS.symm, sdS.symm⟩, eA ▸ oA,
-    eA ▸ sA, eK ▸ kO, eK ▸ kS, forall_ro ⟨eK ▸ kN, eK ▸ kE, eK ▸ kL, eK ▸ kM, eK ▸ kSd⟩, bO, bS,
-    forall_ro ⟨bN, bE, bL, bM, bSd⟩, by omega, by simp only [lay] at hQ ⊢; omega, kv, hk1, el1, elk, slk⟩
+  refine ⟨⟨oS, forall_ro ⟨oN, oE, oL, oM, oSd⟩, forall_ro ⟨nS.symm, eS.symm, lS.symm, mS.symm, sdS.symm⟩,
+    eA ▸ oA, eA ▸ sA, eK ▸ kO, eK ▸ kS, forall_ro ⟨eK ▸ kN, eK ▸ kE, eK ▸ kL, eK ▸ kM, eK ▸ kSd⟩, bO, bS,
+    forall_ro ⟨bN, bE, bL, bM, bSd⟩, by omega, by simp only [lay] at hQ ⊢; omega, kv, hk1, el1, elk, slk,
+    by simp [lay], by simp [lay], by simp only [lay] at hQ ⊢; omega, ?_, ?_, ?_, ?_⟩, ?_, ?_, pl, hsp⟩
+  · intro R hR; simp only [lay, preX, List.mem_singleton] at hR; subst hR; exact oQ.symm
+  · intro R hR; simp only [lay, preX, List.mem_singleton] at hR; subst hR; exact sQ.symm
+  · intro R hR; simp only [lay, preX, List.mem_singleton] at hR; subst hR; rw [eK]; exact kQ
+  · intro R hR; simp only [lay, preX, List.mem_singleton] at hR; subst hR; exact bQ
+  · rw [hrd, eA]
+    rfl
+  · rw [hwr]
+    rfl
+
+theorem lay_ok {H G : Spec.Mgf1.Hash} {P : Nat} {s : State} (h : (encSpec H G P).pre s) :
+    (lay H.len P s).Ok :=
+  (lay_pre h).1
 
 /-! ## The prologue -/
 
@@ -117,16 +141,9 @@ theorem argMoves_apart {a : Nat} (ha : a ∈ saveList.map Prod.snd) :
   rcases ha with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
 
 theorem spec_rdwr {H G : Spec.Mgf1.Hash} {P : Nat} {s : State} (h : (encSpec H G P).pre s) :
-    s.rd = [(lay H.len P s).N, (lay H.len P s).E, (lay H.len P s).LAB, (lay H.len P s).MSG, (lay H.len P s).SD,
-      (lay H.len P s).ARGS] ∧ s.wr = [(lay H.len P s).OUT, (lay H.len P s).SCR] := by
-  have hL := lay_ok h
-  sig_pre [Spec.RsaOaep.encryptContract, Spec.RsaOaep.encryptSig, AArch64.abi, AArch64.argRegs,
-    _root_.List.range, _root_.List.range.loop, List.append_eq] at h
-  obtain ⟨-, -, hrd, hwr, -⟩ := h
-  have hk1 : (s.gpr .x1).toNat = (s.gpr .x3).toNat := hL.olk
-  have e40 : (lay H.len P s).ARGS = ⟨stackArgAddr s 0, 40⟩ := by simp only [ELay.ARGS, lay_args]
-  rw [hrd, hwr, hk1, e40]
-  exact ⟨rfl, rfl⟩
+    s.rd = [(lay H.len P s).N, (lay H.len P s).E, (lay H.len P s).LAB, (lay H.len P s).MSG, (lay H.len P s).SD] ++
+      (lay H.len P s).X ++ [(lay H.len P s).ARGS] ∧ s.wr = [(lay H.len P s).OUT, (lay H.len P s).SCR] :=
+  ⟨(lay_pre h).2.1, (lay_pre h).2.2.1⟩
 
 /-- The frame's words as the prologue leaves them. -/
 abbrev Prologued (L : ELay) (W : Nat → BitVec 64) : Prop := Slots L W
@@ -144,7 +161,7 @@ theorem prologue_ok {H G : Spec.Mgf1.Hash} {P : Nat} {s : State} (h : (encSpec H
       Offset.contains_base _ hd (by unfold frameBytes at hd; omega)⟩
   have harg : ∀ (u : State) d, u.rd = s.rd → 288 ≤ d → d + 8 ≤ 328 →
       InRegions (u.rd ++ u.wr) ((lay H.len P s).Q + BitVec.ofNat 64 d) 8 :=
-    fun u d hu h₁ h₂ => ⟨(lay H.len P s).ARGS, by rw [hu, hrd]; simp, Offset.contains _ h₁ (by omega) (by omega)⟩
+    fun u d hu h₁ h₂ => ⟨(lay H.len P s).ARGS, by rw [hu, hrd]; simp, Offset.contains _ h₁ (by have := hL.al40; omega) (by have := hL.al64; omega)⟩
   have eLr : (entered s).mem.readW ((lay H.len P s).Q + BitVec.ofNat 64 272) 64 = s.gpr .x30 := by
     rw [entered_mem H.len P, Mem.readW_writeW_self64]
   have eArg : ∀ j, j < 5 → (entered s).mem.readW ((lay H.len P s).Q + BitVec.ofNat 64 (288 + 8 * j)) 64 =

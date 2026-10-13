@@ -901,3 +901,108 @@ pub(crate) unsafe extern "C" fn vg_rsa_pkcs1_decrypt_sha256_sha2(out: *mut u8, o
         vg_hmac_sha256_finalize_scratch_sha2 = sym super::hmac_sha256::vg_hmac_sha256_finalize_scratch_sha2,
     )
 }
+
+/// RSAES-PKCS1-v1_5 encryption: RSAES-PKCS1-V1_5-ENCRYPT (RFC 8017 §7.2.1), with the padding string given by the caller. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), encrypts the encoded message `0x00 ‖ 0x02 ‖ PS ‖ 0x00 ‖ M`, for the message `M` (`msg_len` bytes) and the padding string `PS` (`ps_len` bytes), with RSAEP, writes the ciphertext (`n_len` bytes, most significant first) to `out` and returns 1; or writes zeros and returns 0 if `n` or `e` is not such a number or `PS` has a zero byte. RFC 8017 requires `PS` to be pseudo-randomly generated nonzero bytes, freshly for every encryption.
+///
+/// Contract: `VG.Spec.RsaPkcs1Enc.encryptContract`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `n` and `e`, not on the message or the padding string.
+///
+/// This entry point also takes `pre`, the `pre_len` words written by `vg_rsa_public_precompute` for `n` (returning 1). With those values, it writes and returns exactly what is specified above. If `pre` does not hold those values, what it writes and returns is unspecified; memory safety and the timing guarantee still apply. Timing may additionally depend on the contents of `pre`.
+///
+/// Contract: `VG.Spec.RsaPkcs1Enc.encryptPrecomputedContract`.
+///
+/// This implementation builds `EM = 0x00 ‖ 0x02 ‖ PS ‖ 0x00 ‖ M` in its frame, finding whether `PS` has a zero byte without a branch, and calls `vg_rsa_public_precomputed_checked` on it with the cached modulus values. It then sets `out` to zeros and the result to 0 under a mask if `PS` had a zero byte, without branching on the public operation's result, and overwrites the frame's `EM` with zeros either way.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of `out_len` bytes.
+/// * `n` must be valid for reads of `n_len` bytes.
+/// * `e` must be valid for reads of `e_len` bytes.
+/// * `msg` must be valid for reads of `msg_len` bytes.
+/// * `ps` must be valid for reads of `ps_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `pre` must be valid for reads of `8 * pre_len` bytes.
+/// * `n_len` must be in 64..=1024.
+/// * `out_len` must be `n_len`.
+/// * `e_len` must be in 1..=`n_len`.
+/// * `msg_len + 11` must be at most `n_len`.
+/// * `ps_len` must be `n_len - msg_len - 3`.
+/// * `scratch_len` must be at least `16 * n_len + 32`.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `pre_len` must be `2 * ⌈n_len / 8⌉`.
+/// * For the result to be encryption's, `pre` must hold what `vg_rsa_public_precompute` wrote for `n` (returning 1).
+/// * `out` and `scratch` must not overlap each other, `n`, `e`, `msg`, `ps`, `pre` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `n`, `e`, `msg`, `ps`, `scratch` and `pre` may overlap the 1104 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_rsa_pkcs1_encrypt_precomputed(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, msg: *const u8, msg_len: usize, ps: *const u8, ps_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
+    core::arch::naked_asm!(
+        "str x30, [sp, #-16]!",
+        "sub sp, sp, #1072",
+        "ldr x10, [sp, #1104]",
+        "ldr x11, [sp, #1112]",
+        "add x9, sp, #0",
+        "str x10, [x9, #0]",
+        "str x11, [x9, #8]",
+        "str x0, [x9, #16]",
+        "str x3, [x9, #24]",
+        "movz x10, #0, lsl #0",
+        "strb w10, [x9, #40]",
+        "movz x10, #2, lsl #0",
+        "strb w10, [x9, #41]",
+        "ldr x11, [sp, #1088]",
+        "ldr x12, [sp, #1096]",
+        "add x13, x9, #42",
+        "movz x14, #0, lsl #0",
+        "movz x15, #1, lsl #0",
+        "20:",
+        "ldrb w10, [x11, #0]",
+        "strb w10, [x13, #0]",
+        "subs x16, x10, x15",
+        "sbc x16, x10, x10",
+        "orr x14, x14, x16",
+        "add x11, x11, #1",
+        "add x13, x13, #1",
+        "sub x12, x12, #1",
+        "cbnz x12, 20b",
+        "movz x10, #0, lsl #0",
+        "strb w10, [x13, #0]",
+        "add x13, x13, #1",
+        "add x9, sp, #0",
+        "str x14, [x9, #32]",
+        "cbnz x7, 21f",
+        "b 22f",
+        "21:",
+        "23:",
+        "ldrb w10, [x6, #0]",
+        "strb w10, [x13, #0]",
+        "add x6, x6, #1",
+        "add x13, x13, #1",
+        "sub x7, x7, #1",
+        "cbnz x7, 23b",
+        "22:",
+        "add x6, sp, #40",
+        "orr x7, x3, x3",
+        "ldr x2, [sp, #1120]",
+        "ldr x3, [sp, #1128]",
+        "bl {vg_rsa_public_precomputed_checked}",
+        "ldr x14, [sp, #32]",
+        "bic x0, x0, x14, ror #0",
+        "ldr x11, [sp, #16]",
+        "ldr x12, [sp, #24]",
+        "add x13, sp, #40",
+        "movz x15, #0, lsl #0",
+        "24:",
+        "ldrb w10, [x11, #0]",
+        "bic x10, x10, x14, ror #0",
+        "strb w10, [x11, #0]",
+        "strb w15, [x13, #0]",
+        "add x11, x11, #1",
+        "add x13, x13, #1",
+        "sub x12, x12, #1",
+        "cbnz x12, 24b",
+        "add sp, sp, #1072",
+        "ldr x30, [sp], #16",
+        "ret",
+        ".p2align 6",
+        vg_rsa_public_precomputed_checked = sym super::rsa::vg_rsa_public_precomputed_checked,
+    )
+}

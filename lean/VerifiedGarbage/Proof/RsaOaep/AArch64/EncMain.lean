@@ -62,7 +62,7 @@ theorem encEm_ok {Hs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hH.SH.H.hash x)
     (hL.sR _ (ro_MSG L)) _ (hL.ours_scr _ (Offset.contains_base L.scr (d := j) (n := 1) (by omega) (by omega)))
       (h' ▸ Offset.contains_base L.msg (d := i) (n := 1) (k := L.ml.toNat) (by omega)
         (by have := hL.bR _ (ro_MSG L); simp only at this; omega))
-  have inRd : ∀ {u : State} {R : Region}, Ctx L g vv m₀ u → R ∈ [L.N, L.E, L.LAB, L.MSG, L.SD, L.ARGS] →
+  have inRd : ∀ {u : State} {R : Region}, Ctx L g vv m₀ u → R ∈ [L.N, L.E, L.LAB, L.MSG, L.SD] ++ L.X ++ [L.ARGS] →
       ∀ {a : Addr} {n : Nat}, R.Contains a n → InRegions (u.rd ++ u.wr) a n := fun hcu hR _ _ h3 =>
     ⟨_, List.mem_append_left _ (by rw [hcu.rd]; exact hR), h3⟩
   unfold encEm seqs seqs seqs seqs

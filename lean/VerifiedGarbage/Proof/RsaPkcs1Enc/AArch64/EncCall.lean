@@ -172,10 +172,14 @@ theorem covers_pub {L : Lay} (hL : L.Ok) {g : Reg → BitVec 64} {vv : VReg → 
     · exact ⟨L.OUT, by simp, 0, z _, by simp [olk]⟩
     · exact ⟨L.SCR, by simp, 0, z _, by simp⟩
 
-/-- After the call. -/
-structure Called (L : Lay) (g : Reg → BitVec 64) (vv : VReg → BitVec 128) (m₀ : Mem) (t' : State) : Prop where
+/-- After the call, whatever it wrote to `out`. -/
+structure CalledF (L : Lay) (g : Reg → BitVec 64) (vv : VReg → BitVec 128) (m₀ : Mem) (t' : State) : Prop where
   ctx : Ctx L g vv m₀ t'
   z : t'.mem.readW (L.Q + BitVec.ofNat 64 oZ) 64 = zmask (Spec.Rsa.bytesAt m₀ L.ps L.pl.toNat)
+
+/-- After the call. -/
+structure Called (L : Lay) (g : Reg → BitVec 64) (vv : VReg → BitVec 128) (m₀ : Mem) (t' : State) : Prop
+    extends CalledF L g vv m₀ t' where
   out : Spec.Rsa.written t'.mem L.out L.k.toNat ((t'.gpr .x0).setWidth 32)
     (Spec.Rsa.publicOpChecked (Spec.Rsa.bytesAt m₀ L.n L.k.toNat) (Spec.Rsa.bytesAt m₀ L.e L.el.toNat)
       (Spec.RsaPkcs1Enc.encode (Spec.Rsa.bytesAt m₀ L.msg L.ml.toNat) (Spec.Rsa.bytesAt m₀ L.ps L.pl.toNat)))
@@ -216,9 +220,9 @@ theorem pub_call (v : PubImpl) {L : Lay} (hL : L.Ok) (hP : L.P = v.S + 1) {g : R
       · exact (hL.stk_buf (by decide) (.inl rfl)).sub_right hs
       · exact (hL.stk_buf (by decide) (.inr (.inr (.inr (.inr (.inr rfl)))))).sub_right hs
     · exact (hL.fr_low (by decide)).sub_right hs
-  refine ⟨⟨hrd.trans hc.rd, hwr.trans hc.wr, hsp.trans hc.sp, fun r hr h30 => (hcs r hr h30).trans (hc.cs r hr h30),
+  refine ⟨⟨⟨hrd.trans hc.rd, hwr.trans hc.wr, hsp.trans hc.sp, fun r hr h30 => (hcs r hr h30).trans (hc.cs r hr h30),
     fun r hr => (hvs r hr).trans (hc.vs r hr), hc.kept.frame hf hkept, hc.frame.trans (hf.sub fun r hr => ?_)⟩,
-    ?_, ?_⟩
+    ?_⟩, ?_⟩
   · rcases hws r hr with (hs | hs) | hs
     · exact ⟨L.OUT, by simp, hs⟩
     · exact ⟨L.SCR, by simp, hs⟩
