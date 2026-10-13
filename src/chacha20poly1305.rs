@@ -39,7 +39,11 @@
 //! `vg_chacha20_poly1305_seal_gather`
 //! (`VG.Spec.ChaCha20Poly1305.sealGatherContract`), which copies the pieces
 //! to the output and encrypts them there with the same implementation's
-//! `vg_chacha20_poly1305_seal`.
+//! `vg_chacha20_poly1305_seal`; on x86-64 it copies the pieces but the first,
+//! after the first's length, and encrypts with
+//! `vg_chacha20_poly1305_seal_split`, which reads the first piece from where
+//! it is (the AVX-512 instances copy only the bytes of it their first
+//! keystream covers).
 
 #![cfg(any(
     target_arch = "x86_64",

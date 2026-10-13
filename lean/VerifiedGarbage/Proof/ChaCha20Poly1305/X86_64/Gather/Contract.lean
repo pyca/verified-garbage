@@ -14,7 +14,7 @@ import all Init.Data.Vector.Basic
 
 Untrusted: everything here is checked by Lean. The contract the proof of
 `vg_chacha20_poly1305_seal_gather` is written against, which the shared one
-(`Spec.ChaCha20Poly1305.sealGatherContract`, with the 1808 bytes of stack
+(`Spec.ChaCha20Poly1305.sealGatherContract`, with the 1880 bytes of stack
 below the stack pointer that its frames and its call use) implies
 (`Gather/Verified.lean`): `(key = rdi, nonce = rsi, aad = rdx,
 aad_len = rcx, src = r8, src_count = r9, dst = [rsp + 8], len = [rsp + 16],
@@ -56,7 +56,7 @@ abbrev dR : Region := ⟨Dst s, L s⟩
 abbrev tgR : Region := ⟨Tg s, 16⟩
 abbrev argR : Region := ⟨stackArgAddr s 0, 24⟩
 abbrev retR : Region := ⟨SP s, 8⟩
-abbrev stkR : Region := below (SP s) 1808
+abbrev stkR : Region := below (SP s) 1880
 
 /-- The total length of the first `i` slices, and their bytes. -/
 abbrev gl (i : Nat) : Nat := gatheredLen 64 s.mem (Src s) i
@@ -77,7 +77,8 @@ def gatherPre (s : State) : Prop :=
     (K s).toNat + 32 ≤ 2 ^ 64 ∧ (Nn s).toNat + 12 ≤ 2 ^ 64 ∧ (Ad s).toNat + AL s ≤ 2 ^ 64 ∧
     (Dst s).toNat + L s ≤ 2 ^ 64 ∧ (Tg s).toNat + 16 ≤ 2 ^ 64 ∧
     (Src s).toNat + Cnt s * 16 ≤ 2 ^ 64 ∧ (∀ r ∈ lsR s, r.base.toNat + r.len ≤ 2 ^ 64) ∧
-    1808 ≤ (SP s).toNat ∧ (SP s).toNat + 32 ≤ 2 ^ 64 ∧ gl s (Cnt s) = L s ∧ L s ≤ pMax
+    1880 ≤ (SP s).toNat ∧ (SP s).toNat + 32 ≤ 2 ^ 64 ∧ gl s (Cnt s) = L s ∧ L s ≤ pMax ∧
+    (tgR s).Disjoint (dsR s) ∧ (∀ r ∈ lsR s, (tgR s).Disjoint r)
 
 /-- What two runs agree on: the arguments and the descriptors. -/
 def gatherPub (s₁ s₂ : State) : Prop :=

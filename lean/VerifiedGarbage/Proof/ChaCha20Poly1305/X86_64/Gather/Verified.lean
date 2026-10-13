@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.CT
-public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Verified
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -11,13 +10,14 @@ import all Init.Data.Vector.Basic
 # ChaCha20-Poly1305 encryption out of place, from a list of slices, x86-64: `Verified`
 
 Untrusted: everything here is checked by Lean. The shared contract of
-`vg_chacha20_poly1305_seal_gather`, with the 1808 bytes of stack below the
-stack pointer that its frames and its call use (48 for our frame, 8 for
-`tag` pushed for the call, 8 for its return address and 1744 for the
-callee's contract) (`Spec.ChaCha20Poly1305.sealGatherContract`), implies
-the one the proof is written against (`gatherX86_64`, `gather_implies`), and
-so the code, calling an instance of `vg_chacha20_poly1305_seal` by its shared
-contract (`sealFn`), is `Verified` against it (`sealGather_verified`).
+`vg_chacha20_poly1305_seal_gather`, with the 1880 bytes of stack below the
+stack pointer that its frames and its call use (48 for our frame, 24 for
+`dst`, `len` and `tag` pushed for the call, 8 for its return address and
+1800 for the callee's contract) (`Spec.ChaCha20Poly1305.sealGatherContract`),
+implies the one the proof is written against (`gatherX86_64`,
+`gather_implies`), and so the code, calling an instance of
+`vg_chacha20_poly1305_seal_split` by its shared contract (`SealSplitFn`), is
+`Verified` against it (`sealGather_verified`).
 -/
 
 @[expose] public section
@@ -28,7 +28,7 @@ namespace VG.Proof.ChaCha20Poly1305.X86_64.Gather
 
 open VG VG.X86_64 VG.Impl.ChaCha20Poly1305.X86_64.SealGather
 
-theorem sealGather_correct (w : Width) (F : SealFn) (s : State) (hs : gatherX86_64.pre s) :
+theorem sealGather_correct (w : Width) (F : SealSplitFn) (s : State) (hs : gatherX86_64.pre s) :
     ∃ t s', Exec isa (sealGather w F.name F.code) s t s' ∧ abiPreserved s s' ∧ gatherX86_64.post s s' := by
   obtain ⟨t, s', he, ha, hp⟩ := sealGather_wp w F hs
   exact ⟨t, s', he, ha, hp⟩
@@ -61,7 +61,7 @@ theorem pairFacts_ro (l : List (Region × Bool)) (h : ∀ a ∈ l, a.2 = false) 
 theorem stackArgs_three (s : State) : List.map (stackArg s) (List.range 3) =
     [stackArg s 0, stackArg s 1, stackArg s 2] := rfl
 
-theorem gatherPre_of_spec {s : State} (h : (Spec.ChaCha20Poly1305.sealGatherContract X86_64.abi 1808).pre s) :
+theorem gatherPre_of_spec {s : State} (h : (Spec.ChaCha20Poly1305.sealGatherContract X86_64.abi 1880).pre s) :
     gatherPre s := by
   sig_pre [Spec.ChaCha20Poly1305.sealGatherContract, Spec.ChaCha20Poly1305.sealGatherSig,
     Spec.ChaCha20Poly1305.sealGatherPre, X86_64.abi, X86_64.argRegs, stackArgs_three, List.append_eq] at h
@@ -72,19 +72,19 @@ theorem gatherPre_of_spec {s : State} (h : (Spec.ChaCha20Poly1305.sealGatherCont
     filterMap_none', List.map_id', Sig.conj_cons, Sig.conj_append, Sig.conj_map, Bool.cond_false, Bool.cond_true,
     List.filterMap_cons, List.filterMap_nil, List.append_nil, List.nil_append, Sig.conj, Bool.true_or, Bool.or_true,
     Bool.false_or, Bool.or_false, List.cons_append, List.singleton_append, Sig.descRegion] at h
-  obtain ⟨w₁, w₂, rd, wr, ⟨kd, kt, nd, nt, ad, at_, dt, dds, ⟨dls, darg⟩, -, -, -⟩, -, -, -, rdd, rt,
+  obtain ⟨w₁, w₂, rd, wr, ⟨kd, kt, nd, nt, ad, at_, dt, dds, ⟨dls, darg⟩, tds, tls, -⟩, -, -, -, rdd, rt,
     ⟨-, -, bk, bn, ba, bd, bt, bds, bls, -⟩, ok, on, oa, od, ot, ⟨ods, ol⟩, hgl, hpm⟩ := h
   exact ⟨rd, wr, kd, kt, nd, nt, ad, at_, dt, dds, dls, darg, rdd, rt, bk, bn, ba, bd, bt, bds, bls, ok, on, oa,
-    od, ot, ods, ol, w₁, w₂, hgl, hpm⟩
+    od, ot, ods, ol, w₁, w₂, hgl, hpm, tds, tls⟩
 
 theorem gatherPost_of {s s' : State} (h : gatherPost s s') :
-    (Spec.ChaCha20Poly1305.sealGatherContract X86_64.abi 1808).post s s' := by
+    (Spec.ChaCha20Poly1305.sealGatherContract X86_64.abi 1880).post s s' := by
   sig_post [Spec.ChaCha20Poly1305.sealGatherContract, Spec.ChaCha20Poly1305.sealGatherSig,
     Spec.ChaCha20Poly1305.sealGatherPost, X86_64.abi, X86_64.argRegs, stackArgs_three, List.append_eq]
   exact fun _ _ => h
 
 theorem gatherPub_of {s₁ s₂ : State}
-    (hp : (Spec.ChaCha20Poly1305.sealGatherContract X86_64.abi 1808).pub s₁ s₂) : gatherPub s₁ s₂ := by
+    (hp : (Spec.ChaCha20Poly1305.sealGatherContract X86_64.abi 1880).pub s₁ s₂) : gatherPub s₁ s₂ := by
   sig_pub [Spec.ChaCha20Poly1305.sealGatherContract, Spec.ChaCha20Poly1305.sealGatherSig,
     Spec.ChaCha20Poly1305.sealGatherPre, X86_64.abi, X86_64.argRegs, stackArgs_three, List.append_eq] at hp
   simp only [List.getD_cons_succ, List.getD_cons_zero, Sig.descRegion] at hp
@@ -105,48 +105,17 @@ def gatherSat : State where
   rd := [⟨0x1000, 32⟩, ⟨0x2000, 12⟩, ⟨0x3000, 0⟩, ⟨0x3100, 0⟩, ⟨0x9008, 24⟩]
   wr := [⟨0x4000, 0⟩, ⟨0x5000, 16⟩]
 
-theorem gatherSat_pre : ∃ s, (Spec.ChaCha20Poly1305.sealGatherContract X86_64.abi 1808).pre s := by
+theorem gatherSat_pre : ∃ s, (Spec.ChaCha20Poly1305.sealGatherContract X86_64.abi 1880).pre s := by
   sig_implies_sat [Spec.ChaCha20Poly1305.sealGatherContract, Spec.ChaCha20Poly1305.sealGatherSig,
     Spec.ChaCha20Poly1305.sealGatherPre, X86_64.abi, X86_64.argRegs, stackArgs_three, List.append_eq]
     [gatherSat, stackArg, stackArgAddr, Mem.readW, Mem.read, Spec.ChaCha20Poly1305.pMax] using gatherSat
 
-theorem gather_implies : gatherX86_64.Implies (Spec.ChaCha20Poly1305.sealGatherContract X86_64.abi 1808) :=
+theorem gather_implies : gatherX86_64.Implies (Spec.ChaCha20Poly1305.sealGatherContract X86_64.abi 1880) :=
   ⟨fun _ h => gatherPre_of_spec h, fun _ _ _ h => gatherPost_of h, fun _ _ _ _ h => gatherPub_of h, gatherSat_pre⟩
 
-theorem sealGather_verified (w : Width) (F : SealFn) :
+theorem sealGather_verified (w : Width) (F : SealSplitFn) :
     Verified X86_64.target (sealGather w F.name F.code)
-      (Spec.ChaCha20Poly1305.sealGatherContract X86_64.abi 1808) :=
+      (Spec.ChaCha20Poly1305.sealGatherContract X86_64.abi 1880) :=
   Verified.of_correct (k := gatherX86_64) (sealGather_correct w F) (sealGather_ct w F) gather_implies
-
-open VG.Proof.ChaCha20.X86_64 VG.Impl.StackScratch.X86_64 in
-/-- The instance of `vg_chacha20_poly1305_seal` calling the implementation
-`v` of `vg_chacha20_xor`, with its working space in a frame of its own. -/
-def sealFn (v : XorImpl) : SealFn where
-  name := Spec.ChaCha20Poly1305.sealApi.name ++ v.suffix
-  code := withStackArgScratchWipedX 1720 1 42
-    (Impl.ChaCha20Poly1305.X86_64.Stitch.sealFor v.callee v.poly)
-  verified := Proof.ChaCha20Poly1305.X86_64.Stitch.sealFor_framed v
-  sp := SpSafe.of_all
-    (X86_64.withStackArgScratchWipedX_spSafe (Proof.ChaCha20Poly1305.X86_64.Stitch.sealFor_spSafe v))
-  depth := by
-    have := Proof.ChaCha20Poly1305.X86_64.Stitch.sealFor_xdepth v
-    simp only [withStackArgScratchWipedX, withStackArgScratch, Code.x86_64Depth, X86_64.Instr.frameBytes,
-      Nat.zero_max, Nat.max_zero, Nat.max_le]
-    omega
-
-open VG.Proof.ChaCha20.X86_64 in
-/-- How many bytes at a time the instance for `v` copies: as many as the
-CPUs of the instance of `vg_chacha20_poly1305_seal` it calls can. -/
-def width (v : XorImpl) : Width := .ofBlocks v.poly
-
-open VG.Proof.ChaCha20.X86_64 in
-/-- No instruction of the code, or of the instance it calls, writes `rsp`
-but its frames' pushes and pops. -/
-theorem sealGather_spSafe (v : XorImpl) :
-    (sealGather (width v) (sealFn v).name (sealFn v).code).all (fun i => !X86_64.isa.writesSp i) = true := by
-  have hc : (sealFn v).code.all (fun i => !X86_64.isa.writesSp i) = true :=
-    X86_64.withStackArgScratchWipedX_spSafe (Proof.ChaCha20Poly1305.X86_64.Stitch.sealFor_spSafe v)
-  simp only [sealGather, Code.all, hc, Bool.and_true, Bool.true_and]
-  cases width v <;> decide +kernel
 
 end VG.Proof.ChaCha20Poly1305.X86_64.Gather
