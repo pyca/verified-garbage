@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.TripleDes.AArch64.ModeCore
-meta import VerifiedGarbage.Proof.TripleDes.AArch64.ModeCore
+public import VerifiedGarbage.Proof.TripleDes.AArch64.Link
+meta import VerifiedGarbage.Proof.TripleDes.AArch64.Link
 public import VerifiedGarbage.Proof.Modes.AArch64.Fb
 meta import VerifiedGarbage.Proof.Modes.AArch64.Fb
 public import VerifiedGarbage.Proof.Modes.AArch64.Cfb8
@@ -112,7 +112,7 @@ def cfb8DecAArch64 : Contract isa where
 /-- The core keeps `x25`, where the modes keep the IV's address. -/
 theorem keeps_x25 :
     Modes.AArch64.KeepsReg .x25 (dirCore .encrypt).prepare ∧ Modes.AArch64.KeepsReg .x25 (dirCore .encrypt).crypt :=
-  ⟨Modes.AArch64.keepsReg_of_regSafe (by decide +kernel), Modes.AArch64.keepsReg_of_regSafe (by decide +kernel)⟩
+  ⟨Modes.AArch64.keepsReg_of_regSafe (by decide +kernel), crypt_keeps_x25 .encrypt⟩
 
 /-- What the modes' OFB and CFB give, for a mode `mo`: the data and the
 IV as `fbOut` and `fbIn`, keeping the callee-saved registers. -/
@@ -248,7 +248,7 @@ def cfb8FrameSat : State := { fbFrameSat with wr := [⟨0x2000, 8⟩, ⟨0x3000,
 theorem ofb_verified :
     Verified AArch64.target ofb (Proof.TripleDes.fbScratchContract AArch64.abi 125 Proof.TripleDes.ofbPost) :=
   Verified.of_correct (fun s hs => by
-      obtain ⟨t, s', he, ⟨h₁, h₂⟩, h₃⟩ := WP.gprs (rs := [.x30]) (ofb_wp hs) (by lit_decide) (by lit_decide)
+      obtain ⟨t, s', he, ⟨h₁, h₂⟩, h₃⟩ := WP.gprs' ofb_keeps_x30 (ofb_wp hs)
       exact ⟨t, s', he, abi_of he h₁ h₃ (by lit_decide), h₂⟩)
     (VG.Taint.constantTime (A := VectorTaint.taint) (VectorTaint.ofRegs [.x0, .x1, .x2, .x3, .x4])
       (fun s₁ s₂ h₁ h₂ hp => ⟨fbTaint_agree s₁ s₂ h₁ h₂ hp, fun v hv => by
@@ -259,8 +259,7 @@ theorem ofb_verified :
 theorem cfbEncrypt_verified :
     Verified AArch64.target cfbEncrypt (Proof.TripleDes.fbScratchContract AArch64.abi 125 Proof.TripleDes.cfbEncPost) :=
   Verified.of_correct (fun s hs => by
-      obtain ⟨t, s', he, ⟨h₁, h₂⟩, h₃⟩ := WP.gprs (rs := [.x30]) (cfbEncrypt_wp hs) (by lit_decide)
-        (by lit_decide)
+      obtain ⟨t, s', he, ⟨h₁, h₂⟩, h₃⟩ := WP.gprs' cfbEncrypt_keeps_x30 (cfbEncrypt_wp hs)
       exact ⟨t, s', he, abi_of he h₁ h₃ (by lit_decide), h₂⟩)
     (VG.Taint.constantTime (A := VectorTaint.taint) (VectorTaint.ofRegs [.x0, .x1, .x2, .x3, .x4])
       (fun s₁ s₂ h₁ h₂ hp => ⟨fbTaint_agree s₁ s₂ h₁ h₂ hp, fun v hv => by
@@ -271,8 +270,7 @@ theorem cfbEncrypt_verified :
 theorem cfbDecrypt_verified :
     Verified AArch64.target cfbDecrypt (Proof.TripleDes.fbScratchContract AArch64.abi 125 Proof.TripleDes.cfbDecPost) :=
   Verified.of_correct (fun s hs => by
-      obtain ⟨t, s', he, ⟨h₁, h₂⟩, h₃⟩ := WP.gprs (rs := [.x30]) (cfbDecrypt_wp hs) (by lit_decide)
-        (by lit_decide)
+      obtain ⟨t, s', he, ⟨h₁, h₂⟩, h₃⟩ := WP.gprs' cfbDecrypt_keeps_x30 (cfbDecrypt_wp hs)
       exact ⟨t, s', he, abi_of he h₁ h₃ (by lit_decide), h₂⟩)
     (VG.Taint.constantTime (A := VectorTaint.taint) (VectorTaint.ofRegs [.x0, .x1, .x2, .x3, .x4])
       (fun s₁ s₂ h₁ h₂ hp => ⟨fbTaint_agree s₁ s₂ h₁ h₂ hp, fun v hv => by
@@ -284,8 +282,7 @@ theorem cfb8Encrypt_verified :
     Verified AArch64.target cfb8Encrypt
       (Proof.TripleDes.cfb8ScratchContract AArch64.abi 125 Proof.TripleDes.cfb8EncPost) :=
   Verified.of_correct (fun s hs => by
-      obtain ⟨t, s', he, ⟨h₁, h₂⟩, h₃⟩ := WP.gprs (rs := [.x30]) (cfb8Encrypt_wp hs) (by lit_decide)
-        (by lit_decide)
+      obtain ⟨t, s', he, ⟨h₁, h₂⟩, h₃⟩ := WP.gprs' cfb8Encrypt_keeps_x30 (cfb8Encrypt_wp hs)
       exact ⟨t, s', he, abi_of he h₁ h₃ (by lit_decide), h₂⟩)
     (VG.Taint.constantTime (A := VectorTaint.taint) (VectorTaint.ofRegs [.x0, .x1, .x2, .x3, .x4])
       (fun s₁ s₂ h₁ h₂ hp => ⟨fbTaint_agree s₁ s₂ h₁ h₂ hp, fun v hv => by
@@ -298,8 +295,7 @@ theorem cfb8Decrypt_verified :
     Verified AArch64.target cfb8Decrypt
       (Proof.TripleDes.cfb8ScratchContract AArch64.abi 125 Proof.TripleDes.cfb8DecPost) :=
   Verified.of_correct (fun s hs => by
-      obtain ⟨t, s', he, ⟨h₁, h₂⟩, h₃⟩ := WP.gprs (rs := [.x30]) (cfb8Decrypt_wp hs) (by lit_decide)
-        (by lit_decide)
+      obtain ⟨t, s', he, ⟨h₁, h₂⟩, h₃⟩ := WP.gprs' cfb8Decrypt_keeps_x30 (cfb8Decrypt_wp hs)
       exact ⟨t, s', he, abi_of he h₁ h₃ (by lit_decide), h₂⟩)
     (VG.Taint.constantTime (A := VectorTaint.taint) (VectorTaint.ofRegs [.x0, .x1, .x2, .x3, .x4])
       (fun s₁ s₂ h₁ h₂ hp => ⟨fbTaint_agree s₁ s₂ h₁ h₂ hp, fun v hv => by

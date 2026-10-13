@@ -63,6 +63,27 @@ theorem keepsReg_of_regSafe {r : Reg} {c : Prog isa} (hc : regSafe r c = true) :
   | call => intro hc; simp only [regSafe, Bool.false_eq_true] at hc
   | frame => intro hc; simp only [regSafe, Bool.false_eq_true] at hc
 
+theorem KeepsReg.seq {r : Reg} {a b : Prog isa} (ha : KeepsReg r a) (hb : KeepsReg r b) :
+    KeepsReg r (.seq a b) := by
+  intro s t s' h
+  cases h with
+  | seq h₁ h₂ => exact (hb _ _ _ h₂).trans (ha _ _ _ h₁)
+
+theorem KeepsReg.ite {r : Reg} {c : isa.Cond} {a b : Prog isa} (ha : KeepsReg r a) (hb : KeepsReg r b) :
+    KeepsReg r (.ite c a b) := by
+  intro s t s' h
+  cases h with
+  | iteT _ h => exact ha _ _ _ h
+  | iteF _ h => exact hb _ _ _ h
+
+theorem KeepsReg.loop {r : Reg} {b : Prog isa} {c : isa.Cond} (hb : KeepsReg r b) : KeepsReg r (.loop b c) := by
+  intro s t s' h
+  generalize hc : (Code.loop b c : Prog isa) = p at h
+  induction h with
+  | loopExit h₁ _ => cases hc; exact hb _ _ _ h₁
+  | loopNext h₁ _ _ _ ih => cases hc; exact (ih rfl).trans (hb _ _ _ h₁)
+  | _ => cases hc
+
 theorem WP.keepReg {r : Reg} {p : Prog isa} (h : KeepsReg r p) {s : State} {Q : State → Prop} (w : WP isa p s Q) :
     WP isa p s fun t => Q t ∧ t.gpr r = s.gpr r :=
   let ⟨t, s', e, q⟩ := w
