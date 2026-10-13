@@ -6,6 +6,8 @@ import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Ed25519.X86_64.PointAccumulateLoop
+import VerifiedGarbage.Proof.Framework.X86_64.Spill
 
 /-! Checkpoint generation and batch descent implement pointMul. -/
 

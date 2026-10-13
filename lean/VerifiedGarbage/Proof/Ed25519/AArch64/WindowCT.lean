@@ -16,6 +16,8 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Nibbles
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.Nibbles
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 
 /-! Merged from `Proof.Ed25519.AArch64.PointEqualCT`. -/
 

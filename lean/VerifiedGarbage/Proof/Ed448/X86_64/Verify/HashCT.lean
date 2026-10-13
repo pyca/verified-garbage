@@ -16,6 +16,12 @@ meta import VerifiedGarbage.Proof.MlKem.X86_64.KCall
 meta import Mathlib.Tactic.Conv
 meta import Mathlib.Tactic.SplitIfs
 meta import VerifiedGarbage.Proof.Ed448.X86_64.PublicKey.Layout
+import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Absorb
+import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Squeeze
+import VerifiedGarbage.Spec.X25519
+meta import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Absorb
+meta import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Squeeze
+meta import VerifiedGarbage.Spec.X25519
 
 /-!
 # Ed448 verification on x86-64: the hash leaks only the layout

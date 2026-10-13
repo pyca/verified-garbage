@@ -18,6 +18,12 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.MdStream.Spec
+import VerifiedGarbage.Proof.Sha3.X86.Stream.Pad
+import VerifiedGarbage.Proof.Sha3.X86.Stream.Squeeze
+meta import VerifiedGarbage.Proof.MdStream.Spec
+meta import VerifiedGarbage.Proof.Sha3.X86.Stream.Pad
+meta import VerifiedGarbage.Proof.Sha3.X86.Stream.Squeeze
 
 /-!
 # Ed448 on x86 (32-bit): the calls of the sponge functions in constant time

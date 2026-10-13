@@ -10,6 +10,8 @@ import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.KernelRfl
+public import VerifiedGarbage.Proof.X448.AArch64.BitBody
+public import VerifiedGarbage.Proof.X448.AArch64.Counters
 
 /-!
 # Ed448 verification on AArch64: one window of the challenge

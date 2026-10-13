@@ -14,6 +14,8 @@ import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 meta import Mathlib.Data.Finset.Card
 meta import Mathlib.Data.Nat.Find
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.P224.Lit
+meta import VerifiedGarbage.Proof.Ecdsa.AArch64.P224.Lit
 
 /-!
 # Deterministic ECDSA on AArch64: P-224

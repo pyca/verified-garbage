@@ -22,6 +22,12 @@ import VerifiedGarbage.Proof.Framework.X86.CallWith
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.TaintSum
 meta import VerifiedGarbage.Proof.Framework.X86.CallWith
+import VerifiedGarbage.Impl.Mont.Mod
+import VerifiedGarbage.Proof.Framework.X86.TaintMono
+import VerifiedGarbage.Spec.Rc2
+meta import VerifiedGarbage.Impl.Mont.Mod
+meta import VerifiedGarbage.Proof.Framework.X86.TaintMono
+meta import VerifiedGarbage.Spec.Rc2
 
 /-!
 # Verification's equation: what its traces depend on

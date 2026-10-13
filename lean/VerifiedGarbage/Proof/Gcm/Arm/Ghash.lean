@@ -26,6 +26,8 @@ public import VerifiedGarbage.Proof.Framework.Arm.Straight
 import Mathlib.Tactic.SplitIfs
 meta import VerifiedGarbage.Proof.Framework.Arm.Straight
 meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Range
+meta import VerifiedGarbage.Proof.Framework.Range
 
 /-!
 # GHASH on ARMv7: the whole function

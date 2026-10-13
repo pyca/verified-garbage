@@ -13,6 +13,10 @@ import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.X86.CallWith
+import VerifiedGarbage.Impl.Mont.Mod
+import VerifiedGarbage.Proof.Ed25519.X86.ScalarBody
+import VerifiedGarbage.Proof.Framework.X86.Lit
+import VerifiedGarbage.Spec.Rc2
 
 /-! Merged from `Proof.Ed25519.X86.DecodeY`. -/
 

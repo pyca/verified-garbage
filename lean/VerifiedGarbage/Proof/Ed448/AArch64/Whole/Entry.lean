@@ -9,6 +9,7 @@ import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 
 /-!
 # Ed448's complete operations on AArch64: words kept in the locals

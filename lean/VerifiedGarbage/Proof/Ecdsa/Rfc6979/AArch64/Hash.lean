@@ -9,6 +9,11 @@ import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+public import VerifiedGarbage.Proof.MdStream.AArch64.Words
+public import VerifiedGarbage.Proof.Pbkdf2.AArch64.Copy
+public import VerifiedGarbage.Proof.Pbkdf2.Memory
+public import VerifiedGarbage.Proof.Sha256.AArch64.Lit
 
 /-!
 # Deterministic ECDSA on AArch64: the hash function

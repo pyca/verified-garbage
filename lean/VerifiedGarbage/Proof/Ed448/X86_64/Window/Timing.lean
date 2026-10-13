@@ -16,6 +16,10 @@ meta import VerifiedGarbage.Proof.Ed448.X86_64.Window.SelectBase
 meta import VerifiedGarbage.Proof.Ed448.X86_64.Window.SelectKey
 import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 meta import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+import VerifiedGarbage.Proof.Ed448.X86_64.Window.Sign
+import VerifiedGarbage.Proof.Ed448.X86_64.Window.SignedSelect
+meta import VerifiedGarbage.Proof.Ed448.X86_64.Window.Sign
+meta import VerifiedGarbage.Proof.Ed448.X86_64.Window.SignedSelect
 
 /-! Verification lookups reveal only public scalar digits. -/
 

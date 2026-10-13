@@ -7,6 +7,7 @@ import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Mont.X86_64.Row
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Copy
 
 /-!
 # Deterministic ECDSA on x86-64: the messages of steps d, f and h.3

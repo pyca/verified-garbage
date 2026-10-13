@@ -10,6 +10,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Impl.Mont.Mod
+meta import VerifiedGarbage.Impl.Mont.Mod
 
 /-! Fixed-trace arithmetic blocks used in point recovery. -/
 

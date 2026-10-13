@@ -5,6 +5,7 @@ public meta import VerifiedGarbage.Proof.Framework.X86.Taint
 public import VerifiedGarbage.Proof.Framework.X86.NativeHintData
 public meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
 import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Bswap
 
 /-! Optional native hint search. The original taint domain and checker stay
 unchanged: generated expressions must pass the same kernel check. -/

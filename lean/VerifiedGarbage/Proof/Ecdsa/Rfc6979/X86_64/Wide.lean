@@ -6,6 +6,9 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Bytes
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Copy
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Reduce
 
 /-!
 # Deterministic ECDSA on x86-64: scalars longer than the hash

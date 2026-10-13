@@ -16,6 +16,8 @@ meta import VerifiedGarbage.Proof.Framework.X86.TaintMono
 meta import Mathlib.Tactic.SplitIfs
 meta import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P521
 meta import VerifiedGarbage.Spec.Weierstrass.Point
+import VerifiedGarbage.Impl.Ecdsa.X86
+meta import VerifiedGarbage.Impl.Ecdsa.X86
 
 /-!
 # ECDSA over P-521 on x86 (32-bit): the summary of the multiplication modulo `n`

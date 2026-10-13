@@ -13,6 +13,9 @@ import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarVerified
 import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Keep
 import VerifiedGarbage.Proof.Framework.TaintSum
 import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Sym
+import VerifiedGarbage.Proof.Ed25519.X86_64.BaseCallee
+import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Half
+import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Block
 
 /-! The complete verifier satisfies the reviewed message-level contract. -/
 

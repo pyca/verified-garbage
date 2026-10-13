@@ -9,6 +9,7 @@ import all Init.Data.Vector.Basic
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.P521.Lit
 
 /-!
 # Deterministic ECDSA on AArch64: P-521

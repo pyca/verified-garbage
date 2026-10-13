@@ -22,6 +22,14 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Spec.Ed25519.CachedSign
+import VerifiedGarbage.Impl.Mont.Mod
+import VerifiedGarbage.Proof.MdStream.Spec
+import VerifiedGarbage.Spec.Rc2
+meta import VerifiedGarbage.Spec.Ed25519.CachedSign
+meta import VerifiedGarbage.Impl.Mont.Mod
+meta import VerifiedGarbage.Proof.MdStream.Spec
+meta import VerifiedGarbage.Spec.Rc2
 
 /-! Merged from `Proof.Ed25519.X86.SignCached.Contract`. -/
 

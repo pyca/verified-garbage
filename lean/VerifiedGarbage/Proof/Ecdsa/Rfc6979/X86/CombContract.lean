@@ -14,6 +14,7 @@ import VerifiedGarbage.Proof.Framework.X86.Sse
 import VerifiedGarbage.Proof.Sha256.X86.Shared
 import VerifiedGarbage.Proof.Sha512.Word64
 import VerifiedGarbage.Proof.X25519.X86.Column
+import VerifiedGarbage.Proof.Sha256.X86.Variants.Interface
 
 /-! # The shared RFC 6979 contract with the x86 P-256 comb table -/
 

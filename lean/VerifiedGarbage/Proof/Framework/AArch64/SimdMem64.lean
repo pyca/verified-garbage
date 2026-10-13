@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
 import Mathlib.Tactic.SplitIfs
 import Mathlib.Util.CompileInductive
 import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.TCB.Artifact
 
 /-! Loads, stores and byte reversal for pairs of 64-bit lanes. -/
 

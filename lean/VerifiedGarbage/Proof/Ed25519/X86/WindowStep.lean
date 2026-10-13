@@ -10,6 +10,8 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.X86.CallWith
+import VerifiedGarbage.Proof.Ed25519.X86.Point32.Call
+import VerifiedGarbage.Spec.Rc2
 
 /-!
 # Verification's windows

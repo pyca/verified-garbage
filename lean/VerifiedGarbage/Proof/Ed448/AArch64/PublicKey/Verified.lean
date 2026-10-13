@@ -16,6 +16,12 @@ import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.Conv
 meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Absorb
+import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Squeeze
+import VerifiedGarbage.Spec.X25519
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Absorb
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Squeeze
+meta import VerifiedGarbage.Spec.X25519
 
 /-!
 # Ed448 public-key derivation on AArch64: `Verified`

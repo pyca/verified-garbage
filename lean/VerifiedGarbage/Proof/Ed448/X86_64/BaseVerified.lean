@@ -22,6 +22,10 @@ import VerifiedGarbage.Proof.Edwards.Group
 meta import Mathlib.FieldTheory.Finite.Basic
 meta import Mathlib.Tactic.NormNum.Prime
 meta import VerifiedGarbage.Proof.Edwards.Group
+import VerifiedGarbage.Impl.Mont.Mod
+import VerifiedGarbage.Proof.Ed448.Group.Projective
+meta import VerifiedGarbage.Impl.Mont.Mod
+meta import VerifiedGarbage.Proof.Ed448.Group.Projective
 
 /-!
 # Ed448 base-point multiplication on x86-64: `Verified`

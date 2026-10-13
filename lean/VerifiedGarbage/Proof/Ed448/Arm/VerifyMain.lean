@@ -10,6 +10,7 @@ import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Arm.Call
+import VerifiedGarbage.Proof.Ed448.Arm.BaseInit
 
 /-!
 # Ed448 verification's equation on ARMv7: the whole function

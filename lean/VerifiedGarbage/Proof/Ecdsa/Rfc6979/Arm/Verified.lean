@@ -6,6 +6,7 @@ import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Weierstrass.Layout
+import VerifiedGarbage.Spec.Rc2
 
 /-!
 # Deterministic ECDSA on 32-bit ARM: `Verified`

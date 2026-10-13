@@ -8,6 +8,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Recode
+meta import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Recode
 
 /-! Sparse control flow depends only on the public verification scalars. -/
 

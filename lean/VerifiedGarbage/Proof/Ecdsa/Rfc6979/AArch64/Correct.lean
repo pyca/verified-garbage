@@ -7,6 +7,7 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import Mathlib.Logic.Function.Basic
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Copy
 
 /-!
 # Deterministic ECDSA on AArch64: correctness

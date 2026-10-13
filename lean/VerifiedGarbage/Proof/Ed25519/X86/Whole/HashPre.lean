@@ -5,6 +5,7 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.MdStream.Spec
 
 /-! Spatial preconditions for calls of the x86 streaming SHA-512 functions. -/
 

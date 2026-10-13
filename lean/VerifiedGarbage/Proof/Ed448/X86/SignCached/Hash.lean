@@ -8,6 +8,21 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Ed25519.X86.Whole.HashPre
+public import VerifiedGarbage.Proof.Ed448.Scalar
+public import VerifiedGarbage.Proof.Framework.Bswap
+public import VerifiedGarbage.Proof.Framework.OffsetBelow
+public import VerifiedGarbage.Proof.Framework.Range
+public import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
+public import VerifiedGarbage.Proof.MdStream.X86.ArgWord
+public import VerifiedGarbage.Proof.MdStream.X86.Words
+public import VerifiedGarbage.Proof.Sha256.X86.Compress
+public import VerifiedGarbage.Proof.Sha256.X86.Lit
+public import VerifiedGarbage.Proof.Sha3.Arith
+public import VerifiedGarbage.Proof.Sha3.X86.Lit
+public import VerifiedGarbage.Proof.Sha3.X86.Stream.Pad
+public import VerifiedGarbage.Proof.Sha3.X86.Stream.Squeeze
+public import VerifiedGarbage.Proof.Sha512.X86.Stream.Finalize
 
 /-!
 # Ed448 signing with a cached key on x86 (32-bit): the three hashes
