@@ -5,6 +5,9 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Framework.Semantics
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Mem
 
 /-!
 # Poly1305 on AArch64 in AdvSIMD: rows of products

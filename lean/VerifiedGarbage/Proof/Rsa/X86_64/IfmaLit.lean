@@ -8,6 +8,12 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Impl.Rsa.X86_64.CrtIfma
+import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.CTMain
+import VerifiedGarbage.Proof.Framework.X86_64.Call
+meta import VerifiedGarbage.Impl.Rsa.X86_64.CrtIfma
+meta import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.CTMain
+meta import VerifiedGarbage.Proof.Framework.X86_64.Call
 
 /-!
 # RSA-CRT with AVX512_IFMA on x86-64: the code as a literal
