@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.X86_64.Call
+public import VerifiedGarbage.Proof.Framework.X86_64.Depth
 public import VerifiedGarbage.Proof.Framework.RelCT
 
 /-!
@@ -10,7 +10,10 @@ public import VerifiedGarbage.Proof.Framework.RelCT
 such code changes memory only within the regions it may write. Code that
 calls functions also stores their return addresses below the stack pointer,
 within `8 * depth` bytes of it if it never writes `rsp` itself
-(`Exec.frameSp`): `WP.inlineSp` inlines it with that frame. `relCT_inline`
+(`Exec.frameSp`): `WP.inlineSp` inlines it with that frame. Code that writes
+`rsp` only in the pushes and pops of its frames (`SpSafe`) changes memory
+below `rsp` only within its `c.x86_64Depth` bytes (`Exec.stackFrame`):
+`WP.inlineF` inlines it with those. `relCT_inline`
 gives two runs of inlined verified code the same trace, from its
 constant-time proof, as `relCT_call` does for a call.
 -/
@@ -38,6 +41,26 @@ theorem WP.inlineSp {c : Prog isa} {k : Contract isa}
   obtain ⟨t, s₁, he, ha, hp⟩ := hv _ hpre
   obtain ⟨he', e⟩ := regionModel.inline he hc hw
   have f := Exec.frameSp he hsp hd
+  refine ⟨t, _, he', hQ _ (Exec.rdwr he').1 (Exec.rdwr he').2 ha f (fun _ h => Exec.gpr h he') ?_⟩
+  rw [show State.withRegions (regionModel.withRegions s₁ (regionModel.rd s) (regionModel.wr s)) rd wr = s₁
+    from e]
+  exact hp
+
+/-- `WP.inlineSp`, for code that writes `rsp` only in the pushes and pops
+of its frames: memory changes within `wr` and the `c.x86_64Depth` bytes
+below `rsp`. -/
+theorem WP.inlineF {c : Prog isa} {k : Contract isa}
+    (hv : ∀ s, k.pre s → ∃ t s', Exec isa c s t s' ∧ abiPreserved s s' ∧ k.post s s')
+    (hsp : SpSafe c) (hd : c.x86_64Depth < 2 ^ 64)
+    {s : State} {rd wr : List Region} (hpre : k.pre (s.withRegions rd wr))
+    (hc : Covers (rd ++ wr) (s.rd ++ s.wr)) (hw : Covers wr s.wr) {Q : State → Prop}
+    (hQ : ∀ s', s'.rd = s.rd → s'.wr = s.wr → abiPreserved s s' →
+      Frame (wr ++ [below (s.gpr .rsp) c.x86_64Depth]) s.mem s'.mem →
+      (∀ r, (∀ i ∈ instrs c, Taint.clobbers i r = false) → s'.gpr r = s.gpr r) →
+      k.post (s.withRegions rd wr) (s'.withRegions rd wr) → Q s') : WP isa c s Q := by
+  obtain ⟨t, s₁, he, ha, hp⟩ := hv _ hpre
+  obtain ⟨he', e⟩ := regionModel.inline he hc hw
+  have f := Exec.stackFrame hsp he hd
   refine ⟨t, _, he', hQ _ (Exec.rdwr he').1 (Exec.rdwr he').2 ha f (fun _ h => Exec.gpr h he') ?_⟩
   rw [show State.withRegions (regionModel.withRegions s₁ (regionModel.rd s) (regionModel.wr s)) rd wr = s₁
     from e]
