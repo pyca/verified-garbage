@@ -105,14 +105,14 @@ theorem CtrSt.of_frame {W : Addr} {icb : List Byte} {j : Nat} {m m' : Mem} (C : 
       (by rw [show W + BitVec.ofNat 64 100 = W + BitVec.ofNat 64 96 + BitVec.ofNat 64 4 by rw [add_ofNat_assoc]]
           exact Offset.sub_base _ (by decide))) (by decide)]; exact C.rest⟩
 
-theorem cryptChunk_ok (eb : BlocksImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R = 14)
+theorem cryptChunk_ok (eb : BlocksImpl) (wide : Bool) {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R = 14)
     {t : State} (E : Env K W SP t) {N A D : Addr} {al n : Nat} (S : Slots W R N A D al n t.mem)
     (hD : Buf K W SP t D n) (hDw : Covers [⟨D, n⟩] t.wr) {ciph : Spec.GcmSiv.Cipher} {icb x : List Byte}
     (hxl : x.length = n) {b j : Nat} (hb : 16 * b ≤ n) (hj : j < b) (h12 : t.gpr .r12 = D + BitVec.ofNat 64 (16 * j))
     (hbx : t.gpr .rbx = BitVec.ofNat 64 (b - j)) (C : CtrSt W icb j t.mem)
     (hx : bytesAt t.mem D n = GcmSiv.ctrPart ciph icb x (16 * j))
     (hc : Spec.GcmSiv.ctxCiph t.mem (W + BitVec.ofNat 64 248) R = ciph) :
-    WP isa (cryptChunk ⟨eb.enc.name, eb.enc.code⟩) t
+    WP isa (cryptChunk ⟨eb.enc.name, eb.enc.code⟩ wide) t
       (ChunkOut K W SP D n ciph icb x b (j + min 64 (b - j)) t) := by
   have hn := hD.lt
   have hw := L.ww
@@ -213,7 +213,7 @@ theorem cryptChunk_ok (eb : BlocksImpl) {K W SP : Addr} (L : Lay K W SP) {R : Na
       · exact hD.stk.symm) (Nat.le_of_lt hn), hx]
   have hD₆ : Buf K W SP t₆ D n := hD.of_eq rd₀₆ wr₀₆
   refine WP.seq (WP.seq (WP.of_runBlock ⟨t₆, run₆, ?_⟩))
-  refine WP.mono (xorLoop_ok L E₆ hD₆ (by rw [wr₀₆]; exact hDw) hxl hk16 hc1 hc64 hjc
+  refine WP.mono (ksLoop_ok wide L E₆ hD₆ (by rw [wr₀₆]; exact hDw) hxl hk16 hc1 hc64 hjc
     (fun k hk => by rw [m₆]; exact hks k hk)
     ⟨by rw [h12₆, Nat.add_zero], by rw [rsi₆, Nat.mul_zero, Nat.add_zero], by rw [rcx₆, Nat.sub_zero],
       by rw [Nat.add_zero]; exact hx₆, Frame.refl _ _, fun _ _ _ _ _ _ => rfl, rfl, rfl⟩) fun t₇ X => ?_
@@ -278,14 +278,14 @@ structure BlocksPost (K W SP : Addr) (D : Addr) (n : Nat) (ciph : Spec.GcmSiv.Ci
   data : bytesAt t'.mem D n = GcmSiv.ctrPart ciph icb x (16 * b)
   frame : Frame (cryR W SP D n) t.mem t'.mem
 
-theorem blocks_ok (eb : BlocksImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R = 14) {t : State}
+theorem blocks_ok (eb : BlocksImpl) (wide : Bool) {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R = 14) {t : State}
     (E : Env K W SP t) {N A D : Addr} {al n : Nat} (S : Slots W R N A D al n t.mem) (hD : Buf K W SP t D n)
     (hDw : Covers [⟨D, n⟩] t.wr) {ciph : Spec.GcmSiv.Cipher} {icb x : List Byte} (hxl : x.length = n) {b : Nat}
     (hb : 16 * b ≤ n) (hb1 : 1 ≤ b) (h12 : t.gpr .r12 = D) (hbx : t.gpr .rbx = BitVec.ofNat 64 b)
     (C : CtrSt W icb 0 t.mem) (hx : bytesAt t.mem D n = x)
     (hc : Spec.GcmSiv.ctxCiph t.mem (W + BitVec.ofNat 64 248) R = ciph) :
-    WP isa (.loop (cryptChunk ⟨eb.enc.name, eb.enc.code⟩) .ne) t (BlocksPost K W SP D n ciph icb x b t) := by
-  refine WP.loop (M := isa) (body := cryptChunk ⟨eb.enc.name, eb.enc.code⟩) (c := .ne)
+    WP isa (.loop (cryptChunk ⟨eb.enc.name, eb.enc.code⟩ wide) .ne) t (BlocksPost K W SP D n ciph icb x b t) := by
+  refine WP.loop (M := isa) (body := cryptChunk ⟨eb.enc.name, eb.enc.code⟩ wide) (c := .ne)
     (fun (m : Nat) (t' : State) => ∃ j, m = b - j ∧ j < b ∧ BlocksPost K W SP D n ciph icb x j t t' ∧
       t'.gpr .rbx = BitVec.ofNat 64 (b - j)) ?_ (b - 0) t
     ⟨0, rfl, hb1, ⟨E, rfl, rfl, rfl, by rw [h12, Nat.mul_zero, BitVec.add_zero], C,
@@ -293,7 +293,7 @@ theorem blocks_ok (eb : BlocksImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} (
   rintro m t' ⟨j, rfl, hj, P, hbx'⟩
   have hc' : Spec.GcmSiv.ctxCiph t'.mem (W + BitVec.ofNat 64 248) R = ciph := by
     rw [ctxCiph_frame P.frame (key_cryR L hD) (by rcases hR with h | h <;> subst h <;> decide), hc]
-  refine WP.mono (cryptChunk_ok eb L hR P.env (S.of_frame P.frame (slots_cryR L hD)) (hD.of_eq P.rd P.wr)
+  refine WP.mono (cryptChunk_ok eb wide L hR P.env (S.of_frame P.frame (slots_cryR L hD)) (hD.of_eq P.rd P.wr)
     (by rw [P.wr]; exact hDw) hxl hb hj P.r12 hbx' P.ctr P.data hc') fun t'' Q => ?_
   have P' : BlocksPost K W SP D n ciph icb x (j + min 64 (b - j)) t t'' :=
     ⟨Q.env, Q.rd.trans P.rd, Q.wr.trans P.wr, Q.rbp.trans P.rbp, Q.r12, Q.ctr, Q.data, P.frame.trans Q.frame⟩
@@ -445,10 +445,10 @@ theorem cryptHead_ok {K W SP : Addr} (L : Lay K W SP) {R : Nat} {t : State} (E :
     all_goals simp only [gpr_setReg, gpr_arithFlags, gpr_setFlags, ite_true, ite_false, reduceCtorEq]
   all_goals rfl
 
-theorem crypt_ok (v : GcmImpl) (eb : BlocksImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R = 14) {t : State}
+theorem crypt_ok (v : GcmImpl) (eb : BlocksImpl) (wide : Bool) {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R = 14) {t : State}
     (E : Env K W SP t) {N A D : Addr} {al n : Nat} (S : Slots W R N A D al n t.mem) (hD : Buf K W SP t D n)
     (hDw : Covers [⟨D, n⟩] t.wr) :
-    WP isa (crypt v.callees ⟨eb.enc.name, eb.enc.code⟩) t (CryptPost K W SP R D n t) := by
+    WP isa (crypt v.callees ⟨eb.enc.name, eb.enc.code⟩ wide) t (CryptPost K W SP R D n t) := by
   have h15 := E.r15
   have hw := L.ww
   have hn := hD.lt
@@ -494,7 +494,7 @@ theorem crypt_ok (v : GcmImpl) (eb : BlocksImpl) {K W SP : Addr} (L : Lay K W SP
     exact ⟨⟨W + BitVec.ofNat 64 96, 48⟩, by simp, Offset.sub W (by decide) (by decide)⟩
   refine WP.seq (WP.of_runBlock ⟨t₁, run₁, ?_⟩)
   -- The whole blocks.
-  have hmid : WP isa (.ite .e (.block []) (.loop (cryptChunk ⟨eb.enc.name, eb.enc.code⟩) .ne)) t₁
+  have hmid : WP isa (.ite .e (.block []) (.loop (cryptChunk ⟨eb.enc.name, eb.enc.code⟩ wide) .ne)) t₁
       (BlocksPost K W SP D n (Spec.GcmSiv.ctxCiph t.mem (W + BitVec.ofNat 64 248) R)
         (Spec.GcmSiv.initialCounter (bytesAt t.mem W 16)) (bytesAt t.mem D n) (n / 16) t₁) := by
     refine WP.ite (decide (n / 16 = 0)) (eval_e hzf₁) (fun ht => ?_) (fun hf => ?_)
@@ -504,7 +504,7 @@ theorem crypt_ok (v : GcmImpl) (eb : BlocksImpl) {K W SP : Addr} (L : Lay K W SP
       exact ⟨E₁, rfl, rfl, rfl, by rw [h12₁, Nat.mul_zero, BitVec.add_zero], C₀,
         by rw [Nat.mul_zero, GcmSiv.ctrPart_zero, hx₁], Frame.refl _ _⟩
     · have h0 : n / 16 ≠ 0 := by simpa using hf
-      exact blocks_ok eb L hR E₁ S₁ (hD.of_eq hrd₁ hwr₁) (by rw [hwr₁]; exact hDw) hxl (by omega) (by omega) h12₁
+      exact blocks_ok eb wide L hR E₁ S₁ (hD.of_eq hrd₁ hwr₁) (by rw [hwr₁]; exact hDw) hxl (by omega) (by omega) h12₁
         hbx₁ C₀ hx₁ hc₁
   refine WP.seq (WP.mono hmid fun t₂ B => ?_)
   have hbp₂ : t₂.gpr .rbp = BitVec.ofNat 64 (n % 16) := B.rbp.trans hbp₁
