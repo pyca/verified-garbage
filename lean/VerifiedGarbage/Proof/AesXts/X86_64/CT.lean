@@ -47,7 +47,10 @@ theorem saveT_taint : ∃ h, (taint.check (Taint.ofRegs [.r12, .r13, .r14, .r15]
 theorem pass_taint : ∃ h, (taint.check (Taint.ofRegs [.r12, .r13, .r14, .r15]) pass h).isSome = true :=
   ⟨_, by taint_decide⟩
 
-theorem callArgs_taint : ∃ h, (taint.check (Taint.ofRegs [.rbx, .rbp, .r10, .r11, .r12, .r15])
+theorem pass2_taint : ∃ h, (taint.check (Taint.ofRegs [.r12, .r13, .r14, .r15]) (.seq pass (.block stT))
+    h).isSome = true := ⟨_, by taint_decide⟩
+
+theorem callArgs_taint : ∃ h, (taint.check (Taint.ofRegs [.rbx, .rbp, .r10, .r11, .r15])
     (.block callArgs) h).isSome = true := ⟨_, by taint_decide⟩
 
 section
@@ -83,32 +86,31 @@ theorem batch_rel {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State} 
       rcases hr with rfl | rfl | rfl | rfl <;> decide))
     (F₁ := PInv s₀ (blks s₀) (blk s₀ 0) (BitVec.ofNat 64 (N s₀)) 0)
     (F₂ := PInv s₀' (blks s₀') (blk s₀' 0) (BitVec.ofNat 64 (N s₀')) 0)
-    fun _ _ h => ⟨saveT_wp hp (fun _ _ _ => rfl) (fun _ _ _ => rfl) h.1,
-      saveT_wp hp' (fun _ _ _ => rfl) (fun _ _ _ => rfl) h.2⟩
+    fun _ _ h => ⟨saveT_wp (s₀ := s₀) (fun _ _ _ => rfl) (fun _ _ _ => rfl) h.1,
+      saveT_wp (s₀ := s₀') (fun _ _ _ => rfl) (fun _ _ _ => rfl) h.2⟩
   -- The first pass.
   have p₁ := taint_rel _ pass_taint (P := fun a b => PInv s₀ (blks s₀) (blk s₀ 0) (BitVec.ofNat 64 (N s₀)) 0 a ∧
       PInv s₀' (blks s₀') (blk s₀' 0) (BitVec.ofNat 64 (N s₀')) 0 b) (fun _ _ h => PInv.agree hq h.1 h.2)
-    (F₁ := PInv s₀ (blks s₀) (blk s₀ 0) (BitVec.ofNat 64 (N s₀)) (N s₀))
-    (F₂ := PInv s₀' (blks s₀') (blk s₀' 0) (BitVec.ofNat 64 (N s₀')) (N s₀'))
+    (F₁ := fun s' => PInv s₀ (blks s₀) (blk s₀ 0) (BitVec.ofNat 64 (N s₀)) (N s₀) s' ∧ PTw s₀ (N s₀) s')
+    (F₂ := fun s' => PInv s₀' (blks s₀') (blk s₀' 0) (BitVec.ofNat 64 (N s₀')) (N s₀') s' ∧ PTw s₀' (N s₀') s')
     fun _ _ h => ⟨pass_wp hp hN h.1, pass_wp hp' hN' h.2⟩
   -- The arguments of the call.
   have c := taint_rel _ callArgs_taint (P := fun a b =>
-      PInv s₀ (blks s₀) (blk s₀ 0) (BitVec.ofNat 64 (N s₀)) (N s₀) a ∧
-      PInv s₀' (blks s₀') (blk s₀' 0) (BitVec.ofNat 64 (N s₀')) (N s₀') b)
+      (PInv s₀ (blks s₀) (blk s₀ 0) (BitVec.ofNat 64 (N s₀)) (N s₀) a ∧ PTw s₀ (N s₀) a) ∧
+      (PInv s₀' (blks s₀') (blk s₀' 0) (BitVec.ofNat 64 (N s₀')) (N s₀') b ∧ PTw s₀' (N s₀') b))
     (fun _ _ h r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
-      · rw [h.1.rbx, h.2.rbx, pub_W hq]
-      · rw [h.1.rbp, h.2.rbp, pub_rsi hq]
-      · rw [h.1.r10, h.2.r10, pub_blk hq]
-      · rw [h.1.r11, h.2.r11, pub_N hq]
-      · rw [h.1.r12, h.2.r12, pub_Iv hq]
-      · rw [h.1.r15, h.2.r15, pub_S hq])
+      rcases hr with rfl | rfl | rfl | rfl | rfl
+      · rw [h.1.1.rbx, h.2.1.rbx, pub_W hq]
+      · rw [h.1.1.rbp, h.2.1.rbp, pub_rsi hq]
+      · rw [h.1.1.r10, h.2.1.r10, pub_blk hq]
+      · rw [h.1.1.r11, h.2.1.r11, pub_N hq]
+      · rw [h.1.1.r15, h.2.1.r15, pub_S hq])
     (F₁ := fun (s' : State) => Proof.AesOcb.X86_64.BCall s' (W s₀) (Dp s₀) (S s₀) (R s₀) (N s₀) ∧
       PInv s₀ (xored (iv0 s₀) (blks s₀) (N s₀)) (s'.gpr .r10) (s'.gpr .r11) 0 s')
     (F₂ := fun (s' : State) => Proof.AesOcb.X86_64.BCall s' (W s₀') (Dp s₀') (S s₀') (R s₀') (N s₀') ∧
       PInv s₀' (xored (iv0 s₀') (blks s₀') (N s₀')) (s'.gpr .r10) (s'.gpr .r11) 0 s')
-    fun _ _ h => ⟨callArgs_wp hp h.1, callArgs_wp hp' h.2⟩
+    fun _ _ h => ⟨callArgs_wp hp h.1.1, callArgs_wp hp' h.2.1⟩
   -- The call.
   have k := (Proof.AesOcb.X86_64.blk_rel ok ct (name := b.name) (P := fun a b =>
       (Proof.AesOcb.X86_64.BCall a (W s₀) (Dp s₀) (S s₀) (R s₀) (N s₀) ∧
@@ -124,13 +126,13 @@ theorem batch_rel {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State} 
       (s'.gpr .r10) (s'.gpr .r11) 0 s')
     fun _ _ h => ⟨call_wp hp enc ok nosp depth hf h.1.1 h.1.2, call_wp hp' enc ok nosp depth hf h.2.1 h.2.2⟩
   -- The second pass.
-  have p₂ := taint_rel _ pass_taint (P := fun a b =>
+  have p₂ := taint_rel _ pass2_taint (P := fun a b =>
       PInv s₀ ((xored (iv0 s₀) (blks s₀) (N s₀)).map (ciphOf enc (R s₀) (wK s₀))) (a.gpr .r10) (a.gpr .r11) 0 a ∧
       PInv s₀' ((xored (iv0 s₀') (blks s₀') (N s₀')).map (ciphOf enc (R s₀') (wK s₀'))) (b.gpr .r10)
         (b.gpr .r11) 0 b) (fun _ _ h => PInv.agree hq h.1 h.2)
     (F₁ := LInv (AesXts.xtsMode enc) s₀ (N s₀)) (F₂ := LInv (AesXts.xtsMode enc) s₀' (N s₀'))
-    fun _ _ h => ⟨WP.mono (pass_wp hp hN h.1) fun _ h => final_of enc h,
-      WP.mono (pass_wp hp' hN' h.2) fun _ h => final_of enc h⟩
+    fun _ _ h => ⟨WP.seq (WP.mono (pass_wp hp hN h.1) fun _ h => final_wp hp enc h.1 h.2),
+      WP.seq (WP.mono (pass_wp hp' hN' h.2) fun _ h => final_wp hp' enc h.1 h.2)⟩
   exact a.seq (p₁.seq (c.seq ((k.mono (fun _ _ h => h) fun _ _ h => h.2).seq p₂)))
 
 end
