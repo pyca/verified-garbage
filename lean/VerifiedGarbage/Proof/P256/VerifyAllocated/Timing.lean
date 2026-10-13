@@ -22,6 +22,8 @@ import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
+import VerifiedGarbage.Spec.Weierstrass.CheckPoint
+meta import VerifiedGarbage.Spec.Weierstrass.CheckPoint
 
 @[expose] public section
 

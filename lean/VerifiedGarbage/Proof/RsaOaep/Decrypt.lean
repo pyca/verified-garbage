@@ -10,6 +10,7 @@ import all Init.Data.Vector.Basic
 public import Mathlib.Data.Nat.Prime.Defs
 import Mathlib.FieldTheory.Finite.Basic
 import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Rsa.Checked
 
 /-!
 # RSAES-OAEP decryption: one error, and the round trip

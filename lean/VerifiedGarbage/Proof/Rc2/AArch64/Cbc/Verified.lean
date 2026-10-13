@@ -10,6 +10,8 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Rc2.AArch64.Cbc.IO
+import VerifiedGarbage.Proof.Rc2.CbcMemory
 
 /-! # Verified RC2-CBC encryption and decryption -/
 

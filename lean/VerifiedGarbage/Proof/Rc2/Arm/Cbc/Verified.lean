@@ -18,6 +18,8 @@ import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
 meta import Mathlib.Tactic.SplitIfs
 meta import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Rc2.CbcMemory
+meta import VerifiedGarbage.Proof.Rc2.CbcMemory
 
 @[expose] public section
 

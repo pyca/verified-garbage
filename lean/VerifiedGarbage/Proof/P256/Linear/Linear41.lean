@@ -10,6 +10,8 @@ import VerifiedGarbage.Impl.NatPairs
 import VerifiedGarbage.Spec.Weierstrass.Point
 import Mathlib.Logic.Function.Basic
 import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Impl.P256.VerifyArithmetic
+import VerifiedGarbage.Spec.Ecdsa.Generic
 
 @[expose] public section
 

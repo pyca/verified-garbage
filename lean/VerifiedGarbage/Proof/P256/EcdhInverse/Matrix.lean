@@ -8,6 +8,8 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import Mathlib.Data.BitVec
 import VerifiedGarbage.Proof.Mont.AArch64.Row
+import VerifiedGarbage.Impl.Weierstrass.AArch64.Inv
+import VerifiedGarbage.Proof.Divstep.WordDef
 
 /-! Fixed matrix multiplication blocks in the packed divstep batch. -/
 

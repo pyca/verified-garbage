@@ -16,6 +16,8 @@ import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.AArch64.Call
 meta import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Rsa.AArch64.CvLoad
+meta import VerifiedGarbage.Proof.Rsa.AArch64.CvLoad
 
 /-!
 # An RSA key from its primes on AArch64: constant time, the relation

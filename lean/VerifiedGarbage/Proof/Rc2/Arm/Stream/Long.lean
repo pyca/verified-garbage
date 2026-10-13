@@ -9,6 +9,8 @@ import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.TaintSum
+import VerifiedGarbage.Proof.MdStream.Arm.Common
+import VerifiedGarbage.Proof.Rc2.Stream
 
 /-! # Streaming RC2-CBC on ARMv7: the copies before CBC
 

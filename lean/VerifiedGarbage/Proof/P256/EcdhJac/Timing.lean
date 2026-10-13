@@ -22,6 +22,8 @@ meta import Mathlib.Data.Finset.Card
 meta import Mathlib.Data.Nat.Find
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
+import VerifiedGarbage.Proof.Ecdsa.AArch64.Verified
+meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Verified
 
 @[expose] public section
 

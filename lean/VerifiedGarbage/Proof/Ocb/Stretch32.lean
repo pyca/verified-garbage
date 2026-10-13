@@ -8,6 +8,7 @@ import all Init.Data.Vector.Basic
 import Mathlib.Data.List.Induction
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Spec.TripleDes
 
 /-!
 # OCB: `Offset_0` in 32-bit words

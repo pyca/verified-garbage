@@ -12,6 +12,8 @@ import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 meta import Mathlib.Tactic.SplitIfs
 meta import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Reduce
+meta import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Reduce
 
 @[expose] public section
 

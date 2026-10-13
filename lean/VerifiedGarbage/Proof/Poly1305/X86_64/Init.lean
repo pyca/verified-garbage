@@ -16,6 +16,8 @@ public import VerifiedGarbage.Proof.Framework.X86_64.Abi
 import VerifiedGarbage.Proof.Poly1305.X86_64.Lit
 meta import VerifiedGarbage.Proof.Framework.X86_64.Abi
 meta import VerifiedGarbage.Proof.Poly1305.X86_64.Lit
+import VerifiedGarbage.Proof.Poly1305.Spec
+meta import VerifiedGarbage.Proof.Poly1305.Spec
 
 /-!
 # Poly1305 on x86-64: `init`

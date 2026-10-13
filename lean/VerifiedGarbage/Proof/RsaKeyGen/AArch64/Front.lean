@@ -8,6 +8,7 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Bignum.AArch64.PcCT
 
 /-!
 # A candidate on AArch64: the precondition, the zeros to `out`, and the ends

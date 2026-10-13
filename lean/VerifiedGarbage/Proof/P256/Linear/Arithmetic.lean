@@ -9,6 +9,7 @@ import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Impl.NatPairs
 import VerifiedGarbage.Spec.Weierstrass.Point
+import VerifiedGarbage.Impl.P256.VerifyArithmetic
 
 /-! Quotient estimate shared by the fixed small P-256 linear combinations. -/
 

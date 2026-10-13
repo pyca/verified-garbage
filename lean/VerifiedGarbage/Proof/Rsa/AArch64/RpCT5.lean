@@ -8,6 +8,10 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
 meta import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtSel
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtWs
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtSel
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtWs
 
 /-!
 # `vg_rsa_recover_primes` on AArch64: constant time, the exponentiation

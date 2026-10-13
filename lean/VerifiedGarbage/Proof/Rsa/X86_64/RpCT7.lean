@@ -10,6 +10,8 @@ import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.X86_64.Call
 meta import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Bignum.CrtFrame
+meta import VerifiedGarbage.Proof.Bignum.CrtFrame
 
 /-!
 # `vg_rsa_recover_primes` on x86-64: constant time, the factors

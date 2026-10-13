@@ -8,6 +8,8 @@ import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Framework.Semantics
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Curve448.AArch64.Neon.Lanes
+import VerifiedGarbage.Proof.Framework.Block
 
 /-!
 # Poly1305 on AArch64 in AdvSIMD: rows of products

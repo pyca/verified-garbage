@@ -20,6 +20,8 @@ public import VerifiedGarbage.Proof.Md5.AArch64.Stream.Md
 import VerifiedGarbage.Proof.Sha512.Word64
 meta import VerifiedGarbage.Proof.Md5.AArch64.Stream.Md
 meta import VerifiedGarbage.Proof.Sha512.Word64
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
 
 /-!
 # MD5 on AArch64, as a Merkle–Damgård hash function

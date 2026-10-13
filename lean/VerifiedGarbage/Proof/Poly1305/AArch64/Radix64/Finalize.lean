@@ -24,6 +24,8 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Reduce
+meta import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Reduce
 
 /-!
 # Poly1305 on AArch64: `finalize`

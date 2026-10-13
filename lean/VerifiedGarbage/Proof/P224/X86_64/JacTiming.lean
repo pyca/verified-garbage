@@ -18,6 +18,8 @@ meta import Mathlib.Tactic.SplitIfs
 meta import VerifiedGarbage.Proof.Mont.X86_64.Wide
 meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
 meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+import VerifiedGarbage.Spec.Ecdsa.Generic
+meta import VerifiedGarbage.Spec.Ecdsa.Generic
 
 /-! Taint checks of P-224's joint verifier's point additions. -/
 

@@ -12,6 +12,8 @@ import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.TaintSum
+import VerifiedGarbage.Impl.MdStream.Arm
+import VerifiedGarbage.Proof.MdStream.Spec
 
 /-!
 # RC2-CBC's streaming functions on ARMv7, with their working space on the stack
