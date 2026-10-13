@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Xor
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.Verified
+public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512VL
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Xor
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.XorSplitVerified
 public import VerifiedGarbage.Impl.ChaCha20.X86_64.Xor
@@ -65,6 +66,22 @@ def artifacts : List Artifact := [
     stack := 16
     verified := Proof.ChaCha20.X86_64.Avx512.xor_verified
     features := ["avx", "avx512f"]
+    spSafe := Code.all_of_allInstrs (by lit_decide) },
+  { Spec.ChaCha20.xorApi with
+    name := "vg_chacha20_xor_avx512vl"
+    target := X86_64.target
+    doc := Spec.ChaCha20.xorApi.doc
+      (notes := ["For CPUs with AVX-512 whose clock a 512-bit instruction lowers for a while \
+        (Skylake-SP, Cascade Lake): fewer than 513 bytes on `ymm` registers, as \
+        `vg_chacha20_xor_avx2` does but with AVX-512VL's `vprold` for every rotation (eight \
+        blocks with every word in a register, or at most six), so that the code after a short \
+        call keeps its speed; more as `vg_chacha20_xor_avx512` does."])
+    code := Impl.ChaCha20.X86_64.Avx512VL.xorBy
+    contract := Spec.ChaCha20.xorContract X86_64.abi 16
+    writeArgs := true
+    stack := 16
+    verified := Proof.ChaCha20.X86_64.Avx512VL.xor_verified
+    features := ["avx", "avx2", "avx512f", "avx512vl"]
     spSafe := Code.all_of_allInstrs (by lit_decide) },
   { Spec.ChaCha20.initApi with
     target := X86_64.target

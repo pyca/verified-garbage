@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.Verified
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Xor
+public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512VL
 public import VerifiedGarbage.Impl.ChaCha20.X86_64.Callee
 public import VerifiedGarbage.Impl.Poly1305.X86_64.Callee
 public import VerifiedGarbage.Proof.Framework.X86_64.Depth
@@ -179,6 +180,32 @@ def ifma : XorImpl where
   features := ["avx", "avx512f"]
   poly := .ifma
   fold_poly := Or.inr (Or.inr ⟨rfl, rfl, rfl, .inr rfl⟩)
+
+theorem avx512vl_nosp : NoSp Impl.ChaCha20.X86_64.Callee.avx512vl.code := by
+  have : ((instrs Impl.ChaCha20.X86_64.Callee.avx512vl.code).all fun i => !Taint.clobbers i .rsp) = true := by
+    rw [← Code.allInstrs_eq]; lit_decide
+  exact fun i hi => by simpa using List.all_eq_true.mp this i hi
+
+/-- `vg_chacha20_xor_avx512vl`: the AVX-512 implementation with fewer than 513
+bytes in `ymm` registers, for CPUs with AVX-512 but not IFMA, whose clock a
+512-bit instruction lowers: its callers that also call `vg_poly1305_blocks`
+call `vg_poly1305_blocks_avx512`. -/
+def avx512vl : XorImpl where
+  callee := .avx512vl
+  fold_le := by decide
+  stack := 16
+  stack_le := by decide
+  depth_le := by lit_decide
+  xdepth := by lit_decide
+  ok := Avx512VL.xor_rsi
+  ct := Avx512VL.xor_ct
+  nosp := avx512vl_nosp
+  mxcsr := by lit_decide
+  spSafe := Code.all_of_allInstrs (by lit_decide)
+  suffix := "_avx512vl"
+  features := ["avx", "avx2", "avx512f", "avx512vl"]
+  poly := .avx512
+  fold_poly := Or.inr (Or.inr ⟨rfl, rfl, rfl, .inl rfl⟩)
 
 end XorImpl
 

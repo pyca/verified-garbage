@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.ChaCha20.X86_64.Avx2
 public import VerifiedGarbage.Impl.ChaCha20.X86_64.Avx512
+public import VerifiedGarbage.Impl.ChaCha20.X86_64.Avx512VL
 
 /-!
 # The implementations of `vg_chacha20_xor` on x86-64
@@ -45,5 +46,7 @@ def Callee.avx2 : Callee := ⟨"vg_chacha20_xor_avx2", Avx2.xor, 448, 0, 5⟩
 /-- Up to 1024 bytes in one computation of sixteen blocks (the loop, or
 `Avx512.last16`), as are the rest of the data's after the first call. -/
 def Callee.avx512 : Callee := ⟨"vg_chacha20_xor_avx512", Avx512.xor, 960, 1024, 6⟩
+/-- As `avx512`, with fewer than 513 bytes in `ymm` registers (`Avx512VL.xorBy`). -/
+def Callee.avx512vl : Callee := ⟨"vg_chacha20_xor_avx512vl", Avx512VL.xorBy, 960, 1024, 6⟩
 
 end VG.Impl.ChaCha20.X86_64

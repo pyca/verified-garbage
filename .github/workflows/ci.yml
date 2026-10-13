@@ -600,7 +600,8 @@ jobs:
           # ADX without AVX-512F; AVX-512F without AVX2, for Argon2 with G's
           # AVX-512 code and BLAKE2b's baseline code; and AVX-512F without
           # AVX512VL, for Argon2 with G's AVX-512 code and BLAKE2b's AVX2
-          # code.
+          # code, and for ChaCha20's and ChaCha20-Poly1305's `_avx512`
+          # instances, which the CPU's AVX512VL replaces with `_avx512vl`.
           - chip: skx
             arch: x86_64
             runs: |
@@ -608,7 +609,7 @@ jobs:
               bmi2,adx | ffdh dsa ed448 message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
               avx,avx2,bmi2,adx | rsa_pkcs1 rsa_pss rsa_oaep p256 p384 p521 ed25519 message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
               avx,avx512f | argon2 rfc9106 cpu
-              avx,avx2,avx512f | argon2 rfc9106 mlkem cpu
+              avx,avx2,avx512f | argon2 rfc9106 mlkem chacha20 cpu
           # AVX2, but not AVX-512F or ADX; AES-NI and PCLMULQDQ with AVX, but
           # not VAES or VPCLMULQDQ (RSAES-PKCS1-v1_5 decryption and RSASSA-PSS
           # with the hash functions' AVX2 code and RSA's baseline code, and
