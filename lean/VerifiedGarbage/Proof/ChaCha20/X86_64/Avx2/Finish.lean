@@ -905,7 +905,7 @@ theorem byte_write16 (m : Mem) (a : Addr) (v : BitVec 128) {off k : Nat} (ho : o
     rw [Offset.sub_toNat' a (by lit_omega) (by lit_omega)]
     split <;> omega
 
-theorem xor16_ok {x : XReg} (hx : x ≠ .xmm12) {off : Nat} (ho : off + 16 ≤ 512) {a : Addr}
+theorem xor16_ok {x : XReg} (_hx : x ≠ .xmm12) {off : Nat} (ho : off + 16 ≤ 512) {a : Addr}
     {s : State} (hrsi : s.gpr .rsi = a) (hw : DWin s.wr a) :
     WP isa (.block (xor16 x off)) s fun s' =>
       (∀ k < 512, s'.mem (a + BitVec.ofNat 64 k) = if off ≤ k ∧ k < off + 16 then
@@ -920,18 +920,19 @@ theorem xor16_ok {x : XReg} (hx : x ≠ .xmm12) {off : Nat} (ho : off + 16 ≤ 5
   apply WP.of_runBlock
   simp only [xor16, runBlock_cons, runStep_some, runBlock_nil, exec, ea_at, hrsi, State.load128,
     State.store128_eq, i1, o1, ite_true, Option.map_some, Option.some.injEq,
-    exists_eq_left', VOp.exec_gpr, VOp.exec_mem, VOp.exec_rd, VOp.exec_wr, State.setV_gpr,
+    exists_eq_left', State.setV_gpr,
     State.setV_mem, State.setV_rd, State.setV_wr, State.setMem_gpr, State.setMem_mem,
-    State.setMem_rd, State.setMem_wr, State.xmm_lane, lane_vbin128, State.lane_setV128, hx,
-    ite_false, VBinOp.sse, XBinOp.eval]
+    State.setMem_rd, State.setMem_wr, State.xmm_lane, State.lane_setV128,
+    VBinOp.sse, XBinOp.eval]
   refine ⟨fun k hk => ?_, (Frame.refl _ _).writeW (List.mem_singleton_self _) _ c,
     fun r l hr => ?_, trivial, trivial, trivial⟩
   · rw [byte_write16 _ _ _ ho hk]
     by_cases h : off ≤ k ∧ k < off + 16
     · simp only [h.1, h.2, and_self, ite_true, byte]
-      rw [BitVec.extractLsb'_xor, byte_readW _ _ (by lit_omega), add_ofNat, Nat.add_sub_cancel' h.1]
+      rw [BitVec.xor_comm, BitVec.extractLsb'_xor, byte_readW _ _ (by lit_omega), add_ofNat,
+        Nat.add_sub_cancel' h.1]
     · simp only [h, ite_false]
-  · simp only [State.setMem_lane, lane_vbin128, State.lane_setV128, hr, ite_false]
+  · simp only [State.setMem_lane, State.lane_setV128, hr, ite_false]
 
 /-! ## XORing a row of the eight blocks -/
 

@@ -201,10 +201,10 @@ def transpose (x0 x1 x2 x3 : XReg) : List Instr := [
   v .vpunpcklqdq x0 .xmm12 .xmm14, v .vpunpckhqdq x1 .xmm12 .xmm14,
   v .vpunpcklqdq x2 .xmm13 .xmm15, v .vpunpckhqdq x3 .xmm13 .xmm15]
 
-/-- XOR the 16 bytes in lane 0 of `x` into the data at `rsi + off`, through `ymm12`. -/
+/-- XOR the 16 bytes in lane 0 of `x` into the data at `rsi + off`, through `ymm12`
+(`vpxor` with the data as its memory operand). -/
 def xor16 (x : XReg) (off : Nat) : List Instr :=
-  [.vmovdquLoad .l128 .xmm12 (at_ .rsi off), .vop (.vbin .vpxor .l128 .xmm12 .xmm12 x),
-   .vmovdquStore .l128 (at_ .rsi off) .xmm12]
+  [.vbinLoad .vpxor .l128 .xmm12 x (at_ .rsi off), .vmovdquStore .l128 (at_ .rsi off) .xmm12]
 
 /-- XOR row `row` of the eight blocks, transposed into `xs`, into the data:
 `xs[i]` holds it for block `i` in lane 0 and for block `i + 4` in lane 1
