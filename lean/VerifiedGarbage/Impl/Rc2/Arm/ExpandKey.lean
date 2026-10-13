@@ -9,10 +9,12 @@ Public lengths control the loops. `lr` holds public addresses; all
 callee-saved registers are saved in the scratch buffer supplied on the stack.
 
 Each PITABLE lookup scans the whole static `VG_RC2_PITABLE`
-(`Impl/Rc2/Table.lean`): a loop over its 256 bytes in order, at addresses
-that depend only on the entry's number, keeping the entry's byte under a mask
-that is nonzero on its low byte exactly when the (secret) index is the
-entry's number. The scans never branch on key bytes or use them as addresses.
+(`Impl/Rc2/Table.lean`): a loop over its 256 bytes in order, a word of four
+entries at a time, at addresses that depend only on the entries' numbers,
+keeping the word under a mask that is all ones exactly when the (secret)
+index is one of its entries, then selects the index's byte of that word with
+masks. The scans never branch on key bytes or use them as addresses or shift
+amounts.
 -/
 
 @[expose] public section
@@ -29,20 +31,39 @@ def save (base : Reg) (offset : Nat) : List Instr :=
 def restore (base : Reg) (offset : Nat) : List Instr :=
   saved.zipIdx |>.map fun (r, i) => .ldr r base (offset + 4 * i)
 
-/-- One entry of the scan of PITABLE: its byte, at `lr`, is kept iff the
-index in `r12` is the entry's number in `r9` (both below 256, so the mask
-`((r12 ^ r9) - 1) >> 8` is `0x00ffffff` exactly then, and 0 otherwise),
-ORed into `r3`; then on to the next entry (Z set after the last, 255). -/
+/-- Four entries of the scan of PITABLE: their word, at `lr`, is kept iff
+the index in `r12` is in the entries `r9 … r9 + 3` (both below 256 and `r9`
+a multiple of 4, so `(r12 ^ r9) - 4` is negative exactly then, and the mask
+`((r12 ^ r9) - 4) >> 8`, widened by `orr` with itself shifted left by 8, is
+all ones exactly then, and 0 otherwise), ORed into `r3`; then on to the next
+four (Z set after the last, 252). -/
 def piBody : List Instr :=
-  [.ldrb .r10 .lr 0, .dp .eor .r11 .r12 (.reg .r9), .dp .sub .r11 .r11 (.imm 1),
-   .mov .r11 (.shifted .r11 .lsr 8), .dp .and .r10 .r10 (.reg .r11), .dp .orr .r3 .r3 (.reg .r10),
-   .dp .add .lr .lr (.imm 1), .cmp .r9 (.imm 255), .dp .add .r9 .r9 (.imm 1)]
+  [.ldr .r10 .lr 0, .dp .eor .r11 .r12 (.reg .r9), .dp .sub .r11 .r11 (.imm 4),
+   .mov .r11 (.shifted .r11 .lsr 8), .dp .orr .r11 .r11 (.shifted .r11 .lsl 8),
+   .dp .and .r10 .r10 (.reg .r11), .dp .orr .r3 .r3 (.reg .r10),
+   .dp .add .lr .lr (.imm 4), .cmp .r9 (.imm 252), .dp .add .r9 .r9 (.imm 4)]
 
-/-- `r12 := PITABLE[r12 & 255]`, by a scan of the whole table, the entry's
-number in `r9` and its address in `lr`. Clobbers `r3`, `r9`–`r11` and `lr`. -/
+/-- Byte `r12 & 3` of the word in `r3`, into `r12`: for each `k < 4`, byte
+`k` (`r3 >> 8k`) under a mask that is `0x00ffffff` exactly when `r12 & 3` (in
+`lr`) is `k` (`((lr ^ k) - 1) >> 8`), ORed together, then the low byte. -/
+def piSelect : List Instr :=
+  [.dp .and .lr .r12 (.imm 3),
+   .dp .sub .r10 .lr (.imm 1), .mov .r10 (.shifted .r10 .lsr 8), .dp .and .r12 .r10 (.reg .r3),
+   .dp .eor .r10 .lr (.imm 1), .dp .sub .r10 .r10 (.imm 1), .mov .r10 (.shifted .r10 .lsr 8),
+   .dp .and .r10 .r10 (.shifted .r3 .lsr 8), .dp .orr .r12 .r12 (.reg .r10),
+   .dp .eor .r10 .lr (.imm 2), .dp .sub .r10 .r10 (.imm 1), .mov .r10 (.shifted .r10 .lsr 8),
+   .dp .and .r10 .r10 (.shifted .r3 .lsr 16), .dp .orr .r12 .r12 (.reg .r10),
+   .dp .eor .r10 .lr (.imm 3), .dp .sub .r10 .r10 (.imm 1), .mov .r10 (.shifted .r10 .lsr 8),
+   .dp .and .r10 .r10 (.shifted .r3 .lsr 24), .dp .orr .r12 .r12 (.reg .r10),
+   .dp .and .r12 .r12 (.imm 255)]
+
+/-- `r12 := PITABLE[r12 & 255]`, by a scan of the whole table, four entries
+(one word) at a time, the first entry's number in `r9` and its address in
+`lr`, then a selection of the byte among the four. Clobbers `r3`, `r9`–`r11`
+and `lr`. -/
 def piLookup : Prog isa :=
   .seq (.block (mask .r12 8 ++ ([imm .r3 0, .adrSym .lr piSym, .mov .r9 (.imm 0)] : List Instr)))
-    (.seq (.loop (.block piBody) .ne) (.block [rr .r12 .r3]))
+    (.seq (.loop (.block piBody) .ne) (.block piSelect))
 
 def copyKey : List Instr :=
   [.dp .add .lr .r4 (.reg .r0), .ldrb .r12 .lr 0,
