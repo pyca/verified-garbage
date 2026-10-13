@@ -596,11 +596,7 @@ mod tests {
                             &mut tag,
                         )
                     };
-                    assert_eq!(
-                        (&dst[..len], tag),
-                        (&want[..len], want_tag),
-                        "{len} {src_len}"
-                    );
+                    assert_eq!((&dst[..len], tag), (&want[..len], want_tag));
                 }
             }
         }
