@@ -11,9 +11,11 @@ public import VerifiedGarbage.Impl.Ecdsa.Verify.P256.X86_64
 namespace VG.Impl.P256.X86_64
 open VG VG.X86_64 VG.Impl.Weierstrass VG.Impl.Weierstrass.X86_64 VG.Impl.Ecdsa.X86_64
 
+/-- The top digit peeled: its first iteration in the loop measured 0.25%
+slower on an Intel Xeon 8370C. -/
 def publicJoint : Joint.Cfg :=
   ⟨p256.winCfg Impl.Ecdh.X86_64.PX Impl.Ecdh.X86_64.PY Impl.Ecdh.X86_64.BP,
-    6000,"VG_P256_COMB",4000,5408,none,false⟩
+    6000,"VG_P256_COMB",4000,5408,none,true,false⟩
 
 def publicJointAdx : Joint.Cfg :=
   {publicJoint with K := p256x.winCfg Impl.Ecdh.X86_64.PX Impl.Ecdh.X86_64.PY Impl.Ecdh.X86_64.BP}

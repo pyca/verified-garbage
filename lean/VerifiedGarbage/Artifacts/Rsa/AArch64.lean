@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Rsa.AArch64.PubChecked
+public import VerifiedGarbage.Proof.Rsa.AArch64.FoldedChecked
 public import VerifiedGarbage.Proof.Bignum.AArch64.PcVerified
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtVerified
 public import VerifiedGarbage.Proof.Rsa.AArch64.CvVerified
@@ -43,12 +44,14 @@ def artifacts : List Artifact := [
     target := AArch64.target
     doc := Spec.Rsa.publicPrecomputedCheckedApi.doc
       (notes := ["Baseline AArch64: `e` is checked as `vg_rsa_public_checked` checks it; then Montgomery \
-        multiplication and the exponentiation as `vg_rsa_public_checked`'s. `pre` is checked (`n` odd, \
+        multiplication; a three-byte exponent 65537 uses sixteen squares and a final multiplication \
+        by the ordinary input that also converts out of Montgomery form. Other exponents retain \
+        the general exponentiation. `pre` is checked (`n` odd, \
         its top word not zero, `R² mod n` below it) before any arithmetic, so that values of no modulus \
         are safe."])
-    code := Impl.Rsa.AArch64.Checked.precomputedChecked Proof.Bignum.AArch64.Mont.base.mm
+    code := Impl.Rsa.AArch64.Folded.checked Proof.Bignum.AArch64.Mont.base.mm
     contract := Spec.Rsa.publicPrecomputedCheckedContract AArch64.abi
-    verified := Proof.Rsa.AArch64.precomputedChecked_verified _
+    verified := Proof.Rsa.AArch64.FoldedPublic.checked_verified _
     spSafe := Code.all_of_forall (fun _ => rfl) _ },
   { Spec.Rsa.privateCrtApi with
     target := AArch64.target

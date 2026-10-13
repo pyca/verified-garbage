@@ -291,7 +291,7 @@ jobs:
         with:
           persist-credentials: false
       - run: python3 ci/check_lean_imports.py
-      - run: python3 ci/modularize.py check-converted
+      - run: python3 ci/check_lean_modules.py
       - run: python3 ci/check_lean_speed.py
       - run: python3 ci/algorithms_table.py --check
       - run: python3 ci/check_arch_gates.py

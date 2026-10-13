@@ -183,7 +183,7 @@ theorem mb_correct (hL : Law Spec.P384.curve)
     ∃ t s', Exec isa (cfg adx).mulBaseFn s t s' ∧ abiPreserved s s' ∧ mbK.post s s' := by
   obtain ⟨hrd, hwr, hret, hfit, ht, hmp, hz⟩ := hs
   have hc := cfg_ok hI adx
-  obtain ⟨d, hcd, hj, h6, hnc⟩ := (cfg_mulBase adx).1 (by cases adx <;> rfl)
+  obtain ⟨d, hcd, h6, hnc⟩ := (cfg_mulBase adx).1 (by cases adx <;> rfl)
   obtain rfl : d = comb7 := Option.some.inj (hcd.symm.trans (cfg_comb adx))
   have hS : Scr s (s.gpr .rdi) size := ⟨rfl, by rw [hwr]; simp, hfit⟩
   have hn := cfg_n adx
@@ -192,7 +192,7 @@ theorem mb_correct (hL : Law Spec.P384.curve)
   have hz' : wordsVal s.mem (s.gpr .rdi) ((cfg adx).sl ZERO) (cfg adx).n = 0 := by
     rw [hn, cfg_sl]; rw [coordAt_eq _ _ _ (by decide)] at hz; exact hz
   obtain ⟨hTM, hout⟩ := tbls_of adx hrd hwr ht
-  have W := mulBaseFn_ok hc.toBaseCfgOk h6 (cfg_C adx ▸ hL) (cfg_tbls hT adx) hcd hj hS hmp' hz' hTM hout
+  have W := mulBaseFn_ok hc.toBaseCfgOk h6 (cfg_C adx ▸ hL) (cfg_tbls hT adx) hcd hS hmp' hz' hTM hout
   rw [Code.inline_of_noCalls hnc] at W
   obtain ⟨t, s', he, g', sv', rd', wr', sy', U', M', L', R'⟩ := W
   refine ⟨t, s', he, abiPreserved_of_exec (mxcsr_ok adx) he ⟨fun r hr => ?_, ?_⟩, ?_⟩

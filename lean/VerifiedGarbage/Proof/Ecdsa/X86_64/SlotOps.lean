@@ -91,7 +91,7 @@ theorem slMulN_ok (h7 : c.n < 10) {base : Addr} {s : State}
     (ha : a < 45) (hb : b < 45) (hS : SlotsOk o a b MN) (hB : sv c base s b < c.C.n) :
     WP isa (opProg c.MN' (.mul (c.sl o) (c.sl a) (c.sl b))).inline s fun s' => OpKeep c.MN' base (c.sl o) s s' ∧
       sv c base s' o < c.C.n ∧ sv c base s' o * 2 ^ (64 * c.n) % c.C.n = sv c base s a * sv c base s b % c.C.n :=
-  opMulN_ok hs hM rfl rfl hB (slMul_ok (MN'_n c) (MN'_tmp c) (MN'_mo c) h7 hs hM ho ha hb hS hB)
+  opMulN_ok hs hM rfl rfl (sl_le c h7 ho) (sl_le c h7 ha) (sl_le c h7 hb) hB (slMul_ok (MN'_n c) (MN'_tmp c) (MN'_mo c) h7 hs hM ho ha hb hS hB)
 
 /-- `[o] = ([a] + [b]) mod m`, on slots. -/
 theorem slAdd_ok {M : Mod} {m : Nat} (hMn : M.n = c.n) (hMt : M.tmp = c.sl TMP) {jm : Nat}

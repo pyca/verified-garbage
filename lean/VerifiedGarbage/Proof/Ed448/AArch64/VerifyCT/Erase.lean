@@ -22,8 +22,8 @@ namespace VG.Proof.Ed448.AArch64
 open VG VG.AArch64 VG.Impl.Ed448.AArch64
 
 /-- The comparison of two slots, erased: the same code for any slots. -/
-def eqSlotsE : List Instr := (eqSlots 0 0).map Instr.eraseT
+def eqSlotsE : Prog isa := Code.eraseT (eqSlots 0 0)
 
-theorem eqSlots_eraseT (a b : Nat) : (eqSlots a b).map Instr.eraseT = eqSlotsE := by kernel_rfl
+theorem eqSlots_eraseT (a b : Nat) : Code.eraseT (eqSlots a b) = eqSlotsE := by kernel_rfl
 
 end VG.Proof.Ed448.AArch64

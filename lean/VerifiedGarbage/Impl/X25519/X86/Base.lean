@@ -41,11 +41,12 @@ def uEncode : Prog isa :=
     (.seq Impl.Ed25519.X86.invert (.seq (.block (fieldCode uMulOps)) (.block (freeze 64))))
 
 /-- The callee-saved registers saved, the clamped scalar's bits expanded, and `d` in slot 16. -/
-def x25519BaseStart : List Instr := abiSave 2 ++ inputBits 1 32 ++ clampBits ++ fieldCode baseSetupOps
+def x25519BaseStart : Prog isa :=
+  .seq (.block (abiSave 2)) (.seq (inputBits 1 32) (.block (clampBits ++ fieldCode baseSetupOps)))
 
 /-- After the comb's tables' address (`combAddr`). -/
 def x25519BaseBody : Prog isa :=
-  .seq (.block x25519BaseStart)
+  .seq x25519BaseStart
     (.seq combMultiply (.seq uEncode (.block (finishWords 64))))
 
 def x25519Base : Code Instr Cond := .seq (combAddr 2) x25519BaseBody

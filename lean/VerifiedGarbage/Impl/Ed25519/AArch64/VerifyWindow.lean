@@ -41,11 +41,12 @@ def dblOps (t : Bool) : List FieldOp :=
     .sub 12 9 8, .sub 13 10 12, .add 14 8 9, .mul 0 11 13, .mul 1 12 14, .mul 2 13 12] ++
     if t then [.mul 3 11 14] else []
 
-/-- Four doublings: three without `T`, with the counter `x1`, then one with it. -/
+/-- Four doublings without `T`, with the counter `x1`, then the last one's `T = EH`, from
+its `E` and `H`, which every doubling leaves in slots 11 and 14 (`dblOps true`). -/
 def doubleWindow : Prog isa :=
-  .seq (.block [.movz .w .x1 3 0]) (.seq
+  .seq (.block [.movz .w .x1 4 0]) (.seq
     (.loop (.block (fieldCode (dblOps false) ++ [.subImm .x .x1 .x1 1])) (.nonzero .x .x1))
-    (.block (fieldCode (dblOps true))))
+    (.block (fieldCode [.mul 3 11 14])))
 
 /-- `[Y - X, Y + X, 2dT, 2Z]` of the point in slots 17–20 into slots 0–3, with `d` in slot 16. -/
 def cacheOps : List FieldOp := [.sub 0 18 17, .add 1 18 17, .add 2 20 20, .mul 2 2 16, .add 3 19 19]

@@ -81,14 +81,12 @@ theorem decode_ok (hR : RecoverOk) {s : State} {base : Addr} (hs : Scr s base) (
   refine WP.seq (WP.mono (xOps_ok hs3 bd3 xo hxo) fun s4 ⟨k4, bd4, mx4, sm4, e4⟩ => ?_)
   have hs4 := k4.scr hs3
   -- The comparison of `v x²` with `u`, and zero in slot 13.
-  refine WP.seq ?_
-  rw [WP.block_append_iff]
-  refine WP.mono (eqSlotsF_ok hs4 12 13 (lt118 bd4 12) (lt118 bd4 13) (by decide) (by decide))
-    fun s5 ⟨⟨c2, hc2, b5⟩, k5, x25⟩ => ?_
+  refine WP.seq (WP.mono (eqSlotsF_ok hs4 12 13 (lt118 bd4 12) (lt118 bd4 13) (by decide) (by decide))
+    fun s5 ⟨⟨c2, hc2, b5⟩, k5, x25⟩ => ?_)
   have hs5 := k5.scr hs4
   have bd5 : BEnv s5.mem base := bnd_check bd4 k5.mem x25
-  refine WP.mono (VG.Proof.X448.AArch64.Base.constSlot_ok hs5 (o := slot 13) (by decide) (by decide) 0)
-    fun s6 ⟨w6, o6, k6⟩ => ?_
+  refine WP.seq (WP.mono (VG.Proof.X448.AArch64.Base.constSlot_ok hs5 (o := slot 13) (by decide) (by decide) 0)
+    fun s6 ⟨w6, o6, k6⟩ => ?_)
   have hs6 : Scr s6 base := hs5.of_keeps k6 (by decide)
   have z13 : ∀ j < 8, limbs s6.mem base (slot (13 : Fin 22).val) j < 2 ^ 56 := fun j hj => by
     change (word s6.mem base (slot 13 + 8 * j)).toNat < _

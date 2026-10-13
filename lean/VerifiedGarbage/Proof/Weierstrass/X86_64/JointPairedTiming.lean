@@ -6,6 +6,8 @@ public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointLoop
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.JointLoop
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.RegFieldTiming
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.RegFieldTiming
+public import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
+meta import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -108,6 +110,39 @@ theorem jointPair_test {c : Joint.Cfg} {C : Curve} {base : Addr} {size j : Nat}
     hkeep A _ _ ks (Exec.syms es) cs,hkeep A _ _ kt (Exec.syms et) ct,
     (ks.1 _ (by simp)).trans ps,(kt.1 _ (by simp)).trans pt⟩,sz,tz⟩
 
+/-- `cmp rbx, k` reads only `rbx` (its immediate erased for the analysis). -/
+theorem jointCmpCT (k : BitVec 32) : RegCT [.rbx] (.block [.alu .cmp .rbx (.imm k)]) :=
+  VG.Taint.constantTime_mapBlocks (c' := .block [.alu .cmp .rbx (.imm 0)]) taintS_eraseInv
+    (Taint.ofRegs [.rbx]) rfl (fun _ _ _ _ h => h) rfl (by taint_decide)
+
+theorem jointPair_cmp {c : Joint.Cfg} {C : Curve} {base : Addr} {size j k : Nat}
+    {Core : Point C → State → Prop} {A : Point C}
+    (hkeep : ∀ A s t,Keeps [] s t → t.syms=s.syms → Core A s → Core A t)
+    (hj : j<2^64) (hk : k<2^31) :
+    RelCT isa (JointPair c C base size Core A j) (.block [.alu .cmp .rbx (.imm (BitVec.ofNat 32 k))])
+      (fun s t => JointPair c C base size Core A j s t ∧
+        s.zf=some (decide (j=k)) ∧ t.zf=some (decide (j=k))) := by
+  intro s t ts tt s' t' ⟨⟨E,hp⟩,cs,ct,ps,pt⟩ es et
+  obtain ⟨_,_,xs,sz,ks⟩ := cmpRbxImm_ok s hj hk ps
+  obtain ⟨_,_,xt,tz,kt⟩ := cmpRbxImm_ok t hj hk pt
+  obtain ⟨_,rfl⟩ := Exec.det es xs
+  obtain ⟨_,rfl⟩ := Exec.det et xt
+  have he : ts=tt := jointCmpCT _ _ _ _ _ _ _ trivial trivial
+    (Taint.agree_ofRegs (fun r hr => by
+      simp only [List.mem_singleton] at hr
+      subst r
+      exact ps.trans pt.symm)) es et
+  exact ⟨he,⟨⟨E,hp.1.of_keeps ks (by decide),hp.2.of_keeps kt (by decide)⟩,
+    hkeep A _ _ ks (Exec.syms es) cs,hkeep A _ _ kt (Exec.syms et) ct,
+    (ks.1 _ (by simp)).trans ps,(kt.1 _ (by simp)).trans pt⟩,sz,tz⟩
+
+/-- No code. -/
+theorem relCT_nil {P Q : State → State → Prop} (h : ∀ s t,P s t → Q s t) : RelCT isa P (.block []) Q := by
+  intro s₁ s₂ t₁ t₂ s₁' s₂' hp e₁ e₂
+  obtain ⟨rfl,rfl⟩ := Exec.det e₁ (Exec.block rfl)
+  obtain ⟨rfl,rfl⟩ := Exec.det e₂ (Exec.block rfl)
+  exact ⟨rfl,h _ _ hp⟩
+
 section
 variable {c : Joint.Cfg} {C : Curve} {base T : Addr} {size u v : Nat}
     {G Q : Point C} {row : JointGeneratorRow c.K.M.n C G} {double : Prog isa}
@@ -134,7 +169,34 @@ theorem jointPair_digits {j : Nat} {A : Point C} (hA : onCurve C A=true) (hj : j
 
 include hdouble
 
-theorem jointPair_step {j : Nat} (hj : j<64*c.K.M.n) :
+omit hm hC ha hOne hOneVal hG hQ in
+/-- The doubling but where `R` is `O`, in the first iteration (`j = 64 n`). -/
+theorem jointPair_guard {j : Nat} {A : Point C} (hA : onCurve C A=true) (hj : j<Joint.top c)
+    (h0 : j=64*c.K.M.n → add A A=A) :
+    RelCT isa (JointPair c C base size (JointCore c C base size Q u v (JointGenerator c C base T size row)) A j)
+      (Joint.guardDouble c double).inline
+      (JointPair c C base size (JointCore c C base size Q u v (JointGenerator c C base T size row)) (add A A) j) := by
+  have hk (rs : List Reg) (hr : Reg.rdi∉rs) (A : Point C) (s t : State)
+      (ks : Keeps rs s t) (st : t.syms=s.syms) (cs : (JointCore c C base size Q u v (JointGenerator c C base T size row)) A s) : (JointCore c C base size Q u v (JointGenerator c C base T size row)) A t :=
+    cs.of_keeps ks hr (fun n hn hb ho => (cs.external n hn hb ho).of_keeps ks st)
+  have := hL.lookup.layout.n
+  have := joint_top_le c
+  rw [Joint.guardDouble]
+  split
+  · exact (jointPair_stage (fun s hs _ => hdouble _ s hA hs) (ht.double _ j)).mono
+      (fun _ _ h => h) (fun _ _ h => h)
+  simp only [Code.inline]
+  apply RelCT.seq (jointPair_cmp (k:=64*c.K.M.n) (hk [] (by simp)) (by omega) (by omega))
+  refine RelCT.ite (fun s t h => by show s.zf=t.zf; rw [h.2.1,h.2.2]) ?_ ?_
+  · refine relCT_nil fun s t ⟨⟨p,zs,_⟩,he⟩ => ?_
+    have hz : s.zf=some true := he
+    rw [zs] at hz
+    rw [h0 (by simpa using hz)]
+    exact p
+  · exact (jointPair_stage (fun s hs _ => hdouble _ s hA hs) (ht.double _ j)).mono
+      (fun _ _ h => h.1.1) (fun _ _ h => h)
+
+theorem jointPair_step (hu : u<2^(64*c.K.M.n)) (hv : v<2^(64*c.K.M.n)) {j : Nat} (hj : j<Joint.top c) :
     RelCT isa (JointPair c C base size (JointCore c C base size Q u v (JointGenerator c C base T size row)) (jointPoint G Q u v (j+1)) (j+1))
       (Joint.step c double).inline (fun s t => JointPair c C base size (JointCore c C base size Q u v (JointGenerator c C base T size row)) (jointPoint G Q u v j) j s t ∧
         s.zf=some (decide (j=0)) ∧ t.zf=some (decide (j=0))) := by
@@ -143,8 +205,10 @@ theorem jointPair_step {j : Nat} (hj : j<64*c.K.M.n) :
     cs.of_keeps ks hr (fun n hn hb ho => (cs.external n hn hb ho).of_keeps ks st)
   have hA := jointPoint_curve hC hG hQ u v (j+1)
   have := hL.lookup.layout.n
+  have := joint_top_le c
   apply RelCT.seq (jointPair_counter (hk [.rbx] (by decide)) (by omega))
-  apply RelCT.seq (jointPair_stage (fun s hs _ => hdouble _ s hA hs) (ht.double _ j))
+  apply RelCT.seq (jointPair_guard hL ht hdouble hA hj
+    (fun h => by rw [h, jointPoint_topB G Q hu hv]; rfl))
   apply RelCT.seq
   · simpa only [jointPoint_step hC hG hQ] using
       jointPair_digits hL hm hC ha hOne hOneVal hG hQ ht (hC.onCurve_add hA hA)
@@ -153,19 +217,25 @@ theorem jointPair_step {j : Nat} (hj : j<64*c.K.M.n) :
 
 theorem jointPair_run (hu : u<2^(64*c.K.M.n)) (hv : v<2^(64*c.K.M.n)) :
     RelCT isa (JointPair c C base size (JointCore c C base size Q u v (JointGenerator c C base T size row))
-      .infinity (64*c.K.M.n)) (Joint.run c double).inline
+      .infinity (Joint.top c)) (Joint.run c double).inline
       (JointPair c C base size (JointCore c C base size Q u v (JointGenerator c C base T size row)) (add (mul u G) (mul v Q)) 0) := by
-  have seed := jointPair_digits (base:=base) (T:=T) (u:=u) (v:=v) (row:=row) (j:=64*c.K.M.n)
-    (A:=.infinity) hL hm hC ha hOne hOneVal hG hQ ht rfl (by omega)
+  have := hL.lookup.layout.n
   have he := jointPoint_step hC hG hQ u v (64*c.K.M.n)
   rw [jointPoint_topB G Q hu hv] at he
   change add (add .infinity (FastNaf.point C Q 5 v (64*c.K.M.n)))
     (FastNaf.point C G 7 u (64*c.K.M.n))=jointPoint G Q u v (64*c.K.M.n) at he
-  rw [he] at seed
-  have := hL.lookup.layout.n
   have out := jointRun_relCT (c:=c) (double:=double) (by omega)
-    (fun j => JointPair c C base size (JointCore c C base size Q u v (JointGenerator c C base T size row)) (jointPoint G Q u v j) j) seed
-    (fun j hj => jointPair_step hL hm hC ha hOne hOneVal hG hQ ht hdouble hj)
+    (Pre:=JointPair c C base size (JointCore c C base size Q u v (JointGenerator c C base T size row))
+      .infinity (Joint.top c))
+    (fun j => JointPair c C base size (JointCore c C base size Q u v (JointGenerator c C base T size row)) (jointPoint G Q u v j) j)
+    (fun hp => by
+      have seed := jointPair_digits (base:=base) (T:=T) (u:=u) (v:=v) (row:=row) (j:=64*c.K.M.n)
+        (A:=.infinity) hL hm hC ha hOne hOneVal hG hQ ht rfl (by omega)
+      rw [he] at seed
+      simpa only [joint_top_peel hp] using seed)
+    (fun hp s t h => by
+      simpa only [joint_top_guard hp,jointPoint_topB G Q hu hv] using h)
+    (fun j hj => jointPair_step hL hm hC ha hOne hOneVal hG hQ ht hdouble hu hv hj)
   simpa only [jointPoint_zero] using out
 end
 end VG.Proof.Weierstrass.X86_64

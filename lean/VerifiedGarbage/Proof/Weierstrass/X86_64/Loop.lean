@@ -74,4 +74,32 @@ theorem testRbx_ok (s : State) {j : Nat} (hj' : j < 2 ^ 64) (hb : s.gpr .rbx = B
     rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt hj'] at this
     exact h this
 
+/-- `cmp rbx, k` for `rbx = j`: `ZF` of `j = k`. -/
+theorem cmpRbxImm_ok (s : State) {j k : Nat} (hj' : j < 2 ^ 64) (hk : k < 2 ^ 31)
+    (hb : s.gpr .rbx = BitVec.ofNat 64 j) :
+    WP isa (.block [.alu .cmp .rbx (.imm (BitVec.ofNat 32 k))]) s fun s' =>
+      s'.zf = some (decide (j = k)) ∧ Keeps [] s s' := by
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc, Option.bind_some,
+    Option.some.injEq, exists_eq_left', RegUpd.zf_arithFlags, hb]
+  refine ⟨?_, fun r _ => rfl, rfl, rfl, rfl⟩
+  have e : (BitVec.ofNat 32 k).signExtend 64 = BitVec.ofNat 64 k := by
+    apply BitVec.eq_of_toNat_eq
+    rw [BitVec.toNat_signExtend]
+    simp [BitVec.toNat_ofNat, BitVec.msb_eq_decide]
+    split <;> omega
+  rw [e]
+  congr 1
+  by_cases h : j = k
+  · subst h; simp
+  · simp only [h, decide_false]
+    apply beq_false_of_ne
+    intro he
+    have h2 := congrArg (· + BitVec.ofNat 64 k) he
+    simp only [BitVec.sub_add_cancel] at h2
+    have h3 : BitVec.ofNat 64 j = BitVec.ofNat 64 k := h2.trans (by simp)
+    have := congrArg BitVec.toNat h3
+    rw [BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hj', Nat.mod_eq_of_lt (by omega)] at this
+    exact h this
+
 end VG.Proof.Weierstrass.X86_64
