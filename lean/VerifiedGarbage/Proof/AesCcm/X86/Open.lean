@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesCcm.X86.Seal
-import VerifiedGarbage.Proof.AesCcm.X86.Mask
+module
+
+public import VerifiedGarbage.Proof.AesCcm.X86.Seal
+public import VerifiedGarbage.Proof.AesCcm.X86.Mask
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CCM on x86: `vg_aes_ccm_open`
@@ -11,6 +17,8 @@ received tag padded (AES-GCM's `recv_ok`) and compared with it without a branch
 (AES-GCM's `cmp_ok`), the data masked (`mask_ok`) and the exit
 (`open_wp`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

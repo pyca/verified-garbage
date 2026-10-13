@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Copy
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Hmac
-import VerifiedGarbage.Proof.Framework.WriteBytes
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Copy
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Hmac
+public import VerifiedGarbage.Proof.Framework.WriteBytes
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Deterministic ECDSA on x86 (32-bit): the messages of steps d, f and h.3
@@ -12,6 +18,8 @@ copied from the frame (`head_ok`), the byte `b`, then the private key and
 digest, which leaves `h` as `Q - D` zero bytes then the digest
 (`tailW_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Rfc6979.X86
 

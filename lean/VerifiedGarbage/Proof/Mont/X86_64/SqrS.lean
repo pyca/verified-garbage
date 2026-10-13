@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Mont.X86_64.CsubS
-import VerifiedGarbage.Proof.Mont.X86_64.Rounds
-import VerifiedGarbage.Proof.Mont.X86_64.SparseX
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.Steps
+module
+
+public import VerifiedGarbage.Proof.Mont.X86_64.CsubS
+public import VerifiedGarbage.Proof.Mont.X86_64.Rounds
+public import VerifiedGarbage.Proof.Mont.X86_64.SparseX
+public import VerifiedGarbage.Proof.X25519.X86_64.Adx.Steps
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Montgomery arithmetic on x86-64: P-384's squaring with BMI2 and ADX, its parts
@@ -20,6 +26,8 @@ The powers of two above `2²⁵⁶` are never evaluated: they are split into
 factors `2⁶⁴` as soon as they appear (`pow_split`, `pow64x6`, …), or kept
 apart from one another.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Mont.X86_64
 

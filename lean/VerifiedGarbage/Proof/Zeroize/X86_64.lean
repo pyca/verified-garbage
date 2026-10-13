@@ -1,9 +1,23 @@
-import VerifiedGarbage.Impl.Zeroize.X86_64
-import VerifiedGarbage.Proof.Zeroize.Common
-import VerifiedGarbage.Proof.MlKem.X86_64.Wp
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Spec.Zeroize.Contract
-import VerifiedGarbage.TCB.X86_64.Target
+module
+
+public import VerifiedGarbage.Impl.Zeroize.X86_64
+meta import VerifiedGarbage.Impl.Zeroize.X86_64
+public import VerifiedGarbage.Proof.Zeroize.Common
+meta import VerifiedGarbage.Proof.Zeroize.Common
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+meta import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.Zeroize.Contract
+meta import VerifiedGarbage.Spec.Zeroize.Contract
+public import VerifiedGarbage.TCB.X86_64.Target
+meta import VerifiedGarbage.TCB.X86_64.Target
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.Zeroize.X86_64
 open VG VG.X86_64 VG.Impl.Zeroize.X86_64 VG.Proof.MlKem.X86_64

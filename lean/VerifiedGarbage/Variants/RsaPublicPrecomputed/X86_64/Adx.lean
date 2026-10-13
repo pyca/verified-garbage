@@ -1,7 +1,11 @@
-import VerifiedGarbage.Proof.Rsa.X86_64.PublicImpl
-import VerifiedGarbage.Proof.Bignum.X86_64.FoldedBackend
+module
+
+public import VerifiedGarbage.Proof.Rsa.X86_64.PublicImpl
+public import VerifiedGarbage.Proof.Bignum.X86_64.FoldedBackend
 
 /-! # Precomputed RSA public operation: Adx -/
+
+@[expose] public section
 
 namespace VG.Variants.RsaPublicPrecomputed.X86_64.Adx
 

@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.AesGcm.AArch64.Body
-import VerifiedGarbage.Proof.AesGcm.AArch64.FinTag
-import VerifiedGarbage.Proof.AesGcm.AArch64.PieceCT
+module
+
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Body
+meta import VerifiedGarbage.Proof.AesGcm.AArch64.Body
+public import VerifiedGarbage.Proof.AesGcm.AArch64.FinTag
+meta import VerifiedGarbage.Proof.AesGcm.AArch64.FinTag
+public import VerifiedGarbage.Proof.AesGcm.AArch64.PieceCT
+meta import VerifiedGarbage.Proof.AesGcm.AArch64.PieceCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on AArch64: the bodies are constant time
@@ -9,6 +18,8 @@ Untrusted: everything here is checked by Lean. Two runs of `encBody`,
 `decAbs`, `decBody` or `finBody` from states with the same public values (the
 lengths and the offset of the buffered additional data) leak the same.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

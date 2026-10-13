@@ -1,12 +1,18 @@
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Framework.X86.Inline
-import VerifiedGarbage.Proof.Sha1.X86.Compress
-import VerifiedGarbage.Proof.Sha1.X86.Stream.Init
-import VerifiedGarbage.Proof.Sha1.X86.Stream.Md
-import VerifiedGarbage.Spec.Sha1.Contract
-import VerifiedGarbage.Proof.Sha1.X86.Lit
-import VerifiedGarbage.Proof.Sha1.Scratch
-import VerifiedGarbage.Proof.Framework.X86.StackScratch
+module
+
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.X86.Inline
+public import VerifiedGarbage.Proof.Sha1.X86.Compress
+public import VerifiedGarbage.Proof.Sha1.X86.Stream.Init
+public import VerifiedGarbage.Proof.Sha1.X86.Stream.Md
+public import VerifiedGarbage.Spec.Sha1.Contract
+public import VerifiedGarbage.Proof.Sha1.X86.Lit
+public import VerifiedGarbage.Proof.Sha1.Scratch
+public import VerifiedGarbage.Proof.Framework.X86.StackScratch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # SHA-1 on x86: the shared contracts
@@ -30,6 +36,8 @@ stated for any code verified against the per-target contract (`compress_of`,
 every implementation of the compression function
 (`Proof/Sha1/X86/Variants/`) are moved to the shared contracts the same way.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sha1.X86.Shared
 

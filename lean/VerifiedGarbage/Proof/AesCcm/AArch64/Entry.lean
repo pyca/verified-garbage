@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesCcm.AArch64.Callee
+module
+
+public import VerifiedGarbage.Proof.AesCcm.AArch64.Callee
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CCM on AArch64: the arguments and the entry
@@ -9,6 +15,8 @@ and `openPre` give the facts the proofs use about the arguments (`Args`,
 `tag` from the stack, saves our caller's registers at `W + 128` and keeps the
 arguments in registers and in `W` (`entry_ok`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

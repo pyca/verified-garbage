@@ -1,7 +1,17 @@
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Curve
-import VerifiedGarbage.Proof.Ecdsa.X86.P192.Verified
-import VerifiedGarbage.Proof.Ecdsa.X86.P192.Lit
-import VerifiedGarbage.Proof.Framework.X86.Lit
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Curve
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Curve
+public import VerifiedGarbage.Proof.Ecdsa.X86.P192.Verified
+meta import VerifiedGarbage.Proof.Ecdsa.X86.P192.Verified
+public import VerifiedGarbage.Proof.Ecdsa.X86.P192.Lit
+meta import VerifiedGarbage.Proof.Ecdsa.X86.P192.Lit
+public import VerifiedGarbage.Proof.Framework.X86.Lit
+meta import VerifiedGarbage.Proof.Framework.X86.Lit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Deterministic ECDSA on x86 (32-bit): P-192
@@ -11,6 +21,8 @@ P-192 as the proof's curve (`p192`): scalars of 3 64-bit words, the order
 correct (given the group law) and constant time against its contract
 (`coreK` at P-192's sizes, which is `Proof.Ecdsa.X86.P192.signX86`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Rfc6979.X86
 
@@ -22,7 +34,7 @@ theorem p192_nBits : Spec.Ecdsa.nBits Spec.P192.curve = 192 := by
   have h₂ : Spec.P192.curve.n.log2 < 192 := (Nat.log2_lt (by decide +kernel)).mpr (by decide +kernel)
   omega
 
-private theorem core_pre_192 {s : State} (h : (coreK Impl.Ecdsa.X86.p192).pre s) :
+theorem core_pre_192 {s : State} (h : (coreK Impl.Ecdsa.X86.p192).pre s) :
     Proof.Ecdsa.X86.P192.signX86.pre s := by
   obtain ⟨rd, wr, oc, od, og, ok, dc, gc, kc, ao, ac, ro, rc, no, nd, ng, nk, nc, sp, lo, so, ss, _⟩ := h
   exact ⟨rd, wr, oc, od, og, ok, dc, gc, kc, ao, ac, ro, rc, no, nd, ng, nk, nc, sp, lo, so, ss⟩
@@ -47,6 +59,6 @@ def p192 (hL : Weierstrass.Law Spec.P192.curve) : RfcCurve where
       ⟨he, a0, a1, a2, a3, a4⟩
   coreNs := NoSp.of_all (by lit_decide)
   coreStack := by lit_decide
-  reduceT := Function.const _ ⟨_, by taint_decide⟩
+  reduceT := by exact (Function.const _ ⟨_, by taint_decide⟩)
 
 end VG.Proof.Ecdsa.Rfc6979.X86

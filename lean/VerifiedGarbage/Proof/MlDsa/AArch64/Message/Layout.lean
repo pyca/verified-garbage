@@ -1,8 +1,14 @@
-import VerifiedGarbage.Impl.MlDsa.AArch64.Message
-import VerifiedGarbage.Proof.MlKem.AArch64.KeccakCall
-import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.MlDsa.Message.Common
+module
+
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Message
+public import VerifiedGarbage.Proof.MlKem.AArch64.KeccakCall
+public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.MlDsa.Message.Common
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on AArch64, `sign_message` and `verify_message`: where everything is
@@ -18,6 +24,8 @@ pointer, `x28` pointing at `X`, the callee-saved registers, the saves, and
 that memory changed only in `X` and `STK`. `Ctx.keep` carries it over code
 that writes only within `W` and `STK`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Message
 

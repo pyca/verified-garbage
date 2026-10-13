@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.SimpleBitPack
-import VerifiedGarbage.Proof.MlDsa.Pack.Arith
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.SimpleBitPack
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.SimpleBitPack
+public import VerifiedGarbage.Proof.MlDsa.Pack.Arith
+meta import VerifiedGarbage.Proof.MlDsa.Pack.Arith
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on AArch64: `vg_mldsa_bit_pack`
@@ -9,6 +17,8 @@ bit (`subModQ`), which is `b - (x mod± q)` for a reduced `x`
 (`Pack/Arith.lean`). The loop is proven once for every width (`packLoop_ok`),
 and the function by its five cases, which the length chooses.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Pack
 

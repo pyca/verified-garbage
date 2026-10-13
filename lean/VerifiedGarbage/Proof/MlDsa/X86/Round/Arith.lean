@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.MlKem.X86.Red
-import VerifiedGarbage.Proof.Framework.X86.Wp
-import VerifiedGarbage.Impl.MlDsa.X86.Round.Round
-import VerifiedGarbage.Proof.MlDsa.Round.Decompose
-import VerifiedGarbage.Proof.MlDsa.Round.Mem
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86.Red
+public import VerifiedGarbage.Proof.Framework.X86.Wp
+public import VerifiedGarbage.Impl.MlDsa.X86.Round.Round
+public import VerifiedGarbage.Proof.MlDsa.Round.Decompose
+public import VerifiedGarbage.Proof.MlDsa.Round.Mem
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on x86 (32-bit): what the rounding code computes
@@ -13,6 +19,8 @@ Continuation-style rules for the pieces of `Impl/MlDsa/X86/Round/Round.lean`:
 and `hb g` its remainder modulo `m` (`hb_spec`), each changing only the
 registers it names (`Only`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86.Round
 

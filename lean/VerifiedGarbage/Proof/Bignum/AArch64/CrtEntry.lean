@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtMain
-import VerifiedGarbage.Proof.Bignum.AArch64.HdrPairs
+module
+
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtMain
+public import VerifiedGarbage.Proof.Bignum.AArch64.HdrPairs
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSA with the CRT on AArch64: the entry
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.Bignum.AArch64.HdrPairs
 `main` reads, some from the stack) in the header of the working space, and
 leaves its base in `x0` (`crtEntry_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.AArch64
 

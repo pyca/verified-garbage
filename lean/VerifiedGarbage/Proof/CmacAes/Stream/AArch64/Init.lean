@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.CmacAes.Stream.AArch64.Common
+module
+
+public import VerifiedGarbage.Proof.CmacAes.Stream.AArch64.Common
+meta import VerifiedGarbage.Proof.CmacAes.Stream.AArch64.Common
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Streaming AES-CMAC on AArch64: `vg_cmac_aes_init`
@@ -10,6 +17,8 @@ message. The code between the calls is constant time by the taint analysis,
 and the calls by their own proofs (`ek_rel`, `sub_rel`), their arguments
 pinned by `IMid₁` and `IMid₂`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.CmacAes.Stream.AArch64
 

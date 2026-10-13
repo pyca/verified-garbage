@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Weierstrass.AArch64.MontFnG
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Impl.Weierstrass.AArch64
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.MontFnG
+public import VerifiedGarbage.Proof.Framework.AArch64.Call
+public import VerifiedGarbage.Impl.Weierstrass.AArch64
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Calls of the Montgomery products, on AArch64
@@ -13,6 +19,8 @@ function's own working space (`moAt`), it does what the inline product
 does (`Proof/Mont/AArch64/Ops.lean`'s `mul_ok`): it changes only the
 registers `clob`, the number at `o` and the temporary area (`OpKeep`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.AArch64.Mont
 

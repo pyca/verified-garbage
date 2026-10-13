@@ -1,10 +1,16 @@
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Flags
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Ladder
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Chain
-import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
-import VerifiedGarbage.Proof.Weierstrass.Law3
-import VerifiedGarbage.Proof.Framework.AArch64.Spill
-import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.Flags
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Ladder
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Chain
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
+public import VerifiedGarbage.Proof.Weierstrass.Law3
+public import VerifiedGarbage.Proof.Framework.AArch64.Spill
+public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDSA on AArch64: the curve, the arguments and the working space
@@ -21,6 +27,8 @@ the tables of bits `bitsAt n j` (`64 n` bytes each, `j < 3`), which are
 slots `nslots + 8 j` to `nslots + 8 j + 7`. Every offset the scalar's table
 (`j = 0`) is read at is below `4096`, as `ldrb` needs.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.AArch64
 

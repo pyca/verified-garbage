@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Weierstrass.Law
-import VerifiedGarbage.Spec.EcKey
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.Law
+public import VerifiedGarbage.Spec.EcKey
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Public keys from a projective representative
@@ -10,6 +16,8 @@ and numbers
 public key of `d` is `(x, y)` if `d` is in `[1, n-1]` and `Z ≠ 0`, `O` if
 `d` is and `Z = 0`, and none otherwise.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.EcKey
 

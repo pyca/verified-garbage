@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTPH
+module
+
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTPH
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTPH
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSA with the CRT on AArch64: constant time, `p`'s phase
@@ -8,6 +15,8 @@ each piece, a predicate (`PO0` … `PO4`, then `hSteps`' `H0`) carries the
 piece's hypotheses and what correctness gives after it; `o0_of` proves the
 first from `PPre`, as `pPhase_ok` runs the pieces.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.AArch64
 

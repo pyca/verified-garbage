@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Rsa.X86_64.KeySteps
+module
+
+public import VerifiedGarbage.Proof.Rsa.X86_64.KeySteps
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_check_key` on x86-64: the checks modulo `X - 1`
@@ -8,6 +14,8 @@ and'ed with the masks of `dX < M`, `R₁ = 1` and `R₂ = 1`, for `M = X - 1`
 (when `X > 0`) and the remainders `R₁ = e d mod M` and `R₂ = e dX mod M`
 (when `M > 0`) (`modChecks_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.X86_64.Key
 

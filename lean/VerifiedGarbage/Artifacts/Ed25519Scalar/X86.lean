@@ -1,5 +1,9 @@
-import VerifiedGarbage.TCB.X86.Target
-import VerifiedGarbage.Proof.Ed25519.X86.ScalarVerified
+module
+
+public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Proof.Ed25519.X86.ScalarVerified
+
+@[expose] public section
 
 namespace VG.Artifacts.Ed25519Scalar.X86
 

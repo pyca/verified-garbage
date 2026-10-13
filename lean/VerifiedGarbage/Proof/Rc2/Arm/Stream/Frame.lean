@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Rc2.Arm.Stream.Verified
-import VerifiedGarbage.Proof.Rc2.Scratch
-import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
+module
+
+public import VerifiedGarbage.Proof.Rc2.Arm.Stream.Verified
+public import VerifiedGarbage.Proof.Rc2.Scratch
+public import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RC2-CBC's streaming functions on ARMv7, with their working space on the stack
@@ -10,6 +16,8 @@ argument (`Verified.lean`), in a frame of 592 bytes that allocates it and
 copies their two other stack arguments (`Verified.stackScratchWiped`), and
 zero it before returning.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rc2.Arm.Stream
 

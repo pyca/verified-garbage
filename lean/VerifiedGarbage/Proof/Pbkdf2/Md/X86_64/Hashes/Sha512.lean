@@ -1,11 +1,25 @@
-import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Variant
-import VerifiedGarbage.Proof.Sha512.X86_64.Variant
-import VerifiedGarbage.Proof.Sha512.X86_64.Shared
-import VerifiedGarbage.Proof.Sha512.X86_64.Stream.Init
-import VerifiedGarbage.Proof.Hmac.Generic.Common
-import VerifiedGarbage.Spec.Sha512.Contract
-import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.Framework.TaintBatch
+module
+
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Variant
+meta import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Variant
+public import VerifiedGarbage.Proof.Sha512.X86_64.Variant
+meta import VerifiedGarbage.Proof.Sha512.X86_64.Variant
+public import VerifiedGarbage.Proof.Sha512.X86_64.Shared
+meta import VerifiedGarbage.Proof.Sha512.X86_64.Shared
+public import VerifiedGarbage.Proof.Sha512.X86_64.Stream.Init
+meta import VerifiedGarbage.Proof.Sha512.X86_64.Stream.Init
+public import VerifiedGarbage.Proof.Hmac.Generic.Common
+meta import VerifiedGarbage.Proof.Hmac.Generic.Common
+public import VerifiedGarbage.Spec.Sha512.Contract
+meta import VerifiedGarbage.Spec.Sha512.Contract
+public import VerifiedGarbage.TCB.X86_64.Target
+meta import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The SHA-512 family on x86-64, as Merkle–Damgård hash functions
@@ -26,6 +40,8 @@ with its suffix. SHA-384's, SHA-512/256's and SHA-512/224's own `finalize`,
 which writes their digest (`stream384 v`, …), is carried by their
 variants.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Pbkdf2.Md.X86_64.Sha512
 

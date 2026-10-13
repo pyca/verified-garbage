@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Framework.PowLit
-import VerifiedGarbage.Proof.Weierstrass.Affine
-import VerifiedGarbage.Proof.Weierstrass.Field
-import VerifiedGarbage.Proof.Weierstrass.Law
+module
+
+public import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.Proof.Weierstrass.Affine
+public import VerifiedGarbage.Proof.Weierstrass.Field
+public import VerifiedGarbage.Proof.Weierstrass.Law
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The complete formulas compute the specification's group law
@@ -18,6 +24,8 @@ triple over `Fin C.p` (`Rep`, `Law.lean`); the results over `Fin C.p` make
 `Good.law` (`Group.lean`), which the proofs of the code take, so that
 they need none of Mathlib's algebra.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass
 

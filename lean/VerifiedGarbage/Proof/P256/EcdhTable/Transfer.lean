@@ -1,7 +1,15 @@
-import VerifiedGarbage.Proof.P256.EcdhTable.Dblu
-import VerifiedGarbage.Proof.P256.EcdhTable.Zaddu
-import VerifiedGarbage.Proof.P256.EcdhTable.DbluRaw
-import VerifiedGarbage.Proof.P256.EcdhTable.ZadduRaw
+module
+
+public import VerifiedGarbage.Proof.P256.EcdhTable.Dblu
+public import VerifiedGarbage.Proof.P256.EcdhTable.Zaddu
+public import VerifiedGarbage.Proof.P256.EcdhTable.DbluRaw
+public import VerifiedGarbage.Proof.P256.EcdhTable.ZadduRaw
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.P256.EcdhTable
 open VG VG.AArch64 VG.Proof.Mont VG.Proof.Mont.AArch64

@@ -1,7 +1,16 @@
-import VerifiedGarbage.Impl.Argon2.X86_64.SegmentSetup
-import VerifiedGarbage.Proof.Argon2.X86_64.FillSegment
+module
+
+public import VerifiedGarbage.Impl.Argon2.X86_64.SegmentSetup
+public import VerifiedGarbage.Proof.Argon2.X86_64.FillSegment
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Argon2.X86_64.SegmentSetupSteps`. -/
+
+@[expose] public section
+
 section
 /-! Merged from `Proof.Argon2.X86_64.FillContext`. -/
 section

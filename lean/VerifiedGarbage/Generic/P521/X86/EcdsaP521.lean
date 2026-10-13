@@ -1,10 +1,12 @@
-import VerifiedGarbage.TCB.X86.Target
-import VerifiedGarbage.Proof.Weierstrass.Law
-import VerifiedGarbage.Impl.Ecdsa.P521.X86
-import VerifiedGarbage.Proof.Ecdsa.X86.P521.Verified
-import VerifiedGarbage.Proof.Ecdsa.X86.P521.Lit
-import VerifiedGarbage.Impl.Ecdsa.Verify.P521.X86
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86.P521.Verified
+module
+
+public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Proof.Weierstrass.Law
+public import VerifiedGarbage.Impl.Ecdsa.P521.X86
+public import VerifiedGarbage.Proof.Ecdsa.X86.P521.Verified
+public import VerifiedGarbage.Proof.Ecdsa.X86.P521.Lit
+public import VerifiedGarbage.Impl.Ecdsa.Verify.P521.X86
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.P521.Verified
 
 /-!
 # ECDSA over P-521 (FIPS 186-5) on x86 (32-bit)
@@ -12,6 +14,8 @@ import VerifiedGarbage.Proof.Ecdsa.Verify.X86.P521.Verified
 A generic file (see `TCB/Emit.lean`) over P-521's group law `h`, the variant
 `Variants/P521/X86/Law.lean`.
 -/
+
+@[expose] public section
 
 namespace VG.Generic.P521.X86.EcdsaP521
 

@@ -1,7 +1,16 @@
-import VerifiedGarbage.Proof.RsaPss.X86_64.FixedHashCT
-import VerifiedGarbage.Proof.RsaPss.X86_64.MgfDirect
+module
+
+public import VerifiedGarbage.Proof.RsaPss.X86_64.FixedHashCT
+public import VerifiedGarbage.Proof.RsaPss.X86_64.MgfDirect
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! A fixed one-block MGF1 hash never selects a secret final block. -/
+
+@[expose] public section
+
 namespace VG.Proof.RsaPss.X86_64
 open VG VG.X86_64 VG.Impl.RsaPss.X86_64
 open VG.Proof.Bignum.X86_64 (Two two_map two_post)

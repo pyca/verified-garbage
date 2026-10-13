@@ -1,7 +1,14 @@
-import VerifiedGarbage.Proof.Ed448.X86_64.SignCached.Prune
-import VerifiedGarbage.Proof.Ed448.X86_64.Verify.Calls
-import VerifiedGarbage.Proof.Ed448.X86_64.BaseLocal
-import VerifiedGarbage.Proof.Ed448.X86_64.BaseLit
+module
+
+public import VerifiedGarbage.Proof.Ed448.X86_64.VariantBounds
+public import VerifiedGarbage.Proof.Ed448.X86_64.SignCached.Prune
+public import VerifiedGarbage.Proof.Ed448.X86_64.Verify.Calls
+public import VerifiedGarbage.Proof.Ed448.X86_64.BaseLocal
+public import VerifiedGarbage.Proof.Ed448.X86_64.BaseLit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 signing with a cached public key on x86-64: the scalar calls
@@ -15,7 +22,11 @@ imports that proof, and the group theory it imports), and of
 clearing of `s` and `r` (`wipe_ok`).
 -/
 
+@[expose] public section
+
 namespace VG.Proof.Ed448.X86_64.SignCached
+
+variable {v : VG.Impl.Ed448.X86_64.FieldVariant}
 
 open VG VG.X86_64 VG.Impl.Ed448.X86_64.SignCached
 open VG.Impl.Ed448.X86_64.Verify (stk Arg callA fH fScr)
@@ -24,12 +35,11 @@ open VG.Proof.Ed448.X86_64.Verify (Within within_off within_base within_self add
 open VG.Proof.MlKem.X86_64 (Keep WP.keep)
 open VG.Spec.Sha3 (bytesAt)
 
-theorem base_nosp : NoSp Impl.Ed448.X86_64.scalarBase := by
-  have : ((instrs Impl.Ed448.X86_64.scalarBase).all fun i => !Taint.clobbers i .rsp) = true := by
-    rw [← Code.allInstrs_eq]; lit_decide
-  intro i hi; simpa using List.all_eq_true.mp this i hi
+theorem base_nosp : NoSp (Impl.Ed448.X86_64.scalarBaseFor v) :=
+  Proof.Ed448.X86_64.scalarBaseFor_nosp v
 
-theorem base_depth : Impl.Ed448.X86_64.scalarBase.depth ≤ 1 := by lit_decide
+theorem base_depth : (Impl.Ed448.X86_64.scalarBaseFor v).depth ≤ 1 :=
+  Proof.Ed448.X86_64.scalarBaseFor_depth v
 
 theorem mulAdd_nosp : NoSp Impl.Ed448.X86_64.scalarMulAdd := by
   have : ((instrs Impl.Ed448.X86_64.scalarMulAdd).all fun i => !Taint.clobbers i .rsp) = true := by
@@ -39,13 +49,13 @@ theorem mulAdd_nosp : NoSp Impl.Ed448.X86_64.scalarMulAdd := by
 theorem mulAdd_depth : Impl.Ed448.X86_64.scalarMulAdd.depth ≤ 1 := by lit_decide
 
 /-- `vg_ed448_scalar_base` meets the contract its proof is written against, and the ABI. -/
-abbrev BaseOk : Prop := ∀ s, Proof.Ed448.X86_64.scalarBaseLocal.clear.pre s →
-  ∃ t s', Exec isa Impl.Ed448.X86_64.scalarBase s t s' ∧ abiPreserved s s' ∧
+abbrev BaseOk (v : VG.Impl.Ed448.X86_64.FieldVariant) : Prop := ∀ s, Proof.Ed448.X86_64.scalarBaseLocal.clear.pre s →
+  ∃ t s', Exec isa (Impl.Ed448.X86_64.scalarBaseFor v) s t s' ∧ abiPreserved s s' ∧
     Proof.Ed448.X86_64.scalarBaseLocal.post s s'
 
 /-- `vg_ed448_scalar_base` is constant time for that contract. -/
-abbrev BaseCT : Prop := ConstantTime isa Proof.Ed448.X86_64.scalarBaseLocal.clear.pre
-  Proof.Ed448.X86_64.scalarBaseLocal.pub Impl.Ed448.X86_64.scalarBase
+abbrev BaseCT (v : VG.Impl.Ed448.X86_64.FieldVariant) : Prop := ConstantTime isa Proof.Ed448.X86_64.scalarBaseLocal.clear.pre
+  Proof.Ed448.X86_64.scalarBaseLocal.pub (Impl.Ed448.X86_64.scalarBaseFor v)
 
 theorem ed_bytesAt : Spec.Ed448.bytesAt = bytesAt := rfl
 
@@ -147,8 +157,8 @@ theorem base_cpre (hL : L.Ok) {u : State} (g1 : u.gpr .rdi = L.out) (g2 : u.gpr 
     · simpa using ((hL.stk_r hL.kOut (d := 0) (n := 8) (by omega)).sub_right o1_sub).symm
     · simpa using (hL.stk_r hL.kScr (d := 0) (n := 8) (by omega)).symm
 
-theorem base_ok (hb : BaseOk) (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t) :
-    WP isa (callA "vg_ed448_scalar_base" Impl.Ed448.X86_64.scalarBase [.slot fOut, .sp fR, .slot fScr]) t
+theorem base_ok (hb : BaseOk v) (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t) :
+    WP isa (callA ("vg_ed448_scalar_base" ++ v.suffix) (Impl.Ed448.X86_64.scalarBaseFor v) [.slot fOut, .sp fR, .slot fScr]) t
       fun t' => Ctx L g mx m₀ t' ∧ Frame [⟨L.out, 57⟩, L.SCR, ⟨L.B, 16⟩] t.mem t'.mem ∧
         Spec.Ed448.bytesAt t'.mem L.out 57 = Spec.Ed448.scalarBase (Spec.Ed448.bytesAt t.mem L.R 57) := by
   refine WP.seq (WP.mono (setArgs_ok _ (by decide) t hc.frOk) fun t1 ⟨⟨hA, hm, hx⟩, k⟩ => ?_)

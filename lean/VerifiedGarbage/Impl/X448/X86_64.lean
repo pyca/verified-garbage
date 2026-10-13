@@ -374,7 +374,9 @@ def powSave : List Instr := powSaved.map fun (r, d) => .store (sc d) r
 def powRestore : List Instr := powSaved.map fun (r, d) => .mov r (.mem (sc d))
 
 /-- `vg_gf448_r64_pow223`. -/
-def pow223Fn : Prog isa := .seq (.block powSave) (.seq (chain223 baseline (slot 12)) (.block powRestore))
+def pow223FnWith (F : Field) : Prog isa := .seq (.block powSave) (.seq (chain223 F (slot 12)) (.block powRestore))
+
+def pow223Fn : Prog isa := pow223FnWith baseline
 
 /-- A call of `vg_gf448_r64_pow223`. -/
 def pow223Call : Prog isa := .call Spec.X448.Field64.pow223Api.name pow223Fn
@@ -386,14 +388,21 @@ def keepRegs : List Reg := [.r12, .r13]
 /-- A call of `vg_gf448_r64_pow223` that keeps the words at the offsets `keep` (at most
 two) in `keepRegs` across it and stores them back: the same values, but public again for
 a taint analysis, which forgets the working space's public words at a call. -/
-def pow223Keep (keep : List Nat) : Prog isa :=
+def pow223KeepWith (F : Field) (name : String) (keep : List Nat) : Prog isa :=
   .seq (.block ((keepRegs.zip keep).map fun (r, d) => .mov r (.mem (sc d))))
-    (.seq pow223Call (.block ((keepRegs.zip keep).map fun (r, d) => .store (sc d) r)))
+    (.seq (.call name (pow223FnWith F)) (.block ((keepRegs.zip keep).map fun (r, d) => .store (sc d) r)))
+
+def pow223Keep (keep : List Nat) : Prog isa :=
+  pow223KeepWith baseline Spec.X448.Field64.pow223Api.name keep
 
 /-- `invert` by a call: `Z2` copied to slot 12, the chain called (keeping the words at
 `keep`), then `invTail`. -/
 def invertCall (F : Field) (keep : List Nat := []) : Prog isa :=
   .seq (.block (copyOut (slot 12) Z2)) (.seq (pow223Keep keep) (invTail F))
+
+/-- Inversion with the selected field backend in the shared chain as well as its tail. -/
+def invertCallWith (F : Field) (name : String) (keep : List Nat := []) : Prog isa :=
+  .seq (.block (copyOut (slot 12) Z2)) (.seq (pow223KeepWith F name keep) (invTail F))
 
 /-! ## Encoding and decoding -/
 

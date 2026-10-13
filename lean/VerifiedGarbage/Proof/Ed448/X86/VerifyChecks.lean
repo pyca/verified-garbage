@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Ed448.X86.VerifyField
-import VerifiedGarbage.Proof.X448.X86.Freeze
-import VerifiedGarbage.Proof.X448.X86.Copy
+module
+
+public import VerifiedGarbage.Proof.Ed448.X86.VerifyField
+public import VerifiedGarbage.Proof.X448.X86.Freeze
+public import VerifiedGarbage.Proof.X448.X86.Copy
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 verification's equation on x86 (32-bit): accumulating checks
@@ -12,6 +18,8 @@ elements, fully reduced (`eqSlots_ok`). `CKeep` is what the comparisons and
 the field programs may change: the field operations' registers, the counter
 `esi`, and the working space at `BAD`, in the slots and from `ACC`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.X86
 

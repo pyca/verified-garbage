@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesGcm.AArch64.Loops
+module
+
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Loops
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on AArch64: GHASH absorbing a piece (`absorb`)
@@ -12,6 +18,8 @@ rest (`absTail_ok`), by the steps of `Proof/Gcm/Stream.lean`; `absorb_ok`
 puts them together. The pieces are proven separately, between the calls, so
 that the proof of constant time can use them.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

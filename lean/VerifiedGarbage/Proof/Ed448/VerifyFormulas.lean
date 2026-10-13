@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Ed448.Formulas
+module
+
+public import VerifiedGarbage.Proof.Ed448.Formulas
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 verification's equation: its field programs, evaluated
@@ -8,6 +14,8 @@ verification uses them with (`doubleAt`, `addAt`, RFC 8032 §5.2.4's formulas,
 as for base-point multiplication), and the steps of decoding (`decodeUV`, the
 products of `x`, and `-x`), evaluated on the slots (`evalOps`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448
 

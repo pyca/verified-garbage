@@ -1,9 +1,22 @@
-import VerifiedGarbage.Proof.Ed25519.Arm.RecoverCTBlocks
-import VerifiedGarbage.Proof.Ed25519.Arm.PointEqual
-import VerifiedGarbage.Proof.Ed25519.Arm.VerifyCTPublic
-import VerifiedGarbage.Proof.Ed25519.Arm.VerifyCTLit
+module
+
+public import VerifiedGarbage.Proof.Ed25519.Arm.RecoverCTBlocks
+meta import VerifiedGarbage.Proof.Ed25519.Arm.RecoverCTBlocks
+public import VerifiedGarbage.Proof.Ed25519.Arm.PointEqual
+meta import VerifiedGarbage.Proof.Ed25519.Arm.PointEqual
+public import VerifiedGarbage.Proof.Ed25519.Arm.VerifyCTPublic
+meta import VerifiedGarbage.Proof.Ed25519.Arm.VerifyCTPublic
+public import VerifiedGarbage.Proof.Ed25519.Arm.VerifyCTLit
+meta import VerifiedGarbage.Proof.Ed25519.Arm.VerifyCTLit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Ed25519.Arm.PointEqualCT`. -/
+
+@[expose] public section
+
 section
 /-! Point comparison branches depend only on the public projective points. -/
 namespace VG.Proof.Ed25519.Arm

@@ -1,9 +1,18 @@
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Contract
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacPrefix
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Verified
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Contract
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacPrefix
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.Verified
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! The Jacobian verifier's relational proof uses only the bytes already
 exposed as public by the shared ECDSA verification specification. -/
+
+@[expose] public section
+
 namespace VG.Proof.Ecdsa.Verify.AArch64
 open VG VG.AArch64 VG.Impl.Ecdsa.AArch64 VG.Impl.Ecdsa.Verify.AArch64
 open VG.Proof.Ecdsa.AArch64

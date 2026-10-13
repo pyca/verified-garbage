@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.AesGcmSiv.X86.Cmp
+module
+
+public import VerifiedGarbage.Proof.AesGcmSiv.X86.Cmp
+meta import VerifiedGarbage.Proof.AesGcmSiv.X86.Cmp
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM-SIV on x86: the tag in and out
@@ -9,6 +16,8 @@ at `W` out to `tag` (`tagOut_ok`): both load the pointer from its slot, then
 all four words, then store them, so constant time from `ebp`, then from the
 pointer (`recvTag_ct`, `tagOut_ct`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

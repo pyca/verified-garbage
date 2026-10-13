@@ -1,8 +1,16 @@
-import VerifiedGarbage.Impl.Weierstrass.X86.InvMemory
-import VerifiedGarbage.Proof.Mont.X86.Chain
-import VerifiedGarbage.Proof.Mont.X86.Ops
+module
+
+public import VerifiedGarbage.Impl.Weierstrass.X86.InvMemory
+public import VerifiedGarbage.Proof.Mont.X86.Chain
+public import VerifiedGarbage.Proof.Mont.X86.Ops
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## `InvAdd` -/
+
+@[expose] public section
 
 section
 

@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Argon2.X86_64.Taint
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
-import VerifiedGarbage.Impl.Argon2.X86_64.Compressor
+module
+
+public import VerifiedGarbage.Proof.Argon2.X86_64.Taint
+public import VerifiedGarbage.Proof.Framework.X86_64.Call
+public import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
+public import VerifiedGarbage.Impl.Argon2.X86_64.Compressor
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Implementations of G that the derivation calls
@@ -15,6 +21,8 @@ writes `rsp`, and keeps MXCSR's control bits (`ctlOk`: it may load MXCSR
 between Intel's MCDT prologue and epilogue). The code that calls it finds it
 as the instance `Impl.Argon2.X86_64.Compressor`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Argon2.X86_64
 

@@ -1,10 +1,16 @@
-import VerifiedGarbage.Proof.Camellia.X86_64.Round
-import VerifiedGarbage.Proof.Camellia.X86_64.Moves
-import VerifiedGarbage.Proof.Camellia.X86_64.Fl
-import VerifiedGarbage.Proof.Camellia.Layout
-import VerifiedGarbage.Proof.Camellia.Words
-import VerifiedGarbage.Proof.Camellia.Common
-import VerifiedGarbage.Proof.Framework.Block
+module
+
+public import VerifiedGarbage.Proof.Camellia.X86_64.Round
+public import VerifiedGarbage.Proof.Camellia.X86_64.Moves
+public import VerifiedGarbage.Proof.Camellia.X86_64.Fl
+public import VerifiedGarbage.Proof.Camellia.Layout
+public import VerifiedGarbage.Proof.Camellia.Words
+public import VerifiedGarbage.Proof.Camellia.Common
+public import VerifiedGarbage.Proof.Framework.Block
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Eight blocks of bitsliced Camellia on x86-64
@@ -17,6 +23,8 @@ rounds, the groups of six and the FL layers are loops and blocks around
 them, whose invariants are the specification's `pair`, `group` and
 `groups` (`Proof/Camellia/Words.lean`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Camellia.X86_64
 

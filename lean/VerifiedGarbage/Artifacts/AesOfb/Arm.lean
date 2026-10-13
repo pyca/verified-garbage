@@ -1,5 +1,7 @@
-import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Proof.AesOfb.Arm.Verified
+module
+
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.Proof.AesOfb.Arm.Verified
 
 /-!
 # AES-OFB (NIST SP 800-38A §6.4) on ARMv7
@@ -11,6 +13,8 @@ generic over them.
 The function calls `vg_aes_encrypt_blocks` in a frame that pushes its stack
 argument and `lr`, so uses 8 bytes of stack.
 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.AesOfb.Arm
 

@@ -1,9 +1,22 @@
-import VerifiedGarbage.Proof.Ed25519.Arm.RecoverCTBlocks
-import VerifiedGarbage.Proof.Ed25519.Arm.RecoverAdjust
-import VerifiedGarbage.Proof.Ed25519.Arm.RecoverSign
-import VerifiedGarbage.Proof.Ed25519.Arm.RecoverPoint
+module
+
+public import VerifiedGarbage.Proof.Ed25519.Arm.RecoverCTBlocks
+meta import VerifiedGarbage.Proof.Ed25519.Arm.RecoverCTBlocks
+public import VerifiedGarbage.Proof.Ed25519.Arm.RecoverAdjust
+meta import VerifiedGarbage.Proof.Ed25519.Arm.RecoverAdjust
+public import VerifiedGarbage.Proof.Ed25519.Arm.RecoverSign
+meta import VerifiedGarbage.Proof.Ed25519.Arm.RecoverSign
+public import VerifiedGarbage.Proof.Ed25519.Arm.RecoverPoint
+meta import VerifiedGarbage.Proof.Ed25519.Arm.RecoverPoint
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Ed25519.Arm.RecoverCTSign`. -/
+
+@[expose] public section
+
 section
 /-! Merged from `Proof.Ed25519.Arm.RecoverCTAdjust`. -/
 section

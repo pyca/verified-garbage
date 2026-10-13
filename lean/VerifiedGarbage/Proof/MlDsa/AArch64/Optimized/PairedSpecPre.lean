@@ -1,7 +1,15 @@
-import VerifiedGarbage.Spec.MlDsa.PairedResponse
-import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.PairedConsts
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedTableDecode
-import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Contracts
+module
+
+public import VerifiedGarbage.Spec.MlDsa.PairedResponse
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.PairedConsts
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedTableDecode
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Contracts
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Optimized.Paired
 open VG VG.AArch64 VG.Spec.MlDsa

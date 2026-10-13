@@ -1,8 +1,20 @@
-import VerifiedGarbage.Proof.Dsa.X86_64.ReduceInit
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
-import VerifiedGarbage.Impl.Dsa.Layout
+module
+
+public import VerifiedGarbage.Proof.Dsa.X86_64.ReduceInit
+meta import VerifiedGarbage.Proof.Dsa.X86_64.ReduceInit
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
+public import VerifiedGarbage.Impl.Dsa.Layout
+meta import VerifiedGarbage.Impl.Dsa.Layout
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # Constant-time loading of reduction pointers and lengths -/
+
+@[expose] public section
+
 namespace VG.Proof.Dsa.X86_64
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public
 open VG.Impl.Rsa.X86_64 VG.Impl.Dsa.X86_64 VG.Impl.Dsa.Layout

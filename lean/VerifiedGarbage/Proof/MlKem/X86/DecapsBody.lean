@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.MlKem.X86.DecapsDec
-import VerifiedGarbage.Proof.MlKem.X86.DecapsCmp
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86.DecapsDec
+meta import VerifiedGarbage.Proof.MlKem.X86.DecapsDec
+public import VerifiedGarbage.Proof.MlKem.X86.DecapsCmp
+meta import VerifiedGarbage.Proof.MlKem.X86.DecapsCmp
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86 (32-bit): the body of decapsulation
@@ -14,6 +22,8 @@ their iterations (`KPke.kpkeEncrypt_some`); if one failed within
 Each parameter set's contract implies `TPre (Y L)` and its public data
 (`Proof/MlKem/X86/Decaps.lean` for ML-KEM-768).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.X86.Decaps
 

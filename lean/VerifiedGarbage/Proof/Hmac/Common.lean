@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Sha256.Stream
-import VerifiedGarbage.Proof.Sha256.StateMem
-import VerifiedGarbage.Spec.Hmac
-import VerifiedGarbage.Proof.Framework.OmegaLit
+module
+
+public import VerifiedGarbage.Proof.Sha256.Stream
+public import VerifiedGarbage.Proof.Sha256.StateMem
+public import VerifiedGarbage.Spec.Hmac
+public import VerifiedGarbage.Proof.Framework.OmegaLit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # HMAC-SHA-256: lemmas shared by every target
@@ -11,6 +17,8 @@ read, and the streaming states `init` and `finalize` leave, about memory
 alone: every target's proof uses them, so they import no target's ISA or
 proofs.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Hmac.Common
 open VG

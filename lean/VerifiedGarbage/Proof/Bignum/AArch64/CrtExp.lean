@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtBuild
+module
+
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtBuild
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSA with the CRT on AArch64: the exponentiation in a prime's workspace
@@ -12,6 +18,8 @@ read from the modulus' header (`crtExpLoop_ok`): `Y ≡ x^d R`.
 The values hold if `Y ≡ R` and `[aXc] ≡ x R`, which a proposition `Q` (in
 the phases, that `X` divides `n`) gives; the bounds hold whatever.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.AArch64
 

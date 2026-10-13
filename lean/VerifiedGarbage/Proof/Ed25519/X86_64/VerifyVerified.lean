@@ -1,18 +1,40 @@
-import VerifiedGarbage.Proof.Ed25519.X86_64.WindowCT
-import VerifiedGarbage.Proof.Ed25519.X86_64.RecodeCT
-import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyContext
-import VerifiedGarbage.Proof.Ed25519.X86_64.DecodePowers
-import VerifiedGarbage.Proof.Ed25519.X86_64.BaseHeld
-import VerifiedGarbage.Proof.Ed25519.X86_64.PointDecode
-import VerifiedGarbage.Proof.Ed25519.VerifyBytes
-import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarMemory
-import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBaseMain
-import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyLit
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Framework.ConstMem
-import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
+module
+
+public import VerifiedGarbage.Proof.Ed25519.X86_64.WindowCT
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.WindowCT
+public import VerifiedGarbage.Proof.Ed25519.X86_64.RecodeCT
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.RecodeCT
+public import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyContext
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyContext
+public import VerifiedGarbage.Proof.Ed25519.X86_64.DecodePowers
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.DecodePowers
+public import VerifiedGarbage.Proof.Ed25519.X86_64.BaseHeld
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.BaseHeld
+public import VerifiedGarbage.Proof.Ed25519.X86_64.PointDecode
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.PointDecode
+public import VerifiedGarbage.Proof.Ed25519.VerifyBytes
+meta import VerifiedGarbage.Proof.Ed25519.VerifyBytes
+public import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarMemory
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarMemory
+public import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBaseMain
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBaseMain
+public import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyLit
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyLit
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.ConstMem
+meta import VerifiedGarbage.Proof.Framework.ConstMem
+public import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
+meta import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Ed25519.X86_64.VerifyCTPublic`. -/
+
+@[expose] public section
+
 section
 /-! The verification inputs are public, and the equation's trace depends on them alone. -/
 

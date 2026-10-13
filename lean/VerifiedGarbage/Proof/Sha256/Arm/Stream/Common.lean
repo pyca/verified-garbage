@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.MdStream.Arm.Common
-import VerifiedGarbage.Proof.Sha256.Arm.Compress
-import VerifiedGarbage.Impl.Sha256.Arm.Stream
-import VerifiedGarbage.Proof.Sha256.Arm.Lit
+module
+
+public import VerifiedGarbage.Proof.MdStream.Arm.Common
+public import VerifiedGarbage.Proof.Sha256.Arm.Compress
+public import VerifiedGarbage.Impl.Sha256.Arm.Stream
+public import VerifiedGarbage.Proof.Sha256.Arm.Lit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Streaming SHA-256 on ARMv7: calling the compression function, and saving registers
@@ -13,6 +19,8 @@ streaming `update` and `finalize` are proven generically
 (`Proof/Sha256/Arm/Stream/Md.lean`), and the per-instruction rules are
 `VG.Proof.MdStream.Arm`'s.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sha256.Arm.Stream
 

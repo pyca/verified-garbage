@@ -1,9 +1,15 @@
-import VerifiedGarbage.Proof.RsaKeyGen.AArch64.LoadC
-import VerifiedGarbage.Proof.RsaKeyGen.CandMath
-import VerifiedGarbage.Proof.Bignum.AArch64.R2
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtSel
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtArith
-import VerifiedGarbage.Proof.Rsa.AArch64.Div
+module
+
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.LoadC
+public import VerifiedGarbage.Proof.RsaKeyGen.CandMath
+public import VerifiedGarbage.Proof.Bignum.AArch64.R2
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtSel
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtArith
+public import VerifiedGarbage.Proof.Rsa.AArch64.Div
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # A candidate on AArch64: too close to `p`
@@ -15,6 +21,8 @@ the bound `2^(64 w − 100)` (`aY`, by `setWord`) with it, and leaves the mask
 of `|c − p| ≤ 2^(64 w − 100)`, or 0 without `p`, in `x15`
 (`closeCheck_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaKeyGen.AArch64
 

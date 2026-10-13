@@ -1,10 +1,16 @@
-import VerifiedGarbage.Proof.Ed448.AArch64.VerifyStages
-import VerifiedGarbage.Proof.Ed448.AArch64.Window.CopyK
-import VerifiedGarbage.Proof.Ed448.AArch64.Window.TableInit
-import VerifiedGarbage.Proof.X448.AArch64.Base.Digit
-import VerifiedGarbage.Proof.X448.AArch64.Fast.Setup
-import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-import VerifiedGarbage.Proof.Ed448.Group.Decode
+module
+
+public import VerifiedGarbage.Proof.Ed448.AArch64.VerifyStages
+public import VerifiedGarbage.Proof.Ed448.AArch64.Window.CopyK
+public import VerifiedGarbage.Proof.Ed448.AArch64.Window.TableInit
+public import VerifiedGarbage.Proof.X448.AArch64.Base.Digit
+public import VerifiedGarbage.Proof.X448.AArch64.Fast.Setup
+public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+public import VerifiedGarbage.Proof.Ed448.Group.Decode
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 verification on AArch64: the entry and the decodings
@@ -15,6 +21,8 @@ saved, the bits of `S` at `BITS`, the check of `S`, and the decodings of `A`
 (negated, slots 6–7) and `R` (slots 8–9), each check ORed into `x20`
 (`wfront_ok`, `FrontOut`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.AArch64.Window
 

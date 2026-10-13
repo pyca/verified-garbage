@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.Framework.X86.Lit
-import VerifiedGarbage.Proof.X448.X86.FnLit
-import VerifiedGarbage.Impl.Ed448.X86.VerifyEquation
+module
+
+public import VerifiedGarbage.Proof.Framework.X86.Lit
+meta import VerifiedGarbage.Proof.Framework.X86.Lit
+public import VerifiedGarbage.Proof.X448.X86.FnLit
+meta import VerifiedGarbage.Proof.X448.X86.FnLit
+public import VerifiedGarbage.Impl.Ed448.X86.VerifyEquation
+meta import VerifiedGarbage.Impl.Ed448.X86.VerifyEquation
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 verification's equation on x86 (32-bit): the code as a literal
@@ -10,6 +19,8 @@ The field arithmetic is fully unrolled: the literal of the code
 the instructions again in every check that evaluates the code (constant time,
 `spSafe`).
 -/
+
+@[expose] public section
 
 namespace VG
 

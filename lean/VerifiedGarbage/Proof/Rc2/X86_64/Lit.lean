@@ -1,9 +1,21 @@
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
-import VerifiedGarbage.Proof.Rc2.PiLit
-import VerifiedGarbage.Impl.Rc2.X86_64.Block
-import VerifiedGarbage.Impl.Rc2.X86_64.ExpandKey
+module
+
+public import VerifiedGarbage.Proof.Framework.X86_64.Lit
+meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
+public import VerifiedGarbage.Proof.Rc2.PiLit
+meta import VerifiedGarbage.Proof.Rc2.PiLit
+public import VerifiedGarbage.Impl.Rc2.X86_64.Block
+meta import VerifiedGarbage.Impl.Rc2.X86_64.Block
+public import VerifiedGarbage.Impl.Rc2.X86_64.ExpandKey
+meta import VerifiedGarbage.Impl.Rc2.X86_64.ExpandKey
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # Literal RC2 programs for kernel-evaluated checks -/
+
+@[expose] public section
 
 namespace VG.Impl.Rc2.X86_64.Sse2
 

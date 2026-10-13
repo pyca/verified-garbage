@@ -1,5 +1,7 @@
-import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.AesXts.X86_64.Verified
+module
+
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.AesXts.X86_64.Verified
 
 /-!
 # XTS-AES (IEEE Std 1619-2007, NIST SP 800-38E) on x86-64
@@ -13,6 +15,8 @@ features.
 The stack is 8 bytes: the return address of the call of the block function,
 which uses no stack.
 -/
+
+@[expose] public section
 
 namespace VG.Generic.AesBlocks.X86_64.AesXts
 

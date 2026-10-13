@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.RsaPss.X86_64.SignCtBase
+module
+
+public import VerifiedGarbage.Proof.RsaPss.X86_64.SignCtBase
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSASSA-PSS signing on x86-64: the encoding in two runs
@@ -9,6 +15,8 @@ import VerifiedGarbage.Proof.RsaPss.X86_64.SignCtBase
 not (`signEnc_ct`). Each piece keeps the memory outside the writable regions
 (`Frame`), for the private-key operation after it.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPss.X86_64
 

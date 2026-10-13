@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Ed448.X86.Shake.Entry
-import VerifiedGarbage.Spec.Ed448.Contract
+module
+
+public import VerifiedGarbage.Proof.Ed448.X86.Shake.Entry
+public import VerifiedGarbage.Spec.Ed448.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 public-key derivation on x86 (32-bit): the contract the proof is written against
@@ -10,6 +16,8 @@ and writes, their separation, and the 280 bytes of stack below its return
 address. `Facts` are its separation and bounds, and `kit` the layout facts
 the calls need (`Shake.Kit`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.X86.PublicKey
 

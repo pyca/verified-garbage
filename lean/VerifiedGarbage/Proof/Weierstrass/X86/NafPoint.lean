@@ -1,7 +1,16 @@
-import VerifiedGarbage.Proof.Weierstrass.X86.NafTableIO
-import VerifiedGarbage.Proof.Weierstrass.X86.NafAdjust
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86.NafTableIO
+public import VerifiedGarbage.Proof.Weierstrass.X86.NafAdjust
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Public table transfers preserve the selected Jacobian point. -/
+
+@[expose] public section
+
 namespace VG.Proof.Weierstrass.X86
 open VG VG.X86 VG.Impl.Mont.X86 VG.Impl.Mont VG.Impl.Weierstrass.X86 VG.Impl.Weierstrass
 open VG.Proof.Mont.X86 VG.Proof.Mont Spec.Weierstrass

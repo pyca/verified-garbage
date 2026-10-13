@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Weierstrass.X86_64.PointOpsVal
-import VerifiedGarbage.Proof.Weierstrass.X86_64.CachedJacOps
-import VerifiedGarbage.Proof.Weierstrass.X86_64.JacState
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.PointOpsVal
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.CachedJacOps
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.JacState
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Point operations as functions on x86-64: what the cached addition computes
@@ -11,6 +17,8 @@ its branches (`CachedJac.add`): `E` copied for `R`'s `Z = 0`, `R` for
 `E`'s, else the header's `H` and `r`, then the doubling or the point at
 infinity for `H = 0`, else the tail.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.X86_64.PointOps
 

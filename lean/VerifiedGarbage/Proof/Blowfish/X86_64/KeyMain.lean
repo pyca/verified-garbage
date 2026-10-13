@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Blowfish.X86_64.KeyEnc
-import VerifiedGarbage.Proof.Blowfish.X86_64.Ecb
+module
+
+public import VerifiedGarbage.Proof.Blowfish.X86_64.KeyEnc
+public import VerifiedGarbage.Proof.Blowfish.X86_64.Ecb
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The key expansion function
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.Blowfish.X86_64.Ecb
 The initial schedule written, the P-array keyed, the constants set, and
 the 521 encryptions run (`expandKey_correct`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Blowfish.X86_64
 

@@ -1,12 +1,18 @@
-import VerifiedGarbage.Impl.RsaOaep.AArch64
-import VerifiedGarbage.Proof.RsaOaep.Scan
-import VerifiedGarbage.Proof.RsaOaep.Mask
-import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import VerifiedGarbage.Proof.Framework.Covers
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.GetElem
+module
+
+public import VerifiedGarbage.Impl.RsaOaep.AArch64
+public import VerifiedGarbage.Proof.RsaOaep.Scan
+public import VerifiedGarbage.Proof.RsaOaep.Mask
+public import VerifiedGarbage.Proof.Framework.AArch64.Exec
+public import VerifiedGarbage.Proof.Framework.AArch64.Call
+public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+public import VerifiedGarbage.Proof.Framework.Covers
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.GetElem
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-OAEP on AArch64: the frame and the working space
@@ -20,6 +26,8 @@ of the frame `W k`; a store to either changes the one function at what it
 writes (`Rep.wb`, `Rep.wf`), and code that writes only ranges of our
 working space and below the frame keeps the rest (`Rep.frame`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaOaep.AArch64
 

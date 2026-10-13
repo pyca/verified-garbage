@@ -1,10 +1,23 @@
-import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Variant
-import VerifiedGarbage.Proof.Md5.X86_64.Stream.Md
-import VerifiedGarbage.Proof.Md5.X86_64.Stream.Init
-import VerifiedGarbage.Proof.Md5.X86_64.Lit
-import VerifiedGarbage.Proof.Hmac.Generic.Common
-import VerifiedGarbage.Spec.Md5.Contract
-import VerifiedGarbage.Proof.Framework.TaintBatch
+module
+
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Variant
+meta import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Variant
+public import VerifiedGarbage.Proof.Md5.X86_64.Stream.Md
+meta import VerifiedGarbage.Proof.Md5.X86_64.Stream.Md
+public import VerifiedGarbage.Proof.Md5.X86_64.Stream.Init
+meta import VerifiedGarbage.Proof.Md5.X86_64.Stream.Init
+public import VerifiedGarbage.Proof.Md5.X86_64.Lit
+meta import VerifiedGarbage.Proof.Md5.X86_64.Lit
+public import VerifiedGarbage.Proof.Hmac.Generic.Common
+meta import VerifiedGarbage.Proof.Hmac.Generic.Common
+public import VerifiedGarbage.Spec.Md5.Contract
+meta import VerifiedGarbage.Spec.Md5.Contract
+public import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # MD5 on x86-64, as a Merkle–Damgård hash function
@@ -16,6 +29,8 @@ code (`Stream.params`), its specification `Spec.Hmac.md5S`. Its streaming
 `update` and `finalize` are in its registration file
 (`Artifacts/Md5/X86_64.lean`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Pbkdf2.Md.X86_64.Md5
 

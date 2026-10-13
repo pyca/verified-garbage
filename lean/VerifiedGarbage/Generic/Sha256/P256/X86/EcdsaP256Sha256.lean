@@ -1,7 +1,9 @@
-import VerifiedGarbage.Proof.Weierstrass.X86.InvInterface
-import VerifiedGarbage.TCB.X86.Target
-import VerifiedGarbage.Proof.Weierstrass.Law
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Sha256
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86.InvInterface
+public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Proof.Weierstrass.Law
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Sha256
 
 /-!
 # Deterministic ECDSA (RFC 6979) over P-256 with HMAC-SHA-256 on x86, for every x86 SHA-256 backend
@@ -19,6 +21,8 @@ of stack for HMAC's functions).
 It is generic over P-256's group law `h` too, the variant
 `Variants/P256/X86/Law.lean`.
 -/
+
+@[expose] public section
 
 namespace VG.Generic.Sha256.P256.X86.EcdsaP256Sha256
 

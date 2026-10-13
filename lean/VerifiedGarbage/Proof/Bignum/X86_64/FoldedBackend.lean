@@ -1,5 +1,15 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.FoldedCTChecked
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareBackend
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.FoldedCTChecked
+meta import VerifiedGarbage.Proof.Bignum.X86_64.FoldedCTChecked
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareBackend
+meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareBackend
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64.FoldedPublic
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public

@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Weierstrass.Env
-import VerifiedGarbage.Proof.Mont.Words
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.Env
+public import VerifiedGarbage.Proof.Mont.Words
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Short Weierstrass curves: where the ladder and powers keep their numbers
@@ -10,6 +16,8 @@ additions writing slots apart from what they read, and the table of bits
 apart from what is written. The same for powers (`PowLay`). These are facts
 about offsets, the same on every target.
 -/
+
+@[expose] public section
 
 /-- `x ∈ l` for an `x` among the elements of the list `l`, up to unfolding definitions (the
 list's and its elements', as `toComb`'s projections): the proof built directly, element by

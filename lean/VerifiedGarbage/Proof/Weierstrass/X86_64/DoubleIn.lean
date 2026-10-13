@@ -1,7 +1,13 @@
-import VerifiedGarbage.Impl.Weierstrass.X86_64.DoubleIn
-import VerifiedGarbage.Proof.Weierstrass.X86_64.ForwardField
-import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacState
-import VerifiedGarbage.Proof.Weierstrass.Jac
+module
+
+public import VerifiedGarbage.Impl.Weierstrass.X86_64.DoubleIn
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.ForwardField
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacState
+public import VerifiedGarbage.Proof.Weierstrass.Jac
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Doubling a Jacobian point in place, on x86-64
@@ -11,6 +17,8 @@ distinct slots (`dblInSlots`) it computes `dblJF` of `p`'s coordinates
 (`dblIn_run`); `doubleIn` is then a doubling the Jacobian window method can
 use, for any curve with `a = -3` and any number of words (`doubleIn_dblOk`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.X86_64
 

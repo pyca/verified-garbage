@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.MlDsa.X86_64.Message.Rel
-import VerifiedGarbage.Proof.MlDsa.X86_64.Message.Hash
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Message.Rel
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Message.Rel
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Message.Hash
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Message.Hash
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on x86-64, `sign_message` and `verify_message`: SHAKE256 leaks only the layout
@@ -10,6 +18,8 @@ arguments are the same in both runs (functions of the layout), leak the
 same (`zeroSt_tr`, `kabs_tr`, `kpad_tr`, `ksqz_tr`); and so do `muHash` and
 `trHash` (`muHash_tr`, `trHash_tr`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86_64.Message
 

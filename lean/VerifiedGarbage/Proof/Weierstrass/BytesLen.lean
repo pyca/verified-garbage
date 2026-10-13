@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Weierstrass.Words
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.Words
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Short Weierstrass curves: numbers of `len` bytes in `n` words
@@ -13,6 +19,8 @@ of the next ones rotated to the top (`wordsVal_shr`); and the bytes of a
 number written a word at a time, and its top word a byte at a time
 (`bytesAt_eq_toBytes_len`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass
 

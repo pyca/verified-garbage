@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.PubExp
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.PubExp
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_public` on x86-64: the result
@@ -6,6 +12,8 @@ import VerifiedGarbage.Proof.Bignum.X86_64.PubExp
 The result, masked, to `out`; the mask's low bit returned; the saved
 registers restored (`outPhase_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64
 

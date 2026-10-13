@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Rsa.AArch64.PrivCheckOk
+module
+
+public import VerifiedGarbage.Proof.Rsa.AArch64.PrivCheckOk
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_private_checked` on AArch64: correctness
@@ -8,6 +14,8 @@ The frames' pushes, the CRT's arguments and call (`crtArgs_ok`,
 implementation of the CRT, and `check_faultTolerant`, the release's
 soundness whatever the CRT computed.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.AArch64
 

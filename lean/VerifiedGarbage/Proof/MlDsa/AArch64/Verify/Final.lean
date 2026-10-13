@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Cmp
-import VerifiedGarbage.Proof.MlDsa.KeyGen.Rest
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Cmp
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Cmp
+public import VerifiedGarbage.Proof.MlDsa.KeyGen.Rest
+meta import VerifiedGarbage.Proof.MlDsa.KeyGen.Rest
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA verification on AArch64: `vg_mldsa44_verify`, `vg_mldsa65_verify`, `vg_mldsa87_verify`
@@ -12,6 +20,8 @@ holds the result of the samplers and then of the comparison. For primitives
 p` (`verify_verified`): it is correct, and leaks only its inputs, which the
 contract makes public.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Verify
 

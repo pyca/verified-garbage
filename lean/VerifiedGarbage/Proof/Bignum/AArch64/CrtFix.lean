@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.Rsa.Ranges
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtChecks
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtRows
-import VerifiedGarbage.Proof.Bignum.AArch64.R2
-import VerifiedGarbage.Proof.Bignum.AArch64.Setup
+module
+
+public import VerifiedGarbage.Proof.Rsa.Ranges
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtChecks
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtRows
+public import VerifiedGarbage.Proof.Bignum.AArch64.R2
+public import VerifiedGarbage.Proof.Bignum.AArch64.Setup
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_private_crt` on AArch64: the fixes and the products
@@ -12,6 +18,8 @@ clear and computes its `-X⁻¹` and the number 1 (`primeFix_ok`);
 `pqProduct` leaves `p q` in the modulus' accumulators (`pqProduct_ok`), and
 the start of `finish` `m_q + h q` (`finishSum_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.AArch64
 

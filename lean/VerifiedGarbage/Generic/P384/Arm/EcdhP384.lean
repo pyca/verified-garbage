@@ -1,7 +1,9 @@
-import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Proof.Weierstrass.Law
-import VerifiedGarbage.Impl.Ecdh.P384.Arm
-import VerifiedGarbage.Proof.Ecdh.Arm.P384.Verified
+module
+
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.Proof.Weierstrass.Law
+public import VerifiedGarbage.Impl.Ecdh.P384.Arm
+public import VerifiedGarbage.Proof.Ecdh.Arm.P384.Verified
 
 /-!
 # ECDH over P-384 (SP 800-56A) on 32-bit ARM
@@ -9,6 +11,8 @@ import VerifiedGarbage.Proof.Ecdh.Arm.P384.Verified
 A generic file (see `TCB/Emit.lean`) over P-384's group law `h`, the variant
 `Variants/P384/Arm/Law.lean`.
 -/
+
+@[expose] public section
 
 namespace VG.Generic.P384.Arm.EcdhP384
 

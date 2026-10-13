@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Block
-import VerifiedGarbage.Proof.Pbkdf2.Stream.X86.Hashes
-import VerifiedGarbage.Proof.Sha512.Md
-import VerifiedGarbage.Proof.Sha512.X86.Stream.Finalize
+module
+
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Block
+public import VerifiedGarbage.Proof.Pbkdf2.Stream.X86.Hashes
+public import VerifiedGarbage.Proof.Sha512.Md
+public import VerifiedGarbage.Proof.Sha512.X86.Stream.Finalize
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # HMAC and PBKDF2-HMAC on x86 (32-bit): the Merkle–Damgård hash functions
@@ -16,6 +22,8 @@ proofs (`Proof/Md5/Md.lean` and the others), the digests their code writes
 `cmpK`. SHA-256 and SHA-1, whose compression functions have a
 variant for each backend on x86, are in `Sha256.lean` and `Sha1.lean`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Pbkdf2.Md.X86
 

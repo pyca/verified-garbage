@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.ChaCha20.AArch64.Stream.Apply
-import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+module
+
+public import VerifiedGarbage.Proof.ChaCha20.AArch64.Stream.Apply
+meta import VerifiedGarbage.Proof.ChaCha20.AArch64.Stream.Apply
+public import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+meta import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Streaming ChaCha20 on AArch64: `apply`, constant time
@@ -14,6 +22,8 @@ the calls of the block function and of the implementation `v` of
 `vg_chacha20_xor` are constant time by their own proofs (`RelCT.call`), their
 arguments agreeing; and the branches are on public values (`RelCT.ite`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.ChaCha20.AArch64.Stream
 

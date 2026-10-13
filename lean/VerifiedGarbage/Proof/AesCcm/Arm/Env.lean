@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.AesCcm.Arm.Contract
-import VerifiedGarbage.Proof.AesCcm.Ctr
-import VerifiedGarbage.Proof.AesGcm.Arm.Fn
-import VerifiedGarbage.Impl.AesCcm.Arm
+module
+
+public import VerifiedGarbage.Proof.AesCcm.Arm.Contract
+public import VerifiedGarbage.Proof.AesCcm.Ctr
+public import VerifiedGarbage.Proof.AesGcm.Arm.Fn
+public import VerifiedGarbage.Impl.AesCcm.Arm
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CCM on ARMv7: where everything is
@@ -14,6 +20,8 @@ and `q − 1`, and the stack pointer (`Env`). The pieces write the parts of
 `W` in `mutR` (and the data, and the stack below `sp`), so our caller's
 registers saved in `W` stay as the entry left them.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

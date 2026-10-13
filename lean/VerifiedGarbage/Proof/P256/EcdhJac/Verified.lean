@@ -1,11 +1,20 @@
-import VerifiedGarbage.Proof.P256.EcdhJac.Timing
-import VerifiedGarbage.Proof.P256.EcdhJac.Adapter
-import VerifiedGarbage.Proof.P256.EcdhJac.Window
-import VerifiedGarbage.Proof.P256.EcdhJac.Exchange
-import VerifiedGarbage.Proof.P256.EcdhInverse.Inverse
+module
+
+public import VerifiedGarbage.Proof.P256.EcdhJac.Timing
+public import VerifiedGarbage.Proof.P256.EcdhJac.Adapter
+public import VerifiedGarbage.Proof.P256.EcdhJac.Window
+public import VerifiedGarbage.Proof.P256.EcdhJac.Exchange
+public import VerifiedGarbage.Proof.P256.EcdhInverse.Inverse
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Public ECDH contract and ABI, composed with a separately certified
 secret-scalar multiplication. -/
+
+@[expose] public section
+
 namespace VG.Proof.P256.EcdhJac
 open VG VG.AArch64 VG.Impl.Ecdsa.AArch64
 open VG.Proof.Ecdsa.AArch64 VG.Proof.Ecdh.AArch64 VG.Proof.Mont

@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Ecdh.Arm.Peer
-import VerifiedGarbage.Proof.Ecdsa.Arm.Lays
-import VerifiedGarbage.Proof.Ecdsa.Arm.Middle
-import VerifiedGarbage.Proof.Ecdsa.Arm.Main
+module
+
+public import VerifiedGarbage.Proof.Ecdh.Arm.Peer
+public import VerifiedGarbage.Proof.Ecdsa.Arm.Lays
+public import VerifiedGarbage.Proof.Ecdsa.Arm.Middle
+public import VerifiedGarbage.Proof.Ecdsa.Arm.Main
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDH on 32-bit ARM: the peer's point, `[d]P` and `Z^(p-2)`
@@ -16,6 +22,8 @@ As on x86 (`Proof/Ecdh/X86/Validate.lean`).
 its being zero into the flag, and selects for the ladder the peer's point if
 the flag is set, else `G` (`select_ok`): `validate_ok`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdh.Arm
 

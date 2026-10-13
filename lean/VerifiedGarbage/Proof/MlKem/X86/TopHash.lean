@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.MlKem.X86.TopSeq
-import VerifiedGarbage.Proof.MlKem.KPke
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86.TopSeq
+public import VerifiedGarbage.Proof.MlKem.KPke
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86 (32-bit): SHA-3 and SHAKE in the top-level functions
@@ -9,6 +15,8 @@ arguments (`absorbC_piece`, `padC_piece`, `squeezeC_piece`), and a SHA-3 or
 SHAKE function of one or two buffers (`hash1_piece`, `hash2_piece`): the
 output is `squeezeFrom` of the padded state (`Proof/MlKem/KPke.lean`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.X86.Top
 

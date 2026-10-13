@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.MlKem.X86.TopPrim
-import VerifiedGarbage.Proof.MlKem.X86.Sample
-import VerifiedGarbage.Proof.MlKem.X86.CompressEncode
-import VerifiedGarbage.Proof.MlKem.X86.DecodeDecompress
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86.TopPrim
+public import VerifiedGarbage.Proof.MlKem.X86.Sample
+public import VerifiedGarbage.Proof.MlKem.X86.CompressEncode
+public import VerifiedGarbage.Proof.MlKem.X86.DecodeDecompress
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86 (32-bit): calls of `vg_mlkem_sample_ntt`, `vg_mlkem_compress_encode` and `vg_mlkem_decode_decompress`
@@ -13,6 +19,8 @@ are proven for any leaf with the contract of `vg_mlkem_compress_encode` or
 `vg_mlkem_decode_decompress` for some widths (`CeFn`, `DdFn`: `ce768` and
 `dd768` for 1, 4 and 10 bits; ML-KEM-1024's own leaves for 5 and 11).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.X86.Top
 

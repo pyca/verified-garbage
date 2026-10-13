@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.Init
-import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksContract
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Init
+public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksContract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on x86-64: `vg_aes_gcm_init_precomputed`
@@ -9,6 +15,8 @@ then the hash subkey `H` copied to `ctx + 256` (`powStart_ok`), which is
 `H¹` (`hpow_one`), and `H²`–`H⁴⁸` after it, each `vg_ghash` from a zero
 block over the one before it: `(0 ⊕ Hᵏ) • H = Hᵏ⁺¹` (`powStep_ok`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

@@ -254,7 +254,6 @@ BARE_ASSUMPTION_ALLOWED = {
     "VerifiedGarbage/Proof/Ed25519/X86_64/ScalarVerified.lean": 1,
     "VerifiedGarbage/Proof/Ed448/X86_64/BaseVerified.lean": 1,
     "VerifiedGarbage/Proof/Ed448/X86_64/ScalarVerified.lean": 2,
-    "VerifiedGarbage/Proof/Ed448/X86_64/VerifyVerified.lean": 1,
     "VerifiedGarbage/Proof/Gcm/X86_64/Vpclmul/Ghash.lean": 1,
     "VerifiedGarbage/Proof/Md5/AArch64/Compress.lean": 1,
     "VerifiedGarbage/Proof/Md5/Arm/Compress.lean": 1,

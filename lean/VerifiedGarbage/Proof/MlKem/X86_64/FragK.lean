@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.MlKem.X86_64.FragPrim
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86_64.FragPrim
+meta import VerifiedGarbage.Proof.MlKem.X86_64.FragPrim
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM-768 on x86-64: the calls of the SHA-3 sponge
@@ -8,6 +15,8 @@ Zeroing the Keccak state at `scratch` (`kzero_ok`), and the calls of
 working space at `scratch + 200` (`kabs_ok`, `kpad_ok`, `ksqz_ok`), and their
 traces.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.X86_64
 

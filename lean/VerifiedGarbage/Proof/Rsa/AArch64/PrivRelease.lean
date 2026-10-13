@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Rsa.AArch64.PrivTail
+module
+
+public import VerifiedGarbage.Proof.Rsa.AArch64.PrivTail
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_private_checked` on AArch64: the tail
@@ -6,6 +12,8 @@ import VerifiedGarbage.Proof.Rsa.AArch64.PrivTail
 `tail_ok` runs the check and the release from the frames, after the calls:
 whatever `M` and `out` hold and the calls returned.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.AArch64
 

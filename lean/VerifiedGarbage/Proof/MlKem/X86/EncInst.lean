@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlKem.X86.EncV
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86.EncV
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM-768 on x86 (32-bit): the layout of K-PKE.Encrypt
@@ -6,6 +12,8 @@ import VerifiedGarbage.Proof.MlKem.X86.EncV
 The facts of the layout of `scratch` that the proof of `encrypt`
 (`Enc*.lean`) uses, for ML-KEM-768 (`L768`), computed from its offsets.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.X86.Enc
 

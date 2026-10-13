@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_public` on x86-64: the setup is constant time but for `m`
@@ -7,6 +14,8 @@ The loads of `m` and the input, the comparison, `-m⁻¹` and the number 1
 (`setup_ct`). `-m⁻¹ mod 2⁶⁴` is the same in two runs that agree on `m`
 (`minv_unique`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64
 

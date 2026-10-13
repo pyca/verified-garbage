@@ -1,8 +1,19 @@
-import VerifiedGarbage.Proof.EcKey.AArch64.Secp256k1.Main
-import VerifiedGarbage.Proof.EcKey.AArch64.Secp256k1.Contract
-import VerifiedGarbage.Proof.EcKey.AArch64.Secp256k1.Lit
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Secp256k1.Config
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
+module
+
+public import VerifiedGarbage.Proof.EcKey.AArch64.Secp256k1.Main
+meta import VerifiedGarbage.Proof.EcKey.AArch64.Secp256k1.Main
+public import VerifiedGarbage.Proof.EcKey.AArch64.Secp256k1.Contract
+meta import VerifiedGarbage.Proof.EcKey.AArch64.Secp256k1.Contract
+public import VerifiedGarbage.Proof.EcKey.AArch64.Secp256k1.Lit
+meta import VerifiedGarbage.Proof.EcKey.AArch64.Secp256k1.Lit
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.Secp256k1.Config
+meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Secp256k1.Config
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
+meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # secp256k1 public keys on AArch64: `Verified`
@@ -14,6 +25,8 @@ instruction writes the other callee-saved registers, `sp` or a SIMD register
 (`abiPreserved_of`). Constant time by taint tracking: the only branches are on
 loop counters, and every address is an argument plus a constant or a counter.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.EcKey.AArch64.Secp256k1
 

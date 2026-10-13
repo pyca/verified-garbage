@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.Ecdh.X86_64.CheckFn
-import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.InverseVerified
-import VerifiedGarbage.Proof.Weierstrass.X86_64.P521Literals
+module
+
+public import VerifiedGarbage.Proof.Ecdh.X86_64.CheckFn
+meta import VerifiedGarbage.Proof.Ecdh.X86_64.CheckFn
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.InverseVerified
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.InverseVerified
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.P521Literals
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.P521Literals
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_p521_check_point` on x86-64: `Verified`
@@ -9,6 +18,8 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.P521Literals
 are the curve's (`agree`); constant time by taint tracking, `rdi` and `rsp`
 public, on the code's literals.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdh.X86_64.P521.Check
 

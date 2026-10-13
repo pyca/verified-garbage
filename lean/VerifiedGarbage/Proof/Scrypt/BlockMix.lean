@@ -1,4 +1,10 @@
-import VerifiedGarbage.Spec.Scrypt
+module
+
+public import VerifiedGarbage.Spec.Scrypt
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # scryptBlockMix, one block at a time
@@ -7,6 +13,8 @@ import VerifiedGarbage.Spec.Scrypt
 previous one (`yAt`), and the output as the blocks `Y[0], Y[2], …` followed by
 `Y[1], Y[3], …`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Scrypt
 

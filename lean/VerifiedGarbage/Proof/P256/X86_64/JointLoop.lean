@@ -1,8 +1,17 @@
-import VerifiedGarbage.Proof.P256.X86_64.JointLayout
-import VerifiedGarbage.Proof.P256.X86_64.DoubleHalfPublic
-import VerifiedGarbage.Proof.Weierstrass.X86_64.JointDoubler
+module
+
+public import VerifiedGarbage.Proof.P256.X86_64.JointLayout
+public import VerifiedGarbage.Proof.P256.X86_64.DoubleHalfPublic
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointDoubler
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! P-256's in-place doubler is a doubler of the shared two-scalar loop. -/
+
+@[expose] public section
+
 namespace VG.Proof.P256.X86_64
 open VG VG.X86_64 VG.Impl.P256.X86_64 VG.Impl.Weierstrass VG.Impl.Weierstrass.X86_64
 open VG.Proof.Mont VG.Proof.Mont.X86_64 VG.Proof.Weierstrass VG.Proof.Weierstrass.X86_64

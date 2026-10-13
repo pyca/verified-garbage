@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.RecoverCall
-import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCorrect
-import VerifiedGarbage.Proof.RsaPkcs1Sig.Recover
+module
+
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.RecoverCall
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCorrect
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.Recover
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_pkcs1_recover` on x86-64: correctness
@@ -11,6 +17,8 @@ release of those bytes to `out`, or zeros, which is BoringSSL's recovery
 (`recover_eq_recoverEnc`). With the length check, the frame's push, the call
 (`pub_call`) and the pop: `code_correct`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPkcs1Sig.X86_64.Rec
 

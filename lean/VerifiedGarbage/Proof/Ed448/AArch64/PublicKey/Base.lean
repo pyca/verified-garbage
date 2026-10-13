@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Ed448.AArch64.PublicKey.Hash
-import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Wipe
-import VerifiedGarbage.Proof.Ed448.AArch64.BaseContract
-import VerifiedGarbage.Proof.Ed448.AArch64.Whole.Prune
+module
+
+public import VerifiedGarbage.Proof.Ed448.AArch64.PublicKey.Hash
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Wipe
+public import VerifiedGarbage.Proof.Ed448.AArch64.BaseContract
+public import VerifiedGarbage.Proof.Ed448.AArch64.Whole.Prune
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 public-key derivation on AArch64: pruning and the base point
@@ -11,6 +17,8 @@ bottom of the frame (`prune_ok`), `[s]B` is encoded into `out` by
 `vg_ed448_scalar_base` (`base_step`, given that it meets its contract, `BaseOk`), and the scalar and
 the hash in the frame are cleared (`wipe_step`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.AArch64.PublicKey
 

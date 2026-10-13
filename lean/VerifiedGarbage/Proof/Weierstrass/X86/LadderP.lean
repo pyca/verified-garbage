@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Weierstrass.X86.LadderPCall
-import VerifiedGarbage.Proof.Weierstrass.X86.Ladder
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86.LadderPCall
+public import VerifiedGarbage.Proof.Weierstrass.X86.Ladder
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The ladder by calls of the point functions, on x86 (32-bit)
@@ -12,6 +18,8 @@ whose ladder is `ladder`), as on 32-bit ARM
 below `esp`, apart from the working space, and load `edi` again from the
 caller's argument at `[esp + ao]`, which they leave alone (`LadArg`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.X86.Point
 

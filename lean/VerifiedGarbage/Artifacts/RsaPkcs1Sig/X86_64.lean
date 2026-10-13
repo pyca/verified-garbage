@@ -1,13 +1,17 @@
-import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCT
-import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.RecoverCT
-import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.Pub
+module
+
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCT
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.RecoverCT
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.Pub
 
 /-! # RSASSA-PKCS1-v1_5 (RFC 8017 §8.2) on x86-64: verification and recovery
 
 Signing calls `vg_rsa_private_checked`, which has a variant per
 implementation of the CRT, so it is generic over them
 (`Generic/RsaPrivateCrt/X86_64/RsaPkcs1Sig.lean`). -/
+
+@[expose] public section
 
 namespace VG.Artifacts.RsaPkcs1Sig.X86_64
 

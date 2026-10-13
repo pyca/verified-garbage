@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.MlKem.X86.CheckEkBody
-import VerifiedGarbage.Impl.MlKem1024.X86.Kem
-import VerifiedGarbage.Spec.MlKem.Contract1024
-import VerifiedGarbage.TCB.X86.Target
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86.CheckEkBody
+public import VerifiedGarbage.Impl.MlKem1024.X86.Kem
+public import VerifiedGarbage.Spec.MlKem.Contract1024
+public import VerifiedGarbage.TCB.X86.Target
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM-1024 on x86 (32-bit): `vg_mlkem1024_check_ek`
@@ -9,6 +15,8 @@ import VerifiedGarbage.TCB.X86.Target
 The key check (`Proof/MlKem/X86/CheckEkBody.lean`) of ML-KEM-1024: its 512
 groups of `ek[0 : 1536]`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem1024.X86.CheckEk
 

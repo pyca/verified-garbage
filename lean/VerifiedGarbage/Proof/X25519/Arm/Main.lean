@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.X25519.Arm.Bits
-import VerifiedGarbage.TCB.Arm.Target
+module
+
+public import VerifiedGarbage.Proof.X25519.Arm.Bits
+public import VerifiedGarbage.TCB.Arm.Target
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X25519 on 32-bit ARM: the whole function
@@ -7,6 +13,8 @@ import VerifiedGarbage.TCB.Arm.Target
 `vg_x25519` writes `X25519(k, u)` to `out` (`x25519_correct`), restoring the
 callee-saved registers.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X25519.Arm
 

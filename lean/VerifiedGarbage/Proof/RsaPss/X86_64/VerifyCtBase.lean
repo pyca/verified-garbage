@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyBody
-import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyFixed
-import VerifiedGarbage.Proof.RsaPss.X86_64.MgfCT
+module
+
+public import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyBody
+public import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyFixed
+public import VerifiedGarbage.Proof.RsaPss.X86_64.MgfCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSASSA-PSS verification on x86-64: two runs
@@ -15,6 +21,8 @@ stay out of `vw`. A run's state between two pieces is described by `VS`:
 its frame, and its public words, those of `vw`; both runs then start the
 next piece's taint analysis from the same public values (`vtwo`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPss.X86_64
 

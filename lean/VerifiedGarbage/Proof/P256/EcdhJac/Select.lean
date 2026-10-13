@@ -1,6 +1,14 @@
-import VerifiedGarbage.Proof.Weierstrass.Unch
-import VerifiedGarbage.Impl.P256.EcdhSelect
-import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombSelectV
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.Unch
+public import VerifiedGarbage.Impl.P256.EcdhSelect
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombSelectV
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.P256.EcdhJac.Select
 open VG VG.AArch64 VG.Impl.Mont VG.Impl.Mont.AArch64

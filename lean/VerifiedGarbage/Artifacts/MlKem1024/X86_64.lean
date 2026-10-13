@@ -1,10 +1,14 @@
-import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.MlKem1024.X86_64.DecodeDecompress
-import VerifiedGarbage.Proof.MlKem1024.X86_64.CheckEk
-import VerifiedGarbage.Proof.MlKem.X86_64.DecMulV
-import VerifiedGarbage.Proof.MlKem.X86_64.EncMulV
+module
+
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.MlKem1024.X86_64.DecodeDecompress
+public import VerifiedGarbage.Proof.MlKem1024.X86_64.CheckEk
+public import VerifiedGarbage.Proof.MlKem.X86_64.DecMulV
+public import VerifiedGarbage.Proof.MlKem.X86_64.EncMulV
 
 /-! # ML-KEM-1024 (FIPS 203) on x86-64: the polynomial primitives -/
+
+@[expose] public section
 
 namespace VG.Artifacts.MlKem1024.X86_64
 

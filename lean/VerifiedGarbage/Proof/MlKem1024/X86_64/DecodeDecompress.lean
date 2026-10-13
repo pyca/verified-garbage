@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.MlKem.X86_64.FragPrim
-import VerifiedGarbage.Proof.MlKem.X86_64.DecodeDecompress
-import VerifiedGarbage.Proof.MlKem1024.X86_64.CompressEncode
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86_64.FragPrim
+meta import VerifiedGarbage.Proof.MlKem.X86_64.FragPrim
+public import VerifiedGarbage.Proof.MlKem.X86_64.DecodeDecompress
+meta import VerifiedGarbage.Proof.MlKem.X86_64.DecodeDecompress
+public import VerifiedGarbage.Proof.MlKem1024.X86_64.CompressEncode
+meta import VerifiedGarbage.Proof.MlKem1024.X86_64.CompressEncode
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM-1024 on x86-64: `vg_mlkem1024_decode_decompress`
@@ -10,6 +19,8 @@ bytes in two segments (`dgrp11_ok`, from `DD.seg`); the loop is ML-KEM-768's
 (`DD.loop_ok`, `Proof/MlKem/X86_64/DecodeDecompress.lean`), and the function
 is proven by its two cases.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem1024.X86_64
 

@@ -1,5 +1,7 @@
-import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.Scrypt.X86_64.Whole.Verified
+module
+
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.Scrypt.X86_64.Whole.Verified
 
 /-!
 # scrypt (RFC 7914 §6) on x86-64, over SHA-256
@@ -13,6 +15,8 @@ CPU features. Other hash functions emit no scrypt artifact.
 The stack is 88 bytes: a 56-byte frame, the return address of a call, and
 the 24 bytes `vg_pbkdf2_hmac_sha256_scratch`'s own calls use.
 -/
+
+@[expose] public section
 
 namespace VG.Generic.MdHash.X86_64.Scrypt
 

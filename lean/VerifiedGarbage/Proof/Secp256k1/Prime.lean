@@ -1,11 +1,19 @@
-import VerifiedGarbage.Proof.Framework.Pratt
-import VerifiedGarbage.Spec.Secp256k1
+module
+
+public import VerifiedGarbage.Proof.Framework.Pratt
+public import VerifiedGarbage.Spec.Secp256k1
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # Primality of secp256k1’s field and group order
 
 Pratt certificates, checked by the kernel with `prime_of_cert`. Each
 factor below `2^16` is checked by trial division (`prime_small`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Secp256k1
 

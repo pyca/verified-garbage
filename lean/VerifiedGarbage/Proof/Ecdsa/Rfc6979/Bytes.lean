@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Weierstrass.Words
-import VerifiedGarbage.Spec.Ecdsa.Rfc6979
-import VerifiedGarbage.Spec.Ecdsa.P256
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.Words
+public import VerifiedGarbage.Spec.Ecdsa.Rfc6979
+public import VerifiedGarbage.Spec.Ecdsa.P256
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Deterministic ECDSA: big-endian numbers
@@ -15,6 +21,8 @@ its leftmost 32 (`hashToInt_take`, `bits2octets_eq`); and, for any curve,
 is the hash after zero bytes (`bits2octets_short`).
 Each target's proof uses them, its byte reversal being `byteRev64`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Rfc6979
 

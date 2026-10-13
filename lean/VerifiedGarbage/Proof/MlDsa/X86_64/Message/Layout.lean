@@ -1,9 +1,15 @@
-import VerifiedGarbage.Impl.MlDsa.X86_64.Message
-import VerifiedGarbage.Proof.MlKem.X86_64.KCall
-import VerifiedGarbage.Proof.Framework.X86_64.Frame
-import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.MlDsa.Message.Common
+module
+
+public import VerifiedGarbage.Impl.MlDsa.X86_64.Message
+public import VerifiedGarbage.Proof.MlKem.X86_64.KCall
+public import VerifiedGarbage.Proof.Framework.X86_64.Frame
+public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.MlDsa.Message.Common
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on x86-64, `sign_message` and `verify_message`: where everything is
@@ -18,6 +24,8 @@ permissions, `rsp`, the callee-saved registers, the arguments in the frame,
 the two bytes, and that memory changed only in `X` and the stack. `call_ok`
 runs a call of verified code that writes only within `X` in such a state.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86_64.Message
 

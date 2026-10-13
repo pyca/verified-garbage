@@ -1,13 +1,22 @@
-import VerifiedGarbage.Proof.Ed448.X86_64.Window.Mask
+module
+
+public import VerifiedGarbage.Proof.Ed448.X86_64.Window.Mask
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! The projective table occupies a separate range of the existing scratch space. -/
+
+@[expose] public section
+
 namespace VG.Proof.Ed448.X86_64.Window
 
 open VG VG.X86_64 VG.Impl.Ed448.X86_64 VG.Impl.Ed448.X86_64.Window VG.Proof.Ed448.X86_64
 open VG.Proof.X448.X86_64 (Scr Index Env E F Keep Outside Outside2 off ofs clob copyOut_ok E_outside)
 open VG.Impl.X448.X86_64 (slot copyOut W)
 
-def Frame (base : Addr) (m u : Mem) := Outside2 base 64 1584 TAB 3072 m u
+def Frame (base : Addr) (m u : Mem) := Outside2 base 64 1584 TAB 3264 m u
 
 structure KeepW (base : Addr) (s u : State) : Prop where
   gpr : ∀ r, r ∉ clob → u.gpr r = s.gpr r
@@ -28,13 +37,13 @@ theorem KeepW.trans {base : Addr} {s u v : State} (h : KeepW base s u) (g : Keep
 theorem KeepW.scr {base : Addr} {s u : State} (h : KeepW base s u) (hs : Scr s base) : Scr u base :=
   ⟨(h.gpr _ (by decide)).trans hs.rdi, h.wr ▸ hs.wr, hs.nowrap⟩
 
-theorem Frame.wide {base : Addr} {m u : Mem} (h : Frame base m u) : Outside base 64 7104 m u :=
+theorem Frame.wide {base : Addr} {m u : Mem} (h : Frame base m u) : Outside base 64 7296 m u :=
   h.outside (by decide) (by decide) (by decide) (by decide)
 
-theorem Bits.keepW {base : Addr} {o k : Nat} (ho : 2048 ≤ o) (hb : o + 456 ≤ TAB)
+theorem Bits.keepW {base : Addr} {o k : Nat} (ho : 2048 ≤ o) (hb : o + 460 ≤ TAB)
     {s u : State} (h : Bits base o k s) (f : KeepW base s u) : Bits base o k u := by
   intro t ht
-  have hn : o + t < 2 ^ 64 := by simp only [TAB] at hb; omega
+  have hn : o - 1 + t < 2 ^ 64 := by simp only [TAB] at hb; omega
   rw [f.mem _ (Or.inr (by rw [VG.Proof.X448.X86_64.ofs_off' base hn]; omega))
     (Or.inl (by rw [VG.Proof.X448.X86_64.ofs_off' base hn]; omega))]
   exact h t ht
@@ -50,7 +59,7 @@ theorem pointAt_outside {base : Addr} {a n o : Nat} {m u : Mem} (h : Outside bas
   unfold pointAt F
   rw [h.fe (by omega) (by omega), h.fe (by omega) (by omega), h.fe (by omega) (by omega)]
 
-theorem tablePoint_keep {base : Addr} {s u : State} (h : Keep base s u) (i : Nat) (hi : i < 16) :
+theorem tablePoint_keep {base : Addr} {s u : State} (h : Keep base s u) (i : Nat) (hi : i < 17) :
     tablePoint u.mem base i = tablePoint s.mem base i := by
   apply pointAt_outside h.mem <;> simp only [tabOffset, TAB] <;> omega
 
@@ -73,7 +82,7 @@ theorem load_ok {s : State} {base : Addr} (hs : Scr s base) (i : Index) {a : Nat
 
 /-- Store one field slot in the table, preserving all working slots. -/
 theorem store_coord_ok {s : State} {base : Addr} (hs : Scr s base) {o : Nat}
-    (ho : TAB ≤ o) (he : o + 56 ≤ TAB + 3072) (j : Index) :
+    (ho : TAB ≤ o) (he : o + 56 ≤ TAB + 3264) (j : Index) :
     WP isa (.block (copyOut o (slot j.val))) s fun u =>
       KeepW base s u ∧ Outside base o 56 s.mem u.mem ∧ E u.mem base = E s.mem base ∧
       F u.mem base o = E s.mem base j := by
@@ -91,7 +100,7 @@ theorem store_coord_ok {s : State} {base : Addr} (hs : Scr s base) {o : Nat}
   · unfold F E; rw [fu]
 
 /-- Store the accumulator at a public, fixed table index. -/
-theorem store_ok {s : State} {base : Addr} (hs : Scr s base) (i : Nat) (hi : i < 16) :
+theorem store_ok {s : State} {base : Addr} (hs : Scr s base) (i : Nat) (hi : i < 17) :
     WP isa (.block (store i)) s fun u => KeepW base s u ∧
       Outside base (tabOffset i 0) 184 s.mem u.mem ∧ E u.mem base = E s.mem base ∧
       tablePoint u.mem base i = Proof.Ed448.pt (E s.mem base) 0 1 2 := by

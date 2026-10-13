@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesOcb.Arm.Offset0
-import VerifiedGarbage.Proof.AesOcb.Arm.Calls
+module
+
+public import VerifiedGarbage.Proof.AesOcb.Arm.Offset0
+public import VerifiedGarbage.Proof.AesOcb.Arm.Calls
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-OCB on ARMv7: `Offset_0` (`nonce`)
@@ -10,6 +16,8 @@ place (`encOne_ok`) into `Ktop`, and takes `Offset_0` from `Stretch`
 (`offset0_ok`): §4.2's `Offset_0` (`Proof.Ocb.offset0_eq`), at `W + ofsO` and
 `W + o0O` (`nonce_ok`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Rsa.X86_64.RpCands
+module
+
+public import VerifiedGarbage.Proof.Rsa.X86_64.RpCands
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_recover_primes` on x86-64: comparing numbers
@@ -6,6 +12,8 @@ import VerifiedGarbage.Proof.Rsa.X86_64.RpCands
 `wordLoop 0 ltBody`: the borrow of `[rbx] - [r10]` over `N` words, the mask
 of `[rbx] < [r10]` in `rbp` (`lt_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.X86_64
 

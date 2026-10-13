@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Argon2.Arm.HPrime.Contract
-import VerifiedGarbage.Proof.Blake2.Arm.Blake2b
+module
+
+public import VerifiedGarbage.Proof.Argon2.Arm.HPrime.Contract
+public import VerifiedGarbage.Proof.Blake2.Arm.Blake2b
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Argon2 H′ on ARMv7: the calls of the BLAKE2b functions
@@ -11,6 +17,8 @@ stack pointer (`SP`). Each is stated for any `B` and `SP`, so that the
 derivation can use them too: they write only the state, their scratch, the
 digest (`finalize`) and the 32 bytes below `SP`, and keep `r4`–`r11`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Argon2.Arm.HPrime
 

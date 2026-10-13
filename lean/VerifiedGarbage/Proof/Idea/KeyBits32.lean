@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Idea.KeyBits
-import VerifiedGarbage.Impl.Idea.Key32
+module
+
+public import VerifiedGarbage.Proof.Idea.KeyBits
+public import VerifiedGarbage.Impl.Idea.Key32
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # IDEA key expansion, bit by bit, on 32-bit words
@@ -9,6 +15,8 @@ As `KeyBits.lean`, for the 32-bit targets: key bit `i` is at the bit
 (`keyLoc32_spec`), and a subkey's bits are bits of a 32-bit word of the
 schedule in memory (`scheduleAt_getLsbD32`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Idea
 

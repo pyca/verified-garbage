@@ -1,7 +1,15 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallChunk
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallLoop
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallChunk
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallLoop
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## From `BallSetup.lean` -/
+
+@[expose] public section
 
 section
 

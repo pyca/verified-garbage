@@ -1,7 +1,17 @@
-import VerifiedGarbage.Proof.AesOcb.X86_64.Seal
-import VerifiedGarbage.Proof.AesOcb.X86_64.NonceCT
-import VerifiedGarbage.Proof.AesOcb.X86_64.HashCT
-import VerifiedGarbage.Proof.AesOcb.X86_64.BodyCT
+module
+
+public import VerifiedGarbage.Proof.AesOcb.X86_64.Seal
+meta import VerifiedGarbage.Proof.AesOcb.X86_64.Seal
+public import VerifiedGarbage.Proof.AesOcb.X86_64.NonceCT
+meta import VerifiedGarbage.Proof.AesOcb.X86_64.NonceCT
+public import VerifiedGarbage.Proof.AesOcb.X86_64.HashCT
+meta import VerifiedGarbage.Proof.AesOcb.X86_64.HashCT
+public import VerifiedGarbage.Proof.AesOcb.X86_64.BodyCT
+meta import VerifiedGarbage.Proof.AesOcb.X86_64.BodyCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-OCB on x86-64: `vg_aes_ocb_seal` is constant time
@@ -20,6 +30,8 @@ runs the same from its states with `tag` only readable (`rel_narrow`). The
 copy of the tag and `restore` are related by the taint analysis from the
 registers that correctness says agree (`sealTail_rel`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

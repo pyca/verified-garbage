@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.MlKem.X86_64.VPack
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Impl.MlKem.X86_64.Mul
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86_64.VPack
+public import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Impl.MlKem.X86_64.Mul
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86-64: `BaseCaseMultiply` on words
@@ -10,6 +16,8 @@ The words `vbase` computes for a pair (`baseW`): with `mont(x, y) = x · y ·
 a₁b₁γ` and `mont(mont(a₀, b₁) + mont(a₁, b₀), R²)` is `a₀b₁ + a₁b₀`, modulo
 `q`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.X86_64.W
 

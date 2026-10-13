@@ -1,9 +1,15 @@
-import VerifiedGarbage.Proof.Ecdsa.X86_64.Finish
-import VerifiedGarbage.Impl.EcKey.X86_64
-import VerifiedGarbage.Proof.Ecdsa.X86_64.Middle
-import VerifiedGarbage.Proof.Ecdsa.X86_64.Main
-import VerifiedGarbage.Proof.EcKey.PublicKey
-import VerifiedGarbage.Proof.Framework.X86_64.Inline
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.Finish
+public import VerifiedGarbage.Impl.EcKey.X86_64
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.Middle
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.Main
+public import VerifiedGarbage.Proof.EcKey.PublicKey
+public import VerifiedGarbage.Proof.Framework.X86_64.Inline
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Elliptic curve public keys on x86-64: the result, and the whole function
@@ -15,6 +21,8 @@ mask, returns the flag's low bit, and restores the callee-saved registers
 (`finish_ok`): the leading byte (`lead_ok`), then the two coordinates as
 the signature's `finish` writes `r ‖ s`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.EcKey.X86_64
 

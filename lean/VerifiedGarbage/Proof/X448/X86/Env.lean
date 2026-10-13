@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.X448.X86.FieldCall
-import VerifiedGarbage.Proof.X448.X86.Copy
-import VerifiedGarbage.Proof.X448.X86.Swap
-import Mathlib.Logic.Function.Basic
+module
+
+public import VerifiedGarbage.Proof.X448.X86.FieldCall
+public import VerifiedGarbage.Proof.X448.X86.Copy
+public import VerifiedGarbage.Proof.X448.X86.Swap
+public import Mathlib.Logic.Function.Basic
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 on x86 (32-bit): the working space as field-element slots
@@ -10,6 +16,8 @@ Field operations update one of twenty-two slots, preserving bounded limbs in
 every slot. The frame excludes saved registers, the swap bit and the scalar's
 decoded bits.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448.X86
 

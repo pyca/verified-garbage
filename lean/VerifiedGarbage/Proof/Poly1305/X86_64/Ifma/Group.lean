@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Poly1305.X86_64.Ifma.Powers
-import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Group
+module
+
+public import VerifiedGarbage.Proof.Poly1305.X86_64.Ifma.Powers
+public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Group
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Poly1305 on x86-64 with AVX-512 IFMA: groups of eight blocks
@@ -8,6 +14,8 @@ Each group of eight blocks but the last is added to the quadwords of `H`
 (block `π k` to quadword `k`) and multiplied by `r⁸`, in `Y` (Horner's rule
 in eight lanes, `Horner8.lean`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Poly1305.X86_64.Ifma
 

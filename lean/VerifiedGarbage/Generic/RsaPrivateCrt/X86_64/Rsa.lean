@@ -1,5 +1,7 @@
-import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.Rsa.X86_64.PrivCT
+module
+
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.Rsa.X86_64.PrivCT
 
 /-!
 # The checked RSA private-key operation on x86-64
@@ -14,6 +16,8 @@ result, the precomputed values of `n` and the stack arguments of its calls,
 the return address of its calls, and that of their calls of Montgomery
 multiplication, which uses no stack.
 -/
+
+@[expose] public section
 
 namespace VG.Generic.RsaPrivateCrt.X86_64.Rsa
 

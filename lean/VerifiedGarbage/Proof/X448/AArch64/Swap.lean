@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.X448.AArch64.Copy
+module
+
+public import VerifiedGarbage.Proof.X448.AArch64.Copy
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 on AArch64: constant-time conditional swaps
@@ -6,6 +12,8 @@ import VerifiedGarbage.Proof.X448.AArch64.Copy
 An XOR mask exchanges the limbs without a branch or an address depending on
 the swap bit.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448.AArch64
 

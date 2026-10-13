@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Weierstrass.Arm.Fprog
-import VerifiedGarbage.Proof.Weierstrass.Arm.Const
-import VerifiedGarbage.Proof.Framework.Omega
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.Arm.Fprog
+public import VerifiedGarbage.Proof.Weierstrass.Arm.Const
+public import VerifiedGarbage.Proof.Framework.Omega
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Short Weierstrass curves on 32-bit ARM: copies and selections
@@ -11,6 +17,8 @@ or `b`), `selPt` does so for the three coordinates of a point
 (`selPt_ok`). Each changes only `[o]` and `r4` (and `r5` for the
 selections), and keeps the regions. Constants are in `Const.lean`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.Arm
 

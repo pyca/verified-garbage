@@ -1,9 +1,15 @@
-import VerifiedGarbage.Proof.AesGcmSiv.AArch64.FnCT
-import VerifiedGarbage.Proof.GcmSiv.Polyval
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Spec.GcmSiv.Contract
-import VerifiedGarbage.Proof.AesGcmSiv.Scratch
-import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
+module
+
+public import VerifiedGarbage.Proof.AesGcmSiv.AArch64.FnCT
+public import VerifiedGarbage.Proof.GcmSiv.Polyval
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.GcmSiv.Contract
+public import VerifiedGarbage.Proof.AesGcmSiv.Scratch
+public import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM-SIV on AArch64: `Verified`
@@ -19,6 +25,8 @@ words), with no stack: the calls keep the return address in `x30`, which
 each function saves in the working space. The last section allocates the
 working space.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

@@ -1,5 +1,7 @@
-import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Prims
+module
+
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Prims
 
 /-!
 # ML-DSA (FIPS 204) on x86-64: verification
@@ -12,6 +14,8 @@ with its suffix (e.g. `vg_mldsa44_verify_avx2`), and need its CPU features.
 The stack is 32 bytes: the return address of a call of a primitive, and up
 to 24 bytes for its own calls (`vg_mldsa_rej_ntt_poly4`'s).
 -/
+
+@[expose] public section
 
 namespace VG.Generic.MlDsaArith.X86_64.MlDsaVerify
 

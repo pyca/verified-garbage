@@ -1,5 +1,7 @@
-import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.Sha256.AArch64.Shared
+module
+
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.Sha256.AArch64.Shared
 
 /-!
 # SHA-224 (FIPS 180-4) on AArch64
@@ -10,6 +12,8 @@ SHA-224 is SHA-256 from another initial hash value, and its digest the first
 writes its digest, is emitted with each compression function
 (`Proof/Pbkdf2/Md/AArch64/Hashes/Sha224.lean`).
 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.Sha224.AArch64
 

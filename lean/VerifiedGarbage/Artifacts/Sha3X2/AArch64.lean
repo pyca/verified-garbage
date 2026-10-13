@@ -1,7 +1,11 @@
-import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2
+module
+
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2
 
 /-! # Keccak-f[1600] on two interleaved states on AArch64 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.Sha3X2.AArch64
 

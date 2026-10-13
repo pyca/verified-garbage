@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.RsaOaep.X86_64.DecSteps
-import VerifiedGarbage.Proof.RsaOaep.X86_64.EncCT
+module
+
+public import VerifiedGarbage.Proof.RsaOaep.X86_64.DecSteps
+meta import VerifiedGarbage.Proof.RsaOaep.X86_64.DecSteps
+public import VerifiedGarbage.Proof.RsaOaep.X86_64.EncCT
+meta import VerifiedGarbage.Proof.RsaOaep.X86_64.EncCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-OAEP decryption on x86-64: constant time
@@ -17,6 +25,8 @@ message's length are secret: the code after the call computes masks from
 them and never branches on them, which the taint analysis checks. The code
 with `hLen` as an immediate is checked for every `hLen` up to 64.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaOaep.X86_64
 

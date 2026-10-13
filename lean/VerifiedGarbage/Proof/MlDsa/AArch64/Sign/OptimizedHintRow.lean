@@ -1,10 +1,18 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedCalls
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.StaticRoots
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseHintCallTiming
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseHintDecompose
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedLowState
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedCalls
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.StaticRoots
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseHintCallTiming
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseHintDecompose
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedLowState
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## From `OptimizedHintCheck.lean` -/
+
+@[expose] public section
 
 section
 

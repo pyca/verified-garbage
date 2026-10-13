@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtChecks
-import VerifiedGarbage.Proof.Bignum.CrtRedc
-import VerifiedGarbage.Proof.Bignum.CrtMath
+module
+
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtChecks
+public import VerifiedGarbage.Proof.Bignum.CrtRedc
+public import VerifiedGarbage.Proof.Bignum.CrtMath
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSA with the CRT on AArch64: `x R_X^(-K) mod X`
@@ -11,6 +17,8 @@ words, `x = Σ x_k R^k`, is reduced as `A := (A R⁻¹ + x_k R⁻¹) mod X` for
 each chunk from the lowest: `A R^K ≡ x (mod X)` for `K = ⌈w / w_X⌉`
 (`redc_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.AArch64
 

@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512Tail.Sym
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.SymSel
+module
+
+public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512Tail.Sym
+public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.SymSel
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ChaCha20 on x86-64 with AVX-512, the last bytes: blocks of the input from either buffer
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.SymSel
 `4 D` bytes of data (`Sym.lean`): `selD` runs both branches of a `selXor`,
 loading the block as `T.inp`, and `sel_ok` proves either branch agrees.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.ChaCha20.X86_64.Avx512Tail
 

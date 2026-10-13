@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.TripleDes.AArch64.Pass
-import VerifiedGarbage.Proof.TripleDes.Word
+module
+
+public import VerifiedGarbage.Proof.TripleDes.AArch64.Pass
+public import VerifiedGarbage.Proof.TripleDes.Word
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.TripleDes.AArch64
 

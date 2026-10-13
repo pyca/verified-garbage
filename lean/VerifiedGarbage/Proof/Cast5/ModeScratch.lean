@@ -1,8 +1,14 @@
-import VerifiedGarbage.Spec.Cast5.Cbc
-import VerifiedGarbage.Spec.Cast5.Ofb
-import VerifiedGarbage.Spec.Cast5.Cfb
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.Scratch
+module
+
+public import VerifiedGarbage.Spec.Cast5.Cbc
+public import VerifiedGarbage.Spec.Cast5.Ofb
+public import VerifiedGarbage.Spec.Cast5.Cfb
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.Scratch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # CAST5-CBC, CAST5-OFB and CAST5-CFB64 with their working space as an argument
@@ -15,6 +21,8 @@ needs the precondition to read no memory (`modePre_local`) and each
 postcondition to read the memory on entry and on return only within the
 function's buffers (`cbcEncPost_local`, `cbcEncPostOut_local`, …).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Cast5
 

@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.X25519.X86_64.Divstep.FRow
-import VerifiedGarbage.Proof.Framework.Omega
+module
+
+public import VerifiedGarbage.Proof.X25519.X86_64.Divstep.FRow
+public import VerifiedGarbage.Proof.Framework.Omega
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X25519 on x86-64, inversion by divsteps: the rows of `a` and `b`
@@ -11,6 +17,8 @@ import VerifiedGarbage.Proof.Framework.Omega
 the low four with its sign (`foldB_ok`), and the carry of that folded in as
 `±38`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X25519.X86_64
 

@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Sym
-import VerifiedGarbage.Impl.ChaCha20.X86_64.Avx512Split
+module
+
+public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Sym
+public import VerifiedGarbage.Impl.ChaCha20.X86_64.Avx512Split
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ChaCha20 on x86-64 with AVX-512: blocks of the input from either buffer
@@ -13,6 +19,8 @@ block not yet written (so still that of the pass's start); from `src`, the
 first `r10` bytes (at most 1024) at `r8`, which are readable and apart from
 what the pass writes (`SelOk`). `Sym.runPieces` runs `pieces`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.ChaCha20.X86_64.Avx512
 

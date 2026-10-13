@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesCcm.X86_64.Run
+module
+
+public import VerifiedGarbage.Proof.AesCcm.X86_64.Run
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CCM on x86-64: checking a received tag (`recv`, `cmp o`)
@@ -9,6 +15,8 @@ tag at `rsi` with zeros at `W + 256` (`recv_ok`); `cmp o` pads the first `rbx`
 bytes of the tag at `W + o` at `W + 240` and leaves 1 in `rax` if they are
 the received ones, 0 if not (`cmp_ok`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

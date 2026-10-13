@@ -1,6 +1,12 @@
-import VerifiedGarbage.Impl.Blowfish.X86
-import VerifiedGarbage.Proof.MlDsa.X86.Pack.Run
-import VerifiedGarbage.Proof.Rc4.Dword
+module
+
+public import VerifiedGarbage.Impl.Blowfish.X86
+public import VerifiedGarbage.Proof.MlDsa.X86.Pack.Run
+public import VerifiedGarbage.Proof.Rc4.Dword
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Blowfish on x86 (32-bit): running blocks
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.Rc4.Dword
 `brun [facts]` steps a block (ML-DSA's `xrun`, `Proof/MlDsa/X86/Pack/Run.lean`),
 with the memory operands of the Blowfish code, `at_ b d`, at `addr (s.gpr b) d`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Blowfish.X86
 

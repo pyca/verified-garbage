@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombSelect
-import VerifiedGarbage.Proof.Framework.AArch64.SimdMem64
-import VerifiedGarbage.Proof.Weierstrass.TCombWords
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombSelect
+public import VerifiedGarbage.Proof.Framework.AArch64.SimdMem64
+public import VerifiedGarbage.Proof.Weierstrass.TCombWords
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The comb from tables in memory on AArch64: the selection by vectors
@@ -21,6 +27,8 @@ number of words, a multiple of 3, by thirds of three pairs, stored at `E.x`,
 which `E.y` continues (`selXY3_ok`). `Z` is `R`
 unless `a = 0`, as the scalar code sets it (`TCombSelect`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.AArch64
 

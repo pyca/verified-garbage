@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Blowfish.X86_64.KeyInit
+module
+
+public import VerifiedGarbage.Proof.Blowfish.X86_64.KeyInit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Key expansion: the keyed P-array
@@ -6,6 +12,8 @@ import VerifiedGarbage.Proof.Blowfish.X86_64.KeyInit
 `keyP_run`: the 18 P-array entries XORed in place with the key's words,
 cycling through the key's bytes.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Blowfish.X86_64
 

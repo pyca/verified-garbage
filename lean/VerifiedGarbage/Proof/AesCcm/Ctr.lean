@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.AesCcm.Mac
-import VerifiedGarbage.Proof.Gcm.Ctr
-import VerifiedGarbage.Proof.Framework.PowLit
+module
+
+public import VerifiedGarbage.Proof.AesCcm.Mac
+public import VerifiedGarbage.Proof.Gcm.Ctr
+public import VerifiedGarbage.Proof.Framework.PowLit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CCM: counter mode in pieces
@@ -19,6 +25,8 @@ bits of `i + 1` are zero (`inc32_ctrBlock`; when `q < 4` they never are), so
 `j mod 2³² + k ≤ 2³²` (`repeat_inc32_ctrBlock`), and its keystream is CCM's
 (`xorKs_eq`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesCcm
 

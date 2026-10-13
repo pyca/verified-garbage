@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Modes.AArch64.Cfb8Steps
+module
+
+public import VerifiedGarbage.Proof.Modes.AArch64.Cfb8Steps
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # CFB8 on AArch64, for any core: the data loop
@@ -11,6 +17,8 @@ and shifts the input block at the IV to `Iⱼ₊₁` (`cfb8Shift_wp`, `cfb8In`).
 Blocks are `8 bw` bytes. The IV's address is kept in the register `ivR`,
 which the core keeps (`KeepsReg`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Modes.AArch64
 

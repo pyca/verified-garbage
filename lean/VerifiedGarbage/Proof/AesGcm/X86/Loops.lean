@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.AesGcm.X86.Env
-import VerifiedGarbage.Proof.Gcm.Ctr
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86.Env
+meta import VerifiedGarbage.Proof.AesGcm.X86.Env
+public import VerifiedGarbage.Proof.Gcm.Ctr
+meta import VerifiedGarbage.Proof.Gcm.Ctr
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on x86: the byte loops
@@ -10,6 +18,8 @@ at `edi`, a byte at a time, advancing both pointers (`copyLoop_ok`,
 `xorLoop_ok`); the buffers do not overlap. Both are constant time from the
 pointers and the count (`copyLoop_ct`, `xorLoop_ct`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

@@ -1,5 +1,7 @@
-import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.MlDsa.X86_64.Message.VerifyFn
+module
+
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Message.VerifyFn
 
 /-!
 # ML-DSA (FIPS 204) on x86-64: verifying messages
@@ -16,6 +18,8 @@ implementation. The emitter adds the `# Safety` items that depend on the
 target (`Sig.layoutDoc`), from `stack` and `writeArgs`, which `ofSig` checks
 against the contract.
 -/
+
+@[expose] public section
 
 namespace VG.Generic.MlDsaArith.X86_64.MlDsaVerifyMessage
 

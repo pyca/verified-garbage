@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Weierstrass.Group
-import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
-import Mathlib.GroupTheory.Perm.Cycle.Type
-import Mathlib.SetTheory.Cardinal.Finite
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.Group
+public import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
+public import Mathlib.GroupTheory.Perm.Cycle.Type
+public import Mathlib.SetTheory.Cardinal.Finite
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # A curve of prime order, from the order of its base point
@@ -16,6 +22,8 @@ out by Cauchy's theorem, since a curve with no point of order 2 (`Good`)
 has no element of order 2. So `#E = n` is prime, and every point but `O`
 has order `n` (`primeOrder_of`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass
 

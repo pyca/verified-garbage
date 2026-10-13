@@ -1,11 +1,15 @@
-import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.Sha3.X86_64.Permute
-import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Absorb
-import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Pad
-import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Squeeze
-import VerifiedGarbage.Proof.Sha3.X86_64.Frame
+module
+
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.Sha3.X86_64.Permute
+public import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Absorb
+public import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Pad
+public import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Squeeze
+public import VerifiedGarbage.Proof.Sha3.X86_64.Frame
 
 /-! # SHA-3 and SHAKE (FIPS 202) on x86-64 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.Sha3.X86_64
 

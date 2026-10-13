@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.R2aStep
-import VerifiedGarbage.Proof.Bignum.X86_64.R2wFast
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.R2aStep
+public import VerifiedGarbage.Proof.Bignum.X86_64.R2wFast
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `R² mod m` by word steps with ADX on x86-64
@@ -11,6 +17,8 @@ accumulator, the reciprocal `v` of `m`'s top word and `w` steps, `R² mod m`
 `w` a multiple of 4, `vg_rsa_public`'s computation otherwise (`choice_ok`,
 `R2w.choice_ok`'s statement).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64.R2ax
 

@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Ed25519.X86_64.PublicKey.Hash
-import VerifiedGarbage.Proof.Ed25519.Bytes
-import VerifiedGarbage.Proof.Ed25519.X86_64.BaseCallee
-import VerifiedGarbage.Proof.Ed25519.X86_64.CombLit
+module
+
+public import VerifiedGarbage.Proof.Ed25519.X86_64.PublicKey.Hash
+public import VerifiedGarbage.Proof.Ed25519.Bytes
+public import VerifiedGarbage.Proof.Ed25519.X86_64.BaseCallee
+public import VerifiedGarbage.Proof.Ed25519.X86_64.CombLit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed25519 public-key derivation on x86-64: pruning and the base point
@@ -10,6 +16,8 @@ The first half of the digest, pruned, is stored in the frame (`prune_ok`),
 `[s]B` is encoded into `out` (`base_ok`), and the frame's copy of `s` is
 cleared (`wipe_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed25519.X86_64.PublicKey
 

@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
-import VerifiedGarbage.Impl.MlKem.X86_64.KpkeMul
-import VerifiedGarbage.Impl.MlKem.X86_64.Frag
+module
+
+public import VerifiedGarbage.Proof.Framework.X86_64.Lit
+meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
+public import VerifiedGarbage.Impl.MlKem.X86_64.KpkeMul
+meta import VerifiedGarbage.Impl.MlKem.X86_64.KpkeMul
+public import VerifiedGarbage.Impl.MlKem.X86_64.Frag
+meta import VerifiedGarbage.Impl.MlKem.X86_64.Frag
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM's polynomial arithmetic on x86-64: the code as literals
@@ -11,6 +20,8 @@ once; the checks of every instruction of `vg_mlkem*_decrypt_mul`,
 functions `ArithOk` is about read them (`lit_decide`) rather than building
 the code again.
 -/
+
+@[expose] public section
 
 namespace VG
 

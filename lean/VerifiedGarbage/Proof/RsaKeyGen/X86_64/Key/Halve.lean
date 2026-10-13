@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.Front
-import VerifiedGarbage.Proof.RsaKeyGen.KeyMath
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtRows
+module
+
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.Front
+public import VerifiedGarbage.Proof.RsaKeyGen.KeyMath
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtRows
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # An RSA key from its primes on x86-64: `φ` and the halving
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.Bignum.X86_64.CrtRows
 `φ = (p − 1)(q − 1)` (`phi_k`), and the `64 W` steps that halve `u`, `v` and
 `φ` while `u` and `v` are both even (`twos_k`, `halveIter`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaKeyGen.X86_64.Key
 

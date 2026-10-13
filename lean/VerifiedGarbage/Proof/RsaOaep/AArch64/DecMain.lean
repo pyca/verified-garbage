@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.RsaOaep.AArch64.DecOut
-import VerifiedGarbage.Proof.RsaOaep.Decode
-import VerifiedGarbage.Spec.RsaOaep.Contract
+module
+
+public import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.RsaOaep.AArch64.DecOut
+public import VerifiedGarbage.Proof.RsaOaep.Decode
+public import VerifiedGarbage.Spec.RsaOaep.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-OAEP decryption on AArch64: the decoding
@@ -13,6 +19,8 @@ compares `lHash'`, scans, copies and shifts `T`, and writes the message
 under the mask `ok` to `out` and its length to `*msg_len`: what
 `Spec.RsaOaep.decrypt` writes for the operation's outcome.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaOaep.AArch64
 

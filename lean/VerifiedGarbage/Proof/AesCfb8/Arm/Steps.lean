@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.AesCfb8.Arm.Loop
-import VerifiedGarbage.Proof.Framework.Arm.Exec
-import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+module
+
+public import VerifiedGarbage.Proof.AesCfb8.Arm.Loop
+public import VerifiedGarbage.Proof.Framework.Arm.Exec
+public import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CFB8 on ARMv7: the code after the call
@@ -10,6 +16,8 @@ with the first byte of the enciphered block (`encByte`, `decByte`), and the
 input block shifted (`shift`), with their memories as explicit writes
 (`shiftMem32`, `Proof/AesCfb8/Mem.lean`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesCfb8.Arm
 

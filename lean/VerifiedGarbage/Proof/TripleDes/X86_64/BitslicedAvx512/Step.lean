@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx512.Machine
-import VerifiedGarbage.Proof.TripleDes.Bitslice.Pass
+module
+
+public import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx512.Machine
+public import VerifiedGarbage.Proof.TripleDes.Bitslice.Pass
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # One S-box of an AVX-512 round, and the exchange of the halves
@@ -10,6 +16,8 @@ XORing its outputs into their words) does to the state words what `step`
 does, given the key bits at the top of `rax`, and shifts them out.
 `swapHalves_ok`: the exchange of the halves does what `swapW` does.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.TripleDes.X86_64.BitslicedAvx512
 

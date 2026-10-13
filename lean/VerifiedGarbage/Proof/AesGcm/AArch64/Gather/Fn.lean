@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.AesGcm.AArch64.Gather.Loop
-import VerifiedGarbage.Proof.AesGcm.AArch64.Gather.Callee
-import VerifiedGarbage.Proof.AesGcm.ScratchGather
-import VerifiedGarbage.Proof.AesGcm.CtxFrame
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
+module
+
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Gather.Loop
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Gather.Callee
+public import VerifiedGarbage.Proof.AesGcm.ScratchGather
+public import VerifiedGarbage.Proof.AesGcm.CtxFrame
+public import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM one-shot encryption out of place, from a list of slices, AArch64: the function
@@ -16,6 +22,8 @@ address at `B + 2584` and `tag`, the call's stack argument, at `B + 2576`
 call keeps our frame, so the return address comes back from it
 (`sealGather_wp`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

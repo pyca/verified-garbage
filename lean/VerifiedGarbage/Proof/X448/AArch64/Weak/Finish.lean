@@ -1,5 +1,14 @@
-import VerifiedGarbage.Proof.X448.AArch64.Weak.Setup
-import VerifiedGarbage.Proof.X448.AArch64.Finish
+module
+
+public import VerifiedGarbage.Proof.X448.AArch64.Weak.Setup
+public import VerifiedGarbage.Proof.X448.AArch64.Finish
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
+
 namespace VG.Proof.X448.AArch64.Weak
 open VG VG.AArch64
 open VG.Impl.X448.AArch64 (ld st X2 T7 ACC)

@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Framework.Mem
-import VerifiedGarbage.Proof.Sha256.Stream
-import VerifiedGarbage.Spec.Scrypt.Contract
+module
+
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Sha256.Stream
+public import VerifiedGarbage.Spec.Scrypt.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # scrypt: memory lemmas
@@ -9,6 +15,8 @@ Addresses and regions, bytes of memory (`Spec.Scrypt.bytesAt`) read and
 written, words copied, and the exclusive-or of words, which the proofs of
 every target share, so that none imports another target's proof.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Scrypt.Memory
 

@@ -1,7 +1,17 @@
-import VerifiedGarbage.Impl.MlKem1024.X86_64.Compress
-import VerifiedGarbage.Proof.MlKem.X86_64.FragPrim
-import VerifiedGarbage.Proof.MlKem.Encode1024
-import VerifiedGarbage.Proof.MlKem1024.X86_64.Contracts
+module
+
+public import VerifiedGarbage.Impl.MlKem1024.X86_64.Compress
+meta import VerifiedGarbage.Impl.MlKem1024.X86_64.Compress
+public import VerifiedGarbage.Proof.MlKem.X86_64.FragPrim
+meta import VerifiedGarbage.Proof.MlKem.X86_64.FragPrim
+public import VerifiedGarbage.Proof.MlKem.Encode1024
+meta import VerifiedGarbage.Proof.MlKem.Encode1024
+public import VerifiedGarbage.Proof.MlKem1024.X86_64.Contracts
+meta import VerifiedGarbage.Proof.MlKem1024.X86_64.Contracts
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM-1024 on x86-64: `vg_mlkem1024_compress_encode`
@@ -11,6 +21,8 @@ write its `d` bytes (`grp5_ok`, `grp11_ok`); the loop is ML-KEM-768's
 (`CE.loop_ok`, `Proof/MlKem/X86_64/CompressEncode.lean`), with groups of 8
 coefficients and `d` bytes, and the function is proven by its two cases.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem1024.X86_64
 

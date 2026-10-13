@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.BallLoop
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.RejNttCT
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.BallLoop
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.BallLoop
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.RejNttCT
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.RejNttCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on AArch64: `vg_mldsa_sample_in_ball`
@@ -11,6 +19,8 @@ for `vg_mldsa_rej_ntt_poly` (`RejNttCT.lean`): the loop, whose branches and
 addresses depend on the output, by `memTaint`, since both runs have the same
 output and zeros in `c`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Sample
 

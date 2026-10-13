@@ -1,8 +1,17 @@
-import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.Entry
-import VerifiedGarbage.Proof.Rsa.X86_64.CvStore
-import VerifiedGarbage.Proof.Rsa.X86_64.CvFail
+module
+
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.Entry
+public import VerifiedGarbage.Proof.Rsa.X86_64.CvStore
+public import VerifiedGarbage.Proof.Rsa.X86_64.CvFail
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## Out -/
+
+@[expose] public section
+
 section
 
 /-!

@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Camellia.X86_64.Core
+module
+
+public import VerifiedGarbage.Proof.Camellia.X86_64.Core
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The head and tail of eight blocks of bitsliced Camellia on x86-64
@@ -8,6 +14,8 @@ whitens them, and `tail` whitens, transposes and stores them back; between
 them the groups of rounds (`group_wp`) run in a loop. `crypt8_ok` composes
 them: each block becomes `cryptWords g E` of it.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Camellia.X86_64
 

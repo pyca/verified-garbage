@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlKem.X86_64.FragDM
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86_64.FragDM
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86-64: the call of `vg_mlkem*_encrypt_mul`
@@ -9,6 +15,8 @@ As the call of `vg_mlkem*_decrypt_mul` (`FragDM.lean`): what a call of
 needs of the state (`EncMulH`), of a layout (`emChk`, `EncMulH.of`), what it
 computes (`encMulAt_ok`) and that two runs leak the same (`encMulAt_tr`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.X86_64
 

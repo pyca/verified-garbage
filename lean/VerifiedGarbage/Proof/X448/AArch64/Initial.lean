@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.X448.AArch64.Env
+module
+
+public import VerifiedGarbage.Proof.X448.AArch64.Env
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 on AArch64: initial field values
@@ -6,6 +12,8 @@ import VerifiedGarbage.Proof.X448.AArch64.Env
 Every slot starts with bounded limbs. The decoded coordinates are retained,
 and the ladder starts with X2 = 1, Z2 = 0, Z3 = 1, and a zero swap bit.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448.AArch64
 

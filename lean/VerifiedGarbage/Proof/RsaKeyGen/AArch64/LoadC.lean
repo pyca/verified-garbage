@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Front
-import VerifiedGarbage.Proof.RsaKeyGen.Bits
-import VerifiedGarbage.Proof.Rsa.AArch64.CvHead
+module
+
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Front
+public import VerifiedGarbage.Proof.RsaKeyGen.Bits
+public import VerifiedGarbage.Proof.Rsa.AArch64.CvHead
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # A candidate on AArch64: the candidate
@@ -10,6 +16,8 @@ import VerifiedGarbage.Proof.Rsa.AArch64.CvHead
 two top bits and its low bit (`wv_candidate`), and `used := out_len`
 (`loadC_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaKeyGen.AArch64
 

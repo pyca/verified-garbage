@@ -1,7 +1,16 @@
-import VerifiedGarbage.Proof.Dsa.X86_64.OrWords
-import VerifiedGarbage.Proof.RsaKeyGen.CandMath
+module
+
+public import VerifiedGarbage.Proof.Dsa.X86_64.OrWords
+public import VerifiedGarbage.Proof.RsaKeyGen.CandMath
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # The low boundary of DSA scalar and group-element ranges -/
+
+@[expose] public section
+
 namespace VG.Proof.Dsa.X86_64
 open VG VG.X86_64 VG.Impl.Bignum.X86_64
 open VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.MlKem.X86_64

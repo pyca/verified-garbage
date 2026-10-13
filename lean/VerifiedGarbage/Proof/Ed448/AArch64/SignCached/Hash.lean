@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Ed448.AArch64.SignCached.Body
+module
+
+public import VerifiedGarbage.Proof.Ed448.AArch64.SignCached.Body
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 signing with a cached public key on AArch64: the hashes
@@ -9,6 +15,8 @@ Each into the locals at `fH`: `SHAKE256(seed, 114)` (`seedHash_ok`),
 first half of `out` (`chalHash_ok`). The header of `dom4` is kept in the
 locals; each absorption starts from the position the previous one returned.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.AArch64.SignCached
 

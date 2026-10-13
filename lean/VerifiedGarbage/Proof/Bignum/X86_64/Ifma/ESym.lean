@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Lemmas
-import VerifiedGarbage.Impl.Rsa.X86_64.CrtIfma
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Lemmas
+public import VerifiedGarbage.Impl.Rsa.X86_64.CrtIfma
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Straight-line `EVEX.256` code, lane by lane
@@ -15,6 +21,8 @@ step of the multiplication (`vpxorq` of a register with itself, `vpaddq`,
 and the memory form of `vpmadd52luq` and `vpmadd52huq`), it runs loads of
 `rax` from memory (`AmmSym.G`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64.Ifma
 

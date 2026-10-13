@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedSse.Sbox
-import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedSse.Transpose
-import VerifiedGarbage.Proof.Framework.Bitslice.Vars
-import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.Proof.Framework.Offset
+module
+
+public import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedSse.Sbox
+public import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedSse.Transpose
+public import VerifiedGarbage.Proof.Framework.Bitslice.Vars
+public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+public import VerifiedGarbage.Proof.Framework.Offset
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The SSE2 machine state of a batch
@@ -13,6 +19,8 @@ spills (`Room`). Code that only moves and XORs whole words (the S-box
 outputs, the exchange of the halves) is checked on the variable domain,
 quadword lane by quadword lane (`varsRun`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.TripleDes.X86_64.BitslicedSse
 

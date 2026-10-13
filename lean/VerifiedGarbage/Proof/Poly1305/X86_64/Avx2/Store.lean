@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Final
-import VerifiedGarbage.Proof.Poly1305.X86_64.Setup
+module
+
+public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Final
+public import VerifiedGarbage.Proof.Poly1305.X86_64.Setup
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Poly1305 on x86-64 with AVX2: storing the accumulator
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.Poly1305.X86_64.Setup
 `storeH` joins the limbs of lane 0 of `H` into three words and stores them in
 the state, the first two at byte 0 and the last two at byte 8.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Poly1305.X86_64.Avx2
 

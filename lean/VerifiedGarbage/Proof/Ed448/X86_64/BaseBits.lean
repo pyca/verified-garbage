@@ -1,5 +1,11 @@
-import VerifiedGarbage.Impl.Ed448.X86_64.ScalarBase
-import VerifiedGarbage.Proof.X448.X86_64.Bits
+module
+
+public import VerifiedGarbage.Impl.Ed448.X86_64.ScalarBase
+public import VerifiedGarbage.Proof.X448.X86_64.Bits
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 base-point multiplication on x86-64: the bits of the scalar
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.X448.X86_64.Bits
 `BITS`, so byte `t` of `BITS` is bit `t` of the scalar. The proof is X448's
 (`Proof/X448/X86_64/Bits.lean`), for 57 bytes and without the clamping.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.X86_64
 

@@ -1,6 +1,14 @@
-import VerifiedGarbage.Proof.Rc2.AArch64.Cbc.Frame
+module
+
+public import VerifiedGarbage.Proof.Rc2.AArch64.Cbc.Frame
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # One CBC decryption step, retaining the original ciphertext -/
+
+@[expose] public section
 
 namespace VG.Proof.Rc2.AArch64.Cbc
 

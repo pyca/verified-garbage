@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlKem.X86.KeyGenFin
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86.KeyGenFin
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86 (32-bit): the body of key generation
@@ -13,6 +19,8 @@ same pointers and `ρ` leak the same: the contract lets the function leak `ρ`.
 Each parameter set's contract implies `TPre (Y L)` and its public data
 (`Proof/MlKem/X86/KeyGen.lean` for ML-KEM-768).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.X86.KeyGen
 

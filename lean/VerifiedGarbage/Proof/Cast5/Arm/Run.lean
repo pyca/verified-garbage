@@ -1,8 +1,14 @@
-import VerifiedGarbage.Impl.Cast5.Arm
-import VerifiedGarbage.Proof.Framework.Arm.Exec
-import VerifiedGarbage.Proof.Framework.Arm.RegUpd
-import VerifiedGarbage.Proof.Framework.Arm.Inline
-import VerifiedGarbage.Proof.Framework.Offset
+module
+
+public import VerifiedGarbage.Impl.Cast5.Arm
+public import VerifiedGarbage.Proof.Framework.Arm.Exec
+public import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+public import VerifiedGarbage.Proof.Framework.Arm.Inline
+public import VerifiedGarbage.Proof.Framework.Offset
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # CAST5 on ARMv7: running blocks
@@ -14,6 +20,8 @@ import VerifiedGarbage.Proof.Framework.Offset
   memory updates whose registers `RegUpd` reads.
 * `Keep`: what a block that writes only the registers `rs` keeps.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Cast5.Arm
 

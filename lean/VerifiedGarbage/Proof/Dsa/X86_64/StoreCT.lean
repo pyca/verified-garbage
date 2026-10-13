@@ -1,8 +1,20 @@
-import VerifiedGarbage.Proof.Dsa.X86_64.StoreSuffix
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetupLoad
-import VerifiedGarbage.Impl.Dsa.Layout
+module
+
+public import VerifiedGarbage.Proof.Dsa.X86_64.StoreSuffix
+meta import VerifiedGarbage.Proof.Dsa.X86_64.StoreSuffix
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetupLoad
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetupLoad
+public import VerifiedGarbage.Impl.Dsa.Layout
+meta import VerifiedGarbage.Impl.Dsa.Layout
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # Constant-time encoding of an arithmetic result -/
+
+@[expose] public section
+
 namespace VG.Proof.Dsa.X86_64
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public
 open VG.Impl.Rsa.X86_64 VG.Impl.Dsa.X86_64 VG.Impl.Dsa.Layout

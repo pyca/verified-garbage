@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.Ecdh.X86_64.Check
-import VerifiedGarbage.Proof.Ecdh.Exchange
-import VerifiedGarbage.Proof.Ecdsa.X86_64.InvFnX
-import VerifiedGarbage.Proof.Mont.Read
-import VerifiedGarbage.Spec.Weierstrass.CheckPoint
+module
+
+public import VerifiedGarbage.Proof.Ecdh.X86_64.Check
+public import VerifiedGarbage.Proof.Ecdh.Exchange
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.InvFnX
+public import VerifiedGarbage.Proof.Mont.Read
+public import VerifiedGarbage.Spec.Weierstrass.CheckPoint
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_<curve>_check_point` on x86-64: correctness
@@ -14,6 +20,8 @@ point's validity, `x R` and `y R`, and the point for the scalar
 multiplication; `invFnX_gpr` gives the callee-saved registers back
 (`correct`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdh.X86_64.CheckFn
 

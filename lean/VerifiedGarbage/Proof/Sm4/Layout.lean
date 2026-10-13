@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Sm4.Rounds
-import VerifiedGarbage.Proof.Framework.Mem
+module
+
+public import VerifiedGarbage.Proof.Sm4.Rounds
+public import VerifiedGarbage.Proof.Framework.Mem
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Bitsliced SM4: bytes, words and blocks
@@ -10,6 +16,8 @@ is its bytes `4 w … 4 w + 3`, the most significant first (`getLsbD_wordAt`),
 and the output block's byte `4 w' + i` is byte `i` of the final word
 `3 - w'` (`getLsbD_outBlock`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sm4
 

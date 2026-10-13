@@ -1,5 +1,7 @@
-import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Proof.Sha256.Arm.Shared
+module
+
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.Proof.Sha256.Arm.Shared
 
 /-!
 # SHA-224 (FIPS 180-4) on ARMv7
@@ -9,6 +11,8 @@ SHA-224 is SHA-256 from another initial hash value, and its digest the first
 its digest, are its own, and it continues with SHA-256's `update`
 (`Artifacts/Sha256/`).
 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.Sha224.Arm
 

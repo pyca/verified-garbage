@@ -1,7 +1,15 @@
-import VerifiedGarbage.Proof.Weierstrass.X86.WinQuad
-import VerifiedGarbage.Proof.Weierstrass.Words32
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86.WinQuad
+public import VerifiedGarbage.Proof.Weierstrass.Words32
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## `WinFlags` -/
+
+@[expose] public section
 
 section
 

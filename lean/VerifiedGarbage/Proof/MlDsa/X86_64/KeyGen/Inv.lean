@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.MlDsa.DecideAt
-import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.Mask
-import VerifiedGarbage.Proof.MlDsa.KeyGen.Leak
+module
+
+public import VerifiedGarbage.Proof.MlDsa.DecideAt
+public import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.Mask
+public import VerifiedGarbage.Proof.MlDsa.KeyGen.Leak
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA key generation on x86-64: what holds throughout, and pieces
@@ -11,6 +17,8 @@ run from `I` to `J` (`ok`), and two runs related by `I` leak the same (`tr`).
 Pieces compose (`Piece.seq`, `Piece.seqR`), which proves correctness and
 constant time together.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86_64.KeyGen
 

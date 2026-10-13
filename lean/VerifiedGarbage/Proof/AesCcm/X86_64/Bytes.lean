@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.AesCcm.X86_64.Callee
-import VerifiedGarbage.Proof.Cmac.Mem
-import VerifiedGarbage.Proof.Cmac.Mem32
-import VerifiedGarbage.Proof.Framework.Bswap
+module
+
+public import VerifiedGarbage.Proof.AesCcm.X86_64.Callee
+public import VerifiedGarbage.Proof.Cmac.Mem
+public import VerifiedGarbage.Proof.Cmac.Mem32
+public import VerifiedGarbage.Proof.Framework.Bswap
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CCM on x86-64: the bytes of a buffer after writes
@@ -12,6 +18,8 @@ bytes into a buffer replaces those of its bytes (`bytesAt_writeBytes_at`,
 pieces build their blocks (`Ctr₀`, `B₀`, the first block of the associated
 data, a last block padded) as lists.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

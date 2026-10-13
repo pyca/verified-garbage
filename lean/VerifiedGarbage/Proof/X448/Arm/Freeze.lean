@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.X448.Arm.FreezePrep
-import VerifiedGarbage.Proof.X448.Arm.Select
-import VerifiedGarbage.Proof.X448.Arm.Env
+module
+
+public import VerifiedGarbage.Proof.X448.Arm.FreezePrep
+public import VerifiedGarbage.Proof.X448.Arm.Select
+public import VerifiedGarbage.Proof.X448.Arm.Env
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 on ARMv7: canonical reduction
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.X448.Arm.Env
 The final carry selects the unique representative below the prime, using only
 a mask on secret data.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448.Arm
 

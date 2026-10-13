@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Seal
-import VerifiedGarbage.Proof.AesGcm.X86_64.Open
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Seal
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Open
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM's short path on x86-64: `open`
@@ -12,6 +18,8 @@ decrypted in place only if they match (`xorText false`): `openChk_ok` up to
 the comparison, `openTail_ok` after it.
 With `shortStart_ok` and `front_ok`, `openShort_ok`.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

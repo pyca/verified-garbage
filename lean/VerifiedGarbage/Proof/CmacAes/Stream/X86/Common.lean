@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.CmacAes.Stream.X86.Call
-import VerifiedGarbage.Proof.CmacAes.X86.Finalize
-import VerifiedGarbage.Proof.Framework.WriteBytes
-import VerifiedGarbage.Proof.Framework.X86.ArgTaint
-import VerifiedGarbage.Proof.Framework.X86.Spill
+module
+
+public import VerifiedGarbage.Proof.CmacAes.Stream.X86.Call
+public import VerifiedGarbage.Proof.CmacAes.X86.Finalize
+public import VerifiedGarbage.Proof.Framework.WriteBytes
+public import VerifiedGarbage.Proof.Framework.X86.ArgTaint
+public import VerifiedGarbage.Proof.Framework.X86.Spill
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Streaming AES-CMAC on x86: arithmetic, copies and saved registers
@@ -11,6 +17,8 @@ The number of bytes held back, as the code computes it from `count`'s two
 words (`held_ok`); the copy of `ecx` bytes from `esi` to `edi` (`copy_wp`);
 and the registers saved in the scratch buffer (`slot_read`, `restore_wp`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.CmacAes.Stream.X86
 

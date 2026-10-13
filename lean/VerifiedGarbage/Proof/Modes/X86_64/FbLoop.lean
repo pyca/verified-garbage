@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Modes.X86_64.CbcEncLoop
-import VerifiedGarbage.Proof.Modes.Fb
-import VerifiedGarbage.Impl.Modes.X86_64.Fb
-import VerifiedGarbage.Proof.Framework.X86_64.VecKeep
+module
+
+public import VerifiedGarbage.Proof.Modes.X86_64.CbcEncLoop
+public import VerifiedGarbage.Proof.Modes.Fb
+public import VerifiedGarbage.Impl.Modes.X86_64.Fb
+public import VerifiedGarbage.Proof.Framework.X86_64.VecKeep
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # OFB and CFB on x86-64, for any core: the data loop
@@ -13,6 +19,8 @@ enciphers the input block `Iⱼ` in the buffer (`BlockSpec.crypt_wp`), makes
 block `j` of the data its output (`fbOut`) and the buffer `Iⱼ₊₁` (`fbIn`).
 Blocks are `8 bw` bytes.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Modes.X86_64
 

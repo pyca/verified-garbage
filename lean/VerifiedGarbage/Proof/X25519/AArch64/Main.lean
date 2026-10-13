@@ -1,8 +1,16 @@
-import VerifiedGarbage.Proof.X25519.AArch64.Setup
+module
+
+public import VerifiedGarbage.Proof.X25519.AArch64.Setup
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X25519 on AArch64: the whole function
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X25519.AArch64
 

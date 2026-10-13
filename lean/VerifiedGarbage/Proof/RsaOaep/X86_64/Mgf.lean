@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.RsaOaep.X86_64.Hash
-import VerifiedGarbage.Proof.Mgf1.Bytes
-import VerifiedGarbage.Proof.RsaOaep.Mask
+module
+
+public import VerifiedGarbage.Proof.RsaOaep.X86_64.Hash
+public import VerifiedGarbage.Proof.Mgf1.Bytes
+public import VerifiedGarbage.Proof.RsaOaep.Mask
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-OAEP on x86-64: MGF1
@@ -14,6 +20,8 @@ writes the digest to `scratch + oDig`, and the first
 `min(hLen, dstLen - c hLen)` bytes of the digest are XORed into
 `dst + c hLen` (`xorOut_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaOaep.X86_64
 

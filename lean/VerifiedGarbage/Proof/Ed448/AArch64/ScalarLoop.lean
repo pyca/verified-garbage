@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Ed448.AArch64.ScalarWord
-import VerifiedGarbage.Proof.Ed448.ScalarWords
+module
+
+public import VerifiedGarbage.Proof.Ed448.AArch64.ScalarWord
+public import VerifiedGarbage.Proof.Ed448.ScalarWords
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 scalar arithmetic on AArch64: the loop over the words
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.Ed448.ScalarWords
 the top, below the `t` bytes the remainder starts from: the invariant is the
 value modulo `L` of the consumed top bytes. The body writes no memory.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.AArch64
 

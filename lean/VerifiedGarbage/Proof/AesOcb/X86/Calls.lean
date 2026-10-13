@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesOcb.X86.Offset0
+module
+
+public import VerifiedGarbage.Proof.AesOcb.X86.Offset0
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-OCB on x86: enciphering blocks (`callBlocks`)
@@ -9,6 +15,8 @@ and their number in `ebx`) and calls it with the key context and the working
 space at `W + scrO` (`callBlocks_ok`): the blocks at `D` (`DReg`, in `W` or
 the data) go through `f` with the key schedule.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

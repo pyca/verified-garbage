@@ -1,13 +1,27 @@
-import VerifiedGarbage.Impl.MlKem.X86_64.Encode12
-import VerifiedGarbage.Proof.MlKem.X86_64.Bytes
-import VerifiedGarbage.Proof.MlKem.X86_64.Contracts
-import VerifiedGarbage.Proof.MlKem.Encode
-import VerifiedGarbage.Proof.Framework.X86_64.Taint
-import VerifiedGarbage.Proof.Framework.Contract
+module
+
+public import VerifiedGarbage.Impl.MlKem.X86_64.Encode12
+meta import VerifiedGarbage.Impl.MlKem.X86_64.Encode12
+public import VerifiedGarbage.Proof.MlKem.X86_64.Bytes
+meta import VerifiedGarbage.Proof.MlKem.X86_64.Bytes
+public import VerifiedGarbage.Proof.MlKem.X86_64.Contracts
+meta import VerifiedGarbage.Proof.MlKem.X86_64.Contracts
+public import VerifiedGarbage.Proof.MlKem.Encode
+meta import VerifiedGarbage.Proof.MlKem.Encode
+public import VerifiedGarbage.Proof.Framework.X86_64.Taint
+meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86-64: `vg_mlkem_decode12`
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.X86_64
 

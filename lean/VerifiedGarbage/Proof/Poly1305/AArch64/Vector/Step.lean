@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Poly1305.AArch64.Vector.Group
-import VerifiedGarbage.Proof.Poly1305.Spec
+module
+
+public import VerifiedGarbage.Proof.Poly1305.AArch64.Vector.Group
+public import VerifiedGarbage.Proof.Poly1305.Spec
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Poly1305 on AArch64 in AdvSIMD: a group, modulo `p`
@@ -8,6 +14,8 @@ Untrusted: everything here is checked by Lean. The lanes after a group, as
 numbers modulo `p`: lane `e` is `m_(2+e) ρ_(2+e) + (H_e + m_e) ρ_e`, for the
 blocks `m_j` at `x2 + 16 j` and the multipliers `ρ_c` (`val (y c)`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Poly1305.AArch64.Vector
 

@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.MlDsa.X86.Sample.BallLoop
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86.Sample.BallLoop
+meta import VerifiedGarbage.Proof.MlDsa.X86.Sample.BallLoop
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on x86 (32-bit): `vg_mldsa_sample_in_ball`
@@ -11,6 +18,8 @@ after the sign bits (`ballFold`) at `c` and `i` in `edi`; the function returns
 pointers and `c̃` leak the same (`QPub`): the contract lets the function leak
 `c̃`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86.Sample.Ball
 

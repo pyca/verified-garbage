@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Bignum.CrtFrame
-import VerifiedGarbage.Impl.Bignum.CrtLayout
+module
+
+public import VerifiedGarbage.Proof.Bignum.CrtFrame
+public import VerifiedGarbage.Impl.Bignum.CrtLayout
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSA with the CRT: `redc`'s ranges and chunks
@@ -11,6 +17,8 @@ chunk from the lowest. These are the facts about it that do not depend on
 the target: what it changes (`redcRanges`), the words it has read after `k`
 chunks (`lowW`) and its `K = ⌈w / w_X⌉` chunks (`lt_chunks`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum
 

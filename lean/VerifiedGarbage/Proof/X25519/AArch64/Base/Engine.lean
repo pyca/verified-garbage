@@ -1,8 +1,14 @@
-import VerifiedGarbage.Impl.X25519.AArch64.Base
-import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseEngine
-import VerifiedGarbage.Proof.Ed25519.AArch64.BitByte
-import VerifiedGarbage.Proof.Ed25519.Bytes
-import VerifiedGarbage.Proof.X25519.Edwards.Base
+module
+
+public import VerifiedGarbage.Impl.X25519.AArch64.Base
+public import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseEngine
+public import VerifiedGarbage.Proof.Ed25519.AArch64.BitByte
+public import VerifiedGarbage.Proof.Ed25519.Bytes
+public import VerifiedGarbage.Proof.X25519.Edwards.Base
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X25519 of the base point on AArch64: the engine
@@ -12,6 +18,8 @@ The expanded bits of the scalar, clamped (`clampBits_ok`), are those of
 (`combMultiply_ok`), and `uEncode` its u-coordinate `(Z + Y) / (Z - Y)`, which
 `Proof/X25519/Edwards/Ladder.lean` shows is `X25519(k, 9)` (`engine_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X25519.AArch64.Base
 

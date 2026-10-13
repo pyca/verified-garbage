@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.MlKem.X86.TopKeep
-import VerifiedGarbage.Proof.MlKem.X86.TopKem
-import VerifiedGarbage.Proof.MlKem.X86.Extra
-import VerifiedGarbage.Impl.MlKem.X86.Encrypt
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86.TopKeep
+public import VerifiedGarbage.Proof.MlKem.X86.TopKem
+public import VerifiedGarbage.Proof.MlKem.X86.Extra
+public import VerifiedGarbage.Impl.MlKem.X86.Encrypt
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86 (32-bit): the setting of K-PKE.Encrypt
@@ -20,6 +26,8 @@ Its inputs (`Inp`) are `ek`, `m` and 64 bytes whose last 32 are `r`, at
 keeps (`Keeps`) if it is within a larger one (`Keeps.widen`).
 `SamplePolyCBD₂(PRF₂(r, N))` is `cbd_piece`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.X86.Enc
 

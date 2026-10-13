@@ -1,7 +1,16 @@
-import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyCtBack
-import VerifiedGarbage.Proof.RsaPss.X86_64.FixedSaltBack
+module
+
+public import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyCtBack
+public import VerifiedGarbage.Proof.RsaPss.X86_64.FixedSaltBack
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! The fixed-salt tail leaks only the requested, public salt length. -/
+
+@[expose] public section
+
 namespace VG.Proof.RsaPss.X86_64
 open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Impl.RsaPss.X86_64
 open VG.Proof.MlKem.X86_64 (Keep WP.keep ifp ifn)

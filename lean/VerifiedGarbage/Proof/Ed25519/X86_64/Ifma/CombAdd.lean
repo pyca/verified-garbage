@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.CombStage
-import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.Double4
+module
+
+public import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.CombStage
+public import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.Double4
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed25519's comb with AVX512_IFMA: an addition in the lanes
@@ -9,6 +15,8 @@ import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.Double4
 `ymm0–ymm4` (`vadd`): the point there is then `pointAdd` of the two, as field
 elements (`fe5`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed25519.X86_64.Ifma
 

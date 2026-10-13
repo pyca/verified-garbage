@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Idea.X86.Invert
-import VerifiedGarbage.Proof.Idea.X86.Block
+module
+
+public import VerifiedGarbage.Proof.Idea.X86.Invert
+public import VerifiedGarbage.Proof.Idea.X86.Block
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # IDEA ECB on x86 (32-bit)
@@ -12,6 +18,8 @@ says how many remain, that the ones before are transformed and the ones
 after not yet (each iteration is `cryptBlockWith_run`), and restores the
 registers.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Idea.X86
 

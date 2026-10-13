@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowStep
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowStep
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! The 52-iteration signed-window loop, without coordinate conversions. -/
+
+@[expose] public section
+
 namespace VG.Proof.Weierstrass.AArch64
 open VG VG.AArch64 VG.Impl.Mont.AArch64 VG.Impl.Mont VG.Impl.Weierstrass.AArch64 VG.Impl.Weierstrass
 open VG.Proof.Mont.AArch64 VG.Proof.Mont Spec.Weierstrass

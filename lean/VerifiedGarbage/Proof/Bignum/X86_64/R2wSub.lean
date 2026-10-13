@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.R2wDiv
-import VerifiedGarbage.Proof.Bignum.X86_64.Csub
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.R2wDiv
+public import VerifiedGarbage.Proof.Bignum.X86_64.Csub
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `R² mod m` by word steps on x86-64: `x 2^64 - q̂ m`
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.Bignum.X86_64.Csub
 `2^(64 (w + 1))`, with the products' carry in `r9` and the borrow in `rbp`
 (`mulSub_ok`): `t + q̂ m = x 2^64 + 2^(64 (w + 1)) b` for the borrow `b`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64.R2w
 

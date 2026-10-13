@@ -1,8 +1,12 @@
-import VerifiedGarbage.TCB.X86.Target
-import VerifiedGarbage.Proof.Sha3.X86.Shared
-import VerifiedGarbage.Proof.Sha3.X86.Frame
+module
+
+public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Proof.Sha3.X86.Shared
+public import VerifiedGarbage.Proof.Sha3.X86.Frame
 
 /-! # SHA-3 and SHAKE (FIPS 202) on x86 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.Sha3.X86
 

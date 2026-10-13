@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Rsa.X86_64.KeyCtx
+module
+
+public import VerifiedGarbage.Proof.Rsa.X86_64.KeyCtx
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_check_key` on x86-64: the pieces in the checks' context
@@ -6,6 +12,8 @@ import VerifiedGarbage.Proof.Rsa.X86_64.KeyCtx
 Each piece of `main`, from `KCtx`: what it computes, that it keeps `KCtx`,
 and what it changes (`Arrays`, or only `sMask`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.X86_64.Key
 

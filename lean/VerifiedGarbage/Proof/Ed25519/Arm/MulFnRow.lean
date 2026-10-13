@@ -1,6 +1,12 @@
-import VerifiedGarbage.Impl.Ed25519.Arm.MulFn
-import VerifiedGarbage.Proof.X25519.Arm.Mul
-import VerifiedGarbage.Proof.Ed25519.Arm.Field
+module
+
+public import VerifiedGarbage.Impl.Ed25519.Arm.MulFn
+public import VerifiedGarbage.Proof.X25519.Arm.Mul
+public import VerifiedGarbage.Proof.Ed25519.Arm.Field
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_gf25519_r16_mul` on ARMv7: the rows
@@ -11,6 +17,8 @@ which moves up a word a row, and `b` at `r11` (`mulRow_ok`, the invariant
 `MulInv`: after `i` rows, `acc[0, i + 16)` holds the limbs of `x_{<i} · y`);
 `r8` keeps the pointer to the result.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed25519.Arm
 

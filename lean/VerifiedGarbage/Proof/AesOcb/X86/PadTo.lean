@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesOcb.X86.Nonce
+module
+
+public import VerifiedGarbage.Proof.AesOcb.X86.Nonce
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-OCB on x86: a padded block (`padTo`)
@@ -7,6 +13,8 @@ Untrusted: everything here is checked by Lean. `padTo d cO` writes `pad(S)`
 (§4.1) of the `n < 16` bytes `S` at `esi`, `n` at `W + cO`, to `W + d`:
 zeros, the bytes (`copyLoop`), and `0x80` after them (`padTo_ok`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.Machine
-import VerifiedGarbage.Proof.TripleDes.Bitslice.Io
-import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
+module
+
+public import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.Machine
+public import VerifiedGarbage.Proof.TripleDes.Bitslice.Io
+public import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The transposition of the AdvSIMD state
@@ -16,6 +22,8 @@ at word `8 g` exchanges the low three bits of those of the words `8 g + k`
 (`stB`). Together they transpose the 64 doublewords of every lane
 (`stB_stA`, `transpose_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.TripleDes.AArch64.BitslicedNeon
 

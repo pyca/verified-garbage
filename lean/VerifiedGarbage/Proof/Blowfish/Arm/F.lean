@@ -1,10 +1,18 @@
-import VerifiedGarbage.Proof.Blowfish.Arm.Lookup
+module
+
+public import VerifiedGarbage.Proof.Blowfish.Arm.Lookup
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Blowfish on ARMv7: F
 
 `f_run`: F of xL (`r1`) into `lr`, one S-box at a time (`fAcc`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Blowfish.Arm
 

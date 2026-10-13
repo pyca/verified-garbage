@@ -1,5 +1,15 @@
-import VerifiedGarbage.Impl.P256.EcdhInverse
-import VerifiedGarbage.Proof.Framework.AArch64.Taint
+module
+
+public import VerifiedGarbage.Impl.P256.EcdhInverse
+meta import VerifiedGarbage.Impl.P256.EcdhInverse
+public import VerifiedGarbage.Proof.Framework.AArch64.Taint
+meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.P256.EcdhInverse
 open VG VG.AArch64

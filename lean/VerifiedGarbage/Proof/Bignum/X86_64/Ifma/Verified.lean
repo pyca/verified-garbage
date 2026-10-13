@@ -1,16 +1,35 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.CTMain
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTCode
-import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Ws
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtCode
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTFin
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTQ
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTP
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTRedc
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTExp
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTGPow
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetup
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetupLoad
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtImplies
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.CTMain
+meta import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.CTMain
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTCode
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTCode
+public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Ws
+meta import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Ws
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCode
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCode
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTFin
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTFin
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTQ
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTQ
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTP
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTP
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTRedc
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTRedc
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTExp
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTExp
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTGPow
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTGPow
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetup
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetup
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetupLoad
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetupLoad
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtImplies
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtImplies
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_private_crt_ifma` on x86-64, any size: verified against the shared contract
@@ -21,6 +40,8 @@ import VerifiedGarbage.Proof.Bignum.X86_64.CrtImplies
 the registers and the stack (`crt_implies`), `CrtIfma.code` is verified
 (`verified`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64.Ifma
 

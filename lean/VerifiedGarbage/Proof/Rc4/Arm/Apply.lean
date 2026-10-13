@@ -1,7 +1,15 @@
-import VerifiedGarbage.Proof.Rc4.Arm.ApplyLoop
-import VerifiedGarbage.Proof.Rc4.Arm.Init
+module
+
+public import VerifiedGarbage.Proof.Rc4.Arm.ApplyLoop
+public import VerifiedGarbage.Proof.Rc4.Arm.Init
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # RC4 on ARMv7: the stream function -/
+
+@[expose] public section
 
 namespace VG.Proof.Rc4.Arm
 

@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtChk
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtChk
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtChk
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSA with the CRT on x86-64: constant time, the pieces
@@ -12,6 +19,8 @@ the arrays) existential (a `…Pre` predicate).
 The small pieces are proven here; the others are stated (`…CT`) so that
 the phases can be proven from them before them.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64
 

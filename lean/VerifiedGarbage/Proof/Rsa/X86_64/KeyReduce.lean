@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Rsa.X86_64.KeyDbl
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
+module
+
+public import VerifiedGarbage.Proof.Rsa.X86_64.KeyDbl
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_check_key` on x86-64: reduction by restoring division
@@ -9,6 +15,8 @@ of its bits from the top (`bitStep`) is shifted out of `r15` as the carry
 of `dblIn`: `r := 2 r + b mod m`. After the top `i` words, `r` is their
 number modulo `m` (`reduceLoop_ok`), when `m > 0`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.X86_64.Key
 

@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesCtr.AArch64.Body
+module
+
+public import VerifiedGarbage.Proof.AesCtr.AArch64.Body
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CTR on AArch64: one iteration, and the whole function
@@ -10,6 +16,8 @@ from `k` blocks to `k + mOf s₀ k`, for any implementation of
 the first 96 bits if its last 32 bits wrapped around, is CTR's
 (`AesCtr.ctr32_next`, `AesCtr.ctr32_wrap`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesCtr.AArch64
 

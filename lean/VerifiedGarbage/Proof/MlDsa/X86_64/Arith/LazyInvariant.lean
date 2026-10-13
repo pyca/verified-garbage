@@ -1,9 +1,18 @@
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.LazyLay21
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.LazyButterfly
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Ntt
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.LazyLay21
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.LazyButterfly
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Ntt
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Each layer increases the nonnegative coefficient bound by 2q, while
 preserving the residues of the specification's canonical NTT. -/
+
+@[expose] public section
+
 namespace VG.Proof.MlDsa.X86_64.Arith.Lazy
 open VG.Spec.MlDsa (q Zq n)
 open VG.Proof.MlDsa.Arith hiding bfly blockN layF

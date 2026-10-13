@@ -1,6 +1,14 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedTableDecode
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedPackedRoot
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InversePackedTable
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedTableDecode
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedPackedRoot
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InversePackedTable
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Optimized.Paired
 open VG VG.AArch64

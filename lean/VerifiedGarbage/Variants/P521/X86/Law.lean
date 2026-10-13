@@ -1,4 +1,6 @@
-import VerifiedGarbage.Proof.P521.Curve
+module
+
+public import VerifiedGarbage.Proof.P521.Curve
 
 /-!
 # P-521's group law, on x86 (32-bit)
@@ -10,6 +12,8 @@ proof needs Mathlib's algebra. Their registration files are generic over it
 implementation too), so that this file alone, of those that emit them,
 imports that algebra.
 -/
+
+@[expose] public section
 
 namespace VG.Variants.P521.X86.Law
 

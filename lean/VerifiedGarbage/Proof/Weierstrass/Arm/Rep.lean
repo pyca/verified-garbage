@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Weierstrass.Arm.Ladder
-import VerifiedGarbage.Proof.Weierstrass.Law
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.Arm.Ladder
+public import VerifiedGarbage.Proof.Weierstrass.Law
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Short Weierstrass curves on 32-bit ARM: the ladder computes `[k]P`
@@ -9,6 +15,8 @@ for the point `P` that `G` represents, which an iteration keeps
 (`step_rep`, by `ladder_step`) when the slots of `a` and `3b` hold the
 curve's.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.Arm
 

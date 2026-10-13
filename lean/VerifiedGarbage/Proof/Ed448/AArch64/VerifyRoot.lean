@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.X448.AArch64.Fast.Chain
-import VerifiedGarbage.Proof.Ed448.Root
-import VerifiedGarbage.Impl.Ed448.AArch64.Point56
+module
+
+public import VerifiedGarbage.Proof.X448.AArch64.Fast.Chain
+public import VerifiedGarbage.Proof.Ed448.Root
+public import VerifiedGarbage.Impl.Ed448.AArch64.Point56
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 verification's equation on AArch64: the square root's power
@@ -9,6 +15,8 @@ import VerifiedGarbage.Impl.Ed448.AArch64.Point56
 products' coefficients and the counter `x19` (an `ISpec` of the register-resident
 arithmetic, as X448's inversion); slot 21 ends as `rootPow` of slot 12.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.AArch64
 

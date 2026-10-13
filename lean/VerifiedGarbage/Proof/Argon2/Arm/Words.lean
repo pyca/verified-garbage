@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Argon2.Arm.Rounds
-import VerifiedGarbage.Spec.Argon2.Contract
+module
+
+public import VerifiedGarbage.Proof.Argon2.Arm.Rounds
+public import VerifiedGarbage.Spec.Argon2.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Argon2 on ARMv7: blocks as 32-bit words
@@ -9,6 +15,8 @@ the code copies: `blk_of_words` builds it from them, `blockAt_eq` relates it to
 the contract's `Spec.Argon2.blockAt`, and `xor_words` XORs two blocks word by
 word.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Argon2.Arm
 

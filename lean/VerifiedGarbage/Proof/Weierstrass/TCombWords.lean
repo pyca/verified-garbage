@@ -1,6 +1,12 @@
-import VerifiedGarbage.Impl.Weierstrass.TCombWords
-import VerifiedGarbage.Proof.Weierstrass.Comb
-import VerifiedGarbage.Proof.Weierstrass.Words
+module
+
+public import VerifiedGarbage.Impl.Weierstrass.TCombWords
+public import VerifiedGarbage.Proof.Weierstrass.Comb
+public import VerifiedGarbage.Proof.Weierstrass.Words
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The comb's tables as words: their length and their entries
@@ -9,6 +15,8 @@ import VerifiedGarbage.Proof.Weierstrass.Words
 (`tcombWords_length`), and the words of entry `m` of table `j` are its
 coordinates' (`tcombWords_getD`), on any target.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass
 

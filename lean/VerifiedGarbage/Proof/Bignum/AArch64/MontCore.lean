@@ -1,7 +1,17 @@
-import VerifiedGarbage.Proof.Bignum.AArch64.MontMul
-import VerifiedGarbage.Proof.Framework.AArch64.RelCT
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.Framework.TaintBatch
+module
+
+public import VerifiedGarbage.Proof.Bignum.AArch64.MontMul
+meta import VerifiedGarbage.Proof.Bignum.AArch64.MontMul
+public import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+meta import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+public import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Multiword arithmetic on AArch64: constant time
@@ -19,6 +29,8 @@ agree since `Φ a` fixes them (`two_ite`, `two_loop`).
 multiplication in the working space of `Impl/Bignum/Layout.lean`;
 `Mont.basic` is `montMul`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.AArch64
 

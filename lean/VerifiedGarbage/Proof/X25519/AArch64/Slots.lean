@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.X25519.AArch64.Limbwise
-import Mathlib.Logic.Function.Basic
+module
+
+public import VerifiedGarbage.Proof.X25519.AArch64.Limbwise
+public import Mathlib.Logic.Function.Basic
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X25519 on AArch64: the field elements in their slots
@@ -10,6 +16,8 @@ stands for the field element `vals n` with limbs below `2^k`, and that since
 `s₀` only the registers of the field operations and the slots have changed.
 Each field operation updates `vals` and `bnds` at its result's slot.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X25519.AArch64
 

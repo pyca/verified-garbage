@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Bignum.AArch64.Rounds
+module
+
+public import VerifiedGarbage.Proof.Bignum.AArch64.Rounds
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Multiword arithmetic on AArch64: the conditional subtraction
@@ -9,6 +15,8 @@ the top word of `T`: the carry flag ends clear iff `T_w < c`, which is
 `T < m` for `T < 2 · 2^(64 w)` (`subMod_ok`). `selectAcc` then writes `T`
 if the flag is clear and `D` if it is set (`selectAcc_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.AArch64
 

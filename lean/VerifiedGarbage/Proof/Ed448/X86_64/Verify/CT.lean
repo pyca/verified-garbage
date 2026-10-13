@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Ed448.X86_64.Verify.HashCT
-import VerifiedGarbage.Proof.Ed448.X86_64.Verify.Correct
+module
+
+public import VerifiedGarbage.Proof.Ed448.X86_64.Verify.HashCT
+public import VerifiedGarbage.Proof.Ed448.X86_64.Verify.Correct
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 verification on x86-64: constant time
@@ -8,14 +14,32 @@ Two runs from states that satisfy the contract and agree on its public data
 leak the same: the branch on `ctx_len`, the moves and the frame depend only
 on the pointers and the lengths; the hashing leaks only the layout
 (`hash_tr`); and the calls of `vg_ed448_scalar_reduce` and
-`vg_ed448_verify_equation` leak only their pointers (`red_tr`, `eq_tr`).
-The contract makes the inputs public too, but no leak depends on them.
+`vg_ed448_verify_equation` reveal only public data (`red_tr`, `eq_tr`).
+The hash and reduction proofs carry equality of the public inputs through to
+the equation selector: its table addresses may depend on the challenge digits.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.X86_64.Verify
 
+variable {v : VG.Impl.Ed448.X86_64.FieldVariant}
+
 open VG VG.X86_64 VG.Impl.Ed448.X86_64.Verify
 open VG.Proof.MlKem.X86_64 (Keep)
+open VG.Spec.Sha3 (bytesAt)
+
+/-- Public inputs needed by the equation selector. -/
+def EqInputs (L : Lay) (m n : Mem) : Prop :=
+  bytesAt m L.sig 114 = bytesAt n L.sig 114 ∧ chal L m = chal L n
+
+abbrev HeaderReady (L : Lay) (_ : Mem) (s : State) : Prop :=
+  bytesAt s.mem L.SP 10 = hdrBytes L
+abbrev HashReady (L : Lay) (m : Mem) (s : State) : Prop :=
+  bytesAt s.mem L.H 114 = Spec.Ed448.hash (bytesAt m L.ctx L.ctxLen.toNat)
+    (bytesAt m L.sig 57 ++ bytesAt m L.pk 57 ++ bytesAt m L.msg L.len.toNat)
+abbrev KeyReady (L : Lay) (m : Mem) (s : State) : Prop :=
+  bytesAt s.mem L.K 57 = chal L m
 
 section
 variable {I : Lay → Mem → Mem → Prop}
@@ -55,8 +79,8 @@ theorem red_tr {Φ : Lay → Mem → State → Prop} :
       rcases hr with rfl | rfl
       exacts [⟨L.FR, by simp, within_off _ (by omega)⟩, w_scr hL (within_self _)]
 
-theorem eq_tr (hv : EqOk) (hct : EqCT) {Φ : Lay → Mem → State → Prop} :
-    RelCT isa (Two I Φ) (callA "vg_ed448_verify_equation" Impl.Ed448.X86_64.verifyEquation eqArgs)
+theorem eq_tr (hv : EqOk v) (hct : EqCT v) :
+    RelCT isa (Two EqInputs KeyReady) (callA ("vg_ed448_verify_equation" ++ v.suffix) (Impl.Ed448.X86_64.verifyEquationFor v) eqArgs)
       fun _ _ => True := by
   have regs : ∀ (L : Lay) g mx m₀ (t t1 : State), Ctx L g mx m₀ t → Moved eqArgs t t1 →
       t1.gpr .rdi = L.pk ∧ t1.gpr .rsi = L.sig ∧ t1.gpr .rdx = L.K ∧ t1.gpr .rcx = L.scr ∧
@@ -71,7 +95,7 @@ theorem eq_tr (hv : EqOk) (hct : EqCT) {Φ : Lay → Mem → State → Prop} :
   refine call_tr (by decide) hv hct
     (fun L => [L.PK, L.SIG, ⟨L.K, 57⟩]) (fun L => [L.SCR])
     (fun L g mx m₀ t t1 hL hc _ hm => ?_)
-    (fun L g₁ g₂ mx₁ mx₂ m₁ m₂ a b a1 b1 _ _ c₁ c₂ _ _ f₁ f₂ => ?_) fun L _ _ _ _ hL _ _ => ?_
+    (fun L g₁ g₂ mx₁ mx₂ m₁ m₂ a b a1 b1 hL hi c₁ c₂ φ₁ φ₂ f₁ f₂ => ?_) fun L _ _ _ _ hL _ _ => ?_
   · obtain ⟨g1, g2, g3, g4, g5⟩ := regs L g mx m₀ t t1 hc hm
     exact eq_cpre hL ((gpr_ce _ _ _ (by decide : Reg.rdi ≠ .rsp)).trans g1)
       ((gpr_ce _ _ _ (by decide : Reg.rsi ≠ .rsp)).trans g2) ((gpr_ce _ _ _ (by decide : Reg.rdx ≠ .rsp)).trans g3)
@@ -80,7 +104,30 @@ theorem eq_tr (hv : EqOk) (hct : EqCT) {Φ : Lay → Mem → State → Prop} :
     obtain ⟨y1, y2, y3, y4, y5⟩ := regs L g₂ mx₂ m₂ b b1 c₂ f₂
     simp only [Contract.clear, Proof.Ed448.X86_64.verifyEquationLocal, gpr_ce _ _ _ (by decide : Reg.rdi ≠ .rsp),
       gpr_ce _ _ _ (by decide : Reg.rsi ≠ .rsp), gpr_ce _ _ _ (by decide : Reg.rdx ≠ .rsp),
-      gpr_ce _ _ _ (by decide : Reg.rcx ≠ .rsp), rsp_ce, x1, x2, x3, x4, x5, y1, y2, y3, y4, y5, and_self]
+      gpr_ce _ _ _ (by decide : Reg.rcx ≠ .rsp), rsp_ce, x1, x2, x3, x4, x5, y1, y2, y3, y4, y5, true_and]
+    have vals : ∀ {g mx m} {t t1 : State}, Ctx L g mx m t → KeyReady L m t → Moved eqArgs t t1 →
+        bytesAt t1.callEntry.mem L.sig 114 = bytesAt m L.sig 114 ∧
+        bytesAt t1.callEntry.mem L.K 57 = chal L m := by
+      intro g mx m t t1 hc hk hm
+      have hc1 := hc.regs hm.2.2.1 hm.2.2.2 hm.1.2.1 hm.1.2.2
+        (fun r hr => hm.2.gpr (argRegs_cs r hr))
+      constructor
+      · rw [hc1.ce_bytesAt (ret_r hL hL.kSig) (by decide), hc1.bytesAt_eq hL.xSig hL.kSig (by decide)]
+      · rw [hc1.ce_bytesAt ret_k (by decide), hm.1.2.1]; exact hk
+    obtain ⟨asig, ak⟩ := vals c₁ φ₁ f₁
+    obtain ⟨bsig, bk⟩ := vals c₂ φ₂ f₂
+    have sigEq := asig.trans (hi.1.trans bsig.symm)
+    have dropSig (m : Mem) : (bytesAt m L.sig 114).drop 57 = bytesAt m (L.sig + BitVec.ofNat 64 57) 57 := by
+      change (Spec.X25519.bytesAt m L.sig (57 + 57)).drop 57 = _
+      rw [Proof.X25519.bytesAt_add, List.drop_left' (Proof.X25519.length_bytesAt m L.sig 57)]
+      rfl
+    have ds := congrArg (List.drop 57) sigEq
+    rw [dropSig, dropSig] at ds
+    constructor
+    · simp only [signatureScalar, State.withRegions_mem, gpr_ce _ _ _ (by decide : Reg.rsi ≠ .rsp), x2, y2]
+      exact congrArg Spec.Ed448.decodeLE ds
+    · simp only [challengeScalar, State.withRegions_mem, gpr_ce _ _ _ (by decide : Reg.rdx ≠ .rsp), x3, y3]
+      exact congrArg Spec.Ed448.decodeLE (ak.trans (hi.2.trans bk.symm))
   · refine ⟨fun r hr => ?_, fun r hr => ?_⟩
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
@@ -91,14 +138,21 @@ theorem eq_tr (hv : EqOk) (hct : EqCT) {Φ : Lay → Mem → State → Prop} :
       exact w_scr hL (within_self _)
 
 /-- The frame's body, after the header. -/
-theorem rest_tr (hv : EqOk) (hct : EqCT) :
-    RelCT isa (Two I fun _ _ _ => True)
+theorem rest_tr (hv : EqOk v) (hct : EqCT v) :
+    RelCT isa (Two EqInputs HeaderReady)
       (.seq hash (.seq (callA "vg_ed448_scalar_reduce" Impl.Ed448.X86_64.scalarReduce redArgs)
-        (callA "vg_ed448_verify_equation" Impl.Ed448.X86_64.verifyEquation eqArgs))) fun _ _ => True := by
-  have h := two_wp (I := I) (Φ := fun _ _ _ => True) (Ψ := fun _ _ _ => True) hash_tr
-    fun L g mx m₀ t hL hc _ => WP.mono (hash_ok hL hc) fun t' ⟨hc', _⟩ => ⟨hc', trivial⟩
-  have r := two_wp (I := I) (Φ := fun _ _ _ => True) (Ψ := fun _ _ _ => True) red_tr
-    fun L g mx m₀ t hL hc _ => WP.mono (reduce_ok hL hc) fun t' ⟨hc', _⟩ => ⟨hc', trivial⟩
+        (callA ("vg_ed448_verify_equation" ++ v.suffix) (Impl.Ed448.X86_64.verifyEquationFor v) eqArgs))) fun _ _ => True := by
+  have h := two_wp (I := EqInputs) (Φ := HeaderReady) (Ψ := HashReady) hash_tr
+    fun L g mx m₀ t hL hc hh => WP.mono (hash_ok hL hc) fun t' ⟨hc', hH⟩ => by
+      refine ⟨hc', ?_⟩
+      rw [HashReady, hH, hh]
+      simp only [Spec.Ed448.hash, Spec.Ed448.dom4, bytesAt_length, List.append_assoc, List.cons_append,
+        List.nil_append]
+  have r := two_wp (I := EqInputs) (Φ := HashReady) (Ψ := KeyReady) red_tr
+    fun L g mx m₀ t hL hc hH => WP.mono (reduce_ok hL hc) fun t' ⟨hc', hK⟩ => by
+      refine ⟨hc', ?_⟩
+      change Spec.Ed448.bytesAt t'.mem L.K 57 = _
+      rw [hK, hH]
   exact h.seq (r.seq (eq_tr hv hct))
 
 end
@@ -121,6 +175,29 @@ theorem vPub_of {s₁ s₂ : State} (h : (Spec.Ed448.verifyContract X86_64.abi 2
     List.range, List.range.loop] at h
   obtain ⟨a, -, c, d, e, f, g, h, i⟩ := h
   exact ⟨a, c, d, e, f, g, h, i⟩
+
+/-- Public input bytes determine the reduced challenge and signature scalar. -/
+theorem eqInputs_of {x y : State} (hp : (Spec.Ed448.verifyContract X86_64.abi 272).pub x y) :
+    EqInputs (vlay x) x.mem y.mem := by
+  have h := vPub_of hp
+  sig_pub [Spec.Ed448.verifyContract, Spec.Ed448.verifySig, Spec.Ed448.scratchWords, X86_64.abi, X86_64.argRegs,
+    List.range, List.range.loop] at hp
+  obtain ⟨_, bs, _, _, _, _, _, _, _⟩ := hp
+  have hb := byteMap_inj bs
+  change bytesAt x.mem (x.gpr .rdi) 57 ++ bytesAt x.mem (x.gpr .rsi) (x.gpr .rdx).toNat ++
+      bytesAt x.mem (x.gpr .rcx) (x.gpr .r8).toNat ++ bytesAt x.mem (x.gpr .r9) 114 =
+    bytesAt y.mem (y.gpr .rdi) 57 ++ bytesAt y.mem (y.gpr .rsi) (y.gpr .rdx).toNat ++
+      bytesAt y.mem (y.gpr .rcx) (y.gpr .r8).toNat ++ bytesAt y.mem (y.gpr .r9) 114 at hb
+  rw [← h.rdi, ← h.rsi, ← h.rdx, ← h.rcx, ← h.r8, ← h.r9] at hb
+  obtain ⟨abc, sig⟩ := List.append_inj' hb (by simp only [bytesAt_length])
+  obtain ⟨ab, msg⟩ := List.append_inj' abc (by simp only [bytesAt_length])
+  obtain ⟨pk, ctx⟩ := List.append_inj' ab (by simp only [bytesAt_length])
+  have r := congrArg (List.take 57) sig
+  rw [take_bytesAt, take_bytesAt] at r
+  refine ⟨sig, ?_⟩
+  change Spec.Ed448.scalarReduce (Spec.Ed448.hash _ (_ ++ _ ++ _)) = _
+  simp only [vlay] at *
+  rw [ctx, r, pk, msg]
 
 /-- Two runs from states agreeing on the public data have the same layout. -/
 theorem vlay_eq {s₁ s₂ : State} (h₁ : VPre s₁) (h₂ : VPre s₂) (h : VPub s₁ s₂) : vlay s₁ = vlay s₂ := by
@@ -157,9 +234,9 @@ theorem hdr_spOnly : ∀ i ∈ hdr, SpOnly i := by
   · exact spOnly_nomem (fun _ => rfl) rfl
   · exact ⟨fun s₁ s₂ h => by simp [addrs, State.ea, stk, h], rfl⟩
 
-theorem verify_ct (hv : EqOk) (hct : EqCT) :
+theorem verify_ct (hv : EqOk v) (hct : EqCT v) :
     ConstantTime isa (Spec.Ed448.verifyContract X86_64.abi 272).pre (Spec.Ed448.verifyContract X86_64.abi 272).pub
-      verify := by
+      (verifyFor v) := by
   refine RelCT.constantTime (Q := fun _ _ => True) ?_
   have e0 : (fun s₁ s₂ => (Spec.Ed448.verifyContract X86_64.abi 272).pre s₁ ∧
       (Spec.Ed448.verifyContract X86_64.abi 272).pre s₂ ∧ (Spec.Ed448.verifyContract X86_64.abi 272).pub s₁ s₂) =
@@ -167,7 +244,7 @@ theorem verify_ct (hv : EqOk) (hct : EqCT) :
     funext a b; apply propext
     exact ⟨fun h => ⟨a, b, h, rfl, rfl⟩, fun ⟨_, _, h, e₁, e₂⟩ => e₁ ▸ e₂ ▸ h⟩
   rw [e0]
-  unfold verify
+  unfold verifyFor
   -- `cmp rdx, 256`.
   have hcmp := ghost_step (P := VP2) (A := fun x a => a = x) (B := ACmp) (c := .block [.alu .cmp .rdx (.imm 256)])
     (block_rsp_tr (fun i hi => by
@@ -202,7 +279,8 @@ theorem verify_ct (hv : EqOk) (hct : EqCT) :
       rw [f₁.2.2.1 _ (by decide), f₂.2.2.1 _ (by decide)]; exact (vPub_of hxy.2.2).rsp) ?_
     -- The frame's body, from the push.
     let A : State → State → Prop := fun x a => ∃ s₁, VMov x s₁ ∧ a = pushed regs s₁
-    let B : State → State → Prop := fun x t => (x.gpr .rdx).toNat < 256 ∧ Ctx (vlay x) x.gpr x.mxcsr x.mem t
+    let B : State → State → Prop := fun x t => (x.gpr .rdx).toNat < 256 ∧
+      Ctx (vlay x) x.gpr x.mxcsr x.mem t ∧ HeaderReady (vlay x) x.mem t
     have hh := ghost_step (P := VP2) (A := A) (B := B) (c := .block hdr)
       (block_rsp_tr hdr_spOnly
         fun a b ⟨x, y, hxy, ⟨s₁, f₁, e₁⟩, ⟨s₂, f₂, e₂⟩⟩ => by
@@ -217,16 +295,16 @@ theorem verify_ct (hv : EqOk) (hct : EqCT) :
           have hc := entry_ctx hL (by rw [f.2.2.1 _ (by decide), vlay_B]) (f.2.2.2.1.trans rfl)
             (f.2.2.2.2.trans rfl) f.2.1.1 (f.2.2.1 _ (by decide)) (f.2.2.1 _ (by decide)) (f.2.2.1 _ (by decide))
             (f.2.2.1 _ (by decide)) (f.2.2.1 _ (by decide)) (f.2.2.1 _ (by decide))
-          exact WP.mono (hdr_ok hL hc) fun t ⟨hc', _⟩ =>
-            ⟨f.1, hc'.congr (fun r hr _ => f.2.2.1 r (cs_tmp r hr)) f.2.1.2.2.2 f.2.1.2.2.1⟩
+          exact WP.mono (hdr_ok hL hc) fun t ⟨hc', hh⟩ =>
+            ⟨f.1, hc'.congr (fun r hr _ => f.2.2.1 r (cs_tmp r hr)) f.2.1.2.2.2 f.2.1.2.2.1, hh⟩
         exact ⟨en hxy.1 fa, en hxy.2.1 fb⟩
     refine RelCT.seq (RelCT.mono hh (fun a b ⟨s₁, s₂, ⟨x, y, hxy, f₁, f₂⟩, e₁, e₂⟩ =>
-      ⟨x, y, hxy, ⟨s₁, f₁, e₁⟩, ⟨s₂, f₂, e₂⟩⟩) fun a b ⟨x, y, hxy, ⟨h8x, ca⟩, ⟨_, cb⟩⟩ => ?_)
-      (rest_tr (I := fun _ _ _ => True) hv hct)
+      ⟨x, y, hxy, ⟨s₁, f₁, e₁⟩, ⟨s₂, f₂, e₂⟩⟩) fun a b ⟨x, y, hxy, ⟨h8x, ca, ha⟩, ⟨_, cb, hb⟩⟩ => ?_)
+      (rest_tr hv hct)
     have hx := vPre_of hxy.1
     have e := vlay_eq hx (vPre_of hxy.2.1) (vPub_of hxy.2.2)
-    exact ⟨vlay x, x.gpr, y.gpr, x.mxcsr, y.mxcsr, x.mem, y.mem, vlay_ok hx h8x, trivial, ca, e ▸ cb,
-      trivial, trivial⟩
+    exact ⟨vlay x, x.gpr, y.gpr, x.mxcsr, y.mxcsr, x.mem, y.mem, vlay_ok hx h8x, eqInputs_of hxy.2.2, ca, e ▸ cb,
+      ha, e ▸ hb⟩
   · exact block_rsp_tr (fun i hi => by
         simp only [List.mem_singleton] at hi; subst hi; exact spOnly_nomem (fun _ => rfl) rfl)
       fun a b ⟨⟨x, y, hxy, f₁, f₂⟩, _⟩ => by rw [f₁.1, f₂.1]; exact (vPub_of hxy.2.2).rsp

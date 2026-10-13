@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.X25519.X86_64.Divstep.ARow
-import VerifiedGarbage.Proof.Divstep.Iter
-import VerifiedGarbage.Proof.Divstep.Tc
-import VerifiedGarbage.Proof.Divstep.Packed
-import VerifiedGarbage.Proof.Ed25519.Group.Extended
+module
+
+public import VerifiedGarbage.Proof.X25519.X86_64.Divstep.ARow
+public import VerifiedGarbage.Proof.Divstep.Iter
+public import VerifiedGarbage.Proof.Divstep.Tc
+public import VerifiedGarbage.Proof.Divstep.Packed
+public import VerifiedGarbage.Proof.Ed25519.Group.Extended
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X25519 on x86-64, inversion by divsteps: the theory
@@ -16,6 +22,8 @@ modulo `p` (`run_inv`); after 590 divsteps `g = 0` and `f = ±1`
 
 This module imports Mathlib's algebra: only the registration files import it.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X25519.X86_64
 

@@ -1,6 +1,12 @@
+module
 
-import VerifiedGarbage.Proof.Framework.X86.Sse
-import VerifiedGarbage.Proof.Sha1.Spec
+
+public import VerifiedGarbage.Proof.Framework.X86.Sse
+public import VerifiedGarbage.Proof.Sha1.Spec
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # SHA-1 with the SHA extensions on x86: the values in the SSE registers
@@ -11,6 +17,8 @@ compute rounds and schedule words of `Spec/Sha1.lean`: the lemmas of x86-64
 (`Proof/Sha1/X86_64/ShaNi/Compress.lean`), for x86's model of the
 instructions.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sha1.X86.ShaNi
 

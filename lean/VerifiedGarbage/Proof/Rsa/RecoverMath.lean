@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Rsa.KeyMath
+module
+
+public import VerifiedGarbage.Proof.Rsa.KeyMath
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Recovering the prime factors: the mathematics
@@ -17,6 +23,8 @@ relation to the specification (`Spec.Rsa.recoverPrimes`):
 * The candidates `g = 2, 3, …` until one gives a result or 100 are tried
   (`go_found`, `go_none`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa
 

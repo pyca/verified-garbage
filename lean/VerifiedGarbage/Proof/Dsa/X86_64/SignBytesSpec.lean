@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.Dsa.X86_64.AcceptedSpec
+module
+
+public import VerifiedGarbage.Proof.Dsa.X86_64.AcceptedSpec
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # The computed scalars and rejection mask implement the packed signing spec -/
+
+@[expose] public section
+
 namespace VG.Proof.Dsa.X86_64
 open VG
 

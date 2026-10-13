@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Bignum.AArch64.PcCT
-import VerifiedGarbage.Proof.Framework.Contract
+module
+
+public import VerifiedGarbage.Proof.Bignum.AArch64.PcCT
+public import VerifiedGarbage.Proof.Framework.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_public_precompute` on AArch64: verified against the shared contract
@@ -9,6 +15,8 @@ import VerifiedGarbage.Proof.Framework.Contract
 time (`pcCode_constantTime`), `Precompute.code` is verified
 (`precompute_verified`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.AArch64
 

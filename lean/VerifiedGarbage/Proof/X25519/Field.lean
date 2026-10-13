@@ -1,5 +1,11 @@
-import VerifiedGarbage.Spec.X25519
-import VerifiedGarbage.Proof.Framework.PowLit
+module
+
+public import VerifiedGarbage.Spec.X25519
+public import VerifiedGarbage.Proof.Framework.PowLit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X25519: field elements as natural numbers
@@ -10,6 +16,8 @@ element of `GF(p)`, and the lemmas here turn what an implementation proves
 about its numbers (modulo `p`) into the operations of `Spec/X25519.lean`, in
 the order the spec writes them.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X25519
 

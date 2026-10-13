@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Ecdsa.X86.Inv
-import VerifiedGarbage.Proof.Weierstrass.X86.ScalarPower
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86.Front
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.X86.Inv
+public import VerifiedGarbage.Proof.Weierstrass.X86.ScalarPower
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.Front
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDSA verification on x86 (32-bit): `u` and `v`
@@ -13,6 +19,8 @@ power modulo `n` gives `w = s^(n-2)` (in Montgomery form), and `uv` computes
 `r R mod n` (`RM'`) and `u = e w` and `v = r w` modulo `n`, out of
 Montgomery's form (`U`, `V`), with the multiplications of `Proof/Mont`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Verify.X86
 

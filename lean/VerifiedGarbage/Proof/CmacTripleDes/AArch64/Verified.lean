@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Init
-import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Finalize
-import VerifiedGarbage.Proof.CmacTripleDes.AArch64.CT
-import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Implies
-import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+module
+
+public import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Init
+public import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Finalize
+public import VerifiedGarbage.Proof.CmacTripleDes.AArch64.CT
+public import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Implies
+public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # TDEA-CMAC on AArch64: `Verified`
@@ -13,6 +19,8 @@ and the shared contracts with the working space as an argument
 functions call nothing, and write only `x0`–`x17` and the callee-saved
 registers the block saves and restores (`block_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.CmacTripleDes.AArch64
 

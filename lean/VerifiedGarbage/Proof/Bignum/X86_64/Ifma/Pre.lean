@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtUnit
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtPow
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtQ
-import VerifiedGarbage.Impl.Rsa.X86_64.Crt
-import VerifiedGarbage.Impl.Rsa.X86_64.CrtIfma
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtUnit
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtPow
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtQ
+public import VerifiedGarbage.Impl.Rsa.X86_64.Crt
+public import VerifiedGarbage.Impl.Rsa.X86_64.CrtIfma
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSA with AVX512_IFMA on x86-64: the bases in the primes' workspaces
@@ -11,6 +17,8 @@ import VerifiedGarbage.Impl.Rsa.X86_64.CrtIfma
 its workspace and reduces (`enterRedc_ok`): `R_X` into `aY` (from `G`)
 and `x R_X` into `aXc` (from `x G`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64
 

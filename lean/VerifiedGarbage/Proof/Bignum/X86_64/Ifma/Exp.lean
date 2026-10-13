@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Win
-import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Lemmas
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Win
+public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Lemmas
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSA with AVX512_IFMA on x86-64, any size: the exponentiations
@@ -12,6 +18,8 @@ windows (`winLoop_ok`): `Y ≡ x^E R` becomes `x^(256 E + b) R`. After all of
 them `Y ≡ x^e R`, `e` the exponent (`ev`), and a last iteration multiplies
 by `Fin` (`finIter_ok`): `Y ≡ x^e Fin` (`expLoop_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64.Ifma
 

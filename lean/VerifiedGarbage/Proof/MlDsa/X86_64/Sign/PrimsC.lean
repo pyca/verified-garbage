@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Prims
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Prims
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA signing on x86-64: calls of rounding, norms, hints and packing
@@ -7,6 +13,8 @@ As `Prims.lean`, for `vg_mldsa_high_bits`, `vg_mldsa_low_bits`,
 `vg_mldsa_norm_lt`, `vg_mldsa_make_hint`, `vg_mldsa_simple_bit_pack`,
 `vg_mldsa_bit_pack`, `vg_mldsa_bit_unpack` and `vg_mldsa_hint_bit_pack`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86_64.Sign
 

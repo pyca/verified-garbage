@@ -1,11 +1,13 @@
-import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.Weierstrass.Law
-import VerifiedGarbage.Proof.P224.Comb7
-import VerifiedGarbage.Impl.Ecdsa.P224.X86_64
-import VerifiedGarbage.Proof.Ecdsa.X86_64.P224.Verified
-import VerifiedGarbage.Proof.Ecdsa.X86_64.P224.Lit
-import VerifiedGarbage.Impl.Ecdsa.Verify.P224.X86_64
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P224.JointVerified
+module
+
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.Weierstrass.Law
+public import VerifiedGarbage.Proof.P224.Comb7
+public import VerifiedGarbage.Impl.Ecdsa.P224.X86_64
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.P224.Verified
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.P224.Lit
+public import VerifiedGarbage.Impl.Ecdsa.Verify.P224.X86_64
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P224.JointVerified
 
 /-!
 # ECDSA over P-224 (FIPS 186-5) on x86-64
@@ -13,6 +15,8 @@ import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P224.JointVerified
 A generic file (see `TCB/Emit.lean`) over P-224's group law and
 inversions `h`, the variant `Variants/P224/X86_64/Law.lean`.
 -/
+
+@[expose] public section
 
 namespace VG.Generic.P224.X86_64.EcdsaP224
 

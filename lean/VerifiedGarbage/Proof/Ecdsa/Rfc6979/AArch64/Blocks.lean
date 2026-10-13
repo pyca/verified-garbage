@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Copy
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Reduce
-import VerifiedGarbage.Proof.Weierstrass.Words
-import VerifiedGarbage.Proof.Framework.WriteBytes
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Copy
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Reduce
+public import VerifiedGarbage.Proof.Weierstrass.Words
+public import VerifiedGarbage.Proof.Framework.WriteBytes
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Deterministic ECDSA on AArch64: the blocks between the calls
@@ -10,6 +16,8 @@ import VerifiedGarbage.Proof.Framework.WriteBytes
 (`initCnt_ok`), the arguments of `core` (`coreArgs_ok`), whether to go on
 (`goOn_ok`, `again_ok`, `stop_ok`), and the wiping of the frame (`wipe_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Rfc6979.AArch64
 

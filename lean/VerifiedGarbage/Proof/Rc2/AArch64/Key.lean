@@ -1,11 +1,19 @@
-import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-import VerifiedGarbage.Proof.Rc2.AArch64.KeyIO
-import VerifiedGarbage.Proof.Framework.AArch64.Inline
-import VerifiedGarbage.Proof.Rc2.AArch64.ConstantTime
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Spec.Rc2.Contract
+module
+
+public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+public import VerifiedGarbage.Proof.Rc2.AArch64.KeyIO
+public import VerifiedGarbage.Proof.Framework.AArch64.Inline
+public import VerifiedGarbage.Proof.Rc2.AArch64.ConstantTime
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.Rc2.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # Verified RC2 key expansion -/
+
+@[expose] public section
 
 namespace VG.Proof.Rc2.AArch64
 

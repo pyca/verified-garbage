@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Modes.X86.Seq
+module
+
+public import VerifiedGarbage.Proof.Modes.X86.Seq
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The modes on x86 (32-bit), for any core
@@ -8,6 +14,8 @@ specification (SP 800-38A, `Spec/Cbc.lean`, `Spec/Ofb.lean`, `Spec/Cfb.lean`,
 `Spec/Cfb8.lean`) under the core's cipher. Each cipher's contracts follow
 from these.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Modes.X86
 

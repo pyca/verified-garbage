@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.Ed448.X86.ScalarIO
-import VerifiedGarbage.Proof.X448.X86.Inv
-import VerifiedGarbage.Proof.X448.X86.Freeze
-import VerifiedGarbage.Proof.Ed448.Ref
-import VerifiedGarbage.Impl.Ed448.X86.ScalarBase
+module
+
+public import VerifiedGarbage.Proof.Ed448.X86.ScalarIO
+public import VerifiedGarbage.Proof.X448.X86.Inv
+public import VerifiedGarbage.Proof.X448.X86.Freeze
+public import VerifiedGarbage.Proof.Ed448.Ref
+public import VerifiedGarbage.Impl.Ed448.X86.ScalarBase
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 base-point multiplication on x86 (32-bit): the encoding
@@ -14,6 +20,8 @@ written to the output's first 56 bytes (RFC 8032 §5.2.2); then the
 callee-saved registers restored (`baseEncode_ok`). The 57 bytes are
 `encodePoint` of the point in slots 0–2 (`Proof.Ed448.encodePoint_code`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.X86
 

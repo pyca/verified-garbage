@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTMain
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtCode
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTMain
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTMain
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCode
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCode
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_private_crt` on x86-64: constant time but for `n`
@@ -9,6 +17,8 @@ public data (the arguments but the input and the key's values, and `n`),
 and so do `fail` and `main` (`crtMain_ct`): `crtCode_ct`, and the contract's
 `ConstantTime` (`crtCode_constantTime`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64
 

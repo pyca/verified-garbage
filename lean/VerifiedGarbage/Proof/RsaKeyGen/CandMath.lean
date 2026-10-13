@@ -1,5 +1,11 @@
-import VerifiedGarbage.Spec.RsaKeyGen
-import VerifiedGarbage.Proof.Bignum.Words
+module
+
+public import VerifiedGarbage.Spec.RsaKeyGen
+public import VerifiedGarbage.Proof.Bignum.Words
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # A candidate for an RSA prime: arithmetic the implementations share
@@ -8,6 +14,8 @@ The witness from its random octets (`witness_eq`, `wv_le_one`); `|c − p|`
 from a difference and its borrow (`absDiff_of`); and the bits a word
 shifted left gives (`shift_step`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaKeyGen
 

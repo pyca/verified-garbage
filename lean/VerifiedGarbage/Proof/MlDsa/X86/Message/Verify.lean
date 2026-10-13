@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.MlDsa.X86.Message.VerifyCall
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86.Message.VerifyCall
+meta import VerifiedGarbage.Proof.MlDsa.X86.Message.VerifyCall
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on x86 (32-bit), `verify_message`: correct and constant time
@@ -9,6 +16,8 @@ of the verification function on it (`verifyRest_piece`); in the leaf, after
 the check (`verifyMessage_piece`); and what that says of the contract's
 postcondition (`verifyMessage_verified`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86.Message
 

@@ -1,6 +1,14 @@
-import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed5.Args
-import VerifiedGarbage.Proof.ChaCha20.AArch64.Rows6.Setup
-import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.LoopRounds
+module
+
+public import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed5.Args
+public import VerifiedGarbage.Proof.ChaCha20.AArch64.Rows6.Setup
+public import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.LoopRounds
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.ChaCha20.AArch64.Mixed8
 open VG VG.AArch64 VG.Impl.ChaCha20.AArch64.Mixed8

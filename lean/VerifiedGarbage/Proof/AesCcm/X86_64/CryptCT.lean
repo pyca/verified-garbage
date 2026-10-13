@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.AesCcm.X86_64.MacCT
-import VerifiedGarbage.Proof.AesCcm.X86_64.Crypt
+module
+
+public import VerifiedGarbage.Proof.AesCcm.X86_64.MacCT
+meta import VerifiedGarbage.Proof.AesCcm.X86_64.MacCT
+public import VerifiedGarbage.Proof.AesCcm.X86_64.Crypt
+meta import VerifiedGarbage.Proof.AesCcm.X86_64.Crypt
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CCM on x86-64: counter mode is constant time
@@ -10,6 +18,8 @@ the blocks done (`chunk_ok`), and it is kept at `W + 216`, which the taint
 analysis then takes as public (`ccmTk`) for the end of the chunk; the calls
 of `vg_aes_ctr32` have the same arguments in both runs.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

@@ -1,5 +1,7 @@
-import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.Sha512.X86_64.Shared
+module
+
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.Sha512.X86_64.Shared
 
 /-!
 # SHA-384, SHA-512, SHA-512/224 and SHA-512/256 (FIPS 180-4) on x86-64
@@ -8,6 +10,8 @@ import VerifiedGarbage.Proof.Sha512.X86_64.Shared
 once for each implementation of it, by SHA-512's variants of `MdHash`
 (`Variants/MdHash/X86_64/Sha512*.lean`, `Generic/MdHash/X86_64/Stream.lean`).
 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.Sha512.X86_64
 

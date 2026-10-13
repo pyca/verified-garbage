@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.Aes.X86_64.VaesBlocks.Dec
-import VerifiedGarbage.Proof.Aes.X86_64.Vaes.Ctr32
-import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Blocks
+module
+
+public import VerifiedGarbage.Proof.Aes.X86_64.VaesBlocks.Dec
+meta import VerifiedGarbage.Proof.Aes.X86_64.VaesBlocks.Dec
+public import VerifiedGarbage.Proof.Aes.X86_64.Vaes.Ctr32
+meta import VerifiedGarbage.Proof.Aes.X86_64.Vaes.Ctr32
+public import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Blocks
+meta import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Blocks
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # VAES: encryption and decryption of whole blocks
@@ -15,6 +24,8 @@ data block `c + 2k + l` (`loadData_ok`, `storeData_ok`); after it,
 `vzeroupper` keeps the invariant, and the AES-NI loops finish
 (`AesNi.Ecb.tail_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Aes.X86_64.VaesBlocks
 

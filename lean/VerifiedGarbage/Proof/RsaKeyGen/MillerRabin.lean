@@ -1,4 +1,10 @@
-import VerifiedGarbage.Spec.RsaKeyGen
+module
+
+public import VerifiedGarbage.Spec.RsaKeyGen
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Miller–Rabin without splitting `w − 1`
@@ -13,6 +19,8 @@ or'ed with `y_i = w − 1` (`mrRun`). The lowest set bit is `a`, and below it
 `mrIteration`'s result (`mrRun_eq`), without `a` or `m`: the code needs no
 shift by a secret amount.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaKeyGen
 

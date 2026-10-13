@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.X448.Arm.BitWrite
-import VerifiedGarbage.Proof.Ed448.Scalar
-import VerifiedGarbage.Impl.Ed448.Arm.ScalarBase
+module
+
+public import VerifiedGarbage.Proof.X448.Arm.BitWrite
+public import VerifiedGarbage.Proof.Ed448.Scalar
+public import VerifiedGarbage.Impl.Ed448.Arm.ScalarBase
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 base-point multiplication on ARMv7: the scalar's bits
@@ -9,6 +15,8 @@ All 57 bytes of the scalar expanded into bytes `BITS + t` holding bit `t`, as
 X448's `bits` expands its 56 (without its clamping): byte `t` is bit `t` of
 the scalar (`baseBits_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.Arm
 

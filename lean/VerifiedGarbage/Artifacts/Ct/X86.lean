@@ -1,4 +1,8 @@
-import VerifiedGarbage.Proof.Ct.X86
+module
+
+public import VerifiedGarbage.Proof.Ct.X86
+
+@[expose] public section
 
 namespace VG.Artifacts.Ct.X86
 open VG.X86

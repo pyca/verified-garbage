@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.Weierstrass.AArch64.MontContract
-import VerifiedGarbage.Proof.Weierstrass.AArch64.MontModuli
-import VerifiedGarbage.Proof.Framework.Contract
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.MontContract
+meta import VerifiedGarbage.Proof.Weierstrass.AArch64.MontContract
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.MontModuli
+meta import VerifiedGarbage.Proof.Weierstrass.AArch64.MontModuli
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Montgomery products modulo the curves' `p` and `n`, as functions, on AArch64: verified
@@ -11,6 +20,8 @@ proof against `mulA`, which it implies, constant time by `ct_zext` and taint
 tracking (only the pointer and the offsets are public), and a state
 satisfying it (`sat`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.AArch64.Mont
 

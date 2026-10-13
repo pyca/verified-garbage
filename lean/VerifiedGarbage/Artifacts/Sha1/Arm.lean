@@ -1,7 +1,11 @@
-import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Proof.Sha1.Arm.Shared
+module
+
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.Proof.Sha1.Arm.Shared
 
 /-! # SHA-1 (FIPS 180-4) on ARMv7 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.Sha1.Arm
 

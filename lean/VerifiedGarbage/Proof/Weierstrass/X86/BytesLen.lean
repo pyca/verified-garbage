@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Weierstrass.X86.Bytes
-import VerifiedGarbage.Proof.Weierstrass.BytesLen32
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86.Bytes
+public import VerifiedGarbage.Proof.Weierstrass.BytesLen32
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Short Weierstrass curves on x86 (32-bit): numbers of `len` bytes
@@ -13,6 +19,8 @@ and `storeBytes len n dst d a` writes `[a]` masked with `ecx` to the `len`
 bytes at `dst + d` (`storeBytes_ok`), a word of fewer bytes a byte at a
 time.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.X86
 

@@ -1,8 +1,12 @@
-import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
-import VerifiedGarbage.Proof.EcKey.AArch64.Secp256k1.Verified
+module
+
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
+public import VerifiedGarbage.Proof.EcKey.AArch64.Secp256k1.Verified
 
 /-! # secp256k1 on AArch64, generic over its proven group law and inversions -/
+
+@[expose] public section
 
 namespace VG.Generic.Secp256k1.AArch64.EcSecp256k1
 

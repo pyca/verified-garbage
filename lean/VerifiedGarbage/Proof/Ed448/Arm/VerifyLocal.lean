@@ -1,6 +1,12 @@
-import VerifiedGarbage.Impl.Ed448.Arm.VerifyEquation
-import VerifiedGarbage.Spec.Ed448.Contract
-import VerifiedGarbage.Proof.Framework.Contract
+module
+
+public import VerifiedGarbage.Impl.Ed448.Arm.VerifyEquation
+public import VerifiedGarbage.Spec.Ed448.Contract
+public import VerifiedGarbage.Proof.Framework.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 verification's equation on ARMv7: the contract the proof is written against
@@ -9,6 +15,8 @@ The facts of `Spec.Ed448.verifyEquationContract` the proof uses, stated for
 ARMv7, in a module of their own: callers proven for any code meeting them
 need not import the proof.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.Arm
 

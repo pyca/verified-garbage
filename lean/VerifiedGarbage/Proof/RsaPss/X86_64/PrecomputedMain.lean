@@ -1,4 +1,12 @@
-import VerifiedGarbage.Proof.RsaPss.X86_64.PrecomputedFront
+module
+
+public import VerifiedGarbage.Proof.RsaPss.X86_64.PrecomputedFront
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.RsaPss.X86_64.Pc
 

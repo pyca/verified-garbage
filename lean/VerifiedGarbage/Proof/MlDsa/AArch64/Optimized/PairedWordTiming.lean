@@ -1,6 +1,17 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedEntryAccess
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedTiming
-import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Basic
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedEntryAccess
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedEntryAccess
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedTiming
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedTiming
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Basic
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Basic
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Optimized.Paired
 open VG VG.AArch64

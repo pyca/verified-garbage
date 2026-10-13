@@ -1,9 +1,21 @@
-import VerifiedGarbage.Proof.MlKem.X86.Unpack
-import VerifiedGarbage.Proof.MlKem.Encode
-import VerifiedGarbage.Spec.MlKem.Poly
-import VerifiedGarbage.TCB.X86.Target
-import VerifiedGarbage.Proof.Framework.Sig
-import VerifiedGarbage.Proof.Framework.Contract
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86.Unpack
+meta import VerifiedGarbage.Proof.MlKem.X86.Unpack
+public import VerifiedGarbage.Proof.MlKem.Encode
+meta import VerifiedGarbage.Proof.MlKem.Encode
+public import VerifiedGarbage.Spec.MlKem.Poly
+meta import VerifiedGarbage.Spec.MlKem.Poly
+public import VerifiedGarbage.TCB.X86.Target
+meta import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Proof.Framework.Sig
+meta import VerifiedGarbage.Proof.Framework.Sig
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86 (32-bit): `vg_mlkem_decode_decompress`
@@ -13,6 +25,8 @@ bytes, whose fields `unpackSteps` (`Unpack.lean`) decompresses into the
 coefficients of `decodeDecompress1`, `decodeDecompress4_*` and
 `decodeDecompress10_*` (`Encode.lean`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.X86.DecodeDecompress
 

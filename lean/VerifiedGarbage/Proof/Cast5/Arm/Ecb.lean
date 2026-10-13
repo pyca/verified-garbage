@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Cast5.Arm.Block
-import VerifiedGarbage.Proof.Framework.Arm.Spill
+module
+
+public import VerifiedGarbage.Proof.Cast5.Arm.Block
+public import VerifiedGarbage.Proof.Framework.Arm.Spill
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # CAST5 on ARMv7: ECB
@@ -9,6 +15,8 @@ registers in it, keeps its arguments in their slots, runs the block function
 on each block in turn (`ecbLoop_ok`) and restores the registers
 (`ecb_correct`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Cast5.Arm
 

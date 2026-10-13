@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.RsaOaep.AArch64.EncEntry
-import VerifiedGarbage.Proof.RsaOaep.Encode
+module
+
+public import VerifiedGarbage.Proof.RsaOaep.AArch64.EncEntry
+public import VerifiedGarbage.Proof.RsaOaep.Encode
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-OAEP encryption on AArch64: `EM`
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.RsaOaep.Encode
 ‖ M`, in our working space (`EmAt`), from the seed, the label and the
 message as on entry.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaOaep.AArch64.Enc
 

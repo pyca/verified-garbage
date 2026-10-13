@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.Ed448.Arm.Shake.Sponge
-import VerifiedGarbage.Proof.Ed448.Arm.Shake.Header
-import VerifiedGarbage.Proof.Ed25519.Arm.Whole.CallCT
-import VerifiedGarbage.Proof.Ed25519.Arm.Whole.BlocksCT
-import VerifiedGarbage.Proof.Ed448.Arm.PublicKey.Verified
+module
+
+public import VerifiedGarbage.Proof.Ed448.Arm.Shake.Sponge
+public import VerifiedGarbage.Proof.Ed448.Arm.Shake.Header
+public import VerifiedGarbage.Proof.Ed25519.Arm.Whole.CallCT
+public import VerifiedGarbage.Proof.Ed25519.Arm.Whole.BlocksCT
+public import VerifiedGarbage.Proof.Ed448.Arm.PublicKey.Verified
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 on ARMv7: the calls of the sponge functions in constant time
@@ -15,6 +21,8 @@ through `sp`, `r12` and `scratch` (`hdr_ct`, `zero_ct`). The positions the
 absorptions return, which the next ones start from, depend only on the
 lengths (`absorb_ct`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.Arm.Shake
 

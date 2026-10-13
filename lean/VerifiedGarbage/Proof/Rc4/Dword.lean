@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Rc4.Memory
+module
+
+public import VerifiedGarbage.Proof.Rc4.Memory
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RC4: scanning the table a doubleword at a time
@@ -8,6 +14,8 @@ at fixed addresses: the masks `sub` and `sbb` make, the bytes of a
 doubleword, and a doubleword stored back XORed with a difference in one
 byte. (`Qword.lean` has the same for quadwords.)
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rc4
 open VG

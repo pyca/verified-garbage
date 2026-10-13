@@ -1,11 +1,15 @@
-import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Proof.MlDsa.Arm.Pack.SimpleBitPack
-import VerifiedGarbage.Proof.MlDsa.Arm.Pack.BitPack
-import VerifiedGarbage.Proof.MlDsa.Arm.Pack.Unpack
-import VerifiedGarbage.Proof.MlDsa.Arm.Pack.HintPackCT
-import VerifiedGarbage.Proof.MlDsa.Arm.Pack.HintUnpackCT
+module
+
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.Proof.MlDsa.Arm.Pack.SimpleBitPack
+public import VerifiedGarbage.Proof.MlDsa.Arm.Pack.BitPack
+public import VerifiedGarbage.Proof.MlDsa.Arm.Pack.Unpack
+public import VerifiedGarbage.Proof.MlDsa.Arm.Pack.HintPackCT
+public import VerifiedGarbage.Proof.MlDsa.Arm.Pack.HintUnpackCT
 
 /-! # ML-DSA (FIPS 204) on 32-bit ARM: the encodings -/
+
+@[expose] public section
 
 namespace VG.Artifacts.MlDsaPack.Arm
 

@@ -1,5 +1,7 @@
-import VerifiedGarbage.TCB.X86.Target
-import VerifiedGarbage.Proof.AesCfb8.X86.Verified
+module
+
+public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Proof.AesCfb8.X86.Verified
 
 /-!
 # AES-CFB8 (NIST SP 800-38A §6.3, with 8-bit segments) on x86
@@ -13,6 +15,8 @@ forward cipher), are emitted once for each implementation
 The stack is 24 bytes: the five arguments of the block function and the
 return address of its call.
 -/
+
+@[expose] public section
 
 namespace VG.Generic.AesBlocks.X86.AesCfb8
 

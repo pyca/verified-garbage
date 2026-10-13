@@ -1,8 +1,12 @@
-import VerifiedGarbage.TCB.X86.Target
-import VerifiedGarbage.Impl.X25519.X86.Field32
-import VerifiedGarbage.Proof.X25519.X86.Field32.Verified
+module
+
+public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Impl.X25519.X86.Field32
+public import VerifiedGarbage.Proof.X25519.X86.Field32.Verified
 
 /-! # Powers in curve25519's field, in radix `2^32`, on x86 (32-bit) -/
+
+@[expose] public section
 
 namespace VG.Artifacts.Gf25519R32.X86
 

@@ -1,11 +1,18 @@
-import VerifiedGarbage.Proof.Ed448.X86_64.VerifyDecode
-import VerifiedGarbage.Proof.Ed448.X86_64.Window.Joint
-import VerifiedGarbage.Proof.Ed448.X86_64.VerifyBits
-import VerifiedGarbage.Proof.Ed448.X86_64.BaseConst
-import VerifiedGarbage.Proof.Ed448.X86_64.BaseMain
-import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.Framework.X86_64.Abi
-import VerifiedGarbage.Proof.Ed448.X86_64.VerifyLocal
+module
+
+public import VerifiedGarbage.Proof.Ed448.X86_64.FieldVariant
+public import VerifiedGarbage.Proof.Ed448.X86_64.VerifyDecode
+public import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Joint
+public import VerifiedGarbage.Proof.Ed448.X86_64.VerifyPadding
+public import VerifiedGarbage.Proof.Ed448.X86_64.BaseConst
+public import VerifiedGarbage.Proof.Ed448.X86_64.BaseMain
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.Framework.X86_64.Abi
+public import VerifiedGarbage.Proof.Ed448.X86_64.VerifyLocal
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 verification's equation on x86-64: the whole function
@@ -14,11 +21,13 @@ The correctness of `vg_ed448_verify_equation` against the contract the proof
 is written against (`verifyEquationLocal`, `VerifyLocal.lean`): `BAD` ends as the OR of
 the checks of `S`, of decoding `A` and `R`, and of the comparison of `[4]Q`
 with `[4]R`, for `Q` representing `[S]B + [k](-A)` through the joint
-four-bit window loop. Group representation is required only when both
+sparse width-five non-adjacent form loop. Group representation is required only when both
 points decode; malformed inputs still execute safely and are rejected;
 every write is in the working space, so the inputs are read unchanged, the
 callee-saved registers are restored from it, and the return address is kept.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.X86_64
 
@@ -121,22 +130,20 @@ theorem vbits_ok {s : State} {base sig ch : Addr} (hs : Scr s base) (hch : s.gpr
     (hfs : ∀ q < 57, 8192 ≤ ofs base (sig + BitVec.ofNat 64 57 + BitVec.ofNat 64 q))
     (hfc : ∀ q < 57, 8192 ≤ ofs base (ch + BitVec.ofNat 64 q)) :
     WP isa vbits s fun t =>
-      (∀ n < 456, t.mem (off base (BITS + n)) = BitVec.ofNat 8
-        ((Spec.Ed448.decodeLE (Spec.Ed448.bytesAt s.mem (sig + BitVec.ofNat 64 57) 57) >>> n) &&& 1)) ∧
-      (∀ n < 456, t.mem (off base (KBITS + n)) = BitVec.ofNat 8
-        ((Spec.Ed448.decodeLE (Spec.Ed448.bytesAt s.mem ch 57) >>> n) &&& 1)) ∧
+      Window.Bits base BITS (Spec.Ed448.decodeLE (Spec.Ed448.bytesAt s.mem (sig + BitVec.ofNat 64 57) 57)) t ∧
+      Window.Bits base KBITS (Spec.Ed448.decodeLE (Spec.Ed448.bytesAt s.mem ch 57)) t ∧
       t.gpr .rsi = sig + BitVec.ofNat 64 57 ∧
       (∀ r, r ∉ [Reg.rax, .rdx, .rbx, .rsi] → t.gpr r = s.gpr r) ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
-      Outside base BITS 968 s.mem t.mem := by
+      Outside base (BITS - 1) 973 s.mem t.mem := by
   rw [vbits]
   apply WP.seq
-  refine WP.mono (bitsAt_ok (o := KBITS) (by decide) hs hch hrc hfc) fun s1 ⟨g1, rd1, wr1, o1, b1⟩ => ?_
+  refine WP.mono (bitsAtPadded_ok (o := KBITS) hs (by decide) (by decide) hch hrc hfc) fun s1 ⟨g1, rd1, wr1, o1, b1⟩ => ?_
   have hs1 : Scr s1 base := ⟨(g1 _ (by decide)).trans hs.rdi, wr1 ▸ hs.wr, hs.nowrap⟩
   apply WP.seq
   refine WP.mono (movR957_ok s1) fun s2 ⟨si2, g2, m2, rd2, wr2⟩ => ?_
   have hs2 : Scr s2 base := ⟨(g2 _ (by decide)).trans hs1.rdi, wr2 ▸ hs1.wr, hs1.nowrap⟩
   have hsig2 : s2.gpr .rsi = sig + BitVec.ofNat 64 57 := by rw [si2, g1 _ (by decide), hsig]
-  refine WP.mono (bitsAt_ok (o := BITS) (by decide) hs2 hsig2
+  refine WP.mono (bitsAtPadded_ok (o := BITS) hs2 (by decide) (by decide) hsig2
     (fun q hq => by rw [rd2, wr2, rd1, wr1]; exact hrs q hq) hfs) fun t ⟨gt, rdt, wrt, ot, bt⟩ => ?_
   have hm2 : ∀ x, 8192 ≤ ofs base x → s2.mem x = s.mem x := fun x hx => by
     rw [m2, o1 x (Or.inr (by simp only [KBITS]; omega))]
@@ -146,10 +153,15 @@ theorem vbits_ok {s : State} {base sig ch : Addr} (hs : Scr s base) (hch : s.gpr
       rcases h with h | h | h <;> simp only [h, true_or, or_true])
   refine ⟨fun n hn => ?_, fun n hn => ?_, by rw [gt _ (by decide), hsig2], fun r hr => ?_,
     by rw [rdt, rd2, rd1], by rw [wrt, wr2, wr1], fun x hx => ?_⟩
-  · rw [bt n hn, hm2 _ (hfs _ (by omega)), scalar_bit s.mem _ hn]
-  · have hlt : KBITS + n < 2 ^ 64 := by simp only [KBITS]; omega
+  · rw [bt n hn]
+    have hm : Spec.Ed448.bytesAt s2.mem (sig + BitVec.ofNat 64 57) 57 =
+        Spec.Ed448.bytesAt s.mem (sig + BitVec.ofNat 64 57) 57 := by
+      simp only [Spec.Ed448.bytesAt]
+      exact List.map_congr_left fun i hi => hm2 _ (hfs i (List.mem_range.mp hi))
+    rw [hm]
+  · have hlt : KBITS - 1 + n < 2 ^ 64 := by simp only [KBITS]; omega
     have hofs := VG.Proof.X448.X86_64.ofs_off' base hlt
-    rw [ot _ (Or.inr (by rw [hofs]; simp only [BITS, KBITS]; omega)), m2, b1 n hn, scalar_bit s.mem _ hn]
+    rw [ot _ (Or.inr (by rw [hofs]; simp only [BITS, KBITS]; omega)), m2, b1 n hn]
   · have hsi : r ≠ .rsi := fun h => hr (by simp [h])
     rw [gt r (h3 r hr), g2 r hsi, g1 r (h3 r hr)]
   · simp only [BITS] at hx
@@ -799,26 +811,24 @@ theorem verifyEquation_correct (hR : RecoverOk) (_hE : VerifyEqOk) {rt : Prog is
     obtain ⟨vx, vy, vz⟩ := va4 a ha
     show (⟨E s4'.mem base 6, E s4'.mem base 7, E s4'.mem base 10⟩ : Spec.Ed448.Point) = ⟨0 - a.X, a.Y, a.Z⟩
     rw [n6, n7, n10, vx, vy, vz]
-  -- The joint four-bit window multiplication.
+  -- The joint sparse multiplication.
   apply WP.seq
-  have bits4 : ∀ o : Nat, o + 456 ≤ 8192 → 2048 ≤ o → ∀ t < 456,
-      s4'.mem (off base (o + t)) = s2.mem (off base (o + t)) := fun o ho1 ho2 t ht => by
-    have hofs := VG.Proof.X448.X86_64.ofs_off' base (d := o + t) (by omega)
+  have bits4 : ∀ o : Nat, o + 460 ≤ 8192 → 2048 ≤ o → ∀ t < 461,
+      s4'.mem (off base (o - 1 + t)) = s2.mem (off base (o - 1 + t)) := fun o ho1 ho2 t ht => by
+    have hofs := VG.Proof.X448.X86_64.ofs_off' base (d := o - 1 + t) (by omega)
     rw [o4 _ (Or.inr (by rw [hofs]; omega)), D4.wide _ (Or.inr (by rw [hofs]; omega)),
       o3 _ (Or.inr (by rw [hofs]; simp only [KC]; omega))]
   have bs4 : Window.Bits base BITS S s4' := by
     intro t ht
     rw [bits4 BITS (by decide) (by decide) t ht, bs2 t ht]
-    simp only [Nat.shiftRight_eq_div_pow, Nat.and_one_is_mod]
   have bk4 : Window.Bits base KBITS K s4' := by
     intro t ht
     rw [bits4 KBITS (by decide) (by decide) t ht, bk2 t ht]
-    simp only [Nat.shiftRight_eq_div_pow, Nat.and_one_is_mod]
   have hSb : S < 2 ^ 456 := by
     rw [← hS]; exact decodeLE_below (bytesAt57_len _ _)
   have hKb : K < 2 ^ 456 := by
     rw [← hK]; exact decodeLE_below (bytesAt57_len _ _)
-  refine WP.mono (Window.joint_ok hf hP hs4' (by decide) (by decide) bs4 bk4 hSb hKb d4
+  refine WP.mono (Wnaf.joint_ok hf hP hs4' (by decide) (by decide) bs4 bk4 hSb hKb d4
     (congrArg Spec.Ed448.Point.Z q4) p4) fun s6 ⟨hs6, g6, rd6, wr6, M6, rep6⟩ => ?_
   have O7 : Outside base 0 8192 s.mem s6.mem :=
     (O4.trans (o4.mono (by decide) (by decide))).trans (M6.wide.mono (by decide) (by decide))
@@ -896,5 +906,16 @@ theorem verifyEquation_correct_inline (hR : RecoverOk) (hE : VerifyEqOk) {s : St
     WP isa verifyEquation.inline s fun t => gprPreserved s t ∧ verifyEquationLocal.post s t := by
   rw [verifyEquation_inline]
   exact verifyEquation_correct Proof.X448.X86_64.baseline_ok Point64.bodies_ok hR hE (rootCall_ok Proof.X448.X86_64.baseline_ok) hp
+
+theorem verifyEquationFor_inline (v : Impl.Ed448.X86_64.FieldVariant) :
+    (verifyEquationFor v).inline = verifyEquationWith v.field v.bodies
+      (rootCallFor v).inline := by cases v <;> rfl
+
+theorem verifyEquationFor_correct_inline (v : Impl.Ed448.X86_64.FieldVariant)
+    (hR : RecoverOk) (hE : VerifyEqOk) {s : State} (hp : verifyEquationLocal.pre s) :
+    WP isa (verifyEquationFor v).inline s fun t => gprPreserved s t ∧ verifyEquationLocal.post s t := by
+  rw [verifyEquationFor_inline]
+  exact verifyEquation_correct (FieldVariant.field_ok v) (FieldVariant.bodies_ok v) hR hE
+    (rootCallFor_ok v) hp
 
 end VG.Proof.Ed448.X86_64

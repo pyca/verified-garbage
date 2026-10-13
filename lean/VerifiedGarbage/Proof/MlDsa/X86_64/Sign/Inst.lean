@@ -1,17 +1,23 @@
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.SignCT
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.AddSub
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Mul
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.NttInv
-import VerifiedGarbage.Proof.MlDsa.X86_64.Round.Bits
-import VerifiedGarbage.Proof.MlDsa.X86_64.Round.NormLt
-import VerifiedGarbage.Proof.MlDsa.X86_64.Round.MakeHint
-import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.SimpleBitPack
-import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.Unpack
-import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.HintPack
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejNttCT
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.ExpandMask
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.BallCT
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Backend
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.SignCT
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.AddSub
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Mul
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.NttInv
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Round.Bits
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Round.NormLt
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Round.MakeHint
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.SimpleBitPack
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.Unpack
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.HintPack
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejNttCT
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.ExpandMask
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.BallCT
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Backend
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA signing on x86-64: the primitives it calls
@@ -24,6 +30,8 @@ depends only on their public data and that they succeed only if the algorithm
 finishes within `maxBounds` (from what their own proofs say they return,
 `rejNTT_correct` and `sampleInBall_correct`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86_64.Sign
 
@@ -164,9 +172,9 @@ def prims_okWith (v : ArithImpl) : PrimsOk (primsWith v.code) signStack where
   hintBitPack := (⟨0, by decide, Proof.MlDsa.X86_64.Pack.hintBitPack_verified, nosp_of (by decide +kernel),
     by decide +kernel⟩ :
     Callee _ signStack prims.hintBitPack)
-  rejRet := fun s₁ s₂ t₁ t₂ s₁' s₂' ⟨h₁, h₂, hp⟩ e₁ e₂ =>
+  rejRet := by exact (fun s₁ s₂ t₁ t₂ s₁' s₂' ⟨h₁, h₂, hp⟩ e₁ e₂ =>
     ⟨Proof.MlDsa.X86_64.Sample.rejNTT_verified.2.1 s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hp e₁ e₂,
-      show _ = _ by rw [rn_ret h₁ e₁, rn_ret h₂ e₂, rn_pub s₁ s₂ hp]⟩
+      show _ = _ by rw [rn_ret h₁ e₁, rn_ret h₂ e₂, rn_pub s₁ s₂ hp]⟩)
   rejMax := fun s t s' h e h1 => by
     rw [rn_ret h e] at h1
     by_cases hf : (VG.Proof.MlDsa.Sample.rnFold [] (G (bytesAt s.mem (s.gpr .rdi) 34) 1008)).length = 256
@@ -180,17 +188,17 @@ def prims_okWith (v : ArithImpl) : PrimsOk (primsWith v.code) signStack where
     have := v.ok.expandMask4.depth
     show 8 * (v.code.expandMask4.depth + 1) ≤ signStack
     unfold signStack; omega⟩
-  rej4Ret := fun s₁ s₂ t₁ t₂ s₁' s₂' ⟨h₁, h₂, hp⟩ e₁ e₂ =>
+  rej4Ret := by exact (fun s₁ s₂ t₁ t₂ s₁' s₂' ⟨h₁, h₂, hp⟩ e₁ e₂ =>
     ⟨v.ok.rej4.ver.2.1 s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hp e₁ e₂,
       show _ = _ by
         rw [v.ok.rej4.ret _ _ _ h₁ e₁, v.ok.rej4.ret _ _ _ h₂ e₂]
-        exact Proof.MlDsa.X86_64.Rej4.rej4Res_congr (Proof.MlDsa.X86_64.Rej4.r4_pub s₁ s₂ hp)⟩
+        exact Proof.MlDsa.X86_64.Rej4.rej4Res_congr (Proof.MlDsa.X86_64.Rej4.r4_pub s₁ s₂ hp)⟩)
   rej4Max := fun s t s' h e h1 k hk => by
     rw [v.ok.rej4.ret _ _ _ h e] at h1
     exact Proof.MlDsa.X86_64.Rej4.rej4Res_max h1 hk (by decide)
-  ballRet := fun s₁ s₂ t₁ t₂ s₁' s₂' ⟨h₁, h₂, hp⟩ e₁ e₂ =>
+  ballRet := by exact (fun s₁ s₂ t₁ t₂ s₁' s₂' ⟨h₁, h₂, hp⟩ e₁ e₂ =>
     ⟨Proof.MlDsa.X86_64.Sample.sampleInBall_verified.2.1 s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hp e₁ e₂,
-      show _ = _ by rw [sb_ret h₁ e₁, sb_ret h₂ e₂, (sb_pub s₁ s₂ hp).1, (sb_pub s₁ s₂ hp).2]⟩
+      show _ = _ by rw [sb_ret h₁ e₁, sb_ret h₂ e₂, (sb_pub s₁ s₂ hp).1, (sb_pub s₁ s₂ hp).2]⟩)
   ballMax := fun s t s' h e h1 => by
     rw [sb_ret h e] at h1
     by_cases hf : (VG.Proof.MlDsa.Sample.ballFold (VG.Proof.MlDsa.X86_64.Sample.tauOf s)

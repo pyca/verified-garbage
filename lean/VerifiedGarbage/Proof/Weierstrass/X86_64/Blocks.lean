@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Weierstrass.X86_64.Fprog
-import VerifiedGarbage.Proof.Framework.X86_64.CallInline
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.Fprog
+public import VerifiedGarbage.Proof.Framework.X86_64.CallInline
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Short Weierstrass curves on x86-64: code as a sequence of blocks
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.Framework.X86_64.CallInline
 per field operation) runs as `fprog` for a modulus whose products are not
 calls (`fprogB_wp`), and `fprog_ok` holds for it.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.X86_64
 

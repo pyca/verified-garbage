@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.RsaOaep.AArch64.Label
-import VerifiedGarbage.Proof.RsaOaep.AArch64.TaintImm
-import VerifiedGarbage.Proof.Framework.AArch64.RelCT
-import VerifiedGarbage.Proof.Framework.AArch64.Taint
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
+module
+
+public import VerifiedGarbage.Proof.RsaOaep.AArch64.Label
+public import VerifiedGarbage.Proof.RsaOaep.AArch64.TaintImm
+public import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+public import VerifiedGarbage.Proof.Framework.AArch64.Taint
+public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-OAEP on AArch64: relating two runs of the pieces
@@ -17,6 +23,8 @@ there (`lr_seq_tr`), the registers its second part dereferences fixed by
 its first part in both runs. A call of the streaming hash functions is the
 same call in both runs (`lr_init`, `lr_upd`, `lr_updExt`, `lr_fin`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaOaep.AArch64
 

@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Rsa.AArch64.CvMain
-import VerifiedGarbage.Proof.Rsa.AArch64.CvFail
-import VerifiedGarbage.Proof.Bignum.AArch64.HdrPairs
-import VerifiedGarbage.Proof.Bignum.AArch64.PcCode
+module
+
+public import VerifiedGarbage.Proof.Rsa.AArch64.CvMain
+public import VerifiedGarbage.Proof.Rsa.AArch64.CvFail
+public import VerifiedGarbage.Proof.Bignum.AArch64.HdrPairs
+public import VerifiedGarbage.Proof.Bignum.AArch64.PcCode
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_crt_values` on AArch64: correctness
@@ -10,6 +16,8 @@ import VerifiedGarbage.Proof.Bignum.AArch64.PcCode
 inputs (`cvCode_correct`), against `cvA`, which states the shared
 contract's precondition on the registers and the stack.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.AArch64
 

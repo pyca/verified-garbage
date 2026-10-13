@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.ChaCha20.AArch64.Stream.Init
+module
+
+public import VerifiedGarbage.Proof.ChaCha20.AArch64.Stream.Init
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Streaming ChaCha20 on AArch64: XORing bytes
@@ -7,6 +13,8 @@ Untrusted: everything here is checked by Lean. `xorBytes` XORs the `x2`
 bytes at `x1` into those at `x22`, one at a time, advancing both and
 counting them off `x2` and `x23`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.ChaCha20.AArch64.Stream
 

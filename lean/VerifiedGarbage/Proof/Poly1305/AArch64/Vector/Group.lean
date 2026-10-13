@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Poly1305.AArch64.Vector.Split
-import VerifiedGarbage.Proof.Poly1305.AArch64.Vector.Macs
-import VerifiedGarbage.Proof.Poly1305.Pair
+module
+
+public import VerifiedGarbage.Proof.Poly1305.AArch64.Vector.Split
+public import VerifiedGarbage.Proof.Poly1305.AArch64.Vector.Macs
+public import VerifiedGarbage.Proof.Poly1305.Pair
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Poly1305 on AArch64 in AdvSIMD: a group of four blocks
@@ -10,6 +16,8 @@ of the accumulator the carried sum of the products of `(H + m_e)` and of
 `m_(2+e)` by the multipliers in words `e` and `2 + e` of `R` (and `5 R` in
 `S`): `(A + m₀) ρ₀ + m₂ ρ₂` and `(B + m₁) ρ₁ + m₃ ρ₃`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Poly1305.AArch64.Vector
 

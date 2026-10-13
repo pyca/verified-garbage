@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Ed25519.X86.WindowTables
-import VerifiedGarbage.Proof.Ed25519.X86.VerifyContract
-import VerifiedGarbage.Proof.Ed25519.X86.InputSlice
-import VerifiedGarbage.Proof.Ed25519.WindowNibble
+module
+
+public import VerifiedGarbage.Proof.Ed25519.X86.WindowTables
+public import VerifiedGarbage.Proof.Ed25519.X86.VerifyContract
+public import VerifiedGarbage.Proof.Ed25519.X86.InputSlice
+public import VerifiedGarbage.Proof.Ed25519.WindowNibble
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Verification's windows
@@ -11,6 +17,8 @@ digit of a scalar from the inputs (its nibble `esi`), and adds the digit's
 entry of a table, unless the digit is zero. The sum represents a
 multiple of `A` plus a multiple of `-B` throughout (`Rep`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed25519.X86
 

@@ -1,7 +1,16 @@
-import VerifiedGarbage.Proof.Ed25519.AArch64.Ops
-import VerifiedGarbage.Proof.Ed25519.Canonical64
+module
+
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Ops
+public import VerifiedGarbage.Proof.Ed25519.Canonical64
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Full reduction of four limbs to the canonical residue. -/
+
+@[expose] public section
+
 namespace VG.Proof.Ed25519.AArch64
 variable {large : Bool}
 

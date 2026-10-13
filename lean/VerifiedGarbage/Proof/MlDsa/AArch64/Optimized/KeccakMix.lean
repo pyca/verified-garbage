@@ -1,6 +1,17 @@
-import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.KeccakMix
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.RoundLoop
-import VerifiedGarbage.Proof.Framework.AArch64.Taint
+module
+
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.KeccakMix
+meta import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.KeccakMix
+public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.RoundLoop
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Neon.RoundLoop
+public import VerifiedGarbage.Proof.Framework.AArch64.Taint
+meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Optimized.KeccakMix
 open VG VG.AArch64

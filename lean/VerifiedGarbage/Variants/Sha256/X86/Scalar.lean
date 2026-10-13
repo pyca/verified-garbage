@@ -1,6 +1,11 @@
-import VerifiedGarbage.Proof.Sha256.X86.Variants.Interface
-import VerifiedGarbage.Proof.Sha256.X86.Stream.Digest
-import VerifiedGarbage.Proof.Framework.X86.Lit
+module
+
+public import VerifiedGarbage.Proof.Sha256.X86.Variants.Interface
+meta import VerifiedGarbage.Proof.Sha256.X86.Variants.Interface
+public import VerifiedGarbage.Proof.Sha256.X86.Stream.Digest
+meta import VerifiedGarbage.Proof.Sha256.X86.Stream.Digest
+public import VerifiedGarbage.Proof.Framework.X86.Lit
+meta import VerifiedGarbage.Proof.Framework.X86.Lit
 
 /-!
 # SHA-256 on x86: the scalar compression function
@@ -10,6 +15,9 @@ the baseline ISA, the streaming `update` and `finalize` made with it, which
 HMAC's and PBKDF2's functions call (`Generic/Sha256/X86/`), and SHA-224's
 `finalize`.
 -/
+
+@[expose] public section
+
 namespace VG.Variants.Sha256.X86.Scalar
 
 open VG.X86

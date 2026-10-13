@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesGcm.AArch64.Callee
-import VerifiedGarbage.Proof.Gcm.AArch64.Pmull.Ghash
+module
+
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Callee
+public import VerifiedGarbage.Proof.Gcm.AArch64.Pmull.Ghash
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on AArch64: `vg_ghash_aes`
@@ -9,6 +15,8 @@ Untrusted: everything here is checked by Lean. The `GhashImpl` of
 need it, and its proof imports the algebra of `Proof/Gcm/Poly.lean`, which
 the rest of the AES-GCM proofs then need not import.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesGcm.AArch64
 

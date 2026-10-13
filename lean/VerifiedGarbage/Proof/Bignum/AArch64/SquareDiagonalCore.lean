@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.Bignum.AArch64.SquareDiagonal
+module
+
+public import VerifiedGarbage.Proof.Bignum.AArch64.SquareDiagonal
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Register arithmetic of one doubled cross-product pair plus a diagonal. -/
+
+@[expose] public section
+
 namespace VG.Proof.Bignum.AArch64.Square
 open VG VG.AArch64 VG.Impl.Bignum.AArch64 VG.Proof.Bignum
 open VG.Proof.Bignum.AArch64

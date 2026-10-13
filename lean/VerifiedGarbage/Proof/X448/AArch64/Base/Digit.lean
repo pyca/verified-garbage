@@ -1,7 +1,13 @@
-import VerifiedGarbage.Impl.X448.AArch64.Base
-import VerifiedGarbage.Proof.X448.AArch64.BitStep
-import VerifiedGarbage.Proof.X448.BaseDigits
-import VerifiedGarbage.Proof.Curve448.AArch64.Swap
+module
+
+public import VerifiedGarbage.Impl.X448.AArch64.Base
+public import VerifiedGarbage.Proof.X448.AArch64.BitStep
+public import VerifiedGarbage.Proof.X448.BaseDigits
+public import VerifiedGarbage.Proof.Curve448.AArch64.Swap
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 of the base point on AArch64: the comb's digits and masks
@@ -13,6 +19,8 @@ Horner's rule; `magnitude` turns each into `|n - 8|`; `masks` sets the register
 for `m` to all ones exactly if the magnitude is `m`, for `m = 1 … 8`, and
 another to `1` exactly if it is `0`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448.AArch64.Base
 

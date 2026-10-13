@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.ESym
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.ESym
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSA with AVX512_IFMA on x86-64, any size: the terms of a step
@@ -16,6 +22,8 @@ shift (role `k + 1`, with the carry for role 0, and role 0's lanes moved
 down for role `R - 1`); `hT` plus the high halves of `u m` (and, for role
 `R - 1`, of `a b`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64.Ifma
 

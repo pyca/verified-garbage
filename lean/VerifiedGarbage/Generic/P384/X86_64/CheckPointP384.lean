@@ -1,6 +1,8 @@
-import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.Weierstrass.X86_64.InvInterface
-import VerifiedGarbage.Proof.Ecdh.X86_64.P384.CheckVerified
+module
+
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvInterface
+public import VerifiedGarbage.Proof.Ecdh.X86_64.P384.CheckVerified
 
 /-!
 # P-384's check of a public point on x86-64
@@ -11,6 +13,8 @@ generic file (see `TCB/Emit.lean`) over P-384's group law and inversions
 `h`, the variant `Variants/P384/X86_64/Law.lean`, whose inversions'
 soundness the proofs of the configuration take.
 -/
+
+@[expose] public section
 
 namespace VG.Generic.P384.X86_64.CheckPointP384
 

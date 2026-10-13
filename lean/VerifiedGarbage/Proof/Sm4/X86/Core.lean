@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.Sm4.X86.Round
-import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.Framework.X86.RegUpd
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Impl.Sm4.X86.Ecb
+module
+
+public import VerifiedGarbage.Proof.Sm4.X86.Round
+public import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.Framework.X86.RegUpd
+public import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Impl.Sm4.X86.Ecb
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Eight blocks of bitsliced SM4 on x86 (32-bit): the rounds
@@ -14,6 +20,8 @@ round keys `E 0 … E 31` in the scratch buffer (`KeyCtx`), the rounds are
 is that loop for either linear transformation, which the key schedule
 runs too.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sm4.X86
 

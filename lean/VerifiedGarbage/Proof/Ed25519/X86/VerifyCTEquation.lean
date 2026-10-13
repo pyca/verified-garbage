@@ -1,8 +1,19 @@
-import VerifiedGarbage.Proof.Ed25519.X86.WindowCT
-import VerifiedGarbage.Proof.Ed25519.X86.RecoverCTBlocks
-import VerifiedGarbage.Proof.Ed25519.X86.PointEqual
-import VerifiedGarbage.Proof.Ed25519.X86.VerifyPoints
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
+module
+
+public import VerifiedGarbage.Proof.Ed25519.X86.WindowCT
+meta import VerifiedGarbage.Proof.Ed25519.X86.WindowCT
+public import VerifiedGarbage.Proof.Ed25519.X86.RecoverCTBlocks
+meta import VerifiedGarbage.Proof.Ed25519.X86.RecoverCTBlocks
+public import VerifiedGarbage.Proof.Ed25519.X86.PointEqual
+meta import VerifiedGarbage.Proof.Ed25519.X86.PointEqual
+public import VerifiedGarbage.Proof.Ed25519.X86.VerifyPoints
+meta import VerifiedGarbage.Proof.Ed25519.X86.VerifyPoints
+public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Verification's equation: what its traces depend on
@@ -11,6 +22,8 @@ The windows' traces depend only on the public scalars (`windowMultiply_ct`), and
 comparison's on whether the points represented are equal (`pointEqualRep_ct`), the same in both
 runs.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed25519.X86
 

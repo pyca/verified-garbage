@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.CTExp
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.CTExp
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CTExp
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_public` on x86-64: `R² mod m` is constant time but for `m`
@@ -7,6 +14,8 @@ import VerifiedGarbage.Proof.Bignum.X86_64.CTExp
 computation of `R² mod m` (`r2_ct`), which branches on the top word of the
 public modulus.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64
 

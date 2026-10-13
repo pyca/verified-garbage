@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Rsa.X86_64.PrivCrt
+module
+
+public import VerifiedGarbage.Proof.Rsa.X86_64.PrivCrt
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_private_checked` on x86-64: the call of `vg_rsa_public_precompute`
@@ -6,6 +12,8 @@ import VerifiedGarbage.Proof.Rsa.X86_64.PrivCrt
 `r₁` kept in its slot, and `n`'s values written to the frame at `oPre`
 (`pc_stage`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.X86_64
 

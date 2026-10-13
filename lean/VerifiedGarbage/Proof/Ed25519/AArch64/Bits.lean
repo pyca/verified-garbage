@@ -1,8 +1,17 @@
-import VerifiedGarbage.Proof.Ed25519.AArch64.BitByte
-import VerifiedGarbage.Proof.Ed25519.Bytes
-import VerifiedGarbage.Proof.Ed25519.AArch64.PointPowers
+module
+
+public import VerifiedGarbage.Proof.Ed25519.AArch64.BitByte
+public import VerifiedGarbage.Proof.Ed25519.Bytes
+public import VerifiedGarbage.Proof.Ed25519.AArch64.PointPowers
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Ed25519.AArch64.BitRead`. -/
+
+@[expose] public section
+
 section
 /-! Load the next scalar byte and calculate its bit-output address. -/
 namespace VG.Proof.Ed25519.AArch64

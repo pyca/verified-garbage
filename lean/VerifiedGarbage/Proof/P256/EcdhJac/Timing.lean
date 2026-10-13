@@ -1,7 +1,19 @@
-import VerifiedGarbage.Proof.P256.EcdhJac.Lit
-import VerifiedGarbage.Proof.P256.EcdhJac.Prefix
-import VerifiedGarbage.Proof.Ecdh.AArch64.Verified
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
+module
+
+public import VerifiedGarbage.Proof.P256.EcdhJac.Lit
+meta import VerifiedGarbage.Proof.P256.EcdhJac.Lit
+public import VerifiedGarbage.Proof.P256.EcdhJac.Prefix
+meta import VerifiedGarbage.Proof.P256.EcdhJac.Prefix
+public import VerifiedGarbage.Proof.Ecdh.AArch64.Verified
+meta import VerifiedGarbage.Proof.Ecdh.AArch64.Verified
+public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.P256.EcdhJac
 open VG VG.AArch64 VG.Proof.Ecdh.AArch64 VG.Proof.Ecdsa.AArch64

@@ -1,9 +1,15 @@
-import VerifiedGarbage.Impl.MlDsa.AArch64.Arith.Common
-import VerifiedGarbage.Proof.MlKem.AArch64.Common
-import VerifiedGarbage.Proof.MlKem.AArch64.Reduce
-import VerifiedGarbage.Proof.MlDsa.Arith.Mem
-import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import VerifiedGarbage.Proof.MlDsa.Round.Mem
+module
+
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Arith.Common
+public import VerifiedGarbage.Proof.MlKem.AArch64.Common
+public import VerifiedGarbage.Proof.MlKem.AArch64.Reduce
+public import VerifiedGarbage.Proof.MlDsa.Arith.Mem
+public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+public import VerifiedGarbage.Proof.MlDsa.Round.Mem
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on AArch64: symbolic execution, and reduction modulo `q`
@@ -25,6 +31,8 @@ ISA, not ML-KEM.
   for `x < q²` (`redX_toNat`): a Barrett reduction with 64-bit products
   (`barrett64_bounds`), then `csub`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Arith
 

@@ -1,5 +1,11 @@
-import VerifiedGarbage.Spec.RsaPss
-import VerifiedGarbage.Proof.RsaPss.MgfBytes
+module
+
+public import VerifiedGarbage.Spec.RsaPss
+public import VerifiedGarbage.Proof.RsaPss.MgfBytes
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSASSA-PSS: the encoding's parameters from the modulus' first octet
@@ -10,6 +16,8 @@ For a modulus `n₀ ‖ rest` with `n₀ ≠ 0`, `emBits = 8 |rest| + ⌊log₂ 
 and `2^⌊log₂ n₀⌋ - 1` otherwise (`mask_eq`): what the implementations
 compute from `n₀` alone.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPss
 

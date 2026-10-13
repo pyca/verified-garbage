@@ -1,10 +1,23 @@
-import VerifiedGarbage.Proof.Ed25519.X86.RecoverCTLit
-import VerifiedGarbage.Proof.Ed25519.X86.PointCTSupport
-import VerifiedGarbage.Proof.Ed25519.X86.RecoverPoint
-import VerifiedGarbage.Proof.Ed25519.X86.PointCTBlocks
-import VerifiedGarbage.Proof.X25519.X86.Field32.Pow250Sum
+module
+
+public import VerifiedGarbage.Proof.Ed25519.X86.RecoverCTLit
+meta import VerifiedGarbage.Proof.Ed25519.X86.RecoverCTLit
+public import VerifiedGarbage.Proof.Ed25519.X86.PointCTSupport
+meta import VerifiedGarbage.Proof.Ed25519.X86.PointCTSupport
+public import VerifiedGarbage.Proof.Ed25519.X86.RecoverPoint
+meta import VerifiedGarbage.Proof.Ed25519.X86.RecoverPoint
+public import VerifiedGarbage.Proof.Ed25519.X86.PointCTBlocks
+meta import VerifiedGarbage.Proof.Ed25519.X86.PointCTBlocks
+public import VerifiedGarbage.Proof.X25519.X86.Field32.Pow250Sum
+meta import VerifiedGarbage.Proof.X25519.X86.Field32.Pow250Sum
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Fixed-trace arithmetic blocks used in point recovery. -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed25519.X86
 

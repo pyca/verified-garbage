@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.RsaPss.AArch64.Select
-import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Hash
-import VerifiedGarbage.Proof.Pbkdf2.AArch64.Compress
+module
+
+public import VerifiedGarbage.Proof.RsaPss.AArch64.Select
+public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Hash
+public import VerifiedGarbage.Proof.Pbkdf2.AArch64.Compress
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSASSA-PSS on AArch64: compressing every block
@@ -10,6 +16,8 @@ import VerifiedGarbage.Proof.Pbkdf2.AArch64.Compress
 `fb = ⌊(ℓ + L) / B⌋` (`compLoop_ok`): the hash value at `oSel` is then that
 of the first `fb + 1` blocks.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPss.AArch64
 

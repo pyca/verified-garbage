@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.X448.Arm.Call
-import VerifiedGarbage.Spec.X448.Field16
+module
+
+public import VerifiedGarbage.Proof.X448.Arm.Call
+public import VerifiedGarbage.Spec.X448.Field16
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 on ARMv7: the field functions' contracts
@@ -10,6 +16,8 @@ functions meet them (`mul_arm`, …): the specification's limbs and values are
 the proofs' (`limbAt_eq`, `valAt_eq`), and what the functions keep is what
 the contracts say (`keeps_of_field`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448.Arm
 

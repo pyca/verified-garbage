@@ -121,7 +121,6 @@ theorem absorb_correct (a : State) (hp : Proof.Sha3.absorbAArch64.pre a) :
       abiPreserved a q ∧ Proof.Sha3.absorbAArch64.post a q :=
   Sha3.Vector.Resident.absorb_correct VectorSlots.backend _ Resident.functional a hp
 
-#assert_standard_axioms absorb_correct
 
 theorem absorbTaint : ∃ h, (VectorTaint.taint.check (VectorTaint.ofRegs [.x0, .x1, .x2, .x3, .x4, .x5])
     (Impl.Sha3.AArch64.Stream.absorbWith callee) h).isSome = true :=

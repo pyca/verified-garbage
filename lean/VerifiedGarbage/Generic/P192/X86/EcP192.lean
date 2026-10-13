@@ -1,8 +1,10 @@
-import VerifiedGarbage.TCB.X86.Target
-import VerifiedGarbage.Proof.Weierstrass.Law
-import VerifiedGarbage.Impl.EcKey.P192.X86
-import VerifiedGarbage.Proof.EcKey.X86.P192.Verified
-import VerifiedGarbage.Proof.EcKey.X86.P192.Lit
+module
+
+public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Proof.Weierstrass.Law
+public import VerifiedGarbage.Impl.EcKey.P192.X86
+public import VerifiedGarbage.Proof.EcKey.X86.P192.Verified
+public import VerifiedGarbage.Proof.EcKey.X86.P192.Lit
 
 /-!
 # P-192 public keys (FIPS 186-5 §A.2) on x86 (32-bit)
@@ -10,6 +12,8 @@ import VerifiedGarbage.Proof.EcKey.X86.P192.Lit
 A generic file (see `TCB/Emit.lean`) over P-192's group law `h`, the variant
 `Variants/P192/X86/Law.lean`.
 -/
+
+@[expose] public section
 
 namespace VG.Generic.P192.X86.EcP192
 

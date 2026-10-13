@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ForwardOk
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ForwardOk
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! `foldMoves` keeps every word a block leaves in memory: dropping a copy
 `orr d a a` whose register `d` the rest of the block does not read before
@@ -6,6 +12,8 @@ writing it, and reading `a` instead of `d` in the next instruction, changes
 only the dead register `d`. A step needs agreement only on the registers its
 instruction reads (`readRegs`), and after it the two environments agree on
 every register that is read later before it is written. -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.AArch64.Forward
 open VG VG.AArch64 VG.Impl.Weierstrass.AArch64.Forward

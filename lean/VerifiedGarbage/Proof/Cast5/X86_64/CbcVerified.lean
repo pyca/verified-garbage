@@ -1,11 +1,25 @@
-import VerifiedGarbage.Proof.Cast5.X86_64.ModeCore
-import VerifiedGarbage.Proof.Cast5.X86_64.ModesLit
-import VerifiedGarbage.Proof.Cast5.X86_64.EcbVerified
-import VerifiedGarbage.Proof.Cast5.ModeScratch
-import VerifiedGarbage.Proof.Modes.X86_64.CbcDecrypt
-import VerifiedGarbage.Proof.Modes.X86_64.CbcEncrypt
-import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
-import VerifiedGarbage.Proof.Framework.X86_64.StackScratchConsts
+module
+
+public import VerifiedGarbage.Proof.Cast5.X86_64.ModeCore
+meta import VerifiedGarbage.Proof.Cast5.X86_64.ModeCore
+public import VerifiedGarbage.Proof.Cast5.X86_64.ModesLit
+meta import VerifiedGarbage.Proof.Cast5.X86_64.ModesLit
+public import VerifiedGarbage.Proof.Cast5.X86_64.EcbVerified
+meta import VerifiedGarbage.Proof.Cast5.X86_64.EcbVerified
+public import VerifiedGarbage.Proof.Cast5.ModeScratch
+meta import VerifiedGarbage.Proof.Cast5.ModeScratch
+public import VerifiedGarbage.Proof.Modes.X86_64.CbcDecrypt
+meta import VerifiedGarbage.Proof.Modes.X86_64.CbcDecrypt
+public import VerifiedGarbage.Proof.Modes.X86_64.CbcEncrypt
+meta import VerifiedGarbage.Proof.Modes.X86_64.CbcEncrypt
+public import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
+meta import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
+public import VerifiedGarbage.Proof.Framework.X86_64.StackScratchConsts
+meta import VerifiedGarbage.Proof.Framework.X86_64.StackScratchConsts
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # CAST5-CBC on x86-64 meets its contracts
@@ -22,6 +36,8 @@ from them; the subkeys, the chaining value and the data are secret.
 space on the stack, zeroed on return: 240 bytes, the 29 words of the scratch
 buffer and 8 more.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Cast5.X86_64
 

@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.TripleDes.Arm.Frame
-import VerifiedGarbage.Proof.TripleDes.CbcScratch
-import VerifiedGarbage.Proof.Modes.Arm.Core
-import VerifiedGarbage.Impl.TripleDes.Arm.Cbc
+module
+
+public import VerifiedGarbage.Proof.TripleDes.Arm.Frame
+public import VerifiedGarbage.Proof.TripleDes.CbcScratch
+public import VerifiedGarbage.Proof.Modes.Arm.Core
+public import VerifiedGarbage.Impl.TripleDes.Arm.Cbc
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Triple DES's ECB functions on ARMv7 as the modes' core
@@ -12,6 +18,8 @@ contract (`Spec.TripleDes.ecbContract`, with 1024 bytes of stack) and its
 proof (`ecb_framed`): the schedule is the 384-byte schedule, and the cipher
 on a block is `Spec.TripleDes.cipher` or `Spec.TripleDes.invCipher` of it.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.TripleDes.Arm
 

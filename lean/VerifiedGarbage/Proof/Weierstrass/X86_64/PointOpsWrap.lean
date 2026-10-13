@@ -1,9 +1,21 @@
-import VerifiedGarbage.Impl.Weierstrass.X86_64.PointOps
-import VerifiedGarbage.Proof.X25519.X86_64.Step
-import VerifiedGarbage.Proof.Framework.X86_64.KeepReg
-import VerifiedGarbage.Proof.Weierstrass.X86_64.JacState
-import VerifiedGarbage.Proof.Framework.X86_64.Syms
-import VerifiedGarbage.Proof.Weierstrass.X86_64.FieldTiming
+module
+
+public import VerifiedGarbage.Impl.Weierstrass.X86_64.PointOps
+meta import VerifiedGarbage.Impl.Weierstrass.X86_64.PointOps
+public import VerifiedGarbage.Proof.X25519.X86_64.Step
+meta import VerifiedGarbage.Proof.X25519.X86_64.Step
+public import VerifiedGarbage.Proof.Framework.X86_64.KeepReg
+meta import VerifiedGarbage.Proof.Framework.X86_64.KeepReg
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.JacState
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.JacState
+public import VerifiedGarbage.Proof.Framework.X86_64.Syms
+meta import VerifiedGarbage.Proof.Framework.X86_64.Syms
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.FieldTiming
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.FieldTiming
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Point operations as functions on x86-64: the registers they keep
@@ -14,6 +26,8 @@ into `xmm0`–`xmm4` and changes nothing else that the proofs follow
 (`restores_ok`): a run of `wrap d` is a run of `d` from a state that keeps
 every register and the memory (`wrap_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.X86_64.PointOps
 

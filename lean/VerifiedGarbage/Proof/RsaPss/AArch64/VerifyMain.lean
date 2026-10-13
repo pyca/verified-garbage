@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyCall
+module
+
+public import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyCall
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSASSA-PSS verification on AArch64: after the checks
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyCall
 arguments and the call, then `EM` checked (`b1_ok`, `b2_ok`): `x0` is 1
 exactly when the encoding in RSAVP1's result is valid (`vlogic`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPss.AArch64.Vfy
 

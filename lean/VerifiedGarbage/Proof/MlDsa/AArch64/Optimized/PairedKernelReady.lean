@@ -1,14 +1,22 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFinalLoop
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedRestoreLoop
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductInit
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedCallFrame
-import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Paired
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedMiddle
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFirstLoop
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedLowLoop
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFinalLoop
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedRestoreLoop
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductInit
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedCallFrame
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Paired
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedMiddle
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFirstLoop
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedLowLoop
+public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## From `PairedFinalReturn.lean` -/
+
+@[expose] public section
 
 section
 

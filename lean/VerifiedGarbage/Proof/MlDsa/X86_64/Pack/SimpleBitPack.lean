@@ -1,8 +1,19 @@
-import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
-import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.Loop
-import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.Contracts
-import VerifiedGarbage.Proof.Framework.X86_64.Taint
-import VerifiedGarbage.Proof.Framework.Contract
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
+meta import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.Loop
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.Loop
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.Contracts
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.Contracts
+public import VerifiedGarbage.Proof.Framework.X86_64.Taint
+meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on x86-64: `vg_mldsa_simple_bit_pack`
@@ -10,6 +21,8 @@ import VerifiedGarbage.Proof.Framework.Contract
 The loop is proven once for every width (`packLoop_ok`), and the function by
 its three cases.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86_64.Pack
 

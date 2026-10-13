@@ -1,6 +1,12 @@
-import VerifiedGarbage.Impl.Bignum.X86_64.MontFnAdx
-import VerifiedGarbage.Proof.Bignum.X86_64.MontFnBase
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareBackend
+module
+
+public import VerifiedGarbage.Impl.Bignum.X86_64.MontFnAdx
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontFnBase
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareBackend
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_mont_mul_adx`: correctness
@@ -15,6 +21,8 @@ or, for `w` not a multiple of 8, `montMul` (`mmTail_ok`); the tail writes the
 header words back, so that only `aAcc`, `aTmp` and `o` change, and restores
 the callee-saved registers (`unsaves_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64
 

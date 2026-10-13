@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.MlKem.X86.KeyGenPrf
-import VerifiedGarbage.Proof.MlKem.X86.TopSeq2
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86.KeyGenPrf
+public import VerifiedGarbage.Proof.MlKem.X86.TopSeq2
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86 (32-bit): `t̂` in key generation
@@ -14,6 +20,8 @@ masked by the value `vg_mlkem_sample_ntt` returned, which is ANDed into
 of `ek_PKE` for the matrix `aM` they sampled; if 0, one of the `k²` samples
 failed within `minIterations` iterations.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.X86.KeyGen
 

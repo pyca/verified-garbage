@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Ecdh.X86_64.Validate
+module
+
+public import VerifiedGarbage.Proof.Ecdh.X86_64.Validate
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDH and verification on x86-64: the check of the public point
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.Ecdh.X86_64.Validate
 `vg_<curve>_check_point`, between copying the callee-saved registers into
 `xmm0`–`xmm5` and back (`check_ok`, of the code with its calls inlined).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdh.X86_64
 

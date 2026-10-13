@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.SeedsCT
-import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Mask
+module
+
+public import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.SeedsCT
+public import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Mask
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA key generation on 32-bit ARM: the samplers
@@ -10,6 +16,8 @@ The primitives key generation calls, verified with at most `S` bytes of stack
 (`KSamp`), each polynomial is reduced (and those of `s₁ ‖ s₂` small), and
 `r11` is what `Good` says.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Arm.KeyGen
 

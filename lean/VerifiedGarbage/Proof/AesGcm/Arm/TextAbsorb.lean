@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesGcm.Arm.Args
+module
+
+public import VerifiedGarbage.Proof.AesGcm.Arm.Args
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on ARMv7: absorbing the text (`textAbsorb`)
@@ -8,6 +14,8 @@ bytes at `data` into GHASH as text: before the first text (`text_len` 0) it
 pads the additional data first (`firstFlush`), and it does nothing for no
 bytes (`textAbsorb_ok`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

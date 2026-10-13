@@ -1,10 +1,19 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8ProductStep
-import VerifiedGarbage.Impl.Bignum.X86_64.AdxRect8
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxDualAddInput
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxFused
-import VerifiedGarbage.Proof.Bignum.X86_64.OpAt
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8ProductStep
+public import VerifiedGarbage.Impl.Bignum.X86_64.AdxRect8
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxDualAddInput
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxFused
+public import VerifiedGarbage.Proof.Bignum.X86_64.OpAt
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## AdxRect8Product -/
+
+@[expose] public section
+
 section
 
 /-! Register products with either ordering of the disjoint input and output buffers. -/

@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Weierstrass.X86_64.InvWords
-import VerifiedGarbage.Proof.Weierstrass.X86_64.Copy
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvWords
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.Copy
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Inversion by divsteps on x86-64: the reduction of the coefficients
@@ -8,6 +14,8 @@ The reduction `mredC` of a signed number of `n + 1` words to `Divstep.mred`
 (`mredC_ok`): `k = t₀ m`, `[t]` sign-extended and plus `k p`, then its words
 `1 … n + 1` brought into `[0, p)` by carry chains with `p` under masks.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.X86_64
 

@@ -1,22 +1,26 @@
-import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.MlKem.X86_64.AddSub
-import VerifiedGarbage.Proof.MlKem.X86_64.Encode12
-import VerifiedGarbage.Proof.MlKem.X86_64.Decode12
-import VerifiedGarbage.Proof.MlKem.X86_64.Decode12Avx2
-import VerifiedGarbage.Proof.MlKem.X86_64.Cbd
-import VerifiedGarbage.Proof.MlKem.X86_64.CompressEncode
-import VerifiedGarbage.Proof.MlKem.X86_64.DecodeDecompress
-import VerifiedGarbage.Proof.MlKem.X86_64.CheckEk
-import VerifiedGarbage.Proof.MlKem.X86_64.Mul
-import VerifiedGarbage.Proof.MlKem.X86_64.MulAvx2
-import VerifiedGarbage.Proof.MlKem.X86_64.NttAvx2
-import VerifiedGarbage.Proof.MlKem.X86_64.YAddSub
-import VerifiedGarbage.Proof.MlKem.X86_64.DecMulV
-import VerifiedGarbage.Proof.MlKem.X86_64.EncMulV
-import VerifiedGarbage.Proof.MlKem.X86_64.SampleCT
-import VerifiedGarbage.Proof.MlKem.X86_64.Sample4Impl
+module
+
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.MlKem.X86_64.AddSub
+public import VerifiedGarbage.Proof.MlKem.X86_64.Encode12
+public import VerifiedGarbage.Proof.MlKem.X86_64.Decode12
+public import VerifiedGarbage.Proof.MlKem.X86_64.Decode12Avx2
+public import VerifiedGarbage.Proof.MlKem.X86_64.Cbd
+public import VerifiedGarbage.Proof.MlKem.X86_64.CompressEncode
+public import VerifiedGarbage.Proof.MlKem.X86_64.DecodeDecompress
+public import VerifiedGarbage.Proof.MlKem.X86_64.CheckEk
+public import VerifiedGarbage.Proof.MlKem.X86_64.Mul
+public import VerifiedGarbage.Proof.MlKem.X86_64.MulAvx2
+public import VerifiedGarbage.Proof.MlKem.X86_64.NttAvx2
+public import VerifiedGarbage.Proof.MlKem.X86_64.YAddSub
+public import VerifiedGarbage.Proof.MlKem.X86_64.DecMulV
+public import VerifiedGarbage.Proof.MlKem.X86_64.EncMulV
+public import VerifiedGarbage.Proof.MlKem.X86_64.SampleCT
+public import VerifiedGarbage.Proof.MlKem.X86_64.Sample4Impl
 
 /-! # ML-KEM (FIPS 203) on x86-64: the polynomial primitives -/
+
+@[expose] public section
 
 namespace VG.Artifacts.MlKem.X86_64
 
@@ -81,7 +85,7 @@ def artifacts : List Artifact := [
     contract := Spec.MlKem.nttContract X86_64.abi
     verified := Proof.MlKem.X86_64.ntt_verified
     spSafe := Code.all_of_allInstrs (by lit_decide)
-    ofSig := ⟨_, _, _, by unfold Spec.MlKem.nttContract Spec.MlKem.inPlaceContract; rfl⟩ },
+    ofSig := by exact (⟨_, _, _, by unfold Spec.MlKem.nttContract Spec.MlKem.inPlaceContract; rfl⟩) },
   { Spec.MlKem.nttInvApi with
     target := X86_64.target
     doc := Spec.MlKem.nttInvApi.doc
@@ -92,7 +96,7 @@ def artifacts : List Artifact := [
     contract := Spec.MlKem.nttInvContract X86_64.abi
     verified := Proof.MlKem.X86_64.nttInv_verified
     spSafe := Code.all_of_allInstrs (by lit_decide)
-    ofSig := ⟨_, _, _, by unfold Spec.MlKem.nttInvContract Spec.MlKem.inPlaceContract; rfl⟩ },
+    ofSig := by exact (⟨_, _, _, by unfold Spec.MlKem.nttInvContract Spec.MlKem.inPlaceContract; rfl⟩) },
   { Spec.MlKem.nttApi with
     name := Spec.MlKem.nttApi.name ++ "_avx2"
     target := X86_64.target
@@ -105,7 +109,7 @@ def artifacts : List Artifact := [
     verified := Proof.MlKem.X86_64.nttY_verified
     spSafe := Code.all_of_allInstrs (by decide +kernel)
     features := ["avx", "avx2"]
-    ofSig := ⟨_, _, _, by unfold Spec.MlKem.nttContract Spec.MlKem.inPlaceContract; rfl⟩ },
+    ofSig := by exact (⟨_, _, _, by unfold Spec.MlKem.nttContract Spec.MlKem.inPlaceContract; rfl⟩) },
   { Spec.MlKem.addApi with
     target := X86_64.target
     doc := Spec.MlKem.addApi.doc

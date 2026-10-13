@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.MlDsa.Arm.Sample.Ball
+module
+
+public import VerifiedGarbage.Proof.MlDsa.Arm.Sample.Ball
+meta import VerifiedGarbage.Proof.MlDsa.Arm.Sample.Ball
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on 32-bit ARM: `vg_mldsa_sample_in_ball`, constant time but for `c̃`, and `Verified`
@@ -13,6 +20,8 @@ with the same `i`, sign bits and byte `j` (being those of the same output), so
 each branch goes the same way, and each piece between the branches is constant
 time in registers that hold the same values in both runs.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Arm.Sample.Ball
 

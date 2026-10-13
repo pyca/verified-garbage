@@ -1,9 +1,22 @@
-import VerifiedGarbage.Proof.Dsa.X86_64.ReduceReadCT
-import VerifiedGarbage.Proof.Dsa.X86_64.ReduceStepCT
-import VerifiedGarbage.Proof.Dsa.X86_64.ReduceByte
-import VerifiedGarbage.Proof.Dsa.X86_64.PowerCT
+module
+
+public import VerifiedGarbage.Proof.Dsa.X86_64.ReduceReadCT
+meta import VerifiedGarbage.Proof.Dsa.X86_64.ReduceReadCT
+public import VerifiedGarbage.Proof.Dsa.X86_64.ReduceStepCT
+meta import VerifiedGarbage.Proof.Dsa.X86_64.ReduceStepCT
+public import VerifiedGarbage.Proof.Dsa.X86_64.ReduceByte
+meta import VerifiedGarbage.Proof.Dsa.X86_64.ReduceByte
+public import VerifiedGarbage.Proof.Dsa.X86_64.PowerCT
+meta import VerifiedGarbage.Proof.Dsa.X86_64.PowerCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # Constant time of one complete streaming reduction byte -/
+
+@[expose] public section
+
 namespace VG.Proof.Dsa.X86_64
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public
 open VG.Impl.Rsa.X86_64 VG.Impl.Dsa.X86_64

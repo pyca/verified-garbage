@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Rsa.X86_64.RpIn
+module
+
+public import VerifiedGarbage.Proof.Rsa.X86_64.RpIn
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_recover_primes` on x86-64: the factors
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.Rsa.X86_64.RpIn
 (`finC_ok`), both written masked by whether a candidate found `y`, and the
 mask's low bit returned (`rpStores_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.X86_64
 

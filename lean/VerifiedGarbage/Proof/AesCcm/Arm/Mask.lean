@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesCcm.Arm.Seal
+module
+
+public import VerifiedGarbage.Proof.AesCcm.Arm.Seal
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CCM on ARMv7: masking the data (`mask`)
@@ -7,6 +13,8 @@ Untrusted: everything here is checked by Lean. `mask` ANDs every byte of
 the data with `0 − ok`, for `ok ∈ {0, 1}` in `r7`: the data is kept if
 `ok = 1` and zeroed if `ok = 0` (`mask_ok`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

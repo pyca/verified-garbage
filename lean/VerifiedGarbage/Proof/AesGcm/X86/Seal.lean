@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.AesGcm.X86.OneTag
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86.OneTag
+meta import VerifiedGarbage.Proof.AesGcm.X86.OneTag
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on x86: `vg_aes_gcm_seal`
@@ -9,6 +16,8 @@ Untrusted: everything here is checked by Lean. The entry (`oneEntry_pc`),
 (`tagOut_ok`), and the exit, as one `Pc` (`seal_pc`): correct
 (`seal_correct`) and constant time (`seal_ct`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

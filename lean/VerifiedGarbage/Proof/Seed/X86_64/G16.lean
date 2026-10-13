@@ -1,7 +1,13 @@
-import VerifiedGarbage.Impl.Seed.X86_64.G16
-import VerifiedGarbage.Proof.Seed.G16
-import VerifiedGarbage.Proof.Framework.X86_64.Linear
-import VerifiedGarbage.Proof.Aes.X86_64.Encrypt
+module
+
+public import VerifiedGarbage.Impl.Seed.X86_64.G16
+public import VerifiedGarbage.Proof.Seed.G16
+public import VerifiedGarbage.Proof.Framework.X86_64.Linear
+public import VerifiedGarbage.Proof.Aes.X86_64.Encrypt
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `g16` on x86-64
@@ -13,6 +19,8 @@ domain (`g16In_check`, `g16Out_check`: the planes of `M`, and the words from
 the S-box's planes, as `Proof/Seed/G16.lean` states them), the S-box by
 AES's proof (`Proof.Aes.X86_64.sbox_ok`), and `g16_words` puts them together.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Seed.X86_64
 

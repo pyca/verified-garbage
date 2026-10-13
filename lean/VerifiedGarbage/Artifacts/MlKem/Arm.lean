@@ -1,19 +1,23 @@
-import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Proof.MlKem.Arm.Add
-import VerifiedGarbage.Proof.MlKem.Arm.Encode12
-import VerifiedGarbage.Proof.MlKem.Arm.Decode12
-import VerifiedGarbage.Proof.MlKem.Arm.Cbd2
-import VerifiedGarbage.Proof.MlKem.Arm.CheckEk
-import VerifiedGarbage.Proof.MlKem.Arm.CompressEncode
-import VerifiedGarbage.Proof.MlKem.Arm.Decompress
-import VerifiedGarbage.Proof.MlKem.Arm.Mul
-import VerifiedGarbage.Proof.MlKem.Arm.NttInv
-import VerifiedGarbage.Proof.MlKem.Arm.SampleCT
-import VerifiedGarbage.Proof.MlKem.Arm.KeyGenCT
-import VerifiedGarbage.Proof.MlKem.Arm.EncapsCT
-import VerifiedGarbage.Proof.MlKem.Arm.DecapsCT
+module
+
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.Proof.MlKem.Arm.Add
+public import VerifiedGarbage.Proof.MlKem.Arm.Encode12
+public import VerifiedGarbage.Proof.MlKem.Arm.Decode12
+public import VerifiedGarbage.Proof.MlKem.Arm.Cbd2
+public import VerifiedGarbage.Proof.MlKem.Arm.CheckEk
+public import VerifiedGarbage.Proof.MlKem.Arm.CompressEncode
+public import VerifiedGarbage.Proof.MlKem.Arm.Decompress
+public import VerifiedGarbage.Proof.MlKem.Arm.Mul
+public import VerifiedGarbage.Proof.MlKem.Arm.NttInv
+public import VerifiedGarbage.Proof.MlKem.Arm.SampleCT
+public import VerifiedGarbage.Proof.MlKem.Arm.KeyGenCT
+public import VerifiedGarbage.Proof.MlKem.Arm.EncapsCT
+public import VerifiedGarbage.Proof.MlKem.Arm.DecapsCT
 
 /-! # ML-KEM (FIPS 203) on 32-bit ARM -/
+
+@[expose] public section
 
 namespace VG.Artifacts.MlKem.Arm
 
@@ -35,7 +39,7 @@ def artifacts : List Artifact := [
     code := Impl.MlKem.Arm.ntt
     contract := Spec.MlKem.nttContract Arm.abi
     verified := Proof.MlKem.Arm.Ntt.verified
-    ofSig := ⟨_, _, _, by unfold Spec.MlKem.nttContract Spec.MlKem.inPlaceContract; exact rfl⟩
+    ofSig := by exact (⟨_, _, _, by unfold Spec.MlKem.nttContract Spec.MlKem.inPlaceContract; exact rfl⟩)
     spSafe := Code.all_of_forall (fun _ => rfl) _ },
   { Spec.MlKem.nttInvApi with
     target := Arm.target
@@ -44,7 +48,7 @@ def artifacts : List Artifact := [
     code := Impl.MlKem.Arm.nttInv
     contract := Spec.MlKem.nttInvContract Arm.abi
     verified := Proof.MlKem.Arm.NttInv.verified
-    ofSig := ⟨_, _, _, by unfold Spec.MlKem.nttInvContract Spec.MlKem.inPlaceContract; exact rfl⟩
+    ofSig := by exact (⟨_, _, _, by unfold Spec.MlKem.nttInvContract Spec.MlKem.inPlaceContract; exact rfl⟩)
     spSafe := Code.all_of_forall (fun _ => rfl) _ },
   { Spec.MlKem.mulApi with
     target := Arm.target

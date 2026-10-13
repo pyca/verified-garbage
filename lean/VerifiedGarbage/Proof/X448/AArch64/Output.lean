@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.X448.AArch64.Pack
+module
+
+public import VerifiedGarbage.Proof.X448.AArch64.Pack
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 on AArch64: the output buffer
@@ -6,6 +12,8 @@ import VerifiedGarbage.Proof.X448.AArch64.Pack
 Output stores cover exactly 56 bytes. The disjoint working space retains the
 source limbs and saved registers until the function restores them.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448.AArch64
 

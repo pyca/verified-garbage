@@ -1,9 +1,18 @@
-import VerifiedGarbage.Proof.Bignum.AArch64.SquareRaw
-import VerifiedGarbage.Proof.Bignum.AArch64.SquareRedc
-import VerifiedGarbage.Proof.Bignum.AArch64.SquareFinish
-import VerifiedGarbage.Proof.Bignum.AArch64.SquareLayout
+module
+
+public import VerifiedGarbage.Proof.Bignum.AArch64.SquareRaw
+public import VerifiedGarbage.Proof.Bignum.AArch64.SquareRedc
+public import VerifiedGarbage.Proof.Bignum.AArch64.SquareFinish
+public import VerifiedGarbage.Proof.Bignum.AArch64.SquareLayout
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Structural public state used by the constant-time composition. -/
+
+@[expose] public section
+
 namespace VG.Proof.Bignum.AArch64.Square
 open VG VG.AArch64 VG.Impl.Bignum VG.Impl.Bignum.AArch64 VG.Impl.Bignum.Public VG.Proof.Bignum
 open VG.Proof.Bignum.AArch64

@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.RejNtt
-import VerifiedGarbage.Proof.MlKem.AArch64.Sample
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.RejNtt
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.RejNtt
+public import VerifiedGarbage.Proof.MlKem.AArch64.Sample
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Sample
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on AArch64: `vg_mldsa_rej_ntt_poly`, constant time and verified
@@ -8,6 +16,8 @@ Two runs whose seeds and pointers agree leak the same (`RejNtt.ct`), piece by
 piece (`Rel.lean`), and the shared contract follows from `rnK`
 (`rejNTT_verified`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Sample
 

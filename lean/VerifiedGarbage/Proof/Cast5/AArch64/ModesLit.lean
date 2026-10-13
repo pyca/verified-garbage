@@ -1,7 +1,17 @@
-import VerifiedGarbage.Proof.Cast5.AArch64.Lit
-import VerifiedGarbage.Impl.Cast5.AArch64.Modes
+module
+
+public import VerifiedGarbage.Proof.Cast5.AArch64.Lit
+meta import VerifiedGarbage.Proof.Cast5.AArch64.Lit
+public import VerifiedGarbage.Impl.Cast5.AArch64.Modes
+meta import VerifiedGarbage.Impl.Cast5.AArch64.Modes
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # CAST5-CBC, -OFB and -CFB64's AArch64 code as literals, for kernel-evaluated checks -/
+
+@[expose] public section
 
 namespace VG
 

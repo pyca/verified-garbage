@@ -1,6 +1,14 @@
-import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.CommitTail
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Keep
-import VerifiedGarbage.Proof.Framework.AArch64.LaneRestore
+module
+
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.CommitTail
+public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Keep
+public import VerifiedGarbage.Proof.Framework.AArch64.LaneRestore
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Sign.CommitTail
 open VG VG.AArch64

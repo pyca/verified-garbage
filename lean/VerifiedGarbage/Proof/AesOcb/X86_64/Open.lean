@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesOcb.X86_64.Seal
-import VerifiedGarbage.Proof.AesOcb.X86_64.CmpMask
+module
+
+public import VerifiedGarbage.Proof.AesOcb.X86_64.Seal
+public import VerifiedGarbage.Proof.AesOcb.X86_64.CmpMask
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-OCB on x86-64: `vg_aes_ocb_open`
@@ -10,6 +16,8 @@ Untrusted: everything here is checked by Lean. `open` is `front`: `entry`,
 (`recv`), its comparison with the computed tag (`cmp`), the mask of the
 data (`mask`), the result and `restore` (`open_wp`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Weierstrass.CombLay
-import VerifiedGarbage.Impl.Weierstrass.AArch64.TComb
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.CombLay
+public import VerifiedGarbage.Impl.Weierstrass.AArch64.TComb
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The fixed-base comb from tables in memory: where it keeps its numbers
@@ -9,6 +15,8 @@ scalar's `kbytes` cleared in words by the comb (`TCombLay`). `TCombCfg.toComb` i
 the same slots with no tables, whose layout this one gives
 (`TCombLay.comb`): so the addition's facts are the comb's.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass
 

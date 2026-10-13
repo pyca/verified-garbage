@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.Facts
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.Facts
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on x86-64: `oneUndo`
@@ -8,6 +14,8 @@ encrypts again the whole blocks `oneBlocks` decrypted, with `vg_aes_ctr32`
 from the counter block at the state's start (`oneUndo_ok`), which `tag` left
 there.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

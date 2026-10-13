@@ -1,7 +1,17 @@
-import VerifiedGarbage.Proof.TripleDes.Arm.FunctionsLit
-import VerifiedGarbage.Proof.Framework.Arm.TaintMono
+module
+
+public import VerifiedGarbage.Proof.TripleDes.Arm.FunctionsLit
+meta import VerifiedGarbage.Proof.TripleDes.Arm.FunctionsLit
+public import VerifiedGarbage.Proof.Framework.Arm.TaintMono
+meta import VerifiedGarbage.Proof.Framework.Arm.TaintMono
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # Constant-time Triple DES block and key-expansion programs -/
+
+@[expose] public section
 
 namespace VG.Proof.TripleDes.Arm
 

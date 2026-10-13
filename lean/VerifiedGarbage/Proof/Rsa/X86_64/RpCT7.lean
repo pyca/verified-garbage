@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.Rsa.X86_64.RpCT6
+module
+
+public import VerifiedGarbage.Proof.Rsa.X86_64.RpCT6
+meta import VerifiedGarbage.Proof.Rsa.X86_64.RpCT6
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_recover_primes` on x86-64: constant time, the factors
@@ -7,6 +14,8 @@ import VerifiedGarbage.Proof.Rsa.X86_64.RpCT6
 masked stores (`fin_ct`): every loop counts a public number of words, and
 the stores' pointers and lengths are pinned by correctness.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.X86_64
 

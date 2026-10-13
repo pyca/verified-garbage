@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.CT
-import VerifiedGarbage.Proof.Framework.X86_64.Abi
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.CT
+public import VerifiedGarbage.Proof.Framework.X86_64.Abi
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Deterministic ECDSA on x86-64: `Verified`
@@ -13,6 +19,8 @@ time up to the number of candidates: `sign_ct`. The function's own code is
 checked for each size of hash function and of scalars. Each instance's file shows that its
 contract implies `rfcX86_64` (`sign_verified`'s `himp`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Rfc6979.X86_64
 

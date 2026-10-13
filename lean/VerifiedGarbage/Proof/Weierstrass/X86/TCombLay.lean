@@ -1,9 +1,15 @@
-import VerifiedGarbage.Proof.Weierstrass.CombLay
-import VerifiedGarbage.Proof.Weierstrass.TCombWords
-import VerifiedGarbage.Impl.Weierstrass.X86.TComb
-import VerifiedGarbage.Proof.Weierstrass.X86.Fprog
-import VerifiedGarbage.Proof.Weierstrass.Unch
-import VerifiedGarbage.Proof.Weierstrass.X86.CallOps
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.CombLay
+public import VerifiedGarbage.Proof.Weierstrass.TCombWords
+public import VerifiedGarbage.Impl.Weierstrass.X86.TComb
+public import VerifiedGarbage.Proof.Weierstrass.X86.Fprog
+public import VerifiedGarbage.Proof.Weierstrass.Unch
+public import VerifiedGarbage.Proof.Weierstrass.X86.CallOps
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The fixed-base comb from tables in memory on x86 (32-bit): where it keeps its numbers
@@ -15,6 +21,8 @@ bits is `w J` bytes, those past the scalar's `kbytes` cleared in words by the
 comb. The tables are at `T` (`TblMem`): readable, word `i` at `T + 8 i`, and
 they survive a change of the working space only (`TblMem.of_unch`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.X86
 

@@ -1,5 +1,11 @@
-import VerifiedGarbage.Impl.Ed448.Arm.SignCached
-import VerifiedGarbage.Proof.Ed448.Arm.Shake.Sponge
+module
+
+public import VerifiedGarbage.Impl.Ed448.Arm.SignCached
+public import VerifiedGarbage.Proof.Ed448.Arm.Shake.Sponge
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 signing with a cached public key on ARMv7: the layout
@@ -16,6 +22,8 @@ context, the message, the caller's stack arguments (`ORIG`, which hold
 of `out` at `o`; `Away` regions are outside everything a call of a sponge
 function writes.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.Arm.SignCached
 

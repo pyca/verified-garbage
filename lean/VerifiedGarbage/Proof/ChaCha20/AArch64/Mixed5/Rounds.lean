@@ -1,8 +1,16 @@
-import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed5.Schedule
-import VerifiedGarbage.Impl.ChaCha20.AArch64.Mixed5
-import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Rounds
-import VerifiedGarbage.Proof.ChaCha20.AArch64.Block
-import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+module
+
+public import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed5.Schedule
+public import VerifiedGarbage.Impl.ChaCha20.AArch64.Mixed5
+public import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Rounds
+public import VerifiedGarbage.Proof.ChaCha20.AArch64.Block
+public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.ChaCha20.AArch64.Mixed5
 open VG VG.AArch64

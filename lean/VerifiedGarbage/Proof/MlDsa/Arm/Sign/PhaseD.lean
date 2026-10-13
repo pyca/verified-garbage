@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseA
-import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PrimsD
-import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PrimsB
-import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Hash
+module
+
+public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseA
+public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PrimsD
+public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PrimsB
+public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Hash
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA signing on ARMv7: the private key and `ρ″`
@@ -10,6 +16,8 @@ Once `Â` is sampled (`IM`), `ŝ₁[r]`, `ŝ₂[i]` and `t̂₀[i]`, each the `N
 the `BitUnpack` of its piece of `sk` (`dec_ok`), in their slots (`ID`), and
 `ρ″ = H(K ‖ rnd ‖ μ, 64)` at `MS` (`decode_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Arm.Sign
 

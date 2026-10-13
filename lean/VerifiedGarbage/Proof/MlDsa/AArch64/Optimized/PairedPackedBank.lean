@@ -1,8 +1,16 @@
-import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Paired
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InversePacked
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InversePackedBank
+module
+
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Paired
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InversePacked
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InversePackedBank
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## From `PairedPacked.lean` -/
+
+@[expose] public section
 
 section
 

@@ -139,7 +139,7 @@ pub fn bench(c: &mut Criterion) {
         g.throughput(Throughput::Bytes(size as u64));
         let data = vec![0u8; size - 1];
         let content_type = [0x17u8];
-        let mut out = vec![0u8; size];
+        let mut out = crate::InPlace::new(size, &data);
         g.bench_function(BenchmarkId::new(VG, size), |b| {
             b.iter(|| {
                 ChaCha20Poly1305::new(black_box(&key))
@@ -194,7 +194,7 @@ pub fn bench(c: &mut Criterion) {
         g.throughput(Throughput::Bytes(size as u64));
         let data = vec![0u8; size - 1];
         let content_type = [0x17u8];
-        let mut out = vec![0u8; size];
+        let mut out = crate::InPlace::new(size, &data);
         g.bench_function(BenchmarkId::new(VG, size), |b| {
             b.iter(|| {
                 let (body, last) = out.split_at_mut(size - 1);

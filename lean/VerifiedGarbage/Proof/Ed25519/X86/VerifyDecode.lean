@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.Ed25519.X86.VerifyDecodeInput
-import VerifiedGarbage.Proof.Ed25519.X86.VerifyPoints
-import VerifiedGarbage.Proof.Ed25519.X86.VerifyTables
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.Ed25519.Group.Decode
+module
+
+public import VerifiedGarbage.Proof.Ed25519.X86.VerifyDecodeInput
+public import VerifiedGarbage.Proof.Ed25519.X86.VerifyPoints
+public import VerifiedGarbage.Proof.Ed25519.X86.VerifyTables
+public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+public import VerifiedGarbage.Proof.Ed25519.Group.Decode
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed25519 verification on x86: `A` and `R` decoded by one loop
@@ -14,6 +20,8 @@ are words of the working space (`DPTR`, `DNEXT`, `DTAB`, `DOK`, `DecAt`). Each i
 point to the table at `[DTAB]` (`A` at 7680, `R` at 7808); `verifyDecode` then runs the
 equation if both are points (`verifyDecode_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed25519.X86
 open VG VG.X86 VG.Impl.Ed25519.X86

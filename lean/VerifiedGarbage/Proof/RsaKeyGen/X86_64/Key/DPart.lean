@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.DOdd
+module
+
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.DOdd
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## DEven -/
+
+@[expose] public section
+
 section
 
 /-!

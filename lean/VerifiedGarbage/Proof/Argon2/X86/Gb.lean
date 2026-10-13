@@ -1,8 +1,16 @@
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.PowLit
-import VerifiedGarbage.Proof.Blake2.X86.CompressB.G
-import VerifiedGarbage.Proof.Argon2.Spec
-import VerifiedGarbage.Impl.Argon2.X86.Compress
+module
+
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.Proof.Blake2.X86.CompressB.G
+public import VerifiedGarbage.Proof.Argon2.Spec
+public import VerifiedGarbage.Impl.Argon2.X86.Compress
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 section
 

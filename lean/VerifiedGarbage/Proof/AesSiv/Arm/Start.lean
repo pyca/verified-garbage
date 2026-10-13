@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesSiv.Arm.Ctr
-import VerifiedGarbage.Proof.AesGcm.Arm.Fn
+module
+
+public import VerifiedGarbage.Proof.AesSiv.Arm.Ctr
+public import VerifiedGarbage.Proof.AesGcm.Arm.Fn
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-SIV on ARMv7: the entry, and S2V's first state
@@ -12,6 +18,8 @@ their number in `r3`, and the data, its length, `siv` and `W` on the stack
 block at `W + 16` and `D`, and finalize the zero block into `D`:
 `D = AES-CMAC(K1, <zero>)` (`start_ok`), S2V's first state.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

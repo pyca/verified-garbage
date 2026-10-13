@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.Rsa.AArch64.KeyWs
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.Bignum.AArch64.PdCTRest
+module
+
+public import VerifiedGarbage.Proof.Rsa.AArch64.KeyWs
+meta import VerifiedGarbage.Proof.Rsa.AArch64.KeyWs
+public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+public import VerifiedGarbage.Proof.Bignum.AArch64.PdCTRest
+meta import VerifiedGarbage.Proof.Bignum.AArch64.PdCTRest
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSA key routines on AArch64: relational constant time, piece by piece
@@ -14,6 +23,8 @@ data (`pin_ct`, or `pin_seq` after a piece proven constant time otherwise):
 `ws_ct` pins `x0`, `x12` and `x11` after `ws`, and checks the rest of the
 piece with the taint analysis.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.AArch64
 

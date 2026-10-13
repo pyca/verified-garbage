@@ -1,7 +1,16 @@
-import VerifiedGarbage.Proof.Dsa.X86_64.BufferFrame
-import VerifiedGarbage.Proof.Dsa.PackedBytes
+module
+
+public import VerifiedGarbage.Proof.Dsa.X86_64.BufferFrame
+public import VerifiedGarbage.Proof.Dsa.PackedBytes
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # Memory-safe component and digest slices of external DSA inputs -/
+
+@[expose] public section
+
 namespace VG.Proof.Dsa.X86_64
 open VG VG.X86_64
 open VG.Proof.Bignum VG.Proof.Bignum.X86_64

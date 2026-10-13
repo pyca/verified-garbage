@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Curve448.AArch64.Fast.Limbwise
+module
+
+public import VerifiedGarbage.Proof.Curve448.AArch64.Fast.Limbwise
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Differences and sums
@@ -6,6 +12,8 @@ import VerifiedGarbage.Proof.Curve448.AArch64.Fast.Limbwise
 Untrusted: everything here is checked by Lean. `sub o a b` writes
 `a + 2p - b` limb by limb, and `addSub` also `a + b`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Curve448.AArch64.Fast
 

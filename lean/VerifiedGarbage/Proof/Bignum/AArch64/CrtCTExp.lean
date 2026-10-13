@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTGPow
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtExp
+module
+
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTGPow
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTGPow
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtExp
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtExp
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSA with the CRT on AArch64: the exponentiation is constant time
@@ -14,6 +22,8 @@ the addresses and counts it loads from the header, which the taint analysis
 takes as secret, are pinned in both runs by the steps' correctness
 (`CrtExp.lean`, for the bounds alone: `Q := False`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.AArch64
 

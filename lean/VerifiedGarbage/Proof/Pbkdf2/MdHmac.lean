@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Pbkdf2.MdStep
-import VerifiedGarbage.Proof.Hmac.Common
+module
+
+public import VerifiedGarbage.Proof.Pbkdf2.MdStep
+public import VerifiedGarbage.Proof.Hmac.Common
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # HMAC over a Merkle–Damgård hash function: the outer hash as one compression
@@ -11,6 +17,8 @@ block with the block of the digest and the padding of a `B + D`-byte message
 (`Md`), whatever the target. A block in memory made of `D` bytes followed by
 that padding is the padded block of those bytes (`blockAt_tailPad`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MdStream.Md
 

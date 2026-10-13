@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Weierstrass.AArch64.InvWords
-import VerifiedGarbage.Proof.Divstep.Tc
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvWords
+public import VerifiedGarbage.Proof.Divstep.Tc
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Inversion by divsteps on AArch64: the reduction of the coefficients
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.Divstep.Tc
 The carry chains `[d] ± (p & m)` over memory (`chain_ok`), and the reduction
 `mredC` of a signed number of `n + 1` words to `mred` (`mredC_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.AArch64
 

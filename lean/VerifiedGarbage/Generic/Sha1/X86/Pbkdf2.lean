@@ -1,8 +1,10 @@
-import VerifiedGarbage.TCB.X86.Target
-import VerifiedGarbage.Proof.Sha1.X86.Variants.Interface
-import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Sha1
-import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Frame
-import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Frame
+module
+
+public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Proof.Sha1.X86.Variants.Interface
+public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Sha1
+public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Frame
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Frame
 
 /-!
 # PBKDF2-HMAC-SHA-1 (RFC 8018) on x86, for every x86 SHA-1 backend: the iteration and the whole derivation
@@ -22,6 +24,8 @@ calls, and their return address, and gives them 48. `pbkdf2` runs that code
 in a frame holding its working space (`Proof.Pbkdf2.Whole.X86.pbkFramed`).
 -/
 
+@[expose] public section
+
 namespace VG.Generic.Sha1.X86.Pbkdf2
 
 def artifacts (v : Proof.Sha1.X86.Variants.Backend) : List Artifact := [
@@ -31,7 +35,7 @@ def artifacts (v : Proof.Sha1.X86.Variants.Backend) : List Artifact := [
     doc := Spec.Hmac.sha1I.iterateApi.doc
     code := v.M.iterate
     contract := Spec.Hmac.sha1I.iterateContract X86.abi 48
-    ofSig := ⟨_, _, _, by unfold Spec.Hmac.Instance.iterateContract; rfl⟩
+    ofSig := by exact (⟨_, _, _, by unfold Spec.Hmac.Instance.iterateContract; rfl⟩)
     stack := 48
     verified := v.iterate
     spSafe := v.iterSp
@@ -42,7 +46,7 @@ def artifacts (v : Proof.Sha1.X86.Variants.Backend) : List Artifact := [
     doc := Spec.Hmac.sha1I.pbkdf2Api.doc
     code := Impl.StackScratch.X86.withStackScratch (Proof.Pbkdf2.Whole.X86.pbkFrame Spec.Hmac.sha1I) 7 v.F.pbkdf2
     contract := Spec.Hmac.sha1I.pbkdf2Contract X86.abi (76 + Proof.Pbkdf2.Whole.X86.pbkFrame Spec.Hmac.sha1I)
-    ofSig := ⟨_, _, _, by unfold Spec.Hmac.Instance.pbkdf2Contract Spec.Pbkdf2.pbkdf2Contract; rfl⟩
+    ofSig := by exact (⟨_, _, _, by unfold Spec.Hmac.Instance.pbkdf2Contract Spec.Pbkdf2.pbkdf2Contract; rfl⟩)
     stack := 76 + Proof.Pbkdf2.Whole.X86.pbkFrame Spec.Hmac.sha1I
     verified := Proof.Pbkdf2.Whole.X86.pbkFramed (Proof.Pbkdf2.Whole.X86.sha1_verified v) (by decide)
       (Proof.Pbkdf2.Whole.X86.noEsp_of_all v.pbkdf2Sp) (Proof.Pbkdf2.Whole.X86.sha1_stack v)

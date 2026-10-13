@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Weierstrass.Comb
-import VerifiedGarbage.Proof.Framework.PowLit
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.Comb
+public import VerifiedGarbage.Proof.Framework.PowLit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Scalar multiplication by signed windows, on any target
@@ -13,6 +19,8 @@ natural number (`geom_le_div`): it starts at `0` (`winE_top`) and ends at `k`
 (`winE_step`), so four doublings and the addition of `[|d_j|]P`, reflected
 for `d_j < 0`, take `[winE k' J (j+1)]P` to `[winE k' J j]P` (`win_add`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass
 

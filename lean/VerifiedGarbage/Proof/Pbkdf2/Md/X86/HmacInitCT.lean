@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Pbkdf2.Md.X86.HmacInit
+module
+
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.HmacInit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # HMAC over a Merkle–Damgård hash function on x86 (32-bit): `init`, constant time
@@ -10,6 +16,8 @@ on the stack, with them public (`argTaint`); the calls of the streaming
 `cmp_rel`. Then `init` is verified against the contract with the arguments
 read only (`initG`), and with them writable (`initW`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Pbkdf2.Md.X86.HmacInit
 

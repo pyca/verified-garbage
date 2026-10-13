@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecCorrect
-import VerifiedGarbage.Proof.Framework.AArch64.RelCT
-import VerifiedGarbage.Proof.Framework.AArch64.Taint
+module
+
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecCorrect
+public import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+public import VerifiedGarbage.Proof.Framework.AArch64.Taint
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-PKCS1-v1_5 decryption on AArch64: two runs
@@ -13,6 +19,8 @@ taint analysis from the registers both runs agree on there (`two`), which
 `Φ` fixes as functions of the layout; a call is constant time for its
 callee's contract, whose public data agree too (`two_call`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPkcs1Enc.AArch64.Dec
 

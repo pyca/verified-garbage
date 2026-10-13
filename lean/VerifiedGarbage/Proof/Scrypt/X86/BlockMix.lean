@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Scrypt.X86.Common
+module
+
+public import VerifiedGarbage.Proof.Scrypt.X86.Common
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # scryptBlockMix on x86 (32-bit): the loop
@@ -10,6 +16,8 @@ Pointers are read from the arguments on the stack, which nothing writes; the
 calls use the 12 bytes below `esp` (`stkR`), which the memory frames include, as
 on x86-64 (`Proof/Scrypt/X86_64/BlockMixCT.lean`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Scrypt.X86.BlockMix
 

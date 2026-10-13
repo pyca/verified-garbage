@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Weierstrass.Law
-import VerifiedGarbage.Spec.Ecdsa
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.Law
+public import VerifiedGarbage.Spec.Ecdsa
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDSA signing from the values an implementation computes
@@ -11,6 +17,8 @@ computes the
 flag "`d`, `k` in `[1, n-1]`, `r ≠ 0`, `s ≠ 0`", then the specification's
 signature is `(r, s)` if the flag is set, and none otherwise.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa
 

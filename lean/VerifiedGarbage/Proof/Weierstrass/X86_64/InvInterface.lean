@@ -1,9 +1,18 @@
-import VerifiedGarbage.Proof.Weierstrass.X86_64.InvSpec
-import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvSpec
+public import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Curves of prime order also supply it (`PrimeOrder`, every point but the
 point at infinity has order `n`), for the proofs that need it. This
 proof-only interface leaves contracts and the TCB unchanged. -/
+
+@[expose] public section
+
 namespace VG.Proof.Weierstrass.X86_64
 
 /-- The group law of `C`, the soundness of the inversions, and that `C` has

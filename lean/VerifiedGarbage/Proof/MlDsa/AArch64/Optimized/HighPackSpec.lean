@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackMath
-import VerifiedGarbage.Proof.MlDsa.Pack.Bits
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackMath
+public import VerifiedGarbage.Proof.MlDsa.Pack.Bits
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Optimized.HighPack
 open VG VG.Spec.MlDsa

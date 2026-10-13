@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
-import VerifiedGarbage.Proof.MlDsa.X86_64.Message.VerifyCall
-import VerifiedGarbage.Proof.MlDsa.X86_64.Message.SignCorrect
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Message.VerifyCall
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Message.SignCorrect
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on x86-64, `verify_message`: correctness
@@ -12,6 +18,8 @@ the context string is longer than 255 bytes; otherwise it computes
 verification function on `μ` `c`, which gives `ML-DSA.Verify_internal` of
 the formatted message (`verifyMessage_wp`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86_64.Message
 

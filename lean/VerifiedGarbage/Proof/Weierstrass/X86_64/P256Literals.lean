@@ -1,8 +1,18 @@
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
-import VerifiedGarbage.Impl.Ecdh.P256.X86_64
+module
+
+public import VerifiedGarbage.Proof.Framework.X86_64.Lit
+meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
+public import VerifiedGarbage.Impl.Ecdh.P256.X86_64
+meta import VerifiedGarbage.Impl.Ecdh.P256.X86_64
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Shared literals for code used by signing, public-key derivation and ECDH.
 Each generator is checked once here; callers reuse its kernel-checked equality. -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.X86_64.P256Literals
 open VG VG.Impl.Ecdsa.X86_64

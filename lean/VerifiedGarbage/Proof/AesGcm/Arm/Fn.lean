@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesGcm.Arm.J0
+module
+
+public import VerifiedGarbage.Proof.AesGcm.Arm.J0
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on ARMv7: what every function does
@@ -12,6 +18,8 @@ additional data, the text so far), which the code never looks at: each
 function runs the same for all of them, so one run satisfies each instance
 of its proof (`WP.forall_det`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

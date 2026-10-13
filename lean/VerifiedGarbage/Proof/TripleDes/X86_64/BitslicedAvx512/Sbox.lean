@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx512.SboxLit
-import VerifiedGarbage.Proof.TripleDes.X86_64.Sbox
-import VerifiedGarbage.Proof.Framework.X86_64.StraightZ
+module
+
+public import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx512.SboxLit
+public import VerifiedGarbage.Proof.TripleDes.X86_64.Sbox
+public import VerifiedGarbage.Proof.Framework.X86_64.StraightZ
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The AVX-512 S-box circuits' machine code
@@ -11,6 +17,8 @@ lifts that check to every bit position of every quadword of arbitrary
 512-bit words. The circuits spill to the scratch buffer (`[rcx + 64k]`,
 `k < spills`) and write no general-purpose register.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.TripleDes.X86_64.BitslicedAvx512
 

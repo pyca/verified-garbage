@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.X448.X86.Save
+module
+
+public import VerifiedGarbage.Proof.X448.X86.Save
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 on x86 (32-bit): restoring the callee-saved registers
@@ -6,6 +12,8 @@ import VerifiedGarbage.Proof.X448.X86.Save
 The address is retained in eax so edi can be restored after the other saved
 registers.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448.X86
 

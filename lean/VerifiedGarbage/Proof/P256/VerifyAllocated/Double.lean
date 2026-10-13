@@ -1,7 +1,19 @@
-import VerifiedGarbage.Impl.P256.VerifyAllocated
-import VerifiedGarbage.Proof.P256.VerifyAllocated.Case
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Kernel
-import VerifiedGarbage.Proof.Framework.AArch64.Taint
+module
+
+public import VerifiedGarbage.Impl.P256.VerifyAllocated
+meta import VerifiedGarbage.Impl.P256.VerifyAllocated
+public import VerifiedGarbage.Proof.P256.VerifyAllocated.Case
+meta import VerifiedGarbage.Proof.P256.VerifyAllocated.Case
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Kernel
+meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Kernel
+public import VerifiedGarbage.Proof.Framework.AArch64.Taint
+meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.P256.VerifyAllocated.Double
 open VG VG.AArch64 VG.Impl.Weierstrass VG.Impl.Weierstrass.AArch64

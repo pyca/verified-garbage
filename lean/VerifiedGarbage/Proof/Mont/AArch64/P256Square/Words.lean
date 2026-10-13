@@ -1,7 +1,16 @@
-import VerifiedGarbage.Proof.Mont.AArch64.P256Square.Arithmetic
-import VerifiedGarbage.Proof.Mont.AArch64.Csub
+module
+
+public import VerifiedGarbage.Proof.Mont.AArch64.P256Square.Arithmetic
+public import VerifiedGarbage.Proof.Mont.AArch64.Csub
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Word-level identities for the shift/subtract P-256 reduction. -/
+
+@[expose] public section
+
 namespace VG.Proof.Mont.AArch64.P256Square
 open VG.Proof.Ed25519.Word64
 

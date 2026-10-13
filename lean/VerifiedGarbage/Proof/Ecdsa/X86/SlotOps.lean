@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Ecdsa.X86.Setup
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.X86.Setup
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDSA on x86 (32-bit): field operations on numbered slots
@@ -8,6 +14,8 @@ of the working space, modulo `p` (`c.SP`) or `n` (`c.SN`), with their own
 working space at `c.wk`: an operation writing slot `o` keeps every other slot
 but the temporary area's (`sv_keep`) and the moduli (`ModOkW.keepX86`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.X86
 

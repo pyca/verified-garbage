@@ -1,4 +1,8 @@
-import VerifiedGarbage.Proof.Ed25519.X86.PublicKey.Verified
+module
+
+public import VerifiedGarbage.Proof.Ed25519.X86.PublicKey.Verified
+
+@[expose] public section
 
 namespace VG.Artifacts.Ed25519PublicKey.X86
 

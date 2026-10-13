@@ -1,11 +1,15 @@
-import VerifiedGarbage.TCB.X86.Target
-import VerifiedGarbage.Impl.Weierstrass.X86.Mont
-import VerifiedGarbage.Proof.Weierstrass.X86.MontP192
+module
+
+public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Impl.Weierstrass.X86.Mont
+public import VerifiedGarbage.Proof.Weierstrass.X86.MontP192
 
 /-! # Montgomery arithmetic modulo P-192's `p` and `n` on x86 (32-bit)
 
 The functions of `Artifacts/WeierstrassMont/X86.lean` for P-192's moduli,
 in three 64-bit words. -/
+
+@[expose] public section
 
 namespace VG.Artifacts.WeierstrassMontP192.X86
 

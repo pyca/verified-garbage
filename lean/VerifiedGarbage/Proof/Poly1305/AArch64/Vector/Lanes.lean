@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Curve448.AArch64.Neon.Lanes
-import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Impl.Poly1305.AArch64.Vector
+module
+
+public import VerifiedGarbage.Proof.Curve448.AArch64.Neon.Lanes
+public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+public import VerifiedGarbage.Proof.Framework.AArch64.Exec
+public import VerifiedGarbage.Impl.Poly1305.AArch64.Vector
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Poly1305 on AArch64 in AdvSIMD: the lanes of the operations
@@ -10,6 +16,8 @@ Untrusted: everything here is checked by Lean. Executing the AdvSIMD
 instructions of `Vector`, and the 64-bit lanes (`ln`) and 32-bit words (`wd`)
 of their results, as numbers.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Poly1305.AArch64.Vector
 

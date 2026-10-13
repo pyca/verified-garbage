@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecOut
-import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncCorrect
-import VerifiedGarbage.Proof.RsaPkcs1Enc.Decrypt
+module
+
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecOut
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncCorrect
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.Decrypt
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-PKCS1-v1_5 decryption on AArch64: correctness
@@ -11,6 +17,8 @@ and the output (`dBuild_ok` … `selPart_ok`), and the pops: `dec_ok`, for
 every implementation of SHA-256's compression function and of
 `vg_rsa_private_checked`, against the shared contract (`result_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPkcs1Enc.AArch64.Dec
 

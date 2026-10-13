@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.X25519.X86_64.Env
-import VerifiedGarbage.Proof.X25519.Ladder
+module
+
+public import VerifiedGarbage.Proof.X25519.X86_64.Env
+public import VerifiedGarbage.Proof.X25519.Ladder
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X25519 on x86-64: an iteration of the ladder
@@ -8,6 +14,8 @@ The start of an iteration (`stepPre`): the counter `rbx` counts down to the
 bit `t`, whose byte of the array `BITS` is `k_t`; `swap ^ k_t` becomes the
 mask in `rcx`, and `k_t` the new `swap` (a word at `SWAP`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X25519.X86_64
 

@@ -1,13 +1,29 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourParseAddress
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourParseSetup
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourVectorTiming
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourLoop
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourScalarTiming
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourScalarLoop
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourFallback
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourParse
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourParseAddress
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourParseAddress
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourParseSetup
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourParseSetup
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourVectorTiming
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourVectorTiming
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourLoop
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourLoop
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourScalarTiming
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourScalarTiming
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourScalarLoop
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourScalarLoop
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourFallback
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourFallback
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourParse
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourParse
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## From `BoundedFourParseTrace.lean` -/
+
+@[expose] public section
 
 section
 

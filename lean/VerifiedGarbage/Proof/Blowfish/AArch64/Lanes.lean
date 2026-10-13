@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
+module
+
+public import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Byte and word lanes of AdvSIMD permutations
@@ -7,6 +13,8 @@ The bytes of `uzp1`/`uzp2`/`zip1`/`zip2` of `.16b` vectors, and the words of
 those of `.4s` vectors, in terms of their operands' lanes; the bytes of
 `rev32 .16b` and of a 16-byte load; and a word's bytes.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Blowfish.AArch64
 

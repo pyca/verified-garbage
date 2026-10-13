@@ -1,6 +1,10 @@
-import VerifiedGarbage.Proof.Idea.Arm.FbVerified
+module
+
+public import VerifiedGarbage.Proof.Idea.Arm.FbVerified
 
 /-! # IDEA-OFB artifacts on baseline ARMv7 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.IdeaOfb.Arm
 

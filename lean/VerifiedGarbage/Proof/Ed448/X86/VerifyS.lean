@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Ed448.X86.VerifyChecks
-import VerifiedGarbage.Proof.Ed448.X86.ScalarStep
-import VerifiedGarbage.Proof.Ed448.Scalar
-import VerifiedGarbage.Proof.X448.X86.Decode
+module
+
+public import VerifiedGarbage.Proof.Ed448.X86.VerifyChecks
+public import VerifiedGarbage.Proof.Ed448.X86.ScalarStep
+public import VerifiedGarbage.Proof.Ed448.Scalar
+public import VerifiedGarbage.Proof.X448.X86.Decode
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 verification's equation on x86 (32-bit): limbs from bytes, and `S < L`
@@ -11,6 +17,8 @@ twenty-eight limbs of `S`'s low 448 bits plus those of `2^448 - L` (scalar
 reduction's `kLimb`), carried by X448's `pass`, carry out of 448 bits exactly
 when they are at least `L`; with byte 56, `BAD |= 0` exactly when `S < L`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.X86
 

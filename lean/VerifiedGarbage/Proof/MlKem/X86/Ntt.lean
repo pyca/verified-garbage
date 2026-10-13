@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.MlKem.X86.NttSetup
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86.NttSetup
+meta import VerifiedGarbage.Proof.MlKem.X86.NttSetup
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86 (32-bit): `vg_mlkem_ntt`
@@ -7,6 +14,8 @@ The seven layers of Algorithm 9 (`ntt_eq_layers`), each a `layer_piece`
 (`NttLoop.lean`) of the butterfly `bflyBody` (`bfly_spec`), with the zetas
 from `zetas[1]` up.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.X86.NttFwd
 

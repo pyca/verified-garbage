@@ -1,7 +1,16 @@
-import VerifiedGarbage.Proof.Mont.X86_64.Double4
-import VerifiedGarbage.Proof.Weierstrass.X86_64.Fprog
+module
+
+public import VerifiedGarbage.Proof.Mont.X86_64.Double4
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.Fprog
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Register-only doubling preserves the field-program invariant. -/
+
+@[expose] public section
+
 namespace VG.Proof.Weierstrass.X86_64
 open VG VG.X86_64 VG.Impl.Mont VG.Impl.Mont.X86_64
 open VG.Proof.Mont VG.Proof.Mont.X86_64

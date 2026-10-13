@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesGcm.Arm.Entry
+module
+
+public import VerifiedGarbage.Proof.AesGcm.Arm.Entry
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on ARMv7: checking a received tag
@@ -10,6 +16,8 @@ tag length in `r6` is not one §5.2.1.2 allows (`tagLenOk_ok`); `recv` and
 `cmp_ok`), and `cmpTail` sets `r0` to 1 if they are equal and 0 if not,
 without a branch (`cmpTail_ok`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

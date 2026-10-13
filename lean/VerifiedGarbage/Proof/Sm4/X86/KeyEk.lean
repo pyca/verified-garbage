@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Sm4.X86.KeyLoop
+module
+
+public import VerifiedGarbage.Proof.Sm4.X86.KeyLoop
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The SM4 key schedule on x86 (32-bit): the whole function
@@ -10,6 +16,8 @@ registers, keeps the schedule's pointer in its slot, stores the table of
 (`ekIter_ok`) and restores the registers; the schedule is the
 specification's `expandKey`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sm4
 

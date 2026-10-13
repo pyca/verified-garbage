@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.RsaPss.X86_64.SignCtEnc
-import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyCt
+module
+
+public import VerifiedGarbage.Proof.RsaPss.X86_64.SignCtEnc
+public import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyCt
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSASSA-PSS signing on x86-64: constant time, and `Verified`
@@ -12,6 +18,8 @@ agree), and the epilogue, in two runs whose entry states agree on the public
 data (`sign_ct`). With `sign_correct`, `sign` meets
 `Spec.RsaPss.signContract` (`sign_verified`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPss.X86_64
 

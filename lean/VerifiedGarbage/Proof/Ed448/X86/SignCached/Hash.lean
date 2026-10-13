@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Ed448.X86.SignCached.Layout
-import VerifiedGarbage.Proof.Ed448.X86.Shake.Sponge
-import VerifiedGarbage.Proof.Ed448.X86.Shake.Header
-import VerifiedGarbage.Impl.Ed448.X86.SignCached
+module
+
+public import VerifiedGarbage.Proof.Ed448.X86.SignCached.Layout
+public import VerifiedGarbage.Proof.Ed448.X86.Shake.Sponge
+public import VerifiedGarbage.Proof.Ed448.X86.Shake.Header
+public import VerifiedGarbage.Impl.Ed448.X86.SignCached
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 signing with a cached key on x86 (32-bit): the three hashes
@@ -13,6 +19,8 @@ prefix in the frame at `K` and `R` in the first half of `out`. Each writes
 only `Lo E`, the state and the sponge functions' working space, and its
 output (`W`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.X86.SignCached
 

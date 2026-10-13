@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.Words
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.Words
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Multiword arithmetic on x86-64: loops over the words
@@ -9,6 +15,8 @@ continues while they differ. `wp_upto` is the loop rule for an invariant
 indexed by the counter, and `count_ok` the effect of those two
 instructions.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64
 

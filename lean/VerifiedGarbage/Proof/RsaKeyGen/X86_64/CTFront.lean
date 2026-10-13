@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.RsaKeyGen.X86_64.CTMs
-import VerifiedGarbage.Proof.RsaKeyGen.X86_64.KMain
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
+module
+
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.CTMs
+meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.CTMs
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.KMain
+meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.KMain
+public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # A candidate on x86-64: the stages before Montgomery setup
@@ -11,6 +20,8 @@ the schedule (`schedOf`) the leak fixes. Each stage is proven constant time
 with a weak postcondition, then `two_post` recovers `KSt` (and the flag the
 branch after it tests) from its correctness.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaKeyGen.X86_64
 

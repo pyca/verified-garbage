@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Ecdsa.X86_64.Lays
-import VerifiedGarbage.Proof.Ecdsa.X86_64.Stages
-import VerifiedGarbage.Proof.Weierstrass.X86_64.SpillUnch
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.Lays
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.Stages
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.SpillUnch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDSA on x86-64: `Z^(p-2)` and `k^(n-2)`
@@ -14,6 +20,8 @@ them (`Cfg.inverse`): the divsteps between saving the callee-saved registers
 in `PT`'s slot and restoring them (`invFn_ok`), which `pwW` covers; else
 `pPowI` and `nPowI` (`pPow_ok`, `nPow_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.X86_64
 

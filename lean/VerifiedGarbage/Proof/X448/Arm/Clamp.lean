@@ -1,10 +1,18 @@
-import VerifiedGarbage.Proof.X448.Arm.BitWrite
+module
+
+public import VerifiedGarbage.Proof.X448.Arm.BitWrite
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 on ARMv7: clamping the scalar bits
 
 Clear bits zero and one, and set bit 447, as RFC 7748 requires.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448.Arm
 

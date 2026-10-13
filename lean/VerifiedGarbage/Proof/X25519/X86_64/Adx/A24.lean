@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.Sqr
+module
+
+public import VerifiedGarbage.Proof.X25519.X86_64.Adx.Sqr
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X25519 on x86-64: `b + a24 · a` with BMI2 and ADX, and `adx_ok`
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.X25519.X86_64.Adx.Sqr
 `[b]`), then `r12` folded as 38; and the field multiplications `adx` satisfy
 `FieldOk`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X25519.X86_64
 

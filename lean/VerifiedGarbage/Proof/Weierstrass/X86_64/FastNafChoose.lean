@@ -1,8 +1,17 @@
-import VerifiedGarbage.Impl.Weierstrass.X86_64.FastNaf
-import VerifiedGarbage.Proof.Weierstrass.X86_64.FastNafSubtract
-import VerifiedGarbage.Proof.Weierstrass.X86_64.NafChoose
+module
+
+public import VerifiedGarbage.Impl.Weierstrass.X86_64.FastNaf
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.FastNafSubtract
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafChoose
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Width-five and width-seven public digit selection on x86-64. -/
+
+@[expose] public section
+
 namespace VG.Proof.Weierstrass.X86_64
 open VG VG.X86_64 VG.Impl.Weierstrass.X86_64
 open VG.Proof.X25519.X86_64

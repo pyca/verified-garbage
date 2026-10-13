@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.Rsa.X86_64.Pieces
-import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
+module
+
+public import VerifiedGarbage.Proof.Rsa.X86_64.Pieces
+meta import VerifiedGarbage.Proof.Rsa.X86_64.Pieces
+public import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
+public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSA key routines on x86-64: relational constant time, piece by piece
@@ -13,6 +22,8 @@ the registers it needs are pinned, by correctness, to values of the public
 data (`pin_ct`): `ws_ct` pins `rdi`, `r12` and `r9` after `ws`, and checks
 the rest of the piece with the taint analysis.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.X86_64
 

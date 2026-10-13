@@ -1,10 +1,23 @@
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.MlKem1024.X86.Pack
-import VerifiedGarbage.Proof.MlKem.Encode1024
-import VerifiedGarbage.Spec.MlKem.Contract1024
-import VerifiedGarbage.TCB.X86.Target
-import VerifiedGarbage.Proof.Framework.Sig
-import VerifiedGarbage.Proof.Framework.Contract
+module
+
+public import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.MlKem1024.X86.Pack
+meta import VerifiedGarbage.Proof.MlKem1024.X86.Pack
+public import VerifiedGarbage.Proof.MlKem.Encode1024
+meta import VerifiedGarbage.Proof.MlKem.Encode1024
+public import VerifiedGarbage.Spec.MlKem.Contract1024
+meta import VerifiedGarbage.Spec.MlKem.Contract1024
+public import VerifiedGarbage.TCB.X86.Target
+meta import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Proof.Framework.Sig
+meta import VerifiedGarbage.Proof.Framework.Sig
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM-1024 on x86 (32-bit): `vg_mlkem1024_compress_encode`
@@ -15,6 +28,8 @@ bytes are those of `compressEncode5_*` and `compressEncode11_*`
 (`Encode1024.lean`), stored by `st4` and `st3` (`st4_spec`, `st3_spec`). `G b
 t k` is the state within group `t` of `b` bytes, after its first `k` bytes.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem1024.X86.CompressEncode
 

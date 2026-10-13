@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyCtx
-import VerifiedGarbage.Proof.RsaPss.X86_64.SignPro
+module
+
+public import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyCtx
+public import VerifiedGarbage.Proof.RsaPss.X86_64.SignPro
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSASSA-PSS verification on x86-64: the precondition by name, the frame
@@ -10,6 +16,8 @@ below `rsp` (`fb`), within the stack the function uses (`vstkR`). From the
 entry state, after the frame's push, `verifyPrologue` saves `rbx`, `rbp` and
 `r12` and the arguments to their slots (`verifyPro_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPss.X86_64
 

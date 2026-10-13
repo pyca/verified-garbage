@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.CmacTripleDes.X86_64.Init
-import VerifiedGarbage.Proof.CmacTripleDes.X86_64.FinalizeCorrect
-import VerifiedGarbage.Proof.CmacTripleDes.X86_64.CT
-import VerifiedGarbage.Proof.CmacTripleDes.X86_64.Implies
-import VerifiedGarbage.Proof.Framework.X86_64.Abi
+module
+
+public import VerifiedGarbage.Proof.CmacTripleDes.X86_64.Init
+public import VerifiedGarbage.Proof.CmacTripleDes.X86_64.FinalizeCorrect
+public import VerifiedGarbage.Proof.CmacTripleDes.X86_64.CT
+public import VerifiedGarbage.Proof.CmacTripleDes.X86_64.Implies
+public import VerifiedGarbage.Proof.Framework.X86_64.Abi
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # TDEA-CMAC on x86-64: `Verified`
@@ -13,6 +19,8 @@ contracts with the working space as an argument
 (`Proof/CmacTripleDes/Scratch.lean`), which imply them, with no stack: the
 functions call nothing.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.CmacTripleDes.X86_64
 

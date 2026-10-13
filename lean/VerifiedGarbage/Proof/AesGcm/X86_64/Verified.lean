@@ -1,12 +1,18 @@
-import Mathlib.Data.List.Dedup
-import VerifiedGarbage.Proof.AesGcm.X86_64.InitCT
-import VerifiedGarbage.Proof.AesGcm.X86_64.StreamInitCT
-import VerifiedGarbage.Proof.AesGcm.X86_64.StreamAadCT
-import VerifiedGarbage.Proof.AesGcm.X86_64.StreamCryptCT
-import VerifiedGarbage.Proof.AesGcm.X86_64.StreamVerifyCT
-import VerifiedGarbage.Proof.AesGcm.X86_64.OpenCT
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.AesGcm.Scratch
+module
+
+public import Mathlib.Data.List.Dedup
+public import VerifiedGarbage.Proof.AesGcm.X86_64.InitCT
+public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamInitCT
+public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamAadCT
+public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamCryptCT
+public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamVerifyCT
+public import VerifiedGarbage.Proof.AesGcm.X86_64.OpenCT
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.AesGcm.Scratch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on x86-64: `Verified`
@@ -20,6 +26,8 @@ of a call: the functions called make no calls, and 24 for those that call
 `vg_aes_gcm_encrypt_blocks` or `vg_aes_gcm_decrypt_blocks` with an argument
 on the stack).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

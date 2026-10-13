@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.Mont.X86.Chain
-import VerifiedGarbage.Impl.Mont.X86.Sparse
+module
+
+public import VerifiedGarbage.Proof.Mont.X86.Chain
+public import VerifiedGarbage.Impl.Mont.X86.Sparse
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.Mont.X86
 open VG VG.X86 VG.X86.Wp VG.Impl.Mont.X86 VG.Impl.Mont VG.Proof.Mont

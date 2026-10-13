@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Weierstrass.Arm.PointContract
-import VerifiedGarbage.Proof.Weierstrass.Arm.MontVerified
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.Arm.PointContract
+public import VerifiedGarbage.Proof.Weierstrass.Arm.MontVerified
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Complete point addition and doubling as functions, on 32-bit ARM: verified
@@ -10,6 +16,8 @@ implies, given its constant time (proven for each curve by taint tracking:
 only the pointer, in `r0`, is public), and a state satisfying it (`satPt`:
 every number 0).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.Arm.Point
 

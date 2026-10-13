@@ -1,7 +1,13 @@
-import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Verified
+module
+
+public import VerifiedGarbage.TCB.X86_64.Target
+meta import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Verified
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Verified
 
 /-! # Ed25519's point doubling and cached additions, in radix `2^64`, on x86-64 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.Ed25519R64.X86_64
 

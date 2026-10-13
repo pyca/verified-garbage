@@ -1,10 +1,16 @@
-import VerifiedGarbage.Proof.Ed448.X86.PublicKey.Layout
-import VerifiedGarbage.Proof.Ed448.X86.Shake.Sponge
-import VerifiedGarbage.Proof.Ed448.X86.Shake.Prune
-import VerifiedGarbage.Proof.Ed448.X86.BaseLocal
-import VerifiedGarbage.Proof.Ed448.X86.Callee
-import VerifiedGarbage.Proof.Ed25519.X86.Whole.Wipe
-import VerifiedGarbage.Impl.Ed448.X86.PublicKey
+module
+
+public import VerifiedGarbage.Proof.Ed448.X86.PublicKey.Layout
+public import VerifiedGarbage.Proof.Ed448.X86.Shake.Sponge
+public import VerifiedGarbage.Proof.Ed448.X86.Shake.Prune
+public import VerifiedGarbage.Proof.Ed448.X86.BaseLocal
+public import VerifiedGarbage.Proof.Ed448.X86.Callee
+public import VerifiedGarbage.Proof.Ed25519.X86.Whole.Wipe
+public import VerifiedGarbage.Impl.Ed448.X86.PublicKey
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 public-key derivation on x86 (32-bit): correctness
@@ -14,6 +20,8 @@ in the frame at `HASH` (`hash_ok`), its first 57 bytes pruned in place
 (`Kit.prune_ok`), `[s]B` encoded into `out` by `base` (`base_step`), and the
 frame from `HASH` on cleared; `publicKey_ok`: the whole function.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.X86.PublicKey
 

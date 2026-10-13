@@ -1,8 +1,14 @@
-import VerifiedGarbage.Impl.MlDsa.X86.Pack.Stream
-import VerifiedGarbage.Proof.MlDsa.X86.Pack.Run
-import VerifiedGarbage.Proof.MlDsa.Pack.Stream
-import VerifiedGarbage.Proof.MlDsa.Pack.Written
-import VerifiedGarbage.Proof.Framework.Range
+module
+
+public import VerifiedGarbage.Impl.MlDsa.X86.Pack.Stream
+public import VerifiedGarbage.Proof.MlDsa.X86.Pack.Run
+public import VerifiedGarbage.Proof.MlDsa.Pack.Stream
+public import VerifiedGarbage.Proof.MlDsa.Pack.Written
+public import VerifiedGarbage.Proof.Framework.Range
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on x86 (32-bit): streaming fields through `ebx`
@@ -20,6 +26,8 @@ x86-64:
 The accumulator is a slice of the number throughout (`Pack/Stream.lean`),
 of at most `d + 7 ≤ 27` bits.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86.Pack
 

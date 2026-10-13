@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Rc4.AArch64.Rows
-import VerifiedGarbage.Proof.Framework.AArch64.Simd64
+module
+
+public import VerifiedGarbage.Proof.Rc4.AArch64.Rows
+public import VerifiedGarbage.Proof.Framework.AArch64.Simd64
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The constants
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.Framework.AArch64.Simd64
 `constants_ok`: the lane numbers 0–63 in `v8`–`v11`, and 64 and 128 in
 every byte of `v12` and `v13`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rc4.AArch64
 open VG VG.AArch64 VG.AArch64.RegUpd VG.Impl.Rc4.AArch64

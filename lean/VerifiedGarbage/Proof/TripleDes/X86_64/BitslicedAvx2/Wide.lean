@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx2.Batch
-import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Ecb
-import VerifiedGarbage.Proof.TripleDes.X86_64.SaveRegs
+module
+
+public import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx2.Batch
+public import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Ecb
+public import VerifiedGarbage.Proof.TripleDes.X86_64.SaveRegs
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Batches of 256 blocks
@@ -11,6 +17,8 @@ encryption or decryption, and `rsi` and `rdx` then point at and count the
 `n % 256` left. `rbx`, `r12` and `r13`, the callee-saved registers the
 batches use, are saved in the scratch buffer and restored.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.TripleDes.X86_64.BitslicedAvx2
 

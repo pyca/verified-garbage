@@ -1,7 +1,17 @@
-import VerifiedGarbage.Proof.AesCcm.X86_64.CTBase
-import VerifiedGarbage.Proof.AesCcm.X86_64.Mac
-import VerifiedGarbage.Proof.AesCcm.X86_64.Args
-import VerifiedGarbage.Proof.AesCcm.X86_64.Tag
+module
+
+public import VerifiedGarbage.Proof.AesCcm.X86_64.CTBase
+meta import VerifiedGarbage.Proof.AesCcm.X86_64.CTBase
+public import VerifiedGarbage.Proof.AesCcm.X86_64.Mac
+meta import VerifiedGarbage.Proof.AesCcm.X86_64.Mac
+public import VerifiedGarbage.Proof.AesCcm.X86_64.Args
+meta import VerifiedGarbage.Proof.AesCcm.X86_64.Args
+public import VerifiedGarbage.Proof.AesCcm.X86_64.Tag
+meta import VerifiedGarbage.Proof.AesCcm.X86_64.Tag
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CCM on x86-64: the MAC is constant time
@@ -11,6 +21,8 @@ of `vg_cmac_aes_update` passes the taint analysis from the public slots and
 registers (`rel_taintC`); each call has the same arguments in both runs, by
 correctness (`upd_rel`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

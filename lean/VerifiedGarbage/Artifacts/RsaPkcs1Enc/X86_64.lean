@@ -1,8 +1,12 @@
-import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.EncCT
-import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.Callees
+module
+
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.EncCT
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.Callees
 
 /-! # RSAES-PKCS1-v1_5 encryption (RFC 8017 §7.2.1) on x86-64 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.RsaPkcs1Enc.X86_64
 

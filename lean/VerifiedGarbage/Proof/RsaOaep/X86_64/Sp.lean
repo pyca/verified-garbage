@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.RsaOaep.X86_64.DecCT
-import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Variant
+module
+
+public import VerifiedGarbage.Proof.RsaOaep.X86_64.DecCT
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Variant
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-OAEP on x86-64: `rsp` written only by the frames
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Variant
 call is `Good`, which never writes `rsp`; the RSA operation's
 implementation writes it only in its frames; and so do the frames.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaOaep.X86_64
 

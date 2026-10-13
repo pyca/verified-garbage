@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.PcMain
-import VerifiedGarbage.Proof.Bignum.X86_64.PubCode
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.PcMain
+public import VerifiedGarbage.Proof.Bignum.X86_64.PubCode
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_public_precompute` on x86-64: correctness
@@ -8,6 +14,8 @@ The entry (`pcEntry_ok`), an invalid modulus (`pcFail_ok`) and the whole
 function (`pcCode_correct`), against `pcContract`, which states the shared
 contract's precondition on the registers.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64
 

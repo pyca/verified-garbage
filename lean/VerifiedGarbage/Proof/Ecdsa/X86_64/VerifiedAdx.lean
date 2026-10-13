@@ -1,8 +1,19 @@
-import VerifiedGarbage.Proof.Ecdsa.X86_64.Verified
-import VerifiedGarbage.Proof.Ecdsa.X86_64.LitAdx
-import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
-import VerifiedGarbage.Proof.Framework.LitShare
-import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.Verified
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.Verified
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.LitAdx
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.LitAdx
+public import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
+meta import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
+public import VerifiedGarbage.Proof.Framework.LitShare
+meta import VerifiedGarbage.Proof.Framework.LitShare
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDSA over P-256 on x86-64 with BMI2 and ADX: `Verified`
@@ -12,6 +23,8 @@ of `sign_ok` covers as it covers any multiplication (`Proof/Mont/X86_64/Adx.lean
 the same curve, so the same facts (`p256x_ok`, from `p256_ok` but for the
 inversions' constants, decided again) and the same precondition.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.X86_64
 

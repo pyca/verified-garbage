@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.SignEntry
-import VerifiedGarbage.Proof.Rsa.X86_64.PrivCT
-import VerifiedGarbage.Proof.Framework.X86_64.CallSp
-import VerifiedGarbage.Proof.Framework.X86_64.CallFrame
+module
+
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.SignEntry
+public import VerifiedGarbage.Proof.Rsa.X86_64.PrivCT
+public import VerifiedGarbage.Proof.Framework.X86_64.CallSp
+public import VerifiedGarbage.Proof.Framework.X86_64.CallFrame
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_pkcs1_sign` on x86-64: the call of `vg_rsa_private_checked`
@@ -11,6 +17,8 @@ The private operation, for an implementation `v` of the CRT (`CrtImpl`), is
 it uses 3256 bytes of stack (`privCode_depth`). Its arguments
 (`callArgs_ok`) and the call (`priv_call`), which signs `EM` into `out`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPkcs1Sig.X86_64.Sgn
 

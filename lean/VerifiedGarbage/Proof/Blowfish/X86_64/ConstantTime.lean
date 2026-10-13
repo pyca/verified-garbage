@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.Blowfish.X86_64.Lit
-import VerifiedGarbage.Proof.Framework.X86_64.Taint
+module
+
+public import VerifiedGarbage.Proof.Blowfish.X86_64.Lit
+meta import VerifiedGarbage.Proof.Blowfish.X86_64.Lit
+public import VerifiedGarbage.Proof.Framework.X86_64.Taint
+meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Constant time
@@ -9,6 +17,8 @@ code computes from them (the round and row counters, the addresses of the
 P-array entries and of the S-boxes' rows): every address and branch. The
 S-box indices are only ever operands of the masks' arithmetic.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Blowfish.X86_64
 

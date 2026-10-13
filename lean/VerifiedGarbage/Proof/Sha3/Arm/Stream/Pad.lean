@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.Sha3.Arm.Permute
-import VerifiedGarbage.Proof.Framework.Offset
+module
+
+public import VerifiedGarbage.Proof.Sha3.Arm.Permute
+meta import VerifiedGarbage.Proof.Sha3.Arm.Permute
+public import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Offset
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The SHA-3 sponge on ARMv7: `pad`
@@ -7,6 +15,8 @@ import VerifiedGarbage.Proof.Framework.Offset
 The same structure as the AArch64 proof (`VG.Proof.Sha3.AArch64.Stream.Pad`),
 with the return address saved in the scratch space instead of a frame.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sha3.Arm.Stream.Pad
 

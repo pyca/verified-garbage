@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlKem.X86.EncBase
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86.EncBase
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86 (32-bit): `ŷ` in K-PKE.Encrypt
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.MlKem.X86.EncBase
 states (`cbd_piece`); `ŷ[N]` (`y_piece`), and the start of `encrypt`: `eACC`
 set to 1 and the `k` polynomials `ŷ[N]` (`ys_piece`), which reach `P k`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.X86.Enc
 

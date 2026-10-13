@@ -1,13 +1,30 @@
-import VerifiedGarbage.Impl.Ed25519.X86_64.ScalarBasePrecomputed
-import VerifiedGarbage.Proof.Ed25519.X86_64.CombLoop
-import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBaseEngine
-import VerifiedGarbage.Proof.Ed25519.X86_64.CombLit
-import VerifiedGarbage.Proof.Ed25519.X86_64.CTSupport
-import VerifiedGarbage.Proof.Ed25519.X86_64.RecoverCTBlocks
-import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBaseCT
-import VerifiedGarbage.Proof.Framework.X86_64.TaintSym
+module
+
+public import VerifiedGarbage.Impl.Ed25519.X86_64.ScalarBasePrecomputed
+meta import VerifiedGarbage.Impl.Ed25519.X86_64.ScalarBasePrecomputed
+public import VerifiedGarbage.Proof.Ed25519.X86_64.CombLoop
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.CombLoop
+public import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBaseEngine
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBaseEngine
+public import VerifiedGarbage.Proof.Ed25519.X86_64.CombLit
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.CombLit
+public import VerifiedGarbage.Proof.Ed25519.X86_64.CTSupport
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.CTSupport
+public import VerifiedGarbage.Proof.Ed25519.X86_64.RecoverCTBlocks
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.RecoverCTBlocks
+public import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBaseCT
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBaseCT
+public import VerifiedGarbage.Proof.Framework.X86_64.TaintSym
+meta import VerifiedGarbage.Proof.Framework.X86_64.TaintSym
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Ed25519.X86_64.ScalarBasePrecomputedEngine`. -/
+
+@[expose] public section
+
 section
 namespace VG.Proof.Ed25519.X86_64
 open VG VG.X86_64 VG.Impl.Ed25519.X86_64 VG.Proof.Ed25519 Edwards

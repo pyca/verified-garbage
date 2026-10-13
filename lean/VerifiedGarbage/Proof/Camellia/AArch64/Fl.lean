@@ -1,8 +1,14 @@
-import VerifiedGarbage.Impl.Camellia.AArch64.Layers
-import VerifiedGarbage.Proof.Camellia.Bitsliced
-import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import VerifiedGarbage.Proof.Framework.Bitslice.Lanes
+module
+
+public import VerifiedGarbage.Impl.Camellia.AArch64.Layers
+public import VerifiedGarbage.Proof.Camellia.Bitsliced
+public import VerifiedGarbage.Proof.Framework.AArch64.Exec
+public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+public import VerifiedGarbage.Proof.Framework.Bitslice.Lanes
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # FL and FLINV on AArch64
@@ -13,6 +19,8 @@ plane's five instructions for any plane (`flRotStep_ok`, `flOrStep_ok`),
 composed by induction over the planes. The mask of the step is loaded into
 `t2` first.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Camellia.AArch64
 

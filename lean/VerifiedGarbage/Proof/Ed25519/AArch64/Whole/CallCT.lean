@@ -1,8 +1,17 @@
-import VerifiedGarbage.Proof.Framework.AArch64.RelCT
-import VerifiedGarbage.Proof.Framework.AArch64.Taint
-import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Layout
+module
+
+public import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+public import VerifiedGarbage.Proof.Framework.AArch64.Taint
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Layout
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Ed25519.AArch64.Whole.BlocksCT`. -/
+
+@[expose] public section
+
 section
 /-! Equal traces for straight-line helpers addressed through the public SP. -/
 namespace VG.Proof.Ed25519.AArch64.Whole

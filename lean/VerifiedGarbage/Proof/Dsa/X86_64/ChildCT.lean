@@ -1,7 +1,18 @@
-import VerifiedGarbage.Proof.Dsa.X86_64.Child
-import VerifiedGarbage.Proof.Dsa.X86_64.LoadCheckCT
+module
+
+public import VerifiedGarbage.Proof.Dsa.X86_64.Child
+meta import VerifiedGarbage.Proof.Dsa.X86_64.Child
+public import VerifiedGarbage.Proof.Dsa.X86_64.LoadCheckCT
+meta import VerifiedGarbage.Proof.Dsa.X86_64.LoadCheckCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # Constant time of creating and initializing a modulus workspace -/
+
+@[expose] public section
+
 namespace VG.Proof.Dsa.X86_64
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public
 open VG.Impl.Rsa.X86_64 VG.Impl.Dsa.Layout VG.Impl.Dsa.X86_64

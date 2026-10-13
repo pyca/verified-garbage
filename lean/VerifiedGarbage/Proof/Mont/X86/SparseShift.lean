@@ -1,7 +1,16 @@
-import VerifiedGarbage.Proof.Mont.X86.SparseChain
-import VerifiedGarbage.Proof.Mont.X86.Row
+module
+
+public import VerifiedGarbage.Proof.Mont.X86.SparseChain
+public import VerifiedGarbage.Proof.Mont.X86.Row
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # Sparse chains inside a larger accumulator -/
+
+@[expose] public section
+
 namespace VG.Proof.Mont.X86
 open VG VG.X86 VG.X86.Wp VG.Impl.Mont.X86 VG.Impl.Mont VG.Proof.Mont
 

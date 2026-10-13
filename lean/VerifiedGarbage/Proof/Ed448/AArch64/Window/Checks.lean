@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Ed448.AArch64.VerifyChecks
-import VerifiedGarbage.Proof.Curve448.AArch64.Legacy
+module
+
+public import VerifiedGarbage.Proof.Ed448.AArch64.VerifyChecks
+public import VerifiedGarbage.Proof.Curve448.AArch64.Legacy
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 verification on AArch64: comparing slots of the register-resident arithmetic
@@ -8,6 +14,8 @@ Untrusted: everything here is checked by Lean. `canon` and `eqSlots`
 (`VerifyChecks.lean`) for slots whose limbs are below `2^118` (products of
 the register-resident arithmetic).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.AArch64
 

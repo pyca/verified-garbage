@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesGcm.Arm.CTJ0
+module
+
+public import VerifiedGarbage.Proof.AesGcm.Arm.CTJ0
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on ARMv7: constant time of the functions, the tools
@@ -9,6 +15,8 @@ describe each run from its initial state); the pieces' `CT` lemmas apply
 with the public data of `s₀` (`rel_of_ct`); blocks that read stack
 arguments are checked with them public (`rel_argTaint`), from `ArgsKeep`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesGcm.Arm
 

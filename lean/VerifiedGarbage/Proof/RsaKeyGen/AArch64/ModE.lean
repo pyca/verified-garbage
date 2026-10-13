@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.RsaKeyGen.AArch64.GcdStep
+module
+
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.GcdStep
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # A candidate on AArch64: `(c − 1) mod e`
@@ -8,6 +14,8 @@ The 64 bits of a word, from the top, into `r = x3 < e = x13`: `modBits_ok`,
 number from the top, `x10` walking down and `x14` counting
 (`modWords_ok`): the number mod `e`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaKeyGen.AArch64
 

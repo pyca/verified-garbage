@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.MlDsa.X86.Arith.Table
-import VerifiedGarbage.Spec.MlDsa.Poly
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86.Arith.Table
+public import VerifiedGarbage.Spec.MlDsa.Poly
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on x86 (32-bit): the layers of the NTT and its inverse
@@ -18,6 +24,8 @@ x86. The butterflies of a block and the blocks of a layer are the loops
 the argument slots, and differs from the entry only in `f`, `scratch` and
 the arguments.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86.Arith.NttLoop
 

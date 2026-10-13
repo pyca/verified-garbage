@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Framework.X86.RelCT
-import VerifiedGarbage.Proof.Framework.X86.CallWith
+module
+
+public import VerifiedGarbage.Proof.Framework.X86.RelCT
+public import VerifiedGarbage.Proof.Framework.X86.CallWith
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86 (32-bit): pieces of code, correct and constant time
@@ -18,6 +24,8 @@ addresses depend only on registers that correctness determines is checked
 by the taint analysis (`taint`), and a whole function from its entry state
 gives `Verified` (`verified`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.X86
 

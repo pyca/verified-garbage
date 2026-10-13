@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesCcm.X86_64.Run
+module
+
+public import VerifiedGarbage.Proof.AesCcm.X86_64.Run
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CCM on x86-64: `Ctr₀` (`ctrs`)
@@ -7,6 +13,8 @@ Untrusted: everything here is checked by Lean. `ctrs` zeroes the block at
 `W + 48`, writes `q − 1 = 14 − n` to its first byte and copies the nonce
 after it: `Ctr₀` (`ctrs_ok`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

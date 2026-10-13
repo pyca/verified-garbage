@@ -1,7 +1,15 @@
-import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Loop
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchZTo.LoopP
+module
+
+public import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Loop
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZTo.LoopP
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # Prepared GHASH contexts for out-of-place encryption -/
+
+@[expose] public section
 
 namespace VG.Proof.Gcm.X86_64.Stitch
 open VG VG.X86_64

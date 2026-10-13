@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.RsaOaep.X86_64.DecMain
-import VerifiedGarbage.Proof.RsaOaep.X86_64.EncCorrect
+module
+
+public import VerifiedGarbage.Proof.RsaOaep.X86_64.DecMain
+public import VerifiedGarbage.Proof.RsaOaep.X86_64.EncCorrect
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-OAEP decryption on x86-64: correctness
@@ -8,6 +14,8 @@ The frame, the prologue, the private operation, its result to its slot and
 the check of `k` (zeros to `out` and `*msg_len` if the operation failed or
 `k` is too small, the decoding otherwise): `dec_correct`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaOaep.X86_64
 

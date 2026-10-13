@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Weierstrass.Arm.Bytes
-import VerifiedGarbage.Proof.Weierstrass.BytesLen32
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.Arm.Bytes
+public import VerifiedGarbage.Proof.Weierstrass.BytesLen32
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Short Weierstrass curves on 32-bit ARM: numbers of `len` bytes
@@ -13,6 +19,8 @@ and `storeBytes len n dst d a` writes `[a]` masked with `r10` to the `len`
 bytes at `dst + d` (`storeBytes_ok`), a word of fewer bytes a byte at a
 time, as on x86 (`Proof/Weierstrass/X86/BytesLen.lean`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.Arm
 

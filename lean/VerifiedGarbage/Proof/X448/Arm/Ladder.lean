@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.X448.Arm.Iter
+module
+
+public import VerifiedGarbage.Proof.X448.Arm.Iter
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 on ARMv7: all 448 ladder iterations
@@ -6,6 +12,8 @@ import VerifiedGarbage.Proof.X448.Arm.Iter
 A decreasing public counter connects the loop to the specification's
 descending fold over scalar bits.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448.Arm
 

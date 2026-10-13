@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesGcm.AArch64.StreamFinish
+module
+
+public import VerifiedGarbage.Proof.AesGcm.AArch64.StreamFinish
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on AArch64: `vg_aes_gcm_stream_verify`
@@ -10,6 +16,8 @@ writes the tag at `W + 112`, `cmpSeg` compares its first `tag_len` bytes with
 the received ones without a branch, and `verRet` returns 1 or 0
 (`ver_run`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

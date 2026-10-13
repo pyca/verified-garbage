@@ -1,6 +1,10 @@
-import VerifiedGarbage.Proof.Seed.Arm.CbcVerified
+module
+
+public import VerifiedGarbage.Proof.Seed.Arm.CbcVerified
 
 /-! # SEED-CBC artifacts on baseline ARMv7 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.SeedCbc.Arm
 

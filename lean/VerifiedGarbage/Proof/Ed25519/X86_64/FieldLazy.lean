@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Ed25519.X86_64.FieldWide
+module
+
+public import VerifiedGarbage.Proof.Ed25519.X86_64.FieldWide
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed25519 field programs on the wide scratch, with bounds
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.Ed25519.X86_64.FieldWide
 to the wide one (8192), with bounds on the memory before and after; and
 `wp_and` joins two postconditions of the same code.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed25519.X86_64
 

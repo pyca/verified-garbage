@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Curve448.AArch64.Fast.Loop
-import VerifiedGarbage.Proof.Curve448.AArch64.Fast.Columns
+module
+
+public import VerifiedGarbage.Proof.Curve448.AArch64.Fast.Loop
+public import VerifiedGarbage.Proof.Curve448.AArch64.Fast.Columns
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Multiplication
@@ -8,6 +14,8 @@ Untrusted: everything here is checked by Lean. `mul o a b` writes the
 limbs `out r` of the reduced schoolbook coefficients `r` of `[a] * [b]` to
 `o`, for operand limbs below `Ib`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Curve448.AArch64.Fast
 

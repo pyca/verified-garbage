@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Mont.X86_64.MulPX
+module
+
+public import VerifiedGarbage.Proof.Mont.X86_64.MulPX
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Montgomery arithmetic on x86-64: P-521's squares with BMI2 and ADX
@@ -17,6 +23,8 @@ import VerifiedGarbage.Proof.Mont.X86_64.MulPX
 * `2 sCross + sDg = [a]²` (`sq_ident`), so the accumulator holds `[a]²`,
   and `mulPX`'s reduction and final reduction follow (`xRed_ok`, `xCanon_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Mont.X86_64
 

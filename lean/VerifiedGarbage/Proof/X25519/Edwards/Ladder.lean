@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.X25519.Edwards.URep
-import VerifiedGarbage.Proof.X25519.Ladder
-import VerifiedGarbage.Proof.X25519.Bytes
-import VerifiedGarbage.Proof.Framework.PowLit
+module
+
+public import VerifiedGarbage.Proof.X25519.Edwards.URep
+public import VerifiedGarbage.Proof.X25519.Ladder
+public import VerifiedGarbage.Proof.X25519.Bytes
+public import VerifiedGarbage.Proof.Framework.PowLit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X25519 of the base point is the u-coordinate of a multiple of Ed25519's
@@ -18,6 +24,8 @@ compute instead.
 The field facts are evaluated by the kernel: `a24 = 121665` is
 `-d / (1 + d)`, and `B`'s coordinates are those of RFC 8032.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X25519.Edwards
 

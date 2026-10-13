@@ -1,6 +1,12 @@
-import VerifiedGarbage.Spec.Rsa.Contract
-import VerifiedGarbage.Proof.Framework.AArch64.RelCT
-import VerifiedGarbage.Proof.Framework.Sig
+module
+
+public import VerifiedGarbage.Spec.Rsa.Contract
+public import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+public import VerifiedGarbage.Proof.Framework.Sig
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The RSA operations the signatures call, on AArch64
@@ -14,6 +20,8 @@ fit in that stack (`Callee`). The call lemmas (`pubCall`, …) evaluate those
 contracts (`sig_pre`, `sig_post`) into facts about the registers at the
 call, so the callers' proofs never see `Sig.contract`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPkcs1Sig.AArch64
 

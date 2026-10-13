@@ -1,5 +1,7 @@
-import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Variant
+module
+
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Variant
 
 /-!
 # PBKDF2-HMAC (RFC 8018) over a Merkle–Damgård hash function on AArch64
@@ -23,6 +25,8 @@ code calls with its own working space, the code is also emitted on its own,
 as `vg_pbkdf2_hmac_sha256_scratch`.
 -/
 
+@[expose] public section
+
 namespace VG.Generic.MdHash.AArch64.Pbkdf2
 
 def artifacts (v : Proof.Pbkdf2.Md.AArch64.MdHash) : List Artifact := [
@@ -33,7 +37,7 @@ def artifacts (v : Proof.Pbkdf2.Md.AArch64.MdHash) : List Artifact := [
       (notes := ["The function uses no stack: it saves its return address in `scratch`."])
     code := v.H.iterate
     contract := v.I.iterateContract AArch64.abi
-    ofSig := ⟨_, _, _, by unfold Spec.Hmac.Instance.iterateContract; rfl⟩
+    ofSig := by exact (⟨_, _, _, by unfold Spec.Hmac.Instance.iterateContract; rfl⟩)
     verified := v.iterate
     spSafe := Code.all_of_forall (fun _ => rfl) _
     features := v.features },
@@ -43,7 +47,7 @@ def artifacts (v : Proof.Pbkdf2.Md.AArch64.MdHash) : List Artifact := [
     doc := v.I.pbkdf2Api.doc
     code := Impl.StackScratch.AArch64.withStackScratch (Proof.Pbkdf2.Md.AArch64.pbkdf2Frame v.I) .x7 v.H.pbkdf2
     contract := v.I.pbkdf2Contract AArch64.abi (16 + Proof.Pbkdf2.Md.AArch64.pbkdf2Frame v.I)
-    ofSig := ⟨_, _, _, by unfold Spec.Hmac.Instance.pbkdf2Contract Spec.Pbkdf2.pbkdf2Contract; rfl⟩
+    ofSig := by exact (⟨_, _, _, by unfold Spec.Hmac.Instance.pbkdf2Contract Spec.Pbkdf2.pbkdf2Contract; rfl⟩)
     stack := 16 + Proof.Pbkdf2.Md.AArch64.pbkdf2Frame v.I
     verified := v.pbkdf2F
     spSafe := Code.all_of_forall (fun _ => rfl) _
@@ -58,7 +62,7 @@ def artifacts (v : Proof.Pbkdf2.Md.AArch64.MdHash) : List Artifact := [
       doc := v.I.pbkdf2ScratchApi.doc
       code := v.H.pbkdf2
       contract := v.I.pbkdf2ScratchContract AArch64.abi 16
-      ofSig := ⟨_, _, _, by unfold Spec.Hmac.Instance.pbkdf2ScratchContract; rfl⟩
+      ofSig := by exact (⟨_, _, _, by unfold Spec.Hmac.Instance.pbkdf2ScratchContract; rfl⟩)
       stack := 16
       verified := v.pbkdf2
       spSafe := Code.all_of_forall (fun _ => rfl) _

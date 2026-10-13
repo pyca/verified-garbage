@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.MlDsa.X86.Message.Sign
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86.Message.Sign
+meta import VerifiedGarbage.Proof.MlDsa.X86.Message.Sign
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on x86 (32-bit), `verify_message`: the call of the verification function on `μ`
@@ -10,6 +17,8 @@ arguments in `eax`, `ecx`, `edx` and `ebx`, pushed; its precondition
 inputs, which `verify_message`'s inputs determine; and its result, which is
 `verify_message`'s.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86.Message
 

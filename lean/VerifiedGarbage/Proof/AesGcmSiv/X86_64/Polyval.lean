@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Absorb
-import VerifiedGarbage.Proof.GcmSiv.Polyval
+module
+
+public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Absorb
+public import VerifiedGarbage.Proof.GcmSiv.Polyval
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM-SIV on x86-64: POLYVAL and the tag input (`polyval`)
@@ -10,6 +16,8 @@ block (`lens_ok`), `tagIn` turns POLYVAL's result into the tag input
 data and the lengths block from the zero accumulator, leaving the tag input
 of RFC 8452 §4 at `W + 96` (`polyval_ok`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

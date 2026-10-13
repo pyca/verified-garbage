@@ -1,10 +1,16 @@
-import VerifiedGarbage.Proof.Pbkdf2.MdStep
-import VerifiedGarbage.Proof.Pbkdf2.Memory
-import VerifiedGarbage.Proof.MdStream.X86_64.Words
-import VerifiedGarbage.Proof.Pbkdf2.X86_64.Copy
-import VerifiedGarbage.Proof.Hmac.Generic.Common
-import VerifiedGarbage.Impl.Pbkdf2.X86_64
-import VerifiedGarbage.Proof.Framework.Omega
+module
+
+public import VerifiedGarbage.Proof.Pbkdf2.MdStep
+public import VerifiedGarbage.Proof.Pbkdf2.Memory
+public import VerifiedGarbage.Proof.MdStream.X86_64.Words
+public import VerifiedGarbage.Proof.Pbkdf2.X86_64.Copy
+public import VerifiedGarbage.Proof.Hmac.Generic.Common
+public import VerifiedGarbage.Impl.Pbkdf2.X86_64
+public import VerifiedGarbage.Proof.Framework.Omega
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # PBKDF2-HMAC's iteration over a Merkle–Damgård hash function on x86-64
@@ -15,6 +21,8 @@ and writes the digest as `Shape` says, with any correct compression function
 (`CalleeOk`), used as a black box through its proof; `Md.hmac_step` says that
 its two compressions per step compute HMAC.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Pbkdf2.X86_64
 

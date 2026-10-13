@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.X25519.Arm.AddSub
+module
+
+public import VerifiedGarbage.Proof.X25519.Arm.AddSub
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X25519 on 32-bit ARM: multiplication
@@ -9,6 +15,8 @@ the limbs of `x_{<i} · y`), then stores at `o` a number congruent to it, with
 limbs below `2¹⁶` (`mul_ok`), for any `acc` an offset reaches: X25519's
 `ACC` and Ed25519's.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X25519.Arm
 

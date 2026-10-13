@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.MlKem.X86.EncV
-import VerifiedGarbage.Proof.MlKem1024.X86.CompressEncode
-import VerifiedGarbage.Proof.MlKem1024.X86.DecodeDecompress
-import VerifiedGarbage.Impl.MlKem1024.X86.Kem
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86.EncV
+public import VerifiedGarbage.Proof.MlKem1024.X86.CompressEncode
+public import VerifiedGarbage.Proof.MlKem1024.X86.DecodeDecompress
+public import VerifiedGarbage.Impl.MlKem1024.X86.Kem
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM-1024 on x86 (32-bit): the parameter set
@@ -11,6 +17,8 @@ ML-KEM-1024's layout (`L1024`) compresses to 11 and 5 bits with
 and has the facts of the layout of K-PKE.Encrypt that its proof
 (`Proof/MlKem/X86/Enc*.lean`) uses, computed from its offsets.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem1024.X86
 

@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Poly1305.AArch64.Vector.Finish
+module
+
+public import VerifiedGarbage.Proof.Poly1305.AArch64.Vector.Finish
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Poly1305 on AArch64 in AdvSIMD: `vec`
@@ -7,6 +13,8 @@ Untrusted: everything here is checked by Lean. From at least 128 bytes of
 data at `x2` (`x3` of them), `vec` absorbs the first `64 ⌊x3 / 64⌋` into the
 accumulator `x4:x5:x6` (`VEnd`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Poly1305.AArch64.Vector
 

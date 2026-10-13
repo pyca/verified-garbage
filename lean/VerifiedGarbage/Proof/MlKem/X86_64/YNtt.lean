@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.MlKem.X86_64.VLay42
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
-import VerifiedGarbage.Impl.MlKem.X86_64.NttAvx2
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86_64.VLay42
+public import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
+public import VerifiedGarbage.Impl.MlKem.X86_64.NttAvx2
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86-64: the NTT and its inverse on AVX2 registers, the pieces
@@ -12,6 +18,8 @@ from both lanes of a register (`lanes_loadY`, `s16_write2Y`); and the zetas
 the loads of `NttAvx2.lean` leave in the lanes of `ymm13` (`yzeta1_ok`,
 `yzetaS_ok`, `yzeta8_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.X86_64
 

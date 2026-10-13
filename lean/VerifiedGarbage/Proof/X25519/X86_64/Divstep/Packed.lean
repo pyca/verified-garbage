@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.X25519.X86_64.Mem
-import VerifiedGarbage.Proof.X25519.X86_64.Divstep.Step
-import VerifiedGarbage.Proof.X25519.X86_64.Divstep.Spec
+module
+
+public import VerifiedGarbage.Proof.X25519.X86_64.Mem
+public import VerifiedGarbage.Proof.X25519.X86_64.Divstep.Step
+public import VerifiedGarbage.Proof.X25519.X86_64.Divstep.Spec
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X25519 on x86-64, inversion by divsteps: packed divsteps
@@ -15,6 +21,8 @@ the low words by it (`pkLow_ok`) and multiplies the batch's matrix by it
 (`pkComp_ok`): `pkChunkV`, for any words. That the four chunks are 59
 divsteps is the theory of divsteps (`Divstep/Sound.lean`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X25519.X86_64
 

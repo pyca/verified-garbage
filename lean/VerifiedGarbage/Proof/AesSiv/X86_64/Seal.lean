@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesSiv.X86_64.Crypt
+module
+
+public import VerifiedGarbage.Proof.AesSiv.X86_64.Crypt
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-SIV on x86-64: the end of `vg_aes_siv_encrypt`
@@ -9,6 +15,8 @@ the counter from that IV (`counter_ok`), encrypts the data in place with CTR
 (`ctr_wp`) and restores the registers: the working space then starts with
 the IV and the data is the ciphertext (`sealTail_wp`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesSiv.X86_64
 

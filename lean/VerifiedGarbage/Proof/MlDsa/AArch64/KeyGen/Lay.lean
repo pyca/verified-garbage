@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.PrimsOk
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.MlDsa.DecideAt
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.PrimsOk
+public import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.MlDsa.DecideAt
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA key generation on AArch64: parameters and buffers
@@ -12,6 +18,8 @@ precondition gives from the prologue on (`kgLay`), and the checks of pointers
 into them, for any parameter set, which `lay` proves from the offsets by
 `omega`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.KeyGen
 

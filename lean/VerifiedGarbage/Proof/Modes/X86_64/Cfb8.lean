@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Modes.X86_64.Cfb8Loop
-import VerifiedGarbage.Proof.Modes.X86_64.Fb
+module
+
+public import VerifiedGarbage.Proof.Modes.X86_64.Cfb8Loop
+public import VerifiedGarbage.Proof.Modes.X86_64.Fb
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # CFB8 on x86-64, for any core: the whole function
@@ -13,6 +19,8 @@ callee-saved registers, and writes nothing but the scratch buffer, the data
 and the input block. `cfb8Enc_of` and `cfb8Dec_of` (`Proof/Modes/Cfb8.lean`)
 state these as the specification's.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Modes.X86_64
 

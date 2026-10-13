@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecCorrect
+module
+
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecCorrect
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-PKCS1-v1_5 decryption on x86-64: the calls, on their own
@@ -8,6 +14,8 @@ the registers (`initArgsOf`, `updArgsOf`, …), and what each call keeps:
 `Ctx` and the frame (`init_cx`, `upd_cx`, …). The proof of constant time
 relates two runs call by call with these.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPkcs1Enc.X86_64.Dec
 

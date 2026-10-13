@@ -1,7 +1,15 @@
-import VerifiedGarbage.Proof.Gcm.X86_64.Cached.LoopTo
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchZTo.Loop48
+module
+
+public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.LoopTo
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZTo.Loop48
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # Cached-key GCM: the 48-block loops and their tails -/
+
+@[expose] public section
 
 namespace VG.Proof.Gcm.X86_64.StitchZHTo
 open VG VG.X86_64

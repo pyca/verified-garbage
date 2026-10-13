@@ -1,6 +1,12 @@
-import Mathlib.Tactic.Ring
-import Mathlib.Data.Nat.ModEq
-import VerifiedGarbage.Proof.Poly1305.Spec
+module
+
+public import Mathlib.Tactic.Ring
+public import Mathlib.Data.Nat.ModEq
+public import VerifiedGarbage.Proof.Poly1305.Spec
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Poly1305: Horner's rule in four lanes
@@ -12,6 +18,8 @@ summed. With `S = r⁴ V₀ + r³ V₁ + r² V₂ + r V₃`, the invariant is `S
 for the accumulator `a` of the blocks so far (starting with `V₀ = a`, the
 others 0).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Poly1305
 

@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YBase
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.AddSub
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YBase
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YBase
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.AddSub
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.AddSub
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on x86-64: `vg_mldsa_add_avx2` and `vg_mldsa_sub_avx2`
@@ -10,6 +18,8 @@ each lane, does what an iteration of `vg_mldsa_add` (`vg_mldsa_sub`) does
 eight results to `f` (`YAddSub.step`); the loop leaves `f` with all 256
 (`YAddSub.fn_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86_64.Arith
 

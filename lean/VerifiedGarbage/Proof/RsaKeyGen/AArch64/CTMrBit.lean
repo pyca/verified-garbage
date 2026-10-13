@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTMs
-import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrLoop
+module
+
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTMs
+meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTMs
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrLoop
+meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrLoop
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # A candidate on AArch64: constant time of a bit of Miller–Rabin's exponentiation
@@ -11,6 +19,8 @@ the blocks that only address the header. Between the pieces each run keeps
 `c`, `-c⁻¹` and the witness (`B1`), and `[aXm] < c` before the second
 multiplication.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaKeyGen.AArch64
 

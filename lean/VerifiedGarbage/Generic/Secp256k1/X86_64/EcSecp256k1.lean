@@ -1,8 +1,12 @@
-import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.Weierstrass.X86_64.InvSpec
-import VerifiedGarbage.Proof.EcKey.X86_64.Secp256k1.Verified
+module
+
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvSpec
+public import VerifiedGarbage.Proof.EcKey.X86_64.Secp256k1.Verified
 
 /-! # secp256k1 on x86-64, generic over its proven group law and inversions -/
+
+@[expose] public section
 
 namespace VG.Generic.Secp256k1.X86_64.EcSecp256k1
 

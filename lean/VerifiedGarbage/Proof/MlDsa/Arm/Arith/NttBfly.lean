@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.MlDsa.Arm.Arith.Basic
-import VerifiedGarbage.Proof.MlDsa.Arith.Ntt
-import VerifiedGarbage.Impl.MlDsa.Arm.Arith.Ntt
+module
+
+public import VerifiedGarbage.Proof.MlDsa.Arm.Arith.Basic
+public import VerifiedGarbage.Proof.MlDsa.Arith.Ntt
+public import VerifiedGarbage.Impl.MlDsa.Arm.Arith.Ntt
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on 32-bit ARM: the butterflies of `NTT` and `NTT⁻¹`
@@ -10,6 +16,8 @@ before `mulz`, `mulz` (`mulz_ok`), and after it; their values are those of
 `bfly` and `bflyInv` (`bfly_spec`, `bflyInv_spec`): what `BflyOk` states of a
 butterfly's code, for the loops (`NttLoop.lean`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Arm.Arith
 

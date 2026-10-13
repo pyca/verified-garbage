@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.X25519.Arm.Instr
-import VerifiedGarbage.Proof.Framework.Range
-import VerifiedGarbage.Impl.X25519.Arm
+module
+
+public import VerifiedGarbage.Proof.X25519.Arm.Instr
+public import VerifiedGarbage.Proof.Framework.Range
+public import VerifiedGarbage.Impl.X25519.Arm
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X25519 on 32-bit ARM: carrying sums into limbs
@@ -10,6 +16,8 @@ the sums `c_k` that `src k` leaves in `r3` and the carry `cin` in `r5`
 (`pass_ok`), for any `src` that computes them from the memory as it was, but
 for the limbs already stored (`PassInv.frame`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X25519.Arm
 

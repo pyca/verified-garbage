@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Fixed
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Finish
-import VerifiedGarbage.Proof.Framework.AArch64.Syms
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.Fixed
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.Finish
+public import VerifiedGarbage.Proof.Framework.AArch64.Syms
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDSA on AArch64: the setup and the tables of bits
@@ -10,6 +16,8 @@ too: the setup and the table of bits of `k`, and what
 the later stages share. None of it needs the group law, which only the
 proofs of the results (`Main.lean`) import.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.AArch64
 

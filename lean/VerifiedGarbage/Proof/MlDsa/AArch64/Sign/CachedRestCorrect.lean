@@ -1,5 +1,13 @@
-import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.CachedLoop
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedRestCorrect
+module
+
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.CachedLoop
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedRestCorrect
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Sign.Cached
 open VG VG.AArch64 VG.Spec.MlDsa

@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2Tail.Out
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2Tail.Rounds3
+module
+
+public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2Tail.Out
+public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2Tail.Rounds3
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ChaCha20 on x86-64 with AVX2, the last bytes: three sets
@@ -9,6 +15,8 @@ sets (the third set's lane increments `4, 5` summed from the second set's,
 `inT3`), and the output, the first two sets XORed into 256 bytes of data and
 the third stored to `buf[0, 128)`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.ChaCha20.X86_64.Avx2Tail
 

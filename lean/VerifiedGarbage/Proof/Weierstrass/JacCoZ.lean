@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Weierstrass.JacAdd
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.JacAdd
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Co-Z formulas in Jacobian coordinates
@@ -11,6 +17,8 @@ first point, `(X1 C, Y1 (W1 - W2))` with the sum's `Z`, is itself scaled by
 Jacobian doubling with `Z = 1`, and the point itself scaled by the double's
 `Z = 2y` (`InvJ.rescale`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass
 

@@ -1,5 +1,7 @@
-import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Variant
+module
+
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Variant
 
 /-!
 # HMAC (RFC 2104) over a Merkle–Damgård hash function on AArch64
@@ -19,6 +21,8 @@ working space in a frame of their own, above those; `init_scratch` and
 code calls.
 -/
 
+@[expose] public section
+
 namespace VG.Generic.MdHash.AArch64.Hmac
 
 def artifacts (v : Proof.Pbkdf2.Md.AArch64.MdHash) : List Artifact := [
@@ -28,7 +32,7 @@ def artifacts (v : Proof.Pbkdf2.Md.AArch64.MdHash) : List Artifact := [
     doc := v.I.initApi.doc
     code := Impl.StackScratch.AArch64.withStackScratch (Proof.Pbkdf2.Md.AArch64.hmacFrame v.I) .x4 v.H.hmacInit
     contract := v.I.initContract AArch64.abi (16 + Proof.Pbkdf2.Md.AArch64.hmacFrame v.I)
-    ofSig := ⟨_, _, _, by unfold Spec.Hmac.Instance.initContract; rfl⟩
+    ofSig := by exact (⟨_, _, _, by unfold Spec.Hmac.Instance.initContract; rfl⟩)
     stack := 16 + Proof.Pbkdf2.Md.AArch64.hmacFrame v.I
     verified := v.hmacInitF
     spSafe := Code.all_of_forall (fun _ => rfl) _
@@ -39,7 +43,7 @@ def artifacts (v : Proof.Pbkdf2.Md.AArch64.MdHash) : List Artifact := [
     doc := v.I.finalizeApi.doc
     code := Impl.StackScratch.AArch64.withStackScratch (Proof.Pbkdf2.Md.AArch64.hmacFrame v.I) .x4 v.H.hmacFin
     contract := v.I.finalizeContract AArch64.abi (16 + Proof.Pbkdf2.Md.AArch64.hmacFrame v.I)
-    ofSig := ⟨_, _, _, by unfold Spec.Hmac.Instance.finalizeContract; rfl⟩
+    ofSig := by exact (⟨_, _, _, by unfold Spec.Hmac.Instance.finalizeContract; rfl⟩)
     stack := 16 + Proof.Pbkdf2.Md.AArch64.hmacFrame v.I
     verified := v.hmacFinF
     spSafe := Code.all_of_forall (fun _ => rfl) _
@@ -50,7 +54,7 @@ def artifacts (v : Proof.Pbkdf2.Md.AArch64.MdHash) : List Artifact := [
     doc := v.I.initScratchApi.doc
     code := v.H.hmacInit
     contract := v.I.initScratchContract AArch64.abi 16
-    ofSig := ⟨_, _, _, by unfold Spec.Hmac.Instance.initScratchContract; rfl⟩
+    ofSig := by exact (⟨_, _, _, by unfold Spec.Hmac.Instance.initScratchContract; rfl⟩)
     stack := 16
     verified := v.hmacInit
     spSafe := Code.all_of_forall (fun _ => rfl) _
@@ -61,7 +65,7 @@ def artifacts (v : Proof.Pbkdf2.Md.AArch64.MdHash) : List Artifact := [
     doc := v.I.finalizeScratchApi.doc
     code := v.H.hmacFin
     contract := v.I.finalizeScratchContract AArch64.abi 16
-    ofSig := ⟨_, _, _, by unfold Spec.Hmac.Instance.finalizeScratchContract; rfl⟩
+    ofSig := by exact (⟨_, _, _, by unfold Spec.Hmac.Instance.finalizeScratchContract; rfl⟩)
     stack := 16
     verified := v.hmacFin
     spSafe := Code.all_of_forall (fun _ => rfl) _

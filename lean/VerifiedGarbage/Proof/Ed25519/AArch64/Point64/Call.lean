@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Ed25519.AArch64.Point64.Verified
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Proof.Framework.Covers
+module
+
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Point64.Verified
+public import VerifiedGarbage.Proof.Framework.AArch64.Call
+public import VerifiedGarbage.Proof.Framework.Covers
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed25519 on AArch64: calls of the point functions
@@ -13,6 +19,8 @@ it keeps what a field operation keeps (`Keep`), leaves the slots' values
 (`call_ok`). The call runs on the working space alone (`WP.callV`, with the
 function's own proof, `fn_ok`, as its contract, `callK`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed25519.AArch64.Point64
 

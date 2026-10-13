@@ -1,10 +1,19 @@
-import VerifiedGarbage.Impl.Ed25519.X86.FieldCheck
-import VerifiedGarbage.Proof.Ed25519.X86.FreezeField
-import VerifiedGarbage.Proof.Ed25519.X86.PrepareAdd
-import VerifiedGarbage.Impl.Ed25519.X86.RecoverSign
-import VerifiedGarbage.Proof.Ed25519.X86.PointEncodeSign
+module
+
+public import VerifiedGarbage.Impl.Ed25519.X86.FieldCheck
+public import VerifiedGarbage.Proof.Ed25519.X86.FreezeField
+public import VerifiedGarbage.Proof.Ed25519.X86.PrepareAdd
+public import VerifiedGarbage.Impl.Ed25519.X86.RecoverSign
+public import VerifiedGarbage.Proof.Ed25519.X86.PointEncodeSign
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Ed25519.X86.FieldCheck`. -/
+
+@[expose] public section
+
 section
 namespace VG.Proof.Ed25519.X86
 open VG VG.X86 VG.Impl.X25519.X86 VG.Impl.Ed25519.X86

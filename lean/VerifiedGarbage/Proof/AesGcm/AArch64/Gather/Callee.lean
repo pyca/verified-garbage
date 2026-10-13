@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.AesGcm.AArch64.Gather.Contract
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Framework.AArch64.RelCT
-import VerifiedGarbage.Impl.AesGcm.AArch64.SealGather
-import VerifiedGarbage.Spec.Gcm.Contract
+module
+
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Gather.Contract
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+public import VerifiedGarbage.Impl.AesGcm.AArch64.SealGather
+public import VerifiedGarbage.Spec.Gcm.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM one-shot encryption out of place, from a list of slices, AArch64: the function called
@@ -15,6 +21,8 @@ its precondition from the layout the call gives it (`callPre`,
 `sealSpec_pre`), its postcondition (`sealSpec_post`) and its public data
 (`sealSpec_pub`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesGcm.AArch64.Gather
 

@@ -1,11 +1,20 @@
-import VerifiedGarbage.Proof.Weierstrass.X86.InvInterface
-import VerifiedGarbage.Proof.Weierstrass.X86.InvInit
-import VerifiedGarbage.Proof.Weierstrass.X86.InvRun
-import VerifiedGarbage.Proof.Divstep.Tc32
-import VerifiedGarbage.Proof.Divstep.Iter
-import Mathlib.Data.Nat.Prime.Basic
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86.InvInterface
+public import VerifiedGarbage.Proof.Weierstrass.X86.InvInit
+public import VerifiedGarbage.Proof.Weierstrass.X86.InvRun
+public import VerifiedGarbage.Proof.Divstep.Tc32
+public import VerifiedGarbage.Proof.Divstep.Iter
+public import Mathlib.Data.Nat.Prime.Basic
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # Soundness of the 256-bit divstep inversion -/
+
+@[expose] public section
+
 namespace VG.Proof.Weierstrass.X86.Inv
 open VG VG.X86 VG.X86.Wp VG.Impl.Mont.X86 VG.Impl.Weierstrass.X86
   VG.Proof.Mont.X86 VG.Proof.Mont VG.Proof.Weierstrass

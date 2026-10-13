@@ -1,8 +1,14 @@
-import VerifiedGarbage.Impl.Weierstrass.Arm.Mont
-import VerifiedGarbage.Proof.Mont.Arm.Ops
-import VerifiedGarbage.Proof.Weierstrass.Arm.Const
-import VerifiedGarbage.Proof.Weierstrass.Arm.Saves
-import VerifiedGarbage.TCB.Arm.Target
+module
+
+public import VerifiedGarbage.Impl.Weierstrass.Arm.Mont
+public import VerifiedGarbage.Proof.Mont.Arm.Ops
+public import VerifiedGarbage.Proof.Weierstrass.Arm.Const
+public import VerifiedGarbage.Proof.Weierstrass.Arm.Saves
+public import VerifiedGarbage.TCB.Arm.Target
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Montgomery arithmetic modulo a curve's `p` or `n`, as functions, on 32-bit ARM
@@ -17,6 +23,8 @@ stored (`ModOkW`); then the operation, and the registers restored
 `lr` (`abiPreserved`), and changes the memory only at `[o]` and in its own
 working space (`Kept`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.Arm.Mont
 

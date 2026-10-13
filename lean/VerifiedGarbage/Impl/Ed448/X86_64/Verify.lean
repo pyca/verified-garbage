@@ -132,16 +132,19 @@ def hash : Prog isa :=
 /-! ## The function -/
 
 /-- The frame's body. -/
-def body : Prog isa :=
+def bodyFor (v : FieldVariant) : Prog isa :=
   .seq (.block hdr) <| .seq hash <|
     .seq (callA "vg_ed448_scalar_reduce" scalarReduce [.sp fK, .sp fH, .slot fScr])
-      (callA "vg_ed448_verify_equation" verifyEquation [.slot fPk, .slot fSig, .sp fK, .slot fScr])
+      (callA ("vg_ed448_verify_equation" ++ v.suffix) (verifyEquationFor v) [.slot fPk, .slot fSig, .sp fK, .slot fScr])
 
 /-- `vg_ed448_verify`. -/
-def verify : Prog isa :=
+def verifyFor (v : FieldVariant) : Prog isa :=
   .seq (.block [.alu .cmp .rdx (.imm 256)])
     (.ite .b (.seq (.block [.mov .r11 (.mem (stk 8)), .mov32 .rax (.imm 0)])
-        (.frame (.push regs) body (.pop .r11 32)))
+        (.frame (.push regs) (bodyFor v) (.pop .r11 32)))
       (.block [.mov32 .rax (.imm 0)]))
+
+def body : Prog isa := bodyFor .scalar
+def verify : Prog isa := verifyFor .scalar
 
 end VG.Impl.Ed448.X86_64.Verify

@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncVerified
-import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecVerified
-import VerifiedGarbage.Proof.Rsa.AArch64.PrivVerified
-import VerifiedGarbage.Proof.Rsa.AArch64.PubChecked
+module
+
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncVerified
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecVerified
+public import VerifiedGarbage.Proof.Rsa.AArch64.PrivVerified
+public import VerifiedGarbage.Proof.Rsa.AArch64.PubChecked
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_public_checked` as encryption's callee on AArch64
@@ -14,6 +20,8 @@ a `PubImpl` (`pubImpl`). For each implementation `c` of `vg_rsa_private_crt`
 `Generic/RsaPrivateCrt/AArch64/Rsa.lean` emits it, is a `PrivImpl`
 (`privOf`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPkcs1Enc.AArch64
 

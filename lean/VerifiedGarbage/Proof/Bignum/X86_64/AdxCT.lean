@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxFused
-import VerifiedGarbage.Proof.Bignum.X86_64.Mont
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxFused
+meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxFused
+public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
+meta import VerifiedGarbage.Proof.Bignum.X86_64.Mont
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Multiword arithmetic on x86-64: the BMI2/ADX multiplication in constant time
@@ -10,6 +18,8 @@ which `Two` fixes. The size test, the rows' loop and the end of each row
 compare with values from the header, so the branch and the loop are taken
 alike in both runs because `Ws` fixes `w` (`two_ite`, `two_loop`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64
 

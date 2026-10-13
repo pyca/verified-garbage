@@ -1,4 +1,6 @@
-import VerifiedGarbage.Proof.Aes.X86_64.BlocksVariant
+module
+
+public import VerifiedGarbage.Proof.Aes.X86_64.BlocksVariant
 
 /-!
 # `vg_aes_encrypt_blocks` and `vg_aes_decrypt_blocks` on x86-64: with AES-NI
@@ -7,6 +9,8 @@ A variant of `AesBlocks` on x86-64 (see `TCB/Emit.lean`):
 `vg_aes_encrypt_blocks_aesni`, `vg_aes_decrypt_blocks_aesni` and
 `vg_aes_expand_key_scratch_aesni`, which need AES-NI.
 -/
+
+@[expose] public section
 
 namespace VG.Variants.AesBlocks.X86_64.AesNi
 

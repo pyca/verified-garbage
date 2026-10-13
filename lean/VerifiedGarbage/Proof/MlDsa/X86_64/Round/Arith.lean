@@ -1,5 +1,11 @@
-import VerifiedGarbage.Impl.MlDsa.X86_64.Round.Round
-import VerifiedGarbage.Proof.MlDsa.Round.Decompose
+module
+
+public import VerifiedGarbage.Impl.MlDsa.X86_64.Round.Round
+public import VerifiedGarbage.Proof.MlDsa.Round.Decompose
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on x86-64: what the rounding code computes
@@ -10,6 +16,8 @@ registers, as the symbolic execution of a block writes them (`condAddV`,
 `hbRawV_toNat`, `hbV_toNat`), from the target-independent lemmas of
 `Proof/MlDsa/Round/Decompose.lean`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86_64.Round
 

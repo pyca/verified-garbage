@@ -1,8 +1,12 @@
-import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.Unpack
-import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.HintUnpack
+module
+
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.Unpack
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.HintUnpack
 
 /-! # ML-DSA (FIPS 204) on x86-64: the encodings -/
+
+@[expose] public section
 
 namespace VG.Artifacts.MlDsaPack.X86_64
 

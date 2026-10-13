@@ -1,7 +1,17 @@
-import VerifiedGarbage.Proof.Weierstrass.Arm.MontContract
-import VerifiedGarbage.Proof.Weierstrass.Arm.MontModuli
-import VerifiedGarbage.Proof.Framework.Arm.Taint
-import VerifiedGarbage.Proof.Framework.Arm.Contract
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.Arm.MontContract
+meta import VerifiedGarbage.Proof.Weierstrass.Arm.MontContract
+public import VerifiedGarbage.Proof.Weierstrass.Arm.MontModuli
+meta import VerifiedGarbage.Proof.Weierstrass.Arm.MontModuli
+public import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+public import VerifiedGarbage.Proof.Framework.Arm.Contract
+meta import VerifiedGarbage.Proof.Framework.Arm.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Montgomery arithmetic modulo the curves' `p` and `n`, as functions, on 32-bit ARM: verified
@@ -12,6 +22,8 @@ proof against `mulArm`, `addArm` or `subArm`, which it implies, constant
 time by taint tracking (only the pointer and the offsets, in `r0`–`r3`, are
 public), and a state satisfying it (`sat`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.Arm.Mont
 

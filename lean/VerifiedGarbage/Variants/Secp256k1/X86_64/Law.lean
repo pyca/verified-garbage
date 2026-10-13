@@ -1,6 +1,8 @@
-import VerifiedGarbage.Proof.Secp256k1.Curve
-import VerifiedGarbage.Proof.Weierstrass.X86_64.InvMain
-import VerifiedGarbage.Proof.Weierstrass.InvArith
+module
+
+public import VerifiedGarbage.Proof.Secp256k1.Curve
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvMain
+public import VerifiedGarbage.Proof.Weierstrass.InvArith
 
 /-!
 # secp256k1's group law and inversions, on x86-64
@@ -13,6 +15,8 @@ proofs need Mathlib's algebra. Their registration files are generic over it
 implementation too), so that this file alone, of those that emit them,
 imports that algebra.
 -/
+
+@[expose] public section
 
 namespace VG.Variants.Secp256k1.X86_64.Law
 

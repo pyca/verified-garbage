@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.MlDsa.Arm.Message.VerifyCorrect
-import VerifiedGarbage.Proof.Framework.Arm.RelCT
-import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
+module
+
+public import VerifiedGarbage.Proof.MlDsa.Arm.Message.VerifyCorrect
+public import VerifiedGarbage.Proof.Framework.Arm.RelCT
+public import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on ARMv7, `sign_message` and `verify_message`: two runs
@@ -11,6 +17,8 @@ functions of `r7`, which they keep, leak the same in runs that agree on it
 Two runs with the same layout, each in `Ctx` with inputs related by `I`
 (`Two`), and the moves of a call's arguments in them (`setArgs_two`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Arm.Message
 

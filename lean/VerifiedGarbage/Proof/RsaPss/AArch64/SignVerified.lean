@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.RsaPss.AArch64.SignCT
-import VerifiedGarbage.Proof.Framework.Contract
+module
+
+public import VerifiedGarbage.Proof.RsaPss.AArch64.SignCT
+public import VerifiedGarbage.Proof.Framework.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSASSA-PSS signing on AArch64: `Verified`
@@ -9,6 +15,8 @@ and the callee, `stk`) from correctness (`code_ok`), constant time
 (`code_ct`) and a state meeting the precondition (`sign_sat`, for the stack
 of `vg_rsa_private_checked`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPss.AArch64.Sgn
 

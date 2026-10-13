@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Mont.X86_64.Words
-import Mathlib.Tactic.Tauto
+module
+
+public import VerifiedGarbage.Proof.Mont.X86_64.Words
+public import Mathlib.Tactic.Tauto
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Montgomery arithmetic on x86-64: rows of multiply-accumulate steps
@@ -8,6 +14,8 @@ import Mathlib.Tactic.Tauto
 with the carry word `rbp` in and out (`mulSteps_ok`), by induction over the
 words, from X25519's multiply-accumulate step.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Mont.X86_64
 

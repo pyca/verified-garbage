@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesGcm.AArch64.OneEntry
+module
+
+public import VerifiedGarbage.Proof.AesGcm.AArch64.OneEntry
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on AArch64: `J₀` and the additional data of `seal` and `open`
@@ -8,6 +14,8 @@ the state at `W + 16` for the nonce, `oneAad` absorbs the additional data and
 `encPrep` sets up the text's arguments from the slots the entry wrote
 (`front_ok`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

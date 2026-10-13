@@ -1,7 +1,17 @@
-import VerifiedGarbage.Proof.AesCcm.X86.Top
-import VerifiedGarbage.Proof.AesCcm.X86.Seal
-import VerifiedGarbage.Proof.AesCcm.X86.MacCT
-import VerifiedGarbage.Proof.AesCcm.X86.CryptCT
+module
+
+public import VerifiedGarbage.Proof.AesCcm.X86.Top
+meta import VerifiedGarbage.Proof.AesCcm.X86.Top
+public import VerifiedGarbage.Proof.AesCcm.X86.Seal
+meta import VerifiedGarbage.Proof.AesCcm.X86.Seal
+public import VerifiedGarbage.Proof.AesCcm.X86.MacCT
+meta import VerifiedGarbage.Proof.AesCcm.X86.MacCT
+public import VerifiedGarbage.Proof.AesCcm.X86.CryptCT
+meta import VerifiedGarbage.Proof.AesCcm.X86.CryptCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CCM on x86: the start, and what the pieces after it keep, for
@@ -12,6 +22,8 @@ public (`pubOf`); from them, `seal` and `open` start (`Top`), the entry and
 `Ctr₀` are constant time (`start_ct`), and after them each piece keeps `Run`,
 from which the next one's precondition follows.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

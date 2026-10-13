@@ -1,9 +1,15 @@
-import VerifiedGarbage.Impl.Rsa.X86_64.Keys
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtArith
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
-import VerifiedGarbage.Proof.Bignum.X86_64.Cmp
-import VerifiedGarbage.Proof.Bignum.X86_64.Copy
-import VerifiedGarbage.Proof.Bignum.X86_64.Double
+module
+
+public import VerifiedGarbage.Impl.Rsa.X86_64.Keys
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtArith
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
+public import VerifiedGarbage.Proof.Bignum.X86_64.Cmp
+public import VerifiedGarbage.Proof.Bignum.X86_64.Copy
+public import VerifiedGarbage.Proof.Bignum.X86_64.Double
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSA private keys on x86-64: bases and loops over the words
@@ -16,6 +22,8 @@ in place (`shl_ok`), a selection in place (`sel_ok`), a masked subtraction
 and the masked addition (`addM_ok`) and subtraction (`sub_ok`) of
 `subModArr` and `subMod`, as loops.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.X86_64
 

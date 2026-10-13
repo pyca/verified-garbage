@@ -1,8 +1,19 @@
-import VerifiedGarbage.Proof.Ed448.AArch64.ScalarMulAddMain
-import VerifiedGarbage.Proof.Ed448.AArch64.ScalarLit
-import VerifiedGarbage.Proof.Framework.AArch64.Taint
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Spec.Ed448.Contract
+module
+
+public import VerifiedGarbage.Proof.Ed448.AArch64.ScalarMulAddMain
+meta import VerifiedGarbage.Proof.Ed448.AArch64.ScalarMulAddMain
+public import VerifiedGarbage.Proof.Ed448.AArch64.ScalarLit
+meta import VerifiedGarbage.Proof.Ed448.AArch64.ScalarLit
+public import VerifiedGarbage.Proof.Framework.AArch64.Taint
+meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.Ed448.Contract
+meta import VerifiedGarbage.Spec.Ed448.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 scalar arithmetic on AArch64: `Verified`
@@ -12,6 +23,8 @@ never determine branches or memory addresses: only the arguments, which
 are public, do. A concrete witness proves the signature contract is
 satisfiable.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.AArch64
 

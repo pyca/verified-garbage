@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesCbc.AArch64.Verified
-import VerifiedGarbage.Proof.AesCtr.AArch64.CT
+module
+
+public import VerifiedGarbage.Proof.AesCbc.AArch64.Verified
+public import VerifiedGarbage.Proof.AesCtr.AArch64.CT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CTR on AArch64: `Verified`
@@ -12,6 +18,8 @@ in the scratch buffer), whose `leak` (the counter block's last four bytes)
 gives the agreement on the last 32 bits of the counter block `crypt_ct`
 assumes (`ctrPub`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesCtr.AArch64
 

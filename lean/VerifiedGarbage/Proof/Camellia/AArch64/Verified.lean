@@ -1,10 +1,23 @@
-import VerifiedGarbage.Proof.Camellia.AArch64.Ecb
-import VerifiedGarbage.Proof.Camellia.Scratch
-import VerifiedGarbage.Proof.Framework.AArch64.Inline
-import VerifiedGarbage.Proof.Framework.AArch64.Taint
-import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Camellia.AArch64.Lit
+module
+
+public import VerifiedGarbage.Proof.Camellia.AArch64.Ecb
+meta import VerifiedGarbage.Proof.Camellia.AArch64.Ecb
+public import VerifiedGarbage.Proof.Camellia.Scratch
+meta import VerifiedGarbage.Proof.Camellia.Scratch
+public import VerifiedGarbage.Proof.Framework.AArch64.Inline
+meta import VerifiedGarbage.Proof.Framework.AArch64.Inline
+public import VerifiedGarbage.Proof.Framework.AArch64.Taint
+meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
+public import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
+meta import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Camellia.AArch64.Lit
+meta import VerifiedGarbage.Proof.Camellia.AArch64.Lit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Camellia ECB on AArch64 meets its contracts
@@ -16,6 +29,8 @@ in registers (`x0`–`x5`, the copies' pointers and counts and the loop
 tests). `ecb_framed` runs it with its working space on the stack, zeroed
 on return: 3248 bytes, the 406 words of the scratch buffer.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Camellia.AArch64
 

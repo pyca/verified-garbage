@@ -1,6 +1,10 @@
-import VerifiedGarbage.Proof.TripleDes.X86_64.CbcVerified
+module
+
+public import VerifiedGarbage.Proof.TripleDes.X86_64.CbcVerified
 
 /-! # Triple DES-CBC artifacts on baseline x86-64 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.TripleDesCbc.X86_64
 

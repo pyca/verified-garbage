@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Framework.Arm.Contract
-import VerifiedGarbage.Proof.Rc4.Scratch
+module
+
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.Arm.Contract
+public import VerifiedGarbage.Proof.Rc4.Scratch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RC4 on ARMv7: the contracts the proofs use
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.Rc4.Scratch
 `Proof.Rc4.initScratchContract` and `Proof.Rc4.applyScratchContract` spelled
 out for ARMv7: every argument is in a register, and no stack is used.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rc4.Arm
 

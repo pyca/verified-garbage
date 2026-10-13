@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Ws
-import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Comp
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Ws
+public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Comp
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSA with AVX512_IFMA on x86-64, any size: the IFMA branch
@@ -8,6 +14,8 @@ From the checks (`CrtReady`) of a modulus of
 `2 W` words and primes of `W`, `pre`, `ifma` and `post` leave what `qPart`
 and `pPart` leave (`PDone`), and MXCSR's bits 15:0.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64.Ifma
 

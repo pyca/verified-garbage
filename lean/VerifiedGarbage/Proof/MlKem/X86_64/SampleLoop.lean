@@ -1,7 +1,13 @@
-import VerifiedGarbage.Impl.MlKem.X86_64.Sample
-import VerifiedGarbage.Proof.MlKem.X86_64.Bytes
-import VerifiedGarbage.Proof.MlKem.X86_64.Contracts
-import VerifiedGarbage.Proof.MlKem.KPke
+module
+
+public import VerifiedGarbage.Impl.MlKem.X86_64.Sample
+public import VerifiedGarbage.Proof.MlKem.X86_64.Bytes
+public import VerifiedGarbage.Proof.MlKem.X86_64.Contracts
+public import VerifiedGarbage.Proof.MlKem.KPke
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86-64: the loop of `vg_mlkem_sample_ntt`
@@ -9,6 +15,8 @@ import VerifiedGarbage.Proof.MlKem.KPke
 An iteration of the loop does what `sampleStepCap` does to the coefficients
 sampled so far, stored at `a` (`Stored`) and counted in `rdi` (`snBody_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.X86_64
 

@@ -1,6 +1,14 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.Csub
-import VerifiedGarbage.Proof.RsaKeyGen.Gcd
-import VerifiedGarbage.Impl.RsaKeyGen.X86_64.Candidate
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.Csub
+public import VerifiedGarbage.Proof.RsaKeyGen.Gcd
+public import VerifiedGarbage.Impl.RsaKeyGen.X86_64.Candidate
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.RsaKeyGen.X86_64
 

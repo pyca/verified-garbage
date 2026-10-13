@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.RsaOaep.AArch64.EncCorrect
-import VerifiedGarbage.Proof.RsaOaep.AArch64.MgfCT
-import VerifiedGarbage.Proof.RsaOaep.AArch64.LabelCT
+module
+
+public import VerifiedGarbage.Proof.RsaOaep.AArch64.EncCorrect
+public import VerifiedGarbage.Proof.RsaOaep.AArch64.MgfCT
+public import VerifiedGarbage.Proof.RsaOaep.AArch64.LabelCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-OAEP encryption on AArch64: two runs
@@ -16,6 +22,8 @@ dereferences fixed by its first part (the `*E_pin` lemmas). The pieces
 encryption shares with decryption relate two runs by `LR`, which `In`
 implies (`pw_lr`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaOaep.AArch64.Enc
 

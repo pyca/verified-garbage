@@ -1,8 +1,19 @@
-import VerifiedGarbage.Impl.Rc2.X86.Stream
-import VerifiedGarbage.Proof.Rc2.X86.Cbc.Lit
-import VerifiedGarbage.Proof.Rc2.X86.KeyLit
+module
+
+public import VerifiedGarbage.Impl.Rc2.X86.Stream
+meta import VerifiedGarbage.Impl.Rc2.X86.Stream
+public import VerifiedGarbage.Proof.Rc2.X86.Cbc.Lit
+meta import VerifiedGarbage.Proof.Rc2.X86.Cbc.Lit
+public import VerifiedGarbage.Proof.Rc2.X86.KeyLit
+meta import VerifiedGarbage.Proof.Rc2.X86.KeyLit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # Streaming RC2-CBC on x86 (32-bit): the code as literals -/
+
+@[expose] public section
 
 namespace VG.Impl.Rc2.X86.Stream
 materialize_code init

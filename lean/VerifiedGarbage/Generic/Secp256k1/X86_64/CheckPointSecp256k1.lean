@@ -1,6 +1,8 @@
-import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.Weierstrass.X86_64.InvInterface
-import VerifiedGarbage.Proof.Ecdh.X86_64.Secp256k1.CheckVerified
+module
+
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvInterface
+public import VerifiedGarbage.Proof.Ecdh.X86_64.Secp256k1.CheckVerified
 
 /-!
 # secp256k1's check of a public point on x86-64
@@ -10,6 +12,8 @@ verification call. A generic file (see `TCB/Emit.lean`) over secp256k1's group l
 `h`, the variant `Variants/Secp256k1/X86_64/Law.lean`, whose inversions'
 soundness the proofs of the configuration take.
 -/
+
+@[expose] public section
 
 namespace VG.Generic.Secp256k1.X86_64.CheckPointSecp256k1
 

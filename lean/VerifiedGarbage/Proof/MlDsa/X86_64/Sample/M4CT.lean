@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.M4Top
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.M4Top
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.M4Top
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on x86-64: `vg_mldsa_expand_mask_poly4_avx2`, constant time
@@ -10,6 +17,8 @@ squeezes, from the arguments and then `rbx`; the unpackings, from `rbx`,
 `r13` and `rsp`); the two runs take the same branch on `γ₁` (`cmp_ok`), as
 their `γ₁` agree.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86_64.Mask4
 

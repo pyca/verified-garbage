@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Bignum.AArch64.Setup
+module
+
+public import VerifiedGarbage.Proof.Bignum.AArch64.Setup
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Multiword arithmetic on AArch64: the pieces of `R² mod m`
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.Bignum.AArch64.Setup
 * `doubles`: `[o] := 2^c [o] mod m`, counting the doublings in a header
   slot (`doubles_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.AArch64
 

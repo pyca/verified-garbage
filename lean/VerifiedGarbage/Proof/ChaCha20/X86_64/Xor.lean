@@ -1,17 +1,35 @@
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Block
-import VerifiedGarbage.Proof.ChaCha20.Keystream
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Framework.X86_64.Abi
-import VerifiedGarbage.Proof.Framework.X86_64.Spill
-import VerifiedGarbage.Impl.ChaCha20.X86_64.Xor
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Lit
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.ChaCha20.X86_64.XorBuf
+module
+
+public import VerifiedGarbage.Proof.ChaCha20.X86_64.Block
+meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Block
+public import VerifiedGarbage.Proof.ChaCha20.Keystream
+meta import VerifiedGarbage.Proof.ChaCha20.Keystream
+public import VerifiedGarbage.Proof.Framework.X86_64.Call
+meta import VerifiedGarbage.Proof.Framework.X86_64.Call
+public import VerifiedGarbage.Proof.Framework.X86_64.Abi
+meta import VerifiedGarbage.Proof.Framework.X86_64.Abi
+public import VerifiedGarbage.Proof.Framework.X86_64.Spill
+meta import VerifiedGarbage.Proof.Framework.X86_64.Spill
+public import VerifiedGarbage.Impl.ChaCha20.X86_64.Xor
+meta import VerifiedGarbage.Impl.ChaCha20.X86_64.Xor
+public import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.ChaCha20.X86_64.Lit
+meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Lit
+public import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.ChaCha20.X86_64.XorBuf
+meta import VerifiedGarbage.Proof.ChaCha20.X86_64.XorBuf
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ChaCha20 keystream XOR on x86-64
 -/
+
+@[expose] public section
 
 namespace VG.Proof.ChaCha20
 

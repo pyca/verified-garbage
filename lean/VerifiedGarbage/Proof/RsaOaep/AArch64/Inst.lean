@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.RsaOaep.AArch64.EncVerified
-import VerifiedGarbage.Proof.RsaOaep.AArch64.DecVerified
-import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.Callees
-import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Variant
+module
+
+public import VerifiedGarbage.Proof.RsaOaep.AArch64.EncVerified
+public import VerifiedGarbage.Proof.RsaOaep.AArch64.DecVerified
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.Callees
+public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Variant
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-OAEP on AArch64: the instances emitted
@@ -11,6 +17,8 @@ and their names and CPU features, as on x86-64 (`Proof/RsaOaep/X86_64/Sp.lean`);
 that the hash function of a variant is a valid one for MGF1 (`mgf_valid`);
 and states meeting both contracts, for the registration files.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaOaep.AArch64
 

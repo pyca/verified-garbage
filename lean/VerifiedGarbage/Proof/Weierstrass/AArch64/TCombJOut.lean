@@ -1,6 +1,14 @@
-import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombJDigit
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Copy
-import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombSelectV
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombJDigit
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Copy
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombSelectV
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.AArch64
 open VG VG.AArch64 VG.Impl.Mont VG.Impl.Mont.AArch64 VG.Impl.Weierstrass VG.Impl.Weierstrass.AArch64

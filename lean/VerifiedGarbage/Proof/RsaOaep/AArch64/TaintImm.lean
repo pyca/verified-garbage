@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Framework.AArch64.TaintErase
-import VerifiedGarbage.Impl.Pbkdf2.Md.AArch64
+module
+
+public import VerifiedGarbage.Proof.Framework.AArch64.TaintErase
+public import VerifiedGarbage.Impl.Pbkdf2.Md.AArch64
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-OAEP on AArch64: code without its immediates
@@ -11,6 +17,8 @@ zeroes the immediates of `movz` and `movk`, `zImm` also zeroes those of
 immediate) are then checked once, for any hash function, on their copy for
 one of them (`check_of_zImm`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaOaep.AArch64
 

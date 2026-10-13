@@ -1,14 +1,20 @@
-import Mathlib.Data.List.Dedup
-import VerifiedGarbage.Proof.AesGcm.X86.StreamAad
-import VerifiedGarbage.Proof.AesGcm.X86.StreamInit
-import VerifiedGarbage.Proof.AesGcm.X86.StreamDecrypt
-import VerifiedGarbage.Proof.AesGcm.X86.StreamFinish
-import VerifiedGarbage.Proof.AesGcm.X86.StreamVerify
-import VerifiedGarbage.Proof.AesGcm.X86.Seal
-import VerifiedGarbage.Proof.AesGcm.X86.Open
-import VerifiedGarbage.Proof.AesGcm.X86.Init
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.AesGcm.Scratch
+module
+
+public import Mathlib.Data.List.Dedup
+public import VerifiedGarbage.Proof.AesGcm.X86.StreamAad
+public import VerifiedGarbage.Proof.AesGcm.X86.StreamInit
+public import VerifiedGarbage.Proof.AesGcm.X86.StreamDecrypt
+public import VerifiedGarbage.Proof.AesGcm.X86.StreamFinish
+public import VerifiedGarbage.Proof.AesGcm.X86.StreamVerify
+public import VerifiedGarbage.Proof.AesGcm.X86.Seal
+public import VerifiedGarbage.Proof.AesGcm.X86.Open
+public import VerifiedGarbage.Proof.AesGcm.X86.Init
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.AesGcm.Scratch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on x86: `Verified`
@@ -21,6 +27,8 @@ call `vg_aes_ctr32` (which pushes six arguments, and the return address),
 and 24 for `stream_init` and `stream_aad`, which call only `vg_ghash`
 (five).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

@@ -1,7 +1,12 @@
-import VerifiedGarbage.Proof.CmacAes.Stream.AArch64.Frame
+module
+
+public import VerifiedGarbage.Proof.CmacAes.Stream.AArch64.Frame
 
 /-! Streaming absorb is emitted for every verified whole-block CMAC update
 variant. Its buffering proof depends on the update contract, not on CTR. -/
+
+@[expose] public section
+
 namespace VG.Generic.CmacAesUpdate.AArch64.Absorb
 def artifacts (v : Proof.CmacAes.AArch64.UpdateImpl) : List Artifact := [
   { Spec.Cmac.aesAbsorbApi with

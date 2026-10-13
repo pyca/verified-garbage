@@ -1,8 +1,17 @@
-import VerifiedGarbage.Impl.Dsa.Layout
-import VerifiedGarbage.Spec.Dsa.SignVerify
-import VerifiedGarbage.Proof.Bignum.CrtExp
+module
+
+public import VerifiedGarbage.Impl.Dsa.Layout
+public import VerifiedGarbage.Spec.Dsa.SignVerify
+public import VerifiedGarbage.Proof.Bignum.CrtExp
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # Bounds of the DSA scratch layout -/
+
+@[expose] public section
+
 namespace VG.Proof.Dsa
 
 open VG.Impl.Dsa.Layout VG.Proof.Bignum

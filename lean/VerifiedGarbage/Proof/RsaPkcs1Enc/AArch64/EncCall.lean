@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncLoops
+module
+
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncLoops
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-PKCS1-v1_5 encryption on AArch64: the call
@@ -11,6 +17,8 @@ and its stack arguments to read and `out` and `scratch` to write; and
 `pub_call` runs it (`call_ok`): `Ctx` holds again, and `out` holds
 `EM^e mod n` or zeros.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPkcs1Enc.AArch64.Enc
 

@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Ed448.Group.Decode
-import VerifiedGarbage.Proof.Ed448.AArch64.Window.KLoop
-import VerifiedGarbage.Proof.X448.BaseAdd
-import Mathlib.Tactic.Abel
+module
+
+public import VerifiedGarbage.Proof.Ed448.Group.Decode
+public import VerifiedGarbage.Proof.Ed448.AArch64.Window.KLoop
+public import VerifiedGarbage.Proof.X448.BaseAdd
+public import Mathlib.Tactic.Abel
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 verification on AArch64: the equation, by the group law
@@ -12,6 +18,8 @@ Untrusted: everything here is checked by Lean. The table's entries represent
 `verifyEquation` is `S < L` and the projective comparison of `[4]([S]B +
 [k](-A))` with `[4]R` (`verifyEquation_eq`), which the code computes.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.AArch64.Window
 

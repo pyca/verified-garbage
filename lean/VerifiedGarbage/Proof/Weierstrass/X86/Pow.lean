@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Weierstrass.Layout
-import VerifiedGarbage.Proof.Weierstrass.X86.Bits
-import VerifiedGarbage.Proof.Weierstrass.X86.CallOps
-import VerifiedGarbage.Proof.Weierstrass.Pow
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.Layout
+public import VerifiedGarbage.Proof.Weierstrass.X86.Bits
+public import VerifiedGarbage.Proof.Weierstrass.X86.CallOps
+public import VerifiedGarbage.Proof.Weierstrass.Pow
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Short Weierstrass curves on x86 (32-bit): powers
@@ -13,6 +19,8 @@ iteration squares the accumulator, multiplies it by the base into `[tmp]`
 set (`powBody_ok`). The functions' own working space at `wk` is above the
 power's slots, and below its table (`PowWk`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.X86
 

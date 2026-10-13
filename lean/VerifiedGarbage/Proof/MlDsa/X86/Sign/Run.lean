@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlDsa.X86.Sign.PhaseC
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86.Sign.PhaseC
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA signing on x86 (32-bit): what two related runs agree on
@@ -9,6 +15,8 @@ checks make, or 1 if `Â` was not sampled), are the same in two runs related by
 `SPub`; and at an iteration both reach (`t < NI`), so are `c̃`, whether
 `SampleInBall` succeeded, whether the checks passed, and then the hint.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86.Sign
 

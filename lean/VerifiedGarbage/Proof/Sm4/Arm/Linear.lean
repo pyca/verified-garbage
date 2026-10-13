@@ -1,6 +1,12 @@
-import VerifiedGarbage.Impl.Sm4.Arm.ExpandKey
-import VerifiedGarbage.Proof.Sm4.Bitsliced32
-import VerifiedGarbage.Proof.Sm4.Arm.LinG
+module
+
+public import VerifiedGarbage.Impl.Sm4.Arm.ExpandKey
+public import VerifiedGarbage.Proof.Sm4.Bitsliced32
+public import VerifiedGarbage.Proof.Sm4.Arm.LinG
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The linear layers of bitsliced SM4 on ARMv7, by evaluation
@@ -22,6 +28,8 @@ with the XOR of input bits given here.
 Position `p = 8 i + b` of a plane is byte `i` (from the most significant)
 of the word of block `b`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sm4.Arm
 

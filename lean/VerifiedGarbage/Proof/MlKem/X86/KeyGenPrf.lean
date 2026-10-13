@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.MlKem.X86.KeyGenG
-import VerifiedGarbage.Proof.MlKem.X86.Cbd
-import VerifiedGarbage.Proof.MlKem.X86.Ntt
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86.KeyGenG
+public import VerifiedGarbage.Proof.MlKem.X86.Cbd
+public import VerifiedGarbage.Proof.MlKem.X86.Ntt
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86 (32-bit): `ŝ` and `ê` in key generation
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.MlKem.X86.Ntt
 `kgPrf L N` computes `NTT(SamplePolyCBD₂(PRF₂(σ, N)))` into `scratch[1024N]`
 (`prf_piece`), and the `2k` of them take `P 0` to `P (2k)` (`prfs_piece`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.X86.KeyGen
 

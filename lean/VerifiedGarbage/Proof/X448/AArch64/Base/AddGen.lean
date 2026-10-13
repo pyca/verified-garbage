@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.X448.AArch64.Base.AddDefs
-import VerifiedGarbage.Impl.X448.AArch64.Base
+module
+
+public import VerifiedGarbage.Proof.X448.AArch64.Base.AddDefs
+public import VerifiedGarbage.Impl.X448.AArch64.Base
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 of the base point on AArch64: the complete addition
@@ -9,6 +15,8 @@ scalar field operations only, for the four doublings and the last addition: the
 environment afterwards is `genEnv` of the one before, which for the slots used is
 `addPt` of the two points (`genEnv_dbl`, `genEnv_add`, `genPt_eq`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448.AArch64.Base
 

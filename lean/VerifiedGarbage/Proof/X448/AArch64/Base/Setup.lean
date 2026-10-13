@@ -1,10 +1,16 @@
-import VerifiedGarbage.Proof.X448.AArch64.Base.Step
-import VerifiedGarbage.Proof.X448.AArch64.Base.AddGen
-import VerifiedGarbage.Proof.X448.AArch64.Weak.Counters
-import VerifiedGarbage.Proof.X448.AArch64.Fast.Setup
-import VerifiedGarbage.Proof.X448.AArch64.Fast.VSave
-import VerifiedGarbage.Proof.X448.AArch64.Bits
-import VerifiedGarbage.Proof.X448.AArch64.Base.Const
+module
+
+public import VerifiedGarbage.Proof.X448.AArch64.Base.Step
+public import VerifiedGarbage.Proof.X448.AArch64.Base.AddGen
+public import VerifiedGarbage.Proof.X448.AArch64.Weak.Counters
+public import VerifiedGarbage.Proof.X448.AArch64.Fast.Setup
+public import VerifiedGarbage.Proof.X448.AArch64.Fast.VSave
+public import VerifiedGarbage.Proof.X448.AArch64.Bits
+public import VerifiedGarbage.Proof.X448.AArch64.Base.Const
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 of the base point on AArch64: the setup
@@ -14,6 +20,8 @@ working space, sets `x12`, saves the callee-saved registers and the output
 pointer, zeroes every slot, expands the clamped scalar's bits, and starts both
 accumulators at `[G] B` (`baseG`): `StepInv` for step 0.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448.AArch64.Base
 

@@ -1,6 +1,12 @@
-import VerifiedGarbage.Impl.Seed.AArch64.Ecb
-import VerifiedGarbage.Proof.Seed.AArch64.G16
-import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+module
+
+public import VerifiedGarbage.Impl.Seed.AArch64.Ecb
+public import VerifiedGarbage.Proof.Seed.AArch64.G16
+public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The arrays of 32-bit words in the scratch buffer
@@ -13,6 +19,8 @@ instructions' effects on them, and `lanes_ok`, which runs a step written for
 one lane (`lanes16 f`, `f b` touching only lane `b` of each array) on all
 sixteen.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Seed.AArch64
 

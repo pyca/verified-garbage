@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.RsaOaep.AArch64.CtBase
+module
+
+public import VerifiedGarbage.Proof.RsaOaep.AArch64.CtBase
+meta import VerifiedGarbage.Proof.RsaOaep.AArch64.CtBase
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-OAEP on AArch64: the label's hash in constant time
@@ -7,6 +14,8 @@ import VerifiedGarbage.Proof.RsaOaep.AArch64.CtBase
 label at the same place and of the same length in both (`LabAt`): each block
 by the taint analysis, each call the same call (`hashLabel_tr`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaOaep.AArch64
 

@@ -1,6 +1,8 @@
-import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.Weierstrass.X86_64.InvInterface
-import VerifiedGarbage.Proof.Ecdh.X86_64.P224.CheckVerified
+module
+
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvInterface
+public import VerifiedGarbage.Proof.Ecdh.X86_64.P224.CheckVerified
 
 /-!
 # P-224's check of a public point on x86-64
@@ -10,6 +12,8 @@ verification call. A generic file (see `TCB/Emit.lean`) over P-224's group law a
 `h`, the variant `Variants/P224/X86_64/Law.lean`, whose inversions'
 soundness the proofs of the configuration take.
 -/
+
+@[expose] public section
 
 namespace VG.Generic.P224.X86_64.CheckPointP224
 

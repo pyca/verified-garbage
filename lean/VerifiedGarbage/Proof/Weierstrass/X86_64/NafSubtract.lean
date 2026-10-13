@@ -1,10 +1,19 @@
-import VerifiedGarbage.Impl.Weierstrass.X86_64.NafPrep
-import VerifiedGarbage.Proof.Weierstrass.Naf5
-import VerifiedGarbage.Proof.X25519.X86_64.Step
-import VerifiedGarbage.Proof.Mont.X86_64.Words
+module
+
+public import VerifiedGarbage.Impl.Weierstrass.X86_64.NafPrep
+public import VerifiedGarbage.Proof.Weierstrass.Naf5
+public import VerifiedGarbage.Proof.X25519.X86_64.Step
+public import VerifiedGarbage.Proof.Mont.X86_64.Words
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! The five-, seven- and ten-word subtractions used by signed scalar recoding, and the value of the
 scalar's registers (`nafValN`). -/
+
+@[expose] public section
+
 namespace VG.Proof.Weierstrass.X86_64
 open VG VG.X86_64 VG.Impl.Weierstrass.X86_64
 open VG.Proof.X25519.X86_64

@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Sha256
-import VerifiedGarbage.Proof.Pbkdf2.Stream.X86.Sha224
-import VerifiedGarbage.Proof.Framework.TaintBatch
+module
+
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Sha256
+meta import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Sha256
+public import VerifiedGarbage.Proof.Pbkdf2.Stream.X86.Sha224
+meta import VerifiedGarbage.Proof.Pbkdf2.Stream.X86.Sha224
+public import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # HMAC-SHA-224 and PBKDF2-HMAC-SHA-224 over the compression function on x86 (32-bit), for every backend
@@ -17,6 +26,8 @@ the shared contracts of `Spec.Hmac.sha224I`, as for SHA-256 (`Sha256.lean`).
 Their taint checks depend only on the sizes, so they are evaluated once, for
 every backend (`sha224Shape`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Pbkdf2.Md.X86
 

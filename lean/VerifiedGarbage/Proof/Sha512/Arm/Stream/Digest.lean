@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.Sha512.Arm.Stream.Finalize
-import VerifiedGarbage.Proof.Sha512.Digest
+module
+
+public import VerifiedGarbage.Proof.Sha512.Arm.Stream.Finalize
+meta import VerifiedGarbage.Proof.Sha512.Arm.Stream.Finalize
+public import VerifiedGarbage.Proof.Sha512.Digest
+meta import VerifiedGarbage.Proof.Sha512.Digest
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Streaming SHA-384, SHA-512/256 and SHA-512/224 on ARMv7: `finalize`
@@ -11,6 +19,8 @@ generic proof of a `finalize` writing a prefix of the final hash value
 (`Finalize.verifiedD`), given what writing that prefix does (`ShapeD`), and
 constant time by the taint analysis of its code.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sha512.Arm.Stream.Finalize
 

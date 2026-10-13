@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Loop
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Loop
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Deterministic ECDSA on 32-bit ARM: correctness
@@ -10,6 +16,8 @@ candidate that is suitable or the last (`loop_ok`); before it, `h`, `K`,
 6979's (`result_eq`), for the hash function `P`'s instance of the contract. The frame's allocation, and our caller's registers
 saved in it and restored, give the whole function (`sign_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Rfc6979.Arm
 

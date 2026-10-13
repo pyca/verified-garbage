@@ -1,5 +1,11 @@
-import Mathlib.Tactic.Ring
-import VerifiedGarbage.Proof.Poly1305.X86_64.Ifma.Group
+module
+
+public import Mathlib.Tactic.Ring
+public import VerifiedGarbage.Proof.Poly1305.X86_64.Ifma.Group
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Poly1305 on x86-64 with AVX-512 IFMA: the last group
@@ -8,6 +14,8 @@ The last group of eight blocks is added to `H`, and the quadwords folded in
 three steps (`Impl/Poly1305/X86_64/Ifma.lean`), after which quadword 0 of `H`
 is the accumulator, modulo `p`, with limbs at most `2⁴⁴`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Poly1305.X86_64.Ifma
 

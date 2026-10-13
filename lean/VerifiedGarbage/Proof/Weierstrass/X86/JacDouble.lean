@@ -1,8 +1,17 @@
-import VerifiedGarbage.Proof.Weierstrass.X86.Rcb3
-import VerifiedGarbage.Proof.Weierstrass.JacMul
-import VerifiedGarbage.Proof.Weierstrass.X86.Fprog
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86.Rcb3
+public import VerifiedGarbage.Proof.Weierstrass.JacMul
+public import VerifiedGarbage.Proof.Weierstrass.X86.Fprog
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Direct-product Jacobian doubling for the public verification loops. -/
+
+@[expose] public section
+
 namespace VG.Proof.Weierstrass.X86
 open VG VG.X86 VG.Impl.Mont.X86 VG.Impl.Mont VG.Impl.Weierstrass.X86 VG.Impl.Weierstrass
 open VG.Proof.Mont.X86 VG.Proof.Mont Spec.Weierstrass

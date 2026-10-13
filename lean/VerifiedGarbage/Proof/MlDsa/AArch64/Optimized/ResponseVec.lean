@@ -1,6 +1,14 @@
-import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Response
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseWord
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseVec
+module
+
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Response
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseWord
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseVec
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Optimized.Response
 open VG VG.AArch64

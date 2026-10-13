@@ -1,7 +1,15 @@
-import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.KeygenPack
-import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Stream
-import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
+module
+
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.KeygenPack
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Stream
+public import VerifiedGarbage.Proof.MlKem.AArch64.Vec
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Optimized.KeygenPack
 open VG VG.AArch64

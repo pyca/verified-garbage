@@ -1,13 +1,29 @@
-import VerifiedGarbage.Proof.TripleDes.X86.RoundLit
-import VerifiedGarbage.Proof.TripleDes.X86.Linear
-import VerifiedGarbage.Impl.TripleDes.X86.Sbox
-import VerifiedGarbage.Impl.TripleDes.X86.Permutation
-import VerifiedGarbage.Proof.Framework.X86.Lit
-import VerifiedGarbage.Proof.TripleDes.SboxTables
-import VerifiedGarbage.Proof.Framework.X86.Straight
-import VerifiedGarbage.Proof.Framework.Bitslice.Table
+module
+
+public import VerifiedGarbage.Proof.TripleDes.X86.RoundLit
+meta import VerifiedGarbage.Proof.TripleDes.X86.RoundLit
+public import VerifiedGarbage.Proof.TripleDes.X86.Linear
+meta import VerifiedGarbage.Proof.TripleDes.X86.Linear
+public import VerifiedGarbage.Impl.TripleDes.X86.Sbox
+meta import VerifiedGarbage.Impl.TripleDes.X86.Sbox
+public import VerifiedGarbage.Impl.TripleDes.X86.Permutation
+meta import VerifiedGarbage.Impl.TripleDes.X86.Permutation
+public import VerifiedGarbage.Proof.Framework.X86.Lit
+meta import VerifiedGarbage.Proof.Framework.X86.Lit
+public import VerifiedGarbage.Proof.TripleDes.SboxTables
+meta import VerifiedGarbage.Proof.TripleDes.SboxTables
+public import VerifiedGarbage.Proof.Framework.X86.Straight
+meta import VerifiedGarbage.Proof.Framework.X86.Straight
+public import VerifiedGarbage.Proof.Framework.Bitslice.Table
+meta import VerifiedGarbage.Proof.Framework.Bitslice.Table
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## `RoundCheck` -/
+
+@[expose] public section
 
 section
 

@@ -1,6 +1,12 @@
-import VerifiedGarbage.Impl.P384.X86_64.PointOps
-import VerifiedGarbage.Proof.Weierstrass.X86_64.PointOpsFn
-import VerifiedGarbage.Proof.Weierstrass.X86_64.PointOpsCT
+module
+
+public import VerifiedGarbage.Impl.P384.X86_64.PointOps
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.PointOpsFn
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.PointOpsCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # P-384's point functions on x86-64: where their slots are
@@ -10,6 +16,8 @@ constants' slots of `RcbSlots`, `R`, `E` and `E`'s cached powers at byte
 6160), laid out for the field arithmetic, and the facts of `FnCfg`,
 `DoubleLay`, `CachedPts` and `MixedLay` about them, checked by the kernel.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.P384.X86_64.PointOps
 

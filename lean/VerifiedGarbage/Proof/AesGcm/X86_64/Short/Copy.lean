@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.Loops
-import VerifiedGarbage.Proof.AesGcm.X86_64.Run
-import VerifiedGarbage.Impl.AesGcm.X86_64.Short
-import VerifiedGarbage.Proof.Framework.X86_64.Avx512
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Loops
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Run
+public import VerifiedGarbage.Impl.AesGcm.X86_64.Short
+public import VerifiedGarbage.Proof.Framework.X86_64.Avx512
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM's short path on x86-64: copying bytes
@@ -10,6 +16,8 @@ Untrusted: everything here is checked by Lean. `copyBytes` copies `rcx`
 bytes from `rsi` to `rdi`, 16 at a time through `xmm4` and then one at a
 time (`copyBytes_ok`); the buffers do not overlap.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

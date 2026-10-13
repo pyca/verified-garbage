@@ -1,11 +1,19 @@
-import VerifiedGarbage.Proof.X448.X86.Copy
-import VerifiedGarbage.Proof.Framework.X86.RegUpd
+module
+
+public import VerifiedGarbage.Proof.X448.X86.Copy
+public import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 on x86 (32-bit): constant-time conditional swaps
 
 An XOR mask swaps limbs without a secret-dependent branch or memory address.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448.X86
 

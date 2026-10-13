@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.SealBody
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.SealBody
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on x86-64: `vg_aes_gcm_seal`
@@ -7,6 +13,8 @@ Untrusted: everything here is checked by Lean. `J₀` and the additional data
 (`oneAad`), the data encrypted (`oneCrypt`) and the tag of the ciphertext
 (`oneTag 0`, `sealRun_ok`), copied to `tag` (`tagOut_ok`): GCM-AE (`seal_wp`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

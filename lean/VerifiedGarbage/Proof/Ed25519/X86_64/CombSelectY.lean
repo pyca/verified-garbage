@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.CombSelect
+module
+
+public import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.CombSelect
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed25519's comb on x86-64: the selection with AVX2
@@ -8,6 +14,8 @@ time in `ymm11–ymm13`), stores the three rows to slots 4–6, and writes the i
 zero magnitude as `combSelect` does (`combSelOne_slots`): the slots then hold the same entry as
 after `combSelect` (`combSelectY_ok`, `combSelect_ok`'s statement).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed25519.X86_64
 

@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.AesGcm.X86.Loops
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86.Loops
+meta import VerifiedGarbage.Proof.AesGcm.X86.Loops
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on x86: calling `vg_ghash` from the pieces
@@ -11,6 +18,8 @@ accumulator over the blocks (`ghW_ok`, `GhOut`). `ghash1 yo b o` does it for
 the block at `b + o` (`ghash1_ok`). Each is constant time from its
 precondition (`ghW_ct`, `ghash1_ct`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

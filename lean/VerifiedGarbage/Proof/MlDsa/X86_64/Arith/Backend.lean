@@ -1,15 +1,21 @@
-import VerifiedGarbage.Proof.MlDsa.Arith.Representation
-import VerifiedGarbage.Impl.MlDsa.X86_64.Arith.Backend
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Ntt
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.NttInv
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Mul
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.AddSub
-import VerifiedGarbage.Proof.MlKem.X86_64.ArithOk
-import VerifiedGarbage.Proof.MlDsa.X86_64.Round.Bits
-import VerifiedGarbage.Proof.MlDsa.X86_64.Round.MakeHint
-import VerifiedGarbage.Proof.MlDsa.X86_64.Round.NormLt
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej4Verified
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.M4Verified
+module
+
+public import VerifiedGarbage.Proof.MlDsa.Arith.Representation
+public import VerifiedGarbage.Impl.MlDsa.X86_64.Arith.Backend
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Ntt
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.NttInv
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Mul
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.AddSub
+public import VerifiedGarbage.Proof.MlKem.X86_64.ArithOk
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Round.Bits
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Round.MakeHint
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Round.NormLt
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej4Verified
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.M4Verified
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on x86-64: what the callers of the polynomial arithmetic need of it
@@ -22,6 +28,8 @@ loads MXCSR only to restore it. Each is a variant of the interface `MlDsaArith`
 on x86-64 (`Variants/MlDsaArith/X86_64/`), and the functions that call it are
 proven once for all of them (`Generic/MlDsaArith/X86_64/`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86_64
 

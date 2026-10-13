@@ -1,6 +1,12 @@
-import VerifiedGarbage.Spec.RsaKeyGen.Contract
-import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.Framework.PowLit
+module
+
+public import VerifiedGarbage.Spec.RsaKeyGen.Contract
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.Framework.PowLit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # A candidate for an RSA prime on x86-64: the contract the proofs use
@@ -12,6 +18,8 @@ e_len = r8, p = r9, p_len = [rsp + 8], rand = [rsp + 16],
 rand_len = [rsp + 24], scratch = [rsp + 32], scratch_len = [rsp + 40])`.
 The shared contract implies it (`Verified.lean`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaKeyGen.X86_64
 

@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Seed.AArch64.Swap
+module
+
+public import VerifiedGarbage.Proof.Seed.AArch64.Swap
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # A round on AArch64
@@ -8,6 +14,8 @@ puts the steps of a round together: on every lane, the round's code does
 RFC 4269 §2's round (`Spec.Seed.round`) to the arrays of `L0`, `L1`, `R0`,
 `R1`, with the round key at `x0`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Seed.AArch64
 

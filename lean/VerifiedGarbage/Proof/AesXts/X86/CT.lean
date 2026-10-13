@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.AesXts.X86.Body
+module
+
+public import VerifiedGarbage.Proof.AesXts.X86.Body
+meta import VerifiedGarbage.Proof.AesXts.X86.Body
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # XTS-AES on x86: constant time
@@ -10,6 +17,8 @@ and `esi` (which the correctness proof pins to the public arguments,
 `PInv`), and the call of the block function on all the blocks, in its frame,
 is constant time by its own proof (AES-OCB's `blk_ct`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesXts.X86
 

@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Ecdsa.X86_64.Stages
-import VerifiedGarbage.Proof.Weierstrass.X86_64.TComb
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.Stages
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.TComb
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDSA on x86-64: the fixed-base comb's slots and constants
@@ -11,6 +17,8 @@ curve's tables, are what `tcomb_ok` needs (`tcombVals`) if the tables are
 right (`CombOk`), and the tables the calling convention gives are where the
 comb reads them (`tbl_of`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.X86_64
 

@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtChk
-import VerifiedGarbage.Proof.Bignum.X86_64.PubMain
-import VerifiedGarbage.Proof.Bignum.X86_64.R2wFast
-import VerifiedGarbage.Proof.Bignum.CrtHdr
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtChk
+public import VerifiedGarbage.Proof.Bignum.X86_64.PubMain
+public import VerifiedGarbage.Proof.Bignum.X86_64.R2wFast
+public import VerifiedGarbage.Proof.Bignum.CrtHdr
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSA with the CRT on x86-64: up to the checks
@@ -10,6 +16,8 @@ From the header `entry` leaves, for a valid modulus: the modulus' setup (as
 `vg_rsa_public`'s, then `c R mod n`), the primes' workspaces and the checks
 (`front_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64
 

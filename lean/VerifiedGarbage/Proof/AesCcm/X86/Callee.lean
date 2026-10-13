@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.AesCcm.X86.Run
-import VerifiedGarbage.Proof.CmacAes.Stream.X86.Call
+module
+
+public import VerifiedGarbage.Proof.AesCcm.X86.Run
+meta import VerifiedGarbage.Proof.AesCcm.X86.Run
+public import VerifiedGarbage.Proof.CmacAes.Stream.X86.Call
+meta import VerifiedGarbage.Proof.CmacAes.Stream.X86.Call
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CCM on x86: the functions called
@@ -14,6 +22,8 @@ environment: the key schedule, a block of `W` as the state or the counter
 block, the data or blocks of `W` as the data (`Src`), and the working space
 at `W + 384`.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.AesSiv.X86.CmacOf
+module
+
+public import VerifiedGarbage.Proof.AesSiv.X86.CmacOf
+meta import VerifiedGarbage.Proof.AesSiv.X86.CmacOf
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-SIV on x86: S2V over the associated data
@@ -11,6 +18,8 @@ everything outside those keep their values (`Kept`). S2V starts with
 descriptor at `A` lists (`compA`, `compL`), `D = dbl(D) ⊕ AES-CMAC(K1, S)`
 (`adBody_ok`), until none is left (`s2vAds_ok`, with the invariant `AInv`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

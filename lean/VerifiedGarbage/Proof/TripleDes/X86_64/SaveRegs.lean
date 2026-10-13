@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Proof.Framework.Mem
+module
+
+public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+public import VerifiedGarbage.Proof.Framework.X86_64.Exec
+public import VerifiedGarbage.Proof.Framework.Mem
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Storing and reloading registers, one instruction at a time
@@ -9,6 +15,8 @@ import VerifiedGarbage.Proof.Framework.Mem
 of a register or a load into one, so a save or restore of several
 registers is a chain of rewrites.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.TripleDes.X86_64
 

@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.MlDsa.Sample.Rej4
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej4Scalar
-import VerifiedGarbage.Proof.MlKem.X86_64.S4Verified
-import VerifiedGarbage.Proof.MlDsa.KeyGen.Mono
+module
+
+public import VerifiedGarbage.Proof.MlDsa.Sample.Rej4
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej4Scalar
+public import VerifiedGarbage.Proof.MlKem.X86_64.S4Verified
+public import VerifiedGarbage.Proof.MlDsa.KeyGen.Mono
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on x86-64: `vg_mldsa_rej_ntt_poly4` and `vg_mldsa_rej_ntt_poly4_avx2`, verified
@@ -11,6 +17,8 @@ with 256 coefficients in the 1008 bytes both implementations sample from has
 them within those bounds (`rejNTT_some`), and one without has none within the
 least bound (`rejNTT_none`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86_64.Rej4
 

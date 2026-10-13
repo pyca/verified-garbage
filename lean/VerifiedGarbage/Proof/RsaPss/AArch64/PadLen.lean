@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.RsaPss.AArch64.Pad
-import VerifiedGarbage.Proof.Pbkdf2.AArch64.Iterate
+module
+
+public import VerifiedGarbage.Proof.RsaPss.AArch64.Pad
+public import VerifiedGarbage.Proof.Pbkdf2.AArch64.Iterate
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSASSA-PSS on AArch64: `0x80` at a public offset, and the length field
@@ -9,6 +15,8 @@ writes the length field to `scratch + oLen` with `H`'s code
 (`lenField_ok`), and `lenLoop` ORs it into the end of block
 `⌊(ℓ + L) / B⌋` of `Y` through a mask for each block (`lenLoop_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPss.AArch64
 

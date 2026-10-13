@@ -1,6 +1,10 @@
-import VerifiedGarbage.Proof.Seed.AArch64.CbcVerified
+module
+
+public import VerifiedGarbage.Proof.Seed.AArch64.CbcVerified
 
 /-! # SEED-CBC artifacts on baseline AArch64 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.SeedCbc.AArch64
 

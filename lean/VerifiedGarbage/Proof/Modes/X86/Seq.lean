@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Modes.X86.Step
-import VerifiedGarbage.TCB.X86.Target
+module
+
+public import VerifiedGarbage.Proof.Modes.X86.Step
+public import VerifiedGarbage.TCB.X86.Target
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # A mode on x86 (32-bit), for any core: the whole function
@@ -11,6 +17,8 @@ data at `data` with the outputs of `F` from the IV, and (if `M.ivOut`) the
 IV with the last chaining value; it keeps the callee-saved registers and
 the return address. Each mode's and cipher's contract follows from it.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Modes.X86
 

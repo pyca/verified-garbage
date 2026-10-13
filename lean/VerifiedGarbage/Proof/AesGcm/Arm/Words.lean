@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Cmac.Mem32
-import VerifiedGarbage.Proof.Cmac.Dbl32
-import VerifiedGarbage.Proof.Gcm.Be64
-import VerifiedGarbage.TCB.Arm.Isa
+module
+
+public import VerifiedGarbage.Proof.Cmac.Mem32
+public import VerifiedGarbage.Proof.Cmac.Dbl32
+public import VerifiedGarbage.Proof.Gcm.Be64
+public import VerifiedGarbage.TCB.Arm.Isa
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on ARMv7: words and the lengths block
@@ -11,6 +17,8 @@ bytes of a block of two 64-bit values are their big-endian bytes
 (`toBytes_append64`); and `8 x` of a 64-bit `x = hi:lo`, as the code computes
 it with shifts (`shl3_words`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesGcm.Arm
 

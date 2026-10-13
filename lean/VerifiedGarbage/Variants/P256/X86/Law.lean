@@ -1,7 +1,9 @@
-import VerifiedGarbage.Proof.Weierstrass.X86.InvMain
-import VerifiedGarbage.Proof.Weierstrass.InvArith
-import VerifiedGarbage.Proof.P256.PrimeOrder
-import VerifiedGarbage.Proof.Weierstrass.X86.InvInterface
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86.InvMain
+public import VerifiedGarbage.Proof.Weierstrass.InvArith
+public import VerifiedGarbage.Proof.P256.PrimeOrder
+public import VerifiedGarbage.Proof.Weierstrass.X86.InvInterface
 
 /-!
 # P-256's group law, on x86 (32-bit)
@@ -13,6 +15,8 @@ proof needs Mathlib's algebra. Their registration files are generic over it
 implementation too), so that this file alone, of those that emit them,
 imports that algebra.
 -/
+
+@[expose] public section
 
 namespace VG.Variants.P256.X86.Law
 

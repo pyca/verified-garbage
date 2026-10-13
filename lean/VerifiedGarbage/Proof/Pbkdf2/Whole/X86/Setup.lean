@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Key
-import VerifiedGarbage.Proof.Pbkdf2.Whole.Common
+module
+
+public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Key
+public import VerifiedGarbage.Proof.Pbkdf2.Whole.Common
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # PBKDF2-HMAC on x86 (32-bit), the whole derivation: HMAC's states for the key, and the salt
@@ -8,6 +14,8 @@ HMAC's `init` makes the key's inner and outer states; the inner one is copied
 and absorbs the salt (`setup_ok`), which gives the three states every block
 starts from (`States`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Pbkdf2.Whole.X86
 

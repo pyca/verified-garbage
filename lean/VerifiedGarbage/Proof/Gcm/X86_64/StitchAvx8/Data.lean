@@ -1,9 +1,15 @@
-import VerifiedGarbage.Impl.Gcm.X86_64.StitchAvx8
-import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.Proof.Framework.X86_64.Avx
-import VerifiedGarbage.Proof.Framework.X86_64.YFrame
-import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Ctr32
+module
+
+public import VerifiedGarbage.Impl.Gcm.X86_64.StitchAvx8
+public import VerifiedGarbage.Proof.Framework.X86_64.Exec
+public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+public import VerifiedGarbage.Proof.Framework.X86_64.Avx
+public import VerifiedGarbage.Proof.Framework.X86_64.YFrame
+public import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Ctr32
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Applying the encrypted counter to one data block
@@ -11,6 +17,8 @@ import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Ctr32
 The memory-operand XOR avoids a separate input load. The following lemma
 states its exact memory effect and preserves every other vector register.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Gcm.X86_64.StitchAvx8
 

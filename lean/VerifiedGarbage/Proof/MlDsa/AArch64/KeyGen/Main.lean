@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Samp4
-import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.RestRow
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Samp4
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Samp4
+public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.RestRow
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.RestRow
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA key generation on AArch64: `vg_mldsa44_keygen`, `vg_mldsa65_keygen`, `vg_mldsa87_keygen`
@@ -11,6 +19,8 @@ bounds), and 0 if key generation fails within the least bounds; it leaks only
 the pointers, `ρ` and what `RejBoundedPoly` leaks; so it meets the shared
 contract (`keyGen_verified`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.KeyGen
 

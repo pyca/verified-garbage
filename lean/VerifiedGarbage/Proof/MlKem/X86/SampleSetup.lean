@@ -1,11 +1,25 @@
-import VerifiedGarbage.Proof.MlKem.X86.Keccak
-import VerifiedGarbage.Proof.MlKem.X86.Leaf
-import VerifiedGarbage.Proof.MlKem.KPke
-import VerifiedGarbage.Impl.MlKem.X86.Sample
-import VerifiedGarbage.Spec.MlKem.Poly
-import VerifiedGarbage.TCB.X86.Target
-import VerifiedGarbage.Proof.Framework.Sig
-import VerifiedGarbage.Proof.Framework.Contract
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86.Keccak
+meta import VerifiedGarbage.Proof.MlKem.X86.Keccak
+public import VerifiedGarbage.Proof.MlKem.X86.Leaf
+meta import VerifiedGarbage.Proof.MlKem.X86.Leaf
+public import VerifiedGarbage.Proof.MlKem.KPke
+meta import VerifiedGarbage.Proof.MlKem.KPke
+public import VerifiedGarbage.Impl.MlKem.X86.Sample
+meta import VerifiedGarbage.Impl.MlKem.X86.Sample
+public import VerifiedGarbage.Spec.MlKem.Poly
+meta import VerifiedGarbage.Spec.MlKem.Poly
+public import VerifiedGarbage.TCB.X86.Target
+meta import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Proof.Framework.Sig
+meta import VerifiedGarbage.Proof.Framework.Sig
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86 (32-bit): the SHAKE128 output of `vg_mlkem_sample_ntt`
@@ -21,6 +35,8 @@ The state `Base` is what holds throughout the body: `esp` as the leaf's
 frame left it, the permissions, and memory changed only in `a`, `scratch`
 and the 40 bytes of stack below the frame that the calls use (`W`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.X86.Sample
 

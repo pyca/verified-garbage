@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.X25519.AArch64.Invert
-import VerifiedGarbage.Proof.X25519.AArch64.Codec
+module
+
+public import VerifiedGarbage.Proof.X25519.AArch64.Invert
+public import VerifiedGarbage.Proof.X25519.AArch64.Codec
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X25519 on AArch64: the full reduction and the result
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.X25519.AArch64.Codec
 fully (`freeze`), packed into four words at `out` (`pack`), and our caller's
 registers restored.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X25519.AArch64
 

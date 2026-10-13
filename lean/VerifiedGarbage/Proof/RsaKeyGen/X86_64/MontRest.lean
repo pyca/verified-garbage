@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MontSetup
-import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Copy
-import VerifiedGarbage.Proof.RsaKeyGen.CandSpec
+module
+
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MontSetup
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Copy
+public import VerifiedGarbage.Proof.RsaKeyGen.CandSpec
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # A candidate on x86-64: the rest of `montSetup`
@@ -9,6 +15,8 @@ import VerifiedGarbage.Proof.RsaKeyGen.CandSpec
 (`msRm1_ok`); the number of uniform witnesses, `checksW w`, into `kChecks`
 (`msChecks_ok`); and all of `montSetup` (`montSetup_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaKeyGen.X86_64
 

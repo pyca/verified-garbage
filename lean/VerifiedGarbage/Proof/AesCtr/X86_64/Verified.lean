@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesCbc.X86_64.Verified
-import VerifiedGarbage.Proof.AesCtr.X86_64.CT
+module
+
+public import VerifiedGarbage.Proof.AesCbc.X86_64.Verified
+public import VerifiedGarbage.Proof.AesCtr.X86_64.CT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CTR on x86-64: `Verified`
@@ -11,6 +17,8 @@ bytes of stack, for the return address of the call of `vg_aes_ctr32`),
 whose `leak` (the counter block's last four bytes) gives the agreement on
 the last 32 bits of the counter block `crypt_ct` assumes (`ctrPub`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesCtr.X86_64
 

@@ -1,7 +1,17 @@
-import VerifiedGarbage.Proof.EcKey.AArch64.Main
-import VerifiedGarbage.Proof.EcKey.AArch64.P384.Contract
-import VerifiedGarbage.Proof.EcKey.AArch64.P384.Lit
-import VerifiedGarbage.Proof.Ecdsa.AArch64.P384.Verified
+module
+
+public import VerifiedGarbage.Proof.EcKey.AArch64.Main
+meta import VerifiedGarbage.Proof.EcKey.AArch64.Main
+public import VerifiedGarbage.Proof.EcKey.AArch64.P384.Contract
+meta import VerifiedGarbage.Proof.EcKey.AArch64.P384.Contract
+public import VerifiedGarbage.Proof.EcKey.AArch64.P384.Lit
+meta import VerifiedGarbage.Proof.EcKey.AArch64.P384.Lit
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.P384.Verified
+meta import VerifiedGarbage.Proof.Ecdsa.AArch64.P384.Verified
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # P-384 public keys on AArch64: `Verified`
@@ -13,6 +23,8 @@ instruction writes the other callee-saved registers, `sp` or a SIMD register
 (`abiPreserved_of`). Constant time by taint tracking: the only branches are on
 loop counters, and every address is an argument plus a constant or a counter.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.EcKey.AArch64.P384
 

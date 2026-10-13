@@ -1,7 +1,16 @@
-import VerifiedGarbage.Proof.Dsa.X86_64.ReleaseBytes
-import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleState
+module
+
+public import VerifiedGarbage.Proof.Dsa.X86_64.ReleaseBytes
+public import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleState
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # Release both signature scalars, or zero the complete output -/
+
+@[expose] public section
+
 namespace VG.Proof.Dsa.X86_64
 open VG VG.X86_64 VG.Impl.Bignum.X86_64
 open VG.Impl.Dsa.Layout VG.Impl.Dsa.X86_64

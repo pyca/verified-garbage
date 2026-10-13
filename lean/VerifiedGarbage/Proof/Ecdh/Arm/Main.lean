@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Ecdh.Arm.Validate
-import VerifiedGarbage.Proof.Ecdh.Exchange
+module
+
+public import VerifiedGarbage.Proof.Ecdh.Arm.Validate
+public import VerifiedGarbage.Proof.Ecdh.Exchange
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDH on 32-bit ARM: the result, and the whole function
@@ -14,6 +20,8 @@ and `Z ≠ 0` into the flag, and writes `x` or zeros through `lr`
 (`middle_ok`); `finish` writes the result as the signature's does
 (`ecFinish_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdh.Arm
 

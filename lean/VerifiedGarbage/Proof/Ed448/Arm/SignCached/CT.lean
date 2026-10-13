@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Ed448.Arm.SignCached.Body
-import VerifiedGarbage.Proof.Ed448.Arm.Shake.CT
-import VerifiedGarbage.Proof.Ed448.Arm.BaseVerified
+module
+
+public import VerifiedGarbage.Proof.Ed448.Arm.SignCached.Body
+public import VerifiedGarbage.Proof.Ed448.Arm.Shake.CT
+public import VerifiedGarbage.Proof.Ed448.Arm.BaseVerified
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 signing with a cached public key on ARMv7: constant time
@@ -12,6 +18,8 @@ address memory only through `sp`, `r12` and `scratch`
 (`Proof/Ed448/Arm/Shake/CT.lean`); the positions the absorptions return
 depend only on the lengths.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.Arm.SignCached
 

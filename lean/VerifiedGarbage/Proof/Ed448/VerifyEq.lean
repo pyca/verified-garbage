@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Ed448.Group.Decode
-import Mathlib.Tactic.Abel
+module
+
+public import VerifiedGarbage.Proof.Ed448.Group.Decode
+public import Mathlib.Tactic.Abel
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448: the verification equation, as code checks it
@@ -9,6 +15,8 @@ computes: for decoded `A` and `R`, `[4]([S]B + [k](-A))` against `[4]R`,
 each doubled twice from representatives `Q` and `R`. Over the group
 `[4]([S]B - [k]A) = [4]R` exactly when `[4][S]B = [4]R + [4][k]A`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448
 

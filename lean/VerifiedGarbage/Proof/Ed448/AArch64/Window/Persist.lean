@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Ed448.AArch64.Window.Front
-import VerifiedGarbage.Proof.Ed448.AArch64.Window.Table
+module
+
+public import VerifiedGarbage.Proof.Ed448.AArch64.Window.Front
+public import VerifiedGarbage.Proof.Ed448.AArch64.Window.Table
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 verification on AArch64: what every phase keeps
@@ -9,6 +15,8 @@ challenge's copy (`Persist`), and the bits of `S` and `R`'s coordinates, are
 kept by `tabInit` (`IFrame`), the table's loop (`TFrame`) and the field
 operations (`Outside2`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.AArch64.Window
 

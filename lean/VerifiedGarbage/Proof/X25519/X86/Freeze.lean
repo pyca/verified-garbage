@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.X25519.X86.Ops
+module
+
+public import VerifiedGarbage.Proof.X25519.X86.Ops
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X25519 on x86 (32-bit): the full reduction
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.X25519.X86.Ops
 as 19 (`V' < 2²⁵⁵ + 19 < 2p`), then `V' + 19 - 2²⁵⁵ = V' - p` is selected if it
 is not negative, that is if bit 255 of `W = V' + 19` is set.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X25519.X86
 

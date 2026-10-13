@@ -1,10 +1,18 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Message.Depth
-import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedRest
-import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedChecks
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedChecksCorrect
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedLoopCorrect
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.Depth
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedRest
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedChecks
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedChecksCorrect
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedLoopCorrect
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## From `OptimizedDepth.lean` -/
+
+@[expose] public section
 
 section
 

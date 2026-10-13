@@ -1,7 +1,16 @@
-import VerifiedGarbage.Impl.Weierstrass.X86.Naf
-import VerifiedGarbage.Proof.Weierstrass.X86.NafPrep
+module
+
+public import VerifiedGarbage.Impl.Weierstrass.X86.Naf
+public import VerifiedGarbage.Proof.Weierstrass.X86.NafPrep
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Read public signed digits and test their sign and zero case. -/
+
+@[expose] public section
+
 namespace VG.Proof.Weierstrass.X86
 open VG VG.X86 VG.X86.Wp VG.Impl.Weierstrass.X86 VG.Impl.Weierstrass
   VG.Proof.Mont.X86 VG.Proof.Mont

@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.StreamFinish
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamFinish
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on x86-64: `vg_aes_gcm_stream_verify`
@@ -8,6 +14,8 @@ not allow gives 0; any other pads the received tag, read from `tag`
 (`recv`), computes the tag (`finTag 0`) and compares (`cmp 0`), without a
 branch.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

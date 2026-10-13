@@ -1,11 +1,17 @@
-import Mathlib.Data.List.Dedup
-import VerifiedGarbage.Proof.AesGcmSiv.X86_64.FnCT
-import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Fn
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Spec.GcmSiv.Contract
-import VerifiedGarbage.Proof.GcmSiv.Polyval
-import VerifiedGarbage.Proof.AesGcmSiv.Scratch
-import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
+module
+
+public import Mathlib.Data.List.Dedup
+public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.FnCT
+public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Fn
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.GcmSiv.Contract
+public import VerifiedGarbage.Proof.GcmSiv.Polyval
+public import VerifiedGarbage.Proof.AesGcmSiv.Scratch
+public import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM-SIV on x86-64: `Verified`
@@ -18,6 +24,8 @@ of `Spec/GcmSiv/Contract.lean` with the working space as a last argument
 return address of a call of one of them, which make no calls. The last section
 allocates the working space.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

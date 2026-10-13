@@ -1,6 +1,12 @@
-import VerifiedGarbage.Impl.Ed448.AArch64.Point56
-import VerifiedGarbage.Proof.Framework.AArch64.LaneSave
-import VerifiedGarbage.Proof.Framework.AArch64.Exec
+module
+
+public import VerifiedGarbage.Impl.Ed448.AArch64.Point56
+public import VerifiedGarbage.Proof.Framework.AArch64.LaneSave
+public import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 on AArch64: field code as a function
@@ -12,6 +18,8 @@ register it keeps (outside `rs`) or that `asFn` keeps restored. The lanes are
 set by `insOf_ok`, kept by the code (`Exec.vec`), and read back by `umovOf_ok`
 (`Proof/Framework/AArch64/LaneSave.lean`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.AArch64.Point56
 

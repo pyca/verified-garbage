@@ -1,7 +1,9 @@
-import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
-import VerifiedGarbage.Impl.Ecdh.P224.AArch64
-import VerifiedGarbage.Proof.Ecdh.AArch64.P224.Verified
+module
+
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
+public import VerifiedGarbage.Impl.Ecdh.P224.AArch64
+public import VerifiedGarbage.Proof.Ecdh.AArch64.P224.Verified
 
 /-!
 # ECDH over P-224 (SP 800-56A) on AArch64
@@ -9,6 +11,8 @@ import VerifiedGarbage.Proof.Ecdh.AArch64.P224.Verified
 A generic file (see `TCB/Emit.lean`) over P-224's group law `h`, the variant
 `Variants/P224/AArch64/Law.lean`.
 -/
+
+@[expose] public section
 
 namespace VG.Generic.P224.AArch64.EcdhP224
 

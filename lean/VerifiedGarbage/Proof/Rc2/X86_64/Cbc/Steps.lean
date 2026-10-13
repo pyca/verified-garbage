@@ -1,7 +1,15 @@
-import VerifiedGarbage.Proof.Rc2.CbcMemory
-import VerifiedGarbage.Proof.Rc2.X86_64.Block
-import VerifiedGarbage.Impl.Rc2.X86_64.Cbc
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+module
+
+public import VerifiedGarbage.Proof.Rc2.CbcMemory
+public import VerifiedGarbage.Proof.Rc2.X86_64.Block
+public import VerifiedGarbage.Impl.Rc2.X86_64.Cbc
+public import VerifiedGarbage.Proof.Framework.X86_64.Call
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 section
 

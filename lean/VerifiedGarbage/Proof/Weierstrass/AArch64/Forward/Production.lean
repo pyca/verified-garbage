@@ -1,7 +1,15 @@
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256RD
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256DR
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256ED
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256Bounds
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256RD
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256DR
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256ED
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256Bounds
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.AArch64.Forward.Production
 
