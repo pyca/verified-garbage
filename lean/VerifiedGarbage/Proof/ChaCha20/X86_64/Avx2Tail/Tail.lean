@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2Tail.Last3
+public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2Tail.RoundsVL
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512Tail.Tail
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
@@ -161,15 +162,15 @@ theorem fromBufT_ok {s₀ : State} (hp : APre s₀) {p : Nat} (hn : eL s₀ - p 
     · exact ⟨Avx2.bufR (ebp s₀), by simp, Region.sub_prefix (by omega)⟩
     · exact ⟨edR s₀, by simp, win_sub (by have := h.le; omega)⟩
 
-theorem lastT_ok {s₀ : State} (hp : APre s₀) {p : Nat} (hle : eL s₀ - p ≤ 256)
+theorem lastT_ok (vl : Bool) {s₀ : State} (hp : APre s₀) {p : Nat} (hle : eL s₀ - p ≤ 256)
     {s : State} (h : TInv s₀ p s) (hr9 : s.gpr .r9 = ebp s₀) :
-    WP isa last s (Done s₀) := by
+    WP isa (last vl) s (Done s₀) := by
   have hL := eL_lt s₀
   have hw : p + 4 * 0 ≤ eL s₀ := by have := h.le; omega
   have hc : Ctx 0 s := ctx_of hp hw (by decide) h.rdi hr9 h.rsi h.wr
   obtain ⟨hm, hi⟩ := h.cst hr9
   refine WP.seq (WP.mono (setup_ok hc hm hi) fun s₁ ⟨hz₁, ym₁, m₁, g₁, rd₁, wr₁⟩ => ?_)
-  refine WP.seq (WP.mono (rounds2_ok hz₁ ym₁ 10) fun s₂ ⟨hz₂, _, sm₂⟩ => ?_)
+  refine WP.seq (WP.mono (roundsS_ok vl (.inr rfl) hz₁ ym₁ 10) fun s₂ ⟨hz₂, _, sm₂⟩ => ?_)
   have g₂ : s₂.gpr = s.gpr := sm₂.gpr.trans g₁
   have m₂ : s₂.mem = s.mem := sm₂.mem.trans m₁
   have hc₂ : Ctx 0 s₂ := ctx_of hp hw (by decide) (by rw [g₂]; exact h.rdi) (by rw [g₂]; exact hr9)
@@ -186,15 +187,15 @@ theorem lastT_ok {s₀ : State} (hp : APre s₀) {p : Nat} (hle : eL s₀ - p �
   rw [show ebp s₀ + BitVec.ofNat 64 k = s₂.gpr .r9 + BitVec.ofNat 64 k by rw [g₂, hr9], b₃ k (by omega),
     hS, ks_at h.dvd (by omega) (by omega), Nat.add_sub_cancel_left, ← hS']
 
-theorem last1T_ok {s₀ : State} (hp : APre s₀) {p : Nat} (hle : eL s₀ - p ≤ 128)
+theorem last1T_ok (vl : Bool) {s₀ : State} (hp : APre s₀) {p : Nat} (hle : eL s₀ - p ≤ 128)
     {s : State} (h : TInv s₀ p s) (hr9 : s.gpr .r9 = ebp s₀) :
-    WP isa last1 s (Done s₀) := by
+    WP isa (last1 vl) s (Done s₀) := by
   have hL := eL_lt s₀
   have hw : p + 4 * 0 ≤ eL s₀ := by have := h.le; omega
   have hc : Ctx 0 s := ctx_of hp hw (by decide) h.rdi hr9 h.rsi h.wr
   obtain ⟨hm, hi⟩ := h.cst hr9
   refine WP.seq (WP.mono (setup1_ok hc hm hi) fun s₁ ⟨hz₁, ym₁, m₁, g₁, rd₁, wr₁⟩ => ?_)
-  refine WP.seq (WP.mono (rounds1_ok hz₁ ym₁ 10) fun s₂ ⟨hz₂, _, sm₂⟩ => ?_)
+  refine WP.seq (WP.mono (roundsS_ok vl (.inl rfl) hz₁ ym₁ 10) fun s₂ ⟨hz₂, _, sm₂⟩ => ?_)
   have g₂ : s₂.gpr = s.gpr := sm₂.gpr.trans g₁
   have m₂ : s₂.mem = s.mem := sm₂.mem.trans m₁
   have hc₂ : Ctx 0 s₂ := ctx_of hp hw (by decide) (by rw [g₂]; exact h.rdi) (by rw [g₂]; exact hr9)
@@ -213,13 +214,13 @@ theorem last1T_ok {s₀ : State} (hp : APre s₀) {p : Nat} (hle : eL s₀ - p �
 
 /-! ## The whole tail -/
 
-theorem smallT_ok {s₀ : State} (hp : APre s₀) {p : Nat} (hle : eL s₀ - p ≤ 128)
+theorem smallT_ok (vl : Bool) {s₀ : State} (hp : APre s₀) {p : Nat} (hle : eL s₀ - p ≤ 128)
     {s : State} (h : TInv s₀ p s) (hr9 : s.gpr .r9 = ebp s₀) :
-    WP isa small s (Fin s₀) := by
+    WP isa (small vl) s (Fin s₀) := by
   refine WP.seq (WP.mono (cmp65_ok h hr9) fun s₁ ⟨h₁, r₁, c₁⟩ => ?_)
   refine WP.ite (decide (eL s₀ - p < 65)) (by simp [eval, c₁]) (fun _ => ?_) (fun _ => ?_)
   · exact scalarT_ok hp h₁.sinv
-  · exact WP.mono (last1T_ok hp hle h₁ r₁) fun _ d => d.fin hp
+  · exact WP.mono (last1T_ok vl hp hle h₁ r₁) fun _ d => d.fin hp
 
 theorem adv3_ok {s₀ : State} {p : Nat} (hge : 256 ≤ eL s₀ - p) {s : State}
     (hrsi : s.gpr .rsi = edp s₀ + BitVec.ofNat 64 p) (hrdx : s.gpr .rdx = BitVec.ofNat 64 (eL s₀ - p)) :
@@ -236,21 +237,21 @@ theorem adv3_ok {s₀ : State} {p : Nat} (hge : 256 ≤ eL s₀ - p) {s : State}
     by simp only [reduceCtorEq, ↓reduceIte]; rw [hrdx]; bv_omega,
     fun r h₁ h₂ => by simp [h₁, h₂], trivial, trivial, trivial⟩
 
-theorem last3_eq : last3 = .seq (.block setup3) (.seq (rounds3 10) (.seq (.block
+theorem last3_eq (vl : Bool) : last3 vl = .seq (.block setup3) (.seq (roundsS vl 3 10) (.seq (.block
     ((addIn3 ++ xorSetT .xmm0 .xmm1 .xmm2 .xmm3 0 ++ xorSetT .xmm4 .xmm5 .xmm6 .xmm7 128 ++
       storeSetT .xmm8 .xmm9 .xmm10 .xmm11 0) ++
       ([.alu .add .rsi (.imm 256), .alu .sub .rdx (.imm 256)] : List Instr))) fromBuf)) := rfl
 
-theorem last3T_ok {s₀ : State} (hp : APre s₀) {p : Nat} (hge : 257 ≤ eL s₀ - p) (hle : eL s₀ - p ≤ 384)
+theorem last3T_ok (vl : Bool) {s₀ : State} (hp : APre s₀) {p : Nat} (hge : 257 ≤ eL s₀ - p) (hle : eL s₀ - p ≤ 384)
     {s : State} (h : TInv s₀ p s) (hr9 : s.gpr .r9 = ebp s₀) :
-    WP isa last3 s (Done s₀) := by
+    WP isa (last3 vl) s (Done s₀) := by
   have hL := eL_lt s₀
   have hw : p + 4 * 64 ≤ eL s₀ := by omega
   have hc : Ctx 64 s := ctx_of hp hw (by decide) h.rdi hr9 h.rsi h.wr
   obtain ⟨hm, hi⟩ := h.cst hr9
-  rw [last3_eq]
+  rw [last3_eq vl]
   refine WP.seq (WP.mono (setup3_ok hc hm hi) fun s₁ ⟨hz₁, ym₁, m₁, g₁, rd₁, wr₁⟩ => ?_)
-  refine WP.seq (WP.mono (rounds3_ok hz₁ ym₁ 10) fun s₂ ⟨hz₂, _, sm₂⟩ => ?_)
+  refine WP.seq (WP.mono (roundsS3_ok vl hz₁ ym₁ 10) fun s₂ ⟨hz₂, _, sm₂⟩ => ?_)
   have g₂ : s₂.gpr = s.gpr := sm₂.gpr.trans g₁
   have m₂ : s₂.mem = s.mem := sm₂.mem.trans m₁
   have rd₂ : s₂.rd = s.rd := sm₂.rd.trans rd₁
@@ -297,13 +298,13 @@ theorem last3T_ok {s₀ : State} (hp : APre s₀) {p : Nat} (hge : 257 ≤ eL s�
     · exact ⟨Avx2.bufR (ebp s₀), by simp, Region.sub_prefix (by omega)⟩
     · exact ⟨edR s₀, by simp, win_sub (by omega)⟩
 
-theorem tail_eq : tail =
+theorem tail_eq (vl : Bool) : tail vl =
     .seq (.block [.mov .r9 (.reg .rcx), .alu .cmp .rdx (.imm 257)])
-    (.seq (.ite .b rest last3)
+    (.seq (.ite .b (rest vl) (last3 vl))
       (.block [.vop .vzeroupper, .mov .rsi (.reg .r9)])) := rfl
 
-theorem rest_ok {s₀ : State} (hp : APre s₀) {p : Nat} (hlt : eL s₀ - p < 257) {s : State} (h : TInv s₀ p s)
-    (hr9 : s.gpr .r9 = ebp s₀) : WP isa rest s (Fin s₀) := by
+theorem rest_ok (vl : Bool) {s₀ : State} (hp : APre s₀) {p : Nat} (hlt : eL s₀ - p < 257) {s : State} (h : TInv s₀ p s)
+    (hr9 : s.gpr .r9 = ebp s₀) : WP isa (rest vl) s (Fin s₀) := by
   refine WP.seq (WP.mono (cmp_ok h hr9) fun s₁ ⟨h₁, r₁, c₁⟩ => ?_)
   refine WP.ite (decide (eL s₀ - p < 129)) (by simp [eval, c₁]) (fun hs => ?_) (fun hs => ?_)
   · simp only [decide_eq_true_eq] at hs
@@ -311,20 +312,20 @@ theorem rest_ok {s₀ : State} (hp : APre s₀) {p : Nat} (hlt : eL s₀ - p < 2
     refine WP.ite (decide (eL s₀ - p = 0)) (by simp [eval, z₂]) (fun he => ?_) (fun he => ?_)
     · simp only [decide_eq_true_eq] at he
       exact WP.block_nil (M := isa) ((done_of h₂ r₂ he).fin hp)
-    · exact smallT_ok hp (by omega) h₂ r₂
-  · exact WP.mono (lastT_ok hp (by omega) h₁ r₁) fun _ d => d.fin hp
+    · exact smallT_ok vl hp (by omega) h₂ r₂
+  · exact WP.mono (lastT_ok vl hp (by omega) h₁ r₁) fun _ d => d.fin hp
 
-theorem tail_ok {s₀ : State} (hp : APre s₀) {p : Nat} (hlt : eL s₀ - p < 385) {s : State}
+theorem tail_ok (vl : Bool) {s₀ : State} (hp : APre s₀) {p : Nat} (hlt : eL s₀ - p < 385) {s : State}
     (h : TInv s₀ p s) :
-    WP isa tail s fun s' =>
+    WP isa (tail vl) s fun s' =>
       (gprPreserved s₀ s' ∧ xorAvx2X86_64.post s₀ s') ∧ s'.gpr .rsi = s₀.gpr .rcx := by
-  rw [tail_eq]
+  rw [tail_eq vl]
   refine WP.seq (WP.mono (start_ok h) fun s₁ ⟨h₁, r₁, c₁⟩ => ?_)
   refine WP.seq (WP.mono (Q := Fin s₀) (WP.ite (decide (eL s₀ - p < 257)) (by simp [eval, c₁])
     (fun hs => ?_) (fun hs => ?_)) fun s₂ d => fin_ok d)
   · simp only [decide_eq_true_eq] at hs
-    exact rest_ok hp hs h₁ r₁
+    exact rest_ok vl hp hs h₁ r₁
   · simp only [decide_eq_false_iff_not] at hs
-    exact WP.mono (last3T_ok hp (by omega) (by omega) h₁ r₁) fun _ d => d.fin hp
+    exact WP.mono (last3T_ok vl hp (by omega) (by omega) h₁ r₁) fun _ d => d.fin hp
 
 end VG.Proof.ChaCha20.X86_64.Avx2Tail

@@ -411,16 +411,16 @@ theorem adv8_ok {s₀ : State} {p : Nat} (hge : 384 ≤ eL s₀ - p) {s : State}
   · rw [hrdx, show (384 : BitVec 64) = BitVec.ofNat 64 384 from rfl, Offset.ofNat_sub_ofNat (by omega),
       show eL s₀ - p - 384 = eL s₀ - (p + 384) by omega]
 
-theorem last8_eq : last8 = .seq (.block setup) (.seq (rounds 10) (.seq
+theorem last8_eq (vl : Bool) : last8 vl = .seq (.block setup) (.seq (roundsFor vl) (.seq
     (.block (finishWith xorRow8 ++ (move67 ++
       ([.mov .r9 (.reg .rcx), .alu .add .rsi (.imm 384), .alu .sub .rdx (.imm 384)] : List Instr))))
     (.seq Impl.ChaCha20.X86_64.Avx2Tail.fromBuf (.block [.vop .vzeroupper, .mov .rsi (.reg .r9)])))) := by
   simp only [last8, List.append_assoc]
 
 /-- The last 385 to 511 bytes, after `t` chunks. -/
-theorem last8_ok {s₀ : State} (hp : APre s₀) {t : Nat} (hge : 385 ≤ eL s₀ - 512 * t)
+theorem last8_ok (vl : Bool) {s₀ : State} (hp : APre s₀) {t : Nat} (hge : 385 ≤ eL s₀ - 512 * t)
     (hlt : eL s₀ - 512 * t < 512) {s : State} (h : LInv s₀ t s) :
-    WP isa last8 s fun s' =>
+    WP isa (last8 vl) s fun s' =>
       (gprPreserved s₀ s' ∧ xorAvx2X86_64.post s₀ s') ∧ s'.gpr .rsi = s₀.gpr .rcx := by
   have hL := eL_lt s₀
   have hw : 512 * t + 384 ≤ eL s₀ := by omega
@@ -433,13 +433,14 @@ theorem last8_ok {s₀ : State} (hp : APre s₀) {t : Nat} (hge : 385 ≤ eL s�
   have dss : (stR (est s₀)).Disjoint (slotsR (ebp s₀)) := hp.st_b.sub_right (slotsR_sub _)
   have hsl : ∀ r ∈ [slotsR (ebp s₀)], (hiR (ebp s₀)).Disjoint r := by
     intro r hr; simp only [List.mem_singleton] at hr; subst hr; exact hiR_slots _
-  rw [last8_eq]
+  rw [last8_eq vl]
   refine WP.seq (WP.mono (setup_ok h.rdi h.rcx hst hb h.consts)
     fun s₁ ⟨hh, h15, g₁, rd₁, wr₁, y₁, y₂, m₁⟩ => ?_)
   have c₁ : Consts s₁.mem (ebp s₀) := by rw [m₁]; exact h.consts.w2 (by decide) y₁ y₂
   have F₁ : Frame [slotsR (ebp s₀)] s.mem s₁.mem := by
     rw [m₁]; exact W2_frame _ (by decide) y₁ y₂ (Frame.refl _ _)
-  refine WP.seq (WP.mono (rounds_ok hh h15 (by rw [g₁]; exact h.rcx) (by rw [wr₁]; exact hb) c₁.m8 10)
+  refine WP.seq (WP.mono (roundsFor_ok vl hh h15 (by rw [g₁]; exact h.rcx) (by rw [wr₁]; exact hb) c₁.m8
+    ⟨c₁.lo16, c₁.hi16⟩)
     fun s₂ hr => ?_)
   have F₂ := F₁.trans hr.frame
   have g₂ : s₂.gpr = s.gpr := hr.gpr.trans g₁

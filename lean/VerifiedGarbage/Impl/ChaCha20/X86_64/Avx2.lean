@@ -100,6 +100,53 @@ def rounds : Nat → Prog isa
   | 0 => .block []
   | n + 1 => .seq (rounds n) doubleRound
 
+/-! ## The rounds with AVX-512VL
+
+With `vprold` (AVX-512F and AVX-512VL, on `ymm` registers) each rotation is
+one instruction, which needs neither a mask nor a scratch register: words
+10 and 11 then live in `ymm14` and `ymm15` throughout the rounds (`vregV`),
+loaded from their slots before them and stored back after them, and the
+rounds swap nothing. -/
+
+/-- The register holding word `k` during `roundsV`. -/
+def vregV (k : Nat) : XReg :=
+  match k with
+  | 10 => .xmm14 | 11 => .xmm15 | k => vreg k
+
+/-- `qr` with `vprold`. -/
+def qrV (a b c d : XReg) : List Instr := [
+  v .vpaddd a a b, v .vpxor d d a, .vop (.vprold .l256 d d 16),
+  v .vpaddd c c d, v .vpxor b b c, .vop (.vprold .l256 b b 12),
+  v .vpaddd a a b, v .vpxor d d a, .vop (.vprold .l256 d d 8),
+  v .vpaddd c c d, v .vpxor b b c, .vop (.vprold .l256 b b 7)]
+
+def quarterV (x y z w : Nat) : Prog isa := .block (qrV (vregV x) (vregV y) (vregV z) (vregV w))
+
+/-- `inner_block` on each lane, every word in its register. -/
+def doubleRoundV : Prog isa :=
+  .seq (quarterV 0 4 8 12) <| .seq (quarterV 1 5 9 13) <|
+  .seq (quarterV 2 6 10 14) <| .seq (quarterV 3 7 11 15) <|
+  .seq (quarterV 0 5 10 15) <| .seq (quarterV 1 6 11 12) <|
+  .seq (quarterV 2 7 8 13) (quarterV 3 4 9 14)
+
+def roundsV : Nat → Prog isa
+  | 0 => .block []
+  | n + 1 => .seq (roundsV n) doubleRoundV
+
+/-- `n` double rounds with `vprold`, from and to the registers and slots
+`rounds` keeps the words in (the mask of the rotation by 16 loaded into
+`ymm15` again). -/
+def roundsVL (n : Nat) : Prog isa :=
+  .seq (.block [.vmovdquLoad .l256 .xmm14 (at_ .rcx (slotOff 10)),
+    .vmovdquLoad .l256 .xmm15 (at_ .rcx (slotOff 11))])
+  (.seq (roundsV n) (.block [.vmovdquStore .l256 (at_ .rcx (slotOff 10)) .xmm14,
+    .vmovdquStore .l256 (at_ .rcx (slotOff 11)) .xmm15, .vmovdquLoad .l256 .xmm15 (at_ .rcx rot16Off)]))
+
+/-- The kernel's ten double rounds, with `vprold` if `vl`. -/
+def roundsFor : Bool → Prog isa
+  | false => rounds 10
+  | true => roundsVL 10
+
 /-- The `vpshufb` masks of the rotations left by 16 and by 8 of each
 doubleword, and the counter increments `0, 1, …, 7`, as the quadwords stored
 in `buf` (each 128-bit mask twice, for the two lanes). -/
@@ -198,8 +245,8 @@ def next : List Instr :=
   [.mov32 .rax (.mem (at_ .rdi 48)), .alu32 .add .rax (.imm 8), .store32 (at_ .rdi 48) .rax,
    .alu .add .rsi (.imm 512), .alu .sub .rdx (.imm 512), .alu .cmp .rdx (.imm 512)]
 
-/-- Eight blocks. -/
-def body : Prog isa := .seq (.block setup) (.seq (rounds 10) (.block (finish ++ next)))
+/-- Eight blocks, with `vprold` if `vl`. -/
+def body (vl : Bool) : Prog isa := .seq (.block setup) (.seq (roundsFor vl) (.block (finish ++ next)))
 
 /-! ## The last 385 to 511 bytes
 
@@ -231,14 +278,20 @@ def move67 : List Instr :=
 
 /-- The last 385 to 511 bytes; then `rsi` points at `buf`, as after
 `Avx2Tail.tail`. -/
-def last8 : Prog isa :=
-  .seq (.block setup) (.seq (rounds 10) (.seq (.block (finishWith xorRow8 ++ move67 ++
+def last8 (vl : Bool) : Prog isa :=
+  .seq (.block setup) (.seq (roundsFor vl) (.seq (.block (finishWith xorRow8 ++ move67 ++
     ([.mov .r9 (.reg .rcx), .alu .add .rsi (.imm 384), .alu .sub .rdx (.imm 384)] : List Instr)))
   (.seq Avx2Tail.fromBuf (.block [.vop .vzeroupper, .mov .rsi (.reg .r9)]))))
 
-def xor : Prog isa :=
+/-- The kernel, with `vprold` if `vl`. -/
+def xorWith (vl : Bool) : Prog isa :=
   .seq (.block (Avx2Tail.consts ++ consts ++ ([.alu .cmp .rdx (.imm 512)] : List Instr)))
-  (.seq (.ite .b (.block []) (.loop body .ae))
-  (.seq (.block [.alu .cmp .rdx (.imm 385)]) (.ite .b Avx2Tail.tail last8)))
+  (.seq (.ite .b (.block []) (.loop (body vl) .ae))
+  (.seq (.block [.alu .cmp .rdx (.imm 385)]) (.ite .b (Avx2Tail.tail vl) (last8 vl))))
+
+def xor : Prog isa := xorWith false
+
+/-- The kernel with AVX-512VL's `vprold`. -/
+def xorVL : Prog isa := xorWith true
 
 end VG.Impl.ChaCha20.X86_64.Avx2
