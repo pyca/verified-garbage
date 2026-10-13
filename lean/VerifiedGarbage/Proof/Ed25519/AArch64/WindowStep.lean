@@ -363,53 +363,60 @@ theorem dblOps_eval (e : Env) :
     evalOps (dblOps false) e 2 = (dblPoint (point e 0 1 2 3)).Z :=
   ⟨rfl, rfl, rfl, rfl⟩
 
-theorem dbl_ok {s : State} {base : Addr} (hs : Scr s base) (t : Bool) {a : EPoint dZ}
+theorem dbl_ok {s : State} {base : Addr} (hs : Scr s base) {a : EPoint dZ}
     (ha : RepP (point (env s.mem base) 0 1 2 3) a) :
-    WP isa (.block (fieldCode (dblOps t))) s fun u => Keep base s u ∧
+    WP isa (.block (fieldCode (dblOps false))) s fun u => Keep base s u ∧
       RepP (point (env u.mem base) 0 1 2 3) (a + a) ∧
-      (t = true → Rep (point (env u.mem base) 0 1 2 3) (a + a)) ∧
+      env u.mem base = evalOps (dblOps false) (env s.mem base) ∧
       ∀ i : Slot, 16 ≤ i.val → env u.mem base i = env s.mem base i := by
   refine WP.mono (fieldCode_ok _ hs) fun u ⟨ku, vu⟩ => ?_
   have hr := dblPoint_rep ha
-  refine ⟨ku, ?_, fun ht => ?_, fun i hi => by
-    rw [vu]; exact point_ops_high _ (by cases t <;> decide) _ i hi⟩
-  · rw [vu]
-    cases t
-    · obtain ⟨_, ex, ey, ez⟩ := dblOps_eval (env s.mem base)
-      refine ⟨?_, ?_, ?_⟩
-      · show toZ (evalOps _ _ 2) ≠ 0
-        rw [ez]; exact hr.z
-      · show toZ (evalOps _ _ 0) = _ * toZ (evalOps _ _ 2)
-        rw [ex, ez]; exact hr.x
-      · show toZ (evalOps _ _ 1) = _ * toZ (evalOps _ _ 2)
-        rw [ey, ez]; exact hr.y
-    · rw [(dblOps_eval _).1]; exact hr.proj
-  · subst ht
-    rw [vu, (dblOps_eval _).1]; exact hr
+  refine ⟨ku, ?_, vu, fun i hi => by rw [vu]; exact point_ops_high _ (by decide) _ i hi⟩
+  rw [vu]
+  obtain ⟨_, ex, ey, ez⟩ := dblOps_eval (env s.mem base)
+  refine ⟨?_, ?_, ?_⟩
+  · show toZ (evalOps _ _ 2) ≠ 0
+    rw [ez]; exact hr.z
+  · show toZ (evalOps _ _ 0) = _ * toZ (evalOps _ _ 2)
+    rw [ex, ez]; exact hr.x
+  · show toZ (evalOps _ _ 1) = _ * toZ (evalOps _ _ 2)
+    rw [ey, ez]; exact hr.y
+
+theorem dblOps_true (e : Env) :
+    evalOps [.mul 3 11 14] (evalOps (dblOps false) e) = evalOps (dblOps true) e := by
+  rw [evalOps, evalOps, ← List.foldl_append]; rfl
+
+/-- After a doubling without `T` from `e`, its `E` and `H` (slots 11 and 14) give `T`. -/
+theorem dblT_ok {s : State} {base : Addr} (hs : Scr s base) {e : Env} {a : EPoint dZ}
+    (ha : RepP (point e 0 1 2 3) a) (he : env s.mem base = evalOps (dblOps false) e) :
+    WP isa (.block (fieldCode [.mul 3 11 14])) s fun u => Keep base s u ∧
+      Rep (point (env u.mem base) 0 1 2 3) (a + a) ∧
+      ∀ i : Slot, 16 ≤ i.val → env u.mem base i = env s.mem base i := by
+  refine WP.mono (fieldCode_ok _ hs) fun u ⟨ku, vu⟩ =>
+    ⟨ku, ?_, fun i hi => by rw [vu]; exact point_ops_high _ (by decide) _ i hi⟩
+  rw [vu, he, dblOps_true, (dblOps_eval e).1]
+  exact dblPoint_rep ha
 
 theorem doubleWindow_ok {s : State} {base : Addr} {a : EPoint dZ} (hs : Scr s base)
     (ha : RepP (point (env s.mem base) 0 1 2 3) a) :
     WP isa doubleWindow s fun t => Rep (point (env t.mem base) 0 1 2 3) ((16 : Nat) • a) ∧
       (∀ i : Slot, 16 ≤ i.val → env t.mem base i = env s.mem base i) ∧ DoubleKeep base s t := by
   rw [doubleWindow]
-  refine WP.seq (WP.mono (movzW_ok s .x1 3) fun s₁ ⟨c1, k1⟩ => ?_)
+  refine WP.seq (WP.mono (movzW_ok s .x1 4) fun s₁ ⟨c1, k1⟩ => ?_)
   have hs₁ : Scr s₁ base := hs.of_keeps k1 (by decide)
   have k1d : DoubleKeep base s s₁ := ⟨fun r hr _ => k1.gpr r (by simpa using hr), k1.rd, k1.wr, k1.sp,
     by rw [k1.mem]; exact Outside.refl _ _ _ _⟩
   have keepD {x y : State} (k : Keep base x y) : DoubleKeep base x y :=
     ⟨fun r _ hc => k.gpr r hc, k.rd, k.wr, k.sp, k.mem⟩
   refine WP.seq ?_
-  apply WP.loop (fun (n : Nat) (t : State) => 0 < n ∧ n ≤ 3 ∧ Scr t base ∧
-    t.gpr .x1 = BitVec.ofNat 64 n ∧ RepP (point (env t.mem base) 0 1 2 3) ((2 ^ (3 - n) : Nat) • a) ∧
-    (∀ i : Slot, 16 ≤ i.val → env t.mem base i = env s.mem base i) ∧ DoubleKeep base s t) (n := 3)
-  · intro n t ⟨hn0, hn3, ht, tc, tv, th, tk⟩
+  apply WP.loop (fun (n : Nat) (t : State) => 0 < n ∧ n ≤ 4 ∧ Scr t base ∧
+    t.gpr .x1 = BitVec.ofNat 64 n ∧ RepP (point (env t.mem base) 0 1 2 3) ((2 ^ (4 - n) : Nat) • a) ∧
+    (∀ i : Slot, 16 ≤ i.val → env t.mem base i = env s.mem base i) ∧ DoubleKeep base s t) (n := 4)
+  · intro n t ⟨hn0, hn4, ht, tc, tv, th, tk⟩
     obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero (by omega : n ≠ 0)
     rw [WP.block_append_iff]
-    refine WP.mono (dbl_ok ht false tv) fun u ⟨ku, uv, _, uh⟩ => ?_
+    refine WP.mono (dbl_ok ht tv) fun u ⟨ku, uv, ue, uh⟩ => ?_
     refine WP.mono (doubleDec_ok u k ((ku.gpr _ (by decide)).trans tc)) fun w ⟨wc, kw⟩ => ?_
-    have wrep : RepP (point (env w.mem base) 0 1 2 3) ((2 ^ (3 - k) : Nat) • a) := by
-      rw [kw.mem, show 3 - k = (3 - (k + 1)) + 1 by omega, pow_succ, mul_nsmul, two_nsmul]
-      exact uv
     have wh : ∀ i : Slot, 16 ≤ i.val → env w.mem base i = env s.mem base i :=
       fun i h => by rw [kw.mem, uh i h, th i h]
     have wk : DoubleKeep base s w := tk.trans ((keepD ku).trans
@@ -420,14 +427,18 @@ theorem doubleWindow_ok {s : State} {base : Addr} {a : EPoint dZ} (hs : Scr s ba
     · subst hk0
       refine Or.inl ⟨by simp only [eval, read_x, wc, point_counter_nonzero 0 (by decide),
         show decide ((0 : Nat) ≠ 0) = false from rfl], ?_⟩
-      refine WP.mono (dbl_ok (wk.scratch hs) true wrep) fun v ⟨kv, _, vr, vh⟩ => ?_
+      refine WP.mono (dblT_ok (wk.scratch hs) tv (by rw [kw.mem]; exact ue))
+        fun v ⟨kv, vr, vh⟩ => ?_
       refine ⟨?_, fun i h => (vh i h).trans (wh i h), wk.trans (keepD kv)⟩
-      rw [show (16 : Nat) = 2 ^ (3 - 0) * 2 by rfl, mul_nsmul, two_nsmul]
-      exact vr rfl
-    · exact Or.inr ⟨by simp only [eval, read_x, wc, point_counter_nonzero k hk, decide_eq_true hk0],
+      rw [show (16 : Nat) = 2 ^ (4 - (0 + 1)) * 2 by rfl, mul_nsmul, two_nsmul]
+      exact vr
+    · have wrep : RepP (point (env w.mem base) 0 1 2 3) ((2 ^ (4 - k) : Nat) • a) := by
+        rw [kw.mem, show 4 - k = (4 - (k + 1)) + 1 by omega, pow_succ, mul_nsmul, two_nsmul]
+        exact uv
+      exact Or.inr ⟨by simp only [eval, read_x, wc, point_counter_nonzero k hk, decide_eq_true hk0],
         k, by omega, by omega, by omega, wk.scratch hs, wc, wrep, wh, wk⟩
   · refine ⟨by decide, by decide, hs₁, c1, ?_, fun i _ => by rw [k1.mem], k1d⟩
-    rw [show (2 ^ (3 - 3) : Nat) = 1 from rfl, one_nsmul, k1.mem]; exact ha
+    rw [show (2 ^ (4 - 4) : Nat) = 1 from rfl, one_nsmul, k1.mem]; exact ha
 
 /-! ## Digits -/
 
