@@ -14,6 +14,7 @@ import VerifiedGarbage.Proof.Aes.SboxSpec
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Arm.Linear
 import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
+import VerifiedGarbage.Proof.TripleDes.Arm.Ecb.Verified
 
 /-!
 # Triple DES's ECB functions on ARMv7 as the modes' core

@@ -8,6 +8,8 @@ import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.RsaPss.VerifyCases
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyB2
+import VerifiedGarbage.Proof.RsaPss.AArch64.SignEnc
+import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyLogic
 
 /-!
 # RSASSA-PSS verification on AArch64: after the checks

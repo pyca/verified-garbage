@@ -16,6 +16,8 @@ import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.RsaPss.X86_64.CtComp
 meta import Mathlib.Tactic.SplitIfs
 meta import VerifiedGarbage.Proof.RsaPss.X86_64.CtComp
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
 
 /-!
 # RSASSA-PSS on x86-64: `ctHash` is constant time

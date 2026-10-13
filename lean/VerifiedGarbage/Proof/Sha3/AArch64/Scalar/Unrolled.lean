@@ -22,6 +22,8 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.TCB.Axioms
 meta import VerifiedGarbage.TCB.Axioms
+import VerifiedGarbage.Impl.Sha3.AArch64.Callee
+meta import VerifiedGarbage.Impl.Sha3.AArch64.Callee
 
 /-!
 # The unrolled scalar permutation: correctness

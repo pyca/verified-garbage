@@ -9,6 +9,8 @@ import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Sha256.Stream
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.X86.Lit
+import VerifiedGarbage.Proof.Sha256.X86.Compress
 
 /-!
 # Streaming SHA-256 on x86 (32-bit): the loop of `finalize`

@@ -7,6 +7,18 @@ import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Bswap
+public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+public import VerifiedGarbage.Proof.Framework.X86_64.Bswap
+public import VerifiedGarbage.Proof.Framework.X86_64.CallFrame
+public import VerifiedGarbage.Proof.Pbkdf2.Memory
+public import VerifiedGarbage.Proof.Poly1305.Limbs64
+public import VerifiedGarbage.Proof.RsaPss.Params
+public import VerifiedGarbage.Proof.RsaPss.X86_64.BufferXor
+public import VerifiedGarbage.Proof.RsaPss.X86_64.CtComp
+public import VerifiedGarbage.Proof.RsaPss.X86_64.SignEnc
+public import VerifiedGarbage.Proof.Sha256.X86_64.Lit
+public import VerifiedGarbage.Proof.Sha256.X86_64.ShaNi.Compress
 
 /-!
 # RSASSA-PSS on x86-64: the encoding

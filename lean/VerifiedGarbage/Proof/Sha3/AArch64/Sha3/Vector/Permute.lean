@@ -20,6 +20,8 @@ import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.Conv
 meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Impl.Sha3.AArch64.Callee
+meta import VerifiedGarbage.Impl.Sha3.AArch64.Callee
 
 @[expose] public section
 

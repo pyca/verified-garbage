@@ -15,6 +15,9 @@ import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Sha512.Digest
+public import VerifiedGarbage.Proof.Framework.Bswap
+public import VerifiedGarbage.Proof.MdStream.Arm.Words
+public import VerifiedGarbage.Proof.MdStream.Prefix
 
 /-!
 # Sha512 on Arm: the shared contracts

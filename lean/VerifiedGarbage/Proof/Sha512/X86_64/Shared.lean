@@ -14,6 +14,8 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Sha512.Digest
 import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Compress
 
 /-!
 # Sha512 on X86_64: the shared contracts

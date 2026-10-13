@@ -14,6 +14,8 @@ import VerifiedGarbage.Proof.Sha3.X86.Lit
 meta import VerifiedGarbage.Proof.Sha3.Stream
 meta import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Sha3.X86.Lit
+import VerifiedGarbage.Proof.Sha3.Arith
+meta import VerifiedGarbage.Proof.Sha3.Arith
 
 /-!
 # The SHA-3 sponge on x86 (32-bit): `pad`

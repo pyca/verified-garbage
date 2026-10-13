@@ -7,6 +7,7 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import Mathlib.Data.Fintype.Card
 import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import VerifiedGarbage.Proof.RsaPkcs1Enc.Steps
 
 /-!
 # RSAES-PKCS1-v1_5 decryption on x86-64: `CL` and `AM`

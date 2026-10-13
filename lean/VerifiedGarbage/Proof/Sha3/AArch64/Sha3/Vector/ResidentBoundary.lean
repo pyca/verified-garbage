@@ -9,6 +9,7 @@ import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Sha3.Stream
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Impl.Sha3.AArch64.Callee
 
 @[expose] public section
 

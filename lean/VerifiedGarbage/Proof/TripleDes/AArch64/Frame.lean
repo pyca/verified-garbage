@@ -9,6 +9,8 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.AArch64.Spill
+import VerifiedGarbage.Spec.Rc2
 
 /-!
 # Triple DES key expansion and ECB on AArch64, with their working space on the stack

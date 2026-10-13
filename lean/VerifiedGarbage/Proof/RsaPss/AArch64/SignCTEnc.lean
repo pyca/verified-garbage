@@ -16,6 +16,8 @@ meta import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Two
 meta import VerifiedGarbage.Proof.RsaPss.AArch64.Checks
 meta import Mathlib.Tactic.SplitIfs
 meta import VerifiedGarbage.Proof.RsaPss.AArch64.CtHashCT
+import VerifiedGarbage.Proof.RsaPss.AArch64.SignEnc
+meta import VerifiedGarbage.Proof.RsaPss.AArch64.SignEnc
 
 /-!
 # RSASSA-PSS signing on AArch64: the encoding is constant time

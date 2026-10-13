@@ -31,6 +31,8 @@ import all Init.Data.Vector.Basic
 import all Init.Data.Nat.Power2.Basic
 import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Scrypt.Memory
+meta import VerifiedGarbage.Proof.Scrypt.Memory
 
 /-!
 # scryptROMix on AArch64: the precondition

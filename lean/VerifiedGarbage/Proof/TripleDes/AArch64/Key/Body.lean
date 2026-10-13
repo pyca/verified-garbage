@@ -9,6 +9,8 @@ import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Rc2.AArch64.Lookup
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.TripleDes.AArch64.Key.Rotation
 
 @[expose] public section
 

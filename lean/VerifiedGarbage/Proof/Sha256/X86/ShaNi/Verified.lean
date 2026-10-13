@@ -14,6 +14,8 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Impl.MdStream.X86
+meta import VerifiedGarbage.Impl.MdStream.X86
 
 @[expose] public section
 

@@ -9,6 +9,7 @@ public import VerifiedGarbage.Proof.RsaOaep.Scan
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.X86_64.Sse
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
 
 /-!
 # RSAES-OAEP decryption on x86-64: the loops of the decoding

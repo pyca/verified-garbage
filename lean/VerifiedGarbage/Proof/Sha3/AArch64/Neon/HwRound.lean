@@ -8,6 +8,9 @@ import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Theta
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Impl.Sha3.AArch64.Callee
+import VerifiedGarbage.Proof.Framework.AArch64.Simd64
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Round
 
 @[expose] public section
 

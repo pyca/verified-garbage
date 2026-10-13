@@ -18,6 +18,8 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Impl.MdStream.AArch64
+meta import VerifiedGarbage.Impl.MdStream.AArch64
 
 /-! Correctness of SHA-256 compression with the AArch64 SHA-2 instructions. -/
 

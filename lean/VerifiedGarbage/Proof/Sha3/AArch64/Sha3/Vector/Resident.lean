@@ -22,6 +22,8 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Lit
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Lit
 
 @[expose] public section
 
