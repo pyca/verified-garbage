@@ -304,7 +304,42 @@ jobs:
       - run: python3 ci/check_mcdt.py
       - run: python3 ci/check_vectors.py
 
+  # GitHub moves main to exactly the commit its merge queue tested, with
+  # this workflow (see the `lean` job's `reuse`): when that run passed, a
+  # push's Rust jobs run no tests again. They are there for main's caches,
+  # which only main saves, so they build only when their cache's exact key
+  # missed (a new toolchain or `Cargo.lock`), and save what they built. A
+  # push the merge queue did not test (to main directly) runs everything.
+  merge-queue-run:
+    name: "Find the merge queue's run of this commit"
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+    outputs:
+      run-id: ${{ steps.find.outputs.run-id }}
+    steps:
+      - id: find
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          id=$(gh run list --workflow ci.yml --event merge_group --commit "$GITHUB_SHA" --status success \
+            --json databaseId,headBranch \
+            --jq '[.[] | select(.headBranch | startswith("gh-readonly-queue/main/"))][0].databaseId // empty' || true)
+          if [ -n "$id" ]; then
+            echo "The merge queue's run $id tested this commit."
+            echo "run-id=$id" >> "$GITHUB_OUTPUT"
+          else
+            echo "No merge queue run tested this commit: every test runs."
+          fi
+
   rust:
+    # Also on pull requests and in the merge queue, which skip
+    # `merge-queue-run`.
+    needs: merge-queue-run
+    if: ${{ !cancelled() }}
     strategy:
       fail-fast: false
       matrix:
@@ -371,6 +406,7 @@ jobs:
       # Only main saves, so pull requests restore main's entries instead of
       # filling the cache quota with their own.
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        id: rust-cache
         with:
           # Not shared with `rust-cpu-features`: those jobs compute the same
           # key but run no clippy, so when one of them saved the entry first,
@@ -381,8 +417,13 @@ jobs:
             . -> target
             bench -> target
           save-if: ${{ github.ref == 'refs/heads/main' }}
+      - uses: ./.github/actions/rust-todo
+        id: todo
+        with:
+          tested-by: ${{ needs.merge-queue-run.outputs.run-id }}
+          cache-hit: ${{ steps.rust-cache.outputs.cache-hit }}
       - name: Lint
-        if: ${{ matrix.rust == 'stable' }}
+        if: ${{ matrix.rust == 'stable' && steps.todo.outputs.build == 'true' }}
         run: |
           cargo fmt --check
           cargo clippy --all-targets --locked
@@ -391,7 +432,7 @@ jobs:
       # architecture the Benchmarks workflow runs it on, since its files are
       # gated by architecture. It links OpenSSL (rust-openssl).
       - name: Lint the benchmarks
-        if: ${{ matrix.rust == 'stable' && runner.os == 'Linux' }}
+        if: ${{ matrix.rust == 'stable' && runner.os == 'Linux' && steps.todo.outputs.build == 'true' }}
         working-directory: bench
         env:
           RUSTFLAGS: -D warnings
@@ -431,11 +472,17 @@ jobs:
           path: bench-target
           key: ${{ steps.bench-cache-key.outputs.key }}
       - run: rustc -vV
-      - run: cargo test --locked
+      - if: ${{ steps.todo.outputs.test == 'true' }}
+        run: cargo test --locked
+      - name: Build the tests, for main's cache
+        if: ${{ steps.todo.outputs.build == 'true' && steps.todo.outputs.test != 'true' }}
+        run: cargo test --locked --no-run
       - name: Export coverage
+        if: ${{ steps.todo.outputs.test == 'true' }}
         shell: bash
         run: $(command -v python3 || command -v python) ci/export_rust_coverage.py .rust-cov
-      - uses: ./.github/actions/upload-artifact
+      - if: ${{ steps.todo.outputs.test == 'true' }}
+        uses: ./.github/actions/upload-artifact
         with:
           name: coverage-data-${{ strategy.job-index }}
           path: "*.lcov"
@@ -449,6 +496,8 @@ jobs:
   # no profiler runtime, and its Rust code is the ARMv7 job's, which is
   # covered there.
   rust-thumb:
+    needs: merge-queue-run
+    if: ${{ !cancelled() }}
     strategy:
       fail-fast: false
       matrix:
@@ -479,17 +528,28 @@ jobs:
       - name: Install Rust
         run: rustup toolchain install ${{ matrix.rust }} --profile minimal --component clippy --target thumbv7neon-unknown-linux-gnueabihf
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        id: rust-cache
         with:
           shared-key: rust-thumb
           save-if: ${{ github.ref == 'refs/heads/main' }}
+      - uses: ./.github/actions/rust-todo
+        id: todo
+        with:
+          tested-by: ${{ needs.merge-queue-run.outputs.run-id }}
+          cache-hit: ${{ steps.rust-cache.outputs.cache-hit }}
       - run: rustc -vV
       - name: Lint
-        if: ${{ matrix.rust == 'stable' }}
+        if: ${{ matrix.rust == 'stable' && steps.todo.outputs.build == 'true' }}
         run: cargo clippy --all-targets --locked
-      - run: cargo test --locked
+      - if: ${{ steps.todo.outputs.test == 'true' }}
+        run: cargo test --locked
+      - name: Build the tests, for main's cache
+        if: ${{ steps.todo.outputs.build == 'true' && steps.todo.outputs.test != 'true' }}
+        run: cargo test --locked --no-run
       # That the tests ran T32: the symbol of Thumb code has an odd address
       # (AAELF32 §5.5.3, "Symbol Values").
       - name: Check the verified functions are Thumb code
+        if: ${{ steps.todo.outputs.test == 'true' }}
         run: |
           find "target/$CARGO_BUILD_TARGET/debug/deps" -maxdepth 1 -type f -executable -exec readelf -sW {} + |
             awk '$4 == "FUNC" && $8 ~ /vg_/ { n++; if ($2 ~ /[02468aceACE]$/) { print "not Thumb: " $8; bad++ } }
@@ -537,7 +597,8 @@ jobs:
   # dealt out by the CPU time each took on `main` on one class of host
   # (ci/cpu_shards.py, with the times `cpu-features-times` restores).
   rust-cpu-features:
-    needs: cpu-features-times
+    needs: [cpu-features-times, merge-queue-run]
+    if: ${{ !cancelled() && needs.cpu-features-times.result == 'success' }}
     strategy:
       fail-fast: false
       matrix:
@@ -717,7 +778,7 @@ jobs:
               | tr '\n' ' '
           fi
       - name: Download Intel SDE
-        if: ${{ matrix.chip != 'native' }}
+        if: ${{ matrix.chip != 'native' && !needs.merge-queue-run.outputs.run-id }}
         run: |
           curl -sSfLo sde.tar.xz "$SDE_URL"
           echo "$SDE_SHA256  sde.tar.xz" | sha256sum -c
@@ -727,13 +788,22 @@ jobs:
       - name: Install Rust
         run: rustup toolchain install stable --profile minimal --component llvm-tools
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        id: rust-cache
         with:
           shared-key: rust-cpu-features
           save-if: ${{ github.ref == 'refs/heads/main' }}
+      - uses: ./.github/actions/rust-todo
+        id: todo
+        with:
+          tested-by: ${{ needs.merge-queue-run.outputs.run-id }}
+          cache-hit: ${{ steps.rust-cache.outputs.cache-hit }}
+      - name: Build the tests, for main's cache
+        if: ${{ steps.todo.outputs.build == 'true' && steps.todo.outputs.test != 'true' }}
+        run: cargo test --locked --features cpu-features-env --no-run
       # Set the test runner after caching: its temporary path would otherwise
       # change the cache key, which includes CARGO_* environment variables.
       - name: Run the tests under SDE
-        if: ${{ matrix.chip != 'native' }}
+        if: ${{ matrix.chip != 'native' && steps.todo.outputs.test == 'true' }}
         run: echo "CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_RUNNER=$RUNNER_TEMP/sde/sde64 -$CHIP --" >> "$GITHUB_ENV"
         env:
           CHIP: ${{ matrix.chip }}
@@ -753,6 +823,7 @@ jobs:
       # kept, for `main` to save for the next runs' shards, and the CPU's
       # tests and groups, for `coverage` to check every group's paths with.
       - name: Test the implementations
+        if: ${{ steps.todo.outputs.test == 'true' }}
         shell: bash
         run: |
           lines=$(python3 ci/cpu_shards.py pick "$CPU" "$SHARD" "$TIMES" <<< "$RUNS")
@@ -827,23 +898,28 @@ jobs:
           SHARD: ${{ matrix.shard }}
           TIMES: ${{ needs.cpu-features-times.outputs.times }}
           JOB: ${{ strategy.job-index }}
-      # For `cpu-features-times-save`, on `main`.
-      - uses: ./.github/actions/upload-artifact
+      # For `cpu-features-times-save`, on `main` (or the push's, after the
+      # merge queue).
+      - if: ${{ steps.todo.outputs.test == 'true' }}
+        uses: ./.github/actions/upload-artifact
         with:
           name: cpu-features-times-${{ strategy.job-index }}
           path: cpu-features-times-${{ strategy.job-index }}.json
           retention-days: 1
           if-no-files-found: error
       # For `coverage`'s check of ci/cpu_tests.py's groups.
-      - uses: ./.github/actions/upload-artifact
+      - if: ${{ steps.todo.outputs.test == 'true' }}
+        uses: ./.github/actions/upload-artifact
         with:
           name: cpu-tests-${{ strategy.job-index }}
           path: cpu-tests-${{ strategy.job-index }}.json
           retention-days: 1
           if-no-files-found: error
       - name: Export coverage
+        if: ${{ steps.todo.outputs.test == 'true' }}
         run: python3 ci/export_rust_coverage.py .rust-cov --features cpu-features-env
-      - uses: ./.github/actions/upload-artifact
+      - if: ${{ steps.todo.outputs.test == 'true' }}
+        uses: ./.github/actions/upload-artifact
         with:
           name: coverage-data-cpu-features-${{ strategy.job-index }}
           path: "*.lcov"
@@ -855,9 +931,15 @@ jobs:
   # saved for the next runs' `cpu-features-times`.
   cpu-features-times-save:
     name: "Rust: save the times of the CPU feature runs"
-    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
-    needs: rust-cpu-features
+    if: >-
+      ${{ !cancelled() && github.event_name == 'push' && github.ref == 'refs/heads/main'
+      && needs.rust-cpu-features.result == 'success' }}
+    needs: [rust-cpu-features, merge-queue-run]
     runs-on: ubuntu-latest
+    # To download the merge queue's times.
+    permissions:
+      actions: read
+      contents: read
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -867,11 +949,15 @@ jobs:
           path: .cpu-features-times
           key: cpu-features-times-${{ github.run_id }}
           restore-keys: cpu-features-times-
+      # The merge queue's run's, when it tested this commit and this run's
+      # jobs did not run the tests again (`merge-queue-run`).
       - uses: ./.github/actions/download-artifact
         with:
           pattern: cpu-features-times-*
           merge-multiple: true
           path: ${{ runner.temp }}/times
+          run-id: ${{ needs.merge-queue-run.outputs.run-id || github.run_id }}
+          github-token: ${{ github.token }}
       - run: |
           mkdir -p .cpu-features-times
           [ -f .cpu-features-times/times.json ] || echo '{}' > .cpu-features-times/times.json
@@ -883,9 +969,14 @@ jobs:
           path: .cpu-features-times
           key: cpu-features-times-${{ github.run_id }}-${{ github.run_attempt }}
 
+  # Not on a push the merge queue tested, whose jobs collect no coverage
+  # (`merge-queue-run`).
   coverage:
     name: Rust coverage
-    needs: [rust, rust-cpu-features]
+    needs: [rust, rust-cpu-features, merge-queue-run]
+    if: >-
+      ${{ !cancelled() && needs.rust.result == 'success' && needs.rust-cpu-features.result == 'success'
+      && !needs.merge-queue-run.outputs.run-id }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -937,7 +1028,7 @@ jobs:
   # `lean-shard`), and assembles it itself if none did.
   all-green:
     if: ${{ always() }}
-    needs: [lean, lean-shard, lean-imports, rust, rust-thumb, rust-cpu-features, coverage]
+    needs: [lean, lean-shard, lean-imports, rust, rust-thumb, rust-cpu-features, coverage, merge-queue-run]
     runs-on: ubuntu-latest
     # To list the run's artifacts.
     permissions:
@@ -952,16 +1043,23 @@ jobs:
           RESULTS: >-
             ${{ needs.lean.result }} ${{ needs.lean-imports.result }}
             ${{ needs.rust.result }} ${{ needs.rust-thumb.result }} ${{ needs.rust-cpu-features.result }}
-            ${{ needs.coverage.result }}
+          # Skipped on a push the merge queue tested (`merge-queue-run`).
+          COVERAGE: ${{ needs.coverage.result }}
+          TESTED_BY: ${{ needs.merge-queue-run.outputs.run-id }}
           # Skipped when `lean` built the proofs itself.
           SHARDS: ${{ needs.lean-shard.result }}
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
         run: |
-          echo "$RESULTS $SHARDS"
+          echo "$RESULTS $COVERAGE $SHARDS"
           for r in $RESULTS; do
             [ "$r" = success ] || exit 1
           done
+          if [ -n "$TESTED_BY" ]; then
+            [ "$COVERAGE" = skipped ] || [ "$COVERAGE" = success ] || exit 1
+          else
+            [ "$COVERAGE" = success ] || exit 1
+          fi
           case "$SHARDS" in
             skipped) ;;
             success)
