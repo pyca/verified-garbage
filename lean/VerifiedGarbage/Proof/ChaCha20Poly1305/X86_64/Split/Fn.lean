@@ -495,7 +495,9 @@ theorem sealFor_hv (v : Proof.ChaCha20.X86_64.XorImpl) :
   cases hb : v.poly with
   | avx2 => have h₂ := Proof.ChaCha20Poly1305.X86_64.Stitch.sealS_ok v hb; rw [hb] at h₂; exact h₂
   | avx512 =>
-    have h₁ := seal_ok v; rw [hb] at h₁; exact Proof.ChaCha20Poly1305.X86_64.Stitch.sealSmall_ok h₁
+    have h₁ := seal_ok v; rw [hb] at h₁
+    have := Proof.ChaCha20Poly1305.X86_64.Stitch.sealSmall_ok v.small v.small_poly h₁
+    rwa [Proof.ChaCha20.X86_64.XorImpl.small_callee] at this
   | _ => have h₁ := seal_ok v; rw [hb] at h₁; exact h₁
 
 namespace Body

@@ -207,6 +207,39 @@ def avx512vl : XorImpl where
   poly := .avx512
   fold_poly := Or.inr (Or.inr ⟨rfl, rfl, rfl, .inl rfl⟩)
 
+/-- `v` called as the AVX2 instances call `vg_chacha20_xor_avx2`, with
+`vg_poly1305_blocks_avx2`. -/
+def asAvx2 (v : XorImpl) : XorImpl where
+  callee := { v.callee with fold := 448, pass := 0, wide := 5 }
+  fold_le := show 448 ≤ 960 by decide
+  stack := v.stack
+  stack_le := v.stack_le
+  depth_le := v.depth_le
+  xdepth := v.xdepth
+  ok := v.ok
+  ct := v.ct
+  nosp := v.nosp
+  mxcsr := v.mxcsr
+  spSafe := v.spSafe
+  suffix := v.suffix
+  features := v.features
+  poly := .avx2
+  fold_poly := Or.inr (Or.inl ⟨rfl, rfl, rfl, rfl⟩)
+
+/-- The implementation `v`'s ChaCha20-Poly1305 calls from its AVX2 code for
+short data (`Callee.small`). -/
+def small (v : XorImpl) : XorImpl := if v.callee.vl then v.asAvx2 else .avx2
+
+theorem small_poly (v : XorImpl) : v.small.poly = .avx2 := by
+  by_cases h : v.callee.vl = true
+  · simp only [small, h, ite_true]; rfl
+  · simp only [small, h, ite_false, Bool.false_eq_true]; rfl
+
+theorem small_callee (v : XorImpl) : v.small.callee = v.callee.small := by
+  by_cases h : v.callee.vl = true
+  · simp only [small, Impl.ChaCha20.X86_64.Callee.small, h, ite_true, asAvx2]
+  · simp only [small, Impl.ChaCha20.X86_64.Callee.small, h, ite_false, Bool.false_eq_true]; rfl
+
 end XorImpl
 
 end VG.Proof.ChaCha20.X86_64
