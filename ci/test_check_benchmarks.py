@@ -102,6 +102,11 @@ class Selection(unittest.TestCase):
             stack.enter_context(mock.patch.object(planner, 'read', self.read))
             stack.enter_context(mock.patch.object(planner, 'rust_files', lambda root='.': sorted(
                 p for p in self.files if p.startswith('src/'))))
+            # As `read`: a file not changed at the base is there too.
+            stack.enter_context(mock.patch.object(planner, 'bench_rust_files', lambda revision=None, root='.': sorted(
+                p for p in {*self.files, *(self.base_files if revision else ())}
+                if p.startswith('bench/') and p.endswith('.rs'))))
+            planner.includes.cache_clear()
             if registered is not None:
                 stack.enter_context(mock.patch.object(planner, 'registrations',
                                                       return_value=set(registered)))
@@ -388,6 +393,70 @@ class Selection(unittest.TestCase):
         # One no benchmark calls runs every benchmark.
         self.files['bench/benches/primitives/x448.rs'] = ''
         self.assertEqual(len(self.rows(['bench/benches/primitives/kem.rs'])), self.full_matrix())
+
+    def test_included_files_select_their_includers_uses(self):
+        self.files.update({
+            # On x86-64 alone, through a `#[path]` module.
+            'bench/benches/primitives/x448.rs': 'pub const USES: &[&str] = &["x448"];\n'
+                                                '#[cfg(target_arch = "x86_64")]\n'
+                                                '#[path = "../../support/shared.rs"]\nmod shared;\n',
+            # Everywhere, through an `include!` in a differential test.
+            'bench/tests/argon2.rs': 'include!("../support/shared.rs");\n',
+            'bench/support/shared.rs': 'pub fn helper() {}\n',
+        })
+        rows = self.rows(['bench/support/shared.rs'])
+        self.assertEqual(self.modules(rows), {'x86_64': 'argon2 x448', 'aarch64': 'argon2',
+                                              'x86': 'argon2', 'arm': 'argon2'})
+        # A file outside `bench/` (e.g. test vectors), and one a helper
+        # includes, follow the benchmarks including them in turn.
+        self.files['bench/tests/argon2.rs'] = ''
+        self.files['bench/support/shared.rs'] = '#[path = "../../tests/cavp/v.rs"]\nmod v;\n'
+        self.files['tests/cavp/v.rs'] = ''
+        self.assertEqual(self.modules(self.rows(['tests/cavp/v.rs'])), {'x86_64': 'x448'})
+        # Included by a benchmark at the base alone, it was measured there.
+        self.base_files['bench/benches/primitives/x448.rs'] = self.files.pop('bench/benches/primitives/x448.rs')
+        self.files['bench/benches/primitives/argon2.rs'] += '\n#[path = "../../support/shared.rs"]\nmod s;\n'
+        self.assertEqual(self.modules(self.rows(['bench/support/shared.rs'])),
+                         {'x86_64': 'argon2 x448', 'aarch64': 'argon2', 'x86': 'argon2', 'arm': 'argon2'})
+        # A file nothing includes needs nothing outside `bench/`, and every
+        # benchmark inside it.
+        self.assertEqual(self.rows(['tests/cavp/other.rs']), [])
+        self.assertEqual(len(self.rows(['bench/support/other.rs'])), self.full_matrix())
+
+    def test_files_included_by_no_benchmark_or_unresolved_run_every_benchmark(self):
+        self.files['bench/support/shared.rs'] = ''
+        for includer, text in [
+                ('bench/benches/primitives/main.rs', '#[path = "../../support/shared.rs"]\nmod shared;\n'),
+                # In an inline module, whose path this does not follow.
+                ('bench/benches/primitives/argon2.rs',
+                 'pub const USES: &[&str] = &["argon2"];\nmod m {\n    #[path = "x/shared.rs"]\n    mod s;\n}\n'),
+                # Two files including each other, which no benchmark includes.
+                ('bench/support/other.rs', '#[path = "shared.rs"]\nmod s;\n')]:
+            with self.subTest(includer=includer):
+                self.files[includer] = text
+                if includer == 'bench/support/other.rs':
+                    self.files['bench/support/shared.rs'] = '#[path = "other.rs"]\nmod o;\n'
+                self.assertEqual(len(self.rows(['bench/support/shared.rs'])), self.full_matrix())
+                del self.files[includer]
+
+    def test_manifest_target_tables_select_their_architectures(self):
+        manifest = '[package]\nname = "b"\n\n[dev-dependencies]\nx = "1"\n'
+        target = ('\n[target.\'cfg(any(target_arch = "x86_64", target_arch = "aarch64"))\'.dev-dependencies]\n'
+                  'x = { version = "1", features = ["all"] }\n')
+        for path in planner.MANIFESTS:
+            with self.subTest(path=path):
+                self.base_files[path] = manifest
+                self.files[path] = manifest + target
+                rows = self.rows([path])
+                self.assertEqual({r['arch'] for r in rows}, {'x86_64', 'aarch64'})
+                self.assertTrue(all(r['modules'] == '' for r in rows))
+                # A `cfg` this cannot decide, a target triple, a change
+                # outside the target tables, and unparsable TOML: everywhere.
+                for new in [manifest + target.replace('target_arch = "aarch64"', 'unix'),
+                            manifest + '\n[target.x86_64-unknown-linux-gnu.dependencies]\ny = "1"\n',
+                            manifest.replace('"1"', '"2"') + target, manifest + '[']:
+                    self.files[path] = new
+                    self.assertEqual(len(self.rows([path])), self.full_matrix())
 
     def test_manual_runs_select_architectures_and_configurations(self):
         rows = planner.manual()
