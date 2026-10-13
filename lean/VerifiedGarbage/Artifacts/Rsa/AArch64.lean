@@ -38,10 +38,12 @@ def windowHelper : Artifact :=
     target := AArch64.target
     doc := Spec.Rsa.MontWindow.windowApi.doc
       (notes := ["Baseline AArch64: calls the verified accumulator square, with a constant-time \
-        four-vector table scan and scalar fallback for unsupported widths."])
+        four-vector table scan and scalar fallback for unsupported widths. Its multiplication uses \
+        eight-limb product tiles and blocked reduction for widths of at least sixteen limbs \
+        divisible by eight, retaining the row-wise kernel for other widths."])
     code := Proof.Bignum.AArch64.WindowFive.body.code
     contract := Spec.Rsa.MontWindow.windowContract AArch64.abi
-    verified := Proof.Bignum.AArch64.WindowHelper.verified Proof.Bignum.AArch64.Mont.base
+    verified := Proof.Bignum.AArch64.WindowHelper.verified Proof.Bignum.AArch64.Mont.productEight
       Proof.Bignum.AArch64.WindowVector.selector
     spSafe := Code.all_of_forall (fun _ => rfl) _ }
 
