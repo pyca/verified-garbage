@@ -40,7 +40,7 @@ public import VerifiedGarbage.Proof.Bignum.AArch64.SquarePrefix
 public import VerifiedGarbage.Proof.Bignum.AArch64.SquareRaw
 public import VerifiedGarbage.Proof.Bignum.AArch64.SquareRedc
 public import VerifiedGarbage.Proof.Bignum.AArch64.SquareTiledRow
-public import VerifiedGarbage.Proof.Bignum.AArch64.WideDiagonalStep
+public import VerifiedGarbage.Proof.Bignum.AArch64.DiagonalChainStep
 public import VerifiedGarbage.Proof.Bignum.CrtMath
 public import VerifiedGarbage.Proof.Framework.Range
 public import VerifiedGarbage.Proof.Framework.WriteBytes

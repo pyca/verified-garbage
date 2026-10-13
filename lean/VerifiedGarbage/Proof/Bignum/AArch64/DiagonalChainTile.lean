@@ -1,9 +1,10 @@
 module
 
-import VerifiedGarbage.Proof.Bignum.AArch64.WideDiagonalStep
-public import VerifiedGarbage.Proof.Bignum.AArch64.SquareDiagonalLoop
-import VerifiedGarbage.Proof.Bignum.AArch64.SquareMath
-import VerifiedGarbage.Proof.Bignum.AArch64.Row
+import VerifiedGarbage.Proof.Bignum.AArch64.SquareDiagonalLoop
+
+public import VerifiedGarbage.Proof.Bignum.AArch64.DiagonalChainStep
+public import VerifiedGarbage.Proof.Bignum.AArch64.SquareMath
+public import VerifiedGarbage.Proof.Bignum.AArch64.Row
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -15,11 +16,20 @@ import VerifiedGarbage.Proof.Framework.Omega
 
 @[expose] public section
 
-namespace VG.Proof.Bignum.AArch64.WideLoops
+namespace VG.Proof.Bignum.AArch64.DiagonalChain
 open VG VG.AArch64 VG.Impl.Bignum.AArch64 VG.Proof.Bignum
 open VG.Proof.Bignum.AArch64
 open VG.Proof.Bignum.AArch64.Square
 open VG.Proof.MlKem.AArch64 (Keep)
+
+structure DiagInv (s₀ : State) (B : Addr) (Z A eb i : Nat) (t : State) : Prop where
+  scr : Scr t B Z
+  keep : Keep [.x1, .x2, .x3, .x4, .x5, .x6, .x11, .x14, .x16] s₀ t
+  x16 : t.gpr .x16 = off B (A+16*i)
+  x11 : t.gpr .x11 = off B (eb+8*i)
+  out : Outside B A (16*i) s₀.mem t.mem
+  val : wv t.mem B A (2*i) + 2 ^ (128*i)*carry t =
+    2*wv s₀.mem B A (2*i) + diagonalValue s₀.mem B eb i
 
 structure TileInv (s₀ : State) (B : Addr) (Z A eb i j : Nat) (t : State) : Prop where
   scr : Scr t B Z
@@ -27,13 +37,13 @@ structure TileInv (s₀ : State) (B : Addr) (Z A eb i j : Nat) (t : State) : Pro
   x16 : t.gpr .x16 = off B (A+16*i)
   x11 : t.gpr .x11 = off B (eb+8*i)
   out : Outside B A (16*(i+j)) s₀.mem t.mem
-  val : wv t.mem B A (2*(i+j)) + 2 ^ (128*(i+j))*(t.gpr .x5).toNat =
+  val : wv t.mem B A (2*(i+j)) + 2 ^ (128*(i+j))*carry t =
     2*wv s₀.mem B A (2*(i+j)) + diagonalValue s₀.mem B eb (i+j)
 
 theorem diagStep_ok {s₀ t : State} {B : Addr} {Z A eb w i j : Nat}
     (h7 : s₀.gpr .x7 = 0) (hi : i+j < w) (hj : j < 4) (hA : A+16*w ≤ Z) (hb : eb+8*w ≤ Z)
     (sb : eb+8*w ≤ A ∨ A+16*w ≤ eb) (hI : TileInv s₀ B Z A eb i j t) :
-    WP isa (.block (VG.Impl.Bignum.AArch64.WideLoops.step j)) t fun u =>
+    WP isa (.block (VG.Impl.Bignum.AArch64.DiagonalChain.step j)) t fun u =>
         TileInv s₀ B Z A eb i (j+1) u := by
   have hn := hI.scr.nowrap
   have t7 := (hI.keep.gpr .x7 (by decide)).trans h7
@@ -74,7 +84,7 @@ theorem diagStep_ok {s₀ t : State} {B : Addr} {Z A eb w i j : Nat}
     grind
 
 def diagonalPrefix (n : Nat) : List Instr :=
-  (List.range n).flatMap VG.Impl.Bignum.AArch64.WideLoops.step
+  (List.range n).flatMap VG.Impl.Bignum.AArch64.DiagonalChain.step
 
 theorem diagonalPrefix_ok {s₀ t : State} {B : Addr} {Z A eb w i n : Nat}
     (h7 : s₀.gpr .x7 = 0) (hn : n ≤ 4) (hw : i+n ≤ w)
@@ -96,7 +106,7 @@ def diagonalAdvance : List Instr :=
 theorem diagonalAdvance_ok {s : State} {B : Addr} {A eb i : Nat}
     (h16 : s.gpr .x16 = off B (A+16*i)) (h11 : s.gpr .x11 = off B (eb+8*i)) :
     WP isa (.block diagonalAdvance) s fun t =>
-      (t.gpr .x16 = off B (A+16*(i+4)) ∧ t.gpr .x11 = off B (eb+8*(i+4)) ∧ t.mem = s.mem) ∧
+      (t.gpr .x16 = off B (A+16*(i+4)) ∧ t.gpr .x11 = off B (eb+8*(i+4)) ∧ t.mem = s.mem ∧ t.c = s.c) ∧
         Keep [.x16, .x11] s t := by
   refine WP.keep [.x16, .x11] ?_ rfl rfl rfl
   unfold diagonalAdvance
@@ -117,8 +127,8 @@ theorem diagonalBlockStep_ok {s₀ t : State} {B : Addr} {Z A eb k j : Nat}
     (diagonalPrefix_ok h7 (by decide) (by omega) hA hb sb h0)
     (by decide) (by decide) (by decide)) fun v ⟨hv, kp⟩ => ?_
   apply WP.block_append
-  refine WP.mono (diagonalAdvance_ok hv.x16 hv.x11) fun a ⟨⟨ha16, ha11, ham⟩, ka⟩ => ?_
-  refine WP.mono (dec_ok a .x14) fun u ⟨⟨hu14, hum, _⟩, ku⟩ => ?_
+  refine WP.mono (diagonalAdvance_ok hv.x16 hv.x11) fun a ⟨⟨ha16, ha11, ham, hac⟩, ka⟩ => ?_
+  refine WP.mono (dec_ok a .x14) fun u ⟨⟨hu14, hum, huc⟩, ku⟩ => ?_
   have hmem := hum.trans ham
   refine ⟨⟨hv.scr.congr (ku.wr.trans ka.wr),
     ((hv.keep.trans ka).trans ku).mono (by decide), ?_, ?_, ?_, ?_⟩, ?_⟩
@@ -126,9 +136,11 @@ theorem diagonalBlockStep_ok {s₀ t : State} {B : Addr} {Z A eb k j : Nat}
   · exact ((ku.gpr _ (by decide)).trans ha11).trans (congrArg (off B) (by omega))
   · rw [hmem]
     simpa only [show 4*j+4 = 4*(j+1) by omega] using hv.out
-  · rw [hmem, ku.gpr .x5 (by decide), ka.gpr .x5 (by decide)]
+  · have hc : carry u = carry v := by
+      unfold carry; rw [ku.gpr .x5 (by decide), ka.gpr .x5 (by decide), huc, hac]
+    rw [hmem, hc]
     simpa only [show 4*j+4 = 4*(j+1) by omega] using hv.val
   · rw [hu14, ka.gpr .x14 (by decide)]
     rw [kp.gpr .x14 (by decide)]
 
-end VG.Proof.Bignum.AArch64.WideLoops
+end VG.Proof.Bignum.AArch64.DiagonalChain
