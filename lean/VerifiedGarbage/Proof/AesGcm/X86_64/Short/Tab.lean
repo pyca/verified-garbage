@@ -86,7 +86,8 @@ def IsH2 (H T₁ T₂ : Block) : Prop :=
 /-- What the short path's proofs need from the algebra of the field: the
 table `powers` writes (`powers_ok`), the registers its first block leaves
 (`powHead_ok`), `GHASH` of `G` from the table (`gacc_ghash`), and the
-powers `H'` and `H'²` that the end of a long `seal` computes (`finPow_facts`). -/
+powers `H'` and `H'²` that the end of a long `seal` computes (`finPow_facts`)
+or a prepared key context holds (`pp1`, `pp2`). -/
 structure ShortFacts : Prop where
   powers : ∀ {Ctx W SP : Addr} {g : Nat} (s : State), Env Ctx (W + BitVec.ofNat 64 16) W SP s →
     s.mem.readW (W + BitVec.ofNat 64 288) 64 = BitVec.ofNat 64 (4 * g) → 1 ≤ g → g ≤ 8 →
@@ -109,5 +110,8 @@ structure ShortFacts : Prop where
       IsH2 (blockAt s.mem (s.gpr .r13 + BitVec.ofInt 64 ((240 : Nat) : Int))) (t.xmm .xmm3) (t.xmm .xmm6) ∧
       VG.Proof.Gcm.X86_64.Pclmul.Only
         [.xmm0, .xmm1, .xmm3, .xmm6, .xmm7, .xmm8, .xmm9, .xmm10, .xmm11, .xmm12, .xmm13, .xmm14] s t
+  /-- The prepared powers `H'` and `H'²` (`Spec.Gcm.preparedPower`) multiply as `H` and `H²`. -/
+  pp1 : ∀ H : Block, IsH1 H (hInvF (hpow H 1))
+  pp2 : ∀ H : Block, IsH2 H (hInvF (hpow H 1)) (hInvF (hpow H 2))
 
 end VG.Proof.AesGcm.X86_64.Short
