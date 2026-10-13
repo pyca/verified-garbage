@@ -93,10 +93,9 @@ def artifacts : List Artifact := [squareHelper .r2, squareHelper .y, windowHelpe
         the result is stored masked. Each prime has its own working space, with its own \
         Montgomery multiplication (`vg_rsa_public_checked`'s); the input is reduced modulo it by \
         Montgomery reduction of chunks of its size, and the exponents are scanned left to right \
-        over all their bits. Moduli of at least 128 bytes use shared five-bit windows and \
-        32-entry tables within the existing scratch allocation, with a four-vector masked scan \
-        when the public width permits it. Other widths use scalar selection; smaller moduli \
-        retain the four-bit window. The final partial window consumes exactly its remaining bits."])
+        over all their bits. Moduli of at least 128 bytes whose two prime byte lengths are \
+        multiples of 64 use shared five-bit windows, 32-entry tables within the existing scratch \
+        allocation, and a four-vector masked scan. Other lengths retain the four-bit window. The final partial window consumes exactly its remaining bits."])
     code := Proof.Bignum.AArch64.WindowFive.code
     contract := Spec.Rsa.privateCrtContract AArch64.abi
     verified := Proof.Bignum.AArch64.WindowFive.base_verified

@@ -8594,7 +8594,7 @@ pub(crate) unsafe extern "C" fn vg_rsa_public_precomputed_checked(out: *mut u8, 
 ///
 /// Contract: `VG.Spec.Rsa.privateCrtContract`. Constant time but for the modulus: timing may depend on the pointers, the lengths and the contents of `n`, not on the input or the private key.
 ///
-/// Baseline AArch64: the checks (`n` as `vg_rsa_public_precompute` checks it, the input below `n`, `p q = n` by a product of the two, `qInv < p`) give a mask; the primes are replaced by 3 under a clear mask, so that the arithmetic is the same whatever the key, and the result is stored masked. Each prime has its own working space, with its own Montgomery multiplication (`vg_rsa_public_checked`'s); the input is reduced modulo it by Montgomery reduction of chunks of its size, and the exponents are scanned left to right over all their bits. Moduli of at least 128 bytes use shared five-bit windows and 32-entry tables within the existing scratch allocation, with a four-vector masked scan when the public width permits it. Other widths use scalar selection; smaller moduli retain the four-bit window. The final partial window consumes exactly its remaining bits.
+/// Baseline AArch64: the checks (`n` as `vg_rsa_public_precompute` checks it, the input below `n`, `p q = n` by a product of the two, `qInv < p`) give a mask; the primes are replaced by 3 under a clear mask, so that the arithmetic is the same whatever the key, and the result is stored masked. Each prime has its own working space, with its own Montgomery multiplication (`vg_rsa_public_checked`'s); the input is reduced modulo it by Montgomery reduction of chunks of its size, and the exponents are scanned left to right over all their bits. Moduli of at least 128 bytes whose two prime byte lengths are multiples of 64 use shared five-bit windows, 32-entry tables within the existing scratch allocation, and a four-vector masked scan. Other lengths retain the four-bit window. The final partial window consumes exactly its remaining bits.
 ///
 /// # Safety
 ///
@@ -8656,6 +8656,13 @@ pub(crate) unsafe extern "C" fn vg_rsa_private_crt(out: *mut u8, out_len: usize,
         "cbz x9, 20f",
         "ldr x9, [x0, #144]",
         "lsr x9, x9, #7",
+        "ldr x10, [x0, #160]",
+        "ldr x11, [x0, #192]",
+        "orr x10, x10, x11",
+        "movz x11, #63, lsl #0",
+        "tst x10, x11",
+        "movz x11, #0, lsl #0",
+        "csel x9, x9, x11, eq",
         "cbz x9, 22f",
         "ldr x3, [x0, #144]",
         "add x12, x3, #7",

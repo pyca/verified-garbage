@@ -10,10 +10,16 @@ open VG VG.AArch64 VG.Impl.Bignum VG.Impl.Bignum.AArch64
 open VG.Proof.Bignum
 open VG.Proof.MlKem.AArch64 (Keep eval_zero)
 
+abbrev alignedPrimes (pl ql : Nat) : Prop :=
+  ((BitVec.ofNat 64 pl ||| BitVec.ofNat 64 ql) &&& 63) = 0
+
+def guardValue (k pl ql : Nat) : BitVec 64 :=
+  if alignedPrimes pl ql then BitVec.ofNat 64 k >>> 7 else 0
+
 theorem pre_keep {s t : State} {B : Addr} {Z k : Nat} {op np ip pp qp dpp dqp qip : Addr}
     {pl ql : Nat} {nb xb pb qb dpb dqb qib : List Byte}
     (h : CrtPre s B Z k op np ip pp qp dpp dqp qip pl ql nb xb pb qb dpb dqb qib)
-    (hm : t.mem = s.mem) (hk : Keep [.x9] s t) :
+    (hm : t.mem = s.mem) (hk : Keep [.x9,.x10,.x11] s t) :
     CrtPre t B Z k op np ip pp qp dpp dqp qip pl ql nb xb pb qb dpb dqb qib := by
   have im : InScr B Z s.mem t.mem := by rw [hm]; exact InScr.refl _ _ _
   exact {
@@ -56,16 +62,34 @@ theorem pre_keep {s t : State} {B : Addr} {Z k : Nat} {op np ip pp qp dpp dqp qi
     outSep := h.outSep
   }
 
+theorem exec_tst_x (s : State) (n m : Reg) :
+    exec (.tst .x n m) s = some { s with
+      nf := (s.read .x n &&& s.read .x m).msb
+      zf := decide ((s.read .x n &&& s.read .x m) = 0)
+      c := false
+      vf := false } := rfl
+
+theorem exec_csel_eq (s : State) (d n m : Reg) :
+    exec (.cselc .x d n m .eq) s =
+      some (s.write .x d (if s.zf then s.read .x n else s.read .x m)) := rfl
+
 theorem lengthGuard_ok {s : State} {B : Addr} {Z k : Nat} {op np ip pp qp dpp dqp qip : Addr}
     {pl ql : Nat} {nb xb pb qb dpb dqb qib : List Byte}
     (h : CrtPre s B Z k op np ip pp qp dpp dqp qip pl ql nb xb pb qb dpb dqb qib) :
     WP isa (.block VG.Impl.Rsa.AArch64.WindowFive.lengthGuard) s fun t =>
-      t.gpr .x9 = BitVec.ofNat 64 k >>> 7 ∧ t.mem = s.mem ∧ Keep [.x9] s t := by
+      t.gpr .x9 = guardValue k pl ql ∧ t.mem = s.mem ∧ Keep [.x9,.x10,.x11] s t := by
   have hz := h.zk
   have hk := h.k1
-  exact WP.mono (WP.keep [.x9] (Q := fun t => t.gpr .x9 = BitVec.ofNat 64 k >>> 7 ∧ t.mem = s.mem)
+  exact WP.mono (WP.keep [.x9,.x10,.x11] (Q := fun t => t.gpr .x9 = guardValue k pl ql ∧ t.mem = s.mem)
     (by brun [VG.Impl.Rsa.AArch64.WindowFive.lengthGuard,h.x0,hdr_enc (show Public.sK < 32 by decide),
-      h.scr.ld (d := 8 * Public.sK) (by unfold Public.sK sFn; omega),h.hK])
+      h.scr.ld (d := 8 * Public.sK) (by unfold Public.sK sFn; omega),h.hK,
+      hdr_enc (show VG.Impl.Bignum.Crt.sPlen < 32 by decide),
+      hdr_enc (show VG.Impl.Bignum.Crt.sQlen < 32 by decide),
+      h.scr.ld (d := 8 * VG.Impl.Bignum.Crt.sPlen) (by unfold VG.Impl.Bignum.Crt.sPlen sFn; omega),
+      h.scr.ld (d := 8 * VG.Impl.Bignum.Crt.sQlen) (by unfold VG.Impl.Bignum.Crt.sQlen sFn; omega),
+      h.hPl,h.hQl,guardValue,alignedPrimes,CondCode.holds,exec_tst_x,exec_csel_eq,RegUpd.zf_write]
+        simp only [decide_eq_true_eq]
+        rfl)
     (by decide) (by decide) (by decide +kernel)) fun _ ⟨⟨hv,hm⟩,kk⟩ => ⟨hv,hm,kk⟩
 
 theorem lengthGuard_zero {k : Nat} (hk : k < 2 ^ 64) :
@@ -77,6 +101,13 @@ theorem lengthGuard_zero {k : Nat} (hk : k < 2 ^ 64) :
     Nat.shiftRight_eq_div_pow]
   change k / 128 = 0 ↔ k < 128
   omega
+
+theorem guardValue_nonzero {k pl ql : Nat} (hk : k < 2 ^ 64)
+    (h : (guardValue k pl ql == (0 : BitVec 64)) = false) : 128 ≤ k := by
+  by_cases ha : alignedPrimes pl ql
+  · simp only [guardValue,ite_eq_left ha,lengthGuard_zero hk] at h
+    simpa using h
+  · simp [guardValue,ha] at h
 
 theorem dispatch_ok (W : Window) (M : Mont) (S : Selector) {s : State} {B : Addr} {Z k : Nat} {op np ip pp qp dpp dqp qip : Addr}
     {pl ql : Nat} {nb xb pb qb dpb dqb qib : List Byte}
@@ -95,12 +126,12 @@ theorem dispatch_ok (W : Window) (M : Mont) (S : Selector) {s : State} {B : Addr
     intro u r c hp
     exact ⟨hp.bytes,hp.x0,fun x hx ho => by rw [hp.frame x hx ho,hm],
       (kk.trans hp.keep).mono (by decide)⟩
-  refine WP.ite (decide (k < 128)) (by rw [eval_zero,h9,lengthGuard_zero hk64]) ?_ ?_
+  refine WP.ite (guardValue k pl ql == (0 : BitVec 64)) (by rw [eval_zero,h9]) ?_ ?_
   · intro _
     exact WP.mono (VG.Proof.Bignum.AArch64.crtMain_ok M ht hv)
       fun u ⟨c,hp,hi⟩ => ⟨c,finish u _ _ hp,hi⟩
   · intro hk
-    have h128 : 128 ≤ k := by simpa using hk
+    have h128 : 128 ≤ k := guardValue_nonzero hk64 hk
     exact WP.mono (crtMain_ok W M S ht h128 hv)
       fun u ⟨c,hp,hi⟩ => ⟨c,finish u _ _ hp,hi⟩
 

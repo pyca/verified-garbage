@@ -24,7 +24,7 @@ theorem baselineMain_ct (M : Mont) : RelCT isa (Two OldStage) (VG.Impl.Rsa.AArch
       (redc_ct_X M) loadArr_ct_pI)
     VG.Proof.Bignum.AArch64.crtFinish_ct
 
-def GuardPost (p : CrtPub) (s : State) : Prop := OldStage p s ∧ s.gpr .x9 = BitVec.ofNat 64 p.k >>> 7
+def GuardPost (p : CrtPub) (s : State) : Prop := OldStage p s ∧ s.gpr .x9 = guardValue p.k p.pl p.ql
 
 theorem guard_post {p : CrtPub} {s : State} (h : OldStage p s) :
     WP isa (.block VG.Impl.Rsa.AArch64.WindowFive.lengthGuard) s (GuardPost p) := by
@@ -36,8 +36,8 @@ theorem guarded_wide {p : CrtPub} {s : State}
     (h : GuardPost p s ∧ isa.eval (.zero .x .x9) s = some false) : Stage R0 p s := by
   obtain ⟨⟨⟨σ,xb,pb,qb,dpb,dqb,qib,h,hv,rfl⟩,h9⟩,he⟩ := h
   have hk64 : p.k < 2 ^ 64 := by have := h.k2; omega
-  rw [eval_zero,h9,lengthGuard_zero hk64] at he
-  have hk128 : 128 ≤ p.k := by simpa using he
+  rw [eval_zero,h9] at he
+  have hk128 : 128 ≤ p.k := guardValue_nonzero hk64 (Option.some.inj he)
   have hwide : CrtWindowFive.offQ32 p.w p.pl + slot (wsWords p.ql) 8 + CrtWindowFive.tabBytes32 (wsWords p.ql) ≤ p.Z :=
     (CrtWindowFive.prime_scratch32_fits hk128 h.pl2 h.ql2).trans (by have := h.zk; omega)
   exact ⟨s,xb,pb,qb,dpb,dqb,qib,⟨h,hwide⟩,hv,rfl⟩
