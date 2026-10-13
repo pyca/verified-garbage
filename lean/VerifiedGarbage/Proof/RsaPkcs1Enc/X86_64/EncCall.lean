@@ -147,14 +147,20 @@ theorem pub_covers {s t : State} (hp : EPre s) (h : PreCall s t) :
     rcases hr with rfl | rfl
     · exact ⟨_, hout, 0, z _, by dsimp only; omega⟩
     · exact ⟨_, hscr, 0, z _, by dsimp only; omega⟩
-  refine ⟨Covers.append_left (Covers.of_sub fun r hr => ?_) cw.right, cw⟩
-  have hrd : ∀ x, x ∈ s.rd → x ∈ t.rd ++ t.wr := fun x hx => List.mem_append_left _ (by rw [h.rd]; exact hx)
+  refine ⟨Covers.append_left ?_ cw.right, cw⟩
+  have cr : Covers [⟨s.gpr .rdx, (s.gpr .rcx).toNat⟩, ⟨s.gpr .r8, (s.gpr .r9).toNat⟩,
+      ⟨stackArg s 0, (stackArg s 1).toNat⟩, ⟨stackArg s 2, (stackArg s 3).toNat⟩, ⟨stackArgAddr s 0, 48⟩]
+      (t.rd ++ t.wr) := by rw [h.rd]; exact hp.hrd.left
+  apply Covers.of_forall
+  intro r hr
   simp only [pubRd, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
-  · exact ⟨_, hrd ⟨s.gpr .rdx, (s.gpr .rcx).toNat⟩ (by rw [hp.hrd]; simp), 0, z _, by dsimp only; omega⟩
-  · exact ⟨_, hrd ⟨s.gpr .r8, (s.gpr .r9).toNat⟩ (by rw [hp.hrd]; simp), 0, z _, by dsimp only; omega⟩
-  · exact ⟨_, List.mem_append_right _ hfr, oEM, rfl, by dsimp only; omega⟩
-  · exact ⟨_, List.mem_append_right _ hfr, 0, z _, by dsimp only; omega⟩
+  · exact (Covers.of_mem (by intro r hr; rw [List.mem_singleton.mp hr]; simp)).trans cr
+  · exact (Covers.of_mem (by intro r hr; rw [List.mem_singleton.mp hr]; simp)).trans cr
+  · exact Covers.of_sub fun r hr => by
+      rw [List.mem_singleton.mp hr]; exact ⟨_, List.mem_append_right _ hfr, oEM, rfl, by dsimp only; omega⟩
+  · exact Covers.of_sub fun r hr => by
+      rw [List.mem_singleton.mp hr]; exact ⟨_, List.mem_append_right _ hfr, 0, z _, by dsimp only; omega⟩
 
 /-- Memory changed by a call from the frame, within regions in the stack
 the function uses, `out` or the working space. -/
@@ -186,14 +192,17 @@ theorem bytes_of_frame {s : State} {m : Mem} (hf : Frame [stkR s, outR s, scrR s
 abbrev nB (s : State) : List Byte := Spec.Rsa.bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat
 abbrev eB (s : State) : List Byte := Spec.Rsa.bytesAt s.mem (s.gpr .r8) (s.gpr .r9).toNat
 
-/-- After the call. -/
-structure PostCall (s t : State) : Prop where
+/-- After the call, whatever it wrote to `out`: the frame and its slots. -/
+structure AfterCall (s t : State) : Prop where
   rsp : t.gpr .rsp = fb s
   rd : t.rd = s.rd
   wr : t.wr = ⟨fb s, frameBytes⟩ :: s.wr
   mem : Frame [stkR s, outR s, scrR s] s.mem t.mem
   slots : Slots s t.mem
   sZ : word t.mem (fb s) oZ = zmask (psB s)
+
+/-- After the call. -/
+structure PostCall (s t : State) : Prop extends AfterCall s t where
   res : Spec.Rsa.written t.mem (s.gpr .rdi) (kOf s) ((t.gpr .rax).setWidth 32)
     (Spec.Rsa.publicOpChecked (nB s) (eB s) (Spec.RsaPkcs1Enc.encode (msgB s) (psB s)))
 
@@ -261,13 +270,13 @@ theorem pub_call (v : PubImpl) {s t : State} (hp : EPre s) (h : PreCall s t) (hd
     hf.readW (Region.contains_self _ _) (slot_apart hp (by omega)) (by decide)
   have hkeep0 : s'.mem.readW (fb s) 64 = t.mem.readW (fb s) 64 := by
     have := hkeep (d := 0) (by decide); simp only [Bignum.word, off_zero] at this; exact this
-  refine ⟨⟨(hcs .rsp (by decide)).trans h.rsp, hrd.trans h.rd, hwr.trans h.wr,
+  refine ⟨⟨⟨(hcs .rsp (by decide)).trans h.rsp, hrd.trans h.rd, hwr.trans h.wr,
     frame_call (frame_of_outside h.out) hf fun r hr => ?_,
     ⟨(hkeep (by decide)).trans h.slots.sOut, (hkeep (by decide)).trans h.slots.sN,
       (hkeep (by decide)).trans h.slots.sK, (hkeep (by decide)).trans h.slots.sE,
       (hkeep (by decide)).trans h.slots.sEl, hkeep0.trans h.slots.a0, (hkeep (by decide)).trans h.slots.a1,
       (hkeep (by decide)).trans h.slots.a2, (hkeep (by decide)).trans h.slots.a3⟩,
-    (hkeep (by decide)).trans h.sZ, hpost⟩, hcs, hmx⟩
+    (hkeep (by decide)).trans h.sZ⟩, hpost⟩, hcs, hmx⟩
   simp only [pubWr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
   · exact .inr (.inl (by rw [outR, hsi']; exact sub_refl _))

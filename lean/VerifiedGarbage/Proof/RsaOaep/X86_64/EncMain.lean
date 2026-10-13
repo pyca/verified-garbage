@@ -12,8 +12,8 @@ import all Init.Data.Vector.Basic
 /-!
 # RSAES-OAEP encryption on x86-64: after the checks
 
-`encMain` (`encMain_ok`): `EM` written and masked in our working space, then
-`vg_rsa_public_checked` of it into `out`: the encryption.
+`EM` written and masked in our working space (`encMask_ok`), before the
+public operation's call (`PcCorrect`).
 -/
 
 @[expose] public section
@@ -97,8 +97,6 @@ theorem encEm_ok {s t : State} (hp : EPre mH.G s) (he : EnvE s t) (L : Lay t (fb
   have cD : oDig = 3328 := rfl
   have cW : oW = 4096 := rfl
   -- What reads the caller's buffers needs.
-  have inRd : ∀ {t' : State} {r : Region}, t'.rd = s.rd → r ∈ s.rd → ∀ {a : Addr} {n : Nat}, r.Contains a n →
-      InRegions (t'.rd ++ t'.wr) a n := fun h1 h2 _ _ h3 => ⟨_, List.mem_append_left _ (by rw [h1]; exact h2), h3⟩
   have scrC : ∀ {o : Nat}, o < oRsa → (scrR s).Contains (off (stackArg s 5) o) 1 := fun ho =>
     Offset.contains_base _ (by unfold oRsa at ho; omega_using [hsl, ho]) (by unfold oRsa at ho; omega_using [ho])
   unfold encEm seqs seqs seqs seqs
@@ -107,7 +105,7 @@ theorem encEm_ok {s t : State} (hp : EPre mH.G s) (he : EnvE s t) (L : Lay t (fb
   have he1 : EnvE s t1 := he.step k1.2.1 k1.2.2 sp1 (keep_cs3 k1 (by decide)) mx1 f1
   -- The seed.
   refine WP.seq (WP.mono (wp_good (copySeed_good _) (copySeed_ok (H := Hl.stream) L1 R1 w31 hD (by omega_using [hDN, hN, hsD])
-    (fun i hi => inRd he1.rd (by rw [hp.hrd]; simp) (Offset.contains_base (stackArg s 4) (d := i) (n := 1)
+    (fun i hi => hp.rd_in he1.rd (by simp [rdL]) (Offset.contains_base (stackArg s 4) (d := i) (n := 1)
       (k := mH.G.len) (by omega_using [hlen, hsD, hi]) (by omega_using [hDN, hN, hsD, hi])))
     (fun i hi j hj => ne_of_disjoint hp.d_sd_scr (Offset.contains_base (stackArg s 4) (d := i) (n := 1)
       (k := mH.G.len) (by omega_using [hlen, hsD, hi]) (by omega_using [hDN, hN, hsD, hi])) (scrC
@@ -118,8 +116,8 @@ theorem encEm_ok {s t : State} (hp : EPre mH.G s) (he : EnvE s t) (L : Lay t (fb
   have hll : W 28 = BitVec.ofNat 64 (stackArg s 1).toNat := by rw [w28, BitVec.ofNat_toNat, BitVec.setWidth_eq]
   have sS : Region.Sub ⟨stackArg s 5, oRsa⟩ (scrR s) := Region.sub_prefix (by unfold oRsa; omega_using [hsl])
   have A2 : LabAt t2 (fb s) (stackArg s 5) W (stackArg s 0) (stackArg s 1).toNat :=
-    ⟨w27, hll, (stackArg s 1).isLt, Covers.left (Covers.of_mem fun r hr => by
-        rw [List.mem_singleton.mp hr, he2.rd, hp.hrd]; simp),
+    ⟨w27, hll, (stackArg s 1).isLt, Covers.left (by
+        rw [he2.rd]; exact (Covers.of_mem fun r hr => by rw [List.mem_singleton.mp hr]; simp [rdL]).trans hp.hrd),
       (hp.d_lb_scr.sub_right sS), (hp.d_stk_lb.sub_left (ret_sub s))⟩
   refine WP.seq (WP.mono (wp_good (hashLabel_good (HGood.of hH KH) oDig)
     (hashLabel_ok hH.stream (Hs := mH.G) mH.hash L2 R2 A2 (Or.inl rfl)))
@@ -138,7 +136,7 @@ theorem encEm_ok {s t : State} (hp : EPre mH.G s) (he : EnvE s t) (L : Lay t (fb
       (stackArg s 2 + BitVec.ofNat 64 i) 1 := fun i hi => Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])
   refine WP.mono (wp_good putMsg_good (putMsg_ok L4 R4 (k := (s.gpr .rcx).toNat) (mLen := (stackArg s 3).toNat)
     (by rw [w23, BitVec.ofNat_toNat, BitVec.setWidth_eq]) (by rw [w30, BitVec.ofNat_toNat, BitVec.setWidth_eq]) w29
-    (by omega_using [hk]) hk2 (fun i hi => inRd he4.rd (by rw [hp.hrd]; simp) (hmA i hi))
+    (by omega_using [hk]) hk2 (fun i hi => hp.rd_in he4.rd (by simp [rdL]) (hmA i hi))
     (fun i hi j hj => ne_of_disjoint hp.d_ms_scr (hmA i hi) (scrC (by unfold oRsa; omega_using [hk, hk2, hj])))))
     fun t5 ⟨⟨L5, k5, R5⟩, sp5, mx5, f5⟩ => ?_
   have he5 : EnvE s t5 := he4.step k5.2.1 k5.2.2 sp5 (keep_cs3 k5 (by decide)) mx5 f5
@@ -174,16 +172,20 @@ theorem encEm_ok {s t : State} (hp : EPre mH.G s) (he : EnvE s t) (L : Lay t (fb
       bytesAt_getD _ _ hi]
 
 include hH KH hG KG mH mG in
-theorem encMain_ok {s t : State} (hp : EPre mH.G s) (he : EnvE s t) (L : Lay t (fb s) (stackArg s 5))
+/-- `EM` built and masked, then `rest`, from the state with the arguments of
+the public operation's call to make: `EnvE`, the slots, and `EM` in the
+working space. -/
+theorem encMask_ok {s t : State} (hp : EPre mH.G s) (he : EnvE s t) (L : Lay t (fb s) (stackArg s 5))
     {V : Nat → Byte} {W : Nat → BitVec 64} (R : Rep t.mem (fb s) (stackArg s 5) V W) (hW : ArgsW s W)
-    (hk : 2 * Hl.D + 2 + (stackArg s 3).toNat ≤ (s.gpr .rcx).toNat) :
-    WP isa (encMain Hl.stream Gm.stream pubChecked.name pubChecked.code) t fun t' => EnvE s t' ∧
-      Spec.Rsa.written t'.mem (s.gpr .rdi) (s.gpr .rcx).toNat ((t'.gpr .rax).setWidth 32)
-        (Spec.Rsa.publicOpChecked (Spec.Rsa.bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat)
-          (Spec.Rsa.bytesAt s.mem (s.gpr .r8) (s.gpr .r9).toNat)
-          (emOf mG.G Hl.D (s.gpr .rcx).toNat (stackArg s 3).toNat (Spec.Rsa.bytesAt s.mem (stackArg s 4) mH.G.len)
-            (mH.G.hash (Spec.Rsa.bytesAt s.mem (stackArg s 0) (stackArg s 1).toNat))
-            (Spec.Rsa.bytesAt s.mem (stackArg s 2) (stackArg s 3).toNat))) := by
+    (hk : 2 * Hl.D + 2 + (stackArg s 3).toNat ≤ (s.gpr .rcx).toNat) {rest : Prog isa} {Q : State → Prop}
+    (hrest : ∀ t9 V9 W9, EnvE s t9 → Lay t9 (fb s) (stackArg s 5) → Rep t9.mem (fb s) (stackArg s 5) V9 W9 →
+      (∀ k, 21 ≤ k → k ≤ 26 → W9 k = encW s k) →
+      (List.range (s.gpr .rcx).toNat).map (fun i => V9 (oEm + i)) =
+        emOf mG.G Hl.D (s.gpr .rcx).toNat (stackArg s 3).toNat (Spec.Rsa.bytesAt s.mem (stackArg s 4) mH.G.len)
+          (mH.G.hash (Spec.Rsa.bytesAt s.mem (stackArg s 0) (stackArg s 1).toNat))
+          (Spec.Rsa.bytesAt s.mem (stackArg s 2) (stackArg s 3).toNat) → WP isa rest t9 Q) :
+    WP isa (.seq (encEm Hl.stream) (.seq (.block (dbArgs Hl.stream)) (.seq (mgfXor lay Gm.stream)
+      (.seq (.block (seedArgs Hl.stream)) (.seq (mgfXor lay Gm.stream) rest))))) t Q := by
   obtain ⟨w14, w21, w22, w23, w24, w25, w26, w27, w28, w29, w30, w31⟩ := hW.w
   have hk1 := hp.k1; have hk2 := hp.k2
   have hD := hH.hD0
@@ -192,7 +194,6 @@ theorem encMain_ok {s t : State} (hp : EPre mH.G s) (he : EnvE s t) (L : Lay t (
   have c0 : oEm = 0 := rfl
   have cS : oSt = 3072 := rfl
   have w23' : W 23 = BitVec.ofNat 64 (s.gpr .rcx).toNat := by rw [w23, BitVec.ofNat_toNat, BitVec.setWidth_eq]
-  unfold encMain seqs seqs seqs seqs seqs seqs
   -- `EM` before masking.
   refine WP.seq (WP.mono (encEm_ok hH KH mH hp he L R hW hk) fun t5 ⟨he5, L5, V5, R5, E⟩ => ?_)
   -- `DB` masked.
@@ -223,13 +224,6 @@ theorem encMain_ok {s t : State} (hp : EPre mH.G s) (he : EnvE s t) (L : Lay t (
     rw [hW9 k (by unfold nW frameBytes; omega_using [h2]) (by omega_using [h1]) (by omega_using [h1]), mW_other (by omega_using [h1]),
       W7e k (by omega_using [h1]) (by unfold nW frameBytes; omega_using [h2]) (by omega_using [h1]) (by omega_using [h1])]
     exact hW k (.inr ⟨h1, by omega_using [h2]⟩)
-  refine WP.seq (WP.mono (wp_good pubArgs_good (pubArgs_ok L9 R9 W9e))
-    fun t10 ⟨⟨L10, k10, R10, hdi, hsi, hdx, hcx, h8, h9⟩, sp10, mx10, f10⟩ => ?_)
-  have he10 : EnvE s t10 := he9.step k10.2.1 k10.2.2 sp10 (keep_cs3 k10 (by decide)) mx10 f10
-  refine WP.mono (encPub_call hp L10 R10 (he10.rd) he10.wr he10.fr (by simp [upd]) (by simp [upd]) (by simp [upd])
-    (by simp [upd]) hdi hsi hdx hcx h8 h9) fun t11 ⟨hout, rd11, wr11, cs11, mx11, f11⟩ => ?_
-  refine ⟨⟨(cs11 .rsp (by decide)).trans he10.rsp, rd11.trans he10.rd, wr11.trans he10.wr,
-    fun r hr h => (cs11 r hr).trans (he10.cs r hr h), mx11.trans he10.mx, f11⟩, ?_⟩
   have e1 : (s.gpr .rcx).toNat - (Hl.D + 1) = (s.gpr .rcx).toNat - Hl.D - 1 := by omega_using []
   rw [hsD, e1] at hV7 hV9
   have hm : ∀ o, o < (s.gpr .rcx).toNat → mOut o := fun o ho => (mOut_iff o).mpr (.inl (by omega_using [hk2, cS, ho]))
@@ -257,7 +251,6 @@ theorem encMain_ok {s t : State} (hp : EPre mH.G s) (he : EnvE s t) (L : Lay t (
     have hi' := List.mem_range.mp hi
     rw [show oEm + i = i by unfold oEm; omega_using [], hV9 _ (by unfold oRsa; omega_using [hk2, hi']) (hm _ hi'), hsrc]
     exact mixV_congr _ _ _ (hV7 _ (by unfold oRsa; omega_using [hk2, hi']) (hm _ hi'))
-  rw [hlist] at hout
-  exact hout
+  exact hrest t9 V9 W9 he9 L9 R9 W9e hlist
 
 end VG.Proof.RsaOaep.X86_64

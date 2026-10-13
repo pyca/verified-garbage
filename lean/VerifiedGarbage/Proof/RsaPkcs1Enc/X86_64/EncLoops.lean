@@ -79,8 +79,9 @@ theorem psLoop_ok {s t₀ : State} (hp : EPre s) (hsp : t₀.gpr .rsp = fb s) (h
   have hsp' : u.gpr .rsp = fb s := (hI.keep.gpr (by decide)).trans hsp
   have hsi' : u.gpr .rsi = stackArg s 2 := (hI.keep.gpr (by decide)).trans hsi
   have hcx'' : u.gpr .rcx = BitVec.ofNat 64 (stackArg s 3).toNat := (hI.keep.gpr (by decide)).trans hcx'
-  have hin : InRegions (u.rd ++ u.wr) (off (stackArg s 2) (0 + j)) 1 :=
-    ⟨⟨stackArg s 2, (stackArg s 3).toNat⟩, List.mem_append_left _ (by rw [hI.keep.2.1, hrd, hp.hrd]; simp),
+  have hin : InRegions (u.rd ++ u.wr) (off (stackArg s 2) (0 + j)) 1 := by
+    rw [hI.keep.2.1, hrd]
+    exact hp.hrd.left _ _ ⟨⟨stackArg s 2, (stackArg s 3).toNat⟩, by simp,
       by rw [Nat.zero_add]; exact Offset.contains_base _ (by omega) (by have := hp.wP; omega)⟩
   have hst : InRegions u.wr (off (fb s) (oEM + 2 + j)) 1 :=
     (hs.congr (hI.keep.2.2)).st8 (by unfold frameBytes oEM; omega)

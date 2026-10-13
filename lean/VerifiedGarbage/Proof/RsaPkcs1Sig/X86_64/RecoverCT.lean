@@ -73,7 +73,10 @@ theorem copyRest_taint {Φ : State → State → Prop} (h : Pins Φ [.rsi, .rdi,
 
 /-! ## Entry states and the anchor -/
 
-def Sib (a s : State) : Prop := recContract.pre s ∧ recContract.pub a s
+/-- An entry state meeting the precondition (by name) with the anchor's
+public data. A variant with more public data (`RecoverPrecomputed`) uses the
+pieces after the call too. -/
+def Sib (a s : State) : Prop := PreR s ∧ recContract.pub a s
 
 theorem pub_refl (s : State) : recContract.pub s s := ⟨fun _ _ => rfl, rfl, rfl, rfl, rfl, rfl⟩
 
@@ -250,7 +253,7 @@ theorem pub_view {a s t : State} (S : Sib a s) (h : J1 s t) :
       ((t.callEntry.withRegions (pubRd s) (pubWr s)).gpr .r9).toNat =
       Spec.Rsa.bytesAt a.mem (a.gpr .r8) (a.gpr .r9).toNat := by
   obtain ⟨he, hw0, hw1, hw2, hw3, hdi, hsi, hdx, hcx, h8, h9, -⟩ := h
-  have hp := preR_of S.1
+  have hp := S.1
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [entry_regs, hdi, hsi, hdx, hcx, h8, h9, he.rsp, S.fb, S.gpr (r := .rcx) (by decide),
       S.gpr (r := .rdx) (by decide), S.gpr (r := .r8) (by decide), S.gpr (r := .r9) (by decide)]
@@ -269,12 +272,12 @@ theorem call_ct (v : PubImpl) : RelCT isa (Two (At J1)) (.call v.name v.code) fu
   refine RelCT.callEx (k := pubChk) v.ok v.ct fun t₁ t₂ ⟨a, ⟨s₁, S₁, j₁⟩, ⟨s₂, S₂, j₂⟩⟩ => ?_
   obtain ⟨r₁, a0₁, a1₁, a2₁, a3₁, n₁, e₁⟩ := pub_view S₁ j₁
   obtain ⟨r₂, a0₂, a1₂, a2₂, a3₂, n₂, e₂⟩ := pub_view S₂ j₂
-  obtain ⟨c₁, w₁⟩ := pub_covers (preR_of S₁.1) j₁.2.2.2.2.2.2.2.2.2.2.2 j₁.1
-  obtain ⟨c₂, w₂⟩ := pub_covers (preR_of S₂.1) j₂.2.2.2.2.2.2.2.2.2.2.2 j₂.1
+  obtain ⟨c₁, w₁⟩ := pub_covers S₁.1 j₁.2.2.2.2.2.2.2.2.2.2.2 j₁.1
+  obtain ⟨c₂, w₂⟩ := pub_covers S₂.1 j₂.2.2.2.2.2.2.2.2.2.2.2 j₂.1
   obtain ⟨he₁, hw0₁, hw1₁, hw2₁, hw3₁, hdi₁, hsi₁, hdx₁, hcx₁, h8₁, h9₁, hg₁⟩ := j₁
   obtain ⟨he₂, hw0₂, hw1₂, hw2₂, hw3₂, hdi₂, hsi₂, hdx₂, hcx₂, h8₂, h9₂, hg₂⟩ := j₂
-  have p₁ := pub_pre (preR_of S₁.1) hg₁ he₁.rsp hw0₁ hw1₁ hw2₁ hw3₁ hdi₁ hsi₁ hdx₁ hcx₁ h8₁ h9₁
-  have p₂ := pub_pre (preR_of S₂.1) hg₂ he₂.rsp hw0₂ hw1₂ hw2₂ hw3₂ hdi₂ hsi₂ hdx₂ hcx₂ h8₂ h9₂
+  have p₁ := pub_pre S₁.1 hg₁ he₁.rsp hw0₁ hw1₁ hw2₁ hw3₁ hdi₁ hsi₁ hdx₁ hcx₁ h8₁ h9₁
+  have p₂ := pub_pre S₂.1 hg₂ he₂.rsp hw0₂ hw1₂ hw2₂ hw3₂ hdi₂ hsi₂ hdx₂ hcx₂ h8₂ h9₂
   have hpub : pubChk.pub (t₁.callEntry.withRegions (pubRd s₁) (pubWr s₁))
       (t₂.callEntry.withRegions (pubRd s₂) (pubWr s₂)) :=
     ⟨regs_eq (r₁.trans r₂.symm), a0₁.trans a0₂.symm, a1₁.trans a1₂.symm, a2₁.trans a2₂.symm,
@@ -292,7 +295,7 @@ theorem zeroSlots_ct {J : State → State → Prop} (hJ : ∀ s t, J s t → Env
     RelCT isa (Two (At J)) zeroSlots fun _ _ => True := by
   unfold zeroSlots
   refine RelCT.seq (two_piece [.rsp] (pins_rsp fun s t h => (hJ s t h).rsp) (by taint_decide)
-    (Ψ := At JZ) fun _ t ⟨s, S, h⟩ => WP.mono (zeroHead_ok (preR_of S.1) (hJ s t h))
+    (Ψ := At JZ) fun _ t ⟨s, S, h⟩ => WP.mono (zeroHead_ok S.1 (hJ s t h))
       fun _ ⟨_, _, hdi, hsi⟩ => ⟨s, S, hdi, hsi⟩) (zeroOut_taint fun _ _ _ h₁ h₂ r hr => ?_)
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
@@ -303,7 +306,7 @@ theorem copyOut_ct {J : State → State → Prop} (hJ : ∀ s t, J s t → Env s
     RelCT isa (Two (At J)) copyOut fun _ _ => True := by
   unfold copyOut
   refine RelCT.seq (two_piece [.rsp] (pins_rsp fun s t h => (hJ s t h).1.rsp) (by taint_decide)
-    (Ψ := At JC) fun _ t ⟨s, S, h⟩ => WP.mono (copyHead_ok (preR_of S.1) (hJ s t h).1 (hJ s t h).2)
+    (Ψ := At JC) fun _ t ⟨s, S, h⟩ => WP.mono (copyHead_ok S.1 (hJ s t h).1 (hJ s t h).2)
       fun _ ⟨_, _, _, hdi, h9, hsi⟩ => ⟨s, S, hsi, hdi, h9⟩) (copyRest_taint fun _ _ _ h₁ h₂ r hr => ?_)
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
@@ -321,7 +324,7 @@ theorem lenCheck_two : RelCT isa (Two (At J0)) (.block lenCheck) (Two (At JL)) :
     (by taint_decide)
     fun _ t ⟨s, S, ht⟩ => by
       rw [show t = s from ht]
-      exact WP.mono (lenCheck_ok (preR_of S.1)) fun _ h => ⟨s, S, h⟩
+      exact WP.mono (lenCheck_ok S.1) fun _ h => ⟨s, S, h⟩
 
 theorem zeroOut0_ct : RelCT isa (Two fun a t => At JL a t ∧ isa.eval .ne t = some true) zeroOut fun _ _ => True :=
   two_and (zeroOut_taint fun _ _ _ h₁ h₂ r hr => by
@@ -343,13 +346,13 @@ theorem pubArgs_two : RelCT isa (Two (At JA)) (.block pubArgs) (Two (At J1)) :=
           split
           · rfl
           · exact g₀ r (by simpa using hr), k₀.2.1, by simp only [allocState, hsp₀, k₀.2.2]⟩
-      exact WP.mono (pubArgs_ok (preR_of S.1) hA hm₀)
+      exact WP.mono (pubArgs_ok S.1 hA hm₀)
         fun _ ⟨he, hw0, hw1, hw2, hw3, hdi, hsi, hdx, hcx, h8, h9, _⟩ =>
           ⟨s, S, he, hw0, hw1, hw2, hw3, hdi, hsi, hdx, hcx, h8, h9, hg⟩
 
 theorem call_two (v : PubImpl) : RelCT isa (Two (At J1)) (.call v.name v.code) (Two (At J2)) :=
   two_post (call_ct v) fun _ _ ⟨s, S, he, hw0, hw1, hw2, hw3, hdi, hsi, hdx, hcx, h8, h9, hg⟩ =>
-    WP.mono (pub_call v (preR_of S.1) hg he hw0 hw1 hw2 hw3 hdi hsi hdx hcx h8 h9) fun _ h =>
+    WP.mono (pub_call v S.1 hg he hw0 hw1 hw2 hw3 hdi hsi hdx hcx h8 h9) fun _ h =>
       ⟨s, S, h.1, h.2.1, hg⟩
 
 theorem test0_two : RelCT isa (Two (At J2)) (.block test0) (Two (At J3)) :=
@@ -366,7 +369,7 @@ theorem encArgs_two : RelCT isa (Two fun a t => At J3 a t ∧ isa.eval .e t = so
         simp only [eval, hz, Option.some.injEq, Bool.not_eq_false'] at he'; simpa using he'
       obtain ⟨em, hem⟩ := Option.isSome_iff_exists.mp hsome
       rw [hem] at hw
-      refine WP.mono (encArgs_ok (preR_of S.1) he) fun u ⟨hK, hm, h8, hcx, hdx, h9, hsi⟩ =>
+      refine WP.mono (encArgs_ok S.1 he) fun u ⟨hK, hm, h8, hcx, hdx, h9, hsi⟩ =>
         ⟨s, S, he.regs (hK.gpr (by decide)) hm hK.2.1 hK.2.2, h8, hcx, hdx, h9, hsi, ?_, hg⟩
       rw [hm, hw.2]; simp [emOut, hem])
 
@@ -384,7 +387,7 @@ theorem encode_two : RelCT isa (Two (At J4)) encode (Two (At J5)) :=
     (by taint_decide)
     fun _ t ⟨s, S, j⟩ => by
       obtain ⟨he, h8, hcx, hdx, h9, hsi, hem, hg⟩ := j
-      have hp := preR_of S.1
+      have hp := S.1
       refine WP.mono (encode_ok (encPre hp he h8 hcx hdx h9 hsi)) fun u ⟨hK, hout⟩ =>
         ⟨s, S, t, ⟨he, h8, hcx, hdx, h9, hsi, hem, hg⟩, hK, ?_⟩
       rw [hsi, h9, valBytes hp, hem] at hout
@@ -419,7 +422,7 @@ theorem cmpArgs_two : RelCT isa (Two (At J5s)) (.block cmpArgs) (Two (At J7)) :=
         rw [hs.1, hK.gpr (by decide)]; exact j₄.1.rsp) (fun _ _ S => S.fb) h₁ h₂)
     (by taint_decide)
     fun _ t ⟨s, S, ⟨t₅, ⟨t₄, j₄, hK, hout⟩, hs, hz⟩, he⟩ => by
-      have hp := preR_of S.1
+      have hp := S.1
       have hsome : (encRes s).isSome = true := by
         simp only [eval, hz, Option.some.injEq, Bool.not_eq_false'] at he; simpa using he
       obtain ⟨em', hem'⟩ := Option.isSome_iff_exists.mp hsome
@@ -444,7 +447,7 @@ theorem compare_two : RelCT isa (Two (At J7)) compare (Two (At J8)) :=
       · exact pin (fun s => s.gpr .rcx) (fun _ _ h => h.2.2.2.1) (fun _ _ S => S.gpr (by decide)) h₁ h₂)
     (by taint_decide)
     fun _ t ⟨s, S, he, hdi, hsi, hcx, h1, h2, hg⟩ => by
-      have hp := preR_of S.1
+      have hp := S.1
       have hk1 := hp.k1
       have hk2 := hp.k2
       have hr : ∀ i < (s.gpr .rcx).toNat, InRegions (t.rd ++ t.wr) (t.gpr .rdi + BitVec.ofNat 64 i) 1 ∧
@@ -541,7 +544,8 @@ theorem code_ct (v : PubImpl) : RelCT isa (Two (At J0)) (code v.name v.code) fun
 theorem code_constantTime (v : PubImpl) :
     ConstantTime isa recContract.pre recContract.pub (code v.name v.code) :=
   RelCT.constantTime ((code_ct v).mono
-    (fun s₁ s₂ ⟨h₁, h₂, hpub⟩ => ⟨s₁, ⟨s₁, ⟨h₁, pub_refl s₁⟩, rfl⟩, ⟨s₂, ⟨h₂, hpub⟩, rfl⟩⟩) fun _ _ h => h)
+    (fun s₁ s₂ ⟨h₁, h₂, hpub⟩ => ⟨s₁, ⟨s₁, ⟨preR_of h₁, pub_refl s₁⟩, rfl⟩, ⟨s₂, ⟨preR_of h₂, hpub⟩, rfl⟩⟩)
+    fun _ _ h => h)
 
 /-! ## `Verified` -/
 

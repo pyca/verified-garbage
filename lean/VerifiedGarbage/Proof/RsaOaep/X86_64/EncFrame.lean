@@ -25,11 +25,16 @@ open VG.Proof.MlKem.X86_64 (Keep WP.keep writesOnly ifp ifn)
 
 variable (H : Spec.Mgf1.Hash) {G : Spec.Mgf1.Hash}
 
+/-- The caller's read-only buffers and the stack arguments. -/
+def rdL (s : State) : List Region :=
+  [⟨s.gpr .rdx, (s.gpr .rcx).toNat⟩, ⟨s.gpr .r8, (s.gpr .r9).toNat⟩, ⟨stackArg s 0, (stackArg s 1).toNat⟩,
+    ⟨stackArg s 2, (stackArg s 3).toNat⟩, ⟨stackArg s 4, H.len⟩, ⟨stackArgAddr s 0, 56⟩]
+
 /-- `encK.pre`, by name. -/
 structure EPre (s : State) : Prop where
   sp1 : encStack ≤ (s.gpr .rsp).toNat
   sp2 : (s.gpr .rsp).toNat + 64 ≤ 2 ^ 64
-  hrd : s.rd = [⟨s.gpr .rdx, (s.gpr .rcx).toNat⟩, ⟨s.gpr .r8, (s.gpr .r9).toNat⟩, ⟨stackArg s 0, (stackArg s 1).toNat⟩, ⟨stackArg s 2, (stackArg s 3).toNat⟩, ⟨stackArg s 4, H.len⟩, ⟨stackArgAddr s 0, 56⟩]
+  hrd : Covers (rdL H s) s.rd
   hwr : s.wr = [⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩, ⟨stackArg s 5, (stackArg s 6).toNat * 8⟩]
   d_out_n : (⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩ : Region).Disjoint ⟨s.gpr .rdx, (s.gpr .rcx).toNat⟩
   d_out_e : (⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩ : Region).Disjoint ⟨s.gpr .r8, (s.gpr .r9).toNat⟩
@@ -77,7 +82,12 @@ structure EPre (s : State) : Prop where
 theorem EPre.of {s : State} (h : (encK H G).pre s) : EPre H s := by
   simp only [encK] at h
   obtain ⟨sp1, sp2, hrd, hwr, d_out_n, d_out_e, d_out_lb, d_out_ms, d_out_sd, d_out_scr, d_out_args, d_n_scr, d_e_scr, d_lb_scr, d_ms_scr, d_sd_scr, d_scr_args, d_ret_out, d_ret_n, d_ret_e, d_ret_lb, d_ret_ms, d_ret_sd, d_ret_scr, d_ret_args, d_stk_out, d_stk_n, d_stk_e, d_stk_lb, d_stk_ms, d_stk_sd, d_stk_scr, d_stk_args, wO, wN, wE, wL, wM, wSd, wS, ⟨k1, k2⟩, hsi, L1, L2, hsl⟩ := h
-  exact ⟨sp1, sp2, hrd, hwr, d_out_n, d_out_e, d_out_lb, d_out_ms, d_out_sd, d_out_scr, d_out_args, d_n_scr, d_e_scr, d_lb_scr, d_ms_scr, d_sd_scr, d_scr_args, d_ret_out, d_ret_n, d_ret_e, d_ret_lb, d_ret_ms, d_ret_sd, d_ret_scr, d_ret_args, d_stk_out, d_stk_n, d_stk_e, d_stk_lb, d_stk_ms, d_stk_sd, d_stk_scr, d_stk_args, wO, wN, wE, wL, wM, wSd, wS, k1, k2, hsi, L1, L2, by unfold Spec.RsaPss.scratchWords Spec.Rsa.scratchWords at hsl; omega⟩
+  exact ⟨sp1, sp2, by rw [hrd]; exact Covers.refl _, hwr, d_out_n, d_out_e, d_out_lb, d_out_ms, d_out_sd, d_out_scr, d_out_args, d_n_scr, d_e_scr, d_lb_scr, d_ms_scr, d_sd_scr, d_scr_args, d_ret_out, d_ret_n, d_ret_e, d_ret_lb, d_ret_ms, d_ret_sd, d_ret_scr, d_ret_args, d_stk_out, d_stk_n, d_stk_e, d_stk_lb, d_stk_ms, d_stk_sd, d_stk_scr, d_stk_args, wO, wN, wE, wL, wM, wSd, wS, k1, k2, hsi, L1, L2, by unfold Spec.RsaPss.scratchWords Spec.Rsa.scratchWords at hsl; omega⟩
+
+/-- A read-only buffer of the caller is readable. -/
+theorem EPre.rd_in {H : Spec.Mgf1.Hash} {s t : State} (hp : EPre H s) (hrd : t.rd = s.rd) {r : Region} (hr : r ∈ rdL H s) {a : Addr}
+    {n : Nat} (hc : r.Contains a n) : InRegions (t.rd ++ t.wr) a n := by
+  rw [hrd]; exact hp.hrd.left _ _ ⟨r, hr, hc⟩
 
 /-! ## The frame -/
 
@@ -149,7 +159,8 @@ theorem copy1_ok {s : State} (hp : EPre H s) {u : State} (hsp : u.gpr .rsp = fb 
   have := hp.sp2
   have hsc : Scr u (fb s) frameBytes := Scr.of_mem hfr (by unfold frameBytes at *; omega)
   have hin : InRegions (u.rd ++ u.wr) (off (fb s) (frameBytes + 8 + 8 * j)) 8 := by
-    refine ⟨⟨stackArgAddr s 0, 56⟩, List.mem_append_left _ (by rw [hrd, hp.hrd]; simp), ?_⟩
+    rw [hrd]
+    refine hp.hrd.left _ _ ⟨⟨stackArgAddr s 0, 56⟩, by simp [rdL], ?_⟩
     rw [argAddr, stackArgAddr_j s j]
     exact Offset.contains_base _ (by omega) (by omega)
   refine WP.mono (WP.keep [.rax] (Q := fun u' => u'.mem = u.mem.writeW (off (fb s) d) (stackArg s j)) ?_ rfl)

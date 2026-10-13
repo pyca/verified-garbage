@@ -1,9 +1,13 @@
 //! RSAES-OAEP encryption and decryption (RFC 8017 §7.1).
 //!
 //! [`encrypt`] is the verified `vg_rsa_oaep_<H>_mgf1_<G>_encrypt` (contract
-//! `VG.Spec.RsaOaep.encryptContract`), with a seed from the operating
-//! system's generator; it encrypts the encoded message with
-//! `vg_rsa_public_checked`.
+//! `VG.Spec.RsaOaep.encryptContract`; on x86-64,
+//! `vg_rsa_oaep_<H>_mgf1_<G>_encrypt_precomputed` and its variants, contract
+//! `VG.Spec.RsaOaep.encryptPrecomputedContract`, which reuse the public key's
+//! precomputed modulus values, with ADX multiplication when available), with
+//! a seed from the operating system's generator; it encrypts the encoded
+//! message with `vg_rsa_public_checked` (on x86-64,
+//! `vg_rsa_public_precomputed_checked`).
 //!
 //! [`decrypt`] is the verified `vg_rsa_oaep_<H>_mgf1_<G>_decrypt` (contract
 //! `VG.Spec.RsaOaep.decryptContract`), which computes the encoded message
@@ -104,8 +108,9 @@ fn os_random(buf: &mut [u8]) -> Result<(), Error> {
     getrandom::fill(buf).map_err(|_| Error::Randomness)
 }
 
-/// The type of the implementations of `vg_rsa_oaep_<H>_mgf1_<G>_encrypt`,
-/// for `H` of `L` bytes.
+/// The type of the implementations of `vg_rsa_oaep_<H>_mgf1_<G>_encrypt`
+/// (on x86-64, `vg_rsa_oaep_<H>_mgf1_<G>_encrypt_precomputed`), for `H` of
+/// `L` bytes.
 #[cfg(target_arch = "x86_64")]
 type EncryptFn<const L: usize> = unsafe extern "sysv64" fn(
     *mut u8,
@@ -120,6 +125,8 @@ type EncryptFn<const L: usize> = unsafe extern "sysv64" fn(
     usize,
     *const [u8; L],
     *mut u64,
+    usize,
+    *const u64,
     usize,
 ) -> u32;
 #[cfg(target_arch = "aarch64")]
@@ -241,14 +248,18 @@ fn encrypt_with<const L: usize>(
     os_random(&mut seed)?;
     let mut out = vec![0u8; k];
     let mut scratch = vec![0u64; oaep_scratch_words(k)];
+    #[cfg(target_arch = "x86_64")]
+    let pre = key.pre(&mut scratch);
     // SAFETY: each pointer is valid for its length (`out` and `scratch` for
     // writes, `seed` for `L` bytes, the hash function's length), and none
     // overlaps another or wraps around, as they are distinct Rust
     // allocations; `PublicKey::new` gives `64 ≤ n_len ≤ 1024`,
     // `1 ≤ e_len ≤ 5 ≤ n_len`, and `out_len = n_len` and
-    // `scratch_len = 16 n_len + 1056`; and the CPU has the features of the
-    // implementations of the hash functions that `encrypt_impl` chose, which
-    // are those of `f`.
+    // `scratch_len = 16 n_len + 1056`; on x86-64, `pre` holds the verified
+    // precomputation for `key.n`, with `2 * ceil(n_len / 8)` words; and the
+    // CPU has the features of the implementations of the hash functions and
+    // of the public-key operation that `encrypt_impl` chose, which are those
+    // of `f`.
     let r = unsafe {
         f(
             out.as_mut_ptr(),
@@ -264,6 +275,10 @@ fn encrypt_with<const L: usize>(
             &seed,
             scratch.as_mut_ptr(),
             scratch.len(),
+            #[cfg(target_arch = "x86_64")]
+            pre.as_ptr(),
+            #[cfg(target_arch = "x86_64")]
+            pre.len(),
         )
     };
     // The working space holds the encoded message and its powers.
@@ -351,49 +366,60 @@ pub fn decrypt(
 /// The implementation of encryption for `hash` and `mgf1_hash`, if they
 /// are a pair this module supports, for a CPU with the features `f`.
 fn encrypt_impl(hash: Hash, mgf1_hash: Hash, f: Features) -> Option<Encrypt> {
+    let rsa = Backend::select(f);
     Some(match (hash, mgf1_hash) {
-        (Hash::Sha1, Hash::Sha1) => Encrypt::L20(encrypt_sha1_mgf1_sha1(Sha1Backend::select(f))),
+        (Hash::Sha1, Hash::Sha1) => {
+            Encrypt::L20(encrypt_sha1_mgf1_sha1(Sha1Backend::select(f), rsa))
+        }
         (Hash::Sha224, Hash::Sha1) => Encrypt::L28(encrypt_sha224_mgf1_sha1(
             Sha224Backend::select(f),
             Sha1Backend::select(f),
+            rsa,
         )),
         (Hash::Sha224, Hash::Sha224) => {
-            Encrypt::L28(encrypt_sha224_mgf1_sha224(Sha224Backend::select(f)))
+            Encrypt::L28(encrypt_sha224_mgf1_sha224(Sha224Backend::select(f), rsa))
         }
         (Hash::Sha256, Hash::Sha1) => Encrypt::L32(encrypt_sha256_mgf1_sha1(
             Sha256Backend::select(f),
             Sha1Backend::select(f),
+            rsa,
         )),
         (Hash::Sha256, Hash::Sha256) => {
-            Encrypt::L32(encrypt_sha256_mgf1_sha256(Sha256Backend::select(f)))
+            Encrypt::L32(encrypt_sha256_mgf1_sha256(Sha256Backend::select(f), rsa))
         }
         (Hash::Sha384, Hash::Sha1) => Encrypt::L48(encrypt_sha384_mgf1_sha1(
             Sha384Backend::select(f),
             Sha1Backend::select(f),
+            rsa,
         )),
         (Hash::Sha384, Hash::Sha384) => {
-            Encrypt::L48(encrypt_sha384_mgf1_sha384(Sha384Backend::select(f)))
+            Encrypt::L48(encrypt_sha384_mgf1_sha384(Sha384Backend::select(f), rsa))
         }
         (Hash::Sha512, Hash::Sha1) => Encrypt::L64(encrypt_sha512_mgf1_sha1(
             Sha512Backend::select(f),
             Sha1Backend::select(f),
+            rsa,
         )),
         (Hash::Sha512, Hash::Sha512) => {
-            Encrypt::L64(encrypt_sha512_mgf1_sha512(Sha512Backend::select(f)))
+            Encrypt::L64(encrypt_sha512_mgf1_sha512(Sha512Backend::select(f), rsa))
         }
         (Hash::Sha512_224, Hash::Sha1) => Encrypt::L28(encrypt_sha512_224_mgf1_sha1(
             Sha512_224Backend::select(f),
             Sha1Backend::select(f),
+            rsa,
         )),
         (Hash::Sha512_224, Hash::Sha512_224) => Encrypt::L28(encrypt_sha512_224_mgf1_sha512_224(
             Sha512_224Backend::select(f),
+            rsa,
         )),
         (Hash::Sha512_256, Hash::Sha1) => Encrypt::L32(encrypt_sha512_256_mgf1_sha1(
             Sha512_256Backend::select(f),
             Sha1Backend::select(f),
+            rsa,
         )),
         (Hash::Sha512_256, Hash::Sha512_256) => Encrypt::L32(encrypt_sha512_256_mgf1_sha512_256(
             Sha512_256Backend::select(f),
+            rsa,
         )),
         _ => return None,
     })
