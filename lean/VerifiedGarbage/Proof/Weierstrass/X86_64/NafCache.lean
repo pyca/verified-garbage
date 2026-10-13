@@ -9,6 +9,8 @@ import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.X86_64.Avx
 import VerifiedGarbage.Proof.Weierstrass.CombLay
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombDigit
+import VerifiedGarbage.Proof.Weierstrass.X86_64.NafArith
+import VerifiedGarbage.Proof.Weierstrass.X86_64.NafCopy
 
 /-! Cache lookup addresses and exact copies of both cached field elements. -/
 

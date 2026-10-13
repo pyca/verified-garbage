@@ -13,6 +13,7 @@ import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Framework.X86_64.Straight
 
 @[expose] public section
 

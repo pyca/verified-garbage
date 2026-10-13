@@ -13,6 +13,22 @@ import VerifiedGarbage.Proof.Weierstrass.CombLay
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombDigit
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+public import VerifiedGarbage.Proof.Framework.CallLay
+public import VerifiedGarbage.Proof.Mont.X86_64.AddSubP
+public import VerifiedGarbage.Proof.Mont.X86_64.CsubR
+public import VerifiedGarbage.Proof.Mont.X86_64.MulF
+public import VerifiedGarbage.Proof.Mont.X86_64.Sub256
+public import VerifiedGarbage.Proof.Mont.X86_64.Sub384
+public import VerifiedGarbage.Proof.Weierstrass.Pow
+public import VerifiedGarbage.Proof.Weierstrass.Window
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.Blocks
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.Flags
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.JacZero
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFnB
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFnN
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafArith
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafCopy
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombLay
 
 /-! Select a cached odd multiple while retaining the accumulator and both scalar streams. -/
 

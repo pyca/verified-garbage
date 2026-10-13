@@ -6,6 +6,9 @@ import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Timing
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTableTiming
 
 @[expose] public section
 

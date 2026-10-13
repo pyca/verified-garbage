@@ -10,6 +10,10 @@ import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Arm.Taint
 meta import Mathlib.Tactic.SplitIfs
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+import VerifiedGarbage.Spec.Rc2
+import VerifiedGarbage.Spec.X25519
+meta import VerifiedGarbage.Spec.Rc2
+meta import VerifiedGarbage.Spec.X25519
 
 /-!
 # Montgomery arithmetic modulo P-192's `p` and `n`, as functions, on 32-bit ARM: verified

@@ -10,6 +10,7 @@ import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Mont.X86_64.Wide
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+import VerifiedGarbage.Spec.Ecdsa.Generic
 
 /-!
 # Short Weierstrass curves on x86-64: the ladder computes `[k]P`

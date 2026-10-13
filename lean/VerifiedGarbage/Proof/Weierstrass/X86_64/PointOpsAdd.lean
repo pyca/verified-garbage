@@ -11,6 +11,9 @@ import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Mont.X86_64.Wide
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+import VerifiedGarbage.Impl.Ecdsa.X86_64
+import VerifiedGarbage.Proof.Weierstrass.X86_64.ForwardField
+import VerifiedGarbage.Spec.Ecdsa.Generic
 
 /-!
 # Point operations as functions on x86-64: what the cached addition computes

@@ -16,6 +16,10 @@ meta import Mathlib.Tactic.SplitIfs
 meta import VerifiedGarbage.Proof.Mont.X86_64.Wide
 meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
 meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+import VerifiedGarbage.Impl.Weierstrass.Slots
+import VerifiedGarbage.Spec.Ecdsa.Generic
+meta import VerifiedGarbage.Impl.Weierstrass.Slots
+meta import VerifiedGarbage.Spec.Ecdsa.Generic
 
 /-!
 # P-384's product modulo `n` as a function, on x86-64: verified

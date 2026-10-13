@@ -9,6 +9,8 @@ import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Weierstrass.CombLay
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
+import VerifiedGarbage.Proof.Weierstrass.TCombWords
 
 /-! Direct table selection for public verification scalars. -/
 

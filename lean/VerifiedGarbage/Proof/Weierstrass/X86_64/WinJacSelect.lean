@@ -6,6 +6,7 @@ import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Weierstrass.CombLay
+import VerifiedGarbage.Proof.Weierstrass.TCombWords
 
 /-!
 # The Jacobian window method on x86-64: selecting an entry

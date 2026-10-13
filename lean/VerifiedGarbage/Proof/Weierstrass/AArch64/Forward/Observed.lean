@@ -10,6 +10,8 @@ import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 import Mathlib.Logic.Function.Basic
 import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Mont.AArch64.Row
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Refine
+import VerifiedGarbage.Spec.Ecdsa.Generic
 
 /-! Register allocation can discard dead scratch words and introduce spills.
 Its certificate therefore compares exactly the words the caller observes,

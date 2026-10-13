@@ -11,6 +11,8 @@ import Mathlib.Util.CompileInductive
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Spec.Weierstrass
+import VerifiedGarbage.Impl.Mont.AArch64
+import VerifiedGarbage.Spec.Weierstrass.Mont
 
 @[expose] public section
 

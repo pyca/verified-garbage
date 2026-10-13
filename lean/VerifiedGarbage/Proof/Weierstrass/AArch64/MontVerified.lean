@@ -14,6 +14,8 @@ public import VerifiedGarbage.Proof.Mont.Read
 import Mathlib.Tactic.SplitIfs
 meta import VerifiedGarbage.Proof.Mont.Read
 meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Spec.Ecdsa.Generic
+meta import VerifiedGarbage.Spec.Ecdsa.Generic
 
 /-!
 # Montgomery products modulo the curves' `p` and `n`, as functions, on AArch64: verified

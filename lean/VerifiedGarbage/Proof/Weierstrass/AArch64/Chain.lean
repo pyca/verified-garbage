@@ -8,6 +8,9 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Loop
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Unch
 
 /-!
 # Short Weierstrass curves on AArch64: powers by sliding windows

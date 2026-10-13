@@ -6,6 +6,8 @@ import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Weierstrass.X86_64.FastNafShift
+import VerifiedGarbage.Spec.Ecdsa.Generic
 
 /-! An odd digit advances by the window width; all skipped digits are zero. -/
 

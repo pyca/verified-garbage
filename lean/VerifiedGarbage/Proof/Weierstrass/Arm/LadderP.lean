@@ -7,6 +7,14 @@ import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Arm.RelCT
+public import VerifiedGarbage.Proof.Rc2.PairMem
+public import VerifiedGarbage.Proof.Rc2.Select
+public import VerifiedGarbage.Proof.Rc2.Word
+public import VerifiedGarbage.Proof.Weierstrass.Arm.Saves
+public import VerifiedGarbage.Proof.Weierstrass.Pow
+public import VerifiedGarbage.Proof.Weierstrass.Words
+public import VerifiedGarbage.Proof.X25519.Arm.Limbs
 
 /-!
 # The ladder by calls of the point functions, on 32-bit ARM

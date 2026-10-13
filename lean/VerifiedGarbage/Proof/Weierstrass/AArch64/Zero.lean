@@ -9,6 +9,7 @@ public import VerifiedGarbage.Proof.Ed25519.Word64
 import Mathlib.Logic.Function.Basic
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Mont.AArch64.Ops
 
 /-!
 # Short Weierstrass curves on AArch64: masks of zero

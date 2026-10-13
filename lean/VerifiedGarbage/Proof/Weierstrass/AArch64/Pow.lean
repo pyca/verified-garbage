@@ -10,6 +10,7 @@ import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 import VerifiedGarbage.Proof.Framework.AArch64.Call
+public import VerifiedGarbage.Proof.Mont.AArch64.Ops
 
 /-!
 # Short Weierstrass curves on AArch64: the registers powers and loops change

@@ -9,6 +9,14 @@ import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Spec.Weierstrass
+public import VerifiedGarbage.Proof.Ed25519.Word64
+public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+public import VerifiedGarbage.Proof.Framework.Bswap
+public import VerifiedGarbage.Proof.Mont.AArch64.Words
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Certificate
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Domain
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Scalar
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Tree
 
 public meta section
 

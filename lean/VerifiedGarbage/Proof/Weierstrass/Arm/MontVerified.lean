@@ -16,6 +16,10 @@ public import VerifiedGarbage.Proof.Mont.Read
 import Mathlib.Tactic.SplitIfs
 meta import VerifiedGarbage.Proof.Mont.Read
 meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Spec.Rc2
+import VerifiedGarbage.Spec.X25519
+meta import VerifiedGarbage.Spec.Rc2
+meta import VerifiedGarbage.Spec.X25519
 
 /-!
 # Montgomery arithmetic modulo the curves' `p` and `n`, as functions, on 32-bit ARM: verified

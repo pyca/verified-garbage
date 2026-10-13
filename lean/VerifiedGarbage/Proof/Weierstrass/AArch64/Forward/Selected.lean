@@ -11,6 +11,8 @@ import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Fprog
 public import VerifiedGarbage.Proof.Weierstrass.Jac
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Blocks
+import VerifiedGarbage.Spec.Ecdsa.Generic
 
 @[expose] public section
 

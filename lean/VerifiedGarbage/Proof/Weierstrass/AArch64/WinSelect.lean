@@ -10,6 +10,7 @@ import Mathlib.Logic.Function.Basic
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Framework.Range
 
 /-!
 # The window method on AArch64: the constant-time selection

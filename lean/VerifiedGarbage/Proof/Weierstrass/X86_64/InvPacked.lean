@@ -10,6 +10,7 @@ import all Init.Data.Vector.Basic
 import Mathlib.Data.BitVec
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+import VerifiedGarbage.Proof.Divstep.WordDef
 
 /-!
 # Inversion by divsteps on x86-64: packed divsteps

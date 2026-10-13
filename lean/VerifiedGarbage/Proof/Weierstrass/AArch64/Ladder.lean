@@ -9,6 +9,8 @@ import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Weierstrass.Unch
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Loop
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Unch
 
 /-!
 # Short Weierstrass curves on AArch64: the ladder

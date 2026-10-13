@@ -12,6 +12,16 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.Comb
 public import VerifiedGarbage.Proof.Weierstrass.TCombLay
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+public import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
+public import VerifiedGarbage.Proof.Framework.AArch64.Syms
+public import VerifiedGarbage.Proof.Framework.Range
+public import VerifiedGarbage.Proof.Mont.AArch64.P256Square.Core
+public import VerifiedGarbage.Proof.Mont.AArch64.P256Square.Words
+public import VerifiedGarbage.Proof.Mont.AArch64.RowInit
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Loop
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Unch
+public import VerifiedGarbage.Proof.Weierstrass.Pow
+public import VerifiedGarbage.Proof.Weierstrass.TCombWords
 
 /-!
 # The fixed-base comb from tables in memory on AArch64

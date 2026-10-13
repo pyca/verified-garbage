@@ -12,6 +12,7 @@ import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 import Mathlib.Logic.Function.Basic
 import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Mont.AArch64.Row
+import VerifiedGarbage.Spec.Ecdsa.Generic
 
 /-! `optimize` is proved correct once, for every block the interpreter over
 concrete words runs: the optimized block runs too and leaves the same word in

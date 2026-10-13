@@ -6,6 +6,7 @@ import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Weierstrass.CombLay
+import VerifiedGarbage.Proof.Framework.CallLay
 
 /-!
 # The comb from tables in memory on x86-64: the selection's pass with AVX2

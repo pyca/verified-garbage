@@ -14,6 +14,8 @@ import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.OptimizeK
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.OptimizeK
+import VerifiedGarbage.Spec.Weierstrass.CheckPoint
+meta import VerifiedGarbage.Spec.Weierstrass.CheckPoint
 
 @[expose] public section
 

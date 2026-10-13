@@ -8,6 +8,16 @@ import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.CachedAdd
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticJacHead
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticJacTail
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticMixedHead
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticMixedTail
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticRR
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticTableHead
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticTableTail
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Timing
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowLoadTiming
 
 /-! Digit selection remains unchanged while point arithmetic uses a wider frame.
 The callbacks include the final coordinate copy, so no intermediate scratch

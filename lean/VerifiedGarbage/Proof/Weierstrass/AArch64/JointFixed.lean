@@ -8,6 +8,9 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JointInvariant
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeArithmetic
+import VerifiedGarbage.Spec.Weierstrass.CheckPoint
 
 @[expose] public section
 

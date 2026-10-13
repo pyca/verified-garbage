@@ -16,6 +16,10 @@ public import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseCTEngine
 import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarMemory
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseCTEngine
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarMemory
+import VerifiedGarbage.Impl.Mont.Mod
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import VerifiedGarbage.Impl.Mont.Mod
+meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
 
 /-!
 # X25519 of the base point on AArch64: constant time and the contract

@@ -12,6 +12,9 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.X86.Sse
 import VerifiedGarbage.Proof.X25519.X86.Column
+public import VerifiedGarbage.Proof.Framework.CallLay
+public import VerifiedGarbage.Proof.Framework.X86.SseDword
+public import VerifiedGarbage.Proof.Weierstrass.Pow
 
 /-! ## `TCombEntry` -/
 

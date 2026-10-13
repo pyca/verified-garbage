@@ -8,6 +8,7 @@ import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.X25519.X86.Column
+public import VerifiedGarbage.Proof.Divstep.Word32
 
 /-! # A complete thirty-step inversion batch -/
 

@@ -24,6 +24,10 @@ meta import Mathlib.Tactic.SplitIfs
 meta import VerifiedGarbage.Proof.Mont.X86_64.Wide
 meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
 meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+import VerifiedGarbage.Impl.Ecdsa.X86_64
+import VerifiedGarbage.Spec.Ecdsa.Generic
+meta import VerifiedGarbage.Impl.Ecdsa.X86_64
+meta import VerifiedGarbage.Spec.Ecdsa.Generic
 
 /-!
 # Point operations as functions on x86-64: the registers they keep

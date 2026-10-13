@@ -13,6 +13,8 @@ import VerifiedGarbage.Proof.Weierstrass.CombLay
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombDigit
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.Double4
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.JacDoubleForward
 
 /-! A public peer digit either leaves the accumulator alone or adds its cached odd multiple. -/
 
