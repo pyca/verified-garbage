@@ -470,7 +470,6 @@ theorem crtWin5_ok (M : Mont) (S : CrtSel 32) {t₀ t : State} {P : Addr} {wx : 
   have hn := hc.scrT.nowrap
   have hY0 := slot_le (w := wx) (show aY < 8 by decide)
   have hT0 := slot_le (w := wx) (show Crt.aT < 8 by decide)
-  simp only [seqs]
   -- Five squarings.
   refine WP.seq (WP.mono (crtSq_ok M hc hw hw' hR hI₁.ylt hI₁.y) fun t₂ ⟨hc₂, hY₂, hYv₂, hh₂, f₂, k₂⟩ => ?_)
   refine WP.seq (WP.mono (crtSq_ok M hc₂ hw hw' hR hY₂ hYv₂) fun t₃ ⟨hc₃, hY₃, hYv₃, hh₃, f₃, k₃⟩ => ?_)
@@ -603,13 +602,12 @@ def W5Inv (t₀ : State) (P : Addr) (wx : Nat) (minv : BitVec 64) (X Xc : Nat) (
   ∃ i b, padBits L + 8 * i = 5 * j + b ∧ b < 8 ∧ i ≤ L ∧ W5At t₀ P wx minv X Xc Q x ep L eb i b t
 
 theorem expLoop5_eq (mul : Nat → Nat → Nat → Prog isa) (sel : List (Prog isa)) (sp sl : Nat) :
-    Crt.expLoop5 mul sel sp sl = (expInit sp sl :: Crt.tabBuildN mul 30) ++
-      [.block Crt.padInit, .loop (seqs (Crt.expWin5 mul sel)) .ne] := by
+    Crt.expLoop5 mul sel sp sl = ((expInit sp sl :: Crt.tabBuildN mul 30) ++
+      [.block Crt.padInit]) ++ [.loop (seqs (Crt.expWin5 mul sel)) .ne] := by
   simp [Crt.expLoop5, expInit]
 
-/-- The exponentiation in a prime's workspace by windows of 5 bits, with room
-for its table of 32 entries: as `crtExpLoop_ok`. -/
-theorem crtExpLoop5_ok (M : Mont) (S : CrtSel 32) {s : State} {B : Addr} {Z o w wx : Nat} {minv : BitVec 64}
+/-- `expLoop5`'s start, table and padding: the windows' invariant. -/
+theorem crtExpHead5_ok (M : Mont) {s : State} {B : Addr} {Z o w wx : Nat} {minv : BitVec 64}
     {X x : Nat} {Q : Prop} (hc : SubCtx s B Z o w wx minv) (hT : o + slot wx 8 + wsTab wx ≤ Z) (hw2 : 2 ≤ wx)
     (hwx : wx ≤ w) (hw30 : w < 2 ^ 30)
     (hn : wv s.mem (off B o) (slot wx aN) wx = X)
@@ -621,11 +619,9 @@ theorem crtExpLoop5_ok (M : Mont) (S : CrtSel 32) {s : State} {B : Addr} {Z o w 
     (hyc : Q → wv s.mem (off B o) (slot wx aY) wx % X = 2 ^ (64 * wx) % X)
     {sp sl : Nat} (hsp : sp < 32) (hsl : sl < 32) {ep : Addr} {eb : List Byte}
     (hep : word s.mem B (8 * sp) = ep) (hel : word s.mem B (8 * sl) = BitVec.ofNat 64 eb.length)
-    (hL1 : 1 ≤ eb.length) (hL2 : eb.length ≤ 1024) (he : Src s B Z ep eb) :
-    WP isa (seqs (Crt.expLoop5 M.mm S.code sp sl)) s fun t => SubCtx t B Z o w wx minv ∧
-      wv t.mem (off B o) (slot wx aY) wx < X ∧
-      (Q → wv t.mem (off B o) (slot wx aY) wx % X = x ^ Spec.Rsa.os2ip eb * 2 ^ (64 * wx) % X) ∧
-      Frm (off B o) (crtExpRanges5 wx) s.mem t.mem ∧ Keep mmRegs s t := by
+    (hL2 : eb.length ≤ 1024) :
+    WP isa (seqs ((expInit sp sl :: Crt.tabBuildN M.mm 30) ++ [.block Crt.padInit])) s
+      (W5Inv s (off B o) wx minv X (wv s.mem (off B o) (slot wx Crt.aXc) wx) Q x ep eb.length eb 0) := by
   have hi := hc.hi
   have hlo := hc.lo
   have hBn := hc.scr.nowrap
@@ -635,14 +631,8 @@ theorem crtExpLoop5_ok (M : Mont) (S : CrtSel 32) {s : State} {B : Addr} {Z o w 
   simp only [wsTab] at hT'
   have h256 : 256 ≤ slot wx 8 := by unfold slot hdrBytes; omega_arith
   have hR : Nat.Coprime (2 ^ (64 * wx)) X := VG.Proof.Bignum.coprime_pow2 hodd _
-  have hout : ∀ i < eb.length, slot wx 8 + tabBytes wx 32 ≤ ofs (off B o) (ep + BitVec.ofNat 64 i) := fun i hi' => by
-    have := he.out i hi'
-    rcases ofs_rebase B (ep + BitVec.ofNat 64 i) (o := o) (by omega_arith) with ⟨_, h2⟩ | ⟨h1, _⟩
-    · omega_arith
-    · omega_arith
   have hc₀ : CExpCtx s (off B o) wx minv X (wv s.mem (off B o) (slot wx Crt.aXc) wx) 32 :=
     ⟨hc.good, hs32, hn, hinv, rfl⟩
-  rw [expLoop5_eq]
   refine wp_seqs_append (by simp) (by simp) ?_
   -- The start and the table.
   rw [← List.singleton_append]
@@ -671,7 +661,7 @@ theorem crtExpLoop5_ok (M : Mont) (S : CrtSel 32) {s : State} {B : Addr} {Z o w 
   have hlen₂ : word t₂.mem (off B o) (8 * Crt.sExpLen) = BitVec.ofNat 64 eb.length := by
     rw [hh₂ _ (by decide) (by decide) (by decide) (by decide), hm₁,
       hdrStore_hdr (i := Crt.sI) _ _ _ (by decide) (by decide) (by decide), word_writeW_self]
-  refine WP.seq (WP.mono (padInit_ok hc₂ hlen₂ (by omega_arith)) fun t₃ ⟨hm₃, k₃⟩ => ?_)
+  refine WP.mono (padInit_ok hc₂ hlen₂ (by omega_arith)) fun t₃ ⟨hm₃, k₃⟩ => ?_
   have hnT : slot wx 8 + tabBytes wx 32 ≤ 2 ^ 64 := by omega_arith
   have f₃ : Frm (off B o) (crtExpRanges5 wx) t₂.mem t₃.mem := by
     rw [hm₃]
@@ -706,6 +696,45 @@ theorem crtExpLoop5_ok (M : Mont) (S : CrtSel 32) {s : State} {B : Addr} {Z o w 
         hm₁, hdrStore_hdr (i := Crt.sI) _ _ _ (by decide) (by decide) (by decide),
         hdrStore_hdr (i := Crt.sExpLen) _ _ _ (by decide) (by decide) (by decide), word_writeW_self]
     · rw [hh₃ _ (by decide) (by decide) (by decide) (by decide)]; exact hlen₂
+  exact h0
+
+/-- The exponentiation in a prime's workspace by windows of 5 bits, with room
+for its table of 32 entries: as `crtExpLoop_ok`. -/
+theorem crtExpLoop5_ok (M : Mont) (S : CrtSel 32) {s : State} {B : Addr} {Z o w wx : Nat} {minv : BitVec 64}
+    {X x : Nat} {Q : Prop} (hc : SubCtx s B Z o w wx minv) (hT : o + slot wx 8 + wsTab wx ≤ Z) (hw2 : 2 ≤ wx)
+    (hwx : wx ≤ w) (hw30 : w < 2 ^ 30)
+    (hn : wv s.mem (off B o) (slot wx aN) wx = X)
+    (hinv : ((word s.mem (off B o) (slot wx aN)).toNat * minv.toNat + 1) % 2 ^ 64 = 0)
+    (hodd : X % 2 = 1)
+    (hxl : wv s.mem (off B o) (slot wx Crt.aXc) wx < X)
+    (hxc : Q → wv s.mem (off B o) (slot wx Crt.aXc) wx % X = x * 2 ^ (64 * wx) % X)
+    (hyl : wv s.mem (off B o) (slot wx aY) wx < X)
+    (hyc : Q → wv s.mem (off B o) (slot wx aY) wx % X = 2 ^ (64 * wx) % X)
+    {sp sl : Nat} (hsp : sp < 32) (hsl : sl < 32) {ep : Addr} {eb : List Byte}
+    (hep : word s.mem B (8 * sp) = ep) (hel : word s.mem B (8 * sl) = BitVec.ofNat 64 eb.length)
+    (hL1 : 1 ≤ eb.length) (hL2 : eb.length ≤ 1024) (he : Src s B Z ep eb) :
+    WP isa (seqs (Crt.expLoop5 M.mm S.code sp sl)) s fun t => SubCtx t B Z o w wx minv ∧
+      wv t.mem (off B o) (slot wx aY) wx < X ∧
+      (Q → wv t.mem (off B o) (slot wx aY) wx % X = x ^ Spec.Rsa.os2ip eb * 2 ^ (64 * wx) % X) ∧
+      Frm (off B o) (crtExpRanges5 wx) s.mem t.mem ∧ Keep mmRegs s t := by
+  have hi := hc.hi
+  have hlo := hc.lo
+  have hBn := hc.scr.nowrap
+  have hs32 := hc.scr32 hT
+  have hPn := hs32.nowrap
+  have hT' := hT
+  simp only [wsTab] at hT'
+  have h256 : 256 ≤ slot wx 8 := by unfold slot hdrBytes; omega_arith
+  have hR : Nat.Coprime (2 ^ (64 * wx)) X := VG.Proof.Bignum.coprime_pow2 hodd _
+  have hout : ∀ i < eb.length, slot wx 8 + tabBytes wx 32 ≤ ofs (off B o) (ep + BitVec.ofNat 64 i) := fun i hi' => by
+    have := he.out i hi'
+    rcases ofs_rebase B (ep + BitVec.ofNat 64 i) (o := o) (by omega_arith) with ⟨_, h2⟩ | ⟨h1, _⟩
+    · omega_arith
+    · omega_arith
+  rw [expLoop5_eq]
+  refine wp_seqs_append (by simp) (by simp) (WP.mono (crtExpHead5_ok M hc hT hw2 hwx hw30 hn hinv hodd hxl hxc hyl
+    hyc hsp hsl hep hel hL2) fun t₃ h0 => ?_)
+  simp only [seqs]
   -- The windows.
   have hK := win5_dvd eb.length
   refine wp_upto (a := 0) (N := (padBits eb.length + 8 * eb.length) / 5) (by omega)

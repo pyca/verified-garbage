@@ -432,6 +432,11 @@ def gatherBodyV (L : VLen) (n : Nat) : List Instr :=
   gatherOrV L .r9 .xmm13 ++ gatherOrV L .r10 .xmm14 ++ gatherOrV L .rax .xmm15 ++ gatherOrV L .rbx .xmm7 ++
   ([.vmovdquStore L (ix .rbx .r14) .xmm0, .alu .add .r14 (.imm (BitVec.ofNat 32 n))] : List Instr)
 
+/-- `sEnt` past the pass's entries, `sJ := 8 (p + 1)`, `ZF` after the fourth. -/
+def gatherEndV : List Instr :=
+  [.alu .add .rax (.reg .r11), .store (hdr sEnt) .rax, .mov .rax (.reg .r15), .alu .add .rax (.imm 8),
+    .store (hdr sJ) .rax, .alu .cmp .rax (.imm 32)]
+
 /-- Pass `p` of the selection with AVX2: the words of `[aT]` four at a time
 below `r12`, then two more if `r12 < r13`. -/
 def gatherPassV : List (Prog isa) :=
@@ -440,10 +445,10 @@ def gatherPassV : List (Prog isa) :=
     .ite .ne (.loop (.block (gatherBodyV .l256 4 ++ ([.alu .cmp .r14 (.reg .r12)] : List Instr))) .ne) (.block []),
     .block [.alu .cmp .r14 (.reg .r13)],
     .ite .ne (.block (gatherBodyV .l128 2)) (.block []),
-    .block gatherEnd]
+    .block gatherEndV]
 
-/-- `[aT] := T_v`, `v` in `sNib`: two passes of `gatherPassV`, then
-`vzeroupper`. -/
+/-- `[aT] := T_v` for a table of 32 entries, `v` in `sNib`: four passes of
+`gatherPassV`, then `vzeroupper`. -/
 def tabSelectV : List (Prog isa) :=
   [.block [.mov .rax (.mem (hdr sTab)), .store (hdr sEnt) .rax, .mov32 .rax (.imm 0), .store (hdr sJ) .rax],
     .loop (seqs gatherPassV) .ne, .block [.vop .vzeroupper]]

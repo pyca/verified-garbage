@@ -57,7 +57,7 @@ theorem rdi_ct {α : Type} {Φ : α → State → Prop} (f : α → Addr) (h : �
 
 /-- After `j` passes of the selection, in the workspace of `p`. -/
 def GathPassI (p : XPub) (j : Nat) (s : State) : Prop :=
-  ∃ (t₀ : State) (minv : BitVec 64) (X Xc v : Nat), GathPassInv t₀ (off p.B p.o) p.wx minv X Xc v j s ∧
+  ∃ (t₀ : State) (minv : BitVec 64) (X Xc v : Nat), GathPassInv t₀ (off p.B p.o) p.wx minv X Xc v 16 j s ∧
     2 ≤ p.wx ∧ p.wx < 2 ^ 30 ∧ v < 16
 
 /-- After the head of pass `q.2`: its bases, counts and masks, whatever the window. -/
@@ -118,13 +118,13 @@ theorem passBody_ct : RelCT isa (Two fun (q : XPub × Nat) s => q.2 < 2 ∧ Gath
   exact two_taint _ pins_GathE (by taint_decide)
 
 /-- `tabSel_ok`'s hypotheses. -/
-def SelP (p : XPub) (s : State) : Prop :=
-  ∃ (minv : BitVec 64) (X Xc v : Nat), CExpCtx s (off p.B p.o) p.wx minv X Xc ∧ 2 ≤ p.wx ∧ p.wx < 2 ^ 30 ∧
-    v < 16 ∧ word s.mem (off p.B p.o) (8 * Crt.sTab) = off (off p.B p.o) (slot p.wx 8) ∧
+def SelP (n : Nat) (p : XPub) (s : State) : Prop :=
+  ∃ (minv : BitVec 64) (X Xc v : Nat), CExpCtx s (off p.B p.o) p.wx minv X Xc n ∧ 2 ≤ p.wx ∧ p.wx < 2 ^ 30 ∧
+    v < n ∧ word s.mem (off p.B p.o) (8 * Crt.sTab) = off (off p.B p.o) (slot p.wx 8) ∧
     word s.mem (off p.B p.o) (8 * Crt.sNib) = BitVec.ofNat 64 v
 
 /-- The selection leaks the same in runs with the same workspace. -/
-theorem tabSel_ct : RelCT isa (Two SelP) (seqs Crt.tabSelect) fun _ _ => True := by
+theorem tabSel_ct : RelCT isa (Two (SelP 16)) (seqs Crt.tabSelect) fun _ _ => True := by
   rw [tabSelect_eq]
   simp only [seqs]
   refine RelCT.seq (two_piece (Ψ := fun p s => 0 < 2 ∧ GathPassI p 0 s) [.rdi]
@@ -151,7 +151,7 @@ theorem tabSel_ct : RelCT isa (Two SelP) (seqs Crt.tabSelect) fun _ _ => True :=
     (fun _ _ h => h) fun _ _ _ => trivial
 
 /-- A selection is constant time, as `tabSel_ct` says of `CrtSel.sse`. -/
-def CrtSel.CT (S : CrtSel) : Prop := RelCT isa (Two SelP) (seqs S.code) fun _ _ => True
+def CrtSel.CT {n : Nat} (S : CrtSel n) : Prop := RelCT isa (Two (SelP n)) (seqs S.code) fun _ _ => True
 
 theorem CrtSel.sse_ct : CrtSel.sse.CT := tabSel_ct
 
@@ -186,7 +186,7 @@ theorem winSq_q (M : Mont) {p : XPub} {s : State} (h : WinQ p s) :
 
 /-- Before the selection: `tabSel_ok`'s hypotheses, and the rest of `WinQ`. -/
 def WinS (p : XPub) (t : State) : Prop :=
-  SelP p t ∧ ∃ (minv : BitVec 64) (X Xc : Nat), CExpCtx t (off p.B p.o) p.wx minv X Xc ∧
+  SelP 16 p t ∧ ∃ (minv : BitVec 64) (X Xc : Nat), CExpCtx t (off p.B p.o) p.wx minv X Xc ∧
     CTab t.mem (off p.B p.o) p.wx X False 0 ∧ wv t.mem (off p.B p.o) (slot p.wx Public.aY) p.wx < X ∧
     Nat.Coprime (2 ^ (64 * p.wx)) X
 

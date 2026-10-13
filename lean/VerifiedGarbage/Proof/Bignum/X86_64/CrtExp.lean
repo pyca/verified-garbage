@@ -260,10 +260,11 @@ theorem gEnd_ok {t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc p : N
       ofNat_sub_beq (show 8 * (p + 1) < 2 ^ 64 by omega) (show 16 < 2 ^ 64 by decide)]
     exact decide_eq_decide.mpr (by omega)) rfl) fun t' ⟨h, k⟩ => ⟨h.1, h.2, k⟩
 
-/-- After `p` passes of the selection of entry `v` from `t₀`. -/
-structure GathPassInv (t₀ : State) (P : Addr) (wx : Nat) (minv : BitVec 64) (X Xc v : Nat) (p : Nat) (t : State) :
+/-- After `p` passes of the selection of entry `v` from `t₀`, from a table of
+`n` entries. -/
+structure GathPassInv (t₀ : State) (P : Addr) (wx : Nat) (minv : BitVec 64) (X Xc v n : Nat) (p : Nat) (t : State) :
     Prop where
-  ctx : CExpCtx t P wx minv X Xc
+  ctx : CExpCtx t P wx minv X Xc n
   nib : word t.mem P (8 * Crt.sNib) = BitVec.ofNat 64 v
   ent : word t.mem P (8 * Crt.sEnt) = off P (slot wx (8 + 8 * p))
   idx : word t.mem P (8 * Crt.sJ) = BitVec.ofNat 64 (8 * p)
@@ -346,9 +347,9 @@ theorem gathHead_ok {t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc v
 
 /-- Pass `p` of the selection. -/
 theorem gPass_ok {t₀ t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc v p : Nat}
-    (hw : 2 ≤ wx) (hw' : wx < 2 ^ 30) (hv : v < 16) (hp : p < 2) (hI : GathPassInv t₀ P wx minv X Xc v p t) :
+    (hw : 2 ≤ wx) (hw' : wx < 2 ^ 30) (hv : v < 16) (hp : p < 2) (hI : GathPassInv t₀ P wx minv X Xc v 16 p t) :
     WP isa (seqs Crt.gatherPass) t fun t' => t'.zf = some (decide (p + 1 = 2)) ∧
-      GathPassInv t₀ P wx minv X Xc v (p + 1) t' := by
+      GathPassInv t₀ P wx minv X Xc v 16 (p + 1) t' := by
   have hc := hI.ctx
   have hn := hc.scrT.nowrap
   have hT0 := slot_le (w := wx) (show Crt.aT < 8 by decide)
@@ -433,14 +434,14 @@ theorem tabSel_ok {t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc v :
   rw [← hm₁] at o2
   have f₁ : Frm P (selRanges wx) t.mem t₁.mem :=
     (Frm.of_outside o1 (by simp [selRanges])).trans (Frm.of_outside o2 (by simp [selRanges]))
-  have h₁ : GathPassInv t₁ P wx minv X Xc v 0 t₁ := by
+  have h₁ : GathPassInv t₁ P wx minv X Xc v 16 0 t₁ := by
     refine ⟨hc.of_win (f₁.mono (selRanges_sub wx)) k₁.2.2 (k₁.gpr (by decide)), ?_, ?_, ?_, .inl rfl,
       Frm.refl _ _ _, Keep.refl _ _⟩
     · rw [hm₁, hdrStore_hdr _ _ _ (by decide) (by decide) (by decide),
         hdrStore_hdr _ _ _ (by decide) (by decide) (by decide)]; exact hN
     · rw [hm₁, hdrStore_hdr _ _ _ (by decide) (by decide) (by decide), word_writeW_self]
     · rw [hm₁, word_writeW_self]; rfl
-  refine WP.mono (wp_upto (a := 0) (N := 2) (by decide) (GathPassInv t₁ P wx minv X Xc v)
+  refine WP.mono (wp_upto (a := 0) (N := 2) (by decide) (GathPassInv t₁ P wx minv X Xc v 16)
     (fun p _ hp s hI => gPass_ok hw hw' hv hp hI) (fun s h => h) h₁) fun t' hI => ?_
   have hEv : ∀ i < wx, word t₁.mem P (slot wx (8 + v) + 8 * i) = word t.mem P (slot wx (8 + v) + 8 * i) :=
     fun i hi => f₁.word_eq (fun r hr => by
