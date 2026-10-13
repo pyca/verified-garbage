@@ -584,9 +584,13 @@ abbrev stkR : Region := below (s₀.gpr .rsp) 24
 abbrev sub (k n : Nat) : Region := ⟨off (cx s₀) k, n⟩
 end
 
-/-- What the proof uses of the precondition; `enc` for `seal`. -/
+/-- What the proof uses of the precondition; `enc` for `seal`. The code may
+read more than the regions the contract names (`rd`), as when
+`vg_chacha20_poly1305_seal_split` runs `seal` with the code of
+`vg_chacha20_xor_split_avx512` inline, which reads `src`. -/
 structure APre (enc : Bool) (s₀ : State) : Prop where
-  rd : s₀.rd = if enc then [kR s₀, nR s₀, aR s₀, argR s₀] else [kR s₀, nR s₀, aR s₀, tR s₀, argR s₀]
+  rd : ∃ more, s₀.rd = (if enc then [kR s₀, nR s₀, aR s₀, argR s₀] else [kR s₀, nR s₀, aR s₀, tR s₀, argR s₀]) ++
+    more
   wr : s₀.wr = if enc then [dR s₀, tR s₀, ctxR s₀] else [dR s₀, ctxR s₀]
   c_k : (ctxR s₀).Disjoint (kR s₀)
   c_n : (ctxR s₀).Disjoint (nR s₀)
@@ -618,7 +622,7 @@ structure APre (enc : Bool) (s₀ : State) : Prop where
 
 theorem APre.of {enc : Bool} (s₀ : State) (h : preX86_64 enc s₀) : APre enc s₀ := by
   obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h17, h18, h19, h20, h21, h22, h23, h24, h25, h26, h27, h28, h29⟩ := h
-  exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h17, h18, h19, h20, h21, h22, h23, h24, h25, h26, h27, h28, h29⟩
+  exact ⟨⟨[], by rw [List.append_nil]; exact h1⟩, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h17, h18, h19, h20, h21, h22, h23, h24, h25, h26, h27, h28, h29⟩
 
 theorem APre.a_d {enc : Bool} {s₀ : State} (hp : APre enc s₀) : (aR s₀).Disjoint (dR s₀) := hp.d_a.symm
 
@@ -633,22 +637,22 @@ theorem APre.d_wr {s₀ : State} (hp : APre e s₀) : dR s₀ ∈ s₀.wr := by
   rw [hp.wr]; cases e <;> simp
 
 theorem APre.a_rd {s₀ : State} (hp : APre e s₀) : aR s₀ ∈ s₀.rd := by
-  rw [hp.rd]; cases e <;> simp
+  obtain ⟨_, h⟩ := hp.rd; rw [h]; cases e <;> simp
 
 theorem APre.k_rd {s₀ : State} (hp : APre e s₀) : kR s₀ ∈ s₀.rd := by
-  rw [hp.rd]; cases e <;> simp
+  obtain ⟨_, h⟩ := hp.rd; rw [h]; cases e <;> simp
 
 theorem APre.n_rd {s₀ : State} (hp : APre e s₀) : nR s₀ ∈ s₀.rd := by
-  rw [hp.rd]; cases e <;> simp
+  obtain ⟨_, h⟩ := hp.rd; rw [h]; cases e <;> simp
 
 theorem APre.g_rd {s₀ : State} (hp : APre e s₀) : argR s₀ ∈ s₀.rd := by
-  rw [hp.rd]; cases e <;> simp
+  obtain ⟨_, h⟩ := hp.rd; rw [h]; cases e <;> simp
 
 theorem APre.t_wr {s₀ : State} (hp : APre true s₀) : tR s₀ ∈ s₀.wr := by
   rw [hp.wr]; simp
 
 theorem APre.t_rd {s₀ : State} (hp : APre false s₀) : tR s₀ ∈ s₀.rd := by
-  rw [hp.rd]; simp
+  obtain ⟨_, h⟩ := hp.rd; rw [h]; simp
 
 /-! ## Regions -/
 
