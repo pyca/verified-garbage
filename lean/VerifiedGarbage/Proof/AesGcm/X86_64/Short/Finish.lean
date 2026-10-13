@@ -646,32 +646,38 @@ variable {Ctx W SP : Addr} (L : Lay Ctx (W + BitVec.ofNat 64 16) W SP)
 include L
 
 /-- The body of `seal` with `finishWith ks`: what `sealBody_ok` leaves. -/
-theorem sealBodyF_ok (hF : ShortFacts) {ks : Prog isa} (hks : KsOk ks) {R : Nat} {D : Addr} {n al : Nat} {H icb : Block} {a : List Byte} {s : State}
-    (h : ObPre M Ctx W SP R D n s) (hH : blockAt s.mem (Ctx + BitVec.ofNat 64 240) = H)
+theorem finishF_ok (hF : ShortFacts) {ks : Prog isa} (hks : KsOk ks) {R : Nat} {D : Addr} {n al N : Nat} {H icb : Block} {a : List Byte} {s s₃ : State}
+    (h : ObPre M Ctx W SP R D n s) (he₃ : Env Ctx (W + BitVec.ofNat 64 16) W SP s₃) (rd₃ : s₃.rd = s.rd)
+    (wr₃ : s₃.wr = s.wr)
+    (fr₃ : Frame (⟨W + BitVec.ofNat 64 192, 24⟩ :: obFrame (W + BitVec.ofNat 64 16) W SP D (n / 16)) s.mem s₃.mem)
+    (tl₃ : s₃.mem.readW (W + BitVec.ofNat 64 192) 64 = BitVec.ofNat 64 N)
+    (dat₃ : s₃.mem.readW (W + BitVec.ofNat 64 200) 64 = D + BitVec.ofNat 64 (16 * (n / 16)))
+    (len₃ : s₃.mem.readW (W + BitVec.ofNat 64 208) 64 = BitVec.ofNat 64 (n % 16))
+    (o : OutE Ctx W R D (n / 16) s s₃) (hH : blockAt s.mem (Ctx + BitVec.ofNat 64 240) = H)
     (hcb : blockAt s.mem (cbA W) = icb) (hal : s.mem.readW (W + BitVec.ofNat 64 184) 64 = BitVec.ofNat 64 al)
     (habs : Absorbed s.mem (yA W) (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 32) H (a ++ zeros (padLen a.length))) :
-    WP isa (.seq (oneBlocks B.enc) (finishWith ks)) s fun s' =>
+    WP isa (finishWith ks) s₃ fun s' =>
       Env Ctx (W + BitVec.ofNat 64 16) W SP s' ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
       Frame (oneFrameB W D SP n) s.mem s'.mem ∧
       bytesAt s'.mem D n = xorKs (ciphOf s.mem Ctx R) icb 0 (bytesAt s.mem D n) ∧
       bytesAt s'.mem W 16 = toBytes (ghashFrom H (Spec.Gcm.ghash H (Spec.Gcm.blocks (padded a (bytesAt s'.mem D n))))
-        [ofBytes (lensBlock al n)] ^^^ ciphOf s.mem Ctx R (blockAt s.mem (W + BitVec.ofNat 64 16))) := by
+        [ofBytes (lensBlock al N)] ^^^ ciphOf s.mem Ctx R (blockAt s.mem (W + BitVec.ofNat 64 16))) := by
   have hD := h.data.ok.w
   have hlt := h.data.ok.lt
   have hR := h.rounds.2
   have hxa : (a ++ zeros (padLen a.length)).length % 16 = 0 := by
     simp only [List.length_append, Proof.Gcm.length_zeros]; exact Proof.Gcm.length_pad_mod _
-  refine WP.seq (WP.mono (oneBlocksE_ok L B h) fun s₃ ⟨P, o₁, o₂, o₃⟩ => ?_)
-  obtain ⟨f₃, hR₃, hH₃, hc₃, hJ₃, hw₃, ct₃, ab₃, ht₃⟩ := ob_facts L h P hH hcb habs hxa o₁ o₂
+  obtain ⟨o₁, o₂, o₃⟩ := o
+  obtain ⟨f₃, hR₃, hH₃, hc₃, hJ₃, hw₃, ct₃, ab₃, ht₃⟩ := ob_facts L h fr₃ hH hcb habs hxa o₁ o₂
     (Z := bytesAt s₃.mem D (16 * (n / 16))) (by rw [length_bytesAt]; omega)
     (by rw [o₃, show (Ctx + 240 : Addr) = Ctx + BitVec.ofNat 64 240 from rfl, hH, Proof.Gcm.blocksAt_eq])
   generalize hq : n / 16 = q at *
-  have Plen := P.len
+  have Plen := len₃
   generalize hr : n % 16 = r at Plen
   have hnr : n = 16 * q + r := by omega
   have hr16 : r < 16 := by omega
   rw [show n - 16 * q = r by omega] at ht₃
-  have he₃ := P.env
+  have he₃ := he₃
   have kW₃ : ∀ d, (128 ≤ d ∧ d + 8 ≤ 192) ∨ (224 ≤ d ∧ d + 8 ≤ 240) →
       s₃.mem.readW (W + BitVec.ofNat 64 d) 64 = s.mem.readW (W + BitVec.ofNat 64 d) 64 :=
     fun d hd => f₃.readW (r := ⟨W + BitVec.ofNat 64 d, 8⟩) (Region.contains_self _ _)
@@ -704,19 +710,19 @@ theorem sealBodyF_ok (hF : ShortFacts) {ks : Prog isa} (hks : KsOk ks) {R : Nat}
     rw [x₆, x₅ q a b c d]
   have hdw : DataW Ctx (W + BitVec.ofNat 64 16) W SP s (D + BitVec.ofNat 64 (16 * q)) r := by
     have := h.data.drop (k := 16 * q) (by omega); rwa [show n - 16 * q = r by omega] at this
-  have FP : FinPre Ctx W SP H al n r (D + BitVec.ofNat 64 (16 * q)) s₆ :=
+  have FP : FinPre Ctx W SP H al N r (D + BitVec.ofNat 64 (16 * q)) s₆ :=
     { env := he₆
       x0 := by rw [xx _ (by decide) (by decide) (by decide) (by decide)]; exact x0
       x1 := by rw [xx _ (by decide) (by decide) (by decide) (by decide)]; exact x1
       h1 := by rw [xx _ (by decide) (by decide) (by decide) (by decide)]; exact h1
       h2 := by rw [xx .xmm3 (by decide) (by decide) (by decide) (by decide), xx .xmm6 (by decide) (by decide) (by decide) (by decide)]; exact h2
       alen := by rw [m₆, rK 184 (by decide), kW₃ 184 (.inl ⟨by decide, by decide⟩)]; exact hal
-      tlen := by rw [m₆, rK 192 (by decide)]; exact P.tlen
-      dat := by rw [m₆, rK 200 (by decide)]; rw [← hq]; exact P.dat
+      tlen := by rw [m₆, rK 192 (by decide)]; exact tl₃
+      dat := by rw [m₆, rK 200 (by decide)]; exact dat₃
       len := by rw [m₆, rK 208 (by decide)]; exact Plen
       r16 := hr16
-      rd := by rw [rd₆, wr₆, rd₅, wr₅, o₄.rd, o₄.wr, P.rd, P.wr]; exact hdw.ok.rd
-      wr := by rw [wr₆, wr₅, o₄.wr, P.wr]; exact hdw.wr
+      rd := by rw [rd₆, wr₆, rd₅, wr₅, o₄.rd, o₄.wr, rd₃, wr₃]; exact hdw.ok.rd
+      wr := by rw [wr₆, wr₅, o₄.wr, wr₃]; exact hdw.wr
       dW := hdw.ok.w }
   -- What both ends share.
   have m₆₃ : Frame [⟨W + BitVec.ofNat 64 1024, 64⟩] s₃.mem s₆.mem := by rw [m₆]; exact fK
@@ -763,7 +769,7 @@ theorem sealBodyF_ok (hF : ShortFacts) {ks : Prog isa} (hks : KsOk ks) {R : Nat}
         · exact ⟨⟨W + BitVec.ofNat 64 240, 2320⟩, by simp, Offset.sub _ (by decide) (by decide)⟩
         · exact ⟨⟨D, n⟩, by simp, Offset.sub_base D (by omega)⟩))
   have hrw : ∀ t : State, t.rd = s₆.rd → t.wr = s₆.wr → t.rd = s.rd ∧ t.wr = s.wr := fun t a b =>
-    ⟨by rw [a, rd₆, rd₅, o₄.rd, P.rd], by rw [b, wr₆, wr₅, o₄.wr, P.wr]⟩
+    ⟨by rw [a, rd₆, rd₅, o₄.rd, rd₃], by rw [b, wr₆, wr₅, o₄.wr, wr₃]⟩
   have b0 : ∀ (m : Mem) (p : Addr), bytesAt m p 0 = [] := fun _ _ => rfl
   refine WP.ite (decide (r = 0)) (eval_e z₆) (fun h0 => ?_) (fun h0 => ?_)
   · -- No bytes left.
@@ -802,6 +808,19 @@ theorem sealBodyF_ok (hF : ShortFacts) {ks : Prog isa} (hks : KsOk ks) {R : Nat}
       rw [bytesAt_toBytes', tagt, hY, hK₀, hct, ← padded_eq, hpl, e, Proof.Gcm.blocks_append hXZ, bs, ghash_snoc,
         ← Proof.Gcm.ghashFrom_append]
       rfl
+
+theorem sealBodyF_ok (hF : ShortFacts) {ks : Prog isa} (hks : KsOk ks) {R : Nat} {D : Addr} {n al : Nat} {H icb : Block} {a : List Byte} {s : State}
+    (h : ObPre M Ctx W SP R D n s) (hH : blockAt s.mem (Ctx + BitVec.ofNat 64 240) = H)
+    (hcb : blockAt s.mem (cbA W) = icb) (hal : s.mem.readW (W + BitVec.ofNat 64 184) 64 = BitVec.ofNat 64 al)
+    (habs : Absorbed s.mem (yA W) (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 32) H (a ++ zeros (padLen a.length))) :
+    WP isa (.seq (oneBlocks B.enc) (finishWith ks)) s fun s' =>
+      Env Ctx (W + BitVec.ofNat 64 16) W SP s' ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
+      Frame (oneFrameB W D SP n) s.mem s'.mem ∧
+      bytesAt s'.mem D n = xorKs (ciphOf s.mem Ctx R) icb 0 (bytesAt s.mem D n) ∧
+      bytesAt s'.mem W 16 = toBytes (ghashFrom H (Spec.Gcm.ghash H (Spec.Gcm.blocks (padded a (bytesAt s'.mem D n))))
+        [ofBytes (lensBlock al n)] ^^^ ciphOf s.mem Ctx R (blockAt s.mem (W + BitVec.ofNat 64 16))) := by
+  exact WP.seq (WP.mono (oneBlocksE_ok L B h) fun s₃ ⟨P, o⟩ =>
+    finishF_ok L hF hks h P.env P.rd P.wr P.frame P.tlen P.dat P.len o hH hcb hal habs)
 
 end
 

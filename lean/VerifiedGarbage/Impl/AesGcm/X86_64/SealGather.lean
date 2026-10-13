@@ -15,12 +15,25 @@ generic over the implementations of `vg_aes_gcm_seal`, `vg_aes_gcm_stream_init`,
 `vg_aes_gcm_stream_aad`, `vg_aes_gcm_stream_encrypt_to` and
 `vg_aes_gcm_stream_finish` it calls, as the other functions of AES-GCM.
 
-A text shorter than `t` bytes (a parameter of the code, below `2^31`) is
-copied, slice after slice, to the output (`copy`: 64 bytes at a time
-through `xmm0`–`xmm3`, then 16, then the last 16 again, or one at a time), and encrypted there in place by
-one call of `sealFn` (`vg_aes_gcm_seal` for the same implementations, with the
-short path of the AVX-512 ones), with the arguments kept in `work`. The
-streaming functions' calls cost more than the copy saves below `t`.
+A text shorter than `ts` bytes (a parameter of the code, below `2^31`) is
+copied whole and sealed by `sealFn` (`copySeal`, below), after one
+comparison of its length. When a longer text is shorter than `t` bytes (also
+a parameter), or its first slice holds all its whole blocks (as a TLS
+record's text does, followed by its content type), it takes the short path
+(`copyShort`), with the arguments kept in `work`. If the first slice holds
+all the whole blocks and at least `ts` bytes, the slices after it are
+copied, slice after slice, to the output after its length (`copy`: 64 bytes
+at a time through `xmm0`–`xmm3`, then 16, then the last 16 again, or one at
+a time), and the text is encrypted by one call of `splitFn`
+(`vg_aes_gcm_seal_split` for the same implementations), from the first slice
+where it is and the rest in the output (`copySplit`). Otherwise all the
+slices are copied, and the text is encrypted there in place by one call of
+`sealFn` (`vg_aes_gcm_seal` for the same implementations, with the short path
+of the AVX-512 ones; `copySeal`): sealing from the first slice would encrypt
+whole blocks after it in a second pass of the blocks loop, or, below `ts`,
+pay more in calls than the copy costs. The streaming functions' calls cost
+more than the copy saves below `t`, and more than the few bytes copied after
+a first slice holding all the whole blocks.
 
 Otherwise it runs the streaming functions on a state of its own, in `work`: it starts
 the message with the nonce, absorbs the additional data, and, if there is
@@ -147,10 +160,6 @@ def text (aad encTo : Fn) : Prog isa :=
 
 /-! ## A short text: copied, then sealed in place -/
 
-/-- `CF` if the text is shorter than `t` bytes, and `work` in `r11`. -/
-def shortTest (t : Nat) : List Instr :=
-  [.mov .r11 (.mem (at_ .rsp 48)), .mov .rax (.mem (at_ .r11 gLen)), .alu .cmp .rax (imm t)]
-
 /-- The nonce and its length, which `entry2` moved to `rsi` and `rdx`, kept
 in the streaming state's slots, which this path does not use; then the slices
 left (all of them) in `r9`, `dst` in `rdi` and the first descriptor in `r11`. -/
@@ -222,6 +231,97 @@ def copySeal (sealFn : Fn) : Prog isa :=
     (.seq gatherCopy
       (.seq (.block sealArgs) (.frame (.push [.rax, .r10, .r11]) (.call sealFn.name sealFn.code) (.pop .rax 3))))
 
+/-! ## A short copy: the slices after the first copied, then sealed from the first -/
+
+/-- The length of the text and of its first slice (0 if there is none) into
+`r10`, with `work` in `r11`, then `last`. -/
+def lenTest (last : List Instr) : Prog isa :=
+  .seq (.block [.mov .r11 (.mem (at_ .rsp 48)), .mov32 .r10 (imm 0), .mov .rax (.mem (at_ .r11 gLeft)),
+      .alu .test .rax (.reg .rax)])
+    (.seq (.ite .e (.block []) (.block [.mov .r10 (.mem (at_ .r11 gDesc)), .mov .r10 (.mem (at_ .r10 8))]))
+      (.block last))
+
+/-- `CF` if the text is shorter than `t` bytes, or its first slice holds all
+its whole blocks (`16 ⌊len / 16⌋ ≤` its length). -/
+def splitLast (t : Nat) : List Instr :=
+  [.mov .rax (.mem (at_ .r11 gLen)), .shift .shr .rax 4, .shift .shl .rax 4, .alu .cmp .r10 (.reg .rax),
+    .mov .rax (.mem (at_ .r11 gLen)), .mov32 .r10 (imm 0), .cmov .ae .rax (.reg .r10), .alu .cmp .rax (imm t)]
+
+/-- `CF` if the text is shorter than `q` bytes, with `work` in `r11`. -/
+def quickTest (q : Nat) : List Instr :=
+  [.mov .r11 (.mem (at_ .rsp 48)), .mov .rax (.mem (at_ .r11 gLen)), .alu .cmp .rax (imm q)]
+
+/-- `CF` if the text is shorter than `q` bytes, without reading its slices
+(as the tests below are for any such text), and otherwise as `lenTest last`
+sets it. -/
+def lenTestQ (q : Nat) (last : List Instr) : Prog isa :=
+  .seq (.block (quickTest q)) (.ite .b (.block []) (lenTest last))
+
+/-- `CF` if the text takes the short path. -/
+def splitTest (t : Nat) : Prog isa := lenTestQ t (splitLast t)
+
+/-- `CF` unless the first slice holds all the whole blocks and at least `ts`
+bytes (for `ts ≥ 1`). -/
+def selLast (ts : Nat) : List Instr :=
+  [.mov .rax (.mem (at_ .r11 gLen)), .shift .shr .rax 4, .shift .shl .rax 4, .mov32 .r8 (imm 0),
+    .alu .cmp .r10 (.reg .rax), .cmov .b .r10 (.reg .r8), .alu .cmp .r10 (imm ts)]
+
+/-- `CF` if a text on the short path is better copied whole and sealed by
+`vg_aes_gcm_seal` than sealed from its first slice by `vg_aes_gcm_seal_split`
+(for a text of at least `ts` bytes, which `sealGather` has already tested). -/
+def selTest (ts : Nat) : Prog isa := lenTest (selLast ts)
+
+/-- The nonce and its length kept, as `copyEntry` keeps them; `dst` in `rdi`,
+the slices in `r9` and their first descriptor in `r10`, and an empty first
+slice (at the descriptors) in `rax` and `rcx`; `ZF` if there is no slice. -/
+def splitEntry : List Instr :=
+  [.store (at_ .r11 gState) .rsi, .store (at_ .r11 (gState + 8)) .rdx, .mov .r9 (.mem (at_ .r11 gLeft)),
+    .mov .rdi (.mem (at_ .r11 gDst)), .mov .r10 (.mem (at_ .r11 gDesc)), .mov .rax (.reg .r10),
+    .mov32 .rcx (imm 0), .alu .test .r9 (.reg .r9)]
+
+/-- The first slice into `rax` and `rcx`, and past it: one slice fewer, the
+next descriptor, and the output after it. -/
+def splitFirst : List Instr :=
+  [.mov .rax (.mem (at_ .r10 0)), .mov .rcx (.mem (at_ .r10 8)), .alu .sub .r9 (imm 1), .alu .add .r10 (imm 16),
+    .alu .add .rdi (.reg .rcx)]
+
+/-- The first slice kept in the streaming state's slots after the nonce, and
+the next descriptor in `r11`. -/
+def splitKeep : List Instr :=
+  [.store (at_ .r11 (gState + 16)) .rax, .store (at_ .r11 (gState + 24)) .rcx, .mov .r11 (.reg .r10)]
+
+/-- The arguments of `vg_aes_gcm_seal_split(ctx, rounds, nonce, nonce_len,
+aad, aad_len, src, src_len, dst, len, tag)` but `ctx` and `rounds`, with
+`tag`, `len`, `dst`, `src_len` and `src` in `rax`, `r10`, `r11`, `rdi` and
+`rsi`, to be pushed. -/
+def splitArgs : List Instr :=
+  [.mov .r11 (.mem (at_ .rsp 48)), .mov .rdx (.mem (at_ .r11 gState)), .mov .rcx (.mem (at_ .r11 (gState + 8))),
+    .mov .r8 (.mem (at_ .r11 gAad)), .mov .r9 (.mem (at_ .r11 gAlen)), .mov .rax (.mem (at_ .r11 gTag)),
+    .mov .r10 (.mem (at_ .r11 gLen)), .mov .rdi (.mem (at_ .r11 (gState + 24))),
+    .mov .rsi (.mem (at_ .r11 (gState + 16))), .mov .r11 (.mem (at_ .r11 gDst))]
+
+/-- `ctx` and `rounds`, once the other arguments are pushed (`work` 40 bytes
+further up the stack). -/
+def splitCtx : List Instr :=
+  [.mov .r11 (.mem (at_ .rsp 88)), .mov .rdi (.mem (at_ .r11 gCtx)), .mov .rsi (.mem (at_ .r11 gRounds))]
+
+/-- The slices after the first copied to the output after it, and the text
+encrypted by `splitFn` (`vg_aes_gcm_seal_split`) from the first slice where
+it is and the rest at the output, with `src`, `src_len`, `dst`, `len` and
+`tag` passed on the stack. -/
+def copySplit (splitFn : Fn) : Prog isa :=
+  .seq (.seq (.block splitEntry) (.ite .e (.block []) (.block splitFirst)))
+    (.seq (.block splitKeep)
+      (.seq gatherCopy
+        (.seq (.block splitArgs)
+          (.frame (.push [.rax, .r10, .r11, .rdi, .rsi])
+            (.seq (.block splitCtx) (.call splitFn.name splitFn.code)) (.pop .rax 5)))))
+
+/-- The short path: the text copied whole and sealed by `sealFn`, or sealed
+from its first slice by `splitFn`, as `selTest ts` chooses. -/
+def copyShort (ts : Nat) (sealFn splitFn : Fn) : Prog isa :=
+  .seq (selTest ts) (.ite .b (copySeal sealFn) (copySplit splitFn))
+
 /-! ## A longer text: the streaming functions -/
 
 /-- From `vg_aes_gcm_stream_init` on: the message by the streaming functions,
@@ -233,14 +333,20 @@ def stream (init aad encTo fin : Fn) : Prog isa :=
         (.seq (text aad encTo)
           (.seq (.block finArgs) (.call fin.name fin.code)))))
 
-/-- `vg_aes_gcm_seal_gather`, calling `sealFn` (`vg_aes_gcm_seal`) for a text
-shorter than `t` bytes, and otherwise `init` (`vg_aes_gcm_stream_init`),
-`aad` (`vg_aes_gcm_stream_aad`), `encTo` (`vg_aes_gcm_stream_encrypt_to`)
-and `fin` (`vg_aes_gcm_stream_finish`). -/
-def sealGather (sealFn : Fn) (t : Nat) (init aad encTo fin : Fn) : Prog isa :=
+/-- For a text of at least `q` bytes: `short` (`copyShort`)
+if `test` (`splitTest`) sets `CF`, and otherwise `init`
+(`vg_aes_gcm_stream_init`), `aad` (`vg_aes_gcm_stream_aad`), `encTo`
+(`vg_aes_gcm_stream_encrypt_to`) and `fin` (`vg_aes_gcm_stream_finish`). -/
+def gatherRest (test short : Prog isa) (init aad encTo fin : Fn) : Prog isa :=
+  .seq test (.ite .b short (stream init aad encTo fin))
+
+/-- `vg_aes_gcm_seal_gather`: `fast` (`copySeal`) if `quick` (the test of
+the text's length alone, `quickTest q`) sets `CF`, and otherwise
+`gatherRest`. -/
+def sealGather (quick fast test short : Prog isa) (init aad encTo fin : Fn) : Prog isa :=
   .seq (.block entry1)
     (.seq (.block entry2)
-      (.seq (.block (shortTest t))
-        (.ite .b (copySeal sealFn) (stream init aad encTo fin))))
+      (.seq quick
+        (.ite .b fast (gatherRest test short init aad encTo fin))))
 
 end VG.Impl.AesGcm.X86_64.SealGather
