@@ -117,7 +117,8 @@ theorem framed_spSafe {c : Prog isa} (h : c.all (fun i => !X86_64.isa.writesSp i
     (framed c).all (fun i => !X86_64.isa.writesSp i) = true := by
   simp only [framed, Code.all, h, Bool.and_true]; decide
 
-theorem framed_xdepth (c : Prog isa) : (framed c).x86_64Depth = max 0 c.x86_64Depth + 40 := rfl
+theorem framed_xdepth (c : Prog isa) : (framed c).x86_64Depth = c.x86_64Depth + 40 := by
+  simp only [framed, Code.x86_64Depth, X86_64.Instr.frameBytes, Nat.zero_max]; rfl
 
 theorem sealSplitFor_spSafe (v : Proof.ChaCha20.X86_64.XorImpl) :
     (sealSplitFor v.callee v.poly).all (fun i => !X86_64.isa.writesSp i) = true := by
@@ -132,11 +133,11 @@ theorem sealSplitFor_xdepth (v : Proof.ChaCha20.X86_64.XorImpl) : (sealSplitFor 
   have h₁ := Proof.ChaCha20Poly1305.X86_64.Stitch.sealFor_xdepth v
   cases hb : v.poly with
   | avx512 => have := sealSplitBody_xdepth .avx512
-              simp only [sealSplitFor, Code.x86_64Depth, head_xdepth, framed_xdepth]; omega
+              simp only [sealSplitFor, Code.x86_64Depth, head_xdepth, framed_xdepth, Nat.max_le]; omega
   | ifma => have := sealSplitBody_xdepth .ifma
-            simp only [sealSplitFor, Code.x86_64Depth, head_xdepth, framed_xdepth]; omega
-  | scalar => rw [hb] at h₁; simp only [sealSplitFor, Code.x86_64Depth, head_xdepth, framed_xdepth]; omega
-  | avx2 => rw [hb] at h₁; simp only [sealSplitFor, Code.x86_64Depth, head_xdepth, framed_xdepth]; omega
+            simp only [sealSplitFor, Code.x86_64Depth, head_xdepth, framed_xdepth, Nat.max_le]; omega
+  | scalar => rw [hb] at h₁; simp only [sealSplitFor, Code.x86_64Depth, head_xdepth, framed_xdepth, Nat.max_le]; omega
+  | avx2 => rw [hb] at h₁; simp only [sealSplitFor, Code.x86_64Depth, head_xdepth, framed_xdepth, Nat.max_le]; omega
 
 /-- A state satisfying the shared contract's precondition, without the
 working space. -/

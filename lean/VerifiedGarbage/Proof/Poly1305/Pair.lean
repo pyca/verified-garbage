@@ -1,5 +1,7 @@
 module
 
+public import Mathlib.Tactic.Ring
+public import Mathlib.Data.Nat.ModEq
 public import VerifiedGarbage.Proof.Poly1305.Horner
 public import VerifiedGarbage.Proof.Poly1305.Limbs26
 import all Init.Data.Array.Basic
@@ -42,7 +44,7 @@ include h0 h1 h2 h3 hS
 theorem pair_step (eA : A' ≡ (A + mv b0) * r ^ 4 + mv b2 * r ^ 2 [MOD P])
     (eB : B' ≡ (B + mv b1) * r ^ 4 + mv b3 * r ^ 2 [MOD P]) :
     A' * r + B' ≡ r * absorbAll r X (b0 ++ b1 ++ b2 ++ b3) [MOD P] := by
-  have hA := (absorbAll_four (r := r) (a := X) h0 h1 h2 h3).mul_left r
+  have hA := Nat.ModEq.mul_left r (absorbAll_four (r := r) (a := X) h0 h1 h2 h3)
   calc A' * r + B'
       _ ≡ ((A + mv b0) * r ^ 4 + mv b2 * r ^ 2) * r + ((B + mv b1) * r ^ 4 + mv b3 * r ^ 2) [MOD P] :=
         (eA.mul_right r).add eB
