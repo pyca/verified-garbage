@@ -17,7 +17,7 @@ open VG.Proof.Ed448 (pt)
 open VG.Proof.X448.X86_64 (Scr Index Env E F Keep mask cswapE opSwap)
 open VG.Impl.X448.X86_64 (slot)
 
-private theorem coord_keep {base : Addr} {s u : State} (h : Keep base s u) {i c : Nat}
+theorem coord_keep {base : Addr} {s u : State} (h : Keep base s u) {i c : Nat}
     (hi : i < 17) (hc : c < 3) : F u.mem base (tabOffset i c) = F s.mem base (tabOffset i c) := by
   unfold F
   rw [h.mem.fe (by simp only [tabOffset, TAB]; omega) (by simp only [tabOffset, TAB]; omega)]

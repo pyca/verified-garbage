@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Timing
 public import VerifiedGarbage.Proof.Ed448.X86_64.VerifyPrefix
 public import VerifiedGarbage.Proof.Ed448.X86_64.VerifyLit
 public import VerifiedGarbage.Proof.Framework.X86_64.Taint
@@ -7,6 +8,7 @@ public import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.Ed448.Contract
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
+meta import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Timing
 meta import VerifiedGarbage.Proof.Ed448.X86_64.VerifyPrefix
 meta import VerifiedGarbage.Proof.Ed448.X86_64.VerifyLit
 meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
@@ -136,10 +138,10 @@ theorem verifyFinish_ct (v : Impl.Ed448.X86_64.FieldVariant) (base : Addr) :
 theorem verifyRest_ct (v : Impl.Ed448.X86_64.FieldVariant) (base : Addr) (S K : Nat)
     (hS : S < 2 ^ 456) (hK : K < 2 ^ 456) :
     RelCT isa (fun s u => Window.JointTimingCtx base S K s ∧ Window.JointTimingCtx base S K u)
-      (.seq (Window.joint v.field v.bodies KBITS) (vfinish v.field v.bodies)) (fun _ _ => True) := by
-  apply Window.seq_same (Window.joint_ct v base S K) _ (verifyFinish_ct v base)
+      (.seq (Wnaf.joint v.field v.bodies KBITS) (vfinish v.field v.bodies)) (fun _ _ => True) := by
+  apply Window.seq_same (Wnaf.joint_ct v base S K hS hK) _ (verifyFinish_ct v base)
   intro s h
-  exact WP.mono (Window.joint_ok (FieldVariant.field_ok v) (FieldVariant.bodies_ok v)
+  exact WP.mono (Wnaf.joint_ok (FieldVariant.field_ok v) (FieldVariant.bodies_ok v)
     h.scr (by decide) (by decide) h.bs h.bk hS hK h.d h.z h.p) fun u hu => hu.1.rdi
 
 theorem signatureScalar_below (s : State) : signatureScalar s < 2 ^ 456 := by
