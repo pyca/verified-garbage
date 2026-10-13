@@ -12,7 +12,7 @@ import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.SplitIfs
 
 /-! Literal code keeps the audits that evaluate it (constant time, `spSafe`)
-from rebuilding it, the initial schedule's immediates included. -/
+from rebuilding it. -/
 
 @[expose] public section
 
