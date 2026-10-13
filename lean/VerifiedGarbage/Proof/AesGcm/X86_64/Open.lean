@@ -380,7 +380,7 @@ theorem openFront_ok {R t : Nat} {D : Addr} {n al : Nat} {H J : Block} {a : List
   have hxa : (a ++ zeros (padLen a.length)).length % 16 = 0 := by
     simp only [List.length_append, Proof.Gcm.length_zeros]; exact Proof.Gcm.length_pad_mod _
   refine WP.seq (WP.mono (oneBlocksD_ok L B h) fun s₃ ⟨P, o₁, o₂, o₃⟩ => ?_)
-  obtain ⟨f₃, hR₃, hH₃, hc₃, hJ₃, hw₃, ct₃, ab₃, ht₃⟩ := ob_facts L h P hH hcb habs hxa o₁ o₂
+  obtain ⟨f₃, hR₃, hH₃, hc₃, hJ₃, hw₃, ct₃, ab₃, ht₃⟩ := ob_facts L h P.frame hH hcb habs hxa o₁ o₂
     (Z := bytesAt s.mem D (16 * (n / 16))) (by rw [length_bytesAt]; omega)
     (by rw [o₃, show (Ctx + 240 : Addr) = Ctx + BitVec.ofNat 64 240 from rfl, hH, Proof.Gcm.blocksAt_eq])
   have split : ∀ m : Mem, bytesAt m D n =
