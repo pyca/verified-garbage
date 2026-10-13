@@ -25,62 +25,86 @@ namespace VG.Proof.Rc2.Arm
 
 open VG VG.Arm VG.Impl.Rc2.Arm
 
-theorem foldWords_ok (code : Nat → List Instr)
-    (step : Spec.Rc2.Schedule → Nat → Spec.Rc2.State → Spec.Rc2.State) (is : List Nat)
-    (correct : ∀ i ∈ is, ∀ (s : State) (v : Spec.Rc2.State), Words s v → (s.gpr .r0).toNat + 128 ≤ 2 ^ 32 →
-      (∀ j < 128, InRegions (s.rd ++ s.wr) (State.addr (s.gpr .r0 + BitVec.ofNat 32 j)) 1) →
-      WP isa (.block (code i)) s (fun s' =>
-        Words s' (step (Spec.Rc2.scheduleAt s.mem (State.addr (s.gpr .r0))) i v) ∧ Keep roundWrites s s'))
-    (s : State) (v : Spec.Rc2.State) (hv : Words s v)
-    (fit : (s.gpr .r0).toNat + 128 ≤ 2 ^ 32)
-    (readable : ∀ j < 128, InRegions (s.rd ++ s.wr) (State.addr (s.gpr .r0 + BitVec.ofNat 32 j)) 1) :
-    WP isa (.block (is.flatMap code)) s (fun s' =>
-      Words s' (is.foldl (fun v i => step (Spec.Rc2.scheduleAt s.mem (State.addr (s.gpr .r0))) i v) v) ∧
-      Keep roundWrites s s') := by
-  induction is generalizing s v with
-  | nil =>
-    apply WP.block_nil
-    exact ⟨hv, ⟨fun _ _ => rfl, rfl, rfl, rfl⟩⟩
-  | cons i is ih =>
-    rw [List.flatMap_cons, WP.block_append_iff]
-    apply WP.mono (correct i (by simp) s v hv fit readable)
-    intro s₁ h₁
-    have ptr₁ := h₁.2.reg .r0 (by decide)
-    have read₁ : ∀ j < 128,
-        InRegions (s₁.rd ++ s₁.wr) (State.addr (s₁.gpr .r0 + BitVec.ofNat 32 j)) 1 := by
-      rw [h₁.2.rd, h₁.2.wr, ptr₁]; exact readable
-    apply WP.mono (ih (fun j hj => correct j (List.mem_cons_of_mem _ hj)) s₁ _ h₁.1 (by rw [ptr₁]; exact fit) read₁)
-    intro s₂ h₂
-    refine ⟨?_, h₁.2.trans h₂.2⟩
-    rw [h₁.2.mem, ptr₁] at h₂
-    exact h₂.1
+/-- What a step of the rounds needs of its state: the key schedule at `r0`,
+readable and within the address space. -/
+def KeyAt (s : State) : Prop :=
+  (s.gpr .r0).toNat + 128 ≤ 2 ^ 32 ∧ InRegions (s.rd ++ s.wr) (State.addr (s.gpr .r0)) 128
 
-theorem mixRound_ok (s : State) (v : Spec.Rc2.State) (hv : Words s v)
-    (j : Nat) (hj : j < 16)
-    (fit : (s.gpr .r0).toNat + 128 ≤ 2 ^ 32)
-    (readable : ∀ k < 128, InRegions (s.rd ++ s.wr) (State.addr (s.gpr .r0 + BitVec.ofNat 32 k)) 1) :
-    WP isa (.block ((List.range 4).flatMap (fun i => mix (4 * j + i) i))) s (fun s' =>
-      Words s' (Spec.Rc2.mixRound (Spec.Rc2.scheduleAt s.mem (State.addr (s.gpr .r0))) j v) ∧
-      Keep roundWrites s s') := by
-  apply foldWords_ok (step := fun k i v => Spec.Rc2.mix k (4 * j + i) i v) _ _ _ s v hv fit readable
-  intro i hi s v hv fit readable
+theorem KeyAt.keep {s s' : State} (h : KeyAt s) (k : Keep roundWrites s s') : KeyAt s' := by
+  have ptr := k.reg .r0 (by decide)
+  refine ⟨by rw [ptr]; exact h.1, ?_⟩
+  rw [k.rd, k.wr, ptr]; exact h.2
+
+/-- A step of the rounds, from any state with words `v`: the words of `step`
+on `v`, with the key schedule in memory. -/
+def RoundStep (c : Prog isa) (step : Spec.Rc2.Schedule → Spec.Rc2.State → Spec.Rc2.State) : Prop :=
+  ∀ (s : State) (v : Spec.Rc2.State), Words s v → KeyAt s →
+    WP isa c s (fun s' =>
+      Words s' (step (Spec.Rc2.scheduleAt s.mem (State.addr (s.gpr .r0))) v) ∧ Keep roundWrites s s')
+
+theorem RoundStep.seq {c₁ c₂ : Prog isa} {f g : Spec.Rc2.Schedule → Spec.Rc2.State → Spec.Rc2.State}
+    (h₁ : RoundStep c₁ f) (h₂ : RoundStep c₂ g) : RoundStep (.seq c₁ c₂) (fun k v => g k (f k v)) := by
+  intro s v hv key
+  refine WP.seq (WP.mono (h₁ s v hv key) fun s₁ r₁ => WP.mono (h₂ s₁ _ r₁.1 (key.keep r₁.2)) fun s₂ r₂ => ?_)
+  have ptr₁ := r₁.2.reg .r0 (by decide)
+  rw [r₁.2.mem, ptr₁] at r₂
+  exact ⟨r₂.1, r₁.2.trans r₂.2⟩
+
+theorem RoundStep.nil : RoundStep (.block []) (fun _ v => v) :=
+  fun _ _ hv _ => WP.block_nil ⟨hv, ⟨fun _ _ => rfl, rfl, rfl, rfl⟩⟩
+
+theorem RoundStep.block_append {l₁ l₂ : List Instr}
+    {f g : Spec.Rc2.Schedule → Spec.Rc2.State → Spec.Rc2.State}
+    (h₁ : RoundStep (.block l₁) f) (h₂ : RoundStep (.block l₂) g) :
+    RoundStep (.block (l₁ ++ l₂)) (fun k v => g k (f k v)) := by
+  intro s v hv key
+  rw [WP.block_append_iff]
+  exact (h₁.seq h₂ s v hv key).elim fun t ⟨s', he, hq⟩ => by
+    cases he with
+    | seq e₁ e₂ => exact ⟨_, _, e₁, _, _, e₂, hq⟩
+
+theorem RoundStep.flatMap (code : Nat → List Instr)
+    (step : Spec.Rc2.Schedule → Nat → Spec.Rc2.State → Spec.Rc2.State) (is : List Nat)
+    (correct : ∀ i ∈ is, RoundStep (.block (code i)) (fun k v => step k i v)) :
+    RoundStep (.block (is.flatMap code)) (fun k v => is.foldl (fun v i => step k i v) v) := by
+  induction is with
+  | nil => exact RoundStep.nil
+  | cons i is ih =>
+    rw [List.flatMap_cons]
+    exact RoundStep.block_append (f := fun k v => step k i v)
+      (g := fun k v => is.foldl (fun v i => step k i v) v)
+      (correct i List.mem_cons_self) (ih fun j hj => correct j (List.mem_cons_of_mem _ hj))
+
+theorem RoundStep.foldr (code : Nat → Prog isa)
+    (step : Spec.Rc2.Schedule → Nat → Spec.Rc2.State → Spec.Rc2.State) (is : List Nat)
+    (correct : ∀ i ∈ is, RoundStep (code i) (fun k v => step k i v)) :
+    RoundStep (is.foldr (fun i rest => .seq (code i) rest) (.block []))
+      (fun k v => is.foldl (fun v i => step k i v) v) := by
+  induction is with
+  | nil => exact RoundStep.nil
+  | cons i is ih =>
+    exact RoundStep.seq (f := fun k v => step k i v)
+      (g := fun k v => is.foldl (fun v i => step k i v) v)
+      (correct i List.mem_cons_self) (ih fun j hj => correct j (List.mem_cons_of_mem _ hj))
+
+theorem mixRound_ok (j : Nat) (hj : j < 16) :
+    RoundStep (.block ((List.range 4).flatMap (fun i => mix (4 * j + i) i)))
+      (fun k v => Spec.Rc2.mixRound k j v) := by
+  apply RoundStep.flatMap _ (fun k i v => Spec.Rc2.mix k (4 * j + i) i v)
+  intro i hi s v hv key
   have bound := List.mem_range.mp hi
-  apply WP.mono (mix_ok s v hv i (4 * j + i) bound (by omega) fit readable)
+  apply WP.mono (mix_ok s v hv i (4 * j + i) bound (by omega) key.1 key.2)
   exact fun _ h => ⟨h.1, h.2.round⟩
 
-theorem reverseMixRound_ok (s : State) (v : Spec.Rc2.State) (hv : Words s v)
-    (j : Nat) (hj : j < 16)
-    (fit : (s.gpr .r0).toNat + 128 ≤ 2 ^ 32)
-    (readable : ∀ k < 128, InRegions (s.rd ++ s.wr) (State.addr (s.gpr .r0 + BitVec.ofNat 32 k)) 1) :
-    WP isa (.block ([3, 2, 1, 0].flatMap (fun i => reverseMix (4 * j + i) i))) s (fun s' =>
-      Words s' (Spec.Rc2.reverseMixRound (Spec.Rc2.scheduleAt s.mem (State.addr (s.gpr .r0))) j v) ∧
-      Keep roundWrites s s') := by
-  apply foldWords_ok (step := fun k i v => Spec.Rc2.reverseMix k (4 * j + i) i v) _ _ _ s v hv fit readable
-  intro i hi s v hv fit readable
+theorem reverseMixRound_ok (j : Nat) (hj : j < 16) :
+    RoundStep (.block ([3, 2, 1, 0].flatMap (fun i => reverseMix (4 * j + i) i)))
+      (fun k v => Spec.Rc2.reverseMixRound k j v) := by
+  apply RoundStep.flatMap _ (fun k i v => Spec.Rc2.reverseMix k (4 * j + i) i v)
+  intro i hi s v hv key
   have bound : i < 4 := by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hi
     omega
-  apply WP.mono (reverseMix_ok s v hv i (4 * j + i) bound (by omega) fit readable)
+  apply WP.mono (reverseMix_ok s v hv i (4 * j + i) bound (by omega) key.1 key.2)
   exact fun _ h => ⟨h.1, h.2.round⟩
 
 def mashRoundSpec (d : Spec.Rc2.Direction) (k : Spec.Rc2.Schedule)
@@ -89,29 +113,20 @@ def mashRoundSpec (d : Spec.Rc2.Direction) (k : Spec.Rc2.Schedule)
   | .encrypt => Spec.Rc2.mashRound k v
   | .decrypt => Spec.Rc2.reverseMashRound k v
 
-def order (d : Spec.Rc2.Direction) : List Nat :=
-  match d with
-  | .encrypt => List.range 4
-  | .decrypt => [3, 2, 1, 0]
-
-theorem mashRound_ok (d : Spec.Rc2.Direction) (s : State) (v : Spec.Rc2.State) (hv : Words s v)
-    (fit : (s.gpr .r0).toNat + 128 ≤ 2 ^ 32)
-    (readable : ∀ k < 128, InRegions (s.rd ++ s.wr) (State.addr (s.gpr .r0 + BitVec.ofNat 32 k)) 1) :
-    WP isa (.block ((order d).flatMap (mash d))) s (fun s' =>
-      Words s' (mashRoundSpec d (Spec.Rc2.scheduleAt s.mem (State.addr (s.gpr .r0))) v) ∧
-      Keep roundWrites s s') := by
-  have he (k : Spec.Rc2.Schedule) : mashRoundSpec d k v =
-      (order d).foldl (fun v i => mashSpec d k i v) v := by cases d <;> rfl
-  simp only [he]
-  apply foldWords_ok (step := fun k i v => mashSpec d k i v) _ _ _ s v hv fit readable
-  intro i hi s v hv fit readable
+theorem mashRound_ok (d : Spec.Rc2.Direction) :
+    RoundStep (mashRound d) (mashRoundSpec d) := by
+  have he : mashRoundSpec d = fun k v => (mashOrder d).foldl (fun v i => mashSpec d k i v) v := by
+    cases d <;> rfl
+  rw [he]
+  apply RoundStep.foldr _ (fun k i v => mashSpec d k i v)
+  intro i hi s v hv key
   have bound : i < 4 := by
     cases d with
     | encrypt => exact List.mem_range.mp hi
     | decrypt =>
-      simp only [order, List.mem_cons, List.not_mem_nil, or_false] at hi
+      simp only [mashOrder, List.mem_cons, List.not_mem_nil, or_false] at hi
       omega
-  apply WP.mono (mash_ok d s v hv i bound fit readable)
+  apply WP.mono (mash_ok d s v hv i bound key.1 key.2)
   exact fun _ h => ⟨h.1, h.2.round⟩
 
 def roundSpec (d : Spec.Rc2.Direction) (k : Spec.Rc2.Schedule) (j : Nat)
@@ -121,51 +136,39 @@ def roundSpec (d : Spec.Rc2.Direction) (k : Spec.Rc2.Schedule) (j : Nat)
     | .decrypt => Spec.Rc2.reverseMixRound k (15 - j) v
   if j = 4 ∨ j = 10 then mashRoundSpec d k v else v
 
-theorem round_ok (d : Spec.Rc2.Direction) (s : State) (v : Spec.Rc2.State) (hv : Words s v)
-    (j : Nat) (hj : j < 16)
-    (fit : (s.gpr .r0).toNat + 128 ≤ 2 ^ 32)
-    (readable : ∀ k < 128, InRegions (s.rd ++ s.wr) (State.addr (s.gpr .r0 + BitVec.ofNat 32 k)) 1) :
-    WP isa (.block (round d j)) s (fun s' =>
-      Words s' (roundSpec d (Spec.Rc2.scheduleAt s.mem (State.addr (s.gpr .r0))) j v) ∧
-      Keep roundWrites s s') := by
-  have finish (s₁ : State) (v₁ : Spec.Rc2.State) (h₁ : Words s₁ v₁ ∧ Keep roundWrites s s₁) :
-      WP isa (.block (if j = 4 ∨ j = 10 then (order d).flatMap (mash d) else [])) s₁ (fun s₂ =>
-        Words s₂ (if j = 4 ∨ j = 10 then mashRoundSpec d (Spec.Rc2.scheduleAt s.mem (State.addr (s.gpr .r0))) v₁
-          else v₁) ∧ Keep roundWrites s s₂) := by
-    by_cases h : j = 4 ∨ j = 10
-    · rw [ite_eq_left h]
-      have ptr₁ := h₁.2.reg .r0 (by decide)
-      have read₁ : ∀ k < 128,
-          InRegions (s₁.rd ++ s₁.wr) (State.addr (s₁.gpr .r0 + BitVec.ofNat 32 k)) 1 := by
-        rw [h₁.2.rd, h₁.2.wr, ptr₁]; exact readable
-      apply WP.mono (mashRound_ok d s₁ v₁ h₁.1 (by rw [ptr₁]; exact fit) read₁)
-      intro s₂ h₂
-      rw [h₁.2.mem, ptr₁] at h₂
-      exact ⟨by simpa only [ite_eq_left h] using h₂.1, h₁.2.trans h₂.2⟩
-    · rw [ite_eq_right h]
-      apply WP.block_nil
-      exact ⟨by simpa only [ite_eq_right h] using h₁.1, h₁.2⟩
-  cases d with
-  | encrypt =>
-    rw [round, WP.block_append_iff]
-    apply WP.mono (mixRound_ok s v hv j hj fit readable)
-    intro s₁ h₁
-    exact finish s₁ _ h₁
-  | decrypt =>
-    rw [round, WP.block_append_iff]
-    apply WP.mono (reverseMixRound_ok s v hv (15 - j) (by omega) fit readable)
-    intro s₁ h₁
-    exact finish s₁ _ h₁
+def mixSpec (d : Spec.Rc2.Direction) (k : Spec.Rc2.Schedule) (j : Nat)
+    (v : Spec.Rc2.State) : Spec.Rc2.State :=
+  match d with
+  | .encrypt => Spec.Rc2.mixRound k j v
+  | .decrypt => Spec.Rc2.reverseMixRound k (15 - j) v
 
-theorem rounds_ok (d : Spec.Rc2.Direction) (s : State) (v : Spec.Rc2.State) (hv : Words s v)
-    (fit : (s.gpr .r0).toNat + 128 ≤ 2 ^ 32)
-    (readable : ∀ k < 128, InRegions (s.rd ++ s.wr) (State.addr (s.gpr .r0 + BitVec.ofNat 32 k)) 1) :
-    WP isa (.block ((List.range 16).flatMap (round d))) s (fun s' =>
-      Words s' ((List.range 16).foldl (fun v j => roundSpec d
-        (Spec.Rc2.scheduleAt s.mem (State.addr (s.gpr .r0))) j v) v) ∧ Keep roundWrites s s') := by
-  apply foldWords_ok (step := fun k j v => roundSpec d k j v) _ _ _ s v hv fit readable
-  intro j hj s v hv fit readable
-  exact round_ok d s v hv j (List.mem_range.mp hj) fit readable
+theorem roundSpec_eq (d : Spec.Rc2.Direction) (k : Spec.Rc2.Schedule) (j : Nat) (v : Spec.Rc2.State) :
+    roundSpec d k j v =
+      if j = 4 ∨ j = 10 then mashRoundSpec d k (mixSpec d k j v) else mixSpec d k j v := rfl
+
+theorem round_ok (d : Spec.Rc2.Direction) (j : Nat) (hj : j < 16) :
+    RoundStep (round d j) (fun k v => roundSpec d k j v) := by
+  have mixes : RoundStep (.block (mixRound d j)) (fun k v => mixSpec d k j v) := by
+    cases d with
+    | encrypt => exact mixRound_ok j hj
+    | decrypt => exact reverseMixRound_ok (15 - j) (by omega)
+  by_cases h : j = 4 ∨ j = 10
+  · have hr : round d j = .seq (.block (mixRound d j)) (mashRound d) := by
+      rw [round, ite_eq_left h]
+    have hs : (fun k v => roundSpec d k j v) = fun k v => mashRoundSpec d k (mixSpec d k j v) := by
+      funext k v; rw [roundSpec_eq, ite_eq_left h]
+    rw [hr, hs]
+    exact RoundStep.seq (f := fun k v => mixSpec d k j v) (g := mashRoundSpec d) mixes (mashRound_ok d)
+  · have hr : round d j = .seq (.block (mixRound d j)) (.block []) := by
+      rw [round, ite_eq_right h]
+    have hs : (fun k v => roundSpec d k j v) = fun k v => mixSpec d k j v := by
+      funext k v; rw [roundSpec_eq, ite_eq_right h]
+    rw [hr, hs]
+    exact RoundStep.seq (f := fun k v => mixSpec d k j v) (g := fun _ v => v) mixes RoundStep.nil
+
+theorem rounds_ok (d : Spec.Rc2.Direction) :
+    RoundStep (rounds d) (fun k v => (List.range 16).foldl (fun v j => roundSpec d k j v) v) :=
+  RoundStep.foldr _ (fun k j v => roundSpec d k j v) _ fun j hj => round_ok d j (List.mem_range.mp hj)
 
 end VG.Proof.Rc2.Arm
 
