@@ -9,13 +9,15 @@ public import VerifiedGarbage.Spec.P521
 public import VerifiedGarbage.Spec.Secp256k1
 public import VerifiedGarbage.Spec.BrainpoolP256r1
 public import VerifiedGarbage.Spec.BrainpoolP384r1
+public import VerifiedGarbage.Spec.BrainpoolP512r1
 
 /-!
 # Montgomery arithmetic modulo a curve's `p` or `n`, a step at a time
 
 **Trusted** (as every file in `Spec/`). The contracts of three functions for
 each modulus `m` of `moduli` (the primes `p` and the orders `n` of P-192,
-P-224, P-256, P-384, P-521, secp256k1, brainpoolP256r1 and brainpoolP384r1),
+P-224, P-256, P-384, P-521, secp256k1, brainpoolP256r1, brainpoolP384r1 and
+brainpoolP512r1),
 so that the code of a curve's functions can call one copy of its field arithmetic instead of
 repeating it at every use:
 
@@ -212,10 +214,15 @@ def brainpoolp384r1p : Modulus :=
   ⟨"brainpoolp384r1", "p", Spec.BrainpoolP384r1.p, 6, "brainpoolP384r1's prime `p`"⟩
 def brainpoolp384r1n : Modulus :=
   ⟨"brainpoolp384r1", "n", Spec.BrainpoolP384r1.n, 6, "brainpoolP384r1's order `n`"⟩
+def brainpoolp512r1p : Modulus :=
+  ⟨"brainpoolp512r1", "p", Spec.BrainpoolP512r1.p, 8, "brainpoolP512r1's prime `p`"⟩
+def brainpoolp512r1n : Modulus :=
+  ⟨"brainpoolp512r1", "n", Spec.BrainpoolP512r1.n, 8, "brainpoolP512r1's order `n`"⟩
 
 /-- Every modulus. -/
 def moduli : List Modulus :=
   [p192p, p192n, p224p, p224n, p256p, p256n, p384p, p384n, p521p, p521n, secp256k1p, secp256k1n,
-    brainpoolp256r1p, brainpoolp256r1n, brainpoolp384r1p, brainpoolp384r1n]
+    brainpoolp256r1p, brainpoolp256r1n, brainpoolp384r1p, brainpoolp384r1n,
+    brainpoolp512r1p, brainpoolp512r1n]
 
 end VG.Spec.Weierstrass.Mont
