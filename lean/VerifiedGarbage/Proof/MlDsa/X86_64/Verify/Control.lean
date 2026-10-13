@@ -9,6 +9,7 @@ import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.HashCT
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Blocks
 
 /-!
 # ML-DSA verification on x86-64: branches, sequences and the comparison

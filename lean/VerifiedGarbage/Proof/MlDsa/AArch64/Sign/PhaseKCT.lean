@@ -16,6 +16,10 @@ meta import Mathlib.Tactic.Conv
 meta import Mathlib.Tactic.SplitIfs
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
 meta import VerifiedGarbage.Proof.MlKem.AArch64.KgC
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseDCT
+import VerifiedGarbage.Proof.MlDsa.Sign.Mem
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseDCT
+meta import VerifiedGarbage.Proof.MlDsa.Sign.Mem
 
 /-!
 # ML-DSA signing on AArch64: the checks leak only the pointers and whether they passed

@@ -9,6 +9,19 @@ import all Init.Data.Vector.Basic
 import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
 import VerifiedGarbage.Proof.Sha3.X86_64.X4.Wp
+public import VerifiedGarbage.Proof.Framework.Range
+public import VerifiedGarbage.Proof.MlKem.X86_64.Cbd
+public import VerifiedGarbage.Proof.MlKem.X86_64.Decode12
+public import VerifiedGarbage.Proof.MlKem.X86_64.Decode12Avx2
+public import VerifiedGarbage.Proof.MlKem.X86_64.DecodeDecompress
+public import VerifiedGarbage.Proof.MlKem.X86_64.Encode12
+public import VerifiedGarbage.Proof.MlKem.X86_64.Lit
+public import VerifiedGarbage.Proof.MlKem.X86_64.NttAvx2
+public import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
+public import VerifiedGarbage.Proof.MlKem.X86_64.YAddSub
+public import VerifiedGarbage.Proof.MlKem.X86_64.Zero
+public import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Absorb
+public import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Squeeze
 
 /-!
 # ML-DSA key generation on x86-64: its contract, parameters and buffers

@@ -16,6 +16,8 @@ meta import Mathlib.Tactic.Conv
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Sha512.Word64
+import VerifiedGarbage.Proof.Framework.X86.Lit
+meta import VerifiedGarbage.Proof.Framework.X86.Lit
 
 /-!
 # ML-DSA on x86 (32-bit), `sign_message` and `verify_message`: the check, the entry and the leaf

@@ -11,6 +11,7 @@ import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Sha512.Word64
+import VerifiedGarbage.Proof.Framework.X86.Lit
 
 /-!
 # ML-DSA on x86 (32-bit), `sign_message` and `verify_message`: the moves of a call's arguments

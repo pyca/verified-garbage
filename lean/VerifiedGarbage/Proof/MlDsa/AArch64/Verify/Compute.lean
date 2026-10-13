@@ -7,6 +7,9 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.MlKem.AArch64.KgC
+public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Call4
+public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Mask4
+public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Samp4
 
 /-!
 # ML-DSA verification on AArch64: `w′₁`, row by row

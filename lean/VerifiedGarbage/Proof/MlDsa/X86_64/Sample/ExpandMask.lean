@@ -12,6 +12,8 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import Mathlib.Tactic.Conv
 meta import Mathlib.Tactic.Conv
+import VerifiedGarbage.Proof.MlKem.Mem
+meta import VerifiedGarbage.Proof.MlKem.Mem
 
 /-!
 # ML-DSA on x86-64: `vg_mldsa_expand_mask_poly`

@@ -18,6 +18,12 @@ meta import VerifiedGarbage.Impl.MlKem.X86.Encode
 meta import VerifiedGarbage.Impl.MlKem.X86.Ntt
 meta import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.MlKem.Encode
+import VerifiedGarbage.Proof.Framework.X86.Lit
+import VerifiedGarbage.Proof.MlKem.X86.Top
+import VerifiedGarbage.Proof.Sha3.Stream
+meta import VerifiedGarbage.Proof.Framework.X86.Lit
+meta import VerifiedGarbage.Proof.MlKem.X86.Top
+meta import VerifiedGarbage.Proof.Sha3.Stream
 
 /-!
 # ML-DSA on x86 (32-bit), `verify_message`: correct and constant time

@@ -8,6 +8,8 @@ import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import Mathlib.Tactic.Conv
+import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Sha3.Arith
 
 /-!
 # ML-DSA on x86-64: `vg_mldsa_expand_mask_poly4_avx2`, squeezing

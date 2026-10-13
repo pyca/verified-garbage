@@ -9,6 +9,8 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.Set
+import VerifiedGarbage.Proof.MlKem.X86_64.KCall
+import VerifiedGarbage.Proof.Sha3.Stream
 
 /-!
 # ML-DSA verification on x86-64: `H(a ‖ b)` through the sponge

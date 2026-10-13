@@ -7,6 +7,7 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.MlDsa.Arm.Message.SignCorrect
 
 /-!
 # ML-DSA on ARMv7, `sign_message` and `verify_message`: verified

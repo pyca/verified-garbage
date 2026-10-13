@@ -22,6 +22,10 @@ public import VerifiedGarbage.Proof.MlKem.X86.Unpack
 import Mathlib.Tactic.SplitIfs
 meta import VerifiedGarbage.Proof.MlKem.X86.Unpack
 meta import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Bswap
+public import VerifiedGarbage.Proof.Framework.WriteBytes
+meta import VerifiedGarbage.Proof.Framework.Bswap
+meta import VerifiedGarbage.Proof.Framework.WriteBytes
 
 /-!
 # ML-KEM-1024 on x86 (32-bit): `vg_mlkem1024_compress_encode`

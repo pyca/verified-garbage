@@ -28,6 +28,10 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.MlKem.AArch64.KgC
 meta import VerifiedGarbage.Proof.MlKem.AArch64.KgC
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedLoopInit
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedZTiming
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedLoopInit
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedZTiming
 
 /-! ## From `OptimizedPairedLoopEndTiming.lean` -/
 

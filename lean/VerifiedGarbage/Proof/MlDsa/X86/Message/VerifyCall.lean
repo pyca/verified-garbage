@@ -18,6 +18,10 @@ meta import VerifiedGarbage.Impl.MlKem.X86.Encode
 meta import VerifiedGarbage.Impl.MlKem.X86.Ntt
 meta import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.MlKem.Encode
+import VerifiedGarbage.Proof.Framework.X86.Lit
+import VerifiedGarbage.Proof.MlKem.X86.TopCall
+meta import VerifiedGarbage.Proof.Framework.X86.Lit
+meta import VerifiedGarbage.Proof.MlKem.X86.TopCall
 
 /-!
 # ML-DSA on x86 (32-bit), `verify_message`: the call of the verification function on `μ`

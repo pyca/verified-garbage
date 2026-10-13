@@ -8,6 +8,8 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.MlKem.Encode
+import VerifiedGarbage.Impl.MlKem.X86.Sample
+import VerifiedGarbage.Proof.Framework.X86.Lit
 
 /-!
 # ML-DSA on x86 (32-bit), `sign_message` and `verify_message`: the layouts' shapes

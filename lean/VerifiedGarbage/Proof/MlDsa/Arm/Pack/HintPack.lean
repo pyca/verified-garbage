@@ -7,6 +7,7 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Impl.MlDsa.Arm.Pack.Hint
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.MlDsa.Pack.Mem
 
 /-!
 # ML-DSA on 32-bit ARM: `vg_mldsa_hint_bit_pack`, correct

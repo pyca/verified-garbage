@@ -10,6 +10,10 @@ public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Keep
 public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.AbsorbBlock
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Impl.Sha3.AArch64.Callee
+import VerifiedGarbage.Proof.Framework.AArch64.LaneRestore
+import VerifiedGarbage.Proof.Framework.AArch64.Simd64
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CommitTailFirst
 
 /-! ## From `CommitTailPaddingWord.lean` -/
 

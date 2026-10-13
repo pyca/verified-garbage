@@ -12,6 +12,10 @@ import VerifiedGarbage.Proof.Framework.X86_64.Call
 import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.MemTaint
 meta import VerifiedGarbage.Proof.Framework.X86_64.Call
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.MemTaint
+import VerifiedGarbage.Proof.MlKem.Mem
+import VerifiedGarbage.Proof.MlKem.X86_64.Rel
+meta import VerifiedGarbage.Proof.MlKem.Mem
+meta import VerifiedGarbage.Proof.MlKem.X86_64.Rel
 
 /-!
 # ML-DSA on x86-64: `vg_mldsa_hint_bit_unpack`

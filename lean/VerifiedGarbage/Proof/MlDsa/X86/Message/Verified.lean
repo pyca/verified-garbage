@@ -12,6 +12,8 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.MlDsa.X86.Sign.Inv
 meta import VerifiedGarbage.Proof.MlDsa.X86.Sign.Inv
+import VerifiedGarbage.Proof.MlDsa.X86.Sign.Run
+meta import VerifiedGarbage.Proof.MlDsa.X86.Sign.Run
 
 /-!
 # ML-DSA on x86 (32-bit), `sign_message` and `verify_message`: the functions

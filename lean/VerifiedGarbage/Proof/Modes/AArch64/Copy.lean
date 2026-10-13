@@ -10,6 +10,7 @@ import all Init.Data.Vector.Basic
 import Mathlib.Data.List.Induction
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Modes.Ctr
 
 /-!
 # Loops over blocks on AArch64

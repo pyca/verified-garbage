@@ -21,6 +21,7 @@ import all Init.Data.Vector.Basic
 import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Same
 import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
 
 /-!
 # ML-DSA verification on x86-64: the primitives it calls

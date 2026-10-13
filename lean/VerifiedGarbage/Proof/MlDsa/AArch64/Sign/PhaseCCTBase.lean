@@ -11,6 +11,8 @@ import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
 import VerifiedGarbage.Proof.MlKem.AArch64.KgC
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackCall
+import VerifiedGarbage.Proof.MlDsa.Sign.Mem
 
 /-! ## From `BlockTr.lean` -/
 

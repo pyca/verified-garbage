@@ -9,6 +9,9 @@ import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
 import VerifiedGarbage.Proof.MlKem.AArch64.KgC
 import VerifiedGarbage.TCB.Axioms
+import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Call4
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRate
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Sponge
 
 @[expose] public section
 

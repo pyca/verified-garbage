@@ -18,6 +18,14 @@ meta import VerifiedGarbage.Proof.MlDsa.AArch64.Message.Depth
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFold
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Compute
 meta import VerifiedGarbage.Proof.MlKem.AArch64.DecapsA
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseACT
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseZMemory
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedExpansion
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.StaticRootsPrologue
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseACT
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseZMemory
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedExpansion
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.StaticRootsPrologue
 
 @[expose] public section
 

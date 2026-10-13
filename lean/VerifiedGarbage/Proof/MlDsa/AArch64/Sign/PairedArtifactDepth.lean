@@ -9,6 +9,10 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.Depth
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFold
 import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Compute
 import VerifiedGarbage.Proof.MlKem.AArch64.DecapsA
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseHintMemory
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLowMemory
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseZMemory
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedDepth
 
 @[expose] public section
 

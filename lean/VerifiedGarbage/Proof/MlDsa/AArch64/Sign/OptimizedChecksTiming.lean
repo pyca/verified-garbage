@@ -20,6 +20,8 @@ import VerifiedGarbage.Proof.MlKem.AArch64.KgC
 meta import Mathlib.Tactic.Conv
 meta import Mathlib.Tactic.SplitIfs
 meta import VerifiedGarbage.Proof.MlKem.AArch64.KgC
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseZMemory
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseZMemory
 
 @[expose] public section
 

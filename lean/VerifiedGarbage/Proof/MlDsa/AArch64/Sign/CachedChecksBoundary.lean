@@ -7,6 +7,8 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.MlKem.AArch64.KgC
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedChecksEnd
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedChecksInit
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedHintEnd
 
 @[expose] public section
 

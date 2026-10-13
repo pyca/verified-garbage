@@ -10,6 +10,10 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Impl.MlKem.X86.Sample
+import VerifiedGarbage.Proof.Framework.X86.Lit
+meta import VerifiedGarbage.Impl.MlKem.X86.Sample
+meta import VerifiedGarbage.Proof.Framework.X86.Lit
 
 /-!
 # ML-DSA on x86 (32-bit), `sign_message` and `verify_message`: `μ` and `tr`

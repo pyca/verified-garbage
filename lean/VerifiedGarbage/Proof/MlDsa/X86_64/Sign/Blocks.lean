@@ -11,6 +11,7 @@ import all Init.Data.Vector.Basic
 import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.MlKem.Encode
 import VerifiedGarbage.Proof.MlKem.X86_64.Contracts
+import VerifiedGarbage.Proof.MlKem.X86_64.SampleLoop
 
 /-!
 # ML-DSA signing on x86-64: the blocks between the calls

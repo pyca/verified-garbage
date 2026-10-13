@@ -11,6 +11,7 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MontProductCallTimin
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.UseHintPackCallTiming
 import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.MlKem.AArch64.KgC
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversal
 
 @[expose] public section
 

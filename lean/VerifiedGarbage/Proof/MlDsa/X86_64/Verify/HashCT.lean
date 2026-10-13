@@ -12,6 +12,10 @@ public import VerifiedGarbage.Proof.MlKem.X86_64.KCall
 import Mathlib.Tactic.Conv
 meta import VerifiedGarbage.Proof.MlKem.X86_64.KCall
 meta import Mathlib.Tactic.Conv
+import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Absorb
+import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Squeeze
+meta import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Absorb
+meta import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Squeeze
 
 /-!
 # ML-DSA verification on x86-64: the sponge leaks only addresses
