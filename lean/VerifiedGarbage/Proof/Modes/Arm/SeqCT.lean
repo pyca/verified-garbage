@@ -167,7 +167,7 @@ theorem body_ct (hM : ModeOk c M) (hT : SeqTaint c M) (k : Nat) :
   -- The arguments in registers, through the callee's view of a state.
   have regsA : ∀ {s₂ s₂' : State} (h : AfterPre c S M s₀ k s₂) (h' : AfterPre c S M s₀' k s₂'),
       s₂.gpr .r0 = s₂'.gpr .r0 ∧ s₂.gpr .r1 = s₂'.gpr .r1 ∧ s₂.gpr .r2 = s₂'.gpr .r2 ∧
-        (c.rounds = true → s₂.gpr .r3 = s₂'.gpr .r3) := fun h h' => by
+        (c.r3Pub = true → s₂.gpr .r3 = s₂'.gpr .r3) := fun h h' => by
     have p := cpre hp h
     have p' := cpre hp' h'
     rw [← pub_K hq, ← pub_R hq, ← pub_Dk hq, ← pub_Sc hq] at p'
@@ -183,8 +183,12 @@ theorem body_ct (hM : ModeOk c M) (hT : SeqTaint c M) (k : Nat) :
         rwa [hN] at rN
       · have hD : c.dReg = .r2 := by unfold Core.dReg; rw [hr]; rfl
         rwa [hD] at rD
-    · have hN : c.nReg = .r3 := by unfold Core.nReg; rw [hr]; rfl
-      rwa [hN] at rN
+    · cases hr' : c.rounds
+      · have hs : c.arg3.isSome = true := by simpa [Core.r3Pub, hr'] using hr
+        obtain ⟨k, hk⟩ := Option.isSome_iff_exists.mp hs
+        rw [p.a3 k hk, p'.a3 k hk]
+      · have hN : c.nReg = .r3 := by unfold Core.nReg; rw [hr']; rfl
+        rwa [hN] at rN
   have callR : RelCT isa (fun s₂ s₂' => AfterPre c S M s₀ k s₂ ∧ AfterPre c S M s₀' k s₂') c.callStep
       fun _ _ => True := by
     unfold Core.callStep
