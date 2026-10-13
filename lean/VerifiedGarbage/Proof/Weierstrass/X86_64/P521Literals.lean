@@ -21,9 +21,13 @@ materialize_code pPow := Cfg.pPow p521
 materialize_code nPow := Cfg.nPow p521
 materialize_code gMulK := Cfg.gMulK p521
 materialize_code validate := Impl.Ecdh.X86_64.Cfg.validate p521
+materialize_code checkFn := Cfg.invFnX (Impl.Ecdh.X86_64.Cfg.checkBody p521)
+materialize_code check := Impl.Ecdh.X86_64.Cfg.check p521
 materialize_code pPowAdx := Cfg.pPow p521x
 materialize_code nPowAdx := Cfg.nPow p521x
 materialize_code gMulKAdx := Cfg.gMulK p521x
 materialize_code validateAdx := Impl.Ecdh.X86_64.Cfg.validate p521x
+materialize_code checkFnAdx := Cfg.invFnX (Impl.Ecdh.X86_64.Cfg.checkBody p521x)
+materialize_code checkAdx := Impl.Ecdh.X86_64.Cfg.check p521x
 
 end VG.Proof.Weierstrass.X86_64.P521Literals

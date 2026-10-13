@@ -20,7 +20,7 @@ def jointPrefix (c : Cfg) : Prog isa :=
   .seq (Impl.Ecdh.X86_64.Cfg.prefix' c (some D)) <|
   .seq (.block (Impl.Ecdsa.Verify.X86_64.Cfg.loadS c)) <|
   .seq (.block (Impl.Ecdh.X86_64.Cfg.peer c)) <|
-  .seq (Impl.Ecdh.X86_64.Cfg.validate c) <|
+  .seq (Impl.Ecdh.X86_64.Cfg.check c).inline <|
   .seq (Impl.Ecdsa.Verify.X86_64.Cfg.scalars c).inline <| .seq c.nPow.inline <|
   .seq (Impl.Ecdsa.Verify.X86_64.Cfg.uv c).inline (.block [])
 

@@ -189,7 +189,7 @@ def back : Prog isa :=
 /-- `vg_ecdsa_<curve>_verify`. -/
 def verify : Prog isa :=
   .seq (.block (args c)) <| .seq (Impl.Ecdh.X86_64.Cfg.prefix' c (some D)) <| .seq (.block (loadS c)) <|
-  .seq (.block (Impl.Ecdh.X86_64.Cfg.peer c)) <| .seq (Impl.Ecdh.X86_64.Cfg.validate c) (back c)
+  .seq (.block (Impl.Ecdh.X86_64.Cfg.peer c)) <| .seq (Impl.Ecdh.X86_64.Cfg.check c) (back c)
 
 end Cfg
 

@@ -8,6 +8,7 @@ public import VerifiedGarbage.Spec.Ecdsa
 public import VerifiedGarbage.Spec.Weierstrass.MulBase
 public import VerifiedGarbage.Spec.Weierstrass.Mul
 public import VerifiedGarbage.Spec.Weierstrass.Inverse
+public import VerifiedGarbage.Spec.Weierstrass.CheckPoint
 
 /-!
 # ECDSA signing on x86-64
@@ -174,6 +175,11 @@ structure Cfg where
   and `k^(n-2)` (`invFn`), which every function calls (`pPow`, `nPow`);
   else they run them inline. -/
   inverse : Option Spec.Weierstrass.Inverse.Curve := none
+  /-- The curve whose function `vg_<curve>_check_point`
+  (`Spec/Weierstrass/CheckPoint.lean`) checks the public point and selects
+  the point ECDH and verification multiply (`Ecdh.X86_64.Cfg.check`); else
+  they run it inline. -/
+  checkPoint : Option Spec.Weierstrass.CheckPoint.Curve := none
   /-- The bits the window method's scalars have: `8 len`, but for a curve
   whose `n` has fewer bits than its `len` bytes (P-521's `n < 2⁵²¹`, in 66
   bytes), as many as `n` has. ECDH reduces its `d` below `2^nbits` before

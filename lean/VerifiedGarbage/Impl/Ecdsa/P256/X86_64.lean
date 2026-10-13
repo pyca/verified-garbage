@@ -20,6 +20,7 @@ def p256 : Cfg where
   fastN := true
   pubVerify := true
   inverse := some Spec.Weierstrass.Inverse.p256
+  checkPoint := some Spec.Weierstrass.CheckPoint.p256
 
 /-- P-256, multiplying with BMI2 and ADX. `[k]G` for the signature and the
 public key is a call of `vg_p256_mul_base_adx` (`Cfg.mulBase`); without

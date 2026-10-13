@@ -233,44 +233,66 @@ and the range of its coordinates) and the curve's equation. -/
 abbrev PeerOk (c : Cfg) (base : Addr) (s : State) (P₀ : Prop) : Prop :=
   P₀ ∧ OnCurve c (Fin.ofNat c.C.p (sv c base s E)) (Fin.ofNat c.C.p (sv c base s QY))
 
+/-- A number below `m` is determined by what it stands for. -/
+theorem eq_of_toM {m R x y : Nat} [NeZero m] (hm : UnitMod m R) (hx : x < m) (hy : y < m)
+    (h : toM m R x = toM m R y) : x = y := by
+  have unit := mul_rinv hm
+  have he : Fin.ofNat m x = Fin.ofNat m y := by unfold toM at h; grind
+  have hv := congrArg Fin.val he
+  simpa only [Fin.val_ofNat, Nat.mod_eq_of_lt hx, Nat.mod_eq_of_lt hy] using hv
+
+/-- A number below `m` standing for `x` is `x R mod m`. -/
+theorem eq_mont_of_toM {m R v x : Nat} [NeZero m] (hm : UnitMod m R) (hv : v < m)
+    (h : toM m R v = Fin.ofNat m x) : v = x * R % m :=
+  eq_of_toM hm hv (Nat.mod_lt _ (Nat.pos_of_ne_zero (NeZero.ne m))) (by rw [h, toM_mont hm])
+
+/-- `validate`, from `p` and `a R mod p` in their slots, the constants
+`peer` sets and the flag a mask: the numbers it writes. -/
 theorem validate_ok (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s base size)
-    {g : Reg → BitVec 64} (F : Fixed c base g s.mem) (hr2 : sv c base s R2P = c.R * c.R % c.C.p)
+    (hmp : sv c base s MP = c.C.p) (hap : sv c base s AP = c.mont c.C.a)
+    (hr2 : sv c base s R2P = c.R * c.R % c.C.p)
     (hbp : sv c base s BP = c.mont c.C.b) {P₀ : Prop} [Decidable P₀]
     (hf : word s.mem base (c.sl FLAG) = mask P₀) :
     WP isa (Impl.Ecdh.X86_64.Cfg.validate c) s fun s' =>
       Scr s' base size ∧ (∀ r, r ∉ clob c.n → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
       Unch base (slW c [QXM, QYM, TMP, W0, W1, W2, W3, PY] ++ [(c.sl FLAG, 8)]) s.mem s'.mem ∧
       word s'.mem base (c.sl FLAG) = mask (PeerOk c base s P₀) ∧
-      sv c base s' PX < c.C.p ∧ sv c base s' PY < c.C.p ∧
-      toM c.C.p (2 ^ (64 * c.n)) (sv c base s' PX) =
-        (if PeerOk c base s P₀ then Fin.ofNat c.C.p (sv c base s E) else Fin.ofNat c.C.p c.C.gx) ∧
-      toM c.C.p (2 ^ (64 * c.n)) (sv c base s' PY) =
-        (if PeerOk c base s P₀ then Fin.ofNat c.C.p (sv c base s QY) else Fin.ofNat c.C.p c.C.gy) := by
+      sv c base s' QXM = sv c base s E * 2 ^ (64 * c.n) % c.C.p ∧
+      sv c base s' QYM = sv c base s QY * 2 ^ (64 * c.n) % c.C.p ∧
+      sv c base s' PX = (if PeerOk c base s P₀ then sv c base s E * 2 ^ (64 * c.n) % c.C.p
+        else sv c base s GX) ∧
+      sv c base s' PY = (if PeerOk c base s P₀ then sv c base s QY * 2 ^ (64 * c.n) % c.C.p
+        else sv c base s GY) := by
   have h0 := hc.n0
   have h7 := hc.n10
   have hn := hs.nowrap
-  have hp3 := hc.p_ge
-  have hmont : ∀ x, c.mont x < c.C.p := fun x => Nat.mod_lt _ (by omega)
   rw [validate_wp, WP.block_append_iff]
-  refine WP.mono (mont_ok hc hs (modP_of hc F.mp) hr2) fun s₂ Mp => ?_
-  have F₂ := F.unch h7 hn (fixedOk_slW (l := [QXM, QYM, TMP]) (by decide)) Mp.unch
+  refine WP.mono (mont_ok hc hs (modP_of hc hmp) hr2) fun s₂ Mp => ?_
   have e₂ : ∀ {i}, i < 45 → i ∉ [QXM, QYM, TMP] → sv c base s₂ i = sv c base s i := fun hi hl =>
     sv_unch Mp.unch h7 hn hi (apart_slW hl)
   rw [WP.block_append_iff]
-  refine WP.mono (curve_ok hc Mp.scr Mp.mod Mp.x_lt Mp.y_lt F₂.ap (P₀ := P₀)
+  refine WP.mono (curve_ok hc Mp.scr Mp.mod Mp.x_lt Mp.y_lt (P₀ := P₀)
+    (by rw [e₂ (i := AP) (by decide) (by decide)]; exact hap)
     (by rw [e₂ (i := BP) (by decide) (by decide)]; exact hbp)
     (by rw [flag_unch Mp.unch h7 h0 hn (by decide)]; exact hf)) fun s₄ ⟨hs₄, g₄, rd₄, wr₄, U₄, f₄⟩ => ?_
   rw [Mp.x, Mp.y] at f₄
-  have F₄ := F₂.unch h7 hn ((fixedOk_slW (l := [W0, W1, W2, W3, TMP]) (by decide)).append fixedOk_flag) U₄
   refine WP.mono (select_ok hc hs₄ f₄) fun s₆ ⟨hs₆, k₆, U₆, px, py⟩ => ?_
   have q₄ : ∀ {i}, i < 45 → i ∉ [W0, W1, W2, W3, TMP] → i ≠ FLAG → sv c base s₄ i = sv c base s₂ i :=
     fun hi hl hf => sv_unch U₄ h7 hn hi (apart_append (apart_slW hl) (apart_flag h0 hf))
-  have F₆ := F₄.unch h7 hn (fixedOk_slW (l := [PX, PY]) (by decide)) U₆
-  have qx : sv c base s₄ QXM = sv c base s₂ QXM := q₄ (by decide) (by decide) (by decide)
-  have qy : sv c base s₄ QYM = sv c base s₂ QYM := q₄ (by decide) (by decide) (by decide)
+  have q₆ : ∀ {i}, i < 45 → i ∉ [PX, PY] → sv c base s₆ i = sv c base s₄ i :=
+    fun hi hl => sv_unch U₆ h7 hn hi (apart_slW hl)
   have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
+  have qx : sv c base s₄ QXM = sv c base s E * 2 ^ (64 * c.n) % c.C.p := by
+    rw [q₄ (by decide) (by decide) (by decide)]; exact eq_mont_of_toM hpR Mp.x_lt Mp.x
+  have qy : sv c base s₄ QYM = sv c base s QY * 2 ^ (64 * c.n) % c.C.p := by
+    rw [q₄ (by decide) (by decide) (by decide)]; exact eq_mont_of_toM hpR Mp.y_lt Mp.y
+  have gx : sv c base s₄ GX = sv c base s GX := by
+    rw [q₄ (by decide) (by decide) (by decide), e₂ (by decide) (by decide)]
+  have gy : sv c base s₄ GY = sv c base s GY := by
+    rw [q₄ (by decide) (by decide) (by decide), e₂ (by decide) (by decide)]
   refine ⟨hs₆, fun r hr => ?_, by rw [k₆.rd, rd₄, Mp.rd], by rw [k₆.wr, wr₄, Mp.wr], ?_,
-    by rw [flag_unch U₆ h7 h0 hn (by decide)]; exact f₄, ?_, ?_, ?_, ?_⟩
+    by rw [flag_unch U₆ h7 h0 hn (by decide)]; exact f₄, by rw [q₆ (by decide) (by decide)]; exact qx,
+    by rw [q₆ (by decide) (by decide)]; exact qy, ?_, ?_⟩
   · rw [k₆.gpr r (fun h => hr (by simp at h; rcases h with rfl | rfl | rfl <;> simp [clob])), g₄ r hr,
       Mp.gpr r hr]
   · have sub : ∀ i ∈ [QXM, QYM, TMP, W0, W1, W2, W3, TMP, PX, PY], i ∈ [QXM, QYM, TMP, W0, W1, W2, W3, PY] := by
@@ -288,19 +310,11 @@ theorem validate_ok (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s bas
         · exact List.mem_append_right _ hw
     · exact hsl (by decide) w hw
   · rw [px]; split
-    · rw [qx]; exact Mp.x_lt
-    · exact lt_of_eq_of_lt F₄.gx (hmont _)
+    · exact qx
+    · exact gx
   · rw [py]; split
-    · rw [qy]; exact Mp.y_lt
-    · exact lt_of_eq_of_lt F₄.gy (hmont _)
-  · rw [px]; split
-    · rw [qx, Mp.x]
-    · show toM _ _ (wordsVal s₄.mem base (c.sl GX) c.n) = _
-      rw [F₄.gx, toM_cmont hc]
-  · rw [py]; split
-    · rw [qy, Mp.y]
-    · show toM _ _ (wordsVal s₄.mem base (c.sl GY) c.n) = _
-      rw [F₄.gy, toM_cmont hc]
+    · exact qy
+    · exact gy
 
 end VG.Proof.Ecdh.X86_64
 

@@ -106,12 +106,11 @@ def checkLead : List Instr :=
   ([.movzx8 .rdx { base := .r9 }, .alu .xor .rdx (.imm 4), .alu .cmp .rdx (.imm 1),
     .alu .sbb .rdx (.reg .rdx)] : List Instr) ++ c.andFlag
 
-/-- The constants, the peer's `y`, and the checks of its first byte, `x`
-and `y`. -/
+/-- The constants, the peer's `y`, and the check of its first byte. -/
 def peer : List Instr :=
   (consts c).flatMap (fun (i, x) => setConst c.n (c.sl i) x) ++
   ([.mov .rdx (.reg .r9), .alu .add .rdx (.imm (BitVec.ofNat 32 (1 + c.C.len)))] : List Instr) ++
-  loadBytes c.C.len c.n (c.sl QY) .rdx ++ checkLead c ++ checkLtP c (c.sl E) ++ checkLtP c (c.sl QY)
+  loadBytes c.C.len c.n (c.sl QY) .rdx ++ checkLead c
 
 /-- `y² - (x³ + a x + b)`, from `x R` and `y R`, to `W1`. -/
 def curveOps : List FOp :=
@@ -132,6 +131,19 @@ def validate : Prog isa :=
   blocks ([Mont.X86_64.mul c.MP' (c.sl QXM) (c.sl E) (c.sl R2P),
     Mont.X86_64.mul c.MP' (c.sl QYM) (c.sl QY) (c.sl R2P)] ++
     (curveOps c).map (opCode c.MP') ++ [checkZero c (c.sl W1) ++ select c])
+
+/-- The checks of `x < p` and `y < p`, and `validate`: the body of
+`vg_<curve>_check_point` (`Spec/Weierstrass/CheckPoint.lean`). -/
+def checkBody : Prog isa :=
+  .seq (.block (checkLtP c (c.sl E) ++ checkLtP c (c.sl QY))) (validate c)
+
+/-- `checkBody`: a call of `vg_<curve>_check_point` (`_adx` with BMI2 and
+ADX), which keeps the callee-saved registers in `xmm0`–`xmm5` (`invFnX`),
+if the curve has it (`Cfg.checkPoint`), else inline. -/
+def check : Prog isa :=
+  match c.checkPoint with
+  | some C => .call (C.checkApi.name ++ c.fnSuffix) (Impl.Ecdsa.X86_64.Cfg.invFnX (checkBody c))
+  | none => checkBody c
 
 /-- The ladder of the signature, from the point at `PX`, `PY`, `ONEP`. -/
 def ladderQ : LadderCfg := { c.ladderCfg with G := c.pt PX PY ONEP }
@@ -256,7 +268,7 @@ def mulQJ4 : Prog isa :=
 
 /-- `vg_ecdh_<curve>`, with `mq` computing `[d]P` into `R`. -/
 def exchangeWith (mq : Prog isa) : Prog isa :=
-  .seq (.block (args)) <| .seq (prefix' c none) <| .seq (.block (peer c)) <| .seq (validate c) <|
+  .seq (.block (args)) <| .seq (prefix' c none) <| .seq (.block (peer c)) <| .seq (check c) <|
   .seq mq <| .seq c.pPow (middle c)
 
 /-- `vg_ecdh_<curve>` by the Jacobian window method, for a curve of prime

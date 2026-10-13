@@ -44,7 +44,7 @@ theorem verify_eq'' (c : Cfg) : Impl.Ecdsa.Verify.X86_64.Cfg.verify c =
       (.seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) (.seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n))
       (.seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n)) (.block [])))))
       (.seq (.block (Impl.Ecdsa.Verify.X86_64.Cfg.loadS c)) (.seq (.block (Impl.Ecdh.X86_64.Cfg.peer c))
-      (.seq (Impl.Ecdh.X86_64.Cfg.validate c) (.seq (Impl.Ecdsa.Verify.X86_64.Cfg.scalars c)
+      (.seq (Impl.Ecdh.X86_64.Cfg.check c) (.seq (Impl.Ecdsa.Verify.X86_64.Cfg.scalars c)
       (.seq c.nPow (.seq (Impl.Ecdsa.Verify.X86_64.Cfg.uv c)
       (.seq (Impl.Ecdsa.Verify.X86_64.Cfg.points c)
         (Impl.Ecdsa.Verify.X86_64.Cfg.tail c))))))))) := rfl
@@ -55,15 +55,14 @@ theorem verify_inline (c : Cfg) : (Impl.Ecdsa.Verify.X86_64.Cfg.verify c).inline
       (.seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) (.seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n))
       (.seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n)) (.block [])))))
       (.seq (.block (Impl.Ecdsa.Verify.X86_64.Cfg.loadS c)) (.seq (.block (Impl.Ecdh.X86_64.Cfg.peer c))
-      (.seq (Impl.Ecdh.X86_64.Cfg.validate c) (.seq (Impl.Ecdsa.Verify.X86_64.Cfg.scalars c).inline
+      (.seq (Impl.Ecdh.X86_64.Cfg.check c).inline (.seq (Impl.Ecdsa.Verify.X86_64.Cfg.scalars c).inline
       (.seq c.nPow.inline (.seq (Impl.Ecdsa.Verify.X86_64.Cfg.uv c).inline
       (.seq (Impl.Ecdsa.Verify.X86_64.Cfg.points c).inline
         (Impl.Ecdsa.Verify.X86_64.Cfg.tail c).inline)))))))) := by
   rw [verify_eq'']
-  show Code.seq _ (Code.seq _ (Code.seq _ (Code.seq _ (Code.seq (Impl.Ecdh.X86_64.Cfg.validate c).inline
+  show Code.seq _ (Code.seq _ (Code.seq _ (Code.seq _ (Code.seq (Impl.Ecdh.X86_64.Cfg.check c).inline
     (Code.seq (Impl.Ecdsa.Verify.X86_64.Cfg.scalars c).inline (Code.seq c.nPow.inline
     (Code.seq (Impl.Ecdsa.Verify.X86_64.Cfg.uv c).inline _))))))) = _
-  rw [show (Impl.Ecdh.X86_64.Cfg.validate c).inline = _ from blocks_inline _]
   rfl
 
 /-- What the slots of `a`, `3b` and `G` stand for. -/
