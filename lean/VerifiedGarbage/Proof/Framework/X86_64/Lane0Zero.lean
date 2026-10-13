@@ -1,5 +1,7 @@
-import VerifiedGarbage.Proof.Framework.X86_64.Lane0
-import VerifiedGarbage.Proof.Framework.X86_64.Avx512
+module
+
+public import VerifiedGarbage.Proof.Framework.X86_64.Lane0
+public import VerifiedGarbage.Proof.Framework.X86_64.Avx512
 
 /-!
 # x86-64: `VEX.128` blocks keep cleared upper lanes cleared
@@ -8,6 +10,8 @@ A `VEX.128` instruction clears lanes 1–3 of its destination and keeps those
 of every other register, so an upper lane that is clear before a block of
 them (`lane0Block`) is clear after it (`lane0Block_zhi`, `WP.lane0z`).
 -/
+
+@[expose] public section
 
 namespace VG.X86_64
 

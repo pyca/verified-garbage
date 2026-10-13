@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemBody
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Gh
+module
+
+public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemBody
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Gh
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Four of the blocks after the last group
@@ -11,6 +17,8 @@ and, as a load of a group does (`StitchZ.ldAcc_ok`, `WP.zlanes`), adds each
 lane's product, the block byte-reversed with `Y`'s lane added, to that
 lane's products; then clears `Y`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Gcm.X86_64.StitchZH
 
