@@ -32,7 +32,8 @@ variable {P : RfcHash} {L : Lay P.I.hashLen} {g : Reg → BitVec 32} {m₀ : Mem
 
 theorem loop_ok (hL : L.Ok) (hk : CoreOk P L) {t : State} (hc : Ctx L g m₀ t) (h0 : LoopInv P L m₀ 0 t) :
     WP isa (.loop (cfgOf P).tryOne .ne) t fun t' => Ctx L g m₀ t' ∧ ∃ i, Exit P L m₀ i t' := by
-  refine WP.loop (M := isa) (fun n (s : State) => Ctx L g m₀ s ∧ LoopInv P L m₀ (8 - n) s ∧ n ≤ 8) ?_ 8 t
+  refine WP.loop (M := isa) (fun n (s : State) => Ctx L g m₀ s ∧ LoopInv P L m₀ (P.I.tries - n) s ∧ n ≤ P.I.tries)
+    ?_ P.I.tries t
     ⟨hc, by rw [Nat.sub_self]; exact h0, Nat.le_refl _⟩
   rintro n s ⟨hcs, hi, hn⟩
   have hn1 : 1 ≤ n := by have := hi.lt; omega
@@ -40,7 +41,7 @@ theorem loop_ok (hL : L.Ok) (hk : CoreOk P L) {t : State} (hc : Ctx L g m₀ t) 
   rcases h with ⟨he, hx⟩ | ⟨he, hx⟩
   · exact .inl ⟨he, hc', _, hx⟩
   · refine .inr ⟨he, n - 1, by omega, hc', ?_, by omega⟩
-    rwa [show 8 - (n - 1) = 8 - n + 1 by omega]
+    rwa [show P.I.tries - (n - 1) = P.I.tries - n + 1 by omega]
 
 /-! ## Steps a–g -/
 
@@ -216,14 +217,14 @@ theorem stageD_ok (hL : L.Ok) (hk : CoreOk P L) {u : State} (hc : Ctx L g m₀ u
 
 theorem stageE_ok (hL : L.Ok) (hk : CoreOk P L) {u : State} (hc : Ctx L g m₀ u) (hq : QD P L m₀ u) :
     WP isa (.block (cfgOf P).initCnt) u fun u' => Ctx L g m₀ u' ∧ LoopInv P L m₀ 0 u' :=
-  WP.mono (initCnt_ok hL hc) fun u' ⟨hc', hf', hn'⟩ => ⟨hc', by omega,
+  WP.mono (initCnt_ok hL hc) fun u' ⟨hc', hf', hn'⟩ => ⟨hc', P.tries_pos,
     (bytesAt_frame hf' (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact Offset.disjoint _ (by nums) (by nums) (by nums))
       (by nums)).trans hq.k,
     (bytesAt_frame hf' (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact Offset.disjoint _ (by nums) (by nums) (by nums))
       (by nums)).trans hq.v,
-    by rw [hn'], fun j hj => absurd hj (Nat.not_lt_zero _), hq.dg.frameOf hL hk hf' (by simp [DgApart])⟩
+    by rw [hn', Nat.sub_zero], fun j hj => absurd hj (Nat.not_lt_zero _), hq.dg.frameOf hL hk hf' (by simp [DgApart])⟩
 
 theorem stageG_ok (hL : L.Ok) (hk : CoreOk P L) {u : State} (hc : Ctx L g m₀ u) {i : Nat}
     (hx : Exit P L m₀ i u) :
@@ -289,9 +290,9 @@ theorem result_unfold :
     result P.I m₀ L.d L.dg =
       if 1 ≤ xOf P L m₀ ∧ xOf P L m₀ < P.R.E.C.n then
         let (K, V) := kv0 P L m₀
-        Spec.Ecdsa.Rfc6979.search P.R.E.C P.ok.hH.SH.H P.F.H.D (xOf P L m₀) (eOf P L m₀) K V 8
+        Spec.Ecdsa.Rfc6979.search P.R.E.C P.ok.hH.SH.H P.F.H.D (xOf P L m₀) (eOf P L m₀) K V P.I.tries
       else (none, 0) := by
-  simp only [result, Spec.Ecdsa.Rfc6979.Instance.result, P.ecdsa, P.R.curve, P.hash, P.tries, P.len,
+  simp only [result, Spec.Ecdsa.Rfc6979.Instance.result, P.ecdsa, P.R.curve, P.hash, P.len,
     ecdsa_bytesAt, Spec.Ecdsa.Rfc6979.sign]
 
 /-- The signature of the candidate the loop stopped at is RFC 6979's. -/
@@ -300,14 +301,13 @@ theorem result_eq {i : Nat} {t : State} (hx : Exit P L m₀ i t) :
   rw [result_unfold]
   by_cases hv : 1 ≤ xOf P L m₀ ∧ xOf P L m₀ < P.R.E.C.n
   · simp only [hv, and_self, ite_true]
-    rw [Proof.Ecdsa.Rfc6979.searchB_shift (blocks_eq P) i 8 (by have := hx.lt; omega) hx.fails,
-      show 8 - i = (7 - i) + 1 by have := hx.lt; omega]
+    rw [Proof.Ecdsa.Rfc6979.searchB_shift (blocks_eq P) i P.I.tries (by have := hx.lt; omega) hx.fails,
+      show P.I.tries - i = (P.I.tries - 1 - i) + 1 by have := hx.lt; omega]
     cases hs : sigI P L m₀ i with
     | some rs => rw [Proof.Ecdsa.Rfc6979.searchB_ok (blocks_eq P) hs]
     | none =>
-      have h7 : i = 7 := hx.last.resolve_left (by simp [hs])
-      subst h7
-      rw [Proof.Ecdsa.Rfc6979.searchB_fail (blocks_eq P) hs]
+      have h7 : i + 1 = P.I.tries := hx.last.resolve_left (by simp [hs])
+      rw [Proof.Ecdsa.Rfc6979.searchB_fail (blocks_eq P) hs, show P.I.tries - 1 - i = 0 by omega]
       rfl
   · symm
     simp only [hv, ite_false, sigI, Spec.Ecdsa.signWith]
@@ -317,37 +317,42 @@ theorem result_eq {i : Nat} {t : State} (hx : Exit P L m₀ i t) :
 
 /-! ## How many candidates -/
 
+theorem ite_le_of_not {c : Prop} [Decidable c] {a b i : Nat} (hc : ¬c) (hb : b ≤ i) :
+    (if c then a else b) ≤ i := by
+  simp only [hc, ite_false]; exact hb
+
 /-- The candidate the loop stops at, from the number RFC 6979 tries. -/
 def exitAt (P : RfcHash) (L : Lay P.I.hashLen) (m₀ : Mem) : Nat :=
-  if (result P.I m₀ L.d L.dg).2 = 0 then 7 else (result P.I m₀ L.d L.dg).2 - 1
+  if (result P.I m₀ L.d L.dg).2 = 0 then P.I.tries - 1 else (result P.I m₀ L.d L.dg).2 - 1
 
 /-- The loop goes on after candidate `i` iff it stops at a later one. -/
-theorem go_iff {i : Nat} (hi : i < 8) (hf : ∀ j < i, sigI P L m₀ j = none) :
-    (sigI P L m₀ i = none ∧ i + 1 < 8) ↔ i < exitAt P L m₀ := by
+theorem go_iff {i : Nat} (hi : i < P.I.tries) (hf : ∀ j < i, sigI P L m₀ j = none) :
+    (sigI P L m₀ i = none ∧ i + 1 < P.I.tries) ↔ i < exitAt P L m₀ := by
   unfold exitAt
   rw [result_unfold]
   by_cases hv : 1 ≤ xOf P L m₀ ∧ xOf P L m₀ < P.R.E.C.n
   · simp only [hv, and_self, ite_true]
-    rw [Proof.Ecdsa.Rfc6979.searchB_shift (blocks_eq P) i 8 (by omega) hf, show 8 - i = (7 - i) + 1 by omega]
+    rw [Proof.Ecdsa.Rfc6979.searchB_shift (blocks_eq P) i P.I.tries (by omega) hf,
+      show P.I.tries - i = (P.I.tries - 1 - i) + 1 by omega]
     cases hs : sigI P L m₀ i with
     | some rs =>
       rw [Proof.Ecdsa.Rfc6979.searchB_ok (blocks_eq P) hs]
       simp
     | none =>
       rw [Proof.Ecdsa.Rfc6979.searchB_fail (blocks_eq P) hs]
-      by_cases h7 : i + 1 < 8
+      by_cases h7 : i + 1 < P.I.tries
       · have := Proof.Ecdsa.Rfc6979.searchB_pos (C := P.R.E.C) (H := P.ok.hH.SH.H) (hlen := P.F.H.D)
-          (d := xOf P L m₀) (e := eOf P L m₀) (n := 6 - i)
+          (d := xOf P L m₀) (e := eOf P L m₀) (n := P.I.tries - 2 - i)
           (K := (stepB P.ok.hH.SH.H P.nb (kvI P L m₀ i).1 (kvI P L m₀ i).2).1)
           (V := (stepB P.ok.hH.SH.H P.nb (kvI P L m₀ i).1 (kvI P L m₀ i).2).2) (blocks_eq P)
-        rw [show 7 - i = 6 - i + 1 by omega]
+        rw [show P.I.tries - 1 - i = P.I.tries - 2 - i + 1 by omega]
         simp only [true_and, h7]
         simp only [kvI] at this
         rw [true_iff]
         split <;> omega
-      · have hi7 : i = 7 := by omega
-        subst hi7
-        simp [Spec.Ecdsa.Rfc6979.search]
+      · rw [show P.I.tries - 1 - i = 0 by omega]
+        simp only [Spec.Ecdsa.Rfc6979.search, h7, and_false, false_iff, Nat.not_lt]
+        exact ite_le_of_not (by omega) (by omega)
   · simp only [hv, ite_false, ite_true]
     have hs : sigI P L m₀ i = none := by
       simp only [sigI, Spec.Ecdsa.signWith]
@@ -380,7 +385,6 @@ theorem reduceKV_nosp (c : Cfg) :
   rw [show ∀ l : List Nat, (l.all fun _ => true) = true from fun l => List.all_eq_true.mpr fun _ _ => rfl]
   decide
 
-theorem tries_eq : (cfgOf P).tries = 8 := rfl
 
 /-- No instruction of the body writes `esp`: not those of the functions it
 calls, by what `P` and the proofs of HMAC's functions know of them, nor its
@@ -395,12 +399,15 @@ theorem body_nosp (P : RfcHash) : NoSp (cfgOf P).body := by
   have hwd : (cfgOf P).wide = P.R.wide := rfl
   have hsh : (cfgOf P).sh = P.R.sh := rfl
   refine NoSp.of_all ?_
+  -- The count's initial store writes no `esp`, whatever the count.
+  have initCnt_nosp : (Code.block (cfgOf P).initCnt : Prog isa).allInstrs (fun i => !Taint.clobbers i .esp) = true :=
+    rfl
   cases hW : P.R.wide
   · have hR := reduceKV_nosp (cfgOf P)
     obtain ⟨hn, hlen, -, -⟩ := P.R.sizesA hW
     simp only [Cfg.body, Cfg.tryOne, Cfg.cand, Cfg.rekeyFull, Cfg.rekey, Cfg.hmacV, Cfg.hmac, Code.allInstrs.eq_2,
       Code.allInstrs.eq_3, Code.allInstrs.eq_4, Code.allInstrs.eq_5, Code.allInstrs.eq_6, hwd, hW,
-      Bool.false_eq_true, ite_false, cfgOf_F, coreC_eq, hI, hU, hF, hK, hR, Cfg.initCnt, tries_eq, Bool.and_true,
+      Bool.false_eq_true, ite_false, cfgOf_F, coreC_eq, hI, hU, hF, hK, hR, initCnt_nosp, Bool.and_true,
       Bool.true_and]
     simp only [hl, hlen]
     rcases P.hDB with ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ <;> rcases hn with h'' | h'' | h'' <;>
@@ -410,7 +417,7 @@ theorem body_nosp (P : RfcHash) : NoSp (cfgOf P).body := by
     have h7 := sh7 hW
     simp only [Cfg.body, Cfg.tryOne, Cfg.cand, Cfg.rekeyFull, Cfg.rekey, Cfg.hmacV, Cfg.hmac, Code.allInstrs.eq_2,
       Code.allInstrs.eq_3, Code.allInstrs.eq_4, Code.allInstrs.eq_5, Code.allInstrs.eq_6, hwd, hW, ite_true,
-      cfgOf_F, coreC_eq, hI, hU, hF, hK, Cfg.initCnt, tries_eq, Bool.and_true, Cfg.coreDigest, Cfg.keepV,
+      cfgOf_F, coreC_eq, hI, hU, hF, hK, initCnt_nosp, Bool.and_true, Cfg.coreDigest, Cfg.keepV,
       Cfg.candTop, Cfg.conv]
     simp only [hw, hl, hsh, hn, hlen, h7, hD, hB]
     decide +kernel

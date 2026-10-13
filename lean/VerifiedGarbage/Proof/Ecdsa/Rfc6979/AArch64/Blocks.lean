@@ -142,7 +142,7 @@ abbrev cnt {dn : Nat} {E : Impl.Ecdsa.AArch64.Cfg} (L : Lay dn E) (m : Mem) : Bi
 
 theorem initCnt_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) :
     WP isa (.block (cfgOf P).initCnt) t fun t' => Ctx L g m₀ t' ∧
-      Frame [⟨L.B + BitVec.ofNat 64 192, 8⟩] t.mem t'.mem ∧ cnt L t'.mem = BitVec.ofNat 64 8 := by
+      Frame [⟨L.B + BitVec.ofNat 64 192, 8⟩] t.mem t'.mem ∧ cnt L t'.mem = BitVec.ofNat 64 P.I.tries := by
   have w := hc.inFrW (d := 192) (n := 8) (by omega) (by omega)
   refine Ctx.of_keep hL hc ?_ (by rfl) fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact safe_low L (by omega)
@@ -156,7 +156,8 @@ theorem initCnt_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) :
   refine ⟨by atriv, by atriv, (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _),
     ?_⟩
   simp only [cnt, Mem.readW_writeW_self64]
-  decide
+  rw [BitVec.shiftLeft_zero]
+  exact BitVec.setWidth_ofNat_of_le_of_lt (by omega) P.tries_lt
 
 /-! ## `core`'s arguments -/
 
