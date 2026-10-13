@@ -419,19 +419,19 @@ def openStitched (x : ChaCha20.X86_64.Callee) (b : Poly1305.X86_64.Blocks) : Pro
     (.block (compare ++ restore)))))))
 
 /-- `open` for fewer than `smallLim` bytes of data (`len`, in `r9`) with the
-AVX2 code, `openStitched` with `vg_chacha20_xor_avx2` and
-`vg_poly1305_blocks_avx2`, which runs no 512-bit instruction, and for more
-with `big`: as `sealSmall`. -/
-def openSmall (big : Prog isa) : Prog isa :=
+AVX2 code, `openStitched` with the implementation `small` of
+`vg_chacha20_xor` and `vg_poly1305_blocks_avx2`, which runs no 512-bit
+instruction, and for more with `big`: as `sealSmall`. -/
+def openSmall (small : ChaCha20.X86_64.Callee) (big : Prog isa) : Prog isa :=
   .seq (.block [.alu .cmp .r9 (.imm (BitVec.ofNat 32 (smallLim)))])
-    (.ite .b (openStitched ChaCha20.X86_64.Callee.avx2 .avx2) big)
+    (.ite .b (openStitched small .avx2) big)
 
 /-- The `open` an instance uses, as `sealFor`: with the AVX2 implementation of
 `vg_poly1305_blocks`, `openStitched`; with the AVX-512 one (without IFMA),
 `openSmall` of `open`; otherwise `open`. -/
 def openFor (x : ChaCha20.X86_64.Callee) : Poly1305.X86_64.Blocks → Prog isa
   | .avx2 => openStitched x .avx2
-  | .avx512 => openSmall («open» x .avx512)
+  | .avx512 => openSmall x.small («open» x .avx512)
   | b => «open» x b
 
 end VG.Impl.ChaCha20Poly1305.X86_64.Stitch

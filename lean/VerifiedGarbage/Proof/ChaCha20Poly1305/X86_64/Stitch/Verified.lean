@@ -3091,14 +3091,15 @@ theorem FlagsOnly.pubO {s₁ s₂ t₁ t₂ : State} (h₁ : FlagsOnly s₁ t₁
   simp only [pubX86_64, h₁.gpr, h₂.gpr, h₁.arg, h₂.arg]
   exact hp
 
-theorem openSmall_ok {big : Prog isa}
+theorem openSmall_ok (u : Proof.ChaCha20.X86_64.XorImpl) (hu : u.poly = .avx2) {big : Prog isa}
     (hb : ∀ s, openX86_64.pre s → ∃ t s', Exec isa big s t s' ∧ abiPreserved s s' ∧ openX86_64.post s s')
     (s : State) (hs : openX86_64.pre s) :
-    ∃ t s', Exec isa (openSmall big) s t s' ∧ abiPreserved s s' ∧ openX86_64.post s s' := by
-  have hw : WP isa (openSmall big) s fun z => abiPreserved s z ∧ openX86_64.post s z := by
+    ∃ t s', Exec isa (openSmall u.callee big) s t s' ∧ abiPreserved s s' ∧ openX86_64.post s s' := by
+  have hw : WP isa (openSmall u.callee big) s fun z => abiPreserved s z ∧ openX86_64.post s z := by
     refine WP.seq (WP.mono (cmpSmall_ok s) fun e ⟨he, hf⟩ => ?_)
     refine WP.ite _ he (fun _ => ?_) (fun _ => ?_)
-    · obtain ⟨t, s', ex, ha, hp⟩ := openS_ok Proof.ChaCha20.X86_64.XorImpl.avx2 e (hf.preO hs)
+    · obtain ⟨t, s', ex, ha, hp⟩ := openS_ok u e (hf.preO hs)
+      rw [hu] at ex
       exact ⟨t, s', ex, hf.abi ha, hf.postO hp⟩
     · obtain ⟨t, s', ex, ha, hp⟩ := hb e (hf.preO hs)
       exact ⟨t, s', ex, hf.abi ha, hf.postO hp⟩
@@ -3116,8 +3117,8 @@ theorem rel_cmpedO {c : Prog isa} (hc : ConstantTime isa openX86_64.pre openX86_
   obtain ⟨σ₁, σ₂, ⟨p₁, p₂, hp⟩, ⟨-, f₁⟩, ⟨-, f₂⟩⟩ := hR a b hr
   exact ⟨hc _ _ _ _ _ _ (f₁.preO p₁) (f₂.preO p₂) (FlagsOnly.pubO f₁ f₂ hp) e₁ e₂, trivial⟩
 
-theorem openSmall_ct {big : Prog isa} (hb : ConstantTime isa openX86_64.pre openX86_64.pub big) :
-    ConstantTime isa openX86_64.pre openX86_64.pub (openSmall big) := by
+theorem openSmall_ct (u : Proof.ChaCha20.X86_64.XorImpl) (hu : u.poly = .avx2) {big : Prog isa} (hb : ConstantTime isa openX86_64.pre openX86_64.pub big) :
+    ConstantTime isa openX86_64.pre openX86_64.pub (openSmall u.callee big) := by
   refine RelCT.constantTime (Q := fun _ _ => True) ?_
   have hblk : RelCT isa PPO (.block cmpSmall) fun _ _ => True := by
     obtain ⟨_, hc⟩ : ∃ hc, (taint.check (Taint.ofRegs [.r9]) (.block cmpSmall) hc).isSome = true :=
@@ -3127,24 +3128,28 @@ theorem openSmall_ct {big : Prog isa} (hb : ConstantTime isa openX86_64.pre open
   refine RelCT.seq (RelCT.wpDep (F := Cmped) hblk fun s₁ s₂ _ => ⟨cmpSmall_ok s₁, cmpSmall_ok s₂⟩) ?_
   refine RelCT.ite (fun a b ⟨_, σ₁, σ₂, ⟨_, _, hp⟩, ⟨e₁, _⟩, ⟨e₂, _⟩⟩ => ?_) ?_ ?_
   · rw [e₁, e₂, show σ₁.gpr .r9 = σ₂.gpr .r9 from hp.2.2.2.2.2.1]
-  · exact rel_cmpedO (openS_ct Proof.ChaCha20.X86_64.XorImpl.avx2)
+  · have hs := openS_ct u
+    rw [hu] at hs
+    exact rel_cmpedO hs
       fun a b ⟨⟨_, σ₁, σ₂, hp, h₁, h₂⟩, _⟩ => ⟨σ₁, σ₂, hp, h₁, h₂⟩
   · exact rel_cmpedO hb fun a b ⟨⟨_, σ₁, σ₂, hp, h₁, h₂⟩, _⟩ => ⟨σ₁, σ₂, hp, h₁, h₂⟩
 
-theorem openSmall_verified {big : Prog isa}
+theorem openSmall_verified (u : Proof.ChaCha20.X86_64.XorImpl) (hu : u.poly = .avx2) {big : Prog isa}
     (hb : ∀ s, openX86_64.pre s → ∃ t s', Exec isa big s t s' ∧ abiPreserved s s' ∧ openX86_64.post s s')
     (hc : ConstantTime isa openX86_64.pre openX86_64.pub big) :
-    Verified X86_64.target (openSmall big) (openScratchContract X86_64.abi 212 24) :=
-  Verified.of_correct (openSmall_ok hb) (openSmall_ct hc) openS_implies
+    Verified X86_64.target (openSmall u.callee big) (openScratchContract X86_64.abi 212 24) :=
+  Verified.of_correct (openSmall_ok u hu hb) (openSmall_ct u hu hc) openS_implies
 
-theorem openSmall_spSafe {big : Prog isa} (hb : big.all (fun i => !X86_64.isa.writesSp i) = true) :
-    (openSmall big).all (fun i => !X86_64.isa.writesSp i) = true := by
-  have h := openS_spSafe Proof.ChaCha20.X86_64.XorImpl.avx2
+theorem openSmall_spSafe (u : Proof.ChaCha20.X86_64.XorImpl) (hu : u.poly = .avx2) {big : Prog isa} (hb : big.all (fun i => !X86_64.isa.writesSp i) = true) :
+    (openSmall u.callee big).all (fun i => !X86_64.isa.writesSp i) = true := by
+  have h := openS_spSafe u
+  rw [hu] at h
   simp only [openSmall, Code.all, hb, Bool.and_true]
   exact Bool.and_eq_true_iff.mpr ⟨by decide, h⟩
 
-theorem openSmall_xdepth {big : Prog isa} (hb : big.x86_64Depth ≤ 24) : (openSmall big).x86_64Depth ≤ 24 := by
-  have h := openS_xdepth Proof.ChaCha20.X86_64.XorImpl.avx2
+theorem openSmall_xdepth (u : Proof.ChaCha20.X86_64.XorImpl) (hu : u.poly = .avx2) {big : Prog isa} (hb : big.x86_64Depth ≤ 24) : (openSmall u.callee big).x86_64Depth ≤ 24 := by
+  have h := openS_xdepth u
+  rw [hu] at h
   simp only [openSmall, Code.x86_64Depth, Nat.max_le]
   exact ⟨by decide, h, hb⟩
 
@@ -3157,7 +3162,9 @@ theorem openFor_spSafe (v : Proof.ChaCha20.X86_64.XorImpl) :
   generalize v.poly = b at h₁ h₂ ⊢
   cases b with
   | avx2 => exact h₂
-  | avx512 => exact openSmall_spSafe h₁
+  | avx512 =>
+    have := openSmall_spSafe v.small v.small_poly h₁
+    rwa [Proof.ChaCha20.X86_64.XorImpl.small_callee] at this
   | _ => exact h₁
 
 theorem openFor_framed (v : Proof.ChaCha20.X86_64.XorImpl) :
@@ -3174,10 +3181,13 @@ theorem openFor_framed (v : Proof.ChaCha20.X86_64.XorImpl) :
   cases b with
   | avx2 => exact h₂
   | avx512 =>
+    have hv := openSmall_verified v.small v.small_poly ho hc
+    have hs' := openSmall_spSafe v.small v.small_poly hs
+    have hd' := openSmall_xdepth v.small v.small_poly hd
+    rw [Proof.ChaCha20.X86_64.XorImpl.small_callee] at hv hs' hd'
     exact X86_64.Verified.stackArgScratchWipedX (sig := Spec.ChaCha20Poly1305.openSig) (nm := "work") (e := .u64)
       (n := 212) (post := Spec.ChaCha20Poly1305.openPost X86_64.abi.ptrBits) (wa := true) (stack := 24)
-      (bytes := 1720) (k := 42) (openSmall_verified ho hc) (by decide) (by decide) (by decide)
-      (openSmall_spSafe hs) (openSmall_xdepth hd) (by decide) (pre_local _ _) (openPost_local _) (openPost_out _)
+      (bytes := 1720) (k := 42) hv (by decide) (by decide) (by decide) hs' hd' (by decide) (pre_local _ _) (openPost_local _) (openPost_out _)
       openFrameSat_pre
   | _ => exact h₁
 
