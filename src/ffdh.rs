@@ -1,10 +1,12 @@
 //! Finite-field Diffie–Hellman, for the component API used by cryptography.
 //!
+//! Public subgroup checks use variable-time exponentiation of the public order.
 //! Secret exponentiation follows a fixed schedule over the public encoding
 //! length supplied at import, or the public sampling bound for generated keys.
 //! Every multiplication calls the verified Montgomery primitive
-//! (`VG.Spec.Rsa.Mont.mulContract`); every selection calls the verified
-//! `VG.Spec.Ffdh.chooseContract`. Rust composes these primitives, validates
+//! (`VG.Spec.Rsa.Mont.mulContract`); secret table selection uses the verified
+//! `VG.Spec.Ffdh.chooseContract`. Public exponents may directly index a table.
+//! Rust composes these primitives, validates
 //! domains and keys, samples randomness and encodes the result. These Rust
 //! operations, as elsewhere in the crate, are outside the Lean proof boundary.
 //! Imported parameters receive structural and algebraic checks; callers must
@@ -97,7 +99,7 @@ impl Parameters {
                 || q[q.len() - 1] & 1 == 0
                 || value_cmp(q, &p1).is_ge()
                 || !arithmetic::divides(q, &p1)
-                || value_cmp(&mont.power(g, q), &[1]).is_ne())
+                || value_cmp(&mont.power_public(g, q), &[1]).is_ne())
         {
             return Err(Error::InvalidParameters);
         }
@@ -159,7 +161,7 @@ impl Parameters {
             && self
                 .q
                 .as_ref()
-                .is_none_or(|q| value_cmp(&self.mont.power(y, q), &[1]).is_eq())
+                .is_none_or(|q| value_cmp(&self.mont.power_public(y, q), &[1]).is_eq())
     }
 }
 
