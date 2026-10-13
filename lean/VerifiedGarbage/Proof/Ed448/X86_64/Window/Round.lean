@@ -1,14 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.X86_64.Window.Table
-public import VerifiedGarbage.Proof.Ed448.X86_64.Window.SelectBase
-public import VerifiedGarbage.Proof.Ed448.X86_64.Window.SelectKey
+public import VerifiedGarbage.Proof.Ed448.X86_64.Window.SignedSelect
+
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 
-/-! One joint window: four doublings followed by two selected additions. -/
+/-! One joint window: five doublings followed by two selected additions. -/
 
 @[expose] public section
 
@@ -18,37 +18,35 @@ open VG VG.X86_64 VG.Impl.Ed448 VG.Impl.Ed448.X86_64 VG.Impl.Ed448.X86_64.Window
 open VG.Proof.Ed448 VG.Proof.Ed448.X86_64
 open VG.Proof.X448.X86_64 (Scr E Keep FieldOk Outside)
 open VG.Impl.X448.X86_64 (BITS)
-open VG.Proof.Ed448.Window (digit)
+open VG.Proof.Ed448.SignedWindow (magnitude negative signedPoint signedEntry)
 
 def roundPt (p q : Spec.Ed448.Point) (S t : Nat) :=
-  Spec.Ed448.pointAdd (Spec.Ed448.pointAdd (dbl4Pt p)
-    (Proof.X448.basePt (Impl.Ed448.Window.entry (digit S t)))) q
+  Spec.Ed448.pointAdd (Spec.Ed448.pointAdd (dbl5Pt p)
+    (Proof.X448.basePt (signedEntry S t))) q
 
 theorem round_ok {F : Impl.X448.X86_64.Field} (hf : FieldOk F) {P : Point64.Ops} (hP : Point64.PointOk P)
     {s : State} {base : Addr} (hs : Scr s base) {o S K t : Nat}
-    (ho : 2048 ≤ o) (hbnd : o + 456 ≤ 8192) (ht : t + 4 ≤ 456)
+    (ho : 2048 ≤ o) (hbnd : o + 460 ≤ 8192) (ht : t + 5 ≤ 460)
     (hb : s.gpr .rbx = BitVec.ofNat 64 t) (bs : Bits base BITS S s) (bk : Bits base o K s)
     (hd : E s.mem base 11 = Spec.Ed448.d) :
     WP isa (Window.round F P o) s fun u => Keep base s u ∧ u.zf = some (decide (t = 0)) ∧
       E u.mem base 11 = Spec.Ed448.d ∧ pt (E u.mem base) 0 1 2 =
-        roundPt (pt (E s.mem base) 0 1 2) (tablePoint s.mem base (digit K t)) S t := by
+        roundPt (pt (E s.mem base) 0 1 2) (signedPoint (negative K t) (tablePoint s.mem base (magnitude K t))) S t := by
   rw [Window.round]
-  refine WP.seq (WP.mono (dbl4_ok hP hs) fun s1 ⟨k1, p1, f1⟩ => ?_)
-  refine WP.seq (WP.mono (selectBase_ok (k1.scr hs) ht (by rw [k1.gpr _ (by decide), hb])
+  refine WP.seq (WP.mono (dbl5_ok hP hs) fun s1 ⟨k1, p1, f1⟩ => ?_)
+  refine WP.seq (WP.mono (selectSignedBase_ok (k1.scr hs) ht (by rw [k1.gpr _ (by decide), hb])
     (bs.keep (by decide) (by decide) k1)) fun s2 ⟨k2, p2, f2⟩ => ?_)
   have d2 : E s2.mem base 11 = Spec.Ed448.d := by
     rw [f2 11 (by decide) (by decide) (by decide) (by decide), f1 11 (by decide) (by decide), hd]
-  have q2 : pt (E s2.mem base) 0 1 2 = dbl4Pt (pt (E s.mem base) 0 1 2) := by
+  have q2 : pt (E s2.mem base) 0 1 2 = dbl5Pt (pt (E s.mem base) 0 1 2) := by
     rw [pt_congr (f2 0 (by decide) (by decide) (by decide) (by decide))
       (f2 1 (by decide) (by decide) (by decide) (by decide))
       (f2 2 (by decide) (by decide) (by decide) (by decide)), p1]
   refine WP.seq (WP.mono (hP.add (k2.scr (k1.scr hs)) d2) fun s3 ⟨k3, e3⟩ => ?_)
-  apply WP.seq
-  rw [WP.block_append_iff]
-  refine WP.mono (accept_ok (k3.scr (k2.scr (k1.scr hs)))) fun s4 ⟨k4, p4, f4⟩ => ?_
+  refine WP.seq (WP.mono (accept_ok (k3.scr (k2.scr (k1.scr hs)))) fun s4 ⟨k4, p4, f4⟩ => ?_)
   have k04 := ((k1.trans k2).trans k3).trans k4
-  have q4 : pt (E s4.mem base) 0 1 2 = Spec.Ed448.pointAdd (dbl4Pt (pt (E s.mem base) 0 1 2))
-      (Proof.X448.basePt (Impl.Ed448.Window.entry (digit S t))) := by
+  have q4 : pt (E s4.mem base) 0 1 2 = Spec.Ed448.pointAdd (dbl5Pt (pt (E s.mem base) 0 1 2))
+      (Proof.X448.basePt (signedEntry S t)) := by
     have hx := congrArg Prod.fst p2
     have hy := congrArg Prod.snd p2
     dsimp only at hx hy
@@ -56,15 +54,15 @@ theorem round_ok {F : Impl.X448.X86_64.Field} (hf : FieldOk F) {P : Point64.Ops}
     rfl
   have d4 : E s4.mem base 11 = Spec.Ed448.d := by
     rw [f4 11 (by decide), e3, Point64.addAffineOps_keep _ _ (Or.inr (Or.inl (by decide))), d2]
-  refine WP.mono (selectKey_ok (k04.scr hs) ho hbnd ht (by rw [k04.gpr _ (by decide), hb])
-    (bk.keep ho hbnd k04)) fun s5 ⟨k5, p5, f5⟩ => ?_
+  refine WP.seq (WP.mono (selectSignedKey_ok (k04.scr hs) ho hbnd ht (by rw [k04.gpr _ (by decide), hb])
+    (bk.keep ho hbnd k04)) fun s5 ⟨k5, p5, f5⟩ => ?_)
   have d5 : E s5.mem base 11 = Spec.Ed448.d := by
     rw [f5 11 (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), d4]
   have q5 : pt (E s5.mem base) 0 1 2 = pt (E s4.mem base) 0 1 2 :=
     pt_congr (f5 0 (by decide) (by decide) (by decide) (by decide) (by decide) (by decide))
       (f5 1 (by decide) (by decide) (by decide) (by decide) (by decide) (by decide))
       (f5 2 (by decide) (by decide) (by decide) (by decide) (by decide) (by decide))
-  refine WP.seq (WP.mono (add_ok hf (k5.scr (k04.scr hs)) d5) fun s6 ⟨k6, e6⟩ => ?_)
+  refine WP.seq (WP.mono (add_ok hf hP (k5.scr (k04.scr hs)) d5) fun s6 ⟨k6, e6⟩ => ?_)
   rw [WP.block_append_iff]
   refine WP.mono (accept_ok (k6.scr (k5.scr (k04.scr hs)))) fun s7 ⟨k7, p7, f7⟩ => ?_
   have k07 := ((k04.trans k5).trans k6).trans k7
@@ -72,17 +70,17 @@ theorem round_ok {F : Impl.X448.X86_64.Field} (hf : FieldOk F) {P : Point64.Ops}
     fun u ⟨zu, gu, mu, ru, wu⟩ => ?_
   refine ⟨⟨fun r hr => (gu r).trans (k07.gpr r hr), ru.trans k07.rd, wu.trans k07.wr, ?_⟩, zu, ?_, ?_⟩
   · rw [mu]; exact k07.mem
-  · rw [mu, f7 11 (by decide), e6, addOps_keep _ _ (Or.inr (Or.inl (by decide))), d5]
-  · rw [mu, p7, e6, addOps_eval, d5, addWith_d, q5, q4, p5,
-      tablePoint_keep k04 (digit K t) (Proof.Ed448.Window.digit_lt K t)]
+  · rw [mu, f7 11 (by decide), e6, addEnv_d, d5]
+  · rw [mu, p7, e6, addEnv_eval, d5, addWith_d, q5, q4, p5,
+      tablePoint_keep k04 (magnitude K t) (SignedWindow.magnitude_lt K t)]
     rfl
 
-theorem dec4_ok (s : State) {t : Nat} (hb : s.gpr .rbx = BitVec.ofNat 64 (t + 4)) :
-    WP isa (.block ([.alu .sub .rbx (.imm 4)] : List Instr)) s fun u =>
+theorem dec5_ok (s : State) {t : Nat} (hb : s.gpr .rbx = BitVec.ofNat 64 (t + 5)) :
+    WP isa (.block ([.alu .sub .rbx (.imm 5)] : List Instr)) s fun u =>
       u.gpr .rbx = BitVec.ofNat 64 t ∧ (∀ r, r ≠ .rbx → u.gpr r = s.gpr r) ∧ u.mem = s.mem ∧
       u.rd = s.rd ∧ u.wr = s.wr := by
-  have hb' : s.gpr .rbx - (4 : BitVec 32).signExtend 64 = BitVec.ofNat 64 t := by
-    have e1 : (4 : BitVec 32).signExtend 64 = BitVec.ofNat 64 4 := by decide
+  have hb' : s.gpr .rbx - (5 : BitVec 32).signExtend 64 = BitVec.ofNat 64 t := by
+    have e1 : (5 : BitVec 32).signExtend 64 = BitVec.ofNat 64 5 := by decide
     rw [hb, e1, BitVec.ofNat_add, BitVec.add_sub_cancel]
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execAlu, hb',

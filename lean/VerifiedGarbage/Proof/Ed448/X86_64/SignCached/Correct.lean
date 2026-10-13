@@ -24,6 +24,8 @@ contract and the ABI (`signCached_wp`), for any proof of
 
 namespace VG.Proof.Ed448.X86_64.SignCached
 
+variable {v : VG.Impl.Ed448.X86_64.FieldVariant}
+
 open VG VG.X86_64 VG.Impl.Ed448.X86_64.SignCached
 open VG.Impl.Ed448.X86_64.Verify (stk)
 open VG.Proof.Ed448.X86_64.Verify (add_add ea_stk x0 bytesAt_length bytesAt_congr)
@@ -85,9 +87,9 @@ theorem hash_eq' (L : Lay) (c X P Y : List Byte) (hc : c.length = L.ctxLen.toNat
     Spec.Sha3.shake256 (hdrBytes L ++ c ++ X ++ P ++ Y) 114 = Spec.Ed448.hash c (X ++ P ++ Y) := by
   simp only [Spec.Ed448.hash, Spec.Ed448.dom4, hdrBytes, hc, List.append_assoc]
 
-theorem body_ok (hb : BaseOk) (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t)
+theorem body_ok (hb : BaseOk v) (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t)
     (hpk : Spec.Ed448.bytesAt m₀ L.pk 57 = Spec.Ed448.publicKey (Spec.Ed448.bytesAt m₀ L.seed 57)) :
-    WP isa body t fun t' => Ctx L g mx m₀ t' ∧
+    WP isa (bodyFor v) t fun t' => Ctx L g mx m₀ t' ∧
       Spec.Ed448.bytesAt t'.mem L.out 114 = Spec.Ed448.sign (bytesAt m₀ L.seed 57)
         (bytesAt m₀ L.ctx L.ctxLen.toNat) (bytesAt m₀ L.msg L.len.toNat) := by
   refine WP.seq (WP.mono (hdr_ok hL hc) fun t1 ⟨hc1, hh⟩ => ?_)
@@ -255,12 +257,12 @@ theorem cs_tmp : ∀ r ∈ calleeSaved, r ∉ [Reg.r10, .r11, .rax] := by decide
 
 /-! ## The function -/
 
-theorem signCached_wp (hb : BaseOk) {s : State} (hpre : (Spec.Ed448.signCachedContract X86_64.abi 464).pre s) :
-    WP isa signCached s fun s' =>
+theorem signCached_wp (hb : BaseOk v) {s : State} (hpre : (Spec.Ed448.signCachedContract X86_64.abi 464).pre s) :
+    WP isa (signCachedFor v) s fun s' =>
       abiPreserved s s' ∧ (Spec.Ed448.signCachedContract X86_64.abi 464).post s s' := by
   have h := sPre_of hpre
   have hL := slay_ok h
-  unfold signCached
+  unfold signCachedFor
   refine WP.seq (WP.mono (signMov_ok h) fun s2 ⟨⟨h10, h11, hm2, hx2⟩, k2⟩ => ?_)
   have hg2 : ∀ r, r ∉ [Reg.r10, .r11, .rax] → s2.gpr r = s.gpr r := fun r hr => k2.gpr hr
   have hsp2 : s2.gpr .rsp = (slay s).B + BitVec.ofNat 64 464 := by rw [hg2 _ (by decide), slay_B]

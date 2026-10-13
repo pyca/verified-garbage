@@ -98,6 +98,9 @@ def adx : Field where
   sqr := sqrX
   a24 o a := mulSmall o a a24
 
-def x448Adx : Prog isa := x448With adx
+def pow223AdxFn : Prog isa := pow223FnWith adx
+
+def x448Adx : Prog isa := x448Of adx (ladder adx)
+  (invertCallWith adx (Spec.X448.Field64.pow223Api.name ++ "_adx"))
 
 end VG.Impl.X448.X86_64

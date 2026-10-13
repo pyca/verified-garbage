@@ -25,6 +25,8 @@ and the clearing address only the stack; the hashes leak only the layout
 
 namespace VG.Proof.Ed448.X86_64.SignCached
 
+variable {v : VG.Impl.Ed448.X86_64.FieldVariant}
+
 open VG VG.X86_64 VG.Impl.Ed448.X86_64.SignCached
 open VG.Impl.Ed448.X86_64.Verify (stk Arg callA hdr fH fScr)
 open VG.Proof.Ed448.X86_64.Verify (Moved SpOnly spOnly_nomem block_rsp_tr ghost_step Ghost argsIn3 argsIn5 gpr_ce
@@ -68,8 +70,8 @@ theorem red_tr {Φ : Lay → Mem → State → Prop} {d : Nat} (h₂ : d + 57 �
       rcases hr with rfl | rfl
       exacts [⟨L.FR, by simp, Verify.within_off _ h₂⟩, ⟨L.SCR, by simp [hL.wr], Verify.within_self _⟩]
 
-theorem base_tr (hb : BaseOk) (hct : BaseCT) {Φ : Lay → Mem → State → Prop} :
-    RelCT isa (Two I Φ) (callA "vg_ed448_scalar_base" Impl.Ed448.X86_64.scalarBase [.slot fOut, .sp fR, .slot fScr])
+theorem base_tr (hb : BaseOk v) (hct : BaseCT v) {Φ : Lay → Mem → State → Prop} :
+    RelCT isa (Two I Φ) (callA ("vg_ed448_scalar_base" ++ v.suffix) (Impl.Ed448.X86_64.scalarBaseFor v) [.slot fOut, .sp fR, .slot fScr])
       fun _ _ => True := by
   have regs : ∀ (L : Lay) g mx m₀ (t t1 : State), Ctx L g mx m₀ t → Moved [.slot fOut, .sp fR, .slot fScr] t t1 →
       t1.gpr .rdi = L.out ∧ t1.gpr .rsi = L.R ∧ t1.gpr .rdx = L.scr ∧ t1.gpr .rsp = L.SP :=
@@ -177,10 +179,10 @@ theorem two_true {c : Prog isa} (hct : RelCT isa (T I) c fun _ _ => True)
   two_wp hct fun L g mx m₀ t hL hc _ => WP.mono (hw L g mx m₀ t hL hc) fun _ h => ⟨h, trivial⟩
 
 /-- The frame's body, after the header. -/
-theorem rest_tr (hb : BaseOk) (hct : BaseCT) :
+theorem rest_tr (hb : BaseOk v) (hct : BaseCT v) :
     RelCT isa (T I) (.seq seedHash <| .seq (.block prune) <| .seq nonceHash <|
       .seq (callA "vg_ed448_scalar_reduce" Impl.Ed448.X86_64.scalarReduce [.sp fR, .sp fH, .slot fScr]) <|
-      .seq (callA "vg_ed448_scalar_base" Impl.Ed448.X86_64.scalarBase [.slot fOut, .sp fR, .slot fScr]) <|
+      .seq (callA ("vg_ed448_scalar_base" ++ v.suffix) (Impl.Ed448.X86_64.scalarBaseFor v) [.slot fOut, .sp fR, .slot fScr]) <|
       .seq chalHash <|
       .seq (callA "vg_ed448_scalar_reduce" Impl.Ed448.X86_64.scalarReduce [.sp fK, .sp fH, .slot fScr]) <|
       .seq (callA "vg_ed448_scalar_mul_add" Impl.Ed448.X86_64.scalarMulAdd
@@ -238,9 +240,9 @@ abbrev SMov (x x2 : State) : Prop :=
   (x2.gpr .r10 = stackArg x 0 ∧ x2.gpr .r11 = stackArg x 1 ∧ x2.mem = x.mem ∧ x2.mxcsr = x.mxcsr) ∧
     Keep [.r10, .r11, .rax] x x2
 
-theorem signCached_ct (hb : BaseOk) (hct : BaseCT) :
+theorem signCached_ct (hb : BaseOk v) (hct : BaseCT v) :
     ConstantTime isa (Spec.Ed448.signCachedContract X86_64.abi 464).pre
-      (Spec.Ed448.signCachedContract X86_64.abi 464).pub signCached := by
+      (Spec.Ed448.signCachedContract X86_64.abi 464).pub (signCachedFor v) := by
   refine RelCT.constantTime (Q := fun _ _ => True) ?_
   have e0 : (fun s₁ s₂ => (Spec.Ed448.signCachedContract X86_64.abi 464).pre s₁ ∧
       (Spec.Ed448.signCachedContract X86_64.abi 464).pre s₂ ∧
@@ -248,7 +250,7 @@ theorem signCached_ct (hb : BaseOk) (hct : BaseCT) :
     funext a b; apply propext
     exact ⟨fun h => ⟨a, b, h, rfl, rfl⟩, fun ⟨_, _, h, e₁, e₂⟩ => e₁ ▸ e₂ ▸ h⟩
   rw [e0]
-  unfold signCached
+  unfold signCachedFor
   have hmov := ghost_step (P := SP2) (A := fun x a => a = x) (B := SMov)
     (c := .block [.mov .r10 (.mem (stk 8)), .mov .r11 (.mem (stk 16)), .mov32 .rax (.imm 0)])
     (block_rsp_tr (fun i hi => by

@@ -1932,7 +1932,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅</td>
+<td>✅ BMI2, ADX</td>
 
 <td>✅ SHA extensions; keys and signatures by a fixed-base comb, verification by a comb and 4-bit windows</td>
 

@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.X86_64.Window.Loop
+public import VerifiedGarbage.Proof.Ed448.X86_64.Window.First
 public import VerifiedGarbage.Proof.X448.X86_64.Inv
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
@@ -19,33 +20,22 @@ open VG.Proof.Ed448 VG.Proof.Ed448.X86_64
 open VG.Proof.X448.X86_64 (Scr E Keep FieldOk Outside off clob)
 open VG.Impl.X448.X86_64 (BITS)
 
-private theorem init_ok {s : State} {base : Addr} (hs : Scr s base) :
-    WP isa (.block Window.init) s fun u =>
-      Scr u base ∧ u.gpr .rbx = BitVec.ofNat 64 456 ∧
-      (∀ r, r ∉ .rbx :: clob → u.gpr r = s.gpr r) ∧ u.rd = s.rd ∧ u.wr = s.wr ∧
-      Outside base 64 1584 s.mem u.mem ∧
-      pt (E u.mem base) 0 1 2 = Spec.Ed448.identity ∧ E u.mem base 11 = E s.mem base 11 := by
-  rw [Window.init, List.append_assoc, List.append_assoc, WP.block_append_iff]
-  refine WP.mono (constE_ok hs 0 0 c0) fun s1 ⟨k1, e1⟩ => ?_
-  rw [WP.block_append_iff]
-  refine WP.mono (constE_ok (k1.scr hs) 1 1 c1) fun s2 ⟨k2, e2⟩ => ?_
-  rw [WP.block_append_iff]
-  refine WP.mono (constE_ok (k2.scr (k1.scr hs)) 2 1 c1) fun s3 ⟨k3, e3⟩ => ?_
-  refine WP.mono (VG.Proof.X448.X86_64.setRbx_ok s3 456 (by decide))
-    fun u ⟨bu, gu, mu, ru, wu⟩ => ?_
-  have k := (k1.trans k2).trans k3
-  refine ⟨⟨(gu _ (by decide)).trans (k.scr hs).rdi, wu ▸ (k.scr hs).wr, hs.nowrap⟩,
-    bu, ?_, ru.trans k.rd, wu.trans k.wr, ?_, ?_, ?_⟩
-  · intro r hr
-    simp only [List.mem_cons, not_or] at hr
-    exact (gu r hr.1).trans (k.gpr r hr.2)
-  · rw [mu]; exact k.mem
-  · rw [mu, e3, e2, e1]; rfl
-  · rw [mu, e3, e2, e1]; rfl
+private theorem first_rep {A : Spec.Ed448.Point} {a : EdwardsLaw.EPoint dZ} (hA : Rep A a)
+    {S K : Nat} (hS : S < 2 ^ 456) (hK : K < 2 ^ 456) :
+    Rep (Spec.Ed448.pointAdd (Proof.X448.basePt (SignedWindow.signedEntry S 455))
+      (SignedWindow.signedPoint (SignedWindow.negative K 455)
+        (Proof.Ed448.Window.multiples A (SignedWindow.magnitude K 455))))
+      ((SignedWindow.high S 91 : Int) • baseAff + (SignedWindow.high K 91 : Int) • a) := by
+  rw [SignedWindow.high_step S 91, SignedWindow.high_step K 91,
+    SignedWindow.high_end hS, SignedWindow.high_end hK, Int.natCast_zero, mul_zero, zero_add]
+  simp only [zero_add]
+  exact pointAdd_rep (SignedWindow.signedEntry_rep S 455)
+    (SignedWindow.signedPoint_rep
+      (Proof.Ed448.Window.multiples_rep hA (SignedWindow.magnitude K 455)) (SignedWindow.negative K 455))
 
 theorem joint_ok {F : Impl.X448.X86_64.Field} (hf : FieldOk F)
     {P : Point64.Ops} (hP : Point64.PointOk P) {s : State} {base : Addr} {S K o : Nat}
-    (hs : Scr s base) (ho : 2048 ≤ o) (hbnd : o + 456 ≤ TAB)
+    (hs : Scr s base) (ho : 2048 ≤ o) (hbnd : o + 460 ≤ TAB)
     (bs : Bits base BITS S s) (bk : Bits base o K s)
     (hS : S < 2 ^ 456) (hK : K < 2 ^ 456)
     (hd : E s.mem base 11 = Spec.Ed448.d) (hz : E s.mem base 10 = 1)
@@ -57,30 +47,38 @@ theorem joint_ok {F : Impl.X448.X86_64.Field} (hf : FieldOk F)
         Rep (pt (E u.mem base) 0 1 2) (S • baseAff + K • a) := by
   rw [joint]
   refine WP.seq (WP.mono (table_ok hP hs hd hz hp) fun s1 ⟨k1, d1, t1⟩ => ?_)
-  refine WP.seq (WP.mono (init_ok (k1.scr hs)) fun s2 ⟨hs2, b2, g2, r2, w2, m2, p2, d2⟩ => ?_)
-  have bits2 {o k : Nat} (ho : 2048 ≤ o) (hb : o + 456 ≤ TAB) (h : Bits base o k s) :
+  refine WP.seq (WP.mono (VG.Proof.X448.X86_64.setRbx_ok s1 455 (by decide))
+    fun s2 ⟨b2, g2, m2, r2, w2⟩ => ?_)
+  have hs2 : Scr s2 base := ⟨(g2 _ (by decide)).trans (k1.scr hs).rdi, w2 ▸ (k1.scr hs).wr, hs.nowrap⟩
+  have bits2 {o k : Nat} (ho : 2048 ≤ o) (hb : o + 460 ≤ TAB) (h : Bits base o k s) :
       Bits base o k s2 := by
-    intro j hj
-    rw [m2 _ (Or.inr (by rw [VG.Proof.X448.X86_64.ofs_off' base (by simp only [TAB] at hb; omega)]; omega))]
-    exact (h.keepW ho hb k1) j hj
-  have inv : Inv base S K (pt (E s.mem base) 6 7 10) s2 114 s2 := by
-    refine ⟨hs2, b2, fun _ _ => rfl, rfl, rfl, Outside.refl _ _ _ _, d2.trans d1, ?_, ?_⟩
+    rw [Bits, m2]
+    exact h.keepW ho hb k1
+  have bs2 := bits2 (by decide) (by decide) bs
+  have bk2 := bits2 ho hbnd bk
+  have d2 : E s2.mem base 11 = Spec.Ed448.d := by rw [m2]; exact d1
+  have hbnd' : o + 460 ≤ 8192 := by simp only [TAB] at hbnd; omega
+  refine WP.seq (WP.mono (first_ok hf hP hs2 ho hbnd' b2 bs2 bk2 d2) fun s3 ⟨k3, d3, p3⟩ => ?_)
+  have inv : Inv base S K (pt (E s.mem base) 6 7 10) s3 91 s3 := by
+    refine ⟨k3.scr hs2, (k3.gpr _ (by decide)).trans b2, fun _ _ => rfl, rfl, rfl,
+      Outside.refl _ _ _ _, d3, ?_, ?_⟩
     · intro i hi
-      rw [show tablePoint s2.mem base i = tablePoint s1.mem base i from
-        pointAt_outside m2 (by simp only [tabOffset, TAB]; omega) (by simp only [tabOffset, TAB]; omega)]
-      exact t1 i hi
-    · intro a _
-      change Rep (pt (E s2.mem base) 0 1 2) ((S / 2 ^ 456) • baseAff + (K / 2 ^ 456) • a)
-      rw [p2, Nat.div_eq_of_lt hS, Nat.div_eq_of_lt hK, zero_smul, zero_smul, zero_add]
-      exact identity_rep
-  refine WP.mono (loop_ok hf hP ho (by simp only [TAB] at hbnd; omega)
-    (bits2 (by decide) (by decide) bs) (bits2 ho hbnd bk) 114 s2 (by decide) (by decide) inv)
+      rw [tablePoint_keep k3 i hi, m2]; exact t1 i hi
+    · intro a ha
+      rw [p3, m2, t1 _ (SignedWindow.magnitude_lt K 455)]
+      exact first_rep ha hS hK
+  refine WP.mono (loop_ok hf hP ho hbnd'
+    (bs2.keep (by decide) (by decide) k3) (bk2.keep ho hbnd' k3) 91 s3 (by decide) (by decide) inv)
     fun u hu => ?_
-  refine ⟨hu.scr, ?_, hu.rd.trans (r2.trans k1.rd), hu.wr.trans (w2.trans k1.wr),
-    (k1.mem.trans (m2.left _ _)).trans (hu.mem.left _ _), ?_⟩
+  have m3 : Outside base 64 1584 s1.mem s3.mem := by rw [← m2]; exact k3.mem
+  refine ⟨hu.scr, ?_, hu.rd.trans (k3.rd.trans (r2.trans k1.rd)),
+    hu.wr.trans (k3.wr.trans (w2.trans k1.wr)),
+    (k1.mem.trans (m3.left _ _)).trans (hu.mem.left _ _), ?_⟩
   · intro r hr
-    exact ((hu.gpr r hr).trans (g2 r hr)).trans (k1.gpr r (fun h => hr (List.mem_cons_of_mem _ h)))
+    have hrc : r ∉ clob := fun h => hr (List.mem_cons_of_mem _ h)
+    have hrb : r ≠ .rbx := fun h => hr (by simp [h])
+    exact (((hu.gpr r hr).trans (k3.gpr r hrc)).trans (g2 r hrb)).trans (k1.gpr r hrc)
   · intro a ha
-    simpa only [Nat.mul_zero, Nat.pow_zero, Nat.div_one] using hu.rep a ha
+    simpa only [SignedWindow.high_zero, natCast_zsmul] using hu.rep a ha
 
 end VG.Proof.Ed448.X86_64.Window

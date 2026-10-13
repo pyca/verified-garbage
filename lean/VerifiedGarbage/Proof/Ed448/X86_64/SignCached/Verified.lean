@@ -21,6 +21,8 @@ proof and the group theory it imports.
 
 namespace VG.Proof.Ed448.X86_64.SignCached
 
+variable {v : VG.Impl.Ed448.X86_64.FieldVariant}
+
 open VG VG.X86_64 VG.Impl.Ed448.X86_64.SignCached
 
 /-! ## A state satisfying the precondition -/
@@ -90,8 +92,8 @@ theorem sat : ∃ s, (Spec.Ed448.signCachedContract X86_64.abi 464).pre s := by
 
 /-! ## `Verified` -/
 
-theorem signCached_verified (hb : BaseOk) (hct : BaseCT) :
-    Verified X86_64.target signCached (Spec.Ed448.signCachedContract X86_64.abi 464) :=
+theorem signCached_verified (hb : BaseOk v) (hct : BaseCT v) :
+    Verified X86_64.target (signCachedFor v) (Spec.Ed448.signCachedContract X86_64.abi 464) :=
   ⟨fun _ h => let ⟨t, s', he, ha, hq⟩ := signCached_wp hb h; ⟨t, s', he, ha, hq⟩, signCached_ct hb hct, sat⟩
 
 end VG.Proof.Ed448.X86_64.SignCached
