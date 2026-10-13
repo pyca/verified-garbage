@@ -59,7 +59,8 @@ def satState : State where
     | .x0 => 0x5000 | .x1 => 64 | .x2 => 0x1000 | .x3 => 64 | .x4 => 0x2000 | .x5 => 1 | .x7 => 0x3000
     | _ => 0
   sp := 0x10000000000
-  mem a := bif Nat.beq a.toNat 0x10000000000 then 1 else bif Nat.beq a.toNat 0x10000000009 then 0x60
+  mem a := bif Nat.beq a.toNat 0x10000000060 then 0x20
+    else bif Nat.beq a.toNat 0x10000000000 then 1 else bif Nat.beq a.toNat 0x10000000009 then 0x60
     else bif Nat.beq a.toNat 0x10000000010 then 1 else bif Nat.beq a.toNat 0x10000000019 then 0x70
     else bif Nat.beq a.toNat 0x10000000020 then 1 else bif Nat.beq a.toNat 0x10000000029 then 0x80
     else bif Nat.beq a.toNat 0x10000000030 then 1 else bif Nat.beq a.toNat 0x10000000039 then 0x90
@@ -68,7 +69,7 @@ def satState : State where
     else bif Nat.beq a.toNat 0x10000000061 then 4 else 0
   rd := [⟨0x1000, 64⟩, ⟨0x2000, 1⟩, ⟨0x3000, 1⟩, ⟨0x6000, 1⟩, ⟨0x7000, 1⟩, ⟨0x8000, 1⟩, ⟨0x9000, 1⟩,
     ⟨0xA000, 1⟩, ⟨0x10000000000, 104⟩]
-  wr := [⟨0x5000, 64⟩, ⟨0x10000, 8192⟩]
+  wr := [⟨0x5000, 64⟩, ⟨0x10000, 8448⟩]
 
 theorem sat_args : stackArg satState 0 = 1 ∧ stackArg satState 1 = 0x6000 ∧ stackArg satState 2 = 1 ∧
     stackArg satState 3 = 0x7000 ∧ stackArg satState 4 = 1 ∧ stackArg satState 5 = 0x8000 ∧

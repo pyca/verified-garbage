@@ -109,7 +109,8 @@ def chkSatState : State where
   zf := none
   sf := none
   of := none
-  mem a := bif Nat.beq a.toNat 0x10009 then 0x40 else bif Nat.beq a.toNat 0x10010 then 0x40
+  mem a := bif Nat.beq a.toNat 0x10070 then 0x20
+    else bif Nat.beq a.toNat 0x10009 then 0x40 else bif Nat.beq a.toNat 0x10010 then 0x40
     else bif Nat.beq a.toNat 0x10019 then 0x41 else bif Nat.beq a.toNat 0x10020 then 1
     else bif Nat.beq a.toNat 0x10029 then 0x42 else bif Nat.beq a.toNat 0x10030 then 1
     else bif Nat.beq a.toNat 0x10039 then 0x43 else bif Nat.beq a.toNat 0x10040 then 1
@@ -118,7 +119,7 @@ def chkSatState : State where
     else bif Nat.beq a.toNat 0x1006A then 0x02 else bif Nat.beq a.toNat 0x10071 then 0x04 else 0
   rd := [⟨0x2000, 64⟩, ⟨0x3000, 1⟩, ⟨0x4000, 64⟩, ⟨0x4100, 1⟩, ⟨0x4200, 1⟩, ⟨0x4300, 1⟩, ⟨0x4400, 1⟩,
     ⟨0x4500, 1⟩, ⟨0x10008, 112⟩]
-  wr := [⟨0x1000, 64⟩, ⟨0x20000, 8192⟩]
+  wr := [⟨0x1000, 64⟩, ⟨0x20000, 8448⟩]
 
 theorem private_checked_implies : chkContract.Implies (Spec.Rsa.privateCheckedContract abi stackBytes) where
   pre := by

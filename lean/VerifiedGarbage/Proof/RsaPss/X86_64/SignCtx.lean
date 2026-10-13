@@ -107,7 +107,8 @@ def signSatState : State where
   zf := none
   sf := none
   of := none
-  mem a := bif Nat.beq a.toNat 0x10009 then 0x41 else bif Nat.beq a.toNat 0x10010 then 1
+  mem a := bif Nat.beq a.toNat 0x10078 then 0x20
+    else bif Nat.beq a.toNat 0x10009 then 0x41 else bif Nat.beq a.toNat 0x10010 then 1
     else bif Nat.beq a.toNat 0x10019 then 0x42 else bif Nat.beq a.toNat 0x10020 then 1
     else bif Nat.beq a.toNat 0x10029 then 0x43 else bif Nat.beq a.toNat 0x10030 then 1
     else bif Nat.beq a.toNat 0x10039 then 0x44 else bif Nat.beq a.toNat 0x10040 then 1
@@ -116,7 +117,7 @@ def signSatState : State where
     else bif Nat.beq a.toNat 0x10072 then 0x02 else bif Nat.beq a.toNat 0x10079 then 0x08 else 0
   rd := [⟨0x2000, 64⟩, ⟨0x3000, 1⟩, ⟨0x4100, 1⟩, ⟨0x4200, 1⟩, ⟨0x4300, 1⟩, ⟨0x4400, 1⟩, ⟨0x4500, 1⟩,
     ⟨0x4600, G.len⟩, ⟨0x4700, 0⟩, ⟨0x10008, 120⟩]
-  wr := [⟨0x1000, 64⟩, ⟨0x20000, 2048 * 8⟩]
+  wr := [⟨0x1000, 64⟩, ⟨0x20000, 2080 * 8⟩]
 
 /-- `signContract` is satisfiable for each of `MdHash`'s hash functions. -/
 theorem sign_sat (hG : G ∈ Pbkdf2.Md.X86_64.mdHashes) :

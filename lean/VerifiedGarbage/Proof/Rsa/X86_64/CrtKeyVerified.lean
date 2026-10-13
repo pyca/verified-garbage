@@ -35,14 +35,15 @@ def ckSatState : State where
   zf := none
   sf := none
   of := none
-  mem a := bif Nat.beq a.toNat 0x6009 then 0x40 else bif Nat.beq a.toNat 0x6010 then 1
+  mem a := bif Nat.beq a.toNat 0x6050 then 0x20
+    else bif Nat.beq a.toNat 0x6009 then 0x40 else bif Nat.beq a.toNat 0x6010 then 1
     else bif Nat.beq a.toNat 0x6019 then 0x41 else bif Nat.beq a.toNat 0x6020 then 1
     else bif Nat.beq a.toNat 0x6029 then 0x42 else bif Nat.beq a.toNat 0x6030 then 1
     else bif Nat.beq a.toNat 0x6039 then 0x43 else bif Nat.beq a.toNat 0x6040 then 1
     else bif Nat.beq a.toNat 0x6049 then 0x80 else bif Nat.beq a.toNat 0x6051 then 0x04 else 0
   rd := [⟨0x1000, 64⟩, ⟨0x2000, 1⟩, ⟨0x3000, 1⟩, ⟨0x4000, 1⟩, ⟨0x4100, 1⟩, ⟨0x4200, 1⟩, ⟨0x4300, 1⟩,
     ⟨0x6008, 80⟩]
-  wr := [⟨0x8000, 8192⟩]
+  wr := [⟨0x8000, 8448⟩]
 
 theorem ck_implies : ckContract.Implies (Spec.Rsa.checkCrtKeyContract abi) where
   pre := by

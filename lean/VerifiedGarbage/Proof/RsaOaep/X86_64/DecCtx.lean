@@ -241,7 +241,8 @@ def decSatState : State where
   zf := none
   sf := none
   of := none
-  mem a := bif Nat.beq a.toNat 0x10008 then 1 else bif Nat.beq a.toNat 0x10011 then 0x41
+  mem a := bif Nat.beq a.toNat 0x10088 then 0x20
+    else bif Nat.beq a.toNat 0x10008 then 1 else bif Nat.beq a.toNat 0x10011 then 0x41
     else bif Nat.beq a.toNat 0x10018 then 1 else bif Nat.beq a.toNat 0x10021 then 0x42
     else bif Nat.beq a.toNat 0x10028 then 1 else bif Nat.beq a.toNat 0x10031 then 0x43
     else bif Nat.beq a.toNat 0x10038 then 1 else bif Nat.beq a.toNat 0x10041 then 0x44
@@ -251,7 +252,7 @@ def decSatState : State where
     else bif Nat.beq a.toNat 0x10082 then 0x02 else bif Nat.beq a.toNat 0x10089 then 0x08 else 0
   rd := [⟨0x2000, 64⟩, ⟨0x3000, 1⟩, ⟨0x4100, 1⟩, ⟨0x4200, 1⟩, ⟨0x4300, 1⟩, ⟨0x4400, 1⟩, ⟨0x4500, 1⟩,
     ⟨0x4600, 0⟩, ⟨0x4700, 64⟩, ⟨0x10008, 136⟩]
-  wr := [⟨0x1000, 64⟩, ⟨0x1800, 8⟩, ⟨0x20000, 2048 * 8⟩]
+  wr := [⟨0x1000, 64⟩, ⟨0x1800, 8⟩, ⟨0x20000, 2080 * 8⟩]
 
 theorem dec_sat : ∃ s, (Spec.RsaOaep.decryptContract H G abi decStack).pre s := by
   sig_implies_sat [Spec.RsaOaep.decryptContract, Spec.RsaOaep.decryptSig, abi, argRegs, decK, decStack, privStack,

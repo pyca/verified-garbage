@@ -91,9 +91,10 @@ def pdSatState : State where
     | .x0 => 0x1000 | .x1 => 64 | .x2 => 0x2000 | .x3 => 16 | .x4 => 0x3000 | .x5 => 1 | .x6 => 0x4000
     | .x7 => 64 | _ => 0
   sp := 0x6000
-  mem a := if a = 0x6001 then 0x80 else if a = 0x6009 then 0x04 else 0
+  mem a := if a = 0x6008 then 0x20
+    else if a = 0x6001 then 0x80 else if a = 0x6009 then 0x04 else 0
   rd := [⟨0x2000, 128⟩, ⟨0x3000, 1⟩, ⟨0x4000, 64⟩, ⟨0x6000, 16⟩]
-  wr := [⟨0x1000, 64⟩, ⟨0x8000, 8192⟩]
+  wr := [⟨0x1000, 64⟩, ⟨0x8000, 8448⟩]
 
 theorem stackArgs_two (s : State) : List.map (stackArg s) (List.range 2) = [stackArg s 0, stackArg s 1] := rfl
 

@@ -85,10 +85,11 @@ def verSatState : State where
   zf := none
   sf := none
   of := none
-  mem a := if a = 0x10008 then 1 else if a = 0x10011 then 0x40 else if a = 0x10018 then 1
+  mem a := if a = 0x10028 then 0x20
+    else if a = 0x10008 then 1 else if a = 0x10011 then 0x40 else if a = 0x10018 then 1
     else if a = 0x10022 then 0x02 else if a = 0x10029 then 0x04 else 0
   rd := [⟨0x1000, 64⟩, ⟨0x2000, 1⟩, ⟨0x3000, 1⟩, ⟨0x4000, 1⟩, ⟨0x10008, 40⟩]
-  wr := [⟨0x20000, 8192⟩]
+  wr := [⟨0x20000, 8448⟩]
 
 theorem leak_eq4 {a b c d a' b' c' d' : List Byte} (ha : a.length = a'.length) (hb : b.length = b'.length)
     (hc : c.length = c'.length)

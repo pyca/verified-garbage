@@ -91,10 +91,11 @@ def encSatState : State where
   zf := none
   sf := none
   of := none
-  mem a := if a = 0x10009 then 0x41 else if a = 0x10019 then 0x42 else if a = 0x10029 then 0x46
+  mem a := if a = 0x10038 then 0x20
+    else if a = 0x10009 then 0x41 else if a = 0x10019 then 0x42 else if a = 0x10029 then 0x46
     else if a = 0x10032 then 0x02 else if a = 0x10039 then 0x08 else 0
   rd := [⟨0x2000, 64⟩, ⟨0x3000, 1⟩, ⟨0x4100, 0⟩, ⟨0x4200, 0⟩, ⟨0x4600, H.len⟩, ⟨0x10008, 56⟩]
-  wr := [⟨0x1000, 64⟩, ⟨0x20000, 2048 * 8⟩]
+  wr := [⟨0x1000, 64⟩, ⟨0x20000, 2080 * 8⟩]
 
 /-- `encryptContract` is satisfiable for each of `MdHash`'s hash functions. -/
 theorem enc_sat (hH : H ∈ Pbkdf2.Md.X86_64.mdHashes) :

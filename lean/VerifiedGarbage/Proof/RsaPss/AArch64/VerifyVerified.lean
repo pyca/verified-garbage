@@ -79,10 +79,11 @@ def satState (G : Spec.Mgf1.Hash) : State where
     | .x0 => 0x1000 | .x1 => 64 | .x2 => 0x2000 | .x3 => 1 | .x4 => 0x3000 | .x5 => 0x4000 | .x6 => 64
     | _ => 0
   sp := 0x10000000000
-  mem a := if a = 0x1000000000A then 1 else if a = 0x10000000011 then 8
+  mem a := if a = 0x10000000010 then 0x20
+    else if a = 0x1000000000A then 1 else if a = 0x10000000011 then 8
     else if a = 0x10000000019 then 0x50 else if a = 0x10000000020 then 16 else 0
   rd := [⟨0x1000, 64⟩, ⟨0x2000, 1⟩, ⟨0x3000, G.len⟩, ⟨0x4000, 64⟩, ⟨0x5000, 128⟩, ⟨0x10000000000, 40⟩]
-  wr := [⟨0x10000, 2048 * 8⟩]
+  wr := [⟨0x10000, 2080 * 8⟩]
 
 /-- `verifyPrecomputedContract` is satisfiable for each of `MdHash`'s hash
 functions, with the stack of the frame and 16 bytes for the callee and the

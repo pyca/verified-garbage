@@ -46,10 +46,11 @@ def satState : State where
     | .x0 => 0x1000 | .x1 => 64 | .x2 => 0x2000 | .x3 => 1 | .x5 => 0x3000 | .x6 => 1 | .x7 => 0x4000
     | _ => 0
   sp := 0x10000000000
-  mem a := if a = 0x10000000000 then 1 else if a = 0x1000000000A then 1
+  mem a := if a = 0x10000000010 then 0x20
+    else if a = 0x10000000000 then 1 else if a = 0x1000000000A then 1
     else if a = 0x10000000011 then 4 else 0
   rd := [⟨0x1000, 64⟩, ⟨0x2000, 1⟩, ⟨0x3000, 1⟩, ⟨0x4000, 1⟩, ⟨0x10000000000, 24⟩]
-  wr := [⟨0x10000, 8192⟩]
+  wr := [⟨0x10000, 8448⟩]
 
 theorem sat_args : stackArg satState 0 = 1 ∧ stackArg satState 1 = 0x10000 ∧ stackArg satState 2 = 1024 := by
   decide

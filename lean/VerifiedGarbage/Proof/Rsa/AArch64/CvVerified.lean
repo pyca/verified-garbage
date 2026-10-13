@@ -28,11 +28,12 @@ def cvSatState : State where
     | .x0 => 0x1000 | .x1 => 1 | .x2 => 0x1100 | .x3 => 1 | .x4 => 0x1200 | .x5 => 1 | .x6 => 0x2000
     | .x7 => 64 | _ => 0
   sp := 0x6000
-  mem a := if a = 0x6001 then 0x30 else if a = 0x6008 then 1 else if a = 0x6011 then 0x31
+  mem a := if a = 0x6038 then 0x20
+    else if a = 0x6001 then 0x30 else if a = 0x6008 then 1 else if a = 0x6011 then 0x31
     else if a = 0x6018 then 1 else if a = 0x6021 then 0x32 else if a = 0x6028 then 1
     else if a = 0x6031 then 0x80 else if a = 0x6039 then 0x04 else 0
   rd := [⟨0x2000, 64⟩, ⟨0x3000, 1⟩, ⟨0x3100, 1⟩, ⟨0x3200, 1⟩, ⟨0x6000, 64⟩]
-  wr := [⟨0x1000, 1⟩, ⟨0x1100, 1⟩, ⟨0x1200, 1⟩, ⟨0x8000, 8192⟩]
+  wr := [⟨0x1000, 1⟩, ⟨0x1100, 1⟩, ⟨0x1200, 1⟩, ⟨0x8000, 8448⟩]
 
 theorem stackArgs_eight (s : State) :
     List.map (stackArg s) (List.range 8) = [stackArg s 0, stackArg s 1, stackArg s 2, stackArg s 3,
