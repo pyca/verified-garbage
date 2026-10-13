@@ -108,8 +108,8 @@ theorem mul_correct (s : State) (h : fnContract.pre s) :
     (by simpa only [idx, v.x4] using he.2.2))
 
 /-- The shared guarded kernel is constant time at this valid slot tuple too. -/
-theorem square_rel : RelCT isa (Two GoodW) (Public.mm 5 5 5) (fun _ _ => True) := by
-  unfold Public.mm VG.Impl.Bignum.AArch64.Square.montMul
+theorem row_square_rel : RelCT isa (Two GoodW) (VG.Impl.Bignum.AArch64.Square.montMul 5 5 5) (fun _ _ => True) := by
+  unfold VG.Impl.Bignum.AArch64.Square.montMul
   rw [ite_eq_left rfl]
   refine RelCT.seq (two_piece [.x0] pins_goodW (by taint_decide) Square.guard_ctx) ?_
   refine two_ite (Φ := Square.GuardCtx) ?_ ?_ ?_
@@ -121,6 +121,24 @@ theorem square_rel : RelCT isa (Two GoodW) (Public.mm 5 5 5) (fun _ _ => True) :
         (by taint_decide) (by taint_decide))
   · exact two_map id (fun _ _ h => h.1.good)
       (mm_ct (by decide) (by decide) (by decide) (by taint_decide))
+
+/-- The published blocked reducer shares the same workspace and slot contract. -/
+theorem square_rel : RelCT isa (Two GoodW) (Public.mm 5 5 5) (fun _ _ => True) := by
+  unfold Public.mm VG.Impl.Bignum.AArch64.BlockedRedc.mm
+  rw [ite_eq_left (by decide)]
+  refine RelCT.seq (two_piece _ pins_goodW (by taint_decide) BlockedRedc.guard_ctx) ?_
+  refine two_ite (Φ := BlockedRedc.GuardCtx) ?_ ?_ ?_
+  · intro L s t hs ht
+    rw [VG.Proof.MlKem.AArch64.eval_nonzero, VG.Proof.MlKem.AArch64.eval_nonzero, hs.width, ht.width]
+  · refine two_ite ?_ ?_ ?_
+    · intro L s t hs ht
+      rw [VG.Proof.MlKem.AArch64.eval_zero, VG.Proof.MlKem.AArch64.eval_zero, hs.1.rem, ht.1.rem]
+    · exact two_map id (fun _ _ h => ⟨h.1.1.good, BlockedRedc.guard_width h.1.1 h.1.2,
+        BlockedRedc.guard_rem h.1.1 h.2⟩)
+        (BlockedRedc.square_ct (by decide) (by decide) (by decide) (by decide)
+          (by taint_decide) (by taint_decide) (by taint_decide))
+    · exact two_map id (fun _ _ h => h.1.1.good) row_square_rel
+  · exact two_map id (fun _ _ h => h.1.good) row_square_rel
 
 def Ready (d : FnData) (s : State) : Prop :=
   FnPhi d s ∧ (s.gpr .x5).setWidth 32 = tag d.o d.a d.b
