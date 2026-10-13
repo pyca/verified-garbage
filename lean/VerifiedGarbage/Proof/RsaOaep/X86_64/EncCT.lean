@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.RsaOaep.X86_64.EncSteps
+module
+
+public import VerifiedGarbage.Proof.RsaOaep.X86_64.EncSteps
+meta import VerifiedGarbage.Proof.RsaOaep.X86_64.EncSteps
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-OAEP encryption on x86-64: constant time
@@ -14,6 +21,8 @@ in both runs (`mgf_ct`, `hashLabel_ct`); and the call of
 (its registers, its stack arguments, `n` and `e`) are the same in both runs.
 The code with `hLen` as an immediate is checked for every `hLen` up to 64.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaOaep.X86_64
 

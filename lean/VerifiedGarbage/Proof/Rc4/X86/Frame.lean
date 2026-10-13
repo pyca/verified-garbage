@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Rc4.X86.Verified
-import VerifiedGarbage.Proof.Rc4.X86.Lit
-import VerifiedGarbage.Proof.Rc4.Scratch
-import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
+module
+
+public import VerifiedGarbage.Proof.Rc4.X86.Verified
+public import VerifiedGarbage.Proof.Rc4.X86.Lit
+public import VerifiedGarbage.Proof.Rc4.Scratch
+public import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RC4 on x86, with the working space on the stack
@@ -15,6 +21,8 @@ uses no other stack. The copies are read only where the postconditions and
 `vg_rc4_apply`'s leak, the context's `i`, read the buffers
 (`Proof/Rc4/Scratch.lean`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rc4.X86
 

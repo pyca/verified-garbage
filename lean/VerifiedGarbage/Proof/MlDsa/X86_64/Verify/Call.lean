@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Base
-import VerifiedGarbage.Proof.Framework.X86_64.RelCT
-import VerifiedGarbage.Proof.Framework.Contract
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Base
+public import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+public import VerifiedGarbage.Proof.Framework.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA verification on x86-64: calls
@@ -13,6 +19,8 @@ public data agree leak the same (`callAt_tr`). A callee may be verified
 against its contract with any stack up to 16 bytes: its precondition follows
 from the one with 16 (`pre_stack`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86_64.Verify
 

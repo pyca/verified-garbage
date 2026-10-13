@@ -1,6 +1,14 @@
-import VerifiedGarbage.Proof.TripleDes.X86_64.RoundStep
-import VerifiedGarbage.Proof.TripleDes.Core
-import VerifiedGarbage.Proof.Framework.Omega
+module
+
+public import VerifiedGarbage.Proof.TripleDes.X86_64.RoundStep
+public import VerifiedGarbage.Proof.TripleDes.Core
+public import VerifiedGarbage.Proof.Framework.Omega
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.TripleDes.X86_64
 

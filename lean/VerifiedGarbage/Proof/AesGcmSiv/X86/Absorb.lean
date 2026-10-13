@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesGcmSiv.X86.Keys
-import VerifiedGarbage.Proof.Gcm.Stream
+module
+
+public import VerifiedGarbage.Proof.AesGcmSiv.X86.Keys
+public import VerifiedGarbage.Proof.Gcm.Stream
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM-SIV on x86: POLYVAL (`chunk`)
@@ -12,6 +18,8 @@ absorbs them (`chunk_ok`); chunks follow each other until fewer than 16
 bytes are left (`chunks_ok`). The pointer is in `esi`, the number of bytes
 left at `W + nO` and the number of blocks of the chunk at `W + iO`.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

@@ -1,4 +1,8 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.UseHintPackVerified
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.UseHintPackVerified
+
+@[expose] public section
 
 namespace VG.Artifacts.MlDsaUseHintPack.AArch64
 

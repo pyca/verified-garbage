@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.MlKem.Arm.Add
-import VerifiedGarbage.Proof.MlKem.EkCheck
+module
+
+public import VerifiedGarbage.Proof.MlKem.Arm.Add
+meta import VerifiedGarbage.Proof.MlKem.Arm.Add
+public import VerifiedGarbage.Proof.MlKem.EkCheck
+meta import VerifiedGarbage.Proof.MlKem.EkCheck
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM-768 on 32-bit ARM: `vg_mlkem768_check_ek`
@@ -8,6 +16,8 @@ The loop counts the 12-bit fields that are at least `q` (`badCount`); the key
 passes the check exactly when there are none (`ekCheck768`,
 `badCount_eq_zero`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.Arm.CheckEk
 

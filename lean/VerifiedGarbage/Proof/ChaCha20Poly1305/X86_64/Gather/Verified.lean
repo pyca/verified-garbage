@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.CT
-import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Verified
+module
+
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.CT
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Verified
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ChaCha20-Poly1305 encryption out of place, from a list of slices, x86-64: `Verified`
@@ -13,6 +19,8 @@ the one the proof is written against (`gatherX86_64`, `gather_implies`), and
 so the code, calling an instance of `vg_chacha20_poly1305_seal` by its shared
 contract (`sealFn`), is `Verified` against it (`sealGather_verified`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

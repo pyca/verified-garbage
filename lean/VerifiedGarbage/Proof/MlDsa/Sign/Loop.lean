@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlDsa.Sign.Bounds
+module
+
+public import VerifiedGarbage.Proof.MlDsa.Sign.Bounds
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA: the signing loop
@@ -14,6 +20,8 @@ returns the first iteration that passes after iterations that were rejected
 bounds reject every iteration before one whose `SampleInBall` does not finish
 within the smaller ones (`signLoop_min_none`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Sign
 

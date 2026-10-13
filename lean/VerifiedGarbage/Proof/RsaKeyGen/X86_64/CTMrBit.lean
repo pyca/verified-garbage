@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.RsaKeyGen.X86_64.CTMr
+module
+
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.CTMr
+meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.CTMr
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # A candidate on x86-64: constant time of one bit of Miller–Rabin
@@ -8,6 +15,8 @@ multiplication, the comparisons and the flag. Between them, what each run
 keeps (`BitW`): the header, and enough of the arithmetic for the
 multiplications to run (`MrCtx`, `y < c`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaKeyGen.X86_64
 

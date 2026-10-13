@@ -1,6 +1,10 @@
-import VerifiedGarbage.Proof.TripleDes.AArch64.FbVerified
+module
+
+public import VerifiedGarbage.Proof.TripleDes.AArch64.FbVerified
 
 /-! # Triple DES-CFB8 artifacts on baseline AArch64 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.TripleDesCfb8.AArch64
 

@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Curve
-import VerifiedGarbage.Proof.Ecdsa.Arm.P521.Verified
-import VerifiedGarbage.Proof.Ecdsa.Arm.P521.Lit
-import VerifiedGarbage.Proof.Framework.Arm.Lit
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Curve
+public import VerifiedGarbage.Proof.Ecdsa.Arm.P521.Verified
+public import VerifiedGarbage.Proof.Ecdsa.Arm.P521.Lit
+public import VerifiedGarbage.Proof.Framework.Arm.Lit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Deterministic ECDSA on 32-bit ARM: P-521
@@ -13,6 +19,8 @@ bytes, longer than any hash function's output (`wide`), the order `n` of
 against its contract (`coreK` at P-521's sizes, which is
 `Proof.Ecdsa.Arm.P521.signArm`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Rfc6979.Arm
 

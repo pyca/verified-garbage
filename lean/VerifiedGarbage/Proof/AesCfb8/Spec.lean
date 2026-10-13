@@ -1,5 +1,11 @@
-import VerifiedGarbage.Spec.Cfb8.Contract
-import VerifiedGarbage.Proof.AesCbc.Spec
+module
+
+public import VerifiedGarbage.Spec.Cfb8.Contract
+public import VerifiedGarbage.Proof.AesCbc.Spec
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # CFB8: the mode one byte at a time
@@ -13,6 +19,8 @@ shifted left by a byte, with the last ciphertext byte shifted in
 once: `cfb8 enc` is encryption or decryption, and `cts enc` its ciphertext
 bytes (the output or the input).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesCfb8
 

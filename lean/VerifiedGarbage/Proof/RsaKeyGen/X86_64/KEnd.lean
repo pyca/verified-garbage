@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Fin
+module
+
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Fin
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # A candidate on x86-64: how it ends
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Fin
 registers restored and memory outside the scratch space, `out` and `used`
 unchanged. `finUsed_end` and `finNone_end`: the ends that leave `out`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaKeyGen.X86_64
 

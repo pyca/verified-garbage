@@ -1,9 +1,15 @@
-import VerifiedGarbage.Proof.RsaOaep.AArch64.DecCorrect
-import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncVerified
-import VerifiedGarbage.Proof.Framework.AArch64.RelCT
-import VerifiedGarbage.Proof.Framework.AArch64.Taint
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.RsaOaep.AArch64.TaintImm
+module
+
+public import VerifiedGarbage.Proof.RsaOaep.AArch64.DecCorrect
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncVerified
+public import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+public import VerifiedGarbage.Proof.Framework.AArch64.Taint
+public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+public import VerifiedGarbage.Proof.RsaOaep.AArch64.TaintImm
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-OAEP decryption on AArch64: two runs
@@ -22,6 +28,8 @@ taint analysis from those registers (`pw_blk`); one that dereferences a
 pointer it loads is split there (`pw_split`), the registers its second
 part dereferences fixed by its first part.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaOaep.AArch64.Dec
 

@@ -1,9 +1,15 @@
-import VerifiedGarbage.Impl.Ecdsa.Rfc6979.Arm
-import VerifiedGarbage.Proof.Framework.Arm.CallF
-import VerifiedGarbage.Proof.Framework.Arm.Call
-import VerifiedGarbage.Proof.Framework.Covers
-import VerifiedGarbage.Proof.X25519.Arm.Instr
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Contract
+module
+
+public import VerifiedGarbage.Impl.Ecdsa.Rfc6979.Arm
+public import VerifiedGarbage.Proof.Framework.Arm.CallF
+public import VerifiedGarbage.Proof.Framework.Arm.Call
+public import VerifiedGarbage.Proof.Framework.Covers
+public import VerifiedGarbage.Proof.X25519.Arm.Instr
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Deterministic ECDSA on 32-bit ARM: where everything is
@@ -21,6 +27,8 @@ permissions, `sp`, the registers that hold the pointers (`r4`–`r6`, `r8`,
 `out`, `scratch` and the stack. Code that writes only regions apart from the
 saved registers (`Safe`) keeps it (`Ctx.keep`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Rfc6979.Arm
 

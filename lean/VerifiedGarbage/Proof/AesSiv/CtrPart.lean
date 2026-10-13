@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Siv.Spec
-import VerifiedGarbage.Proof.Cmac.Mem
-import VerifiedGarbage.Proof.Framework.WriteBytes
+module
+
+public import VerifiedGarbage.Proof.Siv.Spec
+public import VerifiedGarbage.Proof.Cmac.Mem
+public import VerifiedGarbage.Proof.Framework.WriteBytes
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-SIV: CTR a block at a time
@@ -12,6 +18,8 @@ into the data at `P + 16 i`, gives the next one (`ctrPart_step`), as an
 implementation that XORs a keystream block into the data a byte at a time
 does. Nothing here depends on a target.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesSiv
 

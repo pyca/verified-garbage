@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Ecdsa.X86.CombLays
-import VerifiedGarbage.Proof.Weierstrass.X86.Rep
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.X86.CombLays
+public import VerifiedGarbage.Proof.Weierstrass.X86.Rep
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDSA on x86 (32-bit): `[k]G`
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.Weierstrass.X86.Rep
 `R = [k]G`, from the table of `k`'s bits, changing only the slots and word of
 `gW` (`gMul_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.X86
 

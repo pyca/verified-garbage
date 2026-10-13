@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.Sha512
-import VerifiedGarbage.TCB.X86.Isa
+module
+
+public import VerifiedGarbage.Spec.Sha512
+public import VerifiedGarbage.TCB.X86.Isa
 
 /-!
 # SHA-512 compression function: x86 (32-bit) implementation with SSE2
@@ -38,6 +40,8 @@ target's baseline, so this is the only implementation.
 * The pointers, the block count and `esp` are public; no address and no
   branch depends on anything else.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Sha512.X86
 

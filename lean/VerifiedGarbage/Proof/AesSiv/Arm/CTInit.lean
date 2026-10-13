@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.AesSiv.Arm.Init
-import VerifiedGarbage.Proof.AesGcm.Arm.CTBase
+module
+
+public import VerifiedGarbage.Proof.AesSiv.Arm.Init
+meta import VerifiedGarbage.Proof.AesSiv.Arm.Init
+public import VerifiedGarbage.Proof.AesGcm.Arm.CTBase
+meta import VerifiedGarbage.Proof.AesGcm.Arm.CTBase
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-SIV on ARMv7: `init` is constant time
@@ -11,6 +19,8 @@ arguments (`initPre`) or what `init` keeps from them (the key, the half
 length, the context and the scratch buffer, `IKeep`); the calls get the same
 arguments in both runs (`ek_rel`, `sub_rel`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesSiv.Arm
 

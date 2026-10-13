@@ -1,7 +1,15 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedHashCall
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedCommitmentHash
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedHashCall
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedCommitmentHash
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## From `CachedHashPost.lean` -/
+
+@[expose] public section
 
 section
 

@@ -1,4 +1,6 @@
-import VerifiedGarbage.Proof.Framework.X86_64.CallInline
+module
+
+public import VerifiedGarbage.Proof.Framework.X86_64.CallInline
 
 /-!
 # Calls as inlined code: contracts that keep buffers off the return address
@@ -8,6 +10,8 @@ buffer and argument area away from the 8 bytes below `rsp`, where a call
 stores its return address (`Sig.clear_of_pre`), as `Verified.of_inline`
 requires.
 -/
+
+@[expose] public section
 
 namespace VG.X86_64
 

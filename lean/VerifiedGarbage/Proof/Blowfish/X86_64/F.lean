@@ -1,7 +1,15 @@
-import VerifiedGarbage.Proof.Blowfish.X86_64.Lookup
-import VerifiedGarbage.Proof.Blowfish.F
+module
+
+public import VerifiedGarbage.Proof.Blowfish.X86_64.Lookup
+public import VerifiedGarbage.Proof.Blowfish.F
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # F: four lookups, combined in the low doubleword of `fReg` -/
+
+@[expose] public section
 
 namespace VG.Proof.Blowfish.X86_64
 

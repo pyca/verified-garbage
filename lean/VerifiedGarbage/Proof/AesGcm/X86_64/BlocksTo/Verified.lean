@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.CT
-import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksVerifiedP
-import VerifiedGarbage.Spec.Gcm.OutOfPlace
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.CT
+public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksVerifiedP
+public import VerifiedGarbage.Spec.Gcm.OutOfPlace
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on whole blocks out of place, x86-64: `Verified`
@@ -12,6 +18,8 @@ facts (no load of `mxcsr`, `rsp` kept, 24 bytes of stack), and the shared
 contracts of `Spec/Gcm/OutOfPlace.lean`, for the key contexts of
 `vg_aes_gcm_init` and `vg_aes_gcm_init_precomputed`.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.RsaPkcs1Sig.Octets
-import VerifiedGarbage.Spec.RsaPkcs1Sig
+module
+
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.Octets
+public import VerifiedGarbage.Spec.RsaPkcs1Sig
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSASSA-PKCS1-v1_5 verification accepts exactly the encoding
@@ -19,6 +25,8 @@ import VerifiedGarbage.Spec.RsaPkcs1Sig
 * `recover_eq_some_iff`: `recover` returns `H` exactly when `verify`
   accepts `H`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPkcs1Sig
 

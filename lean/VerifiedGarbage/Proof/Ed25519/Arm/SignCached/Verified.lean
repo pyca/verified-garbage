@@ -1,14 +1,23 @@
-import VerifiedGarbage.Proof.Ed25519.Arm.SignCached.CTCommon
-import VerifiedGarbage.Proof.Ed25519.Arm.PublicKey.PruneCT
-import VerifiedGarbage.Proof.Ed25519.Arm.SignCached.Args
-import VerifiedGarbage.Proof.Ed25519.Arm.Whole.Wrap
-import VerifiedGarbage.Spec.Ed25519.CachedSign
-import VerifiedGarbage.Proof.Ed25519.Arm.Whole.WrapCT
-import VerifiedGarbage.Proof.Ed25519.Arm.SignCached.Body
-import VerifiedGarbage.Proof.Framework.Arm.Contract
-import VerifiedGarbage.Proof.Framework.Contract
+module
+
+public import VerifiedGarbage.Proof.Ed25519.Arm.SignCached.CTCommon
+public import VerifiedGarbage.Proof.Ed25519.Arm.PublicKey.PruneCT
+public import VerifiedGarbage.Proof.Ed25519.Arm.SignCached.Args
+public import VerifiedGarbage.Proof.Ed25519.Arm.Whole.Wrap
+public import VerifiedGarbage.Spec.Ed25519.CachedSign
+public import VerifiedGarbage.Proof.Ed25519.Arm.Whole.WrapCT
+public import VerifiedGarbage.Proof.Ed25519.Arm.SignCached.Body
+public import VerifiedGarbage.Proof.Framework.Arm.Contract
+public import VerifiedGarbage.Proof.Framework.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Ed25519.Arm.SignCached.CTReady`. -/
+
+@[expose] public section
+
 section
 namespace VG.Proof.Ed25519.Arm.SignCached
 open VG VG.Arm

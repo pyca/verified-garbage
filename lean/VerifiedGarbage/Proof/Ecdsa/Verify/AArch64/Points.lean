@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Scalars
-import VerifiedGarbage.Proof.Ecdsa.AArch64.CombLays
-import VerifiedGarbage.Proof.Ecdh.AArch64.Window
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Scalars
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.CombLays
+public import VerifiedGarbage.Proof.Ecdh.AArch64.Window
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDSA verification on AArch64: `[u]G + [v]Q`
@@ -11,6 +17,8 @@ window method (`[v]Q`, from the key's point) and `sum` (the complete
 addition of `U` and `R`, into `R`): `R` holds `rcbAdd` of representatives of
 `[u]G` and `[v]Q`, as `Q₁ 0` and `Q₂ 0` accept them.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Verify.AArch64
 

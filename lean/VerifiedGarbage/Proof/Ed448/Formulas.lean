@@ -1,6 +1,12 @@
-import VerifiedGarbage.Impl.Ed448.Formulas
-import VerifiedGarbage.Proof.Ed448.Ref
-import Mathlib.Logic.Function.Basic
+module
+
+public import VerifiedGarbage.Impl.Ed448.Formulas
+public import VerifiedGarbage.Proof.Ed448.Ref
+public import Mathlib.Logic.Function.Basic
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448: the point formulas' field programs, evaluated
@@ -13,6 +19,8 @@ operation updates its slots so; then `doubleOps` doubles the point in slots
 3–5 (`addWith`, the specification's `pointAdd` with `d` the value of slot
 11), and each leaves the other slots it does not write as they were.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448
 

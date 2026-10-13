@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Rsa.AArch64.Keys
+module
+
+public import VerifiedGarbage.Impl.Rsa.AArch64.Keys
 
 /-!
 # BoringSSL's `RSA_check_key` on AArch64
@@ -28,6 +30,8 @@ returned as 0 or 1 at the end.
 `p < n` and `q < n` need no computation: `p` and `q` are shorter than `n`,
 which is at least `256^(n_len - 1)`.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Rsa.AArch64.CheckKey
 

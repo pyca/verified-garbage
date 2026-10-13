@@ -1,9 +1,21 @@
-import VerifiedGarbage.Proof.Sha1.X86.ShaNi.Rounds
-import VerifiedGarbage.Proof.Sha1.X86.ShaNi.Lit
-import VerifiedGarbage.Proof.Sha1.X86.Compress
-import VerifiedGarbage.Proof.Sha256.X86.ShaNi.Const
-import VerifiedGarbage.Proof.Framework.X86.SseTaint
-import VerifiedGarbage.Proof.Framework.X86.CallWith
+module
+
+public import VerifiedGarbage.Proof.Sha1.X86.ShaNi.Rounds
+meta import VerifiedGarbage.Proof.Sha1.X86.ShaNi.Rounds
+public import VerifiedGarbage.Proof.Sha1.X86.ShaNi.Lit
+meta import VerifiedGarbage.Proof.Sha1.X86.ShaNi.Lit
+public import VerifiedGarbage.Proof.Sha1.X86.Compress
+meta import VerifiedGarbage.Proof.Sha1.X86.Compress
+public import VerifiedGarbage.Proof.Sha256.X86.ShaNi.Const
+meta import VerifiedGarbage.Proof.Sha256.X86.ShaNi.Const
+public import VerifiedGarbage.Proof.Framework.X86.SseTaint
+meta import VerifiedGarbage.Proof.Framework.X86.SseTaint
+public import VerifiedGarbage.Proof.Framework.X86.CallWith
+meta import VerifiedGarbage.Proof.Framework.X86.CallWith
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # SHA-1 compression function on x86 with the SHA extensions
@@ -15,6 +27,8 @@ rounds are those of `Rounds.lean`; around them, the hash value is loaded and
 stored, and the working variables at the start of each block are kept in
 `scratch[0..32)` and added back at its end.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sha1.X86.ShaNi
 

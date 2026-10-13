@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Ocb.Spec
+module
+
+public import VerifiedGarbage.Proof.Ocb.Spec
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # OCB: the block `Nonce`
@@ -10,6 +16,8 @@ it, and `TAGLEN mod 128` in the top 7 bits, as an implementation writes it
 into zeros. `ENCIPHER` takes it with its last 6 bits cleared
 (`nonceN_masked_byte`), which are `bottom` (`nonceN_bottom`, `offset0_eq`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ocb
 

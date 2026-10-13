@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.SignFrame
-import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.RecoverCorrect
+module
+
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.SignFrame
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.RecoverCorrect
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_pkcs1_sign` on x86-64: the blocks around the encoding and the call
@@ -9,6 +15,8 @@ The frame's push, the slots and the arguments of `encode` (`head_ok`, and
 (`zeroSlots_ok`), the arguments of `vg_rsa_private_checked` (`callArgs_ok`),
 and the zeros to `EM` after the call (`wipe_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPkcs1Sig.X86_64.Sgn
 

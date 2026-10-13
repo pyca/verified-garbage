@@ -1,12 +1,14 @@
-import VerifiedGarbage.Proof.Framework.Taint
-import VerifiedGarbage.Proof.Framework.RegSet
-import VerifiedGarbage.Proof.Framework.SlotsK
-import VerifiedGarbage.Proof.Framework.KernelList
-import VerifiedGarbage.Proof.Framework.Mem
-import VerifiedGarbage.Proof.Framework.X86.Exec
-import VerifiedGarbage.Proof.Framework.X86.RegUpd
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.TCB.X86.Target
+module
+
+public import VerifiedGarbage.Proof.Framework.Taint
+public import VerifiedGarbage.Proof.Framework.RegSet
+public import VerifiedGarbage.Proof.Framework.SlotsK
+public import VerifiedGarbage.Proof.Framework.KernelList
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.X86.Exec
+public import VerifiedGarbage.Proof.Framework.X86.RegUpd
+public import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.TCB.X86.Target
 
 /-!
 # Taint tracking for x86 (32-bit)
@@ -61,6 +63,8 @@ on entry lie outside every writable region but the frames (the stack a
 contract's `stack` reserves), and that calls and frames stay within them.
 The register a frame's pop loads is secret.
 -/
+
+@[expose] public section
 
 namespace VG.X86.Taint
 

@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.X25519.X86_64.Step
+module
+
+public import VerifiedGarbage.Proof.X25519.X86_64.Step
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X25519 on x86-64, inversion by divsteps: running blocks
@@ -6,6 +12,8 @@ import VerifiedGarbage.Proof.X25519.X86_64.Step
 `drun` runs a block of the inversion by symbolic execution, reading
 registers through the writes and deciding `cmov`s from the given facts.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X25519.X86_64
 

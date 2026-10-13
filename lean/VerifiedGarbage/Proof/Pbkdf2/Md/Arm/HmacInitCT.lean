@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.HmacInit
-import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
+module
+
+public import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.HmacInit
+public import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # HMAC's `init` over a Merkle–Damgård hash function on ARMv7: constant time
@@ -11,6 +17,8 @@ function); the calls of the streaming `init` are constant time by its own
 proof (`init_rel`, `Proof/Pbkdf2/Stream/Arm/Hash.lean`), and those of the
 compression function by its own (`compressBlock_rel`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Pbkdf2.Md.Arm.HmacInit
 

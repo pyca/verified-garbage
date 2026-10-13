@@ -1,8 +1,17 @@
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Impl.Dsa.X86_64.SignVerify
+module
+
+public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+public import VerifiedGarbage.Proof.Framework.X86_64.Exec
+public import VerifiedGarbage.Impl.Dsa.X86_64.SignVerify
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # Grouping adjacent DSA phases without changing their code -/
+
+@[expose] public section
+
 namespace VG.Proof.Dsa.X86_64
 open VG VG.X86_64 VG.Impl.Bignum.X86_64
 

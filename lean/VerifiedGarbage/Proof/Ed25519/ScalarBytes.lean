@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Ed25519.Bytes
+module
+
+public import VerifiedGarbage.Proof.Ed25519.Bytes
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The bytes of a little-endian scalar are its base-256 digits
@@ -6,6 +12,8 @@ import VerifiedGarbage.Proof.Ed25519.Bytes
 Apart from the group facts of windowed multiplication (`Window.lean`), so that code
 reading a scalar's bytes need not import the group's algebra.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed25519
 

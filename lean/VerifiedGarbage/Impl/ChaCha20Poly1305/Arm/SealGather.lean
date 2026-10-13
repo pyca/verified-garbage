@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.AesGcm.Arm.SealGather
+module
+
+public import VerifiedGarbage.Impl.AesGcm.Arm.SealGather
 
 /-!
 # ChaCha20-Poly1305 encryption out of place, from a list of slices: 32-bit ARM implementation
@@ -18,6 +20,8 @@ at `sp + 12`, and `r0`–`r3`, which the copy uses, at `sp + 16` …
 and the arguments are reached through `r12`, set to `sp` before each use
 (`setFp`).
 -/
+
+@[expose] public section
 
 namespace VG.Impl.ChaCha20Poly1305.Arm.SealGather
 

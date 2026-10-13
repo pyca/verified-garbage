@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesOcb.X86.Whole
+module
+
+public import VerifiedGarbage.Proof.AesOcb.X86.Whole
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-OCB on x86: the rest of the data and the tag (`rest`, `tag`)
@@ -10,6 +16,8 @@ with `Pad` (`xorPad_ok`), and for `open` XORs `C_*` with `Pad` and adds the
 padded result to the checksum (`rest_ok`). `tag d` writes
 `ENCIPHER(K, Checksum ⊕ Offset ⊕ L_$) ⊕ HASH(K, A)` to `W + d` (`tag_ok`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

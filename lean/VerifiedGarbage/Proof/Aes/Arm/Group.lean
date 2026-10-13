@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Aes.Arm.Keys
-import VerifiedGarbage.Proof.Aes.Blocks
-import VerifiedGarbage.Proof.MdStream.Arm.Common
+module
+
+public import VerifiedGarbage.Proof.Aes.Arm.Keys
+public import VerifiedGarbage.Proof.Aes.Blocks
+public import VerifiedGarbage.Proof.MdStream.Arm.Common
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # One group of counter-mode blocks on ARMv7
@@ -13,6 +19,8 @@ counter blocks `c + b` (`b < 2`) from the slots of the counter block
 `xorTail` XOR the keystream into the data, a word at a time. The
 per-instruction rules are those of `Proof/MdStream/Arm/Common.lean`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Aes.Arm
 

@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.Rsa.X86_64.RpCT7
-import VerifiedGarbage.Proof.Rsa.X86_64.RpCode
+module
+
+public import VerifiedGarbage.Proof.Rsa.X86_64.RpCT7
+meta import VerifiedGarbage.Proof.Rsa.X86_64.RpCT7
+public import VerifiedGarbage.Proof.Rsa.X86_64.RpCode
+meta import VerifiedGarbage.Proof.Rsa.X86_64.RpCode
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_recover_primes` on x86-64: constant time but for `n`, `e` and the tries
@@ -9,6 +17,8 @@ branch on `d e` is the public number of tries being 0. Then the entry and
 the modulus' check (`rpCode_ct`), and the contract's `ConstantTime`
 (`rpCode_constantTime`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.X86_64
 

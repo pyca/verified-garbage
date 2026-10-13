@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Aes.X86_64.ExpandKey
-import VerifiedGarbage.Proof.Aes.X86_64.AesNi.ExpandKey
-import VerifiedGarbage.Proof.Aes.Scratch
-import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
+module
+
+public import VerifiedGarbage.Proof.Aes.X86_64.ExpandKey
+public import VerifiedGarbage.Proof.Aes.X86_64.AesNi.ExpandKey
+public import VerifiedGarbage.Proof.Aes.Scratch
+public import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The AES key expansion on x86-64, with its working space on the stack
@@ -13,6 +19,8 @@ zeroes it after the code (`Verified.stackScratchWiped`), since it may hold
 the key and its schedule: 520 bytes, the 512 of working space and 8 more to
 keep `rsp` aligned. The code uses no other stack.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Aes.X86_64
 

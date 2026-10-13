@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PrimsC
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PrimsC
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA signing on x86-64: calls of the packing primitives
@@ -7,6 +13,8 @@ As `Prims.lean`, for `vg_mldsa_simple_bit_pack`, `vg_mldsa_bit_pack`,
 `vg_mldsa_bit_unpack` and `vg_mldsa_hint_bit_pack` (which may leak the hint:
 two runs leak the same when their hints agree, `hbpAt_tr`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86_64.Sign
 

@@ -1,7 +1,17 @@
-import VerifiedGarbage.Proof.TripleDes.AArch64.FunctionsLit
-import VerifiedGarbage.Impl.TripleDes.AArch64.Fb
+module
+
+public import VerifiedGarbage.Proof.TripleDes.AArch64.FunctionsLit
+meta import VerifiedGarbage.Proof.TripleDes.AArch64.FunctionsLit
+public import VerifiedGarbage.Impl.TripleDes.AArch64.Fb
+meta import VerifiedGarbage.Impl.TripleDes.AArch64.Fb
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # Triple DES-OFB, -CFB64 and -CFB8's AArch64 code as literals, for kernel-evaluated checks -/
+
+@[expose] public section
 
 namespace VG
 

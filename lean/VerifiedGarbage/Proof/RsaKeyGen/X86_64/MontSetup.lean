@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.RsaKeyGen.X86_64.TrialLoop
-import VerifiedGarbage.Proof.Bignum.X86_64.PubR2
+module
+
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.TrialLoop
+public import VerifiedGarbage.Proof.Bignum.X86_64.PubR2
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # A candidate on x86-64: Montgomery arithmetic modulo `c`
@@ -9,6 +15,8 @@ the number 1 (`aOne`), `R² mod c` (`aR2`: `2^(64 w − 1)`, the top bit of
 the candidate, doubled `w + 1` times and squared six times, `msR2_ok`), and
 `R mod c` (`aY`, `msY_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaKeyGen.X86_64
 

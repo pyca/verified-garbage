@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.MlKem.Arm.Add
-import VerifiedGarbage.Proof.MlKem.Encode
+module
+
+public import VerifiedGarbage.Proof.MlKem.Arm.Add
+meta import VerifiedGarbage.Proof.MlKem.Arm.Add
+public import VerifiedGarbage.Proof.MlKem.Encode
+meta import VerifiedGarbage.Proof.MlKem.Encode
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on 32-bit ARM: `vg_mlkem_encode12`
@@ -8,6 +16,8 @@ One symbolic execution of the loop body for any pointers (`body_ok`); the
 invariant says which bytes of the output are written (`Inv`); the bytes are
 those of `encode12_byte0`–`encode12_byte2`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.Arm.Encode12
 

@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Camellia.X86.Prologue
+module
+
+public import VerifiedGarbage.Proof.Camellia.X86.Prologue
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The table of bitsliced subkeys on x86 (32-bit)
@@ -10,6 +16,8 @@ each of its two 32-bit words loaded to slot 0 and turned into its eight
 planes (`keyPlane`, checked by evaluation), and `keyLoop_wp` the loop of
 them, counted down in `ebp`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Camellia.X86
 

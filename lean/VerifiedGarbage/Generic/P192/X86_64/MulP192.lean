@@ -1,6 +1,8 @@
-import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.Weierstrass.X86_64.InvInterface
-import VerifiedGarbage.Proof.Ecdsa.X86_64.P192.MulVerified
+module
+
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvInterface
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.P192.MulVerified
 
 /-!
 # P-192's point multiplication on x86-64
@@ -11,6 +13,8 @@ public key derivation, verification and ECDH call. A generic file (see
 `Variants/P192/X86_64/Law.lean`: the ladder's proof takes the group law,
 and the curve's facts (`p192_ok`) its inversions.
 -/
+
+@[expose] public section
 
 namespace VG.Generic.P192.X86_64.MulP192
 

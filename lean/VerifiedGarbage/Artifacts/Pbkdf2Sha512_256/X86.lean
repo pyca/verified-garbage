@@ -1,7 +1,9 @@
-import VerifiedGarbage.TCB.X86.Target
-import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Sha512_256
-import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Instances
-import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Frame
+module
+
+public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Sha512_256
+public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Instances
+public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Frame
 
 /-!
 # PBKDF2-HMAC-SHA-512/256 (RFC 8018) on x86: the iteration and the whole derivation
@@ -21,6 +23,8 @@ that of the shared contracts: 48 bytes for the iteration, and 76 for
 it calls, and their return address, then its frame.
 -/
 
+@[expose] public section
+
 namespace VG.Artifacts.Pbkdf2Sha512_256.X86
 
 open VG.Proof.Pbkdf2.Stream.X86
@@ -31,7 +35,7 @@ def artifacts : List Artifact := [
     doc := Spec.Hmac.sha512_256I.iterateApi.doc
     code := Proof.Pbkdf2.Md.X86.sha512_256M.iterate
     contract := Spec.Hmac.sha512_256I.iterateContract X86.abi 48
-    ofSig := ⟨_, _, _, by unfold Spec.Hmac.Instance.iterateContract; rfl⟩
+    ofSig := by exact (⟨_, _, _, by unfold Spec.Hmac.Instance.iterateContract; rfl⟩)
     stack := 48
     verified := Proof.Pbkdf2.Md.X86.Instances.sha512_256_iterate
     spSafe := Code.all_of_allInstrs (by lit_decide) },
@@ -41,7 +45,7 @@ def artifacts : List Artifact := [
     code := Impl.StackScratch.X86.withStackScratch (Proof.Pbkdf2.Whole.X86.pbkFrame Spec.Hmac.sha512_256I) 7
       Proof.Pbkdf2.Whole.X86.sha512_256F.pbkdf2
     contract := Spec.Hmac.sha512_256I.pbkdf2Contract X86.abi (76 + Proof.Pbkdf2.Whole.X86.pbkFrame Spec.Hmac.sha512_256I)
-    ofSig := ⟨_, _, _, by unfold Spec.Hmac.Instance.pbkdf2Contract Spec.Pbkdf2.pbkdf2Contract; rfl⟩
+    ofSig := by exact (⟨_, _, _, by unfold Spec.Hmac.Instance.pbkdf2Contract Spec.Pbkdf2.pbkdf2Contract; rfl⟩)
     stack := 76 + Proof.Pbkdf2.Whole.X86.pbkFrame Spec.Hmac.sha512_256I
     verified := Proof.Pbkdf2.Whole.X86.pbkFramed Proof.Pbkdf2.Whole.X86.sha512_256 (by decide) (by lit_decide)
       (by lit_decide) Proof.Pbkdf2.Whole.X86.sha512_256_pbkFrameSat

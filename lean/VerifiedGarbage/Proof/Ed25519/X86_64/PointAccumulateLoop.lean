@@ -1,10 +1,19 @@
-import VerifiedGarbage.Impl.Ed25519.X86_64.PointAccumulate
-import VerifiedGarbage.Proof.Ed25519.X86_64.PointSelect
-import VerifiedGarbage.Proof.Ed25519.X86_64.PointTableAddr
-import VerifiedGarbage.Proof.Ed25519.X86_64.PointPowers
-import VerifiedGarbage.Impl.Ed25519.X86_64.PointAccumulateLoop
+module
+
+public import VerifiedGarbage.Impl.Ed25519.X86_64.PointAccumulate
+public import VerifiedGarbage.Proof.Ed25519.X86_64.PointSelect
+public import VerifiedGarbage.Proof.Ed25519.X86_64.PointTableAddr
+public import VerifiedGarbage.Proof.Ed25519.X86_64.PointPowers
+public import VerifiedGarbage.Impl.Ed25519.X86_64.PointAccumulateLoop
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Ed25519.X86_64.PointAccumulate`. -/
+
+@[expose] public section
+
 section
 /-! One masked point addition, with all memory indices public. -/
 

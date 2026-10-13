@@ -1,9 +1,14 @@
-import VerifiedGarbage.Proof.Framework.AArch64.VectorTaint
-import VerifiedGarbage.Proof.Framework.RelCT
+module
+
+public import VerifiedGarbage.Proof.Framework.AArch64.VectorTaint
+public import VerifiedGarbage.Proof.Framework.RelCT
 
 /-! Caller-facing adapters for vector-aware constant-time analysis.
 Initial vectors are secret, so callers only need their existing public-GPR facts.
 -/
+
+@[expose] public section
+
 namespace VG.AArch64.VectorTaint
 
 theorem agree_initial {τ : AArch64.Taint.T} {x y : State}

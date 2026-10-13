@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.RsaOaep.Encoding
-import VerifiedGarbage.Proof.RsaPss.Sign
-import VerifiedGarbage.Spec.RsaOaep.Contract
+module
+
+public import VerifiedGarbage.Proof.RsaOaep.Encoding
+public import VerifiedGarbage.Proof.RsaPss.Sign
+public import VerifiedGarbage.Spec.RsaOaep.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-OAEP decryption: one error, and the round trip
@@ -18,6 +24,8 @@ import VerifiedGarbage.Spec.RsaOaep.Contract
 * `decrypt_ne_fault`, `decrypt_encrypt`: for a key `checkKey` accepts with
   prime factors, decryption never faults, and decrypts every encryption.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaOaep
 

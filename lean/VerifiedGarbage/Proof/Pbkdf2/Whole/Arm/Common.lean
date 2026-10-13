@@ -1,7 +1,13 @@
-import VerifiedGarbage.Impl.Pbkdf2.Whole.Arm
-import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Calls
-import VerifiedGarbage.Proof.Pbkdf2.Stream.Arm.Common
-import VerifiedGarbage.Proof.Hmac.Generic.Common
+module
+
+public import VerifiedGarbage.Impl.Pbkdf2.Whole.Arm
+public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Calls
+public import VerifiedGarbage.Proof.Pbkdf2.Stream.Arm.Common
+public import VerifiedGarbage.Proof.Hmac.Generic.Common
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # PBKDF2-HMAC on 32-bit ARM, the whole derivation: the functions it calls, and its parts
@@ -14,6 +20,8 @@ bytes of stack). Then the precondition of `pbkdf2` (`Pre`, from the shared
 contract with 24 bytes of stack), the parts of its `scratch`, and what every
 piece of it keeps (`KR`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Pbkdf2.Whole.Arm
 

@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Weierstrass.X86_64.Window
-import VerifiedGarbage.Impl.Weierstrass.JacAdd
+module
+
+public import VerifiedGarbage.Impl.Weierstrass.X86_64.Window
+public import VerifiedGarbage.Impl.Weierstrass.JacAdd
 
 /-!
 # Short Weierstrass curves on x86-64: windows in Jacobian coordinates
@@ -23,6 +25,8 @@ masks of their `Z` being zero). The last digit's iteration (`stepLast`) adds
 by the complete formulas, `R` into projective coordinates first
 (`toProjR`), so `R` ends in projective coordinates as in `window`.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Weierstrass.X86_64
 

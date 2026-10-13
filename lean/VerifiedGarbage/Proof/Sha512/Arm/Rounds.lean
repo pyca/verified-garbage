@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.MdStream.Arm.Common
-import VerifiedGarbage.Proof.Sha512.Arm.Word64
-import Mathlib.Tactic.Set
+module
+
+public import VerifiedGarbage.Proof.MdStream.Arm.Common
+public import VerifiedGarbage.Proof.Sha512.Arm.Word64
+public import Mathlib.Tactic.Set
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # SHA-512 on ARMv7: the 64-bit operations
@@ -11,6 +17,8 @@ stores of a 64-bit word, 64-bit additions, constants, `Σ`/`σ`, `Ch` and
 continuation-passing style: the rule for `x` proves `WP (x ++ rest)` from a
 proof of `WP rest` for every state `x` can end in.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sha512.Arm
 

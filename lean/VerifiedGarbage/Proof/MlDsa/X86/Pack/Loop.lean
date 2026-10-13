@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.MlDsa.X86.Pack.Stream
-import VerifiedGarbage.Proof.MlDsa.Pack.Bits
-import VerifiedGarbage.Proof.MlDsa.Pack.Mem
-import VerifiedGarbage.Proof.MlKem.Mem
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86.Pack.Stream
+public import VerifiedGarbage.Proof.MlDsa.Pack.Bits
+public import VerifiedGarbage.Proof.MlDsa.Pack.Mem
+public import VerifiedGarbage.Proof.MlKem.Mem
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on x86 (32-bit): the loops over the groups, as pieces
@@ -19,6 +25,8 @@ Both for any width and any `ld` or `fin`, from the group lemmas of
 `esi`, `edi` and `ecx`, which correctness determines from the public
 pointers (`Piece.countLoop`, given the taint analysis of the loop body).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86.Pack
 

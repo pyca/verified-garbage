@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Ed448.AArch64.Window.Table
-import VerifiedGarbage.Proof.Curve448.AArch64.Copy
-import VerifiedGarbage.Proof.X448.AArch64.Weak.Counters
+module
+
+public import VerifiedGarbage.Proof.Ed448.AArch64.Window.Table
+public import VerifiedGarbage.Proof.Curve448.AArch64.Copy
+public import VerifiedGarbage.Proof.X448.AArch64.Weak.Counters
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 verification on AArch64: the table's first entries
@@ -12,6 +18,8 @@ and `RY`, zero in slot 19 and 1 in slot 20, entry 0 the neutral point, `P =
 at 2 (`tabInit_ok`): `TInv` for entry 2. Only the slots, `RX`, `RY` and the
 first two entries change (`IFrame`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.AArch64.Window
 

@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.X25519.X86.Basic
-import VerifiedGarbage.Spec.X25519.Contract
-import VerifiedGarbage.TCB.X86.Target
+module
+
+public import VerifiedGarbage.Proof.X25519.X86.Basic
+public import VerifiedGarbage.Spec.X25519.Contract
+public import VerifiedGarbage.TCB.X86.Target
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X25519 on x86 (32-bit): the contract the proof is written against
@@ -9,6 +15,8 @@ The facts of the shared contract (`Spec.X25519.x25519Contract`) the proof
 uses, stated for x86; the shared contract implies it (`sig_implies`, in
 `Main.lean`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X25519
 

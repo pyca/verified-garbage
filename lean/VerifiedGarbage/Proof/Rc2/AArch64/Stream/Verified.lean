@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.Rc2.AArch64.Stream.Init
-import VerifiedGarbage.Proof.Rc2.AArch64.Stream.Update
-import VerifiedGarbage.Proof.Rc2.AArch64.Stream.ConstantTime
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Rc2.Scratch
+module
+
+public import VerifiedGarbage.Proof.Rc2.AArch64.Stream.Init
+public import VerifiedGarbage.Proof.Rc2.AArch64.Stream.Update
+public import VerifiedGarbage.Proof.Rc2.AArch64.Stream.ConstantTime
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Rc2.Scratch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Verified streaming RC2-CBC on AArch64
@@ -11,6 +17,8 @@ Correctness (`Init`, `Update`), constant time (`ConstantTime`), and states
 satisfying the preconditions, moved to the shared contracts with `stack = 16`
 (the frame saving `x30`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rc2.AArch64.Stream
 

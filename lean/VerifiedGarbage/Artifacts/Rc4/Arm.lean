@@ -1,7 +1,12 @@
-import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Proof.Rc4.Arm.Frame
+module
+
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.Proof.Rc4.Arm.Frame
 
 /-! # Raw RC4 on ARMv7 -/
+
+@[expose] public section
+
 namespace VG.Artifacts.Rc4.Arm
 
 def artifacts : List Artifact := [

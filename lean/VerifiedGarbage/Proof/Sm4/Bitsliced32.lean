@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Sm4.Bitsliced
+module
+
+public import VerifiedGarbage.Proof.Sm4.Bitsliced
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Bitsliced SM4 on 32-bit planes
@@ -11,6 +17,8 @@ bit `j` of byte `i` (from the most significant) of the word of block `b`
 S-box layer (`tau_rel`), `L` and `L'` (`lin_rel`) and a round
 (`round_rel`). Nothing here depends on the target.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sm4.W32
 

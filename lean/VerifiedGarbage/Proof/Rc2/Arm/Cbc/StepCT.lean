@@ -1,7 +1,17 @@
-import VerifiedGarbage.Proof.Rc2.Arm.Cbc.Body
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
+module
+
+public import VerifiedGarbage.Proof.Rc2.Arm.Cbc.Body
+meta import VerifiedGarbage.Proof.Rc2.Arm.Cbc.Body
+public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # Constant-time CBC steps with public registers restored by the block call -/
+
+@[expose] public section
 
 namespace VG.Proof.Rc2.Arm.Cbc
 

@@ -1,10 +1,23 @@
-import VerifiedGarbage.Proof.MdStream.AArch64.Update
-import VerifiedGarbage.Proof.MdStream.AArch64.Finalize
-import VerifiedGarbage.Proof.MdStream.AArch64.Words
-import VerifiedGarbage.Proof.Md5.Md
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Md5.AArch64.Compress
-import VerifiedGarbage.Impl.Md5.AArch64.Stream
+module
+
+public import VerifiedGarbage.Proof.MdStream.AArch64.Update
+meta import VerifiedGarbage.Proof.MdStream.AArch64.Update
+public import VerifiedGarbage.Proof.MdStream.AArch64.Finalize
+meta import VerifiedGarbage.Proof.MdStream.AArch64.Finalize
+public import VerifiedGarbage.Proof.MdStream.AArch64.Words
+meta import VerifiedGarbage.Proof.MdStream.AArch64.Words
+public import VerifiedGarbage.Proof.Md5.Md
+meta import VerifiedGarbage.Proof.Md5.Md
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Md5.AArch64.Compress
+meta import VerifiedGarbage.Proof.Md5.AArch64.Compress
+public import VerifiedGarbage.Impl.Md5.AArch64.Stream
+meta import VerifiedGarbage.Impl.Md5.AArch64.Stream
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Streaming MD5 on AArch64: `update` and `finalize`
@@ -16,6 +29,8 @@ what MD5's own pieces do: its length field and digest (`shape`), that its
 compression function is verified (`callee`), and that the taint analysis
 accepts its code.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Md5.AArch64.Stream
 

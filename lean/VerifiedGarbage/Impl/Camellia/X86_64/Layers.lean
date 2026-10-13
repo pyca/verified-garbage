@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Camellia.X86_64.Sbox
-import VerifiedGarbage.Impl.Aes.X86_64.Linear
+module
+
+public import VerifiedGarbage.Impl.Camellia.X86_64.Sbox
+public import VerifiedGarbage.Impl.Aes.X86_64.Linear
 
 /-!
 # The layers of bitsliced Camellia on x86-64
@@ -34,6 +36,8 @@ their own state in 393–400 (`Ctr.lean`). The
 key schedule (`ExpandKey.lean`) uses the same layout, with the key's length
 in slot 369 and its 128-bit values in the tail buffer.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Camellia.X86_64
 

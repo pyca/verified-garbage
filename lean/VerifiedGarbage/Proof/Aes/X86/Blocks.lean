@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Aes.X86.Ecb
-import VerifiedGarbage.Proof.Aes.X86.Ctr32
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Aes.X86.BlocksContract
+module
+
+public import VerifiedGarbage.Proof.Aes.X86.Ecb
+public import VerifiedGarbage.Proof.Aes.X86.Ctr32
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Aes.X86.BlocksContract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES on whole blocks on x86 (32-bit): the whole functions
@@ -13,6 +19,8 @@ in the scratch buffer and bitslices the round keys as `vg_aes_ctr32`'s does
 (`Ctr32.lean`, `Keys.lean`); the groups (`Ecb.lean`) do the rest; the
 epilogue restores the registers.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Aes.X86
 

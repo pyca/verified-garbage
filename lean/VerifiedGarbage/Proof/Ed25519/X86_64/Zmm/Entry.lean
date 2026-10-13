@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.CombAdd
+module
+
+public import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.CombAdd
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The `zmm` comb: the `ymm` blocks of an entry, alone
@@ -8,6 +14,8 @@ The `zmm` comb's selection leaves each half's rows of the entry in
 are `esplit` (`eload` without the rows' setup) and `vnegBody` (`vneg` without
 the mask's): their lemmas, as `eload_wp` and `vneg_wp`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed25519.X86_64.Zmm
 

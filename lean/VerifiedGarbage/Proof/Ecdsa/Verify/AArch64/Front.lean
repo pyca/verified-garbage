@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Ecdh.AArch64.Validate
-import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64
-import VerifiedGarbage.Proof.Framework.AArch64.Syms
+module
+
+public import VerifiedGarbage.Proof.Ecdh.AArch64.Validate
+public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64
+public import VerifiedGarbage.Proof.Framework.AArch64.Syms
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDSA verification on AArch64: the arguments and the key
@@ -12,6 +18,8 @@ their slots, `R = O`, the flag of the
 key's validity as the code checks it (`KeyOk`), and the key's point, or `G`
 if it is not valid, for ECDH's window method (`Front`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Verify.AArch64
 

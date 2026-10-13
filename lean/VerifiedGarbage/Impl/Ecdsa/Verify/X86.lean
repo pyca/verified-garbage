@@ -1,6 +1,8 @@
-import VerifiedGarbage.Impl.Ecdh.X86
-import VerifiedGarbage.Impl.Weierstrass.X86.Naf
-import VerifiedGarbage.Impl.Ecdh.X86.Window
+module
+
+public import VerifiedGarbage.Impl.Ecdh.X86
+public import VerifiedGarbage.Impl.Weierstrass.X86.Naf
+public import VerifiedGarbage.Impl.Ecdh.X86.Window
 
 /-!
 # ECDSA signature verification on x86 (32-bit)
@@ -35,6 +37,8 @@ x86-64 and AArch64 (`Impl/Ecdsa/Verify/AArch64.lean`):
 Everything is computed whatever the flag, and only the pointers affect
 timing, although the contract would let every input affect it.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Ecdsa.Verify.X86
 

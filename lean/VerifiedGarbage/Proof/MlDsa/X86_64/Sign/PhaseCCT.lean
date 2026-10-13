@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseDCT
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseC
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseDCT
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseC
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA signing on x86-64: the commitment leaks only the pointers
@@ -9,6 +15,8 @@ are reduced (and the coefficients of `HighBits(w[i])` bounded): `maskR_trL`,
 `rowW_trL`, `w1R_trL`; so two runs agree on what the commitment leaks
 (`commit_tr`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86_64.Sign
 

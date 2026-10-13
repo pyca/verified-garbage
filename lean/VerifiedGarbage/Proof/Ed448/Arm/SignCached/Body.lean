@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Ed448.Arm.SignCached.Calls
-import VerifiedGarbage.Proof.Ed448.Signing
+module
+
+public import VerifiedGarbage.Proof.Ed448.Arm.SignCached.Calls
+public import VerifiedGarbage.Proof.Ed448.Signing
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 signing with a cached public key on ARMv7: the body
@@ -9,6 +15,8 @@ what the later ones read (the header of `dom4`, `s`, the prefix, `r` and
 `R`), leave `Spec.Ed448.sign` in `out` (`Proof.Ed448.sign_pipeline`), given
 the public key of the private key.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.Arm.SignCached
 

@@ -1,4 +1,6 @@
-import VerifiedGarbage.Proof.Blake2.X86_64.Backend
+module
+
+public import VerifiedGarbage.Proof.Blake2.X86_64.Backend
 
 /-!
 # Streaming BLAKE2b on x86-64, for every compression backend
@@ -7,6 +9,8 @@ The reviewed APIs supply signatures and contracts. Names carry the backend's
 suffix, and every streaming caller calls that backend's compression function.
 Initialization is backend-independent and stays in the registration file.
 -/
+
+@[expose] public section
 
 namespace VG.Generic.Blake2b.X86_64.Stream
 

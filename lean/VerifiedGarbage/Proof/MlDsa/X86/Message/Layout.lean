@@ -1,10 +1,16 @@
-import VerifiedGarbage.Impl.MlDsa.X86.Message
-import VerifiedGarbage.Proof.MlKem.X86.Keccak
-import VerifiedGarbage.Proof.MlKem.X86.Leaf
-import VerifiedGarbage.Proof.MlKem.X86.CallRet
-import VerifiedGarbage.Proof.Framework.X86.Wp
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.MlDsa.Message.Common
+module
+
+public import VerifiedGarbage.Impl.MlDsa.X86.Message
+public import VerifiedGarbage.Proof.MlKem.X86.Keccak
+public import VerifiedGarbage.Proof.MlKem.X86.Leaf
+public import VerifiedGarbage.Proof.MlKem.X86.CallRet
+public import VerifiedGarbage.Proof.Framework.X86.Wp
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.MlDsa.Message.Common
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on x86 (32-bit), `sign_message` and `verify_message`: where everything is
@@ -19,6 +25,8 @@ holds in the body of the leaf, from the entry's stores to the end: `esp`,
 `esi` pointing at `X`, the permissions, the arguments, the two bytes, and
 that memory changed only in `scratch` and `STK` since the frame's push.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86.Message
 

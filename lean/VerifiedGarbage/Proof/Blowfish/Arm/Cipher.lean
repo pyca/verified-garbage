@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Blowfish.Arm.F
-import VerifiedGarbage.Proof.Blowfish.Feistel
+module
+
+public import VerifiedGarbage.Proof.Blowfish.Arm.F
+public import VerifiedGarbage.Proof.Blowfish.Feistel
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Blowfish on ARMv7: the block function
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.Blowfish.Feistel
 encryption (`up`) or decryption under the schedule at `r0`, changing only
 `r1`, `r2`, `r4`–`r12`, `lr` and the flags.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Blowfish.Arm
 

@@ -1,7 +1,16 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksVerifiedP
-import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Context
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksVerifiedP
+public import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Context
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # Whole-block functions with prepared contexts -/
+
+@[expose] public section
+
 namespace VG.Proof.AesGcm.X86_64
 open VG VG.X86_64 VG.Impl.AesGcm.X86_64
 open Gcm.X86_64.Stitch (CtxMode)

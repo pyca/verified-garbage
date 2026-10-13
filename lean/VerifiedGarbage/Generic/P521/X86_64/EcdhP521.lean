@@ -1,11 +1,13 @@
-import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.Weierstrass.X86_64.InvInterface
-import VerifiedGarbage.Proof.Weierstrass.Law
-import VerifiedGarbage.Impl.Ecdh.P521.X86_64
-import VerifiedGarbage.Proof.Ecdh.X86_64.P521.Verified
-import VerifiedGarbage.Proof.Ecdh.X86_64.P521.Lit
-import VerifiedGarbage.Proof.Ecdh.X86_64.P521.VerifiedAdx
-import VerifiedGarbage.Proof.Ecdh.X86_64.P521.LitAdx
+module
+
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvInterface
+public import VerifiedGarbage.Proof.Weierstrass.Law
+public import VerifiedGarbage.Impl.Ecdh.P521.X86_64
+public import VerifiedGarbage.Proof.Ecdh.X86_64.P521.Verified
+public import VerifiedGarbage.Proof.Ecdh.X86_64.P521.Lit
+public import VerifiedGarbage.Proof.Ecdh.X86_64.P521.VerifiedAdx
+public import VerifiedGarbage.Proof.Ecdh.X86_64.P521.LitAdx
 
 /-!
 # ECDH over P-521 (SP 800-56A) on x86-64
@@ -15,6 +17,8 @@ inversions `h`, the variant
 `Variants/P521/X86_64/Law.lean`, for each multiplication modulo `p`: the
 baseline's, and BMI2's and ADX's (`_adx`).
 -/
+
+@[expose] public section
 
 namespace VG.Generic.P521.X86_64.EcdhP521
 

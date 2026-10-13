@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-import VerifiedGarbage.Proof.Framework.Block
+module
+
+public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+public import VerifiedGarbage.Proof.Framework.Block
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Keeping `d8`–`d15` around a core that writes them
@@ -12,6 +18,8 @@ and `vKeep_of_vSafeBut` that every run of `c` keeps them, given that every run
 of `k` does. `vsafe_but` proves `VSafeBut k c` for code built of blocks,
 sequences, branches, loops and `k`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Blowfish.AArch64
 

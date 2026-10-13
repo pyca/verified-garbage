@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Ed448.X86_64.Point64.AddSmall
-import VerifiedGarbage.Impl.Ed448.X86_64.ScalarBase
-import VerifiedGarbage.Proof.X448.X86_64.Iter
+module
+
+public import VerifiedGarbage.Proof.Ed448.X86_64.Point64.AddSmall
+public import VerifiedGarbage.Impl.Ed448.X86_64.ScalarBase
+public import VerifiedGarbage.Proof.X448.X86_64.Iter
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 base-point multiplication on x86-64: one bit
@@ -12,6 +18,8 @@ operations that run the field programs `doubleOps` and `addAffineOps`
 `R` with the mask of byte `t` of `BITS` (the bit). Only the slots, the
 product's words, the counter and the registers `clob` change.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.X86_64
 

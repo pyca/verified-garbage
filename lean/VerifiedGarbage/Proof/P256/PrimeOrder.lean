@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.P256.Curve
-import VerifiedGarbage.Proof.P256.Order
-import VerifiedGarbage.Proof.Weierstrass.GroupOrder
+module
+
+public import VerifiedGarbage.Proof.P256.Curve
+public import VerifiedGarbage.Proof.P256.Order
+public import VerifiedGarbage.Proof.Weierstrass.GroupOrder
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # P-256 has prime order
@@ -11,6 +17,8 @@ points has `n` elements, and every point but `O` has order `n`
 (`Weierstrass.primeOrder_of`). Only the variant files
 `Variants/P256/<Target>/Law.lean` import this algebra.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.P256
 

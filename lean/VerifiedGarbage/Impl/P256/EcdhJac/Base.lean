@@ -1,10 +1,15 @@
-import VerifiedGarbage.Impl.Ecdh.P256.AArch64
-import VerifiedGarbage.Impl.Weierstrass.AArch64.TCombJ
-import VerifiedGarbage.Impl.P256.VerifyAllocated
-import VerifiedGarbage.Impl.P256.EcdhSelect
+module
+
+public import VerifiedGarbage.Impl.Ecdh.P256.AArch64
+public import VerifiedGarbage.Impl.Weierstrass.AArch64.TCombJ
+public import VerifiedGarbage.Impl.P256.VerifyAllocated
+public import VerifiedGarbage.Impl.P256.EcdhSelect
 
 /-! Secret-scalar width-five Jacobian/co-Z ECDH.
 All scans use fixed addresses and all control flow uses public counters. -/
+
+@[expose] public section
+
 namespace VG.Impl.P256.EcdhJac
 open VG VG.AArch64 VG.Impl.Mont VG.Impl.Mont.AArch64 VG.Impl.Weierstrass
 open VG.Impl.Weierstrass.AArch64 VG.Impl.Ecdsa.AArch64

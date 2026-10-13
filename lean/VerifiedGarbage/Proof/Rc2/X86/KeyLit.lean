@@ -1,6 +1,17 @@
-import VerifiedGarbage.Impl.Rc2.X86.ExpandKey
-import VerifiedGarbage.Proof.Framework.X86.Lit
-import VerifiedGarbage.Proof.Rc2.PiLit
+module
+
+public import VerifiedGarbage.Impl.Rc2.X86.ExpandKey
+meta import VerifiedGarbage.Impl.Rc2.X86.ExpandKey
+public import VerifiedGarbage.Proof.Framework.X86.Lit
+meta import VerifiedGarbage.Proof.Framework.X86.Lit
+public import VerifiedGarbage.Proof.Rc2.PiLit
+meta import VerifiedGarbage.Proof.Rc2.PiLit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Impl.Rc2.X86
 

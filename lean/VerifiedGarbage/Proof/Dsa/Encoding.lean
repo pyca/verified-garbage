@@ -1,7 +1,16 @@
-import VerifiedGarbage.Proof.Dsa.Digest
-import VerifiedGarbage.Proof.Rsa.Octets
+module
+
+public import VerifiedGarbage.Proof.Dsa.Digest
+public import VerifiedGarbage.Proof.Rsa.Octets
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # Fixed-width encodings used by the DSA entry points -/
+
+@[expose] public section
+
 namespace VG.Proof.Dsa
 open VG
 

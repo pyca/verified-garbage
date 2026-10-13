@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Weierstrass.X86_64.CachedJac
-import VerifiedGarbage.Impl.Weierstrass.X86_64.TCombJ
+module
+
+public import VerifiedGarbage.Impl.Weierstrass.X86_64.CachedJac
+public import VerifiedGarbage.Impl.Weierstrass.X86_64.TCombJ
 
 /-!
 # Short Weierstrass curves on x86-64: scalar multiplication by 5-bit windows in Jacobian coordinates
@@ -41,6 +43,8 @@ At the end `R = (XZ : Y : Z³)` in projective coordinates, with `Y = 1` where
 `Z = 0` (`TCombCfg.outFix`, `outOps`). Every address and branch depends only
 on `rdi` and the public counter `rbx`.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Weierstrass.X86_64
 

@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Ed448.X86.VerifyField
-import VerifiedGarbage.Proof.Ed448.X86.VerifyBits
-import VerifiedGarbage.Proof.X448.X86.Counters
+module
+
+public import VerifiedGarbage.Proof.Ed448.X86.VerifyField
+public import VerifiedGarbage.Proof.Ed448.X86.VerifyBits
+public import VerifiedGarbage.Proof.X448.X86.Counters
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 verification's equation on x86 (32-bit): `[S]B + [k](-A)`
@@ -12,6 +18,8 @@ second, with the shared formulas (`Proof/Ed448/VerifyFormulas.lean`). The
 loop's invariant (`VInv`): `Q` is the reference ladder's point after the bits
 above `n` (`Proof.Ed448.vladder`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.X86
 

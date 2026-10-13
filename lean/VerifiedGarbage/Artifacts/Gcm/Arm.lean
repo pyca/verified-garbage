@@ -1,7 +1,11 @@
-import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Proof.Gcm.Arm.Ghash
+module
+
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.Proof.Gcm.Arm.Ghash
 
 /-! # GHASH on ARMv7 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.Gcm.Arm
 

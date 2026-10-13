@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Weierstrass.Arm.PointCall
-import VerifiedGarbage.Proof.Weierstrass.Arm.Saves
-import VerifiedGarbage.Proof.Weierstrass.Arm.Fprog
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.Arm.PointCall
+public import VerifiedGarbage.Proof.Weierstrass.Arm.Saves
+public import VerifiedGarbage.Proof.Weierstrass.Arm.Fprog
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Field programs on slots at offsets known at run time, on 32-bit ARM
@@ -14,6 +20,8 @@ writes (`W`) must be apart from every other (`LayR`), so that two slots it
 only reads may be one (a point doubled). `rcbR_ok` is the complete
 addition.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.Arm.Point
 

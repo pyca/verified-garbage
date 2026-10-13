@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Cmac.Spec
+module
+
+public import VerifiedGarbage.Proof.Cmac.Spec
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Streaming AES-CMAC: lemmas about the state
@@ -16,6 +22,8 @@ streaming state (`Spec.Cmac.Repr`), whatever the ISA:
 * `repr_finish`: the chaining value and the bytes held back are what
   `vg_cmac_aes_finalize` takes, and its result is the MAC.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Cmac.Stream
 

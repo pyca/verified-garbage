@@ -1,8 +1,14 @@
-import VerifiedGarbage.Impl.Pbkdf2.Md.Arm
-import VerifiedGarbage.Proof.MdStream.Arm.Words
-import VerifiedGarbage.Proof.Pbkdf2.Memory
-import VerifiedGarbage.Proof.Pbkdf2.MdStep
-import VerifiedGarbage.Proof.Framework.OmegaLit
+module
+
+public import VerifiedGarbage.Impl.Pbkdf2.Md.Arm
+public import VerifiedGarbage.Proof.MdStream.Arm.Words
+public import VerifiedGarbage.Proof.Pbkdf2.Memory
+public import VerifiedGarbage.Proof.Pbkdf2.MdStep
+public import VerifiedGarbage.Proof.Framework.OmegaLit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # HMAC and PBKDF2-HMAC over a Merkle–Damgård hash function on ARMv7: words
@@ -13,6 +19,8 @@ words `constW` of the length field), `T ← T ⊕ U` (`xorW`), and `scratch` plu
 an offset in a register (`scrAt`); and what the code writing a hash function's
 digest must do (`OutOk`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Pbkdf2.Md.Arm
 

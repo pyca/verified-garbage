@@ -1,7 +1,9 @@
-import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.Ed448.X86_64.Verify.Verified
-import VerifiedGarbage.Proof.Ed448.X86_64.VerifyVerified
-import VerifiedGarbage.Proof.Ed448.Facts
+module
+
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.Ed448.X86_64.Verify.Verified
+public import VerifiedGarbage.Proof.Ed448.X86_64.VariantVerified
+public import VerifiedGarbage.Proof.Ed448.Facts
 
 /-!
 # Ed448 verification on x86-64
@@ -12,12 +14,16 @@ this file imports it, with the reference computations' agreement with the
 specification (`Proof/Ed448/Facts.lean`).
 -/
 
-namespace VG.Artifacts.Ed448Verify.X86_64
+@[expose] public section
 
-def artifacts : List Artifact := [
+namespace VG.Generic.Curve448Field.X86_64.Ed448Verify
+
+def artifacts (v : Impl.Ed448.X86_64.FieldVariant) : List Artifact := [
   { Spec.Ed448.verifyApi with
+    name := Spec.Ed448.verifyApi.name ++ v.suffix
+    features := v.features
     target := X86_64.target
-    doc := Spec.Ed448.verifyApi.doc (notes := ["Uses baseline integer instructions. Returns 0 \
+    doc := Spec.Ed448.verifyApi.doc (notes := ["Uses the selected field backend and baseline integer instructions elsewhere. Returns 0 \
       at once for a context of 256 bytes or more. Otherwise writes the first ten bytes of \
       dom4(0, C) into a stack frame, hashes them, the context, R, the public key and the \
       message with `vg_keccak_absorb`, `vg_keccak_pad` and `vg_keccak_squeeze` (SHAKE256, \
@@ -25,12 +31,12 @@ def artifacts : List Artifact := [
       frame, reduces the hash modulo L there with `vg_ed448_scalar_reduce`, and returns \
       `vg_ed448_verify_equation`'s result. The frame (the hash and k) is not cleared: \
       verification has no secrets."])
-    code := Impl.Ed448.X86_64.Verify.verify
+    code := Impl.Ed448.X86_64.Verify.verifyFor v
     contract := Spec.Ed448.verifyContract X86_64.abi 272
     stack := 272
     verified := Proof.Ed448.X86_64.Verify.verify_verified
-      (Proof.Ed448.X86_64.verifyEquation_ok Proof.Ed448.recover_ok Proof.Ed448.verifyEq_ok)
-      Proof.Ed448.X86_64.verifyEquation_ct
-    spSafe := Code.all_of_allInstrs (by lit_decide) }]
+      (Proof.Ed448.X86_64.verifyEquationFor_ok v Proof.Ed448.recover_ok Proof.Ed448.verifyEq_ok)
+      (Proof.Ed448.X86_64.verifyEquationFor_ct v Proof.Ed448.recover_ok Proof.Ed448.verifyEq_ok)
+    spSafe := Code.all_of_allInstrs (by cases v <;> lit_decide) }]
 
-end VG.Artifacts.Ed448Verify.X86_64
+end VG.Generic.Curve448Field.X86_64.Ed448Verify

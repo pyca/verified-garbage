@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Steps
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Bytes
-import VerifiedGarbage.Proof.Weierstrass.AArch64.BytesLen
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Steps
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Bytes
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.BytesLen
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Deterministic ECDSA on AArch64: scalars longer than the hash
@@ -16,6 +22,8 @@ bytes shifted right, which is the digest's number shifted left by `sh` bits
 after the next `V`, its first word after it, shifted right by `sh` bits
 (`candW_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Rfc6979.AArch64
 

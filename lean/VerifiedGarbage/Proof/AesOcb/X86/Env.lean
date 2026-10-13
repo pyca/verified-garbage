@@ -1,9 +1,15 @@
-import VerifiedGarbage.Proof.AesOcb.X86.Contract
-import VerifiedGarbage.Proof.AesGcm.X86.Common
-import VerifiedGarbage.Proof.AesGcm.X86.Fn
-import VerifiedGarbage.Proof.AesGcm.X86.Top
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Impl.AesOcb.X86
+module
+
+public import VerifiedGarbage.Proof.AesOcb.X86.Contract
+public import VerifiedGarbage.Proof.AesGcm.X86.Common
+public import VerifiedGarbage.Proof.AesGcm.X86.Fn
+public import VerifiedGarbage.Proof.AesGcm.X86.Top
+public import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Impl.AesOcb.X86
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-OCB on x86: where everything is
@@ -19,6 +25,8 @@ pointer, and the arguments the entry keeps in `W` (`Env`). The pieces write
 only the parts of `W` in `mutR` (and the data, and the stack below `SP`), so
 they keep the slots and our caller's registers saved in `W`.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

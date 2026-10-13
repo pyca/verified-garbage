@@ -1,6 +1,8 @@
-import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Variant
-import VerifiedGarbage.TCB.Emit
-import VerifiedGarbage.Proof.RsaPss.X86_64.PrecomputedCT
+module
+
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Variant
+public import VerifiedGarbage.TCB.Emit
+public import VerifiedGarbage.Proof.RsaPss.X86_64.PrecomputedCT
 
 /-!
 # RSASSA-PSS verification using cached public-key values
@@ -8,6 +10,8 @@ import VerifiedGarbage.Proof.RsaPss.X86_64.PrecomputedCT
 Every hash compression variant combines with every precomputed RSA public
 operation variant. The digest, signature and recovered encoding stay secret.
 -/
+
+@[expose] public section
 
 namespace VG.Generic.MdHash.RsaPublicPrecomputed.X86_64.RsaPss
 

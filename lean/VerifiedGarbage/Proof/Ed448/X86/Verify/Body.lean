@@ -1,12 +1,18 @@
-import VerifiedGarbage.Proof.Ed448.X86.Verify.Layout
-import VerifiedGarbage.Proof.Ed448.X86.Shake.Sponge
-import VerifiedGarbage.Proof.Ed448.X86.Shake.Header
-import VerifiedGarbage.Proof.Ed448.X86.Shake.Prune
-import VerifiedGarbage.Proof.Ed448.X86.VerifyLocal
-import VerifiedGarbage.Proof.Ed448.X86.Callee
-import VerifiedGarbage.Proof.Ed448.X86.ScalarVerified
-import VerifiedGarbage.Proof.Ed448.X86.ScalarLit
-import VerifiedGarbage.Impl.Ed448.X86.Verify
+module
+
+public import VerifiedGarbage.Proof.Ed448.X86.Verify.Layout
+public import VerifiedGarbage.Proof.Ed448.X86.Shake.Sponge
+public import VerifiedGarbage.Proof.Ed448.X86.Shake.Header
+public import VerifiedGarbage.Proof.Ed448.X86.Shake.Prune
+public import VerifiedGarbage.Proof.Ed448.X86.VerifyLocal
+public import VerifiedGarbage.Proof.Ed448.X86.Callee
+public import VerifiedGarbage.Proof.Ed448.X86.ScalarVerified
+public import VerifiedGarbage.Proof.Ed448.X86.ScalarLit
+public import VerifiedGarbage.Impl.Ed448.X86.Verify
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 verification on x86 (32-bit): correctness
@@ -18,6 +24,8 @@ For any `eq` meeting `verifyEquationLocal` (`CalleeOk`): the header of
 (`eq_step`); `verify_ok`: the whole function, which returns 0 at once for a
 context of 256 bytes or more.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.X86.Verify
 

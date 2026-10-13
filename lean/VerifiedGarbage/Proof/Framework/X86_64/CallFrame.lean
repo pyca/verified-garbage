@@ -1,4 +1,6 @@
-import VerifiedGarbage.Proof.Framework.X86_64.Depth
+module
+
+public import VerifiedGarbage.Proof.Framework.X86_64.Depth
 
 /-!
 # Calling verified code that has stack frames (x86-64)
@@ -9,6 +11,8 @@ what `Artifact.spSafe` checks): memory then changes only within the regions
 the callee may write and the `c.x86_64Depth` bytes of stack below the return
 address that its frames and calls use (`Exec.stackFrame`).
 -/
+
+@[expose] public section
 
 namespace VG.X86_64
 

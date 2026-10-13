@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Rsa.AArch64.Guarded
-import VerifiedGarbage.Proof.Bignum.AArch64.PdCT
-import VerifiedGarbage.Proof.Framework.Contract
+module
+
+public import VerifiedGarbage.Proof.Rsa.AArch64.Guarded
+public import VerifiedGarbage.Proof.Bignum.AArch64.PdCT
+public import VerifiedGarbage.Proof.Framework.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_public_precomputed_checked` on AArch64
@@ -10,6 +16,8 @@ against the contract on the registers with the checked postcondition
 (`pdChkContract`), and from there against the shared contract
 (`precomputedChecked_verified`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.AArch64
 

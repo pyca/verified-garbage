@@ -1,12 +1,21 @@
-import VerifiedGarbage.Impl.Ed25519.Arm.PointTableIO
-import VerifiedGarbage.Proof.Ed25519.Arm.LrSlot
-import VerifiedGarbage.Proof.Ed25519.Arm.PointKeep
-import VerifiedGarbage.Proof.Ed25519.Arm.ScalarPass
-import VerifiedGarbage.Proof.Ed25519.Arm.PointEqual
-import VerifiedGarbage.Proof.Ed25519.Arm.PointFromScalar
-import VerifiedGarbage.Impl.Ed25519.Arm.Verify
+module
+
+public import VerifiedGarbage.Impl.Ed25519.Arm.PointTableIO
+public import VerifiedGarbage.Proof.Ed25519.Arm.LrSlot
+public import VerifiedGarbage.Proof.Ed25519.Arm.PointKeep
+public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarPass
+public import VerifiedGarbage.Proof.Ed25519.Arm.PointEqual
+public import VerifiedGarbage.Proof.Ed25519.Arm.PointFromScalar
+public import VerifiedGarbage.Impl.Ed25519.Arm.Verify
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Ed25519.Arm.VerifyContext`. -/
+
+@[expose] public section
+
 section
 /-! Merged from `Proof.Ed25519.Arm.VerifyFrame`. -/
 section

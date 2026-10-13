@@ -1,8 +1,16 @@
-import VerifiedGarbage.Impl.Weierstrass.AArch64.CachedJac
-import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.Jacobian
-import VerifiedGarbage.Impl.Ecdsa.P256.AArch64
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Fprog
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Blocks
+module
+
+public import VerifiedGarbage.Impl.Weierstrass.AArch64.CachedJac
+public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.Jacobian
+public import VerifiedGarbage.Impl.Ecdsa.P256.AArch64
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Fprog
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Blocks
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.AArch64.CachedInit
 open VG VG.AArch64 VG.Impl.Mont VG.Impl.Weierstrass VG.Impl.Weierstrass.AArch64

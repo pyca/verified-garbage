@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.Rsa.AArch64.CvCode
-import VerifiedGarbage.Proof.Rsa.AArch64.CTBase
+module
+
+public import VerifiedGarbage.Proof.Rsa.AArch64.CvCode
+meta import VerifiedGarbage.Proof.Rsa.AArch64.CvCode
+public import VerifiedGarbage.Proof.Rsa.AArch64.CTBase
+meta import VerifiedGarbage.Proof.Rsa.AArch64.CTBase
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_crt_values` on AArch64: constant time, the pieces of `main`
@@ -11,6 +19,8 @@ piece leaks the same in two runs from `GA p` and leaves `GA p` (`zeroA_ct`,
 array (`divmod_ct`) or, for the loads, after the block that loads the
 pointer and the length (`loadA_ct`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.AArch64
 

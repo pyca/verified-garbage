@@ -1,8 +1,10 @@
-import VerifiedGarbage.Proof.P521.Curve
-import VerifiedGarbage.Proof.Weierstrass.X86_64.InvMain
-import VerifiedGarbage.Proof.Weierstrass.InvArith
-import VerifiedGarbage.Proof.Weierstrass.X86_64.InvInterface
-import VerifiedGarbage.Proof.P521.PrimeOrder
+module
+
+public import VerifiedGarbage.Proof.P521.Curve
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvMain
+public import VerifiedGarbage.Proof.Weierstrass.InvArith
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvInterface
+public import VerifiedGarbage.Proof.P521.PrimeOrder
 
 /-!
 # P-521's group law and inversions, on x86-64
@@ -17,6 +19,8 @@ Their registration files are generic over it
 implementation too), so that this file alone, of those that emit them,
 imports that algebra.
 -/
+
+@[expose] public section
 
 namespace VG.Variants.P521.X86_64.Law
 

@@ -1,6 +1,10 @@
-import VerifiedGarbage.Impl.Argon2.X86_64.SegmentSetup
+module
+
+public import VerifiedGarbage.Impl.Argon2.X86_64.SegmentSetup
 
 /-! Fill one slice's lanes serially, advancing only the public lane coordinate. -/
+
+@[expose] public section
 
 namespace VG.Impl.Argon2.X86_64.FillLanes
 

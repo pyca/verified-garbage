@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Lit
-import VerifiedGarbage.Impl.Pbkdf2.Whole.X86
+module
+
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Lit
+meta import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Lit
+public import VerifiedGarbage.Impl.Pbkdf2.Whole.X86
+meta import VerifiedGarbage.Impl.Pbkdf2.Whole.X86
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # PBKDF2-HMAC on x86 (32-bit), the whole derivation: the functions it calls, and its code as literals
@@ -10,6 +18,8 @@ For each hash function of `Proof/Pbkdf2/Md/X86/Hashes.lean`, the functions
 `pbkdf2` as a literal (`materialize_code`, `Proof/Framework/Lit.lean`), which
 the registration files' `spSafe` checks evaluate.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Pbkdf2.Whole.X86
 

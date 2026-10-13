@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Mont.AArch64.Row
+module
+
+public import VerifiedGarbage.Proof.Mont.AArch64.Row
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Montgomery arithmetic on AArch64: the first row
@@ -8,6 +14,8 @@ low words: `rowInit x ts bs` multiplies straight into `ts` (`mulsLo_ok`), and
 then adds the high words one word up in a chain (`chainSkip_ok`). The low and
 high words add up to `x B` (`lo_hi_sum`), which fits in `ts` (`rowInit_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Mont.AArch64
 

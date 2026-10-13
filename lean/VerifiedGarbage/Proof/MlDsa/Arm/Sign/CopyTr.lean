@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Blocks
-import VerifiedGarbage.Proof.MlKem.Arm.CallsCT
+module
+
+public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Blocks
+meta import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Blocks
+public import VerifiedGarbage.Proof.MlKem.Arm.CallsCT
+meta import VerifiedGarbage.Proof.MlKem.Arm.CallsCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA signing on ARMv7: copies leak only their addresses
@@ -8,6 +16,8 @@ The setup of a copy accesses no memory, and its loop leaks only the pointers
 and the count in `r0`–`r2` (by the taint analysis), so two runs of a copy
 between the same addresses leak the same (`copy_tr`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Arm.Sign
 

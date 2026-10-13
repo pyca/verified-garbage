@@ -1,11 +1,17 @@
-import VerifiedGarbage.Proof.Weierstrass.X86_64.Ladder
-import VerifiedGarbage.Proof.Weierstrass.X86_64.Flags
-import VerifiedGarbage.Proof.Weierstrass.X86_64.BytesLen
-import VerifiedGarbage.Proof.Framework.X86_64.Spill
-import VerifiedGarbage.Proof.Weierstrass.CombW
-import VerifiedGarbage.Proof.Weierstrass.X86_64.InvSpec
-import VerifiedGarbage.Proof.Weierstrass.Law3
-import VerifiedGarbage.Proof.Weierstrass.Booth
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.Ladder
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.Flags
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.BytesLen
+public import VerifiedGarbage.Proof.Framework.X86_64.Spill
+public import VerifiedGarbage.Proof.Weierstrass.CombW
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvSpec
+public import VerifiedGarbage.Proof.Weierstrass.Law3
+public import VerifiedGarbage.Proof.Weierstrass.Booth
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDSA on x86-64: the curve, the arguments and the working space
@@ -25,6 +31,8 @@ A curve with a fixed-base comb (`Cfg.comb`) has its tables in a `static`
 the static's address, holding the tables' words, and apart from what it may
 write (`TblsHeld`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.X86_64
 

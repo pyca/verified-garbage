@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlDsa.Sign.Loop
+module
+
+public import VerifiedGarbage.Proof.MlDsa.Sign.Loop
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA: what signing leaks, iteration by iteration
@@ -23,6 +29,8 @@ did not finish), which determines the structure of the loop: two runs that
 agree on it agree on each `c̃`, on the outcome of each iteration and on the
 hint of the one that passes (`leakT_step`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Sign
 

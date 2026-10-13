@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.SboxLit
-import VerifiedGarbage.Proof.Framework.AArch64.StraightV
-import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import VerifiedGarbage.Proof.Framework.Bitslice.Vars
-import VerifiedGarbage.Proof.Framework.Offset
+module
+
+public import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.SboxLit
+public import VerifiedGarbage.Proof.Framework.AArch64.StraightV
+public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+public import VerifiedGarbage.Proof.Framework.Bitslice.Vars
+public import VerifiedGarbage.Proof.Framework.Offset
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The AdvSIMD machine state of a batch
@@ -12,6 +18,8 @@ region (`Room`). Code that only moves and XORs whole words (the S-box
 outputs, the exchange of the halves) is checked on the variable domain,
 doubleword lane by doubleword lane (`varsRun`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.TripleDes.AArch64.BitslicedNeon
 

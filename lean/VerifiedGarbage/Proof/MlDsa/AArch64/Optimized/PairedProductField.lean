@@ -1,10 +1,18 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFirstMemory
-import Mathlib.Data.Fintype.Fin
-import Mathlib.Tactic.FinCases
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFinalLoad
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductMemory
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFirstMemory
+public import Mathlib.Data.Fintype.Fin
+public import Mathlib.Tactic.FinCases
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFinalLoad
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductMemory
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## From `PairedFirstSource.lean` -/
+
+@[expose] public section
 
 section
 

@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncTail
+module
+
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncTail
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-PKCS1-v1_5 encryption on AArch64: correctness
@@ -7,6 +13,8 @@ The frames' pushes, `EM` (`setup`, `psLoop`, `sep`, `msgCopy`), the call
 (`callArgs`, `pub_call`), the mask (`maskArgs`, `maskLoop`) and the pops:
 `enc_ok`, for every implementation of `vg_rsa_public_checked`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPkcs1Enc.AArch64.Enc
 

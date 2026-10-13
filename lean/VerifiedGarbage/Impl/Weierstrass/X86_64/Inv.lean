@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Weierstrass.X86_64
+module
+
+public import VerifiedGarbage.Impl.Weierstrass.X86_64
 
 /-!
 # Short Weierstrass curves on x86-64: inversion by divsteps
@@ -30,6 +32,8 @@ multiplication's rows (`memRow`, `chainW`). The registers are those of
 `rbp`, `r8`–`r13`), and the batches' count in `r14`, which the callers free
 (the multiplications of six words use it too).
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Weierstrass.X86_64
 

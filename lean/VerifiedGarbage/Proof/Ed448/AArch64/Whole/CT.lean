@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Ed448.AArch64.Whole.Calls
-import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.CallCT
+module
+
+public import VerifiedGarbage.Proof.Ed448.AArch64.Whole.Calls
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.CallCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448's complete operations on AArch64: constant time in the frame's body
@@ -12,6 +18,8 @@ in both. A block addresses only the stack (`block_ct`); a call's arguments
 (`setupS_ct`) have the same values `val` in both runs, which `callS_ct`
 passes to constant-time code whose public data they are (`Whole.callEx`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.AArch64.Whole
 

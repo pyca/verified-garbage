@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Ed448.Arm.ScalarIO
-import VerifiedGarbage.TCB.Arm.Target
+module
+
+public import VerifiedGarbage.Proof.Ed448.Arm.ScalarIO
+public import VerifiedGarbage.TCB.Arm.Target
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 scalar reduction on ARMv7: the whole function
@@ -7,6 +13,8 @@ import VerifiedGarbage.TCB.Arm.Target
 `vg_ed448_scalar_reduce(out = r0, wide = r1, scratch = r2)` against a local
 contract (`scalarReduceLocal`), the ABI included.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.Arm
 

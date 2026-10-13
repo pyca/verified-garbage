@@ -1,9 +1,17 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CommitTailVerified
-import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Call
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedMaskTail
-import VerifiedGarbage.Spec.MlDsa.CommitTail
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CommitTailVerified
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Call
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedMaskTail
+public import VerifiedGarbage.Spec.MlDsa.CommitTail
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## From `CommitTailCall.lean` -/
+
+@[expose] public section
 
 section
 

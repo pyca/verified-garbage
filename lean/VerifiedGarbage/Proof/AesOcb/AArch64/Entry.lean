@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesOcb.AArch64.Callee
-import VerifiedGarbage.Proof.Framework.AArch64.Spill
+module
+
+public import VerifiedGarbage.Proof.AesOcb.AArch64.Callee
+public import VerifiedGarbage.Proof.Framework.AArch64.Spill
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-OCB on AArch64: the entry (`entry`)
@@ -9,6 +15,8 @@ stack, saves our caller's registers at `W + savO` (`Spill.save_wp`), keeps
 the data and its length in `x21` and `x28` and the other arguments in `W`,
 computes `L_$` and `L_0` from `L_*` and zeroes the checksum (`entry_ok`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

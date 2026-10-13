@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesGcm.AArch64.StreamVerify
+module
+
+public import VerifiedGarbage.Proof.AesGcm.AArch64.StreamVerify
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on AArch64: the entry of `seal` and `open`
@@ -8,6 +14,8 @@ Untrusted: everything here is checked by Lean. `work` comes from the stack
 later at `W + 216` (`oneEntry_ok`, `OneE`), and puts the state at
 `W + 16` (`oneLay`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

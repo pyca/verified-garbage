@@ -1,7 +1,9 @@
-import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
-import VerifiedGarbage.Impl.Ecdh.P384.AArch64
-import VerifiedGarbage.Proof.Ecdh.AArch64.P384.Verified
+module
+
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
+public import VerifiedGarbage.Impl.Ecdh.P384.AArch64
+public import VerifiedGarbage.Proof.Ecdh.AArch64.P384.Verified
 
 /-!
 # ECDH over P-384 (SP 800-56A) on AArch64
@@ -9,6 +11,8 @@ import VerifiedGarbage.Proof.Ecdh.AArch64.P384.Verified
 A generic file (see `TCB/Emit.lean`) over P-384's group law `h`, the variant
 `Variants/P384/AArch64/Law.lean`.
 -/
+
+@[expose] public section
 
 namespace VG.Generic.P384.AArch64.EcdhP384
 

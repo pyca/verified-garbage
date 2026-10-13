@@ -1,9 +1,17 @@
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Spec.Argon2.Contract
-import VerifiedGarbage.TCB.AArch64.Target
+module
+
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.AArch64.Call
+public import VerifiedGarbage.Spec.Argon2.Contract
+public import VerifiedGarbage.TCB.AArch64.Target
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Decode the reviewed ARM64 contract without requiring normalized upper bits. -/
+
+@[expose] public section
 
 namespace VG.Proof.Argon2.AArch64.Derive
 

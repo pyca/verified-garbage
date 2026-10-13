@@ -1,15 +1,24 @@
-import VerifiedGarbage.Impl.Argon2.X86_64.RandomSource
-import VerifiedGarbage.Proof.Argon2.Matrix
-import VerifiedGarbage.Proof.Argon2.X86_64.FillKernelStable
-import VerifiedGarbage.Proof.Argon2.X86_64.AddressCacheSelect
-import VerifiedGarbage.Proof.Argon2.X86_64.AddressCacheWord
-import VerifiedGarbage.Proof.Argon2.X86_64.ReferenceMapState
-import VerifiedGarbage.Impl.Argon2.X86_64.AddressMode
-import VerifiedGarbage.Proof.Argon2.X86_64.Memory
-import VerifiedGarbage.Proof.Argon2.X86_64.DivideStep
-import VerifiedGarbage.Proof.Argon2.X86_64.FillKernel
+module
+
+public import VerifiedGarbage.Impl.Argon2.X86_64.RandomSource
+public import VerifiedGarbage.Proof.Argon2.Matrix
+public import VerifiedGarbage.Proof.Argon2.X86_64.FillKernelStable
+public import VerifiedGarbage.Proof.Argon2.X86_64.AddressCacheSelect
+public import VerifiedGarbage.Proof.Argon2.X86_64.AddressCacheWord
+public import VerifiedGarbage.Proof.Argon2.X86_64.ReferenceMapState
+public import VerifiedGarbage.Impl.Argon2.X86_64.AddressMode
+public import VerifiedGarbage.Proof.Argon2.X86_64.Memory
+public import VerifiedGarbage.Proof.Argon2.X86_64.DivideStep
+public import VerifiedGarbage.Proof.Argon2.X86_64.FillKernel
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Argon2.X86_64.FillKernelInvariant`. -/
+
+@[expose] public section
+
 section
 /-! Each active-cell update retains the frame and matrix allocation invariant. -/
 

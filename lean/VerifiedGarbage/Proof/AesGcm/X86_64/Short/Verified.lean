@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.Short.CT
-import VerifiedGarbage.Proof.AesGcm.X86_64.Short.SealFin
-import VerifiedGarbage.Proof.AesGcm.X86_64.VerifiedP
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.CT
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.SealFin
+public import VerifiedGarbage.Proof.AesGcm.X86_64.VerifiedP
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM's short path on x86-64: the functions verified
@@ -11,6 +17,8 @@ other instances (the short path's code and the end of the long `seal` use none: 
 `sealShort_xdepth`, `openShort_xdepth`, `finish_xdepth`), and so they preserve what the ABI
 says (`sealM_correct`, `openM_correct`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

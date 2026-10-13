@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.X25519.Field
+module
+
+public import VerifiedGarbage.Proof.X25519.Field
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X25519 on 32-bit ARM: numbers of 16-bit limbs
@@ -9,6 +15,8 @@ a product (Knuth's algorithm M), the fold of a product's top half (`2²⁵⁶ �
 38`), the carry out folded in again (`tail`), `4p` as limbs, and the final
 reduction.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X25519.Arm
 

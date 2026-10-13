@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Mont.X86_64.Chain
-import VerifiedGarbage.Proof.Framework.Omega
+module
+
+public import VerifiedGarbage.Proof.Mont.X86_64.Chain
+public import VerifiedGarbage.Proof.Framework.Omega
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Montgomery arithmetic on x86-64: P-384's masked modulus in registers
@@ -12,6 +18,8 @@ conditional subtraction `csubS` subtracts `p` in place and adds it back under
 the mask of the borrow (`csubS_ok`), with no temporary memory; `csub_ok`
 covers each of `csub`'s three cases. `sbbMask_ok` is the mask of a borrow.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Mont.X86_64
 

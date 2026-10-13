@@ -1,5 +1,7 @@
-import VerifiedGarbage.Proof.Framework.Bitslice.Diag
-import VerifiedGarbage.Proof.Framework.Bitslice.Table
+module
+
+public import VerifiedGarbage.Proof.Framework.Bitslice.Diag
+public import VerifiedGarbage.Proof.Framework.Bitslice.Table
 
 /-!
 # Words of atoms, for checking linear layers
@@ -12,6 +14,8 @@ is the XOR of the atoms `g p` is related to the machine's word when bit `p`
 of it is the XOR of the input bits `g p` (`outWord_rel`, `outWordW_rel`). Each ISA's `Framework/<ISA>/Linear.lean` runs its
 evaluator with these.
 -/
+
+@[expose] public section
 
 namespace VG.Bitslice
 

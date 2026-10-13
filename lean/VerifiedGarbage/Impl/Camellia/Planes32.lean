@@ -1,3 +1,5 @@
+module
+
 /-!
 # Planes of Camellia's 64-bit constants, on 32-bit targets
 
@@ -7,6 +9,8 @@ planes for each subkey: plane `j` of its left 32 bits (`w = 0`) or right
 most significant first) in every lane `b`. The key schedules store the
 constants `Sigma1 … Sigma6` this way, as immediates.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Camellia
 

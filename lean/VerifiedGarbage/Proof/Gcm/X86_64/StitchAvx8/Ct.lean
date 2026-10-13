@@ -1,7 +1,17 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.Callee
-import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Piece
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
-import VerifiedGarbage.Impl.Gcm.X86_64.StitchAvx8
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Callee
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Callee
+public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Piece
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Piece
+public import VerifiedGarbage.Proof.Framework.X86_64.Lit
+meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
+public import VerifiedGarbage.Impl.Gcm.X86_64.StitchAvx8
+meta import VerifiedGarbage.Impl.Gcm.X86_64.StitchAvx8
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Stack safety and constant-time checks for the eight-block pipeline
@@ -20,6 +30,8 @@ which the caller's taint leaves secret, is only stored and loaded back; the
 
 Each loop is checked six times, so it is built once, as a literal.
 -/
+
+@[expose] public section
 
 namespace VG
 

@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.RsaPss.X86_64.SignCall
-import VerifiedGarbage.Proof.RsaPss.SignCases
+module
+
+public import VerifiedGarbage.Proof.RsaPss.X86_64.SignCall
+public import VerifiedGarbage.Proof.RsaPss.SignCases
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSASSA-PSS signing on x86-64: correctness
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.RsaPss.SignCases
 `sign_body`: from the entry state, the body of the frame leaves `out` and
 `rax` as `RsaPss.sign` says, with the callee-saved registers restored.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPss.X86_64
 

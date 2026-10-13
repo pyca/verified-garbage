@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesGcmSiv.X86.TagIO
+module
+
+public import VerifiedGarbage.Proof.AesGcmSiv.X86.TagIO
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM-SIV on x86: `vg_aes_gcm_siv_seal` (correctness)
@@ -12,6 +18,8 @@ the RFC's (`Proof.GcmSiv.Words.tagInputG`, related to it by
 piece writes only `mutR`, which keeps the slots, our caller's registers,
 the return address, the key schedule, the nonce and the additional data.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

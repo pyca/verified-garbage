@@ -1,6 +1,12 @@
-import VerifiedGarbage.Impl.Aes.X86.Ctr32
-import VerifiedGarbage.Proof.Aes.X86.Linear
-import VerifiedGarbage.Proof.Aes.X86.Common
+module
+
+public import VerifiedGarbage.Impl.Aes.X86.Ctr32
+public import VerifiedGarbage.Proof.Aes.X86.Linear
+public import VerifiedGarbage.Proof.Aes.X86.Common
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Encrypting two blocks, bitsliced, on x86 (32-bit)
@@ -12,6 +18,8 @@ buffer. The layers are composed from their proofs (`Sbox.lean`,
 `Linear.lean`); the round loop's invariant is the specification's `foldl`
 over the rounds done.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Aes.X86
 

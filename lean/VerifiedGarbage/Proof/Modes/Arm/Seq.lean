@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Modes.Arm.Core
+module
+
+public import VerifiedGarbage.Proof.Modes.Arm.Core
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The modes one block at a time on ARMv7: the contract, the invariant, the prologue
@@ -23,6 +29,8 @@ registers were saved, the first `k` blocks are `runSeq`'s of the first `k`
 blocks on entry and the rest are unchanged, and the chaining and spare
 blocks are what `runSeq` leaves after them.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Modes.Arm
 

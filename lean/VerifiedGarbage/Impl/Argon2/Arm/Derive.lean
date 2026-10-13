@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Argon2.Arm.Fill
+module
+
+public import VerifiedGarbage.Impl.Argon2.Arm.Fill
 
 /-!
 # Argon2 on ARMv7: the derivation
@@ -17,6 +19,8 @@ XORs the last block of every lane into the first block of the memory, and
 writes H′ of it to `out`. The lanes are evaluated serially, which every
 positive `threads` permits.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Argon2.Arm.Derive
 

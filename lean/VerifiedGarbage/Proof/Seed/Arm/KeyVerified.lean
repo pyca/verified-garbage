@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.Seed.Arm.Key
-import VerifiedGarbage.Proof.Seed.Arm.Verified
+module
+
+public import VerifiedGarbage.Proof.Seed.Arm.Key
+meta import VerifiedGarbage.Proof.Seed.Arm.Key
+public import VerifiedGarbage.Proof.Seed.Arm.Verified
+meta import VerifiedGarbage.Proof.Seed.Arm.Verified
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # SEED key expansion on ARMv7 meets its contracts
@@ -11,6 +19,8 @@ through `sb`, the buffer's base). `expandKey_framed`
 runs it with its working space on the stack, zeroed on return, as
 `ecb_framed` does.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Seed.Arm
 

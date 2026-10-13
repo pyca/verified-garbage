@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Framework.Arm.Exec
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.X25519.Arm.Limbs
+module
+
+public import VerifiedGarbage.Proof.Framework.Arm.Exec
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.X25519.Arm.Limbs
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X25519 on 32-bit ARM: one instruction at a time
@@ -11,6 +17,8 @@ WP rules for the instructions the code uses, which expose only what changes
 unchanged (`Rest`), words of memory at offsets from a base (`wd`), and 32-bit
 arithmetic without overflow.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X25519.Arm
 

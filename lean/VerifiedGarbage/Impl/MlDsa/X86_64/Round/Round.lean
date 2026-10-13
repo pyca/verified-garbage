@@ -1,4 +1,6 @@
-import VerifiedGarbage.TCB.X86_64.Isa
+module
+
+public import VerifiedGarbage.TCB.X86_64.Isa
 
 /-!
 # ML-DSA on x86-64: rounding and hints
@@ -33,6 +35,8 @@ branch on it once, to one loop for each value.
   mod m` by two conditional subtractions of `m`, for `δ` 0 if the hint is 0
   and else 1 if `f · 2γ₂ < a` (`r₀ > 0`), -1 otherwise, as masks.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.X86_64.Round
 

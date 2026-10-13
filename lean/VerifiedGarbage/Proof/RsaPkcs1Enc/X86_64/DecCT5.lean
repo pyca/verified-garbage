@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecCT4
-import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecCorrect
-import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.Alloc
+module
+
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecCT4
+meta import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecCT4
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecCorrect
+meta import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecCorrect
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.Alloc
+meta import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.Alloc
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-PKCS1-v1_5 decryption on x86-64: constant time
@@ -12,6 +21,8 @@ selection's loads and stores are at addresses from the pointers alone, and
 the loop runs `k` times. With the earlier phases, `dec_constantTime`, and
 `dec_verified`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPkcs1Enc.X86_64.Dec
 

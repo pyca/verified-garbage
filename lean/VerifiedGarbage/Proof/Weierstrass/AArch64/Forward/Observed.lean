@@ -1,8 +1,17 @@
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Checked
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Checked
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Register allocation can discard dead scratch words and introduce spills.
 Its certificate therefore compares exactly the words the caller observes,
 while deriving register and memory frames from the executed instructions. -/
+
+@[expose] public section
+
 namespace VG.Proof.Weierstrass.AArch64.Forward
 open VG VG.AArch64 VG.Proof.Mont VG.Proof.Mont.AArch64
 

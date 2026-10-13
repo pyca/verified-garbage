@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Sha3.Arm.Shared
-import VerifiedGarbage.Proof.Sha3.Scratch
-import VerifiedGarbage.Proof.Framework.Arm.StackScratch
+module
+
+public import VerifiedGarbage.Proof.Sha3.Arm.Shared
+public import VerifiedGarbage.Proof.Sha3.Scratch
+public import VerifiedGarbage.Proof.Framework.Arm.StackScratch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The SHA-3 sponge on ARMv7, with its working space on the stack
@@ -13,6 +19,8 @@ address, the saved `lr` and the 640 bytes of working space. The copies are
 read only where the pre- and postconditions read the buffers
 (`Proof/Sha3/Scratch.lean`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sha3.Arm.Frame
 

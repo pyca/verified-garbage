@@ -1,30 +1,40 @@
-import VerifiedGarbage.Proof.Ed448.X86_64.VerifyMain
-import VerifiedGarbage.Proof.Ed448.X86_64.VerifyLit
-import VerifiedGarbage.Proof.Framework.X86_64.Taint
-import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Spec.Ed448.Contract
-import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
+module
+
+public import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Timing
+public import VerifiedGarbage.Proof.Ed448.X86_64.VerifyPrefix
+public import VerifiedGarbage.Proof.Ed448.X86_64.VerifyLit
+public import VerifiedGarbage.Proof.Framework.X86_64.Taint
+public import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.Ed448.Contract
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
+meta import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Timing
+meta import VerifiedGarbage.Proof.Ed448.X86_64.VerifyPrefix
+meta import VerifiedGarbage.Proof.Ed448.X86_64.VerifyLit
+meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
+meta import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Spec.Ed448.Contract
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 verification's equation on x86-64: `Verified`
 
-Correctness including the ABI of the code with `vg_gf448_r64_pow223`'s
-inlined, given the reference computations' agreement with the specification
-(`RecoverOk`, `VerifyEqOk`, which the registration files pass in), constant
-time (by taint tracking, which follows the call: the only branches are on the
-loop counters, and every address is an argument plus a constant or a counter,
-or a pointer the code stored in the working space before any store at a
-counter's offset could change it; the call keeps the decoding loop's pointer
-and count in `r12` and `r13`, which the function restores, and stores them
-back), and a concrete state satisfying the signature's contract, with 8 bytes
-of stack for the call's return address (`Verified.of_inline_ct`). Callers get
-the code's correctness for states that keep their buffers off those 8 bytes
-(`verifyEquation_ok`, `verifyEquationLocal.clear`). The contract lets timing
-depend on the inputs; the code's depends on the pointers alone.
+Correctness and ABI preservation for both field backends, together with a
+relational timing proof. Decoding uses fixed addresses. The joint multiplication
+indexes its projective table using public challenge digits, whose values follow
+from correctness of scalar decoding. The reviewed contract already makes every
+verification input public; no signing or secret-scalar contract changes.
 -/
 
+@[expose] public section
+
 namespace VG.Proof.Ed448.X86_64
+set_option exponentiation.threshold 1024
 
 open VG VG.X86_64 VG.Impl.Ed448.X86_64
 
@@ -46,7 +56,7 @@ def verifyEquationτ : X86_64.Taint.T :=
 theorem verifyEquation_agree {s₁ s₂ : State} (h₁ : verifyEquationLocal.pre s₁)
     (h₂ : verifyEquationLocal.pre s₂) (hpub : verifyEquationLocal.pub s₁ s₂) :
     X86_64.Taint.Agree verifyEquationτ s₁ s₂ := by
-  obtain ⟨p0, p1, p2, p3, p4⟩ := hpub
+  obtain ⟨p0, p1, p2, p3, p4, _, _⟩ := hpub
   have wf : ∀ s, verifyEquationLocal.pre s → X86_64.Taint.Wf verifyEquationτ s := by
     intro s hs
     obtain ⟨-, hw, -, -, -, -, d⟩ := hs
@@ -56,7 +66,8 @@ theorem verifyEquation_agree {s₁ s₂ : State} (h₁ : verifyEquationLocal.pre
   refine ⟨⟨fun r hr => ?_, fun h => by cases h⟩, fun _ => ?_, wf _ h₁, wf _ h₂, ?_, ?_,
     X86_64.Taint.noLo, X86_64.Taint.noXr⟩
   · simp only [verifyEquationτ, RegSet.mem_ofList, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl | rfl <;> assumption
+    rcases hr with rfl | rfl | rfl | rfl | rfl
+    exacts [p1, p2, p3, p4, p0]
   · rw [h₁.2.1, h₂.2.1, p4]
   · intro sl h; simp [verifyEquationτ] at h
   · intro sl h; simp [verifyEquationτ] at h
@@ -80,16 +91,7 @@ theorem verifyEquation_ok (hR : Proof.Ed448.RecoverOk) (hE : Proof.Ed448.VerifyE
       ∃ t s', Exec isa verifyEquation s t s' ∧ abiPreserved s s' ∧ verifyEquationLocal.post s s' :=
   ok_of_inline verifyEquation_inlineOk (verifyEquation_okI hR hE) verifyEquation_patch
 
-/-! ## Constant time, with summaries
-
-The constants stored in the working space are public, and the analysis keeps
-them as public slots: some fifty, which every store of a secret and every
-comparison of taints goes through. Nothing reads them as an address or a
-condition: only the working space at `rdi` (region 0), the pointers to `A`
-and the signature saved there (`PPK`, `PSIG`), and the decodings' loop's
-pointer and count (`PCUR`, `CNT`) need to be public. The decoding and the
-loop over the bits are analysed as summaries (`taint_summary`) from that
-alone, so their analyses (and what follows them) carry no constants. -/
+/-! ## Public-input timing, with decoding summaries -/
 
 /-- What the code needs public after the entry, and the registers `rs` (the
 encoding's address `rsi`, for the decoding). -/
@@ -97,23 +99,78 @@ def verifySumτ (rs : List Reg) : X86_64.Taint.T :=
   { regs := .ofList (rs ++ [.rdi, .rsp]), flags := false, lens := [8192], bases := [(.rdi, 0, 0)],
     slots := [(0, PPK, 8), (0, PSIG, 8), (0, PCUR, 8), (0, CNT, 8)] }
 
-taint_summary verifyRootSum : taintS (verifySumτ []) (rootCall Impl.X448.X86_64.baseline)
+taint_summary verifyRootInlineSum : taintS (verifySumτ [])
+    (rootCallFor .scalar).inline
+taint_summary verifyDecodeInlineSum : taintS (verifySumτ [.rsi])
+    (decode Impl.X448.X86_64.baseline 6 7 (rootCallFor .scalar).inline) using verifyRootInlineSum
+taint_summary verifyRootAdxInlineSum : taintS (verifySumτ [])
+    (rootCallFor .adx).inline
+taint_summary verifyDecodeAdxInlineSum : taintS (verifySumτ [.rsi])
+    (decode Impl.X448.X86_64.adx 6 7 (rootCallFor .adx).inline) using verifyRootAdxInlineSum
 
-taint_summary verifyDecodeASum : taintS (verifySumτ [.rsi])
-    (decode Impl.X448.X86_64.baseline 6 7 (rootCall Impl.X448.X86_64.baseline))
-  using verifyRootSum
-taint_summary verifyLoopSum : taintS (verifySumτ []) (Window.joint Impl.X448.X86_64.baseline Point64.calls KBITS)
+theorem verifyPrefix_ct (v : Impl.Ed448.X86_64.FieldVariant) :
+    ConstantTime isa verifyEquationLocal.pre verifyEquationLocal.pub
+      (verifyPrefix v.field (rootCallFor v).inline) := by
+  cases v
+  · obtain ⟨_, hc⟩ : ∃ h, (taintS.check verifyEquationτ
+        (verifyPrefix Impl.X448.X86_64.baseline (rootCallFor .scalar).inline) h).isSome = true := by
+      taint_decide_sum [verifyDecodeInlineSum]
+    exact VG.Taint.constantTime (A := taintS) verifyEquationτ
+      (fun _ _ h₁ h₂ hp => verifyEquation_agree h₁ h₂ hp) hc
+  · obtain ⟨_, hc⟩ : ∃ h, (taintS.check verifyEquationτ
+        (verifyPrefix Impl.X448.X86_64.adx (rootCallFor .adx).inline) h).isSome = true := by
+      taint_decide_sum [verifyDecodeAdxInlineSum]
+    exact VG.Taint.constantTime (A := taintS) verifyEquationτ
+      (fun _ _ h₁ h₂ hp => verifyEquation_agree h₁ h₂ hp) hc
 
-theorem verifyEquation_ct0 :
-    ConstantTime isa verifyEquationLocal.pre verifyEquationLocal.pub verifyEquation := by
-  obtain ⟨_, hc⟩ : ∃ h, (taintS.check verifyEquationτ verifyEquation h).isSome = true := by
-    taint_decide_sum [verifyDecodeASum, verifyLoopSum]
-  exact VG.Taint.constantTime (A := taintS) verifyEquationτ
-    (fun _ _ h₁ h₂ hp => verifyEquation_agree h₁ h₂ hp) hc
+theorem verifyFinish_ct (v : Impl.Ed448.X86_64.FieldVariant) (base : Addr) :
+    RelCT isa (fun s u => s.gpr .rdi = base ∧ u.gpr .rdi = base)
+      (vfinish v.field v.bodies) (fun _ _ => True) := by
+  cases v <;> apply RelCT.taint (A := taint) (Taint.ofRegs [.rdi]) _ (by taint_decide)
+  all_goals
+    intro s u h
+    apply Taint.agree_ofRegs
+    intro r hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    subst r
+    exact h.1.trans h.2.symm
 
-theorem verifyEquation_ct :
-    ConstantTime isa verifyEquationLocal.clear.pre verifyEquationLocal.pub verifyEquation :=
-  fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hp e₁ e₂ => verifyEquation_ct0 s₁ s₂ t₁ t₂ s₁' s₂' h₁.1 h₂.1 hp e₁ e₂
+theorem verifyRest_ct (v : Impl.Ed448.X86_64.FieldVariant) (base : Addr) (S K : Nat)
+    (hS : S < 2 ^ 456) (hK : K < 2 ^ 456) :
+    RelCT isa (fun s u => Window.JointTimingCtx base S K s ∧ Window.JointTimingCtx base S K u)
+      (.seq (Wnaf.joint v.field v.bodies KBITS) (vfinish v.field v.bodies)) (fun _ _ => True) := by
+  apply Window.seq_same (Wnaf.joint_ct v base S K hS hK) _ (verifyFinish_ct v base)
+  intro s h
+  exact WP.mono (Wnaf.joint_ok (FieldVariant.field_ok v) (FieldVariant.bodies_ok v)
+    h.scr (by decide) (by decide) h.bs h.bk hS hK h.d h.z h.p) fun u hu => hu.1.rdi
+
+theorem signatureScalar_below (s : State) : signatureScalar s < 2 ^ 456 := by
+  exact decodeLE_below (bytesAt57_len s.mem (s.gpr .rsi + BitVec.ofNat 64 57))
+
+theorem challengeScalar_below (s : State) : challengeScalar s < 2 ^ 456 := by
+  exact decodeLE_below (bytesAt57_len s.mem (s.gpr .rdx))
+
+theorem verifyEquationFor_ctI (v : Impl.Ed448.X86_64.FieldVariant) (hR : Proof.Ed448.RecoverOk) :
+    ConstantTime isa verifyEquationLocal.pre verifyEquationLocal.pub (verifyEquationFor v).inline := by
+  let P (s u : State) := verifyEquationLocal.pre s ∧ verifyEquationLocal.pre u ∧ verifyEquationLocal.pub s u
+  have head : RelCT isa P (verifyPrefix v.field (rootCallFor v).inline) (fun _ _ => True) :=
+    fun s u t1 t2 s' u' h e1 e2 => ⟨verifyPrefix_ct v s u t1 t2 s' u' h.1 h.2.1 h.2.2 e1 e2, trivial⟩
+  have hw := head.wpDep (F := fun (s u : State) =>
+      Window.JointTimingCtx (s.gpr .rcx) (signatureScalar s) (challengeScalar s) u)
+    (fun s u h => ⟨verifyPrefix_ok (FieldVariant.field_ok v) hR (rootCallFor_ok v) h.1,
+      verifyPrefix_ok (FieldVariant.field_ok v) hR (rootCallFor_ok v) h.2.1⟩)
+  have hh := hw.seq (Q := fun _ _ => True) (by
+    intro s u t1 t2 s' u' h e1 e2
+    obtain ⟨_, a, b, hab, ha, hb⟩ := h
+    obtain ⟨_, _, _, _, base, sig, chal⟩ := hab.2.2
+    rw [← base, ← sig, ← chal] at hb
+    have hS := signatureScalar_below a
+    have hK := challengeScalar_below a
+    exact verifyRest_ct v (a.gpr .rcx) (signatureScalar a) (challengeScalar a) hS hK
+      s u t1 t2 s' u' ⟨ha, hb⟩ e1 e2)
+  have result := hh.assoc.assoc.assoc.assoc
+  rw [verifyEquationFor_inline]
+  exact result.constantTime
 
 theorem verifyEquation_implies :
     verifyEquationLocal.Implies (Spec.Ed448.verifyEquationContract X86_64.abi) where
@@ -131,8 +188,14 @@ theorem verifyEquation_implies :
   pub s t _ _ h := by
     sig_pub [Spec.Ed448.verifyEquationContract, Spec.Ed448.verifyEquationSig,
       Spec.Ed448.scratchWords, X86_64.abi, X86_64.argRegs] at h
-    obtain ⟨sp, -, pk, sig, ch, base⟩ := h
-    exact ⟨sp, pk, sig, ch, base⟩
+    obtain ⟨sp, bytes, pk, sig, ch, base⟩ := h
+    have hb := byteMap_inj bytes
+    obtain ⟨first, last⟩ := List.append_inj' hb (by simp only [bytesAt57_len])
+    obtain ⟨_, middle⟩ := List.append_inj' first (by simp only [bytesAt114_len])
+    refine ⟨sp, pk, sig, ch, base, ?_, congrArg Spec.Ed448.decodeLE last⟩
+    have hd := congrArg (fun bs => Spec.Ed448.decodeLE (bs.drop 57)) middle
+    rw [bytesAt_drop57, bytesAt_drop57] at hd
+    exact hd
   sat := by
     sig_implies_sat [Spec.Ed448.verifyEquationContract, Spec.Ed448.verifyEquationSig,
       Spec.Ed448.scratchWords, X86_64.abi, X86_64.argRegs] [verifyEquationSat] using verifyEquationSat
@@ -147,7 +210,8 @@ theorem verifyEquation_implies8 :
 
 theorem verifyEquation_verified (hR : Proof.Ed448.RecoverOk) (hE : Proof.Ed448.VerifyEqOk) :
     Verified X86_64.target verifyEquation (Spec.Ed448.verifyEquationContract X86_64.abi 8) :=
-  Verified.of_inline_ct verifyEquation_inlineOk (verifyEquation_okI hR hE) verifyEquation_ct0
+  Verified.of_inline verifyEquation_inlineOk (verifyEquation_okI hR hE) (verifyEquationFor_ctI .scalar hR)
     verifyEquation_implies8 (fun _ h => Sig.clear_of_pre h) (fun _ _ _ _ _ hp => hp)
+    (fun s t hs ht hp => (verifyEquation_implies8.pub s t hs ht hp).1)
 
 end VG.Proof.Ed448.X86_64

@@ -1,18 +1,22 @@
-import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.Rsa.X86_64.PubChecked
-import VerifiedGarbage.Proof.Bignum.X86_64.PcVerified
-import VerifiedGarbage.Proof.Bignum.X86_64.FoldedBackend
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtVerified
-import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Verified
-import VerifiedGarbage.Proof.Rsa.X86_64.CvVerified
-import VerifiedGarbage.Proof.Rsa.X86_64.RpVerified
-import VerifiedGarbage.Proof.Rsa.X86_64.KeyVerified
-import VerifiedGarbage.Proof.Rsa.X86_64.CrtKeyVerified
-import VerifiedGarbage.Proof.Bignum.X86_64.PcFn
-import VerifiedGarbage.Proof.Rsa.X86_64.Calls
-import VerifiedGarbage.Proof.Rsa.X86_64.IfmaLit
+module
+
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.Rsa.X86_64.PubChecked
+public import VerifiedGarbage.Proof.Bignum.X86_64.PcVerified
+public import VerifiedGarbage.Proof.Bignum.X86_64.FoldedBackend
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtVerified
+public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Verified
+public import VerifiedGarbage.Proof.Rsa.X86_64.CvVerified
+public import VerifiedGarbage.Proof.Rsa.X86_64.RpVerified
+public import VerifiedGarbage.Proof.Rsa.X86_64.KeyVerified
+public import VerifiedGarbage.Proof.Rsa.X86_64.CrtKeyVerified
+public import VerifiedGarbage.Proof.Bignum.X86_64.PcFn
+public import VerifiedGarbage.Proof.Rsa.X86_64.Calls
+public import VerifiedGarbage.Proof.Rsa.X86_64.IfmaLit
 
 /-! # RSA (RFC 8017) on x86-64 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.Rsa.X86_64
 

@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.CmacTripleDes.X86.Contract
-import VerifiedGarbage.Proof.CmacTripleDes.X86.Block
-import VerifiedGarbage.Proof.MdStream.X86.Common
-import VerifiedGarbage.Proof.Framework.X86.Spill
+module
+
+public import VerifiedGarbage.Proof.CmacTripleDes.X86.Contract
+public import VerifiedGarbage.Proof.CmacTripleDes.X86.Block
+public import VerifiedGarbage.Proof.MdStream.X86.Common
+public import VerifiedGarbage.Proof.Framework.X86.Spill
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # TDEA-CMAC on x86: saving and restoring the registers, and the arguments
@@ -11,6 +17,8 @@ caller's `ebx`, `esi`, `edi` and `ebp` to bytes `[84, 100)` of the scratch
 buffer through `eax` (`save`, a `Spill.saveCode`), and restores them from
 there through `ebp`, `ebp` last (`restore`). It loads its arguments from the stack (`wp_arg`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.CmacTripleDes.X86
 

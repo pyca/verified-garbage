@@ -1,10 +1,23 @@
-import VerifiedGarbage.Proof.Sha3.AArch64.Callers.Sums
-import VerifiedGarbage.Impl.MlKem1024.AArch64.Encaps
-import VerifiedGarbage.Impl.MlKem1024.AArch64.Decaps
-import VerifiedGarbage.Impl.MlKem.AArch64.Encaps
-import VerifiedGarbage.Impl.MlKem.AArch64.Decaps
-import VerifiedGarbage.Impl.MlKem.AArch64.KeyGen
-import VerifiedGarbage.Impl.MlKem.AArch64.Sample
+module
+
+public import VerifiedGarbage.Proof.Sha3.AArch64.Callers.Sums
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Callers.Sums
+public import VerifiedGarbage.Impl.MlKem1024.AArch64.Encaps
+meta import VerifiedGarbage.Impl.MlKem1024.AArch64.Encaps
+public import VerifiedGarbage.Impl.MlKem1024.AArch64.Decaps
+meta import VerifiedGarbage.Impl.MlKem1024.AArch64.Decaps
+public import VerifiedGarbage.Impl.MlKem.AArch64.Encaps
+meta import VerifiedGarbage.Impl.MlKem.AArch64.Encaps
+public import VerifiedGarbage.Impl.MlKem.AArch64.Decaps
+meta import VerifiedGarbage.Impl.MlKem.AArch64.Decaps
+public import VerifiedGarbage.Impl.MlKem.AArch64.KeyGen
+meta import VerifiedGarbage.Impl.MlKem.AArch64.KeyGen
+public import VerifiedGarbage.Impl.MlKem.AArch64.Sample
+meta import VerifiedGarbage.Impl.MlKem.AArch64.Sample
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Constant time of ML-KEM's calls of the sponge, for any Keccak backend
@@ -13,6 +26,8 @@ Each check, once for any backend `c` with the summaries `sums c`
 (`Callers/Sums.lean`, `taint_decide_generic`), for each backend's
 `Permutation` (`Proof/Sha3/AArch64/Variant.lean`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sha3.AArch64.Callers
 

@@ -1,8 +1,16 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CommitTailCoreState
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentSeed66
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentSeed
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CommitTailCoreState
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentSeed66
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentSeed
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## The core loop -/
+
+@[expose] public section
 
 section
 

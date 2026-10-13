@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrRound
+module
+
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrRound
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # A candidate on AArch64: Miller–Rabin's loop
@@ -8,6 +14,8 @@ draws, at the offset `used` of `rand`, whose remaining loop (`mrRest`) is
 the whole test's. `mrIter_ok`: one iteration; `millerRabin_ok`: the loop,
 with `kStat` 0, 1 or 3 and `kUsed` as `primalityTest` ends.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaKeyGen.AArch64
 

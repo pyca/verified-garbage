@@ -1,6 +1,11 @@
-import VerifiedGarbage.Proof.Sha1.X86.Variants.Interface
-import VerifiedGarbage.Proof.Sha1.X86.Shared
-import VerifiedGarbage.Proof.Framework.X86.Lit
+module
+
+public import VerifiedGarbage.Proof.Sha1.X86.Variants.Interface
+meta import VerifiedGarbage.Proof.Sha1.X86.Variants.Interface
+public import VerifiedGarbage.Proof.Sha1.X86.Shared
+meta import VerifiedGarbage.Proof.Sha1.X86.Shared
+public import VerifiedGarbage.Proof.Framework.X86.Lit
+meta import VerifiedGarbage.Proof.Framework.X86.Lit
 
 /-!
 # SHA-1 on x86: the scalar compression function
@@ -9,6 +14,9 @@ A variant of `Sha1` on x86 (see `TCB/Emit.lean`): `vg_sha1_compress`, in the
 baseline ISA, and the streaming `update` and `finalize` made with it, which
 HMAC's and PBKDF2's functions call (`Generic/Sha1/X86/`).
 -/
+
+@[expose] public section
+
 namespace VG.Variants.Sha1.X86.Scalar
 
 open VG.X86

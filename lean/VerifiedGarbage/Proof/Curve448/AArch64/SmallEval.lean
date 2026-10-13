@@ -1,4 +1,13 @@
-import VerifiedGarbage.Proof.Curve448.AArch64.Stage
+module
+
+public import VerifiedGarbage.Proof.Curve448.AArch64.Stage
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
+
 namespace VG.Proof.Curve448.AArch64
 open VG VG.AArch64 VG.Proof.X448.Wide
 open VG.Impl.X448.AArch64 (ld st)

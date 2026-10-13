@@ -1,8 +1,13 @@
-import VerifiedGarbage.Impl.Ed25519.X86.CommonMemory
-import VerifiedGarbage.Spec.Ed25519
+module
+
+public import VerifiedGarbage.Impl.Ed25519.X86.CommonMemory
+public import VerifiedGarbage.Spec.Ed25519
 
 /-! Binary scalar reduction uses eight 32-bit limbs in scratch. Every bit
 performs a doubling and one masked subtraction of the subgroup order. -/
+
+@[expose] public section
+
 namespace VG.Impl.Ed25519.X86
 open VG.X86 VG.Impl.X25519.X86
 

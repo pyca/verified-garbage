@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Blake2.Arm.Stream.Update
+module
+
+public import VerifiedGarbage.Proof.Blake2.Arm.Stream.Update
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Streaming BLAKE2 on ARMv7: `finalize`
@@ -9,6 +15,8 @@ prologue, which zeroes the rest of the buffer and sets up the call (`pro_ok`),
 the call (`call_ok'`) and the end, which copies the hash value to `out`
 (`end_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Blake2.Arm.Stream.Finalize
 

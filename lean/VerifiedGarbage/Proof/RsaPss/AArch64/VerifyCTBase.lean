@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyTop
-import VerifiedGarbage.Proof.RsaPss.AArch64.CtHashCT
-import VerifiedGarbage.Proof.RsaPss.AArch64.RelSplit
+module
+
+public import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyTop
+meta import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyTop
+public import VerifiedGarbage.Proof.RsaPss.AArch64.CtHashCT
+meta import VerifiedGarbage.Proof.RsaPss.AArch64.CtHashCT
+public import VerifiedGarbage.Proof.RsaPss.AArch64.RelSplit
+meta import VerifiedGarbage.Proof.RsaPss.AArch64.RelSplit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSASSA-PSS verification on AArch64: constant time, the public data and the checks
@@ -14,6 +23,8 @@ on public values only (`AtEV`, `AtSV`: the states after `emLen` and
 `saltFits`); the expected salt length is chosen by `any_salt_len`, loaded
 from its slot and public by correctness (`expLen_ct`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPss.AArch64.Vfy
 

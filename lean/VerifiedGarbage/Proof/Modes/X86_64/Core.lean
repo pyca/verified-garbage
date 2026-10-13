@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Modes.X86_64.Steps
-import VerifiedGarbage.Proof.Framework.Semantics
-import VerifiedGarbage.Proof.Framework.X86_64.Syms
-import VerifiedGarbage.Spec.Cbc
+module
+
+public import VerifiedGarbage.Proof.Modes.X86_64.Steps
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Framework.X86_64.Syms
+public import VerifiedGarbage.Spec.Cbc
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # What the modes need of a block cipher's core, on x86-64
@@ -29,6 +35,8 @@ else: the modes are proven once, for any core, and each cipher proves
   changes only the core's slots in memory, and keeps `sb`, `rsp`,
   `dataReg` and `leftReg`; every other register may change.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Modes.X86_64
 

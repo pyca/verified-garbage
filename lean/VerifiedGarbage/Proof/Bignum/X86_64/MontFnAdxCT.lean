@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.MontFnAdx
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontFnAdx
+meta import VerifiedGarbage.Proof.Bignum.X86_64.MontFnAdx
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_mont_mul_adx`: constant time
@@ -10,6 +17,8 @@ tiles are constant time for the slots the head wrote (`Ops`), and the
 baseline's rounds from the bases; the tail addresses only from `rdi`, which
 no instruction of the body writes.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64
 

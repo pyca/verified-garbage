@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Rsa.AArch64.CkCTCode
-import VerifiedGarbage.Proof.Framework.Contract
+module
+
+public import VerifiedGarbage.Proof.Rsa.AArch64.CkCTCode
+public import VerifiedGarbage.Proof.Framework.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_check_key` on AArch64: verified against the shared contract
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.Framework.Contract
 (`ck_implies`); with correctness (`ckCode_correct`) and constant time
 (`ckCode_constantTime`), `CheckKey.code` is verified (`ck_verified`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.AArch64
 

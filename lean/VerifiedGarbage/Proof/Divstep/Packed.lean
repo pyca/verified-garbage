@@ -1,10 +1,16 @@
-import Mathlib.Tactic.LinearCombination
-import Mathlib.Tactic.Linarith
-import Mathlib.Tactic.NormNum
-import Mathlib.Tactic.Ring
-import VerifiedGarbage.Proof.Divstep.Batch
-import VerifiedGarbage.Proof.Divstep.Word
-import VerifiedGarbage.Proof.Divstep.PackedDef
+module
+
+public import Mathlib.Tactic.LinearCombination
+public import Mathlib.Tactic.Linarith
+public import Mathlib.Tactic.NormNum
+public import Mathlib.Tactic.Ring
+public import VerifiedGarbage.Proof.Divstep.Batch
+public import VerifiedGarbage.Proof.Divstep.Word
+public import VerifiedGarbage.Proof.Divstep.PackedDef
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Packed divsteps on 64-bit words
@@ -18,6 +24,8 @@ modulo `2^64` (`PackedDef.lean`'s `pstep`), for `P ≡ f` and `Q ≡ g` modulo
 give the entries (`pext_rel`). Steps from any matrix are the identity's
 times it (`msteps_gen`), so a batch's matrix is its chunks' product.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Divstep
 

@@ -1,7 +1,9 @@
-import VerifiedGarbage.Impl.Ed448.X86_64.Point64
-import VerifiedGarbage.Impl.Ed448.X86_64.Scalar
-import VerifiedGarbage.Spec.Ed448
-import VerifiedGarbage.Impl.Ed448.Comb
+module
+
+public import VerifiedGarbage.Impl.Ed448.X86_64.FieldVariant
+public import VerifiedGarbage.Impl.Ed448.X86_64.Scalar
+public import VerifiedGarbage.Spec.Ed448
+public import VerifiedGarbage.Impl.Ed448.Comb
 
 /-!
 # Ed448 base-point multiplication on x86-64
@@ -33,6 +35,8 @@ bit of `x` stored as the top bit of the 57th byte.
 The only branches are on the loop counters, and every address is a pointer
 plus a constant or a counter, so only the pointers can affect timing.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Ed448.X86_64
 
@@ -166,7 +170,10 @@ def scalarBaseWith (F : Field) (P : Point64.Ops) (inv : Prog isa := invert F) : 
 
 /-- The point operations call `vg_ed448_r64_point_double` and `vg_ed448_r64_point_add_affine`,
 and the inversion `vg_gf448_r64_pow223`, keeping the output's address at `OUT`. -/
-def scalarBase : Prog isa :=
-  scalarBaseWith Impl.X448.X86_64.baseline Point64.calls (invertCall Impl.X448.X86_64.baseline [OUT])
+def scalarBaseFor (v : FieldVariant) : Prog isa :=
+  scalarBaseWith v.field v.calls (Impl.X448.X86_64.invertCallWith v.field v.powName [OUT])
+
+def scalarBase : Prog isa := scalarBaseFor .scalar
+def scalarBaseAdx : Prog isa := scalarBaseFor .adx
 
 end VG.Impl.Ed448.X86_64

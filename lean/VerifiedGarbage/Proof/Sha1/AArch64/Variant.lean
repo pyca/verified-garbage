@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Sha1.AArch64.Stream.Md
+module
+
+public import VerifiedGarbage.Proof.Sha1.AArch64.Stream.Md
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # SHA-1 compression backends on AArch64
@@ -8,6 +14,8 @@ checked constant-time, register and frame facts for the generic streaming
 wrappers. The functional streaming proofs are shared by every backend.
 HMAC and PBKDF2 consume the resulting streaming functions through `MdHash`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sha1.AArch64
 

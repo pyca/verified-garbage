@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlKem.KPke
+module
+
+public import VerifiedGarbage.Proof.MlKem.KPke
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM-1024: K-PKE and the internal algorithms as polynomial steps
@@ -7,6 +13,8 @@ The names the proofs of each target use for ML-KEM-1024 (`k = 4`,
 `η₁ = η₂ = 2`, `d_u = 11`, `d_v = 5`): those of `KPke.lean`, which states
 K-PKE and the internal algorithms for any parameter set, for `mlKem1024`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem
 

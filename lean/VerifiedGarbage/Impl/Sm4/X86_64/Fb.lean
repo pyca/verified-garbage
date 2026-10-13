@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Sm4.X86_64.Ctr
-import VerifiedGarbage.Impl.Modes.X86_64.Fb
+module
+
+public import VerifiedGarbage.Impl.Sm4.X86_64.Ctr
+public import VerifiedGarbage.Impl.Modes.X86_64.Fb
 
 /-!
 # SM4-OFB and SM4-CFB128, bitsliced, on x86-64
@@ -11,6 +13,8 @@ n = rcx, scratch = r8): `vg_sm4_ofb`, `vg_sm4_cfb128_encrypt` and
 encryption order (`dirCore .encrypt`). Each block's input depends on the
 block before it, so each is enciphered alone, in a batch of sixteen.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Sm4.X86_64
 

@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Ed448.X86.VerifyChecks
-import VerifiedGarbage.Proof.Ed448.X86.VerifySign
-import VerifiedGarbage.Proof.X448.X86.Restore
-import VerifiedGarbage.Proof.X448.X86.Counters
+module
+
+public import VerifiedGarbage.Proof.Ed448.X86.VerifyChecks
+public import VerifiedGarbage.Proof.Ed448.X86.VerifySign
+public import VerifiedGarbage.Proof.X448.X86.Restore
+public import VerifiedGarbage.Proof.X448.X86.Counters
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 verification's equation on x86 (32-bit): the comparison and the result
@@ -11,6 +17,8 @@ compared projectively (`X_Q Z_R = X_R Z_Q`, then `Y_Q Z_R = Y_R Z_Q`, each
 check ORed into `BAD`, by two passes of `vcmp`: `vcmp_ok`), the callee-saved registers restored, and
 `eax = (BAD == 0)`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.X86
 

@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Weierstrass.AArch64.MontFn
-import VerifiedGarbage.Proof.Weierstrass.AArch64.SetConst
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.MontFn
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.SetConst
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Montgomery products modulo a general modulus, as functions, on AArch64
@@ -13,6 +19,8 @@ runs the inline product through the pointers (`mulR_okW`) and restores the
 registers (`mulFnG_ok`): what `mulFnS_ok` gives for the other moduli. `ModOk`
 is either's hypotheses, and `mulFn_ok` the function's product for both.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.AArch64.Mont
 

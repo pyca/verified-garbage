@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Call
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Call
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA signing on x86-64: the moves of a call's arguments
@@ -9,6 +15,8 @@ state before the moves (`setArgs_ok`), and nothing else changed but those
 registers. With it, a call of verified code (`callP_ok`, `callP_tr`,
 `callPRet_tr`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86_64.Sign
 

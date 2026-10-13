@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Argon2.Arm.Derive.Reduce
+module
+
+public import VerifiedGarbage.Proof.Argon2.Arm.Derive.Reduce
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Argon2 on ARMv7: the derivation is correct
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.Argon2.Arm.Derive.Reduce
 the memory, and writes the tag (`Spec.Argon2.derive`) to `out`; `correct`:
 the whole function, in its frames, keeps the ABI's registers too.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Argon2.Arm.Derive
 

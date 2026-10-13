@@ -1,10 +1,18 @@
-import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.MontProduct
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Word
-import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Lanes
-import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseFrame
+module
+
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.MontProduct
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Word
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Lanes
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseFrame
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## From `MontProductVec.lean` -/
+
+@[expose] public section
 
 section
 

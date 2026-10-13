@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Weierstrass.X86.MontFn
-import VerifiedGarbage.Proof.Framework.X86.CallWith
-import VerifiedGarbage.Proof.Framework.Contract
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86.MontFn
+public import VerifiedGarbage.Proof.Framework.X86.CallWith
+public import VerifiedGarbage.Proof.Framework.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Calls of the Montgomery arithmetic's functions, on x86 (32-bit)
@@ -15,6 +21,8 @@ working space (`CallKeep`: the stack below `esp`), and does what `body`
 does. `mulCall_ok`, `addCall_ok` and `subCall_ok` are the calls of `mulFn`,
 `addFn` and `subFn` (`MontFn.lean`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.X86.Mont
 

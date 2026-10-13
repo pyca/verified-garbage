@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Rc2.X86.Lookup
+module
+
+public import VerifiedGarbage.Impl.Rc2.X86.Lookup
 
 /-! # RC2 key expansion on baseline x86
 
@@ -7,6 +9,8 @@ EDI the output, and ECX the public index. The effective-bit count and scratch
 pointer are read from their original stack arguments. PITABLE uses only
 EAX, EBX and EDX, so no secret-dependent address or branch is needed.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Rc2.X86
 

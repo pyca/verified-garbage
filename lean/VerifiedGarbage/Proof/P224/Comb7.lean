@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.P224.Point
-import VerifiedGarbage.Proof.Weierstrass.CombCheckFast
-import VerifiedGarbage.Impl.P224.CombTable7
+module
+
+public import VerifiedGarbage.Proof.P224.Point
+public import VerifiedGarbage.Proof.Weierstrass.CombCheckFast
+public import VerifiedGarbage.Impl.P224.CombTable7
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # P-224: the 7-bit fixed-base comb's tables are right
@@ -11,6 +17,8 @@ start `p224Comb7Start` through the partial sums below; the kernel evaluates
 it once (`combChecks7_p224`, by walking the lists: `combChecksF`), which gives
 the facts the comb's proof needs (`combOk7`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.P224
 

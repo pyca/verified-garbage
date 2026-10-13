@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.X448.Arm.Copy
+module
+
+public import VerifiedGarbage.Proof.X448.Arm.Copy
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 on ARMv7: preparing canonical reduction
@@ -6,6 +12,8 @@ import VerifiedGarbage.Proof.X448.Arm.Copy
 Adding one in limbs zero and fourteen implements the addition of 1 + 2²²⁴
 before carry propagation.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448.Arm
 

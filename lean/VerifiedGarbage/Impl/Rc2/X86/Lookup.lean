@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.Rc2
-import VerifiedGarbage.TCB.X86.Isa
+module
+
+public import VerifiedGarbage.Spec.Rc2
+public import VerifiedGarbage.TCB.X86.Isa
 
 /-! # Constant-time RC2 selection on baseline x86
 
@@ -7,6 +9,8 @@ Every candidate is visited in order. Secret indices affect arithmetic masks,
 never addresses or branches. The three-register PITABLE lookup leaves the
 public key-expansion counters and pointers intact.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Rc2.X86
 

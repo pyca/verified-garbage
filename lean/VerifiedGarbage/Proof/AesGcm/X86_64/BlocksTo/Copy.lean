@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.Mask
-import VerifiedGarbage.Impl.AesGcm.X86_64.BlocksTo
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Mask
+public import VerifiedGarbage.Impl.AesGcm.X86_64.BlocksTo
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM out of place on x86-64: copying blocks (`BlocksTo.copyBlocks`)
@@ -9,6 +15,8 @@ blocks from `rsi` to `rdi`, 16 bytes at a time through `xmm0`, with the
 index in `r10` and the blocks left in `rcx` (`copyBlocks_wp`); the buffers do
 not overlap.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

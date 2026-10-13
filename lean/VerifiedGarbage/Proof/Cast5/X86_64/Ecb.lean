@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Cast5.X86_64.Block
-import VerifiedGarbage.Proof.Framework.X86_64.Abi
+module
+
+public import VerifiedGarbage.Proof.Cast5.X86_64.Block
+public import VerifiedGarbage.Proof.Framework.X86_64.Abi
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # CAST5 on x86-64: ECB
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.Framework.X86_64.Abi
 `ecb blk` saves the callee-saved registers in the working space, runs the
 block function `blk` once for each block, and restores them (`ecb_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Cast5.X86_64
 

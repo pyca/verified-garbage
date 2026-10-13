@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Ed448.X86_64.Verify.Layout
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Spec.Ed448.Contract
-import VerifiedGarbage.TCB.X86_64.Target
+module
+
+public import VerifiedGarbage.Proof.Ed448.X86_64.Verify.Layout
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.Ed448.Contract
+public import VerifiedGarbage.TCB.X86_64.Target
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 verification on x86-64: the precondition and the layout
@@ -10,6 +16,8 @@ The precondition of `verifyContract X86_64.abi 272`, spelled out (`VPre`),
 and the layout of a run from a state satisfying it (`vlay`), which is `Ok`
 if the context is shorter than 256 bytes (`vlay_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.X86_64.Verify
 

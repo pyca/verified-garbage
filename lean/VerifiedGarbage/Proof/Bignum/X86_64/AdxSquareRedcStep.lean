@@ -1,7 +1,15 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareRow
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxRow
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareRow
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRow
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! The carry and cancellation steps for reducing the unreduced square. -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64.AdxSquare
 

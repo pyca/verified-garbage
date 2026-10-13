@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Blowfish.AArch64.Planes
+module
+
+public import VerifiedGarbage.Proof.Blowfish.AArch64.Planes
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # One S-box
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.Blowfish.AArch64.Planes
 the indices in `idxReg j`. `combine_run`: `combine j` accumulates the words
 into `fReg`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Blowfish.AArch64
 

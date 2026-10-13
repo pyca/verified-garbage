@@ -1,6 +1,14 @@
-import VerifiedGarbage.Spec.MlDsa.PairedResponse
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedProductField
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedCheckSlot
+module
+
+public import VerifiedGarbage.Spec.MlDsa.PairedResponse
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedProductField
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedCheckSlot
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Optimized.Paired
 open VG VG.AArch64 VG.Spec.MlDsa

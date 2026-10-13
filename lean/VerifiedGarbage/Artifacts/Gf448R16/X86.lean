@@ -1,8 +1,12 @@
-import VerifiedGarbage.TCB.X86.Target
-import VerifiedGarbage.Impl.X448.X86
-import VerifiedGarbage.Proof.X448.X86.FnVerified
+module
+
+public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Impl.X448.X86
+public import VerifiedGarbage.Proof.X448.X86.FnVerified
 
 /-! # Arithmetic in curve448's field, in radix `2^16`, on x86 (32-bit) -/
+
+@[expose] public section
 
 namespace VG.Artifacts.Gf448R16.X86
 

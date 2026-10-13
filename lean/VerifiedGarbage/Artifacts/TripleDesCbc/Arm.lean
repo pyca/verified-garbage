@@ -1,6 +1,10 @@
-import VerifiedGarbage.Proof.TripleDes.Arm.CbcVerified
+module
+
+public import VerifiedGarbage.Proof.TripleDes.Arm.CbcVerified
 
 /-! # Triple DES-CBC artifacts on baseline ARMv7 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.TripleDesCbc.Arm
 

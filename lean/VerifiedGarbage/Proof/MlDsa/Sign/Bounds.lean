@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Sha3.Stream
-import VerifiedGarbage.Spec.MlDsa.Contract
+module
+
+public import VerifiedGarbage.Proof.Sha3.Stream
+public import VerifiedGarbage.Spec.MlDsa.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA: the samplers are monotone in their bounds
@@ -9,6 +15,8 @@ The XOFs' output for a larger length extends the output for a smaller one
 finish within a bound give the same result within any larger one
 (`rejNTTPoly_mono`, `sampleInBall_mono`, `expandA_mono`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Sign
 

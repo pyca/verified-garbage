@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512Tail.Rounds
-import VerifiedGarbage.Proof.Framework.X86_64.Avx
-import VerifiedGarbage.Impl.ChaCha20.X86_64.Avx2Tail
+module
+
+public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512Tail.Rounds
+public import VerifiedGarbage.Proof.Framework.X86_64.Avx
+public import VerifiedGarbage.Impl.ChaCha20.X86_64.Avx2Tail
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ChaCha20 on x86-64 with AVX2, the last bytes: the rounds
@@ -14,6 +20,8 @@ the rounds is one or three AVX2 instructions (`ymmOf`): a rotation by 16 or
 8 a `vpshufb` with the mask in `ymm8` or `ymm9`, one by 12 or 7 two shifts
 and a `vpor` through `ymm10` (first set) or `ymm11` (second).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.ChaCha20.X86_64.Avx2Tail
 

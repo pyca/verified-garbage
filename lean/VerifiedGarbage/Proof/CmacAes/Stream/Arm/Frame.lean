@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.CmacAes.Stream.Arm.Verified
-import VerifiedGarbage.Proof.Framework.Arm.StackScratch
-import VerifiedGarbage.Proof.Framework.Arm.RegScratch
+module
+
+public import VerifiedGarbage.Proof.CmacAes.Stream.Arm.Verified
+public import VerifiedGarbage.Proof.Framework.Arm.StackScratch
+public import VerifiedGarbage.Proof.Framework.Arm.RegScratch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Streaming AES-CMAC on ARMv7, with its working space on the stack
@@ -14,6 +20,8 @@ those and hold the saved registers too, 2320 bytes (`Verified.stackScratch`).
 The copies are read only where the pre- and postconditions read the buffers
 (`Proof/CmacAes/Stream/Scratch.lean`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.CmacAes.Stream.Arm
 

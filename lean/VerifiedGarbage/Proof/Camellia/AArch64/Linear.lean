@@ -1,6 +1,12 @@
-import VerifiedGarbage.Impl.Camellia.AArch64.Layers
-import VerifiedGarbage.Proof.Camellia.Bitsliced
-import VerifiedGarbage.Proof.Framework.AArch64.Linear
+module
+
+public import VerifiedGarbage.Impl.Camellia.AArch64.Layers
+public import VerifiedGarbage.Proof.Camellia.Bitsliced
+public import VerifiedGarbage.Proof.Framework.AArch64.Linear
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The linear layers of bitsliced Camellia on AArch64, by evaluation
@@ -15,6 +21,8 @@ here. The masks of the layers are constants in their slots
 Position `p = 8c + b` of a plane is byte `c` of block `b`, and byte `c`
 holds the half's byte `pos c`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Camellia.AArch64
 

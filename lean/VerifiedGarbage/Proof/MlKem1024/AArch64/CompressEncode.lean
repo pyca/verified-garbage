@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.MlKem1024.AArch64.Stream
-import VerifiedGarbage.Proof.Framework.Range
+module
+
+public import VerifiedGarbage.Proof.MlKem1024.AArch64.Stream
+meta import VerifiedGarbage.Proof.MlKem1024.AArch64.Stream
+public import VerifiedGarbage.Proof.Framework.Range
+meta import VerifiedGarbage.Proof.Framework.Range
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM-1024 on AArch64: `vg_mlkem1024_compress_encode`
@@ -11,6 +19,8 @@ and `x9` the bits of `acc g e` above them (`SInv`); the coefficient is added
 above those bits (`coeff_step`), and each byte that the bits of `acc g (e +
 1)` complete is stored and shifted out (`byte_step`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem1024
 

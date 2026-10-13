@@ -1,9 +1,21 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejProbePublic
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejChoiceTiming
-import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejProbePublic
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejProbePublic
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejChoiceTiming
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejChoiceTiming
+public import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## From `ResidentRejFourTiming.lean` -/
+
+@[expose] public section
 
 section
 

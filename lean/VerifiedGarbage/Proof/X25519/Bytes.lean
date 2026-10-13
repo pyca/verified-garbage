@@ -1,6 +1,12 @@
-import VerifiedGarbage.Spec.X25519.Contract
-import VerifiedGarbage.Proof.X25519.Ladder
-import Mathlib.Tactic.SplitIfs
+module
+
+public import VerifiedGarbage.Spec.X25519.Contract
+public import VerifiedGarbage.Proof.X25519.Ladder
+public import Mathlib.Tactic.SplitIfs
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X25519: byte strings, numbers and words
@@ -11,6 +17,8 @@ The encodings of RFC 7748 §5 as little-endian numbers of byte strings
 `2²⁵⁵`, each bit of the decoded scalar a bit of one of its bytes (or fixed by
 the clamping), and the encoded result the bytes of its value.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X25519
 

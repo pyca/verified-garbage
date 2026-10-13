@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.StreamAad
-import VerifiedGarbage.Proof.AesGcm.X86_64.FnCT
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamAad
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.StreamAad
+public import VerifiedGarbage.Proof.AesGcm.X86_64.FnCT
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.FnCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on x86-64: `vg_aes_gcm_stream_aad` is constant time
@@ -8,6 +16,8 @@ Untrusted: everything here is checked by Lean. After the entry, both runs
 absorb data at the same address, of the same length, after the same number
 of bytes modulo 16 (`absorb_rel`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesGcm.X86_64
 

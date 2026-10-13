@@ -1,8 +1,16 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareWideGeneral
-import VerifiedGarbage.Proof.Bignum.Square
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxFused
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareWideGeneral
+public import VerifiedGarbage.Proof.Bignum.Square
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxFused
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! The rows of the off-diagonal part of an ADX square. -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64.AdxSquare
 

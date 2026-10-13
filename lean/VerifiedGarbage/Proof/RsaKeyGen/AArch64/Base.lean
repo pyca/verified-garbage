@@ -1,5 +1,11 @@
-import VerifiedGarbage.Impl.RsaKeyGen.AArch64.Candidate
-import VerifiedGarbage.Proof.Rsa.AArch64.KeyWs
+module
+
+public import VerifiedGarbage.Impl.RsaKeyGen.AArch64.Candidate
+public import VerifiedGarbage.Proof.Rsa.AArch64.KeyWs
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # A candidate on AArch64: the working space, and instructions for `brun`
@@ -11,6 +17,8 @@ is any range of the working space but the header words that `Ws` depends on
 to such ranges. `exec_mul_w`, `exec_addImm_w`, `exec_movz_x'` and
 `exec_movk_x` are the instructions `brun` does not know.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaKeyGen.AArch64
 

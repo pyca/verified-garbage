@@ -1,4 +1,10 @@
-import VerifiedGarbage.Impl.Weierstrass.AArch64.Forward
+module
+
+public import VerifiedGarbage.Impl.Weierstrass.AArch64.Forward
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! A twin of the untrusted scheduler's forwarding pass for the kernel. Proofs
 need `optimize`'s output as a literal, which the kernel checks by evaluating
@@ -6,6 +12,8 @@ need `optimize`'s output as a literal, which the kernel checks by evaluating
 compared through `BEq` instances) costs the kernel several times as much as
 the same steps written with recursors and `Nat.beq`; `optimize_eq` rewrites
 `optimize` to that twin, which is proved equal to it for every input. -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.AArch64.Forward
 open VG VG.AArch64 VG.Impl.Weierstrass.AArch64.Forward

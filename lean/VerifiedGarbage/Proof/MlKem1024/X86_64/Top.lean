@@ -1,11 +1,25 @@
-import VerifiedGarbage.Proof.MlKem.X86_64.KgTop
-import VerifiedGarbage.Proof.MlKem.X86_64.EcTop
-import VerifiedGarbage.Proof.MlKem.X86_64.DcTop
-import VerifiedGarbage.Proof.MlKem1024.X86_64.CompressEncode
-import VerifiedGarbage.Proof.MlKem1024.X86_64.DecodeDecompress
-import VerifiedGarbage.Impl.MlKem1024.X86_64.Kem
-import VerifiedGarbage.Spec.MlKem.Contract1024
-import VerifiedGarbage.Spec.MlKem.EncapsH
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86_64.KgTop
+meta import VerifiedGarbage.Proof.MlKem.X86_64.KgTop
+public import VerifiedGarbage.Proof.MlKem.X86_64.EcTop
+meta import VerifiedGarbage.Proof.MlKem.X86_64.EcTop
+public import VerifiedGarbage.Proof.MlKem.X86_64.DcTop
+meta import VerifiedGarbage.Proof.MlKem.X86_64.DcTop
+public import VerifiedGarbage.Proof.MlKem1024.X86_64.CompressEncode
+meta import VerifiedGarbage.Proof.MlKem1024.X86_64.CompressEncode
+public import VerifiedGarbage.Proof.MlKem1024.X86_64.DecodeDecompress
+meta import VerifiedGarbage.Proof.MlKem1024.X86_64.DecodeDecompress
+public import VerifiedGarbage.Impl.MlKem1024.X86_64.Kem
+meta import VerifiedGarbage.Impl.MlKem1024.X86_64.Kem
+public import VerifiedGarbage.Spec.MlKem.Contract1024
+meta import VerifiedGarbage.Spec.MlKem.Contract1024
+public import VerifiedGarbage.Spec.MlKem.EncapsH
+meta import VerifiedGarbage.Spec.MlKem.EncapsH
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM-1024 on x86-64: `vg_mlkem1024_keygen`, `vg_mlkem1024_encaps_h` and `vg_mlkem1024_decaps`
@@ -16,6 +30,8 @@ their checks, evaluated here, it calls `vg_mlkem1024_compress_encode` and
 `vg_mlkem1024_decode_decompress` for its widths, and the shared contracts
 imply the contracts the proofs are written against.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem1024.X86_64
 

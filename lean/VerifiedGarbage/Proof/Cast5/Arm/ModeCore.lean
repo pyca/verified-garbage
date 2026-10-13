@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.Cast5.Arm.EcbVerified
-import VerifiedGarbage.Proof.Cast5.ModeCipher
-import VerifiedGarbage.Proof.Cast5.ModeScratch
-import VerifiedGarbage.Proof.Modes.Arm.Core
-import VerifiedGarbage.Impl.Cast5.Arm.Modes
+module
+
+public import VerifiedGarbage.Proof.Cast5.Arm.EcbVerified
+public import VerifiedGarbage.Proof.Cast5.ModeCipher
+public import VerifiedGarbage.Proof.Cast5.ModeScratch
+public import VerifiedGarbage.Proof.Modes.Arm.Core
+public import VerifiedGarbage.Impl.Cast5.Arm.Modes
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # CAST5's ECB functions as the ARMv7 modes' core
@@ -14,6 +20,8 @@ cipher `Proof.Cast5.dirCipher up` under the subkeys at `r0` and the number
 of rounds in `r1`. They use no stack of their own: the 8 bytes of the push
 of their stack argument.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Cast5.Arm
 

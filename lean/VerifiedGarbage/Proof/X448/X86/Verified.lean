@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.X448.X86.CT
-import VerifiedGarbage.Proof.X448.X86.Lit
-import VerifiedGarbage.Proof.Framework.X86.Taint
-import VerifiedGarbage.Proof.Framework.Contract
+module
+
+public import VerifiedGarbage.Proof.X448.X86.CT
+public import VerifiedGarbage.Proof.X448.X86.Lit
+public import VerifiedGarbage.Proof.Framework.X86.Taint
+public import VerifiedGarbage.Proof.Framework.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 on x86 (32-bit): `Verified`
@@ -10,6 +16,8 @@ Correctness (`Main.lean`), constant time (`CT.lean`), satisfiability, and
 the shared contract of `Spec/`, with the 20 bytes of stack below the return
 address that the calls of the field functions use.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448.X86
 

@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlDsa.X86.Pack.Loop
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86.Pack.Loop
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on x86 (32-bit): the encodings' leaves, loading and branching
@@ -11,6 +17,8 @@ into `eax` (`ldArgs_piece`, `ldPtrs_piece`), and branches on the width
 (`sel_piece`) to one of the loops of `Loop.lean`. The branches depend only on
 the width, which is public.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86.Pack
 

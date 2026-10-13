@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Ed25519.X86_64.RecodeLoop
-import VerifiedGarbage.Proof.Ed25519.ScalarBytes
-import VerifiedGarbage.Proof.Ed25519.X86_64.Bits
+module
+
+public import VerifiedGarbage.Proof.Ed25519.X86_64.RecodeLoop
+public import VerifiedGarbage.Proof.Ed25519.ScalarBytes
+public import VerifiedGarbage.Proof.Ed25519.X86_64.Bits
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Both scalars' digits on x86-64
@@ -11,6 +17,8 @@ each followed by eight zero bytes, recodes them (`recode_ok`), `k`'s `c` bytes w
 five bits into the even bytes of the array and `S`'s with windows of eight bits into the odd ones,
 and sets the counter to `8c + 9` (`recodeAll_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed25519.X86_64
 

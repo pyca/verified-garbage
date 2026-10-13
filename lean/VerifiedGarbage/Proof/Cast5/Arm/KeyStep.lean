@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Cast5.Arm.KeySteps
-import VerifiedGarbage.Proof.Cast5.Arm.Block
+module
+
+public import VerifiedGarbage.Proof.Cast5.Arm.KeySteps
+public import VerifiedGarbage.Proof.Cast5.Arm.Block
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # CAST5 key expansion on ARMv7: a step
@@ -9,6 +15,8 @@ gathers them into `r4`–`r7` (`gather_ok`), scans `tab5678`, and chooses what
 to do with the four values (`postE_ok`, `postL_ok`): the step of the spec's
 `stepRun` (`step_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Cast5.Arm
 

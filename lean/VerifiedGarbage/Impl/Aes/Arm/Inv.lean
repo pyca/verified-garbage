@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Aes.Arm.Linear
+module
+
+public import VerifiedGarbage.Impl.Aes.Arm.Linear
 
 /-!
 # The inverse round transformations of bitsliced AES on ARMv7
@@ -22,6 +24,8 @@ Each uses the state registers, the temporaries `t0`, `t1` and `u7` (and
 `lr` in the S-box), and slots of the scratch buffer at `sb`: those of the
 S-box, and 20–27 for the words `invAff` and `invMcPre` read.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Aes.Arm
 

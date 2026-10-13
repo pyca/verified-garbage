@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.AesCcm.AArch64.EntryCT
-import VerifiedGarbage.Proof.AesCcm.AArch64.MacCT
-import VerifiedGarbage.Proof.AesCcm.AArch64.CtrCT
+module
+
+public import VerifiedGarbage.Proof.AesCcm.AArch64.EntryCT
+meta import VerifiedGarbage.Proof.AesCcm.AArch64.EntryCT
+public import VerifiedGarbage.Proof.AesCcm.AArch64.MacCT
+meta import VerifiedGarbage.Proof.AesCcm.AArch64.MacCT
+public import VerifiedGarbage.Proof.AesCcm.AArch64.CtrCT
+meta import VerifiedGarbage.Proof.AesCcm.AArch64.CtrCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CCM on AArch64: `vg_aes_ccm_seal` is constant time
@@ -14,6 +23,8 @@ analysis from that address, which correctness says both runs load; between
 them, the states the correctness proofs describe
 (`Proof.AesGcm.AArch64.rel_seq`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

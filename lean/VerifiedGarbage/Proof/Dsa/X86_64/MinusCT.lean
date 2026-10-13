@@ -1,7 +1,18 @@
-import VerifiedGarbage.Proof.Dsa.X86_64.Minus
-import VerifiedGarbage.Proof.Dsa.X86_64.CallFinishCT
+module
+
+public import VerifiedGarbage.Proof.Dsa.X86_64.Minus
+meta import VerifiedGarbage.Proof.Dsa.X86_64.Minus
+public import VerifiedGarbage.Proof.Dsa.X86_64.CallFinishCT
+meta import VerifiedGarbage.Proof.Dsa.X86_64.CallFinishCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # Timing of modulus-minus constants used in DSA validation -/
+
+@[expose] public section
+
 namespace VG.Proof.Dsa.X86_64
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public
 open VG.Impl.Dsa.X86_64

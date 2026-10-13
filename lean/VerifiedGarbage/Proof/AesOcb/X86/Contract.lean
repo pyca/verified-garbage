@@ -1,6 +1,12 @@
-import VerifiedGarbage.Spec.Ocb.Contract
-import VerifiedGarbage.TCB.X86.Target
-import VerifiedGarbage.Proof.Framework.PowLit
+module
+
+public import VerifiedGarbage.Spec.Ocb.Contract
+public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Proof.Framework.PowLit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-OCB on x86: the contracts the proofs are written against
@@ -15,6 +21,8 @@ and `vg_aes_expand_key_scratch`, which make no calls, push their arguments and
 return addresses in the 24 bytes below `esp`, which no buffer overlaps, nor
 the return address.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesOcb.X86
 

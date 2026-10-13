@@ -1,7 +1,16 @@
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.ProjectiveFinal
-import VerifiedGarbage.Proof.Weierstrass.X86_64.ForwardField
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.ProjectiveFinal
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.ForwardField
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Square the Jacobian denominator before the existing projective comparison. -/
+
+@[expose] public section
+
 namespace VG.Proof.Ecdsa.Verify.X86_64
 open VG VG.X86_64 VG.Impl.Mont VG.Impl.Weierstrass VG.Impl.Weierstrass.X86_64 VG.Impl.Ecdsa.X86_64
 open VG.Proof.Mont VG.Proof.Mont.X86_64 VG.Proof.Weierstrass VG.Proof.Weierstrass.X86_64

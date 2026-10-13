@@ -1,7 +1,17 @@
-import VerifiedGarbage.Proof.Seed.Arm.ModeCore
-import VerifiedGarbage.Proof.Seed.CbcScratch
-import VerifiedGarbage.Proof.Modes.Arm.Cbc
-import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
+module
+
+public import VerifiedGarbage.Proof.Seed.Arm.ModeCore
+meta import VerifiedGarbage.Proof.Seed.Arm.ModeCore
+public import VerifiedGarbage.Proof.Seed.CbcScratch
+meta import VerifiedGarbage.Proof.Seed.CbcScratch
+public import VerifiedGarbage.Proof.Modes.Arm.Cbc
+meta import VerifiedGarbage.Proof.Modes.Arm.Cbc
+public import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
+meta import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # SEED-CBC on ARMv7 meets its contracts
@@ -14,6 +24,8 @@ the 752 bytes of stack the ECB functions use. `cbcEncrypt_framed` and
 `cbcDecrypt_framed` keep the buffer on the stack, zeroed on return: 80 bytes
 more.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Seed.Arm
 

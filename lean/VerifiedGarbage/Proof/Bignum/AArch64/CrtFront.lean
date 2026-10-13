@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtChk
-import VerifiedGarbage.Proof.Bignum.CrtHdr
+module
+
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtChk
+public import VerifiedGarbage.Proof.Bignum.CrtHdr
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSA with the CRT on AArch64: up to the checks
@@ -8,6 +14,8 @@ From the header `entry` leaves, for a valid modulus: the modulus' setup (as
 `vg_rsa_public`'s, then `c R mod n`), the primes' workspaces and the checks
 (`front_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.AArch64
 

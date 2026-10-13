@@ -1,6 +1,10 @@
-import VerifiedGarbage.Proof.TripleDes.AArch64.CbcVerified
+module
+
+public import VerifiedGarbage.Proof.TripleDes.AArch64.CbcVerified
 
 /-! # Triple DES-CBC artifacts on baseline AArch64 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.TripleDesCbc.AArch64
 

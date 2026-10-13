@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesCbc.Arm.Verified
-import VerifiedGarbage.Proof.AesOfb.Arm.Body
+module
+
+public import VerifiedGarbage.Proof.AesCbc.Arm.Verified
+public import VerifiedGarbage.Proof.AesOfb.Arm.Body
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-OFB on ARMv7: `Verified`
@@ -9,6 +15,8 @@ satisfying the precondition, and the shared contract of
 `Spec/Ofb/Contract.lean`, with 8 bytes of stack: each call of the block
 function pushes its stack argument and `lr`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesOfb.Arm
 

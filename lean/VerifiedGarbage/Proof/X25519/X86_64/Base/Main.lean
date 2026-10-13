@@ -1,8 +1,17 @@
-import VerifiedGarbage.Proof.X25519.X86_64.Base.Engine
-import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBaseMain
-import VerifiedGarbage.Spec.X25519.Contract
+module
+
+public import VerifiedGarbage.Proof.X25519.X86_64.Base.Engine
+public import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBaseMain
+public import VerifiedGarbage.Spec.X25519.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Memory, output encoding and ABI obligations for fixed-base X25519. -/
+
+@[expose] public section
+
 namespace VG.Proof.X25519.X86_64.Base
 open VG VG.X86_64 VG.Impl.Ed25519.X86_64 VG.Impl.X25519.X86_64.Base
 open VG.Proof.Ed25519.X86_64

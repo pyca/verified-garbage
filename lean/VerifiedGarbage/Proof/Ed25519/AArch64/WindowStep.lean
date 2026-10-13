@@ -1,16 +1,25 @@
-import VerifiedGarbage.Proof.Ed25519.AArch64.PointAccumulate
-import VerifiedGarbage.Impl.Ed25519.AArch64.BaseMultiply
-import VerifiedGarbage.Proof.Ed25519.BaseTable
-import VerifiedGarbage.Spec.Ed25519.Contract
-import VerifiedGarbage.Proof.Ed25519.AArch64.PointMulBatch
-import VerifiedGarbage.Impl.Ed25519.AArch64.Verify
-import VerifiedGarbage.Proof.Ed25519.AArch64.DecodeBits
-import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarStep
-import VerifiedGarbage.Impl.Ed25519.AArch64.VerifyWindow
-import VerifiedGarbage.Proof.Ed25519.AArch64.PointLoop
-import VerifiedGarbage.Proof.Ed25519.Group.Double
+module
+
+public import VerifiedGarbage.Proof.Ed25519.AArch64.PointAccumulate
+public import VerifiedGarbage.Impl.Ed25519.AArch64.BaseMultiply
+public import VerifiedGarbage.Proof.Ed25519.BaseTable
+public import VerifiedGarbage.Spec.Ed25519.Contract
+public import VerifiedGarbage.Proof.Ed25519.AArch64.PointMulBatch
+public import VerifiedGarbage.Impl.Ed25519.AArch64.Verify
+public import VerifiedGarbage.Proof.Ed25519.AArch64.DecodeBits
+public import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarStep
+public import VerifiedGarbage.Impl.Ed25519.AArch64.VerifyWindow
+public import VerifiedGarbage.Proof.Ed25519.AArch64.PointLoop
+public import VerifiedGarbage.Proof.Ed25519.Group.Double
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Ed25519.AArch64.BaseAccumulate`. -/
+
+@[expose] public section
+
 section
 /-! Merged from `Proof.Ed25519.AArch64.PointAccumulateLoop`. -/
 section

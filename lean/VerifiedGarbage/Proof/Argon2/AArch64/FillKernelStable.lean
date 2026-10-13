@@ -1,6 +1,14 @@
-import VerifiedGarbage.Proof.Argon2.AArch64.FillKernelArgs
+module
+
+public import VerifiedGarbage.Proof.Argon2.AArch64.FillKernelArgs
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Register-only helpers retain the filling allocation and position invariants. -/
+
+@[expose] public section
 
 namespace VG.Proof.Argon2.AArch64.FillKernel
 

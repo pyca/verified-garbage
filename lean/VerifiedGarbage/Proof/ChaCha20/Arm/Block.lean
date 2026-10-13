@@ -1,14 +1,33 @@
-import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.Framework.Arm.Exec
-import VerifiedGarbage.Proof.Framework.Arm.Spill
-import VerifiedGarbage.Proof.ChaCha20.Spec
-import VerifiedGarbage.Impl.ChaCha20.Arm
-import VerifiedGarbage.Proof.Framework.Arm.Taint
-import VerifiedGarbage.Proof.Framework.Range
-import VerifiedGarbage.Proof.Framework.Arm.Contract
-import VerifiedGarbage.Spec.ChaCha20.Contract
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.Omega
+module
+
+public import VerifiedGarbage.Proof.Framework.Block
+meta import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.Framework.Arm.Exec
+meta import VerifiedGarbage.Proof.Framework.Arm.Exec
+public import VerifiedGarbage.Proof.Framework.Arm.Spill
+meta import VerifiedGarbage.Proof.Framework.Arm.Spill
+public import VerifiedGarbage.Proof.ChaCha20.Spec
+meta import VerifiedGarbage.Proof.ChaCha20.Spec
+public import VerifiedGarbage.Impl.ChaCha20.Arm
+meta import VerifiedGarbage.Impl.ChaCha20.Arm
+public import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+public import VerifiedGarbage.Proof.Framework.Range
+meta import VerifiedGarbage.Proof.Framework.Range
+public import VerifiedGarbage.Proof.Framework.Arm.Contract
+meta import VerifiedGarbage.Proof.Framework.Arm.Contract
+public import VerifiedGarbage.Spec.ChaCha20.Contract
+meta import VerifiedGarbage.Spec.ChaCha20.Contract
+public import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.Framework.Omega
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 section
 

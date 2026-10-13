@@ -1,5 +1,7 @@
-import VerifiedGarbage.TCB.AArch64.Isa
-import VerifiedGarbage.Spec.Sha3
+module
+
+public import VerifiedGarbage.TCB.AArch64.Isa
+public import VerifiedGarbage.Spec.Sha3
 
 /-!
 Portable scalar Keccak schedule following OpenSSL's scalar KeccakF1600_int:
@@ -8,6 +10,9 @@ Twenty-five state lanes remain in general registers. x18 and x29 are excluded.
 Two temporary lane spills supply the extra parity registers required by theta.
 The abstract operations are mapped to reviewed ISA instructions separately.
 -/
+
+@[expose] public section
+
 namespace VG.Impl.Sha3.AArch64.Scalar
 open VG VG.AArch64
 abbrev Lane := Spec.Sha3.Lane

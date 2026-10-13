@@ -1,10 +1,19 @@
-import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyMessage.CT
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Framework.ConstMem
-import VerifiedGarbage.Proof.Ed25519.X86_64.BaseHeld
-import VerifiedGarbage.Proof.Sha512.X86_64.Shared
+module
+
+public import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyMessage.CT
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.ConstMem
+public import VerifiedGarbage.Proof.Ed25519.X86_64.BaseHeld
+public import VerifiedGarbage.Proof.Sha512.X86_64.Shared
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! The complete verifier satisfies the reviewed message-level contract. -/
+
+@[expose] public section
+
 namespace VG.Proof.Ed25519.X86_64.VerifyMessage
 
 variable {fld : VG.Impl.Ed25519.X86_64.Arith} [VG.Proof.Ed25519.X86_64.EdArith fld] {fs : String}

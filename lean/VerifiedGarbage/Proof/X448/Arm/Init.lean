@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.X448.Arm.RowMem
+module
+
+public import VerifiedGarbage.Proof.X448.Arm.RowMem
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 on ARMv7: initialize multiplication
@@ -6,6 +12,8 @@ import VerifiedGarbage.Proof.X448.Arm.RowMem
 The first 28 accumulator words are zero; subsequent rows initialize the
 remaining words.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448.Arm
 

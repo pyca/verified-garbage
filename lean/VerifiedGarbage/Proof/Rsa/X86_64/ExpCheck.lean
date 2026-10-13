@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.Bytes
-import VerifiedGarbage.Proof.Bignum.X86_64.Store
-import VerifiedGarbage.Proof.Framework.WriteBytes
-import VerifiedGarbage.Impl.Rsa.X86_64.Checked
-import VerifiedGarbage.Spec.Rsa.Contract
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.Bytes
+public import VerifiedGarbage.Proof.Bignum.X86_64.Store
+public import VerifiedGarbage.Proof.Framework.WriteBytes
+public import VerifiedGarbage.Impl.Rsa.X86_64.Checked
+public import VerifiedGarbage.Spec.Rsa.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSA on x86-64: BoringSSL's limits on the public exponent
@@ -12,6 +18,8 @@ import VerifiedGarbage.Spec.Rsa.Contract
 `r10` and `r11` (`expCheck_ok`); `failOut` writes zeros to `out` and
 returns 0 (`failOut_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.X86_64
 

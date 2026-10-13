@@ -1,13 +1,21 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.DotCore
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseStaticCore
-import VerifiedGarbage.Spec.MlDsa.FusedInverse
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.DotField
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.DotMemoryValues
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseMemoryCorrect
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.DotTiming
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseSpecPre
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.DotCore
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseStaticCore
+public import VerifiedGarbage.Spec.MlDsa.FusedInverse
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.DotField
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.DotMemoryValues
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseMemoryCorrect
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.DotTiming
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseSpecPre
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## From `DotStatic.lean` -/
+
+@[expose] public section
 
 section
 

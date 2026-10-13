@@ -1,7 +1,11 @@
-import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.Ed25519.AArch64.Point64.Verified
+module
+
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Point64.Verified
 
 /-! # Ed25519's point doubling and affine addition, in radix `2^64`, on AArch64 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.Ed25519R64.AArch64
 

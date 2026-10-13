@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Camellia.X86.KeyPair
-import VerifiedGarbage.Proof.Camellia.X86.Prologue
-import VerifiedGarbage.Proof.Camellia.Planes32
+module
+
+public import VerifiedGarbage.Proof.Camellia.X86.KeyPair
+public import VerifiedGarbage.Proof.Camellia.X86.Prologue
+public import VerifiedGarbage.Proof.Camellia.Planes32
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Camellia's key schedule on x86 (32-bit): the prologue
@@ -10,6 +16,8 @@ callee-saved registers saved, and the planes of `Sigma1 … Sigma6` stored
 as the table's first six entries (`constStores_ok`), which hold the
 constants in every lane (`sigma_rel`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Camellia.X86
 

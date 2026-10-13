@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Mid
-import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Callee
-import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.BlkCall
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Mid
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Callee
+public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.BlkCall
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM one-shot encryption out of place, from a list of slices, x86-64: the calls without stack arguments
@@ -11,6 +17,8 @@ of `vg_aes_gcm_stream_init` (`initCall_ok`), `vg_aes_gcm_stream_aad`
 (`aadCall_ok`) and `vg_aes_gcm_stream_finish` (`finCall_ok`): what each
 needs, from the layout of the entry state `s`, and what it leaves.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

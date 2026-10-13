@@ -1,4 +1,8 @@
-import VerifiedGarbage.Proof.Aes.X86.VariantProof
+module
+
+public import VerifiedGarbage.Proof.Aes.X86.VariantProof
+
+@[expose] public section
 
 namespace VG.Variants.AesCtr32.X86.AesNi
 

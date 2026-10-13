@@ -1,6 +1,8 @@
-import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Proof.CmacAes.Arm.Verified
-import VerifiedGarbage.Proof.CmacAes.Stream.Arm.Frame
+module
+
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.Proof.CmacAes.Arm.Verified
+public import VerifiedGarbage.Proof.CmacAes.Stream.Arm.Frame
 
 /-!
 # AES-CMAC (NIST SP 800-38B) on ARMv7
@@ -16,6 +18,8 @@ The streaming functions keep their working space in a frame of their own
 on the stack (`Proof/CmacAes/Stream/Arm/Frame.lean`): their `stack` is that
 frame and the stack their code uses below it.
 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.CmacAes.Arm
 

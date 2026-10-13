@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.X448.X86.Instr
-import VerifiedGarbage.Proof.X25519.X86.Basic
-import VerifiedGarbage.Spec.X448.Contract
-import VerifiedGarbage.TCB.X86.Target
-import VerifiedGarbage.Proof.Framework.Contract
+module
+
+public import VerifiedGarbage.Proof.X448.X86.Instr
+public import VerifiedGarbage.Proof.X25519.X86.Basic
+public import VerifiedGarbage.Spec.X448.Contract
+public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Proof.Framework.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 on x86 (32-bit): the contract the proof is written against
@@ -11,6 +17,8 @@ The facts of the shared contract (`Spec.X448.x448Contract`) the proof uses,
 stated for x86; the shared contract implies it (`sig_implies`, in
 `Main.lean`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448
 

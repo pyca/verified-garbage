@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.Step
+module
+
+public import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.Step
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # An AdvSIMD round on the machine
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.Step
 `x5`, broadcasts it, steps the pointer by 8 in the pass's direction, and
 does to the 64 state words what `roundW` does, with the key's low 48 bits.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.TripleDes.AArch64.BitslicedNeon
 

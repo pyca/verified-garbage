@@ -1,7 +1,17 @@
-import VerifiedGarbage.Proof.Weierstrass.AArch64.P256Literals
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256RD
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
-import VerifiedGarbage.Impl.Ecdsa.Verify.P256.AArch64
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.P256Literals
+meta import VerifiedGarbage.Proof.Weierstrass.AArch64.P256Literals
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256RD
+meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256RD
+public import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
+public import VerifiedGarbage.Impl.Ecdsa.Verify.P256.AArch64
+meta import VerifiedGarbage.Impl.Ecdsa.Verify.P256.AArch64
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDSA verification over P-256 on AArch64: the code as a literal
@@ -18,6 +28,8 @@ literal: `rd.lit_eq` and `rdComb.lit_eq` say so (by rewriting, not
 evaluation), so that the literal of the code reads it rather than having
 the kernel run the optimizer again.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Verify.AArch64
 

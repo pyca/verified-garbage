@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Ecdsa.X86.Layout
-import VerifiedGarbage.Proof.Weierstrass.X86.BytesLen
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.X86.Layout
+public import VerifiedGarbage.Proof.Weierstrass.X86.BytesLen
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDSA on x86 (32-bit): the setup
@@ -13,6 +19,8 @@ pointer: `argLoad_ok`), shifts the slot `A.hs` holding a hash
 list) and sets the flag to all ones: `setup_ok`, the state `SetupPost`
 describes.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.X86
 

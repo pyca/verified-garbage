@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.TripleDes.SboxTables
-import VerifiedGarbage.Proof.TripleDes.X86_64.Lit
-import VerifiedGarbage.Spec.TripleDes
-import VerifiedGarbage.Proof.Framework.X86_64.Straight
-import VerifiedGarbage.Proof.Framework.Bitslice.Table
+module
+
+public import VerifiedGarbage.Proof.TripleDes.SboxTables
+public import VerifiedGarbage.Proof.TripleDes.X86_64.Lit
+public import VerifiedGarbage.Spec.TripleDes
+public import VerifiedGarbage.Proof.Framework.X86_64.Straight
+public import VerifiedGarbage.Proof.Framework.Bitslice.Table
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # DES S-box machine-code correctness
@@ -12,6 +18,8 @@ inputs, then the sound truth-table evaluator lifts that check to every
 bit position of arbitrary 64-bit words. This verifies both the circuits
 and the allocator's output, including spills.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.TripleDes.X86_64
 

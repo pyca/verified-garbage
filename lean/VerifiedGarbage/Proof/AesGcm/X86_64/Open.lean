@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.Seal
-import VerifiedGarbage.Proof.AesGcm.X86_64.Cmp
-import VerifiedGarbage.Proof.AesGcm.X86_64.Undo
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Seal
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Cmp
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Undo
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on x86-64: `vg_aes_gcm_open`
@@ -13,6 +19,8 @@ compared (`cmp 112`),
 and if they match the rest decrypted (`oneCrypt`), and if not the whole
 blocks encrypted again (`oneUndo`): GCM-AD (`open_wp`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

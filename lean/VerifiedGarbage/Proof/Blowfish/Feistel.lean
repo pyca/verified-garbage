@@ -1,4 +1,10 @@
-import VerifiedGarbage.Spec.Blowfish
+module
+
+public import VerifiedGarbage.Spec.Blowfish
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The Feistel network, round by round
@@ -7,6 +13,8 @@ import VerifiedGarbage.Spec.Blowfish
 `feistel`, before its last swap is undone; `iter_succ` is one more round,
 and `feistel_eq` the rest of `feistel` after sixteen.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Blowfish
 

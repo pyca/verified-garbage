@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Msg
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Msg
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Deterministic ECDSA on 32-bit ARM: the steps on `K` and `V`
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Msg
 then `V = HMAC_K(V)` (`rekey_ok`, step h.3). Each changes only `scratch`,
 the stack below the frame, and `K` and `V`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Rfc6979.Arm
 

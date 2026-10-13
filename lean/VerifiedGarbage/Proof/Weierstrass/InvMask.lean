@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Mont.Words
+module
+
+public import VerifiedGarbage.Proof.Mont.Words
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Inversion by divsteps: masks and signs of numbers of words
@@ -8,6 +14,8 @@ memory, apart from any ISA: masks (`IsMask`, `masked`), the sign of a
 number's top word (`sgnW`, `sgn_iff`), the arithmetic shift by 59 of two
 words (`shr_arith`) and a number sign-extended by a word (`sext`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass
 

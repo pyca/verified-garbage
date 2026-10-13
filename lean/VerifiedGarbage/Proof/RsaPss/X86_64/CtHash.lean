@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.RsaPss.X86_64.Basic
-import VerifiedGarbage.Proof.RsaPss.CtPad
-import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Core
+module
+
+public import VerifiedGarbage.Proof.RsaPss.X86_64.Basic
+public import VerifiedGarbage.Proof.RsaPss.CtPad
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Core
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSASSA-PSS on x86-64: hashing a message of secret length
@@ -10,6 +16,8 @@ bytes of `Y` at `scratch + oDig`, for a hash function whose code the proofs
 know (`HashOK`), from a state where those bytes are followed by zeros up to
 `nbm` blocks (`ctHash_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPss.X86_64
 

@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.RsaOaep.AArch64.EncCT1
-import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncVerified
-import VerifiedGarbage.Proof.Framework.Contract
+module
+
+public import VerifiedGarbage.Proof.RsaOaep.AArch64.EncCT1
+meta import VerifiedGarbage.Proof.RsaOaep.AArch64.EncCT1
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncVerified
+meta import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncVerified
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-OAEP encryption on AArch64: verified
@@ -15,6 +24,8 @@ shared contract with the stack it and its callee use (`enc_verified`), given
 that the contract is satisfiable for it (which the registration file
 checks).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaOaep.AArch64.Enc
 

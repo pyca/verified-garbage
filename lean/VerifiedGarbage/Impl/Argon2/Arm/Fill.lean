@@ -1,6 +1,8 @@
-import VerifiedGarbage.Impl.Argon2.Arm.MemoryInit
-import VerifiedGarbage.Impl.Argon2.Arm.Compress
-import VerifiedGarbage.Spec.Argon2.Contract
+module
+
+public import VerifiedGarbage.Impl.Argon2.Arm.MemoryInit
+public import VerifiedGarbage.Impl.Argon2.Arm.Compress
+public import VerifiedGarbage.Spec.Argon2.Contract
 
 /-!
 # Argon2 on ARMv7: filling the memory
@@ -27,6 +29,8 @@ position, but for the addresses of the previous block's first word (public:
 its position is) and of the reference block, which data-dependent addressing
 permits to leak.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Argon2.Arm.Derive
 

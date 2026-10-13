@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Ed448.AArch64.ScalarIO
+module
+
+public import VerifiedGarbage.Proof.Ed448.AArch64.ScalarIO
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 scalar multiply-add on AArch64: the operands
@@ -8,6 +14,8 @@ one its last byte (`copy57_ok`), without reading past it; the values of
 words in the working space are `mv`. The inputs are outside the working
 space, so the copies leave them unchanged.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.AArch64
 

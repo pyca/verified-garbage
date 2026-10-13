@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.SignFrame
-import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Encode
+module
+
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.SignFrame
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Encode
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_pkcs1_sign` on AArch64: the call of `vg_rsa_private_checked`
@@ -9,6 +15,8 @@ import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Encode
 registers set up (`AtCall`); `call_ok`: the call writes the signature of
 `EM` to `out` and keeps `k` in `x19` and the saved slots (`AfterCall`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPkcs1Sig.AArch64.Sgn
 

@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Shared
-import VerifiedGarbage.Proof.RsaKeyGen.KeyMath
+module
+
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Shared
+public import VerifiedGarbage.Proof.RsaKeyGen.KeyMath
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # An RSA key from its primes on AArch64: `φ` and the halving
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.RsaKeyGen.KeyMath
 `φ` while `u` and `v` are both even (`twoStep_k`, `halveStep`): the mask in
 `x15`, and `halfIf` (`shr_ok` into `aT`, then `selLoop_ok`) on each.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaKeyGen.AArch64.Key
 

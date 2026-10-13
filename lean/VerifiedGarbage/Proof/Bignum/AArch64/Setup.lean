@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Bignum.AArch64.Store
+module
+
+public import VerifiedGarbage.Proof.Bignum.AArch64.Store
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Multiword arithmetic on AArch64: setting up
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.Bignum.AArch64.Store
 Newton's iteration from `x = m₀`, which is right modulo 8. `setBases`: the
 arrays' bases into the header (`setBases_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.AArch64
 

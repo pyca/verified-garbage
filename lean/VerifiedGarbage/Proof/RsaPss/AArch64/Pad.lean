@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.RsaPss.AArch64.Basic
+module
+
+public import VerifiedGarbage.Proof.RsaPss.AArch64.Basic
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSASSA-PSS on AArch64: the padding of a message of secret length
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.RsaPss.AArch64.Basic
 `nbm B` bytes (`pad80_ok`), and `fixedPad80` into byte `ℓ` alone
 (`fixedPad_ok`); both leave the view `v80`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPss.AArch64
 

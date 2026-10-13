@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks.CT
-import VerifiedGarbage.Proof.Framework.Contract
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks.CT
+public import VerifiedGarbage.Proof.Framework.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on whole blocks, x86-64: `Verified`
@@ -11,6 +17,8 @@ interleaved loops), a state satisfying their precondition, and the shared
 contracts of `Spec/Gcm/Contract.lean` (with 8 bytes of stack, for the return
 address of a call: the functions called make no calls).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

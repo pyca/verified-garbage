@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.StreamInit
-import VerifiedGarbage.Proof.AesGcm.X86_64.FnCT
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamInit
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.StreamInit
+public import VerifiedGarbage.Proof.AesGcm.X86_64.FnCT
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.FnCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on x86-64: `vg_aes_gcm_stream_init` is constant time
@@ -7,6 +15,8 @@ import VerifiedGarbage.Proof.AesGcm.X86_64.FnCT
 Untrusted: everything here is checked by Lean. After the entry, both runs
 compute `J₀` of nonces at the same address, of the same length (`j0_rel`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesGcm.X86_64
 

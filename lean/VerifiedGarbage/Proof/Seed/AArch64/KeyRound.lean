@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Seed.AArch64.Round
-import VerifiedGarbage.Impl.Seed.AArch64.ExpandKey
+module
+
+public import VerifiedGarbage.Proof.Seed.AArch64.Round
+public import VerifiedGarbage.Impl.Seed.AArch64.ExpandKey
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # A round of the key schedule on AArch64
@@ -8,6 +14,8 @@ import VerifiedGarbage.Impl.Seed.AArch64.ExpandKey
 `x3 = Key0 || Key1` and `x4 = Key2 || Key3`, to their lanes, and rotates
 one of the two.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Seed.AArch64
 

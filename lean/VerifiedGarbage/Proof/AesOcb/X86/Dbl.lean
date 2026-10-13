@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.AesOcb.X86.Callee
-import VerifiedGarbage.Proof.Cmac.Dbl32
-import VerifiedGarbage.Proof.Ocb.Spec
+module
+
+public import VerifiedGarbage.Proof.AesOcb.X86.Callee
+public import VerifiedGarbage.Proof.Cmac.Dbl32
+public import VerifiedGarbage.Proof.Ocb.Spec
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-OCB on x86: doubling a block
@@ -13,6 +19,8 @@ the block read (`dblMem_block`). The run (`dblW_ok`, `dblK_ok`) reads each
 word of the source before the word of the destination before it is
 written, so the source may be the destination.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

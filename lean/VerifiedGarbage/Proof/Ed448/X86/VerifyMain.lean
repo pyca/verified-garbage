@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.Ed448.X86.VerifyLocal
-import VerifiedGarbage.Proof.Ed448.X86.VerifyDecodeLoop
-import VerifiedGarbage.Proof.Ed448.X86.VerifyLoop
-import VerifiedGarbage.Proof.Ed448.X86.VerifyFinish
-import VerifiedGarbage.Proof.Ed448.X86.BaseMain
+module
+
+public import VerifiedGarbage.Proof.Ed448.X86.VerifyLocal
+public import VerifiedGarbage.Proof.Ed448.X86.VerifyDecodeLoop
+public import VerifiedGarbage.Proof.Ed448.X86.VerifyLoop
+public import VerifiedGarbage.Proof.Ed448.X86.VerifyFinish
+public import VerifiedGarbage.Proof.Ed448.X86.BaseMain
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 verification's equation on x86 (32-bit): the whole function
@@ -17,6 +23,8 @@ and `A` decoded by one loop, `A` negated, `Q = [S]B + [k](-A)` by the loop,
 arguments and the inputs are read unchanged; the callee-saved registers are
 restored from the working space, and the return address is kept.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.X86
 

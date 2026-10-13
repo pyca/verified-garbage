@@ -1,6 +1,8 @@
-import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.Ed448.AArch64.PublicKey.Verified
-import VerifiedGarbage.Proof.Ed448.AArch64.BaseVerified
+module
+
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.Ed448.AArch64.PublicKey.Verified
+public import VerifiedGarbage.Proof.Ed448.AArch64.BaseVerified
 
 /-!
 # Ed448 public-key derivation on AArch64
@@ -13,6 +15,8 @@ documentation come from the reviewed Ed448 API. The correctness of
 `vg_ed448_scalar_base` (`Proof/Ed448/AArch64/BaseVerified.lean`) is passed to
 the proof here, so that only registration and generic files import its algebra.
 -/
+
+@[expose] public section
 
 namespace VG.Generic.Keccak.AArch64.Ed448PublicKey
 

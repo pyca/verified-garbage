@@ -1,7 +1,15 @@
-import VerifiedGarbage.Impl.Ed25519.Arm.Whole.Setup
-import VerifiedGarbage.Proof.Ed25519.Arm.Whole.Layout
-import VerifiedGarbage.Proof.Framework.Arm.Exec
-import VerifiedGarbage.Proof.Framework.Omega
+module
+
+public import VerifiedGarbage.Impl.Ed25519.Arm.Whole.Setup
+public import VerifiedGarbage.Proof.Ed25519.Arm.Whole.Layout
+public import VerifiedGarbage.Proof.Framework.Arm.Exec
+public import VerifiedGarbage.Proof.Framework.Omega
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.Ed25519.Arm.Whole
 open VG VG.Arm VG.Impl.Ed25519.Arm.Whole

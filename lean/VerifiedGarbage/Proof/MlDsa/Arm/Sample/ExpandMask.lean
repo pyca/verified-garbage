@@ -1,7 +1,17 @@
-import VerifiedGarbage.Proof.MlDsa.Arm.Sample.Pro
-import VerifiedGarbage.Proof.MlDsa.Arm.Pack.Unpack
-import VerifiedGarbage.Impl.MlDsa.Arm.Sample.ExpandMask
-import VerifiedGarbage.Proof.Framework.Arm.Inline
+module
+
+public import VerifiedGarbage.Proof.MlDsa.Arm.Sample.Pro
+meta import VerifiedGarbage.Proof.MlDsa.Arm.Sample.Pro
+public import VerifiedGarbage.Proof.MlDsa.Arm.Pack.Unpack
+meta import VerifiedGarbage.Proof.MlDsa.Arm.Pack.Unpack
+public import VerifiedGarbage.Impl.MlDsa.Arm.Sample.ExpandMask
+meta import VerifiedGarbage.Impl.MlDsa.Arm.Sample.ExpandMask
+public import VerifiedGarbage.Proof.Framework.Arm.Inline
+meta import VerifiedGarbage.Proof.Framework.Arm.Inline
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on 32-bit ARM: `vg_mldsa_expand_mask_poly`
@@ -14,6 +24,8 @@ for `c = 1 + bitlen (γ₁ - 1)` on the first `32c` bytes of output
 `H(ρ′, 32c)` (`H_take`). It is constant time: the taint analysis proves each
 piece but the sponge, whose proof is `sponge_ct`, from the pointers and `γ₁`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Arm.Sample.ExpandMask
 

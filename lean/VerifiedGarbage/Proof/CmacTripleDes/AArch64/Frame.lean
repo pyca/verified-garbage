@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Verified
-import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
+module
+
+public import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Verified
+public import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # TDEA-CMAC on AArch64, with its working space on the stack
@@ -8,6 +14,8 @@ The functions run their code, proved with the working space as an argument
 (`Verified.lean`), in a frame of 640 bytes that allocates it
 (`Verified.stackScratch`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.CmacTripleDes.AArch64
 

@@ -1,9 +1,15 @@
-import VerifiedGarbage.Proof.Ed448.Arm.VerifyChecks
-import VerifiedGarbage.Proof.Ed448.Arm.BaseEncode
-import VerifiedGarbage.Proof.Ed448.Scalar
-import VerifiedGarbage.Proof.Ed448.Arm.ScalarNat
-import VerifiedGarbage.Proof.X448.Arm.Carry
-import VerifiedGarbage.Proof.X448.Radix16Bytes
+module
+
+public import VerifiedGarbage.Proof.Ed448.Arm.VerifyChecks
+public import VerifiedGarbage.Proof.Ed448.Arm.BaseEncode
+public import VerifiedGarbage.Proof.Ed448.Scalar
+public import VerifiedGarbage.Proof.Ed448.Arm.ScalarNat
+public import VerifiedGarbage.Proof.X448.Arm.Carry
+public import VerifiedGarbage.Proof.X448.Radix16Bytes
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 verification's equation on ARMv7: limbs from bytes, and `S < L`
@@ -13,6 +19,8 @@ twenty-eight limbs of `S`'s low 448 bits plus those of `2^448 - L` (scalar
 reduction's `kLimb`), carried by X448's `pass`, carry out of 448 bits exactly
 when they are at least `L`; with byte 56, `BAD |= 0` exactly when `S < L`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.Arm
 

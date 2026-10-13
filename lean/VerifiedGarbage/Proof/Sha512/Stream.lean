@@ -1,6 +1,12 @@
-import VerifiedGarbage.Spec.Sha512
-import VerifiedGarbage.Proof.Framework.Mem
-import VerifiedGarbage.Proof.Framework.WriteBytes
+module
+
+public import VerifiedGarbage.Spec.Sha512
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.WriteBytes
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Streaming SHA-512: facts about the specification
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.Framework.WriteBytes
 How `Repr` evolves as bytes are buffered and blocks compressed, and how the
 padded message decomposes, independently of any target.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sha512.Stream
 

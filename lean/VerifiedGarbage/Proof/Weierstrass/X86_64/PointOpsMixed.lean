@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Weierstrass.X86_64.PointOpsAdd
-import VerifiedGarbage.Proof.Weierstrass.X86_64.JacMixedAdd
-import VerifiedGarbage.Impl.Weierstrass.X86_64.JacMixedForward
-import VerifiedGarbage.Proof.Weierstrass.X86_64.JacMixedForward
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.PointOpsAdd
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.JacMixedAdd
+public import VerifiedGarbage.Impl.Weierstrass.X86_64.JacMixedForward
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.JacMixedForward
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Point operations as functions on x86-64: what the mixed addition computes
@@ -12,6 +18,8 @@ and `E`, whatever they are, through the branches of
 and `Y` copied to `t2` and `t4`, the header's `H` and `r`, then the
 doubling or the point at infinity for `H = 0`, else the tail.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.X86_64.PointOps
 

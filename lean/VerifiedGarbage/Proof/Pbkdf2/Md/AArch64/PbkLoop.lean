@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Pbkdf2
-import VerifiedGarbage.Proof.MdStream.AArch64.Words
+module
+
+public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Pbkdf2
+public import VerifiedGarbage.Proof.MdStream.AArch64.Words
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # PBKDF2-HMAC over any Merkle–Damgård hash function on AArch64: `pbkdf2`'s loop
@@ -10,6 +16,8 @@ T_k`; a step computes `T_{k+1}` (`U₁` by `update` with `INT (k + 1)` and
 HMAC's `finalize`, then `iterate`) and copies as much of it as the output
 still needs.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Pbkdf2.Md.AArch64.Pbk
 

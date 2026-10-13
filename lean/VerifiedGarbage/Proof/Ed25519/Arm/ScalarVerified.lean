@@ -1,14 +1,32 @@
-import VerifiedGarbage.Proof.Ed25519.Arm.ScalarABI
-import VerifiedGarbage.Spec.Ed25519.Contract
-import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Proof.Ed25519.Arm.ScalarLoop
-import VerifiedGarbage.Proof.Ed25519.Arm.ScalarFinish
-import VerifiedGarbage.Impl.Ed25519.Arm.ScalarABI
-import VerifiedGarbage.Proof.Framework.Arm.Lit
-import VerifiedGarbage.Proof.Framework.Arm.Taint
-import VerifiedGarbage.Proof.Framework.Arm.Contract
+module
+
+public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarABI
+meta import VerifiedGarbage.Proof.Ed25519.Arm.ScalarABI
+public import VerifiedGarbage.Spec.Ed25519.Contract
+meta import VerifiedGarbage.Spec.Ed25519.Contract
+public import VerifiedGarbage.TCB.Arm.Target
+meta import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarLoop
+meta import VerifiedGarbage.Proof.Ed25519.Arm.ScalarLoop
+public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarFinish
+meta import VerifiedGarbage.Proof.Ed25519.Arm.ScalarFinish
+public import VerifiedGarbage.Impl.Ed25519.Arm.ScalarABI
+meta import VerifiedGarbage.Impl.Ed25519.Arm.ScalarABI
+public import VerifiedGarbage.Proof.Framework.Arm.Lit
+meta import VerifiedGarbage.Proof.Framework.Arm.Lit
+public import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+public import VerifiedGarbage.Proof.Framework.Arm.Contract
+meta import VerifiedGarbage.Proof.Framework.Arm.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Ed25519.Arm.ScalarMain`. -/
+
+@[expose] public section
+
 section
 /-! Merged from `Proof.Ed25519.Arm.ScalarSetup`. -/
 section

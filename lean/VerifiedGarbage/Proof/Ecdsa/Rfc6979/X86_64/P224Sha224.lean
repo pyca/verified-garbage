@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Verified
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.P224
-import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Hashes.Sha224
-import VerifiedGarbage.Spec.Ecdsa.Rfc6979.P224Sha224
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Verified
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.P224
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Hashes.Sha224
+public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.P224Sha224
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Deterministic ECDSA over P-224 with HMAC-SHA-224 on x86-64
@@ -13,6 +19,8 @@ the comb's tables,
 which implies the one the proof is written against (`implies`):
 `vg_ecdsa_p224_sha224_sign` is verified (`sign_verified`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Rfc6979.X86_64.P224Sha224
 

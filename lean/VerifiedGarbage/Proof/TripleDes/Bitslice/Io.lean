@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.TripleDes.Bitslice.Pass
+module
+
+public import VerifiedGarbage.Proof.TripleDes.Bitslice.Pass
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Into and out of the bitsliced state, for 64 blocks
@@ -8,6 +14,8 @@ that word `j` holds bit `j` of every block. Lane `b` of the state is then
 IP of block `b` (`ipLane_transpose`), and transposing a state back gives,
 in each lane, the little-endian word of FP of its value (`transpose_out`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.TripleDes.Bitslice
 

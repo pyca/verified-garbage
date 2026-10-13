@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.Verified
-import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.LitEraseAdx
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.Verified
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.Verified
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.LitEraseAdx
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.LitEraseAdx
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDSA over P-384 on x86-64 with BMI2 and ADX: `Verified`
@@ -10,6 +18,8 @@ import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.LitEraseAdx
 and either selection (`selPassV_ok`): the same curve, so the same facts
 (`p384x_ok`, from `p384_ok`) and the same precondition.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.X86_64.P384
 

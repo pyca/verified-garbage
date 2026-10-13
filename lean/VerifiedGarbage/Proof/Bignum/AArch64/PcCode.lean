@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Bignum.AArch64.PcMain
+module
+
+public import VerifiedGarbage.Proof.Bignum.AArch64.PcMain
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_public_precompute` on AArch64: correctness
@@ -7,6 +13,8 @@ The entry (`pcEntry_ok`) and the whole function (`pcCode_correct`), against
 `pcContract`, which states the shared contract's precondition on the
 registers.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.AArch64
 

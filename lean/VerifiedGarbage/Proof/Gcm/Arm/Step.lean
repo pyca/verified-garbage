@@ -1,10 +1,16 @@
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Impl.Gcm.Arm
-import VerifiedGarbage.Proof.Framework.Arm.Exec
-import VerifiedGarbage.Proof.Framework.Arm.Straight
-import VerifiedGarbage.Proof.Framework.Range
-import VerifiedGarbage.Proof.Gcm.Spec
-import VerifiedGarbage.Proof.MdStream.Arm.Common
+module
+
+public import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Impl.Gcm.Arm
+public import VerifiedGarbage.Proof.Framework.Arm.Exec
+public import VerifiedGarbage.Proof.Framework.Arm.Straight
+public import VerifiedGarbage.Proof.Framework.Range
+public import VerifiedGarbage.Proof.Gcm.Spec
+public import VerifiedGarbage.Proof.MdStream.Arm.Common
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # GHASH on ARMv7: the steps of Algorithm 1
@@ -13,6 +19,8 @@ What the instructions of a step (`Impl.Gcm.Arm.step`) compute on the four
 words of a 128-bit value, stated on the whole value; a byte of `x` (8 steps);
 and the 16 bytes.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Gcm.Arm
 

@@ -1,4 +1,6 @@
-import VerifiedGarbage.TCB.AArch64.Isa
+module
+
+public import VerifiedGarbage.TCB.AArch64.Isa
 
 /-! Four-word arithmetic for Ed25519 on baseline A64.
 
@@ -12,6 +14,8 @@ Field multiplication and squaring keep their operands in registers: the
 words of one operand in x12–x15, the products in x2, x3, x8, x9, x11, x16
 and x17, and the eight words of the full product in x4–x7 and x21–x24.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Ed25519.AArch64
 open VG.AArch64

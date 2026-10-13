@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.AesSiv.X86_64.Enc
-import VerifiedGarbage.Proof.AesSiv.X86_64.CryptCT
+module
+
+public import VerifiedGarbage.Proof.AesSiv.X86_64.Enc
+meta import VerifiedGarbage.Proof.AesSiv.X86_64.Enc
+public import VerifiedGarbage.Proof.AesSiv.X86_64.CryptCT
+meta import VerifiedGarbage.Proof.AesSiv.X86_64.CryptCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-SIV on x86-64: `encrypt` and `decrypt` are constant time
@@ -14,6 +22,8 @@ component's address and length from the descriptor (`adLoad_wp`,
 related by their callees' contracts (`fin_rel`, `cmacOf_rel`), and the end by
 `sealTail_rel` and `openTail_rel`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesSiv.X86_64
 

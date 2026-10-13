@@ -1,10 +1,23 @@
-import VerifiedGarbage.Proof.X25519.X86.Field32.Fn
-import VerifiedGarbage.Proof.X25519.X86.Field32.Lit
-import VerifiedGarbage.Proof.Framework.X86.Taint
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Framework.X86.CallWith
-import VerifiedGarbage.Proof.Mont.Read
-import VerifiedGarbage.Proof.Mont.Words32
+module
+
+public import VerifiedGarbage.Proof.X25519.X86.Field32.Fn
+meta import VerifiedGarbage.Proof.X25519.X86.Field32.Fn
+public import VerifiedGarbage.Proof.X25519.X86.Field32.Lit
+meta import VerifiedGarbage.Proof.X25519.X86.Field32.Lit
+public import VerifiedGarbage.Proof.Framework.X86.Taint
+meta import VerifiedGarbage.Proof.Framework.X86.Taint
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.X86.CallWith
+meta import VerifiedGarbage.Proof.Framework.X86.CallWith
+public import VerifiedGarbage.Proof.Mont.Read
+meta import VerifiedGarbage.Proof.Mont.Read
+public import VerifiedGarbage.Proof.Mont.Words32
+meta import VerifiedGarbage.Proof.Mont.Words32
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_gf25519_r32_pow250` on x86 (32-bit): its `Verified`
@@ -17,6 +30,8 @@ or `esp` plus a constant, and the only branches are on the counter: only the
 argument, which is public, and `esp` need be); satisfiability; and the
 shared contract.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X25519.X86.Field32
 

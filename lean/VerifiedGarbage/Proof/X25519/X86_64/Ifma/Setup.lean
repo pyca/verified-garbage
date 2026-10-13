@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Finish
+module
+
+public import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Finish
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X25519 on x86-64 with AVX512_IFMA: before the loop
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Finish
 state `(1, 0, x₁, 1)` into the lanes of `ymm0–ymm4`, with `x₁` split into
 limbs from its four words at `X1`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X25519.X86_64.Ifma
 

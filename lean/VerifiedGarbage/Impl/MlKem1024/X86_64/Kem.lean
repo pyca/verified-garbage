@@ -1,8 +1,10 @@
-import VerifiedGarbage.Impl.MlKem.X86_64.KeyGen
-import VerifiedGarbage.Impl.MlKem.X86_64.EncapsH
-import VerifiedGarbage.Impl.MlKem.X86_64.Decaps
-import VerifiedGarbage.Impl.MlKem.X86_64.CheckEk
-import VerifiedGarbage.Impl.MlKem1024.X86_64.Compress
+module
+
+public import VerifiedGarbage.Impl.MlKem.X86_64.KeyGen
+public import VerifiedGarbage.Impl.MlKem.X86_64.EncapsH
+public import VerifiedGarbage.Impl.MlKem.X86_64.Decaps
+public import VerifiedGarbage.Impl.MlKem.X86_64.CheckEk
+public import VerifiedGarbage.Impl.MlKem1024.X86_64.Compress
 
 /-!
 # ML-KEM-1024 on x86-64: `vg_mlkem1024_keygen`, `vg_mlkem1024_encaps_h`, `vg_mlkem1024_decaps` and `vg_mlkem1024_check_ek`
@@ -20,6 +22,8 @@ from polynomial 35; in encryption, `u` and `v` are in polynomials 8–12 and
 the working space of `vg_mlkem1024_encrypt_mul` in 40–43. `scratch` is 48
 KiB (44 polynomials).
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlKem1024.X86_64
 

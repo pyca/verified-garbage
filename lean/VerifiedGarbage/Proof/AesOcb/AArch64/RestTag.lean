@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesOcb.AArch64.XorPad
+module
+
+public import VerifiedGarbage.Proof.AesOcb.AArch64.XorPad
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-OCB on AArch64: the rest of the data and the tag (`rest`, `tag`)
@@ -10,6 +16,8 @@ padded plaintext to the checksum (`padCk_ok`), in the order of `seal` or
 `open` (`rest_ok`). `tag d` writes
 `ENCIPHER(K, Checksum ⊕ Offset ⊕ L_$) ⊕ HASH(K, A)` to `W + d` (`tag_ok`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

@@ -1,11 +1,19 @@
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Rc2.Memory
-import VerifiedGarbage.Impl.Rc2.X86_64.Block
-import VerifiedGarbage.Proof.Rc2.X86_64.Lookup
-import VerifiedGarbage.Proof.Rc2.Word
-import VerifiedGarbage.Proof.Rc2.X86_64.Sse2Finish
-import VerifiedGarbage.Proof.Rc2.X86_64.Sse2Vector
-import VerifiedGarbage.Impl.Rc2.X86_64.Sse2KeyLookup
+module
+
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Rc2.Memory
+public import VerifiedGarbage.Impl.Rc2.X86_64.Block
+public import VerifiedGarbage.Proof.Rc2.X86_64.Lookup
+public import VerifiedGarbage.Proof.Rc2.Word
+public import VerifiedGarbage.Proof.Rc2.X86_64.Sse2Finish
+public import VerifiedGarbage.Proof.Rc2.X86_64.Sse2Vector
+public import VerifiedGarbage.Impl.Rc2.X86_64.Sse2KeyLookup
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 section
 

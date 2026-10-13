@@ -1,7 +1,15 @@
-import VerifiedGarbage.Proof.Ecdsa.AArch64.BoothContract
-import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombJ
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.CombProduction
-import VerifiedGarbage.Proof.P256.Order
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.BoothContract
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombJ
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.CombProduction
+public import VerifiedGarbage.Proof.P256.Order
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.AArch64
 open VG VG.AArch64 VG.Impl.Ecdsa.AArch64

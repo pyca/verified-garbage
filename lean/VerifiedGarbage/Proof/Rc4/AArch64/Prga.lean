@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Rc4.AArch64.Output
-import VerifiedGarbage.Proof.Rc4.Table
+module
+
+public import VerifiedGarbage.Proof.Rc4.AArch64.Output
+public import VerifiedGarbage.Proof.Rc4.Table
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The table registers as an RC4 context
@@ -9,6 +15,8 @@ The table registers hold the table `T` from the base `B` (`TableIn`): byte
 (`PrgaRegs`), one byte of the stream (`byte_ok`: a swap step and the
 output) does what RC4's `step` does.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rc4.AArch64
 open VG VG.AArch64 VG.AArch64.RegUpd VG.Impl.Rc4.AArch64 VG.Spec.Rc4 VG.Proof.Rc4

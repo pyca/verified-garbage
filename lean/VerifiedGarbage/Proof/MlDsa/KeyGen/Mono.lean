@@ -1,5 +1,11 @@
-import VerifiedGarbage.Spec.MlDsa.Contract
-import VerifiedGarbage.Proof.Sha3.Stream
+module
+
+public import VerifiedGarbage.Spec.MlDsa.Contract
+public import VerifiedGarbage.Proof.Sha3.Stream
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA key generation: larger bounds give the same result
@@ -10,6 +16,8 @@ finishes with the same result within any larger one (`rejNTTPoly_mono`,
 `rejBoundedPoly_mono`), and so does `ML-DSA.KeyGen_internal`
 (`keyGenInternal_mono`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.KeyGen
 

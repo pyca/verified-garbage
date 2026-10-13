@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecCT3
+module
+
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecCT3
+meta import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecCT3
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-PKCS1-v1_5 decryption on AArch64: constant time, the selection
@@ -8,6 +15,8 @@ checked by the taint analysis from the registers its setup pins as functions
 of the layout (`RelCT.wp` with that setup's correctness), and so are the
 pointers the output's setup loads from the frame (`ldrSp_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPkcs1Enc.AArch64.Dec
 

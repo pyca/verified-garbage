@@ -1,7 +1,17 @@
-import VerifiedGarbage.Proof.Blowfish.X86.KeyMain
-import VerifiedGarbage.Proof.Blowfish.X86.Contract
-import VerifiedGarbage.Proof.Blowfish.X86.Lit
-import VerifiedGarbage.Proof.Framework.X86.Inline
+module
+
+public import VerifiedGarbage.Proof.Blowfish.X86.KeyMain
+meta import VerifiedGarbage.Proof.Blowfish.X86.KeyMain
+public import VerifiedGarbage.Proof.Blowfish.X86.Contract
+meta import VerifiedGarbage.Proof.Blowfish.X86.Contract
+public import VerifiedGarbage.Proof.Blowfish.X86.Lit
+meta import VerifiedGarbage.Proof.Blowfish.X86.Lit
+public import VerifiedGarbage.Proof.Framework.X86.Inline
+meta import VerifiedGarbage.Proof.Framework.X86.Inline
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Blowfish on x86 (32-bit): the functions meet their contracts, with the working space as an argument
@@ -13,6 +23,8 @@ public through memory. ECB meets `ecbC`, with its arguments only read; the
 shared contract lets the code write them too (`wideEcb`), which
 `Verified.narrowTo` allows.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Blowfish.X86
 open VG VG.X86 VG.Spec.Blowfish VG.Proof.Blowfish

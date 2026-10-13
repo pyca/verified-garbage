@@ -1,8 +1,12 @@
-import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.Sha1.AArch64.Shared
-import VerifiedGarbage.Proof.Sha1.AArch64.Sha2.Compress
+module
+
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.Sha1.AArch64.Shared
+public import VerifiedGarbage.Proof.Sha1.AArch64.Sha2.Compress
 
 /-! # SHA-1 (FIPS 180-4) on AArch64 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.Sha1.AArch64
 

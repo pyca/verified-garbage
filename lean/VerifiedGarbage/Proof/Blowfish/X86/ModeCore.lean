@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Blowfish.X86.Ecb
-import VerifiedGarbage.Proof.Modes.X86.Core
-import VerifiedGarbage.Impl.Blowfish.X86.Modes
-import VerifiedGarbage.Proof.Blowfish.ModeBytes
+module
+
+public import VerifiedGarbage.Proof.Blowfish.X86.Ecb
+public import VerifiedGarbage.Proof.Modes.X86.Core
+public import VerifiedGarbage.Impl.Blowfish.X86.Modes
+public import VerifiedGarbage.Proof.Blowfish.ModeBytes
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Blowfish's core for the modes on x86 (32-bit)
@@ -14,6 +20,8 @@ first stack argument, read in place, its cipher `Spec.Blowfish.cipher` or
 and its address are still there, apart from every writable region (`Ready`):
 `prepare` does nothing.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Blowfish.X86
 

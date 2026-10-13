@@ -1,8 +1,12 @@
-import VerifiedGarbage.Impl.Argon2.X86_64.MemoryInit
-import VerifiedGarbage.Impl.Argon2.X86_64.FillSetup
-import VerifiedGarbage.Impl.Argon2.X86_64.FillFinish
+module
+
+public import VerifiedGarbage.Impl.Argon2.X86_64.MemoryInit
+public import VerifiedGarbage.Impl.Argon2.X86_64.FillSetup
+public import VerifiedGarbage.Impl.Argon2.X86_64.FillFinish
 
 /-! All memory initialization, filling and finalization after H₀ has been computed. -/
+
+@[expose] public section
 
 namespace VG.Impl.Argon2.X86_64.InitFill
 

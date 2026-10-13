@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Ed448.X86_64.ScalarWord
+module
+
+public import VerifiedGarbage.Proof.Ed448.X86_64.ScalarWord
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 scalar arithmetic on x86-64: the loop over the words
@@ -9,6 +15,8 @@ modulo `L` of the consumed top bytes. The body writes only `TMP`, which the
 input does not overlap (it is in another buffer, or elsewhere in the
 working space).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.X86_64
 

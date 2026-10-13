@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Rsa.X86_64.CvMain
-import VerifiedGarbage.Proof.Rsa.X86_64.CvFail
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtEntry
-import VerifiedGarbage.Proof.Bignum.X86_64.PubCode
+module
+
+public import VerifiedGarbage.Proof.Rsa.X86_64.CvMain
+public import VerifiedGarbage.Proof.Rsa.X86_64.CvFail
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtEntry
+public import VerifiedGarbage.Proof.Bignum.X86_64.PubCode
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_crt_values` on x86-64: correctness
@@ -10,6 +16,8 @@ import VerifiedGarbage.Proof.Bignum.X86_64.PubCode
 inputs (`cvCode_correct`), against `cvContract`, which states the shared
 contract's precondition on the registers and the stack.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.X86_64
 

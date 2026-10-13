@@ -1,5 +1,7 @@
-import VerifiedGarbage.TCB.X86.Target
-import VerifiedGarbage.Proof.MlDsa.X86.Sign.Verified
+module
+
+public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Proof.MlDsa.X86.Sign.Verified
 
 /-!
 # ML-DSA (FIPS 204) signing on x86
@@ -9,6 +11,8 @@ return address, and calls the primitives with their arguments pushed below
 it: at most 5 arguments and the return address (24 bytes), and the 56 bytes
 the samplers use (`stack := 96`).
 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.MlDsaSign.X86
 

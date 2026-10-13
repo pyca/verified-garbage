@@ -1,12 +1,29 @@
-import VerifiedGarbage.Proof.Aes.X86.Variant
-import VerifiedGarbage.Proof.Aes.X86.Ctr32
-import VerifiedGarbage.Proof.Aes.X86.ExpandKey
-import VerifiedGarbage.Proof.Aes.X86.AesNi.Ctr32
-import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyBlocks
-import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyVerified
-import VerifiedGarbage.Proof.Aes.X86.AesNi.Lit
-import VerifiedGarbage.Proof.Framework.X86.CallWith
-import VerifiedGarbage.Proof.Framework.X86.Lit
+module
+
+public import VerifiedGarbage.Proof.Aes.X86.Variant
+meta import VerifiedGarbage.Proof.Aes.X86.Variant
+public import VerifiedGarbage.Proof.Aes.X86.Ctr32
+meta import VerifiedGarbage.Proof.Aes.X86.Ctr32
+public import VerifiedGarbage.Proof.Aes.X86.ExpandKey
+meta import VerifiedGarbage.Proof.Aes.X86.ExpandKey
+public import VerifiedGarbage.Proof.Aes.X86.AesNi.Ctr32
+meta import VerifiedGarbage.Proof.Aes.X86.AesNi.Ctr32
+public import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyBlocks
+meta import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyBlocks
+public import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyVerified
+meta import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyVerified
+public import VerifiedGarbage.Proof.Aes.X86.AesNi.Lit
+meta import VerifiedGarbage.Proof.Aes.X86.AesNi.Lit
+public import VerifiedGarbage.Proof.Framework.X86.CallWith
+meta import VerifiedGarbage.Proof.Framework.X86.CallWith
+public import VerifiedGarbage.Proof.Framework.X86.Lit
+meta import VerifiedGarbage.Proof.Framework.X86.Lit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Impl.Aes.X86
 materialize_code ctr32

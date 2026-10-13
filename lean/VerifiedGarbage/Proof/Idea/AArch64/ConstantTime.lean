@@ -1,11 +1,21 @@
-import VerifiedGarbage.Proof.Idea.AArch64.Lit
-import VerifiedGarbage.Proof.Framework.AArch64.Taint
+module
+
+public import VerifiedGarbage.Proof.Idea.AArch64.Lit
+meta import VerifiedGarbage.Proof.Idea.AArch64.Lit
+public import VerifiedGarbage.Proof.Framework.AArch64.Taint
+meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # Constant-time IDEA programs on AArch64
 
 Only the stack pointer, the argument pointers and `n` are public; the key,
 the subkeys and the data may differ between runs.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Idea.AArch64
 

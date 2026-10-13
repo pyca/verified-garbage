@@ -1,11 +1,25 @@
-import VerifiedGarbage.Proof.MlKem.X86.Table
-import VerifiedGarbage.Proof.MlKem.X86.NttLoop
-import VerifiedGarbage.Proof.MlKem.X86.Red
-import VerifiedGarbage.Proof.MlKem.X86.Leaf
-import VerifiedGarbage.Spec.MlKem.Poly
-import VerifiedGarbage.TCB.X86.Target
-import VerifiedGarbage.Proof.Framework.Sig
-import VerifiedGarbage.Proof.Framework.Contract
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86.Table
+meta import VerifiedGarbage.Proof.MlKem.X86.Table
+public import VerifiedGarbage.Proof.MlKem.X86.NttLoop
+meta import VerifiedGarbage.Proof.MlKem.X86.NttLoop
+public import VerifiedGarbage.Proof.MlKem.X86.Red
+meta import VerifiedGarbage.Proof.MlKem.X86.Red
+public import VerifiedGarbage.Proof.MlKem.X86.Leaf
+meta import VerifiedGarbage.Proof.MlKem.X86.Leaf
+public import VerifiedGarbage.Spec.MlKem.Poly
+meta import VerifiedGarbage.Spec.MlKem.Poly
+public import VerifiedGarbage.TCB.X86.Target
+meta import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Proof.Framework.Sig
+meta import VerifiedGarbage.Proof.Framework.Sig
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86 (32-bit): `vg_mlkem_multiply_ntts`
@@ -15,6 +29,8 @@ argument slot of `scratch`, the loop computes pair `t` of `h`
 (`multiplyNTTs_even`, `multiplyNTTs_odd`) with three reductions (`red_spec`)
 and compares `h + 8(t + 1)` with that end.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.X86.Mul
 

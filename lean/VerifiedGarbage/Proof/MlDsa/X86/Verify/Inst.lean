@@ -1,16 +1,22 @@
-import VerifiedGarbage.Proof.MlDsa.X86.Verify.Verified
-import VerifiedGarbage.Impl.MlDsa.X86.Verify.Inst
-import VerifiedGarbage.Proof.MlDsa.X86.Arith.AddSub
-import VerifiedGarbage.Proof.MlDsa.X86.Arith.Mul
-import VerifiedGarbage.Proof.MlDsa.X86.Arith.Ntt
-import VerifiedGarbage.Proof.MlDsa.X86.Arith.NttInv
-import VerifiedGarbage.Proof.MlDsa.X86.Sample.RejNtt
-import VerifiedGarbage.Proof.MlDsa.X86.Sample.BallTop
-import VerifiedGarbage.Proof.MlDsa.X86.Round.NormLt
-import VerifiedGarbage.Proof.MlDsa.X86.Round.HintF
-import VerifiedGarbage.Proof.MlDsa.X86.Pack.SimpleBitPack
-import VerifiedGarbage.Proof.MlDsa.X86.Pack.Unpack
-import VerifiedGarbage.Proof.MlDsa.X86.Pack.HintUnpackEnd
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86.Verify.Verified
+public import VerifiedGarbage.Impl.MlDsa.X86.Verify.Inst
+public import VerifiedGarbage.Proof.MlDsa.X86.Arith.AddSub
+public import VerifiedGarbage.Proof.MlDsa.X86.Arith.Mul
+public import VerifiedGarbage.Proof.MlDsa.X86.Arith.Ntt
+public import VerifiedGarbage.Proof.MlDsa.X86.Arith.NttInv
+public import VerifiedGarbage.Proof.MlDsa.X86.Sample.RejNtt
+public import VerifiedGarbage.Proof.MlDsa.X86.Sample.BallTop
+public import VerifiedGarbage.Proof.MlDsa.X86.Round.NormLt
+public import VerifiedGarbage.Proof.MlDsa.X86.Round.HintF
+public import VerifiedGarbage.Proof.MlDsa.X86.Pack.SimpleBitPack
+public import VerifiedGarbage.Proof.MlDsa.X86.Pack.Unpack
+public import VerifiedGarbage.Proof.MlDsa.X86.Pack.HintUnpackEnd
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA verification on x86 (32-bit), with this library's primitives
@@ -20,6 +26,8 @@ contracts, use at most 56 bytes of stack and write `esp` only by frames and
 calls (`prims_ok`), so `vg_mldsa{44,65,87}_verify` meet theirs
 (`verify44_verified`, …).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86.Verify
 

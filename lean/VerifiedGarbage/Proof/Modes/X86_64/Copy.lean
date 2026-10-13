@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Modes.X86_64.Words
-import VerifiedGarbage.Impl.Modes.X86_64.Cbc
+module
+
+public import VerifiedGarbage.Proof.Modes.X86_64.Words
+public import VerifiedGarbage.Impl.Modes.X86_64.Cbc
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Loops over blocks on x86-64
@@ -10,6 +16,8 @@ invariant `J` of everything but those three registers. `copyBlocks_wp`:
 `copyBlocks` copies `n ≥ 1` blocks at `rbx` to `rax` (areas that do not
 overlap) and changes nothing else in memory.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Modes.X86_64
 

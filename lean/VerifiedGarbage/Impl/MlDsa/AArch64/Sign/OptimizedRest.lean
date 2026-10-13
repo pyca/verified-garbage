@@ -1,6 +1,10 @@
-import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedLoop
-import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedInitialization
-import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedOutput
+module
+
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedLoop
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedInitialization
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedOutput
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.AArch64.Sign.Optimized
 open VG VG.AArch64 VG.Spec.MlDsa

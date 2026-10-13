@@ -1,9 +1,15 @@
-import VerifiedGarbage.Proof.Framework.X86_64.Sse
-import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Impl.Gcm.X86_64.Pclmul
-import VerifiedGarbage.Proof.Gcm.X86_64.Rev
-import VerifiedGarbage.Spec.Gcm
-import VerifiedGarbage.TCB.X86_64.Target
+module
+
+public import VerifiedGarbage.Proof.Framework.X86_64.Sse
+public import VerifiedGarbage.Proof.Framework.X86_64.Exec
+public import VerifiedGarbage.Impl.Gcm.X86_64.Pclmul
+public import VerifiedGarbage.Proof.Gcm.X86_64.Rev
+public import VerifiedGarbage.Spec.Gcm
+public import VerifiedGarbage.TCB.X86_64.Target
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # GHASH with PCLMULQDQ: what the instruction groups compute, as bits
@@ -16,6 +22,8 @@ is in `Pclmul/Ghash.lean` (`Prod.val`, `φ_reduce`), which needs the algebra
 of `Proof/Gcm/Poly.lean`; this module does not, so that proofs about where
 the products go import it alone.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Gcm.X86_64.Pclmul
 

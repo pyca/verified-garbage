@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Weierstrass.Arm.MontFn
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.Arm.MontFn
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Montgomery arithmetic as functions on 32-bit ARM: the moduli
@@ -6,6 +12,8 @@ import VerifiedGarbage.Proof.Weierstrass.Arm.MontFn
 Each modulus of `Spec.Weierstrass.Mont.moduli` is one the functions support
 (`ModOk`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.Arm.Mont
 

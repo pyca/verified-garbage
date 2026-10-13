@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.Rc2.X86.RoundSteps
-import VerifiedGarbage.Proof.Rc2.X86.PiLookup
-import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
-import VerifiedGarbage.Proof.Framework.X86.SseLanes
-import VerifiedGarbage.Proof.Framework.CallLay
+module
+
+public import VerifiedGarbage.Proof.Rc2.X86.RoundSteps
+public import VerifiedGarbage.Proof.Rc2.X86.PiLookup
+public import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
+public import VerifiedGarbage.Proof.Framework.X86.SseLanes
+public import VerifiedGarbage.Proof.Framework.CallLay
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RC2 on x86: the schedule's word in SSE2 registers
@@ -13,6 +19,8 @@ time, lane `k` of chunk `c` holding dword `4 c + k`; the dword `d` whose
 number is `(EAX & 63) >> 1` survives its mask (`ChunkAt`), and its half is
 chosen by bit 0. The lanes pass through the 16 bytes at `[ebp + 48]`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rc2.X86
 

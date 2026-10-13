@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.AesCcm.AArch64.Rel
+module
+
+public import VerifiedGarbage.Proof.AesCcm.AArch64.Rel
+meta import VerifiedGarbage.Proof.AesCcm.AArch64.Rel
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CCM on AArch64: the tag and counter mode in two runs
@@ -11,6 +18,8 @@ values, leak the same: the code between calls by the taint analysis
 the blocks left (`RelCT.loop`): both runs encrypt the same number of blocks
 in each chunk, which depends only on the length.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

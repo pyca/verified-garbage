@@ -1,12 +1,28 @@
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointPointsTiming
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointTiming
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.JointContract
-import VerifiedGarbage.Proof.P384.X86_64.JointTiming
-import VerifiedGarbage.Proof.P384.X86_64.NafTableTiming
-import VerifiedGarbage.Proof.P384.X86_64.JointLayout
-import VerifiedGarbage.Proof.P384.X86_64.JointFrame
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointPointsTiming
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointPointsTiming
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointTiming
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointTiming
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.JointContract
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.JointContract
+public import VerifiedGarbage.Proof.P384.X86_64.JointTiming
+meta import VerifiedGarbage.Proof.P384.X86_64.JointTiming
+public import VerifiedGarbage.Proof.P384.X86_64.NafTableTiming
+meta import VerifiedGarbage.Proof.P384.X86_64.NafTableTiming
+public import VerifiedGarbage.Proof.P384.X86_64.JointLayout
+meta import VerifiedGarbage.Proof.P384.X86_64.JointLayout
+public import VerifiedGarbage.Proof.P384.X86_64.JointFrame
+meta import VerifiedGarbage.Proof.P384.X86_64.JointFrame
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Concrete timing checks and the doubler of P-384's baseline and ADX joint verification. -/
+
+@[expose] public section
+
 namespace VG.Proof.Ecdsa.Verify.X86_64.P384
 open VG VG.X86_64 VG.Impl.Ecdsa.X86_64 VG.Impl.P384.X86_64 VG.Impl.Weierstrass.X86_64
 open VG.Proof.P384.X86_64 VG.Proof.Weierstrass.X86_64 VG.Proof.Ecdsa.X86_64 VG.Proof.Mont

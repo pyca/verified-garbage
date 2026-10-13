@@ -1,12 +1,18 @@
-import VerifiedGarbage.Proof.Ed448.AArch64.Window.Persist
-import VerifiedGarbage.Proof.Ed448.AArch64.Window.SBase
-import VerifiedGarbage.Proof.Ed448.AArch64.Window.KInit
-import VerifiedGarbage.Proof.Ed448.AArch64.Window.Spec
-import VerifiedGarbage.Proof.Ed448.AArch64.Window.Cross
-import VerifiedGarbage.Proof.Ed448.AArch64.Window.Result
-import VerifiedGarbage.Proof.Ed448.AArch64.VerifyLocal
-import VerifiedGarbage.Proof.Ed448.Ref
-import VerifiedGarbage.TCB.AArch64.Target
+module
+
+public import VerifiedGarbage.Proof.Ed448.AArch64.Window.Persist
+public import VerifiedGarbage.Proof.Ed448.AArch64.Window.SBase
+public import VerifiedGarbage.Proof.Ed448.AArch64.Window.KInit
+public import VerifiedGarbage.Proof.Ed448.AArch64.Window.Spec
+public import VerifiedGarbage.Proof.Ed448.AArch64.Window.Cross
+public import VerifiedGarbage.Proof.Ed448.AArch64.Window.Result
+public import VerifiedGarbage.Proof.Ed448.AArch64.VerifyLocal
+public import VerifiedGarbage.Proof.Ed448.Ref
+public import VerifiedGarbage.TCB.AArch64.Target
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 verification's equation on AArch64: the whole function
@@ -20,6 +26,8 @@ slots 12–15 hold the cross products of `[4]Q` and `[4]R`, for `Q` the comb's
 inputs are read unchanged, and the callee-saved registers are restored from
 it.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.AArch64
 

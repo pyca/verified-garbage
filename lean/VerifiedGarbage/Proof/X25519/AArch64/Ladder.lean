@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.X25519.AArch64.Slots
-import VerifiedGarbage.Proof.X25519.Ladder
+module
+
+public import VerifiedGarbage.Proof.X25519.AArch64.Slots
+public import VerifiedGarbage.Proof.X25519.Ladder
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X25519 on AArch64: the ladder
@@ -9,6 +15,8 @@ slots from `ladderAfter k x1 (t + 1)` to `ladderAfter k x1 t`, for the bit `t`
 of the scalar stored at `BITS + t`; the loop (`ladder`) runs it for `t = 254,
 …, 0`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X25519.AArch64
 

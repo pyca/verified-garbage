@@ -1,12 +1,27 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallSecondCall
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallChunkTiming
-import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Backend
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallCorrect
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallInitialTiming
-import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.ResidentBackend
-import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.BallDispatch
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallSecondCall
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallSecondCall
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallChunkTiming
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallChunkTiming
+public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Backend
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Backend
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallCorrect
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallCorrect
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallInitialTiming
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallInitialTiming
+public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.ResidentBackend
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.ResidentBackend
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.BallDispatch
+meta import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.BallDispatch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## From `BallSecondPrefix.lean` -/
+
+@[expose] public section
 
 section
 

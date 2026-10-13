@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.X448.AArch64.Small
+module
+
+public import VerifiedGarbage.Proof.X448.AArch64.Small
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Untrusted: a24 coefficient in registers, without an intermediate store. -/
+
+@[expose] public section
+
 namespace VG.Proof.X448.AArch64
 open VG VG.AArch64 VG.Impl.X448.AArch64
 

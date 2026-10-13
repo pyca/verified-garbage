@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Camellia.X86.Linear
-import VerifiedGarbage.Proof.Camellia.X86.Sbox
-import VerifiedGarbage.Proof.Framework.Offset
+module
+
+public import VerifiedGarbage.Proof.Camellia.X86.Linear
+public import VerifiedGarbage.Proof.Camellia.X86.Sbox
+public import VerifiedGarbage.Proof.Framework.Offset
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # A round of bitsliced Camellia on x86 (32-bit)
@@ -12,6 +18,8 @@ leaves `d2 ^ F(d1, k)` in the other half's slots, keeping the first half's
 and writing only the slots below the tail buffer. The layers are composed
 from their checks (`Linear.lean`, `Sbox.lean`) and `W32.round_rel`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Camellia.X86
 

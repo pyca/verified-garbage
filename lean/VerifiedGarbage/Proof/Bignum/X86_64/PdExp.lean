@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.Exp
-import VerifiedGarbage.Proof.Bignum.X86_64.Copy
-import VerifiedGarbage.Proof.Bignum.EvenLast
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.Exp
+public import VerifiedGarbage.Proof.Bignum.X86_64.Copy
+public import VerifiedGarbage.Proof.Bignum.EvenLast
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_public_precomputed` on x86-64: the exponentiation
@@ -11,6 +17,8 @@ it each bit squares `Y` and multiplies it by `X` if set (`pExpBit_ok`, over
 the bits and bytes of `e` in `pExpLoop_ok`), which are read with bit 0 of
 the last cleared (`evenLast`): the exponent is `e - 1` for an odd `e`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64
 

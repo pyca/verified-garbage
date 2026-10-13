@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.Machine
-import VerifiedGarbage.Proof.TripleDes.SboxTables
-import VerifiedGarbage.Proof.Framework.Bitslice.Table
+module
+
+public import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.Machine
+public import VerifiedGarbage.Proof.TripleDes.SboxTables
+public import VerifiedGarbage.Proof.Framework.Bitslice.Table
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The AdvSIMD S-box circuits' machine code
@@ -11,6 +17,8 @@ lifts that check to every bit position of every doubleword of arbitrary
 128-bit words. The circuits use only vector registers, and neither the key
 nor the zero register.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.TripleDes.AArch64.BitslicedNeon
 

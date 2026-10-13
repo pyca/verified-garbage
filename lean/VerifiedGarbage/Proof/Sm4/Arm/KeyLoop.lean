@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Sm4.Arm.KeyInit
+module
+
+public import VerifiedGarbage.Proof.Sm4.Arm.KeyInit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The loop of the SM4 key schedule on ARMv7
@@ -9,6 +15,8 @@ stores them to the schedule as little-endian words (`extract_ok`): the
 first block's words, last first, byte-reversed (`rev`). The schedule's
 pointer waits in slot `nSlot` (the rounds use every register).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sm4.Arm
 

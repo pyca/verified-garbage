@@ -1,8 +1,19 @@
-import VerifiedGarbage.Proof.MlKem.X86_64.TopBase
-import VerifiedGarbage.Proof.MlKem.X86_64.Dot
-import VerifiedGarbage.Proof.MlKem.X86_64.FragS4
-import VerifiedGarbage.Proof.MlKem.X86_64.Prfs
-import VerifiedGarbage.Impl.MlKem.X86_64.KeyGen
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86_64.TopBase
+meta import VerifiedGarbage.Proof.MlKem.X86_64.TopBase
+public import VerifiedGarbage.Proof.MlKem.X86_64.Dot
+meta import VerifiedGarbage.Proof.MlKem.X86_64.Dot
+public import VerifiedGarbage.Proof.MlKem.X86_64.FragS4
+meta import VerifiedGarbage.Proof.MlKem.X86_64.FragS4
+public import VerifiedGarbage.Proof.MlKem.X86_64.Prfs
+meta import VerifiedGarbage.Proof.MlKem.X86_64.Prfs
+public import VerifiedGarbage.Impl.MlKem.X86_64.KeyGen
+meta import VerifiedGarbage.Impl.MlKem.X86_64.KeyGen
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86-64: key generation, its contract, layout, checks and entry
@@ -15,6 +26,8 @@ throughout (`KC`: `Top`, and `d ‖ z` at `seed`), the prologue, and the
 checks of the layout every piece needs (`KgWf L`), which each parameter set
 evaluates.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.X86_64
 

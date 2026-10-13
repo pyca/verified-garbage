@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Modes.X86_64.Counter
+module
+
+public import VerifiedGarbage.Proof.Modes.X86_64.Counter
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # CTR on x86-64: entry and exit
@@ -10,6 +16,8 @@ big-endian) into the running counter's slots, as `hiOf V` and `loOf V`, and
 writes `T₁ + n` back. `restore_ok`: the exit block loads the callee-saved
 registers back.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Modes.X86_64
 

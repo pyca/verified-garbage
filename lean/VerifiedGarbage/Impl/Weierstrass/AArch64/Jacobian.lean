@@ -1,13 +1,18 @@
-import VerifiedGarbage.Impl.P256.VerifyDouble
-import VerifiedGarbage.Impl.Weierstrass.JacAdd
-import VerifiedGarbage.Impl.Weierstrass.AArch64.Window
-import VerifiedGarbage.Impl.Weierstrass.AArch64.TComb
+module
+
+public import VerifiedGarbage.Impl.P256.VerifyDouble
+public import VerifiedGarbage.Impl.Weierstrass.JacAdd
+public import VerifiedGarbage.Impl.Weierstrass.AArch64.Window
+public import VerifiedGarbage.Impl.Weierstrass.AArch64.TComb
 
 /-!
 P-256 verification with public scalar digits and Jacobian accumulators.
 All exceptional-point branches and table indices depend on public verification data.
 This implementation is not used for secret scalars.
 -/
+
+@[expose] public section
+
 namespace VG.Impl.Weierstrass.AArch64.Jacobian
 open VG VG.AArch64 VG.Impl.Mont VG.Impl.Mont.AArch64 VG.Impl.Weierstrass
 

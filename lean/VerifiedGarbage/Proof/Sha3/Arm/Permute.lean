@@ -1,16 +1,37 @@
-import VerifiedGarbage.Proof.Framework.Arm.Taint
-import VerifiedGarbage.Proof.Framework.Taint
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Framework.Range
-import VerifiedGarbage.Proof.Sha3.Lanes
-import VerifiedGarbage.Proof.Sha512.Arm.Rounds
-import VerifiedGarbage.Impl.Sha3.Arm
-import VerifiedGarbage.Spec.Sha3.Contract
-import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Proof.Sha3.Stream
-import VerifiedGarbage.Proof.Sha3.Arith
-import VerifiedGarbage.Proof.Framework.Arm.Call
-import VerifiedGarbage.Impl.Sha3.Arm.Stream
+module
+
+public import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+public import VerifiedGarbage.Proof.Framework.Taint
+meta import VerifiedGarbage.Proof.Framework.Taint
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.Range
+meta import VerifiedGarbage.Proof.Framework.Range
+public import VerifiedGarbage.Proof.Sha3.Lanes
+meta import VerifiedGarbage.Proof.Sha3.Lanes
+public import VerifiedGarbage.Proof.Sha512.Arm.Rounds
+meta import VerifiedGarbage.Proof.Sha512.Arm.Rounds
+public import VerifiedGarbage.Impl.Sha3.Arm
+meta import VerifiedGarbage.Impl.Sha3.Arm
+public import VerifiedGarbage.Spec.Sha3.Contract
+meta import VerifiedGarbage.Spec.Sha3.Contract
+public import VerifiedGarbage.TCB.Arm.Target
+meta import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.Proof.Sha3.Stream
+meta import VerifiedGarbage.Proof.Sha3.Stream
+public import VerifiedGarbage.Proof.Sha3.Arith
+meta import VerifiedGarbage.Proof.Sha3.Arith
+public import VerifiedGarbage.Proof.Framework.Arm.Call
+meta import VerifiedGarbage.Proof.Framework.Arm.Call
+public import VerifiedGarbage.Impl.Sha3.Arm.Stream
+meta import VerifiedGarbage.Impl.Sha3.Arm.Stream
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 section
 

@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
-import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
+public import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSA with the CRT on x86-64: constant time of `q`'s phase
@@ -11,6 +19,8 @@ parts, each state predicate fixes the public data and keeps of the secrets
 only what the next part's claim and the correctness of the parts after it
 need.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64
 

@@ -1,7 +1,15 @@
-import VerifiedGarbage.Proof.TripleDes.AArch64.Block
-import VerifiedGarbage.Proof.TripleDes.Schedule
-import VerifiedGarbage.Proof.TripleDes.AArch64.ConstantTime
-import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+module
+
+public import VerifiedGarbage.Proof.TripleDes.AArch64.Block
+public import VerifiedGarbage.Proof.TripleDes.Schedule
+public import VerifiedGarbage.Proof.TripleDes.AArch64.ConstantTime
+public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.TripleDes.AArch64
 

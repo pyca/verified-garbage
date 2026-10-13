@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedSse.Wide
+module
+
+public import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedSse.Wide
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The SSE2 function
@@ -7,6 +13,8 @@ The batches of 128 blocks (`wide_ok`), then the 64-block code on the blocks
 left (`Bitsliced.ecb_ok`): every block becomes its encryption or decryption
 (`ecb_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.TripleDes.X86_64.BitslicedSse
 

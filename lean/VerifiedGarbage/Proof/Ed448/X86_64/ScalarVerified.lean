@@ -1,8 +1,19 @@
-import VerifiedGarbage.Proof.Ed448.X86_64.ScalarMulAddMain
-import VerifiedGarbage.Proof.Ed448.X86_64.ScalarLit
-import VerifiedGarbage.Proof.Framework.X86_64.Taint
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Spec.Ed448.Contract
+module
+
+public import VerifiedGarbage.Proof.Ed448.X86_64.ScalarMulAddMain
+meta import VerifiedGarbage.Proof.Ed448.X86_64.ScalarMulAddMain
+public import VerifiedGarbage.Proof.Ed448.X86_64.ScalarLit
+meta import VerifiedGarbage.Proof.Ed448.X86_64.ScalarLit
+public import VerifiedGarbage.Proof.Framework.X86_64.Taint
+meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.Ed448.Contract
+meta import VerifiedGarbage.Spec.Ed448.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 scalar arithmetic on x86-64: `Verified`
@@ -11,6 +22,8 @@ Correctness includes the ABI. Taint analysis checks that secret input bytes
 never determine branches or memory addresses. A concrete witness proves the
 signature contract is satisfiable.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.X86_64
 

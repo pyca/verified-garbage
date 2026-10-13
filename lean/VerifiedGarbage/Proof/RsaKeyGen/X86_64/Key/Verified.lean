@@ -1,7 +1,18 @@
-import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.CTTail
-import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.Implies
+module
+
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.CTTail
+meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.CTTail
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.Implies
+meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.Implies
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## CTOut -/
+
+@[expose] public section
+
 section
 
 /-!

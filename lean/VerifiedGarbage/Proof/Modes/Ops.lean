@@ -1,6 +1,12 @@
-import VerifiedGarbage.Impl.Modes.Ops
-import VerifiedGarbage.TCB.Mem
-import VerifiedGarbage.Proof.Framework.PowLit
+module
+
+public import VerifiedGarbage.Impl.Modes.Ops
+public import VerifiedGarbage.TCB.Mem
+public import VerifiedGarbage.Proof.Framework.PowLit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The modes' operations on areas, for any target
@@ -16,6 +22,8 @@ A target's code only touches the bytes of an area below its length
 (`InBounds`), so an area's other bytes never matter (`Agree`,
 `applyOps_agree`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Modes
 

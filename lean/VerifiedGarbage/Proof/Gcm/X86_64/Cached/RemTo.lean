@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Rem
-import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Loop48To
+module
+
+public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Rem
+public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Loop48To
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The blocks after the last group, out of place
@@ -12,6 +18,8 @@ of the output is hashed (`ksSel_ok`, on the in-place view `dst s₀`), the
 `r` blocks encrypted and their products with their powers added
 (`remLoop_ok`), and reduced into `Y`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Gcm.X86_64.StitchZHTo
 

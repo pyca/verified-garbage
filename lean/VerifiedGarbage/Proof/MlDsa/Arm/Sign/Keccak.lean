@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.MlDsa.Arm.Sign.BlockTr
-import VerifiedGarbage.Proof.MlKem.Arm.Sample
+module
+
+public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.BlockTr
+public import VerifiedGarbage.Proof.MlKem.Arm.Sample
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA signing on ARMv7: SHAKE256 through the sponge functions
@@ -11,6 +17,8 @@ As on x86-64: zeroing the Keccak state at `scratch` (`kzero_ok`, from ML-KEM's
 functions in their frames, `Proof/MlKem/Arm/Keccak.lean`), and that two runs
 in the same layout leak the same (`kabs_tr`, …).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Arm.Sign
 

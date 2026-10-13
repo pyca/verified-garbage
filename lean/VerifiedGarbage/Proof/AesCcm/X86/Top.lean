@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesCcm.X86.Args
+module
+
+public import VerifiedGarbage.Proof.AesCcm.X86.Args
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CCM on x86: the start of both functions
@@ -10,6 +16,8 @@ associated data, the data, the received tag and the return address are as
 they were (`Started`). The pieces after them write only `mutR`, which keeps
 all of that but the data (`Started.mut`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

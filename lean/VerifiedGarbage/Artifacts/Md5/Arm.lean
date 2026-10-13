@@ -1,7 +1,11 @@
-import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Proof.Md5.Arm.Shared
+module
+
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.Proof.Md5.Arm.Shared
 
 /-! # MD5 (RFC 1321) on ARMv7 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.Md5.Arm
 

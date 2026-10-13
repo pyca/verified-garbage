@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesOcb.Arm.Pass
+module
+
+public import VerifiedGarbage.Proof.AesOcb.Arm.Pass
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-OCB on ARMv7: the whole blocks (`whole`)
@@ -10,6 +16,8 @@ first pass (each block XORed with its offset, `pre`), `f` on all the blocks
 becomes `Offset_{k+1} ⊕ g(X_k ⊕ Offset_{k+1})`, as on AArch64
 (`Proof.AesOcb.AArch64.whole_ok`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

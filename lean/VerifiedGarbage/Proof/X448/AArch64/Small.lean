@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.X448.AArch64.Columns
+module
+
+public import VerifiedGarbage.Proof.X448.AArch64.Columns
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 on AArch64: multiplication by a24
@@ -6,6 +12,8 @@ import VerifiedGarbage.Proof.X448.AArch64.Columns
 Each limb is multiplied by 39081 before the common carry passes reduce the
 result.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448.AArch64
 

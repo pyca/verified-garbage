@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.RsaKeyGen.Generate
-import VerifiedGarbage.Proof.Rsa.Checked
+module
+
+public import VerifiedGarbage.Proof.RsaKeyGen.Generate
+public import VerifiedGarbage.Proof.Rsa.Checked
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSA key generation: generated keys and the checked private operation
@@ -10,6 +16,8 @@ prime (which the generation tests only probably), the private operation
 checked against `e` never fails its check, and is RSADP with `d`
 (`generate_privateChecked`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaKeyGen
 

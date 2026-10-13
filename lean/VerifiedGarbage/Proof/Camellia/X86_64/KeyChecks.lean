@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Camellia.X86_64.Linear
-import VerifiedGarbage.Impl.Camellia.X86_64.Ecb
+module
+
+public import VerifiedGarbage.Proof.Camellia.X86_64.Linear
+public import VerifiedGarbage.Impl.Camellia.X86_64.Ecb
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Bitslicing a subkey on x86-64, by evaluation
@@ -10,6 +16,8 @@ the planes to the entry at `rsi` (`keyStore`). Both are checked over the
 lane domain: the subkey is input word `d / 8` (words of `rdi`), and the
 planes are input words `0 … 7` of the stores.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Camellia.X86_64
 

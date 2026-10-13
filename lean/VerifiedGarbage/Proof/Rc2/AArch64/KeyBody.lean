@@ -1,6 +1,14 @@
-import VerifiedGarbage.Proof.Rc2.AArch64.KeySetup
+module
+
+public import VerifiedGarbage.Proof.Rc2.AArch64.KeySetup
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # Composing the RC2 key-expansion stages -/
+
+@[expose] public section
 
 namespace VG.Proof.Rc2.AArch64
 

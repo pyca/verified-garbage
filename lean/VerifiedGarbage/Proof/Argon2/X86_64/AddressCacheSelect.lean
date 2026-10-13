@@ -1,8 +1,17 @@
-import VerifiedGarbage.Proof.Argon2.X86_64.AddressCacheMeta
-import VerifiedGarbage.Proof.Argon2.X86_64.AddressCallsPrepare
-import VerifiedGarbage.Proof.Argon2.X86_64.AddressCalls
+module
+
+public import VerifiedGarbage.Proof.Argon2.X86_64.AddressCacheMeta
+public import VerifiedGarbage.Proof.Argon2.X86_64.AddressCallsPrepare
+public import VerifiedGarbage.Proof.Argon2.X86_64.AddressCalls
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Argon2.X86_64.AddressGeneration`. -/
+
+@[expose] public section
+
 section
 /-! Complete independent-address generation against the reviewed algorithm. -/
 

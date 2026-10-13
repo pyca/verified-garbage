@@ -1,4 +1,8 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MontProductVerified
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MontProductVerified
+
+@[expose] public section
 
 namespace VG.Artifacts.MlDsaMontProduct.AArch64
 

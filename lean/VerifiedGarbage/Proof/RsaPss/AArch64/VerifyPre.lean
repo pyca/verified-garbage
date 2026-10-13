@@ -1,7 +1,13 @@
-import VerifiedGarbage.Spec.RsaPss.Precomputed
-import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyLogic
-import VerifiedGarbage.Proof.RsaPss.AArch64.SignPre
-import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.PrecomputedCorrect
+module
+
+public import VerifiedGarbage.Spec.RsaPss.Precomputed
+public import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyLogic
+public import VerifiedGarbage.Proof.RsaPss.AArch64.SignPre
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.PrecomputedCorrect
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSASSA-PSS verification on AArch64: the precondition
@@ -11,6 +17,8 @@ import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.PrecomputedCorrect
 callee using `K` bytes), by name (`preV_of`). The frame is that of signing
 (`Sgn.fb`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPss.AArch64.Vfy
 

@@ -1,4 +1,6 @@
-import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Variant
+module
+
+public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Variant
 
 /-!
 # `vg_poly1305_blocks` on x86-64: with AVX2
@@ -6,6 +8,8 @@ import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Variant
 A variant of `Poly1305Blocks` on x86-64 (see `TCB/Emit.lean`):
 `vg_poly1305_blocks_avx2`, which needs AVX and AVX2.
 -/
+
+@[expose] public section
 
 namespace VG.Variants.Poly1305Blocks.X86_64.Avx2
 

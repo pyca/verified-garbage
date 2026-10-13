@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.AesCtr.Spec
-import VerifiedGarbage.Proof.AesCtr.Inc
-import VerifiedGarbage.Proof.AesSiv.Ctr32
+module
+
+public import VerifiedGarbage.Proof.AesCtr.Spec
+public import VerifiedGarbage.Proof.AesCtr.Inc
+public import VerifiedGarbage.Proof.AesSiv.Ctr32
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CTR from `vg_aes_ctr32`
@@ -16,6 +22,8 @@ wrapped around to 0 (`lo32 t + k = 2³²`), when it leaves `t + k − 2³²`
 CTR on blocks split in two is CTR on each, the second from where the first
 left the counter (`crypt_append`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesCtr
 

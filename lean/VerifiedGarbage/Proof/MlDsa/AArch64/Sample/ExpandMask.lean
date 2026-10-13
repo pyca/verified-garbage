@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.ExpandMaskLoop
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.RejNttCT
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.ExpandMaskLoop
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.ExpandMaskLoop
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.RejNttCT
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.RejNttCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on AArch64: `vg_mldsa_expand_mask_poly`
@@ -10,6 +18,8 @@ the epilogue. Constant time: the prologue, and then everything else, by the
 taint analysis (the second from registers that correctness makes equal: the
 pointers and `γ₁`, which the prologue zero-extends from `w1`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Sample
 

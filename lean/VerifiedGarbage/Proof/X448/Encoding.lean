@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.X448.Pairs
+module
+
+public import VerifiedGarbage.Proof.X448.Pairs
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448: encoding pairs of limbs
@@ -6,6 +12,8 @@ import VerifiedGarbage.Proof.X448.Pairs
 Seven output bytes encode two bounded limbs, and eight such pairs encode the
 complete field element.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448
 

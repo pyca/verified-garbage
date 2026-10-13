@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.RsaOaep.AArch64.DecLay
-import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncEntry
+module
+
+public import VerifiedGarbage.Proof.RsaOaep.AArch64.DecLay
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncEntry
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-OAEP decryption on AArch64: entering the frames
@@ -11,6 +17,8 @@ frame's body starts (`entered`): it saves our register arguments to their
 slots (`Spill.save_wp`) and moves our stack arguments to theirs and to the
 private-key operation's (`moves_ok`), establishing `Ctx`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaOaep.AArch64.Dec
 

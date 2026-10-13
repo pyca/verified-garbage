@@ -1,10 +1,23 @@
-import VerifiedGarbage.Proof.Sha256.X86_64.Avx2.Schedule
-import VerifiedGarbage.Proof.Sha256.X86_64.Avx2.Rounds
-import VerifiedGarbage.Proof.Sha256.X86_64.Compress
-import VerifiedGarbage.Proof.Framework.X86_64.Avx
-import VerifiedGarbage.Proof.Sha256.X86_64.Avx2.Lit
-import VerifiedGarbage.Proof.Sha256.X86_64.ShaNi.Compress
-import VerifiedGarbage.Proof.Framework.X86_64.Spill
+module
+
+public import VerifiedGarbage.Proof.Sha256.X86_64.Avx2.Schedule
+meta import VerifiedGarbage.Proof.Sha256.X86_64.Avx2.Schedule
+public import VerifiedGarbage.Proof.Sha256.X86_64.Avx2.Rounds
+meta import VerifiedGarbage.Proof.Sha256.X86_64.Avx2.Rounds
+public import VerifiedGarbage.Proof.Sha256.X86_64.Compress
+meta import VerifiedGarbage.Proof.Sha256.X86_64.Compress
+public import VerifiedGarbage.Proof.Framework.X86_64.Avx
+meta import VerifiedGarbage.Proof.Framework.X86_64.Avx
+public import VerifiedGarbage.Proof.Sha256.X86_64.Avx2.Lit
+meta import VerifiedGarbage.Proof.Sha256.X86_64.Avx2.Lit
+public import VerifiedGarbage.Proof.Sha256.X86_64.ShaNi.Compress
+meta import VerifiedGarbage.Proof.Sha256.X86_64.ShaNi.Compress
+public import VerifiedGarbage.Proof.Framework.X86_64.Spill
+meta import VerifiedGarbage.Proof.Framework.X86_64.Spill
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # SHA-256 with AVX2 on x86-64: the rounds of the first block
@@ -14,6 +27,8 @@ them, and runs rounds `4n … 4n+3` of the first block, which read their words
 from the scratch space. The words of both blocks are then all stored, for the
 rounds of the second one.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sha256.X86_64.Avx2
 

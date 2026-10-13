@@ -1,5 +1,7 @@
-import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.Poly1305.X86_64.Frame
+module
+
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.Poly1305.X86_64.Frame
 
 /-!
 # Streaming Poly1305 (RFC 8439 §2.5) on x86-64
@@ -15,6 +17,8 @@ The stack is 160 bytes for every implementation: the frame of 136 bytes
 holding the working space, the return address of the call of
 `vg_poly1305_blocks`, and up to 16 bytes for its own calls.
 -/
+
+@[expose] public section
 
 namespace VG.Generic.Poly1305Blocks.X86_64.Poly1305
 

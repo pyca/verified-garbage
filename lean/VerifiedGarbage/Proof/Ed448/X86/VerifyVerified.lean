@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.Ed448.X86.VerifyCT
-import VerifiedGarbage.Proof.Framework.X86.Taint
-import VerifiedGarbage.Proof.Framework.X86.Inline
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Spec.Ed448.Contract
+module
+
+public import VerifiedGarbage.Proof.Ed448.X86.VerifyCT
+public import VerifiedGarbage.Proof.Framework.X86.Taint
+public import VerifiedGarbage.Proof.Framework.X86.Inline
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.Ed448.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 verification's equation on x86 (32-bit): `Verified`
@@ -17,6 +23,8 @@ code's depends on the pointers alone. The local contract only reads the
 arguments; the shared one lets the code write them too (`writeArgs`), which
 it does not (`Verified.narrowTo`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.X86
 

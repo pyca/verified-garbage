@@ -1,6 +1,11 @@
-import VerifiedGarbage.Impl.Ed25519.X86.FieldMemory
+module
+
+public import VerifiedGarbage.Impl.Ed25519.X86.FieldMemory
 
 /-! Select the saved point with a full-word mask in ecx. -/
+
+@[expose] public section
+
 namespace VG.Impl.Ed25519.X86
 open VG.X86
 

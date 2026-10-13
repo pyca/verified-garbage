@@ -1,7 +1,9 @@
-import VerifiedGarbage.Impl.Sm4.Arm.Ecb
-import VerifiedGarbage.Impl.StackScratch.Arm
-import VerifiedGarbage.Impl.Modes.Arm.Seq
-import VerifiedGarbage.Spec.Sm4.Contract
+module
+
+public import VerifiedGarbage.Impl.Sm4.Arm.Ecb
+public import VerifiedGarbage.Impl.StackScratch.Arm
+public import VerifiedGarbage.Impl.Modes.Arm.Seq
+public import VerifiedGarbage.Spec.Sm4.Contract
 
 /-!
 # SM4-CBC on ARMv7
@@ -11,6 +13,8 @@ block at a time (`Impl/Modes/Arm/Seq.lean`) over SM4's ECB functions,
 `vg_sm4_ecb_encrypt` and `vg_sm4_ecb_decrypt`, which they call once per
 block (`ecbCore`).
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Sm4.Arm
 

@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.PubCode
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.PubCode
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSA with the CRT on x86-64: the contract on the registers
@@ -6,6 +12,8 @@ import VerifiedGarbage.Proof.Bignum.X86_64.PubCode
 `crtContract` states the shared contract of `vg_rsa_private_crt` on the
 registers and the stack, apart from its proofs, for its callers.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64
 

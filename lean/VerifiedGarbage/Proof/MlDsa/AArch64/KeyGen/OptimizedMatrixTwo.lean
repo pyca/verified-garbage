@@ -1,7 +1,15 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Samp4
-import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedCallTwo
-import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedMatrixSeeds
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MatrixMask
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Samp4
+public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedCallTwo
+public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedMatrixSeeds
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MatrixMask
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.KeyGen.Optimized
 open VG.Impl.MlDsa.AArch64.Call

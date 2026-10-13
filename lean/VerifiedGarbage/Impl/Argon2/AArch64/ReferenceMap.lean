@@ -1,10 +1,12 @@
-import VerifiedGarbage.Impl.Argon2.AArch64.Instructions
-import VerifiedGarbage.Impl.Argon2.AArch64.ReferenceLane
-import VerifiedGarbage.Impl.Argon2.AArch64.FirstLane
-import VerifiedGarbage.Impl.Argon2.AArch64.ReferenceStart
-import VerifiedGarbage.Impl.Argon2.AArch64.ReferenceCount
-import VerifiedGarbage.Impl.Argon2.AArch64.Relative
-import VerifiedGarbage.Impl.Argon2.AArch64.Wrap
+module
+
+public import VerifiedGarbage.Impl.Argon2.AArch64.Instructions
+public import VerifiedGarbage.Impl.Argon2.AArch64.ReferenceLane
+public import VerifiedGarbage.Impl.Argon2.AArch64.FirstLane
+public import VerifiedGarbage.Impl.Argon2.AArch64.ReferenceStart
+public import VerifiedGarbage.Impl.Argon2.AArch64.ReferenceCount
+public import VerifiedGarbage.Impl.Argon2.AArch64.Relative
+public import VerifiedGarbage.Impl.Argon2.AArch64.Wrap
 
 /-! Complete mapping of J₁ and J₂ to a reference lane and column.
 
@@ -14,6 +16,8 @@ index in `x22` and `x23`. The pass counter is at the frame base `x19`:
 H₀'s first word is reused after memory initialization. `x5` and `x0`
 receive the reference lane and column. The input word is retained in `x7`.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Argon2.AArch64.ReferenceMap
 

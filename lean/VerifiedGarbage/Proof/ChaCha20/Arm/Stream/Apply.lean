@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.ChaCha20.Arm.Stream.Calls
+module
+
+public import VerifiedGarbage.Proof.ChaCha20.Arm.Stream.Calls
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Streaming ChaCha20 on ARMv7: `apply`, correctness
@@ -8,6 +14,8 @@ Untrusted: everything here is checked by Lean. The pieces of `apply`
 (`Q0` … `Q3`), and the whole function. The pieces are those that the proof
 of constant time (`ApplyCT.lean`) relates in two runs.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.ChaCha20.Arm.Stream
 

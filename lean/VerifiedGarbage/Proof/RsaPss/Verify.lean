@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.RsaPss.Encoding
+module
+
+public import VerifiedGarbage.Proof.RsaPss.Encoding
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSASSA-PSS: verification accepts exactly the signatures of encodings
@@ -9,6 +15,8 @@ some salt of the expected length (`verify_iff`). So a signature that RSASP1
 gives for such an encoding, which the checked private-key operation releases
 only if RSAVP1 takes it back to that encoding, verifies.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPss
 

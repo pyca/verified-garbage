@@ -1,7 +1,16 @@
-import VerifiedGarbage.Proof.Bignum.AArch64.SquarePrefix
-import VerifiedGarbage.Proof.Bignum.AArch64.Row
+module
+
+public import VerifiedGarbage.Proof.Bignum.AArch64.SquarePrefix
+public import VerifiedGarbage.Proof.Bignum.AArch64.Row
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Four-word steps preserve the existing row invariant. -/
+
+@[expose] public section
+
 namespace VG.Proof.Bignum.AArch64.Square
 open VG VG.AArch64 VG.Impl.Bignum.AArch64 VG.Proof.Bignum
 open VG.Proof.Bignum.AArch64

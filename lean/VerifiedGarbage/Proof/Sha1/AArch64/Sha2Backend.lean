@@ -1,5 +1,15 @@
-import VerifiedGarbage.Proof.Sha1.AArch64.Variant
-import VerifiedGarbage.Proof.Sha1.AArch64.Sha2.Compress
+module
+
+public import VerifiedGarbage.Proof.Sha1.AArch64.Variant
+meta import VerifiedGarbage.Proof.Sha1.AArch64.Variant
+public import VerifiedGarbage.Proof.Sha1.AArch64.Sha2.Compress
+meta import VerifiedGarbage.Proof.Sha1.AArch64.Sha2.Compress
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.Sha1.AArch64.Sha2
 
@@ -14,10 +24,10 @@ def backend : Compress where
   keepsV := by lit_decide
   suffix := "_sha2"
   features := ["sha2"]
-  updateCT := VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3, .x4])
-    (fun _ _ _ _ hp => MdStream.AArch64.Update.agree₀ hp) (by taint_decide)
-  finalizeCT := VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3])
-    (fun _ _ _ _ hp => MdStream.AArch64.Finalize.agree₀ hp) (by taint_decide)
+  updateCT := by exact (VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3, .x4])
+    (fun _ _ _ _ hp => MdStream.AArch64.Update.agree₀ hp) (by taint_decide))
+  finalizeCT := by exact (VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3])
+    (fun _ _ _ _ hp => MdStream.AArch64.Finalize.agree₀ hp) (by taint_decide))
   updateKeeps := instrs_keeps (by lit_decide)
   finalizeKeeps := instrs_keeps (by lit_decide)
   updateDepth := by lit_decide

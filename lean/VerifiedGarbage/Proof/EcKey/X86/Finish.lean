@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Ecdsa.X86.Finish
-import VerifiedGarbage.Impl.EcKey.X86
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.X86.Finish
+public import VerifiedGarbage.Impl.EcKey.X86
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Elliptic curve public keys on x86 (32-bit): the result
@@ -10,6 +16,8 @@ the callee-saved registers (`pkFinish_ok`): the leading byte by `store8`,
 the two coordinates from `out + 1` as the signature's `finish` writes
 `r ‖ s`, then the signature's tail (`tail_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.EcKey.X86
 

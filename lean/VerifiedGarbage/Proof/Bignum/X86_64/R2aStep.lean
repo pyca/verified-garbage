@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.R2aD3
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.R2aD3
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `R² mod m` by word steps with ADX: a step
@@ -9,6 +15,8 @@ branch, as `R2Words.addBack` does by a mask (`fix_ok`, the same statement);
 accumulator holding `mc = R - m`: `q̂`, refined twice by `refine_ok`, stays
 within `q ≤ q̂ ≤ q + 2` (`d3_bounds`), so `wordStep_valG` applies.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64.R2ax
 

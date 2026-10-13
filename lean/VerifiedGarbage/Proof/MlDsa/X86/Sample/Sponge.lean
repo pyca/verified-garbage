@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.MlDsa.X86.Sample.Setup
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86.Sample.Setup
+meta import VerifiedGarbage.Proof.MlDsa.X86.Sample.Setup
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on x86 (32-bit): the SHAKE output of the sampling functions
@@ -13,6 +20,8 @@ functions (`absorb_call`, `pad_call`, `squeeze_call`), leaving the first
 (`Proof/MlKem/X86/Keccak.lean`), but for a message length and a padding
 position that depend on the entry state (`absorb_piece'`, `pad_piece'`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86.Sample
 

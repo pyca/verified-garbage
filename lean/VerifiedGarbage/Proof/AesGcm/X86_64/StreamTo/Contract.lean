@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Contract
-import VerifiedGarbage.Spec.Gcm.OutOfPlace
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Contract
+public import VerifiedGarbage.Spec.Gcm.OutOfPlace
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM streaming encryption out of place, x86-64: the contracts
@@ -17,6 +23,8 @@ dst_len = [rsp + 24], work = [rsp + 32])`, for a key context of kind `M`
 2608 bytes of stack, with one argument on the stack, so it uses the 2624
 bytes below the stack pointer (`stkS`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesGcm
 

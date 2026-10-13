@@ -1,5 +1,11 @@
-import VerifiedGarbage.Impl.Aes.Arm.Linear
-import VerifiedGarbage.Proof.Aes.Arm.Sbox
+module
+
+public import VerifiedGarbage.Impl.Aes.Arm.Linear
+public import VerifiedGarbage.Proof.Aes.Arm.Sbox
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The linear layers of bitsliced AES on ARMv7
@@ -10,6 +16,8 @@ atoms and compares every output bit with the XOR of input bits given in
 `Proof/Aes/Arm/Bitsliced.lean`. Position `p = 8r + 2c + b` of a word of the
 bitsliced state is byte `r + 4c` of block `b`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Aes.Arm
 

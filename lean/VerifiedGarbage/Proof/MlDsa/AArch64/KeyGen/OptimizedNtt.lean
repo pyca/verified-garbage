@@ -1,6 +1,14 @@
-import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.OptimizedNtt
-import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedRestState
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedCalls
+module
+
+public import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.OptimizedNtt
+public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedRestState
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedCalls
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.KeyGen.Optimized
 open VG VG.AArch64 VG.Impl.MlDsa.AArch64.KeyGen

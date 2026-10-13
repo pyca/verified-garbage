@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Ed25519.X86.WindowStep
+module
+
+public import VerifiedGarbage.Proof.Ed25519.X86.WindowStep
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Verification's windows: the nibbles and the loops
@@ -9,6 +15,8 @@ up, `[k / 16^n]A + [S / 16^n](-B)` (`nsum`). The leading zero bytes of `k`
 above its low 32 are skipped, where the sum is zero; then each window takes
 one nibble of both scalars, `S` having none from 64 up (`S < 256^32`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed25519.X86
 

@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlDsa.X86.Verify.Local
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86.Verify.Local
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA verification on x86 (32-bit): the hint and `z`
@@ -9,6 +15,8 @@ gives the result: 1 with the hint stored (`HOk`), or 0 if it is malformed
 (`hint_piece`); then each `z[i]` is unpacked and the result ANDed with
 `‖z[i]‖∞ < γ₁ - β` (`zOne_piece`, `ZI`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86.Verify
 

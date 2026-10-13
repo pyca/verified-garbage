@@ -1,7 +1,19 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.MontFnBase
-import VerifiedGarbage.Proof.Mont.Read
-import VerifiedGarbage.Spec.Rsa.Mont
-import VerifiedGarbage.Proof.Framework.Contract
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontFnBase
+meta import VerifiedGarbage.Proof.Bignum.X86_64.MontFnBase
+public import VerifiedGarbage.Proof.Mont.Read
+meta import VerifiedGarbage.Proof.Mont.Read
+public import VerifiedGarbage.Spec.Rsa.Mont
+meta import VerifiedGarbage.Spec.Rsa.Mont
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64.MontFn
 

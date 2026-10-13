@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.X448.X86_64.Reduce
+module
+
+public import VerifiedGarbage.Proof.X448.X86_64.Reduce
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 on x86-64: the field multiplications
@@ -8,6 +14,8 @@ Each field operation on the working space as a change of the field element
 and the product's words at `ACC` are unchanged, and so are the registers but
 those the arithmetic uses (`Op`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448.X86_64
 

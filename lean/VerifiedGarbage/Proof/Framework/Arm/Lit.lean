@@ -1,5 +1,7 @@
-import VerifiedGarbage.Proof.Framework.Lit
-import VerifiedGarbage.Proof.Framework.Arm.Taint
+module
+
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Framework.Arm.Taint
 
 /-!
 # Shift code as literals
@@ -7,6 +9,8 @@ import VerifiedGarbage.Proof.Framework.Arm.Taint
 The instances `materialize_code` needs to write this ISA's code as a literal
 (`Proof/Framework/Lit.lean`).
 -/
+
+@[expose] public section
 
 namespace VG.Arm
 

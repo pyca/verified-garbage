@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.AesSiv.X86_64.Open
+module
+
+public import VerifiedGarbage.Proof.AesSiv.X86_64.Open
+meta import VerifiedGarbage.Proof.AesSiv.X86_64.Open
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-SIV on x86-64: the ends of `encrypt` and `decrypt` are constant time
@@ -9,6 +16,8 @@ about the slots of the data and the counter; and the rest, by the taint
 analysis from those registers. `decrypt` compares the IVs and masks the data
 without a branch, so nothing it does depends on the result.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesSiv.X86_64
 

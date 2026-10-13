@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.X448.X86.RowPass
-import VerifiedGarbage.Proof.X448.X86.Field
+module
+
+public import VerifiedGarbage.Proof.X448.X86.RowPass
+public import VerifiedGarbage.Proof.X448.X86.Field
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 on x86 (32-bit): multiplication-row memory
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.X448.X86.Field
 The public row pointer moves through the working space while all field inputs
 remain unchanged.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448.X86
 

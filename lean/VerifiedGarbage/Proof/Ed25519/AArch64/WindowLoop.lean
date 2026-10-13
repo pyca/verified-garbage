@@ -1,9 +1,18 @@
-import VerifiedGarbage.Proof.Ed25519.AArch64.WindowStep
-import VerifiedGarbage.Proof.Ed25519.AArch64.Bits
-import VerifiedGarbage.Proof.Ed25519.AArch64.PointMulCounter
-import VerifiedGarbage.Proof.Ed25519.Window
+module
+
+public import VerifiedGarbage.Proof.Ed25519.AArch64.WindowStep
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Bits
+public import VerifiedGarbage.Proof.Ed25519.AArch64.PointMulCounter
+public import VerifiedGarbage.Proof.Ed25519.Window
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Ed25519.AArch64.WindowByte`. -/
+
+@[expose] public section
+
 section
 /-!
 # Verification's bytes: two windows per byte of the scalars

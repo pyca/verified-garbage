@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.RsaOaep.AArch64.EncCTBase
+module
+
+public import VerifiedGarbage.Proof.RsaOaep.AArch64.EncCTBase
+meta import VerifiedGarbage.Proof.RsaOaep.AArch64.EncCTBase
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-OAEP encryption on AArch64: `EM` and the call in constant time
@@ -9,6 +16,8 @@ MGF1 as for any caller (`pw_lr`), the arguments' blocks by the taint
 analysis, and the call of `vg_rsa_public_checked` with the same public
 arguments in both runs (`pub_pub'`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaOaep.AArch64.Enc
 

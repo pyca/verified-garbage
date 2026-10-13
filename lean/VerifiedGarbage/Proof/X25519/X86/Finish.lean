@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.X25519.X86.Setup
-import VerifiedGarbage.Proof.X25519.X86.Invert
+module
+
+public import VerifiedGarbage.Proof.X25519.X86.Setup
+public import VerifiedGarbage.Proof.X25519.X86.Invert
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X25519 on x86 (32-bit): the end of the ladder, and the result
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.X25519.X86.Invert
 The swap after the loop, and `finish`: `x2 · z2^(p-2)` (with `z2^(p-2)` in
 `T1`), reduced fully, stored to `out`, and the saved registers restored.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X25519.X86
 

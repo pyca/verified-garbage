@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.X25519.Arm.Pass
+module
+
+public import VerifiedGarbage.Proof.X25519.Arm.Pass
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X25519 on 32-bit ARM: field elements in the working space
@@ -12,6 +18,8 @@ An offset from `r0` in a load or store is below 4096, so the lemmas hold for
 a working space of those 4096 bytes and `e` more (`CtxN e`): X25519's has
 none (`Ctx`); Ed25519's on ARMv7 has 8192 bytes.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X25519.Arm
 

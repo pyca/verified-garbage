@@ -1,6 +1,12 @@
-import VerifiedGarbage.Impl.RsaKeyGen.AArch64.Candidate
-import VerifiedGarbage.Proof.Bignum.AArch64.HdrPairs
-import VerifiedGarbage.Proof.Bignum.AArch64.PcCode
+module
+
+public import VerifiedGarbage.Impl.RsaKeyGen.AArch64.Candidate
+public import VerifiedGarbage.Proof.Bignum.AArch64.HdrPairs
+public import VerifiedGarbage.Proof.Bignum.AArch64.PcCode
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # A candidate on AArch64: the entry
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.Bignum.AArch64.PcCode
 `kEntry` stores the arguments in the header of the working space, whose
 base (the second stack argument) it leaves in `x0` (`kEntry_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaKeyGen.AArch64
 

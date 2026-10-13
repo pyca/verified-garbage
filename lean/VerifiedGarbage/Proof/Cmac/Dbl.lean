@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Cmac.Spec
+module
+
+public import VerifiedGarbage.Proof.Cmac.Spec
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # CMAC: doubling a 16-byte block as a 128-bit integer
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.Cmac.Spec
 block as a big-endian 128-bit integer `x` (`Spec.Gcm.ofBytes`), the shift
 `x << 1` XORed with `0x87` if the bit shifted out was 1.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Cmac
 

@@ -1,20 +1,29 @@
-import VerifiedGarbage.Impl.Ed25519.Arm.PublicKey
-import VerifiedGarbage.Proof.Ed25519.Arm.Whole.Layout
-import VerifiedGarbage.Proof.Ed25519.Arm.Whole.Setup
-import VerifiedGarbage.Proof.Ed25519.Bytes
-import VerifiedGarbage.Proof.Ed25519.Arm.Whole.HashPre
-import VerifiedGarbage.Proof.Ed25519.Arm.PublicKey.Prune
-import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseVerified
-import VerifiedGarbage.Proof.Ed25519.Arm.Whole.Wipe
-import VerifiedGarbage.Proof.Ed25519.Arm.Whole.Wrap
-import VerifiedGarbage.Spec.Ed25519.Contract
-import VerifiedGarbage.Proof.Framework.Arm.Contract
-import VerifiedGarbage.Proof.Ed25519.Arm.Whole.CallCT
-import VerifiedGarbage.Proof.Ed25519.Arm.Whole.WrapCT
-import VerifiedGarbage.Proof.Ed25519.Arm.Whole.BlocksCT
-import VerifiedGarbage.Proof.Ed25519.Arm.PublicKey.PruneCT
+module
+
+public import VerifiedGarbage.Impl.Ed25519.Arm.PublicKey
+public import VerifiedGarbage.Proof.Ed25519.Arm.Whole.Layout
+public import VerifiedGarbage.Proof.Ed25519.Arm.Whole.Setup
+public import VerifiedGarbage.Proof.Ed25519.Bytes
+public import VerifiedGarbage.Proof.Ed25519.Arm.Whole.HashPre
+public import VerifiedGarbage.Proof.Ed25519.Arm.PublicKey.Prune
+public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseVerified
+public import VerifiedGarbage.Proof.Ed25519.Arm.Whole.Wipe
+public import VerifiedGarbage.Proof.Ed25519.Arm.Whole.Wrap
+public import VerifiedGarbage.Spec.Ed25519.Contract
+public import VerifiedGarbage.Proof.Framework.Arm.Contract
+public import VerifiedGarbage.Proof.Ed25519.Arm.Whole.CallCT
+public import VerifiedGarbage.Proof.Ed25519.Arm.Whole.WrapCT
+public import VerifiedGarbage.Proof.Ed25519.Arm.Whole.BlocksCT
+public import VerifiedGarbage.Proof.Ed25519.Arm.PublicKey.PruneCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Ed25519.Arm.PublicKey.Correct`. -/
+
+@[expose] public section
+
 section
 /-! Merged from `Proof.Ed25519.Arm.PublicKey.Layout`. -/
 section

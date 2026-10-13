@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.AesCcm.Ctr
-import VerifiedGarbage.Proof.Framework.WriteBytes
-import VerifiedGarbage.Proof.Framework.Offset
+module
+
+public import VerifiedGarbage.Proof.AesCcm.Ctr
+public import VerifiedGarbage.Proof.Framework.WriteBytes
+public import VerifiedGarbage.Proof.Framework.Offset
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CCM: bytes of a buffer
@@ -11,6 +17,8 @@ write of bytes into a buffer replaces those of its bytes
 big-endian encodings `[v]₈ₖ` split into zeros and `[v]₈q` (`be_split`).
 Shared by the 32-bit (`Bytes`) and 64-bit (`Words`) lemmas.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesCcm
 

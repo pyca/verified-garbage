@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Divstep.BatchBasic
-import Mathlib.Data.Int.ModEq
+module
+
+public import VerifiedGarbage.Proof.Divstep.BatchBasic
+public import Mathlib.Data.Int.ModEq
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Divsteps in batches
@@ -12,6 +18,8 @@ They read only `d` and `g mod 2`, so `n` steps on `f`, `g` taken modulo
 `2^N` (`n ≤ N`) give the same `d` and matrix (`msteps_cong`): a batch runs on
 the low words and its matrix updates the whole numbers.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Divstep
 

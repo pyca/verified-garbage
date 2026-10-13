@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchZTo.Base
+module
+
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZTo.Base
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The out-of-place AVX-512 loop: a batch of sixteen blocks
@@ -10,6 +16,8 @@ rounds as in place (`VaesZ.ctrsZ_ok`, `VaesZ.aesZ_ok`), then the XOR of the
 plaintext, which nothing writes, into the output (`xorDataZTo_ok`), as
 `StitchZ.batch_ok` does in place.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Gcm.X86_64.StitchZTo
 

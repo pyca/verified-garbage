@@ -1,7 +1,16 @@
-import VerifiedGarbage.Proof.Weierstrass.X86_64.NafCacheEntryFields
-import VerifiedGarbage.Proof.Weierstrass.X86_64.NafCacheNeg
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafCacheEntryFields
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafCacheNeg
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! The exact lookup environment preserves the point and its cached powers. -/
+
+@[expose] public section
+
 namespace VG.Proof.Weierstrass.X86_64
 open VG VG.X86_64 VG.Impl.Mont VG.Impl.Weierstrass VG.Impl.Weierstrass.X86_64
 open VG.Proof.Mont VG.Proof.Mont.X86_64 Spec.Weierstrass

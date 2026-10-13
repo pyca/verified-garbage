@@ -1,19 +1,39 @@
-import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.Framework.Mem
-import VerifiedGarbage.Proof.Framework.AArch64.Taint
-import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import VerifiedGarbage.Proof.Sha256.Spec
-import VerifiedGarbage.Impl.Sha256.AArch64
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Sha256.StateMem
-import VerifiedGarbage.Proof.Sha256.AArch64.Contract
-import VerifiedGarbage.Proof.Sha256.AArch64.Lit
+module
+
+public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+meta import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+public import VerifiedGarbage.Proof.Framework.Block
+meta import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.Framework.Mem
+meta import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.AArch64.Taint
+meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
+public import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+public import VerifiedGarbage.Proof.Sha256.Spec
+meta import VerifiedGarbage.Proof.Sha256.Spec
+public import VerifiedGarbage.Impl.Sha256.AArch64
+meta import VerifiedGarbage.Impl.Sha256.AArch64
+public import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Sha256.StateMem
+meta import VerifiedGarbage.Proof.Sha256.StateMem
+public import VerifiedGarbage.Proof.Sha256.AArch64.Contract
+meta import VerifiedGarbage.Proof.Sha256.AArch64.Contract
+public import VerifiedGarbage.Proof.Sha256.AArch64.Lit
+meta import VerifiedGarbage.Proof.Sha256.AArch64.Lit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # SHA-256 compression function on AArch64: the message schedule and the rounds
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sha256.AArch64
 

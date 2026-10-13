@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Bignum.AArch64.Run
+module
+
+public import VerifiedGarbage.Proof.Bignum.AArch64.Run
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Multiword arithmetic on AArch64: a multiply-accumulate step
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.Bignum.AArch64.Run
 `x16` and whose carry is returned as `x2 + C`; both pointers advance
 (`mac_ok`). `carryOut_ok` folds C into x2 at the row boundary.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.AArch64
 

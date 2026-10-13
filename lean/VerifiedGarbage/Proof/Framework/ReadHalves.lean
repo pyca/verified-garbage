@@ -1,4 +1,6 @@
-import VerifiedGarbage.Proof.Framework.Mem
+module
+
+public import VerifiedGarbage.Proof.Framework.Mem
 
 /-!
 # A 64-bit word read as two 32-bit halves
@@ -6,6 +8,8 @@ import VerifiedGarbage.Proof.Framework.Mem
 A 32-bit target reads a table of 64-bit words (`Abi.constsHeld`) half a word
 at a time: the low half at the word's address, the high half four bytes on.
 -/
+
+@[expose] public section
 
 namespace VG.Mem
 

@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Pieces
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtRows
+module
+
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Pieces
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtRows
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # An RSA key from its primes on AArch64: pieces more than one stage uses
@@ -8,6 +14,8 @@ The products `mulTo` (`φ` in `lcmPart`, `n` in `nPart`), `inverse`'s start
 `invFrom` and `gcdIsOne` (`dOdd`, `dEven`, `qinvPart`), and `divisorOf`
 (`dEven`, `crtPart`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaKeyGen.AArch64.Key
 

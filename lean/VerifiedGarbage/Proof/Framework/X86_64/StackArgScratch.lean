@@ -1,5 +1,7 @@
-import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
-import VerifiedGarbage.Proof.Framework.X86_64.Inline
+module
+
+public import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
+public import VerifiedGarbage.Proof.Framework.X86_64.Inline
 
 /-!
 # A scratch buffer on the stack, after stack arguments (x86-64)
@@ -29,6 +31,8 @@ within the function's buffers as well (`hleak`, `Sig.LeakLocal`, which holds
 of no leak and is then proved by default). `pubL_args` is `pub_args` with a
 leak.
 -/
+
+@[expose] public section
 
 namespace VG.X86_64
 

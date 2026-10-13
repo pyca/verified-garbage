@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Weierstrass.X86.Copy
-import VerifiedGarbage.Proof.Weierstrass.Words32
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86.Copy
+public import VerifiedGarbage.Proof.Weierstrass.Words32
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Short Weierstrass curves on x86 (32-bit): big-endian words
@@ -8,6 +14,8 @@ What the loads and stores of big-endian numbers (`BytesLen.lean`) share:
 `bswap` is `byteRev32`, the address `[r + d]`, and the 32-bit words of a range
 whose bytes are kept.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.X86
 

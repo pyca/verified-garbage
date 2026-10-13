@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.CmacTripleDes.Arm.Block
-import VerifiedGarbage.Proof.CmacTripleDes.KeySchedule
-import VerifiedGarbage.Proof.CmacTripleDes.Arm.KeysLit
+module
+
+public import VerifiedGarbage.Proof.CmacTripleDes.Arm.Block
+public import VerifiedGarbage.Proof.CmacTripleDes.KeySchedule
+public import VerifiedGarbage.Proof.CmacTripleDes.Arm.KeysLit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # DES's key schedule on 32-bit ARM
@@ -12,6 +18,8 @@ to the round keys' words it stores: the kernel checks it over the lane
 domain (`roundKeys_check`), and `getLsbD_expandDesKey` says the bits are the
 specification's.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.CmacTripleDes.Arm
 

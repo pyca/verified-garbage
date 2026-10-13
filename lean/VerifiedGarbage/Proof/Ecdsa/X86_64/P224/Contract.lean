@@ -1,7 +1,13 @@
-import VerifiedGarbage.Spec.Ecdsa.P224
-import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Ecdsa.X86_64.P224.Tables
+module
+
+public import VerifiedGarbage.Spec.Ecdsa.P224
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.P224.Tables
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDSA over P-224 on x86-64: the contract the proof is written against
@@ -12,6 +18,8 @@ by name: `vg_ecdsa_p224_sign(out = rdi, d = rsi, digest = rdx, k = rcx,
 scratch = r8)`, the result in `eax`, and the tables at the address of the
 static `VG_P224_COMB`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.X86_64.P224
 

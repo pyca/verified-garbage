@@ -1,7 +1,13 @@
-import VerifiedGarbage.Impl.Ed448.AArch64.ScalarBase
-import VerifiedGarbage.Proof.X448.AArch64.BitBody
-import VerifiedGarbage.Proof.X448.AArch64.Finish
-import VerifiedGarbage.Proof.Ed448.Scalar
+module
+
+public import VerifiedGarbage.Impl.Ed448.AArch64.ScalarBase
+public import VerifiedGarbage.Proof.X448.AArch64.BitBody
+public import VerifiedGarbage.Proof.X448.AArch64.Finish
+public import VerifiedGarbage.Proof.Ed448.Scalar
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 base-point multiplication on AArch64: the scalar's bits
@@ -10,6 +16,8 @@ import VerifiedGarbage.Proof.Ed448.Scalar
 `BITS` (byte `t` is bit `t`, X448's `bitHead` and `bitJ`), counting `x19`
 up to 57; then the output pointer into `x1`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.AArch64
 

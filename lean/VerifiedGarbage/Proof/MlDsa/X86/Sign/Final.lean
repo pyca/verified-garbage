@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.MlDsa.X86.Sign.PhaseO
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86.Sign.PhaseO
+meta import VerifiedGarbage.Proof.MlDsa.X86.Sign.PhaseO
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA signing on x86 (32-bit): the body
@@ -10,6 +17,8 @@ signature if the last iteration passed) leaves `OK`, and `sig` if it is 1, as
 within `minBounds` if `SampleInBall` failed or the 814 iterations were
 rejected; and 0 at once if an entry of `Â` failed (`body_piece`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86.Sign
 

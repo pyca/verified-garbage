@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.MlDsa.X86.Message.Call
-import VerifiedGarbage.Proof.Framework.Range
-import VerifiedGarbage.Proof.MlKem.X86.SampleSetup
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86.Message.Call
+meta import VerifiedGarbage.Proof.MlDsa.X86.Message.Call
+public import VerifiedGarbage.Proof.Framework.Range
+meta import VerifiedGarbage.Proof.Framework.Range
+public import VerifiedGarbage.Proof.MlKem.X86.SampleSetup
+meta import VerifiedGarbage.Proof.MlKem.X86.SampleSetup
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on x86 (32-bit), `sign_message` and `verify_message`: SHAKE256 through the sponge functions
@@ -11,6 +20,8 @@ position it returns in `eax`), `vg_keccak_pad` and `vg_keccak_squeeze` on it,
 with their working space at `X + 200` (`kabs_ok`, `kpad_ok`, `ksqz_ok`, from
 ML-KEM's lemmas on their calls, `Proof/MlKem/X86/Keccak.lean`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86.Message
 

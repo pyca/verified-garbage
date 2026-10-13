@@ -1,11 +1,19 @@
-import VerifiedGarbage.Proof.Weierstrass.X86.TCombSelect
-import VerifiedGarbage.Proof.Weierstrass.X86.Ladder
-import VerifiedGarbage.Proof.Weierstrass.X86.TCombLay
-import VerifiedGarbage.Proof.Weierstrass.X86.Rcb3
-import VerifiedGarbage.Proof.Weierstrass.CombW
-import VerifiedGarbage.Proof.Weierstrass.Law3
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86.TCombSelect
+public import VerifiedGarbage.Proof.Weierstrass.X86.Ladder
+public import VerifiedGarbage.Proof.Weierstrass.X86.TCombLay
+public import VerifiedGarbage.Proof.Weierstrass.X86.Rcb3
+public import VerifiedGarbage.Proof.Weierstrass.CombW
+public import VerifiedGarbage.Proof.Weierstrass.Law3
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## `TCombEntry` -/
+
+@[expose] public section
 
 section
 

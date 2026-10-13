@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.EcKey.X86.Finish
-import VerifiedGarbage.Proof.Ecdsa.X86.Middle
-import VerifiedGarbage.Proof.Ecdsa.X86.Main
-import VerifiedGarbage.Proof.EcKey.PublicKey
+module
+
+public import VerifiedGarbage.Proof.EcKey.X86.Finish
+public import VerifiedGarbage.Proof.Ecdsa.X86.Middle
+public import VerifiedGarbage.Proof.Ecdsa.X86.Main
+public import VerifiedGarbage.Proof.EcKey.PublicKey
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Elliptic curve public keys on x86 (32-bit): the whole function
@@ -19,6 +25,8 @@ callee-saved registers. The code up to `Z^(p-2)` is the signature's, with
 its setup reading `k`, `d` and the hash all from `d` (`Args.publicKey`):
 its proof (`stage₁`, `stage₂`) is for any arguments the setup reads.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.EcKey.X86
 

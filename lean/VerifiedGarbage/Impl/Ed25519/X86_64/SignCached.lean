@@ -1,6 +1,8 @@
-import VerifiedGarbage.Impl.Ed25519.X86_64.PublicKey
-import VerifiedGarbage.Impl.Ed25519.X86_64.Scalar
-import VerifiedGarbage.Impl.Ed25519.X86_64.MulAdd
+module
+
+public import VerifiedGarbage.Impl.Ed25519.X86_64.PublicKey
+public import VerifiedGarbage.Impl.Ed25519.X86_64.Scalar
+public import VerifiedGarbage.Impl.Ed25519.X86_64.MulAdd
 
 /-!
 # Complete Ed25519 signing with the matching cached public key
@@ -17,6 +19,9 @@ scratch. Every scalar and hash input to an Ed25519 primitive is outside
 scratch, which those primitives overwrite. Secret frame buffers are wiped
 before returning. Calls need another 16 bytes below the frame.
 -/
+
+@[expose] public section
+
 namespace VG.Impl.Ed25519.X86_64.SignCached
 open VG.X86_64
 open VG.Impl.Sha512.X86_64.Stream (Callee)

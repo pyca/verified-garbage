@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.AesGcm.Arm.Init
-import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
+module
+
+public import VerifiedGarbage.Proof.AesGcm.Arm.Init
+meta import VerifiedGarbage.Proof.AesGcm.Arm.Init
+public import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
+meta import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on ARMv7: `vg_aes_gcm_init` is constant time
@@ -10,6 +18,8 @@ arguments, then `r8`, `r9` and `r11`); the calls of `vg_aes_expand_key_scratch` 
 `vg_aes_ctr32` are constant time by their own proofs (`key_rel`, `ctr_rel`),
 with the same arguments in both runs.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesGcm.Arm
 

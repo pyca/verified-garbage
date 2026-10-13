@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Weierstrass.Window5
-import VerifiedGarbage.Proof.Weierstrass.Booth
-import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.Window5
+public import VerifiedGarbage.Proof.Weierstrass.Booth
+public import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Windows of 5 bits in Jacobian coordinates: why no addition is exceptional
@@ -21,6 +27,8 @@ which only `j = 0`, `k = n - 2 |d|` allows, and then the digit `d_0` is
 The table's mixed additions `[m]P + P`, `2 ≤ m ≤ 15`, are not either
 (`tbl_noexc`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.Window5
 

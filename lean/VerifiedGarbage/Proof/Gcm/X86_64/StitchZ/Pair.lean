@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Gh
+module
+
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Gh
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Interleaved counter mode and GHASH with AVX-512: a pair of loads
@@ -10,6 +16,8 @@ both to each lane's (`WP.zlanes` of `pairSse_ok`, the SSE code of each
 lane); the first pair adds `Y` (`zmm2`) to the first load and writes the
 products instead.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Gcm.X86_64.StitchZ
 

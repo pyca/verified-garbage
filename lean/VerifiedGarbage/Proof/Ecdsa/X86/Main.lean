@@ -1,9 +1,15 @@
-import VerifiedGarbage.Proof.Ecdsa.X86.Inv
-import VerifiedGarbage.Proof.Weierstrass.X86.ScalarPower
-import VerifiedGarbage.Proof.Weierstrass.X86.P256Power
-import VerifiedGarbage.Proof.Ecdsa.X86.Stages
-import VerifiedGarbage.Proof.Weierstrass.X86.Rep
-import VerifiedGarbage.Proof.Ecdsa.Sign
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.X86.Inv
+public import VerifiedGarbage.Proof.Weierstrass.X86.ScalarPower
+public import VerifiedGarbage.Proof.Weierstrass.X86.P256Power
+public import VerifiedGarbage.Proof.Ecdsa.X86.Stages
+public import VerifiedGarbage.Proof.Weierstrass.X86.Rep
+public import VerifiedGarbage.Proof.Ecdsa.Sign
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDSA on x86 (32-bit): the whole function
@@ -18,6 +24,8 @@ setup and the tables of bits (`stage₁`, in `Stages.lean`), `[k]G` and
 `s`, its check and the result (`stage₄`); `signWith_eq` connects what they
 compute to the specification.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.X86
 

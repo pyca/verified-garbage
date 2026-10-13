@@ -1,7 +1,16 @@
-import VerifiedGarbage.Proof.Bignum.Square
-import VerifiedGarbage.Proof.Bignum.Words
+module
+
+public import VerifiedGarbage.Proof.Bignum.Square
+public import VerifiedGarbage.Proof.Bignum.Words
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Digit identities shared in organization with the x86-64 square proof. -/
+
+@[expose] public section
+
 namespace VG.Proof.Bignum.AArch64.Square
 open VG VG.Proof.Bignum
 

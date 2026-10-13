@@ -1,5 +1,15 @@
-import VerifiedGarbage.Impl.P256.X86_64.DoubleHalfPublic
-import VerifiedGarbage.Proof.P256.X86_64.DoubleHalfTiming
+module
+
+public import VerifiedGarbage.Impl.P256.X86_64.DoubleHalfPublic
+meta import VerifiedGarbage.Impl.P256.X86_64.DoubleHalfPublic
+public import VerifiedGarbage.Proof.P256.X86_64.DoubleHalfTiming
+meta import VerifiedGarbage.Proof.P256.X86_64.DoubleHalfTiming
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.P256.X86_64
 open VG VG.X86_64 VG.Impl.P256.X86_64 VG.Impl.Ecdsa.X86_64

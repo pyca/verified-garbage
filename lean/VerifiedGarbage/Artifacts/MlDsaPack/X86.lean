@@ -1,7 +1,9 @@
-import VerifiedGarbage.TCB.X86.Target
-import VerifiedGarbage.Proof.MlDsa.X86.Pack.Unpack
-import VerifiedGarbage.Proof.MlDsa.X86.Pack.HintPack
-import VerifiedGarbage.Proof.MlDsa.X86.Pack.HintUnpackEnd
+module
+
+public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Proof.MlDsa.X86.Pack.Unpack
+public import VerifiedGarbage.Proof.MlDsa.X86.Pack.HintPack
+public import VerifiedGarbage.Proof.MlDsa.X86.Pack.HintUnpackEnd
 
 /-!
 # ML-DSA (FIPS 204) on x86: the encodings
@@ -9,6 +11,8 @@ import VerifiedGarbage.Proof.MlDsa.X86.Pack.HintUnpackEnd
 The functions call no other one, and save their caller's registers in a
 frame of 16 bytes below the return address (`stack := 16`).
 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.MlDsaPack.X86
 

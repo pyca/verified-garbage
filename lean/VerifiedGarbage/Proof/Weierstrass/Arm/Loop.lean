@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Weierstrass.Arm.Copy
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.Arm.Copy
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Short Weierstrass curves on 32-bit ARM: loops counted down in `r11`
@@ -9,6 +15,8 @@ the body starts with `sub r11, r11, #1` (`wp_decCounter`) and ends with
 (`bne`). `countLoop_ok` runs such a loop `n ≥ 1` times from an invariant
 indexed by `r11`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.Arm
 

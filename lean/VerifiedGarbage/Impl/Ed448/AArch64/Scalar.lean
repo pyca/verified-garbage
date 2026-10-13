@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Ed25519.AArch64.Word
+module
+
+public import VerifiedGarbage.Impl.Ed25519.AArch64.Word
 
 /-!
 # Ed448 scalar arithmetic on AArch64
@@ -29,6 +31,8 @@ on the loop counter `x3`, and every address a pointer plus a constant or
 the counter. The callee-saved registers `x19–x26` are saved in the first 64
 bytes of the working space, whose base is in `x2`.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Ed448.AArch64
 

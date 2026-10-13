@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.Contract
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on x86-64: `vg_aes_gcm_stream_init`
@@ -6,6 +12,8 @@ import VerifiedGarbage.Proof.AesGcm.X86_64.Contract
 Untrusted: everything here is checked by Lean. `J₀`, the accumulator and the
 first counter block, from `j0` (`streamInit_wp`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

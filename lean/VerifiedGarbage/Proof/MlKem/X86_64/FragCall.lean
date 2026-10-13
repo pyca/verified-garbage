@@ -1,14 +1,20 @@
-import VerifiedGarbage.Proof.MlKem.X86_64.FragBase
-import VerifiedGarbage.Proof.MlKem.X86_64.Rel
-import VerifiedGarbage.Proof.MlKem.X86_64.AddSub
-import VerifiedGarbage.Proof.MlKem.X86_64.Mul
-import VerifiedGarbage.Proof.MlKem.X86_64.NttInv
-import VerifiedGarbage.Proof.MlKem.X86_64.Cbd
-import VerifiedGarbage.Proof.MlKem.X86_64.Encode12
-import VerifiedGarbage.Proof.MlKem.X86_64.Decode12
-import VerifiedGarbage.Proof.MlKem.X86_64.CompressEncode
-import VerifiedGarbage.Proof.MlKem.X86_64.DecodeDecompress
-import VerifiedGarbage.Proof.MlKem.X86_64.SampleCT
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86_64.FragBase
+public import VerifiedGarbage.Proof.MlKem.X86_64.Rel
+public import VerifiedGarbage.Proof.MlKem.X86_64.AddSub
+public import VerifiedGarbage.Proof.MlKem.X86_64.Mul
+public import VerifiedGarbage.Proof.MlKem.X86_64.NttInv
+public import VerifiedGarbage.Proof.MlKem.X86_64.Cbd
+public import VerifiedGarbage.Proof.MlKem.X86_64.Encode12
+public import VerifiedGarbage.Proof.MlKem.X86_64.Decode12
+public import VerifiedGarbage.Proof.MlKem.X86_64.CompressEncode
+public import VerifiedGarbage.Proof.MlKem.X86_64.DecodeDecompress
+public import VerifiedGarbage.Proof.MlKem.X86_64.SampleCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM-768 on x86-64: the calls of the top-level functions
@@ -18,6 +24,8 @@ permissions and the callee-saved registers as they were, and changes memory
 only within the buffers it writes and the 32 bytes of stack below `rsp`
 (`Post`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.X86_64
 

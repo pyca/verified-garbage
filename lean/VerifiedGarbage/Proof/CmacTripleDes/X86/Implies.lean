@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.CmacTripleDes.X86.Contract
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.CmacTripleDes.Scratch
+module
+
+public import VerifiedGarbage.Proof.CmacTripleDes.X86.Contract
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.CmacTripleDes.Scratch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # TDEA-CMAC on x86: the shared contracts imply ours
@@ -11,6 +17,8 @@ shared contracts of `Spec/Cmac/TripleDesContract.lean`.
 
 Untrusted: everything here is checked by Lean.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.CmacTripleDes.X86
 

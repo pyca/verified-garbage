@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.MlDsa.Arm.Verify.Control
-import VerifiedGarbage.Proof.MlDsa.Verify.Spec
+module
+
+public import VerifiedGarbage.Proof.MlDsa.Arm.Verify.Control
+meta import VerifiedGarbage.Proof.MlDsa.Arm.Verify.Control
+public import VerifiedGarbage.Proof.MlDsa.Verify.Spec
+meta import VerifiedGarbage.Proof.MlDsa.Verify.Spec
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA verification on 32-bit ARM: the primitives, and the hint
@@ -8,6 +16,8 @@ The primitives verification calls, verified with at most `S` bytes of stack
 (`VPrimsOk`); and the hint `h` of the signature, unpacked to polynomials `0,
 …, k - 1`, with `r11` 1 if it is well formed and 0 if not (`hint_piece`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Arm.Verify
 

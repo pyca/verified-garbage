@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Unch
-import VerifiedGarbage.Proof.Weierstrass.AArch64.SetConst
-import VerifiedGarbage.Proof.Framework.Omega
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Unch
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.SetConst
+public import VerifiedGarbage.Proof.Framework.Omega
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Short Weierstrass curves on AArch64: copies, selections and constants
@@ -11,6 +17,8 @@ does so for the three coordinates of a point (`selPt_ok`); `setConst n o x`
 writes `x` (`setConst_ok`, `SetConst.lean`). Each changes only `[o]` and `x1` (and `x2` for
 the selections), and keeps the regions.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.AArch64
 

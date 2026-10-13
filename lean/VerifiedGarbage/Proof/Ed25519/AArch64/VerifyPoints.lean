@@ -1,15 +1,24 @@
-import VerifiedGarbage.Impl.Ed25519.AArch64.Verify
-import VerifiedGarbage.Proof.Ed25519.AArch64.PointMulBatch
-import VerifiedGarbage.Proof.Ed25519.AArch64.PointAccumulate
-import VerifiedGarbage.Impl.Ed25519.AArch64.BaseMultiply
-import VerifiedGarbage.Proof.Ed25519.AArch64.PointPowers
-import VerifiedGarbage.Proof.Ed25519.WindowConstants
-import VerifiedGarbage.Proof.Ed25519.AArch64.WindowStep
-import VerifiedGarbage.Proof.Ed25519.AArch64.WindowLoop
-import VerifiedGarbage.Proof.Ed25519.AArch64.PointEqual
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
+module
+
+public import VerifiedGarbage.Impl.Ed25519.AArch64.Verify
+public import VerifiedGarbage.Proof.Ed25519.AArch64.PointMulBatch
+public import VerifiedGarbage.Proof.Ed25519.AArch64.PointAccumulate
+public import VerifiedGarbage.Impl.Ed25519.AArch64.BaseMultiply
+public import VerifiedGarbage.Proof.Ed25519.AArch64.PointPowers
+public import VerifiedGarbage.Proof.Ed25519.WindowConstants
+public import VerifiedGarbage.Proof.Ed25519.AArch64.WindowStep
+public import VerifiedGarbage.Proof.Ed25519.AArch64.WindowLoop
+public import VerifiedGarbage.Proof.Ed25519.AArch64.PointEqual
+public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Ed25519.AArch64.WindowTables`. -/
+
+@[expose] public section
+
 section
 /-! Merged from `Proof.Ed25519.AArch64.VerifyTables`. -/
 section

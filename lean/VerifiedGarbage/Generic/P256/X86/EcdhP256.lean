@@ -1,9 +1,11 @@
-import VerifiedGarbage.Proof.Weierstrass.X86.InvInterface
-import VerifiedGarbage.TCB.X86.Target
-import VerifiedGarbage.Proof.Weierstrass.Law
-import VerifiedGarbage.Impl.Ecdh.P256.X86
-import VerifiedGarbage.Proof.Ecdh.X86.Verified
-import VerifiedGarbage.Proof.Ecdh.X86.Lit
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86.InvInterface
+public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Proof.Weierstrass.Law
+public import VerifiedGarbage.Impl.Ecdh.P256.X86
+public import VerifiedGarbage.Proof.Ecdh.X86.Verified
+public import VerifiedGarbage.Proof.Ecdh.X86.Lit
 
 /-!
 # ECDH over P-256 (SP 800-56A) on x86 (32-bit)
@@ -11,6 +13,8 @@ import VerifiedGarbage.Proof.Ecdh.X86.Lit
 A generic file (see `TCB/Emit.lean`) over P-256's group law `h`, the variant
 `Variants/P256/X86/Law.lean`.
 -/
+
+@[expose] public section
 
 namespace VG.Generic.P256.X86.EcdhP256
 

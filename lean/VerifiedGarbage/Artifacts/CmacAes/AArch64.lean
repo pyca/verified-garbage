@@ -1,4 +1,9 @@
-import VerifiedGarbage.Proof.CmacAes.AArch64.Aese
+module
+
+public import VerifiedGarbage.Proof.CmacAes.AArch64.Aese
+
+@[expose] public section
+
 namespace VG.Artifacts.CmacAes.AArch64
 def artifacts : List Artifact := [
   { Spec.Cmac.aesUpdateApi with

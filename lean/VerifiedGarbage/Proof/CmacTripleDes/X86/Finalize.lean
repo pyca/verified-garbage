@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.CmacTripleDes.X86.Update
-import VerifiedGarbage.Proof.Framework.WriteBytes
+module
+
+public import VerifiedGarbage.Proof.CmacTripleDes.X86.Update
+public import VerifiedGarbage.Proof.Framework.WriteBytes
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # TDEA-CMAC on x86: `vg_cmac_triple_des_finalize`, up to the last block
@@ -11,6 +17,8 @@ the function forms the last block `Mₙ` (SP 800-38B §6.2 step 4) in
 `[136, 144)` of the scratch buffer, `0x80` after it, and XORed with `K2`
 (`partial_wp`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.CmacTripleDes.X86
 

@@ -1,9 +1,15 @@
-import VerifiedGarbage.Proof.Framework.X86_64.Sse
-import VerifiedGarbage.Proof.Sha512.Spec
-import VerifiedGarbage.Impl.Sha512.X86_64.Avx2
-import VerifiedGarbage.Proof.Sha512.X86_64.Avx2.Lit
-import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+module
+
+public import VerifiedGarbage.Proof.Framework.X86_64.Sse
+public import VerifiedGarbage.Proof.Sha512.Spec
+public import VerifiedGarbage.Impl.Sha512.X86_64.Avx2
+public import VerifiedGarbage.Proof.Sha512.X86_64.Avx2.Lit
+public import VerifiedGarbage.Proof.Framework.X86_64.Exec
+public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # SHA-512 with AVX2 on x86-64: the message schedule of one lane
@@ -12,6 +18,8 @@ Each 256-bit instruction of the schedule acts on the two 128-bit lanes alike,
 so it is proved once, on one lane (`xupd`): the next two words of a block's
 schedule from its previous sixteen.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sha512.X86_64.Avx2
 

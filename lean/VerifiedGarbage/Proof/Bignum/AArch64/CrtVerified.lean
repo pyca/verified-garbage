@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTCode
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTNSetup
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtImplies
+module
+
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTCode
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTNSetup
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtImplies
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_private_crt` on AArch64: verified against the shared contract
@@ -10,6 +16,8 @@ function is (`crtCode_constantTime`); with correctness (`crtCode_correct`)
 and the contract on the registers and the stack (`crt_implies`), `code` is
 verified (`crt_verified`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.AArch64
 

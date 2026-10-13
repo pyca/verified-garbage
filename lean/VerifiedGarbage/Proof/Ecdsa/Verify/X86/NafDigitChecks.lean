@@ -1,8 +1,17 @@
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafAddShared
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafAddShared
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafAddShared
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDSA verification on x86 (32-bit): the checks of the digits' additions
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Verify.X86
 open VG VG.X86 VG.Impl.Mont VG.Impl.Weierstrass VG.Impl.Weierstrass.X86

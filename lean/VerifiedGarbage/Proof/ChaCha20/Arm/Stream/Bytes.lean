@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.ChaCha20.Arm.Stream.Init
-import VerifiedGarbage.Proof.ChaCha20.Arm.Xor
+module
+
+public import VerifiedGarbage.Proof.ChaCha20.Arm.Stream.Init
+public import VerifiedGarbage.Proof.ChaCha20.Arm.Xor
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Streaming ChaCha20 on ARMv7: XORing bytes
@@ -8,6 +14,8 @@ Untrusted: everything here is checked by Lean. `xorBytes` XORs the `r2`
 bytes at `r3` into those at `r5`, one at a time, advancing both (the loop of
 `vg_chacha20_xor`, `Xor.xorLoop`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.ChaCha20.Arm.Stream
 

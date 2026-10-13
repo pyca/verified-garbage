@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.CTLcm
-import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.CTOut
+module
+
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.CTLcm
+meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.CTLcm
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.CTOut
+meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.CTOut
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # An RSA key from its primes on AArch64: constant time, `keyPart`
@@ -15,6 +23,8 @@ of the whole (`qinvPart_k`, `crtPart_k`, `nPart_k`, `finalMask_k`).
 parts are checked one after the other, with `KS` between them from the
 correctness of the first (`finTopT_k`) and of the second (`finOddT_k`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaKeyGen.AArch64.Key
 

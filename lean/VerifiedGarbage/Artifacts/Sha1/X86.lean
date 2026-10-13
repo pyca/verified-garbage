@@ -1,5 +1,7 @@
-import VerifiedGarbage.TCB.X86.Target
-import VerifiedGarbage.Proof.Sha1.X86.Shared
+module
+
+public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Proof.Sha1.X86.Shared
 
 /-!
 # SHA-1 (FIPS 180-4) on x86
@@ -8,6 +10,8 @@ import VerifiedGarbage.Proof.Sha1.X86.Shared
 made with it, are registered for each of its implementations
 (`Variants/Sha1/X86/`, `Generic/Sha1/X86/Stream.lean`).
 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.Sha1.X86
 

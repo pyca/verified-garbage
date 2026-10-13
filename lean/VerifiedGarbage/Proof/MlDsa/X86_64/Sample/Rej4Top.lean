@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej4Parse
-import VerifiedGarbage.Proof.MlKem.X86_64.S4Top
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej4Parse
+public import VerifiedGarbage.Proof.MlKem.X86_64.S4Top
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on x86-64: `vg_mldsa_rej_ntt_poly4_avx2`, correctness
@@ -12,6 +18,8 @@ seed, which leaves the coefficients of its 1008 bytes of output and the AND of
 whether each has 256 in `r14` (`P2`); and the epilogue, which returns it
 (`r4K`, as `vg_mldsa_rej_ntt_poly`'s contract `rnK` for each seed).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86_64.Rej4
 

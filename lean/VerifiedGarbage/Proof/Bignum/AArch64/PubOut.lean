@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Bignum.AArch64.Store
-import VerifiedGarbage.Proof.Bignum.AArch64.PdRest
-import VerifiedGarbage.Proof.Bignum.AArch64.MontMul
+module
+
+public import VerifiedGarbage.Proof.Bignum.AArch64.Store
+public import VerifiedGarbage.Proof.Bignum.AArch64.PdRest
+public import VerifiedGarbage.Proof.Bignum.AArch64.MontMul
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSA on AArch64: the result
@@ -9,6 +15,8 @@ import VerifiedGarbage.Proof.Bignum.AArch64.MontMul
 `out` and returns the mask's low bit (`outArr_ok`); `MainPost` is what a
 computation leaves.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.AArch64
 

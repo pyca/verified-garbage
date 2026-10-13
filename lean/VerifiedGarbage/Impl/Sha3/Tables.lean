@@ -1,3 +1,5 @@
+module
+
 /-!
 # Keccak-f[1600]: tables shared by the implementations
 
@@ -6,6 +8,8 @@ tables, for every target's implementation. (`Proof/Sha3/Spec.lean` proves
 the first two against the specification; `Proof/Sha3/Compl.lean` uses the
 third.)
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Sha3
 

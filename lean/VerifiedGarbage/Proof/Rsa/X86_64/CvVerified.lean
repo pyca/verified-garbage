@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Rsa.X86_64.CvCTCode
-import VerifiedGarbage.Proof.Framework.Sig
-import VerifiedGarbage.Proof.Framework.Contract
+module
+
+public import VerifiedGarbage.Proof.Rsa.X86_64.CvCTCode
+public import VerifiedGarbage.Proof.Framework.Sig
+public import VerifiedGarbage.Proof.Framework.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_crt_values` on x86-64: verified against the shared contract
@@ -9,6 +15,8 @@ import VerifiedGarbage.Proof.Framework.Contract
 (`cv_implies`); with correctness (`cvCode_correct`) and constant time
 (`cvCode_constantTime`), `CrtValues.code` is verified (`cv_verified`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.X86_64
 

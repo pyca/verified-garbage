@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Copy
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Loop
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Copy
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Loop
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Short Weierstrass curves on AArch64: tables of bits, and masks of bits
@@ -10,6 +16,8 @@ one down, each giving eight bytes of the table (`bitsBody_ok`). `bitMask d`
 makes the mask `x3` of the byte `x19` of the table at `d` (`bitMask_ok`): all
 ones for a 1, zero for a 0 (`bitMask_bool_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.AArch64
 

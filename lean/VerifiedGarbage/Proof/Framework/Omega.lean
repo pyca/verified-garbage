@@ -1,9 +1,11 @@
-import Lean.Elab.Tactic.Basic
-import Lean.Elab.Tactic.Omega
-import Lean.Elab.SyntheticMVars
-import Lean.Meta.Closure
-import Lean.Meta.Tactic.Assert
-import Lean.Meta.Tactic.Clear
+module
+
+public meta import Lean.Elab.Tactic.Basic
+public meta import Lean.Elab.Tactic.Omega
+public meta import Lean.Elab.SyntheticMVars
+public meta import Lean.Meta.Closure
+public meta import Lean.Meta.Tactic.Assert
+public meta import Lean.Meta.Tactic.Clear
 
 /-!
 # `omega` in large contexts
@@ -26,6 +28,8 @@ checks. Two ways to run them on less:
   facts `h₁, …, hₙ` (any terms). `omega_using` passes them directly to
   the solver; `bv_omega_using` clears other hypotheses before preprocessing.
 -/
+
+public meta section
 
 namespace VG.Omega
 

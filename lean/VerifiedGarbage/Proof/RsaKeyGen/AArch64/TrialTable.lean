@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Base
-import VerifiedGarbage.Proof.RsaKeyGen.Table
+module
+
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Base
+public import VerifiedGarbage.Proof.RsaKeyGen.Table
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # A candidate on AArch64: the table of small primes
@@ -9,6 +15,8 @@ import VerifiedGarbage.Proof.RsaKeyGen.Table
 writes the table (`tabWrites_ok`), composed by induction rather than run
 in one block.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaKeyGen.AArch64
 

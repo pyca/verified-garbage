@@ -1,11 +1,15 @@
-import VerifiedGarbage.Proof.Framework.Mem
-import VerifiedGarbage.TCB.Arm.Isa
+module
+
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.TCB.Arm.Isa
 
 /-!
 # ARMv7: the bytes of a word
 
 The bits of a word loaded from memory (little-endian), and of `rev` of a word.
 -/
+
+@[expose] public section
 
 namespace VG.Arm
 

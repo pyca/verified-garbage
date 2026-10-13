@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Modes.AArch64.Steps
-import VerifiedGarbage.Proof.Framework.Semantics
-import VerifiedGarbage.Proof.Framework.AArch64.Syms
-import VerifiedGarbage.Spec.Cbc
+module
+
+public import VerifiedGarbage.Proof.Modes.AArch64.Steps
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Framework.AArch64.Syms
+public import VerifiedGarbage.Spec.Cbc
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # What the modes need of a block cipher's core, on AArch64
@@ -31,6 +37,8 @@ else: the modes are proven once, for any core, and each cipher proves
   `leftReg`; every other register may change. (No AArch64 instruction the
   model executes outside a frame changes the stack pointer: `Exec.sp`.)
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Modes.AArch64
 

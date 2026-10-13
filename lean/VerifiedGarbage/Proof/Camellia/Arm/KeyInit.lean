@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Camellia.Arm.KeyPair
-import VerifiedGarbage.Proof.Camellia.Arm.Prologue
-import VerifiedGarbage.Proof.Camellia.Planes32
+module
+
+public import VerifiedGarbage.Proof.Camellia.Arm.KeyPair
+public import VerifiedGarbage.Proof.Camellia.Arm.Prologue
+public import VerifiedGarbage.Proof.Camellia.Planes32
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Camellia's key schedule on ARMv7: the prologue and the key
@@ -11,6 +17,8 @@ stored as the table's first six entries (`constStores_ok`), which hold the
 constants in every lane (`sigma_rel`). `loadKey_wp`: `KL` and `KR`, from
 the key's words, in their slots (`VW`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Camellia.Arm
 

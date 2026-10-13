@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarMemory
-import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.Framework.X86_64.Abi
+module
+
+public import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarMemory
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.Framework.X86_64.Abi
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Scalar reduction: the complete function
@@ -10,6 +16,8 @@ contract. It records the separation needed to preserve the input and return
 address while saving registers, and the output's address while the loop keeps
 it in the scratch.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed25519.X86_64
 

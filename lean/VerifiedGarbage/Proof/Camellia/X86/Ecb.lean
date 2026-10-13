@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Camellia.X86.Group
-import VerifiedGarbage.Proof.Camellia.X86.Keys
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.TCB.X86.Target
+module
+
+public import VerifiedGarbage.Proof.Camellia.X86.Group
+public import VerifiedGarbage.Proof.Camellia.X86.Keys
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.TCB.X86.Target
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Camellia ECB on x86 (32-bit): the whole function
@@ -13,6 +19,8 @@ builds the table of subkeys for 18 or 24 rounds in the order `dir` uses
 them, keeps the data pointer and the count in their slots, transforms the
 blocks a group at a time (`dataLoop_wp`) and restores the registers.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Camellia.X86
 

@@ -1,6 +1,8 @@
-import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.Weierstrass.X86_64.InvInterface
-import VerifiedGarbage.Proof.Ecdsa.X86_64.P224.InverseVerified
+module
+
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvInterface
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.P224.InverseVerified
 
 /-!
 # P-224's inversions modulo `p` and `n` on x86-64
@@ -10,6 +12,8 @@ which the signature, the public key derivation, verification and ECDH call. A ge
 `TCB/Emit.lean`) over P-224's group law and inversions `h`, the variant
 `Variants/P224/X86_64/Law.lean`, whose inversions' soundness the proofs take.
 -/
+
+@[expose] public section
 
 namespace VG.Generic.P224.X86_64.InverseP224
 
@@ -33,9 +37,9 @@ def artifacts (h : Proof.Weierstrass.X86_64.HasLawInv Spec.P224.curve) : List Ar
       doc := C.invPApi.doc (notes := [note adx "p"])
       code := (cfg adx).invFn (cfg adx).pPowI
       contract := C.invPContract X86_64.abi
-      ofSig := ⟨_, _, _, by
+      ofSig := by exact (⟨_, _, _, by
         unfold Spec.Weierstrass.Inverse.Curve.invPContract Spec.Weierstrass.Inverse.Curve.invContract
-        rfl⟩
+        rfl⟩)
       verified := p_verified h.inv adx
       spSafe := Code.all_of_allInstrs (show invP.allInstrs _ = true by lit_decide)
       features := if adx then ["bmi2", "adx"] else [] }) ++
@@ -46,9 +50,9 @@ def artifacts (h : Proof.Weierstrass.X86_64.HasLawInv Spec.P224.curve) : List Ar
       doc := C.invNApi.doc (notes := [note adx "n"])
       code := (cfg adx).invFn (cfg adx).nPowI
       contract := C.invNContract X86_64.abi
-      ofSig := ⟨_, _, _, by
+      ofSig := by exact (⟨_, _, _, by
         unfold Spec.Weierstrass.Inverse.Curve.invNContract Spec.Weierstrass.Inverse.Curve.invContract
-        rfl⟩
+        rfl⟩)
       verified := n_verified h.inv adx
       spSafe := Code.all_of_allInstrs (show invN.allInstrs _ = true by lit_decide)
       features := if adx then ["bmi2", "adx"] else [] })

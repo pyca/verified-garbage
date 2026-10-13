@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.MlKem.X86_64.EcBase
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86_64.EcBase
+meta import VerifiedGarbage.Proof.MlKem.X86_64.EcBase
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86-64: encapsulation
@@ -10,6 +17,8 @@ succeeded within 280 iterations (`allOk`), and 0 otherwise
 (`kemEncapsH_ct`). Each parameter set's file moves this to its shared
 contract, with a state satisfying it (`encapsHSat`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.X86_64
 

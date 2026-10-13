@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.MlDsa.X86.Arith.NttSetup
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86.Arith.NttSetup
+meta import VerifiedGarbage.Proof.MlDsa.X86.Arith.NttSetup
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on x86 (32-bit): `vg_mldsa_ntt`
@@ -7,6 +14,8 @@ The eight layers of Algorithm 41 (`ntt_eq_layers`), each a `layer_piece`
 (`NttLoop.lean`) of the butterfly `bflyBody` (`bfly_spec`), with the zetas
 from `zetas 1` up.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86.Arith.NttFwd
 

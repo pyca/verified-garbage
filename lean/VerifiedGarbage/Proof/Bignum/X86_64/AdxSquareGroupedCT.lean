@@ -1,7 +1,18 @@
-import VerifiedGarbage.Impl.Bignum.X86_64.AdxSquareGrouped
-import VerifiedGarbage.Proof.Bignum.X86_64.Mont
+module
+
+public import VerifiedGarbage.Impl.Bignum.X86_64.AdxSquareGrouped
+meta import VerifiedGarbage.Impl.Bignum.X86_64.AdxSquareGrouped
+public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
+meta import VerifiedGarbage.Proof.Bignum.X86_64.Mont
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! All addresses and loop decisions depend only on the two bases and word count. -/
+
+@[expose] public section
+
 namespace VG.Proof.Bignum.X86_64.AdxSquareGrouped
 open VG VG.X86_64 VG.Impl.Bignum.X86_64
 open VG.Proof.Bignum.X86_64

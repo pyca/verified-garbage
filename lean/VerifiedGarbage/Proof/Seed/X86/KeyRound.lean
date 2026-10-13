@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Seed.X86.Ecb
-import VerifiedGarbage.Proof.Seed.KeyRot
-import VerifiedGarbage.Impl.Seed.X86.ExpandKey
+module
+
+public import VerifiedGarbage.Proof.Seed.X86.Ecb
+public import VerifiedGarbage.Proof.Seed.KeyRot
+public import VerifiedGarbage.Impl.Seed.X86.ExpandKey
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # A round of the key schedule on x86 (32-bit)
@@ -12,6 +18,8 @@ rotated by eight or 24 bits, and their bytes exchanged under a mask
 (`xr_hi`, …), which is two shifts of each word, as `keyStep` has it
 (`rotr8_hi`, …); `keyRounds_ok` runs the sixteen.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Seed.X86
 

@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Mont.AArch64.Chain
+module
+
+public import VerifiedGarbage.Proof.Mont.AArch64.Chain
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Montgomery arithmetic on AArch64: the operations
@@ -9,6 +15,8 @@ multiples of 8 (`ModA`): `mul o a b` writes `[a] [b] R⁻¹ mod m` to `[o]`
 `[a] - [b] mod m` (`sub_ok`), for `[a]`, `[b]` below `m`. Each changes only
 the registers `clob n`, the result and the temporary area (`OpKeep`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Mont.AArch64
 

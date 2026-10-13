@@ -1,8 +1,19 @@
-import VerifiedGarbage.Proof.Seed.Arm.ModeCore
-import VerifiedGarbage.Proof.Seed.FbScratch
-import VerifiedGarbage.Proof.Modes.Arm.OfbCfb
-import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
-import VerifiedGarbage.Impl.Seed.Arm.Modes
+module
+
+public import VerifiedGarbage.Proof.Seed.Arm.ModeCore
+meta import VerifiedGarbage.Proof.Seed.Arm.ModeCore
+public import VerifiedGarbage.Proof.Seed.FbScratch
+meta import VerifiedGarbage.Proof.Seed.FbScratch
+public import VerifiedGarbage.Proof.Modes.Arm.OfbCfb
+meta import VerifiedGarbage.Proof.Modes.Arm.OfbCfb
+public import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
+meta import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
+public import VerifiedGarbage.Impl.Seed.Arm.Modes
+meta import VerifiedGarbage.Impl.Seed.Arm.Modes
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # SEED-OFB and SEED-CFB128 on ARMv7 meet their contracts
@@ -13,6 +24,8 @@ with a scratch buffer of 9 words (`Proof.Seed.fbScratchContract`), with the
 752 bytes of stack the ECB function uses; the `_framed` theorems keep the
 buffer on the stack, zeroed on return: 80 bytes more.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Seed.Arm
 

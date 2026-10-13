@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Ecdh.X86_64.WinJac
-import VerifiedGarbage.Proof.Ecdh.X86_64.MulJ4
-import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacA
+module
+
+public import VerifiedGarbage.Proof.Ecdh.X86_64.WinJac
+public import VerifiedGarbage.Proof.Ecdh.X86_64.MulJ4
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacA
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDH on x86-64: `[d]P` by 5-bit windows with an affine table
@@ -16,6 +22,8 @@ the window's table of bits: the call keeps those bytes and `PT` in the table
 of the bits of `n - 2` and puts them back. Either way, `mulQJA` writes what
 `mulQJ` and the power write and that table (`mulQJAW`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdh.X86_64
 

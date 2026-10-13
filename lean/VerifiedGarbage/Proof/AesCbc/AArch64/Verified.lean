@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.AesCbc.AArch64.CT
+module
+
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.AesCbc.AArch64.CT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CBC on AArch64: `Verified`
@@ -9,6 +15,8 @@ functions), a state satisfying the precondition, and the shared contracts of
 `Spec/Cbc/Contract.lean` (with no stack: the calls keep the return address in
 `x30`, which each function saves in the scratch buffer).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesCbc.AArch64
 

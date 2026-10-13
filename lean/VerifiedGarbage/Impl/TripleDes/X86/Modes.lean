@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.TripleDes.X86.Ecb
-import VerifiedGarbage.Impl.Modes.X86.Seq
+module
+
+public import VerifiedGarbage.Impl.TripleDes.X86.Ecb
+public import VerifiedGarbage.Impl.Modes.X86.Seq
 
 /-!
 # Triple DES's core for the modes on x86 (32-bit)
@@ -20,6 +22,8 @@ modes' data pointer and steps left (their slots 4 and 5, `Core.dSlot` and
 `Core.nSlot`) in `esi` and `ebp` across the call, which the block function
 restores, and stores them back, unchanged, after it.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.TripleDes.X86
 

@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecScan
+module
+
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecScan
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-PKCS1-v1_5 decryption on x86-64: the checks of the padding
@@ -6,6 +12,8 @@ import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecScan
 The validity mask, the selected length and the mask of the private-key
 operation's success, from the scan, without branches (`validBlock_run`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPkcs1Enc.X86_64.Dec
 

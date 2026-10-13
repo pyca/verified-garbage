@@ -1,6 +1,8 @@
-import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.Gcm.AArch64.Ghash
-import VerifiedGarbage.Proof.Gcm.AArch64.Pmull.Ghash
+module
+
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.Gcm.AArch64.Ghash
+public import VerifiedGarbage.Proof.Gcm.AArch64.Pmull.Ghash
 
 /-!
 # GHASH on AArch64
@@ -11,6 +13,8 @@ FEAT_PMULL; the Arm ARM's `ID_AA64ISAR0_EL1.AES` has no value for PMULL
 without AES). With one suffix, a function calling both, such as AES-GCM, has
 one variant for that feature, not one for each suffix and their combination.
 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.Gcm.AArch64
 

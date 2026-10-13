@@ -1,7 +1,15 @@
-import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Verified
-import VerifiedGarbage.Proof.Argon2.AArch64.FillCompressCall
+module
+
+public import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Verified
+public import VerifiedGarbage.Proof.Argon2.AArch64.FillCompressCall
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! A verified H′ call initializes one 1024-byte memory block. -/
+
+@[expose] public section
 
 namespace VG.Proof.Argon2.AArch64.MemoryInit
 

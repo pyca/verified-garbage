@@ -1,6 +1,17 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourInitialized
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourMaskFour
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rel
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourInitialized
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourInitialized
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourMaskFour
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourMaskFour
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rel
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rel
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Optimized.BoundedFour
 open VG VG.AArch64

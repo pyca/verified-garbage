@@ -1,4 +1,6 @@
-import VerifiedGarbage.TCB.X86.Isa
+module
+
+public import VerifiedGarbage.TCB.X86.Isa
 
 /-!
 # The Salsa20/8 Core: x86 (32-bit) implementation, with SSE2
@@ -26,6 +28,8 @@ is put back the inverse way, the input rows (still in `b`) added, and stored.
 Every address is `esp` or `eax` plus a constant, and there are no branches,
 so only the pointers can affect timing.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Scrypt.X86
 

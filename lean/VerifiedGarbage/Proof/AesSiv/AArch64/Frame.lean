@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesSiv.AArch64.Verified
-import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
+module
+
+public import VerifiedGarbage.Proof.AesSiv.AArch64.Verified
+public import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-SIV on AArch64, with its working space on the stack
@@ -14,6 +20,8 @@ last argument (in `x7`), in a frame of 2576 bytes that allocates it, the
 same way: the frame leaves the memory as it is, so the list of slices they
 take needs nothing more.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesSiv.AArch64
 

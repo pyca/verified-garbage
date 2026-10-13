@@ -1,5 +1,7 @@
-import VerifiedGarbage.TCB.X86.Isa
-import VerifiedGarbage.Impl.Modes.Ops
+module
+
+public import VerifiedGarbage.TCB.X86.Isa
+public import VerifiedGarbage.Impl.Modes.Ops
 
 /-!
 # Block cipher modes on x86 (32-bit), for any block cipher with blocks of 8 or 16 bytes
@@ -41,6 +43,8 @@ of constant time forget what the scratch buffer holds, so the data pointer
 and the steps left are stored again, from registers, at the end of each step
 (and after `prepare`).
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Modes.X86
 

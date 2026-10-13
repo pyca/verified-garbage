@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Sha256.Md
-import VerifiedGarbage.Proof.MdStream.Prefix
-import VerifiedGarbage.Spec.Sha256.Contract
-import VerifiedGarbage.Proof.Sha256.Scratch
+module
+
+public import VerifiedGarbage.Proof.Sha256.Md
+public import VerifiedGarbage.Proof.MdStream.Prefix
+public import VerifiedGarbage.Spec.Sha256.Contract
+public import VerifiedGarbage.Proof.Sha256.Scratch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # SHA-224's digest, from the hash value in memory
@@ -12,6 +18,8 @@ its first 28 bytes, the first 7 words (`digest_take`): every target's
 `finalize` of SHA-224 writes them so, with its working space as an
 argument first (`finalize224ScratchContract`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sha256
 

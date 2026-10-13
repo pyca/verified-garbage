@@ -1,11 +1,20 @@
-import VerifiedGarbage.Impl.Ed25519.X86.PointDecode
-import VerifiedGarbage.Proof.Ed25519.X86.FreezeField
-import VerifiedGarbage.Proof.Ed25519.X86.PrepareAdd
-import VerifiedGarbage.Proof.Ed25519.X86.PointEncodeSign
-import VerifiedGarbage.Proof.Ed25519.X86.PointMultiplyFrame
-import VerifiedGarbage.Proof.Ed25519.X86.RecoverPoint
+module
+
+public import VerifiedGarbage.Impl.Ed25519.X86.PointDecode
+public import VerifiedGarbage.Proof.Ed25519.X86.FreezeField
+public import VerifiedGarbage.Proof.Ed25519.X86.PrepareAdd
+public import VerifiedGarbage.Proof.Ed25519.X86.PointEncodeSign
+public import VerifiedGarbage.Proof.Ed25519.X86.PointMultiplyFrame
+public import VerifiedGarbage.Proof.Ed25519.X86.RecoverPoint
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Ed25519.X86.DecodeY`. -/
+
+@[expose] public section
+
 section
 /-! Merged from `Proof.Ed25519.X86.CanonicalY`. -/
 section

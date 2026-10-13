@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.X448.Arm.Ops
+module
+
+public import VerifiedGarbage.Proof.X448.Arm.Ops
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 on ARMv7: public loop counters
@@ -6,6 +12,8 @@ import VerifiedGarbage.Proof.X448.Arm.Ops
 Counters preserve memory and every other register; the zero flag controls loop
 termination.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448.Arm
 

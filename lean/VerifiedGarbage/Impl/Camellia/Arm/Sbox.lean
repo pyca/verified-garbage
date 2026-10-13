@@ -1,5 +1,9 @@
-import VerifiedGarbage.Impl.Camellia.Circuit
-import VerifiedGarbage.Impl.Aes.Arm.Sbox
+module
+
+public import VerifiedGarbage.Impl.Camellia.Circuit
+meta import VerifiedGarbage.Impl.Camellia.Circuit
+public import VerifiedGarbage.Impl.Aes.Arm.Sbox
+meta import VerifiedGarbage.Impl.Aes.Arm.Sbox
 
 /-!
 # The bitsliced Camellia S-box on ARMv7
@@ -13,6 +17,8 @@ written out (and `#guard` checks that it is what `compile` produces) so
 that the kernel, which evaluates the code in the proofs, does not have to
 run the allocator.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Camellia.Arm
 

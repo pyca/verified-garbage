@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.AesCfb8.Mem
-import VerifiedGarbage.Proof.AesCbc.AArch64.Loop
-import VerifiedGarbage.Impl.AesCfb8.AArch64
+module
+
+public import VerifiedGarbage.Proof.AesCfb8.Mem
+public import VerifiedGarbage.Proof.AesCbc.AArch64.Loop
+public import VerifiedGarbage.Impl.AesCfb8.AArch64
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CFB8 on AArch64: the contracts, and the loop
@@ -22,6 +28,8 @@ them.
 `whole_wp`: if one run of `body` takes the invariant from `k` to `k + 1`
 bytes (`BodyOk`), `whole body` meets the contract.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesCfb8.AArch64
 

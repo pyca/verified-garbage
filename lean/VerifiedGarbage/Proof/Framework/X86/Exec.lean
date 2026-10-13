@@ -1,11 +1,15 @@
-import VerifiedGarbage.Proof.Framework.Mem
-import VerifiedGarbage.Proof.Framework.Bswap
-import VerifiedGarbage.TCB.X86.Isa
-import VerifiedGarbage.Proof.Framework.Block
+module
+
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.Bswap
+public import VerifiedGarbage.TCB.X86.Isa
+public import VerifiedGarbage.Proof.Framework.Block
 
 /-!
 # x86 (32-bit): lemmas for symbolic execution
 -/
+
+@[expose] public section
 
 namespace VG.X86
 

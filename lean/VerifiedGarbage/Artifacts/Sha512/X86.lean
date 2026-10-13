@@ -1,7 +1,11 @@
-import VerifiedGarbage.TCB.X86.Target
-import VerifiedGarbage.Proof.Sha512.X86.Shared
+module
+
+public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Proof.Sha512.X86.Shared
 
 /-! # SHA-384, SHA-512, SHA-512/224 and SHA-512/256 (FIPS 180-4) on x86 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.Sha512.X86
 

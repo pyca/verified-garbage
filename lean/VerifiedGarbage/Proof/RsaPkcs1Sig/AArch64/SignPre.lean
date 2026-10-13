@@ -1,7 +1,13 @@
-import VerifiedGarbage.Spec.RsaPkcs1Sig.Contract
-import VerifiedGarbage.Impl.RsaPkcs1Sig.AArch64.Sign
-import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Callee
-import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Wp
+module
+
+public import VerifiedGarbage.Spec.RsaPkcs1Sig.Contract
+public import VerifiedGarbage.Impl.RsaPkcs1Sig.AArch64.Sign
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Callee
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Wp
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_pkcs1_sign` on AArch64: the precondition and the frame
@@ -11,6 +17,8 @@ stack `stk K` of the frame and a callee using `K` bytes), by name
 (`preS_of`). The frame of `frameBytes` bytes is at `fb s`, below which the
 callee uses `K` bytes.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPkcs1Sig.AArch64.Sgn
 

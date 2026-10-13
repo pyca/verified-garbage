@@ -1,4 +1,8 @@
-import VerifiedGarbage.Proof.Ed25519.Arm.VerifyMessage.Verified
+module
+
+public import VerifiedGarbage.Proof.Ed25519.Arm.VerifyMessage.Verified
+
+@[expose] public section
 
 namespace VG.Artifacts.Ed25519VerifyMessage.Arm
 

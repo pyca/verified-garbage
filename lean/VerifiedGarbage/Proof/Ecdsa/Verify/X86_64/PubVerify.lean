@@ -1,8 +1,17 @@
-import VerifiedGarbage.Proof.Ecdsa.X86_64.Layout
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.Layout
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! A curve's facts hold with any `pubVerify`, which only verification reads
 (its final check), so a verification config `{ c with pubVerify := true }`
 has those of the signing config `c`. -/
+
+@[expose] public section
+
 namespace VG.Proof.Ecdsa.Verify.X86_64
 open VG.Impl.Ecdsa.X86_64 VG.Proof.Ecdsa.X86_64
 

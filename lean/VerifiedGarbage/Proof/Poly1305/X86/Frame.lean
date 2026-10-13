@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.Poly1305.X86.Update
-import VerifiedGarbage.Proof.Poly1305.X86.Finalize
-import VerifiedGarbage.Proof.Poly1305.X86.Lit
-import VerifiedGarbage.Proof.Poly1305.Scratch
-import VerifiedGarbage.Proof.Framework.X86.StackScratch
+module
+
+public import VerifiedGarbage.Proof.Poly1305.X86.Update
+public import VerifiedGarbage.Proof.Poly1305.X86.Finalize
+public import VerifiedGarbage.Proof.Poly1305.X86.Lit
+public import VerifiedGarbage.Proof.Poly1305.Scratch
+public import VerifiedGarbage.Proof.Framework.X86.StackScratch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Streaming Poly1305 on x86, with its working space on the stack
@@ -14,6 +20,8 @@ arguments (five slots for `update`, four for `finalize`) and the 128 bytes
 of working space. The copies are read only where the postconditions read
 the buffers (`Proof/Poly1305/Scratch.lean`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Poly1305.X86
 

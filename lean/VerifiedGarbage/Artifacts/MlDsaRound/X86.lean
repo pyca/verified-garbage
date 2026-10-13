@@ -1,8 +1,10 @@
-import VerifiedGarbage.TCB.X86.Target
-import VerifiedGarbage.Proof.MlDsa.X86.Round.Power2Round
-import VerifiedGarbage.Proof.MlDsa.X86.Round.Bits
-import VerifiedGarbage.Proof.MlDsa.X86.Round.NormLt
-import VerifiedGarbage.Proof.MlDsa.X86.Round.HintF
+module
+
+public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Proof.MlDsa.X86.Round.Power2Round
+public import VerifiedGarbage.Proof.MlDsa.X86.Round.Bits
+public import VerifiedGarbage.Proof.MlDsa.X86.Round.NormLt
+public import VerifiedGarbage.Proof.MlDsa.X86.Round.HintF
 
 /-!
 # ML-DSA (FIPS 204) on x86: rounding and hints
@@ -12,6 +14,8 @@ frame of 16 bytes below the return address (`stack := 16`).
 `vg_mldsa_make_hint` and `vg_mldsa_use_hint` overwrite the argument `gamma2`
 on the stack (which their contracts allow).
 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.MlDsaRound.X86
 

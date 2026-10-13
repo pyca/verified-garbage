@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.AesSiv.X86_64.Verified
-import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
-import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
+module
+
+public import VerifiedGarbage.Proof.AesSiv.X86_64.Verified
+public import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
+public import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-SIV on x86-64, with its working space on the stack
@@ -21,6 +27,8 @@ The frame copies `siv`, so the postconditions and `decrypt`'s leak must read
 the memory on entry only within the buffers and the list of slices
 (`encryptPost_local`, `decryptPost_local`, `decryptLeak_local`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesSiv.X86_64
 

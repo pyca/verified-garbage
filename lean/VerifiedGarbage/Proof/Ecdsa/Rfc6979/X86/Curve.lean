@@ -1,12 +1,18 @@
-import VerifiedGarbage.Impl.Ecdsa.X86
-import VerifiedGarbage.Spec.Ecdsa.Generic
-import VerifiedGarbage.TCB.X86.Target
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Framework.X86.Call
-import VerifiedGarbage.Proof.Framework.X86.RelCT
-import VerifiedGarbage.Impl.Ecdsa.Rfc6979.X86
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Contract
-import VerifiedGarbage.Proof.Ecdsa.X86.Layout
+module
+
+public import VerifiedGarbage.Impl.Ecdsa.X86
+public import VerifiedGarbage.Spec.Ecdsa.Generic
+public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.X86.Call
+public import VerifiedGarbage.Proof.Framework.X86.RelCT
+public import VerifiedGarbage.Impl.Ecdsa.Rfc6979.X86
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Contract
+public import VerifiedGarbage.Proof.Ecdsa.X86.Layout
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Deterministic ECDSA on x86 (32-bit): the curve
@@ -25,6 +31,8 @@ the block computing `bits2octets`, which holds `n`'s words as immediates.
 Each curve's file builds one, so that the heavy algebra of its proof stays
 out of the modules generic over the curve and the hash function.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Rfc6979.X86
 

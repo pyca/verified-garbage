@@ -1,9 +1,17 @@
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Setup
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.Finish
+module
+
+public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Setup
+public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.Finish
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ChaCha20 on x86-64 with AVX-512: the sixteen blocks, into the data
 -/
+
+@[expose] public section
 
 namespace VG.Proof.ChaCha20.X86_64.Avx512
 

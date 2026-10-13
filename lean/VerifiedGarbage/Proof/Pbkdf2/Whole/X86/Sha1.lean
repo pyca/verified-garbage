@@ -1,7 +1,17 @@
-import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.CT
-import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Frame
-import VerifiedGarbage.Proof.Sha1.X86.Variants.Interface
-import VerifiedGarbage.Proof.Framework.TaintBatch
+module
+
+public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.CT
+meta import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.CT
+public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Frame
+meta import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Frame
+public import VerifiedGarbage.Proof.Sha1.X86.Variants.Interface
+meta import VerifiedGarbage.Proof.Sha1.X86.Variants.Interface
+public import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # PBKDF2-HMAC-SHA-1 on x86 (32-bit), the whole derivation, for every backend
@@ -16,6 +26,8 @@ so they are evaluated once, for any backend (`sha1Shape`). `sha1_stack`
 bounds the stack the code uses from what the backend proves of the functions
 it calls.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Pbkdf2.Whole.X86
 

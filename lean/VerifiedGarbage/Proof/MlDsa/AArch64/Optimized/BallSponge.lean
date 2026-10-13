@@ -1,8 +1,17 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Sponge
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Sponge
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Retain the SHAKE continuation relation discarded by the original sampler
 wrapper. This uses the existing squeeze contract without specifying an internal
 state representation or assuming a particular cursor value. -/
+
+@[expose] public section
+
 namespace VG.Proof.MlDsa.AArch64.Optimized.Ball
 open VG VG.AArch64
 open VG.Proof.MlDsa.AArch64.Sample

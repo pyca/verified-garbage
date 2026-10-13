@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.VecR
-import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Pre
-import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Lemmas
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.VecR
+public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Pre
+public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Lemmas
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSA with AVX512_IFMA on x86-64: choosing an array of the region's loop
@@ -9,6 +15,8 @@ import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Lemmas
 the count `r8` (`arrSel_ok`), and counts down (`subR8_ok`). The entries'
 arrays and offsets fit their region and are apart (`arrs_ok`, `arrs_sep`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64.Ifma
 

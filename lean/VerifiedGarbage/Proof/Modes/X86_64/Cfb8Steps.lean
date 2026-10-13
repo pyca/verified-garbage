@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Modes.X86_64.FbLoop
-import VerifiedGarbage.Proof.Modes.Cfb8
-import VerifiedGarbage.Proof.Framework.WriteBytes
-import VerifiedGarbage.Impl.Modes.X86_64.Cfb8
+module
+
+public import VerifiedGarbage.Proof.Modes.X86_64.FbLoop
+public import VerifiedGarbage.Proof.Modes.Cfb8
+public import VerifiedGarbage.Proof.Framework.WriteBytes
+public import VerifiedGarbage.Impl.Modes.X86_64.Cfb8
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # CFB8 on x86-64, for any core: the byte and the shift
@@ -12,6 +18,8 @@ shifted left by a byte in place, with `al` shifted in: each byte but the
 last is the one after it (`shl1`, one `shiftByte` at a time), and the last
 is `al`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Modes.X86_64
 

@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.R2
-import VerifiedGarbage.Proof.Bignum.WordStep
-import VerifiedGarbage.Impl.Bignum.X86_64.R2Words
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.R2
+public import VerifiedGarbage.Proof.Bignum.WordStep
+public import VerifiedGarbage.Impl.Bignum.X86_64.R2Words
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `R² mod m` by word steps on x86-64: the estimate of the quotient
@@ -11,6 +17,8 @@ reciprocal `v` of `d` (`quotMG_ok`, Möller and Granlund's division,
 `recip` computes `v` once, by restoring division, a bit at a time
 (`divBit_ok`, `divLoop_ok`, `recip_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64.R2w
 

@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Ed25519.X86_64.CombIfma
+module
+
+public import VerifiedGarbage.Impl.Ed25519.X86_64.CombIfma
 
 /-!
 # Ed25519: base-point multiplication with a comb, in `zmm` registers
@@ -25,6 +27,8 @@ other half, and kept under the mask of each half's magnitude (`r8` for `A`,
 Everything runs between Intel's MXCSR prologue and epilogue (`withMx`), and
 every address is the scratch or the static plus a public offset.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Ed25519.X86_64.Zmm
 

@@ -1,6 +1,12 @@
-import VerifiedGarbage.Spec.Siv.Contract
-import VerifiedGarbage.TCB.X86.Target
-import VerifiedGarbage.Proof.Framework.PowLit
+module
+
+public import VerifiedGarbage.Spec.Siv.Contract
+public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Proof.Framework.PowLit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-SIV on x86: the contracts the proofs are written against
@@ -14,6 +20,8 @@ an argument, `Proof/AesSiv/Scratch.lean`), which imply these
 read-only (`Verified.of_narrow`), so that the taint analysis knows they are
 public.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesSiv.X86
 

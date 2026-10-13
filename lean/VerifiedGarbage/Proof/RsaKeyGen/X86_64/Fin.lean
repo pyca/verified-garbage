@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Entry
-import VerifiedGarbage.Proof.Bignum.X86_64.PubFail
-import VerifiedGarbage.Proof.Bignum.X86_64.Store
+module
+
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Entry
+public import VerifiedGarbage.Proof.Bignum.X86_64.PubFail
+public import VerifiedGarbage.Proof.Bignum.X86_64.Store
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # A candidate on x86-64: zeros to `out`, and the ends
@@ -9,6 +15,8 @@ import VerifiedGarbage.Proof.Bignum.X86_64.Store
 `used`, the status returned and the saved registers restored, for `finNone`,
 `finUsed` and `finPrime` (`c` to `out` first).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaKeyGen.X86_64
 

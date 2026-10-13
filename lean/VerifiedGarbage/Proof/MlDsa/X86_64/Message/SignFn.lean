@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlDsa.X86_64.Message.SignVerified
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Message.SignVerified
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on x86-64, `sign_message`: the signing functions on `μ` it calls
@@ -10,6 +16,8 @@ writes `rsp`, and its calls nest at most four deep, which, as whether it
 writes `rsp`, is checked on the code with the arithmetic's functions empty
 (`Same`), given that theirs nest at most three deep.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86_64.Message
 

@@ -1,7 +1,16 @@
-import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.Lcm
-import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.Minv
+module
+
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.Lcm
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.Minv
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## DBase -/
+
+@[expose] public section
+
 section
 
 /-!

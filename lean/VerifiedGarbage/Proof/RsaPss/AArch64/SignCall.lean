@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.RsaPss.AArch64.SignChecks
-import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Callee
+module
+
+public import VerifiedGarbage.Proof.RsaPss.AArch64.SignChecks
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Callee
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSASSA-PSS signing on AArch64: the call of `vg_rsa_private_checked`
@@ -9,6 +15,8 @@ arguments are set from the slots and the function's stack arguments, and its
 registers (`AtCall`); `call_ok`: the call writes the signature of `EM` to
 `out` and keeps the frame (`AfterCall`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPss.AArch64.Sgn
 

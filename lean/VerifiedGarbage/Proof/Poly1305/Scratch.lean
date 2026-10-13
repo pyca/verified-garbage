@@ -1,5 +1,11 @@
-import VerifiedGarbage.Spec.Poly1305.Contract
-import VerifiedGarbage.Proof.Framework.Offset
+module
+
+public import VerifiedGarbage.Spec.Poly1305.Contract
+public import VerifiedGarbage.Proof.Framework.Offset
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Streaming Poly1305 with its working space as an argument
@@ -17,6 +23,8 @@ within the function's buffers (`updatePost_local`, `finalizePost_local`):
 the data, and the state through `Buffered`, which reads only its first 72
 bytes (`buffered_congr`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Poly1305
 

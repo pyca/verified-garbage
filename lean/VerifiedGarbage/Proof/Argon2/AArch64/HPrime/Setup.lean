@@ -1,8 +1,16 @@
-import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Copy
-import VerifiedGarbage.Proof.Blake2.Stream
-import VerifiedGarbage.Spec.Argon2
+module
+
+public import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Copy
+public import VerifiedGarbage.Proof.Blake2.Stream
+public import VerifiedGarbage.Spec.Argon2
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # H′: saving the caller and writing the length prefix -/
+
+@[expose] public section
 
 namespace VG.Proof.Argon2.AArch64.HPrime
 

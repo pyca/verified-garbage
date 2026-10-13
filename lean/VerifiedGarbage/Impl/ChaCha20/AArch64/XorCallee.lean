@@ -1,5 +1,9 @@
-import VerifiedGarbage.Impl.ChaCha20.AArch64.Xor
-import VerifiedGarbage.Impl.ChaCha20.AArch64.Mixed8
+module
+
+public import VerifiedGarbage.Impl.ChaCha20.AArch64.Xor
+public import VerifiedGarbage.Impl.ChaCha20.AArch64.Mixed8
+
+@[expose] public section
 
 namespace VG.Impl.ChaCha20.AArch64
 

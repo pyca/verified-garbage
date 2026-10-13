@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.Piece
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.Piece
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on x86-64: `oneBlocks`
@@ -8,6 +14,8 @@ Untrusted: everything here is checked by Lean. `oneBlocks` encrypts
 of the data and absorbs them, from the counter block and the accumulator of
 the state, and keeps what is left of the data.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

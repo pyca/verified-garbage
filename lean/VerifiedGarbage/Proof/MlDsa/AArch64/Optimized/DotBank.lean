@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.DotBatch
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductBank
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.DotBatch
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductBank
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Optimized
 open VG VG.AArch64

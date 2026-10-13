@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Weierstrass.Law
-import VerifiedGarbage.Proof.Weierstrass.Env
-import VerifiedGarbage.Spec.Weierstrass.Point
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.Law
+public import VerifiedGarbage.Proof.Weierstrass.Env
+public import VerifiedGarbage.Spec.Weierstrass.Point
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Complete point addition and doubling as functions: what every target uses
@@ -12,6 +18,8 @@ from the curve's group law (`fermat_of_law`), and the specification's
 complete addition is the proofs' (`rcbAdd_eq`). `qOf` is the second
 operand's offset: `P`'s for the doubling, else `Q`'s.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.Point
 

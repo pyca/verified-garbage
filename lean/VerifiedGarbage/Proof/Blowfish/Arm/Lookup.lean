@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Blowfish.Arm.Run
-import VerifiedGarbage.Proof.Blowfish.Scan32
+module
+
+public import VerifiedGarbage.Proof.Blowfish.Arm.Run
+public import VerifiedGarbage.Proof.Blowfish.Scan32
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Blowfish on ARMv7: an S-box lookup
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.Blowfish.Scan32
 `lookup_run`: `lookup j` leaves S-box `j`'s entry for xL's byte `3 - j` in
 the accumulator, changing only the lookup's registers and the flags.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Blowfish.Arm
 

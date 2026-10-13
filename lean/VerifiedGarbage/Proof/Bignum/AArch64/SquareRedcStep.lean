@@ -1,7 +1,16 @@
-import VerifiedGarbage.Proof.Bignum.AArch64.SquareRedcMath
-import VerifiedGarbage.Proof.Bignum.AArch64.SquareTiledRow
+module
+
+public import VerifiedGarbage.Proof.Bignum.AArch64.SquareRedcMath
+public import VerifiedGarbage.Proof.Bignum.AArch64.SquareTiledRow
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! AArch64 Montgomery cancellation setup and pending-carry tail. -/
+
+@[expose] public section
+
 namespace VG.Proof.Bignum.AArch64.Square
 open VG VG.AArch64 VG.Impl.Bignum.AArch64 VG.Proof.Bignum
 open VG.Proof.Bignum.AArch64

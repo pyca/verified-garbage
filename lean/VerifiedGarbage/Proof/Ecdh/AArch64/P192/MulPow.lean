@@ -1,7 +1,15 @@
-import VerifiedGarbage.Proof.Ecdh.AArch64.P192.Mul
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Main
+module
+
+public import VerifiedGarbage.Proof.Ecdh.AArch64.P192.Mul
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.Main
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # Peer multiplication followed by inversion -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdh.AArch64.P192
 

@@ -1,7 +1,12 @@
-import VerifiedGarbage.Impl.Ed25519.AArch64.FieldMemory
-import VerifiedGarbage.Impl.Ed25519.AArch64.Power
+module
+
+public import VerifiedGarbage.Impl.Ed25519.AArch64.FieldMemory
+public import VerifiedGarbage.Impl.Ed25519.AArch64.Power
 
 /-! Affine conversion and canonical point encoding into x4–x7. -/
+
+@[expose] public section
+
 namespace VG.Impl.Ed25519.AArch64
 open VG.AArch64
 

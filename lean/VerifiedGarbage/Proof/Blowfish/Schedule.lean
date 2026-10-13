@@ -1,6 +1,12 @@
-import VerifiedGarbage.Spec.Blowfish
-import VerifiedGarbage.Proof.Framework.Mem
-import VerifiedGarbage.Proof.Framework.Offset
+module
+
+public import VerifiedGarbage.Spec.Blowfish
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.Offset
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The schedule in memory
@@ -9,6 +15,8 @@ Byte `b` of S_{j+1}[x] in `scheduleAt` is the byte at `1024 j + 256 b + x`
 (`sEntry_byte`), and Pᵢ₊₁ the little-endian word at `4096 + 4 i`
 (`pEntry_read`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Blowfish
 

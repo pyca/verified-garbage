@@ -1,7 +1,12 @@
-import VerifiedGarbage.Impl.Ed25519.Arm.Packed
-import VerifiedGarbage.Impl.Ed25519.Arm.PointLoop
+module
+
+public import VerifiedGarbage.Impl.Ed25519.Arm.Packed
+public import VerifiedGarbage.Impl.Ed25519.Arm.PointLoop
 
 /-! Checkpoints and adjacent powers, using public loop bounds. -/
+
+@[expose] public section
+
 namespace VG.Impl.Ed25519.Arm
 open VG.Arm
 

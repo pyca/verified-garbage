@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.RsaPkcs1Sig.AArch64.Recover
+module
+
+public import VerifiedGarbage.Impl.RsaPkcs1Sig.AArch64.Recover
 
 /-!
 # RSASSA-PKCS1-v1_5 signing on AArch64
@@ -24,6 +26,8 @@ the call; at `96`, our caller's `x19` and our return address (`saved`); at
 `oEM`, `EM`, up to 1024 bytes. `out` is kept in `x17` across `encode`, and
 `k` in `x19` across the call.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.RsaPkcs1Sig.AArch64.Sign
 

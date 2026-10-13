@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.MlDsa.X86_64.Arith.Vec
-import VerifiedGarbage.Spec.MlDsa
+module
+
+public import VerifiedGarbage.Impl.MlDsa.X86_64.Arith.Vec
+public import VerifiedGarbage.Spec.MlDsa
 
 /-!
 # ML-DSA on x86-64: `vg_mldsa_ntt` and `vg_mldsa_inv_ntt`
@@ -32,6 +34,8 @@ loads and `r8` at the zetas of the table:
 
 Every address and branch depends only on the pointers.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.X86_64.Arith
 

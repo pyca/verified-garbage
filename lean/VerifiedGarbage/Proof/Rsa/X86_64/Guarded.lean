@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.Rsa.X86_64.ExpCheck
-import VerifiedGarbage.Proof.Framework.X86_64.RelCT
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
+module
+
+public import VerifiedGarbage.Proof.Rsa.X86_64.ExpCheck
+meta import VerifiedGarbage.Proof.Rsa.X86_64.ExpCheck
+public import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSA on x86-64: a function guarded by the check of its public exponent
@@ -12,6 +21,8 @@ state on its arguments, memory and permissions (`Same`): for a contract `k`
 of `c` that depends only on those, `guarded c` is correct
 (`guarded_correct`) and constant time (`guarded_ct`) whenever `c` is.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.X86_64
 

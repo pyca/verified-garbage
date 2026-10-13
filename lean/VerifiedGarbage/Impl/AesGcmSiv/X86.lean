@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.AesGcm.X86
+module
+
+public import VerifiedGarbage.Impl.AesGcm.X86
 
 /-!
 # AES-GCM-SIV: x86 (32-bit) implementation
@@ -69,6 +71,8 @@ moved there before the frame and back after it.
 Only the pointers, the lengths and `rounds` (and for `open`, whether the tag
 is right) affect timing.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.AesGcmSiv.X86
 

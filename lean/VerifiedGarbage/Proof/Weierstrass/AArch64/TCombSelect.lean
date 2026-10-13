@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombDigit
-import VerifiedGarbage.Proof.Framework.AArch64.Syms
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombDigit
+public import VerifiedGarbage.Proof.Framework.AArch64.Syms
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The comb from tables in memory on AArch64: the selection's scalar parts
@@ -9,6 +15,8 @@ table's address into `x16`, from the static `tsym`'s plus `j` tables, with
 `x7 = 0` and `x5 = 1` (`selSetup_ok`), and `Z = R` unless the magnitude is
 zero, by the carry of `subs` (`selZ_carry`) and `csel` (`zWords_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.AArch64
 

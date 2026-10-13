@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Framework.PowLit
-import Mathlib.Tactic.Ring
-import Mathlib.Tactic.LinearCombination
+module
+
+public import VerifiedGarbage.Proof.Framework.PowLit
+public import Mathlib.Tactic.Ring
+public import Mathlib.Tactic.LinearCombination
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The arithmetic of `Neon.mul2`'s products
@@ -12,6 +18,8 @@ which represent the product of the sixteen-limb operands modulo
 `p = x¹⁶ - x⁸ - 1` (`kara_val`), and are at most the sum of their positive
 terms (`kara_nonneg`, `kara_le`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Curve448.AArch64.Neon
 

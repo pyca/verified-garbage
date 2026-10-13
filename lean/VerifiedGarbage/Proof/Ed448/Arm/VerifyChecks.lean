@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Ed448.Arm.VerifyField
-import VerifiedGarbage.Proof.X448.Arm.Freeze
+module
+
+public import VerifiedGarbage.Proof.Ed448.Arm.VerifyField
+public import VerifiedGarbage.Proof.X448.Arm.Freeze
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 verification's equation on ARMv7: accumulating checks
@@ -9,6 +15,8 @@ import VerifiedGarbage.Proof.X448.Arm.Freeze
 slot 1 with those of another slot (`diffSlot_ok`), and two slots' field
 elements, fully reduced (`eqSlots_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.Arm
 

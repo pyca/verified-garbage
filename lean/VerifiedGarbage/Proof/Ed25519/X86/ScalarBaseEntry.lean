@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseMain
-import VerifiedGarbage.Proof.Ed25519.X86.CombSelect
-import VerifiedGarbage.Proof.Framework.X86.SymFrame
+module
+
+public import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseMain
+public import VerifiedGarbage.Proof.Ed25519.X86.CombSelect
+public import VerifiedGarbage.Proof.Framework.X86.SymFrame
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The comb's tables' address at the entry of `vg_ed25519_scalar_base` and `vg_x25519_base`
@@ -11,6 +17,8 @@ starts (`BodyPre`) from the same regions and arguments, with the address there a
 readable (`TblAt`), and what it preserves of its own start the function preserves of its entry
 (`Prologue`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed25519.X86
 open VG VG.X86 VG.Impl.X25519.X86 VG.Impl.Ed25519.X86

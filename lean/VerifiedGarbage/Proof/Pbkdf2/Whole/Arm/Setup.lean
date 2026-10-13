@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Key
-import VerifiedGarbage.Proof.Pbkdf2.Whole.Common
-import VerifiedGarbage.Proof.Framework.Omega
+module
+
+public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Key
+public import VerifiedGarbage.Proof.Pbkdf2.Whole.Common
+public import VerifiedGarbage.Proof.Framework.Omega
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # PBKDF2-HMAC on 32-bit ARM, the whole derivation: HMAC's states for the key, and the salt
@@ -9,6 +15,8 @@ As on x86 (`Proof/Pbkdf2/Whole/X86/Setup.lean`): HMAC's `init` makes the key's
 inner and outer states; the inner one is copied and absorbs the salt
 (`setup_ok`), which gives the three states every block starts from (`States`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Pbkdf2.Whole.Arm
 

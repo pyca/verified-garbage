@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Layout
-import VerifiedGarbage.Impl.Ecdh.AArch64
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Finish
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Fixed
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.Layout
+public import VerifiedGarbage.Impl.Ecdh.AArch64
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.Finish
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.Fixed
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDH on AArch64: reading and checking the peer's key
@@ -16,6 +22,8 @@ Each check ands a mask into the flag, as the signature's checks do
 zero (`checkZero_ok`). A register is zero iff it is below 1
 (`isZero_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdh.AArch64
 

@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.RecoverCorrect
-import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.VerifyCT
+module
+
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.RecoverCorrect
+meta import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.RecoverCorrect
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.VerifyCT
+meta import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.VerifyCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_pkcs1_recover` on AArch64: constant time
@@ -9,6 +17,8 @@ it of the bytes it loads: the branches on the call's result, on `encode`'s
 and on `compare`'s are pinned by correctness (`two_ite`), and the code
 between them is checked by the taint analysis (`two_taint`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPkcs1Sig.AArch64.Rec
 

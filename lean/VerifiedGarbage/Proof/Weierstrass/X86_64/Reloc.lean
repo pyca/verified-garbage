@@ -1,6 +1,12 @@
-import VerifiedGarbage.Impl.Weierstrass.X86_64.Mont
-import VerifiedGarbage.Proof.Framework.X86_64.Inline
-import VerifiedGarbage.Proof.Framework.Block
+module
+
+public import VerifiedGarbage.Impl.Weierstrass.X86_64.Mont
+public import VerifiedGarbage.Proof.Framework.X86_64.Inline
+public import VerifiedGarbage.Proof.Framework.Block
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Code with its operands read through other registers, on x86-64
@@ -15,6 +21,8 @@ operand through `rdi` (`wp_unptr`): proofs of the inline code, its operands
 at constant offsets of `rdi`, carry over to code reading them through
 registers.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.X86_64.Mont
 

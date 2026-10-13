@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.Framework.Lit
-import VerifiedGarbage.Spec.Rc2
+module
+
+public import VerifiedGarbage.Proof.Framework.Lit
+meta import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Spec.Rc2
+meta import VerifiedGarbage.Spec.Rc2
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # RC2's PITABLE as a packed table
 
@@ -11,6 +19,8 @@ each target. `piNat` reads the entries from one number instead
 the rows, and each target's literals read the lookups through it
 (`piTable_getD`).
 -/
+
+@[expose] public section
 
 namespace VG.Rc2
 

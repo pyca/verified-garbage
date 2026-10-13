@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacBuild
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacBuild
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The Jacobian window method on x86-64: `R = 32 R`
@@ -9,6 +15,8 @@ added, and each doubling takes `4096` off and compares with `4096`, whose
 carry ends the loop with the window index left (`dblCount_ok`, `aeLoop_ok`,
 `dbls_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.X86_64
 

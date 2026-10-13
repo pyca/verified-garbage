@@ -1,7 +1,9 @@
-import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.VerifyVerified
-import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.RecoverVerified
-import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Callees
+module
+
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.VerifyVerified
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.RecoverVerified
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Callees
 
 /-! # RSASSA-PKCS1-v1_5 (RFC 8017 §8.2) on AArch64: verification and recovery
 
@@ -11,6 +13,8 @@ implementation of the CRT, so it is generic over them
 precomputed values is generic over the implementations of
 `vg_rsa_public_precomputed_checked`
 (`Generic/RsaPublicPrecomputed/AArch64/RsaPkcs1Sig.lean`). -/
+
+@[expose] public section
 
 namespace VG.Artifacts.RsaPkcs1Sig.AArch64
 

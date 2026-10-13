@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.X448.X86.Main
-import VerifiedGarbage.Proof.X448.X86.Runs
-import VerifiedGarbage.Proof.X448.X86.Lit
+module
+
+public import VerifiedGarbage.Proof.X448.X86.Main
+meta import VerifiedGarbage.Proof.X448.X86.Main
+public import VerifiedGarbage.Proof.X448.X86.Runs
+meta import VerifiedGarbage.Proof.X448.X86.Runs
+public import VerifiedGarbage.Proof.X448.X86.Lit
+meta import VerifiedGarbage.Proof.X448.X86.Lit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 on x86 (32-bit): constant time
@@ -12,6 +21,8 @@ and the calls, the inversion's squarings and the ladder's iterations by
 `RelCT`. `W F` relates two runs from entry states the contract relates, each
 in a state `F` says of its own run.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448.X86
 

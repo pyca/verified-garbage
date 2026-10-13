@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Ed448.X86_64.Verify.Calls
-import VerifiedGarbage.Proof.Ed448.X86_64.Verify.Pre
+module
+
+public import VerifiedGarbage.Proof.Ed448.X86_64.Verify.Calls
+public import VerifiedGarbage.Proof.Ed448.X86_64.Verify.Pre
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 verification on x86-64: correctness
@@ -13,7 +19,11 @@ if the context is longer than 255 bytes and otherwise that result, which is
 (`EqOk`).
 -/
 
+@[expose] public section
+
 namespace VG.Proof.Ed448.X86_64.Verify
+
+variable {v : VG.Impl.Ed448.X86_64.FieldVariant}
 
 open VG VG.X86_64 VG.Impl.Ed448.X86_64.Verify
 open VG.Proof.MlKem.X86_64 (Keep WP.keep)
@@ -38,8 +48,8 @@ abbrev chal (L : Lay) (m₀ : Mem) : List Byte :=
   Spec.Ed448.scalarReduce (Spec.Ed448.hash (bytesAt m₀ L.ctx L.ctxLen.toNat)
     (bytesAt m₀ L.sig 57 ++ bytesAt m₀ L.pk 57 ++ bytesAt m₀ L.msg L.len.toNat))
 
-theorem body_ok (hv : EqOk) (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t) :
-    WP isa body t fun t' => Ctx L g mx m₀ t' ∧
+theorem body_ok (hv : EqOk v) (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t) :
+    WP isa (bodyFor v) t fun t' => Ctx L g mx m₀ t' ∧
       t'.gpr .rax = if Spec.Ed448.verifyEquation (bytesAt m₀ L.pk 57) (bytesAt m₀ L.sig 114) (chal L m₀)
         then 1 else 0 := by
   refine WP.seq (WP.mono (hdr_ok hL hc) fun t1 ⟨hc1, hh⟩ => ?_)
@@ -142,10 +152,10 @@ theorem cs_tmp : ∀ r ∈ calleeSaved, r ∉ [Reg.r11, .rax] := by decide
 
 /-! ## The function -/
 
-theorem verify_wp (hv : EqOk) {s : State} (hpre : (Spec.Ed448.verifyContract X86_64.abi 272).pre s) :
-    WP isa verify s fun s' => abiPreserved s s' ∧ (Spec.Ed448.verifyContract X86_64.abi 272).post s s' := by
+theorem verify_wp (hv : EqOk v) {s : State} (hpre : (Spec.Ed448.verifyContract X86_64.abi 272).pre s) :
+    WP isa (verifyFor v) s fun s' => abiPreserved s s' ∧ (Spec.Ed448.verifyContract X86_64.abi 272).post s s' := by
   have h := vPre_of hpre
-  unfold verify
+  unfold verifyFor
   refine WP.seq (WP.mono (cmp_ok s) fun s1 ⟨hg1, hm1, hrd1, hwr1, hx1, hc1⟩ => ?_)
   by_cases h8 : (s.gpr .rdx).toNat < 256
   · rw [decide_eq_true h8] at hc1

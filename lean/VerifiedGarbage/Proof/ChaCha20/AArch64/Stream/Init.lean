@@ -1,12 +1,23 @@
-import VerifiedGarbage.Proof.ChaCha20.Stream
-import VerifiedGarbage.Proof.ChaCha20.AArch64.Xor
-import VerifiedGarbage.Impl.ChaCha20.AArch64.Stream
+module
+
+public import VerifiedGarbage.Proof.ChaCha20.Stream
+meta import VerifiedGarbage.Proof.ChaCha20.Stream
+public import VerifiedGarbage.Proof.ChaCha20.AArch64.Xor
+meta import VerifiedGarbage.Proof.ChaCha20.AArch64.Xor
+public import VerifiedGarbage.Impl.ChaCha20.AArch64.Stream
+meta import VerifiedGarbage.Impl.ChaCha20.AArch64.Stream
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Streaming ChaCha20 on AArch64: `init` and `set_nonce`
 
 Untrusted: everything here is checked by Lean.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.ChaCha20
 

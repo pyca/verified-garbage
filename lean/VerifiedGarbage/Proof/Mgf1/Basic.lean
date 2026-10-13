@@ -1,4 +1,10 @@
-import VerifiedGarbage.Spec.Mgf1
+module
+
+public import VerifiedGarbage.Spec.Mgf1
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # MGF1: lengths and masking
@@ -7,6 +13,8 @@ A hash function whose digests are `hLen > 0` octets (`Valid`) makes
 masks of the length asked for (`mgf1_length`), and masking twice with the
 same mask gives the octets back (`xorBytes_xorBytes`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Mgf1
 

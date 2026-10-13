@@ -1,7 +1,16 @@
-import VerifiedGarbage.Proof.P256.X86_64.Half
-import VerifiedGarbage.Proof.Mont.X86_64.Chain
+module
+
+public import VerifiedGarbage.Proof.P256.X86_64.Half
+public import VerifiedGarbage.Proof.Mont.X86_64.Chain
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Memory contract for P-256 modular halving, permitting in-place operation. -/
+
+@[expose] public section
+
 namespace VG.Proof.P256.X86_64
 open VG VG.X86_64 VG.Impl.P256.X86_64 VG.Impl.Mont.X86_64
 open VG.Proof.Mont VG.Proof.Mont.X86_64 VG.Proof.X25519.X86_64

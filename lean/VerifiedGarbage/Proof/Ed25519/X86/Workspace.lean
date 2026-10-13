@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.X25519.X86.Freeze
+module
+
+public import VerifiedGarbage.Proof.X25519.X86.Freeze
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed25519 on x86 (32-bit): the field arithmetic
@@ -7,6 +13,8 @@ Ed25519's field operations are X25519's code (`Impl.X25519.X86`), so their
 proofs are X25519's, for Ed25519's working space of 8192 bytes, whose slots
 start at offset 64.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed25519.X86
 

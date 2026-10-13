@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Rc2.Stream
-import VerifiedGarbage.Proof.MdStream.AArch64.Common
-import VerifiedGarbage.Proof.Framework.WriteBytes
-import VerifiedGarbage.Impl.Rc2.AArch64.Stream
+module
+
+public import VerifiedGarbage.Proof.Rc2.Stream
+public import VerifiedGarbage.Proof.MdStream.AArch64.Common
+public import VerifiedGarbage.Proof.Framework.WriteBytes
+public import VerifiedGarbage.Impl.Rc2.AArch64.Stream
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Streaming RC2-CBC on AArch64: the byte copy
@@ -10,6 +16,8 @@ import VerifiedGarbage.Impl.Rc2.AArch64.Stream
 bytes at `src + so` to `dst + dd` (`writeBytes`), advancing `src` and `dst` by
 the count; the one lemma (`copy_ok`) every call site uses.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rc2.AArch64.Stream
 

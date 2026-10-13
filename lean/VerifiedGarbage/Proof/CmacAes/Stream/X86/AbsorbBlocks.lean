@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.CmacAes.Stream.X86.Common
+module
+
+public import VerifiedGarbage.Proof.CmacAes.Stream.X86.Common
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Streaming AES-CMAC on x86: `vg_cmac_aes_absorb`'s straight-line code
@@ -11,6 +17,8 @@ held c`, the bytes copied after them `f = min L (16 - h)`, the data left `L -
 f`, whether to chain the block held back (`b1`), the blocks chained after it
 (`nb`), and the rest (`rest`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.CmacAes.Stream.X86
 

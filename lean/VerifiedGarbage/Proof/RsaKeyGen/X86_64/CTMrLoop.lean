@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.RsaKeyGen.X86_64.CTMrRound
-import VerifiedGarbage.Proof.RsaKeyGen.CandLeak
+module
+
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.CTMrRound
+meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.CTMrRound
+public import VerifiedGarbage.Proof.RsaKeyGen.CandLeak
+meta import VerifiedGarbage.Proof.RsaKeyGen.CandLeak
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # A candidate on x86-64: constant time of Miller–Rabin's loop
@@ -10,6 +18,8 @@ test's result (`shapeOf`: what became of the candidate, and how many octets
 of `rand` were left). The shape fixes how many iterations remain from each
 offset (`itersOf`), and whether each witness passes (`passS`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaKeyGen.X86_64
 

@@ -1,6 +1,14 @@
-import VerifiedGarbage.Proof.ChaCha20.AArch64.Xor
-import VerifiedGarbage.Impl.ChaCha20Poly1305.AArch64
-import VerifiedGarbage.Impl.ChaCha20Poly1305.AArch64.Stitched
+module
+
+public import VerifiedGarbage.Proof.ChaCha20.AArch64.Xor
+public import VerifiedGarbage.Impl.ChaCha20Poly1305.AArch64
+public import VerifiedGarbage.Impl.ChaCha20Poly1305.AArch64.Stitched
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.ChaCha20.AArch64
 

@@ -1,3 +1,5 @@
+module
+
 /-!
 # The primes below 8162, by a sieve on one number
 
@@ -12,6 +14,8 @@ proves that `primes` is `Spec.RsaKeyGen.smallPrimes`.
 The candidates' table of divisors (`slots`, packed four to a word by
 `tabWord`) is the same on every target.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.RsaKeyGen
 

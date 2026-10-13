@@ -1,9 +1,11 @@
-import Lean.Elab.Tactic.Basic
-import Lean.Meta.AppBuilder
-import Lean.Meta.Tactic.Assert
-import Lean.Meta.Offset
-import Lean.Meta.Reduce
-import Lean.Util.CollectFVars
+module
+
+public meta import Lean.Elab.Tactic.Basic
+public meta import Lean.Meta.AppBuilder
+public meta import Lean.Meta.Tactic.Assert
+public meta import Lean.Meta.Offset
+public meta import Lean.Meta.Reduce
+public meta import Lean.Util.CollectFVars
 
 /-!
 # Deciding a check for each parameter set
@@ -15,6 +17,8 @@ and proves them by unfolding them into arithmetic on the fields of `p` for
 cheaper to decide for each parameter set: `decide_at` states it as one closed
 proposition per parameter set, which the kernel evaluates in milliseconds.
 -/
+
+public meta section
 
 namespace VG.Proof.MlDsa
 

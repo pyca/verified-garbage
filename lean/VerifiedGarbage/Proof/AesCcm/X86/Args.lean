@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesCcm.X86.Entry
+module
+
+public import VerifiedGarbage.Proof.AesCcm.X86.Entry
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CCM on x86: the arguments
@@ -10,6 +16,8 @@ Between the entry and the exit, the pieces only write the parts of `W` in
 `mutR`, the stack below `SP` and the data, so they keep the slots, the saved
 registers, the key schedule, the nonce and the associated data.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

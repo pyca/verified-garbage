@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Open
-import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Cond
-import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Finish
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Open
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Cond
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Finish
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM's short path on x86-64: `seal` and `open`
@@ -12,6 +18,8 @@ instances' body with `finish` at its end, `sealRunF_ok`), and `open`, for a
 tag length it allows, what `openOk_ok` does (`openShort_ok`), so the rest of
 `sealM_wp`'s and `openM_wp`'s proofs applies (`sealM_of`, `openM_of`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

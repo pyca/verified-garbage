@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Inst
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Same
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Inst
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Same
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA signing on x86-64: verified
@@ -12,6 +18,8 @@ it was rejected. The contract's `signLeak` tags the iterations the same way
 (`signLeakT_eq_signLeak`), so `signContractT` is `signContract`
 (`signContractT_eq`), against which `sign*_verified'` state it.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86_64.Sign
 

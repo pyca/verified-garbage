@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourParseArgs
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourFallback
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourParseArgs
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourFallback
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Optimized.BoundedFour
 open VG VG.AArch64 VG.Spec.MlDsa VG.Proof.MlDsa.Sample

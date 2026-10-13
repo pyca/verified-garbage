@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.X448.Wide.PassInit
+module
+
+public import VerifiedGarbage.Proof.X448.Wide.PassInit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Untrusted: in-place or disjoint wide carry propagation. -/
+
+@[expose] public section
+
 namespace VG.Proof.X448.Wide
 
 open VG VG.AArch64

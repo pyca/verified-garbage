@@ -1,12 +1,20 @@
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.DeadOk
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.WellFormed
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Checked
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.DeadOk
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.WellFormed
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Checked
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! `optimize` is proved correct once, for every block the interpreter over
 concrete words runs: the optimized block runs too and leaves the same word in
 every slot. A block refines to its optimization when it passes the syntactic
 check `wfK` and both blocks' accesses fit the scratch area, all evaluated in
 time linear in the block, with no certificate to build or check. -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.AArch64.Forward
 open VG VG.AArch64 VG.Proof.Mont VG.Proof.Mont.AArch64 VG.Impl.Weierstrass.AArch64.Forward

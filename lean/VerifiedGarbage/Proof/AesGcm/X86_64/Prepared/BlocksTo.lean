@@ -1,8 +1,17 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Verified
-import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.Verified
-import VerifiedGarbage.Proof.AesGcm.ScratchPreparedTo
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Verified
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.Verified
+public import VerifiedGarbage.Proof.AesGcm.ScratchPreparedTo
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # Prepared-context BlocksTo contracts -/
+
+@[expose] public section
+
 set_option linter.unusedSimpArgs false
 namespace VG.Proof.AesGcm.X86_64
 open VG VG.X86_64 VG.Impl.AesGcm.X86_64

@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtRedc
-import VerifiedGarbage.Proof.Bignum.AArch64.Bytes
-import VerifiedGarbage.Proof.Bignum.AArch64.Setup
-import VerifiedGarbage.Proof.Bignum.AArch64.PubSetup
+module
+
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtRedc
+public import VerifiedGarbage.Proof.Bignum.AArch64.Bytes
+public import VerifiedGarbage.Proof.Bignum.AArch64.Setup
+public import VerifiedGarbage.Proof.Bignum.AArch64.PubSetup
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSA with the CRT on AArch64: the primes' workspaces
@@ -11,6 +17,8 @@ one there for `max(2, ⌈len / 8⌉)` words, linked back to the modulus'
 (`wsNew_ok`), and `loadArr` loads bytes outside the working space into an
 array of a prime's workspace (`primeLoad_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.AArch64
 

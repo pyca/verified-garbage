@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Camellia.X86.Ecb
-import VerifiedGarbage.Impl.Modes.X86.Seq
+module
+
+public import VerifiedGarbage.Impl.Camellia.X86.Ecb
+public import VerifiedGarbage.Impl.Modes.X86.Seq
 
 /-!
 # Camellia's core for the modes on x86 (32-bit)
@@ -17,6 +19,8 @@ slots in all (`[u64; 341]`).
 CBC runs in the core's direction; OFB and CFB128 run the cipher forwards
 (encryption) in both directions. The number of rounds is public, as in ECB.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Camellia.X86
 

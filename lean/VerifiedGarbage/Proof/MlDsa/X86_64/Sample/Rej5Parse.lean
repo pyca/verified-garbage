@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej4Parse
-import VerifiedGarbage.Impl.MlDsa.X86_64.Sample.RejNtt5
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej4Parse
+public import VerifiedGarbage.Impl.MlDsa.X86_64.Sample.RejNtt5
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86_64.Rej4.Segment
 

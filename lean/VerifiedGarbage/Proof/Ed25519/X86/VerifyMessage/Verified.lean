@@ -1,18 +1,40 @@
-import VerifiedGarbage.Proof.Ed25519.X86.VerifyMessage.Body
-import VerifiedGarbage.Proof.Ed25519.X86.Whole.CallCT
-import VerifiedGarbage.Proof.Ed25519.X86.Whole.BlocksCT
-import VerifiedGarbage.Proof.Ed25519.X86.VerifyMessage.Args
-import VerifiedGarbage.Proof.Ed25519.X86.RecoverParity
-import VerifiedGarbage.Proof.Framework.X86.CallWith
-import VerifiedGarbage.Spec.Ed25519.Contract
-import VerifiedGarbage.Impl.Ed25519.X86.VerifyMessage
-import VerifiedGarbage.Proof.Framework.X86.Lit
-import VerifiedGarbage.Proof.Sha512.X86.Lit
-import VerifiedGarbage.Proof.Ed25519.X86.ScalarLit
-import VerifiedGarbage.Proof.Ed25519.X86.VerifyLit
-import VerifiedGarbage.Proof.Framework.Contract
+module
+
+public import VerifiedGarbage.Proof.Ed25519.X86.VerifyMessage.Body
+meta import VerifiedGarbage.Proof.Ed25519.X86.VerifyMessage.Body
+public import VerifiedGarbage.Proof.Ed25519.X86.Whole.CallCT
+meta import VerifiedGarbage.Proof.Ed25519.X86.Whole.CallCT
+public import VerifiedGarbage.Proof.Ed25519.X86.Whole.BlocksCT
+meta import VerifiedGarbage.Proof.Ed25519.X86.Whole.BlocksCT
+public import VerifiedGarbage.Proof.Ed25519.X86.VerifyMessage.Args
+meta import VerifiedGarbage.Proof.Ed25519.X86.VerifyMessage.Args
+public import VerifiedGarbage.Proof.Ed25519.X86.RecoverParity
+meta import VerifiedGarbage.Proof.Ed25519.X86.RecoverParity
+public import VerifiedGarbage.Proof.Framework.X86.CallWith
+meta import VerifiedGarbage.Proof.Framework.X86.CallWith
+public import VerifiedGarbage.Spec.Ed25519.Contract
+meta import VerifiedGarbage.Spec.Ed25519.Contract
+public import VerifiedGarbage.Impl.Ed25519.X86.VerifyMessage
+meta import VerifiedGarbage.Impl.Ed25519.X86.VerifyMessage
+public import VerifiedGarbage.Proof.Framework.X86.Lit
+meta import VerifiedGarbage.Proof.Framework.X86.Lit
+public import VerifiedGarbage.Proof.Sha512.X86.Lit
+meta import VerifiedGarbage.Proof.Sha512.X86.Lit
+public import VerifiedGarbage.Proof.Ed25519.X86.ScalarLit
+meta import VerifiedGarbage.Proof.Ed25519.X86.ScalarLit
+public import VerifiedGarbage.Proof.Ed25519.X86.VerifyLit
+meta import VerifiedGarbage.Proof.Ed25519.X86.VerifyLit
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Ed25519.X86.VerifyMessage.CTEquation`. -/
+
+@[expose] public section
+
 section
 /-! Merged from `Proof.Ed25519.X86.VerifyMessage.CTHashPipeline`. -/
 section

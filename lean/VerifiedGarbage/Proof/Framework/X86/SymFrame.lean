@@ -1,6 +1,11 @@
-import VerifiedGarbage.Proof.Framework.X86.Call
+module
+
+public import VerifiedGarbage.Proof.Framework.X86.Call
 
 /-! # Obtaining a static address with a balanced four-byte CALL frame -/
+
+@[expose] public section
+
 namespace VG.X86
 open VG
 

@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Mul
-import VerifiedGarbage.Proof.X25519.Field
+module
+
+public import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Mul
+public import VerifiedGarbage.Proof.X25519.Field
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X25519 on x86-64 with AVX512_IFMA: the arithmetic of the lanes
@@ -8,6 +14,8 @@ A field element is five limbs `x₀ + 2⁵¹ x₁ + … + 2²⁰⁴ x₄` (`lv`)
 its residue modulo `p`. The identities between limbs are polynomial identities
 in `R = 2⁵¹` (`2⁵² = 2R`, `2²⁵⁵ = R⁵`), proved as such.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X25519.X86_64.Ifma
 

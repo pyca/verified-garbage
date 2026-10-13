@@ -1,10 +1,16 @@
-import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Proof.Framework.Mem
-import VerifiedGarbage.Proof.Framework.Sig
-import VerifiedGarbage.Proof.Framework.X86_64.Inline
-import VerifiedGarbage.Proof.Framework.X86_64.Abi
-import VerifiedGarbage.Impl.MlKem.X86_64.Common
-import VerifiedGarbage.Proof.MlKem.Arith
+module
+
+public import VerifiedGarbage.Proof.Framework.X86_64.Exec
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.Sig
+public import VerifiedGarbage.Proof.Framework.X86_64.Inline
+public import VerifiedGarbage.Proof.Framework.X86_64.Abi
+public import VerifiedGarbage.Impl.MlKem.X86_64.Common
+public import VerifiedGarbage.Proof.MlKem.Arith
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86-64: running blocks symbolically
@@ -20,6 +26,8 @@ makes as hypotheses on the registers of the state it starts from.
 `Keep rs s s'` says that `s'` differs from `s` only in the registers `rs`
 (and the flags and memory).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.X86_64
 

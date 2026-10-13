@@ -1,8 +1,16 @@
-import VerifiedGarbage.Proof.Rc4.Arm.Schedule
-import VerifiedGarbage.Proof.Rc4.Arm.Contract
-import VerifiedGarbage.Proof.Framework.Arm.Spill
+module
+
+public import VerifiedGarbage.Proof.Rc4.Arm.Schedule
+public import VerifiedGarbage.Proof.Rc4.Arm.Contract
+public import VerifiedGarbage.Proof.Framework.Arm.Spill
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # RC4 on ARMv7: checked initialization -/
+
+@[expose] public section
 
 namespace VG.Proof.Rc4.Arm
 

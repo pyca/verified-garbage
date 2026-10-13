@@ -1,6 +1,14 @@
-import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Update
+module
+
+public import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Update
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # H′: finishing a BLAKE2b hash -/
+
+@[expose] public section
 
 namespace VG.Proof.Argon2.AArch64.HPrime
 

@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitch.Body
-import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Xor
+module
+
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitch.Body
+public import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Xor
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ChaCha20 and Poly1305 together (AArch64): the whole chunks
@@ -11,6 +17,8 @@ decrypted), as `Mixed8.bulk_ok`, and the bytes they absorbed: when
 decrypting, every chunk's data as it was on entry; when encrypting, the
 output of every chunk but the last.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.ChaCha20Poly1305.AArch64.Stitch
 

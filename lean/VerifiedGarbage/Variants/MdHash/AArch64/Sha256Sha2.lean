@@ -1,5 +1,9 @@
-import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Hashes.Sha256
-import VerifiedGarbage.Proof.Sha256.AArch64.Sha2Backend
+module
+
+public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Hashes.Sha256
+public import VerifiedGarbage.Proof.Sha256.AArch64.Sha2Backend
+
+@[expose] public section
 
 namespace VG.Variants.MdHash.AArch64.Sha256Sha2
 

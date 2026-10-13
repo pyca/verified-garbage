@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Weierstrass.X86_64.WinEntry
-import VerifiedGarbage.Proof.Weierstrass.X86_64.Flags
-import VerifiedGarbage.Proof.Weierstrass.X86_64.QuadCounter
-import VerifiedGarbage.Proof.Weierstrass.JacMul
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinEntry
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.Flags
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.QuadCounter
+public import VerifiedGarbage.Proof.Weierstrass.JacMul
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The window method on x86-64: the loop's frame and 
@@ -12,6 +18,8 @@ the loop writes), the addition of the entry (`sumStep_ok`), and `R = 16 R`
 `Y = 1` where the result is `O` (`ySel_ok`: the mask of `E.z = 0`,
 `winZeroMask_ok`, selecting Montgomery's one word by word, `ySelWord_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.X86_64
 

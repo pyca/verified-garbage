@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Curve448.AArch64.Memory
+module
+
+public import VerifiedGarbage.Proof.Curve448.AArch64.Memory
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 on AArch64: copying field elements
@@ -6,6 +12,8 @@ import VerifiedGarbage.Proof.Curve448.AArch64.Memory
 Untrusted: everything here is checked by Lean. Eight persistent limbs are copied. Source and destination are
 equal or disjoint; every limb is copied without changing its representation.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Curve448.AArch64
 

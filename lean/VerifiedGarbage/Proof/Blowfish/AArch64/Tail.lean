@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Blowfish.AArch64.Ecb
+module
+
+public import VerifiedGarbage.Proof.Blowfish.AArch64.Ecb
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The blocks left
@@ -7,6 +13,8 @@ Fewer than sixteen blocks left (`k` of them, at `x1`) are copied into the
 working space (the first 128 bytes at `x3`), run there as a batch whose
 other lanes hold whatever the buffer held, and copied back (`tail_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Blowfish.AArch64
 

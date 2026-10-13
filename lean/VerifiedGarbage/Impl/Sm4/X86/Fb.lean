@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Sm4.X86.Modes
+module
+
+public import VerifiedGarbage.Impl.Sm4.X86.Modes
 
 /-!
 # SM4-OFB and SM4-CFB128 on x86 (32-bit)
@@ -7,6 +9,8 @@ The modes' OFB and CFB (`Impl/Modes/X86/Seq.lean`) over SM4's core in the
 encryption direction (`Modes.lean`), with the scratch buffer as the fifth
 argument.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Sm4.X86
 

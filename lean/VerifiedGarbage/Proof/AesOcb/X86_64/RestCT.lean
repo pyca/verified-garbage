@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.AesOcb.X86_64.TagCT
+module
+
+public import VerifiedGarbage.Proof.AesOcb.X86_64.TagCT
+meta import VerifiedGarbage.Proof.AesOcb.X86_64.TagCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-OCB on x86-64: the rest of the data is constant time
@@ -8,6 +15,8 @@ passes the taint analysis from the public slots and the address and length
 of the rest in `rbx` and `r12` (`rel_taintC`); the call of
 `vg_aes_encrypt_blocks` has the same arguments in both runs (`callTmp_rel`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

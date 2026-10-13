@@ -1,8 +1,15 @@
-import VerifiedGarbage.Proof.Scrypt.Memory
-import VerifiedGarbage.Proof.MdStream.AArch64.Common
-import VerifiedGarbage.Impl.Scrypt.AArch64.BlockMix
-import VerifiedGarbage.Spec.Scrypt.Contract
-import VerifiedGarbage.TCB.AArch64.Target
+module
+
+public import VerifiedGarbage.Proof.Scrypt.Memory
+public import VerifiedGarbage.Proof.MdStream.AArch64.Common
+public import VerifiedGarbage.Impl.Scrypt.AArch64.BlockMix
+public import VerifiedGarbage.Spec.Scrypt.Contract
+public import VerifiedGarbage.TCB.AArch64.Target
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+import all Init.Data.Nat.Power2.Basic
 
 /-!
 # scrypt on AArch64: common lemmas
@@ -11,6 +18,8 @@ The target-independent lemmas about addresses and bytes are in
 `Proof/Scrypt/Memory.lean`; here are the weakest-precondition rules for the
 AArch64 forms, and the 64-byte exclusive-or.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Scrypt
 

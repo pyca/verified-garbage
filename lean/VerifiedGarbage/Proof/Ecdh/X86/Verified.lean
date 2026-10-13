@@ -1,9 +1,21 @@
-import VerifiedGarbage.Proof.Ecdh.X86.JacMain
-import VerifiedGarbage.Proof.Ecdh.X86.Contract
-import VerifiedGarbage.Proof.Ecdh.X86.Lit
-import VerifiedGarbage.Proof.Ecdsa.X86.Verified
-import VerifiedGarbage.Proof.Framework.X86.SseTaintMono
-import VerifiedGarbage.Proof.Framework.X86.Inline
+module
+
+public import VerifiedGarbage.Proof.Ecdh.X86.JacMain
+meta import VerifiedGarbage.Proof.Ecdh.X86.JacMain
+public import VerifiedGarbage.Proof.Ecdh.X86.Contract
+meta import VerifiedGarbage.Proof.Ecdh.X86.Contract
+public import VerifiedGarbage.Proof.Ecdh.X86.Lit
+meta import VerifiedGarbage.Proof.Ecdh.X86.Lit
+public import VerifiedGarbage.Proof.Ecdsa.X86.Verified
+meta import VerifiedGarbage.Proof.Ecdsa.X86.Verified
+public import VerifiedGarbage.Proof.Framework.X86.SseTaintMono
+meta import VerifiedGarbage.Proof.Framework.X86.SseTaintMono
+public import VerifiedGarbage.Proof.Framework.X86.Inline
+meta import VerifiedGarbage.Proof.Framework.X86.Inline
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDH over P-256 on x86 (32-bit): `Verified`
@@ -17,6 +29,8 @@ Constant time by taint tracking, as for the signature
 arguments' slots are readable, and moves to the shared contract, which makes
 them writable, by `Verified.narrowTo`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdh.X86
 

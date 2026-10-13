@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchTo.Base
+module
+
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchTo.Base
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The out-of-place VAES loop: a batch of eight blocks
@@ -10,6 +16,8 @@ as in place (`Vaes.ctrs_ok`, `Vaes.aesG_ok`), then the XOR of the plaintext,
 which nothing writes, into the output (`xorDataKTo_ok`), as
 `Stitch.batch_ok` does in place.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Gcm.X86_64.StitchTo
 

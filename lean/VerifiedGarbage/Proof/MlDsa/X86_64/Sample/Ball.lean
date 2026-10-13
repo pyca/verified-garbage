@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.BallLoop
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejNtt
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.BallLoop
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejNtt
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on x86-64: `vg_mldsa_sample_in_ball`, correctness
@@ -11,6 +17,8 @@ polynomial and `i` that `bFold` computes from the first `t` of them, and the
 sign bits not yet used in `r9` (`W σ`, the first 8 bytes as a `u64`, shifted
 right once per coefficient set).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86_64.Sample
 

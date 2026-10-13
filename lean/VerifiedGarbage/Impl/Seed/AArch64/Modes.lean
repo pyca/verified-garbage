@@ -1,7 +1,9 @@
-import VerifiedGarbage.Impl.Seed.AArch64.Ecb
-import VerifiedGarbage.Impl.Modes.AArch64.Cbc
-import VerifiedGarbage.Impl.Modes.AArch64.CbcEnc
-import VerifiedGarbage.Impl.Modes.AArch64.Fb
+module
+
+public import VerifiedGarbage.Impl.Seed.AArch64.Ecb
+public import VerifiedGarbage.Impl.Modes.AArch64.Cbc
+public import VerifiedGarbage.Impl.Modes.AArch64.CbcEnc
+public import VerifiedGarbage.Impl.Modes.AArch64.Fb
 
 /-!
 # SEED-CBC, -OFB and -CFB128 on AArch64
@@ -26,6 +28,8 @@ buffer, its sixteen blocks and the copy's first round key, and runs the
 batch. The feedback modes keep the IV's address in `x25`, which `fbCore`
 keeps in `v31` (`Core.viaV`).
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Seed.AArch64
 

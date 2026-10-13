@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.FinTag
-import VerifiedGarbage.Proof.AesGcm.X86_64.FnCT
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.FinTag
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.FinTag
+public import VerifiedGarbage.Proof.AesGcm.X86_64.FnCT
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.FnCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on x86-64: `finTag` in two runs
@@ -10,6 +18,8 @@ rounds leak the same: the branch is on the length of the text, `flush` has
 the same number of buffered bytes and `tag` the same lengths
 (`flush_rel`, `tag_rel`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesGcm.X86_64
 

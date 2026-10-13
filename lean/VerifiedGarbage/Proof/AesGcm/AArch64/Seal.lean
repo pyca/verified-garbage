@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesGcm.AArch64.OneShot
+module
+
+public import VerifiedGarbage.Proof.AesGcm.AArch64.OneShot
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on AArch64: `vg_aes_gcm_seal`
@@ -9,6 +15,8 @@ at `W + 248` (`entryStash_ok`); `encBody` encrypts the data and absorbs the
 ciphertext, `finBody 0` writes the tag to `W`, and `tagOut` copies it to `tag`
 (`seal_wp`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

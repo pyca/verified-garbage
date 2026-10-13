@@ -1,6 +1,8 @@
-import VerifiedGarbage.TCB.X86.Target
-import VerifiedGarbage.Proof.Sha256.X86.Variants.Interface
-import VerifiedGarbage.Proof.Scrypt.X86.Whole.Verified
+module
+
+public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Proof.Sha256.X86.Variants.Interface
+public import VerifiedGarbage.Proof.Scrypt.X86.Whole.Verified
 
 /-!
 # scrypt (RFC 7914 §6) on x86, over SHA-256
@@ -13,6 +15,8 @@ suffix (e.g. `vg_scrypt_shani`), and needs its CPU features.
 The stack is 116 bytes: a 36-byte frame, the return address of a call, and
 the 76 bytes `vg_pbkdf2_hmac_sha256_scratch` uses.
 -/
+
+@[expose] public section
 
 namespace VG.Generic.Sha256.X86.Scrypt
 

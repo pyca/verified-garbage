@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.EncEM
+module
+
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.EncEM
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-PKCS1-v1_5 encryption on x86-64: up to the call
@@ -8,6 +14,8 @@ From the frame's push, the first four pieces (`setup`, `psLoop`, `sep`,
 `PS` and `EM = 0x00 ‖ 0x02 ‖ PS ‖ 0x00 ‖ M` in the frame (`PreCall`,
 `em_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPkcs1Enc.X86_64
 

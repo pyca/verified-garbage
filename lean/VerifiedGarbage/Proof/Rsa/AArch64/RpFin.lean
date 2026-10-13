@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Rsa.AArch64.RpCands
+module
+
+public import VerifiedGarbage.Proof.Rsa.AArch64.RpCands
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_recover_primes` on AArch64: the factors
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.Rsa.AArch64.RpCands
 (`finA_ok`), `p = gcd(u, n)` and `q = n / p` (`finB_ok`), the larger first
 (`finC_ok`), both written masked by whether a candidate found `y`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.AArch64
 

@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCall
-import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.Compare
-import VerifiedGarbage.Proof.RsaPkcs1Sig.Verify
+module
+
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCall
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.Compare
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.Verify
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_pkcs1_verify` on x86-64: correctness
@@ -10,6 +16,8 @@ After the call (`afterPub_ok`): the encoding of the hash value into `EM₂`
 §8.2.2's verification (`verify_eq_verifyRfc`). With the length check, the
 frame's push, the call (`pub_call`) and the pop: `code_correct`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPkcs1Sig.X86_64.Ver
 

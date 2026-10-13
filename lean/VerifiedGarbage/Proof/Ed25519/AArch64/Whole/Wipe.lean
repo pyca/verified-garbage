@@ -1,8 +1,16 @@
-import VerifiedGarbage.Impl.Ed25519.AArch64.Whole.Wipe
-import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Layout
+module
+
+public import VerifiedGarbage.Impl.Ed25519.AArch64.Whole.Wipe
+public import VerifiedGarbage.Proof.Framework.AArch64.Exec
+public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Layout
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.Ed25519.AArch64.Whole
 open VG VG.AArch64 VG.Impl.Ed25519.AArch64.Whole

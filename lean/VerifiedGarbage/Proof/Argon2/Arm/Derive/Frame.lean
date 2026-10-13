@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Argon2.Arm.Derive.Contract
+module
+
+public import VerifiedGarbage.Proof.Argon2.Arm.Derive.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Argon2 on ARMv7: the derivation's frames
@@ -10,6 +16,8 @@ in; `frames_ok` gives the callee-saved registers and the stack pointer back,
 from a body that leaves the stack pointer at the locals and the saved words
 alone (`BodyDone`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Argon2.Arm.Derive
 

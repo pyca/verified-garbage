@@ -1,6 +1,14 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Message.OptimizedVerifyCorrect
-import VerifiedGarbage.Proof.MlDsa.AArch64.Message.OptimizedVerifyTopTiming
-import VerifiedGarbage.Proof.MlDsa.AArch64.Message.OptimizedVerifySat
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.OptimizedVerifyCorrect
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.OptimizedVerifyTopTiming
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.OptimizedVerifySat
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Message.OptimizedVerify
 open VG VG.AArch64 VG.Spec.MlDsa

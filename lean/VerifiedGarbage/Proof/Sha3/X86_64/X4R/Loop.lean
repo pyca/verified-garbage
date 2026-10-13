@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Sha3.X86_64.X4R.Round
+module
+
+public import VerifiedGarbage.Proof.Sha3.X86_64.X4R.Round
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Keccak-f[1600] four times at once, in registers: the permutation
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.Sha3.X86_64.X4R.Round
 its loop), and stores them back (`store_ok`): Keccak-f[1600] on each of the
 four states (`permute4R_ok`), with the interface of `X4.permute4_ok`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sha3.X86_64.X4R
 

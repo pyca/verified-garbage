@@ -1,6 +1,8 @@
-import VerifiedGarbage.Impl.Cast5.Tables
-import VerifiedGarbage.TCB.X86.Isa
-import VerifiedGarbage.Impl.Cast5.Lines
+module
+
+public import VerifiedGarbage.Impl.Cast5.Tables
+public import VerifiedGarbage.TCB.X86.Isa
+public import VerifiedGarbage.Impl.Cast5.Lines
 
 /-!
 # CAST5 on baseline 32-bit x86
@@ -23,6 +25,8 @@ With seven registers, the working space (`esi`) holds the public state: the
 subkeys' pointer, the counts, the arguments. The scan obtains its table's
 address itself, in a four-byte `symPush` frame.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Cast5.X86
 

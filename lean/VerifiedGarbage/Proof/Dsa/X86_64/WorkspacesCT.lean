@@ -1,7 +1,18 @@
-import VerifiedGarbage.Proof.Dsa.X86_64.ChildCT
-import VerifiedGarbage.Proof.Dsa.X86_64.ShapeCTState
+module
+
+public import VerifiedGarbage.Proof.Dsa.X86_64.ChildCT
+meta import VerifiedGarbage.Proof.Dsa.X86_64.ChildCT
+public import VerifiedGarbage.Proof.Dsa.X86_64.ShapeCTState
+meta import VerifiedGarbage.Proof.Dsa.X86_64.ShapeCTState
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # Constant time of initializing both Montgomery workspaces -/
+
+@[expose] public section
+
 namespace VG.Proof.Dsa.X86_64
 open VG VG.X86_64 VG.Impl.Bignum.X86_64
 open VG.Impl.Dsa.Layout VG.Impl.Dsa.X86_64

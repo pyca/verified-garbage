@@ -1,8 +1,12 @@
-import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.Blake2.AArch64.Compress
-import VerifiedGarbage.Proof.Blake2.AArch64.Stream.Verified
+module
+
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.Blake2.AArch64.Compress
+public import VerifiedGarbage.Proof.Blake2.AArch64.Stream.Verified
 
 /-! # BLAKE2s (RFC 7693) on AArch64 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.Blake2s.AArch64
 

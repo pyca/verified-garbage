@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.CTBase
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.CTBase
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA verification on x86-64: constant time, the hint and `z`
@@ -9,6 +15,8 @@ each call's trace needs (the pointers, reduced inputs, and the public bytes it
 reads); the branches test results that are functions of the signature alone
 (the hint is well formed, `z` is small: `ifOk_rel`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86_64.Verify
 

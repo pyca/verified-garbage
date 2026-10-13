@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Spec
-import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Lemmas
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Spec
+public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Lemmas
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSA with AVX512_IFMA on x86-64, any size: reading an entry of the table
@@ -10,6 +16,8 @@ quadword at `oV` of prime `p`'s region and copies entry `v` of the table
 `v` under a mask (`select_ok`). The vector part of an iteration is run by
 `ESym` and checked for each layout (`checkSel`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64.Ifma
 

@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.MlKem.X86.Sample
+module
+
+public import VerifiedGarbage.Impl.MlKem.X86.Sample
 
 /-!
 # ML-DSA on x86 (32-bit): sampling from SHAKE
@@ -22,6 +24,8 @@ message is shorter than a block), and squeezes `outlen` bytes to
 `scratch + 840` with `vg_keccak_squeeze`. Its addresses and branches depend
 only on `esp`, the pointers and the length.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.X86.Sample
 

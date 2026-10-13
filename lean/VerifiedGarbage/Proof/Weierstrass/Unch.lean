@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Mont.Words
+module
+
+public import VerifiedGarbage.Proof.Mont.Words
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Memory unchanged outside a list of ranges
@@ -9,6 +15,8 @@ changes their union (`Unch.trans`); a number or a byte apart from all of them
 is unchanged (`Unch.wordsVal`, `Unch.byte`), and so is memory beyond them
 (`Unch.far`), such as the arguments and the result, outside the working space.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass
 

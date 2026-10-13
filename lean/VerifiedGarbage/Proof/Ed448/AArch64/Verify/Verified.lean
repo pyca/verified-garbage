@@ -1,7 +1,17 @@
-import VerifiedGarbage.Proof.Ed448.AArch64.Verify.Main
-import VerifiedGarbage.Proof.Ed448.AArch64.Whole.CallsCT
-import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.WrapCT
-import VerifiedGarbage.Proof.Framework.Contract
+module
+
+public import VerifiedGarbage.Proof.Ed448.AArch64.Verify.Main
+meta import VerifiedGarbage.Proof.Ed448.AArch64.Verify.Main
+public import VerifiedGarbage.Proof.Ed448.AArch64.Whole.CallsCT
+meta import VerifiedGarbage.Proof.Ed448.AArch64.Whole.CallsCT
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.WrapCT
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.WrapCT
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 verification on AArch64: `Verified`
@@ -17,6 +27,8 @@ code (the sponge functions for `v`, `vg_ed448_scalar_reduce`,
 `vg_ed448_verify_equation`, all constant time in their buffers' contents)
 whose public data, its pointers, lengths and the sponge's positions, agree.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.AArch64.Verify
 

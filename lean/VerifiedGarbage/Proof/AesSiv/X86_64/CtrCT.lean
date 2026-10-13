@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.AesSiv.X86_64.Ctr
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
+module
+
+public import VerifiedGarbage.Proof.AesSiv.X86_64.Ctr
+meta import VerifiedGarbage.Proof.AesSiv.X86_64.Ctr
+public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-SIV on x86-64: CTR is constant time
@@ -13,6 +21,8 @@ around the call of `vg_aes_ctr32` passes the taint analysis, and the call's
 arguments are the same in both runs (`ctr_rel` of `CmacAes.X86_64`). Both
 runs leave the loop after the same block, the last one (`ctr_tail`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesSiv.X86_64
 

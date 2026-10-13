@@ -1,10 +1,19 @@
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Production
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeFetch
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowInvariant
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Production
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeFetch
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowInvariant
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Tree precomputation: even multiples double a previous table entry;
 odd multiples add the original public point to the accumulator. -/
+
+@[expose] public section
+
 namespace VG.Proof.Weierstrass.AArch64
 open VG VG.AArch64 VG.Impl.Mont.AArch64 VG.Impl.Mont VG.Impl.Weierstrass.AArch64 VG.Impl.Weierstrass
 open VG.Proof.Mont.AArch64 VG.Proof.Mont Spec.Weierstrass

@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Contract
-import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Mid
-import VerifiedGarbage.Proof.Gcm.SealGather
-import VerifiedGarbage.Impl.AesGcm.X86_64.SealGather
-import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Contract
+public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Mid
+public import VerifiedGarbage.Proof.Gcm.SealGather
+public import VerifiedGarbage.Impl.AesGcm.X86_64.SealGather
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM one-shot encryption out of place, from a list of slices, x86-64: the setting
@@ -13,6 +19,8 @@ state `s` (`K`, `Nn`, `NL`, `Ad`, `AL`, `Src`, `Cnt`, `Dst`, `L`, `Tg`,
 slots of `work` the code keeps the arguments and its progress in (`Kept`),
 and the entry, which fills them (`entry1_ok`, `entry2_ok`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

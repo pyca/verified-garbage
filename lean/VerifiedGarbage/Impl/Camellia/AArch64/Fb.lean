@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Camellia.AArch64.Ctr
-import VerifiedGarbage.Impl.Modes.AArch64.Fb
+module
+
+public import VerifiedGarbage.Impl.Camellia.AArch64.Ctr
+public import VerifiedGarbage.Impl.Modes.AArch64.Fb
 
 /-!
 # Camellia-OFB and Camellia-CFB128, bitsliced, on AArch64
@@ -15,6 +17,8 @@ IV's address could be kept in, but no vector register: the modes keep it in
 depends on the block before it, so each is enciphered alone, in a batch of
 eight.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Camellia.AArch64
 

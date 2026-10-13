@@ -1,7 +1,17 @@
-import VerifiedGarbage.Proof.RsaPss.X86_64.CtHashOk
-import VerifiedGarbage.Proof.RsaPss.X86_64.CtBase
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+module
+
+public import VerifiedGarbage.Proof.RsaPss.X86_64.CtHashOk
+meta import VerifiedGarbage.Proof.RsaPss.X86_64.CtHashOk
+public import VerifiedGarbage.Proof.RsaPss.X86_64.CtBase
+meta import VerifiedGarbage.Proof.RsaPss.X86_64.CtBase
+public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+public import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSASSA-PSS on x86-64: `ctHash` is constant time
@@ -13,6 +23,8 @@ checked by the taint analysis (`HashChecks`), the calls are constant time by
 their callees' contracts, and the loop over the blocks goes the same way in
 both runs.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPss.X86_64
 

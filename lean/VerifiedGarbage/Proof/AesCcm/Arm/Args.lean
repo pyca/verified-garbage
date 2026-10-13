@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesCcm.Arm.Crypt
+module
+
+public import VerifiedGarbage.Proof.AesCcm.Arm.Crypt
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CCM on ARMv7: the arguments, and what the pieces write
@@ -11,6 +17,8 @@ registers, the stack below `sp` and the data), which miss the saved
 registers, the key schedule, the stack arguments, the nonce and the
 associated data.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesCcm.Arm
 

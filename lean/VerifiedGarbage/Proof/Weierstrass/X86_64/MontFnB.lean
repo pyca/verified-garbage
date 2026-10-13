@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFnX
-import VerifiedGarbage.Proof.Mont.X86_64.SqrP
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFnX
+public import VerifiedGarbage.Proof.Mont.X86_64.SqrP
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # P-521's product modulo `p` as a function, on x86-64
@@ -11,6 +17,8 @@ operands whose registers it does not change (`termR_ok`), so the columns'
 arithmetic is `mulP`'s and `sqrP`'s (`pColSum`, `sColSum`). The result plus
 one then goes into `xWin 9` (`plusOne_ok`) for `mulFnX`'s exit.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.X86_64.Mont
 

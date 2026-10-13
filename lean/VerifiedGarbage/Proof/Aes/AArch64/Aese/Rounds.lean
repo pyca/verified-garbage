@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Impl.Aes.AArch64.Aese
-import VerifiedGarbage.Spec.Aes
-import VerifiedGarbage.TCB.AArch64.Target
+module
+
+public import VerifiedGarbage.Proof.Framework.AArch64.Exec
+public import VerifiedGarbage.Impl.Aes.AArch64.Aese
+public import VerifiedGarbage.Spec.Aes
+public import VerifiedGarbage.TCB.AArch64.Target
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The Armv8 AES instructions are FIPS 197's rounds
@@ -16,6 +22,8 @@ by repeated squaring, is the one of `Spec/Aes.lean` (`sbox_eq`).
 `aes_ok`: `Impl.Aes.AArch64.Aese.aes regs` encrypts each register of `regs`
 with the round keys in `v16`–`v30`, whatever the list of registers.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Aes.AArch64.Aese
 

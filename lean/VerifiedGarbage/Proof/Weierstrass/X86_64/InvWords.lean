@@ -1,9 +1,15 @@
-import VerifiedGarbage.Proof.Weierstrass.X86_64.InvStep
-import VerifiedGarbage.Proof.Mont.X86_64.WideOps
-import VerifiedGarbage.Proof.Weierstrass.Unch
-import VerifiedGarbage.Proof.Divstep.Tc
-import VerifiedGarbage.Proof.Weierstrass.InvMask
-import VerifiedGarbage.Proof.Framework.Omega
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvStep
+public import VerifiedGarbage.Proof.Mont.X86_64.WideOps
+public import VerifiedGarbage.Proof.Weierstrass.Unch
+public import VerifiedGarbage.Proof.Divstep.Tc
+public import VerifiedGarbage.Proof.Weierstrass.InvMask
+public import VerifiedGarbage.Proof.Framework.Omega
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Inversion by divsteps on x86-64: numbers of several words
@@ -14,6 +20,8 @@ signed linear combination `w [x] + w' [y]` (`lin_ok`, from the wide
 Montgomery multiplication's rows; `linR_ok`, column by column in registers),
 and the arithmetic shift by 59 (`shr59_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.X86_64
 

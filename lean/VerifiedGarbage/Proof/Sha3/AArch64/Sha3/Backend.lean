@@ -1,7 +1,19 @@
-import VerifiedGarbage.Proof.Framework.AArch64.VectorCaller
-import VerifiedGarbage.Proof.Sha3.AArch64.Variant
-import VerifiedGarbage.Proof.Sha3.AArch64.Sums
-import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Permute
+module
+
+public import VerifiedGarbage.Proof.Framework.AArch64.VectorCaller
+meta import VerifiedGarbage.Proof.Framework.AArch64.VectorCaller
+public import VerifiedGarbage.Proof.Sha3.AArch64.Variant
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Variant
+public import VerifiedGarbage.Proof.Sha3.AArch64.Sums
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Sums
+public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Permute
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Permute
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.Sha3.AArch64.Sha3
 

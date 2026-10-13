@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.MlDsa.X86_64.Arith.Vec
+module
+
+public import VerifiedGarbage.Impl.MlDsa.X86_64.Arith.Vec
 
 /-!
 # ML-DSA on x86-64: `vg_mldsa_add` and `vg_mldsa_sub`
@@ -11,6 +13,8 @@ with `rdi` and `rsi` pointing at coefficient `4i` of `f` and `g`, and
 with `q` in the doublewords of `xmm15`. Every address and branch depends
 only on the pointers.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.X86_64.Arith
 

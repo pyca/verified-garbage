@@ -1,5 +1,7 @@
-import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarVerified
+module
+
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarVerified
 
 /-!
 # Ed25519 scalar reduction on x86-64
@@ -8,6 +10,8 @@ The signature and documentation come from the reviewed Ed25519 API.
 This building block reduces a 64-bit word at a time using baseline integer
 instructions; it neither hashes messages nor implements signing by itself.
 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.Ed25519Scalar.X86_64
 

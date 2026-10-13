@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Idea.Arith32
-import VerifiedGarbage.Impl.Idea.X86
-import VerifiedGarbage.Proof.Framework.X86.Exec
-import VerifiedGarbage.Proof.Framework.X86.RegUpd
+module
+
+public import VerifiedGarbage.Proof.Idea.Arith32
+public import VerifiedGarbage.Impl.Idea.X86
+public import VerifiedGarbage.Proof.Framework.X86.Exec
+public import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # IDEA on x86 (32-bit): ⊙ without branches
@@ -11,6 +17,8 @@ import VerifiedGarbage.Proof.Framework.X86.RegUpd
 the same value once `eax` has changed. The arithmetic is
 `Proof.Idea.prep32_toNat` and `Proof.Idea.reduce32`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Idea.X86
 

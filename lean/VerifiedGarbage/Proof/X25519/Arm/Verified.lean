@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.X25519.Arm.Main
-import VerifiedGarbage.Proof.X25519.Arm.CT
-import VerifiedGarbage.Proof.Framework.Arm.Contract
-import VerifiedGarbage.Spec.X25519.Contract
+module
+
+public import VerifiedGarbage.Proof.X25519.Arm.Main
+public import VerifiedGarbage.Proof.X25519.Arm.CT
+public import VerifiedGarbage.Proof.Framework.Arm.Contract
+public import VerifiedGarbage.Spec.X25519.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X25519 on 32-bit ARM: verified
@@ -9,6 +15,8 @@ import VerifiedGarbage.Spec.X25519.Contract
 `vg_x25519` meets the shared contract of `Spec/X25519/Contract.lean`: the
 proof against `x25519Arm`, which it implies, and a state satisfying it.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X25519.Arm
 

@@ -1,11 +1,19 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedCalls
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductCallTiming
-import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedResponse
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.StaticRoots
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedChallenge
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedLoopInit
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedCalls
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductCallTiming
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedResponse
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.StaticRoots
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedChallenge
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedLoopInit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## From `OptimizedProduct.lean` -/
+
+@[expose] public section
 
 section
 

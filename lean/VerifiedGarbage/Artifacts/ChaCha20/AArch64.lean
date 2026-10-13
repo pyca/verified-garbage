@@ -1,10 +1,14 @@
-import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.ChaCha20.AArch64.Block
-import VerifiedGarbage.Impl.ChaCha20.AArch64.Xor
-import VerifiedGarbage.Proof.ChaCha20.AArch64.Lit
-import VerifiedGarbage.Proof.ChaCha20.AArch64.Stream.Init
+module
+
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.ChaCha20.AArch64.Block
+public import VerifiedGarbage.Impl.ChaCha20.AArch64.Xor
+public import VerifiedGarbage.Proof.ChaCha20.AArch64.Lit
+public import VerifiedGarbage.Proof.ChaCha20.AArch64.Stream.Init
 
 /-! # The ChaCha20 block function (RFC 8439) on AArch64 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.ChaCha20.AArch64
 

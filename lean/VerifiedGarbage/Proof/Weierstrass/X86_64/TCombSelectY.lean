@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombSelectPass
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombSelectPass
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The comb from tables in memory on x86-64: the selection's pass with AVX2
@@ -13,6 +19,8 @@ last two 32-byte pieces overlap (`qY`). The mask of entry `m` is `vpcmpeqd` of t
 stored pieces are `selPass_ok`'s (`selPassY_ok`, `selPassV_ok`): overlapping
 stores write the same pieces (`storeAccY_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.X86_64
 

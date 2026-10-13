@@ -1,4 +1,6 @@
-import VerifiedGarbage.TCB.X86_64.Isa
+module
+
+public import VerifiedGarbage.TCB.X86_64.Isa
 
 /-!
 # The Salsa20/8 Core: x86-64 implementation
@@ -20,6 +22,8 @@ stores it back. The four double rounds are fully unrolled.
 Every address is `rdi` or `rsi` plus a constant, and there are no branches,
 so only the pointers can affect timing.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Scrypt.X86_64
 

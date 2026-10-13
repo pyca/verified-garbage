@@ -1,8 +1,12 @@
-import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Impl.X25519.Arm
-import VerifiedGarbage.Proof.X25519.Arm.Verified
+module
+
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.Impl.X25519.Arm
+public import VerifiedGarbage.Proof.X25519.Arm.Verified
 
 /-! # X25519 (RFC 7748) on ARMv7 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.X25519.Arm
 

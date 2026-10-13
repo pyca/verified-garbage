@@ -1,9 +1,17 @@
-import VerifiedGarbage.Impl.Ed25519.AArch64.ScalarBase
-import VerifiedGarbage.Proof.Ed25519.AArch64.CombLoop
-import VerifiedGarbage.Proof.Ed25519.AArch64.PointEncode
-import VerifiedGarbage.Proof.Ed25519.AArch64.Bits
+module
+
+public import VerifiedGarbage.Impl.Ed25519.AArch64.ScalarBase
+public import VerifiedGarbage.Proof.Ed25519.AArch64.CombLoop
+public import VerifiedGarbage.Proof.Ed25519.AArch64.PointEncode
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Bits
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! The scalar bits, base-point multiplication, and canonical encoding compose. -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed25519.AArch64
 

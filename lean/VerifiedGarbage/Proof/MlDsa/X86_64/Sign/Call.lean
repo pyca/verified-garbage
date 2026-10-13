@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Lay
-import VerifiedGarbage.Proof.Framework.X86_64.RelCT
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.TCB.X86_64.Target
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Lay
+public import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+public import VerifiedGarbage.Proof.Framework.X86_64.Call
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.TCB.X86_64.Target
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA signing on x86-64: calls of verified code
@@ -17,6 +23,8 @@ bytes of stack below `rsp`. Two runs of it leak the same when the callee's
 public data agree (`glueCall_tr`), and a callee whose result is public in its
 own runs (`RetPub`) returns the same in both (`glueCallRet_tr`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86_64.Sign
 

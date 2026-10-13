@@ -1,13 +1,29 @@
-import VerifiedGarbage.Proof.Ecdsa.X86.Main
-import VerifiedGarbage.Proof.Weierstrass.X86.MontContract
-import VerifiedGarbage.Proof.Ecdsa.X86.P521.Contract
-import VerifiedGarbage.Proof.Ecdsa.X86.P521.Lit
-import VerifiedGarbage.Proof.P521.Point
-import VerifiedGarbage.Proof.Framework.X86.Taint
-import VerifiedGarbage.Proof.Framework.X86.Inline
-import VerifiedGarbage.Proof.Framework.X86.TaintMono
-import VerifiedGarbage.Proof.Ecdsa.X86.P521.MulSumP
-import VerifiedGarbage.Proof.Ecdsa.X86.P521.MulSumN
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.X86.Main
+meta import VerifiedGarbage.Proof.Ecdsa.X86.Main
+public import VerifiedGarbage.Proof.Weierstrass.X86.MontContract
+meta import VerifiedGarbage.Proof.Weierstrass.X86.MontContract
+public import VerifiedGarbage.Proof.Ecdsa.X86.P521.Contract
+meta import VerifiedGarbage.Proof.Ecdsa.X86.P521.Contract
+public import VerifiedGarbage.Proof.Ecdsa.X86.P521.Lit
+meta import VerifiedGarbage.Proof.Ecdsa.X86.P521.Lit
+public import VerifiedGarbage.Proof.P521.Point
+meta import VerifiedGarbage.Proof.P521.Point
+public import VerifiedGarbage.Proof.Framework.X86.Taint
+meta import VerifiedGarbage.Proof.Framework.X86.Taint
+public import VerifiedGarbage.Proof.Framework.X86.Inline
+meta import VerifiedGarbage.Proof.Framework.X86.Inline
+public import VerifiedGarbage.Proof.Framework.X86.TaintMono
+meta import VerifiedGarbage.Proof.Framework.X86.TaintMono
+public import VerifiedGarbage.Proof.Ecdsa.X86.P521.MulSumP
+meta import VerifiedGarbage.Proof.Ecdsa.X86.P521.MulSumP
+public import VerifiedGarbage.Proof.Ecdsa.X86.P521.MulSumN
+meta import VerifiedGarbage.Proof.Ecdsa.X86.P521.MulSumN
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDSA over P-521 on x86 (32-bit): `Verified`
@@ -20,6 +36,8 @@ space or `out`. Constant time by taint tracking: the only branches are on
 loop counters, and every address is an argument plus a constant or a
 counter.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.X86.P521
 

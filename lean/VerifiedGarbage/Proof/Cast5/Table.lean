@@ -1,5 +1,11 @@
-import VerifiedGarbage.Impl.Cast5.Tables
-import VerifiedGarbage.Proof.Framework.ReadHalves
+module
+
+public import VerifiedGarbage.Impl.Cast5.Tables
+public import VerifiedGarbage.Proof.Framework.ReadHalves
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # CAST5: the tables' entries
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.Framework.ReadHalves
 Entry `e` of `table a b c d`, read as four dwords (`ent`) from memory holding
 the table's quadwords (`Held`), is `a e, b e, c e, d e`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Cast5
 

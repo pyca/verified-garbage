@@ -1,15 +1,23 @@
-import VerifiedGarbage.Spec.Poly1305
-import VerifiedGarbage.Proof.Poly1305.Limbs64
-import VerifiedGarbage.Proof.Framework.PowLit
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Proof.Framework.X86_64.Abi
-import VerifiedGarbage.Impl.Poly1305.X86_64
-import VerifiedGarbage.Proof.Poly1305.Spec
-import VerifiedGarbage.Proof.Framework.Mem
-import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.Poly1305.X86_64.Lit
-import VerifiedGarbage.Proof.Framework.Offset
+module
+
+public import VerifiedGarbage.Spec.Poly1305
+public import VerifiedGarbage.Proof.Poly1305.Limbs64
+public import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Framework.X86_64.Exec
+public import VerifiedGarbage.Proof.Framework.X86_64.Abi
+public import VerifiedGarbage.Impl.Poly1305.X86_64
+public import VerifiedGarbage.Proof.Poly1305.Spec
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.Poly1305.X86_64.Lit
+public import VerifiedGarbage.Proof.Framework.Offset
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 section
 

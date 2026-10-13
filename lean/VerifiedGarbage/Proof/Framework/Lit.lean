@@ -1,8 +1,14 @@
-import Lean.Elab.Command
-import Lean.Elab.Tactic.Rewrite
-import Lean.Meta.Eval
-import Lean.Util.ShareCommon
-import VerifiedGarbage.TCB.Code
+module
+
+public import Lean.Elab.Command
+public meta import Lean.Elab.Command
+public import Lean.Elab.Tactic.Rewrite
+public meta import Lean.Elab.Tactic.Rewrite
+public import Lean.Meta.Eval
+public meta import Lean.Meta.Eval
+public import Lean.Util.ShareCommon
+public meta import Lean.Util.ShareCommon
+public import VerifiedGarbage.TCB.Code
 
 /-!
 # Code as literals, for the kernel
@@ -24,6 +30,8 @@ instructions once for every caller (in `g.lit_eq`).
 `lit_decide` proves a goal by `decide +kernel` after rewriting the code in
 it that has a literal (`rw_lit`); `taint_decide` does the same.
 -/
+
+@[expose] public section
 
 namespace VG
 

@@ -1,9 +1,18 @@
-import VerifiedGarbage.Impl.Poly1305.AArch64.Radix64
-import VerifiedGarbage.Proof.Poly1305.Limbs64
-import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+module
+
+public import VerifiedGarbage.Impl.Poly1305.AArch64.Radix64
+public import VerifiedGarbage.Proof.Poly1305.Limbs64
+public import VerifiedGarbage.Proof.Framework.AArch64.Exec
+public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Instruction-level proofs for the radix-64 Poly1305 arithmetic. -/
+
+@[expose] public section
+
 namespace VG.Proof.Poly1305.AArch64.Radix64
 open VG VG.AArch64 VG.AArch64.RegUpd VG.Impl.Poly1305.AArch64.Radix64
 open VG.Proof.Poly1305.Limbs64

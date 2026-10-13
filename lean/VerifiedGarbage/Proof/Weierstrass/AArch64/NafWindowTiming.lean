@@ -1,7 +1,15 @@
-import VerifiedGarbage.Proof.Weierstrass.AArch64.NafLoopTiming
-import VerifiedGarbage.Proof.Weierstrass.AArch64.NafFinishTiming
-import VerifiedGarbage.Proof.Weierstrass.AArch64.NafTableTiming
-import VerifiedGarbage.Proof.Weierstrass.AArch64.NafWindow
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafLoopTiming
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafFinishTiming
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafTableTiming
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafWindow
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.AArch64
 open VG VG.AArch64 VG.Impl.Mont.AArch64 VG.Impl.Mont VG.Impl.Weierstrass.AArch64 VG.Impl.Weierstrass

@@ -1,4 +1,6 @@
-import VerifiedGarbage.Proof.Framework.X86.StackScratch
+module
+
+public import VerifiedGarbage.Proof.Framework.X86.StackScratch
 
 /-!
 # A scratch buffer on the stack, wiped after use (x86)
@@ -12,6 +14,8 @@ on the stack pointer. The postcondition holds of the memory after the wipe
 if it reads the memory on return only within the function's buffers
 (`hpostOut`), which are disjoint from the frame.
 -/
+
+@[expose] public section
 
 namespace VG.X86
 

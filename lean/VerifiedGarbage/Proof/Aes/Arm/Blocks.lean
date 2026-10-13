@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.Aes.Arm.Ecb
-import VerifiedGarbage.Proof.Aes.Arm.Ctr32
+module
+
+public import VerifiedGarbage.Proof.Aes.Arm.Ecb
+meta import VerifiedGarbage.Proof.Aes.Arm.Ecb
+public import VerifiedGarbage.Proof.Aes.Arm.Ctr32
+meta import VerifiedGarbage.Proof.Aes.Arm.Ctr32
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES on whole blocks on ARMv7: the whole functions
@@ -11,6 +19,8 @@ two blocks with `CryptOk`: the prologue saves the callee-saved registers
 bitslices the round keys (`Keys.lean`); the groups (`Ecb.lean`) do the
 rest; the epilogue restores the registers.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Aes
 

@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.Absorb
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Absorb
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Absorb
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on x86-64: `absorb` in two runs
@@ -9,6 +16,8 @@ of bytes modulo 16, leak the same: the code between the calls of `vg_ghash`
 is checked by the taint analysis, from the registers `AbsIn` and `AbsMid`
 fix, and each call has the same arguments in both runs.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesGcm.X86_64
 

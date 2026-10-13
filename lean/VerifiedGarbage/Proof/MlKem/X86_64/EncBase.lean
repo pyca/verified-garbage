@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.MlKem.X86_64.KgTop
-import VerifiedGarbage.Impl.MlKem.X86_64.Encrypt
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86_64.KgTop
+public import VerifiedGarbage.Impl.MlKem.X86_64.Encrypt
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86-64: K-PKE.Encrypt, its context and the matrix
@@ -11,6 +17,8 @@ key at `E`, the message at `M`, the randomness at `G + 32`. The matrix `Â`
 from `ρ` (the last 32 bytes of the key), as in key generation (`mat_ok`), and
 its constant time, for a given `ρ` (`mat_tr`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.X86_64
 

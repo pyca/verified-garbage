@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.Bignum.AArch64.CTR2
+module
+
+public import VerifiedGarbage.Proof.Bignum.AArch64.CTR2
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CTR2
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_public_precompute` on AArch64: constant time but for `n`
@@ -8,6 +15,8 @@ lengths and `n`: the load of `m` and `-m⁻¹` (`pcLoad_ct`), `R² mod m`
 (`pcR2_ct`), the copies to `pre` (`pcOut_ct`), and the whole function
 (`pcCode_constantTime`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.AArch64
 

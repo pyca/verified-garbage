@@ -1,11 +1,19 @@
-import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowBase
-import VerifiedGarbage.Proof.Weierstrass.AArch64.AddCall
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowBase
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.AddCall
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The window method on AArch64: the table
 
 The table `[1 … 8]P`: `P`, then `[m + 1]P = [m]P + P` by the complete addition (`build_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.AArch64
 

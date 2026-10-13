@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.Idea.Arm.Key
-import VerifiedGarbage.Proof.Idea.Arm.Block
-import VerifiedGarbage.Proof.Idea.Inverse
-import VerifiedGarbage.Proof.Idea.Scratch32
-import VerifiedGarbage.Proof.Framework.Arm.Spill
+module
+
+public import VerifiedGarbage.Proof.Idea.Arm.Key
+public import VerifiedGarbage.Proof.Idea.Arm.Block
+public import VerifiedGarbage.Proof.Idea.Inverse
+public import VerifiedGarbage.Proof.Idea.Scratch32
+public import VerifiedGarbage.Proof.Framework.Arm.Spill
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # IDEA decryption subkeys on ARMv7
@@ -15,6 +21,8 @@ the inverse by a loop of fifteen steps of `t := (t ⊙ t) ⊙ a`,
 `invLoop_ok`), placed in its 16 bits of `r7` (`invPlace`), and stored two
 at a time (`invPair_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Idea.Arm
 

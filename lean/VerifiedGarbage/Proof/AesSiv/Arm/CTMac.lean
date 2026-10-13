@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.AesSiv.Arm.Open
-import VerifiedGarbage.Proof.AesGcm.Arm.CTBase
+module
+
+public import VerifiedGarbage.Proof.AesSiv.Arm.Open
+meta import VerifiedGarbage.Proof.AesSiv.Arm.Open
+public import VerifiedGarbage.Proof.AesGcm.Arm.CTBase
+meta import VerifiedGarbage.Proof.AesGcm.Arm.CTBase
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-SIV on ARMv7: the CMAC of a string is constant time
@@ -11,6 +19,8 @@ that hold the string's address and length, the context, the rounds and `W`;
 the calls get the same arguments in both runs (`upd_rel`, `fin_rel`), which
 the correctness lemmas give.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

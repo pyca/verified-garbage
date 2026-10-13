@@ -1,13 +1,27 @@
-import VerifiedGarbage.Proof.Poly1305.X86_64.Setup
-import VerifiedGarbage.Proof.Framework.X86_64.Taint
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Spec.Poly1305.Contract
-import VerifiedGarbage.Proof.Framework.PowLit
-import VerifiedGarbage.Proof.Framework.Omega
+module
+
+public import VerifiedGarbage.Proof.Poly1305.X86_64.Setup
+meta import VerifiedGarbage.Proof.Poly1305.X86_64.Setup
+public import VerifiedGarbage.Proof.Framework.X86_64.Taint
+meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.Poly1305.Contract
+meta import VerifiedGarbage.Spec.Poly1305.Contract
+public import VerifiedGarbage.Proof.Framework.PowLit
+meta import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.Framework.Omega
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Poly1305 on x86-64: `blocks`
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Poly1305.X86_64
 

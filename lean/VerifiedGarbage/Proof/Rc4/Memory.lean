@@ -1,6 +1,14 @@
-import VerifiedGarbage.Proof.Rc4.Table
-import VerifiedGarbage.Proof.Framework.Mem
-import VerifiedGarbage.Proof.Framework.Offset
+module
+
+public import VerifiedGarbage.Proof.Rc4.Table
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.Offset
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.Rc4
 open VG VG.Spec.Rc4

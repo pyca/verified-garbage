@@ -1,7 +1,16 @@
-import VerifiedGarbage.Proof.Weierstrass.WinLay
-import VerifiedGarbage.Impl.Weierstrass.X86.Naf
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.WinLay
+public import VerifiedGarbage.Impl.Weierstrass.X86.Naf
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! The eight-entry odd-multiple table and cached double and its disjoint scratch slots. -/
+
+@[expose] public section
+
 namespace VG.Proof.Weierstrass.X86
 open VG VG.Impl.Mont VG.Impl.Weierstrass VG.Impl.Weierstrass.X86 VG.Proof.Mont
 

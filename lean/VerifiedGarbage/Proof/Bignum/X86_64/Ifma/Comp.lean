@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Glue
-import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Lemmas
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Glue
+public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Lemmas
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSA with AVX512_IFMA on x86-64, any size: `ifma`
@@ -9,6 +15,8 @@ both regions, the vector code, and the results back in the primes'
 workspaces. `IMem` gathers what holds throughout; `IMem.of_frm` keeps it
 across any change within `ifmaR`, the ranges `ifma` writes.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64.Ifma
 

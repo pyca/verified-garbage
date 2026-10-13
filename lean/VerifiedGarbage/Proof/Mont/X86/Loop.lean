@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Mont.X86.RedRow
+module
+
+public import VerifiedGarbage.Proof.Mont.X86.RedRow
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Montgomery arithmetic on x86 (32-bit): the loop of the multiplication
@@ -9,6 +15,8 @@ below `2m` in the accumulator's words from `i` up (`row_ok`): `q` makes the
 sum's low word zero, so the accumulator's words from `i + 1` up hold
 `(T + a_i B + q m) / 2³²`, below `2m` again; `ZF` is whether `i + 1 = N`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Mont.X86
 

@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.Blake2.AArch64.Stream.Lit
-import VerifiedGarbage.Proof.Blake2.AArch64.Stream.Common
-import VerifiedGarbage.Proof.Framework.AArch64.Taint
+module
+
+public import VerifiedGarbage.Proof.Blake2.AArch64.Stream.Lit
+meta import VerifiedGarbage.Proof.Blake2.AArch64.Stream.Lit
+public import VerifiedGarbage.Proof.Blake2.AArch64.Stream.Common
+meta import VerifiedGarbage.Proof.Blake2.AArch64.Stream.Common
+public import VerifiedGarbage.Proof.Framework.AArch64.Taint
+meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Streaming BLAKE2 on AArch64: constant time
@@ -9,6 +18,8 @@ The taint analysis of `init`, `update` and `finalize` (the compression
 function they call included), from the public arguments: the pointers,
 `outlen`, `keylen`, `count` and `len`, and the stack pointer.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Blake2.AArch64.Stream
 

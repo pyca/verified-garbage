@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTSetupChk
+module
+
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTSetupChk
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTSetupChk
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSA with the CRT on AArch64: constant time of the setup and the checks
@@ -8,6 +15,8 @@ The claims of `CrtCTDefs.lean` for the primes' setup: the loads
 `primesSetup` (`setup_ct`, in `CrtCTSetupWs.lean`), and `checks`
 (`checks_ct`), from its pieces (`CrtCTSetupChk.lean`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.AArch64
 

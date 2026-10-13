@@ -1,9 +1,19 @@
-import VerifiedGarbage.Proof.Framework.Arm.Lit
-import VerifiedGarbage.Impl.Sm3.Arm.Stream
+module
+
+public import VerifiedGarbage.Proof.Framework.Arm.Lit
+meta import VerifiedGarbage.Proof.Framework.Arm.Lit
+public import VerifiedGarbage.Impl.Sm3.Arm.Stream
+meta import VerifiedGarbage.Impl.Sm3.Arm.Stream
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # SM3 on ARMv7: the code as literals
 -/
+
+@[expose] public section
 
 namespace VG
 

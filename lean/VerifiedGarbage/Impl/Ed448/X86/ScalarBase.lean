@@ -1,6 +1,8 @@
-import VerifiedGarbage.Impl.Ed448.Formulas
-import VerifiedGarbage.Impl.Ed448.X86.Scalar
-import VerifiedGarbage.Spec.Ed448
+module
+
+public import VerifiedGarbage.Impl.Ed448.Formulas
+public import VerifiedGarbage.Impl.Ed448.X86.Scalar
+public import VerifiedGarbage.Spec.Ed448
 
 /-!
 # Ed448 base-point multiplication on x86 (32-bit)
@@ -36,6 +38,8 @@ reduced and written as its first 56 bytes.
 The only branches are on the loop counters, and every address is a pointer
 plus a constant or a counter, so only the pointers can affect timing.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Ed448.X86
 

@@ -1,7 +1,9 @@
-import VerifiedGarbage.Proof.Framework.X86_64.Avx
-import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Proof.Framework.Mem
-import VerifiedGarbage.Proof.Framework.Bitslice.Dom
+module
+
+public import VerifiedGarbage.Proof.Framework.X86_64.Avx
+public import VerifiedGarbage.Proof.Framework.X86_64.Exec
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.Bitslice.Dom
 
 /-!
 # x86-64: straight-line bitwise AVX2 code, quadword lane by lane
@@ -27,6 +29,8 @@ quadwords of vector registers to give it. It rejects (`none`) any other
 instruction or memory operand, and the use of an unknown value; nothing it
 accepts writes a flag, nor a general-purpose register but by `movabs`.
 -/
+
+@[expose] public section
 
 namespace VG.X86_64.StraightY
 

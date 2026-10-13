@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.RsaPss.X86_64.Basic
+module
+
+public import VerifiedGarbage.Proof.RsaPss.X86_64.Basic
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSASSA-PSS on x86-64: the loops that clear and copy bytes
@@ -7,6 +13,8 @@ The counter of a byte loop (`step`, with an immediate or a register as its
 end: `stepI_ok`, `stepR_ok`), clearing a range of our working space a word
 at a time (`clearQ_ok`), and copying bytes into it (`copy_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPss.X86_64
 

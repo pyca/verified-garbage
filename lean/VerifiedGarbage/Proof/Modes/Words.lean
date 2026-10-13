@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Modes.Addr
-import VerifiedGarbage.Proof.Modes.Ctr
+module
+
+public import VerifiedGarbage.Proof.Modes.Addr
+public import VerifiedGarbage.Proof.Modes.Ctr
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Words stored one at a time, in memory
@@ -9,6 +15,8 @@ mode's word loops (a copy, a XOR into a block) store a block a word at a
 time; `over_step` adds the next word's 8 bytes, so a loop's memory is
 `over` of its first `8 w` bytes after `w` words, on any 64-bit target.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Modes
 

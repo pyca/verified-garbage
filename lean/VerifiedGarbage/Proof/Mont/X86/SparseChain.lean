@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.Mont.X86.SparseStep
+module
+
+public import VerifiedGarbage.Proof.Mont.X86.SparseStep
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # Carry and borrow chains for sparse x86 reduction -/
+
+@[expose] public section
+
 namespace VG.Proof.Mont.X86
 open VG VG.X86 VG.X86.Wp VG.Impl.Mont.X86 VG.Impl.Mont VG.Proof.Mont
 

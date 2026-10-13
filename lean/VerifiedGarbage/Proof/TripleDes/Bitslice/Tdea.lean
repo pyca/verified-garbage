@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.TripleDes.Bitslice.Io
-import VerifiedGarbage.Proof.TripleDes.Schedule
-import VerifiedGarbage.Proof.TripleDes.Bytes
+module
+
+public import VerifiedGarbage.Proof.TripleDes.Bitslice.Io
+public import VerifiedGarbage.Proof.TripleDes.Schedule
+public import VerifiedGarbage.Proof.TripleDes.Bytes
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Three bitsliced DES passes, and the blocks they come from
@@ -11,6 +17,8 @@ state words (`*_congr`); TDEA's three passes (`tdeaW`) do in every lane
 what TDEA does between IP and FP (`tdeaW_lane`); and ECB's result is that
 of each of its blocks (`ecb_blocks`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.TripleDes.Bitslice
 

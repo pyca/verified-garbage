@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyCtMid
+module
+
+public import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyCtMid
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSASSA-PSS verification on x86-64: `M'` and its hash in two runs
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyCtMid
 each constant time from the public words of both runs. The shift's ten
 passes and the hash's blocks do not depend on the salt's position.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPss.X86_64
 

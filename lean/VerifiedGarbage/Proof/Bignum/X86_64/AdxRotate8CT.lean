@@ -1,8 +1,17 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8CtEdges
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8CtLoop
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Redc
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8CtEdges
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8CtLoop
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Redc
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Constant time of the complete register-tiled Montgomery reduction. -/
+
+@[expose] public section
+
 namespace VG.Proof.Bignum.X86_64.AdxRotate8
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public
 open VG.Proof.Bignum.X86_64

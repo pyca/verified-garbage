@@ -1,5 +1,7 @@
-import VerifiedGarbage.TCB.X86.Target
-import VerifiedGarbage.Proof.Sha256.X86.Shared
+module
+
+public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Proof.Sha256.X86.Shared
 
 /-!
 # SHA-224 (FIPS 180-4) on x86 (32-bit)
@@ -10,6 +12,8 @@ SHA-224 is SHA-256 from another initial hash value, and its digest the first
 writes its digest, is emitted with each compression function
 (`Variants/Sha256/X86/`).
 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.Sha224.X86
 

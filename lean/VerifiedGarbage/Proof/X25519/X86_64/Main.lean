@@ -1,9 +1,15 @@
-import VerifiedGarbage.Proof.X25519.X86_64.Finish
-import VerifiedGarbage.Proof.X25519.X86_64.Divstep.Main
-import VerifiedGarbage.Proof.X25519.X86_64.Invert
-import VerifiedGarbage.Spec.X25519.Contract
-import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.Framework.X86_64.Abi
+module
+
+public import VerifiedGarbage.Proof.X25519.X86_64.Finish
+public import VerifiedGarbage.Proof.X25519.X86_64.Divstep.Main
+public import VerifiedGarbage.Proof.X25519.X86_64.Invert
+public import VerifiedGarbage.Spec.X25519.Contract
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.Framework.X86_64.Abi
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X25519 on x86-64: the whole function
@@ -14,6 +20,8 @@ of `vg_x25519` against it: every write is in the working space but the
 result's, so the arguments are read unchanged, the callee-saved registers
 restored from the working space, and the return address kept.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X25519
 

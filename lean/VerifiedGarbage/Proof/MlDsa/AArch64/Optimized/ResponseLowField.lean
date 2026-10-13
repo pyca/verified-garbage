@@ -1,7 +1,15 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLowCall
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Residue
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Representation
-import VerifiedGarbage.Proof.MlDsa.Round.Decompose
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLowCall
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Residue
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Representation
+public import VerifiedGarbage.Proof.MlDsa.Round.Decompose
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Optimized.Response
 open VG VG.AArch64 VG.Spec.MlDsa VG.Proof.MlDsa.Arith

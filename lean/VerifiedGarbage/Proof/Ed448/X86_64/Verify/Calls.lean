@@ -1,8 +1,15 @@
-import VerifiedGarbage.Proof.Ed448.X86_64.BaseLocal
-import VerifiedGarbage.Proof.Ed448.X86_64.Verify.Hash
-import VerifiedGarbage.Proof.Ed448.X86_64.ScalarVerified
-import VerifiedGarbage.Proof.Ed448.X86_64.VerifyLocal
-import VerifiedGarbage.Proof.Ed448.X86_64.VerifyLit
+module
+
+public import VerifiedGarbage.Proof.Ed448.X86_64.VariantBounds
+public import VerifiedGarbage.Proof.Ed448.X86_64.BaseLocal
+public import VerifiedGarbage.Proof.Ed448.X86_64.Verify.Hash
+public import VerifiedGarbage.Proof.Ed448.X86_64.ScalarVerified
+public import VerifiedGarbage.Proof.Ed448.X86_64.VerifyLocal
+public import VerifiedGarbage.Proof.Ed448.X86_64.VerifyLit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 verification on x86-64: the challenge and the equation
@@ -16,7 +23,11 @@ whole function's `Verified` imports that proof, and the group theory it
 imports.
 -/
 
+@[expose] public section
+
 namespace VG.Proof.Ed448.X86_64.Verify
+
+variable {v : VG.Impl.Ed448.X86_64.FieldVariant}
 
 open VG VG.X86_64 VG.Impl.Ed448.X86_64.Verify
 open VG.Proof.MlKem.X86_64 (Keep)
@@ -29,21 +40,20 @@ theorem reduce_nosp : NoSp Impl.Ed448.X86_64.scalarReduce := by
 
 theorem reduce_depth : Impl.Ed448.X86_64.scalarReduce.depth ≤ 1 := by lit_decide
 
-theorem equation_nosp : NoSp Impl.Ed448.X86_64.verifyEquation := by
-  have : ((instrs Impl.Ed448.X86_64.verifyEquation).all fun i => !Taint.clobbers i .rsp) = true := by
-    rw [← Code.allInstrs_eq]; lit_decide
-  intro i hi; simpa using List.all_eq_true.mp this i hi
+theorem equation_nosp : NoSp (Impl.Ed448.X86_64.verifyEquationFor v) :=
+  Proof.Ed448.X86_64.verifyEquationFor_nosp v
 
-theorem equation_depth : Impl.Ed448.X86_64.verifyEquation.depth ≤ 1 := by lit_decide
+theorem equation_depth : (Impl.Ed448.X86_64.verifyEquationFor v).depth ≤ 1 :=
+  Proof.Ed448.X86_64.verifyEquationFor_depth v
 
 /-- `vg_ed448_verify_equation` meets the contract its proof is written against, and the ABI. -/
-abbrev EqOk : Prop := ∀ s, Proof.Ed448.X86_64.verifyEquationLocal.clear.pre s →
-  ∃ t s', Exec isa Impl.Ed448.X86_64.verifyEquation s t s' ∧ abiPreserved s s' ∧
+abbrev EqOk (v : VG.Impl.Ed448.X86_64.FieldVariant) : Prop := ∀ s, Proof.Ed448.X86_64.verifyEquationLocal.clear.pre s →
+  ∃ t s', Exec isa (Impl.Ed448.X86_64.verifyEquationFor v) s t s' ∧ abiPreserved s s' ∧
     Proof.Ed448.X86_64.verifyEquationLocal.post s s'
 
 /-- `vg_ed448_verify_equation` is constant time for that contract. -/
-abbrev EqCT : Prop := ConstantTime isa Proof.Ed448.X86_64.verifyEquationLocal.clear.pre
-  Proof.Ed448.X86_64.verifyEquationLocal.pub Impl.Ed448.X86_64.verifyEquation
+abbrev EqCT (v : VG.Impl.Ed448.X86_64.FieldVariant) : Prop := ConstantTime isa Proof.Ed448.X86_64.verifyEquationLocal.clear.pre
+  Proof.Ed448.X86_64.verifyEquationLocal.pub (Impl.Ed448.X86_64.verifyEquationFor v)
 
 section
 variable {L : Lay} {g : Reg → BitVec 64} {mx : BitVec 32} {m₀ : Mem}
@@ -136,8 +146,8 @@ theorem eq_cpre (hL : L.Ok) {u : State} (g1 : u.gpr .rdi = L.pk) (g2 : u.gpr .rs
 /-- The arguments of `vg_ed448_verify_equation`. -/
 abbrev eqArgs : List Arg := [.slot fPk, .slot fSig, .sp fK, .slot fScr]
 
-theorem equation_ok (hv : EqOk) (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t) :
-    WP isa (callA "vg_ed448_verify_equation" Impl.Ed448.X86_64.verifyEquation eqArgs) t fun t' =>
+theorem equation_ok (hv : EqOk v) (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t) :
+    WP isa (callA ("vg_ed448_verify_equation" ++ v.suffix) (Impl.Ed448.X86_64.verifyEquationFor v) eqArgs) t fun t' =>
       Ctx L g mx m₀ t' ∧ t'.gpr .rax = if Spec.Ed448.verifyEquation (bytesAt m₀ L.pk 57) (bytesAt m₀ L.sig 114)
         (bytesAt t.mem L.K 57) then 1 else 0 := by
   refine WP.seq (WP.mono (setArgs_ok eqArgs (by decide) t hc.frOk) fun t1 ⟨⟨hA, hm, hx⟩, k⟩ => ?_)

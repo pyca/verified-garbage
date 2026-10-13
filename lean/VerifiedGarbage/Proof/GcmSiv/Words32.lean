@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.GcmSiv.Words
-import VerifiedGarbage.Proof.GcmSiv.Ctr
+module
+
+public import VerifiedGarbage.Proof.GcmSiv.Words
+public import VerifiedGarbage.Proof.GcmSiv.Ctr
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM-SIV: blocks as 32-bit words
@@ -16,6 +22,8 @@ Untrusted: everything here is checked by Lean. The counterparts, on the
 * the tag input, the initial counter block and the lengths block
   (`tagOf_words`, `initialCounter_words`, `le64_words`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

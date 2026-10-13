@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Sm3.Arm
-import VerifiedGarbage.Impl.MdStream.Arm
+module
+
+public import VerifiedGarbage.Impl.Sm3.Arm
+public import VerifiedGarbage.Impl.MdStream.Arm
 
 /-!
 # Streaming SM3: 32-bit ARM implementation
@@ -14,6 +16,8 @@ The streaming state (96 bytes at `state`) is the hash value followed by a
   our caller's `r4`–`r11` and `lr` after it. The length field is big-endian,
   and so are the words of the hash value.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Sm3.Arm.Stream
 

@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecD
-import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Hashes.Sha256
-import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.PbkCalls
-import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Core
+module
+
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecD
+public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Hashes.Sha256
+public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.PbkCalls
+public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Core
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-PKCS1-v1_5 decryption on AArch64: `DH = SHA256(D)`
@@ -10,6 +16,8 @@ SHA-256's functions, with an implementation `v` of its compression function
 (`HH v`), and what is proven of them; the blocks setting the calls'
 arguments, and the hash of `D` (`hashD_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPkcs1Enc.AArch64.Dec
 

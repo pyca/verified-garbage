@@ -1,8 +1,14 @@
-import VerifiedGarbage.Impl.MlDsa.Arm.Pack.Encode
-import VerifiedGarbage.Proof.MlKem.Arm.Common
-import VerifiedGarbage.Proof.Framework.Arm.Inline
-import VerifiedGarbage.Proof.Framework.Range
-import VerifiedGarbage.Proof.MlDsa.Pack.Stream
+module
+
+public import VerifiedGarbage.Impl.MlDsa.Arm.Pack.Encode
+public import VerifiedGarbage.Proof.MlKem.Arm.Common
+public import VerifiedGarbage.Proof.Framework.Arm.Inline
+public import VerifiedGarbage.Proof.Framework.Range
+public import VerifiedGarbage.Proof.MlDsa.Pack.Stream
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on 32-bit ARM: streaming fields through `r3`
@@ -20,6 +26,8 @@ x86-64:
 The accumulator `r3` is a slice of the number throughout
 (`Proof/MlDsa/Pack/Stream.lean`), of at most `d + 7 ≤ 27` bits.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Arm.Pack
 

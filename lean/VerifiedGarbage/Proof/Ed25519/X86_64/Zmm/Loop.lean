@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Step
+module
+
+public import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Step
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The `zmm` comb: a step of the loop
@@ -7,6 +13,8 @@ Step `j` adds the entry of table `j` for the odd digit `d_{2j+1}` to half 0
 (`A`) and for the even digit `d_{2j}` to half 1 (`B`): after the 26 steps,
 `A = [G + Σ d_{2j+1} 1024^j]B` and `B = [G + Σ d_{2j} 1024^j]B`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed25519.X86_64.Zmm
 

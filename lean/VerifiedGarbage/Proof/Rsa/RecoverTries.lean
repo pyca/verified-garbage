@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Rsa.RecoverMath
+module
+
+public import VerifiedGarbage.Proof.Rsa.RecoverMath
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `recoverPrimes`: the number of tries
@@ -9,6 +15,8 @@ candidate `j` iff `j + 1` is that number (`cand_cond`): which the
 implementations' constant-time proofs need, as the number of tries is
 public.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa
 

@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.Rsa.AArch64.RpCT5
-import VerifiedGarbage.Proof.Rsa.AArch64.RpCands
-import VerifiedGarbage.Proof.Rsa.RecoverTries
+module
+
+public import VerifiedGarbage.Proof.Rsa.AArch64.RpCT5
+meta import VerifiedGarbage.Proof.Rsa.AArch64.RpCT5
+public import VerifiedGarbage.Proof.Rsa.AArch64.RpCands
+meta import VerifiedGarbage.Proof.Rsa.AArch64.RpCands
+public import VerifiedGarbage.Proof.Rsa.RecoverTries
+meta import VerifiedGarbage.Proof.Rsa.RecoverTries
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_recover_primes` on AArch64: constant time, the candidates
@@ -10,6 +19,8 @@ A candidate leaks the same in runs whose working spaces agree
 (`candLoop_ct`): the loop stops after candidate `j` iff `j + 1` is that
 number (`cand_cond`, `RecoverTries.lean`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.AArch64
 

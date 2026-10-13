@@ -1,5 +1,7 @@
-import VerifiedGarbage.Proof.Argon2.X86_64.Compress
-import VerifiedGarbage.Proof.Argon2.X86_64.CompressImpl
+module
+
+public import VerifiedGarbage.Proof.Argon2.X86_64.Compress
+public import VerifiedGarbage.Proof.Argon2.X86_64.CompressImpl
 
 /-!
 # Argon2's G on baseline x86-64
@@ -7,6 +9,8 @@ import VerifiedGarbage.Proof.Argon2.X86_64.CompressImpl
 A variant of `Argon2Compress` on x86-64 (see `TCB/Emit.lean`):
 `vg_argon2_compress`, in the baseline ISA, which the derivation calls.
 -/
+
+@[expose] public section
 
 namespace VG.Variants.Argon2Compress.X86_64.Scalar
 

@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Rc2.Arm.Cbc
-import VerifiedGarbage.Impl.Rc2.Arm.ExpandKey
+module
+
+public import VerifiedGarbage.Impl.Rc2.Arm.Cbc
+public import VerifiedGarbage.Impl.Rc2.Arm.ExpandKey
 
 /-! # Streaming RC2-CBC on ARMv7
 
@@ -27,6 +29,8 @@ Bytes are copied one at a time, through advancing pointers (the model has
 no register-offset addressing), with `r12` holding the byte. Every branch,
 loop count and address depends only on the pointers and lengths.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Rc2.Arm.Stream
 

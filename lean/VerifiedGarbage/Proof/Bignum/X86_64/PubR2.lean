@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_public` on x86-64: `R² mod m`
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
 word), doubled `64 - j + w` times to `2^w R mod m`, then squared six times
 in Montgomery form: `R² mod m` (`r2_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64
 

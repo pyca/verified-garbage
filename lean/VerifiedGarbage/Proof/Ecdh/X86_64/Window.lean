@@ -1,9 +1,15 @@
-import VerifiedGarbage.Proof.Ecdh.X86_64.Validate
-import VerifiedGarbage.Proof.Ecdsa.X86_64.MulFn
-import VerifiedGarbage.Proof.Weierstrass.X86_64.WinLoop
-import VerifiedGarbage.Proof.Weierstrass.X86_64.AddConst
-import VerifiedGarbage.Proof.Weierstrass.X86_64.Bits
-import VerifiedGarbage.Proof.Weierstrass.X86_64.Rep
+module
+
+public import VerifiedGarbage.Proof.Ecdh.X86_64.Validate
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.MulFn
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinLoop
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.AddConst
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.Bits
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.Rep
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDH on x86-64: `[d]P` by windows, and `Z^(p-2)`
@@ -18,6 +24,8 @@ slot `BP` for the complete addition for `a = -3`. `mulPow_ok` is `mulQ`, the
 window method or (for more words) the ladder, inline or by a call of
 `vg_<curve>_mul`, and the signature's power: it leaves `R` representing `[d]P`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdh.X86_64
 

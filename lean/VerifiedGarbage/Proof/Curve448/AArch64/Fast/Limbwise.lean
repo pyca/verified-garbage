@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Curve448.AArch64.Fast.Sqr
+module
+
+public import VerifiedGarbage.Proof.Curve448.AArch64.Fast.Sqr
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Limb-by-limb operations
@@ -6,6 +12,8 @@ import VerifiedGarbage.Proof.Curve448.AArch64.Fast.Sqr
 Untrusted: everything here is checked by Lean. `limbs_loop`: eight steps,
 step `i` writing limb `i` of each output slot from the unchanged inputs.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Curve448.AArch64.Fast
 

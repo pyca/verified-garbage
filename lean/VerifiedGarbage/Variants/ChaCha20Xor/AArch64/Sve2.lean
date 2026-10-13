@@ -1,4 +1,8 @@
-import VerifiedGarbage.Proof.ChaCha20.AArch64.XorBackends
+module
+
+public import VerifiedGarbage.Proof.ChaCha20.AArch64.XorBackends
+
+@[expose] public section
 
 namespace VG.Variants.ChaCha20Xor.AArch64.Sve2
 

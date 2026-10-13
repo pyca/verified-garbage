@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.MlKem.X86_64.Vec
+module
+
+public import VerifiedGarbage.Impl.MlKem.X86_64.Vec
 
 /-!
 # ML-KEM on x86-64: SSE2 code as AVX2 code
@@ -12,6 +14,8 @@ by an instruction on it merged into one three-operand instruction (`toY`):
 
 `yconst r v` sets each doubleword of `ymm r` to `v`, through `rax`.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlKem.X86_64
 

@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlDsa.Sample.RejBounded
+module
+
+public import VerifiedGarbage.Proof.MlDsa.Sample.RejBounded
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA: `CoeffFromHalfByte` as a bound and a formula, for every target
@@ -8,6 +14,8 @@ For `η = 2` or `4`, `CoeffFromHalfByte` accepts the half-bytes less than `rbB
 that coefficient exactly when the half-byte is less than the bound
 (`hbTry_eq`), and whether it does is `halfByteOk` (`halfByteOk_eq`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Sample
 

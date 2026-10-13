@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Lanes
-import VerifiedGarbage.Proof.X25519.X86_64.Iter
+module
+
+public import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Lanes
+public import VerifiedGarbage.Proof.X25519.X86_64.Iter
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X25519 on x86-64 with AVX512_IFMA: stage 1 of an iteration
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.X25519.X86_64.Iter
 From `(x₂, z₂, x₃, z₃)` in the lanes of `ymm0–ymm4`, stage 1 and its product
 leave `(AA, BB, DA, CB)` there.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X25519.X86_64.Ifma
 

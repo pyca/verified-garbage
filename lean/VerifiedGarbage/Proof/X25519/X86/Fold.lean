@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.X25519.X86.Column
-import VerifiedGarbage.Proof.X25519.Field
+module
+
+public import VerifiedGarbage.Proof.X25519.X86.Column
+public import VerifiedGarbage.Proof.X25519.Field
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X25519 on x86 (32-bit): folding a carry, and linear combinations
@@ -9,6 +15,8 @@ import VerifiedGarbage.Proof.X25519.Field
 which cannot carry again. `linear_ok`: an element summed by eight columns and
 folded is their sum modulo `p`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X25519.X86
 

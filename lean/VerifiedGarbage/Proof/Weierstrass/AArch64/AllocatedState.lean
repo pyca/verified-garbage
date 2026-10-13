@@ -1,8 +1,17 @@
-import VerifiedGarbage.Proof.Weierstrass.AArch64.AllocatedFrame
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JointGenerator
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.AllocatedFrame
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JointGenerator
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Transfer only initialized field values and stable data across allocated
 arithmetic. Dead intermediate words and temporary registers need not agree. -/
+
+@[expose] public section
+
 namespace VG.Proof.Weierstrass.AArch64
 open VG VG.AArch64 VG.Impl.Mont VG.Impl.Weierstrass VG.Impl.Weierstrass.AArch64
 open VG.Proof.Mont VG.Proof.Mont.AArch64 Spec.Weierstrass

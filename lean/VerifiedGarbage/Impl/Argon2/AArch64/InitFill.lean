@@ -1,9 +1,13 @@
-import VerifiedGarbage.Impl.Argon2.AArch64.Instructions
-import VerifiedGarbage.Impl.Argon2.AArch64.MemoryInit
-import VerifiedGarbage.Impl.Argon2.AArch64.FillSetup
-import VerifiedGarbage.Impl.Argon2.AArch64.FillFinish
+module
+
+public import VerifiedGarbage.Impl.Argon2.AArch64.Instructions
+public import VerifiedGarbage.Impl.Argon2.AArch64.MemoryInit
+public import VerifiedGarbage.Impl.Argon2.AArch64.FillSetup
+public import VerifiedGarbage.Impl.Argon2.AArch64.FillFinish
 
 /-! All memory initialization, filling and finalization after H₀ has been computed. -/
+
+@[expose] public section
 
 namespace VG.Impl.Argon2.AArch64.InitFill
 

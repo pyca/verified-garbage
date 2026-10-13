@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Weierstrass.X86_64.Words
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Bytes
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.Words
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Bytes
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Deterministic ECDSA on x86-64: big-endian numbers
@@ -8,6 +14,8 @@ The 32 bytes at an address, big-endian, from the `bswap`s of their four
 words (`ofBytes_32`, from `Proof/Ecdsa/Rfc6979/Bytes.lean`, as `bswap` is
 `byteRev64`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Rfc6979.X86_64
 

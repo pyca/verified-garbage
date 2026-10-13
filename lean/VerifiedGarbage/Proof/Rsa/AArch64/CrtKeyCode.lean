@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Rsa.AArch64.CkCode
-import VerifiedGarbage.Proof.Rsa.AArch64.CrtKeyMain
+module
+
+public import VerifiedGarbage.Proof.Rsa.AArch64.CkCode
+public import VerifiedGarbage.Proof.Rsa.AArch64.CrtKeyMain
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_check_crt_key` on AArch64: correctness
@@ -10,6 +16,8 @@ states the shared contract's precondition on the registers and the stack.
 The inputs of `main` are `CkIn`'s with `p` as `d` (`ckcIn`): the entry
 stores `p` and `p_len` in `d`'s slots too.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.AArch64
 

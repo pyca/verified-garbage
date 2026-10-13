@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.X448.X86_64
+module
+
+public import VerifiedGarbage.Impl.X448.X86_64
 
 /-!
 # Ed448 scalar arithmetic on x86-64
@@ -25,6 +27,8 @@ the loop counter `rbx`, and every address a pointer plus a constant or the
 counter. The working space's base is in `rdi`; the callee-saved registers
 are saved in its first 48 bytes, and the arguments from byte 48.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Ed448.X86_64
 

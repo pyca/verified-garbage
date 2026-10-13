@@ -1,6 +1,10 @@
-import VerifiedGarbage.Proof.Idea.Arm.Verified
+module
+
+public import VerifiedGarbage.Proof.Idea.Arm.Verified
 
 /-! # IDEA artifacts on baseline ARMv7 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.Idea.Arm
 

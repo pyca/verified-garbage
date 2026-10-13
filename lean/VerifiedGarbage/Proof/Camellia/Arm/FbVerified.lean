@@ -1,8 +1,19 @@
-import VerifiedGarbage.Proof.Camellia.Arm.ModeCore
-import VerifiedGarbage.Proof.Camellia.FbScratch
-import VerifiedGarbage.Proof.Modes.Arm.OfbCfb
-import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
-import VerifiedGarbage.Impl.Camellia.Arm.Fb
+module
+
+public import VerifiedGarbage.Proof.Camellia.Arm.ModeCore
+meta import VerifiedGarbage.Proof.Camellia.Arm.ModeCore
+public import VerifiedGarbage.Proof.Camellia.FbScratch
+meta import VerifiedGarbage.Proof.Camellia.FbScratch
+public import VerifiedGarbage.Proof.Modes.Arm.OfbCfb
+meta import VerifiedGarbage.Proof.Modes.Arm.OfbCfb
+public import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
+meta import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
+public import VerifiedGarbage.Impl.Camellia.Arm.Fb
+meta import VerifiedGarbage.Impl.Camellia.Arm.Fb
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Camellia-OFB and Camellia-CFB128 on ARMv7 meet their contracts
@@ -14,6 +25,8 @@ number of rounds) meet the contracts with a scratch buffer of 9 words
 ECB function uses; the `_framed` theorems keep the buffer on the stack,
 zeroed on return: 88 bytes more.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Camellia.Arm
 

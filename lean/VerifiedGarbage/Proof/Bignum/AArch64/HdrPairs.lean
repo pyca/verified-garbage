@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Bignum.AArch64.MontMul
-import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
+module
+
+public import VerifiedGarbage.Proof.Bignum.AArch64.MontMul
+public import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Multiword arithmetic on AArch64: stack arguments into the header
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
 An entry stores its stack arguments in the header of the working space, each
 by a load into `x9` and a store at `x8` (`hdrPairs_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.AArch64
 

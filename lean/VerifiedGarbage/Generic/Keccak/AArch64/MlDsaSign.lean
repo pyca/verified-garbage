@@ -1,7 +1,11 @@
-import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedSelected
+module
+
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedSelected
 
 /-! # ML-DSA (FIPS 204) signing on AArch64 -/
+
+@[expose] public section
 
 namespace VG.Generic.Keccak.AArch64.MlDsaSign
 

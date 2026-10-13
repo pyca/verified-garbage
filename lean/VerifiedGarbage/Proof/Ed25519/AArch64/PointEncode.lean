@@ -1,9 +1,18 @@
-import VerifiedGarbage.Impl.Ed25519.AArch64.PointEncode
-import VerifiedGarbage.Proof.Ed25519.AArch64.Power
-import VerifiedGarbage.Proof.Ed25519.AArch64.CounterKeep
-import VerifiedGarbage.Proof.Ed25519.AArch64.Freeze
+module
+
+public import VerifiedGarbage.Impl.Ed25519.AArch64.PointEncode
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Power
+public import VerifiedGarbage.Proof.Ed25519.AArch64.CounterKeep
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Freeze
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Ed25519.AArch64.PointAffine`. -/
+
+@[expose] public section
+
 section
 /-! Normalize extended coordinates with the verified inversion chain. -/
 namespace VG.Proof.Ed25519.AArch64

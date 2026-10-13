@@ -1,4 +1,6 @@
-import VerifiedGarbage.TCB.AArch64.Isa
+module
+
+public import VerifiedGarbage.TCB.AArch64.Isa
 
 /-!
 # The Salsa20/8 Core: AArch64 implementation
@@ -17,6 +19,8 @@ Salsa20/8 Core (RFC 7914 §3).
 * Every address is `x0` plus a constant, and there are no branches, so only
   the pointers can affect timing.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Scrypt.AArch64
 

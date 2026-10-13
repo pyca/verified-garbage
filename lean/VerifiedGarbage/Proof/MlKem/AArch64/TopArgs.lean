@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlKem.AArch64.PrimCall
+module
+
+public import VerifiedGarbage.Proof.MlKem.AArch64.PrimCall
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM-768 on AArch64: buffers of the top-level functions
@@ -11,6 +17,8 @@ argument (`R.sub`), and so apart from the stack below the stack pointer
 (`R.stk`). These reduce the region facts the calls need to arithmetic on the
 offsets.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.AArch64
 

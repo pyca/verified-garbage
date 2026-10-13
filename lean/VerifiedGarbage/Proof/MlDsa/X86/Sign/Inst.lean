@@ -1,16 +1,22 @@
-import VerifiedGarbage.Proof.MlDsa.X86.Sign.Prims
-import VerifiedGarbage.Proof.MlDsa.X86.Arith.AddSub
-import VerifiedGarbage.Proof.MlDsa.X86.Arith.Mul
-import VerifiedGarbage.Proof.MlDsa.X86.Arith.Ntt
-import VerifiedGarbage.Proof.MlDsa.X86.Arith.NttInv
-import VerifiedGarbage.Proof.MlDsa.X86.Round.Bits
-import VerifiedGarbage.Proof.MlDsa.X86.Round.NormLt
-import VerifiedGarbage.Proof.MlDsa.X86.Round.HintF
-import VerifiedGarbage.Proof.MlDsa.X86.Pack.Unpack
-import VerifiedGarbage.Proof.MlDsa.X86.Pack.HintPack
-import VerifiedGarbage.Proof.MlDsa.X86.Sample.RejNtt
-import VerifiedGarbage.Proof.MlDsa.X86.Sample.ExpandMask
-import VerifiedGarbage.Proof.MlDsa.X86.Sample.BallTop
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86.Sign.Prims
+public import VerifiedGarbage.Proof.MlDsa.X86.Arith.AddSub
+public import VerifiedGarbage.Proof.MlDsa.X86.Arith.Mul
+public import VerifiedGarbage.Proof.MlDsa.X86.Arith.Ntt
+public import VerifiedGarbage.Proof.MlDsa.X86.Arith.NttInv
+public import VerifiedGarbage.Proof.MlDsa.X86.Round.Bits
+public import VerifiedGarbage.Proof.MlDsa.X86.Round.NormLt
+public import VerifiedGarbage.Proof.MlDsa.X86.Round.HintF
+public import VerifiedGarbage.Proof.MlDsa.X86.Pack.Unpack
+public import VerifiedGarbage.Proof.MlDsa.X86.Pack.HintPack
+public import VerifiedGarbage.Proof.MlDsa.X86.Sample.RejNtt
+public import VerifiedGarbage.Proof.MlDsa.X86.Sample.ExpandMask
+public import VerifiedGarbage.Proof.MlDsa.X86.Sample.BallTop
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA signing on x86 (32-bit): the primitives it calls
@@ -23,6 +29,8 @@ proofs (`Fin` of `RejNtt.lean` and `BallTop.lean`): 1 exactly when the loop
 over the output they squeeze (1008 and 272 bytes) finishes, which is within
 `maxBounds`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86.Sign
 

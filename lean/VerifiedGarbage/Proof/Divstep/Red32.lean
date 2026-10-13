@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.Divstep.Tc32Red
+module
+
+public import VerifiedGarbage.Proof.Divstep.Tc32Red
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # Finishing a 32-bit divstep reduction with one conditional subtraction -/
+
+@[expose] public section
+
 namespace VG.Proof.Divstep.W32
 
 theorem norm_first_mod {p r : Int} (_hp : 0 < p) (hr : -p < r ∧ r < 2 * p) :

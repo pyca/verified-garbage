@@ -1,7 +1,9 @@
-import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Proof.Weierstrass.Law
-import VerifiedGarbage.Impl.EcKey.P384.Arm
-import VerifiedGarbage.Proof.EcKey.Arm.P384.Verified
+module
+
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.Proof.Weierstrass.Law
+public import VerifiedGarbage.Impl.EcKey.P384.Arm
+public import VerifiedGarbage.Proof.EcKey.Arm.P384.Verified
 
 /-!
 # P-384 public keys (FIPS 186-5 §A.2) on 32-bit ARM
@@ -9,6 +11,8 @@ import VerifiedGarbage.Proof.EcKey.Arm.P384.Verified
 A generic file (see `TCB/Emit.lean`) over P-384's group law `h`, the variant
 `Variants/P384/Arm/Law.lean`.
 -/
+
+@[expose] public section
 
 namespace VG.Generic.P384.Arm.EcP384
 

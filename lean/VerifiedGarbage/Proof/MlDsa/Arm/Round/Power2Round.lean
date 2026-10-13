@@ -1,10 +1,23 @@
-import VerifiedGarbage.Proof.MlDsa.Arm.Round.Loop
-import VerifiedGarbage.Proof.MlDsa.Arm.Arith.AddSub
-import VerifiedGarbage.Proof.MlDsa.Arm.Arith.Saving
-import VerifiedGarbage.Proof.MlDsa.Round.Decompose
-import VerifiedGarbage.Proof.Framework.Arm.Taint
-import VerifiedGarbage.Proof.Framework.Arm.Contract
-import VerifiedGarbage.Proof.Framework.Contract
+module
+
+public import VerifiedGarbage.Proof.MlDsa.Arm.Round.Loop
+meta import VerifiedGarbage.Proof.MlDsa.Arm.Round.Loop
+public import VerifiedGarbage.Proof.MlDsa.Arm.Arith.AddSub
+meta import VerifiedGarbage.Proof.MlDsa.Arm.Arith.AddSub
+public import VerifiedGarbage.Proof.MlDsa.Arm.Arith.Saving
+meta import VerifiedGarbage.Proof.MlDsa.Arm.Arith.Saving
+public import VerifiedGarbage.Proof.MlDsa.Round.Decompose
+meta import VerifiedGarbage.Proof.MlDsa.Round.Decompose
+public import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+public import VerifiedGarbage.Proof.Framework.Arm.Contract
+meta import VerifiedGarbage.Proof.Framework.Arm.Contract
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on 32-bit ARM: `vg_mldsa_power2round`
@@ -14,6 +27,8 @@ values are `Power2Round`'s (`t1_val`, `t0_val`, from `power2Round_eq`), and
 the loop (`loop_ok`) in the frame that saves `r4` (`wp_saving`) writes them
 all.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Arm.Round.P2R
 

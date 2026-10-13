@@ -1,7 +1,17 @@
-import VerifiedGarbage.Proof.MlKem.Arm.Reduce
-import VerifiedGarbage.Proof.Framework.Arm.Taint
-import VerifiedGarbage.Proof.Framework.Arm.Contract
-import VerifiedGarbage.Proof.Framework.Contract
+module
+
+public import VerifiedGarbage.Proof.MlKem.Arm.Reduce
+meta import VerifiedGarbage.Proof.MlKem.Arm.Reduce
+public import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+public import VerifiedGarbage.Proof.Framework.Arm.Contract
+meta import VerifiedGarbage.Proof.Framework.Arm.Contract
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on 32-bit ARM: `vg_mlkem_multiply_ntts`
@@ -12,6 +22,8 @@ whose body is symbolically executed once for any pointers (`body_ok`); the
 invariant says which coefficients of `h` are written, and that `h` is the only
 memory written since the setup (`Inv`); then the registers restored.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.Arm.Mul
 

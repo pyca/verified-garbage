@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.CTBase
+module
+
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.CTBase
+meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.CTBase
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # An RSA key from its primes on AArch64: constant time, the key routines
@@ -10,6 +17,8 @@ leaves `KG F` for facts `F` its changes keep (`Stab`, `…_ct`); `selC`,
 `setOneA` and `inverse` need the facts their correctness needs. The taint
 checks are the callers' (`by taint_decide` on the concrete code).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaKeyGen.AArch64.Key
 

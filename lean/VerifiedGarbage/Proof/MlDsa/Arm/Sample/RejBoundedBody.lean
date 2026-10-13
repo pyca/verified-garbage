@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlDsa.Arm.Sample.RejBoundedLoop
+module
+
+public import VerifiedGarbage.Proof.MlDsa.Arm.Sample.RejBoundedLoop
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on 32-bit ARM: an iteration of `vg_mldsa_rej_bounded_poly`
@@ -10,6 +16,8 @@ half-byte and the test of `j ≥ 256` again (`hi_ok`, leaving `HI`), and the
 high half-byte tried if `j < 256` (`mid_ok`); then the step (`stepB_ok`): what
 `rbStep` does (`body_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Arm.Sample.RejBounded
 

@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.P384
-import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.VerifiedAdx
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.P384
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.VerifiedAdx
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Deterministic ECDSA on x86-64: P-384 with BMI2 and ADX
@@ -8,6 +14,8 @@ As `P384.lean`, with `vg_ecdsa_p384_sign_adx` (`p384x`, P-384 multiplying
 with BMI2 and ADX), proven correct and constant time against the same
 contract; `p384Of` is either.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Rfc6979.X86_64
 

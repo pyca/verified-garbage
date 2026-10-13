@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrCtx
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtSel
-import VerifiedGarbage.Proof.Bignum.AArch64.Mont
-import VerifiedGarbage.Proof.Rsa.AArch64.CvLoad
-import VerifiedGarbage.Proof.RsaKeyGen.MrMont
+module
+
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrCtx
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtSel
+public import VerifiedGarbage.Proof.Bignum.AArch64.Mont
+public import VerifiedGarbage.Proof.Rsa.AArch64.CvLoad
+public import VerifiedGarbage.Proof.RsaKeyGen.MrMont
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # A candidate on AArch64: one bit of Miller–Rabin's exponentiation
@@ -11,6 +17,8 @@ import VerifiedGarbage.Proof.RsaKeyGen.MrMont
 `y' = y² b^bt mod c` (as `y' R mod c`), the flag updated with `y' = 1` and
 `y' = c − 1` (`eqMask_ok`), `kV` doubled and `x3 := kBits := kBits − 1`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaKeyGen.AArch64
 

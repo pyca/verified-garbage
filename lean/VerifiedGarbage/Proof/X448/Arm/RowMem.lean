@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.X448.Arm.RowPass
+module
+
+public import VerifiedGarbage.Proof.X448.Arm.RowPass
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 on ARMv7: the multiplication-row working space
@@ -6,6 +12,8 @@ import VerifiedGarbage.Proof.X448.Arm.RowPass
 A row uses a second pointer, `r7`, at a public word offset from the
 working-space pointer in `r0`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448.Arm
 

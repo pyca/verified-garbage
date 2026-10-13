@@ -1,4 +1,10 @@
-import VerifiedGarbage.Spec.Idea.Contract
+module
+
+public import VerifiedGarbage.Spec.Idea.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # IDEA with a scratch buffer of 32-bit words as an argument
@@ -8,6 +14,8 @@ registers: `vg_idea_invert_key` and `vg_idea_ecb` keep the registers they
 save in a frame of their own, around code proved with that buffer of `n`
 32-bit words as an argument, whatever it holds.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Idea
 

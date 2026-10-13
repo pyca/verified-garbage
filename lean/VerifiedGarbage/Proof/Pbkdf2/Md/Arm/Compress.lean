@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Words
-import VerifiedGarbage.Proof.Framework.Arm.RelCT
-import VerifiedGarbage.Proof.Framework.Arm.Taint
+module
+
+public import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Words
+meta import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Words
+public import VerifiedGarbage.Proof.Framework.Arm.RelCT
+meta import VerifiedGarbage.Proof.Framework.Arm.RelCT
+public import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # A Merkle–Damgård compression function on ARMv7, called on one block
@@ -14,6 +23,8 @@ constant time, without calls, never writing `r0` or `r3`), and the call of it
 on the block at `r6` (`compressBlock`), in one run (`compressBlock_ok`) and in
 two (`compressBlock_rel`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Pbkdf2.Md.Arm
 

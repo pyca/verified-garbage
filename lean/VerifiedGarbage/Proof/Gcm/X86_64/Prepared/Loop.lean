@@ -1,7 +1,15 @@
-import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Setup
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.LoopP
+module
+
+public import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Setup
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.LoopP
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # Loading the larger GHASH tables from a prepared context -/
+
+@[expose] public section
 
 namespace VG.Proof.Gcm.X86_64.StitchZR
 open VG VG.X86_64

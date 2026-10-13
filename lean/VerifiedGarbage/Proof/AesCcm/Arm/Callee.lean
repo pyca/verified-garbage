@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.AesCcm.Arm.Env
-import VerifiedGarbage.Proof.CmacAes.Stream.Arm.Call
-import VerifiedGarbage.Proof.AesGcm.Arm.Callee
+module
+
+public import VerifiedGarbage.Proof.AesCcm.Arm.Env
+public import VerifiedGarbage.Proof.CmacAes.Stream.Arm.Call
+public import VerifiedGarbage.Proof.AesGcm.Arm.Callee
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CCM on ARMv7: the calls of `vg_cmac_aes_update`
@@ -13,6 +19,8 @@ call needs (`UArgs`), what it leaves (`UPost`), and that two calls with the
 same arguments leak the same (`upd_rel`). The calls of `vg_aes_ctr32` are
 AES-GCM's (`Proof.AesGcm.Arm.ctr_call`, `ctr_rel`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesCcm.Arm
 

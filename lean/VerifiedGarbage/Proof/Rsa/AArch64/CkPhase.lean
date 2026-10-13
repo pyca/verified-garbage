@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Rsa.AArch64.CkSteps
-import VerifiedGarbage.Proof.Rsa.AArch64.CvMain
+module
+
+public import VerifiedGarbage.Proof.Rsa.AArch64.CkSteps
+public import VerifiedGarbage.Proof.Rsa.AArch64.CvMain
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_check_key` on AArch64: the phases of `main`
@@ -9,6 +15,8 @@ of the checks and'es its conditions into the mask (`phDN_ok`, `phPQ_ok`,
 `phMod_ok`, `phQI_ok`), exactly when the facts the key's other checks give
 hold.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.AArch64
 

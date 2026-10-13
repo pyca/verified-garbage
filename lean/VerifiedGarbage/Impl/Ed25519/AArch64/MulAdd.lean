@@ -1,6 +1,10 @@
-import VerifiedGarbage.Impl.Ed25519.AArch64.Scalar
+module
+
+public import VerifiedGarbage.Impl.Ed25519.AArch64.Scalar
 
 /-! Full-width scalar multiply-add followed by subgroup reduction. -/
+
+@[expose] public section
 
 namespace VG.Impl.Ed25519.AArch64
 open VG.AArch64

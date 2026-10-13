@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.CopyCT
-import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Verified
-import VerifiedGarbage.Proof.AesGcm.ScratchGather
-import VerifiedGarbage.Proof.AesSiv.X86_64.Verified
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.CopyCT
+public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Verified
+public import VerifiedGarbage.Proof.AesGcm.ScratchGather
+public import VerifiedGarbage.Proof.AesSiv.X86_64.Verified
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM one-shot encryption out of place, from a list of slices, x86-64: `Verified`
@@ -18,6 +24,8 @@ bytes, a copy of the five other stack arguments, and 16 more, for 5128
 bytes of stack in all; for the key contexts of `vg_aes_gcm_init` and
 `vg_aes_gcm_init_precomputed`.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

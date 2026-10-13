@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed5.Counter
-import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Finish
+module
+
+public import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed5.Counter
+public import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Finish
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.ChaCha20.AArch64.Mixed5
 open VG VG.AArch64

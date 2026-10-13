@@ -1,5 +1,11 @@
-import VerifiedGarbage.Spec.MlDsa
-import VerifiedGarbage.Proof.Framework.PowLit
+module
+
+public import VerifiedGarbage.Spec.MlDsa
+public import VerifiedGarbage.Proof.Framework.PowLit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA: the coefficients of `BitPack` and `BitUnpack` modulo `q`, for every target
@@ -9,6 +15,8 @@ import VerifiedGarbage.Proof.Framework.PowLit
 Both are `(b + q - x) mod q`, which an implementation computes without
 branches as `b - x`, plus `q` if that borrows (`sub_modPm`, `ofInt_sub`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Pack
 

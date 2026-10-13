@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Ed448.Arm.Shake.Layout
-import VerifiedGarbage.Proof.Ed448.Arm.PublicKey.Hash
-import VerifiedGarbage.Impl.Ed448.Arm.Shake
-import VerifiedGarbage.Proof.X25519.Arm.Instr
+module
+
+public import VerifiedGarbage.Proof.Ed448.Arm.Shake.Layout
+public import VerifiedGarbage.Proof.Ed448.Arm.PublicKey.Hash
+public import VerifiedGarbage.Impl.Ed448.Arm.Shake
+public import VerifiedGarbage.Proof.X25519.Arm.Instr
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 on ARMv7: the calls of the sponge functions
@@ -16,6 +22,8 @@ position the previous one returned in `r0`. Each step states the regions it
 may write: the outgoing stack arguments (`kArgs E 8`), the state and the
 working space (`kWr scr`), and the squeezed output.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.Arm.Shake
 

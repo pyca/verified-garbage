@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Seed.AArch64.KeyVerified
-import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
+module
+
+public import VerifiedGarbage.Proof.Seed.AArch64.KeyVerified
+public import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # SEED on AArch64, with its working space on the stack
@@ -9,6 +15,8 @@ argument, in a frame that allocates it and zeroes it after the code
 (`Verified.stackScratchWiped`), since it holds the key, the round keys and
 the data: the 976 bytes of the working space. The code uses no other stack.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Seed.AArch64
 

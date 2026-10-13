@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Siv.Spec
-import VerifiedGarbage.Proof.Cmac.Mem
-import VerifiedGarbage.Proof.CmacAes.X86_64.Dbl
-import VerifiedGarbage.Proof.Gcm.X86_64.Bits
+module
+
+public import VerifiedGarbage.Proof.Siv.Spec
+public import VerifiedGarbage.Proof.Cmac.Mem
+public import VerifiedGarbage.Proof.CmacAes.X86_64.Dbl
+public import VerifiedGarbage.Proof.Gcm.X86_64.Bits
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-SIV on x86-64: words and bits
@@ -16,6 +22,8 @@ import VerifiedGarbage.Proof.Gcm.X86_64.Bits
   (`eqz`), and `a`, the OR of the XORs of the halves, is 0 exactly if the IVs
   are equal (`or_xor_eq_zero`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesSiv.X86_64
 

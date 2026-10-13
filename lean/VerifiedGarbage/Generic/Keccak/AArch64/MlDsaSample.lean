@@ -1,12 +1,16 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallSelected
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejSelected
-import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.RejNttCT
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.RejBoundedCT
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.ExpandMask
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Ball
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallSelected
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejSelected
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.RejNttCT
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.RejBoundedCT
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.ExpandMask
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Ball
 
 /-! # ML-DSA (FIPS 204) on AArch64: the sampling primitives -/
+
+@[expose] public section
 
 namespace VG.Generic.Keccak.AArch64.MlDsaSample
 

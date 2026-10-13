@@ -1,10 +1,16 @@
-import VerifiedGarbage.Proof.MdStream.Spec
-import VerifiedGarbage.Proof.Framework.X86.CallWith
-import VerifiedGarbage.Proof.Framework.X86.Exec
-import VerifiedGarbage.Impl.MdStream.X86
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.Set
-import VerifiedGarbage.Proof.Framework.Offset
+module
+
+public import VerifiedGarbage.Proof.MdStream.Spec
+public import VerifiedGarbage.Proof.Framework.X86.CallWith
+public import VerifiedGarbage.Proof.Framework.X86.Exec
+public import VerifiedGarbage.Impl.MdStream.X86
+public import Mathlib.Tactic.Conv
+public import Mathlib.Tactic.Set
+public import VerifiedGarbage.Proof.Framework.Offset
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Streaming Merkle–Damgård hash functions on x86 (32-bit): common lemmas
@@ -15,6 +21,8 @@ function's parameters (`Dims`, `Shape`) and of its compression function
 weakest-precondition rules for the instructions used that expose only what
 changes, and arithmetic on 32-bit values.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MdStream.X86
 

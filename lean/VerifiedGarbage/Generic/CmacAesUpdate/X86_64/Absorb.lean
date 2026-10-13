@@ -1,5 +1,7 @@
-import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.CmacAes.Stream.X86_64.Frame
+module
+
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.CmacAes.Stream.X86_64.Frame
 
 /-!
 # Streaming AES-CMAC's `absorb` on x86-64
@@ -15,6 +17,8 @@ It keeps its working space in a frame of its own on the stack
 most 16 bytes: the return addresses of the call of `vg_cmac_aes_update` and
 of its call of `vg_aes_ctr32`.
 -/
+
+@[expose] public section
 
 namespace VG.Generic.CmacAesUpdate.X86_64.Absorb
 

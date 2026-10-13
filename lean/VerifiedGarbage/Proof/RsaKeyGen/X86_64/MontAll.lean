@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MontRest
+module
+
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MontRest
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # A candidate on x86-64: all of `montSetup`
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MontRest
 `c − R mod c` in `aRm1` and `checksW w` in `kChecks`, changing only
 `msRanges`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaKeyGen.X86_64
 

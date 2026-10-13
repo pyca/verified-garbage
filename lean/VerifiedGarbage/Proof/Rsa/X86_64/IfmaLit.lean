@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
-import VerifiedGarbage.Proof.Rsa.X86_64.Calls
+module
+
+public import VerifiedGarbage.Proof.Framework.X86_64.Lit
+meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
+public import VerifiedGarbage.Proof.Rsa.X86_64.Calls
+meta import VerifiedGarbage.Proof.Rsa.X86_64.Calls
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSA-CRT with AVX512_IFMA on x86-64: the code as a literal
@@ -10,6 +18,8 @@ stack depth, `spSafe`, in the registration file and the variant): the literal
 of the code (`materialize_code`, `Proof/Framework/Lit.lean`) is checked once
 here instead.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.X86_64
 

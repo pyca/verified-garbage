@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.AesGcm.Arm.Loops
-import VerifiedGarbage.Impl.AesGcm.Arm.SealGather
-import VerifiedGarbage.Proof.Cmac.Stream
+module
+
+public import VerifiedGarbage.Proof.AesGcm.Arm.Loops
+public import VerifiedGarbage.Impl.AesGcm.Arm.SealGather
+public import VerifiedGarbage.Proof.Cmac.Stream
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM one-shot encryption out of place, from a list of slices, ARMv7: copying a slice
@@ -12,6 +18,8 @@ down (`copyWords_ok`); with `copyLoop` for the last bytes (`copyLoop_ok`),
 leaving `r2` past it (`copySlice_wp`). The bytes copied and the bytes written
 do not overlap.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

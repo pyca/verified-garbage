@@ -1,9 +1,15 @@
-import VerifiedGarbage.Proof.Framework.X86.Exec
-import VerifiedGarbage.Proof.Framework.X86.RegUpd
-import VerifiedGarbage.Proof.Framework.Mem
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Impl.X25519.X86
+module
+
+public import VerifiedGarbage.Proof.Framework.X86.Exec
+public import VerifiedGarbage.Proof.Framework.X86.RegUpd
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Impl.X25519.X86
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X25519 on x86 (32-bit): words of the working space
@@ -14,6 +20,8 @@ any `W ≥ 4096`); a field element is eight of them (`fe`). A store to a word
 leaves the others unchanged, and code that stores only to some regions of it
 leaves the rest of memory unchanged (`Frame`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X25519.X86
 

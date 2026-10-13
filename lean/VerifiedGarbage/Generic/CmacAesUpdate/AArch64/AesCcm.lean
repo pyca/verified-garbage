@@ -1,5 +1,7 @@
-import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.AesCcm.AArch64.Frame
+module
+
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.AesCcm.AArch64.Frame
 
 /-!
 # AES-CCM (NIST SP 800-38C) on AArch64
@@ -22,6 +24,8 @@ keeps its working space, its last argument, in a frame of 2592 bytes on the
 stack that also holds a copy of `tag` and `tag_len`
 (`Verified.stackArgScratch`).
 -/
+
+@[expose] public section
 
 namespace VG.Generic.CmacAesUpdate.AArch64.AesCcm
 

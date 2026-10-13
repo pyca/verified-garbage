@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.Argon2.X86.Derive.FillCT1
+module
+
+public import VerifiedGarbage.Proof.Argon2.X86.Derive.FillCT1
+meta import VerifiedGarbage.Proof.Argon2.X86.Derive.FillCT1
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Argon2 on x86 (32-bit): a block of the filling loops, in two runs
@@ -10,6 +17,8 @@ G is called on the previous and the reference blocks (`fillCompress_rel`), and
 its output is written to the current block (`fillWrite_rel`), whose address the
 runs agree on.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Argon2.X86.Derive
 

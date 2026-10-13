@@ -1,10 +1,18 @@
-import VerifiedGarbage.Proof.Curve448.AArch64.Fast.ColEnd
+module
+
+public import VerifiedGarbage.Proof.Curve448.AArch64.Fast.ColEnd
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The end of a product: the last carries and the result
 
 Untrusted: everything here is checked by Lean.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Curve448.AArch64.Fast
 

@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Blowfish.X86.Cipher
-import VerifiedGarbage.Proof.Blowfish.Blocks
+module
+
+public import VerifiedGarbage.Proof.Blowfish.X86.Cipher
+public import VerifiedGarbage.Proof.Blowfish.Blocks
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Blowfish on x86 (32-bit): ECB
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.Blowfish.Blocks
 `ecb_correct`: every block becomes its encryption or decryption, one at a
 time; our caller's registers are saved in the working space and restored.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Blowfish.X86
 

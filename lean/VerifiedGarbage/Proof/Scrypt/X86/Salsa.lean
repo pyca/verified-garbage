@@ -1,14 +1,32 @@
-import VerifiedGarbage.Proof.Scrypt.Spec
-import VerifiedGarbage.Spec.Scrypt.Contract
-import VerifiedGarbage.TCB.X86.Target
-import VerifiedGarbage.Proof.Framework.Range
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Framework.X86.Inline
-import VerifiedGarbage.Proof.Sha256.X86.Stream.Common
-import VerifiedGarbage.Proof.Scrypt.Memory
-import VerifiedGarbage.Proof.Framework.X86.SseTaint
-import VerifiedGarbage.Proof.Scrypt.X86.SalsaRounds
-import VerifiedGarbage.Impl.Scrypt.X86.Salsa
+module
+
+public import VerifiedGarbage.Proof.Scrypt.Spec
+meta import VerifiedGarbage.Proof.Scrypt.Spec
+public import VerifiedGarbage.Spec.Scrypt.Contract
+meta import VerifiedGarbage.Spec.Scrypt.Contract
+public import VerifiedGarbage.TCB.X86.Target
+meta import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Proof.Framework.Range
+meta import VerifiedGarbage.Proof.Framework.Range
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.X86.Inline
+meta import VerifiedGarbage.Proof.Framework.X86.Inline
+public import VerifiedGarbage.Proof.Sha256.X86.Stream.Common
+meta import VerifiedGarbage.Proof.Sha256.X86.Stream.Common
+public import VerifiedGarbage.Proof.Scrypt.Memory
+meta import VerifiedGarbage.Proof.Scrypt.Memory
+public import VerifiedGarbage.Proof.Framework.X86.SseTaint
+meta import VerifiedGarbage.Proof.Framework.X86.SseTaint
+public import VerifiedGarbage.Proof.Scrypt.X86.SalsaRounds
+meta import VerifiedGarbage.Proof.Scrypt.X86.SalsaRounds
+public import VerifiedGarbage.Impl.Scrypt.X86.Salsa
+meta import VerifiedGarbage.Impl.Scrypt.X86.Salsa
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+import all Init.Data.Nat.Power2.Basic
 
 /-!
 # The Salsa20/8 Core on x86 (32-bit)
@@ -21,6 +39,8 @@ proof is written against a contract under which the code only reads its
 arguments (which it does), and moved to the shared contract with
 `Verified.narrowTo`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Scrypt
 

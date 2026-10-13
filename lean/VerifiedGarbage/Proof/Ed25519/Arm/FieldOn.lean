@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Ed25519.Arm.FieldProg
+module
+
+public import VerifiedGarbage.Proof.Ed25519.Arm.FieldProg
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed25519 on ARMv7: field code on some of the slots
@@ -10,6 +16,8 @@ assume it of its operands: `LimOn m b S` asks it of the slots of `S`, and
 (`limsAfter`, decided on the slots), adding each operation's result to them,
 and changes no memory but the slots `W` it writes and `ACC` (`wRegions`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed25519.Arm
 

@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Seed.X86_64.KeyRounds
-import VerifiedGarbage.Proof.Seed.X86_64.Copy
-import VerifiedGarbage.Proof.Seed.Memory
+module
+
+public import VerifiedGarbage.Proof.Seed.X86_64.KeyRounds
+public import VerifiedGarbage.Proof.Seed.X86_64.Copy
+public import VerifiedGarbage.Proof.Seed.Memory
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Loading the key on x86-64
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.Seed.Memory
 `keyLoad_ok`: `keyLoad` puts the key's big-endian words in `r10 = Key0 || Key1`
 and `r11 = Key2 || Key3` (`kx`, `ky` of `keyWords key 0`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Seed.X86_64
 

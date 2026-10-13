@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YLay
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YLay
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on x86-64: the layers of the NTT and its inverse with `len` = 2 and 1 on AVX2 registers
@@ -11,6 +17,8 @@ four coefficients from `j + 4l` and the four from `j + 8 + 4l` (`core2_ok`,
 (`yzetaS_ok`, `yzeta8_ok`, `yzeta8R_ok`); `ystep21` is an iteration for any
 such code, and `ylay2_ok` and `ylay1_ok` the layers.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86_64.Arith
 

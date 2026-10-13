@@ -1,6 +1,10 @@
-import VerifiedGarbage.Proof.Seed.Arm.FbVerified
+module
+
+public import VerifiedGarbage.Proof.Seed.Arm.FbVerified
 
 /-! # SEED-CFB128 artifacts on baseline ARMv7 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.SeedCfb.Arm
 

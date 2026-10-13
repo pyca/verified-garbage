@@ -1,4 +1,7 @@
-import VerifiedGarbage.Spec.TripleDes
+module
+
+public import VerifiedGarbage.Spec.TripleDes
+meta import VerifiedGarbage.Spec.TripleDes
 
 /-!
 # DES's S-boxes, packed for evaluation
@@ -12,6 +15,8 @@ target's proof checks the constants against the specification's S-boxes
 (`Proof.TripleDes.outputTable`), and the `#guard` below checks the table
 when the file is compiled.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.CmacTripleDes
 

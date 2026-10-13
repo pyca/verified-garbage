@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Aes
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchZTo.Base
-import VerifiedGarbage.Impl.Gcm.X86_64.StitchTo
+module
+
+public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Aes
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZTo.Base
+public import VerifiedGarbage.Impl.Gcm.X86_64.StitchTo
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The out-of-place VAES loop: the data
@@ -16,6 +22,8 @@ registers into the blocks loaded from `base + idx + 32 (j + i)` and stores
 them to `base + 32 (j + i)`, for a source and a destination in disjoint
 regions, as `Vaes.xorData_ok` does in place.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Gcm.X86_64.StitchTo
 

@@ -1,5 +1,7 @@
-import VerifiedGarbage.TCB.Emit
-import VerifiedGarbage.Proof.RsaOaep.AArch64.Inst
+module
+
+public import VerifiedGarbage.TCB.Emit
+public import VerifiedGarbage.Proof.RsaOaep.AArch64.Inst
 
 /-!
 # RSAES-OAEP encryption on AArch64
@@ -14,6 +16,8 @@ named by `Emit.qualifiedName` (`Inst.parts`), and needs both's CPU features.
 Its stack is its frames, 288 bytes, and 16 bytes below them for the calls,
 whose callees use no stack of their own.
 -/
+
+@[expose] public section
 
 namespace VG.Generic.MdHash.MdHash.AArch64.RsaOaep
 

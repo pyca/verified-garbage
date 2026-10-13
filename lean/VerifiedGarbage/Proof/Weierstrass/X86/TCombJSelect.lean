@@ -1,9 +1,17 @@
-import VerifiedGarbage.Proof.Weierstrass.X86.TCombJDigit
-import VerifiedGarbage.Proof.Weierstrass.Words32
-import VerifiedGarbage.Proof.Weierstrass.X86.TCombOne
-import VerifiedGarbage.Proof.Weierstrass.X86.TComb
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86.TCombJDigit
+public import VerifiedGarbage.Proof.Weierstrass.Words32
+public import VerifiedGarbage.Proof.Weierstrass.X86.TCombOne
+public import VerifiedGarbage.Proof.Weierstrass.X86.TComb
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## `TCombJMask` -/
+
+@[expose] public section
 
 section
 

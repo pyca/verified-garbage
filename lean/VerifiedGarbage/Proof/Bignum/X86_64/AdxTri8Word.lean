@@ -1,5 +1,13 @@
-import VerifiedGarbage.Impl.Bignum.X86_64.AdxTri8
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxDualAddWord
+module
+
+public import VerifiedGarbage.Impl.Bignum.X86_64.AdxTri8
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxDualAddWord
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64.AdxTri8
 open VG VG.X86_64 VG.Impl.Bignum.X86_64

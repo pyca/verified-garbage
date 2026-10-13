@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Rel
-import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseD
+module
+
+public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Rel
+public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseD
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA signing on ARMv7: decoding leaks only the pointers
@@ -8,6 +14,8 @@ Each call while decoding leaks only its pointers, given that its input
 polynomial is reduced (`dec_tr`); so two runs agree on what decoding leaks
 (`decode_tr`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Arm.Sign
 

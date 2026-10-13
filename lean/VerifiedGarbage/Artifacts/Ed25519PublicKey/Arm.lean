@@ -1,4 +1,8 @@
-import VerifiedGarbage.Proof.Ed25519.Arm.PublicKey.Verified
+module
+
+public import VerifiedGarbage.Proof.Ed25519.Arm.PublicKey.Verified
+
+@[expose] public section
 
 namespace VG.Artifacts.Ed25519PublicKey.Arm
 

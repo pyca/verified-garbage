@@ -1,7 +1,15 @@
-import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedMasks
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedInitialization
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedMaskVector
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.MaskPairLoop
+module
+
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedMasks
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedInitialization
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedMaskVector
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.MaskPairLoop
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Sign
 open VG VG.AArch64 VG.Spec.MlDsa

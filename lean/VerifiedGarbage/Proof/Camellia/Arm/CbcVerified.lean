@@ -1,7 +1,17 @@
-import VerifiedGarbage.Proof.Camellia.Arm.ModeCore
-import VerifiedGarbage.Proof.Camellia.CbcScratch
-import VerifiedGarbage.Proof.Modes.Arm.Cbc
-import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
+module
+
+public import VerifiedGarbage.Proof.Camellia.Arm.ModeCore
+meta import VerifiedGarbage.Proof.Camellia.Arm.ModeCore
+public import VerifiedGarbage.Proof.Camellia.CbcScratch
+meta import VerifiedGarbage.Proof.Camellia.CbcScratch
+public import VerifiedGarbage.Proof.Modes.Arm.Cbc
+meta import VerifiedGarbage.Proof.Modes.Arm.Cbc
+public import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
+meta import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Camellia-CBC on ARMv7 meets its contracts
@@ -14,6 +24,8 @@ rounds) meet Camellia-CBC's contracts with a scratch buffer of 9 words
 ECB functions use. `cbcEncrypt_framed` and `cbcDecrypt_framed` keep the
 buffer on the stack, zeroed on return: 88 bytes more.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Camellia.Arm
 

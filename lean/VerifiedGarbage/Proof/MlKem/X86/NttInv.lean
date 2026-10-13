@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.MlKem.X86.Ntt
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86.Ntt
+meta import VerifiedGarbage.Proof.MlKem.X86.Ntt
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86 (32-bit): `vg_mlkem_inv_ntt`
@@ -7,6 +14,8 @@ The seven layers of Algorithm 10 (`nttInv_eq_layers`), each a `layer_piece`
 (`NttLoop.lean`) of the inverse butterfly `ibflyBody` (`ibfly_spec`), with the
 zetas from `zetas[127]` down; then every coefficient times 3303 (`scaleBody`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.X86.NttInvP
 

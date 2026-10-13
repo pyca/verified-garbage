@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Poly1305.AArch64.Vector.Init
-import VerifiedGarbage.Proof.Poly1305.AArch64.Buffer
-import VerifiedGarbage.Proof.Poly1305.Stream
+module
+
+public import VerifiedGarbage.Proof.Poly1305.AArch64.Vector.Init
+public import VerifiedGarbage.Proof.Poly1305.AArch64.Buffer
+public import VerifiedGarbage.Proof.Poly1305.Stream
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Poly1305 on AArch64 in AdvSIMD: the setup and the loop
@@ -12,6 +18,8 @@ the constants, and (if the accumulator on entry is below `2¹³⁰ + 2¹²⁹`, 
 `Radix64` keeps it) the lanes `A`, `B` with `A r + B ≡ r a` for the
 accumulator `a` of the blocks so far.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Poly1305.AArch64.Vector
 

@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.PubFail
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.PubFail
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_public` on x86-64: the entry
@@ -6,6 +12,8 @@ import VerifiedGarbage.Proof.Bignum.X86_64.PubFail
 `entry` saves the callee-saved registers and the arguments in the header of
 the working space, and leaves its base in `rdi` (`entry_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64
 

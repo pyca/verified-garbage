@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Sha3.Lanes
-import VerifiedGarbage.Proof.Framework.Bitslice.Anf
+module
+
+public import VerifiedGarbage.Proof.Sha3.Lanes
+public import VerifiedGarbage.Proof.Framework.Bitslice.Anf
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Keccak-f[1600]: a round on complemented lanes, as polynomials
@@ -14,6 +20,8 @@ domain from the specification's `out` (`Proof/Sha3/Spec.lean`) on the
 uncomplemented lanes, and complemented again. `eval_specP` says what that
 is: lane `j` of the round's output, as stored.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sha3.Compl
 

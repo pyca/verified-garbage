@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.CmacAes.Stream.X86_64.Common
-import VerifiedGarbage.Proof.Framework.X86_64.Taint
+module
+
+public import VerifiedGarbage.Proof.CmacAes.Stream.X86_64.Common
+meta import VerifiedGarbage.Proof.CmacAes.Stream.X86_64.Common
+public import VerifiedGarbage.Proof.Framework.X86_64.Taint
+meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Streaming AES-CMAC on x86-64: `vg_cmac_aes_init`
@@ -11,6 +19,8 @@ The code between the calls is constant time by the taint analysis, and the
 calls by their own proofs (`ek_rel`, `sub_rel`), their arguments pinned by
 `IMid₁` and `IMid₂`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.CmacAes.Stream.X86_64
 

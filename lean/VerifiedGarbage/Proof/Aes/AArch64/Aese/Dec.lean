@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Aes.AArch64.Aese.Rounds
-import VerifiedGarbage.Proof.Aes.InvBitsliced
-import VerifiedGarbage.Impl.Aes.AArch64.AeseBlocks
+module
+
+public import VerifiedGarbage.Proof.Aes.AArch64.Aese.Rounds
+public import VerifiedGarbage.Proof.Aes.InvBitsliced
+public import VerifiedGarbage.Impl.Aes.AArch64.AeseBlocks
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The Armv8 AES instructions: decryption
@@ -19,6 +25,8 @@ after those rounds (`DInv`). `aesDec_ok` proves that
 `Impl.Aes.AArch64.Aese.aesDec` decrypts each register of a list, from the
 round keys as `decSetup` leaves them (`DKeys`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Aes.AArch64.Aese
 

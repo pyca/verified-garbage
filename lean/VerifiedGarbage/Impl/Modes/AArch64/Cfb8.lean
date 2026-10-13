@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Modes.AArch64.Fb
+module
+
+public import VerifiedGarbage.Impl.Modes.AArch64.Fb
 
 /-!
 # CFB8 on AArch64, for any block cipher with blocks of 8 or 16 bytes
@@ -21,6 +23,8 @@ shifted in. After the last byte it is the input block to continue from.
 Only the pointers and the length (and what is computed from them) are
 public; no address or branch depends on the key, the IV or the data.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Modes.AArch64
 

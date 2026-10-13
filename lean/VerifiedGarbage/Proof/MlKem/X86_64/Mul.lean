@@ -1,8 +1,19 @@
-import VerifiedGarbage.Proof.MlKem.X86_64.VMul
-import VerifiedGarbage.Proof.MlKem.X86_64.VMxcsr
-import VerifiedGarbage.Proof.MlKem.Ntt
-import VerifiedGarbage.Proof.Framework.X86_64.Taint
-import VerifiedGarbage.Proof.Framework.Contract
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86_64.VMul
+meta import VerifiedGarbage.Proof.MlKem.X86_64.VMul
+public import VerifiedGarbage.Proof.MlKem.X86_64.VMxcsr
+meta import VerifiedGarbage.Proof.MlKem.X86_64.VMxcsr
+public import VerifiedGarbage.Proof.MlKem.Ntt
+meta import VerifiedGarbage.Proof.MlKem.Ntt
+public import VerifiedGarbage.Proof.Framework.X86_64.Taint
+meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86-64: `vg_mlkem_multiply_ntts`
@@ -11,6 +22,8 @@ Each iteration of the loop loads 16 coefficients of `f` and of `g` into the
 words of their pairs (`deintF_ok`, `deintG_ok`), multiplies the eight pairs
 (`vbase_ok`) and stores the 16 coefficients of `h` (`vinter_ok`): `Mul.step`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.X86_64
 

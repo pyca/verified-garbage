@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.X448.AArch64.Fast.Weave
-import VerifiedGarbage.Proof.X448.AArch64.Fast.NeonEnv
-import VerifiedGarbage.Proof.X448.AArch64.Fast.StepOps
+module
+
+public import VerifiedGarbage.Proof.X448.AArch64.Fast.Weave
+public import VerifiedGarbage.Proof.X448.AArch64.Fast.NeonEnv
+public import VerifiedGarbage.Proof.X448.AArch64.Fast.StepOps
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 on AArch64: the ladder step's field operations
@@ -10,6 +16,8 @@ two products in AdvSIMD interleaved with scalar operations; the two streams
 are independent (checked by evaluating their footprints), so they run as the
 scalar operations and then the vector products.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448.AArch64.Fast
 

@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.CmacAes.Stream.Arm.AbsorbBlocks
+module
+
+public import VerifiedGarbage.Proof.CmacAes.Stream.Arm.AbsorbBlocks
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Streaming AES-CMAC on ARMv7: `vg_cmac_aes_absorb` up to the first call
@@ -8,6 +14,8 @@ min(len, 16 - h)` bytes after them, and sets up the first call of
 `vg_cmac_aes_update`, which chains the block held back if data is left
 (`AMid₁`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.CmacAes.Stream.Arm
 

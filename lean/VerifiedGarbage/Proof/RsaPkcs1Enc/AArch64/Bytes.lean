@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import VerifiedGarbage.TCB.AArch64.Isa
+module
+
+public import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+public import VerifiedGarbage.TCB.AArch64.Isa
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSA encryption on AArch64: bytes, one at a time
@@ -11,6 +17,8 @@ byte store at a register (`exec_ldrb0`, `exec_strb0`), a byte written to
 memory (`write1_apply`), and a loop that runs a down-counter from `n` to
 zero (`count_loop`).
 -/
+
+@[expose] public section
 
 namespace VG.AArch64.Bytes
 

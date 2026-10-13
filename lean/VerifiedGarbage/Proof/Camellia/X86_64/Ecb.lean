@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Camellia.X86_64.Group
+module
+
+public import VerifiedGarbage.Proof.Camellia.X86_64.Group
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Camellia ECB on x86-64: the whole function
@@ -8,6 +14,8 @@ saves the callee-saved registers, sets the masks, builds the table of
 subkeys for 18 or 24 rounds in the order `dir` uses them, transforms the
 blocks a group at a time (`dataGroup_wp`) and restores the registers.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Camellia
 

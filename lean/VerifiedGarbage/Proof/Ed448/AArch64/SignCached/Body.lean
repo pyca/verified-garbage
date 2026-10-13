@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Ed448.AArch64.SignCached.Layout
+module
+
+public import VerifiedGarbage.Proof.Ed448.AArch64.SignCached.Layout
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 signing with a cached public key on AArch64: the frame's entry
@@ -7,6 +13,8 @@ The saved arguments (`Args`) as the body reads them (`arg_src`), the inputs'
 bytes as on entry (`in_bytes`), and the entry, which keeps `len` and
 `scratch` and writes the header of `dom4` in the locals (`entry_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.AArch64.SignCached
 

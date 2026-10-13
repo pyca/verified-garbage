@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Cmac.Spec
-import VerifiedGarbage.Proof.Framework.Mem
-import VerifiedGarbage.Proof.Framework.Offset
+module
+
+public import VerifiedGarbage.Proof.Cmac.Spec
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.Offset
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # CMAC: blocks in memory as 64-bit words
@@ -10,6 +16,8 @@ A 16-byte block is loaded and stored as two little-endian 64-bit words:
 `le8 (readW p) ++ le8 (readW (p + BitVec.ofNat 64 8))`, and storing `w₀` at `p` and `w₁` at
 `p + 8` leaves `le8 w₀ ++ le8 w₁` there.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Cmac
 

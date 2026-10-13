@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedFieldTiming
-import VerifiedGarbage.Proof.P256.VerifySparse.Fprog
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedFieldTiming
+public import VerifiedGarbage.Proof.P256.VerifySparse.Fprog
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Verify.AArch64.Allocated
 open VG VG.Proof.Mont VG.Proof.Weierstrass

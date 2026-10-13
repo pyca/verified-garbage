@@ -1,4 +1,8 @@
-import VerifiedGarbage.Impl.MlDsa.AArch64.Arith.Neon.Vec
+module
+
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Arith.Neon.Vec
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.AArch64.Optimized.AddSub
 open VG.AArch64

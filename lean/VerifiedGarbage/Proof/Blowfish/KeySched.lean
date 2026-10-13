@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Blowfish.Feistel
+module
+
+public import VerifiedGarbage.Proof.Blowfish.Feistel
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The key schedule, one encryption at a time
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.Blowfish.Feistel
 encryptions; `ksIter_succ` is one more, and `expandKey key = (ksIter key
 521).1`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Blowfish
 

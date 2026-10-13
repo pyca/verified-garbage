@@ -1,15 +1,31 @@
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.MdStream.X86.Common
-import VerifiedGarbage.Proof.Sm3.Stream
-import VerifiedGarbage.Proof.Sm3.StateMem
-import VerifiedGarbage.Proof.Sm3.X86.Contract
-import VerifiedGarbage.Impl.Sm3.X86.Stream
-import Mathlib.Tactic.Set
-import VerifiedGarbage.Proof.Sm3.X86.Lit
+module
+
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.MdStream.X86.Common
+meta import VerifiedGarbage.Proof.MdStream.X86.Common
+public import VerifiedGarbage.Proof.Sm3.Stream
+meta import VerifiedGarbage.Proof.Sm3.Stream
+public import VerifiedGarbage.Proof.Sm3.StateMem
+meta import VerifiedGarbage.Proof.Sm3.StateMem
+public import VerifiedGarbage.Proof.Sm3.X86.Contract
+meta import VerifiedGarbage.Proof.Sm3.X86.Contract
+public import VerifiedGarbage.Impl.Sm3.X86.Stream
+meta import VerifiedGarbage.Impl.Sm3.X86.Stream
+public import Mathlib.Tactic.Set
+meta import Mathlib.Tactic.Set
+public import VerifiedGarbage.Proof.Sm3.X86.Lit
+meta import VerifiedGarbage.Proof.Sm3.X86.Lit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Streaming SM3 on x86 (32-bit): `init`
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sm3.X86.Stream
 

@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Sym
-import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Sym
-import VerifiedGarbage.Impl.Poly1305.X86_64.Ifma
+module
+
+public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Sym
+public import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Sym
+public import VerifiedGarbage.Impl.Poly1305.X86_64.Ifma
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Poly1305 on x86-64 with AVX-512 IFMA: straight-line code, quadword by quadword
@@ -13,6 +19,8 @@ proves the machine agrees. The terms add `vpmadd52luq` and `vpmadd52huq`
 `vpxord` of itself (`zero`); the products of `vpmuludq` and `vpandnq`, which
 the code does not use, are left out.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Poly1305.X86_64.Ifma
 

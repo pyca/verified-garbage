@@ -1,9 +1,15 @@
-import VerifiedGarbage.Proof.MlKem.X86_64.VLanes
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.MlKem.Mem
-import VerifiedGarbage.Proof.MlKem.Ntt
-import VerifiedGarbage.Proof.Framework.X86_64.Avx
-import VerifiedGarbage.Impl.MlKem.X86_64.Ntt
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86_64.VLanes
+public import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.MlKem.Mem
+public import VerifiedGarbage.Proof.MlKem.Ntt
+public import VerifiedGarbage.Proof.Framework.X86_64.Avx
+public import VerifiedGarbage.Impl.MlKem.X86_64.Ntt
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86-64: polynomials as words in the working space
@@ -13,6 +19,8 @@ coefficients (`lanes_load`) and stores of them (`s16_write2`), and the table
 of the zetas as words (`T16`), from which `vzeta` loads the zetas of up to
 four blocks (`vzeta_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.X86_64
 

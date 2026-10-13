@@ -1,7 +1,16 @@
-import VerifiedGarbage.Proof.RsaPss.X86_64.FixedSaltCopy
-import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyMain
+module
+
+public import VerifiedGarbage.Proof.RsaPss.X86_64.FixedSaltCopy
+public import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyMain
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Verification's fixed-length salt input, built without a masked shift. -/
+
+@[expose] public section
+
 namespace VG.Proof.RsaPss.X86_64
 open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Impl.RsaPss.X86_64
 open VG.Proof.MlKem.X86_64 (Keep WP.keep ifp ifn)

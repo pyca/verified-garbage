@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.Impl.Gcm.X86_64.StitchAvx
-import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Aes
+module
+
+public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+public import VerifiedGarbage.Impl.Gcm.X86_64.StitchAvx
+public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Aes
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Interleaved counter mode and GHASH in AVX: a batch of four blocks
@@ -14,6 +20,8 @@ the data (`xorData_ok`). The blocks `g i` between the rounds do what `Q`
 says, which neither the counter blocks, the rounds nor the XOR (which writes
 only those four blocks) undo.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Gcm.X86_64.StitchAvx
 

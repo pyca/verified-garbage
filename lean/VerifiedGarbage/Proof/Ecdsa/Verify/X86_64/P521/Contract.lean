@@ -1,7 +1,13 @@
-import VerifiedGarbage.Spec.Ecdsa.Verify.P521
-import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.Tables
+module
+
+public import VerifiedGarbage.Spec.Ecdsa.Verify.P521
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.Tables
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDSA verification over P-521 on x86-64: the contract the proof is written against
@@ -14,6 +20,8 @@ static `VG_P521_COMB`. Only the pointers (and the tables' address) are public
 here: the proof shows that nothing else affects timing, although the
 contract would let the contents of the three buffers.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Verify.X86_64.P521
 

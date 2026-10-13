@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.MlKem.X86_64.Encode12
+module
+
+public import VerifiedGarbage.Impl.MlKem.X86_64.Encode12
 
 /-!
 # ML-KEM on x86-64: the key check (`vg_mlkem768_check_ek`, `vg_mlkem1024_check_ek`)
@@ -11,6 +13,8 @@ key passes the modulus check exactly when all `256k` are: `cmp r8, 256k` sets
 CF exactly when one is not, and `sbb rax, rax; add rax, 1` returns `1 - CF`,
 without a branch. Every address and branch depends only on the pointer.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlKem.X86_64
 

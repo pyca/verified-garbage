@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Arith
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Arith
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Arith
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on AArch64: `vg_mldsa_norm_lt`
@@ -7,6 +14,8 @@ The top bit of `x10` says whether every coefficient `a` so far has `a < B` or
 `q - a < B` (`J`): each is the sign bit of a difference of numbers less than
 `2³²` (`sgn_sub`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Round
 

@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Ecdh.AArch64.Peer
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Lays
-import VerifiedGarbage.Proof.Ecdsa.AArch64.SlotOps
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Stages
+module
+
+public import VerifiedGarbage.Proof.Ecdh.AArch64.Peer
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.Lays
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.SlotOps
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.Stages
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDH on AArch64: the peer's point, `[d]P` and `Z^(p-2)`
@@ -14,6 +20,8 @@ a field program, by `fprog_ok`), ands the mask of its being zero into the
 flag, and selects for the window method the peer's point if the flag is set, else
 `G` (`validate_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdh.AArch64
 

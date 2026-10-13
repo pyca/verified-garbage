@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlKem.Arith
+module
+
+public import VerifiedGarbage.Proof.MlKem.Arith
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM: the NTT as butterflies, for every target
@@ -25,6 +31,8 @@ The zeta of the block `b` of the layer with `len` (`k` in the loops, `i` in
 the standard) is `128 / len + b` in `NTT` (the standard's counter `i` runs
 from 1 up) and `256 / len - 1 - b` in `NTT⁻¹` (from 127 down).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem
 

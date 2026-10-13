@@ -1,7 +1,17 @@
-import VerifiedGarbage.Proof.MlDsa.X86.Arith.NttLoop
-import VerifiedGarbage.TCB.X86.Target
-import VerifiedGarbage.Proof.Framework.Sig
-import VerifiedGarbage.Proof.Framework.Contract
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86.Arith.NttLoop
+meta import VerifiedGarbage.Proof.MlDsa.X86.Arith.NttLoop
+public import VerifiedGarbage.TCB.X86.Target
+meta import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Proof.Framework.Sig
+meta import VerifiedGarbage.Proof.Framework.Sig
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on x86 (32-bit): the start of `vg_mldsa_ntt` and `vg_mldsa_inv_ntt`
@@ -11,6 +21,8 @@ at entry `z`, and store `f + 1024` in the argument slot of `scratch`
 (`setup_piece`), leaving `MemOK` with the input polynomial, as for ML-KEM on
 x86.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86.Arith.NttLoop
 

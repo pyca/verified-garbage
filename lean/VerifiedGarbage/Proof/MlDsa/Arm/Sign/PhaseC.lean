@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseD
-import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PrimsC
-import VerifiedGarbage.Proof.MlDsa.Sign.Iter
+module
+
+public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseD
+public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PrimsC
+public import VerifiedGarbage.Proof.MlDsa.Sign.Iter
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA signing on ARMv7: the commitment of an iteration
@@ -12,6 +18,8 @@ at `KAP`, `814 - t` at `CNT`, and the `t` iterations before rejected (within
 `w1Encode(HighBits(w[i]))` at `W1` (`w1R_ok`), and `c̃ = H(μ ‖ w1Encode(w₁),
 λ/4)` at `CT` (`commit_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Arm.Sign
 

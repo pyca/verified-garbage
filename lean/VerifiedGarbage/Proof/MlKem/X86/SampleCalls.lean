@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.MlKem.X86.SampleSetup
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86.SampleSetup
+meta import VerifiedGarbage.Proof.MlKem.X86.SampleSetup
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86 (32-bit): the Keccak calls of `vg_mlkem_sample_ntt`
@@ -9,6 +16,8 @@ leaves the first 840 bytes of the XOF output of the seed there (`Out`). Each
 call's arguments are set by a block (`absArgs_piece`, `padArgs_piece`,
 `sqArgs_piece`) from `esi = scratch` and the seed pointer on the stack.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.X86.Sample
 
