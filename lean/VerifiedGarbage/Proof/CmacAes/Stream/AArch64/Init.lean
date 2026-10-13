@@ -6,6 +6,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Cmac.Block
+meta import VerifiedGarbage.Proof.Cmac.Block
 
 /-!
 # Streaming AES-CMAC on AArch64: `vg_cmac_aes_init`

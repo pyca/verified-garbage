@@ -7,6 +7,7 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Impl.CmacTripleDes.Arm
 
 /-!
 # TDEA-CMAC on ARMv7: saving and restoring the registers

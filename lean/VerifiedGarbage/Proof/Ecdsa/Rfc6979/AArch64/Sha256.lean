@@ -9,6 +9,11 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Data.Finset.Card
+import Mathlib.Data.Nat.Find
+import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Sha512.Word64
+import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowQuad
 
 /-!
 # Deterministic ECDSA over P-256 with HMAC-SHA-256 on AArch64

@@ -8,6 +8,9 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Impl.CmacTripleDes.X86
+import Mathlib.Data.List.Induction
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # TDEA-CMAC on x86: saving and restoring the registers, and the arguments

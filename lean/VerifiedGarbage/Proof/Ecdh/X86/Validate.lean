@@ -10,6 +10,7 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.X25519.X86.Column
 
 /-!
 # ECDH on x86 (32-bit): the peer's point, `[d]P` and `Z^(p-2)`
