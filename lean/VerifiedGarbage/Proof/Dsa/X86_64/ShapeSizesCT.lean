@@ -10,6 +10,10 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Dsa.X86_64.ShapeSizes
+import VerifiedGarbage.Proof.Framework.X86_64.Call
+meta import VerifiedGarbage.Proof.Dsa.X86_64.ShapeSizes
+meta import VerifiedGarbage.Proof.Framework.X86_64.Call
 
 /-! # Constant time of both public width scans and size selection -/
 
