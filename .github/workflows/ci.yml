@@ -434,15 +434,15 @@ jobs:
       # A push to main is the commit the merge queue tested (see the `lean`
       # job's `reuse`): it only builds, for main's caches, which only main
       # saves.
-      - if: ${{ github.event_name != 'push' }}
+      - if: ${{ !(github.event_name == 'push' && github.ref == 'refs/heads/main') }}
         run: cargo test --locked
-      - if: ${{ github.event_name == 'push' }}
+      - if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
         run: cargo test --locked --no-run
       - name: Export coverage
-        if: ${{ github.event_name != 'push' }}
+        if: ${{ !(github.event_name == 'push' && github.ref == 'refs/heads/main') }}
         shell: bash
         run: $(command -v python3 || command -v python) ci/export_rust_coverage.py .rust-cov
-      - if: ${{ github.event_name != 'push' }}
+      - if: ${{ !(github.event_name == 'push' && github.ref == 'refs/heads/main') }}
         uses: ./.github/actions/upload-artifact
         with:
           name: coverage-data-${{ strategy.job-index }}
@@ -495,14 +495,14 @@ jobs:
         if: ${{ matrix.rust == 'stable' }}
         run: cargo clippy --all-targets --locked
       # Only builds on a push to main, as in the `rust` job.
-      - if: ${{ github.event_name != 'push' }}
+      - if: ${{ !(github.event_name == 'push' && github.ref == 'refs/heads/main') }}
         run: cargo test --locked
-      - if: ${{ github.event_name == 'push' }}
+      - if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
         run: cargo test --locked --no-run
       # That the tests ran T32: the symbol of Thumb code has an odd address
       # (AAELF32 §5.5.3, "Symbol Values").
       - name: Check the verified functions are Thumb code
-        if: ${{ github.event_name != 'push' }}
+        if: ${{ !(github.event_name == 'push' && github.ref == 'refs/heads/main') }}
         run: |
           find "target/$CARGO_BUILD_TARGET/debug/deps" -maxdepth 1 -type f -executable -exec readelf -sW {} + |
             awk '$4 == "FUNC" && $8 ~ /vg_/ { n++; if ($2 ~ /[02468aceACE]$/) { print "not Thumb: " $8; bad++ } }
@@ -731,7 +731,7 @@ jobs:
           fi
       # Only builds on a push to main, as in the `rust` job.
       - name: Download Intel SDE
-        if: ${{ matrix.chip != 'native' && github.event_name != 'push' }}
+        if: ${{ matrix.chip != 'native' && !(github.event_name == 'push' && github.ref == 'refs/heads/main') }}
         run: |
           curl -sSfLo sde.tar.xz "$SDE_URL"
           echo "$SDE_SHA256  sde.tar.xz" | sha256sum -c
@@ -744,12 +744,12 @@ jobs:
         with:
           shared-key: rust-cpu-features
           save-if: ${{ github.ref == 'refs/heads/main' }}
-      - if: ${{ github.event_name == 'push' }}
+      - if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
         run: cargo test --locked --features cpu-features-env --no-run
       # Set the test runner after caching: its temporary path would otherwise
       # change the cache key, which includes CARGO_* environment variables.
       - name: Run the tests under SDE
-        if: ${{ matrix.chip != 'native' && github.event_name != 'push' }}
+        if: ${{ matrix.chip != 'native' && !(github.event_name == 'push' && github.ref == 'refs/heads/main') }}
         run: echo "CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_RUNNER=$RUNNER_TEMP/sde/sde64 -$CHIP --" >> "$GITHUB_ENV"
         env:
           CHIP: ${{ matrix.chip }}
@@ -769,7 +769,7 @@ jobs:
       # kept, for `main` to save for the next runs' shards, and the CPU's
       # tests and groups, for `coverage` to check every group's paths with.
       - name: Test the implementations
-        if: ${{ github.event_name != 'push' }}
+        if: ${{ !(github.event_name == 'push' && github.ref == 'refs/heads/main') }}
         shell: bash
         run: |
           lines=$(python3 ci/cpu_shards.py pick "$CPU" "$SHARD" "$TIMES" <<< "$RUNS")
@@ -845,7 +845,7 @@ jobs:
           TIMES: ${{ needs.cpu-features-times.outputs.times }}
           JOB: ${{ strategy.job-index }}
       # For `cpu-features-times-save`, from the merge queue's run.
-      - if: ${{ github.event_name != 'push' }}
+      - if: ${{ !(github.event_name == 'push' && github.ref == 'refs/heads/main') }}
         uses: ./.github/actions/upload-artifact
         with:
           name: cpu-features-times-${{ strategy.job-index }}
@@ -853,7 +853,7 @@ jobs:
           retention-days: 1
           if-no-files-found: error
       # For `coverage`'s check of ci/cpu_tests.py's groups.
-      - if: ${{ github.event_name != 'push' }}
+      - if: ${{ !(github.event_name == 'push' && github.ref == 'refs/heads/main') }}
         uses: ./.github/actions/upload-artifact
         with:
           name: cpu-tests-${{ strategy.job-index }}
@@ -861,9 +861,9 @@ jobs:
           retention-days: 1
           if-no-files-found: error
       - name: Export coverage
-        if: ${{ github.event_name != 'push' }}
+        if: ${{ !(github.event_name == 'push' && github.ref == 'refs/heads/main') }}
         run: python3 ci/export_rust_coverage.py .rust-cov --features cpu-features-env
-      - if: ${{ github.event_name != 'push' }}
+      - if: ${{ !(github.event_name == 'push' && github.ref == 'refs/heads/main') }}
         uses: ./.github/actions/upload-artifact
         with:
           name: coverage-data-cpu-features-${{ strategy.job-index }}
@@ -932,7 +932,7 @@ jobs:
   coverage:
     name: Rust coverage
     needs: [rust, rust-cpu-features]
-    if: ${{ github.event_name != 'push' }}
+    if: ${{ !(github.event_name == 'push' && github.ref == 'refs/heads/main') }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -1010,7 +1010,7 @@ jobs:
           for r in $RESULTS; do
             [ "$r" = success ] || exit 1
           done
-          [ "$COVERAGE" = success ] || { [ "$GITHUB_EVENT_NAME" = push ] && [ "$COVERAGE" = skipped ]; } || exit 1
+          [ "$COVERAGE" = success ] || { [ "$GITHUB_EVENT_NAME" = push ] && [ "$GITHUB_REF" = refs/heads/main ] && [ "$COVERAGE" = skipped ]; } || exit 1
           case "$SHARDS" in
             skipped) ;;
             success)
