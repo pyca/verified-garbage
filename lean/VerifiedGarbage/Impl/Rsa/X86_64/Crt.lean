@@ -418,12 +418,14 @@ def gatherHeadV : List (Prog isa) :=
     .block keepMaskV,
     .block gatherBases]
 
-/-- `x0 |= [b + 8 r14] & x`, `L / 64` words. -/
+/-- `xmm0 |= [b + 8 r14] & x`, a lane or two of words. -/
 def gatherOrV (L : VLen) (b : Reg) (x : XReg) : List Instr :=
-  [.vmovdquLoad L .xmm1 (ix b .r14), .vop (.vbin .vpand L .xmm1 .xmm1 x), .vop (.vbin .vpor L .xmm0 .xmm0 .xmm1)]
+  [.vbinLoad .vpand L .xmm1 x (ix b .r14), .vop (.vbin .vpor L .xmm0 .xmm0 .xmm1)]
 
+/-- `[rbx + 8 r14] := ([rbx + 8 r14] & ymm7) | OR_j ([b_j + 8 r14] & ymm(8+j))`
+over 4 words (`.l256`) or 2 (`.l128`), and `r14 += n`. -/
 def gatherBodyV (L : VLen) (n : Nat) : List Instr :=
-  [.vmovdquLoad L .xmm0 (ix .rcx .r14), .vop (.vbin .vpand L .xmm0 .xmm0 .xmm8)] ++
+  [.vbinLoad .vpand L .xmm0 .xmm8 (ix .rcx .r14)] ++
   gatherOrV L .rdx .xmm9 ++ gatherOrV L .rsi .xmm10 ++ gatherOrV L .rbp .xmm11 ++ gatherOrV L .r8 .xmm12 ++
   gatherOrV L .r9 .xmm13 ++ gatherOrV L .r10 .xmm14 ++ gatherOrV L .rax .xmm15 ++ gatherOrV L .rbx .xmm7 ++
   ([.vmovdquStore L (ix .rbx .r14) .xmm0, .alu .add .r14 (.imm (BitVec.ofNat 32 n))] : List Instr)
