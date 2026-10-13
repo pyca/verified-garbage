@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Bignum.AArch64.CarrySelect
 public import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Rsa.AArch64.KeyWs
 public import VerifiedGarbage.Proof.Rsa.KeyMath
@@ -203,7 +204,7 @@ theorem divSub_ok {s : State} {B : Addr} {Z w : Nat} {iR iD iT : Nat} (hs : Scr 
   -- The selection.
   have e15 : s₉.gpr .x15 = mask (!decide (wv s.mem B (slot w iR) (w + 1) < wv s.mem B (slot w iD) w)) := by
     rw [(k79.gpr .x15 (by decide)), h15₆, ← hb, Bool.not_not]
-  refine WP.mono (selLoop_ok (hI.scr.congr (k46.trans k79).wr) ((k₈.trans k₉ |>.gpr .x16 (by decide)).trans h16₇)
+  refine WP.mono (carrySelect_ok (hI.scr.congr (k46.trans k79).wr) ((k₈.trans k₉ |>.gpr .x16 (by decide)).trans h16₇)
     ((k₉.gpr .x17 (by decide)).trans h17₈) h14₉ e15 (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith))
     fun t ⟨hv, ho, k₁₀⟩ => ?_
   have hR₉ : wv s₉.mem B (slot w iR) (w + 1) = wv s.mem B (slot w iR) (w + 1) := by
