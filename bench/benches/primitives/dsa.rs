@@ -2,7 +2,7 @@
 //! aws-lc-rs does not expose a DSA signing/verification API.
 use criterion::Criterion;
 
-pub const USES: &[&str] = &["dsa", "rsa_mont", "ffdh", "ct"];
+pub const USES: &[&str] = &["dsa", "rsa_mont"];
 
 #[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
 #[path = "../../../tests/cavp/dsa_vectors.rs"]

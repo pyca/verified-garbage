@@ -1,7 +1,7 @@
 //! DSA signing and verification of prehashed messages, with fixed-width
 //! big-endian `r || s` signatures (FIPS 186-4).
 //!
-//! The operations check domain and key algebraic consistency and
+//! The verified operations check domain and key algebraic consistency and
 //! scalar ranges. As with this crate's RSA operations, they do not prove
 //! primality: callers must obtain domain parameters from a trusted source
 //! or validate them separately. FIPS 186-5 retains DSA for legacy verification.
@@ -12,11 +12,6 @@
 //! may have any length and are truncated to the subgroup's actual bit length.
 //! Keys own their components, so each operation's buffers are disjoint.
 //! Private keys, nonces and scratch are wiped when their owners are dropped.
-//!
-//! On x86-64, Lean verifies the complete signing and verification primitives.
-//! On AArch64, Rust composes the verified Montgomery, selection and equality
-//! primitives shared with FFDH. The Rust domain checks, reductions and DSA
-//! formulas are outside the Lean proof boundary.
 
 #![cfg(all(
     any(target_arch = "x86_64", target_arch = "aarch64"),
@@ -28,16 +23,12 @@ use core::fmt;
 
 #[cfg(target_arch = "x86_64")]
 use crate::arch::dsa::{
-    VG_DSA_SIGN_ADX_FEATURES, VG_DSA_VERIFY_ADX_FEATURES, vg_dsa_sign, vg_dsa_sign_adx,
-    vg_dsa_verify, vg_dsa_verify_adx,
+    VG_DSA_SIGN_ADX_FEATURES, VG_DSA_VERIFY_ADX_FEATURES, vg_dsa_sign_adx, vg_dsa_verify_adx,
 };
-#[cfg(any(target_arch = "x86_64", test))]
-use crate::cpu::Features;
-#[cfg(target_arch = "x86_64")]
-use crate::cpu::detected;
+use crate::arch::dsa::{vg_dsa_sign, vg_dsa_verify};
+use crate::cpu::{Features, detected};
 use crate::zeroize::{Int, zeroize};
 
-#[cfg(any(target_arch = "x86_64", test))]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum Backend {
     Baseline,
@@ -45,7 +36,6 @@ enum Backend {
     Adx,
 }
 
-#[cfg(any(target_arch = "x86_64", test))]
 impl Backend {
     fn select(_features: Features) -> Self {
         #[cfg(target_arch = "x86_64")]
@@ -108,7 +98,6 @@ pub struct PublicKey {
     packed: Vec<u8>,
     p_len: usize,
     q_len: usize,
-    #[cfg(target_arch = "x86_64")]
     backend: Backend,
 }
 
@@ -130,7 +119,6 @@ impl PublicKey {
             packed,
             p_len: p.len(),
             q_len: q.len(),
-            #[cfg(target_arch = "x86_64")]
             backend: Backend::select(detected()),
         })
     }
@@ -141,41 +129,35 @@ impl PublicKey {
         if signature.len() != 2 * self.q_len {
             return false;
         }
-        #[cfg(target_arch = "aarch64")]
-        {
-            aarch64::verify(&self.packed, self.p_len, self.q_len, digest, signature)
-        }
-        #[cfg(target_arch = "x86_64")]
-        {
-            let mut scratch = Secret(vec![0u64; 16 * self.p_len]);
-            macro_rules! verify {
-                ($function:path) => {
-                    // SAFETY: import establishes all widths. The key owns its
-                    // bytes; scratch is a fresh allocation, disjoint from every
-                    // input, with the contract's 16*p_len words. Read-only inputs
-                    // may overlap one another. CPU features select the backend.
-                    unsafe {
-                        $function(
-                            self.packed.as_ptr(),
-                            self.packed.len(),
-                            self.p_len,
-                            self.q_len,
-                            signature.as_ptr(),
-                            signature.len(),
-                            digest.as_ptr(),
-                            digest.len(),
-                            scratch.0.as_mut_ptr(),
-                            scratch.0.len(),
-                        )
-                    }
-                };
-            }
-            let result = match self.backend {
-                Backend::Baseline => verify!(vg_dsa_verify),
-                Backend::Adx => verify!(vg_dsa_verify_adx),
+        let mut scratch = Secret(vec![0u64; 16 * self.p_len]);
+        macro_rules! verify {
+            ($function:path) => {
+                // SAFETY: import establishes all widths. The key owns its
+                // bytes; scratch is a fresh allocation, disjoint from every
+                // input, with the contract's 16*p_len words. Read-only inputs
+                // may overlap one another. CPU features select the backend.
+                unsafe {
+                    $function(
+                        self.packed.as_ptr(),
+                        self.packed.len(),
+                        self.p_len,
+                        self.q_len,
+                        signature.as_ptr(),
+                        signature.len(),
+                        digest.as_ptr(),
+                        digest.len(),
+                        scratch.0.as_mut_ptr(),
+                        scratch.0.len(),
+                    )
+                }
             };
-            result == 1
         }
+        let result = match self.backend {
+            Backend::Baseline => verify!(vg_dsa_verify),
+            #[cfg(target_arch = "x86_64")]
+            Backend::Adx => verify!(vg_dsa_verify_adx),
+        };
+        result == 1
     }
 }
 
@@ -278,54 +260,38 @@ impl PrivateKey {
         assert_eq!(nonce.len(), self.public.q_len);
         assert_eq!(output.len(), 2 * self.public.q_len);
         assert!(scratch.len() >= 16 * self.public.p_len);
-        #[cfg(target_arch = "aarch64")]
-        {
-            aarch64::sign(
-                &self.packed.0,
-                self.public.p_len,
-                self.public.q_len,
-                digest,
-                nonce,
-                output,
-            )
-        }
-        #[cfg(target_arch = "x86_64")]
-        {
-            macro_rules! sign {
-                ($function:path) => {
-                    // SAFETY: import and the assertions establish the contract's
-                    // widths. The owned packed key cannot alias the output or
-                    // scratch, and the exclusive output/scratch slices cannot
-                    // overlap any live input. CPU features select the backend.
-                    unsafe {
-                        $function(
-                            output.as_mut_ptr(),
-                            output.len(),
-                            self.packed.0.as_ptr(),
-                            self.packed.0.len(),
-                            self.public.p_len,
-                            nonce.as_ptr(),
-                            nonce.len(),
-                            digest.as_ptr(),
-                            digest.len(),
-                            scratch.as_mut_ptr(),
-                            scratch.len(),
-                        )
-                    }
-                };
-            }
-            let result = match self.public.backend {
-                Backend::Baseline => sign!(vg_dsa_sign),
-                Backend::Adx => sign!(vg_dsa_sign_adx),
+        macro_rules! sign {
+            ($function:path) => {
+                // SAFETY: import and the assertions establish the contract's
+                // widths. The owned packed key cannot alias the output or
+                // scratch, and the exclusive output/scratch slices cannot
+                // overlap any live input. CPU features select the backend.
+                unsafe {
+                    $function(
+                        output.as_mut_ptr(),
+                        output.len(),
+                        self.packed.0.as_ptr(),
+                        self.packed.0.len(),
+                        self.public.p_len,
+                        nonce.as_ptr(),
+                        nonce.len(),
+                        digest.as_ptr(),
+                        digest.len(),
+                        scratch.as_mut_ptr(),
+                        scratch.len(),
+                    )
+                }
             };
-            result == 1
         }
+        let result = match self.public.backend {
+            Backend::Baseline => sign!(vg_dsa_sign),
+            #[cfg(target_arch = "x86_64")]
+            Backend::Adx => sign!(vg_dsa_sign_adx),
+        };
+        result == 1
     }
 }
 
 #[cfg(test)]
 #[path = "dsa/tests.rs"]
 mod tests;
-
-#[cfg(target_arch = "aarch64")]
-mod aarch64;
