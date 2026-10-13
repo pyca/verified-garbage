@@ -6,7 +6,7 @@
 ///
 /// Contract: `VG.Spec.Cast5.cbcEncryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the subkeys, the chaining value or the data.
 ///
-/// Baseline ARMv7: the generic CBC of `Impl/Modes/Arm/`, one block at a time, calling the verified `vg_cast5_ecb_encrypt` or `vg_cast5_ecb_decrypt` (which scans the S-boxes written into its code, so no secret is an address) on each block with the number of rounds and, as its stack argument, the end of a 312-byte working space on the stack (the mode's 56 bytes, then the 256 the ECB function works in), zeroed on return.
+/// Baseline ARMv7: the generic CBC of `Impl/Modes/Arm/`, one block at a time, calling the verified `vg_cast5_ecb_encrypt` or `vg_cast5_ecb_decrypt` (which scans the S-boxes in the static `VG_CAST5_S1234`, so no secret is an address) on each block with the number of rounds and, as its stack argument, the end of a 312-byte working space on the stack (the mode's 56 bytes, then the 256 the ECB function works in), zeroed on return.
 ///
 /// # Safety
 ///
@@ -175,7 +175,7 @@ pub(crate) unsafe extern "C" fn vg_cast5_cbc_encrypt(schedule: *const [u8; 128],
 ///
 /// Contract: `VG.Spec.Cast5.cbcDecryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the subkeys, the chaining value or the data.
 ///
-/// Baseline ARMv7: the generic CBC of `Impl/Modes/Arm/`, one block at a time, calling the verified `vg_cast5_ecb_encrypt` or `vg_cast5_ecb_decrypt` (which scans the S-boxes written into its code, so no secret is an address) on each block with the number of rounds and, as its stack argument, the end of a 312-byte working space on the stack (the mode's 56 bytes, then the 256 the ECB function works in), zeroed on return.
+/// Baseline ARMv7: the generic CBC of `Impl/Modes/Arm/`, one block at a time, calling the verified `vg_cast5_ecb_encrypt` or `vg_cast5_ecb_decrypt` (which scans the S-boxes in the static `VG_CAST5_S1234`, so no secret is an address) on each block with the number of rounds and, as its stack argument, the end of a 312-byte working space on the stack (the mode's 56 bytes, then the 256 the ECB function works in), zeroed on return.
 ///
 /// # Safety
 ///

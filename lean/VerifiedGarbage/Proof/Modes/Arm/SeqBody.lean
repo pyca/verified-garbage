@@ -369,14 +369,16 @@ theorem UPre.disj_blks {k : Nat} (hk : k < N c s₀) {R : Region} (hd : R.Disjoi
 
 /-- The call's arguments make its precondition. -/
 theorem PreA.callPre (hM : ModeOk c M) {k : Nat} (hk : k < N c s₀) {b : Blks} {s s₂ : State}
-    (h : LInv c S M s₀ k s) (a : PreA (c := c) (M := M) s₀ k b s s₂) :
+    (h : LInv c S M s₀ k s) (a : PreA (c := c) (M := M) s₀ k b s s₂) (hsy : s₂.syms = s₀.syms) :
     CallPre c S s₂ (Kp s₀) (Rp s₀) (bt c (Dk s₀ c M k) (Sc c s₀) M.tgt) (Cs c s₀) := by
   have hL := hp.lay hk
   have sp : s₂.sp = s₀.sp := by rw [a.sp, h.sp]
   have ts := hM.tgt_sz
+  have et : tabRegs S.consts s₂ = tabRegs S.consts s₀ := by simp only [tabRegs, hsy]
+  have tw := hp.tabs.2
   refine ⟨a.r0, a.r1, hp.rok, a.rD, a.rN, by rw [sp]; exact hp.stk, hp.fK, ts ▸ hL.bt_fit _, ?_, ?_, ?_, ?_, ?_,
     a.r12, hp.cs_fit, hp.key_scr.sub_right hp.cs_sub_scr, ?_, by rw [sp]; exact hp.b_scr.sub_right hp.cs_sub_scr,
-    fun hs => ?_⟩
+    fun hs => ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [hL.bt_addr, ← ts]; exact hp.disj_blks hk hp.key_data hp.key_scr _
   · rw [sp]; exact hp.b_key
   · rw [sp, hL.bt_addr, ← ts]; exact hp.disj_blks hk hp.b_data hp.b_scr _
@@ -388,6 +390,22 @@ theorem PreA.callPre (hM : ModeOk c M) {k : Nat} (hk : k < N c s₀) {b : Blks} 
       simp only [List.mem_singleton] at hr; subst hr
       have := hp.fS; unfold Core.scratchBytes at this
       exact ⟨_, hp.scr_in, c.csOff, hp.cs_addr hs, by show c.csOff + c.stackScratch ≤ c.scratchBytes; rfl⟩
+  · rw [et, a.rd, h.rd]; exact fun t ht => (tw t ht).1
+  · have e2 : (fun n => State.addr (s₂.syms n)) = fun n => State.addr (s₀.syms n) := by rw [hsy]
+    rw [e2]
+    refine held_frame (hp.frame_entry hk h.frame a.frame) (fun t ht r hr => ?_) (fun t ht => ?_) hp.tabs.1
+    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl
+      · exact (tw t ht).2.2.1 _ hp.data_in
+      · exact (tw t ht).2.2.1 _ hp.scr_in
+      · exact (tw t ht).2.2.2
+    · have := (tw t ht).2.1; omega
+  · rw [et]; exact fun t ht => (tw t ht).2.1
+  · rw [et]; intro t ht
+    rw [hL.bt_addr, ← ts]
+    exact hp.disj_blks hk ((tw t ht).2.2.1 _ hp.data_in) ((tw t ht).2.2.1 _ hp.scr_in) _
+  · rw [et]; exact fun t ht => ((tw t ht).2.2.1 _ hp.scr_in).sub_right hp.cs_sub_scr
+  · rw [et, sp]; exact fun t ht => (tw t ht).2.2.2
 
 /-- The blocks after the call. -/
 theorem call_blks (hM : ModeOk c M) {k : Nat} (hk : k < N c s₀) {b : Blks} {s s₂ s₃ : State}
@@ -431,12 +449,13 @@ theorem UPre.step_sub {k : Nat} (hk : k < N c s₀) :
   · exact ⟨_, .head _, hp.blk_sub_data hk⟩
   · exact ⟨_, .tail _ (.head _), Region.sub_prefix (by omega)⟩
 
-theorem body_ok (hM : ModeOk c M) {k : Nat} (hk : k < N c s₀) {s : State} (h : LInv c S M s₀ k s) :
+theorem body_ok (hM : ModeOk c M) {k : Nat} (hk : k < N c s₀) {s : State} (h : LInv c S M s₀ k s)
+    (hsy : s.syms = s₀.syms) :
     WP isa (c.body M) s fun s' => LInv c S M s₀ (k + 1) s' ∧ s'.z = decide (N c s₀ - (k + 1) = 0) := by
   have hL := hp.lay hk
   have hfit : c.bs ≤ 2 ^ 64 := by have := hp.fS; unfold Core.scratchBytes Core.csOff at this; omega
-  refine WP.seq (WP.mono (pre_wp hp hM hk h) fun s₂ a => ?_)
-  refine WP.seq (WP.mono (call_wp S (a.callPre hp hM hk h)) fun s₃ cp => ?_)
+  refine WP.seq (VG.Arm.WP.mono_syms (pre_wp hp hM hk h) fun s₂ a sy₂ => ?_)
+  refine WP.seq (WP.mono (call_wp S (a.callPre hp hM hk h (sy₂.trans hsy))) fun s₃ cp => ?_)
   have hb₂ := call_blks hp hM hk h a cp
   have g₃ : ∀ r ∈ preserved, r ≠ .lr → r ≠ .r9 → r ≠ .r10 → s₃.gpr r = s.gpr r := fun r hr hl h9 h10 => by
     rw [cp.saved r hr hl, a.regs r (by rintro rfl; simp [preserved] at hr) (by rintro rfl; simp [preserved] at hr)
