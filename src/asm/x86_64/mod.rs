@@ -65,6 +65,15 @@ pub(crate) mod brainpoolp256r1_inverse;
 pub(crate) mod brainpoolp256r1_mul;
 
 #[rustfmt::skip]
+pub(crate) mod brainpoolp384r1_check_point;
+
+#[rustfmt::skip]
+pub(crate) mod brainpoolp384r1_inverse;
+
+#[rustfmt::skip]
+pub(crate) mod brainpoolp384r1_mul;
+
+#[rustfmt::skip]
 pub(crate) mod camellia;
 
 #[rustfmt::skip]
@@ -116,6 +125,9 @@ pub(crate) mod dsa;
 pub(crate) mod ec_brainpoolp256r1;
 
 #[rustfmt::skip]
+pub(crate) mod ec_brainpoolp384r1;
+
+#[rustfmt::skip]
 pub(crate) mod ec_p192;
 
 #[rustfmt::skip]
@@ -135,6 +147,9 @@ pub(crate) mod ec_secp256k1;
 
 #[rustfmt::skip]
 pub(crate) mod ecdh_brainpoolp256r1;
+
+#[rustfmt::skip]
+pub(crate) mod ecdh_brainpoolp384r1;
 
 #[rustfmt::skip]
 pub(crate) mod ecdh_p192;
@@ -159,6 +174,12 @@ pub(crate) mod ecdsa_brainpoolp256r1;
 
 #[rustfmt::skip]
 pub(crate) mod ecdsa_brainpoolp256r1_sha256;
+
+#[rustfmt::skip]
+pub(crate) mod ecdsa_brainpoolp384r1;
+
+#[rustfmt::skip]
+pub(crate) mod ecdsa_brainpoolp384r1_sha384;
 
 #[rustfmt::skip]
 pub(crate) mod ecdsa_p192;

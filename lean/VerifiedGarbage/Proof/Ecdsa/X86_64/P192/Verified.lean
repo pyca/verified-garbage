@@ -108,7 +108,7 @@ theorem pre_of {s : State} (h : signX86_64.pre s) : Pre p192 s := by
 
 /-- `[k]G` is a call of `vg_p192_mul`, which calls no other function. -/
 theorem p192_mulBase : MulBaseOk p192 :=
-  ⟨fun h => absurd h (by decide), fun _ => ⟨rfl, by lit_decide⟩⟩
+  ⟨fun h => absurd h (by decide), fun _ => ⟨.inl rfl, by lit_decide⟩⟩
 
 theorem sign_x86 (hL : Law Spec.P192.curve)
     (hI : InvSounds) (s : State)

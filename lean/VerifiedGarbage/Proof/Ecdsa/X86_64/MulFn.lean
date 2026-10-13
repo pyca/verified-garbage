@@ -235,10 +235,10 @@ theorem mulBody_ok (hc : BaseCfgOk c) (hC : Law c.C) {base : Addr} {s : State} (
   · rw [Nat.shiftRight_zero] at R'
     exact R'
 
-/-- `vg_<curve>_mul`, for a curve of four words: what its body gives
+/-- `vg_<curve>_mul`, for a curve of four or six words: what its body gives
 (`mulBody_ok`); the registers it copies to `xmm` registers and back are
 among those its body changes (`powClob`). -/
-theorem mulFn_ok (hc : BaseCfgOk c) (h4 : c.n = 4) (hC : Law c.C) {base : Addr} {s : State}
+theorem mulFn_ok (hc : BaseCfgOk c) (h4 : c.n = 4 ∨ c.n = 6) (hC : Law c.C) {base : Addr} {s : State}
     (hs : Scr s base size)
     (hmp : sv c base s MP = c.C.p) (hz : sv c base s ZERO = 0)
     (hone : sv c base s ONEP = 2 ^ (64 * c.n) % c.C.p)
@@ -250,7 +250,8 @@ theorem mulFn_ok (hc : BaseCfgOk c) (h4 : c.n = 4) (hC : Law c.C) {base : Addr} 
       (∀ x ∈ [c.sl RX, c.sl RY, c.sl RZ], wordsVal s'.mem base x c.n < c.C.p) ∧
       Rep c.C (tmv c.C c.n base s' (c.sl RX)) (tmv c.C c.n base s' (c.sl RY))
         (tmv c.C c.n base s' (c.sl RZ)) (mul (sv c base s K) (ptQ c base s)) := by
-  have hkept : ∀ r ∈ Cfg.invKeptX.map Prod.fst, r ∈ powClob c.n := by rw [h4]; decide
+  have hkept : ∀ r ∈ Cfg.invKeptX.map Prod.fst, r ∈ powClob c.n := by
+    rcases h4 with h | h <;> rw [h] <;> decide
   show WP isa (.seq (.block _) (.seq c.mulBody.inline (.block _))) s _
   refine WP.seq (WP.mono (savesX_ok s) fun s₁ ⟨g₁, m₁, rd₁, wr₁⟩ => ?_)
   have hs₁ : Scr s₁ base size := ⟨by rw [g₁]; exact hs.rdi, by rw [wr₁]; exact hs.wr, hs.nowrap⟩
