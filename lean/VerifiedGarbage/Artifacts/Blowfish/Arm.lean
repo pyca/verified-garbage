@@ -12,12 +12,14 @@ def artifacts : List Artifact := [
   { Spec.Blowfish.expandKeyApi with
     target := Arm.target
     doc := Spec.Blowfish.expandKeyApi.doc
-      (notes := ["The initial schedule is written from immediates, the P-array keyed a byte of the key at \
-        a time, and the 521 encryptions run ECB's block function under the schedule as it is written. \
-        Our caller's registers, the next entries' pointer and the encryptions left are kept in 64 bytes \
-        of working space on the stack, whose first 48 are zeroed before returning."])
+      (notes := ["The initial schedule is copied from the static `VG_BLOWFISH_INIT`, seven words a \
+        step, the P-array keyed a byte of the key at a time, and the 521 encryptions run ECB's block \
+        function under the schedule as it is written. Our caller's registers, the next entries' \
+        pointer and the encryptions left are kept in 64 bytes of working space on the stack, whose \
+        first 48 are zeroed before returning."])
+    consts := Impl.Blowfish.Arm.initConsts
     code := Impl.StackScratch.Arm.withRegScratchWiped 64 .r3 12 Impl.Blowfish.Arm.expandKey
-    contract := Spec.Blowfish.expandKeyContract Arm.abi 64
+    contract := Spec.Blowfish.expandKeyContract (Arm.abi.withConsts Impl.Blowfish.Arm.initConsts) 64
     stack := 64
     verified := Proof.Blowfish.Arm.expandKey_framed
     spSafe := Code.all_of_forall (fun _ => rfl) _ },
