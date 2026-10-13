@@ -2500,7 +2500,101 @@ pub mod probe {
         for (d, x) in descs.iter_mut().zip(p) {
             *d = [x.as_ptr() as usize, x.len()];
         }
-        k.seal_gather_prepared(nonce, aad, descs.as_ptr(), p.len(), out).unwrap()
+        k.seal_gather_prepared(nonce, aad, descs.as_ptr(), p.len(), out)
+            .unwrap()
+    }
+
+    pub fn split_direct(
+        k: &AesGcm,
+        nonce: &[u8],
+        aad: &[u8],
+        src: &[u8],
+        ty: u8,
+        out: &mut [u8],
+    ) -> Block {
+        use crate::arch::gcm::vg_aes_gcm_seal_split_prepared_vaes_vpclmul_avx512 as f;
+        let n = src.len();
+        out[n] = ty;
+        let mut tag = [0u8; 16];
+        unsafe {
+            f(
+                ctx(k),
+                k.rounds,
+                nonce.as_ptr(),
+                nonce.len(),
+                aad.as_ptr(),
+                aad.len(),
+                src.as_ptr(),
+                n,
+                out.as_mut_ptr(),
+                out.len(),
+                &mut tag,
+            )
+        };
+        tag
+    }
+    /// The two-slice seal with E(J0) and the tail keystream computed first.
+    pub fn two_early(
+        k: &AesGcm,
+        nonce: &[u8],
+        aad: &[u8],
+        src: &[u8],
+        ty: &[u8],
+        out: &mut [u8],
+    ) -> Block {
+        use crate::arch::aes::vg_aes_encrypt_blocks_vaes as ecb;
+        use crate::arch::gcm::{
+            vg_aes_gcm_encrypt_blocks_to_prepared_vaes_vpclmul_avx512 as blocks,
+            vg_ghash_vpclmul as gh,
+        };
+        let ctx = ctx(k);
+        let mut scratch = MaybeUninit::<[u64; 264]>::uninit();
+        let work = scratch.as_mut_ptr();
+        let head = src.len() & !15;
+        let count = head / 16;
+        let rem = src.len() - head;
+        let tail = rem + ty.len();
+        let mut ks = [[0u8; 16]; 2];
+        ks[0][..12].copy_from_slice(nonce);
+        ks[1] = ks[0];
+        ks[0][12..].copy_from_slice(&1u32.to_be_bytes());
+        ks[1][12..].copy_from_slice(&(2u32.wrapping_add(count as u32)).to_be_bytes());
+        let mut counter = ks[0];
+        counter[12..].copy_from_slice(&2u32.to_be_bytes());
+        let mut finish = [[0u8; 16]; 2];
+        finish[0][..rem].copy_from_slice(&src[head..]);
+        finish[0][rem..tail].copy_from_slice(ty);
+        finish[1][..8].copy_from_slice(&((aad.len() as u64) * 8).to_be_bytes());
+        finish[1][8..].copy_from_slice(&((out.len() as u64) * 8).to_be_bytes());
+        let mut y = [0u8; 16];
+        unsafe {
+            ecb(ctx.cast(), k.rounds, ks.as_mut_ptr(), 2, work.cast());
+            let mask = u128::MAX >> (8 * (16 - tail));
+            let c = (u128::from_le_bytes(finish[0]) ^ u128::from_le_bytes(ks[1])) & mask;
+            finish[0] = c.to_le_bytes();
+            let h = ctx.cast::<u8>().add(240).cast::<[u8; 16]>();
+            let mut a = [0u8; 16];
+            a[..aad.len()].copy_from_slice(aad);
+            gh(h, &mut y, &a, 1, work.cast());
+            blocks(
+                ctx,
+                k.rounds,
+                &mut counter,
+                &mut y,
+                src.as_ptr().cast(),
+                count,
+                out.as_mut_ptr().cast(),
+                count,
+                work,
+            );
+            out[head..].copy_from_slice(&finish[0][..tail]);
+            gh(h, &mut y, finish.as_ptr(), 2, work.cast());
+        }
+        let mut tag = ks[0];
+        for i in 0..16 {
+            tag[i] ^= y[i];
+        }
+        tag
     }
     pub fn ctx(k: &AesGcm) -> *const [u64; 128] {
         k.powers.ctx.load(Ordering::Acquire)
@@ -2511,13 +2605,34 @@ pub mod probe {
         let mut counter = [0u8; 16];
         let mut y = [0u8; 16];
         let n = src.len() / 16;
-        unsafe { f(ctx(k), k.rounds, &mut counter, &mut y, src.as_ptr().cast(), n, dst.as_mut_ptr().cast(), n, scratch.as_mut_ptr()) }
+        unsafe {
+            f(
+                ctx(k),
+                k.rounds,
+                &mut counter,
+                &mut y,
+                src.as_ptr().cast(),
+                n,
+                dst.as_mut_ptr().cast(),
+                n,
+                scratch.as_mut_ptr(),
+            )
+        }
     }
     pub fn ctr1(k: &AesGcm, b: &mut [u8; 16]) {
         use crate::arch::aes::vg_aes_ctr32_vaes as f;
         let mut scratch = MaybeUninit::<[u64; 264]>::uninit();
         let mut counter = [0u8; 16];
-        unsafe { f(ctx(k).cast(), k.rounds, &mut counter, b, 1, scratch.as_mut_ptr().cast()) }
+        unsafe {
+            f(
+                ctx(k).cast(),
+                k.rounds,
+                &mut counter,
+                b,
+                1,
+                scratch.as_mut_ptr().cast(),
+            )
+        }
     }
     pub fn gh(k: &AesGcm, y: &mut [u8; 16], b: &[[u8; 16]]) {
         use crate::arch::gcm::vg_ghash_vpclmul as f;

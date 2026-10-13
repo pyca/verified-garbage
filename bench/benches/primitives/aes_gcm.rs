@@ -658,6 +658,12 @@ fn probe(c: &mut Criterion) {
             g.bench_function(BenchmarkId::new(VG, 2_000_000 + size), |b| {
                 b.iter(|| probe::split(&k, black_box(&nonce), black_box(&aad), &[black_box(&data[..]), black_box(&ty[..])], black_box(&mut out)))
             });
+            g.bench_function(BenchmarkId::new(VG, 5_000_000 + size), |b| {
+                b.iter(|| probe::split_direct(&k, black_box(&nonce), black_box(&aad), black_box(&data[..]), 0x17, black_box(&mut out)))
+            });
+            g.bench_function(BenchmarkId::new(VG, 6_000_000 + size), |b| {
+                b.iter(|| probe::two_early(&k, black_box(&nonce), black_box(&aad), black_box(&data[..]), black_box(&ty[..]), black_box(&mut out)))
+            });
             g.bench_function(BenchmarkId::new(VG, 3_000_000 + size), |b| {
                 b.iter(|| k.encrypt_in_place(black_box(&nonce), black_box(&aad), black_box(&mut buf)).unwrap())
             });
