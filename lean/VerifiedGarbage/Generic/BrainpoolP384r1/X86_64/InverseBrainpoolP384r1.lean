@@ -27,43 +27,35 @@ namespace VG.Generic.BrainpoolP384r1.X86_64.InverseBrainpoolP384r1
 open VG.Impl.Ecdsa.X86_64 VG.Proof.Ecdsa.X86_64.BrainpoolP384r1.Inverse
 
 /-- What the functions run. -/
-def note (adx : Bool) (mod : String) : String :=
-  "The function keeps `rbx`, `rbp` and `r12`–`r15` in `xmm0` to `xmm5` while it runs, and \
-  computes the inverse modulo `" ++ mod ++ "` by Bernstein and Yang's divsteps, in batches of 59 \
-  (10 batches for four words), each run on the low words of `f` and `g` packed into 64-bit \
-  registers and applied to `f`, `g` and the numbers `d`, `e` by the batch's matrix, in its working \
-  area at bytes 2296 to 2615, then multiplies by a constant (`2^(5 B) R³ mod " ++ mod ++
-  "`) to return to Montgomery form, " ++
-  (if adx then "by rows of BMI2's `mulx` with ADX's two carry chains (`adcx`, `adox`)"
-    else "by `mul` and word-by-word Montgomery reduction") ++
-  "; nothing depends on the numbers but through masks and `cmov`."
+def note (mod : String) : String :=
+  "The function keeps `rbx`, `rbp` and `r12`–`r15` in bytes 1504 to 1551 of `ws` (slot 30) while \
+  it runs, and computes the inverse modulo `" ++ mod ++ "` by Bernstein and Yang's divsteps, in \
+  batches of 59 (15 batches for six words), each run on the low words of `f` and `g` packed into \
+  64-bit registers and applied to `f`, `g` and the numbers `d`, `e` by the batch's matrix, in its \
+  working area at bytes 3400 to 3847, then multiplies by a constant (`2^(5 B) R³ mod " ++ mod ++
+  "`) to return to Montgomery form, by `mul` and word-by-word Montgomery reduction; nothing depends \
+  on the numbers but through masks and `cmov`."
 
 def artifacts (h : Proof.Weierstrass.X86_64.HasLawInv Spec.BrainpoolP384r1.curve) : List Artifact :=
-  ([false].map fun adx =>
-    { C.invPApi with
-      name := C.invPApi.name ++ (if adx then "_adx" else "")
+  [{ C.invPApi with
       target := X86_64.target
-      doc := C.invPApi.doc (notes := [note adx "p"])
-      code := (cfg adx).invFn (cfg adx).pPowI
+      doc := C.invPApi.doc (notes := [note "p"])
+      code := cfg.invFn cfg.pPowI
       contract := C.invPContract X86_64.abi
       ofSig := by exact (⟨_, _, _, by
         unfold Spec.Weierstrass.Inverse.Curve.invPContract Spec.Weierstrass.Inverse.Curve.invContract
         rfl⟩)
-      verified := p_verified h.inv adx
-      spSafe := Code.all_of_allInstrs (show invP.allInstrs _ = true by lit_decide)
-      features := if adx then ["bmi2", "adx"] else [] }) ++
-  ([false].map fun adx =>
+      verified := p_verified h.inv
+      spSafe := Code.all_of_allInstrs (show invP.allInstrs _ = true by lit_decide) },
     { C.invNApi with
-      name := C.invNApi.name ++ (if adx then "_adx" else "")
       target := X86_64.target
-      doc := C.invNApi.doc (notes := [note adx "n"])
-      code := (cfg adx).invFn (cfg adx).nPowI
+      doc := C.invNApi.doc (notes := [note "n"])
+      code := cfg.invFn cfg.nPowI
       contract := C.invNContract X86_64.abi
       ofSig := by exact (⟨_, _, _, by
         unfold Spec.Weierstrass.Inverse.Curve.invNContract Spec.Weierstrass.Inverse.Curve.invContract
         rfl⟩)
-      verified := n_verified h.inv adx
-      spSafe := Code.all_of_allInstrs (show invN.allInstrs _ = true by lit_decide)
-      features := if adx then ["bmi2", "adx"] else [] })
+      verified := n_verified h.inv
+      spSafe := Code.all_of_allInstrs (show invN.allInstrs _ = true by lit_decide) }]
 
 end VG.Generic.BrainpoolP384r1.X86_64.InverseBrainpoolP384r1

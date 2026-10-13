@@ -2,8 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.BrainpoolP384r1.Verified
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.BrainpoolP384r1.Verified
-public import VerifiedGarbage.Proof.Ecdsa.X86_64.BrainpoolP384r1.VerifiedAdx
-meta import VerifiedGarbage.Proof.Ecdsa.X86_64.BrainpoolP384r1.VerifiedAdx
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.BrainpoolP384r1.InverseLit
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.BrainpoolP384r1.InverseLit
 public import VerifiedGarbage.Proof.Framework.Pratt
@@ -52,8 +50,8 @@ open VG.Proof.Ecdsa.X86_64 VG.Proof.Ecdsa.X86_64.BrainpoolP384r1
 /-- brainpoolP384r1's curve of `Spec/Weierstrass/Inverse.lean`. -/
 abbrev C : Spec.Weierstrass.Inverse.Curve := Spec.Weierstrass.Inverse.brainpoolp384r1
 
-/-- The configuration of the functions (`adx` false) or their `_adx` forms. -/
-abbrev cfg (adx : Bool) : Cfg := if adx then brainpoolp384r1x else brainpoolp384r1
+/-- The configuration of the functions. -/
+abbrev cfg : Cfg := brainpoolp384r1
 
 /-- The inversion modulo `m`, at `modAt`, of the number at `inAt`, on x86-64. -/
 def invK (m : Nat) [NeZero m] (modAt inAt : Nat) : Contract isa where
@@ -96,22 +94,19 @@ theorem dec_eq_p (x : Nat) : C.dec Spec.BrainpoolP384r1.p x = toM Spec.Brainpool
 theorem dec_eq_n (x : Nat) : C.dec Spec.BrainpoolP384r1.n x = toM Spec.BrainpoolP384r1.n (2 ^ (64 * C.k)) x :=
   dec_eq (by decide +kernel) (by decide +kernel) (by decide +kernel) x
 
-theorem cfg_ok (hI : InvSounds) (adx : Bool) : CfgOk (cfg adx) := by
-  cases adx
-  · exact brainpoolp384r1_ok hI
-  · exact brainpoolp384r1x_ok hI
+theorem cfg_ok (hI : InvSounds) : CfgOk cfg := brainpoolp384r1_ok hI
 
-theorem cfg_n (adx : Bool) : (cfg adx).n = 6 := by cases adx <;> rfl
-theorem cfg_C (adx : Bool) : (cfg adx).C = Spec.BrainpoolP384r1.curve := by cases adx <;> rfl
-theorem cfg_sl (adx : Bool) (i : Nat) : (cfg adx).sl i = brainpoolp384r1.sl i := by cases adx <;> rfl
-theorem cfg_fastN (adx : Bool) : (cfg adx).fastN = true := by cases adx <;> rfl
+theorem cfg_n : cfg.n = 6 := rfl
+theorem cfg_C : cfg.C = Spec.BrainpoolP384r1.curve := rfl
+theorem cfg_sl (i : Nat) : cfg.sl i = brainpoolp384r1.sl i := rfl
+theorem cfg_fastN : cfg.fastN = true := rfl
 
 /-- What the functions write, as offsets: `ACC`'s slot (the result's) and the
 own working space. -/
-theorem pwW_eq (adx : Bool) : pwW (cfg adx) = [(1456, 48), (1504, 48), (4048, 48), (3400, 448)] := by
-  cases adx <;> decide
+theorem pwW_eq : pwW cfg = [(1456, 48), (1504, 48), (4048, 48), (3400, 448)] := by
+  decide
 
-theorem keeps_of_unch {ws : Addr} {m m' : Mem} (adx : Bool) (hu : Unch ws (pwW (cfg adx)) m m') :
+theorem keeps_of_unch {ws : Addr} {m m' : Mem} (hu : Unch ws (pwW cfg) m m') :
     C.Keeps ws m m' := by
   intro i hi hown hp
   have h8 : Spec.Weierstrass.Mont.wsBytes = 8192 := rfl
@@ -126,36 +121,32 @@ theorem keeps_of_unch {ws : Addr} {m m' : Mem} (adx : Bool) (hu : Unch ws (pwW (
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
   rcases hw with rfl | rfl | rfl | rfl <;> dsimp only <;> omega
 
-theorem mxcsrP (adx : Bool) : ((cfg adx).invFn (cfg adx).pPowI).allInstrs (fun i => !loadsMxcsr i) = true := by
-  cases adx
-  · show invP.allInstrs _ = true; lit_decide
-  · show invPAdx.allInstrs _ = true; lit_decide
+theorem mxcsrP : (cfg.invFn cfg.pPowI).allInstrs (fun i => !loadsMxcsr i) = true := by
+  show invP.allInstrs _ = true; lit_decide
 
-theorem mxcsrN (adx : Bool) : ((cfg adx).invFn (cfg adx).nPowI).allInstrs (fun i => !loadsMxcsr i) = true := by
-  cases adx
-  · show invN.allInstrs _ = true; lit_decide
-  · show invNAdx.allInstrs _ = true; lit_decide
+theorem mxcsrN : (cfg.invFn cfg.nPowI).allInstrs (fun i => !loadsMxcsr i) = true := by
+  show invN.allInstrs _ = true; lit_decide
 
 /-- From what `invFn_ok` gives: the ABI's registers and return address, and
 the result's facts. -/
-theorem finish {code : Prog isa} (hmx : code.allInstrs (fun i => !loadsMxcsr i) = true) (adx : Bool)
+theorem finish {code : Prog isa} (hmx : code.allInstrs (fun i => !loadsMxcsr i) = true)
     {m : Nat} [NeZero m] {modAt : Nat} {s : State} (hwr : s.wr = [⟨s.gpr .rdi, 8192⟩])
     (hret : (⟨s.gpr .rsp, 8⟩ : Region).Disjoint ⟨s.gpr .rdi, 8192⟩) {inAt : Nat} (hin : inAt < 2 ^ 32)
     (hdec : ∀ x, C.dec m x = toM m (2 ^ (64 * C.k)) x) {t : List Leak} {s' : State}
     (he : Exec isa code s t s') (hnc : code.noCalls = true)
     (sv : ∀ r ∈ Cfg.saved.map Prod.fst, s'.gpr r = s.gpr r)
-    (K : KeepRegs (invClob (cfg adx).n) s s') (U : Unch (s.gpr .rdi) (pwW (cfg adx)) s.mem s'.mem)
+    (K : KeepRegs (invClob cfg.n) s s') (U : Unch (s.gpr .rdi) (pwW cfg) s.mem s'.mem)
     {m₀ : Nat} [NeZero m₀] (hm₀ : m = m₀)
-    (lt : wordsVal s'.mem (s.gpr .rdi) ((cfg adx).sl ACC) (cfg adx).n < m₀)
-    (v : toM m₀ (2 ^ (64 * (cfg adx).n)) (wordsVal s'.mem (s.gpr .rdi) ((cfg adx).sl ACC) (cfg adx).n) =
-      toM m₀ (2 ^ (64 * (cfg adx).n)) (wordsVal s.mem (s.gpr .rdi) inAt (cfg adx).n) ^ (m₀ - 2)) :
+    (lt : wordsVal s'.mem (s.gpr .rdi) (cfg.sl ACC) cfg.n < m₀)
+    (v : toM m₀ (2 ^ (64 * cfg.n)) (wordsVal s'.mem (s.gpr .rdi) (cfg.sl ACC) cfg.n) =
+      toM m₀ (2 ^ (64 * cfg.n)) (wordsVal s.mem (s.gpr .rdi) inAt cfg.n) ^ (m₀ - 2)) :
     abiPreserved s s' ∧ (invK m modAt inAt).post s s' := by
   subst hm₀
-  have hn := cfg_n adx
-  have hk : (cfg adx).n = C.k := by rw [hn]; rfl
-  have hacc : (cfg adx).sl ACC = C.outAt := by rw [cfg_sl]; rfl
+  have hn := cfg_n
+  have hk : cfg.n = C.k := by rw [hn]; rfl
+  have hacc : cfg.sl ACC = C.outAt := by rw [cfg_sl]; rfl
   rw [hk, hacc] at lt v
-  refine ⟨abiPreserved_of_exec hmx he ⟨fun r hr => ?_, ?_⟩, ?_, ?_, keeps_of_unch adx U⟩
+  refine ⟨abiPreserved_of_exec hmx he ⟨fun r hr => ?_, ?_⟩, ?_, ?_, keeps_of_unch U⟩
   · simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
     · exact sv _ (by decide)
@@ -186,53 +177,49 @@ abbrev pK : Contract isa := invK Spec.BrainpoolP384r1.p C.pAt C.zAt
 /-- `vg_brainpoolp384r1_inv_mod_n`'s contract, by name. -/
 abbrev nK : Contract isa := invK Spec.BrainpoolP384r1.n C.nAt C.xAt
 
-theorem p_correct (hI : InvSounds) (adx : Bool) (s : State) (hs : pK.pre s) :
-    ∃ t s', Exec isa ((cfg adx).invFn (cfg adx).pPowI) s t s' ∧ abiPreserved s s' ∧ pK.post s s' := by
+theorem p_correct (hI : InvSounds) (s : State) (hs : pK.pre s) :
+    ∃ t s', Exec isa (cfg.invFn cfg.pPowI) s t s' ∧ abiPreserved s s' ∧ pK.post s s' := by
   obtain ⟨-, hwr, hret, hfit, hm, hz⟩ := hs
-  have hc := (cfg_ok hI adx).toBaseCfgOk
+  have hc := (cfg_ok hI).toBaseCfgOk
   have hS : Scr s (s.gpr .rdi) size := ⟨rfl, by rw [hwr]; simp, hfit⟩
-  have hn := cfg_n adx
-  have hk : (cfg adx).n = C.k := by rw [cfg_n]; rfl
-  have em : wordsVal s.mem (s.gpr .rdi) ((cfg adx).sl MP) (cfg adx).n = C.num (s.gpr .rdi) s.mem C.pAt := by
+  have hn := cfg_n
+  have hk : cfg.n = C.k := by rw [cfg_n]; rfl
+  have em : wordsVal s.mem (s.gpr .rdi) (cfg.sl MP) cfg.n = C.num (s.gpr .rdi) s.mem C.pAt := by
     rw [hk, cfg_sl, num_eq _ _ (by decide)]; rfl
-  have ez : wordsVal s.mem (s.gpr .rdi) ((cfg adx).sl RZ) (cfg adx).n = C.num (s.gpr .rdi) s.mem C.zAt := by
+  have ez : wordsVal s.mem (s.gpr .rdi) (cfg.sl RZ) cfg.n = C.num (s.gpr .rdi) s.mem C.zAt := by
     rw [hk, cfg_sl, num_eq _ _ (by decide)]; rfl
-  rw [← em, ← curve_p, ← cfg_C adx] at hm
-  rw [← ez, ← curve_p, ← cfg_C adx] at hz
+  rw [← em, ← curve_p, ← cfg_C] at hm
+  rw [← ez, ← curve_p, ← cfg_C] at hz
   obtain ⟨t, s', he, sv, K, U, lt, v⟩ := invPFn_ok hc (by omega) (by omega) hS
     (modP_of hc hm) hz
-  have hnc : ((cfg adx).invFn (cfg adx).pPowI).noCalls = true := by
-    cases adx
-    · show invP.noCalls = true; lit_decide
-    · show invPAdx.noCalls = true; lit_decide
+  have hnc : (cfg.invFn cfg.pPowI).noCalls = true := by
+    show invP.noCalls = true; lit_decide
   rw [cfg_C] at lt v
-  have hrz : (cfg adx).sl RZ = C.zAt := by rw [cfg_sl]; rfl
+  have hrz : cfg.sl RZ = C.zAt := by rw [cfg_sl]; rfl
   rw [hrz] at v
-  exact ⟨t, s', he, finish (mxcsrP adx) adx hwr hret (by decide) dec_eq_p he hnc sv K U curve_p.symm lt v⟩
+  exact ⟨t, s', he, finish mxcsrP hwr hret (by decide) dec_eq_p he hnc sv K U curve_p.symm lt v⟩
 
-theorem n_correct (hI : InvSounds) (adx : Bool) (s : State) (hs : nK.pre s) :
-    ∃ t s', Exec isa ((cfg adx).invFn (cfg adx).nPowI) s t s' ∧ abiPreserved s s' ∧ nK.post s s' := by
+theorem n_correct (hI : InvSounds) (s : State) (hs : nK.pre s) :
+    ∃ t s', Exec isa (cfg.invFn cfg.nPowI) s t s' ∧ abiPreserved s s' ∧ nK.post s s' := by
   obtain ⟨-, hwr, hret, hfit, hm, hx⟩ := hs
-  have hc := (cfg_ok hI adx).toBaseCfgOk
+  have hc := (cfg_ok hI).toBaseCfgOk
   have hS : Scr s (s.gpr .rdi) size := ⟨rfl, by rw [hwr]; simp, hfit⟩
-  have hn := cfg_n adx
-  have hk : (cfg adx).n = C.k := by rw [cfg_n]; rfl
-  have em : wordsVal s.mem (s.gpr .rdi) ((cfg adx).sl MN) (cfg adx).n = C.num (s.gpr .rdi) s.mem C.nAt := by
+  have hn := cfg_n
+  have hk : cfg.n = C.k := by rw [cfg_n]; rfl
+  have em : wordsVal s.mem (s.gpr .rdi) (cfg.sl MN) cfg.n = C.num (s.gpr .rdi) s.mem C.nAt := by
     rw [hk, cfg_sl, num_eq _ _ (by decide)]; rfl
-  have ex : wordsVal s.mem (s.gpr .rdi) ((cfg adx).sl KM) (cfg adx).n = C.num (s.gpr .rdi) s.mem C.xAt := by
+  have ex : wordsVal s.mem (s.gpr .rdi) (cfg.sl KM) cfg.n = C.num (s.gpr .rdi) s.mem C.xAt := by
     rw [hk, cfg_sl, num_eq _ _ (by decide)]; rfl
-  rw [← em, ← curve_n, ← cfg_C adx] at hm
-  rw [← ex, ← curve_n, ← cfg_C adx] at hx
+  rw [← em, ← curve_n, ← cfg_C] at hm
+  rw [← ex, ← curve_n, ← cfg_C] at hx
   obtain ⟨t, s', he, sv, K, U, lt, v⟩ := invNFn_ok hc (by omega) (by omega)
-    (cfg_fastN adx) hS (modN_of hc hm) hx
-  have hnc : ((cfg adx).invFn (cfg adx).nPowI).noCalls = true := by
-    cases adx
-    · show invN.noCalls = true; lit_decide
-    · show invNAdx.noCalls = true; lit_decide
+    (cfg_fastN) hS (modN_of hc hm) hx
+  have hnc : (cfg.invFn cfg.nPowI).noCalls = true := by
+    show invN.noCalls = true; lit_decide
   rw [cfg_C] at lt v
-  have hkm : (cfg adx).sl KM = C.xAt := by rw [cfg_sl]; rfl
+  have hkm : cfg.sl KM = C.xAt := by rw [cfg_sl]; rfl
   rw [hkm] at v
-  exact ⟨t, s', he, finish (mxcsrN adx) adx hwr hret (by decide) dec_eq_n he hnc sv K U curve_n.symm lt v⟩
+  exact ⟨t, s', he, finish mxcsrN hwr hret (by decide) dec_eq_n he hnc sv K U curve_n.symm lt v⟩
 
 theorem agree {m : Nat} [NeZero m] {modAt inAt : Nat} (s₁ s₂ : State) (_ : (invK m modAt inAt).pre s₁)
     (_ : (invK m modAt inAt).pre s₂) (h : (invK m modAt inAt).pub s₁ s₂) :
@@ -244,19 +231,13 @@ theorem agree {m : Nat} [NeZero m] {modAt inAt : Nat} (s₁ s₂ : State) (_ : (
     · exact h.1
 
 /-- Constant time by taint tracking, `rdi` and `rsp` public. -/
-theorem p_ct (adx : Bool) : ConstantTime isa pK.pre pK.pub ((cfg adx).invFn (cfg adx).pPowI) := by
-  cases adx
-  · show ConstantTime isa _ _ invP
-    exact VG.Taint.constantTime (A := X86_64.taint) (Taint.ofRegs [.rdi, .rsp]) agree (by taint_decide)
-  · show ConstantTime isa _ _ invPAdx
-    exact VG.Taint.constantTime (A := X86_64.taint) (Taint.ofRegs [.rdi, .rsp]) agree (by taint_decide)
+theorem p_ct : ConstantTime isa pK.pre pK.pub (cfg.invFn cfg.pPowI) := by
+  show ConstantTime isa _ _ invP
+  exact VG.Taint.constantTime (A := X86_64.taint) (Taint.ofRegs [.rdi, .rsp]) agree (by taint_decide)
 
-theorem n_ct (adx : Bool) : ConstantTime isa nK.pre nK.pub ((cfg adx).invFn (cfg adx).nPowI) := by
-  cases adx
-  · show ConstantTime isa _ _ invN
-    exact VG.Taint.constantTime (A := X86_64.taint) (Taint.ofRegs [.rdi, .rsp]) agree (by taint_decide)
-  · show ConstantTime isa _ _ invNAdx
-    exact VG.Taint.constantTime (A := X86_64.taint) (Taint.ofRegs [.rdi, .rsp]) agree (by taint_decide)
+theorem n_ct : ConstantTime isa nK.pre nK.pub (cfg.invFn cfg.nPowI) := by
+  show ConstantTime isa _ _ invN
+  exact VG.Taint.constantTime (A := X86_64.taint) (Taint.ofRegs [.rdi, .rsp]) agree (by taint_decide)
 
 /-- The memory of `satState`: brainpoolP384r1's `p` and `n` at `ws + 64` and
 `ws + 112` for `ws = 0x1000`, zeros elsewhere. -/
@@ -319,14 +300,14 @@ theorem n_implies : nK.Implies (C.invNContract X86_64.abi) where
       Spec.Weierstrass.Inverse.sig, X86_64.abi, X86_64.argRegs, stackBelow]
     exact ⟨Region.disjoint_of_sep (by decide), by decide, sat_n⟩⟩
 
-/-- `vg_brainpoolp384r1_inv_mod_p` (`adx` false) and `vg_brainpoolp384r1_inv_mod_p_adx` on x86-64. -/
-theorem p_verified (hI : InvSounds) (adx : Bool) :
-    Verified X86_64.target ((cfg adx).invFn (cfg adx).pPowI) (C.invPContract X86_64.abi) :=
-  Verified.of_correct (p_correct hI adx) (p_ct adx) p_implies
+/-- `vg_brainpoolp384r1_inv_mod_p` on x86-64. -/
+theorem p_verified (hI : InvSounds) :
+    Verified X86_64.target (cfg.invFn cfg.pPowI) (C.invPContract X86_64.abi) :=
+  Verified.of_correct (p_correct hI) p_ct p_implies
 
-/-- `vg_brainpoolp384r1_inv_mod_n` (`adx` false) and `vg_brainpoolp384r1_inv_mod_n_adx` on x86-64. -/
-theorem n_verified (hI : InvSounds) (adx : Bool) :
-    Verified X86_64.target ((cfg adx).invFn (cfg adx).nPowI) (C.invNContract X86_64.abi) :=
-  Verified.of_correct (n_correct hI adx) (n_ct adx) n_implies
+/-- `vg_brainpoolp384r1_inv_mod_n` on x86-64. -/
+theorem n_verified (hI : InvSounds) :
+    Verified X86_64.target (cfg.invFn cfg.nPowI) (C.invNContract X86_64.abi) :=
+  Verified.of_correct (n_correct hI) n_ct n_implies
 
 end VG.Proof.Ecdsa.X86_64.BrainpoolP384r1.Inverse

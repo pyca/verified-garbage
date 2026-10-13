@@ -51,15 +51,15 @@ namespace VG.Proof.Ecdsa.X86_64.BrainpoolP384r1
 open VG VG.X86_64 VG.Impl.Mont.X86_64 VG.Impl.Mont VG.Impl.Weierstrass.X86_64 VG.Impl.Weierstrass VG.Impl.Ecdsa.X86_64
 open VG.Proof.Mont.X86_64 VG.Proof.Mont VG.Proof.Weierstrass.X86_64 VG.Proof.Weierstrass Spec.Weierstrass
 
-theorem brainpoolp384r1_nBits : Spec.Ecdsa.nBits brainpoolp384r1.C = 256 := by
-  show Spec.BrainpoolP384r1.curve.n.log2 + 1 = 256
-  have h1 : 255 ≤ Spec.BrainpoolP384r1.curve.n.log2 :=
+theorem brainpoolp384r1_nBits : Spec.Ecdsa.nBits brainpoolp384r1.C = 384 := by
+  show Spec.BrainpoolP384r1.curve.n.log2 + 1 = 384
+  have h1 : 383 ≤ Spec.BrainpoolP384r1.curve.n.log2 :=
     (Nat.le_log2 (by decide +kernel)).mpr (by decide +kernel)
-  have h2 : Spec.BrainpoolP384r1.curve.n.log2 < 256 :=
+  have h2 : Spec.BrainpoolP384r1.curve.n.log2 < 384 :=
     (Nat.log2_lt (by decide +kernel)).mpr (by decide +kernel)
   omega
 
-/-- No bit of a hash of `32` bytes is dropped. -/
+/-- No bit of a hash of `48` bytes is dropped. -/
 theorem brainpoolp384r1_sh : brainpoolp384r1.sh = 0 := by
   unfold Cfg.sh
   rw [brainpoolp384r1_nBits]

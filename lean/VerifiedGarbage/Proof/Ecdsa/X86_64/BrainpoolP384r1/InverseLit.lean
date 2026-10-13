@@ -25,16 +25,10 @@ open VG.Impl.Ecdsa.X86_64
 
 /-- `vg_brainpoolp384r1_inv_mod_p`. -/
 def invP : Prog VG.X86_64.isa := brainpoolp384r1.invFn brainpoolp384r1.pPowI
-/-- `vg_brainpoolp384r1_inv_mod_p_adx`. -/
-def invPAdx : Prog VG.X86_64.isa := brainpoolp384r1x.invFn brainpoolp384r1x.pPowI
 /-- `vg_brainpoolp384r1_inv_mod_n`. -/
 def invN : Prog VG.X86_64.isa := brainpoolp384r1.invFn brainpoolp384r1.nPowI
-/-- `vg_brainpoolp384r1_inv_mod_n_adx`. -/
-def invNAdx : Prog VG.X86_64.isa := brainpoolp384r1x.invFn brainpoolp384r1x.nPowI
 
 materialize_code invP
-materialize_code invPAdx
 materialize_code invN
-materialize_code invNAdx
 
 end VG.Proof.Ecdsa.X86_64.BrainpoolP384r1.Inverse

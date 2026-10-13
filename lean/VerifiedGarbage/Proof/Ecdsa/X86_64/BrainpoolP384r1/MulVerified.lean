@@ -76,9 +76,9 @@ theorem coordAt_eq (P : Spec.Weierstrass.Point.Curve) (m : Mem) (ws : Addr) {o :
 
 /-- What the function writes, as offsets: `R`'s slots (`P`'s) and the own
 working space. -/
-theorem mulW_eq : mulW brainpoolp384r1 = [(512, 32), (544, 32), (576, 32), (992, 32), (1024, 32), (704, 32),
-    (736, 32), (768, 32), (800, 32), (832, 32), (864, 32), (896, 32), (928, 32), (960, 32), (608, 32),
-    (640, 32), (672, 32), (128, 32), (1504, 264)] := by decide
+theorem mulW_eq : mulW brainpoolp384r1 = [(736, 48), (784, 48), (832, 48), (1456, 48), (1504, 48), (1024, 48),
+    (1072, 48), (1120, 48), (1168, 48), (1216, 48), (1264, 48), (1312, 48), (1360, 48), (1408, 48), (880, 48),
+    (928, 48), (976, 48), (4048, 48), (2224, 392)] := by decide
 
 theorem keeps_of_unch {ws : Addr} {m m' : Mem} (hu : Unch ws (mulW brainpoolp384r1) m m') :
     C.Keeps ws m m' := by
@@ -126,7 +126,7 @@ theorem ca (m : Mem) (ws : Addr) {o : Nat} (ho : o < 2 ^ 32) :
     C.toPoint.coordAt m ws o = wordsVal m ws o 4 := coordAt_eq _ _ _ ho
 
 theorem sv_at {base : Addr} {s : State} {i o : Nat} (h : brainpoolp384r1.sl i = o) :
-    sv brainpoolp384r1 base s i = wordsVal s.mem base o 4 := by
+    sv brainpoolp384r1 base s i = wordsVal s.mem base o 6 := by
   show wordsVal s.mem base (brainpoolp384r1.sl i) brainpoolp384r1.n = _
   rw [h]; rfl
 
@@ -146,17 +146,17 @@ theorem mul_correct (hL : Law Spec.BrainpoolP384r1.curve) (hI : InvSounds) (s : 
   have hmp' : sv brainpoolp384r1 (s.gpr .rdi) s MP = brainpoolp384r1.C.p := (ca _ _ (by decide)).symm.trans hmp
   have hz' : sv brainpoolp384r1 (s.gpr .rdi) s ZERO = 0 := (ca _ _ (by decide)).symm.trans hz
   have hone' : sv brainpoolp384r1 (s.gpr .rdi) s ONEP = 2 ^ (64 * brainpoolp384r1.n) % brainpoolp384r1.C.p := by
-    have h := (ca s.mem (s.gpr .rdi) (o := 224) (by decide)).symm.trans hone
+    have h := (ca s.mem (s.gpr .rdi) (o := 304) (by decide)).symm.trans hone
     simp only [Spec.Weierstrass.Mul.Curve.mont, Nat.one_mul] at h
     exact h
   have ha' : sv brainpoolp384r1 (s.gpr .rdi) s AP = brainpoolp384r1.mont brainpoolp384r1.C.a :=
-    (ca s.mem (s.gpr .rdi) (o := 256) (by decide)).symm.trans ha
+    (ca s.mem (s.gpr .rdi) (o := 352) (by decide)).symm.trans ha
   have hb3' : sv brainpoolp384r1 (s.gpr .rdi) s B3P = brainpoolp384r1.mont (3 * brainpoolp384r1.C.b) :=
-    (ca s.mem (s.gpr .rdi) (o := 288) (by decide)).symm.trans hb3
+    (ca s.mem (s.gpr .rdi) (o := 400) (by decide)).symm.trans hb3
   have qx : (C.qCoords (s.gpr .rdi) s.mem).1 = sv brainpoolp384r1 (s.gpr .rdi) s RX := by
-    rw [sv_at (i := RX) (o := 512) rfl, ← ca _ _ (by decide)]; rfl
+    rw [sv_at (i := RX) (o := 736) rfl, ← ca _ _ (by decide)]; rfl
   have qy : (C.qCoords (s.gpr .rdi) s.mem).2 = sv brainpoolp384r1 (s.gpr .rdi) s RY := by
-    rw [sv_at (i := RY) (o := 544) rfl, ← ca _ _ (by decide)]; rfl
+    rw [sv_at (i := RY) (o := 784) rfl, ← ca _ _ (by decide)]; rfl
   have hx' : sv brainpoolp384r1 (s.gpr .rdi) s RX < brainpoolp384r1.C.p := qx ▸ hx
   have hy' : sv brainpoolp384r1 (s.gpr .rdi) s RY < brainpoolp384r1.C.p := qy ▸ hy
   have eP : C.point (s.gpr .rdi) s.mem = ptQ brainpoolp384r1 (s.gpr .rdi) s := by
