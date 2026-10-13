@@ -3,6 +3,9 @@ module
 public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Impl.X25519.Arm
 public import VerifiedGarbage.Proof.X25519.Arm.Verified
+import Batteries.Logic
+import VerifiedGarbage.Proof.Framework.RegSet
+import VerifiedGarbage.Proof.Framework.Taint
 
 /-! # X25519 (RFC 7748) on ARMv7 -/
 

@@ -8,6 +8,7 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Ghash
 
 /-!
 # AES-GCM's short path on x86-64: GHASH of the buffer, in the field

@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.TCB.Emit
 public import VerifiedGarbage.Proof.RsaOaep.X86_64.Sp
+import Mathlib.Data.Int.ModEq
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 
 /-!
 # RSAES-OAEP encryption on x86-64

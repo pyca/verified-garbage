@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.TripleDes.AArch64.CbcVerified
+import Mathlib.Tactic.SplitIfs
 
 /-! # Triple DES-CBC artifacts on baseline AArch64 -/
 

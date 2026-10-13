@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.TripleDes.X86_64.FbVerified
+import Mathlib.Tactic.SplitIfs
 
 /-! # Triple DES-OFB artifacts on baseline x86-64 -/
 

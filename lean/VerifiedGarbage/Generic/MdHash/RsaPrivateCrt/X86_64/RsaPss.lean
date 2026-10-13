@@ -4,6 +4,8 @@ public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Variant
 public import VerifiedGarbage.TCB.Emit
 public import VerifiedGarbage.Proof.RsaPss.X86_64.SignCt
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.Callees
+import Mathlib.Data.Int.ModEq
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 
 /-!
 # RSASSA-PSS signing on x86-64

@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyMessage.Verified
 public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Variant
+import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.Sha512.Word64
 
 /-! Whole-message Ed25519 verification follows every SHA-512 backend carried
 by MdHash. The signature and contract come from the reviewed Ed25519 API. -/

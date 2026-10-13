@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.X86.VerifyMessage.Verified
+import VerifiedGarbage.Proof.Framework.TaintSum
 
 @[expose] public section
 

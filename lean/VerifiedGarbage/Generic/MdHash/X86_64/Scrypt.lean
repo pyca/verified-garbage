@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Scrypt.X86_64.Whole.Verified
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
 
 /-!
 # scrypt (RFC 7914 §6) on x86-64, over SHA-256
