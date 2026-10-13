@@ -128,9 +128,86 @@ def dec : Prog isa :=
 
 open VG.Impl.AesGcm.X86_64 (imm ptr Callees Fn)
 open VG.Impl.AesGcmSiv.X86_64 (entry recv keys absorb lens tagIn tag tagOut cmp mask restore crypt polyval cryptChunk
-  cryptTail okO tagO cmO yO hO skO scrO ghO roundsO aadO alenO dataO lenO bO)
+  cryptTail okO tagO cmO yO hO akO skO scrO ghO roundsO aadO alenO dataO lenO bO zero16)
 
 variable (c : Callees) (e : Fn) (wide : Bool)
+
+/-! ## POLYVAL in registers, for short messages
+
+POLYVAL's field element of a block is its 16 bytes as they are (`ldR`), so
+a short message's POLYVAL takes one block at a time in registers: `Y ← (Y ⊕
+X) · H` with `vg_ghash_vpclmul`'s product of a lane (`Vpclmul.acc`,
+`reduce`) and `H' = H · x⁻¹`, which is the authentication key at `W + akO`
+as it is (GHASH's key `H` is its product with `x`, `hkey`). `Y` starts at
+zero in a register, and the lengths block is built in registers: loading
+either from where it was just stored in two halves would wait for the
+stores. The last bytes of the additional data and of the data go through
+`W + bO`. -/
+
+/-- `Y ← (Y ⊕ X) · H` in lane 0 of `ymm2`, `X` in `xmm7`, with
+`vg_ghash_vpclmul`'s product of each lane (`Vpclmul.acc`, `reduce`). -/
+def hmul : List Instr :=
+  Gcm.X86_64.Vpclmul.zero ++ ([.vop (.vbin .vpxor .l256 .xmm7 .xmm7 .xmm2)] : List Instr) ++
+  Gcm.X86_64.Vpclmul.acc .xmm7 .xmm3 ++ Gcm.X86_64.Vpclmul.reduce .xmm2
+
+/-- `hmul` of the block at `rsi`, as it is. -/
+def hstep : List Instr := ([.vmovdquLoad .l128 .xmm7 (at_ .rsi 0)] : List Instr) ++ hmul
+
+/-- One block: `hstep`, `rsi` on, `rbx` down. -/
+def hrBody : List Instr := hstep ++ ([.alu .add .rsi (imm 16), .alu .sub .rbx (imm 1)] : List Instr)
+
+/-- The last `rbp` (1 to 15) bytes at `rsi`, padded with zeros at `W + bO`,
+absorbed. -/
+def htail : Prog isa :=
+  .seq (.block (zero16 bO ++ ptr .rdi .r15 bO ++ ([.mov .rcx (.reg .rbp)] : List Instr)))
+  (.seq Impl.AesGcm.X86_64.copyLoop (.block (ptr .rsi .r15 bO ++ hstep)))
+
+/-- The `rbp` bytes at `r12`, padded with zeros to whole blocks, absorbed. -/
+def habsorb : Prog isa :=
+  .seq (.block [.mov .rbx (.reg .rbp), .shift .shr .rbx 4, .alu .and .rbp (imm 15), .mov .rsi (.reg .r12),
+      .alu .test .rbx (.reg .rbx)])
+  (.seq (.ite .e (.block []) (.loop (.block hrBody) .ne))
+  (.seq (.block [.alu .test .rbp (.reg .rbp)])
+    (.ite .e (.block []) htail)))
+
+/-- The constants, `H'` (the authentication key at `W + akO`) in `xmm3` and
+`Y` (zero) in `xmm2`. -/
+def hsetup : List Instr :=
+  ([.vop .vzeroupper] : List Instr) ++ Gcm.X86_64.Pclmul.const .xmm0 revMask ++ Gcm.X86_64.Pclmul.const .xmm1 poly ++
+  ([.vop (.vinserti128 .xmm1 .xmm1 .xmm1 1), .vmovdquLoad .l128 .xmm3 (at_ .r15 akO),
+    .vop (.vbin .vpxor .l128 .xmm2 .xmm2 .xmm2)] : List Instr)
+
+/-- The lengths block, `le64(8 · aad_len) ‖ le64(8 · len)`, built in `xmm7`
+and absorbed, and `Y` stored in GHASH's order. -/
+def hlens : List Instr :=
+  [.mov .rax (.mem (at_ .r15 alenO)), .alu .add .rax (.reg .rax), .alu .add .rax (.reg .rax),
+    .alu .add .rax (.reg .rax), .vop (.vmovq .xmm5 .rax),
+    .mov .rax (.mem (at_ .r15 lenO)), .alu .add .rax (.reg .rax), .alu .add .rax (.reg .rax),
+    .alu .add .rax (.reg .rax), .vop (.vmovq .xmm6 .rax), .vop (.vbin .vpunpcklqdq .l128 .xmm7 .xmm5 .xmm6)] ++
+  hmul ++
+  ([.vop (.vbin .vpshufb .l128 .xmm2 .xmm2 .xmm0), .vmovdquStore .l128 (at_ .r15 yO) .xmm2, .vop .vzeroupper] :
+    List Instr)
+
+/-- POLYVAL of the additional data, the data and the lengths, in registers,
+and the tag input. -/
+def polyvalR : Prog isa :=
+  .seq (.block (hsetup ++ ([.mov .r12 (.mem (Impl.AesGcm.X86_64.at_ .r15 aadO)),
+      .mov .rbp (.mem (Impl.AesGcm.X86_64.at_ .r15 alenO))] : List Instr)))
+  (.seq habsorb
+  (.seq (.block [.mov .r12 (.mem (Impl.AesGcm.X86_64.at_ .r15 dataO)), .mov .rbp (.mem (Impl.AesGcm.X86_64.at_ .r15 lenO))])
+  (.seq habsorb (.block (hlens ++ tagIn)))))
+
+/-- The whole blocks of the additional data and the data together, against
+10: below it, POLYVAL in registers (`polyvalR`), whose blocks wait for each
+other, else `polyval`, whose call computes powers of `H` to take eight blocks
+at once. -/
+def hsmall : List Instr :=
+  [.mov .rax (.mem (Impl.AesGcm.X86_64.at_ .r15 alenO)), .shift .shr .rax 4, .mov .rdx (.mem (Impl.AesGcm.X86_64.at_ .r15 lenO)),
+    .shift .shr .rdx 4, .alu .add .rax (.reg .rdx), .alu .cmp .rax (imm 10)]
+
+/-- POLYVAL and the tag input: in registers for short messages. -/
+def polyvalS : Prog isa := .seq (.block hsmall) (.ite .b polyvalR (polyval c wide))
+
 
 /-- The data from the 256-byte groups on (`r12`, its length `rbp`): its whole
 blocks and its last bytes deciphered from the counter block at `W + cmO`. -/
@@ -170,7 +247,7 @@ def stitched : Prog isa :=
 def «open» : Prog isa :=
   .seq (.block entry) (.seq (.block recv) (.seq (keys c e)
     (.seq (.block [.mov .rax (.mem (Impl.AesGcm.X86_64.at_ .r15 lenO)), .alu .cmp .rax (imm 256)])
-    (.seq (.ite .b (.seq (crypt c e wide) (polyval c wide)) (stitched c e wide))
+    (.seq (.ite .b (.seq (crypt c e wide) (polyvalS c wide)) (stitched c e wide))
     (.seq (tag c bO)
     (.seq (.block cmp) (.seq mask (.block (([.mov .rax (.mem (Impl.AesGcm.X86_64.at_ .r15 okO))] : List Instr) ++ restore)))))))))
 
@@ -254,7 +331,7 @@ def cryptS : Prog isa :=
 /-- `vg_aes_gcm_siv_seal`, with the loops from 256 bytes of data. -/
 def «seal» : Prog isa :=
   .seq (.block entry) (.seq (keys c e)
-    (.seq (.block lenCmp) (.seq (.ite .b (polyval c wide) (hashS c wide))
+    (.seq (.block lenCmp) (.seq (.ite .b (polyvalS c wide) (hashS c wide))
     (.seq (tag c tagO)
     (.seq (.block lenCmp) (.seq (.ite .b (crypt c e wide) (cryptS c e wide))
     (.block (tagOut ++ restore))))))))

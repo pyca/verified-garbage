@@ -18,7 +18,11 @@ piece: `stitched`'s straight blocks and the interleaved loop pass the taint
 analysis from the registers that agree (`dec_check`), and its calls are
 related as `crypt`'s and `polyval`'s are (`blksFrom_rel`, `tail_rel`,
 `absorb_rel`, `lens_rel`); what each run keeps between the pieces (`Bufs`)
-follows from their correctness.
+follows from their correctness. POLYVAL in registers (`polyvalR`) passes the
+taint analysis piece by piece: its loops run on the lengths, loaded from the
+public slots into `r12` and `rbp` (`habsorb_check`), and its addresses are the
+buffers' and the working space's (`polyvalR_rel`); with `polyval`'s,
+`polyvalS` is constant time (`polyvalS_rel`).
 -/
 
 @[expose] public section
@@ -32,6 +36,150 @@ open VG.Impl.AesGcm.X86_64 (at_ imm ptr)
 open VG.Spec.Aes (bytesAt)
 open VG.Proof.AesGcm.X86_64 (GcmImpl toNat_ofNat_of_lt)
 open VG.Proof.Aes.X86_64 (BlocksImpl)
+
+/-! ## POLYVAL in registers -/
+
+theorem habsorb_check : ∃ hc, (taint.check (sivT [.r12, .rbp]) Impl.AesGcmSiv.X86_64Stitch.habsorb hc).isSome =
+    true := ⟨_, by taint_decide⟩
+
+theorem rsetup_check : ∃ hc, (taint.check (sivT []) (.block (Impl.AesGcmSiv.X86_64Stitch.hsetup ++
+    ([.mov .r12 (.mem (at_ .r15 aadO)), .mov .rbp (.mem (at_ .r15 alenO))] : List Instr))) hc).isSome = true :=
+  ⟨_, by taint_decide⟩
+
+theorem rfin_check : ∃ hc, (taint.check (sivT []) (.block (Impl.AesGcmSiv.X86_64Stitch.hlens ++ tagIn)) hc).isSome =
+    true := ⟨_, by taint_decide⟩
+
+/-- What the runs keep through `polyvalR`: the public arguments, and some
+`H'` for some `H`. -/
+abbrev RBufs (K W SP : Addr) (R : Nat) (N A D : Addr) (al n : Nat) (t : State) : Prop :=
+  Bufs K W SP R N A D al n t ∧ ∃ H, Stitch.RRegs H t
+
+theorem rsetup_wp {K W SP : Addr} {R : Nat} {N A D : Addr} {al n : Nat} (L : Lay K W SP) {t : State}
+    (h : Bufs K W SP R N A D al n t) :
+    WP isa (.block (Impl.AesGcmSiv.X86_64Stitch.hsetup ++
+      ([.mov .r12 (.mem (at_ .r15 aadO)), .mov .rbp (.mem (at_ .r15 alenO))] : List Instr))) t fun t₁ =>
+      RBufs K W SP R N A D al n t₁ ∧ t₁.gpr .r12 = A ∧ t₁.gpr .rbp = BitVec.ofNat 64 al :=
+  WP.mono (Stitch.rsetup_ok h.one.env h.one.sl) fun t₁ ⟨R₁, _, a₁, l₁, g₁, m₁, rd₁, wr₁⟩ =>
+    ⟨⟨h.of_eq (h.one.env.keep (fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl <;> exact g₁ _ (by decide) (by decide) (by decide)) rd₁ wr₁)
+      (by rw [m₁]; exact Frame.refl _ _) L rd₁ wr₁, _, R₁⟩, a₁, l₁⟩
+
+theorem habsorb_wp {K W SP : Addr} {R : Nat} {N A D : Addr} {al n : Nat} (L : Lay K W SP) {t : State}
+    (h : RBufs K W SP R N A D al n t) {Q : Addr} {nb : Nat} (hQ : Buf K W SP t Q nb) (h12 : t.gpr .r12 = Q)
+    (hbp : t.gpr .rbp = BitVec.ofNat 64 nb) :
+    WP isa Impl.AesGcmSiv.X86_64Stitch.habsorb t (RBufs K W SP R N A D al n) := by
+  obtain ⟨hB, H, hR⟩ := h
+  exact WP.mono (Stitch.habsorb_ok L hB.one.env hR hQ h12 hbp) fun _ P =>
+    ⟨hB.of_eq P.env (P.frame.mono fun r hr => by simp only [List.mem_singleton] at hr; subst hr; simp) L P.rd P.wr,
+      _, P.regs⟩
+
+theorem loadD_wp {K W SP : Addr} {R : Nat} {N A D : Addr} {al n : Nat} (L : Lay K W SP) {t : State}
+    (h : RBufs K W SP R N A D al n t) :
+    WP isa (.block [.mov .r12 (.mem (at_ .r15 dataO)), .mov .rbp (.mem (at_ .r15 lenO))]) t fun t₁ =>
+      RBufs K W SP R N A D al n t₁ ∧ t₁.gpr .r12 = D ∧ t₁.gpr .rbp = BitVec.ofNat 64 n := by
+  obtain ⟨hB, H, hR⟩ := h
+  have h15 := hB.one.env.r15
+  have rD := hB.one.env.perm.wR (show 232 + 8 ≤ 3816 by decide)
+  have rN := hB.one.env.perm.wR (show 240 + 8 ≤ 3816 by decide)
+  obtain ⟨t₁, run₁, d₁, n₁, g₁, m₁, rd₁, wr₁, x₁, y₁⟩ : ∃ t₁ : State,
+      runBlock isa [.mov .r12 (.mem (at_ .r15 dataO)), .mov .rbp (.mem (at_ .r15 lenO))] t = some t₁ ∧
+      t₁.gpr .r12 = D ∧ t₁.gpr .rbp = BitVec.ofNat 64 n ∧ (∀ r, r ≠ .r12 → r ≠ .rbp → t₁.gpr r = t.gpr r) ∧
+      t₁.mem = t.mem ∧ t₁.rd = t.rd ∧ t₁.wr = t.wr ∧ t₁.xmm = t.xmm ∧ t₁.ymmHi = t.ymmHi := by
+    refine ⟨_, by srun [h15, rD, rN], ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+    · simp only [gpr_setReg, ite_true, ite_false, reduceCtorEq, hB.one.sl.data]
+    · simp only [gpr_setReg, ite_true, hB.one.sl.len]
+    · intro r h₁ h₂; simp only [gpr_setReg, h₁, h₂, ite_false]
+    all_goals rfl
+  have lk : ∀ q l, t₁.lane q l = t.lane q l := fun q l => by simp only [State.lane, x₁, y₁]
+  exact WP.of_runBlock ⟨t₁, run₁, ⟨hB.of_eq (hB.one.env.keep (fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl <;> exact g₁ _ (by decide) (by decide)) rd₁ wr₁)
+      (by rw [m₁]; exact Frame.refl _ _) L rd₁ wr₁, H,
+      ⟨by rw [lk]; exact hR.m0, fun l hl => by rw [lk]; exact hR.m1 l hl, by rw [lk]; exact hR.h⟩⟩, d₁, n₁⟩
+
+/-- `polyvalR`, in two runs with the same public arguments. -/
+theorem polyvalR_rel {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A D : Addr} {al n : Nat}
+    (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 3816⟩) (hn : n ≤ 2 ^ 64) {P : State → State → Prop}
+    (hP : ∀ t₁ t₂, P t₁ t₂ → Bufs K W SP R N A D al n t₁ ∧ Bufs K W SP R N A D al n t₂) :
+    RelCT isa P Impl.AesGcmSiv.X86_64Stitch.polyvalR fun _ _ => True := by
+  have agree2 : ∀ {Q : Addr} {nb : Nat} {t₁ t₂ : State}, t₁.gpr .r12 = Q → t₁.gpr .rbp = BitVec.ofNat 64 nb →
+      t₂.gpr .r12 = Q → t₂.gpr .rbp = BitVec.ofNat 64 nb → ∀ r ∈ [Reg.r12, .rbp], t₁.gpr r = t₂.gpr r :=
+    fun a₁ b₁ a₂ b₂ r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · rw [a₁, a₂]
+      · rw [b₁, b₂]
+  have r₁ := (rel_taintC [] hDW hn (fun t₁ t₂ h => ⟨(hP _ _ h).1.one, (hP _ _ h).2.one, fun _ h => nomatch h⟩)
+    rsetup_check).wp
+    (F₁ := fun (t : State) => RBufs K W SP R N A D al n t ∧ t.gpr .r12 = A ∧ t.gpr .rbp = BitVec.ofNat 64 al)
+    (F₂ := fun (t : State) => RBufs K W SP R N A D al n t ∧ t.gpr .r12 = A ∧ t.gpr .rbp = BitVec.ofNat 64 al)
+    fun t₁ t₂ h => ⟨rsetup_wp L (hP _ _ h).1, rsetup_wp L (hP _ _ h).2⟩
+  have r₂ := (rel_taintC [.r12, .rbp] (P := fun t₁ t₂ => True ∧ (fun (t : State) => RBufs K W SP R N A D al n t ∧ t.gpr .r12 = A ∧ t.gpr .rbp = BitVec.ofNat 64 al) t₁ ∧ (fun (t : State) => RBufs K W SP R N A D al n t ∧ t.gpr .r12 = A ∧ t.gpr .rbp = BitVec.ofNat 64 al) t₂) hDW hn
+      (fun t₁ t₂ h => ⟨h.2.1.1.1.one, h.2.2.1.1.one,
+      agree2 h.2.1.2.1 h.2.1.2.2 h.2.2.2.1 h.2.2.2.2⟩) habsorb_check).wp
+    (F₁ := RBufs K W SP R N A D al n) (F₂ := RBufs K W SP R N A D al n)
+    fun t₁ t₂ h => ⟨habsorb_wp L h.2.1.1 h.2.1.1.1.aad h.2.1.2.1 h.2.1.2.2,
+      habsorb_wp L h.2.2.1 h.2.2.1.1.aad h.2.2.2.1 h.2.2.2.2⟩
+  have r₃ := (rel_taintC [] (P := fun t₁ t₂ => True ∧ RBufs K W SP R N A D al n t₁ ∧ RBufs K W SP R N A D al n t₂)
+    hDW hn (fun t₁ t₂ h => ⟨h.2.1.1.one, h.2.2.1.one, fun _ h => nomatch h⟩) polyD_check).wp
+    (F₁ := fun (t : State) => RBufs K W SP R N A D al n t ∧ t.gpr .r12 = D ∧ t.gpr .rbp = BitVec.ofNat 64 n)
+    (F₂ := fun (t : State) => RBufs K W SP R N A D al n t ∧ t.gpr .r12 = D ∧ t.gpr .rbp = BitVec.ofNat 64 n)
+    fun t₁ t₂ h => ⟨loadD_wp L h.2.1, loadD_wp L h.2.2⟩
+  have r₄ := (rel_taintC [.r12, .rbp] (P := fun t₁ t₂ => True ∧ (fun (t : State) => RBufs K W SP R N A D al n t ∧ t.gpr .r12 = D ∧ t.gpr .rbp = BitVec.ofNat 64 n) t₁ ∧ (fun (t : State) => RBufs K W SP R N A D al n t ∧ t.gpr .r12 = D ∧ t.gpr .rbp = BitVec.ofNat 64 n) t₂) hDW hn
+      (fun t₁ t₂ h => ⟨h.2.1.1.1.one, h.2.2.1.1.one,
+      agree2 h.2.1.2.1 h.2.1.2.2 h.2.2.2.1 h.2.2.2.2⟩) habsorb_check).wp
+    (F₁ := RBufs K W SP R N A D al n) (F₂ := RBufs K W SP R N A D al n)
+    fun t₁ t₂ h => ⟨habsorb_wp L h.2.1.1 h.2.1.1.1.data h.2.1.2.1 h.2.1.2.2,
+      habsorb_wp L h.2.2.1 h.2.2.1.1.data h.2.2.2.1 h.2.2.2.2⟩
+  have r₅ := rel_taintC [] (P := fun t₁ t₂ => True ∧ RBufs K W SP R N A D al n t₁ ∧ RBufs K W SP R N A D al n t₂)
+    hDW hn (fun t₁ t₂ h => ⟨h.2.1.1.one, h.2.2.1.one, fun _ h => nomatch h⟩) rfin_check
+  exact RelCT.seq r₁ (RelCT.seq r₂ (RelCT.seq r₃ (RelCT.seq r₄ r₅)))
+
+theorem hsmall_check : ∃ hc, (taint.check (sivT []) (.block Impl.AesGcmSiv.X86_64Stitch.hsmall) hc).isSome = true :=
+  ⟨_, by taint_decide⟩
+
+theorem polyvalS_st (v : GcmImpl) (wide : Bool) {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A D T : Addr}
+    {al n : Nat} {t : State} (h : StK K W SP R N A D al n T t) :
+    WP isa (Impl.AesGcmSiv.X86_64Stitch.polyvalS v.callees wide) t (St K W SP R N A D al n T) :=
+  WP.mono (Stitch.polyvalS_ok v wide L h.1.bufs.one.env h.1.bufs.one.sl h.1.bufs.aad h.1.bufs.data h.1.nonce h.2.1
+      h.2.2)
+    fun _ Po => h.1.frame Po.env Po.frame (fun q hq => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
+      rcases hq with rfl | rfl | rfl | rfl | rfl | rfl
+      · exact L.w_w (.inr (by decide)) (by decide) (by decide)
+      · exact L.w_w (.inr (by decide)) (by decide) (by decide)
+      · exact L.w_w (.inr (by decide)) (by decide) (by decide)
+      · exact L.w_w (.inl (by decide)) (by decide) (by decide)
+      · exact L.w_w (.inl (by decide)) (by decide) (by decide)
+      · exact (L.stk_w' (by decide)).symm) ((Po.frame.sub (polyR_mutW W SP)).sub (mutW_mut W SP D n)) Po.rd Po.wr
+
+theorem hsmall_wp {K W SP : Addr} {R : Nat} {N A D : Addr} {al n : Nat} (L : Lay K W SP) {t : State}
+    (h : Bufs K W SP R N A D al n t) :
+    WP isa (.block Impl.AesGcmSiv.X86_64Stitch.hsmall) t fun t₁ =>
+      Bufs K W SP R N A D al n t₁ ∧ t₁.cf = some (decide (al / 16 + n / 16 < 10)) := by
+  obtain ⟨t₁, run₁, hcf₁, hg₁, hm₁, hrd₁, hwr₁, -, -⟩ := Stitch.smallCond_run h.one.env h.one.sl h.aad.lt h.data.lt
+  have E₁ : Env K W SP t₁ := h.one.env.keep (fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl <;> exact hg₁ _ (by decide) (by decide)) hrd₁ hwr₁
+  exact WP.of_runBlock ⟨t₁, run₁, h.of_eq E₁ (by rw [hm₁]; exact Frame.refl _ _) L hrd₁ hwr₁, hcf₁⟩
+
+/-- `polyvalS`, in two runs with the same public arguments. -/
+theorem polyvalS_rel (v : GcmImpl) (wide : Bool) {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A D : Addr}
+    {al n : Nat} (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 3816⟩) (hn : n ≤ 2 ^ 64) (hal : al < 2 ^ 64)
+    (hn' : n < 2 ^ 64) {P : State → State → Prop}
+    (hP : ∀ t₁ t₂, P t₁ t₂ → Bufs K W SP R N A D al n t₁ ∧ Bufs K W SP R N A D al n t₂) :
+    RelCT isa P (Impl.AesGcmSiv.X86_64Stitch.polyvalS v.callees wide) fun _ _ => True := by
+  have r₀ := (rel_taintC [] hDW hn (fun t₁ t₂ h => ⟨(hP _ _ h).1.one, (hP _ _ h).2.one, fun _ h => nomatch h⟩)
+    hsmall_check).wp
+    (F₁ := fun (t : State) => Bufs K W SP R N A D al n t ∧ t.cf = some (decide (al / 16 + n / 16 < 10)))
+    (F₂ := fun (t : State) => Bufs K W SP R N A D al n t ∧ t.cf = some (decide (al / 16 + n / 16 < 10)))
+    fun t₁ t₂ h => ⟨hsmall_wp L (hP _ _ h).1, hsmall_wp L (hP _ _ h).2⟩
+  refine RelCT.seq r₀ (RelCT.ite (fun t₁ t₂ h => by
+    show t₁.cf = t₂.cf; rw [h.2.1.2, h.2.2.2]) ?_ ?_)
+  · exact polyvalR_rel L hDW hn fun t₁ t₂ h => ⟨h.1.2.1.1, h.1.2.2.1⟩
+  · exact polyval_rel v wide L hDW hn hal hn' fun t₁ t₂ h => ⟨h.1.2.1.1, h.1.2.2.1⟩
+
 
 /-! ## What each run keeps -/
 
@@ -388,12 +536,12 @@ theorem mid_st (v : GcmImpl) (eb : BlocksImpl) (wide : Bool) {K W SP : Addr} (L 
     (hR : R = 10 ∨ R = 14) {N A D T : Addr} {al n : Nat} (hND : (⟨N, 12⟩ : Region).Disjoint ⟨D, n⟩)
     (hAD : (⟨A, al⟩ : Region).Disjoint ⟨D, n⟩) {t : State}
     (h : StK K W SP R N A D al n T t ∧ t.cf = some (decide (n < 256))) :
-    WP isa (.ite .b (.seq (crypt v.callees ⟨eb.enc.name, eb.enc.code⟩ wide) (polyval v.callees wide))
+    WP isa (.ite .b (.seq (crypt v.callees ⟨eb.enc.name, eb.enc.code⟩ wide) (Impl.AesGcmSiv.X86_64Stitch.polyvalS v.callees wide))
       (Impl.AesGcmSiv.X86_64Stitch.stitched v.callees ⟨eb.enc.name, eb.enc.code⟩ wide)) t
       (St K W SP R N A D al n T) := by
   obtain ⟨h, hcf⟩ := h
   refine WP.ite (decide (n < 256)) (eval_b hcf) (fun _ => ?_) (fun hf => ?_)
-  · exact WP.seq (WP.mono (crypt_st v eb wide L hR h) fun _ h' => polyval_st v wide L h')
+  · exact WP.seq (WP.mono (crypt_st v eb wide L hR h) fun _ h' => polyvalS_st v wide L h')
   · exact WP.mono (stitched_ok v eb wide L hR h.1.bufs.one.env h.1.bufs.one.sl h.1.bufs.aad h.1.bufs.data h.1.nonce
       h.1.bufs.dw hND hAD h.2.1 h.2.2 (by simpa using hf)) fun _ Md =>
       h.1.frame Md.env Md.frame (mid_disj L h.1.bufs.data.w (.inr ⟨by decide, by decide⟩))
@@ -406,7 +554,7 @@ theorem openSBody_rel (v : GcmImpl) (eb : Proof.Aes.X86_64.BlocksImpl) (wide : B
     (hP : ∀ t₁ t₂, P t₁ t₂ → St K W SP R N A D al n T t₁ ∧ St K W SP R N A D al n T t₂) :
     RelCT isa P (.seq (.block recv) (.seq (keys v.callees ⟨eb.enc.name, eb.enc.code⟩)
       (.seq (.block [.mov .rax (.mem (Impl.AesGcm.X86_64.at_ .r15 lenO)), .alu .cmp .rax (imm 256)])
-      (.seq (.ite .b (.seq (crypt v.callees ⟨eb.enc.name, eb.enc.code⟩ wide) (polyval v.callees wide))
+      (.seq (.ite .b (.seq (crypt v.callees ⟨eb.enc.name, eb.enc.code⟩ wide) (Impl.AesGcmSiv.X86_64Stitch.polyvalS v.callees wide))
         (Impl.AesGcmSiv.X86_64Stitch.stitched v.callees ⟨eb.enc.name, eb.enc.code⟩ wide))
       (.seq (tag v.callees bO) (.seq (.block Impl.AesGcmSiv.X86_64.cmp) (.seq mask
         (.block (([.mov .rax (.mem (at_ .r15 okO))] : List Instr) ++ restore)))))))))
@@ -427,7 +575,7 @@ theorem openSBody_rel (v : GcmImpl) (eb : Proof.Aes.X86_64.BlocksImpl) (wide : B
     fun t₁ t₂ h => ⟨lenCmp_stk h.2.1, lenCmp_stk h.2.2⟩
   have i₃ : RelCT isa (fun t₁ t₂ => True ∧ (StK K W SP R N A D al n T t₁ ∧ t₁.cf = some (decide (n < 256))) ∧
         (StK K W SP R N A D al n T t₂ ∧ t₂.cf = some (decide (n < 256))))
-      (.ite .b (.seq (crypt v.callees ⟨eb.enc.name, eb.enc.code⟩ wide) (polyval v.callees wide))
+      (.ite .b (.seq (crypt v.callees ⟨eb.enc.name, eb.enc.code⟩ wide) (Impl.AesGcmSiv.X86_64Stitch.polyvalS v.callees wide))
         (Impl.AesGcmSiv.X86_64Stitch.stitched v.callees ⟨eb.enc.name, eb.enc.code⟩ wide)) fun _ _ => True := by
     refine RelCT.ite (fun t₁ t₂ h => by rw [eval_b h.2.1.2, eval_b h.2.2.2]) ?_ ?_
     · have c₁ := (crypt_rel v eb wide L hR hDW hn (P := fun t₁ t₂ => (True ∧
@@ -437,7 +585,7 @@ theorem openSBody_rel (v : GcmImpl) (eb : Proof.Aes.X86_64.BlocksImpl) (wide : B
           ⟨h.1.2.2.1.1.bufs.one, h.1.2.2.1.1.bufs.data⟩⟩).wp
         (F₁ := StK K W SP R N A D al n T) (F₂ := StK K W SP R N A D al n T)
         fun t₁ t₂ h => ⟨crypt_st v eb wide L hR h.1.2.1.1, crypt_st v eb wide L hR h.1.2.2.1⟩
-      exact RelCT.seq c₁ (polyval_rel v wide L hDW hn hal hn' fun t₁ t₂ h => ⟨h.2.1.1.bufs, h.2.2.1.bufs⟩)
+      exact RelCT.seq c₁ (polyvalS_rel v wide L hDW hn hal hn' fun t₁ t₂ h => ⟨h.2.1.1.bufs, h.2.2.1.bufs⟩)
     · by_cases hn256 : 256 ≤ n
       · exact stitched_rel v eb wide L hR hDW hn hal hn' hn256 fun t₁ t₂ h =>
           ⟨h.1.2.1.1.1.bufs, h.1.2.2.1.1.bufs⟩

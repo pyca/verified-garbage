@@ -234,10 +234,10 @@ theorem lenCmp_st {K W SP : Addr} {R : Nat} {N A D T : Addr} {al n : Nat} {t : S
 /-- POLYVAL and the tag input, either way, keep `St`. -/
 theorem poly_st (v : GcmImpl) (wide : Bool) {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A D T : Addr}
     {al n : Nat} {t : State} (h : StK K W SP R N A D al n T t ∧ t.cf = some (decide (n < 256))) :
-    WP isa (.ite .b (polyval v.callees wide) (Impl.AesGcmSiv.X86_64Stitch.hashS v.callees wide)) t
+    WP isa (.ite .b (Impl.AesGcmSiv.X86_64Stitch.polyvalS v.callees wide) (Impl.AesGcmSiv.X86_64Stitch.hashS v.callees wide)) t
       (St K W SP R N A D al n T) := by
   obtain ⟨h, hcf⟩ := h
-  refine WP.ite (decide (n < 256)) (eval_b hcf) (fun _ => polyval_st v wide L h) (fun hf => ?_)
+  refine WP.ite (decide (n < 256)) (eval_b hcf) (fun _ => polyvalS_st v wide L h) (fun hf => ?_)
   exact WP.mono (hashS_ok v wide L h.1.bufs.one.env h.1.bufs.one.sl h.1.bufs.aad h.1.bufs.data h.1.nonce h.1.bufs.dw
     h.2.1 h.2.2 (by simpa using hf)) fun _ Po => h.1.frame Po.env Po.frame (fun q hq => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
@@ -264,7 +264,7 @@ theorem cry_st (v : GcmImpl) (eb : BlocksImpl) (wide : Bool) {K W SP : Addr} (L 
 /-- `seal` after its entry, up to the copy of the tag. -/
 abbrev sealSFront (v : GcmImpl) (eb : BlocksImpl) (wide : Bool) : Prog isa :=
   .seq (.seq (.seq (.seq (.seq (keys v.callees ⟨eb.enc.name, eb.enc.code⟩) (.block Impl.AesGcmSiv.X86_64Stitch.lenCmp))
-    (.ite .b (polyval v.callees wide) (Impl.AesGcmSiv.X86_64Stitch.hashS v.callees wide))) (tag v.callees tagO))
+    (.ite .b (Impl.AesGcmSiv.X86_64Stitch.polyvalS v.callees wide) (Impl.AesGcmSiv.X86_64Stitch.hashS v.callees wide))) (tag v.callees tagO))
     (.block Impl.AesGcmSiv.X86_64Stitch.lenCmp))
     (.ite .b (crypt v.callees ⟨eb.enc.name, eb.enc.code⟩ wide)
       (Impl.AesGcmSiv.X86_64Stitch.cryptS v.callees ⟨eb.enc.name, eb.enc.code⟩ wide))
@@ -295,9 +295,9 @@ theorem sealSFront_rel (v : GcmImpl) (eb : BlocksImpl) (wide : Bool) {K W SP : A
     fun t₁ t₂ h => ⟨lenCmp_stk h.2.1, lenCmp_stk h.2.2⟩
   have i₃ : RelCT isa (fun t₁ t₂ => True ∧ (StK K W SP R N A D al n T t₁ ∧ t₁.cf = some (decide (n < 256))) ∧
         (StK K W SP R N A D al n T t₂ ∧ t₂.cf = some (decide (n < 256))))
-      (.ite .b (polyval v.callees wide) (Impl.AesGcmSiv.X86_64Stitch.hashS v.callees wide)) fun _ _ => True := by
+      (.ite .b (Impl.AesGcmSiv.X86_64Stitch.polyvalS v.callees wide) (Impl.AesGcmSiv.X86_64Stitch.hashS v.callees wide)) fun _ _ => True := by
     refine RelCT.ite (fun t₁ t₂ h => by rw [eval_b h.2.1.2, eval_b h.2.2.2]) ?_ ?_
-    · exact polyval_rel v wide L hDW hn hal hn' fun t₁ t₂ h => ⟨h.1.2.1.1.1.bufs, h.1.2.2.1.1.bufs⟩
+    · exact polyvalS_rel v wide L hDW hn hal hn' fun t₁ t₂ h => ⟨h.1.2.1.1.1.bufs, h.1.2.2.1.1.bufs⟩
     · by_cases hn256 : 256 ≤ n
       · exact hashS_rel v wide L hDW hn hal hn' hn256 fun t₁ t₂ h => ⟨h.1.2.1.1.1.bufs, h.1.2.2.1.1.bufs⟩
       · refine RelCT.of_false fun _ _ h => hn256 ?_

@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Fn
-public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Stitch.Ok
+public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Stitch.PolyR
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -87,7 +87,7 @@ theorem classic_ok (v : GcmImpl) (eb : Proof.Aes.X86_64.BlocksImpl) (wide : Bool
     (hG : Spec.Gcm.blockAt t.mem (W + BitVec.ofNat 64 64) =
       GcmSiv.Polyval.mulXG (Spec.GcmSiv.ofBytes (bytesAt t.mem (W + BitVec.ofNat 64 16) 16)))
     (hY : Spec.Gcm.blockAt t.mem (W + BitVec.ofNat 64 80) = 0) :
-    WP isa (.seq (crypt v.callees ⟨eb.enc.name, eb.enc.code⟩ wide) (polyval v.callees wide)) t
+    WP isa (.seq (crypt v.callees ⟨eb.enc.name, eb.enc.code⟩ wide) (Impl.AesGcmSiv.X86_64Stitch.polyvalS v.callees wide)) t
       (MidPost K W SP R N A D al n t) := by
   refine WP.seq (WP.mono (crypt_ok v eb wide L hR E S hD hDw) fun s₃ Cr => ?_)
   have S₃ := S.of_frame Cr.frame (slots_cryR L hD)
@@ -98,7 +98,7 @@ theorem classic_ok (v : GcmImpl) (eb : Proof.Aes.X86_64.BlocksImpl) (wide : Bool
     rw [Proof.AesGcm.X86_64.blockAt_frame Cr.frame (lowW_cryR L hD.w (by decide)), hG, hA₃]
   have hY₃ : Spec.Gcm.blockAt s₃.mem (W + BitVec.ofNat 64 80) = 0 := by
     rw [Proof.AesGcm.X86_64.blockAt_frame Cr.frame (lowW_cryR L hD.w (by decide)), hY]
-  refine WP.mono (polyval_ok v wide L Cr.env S₃ (hA.of_eq Cr.rd Cr.wr) (hD.of_eq Cr.rd Cr.wr) (hN.of_eq Cr.rd Cr.wr)
+  refine WP.mono (Stitch.polyvalS_ok v wide L Cr.env S₃ (hA.of_eq Cr.rd Cr.wr) (hD.of_eq Cr.rd Cr.wr) (hN.of_eq Cr.rd Cr.wr)
     hG₃ hY₃) fun s₄ Po => ?_
   have d₄ : bytesAt s₄.mem D n = bytesAt s₃.mem D n :=
     Proof.AesGcm.X86_64.bytesAt_frame Po.frame (data_polyR hD) (Nat.le_of_lt hD.lt)
@@ -766,7 +766,7 @@ theorem openS_wp' (v : GcmImpl) (eb : Proof.Aes.X86_64.BlocksImpl) (wide : Bool)
       GcmSiv.Polyval.mulXG (Spec.GcmSiv.ofBytes (bytesAt s₂.mem (W + BitVec.ofNat 64 16) 16)) := Ky.hkey
   have nA₂ : ∀ {P : Addr} {len : Nat}, Buf K W SP s P len → bytesAt s₂.mem P len = bytesAt s.mem P len :=
     fun hP => by rw [buf_mutW (hP.of_eq rd₁ wr₁) fK, hent hP]
-  have hmid : WP isa (.ite .b (.seq (crypt v.callees ⟨eb.enc.name, eb.enc.code⟩ wide) (polyval v.callees wide))
+  have hmid : WP isa (.ite .b (.seq (crypt v.callees ⟨eb.enc.name, eb.enc.code⟩ wide) (Impl.AesGcmSiv.X86_64Stitch.polyvalS v.callees wide))
       (Impl.AesGcmSiv.X86_64Stitch.stitched v.callees ⟨eb.enc.name, eb.enc.code⟩ wide)) s₃
       (MidPost K W SP R N A D al n s₃) := by
     have S₃ : Slots W R N A D al n s₃.mem := hm₃ ▸ S₂

@@ -350,7 +350,7 @@ theorem sealS_wp' (v : GcmImpl) (eb : Proof.Aes.X86_64.BlocksImpl) (wide : Bool)
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl <;> exact hg₂' _ (by decide)) hrd₂' hwr₂'
   have S₂' : Slots W R N A D al n s₂'.mem := hm₂' ▸ S₂
-  have hpo : WP isa (.ite .b (polyval v.callees wide) (Impl.AesGcmSiv.X86_64Stitch.hashS v.callees wide)) s₂'
+  have hpo : WP isa (.ite .b (Impl.AesGcmSiv.X86_64Stitch.polyvalS v.callees wide) (Impl.AesGcmSiv.X86_64Stitch.hashS v.callees wide)) s₂'
       (PolyPost K W SP N A D al n s₂) := by
     have bA₂ := bA₁.of_eq (by rw [hrd₂', Ky.rd]) (by rw [hwr₂', Ky.wr])
     have bD₂ := bD₁.of_eq (by rw [hrd₂', Ky.rd]) (by rw [hwr₂', Ky.wr])
@@ -359,7 +359,7 @@ theorem sealS_wp' (v : GcmImpl) (eb : Proof.Aes.X86_64.BlocksImpl) (wide : Bool)
     have hY₂ := Ky.acc
     rw [← hm₂'] at hG₂ hY₂
     refine WP.ite (decide (n < 256)) (eval_b hcf₂') (fun _ => ?_) (fun hf => ?_)
-    · exact WP.mono (polyval_ok v wide L E₂' S₂' bA₂ bD₂ bN₂ hG₂ hY₂) fun _ P => P.of_pre hm₂' hrd₂' hwr₂'
+    · exact WP.mono (Stitch.polyvalS_ok v wide L E₂' S₂' bA₂ bD₂ bN₂ hG₂ hY₂) fun _ P => P.of_pre hm₂' hrd₂' hwr₂'
     · exact WP.mono (hashS_ok v wide L E₂' S₂' bA₂ bD₂ bN₂ (by rw [hwr₂', Ky.wr, wr₁]; exact Ar.dw) hG₂ hY₂
         (by simpa using hf)) fun _ P => P.of_pre hm₂' hrd₂' hwr₂'
   refine WP.seq (WP.mono hpo fun s₃ Po => ?_)
