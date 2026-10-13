@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.Mont
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.MontVerified
+import Mathlib.Tactic.SplitIfs
 
 /-! # Montgomery products modulo the curves' `p` and `n` on AArch64 -/
 

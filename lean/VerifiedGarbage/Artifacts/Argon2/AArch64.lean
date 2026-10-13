@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Argon2.AArch64.Compress
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AArch64.Inline
 
 /-! Argon2 block compression on baseline ARM64. -/
 

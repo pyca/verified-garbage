@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Impl.Selftest.X86_64
 public import VerifiedGarbage.Proof.Selftest.X86_64
+public import VerifiedGarbage.Proof.Framework.Semantics
 
 /-! # The pipeline self-test on x86-64 -/
 

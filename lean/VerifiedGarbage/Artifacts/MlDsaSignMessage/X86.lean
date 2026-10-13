@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.MlDsa.X86.Message.Verified
+import VerifiedGarbage.Proof.MlDsa.X86.Sign.Inv
 
 /-!
 # ML-DSA (FIPS 204) on x86 (32-bit): signing messages

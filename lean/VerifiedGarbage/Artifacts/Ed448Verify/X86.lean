@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Ed448.X86.Verify.Verified
 public import VerifiedGarbage.Proof.Ed448.X86.VerifyVerified
 public import VerifiedGarbage.Proof.Ed448.X86.VerifyLit
 public import VerifiedGarbage.Proof.Ed448.Facts
+public import VerifiedGarbage.Proof.Sha3.X86.Lit
 
 /-!
 # Ed448 verification on x86 (32-bit)

@@ -2,6 +2,11 @@ module
 
 public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Sha512.X86_64.Shared
+public import VerifiedGarbage.Proof.Sha512.X86_64.Avx2.Lit
+public import VerifiedGarbage.Proof.Sha512.X86_64.Lit
+public import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Lit
+import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
 
 /-!
 # SHA-384, SHA-512, SHA-512/224 and SHA-512/256 (FIPS 180-4) on x86-64

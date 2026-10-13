@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.MlDsa.X86_64.Verify.Frag
+public import VerifiedGarbage.Spec.MlDsa
 
 /-!
 # ML-DSA on x86-64: `vg_mldsa44_verify`, `vg_mldsa65_verify`, `vg_mldsa87_verify`

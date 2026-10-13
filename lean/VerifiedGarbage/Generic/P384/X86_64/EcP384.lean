@@ -9,6 +9,13 @@ public import VerifiedGarbage.Proof.EcKey.X86_64.P384.Verified
 public import VerifiedGarbage.Proof.EcKey.X86_64.P384.Lit
 public import VerifiedGarbage.Proof.EcKey.X86_64.P384.VerifiedAdx
 public import VerifiedGarbage.Proof.EcKey.X86_64.P384.LitAdx
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.VerifiedAdx
+import Mathlib.Data.Finset.Card
+import Mathlib.Data.Nat.Find
+import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
+import VerifiedGarbage.Proof.Mont.X86_64.Wide
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
 
 /-!
 # P-384 public keys (FIPS 186-5 §A.2) on x86-64

@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Impl.X448.Arm
 public import VerifiedGarbage.Proof.X448.Arm.FnVerified
+import Mathlib.Tactic.SplitIfs
 
 /-! # Arithmetic in curve448's field, in radix `2^16`, on ARMv7 -/
 

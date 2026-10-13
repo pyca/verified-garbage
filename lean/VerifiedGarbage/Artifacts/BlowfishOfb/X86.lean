@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Blowfish.X86.FbVerified
+import Mathlib.Tactic.SplitIfs
 
 /-! # Blowfish-OFB artifacts on baseline x86 (32-bit) -/
 

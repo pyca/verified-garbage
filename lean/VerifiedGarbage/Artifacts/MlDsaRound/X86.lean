@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.MlDsa.X86.Round.Power2Round
 public import VerifiedGarbage.Proof.MlDsa.X86.Round.Bits
 public import VerifiedGarbage.Proof.MlDsa.X86.Round.NormLt
 public import VerifiedGarbage.Proof.MlDsa.X86.Round.HintF
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # ML-DSA (FIPS 204) on x86: rounding and hints

@@ -5,6 +5,7 @@ public import VerifiedGarbage.Impl.ChaCha20Poly1305.AArch64
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Verified
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Lit
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Gather.Verified
+import VerifiedGarbage.Proof.AesGcm.AArch64.RelBase
 
 /-!
 # ChaCha20-Poly1305 (RFC 8439 §2.8) on AArch64

@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Weierstrass.X86.InvInterface
 public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Weierstrass.Law
 public import VerifiedGarbage.Proof.Weierstrass.X86.PointCurves
+import VerifiedGarbage.Proof.X25519.X86.Column
 
 /-!
 # P-256's point addition and doubling on x86 (32-bit)

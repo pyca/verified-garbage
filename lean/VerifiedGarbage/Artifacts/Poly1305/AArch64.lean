@@ -9,6 +9,7 @@ public import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Update
 public import VerifiedGarbage.Proof.Poly1305.AArch64.Vector.Update
 public import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Lit
 public import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Frame
+import VerifiedGarbage.Proof.Poly1305.AArch64.Vector.Finish
 
 /-! # Poly1305 (RFC 8439 §2.5) on AArch64 -/
 

@@ -13,6 +13,7 @@ public import VerifiedGarbage.Proof.Rsa.X86_64.CrtKeyVerified
 public import VerifiedGarbage.Proof.Bignum.X86_64.PcFn
 public import VerifiedGarbage.Proof.Rsa.X86_64.Calls
 public import VerifiedGarbage.Proof.Rsa.X86_64.IfmaLit
+import VerifiedGarbage.Proof.Framework.X86_64.Call
 
 /-! # RSA (RFC 8017) on x86-64 -/
 

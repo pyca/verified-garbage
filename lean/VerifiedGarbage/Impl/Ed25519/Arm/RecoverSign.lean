@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Ed25519.Arm.Recover
+public import VerifiedGarbage.Impl.Ed25519.Arm.FieldCheck
 
 /-! Validate the candidate and choose the public encoded sign, saved at offset 60. -/
 

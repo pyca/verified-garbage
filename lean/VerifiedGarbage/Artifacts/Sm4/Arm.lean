@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Sm4.Arm.KeyVerified
+import Mathlib.Tactic.SplitIfs
 
 /-! # SM4 artifacts on baseline ARMv7 -/
 

@@ -4,6 +4,8 @@ public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Ed448.X86_64.SignCached.Verified
 public import VerifiedGarbage.Proof.Ed448.X86_64.VariantVerified
 public import VerifiedGarbage.Proof.Ed448.Facts
+import VerifiedGarbage.Proof.Ed448.X86_64.PublicKey.Layout
+import VerifiedGarbage.Proof.Ed448.X86_64.Verify.Correct
 
 /-!
 # Ed448 signing with a cached public key on x86-64

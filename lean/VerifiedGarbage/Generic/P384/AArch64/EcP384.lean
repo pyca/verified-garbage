@@ -5,6 +5,9 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
 public import VerifiedGarbage.Proof.P384.Comb7
 public import VerifiedGarbage.Impl.EcKey.P384.AArch64
 public import VerifiedGarbage.Proof.EcKey.AArch64.P384.Verified
+import Mathlib.Data.Finset.Card
+import Mathlib.Data.Nat.Find
+import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 
 /-!
 # P-384 public keys (FIPS 186-5 §A.2) on AArch64

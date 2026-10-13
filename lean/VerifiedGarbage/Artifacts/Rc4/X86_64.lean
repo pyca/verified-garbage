@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Rc4.X86_64.Verified
+import VerifiedGarbage.Proof.Rc4.X86_64.Lookup
 
 /-! # Raw RC4 on baseline x86-64 -/
 

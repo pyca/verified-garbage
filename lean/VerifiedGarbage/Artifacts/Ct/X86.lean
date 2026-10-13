@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ct.X86
+import Mathlib.Tactic.SplitIfs
 
 @[expose] public section
 

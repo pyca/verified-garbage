@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Argon2.X86.Layout
 public import VerifiedGarbage.Impl.Argon2.X86.Divide
+public import VerifiedGarbage.Impl.Argon2.X86.HPrime
 
 /-!
 # Argon2 on x86 (32-bit): the parameters and H₀

@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Impl.Argon2.AArch64.Instructions
 public import VerifiedGarbage.Impl.Argon2.AArch64.FillWrite
 public import VerifiedGarbage.Spec.Argon2.Contract
+public import VerifiedGarbage.Impl.Argon2.AArch64.Compress
 
 /-! Compress the selected previous/reference blocks and update the current
 matrix cell. Pointer setup supplied `x6` (current), `x0` (previous), and

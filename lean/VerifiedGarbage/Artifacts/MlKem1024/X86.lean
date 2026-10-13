@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.MlKem1024.X86.CheckEk
 public import VerifiedGarbage.Proof.MlKem1024.X86.KeyGen
 public import VerifiedGarbage.Proof.MlKem1024.X86.Encaps
 public import VerifiedGarbage.Proof.MlKem1024.X86.Decaps
+public import VerifiedGarbage.Proof.Sha3.X86.Lit
 
 /-!
 # ML-KEM-1024 (FIPS 203) on x86

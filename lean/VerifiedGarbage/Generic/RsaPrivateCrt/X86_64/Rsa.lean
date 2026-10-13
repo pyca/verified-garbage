@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Rsa.X86_64.PrivCT
+import Mathlib.Data.Int.ModEq
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 
 /-!
 # The checked RSA private-key operation on x86-64

@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Sha256.AArch64.Shared
 public import VerifiedGarbage.Proof.Sha256.AArch64.Sha2.Compress
+import Mathlib.Tactic.SplitIfs
 
 /-! # SHA-256 (FIPS 180-4) on AArch64 -/
 

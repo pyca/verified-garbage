@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.MlKem.X86_64.Top768
 public import VerifiedGarbage.Proof.MlKem1024.X86_64.Top
+import Mathlib.Tactic.Conv
+import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
 
 /-!
 # ML-KEM-768 and ML-KEM-1024 (FIPS 203) on x86-64: key generation, encapsulation (with `H(ek)` given) and decapsulation

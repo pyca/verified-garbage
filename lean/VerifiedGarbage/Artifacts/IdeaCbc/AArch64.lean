@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Idea.AArch64.CbcVerified
+import Mathlib.Tactic.SplitIfs
 
 /-! # IDEA-CBC artifacts on baseline AArch64 -/
 

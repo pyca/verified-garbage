@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.Rc4.Arm.Frame
+import Mathlib.Tactic.SplitIfs
 
 /-! # Raw RC4 on ARMv7 -/
 

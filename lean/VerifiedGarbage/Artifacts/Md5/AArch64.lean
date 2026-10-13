@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Md5.AArch64.Shared
+import Mathlib.Tactic.Conv
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # MD5 (RFC 1321) on AArch64 -/
 

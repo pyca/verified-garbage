@@ -4,6 +4,7 @@ public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.VerifyVerified
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.RecoverVerified
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Callees
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # RSASSA-PKCS1-v1_5 (RFC 8017 §8.2) on AArch64: verification and recovery
 

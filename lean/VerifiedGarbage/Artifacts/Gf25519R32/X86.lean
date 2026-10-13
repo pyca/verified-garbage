@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Impl.X25519.X86.Field32
 public import VerifiedGarbage.Proof.X25519.X86.Field32.Verified
+import Mathlib.Tactic.SplitIfs
 
 /-! # Powers in curve25519's field, in radix `2^32`, on x86 (32-bit) -/
 

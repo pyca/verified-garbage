@@ -7,6 +7,9 @@ public import VerifiedGarbage.Impl.Ecdsa.P384.AArch64
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.P384.Verified
 public import VerifiedGarbage.Impl.Ecdsa.Verify.P384.AArch64
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P384.Verified
+import Mathlib.Data.Finset.Card
+import Mathlib.Data.Nat.Find
+import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 
 /-!
 # ECDSA over P-384 (FIPS 186-5) on AArch64

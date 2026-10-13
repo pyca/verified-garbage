@@ -9,6 +9,7 @@ public import VerifiedGarbage.Proof.MlDsa.X86_64.Round.MakeHint
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Round.YBits
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Round.YHint
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Round.YUse
+import Mathlib.Tactic.Conv
 
 /-! # ML-DSA (FIPS 204) on x86-64: rounding and hints -/
 

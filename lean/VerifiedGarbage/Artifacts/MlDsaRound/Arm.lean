@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.MlDsa.Arm.Round.Bits
 public import VerifiedGarbage.Proof.MlDsa.Arm.Round.NormLt
 public import VerifiedGarbage.Proof.MlDsa.Arm.Round.MakeHint
 public import VerifiedGarbage.Proof.MlDsa.Arm.Round.UseHint
+import Mathlib.Tactic.SplitIfs
 
 /-! # ML-DSA (FIPS 204) on 32-bit ARM: rounding and hints -/
 

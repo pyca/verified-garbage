@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Ed25519.X86_64.PointBatch
+public import VerifiedGarbage.Impl.Ed25519.X86_64.PointAccumulateLoop
 
 /-! Descend through checkpoint batches with a public counter in scratch. -/
 

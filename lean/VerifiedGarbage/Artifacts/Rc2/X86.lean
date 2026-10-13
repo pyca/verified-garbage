@@ -6,6 +6,8 @@ public import VerifiedGarbage.Proof.Rc2.X86.Key
 public import VerifiedGarbage.Proof.Rc2.X86.Cbc.Verified
 public import VerifiedGarbage.Proof.Rc2.X86.Stream.Lit
 public import VerifiedGarbage.Proof.Rc2.X86.Stream.Frame
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # RC2 artifacts on baseline x86 -/
 

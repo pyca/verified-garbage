@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Bits
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Round.NormLt
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Round.UseHint
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Round.MakeHint
+import Mathlib.Tactic.SplitIfs
 
 /-! # ML-DSA (FIPS 204) on AArch64: rounding and hints -/
 

@@ -3,6 +3,11 @@ module
 public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Impl.Weierstrass.X86.Mont
 public import VerifiedGarbage.Proof.Weierstrass.X86.MontVerified
+public import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P256
+public import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P384
+public import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P521
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.X25519.X86.Column
 
 /-! # Montgomery arithmetic modulo the curves' `p` and `n` on x86 (32-bit) -/
 

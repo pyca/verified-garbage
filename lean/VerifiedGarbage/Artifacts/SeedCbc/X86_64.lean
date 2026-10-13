@@ -1,6 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Seed.X86_64.CbcVerified
+public import VerifiedGarbage.Proof.Seed.X86_64.ModesLit
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.TaintSum
 
 /-! # SEED-CBC artifacts on baseline x86-64 -/
 

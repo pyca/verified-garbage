@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.ChaCha20.X86.Stream.ApplyCT
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.X86.Sse
 
 /-!
 # Streaming ChaCha20 (RFC 8439) on x86: `vg_chacha20_apply`

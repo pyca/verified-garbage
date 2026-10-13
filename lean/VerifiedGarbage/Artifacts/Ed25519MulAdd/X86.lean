@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Ed25519.X86.MulAddVerified
+public import VerifiedGarbage.Proof.Ed25519.X86.MulAddLit
 
 @[expose] public section
 

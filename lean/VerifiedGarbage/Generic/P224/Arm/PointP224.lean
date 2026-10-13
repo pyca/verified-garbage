@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.Weierstrass.Law
 public import VerifiedGarbage.Proof.Weierstrass.Arm.PointCurves
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Arm.Contract
 
 /-!
 # P-224's point addition and doubling on 32-bit ARM

@@ -4,6 +4,7 @@ public import VerifiedGarbage.Impl.Argon2.AArch64.Instructions
 public import VerifiedGarbage.Impl.Argon2.AArch64.AddressHeader
 public import VerifiedGarbage.Impl.Argon2.AArch64.ClearBlock
 public import VerifiedGarbage.Spec.Argon2.Contract
+public import VerifiedGarbage.Impl.Argon2.AArch64.Compress
 
 /-! Independent-address generation in the shared 16 KiB scratch allocation.
 G uses `[0,4096)`, temporary output `[4096,5120)`, input `[5120,6144)`,

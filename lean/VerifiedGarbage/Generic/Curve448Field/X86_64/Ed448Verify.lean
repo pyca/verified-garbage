@@ -4,6 +4,7 @@ public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Ed448.X86_64.Verify.Verified
 public import VerifiedGarbage.Proof.Ed448.X86_64.VariantVerified
 public import VerifiedGarbage.Proof.Ed448.Facts
+import VerifiedGarbage.Proof.Ed448.X86_64.PublicKey.Layout
 
 /-!
 # Ed448 verification on x86-64

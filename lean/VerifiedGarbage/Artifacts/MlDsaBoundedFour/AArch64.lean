@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourVerified
+import Mathlib.Tactic.Conv
+import Mathlib.Tactic.SplitIfs
 
 @[expose] public section
 

@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Ed448.X86.Shake
 public import VerifiedGarbage.Impl.Ed448.X86.Scalar
+public import VerifiedGarbage.Impl.Ed25519.X86.Whole.Wipe
 
 /-!
 # Ed448 signing with a cached public key on x86 (32-bit)

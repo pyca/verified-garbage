@@ -3,6 +3,10 @@ module
 public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Impl.Weierstrass.Arm.Mont
 public import VerifiedGarbage.Proof.Weierstrass.Arm.MontP192
+import Batteries.Logic
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.RegSet
+import VerifiedGarbage.Proof.Framework.Taint
 
 /-! # Montgomery arithmetic modulo P-192's `p` and `n` on ARMv7
 
