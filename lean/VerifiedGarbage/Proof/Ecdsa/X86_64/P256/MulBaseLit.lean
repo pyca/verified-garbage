@@ -1,7 +1,17 @@
-import VerifiedGarbage.Proof.Ecdsa.X86_64.Lit
-import VerifiedGarbage.Proof.Ecdsa.X86_64.LitAdx
-import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
-import VerifiedGarbage.Proof.Framework.LitShare
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.Lit
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.Lit
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.LitAdx
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.LitAdx
+public import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
+meta import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
+public import VerifiedGarbage.Proof.Framework.LitShare
+meta import VerifiedGarbage.Proof.Framework.LitShare
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_p256_mul_base_adx` on x86-64: the code without its displacements, as a literal
@@ -10,6 +20,8 @@ As `LitErase.lean` for the signature: the constant-time checks of
 `vg_p256_mul_base_adx` analyses its code with its displacements and
 immediates erased, each repeated block a constant (`materialize_shared`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.X86_64.P256
 

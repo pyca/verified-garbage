@@ -1,9 +1,21 @@
-import VerifiedGarbage.Proof.Ecdsa.X86_64.Verified
-import VerifiedGarbage.Proof.Ecdsa.X86_64.VerifiedAdx
-import VerifiedGarbage.Proof.Ecdsa.X86_64.P256.MulBaseLit
-import VerifiedGarbage.Proof.Weierstrass.PointFacts
-import VerifiedGarbage.Proof.Mont.Read
-import VerifiedGarbage.Spec.Weierstrass.MulBase
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.Verified
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.Verified
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.VerifiedAdx
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.VerifiedAdx
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.P256.MulBaseLit
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P256.MulBaseLit
+public import VerifiedGarbage.Proof.Weierstrass.PointFacts
+meta import VerifiedGarbage.Proof.Weierstrass.PointFacts
+public import VerifiedGarbage.Proof.Mont.Read
+meta import VerifiedGarbage.Proof.Mont.Read
+public import VerifiedGarbage.Spec.Weierstrass.MulBase
+meta import VerifiedGarbage.Spec.Weierstrass.MulBase
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_p256_mul_base_adx` on x86-64: `Verified`
@@ -19,6 +31,8 @@ proofs' (`dec_eq`, given Fermat's little theorem from the group law), and
 `Represents` is `Rep`. Constant time by taint tracking with the static's
 address public, as the signature (`mb_ct`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.X86_64.P256.MulBase
 

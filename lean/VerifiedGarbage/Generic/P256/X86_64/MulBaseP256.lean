@@ -1,7 +1,9 @@
-import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.Weierstrass.X86_64.InvInterface
-import VerifiedGarbage.Proof.P256.Comb7
-import VerifiedGarbage.Proof.Ecdsa.X86_64.P256.MulBaseVerified
+module
+
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvInterface
+public import VerifiedGarbage.Proof.P256.Comb7
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.P256.MulBaseVerified
 
 /-!
 # P-256's base point multiplication on x86-64
@@ -14,6 +16,8 @@ over P-256's group law and inversions `h`, the variant
 `Variants/P256/X86_64/Law.lean`: the comb's proof takes the group law, and
 the curve's facts (`p256_ok`) its inversions.
 -/
+
+@[expose] public section
 
 namespace VG.Generic.P256.X86_64.MulBaseP256
 
