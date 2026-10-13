@@ -66,7 +66,7 @@ theorem PTs_getD {s₀ : State} (m : Mem) {k : Nat} (hk : k < L s₀) :
 
 /-- With at most 960 bytes, the prologue's keystream covers them all, and
 `src` is all copied. -/
-theorem PTs_small {s₀ : State} (hle : SL s₀ ≤ L s₀) (hs : L s₀ ≤ 960) (m : Mem) :
+theorem PTs_small {s₀ : State} (hs : L s₀ ≤ 960) (m : Mem) :
     PTs s₀ m = bytesAt m (dp s₀) (L s₀) := by
   have hm : mm s₀ = L s₀ := by simp only [mm, mOf, hs, ite_true]
   simp only [PTs, bytesAt]

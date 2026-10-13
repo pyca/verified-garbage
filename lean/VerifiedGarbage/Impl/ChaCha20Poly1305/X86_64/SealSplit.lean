@@ -84,13 +84,13 @@ def head (whole : Bool) (w : Width) : Prog isa :=
 
 /-- After `cryptArgsM` (the state, the data from byte `m`, its length and
 `buf`), the arguments of `vg_chacha20_xor_split_avx512`: the state, `src`
-from byte `m` (`rsi - r14`), `src_len - m` (0 if `src_len < m`), the data
-from byte `m`, its length and `buf`. -/
+from byte `k`, `src_len - k`, the data from byte `m`, its length and `buf`,
+where `k` is the smaller of `m` (`rsi - r14`) and `src_len`. -/
 def splitArgs : List Instr :=
   [.mov .r8 (.reg .rdx), .mov .r9 (.reg .rcx), .mov .rcx (.reg .rsi), .mov .rax (.reg .rsi),
-   .alu .sub .rax (.reg .r14), .mov .rsi (.mem (at_ .rsp 24)), .alu .add .rsi (.reg .rax),
-   .mov .rdx (.mem (at_ .rsp 32)), .mov32 .r10 (.imm 0), .alu .sub .rdx (.reg .rax),
-   .cmov .b .rdx (.reg .r10)]
+   .alu .sub .rax (.reg .r14), .mov .rdx (.mem (at_ .rsp 32)), .alu .cmp .rdx (.reg .rax),
+   .cmov .b .rax (.reg .rdx), .mov .rsi (.mem (at_ .rsp 24)), .alu .add .rsi (.reg .rax),
+   .alu .sub .rdx (.reg .rax)]
 
 /-- As `cryptBig` with `vg_chacha20_xor_avx512`, but the call is replaced
 by the code of `vg_chacha20_xor_split_avx512`, inline (its own call of
