@@ -1,7 +1,12 @@
 //! ECDH over brainpoolP256r1 (`vg_ecdh_brainpoolp256r1`), and public keys
 //! (`vg_ec_brainpoolp256r1_public_key`).
 
-#![cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
+#![cfg(any(
+    target_arch = "x86_64",
+    target_arch = "x86",
+    target_arch = "aarch64",
+    target_arch = "arm"
+))]
 
 use super::{BrainpoolP256r1, Error, PrivateKey};
 use crate::arch::ec_brainpoolp256r1::vg_ec_brainpoolp256r1_public_key;
