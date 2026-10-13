@@ -401,9 +401,10 @@ def keepMaskV : List Instr :=
   [.mov32 .r14 (.imm 0), .alu .cmp .r14 (.reg .r15), .alu .sbb .r14 (.reg .r14), .vop (.vmovq .xmm7 .r14),
     .vop (.vpbroadcastq .l256 .xmm7 .xmm7)]
 
-/-- `gatherRegs`, and `r12 := r13` rounded down to a multiple of 4. -/
+/-- `gatherRegs`, and `r12 := 4 ⌊r13 / 4⌋`. -/
 def gatherRegsV : List Instr :=
-  gatherRegs ++ ([.mov .r12 (.reg .r13), .alu .and .r12 (.imm (BitVec.ofInt 32 (-4)))] : List Instr)
+  gatherRegs ++ ([.mov .r12 (.reg .r13), .shift .shr .r12 2, .alu .add .r12 (.reg .r12), .alu .add .r12 (.reg .r12)] :
+    List Instr)
 
 /-- A pass's registers, masks and bases. -/
 def gatherHeadV : List (Prog isa) :=
