@@ -8,6 +8,7 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
 
 /-! Untrusted cdecl facts shared by the Ed25519 primitives. No particular
 argument list or output is assumed by scratch setup and register saving. -/

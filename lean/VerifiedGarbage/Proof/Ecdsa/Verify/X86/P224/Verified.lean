@@ -20,6 +20,10 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P224
+import VerifiedGarbage.Proof.X25519.X86.Column
+meta import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P224
+meta import VerifiedGarbage.Proof.X25519.X86.Column
 
 /-!
 # ECDSA verification over P-224 on x86 (32-bit): `Verified`

@@ -7,6 +7,7 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
 
 /-! Relational constant-time composition with a public stack pointer.
 The AArch64 taint domain always includes sp; this wrapper carries its agreement

@@ -20,6 +20,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 
 /-! P-256 joint verification on AArch64 as a literal. Its forwarded field
 programs, which the kernel evaluates slowly, have literals of their own

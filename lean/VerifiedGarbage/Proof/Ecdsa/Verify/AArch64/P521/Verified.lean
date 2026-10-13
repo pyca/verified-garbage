@@ -12,6 +12,16 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
+import Mathlib.Data.Finset.Card
+import Mathlib.Data.Nat.Find
+import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
+meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
+meta import Mathlib.Data.Finset.Card
+meta import Mathlib.Data.Nat.Find
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+meta import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
 
 /-!
 # ECDSA verification over P-521 on AArch64: `Verified`

@@ -12,6 +12,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
+meta import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
 
 /-!
 # `vg_p256_mul_base_adx` on x86-64: the code without its displacements, as a literal

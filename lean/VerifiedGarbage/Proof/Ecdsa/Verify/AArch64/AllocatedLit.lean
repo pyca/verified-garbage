@@ -14,6 +14,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 
 /-! P-256 verification with register-allocated arithmetic on AArch64 as a
 literal, reading the literals of the forwarded field programs it shares with

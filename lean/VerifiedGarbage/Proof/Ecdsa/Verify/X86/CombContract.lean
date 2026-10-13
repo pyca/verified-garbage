@@ -6,6 +6,12 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Data.Finset.Card
+import Mathlib.Data.Nat.Find
+import VerifiedGarbage.Proof.Ecdsa.X86.CombFacts
+import VerifiedGarbage.Proof.Framework.NativeTaint
+import VerifiedGarbage.Proof.Framework.X86.Sse
+import VerifiedGarbage.Proof.X25519.X86.Column
 
 /-! # Shared verification contract for the x86 fixed-base comb -/
 

@@ -7,6 +7,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.X86.CallWith
 
 /-!
 # The comb's tables' address at the entry of `vg_ed25519_scalar_base` and `vg_x25519_base`
