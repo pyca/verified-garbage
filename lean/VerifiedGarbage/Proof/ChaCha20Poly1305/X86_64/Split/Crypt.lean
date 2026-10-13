@@ -163,6 +163,25 @@ theorem SArgs.pre {s₀ : State} (hT : SPre s₀) {m : Nat} (hm : m ≤ L s₀) 
     srcM_wrap hT m, ?_⟩
   simpa only [dRm] using hp.wrap_dm hm
 
+/-- The inline code's writable regions are within the state's. -/
+theorem SArgs.hw {s₀ : State} (hT : SPre s₀) {m : Nat} (hm : m ≤ L s₀) {s : State} (hwr : s.wr = s₀.wr) :
+    Covers (wrM s₀ m) s.wr := by
+  have hp := hT.hp
+  refine Covers.of_sub fun r hr => ?_
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl
+  · exact ⟨ctxR s₀, by rw [hwr]; exact hp.ctx_wr, 64, by simp [off_eq], by show 64 + 64 ≤ 1696; omega_using []⟩
+  · exact ⟨dR s₀, by rw [hwr]; exact hp.d_wr, m, by simp [off_eq], by show m + (L s₀ - m) ≤ L s₀; omega_using [hm]⟩
+  · exact ⟨ctxR s₀, by rw [hwr]; exact hp.ctx_wr, 128, by simp [off_eq], by show 128 + 320 ≤ 1696; omega_using []⟩
+
+/-- The inline code's regions are within the state's. -/
+theorem SArgs.hc {s₀ : State} (hT : SPre s₀) {m : Nat} (hm : m ≤ L s₀) {s : State} (hrd : s.rd = s₀.rd)
+    (hwr : s.wr = s₀.wr) : Covers ([srcM s₀ m] ++ wrM s₀ m) (s.rd ++ s.wr) := by
+  refine Covers.append_left ?_ (Covers.right (SArgs.hw hT hm hwr))
+  refine Covers.of_sub fun r hr => ?_
+  simp only [List.mem_singleton] at hr; subst hr
+  exact ⟨spR s₀, List.mem_append_left _ (by rw [hrd]; exact hT.s_rd), _, srcM_in s₀ m⟩
+
 /-- The inline code of `vg_chacha20_xor_split_avx512`, from its arguments:
 its postcondition, in memory changed only within its regions and the stack
 below `rsp` that `seal`'s calls take. -/
@@ -182,26 +201,8 @@ theorem SArgs.inline {s₀ : State} (hT : SPre s₀) {m : Nat} (hm : m ≤ L s�
   have eL : (BitVec.ofNat 64 (L s₀ - m)).toNat = L s₀ - m := toNat_ofNat_lt (by simp only [L]; omega)
   have eS : (BitVec.ofNat 64 (SL s₀ - m)).toNat = SL s₀ - m := toNat_ofNat_lt (by omega)
   have hd := xorSplit_depth
-  have hw : Covers (wrM s₀ m) s.wr := by
-    refine Covers.of_sub fun r hr => ?_
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl
-    · exact ⟨ctxR s₀, by rw [hwr]; exact hp.ctx_wr, 64, by simp [off_eq], by show 64 + 64 ≤ 1696; omega_using []⟩
-    · exact ⟨dR s₀, by rw [hwr]; exact hp.d_wr, m, by simp [off_eq], by show m + (L s₀ - m) ≤ L s₀; omega_using [hm]⟩
-    · exact ⟨ctxR s₀, by rw [hwr]; exact hp.ctx_wr, 128, by simp [off_eq], by show 128 + 320 ≤ 1696; omega_using []⟩
-  have hc : Covers ([srcM s₀ m] ++ wrM s₀ m) (s.rd ++ s.wr) := by
-    refine Covers.of_sub fun r hr => ?_
-    rcases List.mem_append.mp hr with hr | hr
-    · simp only [List.mem_singleton] at hr; subst hr
-      exact ⟨spR s₀, List.mem_append_left _ (by rw [hrd]; exact hT.s_rd), _, srcM_in s₀ m⟩
-    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl
-      · exact ⟨ctxR s₀, List.mem_append_right _ (by rw [hwr]; exact hp.ctx_wr), 64, by simp [off_eq],
-          by show 64 + 64 ≤ 1696; omega_using []⟩
-      · exact ⟨dR s₀, List.mem_append_right _ (by rw [hwr]; exact hp.d_wr), m, by simp [off_eq],
-          by show m + (L s₀ - m) ≤ L s₀; omega_using [hm]⟩
-      · exact ⟨ctxR s₀, List.mem_append_right _ (by rw [hwr]; exact hp.ctx_wr), 128, by simp [off_eq],
-          by show 128 + 320 ≤ 1696; omega_using []⟩
+  have hw := SArgs.hw hT hm hwr
+  have hc := SArgs.hc hT hm hrd hwr
   refine WP.inlineSp Proof.ChaCha20.X86_64.Avx512Split.xorSplit_correct xorSplit_nosp (by omega)
     (h.pre hT hm hrsp) hc hw fun s' rd' wr' abi f _ post => hQ s' rd' wr' abi ?_ ?_
   · refine f.sub fun r hr => ?_
