@@ -27,10 +27,6 @@ namespace VG.Impl.Ed25519.AArch64
 
 open VG.AArch64
 
-/-- Slots 0–3 to the point at byte `o`, beyond the multiplication workspace. -/
-def pointTableWrite (o : Nat) : List Instr :=
-  [.movz .w .x19 0 0] ++ tableAddr o ++ pointToTable
-
 /-- The point at byte `o` to slots 0–3. -/
 def pointTableRead (o : Nat) : List Instr :=
   [.movz .w .x19 0 0] ++ tableAddr o ++ pointFromTable
