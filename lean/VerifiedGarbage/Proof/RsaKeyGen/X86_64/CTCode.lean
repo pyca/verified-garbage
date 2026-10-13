@@ -115,7 +115,8 @@ theorem C3.k0 {p : CPub} {t : State} (h : C3 p t) (hlt : ¬ p.f.rl < 8 * p.f.w) 
   rw [hs.eB, hs.B, hs.Z, hs.op, hs.up, hs.eP, hs.pP, hs.rP] at hm
   rw [hs.pP, hs.rP] at hsch
   refine ⟨by rw [← hs.B, ← hs.wr]; exact kw_of hs.pre, (hf.keep.2.2.trans he.keep.2.2).trans hs.wr,
-    ⟨by have := hm.z; rwa [show 8 * p.f.w / 8 = p.f.w by omega] at this, by omega, by omega,
+    ⟨by have := hm.z; rwa [show 8 * p.f.w / 8 = p.f.w by omega] at this,
+      by have := hm.zx; rwa [show 8 * p.f.w / 8 = p.f.w by omega] at this, by omega, by omega,
       by rw [← hs.rl]; exact (arg s 2).isLt, by omega, ?_, ?_, ?_⟩, _, _, hm, by rw [bytesAt_length, hs.pl],
     by rw [bytesAt_length, hs.rl], hsch⟩
   · rw [← hs.eB, bytesAt_length]; exact c.el1

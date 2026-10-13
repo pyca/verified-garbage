@@ -34,6 +34,7 @@ and `used` octets of `rand`. -/
 structure MrSt (B : Addr) (Z w : Nat) (mi : BitVec 64) (c ch : Nat) (rp : Addr) (r : List Byte) (s₀ : State)
     (res : Option (Bool × List Byte)) (i uni used : Nat) (s : State) : Prop where
   ctx : ∃ bm, MrCtx s B Z w mi c bm
+  ex : ECtx s.mem B w c
   r2 : wv s.mem B (slot w aR2) w = 2 ^ (64 * w) * 2 ^ (64 * w) % c
   rand : word s.mem B (8 * kRand) = rp
   len : word s.mem B (8 * kLen) = BitVec.ofNat 64 (8 * w)
@@ -73,21 +74,25 @@ theorem statCmp_ok {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 64} (hg : Goo
     exact (congrArg (fun x => (BitVec.ofNat 64 v - x == 0)) (show (4 : BitVec 64) = BitVec.ofNat 64 4 from rfl)).trans
       (ofNat_sub_beq (by omega) (by decide))) rfl) fun t ⟨⟨hz, hm⟩, k⟩ => ⟨hz, hm, k⟩
 
-/-- Bounds of a list of literal ranges of the scratch space. -/
-macro "rng_le" : tactic => `(tactic| (
-  simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq, slot, hdrBytes, aN, aX, aAcc,
-    aTmp, aR2, aXm, aY, aOne, aB, aR1, aRm1, aTab, kT0, kChecks, kE, sFn, sMinv, sW, sArr, kG, kV, kWords, kBits,
-    kFlag, kPlen, kI, kElen, kU, kUni, kP, kStat, kT1, kT2, kUsed]
-  and_intros <;> omega))
+theorem roundRanges_lt (w : Nat) : ∀ r ∈ roundRanges w, r.1 + r.2 ≤ slot w aE := by
+  intro r hr
+  simp only [roundRanges, List.mem_append] at hr
+  have := slot_mono w (show 8 ≤ aE by decide)
+  rcases hr with (hr | hr) | hr
+  · exact preRanges_lt w r hr
+  · have := expRanges_low w r hr; omega
+  · have := hdr_lt_slot w 8 (show 31 < 32 by decide)
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl <;> simp only [kI, kElen, kUni, kP, kStat, sFn] at * <;> omega
 
 theorem roundRanges_le (w : Nat) : ∀ r ∈ roundRanges w, r.1 + r.2 ≤ slot w aRm1 + 8 * (w + 2) := by
-  simp only [roundRanges, preRanges, witRanges, expRanges, bitRanges, List.cons_append, List.nil_append]
+  simp only [roundRanges, preRanges, witRanges, tabRanges, expRanges, winRanges, List.cons_append, List.nil_append]
   rng_le
 
 /-- The header words a round keeps. -/
 theorem roundRanges_hdr (w : Nat) {k : Nat} (hk : k = kRand ∨ k = kLen ∨ k = kRandLen ∨ k = kChecks ∨ k = kOut ∨
     k = kUsedP) : ∀ r ∈ roundRanges w, 8 * k + 8 ≤ r.1 ∨ r.1 + r.2 ≤ 8 * k := by
-  simp only [roundRanges, preRanges, witRanges, expRanges, bitRanges, List.cons_append, List.nil_append]
+  simp only [roundRanges, preRanges, witRanges, tabRanges, expRanges, winRanges, List.cons_append, List.nil_append]
   rcases hk with rfl | rfl | rfl | rfl | rfl | rfl
   all_goals (try simp only [kRand, kLen, kRandLen, kOut, kUsedP])
   all_goals rng_disj
@@ -112,8 +117,10 @@ theorem mrIter_ok (M : Mont) {B : Addr} {Z w : Nat} {mi : BitVec 64} {c ch : Nat
       (isa.eval .e s' = some false ∧ MrEnd B Z w mi c r s₀ res s' ∧ (res = none → r.length < used + 8 * w) ∧
         (∀ b rest, res = some (b, rest) → rest.length + (used + 8 * w) = r.length)) ∨
       (isa.eval .e s' = some true ∧ ∃ uni', MrSt B Z w mi c ch rp r s₀ res (i + 1) uni' (used + 8 * w) s') := by
-  obtain ⟨⟨bm, hc⟩, hr2, hrp, hlen, hrlen, hchk, hsrc, hi, hun, hus, hul, hgo, hiu, huni, hres, hfrm, hkeep⟩ := hI
+  obtain ⟨⟨bm, hc⟩, hE, hr2, hrp, hlen, hrlen, hchk, hsrc, hi, hun, hus, hul, hgo, hiu, huni, hres, hfrm, hkeep⟩ := hI
   have hg := hc.good
+  have hEn : B.toNat + slot w aE + 8 * (w + 1) ≤ 2 ^ 64 := by
+    have := aE_fits hd; have := hd.z; have := hg.scr.nowrap; omega
   have hZ := hd.z
   have hw4 := hd.w4
   have hnw := hg.scr.nowrap
@@ -155,7 +162,7 @@ theorem mrIter_ok (M : Mont) {B : Addr} {Z w : Nat} {mi : BitVec 64} {c ch : Nat
       fun b rest h1 => by rw [hres0] at h1; cases h1⟩
     · intro _; rw [hm, hm₂, word_writeW_self]
     · intro b rest h; rw [hres0] at h; cases h
-    · exact hfrm.trans (hft.mono (by simp [roundRanges, preRanges, witRanges, expRanges, bitRanges]))
+    · exact hfrm.trans (hft.mono (by simp [roundRanges, preRanges, witRanges, tabRanges, expRanges, winRanges]))
   · -- A round.
     simp only [decide_eq_false_iff_not, Nat.not_lt] at h
     have hc₁ : MrCtx s₁ B Z w mi c bm := hc.of_frm hd (rs := []) (by rw [hm₁]; exact Frm.refl _ _ _) hg₁.scr
@@ -164,13 +171,13 @@ theorem mrIter_ok (M : Mont) {B : Addr} {Z w : Nat} {mi : BitVec 64} {c ch : Nat
       have : 32 * i ≤ 8 * w * i := Nat.mul_le_mul_right _ (by omega)
       omega
     refine WP.mono (mrRound_ok (rp := rp) (used := used) (r := r) (i := i) (uni := uni) (ch := ch) M hd hc₁
-      (by rw [hm₁]; exact hr2) hc1 hsh (by rw [hm₁]; exact hrp)
+      (by rw [hm₁]; exact hE) (by rw [hm₁]; exact hr2) hc1 hsh (by rw [hm₁]; exact hrp)
       (by rw [hm₁]; exact hus) (by rw [hm₁]; exact hlen) (hsrc.congrK (by rw [hm₁]; exact InScr.refl _ _ _) k₁) h
       (by rw [hm₁]; exact hi) (by rw [hm₁]; exact hun) (by rw [hm₁]; exact hchk) hi61 (by omega) hch)
-      fun s₂ ⟨hc₂, hr₂, hus₂, hst₂, hcnt₂, hfr₂, k₂⟩ => ?_
+      fun s₂ ⟨⟨bm₂, hc₂⟩, hr₂, hus₂, hst₂, hcnt₂, hfr₂, k₂⟩ => ?_
     rw [ite_t h] at hres'
     generalize hwt : Spec.RsaKeyGen.witness (c - 1) (Spec.Rsa.os2ip (VG.Proof.RsaKeyGen.seg r used (8 * w))) = wt
-      at hres' hc₂ hst₂ hcnt₂
+      at hres' hst₂ hcnt₂
     generalize hfv : Spec.RsaKeyGen.mrIteration c (Spec.Rsa.splitTwos (c - 1)).1 (Spec.Rsa.splitTwos (c - 1)).2 wt.1 = f
       at hres' hst₂ hcnt₂
     have hfr : Frm B (roundRanges w) s.mem s₂.mem := by rw [← hm₁]; exact hfr₂
@@ -178,7 +185,7 @@ theorem mrIter_ok (M : Mont) {B : Addr} {Z w : Nat} {mi : BitVec 64} {c ch : Nat
     have hk : Keep mmRegs s₀ s₂ := ((hkeep.trans k₁).trans k₂).mono (by decide)
     refine WP.mono (statCmp_ok hc₂.good hZ (v := if f then (if i + 1 < 17 ∨ uni + wt.2.toNat < ch then 4 else 1) else 3)
       (by split <;> (try split) <;> decide) hst₂) fun t ⟨hz, hm, k⟩ => ?_
-    have hct : MrCtx t B Z w mi c (wt.1 * 2 ^ (64 * w) % c) := hc₂.of_frm hd (rs := [])
+    have hct : MrCtx t B Z w mi c bm₂ := hc₂.of_frm hd (rs := [])
       (by rw [hm]; exact Frm.refl _ _ _) (hc₂.good.scr.congr k.2.2) ((k.gpr (by decide)).trans hc₂.good.rdi)
       (by simp) (by simp) (by simp) (by simp) (by simp)
     have hkt : Keep mmRegs s₀ t := (hk.trans k).mono (by decide)
@@ -204,7 +211,8 @@ theorem mrIter_ok (M : Mont) {B : Addr} {Z w : Nat} {mi : BitVec 64} {c ch : Nat
       simp only [↓reduceIte, hu] at hres'
       by_cases hcnd : i + 1 < 17 ∨ uni + wt.2.toNat < ch
       · -- On to the next witness.
-        refine Or.inr ⟨by simp [eval, hz, hcnd], uni + wt.2.toNat, ⟨⟨_, hct⟩, ?_, ?_, ?_, ?_, ?_,
+        refine Or.inr ⟨by simp [eval, hz, hcnd], uni + wt.2.toNat, ⟨⟨_, hct⟩,
+          hE.of_frm (by rw [hm]; exact hfr) (fun r hr => Or.inr (roundRanges_lt w r hr)) hEn, ?_, ?_, ?_, ?_, ?_,
           ?_, by rw [hm]; exact hI₂, by rw [hm]; exact hN₂, by rw [hm]; exact hus₂, by omega, ?_, ?_, ?_, ?_, hft,
           hkt⟩⟩
         · rw [hm]; exact hr₂
@@ -246,7 +254,8 @@ theorem mrIter_ok (M : Mont) {B : Addr} {Z w : Nat} {mi : BitVec 64} {c ch : Nat
 /-- The start of `millerRabin`: `kI := 1`, `kUni := 0`. -/
 theorem mrInit_ok {B : Addr} {Z w : Nat} {mi : BitVec 64} {c ch bm : Nat} {rp : Addr}
     {r : List Byte} {s : State} {used : Nat} (hd : MrDims B Z w)
-    (hc : MrCtx s B Z w mi c bm) (hr2 : wv s.mem B (slot w aR2) w = 2 ^ (64 * w) * 2 ^ (64 * w) % c)
+    (hc : MrCtx s B Z w mi c bm) (hE : ECtx s.mem B w c)
+    (hr2 : wv s.mem B (slot w aR2) w = 2 ^ (64 * w) * 2 ^ (64 * w) % c)
     (hrp : word s.mem B (8 * kRand) = rp) (hlen : word s.mem B (8 * kLen) = BitVec.ofNat 64 (8 * w))
     (hrlen : word s.mem B (8 * kRandLen) = BitVec.ofNat 64 r.length)
     (hchk : word s.mem B (8 * kChecks) = BitVec.ofNat 64 ch) (hsrc : Src s B Z rp r)
@@ -274,7 +283,7 @@ theorem mrInit_ok {B : Addr} {Z w : Nat} {mi : BitVec 64} {c ch bm : Nat} {rp : 
     rcases hk with rfl | rfl | rfl | rfl | rfl | rfl <;>
       rw [hdrStore_hdr _ _ _ (by decide) (by decide) (by decide), hdrStore_hdr _ _ _ (by decide) (by decide) (by decide)]
   refine ⟨⟨bm, hc.of_frm hd hf₁ hg₁.scr hg₁.rdi (by rng_disj) (by rng_disj) (by rng_disj) (by rng_disj)
-      (by rng_disj)⟩, ?_, by rw [hh (Or.inl rfl)]; exact hrp, by rw [hh (Or.inr (Or.inl rfl))]; exact hlen,
+      (by rng_disj)⟩, hE.of_frm hf₁ (by rng_disj) (by have := aE_fits hd; have := hd.z; have := hg.scr.nowrap; omega), ?_, by rw [hh (Or.inl rfl)]; exact hrp, by rw [hh (Or.inr (Or.inl rfl))]; exact hlen,
     by rw [hh (Or.inr (Or.inr (Or.inl rfl)))]; exact hrlen, by rw [hh (Or.inr (Or.inr (Or.inr (Or.inl rfl))))]; exact hchk,
     hsrc.congrK (InScr.of_frm hf₁ (by
       have := hdr_lt_slot w 8 (show 31 < 32 by decide)
@@ -283,7 +292,7 @@ theorem mrInit_ok {B : Addr} {Z w : Nat} {mi : BitVec 64} {c ch bm : Nat} {rp : 
     by rw [hm₁, hdrStore_hdr _ _ _ (by decide) (by decide) (by decide), word_writeW_self],
     by rw [hm₁, word_writeW_self], by rw [hh (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl rfl)))))]; exact hus, hu2,
     Or.inl (by decide), by omega, by omega, rfl,
-    hf₁.mono (by simp [roundRanges, preRanges, witRanges, expRanges, bitRanges]), k₁.mono (by decide)⟩
+    hf₁.mono (by simp [roundRanges, preRanges, witRanges, tabRanges, expRanges, winRanges]), k₁.mono (by decide)⟩
   rw [hf₁.wv_eq (d := slot w aR2) (k := w) (by rng_disj)
     (by have := slot_le (w := w) (show aR2 < 8 by decide); omega)]; exact hr2
 
@@ -293,7 +302,8 @@ loop from `(1, 0)`. -/
 theorem millerRabin_ok (M : Mont) {B : Addr} {Z w : Nat} {mi : BitVec 64} {c ch bm : Nat} {rp : Addr}
     {r : List Byte} {s : State} {used : Nat} (hd : MrDims B Z w) (hc1 : 1 < c)
     (hsh : VG.Proof.RsaKeyGen.PrimeShape (64 * w) c) (hrl : r.length < 2 ^ 64) (hch : ch < 2 ^ 62)
-    (hc : MrCtx s B Z w mi c bm) (hr2 : wv s.mem B (slot w aR2) w = 2 ^ (64 * w) * 2 ^ (64 * w) % c)
+    (hc : MrCtx s B Z w mi c bm) (hE : ECtx s.mem B w c)
+    (hr2 : wv s.mem B (slot w aR2) w = 2 ^ (64 * w) * 2 ^ (64 * w) % c)
     (hrp : word s.mem B (8 * kRand) = rp) (hlen : word s.mem B (8 * kLen) = BitVec.ofNat 64 (8 * w))
     (hrlen : word s.mem B (8 * kRandLen) = BitVec.ofNat 64 r.length)
     (hchk : word s.mem B (8 * kChecks) = BitVec.ofNat 64 ch) (hsrc : Src s B Z rp r)
@@ -301,7 +311,7 @@ theorem millerRabin_ok (M : Mont) {B : Addr} {Z w : Nat} {mi : BitVec 64} {c ch 
     WP isa (seqs (millerRabin M.mm)) s (MrEnd B Z w mi c r s (mrRest c ch r 1 0 used)) := by
   unfold millerRabin
   simp only [seqs]
-  refine WP.seq (WP.mono (mrInit_ok hd hc hr2 hrp hlen hrlen hchk hsrc hus hu1 hu2) fun s₁ h => ?_)
+  refine WP.seq (WP.mono (mrInit_ok hd hc hE hr2 hrp hlen hrlen hchk hsrc hus hu1 hu2) fun s₁ h => ?_)
   exact WP.loop (fun n t => ∃ i uni u, n = r.length - u ∧ MrSt B Z w mi c ch rp r s (mrRest c ch r 1 0 used) i uni u t)
     (fun n t ⟨i, uni, u, hn, hI⟩ => WP.mono (mrIter_ok M hd hc1 hsh hrl hch t hI) fun t' h => h.imp (fun h => ⟨h.1, h.2.1⟩)
       fun ⟨he, uni', hI'⟩ => ⟨he, r.length - (u + 8 * w), by have := hI'.ul; have := hd.w4; omega,

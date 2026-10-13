@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrWitAll
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrTab
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -11,8 +12,8 @@ import VerifiedGarbage.Proof.Framework.X86_64.Call
 /-!
 # A candidate on x86-64: one round of Miller–Rabin
 
-`roundPre_ok`: the witness `b`, `b R mod c` into `aXm` and `aB`, and
-`y := 1` (`R mod c` into `aY`).
+`roundPre_ok`: the witness `b`, `b R mod c` into `aXm`, the table of its
+powers (`TabOK`) and `y := 1` (`R mod c` into `aY`).
 -/
 
 @[expose] public section
@@ -38,35 +39,11 @@ theorem Src.seg {s : State} {B : Addr} {Z : Nat} {rp : Addr} {r : List Byte} (h 
 
 /-- What the start of a round changes. -/
 def preRanges (w : Nat) : List (Nat × Nat) :=
-  witRanges w ++ [(slot w aAcc, 8 * (w + 2)), (slot w aTmp, 8 * (w + 2)), (slot w aXm, 8 * (w + 2)),
-    (slot w aB, 8 * (w + 2)), (slot w aY, 8 * (w + 2))]
+  witRanges w ++ [(slot w aAcc, 8 * (w + 2)), (slot w aTmp, 8 * (w + 2)), (slot w aXm, 8 * (w + 2))] ++ tabRanges w
 
 theorem roundPre_eq (mul : Nat → Nat → Nat → Prog isa) :
-    mrWitness ++ [mul aXm aX aR2,
-      .block (([.mov .r12 (.mem (hdr sW)), .mov .rsi (.mem (hdr (sArr aXm)))] : List Instr) ++ extBase aB .rbx), copyWords,
-      .block (([.mov .r12 (.mem (hdr sW)), .mov .rbx (.mem (hdr (sArr aY)))] : List Instr) ++ extBase aR1 .rsi), copyWords] =
-    mrWitness ++ ([mul aXm aX aR2] ++
-      (([.block (([.mov .r12 (.mem (hdr sW)), .mov .rsi (.mem (hdr (sArr aXm)))] : List Instr) ++ extBase aB .rbx), copyWords] : List (Prog isa)) ++
-      ([.block (([.mov .r12 (.mem (hdr sW)), .mov .rbx (.mem (hdr (sArr aY)))] : List Instr) ++ extBase aR1 .rsi), copyWords] : List (Prog isa)))) := rfl
-
-/-- `MrCtx` with a new witness. -/
-theorem MrCtx.setB {s t : State} {B : Addr} {Z w : Nat} {mi : BitVec 64} {c bm bm' : Nat} {rs : List (Nat × Nat)}
-    (hc : MrCtx s B Z w mi c bm) (hd : MrDims B Z w) (hf : Frm B rs s.mem t.mem) (hs : Scr t B Z)
-    (hdi : t.gpr .rdi = B) (hh : ∀ r ∈ rs, 128 ≤ r.1)
-    (dN : ∀ r ∈ rs, slot w aN + 8 * w ≤ r.1 ∨ r.1 + r.2 ≤ slot w aN)
-    (d1 : ∀ r ∈ rs, slot w aR1 + 8 * w ≤ r.1 ∨ r.1 + r.2 ≤ slot w aR1)
-    (dm : ∀ r ∈ rs, slot w aRm1 + 8 * w ≤ r.1 ∨ r.1 + r.2 ≤ slot w aRm1)
-    (hb : wv t.mem B (slot w aB) w = bm') : MrCtx t B Z w mi c bm' := by
-  have hn := hc.good.scr.nowrap
-  have hx := hd.x
-  have hb1 : slot w aRm1 + 8 * (w + 2) ≥ slot w aR1 + 8 * w := by unfold slot aRm1 aR1; omega_using []
-  have hb0 : slot w aRm1 + 8 * (w + 2) ≥ slot w aN + 8 * w := by unfold slot aRm1 aN; omega_using []
-  have := hd.w4
-  refine ⟨⟨hs, hdi, Hdr.of_frm hc.good.hdr hf hh⟩, ?_, ?_, hb, ?_, ?_⟩
-  · rw [hf.word_eq (d := slot w aN) (fun r hr => by have := dN r hr; omega_arith) (by omega_using [hn, hx, hb0, this])]; exact hc.inv
-  · rw [hf.wv_eq dN (by omega_using [hn, hx, hb0])]; exact hc.n
-  · rw [hf.wv_eq d1 (by omega_using [hn, hx, hb1])]; exact hc.r1
-  · rw [hf.wv_eq dm (by omega_using [hn, hx])]; exact hc.rm1
+    mrWitness ++ [mul aXm aX aR2] ++ tabBuild mul = mrWitness ++ ([mul aXm aX aR2] ++ tabBuild mul) :=
+  List.append_assoc _ _ _
 
 /-- The start of a round. -/
 theorem roundPre_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 64} {c bm : Nat}
@@ -76,13 +53,12 @@ theorem roundPre_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 6
     {rp : Addr} {used : Nat} {r : List Byte} (hR : word s.mem B (8 * kRand) = rp)
     (hU : word s.mem B (8 * kUsed) = BitVec.ofNat 64 used) (hK : word s.mem B (8 * kLen) = BitVec.ofNat 64 (8 * w))
     (hsrc : Src s B Z rp r) (hlen : used + 8 * w ≤ r.length) :
-    WP isa (seqs (mrWitness ++ [M.mm aXm aX aR2,
-      .block (([.mov .r12 (.mem (hdr sW)), .mov .rsi (.mem (hdr (sArr aXm)))] : List Instr) ++ extBase aB .rbx), copyWords,
-      .block (([.mov .r12 (.mem (hdr sW)), .mov .rbx (.mem (hdr (sArr aY)))] : List Instr) ++ extBase aR1 .rsi), copyWords])) s
-      fun t =>
+    WP isa (seqs (mrWitness ++ [M.mm aXm aX aR2] ++ tabBuild M.mm)) s fun t =>
       MrCtx t B Z w mi c
-        ((Spec.RsaKeyGen.witness (c - 1) (Spec.Rsa.os2ip (VG.Proof.RsaKeyGen.seg r used (8 * w)))).1 *
-          2 ^ (64 * w) % c) ∧
+        (Spec.Rsa.powMod (Spec.RsaKeyGen.witness (c - 1) (Spec.Rsa.os2ip (VG.Proof.RsaKeyGen.seg r used (8 * w)))).1
+          1 c * 2 ^ (64 * w) % c) ∧
+      TabOK t.mem B w c
+        (Spec.RsaKeyGen.witness (c - 1) (Spec.Rsa.os2ip (VG.Proof.RsaKeyGen.seg r used (8 * w)))).1 ∧
       wv t.mem B (slot w aY) w = 2 ^ (64 * w) % c ∧
       wv t.mem B (slot w aR2) w = 2 ^ (64 * w) * 2 ^ (64 * w) % c ∧
       word t.mem B (8 * kU) =
@@ -108,47 +84,35 @@ theorem roundPre_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 6
     rw [hf₁.wv_eq (d := slot w aR2) (k := w) (by simp only [witRanges]; rng_disj)
       (by have := slot_le (w := w) (show aR2 < 8 by decide); omega_using [hZ, hn, this])]; exact hR2
   -- `b R mod c` into `aXm`.
-  refine wp_seqs_append (by simp) (by simp) ?_
+  refine wp_seqs_append (by simp) (by simp [tabBuild]) ?_
   refine WP.mono (M.mm_ok hc₁.good hZ (by omega_using [hw4]) hw' (o := aXm) (a := aX) (b := aR2) (by decide) (by decide)
     (by decide) (by decide) (by decide) (by decide) (by decide) hc₁.inv
     (by rw [hR2₁, hc₁.n]; exact Nat.mod_lt _ hc0)) fun s₂ ⟨hg₂, hlt₂, hy₂, ha₂, k₂⟩ => ?_
   rw [hc₁.n] at hlt₂ hy₂
   rw [hx₁, hR2₁] at hy₂
-  have hXm : wv s₂.mem B (slot w aXm) w = wt.1 * 2 ^ (64 * w) % c := by
-    rw [← Nat.mod_eq_of_lt hlt₂]
+  have hXm : wv s₂.mem B (slot w aXm) w = Spec.Rsa.powMod wt.1 1 c * 2 ^ (64 * w) % c := by
+    rw [← Nat.mod_eq_of_lt hlt₂, VG.Proof.Bignum.powMod_eq, Nat.pow_one, Nat.mod_mul_mod]
     refine VG.Proof.Bignum.mont_cancel hRc ?_
     rw [hy₂, Nat.mul_mod, Nat.mod_mod, ← Nat.mul_mod, Nat.mul_assoc]
-  have hc₂ : MrCtx s₂ B Z w mi c bm := hc₁.of_frm hd (Frm.of_arrays ha₂
-    (rs := [(slot w aAcc, 8 * (w + 2)), (slot w aTmp, 8 * (w + 2)), (slot w aXm, 8 * (w + 2))]) (by simp))
-    hg₂.scr hg₂.rdi (by rng_disj) (by rng_disj) (by rng_disj) (by rng_disj) (by rng_disj)
-  -- `[aB] := b R mod c`.
-  refine wp_seqs_append (by simp) (by simp) ?_
-  refine WP.mono (copyToExt_ok hg₂ hZ (by omega_using [hw4]) hw' (a := aXm) (d := aB) (by decide) (by decide)
-    (by unfold slot aB aRm1 at *; omega_arith)) fun s₃ ⟨hv₃, ho₃, k₃⟩ => ?_
-  rw [hXm] at hv₃
-  have hg₃ : Good s₃ B Z w mi := ⟨hg₂.scr.congr k₃.2.2, (k₃.gpr (by decide)).trans hg₂.rdi,
-    Hdr.outside hg₂.hdr ho₃ (by unfold slot; omega_using [])⟩
-  have hf₃ : Frm B [(slot w aB, 8 * (w + 2))] s₂.mem s₃.mem :=
-    Frm.of_outside (ho₃.mono (o' := slot w aB) (n' := 8 * (w + 2)) (Nat.le_refl _) (by omega_using [])) (by simp)
-  have hc₃ := hc₂.setB hd hf₃ hg₃.scr hg₃.rdi (by rng_disj) (by rng_disj) (by rng_disj) (by rng_disj) hv₃
-  -- `[aY] := R mod c`.
-  refine WP.mono (copyFromExt_ok hg₃ hZ (by omega_using [hw4]) hw' (a := aY) (d := aR1) (by decide) (by decide)
-    (by unfold slot aR1 aRm1 at *; omega_arith)) fun t ⟨hv, ho, k⟩ => ?_
-  rw [hc₃.r1] at hv
-  have hgt : Good t B Z w mi := ⟨hg₃.scr.congr k.2.2, (k.gpr (by decide)).trans hg₃.rdi,
-    Hdr.outside hg₃.hdr ho (by unfold slot; omega_using [])⟩
-  have hft : Frm B [(slot w aY, 8 * (w + 2))] s₃.mem t.mem :=
-    Frm.of_outside (ho.mono (o' := slot w aY) (n' := 8 * (w + 2)) (Nat.le_refl _) (by omega_using [])) (by simp)
-  have hf23 : Frm B [(slot w aAcc, 8 * (w + 2)), (slot w aTmp, 8 * (w + 2)), (slot w aXm, 8 * (w + 2)),
-      (slot w aB, 8 * (w + 2)), (slot w aY, 8 * (w + 2))] s₁.mem t.mem :=
-    ((Frm.of_arrays ha₂ (by simp)).trans (hf₃.mono (by simp))).trans (hft.mono (by simp))
-  refine ⟨hc₃.of_frm hd hft hgt.scr hgt.rdi (by rng_disj) (by rng_disj) (by rng_disj) (by rng_disj) (by rng_disj),
-    hv, ?_, ?_, ?_, ?_, ((((k₁.trans k₂).trans k₃).trans k).mono (by decide))⟩
-  · rw [hf23.wv_eq (d := slot w aR2) (k := w) (by rng_disj)
+  have hf₂ : Frm B [(slot w aAcc, 8 * (w + 2)), (slot w aTmp, 8 * (w + 2)), (slot w aXm, 8 * (w + 2))] s₁.mem s₂.mem :=
+    Frm.of_arrays ha₂ (by simp)
+  have hc₂ : MrCtx s₂ B Z w mi c bm := hc₁.of_frm hd hf₂ hg₂.scr hg₂.rdi (by rng_disj) (by rng_disj) (by rng_disj)
+    (by rng_disj) (by rng_disj)
+  -- The table and `y := 1`.
+  refine WP.mono (tabBuild_ok M hd hc₂ hodd hc1 hXm) fun t ⟨hct, hTt, hYt, hft, kt⟩ => ?_
+  have hf : Frm B (preRanges w) s.mem t.mem :=
+    ((hf₁.mono fun r hr => by simp only [preRanges, List.mem_append]; exact .inl (.inl hr)).trans
+      (hf₂.mono fun r hr => by simp only [preRanges, List.mem_append]; exact .inl (.inr hr))).trans
+      (hft.mono fun r hr => by simp only [preRanges, List.mem_append]; exact .inr hr)
+  have hft' : Frm B (tabRanges w ++ [(slot w aAcc, 8 * (w + 2)), (slot w aTmp, 8 * (w + 2)),
+      (slot w aXm, 8 * (w + 2))]) s₁.mem t.mem :=
+    (hf₂.mono fun r hr => List.mem_append_right _ hr).trans (hft.mono fun r hr => List.mem_append_left _ hr)
+  refine ⟨hct, hTt, hYt, ?_, ?_, ?_, hf, ((k₁.trans k₂).trans kt).mono (by decide)⟩
+  · rw [hft'.wv_eq (d := slot w aR2) (k := w) (by simp only [tabRanges, List.cons_append, List.nil_append]; rng_disj)
       (by have := slot_le (w := w) (show aR2 < 8 by decide); omega_using [hZ, hn, this])]; exact hR2₁
-  · rw [hf23.word_eq (d := 8 * kU) (by rng_disj) (by unfold kU sFn; omega_using [])]; exact hu₁
-  · rw [hf23.word_eq (d := 8 * kUsed) (by rng_disj) (by unfold kUsed sFn; omega_using [])]; exact hus₁
-  · exact (hf₁.mono fun r hr => List.mem_append_left _ hr).trans (hf23.mono (by simp))
+  · rw [hft'.word_eq (d := 8 * kU) (by simp only [tabRanges, List.cons_append, List.nil_append]; rng_disj) (by unfold kU sFn; omega_using [])]; exact hu₁
+  · rw [hft'.word_eq (d := 8 * kUsed) (by simp only [tabRanges, List.cons_append, List.nil_append]; rng_disj) (by unfold kUsed sFn; omega_using [])]
+    exact hus₁
 
 theorem mask_and1' (c : Bool) : mask c &&& BitVec.signExtend 64 (1 : BitVec 32) = BitVec.ofNat 64 c.toNat := by
   cases c <;> decide

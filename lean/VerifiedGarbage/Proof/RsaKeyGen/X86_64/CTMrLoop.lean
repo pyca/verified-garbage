@@ -54,10 +54,10 @@ theorem MrSt.congr {B : Addr} {Z w : Nat} {mi : BitVec 64} {c ch : Nat} {rp : Ad
     {res : Option (Bool × List Byte)} {i uni used : Nat} {s t : State} {rs : List Reg}
     (h : MrSt B Z w mi c ch rp r s₀ res i uni used s) (hd : MrDims B Z w) (hm : t.mem = s.mem) (k : Keep rs s t)
     (hrs : ∀ r ∈ rs, r ∈ mmRegs) : MrSt B Z w mi c ch rp r s₀ res i uni used t := by
-  obtain ⟨⟨bm, hc⟩, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16⟩ := h
+  obtain ⟨⟨bm, hc⟩, hE, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16⟩ := h
   refine ⟨⟨bm, hc.of_frm hd (rs := []) (by rw [hm]; exact Frm.refl _ _ _) (hc.good.scr.congr k.2.2)
     ((k.gpr (by intro h; have := hrs _ h; simp [mmRegs] at this)).trans hc.good.rdi) (by simp) (by simp) (by simp)
-    (by simp) (by simp)⟩, by rw [hm]; exact h1, by rw [hm]; exact h2, by rw [hm]; exact h3, by rw [hm]; exact h4,
+    (by simp) (by simp)⟩, by rw [hm]; exact hE, by rw [hm]; exact h1, by rw [hm]; exact h2, by rw [hm]; exact h3, by rw [hm]; exact h4,
     by rw [hm]; exact h5, h6.congrK (by rw [hm]; exact InScr.refl _ _ _) k, by rw [hm]; exact h7, by rw [hm]; exact h8,
     by rw [hm]; exact h9, h10, h11, h12, h13, h14, by rw [hm]; exact h15, (h16.trans k).mono fun r hr => ?_⟩
   rcases List.mem_append.mp hr with hr | hr
@@ -120,7 +120,7 @@ theorem avI_r0 {p : LPub × Nat} {s : State} (h : AvI p s) (hb : isa.eval .b s =
   have hi : 32 * (p.2 + 1) ≤ 8 * p.1.p.w * (p.2 + 1) := Nat.mul_le_mul_right _ (by omega)
   have hj : p.2 + 1 < 2 ^ 59 := by omega
   have hun := hI.unii
-  refine ⟨hk, hp, hd, mi, c, bm, r, uni, hc, hI.r2, hc1, hsh, hI.src, hrlen, by rw [hrlen]; exact hb, hI.kuni,
+  refine ⟨hk, hp, hd, mi, c, bm, r, uni, hc, hI.ex, hI.r2, hc1, hsh, hI.src, hrlen, by rw [hrlen]; exact hb, hI.kuni,
     show p.2 + 1 < 2 ^ 61 by omega, by omega, hch, ?_⟩
   rw [← hS, ← hI.rest, ← hrlen]
   exact (VG.Proof.RsaKeyGen.mr_pass hI.go hwb (by omega) (by rw [hrlen]; exact hb)).symm
@@ -169,10 +169,10 @@ theorem mrLoop_ct (M : Mont) :
           (fun _ => rfl) (fun _ _ h => h) (pins_nil _) (by taint_decide))
       rintro p s ⟨h, hb⟩
       have hr := avI_r0 h hb
-      obtain ⟨hk, hp, hd, mi, c, bm, r, uni, hc, hR2, hc1, hsh, hsrc, -, hlen, hun, hi, huni, hch, -⟩ := hr
+      obtain ⟨hk, hp, hd, mi, c, bm, r, uni, hc, hE, hR2, hc1, hsh, hsrc, -, hlen, hun, hi, huni, hch, -⟩ := hr
       have hm := (hp0 hp).mrh
-      exact WP.mono (mrRound_ok M hd hc hR2 hc1 hsh hm.rand hm.used hm.len hsrc hlen hm.ki hun hm.chk hi huni hch)
-        fun t ⟨hc', _, _, _, _, _, k⟩ => ⟨hk, hc'.good.rdi, k.2.2.trans hp.wr, fun _ he => absurd he (List.not_mem_nil)⟩
+      exact WP.mono (mrRound_ok M hd hc hE hR2 hc1 hsh hm.rand hm.used hm.len hsrc hlen hm.ki hun hm.chk hi huni hch)
+        fun t ⟨⟨_, hc'⟩, _, _, _, _, _, k⟩ => ⟨hk, hc'.good.rdi, k.2.2.trans hp.wr, fun _ he => absurd he (List.not_mem_nil)⟩
   · rintro a j s hj ⟨hk, hd, hch, hrl, mi, c, r, s₀, res, uni, hI, hS, hrlen, hc1, hsh, ho, hu, hl0, hw, hit⟩
     have hw4 := hd.w4
     obtain ⟨_, _, hwb⟩ := VG.Proof.RsaKeyGen.cand_bits (by omega) hsh
@@ -199,7 +199,7 @@ theorem mrLoop_ct (M : Mont) :
 of its result. -/
 def MrPre (a : LPub) (s : State) : Prop :=
   KW a.p.B a.p.wr ∧ HP a.p.B a.p.wr [] s ∧ MrDims a.p.B a.p.Z a.p.w ∧ a.p.ch < 2 ^ 62 ∧ a.p.rl < 2 ^ 64 ∧
-    ∃ (mi : BitVec 64) (c bm : Nat) (r : List Byte), MrCtx s a.p.B a.p.Z a.p.w mi c bm ∧
+    ∃ (mi : BitVec 64) (c bm : Nat) (r : List Byte), MrCtx s a.p.B a.p.Z a.p.w mi c bm ∧ ECtx s.mem a.p.B a.p.w c ∧
       wv s.mem a.p.B (slot a.p.w aR2) a.p.w = 2 ^ (64 * a.p.w) * 2 ^ (64 * a.p.w) % c ∧ 1 < c ∧
       VG.Proof.RsaKeyGen.PrimeShape (64 * a.p.w) c ∧ word s.mem a.p.B (8 * kOut) = a.p.op ∧
       word s.mem a.p.B (8 * kUsedP) = a.p.up ∧ word s.mem a.p.B (8 * kRand) = a.p.rP ∧
@@ -216,8 +216,8 @@ theorem millerRabin_ct (M : Mont) : RelCT isa (Two MrPre) (seqs (millerRabin M.m
   simp only [seqs]
   refine RelCT.seq (kt_piece (fun a : LPub => a.p.B) (fun a => a.p.wr) [] (fun _ => []) [] (by decide)
     (fun _ => rfl) (fun _ _ h => ⟨h.1, h.2.1⟩) (pins_nil _) (by taint_decide) ?_) (mrLoop_ct M)
-  rintro a s ⟨hk, hp, hd, hch, hrl, mi, c, bm, r, hc, hr2, hc1, hsh, ho, hup, hR, hK, hRL, hrlen, hC, hsrc, hU, hu1, hu2,
-    hS⟩
+  rintro a s ⟨hk, hp, hd, hch, hrl, mi, c, bm, r, hc, hE, hr2, hc1, hsh, ho, hup, hR, hK, hRL, hrlen, hC, hsrc, hU, hu1,
+    hu2, hS⟩
   have hw4 := hd.w4
   obtain ⟨_, _, hwb⟩ := VG.Proof.RsaKeyGen.cand_bits (by omega) hsh
   have hN : 1 ≤ a.N := by
@@ -227,7 +227,7 @@ theorem millerRabin_ct (M : Mont) : RelCT isa (Two MrPre) (seqs (millerRabin M.m
     have hr' : Spec.RsaKeyGen.loop (Spec.RsaKeyGen.mrStep c a.p.ch (Spec.Rsa.splitTwos (c - 1)).1
         (Spec.Rsa.splitTwos (c - 1)).2) (1, 0) (List.drop a.u0 r) = mrRest c a.p.ch r 1 0 a.u0 := rfl
     rwa [hr', hS, hrlen] at this
-  refine WP.mono (mrInit_ok hd hc hr2 hR hK hRL hC hsrc hU hu1 hu2) fun t hI => ⟨hN, hk, hd, hch, hrl, mi, c, r, s,
+  refine WP.mono (mrInit_ok hd hc hE hr2 hR hK hRL hC hsrc hU hu1 hu2) fun t hI => ⟨hN, hk, hd, hch, hrl, mi, c, r, s,
     _, 0, by simpa [LPub.u] using hI, hS, hrlen, hc1, hsh, ho, hup, hK, hp.wr, by simp [LPub.u]⟩
 
 end VG.Proof.RsaKeyGen.X86_64
