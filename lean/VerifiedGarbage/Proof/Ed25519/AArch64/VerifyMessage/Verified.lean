@@ -22,6 +22,10 @@ import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Proof.Sha512.Word64
 meta import VerifiedGarbage.Proof.Framework.KernelRfl
 meta import VerifiedGarbage.Proof.Sha512.Word64
+import VerifiedGarbage.Impl.Mont.Mod
+import VerifiedGarbage.Proof.Sha512.AArch64.Stream.Init
+meta import VerifiedGarbage.Impl.Mont.Mod
+meta import VerifiedGarbage.Proof.Sha512.AArch64.Stream.Init
 
 /-! Merged from `Proof.Ed25519.AArch64.VerifyMessage.CTHashPipeline`. -/
 

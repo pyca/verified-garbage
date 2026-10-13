@@ -26,6 +26,8 @@ import Mathlib.Logic.Function.Basic
 import VerifiedGarbage.Proof.Framework.Arm.Call
 meta import Mathlib.Logic.Function.Basic
 meta import VerifiedGarbage.Proof.Framework.Arm.Call
+import VerifiedGarbage.Proof.Framework.Arm.Spill
+meta import VerifiedGarbage.Proof.Framework.Arm.Spill
 
 /-! Merged from `Proof.Ed25519.Arm.ScalarMain`. -/
 

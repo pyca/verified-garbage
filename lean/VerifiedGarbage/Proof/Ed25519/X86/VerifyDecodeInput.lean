@@ -11,6 +11,9 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.X86.CallWith
+import VerifiedGarbage.Impl.Mont.Mod
+import VerifiedGarbage.Proof.Framework.X86.Lit
+import VerifiedGarbage.Spec.Rc2
 
 @[expose] public section
 

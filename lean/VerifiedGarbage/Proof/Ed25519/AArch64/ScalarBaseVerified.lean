@@ -14,6 +14,10 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarMemory
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarMemory
+import VerifiedGarbage.Impl.Mont.Mod
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import VerifiedGarbage.Impl.Mont.Mod
+meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
 
 /-! Merged from `Proof.Ed25519.AArch64.ScalarBaseCT`. -/
 

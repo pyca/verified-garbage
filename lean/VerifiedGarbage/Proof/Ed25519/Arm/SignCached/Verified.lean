@@ -13,6 +13,7 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Sha512.Arm.Stream.Finalize
 
 /-! Merged from `Proof.Ed25519.Arm.SignCached.CTReady`. -/
 

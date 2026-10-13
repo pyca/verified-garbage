@@ -18,6 +18,18 @@ import VerifiedGarbage.Spec.Weierstrass
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Keep
 meta import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Sym
 meta import VerifiedGarbage.Spec.Weierstrass
+import VerifiedGarbage.Proof.Ed25519.Recode
+import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Ops
+import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Half
+import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Block
+import VerifiedGarbage.Spec.EcKey.Generic
+import VerifiedGarbage.Spec.Ecdsa.Generic
+meta import VerifiedGarbage.Proof.Ed25519.Recode
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Ops
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Half
+meta import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Block
+meta import VerifiedGarbage.Spec.EcKey.Generic
+meta import VerifiedGarbage.Spec.Ecdsa.Generic
 
 /-! Merged from `Proof.Ed25519.X86_64.PublicKey.CT`. -/
 

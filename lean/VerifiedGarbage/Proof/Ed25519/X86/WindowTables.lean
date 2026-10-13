@@ -11,6 +11,7 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Spec.Rc2
 
 /-!
 # Verification's tables: `[1]A … [15]A` and `-[1]B … -[15]B`

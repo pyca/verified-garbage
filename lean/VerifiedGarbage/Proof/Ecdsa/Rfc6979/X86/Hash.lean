@@ -8,6 +8,7 @@ import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.X25519.X86.Column
+public import VerifiedGarbage.Proof.Sha256.X86.Lit
 
 /-!
 # Deterministic ECDSA on x86 (32-bit): the hash function

@@ -13,6 +13,13 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Ed448.AArch64.VerifyBits
 import VerifiedGarbage.Proof.Framework.KernelRfl
+public import VerifiedGarbage.Impl.Ed448.AArch64.ScalarBase
+public import VerifiedGarbage.Proof.Ed448.AArch64.Window.Checks
+public import VerifiedGarbage.Proof.Ed448.Recover
+public import VerifiedGarbage.Proof.X448.AArch64.FinalSwap
+public import VerifiedGarbage.Proof.X448.AArch64.Ladder
+public import VerifiedGarbage.Proof.X448.AArch64.Weak.Finish
+public import VerifiedGarbage.Proof.X448.AArch64.Weak.Ladder
 
 /-!
 # Ed448 verification on AArch64: the entry and the decodings

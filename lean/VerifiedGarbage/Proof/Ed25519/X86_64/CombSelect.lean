@@ -14,6 +14,13 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Impl.Ed25519.X86_64.BaseOdd
+public import VerifiedGarbage.Proof.Ed25519.X86_64.FieldLazy
+public import VerifiedGarbage.Proof.Ed25519.X86_64.MulAddMemory
+public import VerifiedGarbage.Proof.Ed25519.X86_64.PointSelect
+public import VerifiedGarbage.Proof.Framework.X86_64.VecKeep
+public import VerifiedGarbage.Proof.Mont.Read
+public import VerifiedGarbage.Proof.X25519.X86_64.Bits
 
 /-!
 # The comb's constant-time selection, from the tables in the static

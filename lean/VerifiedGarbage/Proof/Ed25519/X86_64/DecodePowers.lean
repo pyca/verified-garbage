@@ -12,6 +12,14 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulCTLit
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulCTLit
+import VerifiedGarbage.Impl.Mont.Mod
+import VerifiedGarbage.Proof.Ed25519.X86_64.DecodeBits
+import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyFrame
+import VerifiedGarbage.Proof.X25519.X86_64.Setup
+meta import VerifiedGarbage.Impl.Mont.Mod
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.DecodeBits
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyFrame
+meta import VerifiedGarbage.Proof.X25519.X86_64.Setup
 
 /-!
 # Ed25519 verification on x86-64: both square roots' powers first

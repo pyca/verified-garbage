@@ -6,6 +6,8 @@ import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.ReadDigit
+import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Sign
+import VerifiedGarbage.Proof.Framework.X86_64.Spill
 
 /-! Sparse signed-digit selection preserves the accumulator and curve constant. -/
 

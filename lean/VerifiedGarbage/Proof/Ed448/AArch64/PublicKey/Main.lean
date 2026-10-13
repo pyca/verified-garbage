@@ -9,6 +9,7 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Spec.X25519
 
 /-!
 # Ed448 public-key derivation on AArch64: the whole function

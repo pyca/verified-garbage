@@ -7,6 +7,7 @@ import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import Batteries.Logic
+import VerifiedGarbage.Proof.Framework.Range
 
 /-!
 # Ed448 scalar arithmetic on ARMv7: entry and exit

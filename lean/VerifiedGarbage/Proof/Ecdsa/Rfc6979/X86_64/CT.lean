@@ -10,6 +10,8 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
 meta import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Reduce
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Reduce
 
 /-!
 # Deterministic ECDSA on x86-64: constant time, up to the number of candidates

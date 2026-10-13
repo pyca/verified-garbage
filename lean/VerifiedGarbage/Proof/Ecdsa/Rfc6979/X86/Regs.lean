@@ -8,6 +8,7 @@ import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Framework.X86.Wp
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Spec.Rc2
 
 /-!
 # Deterministic ECDSA on x86 (32-bit): addresses and registers

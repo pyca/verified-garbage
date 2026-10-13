@@ -6,6 +6,10 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.X86.Lit
+import VerifiedGarbage.Proof.X448.X86.Init
+import VerifiedGarbage.Proof.X448.X86.Ops
+import VerifiedGarbage.Proof.X448.X86.RowPass
 
 /-!
 # Ed448 scalar multiply-add on x86 (32-bit): the steps

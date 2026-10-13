@@ -16,6 +16,8 @@ import VerifiedGarbage.Proof.Framework.Arm.TaintErase
 meta import VerifiedGarbage.Proof.Framework.Arm.TaintErase
 import VerifiedGarbage.Proof.Weierstrass.Layout
 meta import VerifiedGarbage.Proof.Weierstrass.Layout
+import VerifiedGarbage.Spec.Rc2
+meta import VerifiedGarbage.Spec.Rc2
 
 /-!
 # Deterministic ECDSA on 32-bit ARM: constant time, up to the number of candidates

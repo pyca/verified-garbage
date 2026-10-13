@@ -7,6 +7,7 @@ import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import Mathlib.Data.List.Induction
+import VerifiedGarbage.Spec.TripleDes
 
 /-!
 # GCM: the streaming state, the tag and the pre-counter block

@@ -18,6 +18,10 @@ meta import VerifiedGarbage.Proof.Framework.X86.RelCT
 meta import VerifiedGarbage.Proof.Framework.X86.Sse
 meta import VerifiedGarbage.Proof.Framework.X86.SseTaint
 meta import VerifiedGarbage.Proof.X25519.X86.Column
+import VerifiedGarbage.Proof.Weierstrass.X86.TCombJFirst
+import VerifiedGarbage.Proof.Weierstrass.X86.TCombJStep
+meta import VerifiedGarbage.Proof.Weierstrass.X86.TCombJFirst
+meta import VerifiedGarbage.Proof.Weierstrass.X86.TCombJStep
 
 @[expose] public section
 

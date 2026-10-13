@@ -15,6 +15,7 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Spec.Rc2
 
 /-!
 # Deterministic ECDSA on x86 (32-bit): where everything is

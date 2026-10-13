@@ -7,6 +7,7 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import Mathlib.Data.List.Induction
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Cmac.Spec
 
 /-!
 # GCM streaming, out of place: whole blocks on the state

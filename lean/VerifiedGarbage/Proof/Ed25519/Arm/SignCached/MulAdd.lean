@@ -7,6 +7,7 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarMulAddVerified
 import Mathlib.Logic.Function.Basic
+import VerifiedGarbage.Proof.Framework.Arm.Spill
 
 @[expose] public section
 

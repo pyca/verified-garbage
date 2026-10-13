@@ -12,6 +12,10 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Ed448.X86.VerifyRoot
 meta import VerifiedGarbage.Proof.Ed448.X86.VerifyRoot
+import VerifiedGarbage.Proof.Ed448.X86.BaseMain
+import VerifiedGarbage.Proof.Ed448.X86.VerifyFinish
+meta import VerifiedGarbage.Proof.Ed448.X86.BaseMain
+meta import VerifiedGarbage.Proof.Ed448.X86.VerifyFinish
 
 /-!
 # Ed448 verification's equation on x86 (32-bit): constant time

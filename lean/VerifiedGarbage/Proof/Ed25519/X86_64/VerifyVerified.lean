@@ -30,6 +30,12 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Ed25519.Group.Decode
+import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyFrame
+import VerifiedGarbage.Proof.Framework.X86_64.Syms
+meta import VerifiedGarbage.Proof.Ed25519.Group.Decode
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyFrame
+meta import VerifiedGarbage.Proof.Framework.X86_64.Syms
 
 /-! Merged from `Proof.Ed25519.X86_64.VerifyCTPublic`. -/
 

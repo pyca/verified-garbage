@@ -34,6 +34,18 @@ public import VerifiedGarbage.Proof.Ed25519.X86.Whole.Reduce
 import VerifiedGarbage.Proof.Framework.TaintSum
 meta import VerifiedGarbage.Proof.Ed25519.X86.Whole.Reduce
 meta import VerifiedGarbage.Proof.Framework.TaintSum
+import VerifiedGarbage.Impl.Mont.Mod
+import VerifiedGarbage.Proof.Framework.OffsetBelow
+import VerifiedGarbage.Proof.Framework.X86.Syms
+import VerifiedGarbage.Proof.Framework.X86.TaintMono
+import VerifiedGarbage.Proof.Sha512.X86.Stream.Finalize
+import VerifiedGarbage.Spec.Rc2
+meta import VerifiedGarbage.Impl.Mont.Mod
+meta import VerifiedGarbage.Proof.Framework.OffsetBelow
+meta import VerifiedGarbage.Proof.Framework.X86.Syms
+meta import VerifiedGarbage.Proof.Framework.X86.TaintMono
+meta import VerifiedGarbage.Proof.Sha512.X86.Stream.Finalize
+meta import VerifiedGarbage.Spec.Rc2
 
 /-! Merged from `Proof.Ed25519.X86.VerifyMessage.CTEquation`. -/
 

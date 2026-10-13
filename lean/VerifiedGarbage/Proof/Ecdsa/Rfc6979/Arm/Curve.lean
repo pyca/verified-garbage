@@ -10,6 +10,7 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Framework.Arm.CallF
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Spec.X25519
 
 /-!
 # Deterministic ECDSA on 32-bit ARM: the curve

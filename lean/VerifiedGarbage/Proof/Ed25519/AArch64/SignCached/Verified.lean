@@ -20,6 +20,14 @@ import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Proof.Sha512.Word64
 meta import VerifiedGarbage.Proof.Framework.KernelRfl
 meta import VerifiedGarbage.Proof.Sha512.Word64
+public import VerifiedGarbage.Spec.Ed25519.CachedSign
+import VerifiedGarbage.Impl.Mont.Mod
+import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarVerified
+import VerifiedGarbage.Proof.Sha512.AArch64.Stream.Init
+meta import VerifiedGarbage.Spec.Ed25519.CachedSign
+meta import VerifiedGarbage.Impl.Mont.Mod
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarVerified
+meta import VerifiedGarbage.Proof.Sha512.AArch64.Stream.Init
 
 /-! Merged from `Proof.Ed25519.AArch64.SignCached.Correct`. -/
 

@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Framework.AArch64.Simd
 public import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Bswap
 
 /-! AArch64 vector loads, stores, and byte reversal. -/
 

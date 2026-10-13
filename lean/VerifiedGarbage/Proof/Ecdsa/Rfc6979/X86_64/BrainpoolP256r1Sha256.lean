@@ -14,6 +14,7 @@ import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
 import VerifiedGarbage.Proof.Mont.X86_64.Wide
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+import VerifiedGarbage.Spec.EcKey.Generic
 
 /-!
 # Deterministic ECDSA over brainpoolP256r1 with HMAC-SHA-256 on x86-64

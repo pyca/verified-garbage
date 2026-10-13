@@ -9,6 +9,9 @@ import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Arm.Call
+import VerifiedGarbage.Proof.X448.Arm.Freeze
+import VerifiedGarbage.Proof.X448.Arm.Output
+import VerifiedGarbage.Proof.X448.Arm.Restore
 
 /-!
 # Ed448 base-point multiplication on ARMv7: the encoding

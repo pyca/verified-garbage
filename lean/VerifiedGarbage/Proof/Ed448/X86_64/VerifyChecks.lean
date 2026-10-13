@@ -8,6 +8,11 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Impl.Ed448.Wnaf
+public import VerifiedGarbage.Proof.Ed448.X86_64.FieldVariant
+public import VerifiedGarbage.Proof.Framework.Range
+public import VerifiedGarbage.Proof.X448.X86_64.Adx.Lit
+public import VerifiedGarbage.Proof.X448.X86_64.Adx.Sqr
 
 /-!
 # Ed448 verification's equation on x86-64: the checks

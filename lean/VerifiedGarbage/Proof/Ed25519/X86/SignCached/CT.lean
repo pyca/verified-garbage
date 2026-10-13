@@ -32,6 +32,16 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Impl.Mont.Mod
+import VerifiedGarbage.Proof.Ed25519.Signing
+import VerifiedGarbage.Proof.Framework.OffsetBelow
+import VerifiedGarbage.Proof.Sha512.X86.Stream.Finalize
+import VerifiedGarbage.Spec.Rc2
+meta import VerifiedGarbage.Impl.Mont.Mod
+meta import VerifiedGarbage.Proof.Ed25519.Signing
+meta import VerifiedGarbage.Proof.Framework.OffsetBelow
+meta import VerifiedGarbage.Proof.Sha512.X86.Stream.Finalize
+meta import VerifiedGarbage.Spec.Rc2
 
 /-! Merged from `Proof.Ed25519.X86.SignCached.CTCommon`. -/
 
