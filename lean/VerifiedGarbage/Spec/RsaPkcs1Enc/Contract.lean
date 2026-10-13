@@ -36,7 +36,7 @@ encoded message `EM` and the alternative message `AM` whichever it returns
 secrets (whether the padding string has a zero octet; whether the
 ciphertext is below `n`, the key is consistent and RSADP passes its check).
 
-`scratch` is working space of at least `16 n_len` `u64`s, whose contents on
+`scratch` is working space of at least `16 n_len + 32` `u64`s, whose contents on
 return are unspecified. `stack` is the number of bytes below the stack
 pointer that an implementation's calls and frames use. The functions may
 overwrite their arguments passed in memory, where the calling convention

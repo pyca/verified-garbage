@@ -18,7 +18,7 @@
 /// * `n_len` must be in 64..=1024.
 /// * `out_len` and `input_len` must be `n_len`.
 /// * `e_len` must be in 1..=`n_len`.
-/// * `scratch_len` must be at least `16 * n_len`.
+/// * `scratch_len` must be at least `16 * n_len + 32`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out` and `scratch` must not overlap each other, `n`, `e`, `input` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `out`, `n`, `e`, `input` and `scratch` may wrap around the end of the address space (no Rust object does).
@@ -3925,7 +3925,7 @@ pub(crate) unsafe extern "C" fn vg_rsa_public_checked(out: *mut u8, out_len: usi
 /// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
 /// * `n_len` must be in 64..=1024.
 /// * `pre_len` must be `2 * ⌈n_len / 8⌉`.
-/// * `scratch_len` must be at least `16 * n_len`.
+/// * `scratch_len` must be at least `16 * n_len + 32`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `pre` and `scratch` must not overlap each other or `n` (distinct Rust objects never do).
 /// * None of `pre`, `n` and `scratch` may wrap around the end of the address space (no Rust object does).
@@ -5748,7 +5748,7 @@ pub(crate) unsafe extern "C" fn vg_rsa_public_precompute(pre: *mut u64, pre_len:
 /// * `pre_len` must be `2 * ⌈out_len / 8⌉`.
 /// * `e_len` must be in 1..=`out_len`.
 /// * For the result to be RSAEP's, `pre` must hold what `vg_rsa_public_precompute` wrote for a modulus of `out_len` bytes (returning 1); otherwise it is unspecified.
-/// * `scratch_len` must be at least `16 * n_len`.
+/// * `scratch_len` must be at least `16 * n_len + 32`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out` and `scratch` must not overlap each other, `pre`, `e`, `input` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `out`, `pre`, `e`, `input` and `scratch` may wrap around the end of the address space (no Rust object does).
@@ -11433,7 +11433,7 @@ pub(crate) unsafe extern "C" fn vg_rsa_public_precomputed_checked(out: *mut u8, 
 /// * `out_len` and `input_len` must be `n_len`.
 /// * `p_len` and `q_len` must be in 1..`n_len`.
 /// * `dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`.
-/// * `scratch_len` must be at least `16 * n_len`.
+/// * `scratch_len` must be at least `16 * n_len + 32`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out` and `scratch` must not overlap each other, `n`, `input`, `p`, `q`, `dp`, `dq`, `qinv` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `out`, `n`, `input`, `p`, `q`, `dp`, `dq`, `qinv` and `scratch` may wrap around the end of the address space (no Rust object does).
@@ -33015,7 +33015,7 @@ pub(crate) unsafe extern "C" fn vg_rsa_private_crt(out: *mut u8, out_len: usize,
 /// * `p_len` and `q_len` must be in 1..`n_len`.
 /// * `dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`.
 /// * `d_len` must be in 1..=`n_len`.
-/// * `scratch_len` must be at least `16 * n_len`.
+/// * `scratch_len` must be at least `16 * n_len + 32`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `dp`, `dq`, `qinv` and `scratch` must not overlap each other, `n`, `p`, `q`, `d` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `dp`, `dq`, `qinv`, `n`, `p`, `q`, `d` and `scratch` may wrap around the end of the address space (no Rust object does).
@@ -34466,7 +34466,7 @@ pub(crate) unsafe extern "C" fn vg_rsa_crt_values(dp: *mut u8, dp_len: usize, dq
 /// * `n_len` must be in 64..=1024.
 /// * `p_len` and `q_len` must be `n_len`.
 /// * `e_len` and `d_len` must be in 1..=`n_len`.
-/// * `scratch_len` must be at least `16 * n_len`.
+/// * `scratch_len` must be at least `16 * n_len + 32`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `p`, `q` and `scratch` must not overlap each other, `n`, `e`, `d` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `p`, `q`, `n`, `e`, `d` and `scratch` may wrap around the end of the address space (no Rust object does).
@@ -39896,7 +39896,7 @@ pub(crate) unsafe extern "C" fn vg_rsa_recover_primes(p: *mut u8, p_len: usize, 
 /// * `e_len` and `d_len` must be in 1..=`n_len`.
 /// * `p_len` and `q_len` must be in 1..`n_len`.
 /// * `dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`.
-/// * `scratch_len` must be at least `16 * n_len`.
+/// * `scratch_len` must be at least `16 * n_len + 32`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `scratch` must not overlap `n`, `e`, `d`, `p`, `q`, `dp`, `dq`, `qinv` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `n`, `e`, `d`, `p`, `q`, `dp`, `dq`, `qinv` and `scratch` may wrap around the end of the address space (no Rust object does).
@@ -41949,7 +41949,7 @@ pub(crate) unsafe extern "C" fn vg_rsa_check_key(n: *const u8, n_len: usize, e: 
 /// * `e_len` must be in 1..=`n_len`.
 /// * `p_len` and `q_len` must be in 1..`n_len`.
 /// * `dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`.
-/// * `scratch_len` must be at least `16 * n_len`.
+/// * `scratch_len` must be at least `16 * n_len + 32`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `scratch` must not overlap `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv` and `scratch` may wrap around the end of the address space (no Rust object does).
@@ -43608,7 +43608,7 @@ pub(crate) unsafe extern "C" fn vg_rsa_check_crt_key(n: *const u8, n_len: usize,
 /// * `e_len` must be in 1..=`n_len`.
 /// * `p_len` and `q_len` must be in 1..`n_len`.
 /// * `dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`.
-/// * `scratch_len` must be at least `16 * n_len`.
+/// * `scratch_len` must be at least `16 * n_len + 32`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out` and `scratch` must not overlap each other, `n`, `e`, `input`, `p`, `q`, `dp`, `dq`, `qinv` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `out`, `n`, `e`, `input`, `p`, `q`, `dp`, `dq`, `qinv` and `scratch` may overlap the 3248 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).

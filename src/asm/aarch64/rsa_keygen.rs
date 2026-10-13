@@ -19,7 +19,7 @@
 /// * `out_len` must be a multiple of 8 in 32..=512.
 /// * `e_len` must be in 1..=8.
 /// * `p_len` must be 0 or `out_len`.
-/// * `scratch_len` must be at least `16 * out_len`.
+/// * `scratch_len` must be at least `16 * out_len + 32`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out`, `used` and `scratch` must not overlap each other, `e`, `p`, `rand` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `out`, `used`, `e`, `p`, `rand` and `scratch` may wrap around the end of the address space (no Rust object does).
@@ -6056,7 +6056,7 @@ pub(crate) unsafe extern "C" fn vg_rsa_keygen_candidate(out: *mut u8, out_len: u
 /// * `n_len` and `d_len` must be `2 * p_len`.
 /// * `q_len`, `dp_len`, `dq_len` and `qinv_len` must be `p_len`.
 /// * `e_len` must be in 1..=8.
-/// * `scratch_len` must be at least `16 * n_len`.
+/// * `scratch_len` must be at least `16 * n_len + 32`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `n`, `d`, `p`, `q`, `dp`, `dq`, `qinv` and `scratch` must not overlap each other, `e` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `n`, `d`, `p`, `q`, `dp`, `dq`, `qinv`, `e` and `scratch` may wrap around the end of the address space (no Rust object does).

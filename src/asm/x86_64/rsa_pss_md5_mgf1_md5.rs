@@ -29,7 +29,7 @@ pub(crate) const VG_RSA_PSS_MD5_MGF1_MD5_SIGN_CRT_ADX_FEATURES: crate::cpu::Feat
 /// * `e_len` must be in 1..=`n_len`.
 /// * `p_len` and `q_len` must be in 1..`n_len`.
 /// * `dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`.
-/// * `scratch_len` must be at least `16 * n_len + 1024`.
+/// * `scratch_len` must be at least `16 * n_len + 1056`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out` and `scratch` must not overlap each other, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `out`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt` and `scratch` may overlap the return address on the stack or the 3656 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
@@ -536,7 +536,7 @@ pub(crate) unsafe extern "sysv64" fn vg_rsa_pss_md5_mgf1_md5_sign_crt_adx(out: *
 /// * `e_len` must be in 1..=`n_len`.
 /// * `p_len` and `q_len` must be in 1..`n_len`.
 /// * `dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`.
-/// * `scratch_len` must be at least `16 * n_len + 1024`.
+/// * `scratch_len` must be at least `16 * n_len + 1056`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out` and `scratch` must not overlap each other, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `out`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt` and `scratch` may overlap the return address on the stack or the 3656 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
@@ -1045,7 +1045,7 @@ pub(crate) const VG_RSA_PSS_MD5_MGF1_MD5_SIGN_CRT_IFMA_FEATURES: crate::cpu::Fea
 /// * `e_len` must be in 1..=`n_len`.
 /// * `p_len` and `q_len` must be in 1..`n_len`.
 /// * `dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`.
-/// * `scratch_len` must be at least `16 * n_len + 1024`.
+/// * `scratch_len` must be at least `16 * n_len + 1056`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out` and `scratch` must not overlap each other, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `out`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt` and `scratch` may overlap the return address on the stack or the 3656 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
@@ -1552,7 +1552,7 @@ pub(crate) const VG_RSA_PSS_MD5_MGF1_MD5_VERIFY_PRECOMPUTED_RSA_ADX_FEATURES: cr
 /// * `n_len` must be in 64..=1024.
 /// * `sig_len` must be `n_len`.
 /// * `e_len` must be in 1..=`n_len`.
-/// * `scratch_len` must be at least `16 * n_len + 1024`.
+/// * `scratch_len` must be at least `16 * n_len + 1056`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `pre_len` must be `2 * ⌈n_len / 8⌉`.
 /// * For the result to be signature verification's, `pre` must hold what `vg_rsa_public_precompute` wrote for `n` (returning 1).
@@ -2458,7 +2458,7 @@ pub(crate) unsafe extern "sysv64" fn vg_rsa_pss_md5_mgf1_md5_verify_precomputed_
 /// * `n_len` must be in 64..=1024.
 /// * `sig_len` must be `n_len`.
 /// * `e_len` must be in 1..=`n_len`.
-/// * `scratch_len` must be at least `16 * n_len + 1024`.
+/// * `scratch_len` must be at least `16 * n_len + 1056`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `pre_len` must be `2 * ⌈n_len / 8⌉`.
 /// * For the result to be signature verification's, `pre` must hold what `vg_rsa_public_precompute` wrote for `n` (returning 1).

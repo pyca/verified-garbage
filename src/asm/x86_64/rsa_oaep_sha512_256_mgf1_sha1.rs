@@ -20,7 +20,7 @@
 /// * `n_len` must be in 64..=1024.
 /// * `out_len` must be `n_len`.
 /// * `e_len` must be in 1..=`n_len`.
-/// * `scratch_len` must be at least `16 * n_len + 1024`.
+/// * `scratch_len` must be at least `16 * n_len + 1056`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out` and `scratch` must not overlap each other, `n`, `e`, `label`, `msg`, `seed` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `out`, `n`, `e`, `label`, `msg`, `seed` and `scratch` may overlap the return address on the stack or the 312 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
@@ -367,7 +367,7 @@ pub(crate) const VG_RSA_OAEP_SHA512_256_MGF1_SHA1_ENCRYPT_MGF1_SHANI_FEATURES: c
 /// * `n_len` must be in 64..=1024.
 /// * `out_len` must be `n_len`.
 /// * `e_len` must be in 1..=`n_len`.
-/// * `scratch_len` must be at least `16 * n_len + 1024`.
+/// * `scratch_len` must be at least `16 * n_len + 1056`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out` and `scratch` must not overlap each other, `n`, `e`, `label`, `msg`, `seed` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `out`, `n`, `e`, `label`, `msg`, `seed` and `scratch` may overlap the return address on the stack or the 312 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
@@ -715,7 +715,7 @@ pub(crate) const VG_RSA_OAEP_SHA512_256_MGF1_SHA1_ENCRYPT_SHA512_256_AVX2_FEATUR
 /// * `n_len` must be in 64..=1024.
 /// * `out_len` must be `n_len`.
 /// * `e_len` must be in 1..=`n_len`.
-/// * `scratch_len` must be at least `16 * n_len + 1024`.
+/// * `scratch_len` must be at least `16 * n_len + 1056`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out` and `scratch` must not overlap each other, `n`, `e`, `label`, `msg`, `seed` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `out`, `n`, `e`, `label`, `msg`, `seed` and `scratch` may overlap the return address on the stack or the 312 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
@@ -1063,7 +1063,7 @@ pub(crate) const VG_RSA_OAEP_SHA512_256_MGF1_SHA1_ENCRYPT_SHA512_256_AVX2_MGF1_S
 /// * `n_len` must be in 64..=1024.
 /// * `out_len` must be `n_len`.
 /// * `e_len` must be in 1..=`n_len`.
-/// * `scratch_len` must be at least `16 * n_len + 1024`.
+/// * `scratch_len` must be at least `16 * n_len + 1056`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out` and `scratch` must not overlap each other, `n`, `e`, `label`, `msg`, `seed` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `out`, `n`, `e`, `label`, `msg`, `seed` and `scratch` may overlap the return address on the stack or the 312 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
@@ -1411,7 +1411,7 @@ pub(crate) const VG_RSA_OAEP_SHA512_256_MGF1_SHA1_ENCRYPT_SHA512_256_SHANI_FEATU
 /// * `n_len` must be in 64..=1024.
 /// * `out_len` must be `n_len`.
 /// * `e_len` must be in 1..=`n_len`.
-/// * `scratch_len` must be at least `16 * n_len + 1024`.
+/// * `scratch_len` must be at least `16 * n_len + 1056`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out` and `scratch` must not overlap each other, `n`, `e`, `label`, `msg`, `seed` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `out`, `n`, `e`, `label`, `msg`, `seed` and `scratch` may overlap the return address on the stack or the 312 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
@@ -1759,7 +1759,7 @@ pub(crate) const VG_RSA_OAEP_SHA512_256_MGF1_SHA1_ENCRYPT_SHA512_256_SHANI_MGF1_
 /// * `n_len` must be in 64..=1024.
 /// * `out_len` must be `n_len`.
 /// * `e_len` must be in 1..=`n_len`.
-/// * `scratch_len` must be at least `16 * n_len + 1024`.
+/// * `scratch_len` must be at least `16 * n_len + 1056`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out` and `scratch` must not overlap each other, `n`, `e`, `label`, `msg`, `seed` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `out`, `n`, `e`, `label`, `msg`, `seed` and `scratch` may overlap the return address on the stack or the 312 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
@@ -2114,7 +2114,7 @@ pub(crate) const VG_RSA_OAEP_SHA512_256_MGF1_SHA1_DECRYPT_CRT_ADX_FEATURES: crat
 /// * `e_len` must be in 1..=`n_len`.
 /// * `p_len` and `q_len` must be in 1..`n_len`.
 /// * `dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`.
-/// * `scratch_len` must be at least `16 * n_len + 1024`.
+/// * `scratch_len` must be at least `16 * n_len + 1056`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out`, `msg_len` and `scratch` must not overlap each other, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `label`, `ct` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `out`, `msg_len`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `label`, `ct` and `scratch` may overlap the return address on the stack or the 3560 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
@@ -2559,7 +2559,7 @@ pub(crate) unsafe extern "sysv64" fn vg_rsa_oaep_sha512_256_mgf1_sha1_decrypt_cr
 /// * `e_len` must be in 1..=`n_len`.
 /// * `p_len` and `q_len` must be in 1..`n_len`.
 /// * `dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`.
-/// * `scratch_len` must be at least `16 * n_len + 1024`.
+/// * `scratch_len` must be at least `16 * n_len + 1056`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out`, `msg_len` and `scratch` must not overlap each other, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `label`, `ct` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `out`, `msg_len`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `label`, `ct` and `scratch` may overlap the return address on the stack or the 3560 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
@@ -3006,7 +3006,7 @@ pub(crate) const VG_RSA_OAEP_SHA512_256_MGF1_SHA1_DECRYPT_CRT_IFMA_FEATURES: cra
 /// * `e_len` must be in 1..=`n_len`.
 /// * `p_len` and `q_len` must be in 1..`n_len`.
 /// * `dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`.
-/// * `scratch_len` must be at least `16 * n_len + 1024`.
+/// * `scratch_len` must be at least `16 * n_len + 1056`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out`, `msg_len` and `scratch` must not overlap each other, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `label`, `ct` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `out`, `msg_len`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `label`, `ct` and `scratch` may overlap the return address on the stack or the 3560 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
@@ -3454,7 +3454,7 @@ pub(crate) const VG_RSA_OAEP_SHA512_256_MGF1_SHA1_DECRYPT_MGF1_SHANI_CRT_ADX_FEA
 /// * `e_len` must be in 1..=`n_len`.
 /// * `p_len` and `q_len` must be in 1..`n_len`.
 /// * `dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`.
-/// * `scratch_len` must be at least `16 * n_len + 1024`.
+/// * `scratch_len` must be at least `16 * n_len + 1056`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out`, `msg_len` and `scratch` must not overlap each other, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `label`, `ct` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `out`, `msg_len`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `label`, `ct` and `scratch` may overlap the return address on the stack or the 3560 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
@@ -3902,7 +3902,7 @@ pub(crate) const VG_RSA_OAEP_SHA512_256_MGF1_SHA1_DECRYPT_MGF1_SHANI_FEATURES: c
 /// * `e_len` must be in 1..=`n_len`.
 /// * `p_len` and `q_len` must be in 1..`n_len`.
 /// * `dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`.
-/// * `scratch_len` must be at least `16 * n_len + 1024`.
+/// * `scratch_len` must be at least `16 * n_len + 1056`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out`, `msg_len` and `scratch` must not overlap each other, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `label`, `ct` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `out`, `msg_len`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `label`, `ct` and `scratch` may overlap the return address on the stack or the 3560 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
@@ -4350,7 +4350,7 @@ pub(crate) const VG_RSA_OAEP_SHA512_256_MGF1_SHA1_DECRYPT_MGF1_SHANI_CRT_IFMA_FE
 /// * `e_len` must be in 1..=`n_len`.
 /// * `p_len` and `q_len` must be in 1..`n_len`.
 /// * `dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`.
-/// * `scratch_len` must be at least `16 * n_len + 1024`.
+/// * `scratch_len` must be at least `16 * n_len + 1056`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out`, `msg_len` and `scratch` must not overlap each other, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `label`, `ct` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `out`, `msg_len`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `label`, `ct` and `scratch` may overlap the return address on the stack or the 3560 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
@@ -4798,7 +4798,7 @@ pub(crate) const VG_RSA_OAEP_SHA512_256_MGF1_SHA1_DECRYPT_SHA512_256_AVX2_CRT_AD
 /// * `e_len` must be in 1..=`n_len`.
 /// * `p_len` and `q_len` must be in 1..`n_len`.
 /// * `dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`.
-/// * `scratch_len` must be at least `16 * n_len + 1024`.
+/// * `scratch_len` must be at least `16 * n_len + 1056`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out`, `msg_len` and `scratch` must not overlap each other, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `label`, `ct` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `out`, `msg_len`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `label`, `ct` and `scratch` may overlap the return address on the stack or the 3560 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
@@ -5246,7 +5246,7 @@ pub(crate) const VG_RSA_OAEP_SHA512_256_MGF1_SHA1_DECRYPT_SHA512_256_AVX2_FEATUR
 /// * `e_len` must be in 1..=`n_len`.
 /// * `p_len` and `q_len` must be in 1..`n_len`.
 /// * `dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`.
-/// * `scratch_len` must be at least `16 * n_len + 1024`.
+/// * `scratch_len` must be at least `16 * n_len + 1056`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out`, `msg_len` and `scratch` must not overlap each other, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `label`, `ct` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `out`, `msg_len`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `label`, `ct` and `scratch` may overlap the return address on the stack or the 3560 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
@@ -5694,7 +5694,7 @@ pub(crate) const VG_RSA_OAEP_SHA512_256_MGF1_SHA1_DECRYPT_SHA512_256_AVX2_CRT_IF
 /// * `e_len` must be in 1..=`n_len`.
 /// * `p_len` and `q_len` must be in 1..`n_len`.
 /// * `dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`.
-/// * `scratch_len` must be at least `16 * n_len + 1024`.
+/// * `scratch_len` must be at least `16 * n_len + 1056`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out`, `msg_len` and `scratch` must not overlap each other, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `label`, `ct` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `out`, `msg_len`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `label`, `ct` and `scratch` may overlap the return address on the stack or the 3560 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
@@ -6142,7 +6142,7 @@ pub(crate) const VG_RSA_OAEP_SHA512_256_MGF1_SHA1_DECRYPT_SHA512_256_AVX2_MGF1_S
 /// * `e_len` must be in 1..=`n_len`.
 /// * `p_len` and `q_len` must be in 1..`n_len`.
 /// * `dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`.
-/// * `scratch_len` must be at least `16 * n_len + 1024`.
+/// * `scratch_len` must be at least `16 * n_len + 1056`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out`, `msg_len` and `scratch` must not overlap each other, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `label`, `ct` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `out`, `msg_len`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `label`, `ct` and `scratch` may overlap the return address on the stack or the 3560 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
@@ -6590,7 +6590,7 @@ pub(crate) const VG_RSA_OAEP_SHA512_256_MGF1_SHA1_DECRYPT_SHA512_256_AVX2_MGF1_S
 /// * `e_len` must be in 1..=`n_len`.
 /// * `p_len` and `q_len` must be in 1..`n_len`.
 /// * `dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`.
-/// * `scratch_len` must be at least `16 * n_len + 1024`.
+/// * `scratch_len` must be at least `16 * n_len + 1056`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out`, `msg_len` and `scratch` must not overlap each other, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `label`, `ct` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `out`, `msg_len`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `label`, `ct` and `scratch` may overlap the return address on the stack or the 3560 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
@@ -7038,7 +7038,7 @@ pub(crate) const VG_RSA_OAEP_SHA512_256_MGF1_SHA1_DECRYPT_SHA512_256_AVX2_MGF1_S
 /// * `e_len` must be in 1..=`n_len`.
 /// * `p_len` and `q_len` must be in 1..`n_len`.
 /// * `dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`.
-/// * `scratch_len` must be at least `16 * n_len + 1024`.
+/// * `scratch_len` must be at least `16 * n_len + 1056`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out`, `msg_len` and `scratch` must not overlap each other, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `label`, `ct` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `out`, `msg_len`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `label`, `ct` and `scratch` may overlap the return address on the stack or the 3560 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
@@ -7486,7 +7486,7 @@ pub(crate) const VG_RSA_OAEP_SHA512_256_MGF1_SHA1_DECRYPT_SHA512_256_SHANI_CRT_A
 /// * `e_len` must be in 1..=`n_len`.
 /// * `p_len` and `q_len` must be in 1..`n_len`.
 /// * `dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`.
-/// * `scratch_len` must be at least `16 * n_len + 1024`.
+/// * `scratch_len` must be at least `16 * n_len + 1056`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out`, `msg_len` and `scratch` must not overlap each other, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `label`, `ct` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `out`, `msg_len`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `label`, `ct` and `scratch` may overlap the return address on the stack or the 3560 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
@@ -7934,7 +7934,7 @@ pub(crate) const VG_RSA_OAEP_SHA512_256_MGF1_SHA1_DECRYPT_SHA512_256_SHANI_FEATU
 /// * `e_len` must be in 1..=`n_len`.
 /// * `p_len` and `q_len` must be in 1..`n_len`.
 /// * `dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`.
-/// * `scratch_len` must be at least `16 * n_len + 1024`.
+/// * `scratch_len` must be at least `16 * n_len + 1056`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out`, `msg_len` and `scratch` must not overlap each other, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `label`, `ct` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `out`, `msg_len`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `label`, `ct` and `scratch` may overlap the return address on the stack or the 3560 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
@@ -8382,7 +8382,7 @@ pub(crate) const VG_RSA_OAEP_SHA512_256_MGF1_SHA1_DECRYPT_SHA512_256_SHANI_CRT_I
 /// * `e_len` must be in 1..=`n_len`.
 /// * `p_len` and `q_len` must be in 1..`n_len`.
 /// * `dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`.
-/// * `scratch_len` must be at least `16 * n_len + 1024`.
+/// * `scratch_len` must be at least `16 * n_len + 1056`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out`, `msg_len` and `scratch` must not overlap each other, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `label`, `ct` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `out`, `msg_len`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `label`, `ct` and `scratch` may overlap the return address on the stack or the 3560 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
@@ -8830,7 +8830,7 @@ pub(crate) const VG_RSA_OAEP_SHA512_256_MGF1_SHA1_DECRYPT_SHA512_256_SHANI_MGF1_
 /// * `e_len` must be in 1..=`n_len`.
 /// * `p_len` and `q_len` must be in 1..`n_len`.
 /// * `dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`.
-/// * `scratch_len` must be at least `16 * n_len + 1024`.
+/// * `scratch_len` must be at least `16 * n_len + 1056`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out`, `msg_len` and `scratch` must not overlap each other, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `label`, `ct` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `out`, `msg_len`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `label`, `ct` and `scratch` may overlap the return address on the stack or the 3560 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
@@ -9278,7 +9278,7 @@ pub(crate) const VG_RSA_OAEP_SHA512_256_MGF1_SHA1_DECRYPT_SHA512_256_SHANI_MGF1_
 /// * `e_len` must be in 1..=`n_len`.
 /// * `p_len` and `q_len` must be in 1..`n_len`.
 /// * `dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`.
-/// * `scratch_len` must be at least `16 * n_len + 1024`.
+/// * `scratch_len` must be at least `16 * n_len + 1056`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out`, `msg_len` and `scratch` must not overlap each other, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `label`, `ct` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `out`, `msg_len`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `label`, `ct` and `scratch` may overlap the return address on the stack or the 3560 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
@@ -9726,7 +9726,7 @@ pub(crate) const VG_RSA_OAEP_SHA512_256_MGF1_SHA1_DECRYPT_SHA512_256_SHANI_MGF1_
 /// * `e_len` must be in 1..=`n_len`.
 /// * `p_len` and `q_len` must be in 1..`n_len`.
 /// * `dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`.
-/// * `scratch_len` must be at least `16 * n_len + 1024`.
+/// * `scratch_len` must be at least `16 * n_len + 1056`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out`, `msg_len` and `scratch` must not overlap each other, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `label`, `ct` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `out`, `msg_len`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `label`, `ct` and `scratch` may overlap the return address on the stack or the 3560 bytes of stack below it, or wrap around the end of the address space (no Rust object does).

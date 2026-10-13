@@ -246,7 +246,7 @@ fn encrypt_with<const L: usize>(
     // overlaps another or wraps around, as they are distinct Rust
     // allocations; `PublicKey::new` gives `64 ≤ n_len ≤ 1024`,
     // `1 ≤ e_len ≤ 5 ≤ n_len`, and `out_len = n_len` and
-    // `scratch_len = 16 n_len + 1024`; and the CPU has the features of the
+    // `scratch_len = 16 n_len + 1056`; and the CPU has the features of the
     // implementations of the hash functions that `encrypt_impl` chose, which
     // are those of `f`.
     let r = unsafe {
@@ -305,7 +305,7 @@ pub fn decrypt(
     // check above give `64 ≤ n_len ≤ 1024`, `out_len = ct_len = n_len`,
     // `1 ≤ e_len ≤ 5 ≤ n_len`, `1 ≤ p_len < n_len`, `1 ≤ q_len < n_len`,
     // `dp_len = qinv_len = p_len`, `dq_len = q_len` and
-    // `scratch_len = 16 n_len + 1024`; and the CPU has the features of the
+    // `scratch_len = 16 n_len + 1056`; and the CPU has the features of the
     // implementations of the hash functions and of the private-key
     // operation that `decrypt_impl` chose, which are those of `f`.
     let r = unsafe {
