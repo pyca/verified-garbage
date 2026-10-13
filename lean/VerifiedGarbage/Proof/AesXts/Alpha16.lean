@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesXts.Alpha
-import VerifiedGarbage.Proof.AesXts.Spec
+module
+
+public import VerifiedGarbage.Proof.AesXts.Alpha
+public import VerifiedGarbage.Proof.AesXts.Spec
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # XTS: sixteen multiplications by `α` at once
@@ -11,6 +17,8 @@ shifted left by one, and `0x87` XORed in if its top bit was set
 XORed with `P (v >>> 112)`, where `P c = c ⊕ c ≪ 1 ⊕ c ≪ 2 ⊕ c ≪ 7` is the
 carry-less product of `c` and `0x87` (`repeat_mulA128`, `next_b16`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesXts
 

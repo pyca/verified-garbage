@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.PrePost
-import VerifiedGarbage.Proof.AesCbc.X86_64.Body
+module
+
+public import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.PrePost
+public import VerifiedGarbage.Proof.AesCbc.X86_64.Body
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # One-pass XTS-AES on x86-64: sixteen blocks at a time
@@ -15,6 +21,8 @@ tweaks), kept by writes to the data and the tweaks (`Stable`).
 rounds `f16` computing the cipher (or its inverse) on both lanes of
 `ymm0`–`ymm7` (`Blk16`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesXts.X86_64.Vaes
 

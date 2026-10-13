@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.Step
-import VerifiedGarbage.Proof.Aes.X86_64.VaesBlocks.Blocks
+module
+
+public import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.Step
+public import VerifiedGarbage.Proof.Aes.X86_64.VaesBlocks.Blocks
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # One-pass XTS-AES on x86-64: the tweaks XORed in, before and after
@@ -8,6 +14,8 @@ For one block register `b` and two blocks: `pre1_ok` loads the blocks at
 `r11 + d` and XORs in the two tweaks at `r8 + e`; `post1_ok` XORs them in
 again and stores the register to `r11 + d`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesXts.X86_64.Vaes
 

@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.Tail
+module
+
+public import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.Tail
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # One-pass XTS-AES on x86-64: the loops
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.Tail
 the sixteen-block loop (if sixteen blocks are left) reaches `GInv c c` with
 fewer than sixteen blocks left.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesXts.X86_64.Vaes
 

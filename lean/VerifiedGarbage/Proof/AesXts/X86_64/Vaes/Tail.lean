@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.Loop
-import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.TailOps
+module
+
+public import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.Loop
+public import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.TailOps
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # One-pass XTS-AES on x86-64: the blocks left
@@ -11,6 +17,8 @@ through the AES-NI round code `f` on `n` block registers (`regs8` or
 `xmm0`), their tweaks XORed in before and after; `tail_wp` composes eight and
 then one at a time.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesXts.X86_64.Vaes
 

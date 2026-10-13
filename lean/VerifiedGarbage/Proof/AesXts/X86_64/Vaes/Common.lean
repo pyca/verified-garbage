@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.AesXts.X86_64.Clmul87
-import VerifiedGarbage.Proof.AesXts.X86_64.Steps
-import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Rounds
-import VerifiedGarbage.Impl.AesXts.X86_64Vaes
+module
+
+public import VerifiedGarbage.Proof.AesXts.X86_64.Clmul87
+public import VerifiedGarbage.Proof.AesXts.X86_64.Steps
+public import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Rounds
+public import VerifiedGarbage.Impl.AesXts.X86_64Vaes
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # One-pass XTS-AES on x86-64: blocks as words
@@ -13,6 +19,8 @@ of the word (`bytesAt_b16`, `st_toList`); XOR of words is XOR of their bytes
 (`ciphOf_b16`). `xtsWord`: the XTS of a block from its words, as the
 functions compute it.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesXts.X86_64.Vaes
 

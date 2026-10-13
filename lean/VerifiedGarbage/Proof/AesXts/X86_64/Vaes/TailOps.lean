@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.PrePost
+module
+
+public import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.PrePost
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # One-pass XTS-AES on x86-64: the tweaks XORed in, one block per register
@@ -7,6 +13,8 @@ The blocks left after the sixteen-block loop go through 128-bit registers:
 `tPreList_ok` loads block register `k` from `r11 + 16 k` and XORs in the
 tweak at `rax + 16 k`; `tPostList_ok` XORs it in again and stores it.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesXts.X86_64.Vaes
 

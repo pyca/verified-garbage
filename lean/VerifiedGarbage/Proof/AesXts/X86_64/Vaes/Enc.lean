@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.Top
-import VerifiedGarbage.Proof.Aes.X86_64.Vaes.Rounds
+module
+
+public import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.Top
+public import VerifiedGarbage.Proof.Aes.X86_64.Vaes.Rounds
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # One-pass XTS-AES on x86-64: encryption
@@ -9,6 +15,8 @@ import VerifiedGarbage.Proof.Aes.X86_64.Vaes.Rounds
 need (`KPe`): `Vaes.aes` on `ymm0`–`ymm7` and `AesNi.aes` on 128-bit
 registers compute the cipher.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesXts.X86_64.Vaes
 

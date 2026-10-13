@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.Body
+module
+
+public import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.Body
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # One-pass XTS-AES on x86-64: the arguments and the first sixteen tweaks
@@ -10,6 +16,8 @@ key's address in `r10` (`gen_all_ok`). `SInv`: the state during, and
 `SInvK` after, from which `GInv 0 0` follows for anything the rounds need
 that it keeps.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesXts.X86_64.Vaes
 

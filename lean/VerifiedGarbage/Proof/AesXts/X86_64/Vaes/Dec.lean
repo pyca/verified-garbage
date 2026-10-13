@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.Enc
-import VerifiedGarbage.Proof.Aes.X86_64.VaesBlocks.Dec
+module
+
+public import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.Enc
+public import VerifiedGarbage.Proof.Aes.X86_64.VaesBlocks.Dec
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # One-pass XTS-AES on x86-64: decryption
@@ -9,6 +15,8 @@ import VerifiedGarbage.Proof.Aes.X86_64.VaesBlocks.Dec
 through `aesimc` as what the rounds need (`KPd`). `AesNi.imcKeys` writes those
 at the start of the scratch buffer, below the tweaks (`ImcInv.lo`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesXts.X86_64.Vaes
 
