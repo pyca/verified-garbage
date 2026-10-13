@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorRow
+import Mathlib.Data.Int.ModEq
 
 /-! Advance the full-scan row pointer and public SIMD row index. -/
 

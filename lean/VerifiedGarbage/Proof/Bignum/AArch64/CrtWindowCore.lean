@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowTableCT
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowSquares
+import Mathlib.Data.Int.ModEq
 
 /-! A complete five-bit arithmetic window, generic over the proved table
 selector so the scalar fallback and vector path share its arithmetic proof. -/

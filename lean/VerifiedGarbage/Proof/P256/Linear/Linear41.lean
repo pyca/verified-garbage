@@ -8,6 +8,8 @@ import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Impl.NatPairs
 import VerifiedGarbage.Spec.Weierstrass.Point
+import Mathlib.Logic.Function.Basic
+import VerifiedGarbage.Proof.Framework.AArch64.Call
 
 @[expose] public section
 

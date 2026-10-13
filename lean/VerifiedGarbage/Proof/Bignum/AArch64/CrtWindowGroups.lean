@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowGroupLoop
+import Mathlib.Data.Int.ModEq
 
 /-! Consume all complete five-byte groups; the count depends only on length. -/
 

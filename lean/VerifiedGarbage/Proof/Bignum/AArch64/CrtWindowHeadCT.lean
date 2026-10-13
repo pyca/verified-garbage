@@ -6,6 +6,8 @@ public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowRunCT
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowBuildCT
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowRunCT
 public meta import VerifiedGarbage.Impl.Rsa.AArch64.WindowLoop
+import Mathlib.Data.Int.ModEq
+meta import Mathlib.Data.Int.ModEq
 
 /-! The wider-table initializer shares only workspace and source layout between runs. -/
 

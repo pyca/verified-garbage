@@ -19,6 +19,7 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.NafEntryTiming
 import VerifiedGarbage.Proof.Weierstrass.AArch64.NafSum
 import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
 import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowQuad
+import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 
 /-! ## `HotField` -/
 

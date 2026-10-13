@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowTailLoop
+import Mathlib.Data.Int.ModEq
 
 /-! Consume the remaining bytes, preserving the pending count across byte boundaries. -/
 

@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorStart
+import Mathlib.Data.Int.ModEq
 
 /-! One complete SIMD selection tile, including initialization, all rows and stores. -/
 

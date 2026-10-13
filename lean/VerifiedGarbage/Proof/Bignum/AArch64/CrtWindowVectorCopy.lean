@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorTile
+import Mathlib.Data.Int.ModEq
 
 /-! Join adjacent selected blocks without losing previously copied bytes. -/
 

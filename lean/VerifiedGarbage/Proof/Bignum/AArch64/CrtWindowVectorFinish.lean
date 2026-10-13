@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorLoop
+import Mathlib.Data.Int.ModEq
 
 /-! Restore the scalar selector's final public header values. -/
 

@@ -3,6 +3,12 @@ module
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowRunContext
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowRunContext
 public meta import VerifiedGarbage.Impl.Rsa.AArch64.WindowLoop
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowGroupCT
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowTakeBitCT
+import Mathlib.Data.Int.ModEq
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowGroupCT
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowTakeBitCT
+meta import Mathlib.Data.Int.ModEq
 
 /-! Batch and trailing-byte bodies have public source addresses and control. -/
 

@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowRawCore
+import Mathlib.Data.Int.ModEq
 
 /-! Constant time for the raw relation, without table-power assumptions. -/
 

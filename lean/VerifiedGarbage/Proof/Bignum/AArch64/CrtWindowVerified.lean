@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowCode
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowCodeCT
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtImplies
+import Mathlib.Data.Int.ModEq
 
 /-! Wider-window RSA CRT against the unchanged shared contract. -/
 

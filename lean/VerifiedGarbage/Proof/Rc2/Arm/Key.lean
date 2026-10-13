@@ -24,6 +24,8 @@ import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
 meta import Mathlib.Tactic.SplitIfs
 meta import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Rc2.Table
+meta import VerifiedGarbage.Proof.Rc2.Table
 
 /-! # Verified RC2 key expansion
 

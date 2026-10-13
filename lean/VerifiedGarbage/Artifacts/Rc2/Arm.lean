@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.Rc2.Arm.Stream.Frame
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.TaintSum
 
 /-! # RC2 artifacts on baseline ARMv7 -/
 

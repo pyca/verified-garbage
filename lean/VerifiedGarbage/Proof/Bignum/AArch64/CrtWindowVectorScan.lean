@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorInner
 meta import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
 meta import VerifiedGarbage.Impl.Rsa.AArch64.WindowSelectVector
+import Mathlib.Data.Int.ModEq
+meta import Mathlib.Data.Int.ModEq
 
 /-! The 32-entry scan consumes every row and leaves the selected 64-byte block. -/
 

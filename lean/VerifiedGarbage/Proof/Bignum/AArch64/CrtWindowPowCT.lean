@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTQ
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowExpCT
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowQ
+import Mathlib.Data.Int.ModEq
 
 /-! Constant time for conversion followed by five-bit exponentiation. -/
 

@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowRawCT
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowReset
 public import VerifiedGarbage.Proof.Bignum.CrtWindowFrame
+import Mathlib.Data.Int.ModEq
 
 /-! The complete window body, including reset and caller-state preservation. -/
 

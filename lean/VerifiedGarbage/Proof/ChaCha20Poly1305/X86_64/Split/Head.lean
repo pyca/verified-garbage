@@ -6,6 +6,11 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Impl.ChaCha20Poly1305.X86_64.SealSplit
+import Mathlib.Data.List.Induction
+import VerifiedGarbage.Proof.Aes.KeyExp
+import VerifiedGarbage.Proof.Aes.SboxSpec
+import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
 
 /-!
 # ChaCha20-Poly1305 with the data's first bytes from `src`, x86-64: the copy

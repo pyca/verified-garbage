@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowFinishSquare
+import Mathlib.Data.Int.ModEq
 
 /-! A final partial window consumes exactly the pending exponent bits. -/
 

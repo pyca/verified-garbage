@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorLoad
+import Mathlib.Data.Int.ModEq
 
 /-! A complete table-row selection, with fixed-address loads and SIMD masks. -/
 

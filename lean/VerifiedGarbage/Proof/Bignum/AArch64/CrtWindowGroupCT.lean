@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowGroupCore
+import Mathlib.Data.Int.ModEq
 
 /-! Constant-time composition of a full group. Its value remains secret. -/
 

@@ -8,6 +8,7 @@ import all Init.Data.Vector.Basic
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.TaintSum
 
 /-! # Streaming RC2-CBC on ARMv7: the copies before CBC
 

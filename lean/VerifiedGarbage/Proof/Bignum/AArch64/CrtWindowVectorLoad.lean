@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorWord
+public import VerifiedGarbage.Impl.Rsa.AArch64.WindowSelectVector
+import Mathlib.Data.Int.ModEq
 
 /-! Four independent load/BIT pairs, sharing one row-comparison mask. -/
 

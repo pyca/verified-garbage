@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowCoreCT
 public meta import VerifiedGarbage.Impl.Bignum.AArch64.Core
 public meta import VerifiedGarbage.Impl.Bignum.CrtLayout
 public meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
+import Mathlib.Data.Int.ModEq
 
 /-! The final partial window branches and loops only on its public bit count. -/
 

@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Layout
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! Tightening memory frames using preserved whole words. -/
 

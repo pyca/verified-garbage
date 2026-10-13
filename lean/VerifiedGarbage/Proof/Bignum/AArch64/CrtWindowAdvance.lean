@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowLoopControl
+import Mathlib.Data.Int.ModEq
 
 /-! Advancing the public byte index leaves the table and exponent unchanged. -/
 

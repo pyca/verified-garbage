@@ -20,6 +20,10 @@ import VerifiedGarbage.Spec.Weierstrass.Point
 meta import Mathlib.Tactic.SplitIfs
 meta import VerifiedGarbage.Impl.NatPairs
 meta import VerifiedGarbage.Spec.Weierstrass.Point
+import Mathlib.Logic.Function.Basic
+import VerifiedGarbage.Proof.Framework.AArch64.Call
+meta import Mathlib.Logic.Function.Basic
+meta import VerifiedGarbage.Proof.Framework.AArch64.Call
 
 @[expose] public section
 

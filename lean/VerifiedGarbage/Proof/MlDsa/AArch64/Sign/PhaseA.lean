@@ -9,6 +9,8 @@ import all Init.Data.Vector.Basic
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlKem.AArch64.KgC
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Blocks
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.Inv
 
 /-!
 # ML-DSA signing on AArch64: `ExpandA`

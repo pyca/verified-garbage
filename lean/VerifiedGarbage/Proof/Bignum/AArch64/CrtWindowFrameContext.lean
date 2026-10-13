@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowHead
+import Mathlib.Data.Int.ModEq
 
 /-! The wider table leaves the modulus and prime workspace headers unchanged. -/
 

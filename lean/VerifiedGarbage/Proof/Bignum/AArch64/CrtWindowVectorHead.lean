@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorSetup
+import Mathlib.Data.Int.ModEq
 
 /-! Start each SIMD block at the same public offset in every table entry. -/
 

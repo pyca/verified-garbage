@@ -6,6 +6,8 @@ public import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTExp
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTExp
 public meta import VerifiedGarbage.Impl.Rsa.AArch64.WindowLoop
 public meta import VerifiedGarbage.Impl.Rsa.AArch64.WindowFive
+import Mathlib.Data.Int.ModEq
+meta import Mathlib.Data.Int.ModEq
 
 /-! Exponent bytes remain secret; their addresses are public. -/
 

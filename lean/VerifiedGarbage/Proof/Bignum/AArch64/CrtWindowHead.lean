@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowRun
+import Mathlib.Data.Int.ModEq
 
 /-! Prepare the wider table within the existing RSA workspace allocation. -/
 

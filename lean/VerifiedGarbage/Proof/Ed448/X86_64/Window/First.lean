@@ -7,6 +7,7 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Ed448.X86_64.Window.SelectBase
 import VerifiedGarbage.Proof.Ed448.X86_64.Window.SelectKey
+import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 
 /-! Initialize from the first selected point, avoiding arithmetic on the identity. -/
 
