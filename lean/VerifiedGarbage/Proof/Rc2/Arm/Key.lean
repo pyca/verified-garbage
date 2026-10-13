@@ -6,6 +6,12 @@ public import VerifiedGarbage.Proof.Framework.Arm.Inline
 meta import VerifiedGarbage.Proof.Framework.Arm.Inline
 public import VerifiedGarbage.Proof.Rc2.Arm.ConstantTime
 meta import VerifiedGarbage.Proof.Rc2.Arm.ConstantTime
+public import VerifiedGarbage.Proof.Framework.Arm.TaintSym
+meta import VerifiedGarbage.Proof.Framework.Arm.TaintSym
+public import VerifiedGarbage.Proof.Framework.Arm.StackScratchConsts
+meta import VerifiedGarbage.Proof.Framework.Arm.StackScratchConsts
+public import VerifiedGarbage.Proof.Framework.ConstMem
+meta import VerifiedGarbage.Proof.Framework.ConstMem
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.Rc2.Contract
@@ -19,13 +25,20 @@ import VerifiedGarbage.Proof.Framework.Omega
 meta import Mathlib.Tactic.SplitIfs
 meta import VerifiedGarbage.Proof.Framework.Omega
 
-/-! # Verified RC2 key expansion -/
+/-! # Verified RC2 key expansion
+
+Verified under `abi.withConsts piConsts`: the contract without the table
+(`keyContract`) for the state without its region (`stripConsts`), and what
+the calling convention says of the table (`ConstsOk`), from which the scans
+read it (`PiAt`, `consts_pi`). Constant time by the taint analysis with the
+table's address public (`taintSym`). -/
 
 @[expose] public section
 
 namespace VG.Proof.Rc2.Arm
 
 open VG VG.Arm VG.Impl.Rc2.Arm
+open VG.Impl.Rc2 (piSym piQuads piConsts)
 
 def keyContract : Contract isa where
   pre s :=
@@ -44,9 +57,56 @@ def keyContract : Contract isa where
   pub s₁ s₂ := s₁.sp = s₂.sp ∧ s₁.gpr .r0 = s₂.gpr .r0 ∧ s₁.gpr .r1 = s₂.gpr .r1 ∧
     s₁.gpr .r2 = s₂.gpr .r2 ∧ s₁.gpr .r3 = s₂.gpr .r3 ∧ stackArg s₁ 0 = stackArg s₂ 0
 
-theorem key_body_correct (s : State) (hs : keyContract.pre s) :
+theorem stackArg_stripConsts (K : List (String × List (BitVec 64))) (s : State) (i : Nat) :
+    stackArg (stripConsts K s) i = stackArg s i := rfl
+
+theorem stackArgAddr_stripConsts (K : List (String × List (BitVec 64))) (s : State) (i : Nat) :
+    stackArgAddr (stripConsts K s) i = stackArgAddr s i := rfl
+
+theorem piConsts_eq : piConsts = [(piSym, piQuads)] := rfl
+
+/-- What the calling convention says of the table (`ConstsOk`), as the scans
+need it: PITABLE at the table's address, apart from the writable regions, and
+the table's region last among the readable ones. -/
+theorem consts_pi {st : Nat} {s : State} (hc : ConstsOk piConsts st s) :
+    PiAt (s.syms piSym) s ∧ (∀ r ∈ s.wr, (⟨State.addr (s.syms piSym), 256⟩ : Region).Disjoint r) ∧
+      s.rd.drop (s.rd.length - 1) = [⟨State.addr (s.syms piSym), 256⟩] ∧
+      PiHeld s.mem (State.addr (s.syms piSym)) ∧
+      ∀ r ∈ abi.reserved st s, (⟨State.addr (s.syms piSym), 256⟩ : Region).Disjoint r := by
+  obtain ⟨hd, hh, ht⟩ := hc
+  have e : constRegs piConsts s = [⟨State.addr (s.syms piSym), 256⟩] := by
+    rw [constRegs, piConsts_eq, Abi.constRegions_cons, Abi.constRegions_nil, piQuads_length]; rfl
+  have hl : piConsts.length = 1 := rfl
+  rw [e, hl] at hd
+  rw [e] at ht
+  obtain ⟨hfit, hwr, hres⟩ := List.forall_mem_singleton.mp ht
+  have hfit' : (s.syms piSym).toNat + 256 ≤ 2 ^ 32 := by
+    have : (State.addr (s.syms piSym)).toNat = (s.syms piSym).toNat := by
+      simp only [State.addr, BitVec.toNat_setWidth]; exact Nat.mod_eq_of_lt (by omega)
+    rw [this] at hfit; exact hfit
+  have held : PiHeld s.mem (State.addr (s.syms piSym)) := fun i hi => hh _ List.mem_cons_self i hi
+  refine ⟨⟨⟨hfit', ?_, fun i hi => held.byte hi⟩, rfl⟩, hwr, hd, held, hres⟩
+  have hm : (⟨State.addr (s.syms piSym), 256⟩ : Region) ∈ s.rd.drop (s.rd.length - 1) := by
+    rw [hd]; exact List.mem_singleton_self _
+  exact List.mem_of_mem_drop hm
+
+theorem key_body_correct (s : State) (hs : keyContract.pre (stripConsts piConsts s))
+    (hc : ConstsOk piConsts 0 s) :
     WP isa expandKey s (fun s' => (∀ r ∈ preserved, s'.gpr r = s.gpr r) ∧ keyContract.post s s') := by
-  obtain ⟨hrd, hwr, keyOut, keyScratch, outScratch, _argsOut, _argsScratch, keyFit, outFit, scratchFit, _spFit, ht, ht', hb, hb'⟩ := hs
+  obtain ⟨hrd', hwr, keyOut, keyScratch, outScratch, argsOut, argsScratch, keyFit, outFit, scratchFit, spFit, ht, ht', hb, hb'⟩ := hs
+  obtain ⟨hT, twr, tdrop, -, -⟩ := consts_pi hc
+  have hrd : s.rd = [⟨State.addr (s.gpr .r0), (s.gpr .r1).toNat⟩, ⟨stackArgAddr s 0, 4⟩,
+      ⟨State.addr (s.syms piSym), 256⟩] := by
+    rw [← List.take_append_drop (s.rd.length - 1) s.rd, tdrop]
+    have h' : s.rd.take (s.rd.length - piConsts.length) = _ := hrd'
+    exact congrArg (· ++ _) h'
+  clear argsOut argsScratch spFit
+  simp only [stripConsts_wr, stripConsts_gpr, stackArg_stripConsts]
+    at hwr keyOut keyScratch outScratch keyFit outFit scratchFit ht ht' hb hb'
+  have tOut : (⟨State.addr (s.syms piSym), 256⟩ : Region).Disjoint ⟨State.addr (s.gpr .r3), 128⟩ :=
+    twr _ (by rw [hwr]; exact List.mem_cons_self)
+  have tScr : (⟨State.addr (s.syms piSym), 256⟩ : Region).Disjoint ⟨State.addr (stackArg s 0), 512⟩ :=
+    twr _ (by rw [hwr]; simp)
   rw [expandKey]
   apply WP.seq
   obtain ⟨s₀, run₀, scratch₀, keep₀⟩ := loadScratch_ok s (by
@@ -56,10 +116,10 @@ theorem key_body_correct (s : State) (hs : keyContract.pre s) :
   have gpr₀ (r : Reg) (hr : r ≠ .r12) : s₀.gpr r = s.gpr r := keep₀.reg r (by simpa using hr)
   apply WP.seq
   rw [WP.block_append_iff, keySave_eq]
-  apply WP.mono (Spill.save_block_ok keySlots_ok (by rw [scratch₀]; omega) fun d _ hd => by
+  apply WP.mono_syms (Spill.save_block_ok keySlots_ok (by rw [scratch₀]; omega) fun d _ hd => by
     rw [keep₀.wr, scratch₀, hwr]
     exact ⟨⟨State.addr (stackArg s 0), 512⟩, by simp, Offset.contains_base _ (by omega) (by omega)⟩)
-  intro s₁ h₁
+  intro s₁ h₁ sy₁
   obtain ⟨s₂, run₂, r8₂, key₂, len₂, ptr₂, bits₂, zero₂, keep₂⟩ := pinKey_ok s₁
   refine WP.of_runBlock ⟨s₂, run₂, ?_⟩
   rw [h₁.1, scratch₀] at r8₂
@@ -86,14 +146,22 @@ theorem key_body_correct (s : State) (hs : keyContract.pre s) :
     intro i hi
     rw [wr₂, ptr₂, hwr]
     exact ⟨⟨State.addr (s.gpr .r3), 128⟩, by simp, Offset.contains_base _ (by omega) (by omega)⟩
+  have sy₂ : s₂.syms = s.syms := (runBlock_syms run₂).trans (sy₁.trans (runBlock_syms run₀))
+  have hT₂ : PiAt (s.syms piSym) s₂ := by
+    refine ⟨⟨hT.fit, by rw [rd₂]; exact hT.rd, fun i hi => ?_⟩, by rw [sy₂]⟩
+    rw [scratchFrame.bytes (R := ⟨State.addr (s.syms piSym), 256⟩) (by simpa using tScr) (by simp) hi]
+    exact hT.held i hi
+  have tOut₂ : (⟨State.addr (s.syms piSym), 256⟩ : Region).Disjoint ⟨State.addr (s₂.gpr .r6), 128⟩ := by
+    rw [ptr₂]; exact tOut
   apply WP.seq
-  apply WP.mono (expandCopyFill_ok s₂ (s.gpr .r1).toNat ht ht' (by rw [key₂]; exact keyFit) (by rw [ptr₂]; exact outFit)
+  apply WP.mono (expandCopyFill_ok s₂ (s.gpr .r1).toNat ht ht' hT₂ tOut₂ (by rw [key₂]; exact keyFit) (by rw [ptr₂]; exact outFit)
     (by simpa using len₂) zero₂ read₂ write₂ (by rw [key₂, ptr₂]; exact keyOut))
   intro s₃ h₃
   apply WP.seq
   have write₃ : ∀ i < 128, InRegions s₃.wr (State.addr (s₃.gpr .r6) + BitVec.ofNat 64 i) 1 := by
     rw [h₃.1.wr, h₃.1.reg .r6 (by decide)]; exact write₂
-  apply WP.mono (expandReduce_ok s₃ _ (s.gpr .r2).toNat hb hb' (by rw [h₃.1.reg .r6 (by decide), ptr₂]; exact outFit)
+  apply WP.mono (expandReduce_ok s₃ _ (s.gpr .r2).toNat hb hb' (hT₂.frame h₃.1 tOut₂)
+    (by rw [h₃.1.reg .r6 (by decide)]; exact tOut₂) (by rw [h₃.1.reg .r6 (by decide), ptr₂]; exact outFit)
     (by simpa using (h₃.1.reg .r7 (by decide)).trans bits₂) write₃
     (by rw [h₃.1.reg .r6 (by decide)]; exact h₃.2))
   intro s₄ h₄
@@ -150,15 +218,22 @@ def keySatState : State where
   rd := [⟨0x1000, 1⟩, ⟨0x4000, 4⟩]
   wr := [⟨0x2000, 128⟩, ⟨0x3000, 512⟩]
 
-theorem key_correct (s : State) (hs : keyContract.pre s) :
-    ∃ t s', Exec isa expandKey s t s' ∧ abiPreserved s s' ∧ keyContract.post s s' := by
-  obtain ⟨t, s', he, ha, hp⟩ := key_body_correct s hs
+/-- Key expansion's contract with the table, as the proof states it. -/
+def keyContractC : Contract isa where
+  pre s := keyContract.pre (stripConsts piConsts s) ∧ ConstsOk piConsts 0 s
+  post := keyContract.post
+  pub s₁ s₂ := keyContract.pub s₁ s₂ ∧ s₁.syms piSym = s₂.syms piSym
+
+theorem key_correct (s : State) (hs : keyContractC.pre s) :
+    ∃ t s', Exec isa expandKey s t s' ∧ abiPreserved s s' ∧ keyContractC.post s s' := by
+  obtain ⟨t, s', he, ha, hp⟩ := key_body_correct s hs.1 hs.2
   exact ⟨t, s', he, ⟨ha, VG.Arm.Exec.sp he⟩, hp⟩
 
 def keyTaint : VG.Arm.Taint.T := { regs := .ofList [.r0, .r1, .r2, .r3], flags := false, argLen := 4 }
 
-theorem keyTaint_wf {s : State} (h : keyContract.pre s) : VG.Arm.Taint.Wf keyTaint s := by
+theorem keyTaint_wf {s : State} (h : keyContract.pre (stripConsts piConsts s)) : VG.Arm.Taint.Wf keyTaint s := by
   obtain ⟨_, wr, _, _, _, ao, asc, _, _, _, spfit, _⟩ := h
+  simp only [stripConsts_wr, stripConsts_sp, stackArg_stripConsts, stackArgAddr_stripConsts] at wr ao asc spfit
   refine ⟨fun h => absurd rfl h, fun _ h => (List.not_mem_nil h).elim,
     fun _ => ⟨spfit, ?_⟩, fun _ h => (List.not_mem_nil h).elim⟩
   have addr : State.addr s.sp = stackArgAddr s 0 := by simp [stackArgAddr]
@@ -167,28 +242,93 @@ theorem keyTaint_wf {s : State} (h : keyContract.pre s) : VG.Arm.Taint.Wf keyTai
   · exact ao
   · exact asc
 
-theorem keyTaint_agree {s₁ s₂ : State} (h₁ : keyContract.pre s₁) (h₂ : keyContract.pre s₂)
+theorem keyTaint_agree {s₁ s₂ : State} (h₁ : keyContract.pre (stripConsts piConsts s₁))
+    (h₂ : keyContract.pre (stripConsts piConsts s₂))
     (hp : keyContract.pub s₁ s₂) : VG.Arm.Taint.Agree keyTaint s₁ s₂ := by
   obtain ⟨psp, p0, p1, p2, p3, a0⟩ := hp
   refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun h => absurd rfl h,
     keyTaint_wf h₁, keyTaint_wf h₂, fun _ h => (List.not_mem_nil h).elim,
     fun _ h => (List.not_mem_nil h).elim, fun _ => psp, fun k hk => ?_⟩
   · simp only [keyTaint, RegSet.mem_ofList, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl <;> with_reducible assumption
+    rcases hr with rfl | rfl | rfl | rfl
+    · exact p0
+    · exact p1
+    · exact p2
+    · exact p3
   · have argByte_eq (s : State) : Taint.argByte s k = stackArgAddr s 0 + BitVec.ofNat 64 k := by
       simp [Taint.argByte, stackArgAddr]
     simp only [keyTaint] at hk
     rw [argByte_eq, argByte_eq, Mem.readW_byte s₁.mem _ hk, Mem.readW_byte s₂.mem _ hk]
     exact congrArg _ a0
 
-theorem expandKey_constantTime : ConstantTime isa keyContract.pre keyContract.pub expandKey := by
-  exact VG.Taint.constantTime (A := taint) keyTaint (fun _ _ h₁ h₂ hp => keyTaint_agree h₁ h₂ hp)
-    (by taint_decide)
+theorem expandKey_constantTime : ConstantTime isa keyContractC.pre keyContractC.pub expandKey :=
+  VG.Taint.constantTime (A := taintSym [piSym]) keyTaint (fun _ _ h₁ h₂ hp => ⟨keyTaint_agree h₁.1 h₂.1 hp.1,
+    fun n hn => by simp only [List.mem_singleton] at hn; subst hn; exact hp.2⟩) (by taint_decide)
 
-theorem key_verified : Verified target expandKey (Spec.Rc2.expandKeyContract abi) := by
-  refine Verified.of_correct key_correct expandKey_constantTime ?_
+theorem key_implies : keyContract.Implies (Spec.Rc2.expandKeyContract abi) := by
   sig_implies [Spec.Rc2.expandKeyContract, Spec.Rc2.expandKeySig, abi, argRegs,
     Arm.reduceClassify, Arm.Loc.val, State.addr, keyContract, Spec.Rc2.validKey]
     [keySatState, stackArg, stackArgAddr, Mem.readW, Mem.read] using keySatState
+
+/-- The memory of the witness with the table: the table at `0x100000`, zero
+elsewhere (irreducible: unfolding it in a definitional check would evaluate
+the table). -/
+@[irreducible] def keySatMem : Mem := constMem 0x100000 piQuads
+
+theorem keySatMem_held : ∀ i < piQuads.length,
+    keySatMem.readW (0x100000 + BitVec.ofNat 64 (8 * i)) 64 = piQuads.getD i 0 := by
+  unfold keySatMem
+  exact constMem_held _ _ (by rw [piQuads_length]; decide)
+
+/-- The witness's memory below the table. -/
+theorem keySatMem_readW (a : Addr) (ha : ∀ i < 4, ¬ (a + BitVec.ofNat 64 i - 0x100000).toNat < 256) :
+    keySatMem.readW a 32 = 0 := by
+  have e : keySatMem.readW a 32 = Mem.readW (fun _ => (0 : Byte)) a 32 := by
+    apply Mem.readW_congr
+    intro i hi
+    unfold keySatMem constMem
+    rw [piQuads_length, ite_eq_right (ha i hi)]
+  rw [e, Mem.readW, Mem.read_eq_of_bytes (n := 32 / 8) (v := 0) (fun i _ => by simp)]
+  decide
+
+/-- A state satisfying the precondition with the table: the working space at 0. -/
+def keySatC : State :=
+  { keySatState with
+    mem := keySatMem, rd := [⟨0x1000, 1⟩, ⟨0x4000, 4⟩, ⟨0x100000, 256⟩], wr := [⟨0x2000, 128⟩, ⟨0, 512⟩],
+    syms := fun _ => 0x100000 }
+
+theorem keySatC_arg : stackArg keySatC 0 = 0 :=
+  keySatMem_readW _ (by decide)
+
+theorem key_sat : (Spec.Rc2.expandKeyContract (abi.withConsts piConsts)).pre keySatC := by
+  have hl : piQuads.length = 32 := piQuads_length
+  have held := keySatMem_held
+  have a0 := keySatC_arg
+  rw [piConsts_eq]
+  generalize piQuads = W at hl held ⊢
+  generalize e : keySatC = s at a0
+  sig_pre [Spec.Rc2.expandKeyContract, Spec.Rc2.expandKeySig, abi, argRegs,
+    Arm.reduceClassify, Arm.Loc.val, Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow,
+    Spec.Rc2.validKey]
+  subst e
+  rw [a0, hl]
+  refine ⟨by decide, by decide, fun i hi => held i (by rw [hl]; exact hi), by decide, ?_, ?_⟩
+  · intro r hr
+    change r ∈ ([⟨0x2000, 128⟩, ⟨0, 512⟩] : List Region) at hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl <;> exact Region.disjoint_of_sep (by decide)
+  · repeat' apply And.intro
+    all_goals first | rfl | decide | exact Region.disjoint_of_sep (by decide)
+
+theorem keyC_implies : keyContractC.Implies (Spec.Rc2.expandKeyContract (abi.withConsts piConsts)) where
+  pre _ hs := ⟨key_implies.pre _ (pre_consts.mp hs).1, (pre_consts.mp hs).2⟩
+  post s s' hs hp := post_consts.mpr (key_implies.post (stripConsts piConsts s) s' (pre_consts.mp hs).1 hp)
+  pub s₁ s₂ h₁ h₂ hp := ⟨key_implies.pub (stripConsts piConsts s₁) (stripConsts piConsts s₂)
+      (pre_consts.mp h₁).1 (pre_consts.mp h₂).1 (pub_consts.mp hp).1,
+    symAddr_eq_iff.mp ((pub_consts.mp hp).2 _ List.mem_cons_self)⟩
+  sat := ⟨keySatC, key_sat⟩
+
+theorem key_verified : Verified target expandKey (Spec.Rc2.expandKeyContract (abi.withConsts piConsts)) :=
+  Verified.of_correct key_correct expandKey_constantTime keyC_implies
 
 end VG.Proof.Rc2.Arm

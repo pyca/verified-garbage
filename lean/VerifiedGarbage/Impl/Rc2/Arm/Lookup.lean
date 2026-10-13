@@ -6,7 +6,8 @@ public import VerifiedGarbage.TCB.Arm.Isa
 /-! # RC2 selection on ARMv7
 
 Every candidate is visited in a fixed order. Secret indices are used only
-in arithmetic masks, never as addresses or branch conditions.
+in arithmetic masks, never as addresses or branch conditions. (Key
+expansion's scan of PITABLE is in `ExpandKey.lean`.)
 -/
 
 @[expose] public section
@@ -24,14 +25,6 @@ def mask (r : Reg) (n : Nat) : List Instr :=
 def selectMask (i : Nat) : List Instr :=
   [imm .r10 i, .dp .eor .r10 .r12 (.reg .r10), .dp .sub .r10 .r10 (.imm 1),
    .mov .r10 (.shifted .r10 .lsr 31), imm .r11 0, .dp .sub .r11 .r11 (.reg .r10)]
-
-def piStep (i : Nat) : List Instr :=
-  selectMask i ++
-    ([imm .r10 (Spec.Rc2.piTable.getD i 0).toNat,
-      .dp .and .r11 .r11 (.reg .r10), .dp .orr .r3 .r3 (.reg .r11)] : List Instr)
-
-def piLookup : List Instr :=
-  mask .r12 8 ++ [imm .r3 0] ++ (List.range 256).flatMap piStep ++ [rr .r12 .r3]
 
 def loadKey (i : Nat) : List Instr :=
   [.ldrb .r8 .r0 (2 * i), .ldrb .r9 .r0 (2 * i + 1),

@@ -1,6 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Rc2.Arm.KeySteps
+public import VerifiedGarbage.Proof.Rc2.Arm.PiScan
+public import VerifiedGarbage.Proof.Framework.Arm.Syms
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -16,22 +17,38 @@ namespace VG.Proof.Rc2.Arm
 
 open VG VG.Arm VG.Impl.Rc2.Arm
 
-theorem fillKey_ok (s : State)
+/-- A block keeps the addresses of statics. -/
+theorem runBlock_syms {is : List Instr} {s s' : State} (h : runBlock isa is s = some s') :
+    s'.syms = s.syms := by
+  induction is generalizing s with
+  | nil => rw [runBlock_nil, Option.some.injEq] at h; rw [h]
+  | cons i is ih =>
+    rw [runBlock_cons] at h
+    cases he : exec i s with
+    | none => rw [he, runStep, Option.bind_none] at h; cases h
+    | some s₁ => rw [he, runStep_some] at h; exact (ih h).trans (exec_syms he)
+
+/-- The table, after a block that keeps memory and regions. -/
+theorem PiAt.run {T : BitVec 32} {rs : List Reg} {is : List Instr} {s s' : State} (h : PiAt T s)
+    (run : runBlock isa is s = some s') (k : Keep rs s s') : PiAt T s' :=
+  ⟨h.toPiTab.keep k, by rw [runBlock_syms run]; exact h.syms⟩
+
+theorem fillKey_ok (s : State) {T : BitVec 32} (hT : PiAt T s)
     (readLo : InRegions (s.rd ++ s.wr) (State.addr (s.gpr .r6 + s.gpr .r0 - 1)) 1)
     (readHi : InRegions (s.rd ++ s.wr) (State.addr (s.gpr .r6 + (s.gpr .r0 - s.gpr .r5))) 1)
     (writable : InRegions s.wr (State.addr (s.gpr .r6 + s.gpr .r0)) 1) :
-    WP isa (.block fillKey) s (fun s' =>
+    WP isa fillKey s (fun s' =>
       s'.gpr .r0 = s.gpr .r0 + 1 ∧
       zeroFlag s' = some ((s.gpr .r0 + 1 - 128) == 0) ∧
       Keep keyTemps {s with
         mem := s.mem.writeW (State.addr (s.gpr .r6 + s.gpr .r0))
           (Spec.Rc2.pi (s.mem (State.addr (s.gpr .r6 + s.gpr .r0 - 1)) +
           s.mem (State.addr (s.gpr .r6 + (s.gpr .r0 - s.gpr .r5)))))} s') := by
-  rw [fillKey, List.append_assoc, WP.block_append_iff]
+  rw [fillKey]
   obtain ⟨s₁, run₁, out₁, keep₁⟩ := fillInput_ok s readLo readHi
-  refine WP.of_runBlock ⟨s₁, run₁, ?_⟩
-  rw [WP.block_append_iff]
-  apply WP.mono (piLookup_ok s₁)
+  refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
+  apply WP.seq
+  apply WP.mono (piLookup_ok s₁ (hT.run run₁ keep₁))
   intro s₂ h₂
   have k₁ : Keep keyTemps s s₁ := keep₁.weaken (by
     intro r hr
@@ -39,8 +56,8 @@ theorem fillKey_ok (s : State)
     rcases hr with h | h | h | h <;> subst r <;> decide)
   have k₂ : Keep keyTemps s₁ s₂ := h₂.2.weaken (by
     intro r hr
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with h | h | h | h <;> subst r <;> decide)
+    simp only [piRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with h | h | h | h | h | h <;> subst r <;> decide)
   have keep := k₁.trans k₂
   have ptr := keep.reg .r6 (by decide)
   have index := (keep₁.reg .r0 (by decide)).trans rfl
@@ -58,13 +75,14 @@ theorem fillKey_ok (s : State)
   · exact keep₃.rd.trans keep.rd
   · exact keep₃.wr.trans keep.wr
 
-theorem piStore_ok (s : State) (writable : InRegions s.wr (State.addr (s.gpr .r6 + s.gpr .r0)) 1) :
-    WP isa (.block (piLookup ++ storeKey)) s (fun s' =>
+theorem piStore_ok (s : State) {T : BitVec 32} (hT : PiAt T s)
+    (writable : InRegions s.wr (State.addr (s.gpr .r6 + s.gpr .r0)) 1) :
+    WP isa (.seq piLookup (.block storeKey)) s (fun s' =>
       s'.gpr .r0 = s.gpr .r0 ∧
       Keep keyTemps {s with
         mem := s.mem.writeW (State.addr (s.gpr .r6 + s.gpr .r0)) (Spec.Rc2.pi ((s.gpr .r12).setWidth 8))} s') := by
-  rw [WP.block_append_iff]
-  apply WP.mono (piLookup_ok s)
+  apply WP.seq
+  apply WP.mono (piLookup_ok s hT)
   intro s₁ h₁
   have ptr := h₁.2.reg .r6 (by decide)
   have index := h₁.2.reg .r0 (by decide)
@@ -76,28 +94,28 @@ theorem piStore_ok (s : State) (writable : InRegions s.wr (State.addr (s.gpr .r6
   · intro r hr
     rw [keep₂.reg r (by intro hm; simp only [List.mem_singleton] at hm; subst r; exact hr (by decide))]
     exact h₁.2.reg r (fun hm => hr (by
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hm
-      rcases hm with h | h | h | h <;> subst r <;> decide))
+      simp only [piRegs, List.mem_cons, List.not_mem_nil, or_false] at hm
+      rcases hm with h | h | h | h | h | h <;> subst r <;> decide))
   · rw [keep₂.mem, h₁.2.mem, ptr, index, h₁.1]
     simp
   · exact keep₂.rd.trans h₁.2.rd
   · exact keep₂.wr.trans h₁.2.wr
 
-theorem reduceKey_ok (s : State)
+theorem reduceKey_ok (s : State) {T : BitVec 32} (hT : PiAt T s)
     (readable : InRegions (s.rd ++ s.wr) (State.addr (s.gpr .r6 + s.gpr .r0)) 1)
     (writable : InRegions s.wr (State.addr (s.gpr .r6 + s.gpr .r0)) 1) :
-    WP isa (.block reduceKey) s (fun s' => s'.gpr .r0 = s.gpr .r0 ∧
+    WP isa reduceKey s (fun s' => s'.gpr .r0 = s.gpr .r0 ∧
       Keep keyTemps {s with
         mem := s.mem.writeW (State.addr (s.gpr .r6 + s.gpr .r0))
           (Spec.Rc2.pi (s.mem (State.addr (s.gpr .r6 + s.gpr .r0)) &&& (s.gpr .r2).setWidth 8))} s') := by
-  rw [reduceKey, List.append_assoc, WP.block_append_iff]
+  rw [reduceKey]
   obtain ⟨s₁, run₁, out₁, keep₁⟩ := reduceInput_ok s readable
-  refine WP.of_runBlock ⟨s₁, run₁, ?_⟩
+  refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
   have ptr := keep₁.reg .r6 (by decide)
   have index := keep₁.reg .r0 (by decide)
   have valid : InRegions s₁.wr (State.addr (s₁.gpr .r6 + s₁.gpr .r0)) 1 := by
     rw [keep₁.wr, ptr, index]; exact writable
-  apply WP.mono (piStore_ok s₁ valid)
+  apply WP.mono (piStore_ok s₁ (hT.run run₁ keep₁) valid)
   intro s₂ h₂
   refine ⟨h₂.1.trans index, ?_⟩
   constructor
@@ -111,25 +129,25 @@ theorem reduceKey_ok (s : State)
   · exact h₂.2.rd.trans keep₁.rd
   · exact h₂.2.wr.trans keep₁.wr
 
-theorem descendKey_ok (s : State)
+theorem descendKey_ok (s : State) {T : BitVec 32} (hT : PiAt T s)
     (readLo : InRegions (s.rd ++ s.wr) (State.addr (s.gpr .r6 + (s.gpr .r0 - 1) + 1)) 1)
     (readHi : InRegions (s.rd ++ s.wr) (State.addr (s.gpr .r6 + (s.gpr .r0 - 1 + s.gpr .r1))) 1)
     (writable : InRegions s.wr (State.addr (s.gpr .r6 + (s.gpr .r0 - 1))) 1) :
-    WP isa (.block descendKey) s (fun s' =>
+    WP isa descendKey s (fun s' =>
       s'.gpr .r0 = s.gpr .r0 - 1 ∧ zeroFlag s' = some ((s.gpr .r0 - 1) == 0) ∧
       Keep keyTemps {s with
         mem := s.mem.writeW (State.addr (s.gpr .r6 + (s.gpr .r0 - 1)))
           (Spec.Rc2.pi (s.mem (State.addr (s.gpr .r6 + (s.gpr .r0 - 1) + 1)) ^^^
             s.mem (State.addr (s.gpr .r6 + (s.gpr .r0 - 1 + s.gpr .r1)))))} s') := by
-  rw [descendKey, List.append_assoc, WP.block_append_iff]
+  rw [descendKey]
   obtain ⟨s₁, run₁, index₁, out₁, keep₁⟩ := descendInput_ok s readLo readHi
-  refine WP.of_runBlock ⟨s₁, run₁, ?_⟩
+  refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
   have ptr := keep₁.reg .r6 (by decide)
   have valid : InRegions s₁.wr (State.addr (s₁.gpr .r6 + s₁.gpr .r0)) 1 := by
     rw [keep₁.wr, ptr, index₁]; exact writable
-  rw [← List.append_assoc, WP.block_append_iff]
-  apply WP.mono (piStore_ok s₁ valid)
-  intro s₂ h₂
+  refine WP.seq (WP.mono (WP.seq_iff.mp (piStore_ok s₁ (hT.run run₁ keep₁) valid)) fun t ht => ?_)
+  rw [WP.block_append_iff]
+  refine WP.mono ht fun s₂ h₂ => ?_
   obtain ⟨s₃, run₃, flag₃, keep₃⟩ := cmpZero_ok s₂
   refine WP.of_runBlock ⟨s₃, run₃, ?_⟩
   have index₂ := h₂.1.trans index₁
@@ -183,30 +201,39 @@ structure KeyFrame (s₀ s : State) : Prop where
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
   mem : Frame [⟨State.addr (s₀.gpr .r6), 128⟩] s₀.mem s.mem
+  syms : s.syms = s₀.syms
 
 theorem KeyFrame.refl (s : State) : KeyFrame s s :=
-  ⟨fun _ _ => rfl, rfl, rfl, Frame.refl _ _⟩
+  ⟨fun _ _ => rfl, rfl, rfl, Frame.refl _ _, rfl⟩
 
 theorem KeyFrame.trans {s₀ s₁ s₂ : State} (h₁ : KeyFrame s₀ s₁) (h₂ : KeyFrame s₁ s₂) :
     KeyFrame s₀ s₂ := by
   refine ⟨fun r hr => (h₂.reg r hr).trans (h₁.reg r hr), h₂.rd.trans h₁.rd,
-    h₂.wr.trans h₁.wr, ?_⟩
+    h₂.wr.trans h₁.wr, ?_, h₂.syms.trans h₁.syms⟩
   have frame₂ := h₂.mem
   rw [h₁.reg .r6 (by decide)] at frame₂
   exact h₁.mem.trans frame₂
 
 theorem KeyFrame.step {s₀ s s' : State} (h : KeyFrame s₀ s) (i : Nat) (hi : i < 128)
-    (b : Byte) (keep : Keep keyTemps {s with mem := s.mem.writeW (State.addr (s₀.gpr .r6) + BitVec.ofNat 64 i) b} s') : KeyFrame s₀ s' := by
+    (b : Byte) (keep : Keep keyTemps {s with mem := s.mem.writeW (State.addr (s₀.gpr .r6) + BitVec.ofNat 64 i) b} s')
+    (hsy : s'.syms = s.syms) : KeyFrame s₀ s' := by
   refine ⟨fun r hr => (keep.reg r hr).trans (h.reg r hr), keep.rd.trans h.rd,
-    keep.wr.trans h.wr, ?_⟩
+    keep.wr.trans h.wr, ?_, hsy.trans h.syms⟩
   rw [keep.mem]
   exact h.mem.writeW List.mem_cons_self _ (Offset.contains_base _ (by omega) (by omega))
 
-theorem KeyFrame.keep {s₀ s s' : State} (h : KeyFrame s₀ s) (keep : Keep keyTemps s s') :
-    KeyFrame s₀ s' := by
+theorem KeyFrame.keep {s₀ s s' : State} (h : KeyFrame s₀ s) (keep : Keep keyTemps s s')
+    (hsy : s'.syms = s.syms) : KeyFrame s₀ s' := by
   refine ⟨fun r hr => (keep.reg r hr).trans (h.reg r hr), keep.rd.trans h.rd,
-    keep.wr.trans h.wr, ?_⟩
+    keep.wr.trans h.wr, ?_, hsy.trans h.syms⟩
   rw [keep.mem]; exact h.mem
+
+/-- The table, after a key-expansion loop, which writes only the schedule. -/
+theorem PiAt.frame {T : BitVec 32} {s₀ s : State} (h : PiAt T s₀) (f : KeyFrame s₀ s)
+    (sep : (⟨State.addr T, 256⟩ : Region).Disjoint ⟨State.addr (s₀.gpr .r6), 128⟩) : PiAt T s := by
+  refine ⟨⟨h.fit, by rw [f.rd]; exact h.rd, fun i hi => ?_⟩, by rw [f.syms]; exact h.syms⟩
+  rw [f.mem.bytes (R := ⟨State.addr T, 256⟩) (by simpa using sep) (by simp) hi]
+  exact h.held i hi
 
 theorem counter_add (i : Nat) : BitVec.ofNat 32 i + 1 = BitVec.ofNat 32 (i + 1) := by
   rw [BitVec.ofNat_add]

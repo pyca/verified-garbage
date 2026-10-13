@@ -766,7 +766,8 @@ open VG.Proof.MdStream.Arm (Upd Mupd op2_reg wp_ldr wp_ldrSp eval_ne)
 /-- The postcondition of `init`: the callee-saved registers and the contract's. -/
 abbrev InitPost (s s' : State) : Prop := (∀ r ∈ preserved, s'.gpr r = s.gpr r) ∧ initContract.post s s'
 
-theorem key_pre (s : State) (hs : initContract.pre s) (hv : IValid s) (u : State) (hu : ArgsPost s u) :
+theorem key_pre (s : State) (hs : initContract.pre s) (ht : InitTab s) (hv : IValid s) (u : State)
+    (hu : ArgsPost s u) (hsy : u.syms = s.syms) :
     KeyPre u (s.gpr .r0) (s.gpr .r1) (s.gpr .r2) (stackArg s 1) (stackArg s 2) := by
   obtain ⟨sp8, _, hrd, hwr, keyCtx, keyScr, _, _, ctxScr, _, _, bKey, _, bCtx, bScr, _, fitK, _, fitC, fitS⟩ := hs
   have p128 : Region.Sub ⟨State.addr (stackArg s 1), 128⟩ ⟨State.addr (stackArg s 1), 144⟩ :=
@@ -774,9 +775,15 @@ theorem key_pre (s : State) (hs : initContract.pre s) (hv : IValid s) (u : State
   have p512 : Region.Sub ⟨State.addr (stackArg s 2), 512⟩ ⟨State.addr (stackArg s 2), 576⟩ :=
     Region.sub_prefix (by decide)
   have eb : (⟨State.addr u.sp - 8, 8⟩ : Region) = ⟨State.addr s.sp - 8, 8⟩ := by rw [hu.sp]
+  have et : tbl u = tbl s := by unfold tbl; rw [hsy]
+  have tCtx : (tbl s).Disjoint ⟨State.addr (stackArg s 1), 144⟩ := ht.wr _ (by rw [hwr]; exact List.mem_cons_self)
+  have tScr : (tbl s).Disjoint ⟨State.addr (stackArg s 2), 576⟩ := ht.wr _ (by rw [hwr]; simp)
   refine ⟨hu.r0, hu.r1, hu.r2, hu.r3, hu.r12, by rw [hu.sp]; exact sp8,
     ⟨hv.1.1, hv.1.2, hv.2.1.1, hv.2.1.2⟩, keyCtx.sub_right p128, keyScr.sub_right p512,
-    (ctxScr.sub_left p128).sub_right p512, ?_, ?_, ?_, fitK, by omega, by omega, ?_, ?_⟩
+    (ctxScr.sub_left p128).sub_right p512, ?_, ?_, ?_, fitK, by omega, by omega, ?_, ?_,
+    by rw [hsy]; exact ht.fit, ?_, by rw [et]; exact tCtx.sub_right p128, by rw [et]; exact tScr.sub_right p512,
+    by show (Region.mk (State.addr u.sp - 8) 8).Disjoint (tbl u); rw [et, eb]; exact ht.below.symm,
+    by rw [et, hu.rd, hrd]; simp⟩
   · show (Region.mk (State.addr u.sp - 8) 8).Disjoint _; rw [eb]; exact bKey
   · show (Region.mk (State.addr u.sp - 8) 8).Disjoint _; rw [eb]; exact bCtx.sub_right p128
   · show (Region.mk (State.addr u.sp - 8) 8).Disjoint _; rw [eb]; exact bScr.sub_right p512
@@ -790,6 +797,16 @@ theorem key_pre (s : State) (hs : initContract.pre s) (hv : IValid s) (u : State
       rcases hr with rfl | rfl
       · exact ⟨⟨State.addr (stackArg s 1), 144⟩, by simp, 0, (add0 _).symm, by simp⟩
       · exact ⟨⟨State.addr (stackArg s 2), 576⟩, by simp, 0, (add0 _).symm, by simp⟩
+  · rw [hsy]
+    intro i hi
+    have hi' : i < 32 := by rw [piQuads_length] at hi; exact hi
+    rw [hu.frame.readW (r := tbl s) (Offset.contains_base _ (by omega)
+        (by have := ht.fit; omega)) (fun r hr => by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl
+        · exact tCtx.sub_right (ivSub _)
+        · exact tScr.sub_right (lrSub _)) (by decide)]
+    exact ht.held i hi
 
 theorem tail_ok (s : State) (hs : initContract.pre s) (hv : IValid s) (u : State) (hu : ArgsPost s u)
     (v : State) (hk : KeyPost u (s.gpr .r0) (s.gpr .r1) (s.gpr .r2) (stackArg s 1) (stackArg s 2) v) :
@@ -860,15 +877,16 @@ theorem tail_ok (s : State) (hs : initContract.pre s) (hv : IValid s) (u : State
         · exact (bCtx.sub_right i128).symm), hu.iv]
     exact init_post hv.1 hv.2.1 hv.2.2 (by rw [setWidth_append, gpr_setReg_self]) hsched hiv
 
-theorem init_wp (s : State) (hs : initContract.pre s) : WP isa init s (InitPost s) := by
+theorem init_wp (s : State) (hs' : initContractC.pre s) : WP isa init s (InitPost s) := by
+  obtain ⟨hs, ht⟩ := hs'
   rw [init]
-  refine WP.seq (WP.mono (checks_ok s hs) fun c hc => ?_)
+  refine WP.seq (WP.mono_syms (checks_ok s hs) fun c hc syc => ?_)
   by_cases hv : IValid s
   · refine WP.ite false (by show eval .ne c = _; rw [eval_ne, hc.z]; simp [hv]) (fun h => absurd h (by simp))
       fun _ => ?_
     rw [initBody]
-    exact WP.seq (WP.mono (args_ok s hs hv c hc) fun u hu =>
-      WP.seq (WP.mono (key_call (key_pre s hs hv u hu)) fun v hk => tail_ok s hs hv u hu v hk))
+    exact WP.seq (WP.mono_syms (args_ok s hs hv c hc) fun u hu syu =>
+      WP.seq (WP.mono (key_call (key_pre s hs ht hv u hu (syu.trans syc))) fun v hk => tail_ok s hs hv u hu v hk))
   · refine WP.ite true (by show eval .ne c = _; rw [eval_ne, hc.z]; simp [hv]) (fun _ => WP.block_nil ?_)
       (fun h => absurd h (by simp))
     refine ⟨fun r hr => ?_, ?_⟩
@@ -879,8 +897,8 @@ theorem init_wp (s : State) (hs : initContract.pre s) : WP isa init s (InitPost 
       exact hc.keep r h.1 h.2
     · exact init_post_error (by rw [setWidth_append]; exact hc.err hv) hv
 
-theorem init_correct (s : State) (hs : initContract.pre s) :
-    ∃ t s', Exec isa init s t s' ∧ abiPreserved s s' ∧ initContract.post s s' := by
+theorem init_correct (s : State) (hs : initContractC.pre s) :
+    ∃ t s', Exec isa init s t s' ∧ abiPreserved s s' ∧ initContractC.post s s' := by
   obtain ⟨t, s', he, ha, hp⟩ := init_wp s hs
   exact ⟨t, s', he, ⟨ha, VG.Arm.Exec.sp he⟩, hp⟩
 
@@ -904,6 +922,7 @@ namespace VG.Proof.Rc2.Arm.Stream
 
 open VG VG.Arm VG.Impl.Rc2.Arm VG.Impl.Rc2.Arm.Stream
 open VG.Proof.MdStream.Arm (eval_ne)
+open VG.Impl.Rc2 (piSym)
 
 /-- The stack arguments after the call are those on entry. -/
 theorem args_after_key (s : State) (hs : initContract.pre s) (u : State) (hu : ArgsPost s u) (v : State)
@@ -948,8 +967,11 @@ theorem tail_taint :
     ∃ hc, (VG.Taint.check taint (argTaint [] 12) (.block (restoreLr ++ ([.mov .r0 (.imm 0)] : List Instr))) hc).isSome = true :=
   ⟨_, by taint_decide⟩
 
-theorem init_rel {s₀ s₀' : State} (h0 : initContract.pre s₀) (h0' : initContract.pre s₀')
-    (hq : initContract.pub s₀ s₀') : RelCT isa (fun a b => a = s₀ ∧ b = s₀') init fun _ _ => True := by
+theorem init_rel {s₀ s₀' : State} (h0C : initContractC.pre s₀) (h0'C : initContractC.pre s₀')
+    (hqC : initContractC.pub s₀ s₀') : RelCT isa (fun a b => a = s₀ ∧ b = s₀') init fun _ _ => True := by
+  obtain ⟨h0, ht0⟩ := h0C
+  obtain ⟨h0', ht0'⟩ := h0'C
+  obtain ⟨hq, hsym⟩ := hqC
   obtain ⟨q₀, q₁, q₂, q₃, q₄, q₅, q₆, q₇⟩ := hq
   have fit := h0.2.1
   have qa : ∀ i < 3, stackArg s₀ i = stackArg s₀' i := by
@@ -964,28 +986,34 @@ theorem init_rel {s₀ s₀' : State} (h0 : initContract.pre s₀) (h0' : initCo
     rcases hr with rfl | rfl | rfl | rfl <;> assumption
   have hvq : IValid s₀ ↔ IValid s₀' := by simp only [IValid, q₂, q₃, q₅]
   rw [init]
-  refine RelCT.seq (rel_agree (F := (· = s₀)) (F' := (· = s₀')) (G := CheckPost s₀) (G' := CheckPost s₀')
+  refine RelCT.seq (rel_agree (F := (· = s₀)) (F' := (· = s₀'))
+    (G := fun c => CheckPost s₀ c ∧ c.syms = s₀.syms) (G' := fun c => CheckPost s₀' c ∧ c.syms = s₀'.syms)
     (argTaint [.r0, .r1, .r2, .r3] 12)
     (fun s s' e e' => by
       subst e e'
       exact agree12 regs q₀ fit (iwrSep h0) (iwrSep h0') qa) checks_taint
-    (fun s e => e ▸ checks_ok s₀ h0) (fun s e => e ▸ checks_ok s₀' h0')) ?_
-  refine RelCT.ite (fun c c' ⟨hc, hc'⟩ => by
+    (fun s e => by rw [e]; exact WP.mono_syms (checks_ok s₀ h0) fun c hc sy => ⟨hc, sy⟩)
+    (fun s e => by rw [e]; exact WP.mono_syms (checks_ok s₀' h0') fun c hc sy => ⟨hc, sy⟩)) ?_
+  refine RelCT.ite (fun c c' ⟨⟨hc, _⟩, ⟨hc', _⟩⟩ => by
     show eval .ne c = eval .ne c'; rw [eval_ne, eval_ne, hc.z, hc'.z]; simp only [hvq]) ?_ ?_
   · exact RelCT.block_nil fun _ _ _ => trivial
   by_cases hv : IValid s₀
   swap
-  · refine RelCT.of_false fun c c' ⟨⟨hc, _⟩, he⟩ => ?_
+  · refine RelCT.of_false fun c c' ⟨⟨⟨hc, _⟩, _⟩, he⟩ => ?_
     change eval .ne c = _ at he
     rw [eval_ne, hc.z] at he; simp [hv] at he
   have hv' : IValid s₀' := hvq.mp hv
   rw [initBody]
-  refine RelCT.mono (P := fun c c' => CheckPost s₀ c ∧ CheckPost s₀' c') ?_ (fun _ _ h => h.1)
-    fun _ _ h => h
-  refine RelCT.seq (rel_agree (G := ArgsPost s₀) (G' := ArgsPost s₀') (argTaint [.r0, .r1, .r2, .r3] 12)
-    (fun c c' hc hc' => ?_) initArgs_taint
-    (fun c hc => args_ok s₀ h0 hv c hc) (fun c hc => args_ok s₀' h0' hv' c hc)) ?_
-  · have g : ∀ {s c}, IValid s → CheckPost s c → ∀ r ∈ ([.r0, .r1, .r2, .r3] : List Reg), c.gpr r = s.gpr r :=
+  refine RelCT.mono (P := fun (c c' : State) => (CheckPost s₀ c ∧ c.syms = s₀.syms) ∧ (CheckPost s₀' c' ∧ c'.syms = s₀'.syms))
+    ?_ (fun _ _ h => h.1) fun _ _ h => h
+  refine RelCT.seq (rel_agree (G := fun u => ArgsPost s₀ u ∧ u.syms = s₀.syms)
+    (G' := fun u => ArgsPost s₀' u ∧ u.syms = s₀'.syms) (argTaint [.r0, .r1, .r2, .r3] 12)
+    (fun c c' hcC hc'C => ?_) initArgs_taint
+    (fun c hc => WP.mono_syms (args_ok s₀ h0 hv c hc.1) fun u hu sy => ⟨hu, sy.trans hc.2⟩)
+    (fun c hc => WP.mono_syms (args_ok s₀' h0' hv' c hc.1) fun u hu sy => ⟨hu, sy.trans hc.2⟩)) ?_
+  · obtain ⟨hc, -⟩ := hcC
+    obtain ⟨hc', -⟩ := hc'C
+    have g : ∀ {s c}, IValid s → CheckPost s c → ∀ r ∈ ([.r0, .r1, .r2, .r3] : List Reg), c.gpr r = s.gpr r :=
       fun hv hc r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl | rfl
@@ -1000,15 +1028,17 @@ theorem init_rel {s₀ s₀' : State} (h0 : initContract.pre s₀) (h0' : initCo
       (by rw [hc'.wr, show stackArgAddr c' 0 = stackArgAddr s₀' 0 by unfold stackArgAddr; rw [hc'.sp]]
           exact iwrSep h0')
       (fun i hi => by rw [st hc, st hc']; exact qa i hi)
-  have hct : RelCT isa (fun u u' => ArgsPost s₀ u ∧ ArgsPost s₀' u') keyCall fun _ _ => True :=
-    key_rel (sp₀ := s₀.sp) fun u u' ⟨a, a'⟩ => ⟨key_pre s₀ h0 hv u a, by
-      have := key_pre s₀' h0' hv' u' a'; rwa [← q₁, ← q₂, ← q₃, ← q₆, ← q₇] at this, a.sp, a'.sp.trans q₀.symm⟩
+  have hct : RelCT isa (fun u u' => (ArgsPost s₀ u ∧ u.syms = s₀.syms) ∧ (ArgsPost s₀' u' ∧ u'.syms = s₀'.syms))
+      keyCall fun _ _ => True :=
+    key_rel (sp₀ := s₀.sp) (T₀ := s₀.syms piSym) fun u u' ⟨⟨a, ya⟩, ⟨a', ya'⟩⟩ => ⟨key_pre s₀ h0 ht0 hv u a ya, by
+      have := key_pre s₀' h0' ht0' hv' u' a' ya'; rwa [← q₁, ← q₂, ← q₃, ← q₆, ← q₇] at this, a.sp,
+      a'.sp.trans q₀.symm, by rw [ya], by rw [ya', hsym]⟩
   refine RelCT.seq (rel_wp (G := fun v => ∃ u, ArgsPost s₀ u ∧
       KeyPost u (s₀.gpr .r0) (s₀.gpr .r1) (s₀.gpr .r2) (stackArg s₀ 1) (stackArg s₀ 2) v)
     (G' := fun v => ∃ u, ArgsPost s₀' u ∧
       KeyPost u (s₀'.gpr .r0) (s₀'.gpr .r1) (s₀'.gpr .r2) (stackArg s₀' 1) (stackArg s₀' 2) v) hct
-    (fun u a => WP.mono (key_call (key_pre s₀ h0 hv u a)) fun v hk => ⟨u, a, hk⟩)
-    (fun u a => WP.mono (key_call (key_pre s₀' h0' hv' u a)) fun v hk => ⟨u, a, hk⟩)) ?_
+    (fun u a => WP.mono (key_call (key_pre s₀ h0 ht0 hv u a.1 a.2)) fun v hk => ⟨u, a.1, hk⟩)
+    (fun u a => WP.mono (key_call (key_pre s₀' h0' ht0' hv' u a.1 a.2)) fun v hk => ⟨u, a.1, hk⟩)) ?_
   refine (rel_agree (argTaint [] 12) (fun v v' ⟨u, a, k⟩ ⟨u', a', k'⟩ => ?_) tail_taint
     (fun v ⟨u, a, k⟩ => WP.mono (tail_ok s₀ h0 hv u a v k) fun _ _ => trivial)
     (fun v ⟨u, a, k⟩ => WP.mono (tail_ok s₀' h0' hv' u a v k) fun _ _ => trivial)).mono
@@ -1022,7 +1052,7 @@ theorem init_rel {s₀ s₀' : State} (h0 : initContract.pre s₀) (h0' : initCo
     (fun i hi => by
       rw [args_after_key s₀ h0 u a v k i hi, args_after_key s₀' h0' u' a' v' k' i hi]; exact qa i hi)
 
-theorem init_constantTime : ConstantTime isa initContract.pre initContract.pub init :=
+theorem init_constantTime : ConstantTime isa initContractC.pre initContractC.pub init :=
   fun _ _ _ _ _ _ h₁ h₂ hq e₁ e₂ => (init_rel h₁ h₂ hq _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂).1
 
 end VG.Proof.Rc2.Arm.Stream
@@ -1034,8 +1064,10 @@ end
 namespace VG.Proof.Rc2.Arm.Stream
 
 open VG VG.Arm
+open VG.Impl.Rc2 (piConsts)
 
-theorem init_verified : Verified target Impl.Rc2.Arm.Stream.init (Proof.Rc2.cbcInitScratchContract abi 8) :=
+theorem init_verified :
+    Verified target Impl.Rc2.Arm.Stream.init (Proof.Rc2.cbcInitScratchContract (abi.withConsts piConsts) 8) :=
   Verified.of_correct init_correct init_constantTime init_implies
 
 theorem encryptUpdate_verified :
