@@ -109,7 +109,7 @@ theorem gRanges_le (w : Nat) : ∀ r ∈ gRanges w, r.1 + r.2 ≤ slot w 8 := by
   rintro _ (rfl | rfl | rfl | rfl | rfl) <;> simp only [Crt.sD, Public.sCnt, sFn] <;> omega
 
 theorem gxRanges_le {w o wx : Nat} (hlo : slot w 8 ≤ o) :
-    ∀ r ∈ gRanges w ++ [xRange o wx], r.1 + r.2 ≤ o + slot wx 8 + tabBytes wx := by
+    ∀ r ∈ gRanges w ++ [xRange o wx], r.1 + r.2 ≤ o + slot wx 8 + wsTab wx := by
   have hX8 : 8 * 17 ≤ slot wx 8 := by unfold slot hdrBytes; omega
   intro r hr
   rcases List.mem_append.mp hr with hr | hr

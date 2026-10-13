@@ -270,19 +270,19 @@ structure GathAccV (s : State) (B : Addr) (wx p v c : Nat) (L : VLen) (n : Nat) 
 theorem nl_le (L : VLen) : nl L ≤ 2 := by cases L <;> decide
 
 /-- The chunk at word `c` of an entry is within the table. -/
-theorem gEntV_le (wx : Nat) {j c : Nat} (L : VLen) (hj : j < 16) (hc : c + 2 * nl L ≤ wx + 2) :
-    slot wx (8 + j) + 8 * c + 16 * nl L ≤ slot wx 8 + tabBytes wx := by
+theorem gEntV_le (wx : Nat) {j c : Nat} (L : VLen) (hj : j < 32) (hc : c + 2 * nl L ≤ wx + 2) :
+    slot wx (8 + j) + 8 * c + 16 * nl L ≤ slot wx 8 + tabBytes wx 32 := by
   have := ent_le wx hj; unfold slot at *; omega
 
 /-- The chunk at word `c` of `[aT]` is within its array. -/
 theorem gTV_le (wx : Nat) {c : Nat} (L : VLen) (hc : c + 2 * nl L ≤ wx + 2) :
-    slot wx Crt.aT + 8 * c + 16 * nl L ≤ slot wx 8 + tabBytes wx := by
+    slot wx Crt.aT + 8 * c + 16 * nl L ≤ slot wx 8 + tabBytes wx 32 := by
   have := slot_succ wx Crt.aT
   have := slot_mono wx (show Crt.aT + 1 ≤ 8 by decide)
   unfold tabBytes; omega
 
-theorem gAccV0 (L : VLen) {s : State} {B : Addr} {wx p v c : Nat} (hs : Scr s B (slot wx 8 + tabBytes wx))
-    (hG : GRegsV B wx p v s) (hp : p < 2) (h14 : s.gpr .r14 = BitVec.ofNat 64 c) (hc : c + 2 * nl L ≤ wx + 2) :
+theorem gAccV0 (L : VLen) {s : State} {B : Addr} {wx p v c : Nat} (hs : Scr s B (slot wx 8 + tabBytes wx 32))
+    (hG : GRegsV B wx p v s) (hp : p < 4) (h14 : s.gpr .r14 = BitVec.ofNat 64 c) (hc : c + 2 * nl L ≤ wx + 2) :
     WP isa (.block [.vbinLoad .vpand L .xmm0 .xmm8 (ix .rcx .r14)]) s (GathAccV s B wx p v c L 0) := by
   have hb := hG.base 0 (by decide)
   rw [Nat.add_zero] at hb
@@ -292,8 +292,8 @@ theorem gAccV0 (L : VLen) {s : State} {B : Addr} {wx p v c : Nat} (hs : Scr s B 
     hG.msk 0 (by decide) l (by have := nl_le L; omega) q hq, BitVec.and_comm]
   rfl
 
-theorem gAccV_step (L : VLen) {s t : State} {B : Addr} {wx p v c n : Nat} (hs : Scr s B (slot wx 8 + tabBytes wx))
-    (hG : GRegsV B wx p v s) (hp : p < 2) (h14 : s.gpr .r14 = BitVec.ofNat 64 c) (hc : c + 2 * nl L ≤ wx + 2)
+theorem gAccV_step (L : VLen) {s t : State} {B : Addr} {wx p v c n : Nat} (hs : Scr s B (slot wx 8 + tabBytes wx 32))
+    (hG : GRegsV B wx p v s) (hp : p < 4) (h14 : s.gpr .r14 = BitVec.ofNat 64 c) (hc : c + 2 * nl L ≤ wx + 2)
     (hn : n < 7) (hA : GathAccV s B wx p v c L n t) :
     WP isa (.block (Crt.gatherOrV L (gReg (n + 1)) (gX (n + 1)))) t (GathAccV s B wx p v c L (n + 1)) := by
   have hb : t.gpr (gReg (n + 1)) = off B (slot wx (8 + 8 * p + (n + 1))) := by
@@ -308,8 +308,8 @@ theorem gAccV_step (L : VLen) {s t : State} {B : Addr} {wx p v c n : Nat} (hs : 
   simp only [gacc, Nat.add_assoc]
 
 /-- The chunk at word `c` of a pass: `[aT] := ([aT] & keep) | OR_j (T_(8p+j) & mask_j)`, and `r14 += n`. -/
-theorem gChunkV_ok (L : VLen) {s : State} {B : Addr} {wx p v c n : Nat} (hs : Scr s B (slot wx 8 + tabBytes wx))
-    (hG : GRegsV B wx p v s) (hp : p < 2) (h14 : s.gpr .r14 = BitVec.ofNat 64 c) (hc : c + 2 * nl L ≤ wx + 2)
+theorem gChunkV_ok (L : VLen) {s : State} {B : Addr} {wx p v c n : Nat} (hs : Scr s B (slot wx 8 + tabBytes wx 32))
+    (hG : GRegsV B wx p v s) (hp : p < 4) (h14 : s.gpr .r14 = BitVec.ofNat 64 c) (hc : c + 2 * nl L ≤ wx + 2)
     (hn : n = 2 * nl L) :
     WP isa (.block (Crt.gatherBodyV L n)) s fun t =>
       (∀ k < 2 * nl L, word t.mem B (slot wx Crt.aT + 8 * (c + k)) = gvalV s.mem B wx p v (c + k)) ∧
@@ -376,8 +376,8 @@ theorem GathInvV.init {s : State} {B : Addr} {wx p v : Nat} (h14 : s.gpr .r14 = 
   ⟨h14, fun _ _ => rfl, fun _ _ _ _ => rfl, rfl, rfl, Outside.refl _ _ _ _, fun _ h => absurd h (Nat.not_lt_zero _)⟩
 
 /-- The chunk at word `c`, from the invariant below `c`. -/
-theorem gStepV_ok (L : VLen) {s t : State} {B : Addr} {wx p v c n : Nat} (hs : Scr s B (slot wx 8 + tabBytes wx))
-    (hG : GRegsV B wx p v s) (hp : p < 2) (hc : c + 2 * nl L ≤ wx + 2) (hn : n = 2 * nl L)
+theorem gStepV_ok (L : VLen) {s t : State} {B : Addr} {wx p v c n : Nat} (hs : Scr s B (slot wx 8 + tabBytes wx 32))
+    (hG : GRegsV B wx p v s) (hp : p < 4) (hc : c + 2 * nl L ≤ wx + 2) (hn : n = 2 * nl L)
     (hI : GathInvV s B wx p v c t) :
     WP isa (.block (Crt.gatherBodyV L n)) t fun t' =>
       GathInvV s B wx p v (c + 2 * nl L) t' ∧ t'.gpr .r14 = BitVec.ofNat 64 c + BitVec.ofNat 64 n := by
@@ -396,15 +396,15 @@ theorem gStepV_ok (L : VLen) {s t : State} {B : Addr} {wx p v c n : Nat} (hs : S
   obtain ⟨i, hi, rfl⟩ : ∃ i, i < 2 * nl L ∧ k = c + i := ⟨k - c, by omega, by omega⟩
   rw [hv i hi]
   refine gvalV_congr (fun j hj => ?_) ?_
-  · have := ent_le wx (j := 8 * p + j) (by omega)
+  · have := ent_le wx (n := 32) (j := 8 * p + j) (by omega)
     have := slot_mono wx (show 8 ≤ 8 + (8 * p + j) by omega)
     rw [show 8 + 8 * p + j = 8 + (8 * p + j) by omega]
     exact hI.out.word (by omega) (by unfold slot at *; omega)
   · exact hI.out.word (by omega) (by omega)
 
 /-- The four-word chunks of a pass: every word below `4 N`. -/
-theorem gLoopV_ok {s : State} {B : Addr} {wx p v N : Nat} (hs : Scr s B (slot wx 8 + tabBytes wx))
-    (hG : GRegsV B wx p v s) (hp : p < 2) (h14 : s.gpr .r14 = BitVec.ofNat 64 0) (hN : 0 < N)
+theorem gLoopV_ok {s : State} {B : Addr} {wx p v N : Nat} (hs : Scr s B (slot wx 8 + tabBytes wx 32))
+    (hG : GRegsV B wx p v s) (hp : p < 4) (h14 : s.gpr .r14 = BitVec.ofNat 64 0) (hN : 0 < N)
     (hN' : 4 * N ≤ wx + 1) (hw' : wx < 2 ^ 30) (h12 : s.gpr .r12 = BitVec.ofNat 64 (4 * N)) :
     WP isa (.loop (.block (Crt.gatherBodyV .l256 4 ++ ([.alu .cmp .r14 (.reg .r12)] : List Instr))) .ne) s
       (GathInvV s B wx p v (4 * N)) := by

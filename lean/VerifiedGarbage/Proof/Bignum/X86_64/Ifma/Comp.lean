@@ -66,11 +66,11 @@ def IKept (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (op oq d n : Nat) : Prop :=
     (d = op + slot l.W Public.aOne ∧ n ≤ 8 * l.W) ∨ (oq ≤ d ∧ d + n ≤ oq + 8 * 29) ∨
     (d = oq + slot l.W Public.aN ∧ n ≤ 8 * l.W) ∨ (d = oq + slot l.W Public.aOne ∧ n ≤ 8 * l.W)
 
-theorem ifmaR_disj {op oq a d n : Nat} (hpq : op + slot l.W 8 + tabBytes l.W ≤ oq)
-    (hqa : oq + slot l.W 8 + tabBytes l.W ≤ a)
+theorem ifmaR_disj {op oq a d n : Nat} (hpq : op + slot l.W 8 + wsTab l.W ≤ oq)
+    (hqa : oq + slot l.W 8 + wsTab l.W ≤ a)
     (h : IKept l op oq d n ∨ (d = op + 8 * sIfma ∧ n = 8) ∨ (d = oq + 8 * sIfma ∧ n = 8)) :
     ∀ r ∈ ifmaR l op oq a, d + n ≤ r.1 ∨ r.1 + r.2 ≤ d := by
-  have hT : tabBytes l.W = 128 * (l.W + 2) := by unfold tabBytes; omega_using []
+  have hT : wsTab l.W = 256 * (l.W + 2) := by unfold wsTab tabBytes; omega_using []
   have hs : ∀ j, slot l.W j = 256 + j * (8 * (l.W + 2)) := fun j => by unfold slot hdrBytes; omega_using []
   simp only [IKept, Public.aN, Public.aOne, hs, sIfma, sFn] at h
   simp only [ifmaR, shiftRanges, k1Ranges, resRanges, List.map_cons, List.map_nil,
@@ -79,9 +79,9 @@ theorem ifmaR_disj {op oq a d n : Nat} (hpq : op + slot l.W 8 + tabBytes l.W ≤
   rintro _ (rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl) <;>
     simp only <;> omega_using [h, hpq, hqa]
 
-theorem ifmaR_le {op oq a : Nat} (hpq : op + slot l.W 8 + tabBytes l.W ≤ oq)
-    (hqa : oq + slot l.W 8 + tabBytes l.W ≤ a) : ∀ r ∈ ifmaR l op oq a, r.1 + r.2 ≤ a + 2 * l.D + 8 := by
-  have hT : tabBytes l.W = 128 * (l.W + 2) := by unfold tabBytes; omega_using []
+theorem ifmaR_le {op oq a : Nat} (hpq : op + slot l.W 8 + wsTab l.W ≤ oq)
+    (hqa : oq + slot l.W 8 + wsTab l.W ≤ a) : ∀ r ∈ ifmaR l op oq a, r.1 + r.2 ≤ a + 2 * l.D + 8 := by
+  have hT : wsTab l.W = 256 * (l.W + 2) := by unfold wsTab tabBytes; omega_using []
   have hs : ∀ j, slot l.W j = 256 + j * (8 * (l.W + 2)) := fun j => by unfold slot hdrBytes; omega_using []
   simp only [ifmaR, shiftRanges, k1Ranges, resRanges, List.map_cons, List.map_nil,
     List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false, sCtr, sFn, hs,
@@ -92,9 +92,9 @@ theorem ifmaR_le {op oq a : Nat} (hpq : op + slot l.W 8 + tabBytes l.W ≤ oq)
 theorem IPre.of_frm (hl : LayOk l) {m m' : Mem} {B : Addr} {w op oq : Nat} {minv mp mq mk : BitVec 64} {P Q : Nat}
     {ep eq : Addr} {lp lq : Nat} (h : IPre l m B w op oq minv mp mq mk P Q ep eq lp lq) {rs : List (Nat × Nat)}
     (hf : Frm B rs m m') (hr : ∀ d n, IKept l op oq d n → ∀ r ∈ rs, d + n ≤ r.1 ∨ r.1 + r.2 ≤ d)
-    (hlo : slot w 8 ≤ op) (hpq : op + slot l.W 8 + tabBytes l.W ≤ oq) (hz : oq + slot l.W 8 ≤ 2 ^ 64) :
+    (hlo : slot w 8 ≤ op) (hpq : op + slot l.W 8 + wsTab l.W ≤ oq) (hz : oq + slot l.W 8 ≤ 2 ^ 64) :
     IPre l m' B w op oq minv mp mq mk P Q ep eq lp lq := by
-  have hT : tabBytes l.W = 128 * (l.W + 2) := by unfold tabBytes; omega_using []
+  have hT : wsTab l.W = 256 * (l.W + 2) := by unfold wsTab tabBytes; omega_using []
   obtain ⟨hW1, hW2⟩ := W_bounds hl
   have h8 := hdr_lt_slot w 8 (show 31 < 32 by decide)
   have h16 := hdr_lt_slot l.W 8 (show 31 < 32 by decide)
@@ -124,10 +124,10 @@ theorem IPre.of_frm (hl : LayOk l) {m m' : Mem} {B : Addr} {w op oq : Nat} {minv
 
 theorem IMem.of_frm (hl : LayOk l) {m m' : Mem} {B : Addr} {w op oq a : Nat} {minv mp mq mk : BitVec 64} {P Q : Nat}
     {ep eq : Addr} {lp lq : Nat} (h : IMem l m B w op oq a minv mp mq mk P Q ep eq lp lq)
-    (hf : Frm B (ifmaR l op oq a) m m') (hlo : slot w 8 ≤ op) (hpq : op + slot l.W 8 + tabBytes l.W ≤ oq)
-    (hqa : oq + slot l.W 8 + tabBytes l.W ≤ a) (hz : a ≤ 2 ^ 64) :
+    (hf : Frm B (ifmaR l op oq a) m m') (hlo : slot w 8 ≤ op) (hpq : op + slot l.W 8 + wsTab l.W ≤ oq)
+    (hqa : oq + slot l.W 8 + wsTab l.W ≤ a) (hz : a ≤ 2 ^ 64) :
     IMem l m' B w op oq a minv mp mq mk P Q ep eq lp lq := by
-  have hT : tabBytes l.W = 128 * (l.W + 2) := by unfold tabBytes; omega_arith
+  have hT : wsTab l.W = 256 * (l.W + 2) := by unfold wsTab tabBytes; omega_arith
   have h16 := hdr_lt_slot l.W 8 (show 31 < 32 by decide)
   refine ⟨h.toIPre.of_frm hl hf (fun d n hk => ifmaR_disj hpq hqa (.inl hk)) hlo hpq (by omega_using [hqa, hz]), ?_, ?_⟩
   · rw [word_off, hf.word_eq (ifmaR_disj hpq hqa (.inr (.inl ⟨rfl,
@@ -142,7 +142,7 @@ theorem IMem.of_frm (hl : LayOk l) {m m' : Mem} {B : Addr} {w op oq a : Nat} {mi
 theorem headI_ok (hl : LayOk l) {s : State} {B : Addr} {Z w op oq a : Nat} {minv mp mq mk : BitVec 64} {P Q : Nat}
     {ep eq : Addr} {lp lq : Nat} (hs : Scr s B Z) (hdi : s.gpr .rdi = B)
     (h : IPre l s.mem B w op oq minv mp mq mk P Q ep eq lp lq) (hlo : slot w 8 ≤ op)
-    (hpq : op + slot l.W 8 + tabBytes l.W ≤ oq) (ha : a = oq + slot l.W 8 + tabBytes l.W) (haZ : a + 2 * l.D + 8 ≤ Z) :
+    (hpq : op + slot l.W 8 + wsTab l.W ≤ oq) (ha : a = oq + slot l.W 8 + wsTab l.W) (haZ : a + 2 * l.D + 8 ≤ Z) :
     WP isa (.block (([.mov .rdx (.mem (hdr sWsQ))] : List Instr) ++ wsEndT ++
       ([.mov .rdx (.mem (hdr sWsP)), .store (ws .rdx sIfma) .rax, .mov .rdx (.mem (hdr sWsQ)),
         .store (ws .rdx sIfma) .rax, enterP] : List Instr))) s fun u =>
@@ -150,23 +150,23 @@ theorem headI_ok (hl : LayOk l) {s : State} {B : Addr} {Z w op oq a : Nat} {minv
       Frm B [(op + 8 * sIfma, 8), (oq + 8 * sIfma, 8)] s.mem u.mem ∧ u.gpr .rdi = off B op ∧
       Keep [.rax, .rdx, .rdi] s u := by
   have hn := hs.nowrap
-  have hT : tabBytes l.W = 128 * (l.W + 2) := by unfold tabBytes; omega_using []
+  have hT : wsTab l.W = 256 * (l.W + 2) := by unfold wsTab tabBytes; omega_using []
   obtain ⟨o1, o2, o3, o4, o5, o6, o7, o8, o9, o10⟩ := lay_offs l
   obtain ⟨hDb1, hDb2⟩ := hl.D_bounds
   obtain ⟨hW1, hW2⟩ := W_bounds hl
   have h16 := hdr_lt_slot l.W 8 (show 31 < 32 by decide)
   subst ha
   refine WP.mono (ifmaHead_ok hl ⟨hs, hdi, h.nh⟩ hlo hpq (by omega_using [haZ]) h.wsP h.wsQ h.qws) fun u ⟨me, di, k⟩ => ?_
-  have o1 := writeW_outside s.mem B (d := op + 8 * sIfma) (off (off B oq) (slot l.W 8 + tabBytes l.W))
+  have o1 := writeW_outside s.mem B (d := op + 8 * sIfma) (off (off B oq) (slot l.W 8 + wsTab l.W))
     (by unfold sIfma sFn; omega_using [hpq, hn, h16, haZ])
-  have o2 := writeW_outside (s.mem.writeW (off B (op + 8 * sIfma)) (off (off B oq) (slot l.W 8 + tabBytes l.W))) B
-    (d := oq + 8 * sIfma) (off (off B oq) (slot l.W 8 + tabBytes l.W)) (by unfold sIfma sFn; omega_using [hn, h16, haZ])
+  have o2 := writeW_outside (s.mem.writeW (off B (op + 8 * sIfma)) (off (off B oq) (slot l.W 8 + wsTab l.W))) B
+    (d := oq + 8 * sIfma) (off (off B oq) (slot l.W 8 + wsTab l.W)) (by unfold sIfma sFn; omega_using [hn, h16, haZ])
   rw [off_off B op, off_off B oq (8 * sIfma)] at me
   have f : Frm B [(op + 8 * sIfma, 8), (oq + 8 * sIfma, 8)] s.mem u.mem := by
     rw [me]
     exact (Frm.of_outside o1 (List.mem_cons_self ..)).trans
       (Frm.of_outside o2 (List.mem_cons_of_mem _ (List.mem_cons_self ..)))
-  have hia : off (off B oq) (slot l.W 8 + tabBytes l.W) = off B (oq + slot l.W 8 + tabBytes l.W) := by
+  have hia : off (off B oq) (slot l.W 8 + wsTab l.W) = off B (oq + slot l.W 8 + wsTab l.W) := by
     rw [off_off, Nat.add_assoc]
   refine ⟨⟨h.of_frm hl f (fun d n hk r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -221,7 +221,7 @@ theorem regFr_ifmaR (hl : LayOk l) {op oq a o p : Nat} (ho : o = op ∨ o = oq) 
 theorem ifmaA_ok (hl : LayOk l) {s : State} {B : Addr} {Z w op oq a : Nat} {minv mp mq mk : BitVec 64} {P Q : Nat}
     {ep eq : Addr} {ebp ebq : List Byte} (hs : Scr s B Z) (hdi : s.gpr .rdi = B)
     (h : IPre l s.mem B w op oq minv mp mq mk P Q ep eq ebp.length ebq.length) (hlo : slot w 8 ≤ op)
-    (hpq : op + slot l.W 8 + tabBytes l.W ≤ oq) (ha : a = oq + slot l.W 8 + tabBytes l.W) (haZ : a + 2 * l.D + 8 ≤ Z)
+    (hpq : op + slot l.W 8 + wsTab l.W ≤ oq) (ha : a = oq + slot l.W 8 + wsTab l.W) (haZ : a + 2 * l.D + 8 ≤ Z)
     (hYp : wv s.mem (off B op) (slot l.W Public.aY) l.W < P) (hYq : wv s.mem (off B oq) (slot l.W Public.aY) l.W < Q)
     (hep : Src s B Z ep ebp) (heq : Src s B Z eq ebq) (hLp1 : 1 ≤ ebp.length) (hLp2 : ebp.length ≤ l.E)
     (hLq1 : 1 ≤ ebq.length) (hLq2 : ebq.length ≤ l.E) :
@@ -239,7 +239,7 @@ theorem ifmaA_ok (hl : LayOk l) {s : State} {B : Addr} {Z w op oq a : Nat} {minv
       Frm B ([(op + 8 * sIfma, 8), (oq + 8 * sIfma, 8)] ++ ifmaR l op oq a) s.mem t.mem ∧
       t.wr = s.wr ∧ t.rd = s.rd ∧ t.gpr .rdi = off B oq ∧ Keep (mmRegs ++ ([.rdi] : List Reg)) s t := by
   have hn := hs.nowrap
-  have hT : tabBytes l.W = 128 * (l.W + 2) := by unfold tabBytes; omega_using []
+  have hT : wsTab l.W = 256 * (l.W + 2) := by unfold wsTab tabBytes; omega_using []
   obtain ⟨o1, o2, o3, o4, o5, o6, o7, o8, o9, o10⟩ := lay_offs l
   obtain ⟨hDb1, hDb2⟩ := hl.D_bounds
   obtain ⟨hW1, hW2⟩ := W_bounds hl
@@ -268,7 +268,7 @@ theorem ifmaA_ok (hl : LayOk l) {s : State} {B : Addr} {Z w op oq a : Nat} {minv
     rcases hr with rfl | rfl <;> simp only [sIfma, sFn] <;> omega_using [hpq, ha, haZ, lC, hC0]
   -- `p`'s region.
   refine wp_seqs_append (by simp [region, k1, copyArr]) (by simp) (WP.mono
-    (region_ok hl (p := 0) (SubCtx.mk' (hs.congr k₁.2.2) m₁.nh m₁.pws d₁ hlo (by omega_using [hpq, ha, haZ])) m₁.pia
+    (region_ok hl (p := 0) (SubCtx.mk' (hs.congr k₁.2.2) m₁.nh m₁.pws d₁ hlo (by have := tabBytes_le_wsTab l.W; omega_using [hpq, ha, haZ, this])) m₁.pia
         (by omega_using [hpq, ha]) haZ
       (by decide) m₁.pn (by rw [hYp₁]; exact hYp) (by decide) (by decide) m₁.dp m₁.pl
       (hep.congr (InScr.of_frm f₁ hZ₁) k₁.2.1 k₁.2.2) hLp1 hLp2) fun u₂ ⟨rp, f₂, w₂, d₂, k₂⟩ => ?_)
@@ -297,7 +297,7 @@ theorem ifmaA_ok (hl : LayOk l) {s : State} {B : Addr} {Z w op oq a : Nat} {minv
   have k₁₃ := (k₁.trans k₂).trans k₃
   -- `q`'s region.
   refine WP.mono (region_ok hl (p := 1) (SubCtx.mk' (hs.congr k₁₃.2.2) m₂.nh m₂.qws d₃ (by omega_using [hlo, hpq])
-      (by omega_using [ha, haZ])) m₂.qia
+      (by have := tabBytes_le_wsTab l.W; omega_using [ha, haZ, this])) m₂.qia
     (by omega_using [ha]) haZ (by decide) m₂.qn (by rw [hq₃ _ (by decide) (by decide) (by decide) (by decide)]; exact hYq)
     (by decide) (by decide) m₂.dq m₂.ql (heq.congr (InScr.of_frm F₂ hZF) k₁₃.2.1 k₁₃.2.2) hLq1 hLq2)
     fun t ⟨rq, f₄, w₄, d₄, k₄⟩ => ?_
@@ -436,7 +436,7 @@ theorem resSh_ifmaR (op oq a : Nat) {o : Nat} (ho : o = op ∨ o = oq) :
 theorem resI_ok (hl : LayOk l) {t : State} {B : Addr} {Z w op oq a : Nat} {minv mp mq mk : BitVec 64} {P Q : Nat}
     {ep eq : Addr} {lp lq : Nat} (hs : Scr t B Z) (hdi : t.gpr .rdi = off B oq)
     (hm : IMem l t.mem B w op oq a minv mp mq mk P Q ep eq lp lq) (hlo : slot w 8 ≤ op)
-    (hpq : op + slot l.W 8 + tabBytes l.W ≤ oq) (hqa : oq + slot l.W 8 + tabBytes l.W ≤ a) (haZ : a + 2 * l.D + 8 ≤ Z)
+    (hpq : op + slot l.W 8 + wsTab l.W ≤ oq) (hqa : oq + slot l.W 8 + wsTab l.W ≤ a) (haZ : a + 2 * l.D + 8 ≤ Z)
     (gp : Good l t.mem (off B a) (two P Q) l.oY 0) (gq : Good l t.mem (off B a) (two P Q) l.oY 1) :
     WP isa (seqs (result l 1 ++ (([.block [leave, enterP]] : List (Prog isa)) ++
       (result l 0 ++ ([.block [leave]] : List (Prog isa)))))) t fun t' =>
@@ -446,7 +446,7 @@ theorem resI_ok (hl : LayOk l) {t : State} {B : Addr} {Z w op oq a : Nat} {minv 
       Frm B (ifmaR l op oq a) t.mem t'.mem ∧ t'.gpr .rdi = B ∧ t'.rd = t.rd ∧ t'.wr = t.wr ∧
       Keep (mmRegs ++ ([.rdi] : List Reg)) t t' := by
   have hn := hs.nowrap
-  have hT : tabBytes l.W = 128 * (l.W + 2) := by unfold tabBytes; omega_using []
+  have hT : wsTab l.W = 256 * (l.W + 2) := by unfold wsTab tabBytes; omega_using []
   obtain ⟨o1, o2, o3, o4, o5, o6, o7, o8, o9, o10⟩ := lay_offs l
   obtain ⟨hDb1, hDb2⟩ := hl.D_bounds
   obtain ⟨hW1, hW2⟩ := W_bounds hl
@@ -509,7 +509,7 @@ theorem resI_mx (hl : LayOk l) : (seqs (result l 1 ++ (([.block [leave, enterP]]
 theorem ifma_ok (hl : LayOk l) {s : State} {B : Addr} {Z w op oq a wp : Nat} {minv mp mq mk : BitVec 64} {P Q C : Nat}
     {ep eq : Addr} {ebp ebq : List Byte} {K : Prop} (hs : Scr s B Z) (hdi : s.gpr .rdi = B)
     (h : IPre l s.mem B w op oq minv mp mq mk P Q ep eq ebp.length ebq.length) (hlo : slot w 8 ≤ op)
-    (hpq : op + slot l.W 8 + tabBytes l.W ≤ oq) (ha : a = oq + slot l.W 8 + tabBytes l.W) (haZ : a + 2 * l.D + 8 ≤ Z)
+    (hpq : op + slot l.W 8 + wsTab l.W ≤ oq) (ha : a = oq + slot l.W 8 + wsTab l.W) (haZ : a + 2 * l.D + 8 ≤ Z)
     (hwp : wp = l.W) (hPo : P % 2 = 1) (hQo : Q % 2 = 1)
     (hYp : wv s.mem (off B op) (slot l.W Public.aY) l.W < P) (hYq : wv s.mem (off B oq) (slot l.W Public.aY) l.W < Q)
     (hXp : wv s.mem (off B op) (slot l.W aXc) l.W < P) (hXq : wv s.mem (off B oq) (slot l.W aXc) l.W < Q)
@@ -527,7 +527,7 @@ theorem ifma_ok (hl : LayOk l) {s : State} {B : Addr} {Z w op oq a wp : Nat} {mi
       (K → wv t.mem (off B op) (slot l.W Public.aY) l.W % P = C ^ Spec.Rsa.os2ip ebp * 2 ^ (64 * wp) % P) ∧
       Frm B ([(op + 8 * sIfma, 8), (oq + 8 * sIfma, 8)] ++ ifmaR l op oq a) s.mem t.mem ∧ t.gpr .rdi = B ∧
       Keep mmRegs s t ∧ t.mxcsr = s.mxcsr &&& 0xFFFF := by
-  have hT : tabBytes l.W = 128 * (l.W + 2) := by unfold tabBytes; omega_using []
+  have hT : wsTab l.W = 256 * (l.W + 2) := by unfold wsTab tabBytes; omega_using []
   obtain ⟨o1, o2, o3, o4, o5, o6, o7, o8, o9, o10⟩ := lay_offs l
   obtain ⟨hDb1, hDb2⟩ := hl.D_bounds
   obtain ⟨hW1, hW2⟩ := W_bounds hl

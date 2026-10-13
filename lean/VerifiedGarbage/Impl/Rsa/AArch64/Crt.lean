@@ -13,7 +13,7 @@ first eight arguments in `x0`–`x7`, the others on the stack (AAPCS64).
 The computation is x86-64's (`Impl/Rsa/X86_64/Crt.lean`), in the same
 layout (`Impl/Bignum/CrtLayout.lean`): three workspaces, `n`'s at
 `scratch`, then `p`'s and `q`'s (`max(2, ⌈len / 8⌉)` words each), each
-followed by the 16 entries of its exponentiation's table. The code runs in
+followed by room for its exponentiation's table (32 entries). The code runs in
 one at a time, its base in `x0`; the headers of `p`'s and `q`'s link back
 to `n`'s.
 
@@ -87,9 +87,9 @@ array's base plus `8 (w + 2)` (in `x6`). -/
 def wsEnd : List Instr :=
   [ldw .x4 .x5 (sArr aOne), ldw .x6 .x5 sW, .addImm .x .x6 .x6 2, .lsl .x .x6 .x6 3, .add .x .x4 .x4 .x6]
 
-/-- `x4 := ` the end of a prime's workspace at `x5`: its arrays, then the 16
-entries of the window's table (`8 (w + 2)` bytes each). -/
-def wsEndT : List Instr := wsEnd ++ ([.lsl .x .x6 .x6 4, .add .x .x4 .x4 .x6] : List Instr)
+/-- `x4 := ` the end of a prime's workspace at `x5`: its arrays, then room for
+the 32 entries of a window's table (`8 (w + 2)` bytes each), as on x86-64. -/
+def wsEndT : List Instr := wsEnd ++ ([.lsl .x .x6 .x6 5, .add .x .x4 .x4 .x6] : List Instr)
 
 /-- A workspace at `x4` (its base stored in slot `slotWs`) for a number of
 the byte length in slot `slotLen`: `w = max(2, ⌈len / 8⌉)`, its arrays'

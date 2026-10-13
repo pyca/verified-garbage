@@ -1,7 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtChk
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtExpL
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtChk
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtExpL
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -188,6 +190,17 @@ def EPre (sp sl : Nat) (p : BPub) (s : State) : Prop :=
 def ExpCT (M : Mont) (S : CrtSel) (sp sl : Nat) : Prop :=
   RelCT isa (Two (EPre sp sl)) (seqs (Crt.expLoop M.mm S.code sp sl)) fun _ _ => True
 
+/-- `EPre` and the room for a table of 32 entries: what `CrtExpL.ok` needs. -/
+def EPre5 (sp sl : Nat) (p : BPub) (s : State) : Prop :=
+  EPre sp sl p s ∧ p.x.o + slot p.x.wx 8 + wsTab p.x.wx ≤ p.x.Z
+
+/-- The exponentiation `E.code sp sl` is constant time. -/
+def ExpCTL {M : Mont} (E : CrtExpL M) (sp sl : Nat) : Prop :=
+  RelCT isa (Two (EPre5 sp sl)) (seqs (E.code sp sl)) fun _ _ => True
+
+/-- The exponentiation is constant time for the primes' exponents. -/
+def CrtExpL.CT {M : Mont} (E : CrtExpL M) : Prop := ExpCTL E sDp sPlen ∧ ExpCTL E sDq sQlen
+
 /-- `primeLoad_ok`'s hypotheses. -/
 def LPre (j sp sl : Nat) (p : BPub) (s : State) : Prop :=
   ∃ (minv : BitVec 64) (bs : List Byte), SubCtx s p.x.B p.x.Z p.x.o p.x.w p.x.wx minv ∧ 2 ≤ p.x.wx ∧
@@ -215,7 +228,7 @@ structure SetupPub where
 /-- `primesSetup_ok`'s hypotheses. -/
 def SetupPre (p : SetupPub) (s : State) : Prop :=
   ∃ pb qb ib : List Byte, Good s p.B p.Z p.w p.minv ∧ 8 ≤ p.w ∧ p.w < 2 ^ 28 ∧
-    offQ p.w p.pl + slot (wsWords p.ql) 8 + tabBytes (wsWords p.ql) ≤ p.Z ∧
+    offQ p.w p.pl + slot (wsWords p.ql) 8 + wsTab (wsWords p.ql) ≤ p.Z ∧
     word s.mem p.B (8 * sPlen) = BitVec.ofNat 64 p.pl ∧ word s.mem p.B (8 * sQlen) = BitVec.ofNat 64 p.ql ∧
     word s.mem p.B (8 * sP) = p.pp ∧ word s.mem p.B (8 * sQ) = p.qp ∧ word s.mem p.B (8 * sQinv) = p.ip ∧
     Src s p.B p.Z p.pp pb ∧ Src s p.B p.Z p.qp qb ∧ Src s p.B p.Z p.ip ib ∧ pb.length = p.pl ∧
@@ -240,7 +253,7 @@ structure ChecksPub where
 /-- `checks_ok`'s hypotheses. -/
 def ChecksPre (p : ChecksPub) (s : State) : Prop :=
   ∃ (mp mq : BitVec 64) (P Q QI : Nat) (m0 : Bool), Good s p.B p.Z p.w p.minv ∧ 8 ≤ p.w ∧ p.w < 2 ^ 28 ∧
-    slot p.w 8 ≤ p.op ∧ p.op + slot p.wp 8 + tabBytes p.wp ≤ p.oq ∧ p.oq + slot p.wq 8 + tabBytes p.wq ≤ p.Z ∧
+    slot p.w 8 ≤ p.op ∧ p.op + slot p.wp 8 + wsTab p.wp ≤ p.oq ∧ p.oq + slot p.wq 8 + wsTab p.wq ≤ p.Z ∧
     2 ≤ p.wp ∧ p.wp ≤ p.w ∧ 2 ≤ p.wq ∧ p.wq ≤ p.w ∧ word s.mem p.B (8 * sWsP) = off p.B p.op ∧
     word s.mem p.B (8 * sWsQ) = off p.B p.oq ∧ WsAt s.mem p.B p.op p.wp mp ∧ WsAt s.mem p.B p.oq p.wq mq ∧
     wv s.mem p.B (slot p.w Public.aN) p.w = p.N ∧ word s.mem p.B (8 * Public.sMask) = mask m0 ∧
@@ -265,7 +278,7 @@ structure UPub where
 /-- `unitPhase_ok`'s hypotheses. -/
 def UPre (sl : Nat) (p : UPub) (s : State) : Prop :=
   ∃ (mx : BitVec 64) (X : Nat), Good s p.B p.Z p.w p.minv ∧ 8 ≤ p.w ∧ p.w < 2 ^ 28 ∧ slot p.w 8 ≤ p.o ∧
-    p.o + slot p.wx 8 + tabBytes p.wx ≤ p.Z ∧ 2 ≤ p.wx ∧ p.wx ≤ p.w ∧ sl < 32 ∧ sl ≠ Crt.sD ∧ sl ≠ Public.sCnt ∧
+    p.o + slot p.wx 8 + wsTab p.wx ≤ p.Z ∧ 2 ≤ p.wx ∧ p.wx ≤ p.w ∧ sl < 32 ∧ sl ≠ Crt.sD ∧ sl ≠ Public.sCnt ∧
     word s.mem p.B (8 * sl) = off p.B p.o ∧ WsAt s.mem p.B p.o p.wx mx ∧ NVals s p.B p.w p.minv p.N ∧
     p.N % 2 = 1 ∧ 1 < p.N ∧ XVals s p.B p.o p.wx mx X ∧ 1 < X ∧ X % 2 = 1
 
@@ -278,7 +291,7 @@ def UnitCT (M : Mont) (sl : Nat) : Prop :=
 slots `sd` and `slen`. -/
 def PwPre (sl sd slen : Nat) (p : BPub) (s : State) : Prop :=
   ∃ (minv mx : BitVec 64) (N X C : Nat) (eb : List Byte), Good s p.x.B p.x.Z p.x.w minv ∧ p.x.w < 2 ^ 28 ∧
-    slot p.x.w 8 ≤ p.x.o ∧ p.x.o + slot p.x.wx 8 + tabBytes p.x.wx ≤ p.x.Z ∧ 2 ≤ p.x.wx ∧ p.x.wx ≤ p.x.w ∧ sl < 32 ∧
+    slot p.x.w 8 ≤ p.x.o ∧ p.x.o + slot p.x.wx 8 + wsTab p.x.wx ≤ p.x.Z ∧ 2 ≤ p.x.wx ∧ p.x.wx ≤ p.x.w ∧ sl < 32 ∧
     word s.mem p.x.B (8 * sl) = off p.x.B p.x.o ∧ WsAt s.mem p.x.B p.x.o p.x.wx mx ∧
     XVals s p.x.B p.x.o p.x.wx mx X ∧ 1 < X ∧ X % 2 = 1 ∧
     wv s.mem p.x.B (slot p.x.w Public.aY) p.x.w % N = C * 2 ^ (64 * p.x.wx * (nChunks p.x.w p.x.wx + 1)) % N ∧
@@ -289,9 +302,9 @@ def PwPre (sl sd slen : Nat) (p : BPub) (s : State) : Prop :=
     eb.length ≤ 1024 ∧ Src s p.x.B p.x.Z p.ptr eb
 
 /-- The phases' exponentiation (`powPhase_ok`) is constant time. -/
-def PowCT (M : Mont) (S : CrtSel) (sl sd slen : Nat) : Prop :=
+def PowCT (M : Mont) (E : CrtExpL M) (sl sd slen : Nat) : Prop :=
   RelCT isa (Two (PwPre sl sd slen)) (seqs ([.block [.mov .rdi (.mem (hdr sl))]] ++ redc M.mm Public.aY ++
-    Crt.expLoop M.mm S.code sd slen)) fun _ _ => True
+    E.code sd slen)) fun _ _ => True
 
 /-- The public data of a prime's phase: `n`'s workspace, `-n⁻¹`, `n`, the
 prime's workspace and the exponent's pointer and length. -/
@@ -309,7 +322,7 @@ structure PhasePub where
 /-- `qPhase_ok`'s hypotheses. -/
 def QPre (p : PhasePub) (s : State) : Prop :=
   ∃ (mx : BitVec 64) (X C : Nat) (eb : List Byte), Good s p.B p.Z p.w p.minv ∧ 8 ≤ p.w ∧ p.w < 2 ^ 28 ∧
-    slot p.w 8 ≤ p.o ∧ p.o + slot p.wx 8 + tabBytes p.wx ≤ p.Z ∧ 2 ≤ p.wx ∧ p.wx ≤ p.w ∧
+    slot p.w 8 ≤ p.o ∧ p.o + slot p.wx 8 + wsTab p.wx ≤ p.Z ∧ 2 ≤ p.wx ∧ p.wx ≤ p.w ∧
     word s.mem p.B (8 * sWsQ) = off p.B p.o ∧ WsAt s.mem p.B p.o p.wx mx ∧ NVals s p.B p.w p.minv p.N ∧
     p.N % 2 = 1 ∧ 1 < p.N ∧ wv s.mem p.B (slot p.w Public.aXm) p.w % p.N = C * 2 ^ (64 * p.w) % p.N ∧
     XVals s p.B p.o p.wx mx X ∧ 1 < X ∧ X % 2 = 1 ∧ word s.mem p.B (8 * sDq) = p.ep ∧
@@ -317,7 +330,7 @@ def QPre (p : PhasePub) (s : State) : Prop :=
     eb.length ≤ 1024 ∧ Src s p.B p.Z p.ep eb
 
 /-- `qPhase M.mm` is constant time. -/
-def QPhaseCT (M : Mont) (S : CrtSel) : Prop := RelCT isa (Two QPre) (seqs (qPhase M.mm S.code)) fun _ _ => True
+def QPhaseCT (M : Mont) (E : CrtExpL M) : Prop := RelCT isa (Two QPre) (seqs (qPhase M.mm E.code)) fun _ _ => True
 
 /-- The public data of `p`'s phase: also `q`'s workspace and `qInv`'s
 pointer. -/
@@ -331,7 +344,7 @@ structure PPhasePub where
 def PPre (p : PPhasePub) (s : State) : Prop :=
   ∃ (mx mq : BitVec 64) (X C : Nat) (eb qib : List Byte) (c : Bool), Good s p.ph.B p.ph.Z p.ph.w p.ph.minv ∧
     8 ≤ p.ph.w ∧ p.ph.w < 2 ^ 28 ∧ slot p.ph.w 8 ≤ p.ph.o ∧
-    p.ph.o + slot p.ph.wx 8 + tabBytes p.ph.wx ≤ p.oq ∧ p.oq + slot p.wq 8 + tabBytes p.wq ≤ p.ph.Z ∧
+    p.ph.o + slot p.ph.wx 8 + wsTab p.ph.wx ≤ p.oq ∧ p.oq + slot p.wq 8 + wsTab p.wq ≤ p.ph.Z ∧
     2 ≤ p.ph.wx ∧ p.ph.wx ≤ p.ph.w ∧ 1 ≤ p.wq ∧ p.wq ≤ p.ph.w ∧
     word s.mem p.ph.B (8 * sWsP) = off p.ph.B p.ph.o ∧ WsAt s.mem p.ph.B p.ph.o p.ph.wx mx ∧
     word s.mem p.ph.B (8 * sWsQ) = off p.ph.B p.oq ∧ WsAt s.mem p.ph.B p.oq p.wq mq ∧
@@ -345,6 +358,6 @@ def PPre (p : PPhasePub) (s : State) : Prop :=
     (qib.length + 7) / 8 ≤ p.ph.wx ∧ (c = true → Spec.Rsa.os2ip qib < X)
 
 /-- `pPhase M.mm` is constant time. -/
-def PPhaseCT (M : Mont) (S : CrtSel) : Prop := RelCT isa (Two PPre) (seqs (pPhase M.mm S.code)) fun _ _ => True
+def PPhaseCT (M : Mont) (E : CrtExpL M) : Prop := RelCT isa (Two PPre) (seqs (pPhase M.mm E.code)) fun _ _ => True
 
 end VG.Proof.Bignum.X86_64

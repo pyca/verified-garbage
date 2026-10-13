@@ -45,25 +45,25 @@ def PO4 (M : Mont) (p : PPhasePub) (s : State) : Prop :=
   s.gpr .rdi = off p.ph.B p.ph.o ∧ WP isa (.block [leave]) s (H0 M p.h)
 
 /-- Before the exponentiation. -/
-def PO3 (M : Mont) (S : CrtSel) (p : PPhasePub) (s : State) : Prop :=
-  PwPre sWsP sDp sPlen p.pw s ∧ WP isa (seqs (powSteps M.mm S.code sWsP sDp sPlen)) s (PO4 M p)
+def PO3 (M : Mont) (E : CrtExpL M) (p : PPhasePub) (s : State) : Prop :=
+  PwPre sWsP sDp sPlen p.pw s ∧ WP isa (seqs (powSteps M.mm E.code sWsP sDp sPlen)) s (PO4 M p)
 
 /-- Before `c G mod N`. -/
-def PO2 (M : Mont) (S : CrtSel) (p : PPhasePub) (s : State) : Prop :=
-  GoodW p.nw s ∧ WP isa (M.mm Public.aY Public.aXm Public.aY) s (PO3 M S p)
+def PO2 (M : Mont) (E : CrtExpL M) (p : PPhasePub) (s : State) : Prop :=
+  GoodW p.nw s ∧ WP isa (M.mm Public.aY Public.aXm Public.aY) s (PO3 M E p)
 
 /-- Before `m_q G mod N`. -/
-def PO1 (M : Mont) (S : CrtSel) (p : PPhasePub) (s : State) : Prop :=
-  Mq0 M p.mq s ∧ WP isa (seqs (mqSteps M.mm)) s (PO2 M S p)
+def PO1 (M : Mont) (E : CrtExpL M) (p : PPhasePub) (s : State) : Prop :=
+  Mq0 M p.mq s ∧ WP isa (seqs (mqSteps M.mm)) s (PO2 M E p)
 
 /-- Before `pPhase`. -/
-def PO0 (M : Mont) (S : CrtSel) (p : PPhasePub) (s : State) : Prop :=
-  UPre sWsP p.u s ∧ WP isa (seqs (unitSteps M.mm sWsP)) s (PO1 M S p)
+def PO0 (M : Mont) (E : CrtExpL M) (p : PPhasePub) (s : State) : Prop :=
+  UPre sWsP p.u s ∧ WP isa (seqs (unitSteps M.mm sWsP)) s (PO1 M E p)
 
 /-- From before the exponentiation: `PO3`, as `pPhase_ok` runs the rest. -/
-theorem o3_of (M : Mont) (S : CrtSel) {s : State} {B : Addr} {Z w : Nat} {minv mx : BitVec 64}
+theorem o3_of (M : Mont) (E : CrtExpL M) {s : State} {B : Addr} {Z w : Nat} {minv mx : BitVec 64}
     {N X C o wx oq wq : Nat} {ep qp : Addr} {eb qib : List Byte} {c : Bool}
-    (hg : Good s B Z w minv) (hw28 : w < 2 ^ 28) (hlo : slot w 8 ≤ o) (hhi : o + slot wx 8 + tabBytes wx ≤ Z)
+    (hg : Good s B Z w minv) (hw28 : w < 2 ^ 28) (hlo : slot w 8 ≤ o) (hhi : o + slot wx 8 + wsTab wx ≤ Z)
     (hwx2 : 2 ≤ wx) (hwx : wx ≤ w) (hslv : word s.mem B (8 * sWsP) = off B o) (hws : WsAt s.mem B o wx mx)
     (hX : XVals s B o wx mx X) (hX1 : 1 < X) (hXodd : X % 2 = 1)
     (hcg : wv s.mem B (slot w Public.aY) w % N = C * 2 ^ (64 * wx * (nChunks w wx + 1)) % N)
@@ -74,7 +74,7 @@ theorem o3_of (M : Mont) (S : CrtSel) {s : State} {B : Addr} {Z w : Nat} {minv m
     (hmask : word s.mem (off B o) (8 * sMaskX) = mask c)
     (hqp : word s.mem B (8 * sQinv) = qp) (hql : qib.length = eb.length) (hqs : Src s B Z qp qib)
     (hqw : (qib.length + 7) / 8 ≤ wx) (hqi : c = true → Spec.Rsa.os2ip qib < X) :
-    PO3 M S ⟨⟨B, Z, w, minv, N, o, wx, ep, eb.length⟩, oq, wq, qp⟩ s := by
+    PO3 M E ⟨⟨B, Z, w, minv, N, o, wx, ep, eb.length⟩, oq, wq, qp⟩ s := by
   have hs := hg.scr
   have hn := hs.nowrap
   have h8 := hdr_lt_slot w 8 (show 31 < 32 by decide)
@@ -83,7 +83,7 @@ theorem o3_of (M : Mont) (S : CrtSel) {s : State} {B : Addr} {Z w : Nat} {minv m
   -- `c^dP R_p mod p`.
   refine ⟨⟨minv, mx, N, X, C, eb, hg, hw28, hlo, hhi, hwx2, hwx, by decide, hslv, hws, hX, hX1, hXodd, hcg, hpl,
       hpy, by decide, by decide, hep, hel, rfl, hL1, hL2, he⟩,
-    WP.mono (powPhase_ok M S hg hw28 hlo hhi hwx2 hwx (sl := sWsP) (by decide) hslv hws hX hX1 hXodd hcg hpl hpy
+    WP.mono (powPhase_ok M E hg hw28 hlo hhi hwx2 hwx (sl := sWsP) (by decide) hslv hws hX hX1 hXodd hcg hpl hpy
       (sd := sDp) (slen := sPlen) (by decide) (by decide) hep hel hL1 hL2 he)
       fun s₄ ⟨hc₄, hX₄, hlt₄, _, hM₄, fx₄, k₄⟩ => ?_⟩
   -- Back to the modulus'.
@@ -115,7 +115,7 @@ theorem o3_of (M : Mont) (S : CrtSel) {s : State} {B : Addr} {Z w : Nat} {minv m
   exact this
 
 /-- `pPhase_ok`'s hypotheses give `PO0`. -/
-theorem o0_of (M : Mont) (S : CrtSel) {p : PPhasePub} {s : State} (h : PPre p s) : PO0 M S p s := by
+theorem o0_of (M : Mont) (E : CrtExpL M) {p : PPhasePub} {s : State} (h : PPre p s) : PO0 M E p s := by
   obtain ⟨⟨B, Z, w, minv, N, o, wx, ep, len⟩, oq, wq, qp⟩ := p
   dsimp only [PPre] at h
   obtain ⟨mx, mq, X, C, eb, qib, c, h⟩ := h
@@ -130,7 +130,7 @@ theorem o0_of (M : Mont) (S : CrtSel) {p : PPhasePub} {s : State} (h : PPre p s)
   have hX8 : 256 ≤ slot wx 8 := by unfold slot hdrBytes; omega
   have hQ8 : 256 ≤ slot wq 8 := by unfold slot hdrBytes; omega
   have hz : B.toNat + slot w 8 ≤ 2 ^ 64 := by omega
-  have hhi' : o + slot wx 8 + tabBytes wx ≤ Z := by omega
+  have hhi' : o + slot wx 8 + wsTab wx ≤ Z := by omega
   have hsub : ∀ {rs : List (Nat × Nat)}, (∀ r ∈ rs, r ∈ pRanges w ++ [xRange o wx]) → ∀ {m m' : Mem},
       Frm B rs m m' → Frm B (pRanges w ++ [xRange o wx]) m m' := fun h _ _ f => f.mono h
   have sgx : ∀ r ∈ gRanges w ++ [xRange o wx], r ∈ pRanges w ++ [xRange o wx] := fun r hr =>
@@ -211,17 +211,17 @@ theorem o0_of (M : Mont) (S : CrtSel) {p : PPhasePub} {s : State} (h : PPre p s)
   have k03 := (k₁.trans k₂).trans k₃
   have hM₃ : word s₃.mem (off B o) (8 * sMaskX) = mask c := by
     rw [hpw f₃ sg' _ (by decide), hpw f₂ (fun r h => h) _ (by decide), hM₁]; exact hmask
-  exact o3_of M S hg₃ hw28 hlo hhi' hwx2 hwx (by rw [f₀₃.px_hdr hlo (by decide) (by decide) (by decide)]; exact hslv)
+  exact o3_of M E hg₃ hw28 hlo hhi' hwx2 hwx (by rw [f₀₃.px_hdr hlo (by decide) (by decide) (by decide)]; exact hslv)
     hws₃ hX₃ hX1 hXodd hcg (by rw [hpY₃]; exact hpl₁) (fun hd => by rw [hpY₃]; exact hpy₁ hd)
     (by rw [f₀₃.px_hdr hlo (by decide) (by decide) (by decide)]; exact hep)
     (by rw [f₀₃.px_hdr hlo (by decide) (by decide) (by decide)]; exact hel) hL1 hL2 (he.congrK i03 k03) hM₃
     (by rw [f₀₃.px_hdr hlo (by decide) (by decide) (by decide)]; exact hqp) hql (hqs.congrK i03 k03) hqw hqi
 
 /-- `p`'s phase is constant time, given its pieces' claims. -/
-theorem pPhase_ct (M : Mont) (S : CrtSel) (hU : UnitCT M sWsP) (hP : PowCT M S sWsP sDp sPlen) (hRX : RedcCT M Public.aX)
-    (hL : LoadCT aChunk sQinv sPlen) : PPhaseCT M S := by
+theorem pPhase_ct (M : Mont) (E : CrtExpL M) (hU : UnitCT M sWsP) (hP : PowCT M E sWsP sDp sPlen) (hRX : RedcCT M Public.aX)
+    (hL : LoadCT aChunk sQinv sPlen) : PPhaseCT M E := by
   unfold PPhaseCT
-  refine two_map id (fun _ _ h => o0_of M S h) ?_
+  refine two_map id (fun _ _ h => o0_of M E h) ?_
   rw [pPhase_eq]
   refine ct_steps (by simp [unitSteps]) (by simp [mqSteps]) PPhasePub.u (fun _ _ h => h.1) (fun _ _ h => h.2)
     hU ?_

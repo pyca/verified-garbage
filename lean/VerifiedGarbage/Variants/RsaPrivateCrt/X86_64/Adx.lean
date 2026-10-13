@@ -13,8 +13,9 @@ import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.CTMain
 A variant of `RsaPrivateCrt` on x86-64 (see `TCB/Emit.lean`):
 `vg_rsa_private_crt_adx`, checked with `vg_rsa_public_precompute_adx` and
 `vg_rsa_public_precomputed_checked_adx`, all three by calls of
-`vg_rsa_mont_mul_adx`, which needs BMI2 and ADX; the first reads its table
-with AVX2 (`Crt.tabSelectV`).
+`vg_rsa_mont_mul_adx`, which needs BMI2 and ADX; the first exponentiates by
+windows of 5 bits (`Crt.expLoop5`), reading its table of 32 powers with AVX2
+(`Crt.tabSelectV`).
 -/
 
 @[expose] public section
@@ -25,10 +26,11 @@ open VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.Rsa.X86_64
 
 def variant : CrtImpl where
   name := Spec.Rsa.privateCrtApi.name ++ "_adx"
-  code := Impl.Rsa.X86_64.Crt.code CallMont.adx.mm Impl.Rsa.X86_64.Crt.tabSelectV
+  code := Impl.Rsa.X86_64.Crt.code CallMont.adx.mm
+    (Impl.Rsa.X86_64.Crt.expLoop5 CallMont.adx.mm Impl.Rsa.X86_64.Crt.tabSelectV)
   depth := by decide +kernel
-  ok := crt_call_ok (by decide +kernel) (crtCode_correct Mont.fnAdx CrtSel.avx (by decide +kernel))
-  ct := crt_call_ct (by decide +kernel) (crtCode_correct Mont.fnAdx CrtSel.avx (by decide +kernel)) (crtCode_constantTime Mont.fnAdx CrtSel.avx tabSelV_ct)
+  ok := crt_call_ok (by decide +kernel) (crtCode_correct Mont.fnAdx (CrtExpL.w5 Mont.fnAdx) (by decide +kernel))
+  ct := crt_call_ct (by decide +kernel) (crtCode_correct Mont.fnAdx (CrtExpL.w5 Mont.fnAdx) (by decide +kernel)) (crtCode_constantTime Mont.fnAdx (CrtExpL.w5 Mont.fnAdx) (CrtExpL.w5_ct Mont.fnAdx))
   nosp := noSp_of (by decide +kernel)
   spSafe := Code.all_of_allInstrs (by decide +kernel)
   montSuffix := "_adx"

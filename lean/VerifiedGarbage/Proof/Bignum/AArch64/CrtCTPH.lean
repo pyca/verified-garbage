@@ -102,7 +102,8 @@ theorem h_ct (M : Mont) (hR : RedcCT M Public.aX) (hL : LoadCT aChunk sQinv sPle
 /-- `hTail_ok`'s hypotheses give `H2`. -/
 theorem h2_chain (M : Mont) {s : State} {B : Addr} {Z w : Nat} {mx : BitVec 64} {X o wx : Nat}
     {qp : Addr} {qib : List Byte} {c : Bool}
-    (hc : SubCtx s B Z o w wx mx) (hX : XVals s B o wx mx X) (hX1 : 1 < X) (hw28 : w < 2 ^ 28) (hwx2 : 2 ≤ wx)
+    (hc : SubCtx s B Z o w wx mx) (hT : o + slot wx 8 + wsTab wx ≤ Z) (hX : XVals s B o wx mx X) (hX1 : 1 < X)
+    (hw28 : w < 2 ^ 28) (hwx2 : 2 ≤ wx)
     (hwx : wx ≤ w) (hyl : wv s.mem (off B o) (slot wx Public.aY) wx < X)
     (hlt : wv s.mem (off B o) (slot wx aXc) wx < X) (hmask : word s.mem (off B o) (8 * sMaskX) = mask c)
     (hqp : word s.mem B (8 * sQinv) = qp) (hql : word s.mem B (8 * sPlen) = BitVec.ofNat 64 qib.length)
@@ -167,7 +168,7 @@ theorem h2_chain (M : Mont) {s : State} {B : Addr} {Z w : Nat} {mx : BitVec 64} 
 /-- `hPart_ok`'s hypotheses give `H0`. -/
 theorem h_chain (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx : BitVec 64} {X o wx : Nat}
     {qp : Addr} {qib : List Byte} {c : Bool}
-    (hg : Good s B Z w minv) (hw28 : w < 2 ^ 28) (hlo : slot w 8 ≤ o) (hhi : o + slot wx 8 + tabBytes wx ≤ Z)
+    (hg : Good s B Z w minv) (hw28 : w < 2 ^ 28) (hlo : slot w 8 ≤ o) (hhi : o + slot wx 8 + wsTab wx ≤ Z)
     (hwx2 : 2 ≤ wx) (hwx : wx ≤ w) (hslv : word s.mem B (8 * sWsP) = off B o) (hws : WsAt s.mem B o wx mx)
     (hX : XVals s B o wx mx X) (hX1 : 1 < X)
     (hyl : wv s.mem (off B o) (slot wx Public.aY) wx < X)
@@ -186,7 +187,7 @@ theorem h_chain (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx : BitVec 
     (by brun [hg.x0, hdr_enc (show sWsP < 32 by decide), l1, hslv]) (by decide) (by decide) (by decide +kernel))
     fun s₁ ⟨⟨hdi₁, hm₁⟩, k₁⟩ => ?_⟩
   have hc₁ : SubCtx s₁ B Z o w wx mx :=
-    SubCtx.mk' (hs.congr k₁.wr) (by rw [hm₁]; exact hg.hdr) (by rw [hm₁]; exact hws) hdi₁ hlo hhi
+    SubCtx.mk' (hs.congr k₁.wr) (by rw [hm₁]; exact hg.hdr) (by rw [hm₁]; exact hws) hdi₁ hlo (by have := tabBytes_le_wsTab wx; omega)
   have hX₁ : XVals s₁ B o wx mx X := ⟨by rw [hm₁]; exact hX.n, by rw [hm₁]; exact hX.inv, by rw [hm₁]; exact hX.one⟩
   -- `m_q R_p` into `p`'s `X_c`.
   refine ⟨⟨mx, X, hc₁, hX₁, hwx2, hwx, show w < 2 ^ 30 by omega, hX1, by decide⟩,
@@ -216,7 +217,7 @@ theorem h_chain (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx : BitVec 
     have f := fx₂
     rw [hm₁] at f
     exact InScr.of_frm f fun r hr => by rw [List.mem_singleton.mp hr]; simp only [xRange]; omega
-  exact h2_chain M hc₂ hX₂ hX1 hw28 hwx2 hwx (by rw [hY₂]; exact hyl) hlt₂ hM₂
+  exact h2_chain M hc₂ (by omega) hX₂ hX1 hw28 hwx2 hwx (by rw [hY₂]; exact hyl) hlt₂ hM₂
     (by rw [hb₂ _ (by unfold sQinv sFn; omega)]; exact hqp) (by rw [hb₂ _ (by unfold sPlen sFn; omega)]; exact hql)
     (hqs.congrK i02 (k₁.trans k₂)) hq1 hq2 hqw hqi
 

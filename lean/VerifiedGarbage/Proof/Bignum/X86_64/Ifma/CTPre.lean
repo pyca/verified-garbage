@@ -45,7 +45,7 @@ theorem redc_ct_Xm (M : Mont) : RedcCT M Public.aXm := redc_ct_of M (by taint_de
 `-n⁻¹`, `n`, and the prime's workspace). -/
 def PrepPre (sl : Nat) (p : UPub) (s : State) : Prop :=
   ∃ (mx : BitVec 64) (X : Nat), Good s p.B p.Z p.w p.minv ∧ p.w < 2 ^ 28 ∧ slot p.w 8 ≤ p.o ∧
-    p.o + slot p.wx 8 + tabBytes p.wx ≤ p.Z ∧ 2 ≤ p.wx ∧ p.wx ≤ p.w ∧ sl < 32 ∧
+    p.o + slot p.wx 8 + wsTab p.wx ≤ p.Z ∧ 2 ≤ p.wx ∧ p.wx ≤ p.w ∧ sl < 32 ∧
     word s.mem p.B (8 * sl) = off p.B p.o ∧ WsAt s.mem p.B p.o p.wx mx ∧ XVals s p.B p.o p.wx mx X ∧ 1 < X
 
 /-- The prime's workspace. -/
@@ -91,7 +91,7 @@ theorem prep_eq (mul : Nat → Nat → Nat → Prog isa) (sl : Nat) :
 /-- Entering the prime's workspace, from `n`'s. -/
 theorem enter_rpre {s : State} {p : UPub} {sl j : Nat} (hj : j < 8) {mx : BitVec 64} {X : Nat}
     (hg : Good s p.B p.Z p.w p.minv)
-    (hw28 : p.w < 2 ^ 28) (hlo : slot p.w 8 ≤ p.o) (hhi : p.o + slot p.wx 8 + tabBytes p.wx ≤ p.Z)
+    (hw28 : p.w < 2 ^ 28) (hlo : slot p.w 8 ≤ p.o) (hhi : p.o + slot p.wx 8 + wsTab p.wx ≤ p.Z)
     (hwx2 : 2 ≤ p.wx) (hwx : p.wx ≤ p.w) (hsl : sl < 32) (hslv : word s.mem p.B (8 * sl) = off p.B p.o)
     (hws : WsAt s.mem p.B p.o p.wx mx) (hX : XVals s p.B p.o p.wx mx X) (hX1 : 1 < X) :
     WP isa (.block [.mov .rdi (.mem (hdr sl))]) s fun t =>
@@ -104,7 +104,7 @@ theorem enter_rpre {s : State} {p : UPub} {sl j : Nat} (hj : j < 8) {mx : BitVec
     (by xrun [State.ea, hdr, hg.rdi, hdrOff, hs.ld (d := 8 * sl) (by omega), hslv]) rfl)
     fun t ⟨⟨hdi, hm⟩, k⟩ => ?_
   have hc : SubCtx t p.B p.Z p.o p.w p.wx mx :=
-    SubCtx.mk' (hs.congr k.2.2) (by rw [hm]; exact hg.hdr) (by rw [hm]; exact hws) hdi hlo hhi
+    SubCtx.mk' (hs.congr k.2.2) (by rw [hm]; exact hg.hdr) (by rw [hm]; exact hws) hdi hlo (by have := tabBytes_le_wsTab p.wx; omega)
   have hX' : XVals t p.B p.o p.wx mx X := by
     rw [show t = { t with mem := s.mem } by rw [← hm]]; exact ⟨hX.n, hX.inv, hX.one⟩
   exact ⟨⟨mx, X, hc, hX', hwx2, hwx, show p.w < 2 ^ 30 by omega, hX1, hj⟩, hc, hX', hm, k⟩
@@ -198,7 +198,7 @@ abbrev PrePub.up (p : PrePub) : UPub := ⟨p.B, p.Z, p.w, p.minv, p.N, p.op, p.w
 /-- `pre_ok`'s hypotheses. -/
 def PrePre (p : PrePub) (s : State) : Prop :=
   ∃ (mp mq : BitVec 64) (P Q C : Nat), Good s p.B p.Z p.w p.minv ∧ p.w < 2 ^ 28 ∧ slot p.w 8 ≤ p.op ∧
-    p.op + slot p.wp 8 + tabBytes p.wp ≤ p.oq ∧ p.oq + slot p.wp 8 + tabBytes p.wp ≤ p.Z ∧ 2 ≤ p.wp ∧
+    p.op + slot p.wp 8 + wsTab p.wp ≤ p.oq ∧ p.oq + slot p.wp 8 + wsTab p.wp ≤ p.Z ∧ 2 ≤ p.wp ∧
     p.w = 2 * p.wp ∧ word s.mem p.B (8 * sWsP) = off p.B p.op ∧ word s.mem p.B (8 * sWsQ) = off p.B p.oq ∧
     WsAt s.mem p.B p.op p.wp mp ∧ WsAt s.mem p.B p.oq p.wp mq ∧ NVals s p.B p.w p.minv p.N ∧
     wv s.mem p.B (slot p.w Public.aXm) p.w % p.N = C * 2 ^ (64 * p.w) % p.N ∧

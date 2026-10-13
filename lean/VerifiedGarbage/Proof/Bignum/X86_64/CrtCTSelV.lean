@@ -24,6 +24,11 @@ namespace VG.Proof.Bignum.X86_64
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Rsa.X86_64 VG.Impl.Rsa.X86_64.Crt
 open VG.Proof.MlKem.X86_64
 
+/-- After `j` passes of the selection with AVX2, in the workspace of `p`. -/
+def GathPassIV (p : XPub) (j : Nat) (s : State) : Prop :=
+  ∃ (t₀ : State) (minv : BitVec 64) (X Xc v : Nat), GathPassInv t₀ (off p.B p.o) p.wx minv X Xc v 32 j s ∧
+    2 ≤ p.wx ∧ p.wx < 2 ^ 30 ∧ v < 32
+
 /-- After the head of pass `q.2` with AVX2: its bases, counts and the
 workspace, whatever the window. -/
 def GathBV (q : XPub × Nat) (s : State) : Prop :=
@@ -55,13 +60,13 @@ theorem pins_GathBV :
 /-- A pass of the selection with AVX2 leaks the same in runs with the same
 workspace, whatever the window. -/
 theorem passBodyV_ct :
-    RelCT isa (Two fun (q : XPub × Nat) s => q.2 < 2 ∧ GathPassI q.1 q.2 s) (seqs Crt.gatherPassV)
+    RelCT isa (Two fun (q : XPub × Nat) s => q.2 < 4 ∧ GathPassIV q.1 q.2 s) (seqs Crt.gatherPassV)
       fun _ _ => True := by
   rw [show seqs Crt.gatherPassV = .seq (seqs Crt.gatherHeadV) (.seq (.block [.alu .test .r12 (.reg .r12)])
       (.seq (.ite .ne (.loop (.block (Crt.gatherBodyV .l256 4 ++ ([.alu .cmp .r14 (.reg .r12)] : List Instr))) .ne)
           (.block []))
         (.seq (.block [.alu .cmp .r14 (.reg .r13)]) (.seq (.ite .ne (.block (Crt.gatherBodyV .l128 2)) (.block []))
-          (.block Crt.gatherEnd))))) from rfl]
+          (.block Crt.gatherEndV))))) from rfl]
   refine RelCT.seq (two_piece (Ψ := GathBV) [.rdi] (pins_rdi (fun q => off q.1.B q.1.o)
     fun _ _ ⟨_, _, _, _, _, _, hI, _⟩ => hI.ctx.good.rdi) (by taint_decide)
     fun q s ⟨hp, t₀, minv, X, Xc, v, hI, hw, hw', hv⟩ =>
@@ -74,10 +79,10 @@ theorem pins_nil {α : Type} (Φ : α → State → Prop) : Pins Φ [] :=
 
 /-- The selection with AVX2 leaks the same in runs with the same workspace. -/
 theorem tabSelV_ct : CrtSel.avx.CT := by
-  show RelCT isa (Two SelP) (seqs Crt.tabSelectV) fun _ _ => True
+  show RelCT isa (Two (SelP 32)) (seqs Crt.tabSelectV) fun _ _ => True
   rw [tabSelectV_eq]
   simp only [seqs]
-  refine RelCT.seq (two_piece (Ψ := fun p s => 0 < 2 ∧ GathPassI p 0 s) [.rdi]
+  refine RelCT.seq (two_piece (Ψ := fun p s => 0 < 4 ∧ GathPassIV p 0 s) [.rdi]
     (pins_rdi (fun p : XPub => off p.B p.o) fun _ _ ⟨_, _, _, _, hc, _⟩ => hc.good.rdi) (by taint_decide)
     fun p s ⟨minv, X, Xc, v, hc, hw, hw', hv, ht, hN⟩ => ?_) ?_
   · have hn := hc.scrT.nowrap
@@ -95,7 +100,7 @@ theorem tabSelV_ct : CrtSel.avx.CT := by
     · rw [hm₁, hdrStore_hdr _ _ _ (by decide) (by decide) (by decide), word_writeW_self]
     · rw [hm₁, word_writeW_self]; rfl
   refine RelCT.seq (R := Two fun (_ : XPub) (_ : State) => True)
-    ((two_loop (Φ := GathPassI) (Ψ := fun _ _ => True) (fun _ => 2) passBodyV_ct
+    ((two_loop (Φ := GathPassIV) (Ψ := fun _ _ => True) (fun _ => 4) passBodyV_ct
       fun p j s hj ⟨t₀, minv, X, Xc, v, hI, hw, hw', hv⟩ =>
         WP.mono (gPassV_ok hw hw' hv hj hI) fun s' ⟨hz, hI'⟩ =>
           ⟨eval_ne_count hj hz, fun _ => ⟨t₀, minv, X, Xc, v, hI', hw, hw', hv⟩, fun _ => trivial⟩).mono

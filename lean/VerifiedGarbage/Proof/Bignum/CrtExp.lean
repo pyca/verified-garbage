@@ -28,11 +28,15 @@ open VG VG.Impl.Bignum VG.Impl.Bignum.Public
 theorem slot_mono (w : Nat) {j k : Nat} (h : j ≤ k) : slot w j ≤ slot w k := by
   unfold slot; have := Nat.mul_le_mul_right (8 * (w + 2)) h; omega_arith
 
-/-- Entry `j` of the table is the workspace's array `8 + j`. -/
-theorem ent_le (wx : Nat) {j : Nat} (hj : j < 16) :
-    slot wx (8 + j) + 8 * (wx + 2) ≤ slot wx 8 + tabBytes wx := by
-  have := Nat.mul_le_mul_right (8 * (wx + 2)) (show 8 + j + 1 ≤ 24 by omega_arith)
-  unfold slot tabBytes
+theorem slot_add_mul (w j k : Nat) : slot w (j + k) = slot w j + k * (8 * (w + 2)) := by
+  unfold slot; rw [Nat.add_mul]; omega_arith
+
+/-- Entry `j` of a table of `n` entries is the workspace's array `8 + j`. -/
+theorem ent_le (wx : Nat) {n j : Nat} (hj : j < n) :
+    slot wx (8 + j) + 8 * (wx + 2) ≤ slot wx 8 + tabBytes wx n := by
+  have := Nat.mul_le_mul_right (8 * (wx + 2)) (show j + 1 ≤ n by omega_arith)
+  rw [slot_add_mul]
+  unfold tabBytes
   rw [Nat.add_mul, Nat.one_mul] at this
   omega_arith
 
@@ -44,12 +48,12 @@ def crtWinRanges (wx : Nat) : List (Nat × Nat) :=
     (8 * Crt.sJ, 8)]
 
 /-- What the exponentiation changes: also the exponent's pointer and length,
-the byte index, and the table. -/
-def crtExpRanges (wx : Nat) : List (Nat × Nat) :=
+the byte index, and the table (of `n` entries). -/
+def crtExpRanges (wx : Nat) (n : Nat := 16) : List (Nat × Nat) :=
   (8 * Crt.sExp, 8) :: (8 * Crt.sExpLen, 8) :: (8 * Crt.sI, 8) :: (8 * Crt.sTab, 8) ::
-    (slot wx 8, tabBytes wx) :: crtWinRanges wx
+    (slot wx 8, tabBytes wx n) :: crtWinRanges wx
 
-theorem crtWinRanges_sub (wx : Nat) : ∀ r ∈ crtWinRanges wx, r ∈ crtExpRanges wx := fun _ hr =>
+theorem crtWinRanges_sub (wx : Nat) {n : Nat} : ∀ r ∈ crtWinRanges wx, r ∈ crtExpRanges wx n := fun _ hr =>
   List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _
     (List.mem_cons_of_mem _ hr))))
 
@@ -67,8 +71,8 @@ theorem crtWinRanges_ok (wx : Nat) : ∀ r ∈ crtWinRanges wx, 8 * 17 ≤ r.1 �
   rintro _ (rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl) <;>
     simp only [Crt.sV, Crt.sBit, Crt.sNib, Crt.sEnt, Crt.sJ, sFn] at * <;> omega_arith
 
-theorem crtExpRanges_ok (wx : Nat) :
-    ∀ r ∈ crtExpRanges wx, 8 * 17 ≤ r.1 ∧ r.1 + r.2 ≤ slot wx 8 + tabBytes wx := by
+theorem crtExpRanges_ok (wx : Nat) {n : Nat} :
+    ∀ r ∈ crtExpRanges wx n, 8 * 17 ≤ r.1 ∧ r.1 + r.2 ≤ slot wx 8 + tabBytes wx n := by
   have h8 := hdr_lt_slot wx 8 (show 31 < 32 by decide)
   intro r hr
   simp only [crtExpRanges, List.mem_cons] at hr
@@ -82,7 +86,7 @@ theorem crtExpRanges_ok (wx : Nat) :
 
 /-- The arrays the exponentiation does not change. -/
 theorem crtExpRanges_arr (wx : Nat) {j : Nat} (hj : j < 8) (h1 : j ≠ aAcc) (h2 : j ≠ aTmp) (h3 : j ≠ aY)
-    (h4 : j ≠ Crt.aT) : ∀ r ∈ crtExpRanges wx, slot wx j + 8 * (wx + 2) ≤ r.1 ∨ r.1 + r.2 ≤ slot wx j := by
+    (h4 : j ≠ Crt.aT) (n : Nat := 16) : ∀ r ∈ crtExpRanges wx n, slot wx j + 8 * (wx + 2) ≤ r.1 ∨ r.1 + r.2 ≤ slot wx j := by
   have := hdr_lt_slot wx j (show 31 < 32 by decide)
   have s1 := slot_sep (w := wx) h1
   have s2 := slot_sep (w := wx) h2
@@ -111,17 +115,17 @@ theorem crtWinRanges_ent (wx : Nat) (j : Nat) :
     ∀ r ∈ crtWinRanges wx, slot wx (8 + j) + 8 * (wx + 2) ≤ r.1 ∨ r.1 + r.2 ≤ slot wx (8 + j) :=
   fun r hr => Or.inr (by have := (crtWinRanges_ok wx r hr).2; have := slot_mono wx (show 8 ≤ 8 + j by omega_arith); omega_arith)
 
-/-- The table: `T_j < X`, and `T_j ≡ x^j R` if `Q`; its first entry's
-address in `sTab`. -/
-structure CTab (m : Mem) (P : Addr) (wx X : Nat) (Q : Prop) (x : Nat) : Prop where
+/-- The table of `n` entries (16 unless given): `T_j < X`, and
+`T_j ≡ x^j R` if `Q`; its first entry's address in `sTab`. -/
+structure CTab (m : Mem) (P : Addr) (wx X : Nat) (Q : Prop) (x : Nat) (n : Nat := 16) : Prop where
   tab : word m P (8 * Crt.sTab) = off P (slot wx 8)
-  lt : ∀ j < 16, wv m P (slot wx (8 + j)) wx < X
-  val : Q → ∀ j < 16, wv m P (slot wx (8 + j)) wx % X = x ^ j * 2 ^ (64 * wx) % X
+  lt : ∀ j < n, wv m P (slot wx (8 + j)) wx < X
+  val : Q → ∀ j < n, wv m P (slot wx (8 + j)) wx % X = x ^ j * 2 ^ (64 * wx) % X
 
-theorem CTab.of_win {m m' : Mem} {P : Addr} {wx X : Nat} {Q : Prop} {x : Nat} (h : CTab m P wx X Q x)
-    (hf : Frm P (crtWinRanges wx) m m') (hn : P.toNat + (slot wx 8 + tabBytes wx) ≤ 2 ^ 64) :
-    CTab m' P wx X Q x := by
-  have he : ∀ j < 16, wv m' P (slot wx (8 + j)) wx = wv m P (slot wx (8 + j)) wx := fun j hj =>
+theorem CTab.of_win {m m' : Mem} {P : Addr} {wx X : Nat} {Q : Prop} {x n : Nat} (h : CTab m P wx X Q x n)
+    (hf : Frm P (crtWinRanges wx) m m') (hn : P.toNat + (slot wx 8 + tabBytes wx n) ≤ 2 ^ 64) :
+    CTab m' P wx X Q x n := by
+  have he : ∀ j < n, wv m' P (slot wx (8 + j)) wx = wv m P (slot wx (8 + j)) wx := fun j hj =>
     hf.wv_eq (fun r hr => by have := crtWinRanges_ent wx j r hr; omega_arith) (by have := ent_le wx hj; omega_arith)
   refine ⟨?_, fun j hj => (he j hj).symm ▸ h.lt j hj, fun hQ j hj => (he j hj).symm ▸ h.val hQ j hj⟩
   rw [hf.word_eq (crtWinRanges_hdr wx (by decide) (by decide) (by decide) (by decide) (by decide) (by decide))
@@ -167,18 +171,19 @@ theorem win_step {E v j : Nat} (hv : v < 256) (hj : j < 2) :
   rcases (show j = 0 ∨ j = 1 by omega_arith) with rfl | rfl <;> simp only [Nat.reducePow, Nat.reduceSub, Nat.reduceAdd] <;>
     omega_arith
 
-/-- What the table's build changes: the products' arrays, its slots and the table. -/
-def buildRanges (wx : Nat) : List (Nat × Nat) :=
+/-- What the build of a table of `n` entries changes: the products' arrays,
+its slots and the table. -/
+def buildRanges (wx : Nat) (n : Nat := 16) : List (Nat × Nat) :=
   [(slot wx aAcc, 8 * (wx + 2)), (slot wx aTmp, 8 * (wx + 2)), (slot wx Crt.aT, 8 * (wx + 2)),
-    (8 * Crt.sTab, 8), (8 * Crt.sEnt, 8), (8 * Crt.sBit, 8), (slot wx 8, tabBytes wx)]
+    (8 * Crt.sTab, 8), (8 * Crt.sEnt, 8), (8 * Crt.sBit, 8), (slot wx 8, tabBytes wx n)]
 
-theorem buildRanges_sub (wx : Nat) : ∀ r ∈ buildRanges wx, r ∈ crtExpRanges wx := by
+theorem buildRanges_sub (wx : Nat) {n : Nat} : ∀ r ∈ buildRanges wx n, r ∈ crtExpRanges wx n := by
   simp only [buildRanges, List.mem_cons, List.not_mem_nil, or_false]
   rintro _ (rfl | rfl | rfl | rfl | rfl | rfl | rfl) <;> simp [crtExpRanges, crtWinRanges]
 
 /-- `Y` is past what the build changes. -/
-theorem buildRanges_y (wx : Nat) :
-    ∀ r ∈ buildRanges wx, slot wx aY + 8 * wx ≤ r.1 ∨ r.1 + r.2 ≤ slot wx aY := by
+theorem buildRanges_y (wx : Nat) {n : Nat} :
+    ∀ r ∈ buildRanges wx n, slot wx aY + 8 * wx ≤ r.1 ∨ r.1 + r.2 ≤ slot wx aY := by
   have := hdr_lt_slot wx aY (show 31 < 32 by decide)
   have s1 := slot_sep (w := wx) (show aY ≠ aAcc by decide)
   have s2 := slot_sep (w := wx) (show aY ≠ aTmp by decide)

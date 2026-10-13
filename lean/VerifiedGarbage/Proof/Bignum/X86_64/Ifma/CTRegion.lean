@@ -82,7 +82,7 @@ abbrev RegPub.pw (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (q : RegPub) : Ws := ⟨of
 
 /-- The layout of region `p`. -/
 def RegPub.Ok (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (q : RegPub) (p sp sl : Nat) : Prop :=
-  q.o + slot l.W 8 + tabBytes l.W ≤ q.a ∧ q.a + 2 * l.D + 8 ≤ q.Z ∧ p < 2 ∧ sp < 32 ∧ sl < 32 ∧ 1 ≤ q.L ∧
+  q.o + slot l.W 8 + wsTab l.W ≤ q.a ∧ q.a + 2 * l.D + 8 ≤ q.Z ∧ p < 2 ∧ sp < 32 ∧ sl < 32 ∧ 1 ≤ q.L ∧
     q.L ≤ l.E
 
 /-- What the region's blocks read (`TCtx`). -/
