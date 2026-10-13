@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Verified
 public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Stitch.Verified
 public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Stitch.SealVerified
 public import VerifiedGarbage.Generic.AesGcm.X86_64.AesGcm
+import VerifiedGarbage.Proof.Framework.X86_64.HighRegs
 
 /-!
 # AES-GCM-SIV (RFC 8452) on x86-64

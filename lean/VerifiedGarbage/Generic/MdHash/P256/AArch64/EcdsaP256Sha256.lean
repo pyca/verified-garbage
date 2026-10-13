@@ -4,6 +4,11 @@ public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvInterface
 public import VerifiedGarbage.Proof.P256.Comb7
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Sha256
+import Mathlib.Data.Finset.Card
+import Mathlib.Data.Nat.Find
+import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Sha512.Word64
+import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowQuad
 
 /-!
 # Deterministic ECDSA (RFC 6979) over P-256 with HMAC-SHA-256 on AArch64

@@ -8,6 +8,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.AesGcm.X86_64.Undo
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Undo
 
 /-!
 # AES-GCM on x86-64: `vg_aes_gcm_open` is constant time

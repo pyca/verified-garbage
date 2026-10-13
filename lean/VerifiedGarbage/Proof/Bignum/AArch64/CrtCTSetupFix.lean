@@ -6,6 +6,12 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtFix
+import Mathlib.Data.Int.ModEq
+import VerifiedGarbage.Proof.Framework.AArch64.Call
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtFix
+meta import Mathlib.Data.Int.ModEq
+meta import VerifiedGarbage.Proof.Framework.AArch64.Call
 
 /-!
 # RSA with the CRT on AArch64: constant time of a prime's fixes

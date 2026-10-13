@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Variant
+import VerifiedGarbage.Proof.Sha512.Word64
 
 /-!
 # HMAC (RFC 2104) over a Merkle–Damgård hash function on AArch64

@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Backend
+public import VerifiedGarbage.Proof.Dsa.X86_64.VerifyingVerified
+import VerifiedGarbage.Proof.Framework.X86_64.Call
 
 /-! # DSA signing and verification for every x86-64 arithmetic backend -/
 

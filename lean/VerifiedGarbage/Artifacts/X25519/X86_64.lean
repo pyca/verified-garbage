@@ -14,6 +14,11 @@ public import VerifiedGarbage.Proof.X25519.X86_64.Base.Verified
 public import VerifiedGarbage.Proof.X25519.X86_64.Base.Ifma
 public import VerifiedGarbage.Proof.X25519.X86_64.Base.Adx
 public import VerifiedGarbage.Proof.X25519.X86_64.Divstep.Sound
+public import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.CombLit
+import Mathlib.Data.BitVec
+import VerifiedGarbage.Proof.Divstep.Bound
+import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Keep
+import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Sym
 
 /-! # X25519 (RFC 7748) on x86-64 -/
 

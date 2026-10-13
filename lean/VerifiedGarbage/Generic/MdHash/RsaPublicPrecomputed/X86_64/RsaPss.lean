@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Variant
 public import VerifiedGarbage.TCB.Emit
 public import VerifiedGarbage.Proof.RsaPss.X86_64.PrecomputedCT
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
 
 /-!
 # RSASSA-PSS verification using cached public-key values
