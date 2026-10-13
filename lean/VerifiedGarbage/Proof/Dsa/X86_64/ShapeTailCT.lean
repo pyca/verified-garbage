@@ -6,6 +6,10 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Dsa.X86_64.BoundaryCT
+import VerifiedGarbage.Proof.Framework.X86_64.Call
+meta import VerifiedGarbage.Proof.Dsa.X86_64.BoundaryCT
+meta import VerifiedGarbage.Proof.Framework.X86_64.Call
 
 /-! # Timing of the oddness and digest-prefix selection tail -/
 

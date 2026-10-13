@@ -8,6 +8,12 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Dsa.X86_64.ChildBases
+public import VerifiedGarbage.Proof.Dsa.X86_64.ChildCount
+import VerifiedGarbage.Proof.Framework.X86_64.Call
+meta import VerifiedGarbage.Proof.Dsa.X86_64.ChildBases
+meta import VerifiedGarbage.Proof.Dsa.X86_64.ChildCount
+meta import VerifiedGarbage.Proof.Framework.X86_64.Call
 
 /-! # Constant time of creating and initializing a modulus workspace -/
 

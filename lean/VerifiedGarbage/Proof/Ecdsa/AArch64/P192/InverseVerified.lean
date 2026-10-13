@@ -12,6 +12,12 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.Fixed
+import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
+meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Fixed
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+meta import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
 
 /-!
 # `vg_p192_inv_mod_p` and `_n` on AArch64: `Verified`
