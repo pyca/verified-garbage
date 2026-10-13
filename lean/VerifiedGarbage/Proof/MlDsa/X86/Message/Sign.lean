@@ -6,6 +6,18 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Impl.MlKem.X86.Cbd
+import VerifiedGarbage.Impl.MlKem.X86.Compress
+import VerifiedGarbage.Impl.MlKem.X86.Encode
+import VerifiedGarbage.Impl.MlKem.X86.Ntt
+import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.MlKem.Encode
+meta import VerifiedGarbage.Impl.MlKem.X86.Cbd
+meta import VerifiedGarbage.Impl.MlKem.X86.Compress
+meta import VerifiedGarbage.Impl.MlKem.X86.Encode
+meta import VerifiedGarbage.Impl.MlKem.X86.Ntt
+meta import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.MlKem.Encode
 
 /-!
 # ML-DSA on x86 (32-bit), `sign_message`: correct and constant time
