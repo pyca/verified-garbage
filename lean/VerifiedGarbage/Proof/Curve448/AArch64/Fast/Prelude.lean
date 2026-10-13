@@ -31,12 +31,12 @@ theorem A_mem : ∀ i < 8, Mul.A i ∈ [Reg.x0, .x2, .x4, .x5, .x6, .x7, .x8, .x
 
 def aRegs : List Reg := [.x0, .x2, .x4, .x5, .x6, .x7, .x8, .x9]
 
-theorem loadA_ok {s : State} {base : Addr} (hs : Scr s base) {a : Nat} (ha : a + 64 ≤ 8192)
-    (ha8 : a % 8 = 0) :
-    WP isa (.block (loadA a)) s fun t =>
+theorem loadA_ok {s : State} {base : Addr} (hs : Scr s base) {ra : Reg} {D a : Nat}
+    (hp : PtrOk s base ra D a) (hra : ra ∉ aRegs) :
+    WP isa (.block (loadA ra D)) s fun t =>
       (∀ i < 8, t.gpr (Mul.A i) = word s.mem base (a + 8 * i)) ∧ t.mem = s.mem ∧
       Keeps aRegs s t := by
-  have e : loadA a = (List.range 8).flatMap fun i => [ld (Mul.A i) (a + 8 * i)] := by
+  have e : loadA ra D = (List.range 8).flatMap fun i => [.ldr .x (Mul.A i) ra (D + 8 * i)] := by
     simp only [loadA]
     rfl
   rw [e]
@@ -45,7 +45,7 @@ theorem loadA_ok {s : State} {base : Addr} (hs : Scr s base) {a : Nat} (ha : a +
   refine wp_range_flatMap (M := isa) (N := 8) inv (fun n t hn ⟨tv, tm, tk⟩ => ?_) 8 (by decide) s
     ⟨fun _ h => absurd h (Nat.not_lt_zero _), rfl, Keeps.refl _ _⟩
   have ts : Scr t base := hs.of_keeps tk (by decide)
-  refine WP.mono (ld_ok ts (Mul.A n) (d := a + 8 * n) (by omega) (by omega)) fun u ⟨uv, um, uk⟩ => ?_
+  refine WP.mono (ldPtr_ok ts (Mul.A n) (hp.of_keeps tk hra) hn) fun u ⟨uv, um, uk⟩ => ?_
   refine ⟨fun i hi => ?_, um.trans tm, tk.trans (uk.mono fun r hr => ?_)⟩
   · by_cases h : i = n
     · subst h; rw [uv, tm]
@@ -95,10 +95,10 @@ theorem stw_ok {t : State} {base : Addr} (ht : Scr t base) (r : Reg) {d : Nat} (
 theorem A_ne : ∀ i < 8, Mul.A i ∉ [Reg.x10, .x11, .x13] := by decide
 
 /-- One step of the operand sums of a product. -/
-theorem kakbStep_ok {s : State} {base : Addr} (hs : Scr s base) {b i : Nat} (hb : b + 64 ≤ ACC)
-    (hb8 : b % 8 = 0) (hi : i < 4) :
+theorem kakbStep_ok {s : State} {base : Addr} (hs : Scr s base) {rb : Reg} {D b i : Nat}
+    (hp : PtrOk s base rb D b) (hb : b + 64 ≤ ACC) (hrb : rb ∉ [Reg.x10, .x11, .x13]) (hi : i < 4) :
     WP isa (.block [.add .x Mul.R.p0 (Mul.A i) (Mul.A (i + 4)), st Mul.R.p0 (KA + 8 * i),
-      ld Mul.R.t (b + 8 * i), ld Mul.R.p1 (b + 32 + 8 * i),
+      .ldr .x Mul.R.t rb (D + 8 * i), .ldr .x Mul.R.p1 rb (D + 32 + 8 * i),
       .add .x Mul.R.t Mul.R.t Mul.R.p1, st Mul.R.t (KB + 8 * i)]) s fun t =>
       word t.mem base (KA + 8 * i) = s.gpr (Mul.A i) + s.gpr (Mul.A (i + 4)) ∧
       word t.mem base (KB + 8 * i) = word s.mem base (b + 8 * i) + word s.mem base (b + 32 + 8 * i) ∧
@@ -108,11 +108,14 @@ theorem kakbStep_ok {s : State} {base : Addr} (hs : Scr s base) {b i : Nat} (hb 
   have hA : ACC = 3584 := rfl
   have hKA : KA = ACC := rfl
   have hKB : KB = ACC + 32 := rfl
+  have hal := hp.al
+  have hlt := hp.lt
+  have hrb' : ∀ q ∈ [Reg.x10, .x11, .x13], rb ≠ q := fun q hq e => hrb (e ▸ hq)
   rw [show [Instr.add .x Mul.R.p0 (Mul.A i) (Mul.A (i + 4)), st Mul.R.p0 (KA + 8 * i),
-      ld Mul.R.t (b + 8 * i), ld Mul.R.p1 (b + 32 + 8 * i),
+      .ldr .x Mul.R.t rb (D + 8 * i), .ldr .x Mul.R.p1 rb (D + 32 + 8 * i),
       .add .x Mul.R.t Mul.R.t Mul.R.p1, st Mul.R.t (KB + 8 * i)] =
       [Instr.add .x Mul.R.p0 (Mul.A i) (Mul.A (i + 4))] ++ [st Mul.R.p0 (KA + 8 * i)] ++
-      [ld Mul.R.t (b + 8 * i)] ++ [ld Mul.R.p1 (b + 32 + 8 * i)] ++
+      [.ldr .x Mul.R.t rb (D + 8 * i)] ++ [.ldr .x Mul.R.p1 rb (D + 32 + 8 * i)] ++
       [Instr.add .x Mul.R.t Mul.R.t Mul.R.p1] ++ [st Mul.R.t (KB + 8 * i)] from rfl]
   simp only [List.append_assoc]
   rw [WP.block_append_iff]
@@ -121,11 +124,19 @@ theorem kakbStep_ok {s : State} {base : Addr} (hs : Scr s base) {b i : Nat} (hb 
   rw [WP.block_append_iff]
   refine WP.mono (stw_ok s1 _ (d := KA + 8 * i) (by omega) (by omega)) fun t2 ⟨w2, o2, g2, r2, wr2⟩ => ?_
   have s2 : Scr t2 base := ⟨by rw [g2]; exact s1.x3, by rw [g2]; exact s1.mask, wr2 ▸ s1.wr, s1.nowrap⟩
+  have p2 : PtrOk t2 base rb D b := (hp.of_keeps k1 (by
+    simp only [List.mem_cons, List.not_mem_nil, or_false]
+    exact hrb' _ (by simp [Mul.R]))).keep (by rw [g2])
   rw [WP.block_append_iff]
-  refine WP.mono (ld_ok s2 Mul.R.t (d := b + 8 * i) (by omega) (by omega)) fun t3 ⟨v3, m3, k3⟩ => ?_
+  refine WP.mono (ldPtr_ok s2 Mul.R.t p2 (k := i) (by omega)) fun t3 ⟨v3, m3, k3⟩ => ?_
   have s3 : Scr t3 base := s2.of_keeps k3 (by decide)
+  have p3 : PtrOk t3 base rb D b := p2.of_keeps k3 (by
+    simp only [List.mem_cons, List.not_mem_nil, or_false]
+    exact hrb' _ (by simp [Mul.R]))
+  have e3 := p3.ptr (32 + 8 * i)
+  rw [← Nat.add_assoc, ← Nat.add_assoc] at e3
   rw [WP.block_append_iff]
-  refine WP.mono (ld_ok s3 Mul.R.p1 (d := b + 32 + 8 * i) (by omega) (by omega)) fun t4 ⟨v4, m4, k4⟩ => ?_
+  refine WP.mono (ldAt_ok s3 Mul.R.p1 rb e3 (by omega) (by omega) (by omega)) fun t4 ⟨v4, m4, k4⟩ => ?_
   have s4 : Scr t4 base := s3.of_keeps k4 (by decide)
   rw [WP.block_append_iff]
   refine WP.mono (add_ok t4 _ _ _) fun t5 ⟨v5, m5, k5⟩ => ?_

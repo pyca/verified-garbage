@@ -144,9 +144,6 @@ theorem outside2_of {ok : Nat → Bool} (hok : ∀ d, ok d = true → 64 ≤ d �
 theorem dblOk_slots : ∀ d, dblOk d = true → 64 ≤ d ∧ d + 8 ≤ 2880 ∨ 3584 ≤ d ∧ d + 8 ≤ 4736 := by
   intro d hd; simp only [dblOk, Bool.or_eq_true, Bool.and_eq_true, decide_eq_true_eq] at hd; omega
 
-theorem powOk_slots : ∀ d, powOk d = true → 64 ≤ d ∧ d + 8 ≤ 2880 ∨ 3584 ≤ d ∧ d + 8 ≤ 4736 := by
-  intro d hd; simp only [powOk, Bool.or_eq_true, Bool.and_eq_true, decide_eq_true_eq] at hd; omega
-
 /-- **A call of `vg_ed448_r56_point_double`**, as the inlined doubling. -/
 theorem doubleCall_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BEnv s.mem base)
     (hz : Bnd Mb s.mem base (slot 5)) :
@@ -172,15 +169,20 @@ theorem addCall_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BEnv s.mem 
 /-- **A call of `vg_gf448_r56_pow_p34`**, as the inlined power. -/
 theorem powCall_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BEnv s.mem base) :
     WP isa Point56.powCall s fun t => CKeep base s t ∧ PowMem base s.mem t.mem :=
-  fnCall_ok (c := true) (P := fun _ => True) (fun r hr => by
-      by_cases h : r = .x19
-      · exact .inr (by rw [h]; decide)
-      · exact .inl fun h' => hr (List.mem_cons_of_mem _ ((List.mem_cons.mp h').resolve_left h)))
+  fnCall_ok (c := true) (rs := Point56.pclob) (P := fun _ => True) (fun r hr => by
+      by_cases h19 : r = .x19
+      · exact .inr (by rw [h19]; decide)
+      refine .inl fun h' => hr ?_
+      simp only [Point56.pclob, List.mem_cons] at h' ⊢
+      rcases h' with h' | h' | h'
+      · exact .inl h'
+      · exact absurd h' h19
+      · exact .inr h')
     (by decide)
     (fun t ht h0 _ => by
       refine WP.mono (powFn_ok ht) fun u hu => ?_
       rw [h0] at hu; exact hu)
-    (fun m m' hq => outside2_of powOk_slots hq.2.2) powFn_keepsV
+    (fun m m' hq p h1 h2 => hq.2.2 p (by omega) h2) powFn_keepsV
     (by decide +kernel) hs hb trivial
 
 end VG.Proof.Ed448.AArch64.Point56

@@ -103,27 +103,40 @@ def finVal (l : Nat → Nat) (cl ch : Nat) (i : Nat) : Nat :=
   | 5 => l 5 + (l 4 + cl + ch) / radix
   | i => l i
 
-theorem finish_split (o : Nat) : finish o =
-    [ld .x4 o, ld .x5 (o + 8), ld .x6 (o + 32), ld .x7 (o + 40)] ++ finA ++
-    [st .x4 o, st .x5 (o + 8), st .x6 (o + 32), st .x7 (o + 40)] := rfl
+theorem finish_split (ro : Reg) (o : Nat) : finish ro o =
+    ([.ldr .x .x4 ro o, .ldr .x .x5 ro (o + 8), .ldr .x .x6 ro (o + 32), .ldr .x .x7 ro (o + 40)] :
+      List Instr) ++
+    finA ++ ([.str .x .x4 ro o, .str .x .x5 ro (o + 8), .str .x .x6 ro (o + 32),
+      .str .x .x7 ro (o + 40)] : List Instr) := rfl
 
-theorem finish_ok {s : State} {base : Addr} (hs : Scr s base) {o : Nat} (ho : o + 64 ≤ 8192)
-    (ho8 : o % 8 = 0) (hm : s.gpr MASK = BitVec.ofNat 64 (2 ^ 56 - 1)) {l : Nat → Nat}
+theorem finish_ok {s : State} {base : Addr} (hs : Scr s base) {ro : Reg} {D o : Nat}
+    (hp : PtrOk s base ro D o) (hro : ro ∉ [.x4, .x5, .x6, .x7, .x8])
+    (hm : s.gpr MASK = BitVec.ofNat 64 (2 ^ 56 - 1)) {l : Nat → Nat}
     (hl : ∀ i < 8, (word s.mem base (o + 8 * i)).toNat = l i) (hb : ∀ i < 8, l i < radix)
     {cl ch : Nat} (hcl : (s.gpr CL).toNat = cl) (hch : (s.gpr CH).toNat = ch)
     (c0 : l 0 + ch < 2 ^ 64) (c4 : l 4 + cl + ch < 2 ^ 64) :
-    WP isa (.block (finish o)) s fun t =>
+    WP isa (.block (finish ro D)) s fun t =>
       (∀ i < 8, limbs t.mem base o i = finVal l cl ch i) ∧ Outside base o 64 s.mem t.mem ∧
       Keeps [.x4, .x5, .x6, .x7, .x8] s t := by
+  have ho : o + 64 ≤ 8192 := hp.fit
+  have hal := hp.al
+  have hlt := hp.lt
+  simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hro
+  obtain ⟨n4, n5, n6, n7, n8⟩ := hro
   have rd : ∀ d, d + 8 ≤ 8192 → InRegions (s.rd ++ s.wr) (off base d) 8 := fun d hd => hs.read hd
-  have ae : ∀ d, d % 8 = 0 → d + 8 ≤ 8192 → d % 8 = 0 ∧ d < 32768 := fun d h1 h2 => ⟨h1, by omega⟩
+  have ae : ∀ d, d % 8 = 0 → d < 32768 → d % 8 = 0 ∧ d < 32768 := fun d h1 h2 => ⟨h1, h2⟩
+  have p0 : s.gpr ro + BitVec.ofNat 64 D = off base o := by
+    have := hp.ptr 0; simp only [Nat.add_zero] at this; exact this
+  have p8 := hp.ptr 8
+  have p32 := hp.ptr 32
+  have p40 := hp.ptr 40
   rw [finish_split, List.append_assoc, WP.block_append_iff]
   refine WP.mono (WP.of_runBlock ⟨_, by
-    simp only [ld, runBlock_cons, runStep_some, runBlock_nil, exec, addr, Size.bytes, State.load,
+    simp only [runBlock_cons, runStep_some, runBlock_nil, exec, addr, Size.bytes, State.load,
       RegUpd.gpr_write, RegUpd.mem_write, RegUpd.rd_write, RegUpd.wr_write,
-      reduceCtorEq, ite_false, hs.x3, ae o ho8 (by omega),
-      ae (o + 8) (by omega) (by omega), ae (o + 32) (by omega) (by omega),
-      ae (o + 40) (by omega) (by omega), and_self, ite_true,
+      ite_false, n4, n5, n6, p0, p8, p32, p40,
+      ae D hal (by omega), ae (D + 8) (by omega) (by omega), ae (D + 32) (by omega) (by omega),
+      ae (D + 40) (by omega) (by omega), and_self, ite_true,
       rd o (by omega), rd (o + 8) (by omega), rd (o + 32) (by omega),
       rd (o + 40) (by omega), Option.map_some, Option.bind_some]; rfl, rfl⟩) fun t ht => ?_
   subst ht
@@ -138,6 +151,9 @@ theorem finish_ok {s : State} {base : Addr} (hs : Scr s base) {o : Nat} (ho : o 
     (by simp only [RegUpd.gpr_write, CL, reduceCtorEq, ite_false]; exact hcl)
     (by simp only [RegUpd.gpr_write, CH, reduceCtorEq, ite_false]; exact hch)
     c0 c4 (hb 1 (by decide)) (hb 5 (by decide))) fun u ⟨u4, u5, u6, u7, um, uk⟩ => ?_
+  have uro : u.gpr ro = s.gpr ro := by
+    rw [uk.1 ro (by simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]; exact ⟨n4, n5, n6, n7, n8⟩)]
+    simp only [RegUpd.gpr_write, n4, n5, n6, n7, ite_false]
   have u3 : u.gpr .x3 = base := by
     rw [uk.1 .x3 (by decide)]
     simp only [RegUpd.gpr_write, reduceCtorEq, ite_false]
@@ -149,28 +165,36 @@ theorem finish_ok {s : State} {base : Addr} (hs : Scr s base) {o : Nat} (ho : o 
   have us : Scr u base := ⟨u3, u12, uk.2.2 ▸ hs.wr, hs.nowrap⟩
   have mu : u.mem = s.mem := um
   -- the four stores
-  have sw : ∀ (t : State) (r : Reg) (d : Nat), Scr t base → d % 8 = 0 → d + 8 ≤ 8192 →
-      WP isa (.block [st r d]) t fun t' =>
+  have sw : ∀ (t : State) (r : Reg) (E d : Nat), Scr t base →
+      t.gpr ro + BitVec.ofNat 64 E = off base d → E % 8 = 0 → E < 32768 → d + 8 ≤ 8192 →
+      WP isa (.block [.str .x r ro E]) t fun t' =>
         (∀ d', d' + 8 ≤ 8192 → (d' = d ∨ d' + 8 ≤ d ∨ d + 8 ≤ d') →
           word t'.mem base d' = if d' = d then t.gpr r else word t.mem base d') ∧
         Outside base d 8 t.mem t'.mem ∧ t'.gpr = t.gpr ∧ t'.rd = t.rd ∧ t'.wr = t.wr := by
-    intro t r d ht h8 hd
-    refine WP.mono (st_ok ht r h8 hd) fun t' ⟨hm, hk⟩ => ⟨fun d' hd' hs => ?_, ?_, ?_, hk.2.1, hk.2.2⟩
+    intro t r E d ht hE h8 hlt hd
+    refine WP.mono (stAt_ok ht r ro hE h8 hlt hd) fun t' ⟨hm, hk⟩ =>
+      ⟨fun d' hd' hs => ?_, ?_, ?_, hk.2.1, hk.2.2⟩
     · rw [hm]; exact word_writeW _ _ hd hd' hs _
     · rw [hm]; exact writeW_outside _ _ _ hd
     · funext q; exact hk.1 q (by simp)
-  rw [show ([st .x4 o, st .x5 (o + 8), st .x6 (o + 32), st .x7 (o + 40)] : List Instr) =
-      [st .x4 o] ++ [st .x5 (o + 8)] ++ [st .x6 (o + 32)] ++ [st .x7 (o + 40)] from rfl]
+  rw [show ([.str .x .x4 ro D, .str .x .x5 ro (D + 8), .str .x .x6 ro (D + 32),
+      .str .x .x7 ro (D + 40)] : List Instr) =
+      [.str .x .x4 ro D] ++ [.str .x .x5 ro (D + 8)] ++ [.str .x .x6 ro (D + 32)] ++
+        [.str .x .x7 ro (D + 40)] from rfl]
   simp only [List.append_assoc]
   have ss : ∀ t : State, t.gpr .x3 = base → t.gpr .x12 = 0x0fffffff → t.wr = u.wr → Scr t base :=
     fun t h1 h2 h3 => ⟨h1, h2, h3 ▸ us.wr, hs.nowrap⟩
   rw [WP.block_append_iff]
-  refine WP.mono (sw u .x4 (o) us (by omega) (by omega)) fun t1 ⟨t1w, t1o, t1g, t1r, t1wr⟩ => ?_
+  refine WP.mono (sw u .x4 D o us (by rw [uro]; exact p0) hal (by omega) (by omega))
+    fun t1 ⟨t1w, t1o, t1g, t1r, t1wr⟩ => ?_
   rw [WP.block_append_iff]
-  refine WP.mono (sw t1 .x5 (o + 8) (ss t1 (by simp only [*]) (by simp only [*]) (by simp only [*])) (by omega) (by omega)) fun t2 ⟨t2w, t2o, t2g, t2r, t2wr⟩ => ?_
+  refine WP.mono (sw t1 .x5 (D + 8) (o + 8) (ss t1 (by simp only [*]) (by simp only [*]) (by simp only [*]))
+    (by rw [t1g, uro]; exact p8) (by omega) (by omega) (by omega)) fun t2 ⟨t2w, t2o, t2g, t2r, t2wr⟩ => ?_
   rw [WP.block_append_iff]
-  refine WP.mono (sw t2 .x6 (o + 32) (ss t2 (by simp only [*]) (by simp only [*]) (by simp only [*])) (by omega) (by omega)) fun t3 ⟨t3w, t3o, t3g, t3r, t3wr⟩ => ?_
-  refine WP.mono (sw t3 .x7 (o + 40) (ss t3 (by simp only [*]) (by simp only [*]) (by simp only [*])) (by omega) (by omega)) fun t4 ⟨t4w, t4o, t4g, t4r, t4wr⟩ => ?_
+  refine WP.mono (sw t2 .x6 (D + 32) (o + 32) (ss t2 (by simp only [*]) (by simp only [*]) (by simp only [*]))
+    (by rw [t2g, t1g, uro]; exact p32) (by omega) (by omega) (by omega)) fun t3 ⟨t3w, t3o, t3g, t3r, t3wr⟩ => ?_
+  refine WP.mono (sw t3 .x7 (D + 40) (o + 40) (ss t3 (by simp only [*]) (by simp only [*]) (by simp only [*]))
+    (by rw [t3g, t2g, t1g, uro]; exact p40) (by omega) (by omega) (by omega)) fun t4 ⟨t4w, t4o, t4g, t4r, t4wr⟩ => ?_
   have keep : ∀ d, d + 8 ≤ 8192 → (d + 8 ≤ o ∨ o + 8 ≤ d) → (d + 8 ≤ o + 8 ∨ o + 16 ≤ d) →
       (d + 8 ≤ o + 32 ∨ o + 40 ≤ d) → (d + 8 ≤ o + 40 ∨ o + 48 ≤ d) →
       word t4.mem base d = word s.mem base d := by

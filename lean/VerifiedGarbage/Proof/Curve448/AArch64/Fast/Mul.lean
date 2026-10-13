@@ -23,26 +23,27 @@ open VG VG.AArch64
 open VG.Impl.Curve448.AArch64.Fast
 open VG.Impl.X448.AArch64 (ld st ACC)
 open VG.Proof.X448.Wide (radix pair rows reduced)
-open VG.Proof.X448.AArch64 (Keeps Scr word off Outside writeW_outside limbs FieldMem ofs)
+open VG.Proof.X448.AArch64 (Keeps Scr word off Outside Outside2 writeW_outside limbs FieldMem ofs)
 
 /-- The registers every field operation may write. -/
 def clob : List Reg :=
   [.x0, .x2, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x13, .x14, .x15, .x16, .x17,
     .x21, .x22, .x23, .x24, .x25, .x26, .x27, .x28]
 
-def kakb (b : Nat) : List Instr :=
+def kakb (rb : Reg) (b : Nat) : List Instr :=
   (List.range 4).flatMap (fun i =>
     [.add .x Mul.R.p0 (Mul.A i) (Mul.A (i + 4)), st Mul.R.p0 (KA + 8 * i),
-      ld Mul.R.t (b + 8 * i), ld Mul.R.p1 (b + 32 + 8 * i),
+      .ldr .x Mul.R.t rb (b + 8 * i), .ldr .x Mul.R.p1 rb (b + 32 + 8 * i),
       .add .x Mul.R.t Mul.R.t Mul.R.p1, st Mul.R.t (KB + 8 * i)])
 
-theorem mul_split (o a b : Nat) :
-    mul o a b = loadA a ++ consts ++ kakb b ++ columns Mul.R b Mul.L Mul.H Mul.column o ++ finish o :=
+theorem mulAt_split (ra : Reg) (a : Nat) (rb : Reg) (b : Nat) (ro : Reg) (o : Nat) :
+    mulAt ra a rb b ro o = loadA ra a ++ consts ++ kakb rb b ++
+      columns Mul.R rb b Mul.L Mul.H Mul.column ro o ++ finish ro o :=
   rfl
 
-theorem kakb_ok {s : State} {base : Addr} (hs : Scr s base) {b : Nat} (hb : b + 64 ≤ ACC)
-    (hb8 : b % 8 = 0) :
-    WP isa (.block (kakb b)) s fun t =>
+theorem kakb_ok {s : State} {base : Addr} (hs : Scr s base) {rb : Reg} {D b : Nat}
+    (hp : PtrOk s base rb D b) (hb : b + 64 ≤ ACC) (hrb : rb ∉ [Reg.x10, .x11, .x13]) :
+    WP isa (.block (kakb rb D)) s fun t =>
       (∀ i < 4, word t.mem base (KA + 8 * i) = s.gpr (Mul.A i) + s.gpr (Mul.A (i + 4))) ∧
       (∀ i < 4, word t.mem base (KB + 8 * i) =
         word s.mem base (b + 8 * i) + word s.mem base (b + 32 + 8 * i)) ∧
@@ -62,7 +63,7 @@ theorem kakb_ok {s : State} {base : Addr} (hs : Scr s base) {b : Nat} (hb : b + 
   have treg : ∀ i < 8, t.gpr (Mul.A i) = s.gpr (Mul.A i) := fun i hi => tk.1 _ (A_ne i hi)
   have tw : ∀ d, d + 8 ≤ KA → word t.mem base d = word s.mem base d := fun d hd =>
     tO.word (Or.inl hd) (by omega)
-  refine WP.mono (kakbStep_ok ts hb hb8 hn) fun u ⟨ua, ub, uo, uk, uw⟩ => ?_
+  refine WP.mono (kakbStep_ok ts (hp.of_keeps tk hrb) hb hrb hn) fun u ⟨ua, ub, uo, uk, uw⟩ => ?_
   refine ⟨fun i hi => ?_, fun i hi => ?_, tO.trans uo, tk.trans uk⟩
   · by_cases h : i = n
     · subst h; rw [ua, treg i (by omega), treg (i + 4) (by omega)]
@@ -106,27 +107,46 @@ theorem finVal_out (r : Nat → Nat) :
       i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 := by omega
   all_goals simp only [finVal, out]; rfl
 
-theorem mul_ok {s : State} {base : Addr} (hs : Scr s base) {o a b : Nat}
-    (ho : o + 64 ≤ ACC) (ho8 : o % 8 = 0) (ha : a + 64 ≤ ACC) (ha8 : a % 8 = 0)
-    (hb : b + 64 ≤ ACC) (hb8 : b % 8 = 0) (hob : o + 64 ≤ b ∨ b + 64 ≤ o)
+theorem aRegs_clob : ∀ r ∈ aRegs, r ∈ clob := by decide
+theorem consts_clob : ∀ r ∈ [MASK, ZERO], r ∈ clob := by decide
+theorem kakb_clob : ∀ r ∈ [Reg.x10, .x11, .x13], r ∈ clob := by decide
+theorem colWrites_clob : ∀ r ∈ colWrites Mul.R [Mul.L, Mul.H, Mul.X, Mul.Y], r ∈ clob := by decide
+theorem finish_clob : ∀ r ∈ [Reg.x4, .x5, .x6, .x7, .x8], r ∈ clob := by decide
+
+/-- **A product** of operands each addressed by a register plus a displacement (`PtrOk`), at
+offsets `a`, `b` and `o` of the working space below the coefficients: the result's limbs, and
+only the result's 64 bytes and the operand sums' 64 bytes (`KA`) written. The pointers of `b` and
+`o` are not among the registers the product writes, nor `a`'s among those the operand loads write. -/
+theorem mulAt_ok {s : State} {base : Addr} (hs : Scr s base) {ra rb ro : Reg} {da db od a b o : Nat}
+    (hpa : PtrOk s base ra da a) (hpb : PtrOk s base rb db b) (hpo : PtrOk s base ro od o)
+    (hra : ra ∉ aRegs) (hrb : rb ∉ clob) (hro : ro ∉ clob)
+    (ho : o + 64 ≤ ACC) (hb : b + 64 ≤ ACC) (hob : o + 64 ≤ b ∨ b + 64 ≤ o)
     (fa : ∀ i < 8, limbs s.mem base a i < Ib) (fb : ∀ i < 8, limbs s.mem base b i < Ib) :
-    WP isa (.block (mul o a b)) s fun t =>
+    WP isa (.block (mulAt ra da rb db ro od)) s fun t =>
       (∀ i < 8, limbs t.mem base o i = prodOut (limbs s.mem base a) (limbs s.mem base b) i) ∧
-      FieldMem base o s.mem t.mem ∧ Keeps clob s t := by
+      Outside2 base o 64 KA 64 s.mem t.mem ∧ Keeps clob s t := by
   have hA : ACC = 3584 := rfl
   have hKA : KA = 3584 := rfl
   have hKB : KB = 3616 := rfl
   let f := limbs s.mem base a
   let g := limbs s.mem base b
-  rw [mul_split, List.append_assoc, List.append_assoc, List.append_assoc, WP.block_append_iff]
-  refine WP.mono (loadA_ok hs (by omega) ha8) fun t1 ⟨a1, m1, k1⟩ => ?_
+  have nclob : ∀ {r : Reg} {rs : List Reg}, r ∉ clob → (∀ q ∈ rs, q ∈ clob) → r ∉ rs :=
+    fun hr hs h => hr (hs _ h)
+  rw [mulAt_split, List.append_assoc, List.append_assoc, List.append_assoc, WP.block_append_iff]
+  refine WP.mono (loadA_ok hs hpa hra) fun t1 ⟨a1, m1, k1⟩ => ?_
   have s1 : Scr t1 base := hs.of_keeps k1 (by decide)
   rw [WP.block_append_iff]
   refine WP.mono (consts_ok t1) fun t2 ⟨mk2, z2, m2, k2⟩ => ?_
   have s2 : Scr t2 base := s1.of_keeps k2 (by decide)
+  have pb2 : PtrOk t2 base rb db b :=
+    (hpb.of_keeps k1 (nclob hrb aRegs_clob)).of_keeps k2 (nclob hrb consts_clob)
+  have po2 : PtrOk t2 base ro od o :=
+    (hpo.of_keeps k1 (nclob hro aRegs_clob)).of_keeps k2 (nclob hro consts_clob)
   rw [WP.block_append_iff]
-  refine WP.mono (kakb_ok s2 hb hb8) fun t3 ⟨ka3, kb3, o3, k3⟩ => ?_
+  refine WP.mono (kakb_ok s2 pb2 hb (nclob hrb kakb_clob)) fun t3 ⟨ka3, kb3, o3, k3⟩ => ?_
   have s3 : Scr t3 base := s2.of_keeps k3 (by decide)
+  have pb3 : PtrOk t3 base rb db b := pb2.of_keeps k3 (nclob hrb kakb_clob)
+  have po3 : PtrOk t3 base ro od o := po2.of_keeps k3 (nclob hro kakb_clob)
   have A3 : ∀ i < 8, (t3.gpr (Mul.A i)).toNat = f i := by
     intro i hi
     rw [k3.1 _ (A_ne i hi), k2.1 _ (A_consts i hi), a1 i hi]
@@ -177,8 +197,9 @@ theorem mul_ok {s : State} {base : Addr} (hs : Scr s base) {o a b : Nat}
       push_cast
       rfl
   rw [WP.block_append_iff]
-  refine WP.mono (columns_ok mul_good mul_colRegs (by decide) (by decide) (by decide) hb8 (by omega)
-    ho8 (by omega) hfit mul_ops P hP hsem s3 ⟨fun _ _ => rfl, fun _ _ _ => rfl⟩
+  refine WP.mono (columns_ok mul_good mul_colRegs (by decide) (by decide) (by decide)
+    (nclob hrb colWrites_clob) (nclob hro colWrites_clob) hfit mul_ops P hP hsem s3 pb3 po3
+    ⟨fun _ _ => rfl, fun _ _ _ => rfl⟩
     (by rw [k3.1 _ (by decide)]; exact mk2) (by rw [k3.1 _ (by decide)]; exact z2))
     fun t4 ⟨p4, i4, k4⟩ => ?_
   have hcl := i4.cl (by decide)
@@ -186,7 +207,8 @@ theorem mul_ok {s : State} {base : Addr} (hs : Scr s base) {o a b : Nat}
   have lb : ∀ j < 8, (if j < 4 then chainLimb (reduced (rows f g 8)) 0 j
       else chainLimb (reduced (rows f g 8)) 4 (j - 4)) < radix := fun j _ => by
     split <;> exact Nat.mod_lt _ (by decide)
-  refine WP.mono (finish_ok i4.scr (by omega) ho8 i4.mask (stage_limbs i4) lb hcl hch hfit.c₀ hfit.c₄)
+  refine WP.mono (finish_ok i4.scr (po3.of_keeps k4 (nclob hro colWrites_clob))
+    (nclob hro finish_clob) i4.mask (stage_limbs i4) lb hcl hch hfit.c₀ hfit.c₄)
     fun t5 ⟨v5, o5, k5⟩ => ⟨fun i hi => by rw [v5 i hi, finVal_out _ i hi], ?_, ?_⟩
   · intro x h1 h2
     simp only [ofs] at h1 h2
@@ -194,5 +216,18 @@ theorem mul_ok {s : State} {base : Addr} (hs : Scr s base) {o a b : Nat}
       o3 x (by simp only [ofs]; omega), m2, m1]
   · refine (k1.mono ?_).trans ((k2.mono ?_).trans ((k3.mono ?_).trans ((k4.mono ?_).trans (k5.mono ?_))))
     all_goals intro r hr; revert r; decide
+
+theorem mul_ok {s : State} {base : Addr} (hs : Scr s base) {o a b : Nat}
+    (ho : o + 64 ≤ ACC) (ho8 : o % 8 = 0) (ha : a + 64 ≤ ACC) (ha8 : a % 8 = 0)
+    (hb : b + 64 ≤ ACC) (hb8 : b % 8 = 0) (hob : o + 64 ≤ b ∨ b + 64 ≤ o)
+    (fa : ∀ i < 8, limbs s.mem base a i < Ib) (fb : ∀ i < 8, limbs s.mem base b i < Ib) :
+    WP isa (.block (mul o a b)) s fun t =>
+      (∀ i < 8, limbs t.mem base o i = prodOut (limbs s.mem base a) (limbs s.mem base b) i) ∧
+      FieldMem base o s.mem t.mem ∧ Keeps clob s t := by
+  have hA : ACC = 3584 := rfl
+  have hKA : KA = 3584 := rfl
+  refine WP.mono (mulAt_ok hs (PtrOk.x3 hs ha8 (by omega)) (PtrOk.x3 hs hb8 (by omega))
+    (PtrOk.x3 hs ho8 (by omega)) (by decide) (by decide) (by decide) ho hb hob fa fb)
+    fun t ⟨tv, tm, tk⟩ => ⟨tv, fun x h1 h2 => tm x (by omega) (by omega), tk⟩
 
 end VG.Proof.Curve448.AArch64.Fast

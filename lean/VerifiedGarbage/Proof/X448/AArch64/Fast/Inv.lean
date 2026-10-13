@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.X448.AArch64.Fast.Ladder
 public import VerifiedGarbage.Proof.X448.AArch64.Fast.Chain
 public import VerifiedGarbage.Proof.Ed448.AArch64.Point56.Call
+public import VerifiedGarbage.Proof.Ed448.AArch64.Point56.MulSlots
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -13,7 +14,8 @@ import all Init.Data.Vector.Basic
 
 Untrusted: everything here is checked by Lean. `z` (slot 2) copied to slot 12,
 a call of `vg_gf448_r56_pow_p34` (`powCall_ok`) with the return address kept in a
-lane of `v8` (`call_spec`), and the power squared twice and multiplied by `z`:
+lane of `v8` (`call_spec`), and the power squared twice and multiplied by `z` (a call of
+`vg_gf448_r56_mul`, `mulCallKI`):
 slot 21 ends as `z^(p-2)` (`invEnv_eval`), since `z^(p-2) = (z^((p-3)/4))^4 z`
 (`invert_rootPow`). It keeps what the inlined chain did (`IKeep`).
 -/
@@ -70,7 +72,8 @@ def invEnv (e : Env) : Env :=
 theorem invert_spec (base : Addr) : ISpec base Impl.X448.AArch64.Fast.invert invEnv := by
   have h : ISpec base _ _ :=
     (opsI base [.copy 12 2] (by simp [MulCopy])).seq <| (call_spec base).seq <|
-      (sqnI base 21 (n := 2) (by decide) (by decide)).seq (opsI base [.mul 21 21 2] (by simp [MulCopy]))
+      (sqnI base 21 (n := 2) (by decide) (by decide)).seq
+        (VG.Proof.Ed448.AArch64.Point56.mulCallKI base 21 21 2 (by decide))
   exact h
 
 theorem invEnv_eq (e : Env) :

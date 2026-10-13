@@ -115,8 +115,7 @@ theorem correct {sE : State} (hp : Pre sE) :
   have hs4 := k4.scr f3.scr
   refine WP.seq (WP.mono (invert_ok hs4 b4) fun s5 ⟨k5, b5, e5⟩ => ?_)
   have hs5 : Scr s5 base := hs4.of_keeps k5.regs (by decide)
-  simp only [List.cons_append]
-  rw [← List.singleton_append, WP.block_append_iff]
+  rw [WP.seq_iff]
   refine WP.mono (VG.Proof.X448.AArch64.moveOutput_ok s5) fun s6 ⟨x16, m6, k6⟩ => ?_
   have hs6 : Scr s6 base := hs5.of_keeps k6 (by decide)
   -- The working space outside the slots and the products' working space, from `s1` on.

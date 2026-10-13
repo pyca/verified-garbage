@@ -41,21 +41,25 @@ structure ColInv (base : Addr) (o : Nat) (r : Nat → Nat) (s t : State) (n : Na
   ch : 0 < n → (t.gpr CH).toNat = chain r 4 n
 
 theorem colEnd_ok {s : State} {base : Addr} (hs : Scr s base) (t : Reg) (a : Acc) (c : Reg)
-    (first : Bool) {o k : Nat} (ho8 : o % 8 = 0) (ho : o + 64 ≤ 8192) (hk : k < 8) (h₁ : t ≠ a.lo) (h₂ : t ≠ a.hi) (h₃ : t ≠ .x3)
+    (first : Bool) {ro : Reg} {D o k : Nat} (hpo : PtrOk s base ro D o) (hk : k < 8) (h₁ : t ≠ a.lo)
+    (h₂ : t ≠ a.hi) (h₃ : t ≠ ro)
     (h₄ : a.lo ≠ a.hi) (h₅ : a.lo ≠ ZERO) (h₆ : MASK ∉ [a.lo, a.hi]) (h₇ : a.lo ≠ .x3)
-    (h₈ : a.hi ≠ .x3) (h₉ : a.lo ≠ .x12) (h₁₀ : a.hi ≠ .x12)
+    (h₈ : a.hi ≠ .x3) (h₉ : a.lo ≠ .x12) (h₁₀ : a.hi ≠ .x12) (h₁₁ : a.lo ≠ ro) (h₁₂ : a.hi ≠ ro)
     (hm : s.gpr MASK = BitVec.ofNat 64 (2 ^ 56 - 1)) (hz : s.gpr ZERO = 0)
     {V cin : Nat} (hV : accVal s a = V) (hc : first = false → (s.gpr c).toNat = cin)
     (h0 : first = true → cin = 0) (hlt : V + cin < 2 ^ 120) :
-    WP isa (.block (colEnd t a c first o k)) s fun u =>
+    WP isa (.block (colEnd t a c first ro D k)) s fun u =>
       u.mem = s.mem.writeW (off base (o + 8 * k)) (BitVec.ofNat 64 ((V + cin) % radix)) ∧
       (u.gpr c).toNat = (V + cin) / radix ∧ Keeps [a.lo, a.hi, t, c] s u := by
+  have ho : o + 64 ≤ 8192 := hpo.fit
+  have hal := hpo.al
+  have hDl := hpo.lt
   cases first
   · simp only [colEnd, Bool.false_eq_true, ite_false, List.cons_append, List.nil_append]
     rw [show (Instr.adds .x a.lo a.lo c :: Instr.adc .x a.hi a.hi ZERO ::
-        [Instr.logic .and .x t a.lo MASK, st t (o + 8 * k), .extr .x c a.hi a.lo 56]) =
+        [Instr.logic .and .x t a.lo MASK, .str .x t ro (D + 8 * k), .extr .x c a.hi a.lo 56]) =
         [Instr.adds .x a.lo a.lo c, .adc .x a.hi a.hi ZERO] ++
-        [Instr.logic .and .x t a.lo MASK, st t (o + 8 * k), .extr .x c a.hi a.lo 56] from rfl,
+        [Instr.logic .and .x t a.lo MASK, .str .x t ro (D + 8 * k), .extr .x c a.hi a.lo 56] from rfl,
       WP.block_append_iff]
     have hc' := hc rfl
     refine WP.mono (carryIn_ok s a c h₄ h₅ hz (by rw [hV, hc']; omega)) fun u ⟨uv, um, uk⟩ => ?_
@@ -63,7 +67,11 @@ theorem colEnd_ok {s : State} {base : Addr} (hs : Scr s base) (t : Reg) (a : Acc
       simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]
       exact ⟨⟨Ne.symm h₇, Ne.symm h₈⟩, ⟨Ne.symm h₉, Ne.symm h₁₀⟩⟩)
     have um' : u.gpr MASK = BitVec.ofNat 64 (2 ^ 56 - 1) := by rw [uk.1 _ h₆, hm]
-    refine WP.mono (stage_ok us t a c (by omega) (by omega) h₁ h₂ h₃ um' (by rw [uv, hV, hc']; omega))
+    have up : PtrOk u base ro D o := hpo.of_keeps uk (by
+      simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]
+      exact ⟨Ne.symm h₁₁, Ne.symm h₁₂⟩)
+    refine WP.mono (stage_ok us t a c (up.ptr (8 * k)) (by omega) (by omega) (by omega) h₁ h₂ h₃ um'
+      (by rw [uv, hV, hc']; omega))
       fun w ⟨wm, wc, wk⟩ => ⟨?_, ?_, ?_⟩
     · rw [wm, uv, um, hV, hc']
     · rw [wc, uv, hV, hc']
@@ -73,7 +81,8 @@ theorem colEnd_ok {s : State} {base : Addr} (hs : Scr s base) (t : Reg) (a : Acc
   · simp only [colEnd, ite_true, List.nil_append]
     have hc' := h0 rfl
     subst hc'
-    refine WP.mono (stage_ok hs t a c (by omega) (by omega) h₁ h₂ h₃ hm (by rw [hV]; omega))
+    refine WP.mono (stage_ok hs t a c (hpo.ptr (8 * k)) (by omega) (by omega) (by omega) h₁ h₂ h₃ hm
+      (by rw [hV]; omega))
       fun w ⟨wm, wc, wk⟩ => ⟨?_, ?_, ?_⟩
     · rw [wm, hV, Nat.add_zero]
     · rw [wc, hV, Nat.add_zero]
@@ -101,18 +110,22 @@ theorem stage_outside (m : Mem) (base : Addr) {o k : Nat} (ho : o + 64 ≤ 8192)
   exact (writeW_outside m base v (by omega)).mono (by omega) (by omega)
 
 section
-variable {R : Regs} {accs : List Acc} {L H : Acc} {col : Nat → List MOp} {b o : Nat}
+variable {R : Regs} {accs : List Acc} {L H : Acc} {col : Nat → List MOp} {rb ro : Reg} {db b od o : Nat}
   {r : Nat → Nat} {base : Addr}
 
 theorem column_ok (hG : Good R accs) (hC : ColRegs R accs) (hL : L ∈ accs) (hH : H ∈ accs)
-    (hLH : L ≠ H) (hb8 : b % 8 = 0) (hb : b + 64 ≤ 8192) (ho8 : o % 8 = 0) (ho : o + 64 ≤ 8192)
+    (hLH : L ≠ H) (hrb : rb ∉ colWrites R accs) (hro : ro ∉ colWrites R accs)
     (hfit : Fits r) {d : Nat} (hd : d < 4) (hops : (col d).all (opOk (writes R accs) accs) = true)
-    {t : State} {s : State} (hi : ColInv base o r s t d)
+    {t : State} {s : State} (hi : ColInv base o r s t d) (hpb : PtrOk t base rb db b)
+    (hpo : PtrOk t base ro od o)
     (hsem : ∀ e, sem (srcVal t base b) e (col d) L = r d ∧ sem (srcVal t base b) e (col d) H = r (d + 4)) :
-    WP isa (.block ((col d).flatMap (MOp.code R b) ++ colEnd R.t L CL (d == 0) o d ++
-        colEnd R.t H CH (d == 0) o (d + 4))) t fun w =>
+    WP isa (.block ((col d).flatMap (MOp.code R rb db) ++ colEnd R.t L CL (d == 0) ro od d ++
+        colEnd R.t H CH (d == 0) ro od (d + 4))) t fun w =>
       ColInv base o r s w (d + 1) ∧ Keeps (colWrites R accs) t w ∧ Outside base o 64 t.mem w.mem := by
   obtain ⟨hM, hZ, hCL, hCH, hCC, h3, h12⟩ := hC
+  have ho : o + 64 ≤ 8192 := hpo.fit
+  have hrbw : rb ∉ writes R accs := fun h => hrb (List.mem_append_left _ h)
+  have hrow : ro ∉ writes R accs := fun h => hro (List.mem_append_left _ h)
   have nM : MASK ∉ writes R accs := fun h => hM (List.mem_append_left _ h)
   have nZ : ZERO ∉ writes R accs := fun h => hZ (List.mem_append_left _ h)
   obtain ⟨Llh, Llo, Lhi⟩ := hG.acc hL
@@ -120,7 +133,7 @@ theorem column_ok (hG : Good R accs) (hC : ColRegs R accs) (hL : L ∈ accs) (hH
   have x3w : Reg.x3 ∉ writes R accs := hG.2.2.2.2.2.1
   have x12w : Reg.x12 ∉ writes R accs := hG.2.2.2.2.2.2
   rw [List.append_assoc, WP.block_append_iff]
-  refine WP.mono (mops_ok hG hb8 hb (col d) hops hi.scr (v := srcVal t base b) (fun _ _ => rfl)
+  refine WP.mono (mops_ok hG hrbw (col d) hops hi.scr hpb (v := srcVal t base b) (fun _ _ => rfl)
     (e := fun a => (accVal t a : Int)) (fun a _ => self_emod (pair_lt _ _))) fun u ⟨uv, um, uk⟩ => ?_
   have us : Scr u base := hG.scr hi.scr uk (fun _ h => h)
   obtain ⟨sL, sH⟩ := hsem (fun a => (accVal t a : Int))
@@ -133,7 +146,8 @@ theorem column_ok (hG : Good R accs) (hC : ColRegs R accs) (hL : L ∈ accs) (hH
   have tne : ∀ a ∈ accs, R.t ≠ a.lo ∧ R.t ≠ a.hi := fun a ha => by
     obtain ⟨-, h1, h2⟩ := hG.acc ha
     exact ⟨fun e => h1 (by simp [e]), fun e => h2 (by simp [e])⟩
-  have t3 : R.t ≠ .x3 := fun e => x3w (e ▸ t_mem)
+  have t3 : R.t ≠ ro := fun e => hrow (e ▸ t_mem)
+  have up : PtrOk u base ro od o := hpo.of_keeps uk hrow
   have nmem : ∀ {q : Reg} {a : Acc}, a ∈ accs → q ∉ writes R accs → q ∉ [a.lo, a.hi] := by
     intro q a ha hq hm
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hm
@@ -145,9 +159,10 @@ theorem column_ok (hG : Good R accs) (hC : ColRegs R accs) (hL : L ∈ accs) (hH
     rw [uk.1 _ hCL]; exact hi.cl (by simp at h; omega)
   have h0L : (d == 0) = true → chain r 0 d = 0 := fun h => by
     simp at h; subst h; rfl
-  refine WP.mono (colEnd_ok us R.t L CL (d == 0) (k := d) ho8 ho (by omega) (tne L hL).1 (tne L hL).2 t3 Llh
+  refine WP.mono (colEnd_ok us R.t L CL (d == 0) (k := d) up (by omega) (tne L hL).1 (tne L hL).2 t3 Llh
     (fun e => nZ (e ▸ lo_mem hL)) (nmem hL nM) (fun e => x3w (e ▸ lo_mem hL))
     (fun e => x3w (e ▸ hi_mem hL)) (fun e => x12w (e ▸ lo_mem hL)) (fun e => x12w (e ▸ hi_mem hL))
+    (fun e => hrow (e ▸ lo_mem hL)) (fun e => hrow (e ▸ hi_mem hL))
     um' uz rL hcL h0L (hfit.low d hd)) fun w ⟨wm, wc, wk⟩ => ?_
   have lnot : ∀ {q : Reg}, q ∉ writes R accs → q ≠ CL → q ∉ [L.lo, L.hi, R.t, CL] := by
     intro q hq hc hm
@@ -179,13 +194,15 @@ theorem column_ok (hG : Good R accs) (hC : ColRegs R accs) (hL : L ∈ accs) (hH
         · exact d2 (by simp [e])
         · exact (tne H hH).2 e.symm
         · exact hCL (e ▸ hi_mem hH)), rH]
+  have wp : PtrOk w base ro od o := up.of_keeps wk (lnot hrow (fun e => hro (by simp [colWrites, e])))
   have hcH : (d == 0) = false → (w.gpr CH).toNat = chain r 4 d := fun h => by
     rw [wk.1 _ (lnot hCH (Ne.symm hCC)), uk.1 _ hCH]; exact hi.ch (by simp at h; omega)
   have h0H : (d == 0) = true → chain r 4 d = 0 := fun h => by
     simp at h; subst h; rfl
-  refine WP.mono (colEnd_ok ws R.t H CH (d == 0) (k := d + 4) ho8 ho (by omega) (tne H hH).1 (tne H hH).2 t3
+  refine WP.mono (colEnd_ok ws R.t H CH (d == 0) (k := d + 4) wp (by omega) (tne H hH).1 (tne H hH).2 t3
     Hlh (fun e => nZ (e ▸ lo_mem hH)) (nmem hH nM) (fun e => x3w (e ▸ lo_mem hH))
     (fun e => x3w (e ▸ hi_mem hH)) (fun e => x12w (e ▸ lo_mem hH)) (fun e => x12w (e ▸ hi_mem hH))
+    (fun e => hrow (e ▸ lo_mem hH)) (fun e => hrow (e ▸ hi_mem hH))
     wM wZ wH hcH h0H (hfit.high d hd)) fun x ⟨xm, xc, xk⟩ => ?_
   have hnot : ∀ {q : Reg}, q ∉ writes R accs → q ≠ CH → q ∉ [H.lo, H.hi, R.t, CH] := by
     intro q hq hc hm
@@ -237,22 +254,23 @@ theorem column_ok (hG : Good R accs) (hC : ColRegs R accs) (hL : L ∈ accs) (hH
     · rw [h]; simp [colWrites]
 
 theorem columns_ok (hG : Good R accs) (hC : ColRegs R accs) (hL : L ∈ accs) (hH : H ∈ accs)
-    (hLH : L ≠ H) (hb8 : b % 8 = 0) (hb : b + 64 ≤ 8192) (ho8 : o % 8 = 0) (ho : o + 64 ≤ 8192)
+    (hLH : L ≠ H) (hrb : rb ∉ colWrites R accs) (hro : ro ∉ colWrites R accs)
     (hfit : Fits r) (hops : ∀ d < 4, (col d).all (opOk (writes R accs) accs) = true)
     (P : State → Prop)
     (hP : ∀ t u, P t → Keeps (colWrites R accs) t u → Outside base o 64 t.mem u.mem → P u)
     (hsem : ∀ d < 4, ∀ t, P t → ∀ e,
       sem (srcVal t base b) e (col d) L = r d ∧ sem (srcVal t base b) e (col d) H = r (d + 4))
-    {s : State} (hs : Scr s base) (hP0 : P s) (hm : s.gpr MASK = BitVec.ofNat 64 (2 ^ 56 - 1))
-    (hz : s.gpr ZERO = 0) :
-    WP isa (.block (columns R b L H col o)) s fun t =>
+    {s : State} (hs : Scr s base) (hpb : PtrOk s base rb db b) (hpo : PtrOk s base ro od o) (hP0 : P s)
+    (hm : s.gpr MASK = BitVec.ofNat 64 (2 ^ 56 - 1)) (hz : s.gpr ZERO = 0) :
+    WP isa (.block (columns R rb db L H col ro od)) s fun t =>
       P t ∧ ColInv base o r s t 4 ∧ Keeps (colWrites R accs) s t := by
   let inv := fun n (t : State) => P t ∧ ColInv base o r s t n ∧ Keeps (colWrites R accs) s t
   refine wp_range_flatMap (M := isa) (N := 4) inv (fun n t hn ⟨tp, ti, tk⟩ => ?_) 4 (by decide) s
     ⟨hP0, ⟨hs, hm, hz, Outside.refl _ _ _ _, fun _ h => absurd h (Nat.not_lt_zero _),
       fun _ h => absurd h (Nat.not_lt_zero _), fun h => absurd h (Nat.lt_irrefl _),
       fun h => absurd h (Nat.lt_irrefl _)⟩, Keeps.refl _ _⟩
-  exact WP.mono (column_ok hG hC hL hH hLH hb8 hb ho8 ho hfit hn (hops n hn) ti (hsem n hn t tp))
+  exact WP.mono (column_ok hG hC hL hH hLH hrb hro hfit hn (hops n hn) ti (hpb.of_keeps tk hrb)
+    (hpo.of_keeps tk hro) (hsem n hn t tp))
     fun u ⟨ui, uk, uo⟩ => ⟨hP t u tp uk uo, ui, tk.trans uk⟩
 
 end

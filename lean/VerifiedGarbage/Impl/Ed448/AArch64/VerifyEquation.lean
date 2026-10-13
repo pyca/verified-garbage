@@ -137,8 +137,8 @@ bound), the sign bit is kept at `SIGN`, and `-x` is `0 - x`, from zero written i
 once compared). -/
 def decode (rp : Reg) (xo yo : Nat) : Prog isa :=
   .seq (.block (decodeY rp yo ++ [st .x17 SIGN] ++ Impl.X448.AArch64.Base.constSlot (slot 10) 1)) <|
-  .seq (X448.AArch64.Fast.ops (decodeUVOps yo xo)) <| .seq Point56.powCall <|
-  .seq (X448.AArch64.Fast.ops (decodeXOps xo)) <|
+  .seq (X448.AArch64.Fast.opsK (decodeUVOps yo xo)) <| .seq Point56.powCall <|
+  .seq (X448.AArch64.Fast.opsK (decodeXOps xo)) <|
   .seq (eqSlots 12 13) <| .seq (.block (Impl.X448.AArch64.Base.constSlot (slot 13) 0)) <|
   .seq (X448.AArch64.Fast.ops [.sub (slot 12) (slot 13) (slot xo)]) <|
   .block ([ld .x17 SIGN] ++ zeroSign xo ++ negMask ++ negSwap xo)
@@ -185,13 +185,14 @@ def ventry : Prog isa :=
     Impl.X448.AArch64.Base.constSlot (slot 10) 1 ++ Impl.X448.AArch64.Base.constSlot (slot 11) Spec.Ed448.d)
 
 /-- After `A` is decoded into slots 8–9: `-A` into slots 6–7 (`x`, below the products' bound as a
-product by 1 in slot 10, subtracted from zero in slot 13), `R`'s pointer into `x0`, and the working
-space's into `x1`, which ends the loop of `decodes`. -/
+product by 1 in slot 10 (a call of `vg_gf448_r56_mul`), subtracted from zero in slot 13), `R`'s
+pointer into `x0`, and the working space's into `x1`, which ends the loop of `decodes`; then
+`x19 := x0 - x3`, which is the value `x19` had (`R`'s offset) but public again after the call. -/
 def negA : Prog isa :=
-  .seq (X448.AArch64.Fast.ops [.mul (slot 6) (slot 8) (slot 10), .copy (slot 7) (slot 9)]) <|
+  .seq (X448.AArch64.Fast.opsK [.mul (slot 6) (slot 8) (slot 10), .copy (slot 7) (slot 9)]) <|
   .seq (.block (Impl.X448.AArch64.Base.constSlot (slot 13) 0)) <|
   .seq (X448.AArch64.Fast.ops [.sub (slot 12) (slot 13) (slot 6), .copy (slot 6) (slot 12)])
-    (.block [.addImm .x .x0 .x1 0, .addImm .x .x1 .x3 0])
+    (.block [.addImm .x .x0 .x1 0, .addImm .x .x1 .x3 0, .sub .x .x19 .x0 .x3])
 
 /-- `A` (from `x0`) and `R` (from `x1`) decoded by one copy of `decode`, into slots 8–9. Each pass
 ends with `x19 := x1 - x3`, public after `decode` (which keeps `x19` only through a vector lane): `R`'s
