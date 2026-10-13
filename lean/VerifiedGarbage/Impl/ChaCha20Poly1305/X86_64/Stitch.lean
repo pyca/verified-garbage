@@ -471,7 +471,7 @@ def openStitched (x : ChaCha20.X86_64.Callee) (b : Poly1305.X86_64.Blocks) : Pro
 
 /-- `openSmall`'s limit, as `smallLim` is `sealSmall`'s: `open`'s chunks
 and `seal`'s differ in cost. -/
-def openLim : Nat := 640
+def openLim : Nat := 704
 
 /-- `open` for fewer than `openLim` bytes of data (`len`, in `r9`) with the
 AVX2 code, `openStitched` with the implementation `small` of
