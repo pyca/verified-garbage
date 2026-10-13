@@ -120,8 +120,8 @@ def finish : List Instr :=
 /-- `x = X Z⁻¹`, with `Z⁻¹ R` in `ACC`, out of Montgomery form, `x R mod n`
 and `x R - r R mod n`, the checks of `Z` and of `x ≡ r`, and the result. -/
 def final : Prog isa :=
-  .seq (.block (Mont.AArch64.mul c.MP' (c.sl XM) (c.sl RX) (c.sl ACC))) <|
-  .seq (.block (Mont.AArch64.mul c.MP' (c.sl X) (c.sl XM) (c.sl ONE))) <|
+  .seq (c.mulPP (c.sl XM) (c.sl RX) (c.sl ACC)) <|
+  .seq (c.mulPP (c.sl X) (c.sl XM) (c.sl ONE)) <|
   .seq (c.mulNP (c.sl XN) (c.sl X) (c.sl R2N)) <|
   .seq (.block (Mont.AArch64.sub c.MN' (c.sl W) (c.sl XN) (c.sl RM')))
     (.block (c.checkNonzero (c.sl RZ) ++ Impl.Ecdh.AArch64.Cfg.checkZero c (c.sl W) ++ finish c))

@@ -382,10 +382,17 @@ def mulNP (o a b : Nat) : Prog isa :=
   | some (f, m) => mulCall f c.n m o a b
   | none => .block (Mont.AArch64.mul c.MN' o a b)
 
+/-- `[o] = [a] [b] R⁻¹ mod p`: a call of `vg_<curve>_mul_mod_p` for a curve
+whose products modulo `p` are a function (`Mont.callOf`), else inline. -/
+def mulPP (o a b : Nat) : Prog isa :=
+  match Mont.callOf c.MP' with
+  | some (f, m) => mulCall f c.n m o a b
+  | none => .block (Mont.AArch64.mul c.MP' o a b)
+
 /-- `x = X Z⁻¹`, `r = x mod n`, `k R mod n`, and the checks of `d`, `k`, `r`. -/
 def middle : Prog isa :=
-  .seq (.block (Mont.AArch64.mul c.MP' (c.sl XM) (c.sl RX) (c.sl ACC))) <|
-  .seq (.block (Mont.AArch64.mul c.MP' (c.sl X) (c.sl XM) (c.sl ONE))) <|
+  .seq (c.mulPP (c.sl XM) (c.sl RX) (c.sl ACC)) <|
+  .seq (c.mulPP (c.sl X) (c.sl XM) (c.sl ONE)) <|
   .seq (.block (Mont.AArch64.add c.MN' (c.sl RR) (c.sl X) (c.sl ZERO))) <|
   .seq (c.mulNP (c.sl KM) (c.sl K) (c.sl R2N))
     (.block (c.checkRange (c.sl D) ++ c.checkRange (c.sl K) ++ c.checkNonzero (c.sl RR)))
