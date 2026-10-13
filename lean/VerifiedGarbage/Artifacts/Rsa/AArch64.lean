@@ -25,7 +25,9 @@ def artifacts : List Artifact := [
         integrated operand scanning with `mul` and `umulh`, the final subtraction selected with \
         `csel`), and symmetric Montgomery squares using each cross-product once, with four-word \
         MAC blocks and scalar tails, reusing the accumulator and temporary arrays; below eight \
-        limbs, squares retain the general kernel. R² mod n by constant-time doublings and squarings, and the exponent scanned \
+        limbs, squares retain the general kernel. Squares of at least sixteen limbs, with a width \
+        divisible by eight, use eight-limb register-blocked reduction; other widths retain the \
+        row-wise reduction. R² mod n by constant-time doublings and squarings, and the exponent scanned \
         left to right from its first set bit, which starts the result as the input; a square per \
         later bit and a multiplication per later set bit."])
     code := Impl.Rsa.AArch64.Checked.publicChecked
