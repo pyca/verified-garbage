@@ -1,6 +1,8 @@
-import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.Verified
-import VerifiedGarbage.Proof.AesXts.X86_64.AesNi.Verified
+module
+
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.Verified
+public import VerifiedGarbage.Proof.AesXts.X86_64.AesNi.Verified
 
 /-!
 # XTS-AES (IEEE Std 1619-2007, NIST SP 800-38E) on x86-64, in one pass
@@ -16,6 +18,8 @@ them in registers (`_vaes_vpclmul`) or in the scratch buffer
 
 They write no stack; the 8 bytes are those of the shared precondition.
 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.AesXts.X86_64
 
