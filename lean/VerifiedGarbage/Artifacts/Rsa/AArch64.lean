@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.Bignum.AArch64.SquareHelper
 public import VerifiedGarbage.Proof.Rsa.AArch64.PubChecked
 public import VerifiedGarbage.Proof.Rsa.AArch64.FoldedChecked
 public import VerifiedGarbage.Proof.Bignum.AArch64.PcVerified
@@ -16,7 +17,19 @@ public import VerifiedGarbage.Proof.Rsa.AArch64.RpVerified
 
 namespace VG.Artifacts.Rsa.AArch64
 
-def artifacts : List Artifact := [
+/-- The two repeated squares are shared by all RSA callers. -/
+def squareHelper (slot : Spec.Rsa.MontSquare.Slot) : Artifact :=
+  { Spec.Rsa.MontSquare.squareApi slot with
+    target := AArch64.target
+    doc := (Spec.Rsa.MontSquare.squareApi slot).doc
+      (notes := ["Baseline AArch64 symmetric square with eight-limb blocked reduction for widths \
+        of at least sixteen limbs divisible by eight; other widths retain the row-wise reduction."])
+    contract := Spec.Rsa.MontSquare.squareContract slot AArch64.abi
+    code := Proof.Bignum.AArch64.Mont.blocked.mm slot.index slot.index slot.index
+    verified := Proof.Bignum.AArch64.SquareHelper.verified Proof.Bignum.AArch64.Mont.blocked slot
+    spSafe := Code.all_of_forall (fun _ => rfl) _ }
+
+def artifacts : List Artifact := [squareHelper .r2, squareHelper .y,
   { Spec.Rsa.publicCheckedApi with
     target := AArch64.target
     doc := Spec.Rsa.publicCheckedApi.doc
