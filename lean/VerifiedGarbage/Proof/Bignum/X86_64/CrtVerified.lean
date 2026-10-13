@@ -38,18 +38,18 @@ namespace VG.Proof.Bignum.X86_64
 open VG VG.X86_64 VG.Impl.Rsa.X86_64 VG.Impl.Rsa.X86_64.Crt
 
 /-- `vg_rsa_private_crt` is constant time but for `n`. -/
-theorem crtCode_constantTime (M : Mont) : ConstantTime isa crtContract.pre crtContract.pub (Crt.code M.mm) :=
-  crtCode_constantTime_of M setup_ct checks_ct
-    (qPhase_ct M (unit_ct M (gPow_ct_Q M) (redc_ct_Y M) (by taint_decide))
-      (pow_ct M (redc_ct_Y M) (expLoop_ct_Q M) (by taint_decide)))
-    (pPhase_ct M (unit_ct M (gPow_ct_P M) (redc_ct_Y M) (by taint_decide))
-      (pow_ct M (redc_ct_Y M) (expLoop_ct_P M) (by taint_decide)) (redc_ct_X M) loadArr_ct_pI)
+theorem crtCode_constantTime (M : Mont) (S : CrtSel) (hS : S.CT) : ConstantTime isa crtContract.pre crtContract.pub (Crt.code M.mm S.code) :=
+  crtCode_constantTime_of M S setup_ct checks_ct
+    (qPhase_ct M S (unit_ct M (gPow_ct_Q M) (redc_ct_Y M) (by taint_decide))
+      (pow_ct M S (redc_ct_Y M) (expLoop_ct_Q M S hS) (by taint_decide)))
+    (pPhase_ct M S (unit_ct M (gPow_ct_P M) (redc_ct_Y M) (by taint_decide))
+      (pow_ct M S (redc_ct_Y M) (expLoop_ct_P M S hS) (by taint_decide)) (redc_ct_X M) loadArr_ct_pI)
     crtFinish_ct
 
 /-- `vg_rsa_private_crt` with Montgomery multiplication `M`, given that its
 code never loads MXCSR (which the registration file evaluates). -/
-theorem crt_verified (M : Mont) (hmx : (Crt.code M.mm).allInstrs (fun i => !loadsMxcsr i) = true) :
-    Verified target (Crt.code M.mm) (Spec.Rsa.privateCrtContract abi) :=
-  Verified.of_correct (crtCode_correct M hmx) (crtCode_constantTime M) crt_implies
+theorem crt_verified (M : Mont) (S : CrtSel) (hS : S.CT) (hmx : (Crt.code M.mm S.code).allInstrs (fun i => !loadsMxcsr i) = true) :
+    Verified target (Crt.code M.mm S.code) (Spec.Rsa.privateCrtContract abi) :=
+  Verified.of_correct (crtCode_correct M S hmx) (crtCode_constantTime M S hS) crt_implies
 
 end VG.Proof.Bignum.X86_64

@@ -212,15 +212,15 @@ theorem crtCode_fin {s t₁ t₂ t : State} (c : CrtCtx s) (h : CrtHeadPost s t�
 
 /-- `vg_rsa_private_crt` with Montgomery multiplication `M`, given that its
 code never loads MXCSR (which the registration file evaluates). -/
-theorem crtCode_correct (M : Mont) (hmx : (Crt.code M.mm).allInstrs (fun i => !loadsMxcsr i) = true)
+theorem crtCode_correct (M : Mont) (S : CrtSel) (hmx : (Crt.code M.mm S.code).allInstrs (fun i => !loadsMxcsr i) = true)
     (s : State) (h : crtContract.pre s) :
-    ∃ t s', Exec isa (Crt.code M.mm) s t s' ∧ abiPreserved s s' ∧ crtContract.post s s' := by
+    ∃ t s', Exec isa (Crt.code M.mm S.code) s t s' ∧ abiPreserved s s' ∧ crtContract.post s s' := by
   have c := crtCtx_of h
   clear h
   have hZ' := c.hZ
   have hk1 := c.hk1
   have hk2 := c.hk2
-  suffices hwp : WP isa (Crt.code M.mm) s fun s' => gprPreserved s s' ∧ crtContract.post s s' by
+  suffices hwp : WP isa (Crt.code M.mm S.code) s fun s' => gprPreserved s s' ∧ crtContract.post s s' by
     obtain ⟨t, s', he, hg, hp⟩ := hwp
     exact ⟨t, s', he, abiPreserved_of_exec hmx he hg, hp⟩
   unfold Crt.code
@@ -240,7 +240,7 @@ theorem crtCode_correct (M : Mont) (hmx : (Crt.code M.mm).allInstrs (fun i => !l
       fun t hp => crtCode_fin c h₁ hm₂ k₂ hp (fun h => absurd h (by rw [hv]; decide)) fun _ => ⟨rfl, rfl⟩
   · have hv : Spec.Rsa.modulusValid (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat))
         (s.gpr .rcx).toNat = true := by simpa using hb
-    exact WP.mono (crtMain_ok M hpre hv) fun t ⟨Mk, hp, hiff⟩ => crtCode_fin c h₁ hm₂ k₂ hp
+    exact WP.mono (crtMain_ok M S hpre hv) fun t ⟨Mk, hp, hiff⟩ => crtCode_fin c h₁ hm₂ k₂ hp
       (fun _ => ⟨hiff, rfl⟩) fun h => absurd h (by rw [hv]; decide)
 
 end VG.Proof.Bignum.X86_64

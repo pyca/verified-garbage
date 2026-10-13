@@ -460,6 +460,21 @@ theorem tabSel_ok {t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc v :
   · omega
   rw [h i (by omega), ite_eq_left (by omega), hEv i hi]
 
+/-- A selection of the window's entry: code with `tabSel_ok`'s conclusion
+(`CrtSel.sse`, and `tabSelectV`'s with AVX2). -/
+structure CrtSel where
+  code : List (Prog isa)
+  ne : code ≠ []
+  ok : ∀ {t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc v : Nat}, CExpCtx t P wx minv X Xc →
+    2 ≤ wx → wx < 2 ^ 30 → v < 16 → word t.mem P (8 * Crt.sTab) = off P (slot wx 8) →
+    word t.mem P (8 * Crt.sNib) = BitVec.ofNat 64 v →
+    WP isa (seqs code) t fun t' => CExpCtx t' P wx minv X Xc ∧
+      wv t'.mem P (slot wx Crt.aT) wx = wv t.mem P (slot wx (8 + v)) wx ∧
+      Frm P (selRanges wx) t.mem t'.mem ∧ Keep mmRegs t t'
+
+/-- The selection with SSE2. -/
+def CrtSel.sse : CrtSel := ⟨Crt.tabSelect, by simp [tabSelect_eq], tabSel_ok⟩
+
 /-! ## A window -/
 
 /-- The window count decremented, `ZF` when it reaches 0. -/
@@ -538,24 +553,24 @@ theorem winMid_ok {t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc V :
     rw [show V + V + (V + V) + (V + V + (V + V)) + (V + V + (V + V) + (V + V + (V + V))) = 16 * V by omega_arith])
     rfl) fun t' ⟨h, k⟩ => ⟨h, k⟩
 
-theorem expWin_eq (mul : Nat → Nat → Nat → Prog isa) : Crt.expWin mul =
+theorem expWin_eq (mul : Nat → Nat → Nat → Prog isa) (sel : List (Prog isa)) : Crt.expWin mul sel =
     [mul aY aY aY, mul aY aY aY, mul aY aY aY, mul aY aY aY,
       .block [.mov .rdx (.mem (hdr Crt.sV)), .mov .rax (.reg .rdx), .alu .add .rax (.reg .rax),
         .alu .add .rax (.reg .rax), .alu .add .rax (.reg .rax), .alu .add .rax (.reg .rax), .store (hdr Crt.sV) .rax,
         .shift .shr .rdx 4, .alu .and .rdx (.imm 15), .store (hdr Crt.sNib) .rdx]] ++
-    (Crt.tabSelect ++ [mul aY aY Crt.aT,
+    (sel ++ [mul aY aY Crt.aT,
       .block [.mov .rax (.mem (hdr Crt.sBit)), .alu .sub .rax (.imm 1), .store (hdr Crt.sBit) .rax]]) := rfl
 
 /-- One window: `Y ≡ x^E R` becomes `x^(16 E + v) R` for the window
 `v = ⌊V / 16⌋ mod 16` of the value `V` in `sV`, which moves up 4 bits; the
 window count `b` drops. -/
-theorem crtWin_ok (M : Mont) {t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc : Nat} {Q : Prop}
+theorem crtWin_ok (M : Mont) (S : CrtSel) {t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc : Nat} {Q : Prop}
     {x E V b : Nat} (hc : CExpCtx t P wx minv X Xc) (htab : CTab t.mem P wx X Q x) (hw : 2 ≤ wx)
     (hw' : wx < 2 ^ 30) (hR : Nat.Coprime (2 ^ (64 * wx)) X) (hY : wv t.mem P (slot wx aY) wx < X)
     (hYv : Q → wv t.mem P (slot wx aY) wx % X = x ^ E * 2 ^ (64 * wx) % X)
     (hV : word t.mem P (8 * Crt.sV) = BitVec.ofNat 64 V) (hV' : V < 2 ^ 56)
     (hb : word t.mem P (8 * Crt.sBit) = BitVec.ofNat 64 b) (hb1 : 1 ≤ b) (hb' : b < 2 ^ 31) :
-    WP isa (seqs (Crt.expWin M.mm)) t fun t' => CExpCtx t' P wx minv X Xc ∧ CTab t'.mem P wx X Q x ∧
+    WP isa (seqs (Crt.expWin M.mm S.code)) t fun t' => CExpCtx t' P wx minv X Xc ∧ CTab t'.mem P wx X Q x ∧
       wv t'.mem P (slot wx aY) wx < X ∧
       (Q → wv t'.mem P (slot wx aY) wx % X = x ^ (16 * E + V / 16 % 16) * 2 ^ (64 * wx) % X) ∧
       word t'.mem P (8 * Crt.sV) = BitVec.ofNat 64 (16 * V) ∧
@@ -565,7 +580,7 @@ theorem crtWin_ok (M : Mont) {t : State} {P : Addr} {wx : Nat} {minv : BitVec 64
   have hY0 := slot_le (w := wx) (show aY < 8 by decide)
   have hT0 := slot_le (w := wx) (show Crt.aT < 8 by decide)
   rw [expWin_eq]
-  refine wp_seqs_append (by simp) (by simp [tabSelect_eq]) ?_
+  refine wp_seqs_append (by simp) (by simp) ?_
   simp only [seqs]
   -- Four squarings.
   refine WP.seq (WP.mono (crtSq_ok M hc hw hw' hR hY hYv) fun t₁ ⟨hc₁, hY₁, hYv₁, hh₁, f₁, k₁⟩ => ?_)
@@ -595,8 +610,8 @@ theorem crtWin_ok (M : Mont) {t : State} {P : Addr} {wx : Nat} {minv : BitVec 64
         hh04 k hk]
   have hv16 : V / 16 % 16 < 16 := Nat.mod_lt _ (by decide)
   -- `T := T_v`.
-  refine wp_seqs_append (by simp [tabSelect_eq]) (by simp) ?_
-  refine WP.mono (tabSel_ok hc₅ hw hw' hv16 (by rw [hh₅ _ (by decide) (by decide) (by decide)]; exact htab.tab)
+  refine wp_seqs_append S.ne (by simp) ?_
+  refine WP.mono (S.ok hc₅ hw hw' hv16 (by rw [hh₅ _ (by decide) (by decide) (by decide)]; exact htab.tab)
     (by rw [hm₅, word_writeW_self])) fun t₆ ⟨hc₆, hT₆, f₆, k₆⟩ => ?_
   have f₆' : Frm P (crtWinRanges wx) t₅.mem t₆.mem := f₆.mono (selRanges_sub wx)
   have hY₆ : wv t₆.mem P (slot wx aY) wx = wv t₅.mem P (slot wx aY) wx :=
@@ -656,13 +671,13 @@ structure CWinInv (t₀ : State) (P : Addr) (wx : Nat) (minv : BitVec 64) (X Xc 
   keep : Keep mmRegs t₀ t
 
 /-- Window `j` of the byte `v`. -/
-theorem crtWinStep_ok (M : Mont) {t s : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc : Nat} {Q : Prop}
+theorem crtWinStep_ok (M : Mont) (S : CrtSel) {t s : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc : Nat} {Q : Prop}
     {x E v : Nat} (hw : 2 ≤ wx) (hw' : wx < 2 ^ 30) (hR : Nat.Coprime (2 ^ (64 * wx)) X) (hv : v < 256) {j : Nat}
     (hj : j < 2) (hI : CWinInv t P wx minv X Xc Q x E v j s) :
-    WP isa (seqs (Crt.expWin M.mm)) s fun s' => s'.zf = some (decide (j + 1 = 2)) ∧
+    WP isa (seqs (Crt.expWin M.mm S.code)) s fun s' => s'.zf = some (decide (j + 1 = 2)) ∧
       CWinInv t P wx minv X Xc Q x E v (j + 1) s' := by
   have hp : 16 ^ j ≤ 16 := by rcases (show j = 0 ∨ j = 1 by omega_arith) with rfl | rfl <;> decide
-  refine WP.mono (crtWin_ok M (E := E * 16 ^ j + v / 16 ^ (2 - j)) hI.ctx hI.tab hw hw' hR hI.ylt hI.y hI.v
+  refine WP.mono (crtWin_ok M S (E := E * 16 ^ j + v / 16 ^ (2 - j)) hI.ctx hI.tab hw hw' hR hI.ylt hI.y hI.v
     (by have := Nat.mul_le_mul_left v hp; omega_arith) hI.b (by omega_arith) (by omega_arith))
     fun s' ⟨hc', htab', hY', hYv', hV', hb', hz', hfr', k'⟩ => ⟨?_, hc', htab', hY', ?_, ?_, ?_,
       hI.frm.trans hfr', (hI.keep.trans k').mono (by decide)⟩
@@ -672,12 +687,12 @@ theorem crtWinStep_ok (M : Mont) {t s : State} {P : Addr} {wx : Nat} {minv : Bit
   · rw [hb']; congr 1
 
 /-- The two windows of the byte `v`: `Y ≡ x^E R` becomes `x^(256 E + v) R`. -/
-theorem crtWins_ok (M : Mont) {t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc : Nat} {Q : Prop}
+theorem crtWins_ok (M : Mont) (S : CrtSel) {t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc : Nat} {Q : Prop}
     {x E v : Nat} (hw : 2 ≤ wx) (hw' : wx < 2 ^ 30) (hR : Nat.Coprime (2 ^ (64 * wx)) X) (hv : v < 256)
     (h0 : CWinInv t P wx minv X Xc Q x E v 0 t) :
-    WP isa (.loop (seqs (Crt.expWin M.mm)) .ne) t (CWinInv t P wx minv X Xc Q x E v 2) :=
+    WP isa (.loop (seqs (Crt.expWin M.mm S.code)) .ne) t (CWinInv t P wx minv X Xc Q x E v 2) :=
   wp_upto (a := 0) (N := 2) (by decide) (CWinInv t P wx minv X Xc Q x E v)
-    (fun _ _ hj _ hI => crtWinStep_ok M hw hw' hR hv hj hI) (fun _ h => h) h0
+    (fun _ _ hj _ hI => crtWinStep_ok M S hw hw' hR hv hj hI) (fun _ h => h) h0
 
 /-! ## The bytes of the exponent -/
 
@@ -760,7 +775,7 @@ theorem crtByteHead_eq : ([.mov .rax (.mem (hdr Crt.sExp)), .mov .rcx (.mem (hdr
       .store (hdr Crt.sBit) .rax] : List Instr) := rfl
 
 /-- One byte of the exponent: its two windows, then the next byte. -/
-theorem crtByte_ok (M : Mont) {t₀ t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc : Nat} {Q : Prop}
+theorem crtByte_ok (M : Mont) (S : CrtSel) {t₀ t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc : Nat} {Q : Prop}
     {x : Nat} {ep : Addr} {L : Nat} {eb : List Byte} {i : Nat} (hw : 2 ≤ wx) (hw' : wx < 2 ^ 30)
     (hR : Nat.Coprime (2 ^ (64 * wx)) X) (hL : eb.length = L) (hL' : L < 2 ^ 31) (hi : i < L)
     (hrd : ∀ i < L, InRegions (t₀.rd ++ t₀.wr) (ep + BitVec.ofNat 64 i) 1)
@@ -770,7 +785,7 @@ theorem crtByte_ok (M : Mont) {t₀ t : State} {P : Addr} {wx : Nat} {minv : Bit
     WP isa (seqs [.block [.mov .rax (.mem (hdr Crt.sExp)), .mov .rcx (.mem (hdr Crt.sI)),
         .movzx8 .rax { base := .rax, index := some .rcx }, .store (hdr Crt.sV) .rax, .mov32 .rax (.imm 2),
         .store (hdr Crt.sBit) .rax],
-      .loop (seqs (Crt.expWin M.mm)) .ne,
+      .loop (seqs (Crt.expWin M.mm S.code)) .ne,
       .block [.mov .rax (.mem (hdr Crt.sI)), .alu .add .rax (.imm 1), .store (hdr Crt.sI) .rax,
         .alu .cmp .rax (.mem (hdr Crt.sExpLen))]]) t fun t' =>
       t'.zf = some (decide (i + 1 = L)) ∧ CByteInv t₀ P wx minv X Xc Q x ep L eb (i + 1) t' := by
@@ -780,7 +795,7 @@ theorem crtByte_ok (M : Mont) {t₀ t : State} {P : Addr} {wx : Nat} {minv : Bit
   refine WP.seq ((WP.block_append_iff).mpr (WP.mono (crtByteHead1_ok hI) fun tₐ ⟨hax, hcx, hIₐ⟩ =>
     WP.mono (crtByteHead2_ok hL hi hrd hbytes hout hIₐ hax hcx) fun t₁ ⟨hm₁, k₁, hB0⟩ => ?_))
   have hv : (eb[i]'(by omega_arith)).toNat < 256 := (eb[i]'(by omega_arith)).isLt
-  refine WP.seq (WP.mono (crtWins_ok M hw hw' hR hv hB0) fun t₂ h₂ => ?_)
+  refine WP.seq (WP.mono (crtWins_ok M S hw hw' hR hv hB0) fun t₂ h₂ => ?_)
   -- The next byte.
   have hc₂ := h₂.ctx
   have hh₂ : ∀ k < 32, k ≠ Crt.sV → k ≠ Crt.sBit → k ≠ Crt.sNib → k ≠ Crt.sEnt → k ≠ Crt.sJ →
@@ -1157,17 +1172,17 @@ def expInit (sp sl : Nat) : Prog isa :=
     .mov .rdx (.mem (Crt.ws .rax sl)), .store (hdr Crt.sExpLen) .rdx, .mov32 .rdx (.imm 0), .store (hdr Crt.sI) .rdx]
 
 /-- `expLoop`'s bytes. -/
-def expBytes (mul : Nat → Nat → Nat → Prog isa) : Prog isa :=
+def expBytes (mul : Nat → Nat → Nat → Prog isa) (sel : List (Prog isa)) : Prog isa :=
   .loop (seqs [
     .block [.mov .rax (.mem (hdr Crt.sExp)), .mov .rcx (.mem (hdr Crt.sI)),
       .movzx8 .rax { base := .rax, index := some .rcx }, .store (hdr Crt.sV) .rax, .mov32 .rax (.imm 2),
       .store (hdr Crt.sBit) .rax],
-    .loop (seqs (Crt.expWin mul)) .ne,
+    .loop (seqs (Crt.expWin mul sel)) .ne,
     .block [.mov .rax (.mem (hdr Crt.sI)), .alu .add .rax (.imm 1), .store (hdr Crt.sI) .rax,
       .alu .cmp .rax (.mem (hdr Crt.sExpLen))]]) .ne
 
-theorem expLoop_eq (mul : Nat → Nat → Nat → Prog isa) (sp sl : Nat) :
-    Crt.expLoop mul sp sl = expInit sp sl :: (Crt.tabBuild mul ++ [expBytes mul]) := by
+theorem expLoop_eq (mul : Nat → Nat → Nat → Prog isa) (sel : List (Prog isa)) (sp sl : Nat) :
+    Crt.expLoop mul sel sp sl = expInit sp sl :: (Crt.tabBuild mul ++ [expBytes mul sel]) := by
   simp [Crt.expLoop, expInit, expBytes]
 
 /-- `expLoop`'s start and table: the bytes' invariant. -/
@@ -1236,7 +1251,7 @@ stay so, and if `Q` gives `Y ≡ R` and `[aXc] ≡ x R` modulo `X`, then
 `Y ≡ x^d R`, for the exponent `d` whose `L` bytes `eb` (most significant
 first) are at `ep`, outside the working space, the pointer and length in
 the modulus' header slots `sp` and `sl`. -/
-theorem crtExpLoop_ok (M : Mont) {s : State} {B : Addr} {Z o w wx : Nat} {minv : BitVec 64} {X x : Nat}
+theorem crtExpLoop_ok (M : Mont) (S : CrtSel) {s : State} {B : Addr} {Z o w wx : Nat} {minv : BitVec 64} {X x : Nat}
     {Q : Prop} (hc : SubCtx s B Z o w wx minv) (hw2 : 2 ≤ wx) (hwx : wx ≤ w) (hw30 : w < 2 ^ 30)
     (hn : wv s.mem (off B o) (slot wx aN) wx = X)
     (hinv : ((word s.mem (off B o) (slot wx aN)).toNat * minv.toNat + 1) % 2 ^ 64 = 0)
@@ -1248,7 +1263,7 @@ theorem crtExpLoop_ok (M : Mont) {s : State} {B : Addr} {Z o w wx : Nat} {minv :
     {sp sl : Nat} (hsp : sp < 32) (hsl : sl < 32) {ep : Addr} {eb : List Byte}
     (hep : word s.mem B (8 * sp) = ep) (hel : word s.mem B (8 * sl) = BitVec.ofNat 64 eb.length)
     (hL1 : 1 ≤ eb.length) (hL2 : eb.length ≤ 1024) (he : Src s B Z ep eb) :
-    WP isa (seqs (Crt.expLoop M.mm sp sl)) s fun t => SubCtx t B Z o w wx minv ∧
+    WP isa (seqs (Crt.expLoop M.mm S.code sp sl)) s fun t => SubCtx t B Z o w wx minv ∧
       wv t.mem (off B o) (slot wx aY) wx < X ∧
       (Q → wv t.mem (off B o) (slot wx aY) wx % X = x ^ Spec.Rsa.os2ip eb * 2 ^ (64 * wx) % X) ∧
       Frm (off B o) (crtExpRanges wx) s.mem t.mem ∧ Keep mmRegs s t := by
@@ -1269,7 +1284,7 @@ theorem crtExpLoop_ok (M : Mont) {s : State} {B : Addr} {Z o w wx : Nat} {minv :
   simp only [seqs, expBytes]
   refine wp_upto (a := 0) (N := eb.length) (by omega_arith)
     (CByteInv s (off B o) wx minv X (wv s.mem (off B o) (slot wx Crt.aXc) wx) Q x ep eb.length eb)
-    (fun i _ hi' t hI => crtByte_ok M hw2 (by omega_arith) hR rfl (by omega_arith) hi' he.rd he.val hout hI)
+    (fun i _ hi' t hI => crtByte_ok M S hw2 (by omega_arith) hR rfl (by omega_arith) hi' he.rd he.val hout hI)
     (fun t hI => ?_) h₂
   exact ⟨hc.of_frmT hI.frm (crtExpRanges_ok wx) hI.keep.2.2 (hI.keep.gpr (by decide)), hI.ylt,
     fun hq => by rw [hI.y hq, pre_len], hI.frm, hI.keep⟩

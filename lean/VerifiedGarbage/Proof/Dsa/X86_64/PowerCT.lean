@@ -35,8 +35,8 @@ theorem encodePower_ct (M : Mont) :
 
 /-- The shared secret-exponent loop with DSA's parent-header argument slots.
 The byte values are secret; the pointer, length and workspace layout are public. -/
-theorem exponent_ct (M : Mont) : ExpCT M VG.Impl.Dsa.Layout.arg2 VG.Impl.Dsa.Layout.arg2Len :=
-  crtExpLoop_ct M (by taint_decide)
+theorem exponent_ct (M : Mont) : ExpCT M CrtSel.sse VG.Impl.Dsa.Layout.arg2 VG.Impl.Dsa.Layout.arg2Len :=
+  crtExpLoop_ct M CrtSel.sse CrtSel.sse_ct (by taint_decide)
 
 /-- The caller fixes addresses, widths and modulus; exponent and base values
 remain existential in the relational preconditions. -/

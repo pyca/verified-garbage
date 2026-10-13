@@ -26,7 +26,7 @@
 //! its contents if it can) in constant time. Whether the padding is valid,
 //! the length of the message and which of the two messages is returned do
 //! not affect the timing of the verified function. On an x86-64 CPU with the
-//! SHA extensions or AVX2, and with BMI2 and ADX (and AVX512_IFMA), and on
+//! SHA extensions or AVX2, and with BMI2, ADX and AVX2 (and AVX512_IFMA), and on
 //! an AArch64 CPU with the SHA-2 instructions, it uses the faster SHA-256
 //! compression functions and private-key operations, as
 //! [`hashes::sha256`](crate::hashes::sha256) and [`rsa`](crate::rsa) do.
