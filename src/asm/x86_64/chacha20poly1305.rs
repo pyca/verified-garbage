@@ -43750,7 +43750,7 @@ pub(crate) const VG_CHACHA20_POLY1305_SEAL_AVX512_FEATURES: crate::cpu::Features
 ///
 /// This implementation encrypts with `vg_chacha20_xor_avx512` and authenticates with `vg_poly1305_blocks_avx512`.
 ///
-/// For fewer than 640 bytes of data, it runs the code of `vg_chacha20_poly1305_seal_avx2` instead, with no 512-bit instruction: the CPUs with AVX-512 but not IFMA (Skylake-SP, Cascade Lake) lower their clock while they run 512-bit instructions, which costs short data more than the wider keystream saves.
+/// For fewer than 832 bytes of data, it runs the code of `vg_chacha20_poly1305_seal_avx2` instead, with no 512-bit instruction: the CPUs with AVX-512 but not IFMA (Skylake-SP, Cascade Lake) lower their clock while they run 512-bit instructions, which costs short data more than the wider keystream saves.
 ///
 /// # Safety
 ///
@@ -43771,7 +43771,7 @@ pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_seal_avx512(key: *cons
         "mov rax, rsp",
         "add rax, 24",
         "mov QWORD PTR [rsp+16], rax",
-        "cmp r9, 640",
+        "cmp r9, 832",
         "jb 20f",
         "mov rax, QWORD PTR [rsp+16]",
         "mov r11, QWORD PTR [rsp+8]",
@@ -71636,7 +71636,7 @@ pub(crate) const VG_CHACHA20_POLY1305_SEAL_AVX512VL_FEATURES: crate::cpu::Featur
 ///
 /// This implementation encrypts with `vg_chacha20_xor_avx512vl` and authenticates with `vg_poly1305_blocks_avx512`.
 ///
-/// For fewer than 640 bytes of data, it runs the code of `vg_chacha20_poly1305_seal_avx2` instead, with no 512-bit instruction: the CPUs with AVX-512 but not IFMA (Skylake-SP, Cascade Lake) lower their clock while they run 512-bit instructions, which costs short data more than the wider keystream saves.
+/// For fewer than 832 bytes of data, it runs the code of `vg_chacha20_poly1305_seal_avx2` instead, with no 512-bit instruction: the CPUs with AVX-512 but not IFMA (Skylake-SP, Cascade Lake) lower their clock while they run 512-bit instructions, which costs short data more than the wider keystream saves.
 ///
 /// # Safety
 ///
@@ -71657,7 +71657,7 @@ pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_seal_avx512vl(key: *co
         "mov rax, rsp",
         "add rax, 24",
         "mov QWORD PTR [rsp+16], rax",
-        "cmp r9, 640",
+        "cmp r9, 832",
         "jb 20f",
         "mov rax, QWORD PTR [rsp+16]",
         "mov r11, QWORD PTR [rsp+8]",
