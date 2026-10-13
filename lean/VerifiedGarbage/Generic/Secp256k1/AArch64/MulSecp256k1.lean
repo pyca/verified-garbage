@@ -1,6 +1,8 @@
-import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Secp256k1.MulVerified
+module
+
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.Secp256k1.MulVerified
 
 /-!
 # secp256k1's point multiplication on AArch64
@@ -11,6 +13,8 @@ public key derivation, verification and ECDH call. A generic file (see
 `Variants/Secp256k1/AArch64/Law.lean`: the ladder's proof takes the group law,
 and the curve's facts (`secp256k1_ok`) its inversions.
 -/
+
+@[expose] public section
 
 namespace VG.Generic.Secp256k1.AArch64.MulSecp256k1
 

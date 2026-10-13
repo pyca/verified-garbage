@@ -1,6 +1,8 @@
-import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
-import VerifiedGarbage.Proof.Ecdsa.AArch64.P192.MulVerified
+module
+
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.P192.MulVerified
 
 /-!
 # P-192's point multiplication on AArch64
@@ -11,6 +13,8 @@ public key derivation, verification and ECDH call. A generic file (see
 `Variants/P192/AArch64/Law.lean`: the ladder's proof takes the group law,
 and the curve's facts (`p192_ok`) its inversions.
 -/
+
+@[expose] public section
 
 namespace VG.Generic.P192.AArch64.MulP192
 
