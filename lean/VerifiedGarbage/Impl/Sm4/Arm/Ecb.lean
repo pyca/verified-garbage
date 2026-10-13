@@ -106,11 +106,27 @@ def advance : Prog isa := .seq groupCount (.block [.dp .add .r1 .r1 (.imm 128), 
 /-- Eight blocks, or the last one to seven. -/
 def group : Prog isa := .seq copyIn (.seq cryptSaved (.seq copyOut advance))
 
-/-- The whole function: the table, then the groups. -/
-def ecb (dir : Dir) : Prog isa :=
-  .seq (.block (saveRegs .r3 ++ [movR sb .r3, movR .r12 .r0]))
-    (.seq (keys dir)
+/-- The whole function with its working space at `sr` and the table built
+by `kt`: the table, then the groups. -/
+def ecbWith (sr : Reg) (kt : Prog isa) : Prog isa :=
+  .seq (.block (saveRegs sr ++ [movR sb sr, movR .r12 .r0]))
+    (.seq kt
       (.seq (.block [.cmp .r2 (.imm 0)])
         (.seq (.ite .eq (.block []) (.loop group .ne)) (.block ([movR .r12 sb] ++ restoreRegs .r12)))))
+
+/-! ## Either direction
+
+`vg_sm4_ecb(schedule = r0, data = r1, n = r2, decrypt = r3, scratch = [sp])`
+(`ecbAny`): the scratch buffer's address from the stack to `r12`, then the
+code above with the working space at `r12`, its table built in the
+direction the public `decrypt` selects (`keysAny`). `vg_sm4_ecb_encrypt`
+and `vg_sm4_ecb_decrypt` call it (`Cbc.lean`, `ecbCall`). -/
+
+/-- The table of encryption if `r3` is 0, of decryption otherwise. -/
+def keysAny : Prog isa := .seq (.block [.cmp .r3 (.imm 0)]) (.ite .eq encKeys decKeys)
+
+/-- ECB in the direction `r3` selects, its scratch buffer's address on the
+stack. -/
+def ecbAny : Prog isa := .seq (.block [.ldrSp .r12 0]) (ecbWith .r12 keysAny)
 
 end VG.Impl.Sm4.Arm

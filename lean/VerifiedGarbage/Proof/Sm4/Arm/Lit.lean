@@ -27,7 +27,6 @@ code again in each of them.
 namespace VG.Proof.Sm4.Arm
 
 materialize_flat_code expandKeyCode := Impl.Sm4.Arm.expandKey
-materialize_flat_code ecbEncrypt := Impl.Sm4.Arm.ecb .encrypt
-materialize_flat_code ecbDecrypt := Impl.Sm4.Arm.ecb .decrypt
+materialize_flat_code ecbAnyCode := Impl.Sm4.Arm.ecbAny
 
 end VG.Proof.Sm4.Arm
