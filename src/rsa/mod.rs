@@ -419,7 +419,10 @@ pub(crate) mod tests {
             Backend::Adx
         );
         assert_eq!(
-            Backend::select(VG_RSA_PRIVATE_CHECKED_IFMA_FEATURES),
+            Backend::select(Features::all(&[
+                VG_RSA_PRIVATE_CHECKED_IFMA_FEATURES,
+                Features::of(&["avx2"]),
+            ])),
             Backend::Ifma
         );
         assert_eq!(
