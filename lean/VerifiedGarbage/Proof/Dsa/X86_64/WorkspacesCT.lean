@@ -12,6 +12,10 @@ public import VerifiedGarbage.Proof.Dsa.Layout
 import VerifiedGarbage.Proof.Framework.X86_64.Call
 meta import VerifiedGarbage.Proof.Dsa.Layout
 meta import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
+import VerifiedGarbage.Proof.MdStream.Spec
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
+meta import VerifiedGarbage.Proof.MdStream.Spec
 
 /-! # Constant time of initializing both Montgomery workspaces -/
 

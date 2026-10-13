@@ -8,6 +8,10 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Dsa.Joint
+import VerifiedGarbage.Spec.Dsa
+meta import VerifiedGarbage.Proof.Dsa.Joint
+meta import VerifiedGarbage.Spec.Dsa
 
 /-! # Joint exponentiation and conversion out of Montgomery representation -/
 

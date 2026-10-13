@@ -5,6 +5,7 @@ public import VerifiedGarbage.TCB.Emit
 public import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyVerified
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Callees
 import VerifiedGarbage.Proof.Sha512.Word64
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
 
 /-!
 # RSASSA-PSS verification using cached public-key values, on AArch64

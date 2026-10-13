@@ -12,6 +12,8 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.X86_64.Call
 meta import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Bignum.X86_64.R2wCT
+meta import VerifiedGarbage.Proof.Bignum.X86_64.R2wCT
 
 /-! # Constant time of complete DSA streaming reduction, including empty inputs -/
 

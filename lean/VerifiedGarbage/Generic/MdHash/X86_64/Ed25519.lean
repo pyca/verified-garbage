@@ -11,6 +11,7 @@ public import VerifiedGarbage.Proof.Ed25519.X86_64.WindowSlideCT
 import Mathlib.Data.BitVec
 import VerifiedGarbage.Proof.Divstep.Bound
 import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Keep
+import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Half
 
 /-!
 # Ed25519 (RFC 8032) on x86-64, over SHA-512

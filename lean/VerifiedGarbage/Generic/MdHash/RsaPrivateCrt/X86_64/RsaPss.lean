@@ -6,6 +6,10 @@ public import VerifiedGarbage.Proof.RsaPss.X86_64.SignCt
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.Callees
 import Mathlib.Data.Int.ModEq
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxFused
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtExpL
+import VerifiedGarbage.Proof.Bignum.X86_64.PcCT
+import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
 
 /-!
 # RSASSA-PSS signing on x86-64
