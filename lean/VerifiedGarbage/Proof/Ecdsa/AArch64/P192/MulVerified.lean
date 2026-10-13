@@ -147,7 +147,7 @@ theorem mul_correct (hL : Law Spec.P192.curve) (hI : InvSounds) (s : State) (hs 
     rfl
   have hQ : onCurve p192.C (ptQ p192 (s.gpr .x0) s) = true := by rw [← eP]; exact hon
   obtain ⟨t, s', he, K', U', -, L', R'⟩ :=
-    mulFn_ok hc rfl ladLayM ladAM hL hS hmp' hz' hone' ha' hb3' hx' hy' hQ
+    mulFn_ok hc (.inl rfl) (.inl (by decide)) ladLayM ladAM hL hS hmp' hz' hone' ha' hb3' hx' hy' hQ
   refine ⟨t, s', he, ⟨fun r hr => K'.gpr r (by revert r; decide), K'.sp, Exec.preservedV he
     (show p192.mulFn.allInstrs keepsV = true by lit_decide)⟩, ?_⟩
   show C.Result (mul (C.scalar (s.gpr .x0) s.mem) (C.point (s.gpr .x0) s.mem)) (s.gpr .x0) s.mem s'.mem

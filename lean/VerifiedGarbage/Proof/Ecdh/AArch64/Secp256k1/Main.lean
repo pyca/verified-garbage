@@ -100,7 +100,7 @@ theorem exchange_ok (hc : BaseCfgOk secp256k1) (hC : Law secp256k1.C) {s₀ : St
       have s₃ : ∀ x ∈ [RX, RY, RZ, ACC, PT, TX, TY, TZ, T0, T1, T2, T3, T4, T5, DX, DY, DZ, TMP],
         x ∈ [EXPP, BM, RX, RY, RZ, ACC, PT, TX, TY, TZ, T0, T1, T2, T3, T4, T5, DX, DY, DZ, TMP] := by decide
       exact apart_append (apart_slW (fun h => hl (s₁ _ h)) ha)
-        (apart_append (apart_slW (fun h => hl (s₂ _ h)) ha) (apart_mulWF hi (fun h => hl (s₃ _ h)) ha))
+        (apart_append (apart_slW (fun h => hl (s₂ _ h)) ha) (apart_mulWF (.inl (by decide)) hi (fun h => hl (s₃ _ h)) ha))
   have e₅ : ∀ {i}, i < 45 → i ∉ [EXPP, BM, RX, RY, RZ, ACC, PT, TX, TY, TZ, T0, T1, T2, T3, T4, T5, DX, DY,
       DZ, TMP] → i ∉ [ACC, TMP] →
       sv secp256k1 (s₀.gpr .x3) s₅ i = sv secp256k1 (s₀.gpr .x3) s₄ i :=

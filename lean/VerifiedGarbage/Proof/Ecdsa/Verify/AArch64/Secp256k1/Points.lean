@@ -32,7 +32,7 @@ theorem apart_pts {i : Nat} (hi : i < 45) (hl : i ∉ ptsW)
   have s₂ : ∀ x ∈ [BM], x ∈ ptsW := by decide
   have s₃ : ∀ x ∈ [RX, RY, RZ, ACC, PT, TX, TY, TZ, T0, T1, T2, T3, T4, T5, DX, DY, DZ, TMP], x ∈ ptsW := by decide
   exact apart_append (apart_slW (fun h => hl (s₁ _ h)) hiA)
-    (apart_append (apart_slW (fun h => hl (s₂ _ h)) hiA) (apart_mulWF hi (fun h => hl (s₃ _ h)) hiA))
+    (apart_append (apart_slW (fun h => hl (s₂ _ h)) hiA) (apart_mulWF (.inl (by decide)) hi (fun h => hl (s₃ _ h)) hiA))
 
 theorem points_ok (hc : BaseCfgOk secp256k1) {s₀ : State} {base : Addr} {g : Reg → BitVec 64} {s : State}
     (hM : Mid secp256k1 s₀ base g s) {Q₁ Q₂ : Nat → Fe secp256k1.C → Fe secp256k1.C → Fe secp256k1.C → Prop}
@@ -122,7 +122,7 @@ theorem points_ok (hc : BaseCfgOk secp256k1) {s₀ : State} {base : Addr} {g : R
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hi
     rcases hi with rfl | rfl | rfl <;>
       exact (sv_unch U₅ h7 hn (by decide) (apart_append (apart_slW (by decide))
-        (apart_append (apart_slW (by decide)) (apart_mulWF (by decide) (by decide))))).trans
+        (apart_append (apart_slW (by decide)) (apart_mulWF (.inl (by decide)) (by decide) (by decide))))).trans
         (v₄ (by decide) (by decide))
   refine WP.seq (WP.mono (sum_ok hc hs₅ M₅ (fun i hi => ?_)) fun s₆ ⟨hs₆, rd₆, wr₆, U₆, M₆, rz₆, t₆⟩ => ?_)
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hi
@@ -154,21 +154,24 @@ theorem points_ok (hc : BaseCfgOk secp256k1) {s₀ : State} {base : Addr} {g : R
   have em₆ : sv secp256k1 base s₆ EM = sv secp256k1 base s K := by
     have a₆ := sv_unch (c := secp256k1) U₆ h7 hn (i := EM) (by decide) (apart_slW (by decide))
     have a₅ := sv_unch (c := secp256k1) U₅ h7 hn (i := EM) (by decide) (apart_append (apart_slW (by decide))
-      (apart_append (apart_slW (by decide)) (apart_mulWF (by decide) (by decide))))
+      (apart_append (apart_slW (by decide)) (apart_mulWF (.inl (by decide)) (by decide) (by decide))))
     have a₃ := sv_unch (c := secp256k1) U₃ h7 hn (i := EM) (by decide) (apart_slW (by decide))
     have a₂ := sv_unch (c := secp256k1) U₂ h7 hn (i := EM) (by decide) (apart_append (apart_slW (by decide))
-      (apart_mulWF (by decide) (by decide)))
+      (apart_mulWF (.inl (by decide)) (by decide) (by decide)))
     exact a₆.trans (a₅.trans ((v₄ (by decide) (by decide)).trans (a₃.trans (a₂.trans em₁))))
-  have UW : Unch base ([(bitsAt secp256k1.n 0, 64 * secp256k1.n + 8)] ++ slW secp256k1 ptsW) s.mem s₇.mem := by
+  have UW : Unch base ([(bitsAt secp256k1.n 0, 64 * secp256k1.n + 8), (secp256k1.invTmp, 8 * secp256k1.n)] ++ slW secp256k1 ptsW) s.mem s₇.mem := by
     refine (U₁.trans (U₂.trans (U₃.trans (U₄.trans (U₅.trans (U₆.trans U₇)))))).mono fun w hw => ?_
     have hB : ∀ {l : List Nat}, (∀ i ∈ l, i ∈ ptsW) → ∀ w ∈ slW secp256k1 l,
-        w ∈ [(bitsAt secp256k1.n 0, 64 * secp256k1.n + 8)] ++ slW secp256k1 ptsW := fun hl w hw =>
+        w ∈ [(bitsAt secp256k1.n 0, 64 * secp256k1.n + 8), (secp256k1.invTmp, 8 * secp256k1.n)] ++ slW secp256k1 ptsW := fun hl w hw =>
       List.mem_append_right _ (List.map_subset _ hl hw)
-    have hM' : ∀ w ∈ mulWF secp256k1, w ∈ [(bitsAt secp256k1.n 0, 64 * secp256k1.n + 8)] ++ slW secp256k1 ptsW := by
+    have hM' : ∀ w ∈ mulWF secp256k1, w ∈ [(bitsAt secp256k1.n 0, 64 * secp256k1.n + 8), (secp256k1.invTmp, 8 * secp256k1.n)] ++ slW secp256k1 ptsW := by
       intro w hw
       rcases List.mem_append.mp hw with hw | hw
       · exact hB (by decide) w hw
-      · exact List.mem_append_left _ hw
+      · simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
+        rcases hw with rfl | rfl
+        · exact List.mem_append_left _ (List.mem_cons_of_mem _ (List.mem_singleton_self _))
+        · exact List.mem_append_left _ (List.mem_cons_self ..)
     simp only [List.mem_append] at hw
     rcases hw with hw | (hw | hw) | hw | hw | (hw | hw | hw) | hw | hw
     · exact hB (by decide) w hw
@@ -208,16 +211,21 @@ theorem points_ok (hc : BaseCfgOk secp256k1) {s₀ : State} {base : Addr} {g : R
   · rw [UW.word (fun w hw => ?_) (by have := sl_le secp256k1 h7 (i := FLAG) (by decide); omega)]
     · exact hM.flag
     · rcases List.mem_append.mp hw with hw | hw
-      · rw [List.mem_singleton.mp hw]
-        have := sl_below_bits secp256k1 (i := FLAG) (by decide) 0 0
-        exact .inl (by dsimp only; omega)
+      · simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
+        rcases hw with rfl | rfl
+        · have := sl_below_bits secp256k1 (i := FLAG) (by decide) 0 0
+          exact .inl (by dsimp only; omega)
+        · decide
       · exact (apart_slW (c := secp256k1) (i := FLAG) (l := ptsW) (by decide)) w hw |>.elim
           (fun h => Or.inl (by omega)) (fun h => Or.inr h)
   · refine unch_whole (hM.unch.trans UW) fun w hw => ?_
     rcases List.mem_append.mp hw with hw | hw
     · rw [List.mem_singleton.mp hw]; exact Nat.le_refl _
     rcases List.mem_append.mp hw with hw | hw
-    · rw [List.mem_singleton.mp hw]; have := bitsAt0_le secp256k1 h7; show _ ≤ 8192; dsimp only; omega
+    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
+      rcases hw with rfl | rfl
+      · have := bitsAt0_le secp256k1 h7; show _ ≤ 8192; dsimp only; omega
+      · show _ ≤ 8192; decide
     · obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hw
       exact sl_le secp256k1 h7 ((show ∀ i ∈ ptsW, i < 45 by decide) i hi)
 

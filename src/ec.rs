@@ -148,14 +148,14 @@ impl Curve for BrainpoolP256r1 {
 }
 
 /// The curve brainpoolP384r1 (RFC 5639 §3.6).
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum BrainpoolP384r1 {}
 
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
 impl sealed::Sealed for BrainpoolP384r1 {}
 
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
 impl Curve for BrainpoolP384r1 {
     type PrivateKey = [u8; 48];
     type PublicKey = [u8; 97];
