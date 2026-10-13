@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Dsa.Layout
 public import VerifiedGarbage.Impl.Dsa.X86_64.Joint
+public import VerifiedGarbage.Impl.Dsa.X86_64.PublicPower
 
 /-!
 # DSA signing and verification arithmetic on x86-64
@@ -46,6 +47,12 @@ def pow (mul : Nat → Nat → Nat → Prog isa) (ws : Nat) (base exponent outpu
   seqs ([.block (operand arg argLen base ++ operand arg2 arg2Len exponent ++
     operand result resultLen output ++ enter ws),
     Arithmetic.power mul arg argLen arg2 arg2Len] ++ finish)
+
+/-- Only for exponents declared public by the caller's contract. -/
+def publicPow (mul : Nat → Nat → Nat → Prog isa) (ws : Nat) (base exponent output : Operand) : Prog isa :=
+  seqs ([.block (operand arg argLen base ++ operand arg2 arg2Len exponent ++
+    operand result resultLen output ++ enter ws),
+    PublicPower.power mul arg argLen arg2 arg2Len] ++ finish)
 
 /-- Joint exponentiation uses the verification scalars u/v. -/
 def joint (mul : Nat → Nat → Nat → Prog isa) (ws : Nat) (a b output : Operand) : Prog isa :=

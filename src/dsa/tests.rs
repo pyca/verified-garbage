@@ -114,6 +114,46 @@ fn padded_domain_and_scalars() {
 }
 
 #[test]
+fn public_subgroup_windows() {
+    let cases = vectors(include_str!("../../vectors/nist-cavp-dsa/SigGen.txt"), true);
+    let v = &cases[0];
+    let p = hex(&v["P"], 0);
+    let q = hex(&v["Q"], 0);
+    let g = hex(&v["G"], p.len());
+    let y = hex(&v["Y"], p.len());
+    let x = hex(&v["X"], q.len());
+    let nonce = hex(&v["K"], q.len());
+    let digest = digest(&v["Hash"], &hex(&v["Msg"], 0));
+    let signature = [hex(&v["R"], q.len()), hex(&v["S"], q.len())].concat();
+    let mut minus_one = p.clone();
+    // p is odd, so subtracting one cannot borrow from the final byte.
+    *minus_one.last_mut().unwrap() -= 1;
+    // Each has order two, although their product is one. Both subgroup
+    // checks must reject them independently for the odd subgroup order.
+    for (generator, public) in [(&minus_one, &y), (&g, &minus_one), (&minus_one, &minus_one)] {
+        let key = PublicKey::from_components(&p, &q, generator, public).unwrap();
+        assert!(!key.verify(&digest, &signature));
+    }
+    // Malformed odd orders still execute the public exponentiation path.
+    // Exercise zero windows, dense windows and every table digit. With
+    // g = -1 and odd q, subgroup validation must always fail.
+    for pattern in [0x00, 0xff, 0xf0, 0x01] {
+        let mut order = vec![pattern; q.len()];
+        order[0] |= 0x80;
+        *order.last_mut().unwrap() |= 1;
+        if pattern == 0x01 {
+            order[1..9].copy_from_slice(&[0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef]);
+        }
+        let key = PrivateKey::from_components(&p, &order, &minus_one, &y, &x).unwrap();
+        assert!(!key.public_key().verify(&digest, &signature));
+        let mut output = vec![0xa5; signature.len()];
+        let mut scratch = Secret(vec![0xa5a5a5a5a5a5a5a5; 16 * p.len()]);
+        assert!(!key.sign_once(&digest, &nonce, &mut output, &mut scratch.0));
+        assert_eq!(output, vec![0; signature.len()]);
+    }
+}
+
+#[test]
 fn malformed_keys_nonces_and_bounded_retries() {
     let (mut key, digest, nonce) = sample();
     let mut output = vec![0xa5; 40];

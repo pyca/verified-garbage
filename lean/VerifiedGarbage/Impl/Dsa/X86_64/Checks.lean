@@ -135,16 +135,19 @@ def isOne (ws : Nat) (value : Operand) : Prog isa := seqs [
   wordLoop 1 [.mov .rax (.mem (ix .rbx .r14)), .alu .or .r15 (.reg .rax)],
   .block (([.alu .cmp .r15 (.imm 1), .alu .sbb .rax (.reg .rax), Crt.leave] : List Instr) ++ accumulate)]
 
-/-- Algebraic domain checks and public-key validation. -/
-def publicKey (mul : Nat → Nat → Nat → Prog isa) : Prog isa := seqs [
+/-- Range and domain checks before the public subgroup exponentiations. -/
+def publicPrefix (mul : Nat → Nat → Nat → Prog isa) : List (Prog isa) := [
   range pWorkspace Core.generator true, range pWorkspace Core.publicValue true,
   modulusMinus pWorkspace 1 (Core.element t),
   Core.reduce mul (Core.element t) (Core.scalar u), zero (Core.scalar u),
-  modulusMinus qWorkspace 2 (Core.scalar qMinusTwo),
-  Core.pow mul pWorkspace Core.generator ⟨.input .q, .qLen⟩ (Core.element t),
+  modulusMinus qWorkspace 2 (Core.scalar qMinusTwo)]
+
+/-- Check both subgroup memberships independently, with public q windows. -/
+def publicKey (mul : Nat → Nat → Nat → Prog isa) : Prog isa := seqs (publicPrefix mul ++ [
+  Core.publicPow mul pWorkspace Core.generator ⟨.input .q, .qLen⟩ (Core.element t),
   isOne pWorkspace (Core.element t),
-  Core.pow mul pWorkspace Core.publicValue ⟨.input .q, .qLen⟩ (Core.element t),
-  isOne pWorkspace (Core.element t)]
+  Core.publicPow mul pWorkspace Core.publicValue ⟨.input .q, .qLen⟩ (Core.element t),
+  isOne pWorkspace (Core.element t)])
 
 /-- Private/public key consistency and nonce rejection masks. -/
 def privateKey (mul : Nat → Nat → Nat → Prog isa) : Prog isa := seqs [
