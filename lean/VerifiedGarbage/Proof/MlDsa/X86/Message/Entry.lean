@@ -8,6 +8,14 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.Conv
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Sha512.Word64
+meta import Mathlib.Tactic.Conv
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.Sha512.Word64
 
 /-!
 # ML-DSA on x86 (32-bit), `sign_message` and `verify_message`: the check, the entry and the leaf

@@ -10,6 +10,12 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Blocks
+import Mathlib.Tactic.Conv
+import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Same
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Blocks
+meta import Mathlib.Tactic.Conv
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Same
 
 /-!
 # ML-DSA verification on x86-64: constant time, the pieces without calls
