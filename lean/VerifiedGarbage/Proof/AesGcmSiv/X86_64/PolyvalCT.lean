@@ -383,17 +383,17 @@ theorem AMid.agree {K W SP : Addr} {R : Nat} {N A D : Addr} {al n : Nat} {Q : Ad
     · rw [h₁.inv.rbp, h₂.inv.rbp]
     · rw [h₁.r14, h₂.r14]⟩
 
-theorem chunkPre_wp {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A D : Addr} {al n : Nat} {Q : Addr} {b nr d : Nat}
+theorem chunkPre_wp (wide : Bool) {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A D : Addr} {al n : Nat} {Q : Addr} {b nr d : Nat}
     (hd : d < b) {t : State} (I : AInv K W SP R N A D al n Q b nr d t) :
     WP isa (.seq (.block [.mov32 .r14 (imm 64), .alu .cmp .rbx (.reg .r14)])
       (.seq (.ite .b (.block [.mov .r14 (.reg .rbx)]) (.block []))
       (.seq (.block (([.mov .rsi (.reg .r12)] : List Instr) ++ ptr .rdi .r15 revO))
-      (.seq revLoop (.block (ghArgs ++ ptr .rdx .r15 revO ++ ([.mov .rcx (.reg .r14)] : List Instr))))))) t
+      (.seq (revSel wide) (.block (ghArgs ++ ptr .rdx .r15 revO ++ ([.mov .rcx (.reg .r14)] : List Instr))))))) t
       fun t₅ => GhCall t₅ (W + BitVec.ofNat 64 64) (W + BitVec.ofNat 64 80) (W + BitVec.ofNat 64 488)
         (W + BitVec.ofNat 64 1512) (min (b - d) 64) ∧ t₅.gpr .rsp = SP ∧
         AMid K W SP R N A D al n Q b nr d (min (b - d) 64) t₅ := by
   have hQ : Buf K W SP t (Q + BitVec.ofNat 64 (16 * d)) (16 * (b - d)) := I.buf.slice (by omega)
-  refine WP.mono (chunkPre_ok L I.one.env (by omega) hQ I.r12 I.rbx) fun t₅ Pr => ⟨Pr.call, Pr.env.rsp, ?_, Pr.r14⟩
+  refine WP.mono (chunkPre_ok wide L I.one.env (by omega) hQ I.r12 I.rbx) fun t₅ Pr => ⟨Pr.call, Pr.env.rsp, ?_, Pr.r14⟩
   refine ⟨⟨Pr.env, I.one.sl.of_frame Pr.frame (fun q hq => ?_), Pr.wr.trans I.one.wr⟩, I.buf.of_eq Pr.rd Pr.wr,
     I.res.of_eq Pr.rd Pr.wr, by rw [Pr.regs _ (by simp), I.r12], by rw [Pr.regs _ (by simp), I.rbx], by rw [Pr.regs _ (by simp), I.rbp]⟩
   simp only [List.mem_singleton] at hq; subst hq
@@ -440,12 +440,15 @@ theorem chunkEnd_wp {K W SP : Addr} {R : Nat} {N A D : Addr} {al n : Nat} {Q : A
       M.r14, Proof.AesGcm.X86_64.sub_beq (show b - d < 2 ^ 64 by omega) (show min (b - d) 64 < 2 ^ 64 by omega)]
     exact congrArg some (decide_eq_decide.mpr (by omega))
 
-theorem chunkPre_check : ∃ hc, (taint.check (sivT [.r12, .rbx, .rbp])
+theorem chunkPre_check (wide : Bool) : ∃ hc, (taint.check (sivT [.r12, .rbx, .rbp])
     (.seq (.block [.mov32 .r14 (imm 64), .alu .cmp .rbx (.reg .r14)])
       (.seq (.ite .b (.block [.mov .r14 (.reg .rbx)]) (.block []))
       (.seq (.block (([.mov .rsi (.reg .r12)] : List Instr) ++ ptr .rdi .r15 revO))
-      (.seq revLoop (.block (ghArgs ++ ptr .rdx .r15 revO ++ ([.mov .rcx (.reg .r14)] : List Instr))))))) hc).isSome =
-    true := ⟨_, by taint_decide⟩
+      (.seq (revSel wide) (.block (ghArgs ++ ptr .rdx .r15 revO ++ ([.mov .rcx (.reg .r14)] : List Instr))))))) hc).isSome =
+    true := by
+  cases wide
+  · exact ⟨_, by taint_decide⟩
+  · exact ⟨_, by taint_decide⟩
 
 theorem chunkEnd_check : ∃ hc, (taint.check (sivT [.r12, .rbx, .rbp, .r14])
     (.block [.mov .rax (.reg .r14), .alu .add .rax (.reg .rax), .alu .add .rax (.reg .rax),
@@ -453,24 +456,24 @@ theorem chunkEnd_check : ∃ hc, (taint.check (sivT [.r12, .rbx, .rbp, .r14])
     hc).isSome = true := ⟨_, by taint_decide⟩
 
 /-- A chunk, in two runs after the same blocks. -/
-theorem chunk_rel (v : GcmImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A D : Addr} {al n : Nat}
+theorem chunk_rel (v : GcmImpl) (wide : Bool) {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A D : Addr} {al n : Nat}
     (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 3816⟩) (hn : n ≤ 2 ^ 64) {Q : Addr} {b nr d : Nat} (hd : d < b) :
     RelCT isa (fun t₁ t₂ => AInv K W SP R N A D al n Q b nr d t₁ ∧ AInv K W SP R N A D al n Q b nr d t₂)
-      (absorbChunk v.callees)
+      (absorbChunk v.callees wide)
       fun t₁ t₂ => (AInv K W SP R N A D al n Q b nr (d + min (b - d) 64) t₁ ∧
           t₁.zf = some (decide (b - (d + min (b - d) 64) = 0))) ∧
         (AInv K W SP R N A D al n Q b nr (d + min (b - d) 64) t₂ ∧
           t₂.zf = some (decide (b - (d + min (b - d) 64) = 0))) := by
   refine rel_assoc5 ?_
   have r₁ := (rel_taintC [.r12, .rbx, .rbp] (P := fun t₁ t₂ => AInv K W SP R N A D al n Q b nr d t₁ ∧
-      AInv K W SP R N A D al n Q b nr d t₂) hDW hn (fun t₁ t₂ h => h.1.agree h.2) chunkPre_check).wp
+      AInv K W SP R N A D al n Q b nr d t₂) hDW hn (fun t₁ t₂ h => h.1.agree h.2) (chunkPre_check wide)).wp
     (F₁ := fun (t₅ : State) => GhCall t₅ (W + BitVec.ofNat 64 64) (W + BitVec.ofNat 64 80) (W + BitVec.ofNat 64 488)
         (W + BitVec.ofNat 64 1512) (min (b - d) 64) ∧ t₅.gpr .rsp = SP ∧
         AMid K W SP R N A D al n Q b nr d (min (b - d) 64) t₅)
     (F₂ := fun (t₅ : State) => GhCall t₅ (W + BitVec.ofNat 64 64) (W + BitVec.ofNat 64 80) (W + BitVec.ofNat 64 488)
         (W + BitVec.ofNat 64 1512) (min (b - d) 64) ∧ t₅.gpr .rsp = SP ∧
         AMid K W SP R N A D al n Q b nr d (min (b - d) 64) t₅)
-    fun t₁ t₂ h => ⟨chunkPre_wp L hd h.1, chunkPre_wp L hd h.2⟩
+    fun t₁ t₂ h => ⟨chunkPre_wp wide L hd h.1, chunkPre_wp wide L hd h.2⟩
   have r₂ := (gh_rel v.gh (P := fun t₁ t₂ => True ∧ (GhCall t₁ (W + BitVec.ofNat 64 64) (W + BitVec.ofNat 64 80)
         (W + BitVec.ofNat 64 488) (W + BitVec.ofNat 64 1512) (min (b - d) 64) ∧ t₁.gpr .rsp = SP ∧
         AMid K W SP R N A D al n Q b nr d (min (b - d) 64) t₁) ∧
@@ -492,10 +495,10 @@ theorem chunk_rel (v : GcmImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A 
   exact (RelCT.seq r₁ (RelCT.seq r₂ r₃)).mono (fun _ _ h => h) fun _ _ h => ⟨h.2.1, h.2.2⟩
 
 /-- The chunks, in two runs. -/
-theorem chunks_rel (v : GcmImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A D : Addr} {al n : Nat}
+theorem chunks_rel (v : GcmImpl) (wide : Bool) {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A D : Addr} {al n : Nat}
     (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 3816⟩) (hn : n ≤ 2 ^ 64) {Q : Addr} {b nr : Nat} (hb : 1 ≤ b) :
     RelCT isa (fun t₁ t₂ => AInv K W SP R N A D al n Q b nr 0 t₁ ∧ AInv K W SP R N A D al n Q b nr 0 t₂)
-      (.loop (absorbChunk v.callees) .ne)
+      (.loop (absorbChunk v.callees wide) .ne)
       fun t₁ t₂ => AInv K W SP R N A D al n Q b nr b t₁ ∧ AInv K W SP R N A D al n Q b nr b t₂ := by
   refine (RelCT.loop (fun m t₁ t₂ => ∃ d, m = b - d ∧ d < b ∧ AInv K W SP R N A D al n Q b nr d t₁ ∧
       AInv K W SP R N A D al n Q b nr d t₂) (fun m => ?_) (b - 0)).mono
@@ -504,7 +507,7 @@ theorem chunks_rel (v : GcmImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A
   by_cases hd : d < b
   · by_cases hm : m = b - d
     · subst hm
-      refine (chunk_rel v L hDW hn hd).mono (fun t₁ t₂ h => ⟨h.2.2.1, h.2.2.2⟩)
+      refine (chunk_rel v wide L hDW hn hd).mono (fun t₁ t₂ h => ⟨h.2.2.1, h.2.2.2⟩)
         fun t₁ t₂ ⟨⟨I₁, z₁⟩, ⟨I₂, z₂⟩⟩ => ⟨by rw [eval_ne z₁, eval_ne z₂], fun hc => ?_, fun hc => ?_⟩
       · rw [eval_ne z₁] at hc
         have he : d + min (b - d) 64 = b := by simp at hc; omega
@@ -589,10 +592,10 @@ theorem absTest_wp {K W SP : Addr} {R : Nat} {N A D : Addr} {al n : Nat} {Q : Ad
     rw [Proof.AesGcm.X86_64.and_self_beq (by omega)]
 
 /-- `absorb`, in two runs with the same public arguments. -/
-theorem absorb_rel (v : GcmImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A D : Addr} {al n : Nat}
+theorem absorb_rel (v : GcmImpl) (wide : Bool) {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A D : Addr} {al n : Nat}
     (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 3816⟩) (hn : n ≤ 2 ^ 64) {Q : Addr} {nb : Nat} {P : State → State → Prop}
     (hP : ∀ t₁ t₂, P t₁ t₂ → AbsIn K W SP R N A D al n Q nb t₁ ∧ AbsIn K W SP R N A D al n Q nb t₂) :
-    RelCT isa P (absorb v.callees) fun _ _ => True := by
+    RelCT isa P (absorb v.callees wide) fun _ _ => True := by
   have r₁ := (rel_taintC [.r12, .rbp] hDW hn (fun t₁ t₂ h => ⟨(hP _ _ h).1.one, (hP _ _ h).2.one, fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
@@ -604,7 +607,7 @@ theorem absorb_rel (v : GcmImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A
   have r₂ : RelCT isa (fun t₁ t₂ => True ∧ (AInv K W SP R N A D al n Q (nb / 16) (nb % 16) 0 t₁ ∧
         t₁.zf = some (decide (nb / 16 = 0))) ∧ (AInv K W SP R N A D al n Q (nb / 16) (nb % 16) 0 t₂ ∧
         t₂.zf = some (decide (nb / 16 = 0))))
-      (.ite .e (.block []) (.loop (absorbChunk v.callees) .ne))
+      (.ite .e (.block []) (.loop (absorbChunk v.callees wide) .ne))
       fun t₁ t₂ => AInv K W SP R N A D al n Q (nb / 16) (nb % 16) (nb / 16) t₁ ∧
         AInv K W SP R N A D al n Q (nb / 16) (nb % 16) (nb / 16) t₂ := by
     refine RelCT.ite (fun t₁ t₂ h => by rw [eval_e h.2.1.2, eval_e h.2.2.2]) ?_ ?_
@@ -619,7 +622,7 @@ theorem absorb_rel (v : GcmImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A
         have := h.2
         rw [eval_e h.1.2.1.2] at this
         simp [h0] at this
-      · exact (chunks_rel v L hDW hn (b := nb / 16) (by omega)).mono (fun t₁ t₂ h => ⟨h.1.2.1.1, h.1.2.2.1⟩)
+      · exact (chunks_rel v wide L hDW hn (b := nb / 16) (by omega)).mono (fun t₁ t₂ h => ⟨h.1.2.1.1, h.1.2.2.1⟩)
           fun _ _ h => h
   have r₃ := (rel_taintC [.r12, .rbx, .rbp] (P := fun t₁ t₂ =>
       AInv K W SP R N A D al n Q (nb / 16) (nb % 16) (nb / 16) t₁ ∧
@@ -719,17 +722,17 @@ theorem polyBlk_wp {K W SP : Addr} {R : Nat} {N A D : Addr} {al n : Nat} {t : St
   exact ⟨⟨⟨E', h.one.sl, h.one.wr⟩, hQ.of_eq rfl rfl, by simp only [gpr_setReg, ite_true, ite_false, reduceCtorEq, h₁],
     by simp only [gpr_setReg, ite_true, h₂]⟩, ⟨E', h.one.sl, h.one.wr⟩, h.aad.of_eq rfl rfl, h.data.of_eq rfl rfl⟩
 
-theorem absorb_bufs (v : GcmImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A D : Addr} {al n : Nat}
+theorem absorb_bufs (v : GcmImpl) (wide : Bool) {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A D : Addr} {al n : Nat}
     {Q : Addr} {nb : Nat} {t : State} (h : AbsIn K W SP R N A D al n Q nb t ∧ Bufs K W SP R N A D al n t) :
-    WP isa (absorb v.callees) t (Bufs K W SP R N A D al n) :=
-  WP.mono (absorb_ok v L h.1.one.env h.1.buf h.1.r12 h.1.rbp) fun _ P => h.2.of_eq P.env P.frame L P.rd P.wr
+    WP isa (absorb v.callees wide) t (Bufs K W SP R N A D al n) :=
+  WP.mono (absorb_ok v wide L h.1.one.env h.1.buf h.1.r12 h.1.rbp) fun _ P => h.2.of_eq P.env P.frame L P.rd P.wr
 
 /-- `polyval`, in two runs with the same public arguments. -/
-theorem polyval_rel (v : GcmImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A D : Addr} {al n : Nat}
+theorem polyval_rel (v : GcmImpl) (wide : Bool) {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A D : Addr} {al n : Nat}
     (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 3816⟩) (hn : n ≤ 2 ^ 64) (hal : al < 2 ^ 64) (hn' : n < 2 ^ 64)
     {P : State → State → Prop}
     (hP : ∀ t₁ t₂, P t₁ t₂ → Bufs K W SP R N A D al n t₁ ∧ Bufs K W SP R N A D al n t₂) :
-    RelCT isa P (polyval v.callees) fun _ _ => True := by
+    RelCT isa P (polyval v.callees wide) fun _ _ => True := by
   have r₁ := (rel_taintC [] hDW hn (fun t₁ t₂ h => ⟨(hP _ _ h).1.one, (hP _ _ h).2.one, fun _ h => nomatch h⟩)
     polyA_check).wp
     (F₁ := fun (t : State) => AbsIn K W SP R N A D al n A al t ∧ Bufs K W SP R N A D al n t)
@@ -738,12 +741,12 @@ theorem polyval_rel (v : GcmImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N 
         (hP _ _ h).1.one.sl.alen (by decide) (by decide),
       polyBlk_wp (o₁ := aadO) (o₂ := alenO) (hP _ _ h).2 (hP _ _ h).2.aad (hP _ _ h).2.one.sl.aad
         (hP _ _ h).2.one.sl.alen (by decide) (by decide)⟩
-  have r₂ := (absorb_rel v L hDW hn (Q := A) (nb := al) (P := fun t₁ t₂ => True ∧
+  have r₂ := (absorb_rel v wide L hDW hn (Q := A) (nb := al) (P := fun t₁ t₂ => True ∧
       (AbsIn K W SP R N A D al n A al t₁ ∧ Bufs K W SP R N A D al n t₁) ∧
       (AbsIn K W SP R N A D al n A al t₂ ∧ Bufs K W SP R N A D al n t₂))
     fun t₁ t₂ h => ⟨h.2.1.1, h.2.2.1⟩).wp
     (F₁ := Bufs K W SP R N A D al n) (F₂ := Bufs K W SP R N A D al n)
-    fun t₁ t₂ h => ⟨absorb_bufs v L h.2.1, absorb_bufs v L h.2.2⟩
+    fun t₁ t₂ h => ⟨absorb_bufs v wide L h.2.1, absorb_bufs v wide L h.2.2⟩
   have r₃ := (rel_taintC [] (P := fun t₁ t₂ => True ∧ Bufs K W SP R N A D al n t₁ ∧ Bufs K W SP R N A D al n t₂)
     hDW hn (fun t₁ t₂ h => ⟨h.2.1.one, h.2.2.one, fun _ h => nomatch h⟩) polyD_check).wp
     (F₁ := fun (t : State) => AbsIn K W SP R N A D al n D n t ∧ Bufs K W SP R N A D al n t)
@@ -752,12 +755,12 @@ theorem polyval_rel (v : GcmImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N 
         (by decide) (by decide),
       polyBlk_wp (o₁ := dataO) (o₂ := lenO) h.2.2 h.2.2.data h.2.2.one.sl.data h.2.2.one.sl.len (by decide)
         (by decide)⟩
-  have r₄ := (absorb_rel v L hDW hn (Q := D) (nb := n) (P := fun t₁ t₂ => True ∧
+  have r₄ := (absorb_rel v wide L hDW hn (Q := D) (nb := n) (P := fun t₁ t₂ => True ∧
       (AbsIn K W SP R N A D al n D n t₁ ∧ Bufs K W SP R N A D al n t₁) ∧
       (AbsIn K W SP R N A D al n D n t₂ ∧ Bufs K W SP R N A D al n t₂))
     fun t₁ t₂ h => ⟨h.2.1.1, h.2.2.1⟩).wp
     (F₁ := Bufs K W SP R N A D al n) (F₂ := Bufs K W SP R N A D al n)
-    fun t₁ t₂ h => ⟨absorb_bufs v L h.2.1, absorb_bufs v L h.2.2⟩
+    fun t₁ t₂ h => ⟨absorb_bufs v wide L h.2.1, absorb_bufs v wide L h.2.2⟩
   have lens_bufs : ∀ {t : State}, Bufs K W SP R N A D al n t → WP isa (lens v.callees) t (Bufs K W SP R N A D al n) :=
     fun h => WP.mono (lens_ok v L h.one.env h.one.sl.alen h.one.sl.len hal hn') fun _ P =>
       h.of_eq P.env P.frame L P.rd P.wr
