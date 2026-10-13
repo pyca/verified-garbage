@@ -7,6 +7,8 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import Mathlib.Data.Fintype.Card
 import VerifiedGarbage.Proof.Sha512.Word64
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Pbkdf2.Hmac
 
 /-!
 # RSAES-PKCS1-v1_5 decryption on AArch64: the HMACs

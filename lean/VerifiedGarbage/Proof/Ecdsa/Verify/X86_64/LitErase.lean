@@ -20,6 +20,8 @@ import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
 meta import VerifiedGarbage.Proof.Mont.X86_64.Wide
 meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
 meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+import VerifiedGarbage.Proof.Weierstrass.X86_64.P256Templates
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.P256Templates
 
 /-!
 # ECDSA verification over P-256 on x86-64: the checked code without its displacements

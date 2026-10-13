@@ -20,6 +20,8 @@ meta import Mathlib.Data.Nat.Find
 meta import VerifiedGarbage.Proof.Framework.NativeTaint
 meta import VerifiedGarbage.Proof.Framework.X86.Sse
 meta import VerifiedGarbage.Proof.X25519.X86.Column
+import VerifiedGarbage.Proof.P256.Prime
+meta import VerifiedGarbage.Proof.P256.Prime
 
 /-! # Verification with the static comb table address -/
 

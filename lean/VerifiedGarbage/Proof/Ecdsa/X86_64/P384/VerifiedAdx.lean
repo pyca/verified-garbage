@@ -20,6 +20,10 @@ meta import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
 meta import VerifiedGarbage.Proof.Mont.X86_64.Wide
 meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
 meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+import VerifiedGarbage.Impl.Weierstrass.X86_64.DoubleCms
+import VerifiedGarbage.Proof.P384.Prime
+meta import VerifiedGarbage.Impl.Weierstrass.X86_64.DoubleCms
+meta import VerifiedGarbage.Proof.P384.Prime
 
 /-!
 # ECDSA over P-384 on x86-64 with BMI2 and ADX: `Verified`

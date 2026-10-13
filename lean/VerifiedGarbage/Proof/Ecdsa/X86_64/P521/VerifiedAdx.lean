@@ -22,6 +22,8 @@ meta import VerifiedGarbage.Proof.Mont.X86_64.Wide
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.FieldErase
 meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
 meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+import VerifiedGarbage.Proof.P521.Prime
+meta import VerifiedGarbage.Proof.P521.Prime
 
 /-!
 # ECDSA over P-521 on x86-64 with BMI2 and ADX: `Verified`

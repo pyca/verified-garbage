@@ -32,6 +32,8 @@ meta import VerifiedGarbage.Proof.Mont.X86_64.Wide
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.P521Literals
 meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
 meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+import VerifiedGarbage.Spec.EcKey.Generic
+meta import VerifiedGarbage.Spec.EcKey.Generic
 
 /-! Concrete timing checks and the doubler of P-521's baseline and ADX joint verification. -/
 

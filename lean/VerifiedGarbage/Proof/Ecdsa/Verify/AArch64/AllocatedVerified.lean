@@ -30,6 +30,10 @@ meta import VerifiedGarbage.Proof.Divstep.Bound
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedFixedDigitTiming
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.JointFixedDigitTiming
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedRaw
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedScalars
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedRaw
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedScalars
 
 /-! ## `AllocatedInverse` -/
 

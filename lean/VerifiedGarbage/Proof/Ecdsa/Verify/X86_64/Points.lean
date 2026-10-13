@@ -11,6 +11,8 @@ import VerifiedGarbage.Proof.Ecdsa.X86_64.MulFn
 import VerifiedGarbage.Proof.Mont.X86_64.Wide
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+import VerifiedGarbage.Proof.Ecdsa.X86_64.Lays
+import VerifiedGarbage.Proof.Weierstrass.X86_64.Rep
 
 /-!
 # ECDSA verification on x86-64: `[u]G + [v]Q`

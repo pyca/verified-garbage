@@ -16,6 +16,8 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Weierstrass.AArch64.P256Literals
+meta import VerifiedGarbage.Proof.Weierstrass.AArch64.P256Literals
 
 /-! The comb that signing and public keys share is checked once, and their
 literals read it.

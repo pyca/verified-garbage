@@ -8,6 +8,7 @@ import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Mont.X86_64.Wide
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+import VerifiedGarbage.Proof.Ecdsa.X86_64.Finish
 
 /-!
 # ECDSA verification on x86-64: `x` and the result

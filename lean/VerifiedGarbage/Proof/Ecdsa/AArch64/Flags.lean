@@ -9,6 +9,7 @@ import all Init.Data.Vector.Basic
 import Mathlib.Logic.Function.Basic
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Mont.AArch64.Ops
 
 /-!
 # ECDSA on AArch64: the masks of the checks, and the flag

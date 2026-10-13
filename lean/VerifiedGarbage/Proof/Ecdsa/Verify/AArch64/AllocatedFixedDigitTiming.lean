@@ -19,6 +19,19 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.NafEntryTiming
 import VerifiedGarbage.Proof.Weierstrass.AArch64.NafSum
 import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
 import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowQuad
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.Finish
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.Padd
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.NafWindowTiming
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.AllocatedJointLoop
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.AllocatedState
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeStep
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafTableInit
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafWindow
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowEntry
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowSum
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowTable
+public import VerifiedGarbage.Proof.Weierstrass.BytesLen
+public import VerifiedGarbage.Proof.Weierstrass.JacInplace
 
 /-! ## `AllocatedMixedTiming` -/
 

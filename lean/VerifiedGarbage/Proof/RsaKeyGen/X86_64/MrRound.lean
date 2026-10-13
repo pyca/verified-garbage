@@ -8,6 +8,7 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrWit
 
 /-!
 # A candidate on x86-64: one round of Miller–Rabin

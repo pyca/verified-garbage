@@ -8,6 +8,10 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.X86.Sse
 import VerifiedGarbage.Proof.X25519.X86.Column
+public import VerifiedGarbage.Proof.Ecdsa.X86.Finish
+public import VerifiedGarbage.Proof.Weierstrass.BytesLen
+public import VerifiedGarbage.Proof.Weierstrass.X86.BytesLen
+public import VerifiedGarbage.Proof.Weierstrass.X86.WinEntry
 
 /-! # Scratch layout and preservation for the x86 P-256 window -/
 

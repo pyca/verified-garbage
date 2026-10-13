@@ -8,6 +8,7 @@ import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Impl.MlKem.AArch64.Compress
 
 /-!
 # `vg_rsa_pkcs1_recover` on AArch64: the precondition

@@ -8,6 +8,12 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Sha512.Word64
 meta import VerifiedGarbage.Proof.Sha512.Word64
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncCT
+meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncCT
 
 /-!
 # RSAES-PKCS1-v1_5 decryption on AArch64: constant time, the selection
