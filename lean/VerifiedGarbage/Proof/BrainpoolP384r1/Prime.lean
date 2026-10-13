@@ -10,10 +10,11 @@ import all Init.Data.Vector.Basic
 /-!
 # The brainpoolP384r1 field prime is prime
 
-A Pratt certificate (`Proof/Framework/Pratt.lean`) for RFC 5639's `p`, one
-theorem per prime of the tree, from the factors of `p - 1`. Factors below
-`2^16` are prime by trial division (`prime_small`). The group law needs only
-`p` prime (`Weierstrass.Good`).
+Pratt certificates (`Proof/Framework/Pratt.lean`) for RFC 5639's `p` and
+`q` (here `n`), one theorem per prime of each tree, from the factors of
+`p - 1` and `n - 1`. Factors below `2^16` are prime by trial division
+(`prime_small`). The group law needs only `p` prime (`Weierstrass.Good`);
+the inversions modulo `n` by divsteps need `n` prime.
 -/
 
 @[expose] public section
