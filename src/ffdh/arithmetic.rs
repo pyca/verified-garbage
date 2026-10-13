@@ -147,18 +147,20 @@ impl Montgomery {
                         self.mul(&mut ws, 5, 5, 5);
                     }
                     let digit = u64::from((byte >> shift) & 15);
-                    for i in 0..w {
-                        let mut selected = ws[table_at + i];
-                        for candidate in 1..16 {
-                            // Both values are in 0..16: the high bit of (x-1)
-                            // is set exactly when x is zero.
-                            let equal = (digit ^ candidate as u64).wrapping_sub(1) >> 63;
-                            // SAFETY: choose has no preconditions.
-                            selected = unsafe {
-                                vg_ffdh_choose(selected, ws[table_at + candidate * w + i], equal)
-                            };
+                    let (arrays, table) = ws.split_at_mut(table_at);
+                    let selected = &mut arrays[at(6)..at(6) + w];
+                    selected.fill(0);
+                    for (candidate, row) in table.chunks_exact(w).enumerate() {
+                        // Both values are in 0..16: the high bit of (x-1)
+                        // is set exactly when x is zero.
+                        let equal = (digit ^ candidate as u64).wrapping_sub(1) >> 63;
+                        // SAFETY: choose has no preconditions. The opaque assembly
+                        // call returns a mask; Rust sees an arbitrary u64, so the
+                        // following AND/OR operations need no conditional select.
+                        let mask = unsafe { vg_ffdh_choose(0, u64::MAX, equal) };
+                        for (dst, &src) in selected.iter_mut().zip(row) {
+                            *dst |= src & mask;
                         }
-                        ws[at(6) + i] = selected;
                     }
                     self.mul(&mut ws, 5, 5, 6);
                 }
