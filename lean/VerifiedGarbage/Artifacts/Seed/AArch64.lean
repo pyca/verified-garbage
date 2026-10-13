@@ -40,21 +40,19 @@ def artifacts : List Artifact := [
     spSafe := Code.all_of_forall (fun _ => rfl) _ },
   { Spec.Seed.encryptBlocksApi with
     target := AArch64.target
-    doc := Spec.Seed.encryptBlocksApi.doc (notes := ["Prototype."])
+    doc := Spec.Seed.encryptBlocksApi.doc (notes := ["Uses the first 976 bytes of `scratch`."])
     code := Impl.Seed.AArch64.encrypt
     contract := Spec.Seed.blocksContract AArch64.abi .encrypt
     stack := 0
-    ofSig := ⟨_, _, _, by unfold Spec.Seed.blocksContract; rfl⟩
-    verified := Proof.Seed.AArch64.encrypt_verified
+    verified := Proof.Seed.AArch64.encrypt_blocks_verified
     spSafe := Code.all_of_forall (fun _ => rfl) _ },
   { Spec.Seed.decryptBlocksApi with
     target := AArch64.target
-    doc := Spec.Seed.decryptBlocksApi.doc (notes := ["Prototype."])
+    doc := Spec.Seed.decryptBlocksApi.doc (notes := ["Uses the first 976 bytes of `scratch`."])
     code := Impl.Seed.AArch64.decrypt
     contract := Spec.Seed.blocksContract AArch64.abi .decrypt
     stack := 0
-    ofSig := ⟨_, _, _, by unfold Spec.Seed.blocksContract; rfl⟩
-    verified := Proof.Seed.AArch64.decrypt_verified
+    verified := Proof.Seed.AArch64.decrypt_blocks_verified
     spSafe := Code.all_of_forall (fun _ => rfl) _ }]
 
 end VG.Artifacts.Seed.AArch64

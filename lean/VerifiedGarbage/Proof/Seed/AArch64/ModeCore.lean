@@ -134,8 +134,8 @@ theorem blockCall_eq (d : Direction) : blockCall d =
 theorem ecb_correct (d : Direction) (s : State) (hs : (contract d).pre s) :
     ∃ t s', Exec isa (ecb d) s t s' ∧ abiPreserved s s' ∧ (contract d).post s s' := by
   cases d
-  · exact encrypt_correct s hs
-  · exact decrypt_correct s hs
+  · exact encrypt_correct (Nat.le_refl _) s hs
+  · exact decrypt_correct (Nat.le_refl _) s hs
 
 /-- Block `j` of blocks transformed by ECB. -/
 theorem blockAt_of_ecb {K : Spec.Seed.Schedule} {d : Direction} {m m' : Mem} {D : Addr} {n : Nat}
