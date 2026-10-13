@@ -91,7 +91,6 @@ impl Montgomery {
     }
     pub(super) fn power(&self, base: &[u8], exponent: &[u8]) -> Vec<u8> {
         let w = self.modulus.len();
-        let table_at = 32 + 8 * (w + 2);
         let window = if exponent.len() >= 39 { 5 } else { 4 };
         let table_words = if cfg!(target_arch = "aarch64") {
             (1 << window) * w
@@ -115,6 +114,7 @@ impl Montgomery {
         }
         #[cfg(target_arch = "aarch64")]
         {
+            let table_at = at(8);
             // All window powers, including Montgomery one, in wiped storage.
             // The verified multiplication preserves this extension of the workspace.
             for i in 0..w {
