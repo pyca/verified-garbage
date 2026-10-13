@@ -9,6 +9,9 @@ import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import all Init.Data.Nat.Power2.Basic
+public import VerifiedGarbage.Proof.Framework.X86.Spill
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Omega
 
 @[expose] public section
 

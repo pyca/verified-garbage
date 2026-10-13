@@ -5,6 +5,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Framework.AArch64.Spill
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # RSASSA-PSS signing on AArch64: the prologue
