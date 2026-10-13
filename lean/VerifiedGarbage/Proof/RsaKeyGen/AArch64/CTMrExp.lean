@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTMrBit
-meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTMrBit
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTMrWin
+meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTMrWin
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -13,10 +13,10 @@ meta import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
 # A candidate on AArch64: constant time of Miller–Rabin's exponentiation
 
 `mrExpLoop`, for runs that agree on the working space (`mrExpLoop_ct`): its
-loops run `w` words and 64 bits a word (63 of the last), counts that
-correctness pins (`mrWord_ok`, `mrBitStep_ok`); the start of each word loads
-`kWords` and `c`'s base, which are pinned before the word's load
-(`wordHead_ct`).
+loops run `w` words and 16 windows a word, counts that correctness pins
+(`mrWord_ok`, `mrWinStep_ok`); the start of each word loads the word of `E`
+at an address from `kWords` and `aE`'s base, which are pinned before the
+load (`wordHead_ct`); then the three squarings (`mrLast_ct`).
 -/
 
 @[expose] public section
@@ -25,7 +25,7 @@ namespace VG.Proof.RsaKeyGen.AArch64
 
 open VG VG.AArch64 VG.Impl.Bignum VG.Impl.Bignum.AArch64 VG.Impl.Rsa.AArch64 VG.Impl.Rsa.AArch64.Keys
 open VG.Impl.RsaKeyGen.AArch64.Candidate
-open VG.Proof.Bignum VG.Proof.Bignum.AArch64 VG.Proof.Rsa.AArch64
+open VG.Proof.Bignum VG.Proof.Bignum.AArch64 VG.Proof.Rsa.AArch64 VG.Proof.RsaKeyGen
 open VG.Proof.MlKem.AArch64 (Keep eval_nonzero)
 open VG.Impl.Bignum.Public (aN aAcc aTmp aXm aY sCnt)
 
@@ -43,101 +43,121 @@ theorem eval_cnt (r : Reg) {t : State} {j c : Nat} (hj : j < c) (h : (t.gpr r).t
 
 /-- Before the exponentiation (`mrExpLoop_ok`'s hypotheses). -/
 def E0 (L : WsP) (s : State) : Prop :=
-  4 ≤ L.w ∧ L.w ≤ 64 ∧ ∃ c b, MrCtx s L.B L.Z L.w c (b * 2 ^ (64 * L.w) % c) ∧ c % 2 = 1 ∧ 1 < c ∧
+  4 ≤ L.w ∧ L.w ≤ 64 ∧ slot L.w aE + 8 * (L.w + 2) ≤ L.Z ∧ ∃ c bm b, MrCtx s L.B L.Z L.w c bm ∧
+    TabOK s.mem L.B L.w c b ∧ ECtx s.mem L.B L.w c ∧ c % 2 = 1 ∧ 1 < c ∧
     wv s.mem L.B (slot L.w aY) L.w = 2 ^ (64 * L.w) % c
 
 /-- After `j` words. -/
 def WI (L : WsP) (j : Nat) (s : State) : Prop :=
-  4 ≤ L.w ∧ L.w ≤ 64 ∧ ∃ c b s₀, WordInv L.B L.Z L.w c b s₀ j s ∧ c % 2 = 1 ∧ 1 < c
+  4 ≤ L.w ∧ L.w ≤ 64 ∧ slot L.w aE + 8 * (L.w + 2) ≤ L.Z ∧ ∃ c bm b s₀, WordInv L.B L.Z L.w c bm b s₀ j s ∧
+    ECtx s₀.mem L.B L.w c ∧ c % 2 = 1 ∧ 1 < c
 
-/-- The bits of word `w − 1 − j`. -/
-abbrev nbOf (w j : Nat) : Nat := if w - j = 1 then 63 else 64
+/-- After `i` windows of word `w − 1 − j`. -/
+def WinP (p : WsP × Nat) (i : Nat) (s : State) : Prop :=
+  4 ≤ p.1.w ∧ p.1.w ≤ 64 ∧ slot p.1.w aE + 8 * (p.1.w + 2) ≤ p.1.Z ∧ p.2 < p.1.w ∧ ∃ c bm b s₀ W,
+    WinInv p.1.B p.1.Z p.1.w c bm b (p.1.w - p.2) W s₀ i s ∧
+    W.toNat = mrE c / 2 ^ (64 * (p.1.w - p.2 - 1)) % 2 ^ 64 ∧ ECtx s₀.mem p.1.B p.1.w c ∧ c % 2 = 1 ∧ 1 < c
 
-/-- After `i` bits of word `w − 1 − j`. -/
-def BI (p : WsP × Nat) (i : Nat) (s : State) : Prop :=
-  4 ≤ p.1.w ∧ p.1.w ≤ 64 ∧ p.2 < p.1.w ∧ ∃ c b s₀ W,
-    BitInv p.1.B p.1.Z p.1.w c b (p.1.w - p.2) (nbOf p.1.w p.2) W s₀ i s ∧
-    (∀ u < 64, W.toNat.testBit u = c.testBit (64 * (p.1.w - p.2 - 1) + u)) ∧ c % 2 = 1 ∧ 1 < c
+theorem tab_lt {m : Mem} {B : Addr} {w c b : Nat} (h : TabOK m B w c b) (hc : 0 < c) :
+    ∀ j < 16, wv m B (slot w (aT0 + j)) w < c := fun j hj => by rw [h j hj]; exact Nat.mod_lt _ hc
+
+theorem winP_ww {p : WsP × Nat} {i : Nat} {s : State} (h : WinP p i s) : WW p.1 s := by
+  obtain ⟨h4, h64, hEZ, -, c, bm, b, s₀, W, hI, -, -, hodd, hc1⟩ := h
+  exact ⟨h4, h64, hEZ, c, bm, hI.ctx, hodd, hc1, tab_lt hI.tab (by omega), by rw [hI.y]; exact Nat.mod_lt _ (by omega)⟩
 
 /-- The registers pinned before a word's load. -/
 def whVal (p : WsP × Nat) : Reg → BitVec 64
   | .x0 => p.1.B
   | .x3 => BitVec.ofNat 64 (p.1.w - p.2 - 1)
-  | _ => off p.1.B (slot p.1.w aN)
+  | _ => off p.1.B (slot p.1.w aE)
 
-/-- The start of a word, up to `c`'s base. -/
+/-- The start of a word, up to the index of its word. -/
 theorem wordPre_ok {p : WsP × Nat} {s : State} (h : p.2 < p.1.w ∧ WI p.1 p.2 s) :
-    WP isa (.block [ldh .x3 kWords, .subImm .x .x3 .x3 1, sth .x3 kWords, ldh .x4 (sArr aN)]) s
-      fun t => ∀ r ∈ [Reg.x0, .x3, .x4], t.gpr r = whVal p r := by
-  obtain ⟨hj, h4, h64, c, b, s₀, hI, -⟩ := h
+    WP isa (.block (ws ++ base aE .x16 ++ [ldh .x3 kWords, .subImm .x .x3 .x3 1, sth .x3 kWords])) s
+      fun t => ∀ r ∈ [Reg.x0, .x3, .x16], t.gpr r = whVal p r := by
+  obtain ⟨hj, h4, h64, hEZ, c, bm, b, s₀, hI, -⟩ := h
   have hw := hI.ctx.ws
   have hs := hw.scr
   have hn := hs.nowrap
   have h256 := hw.h256
-  have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off p.1.B (8 * i)) 8 := fun i hi => hs.ld (by omega)
-  have hst : ∀ i < 32, InRegions s.wr (off p.1.B (8 * i)) 8 := fun i hi => hs.st (by omega)
-  refine WP.mono (WP.keep [.x3, .x4] (Q := fun t => t.gpr .x3 = BitVec.ofNat 64 (p.1.w - p.2 - 1) ∧
-      t.gpr .x4 = off p.1.B (slot p.1.w aN)) (by
-    brun [hw.x0, hdr_enc (show kWords < 32 by decide), hdr_enc (show sArr aN < 32 by decide),
-      hl kWords (by decide), hl (sArr aN) (by decide), hst kWords (by decide), hI.words,
-      ofNat64_pred (show 1 ≤ p.1.w - p.2 by omega) (by omega),
-      fun X => (hdrStore_hdr s.mem p.1.B X (show kWords < 32 by decide) (show sArr aN < 32 by decide)
-        (by decide)).trans (hw.harr aN (by decide))]) (by decide) (by decide) (by decide +kernel))
-    fun t ⟨⟨h3, h4⟩, k⟩ r hr => ?_
+  rw [List.append_assoc, WP.block_append_iff]
+  refine WP.mono hw.ws_ok fun s₁ ⟨⟨_, h11, m₁, _⟩, k₁⟩ => ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (base_ok aE .x16 ((k₁.gpr .x0 (by decide)).trans hw.x0) h11) fun s₂ ⟨⟨h16, m₂, _⟩, k₂⟩ => ?_
+  have k12 := k₁.trans k₂
+  have hs₂ := hs.congr k12.wr
+  refine WP.mono (WP.keep [.x3] (Q := fun t => t.gpr .x3 = BitVec.ofNat 64 (p.1.w - p.2 - 1)) (by
+    brun [(k12.gpr .x0 (by decide)).trans hw.x0, hdr_enc (show kWords < 32 by decide),
+      hs₂.ld (d := 8 * kWords) (by simp only [kWords, kT1, sFn]; omega),
+      hs₂.st (d := 8 * kWords) (by simp only [kWords, kT1, sFn]; omega),
+      (by rw [m₂, m₁]; exact hI.words : word s₂.mem p.1.B (8 * kWords) = BitVec.ofNat 64 (p.1.w - p.2)),
+      ofNat64_pred (show 1 ≤ p.1.w - p.2 by omega) (by omega)])
+    (by decide) (by decide) (by decide +kernel)) fun t ⟨h3, k⟩ r hr => ?_
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
-  · exact (k.gpr .x0 (by decide)).trans hw.x0
+  · exact ((k12.trans k).gpr .x0 (by decide)).trans hw.x0
   · exact h3
-  · exact h4
+  · exact (k.gpr .x16 (by decide)).trans h16
+
+theorem wordStart_eq : ws ++ base aE .x16 ++ wordHead =
+    (ws ++ base aE .x16 ++ ([ldh .x3 kWords, .subImm .x .x3 .x3 1, sth .x3 kWords] : List Instr)) ++
+      ([.lsl .x .x5 .x3 3, .add .x .x4 .x16 .x5, ld .x5 .x4, sth .x5 kV, movi .x6 16, sth .x6 kBits] : List Instr) := by
+  simp only [wordHead, List.append_assoc, List.cons_append, List.nil_append]
 
 theorem wordHead_ct : RelCT isa (Two fun (p : WsP × Nat) s => p.2 < p.1.w ∧ WI p.1 p.2 s)
-    (.block [ldh .x3 kWords, .subImm .x .x3 .x3 1, sth .x3 kWords, ldh .x4 (sArr aN), .lsl .x .x5 .x3 3,
-      .add .x .x4 .x4 .x5, ld .x5 .x4, sth .x5 kV, movi .x6 64, movi .x7 63, movi .x4 1, .subs .x .x8 .x3 .x4,
-      .csel .x .x6 .x6 .x7, sth .x6 kBits]) (Two fun p s => 0 < nbOf p.1.w p.2 ∧ BI p 0 s) :=
-  blk_pin [ldh .x3 kWords, .subImm .x .x3 .x3 1, sth .x3 kWords, ldh .x4 (sArr aN)]
-    [.lsl .x .x5 .x3 3, .add .x .x4 .x4 .x5, ld .x5 .x4, sth .x5 kV, movi .x6 64, movi .x7 63, movi .x4 1,
-      .subs .x .x8 .x3 .x4, .csel .x .x6 .x6 .x7, sth .x6 kBits] [.x0] [.x0, .x3, .x4] whVal
+    (.block (ws ++ base aE .x16 ++ wordHead)) (Two fun p s => 0 < 16 ∧ WinP p 0 s) := by
+  rw [wordStart_eq]
+  exact blk_pin (ws ++ base aE .x16 ++ [ldh .x3 kWords, .subImm .x .x3 .x3 1, sth .x3 kWords])
+    [.lsl .x .x5 .x3 3, .add .x .x4 .x16 .x5, ld .x5 .x4, sth .x5 kV, movi .x6 16, sth .x6 kBits] [.x0]
+    [.x0, .x3, .x16] whVal
     (pins_ws' (fun p : WsP × Nat => p.1.B) (fun p => p.1.Z) (fun p => p.1.w)
-      fun _ _ ⟨_, _, _, _, _, _, hI, _⟩ => hI.ctx.ws) (by taint_decide) (fun _ _ h => wordPre_ok h)
-    (by taint_decide) fun p s ⟨hj, h4, h64, c, b, s₀, hI, hodd, hc1⟩ =>
-      WP.mono (wordStart_ok hj hI) fun t ⟨hB, hWc⟩ => ⟨by unfold nbOf; split <;> decide,
-        h4, h64, hj, c, b, s₀, _, hB, hWc, hodd, hc1⟩
+      fun _ _ ⟨_, _, _, _, _, _, _, _, hI, _⟩ => hI.ctx.ws) (by taint_decide) (fun _ _ h => wordPre_ok h)
+    (by taint_decide) fun p s ⟨hj, h4, h64, hEZ, c, bm, b, s₀, hI, hE, hodd, hc1⟩ => by
+      rw [← wordStart_eq]
+      have hW : (wordE s.mem p.1.B p.1.w p.2).toNat = mrE c / 2 ^ (64 * (p.1.w - p.2 - 1)) % 2 ^ 64 := by
+        have hE' : ECtx s.mem p.1.B p.1.w c :=
+          hE.of_low hI.frm (expRanges_low p.1.w) hEZ hI.ctx.ws.scr.nowrap
+        rw [← hE'.e]; exact word_of_wv s.mem p.1.B (slot p.1.w aE) p.1.w (by omega)
+      exact WP.mono (wordStart_ok hEZ hj hI) fun t hB =>
+        ⟨by decide, h4, h64, hEZ, hj, c, bm, b, s₀, _, hB, hW, hE, hodd, hc1⟩
 
-/-- The bits of a word. -/
-theorem wordBits_ct (M : Mont) : RelCT isa (Two fun (p : WsP × Nat) s => 0 < nbOf p.1.w p.2 ∧ BI p 0 s)
-    (.loop (seqs (mrExpBit M.mm)) (.nonzero .x .x3)) (Two fun p s => BI p (nbOf p.1.w p.2) s) := by
-  refine two_loop (Φ := BI) (fun p => nbOf p.1.w p.2) (two_map (fun q : (WsP × Nat) × Nat => q.1.1)
-    (fun _ _ ⟨_, h4, h64, _, c, b, s₀, W, hI, _, hodd, hc1⟩ => ⟨h4, h64, c, b, _, hI.ctx, hodd, hc1, hI.y⟩)
-    (mrExpBit_ct M)) ?_
-  rintro p i s hi ⟨h4, h64, hj, c, b, s₀, W, hI, hWc, hodd, hc1⟩
-  exact WP.mono (mrBitStep_ok M h4 h64 hodd hc1 (by omega) (by omega) rfl hWc hi hI) fun t ⟨hI', hz⟩ =>
-    ⟨eval_cnt .x3 hi hz, fun _ => ⟨h4, h64, hj, c, b, s₀, W, hI', hWc, hodd, hc1⟩,
-      fun e => e ▸ ⟨h4, h64, hj, c, b, s₀, W, hI', hWc, hodd, hc1⟩⟩
+/-- The windows of a word. -/
+theorem wordWins_ct (M : Mont) : RelCT isa (Two fun (p : WsP × Nat) s => 0 < 16 ∧ WinP p 0 s)
+    (.loop (seqs (mrWin M.mm)) (.nonzero .x .x3)) (Two fun p s => WinP p 16 s) := by
+  refine two_loop (Φ := WinP) (fun _ => 16) (two_map (fun q : (WsP × Nat) × Nat => q.1.1)
+    (fun _ _ h => winP_ww h.2) (mrWin_ct M)) ?_
+  rintro p i s hi ⟨h4, h64, hEZ, hj, c, bm, b, s₀, W, hI, hW, hE, hodd, hc1⟩
+  exact WP.mono (mrWinStep_ok M h64 hEZ hodd hc1 (by omega) (by omega) hW hi hI) fun t ⟨hI', hz⟩ =>
+    ⟨eval_cnt .x3 hi hz, fun _ => ⟨h4, h64, hEZ, hj, c, bm, b, s₀, W, hI', hW, hE, hodd, hc1⟩,
+      fun e => e ▸ ⟨h4, h64, hEZ, hj, c, bm, b, s₀, W, hI', hW, hE, hodd, hc1⟩⟩
 
 /-- One word. -/
 theorem word_ct (M : Mont) : RelCT isa (Two fun (p : WsP × Nat) s => p.2 < p.1.w ∧ WI p.1 p.2 s)
-    (seqs [
-      .block [ldh .x3 kWords, .subImm .x .x3 .x3 1, sth .x3 kWords, ldh .x4 (sArr aN), .lsl .x .x5 .x3 3,
-        .add .x .x4 .x4 .x5, ld .x5 .x4, sth .x5 kV, movi .x6 64, movi .x7 63, movi .x4 1, .subs .x .x8 .x3 .x4,
-        .csel .x .x6 .x6 .x7, sth .x6 kBits],
-      .loop (seqs (mrExpBit M.mm)) (.nonzero .x .x3),
+    (seqs [.block (ws ++ base aE .x16 ++ wordHead), .loop (seqs (mrWin M.mm)) (.nonzero .x .x3),
       .block [ldh .x3 kWords]]) fun _ _ => True :=
-  RelCT.seq wordHead_ct (RelCT.seq (wordBits_ct M) (two_taint [.x0]
+  RelCT.seq wordHead_ct (RelCT.seq (wordWins_ct M) (two_taint [.x0]
     (pins_ws' (fun p : WsP × Nat => p.1.B) (fun p => p.1.Z) (fun p => p.1.w)
-      fun _ _ ⟨_, _, _, _, _, _, _, hI, _⟩ => hI.ctx.ws) (by taint_decide)))
+      fun _ _ h => (winP_ww h).ws) (by taint_decide)))
 
 /-- The exponentiation leaks the same in runs that agree on the working space. -/
 theorem mrExpLoop_ct (M : Mont) : RelCT isa (Two E0) (seqs (mrExpLoop M.mm)) fun _ _ => True := by
-  unfold mrExpLoop
+  rw [mrExpLoop_eq]
+  refine ct_app' (by simp) (by simp [mrLast]) ?_ (ct_app' (by simp [mrLast]) (by simp [mrLast]) (mrLast_ct M (by decide))
+    (ct_app' (by simp [mrLast]) (by simp [mrLast]) (mrLast_ct M (by decide))
+      ((mrLast_ct M (by decide)).mono (fun _ _ h => h) fun _ _ _ => trivial)))
+  simp only [seqs]
   refine RelCT.seq (two_piece (Ψ := fun L s => 0 < L.w ∧ WI L 0 s) [.x0]
     (pins_ws' (fun L : WsP => L.B) (fun L : WsP => L.Z) (fun L : WsP => L.w)
-      fun _ _ ⟨_, _, _, _, hc, _⟩ => hc.ws) (by taint_decide)
-    fun L s ⟨h4, h64, c, b, hc, hodd, hc1, hY⟩ => WP.mono (expStart_ok hc hc1 hY) fun t hI =>
-      ⟨by omega, h4, h64, c, b, s, hI, hodd, hc1⟩) ?_
-  refine (two_loop (Φ := WI) (Ψ := fun _ _ => True) (fun L => L.w) (word_ct M) ?_).mono (fun _ _ h => h)
-    fun _ _ _ => trivial
-  rintro L j s hj ⟨h4, h64, c, b, s₀, hI, hodd, hc1⟩
-  exact WP.mono (mrWord_ok M h4 h64 hodd hc1 hj hI) fun t ⟨hI', hz⟩ =>
-    ⟨eval_cnt .x3 hj hz, fun _ => ⟨h4, h64, c, b, s₀, hI', hodd, hc1⟩, fun _ => trivial⟩
+      fun _ _ ⟨_, _, _, _, _, _, hc, _⟩ => hc.ws) (by taint_decide)
+    fun L s ⟨h4, h64, hEZ, c, bm, b, hc, hT, hE, hodd, hc1, hY⟩ => WP.mono (expStart_ok hEZ hc hT hY) fun t hI =>
+      ⟨by omega, h4, h64, hEZ, c, bm, b, s, hI, hE, hodd, hc1⟩) ?_
+  refine two_loop (Φ := WI) (Ψ := WLast) (fun L => L.w) (word_ct M) ?_
+  rintro L j s hj ⟨h4, h64, hEZ, c, bm, b, s₀, hI, hE, hodd, hc1⟩
+  refine WP.mono (mrWord_ok M h64 hEZ (hE.of_low hI.frm (expRanges_low L.w) hEZ hI.ctx.ws.scr.nowrap) hodd hc1 hj hI)
+    fun t ⟨hI', hz⟩ => ⟨eval_cnt .x3 hj hz, fun _ => ⟨h4, h64, hEZ, c, bm, b, s₀, hI', hE, hodd, hc1⟩, fun _ => ?_⟩
+  have hn := hI'.ctx.ws.scr.nowrap
+  refine ⟨⟨h4, h64, hEZ, c, bm, hI'.ctx, hodd, hc1, tab_lt hI'.tab (by omega),
+    by rw [hI'.y]; exact Nat.mod_lt _ (by omega)⟩, by rw [hI'.ctx.n]; exact hE.of_low hI'.frm (expRanges_low L.w) hEZ hn,
+    _, hI'.flag⟩
 
 end VG.Proof.RsaKeyGen.AArch64
