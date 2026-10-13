@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.Layout
-public import VerifiedGarbage.Impl.Dsa.X86_64.Arithmetic
+public import VerifiedGarbage.Impl.Dsa.X86_64.Joint
 
 /-!
 # DSA signing and verification arithmetic on x86-64
@@ -47,6 +47,11 @@ def pow (mul : Nat → Nat → Nat → Prog isa) (ws : Nat) (base exponent outpu
     operand result resultLen output ++ enter ws),
     Arithmetic.power mul arg argLen arg2 arg2Len] ++ finish)
 
+/-- Joint exponentiation uses the verification scalars u/v. -/
+def joint (mul : Nat → Nat → Nat → Prog isa) (ws : Nat) (a b output : Operand) : Prog isa :=
+  seqs ([.block (operand arg argLen a ++ operand arg2 arg2Len b ++
+    operand result resultLen output ++ enter ws), Joint.power mul] ++ finish)
+
 def product (mul : Nat → Nat → Nat → Prog isa) (ws : Nat) (a b output : Operand) : Prog isa :=
   seqs ([.block (operand arg argLen a ++ operand arg2 arg2Len b ++
     operand result resultLen output ++ enter ws),
@@ -91,9 +96,7 @@ def verify (mul : Nat → Nat → Nat → Prog isa) : Prog isa := seqs [
   reduce mul digest (scalar z),
   product mul qWorkspace (scalar z) (scalar inverse) (scalar u),
   product mul qWorkspace signatureR (scalar inverse) (scalar v),
-  pow mul pWorkspace generator (scalar u) (element t),
-  pow mul pWorkspace publicValue (scalar v) (element t2),
-  product mul pWorkspace (element t) (element t2) (element t),
+  joint mul pWorkspace generator publicValue (element t),
   reduce mul (element t) (scalar u)]
 
 end VG.Impl.Dsa.X86_64.Core

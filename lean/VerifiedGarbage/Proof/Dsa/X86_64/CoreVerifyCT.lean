@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleJointCT
+meta import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleJointCT
 public import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleReduceCT
 meta import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleReduceCT
 import all Init.Data.Array.Basic
@@ -53,17 +55,9 @@ theorem coreVerifySchedule_ct (M : Mont) (inputs : SchedulePublic → List (Oper
     (fun p => p.layout.qLen) (fun p => p.layout.qLen)
     (by trivial) (by change inverse < 2 ^ 31; decide) (by simp [stablePointer, Core.signatureR]) (by trivial)
     qp hqfit qp hqfit (by decide) (by decide) (scalar_space (by decide)) (by taint_decide)
-  have h5 := schedulePow_ct M inputs stable .p t Core.generator (Core.scalar u)
-    (fun p => p.layout.pLen) (fun p => p.layout.qLen)
-    (by trivial) (by change u < 2 ^ 31; decide) (by simp [stablePointer, Core.generator]) (by trivial)
-    pp hpfit qp qb (by decide) (by decide) (element_space (by decide)) (by taint_decide)
-  have h6 := schedulePow_ct M inputs stable .p t2 Core.publicValue (Core.scalar v)
-    (fun p => p.layout.pLen) (fun p => p.layout.qLen)
-    (by trivial) (by change v < 2 ^ 31; decide) (by simp [stablePointer, Core.publicValue]) (by trivial)
-    pp hpfit qp qb (by decide) (by decide) (element_space (by decide)) (by taint_decide)
-  have h7 := scheduleProduct_ct M inputs stable .p t (Core.element t) (Core.element t2)
+  have h5 := scheduleJoint_ct M inputs stable t Core.generator Core.publicValue
     (fun p => p.layout.pLen) (fun p => p.layout.pLen)
-    (by change t < 2 ^ 31; decide) (by change t2 < 2 ^ 31; decide) (by trivial) (by trivial)
+    (by trivial) (by trivial) (by simp [stablePointer, Core.generator]) (by simp [stablePointer, Core.publicValue])
     pp hpfit pp hpfit (by decide) (by decide) (element_space (by decide)) (by taint_decide)
   have h8 := scheduleReduce_ct M inputs stable u (Core.element t) (fun p => p.layout.pLen)
     (by change t < 2 ^ 31; decide) (by trivial) (by intro p; have := p.layout.widths; omega)
@@ -82,13 +76,7 @@ theorem coreVerifySchedule_ct (M : Mont) (inputs : SchedulePublic → List (Oper
       h.1.1.availableLocal .q inverse (by decide) (scalar_space (by decide) p)⟩) h4) ?_
   refine RelCT.seq (two_map (fun p => p) (fun p st h =>
     ⟨h.1, (h.1.2.1 (Core.generator, p.layout.pLen) (members p _ (by simp [verifyInputs]))).active,
-      h.1.1.availableLocal .q u (by decide) (scalar_space (by decide) p)⟩) h5) ?_
-  refine RelCT.seq (two_map (fun p => p) (fun p st h =>
-    ⟨h.1, (h.1.2.1 (Core.publicValue, p.layout.pLen) (members p _ (by simp [verifyInputs]))).active,
-      h.1.1.availableLocal .q v (by decide) (scalar_space (by decide) p)⟩) h6) ?_
-  refine RelCT.seq (two_map (fun p => p) (fun p st h =>
-    ⟨h.1, h.1.1.availableLocal .p t (by decide) (element_space (by decide) p),
-      h.1.1.availableLocal .p t2 (by decide) (element_space (by decide) p)⟩) h7) ?_
+      (h.1.2.1 (Core.publicValue, p.layout.pLen) (members p _ (by simp [verifyInputs]))).active⟩) h5) ?_
   exact (two_map (fun p => p) (fun p st h =>
     ⟨h.1, h.1.1.availableLocal .p t (by decide) (element_space (by decide) p)⟩) h8).mono
     (fun _ _ h => h) (fun _ _ => two_mono (fun _ _ h => h.1))
