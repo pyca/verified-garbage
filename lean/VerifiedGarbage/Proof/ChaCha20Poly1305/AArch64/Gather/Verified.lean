@@ -7,6 +7,7 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.AesGcm.AArch64.RelBase
 
 /-!
 # ChaCha20-Poly1305 encryption out of place, from a list of slices, AArch64: `Verified`

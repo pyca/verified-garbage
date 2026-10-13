@@ -8,6 +8,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.CmacAes.X86_64.Finalize
+meta import VerifiedGarbage.Proof.CmacAes.X86_64.Finalize
 
 /-!
 # Streaming AES-CMAC on x86-64: `vg_cmac_aes_init`

@@ -12,6 +12,10 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Lit
+import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitch.Body
+import VerifiedGarbage.Proof.Poly1305.AArch64.Lit
+import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Lit
 
 @[expose] public section
 
