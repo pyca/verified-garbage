@@ -272,19 +272,6 @@ impl Montgomery {
         false
     }
 
-    /// Multiply reduced, fixed-width operands, with wiped intermediate storage.
-    #[cfg(target_arch = "aarch64")]
-    pub(crate) fn product(&self, a: &[u8], b: &[u8]) -> Vec<u8> {
-        let mut ws = self.workspace(a, 0);
-        let at = |j| 32 + j * (self.modulus.len() + 2);
-        for (i, &byte) in b.iter().rev().enumerate() {
-            ws[at(6) + i / 8] |= u64::from(byte) << (8 * (i % 8));
-        }
-        self.mul(&mut ws, 6, 6, 1);
-        self.mul(&mut ws, 5, 4, 6);
-        self.finish(&mut ws)
-    }
-
     fn workspace(&self, base: &[u8], table_words: usize) -> Scratch {
         let w = self.modulus.len();
         let table_at = 32 + 8 * (w + 2);
