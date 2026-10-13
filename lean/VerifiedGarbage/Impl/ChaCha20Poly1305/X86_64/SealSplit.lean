@@ -16,9 +16,11 @@ first `src_len` bytes are read from `src` (`sealSplitFor`).
 It first copies the bytes of `src` it does not read in place of the data's to
 `dst` (`head`): `key`, `nonce`, `aad_len` and `src` wait in `work[0, 32)`,
 which `seal` writes before it reads, while `SealGather.copyBytes` copies them.
-Then it lays out its stack arguments as `seal`'s, `tag` and `work` at
-`rsp + 8` and `rsp + 16`, with `src` and `src_len` after them, at `rsp + 24`
-and `rsp + 32`, and the data and its length in `r8` and `r9`.
+Then it runs `seal` in a frame of 40 bytes laid out as `seal`'s entry
+(`framed`): `tag` and `work` at `rsp + 8` and `rsp + 16`, `seal`'s stack
+arguments, and `src` and `src_len` after them, at `rsp + 24` and `rsp + 32`,
+with the data and its length in `r8` and `r9` (its own stack arguments are
+read only).
 
 With the AVX-512 implementations of `vg_poly1305_blocks` (`.avx512`,
 `.ifma`, whose `seal` calls `vg_chacha20_xor_avx512`), it copies only the
@@ -64,23 +66,27 @@ def prefixLen : Bool → List Instr
 /-- The copy's source and destination: `src` and `dst`. -/
 def copyArgs : List Instr := [.mov .rsi (.reg .r8), .mov .rdi (.mem (at_ .rsp 8))]
 
-/-- `key`, `nonce`, `aad_len` and `src` back from `work`. -/
+/-- `key`, `nonce`, `aad_len` and `src` back from `work`; then `work`,
+`tag` and `dst` into `r10`, `r11` and `rax`, for the frame. -/
 def unstash : List Instr :=
   [.mov .rax (.mem (at_ .rsp 32)), .mov .rdi (.mem (at_ .rax 0)), .mov .rsi (.mem (at_ .rax 8)),
-   .mov .rcx (.mem (at_ .rax 16)), .mov .r8 (.mem (at_ .rax 24))]
-
-/-- `seal`'s stack arguments `tag` and `work` at `rsp + 8` and `rsp + 16`,
-then `src` and `src_len`; the data and its length in `r8` and `r9`. -/
-def shuffle : List Instr :=
-  [.mov .rax (.mem (at_ .rsp 32)), .mov .r10 (.mem (at_ .rsp 8)), .mov .r11 (.mem (at_ .rsp 16)),
-   .store (at_ .rsp 16) .rax, .mov .rax (.mem (at_ .rsp 24)), .store (at_ .rsp 8) .rax,
-   .store (at_ .rsp 24) .r8, .store (at_ .rsp 32) .r9, .mov .r8 (.reg .r10), .mov .r9 (.reg .r11)]
+   .mov .rcx (.mem (at_ .rax 16)), .mov .r8 (.mem (at_ .rax 24)),
+   .mov .r10 (.mem (at_ .rsp 32)), .mov .r11 (.mem (at_ .rsp 24)), .mov .rax (.mem (at_ .rsp 8))]
 
 /-- The bytes of `src` to copy copied to `dst`, `w` bytes at a time, and the
-arguments laid out for `seal`. -/
+values the frame pushes in registers. -/
 def head (whole : Bool) (w : Width) : Prog isa :=
-  .seq (.block (stash ++ prefixLen whole ++ copyArgs))
-    (.seq (copyBytes w) (.block (unstash ++ shuffle)))
+  .seq (.block (stash ++ prefixLen whole ++ copyArgs)) (.seq (copyBytes w) (.block unstash))
+
+/-- `seal`'s data and its length into `r8` and `r9`: `dst`, and `len`, the
+caller's second stack argument, above the frame. -/
+def dataArgs : List Instr := [.mov .r8 (.reg .rax), .mov .r9 (.mem (at_ .rsp 56))]
+
+/-- `body` in a frame laid out as `seal`'s entry: `dst` (where the return
+address would be), `tag` and `work` (`seal`'s stack arguments), then `src`
+and `src_len`. -/
+def framed (body : Prog isa) : Prog isa :=
+  .frame (.push [.r9, .r8, .r10, .r11, .rax]) (.seq (.block dataArgs) body) (.pop .rax 5)
 
 /-- After `cryptArgsM` (the state, the data from byte `m`, its length and
 `buf`), the arguments of `vg_chacha20_xor_split_avx512`: the state, `src`
@@ -130,8 +136,8 @@ def sealSplitBody (b : Poly1305.X86_64.Blocks) : Prog isa :=
 implementation `x` of `vg_chacha20_xor` and `b` of `vg_poly1305_blocks`
 (`x` is `vg_chacha20_xor_avx512` for `.avx512` and `.ifma`). -/
 def sealSplitFor (x : ChaCha20.X86_64.Callee) : Poly1305.X86_64.Blocks → Prog isa
-  | .avx512 => .seq (head false .z64) (sealSplitBody .avx512)
-  | .ifma => .seq (head false .z64) (sealSplitBody .ifma)
-  | b => .seq (head true (Width.ofBlocks b)) (Stitch.sealFor x b)
+  | .avx512 => .seq (head false .z64) (framed (sealSplitBody .avx512))
+  | .ifma => .seq (head false .z64) (framed (sealSplitBody .ifma))
+  | b => .seq (head true (Width.ofBlocks b)) (framed (Stitch.sealFor x b))
 
 end VG.Impl.ChaCha20Poly1305.X86_64.SealSplit
