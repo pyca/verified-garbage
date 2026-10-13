@@ -8,6 +8,10 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedSse.Lit
+import VerifiedGarbage.Proof.Framework.X86_64.Taint
+meta import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedSse.Lit
+meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
 
 /-! # The ECB functions' code around the call of the core, as literals -/
 

@@ -9,6 +9,7 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Mont.X86_64.Csub
 
 /-!
 # Short Weierstrass curves on x86-64: copies, selections and constants

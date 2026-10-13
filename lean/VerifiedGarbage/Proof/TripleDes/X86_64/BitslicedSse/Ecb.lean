@@ -5,6 +5,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Ecb
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # The SSE2 function
