@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Sm4.X86_64.FbVerified
+import Mathlib.Tactic.SplitIfs
 
 /-! # SM4-OFB artifacts on baseline x86-64 -/
 

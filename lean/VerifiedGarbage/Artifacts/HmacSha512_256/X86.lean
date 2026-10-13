@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Sha512_256
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Frame
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Lit
 
 /-!
 # HMAC-SHA-512/256 (RFC 2104) on x86

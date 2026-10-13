@@ -90,9 +90,9 @@ theorem ecFinish_ok (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s bas
   · have hra : Reg.rax ∉ Cfg.saved.map Prod.fst := by decide
     rw [r₄ _ hra, e₃, hrcx₂, mask_bit]
 
-theorem middle_eq (c : Cfg) : Impl.Ecdh.X86_64.Cfg.middle c =
-    .seq (.block (Impl.Mont.X86_64.mul c.MP' (c.sl XM) (c.sl RX) (c.sl ACC)))
-    (.seq (.block (Impl.Mont.X86_64.mul c.MP' (c.sl X) (c.sl XM) (c.sl ONE)))
+theorem middle_eq (c : Cfg) : (Impl.Ecdh.X86_64.Cfg.middle c).inline =
+    .seq ((opProg c.MP' (.mul (c.sl XM) (c.sl RX) (c.sl ACC))).inline)
+    (.seq ((opProg c.MP' (.mul (c.sl X) (c.sl XM) (c.sl ONE))).inline)
     (.block (c.checkRange (c.sl D) ++ c.checkNonzero (c.sl RZ) ++ Impl.Ecdh.X86_64.Cfg.finish c))) := rfl
 
 /-- Whether the result is a shared secret: the peer's key (`V`), `d` in
@@ -106,7 +106,7 @@ theorem middle_ok (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s base 
     {V : Prop} [Decidable V] (hflag : word s.mem base (c.sl FLAG) = mask V) {out : Addr}
     (hrsi : s.gpr .rsi = out) (hw : (⟨out, c.C.len⟩ : Region) ∈ s.wr)
     (hd : Region.Disjoint ⟨out, c.C.len⟩ ⟨base, size⟩) (hfit : out.toNat + c.C.len ≤ 2 ^ 64) :
-    WP isa (Impl.Ecdh.X86_64.Cfg.middle c) s fun s' => ∃ xv, xv < c.C.p ∧
+    WP isa (Impl.Ecdh.X86_64.Cfg.middle c).inline s fun s' => ∃ xv, xv < c.C.p ∧
       Fin.ofNat c.C.p xv =
         toM c.C.p (2 ^ (64 * c.n)) (sv c base s RX) * toM c.C.p (2 ^ (64 * c.n)) (sv c base s ACC) ∧
       Spec.Ecdsa.bytesAt s'.mem out c.C.len =
@@ -123,14 +123,14 @@ theorem middle_ok (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s base 
   have hM := modP_of hc F.mp
   have hone : sv c base s ONE = 1 := F.one
   -- `XM = X · ACC`.
-  refine WP.seq (WP.mono (slMul_ok (MP'_n c) (MP'_tmp c) (MP'_mo c) h7 hs hM (o := XM) (a := RX) (b := ACC) (by decide)
+  refine WP.seq (WP.mono (slMulP_ok h7 hs hM (o := XM) (a := RX) (b := ACC) (by decide)
     (by decide) (by decide) (by decide) hacc) fun s₁ ⟨k₁, _, e₁⟩ => ?_)
   have hs₁ := k₁.scr hs
   have kP₁ := hM.keep (j := MP) (by decide) rfl rfl rfl rfl h7 hn k₁ (by decide) (by decide)
   have v₁ : ∀ {i}, i < 45 → i ≠ XM → i ≠ TMP → sv c base s₁ i = sv c base s i := fun hi h₁ h₂ =>
     sv_keep (MP'_n c) rfl h7 hn k₁ hi h₁ h₂
   -- `X = XM · 1`.
-  refine WP.seq (WP.mono (slMul_ok (MP'_n c) (MP'_tmp c) (MP'_mo c) h7 hs₁ kP₁ (o := X) (a := XM) (b := ONE) (by decide)
+  refine WP.seq (WP.mono (slMulP_ok h7 hs₁ kP₁ (o := X) (a := XM) (b := ONE) (by decide)
     (by decide) (by decide) (by decide) (by rw [v₁ (by decide) (by decide) (by decide), hone]; omega_arith))
     fun s₂ ⟨k₂, lt₂, e₂⟩ => ?_)
   have hs₂ := k₂.scr hs₁
@@ -297,11 +297,10 @@ theorem exchangeWith_inline (c : Cfg) (mq : Prog isa) : (Impl.Ecdh.X86_64.Cfg.ex
       (.seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) (.seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n))
       (.seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n)) (.block [])))))
     (.seq (.block (Impl.Ecdh.X86_64.Cfg.peer c)) (.seq (Impl.Ecdh.X86_64.Cfg.check c).inline
-    (.seq mq.inline (.seq c.pPow.inline (Impl.Ecdh.X86_64.Cfg.middle c)))))) := by
+    (.seq mq.inline (.seq c.pPow.inline (Impl.Ecdh.X86_64.Cfg.middle c).inline))))) := by
   rw [exchangeWith_eq']
   show Code.seq _ (Code.seq _ (Code.seq _ (Code.seq (Impl.Ecdh.X86_64.Cfg.check c).inline
     (Code.seq _ (Code.seq c.pPow.inline (Impl.Ecdh.X86_64.Cfg.middle c).inline))))) = _
-  rw [show (Impl.Ecdh.X86_64.Cfg.middle c).inline = _ from blocks_inline _]
   rfl
 
 /-- `vg_ecdh_<curve>`, with a scalar multiplication `mq` computing `[d]P`

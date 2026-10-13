@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Pow250Verified
+import Mathlib.Tactic.SplitIfs
 
 /-! # Powers in curve25519's field, in radix `2^64`, on AArch64 -/
 

@@ -29,7 +29,7 @@ open VG.Spec.Argon2 (Block blockAt zeroBlock FillState compress xorBlock)
 open VG.Proof.Argon2.X86 (blk ofWords blk_of_words)
 open VG.Impl.Sha512.X86 (at_)
 open VG.Impl.Argon2.X86.Derive (sliceOff segLenOff indexOff laneOff laneLenOff argOff passOff counterOff
-  j1Off j2Off refLaneOff startOff countOff tmpOff curOff writeWord)
+  j1Off j2Off refLaneOff startOff countOff tmpOff curOff writeWord writeBlock)
 
 /-- Words of the memory matrix. -/
 abbrev mw (s₀ : State) (m : Mem) (o : Nat) : BitVec 32 := m.readW (addr (memP s₀) o) 32
@@ -55,16 +55,16 @@ theorem mw_store (m : Mem) {a b : Nat} (ha : a + 4 ≤ blocksN s₀ * 1024) (hb 
   · rw [ite_eq_right e, mw, mw, mem_addr' hp (by omega), mem_addr' hp (by omega)]
     exact Mem.readW_writeW_sep (Offset.sep _ (by omega) (by omega) (by omega)) (by decide)
 
-/-- The words of the current block, `n` of them written. -/
+/-- The words of the current block from word `b`, `n` of them written. -/
 theorem writeWords_ok {s : State} (h : Inv s₀ s) {cur : Nat} (hc : cur < blocksN s₀) (xo : Bool)
-    {P : BitVec 32} (hsi : s.gpr .esi = P) (hPfit : P.toNat + 1024 ≤ 2 ^ 32)
+    {P : BitVec 32} {b : Nat} (hsi : s.gpr .esi = P + BitVec.ofNat 32 (4 * b)) (hPfit : P.toNat + 1024 ≤ 2 ^ 32)
     (hPw : ∃ R ∈ [scrR s₀, memR s₀], ∃ off, P.setWidth 64 = R.base + BitVec.ofNat 64 off ∧ off + 1024 ≤ R.len)
     (hPC : Region.Disjoint ⟨P.setWidth 64, 1024⟩ ⟨matrixCell (memB s₀) cur, 1024⟩)
-    (hdi : s.gpr .edi = memP s₀ + BitVec.ofNat 32 (cur * 1024)) :
-    ∀ n ≤ 256, WP isa (.block ((List.range n).flatMap (writeWord xo))) s fun t =>
+    (hdi : s.gpr .edi = memP s₀ + BitVec.ofNat 32 (cur * 1024 + 4 * b)) :
+    ∀ n, b + n ≤ 256 → WP isa (.block ((List.range n).flatMap (writeWord xo))) s fun t =>
       Inv s₀ t ∧ (∀ r, r ≠ .eax → t.gpr r = s.gpr r) ∧
       Frame [⟨matrixCell (memB s₀) cur, 1024⟩] s.mem t.mem ∧
-      ∀ i < 256, mw s₀ t.mem (cur * 1024 + 4 * i) = if i < n then
+      ∀ i < 256, mw s₀ t.mem (cur * 1024 + 4 * i) = if b ≤ i ∧ i < b + n then
         (if xo then s.mem.readW (addr P (4 * i)) 32 ^^^ mw s₀ s.mem (cur * 1024 + 4 * i) else s.mem.readW (addr P (4 * i)) 32)
         else mw s₀ s.mem (cur * 1024 + 4 * i)
   | 0, _ => WP.block_nil ⟨h, fun _ _ => rfl, Frame.refl _ _, fun i _ => by rw [ite_eq_right (by omega)]⟩
@@ -78,18 +78,19 @@ theorem writeWords_ok {s : State} (h : Inv s₀ s) {cur : Nat} (hc : cur < block
       fun t ⟨it, gt, ft, wt⟩ => ?_)
     have cell : matrixCell (memB s₀) cur = memB s₀ + BitVec.ofNat 64 (cur * 1024) := rfl
     -- The source word is kept: only the current block has been written.
-    have eP : addr P (4 * n) = P.setWidth 64 + BitVec.ofNat 64 (4 * n) := addr_eq (by omega_using [hPfit, hn])
-    have sw_t : t.mem.readW (addr P (4 * n)) 32 = s.mem.readW (addr P (4 * n)) 32 := by
+    have eP : addr P (4 * (b + n)) = P.setWidth 64 + BitVec.ofNat 64 (4 * (b + n)) :=
+      addr_eq (by omega_using [hPfit, hn])
+    have sw_t : t.mem.readW (addr P (4 * (b + n))) 32 = s.mem.readW (addr P (4 * (b + n))) 32 := by
       rw [eP]
-      refine ft.readW (r := ⟨P.setWidth 64 + BitVec.ofNat 64 (4 * n), 4⟩) (Region.contains_self _ _)
+      refine ft.readW (r := ⟨P.setWidth 64 + BitVec.ofNat 64 (4 * (b + n)), 4⟩) (Region.contains_self _ _)
         (fun r hr => ?_) (by decide)
       simp only [List.mem_singleton] at hr; subst hr
       exact hPC.sub_left (Offset.sub_base _ (by omega_using [hn]))
-    have ea : addr (t.gpr .esi) (4 * n) = addr P (4 * n) := by
-      rw [gt _ (by decide), hsi]
-    have eb : addr (t.gpr .edi) (4 * n) = addr (memP s₀) (cur * 1024 + 4 * n) := by
-      rw [gt _ (by decide), hdi, addr_shift]
-    have b1 : cur * 1024 + 4 * n + 4 ≤ blocksN s₀ * 1024 := by omega_using [hc', hn]
+    have ea : addr (t.gpr .esi) (4 * n) = addr P (4 * (b + n)) := by
+      rw [gt _ (by decide), hsi, addr_shift, Nat.mul_add]
+    have eb : addr (t.gpr .edi) (4 * n) = addr (memP s₀) (cur * 1024 + 4 * (b + n)) := by
+      rw [gt _ (by decide), hdi, addr_shift, Nat.mul_add, Nat.add_assoc]
+    have b1 : cur * 1024 + 4 * (b + n) + 4 ≤ blocksN s₀ * 1024 := by omega_using [hc', hn]
     have b2 : cur * 1024 + 1024 < 2 ^ 64 := by omega_using [hc', hb]
     have inS : InRegions (t.rd ++ t.wr) (addr (t.gpr .esi) (4 * n)) 4 := by
       obtain ⟨R, hR, off, bR, lR⟩ := hPw
@@ -112,11 +113,11 @@ theorem writeWords_ok {s : State} (h : Inv s₀ s) {cur : Nat} (hc : cur < block
     -- The word.
     have fin : ∀ (v : BitVec 32) (u : State), u.mem = t.mem.writeW (addr (t.gpr .edi) (4 * n)) v →
         u.rd = t.rd → u.wr = t.wr → (∀ r, r ≠ .eax → u.gpr r = s.gpr r) →
-        v = (if xo then s.mem.readW (addr P (4 * n)) 32 ^^^ mw s₀ s.mem (cur * 1024 + 4 * n)
-          else s.mem.readW (addr P (4 * n)) 32) →
+        v = (if xo then s.mem.readW (addr P (4 * (b + n))) 32 ^^^ mw s₀ s.mem (cur * 1024 + 4 * (b + n))
+          else s.mem.readW (addr P (4 * (b + n))) 32) →
         Inv s₀ u ∧ (∀ r, r ≠ .eax → u.gpr r = s.gpr r) ∧
         Frame [⟨matrixCell (memB s₀) cur, 1024⟩] s.mem u.mem ∧
-        ∀ i < 256, mw s₀ u.mem (cur * 1024 + 4 * i) = if i < n + 1 then
+        ∀ i < 256, mw s₀ u.mem (cur * 1024 + 4 * i) = if b ≤ i ∧ i < b + (n + 1) then
           (if xo then s.mem.readW (addr P (4 * i)) 32 ^^^ mw s₀ s.mem (cur * 1024 + 4 * i)
             else s.mem.readW (addr P (4 * i)) 32)
           else mw s₀ s.mem (cur * 1024 + 4 * i) := fun v u hm hrd hwr gu ev => by
@@ -127,13 +128,13 @@ theorem writeWords_ok {s : State} (h : Inv s₀ s) {cur : Nat} (hc : cur < block
         (by rw [hm]; exact (Frame.refl _ _).writeW (r := memR s₀) (by simp) v inMc)
       refine ⟨iu, gu, fu, fun i hi => ?_⟩
       rw [hm, eb, mw_store hp _ b1 (by omega_using [hi, hc', hb]) (by omega_using []), wt i hi]
-      by_cases e : i = n
+      by_cases e : i = b + n
       · subst e
-        rw [ite_eq_left rfl, ite_eq_left (show i < i + 1 by omega_using []), ev]
-      · rw [ite_eq_right (show ¬cur * 1024 + 4 * n = cur * 1024 + 4 * i by omega_using [e])]
-        by_cases c : i < n
-        · rw [ite_eq_left c, ite_eq_left (show i < n + 1 by omega_using [c])]
-        · rw [ite_eq_right c, ite_eq_right (show ¬i < n + 1 by omega_using [c, e])]
+        rw [ite_eq_left rfl, ite_eq_left (show b ≤ b + n ∧ b + n < b + (n + 1) by omega_using []), ev]
+      · rw [ite_eq_right (show ¬cur * 1024 + 4 * (b + n) = cur * 1024 + 4 * i by omega_using [e])]
+        by_cases c : b ≤ i ∧ i < b + n
+        · rw [ite_eq_left c, ite_eq_left (show b ≤ i ∧ i < b + (n + 1) by omega_using [c])]
+        · rw [ite_eq_right c, ite_eq_right (show ¬(b ≤ i ∧ i < b + (n + 1)) by omega_using [c, e])]
     cases xo
     · simp only [writeWord, Bool.false_eq_true, ite_false, List.nil_append]
       refine wp_ldm rfl inS fun u₁ v₁ => ?_
@@ -151,8 +152,83 @@ theorem writeWords_ok {s : State} (h : Inv s₀ s) {cur : Nat} (hc : cur < block
       refine fin _ u (by rw [mu.mem, v₂.mem, v₁.mem]) (by rw [mu.rd, v₂.rd, v₁.rd]) (by rw [mu.wr, v₂.wr, v₁.wr])
         (fun r hr => by rw [mu.gpr, v₂.other r hr, v₁.other r hr, gt r hr]) ?_
       simp only [ite_true]
-      rw [v₂.gpr, v₁.gpr, v₁.mem, ea, sw_t, eb, ← mw, wt n (by omega_using [hn]),
-        ite_eq_right (show ¬n < n by omega_using [])]
+      rw [v₂.gpr, v₁.gpr, v₁.mem, ea, sw_t, eb, ← mw, wt (b + n) (by omega_using [hn]),
+        ite_eq_right (show ¬(b ≤ b + n ∧ b + n < b + n) by omega_using [])]
+
+/-- What `writeBlock xo` writes to word `i` of the current block, from memory `m`. -/
+abbrev wnew (s₀ : State) (cur : Nat) (xo : Bool) (P : BitVec 32) (m : Mem) (i : Nat) : BitVec 32 :=
+  if xo then m.readW (addr P (4 * i)) 32 ^^^ mw s₀ m (cur * 1024 + 4 * i) else m.readW (addr P (4 * i)) 32
+
+/-- `writeBlock xo`: the 256 words, 64 per iteration of its loop. -/
+theorem writeBlock_ok {s : State} (h : Inv s₀ s) {cur : Nat} (hc : cur < blocksN s₀) (xo : Bool)
+    {P : BitVec 32} (hsi : s.gpr .esi = P) (hPfit : P.toNat + 1024 ≤ 2 ^ 32)
+    (hPw : ∃ R ∈ [scrR s₀, memR s₀], ∃ off, P.setWidth 64 = R.base + BitVec.ofNat 64 off ∧ off + 1024 ≤ R.len)
+    (hPC : Region.Disjoint ⟨P.setWidth 64, 1024⟩ ⟨matrixCell (memB s₀) cur, 1024⟩)
+    (hdi : s.gpr .edi = memP s₀ + BitVec.ofNat 32 (cur * 1024)) :
+    WP isa (writeBlock xo) s fun t => Inv s₀ t ∧
+      Frame [⟨matrixCell (memB s₀) cur, 1024⟩] s.mem t.mem ∧
+      ∀ i < 256, mw s₀ t.mem (cur * 1024 + 4 * i) = if i < 256 then wnew s₀ cur xo P s.mem i
+        else mw s₀ s.mem (cur * 1024 + 4 * i) := by
+  have hm := hp.mem_fits
+  have hb := blocks22 hp
+  have hc' : cur * 1024 + 1024 ≤ blocksN s₀ * 1024 := by omega
+  -- After `k` iterations.
+  let WI : Nat → State → Prop := fun k t => Inv s₀ t ∧ t.gpr .esi = P + BitVec.ofNat 32 (4 * (64 * k)) ∧
+    t.gpr .edi = memP s₀ + BitVec.ofNat 32 (cur * 1024 + 4 * (64 * k)) ∧ t.gpr .ecx = BitVec.ofNat 32 (4 - k) ∧
+    Frame [⟨matrixCell (memB s₀) cur, 1024⟩] s.mem t.mem ∧
+    ∀ i < 256, mw s₀ t.mem (cur * 1024 + 4 * i) = if i < 64 * k then wnew s₀ cur xo P s.mem i
+      else mw s₀ s.mem (cur * 1024 + 4 * i)
+  -- The source is outside the current block.
+  have src : ∀ (m : Mem), Frame [⟨matrixCell (memB s₀) cur, 1024⟩] s.mem m → ∀ i < 256,
+      m.readW (addr P (4 * i)) 32 = s.mem.readW (addr P (4 * i)) 32 := fun m f i hi => by
+    rw [addr_eq (by omega_using [hPfit, hi])]
+    refine f.readW (r := ⟨P.setWidth 64 + BitVec.ofNat 64 (4 * i), 4⟩) (Region.contains_self _ _)
+      (fun r hr => ?_) (by decide)
+    simp only [List.mem_singleton] at hr; subst hr
+    exact hPC.sub_left (Offset.sub_base _ (by omega_using [hi]))
+  unfold writeBlock
+  refine WP.seq (wp_movi fun s₁ u₁ => WP.block_nil ?_)
+  refine (WP.loop (M := isa) (Q := WI 4) (fun n t => ∃ k, n = 4 - k ∧ k < 4 ∧ WI k t) ?_ 4 s₁
+    ⟨0, rfl, by decide, h.upd u₁ (by decide) (by decide),
+      by rw [u₁.other _ (by decide), hsi]; simp, by rw [u₁.other _ (by decide), hdi]; simp, u₁.gpr,
+      by rw [u₁.mem]; exact Frame.refl _ _, fun i _ => by rw [ite_eq_right (by omega), u₁.mem]⟩).mono ?_
+  · rintro n t ⟨k, rfl, hk, it, si, di, ci, ft, wt⟩
+    unfold Impl.Argon2.X86.Derive.writeChunk
+    refine WP.block_append ((writeWords_ok hp it hc xo (b := 64 * k) si hPfit hPw hPC di 64 (by omega)).mono
+      fun u ⟨iu, gu, fu, wu⟩ => ?_)
+    refine wp_addi fun u₁ v₁ => wp_addi fun u₂ v₂ => wp_subi fun u₃ v₃ _ z₃ => WP.block_nil ?_
+    have i₃ := ((iu.upd v₁ (by decide) (by decide)).upd v₂ (by decide) (by decide)).upd v₃ (by decide) (by decide)
+    have m₃ : u₃.mem = u.mem := by rw [v₃.mem, v₂.mem, v₁.mem]
+    have next : WI (k + 1) u₃ := by
+      refine ⟨i₃, ?_, ?_, ?_, by rw [m₃]; exact ft.trans fu, fun i hi => ?_⟩
+      · rw [v₃.other _ (by decide), v₂.other _ (by decide), v₁.gpr, gu _ (by decide), si,
+          show (256 : BitVec 32) = BitVec.ofNat 32 256 from rfl, BitVec.add_assoc, BitVec.ofNat_add_ofNat,
+          show 4 * (64 * k) + 256 = 4 * (64 * (k + 1)) by omega]
+      · rw [v₃.other _ (by decide), v₂.gpr, v₁.other _ (by decide), gu _ (by decide), di,
+          show (256 : BitVec 32) = BitVec.ofNat 32 256 from rfl, BitVec.add_assoc, BitVec.ofNat_add_ofNat,
+          show cur * 1024 + 4 * (64 * k) + 256 = cur * 1024 + 4 * (64 * (k + 1)) by omega]
+      · rw [v₃.gpr, v₂.other _ (by decide), v₁.other _ (by decide), gu _ (by decide), ci, Wp.ofNat_pred (by omega)]
+        congr 1
+      · rw [m₃, wu i hi]
+        by_cases e : 64 * k ≤ i ∧ i < 64 * k + 64
+        · rw [ite_eq_left e, ite_eq_left (show i < 64 * (k + 1) by omega), src t.mem ft i hi,
+            wt i hi, ite_eq_right (show ¬i < 64 * k by omega)]
+        · rw [ite_eq_right e, wt i hi]
+          by_cases c : i < 64 * k
+          · rw [ite_eq_left c, ite_eq_left (show i < 64 * (k + 1) by omega)]
+          · rw [ite_eq_right c, ite_eq_right (show ¬i < 64 * (k + 1) by omega)]
+    have z : u₃.zf = some (decide (4 - (k + 1) = 0)) := by
+      rw [z₃, v₂.other _ (by decide), v₁.other _ (by decide), gu _ (by decide), ci, Wp.ofNat_pred (by omega),
+        Wp.ofNat_beq_zero (by omega)]
+      rfl
+    by_cases done : k + 1 = 4
+    · refine .inl ⟨?_, done ▸ next⟩
+      simp only [eval, z, show 4 - (k + 1) = 0 by omega, decide_true, Option.map_some, Bool.not_true]
+    · refine .inr ⟨?_, 4 - (k + 1), by omega, k + 1, rfl, by omega, next⟩
+      simp only [eval, z, show 4 - (k + 1) ≠ 0 by omega, decide_false, Option.map_some, Bool.not_false]
+  · rintro t ⟨it, _, _, _, ft, wt⟩
+    refine ⟨it, ft, fun i hi => ?_⟩
+    rw [wt i hi, ite_eq_left (show i < 64 * 4 by omega)]
 
 end
 
@@ -306,10 +382,10 @@ theorem fillWrite_ok {s : State} {pass slice lane index ctr : Nat} {st : FillSta
     show s₅.zf = _
     rw [z₅, u₄.gpr, lw_mem u₃.mem, lw_mem u₂.mem, lw_mem u₁.mem, h.pos.pass, z, Wp.ofNat_beq_zero hpass])
     (fun hb => ?_) fun hb => ?_
-  · refine ((writeWords_ok hp h₅.inv hC false si Pfit Pw PC di 256 (Nat.le_refl _)).mono fun t ⟨it, _, ft, wt⟩ =>
+  · refine ((writeBlock_ok hp h₅.inv hC false si Pfit Pw PC di).mono fun t ⟨it, ft, wt⟩ =>
       ⟨it, by rw [← m₅]; exact ft, ?_⟩)
     rw [done false t wt, ite_eq_left (of_decide_eq_true hb)]; rfl
-  · refine ((writeWords_ok hp h₅.inv hC true si Pfit Pw PC di 256 (Nat.le_refl _)).mono fun t ⟨it, _, ft, wt⟩ =>
+  · refine ((writeBlock_ok hp h₅.inv hC true si Pfit Pw PC di).mono fun t ⟨it, ft, wt⟩ =>
       ⟨it, by rw [← m₅]; exact ft, ?_⟩)
     rw [done true t wt, ite_eq_right (of_decide_eq_false hb)]; rfl
 

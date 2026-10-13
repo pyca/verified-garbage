@@ -53,7 +53,7 @@ theorem exchange_ok (hc : BaseCfgOk p192) (hC : Law p192.C) {s₀ : State} (hp :
   have hq₂ : s₂.gpr .x6 = s₀.gpr .x2 := by rw [S₂.gpr _ (by decide), x6₁]
   have hrw₂ : s₂.rd ++ s₂.wr = s₀.rd ++ s₀.wr := by rw [S₂.rd, S₂.wr, hrd₁]
   -- The peer's key.
-  refine WP.seq (WP.mono (peer_ok hc S₂.scr hq₂ (by rw [hrw₂, hp.rd]; simp) hp.peer_sc S₂.fixed.mp)
+  refine WP.seq (WP.mono (peer_ok hc S₂.scr hq₂ (by rw [hrw₂, hp.rd]; simp) hp.peer_sc)
     fun s₃ ⟨hs₃, k₃, U₃, r2₃, bp₃, y₃, f₃⟩ => ?_)
   have F₃ := S₂.fixed.unch h7 hn ((fixedOk_slW (l := [R2P, BP, QY]) (by decide)).append fixedOk_flag) U₃
   have e₃ : ∀ {i}, i < 45 → i ∉ [R2P, BP, QY] → i ≠ FLAG →
@@ -67,9 +67,8 @@ theorem exchange_ok (hc : BaseCfgOk p192) (hC : Law p192.C) {s₀ : State} (hp :
     have := keep_of_disjoint' W₂ hp.peer_sc (by omega) (i := 0) (by omega) (by omega)
     rwa [BitVec.add_zero] at this
   -- What the code checks of the peer's key so far.
-  have hf₃ : word s₃.mem (s₀.gpr .x3) (p192.sl FLAG) = mask (((s₀.mem (s₀.gpr .x2) = 4 ∧
-      sv p192 (s₀.gpr .x3) s₃ E < p192.C.p) ∧ sv p192 (s₀.gpr .x3) s₃ QY < p192.C.p)) := by
-    rw [f₃, S₂.flag, BitVec.allOnes_and, mask_and, mask_and, x₃, hq0]
+  have hf₃ : word s₃.mem (s₀.gpr .x3) (p192.sl FLAG) = mask (s₀.mem (s₀.gpr .x2) = 4) := by
+    rw [f₃, S₂.flag, BitVec.allOnes_and, hq0]
   refine WP.seq (WP.mono (validate_ok hc hs₃ F₃ r2₃ bp₃ hf₃)
     fun s₄ ⟨hs₄, g₄, rd₄, wr₄, U₄, f₄, px_lt, py_lt, px, py⟩ => ?_)
   have F₄ := F₃.unch h7 hn ((fixedOk_slW (l := [QXM, QYM, TMP, W0, W1, W2, W3, PY]) (by decide)).append
@@ -81,41 +80,35 @@ theorem exchange_ok (hc : BaseCfgOk p192) (hC : Law p192.C) {s₀ : State} (hp :
   have hk₄ : sv p192 (s₀.gpr .x3) s₄ K = dk p192 s₀ := by
     rw [e₄ (by decide) (by decide) (by decide), e₃ (by decide) (by decide) (by decide), S₂.k]
     simp only [kv, dk, k₁.mem, x3₁]
-  have r₄ : ∀ {i}, i < 45 → i ∉ [QXM, QYM, TMP, W0, W1, W2, W3, PY] →
-      i ∉ [R2P, BP, QY] → i ≠ FLAG → sv p192 (s₀.gpr .x3) s₄ i = sv p192 (s₀.gpr .x3) s₂ i :=
-    fun hi ha hb hf => (e₄ hi ha hf).trans (e₃ hi hb hf)
-  have valBelow : ∀ w ∈ slW p192 [QXM, QYM, TMP, W0, W1, W2, W3, PY],
-      w.1 + w.2 ≤ bitsAt p192.n 0 := by decide +kernel
-  have ht₄ : ∀ t < 64 * p192.n, s₄.mem (off (s₀.gpr .x3) (bitsAt p192.n 0 + t)) =
-      if (sv p192 (s₀.gpr .x3) s₄ K).testBit t then 1 else 0 := by
-    intro t ht
-    rw [tbl_unch U₄ h7 (j := 0) (by decide) ht
-        (apart_append (fun w hw => Or.inr ((valBelow w hw).trans (Nat.le_add_right _ t))) (tbl_apart_flag h0 0 t)),
-      tbl_unch U₃ h7 (j := 0) (by decide) ht
-        (apart_append (tbl_apart_slW (by decide) 0 t) (tbl_apart_flag h0 0 t)),
-      S₂.t₀ t ht, r₄ (by decide) (by decide) (by decide) (by decide), S₂.k]
   refine ladPow_ok hc hC hs₄ F₄ (peerPt_onCurve hc _ _ _) px_lt py_lt
     (peerPt_rep hC _ _ _ px py |> fun h => by
       show Rep p192.C (toM p192.C.p (2 ^ (64 * p192.n)) (sv p192 (s₀.gpr .x3) s₄ PX))
         (toM p192.C.p (2 ^ (64 * p192.n)) (sv p192 (s₀.gpr .x3) s₄ PY))
         (toM p192.C.p (2 ^ (64 * p192.n)) (wordsVal s₄.mem (s₀.gpr .x3) (p192.sl ONEP) p192.n)) _
-      rw [F₄.onep, toM_one hpR]; exact h)
-    (by rw [r₄ (by decide) (by decide) (by decide) (by decide)]; exact S₂.rx)
-    (by rw [r₄ (by decide) (by decide) (by decide) (by decide)]; exact S₂.ry)
-    (by rw [r₄ (by decide) (by decide) (by decide) (by decide)]; exact S₂.rz)
-    ht₄ fun s₅ L => ?_
+      rw [F₄.onep, toM_one hpR]; exact h) fun s₅ L => ?_
   have hs₅ := L.scr
-  have F₅ := F₄.unch h7 hn ((fixedOk_slW (l := gSlots) (by decide)).append (fixedOk_chainWc hc))
-    L.unch
-  have e₅ : ∀ {i}, i < 45 → i ∉ gSlots → i ∉ [ACC, TMP] →
+  have F₅ := L.fixed
+  have aq : ∀ {i}, i < 45 → i ∉ [EXPP, BM, RX, RY, RZ, ACC, PT, TX, TY, TZ, T0, T1, T2, T3, T4, T5, DX, DY, DZ,
+      TMP] → i ≠ 54 ∧ i ≠ 82 → ∀ w ∈ qW, p192.sl i + 8 * p192.n ≤ w.1 ∨ w.1 + w.2 ≤ p192.sl i :=
+    fun hi hl ha => by
+      have s₁ : ∀ x ∈ [EXPP], x ∈ [EXPP, BM, RX, RY, RZ, ACC, PT, TX, TY, TZ, T0, T1, T2, T3, T4, T5, DX, DY,
+        DZ, TMP] := by decide
+      have s₂ : ∀ x ∈ [BM], x ∈ [EXPP, BM, RX, RY, RZ, ACC, PT, TX, TY, TZ, T0, T1, T2, T3, T4, T5, DX, DY,
+        DZ, TMP] := by decide
+      have s₃ : ∀ x ∈ [RX, RY, RZ, ACC, PT, TX, TY, TZ, T0, T1, T2, T3, T4, T5, DX, DY, DZ, TMP],
+        x ∈ [EXPP, BM, RX, RY, RZ, ACC, PT, TX, TY, TZ, T0, T1, T2, T3, T4, T5, DX, DY, DZ, TMP] := by decide
+      exact apart_append (apart_slW (fun h => hl (s₁ _ h)) ha)
+        (apart_append (apart_slW (fun h => hl (s₂ _ h)) ha) (apart_mulWF hi (fun h => hl (s₃ _ h)) ha))
+  have e₅ : ∀ {i}, i < 45 → i ∉ [EXPP, BM, RX, RY, RZ, ACC, PT, TX, TY, TZ, T0, T1, T2, T3, T4, T5, DX, DY,
+      DZ, TMP] → i ∉ [ACC, TMP] →
       sv p192 (s₀.gpr .x3) s₅ i = sv p192 (s₀.gpr .x3) s₄ i :=
     fun hi h₁ h₂ => sv_unch L.unch h7 hn hi
-      (apart_append (apart_slW h₁) (apart_chainWc hc hi h₂))
+      (apart_append (aq hi h₁ (by constructor <;> omega)) (apart_chainWc hc hi h₂))
   have hflag₅ := f₄
   have hf₅ : word s₅.mem (s₀.gpr .x3) (p192.sl FLAG) = word s₄.mem (s₀.gpr .x3) (p192.sl FLAG) := by
     have hF := sl_le p192 h7 (i := FLAG) (by decide)
     refine L.unch.word (fun w hw => ?_) (by omega)
-    have ha := apart_append (apart_slW (c := p192) (i := FLAG) (l := gSlots) (by decide))
+    have ha := apart_append (aq (i := FLAG) (by decide) (by decide) (by decide))
       (apart_chainWc hc (i := FLAG) (by decide) (by decide)) w hw
     rcases ha with ha | ha
     · exact .inl (by omega)

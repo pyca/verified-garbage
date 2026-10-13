@@ -4,6 +4,8 @@ public import VerifiedGarbage.TCB.X86_64.Target
 meta import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Verified
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Verified
+import Mathlib.Tactic.SplitIfs
+meta import Mathlib.Tactic.SplitIfs
 
 /-! # Ed25519's point doubling and cached additions, in radix `2^64`, on x86-64 -/
 

@@ -55,21 +55,31 @@ def tableSetup : List Instr := [movR kp sb, .addImm .x kp kp (8 * keySlot)]
 the table (`g` the number of groups of six rounds). -/
 def endAddr (g : Nat) : List Instr := [movR .x4 sb, .addImm .x .x4 .x4 (8 * keySlot + 512 * g)]
 
-/-- Encryption's table, for `g` groups: the `8 g + 2` subkeys in order. -/
-def encKeys (g : Nat) : Prog isa :=
-  .seq (.block (tableSetup ++ ([.movz .x t1 (BitVec.ofNat 16 (8 * g + 2)) 0] : List Instr)))
+/-- What depends on the number of groups `g`: `x4` (`endAddr`), the
+subkeys the loop bitslices in `t1`, and for decryption `x0` at `kw3`. -/
+def groupConsts : Dir → Nat → List Instr
+  | .encrypt, g => endAddr g ++ [.movz .x t1 (BitVec.ofNat 16 (8 * g + 2)) 0]
+  | .decrypt, g => endAddr g ++ [.addImm .x .x0 .x0 (64 * g), .movz .x t1 (BitVec.ofNat 16 (8 * g - 2)) 0]
+
+/-- Encryption's table: the `t1` subkeys from `x0`, in order. -/
+def encKeys : Prog isa :=
+  .seq (.block tableSetup)
     (.loop (.block (keyOne 0 ++ ([.addImm .x .x0 .x0 8, .subImm .x t1 t1 1] : List Instr))) (.nonzero .x t1))
 
-/-- Decryption's table, for `g` groups: `kw3, kw4` (words `8 g`, `8 g + 1`),
-words `8 g - 1` down to 2, then `kw1, kw2`. -/
-def decKeys (g : Nat) : Prog isa :=
-  .seq (.block (tableSetup ++ ([.addImm .x .x0 .x0 (64 * g)] : List Instr) ++
-      keyOne 0 ++ keyOne 8 ++ ([.subImm .x .x0 .x0 8, .movz .x t1 (BitVec.ofNat 16 (8 * g - 2)) 0] : List Instr)))
+/-- Decryption's table, for `g` groups, `x0` at word `8 g` and `t1 = 8 g - 2`:
+`kw3, kw4` (words `8 g`, `8 g + 1`), words `8 g - 1` down to 2, then
+`kw1, kw2`. -/
+def decKeys : Prog isa :=
+  .seq (.block (tableSetup ++ keyOne 0 ++ keyOne 8 ++ ([.subImm .x .x0 .x0 8] : List Instr)))
     (.seq (.loop (.block (keyOne 0 ++ ([.subImm .x .x0 .x0 8, .subImm .x t1 t1 1] : List Instr))) (.nonzero .x t1))
       (.block (([.subImm .x .x0 .x0 8] : List Instr) ++ keyOne 0 ++ keyOne 8)))
 
-def keys (dir : Dir) (g : Nat) : Prog isa :=
-  .seq (match dir with | .encrypt => encKeys g | .decrypt => decKeys g) (.block (endAddr g))
+/-- The table for 18 rounds (`t0 = 0`) or 24, and `x4` at its
+postwhitening entry: the branches set only `groupConsts`, and one copy of
+the loops builds either table. -/
+def keys (dir : Dir) : Prog isa :=
+  .seq (.ite (.zero .x t0) (.block (groupConsts dir 3)) (.block (groupConsts dir 4)))
+    (match dir with | .encrypt => encKeys | .decrypt => decKeys)
 
 /-! ## Eight blocks, in the tail buffer -/
 
@@ -144,7 +154,7 @@ def group : Prog isa :=
 /-- The whole function: the table for 18 or 24 rounds, then the groups. -/
 def ecb (dir : Dir) : Prog isa :=
   .seq (.block ([movR sb .x4] ++ saveRegs ++ setSlots layerMasks ++ ([.subImm .x t0 .x1 18] : List Instr)))
-    (.seq (.ite (.zero .x t0) (keys dir 3) (keys dir 4))
+    (.seq (keys dir)
       (.seq (.ite (.zero .x .x3) (.block []) (.loop group (.nonzero .x .x3))) (.block restoreRegs)))
 
 end VG.Impl.Camellia.AArch64

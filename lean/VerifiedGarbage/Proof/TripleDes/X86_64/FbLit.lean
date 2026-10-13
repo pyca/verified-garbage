@@ -20,5 +20,10 @@ materialize_code Impl.TripleDes.X86_64.cfbEncrypt
 materialize_code Impl.TripleDes.X86_64.cfbDecrypt
 materialize_code Impl.TripleDes.X86_64.cfb8Encrypt
 materialize_code Impl.TripleDes.X86_64.cfb8Decrypt
+materialize_code Impl.TripleDes.X86_64.ofbI
+materialize_code Impl.TripleDes.X86_64.cfbEncryptI
+materialize_code Impl.TripleDes.X86_64.cfbDecryptI
+materialize_code Impl.TripleDes.X86_64.cfb8EncryptI
+materialize_code Impl.TripleDes.X86_64.cfb8DecryptI
 
 end VG

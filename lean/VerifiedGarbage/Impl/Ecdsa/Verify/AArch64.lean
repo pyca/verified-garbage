@@ -96,11 +96,21 @@ def save : List Instr :=
   copy c.n (c.sl UX) (c.sl RX) ++ copy c.n (c.sl UY) (c.sl RY) ++ copy c.n (c.sl UZ) (c.sl RZ) ++
   setConst c.n (c.sl RX) 0 ++ setConst c.n (c.sl RY) (c.mont 1) ++ setConst c.n (c.sl RZ) 0
 
-/-- `R = U + R`, through `D`. -/
+/-- `D` to `R`. -/
+def fromD : List Instr :=
+  copy c.n (c.sl RX) (c.sl DX) ++ copy c.n (c.sl RY) (c.sl DY) ++ copy c.n (c.sl RZ) (c.sl DZ)
+
+/-- `R = U + R`, through `D`: inline, or for a curve whose complete additions are a function
+(`padd`) a call of it, which adds `T` to `R` and reads `b` at `EM`'s slot (free here): `b` to `EM`,
+`R` to `T` and `U` to `R` before the call. -/
 def sum : Prog isa :=
-  .seq (fprogB c.MP' (rcb3 c.rcbSlots (c.pt UX UY UZ) (c.pt RX RY RZ) (c.pt DX DY DZ)))
-    (.block (copy c.n (c.sl RX) (c.sl DX) ++ copy c.n (c.sl RY) (c.sl DY) ++
-      copy c.n (c.sl RZ) (c.sl DZ)))
+  match c.padd with
+  | none =>
+    .seq (fprogB c.MP' (rcb3 c.rcbSlots (c.pt UX UY UZ) (c.pt RX RY RZ) (c.pt DX DY DZ))) (.block (fromD c))
+  | some f =>
+    .seq (.block (copy c.n (c.sl EM) (c.sl BM) ++ copyPt c.n (c.pt TX TY TZ) (c.pt RX RY RZ))) <|
+    .seq (.seq (.block (copyPt c.n (c.pt RX RY RZ) (c.pt UX UY UZ)))
+      (addP c.MP' c.rcbSlots (c.pt RX RY RZ) (c.pt TX TY TZ) (c.pt DX DY DZ) (some f))) (.block (fromD c))
 
 /-- `x19`–`x25` restored, and the flag's low bit to `x0`. -/
 def finish : List Instr :=
@@ -110,8 +120,8 @@ def finish : List Instr :=
 /-- `x = X Z⁻¹`, with `Z⁻¹ R` in `ACC`, out of Montgomery form, `x R mod n`
 and `x R - r R mod n`, the checks of `Z` and of `x ≡ r`, and the result. -/
 def final : Prog isa :=
-  .seq (.block (Mont.AArch64.mul c.MP' (c.sl XM) (c.sl RX) (c.sl ACC))) <|
-  .seq (.block (Mont.AArch64.mul c.MP' (c.sl X) (c.sl XM) (c.sl ONE))) <|
+  .seq (c.mulPP (c.sl XM) (c.sl RX) (c.sl ACC)) <|
+  .seq (c.mulPP (c.sl X) (c.sl XM) (c.sl ONE)) <|
   .seq (c.mulNP (c.sl XN) (c.sl X) (c.sl R2N)) <|
   .seq (.block (Mont.AArch64.sub c.MN' (c.sl W) (c.sl XN) (c.sl RM')))
     (.block (c.checkNonzero (c.sl RZ) ++ Impl.Ecdh.AArch64.Cfg.checkZero c (c.sl W) ++ finish c))

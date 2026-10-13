@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Verified
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Verified
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Split.Verified
 
 /-!
 # ChaCha20-Poly1305 (RFC 8439 §2.8) on x86-64
@@ -30,7 +31,10 @@ every implementation: the return address of the call of `vg_chacha20_xor`,
 and up to 16 bytes for its own calls; 1744 bytes in all. `seal_gather`
 gathers its slices to its output and calls the instance of `seal` on them
 there, with the six argument registers pushed in a frame of 48 bytes and
-`tag` pushed for the call: 1808 bytes in all.
+`tag` pushed for the call: 1808 bytes in all. `seal_split` keeps its working
+space as `seal` does, in a frame of 1736 bytes (which also holds copies of
+`dst`, `len` and `tag`), and runs `seal`'s code in a frame of 40 bytes laid
+out as `seal`'s entry, whose calls use 24 bytes below it: 1800 bytes in all.
 -/
 
 @[expose] public section
@@ -54,6 +58,19 @@ def gatherNote (w : Impl.ChaCha20Poly1305.X86_64.SealGather.Width) (fn : String)
     | .z64 => "64 bytes at a time with AVX-512"
   "This implementation copies the slices, " ++ how ++ ", one after the other to `dst`, and \
     encrypts them there in place with `" ++ fn ++ "`."
+
+/-- What `vg_chacha20_poly1305_seal_split` does: with the AVX-512
+implementations of `vg_poly1305_blocks`, it copies only the bytes of `src`
+the first pass of the keystream covers and reads the rest from `src` as it
+encrypts; otherwise it copies all of `src`. -/
+def splitNote (v : Proof.ChaCha20.X86_64.XorImpl) : String :=
+  match v.poly with
+  | .avx512 | .ifma => "This implementation copies to `dst` the bytes of `src` that the first keystream it \
+      computes covers (all of them for at most 960 bytes of data, else at most 960, as many as the data has \
+      past its last multiple of 1024 bytes, rounded up to 64), and reads the rest of `src` as it encrypts, \
+      in the code of `vg_chacha20_xor_split_avx512`."
+  | _ => "This implementation copies `src` to `dst` and encrypts it there in place, as \
+      `vg_chacha20_poly1305_seal` does."
 
 /-- The CPU features an instance requires: those of both implementations. -/
 def features (v : Proof.ChaCha20.X86_64.XorImpl) : List String :=
@@ -81,6 +98,17 @@ def artifacts (v : Proof.ChaCha20.X86_64.XorImpl) : List Artifact := [
     stack := 1744
     verified := Stitch.openFor_framed v
     spSafe := X86_64.withStackArgScratchWipedX_spSafe (Stitch.openFor_spSafe v)
+    features := features v },
+  { Spec.ChaCha20Poly1305.sealSplitApi with
+    name := Spec.ChaCha20Poly1305.sealSplitApi.name ++ v.suffix
+    target := X86_64.target
+    doc := Spec.ChaCha20Poly1305.sealSplitApi.doc (notes := [xorNote v, splitNote v])
+    code := Impl.StackScratch.X86_64.withStackArgScratchWipedX 1736 3 42
+      (Impl.ChaCha20Poly1305.X86_64.SealSplit.sealSplitFor v.callee v.poly)
+    contract := Spec.ChaCha20Poly1305.sealSplitContract X86_64.abi 1800
+    stack := 1800
+    verified := Split.sealSplit_framed v
+    spSafe := X86_64.withStackArgScratchWipedX_spSafe (Split.sealSplitFor_spSafe v)
     features := features v },
   { Spec.ChaCha20Poly1305.sealGatherApi with
     name := Spec.ChaCha20Poly1305.sealGatherApi.name ++ v.suffix

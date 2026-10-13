@@ -8,6 +8,12 @@ public import VerifiedGarbage.Proof.Ecdh.X86_64.Verified
 public import VerifiedGarbage.Proof.Ecdh.X86_64.Lit
 public import VerifiedGarbage.Proof.Ecdh.X86_64.VerifiedAdx
 public import VerifiedGarbage.Proof.Ecdh.X86_64.LitAdx
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.VerifiedAdx
+import Mathlib.Data.Finset.Card
+import Mathlib.Data.Nat.Find
+import VerifiedGarbage.Proof.Mont.X86_64.Wide
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
 
 /-!
 # ECDH over P-256 (SP 800-56A) on x86-64

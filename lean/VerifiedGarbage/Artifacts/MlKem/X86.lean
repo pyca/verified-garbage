@@ -14,6 +14,8 @@ public import VerifiedGarbage.Proof.MlKem.X86.Sample
 public import VerifiedGarbage.Proof.MlKem.X86.KeyGen
 public import VerifiedGarbage.Proof.MlKem.X86.Encaps
 public import VerifiedGarbage.Proof.MlKem.X86.Decaps
+public import VerifiedGarbage.Proof.Sha3.X86.Lit
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # ML-KEM (FIPS 203) on x86

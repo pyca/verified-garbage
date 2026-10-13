@@ -54,34 +54,86 @@ def permOf (dir : Dir) : Nat → Nat → Nat := dirPerm (specDir dir)
 theorem exec_movR (s : State) (d n : Reg) : exec (movR d n) s = some (s.setReg d (s.gpr n)) := by
   simp [movR, exec, Op2.eval]
 
+/-- The subkeys the loop bitslices, for `g` groups. -/
+def cntOf : Dir → Nat → Nat
+  | .encrypt, g => 8 * g + 2
+  | .decrypt, g => 8 * g - 2
+
+/-- How far `groupConsts` moves `r12`. -/
+def r12Of : Dir → Nat → Nat
+  | .encrypt, _ => 0
+  | .decrypt, g => 64 * g
+
+theorem groupConsts_ok (dir : Dir) {g : Nat} (hg : g = 3 ∨ g = 4) (s : State) :
+    ∃ s', runBlock isa (groupConsts dir g) s = some s' ∧ s'.gpr .lr = BitVec.ofNat 32 (cntOf dir g) ∧
+      s'.gpr u7 = s.gpr u7 + BitVec.ofNat 32 (r12Of dir g) ∧
+      (∀ r, r ≠ .lr → r ≠ u7 → s'.gpr r = s.gpr r) ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
+      s'.sp = s.sp := by
+  cases dir
+  · refine ⟨s.setReg .lr (BitVec.ofNat 32 (8 * g + 2)), ?_, RegUpd.gpr_setReg_self _ _ _, ?_,
+      fun r h1 _ => RegUpd.gpr_setReg_of_ne _ _ h1, rfl, rfl, rfl, rfl⟩
+    · rw [groupConsts, runBlock_cons, exec_movImm (by rcases hg with rfl | rfl <;> decide), runStep_some,
+        runBlock_nil]
+    · rw [RegUpd.gpr_setReg_of_ne _ _ (by decide)]; simp [r12Of]
+  · let s₁ := s.setReg .r12 (s.gpr .r12 + BitVec.ofNat 32 (64 * g))
+    refine ⟨s₁.setReg .lr (BitVec.ofNat 32 (8 * g - 2)), ?_, RegUpd.gpr_setReg_self _ _ _, ?_,
+      fun r h1 h2 => by rw [RegUpd.gpr_setReg_of_ne _ _ h1]; exact RegUpd.gpr_setReg_of_ne _ _ h2, rfl, rfl, rfl,
+      rfl⟩
+    · rw [groupConsts, runBlock_cons, exec_addImm (by rcases hg with rfl | rfl <;> decide), runStep_some,
+        runBlock_cons, exec_movImm (by rcases hg with rfl | rfl <;> decide), runStep_some, runBlock_nil]
+    · rw [RegUpd.gpr_setReg_of_ne _ _ (by decide), show u7 = Reg.r12 from rfl, RegUpd.gpr_setReg_self]; rfl
+
+/-- `KeysPost` from the state after `groupConsts`, which wrote only `lr` and `r12`. -/
+theorem KeysPost.of_consts {s₀ s₁ s : State} {b sched : BitVec 32} {g : Nat} {perm : Nat → Nat}
+    (h : KeysPost s₁ b sched g perm s) (hm : s₁.mem = s₀.mem) (hrd : s₁.rd = s₀.rd) (hwr : s₁.wr = s₀.wr)
+    (ho : ∀ r, r ≠ .lr → r ≠ u7 → s₁.gpr r = s₀.gpr r) : KeysPost s₀ b sched g perm s :=
+  ⟨h.pre, fun i hi => hm ▸ h.ent i hi, hm ▸ h.frame,
+    fun r h1 h2 => by
+      rw [h.regs r h1 h2, ho r (fun h => h1 (by subst h; decide)) (fun h => h1 (by subst h; decide))],
+    h.rd.trans hrd, h.wr.trans hwr, h.kpos⟩
+
 /-- The postwhitening's address, to `lr`. -/
-theorem endAddr_ok {s : State} {b : BitVec 32} {g : Nat} (hg : g = 3 ∨ g = 4) (hb : s.gpr sb = b) :
-    ∃ s', runBlock isa (endAddr g) s = some s' ∧ s'.gpr .lr = b + BitVec.ofNat 32 (4 * keySlot + 512 * g) ∧
+theorem endAddr_ok {s : State} {b : BitVec 32} {g : Nat} (hk : AtEntry s b (8 * g + 2)) :
+    ∃ s', runBlock isa endAddr s = some s' ∧ s'.gpr .lr = b + BitVec.ofNat 32 (4 * keySlot + 512 * g) ∧
       s'.mem = s.mem ∧ (∀ r, r ≠ .lr → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp := by
-  let s₁ := s.setReg .lr (s.gpr sb + BitVec.ofNat 32 (4 * keySlot))
-  let s₂ := s₁.setReg .lr (s₁.gpr .lr + BitVec.ofNat 32 (512 * g))
-  refine ⟨s₂, ?_, ?_, rfl, fun r hr => ?_, rfl, rfl, rfl⟩
-  · rw [endAddr, runBlock_cons, slotAddr, exec_addImm (by decide), runStep_some, runBlock_cons,
-      exec_addImm (by rcases hg with rfl | rfl <;> decide), runStep_some, runBlock_nil]
-  · rw [RegUpd.gpr_setReg_self, RegUpd.gpr_setReg_self, hb, add_ofNat_ofNat]
-  · rw [RegUpd.gpr_setReg_of_ne _ _ hr, RegUpd.gpr_setReg_of_ne _ _ hr]
+  refine ⟨s.setReg .lr (s.gpr kp - 128), ?_, ?_, rfl, fun r hr => RegUpd.gpr_setReg_of_ne _ _ hr,
+    rfl, rfl, rfl⟩
+  · simp only [endAddr, runBlock_cons, exec, Op2.eval, show encodable 128 = true by decide, ↓reduceIte,
+      Option.map_some, runStep_some, runBlock_nil]
+  · rw [RegUpd.gpr_setReg_self, hk, show (128 : BitVec 32) = BitVec.ofNat 32 128 from rfl, BitVec.sub_eq_add_neg,
+      BitVec.add_assoc, ← BitVec.sub_eq_add_neg, VG.Offset.ofNat_sub_ofNat (by rw [keySlot_eq]; omega),
+      show 4 * keySlot + 64 * (8 * g + 2) - 128 = 4 * keySlot + 512 * g by rw [keySlot_eq]; omega]
 
 theorem keys_wp (dir : Dir) {s₀ : State} {b sched : BitVec 32} {g : Nat} (hg : g = 3 ∨ g = 4)
-    (hk : KeyPre s₀ b sched) (hr : s₀.gpr u7 = sched) :
-    WP isa (keys dir g) s₀ fun s => ∃ s₁, KeysPost s₀ b sched g (permOf dir g) s₁ ∧
+    (hz : isa.eval .eq s₀ = some (decide (g = 3))) (hk : KeyPre s₀ b sched) (hr : s₀.gpr u7 = sched) :
+    WP isa (keys dir) s₀ fun s => ∃ s₁, KeysPost s₀ b sched g (permOf dir g) s₁ ∧
       s.gpr .lr = b + BitVec.ofNat 32 (4 * keySlot + 512 * g) ∧ s.mem = s₁.mem ∧
       (∀ r, r ≠ .lr → s.gpr r = s₁.gpr r) ∧ s.rd = s₁.rd ∧ s.wr = s₁.wr ∧ s.sp = s₀.sp := by
-  have post : ∀ s₁, KeysPost s₀ b sched g (permOf dir g) s₁ → s₁.sp = s₀.sp →
-      WP isa (.block (endAddr g)) s₁ fun s => ∃ s₁, KeysPost s₀ b sched g (permOf dir g) s₁ ∧
-        s.gpr .lr = b + BitVec.ofNat 32 (4 * keySlot + 512 * g) ∧ s.mem = s₁.mem ∧
-        (∀ r, r ≠ .lr → s.gpr r = s₁.gpr r) ∧ s.rd = s₁.rd ∧ s.wr = s₁.wr ∧ s.sp = s₀.sp := by
-    intro s₁ h sp₁
-    obtain ⟨s', e', l', m', g', rd', wr', sp'⟩ := endAddr_ok hg h.pre.base
-    exact WP.of_runBlock ⟨s', e', s₁, h, l', m', g', rd', wr', sp'.trans sp₁⟩
   unfold keys
+  refine WP.seq (WP.mono (M := isa) (Q := fun s₁ => s₁.gpr .lr = BitVec.ofNat 32 (cntOf dir g) ∧
+      s₁.gpr u7 = s₀.gpr u7 + BitVec.ofNat 32 (r12Of dir g) ∧
+      (∀ r, r ≠ .lr → r ≠ u7 → s₁.gpr r = s₀.gpr r) ∧ s₁.mem = s₀.mem ∧ s₁.rd = s₀.rd ∧ s₁.wr = s₀.wr ∧
+      s₁.sp = s₀.sp)
+    (WP.ite (decide (g = 3)) hz (fun h => ?_) (fun h => ?_)) fun s₁ h₁ => ?_)
+  · obtain rfl : g = 3 := by simpa using h
+    obtain ⟨s', e', h'⟩ := groupConsts_ok dir hg s₀
+    exact WP.of_runBlock ⟨s', e', h'⟩
+  · obtain rfl : g = 4 := by simp at h; omega
+    obtain ⟨s', e', h'⟩ := groupConsts_ok dir hg s₀
+    exact WP.of_runBlock ⟨s', e', h'⟩
+  obtain ⟨l₁, r₁, o₁, m₁, rd₁, wr₁, sp₁⟩ := h₁
+  have hk₁ : KeyPre s₁ b sched := hk.congr (o₁ _ (by decide) (by decide)) rd₁ wr₁
+  have post : ∀ s₂, KeysPost s₁ b sched g (permOf dir g) s₂ → s₂.sp = s₁.sp →
+      WP isa (.block endAddr) s₂ fun s => ∃ s₂, KeysPost s₀ b sched g (permOf dir g) s₂ ∧
+        s.gpr .lr = b + BitVec.ofNat 32 (4 * keySlot + 512 * g) ∧ s.mem = s₂.mem ∧
+        (∀ r, r ≠ .lr → s.gpr r = s₂.gpr r) ∧ s.rd = s₂.rd ∧ s.wr = s₂.wr ∧ s.sp = s₀.sp := by
+    intro s₂ h sp₂
+    obtain ⟨s', e', l', m', g', rd', wr', sp'⟩ := endAddr_ok h.kpos
+    exact WP.of_runBlock ⟨s', e', s₂, h.of_consts m₁ rd₁ wr₁ o₁, l', m', g', rd', wr', sp'.trans (sp₂.trans sp₁)⟩
   cases dir
-  · exact WP.seq (WP.mono (WP.sp (encKeys_wp hg hk hr)) fun s h => post s h.1 h.2)
-  · exact WP.seq (WP.mono (WP.sp (decKeys_wp hg hk hr)) fun s h => post s h.1 h.2)
+  · exact WP.seq (WP.mono (WP.sp (encKeys_wp hg hk₁ (by rw [r₁, hr]; simp [r12Of]) l₁)) fun s h => post s h.1 h.2)
+  · exact WP.seq (WP.mono (WP.sp (decKeys_wp hg hk₁ (by rw [r₁, hr]; simp only [r12Of]; congr 2; omega) l₁))
+      fun s h => post s h.1 h.2)
 
 theorem dataLoop_wp {s₀ : State} {b D : BitVec 32} {n g : Nat} {E : Nat → BitVec 64} (hp : GPre s₀ b D n)
     (hg : g = 3 ∨ g = 4) {s : State} (hi : GInv s₀ b D n g E 0 s) :
@@ -176,13 +228,9 @@ theorem ecb_wp (dir : Dir) {s₀ : State} (hp : (ecbArm dir).pre s₀) :
   let KQ : State → Prop := fun s => ∃ s', KeysPost s₁ b sched g (permOf dir g) s' ∧
       s.gpr .lr = b + BitVec.ofNat 32 (4 * keySlot + 512 * g) ∧ s.mem = s'.mem ∧
       (∀ r, r ≠ .lr → s.gpr r = s'.gpr r) ∧ s.rd = s'.rd ∧ s.wr = s'.wr ∧ s.sp = s₁.sp
-  refine WP.seq (WP.mono (M := isa) (Q := KQ)
-    (WP.ite (decide (R = 18)) ((eval_eq s₁).trans (by rw [hz₁])) (fun h => ?_) (fun h => ?_))
+  refine WP.seq (WP.mono (M := isa) (Q := KQ) (keys_wp dir hg ((eval_eq s₁).trans (by
+      rw [hz₁]; exact congrArg some (decide_eq_decide.mpr ⟨fun h => by omega, fun h => by omega⟩))) hk₁ r12₁)
     fun s₂ ⟨s₂', k₂, lr₂, m₂, g₂, rd₂', wr₂', sp₂⟩ => ?_)
-  · obtain rfl : g = 3 := by simp at h; omega
-    exact keys_wp dir (Or.inl rfl) hk₁ r12₁
-  · obtain rfl : g = 4 := by simp at h; omega
-    exact keys_wp dir (Or.inr rfl) hk₁ r12₁
   -- The scratch buffer and the data before the groups.
   let E : Nat → BitVec 64 := fun i => (schedWords s₀.mem (State.addr sched) R).getD (permOf dir g i) 0
   have f₀₂ : Frame [⟨State.addr b, 4 * slots⟩] s₀.mem s₂.mem := by

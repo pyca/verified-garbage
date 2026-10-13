@@ -11,8 +11,8 @@ Verification may leak its inputs, so its scalars `S` and `k` are public. It
 computes `[k]A - [S]B` with one chain of doublings (`dblOps`, `dbl-2008-hwcd`),
 four per 4-bit window of the scalars (a loop, `doubleWindow`), from the top: each window adds `[a]A`
 for `k`'s digit `a` from a table of `[1]A … [15]A` built at run time (byte
-1024), and `[-b]B` for `S`'s digit `b` from a table of constants
-(`baseMultiples`, negated, byte 3072), both with the specification's
+1024), and `[-b]B` for `S`'s digit `b` from a table copied from the static
+`bSym` (`baseMultiples`, negated, byte 3072), both with the specification's
 addition. A zero digit adds nothing. The leading zero bytes of `k` above its
 low 32 are skipped (`skipZero`, counting bytes in `esi`): before them the sum
 is zero, which doubles to itself. The windows are then one loop
@@ -81,16 +81,37 @@ def negBase (i : Nat) : Spec.Ed25519.Point :=
   let m := Impl.Ed25519.baseMultiples.getD i (0, 1)
   ⟨0 - m.1, m.2, 1, 0 - m.1 * m.2⟩
 
-/-- Entry `i` of the table at byte 3072: `-[i + 1]B`, through slots 0–3. -/
-def bEntry (i : Nat) : List Instr := constPoint (negBase i) ++ pointTableWrite (3072 + 128 * i)
+/-- The static holding `-[1]B … -[15]B` (`bWords`). -/
+def bSym : String := "VG_ED25519_VERIFY_NEG_BASE"
 
-/-- The entries listed of the table at byte 3072. -/
-def bEntries : List Nat → Prog isa
-  | [] => .block []
-  | i :: is => .seq (.block (bEntry i)) (bEntries is)
+/-- Coordinate `c` of a point: `X`, `Y`, `Z`, `T` for `c = 0, 1, 2, 3`. -/
+def pointCoord (q : Spec.Ed25519.Point) : Nat → Spec.X25519.Fe
+  | 0 => q.X
+  | 1 => q.Y
+  | 2 => q.Z
+  | _ => q.T
 
-/-- Entries `j < 15` of the table at byte 3072 are `-[j + 1]B`. -/
-def bTable : Prog isa := bEntries (List.range 15)
+/-- Word `i` of the static: word `i % 4` of coordinate `i / 4 % 4` of `negBase (i / 16)`, 128 bytes
+an entry, as a table entry holds it. -/
+def bWord (i : Nat) : BitVec 64 :=
+  BitVec.ofNat 64 ((pointCoord (negBase (i / 16)) (i / 4 % 4)).val / 2 ^ (64 * (i % 4)))
+
+/-- The words of the 15 entries, as the static `bSym` holds them. -/
+def bWords : List (BitVec 64) := (List.range 240).map bWord
+
+/-- The static verification reads. -/
+def bConsts : List (String × List (BitVec 64)) := [(bSym, bWords)]
+
+/-- The dword at `esi` to `edx`, both advanced; `ecx` counts the dwords left. -/
+def bCopyStep : List Instr :=
+  [.mov .eax (.mem (at_ .esi 0)), .store (at_ .edx 0) .eax, .alu .add .esi (.imm 4),
+    .alu .add .edx (.imm 4), .alu .sub .ecx (.imm 1)]
+
+/-- Entries `j < 15` of the table at byte 3072 are `-[j + 1]B`: the static's 480 dwords, copied. -/
+def bTable : Prog isa :=
+  .seq (.frame (.symPush .eax bSym) (.block []) (.pop .ecx 1))
+    (.seq (.block [.mov .esi (.reg .eax), .mov .edx (.reg .edi), .alu .add .edx (.imm 3072),
+      .mov .ecx (.imm 480)]) (.loop (.block bCopyStep) .ne))
 
 /-- `eax` = nibble `esi` of the input whose pointer is at `[esp + arg]`, from its byte `add`
 on: the high nibble of byte `esi / 2` if `esi` is odd, and its low nibble if it is even. -/
@@ -148,8 +169,9 @@ def windowSetup : List Instr := fieldCode [.const 16 Spec.Ed25519.d]
 /-- The sum at the identity, and the counter at all 64 bytes of `k`. -/
 def windowInit : List Instr := constPoint Spec.Ed25519.identity ++ [.mov .esi (.imm 64)]
 
-/-- The tables, and the sum at the identity. -/
-def windowPrep : Prog isa := .seq (.block windowSetup) (.seq aTable (.seq bTable (.block windowInit)))
+/-- `d`, the table of `A`, and the sum at the identity (the table of `B` is copied before,
+`verifyEquationPoints`). -/
+def windowPrep : Prog isa := .seq (.block windowSetup) (.seq aTable (.block windowInit))
 
 /-- `[k]A - [S]B` in slots 0–3: the nibbles left after `skipZero`, two per byte. -/
 def windowMultiply : Prog isa :=

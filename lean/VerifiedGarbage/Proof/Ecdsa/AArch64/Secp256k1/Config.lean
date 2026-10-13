@@ -63,5 +63,6 @@ theorem secp256k1_ok (hI : Weierstrass.AArch64.InvSounds) : BaseCfgOk secp256k1 
   inv_at := .inr (by decide +kernel)
   inv_fn := fun _ => ⟨by decide, by lit_decide, by lit_decide, by lit_decide, by lit_decide⟩
   padd := fun h => absurd rfl h
+  check_fn := fun _ => ⟨by lit_decide, by lit_decide, by lit_decide⟩
 
 end VG.Proof.Ecdsa.AArch64.Secp256k1

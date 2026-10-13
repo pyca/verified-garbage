@@ -12,12 +12,13 @@ keys `Ki0 = G(Key0 + Key2 - KCi)` and `Ki1 = G(Key1 - Key3 + KCi)`: the
 inputs of `G` do not depend on its outputs, so all 32 are computed first
 (`keyRound`), the first sixteen into `g16`'s words (`tSlot`) and the rest
 into `uSlot`, and `G` of each sixteen is computed by `g16`, then copied to
-the schedule, whose words are in the same order. The scratch buffer is laid
-out as ECB's (`Ecb.lean`).
+the schedule, whose words are in the same order: a loop of two (`keyHalf`),
+counting the halves left in `x3` once the rounds are done with it. The
+scratch buffer is laid out as ECB's (`Ecb.lean`).
 
 `Key0 || Key1` is kept in `x3` and `Key2 || Key3` in `x4`, as 64-bit words,
 so that the rotations by eight bits are `ror`s. Nothing depends on the key
-but the data: the code is straight-line.
+but the data: only the count decides the branches.
 -/
 
 @[expose] public section
@@ -64,8 +65,15 @@ def keyStore (k : Nat) : List Instr :=
 def keyMove : List Instr :=
   (List.range 16).flatMap fun w => [ldW .x14 uSlot w, stW (tSlot 0) w .x14]
 
+/-- `G` of `g16`'s words, copied to the schedule at `x1`, which moves on by
+64 bytes, and the halves left in `x3` down; then, unless none is left, the
+second sixteen inputs to `g16`'s words. -/
+def keyHalf : Prog isa :=
+  .seq (.block (g16 ++ keyStore 0 ++ [.addImm .x .x1 .x1 64, .subImm .x .x3 .x3 1]))
+    (.ite (.nonzero .x .x3) (.block keyMove) (.block []))
+
 def expandKey : Prog isa :=
-  .block ([movR sb .x2] ++ saveRegs ++ keyLoad ++ (List.range 16).flatMap keyRound ++ g16 ++
-    keyStore 0 ++ keyMove ++ g16 ++ keyStore 16 ++ restore)
+  .seq (.block ([movR sb .x2] ++ saveRegs ++ keyLoad ++ (List.range 16).flatMap keyRound ++ [.movz .x .x3 2 0]))
+    (.seq (.loop keyHalf (.nonzero .x .x3)) (.block restore))
 
 end VG.Impl.Seed.AArch64

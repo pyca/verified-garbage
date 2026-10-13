@@ -17,5 +17,7 @@ namespace VG
 
 materialize_code Impl.TripleDes.X86_64.cbcEncrypt
 materialize_code Impl.TripleDes.X86_64.cbcDecrypt
+materialize_code Impl.TripleDes.X86_64.cbcEncryptI
+materialize_code Impl.TripleDes.X86_64.cbcDecryptI
 
 end VG

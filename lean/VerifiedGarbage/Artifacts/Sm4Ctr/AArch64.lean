@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Sm4.AArch64.CtrVerified
+import Mathlib.Tactic.SplitIfs
 
 /-! # SM4-CTR artifacts on baseline AArch64 -/
 

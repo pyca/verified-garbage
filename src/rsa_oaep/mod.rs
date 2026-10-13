@@ -18,7 +18,7 @@
 //! SHA-512, SHA-512/224 and SHA-512/256, with MGF1 over the same hash
 //! function or over SHA-1 (the pairs in use, and those Wycheproof tests);
 //! other pairs are refused ([`Error::UnsupportedHash`]). On an x86-64 CPU
-//! with the SHA extensions or AVX2, and with BMI2 and ADX (and
+//! with the SHA extensions or AVX2, and with BMI2, ADX and AVX2 (and
 //! AVX512_IFMA), and on an AArch64 CPU with the SHA-2 or SHA-3
 //! instructions, it uses the faster compression functions and private-key
 //! operations, as [`hashes`](crate::hashes) and [`rsa`](crate::rsa) do.

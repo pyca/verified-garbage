@@ -36,6 +36,8 @@ materialize_code invFnP := Cfg.invFn p224 (Cfg.pPowI p224)
 materialize_code invFnN := Cfg.invFn p224 (Cfg.nPowI p224)
 materialize_code pPow := Cfg.pPow p224
 materialize_code nPow := Cfg.nPow p224
+materialize_code checkBody := Impl.Ecdh.AArch64.Cfg.checkBody p224
+materialize_code checkFn := Impl.Ecdh.AArch64.Cfg.checkFn p224
 materialize_code validate := Impl.Ecdh.AArch64.Cfg.validate p224
 materialize_code comb := Impl.Weierstrass.AArch64.TCombCfg.comb p224.combCfg
 

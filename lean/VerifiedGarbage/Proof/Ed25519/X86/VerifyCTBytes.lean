@@ -41,7 +41,7 @@ theorem VerifyCTFacts.scalarBytes {s t : State} (h : VerifyCTFacts s t) :
 theorem VerifyCTFacts.challengeBytes {s t : State} (h : VerifyCTFacts s t) :
     VG.Spec.Ed25519.bytesAt s.mem ((arg s 2 + BitVec.ofNat 32 0).setWidth 64) 64 =
       VG.Spec.Ed25519.bytesAt t.mem ((arg t 2 + BitVec.ofNat 32 0).setWidth 64) 64 := by
-  simpa only [show BitVec.ofNat 32 0 = 0#32 from rfl, BitVec.add_zero] using h.pub.2.2.2.2.2.2.2
+  simpa only [show BitVec.ofNat 32 0 = 0#32 from rfl, BitVec.add_zero] using h.pub.2.2.2.2.2.2.2.1
 
 theorem fe_decode_input {s : State} {p : BitVec 32} (h : p.toNat + 32 ≤ 2 ^ 32) :
     fe s.mem p 0 = VG.Spec.Ed25519.decodeLE (VG.Spec.Ed25519.bytesAt s.mem (p.setWidth 64) 32) := by

@@ -295,6 +295,7 @@ def Instr.rspFree : Instr → Bool
   | .imul d r => d != .rsp && r != .rsp
   | .mulx hi lo src => hi != .rsp && lo != .rsp && src.noRsp
   | .movImm64 d _ => d != .rsp
+  | .bswap d => d != .rsp
   | .xop (.movq _ r) => r != .rsp
   | .xop _ => true
   | .movqR d _ => d != .rsp
@@ -450,6 +451,9 @@ theorem exec_setRsp {i : Instr} (hi : i.rspFree = true) :
   | movImm64 d v =>
     simp only [Instr.rspFree, bne_iff_ne, ne_eq] at hi
     simp only [exec, Option.map_some, setReg_setRsp hi]
+  | bswap d =>
+    simp only [Instr.rspFree, bne_iff_ne, ne_eq] at hi
+    simp only [exec, Option.map_some, setRsp_gpr hi, setReg_setRsp hi]
   | xop op =>
     simp only [exec, Option.map_some]; congr 1
     cases op with

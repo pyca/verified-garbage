@@ -32,7 +32,7 @@ def pointEqual : Prog isa :=
 
 /-- Returns 1 in `eax` if `[S]B = R + [k]A`, for `A` at byte 7680 and `R` at byte 7808: the
 windows' `[k]A - [S]B` compared with `-R`. -/
-def verifyEquationPoints : Prog isa := .seq windowMultiply (.seq (.block negR) pointEqual)
+def verifyEquationPoints : Prog isa := .seq bTable (.seq windowMultiply (.seq (.block negR) pointEqual))
 
 /-! ## Decoding `A` and `R` -/
 

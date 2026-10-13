@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Seed.Arm.FbVerified
+import VerifiedGarbage.Proof.Framework.Arm.Contract
 
 /-! # SEED-CFB128 artifacts on baseline ARMv7 -/
 

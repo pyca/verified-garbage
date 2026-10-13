@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.MlDsa.X86.Arith.AddSub
 public import VerifiedGarbage.Proof.MlDsa.X86.Arith.Mul
 public import VerifiedGarbage.Proof.MlDsa.X86.Arith.Ntt
 public import VerifiedGarbage.Proof.MlDsa.X86.Arith.NttInv
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # ML-DSA (FIPS 204) on x86: the arithmetic of polynomials

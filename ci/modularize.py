@@ -7,6 +7,14 @@ and `ci/check_lean_modules.py` checks that they are.
 
   modularize.py PATH...   convert each `.lean` file at PATH (a file or a
                           directory, recursively) that is not a module yet
+  modularize.py visibility [--additions-only] PATH...
+                          after `lake build`: in the modules under PATH,
+                          make plain each `public import` their public
+                          surface does not need, and add the direct
+                          imports a module needs once its imports'
+                          imports are no longer public (only those, with
+                          `--additions-only`); `D/*` is D's own files:
+                          see "Import visibility"
 
 A converted file starts with `module`; its imports become `public import`;
 and its body is an `@[expose] public section`, so that every declaration
@@ -33,10 +41,33 @@ modules of `CORE_ALL` with `import all`, and those of `CORE_ALL_FOR` whose
 definition it mentions.
 
 A leading comment (a copyright notice) stays before `module`.
+
+Import visibility (`visibility`). A module's plain (private) `import X`
+gives it X for its proofs, but not to the modules that import it: they see
+only its public imports, transitively. A file that is not a module (the
+emitter's drivers, `Artifacts.lean`, the known-answer tests) still loads and
+sees everything, private imports included, so the audits still see every
+proof (`ci/audit_negative.py` checks it). After `lake build`,
+`lean/ImportUses.lean` lists for each module the modules whose constants its
+public surface mentions (the types of its declarations, the values of its
+definitions, which are exposed) and those it uses anywhere. From that, a
+`public import X` stays public when X's public closure (X and what it
+imports publicly, transitively, after the change) has a module the public
+surface mentions; when X is outside this project; or when the module, or X,
+declares syntax, attributes or `simp` lemmas (which change how importers
+elaborate without leaving a constant behind). Then every module whose
+imports no longer give it what it uses (a constant, in a proof too), or a
+module outside this project or of that kind which it sees today, gets a
+direct import of it: `public import` if its public surface needs it, plain
+`import` otherwise, and `meta import` too in a file that evaluates code. The
+added imports change nothing before the demotions, so they can merge first.
+Like the emitter, it loads every module at once: on Linux it needs
+`vm.max_map_count` raised (lean/README.md).
 """
 
 import pathlib
 import re
+import subprocess
 import sys
 
 LEAN = pathlib.Path(__file__).resolve().parent.parent / "lean"
@@ -199,7 +230,250 @@ def convert(text: str, proof: bool = False, names: list[str] = EVAL_NAMES) -> st
     return "\n".join(out)
 
 
+# Import visibility (`visibility`): which `public import`s can be plain
+# (private) `import`s.
+
+# Declarations that change how importers parse or elaborate, without leaving a
+# constant in what they elaborate: a module declaring one is imported
+# publicly, and every module keeps seeing it.
+SURFACE_SYNTAX = re.compile(
+    r"^\s*(?:@\[[^\]]*\]\s*)?(?:(?:scoped|local)\s+)?"
+    r"(syntax|macro|macro_rules|elab|elab_rules|notation|infixl?|infixr|prefix|postfix|"
+    r"simproc|dsimproc|declare_syntax_cat|attribute\s+\[)\b", re.M)
+SIMP_ATTR = re.compile(r"@\[[^\]]*\bsimp\b")
+VIS_IMPORT = re.compile(r"^(public\s+)?(meta\s+)?import\s+(all\s+)?(\S+)\s*$")
+
+
+def module_path(name: str) -> pathlib.Path:
+    return LEAN / (name.replace(".", "/") + ".lean")
+
+
+def read_uses(path: pathlib.Path) -> dict:
+    """The lines `ImportUses.lean` writes, by module: (imports as (name,
+    public, meta), modules of the public surface, modules used anywhere,
+    whether it declares meta code)."""
+    mods = {}
+    for line in path.read_text().splitlines():
+        name, imps, pub, used, meta = line.split("\t")
+        imports = []
+        for i in filter(None, imps.split(",")):
+            base = i.split("+")[0]
+            imports.append((base, "+p" in i, "+m" in i))
+        mods[name] = (imports, set(filter(None, pub.split(","))),
+                      set(filter(None, used.split(","))), meta == "meta")
+    return mods
+
+
+def plan_visibility(mods: dict) -> dict:
+    """For each module of this project whose imports change: (the imports
+    that become plain `import`s, the `public import`s to add, the `import`s to
+    add), keeping every module's sight of what it uses.
+
+    A `public import X` stays public when X's public closure (X and what it
+    imports publicly, transitively, after this plan) has a module whose
+    constants the module's public surface mentions, or when X is outside this
+    project or declares syntax, attributes or `simp` lemmas, which change how
+    importers elaborate without leaving a constant behind. Then each module
+    gets a direct import of what it no longer sees but uses (a constant, in
+    a proof too) or sees today and is outside this project or such a module:
+    `public import` for what its public surface needs, plain `import`
+    otherwise (with `meta import` too in a file that evaluates code)."""
+    names = list(mods)
+    idx = {n: i for i, n in enumerate(names)}
+    project = {n for n in names if n.startswith("VerifiedGarbage.")}
+    src = {}
+    for n in project:
+        p = module_path(n)
+        src[n] = p.read_text() if p.exists() else ""
+    surface = {n for n in project
+               if mods[n][3] or SURFACE_SYNTAX.search(src[n]) or SIMP_ATTR.search(src[n])}
+    keep = {n for n in names if n not in project or n in surface or not is_module(src[n].split("\n"))}
+    implicit = {n for n in names if n == "Init" or n.startswith("Init.")}
+    bit = lambda ns: sum(1 << idx[n] for n in ns if n in idx)
+
+    def order():
+        seen, out = set(), []
+        for root in names:
+            stack = [(root, iter(mods[root][0]))]
+            if root in seen:
+                continue
+            seen.add(root)
+            while stack:
+                n, it = stack[-1]
+                nxt = next((m for m, _, _ in it if m in mods and m not in seen), None)
+                if nxt is None:
+                    out.append(n)
+                    stack.pop()
+                else:
+                    seen.add(nxt)
+                    stack.append((nxt, iter(mods[nxt][0])))
+        return out
+
+    # What a module sees: its imports (`meta` ones too, for its meta code),
+    # and what they import publicly, transitively.
+    def closures(public_of):
+        clo = {}
+        for n in order():
+            c = 1 << idx[n]
+            for m in public_of(n):
+                c |= clo[m]
+            clo[n] = c
+        return clo
+
+    old_pub = lambda n: [m for m, p, mt in mods[n][0] if p and m in mods]
+    old_clo = closures(old_pub)
+    keep_bits = bit(keep - implicit)
+    plan, new_pub_edges = {}, {}
+    new_clo = {}
+    for n in order():
+        imports = mods[n][0]
+        if n not in project or not is_module(src[n].split("\n")):
+            new_pub_edges[n] = old_pub(n)
+        else:
+            pub_need = bit(mods[n][1] - implicit) & ~(1 << idx[n])
+            public, private, optional = [], [], []
+            for m, p, mt in imports:
+                if m not in mods:
+                    continue
+                if p and (mt or n in keep or m in keep):
+                    public.append(m)
+                elif p and new_clo[m] & pub_need:
+                    optional.append(m)
+                else:
+                    private.append((m, p))
+            # Keep public only enough of the others to cover what the public
+            # surface needs: each time, the import that covers the most of
+            # what is left for the least it adds to what importers see.
+            sees_pub = 0
+            for m in public:
+                sees_pub |= new_clo[m]
+            while pub_need & ~sees_pub and optional:
+                def cost(m):
+                    gain = (new_clo[m] & pub_need & ~sees_pub).bit_count()
+                    return (-(gain / (1 + (new_clo[m] & ~sees_pub).bit_count())), m) if gain else (1, m)
+                best = min(optional, key=cost)
+                if cost(best)[0] == 1:
+                    break
+                optional.remove(best)
+                public.append(best)
+                sees_pub |= new_clo[best]
+            private += [(m, True) for m in optional]
+            demoted = [m for m, p in private if p]
+            add_pub = cover(pub_need & ~sees_pub, names, new_clo)
+            for m in add_pub:
+                sees_pub |= new_clo[m]
+            sees = sees_pub
+            for m, _ in private:
+                sees |= new_clo[m]
+            old_sees = 0
+            for m, _, mt in imports:
+                if m in mods:
+                    old_sees |= old_clo[m]
+            need = bit(mods[n][2] - implicit) | (old_sees & keep_bits)
+            # What a module uses it sees today: an import added for it changes
+            # what no module sees, and adds no dependency.
+            unseen = need & ~old_sees & ~(1 << idx[n])
+            if unseen:
+                bad = [names[i] for i in range(unseen.bit_length()) if unseen >> i & 1]
+                raise SystemExit(f"{n} uses {bad[:3]}, which it does not see: rerun ImportUses.lean")
+            add = cover(need & ~sees & ~(1 << idx[n]), names, new_clo)
+            if demoted or add_pub or add:
+                plan[n] = (demoted, add_pub, add)
+            new_pub_edges[n] = public + add_pub
+        c = 1 << idx[n]
+        for m in new_pub_edges[n]:
+            c |= new_clo[m]
+        new_clo[n] = c
+    return plan
+
+
+def cover(missing: int, names: list[str], clo: dict) -> list[str]:
+    """Modules whose public closures together cover the bit set `missing`,
+    taking the largest closures first (a closure contains those of the
+    modules in it)."""
+    ms = [names[i] for i in range(missing.bit_length()) if missing >> i & 1]
+    ms.sort(key=lambda m: (-clo[m].bit_count(), m))
+    out, covered = [], 0
+    for m in ms:
+        if not (missing & ~covered):
+            break
+        if (missing & ~covered) & clo[m] and not covered >> names_idx(names)[m] & 1:
+            out.append(m)
+            covered |= clo[m]
+    assert missing & ~covered == 0
+    return sorted(out)
+
+
+_IDX = {}
+
+
+def names_idx(names: list[str]) -> dict:
+    if id(names) not in _IDX:
+        _IDX[id(names)] = {n: i for i, n in enumerate(names)}
+    return _IDX[id(names)]
+
+
+def apply_visibility(text: str, demoted: list[str], add_pub: list[str], add: list[str]) -> str:
+    """`text` with each `public import` of `demoted` a plain `import` (dropped
+    if the file also has `import all` of it) and the imports `add_pub`
+    (public) and `add` added after its last import."""
+    lines = text.split("\n")
+    has_all = {m.group(4) for l in lines if (m := VIS_IMPORT.match(l)) and m.group(3)}
+    evaluates_code = any((m := VIS_IMPORT.match(l)) and m.group(2) and not m.group(1) for l in lines)
+    out, last = [], -1
+    for l in lines:
+        m = VIS_IMPORT.match(l)
+        if m and m.group(1) and not m.group(2) and not m.group(3) and m.group(4) in demoted:
+            if m.group(4) not in has_all:
+                out.append(f"import {m.group(4)}")
+        else:
+            out.append(l)
+        if VIS_IMPORT.match(out[-1] if out else ""):
+            last = len(out) - 1
+    new = [f"public import {m}" for m in add_pub] + [f"import {m}" for m in add]
+    if evaluates_code:
+        new += [f"meta import {m}" for m in add_pub + add]
+    return "\n".join(out[:last + 1] + new + out[last + 1:])
+
+
+def module_names(lean: pathlib.Path) -> list[str]:
+    """The modules of the library (files under `VerifiedGarbage/` that are)."""
+    return sorted(".".join(f.relative_to(lean).with_suffix("").parts)
+                  for f in (lean / "VerifiedGarbage").rglob("*.lean")
+                  if is_module(f.read_text().split("\n")))
+
+
+def visibility(paths: list[str], additions_only: bool) -> int:
+    """Applies `plan_visibility` to the files under `paths`, from what
+    `ImportUses.lean` finds in the built library."""
+    out = LEAN / ".lake" / "import-uses.tsv"
+    r = subprocess.run(["lake", "env", "lean", "--run", "ImportUses.lean", str(out)] + module_names(LEAN),
+                       cwd=LEAN)
+    if r.returncode:
+        return r.returncode
+    plan = plan_visibility(read_uses(out))
+    # `D/*` is D's own files, `D` every file under D.
+    own = [pathlib.Path(p[:-2]).resolve() for p in paths if p.endswith("/*")]
+    roots = [pathlib.Path(p).resolve() for p in paths if not p.endswith("/*")]
+    changed = 0
+    for n, (demoted, add_pub, add) in sorted(plan.items()):
+        f = module_path(n).resolve()
+        if not (f.parent in own or any(f.is_relative_to(r) for r in roots)):
+            continue
+        text = f.read_text()
+        new = apply_visibility(text, [] if additions_only else demoted, add_pub, add)
+        if new != text:
+            f.write_text(new)
+            changed += 1
+    print(f"{changed} files changed", file=sys.stderr)
+    return 0
+
+
+
 def main(args: list[str]) -> int:
+    if args and args[0] == "visibility":
+        rest = [a for a in args[1:] if a != "--additions-only"]
+        return visibility(rest, "--additions-only" in args) if rest else 2
     if not args:
         print(__doc__, file=sys.stderr)
         return 2

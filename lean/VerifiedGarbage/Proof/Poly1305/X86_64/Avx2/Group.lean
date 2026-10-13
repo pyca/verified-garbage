@@ -140,6 +140,7 @@ theorem last_ok {R X : Nat} {s : State} (hr8 : s.gpr .r8 = 0x3ffffff) (hr9 : s.g
     exact (Limbs26.mul_mod _ _).trans (Nat.ModEq.mul_left _ (Y₁.hi k hk))
   rw [group_bytes]
   exact Poly1305.horner_last (blk_length s 0) (blk_length s 1) (blk_length s 2) (blk_length s 3) hI.acc
-    (e 0 (by decide)) (e 1 (by decide)) (e 2 (by decide)) (by simpa using e 3 (by decide))
+    (e 0 (by decide)) (e 1 (by decide)) (e 2 (by decide))
+    (by have h := e 3 (by decide); rw [show 4 - 3 = 1 from rfl, Nat.pow_one] at h; exact h)
 
 end VG.Proof.Poly1305.X86_64.Avx2

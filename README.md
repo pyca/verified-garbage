@@ -654,7 +654,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ AES-NI, VAES, AVX2</td>
+<td>✅ AES-NI, VAES, VPCLMULQDQ, AVX2</td>
 
 <td>✅ AES, PMULL</td>
 
@@ -2066,7 +2066,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ AVX-512F, AVX-512 IFMA, AVX-512VL, BMI2, ADX</td>
+<td>✅ AVX-512F, AVX-512 IFMA, AVX-512VL, AVX2, BMI2, ADX</td>
 
 <td>✅</td>
 
@@ -2098,7 +2098,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ AVX-512F, AVX-512 IFMA, AVX-512VL, BMI2, ADX</td>
+<td>✅ AVX-512F, AVX-512 IFMA, AVX-512VL, AVX2, BMI2, ADX</td>
 
 <td>✅</td>
 

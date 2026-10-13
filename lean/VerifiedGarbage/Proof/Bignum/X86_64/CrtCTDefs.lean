@@ -183,8 +183,8 @@ def EPre (sp sl : Nat) (p : BPub) (s : State) : Prop :=
     eb.length ≤ 1024 ∧ Src s p.x.B p.x.Z p.ptr eb
 
 /-- `expLoop M.mm sp sl` is constant time. -/
-def ExpCT (M : Mont) (sp sl : Nat) : Prop :=
-  RelCT isa (Two (EPre sp sl)) (seqs (Crt.expLoop M.mm sp sl)) fun _ _ => True
+def ExpCT (M : Mont) (S : CrtSel) (sp sl : Nat) : Prop :=
+  RelCT isa (Two (EPre sp sl)) (seqs (Crt.expLoop M.mm S.code sp sl)) fun _ _ => True
 
 /-- `primeLoad_ok`'s hypotheses. -/
 def LPre (j sp sl : Nat) (p : BPub) (s : State) : Prop :=
@@ -287,9 +287,9 @@ def PwPre (sl sd slen : Nat) (p : BPub) (s : State) : Prop :=
     eb.length ≤ 1024 ∧ Src s p.x.B p.x.Z p.ptr eb
 
 /-- The phases' exponentiation (`powPhase_ok`) is constant time. -/
-def PowCT (M : Mont) (sl sd slen : Nat) : Prop :=
+def PowCT (M : Mont) (S : CrtSel) (sl sd slen : Nat) : Prop :=
   RelCT isa (Two (PwPre sl sd slen)) (seqs ([.block [.mov .rdi (.mem (hdr sl))]] ++ redc M.mm Public.aY ++
-    Crt.expLoop M.mm sd slen)) fun _ _ => True
+    Crt.expLoop M.mm S.code sd slen)) fun _ _ => True
 
 /-- The public data of a prime's phase: `n`'s workspace, `-n⁻¹`, `n`, the
 prime's workspace and the exponent's pointer and length. -/
@@ -315,7 +315,7 @@ def QPre (p : PhasePub) (s : State) : Prop :=
     eb.length ≤ 1024 ∧ Src s p.B p.Z p.ep eb
 
 /-- `qPhase M.mm` is constant time. -/
-def QPhaseCT (M : Mont) : Prop := RelCT isa (Two QPre) (seqs (qPhase M.mm)) fun _ _ => True
+def QPhaseCT (M : Mont) (S : CrtSel) : Prop := RelCT isa (Two QPre) (seqs (qPhase M.mm S.code)) fun _ _ => True
 
 /-- The public data of `p`'s phase: also `q`'s workspace and `qInv`'s
 pointer. -/
@@ -343,6 +343,6 @@ def PPre (p : PPhasePub) (s : State) : Prop :=
     (qib.length + 7) / 8 ≤ p.ph.wx ∧ (c = true → Spec.Rsa.os2ip qib < X)
 
 /-- `pPhase M.mm` is constant time. -/
-def PPhaseCT (M : Mont) : Prop := RelCT isa (Two PPre) (seqs (pPhase M.mm)) fun _ _ => True
+def PPhaseCT (M : Mont) (S : CrtSel) : Prop := RelCT isa (Two PPre) (seqs (pPhase M.mm S.code)) fun _ _ => True
 
 end VG.Proof.Bignum.X86_64

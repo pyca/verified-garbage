@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Impl.Ed25519.X86_64.PointDecode
 public import VerifiedGarbage.Impl.Ed25519.X86_64.ScalarBase
 public import VerifiedGarbage.Impl.Ed25519.X86_64.VerifyWindow
+public import VerifiedGarbage.Impl.Ed25519.X86_64.BaseOdd
 
 /-! Strict verification with the full 512-bit challenge supplied by the caller. -/
 

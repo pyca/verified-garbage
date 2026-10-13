@@ -4,6 +4,7 @@ public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.Weierstrass.Law
 public import VerifiedGarbage.Impl.Ecdh.P192.Arm
 public import VerifiedGarbage.Proof.Ecdh.Arm.P192.Verified
+import VerifiedGarbage.Proof.Framework.Arm.Contract
 
 /-!
 # ECDH over P-192 (SP 800-56A) on 32-bit ARM

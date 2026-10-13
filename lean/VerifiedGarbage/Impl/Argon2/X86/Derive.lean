@@ -27,18 +27,20 @@ open VG.Impl.Sha512.X86 (at_)
 /-! ## The final block and the tag -/
 
 /-- Zero the memory's first block. -/
-def reduceClear : List Instr :=
-  ([.mov .edi (fr (argOff memoryArg)), .mov .eax (.imm 0)] : List Instr) ++
-    (List.range 256).map fun k => .store (at_ .edi (4 * k)) .eax
+def reduceClear : Prog isa := .seq (.block [.mov .edi (fr (argOff memoryArg))]) (zeroWords .edi 256)
 
-/-- XOR the last block of lane `[ebp + laneOff]` into the first block. -/
+/-- The address of the last block of lane `[ebp + laneOff]`, in `eax`. -/
 def reduceLane : List Instr :=
-  ([.mov .eax (fr laneOff), .mov .ecx (fr laneLenOff), .alu .sub .ecx (.imm 1)] : List Instr) ++ blockAddr ++
-    ([.mov .esi (.reg .eax), .mov .edi (fr (argOff memoryArg))] : List Instr) ++ writeBlock true
+  ([.mov .eax (fr laneOff), .mov .ecx (fr laneLenOff), .alu .sub .ecx (.imm 1)] : List Instr) ++ blockAddr
 
+/-- XOR it into the first block, and on to the next lane. -/
+def reduceXor : Prog isa :=
+  .seq (.block [.mov .esi (.reg .eax), .mov .edi (fr (argOff memoryArg))])
+    (.seq (writeBlock true) (.block (advance laneOff (fr (argOff lanesArg)))))
+
+/-- XOR the last block of every lane into the first block. -/
 def reduce : Prog isa :=
-  .seq (.block (reduceClear ++ setLocal laneOff 0))
-    (.loop (.block (reduceLane ++ advance laneOff (fr (argOff lanesArg)))) .b)
+  .seq (.seq reduceClear (.block (setLocal laneOff 0))) (.loop (.seq (.block reduceLane) reduceXor) .b)
 
 /-- `hprime(memory, 1024, out, out_len, scratch)`. -/
 def finalOutput : Prog isa :=

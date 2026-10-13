@@ -1,6 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Blowfish.Arm.FbVerified
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Aes.SboxSpec
+import VerifiedGarbage.Proof.Blowfish.Arm.Run
+import VerifiedGarbage.Proof.Framework.Arm.Linear
+import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
 
 /-! # Blowfish-CFB128 artifacts on baseline ARMv7 -/
 

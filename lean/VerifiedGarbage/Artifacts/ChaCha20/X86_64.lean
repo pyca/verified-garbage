@@ -10,6 +10,11 @@ public import VerifiedGarbage.Impl.ChaCha20.X86_64.Avx2
 public import VerifiedGarbage.Impl.ChaCha20.X86_64.Avx512
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Lit
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Stream.Init
+import Mathlib.Data.List.Induction
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Aes.KeyExp
+import VerifiedGarbage.Proof.Aes.SboxSpec
+import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
 
 /-! # The ChaCha20 block function (RFC 8439) on x86-64 -/
 

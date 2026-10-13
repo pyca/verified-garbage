@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Ed25519.X86.PointBatch
+public import VerifiedGarbage.Impl.Ed25519.X86.PointAccumulate
 
 /-! Descending batches, with the public remaining count at workspace byte28. -/
 

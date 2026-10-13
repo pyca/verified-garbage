@@ -19,8 +19,8 @@ def artifacts : List Artifact := [
     target := X86_64.target
     doc := Spec.TripleDes.ofbApi.doc (notes := [note])
     code := Impl.StackScratch.X86_64.withStackScratchWiped 976 .r8 121 Impl.TripleDes.X86_64.ofb
-    contract := Spec.TripleDes.ofbContract X86_64.abi 976
-    stack := 976
+    contract := Spec.TripleDes.ofbContract X86_64.abi 984
+    stack := 984
     verified := Proof.TripleDes.X86_64.ofb_framed
     spSafe := Code.all_of_allInstrs (by lit_decide) }]
 

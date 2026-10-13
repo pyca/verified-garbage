@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.TripleDes.AArch64.VerifiedBlock
 public import VerifiedGarbage.Proof.TripleDes.AArch64.Key.Verified
 public import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.Verified
 public import VerifiedGarbage.Proof.TripleDes.AArch64.Frame
+import Mathlib.Tactic.SplitIfs
 
 @[expose] public section
 

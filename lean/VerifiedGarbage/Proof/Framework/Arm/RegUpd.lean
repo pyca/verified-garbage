@@ -35,5 +35,6 @@ theorem z_setReg (r : Reg) (x : BitVec 32) : (s.setReg r x).z = s.z := rfl
 theorem n_setReg (r : Reg) (x : BitVec 32) : (s.setReg r x).n = s.n := rfl
 theorem c_setReg (r : Reg) (x : BitVec 32) : (s.setReg r x).c = s.c := rfl
 theorem v_setReg (r : Reg) (x : BitVec 32) : (s.setReg r x).v = s.v := rfl
+theorem syms_setReg (r : Reg) (x : BitVec 32) : (s.setReg r x).syms = s.syms := rfl
 
 end VG.Arm.RegUpd

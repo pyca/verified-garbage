@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Seed.X86_64.Frame
+import Mathlib.Tactic.SplitIfs
 
 /-! # SEED artifacts on baseline x86-64 -/
 

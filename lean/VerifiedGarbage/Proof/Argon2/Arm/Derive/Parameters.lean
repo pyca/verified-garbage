@@ -5,6 +5,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Argon2.Arm.Divide
+import VerifiedGarbage.Proof.Argon2.Arm.Mix
 
 /-!
 # Argon2 on ARMv7: the parameters

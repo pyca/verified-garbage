@@ -557,8 +557,13 @@ variable (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMode} {Hyp : Prop} {Ctx St W SP
   {D : Addr} {n : Nat} {m₀ : Mem}
 
 /-- `k` more bytes, from byte `j`: encrypted and absorbed, or absorbed and
-decrypted. -/
-theorem part_ok (K : SCtx M Ctx St W SP R H D n m₀) (enc : Bool) {j k : Nat} {s : State}
+decrypted, by any `cr` and `ab` that do what `crypt` and `absorb` do. -/
+theorem partWith_ok (K : SCtx M Ctx St W SP R H D n m₀) (enc : Bool) {cr ab : Prog isa} {j k : Nat} {s : State}
+    (hcr : ∀ {t : State}, CrIn Ctx St W SP R icb (P₀ + j) (D + BitVec.ofNat 64 j) k t →
+      WP isa cr t (CrOut Ctx St W SP R icb (P₀ + j) (D + BitVec.ofNat 64 j) k t.mem))
+    (hab : ∀ {x : List Byte} {t : State}, x.length % 16 = (P₀ + j) % 16 →
+      AbsIn Ctx St W SP 16 H x (D + BitVec.ofNat 64 j) k t →
+      WP isa ab t (AbsOut Ctx St W SP 16 H x (x ++ bytesAt t.mem (D + BitVec.ofNat 64 j) k) t.mem))
     (h : SInv M Hyp Ctx St W SP R H icb x₀ P₀ enc D n m₀ j s)
     (hx : x₀.length % 16 = P₀ % 16) (hk : j + k ≤ n)
     (h12 : s.gpr .r12 = D + BitVec.ofNat 64 j) (hbp : s.gpr .rbp = BitVec.ofNat 64 k)
@@ -566,8 +571,7 @@ theorem part_ok (K : SCtx M Ctx St W SP R H D n m₀) (enc : Bool) {j k : Nat} {
     (hdat : s.mem.readW (W + BitVec.ofNat 64 200) 64 = D + BitVec.ofNat 64 j)
     (hlen : s.mem.readW (W + BitVec.ofNat 64 208) 64 = BitVec.ofNat 64 k)
     (htl : s.mem.readW (W + BitVec.ofNat 64 192) 64 = BitVec.ofNat 64 (P₀ + j)) :
-    WP isa (if enc then .seq (crypt v.callees) (.seq (.block streamLoad) (absorb v.callees 16))
-      else .seq (absorb v.callees 16) (.seq (.block streamLoad) (crypt v.callees))) s fun s' =>
+    WP isa (partWith enc cr ab) s fun s' =>
       SInv M Hyp Ctx St W SP R H icb x₀ P₀ enc D n m₀ (j + k) s' ∧
       ∀ d, 176 ≤ d → d + 8 ≤ 240 → s'.mem.readW (W + BitVec.ofNat 64 d) 64 = s.mem.readW (W + BitVec.ofNat 64 d) 64 := by
   have L := K.lay
@@ -589,10 +593,10 @@ theorem part_ok (K : SCtx M Ctx St W SP R H D n m₀) (enc : Bool) {j k : Nat} {
   have hrestA := dsub_absFrame hD.ok (e := j + k) (l := n - (j + k)) (by omega_arith)
   cases enc
   · -- Decrypting: the ciphertext absorbed, then decrypted.
-    simp only [Bool.false_eq_true, ↓reduceIte]
+    simp only [partWith, Bool.false_eq_true, ↓reduceIte]
     have hai : AbsIn Ctx St W SP 16 H (x₀ ++ ctext false (ciphOf m₀ Ctx R) icb P₀ (bytesAt m₀ D j))
         (D + BitVec.ofNat 64 j) k s := ⟨h.env, h12, hbp, by rw [hbx, hxl], hdj.ok, hH⟩
-    refine WP.seq (WP.mono (WP.with_rdwr (absorb_ok v L (yo := 16) (.inr rfl) hai)) fun s₂ ⟨ao, rd₂, wr₂⟩ => ?_)
+    refine WP.seq (WP.mono (WP.with_rdwr (hab hxl hai)) fun s₂ ⟨ao, rd₂, wr₂⟩ => ?_)
     have sl₂ : ∀ d, 176 ≤ d → d + 8 ≤ 240 →
         s₂.mem.readW (W + BitVec.ofNat 64 d) 64 = s.mem.readW (W + BitVec.ofNat 64 d) 64 := fun d h₁ h₂ =>
       ao.frame.readW (r := ⟨W + BitVec.ofNat 64 d, 8⟩) (Region.contains_self _ _) (slot_absFrame L h₁ (by omega_arith))
@@ -606,7 +610,7 @@ theorem part_ok (K : SCtx M Ctx St W SP R H D n m₀) (enc : Bool) {j k : Nat} {
     have hc₂ : ciphOf s₂.mem Ctx R = ciphOf m₀ Ctx R := by rw [ciph_frame ao.frame (ctxAll_absFrame L) hR.2, hc]
     have hR₃ : RoundsAt s₃.mem W R := hm₃ ▸ rounds_frame ao.frame (slot_absFrame L (by decide) (by decide)) hR
     have hdj₃ : DataW Ctx St W SP s₃ (D + BitVec.ofNat 64 j) k := hdj.of_eq (hrd₃.trans rd₂) (hwr₃.trans wr₂)
-    refine WP.mono (WP.with_rdwr (crypt_ok v L (icb := icb) ⟨he₃, h12₃, hbp₃, hbx₃, hdj₃, hR₃⟩))
+    refine WP.mono (WP.with_rdwr (hcr ⟨he₃, h12₃, hbp₃, hbx₃, hdj₃, hR₃⟩))
       fun s₄ ⟨co, rd₄, wr₄⟩ => ⟨⟨co.env, hD.of_eq (by rw [rd₄, hrd₃, rd₂]) (by rw [wr₄, hwr₃, wr₂]), hk,
         h.frame.trans ((absFrame_st ao.frame).trans (hm₃ ▸ crFrame_st hk co.frame)), ?_, fun hy => ?_, fun hy => ?_,
         fun hy => ?_, by rw [rd₄, hrd₃, rd₂, wr₄, hwr₃, wr₂]; exact h.cov⟩, fun d h₁ h₂ => ?_⟩
@@ -631,8 +635,8 @@ theorem part_ok (K : SCtx M Ctx St W SP R H D n m₀) (enc : Bool) {j k : Nat} {
     · rw [co.frame.readW (r := ⟨W + BitVec.ofNat 64 d, 8⟩) (Region.contains_self _ _)
         (slot_crFrame L hdj₃.ok h₁ (by omega_arith)) (by decide), hm₃, sl₂ d h₁ h₂]
   · -- Encrypting: the plaintext encrypted, then the ciphertext absorbed.
-    simp only [↓reduceIte]
-    refine WP.seq (WP.mono (WP.with_rdwr (crypt_ok v L (icb := icb) ⟨h.env, h12, hbp, hbx, hdj, hR⟩))
+    simp only [partWith, ↓reduceIte]
+    refine WP.seq (WP.mono (WP.with_rdwr (hcr ⟨h.env, h12, hbp, hbx, hdj, hR⟩))
       fun s₂ ⟨co, rd₂, wr₂⟩ => ?_)
     have sl₂ : ∀ d, 176 ≤ d → d + 8 ≤ 240 →
         s₂.mem.readW (W + BitVec.ofNat 64 d) 64 = s.mem.readW (W + BitVec.ofNat 64 d) 64 := fun d h₁ h₂ =>
@@ -649,7 +653,7 @@ theorem part_ok (K : SCtx M Ctx St W SP R H D n m₀) (enc : Bool) {j k : Nat} {
       rw [hm₃, blockAt_frame co.frame (fun r hr => (ctx_crFrame L hdj r hr).sub_left (Lay.ctxSub (by decide))), hH]
     have hai : AbsIn Ctx St W SP 16 H (x₀ ++ ctext true (ciphOf m₀ Ctx R) icb P₀ (bytesAt m₀ D j))
         (D + BitVec.ofNat 64 j) k s₃ := ⟨he₃, h12₃, hbp₃, by rw [hbx₃, hxl], hdj₃.ok, hH₃⟩
-    refine WP.mono (WP.with_rdwr (absorb_ok v L (yo := 16) (.inr rfl) hai))
+    refine WP.mono (WP.with_rdwr (hab hxl hai))
       fun s₄ ⟨ao, rd₄, wr₄⟩ => ⟨⟨ao.env, hD.of_eq (by rw [rd₄, hrd₃, rd₂]) (by rw [wr₄, hwr₃, wr₂]), hk,
         h.frame.trans ((crFrame_st hk co.frame).trans (hm₃ ▸ absFrame_st ao.frame)), ?_, fun hy => ?_, fun hy => ?_,
         fun hy => ?_, by rw [rd₄, hrd₃, rd₂, wr₄, hwr₃, wr₂]; exact h.cov⟩, fun d h₁ h₂ => ?_⟩
@@ -678,6 +682,54 @@ theorem part_ok (K : SCtx M Ctx St W SP R H D n m₀) (enc : Bool) {j k : Nat} {
         exact o
     · rw [ao.frame.readW (r := ⟨W + BitVec.ofNat 64 d, 8⟩) (Region.contains_self _ _)
         (slot_absFrame L h₁ (by omega_arith)) (by decide), hm₃, sl₂ d h₁ h₂]
+
+/-- `k` more bytes, from byte `j`, by `crypt` and `absorb`. -/
+theorem part_ok (K : SCtx M Ctx St W SP R H D n m₀) (enc : Bool) {j k : Nat} {s : State}
+    (h : SInv M Hyp Ctx St W SP R H icb x₀ P₀ enc D n m₀ j s)
+    (hx : x₀.length % 16 = P₀ % 16) (hk : j + k ≤ n)
+    (h12 : s.gpr .r12 = D + BitVec.ofNat 64 j) (hbp : s.gpr .rbp = BitVec.ofNat 64 k)
+    (hbx : s.gpr .rbx = BitVec.ofNat 64 ((P₀ + j) % 16))
+    (hdat : s.mem.readW (W + BitVec.ofNat 64 200) 64 = D + BitVec.ofNat 64 j)
+    (hlen : s.mem.readW (W + BitVec.ofNat 64 208) 64 = BitVec.ofNat 64 k)
+    (htl : s.mem.readW (W + BitVec.ofNat 64 192) 64 = BitVec.ofNat 64 (P₀ + j)) :
+    WP isa (partWith enc (crypt v.callees) (absorb v.callees 16)) s fun s' =>
+      SInv M Hyp Ctx St W SP R H icb x₀ P₀ enc D n m₀ (j + k) s' ∧
+      ∀ d, 176 ≤ d → d + 8 ≤ 240 → s'.mem.readW (W + BitVec.ofNat 64 d) 64 = s.mem.readW (W + BitVec.ofNat 64 d) 64 :=
+  partWith_ok K enc (crypt_ok v K.lay) (fun _ => absorb_ok v K.lay (.inr rfl)) h hx hk h12 hbp hbx hdat hlen htl
+
+/-- The head, `headLen P₀ n` bytes from the start, of `n ≠ 0`: by
+`cryptHead` and `absorbHead`, if the text so far left a block partial. -/
+theorem headPart_ok (K : SCtx M Ctx St W SP R H D n m₀) (enc : Bool) {s : State}
+    (h : SInv M Hyp Ctx St W SP R H icb x₀ P₀ enc D n m₀ 0 s)
+    (hx : x₀.length % 16 = P₀ % 16) (hn : n ≠ 0)
+    (h12 : s.gpr .r12 = D + BitVec.ofNat 64 0) (hbp : s.gpr .rbp = BitVec.ofNat 64 (headLen P₀ n))
+    (hbx : s.gpr .rbx = BitVec.ofNat 64 ((P₀ + 0) % 16))
+    (hdat : s.mem.readW (W + BitVec.ofNat 64 200) 64 = D + BitVec.ofNat 64 0)
+    (hlen : s.mem.readW (W + BitVec.ofNat 64 208) 64 = BitVec.ofNat 64 (headLen P₀ n))
+    (htl : s.mem.readW (W + BitVec.ofNat 64 192) 64 = BitVec.ofNat 64 (P₀ + 0)) :
+    WP isa (headPart v.callees enc) s fun s' =>
+      SInv M Hyp Ctx St W SP R H icb x₀ P₀ enc D n m₀ (0 + headLen P₀ n) s' ∧
+      ∀ d, 176 ≤ d → d + 8 ≤ 240 → s'.mem.readW (W + BitVec.ofNat 64 d) 64 = s.mem.readW (W + BitVec.ofNat 64 d) 64 := by
+  have hlt := Nat.mod_lt (P₀ + 0) (show 16 > 0 by decide)
+  obtain ⟨s₁, run₁, hz₁, hg₁, hm₁, hrd₁, hwr₁⟩ := test_ok s .rbx hbx (by omega_arith)
+  refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
+  have I₁ := h.regs (fun r _ => by rw [hg₁]) hm₁ hrd₁ hwr₁
+  refine WP.ite (decide ((P₀ + 0) % 16 = 0)) (eval_e hz₁) (fun ht => ?_) (fun hf => ?_)
+  · have h0 : (P₀ + 0) % 16 = 0 := by simpa using ht
+    have e : headLen P₀ n = 0 := by simp only [headLen, Nat.add_zero] at h0 ⊢; simp [h0]
+    rw [e]
+    exact WP.block_nil ⟨I₁, fun d _ _ => by rw [hm₁]⟩
+  · have h0 : P₀ % 16 ≠ 0 := by simpa using hf
+    have e : headLen P₀ n = min (16 - P₀ % 16) n := by simp [headLen, h0]
+    have hk0 : headLen P₀ n ≠ 0 := by rw [e]; omega_arith
+    have hle : headLen P₀ n ≤ 16 - (P₀ + 0) % 16 := by rw [e, Nat.add_zero]; omega_arith
+    have hkn : 0 + headLen P₀ n ≤ n := by have := headLen_le P₀ n; omega_arith
+    refine WP.mono (partWith_ok K enc (fun hc => cryptHead_out hc hk0 (by rwa [Nat.add_zero]) hle)
+      (fun hxl ha => absorbHead_out v K.lay (.inr rfl) ha hk0 (by rw [hxl, Nat.add_zero]; exact h0)
+        (by rw [hxl]; exact hle))
+      I₁ hx hkn (by rw [hg₁]; exact h12) (by rw [hg₁]; exact hbp) (by rw [hg₁]; exact hbx)
+      (by rw [hm₁]; exact hdat) (by rw [hm₁]; exact hlen) (by rw [hm₁]; exact htl))
+      fun s' ⟨I', sl⟩ => ⟨I', fun d h₁ h₂ => by rw [sl d h₁ h₂, hm₁]⟩
 
 end
 
@@ -1159,9 +1211,11 @@ theorem streamText_ok (B : BlkFn M) (K : SCtx M Ctx St W SP R H D n m₀) (enc :
       rw [f₄.readW (r := ⟨W + BitVec.ofNat 64 d, 8⟩) (Region.contains_self _ _) (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
         exact K.lay.w_w (.inl (by omega_arith)) (by omega_arith) (by decide)) (by decide), sl₃' d h₁ (by omega_arith)]
-    refine WP.seq (WP.mono (part_ok v K enc I₄ hx (j := 0) (k := k) (by omega_arith) (by simp [hg₄ .r12 (by decide) (by decide), h12₃'])
+    subst hk
+    refine WP.seq (WP.mono (headPart_ok v K enc I₄ hx h0 (by simp [hg₄ .r12 (by decide) (by decide), h12₃'])
       hbp₄ (by rw [hg₄ .rbx (by decide) (by decide), hbx₃', Nat.add_zero]) (by rw [sl₄ 200 (by decide) (by decide), hdat]; simp) hl₄
       (by rw [sl₄ 192 (by decide) (by decide), htl, Nat.add_zero])) fun s₅ ⟨I₅, sl₅⟩ => ?_)
+    generalize headLen c₀.length n = k at hkn hkw I₅ hl₄
     -- Past the head.
     refine WP.seq (WP.mono (next_ok I₅.env (D := D) (P := c₀.length) hkn hlt (by rw [sl₅ 208 (by decide) (by decide), hl₄])
       (by rw [sl₅ 200 (by decide) (by decide), sl₄ 200 (by decide) (by decide), hdat])

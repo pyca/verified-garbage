@@ -10,24 +10,22 @@ Verification may leak its inputs, so its scalars `S` and `k` are public. It
 computes `[k]A - [S]B` with one chain of doublings (`dblOps`), four per 4-bit window
 of the scalars, from the top: each window adds `[a]A` for `k`'s digit `a`
 from a table of `[1]A … [15]A` built at run time (byte 5376, cached), and `[-b]B`
-for `S`'s digit `b` from constants (`negBaseCached`, byte 2048). A zero
-digit adds nothing. The digits are read from the inputs, byte by byte (the
-counter at byte 56), high nibble first: `k`'s 64 bytes, of which only the
-low 32 have a byte of `S` beside them. The leading zero bytes of `k` above
-its low 32 are skipped (`skipZero`): before them the sum is zero, which
-doubles to itself. The equation `[S]B = R + [k]A` holds exactly when the
-result equals `-R`, which the projective comparison `pointEqual` checks.
+for `S`'s digit `b` from a table copied from the static `bSym` (`negBaseCached`,
+byte 2048). A zero digit adds nothing. The digits are first split out of the
+inputs with vector instructions (`nibbles`), one per byte of the workspace: `k`'s 128 at byte 768
+and `S`'s 64 at byte 896, nibble `j` at offset `j`. A window is then one
+iteration of a loop over the nibbles left (the counter at byte 56), from the
+top: `k`'s 128, of which only the low 64 have a nibble of `S` beside them. The
+leading zero nibbles of `k` above its low 64 are skipped (`skipZero`): before
+them the sum is zero, which doubles to itself. The equation `[S]B = R + [k]A`
+holds exactly when the result equals `-R`, which the projective comparison
+`pointEqual` checks.
 -/
-
 @[expose] public section
 
 namespace VG.Impl.Ed25519.AArch64
 
 open VG.AArch64
-
-/-- Slots 0–3 to the point at byte `o`, beyond the multiplication workspace. -/
-def pointTableWrite (o : Nat) : List Instr :=
-  [.movz .w .x19 0 0] ++ tableAddr o ++ pointToTable
 
 /-- The point at byte `o` to slots 0–3. -/
 def pointTableRead (o : Nat) : List Instr :=
@@ -68,20 +66,69 @@ def aTableBody : List Instr :=
 /-- Entries `j < 15` of the table at byte 5376 are cached `[j + 1]A`. -/
 def aTable : Prog isa := .seq (.block aTableInit) (.loop (.block aTableBody) (.nonzero .x .x8))
 
-/-- Entries `j < 15` of the table at byte 2048 are cached `-[j + 1]B`. -/
-def bTable : List Instr :=
-  (List.range 15).flatMap fun i => cachedPointStore (negBaseCached i) (2048 + 128 * i)
+/-- The static holding the cached `-[1]B … -[15]B` (`bWords`). -/
+def bSym : String := "VG_ED25519_VERIFY_NEG_BASE"
 
-/-- `x19` = byte `counter` of the scalar at the pointer stored at byte `ptr`, plus `add`. -/
-def digitByte (ptr add : Nat) : List Instr :=
-  [ld .x2 ptr, ld .x8 56, .add .x .x8 .x2 .x8, .ldrb .x19 .x8 add]
+/-- Coordinate `c` of a point: `X`, `Y`, `Z`, `T` for `c = 0, 1, 2, 3`. -/
+def pointCoord (q : Spec.Ed25519.Point) : Nat → Spec.X25519.Fe
+  | 0 => q.X
+  | 1 => q.Y
+  | 2 => q.Z
+  | _ => q.T
 
-/-- The byte's high nibble. -/
-def digitHigh (ptr add : Nat) : List Instr := digitByte ptr add ++ [.lsr .x .x19 .x19 4]
+/-- Word `i` of the static: word `i % 4` of coordinate `i / 4 % 4` of `negBaseCached (i / 16)`,
+128 bytes an entry, as a table entry holds it. -/
+def bWord (i : Nat) : BitVec 64 :=
+  BitVec.ofNat 64 ((pointCoord (negBaseCached (i / 16)) (i / 4 % 4)).val / 2 ^ (64 * (i % 4)))
 
-/-- The byte's low nibble. -/
-def digitLow (ptr add : Nat) : List Instr :=
-  digitByte ptr add ++ [.lsl .x .x19 .x19 60, .lsr .x .x19 .x19 60]
+/-- The words of the 15 entries, as the static `bSym` holds them. -/
+def bWords : List (BitVec 64) := (List.range 240).map bWord
+
+/-- The static verification reads. -/
+def bConsts : List (String × List (BitVec 64)) := [(bSym, bWords)]
+
+/-- Coordinate `c` of the static's entry at `x9` to the table entry at `x8`. -/
+def bCopyCoord (c : Nat) : List Instr :=
+  [.ldr .x .x4 .x9 (32 * c), .ldr .x .x5 .x9 (32 * c + 8), .ldr .x .x6 .x9 (32 * c + 16),
+    .ldr .x .x7 .x9 (32 * c + 24)] ++ tableWords (32 * c)
+
+/-- The static's entry at `x9` to entry `x19` of the table at byte 2048; `x9` moves to the next
+entry, and `x8` is nonzero while another entry follows. -/
+def bTableBody : List Instr :=
+  tableAddr 2048 ++ (List.range 4).flatMap bCopyCoord ++
+    [.addImm .x .x9 .x9 128, .addImm .x .x19 .x19 1, .subImm .x .x8 .x19 15]
+
+/-- Entries `j < 15` of the table at byte 2048 are cached `-[j + 1]B`, copied from the static. -/
+def bTable : Prog isa :=
+  .seq (.block [.adrSym .x9 bSym, .movz .w .x19 0 0]) (.loop (.block bTableBody) (.nonzero .x .x8))
+
+/-- 16 bytes at `x2 + src` split into their nibbles at `x0 + dst`, the low nibble of each byte
+first, with 15 in every byte of `v7`. -/
+def nibBlock (src dst : Nat) : List Instr :=
+  [.ldrq .v0 .x2 src, .vop (.shift .ushr .b16 .v1 .v0 4), .vop (.logic .and .v0 .v0 .v7),
+    .vop (.perm .zip1 .b16 .v2 .v0 .v1), .vop (.perm .zip2 .b16 .v3 .v0 .v1),
+    .strq .v2 .x0 dst, .strq .v3 .x0 (dst + 16)]
+
+/-- `16 n` bytes at `x2 + src` split into their nibbles at `x0 + dst`. -/
+def nibBlocks (src dst n : Nat) : List Instr :=
+  (List.range n).flatMap fun q => nibBlock (src + 16 * q) (dst + 32 * q)
+
+/-- 15 in every byte of `v7`, then the 64 bytes at `x2` split into their 128 nibbles at byte 768. -/
+def kNibblesAt : List Instr := [.movz .w .x8 15 0, .vop (.dup .b16 .v7 .x8)] ++ nibBlocks 0 768 4
+
+/-- `k`'s 64 bytes (its pointer at byte 7952) split into its 128 nibbles at byte 768. -/
+def kNibbles : List Instr := [ld .x2 7952] ++ kNibblesAt
+
+/-- `S`'s 32 bytes (byte 32 on of the signature, whose pointer is at byte 7944) split into its
+64 nibbles at byte 896. -/
+def sNibbles : List Instr := [ld .x2 7944] ++ nibBlocks 32 896 2
+
+/-- The scalars' nibbles, one per byte: nibble `j` of `k` at byte `768 + j`, of `S` at
+`896 + j`. -/
+def nibbles : List Instr := kNibbles ++ sNibbles
+
+/-- `x19` = the nibble at byte `o + counter`. -/
+def digitAt (o : Nat) : List Instr := [ld .x8 56, .add .x .x8 .x0 .x8, .ldrb .x19 .x8 o]
 
 /-- Add entry `x19 - 1` of the table at byte `o`, unless `x19` is zero. -/
 def addDigit (o : Nat) (add : List Instr) : Prog isa :=
@@ -103,35 +150,33 @@ def windowA (digit : List Instr) : Prog isa := windowWith digit pointAddCachedP
 def windowAB (digitA digitB : List Instr) : Prog isa :=
   .seq (windowWith digitA pointAddCached) (.seq (.block digitB) (addDigit 2048 pointAddCachedP))
 
-/-- `x19` = the counter less 32: nonzero while a byte of `k` alone follows. -/
-def aboveLow : List Instr := [ld .x19 56, .subImm .x .x19 .x19 32]
+/-- `x19` = the counter less 64: nonzero while a nibble of `k` alone follows. -/
+def aboveLow : List Instr := [ld .x19 56, .subImm .x .x19 .x19 64]
 
-/-- A byte of `k` alone (bytes 63 down to 32). -/
-def byteStepA : Prog isa :=
-  .seq (.block batchBegin) (.seq (windowA (digitHigh 7952 0))
-    (.seq (windowA (digitLow 7952 0)) (.block aboveLow)))
+/-- A nibble of `k` alone (nibbles 127 down to 64). -/
+def nibStepA : Prog isa :=
+  .seq (.block batchBegin) (.seq (windowA (digitAt 768)) (.block aboveLow))
 
-/-- A byte of `k` and of `S` (bytes 31 down to 0). -/
-def byteStepAB : Prog isa :=
-  .seq (.block batchBegin) (.seq (windowAB (digitHigh 7952 0) (digitHigh 7944 32))
-    (.seq (windowAB (digitLow 7952 0) (digitLow 7944 32)) (.block batchTest)))
+/-- A nibble of `k` and of `S` (nibbles 63 down to 0). -/
+def nibStepAB : Prog isa :=
+  .seq (.block batchBegin) (.seq (windowAB (digitAt 768) (digitAt 896)) (.block batchTest))
 
-/-- `x19` = byte `c - 1` of `k`, for the counter `c`, which is `x8 + 1`. -/
+/-- `x19` = nibble `c - 1` of `k`, for the counter `c`, which is `x8 + 1`. -/
 def skipLoad : List Instr :=
-  [ld .x8 56, .subImm .x .x8 .x8 1, ld .x2 7952, .add .x .x2 .x2 .x8, .ldrb .x19 .x2 0]
+  [ld .x8 56, .subImm .x .x8 .x8 1, .add .x .x2 .x0 .x8, .ldrb .x19 .x2 768]
 
-/-- Below a zero byte, the counter moves down; `x19` is nonzero while another
-byte of `k` alone may be skipped. -/
+/-- Below a zero nibble, the counter moves down; `x19` is nonzero while another
+nibble of `k` alone may be skipped. -/
 def skipBody : Prog isa :=
   .seq (.block skipLoad) (.ite (.nonzero .x .x19) (.block [.movz .w .x19 0 0])
-    (.block [st .x8 56, .subImm .x .x19 .x8 32]))
+    (.block [st .x8 56, .subImm .x .x19 .x8 64]))
 
-/-- Skip the leading zero bytes of `k` above its low 32. -/
+/-- Skip the leading zero nibbles of `k` above its low 64. -/
 def skipZero : Prog isa := .loop skipBody (.nonzero .x .x19)
 
-/-- The bytes of `k` alone that are left after `skipZero`. -/
+/-- The nibbles of `k` alone that are left after `skipZero`. -/
 def windowsA : Prog isa :=
-  .seq (.block aboveLow) (.ite (.nonzero .x .x19) (.loop byteStepA (.nonzero .x .x19)) (.block []))
+  .seq (.block aboveLow) (.ite (.nonzero .x .x19) (.loop nibStepA (.nonzero .x .x19)) (.block []))
 
 /-- `-R` from byte 7552 into slots 4–7. -/
 def negR : List Instr :=
@@ -139,6 +184,6 @@ def negR : List Instr :=
 
 def windowSetup : List Instr := constField 16 Spec.Ed25519.d
 
-def windowInit : List Instr := constPoint Spec.Ed25519.identity ++ mulCounterInit 64
+def windowInit : List Instr := constPoint Spec.Ed25519.identity ++ mulCounterInit 128
 
 end VG.Impl.Ed25519.AArch64

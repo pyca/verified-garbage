@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.TripleDes.AArch64.ModeCore
-meta import VerifiedGarbage.Proof.TripleDes.AArch64.ModeCore
+public import VerifiedGarbage.Proof.TripleDes.AArch64.Link
+meta import VerifiedGarbage.Proof.TripleDes.AArch64.Link
 public import VerifiedGarbage.Proof.Modes.AArch64.CbcDecrypt
 meta import VerifiedGarbage.Proof.Modes.AArch64.CbcDecrypt
 public import VerifiedGarbage.Proof.Modes.AArch64.CbcEncrypt
@@ -141,7 +141,7 @@ theorem cbcDecrypt_ct : ConstantTime isa cbcDecAArch64.pre cbcDecAArch64.pub cbc
 
 theorem cbcDecrypt_correct (s : State) (hs : cbcDecAArch64.pre s) :
     ∃ t s', Exec isa cbcDecrypt s t s' ∧ abiPreserved s s' ∧ cbcDecAArch64.post s s' := by
-  obtain ⟨t, s', he, ⟨h₁, h₂⟩, h₃⟩ := WP.gprs (rs := [.x30]) (cbcDecrypt_wp hs) (by lit_decide) (by lit_decide)
+  obtain ⟨t, s', he, ⟨h₁, h₂⟩, h₃⟩ := WP.gprs' cbcDecrypt_keeps_x30 (cbcDecrypt_wp hs)
   exact ⟨t, s', he, ⟨Proof.Modes.AArch64.preserved_of h₁ h₃, Exec.sp he, Exec.preservedV he (by lit_decide)⟩, h₂⟩
 
 theorem cbcDecrypt_verified :
@@ -191,7 +191,7 @@ theorem cbcEncrypt_ct : ConstantTime isa cbcEncAArch64.pre cbcEncAArch64.pub cbc
 
 theorem cbcEncrypt_correct (s : State) (hs : cbcEncAArch64.pre s) :
     ∃ t s', Exec isa cbcEncrypt s t s' ∧ abiPreserved s s' ∧ cbcEncAArch64.post s s' := by
-  obtain ⟨t, s', he, ⟨h₁, h₂⟩, h₃⟩ := WP.gprs (rs := [.x30]) (cbcEncrypt_wp hs) (by lit_decide) (by lit_decide)
+  obtain ⟨t, s', he, ⟨h₁, h₂⟩, h₃⟩ := WP.gprs' cbcEncrypt_keeps_x30 (cbcEncrypt_wp hs)
   exact ⟨t, s', he, ⟨Proof.Modes.AArch64.preserved_of h₁ h₃, Exec.sp he, Exec.preservedV he (by lit_decide)⟩, h₂⟩
 
 theorem cbcEncrypt_verified :

@@ -47,10 +47,19 @@ files changed:
   * `bench/benches/primitives/<name>.rs`, or its differential test
     `bench/tests/<name>.rs`: the modules in its `USES`, or for a helper
     without one (e.g. `mlkem.rs`, a macro), those of the benchmarks that
-    call it.
+    call it;
+  * any other file a Rust file of `bench/` includes (`#[path = "…"] mod`,
+    `include!`, e.g. `bench/support/ffdh.rs` or `tests/cavp/dsa_vectors.rs`),
+    at base or now: those of the files including it, on the architectures
+    that compile the inclusion; every benchmark if one of them is no
+    benchmark's (e.g. `main.rs`).
 
 A change to a file of `src/` only inside its tests (a top-level
 `#[cfg(test)] mod`, which no benchmark compiles) needs nothing.
+
+A change to a manifest (`Cargo.toml`, `bench/Cargo.toml`) only inside its
+`[target.'cfg(…)'.*]` tables needs every benchmark on the architectures
+where a changed table's `cfg` can hold, and nothing elsewhere.
 
 The benchmarks run those that use any of them, and all of them for a module
 none uses (e.g. `lib`, or the generated `src/asm/<arch>/mod.rs`). Any
@@ -110,6 +119,7 @@ import posixpath
 import subprocess
 import re
 import sys
+import tomllib
 
 # The architectures benchmarked, and where each one runs natively (as in
 # ci.yml's `rust` job: the 32-bit ones in a 32-bit userspace container, built
@@ -204,6 +214,16 @@ BENCH = re.compile(r"bench/benches/primitives/(?!main\.rs$)([a-z0-9_]+)\.rs$")
 # A differential test of one algorithm's benchmark's API, next to it.
 BENCH_TEST = re.compile(r"bench/tests/([a-z0-9_]+)\.rs$")
 USES = re.compile(r"pub const USES: &\[&str\] = &\[([^\]]*)\];")
+# A file a Rust file of `bench/` includes: a `#[path]` module (after
+# anything else on its line, it may be in an inline module, whose path this
+# does not follow) or an `include!`, both relative to the including file's
+# directory.
+PATH_ATTR = re.compile(r'^([^\n]*?)#\[\s*path\s*=\s*"([^"]+)"\s*\]', re.M)
+INCLUDE = re.compile(r'\binclude(?:_str|_bytes)?!\s*\(\s*"([^"]+)"')
+INCLUSION = re.compile(r"#\[\s*path\b|\binclude(?:_str|_bytes)?!")
+# The manifests whose `[target.'cfg(…)']` tables apply to some architectures.
+MANIFESTS = ("Cargo.toml", "bench/Cargo.toml")
+TARGET_CFG = re.compile(r"cfg\((.*)\)", re.S)
 QUOTED = re.compile(r'"([a-z0-9_]+)"')
 # A generated variant's CPU features (a `Features` constant, or a list of
 # names at a base revision from before it was one), and the features
@@ -516,6 +536,99 @@ def affected(path, base):
         return [a for a in PLATFORMS if for_arch(old, a) != for_arch(new, a)]
     except Unreadable:
         return list(PLATFORMS)
+
+
+def bench_rust_files(revision=None, root="."):
+    """The Rust files of `bench/` at `revision` (None: now)."""
+    if revision is None:
+        return sorted(p.relative_to(root).as_posix() for p in pathlib.Path(root, "bench").glob("**/*.rs"))
+    result = subprocess.run(["git", "ls-tree", "-r", "--name-only", revision, "bench/"], cwd=root,
+                            capture_output=True, text=True, check=False)
+    return sorted(p for p in result.stdout.split() if p.endswith(".rs"))
+
+
+@functools.lru_cache(None)
+def includes(revision=None):
+    """The files Rust files of `bench/` include at `revision`: for each, the
+    files including it and the architectures compiling each inclusion; and
+    the names of files an inclusion this cannot resolve may be."""
+    found, unresolved = {}, set()
+    for path in bench_rust_files(revision):
+        text = read(path, revision) or ""
+        if not INCLUSION.search(text):
+            continue
+        directory = pathlib.PurePosixPath(path).parent
+        try:
+            unresolved |= {posixpath.basename(m[2]) for m in PATH_ATTR.finditer(without_comments(text)) if m[1]}
+        except Unreadable:
+            unresolved |= {posixpath.basename(m[2]) for m in PATH_ATTR.finditer(text) if m[1].strip()}
+        for arch in PLATFORMS:
+            try:
+                compiled = "\n".join(for_arch(text, arch))
+            except Unreadable:
+                # Whatever it may include, everywhere.
+                compiled = text
+            for target in [m[2] for m in PATH_ATTR.finditer(compiled)] + INCLUDE.findall(compiled):
+                target = posixpath.normpath(str(directory / target))
+                found.setdefault(target, {}).setdefault(path, set()).add(arch)
+    return found, unresolved
+
+
+def included_uses(path, base, catalog, seen=frozenset()):
+    """The modules the benchmarks including `path` use, on each architecture
+    compiling an inclusion of it (at `base` or now); None if no Rust file of
+    `bench/` includes it, and ALL if one that is no benchmark does, or an
+    inclusion may be it."""
+    by = {}
+    for revision in [base, None] if base else [None]:
+        found, unresolved = includes(revision)
+        if posixpath.basename(path) in unresolved:
+            return ALL
+        for includer, arches in found.get(path, {}).items():
+            by[includer, revision] = arches
+    if not by:
+        return None
+    needed = {}
+    for (includer, revision), arches in by.items():
+        if bench := BENCH.match(includer) or BENCH_TEST.match(includer):
+            uses = (bench_uses(f"bench/benches/primitives/{bench[1]}.rs", revision)
+                    or helper_uses(bench[1], catalog))
+            if not uses:
+                return ALL
+            of = {a: uses for a in arches}
+        elif includer in seen:
+            return ALL
+        else:
+            of = included_uses(includer, base, catalog, seen | {path})
+        if of is None or of is ALL:
+            return ALL
+        for a in arches & set(of):
+            needed.setdefault(a, set()).update(of[a])
+    return needed
+
+
+def manifest_arches(path, base):
+    """The benchmarked architectures the change to the manifest `path` since
+    `base` can affect: those where the `cfg` of a changed
+    `[target.'cfg(…)']` table can hold, if nothing else changed; all of
+    them otherwise."""
+    try:
+        old, new = (tomllib.loads(read(path, r) or "") for r in (base, None))
+    except tomllib.TOMLDecodeError:
+        return list(PLATFORMS)
+    targets = [old.pop("target", {}), new.pop("target", {})]
+    if old != new or not base:
+        return list(PLATFORMS)
+    arches = set()
+    for key in set(targets[0]) | set(targets[1]):
+        if targets[0].get(key) == targets[1].get(key):
+            continue
+        m = TARGET_CFG.fullmatch(key)
+        try:
+            arches |= {a for a in PLATFORMS if m and cfg_value(m[1], a) is not False} if m else set(PLATFORMS)
+        except Unreadable:
+            return list(PLATFORMS)
+    return [a for a in PLATFORMS if a in arches]
 
 
 def members(family, known):
@@ -855,6 +968,15 @@ def arches(changed, base=None):
                 or helper_uses(bench[1], catalogs[-1])):
             for a in targets:
                 for m in uses:
+                    need(a, m)
+        elif path in MANIFESTS:
+            for a in manifest_arches(path, base):
+                needed[a] = ALL
+        elif (included := included_uses(path, base, catalogs[-1])) is not None:
+            for a in PLATFORMS if included is ALL else targets:
+                if included is ALL:
+                    needed[a] = ALL
+                for m in () if included is ALL else included.get(a, ()):
                     need(a, m)
         elif SHARED.match(path):
             for a in targets:

@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarMulAddVerified
+import Mathlib.Logic.Function.Basic
+import VerifiedGarbage.Proof.Framework.Arm.Call
 
 /-! Baseline ARMv7 Ed25519 primitive with register saves in the reviewed scratch buffer. -/
 

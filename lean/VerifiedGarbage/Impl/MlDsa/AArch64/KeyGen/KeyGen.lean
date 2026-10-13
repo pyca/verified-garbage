@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.Frag
+public import VerifiedGarbage.Spec.MlDsa
 
 /-!
 # ML-DSA on AArch64: `vg_mldsa44_keygen`, `vg_mldsa65_keygen`, `vg_mldsa87_keygen`

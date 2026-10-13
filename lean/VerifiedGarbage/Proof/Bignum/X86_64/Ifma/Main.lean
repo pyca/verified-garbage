@@ -263,7 +263,7 @@ theorem ifmaPart_ok (hl : LayOk l) (M : Mont) {s t₀ : State} {B : Addr} {Z k :
 theorem main_eq (mul : Nat → Nat → Nat → Prog isa) : CrtIfma.main mul =
     seqs ((nSetup mul ++ primesSetup ++ checks) ++
       (([.seq CrtIfma.anySizes (.ite .e (seqs (CrtIfma.pre mul ++ ([CrtIfma.ifmaAny] : List (Prog isa)) ++
-        CrtIfma.post mul)) (seqs (qPhase mul ++ pPhase mul)))] : List (Prog isa)) ++ finish)) := by
+        CrtIfma.post mul)) (seqs (qPhase mul Crt.tabSelect ++ pPhase mul Crt.tabSelect)))] : List (Prog isa)) ++ finish)) := by
   simp only [CrtIfma.main, List.append_assoc]
 
 /-- `main`, for a valid modulus: `privateCrt`'s result as `vg_rsa_private_crt`
@@ -275,7 +275,7 @@ theorem main_ok (M : Mont) {s : State} {B : Addr} {Z k : Nat} {op np ip pp qp dp
     (hfront : (seqs (nSetup M.mm ++ primesSetup ++ checks)).allInstrs (fun i => !loadsMxcsr i) = true)
     (hpre : (seqs (CrtIfma.pre M.mm)).allInstrs (fun i => !loadsMxcsr i) = true)
     (hpost : (seqs (CrtIfma.post M.mm)).allInstrs (fun i => !loadsMxcsr i) = true)
-    (hcrt : (seqs (qPhase M.mm ++ pPhase M.mm)).allInstrs (fun i => !loadsMxcsr i) = true) :
+    (hcrt : (seqs (qPhase M.mm CrtSel.sse.code ++ pPhase M.mm CrtSel.sse.code)).allInstrs (fun i => !loadsMxcsr i) = true) :
     WP isa (CrtIfma.main M.mm) s fun t => (∃ Mk : Bool, MainPost s t B Z k op
       (if Mk then crtResult (Spec.Rsa.os2ip pb) (Spec.Rsa.os2ip qb) (Spec.Rsa.os2ip dpb) (Spec.Rsa.os2ip dqb)
         (Spec.Rsa.os2ip qib) (Spec.Rsa.os2ip xb) else 0) Mk ∧
@@ -291,12 +291,12 @@ theorem main_ok (M : Mont) {s : State} {B : Addr} {Z k : Nat} {op np ip pp qp dp
       (keyMask (decide (Spec.Rsa.os2ip xb < Spec.Rsa.os2ip nb)) (Spec.Rsa.os2ip nb) (Spec.Rsa.os2ip pb)
         (Spec.Rsa.os2ip qb) (Spec.Rsa.os2ip qib)) →
       t₁.mxcsr.extractLsb' 6 10 = s.mxcsr.extractLsb' 6 10 →
-      WP isa (seqs (qPhase M.mm ++ pPhase M.mm)) t₁ (MainQ s B Z k pl ql minv mp mq nb xb pb qb qib dpb dqb) :=
+      WP isa (seqs (qPhase M.mm CrtSel.sse.code ++ pPhase M.mm CrtSel.sse.code)) t₁ (MainQ s B Z k pl ql minv mp mq nb xb pb qb qib dpb dqb) :=
     fun t₁ hr₁ mx₁ => WP.mono_mx hcrt (wp_seqs_append (by simp [qPhase]) (by simp [pPhase])
-      (WP.mono (qPart_ok M h hv hr₁ rfl) fun _ hq => pPart_ok M h hv hq rfl)) fun t hp' mxc =>
+      (WP.mono (qPart_ok M CrtSel.sse h hv hr₁ rfl) fun _ hq => pPart_ok M CrtSel.sse h hv hq rfl)) fun t hp' mxc =>
         ⟨hp', by rw [mxc, mx₁]⟩
   have hdisp : WP isa (.seq CrtIfma.anySizes (.ite .e (seqs (CrtIfma.pre M.mm ++ ([CrtIfma.ifmaAny] : List (Prog isa)) ++
-      CrtIfma.post M.mm)) (seqs (qPhase M.mm ++ pPhase M.mm)))) t₀
+      CrtIfma.post M.mm)) (seqs (qPhase M.mm CrtSel.sse.code ++ pPhase M.mm CrtSel.sse.code)))) t₀
       (MainQ s B Z k pl ql minv mp mq nb xb pb qb qib dpb dqb) := by
     refine WP.seq (WP.mono (anySizes_ok h hr) fun t₁ ⟨z₁, r₁, x₁⟩ => ?_)
     refine WP.ite _ z₁ (fun hb => ?_) (fun _ => hcrtB t₁ r₁ (by rw [x₁, mx₀]))
@@ -316,7 +316,7 @@ theorem code_correct (M : Mont)
     (hfront : (seqs (nSetup M.mm ++ primesSetup ++ checks)).allInstrs (fun i => !loadsMxcsr i) = true)
     (hpre : (seqs (CrtIfma.pre M.mm)).allInstrs (fun i => !loadsMxcsr i) = true)
     (hpost : (seqs (CrtIfma.post M.mm)).allInstrs (fun i => !loadsMxcsr i) = true)
-    (hcrt : (seqs (qPhase M.mm ++ pPhase M.mm)).allInstrs (fun i => !loadsMxcsr i) = true)
+    (hcrt : (seqs (qPhase M.mm CrtSel.sse.code ++ pPhase M.mm CrtSel.sse.code)).allInstrs (fun i => !loadsMxcsr i) = true)
     (s : State) (h : crtContract.pre s) :
     ∃ t s', Exec isa (CrtIfma.code M.mm) s t s' ∧ abiPreserved s s' ∧ crtContract.post s s' := by
   have c := crtCtx_of h

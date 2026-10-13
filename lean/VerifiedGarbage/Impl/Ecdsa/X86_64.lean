@@ -441,10 +441,16 @@ def checkRange (a : Nat) : List Instr :=
 /-- `[a] ≠ 0`: the flag `&=` its mask. -/
 def checkNonzero (a : Nat) : List Instr := c.nonzero a ++ c.andFlag
 
+/-- A product modulo `p` of the signature's and the public key's finish: a call of
+`vg_<curve>_mul_mod_p` where `opProg` makes one, but inline for P-521, whose
+signature and public key measured slower with the calls. -/
+def mulPF (o a b : Nat) : Prog isa :=
+  if c.n = 9 then .block (Mont.X86_64.mul c.MP' o a b) else opProg c.MP' (.mul o a b)
+
 /-- `x = X Z⁻¹`, `r = x mod n`, `k R mod n`, and the checks of `d`, `k`, `r`. -/
 def middle : Prog isa :=
-  progs [.block (Mont.X86_64.mul c.MP' (c.sl XM) (c.sl RX) (c.sl ACC)),
-    .block (Mont.X86_64.mul c.MP' (c.sl X) (c.sl XM) (c.sl ONE)),
+  progs [c.mulPF (c.sl XM) (c.sl RX) (c.sl ACC),
+    c.mulPF (c.sl X) (c.sl XM) (c.sl ONE),
     .block (Mont.X86_64.add c.MN' (c.sl RR) (c.sl X) (c.sl ZERO)),
     opProg c.MN' (.mul (c.sl KM) (c.sl K) (c.sl R2N)),
     .block (c.checkRange (c.sl D) ++ c.checkRange (c.sl K) ++ c.checkNonzero (c.sl RR))]

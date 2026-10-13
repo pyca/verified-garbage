@@ -25,19 +25,19 @@ theorem stage₂ (hc : BaseCfgOk secp256k1) (hC : Law secp256k1.C)
   have h7 := hc.n10
   have hn := hS.scr.nowrap
   have F := hS.fixed
-  have W := gMul_ok hc hC hS.scr F (hS.k ▸ wordsVal_lt _ _ _ _)
-    hS.rx hS.ry hS.rz hS.t₀
+  have W := gMul_ok hc hC hS.scr F
   refine WP.seq (WP.mono W fun s₅ h₅ => ?_)
-  obtain ⟨K₅, U₅, M₅, L₅, R₅⟩ := h₅
+  obtain ⟨K₅, U₅, F₅, M₅, L₅, R₅⟩ := h₅
+  rw [hS.k] at R₅
   have hs₅ := hS.scr.of_keepRegs K₅ (x0_not_powClob h7)
-  have F₅ := F.unch h7 hn (fixedOk_slW (l := gSlots) (by decide)) U₅
   refine WP.seq (WP.mono (pPow_ok hc hs₅ M₅
     (L₅ (secp256k1.sl RZ) (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_singleton_self _)))))
     fun s₆ ⟨K₆, U₆, lt₆, v₆⟩ => h s₆ ?_)
   have e₆ : ∀ {i}, i < 45 → i ∉ [ACC, TMP] →
-      i ∉ gSlots →
+      i ∉ [BM, RX, RY, RZ, ACC, PT, TX, TY, TZ, T0, T1, T2, T3, T4, T5, DX, DY, DZ, TMP] →
       sv secp256k1 base s₆ i = sv secp256k1 base s i := fun hi h₁ h₂ =>
-    (sv_unch U₆ h7 hn hi (apart_chainWc hc hi h₁)).trans (sv_unch U₅ h7 hn hi (apart_slW h₂))
+    (sv_unch U₆ h7 hn hi (apart_chainWc hc hi h₁)).trans (sv_unch U₅ h7 hn hi
+      (apart_append (apart_slW (fun h => h₂ (by simp_all))) (apart_mulWF hi (fun h => h₂ (by simp_all)))))
   have r₆ : ∀ {i}, i < 45 → i ∉ [ACC, TMP] → sv secp256k1 base s₆ i = sv secp256k1 base s₅ i := fun hi h₁ =>
     sv_unch U₆ h7 hn hi (apart_chainWc hc hi h₁)
   refine ⟨⟨hs₅.of_keepRegs K₆ (x0_not_powClob h7), ?_, by rw [K₆.wr, K₅.wr, hS.wr],
@@ -45,7 +45,7 @@ theorem stage₂ (hc : BaseCfgOk secp256k1) (hC : Law secp256k1.C)
     by rw [e₆ (by decide) (by decide) (by decide), hS.k],
     by rw [e₆ (by decide) (by decide) (by decide), hS.d],
     by rw [e₆ (by decide) (by decide) (by decide), hS.e],
-    by rw [flag_unch_chain hc U₆ h7 h0 hn, flag_unch U₅ h7 h0 hn (by decide), hS.flag], ?_, lt₆, ?_,
+    by rw [flag_unch_chain hc U₆ h7 h0 hn, flag_unch_mulWF U₅ h7 h0 hn (by decide), hS.flag], ?_, lt₆, ?_,
     ?_⟩
   · rw [K₆.gpr _ (x20_not_powClob h7), K₅.gpr _ (x20_not_powClob h7), hS.x20]
   · show Rep secp256k1.C (toM _ _ (sv secp256k1 base s₆ RX)) (toM _ _ (sv secp256k1 base s₆ RY)) (toM _ _ (sv secp256k1 base s₆ RZ)) _

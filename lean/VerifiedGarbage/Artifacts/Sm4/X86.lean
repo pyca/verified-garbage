@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Sm4.X86.KeyVerified
+import Mathlib.Tactic.SplitIfs
 
 /-! # SM4 artifacts on baseline x86 (32-bit) -/
 

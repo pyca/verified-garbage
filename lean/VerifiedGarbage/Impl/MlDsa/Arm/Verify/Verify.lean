@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.MlDsa.Arm.KeyGen.Frag
+public import VerifiedGarbage.Spec.MlDsa
 
 /-!
 # ML-DSA on 32-bit ARM: `vg_mldsa44_verify`, `vg_mldsa65_verify`, `vg_mldsa87_verify`

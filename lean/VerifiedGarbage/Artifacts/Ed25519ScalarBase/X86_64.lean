@@ -5,6 +5,10 @@ public import VerifiedGarbage.Proof.X25519.X86_64.Divstep.Sound
 public import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBasePrecomputedVerified
 public import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.ScalarBase
 public import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBaseAdx
+import Mathlib.Data.BitVec
+import VerifiedGarbage.Proof.Divstep.Bound
+import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Keep
+import VerifiedGarbage.Spec.Weierstrass
 
 /-! Complete unsigned scalar multiplication by the Ed25519 base point. -/
 

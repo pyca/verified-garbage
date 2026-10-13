@@ -157,6 +157,8 @@ def step (τ : T) : Instr → Option T
     some { τ with regs := set τ d (pub τ n && op2Pub τ op2 && τ.flags), bases := kill τ d }
   | .cmp n op2 => some { τ with flags := pub τ n && op2Pub τ op2 }
   | .movw d _ => some { τ with regs := set τ d true, bases := kill τ d }
+  -- Nor does it track the addresses of statics.
+  | .adrSym d _ => some { τ with regs := set τ d false, bases := kill τ d }
   | .addSp d _ => some { τ with regs := set τ d (decide (0 < τ.argLen)), bases := kill τ d }
   | .movt d _ => some { τ with regs := set τ d (pub τ d), bases := kill τ d }
   | .rev d m => some { τ with regs := set τ d (pub τ m), bases := kill τ d }
@@ -551,7 +553,7 @@ theorem Agree.store {τ : T} {s₁ s₂ : State} (ha : Agree τ s₁ s₂) {r : 
 do not; a frame's pop writes its register). -/
 def dst : Instr → Option Reg
   | .mov d _ | .dp _ d _ _ | .adds d _ _ | .adc d _ _ | .subs d _ _ | .movw d _ | .movt d _ | .rev d _
-  | .addSp d _ | .mul d _ _ | .ldr d _ _ | .ldrb d _ _ | .ldrSp d _ | .pop d _ => some d
+  | .addSp d _ | .mul d _ _ | .ldr d _ _ | .ldrb d _ _ | .ldrSp d _ | .pop d _ | .adrSym d _ => some d
   | .cmp .. | .str .. | .strb .. | .push _ | .alloc _ | .free _ => none
 
 theorem exec_dst {i : Instr} {d : Reg} (hd : dst i = some d) {s s' : State}
@@ -680,6 +682,11 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     refine ⟨rfl, ha.write rfl e₁ e₂ ?_ rfl rfl rfl rfl fun _ h => h⟩
     simp only [exec, Option.some.injEq] at e₁ e₂; subst e₁ e₂
     exact ⟨regs_set (d := d) (p := true) ha.rf.1 fun _ => rfl, fun hf => ha.rf.2 hf⟩
+  | adrSym d name =>
+    simp only [step, Option.some.injEq] at hs; subst hs
+    refine ⟨rfl, ha.write rfl e₁ e₂ ?_ rfl rfl rfl rfl fun _ h => h⟩
+    simp only [exec, Option.some.injEq] at e₁ e₂; subst e₁ e₂
+    exact ⟨regs_set (d := d) (p := false) ha.rf.1 (fun h => nomatch h), fun hf => ha.rf.2 hf⟩
   | movt d imm =>
     simp only [step, Option.some.injEq] at hs; subst hs
     refine ⟨rfl, ha.write rfl e₁ e₂ ?_ rfl rfl rfl rfl fun _ h => h⟩
@@ -926,6 +933,7 @@ def stepK (τ : T) : Instr → Option T
     some { τ with regs := setK τ d (pub τ n && op2Pub τ op2 && τ.flags), bases := killK τ d }
   | .cmp n op2 => some { τ with flags := pub τ n && op2Pub τ op2 }
   | .movw d _ => some { τ with regs := setK τ d true, bases := killK τ d }
+  | .adrSym d _ => some { τ with regs := setK τ d false, bases := killK τ d }
   | .addSp d _ => some { τ with regs := setK τ d (decide (0 < τ.argLen)), bases := killK τ d }
   | .movt d _ => some { τ with regs := setK τ d (pub τ d), bases := killK τ d }
   | .rev d m => some { τ with regs := setK τ d (pub τ m), bases := killK τ d }
@@ -1093,6 +1101,7 @@ def stepKDFn : Instr → Step
     some { τ with regs := setK τ d (pub τ n && op2Pub τ op2 && τ.flags), bases := killK τ d }⟩
   | .cmp n op2 => ⟨fun τ => some { τ with flags := pub τ n && op2Pub τ op2 }⟩
   | .movw d _ => ⟨fun τ => some { τ with regs := setK τ d true, bases := killK τ d }⟩
+  | .adrSym d _ => ⟨fun τ => some { τ with regs := setK τ d false, bases := killK τ d }⟩
   | .addSp d _ => ⟨fun τ => some { τ with regs := setK τ d (decide (0 < τ.argLen)), bases := killK τ d }⟩
   | .movt d _ => ⟨fun τ => some { τ with regs := setK τ d (pub τ d), bases := killK τ d }⟩
   | .rev d m => ⟨fun τ => some { τ with regs := setK τ d (pub τ m), bases := killK τ d }⟩

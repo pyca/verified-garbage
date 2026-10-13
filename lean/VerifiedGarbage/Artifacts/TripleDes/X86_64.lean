@@ -8,6 +8,8 @@ public import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx512.Verified
 public import VerifiedGarbage.Proof.TripleDes.X86_64.Frame
 public import VerifiedGarbage.Proof.TripleDes.X86_64.SpSafe
 public import VerifiedGarbage.Proof.TripleDes.X86_64.EcbCall.Verified
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.X86_64.Avx512
 
 @[expose] public section
 

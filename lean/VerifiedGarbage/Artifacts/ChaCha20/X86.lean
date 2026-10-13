@@ -5,6 +5,8 @@ public import VerifiedGarbage.Proof.ChaCha20.X86.Xor
 public import VerifiedGarbage.Impl.ChaCha20.X86.Xor
 public import VerifiedGarbage.Proof.ChaCha20.X86.Lit
 public import VerifiedGarbage.Proof.ChaCha20.X86.Stream.Init
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.X86.Sse
 
 /-! # The ChaCha20 block function (RFC 8439) on x86 -/
 

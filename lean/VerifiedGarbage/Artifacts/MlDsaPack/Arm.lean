@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.MlDsa.Arm.Pack.BitPack
 public import VerifiedGarbage.Proof.MlDsa.Arm.Pack.Unpack
 public import VerifiedGarbage.Proof.MlDsa.Arm.Pack.HintPackCT
 public import VerifiedGarbage.Proof.MlDsa.Arm.Pack.HintUnpackCT
+import Mathlib.Tactic.SplitIfs
 
 /-! # ML-DSA (FIPS 204) on 32-bit ARM: the encodings -/
 

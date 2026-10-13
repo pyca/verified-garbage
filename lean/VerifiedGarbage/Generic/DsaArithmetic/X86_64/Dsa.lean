@@ -16,9 +16,10 @@ def artifacts (v : Backend) : List Artifact := [
     doc := Spec.Dsa.signApi.doc (notes := ["Fixed-window exponentiation and streaming modular reduction \
       use the selected Montgomery backend. Leading-zero component padding is supported. \
       Scratch is initialized before use; every failure zeros the entire output."])
-    code := Impl.Dsa.X86_64.SignVerify.sign v.mont.mm
-    contract := Spec.Dsa.signContract X86_64.abi
-    verified := signing_verified v.mont v.signMx
+    code := Impl.Dsa.X86_64.SignVerify.sign v.mul
+    contract := Spec.Dsa.signContract X86_64.abi v.stack
+    stack := v.stack
+    verified := v.signVerified
     spSafe := v.signSp
     features := v.features },
   { Spec.Dsa.verifyApi with
@@ -27,9 +28,10 @@ def artifacts (v : Backend) : List Artifact := [
     doc := Spec.Dsa.verifyApi.doc (notes := ["Fixed-window exponentiation and streaming modular reduction \
       use the selected Montgomery backend. Leading-zero component padding is supported. \
       Signature scalars and the digest do not affect the leakage trace."])
-    code := Impl.Dsa.X86_64.SignVerify.verify v.mont.mm
-    contract := Spec.Dsa.verifyContract X86_64.abi
-    verified := verifying_verified v.mont v.verifyMx
+    code := Impl.Dsa.X86_64.SignVerify.verify v.mul
+    contract := Spec.Dsa.verifyContract X86_64.abi v.stack
+    stack := v.stack
+    verified := v.verifyVerified
     spSafe := v.verifySp
     features := v.features }]
 

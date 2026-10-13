@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.MlDsa.X86.Verify.Inst
+import VerifiedGarbage.Proof.MlDsa.X86.Pack.HintBase
+import VerifiedGarbage.Proof.MlDsa.X86.Pack.Run
 
 /-!
 # ML-DSA (FIPS 204) verification on x86 (32-bit)

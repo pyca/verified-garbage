@@ -8,6 +8,7 @@ public import VerifiedGarbage.Spec.Weierstrass
 public import VerifiedGarbage.Spec.Ecdsa
 public import VerifiedGarbage.Spec.Weierstrass.Inverse
 public import VerifiedGarbage.Spec.Weierstrass.PointOps
+public import VerifiedGarbage.Spec.Weierstrass.Mul
 
 /-!
 # ECDSA signing on AArch64
@@ -315,6 +316,46 @@ def nPow : Prog isa :=
   | some C => invCall C.invNApi.name (c.invFn c.nPowI)
   | none => c.nPowI
 
+/-- The ladder of `vg_<curve>_mul` (`Spec/Weierstrass/Mul.lean`): its point
+at `ACC`, `PT` (its copy of `Q`) and `ONEP`, `a` and `3 b` at `AP`'s and
+`BM`'s slots (where the contract has them), over the `64 n` bits of the table
+at `bitsAt n 0`. -/
+def mulLadder : LadderCfg where
+  M := c.MP'
+  S := c.rcbSlots
+  G := c.pt ACC PT ONEP
+  R := c.pt RX RY RZ
+  D := c.pt DX DY DZ
+  T := c.pt TX TY TZ
+  bits := bitsAt c.n 0
+  nbits := 64 * c.n
+
+/-- `vg_<curve>_mul`'s body: the table of `k`'s bits, `Q` (in `R`'s first two
+slots) copied to `ACC` and `PT`, `R` the point at infinity (from zero and
+one), then `R = [k]Q` by the ladder. -/
+def mulBody : Prog isa :=
+  .seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) <|
+  .seq (.block (copy c.n (c.sl ACC) (c.sl RX) ++ copy c.n (c.sl PT) (c.sl RY) ++
+    copy c.n (c.sl RX) (c.sl ZERO) ++ copy c.n (c.sl RY) (c.sl ONEP) ++ copy c.n (c.sl RZ) (c.sl ZERO)))
+    (ladder c.mulLadder)
+
+/-- Where `vg_<curve>_mul` keeps `x19`, which the ladder counts with: the word
+past the table of bits, in its own working space. -/
+def mulSave : Nat := bitsAt c.n 0 + 64 * c.n
+
+/-- `vg_<curve>_mul`: its body between keeping `x19` and restoring it. -/
+def mulFn : Prog isa :=
+  .seq (.block [st .x19 c.mulSave]) (.seq c.mulBody (.block [ld .x19 c.mulSave]))
+
+/-- `R = [k]P` for the `k` in `K`'s slot and the point at `px`, `py` (affine,
+Montgomery's form), by a call of the function `name` (`vg_<curve>_mul`,
+`mulFn`): `P` copied to `R`'s first two slots and `3 b R mod p` to `BM`'s slot,
+where the function reads them, and `b R mod p` back after. -/
+def mulAt (name : String) (px py : Nat) : Prog isa :=
+  .seq (.block (copy c.n (c.sl RX) (c.sl px) ++ copy c.n (c.sl RY) (c.sl py) ++
+    setConst c.n (c.sl BM) (c.mont (3 * c.C.b)))) <|
+  .seq (Cfg.invCall name c.mulFn) (.block (setConst c.n (c.sl BM) (c.mont c.C.b)))
+
 /-- The callee-saved registers the code uses (`x21`–`x25` by the
 multiplications of more than six words), and where they are saved. -/
 def saved : List (Reg × Nat) :=
@@ -382,10 +423,17 @@ def mulNP (o a b : Nat) : Prog isa :=
   | some (f, m) => mulCall f c.n m o a b
   | none => .block (Mont.AArch64.mul c.MN' o a b)
 
+/-- `[o] = [a] [b] R⁻¹ mod p`: a call of `vg_<curve>_mul_mod_p` for a curve
+whose products modulo `p` are a function (`Mont.callOf`), else inline. -/
+def mulPP (o a b : Nat) : Prog isa :=
+  match Mont.callOf c.MP' with
+  | some (f, m) => mulCall f c.n m o a b
+  | none => .block (Mont.AArch64.mul c.MP' o a b)
+
 /-- `x = X Z⁻¹`, `r = x mod n`, `k R mod n`, and the checks of `d`, `k`, `r`. -/
 def middle : Prog isa :=
-  .seq (.block (Mont.AArch64.mul c.MP' (c.sl XM) (c.sl RX) (c.sl ACC))) <|
-  .seq (.block (Mont.AArch64.mul c.MP' (c.sl X) (c.sl XM) (c.sl ONE))) <|
+  .seq (c.mulPP (c.sl XM) (c.sl RX) (c.sl ACC)) <|
+  .seq (c.mulPP (c.sl X) (c.sl XM) (c.sl ONE)) <|
   .seq (.block (Mont.AArch64.add c.MN' (c.sl RR) (c.sl X) (c.sl ZERO))) <|
   .seq (c.mulNP (c.sl KM) (c.sl K) (c.sl R2N))
     (.block (c.checkRange (c.sl D) ++ c.checkRange (c.sl K) ++ c.checkNonzero (c.sl RR)))

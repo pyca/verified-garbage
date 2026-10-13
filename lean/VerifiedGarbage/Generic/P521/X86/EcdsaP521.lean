@@ -7,6 +7,8 @@ public import VerifiedGarbage.Proof.Ecdsa.X86.P521.Verified
 public import VerifiedGarbage.Proof.Ecdsa.X86.P521.Lit
 public import VerifiedGarbage.Impl.Ecdsa.Verify.P521.X86
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.P521.Verified
+import VerifiedGarbage.Proof.Framework.TaintSum
+import VerifiedGarbage.Proof.X25519.X86.Column
 
 /-!
 # ECDSA over P-521 (FIPS 186-5) on x86 (32-bit)

@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.Inst
+import Mathlib.Tactic.Conv
+import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
 
 /-!
 # ML-DSA (FIPS 204) on x86-64: key generation

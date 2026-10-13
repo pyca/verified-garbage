@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Sha256.X86.Shared
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # SHA-224 (FIPS 180-4) on x86 (32-bit)

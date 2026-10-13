@@ -5,6 +5,9 @@ public import VerifiedGarbage.Proof.MlKem1024.X86_64.DecodeDecompress
 public import VerifiedGarbage.Proof.MlKem1024.X86_64.CheckEk
 public import VerifiedGarbage.Proof.MlKem.X86_64.DecMulV
 public import VerifiedGarbage.Proof.MlKem.X86_64.EncMulV
+import Mathlib.Tactic.Conv
+import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
+import VerifiedGarbage.Proof.Sha3.X86_64.X4.Wp
 
 /-! # ML-KEM-1024 (FIPS 203) on x86-64: the polynomial primitives -/
 

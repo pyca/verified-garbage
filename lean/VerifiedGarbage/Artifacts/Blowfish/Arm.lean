@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Blowfish.Arm.Frame
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Blowfish.Arm.Run
 
 @[expose] public section
 

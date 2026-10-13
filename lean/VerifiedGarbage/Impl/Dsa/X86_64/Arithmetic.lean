@@ -63,7 +63,7 @@ def constants : Prog isa := seqs [
 
 /-- Exponentiate an encoded base with accumulator R, then decode. -/
 def encodedPower (mul : Nat → Nat → Nat → Prog isa) (exp expLen : Nat) : Prog isa :=
-  .seq (seqs (Crt.expLoop mul exp expLen)) (mul aY aY aOne)
+  .seq (seqs (Crt.expLoop mul Crt.tabSelect exp expLen)) (mul aY aY aOne)
 
 /-- Convert the loaded base and accumulator to Montgomery representation. -/
 def encodePower (mul : Nat → Nat → Nat → Prog isa) : Prog isa :=

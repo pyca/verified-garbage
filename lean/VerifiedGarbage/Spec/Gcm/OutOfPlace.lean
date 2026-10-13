@@ -22,17 +22,23 @@ it there to encrypt it in place:
   by `gathered`), as a vector of I/O buffers gives it: a record split into
   pieces, and TLS 1.3's content-type byte after it, are encrypted in one
   call, the ciphertext written to one buffer.
+* `vg_aes_gcm_seal_split` is `vg_aes_gcm_seal` (`sealContract`) on the
+  data in `dst` whose first `src_len` bytes are read from `src` instead: the
+  first slice of a gathered plaintext encrypted out of place, the rest (a
+  TLS record's content type) already copied after it in place, in one call.
 * `vg_aes_gcm_encrypt_blocks_to_precomputed`,
-  `vg_aes_gcm_stream_encrypt_to_precomputed` and
-  `vg_aes_gcm_seal_gather_precomputed` are the same with a key context of
+  `vg_aes_gcm_stream_encrypt_to_precomputed`,
+  `vg_aes_gcm_seal_gather_precomputed` and
+  `vg_aes_gcm_seal_split_precomputed` are the same with a key context of
   `vg_aes_gcm_init_precomputed`, as the `_precomputed` functions of
   `Spec/Gcm/Precomputed.lean` are those without it.
 
 The output and the input are different buffers: the signatures make the
 output overlap no other buffer (`Sig.contract`), so it never overlaps the
 input; a caller encrypting in place calls the functions of
-`Spec/Gcm/Contract.lean`. Each output has its own length argument, which
-the preconditions require to be the length of the input. The other
+`Spec/Gcm/Contract.lean`. Each output but `seal_split`'s has its own length
+argument, which the preconditions require to be the length of the input;
+`seal_split`'s input from `src` is at most as long as its output. The other
 arguments, what is public and what is secret, and the working space are
 those of the functions they follow. Existing contracts are unchanged.
 -/
@@ -232,6 +238,73 @@ def sealGatherApi : Api where
     affect timing, not the key context, the nonce, the additional data or the data."
   safety := ["`rounds` must be 10, 12 or 14.", gatherSafety]
 
+/-! ## A prefix read from elsewhere -/
+
+/-- `vg_aes_gcm_seal_split(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, src_len: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16])`.
+`rounds` is public. -/
+def sealSplitSig : Sig where
+  params := [("ctx", .array false .u64 32), ("rounds", .int .usize true),
+    ("nonce", .slice false .u8 "nonce_len"), ("aad", .slice false .u8 "aad_len"),
+    ("src", .slice false .u8 "src_len"), ("dst", .slice true .u8 "len"),
+    ("tag", .array true .u8 16)]
+
+/-- `rounds` is 10, 12 or 14, and the input from `src` is at most as long
+as the output. -/
+def sealSplitPre (pb : Nat) : Curry (sealSplitSig.words pb) (Mem → Prop) :=
+  fun _ctx rounds _nonce _nonceLen _aad _aadLen _src srcLen _dst len _tag _ =>
+    (rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14) ∧ srcLen.toNat ≤ len.toNat
+
+/-- For `rounds` of 10, 12 or 14, with the key context at `ctx`, and an
+input from `src` at most as long as the output: the `len` bytes at `dst` are
+the encryption of the `src_len` bytes at `src` followed by the bytes at
+`dst` from `src_len` on, with the IV the `nonce_len` bytes at `nonce` and the
+`aad_len` bytes of additional data at `aad` (GCM-AE, `encryptWith`), and the
+16-byte tag is at `tag`. (`sealPost`, with the data's first `src_len` bytes
+read from `src`.) -/
+def sealSplitPost (pb : Nat) : sealSplitSig.Post pb :=
+  fun ctx rounds nonce nonceLen aad aadLen src srcLen dst len tag m m' _ =>
+    (rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14) →
+    srcLen.toNat ≤ len.toNat →
+    encryptWith (ctxCiph m ctx rounds.toNat) (ctxH m ctx) 16 (Aes.bytesAt m nonce nonceLen.toNat)
+        (Aes.bytesAt m src srcLen.toNat ++ (Aes.bytesAt m dst len.toNat).drop srcLen.toNat)
+        (Aes.bytesAt m aad aadLen.toNat) =
+      (Aes.bytesAt m' dst len.toNat, Aes.bytesAt m' tag 16)
+
+/-- For `rounds` of 10, 12 or 14 and an input from `src` at most as long as
+the output (`sealSplitPre`): `sealSplitPost`. The key context, the nonce,
+the additional data and the data are secret. -/
+def sealSplitContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  sealSplitSig.contract A (pre := sealSplitPre A.ptrBits) (post := sealSplitPost A.ptrBits)
+    (writeArgs := true) (stack := stack)
+
+/-- The documentation of the precondition on `src_len`. -/
+def splitSafety : String :=
+  "`src_len` must be at most `len`."
+
+/-- `vg_aes_gcm_seal_split` on every target. -/
+def sealSplitApi : Api where
+  module := "gcm"
+  name := "vg_aes_gcm_seal_split"
+  sig := sealSplitSig
+  writeArgs := true
+  contracts := some fun A stack => sealSplitContract A stack
+  summary := "AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit \
+    tag) of a plaintext whose first part is elsewhere: with the key context `*ctx` that \
+    `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the `len` bytes made of the \
+    `src_len` bytes at `src` followed by the bytes at `dst` from `src_len` on, under the IV \
+    the `nonce_len` bytes at `nonce`, writes the ciphertext to the `len` bytes at `dst`, and \
+    writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to \
+    `*tag`: `vg_aes_gcm_seal` of `dst` with its first `src_len` bytes read from `src`. A \
+    shorter tag is the first bytes of this one.\n\n\
+    The function checks no length. GCM is secure only for a nonce of 1 to `2^61 - 1` bytes, \
+    at most `2^36 - 32` bytes of data and at most `2^61 - 1` bytes of additional data \
+    (§5.2.1.1), which the caller must ensure; and a nonce must never be used twice with the \
+    same key.\n\n\
+    Contract: `VG.Spec.Gcm.sealSplitContract`. Constant time: only the pointers, `rounds` and \
+    the lengths may affect timing, not the key context, the nonce, the additional data or the \
+    data."
+  safety := ["`rounds` must be 10, 12 or 14.", splitSafety]
+
 /-! ## With the powers of the hash subkey -/
 
 /-- `vg_aes_gcm_encrypt_blocks_to_precomputed(ctx: *const [u64; 128], rounds: usize, counter: *mut [u8; 16], y: *mut [u8; 16], src: *const [u8; 16], n: usize, dst: *mut [u8; 16], dst_n: usize, scratch: *mut [u64; 264])`:
@@ -345,5 +418,42 @@ def sealGatherPrecomputedApi : Api where
     the powers being as secret as the rest of the key context.\n\n\
     Contract: `VG.Spec.Gcm.sealGatherPrecomputedContract`."
   safety := sealGatherApi.safety ++ [powersSafety]
+
+/-- `vg_aes_gcm_seal_split_precomputed(ctx: *const [u64; 128], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, src_len: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16])`:
+`sealSplitSig` with the larger key context. -/
+def sealSplitPrecomputedSig : Sig where
+  params := [("ctx", .array false .u64 128), ("rounds", .int .usize true),
+    ("nonce", .slice false .u8 "nonce_len"), ("aad", .slice false .u8 "aad_len"),
+    ("src", .slice false .u8 "src_len"), ("dst", .slice true .u8 "len"),
+    ("tag", .array true .u8 16)]
+
+/-- `sealSplitPre`, and the key context at `ctx` holds the powers of its
+hash subkey. -/
+def sealSplitPrecomputedPre (pb : Nat) :
+    Curry (sealSplitPrecomputedSig.words pb) (Mem → Prop) :=
+  fun ctx rounds _nonce _nonceLen _aad _aadLen _src srcLen _dst len _tag m =>
+    (rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14) ∧ srcLen.toNat ≤ len.toNat ∧
+      PowersRepr m ctx
+
+/-- `sealSplitContract`, with the larger key context. -/
+def sealSplitPrecomputedContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  sealSplitPrecomputedSig.contract A (pre := sealSplitPrecomputedPre A.ptrBits)
+    (post := sealSplitPost A.ptrBits) (writeArgs := true) (stack := stack)
+
+/-- `vg_aes_gcm_seal_split_precomputed` on every target. -/
+def sealSplitPrecomputedApi : Api where
+  module := "gcm"
+  name := "vg_aes_gcm_seal_split_precomputed"
+  sig := sealSplitPrecomputedSig
+  writeArgs := true
+  contracts := some fun A stack => sealSplitPrecomputedContract A stack
+  summary := "`vg_aes_gcm_seal_split` with a key context of `vg_aes_gcm_init_precomputed`: \
+    with the key context `*ctx` that `vg_aes_gcm_init_precomputed` wrote for `rounds` rounds, \
+    does exactly what `vg_aes_gcm_seal_split` does with its first 256 bytes (see \
+    `vg_aes_gcm_seal_split`), and may read the powers of the hash subkey that it holds \
+    instead of computing them. Its constant-time guarantee is `vg_aes_gcm_seal_split`'s, \
+    the powers being as secret as the rest of the key context.\n\n\
+    Contract: `VG.Spec.Gcm.sealSplitPrecomputedContract`."
+  safety := sealSplitApi.safety ++ [powersSafety]
 
 end VG.Spec.Gcm

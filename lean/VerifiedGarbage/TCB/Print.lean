@@ -26,6 +26,8 @@ reference has exactly one target. The numbers are `20`, `21`, `22`, …
 binary literal in Intel syntax.
 IA-32's `symPush` reserves label `2` for its adjacent call/address pair;
 its references use the nearest `2f`/`2b`, even with several such pairs.
+ARMv7's `adrSym` likewise reserves labels `2` and `3`, around its `add`,
+which its `movw` and `movt` reference as the nearest `2f` and `3f`.
 
 A printer's `funcAlign` is an assembler alignment directive (e.g.
 `.p2align 6`) that `VG.Rust.function` emits after everything else in the
@@ -57,6 +59,10 @@ inductive SymPart
   | ripRel
   /-- IA-32 displacement from the local instruction-pointer label `2`. -/
   | x86PcRel
+  /-- ARMv7 displacement from the `pc` that the `add` between the local
+  labels `2` and `3` reads (ARMv7's `adrSym`), closing the parenthesis the
+  text opened: `<sym> - (2f + 2 * (3f - 2f)))`. -/
+  | armPcRel
   deriving DecidableEq, Repr
 
 /-- A line of assembly: text, a call instruction of the function it names,

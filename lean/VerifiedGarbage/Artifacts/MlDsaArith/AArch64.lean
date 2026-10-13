@@ -6,6 +6,7 @@ public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.AddSub
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Mul
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.NttInv
+import Mathlib.Tactic.SplitIfs
 
 /-! # ML-DSA (FIPS 204) on AArch64: the arithmetic of polynomials -/
 

@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Argon2.Arm.Layout
 public import VerifiedGarbage.Impl.Argon2.Arm.Divide
+public import VerifiedGarbage.Impl.Argon2.Arm.HPrime
 
 /-!
 # Argon2 on ARMv7: the parameters and H₀

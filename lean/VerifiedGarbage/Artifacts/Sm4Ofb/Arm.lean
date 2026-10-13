@@ -1,6 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Sm4.Arm.FbVerified
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Aes.SboxSpec
+import VerifiedGarbage.Proof.Framework.Arm.Contract
 
 /-! # SM4-OFB artifacts on baseline ARMv7 -/
 

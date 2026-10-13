@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Sm4.AArch64.CbcVerified
+import Mathlib.Tactic.SplitIfs
 
 /-! # SM4-CBC artifacts on baseline AArch64 -/
 
