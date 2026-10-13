@@ -17,7 +17,8 @@ import all Init.Data.Vector.Basic
 # X25519 on x86 (32-bit): `Verified`
 
 Constant time (by taint tracking: the only branches are on the loop counters,
-and every address is a pointer plus a constant or the counter),
+and every address is a pointer plus a constant or the counter, through the
+inversion's call of `vg_gf25519_r32_pow250`),
 satisfiability, and the shared contract of `Spec/`.
 -/
 
@@ -29,15 +30,17 @@ open VG VG.X86 VG.Impl.X25519.X86
 
 /-- The taint analysis starts with the stack arguments public, and the words
 holding `out` and `scratch` known to be the base addresses of the writable
-regions. -/
+regions, and the 8 bytes below `esp`, where the inversion's call pushes, apart
+from them. -/
 def τ₀ : VG.X86.Taint.T :=
-  { regs := .ofList [.esp], flags := false, lens := [32, 4096], argLen := 20, argBases := [(4, 0), (16, 1)] }
+  { regs := .ofList [.esp], flags := false, lens := [32, 4096], argLen := 20, argBases := [(4, 0), (16, 1)],
+    room := 8 }
 
 theorem wf₀ {s : State} (hp : Pre s) : VG.X86.Taint.Wf τ₀ s := by
   have hsc := hp.sc_fit; have ho := hp.out_fit; have hs := hp.sp_fit
-  refine VG.X86.Taint.Wf.entry rfl rfl ⟨fun _ => ⟨by simp [hp.wr, τ₀], by simpa [hp.wr] using hp.out_sc, ?_⟩,
+  refine VG.X86.Taint.Wf.entryRoom rfl ⟨fun _ => ⟨by simp [hp.wr, τ₀], by simpa [hp.wr] using hp.out_sc, ?_⟩,
     fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim,
-    fun _ => ⟨hs, ?_⟩, ?_⟩
+    fun _ => ⟨hs, ?_⟩, ?_⟩ fun _ => ⟨hp.sp_room, ?_⟩
   · simp only [hp.wr, List.mem_cons, List.not_mem_nil, or_false]
     rintro r (rfl | rfl) <;> simp only [BitVec.toNat_setWidth] <;> omega_using [hsc, ho]
   · simp only [hp.wr, List.mem_cons, List.not_mem_nil, or_false]
@@ -48,6 +51,10 @@ theorem wf₀ {s : State} (hp : Pre s) : VG.X86.Taint.Wf τ₀ s := by
     simp only [τ₀, List.mem_cons, List.not_mem_nil, or_false] at hp'
     rcases hp' with rfl | rfl <;> refine ⟨by decide, ?_⟩ <;>
       simp [VG.X86.Taint.region, hp.wr, addr, arg, argAddr]
+  · simp only [hp.wr, List.mem_cons, List.not_mem_nil, or_false]
+    rintro r (rfl | rfl)
+    · exact hp.stk_out
+    · exact hp.stk_sc
 
 theorem agree₀ {s₁ s₂ : State} (h₁ : Proof.X25519.x25519X86.pre s₁) (h₂ : Proof.X25519.x25519X86.pre s₂)
     (hpub : Proof.X25519.x25519X86.pub s₁ s₂) : VG.X86.Taint.Agree τ₀ s₁ s₂ := by
@@ -96,7 +103,7 @@ theorem x25519_ok (s : State) (hs : Proof.X25519.x25519X86.pre s) :
   x25519_correct (Pre.of s hs)
 
 theorem x25519_verified :
-    Verified X86.target Impl.X25519.X86.x25519 (Spec.X25519.x25519Contract X86.abi) :=
+    Verified X86.target Impl.X25519.X86.x25519 (Spec.X25519.x25519Contract X86.abi 8) :=
   Verified.of_correct x25519_ok x25519_ct (by
     have a0 : arg satState 0 = 0x1000 := by decide
     have a1 : arg satState 1 = 0x2000 := by decide
@@ -105,7 +112,7 @@ theorem x25519_verified :
     have e : argAddr satState 0 = 0x8004 := by decide
     have esp : satState.gpr .esp = 0x8000 := rfl
     sig_implies [Spec.X25519.x25519Contract, Spec.X25519.x25519Sig, Proof.X25519.x25519X86, X86.abi,
-      X86.argSlots, X86.argVal, X86.argBytes]
+      X86.argSlots, X86.argVal, X86.argBytes, stackBelow]
       [a0, a1, a2, a3, e, esp] using Proof.X25519.X86.satState)
 
 end VG.Proof.X25519.X86
