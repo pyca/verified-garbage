@@ -28,6 +28,8 @@ meta import Mathlib.Data.Finset.Card
 meta import Mathlib.Data.Nat.Find
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.P192Literals
+import VerifiedGarbage.Proof.P192.Point
+meta import VerifiedGarbage.Proof.P192.Point
 
 /-!
 # `vg_p192_mul` on AArch64: `Verified`

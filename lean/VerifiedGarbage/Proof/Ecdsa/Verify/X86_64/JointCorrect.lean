@@ -12,6 +12,9 @@ import Mathlib.Data.Nat.Find
 import VerifiedGarbage.Proof.Mont.X86_64.Wide
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+import VerifiedGarbage.Proof.P256.X86_64.JointFrame
+import VerifiedGarbage.Proof.P256.X86_64.JointInitLayout
+import VerifiedGarbage.Proof.P256.X86_64.JointPrep
 
 /-! Baseline and ADX joint verification satisfy the existing functional specification. -/
 

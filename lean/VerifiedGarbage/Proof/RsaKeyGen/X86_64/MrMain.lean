@@ -6,6 +6,9 @@ import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.X86_64.Call
+public import VerifiedGarbage.Proof.RsaKeyGen.Bits
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrSel
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrWit
 
 /-!
 # A candidate on x86-64: Miller–Rabin's loop

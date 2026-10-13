@@ -8,6 +8,12 @@ import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MontSetup
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.X86_64.Call
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtFrame
+public import VerifiedGarbage.Proof.Bignum.X86_64.R2
+public import VerifiedGarbage.Proof.Framework.WriteBytes
+public import VerifiedGarbage.Proof.Poly1305.Limbs64
+public import VerifiedGarbage.Proof.RsaKeyGen.CandMath
+public import VerifiedGarbage.Proof.RsaKeyGen.TrialMath
 
 /-!
 # A candidate on x86-64: all of `montSetup`

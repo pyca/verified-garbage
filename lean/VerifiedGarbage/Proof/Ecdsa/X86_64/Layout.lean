@@ -15,6 +15,17 @@ import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Mont.X86_64.Wide
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+public import VerifiedGarbage.Proof.Mont.X86_64.AddSubP
+public import VerifiedGarbage.Proof.Mont.X86_64.CsubR
+public import VerifiedGarbage.Proof.Mont.X86_64.MulF
+public import VerifiedGarbage.Proof.Mont.X86_64.Sub256
+public import VerifiedGarbage.Proof.Mont.X86_64.Sub384
+public import VerifiedGarbage.Proof.Weierstrass.BytesLen
+public import VerifiedGarbage.Proof.Weierstrass.Pow
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.Bits
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.Blocks
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFnB
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFnN
 
 /-!
 # ECDSA on x86-64: the curve, the arguments and the working space

@@ -32,6 +32,10 @@ meta import Mathlib.Data.Nat.Find
 meta import VerifiedGarbage.Proof.Mont.X86_64.Wide
 meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
 meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+import VerifiedGarbage.Proof.Weierstrass.X86_64.P224Literals
+import VerifiedGarbage.Spec.EcKey.Generic
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.P224Literals
+meta import VerifiedGarbage.Spec.EcKey.Generic
 
 /-! Concrete timing checks and the doubler of P-224's joint verification. -/
 

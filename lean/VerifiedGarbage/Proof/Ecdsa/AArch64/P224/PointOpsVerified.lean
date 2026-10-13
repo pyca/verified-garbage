@@ -20,6 +20,8 @@ import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 meta import Mathlib.Data.Finset.Card
 meta import Mathlib.Data.Nat.Find
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Ecdsa.AArch64.P224.Lit
+meta import VerifiedGarbage.Proof.Ecdsa.AArch64.P224.Lit
 
 /-!
 # `vg_p224_proj_add` on AArch64: `Verified`

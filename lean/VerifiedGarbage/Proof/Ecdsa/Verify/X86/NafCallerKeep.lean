@@ -12,6 +12,8 @@ import VerifiedGarbage.Proof.X25519.X86.Column
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombTailCT
 meta import VerifiedGarbage.Proof.Framework.X86.Sse
 meta import VerifiedGarbage.Proof.X25519.X86.Column
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafMul
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafMul
 
 @[expose] public section
 

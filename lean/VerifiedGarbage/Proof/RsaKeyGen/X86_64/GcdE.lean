@@ -10,6 +10,7 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Spec.RsaKeyGen
 
 /-!
 # A candidate on x86-64: `gcd(c − 1, e)` for an odd `e > 1`

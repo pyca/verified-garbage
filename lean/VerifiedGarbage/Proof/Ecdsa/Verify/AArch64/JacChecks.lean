@@ -32,6 +32,30 @@ meta import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.NafArithmeticTiming
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.NafEntryTiming
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.NafSum
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.Finish
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.Padd
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacPoints
+public import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacCombSum
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeStep
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafTableInit
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafWindow
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowEntry
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowSum
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowTable
+public import VerifiedGarbage.Proof.Weierstrass.BytesLen
+meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Finish
+meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Padd
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacPoints
+meta import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
+meta import VerifiedGarbage.Proof.Weierstrass.AArch64.JacCombSum
+meta import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeStep
+meta import VerifiedGarbage.Proof.Weierstrass.AArch64.NafTableInit
+meta import VerifiedGarbage.Proof.Weierstrass.AArch64.NafWindow
+meta import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowEntry
+meta import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowSum
+meta import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowTable
+meta import VerifiedGarbage.Proof.Weierstrass.BytesLen
 
 @[expose] public section
 

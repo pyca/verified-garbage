@@ -44,6 +44,12 @@ meta import Mathlib.Data.Nat.Find
 meta import VerifiedGarbage.Proof.Mont.X86_64.Wide
 meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
 meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+import VerifiedGarbage.Proof.P256.X86_64.NafCacheTiming
+import VerifiedGarbage.Proof.Weierstrass.X86_64.P256Literals
+import VerifiedGarbage.Proof.Weierstrass.X86_64.P256Templates
+meta import VerifiedGarbage.Proof.P256.X86_64.NafCacheTiming
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.P256Literals
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.P256Templates
 
 /-! Concrete timing checks for baseline and ADX public joint verification. -/
 

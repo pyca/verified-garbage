@@ -28,6 +28,8 @@ meta import Mathlib.Data.Finset.Card
 meta import Mathlib.Data.Nat.Find
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Secp256k1Literals
+import VerifiedGarbage.Proof.Secp256k1.Point
+meta import VerifiedGarbage.Proof.Secp256k1.Point
 
 /-!
 # `vg_secp256k1_mul` on AArch64: `Verified`
