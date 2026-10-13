@@ -37,6 +37,24 @@ def artifacts : List Artifact := [
     stack := 976
     ofSig := by exact (⟨_, _, _, by unfold Spec.Seed.ecbDecryptContract Spec.Seed.ecbContract; rfl⟩)
     verified := Proof.Seed.AArch64.decrypt_framed
+    spSafe := Code.all_of_forall (fun _ => rfl) _ },
+  { Spec.Seed.encryptBlocksApi with
+    target := AArch64.target
+    doc := Spec.Seed.encryptBlocksApi.doc (notes := ["Prototype."])
+    code := Impl.Seed.AArch64.encrypt
+    contract := Spec.Seed.blocksContract AArch64.abi .encrypt
+    stack := 0
+    ofSig := ⟨_, _, _, by unfold Spec.Seed.blocksContract; rfl⟩
+    verified := Proof.Seed.AArch64.encrypt_verified
+    spSafe := Code.all_of_forall (fun _ => rfl) _ },
+  { Spec.Seed.decryptBlocksApi with
+    target := AArch64.target
+    doc := Spec.Seed.decryptBlocksApi.doc (notes := ["Prototype."])
+    code := Impl.Seed.AArch64.decrypt
+    contract := Spec.Seed.blocksContract AArch64.abi .decrypt
+    stack := 0
+    ofSig := ⟨_, _, _, by unfold Spec.Seed.blocksContract; rfl⟩
+    verified := Proof.Seed.AArch64.decrypt_verified
     spSafe := Code.all_of_forall (fun _ => rfl) _ }]
 
 end VG.Artifacts.Seed.AArch64
