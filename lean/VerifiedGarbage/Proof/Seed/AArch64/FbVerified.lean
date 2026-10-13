@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Seed.AArch64.ModeCore
-meta import VerifiedGarbage.Proof.Seed.AArch64.ModeCore
+public import VerifiedGarbage.Proof.Seed.AArch64.Link
+meta import VerifiedGarbage.Proof.Seed.AArch64.Link
 public import VerifiedGarbage.Proof.Modes.AArch64.Fb
 meta import VerifiedGarbage.Proof.Modes.AArch64.Fb
 public import VerifiedGarbage.Proof.Modes.AArch64.ViaV
@@ -175,7 +175,7 @@ def fbSat : State where
 theorem ofb_verified :
     Verified AArch64.target ofb (Proof.Seed.fbScratchContract AArch64.abi 182 Proof.Seed.ofbPost) :=
   Verified.of_correct (fun s hs => by
-      obtain ⟨t, s', he, ⟨h₁, h₂⟩, h₃⟩ := WP.gprs (rs := [.x30]) (ofb_wp hs) (by lit_decide) (by lit_decide)
+      obtain ⟨t, s', he, ⟨h₁, h₂⟩, h₃⟩ := WP.gprs' ofb_keeps_x30 (ofb_wp hs)
       exact ⟨t, s', he, modeAbi_of he h₁ h₃ (by lit_decide), h₂⟩)
     (VG.Taint.constantTime (A := VectorTaint.taint) (VectorTaint.ofRegs [.x0, .x1, .x2, .x3, .x4]) fbTaint_agree
       (by taint_decide)) (by
@@ -185,8 +185,7 @@ theorem ofb_verified :
 theorem cfbEncrypt_verified :
     Verified AArch64.target cfbEncrypt (Proof.Seed.fbScratchContract AArch64.abi 182 Proof.Seed.cfbEncPost) :=
   Verified.of_correct (fun s hs => by
-      obtain ⟨t, s', he, ⟨h₁, h₂⟩, h₃⟩ := WP.gprs (rs := [.x30]) (cfbEncrypt_wp hs) (by lit_decide)
-        (by lit_decide)
+      obtain ⟨t, s', he, ⟨h₁, h₂⟩, h₃⟩ := WP.gprs' cfbEncrypt_keeps_x30 (cfbEncrypt_wp hs)
       exact ⟨t, s', he, modeAbi_of he h₁ h₃ (by lit_decide), h₂⟩)
     (VG.Taint.constantTime (A := VectorTaint.taint) (VectorTaint.ofRegs [.x0, .x1, .x2, .x3, .x4]) fbTaint_agree
       (by taint_decide)) (by
@@ -196,8 +195,7 @@ theorem cfbEncrypt_verified :
 theorem cfbDecrypt_verified :
     Verified AArch64.target cfbDecrypt (Proof.Seed.fbScratchContract AArch64.abi 182 Proof.Seed.cfbDecPost) :=
   Verified.of_correct (fun s hs => by
-      obtain ⟨t, s', he, ⟨h₁, h₂⟩, h₃⟩ := WP.gprs (rs := [.x30]) (cfbDecrypt_wp hs) (by lit_decide)
-        (by lit_decide)
+      obtain ⟨t, s', he, ⟨h₁, h₂⟩, h₃⟩ := WP.gprs' cfbDecrypt_keeps_x30 (cfbDecrypt_wp hs)
       exact ⟨t, s', he, modeAbi_of he h₁ h₃ (by lit_decide), h₂⟩)
     (VG.Taint.constantTime (A := VectorTaint.taint) (VectorTaint.ofRegs [.x0, .x1, .x2, .x3, .x4]) fbTaint_agree
       (by taint_decide)) (by

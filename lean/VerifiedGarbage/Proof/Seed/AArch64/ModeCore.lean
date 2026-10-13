@@ -1,6 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Seed.AArch64.Ecb
+public import VerifiedGarbage.Proof.Seed.AArch64.Verified
+public import VerifiedGarbage.Proof.Framework.AArch64.Call
 public import VerifiedGarbage.Proof.Seed.AArch64.Batch
 public import VerifiedGarbage.Proof.Seed.AArch64.Lit
 public import VerifiedGarbage.Proof.Seed.ModeBytes
@@ -32,7 +33,7 @@ batch writes no vector register (`vSafe`).
 namespace VG.Proof.Seed.AArch64
 
 open VG VG.AArch64 VG.AArch64.Straight VG.Impl.Seed.AArch64
-open VG.Impl.Aes.AArch64 (sb)
+open VG.Impl.Aes.AArch64 (sb movR)
 open VG.Proof.Modes (over over_at over_frame)
 open VG.Proof.Modes.AArch64 (ScrIn coreRegion blkRegion blkAddr BlockSpec copyN_wp addImm_ok movz_ok
   runBlock_app addr_add vSafe keepsV_of_vSafe dup_ok umov_ok extract_ofVDwords)
@@ -114,23 +115,36 @@ theorem prepare_wp (d : Direction) {s : State} {B : Addr} {rs : List Region} {k 
   exact (over_frame _ _ _ _).sub fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, List.mem_singleton_self _, sched_sub B⟩
 
-/-- One instruction that writes no vector register keeps them. -/
-private theorem single_v {i : Instr} {s s' : State} (h : vdstOf i = none) (hr : runBlock isa [i] s = some s') :
-    s'.v = s.v := by
-  cases he : exec i s with
-  | none => rw [runBlock_cons, he] at hr; cases hr
-  | some u =>
-    rw [runBlock_cons, he, runStep_some, runBlock_nil] at hr
-    cases hr
-    funext r
-    exact exec_vec (by rw [h]; simp) he
+/-- The call keeps the vector registers `v28`, `v27`, `v29`, `v30` and `v31`. -/
+theorem blockCall_vsafe (d : Direction) : vSafe .v28 (blockCall d) = true ∧ vSafe .v27 (blockCall d) = true ∧
+    vSafe .v29 (blockCall d) = true ∧ vSafe .v30 (blockCall d) = true ∧ vSafe .v31 (blockCall d) = true := by
+  cases d <;> exact ⟨by lit_decide, by lit_decide, by lit_decide, by lit_decide, by lit_decide⟩
 
-private theorem inRd {s : State} {a : Addr} {n : Nat} (h : InRegions s.wr a n) : InRegions (s.rd ++ s.wr) a n :=
-  let ⟨r, hr, hc⟩ := h; ⟨r, List.mem_append_right _ hr, hc⟩
+/-- A block that writes no vector register `v` keeps it, from a run given by `runBlock`. -/
+theorem runBlock_v {is : List Instr} {s s' : State} {v : VReg} (hv : ∀ i ∈ is, vdstOf i ≠ some v)
+    (e : runBlock isa is s = some s') : s'.v v = s.v v := by
+  have w : WP isa (.block is) s fun x => x = s' := WP.of_runBlock ⟨s', e, rfl⟩
+  obtain ⟨t, u, he, rfl⟩ := w
+  exact Exec.vec (c := .block is) hv he
 
-/-- The batch keeps the vector registers `v29` and `v30`. -/
-theorem batch_vsafe (d : Direction) : vSafe .v29 (batch d) = true ∧ vSafe .v30 (batch d) = true := by
-  cases d <;> exact ⟨by lit_decide, by lit_decide⟩
+theorem blockCall_eq (d : Direction) : blockCall d =
+    .call (match d with | .encrypt => "vg_seed_encrypt_blocks" | .decrypt => "vg_seed_decrypt_blocks")
+      (ecb d) := by cases d <;> rfl
+
+theorem ecb_correct (d : Direction) (s : State) (hs : (contract d).pre s) :
+    ∃ t s', Exec isa (ecb d) s t s' ∧ abiPreserved s s' ∧ (contract d).post s s' := by
+  cases d
+  · exact encrypt_correct (Nat.le_refl _) s hs
+  · exact decrypt_correct (Nat.le_refl _) s hs
+
+/-- Block `j` of blocks transformed by ECB. -/
+theorem blockAt_of_ecb {K : Spec.Seed.Schedule} {d : Direction} {m m' : Mem} {D : Addr} {n : Nat}
+    (h : Spec.Seed.blocksAt m' D n = Spec.Seed.ecb K d (Spec.Seed.blocksAt m D n)) {j : Nat} (hj : j < n) :
+    Spec.Seed.blockAt m' (D + BitVec.ofNat 64 (16 * j)) = cipher d K (Spec.Seed.blockAt m (D + BitVec.ofNat 64 (16 * j))) := by
+  have := congrArg (fun l => l[j]?) h
+  cases d <;> simpa [Spec.Seed.blocksAt, Spec.Seed.ecb, cipher, hj] using this
+
+theorem toNat16 : (BitVec.ofNat 64 16).toNat = 16 := rfl
 
 theorem crypt_wp (d : Direction) {s : State} {B : Addr} {k : Spec.Seed.Schedule} (hB : s.gpr sb = B)
     (hs : ScrIn s B (dirCore d).total) (hr : ReadyAt s.mem B k) :
@@ -144,101 +158,147 @@ theorem crypt_wp (d : Direction) {s : State} {B : Addr} {k : Spec.Seed.Schedule}
   rw [total_eq] at hfB
   have hw := hs.wr
   rw [total_eq] at hw
-  -- The data's address and the blocks left to `v29` and `v30`.
-  have e₁ := dup_ok s .v29 .x23
-  let s₂ := (s.setV .v29 (ofVDwords (s.gpr .x23) (s.gpr .x23))).setV .v30
-    (ofVDwords (s.gpr .x24) (s.gpr .x24))
-  have e₂ : runBlock isa [.vop (.dup .d2 .v30 .x24)] (s.setV .v29 (ofVDwords (s.gpr .x23) (s.gpr .x23))) =
-      some s₂ := dup_ok _ _ _
-  have v29₂ : s₂.v .v29 = ofVDwords (s.gpr .x23) (s.gpr .x23) := by
-    simp only [s₂, RegUpd.v_setV_of_ne _ _ (show VReg.v29 ≠ .v30 by decide), RegUpd.v_setV_self]
-  have v30₂ : s₂.v .v30 = ofVDwords (s.gpr .x24) (s.gpr .x24) := RegUpd.v_setV_self _ _ _
-  -- `x1`, `x2` and `x0` to the buffer, its sixteen blocks and the first round key.
-  obtain ⟨s₃, e₃, r₃, o₃, m₃, rd₃, wr₃⟩ := addImm_ok s₂ .x1 sb (v := 8 * bufSlot) (by decide)
-  obtain ⟨s₄, e₄, r₄, o₄, m₄, rd₄, wr₄⟩ := movz_ok s₃ .x2 (v := 16) (by decide)
-  obtain ⟨s₅, e₅, r₅, o₅, m₅, rd₅, wr₅⟩ := addImm_ok s₄ .x0 sb (v := 8 * schedSlot + keyStart d)
-    (by cases d <;> decide)
-  have g₅ : ∀ x, x ≠ .x1 → x ≠ .x2 → x ≠ .x0 → s₅.gpr x = s.gpr x := fun x h1 h2 h3 => by
-    rw [o₅ x h3, o₄ x h2, o₃ x h1]; rfl
-  have x5₅ : s₅.gpr .x5 = B := by rw [g₅ _ (by decide) (by decide) (by decide)]; exact hB
-  have x1₅ : s₅.gpr .x1 = bufAt B := by
-    rw [o₅ _ (by decide), o₄ _ (by decide), r₃]; show s.gpr sb + _ = _; rw [hB]
-  have x2₅ : s₅.gpr .x2 = 16 := by rw [o₅ _ (by decide), r₄]; rfl
-  have x0₅ : s₅.gpr .x0 = schedAddr B + BitVec.ofNat 64 (keyStart d) := by
-    rw [r₅, o₄ _ (by decide), o₃ _ (by decide)]
-    show s.gpr sb + _ = _
-    rw [hB, BitVec.add_assoc, BitVec.ofNat_add]
-  have mem₅ : s₅.mem = s.mem := by rw [m₅, m₄, m₃]; rfl
-  have rd₅' : s₅.rd = s.rd := by rw [rd₅, rd₄, rd₃]; rfl
-  have wr₅' : s₅.wr = s.wr := by rw [wr₅, wr₄, wr₃]; rfl
-  have v₅ : ∀ v, s₅.v v = s₂.v v := fun v => by
-    rw [single_v rfl e₅, single_v rfl e₄, single_v rfl e₃]
-  have room₅ : Room s₅ := ⟨8 * 182, by decide, by rw [x5₅, wr₅']; exact hw⟩
-  have hx2 : (s₅.gpr .x2).toNat = 16 := by rw [x2₅]; rfl
-  have scr₅ : scratchR s₅ = ⟨B, 8 * scratchSlots⟩ := by simp only [scratchR, x5₅]
-  have inScr : ∀ t n, t + n ≤ 1456 → InRegions s₅.wr (B + BitVec.ofNat 64 t) n := fun t n h =>
-    ⟨_, by rw [wr₅']; exact hw, Offset.contains_base B (by omega) (by omega)⟩
-  have hbuf : 8 * bufSlot = 976 := rfl
-  have hsch : 8 * schedSlot = 1232 := rfl
-  have hpre : BatchPre d s₅ := by
-    refine ⟨room₅, by rw [hx2]; decide, fun b hb w hw' => ?_, ?_, fun j hj => ?_, fun j hj => ?_⟩
-    · rw [hx2] at hb
-      rw [x1₅, bufAt, Offset.add_add, hbuf]
-      exact inScr _ _ (by omega)
-    · rw [x1₅, hx2, scr₅, bufAt, hbuf]; exact Offset.disjoint_base B (by decide) (by decide)
-    · rw [x0₅, kp_start _ _ hj, schedAddr, Offset.add_add, scr₅, hsch]
-      have := keyOff_le d hj
-      refine ⟨inRd (inScr (1232 + keyOff d j) 4 (by omega)), ?_,
-        Offset.disjoint_base B (by unfold scratchSlots; omega) (by omega)⟩
-      rw [show (4 : BitVec 64) = BitVec.ofNat 64 4 from rfl, Offset.add_add]
-      exact inRd (inScr (1232 + keyOff d j + 4) 4 (by omega))
-    · rw [x0₅, kp_start _ _ hj, schedAddr, Offset.add_add, x1₅, hx2, bufAt, hbuf, hsch]
-      have := keyOff_le d hj
-      exact Offset.disjoint B (.inr (by omega)) (by omega) (by omega)
-  refine WP.seq (WP.of_runBlock ⟨s₅, ?_, ?_⟩)
-  · show runBlock isa ([.vop (.dup .d2 .v29 .x23)] ++ ([.vop (.dup .d2 .v30 .x24)] ++
-      ([.addImm .x .x1 sb (8 * bufSlot)] ++ ([.movz .x .x2 (BitVec.ofNat 16 16) 0] ++
-      ([.addImm .x .x0 sb (8 * schedSlot + keyStart d)] : List Instr))))) s = some s₅
-    rw [runBlock_app, e₁, Option.bind_some, runBlock_app, e₂, Option.bind_some, runBlock_app, e₃, Option.bind_some,
-      runBlock_app, e₄, Option.bind_some, e₅]
-  obtain ⟨hv29, hv30⟩ := batch_vsafe d
-  refine WP.seq (WP.mono (show WP isa (batch d) s₅ fun s₈ => BatchPost d s₅ s₈ ∧ s₈.v .v29 = s₅.v .v29 ∧
-      s₈.v .v30 = s₅.v .v30 from
-    let ⟨t, s₈, e, q⟩ := batch_ok d hpre
-    ⟨t, s₈, e, q, keepsV_of_vSafe hv29 _ _ _ e, keepsV_of_vSafe hv30 _ _ _ e⟩) fun s₈ ⟨q, q29, q30⟩ => ?_)
-  obtain ⟨qdone, _, _, qregs, _, qrd, qwr, qframe⟩ := q
-  rw [hx2, x1₅] at qdone qframe
-  have x5₈ : s₈.gpr .x5 = B := by rw [qregs .x5 (by simp), x5₅]
-  have e₆ := umov_ok s₈ .x23 .v29
-  have e₇ := umov_ok (s₈.write .x .x23 ((s₈.v .v29).extractLsb' 0 64)) .x24 .v30
-  refine WP.of_runBlock ⟨_, by
-    show runBlock isa ([.umov .x .x23 .v29 0] ++ [.umov .x .x24 .v30 0]) s₈ = some _
-    rw [runBlock_app, e₆, Option.bind_some, e₇], ?_⟩
-  have workR₅ : workR s₅ = ⟨B, 8 * 112⟩ := by simp only [workR, x5₅]
-  rw [workR₅] at qframe
-  have fsched₈ : ∀ r ∈ [(⟨B, 8 * 112⟩ : Region), ⟨bufAt B, 16 * 16⟩], Region.Disjoint ⟨schedAddr B, 128⟩ r := by
-    intro r hr
+  -- The return address, `sb`, the data's address and the blocks left to vector registers.
+  let s₁ := (((s.setV .v28 (ofVDwords (s.gpr .x30) (s.gpr .x30))).setV .v27 (ofVDwords (s.gpr sb) (s.gpr sb))).setV
+    .v29 (ofVDwords (s.gpr .x23) (s.gpr .x23))).setV .v30 (ofVDwords (s.gpr .x24) (s.gpr .x24))
+  have e₁ : runBlock isa [.vop (.dup .d2 .v28 .x30), .vop (.dup .d2 .v27 sb), .vop (.dup .d2 .v29 .x23),
+      .vop (.dup .d2 .v30 .x24)] s = some s₁ := by
+    rw [show ([.vop (.dup .d2 .v28 .x30), .vop (.dup .d2 .v27 sb), .vop (.dup .d2 .v29 .x23),
+      .vop (.dup .d2 .v30 .x24)] : List Instr) = [.vop (.dup .d2 .v28 .x30)] ++ ([.vop (.dup .d2 .v27 sb)] ++
+      ([.vop (.dup .d2 .v29 .x23)] ++ [.vop (.dup .d2 .v30 .x24)])) from rfl,
+      runBlock_app, dup_ok, Option.bind_some, runBlock_app, dup_ok, Option.bind_some, runBlock_app, dup_ok,
+      Option.bind_some, dup_ok]
+    rfl
+  obtain ⟨s₃, e₃, r₃, o₃, m₃, rd₃, wr₃⟩ := addImm_ok s₁ .x0 sb (v := 8 * schedSlot) (by decide)
+  obtain ⟨s₄, e₄, r₄, o₄, m₄, rd₄, wr₄⟩ := addImm_ok s₃ .x1 sb (v := 8 * bufSlot) (by decide)
+  obtain ⟨s₅, e₅, r₅, o₅, m₅, rd₅, wr₅⟩ := movz_ok s₄ .x2 (v := 16) (by decide)
+  obtain ⟨s₆, e₆, r₆, o₆, m₆, rd₆, wr₆⟩ := addImm_ok s₅ .x3 sb (v := 0) (by decide)
+  have e₃₆ : runBlock isa ([.addImm .x .x0 sb (8 * schedSlot)] ++ ([.addImm .x .x1 sb (8 * bufSlot)] ++
+      ([.movz .x .x2 (BitVec.ofNat 16 16) 0] ++ [.addImm .x .x3 sb 0]))) s₁ = some s₆ := by
+    rw [runBlock_app, e₃, Option.bind_some, runBlock_app, e₄, Option.bind_some, runBlock_app, e₅,
+      Option.bind_some, e₆]
+  have v₆ : ∀ v ∈ [VReg.v27, .v28, .v29, .v30], s₆.v v = s₁.v v := fun v hv => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hv
+    rcases hv with rfl | rfl | rfl | rfl <;> exact runBlock_v (by decide) e₃₆
+  have g₆ : ∀ x, x ≠ .x0 → x ≠ .x1 → x ≠ .x2 → x ≠ .x3 → s₆.gpr x = s.gpr x :=
+    fun x h2 h3 h4 h5 => by rw [o₆ x h5, o₅ x h4, o₄ x h3, o₃ x h2]; rfl
+  have sb₆ : s₆.gpr sb = B := by rw [g₆ _ (by decide) (by decide) (by decide) (by decide), hB]
+  have x0₆ : s₆.gpr .x0 = schedAddr B := by
+    rw [o₆ _ (by decide), o₅ _ (by decide), o₄ _ (by decide), r₃]; show s.gpr sb + _ = _; rw [hB]
+  have x1₆ : s₆.gpr .x1 = bufAt B := by
+    rw [o₆ _ (by decide), o₅ _ (by decide), r₄, o₃ _ (by decide)]; show s.gpr sb + _ = _; rw [hB]
+  have x2₆ : s₆.gpr .x2 = BitVec.ofNat 64 16 := by rw [o₆ _ (by decide), r₅]
+  have x3₆ : s₆.gpr .x3 = B := by
+    rw [r₆, o₅ _ (by decide), o₄ _ (by decide), o₃ _ (by decide)]
+    show s.gpr sb + _ = _; rw [hB]; exact BitVec.add_zero _
+  have mem₆ : s₆.mem = s.mem := by rw [m₆, m₅, m₄, m₃]; rfl
+  have rd₆' : s₆.rd = s.rd := by rw [rd₆, rd₅, rd₄, rd₃]; rfl
+  have wr₆' : s₆.wr = s.wr := by rw [wr₆, wr₅, wr₄, wr₃]; rfl
+  show WP isa (.seq (.block cryptHead) (.seq (blockCall d) (.block cryptTail))) s _
+  refine WP.seq (WP.of_runBlock ⟨s₆, by
+    rw [show cryptHead = [.vop (.dup .d2 .v28 .x30), .vop (.dup .d2 .v27 sb), .vop (.dup .d2 .v29 .x23),
+      .vop (.dup .d2 .v30 .x24)] ++ ([.addImm .x .x0 sb (8 * schedSlot)] ++ ([.addImm .x .x1 sb (8 * bufSlot)] ++
+      ([.movz .x .x2 (BitVec.ofNat 16 16) 0] ++ [.addImm .x .x3 sb 0]))) from rfl,
+      runBlock_app, e₁, Option.bind_some, e₃₆], ?_⟩)
+  -- The call.
+  have sub : ∀ off len, off + len ≤ 1456 → ∃ r' ∈ s₆.wr, ∃ o,
+      (B + BitVec.ofNat 64 off) = r'.base + BitVec.ofNat 64 o ∧ o + len ≤ r'.len :=
+    fun off len h => ⟨_, by rw [wr₆']; exact hw, off, rfl, h⟩
+  have sub0 : ∃ r' ∈ s₆.wr, ∃ o, B = r'.base + BitVec.ofNat 64 o ∧ o + 976 ≤ r'.len := by
+    obtain ⟨r', h1, o, h2, h3⟩ := sub 0 976 (by decide)
+    exact ⟨r', h1, o, by rw [← h2]; exact (BitVec.add_zero B).symm, h3⟩
+  have w : WP isa (blockCall d) s₆ fun s' => s'.rd = s₆.rd ∧ s'.wr = s₆.wr ∧
+      Frame [⟨bufAt B, 256⟩, ⟨B, 976⟩] s₆.mem s'.mem ∧ (∀ r ∈ preserved, r ≠ .x30 → s'.gpr r = s₆.gpr r) ∧
+      Spec.Seed.blocksAt s'.mem (bufAt B) 16 =
+        Spec.Seed.ecb (Spec.Seed.scheduleAt s₆.mem (schedAddr B)) d (Spec.Seed.blocksAt s₆.mem (bufAt B) 16) := by
+    rw [blockCall_eq]
+    refine WP.call (k := contract d) (ecb_correct d)
+      (rd := [⟨schedAddr B, 128⟩]) (wr := [⟨bufAt B, 256⟩, ⟨B, 976⟩]) ?_
+      (Covers.right (Covers.of_sub fun r hr => ?_)) (Covers.of_sub fun r hr => ?_)
+      (fun s' hrd hwr _ hf hsv _ hpost => ?_) (by cases d <;> rfl)
+    · simp only [contract, State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr,
+        State.callEntry_gpr _ (by decide : Reg.x0 ∉ linkRegs), State.callEntry_gpr _ (by decide : Reg.x1 ∉ linkRegs),
+        State.callEntry_gpr _ (by decide : Reg.x2 ∉ linkRegs), State.callEntry_gpr _ (by decide : Reg.x3 ∉ linkRegs),
+        x0₆, x1₆, x2₆, x3₆, toNat16]
+      refine ⟨trivial, trivial, sched_buf B,
+        Offset.disjoint_base B (by simp only [schedSlot, bufSlot, scratchSlots]; omega)
+          (by simp only [schedSlot, bufSlot, scratchSlots]; omega),
+        Offset.disjoint_base B (by simp only [bufSlot, scratchSlots]; omega)
+          (by simp only [bufSlot, scratchSlots]; omega), ?_⟩
+      rw [bufAt, Offset.toNat_add_ofNat]
+      simp only [bufSlot, scratchSlots]; omega
+    · simp only [List.mem_cons, List.not_mem_nil, or_false, List.cons_append, List.nil_append] at hr
+      rcases hr with rfl | rfl | rfl
+      · exact sub (8 * schedSlot) 128 (by decide)
+      · exact sub (8 * bufSlot) 256 (by decide)
+      · exact sub0
+    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact sub (8 * bufSlot) 256 (by decide)
+      · exact sub0
+    · refine ⟨hrd, hwr, hf, hsv, ?_⟩
+      change Spec.Seed.blocksAt _ _ _ = _ at hpost
+      simp only [State.withRegions_gpr, State.withRegions_mem, State.callEntry_mem,
+        State.callEntry_gpr _ (by decide : Reg.x0 ∉ linkRegs), State.callEntry_gpr _ (by decide : Reg.x1 ∉ linkRegs),
+        State.callEntry_gpr _ (by decide : Reg.x2 ∉ linkRegs), x0₆, x1₆, x2₆, toNat16] at hpost
+      exact hpost
+  obtain ⟨t₇, s₇, e₇, rd₇, wr₇, f₇, -, res₇⟩ := w
+  have v₇ : ∀ v ∈ [VReg.v27, .v28, .v29, .v30], s₇.v v = s₆.v v := fun v hv => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hv
+    rcases hv with rfl | rfl | rfl | rfl
+    · exact keepsV_of_vSafe (blockCall_vsafe d).2.1 _ _ _ e₇
+    · exact keepsV_of_vSafe (blockCall_vsafe d).1 _ _ _ e₇
+    · exact keepsV_of_vSafe (blockCall_vsafe d).2.2.1 _ _ _ e₇
+    · exact keepsV_of_vSafe (blockCall_vsafe d).2.2.2.1 _ _ _ e₇
+  have vv : ∀ v ∈ [VReg.v27, .v28, .v29, .v30], s₇.v v = s₁.v v := fun v hv => by
+    rw [v₇ v hv, v₆ v hv]
+  refine WP.seq ⟨t₇, s₇, e₇, ?_⟩
+  -- The four registers back.
+  let s₈ := s₇.write .x sb ((s₇.v .v27).extractLsb' 0 64)
+  let s₉ := s₈.write .x .x30 ((s₈.v .v28).extractLsb' 0 64)
+  let s₁₀ := s₉.write .x .x23 ((s₉.v .v29).extractLsb' 0 64)
+  let s₁₁ := s₁₀.write .x .x24 ((s₁₀.v .v30).extractLsb' 0 64)
+  refine WP.of_runBlock ⟨s₁₁, by
+    rw [show cryptTail = [.umov .x sb .v27 0] ++ ([.umov .x .x30 .v28 0] ++ ([.umov .x .x23 .v29 0] ++
+      [.umov .x .x24 .v30 0])) from rfl, runBlock_app, umov_ok, Option.bind_some, runBlock_app, umov_ok,
+      Option.bind_some, runBlock_app, umov_ok, Option.bind_some, umov_ok], ?_⟩
+  have m₁₁ : s₁₁.mem = s₇.mem := rfl
+  have hv : ∀ v, s₁₁.v v = s₇.v v ∧ s₁₀.v v = s₇.v v ∧ s₉.v v = s₇.v v ∧ s₈.v v = s₇.v v :=
+    fun v => ⟨rfl, rfl, rfl, rfl⟩
+  have fcore : Frame [⟨B, 1360⟩] s.mem s₇.mem := by
+    rw [← mem₆]
+    refine f₇.sub fun r hr => ?_
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · exact Offset.disjoint_base B (by decide) (by decide)
-    · exact sched_buf B
-  have fcore : Frame [⟨B, 1360⟩] s.mem s₈.mem := by
-    rw [← mem₅]
-    refine qframe.sub fun r hr => ?_
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl
-    · exact ⟨_, List.mem_singleton_self _, Region.sub_prefix (by decide)⟩
     · exact ⟨_, List.mem_singleton_self _, Offset.sub_base B (by decide)⟩
-  refine ⟨by rw [(Modes.AArch64.write_ok _ .x24 _).2.1 sb (by decide), (Modes.AArch64.write_ok _ .x23 _).2.1 sb (by decide)]; exact x5₈,
-    by rw [(Modes.AArch64.write_ok _ .x24 _).2.1 .x23 (by decide), (Modes.AArch64.write_ok _ .x23 _).1, q29, v₅, v29₂, extract_ofVDwords],
-    by rw [(Modes.AArch64.write_ok _ .x24 _).1, RegUpd.v_write, q30, v₅, v30₂, extract_ofVDwords],
-    ?_, by rw [core_eq, RegUpd.mem_write, RegUpd.mem_write]; exact fcore, fun j hj => ?_, by rw [RegUpd.rd_write, RegUpd.rd_write, qrd, rd₅'], by rw [RegUpd.wr_write, RegUpd.wr_write, qwr, wr₅']⟩
-  · rw [RegUpd.mem_write, RegUpd.mem_write, ReadyAt, scheduleAt_frame qframe fsched₈, mem₅]; exact hr
+    · exact ⟨_, List.mem_singleton_self _, Region.sub_prefix (by decide)⟩
+  refine ⟨?_, ?_, ?_, ?_, ?_, fun j hj => ?_, ?_, ?_⟩
+  · rw [(Modes.AArch64.write_ok _ .x24 _).2.1 sb (by decide), (Modes.AArch64.write_ok _ .x23 _).2.1 sb (by decide),
+      (Modes.AArch64.write_ok _ .x30 _).2.1 sb (by decide), (Modes.AArch64.write_ok _ sb _).1,
+      vv .v27 (by simp)]
+    show (ofVDwords (s.gpr sb) (s.gpr sb)).extractLsb' 0 64 = B
+    rw [extract_ofVDwords, hB]
+  · rw [(Modes.AArch64.write_ok _ .x24 _).2.1 .x23 (by decide), (Modes.AArch64.write_ok _ .x23 _).1,
+      (hv .v29).2.2.1, vv .v29 (by simp)]
+    show (ofVDwords (s.gpr .x23) (s.gpr .x23)).extractLsb' 0 64 = _
+    rw [extract_ofVDwords]
+  · rw [(Modes.AArch64.write_ok _ .x24 _).1, (hv .v30).2.1, vv .v30 (by simp)]
+    show (ofVDwords (s.gpr .x24) (s.gpr .x24)).extractLsb' 0 64 = _
+    rw [extract_ofVDwords]
+  · rw [m₁₁, ReadyAt, scheduleAt_frame f₇ fun r hr => ?_, mem₆]
+    · exact hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact sched_buf B
+    · exact Offset.disjoint_base B (by decide) (by decide)
+  · rw [core_eq, m₁₁]; exact fcore
   · have hj16 : j < 16 := by simp only [dirCore, Impl.Modes.AArch64.Core.G] at hj; exact hj
     have ea : blkAddr (dirCore d) B j = bufAt B + BitVec.ofNat 64 (16 * j) := by
       rw [blkAddr, bufAt, Offset.add_add]; simp only [dirCore, bufSlot, scratchSlots]
-    rw [dirCore_bw, show 8 * 2 = 16 from rfl, ea, dirCipher_bytes, bytesAt_eq, RegUpd.mem_write, RegUpd.mem_write,
-      qdone j (by omega), x0₅, crypt_keysAt, mem₅, hr]
+    rw [dirCore_bw, show 8 * 2 = 16 from rfl, ea, dirCipher_bytes, bytesAt_eq, m₁₁,
+      blockAt_of_ecb res₇ hj16, mem₆, hr]
+  · show s₇.rd = _; rw [rd₇, rd₆']
+  · show s₇.wr = _; rw [wr₇, wr₆']
 
 /-- SEED's core for the direction `d` meets what the modes need. -/
 def dirCoreSpec (d : Direction) : BlockSpec (dirCore d) where
