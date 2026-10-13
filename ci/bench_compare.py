@@ -1,529 +1,72 @@
-"""Compares the performance of two checkouts of this repository.
-
-    python3 ci/bench_compare.py BASE HEAD [--summary FILE] [--openssl]
-
-Both are built with HEAD's `bench/` crate (so the two run the same
-benchmark code against different library code), each at the same path
-(`STAGE`); if that doesn't build against BASE (it benchmarks an API BASE
-doesn't have yet), BASE uses its own `bench/` crate, and HEAD's other
-benchmarks show as new. Their benchmark
-binaries are run on this machine one after the other, `--rounds` times each
-(alternately, keeping the fastest time of each benchmark on each side, if
-more than one): one round, with a short warm-up and measurement, is the
-default, since the check fails only on a slowdown of more than
-`--threshold`, far beyond the noise between two runs of the same code (in
-an A/A run on CI, with two rounds of 0.2 s and 0.5 s: 99% of benchmarks
-within 3%, the largest 12%). A single run is exposed to a few slow seconds
-of the runner, though (an A/A run of one round found three neighbouring
-benchmarks 35% slower), so the benchmarks over the threshold after the
-rounds run again, base and head alternately, `--confirm` more times each:
-a slowdown fails only if it is still there in the fastest time of every
-run.
-
-Writes a Markdown table of the results to stdout (and appends it to
-`--summary`, e.g. `$GITHUB_STEP_SUMMARY`), and exits with status 1 if any
-verified-garbage benchmark got slower by more than `--threshold`. If BASE
-does not exist, HEAD runs alone, next to OpenSSL and aws-lc-rs.
-
-OpenSSL's and aws-lc-rs's code is the same on both sides, so their
-benchmarks are only a reference point for HEAD's times, not part of the
-comparison: they run once, with HEAD's binary, with `--openssl` or when BASE
-does not exist; and only without `VG_CPU_FEATURES`, which does not change
-their code either. aws-lc-rs has no benchmark where it lacks the primitive.
-
-`VG_CPU_FEATURES` in the environment (see src/cpu.rs) restricts the CPU
-features both sides use, and is named in the report. Each side is passed
-only the features its own src/cpu.rs knows (base may predate one), since it
-cannot use the others anyway. If it names a feature this runner's CPU does
-not have, the library stops the benchmarks (they would measure another
-configuration's code under its name): the report then says what was not
-measured, with a warning, and the exit status is 0, since another runner,
-from a re-run, may have the feature.
-
-The groups that read a large table of constants (`FRESH_COPIES`: the
-combs of hundreds of kilobytes) are slower or faster by up to about 7%
-depending on which physical pages hold the table, which the kernel picks
-when it first reads that file into its page cache, and keeps until it drops
-it: identical copies of one binary measured 104.5–110.4 µs for a P-521
-signature, each copy within 0.3% of itself from run to run. So one run of
-each side would compare two draws of that, not the code; these groups also
-run from `--copies - 1` fresh copies of each side's binary (each a new
-file, so new pages), and each of their times is the fastest of the copies
-(as of the rounds): the time with the table where it collides least, which
-the code decides, while the median of five draws still moved by 1–2%
-between two sides of the same code. The report shows the spread.
-
-`--modules` runs only the benchmarks of those library modules (see
-`bench_arches.py`), and `--shard i/n` only the i-th of n shares of them,
-whose groups (`<primitive>`s) are dealt out by HEAD's list of them, balanced
-by their number of benchmarks.
-"""
-
-import argparse
-import json
-import os
-import pathlib
-import re
-import shutil
-import subprocess
-import sys
-
-from bench_arches import bench_catalog
-
-# Criterion filters (regexes over benchmark ids, which are
-# `<primitive>/<library>/<bytes>`, see bench/benches/primitives/main.rs).
-VG = "verified-garbage"
-# The libraries benchmarked for reference, with their names in the report.
-REFERENCES = {"openssl": "OpenSSL", "aws-lc-rs": "aws-lc-rs"}
+# UNPROVED scheduling experiment. Native AArch64 only; never merge.
+import sys,os,json,shutil,subprocess,statistics,pathlib
+from pathlib import Path
+import bench_compare_production as b
+def prepare_openssl4():
+    import tempfile
+    root = pathlib.Path(tempfile.mkdtemp(prefix="vg-openssl4-"))
+    source, prefix = root / "source", root / "install"
+    rev = "af1775b60dfa141a4ad762585052cabeb9f37e9e"
+    subprocess.run(["git", "clone", "--depth", "1", "--branch", "openssl-4.0.3",
+                    "https://github.com/openssl/openssl.git", str(source)], check=True)
+    actual = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=source, text=True).strip()
+    if actual != rev:
+        raise RuntimeError("OpenSSL tag no longer matches pinned source revision")
+    with (root / "build.log").open("w") as log:
+        for command in [["./Configure", "linux-aarch64", "--prefix=" + str(prefix), "--libdir=lib", "no-shared", "no-tests", "no-docs"],
+                        ["make", "-j4"], ["make", "install_sw"]]:
+            result = subprocess.run(command, cwd=source, stdout=log, stderr=subprocess.STDOUT)
+            if result.returncode:
+                log.flush()
+                print((root / "build.log").read_text()[-20000:], flush=True)
+                result.check_returncode()
+    os.environ["OPENSSL_DIR"] = str(prefix)
+    os.environ["OPENSSL_STATIC"] = "1"
+    os.environ["PATH"] = str(prefix / "bin") + os.pathsep + os.environ["PATH"]
+    print("RSA_GAP_OPENSSL_SOURCE " + rev, flush=True)
+    subprocess.run([str(prefix / "bin/openssl"), "version", "-a"], check=True)
 
 
-# Every build shares one target directory, so the dependencies (criterion,
-# rust-openssl, aws-lc-rs), which are the same on both sides, are compiled
-# only once.
-TARGET = pathlib.Path("bench-target").resolve()
-
-# The benchmark groups (`<primitive>`s) that read a comb's table of hundreds
-# of kilobytes, whose time depends on the physical pages that hold it (see
-# the module docstring), so they run from `--copies` copies of each binary.
-FRESH_COPIES = re.compile(r"^(?:ec_p521_public_key|ecdsa_p521_)")
-# The `VG_BENCH_MODULES` of the copies' runs: the module whose benchmarks
-# hold those groups. The binary sets up every selected benchmark before
-# criterion's filter applies (RSA keys of up to 4096 bits among them),
-# which took about 110 s of each copy's run with every module.
-FRESH_COPIES_MODULES = "ecdsa_p521"
-
-# How src/cpu.rs stops a run whose `VG_CPU_FEATURES` names features this CPU
-# does not have.
-LACKING = re.compile(r"VG_CPU_FEATURES names (\S+), which this CPU does not have")
-
-
-class Lacking(Exception):
-    """A run stopped by `LACKING`, with the features the CPU lacks."""
-
-
-# Where each side is built, one after the other: the same path for both,
-# since Cargo derives the library's symbol hashes from its path, and with
-# them the order the linker lays out its code and tables in, so the same
-# code built in two checkouts put P-521's comb table at a different offset
-# in a page (0x700 and 0x740 on x86-64), and an A/A run measured P-521
-# signatures 5% slower on one side.
-STAGE = pathlib.Path("bench-src").resolve()
-
-
-def stage(checkout, bench=None):
-    """Copies what building `checkout`'s benchmarks reads to `STAGE`, with
-    the benchmark crate `bench` (`checkout`'s own by default), returning
-    the staged crate. Copies get new modification times, so Cargo rebuilds
-    the library, which the last side's build would otherwise seem to be."""
-    shutil.rmtree(STAGE, ignore_errors=True)
-    # (Run from a checkout, as `bench_compare.py main-checkout .`, STAGE,
-    # TARGET and the work directory are in it.)
-    top = {".git", "lean", "target", "bench", "bench-head", STAGE.name, TARGET.name, "bench-compare"}
-    skip = lambda d, names: top & set(names) if pathlib.Path(d) == pathlib.Path(checkout) else []
-    shutil.copytree(checkout, STAGE, ignore=skip, copy_function=shutil.copy)
-    shutil.copytree(bench or checkout / "bench", STAGE / "bench",
-                    ignore=shutil.ignore_patterns("target"), copy_function=shutil.copy)
-    return STAGE / "bench"
-
-
-def build(checkout, bench=None):
-    """Builds `checkout`'s library with the benchmark crate `bench`
-    (`checkout`'s own by default) at `STAGE`, returning the binary's path."""
-    out = subprocess.run(
-        [
-            "cargo",
-            "bench",
-            "--no-run",
-            "--message-format=json-render-diagnostics",
-        ],
-        cwd=stage(checkout, bench),
-        env={**os.environ, "CARGO_TARGET_DIR": str(TARGET)},
-        check=True,
-        stdout=subprocess.PIPE,
-        text=True,
-    ).stdout
-    for line in out.splitlines():
-        msg = json.loads(line)
-        if msg.get("reason") == "compiler-artifact" and msg.get("executable"):
-            if msg["target"]["name"] == "primitives":
-                # A copy, which the next build can't overwrite.
-                binary = TARGET / f"primitives-{len(list(TARGET.glob('primitives-*')))}"
-                shutil.copy2(msg["executable"], binary)
-                return str(binary)
-    raise RuntimeError(f"no benchmark binary built for {checkout}")
-
-
-def fresh_copy(binary, i):
-    """A copy of `binary` in a new file: the page cache holds a file's pages
-    by inode, so the copy's table is read into newly chosen physical pages."""
-    copy = TARGET / f"{pathlib.Path(binary).name}-copy-{i}"
-    shutil.copyfile(binary, copy)
-    copy.chmod(0o755)
-    return copy
-
-
-def build_base(base, head):
-    """Builds BASE's benchmarks (see the module docstring), returning the
-    binary's path and a note on which benchmark code it runs, or no path
-    if neither builds."""
-    if base == head:
-        return build(head), None, head
-    try:
-        return build(base, head / "bench"), None, head
-    except subprocess.CalledProcessError:
-        pass
-    if (base / "bench").is_dir():
-        try:
-            return build(base), "Head's benchmarks don't build against base, so base ran its own.", base
-        except subprocess.CalledProcessError:
-            pass
-    return None, "Base has no benchmarks that build, so head ran alone.", base
-
-
-NAMES = re.compile(r"const NAMES: \[&str; \d+\] = \[(.*?)\];", re.DOTALL)
-
-
-def cpu_features(checkout):
-    """`VG_CPU_FEATURES` without the features `checkout`'s src/cpu.rs does
-    not know (which it rejects)."""
-    features = os.environ.get("VG_CPU_FEATURES", "")
-    if features in ("", "none"):
-        return features
-    known = re.findall(r'"([^"]+)"', NAMES.search((checkout / "src/cpu.rs").read_text())[1])
-    return ",".join(f for f in features.split(",") if f in known) or "none"
-
-
-def selected_modules(checkout, requested):
-    if not requested.strip():
-        return ""  # Explicit full-suite selection.
-    catalog = bench_catalog(root=str(checkout))
-    if catalog is None:
-        return None
-    return " ".join(sorted(set(requested.split()) & set().union(*catalog.values()))) or None
-
-
-def list_groups(binary, modules):
-    """The benchmark groups (`<primitive>`s) of verified-garbage that
-    `binary` runs for `modules`, with how many benchmarks each has."""
-    # Without `VG_CPU_FEATURES`: listing runs no benchmark, and the library
-    # stops at its start if this CPU lacks a feature it names, which the
-    # runs report.
-    env = {k: v for k, v in os.environ.items() if k != "VG_CPU_FEATURES"}
-    out = subprocess.run(
-        [binary, "--bench", "--list", f"/{VG}/"],
-        env={**env, "VG_BENCH_MODULES": modules},
-        check=True,
-        stdout=subprocess.PIPE,
-        text=True,
-    ).stdout
-    groups = {}
-    for line in out.splitlines():
-        if line.endswith(": benchmark"):
-            group = line.split("/", 1)[0]
-            groups[group] = groups.get(group, 0) + 1
-    return groups
-
-
-def shard_groups(groups, shard, shards):
-    """The groups of the `shard`-th (from 1) of `shards` shares: each, largest
-    first, goes to the share with the fewest benchmarks so far."""
-    load = [0] * shards
-    mine = []
-    for group in sorted(groups, key=lambda g: (-groups[g], g)):
-        i = load.index(min(load))
-        load[i] += groups[group]
-        if i == shard - 1:
-            mine.append(group)
-    return sorted(mine)
-
-
-def run(binary, home, library, args, checkout, modules, groups=None):
-    """Runs the benchmarks of `checkout` once (only those of `groups`, if
-    given), returning each one's median time (ns)."""
-    pattern = f"/{library}/"
-    if groups is not None:
-        pattern = f"^(?:{'|'.join(map(re.escape, groups))})/{library}/"
-    proc = subprocess.run(
-        [
-            binary,
-            "--bench",
-            "--noplot",
-            "--warm-up-time",
-            str(args.warm_up_time),
-            "--measurement-time",
-            str(args.measurement_time),
-            # Criterion's default 100 samples cannot fit in a short
-            # measurement once an iteration takes more than a few
-            # milliseconds (PBKDF2 at 16384 iterations, signatures), so
-            # those overran it with a warning; faster benchmarks take as
-            # long either way, with more iterations per sample.
-            "--sample-size",
-            "25",
-            # Only the median is used, not the bootstrapped confidence
-            # intervals, whose default 100000 resamples cost more than a
-            # short measurement.
-            "--nresamples",
-            "1000",
-            pattern,
-        ],
-        env={
-            **os.environ,
-            "CRITERION_HOME": str(home),
-            "VG_BENCH_MODULES": modules,
-            "VG_CPU_FEATURES": cpu_features(checkout),
-        },
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.PIPE,
-        text=True,
-    )
-    sys.stderr.write(proc.stderr)
-    if proc.returncode:
-        if m := LACKING.search(proc.stderr):
-            raise Lacking(m[1])
-        raise subprocess.CalledProcessError(proc.returncode, binary)
-    times = {}
-    for est in home.glob(f"*/{library}/*/new/estimates.json"):
-        primitive, _, size = est.relative_to(home).parts[:3]
-        times[primitive, int(size)] = json.loads(est.read_text())["median"]["point_estimate"]
-    return times
-
-
-def cpu_model():
-    """This machine's CPU model, from /proc/cpuinfo, or None."""
-    try:
-        cpuinfo = pathlib.Path("/proc/cpuinfo").read_text()
-    except OSError:
-        return None
-    m = re.search(r"^model name\s*:\s*(.+)$", cpuinfo, re.M)
-    return m[1].strip() if m else None
-
-
-def not_measured(cpu_features, lacking, model):
-    """The report of a run that this CPU, without the features `lacking`,
-    cannot measure."""
-    return (f"## Benchmarks (VG_CPU_FEATURES={cpu_features})\n\n"
-            f"Not measured: this runner's CPU{f' ({model})' if model else ''} does not have {lacking},"
-            " which this configuration names; a re-run may get a runner with them.\n")
-
-
-def vs_reference(ours, theirs):
-    """How head's time compares with a reference library's, in words."""
-    if ours > theirs * 1.05:
-        return f"{ours / theirs:.1f}× slower"
-    if theirs > ours * 1.05:
-        return f"{theirs / ours:.1f}× faster"
-    return "about the same"
-
-
-def fmt_time(ns):
-    for unit, scale in (("ms", 1e6), ("µs", 1e3)):
-        if ns >= scale:
-            return f"{ns / scale:.2f} {unit}"
-    return f"{ns:.0f} ns"
-
-
-def main():
-    p = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    p.add_argument("base", type=pathlib.Path)
-    p.add_argument("head", type=pathlib.Path)
-    p.add_argument("--summary", type=pathlib.Path)
-    p.add_argument("--rounds", type=int, default=1)
-    p.add_argument("--copies", type=int, default=8,
-                   help="copies of each binary that run the groups of FRESH_COPIES (1: only the binary)")
-    p.add_argument("--confirm", type=int, default=2,
-                   help="runs of each side again for the benchmarks over the threshold")
-    p.add_argument("--threshold", type=float, default=0.35)
-    p.add_argument("--warm-up-time", type=float, default=0.1)
-    p.add_argument("--measurement-time", type=float, default=0.3)
-    p.add_argument("--openssl", action="store_true",
-                   help="also run OpenSSL's and aws-lc-rs's benchmarks, for reference")
-    p.add_argument("--work-dir", type=pathlib.Path, default=pathlib.Path("bench-compare"))
-    p.add_argument("--modules", default="", help="space-separated; only benchmark these modules")
-    p.add_argument("--shard", default="", help="i/n: only the i-th of n shares of the benchmarks")
-    args = p.parse_args()
-    shard, shards = map(int, (args.shard or "1/1").split("/"))
-    if not 1 <= shard <= shards:
-        p.error("--shard must be i/n with 1 <= i <= n")
-
-    base, head = args.base.resolve(), args.head.resolve()
-    modules = {"head": selected_modules(head, args.modules), "base": selected_modules(base, args.modules)}
-    if modules["head"] is None or (args.modules and set(modules["head"].split()) != set(args.modules.split())):
-        p.error("head's benchmark registry does not use the selected modules")
-    binaries = {"head": build(head), "base": None}
-    note = "Base has no selected benchmarks; head's and the references' results are new."
-    if not base.is_dir():
-        note = "No base to compare with, so head ran alone."
-    elif modules["base"] is not None:
-        binaries["base"], note, source = build_base(base, head)
-        if binaries["base"] is not None:
-            modules["base"] = selected_modules(source, args.modules)
-
-    # Both sides run the same groups, which head's list of them decides.
-    groups = None
-    if shards > 1:
-        groups = shard_groups(list_groups(binaries["head"], modules["head"]), shard, shards)
-
-    shutil.rmtree(args.work_dir, ignore_errors=True)
-    best = {"base": {}, "head": {}}
-    try:
-        for r in range(args.rounds):
-            # Alternate which side goes first, so neither always runs warmer.
-            for side in ("base", "head") if r % 2 == 0 else ("head", "base"):
-                if binaries[side] is None:
-                    continue
-                print(f"round {r + 1}/{args.rounds}: {side}", file=sys.stderr)
-                checkout = base if side == "base" else head
-                times = run(binaries[side], args.work_dir.resolve() / f"{side}-{r}", VG, args, checkout,
-                            modules[side], groups)
-                for bench_id, t in times.items():
-                    best[side][bench_id] = min(t, best[side].get(bench_id, t))
-    except Lacking as e:
-        # The first run of either side stops, before any other.
-        report = not_measured(os.environ.get("VG_CPU_FEATURES", ""), e.args[0], cpu_model())
-        print(f"::warning::{report.splitlines()[-1]}")
-        print(report)
-        if args.summary:
-            with args.summary.open("a") as f:
-                f.write(report)
-        return 0
-
-    # The groups that depend on where the kernel puts their table run again
-    # from fresh copies of each binary, alternately, and keep the fastest
-    # time of the copies (the rounds above counting as the first copy).
-    copied = []
-    if args.copies > 1:
-        listed = groups if groups is not None else list_groups(binaries["head"], modules["head"])
-        copied = sorted(g for g in listed if FRESH_COPIES.match(g))
-    spread = {"base": {}, "head": {}}
-    if copied:
-        for side in spread:
-            spread[side] = {i: [t] for i, t in best[side].items() if i[0] in copied}
-        for c in range(1, args.copies):
-            for side in ("head", "base") if c % 2 else ("base", "head"):
-                if binaries[side] is None:
-                    continue
-                print(f"copy {c + 1}/{args.copies} of {len(copied)} group(s): {side}", file=sys.stderr)
-                checkout = base if side == "base" else head
-                copy = fresh_copy(binaries[side], c)
-                try:
-                    times = run(str(copy), args.work_dir.resolve() / f"{side}-copy-{c}", VG, args, checkout,
-                                FRESH_COPIES_MODULES, copied)
-                finally:
-                    copy.unlink()
-                for bench_id, t in times.items():
-                    spread[side].setdefault(bench_id, []).append(t)
-        for side, times in spread.items():
-            for bench_id, ts in times.items():
-                best[side][bench_id] = min(ts)
-
-    def suspects():
-        """The groups (`<primitive>`s) of the benchmarks over the threshold."""
-        return sorted({p for (p, size), h in best["head"].items()
-                       if (p, size) in best["base"] and h / best["base"][p, size] - 1 > args.threshold})
-
-    # A slowdown over the threshold is confirmed: its groups run again on
-    # both sides, alternately, and keep their fastest times.
-    # (Not the groups that ran from copies, already the fastest of as many
-    # runs.)
-    confirmed = [g for g in suspects() if g not in copied] if binaries["base"] is not None else []
-    for r in range(args.confirm if confirmed else 0):
-        for side in ("head", "base") if r % 2 == 0 else ("base", "head"):
-            print(f"confirming {len(confirmed)} group(s), {r + 1}/{args.confirm}: {side}", file=sys.stderr)
-            checkout = base if side == "base" else head
-            times = run(binaries[side], args.work_dir.resolve() / f"{side}-confirm-{r}", VG, args, checkout,
-                        modules[side], confirmed)
-            for bench_id, t in times.items():
-                best[side][bench_id] = min(t, best[side].get(bench_id, t))
-    cpu_features = os.environ.get("VG_CPU_FEATURES", "")
-    references = {}
-    with_references = (args.openssl or binaries["base"] is None) and not cpu_features
-    if with_references:
-        for library, name in REFERENCES.items():
-            print(name, file=sys.stderr)
-            references[library] = run(binaries["head"], args.work_dir.resolve() / library, library, args, head,
-                                       modules["head"], groups)
-
-    title = ", ".join([*([f"VG_CPU_FEATURES={cpu_features}"] if cpu_features else []),
-                       *([f"shard {shard}/{shards}"] if shards > 1 else [])])
-    runs = (f"Fastest of {args.rounds} interleaved runs of each side" if args.rounds > 1
-            else "One run of each side")
-    lines = [
-        f"## Benchmarks ({title})" if title else "## Benchmarks",
-        "",
-        f"{runs} on this runner; a slowdown of more than {args.threshold:.0%} fails."
-        + (" OpenSSL (through rust-openssl) and aws-lc-rs ran once, for reference." if with_references
-           else " OpenSSL and aws-lc-rs ran only in the configuration without VG_CPU_FEATURES." if cpu_features
-           else " OpenSSL and aws-lc-rs did not run (they do with `--openssl`, as in the workflow's manual runs)."),
-        *(
-            [
-                f"Changed modules: {args.modules}. Only the benchmarks that use them ran"
-                ". Base received only modules present in its benchmark registry."
-            ]
-            if args.modules.strip()
-            else []
-        ),
-        *([f"{note}"] if note else []),
-        *(
-            [
-                f"From {args.copies} copies of each binary (each a new file, so the kernel reads it into new"
-                " physical pages, on which these groups' tables of constants make them up to about 7% faster or"
-                f" slower), the fastest of the copies: {', '.join(f'`{g}`' for g in copied)}."
-                " Their spread is below the table."
-            ]
-            if copied
-            else []
-        ),
-        *(
-            [
-                f"Over the threshold after the first run, so run {args.confirm} more time(s) on each side,"
-                f" alternately, keeping the fastest: {', '.join(f'`{g}`' for g in confirmed)}."
-            ]
-            if confirmed and args.confirm
-            else []
-        ),
-        "",
-        "| Benchmark | Base | Head | Change |"
-        + "".join(f" {name} | Head vs {name} |" for name in REFERENCES.values() if with_references),
-        "|---|--:|--:|--:|" + "--:|--:|" * len(references),
-    ]
-    regressions = []
-    for primitive, size in sorted(best["head"]):
-        bench_id = f"{primitive}/{size}"
-        b, h = best["base"].get((primitive, size)), best["head"][primitive, size]
-        if b is None:
-            change = "new"
-        else:
-            change = f"{h / b - 1:.1%} slower" if h > b else f"{1 - h / b:.1%} faster"
-            if h / b - 1 > args.threshold:
-                regressions.append(bench_id)
-                change += " 🚨"
-        b = fmt_time(b) if b else "–"
-        row = f"| `{bench_id}` | {b} | {fmt_time(h)} | {change} |"
-        for times in references.values():
-            o = times.get((primitive, size))
-            row += f" {fmt_time(o) if o else '–'} | {vs_reference(h, o) if o else '–'} |"
-        lines.append(row)
-    if copied:
-        lines += ["", "| Benchmark | Base copies | Head copies |", "|---|--:|--:|"]
-        for bench_id in sorted(spread["head"]):
-            cells = []
-            for side in ("base", "head"):
-                ts = spread[side].get(bench_id)
-                cells.append(f"{fmt_time(min(ts))} – {fmt_time(max(ts))} ({max(ts) / min(ts) - 1:.1%})" if ts else "–")
-            lines.append(f"| `{bench_id[0]}/{bench_id[1]}` | {cells[0]} | {cells[1]} |")
-    lines.append("")
-    if regressions:
-        lines.append(f"🚨 {len(regressions)} benchmark(s) slowed down by more than {args.threshold:.0%}.")
-    else:
-        lines.append(f"No benchmark slowed down by more than {args.threshold:.0%}.")
-    report = "\n".join(lines) + "\n"
-
-    print(report)
-    if args.summary:
-        with args.summary.open("a") as f:
-            f.write(report)
-    return 1 if regressions else 0
-
-
-if __name__ == "__main__":
-    sys.exit(main())
+base,head=Path(sys.argv[1]).resolve(),Path(sys.argv[2]).resolve()
+prepare_openssl4()
+subprocess.run(['rustc','-Vv'],check=True)
+print('RSA_EXPERIMENT_BASE '+subprocess.check_output(['git','rev-parse','HEAD'],cwd=base,text=True).strip(),flush=True)
+print('RSA_EXPERIMENT_HEAD '+subprocess.check_output(['git','rev-parse','HEAD'],cwd=head,text=True).strip(),flush=True)
+os.environ['VG_BENCH_MODULES']='rsa'
+os.environ.pop('VG_CPU_FEATURES',None)
+original=b.stage
+mode='base'
+def stage(checkout,bench=None):
+ r=original(checkout,bench)
+ if mode!='base': shutil.copy2(head/'ci/rsa_reduction_experiment'/f'{mode}.rs',b.STAGE/'src/asm/aarch64/rsa.rs')
+ return r
+b.stage=stage
+root=Path('rsa-reduction-results').resolve();root.mkdir(exist_ok=True)
+modes=['base','p','c','cp','cpr'];bins={}
+for mode in modes:
+ binary=b.build(base)
+ dest=root/f'bench-{mode}';shutil.copy2(binary,dest);bins[mode]=dest
+# All compilation is complete before timing. Same benchmark source and stage path.
+env=dict(os.environ,CRITERION_HOME=str(root/'criterion'))
+rows=[]
+for i,order in enumerate([modes,list(reversed(modes)),modes],1):
+ for mode in order:
+  print(f'RSA_EXPERIMENT round {i} {mode}',flush=True)
+  subprocess.run([str(bins[mode]),'--bench','^rsa_(public|private)/verified-garbage/(256|384|512)$','--noplot','--warm-up-time','1','--measurement-time','3','--sample-size','50','--nresamples','1000','--save-baseline',f'{mode}-{i}'],env=env,check=True)
+ for lib in ['openssl']:
+  subprocess.run([str(bins['base']),'--bench',f'^rsa_(public|private)/{lib}/(256|384|512)$','--noplot','--warm-up-time','1','--measurement-time','3','--sample-size','50','--nresamples','1000','--save-baseline',f'reference-{i}'],env=env,check=True)
+for op in ['rsa_public','rsa_private']:
+ for n in [256,384,512]:
+  vals={}
+  for mode in modes+['openssl']:
+   lib='openssl' if mode=='openssl' else 'verified-garbage'
+   prefix='reference' if mode=='openssl' else mode
+   vals[mode]=[]
+   for i in [1,2,3]:
+    folder=root/'criterion'/op/lib/str(n)/f'{prefix}-{i}'
+    estimates=json.loads((folder/'estimates.json').read_text())
+    vals[mode].append(estimates['mean']['point_estimate']/1000)
+    print('RSA_REDUCTION_SAMPLE '+json.dumps(dict(operation=op,bits=n*8,mode=mode,round=i,estimates=estimates,samples=json.loads((folder/'sample.json').read_text()))),flush=True)
+  row=dict(operation=op,bits=n*8,us=vals,delta_percent={m:100*(statistics.mean(v)/statistics.mean(vals['base'])-1) for m,v in vals.items()})
+  rows.append(row);print('RSA_REDUCTION_RESULT '+json.dumps(row),flush=True)
+(root/'results.json').write_text(json.dumps(rows,indent=2))
