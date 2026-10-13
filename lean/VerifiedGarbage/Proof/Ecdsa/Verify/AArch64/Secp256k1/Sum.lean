@@ -24,6 +24,10 @@ variable {c : VG.Impl.Ecdsa.AArch64.Cfg}
 abbrev sumR : List Nat := [AP, EXPP, UX, UY, UZ, RX, RY, RZ]
 abbrev sumSl : List Nat := sumR ++ [T0, T1, T2, T3, T4, T5, DX, DY, DZ]
 
+/-- The slots `sum` writes: not `EM` or `T`, which the shared `sumW` (of the
+addition by a call of `padd`) includes. -/
+abbrev sumW : List Nat := [T0, T1, T2, T3, T4, T5, DX, DY, DZ, TMP, RX, RY, RZ]
+
 theorem sum_ok (hc : BaseCfgOk c) {s : State} {base : Addr} (hs : Scr s base size)
     (hM : ModOkA c.MP' size c.C.p s.mem base) (hlt : ∀ i ∈ sumR, sv c base s i < c.C.p) :
     WP isa (sum c) s fun s' =>
