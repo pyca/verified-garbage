@@ -1,5 +1,8 @@
 //! Every published FIPS 186-4 DSA verification vector, at all four widths.
-#![cfg(all(target_arch = "x86_64", feature = "alloc"))]
+#![cfg(all(
+    any(target_arch = "x86_64", target_arch = "aarch64"),
+    feature = "alloc"
+))]
 
 use verified_garbage::dsa::PublicKey;
 use verified_garbage::hashes::{

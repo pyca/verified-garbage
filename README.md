@@ -1758,7 +1758,7 @@ yours to keep:
 
 <td>✅ BMI2, ADX</td>
 
-<td>❌</td>
+<td>✅</td>
 
 <td>❌</td>
 
