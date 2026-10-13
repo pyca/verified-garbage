@@ -2,8 +2,9 @@
 use crate::arch::ffdh::vg_ffdh_choose;
 use crate::arch::rsa_mont::vg_rsa_mont_mul;
 #[cfg(target_arch = "x86_64")]
-use crate::arch::rsa_mont::vg_rsa_mont_mul_adx;
-use crate::rsa::{Backend, Scratch};
+use crate::arch::rsa_mont::{VG_RSA_MONT_MUL_ADX_FEATURES, vg_rsa_mont_mul_adx};
+use crate::cpu::{Features, detected};
+use crate::rsa::Scratch;
 use alloc::{vec, vec::Vec};
 use core::cmp::Ordering;
 
@@ -58,6 +59,24 @@ pub(super) fn divides(q: &[u8], n: &[u8]) -> bool {
     rem.iter().all(|&b| b == 0)
 }
 
+/// The Montgomery implementations FFDH calls. RSA's private-key routines
+/// have additional feature requirements that do not apply to these functions.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum Backend {
+    Baseline,
+    #[cfg(target_arch = "x86_64")]
+    Adx,
+}
+impl Backend {
+    fn select(_features: Features) -> Self {
+        #[cfg(target_arch = "x86_64")]
+        if _features.contains(VG_RSA_MONT_MUL_ADX_FEATURES) {
+            return Self::Adx;
+        }
+        Self::Baseline
+    }
+}
+
 #[derive(Clone, Debug)]
 pub(super) struct Montgomery {
     modulus: Vec<u64>,
@@ -86,7 +105,7 @@ impl Montgomery {
             r2,
             minv: inv.wrapping_neg(),
             len: p.len(),
-            backend: Backend::select(crate::cpu::detected()),
+            backend: Backend::select(detected()),
         }
     }
     pub(super) fn power(&self, base: &[u8], exponent: &[u8]) -> Vec<u8> {
@@ -305,9 +324,8 @@ impl Montgomery {
     fn mul(&self, ws: &mut [u64], out: u32, a: u32, b: u32) {
         let f = match self.backend {
             Backend::Baseline => vg_rsa_mont_mul,
-            // IFMA is an RSA CRT optimization; its Montgomery backend is ADX.
             #[cfg(target_arch = "x86_64")]
-            Backend::Adx | Backend::Ifma => vg_rsa_mont_mul_adx,
+            Backend::Adx => vg_rsa_mont_mul_adx,
         };
         // SAFETY: ws has at least 32+8*(w+2) words, w>=2 and w<=128. The header
         // points into this allocation, stores the odd modulus' negative
@@ -390,6 +408,46 @@ mod tests {
                     assert_eq!(mont.power_public(&[2], &padded), expected);
                 }
             }
+        }
+    }
+
+    #[cfg(target_arch = "x86_64")]
+    #[test]
+    fn backend_feature_requirements() {
+        // AVX, AVX2 and IFMA belong to other RSA routines: they neither
+        // enable Montgomery ADX nor gate it when BMI2 and ADX are present.
+        let cases: &[(&[&str], Backend)] = &[
+            (&[], Backend::Baseline),
+            (&["bmi2"], Backend::Baseline),
+            (&["adx"], Backend::Baseline),
+            (&["avx", "avx2"], Backend::Baseline),
+            (&["avx", "avx2", "bmi2"], Backend::Baseline),
+            (&["avx", "avx2", "adx"], Backend::Baseline),
+            (
+                &["avx", "avx2", "avx512f", "avx512ifma", "avx512vl"],
+                Backend::Baseline,
+            ),
+            (&["bmi2", "adx"], Backend::Adx),
+            (&["avx", "avx2", "bmi2", "adx"], Backend::Adx),
+            (
+                &[
+                    "avx",
+                    "avx2",
+                    "avx512f",
+                    "bmi2",
+                    "adx",
+                    "avx512ifma",
+                    "avx512vl",
+                ],
+                Backend::Adx,
+            ),
+        ];
+        for &(features, expected) in cases {
+            assert_eq!(
+                Backend::select(Features::of(features)),
+                expected,
+                "{features:?}"
+            );
         }
     }
 }
