@@ -1,6 +1,9 @@
 //! Published RFC 5114 and NIST FFC validity vectors, vendored byte for byte
 //! from cryptography with pinned provenance in vectors/sources/.
-#![cfg(all(target_arch = "x86_64", feature = "alloc"))]
+#![cfg(all(
+    any(target_arch = "x86_64", target_arch = "aarch64"),
+    feature = "alloc"
+))]
 use super::unhex;
 use std::collections::BTreeMap;
 use verified_garbage::ffdh::{Error, Parameters, PrivateKey, PublicKey};

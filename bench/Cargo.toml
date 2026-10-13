@@ -40,6 +40,11 @@ aws-lc-sys = { version = "0.45", default-features = false }
 criterion = { version = "0.8", default-features = false, features = ["cargo_bench_support"] }
 openssl = "0.10"
 
+# FFDH is exposed by AWS-LC's C API, but not the minimal aws-lc-rs bindings.
+# Keep other targets on their pre-generated minimal bindings.
+[target.'cfg(any(target_arch = "x86_64", target_arch = "aarch64"))'.dev-dependencies]
+aws-lc-sys = { version = "0.45", default-features = false, features = ["all-bindings"] }
+
 [[bench]]
 name = "primitives"
 harness = false

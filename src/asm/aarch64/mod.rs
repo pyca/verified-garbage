@@ -188,6 +188,9 @@ pub(crate) mod ed448;
 pub(crate) mod ed448_r56;
 
 #[rustfmt::skip]
+pub(crate) mod ffdh;
+
+#[rustfmt::skip]
 pub(crate) mod gcm;
 
 #[rustfmt::skip]
@@ -333,6 +336,9 @@ pub(crate) mod rsa;
 
 #[rustfmt::skip]
 pub(crate) mod rsa_keygen;
+
+#[rustfmt::skip]
+pub(crate) mod rsa_mont;
 
 #[rustfmt::skip]
 pub(crate) mod rsa_oaep_sha1_mgf1_sha1;

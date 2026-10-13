@@ -1,7 +1,8 @@
 //! Finite-field Diffie–Hellman, for the component API used by cryptography.
 //!
-//! Secret exponentiation follows a fixed schedule over a modulus-sized
-//! scalar. Every multiplication calls the verified Montgomery primitive
+//! Secret exponentiation follows a fixed schedule over the public encoding
+//! length supplied at import, or the public sampling bound for generated keys.
+//! Every multiplication calls the verified Montgomery primitive
 //! (`VG.Spec.Rsa.Mont.mulContract`); every selection calls the verified
 //! `VG.Spec.Ffdh.chooseContract`. Rust composes these primitives, validates
 //! domains and keys, samples randomness and encodes the result. These Rust
@@ -10,7 +11,10 @@
 //! establish primality/provenance. Optional q enables subgroup checks.
 //! Exchange returns exactly ceil(bits(p)/8) bytes, without applying a KDF.
 
-#![cfg(all(target_arch = "x86_64", feature = "alloc"))]
+#![cfg(all(
+    any(target_arch = "x86_64", target_arch = "aarch64"),
+    feature = "alloc"
+))]
 
 mod arithmetic;
 mod generation;
@@ -139,7 +143,7 @@ impl Parameters {
             let mut padded = alloc::vec![0; self.p.len()];
             let offset = padded.len() - x.len();
             padded[offset..].copy_from_slice(&x);
-            let result = PrivateKey::from_padded(self, padded);
+            let result = PrivateKey::from_padded(self, padded, upper.len());
             zeroize(&mut x);
             match result {
                 Err(Error::InvalidKey) => continue,
@@ -192,6 +196,8 @@ impl PublicKey {
 pub struct PrivateKey {
     public: PublicKey,
     x: Vec<u8>,
+    // Public input encoding length, capped at the modulus width.
+    exponent_len: usize,
 }
 impl fmt::Debug for PrivateKey {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -207,6 +213,9 @@ impl Drop for PrivateKey {
 }
 impl PrivateKey {
     /// Import y and x with variable-time parsing; check range and y=g^x mod p.
+    /// The encoding length of x is public and determines the fixed
+    /// exponentiation schedule, capped at the modulus width. Leading zeros
+    /// are retained in that schedule; the scalar value does not set its length.
     pub fn from_components(params: &Parameters, y: &[u8], x: &[u8]) -> Result<Self, Error> {
         let key = Self::from_private_component(params, x)?;
         if !crate::ct::eq(&key.public.y, canonical(y)) {
@@ -215,18 +224,19 @@ impl PrivateKey {
         Ok(key)
     }
     /// Import x and derive y. x is unsigned big-endian; its encoding length
-    /// is public. Scalars are padded before exponentiation. Import validation
+    /// is public and determines the exponentiation schedule. Import validation
     /// may reveal whether x is in range, and is not a constant-time parser.
     fn from_private_component(params: &Parameters, x: &[u8]) -> Result<Self, Error> {
         let upper = params.q.clone().unwrap_or_else(|| minus_one(&params.p));
         if value_cmp(x, &[0]).is_le() || value_cmp(x, &upper).is_ge() {
             return Err(Error::InvalidKey);
         }
+        let exponent_len = x.len().min(params.p.len());
         let x = scalar(x, params.p.len());
-        Self::from_padded(params, x)
+        Self::from_padded(params, x, exponent_len)
     }
-    fn from_padded(params: &Parameters, x: Vec<u8>) -> Result<Self, Error> {
-        let y = params.mont.power(&params.g, &x);
+    fn from_padded(params: &Parameters, x: Vec<u8>, exponent_len: usize) -> Result<Self, Error> {
+        let y = params.mont.power(&params.g, &x[x.len() - exponent_len..]);
         if !params.public_valid(&y) {
             let mut x = x;
             zeroize(&mut x);
@@ -238,6 +248,7 @@ impl PrivateKey {
                 y: canonical(&y).to_vec(),
             },
             x,
+            exponent_len,
         })
     }
     /// Borrow the public half of this key.
@@ -257,7 +268,9 @@ impl PrivateKey {
         if params != &peer.params {
             return Err(Error::ParametersMismatch);
         }
-        let mut z = params.mont.power(&peer.y, &self.x);
+        let mut z = params
+            .mont
+            .power(&peer.y, &self.x[self.x.len() - self.exponent_len..]);
         let one = scalar(&[1], params.p.len());
         let zero = scalar(&[0], params.p.len());
         let p1 = minus_one(&params.p);

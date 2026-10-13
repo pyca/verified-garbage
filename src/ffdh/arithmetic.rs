@@ -1,6 +1,8 @@
 //! Public modulus setup and fixed-schedule secret exponentiation.
 use crate::arch::ffdh::vg_ffdh_choose;
-use crate::arch::rsa_mont::{vg_rsa_mont_mul, vg_rsa_mont_mul_adx};
+use crate::arch::rsa_mont::vg_rsa_mont_mul;
+#[cfg(target_arch = "x86_64")]
+use crate::arch::rsa_mont::vg_rsa_mont_mul_adx;
 use crate::rsa::{Backend, Scratch};
 use alloc::{vec, vec::Vec};
 use core::cmp::Ordering;
@@ -89,7 +91,14 @@ impl Montgomery {
     }
     pub(super) fn power(&self, base: &[u8], exponent: &[u8]) -> Vec<u8> {
         let w = self.modulus.len();
-        let mut ws = Scratch::new(32 + 8 * (w + 2));
+        let table_at = 32 + 8 * (w + 2);
+        let window = if exponent.len() >= 39 { 5 } else { 4 };
+        let table_words = if cfg!(target_arch = "aarch64") {
+            (1 << window) * w
+        } else {
+            0
+        };
+        let mut ws = Scratch::new(table_at + table_words);
         ws[6] = w as u64;
         ws[7] = self.minv;
         for j in 0..8 {
@@ -103,8 +112,7 @@ impl Montgomery {
         ws[at(7)] = 1;
         self.mul(&mut ws, 4, 4, 1);
         self.mul(&mut ws, 5, 7, 1);
-        // Call count and addresses depend only on public lengths. A secret
-        // bit is never a branch condition, a loop bound or an array index.
+        #[cfg(target_arch = "x86_64")]
         for &byte in exponent {
             for bit in (0..8).rev() {
                 self.mul(&mut ws, 5, 5, 5);
@@ -114,6 +122,68 @@ impl Montgomery {
                     ws[at(5) + i] = unsafe {
                         vg_ffdh_choose(ws[at(5) + i], ws[at(6) + i], u64::from((byte >> bit) & 1))
                     };
+                }
+            }
+        }
+        #[cfg(target_arch = "aarch64")]
+        {
+            // All window powers, including Montgomery one, in wiped storage.
+            // The verified multiplication preserves this extension of the workspace.
+            for i in 0..w {
+                ws[table_at + i] = ws[at(5) + i];
+                ws[table_at + w + i] = ws[at(4) + i];
+                ws[at(6) + i] = ws[at(4) + i];
+            }
+            for digit in 2..(1 << window) {
+                if digit % 2 == 0 {
+                    // Public table indices. Route even powers through the shared
+                    // RSA squarer, whose callable fast path uses accumulator 5.
+                    ws.copy_within(
+                        table_at + (digit / 2) * w..table_at + (digit / 2 + 1) * w,
+                        at(5),
+                    );
+                    self.mul(&mut ws, 5, 5, 5);
+                    ws.copy_within(at(5)..at(5) + w, at(6));
+                } else {
+                    self.mul(&mut ws, 6, 6, 4);
+                }
+                ws.copy_within(at(6)..at(6) + w, table_at + digit * w);
+            }
+            ws.copy_within(table_at..table_at + w, at(5));
+            // Window size and bit positions depend only on the public encoding
+            // length. Every table entry is read in the same order, even for zero.
+            let bits = exponent.len() * 8;
+            for start in (0..bits).step_by(window) {
+                let width = window.min(bits - start);
+                let mut digit = 0u64;
+                for bit in start..start + width {
+                    digit = (digit << 1) | u64::from((exponent[bit / 8] >> (7 - bit % 8)) & 1);
+                }
+                if start != 0 {
+                    for _ in 0..width {
+                        self.mul(&mut ws, 5, 5, 5);
+                    }
+                }
+                let (arrays, table) = ws.split_at_mut(table_at);
+                let selected = &mut arrays[at(6)..at(6) + w];
+                selected.fill(0);
+                for (candidate, row) in table.chunks_exact(w).enumerate() {
+                    // Both values are below 32: the high bit of (x-1)
+                    // is set exactly when x is zero.
+                    let equal = (digit ^ candidate as u64).wrapping_sub(1) >> 63;
+                    // SAFETY: choose has no preconditions. The opaque assembly
+                    // call returns a mask; Rust sees an arbitrary u64, so the
+                    // following AND/OR operations need no conditional select.
+                    let mask = unsafe { vg_ffdh_choose(0, u64::MAX, equal) };
+                    for (dst, &src) in selected.iter_mut().zip(row) {
+                        *dst |= src & mask;
+                    }
+                }
+                if start == 0 {
+                    // The first window replaces Montgomery one directly.
+                    ws.copy_within(at(6)..at(6) + w, at(5));
+                } else {
+                    self.mul(&mut ws, 5, 5, 6);
                 }
             }
         }
@@ -128,9 +198,10 @@ impl Montgomery {
         let f = match self.backend {
             Backend::Baseline => vg_rsa_mont_mul,
             // IFMA is an RSA CRT optimization; its Montgomery backend is ADX.
+            #[cfg(target_arch = "x86_64")]
             Backend::Adx | Backend::Ifma => vg_rsa_mont_mul_adx,
         };
-        // SAFETY: ws has 32+8*(w+2) words, w>=2 and w<=128. The header
+        // SAFETY: ws has at least 32+8*(w+2) words, w>=2 and w<=128. The header
         // points into this allocation, stores the odd modulus' negative
         // inverse and w, and indices are among 1,4,5,6,7. Each b is below
         // the modulus: R², one, or a prior Montgomery result. Scratch owns
