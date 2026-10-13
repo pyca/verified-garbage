@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Ecdsa.X86.Fixed
-import VerifiedGarbage.Proof.Ecdsa.X86.Flags
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.X86.Fixed
+public import VerifiedGarbage.Proof.Ecdsa.X86.Flags
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDSA on x86 (32-bit): `x`, `r`, `k R mod n` and the checks of `d`, `k`, `r`
@@ -10,6 +16,8 @@ zero modulo `n`, as `x < p < 2n`) and `k R mod n` (a multiplication by
 `R² mod n`), then ands the masks of `d, k ∈ [1, n-1]` and `r ≠ 0` into the
 flag (`middle_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.X86
 

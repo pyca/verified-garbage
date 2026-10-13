@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Ed448.Arm.ScalarMain
-import VerifiedGarbage.Proof.X448.Arm.MulLoop
+module
+
+public import VerifiedGarbage.Proof.Ed448.Arm.ScalarMain
+public import VerifiedGarbage.Proof.X448.Arm.MulLoop
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 scalar multiply-add on ARMv7
@@ -10,6 +16,8 @@ inputs reduced (`reduceArg_ok`), the product of two with X448's rows
 (`product_ok`), its limbs reduced (`reduceProduct_ok`), and the sum with the
 third (`addPass_ok`) reduced once more.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.Arm
 

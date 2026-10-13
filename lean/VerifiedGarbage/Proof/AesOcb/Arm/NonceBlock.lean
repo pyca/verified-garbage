@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.AesOcb.Arm.LNtz
-import VerifiedGarbage.Proof.Ocb.Nonce
-import VerifiedGarbage.Proof.Ocb.Bytes
+module
+
+public import VerifiedGarbage.Proof.AesOcb.Arm.LNtz
+public import VerifiedGarbage.Proof.Ocb.Nonce
+public import VerifiedGarbage.Proof.Ocb.Bytes
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-OCB on ARMv7: the block `Nonce` (`nonceBlock`)
@@ -14,6 +20,8 @@ the first byte, and the last byte split into `bottom` and the rest. The 16
 bytes are followed as a list through the writes, and compared with `nb`
 (`Proof.Ocb.nonceN_masked_byte`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

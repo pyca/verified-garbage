@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.AesSiv.Arm.FinishShort
-import VerifiedGarbage.Proof.AesSiv.Long
-import VerifiedGarbage.Proof.AesCcm.Bytes
+module
+
+public import VerifiedGarbage.Proof.AesSiv.Arm.FinishShort
+public import VerifiedGarbage.Proof.AesSiv.Long
+public import VerifiedGarbage.Proof.AesCcm.Bytes
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-SIV on ARMv7: finishing S2V with a string of a block or more
@@ -12,6 +18,8 @@ its last 16 (`tailCopy_ok`, `xorend_mem4`); `longMac out` chains the `k`
 blocks of `P`, then the first `j` blocks of the tail, and finalizes the rest
 (`longMac_ok`), which is S2V's end (`long_spec`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

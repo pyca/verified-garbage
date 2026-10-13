@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Calls
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Calls
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM one-shot encryption out of place, from a list of slices, x86-64: the call of a slice
@@ -9,6 +15,8 @@ bytes of the slices before it, with its length, where it goes and its
 length again pushed for it (`toCall_ok`): what it needs, from the layout of
 the entry state `s` (`toEntry`), and what it leaves.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

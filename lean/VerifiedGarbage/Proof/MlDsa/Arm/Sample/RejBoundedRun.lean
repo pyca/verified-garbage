@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlDsa.Arm.Sample.RejBoundedBody
+module
+
+public import VerifiedGarbage.Proof.MlDsa.Arm.Sample.RejBoundedBody
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on 32-bit ARM: `vg_mldsa_rej_bounded_poly`, correctness
@@ -8,6 +14,8 @@ The function runs in pieces: the prologue (`J0`), the sponge, whose output is
 which starts from `Base` with the coefficients `rbFold` samples from the first
 `t` bytes of output stored (`loop_ok`); then the end returns whether there are 256.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Arm.Sample.RejBounded
 

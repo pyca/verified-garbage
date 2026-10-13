@@ -1,6 +1,10 @@
-import VerifiedGarbage.Proof.Camellia.AArch64.FbVerified
+module
+
+public import VerifiedGarbage.Proof.Camellia.AArch64.FbVerified
 
 /-! # Camellia-OFB artifacts on baseline AArch64 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.CamelliaOfb.AArch64
 

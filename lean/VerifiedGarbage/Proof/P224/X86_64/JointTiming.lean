@@ -1,14 +1,30 @@
-import VerifiedGarbage.Impl.Ecdsa.Verify.P224.X86_64
-import VerifiedGarbage.Proof.P224.X86_64.JacTiming
-import VerifiedGarbage.Proof.Weierstrass.X86_64.JointCachedDigitTiming
-import VerifiedGarbage.Proof.Weierstrass.X86_64.JointFixedDigitTiming
-import VerifiedGarbage.Proof.Weierstrass.X86_64.JointFixedTiming
-import VerifiedGarbage.Proof.Weierstrass.X86_64.FastNafTiming
-import VerifiedGarbage.Proof.Framework.X86_64.TaintSym
+module
+
+public import VerifiedGarbage.Impl.Ecdsa.Verify.P224.X86_64
+meta import VerifiedGarbage.Impl.Ecdsa.Verify.P224.X86_64
+public import VerifiedGarbage.Proof.P224.X86_64.JacTiming
+meta import VerifiedGarbage.Proof.P224.X86_64.JacTiming
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointCachedDigitTiming
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.JointCachedDigitTiming
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointFixedDigitTiming
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.JointFixedDigitTiming
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointFixedTiming
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.JointFixedTiming
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.FastNafTiming
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.FastNafTiming
+public import VerifiedGarbage.Proof.Framework.X86_64.TaintSym
+meta import VerifiedGarbage.Proof.Framework.X86_64.TaintSym
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Taint checks of the rest of P-224's joint loop: its digits' reads and
 entries, the cache of `Z²`, `Z³`, the seed, the counter, the recoders and the
 doubler. -/
+
+@[expose] public section
+
 namespace VG.Proof.P224.X86_64
 open VG VG.X86_64 VG.Impl.P224.X86_64 VG.Impl.Weierstrass VG.Impl.Weierstrass.X86_64
 open VG.Impl.Ecdsa.X86_64 VG.Impl.Ecdsa.Verify.X86_64 VG.Proof.Weierstrass.X86_64

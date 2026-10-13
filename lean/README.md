@@ -149,6 +149,14 @@ lake env lean --run Emit.lean --check
 lake env lean --run EmitOne.lean [--check] Rc2.AArch64   # one registration file
 ```
 
+On Linux, `Emit.lean` needs `vm.max_map_count` above the default of many
+distributions (65,530): its driver is not a module, so it maps every module
+it imports with its `.olean.server` and `.olean.private` parts, about six
+regions of memory per `.olean`. It refuses to start below eight per `.olean`
+and names the command to raise the limit, `sudo sysctl -w
+vm.max_map_count=262144`, which CI runs (`EmitOne.lean` loads far fewer).
+Past the limit Lean would fail with `failed to read file '….olean.private'`.
+
 Every module records a profile of its build, kept in its `.trace` file
 (`moreLeanArgs` in `lakefile.toml`), which Lake prints again for each module
 it finds already built: `--log-level=warning` (or `-q`) leaves it out and
@@ -166,25 +174,21 @@ checked build's cache key with the manifest's `io.pyca.lean.cache-key`
 annotation and skips packaging and publishing when it matches, so Rust- or
 docs-only changes do not create a new cache version.
 
-Restore it with `curl`, which streams the layer straight from the registry
-API with an anonymous pull token. With `curl`, `python3` and `zstd`
-installed, from the repository root:
+Restore it with `ci/fetch_lean_cache.py`, which streams the layer straight
+from the registry API with an anonymous pull token, resumes from where it
+stopped when the connection drops, and checks the download against the
+layer's digest. With `python3` and `zstd` installed, from the repository
+root:
 
 ```sh
 set -o pipefail
-repo=pyca/vg-lean-cache
-token=$(curl -fsS "https://ghcr.io/token?scope=repository:$repo:pull" |
-  python3 -c 'import json, sys; print(json.load(sys.stdin)["token"])')
-layer=$(curl -fsS -H "Authorization: Bearer $token" \
-  -H "Accept: application/vnd.oci.image.manifest.v1+json" \
-  "https://ghcr.io/v2/$repo/manifests/latest" |
-  python3 -c 'import json, sys; [l] = json.load(sys.stdin)["layers"]; print(l["digest"])')
-curl -fsSL -H "Authorization: Bearer $token" "https://ghcr.io/v2/$repo/blobs/$layer" |
-  zstd -dc | tar --no-same-owner -xf - -C lean
+python3 ci/fetch_lean_cache.py | zstd -dc | tar --no-same-owner -xf - -C lean
 ```
 
 The download (about 3 GB) streams through the pipeline and is never
-stored. Install the toolchain in `lean/lean-toolchain` separately; the
+stored. If the pipeline fails (a connection that drops five times in a row
+without progress, or a download that does not match the digest), run it
+again. Install the toolchain in `lean/lean-toolchain` separately; the
 manifest's `io.pyca.lean.toolchain` and `org.opencontainers.image.revision`
 annotations identify the cached build. Lake rebuilds outputs that differ
 from the checkout. The modules' `.trace` files carry the profile CI's build

@@ -1,10 +1,23 @@
-import VerifiedGarbage.Proof.Blake2.X86.LitB
-import VerifiedGarbage.Proof.Blake2.X86.CompressB.Verified
-import VerifiedGarbage.Proof.Blake2.X86.Stream.Verified
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Spec.Blake2.Contract
-import VerifiedGarbage.Proof.Blake2.Scratch
-import VerifiedGarbage.Proof.Framework.X86.StackScratch
+module
+
+public import VerifiedGarbage.Proof.Blake2.X86.LitB
+meta import VerifiedGarbage.Proof.Blake2.X86.LitB
+public import VerifiedGarbage.Proof.Blake2.X86.CompressB.Verified
+meta import VerifiedGarbage.Proof.Blake2.X86.CompressB.Verified
+public import VerifiedGarbage.Proof.Blake2.X86.Stream.Verified
+meta import VerifiedGarbage.Proof.Blake2.X86.Stream.Verified
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.Blake2.Contract
+meta import VerifiedGarbage.Spec.Blake2.Contract
+public import VerifiedGarbage.Proof.Blake2.Scratch
+meta import VerifiedGarbage.Proof.Blake2.Scratch
+public import VerifiedGarbage.Proof.Framework.X86.StackScratch
+meta import VerifiedGarbage.Proof.Framework.X86.StackScratch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # BLAKE2b on x86 (32-bit): the instance
@@ -14,6 +27,8 @@ calling its compression function (`Proof/Blake2/X86/CompressB/`): their
 constant time, and their proofs moved to the shared contracts of
 `Spec/Blake2/Contract.lean`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Blake2.X86.B
 

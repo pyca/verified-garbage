@@ -1,7 +1,15 @@
-import VerifiedGarbage.Impl.Weierstrass.X86.Jacobian
-import VerifiedGarbage.Proof.Weierstrass.JacAdd
-import VerifiedGarbage.Proof.Weierstrass.X86.Fprog
-import VerifiedGarbage.Proof.Weierstrass.X86.TComb
+module
+
+public import VerifiedGarbage.Impl.Weierstrass.X86.Jacobian
+public import VerifiedGarbage.Proof.Weierstrass.JacAdd
+public import VerifiedGarbage.Proof.Weierstrass.X86.Fprog
+public import VerifiedGarbage.Proof.Weierstrass.X86.TComb
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.X86
 open VG VG.X86 VG.Impl.Mont.X86 VG.Impl.Mont VG.Impl.Weierstrass.X86

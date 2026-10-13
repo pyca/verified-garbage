@@ -1,7 +1,9 @@
-import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Verified
-import VerifiedGarbage.Proof.AesGcm.AArch64.Verified
-import VerifiedGarbage.Proof.AesGcm.AArch64.GhashImpls
+module
+
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Verified
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Verified
+public import VerifiedGarbage.Proof.AesGcm.AArch64.GhashImpls
 
 /-!
 # AES-GCM-SIV (RFC 8452) on AArch64
@@ -21,6 +23,8 @@ Each keeps its working space in a frame of 3824 bytes on the stack
 address in `x30`, which they save in the working space, with our caller's
 registers, so no other stack is used.
 -/
+
+@[expose] public section
 
 namespace VG.Generic.AesGcm.AArch64.AesGcmSiv
 

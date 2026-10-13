@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.X448.X86_64.Comba
+module
+
+public import VerifiedGarbage.Proof.X448.X86_64.Comba
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 on x86-64: the reduction of a product
@@ -8,6 +14,8 @@ seven-word number congruent to it modulo `p` at `[o]`: `L + H`, plus
 `H - H mod 2²²⁴`, plus `rot(H)` (`H` rotated by 224 bits), whose top word is
 folded twice (`fold2`). `reduce_arith` is the congruence, as arithmetic.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448.X86_64
 

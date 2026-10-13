@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesGcmSiv.Arm.Polyval
+module
+
+public import VerifiedGarbage.Proof.AesGcmSiv.Arm.Polyval
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM-SIV on ARMv7: a block encrypted with the encryption key (`tag`)
@@ -9,6 +15,8 @@ Untrusted: everything here is checked by Lean. `tag o` copies the block at
 encryption of the block at `W + 96` with the encryption key's schedule at
 `W + 192` (`tag_ok`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

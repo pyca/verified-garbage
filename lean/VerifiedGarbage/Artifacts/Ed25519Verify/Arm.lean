@@ -1,7 +1,12 @@
-import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Proof.Ed25519.Arm.VerifyVerified
+module
+
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.Proof.Ed25519.Arm.VerifyVerified
 
 /-! Baseline ARMv7 Ed25519 primitive with register saves in the reviewed scratch buffer. -/
+
+@[expose] public section
+
 namespace VG.Artifacts.Ed25519Verify.Arm
 
 def artifacts : List Artifact := [

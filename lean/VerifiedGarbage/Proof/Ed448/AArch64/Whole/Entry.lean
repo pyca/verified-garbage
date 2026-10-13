@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Ed448.AArch64.Whole.Ctx
-import VerifiedGarbage.Proof.X25519.Bytes
-import VerifiedGarbage.Spec.Ed448.Contract
-import VerifiedGarbage.Spec.Sha3
+module
+
+public import VerifiedGarbage.Proof.Ed448.AArch64.Whole.Ctx
+public import VerifiedGarbage.Proof.X25519.Bytes
+public import VerifiedGarbage.Spec.Ed448.Contract
+public import VerifiedGarbage.Spec.Sha3
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448's complete operations on AArch64: words kept in the locals
@@ -9,6 +15,8 @@ import VerifiedGarbage.Spec.Sha3
 `keep r d` stores `r` in the locals (`keep_ok`); `hdr d ctxlen` stores the
 first ten bytes of `dom4(0, context)` there (`hdr_ok`, `hdr_bytes`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.AArch64.Whole
 

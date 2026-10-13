@@ -1,12 +1,20 @@
-import VerifiedGarbage.Proof.TripleDes.Arm.Box
-import VerifiedGarbage.Proof.TripleDes.Arm.RoundFunction
-import VerifiedGarbage.Proof.Framework.Arm.RegUpd
-import VerifiedGarbage.Proof.Rc2.Arm.KeySteps
-import VerifiedGarbage.Proof.TripleDes.Core
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.TripleDes.Word
+module
+
+public import VerifiedGarbage.Proof.TripleDes.Arm.Box
+public import VerifiedGarbage.Proof.TripleDes.Arm.RoundFunction
+public import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+public import VerifiedGarbage.Proof.Rc2.Arm.KeySteps
+public import VerifiedGarbage.Proof.TripleDes.Core
+public import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.TripleDes.Word
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## `RoundBody` -/
+
+@[expose] public section
 
 section
 

@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlDsa.X86.Sign.Base
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86.Sign.Base
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA signing on x86 (32-bit): calls
@@ -10,6 +16,8 @@ callee may leak what signing may (`callP_piece`, `callPR_piece`). What the
 callee sees on entry: its arguments (`ent_arg`), the stack below `esp`
 (`ent_esp`, `ent_arg0`), and the buffers apart from its stack (`ent_rgn`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86.Sign
 

@@ -1,7 +1,13 @@
-import VerifiedGarbage.Impl.Blowfish.Arm
-import VerifiedGarbage.Proof.Framework.Arm.Exec
-import VerifiedGarbage.Proof.Framework.Arm.RegUpd
-import VerifiedGarbage.Proof.Framework.Arm.Inline
+module
+
+public import VerifiedGarbage.Impl.Blowfish.Arm
+public import VerifiedGarbage.Proof.Framework.Arm.Exec
+public import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+public import VerifiedGarbage.Proof.Framework.Arm.Inline
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Blowfish on ARMv7: running blocks
@@ -13,6 +19,8 @@ with `RegUpd`), keeping the flag and memory updates folded, as RC4's `arun`
 of `s` but for `rs`, and its regions and stack pointer; `WP.keep` proves it
 of a block none of whose instructions writes another register.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Blowfish.Arm
 

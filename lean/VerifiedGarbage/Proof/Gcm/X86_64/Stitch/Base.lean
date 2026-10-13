@@ -1,7 +1,13 @@
-import VerifiedGarbage.Impl.Gcm.X86_64.Stitch
-import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Spec
-import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Exec
-import VerifiedGarbage.Proof.Aes.X86_64.Vaes.Ctr32
+module
+
+public import VerifiedGarbage.Impl.Gcm.X86_64.Stitch
+public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Spec
+public import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Exec
+public import VerifiedGarbage.Proof.Aes.X86_64.Vaes.Ctr32
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Interleaved counter mode and GHASH: the setting
@@ -13,6 +19,8 @@ the counter (`rdx`), `Y` (`rcx`), the data (`r8`), the number of blocks
 they need of it: the regions they read and write are accessible, disjoint
 where one is written, and do not wrap around.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Gcm.X86_64.Stitch
 

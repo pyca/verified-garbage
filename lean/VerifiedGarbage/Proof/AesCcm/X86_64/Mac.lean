@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesCcm.X86_64.Aad
+module
+
+public import VerifiedGarbage.Proof.AesCcm.X86_64.Aad
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CCM on x86-64: the MAC (`mac y`)
@@ -8,6 +14,8 @@ formatted associated data and the payload padded into the MAC state at
 `W + y`, from a zero block: CBC-MAC of the formatted blocks (`mac_ok`), whose
 first `t` bytes are CCM's MAC (`Proof.AesCcm.mac_eq`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Lays
-import VerifiedGarbage.Proof.Weierstrass.AArch64.AddCall
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.Lays
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.AddCall
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDSA on AArch64: what the complete additions' calls need
@@ -9,6 +15,8 @@ window method and verification's sum calls of `vg_<curve>_proj_add`, which
 reads `b` at `EM`'s slot. Any slots laid out together with `EM`'s give what
 `addP_ok` needs (`addOk_of`), from the curve's facts (`BaseCfgOk.padd`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.AArch64
 

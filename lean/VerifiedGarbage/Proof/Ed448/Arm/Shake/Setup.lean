@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Ed25519.Arm.Whole.Setup
+module
+
+public import VerifiedGarbage.Proof.Ed25519.Arm.Whole.Setup
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 on ARMv7: setting up a call's arguments
@@ -11,6 +17,8 @@ register but `r0`, `r12` and the destinations alone (`Ctx.setup`), so that
 an argument can be moved into its register before it, and writes only the
 words of its stack arguments.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.Arm.Shake
 

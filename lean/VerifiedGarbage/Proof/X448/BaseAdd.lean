@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Ed448.Group.Projective
-import VerifiedGarbage.Proof.X448.Edwards.Ladder
+module
+
+public import VerifiedGarbage.Proof.Ed448.Group.Projective
+public import VerifiedGarbage.Proof.X448.Edwards.Ladder
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The fixed-base comb's addition is the specification's
@@ -10,6 +16,8 @@ import VerifiedGarbage.Proof.X448.Edwards.Ladder
 `h - c - e` as `X₁Y₂ + Y₁X₂`. It is the specification's `pointAdd`
 (`addPt_eq`), so it represents the sum of the points represented.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448
 

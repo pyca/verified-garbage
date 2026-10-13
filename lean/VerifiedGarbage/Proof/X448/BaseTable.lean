@@ -1,5 +1,11 @@
-import VerifiedGarbage.Impl.X448.BaseTable
-import VerifiedGarbage.Proof.Ed448.Group.Projective
+module
+
+public import VerifiedGarbage.Impl.X448.BaseTable
+public import VerifiedGarbage.Proof.Ed448.Group.Projective
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The fixed-base tables represent `[k 256^j] B`, and `baseG` represents `[G] B`
@@ -10,6 +16,8 @@ with the specification's `pointAdd`, compared projectively; the first entry of
 table `j + 1` is `[256]` of table `j`'s, with the specification's `pointMul`.
 The kernel evaluates it (`tables_check`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448
 

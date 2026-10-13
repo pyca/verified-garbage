@@ -1,11 +1,19 @@
-import VerifiedGarbage.Proof.X448.Arm.Field
-import VerifiedGarbage.Proof.Framework.Range
+module
+
+public import VerifiedGarbage.Proof.X448.Arm.Field
+public import VerifiedGarbage.Proof.Framework.Range
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 on ARMv7: filling words with zero
 
 Each store touches only its designated word in the working space.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448.Arm
 

@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesCcm.X86.Mask
+module
+
+public import VerifiedGarbage.Proof.AesCcm.X86.Mask
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CCM on x86: `vg_aes_ccm_seal`
@@ -8,6 +14,8 @@ entry and `Ctr₀`, `start_ok`), the MAC of the payload at `W` (`mac_ok`),
 encrypted (`tag_ok`), counter mode over the data (`ctr_ok`), the tag copied
 to `tag` (`tagOut_ok`) and the exit (`seal_wp`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

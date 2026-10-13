@@ -1,9 +1,15 @@
-import VerifiedGarbage.Proof.Argon2.HPrime
-import VerifiedGarbage.Proof.Argon2.Arm.Push
-import VerifiedGarbage.Proof.Framework.Arm.Spill
-import VerifiedGarbage.Proof.MdStream.Arm.Common
-import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Impl.Argon2.Arm.HPrime
+module
+
+public import VerifiedGarbage.Proof.Argon2.HPrime
+public import VerifiedGarbage.Proof.Argon2.Arm.Push
+public import VerifiedGarbage.Proof.Framework.Arm.Spill
+public import VerifiedGarbage.Proof.MdStream.Arm.Common
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.Impl.Argon2.Arm.HPrime
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Argon2 H′ on ARMv7: the contract of the proof
@@ -14,6 +20,8 @@ out_len = r3, scratch = [sp])` with its stack argument only read;
 narrowing. H′ uses the 32 bytes of stack below the stack pointer: a call of
 `vg_blake2b_update` pushes four words, and `update` itself uses 16 bytes.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Argon2.Arm.HPrime
 

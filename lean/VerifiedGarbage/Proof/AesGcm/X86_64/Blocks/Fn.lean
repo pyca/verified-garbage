@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks.Fin
-import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks.Full
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks.Fin
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks.Full
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on whole blocks, x86-64: correctness
@@ -8,6 +14,8 @@ Untrusted: everything here is checked by Lean. The entry, the first
 `16 ⌊n / 16⌋` blocks in one pass (with `stitch`), and the rest
 (`encrypt_wp`, `decrypt_wp`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

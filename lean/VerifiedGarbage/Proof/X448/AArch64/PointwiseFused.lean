@@ -1,8 +1,17 @@
-import VerifiedGarbage.Proof.X448.AArch64.PointwiseCarry
-import VerifiedGarbage.Proof.X448.AArch64.PointwiseFinish
-import VerifiedGarbage.Proof.X448.AArch64.Columns
+module
+
+public import VerifiedGarbage.Proof.X448.AArch64.PointwiseCarry
+public import VerifiedGarbage.Proof.X448.AArch64.PointwiseFinish
+public import VerifiedGarbage.Proof.X448.AArch64.Columns
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Untrusted: fuse a pointwise coefficient with its first carry step. -/
+
+@[expose] public section
+
 namespace VG.Proof.X448.AArch64
 open VG VG.AArch64 VG.Impl.X448.AArch64
 

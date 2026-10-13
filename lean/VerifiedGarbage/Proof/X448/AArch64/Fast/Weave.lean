@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Framework.AArch64.Interleave
-import VerifiedGarbage.Proof.X448.AArch64.Fast.StepOps
-import VerifiedGarbage.Proof.X448.AArch64.Fast.Bounds
+module
+
+public import VerifiedGarbage.Proof.Framework.AArch64.Interleave
+public import VerifiedGarbage.Proof.X448.AArch64.Fast.StepOps
+public import VerifiedGarbage.Proof.X448.AArch64.Fast.Bounds
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 on AArch64: interleaved code
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.X448.AArch64.Fast.Bounds
 Untrusted: everything here is checked by Lean. `weave a b` is a merge of
 `a` and `b`, so for independent blocks it runs as `a` and then `b`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448.AArch64.Fast
 

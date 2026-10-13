@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.MlDsa.X86.Sign.PhaseL
-import VerifiedGarbage.Proof.MlDsa.Round.Decompose
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86.Sign.PhaseL
+public import VerifiedGarbage.Proof.MlDsa.Round.Decompose
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA signing on x86 (32-bit): the signature
@@ -10,6 +16,8 @@ and `HintBitPack(h)` (`hpack_piece`), whose 1s are at most `ω` by the check of
 their number, and whose leakage, the hint, two runs whose checks pass agree on
 (`hint_list`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86.Sign
 

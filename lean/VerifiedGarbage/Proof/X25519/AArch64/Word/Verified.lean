@@ -1,8 +1,20 @@
-import VerifiedGarbage.Proof.X25519.AArch64.Word.Top
-import VerifiedGarbage.Proof.X25519.AArch64.Word.Lit
-import VerifiedGarbage.Proof.X25519.AArch64.Verified
+module
+
+public import VerifiedGarbage.Proof.X25519.AArch64.Word.Top
+meta import VerifiedGarbage.Proof.X25519.AArch64.Word.Top
+public import VerifiedGarbage.Proof.X25519.AArch64.Word.Lit
+meta import VerifiedGarbage.Proof.X25519.AArch64.Word.Lit
+public import VerifiedGarbage.Proof.X25519.AArch64.Verified
+meta import VerifiedGarbage.Proof.X25519.AArch64.Verified
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Correctness, constant time, and the original shared contract. -/
+
+@[expose] public section
+
 namespace VG.Proof.X25519.AArch64.Word
 open VG VG.AArch64
 

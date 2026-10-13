@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Argon2.Arm.Derive.FillWrite
+module
+
+public import VerifiedGarbage.Proof.Argon2.Arm.Derive.FillWrite
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Argon2 on ARMv7: one block of the filling loops
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.Argon2.Arm.Derive.FillWrite
 `scratch + 4096`; `fillWrite_ok`: the current block, copied or XORed;
 `fillBlock_ok`: the filling state after one block (`Spec.Argon2.fillBlock`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Argon2.Arm.Derive
 

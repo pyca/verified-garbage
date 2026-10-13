@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.Mem
-import VerifiedGarbage.Spec.Aes
+module
+
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Spec.Aes
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Addresses at offsets, for the modes
@@ -9,6 +15,8 @@ Facts about the bytes at offsets of a base address, and in memory around
 stores and frames, that the modes' proofs share, on any 64-bit target. Nothing here depends on a cipher or a
 target.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Modes
 

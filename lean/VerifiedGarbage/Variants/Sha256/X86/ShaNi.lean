@@ -1,6 +1,11 @@
-import VerifiedGarbage.Proof.Sha256.X86.Variants.Interface
-import VerifiedGarbage.Proof.Sha256.X86.Stream.Digest
-import VerifiedGarbage.Proof.Sha256.X86.ShaNi.Verified
+module
+
+public import VerifiedGarbage.Proof.Sha256.X86.Variants.Interface
+meta import VerifiedGarbage.Proof.Sha256.X86.Variants.Interface
+public import VerifiedGarbage.Proof.Sha256.X86.Stream.Digest
+meta import VerifiedGarbage.Proof.Sha256.X86.Stream.Digest
+public import VerifiedGarbage.Proof.Sha256.X86.ShaNi.Verified
+meta import VerifiedGarbage.Proof.Sha256.X86.ShaNi.Verified
 
 /-!
 # SHA-256 on x86 with the SHA extensions
@@ -10,6 +15,9 @@ which needs the SHA extensions and SSSE3, and the streaming `update` and
 `finalize` made with it, which HMAC's and PBKDF2's functions call
 (`Generic/Sha256/X86/`), and SHA-224's `finalize`.
 -/
+
+@[expose] public section
+
 namespace VG.Variants.Sha256.X86.ShaNi
 open VG VG.X86
 open VG.Proof.Sha256.X86.Stream (params dims)

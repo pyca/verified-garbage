@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Aes.X86_64.VaesZ.Rounds
-import VerifiedGarbage.Proof.Aes.X86_64.Vaes.Ctr32
+module
+
+public import VerifiedGarbage.Proof.Aes.X86_64.VaesZ.Rounds
+public import VerifiedGarbage.Proof.Aes.X86_64.Vaes.Ctr32
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AVX-512 VAES counter mode: the counter blocks and the data
@@ -11,6 +17,8 @@ of the registers into the data blocks `4j`, `4j + 1`, …; both for any list
 of registers, by induction, as `Vaes.ctrs_ok` and `Vaes.xorData_ok` do with
 two lanes.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Aes.X86_64.VaesZ
 

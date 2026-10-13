@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
-import VerifiedGarbage.Proof.Ed448.AArch64.Chain
+module
+
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
+public import VerifiedGarbage.Proof.Ed448.AArch64.Chain
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 on AArch64: words stored and loaded relative to a register
@@ -9,6 +15,8 @@ register, proven once by induction on the list: the stores write the words
 in turn (`wrs`), each of which a later read finds if the offsets are
 separate (`word_wrs`), and the loads read them.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.AArch64
 

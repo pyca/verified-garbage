@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.AesCcm.X86_64.OpenCT
-import VerifiedGarbage.Proof.CmacAes.X86_64.Verified
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.AesCcm.Scratch
+module
+
+public import VerifiedGarbage.Proof.AesCcm.X86_64.OpenCT
+public import VerifiedGarbage.Proof.CmacAes.X86_64.Verified
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.AesCcm.Scratch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CCM on x86-64: `Verified`
@@ -14,6 +20,8 @@ argument (`Proof/AesCcm/Scratch.lean`), with 16 bytes of stack: the return
 addresses of the call of `vg_cmac_aes_update` (or of `vg_aes_ctr32`) and of
 its call of `vg_aes_ctr32`, if it makes one. `Frame.lean` allocates the working space.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesCcm.X86_64
 

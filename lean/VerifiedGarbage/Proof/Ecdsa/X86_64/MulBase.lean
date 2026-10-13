@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Ecdsa.X86_64.GMul
-import VerifiedGarbage.Proof.Weierstrass.X86_64.SpillUnch
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.GMul
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.SpillUnch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_<curve>_mul_base`'s body on x86-64
@@ -12,6 +18,8 @@ the word past the table (`mulBaseBody_ok`): what `gMulK_ok` gives, from
 saving the callee-saved registers in `ACC`'s slot and restoring them
 (`mulBaseFn_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.X86_64
 

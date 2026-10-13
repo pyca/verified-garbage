@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.Modes.X86.Ops
-import VerifiedGarbage.Proof.Modes.Steps
-import VerifiedGarbage.Proof.Framework.Semantics
-import VerifiedGarbage.Proof.Framework.X86.Syms
-import VerifiedGarbage.Spec.Aes
+module
+
+public import VerifiedGarbage.Proof.Modes.X86.Ops
+public import VerifiedGarbage.Proof.Modes.Steps
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Framework.X86.Syms
+public import VerifiedGarbage.Spec.Aes
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # What the modes need of a block cipher's core, on x86 (32-bit)
@@ -26,6 +32,8 @@ proves `CoreSpec` of its own.
   `stack` bytes below `esp` in memory, and keeps `sb` and `esp`; every other
   register may change.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Modes.X86
 

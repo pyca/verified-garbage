@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.Ed25519.Arm.Point16Verified
-import VerifiedGarbage.Proof.X25519.Chain250
-import VerifiedGarbage.Proof.Ed25519.Arm.Power
+module
+
+public import VerifiedGarbage.Proof.Ed25519.Arm.Point16Verified
+meta import VerifiedGarbage.Proof.Ed25519.Arm.Point16Verified
+public import VerifiedGarbage.Proof.X25519.Chain250
+meta import VerifiedGarbage.Proof.X25519.Chain250
+public import VerifiedGarbage.Proof.Ed25519.Arm.Power
+meta import VerifiedGarbage.Proof.Ed25519.Arm.Power
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_gf25519_r16_pow250` on ARMv7, verified
@@ -14,6 +23,8 @@ results are `a^(2^250 - 1)` in slot 15 and `a^11` in slot 14
 (`keeps₂_of_frame`, from the slots it writes, 14 to 17). Constant time by
 taint tracking, as for the point functions.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed25519.Arm.Pow250
 

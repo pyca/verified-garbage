@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlKem.X86.TopLocal
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86.TopLocal
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86 (32-bit): what a call leaves unchanged
@@ -10,6 +16,8 @@ bytes (`keep`), and so the polynomial, bytes or word it holds (`keepPoly`,
 The body of a top-level function, which ends in `Ctx`, makes a leaf
 (`topLeaf`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.X86.Top
 

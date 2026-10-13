@@ -1,5 +1,7 @@
-import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Proof.Ed448.Arm.ScalarVerified
+module
+
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.Proof.Ed448.Arm.ScalarVerified
 
 /-!
 # Ed448 scalar arithmetic on ARMv7
@@ -9,6 +11,8 @@ building blocks reduce and combine scalars modulo the subgroup order with
 baseline integer instructions; they neither hash messages nor implement
 signing by themselves.
 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.Ed448Scalar.Arm
 

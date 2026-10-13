@@ -1,7 +1,16 @@
-import VerifiedGarbage.Proof.Weierstrass.WinLay
-import VerifiedGarbage.Impl.Weierstrass.AArch64.Jacobian
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.WinLay
+public import VerifiedGarbage.Impl.Weierstrass.AArch64.Jacobian
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! The sixteen-entry public Jacobian table and its disjoint scratch slots. -/
+
+@[expose] public section
+
 namespace VG.Proof.Weierstrass.AArch64
 open VG VG.Impl.Mont VG.Impl.Weierstrass VG.Impl.Weierstrass.AArch64 VG.Proof.Mont
 

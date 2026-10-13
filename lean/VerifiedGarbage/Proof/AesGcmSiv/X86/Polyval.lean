@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesGcmSiv.X86.Absorb
-import VerifiedGarbage.Proof.AesGcm.X86.Loops
+module
+
+public import VerifiedGarbage.Proof.AesGcmSiv.X86.Absorb
+public import VerifiedGarbage.Proof.AesGcm.X86.Loops
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM-SIV on x86: POLYVAL and the tag input (`absorb`, `polyval`)
@@ -13,6 +19,8 @@ result into the tag input (`tagIn_ok`). `polyval_ok`: the tag input of
 RFC 8452 §4, with POLYVAL as GHASH with the key `H · x`
 (`Proof.GcmSiv.Words.tagInputG`), at `W + 96`.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

@@ -1,5 +1,11 @@
-import VerifiedGarbage.Spec.X448
-import VerifiedGarbage.Proof.Framework.PowLit
+module
+
+public import VerifiedGarbage.Spec.X448
+public import VerifiedGarbage.Proof.Framework.PowLit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448: the inversion `z^(p-2)` as an addition chain
@@ -8,6 +14,8 @@ An addition chain for `z^(2⁴⁴⁸ - 2²²⁴ - 3)`, with runs of squarings sh
 the targets. The chain first builds `z^(2²²² - 1)`, then its two final
 factors.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448
 

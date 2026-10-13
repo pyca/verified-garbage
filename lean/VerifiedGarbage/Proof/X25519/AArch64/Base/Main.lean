@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.X25519.AArch64.Base.Engine
-import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseMain
-import VerifiedGarbage.Spec.X25519.Contract
+module
+
+public import VerifiedGarbage.Proof.X25519.AArch64.Base.Engine
+public import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseMain
+public import VerifiedGarbage.Spec.X25519.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X25519 of the base point on AArch64: memory and ABI obligations
@@ -8,6 +14,8 @@ import VerifiedGarbage.Spec.X25519.Contract
 As Ed25519's `scalarBase` (`Proof/Ed25519/AArch64/ScalarBaseMain.lean`), with
 the engine of `Engine.lean` and its result read as a u-coordinate.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X25519.AArch64.Base
 

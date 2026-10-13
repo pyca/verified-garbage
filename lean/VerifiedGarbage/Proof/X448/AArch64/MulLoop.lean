@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.X448.AArch64.Row
+module
+
+public import VerifiedGarbage.Proof.X448.AArch64.Row
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 on AArch64: multiplication loop
@@ -6,6 +12,8 @@ import VerifiedGarbage.Proof.X448.AArch64.Row
 The invariant relates the 32 coefficients to the rows already accumulated,
 retaining the two input field elements throughout the loop.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448.AArch64
 

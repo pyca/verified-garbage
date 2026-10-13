@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesSiv.CtrPart
-import VerifiedGarbage.Proof.Cmac.Block
+module
+
+public import VerifiedGarbage.Proof.AesSiv.CtrPart
+public import VerifiedGarbage.Proof.Cmac.Block
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-SIV: finishing S2V with a string of a block or more
@@ -13,6 +19,8 @@ then it chains the `k` blocks of `P`, then the first `j` blocks of the tail,
 and finalizes the rest of the tail (`long_spec`). Nothing here depends on a
 target.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesSiv
 

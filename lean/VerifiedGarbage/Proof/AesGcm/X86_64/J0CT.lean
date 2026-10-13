@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.J0
-import VerifiedGarbage.Proof.AesGcm.X86_64.TagCT
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.J0
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.J0
+public import VerifiedGarbage.Proof.AesGcm.X86_64.TagCT
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.TagCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on x86-64: `j0` in two runs
@@ -10,6 +18,8 @@ length, and the GHASH of a nonce of any other length is `absorbPad` and
 `lens` (`absorbPad_rel`, `lens_rel`), with the length kept at
 `W + 216` between them.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesGcm.X86_64
 

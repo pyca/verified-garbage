@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.NFin
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtEntry
+module
+
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.NFin
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtEntry
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # An RSA key from its primes on x86-64: the entry and the head
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.Bignum.X86_64.CrtEntry
 with its base in `rdi` (`keyEntry_ok`); `head` sets up the working space
 for `W = n_len / 8` words (`keyHead_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaKeyGen.X86_64.Key
 

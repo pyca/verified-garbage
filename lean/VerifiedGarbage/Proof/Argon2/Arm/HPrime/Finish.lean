@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Argon2.Arm.HPrime.First
+module
+
+public import VerifiedGarbage.Proof.Argon2.Arm.HPrime.First
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Argon2 H′ on ARMv7: the output from the first digest
@@ -9,6 +15,8 @@ hashes the digest again and emits the prefix of the new one, while more than
 the first digest: the digest itself for at most 64 bytes, and otherwise its
 prefix, the chain and the last hash (`extend_ok`), of the 33 to 64 bytes left.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Argon2.Arm.HPrime
 

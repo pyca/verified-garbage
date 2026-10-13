@@ -1,8 +1,14 @@
-import VerifiedGarbage.Impl.Camellia.Arm.Sbox
-import VerifiedGarbage.Proof.Camellia.SboxTable
-import VerifiedGarbage.Proof.Framework.Arm.Straight
-import VerifiedGarbage.Proof.Framework.Arm.Exec
-import VerifiedGarbage.Proof.Camellia.Bitsliced32
+module
+
+public import VerifiedGarbage.Impl.Camellia.Arm.Sbox
+public import VerifiedGarbage.Proof.Camellia.SboxTable
+public import VerifiedGarbage.Proof.Framework.Arm.Straight
+public import VerifiedGarbage.Proof.Framework.Arm.Exec
+public import VerifiedGarbage.Proof.Camellia.Bitsliced32
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The bitsliced Camellia S-box on ARMv7
@@ -13,6 +19,8 @@ truth tables of the 256 inputs (`Bitslice.table`) and compares the result
 with the specification's `SBOX1`. `sbox_ok` then gives, at every bit
 position `p`, `SBOX1` of the byte formed by bit `p` of the eight words.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Camellia.Arm
 

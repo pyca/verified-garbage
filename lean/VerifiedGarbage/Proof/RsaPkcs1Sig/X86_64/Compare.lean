@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.Encode
-import VerifiedGarbage.Proof.MlKem.X86_64.Wp
-import VerifiedGarbage.Proof.Ct.Common
-import VerifiedGarbage.Proof.Framework.Offset
+module
+
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.Encode
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+public import VerifiedGarbage.Proof.Ct.Common
+public import VerifiedGarbage.Proof.Framework.Offset
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Comparing two buffers on x86-64
@@ -11,6 +17,8 @@ import VerifiedGarbage.Proof.Framework.Offset
 they are equal, and changes neither memory nor any register but `rax`,
 `rdx`, `r10` and `r11`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPkcs1Sig.X86_64
 

@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
-import VerifiedGarbage.Impl.CmacTripleDes.AArch64.Round
-import VerifiedGarbage.Proof.CmacTripleDes.IndexLit
+module
+
+public import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
+public import VerifiedGarbage.Impl.CmacTripleDes.AArch64.Round
+meta import VerifiedGarbage.Impl.CmacTripleDes.AArch64.Round
+public import VerifiedGarbage.Proof.CmacTripleDes.IndexLit
+meta import VerifiedGarbage.Proof.CmacTripleDes.IndexLit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The DES block's AArch64 code as literals, for kernel-evaluated checks
@@ -11,6 +20,8 @@ once, here: the checks of each part (`Layout.lean`, `Round.lean`,
 (`Lit.lean`) read these literals rather than evaluate the S-boxes and bit
 permutations again.
 -/
+
+@[expose] public section
 
 namespace VG
 

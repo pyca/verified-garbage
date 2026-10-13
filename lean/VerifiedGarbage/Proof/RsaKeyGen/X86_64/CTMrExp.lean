@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.RsaKeyGen.X86_64.CTMrBit
+module
+
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.CTMrBit
+meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.CTMrBit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # A candidate on x86-64: constant time of Miller–Rabin's exponentiation
@@ -7,6 +14,8 @@ Its loops over the words of `c` and their bits, with the invariants of
 their correctness proofs (`WordInv`, `BitInv`) from the state `s₀` where
 the exponentiation starts, whose header holds the public words (`EBase`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaKeyGen.X86_64
 

@@ -1,10 +1,23 @@
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Timing
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Contract
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Lit
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.LitErase
-import VerifiedGarbage.Proof.Ecdsa.X86_64.Verified
-import VerifiedGarbage.Proof.Framework.X86_64.TaintSym
-import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Timing
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Timing
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Contract
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Contract
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Lit
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Lit
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.LitErase
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.LitErase
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.Verified
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.Verified
+public import VerifiedGarbage.Proof.Framework.X86_64.TaintSym
+meta import VerifiedGarbage.Proof.Framework.X86_64.TaintSym
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDSA verification over P-256 on x86-64: `Verified`
@@ -19,6 +32,8 @@ from (`abiPreserved`). Direct table lookup uses the scalar determined by
 the public digest and signature. `verify_public_ct` relates those lookups,
 and taint tracking checks the remaining code against the shared contract.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Verify.X86_64
 

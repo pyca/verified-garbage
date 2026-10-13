@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.CmacAes.Stream.X86_64.Verified
-import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
+module
+
+public import VerifiedGarbage.Proof.CmacAes.Stream.X86_64.Verified
+public import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Streaming AES-CMAC on x86-64, with its working space on the stack
@@ -11,6 +17,8 @@ keep `rsp` aligned. Their own calls use at most 16 bytes below it: two
 return addresses, as `vg_aes_ctr32` and `vg_aes_expand_key_scratch` use no
 stack (and `vg_cmac_aes_update_aesni_cbc` none at all).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.CmacAes.Stream.X86_64
 

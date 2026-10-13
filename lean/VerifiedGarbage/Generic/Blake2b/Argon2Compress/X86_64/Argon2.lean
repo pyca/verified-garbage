@@ -1,5 +1,7 @@
-import VerifiedGarbage.Proof.Argon2.X86_64.DeriveVerified
-import VerifiedGarbage.TCB.Emit
+module
+
+public import VerifiedGarbage.Proof.Argon2.X86_64.DeriveVerified
+public import VerifiedGarbage.TCB.Emit
 
 /-!
 # Argon2 on x86-64, for every BLAKE2b backend and every implementation of G
@@ -13,6 +15,8 @@ named by `Emit.qualifiedName` with the tags `blake2b` and `g` (e.g.
 `vg_argon2_g_avx2` for G with AVX2 and BLAKE2b's baseline backend),
 needing both's CPU features.
 -/
+
+@[expose] public section
 
 namespace VG.Generic.Blake2b.Argon2Compress.X86_64.Argon2
 

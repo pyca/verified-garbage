@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.MlDsa.X86.Message.Args
-import VerifiedGarbage.Proof.MlKem.X86.CallRet
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86.Message.Args
+public import VerifiedGarbage.Proof.MlKem.X86.CallRet
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on x86 (32-bit), `sign_message` and `verify_message`: calls, correct and constant time
@@ -14,6 +20,8 @@ the taint analysis, their addresses depending only on `esp` and `esi`; and a
 call with them (`argsRet_piece`, `argsWith_piece`) is constant time when
 correctness determines its arguments from public data.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86.Message
 

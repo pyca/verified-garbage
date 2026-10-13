@@ -1,9 +1,18 @@
-import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
-import VerifiedGarbage.Proof.Weierstrass.InvToM
-import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
+public import VerifiedGarbage.Proof.Weierstrass.InvToM
+public import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Curves using a public early-exit inverse also supply its Montgomery-form
 arithmetic theorem. This proof-only interface leaves contracts and the TCB unchanged. -/
+
+@[expose] public section
+
 namespace VG.Proof.Weierstrass.AArch64
 
 structure HasLawInvToM (C : Spec.Weierstrass.Curve) extends HasLawInv C where

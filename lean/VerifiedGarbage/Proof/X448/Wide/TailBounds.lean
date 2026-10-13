@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.X448.Wide.Limbs
+module
+
+public import VerifiedGarbage.Proof.X448.Wide.Limbs
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Untrusted: tighter carry bounds for coefficients after the first fold. -/
+
+@[expose] public section
+
 namespace VG.Proof.X448.Wide
 
 theorem carry_small {f : Nat → Nat} {n : Nat} (h : ∀ i < n, f i < 2 ^ 63 + radix) :

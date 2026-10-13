@@ -1,6 +1,8 @@
-import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.Weierstrass.AArch64.InvInterface
-import VerifiedGarbage.Proof.P256.EcdhJac.Verified
+module
+
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvInterface
+public import VerifiedGarbage.Proof.P256.EcdhJac.Verified
 
 /-!
 # ECDH over P-256 (SP 800-56A) on AArch64
@@ -8,6 +10,8 @@ import VerifiedGarbage.Proof.P256.EcdhJac.Verified
 A generic file (see `TCB/Emit.lean`) over P-256's group law `h`, the variant
 `Variants/P256/AArch64/Law.lean`.
 -/
+
+@[expose] public section
 
 namespace VG.Generic.P256.AArch64.EcdhP256
 

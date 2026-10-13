@@ -1,9 +1,21 @@
-import VerifiedGarbage.Proof.Ed448.Arm.VerifyMain
-import VerifiedGarbage.Proof.Ed448.Arm.VerifyLocal
-import VerifiedGarbage.Proof.Ed448.Arm.VerifyLit
-import VerifiedGarbage.Proof.Framework.Arm.Taint
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Spec.Ed448.Contract
+module
+
+public import VerifiedGarbage.Proof.Ed448.Arm.VerifyMain
+meta import VerifiedGarbage.Proof.Ed448.Arm.VerifyMain
+public import VerifiedGarbage.Proof.Ed448.Arm.VerifyLocal
+meta import VerifiedGarbage.Proof.Ed448.Arm.VerifyLocal
+public import VerifiedGarbage.Proof.Ed448.Arm.VerifyLit
+meta import VerifiedGarbage.Proof.Ed448.Arm.VerifyLit
+public import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.Ed448.Contract
+meta import VerifiedGarbage.Spec.Ed448.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 verification's equation on ARMv7: `Verified`
@@ -16,6 +28,8 @@ an argument plus a constant or a counter), and a concrete state satisfying
 the signature's contract. The contract lets timing depend on the inputs; the
 code's depends on the pointers alone.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.Arm
 

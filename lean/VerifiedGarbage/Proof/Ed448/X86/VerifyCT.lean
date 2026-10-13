@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.Ed448.X86.VerifyMain
-import VerifiedGarbage.Proof.Ed448.X86.VerifyLit
-import VerifiedGarbage.Proof.X448.X86.Runs
+module
+
+public import VerifiedGarbage.Proof.Ed448.X86.VerifyMain
+meta import VerifiedGarbage.Proof.Ed448.X86.VerifyMain
+public import VerifiedGarbage.Proof.Ed448.X86.VerifyLit
+meta import VerifiedGarbage.Proof.Ed448.X86.VerifyLit
+public import VerifiedGarbage.Proof.X448.X86.Runs
+meta import VerifiedGarbage.Proof.X448.X86.Runs
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 verification's equation on x86 (32-bit): constant time
@@ -13,6 +22,8 @@ the memory but the working space and the stack below the return address,
 where code reads the arguments), and the loops by `RelCT.loop`, with the
 correctness proofs' invariants. `VP₀` relates the entry states.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.X86
 

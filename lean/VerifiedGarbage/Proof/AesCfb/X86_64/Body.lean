@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.AesCfb.Spec
-import VerifiedGarbage.Proof.AesOfb.X86_64.Body
-import VerifiedGarbage.Impl.AesCfb.X86_64
+module
+
+public import VerifiedGarbage.Proof.AesCfb.Spec
+meta import VerifiedGarbage.Proof.AesCfb.Spec
+public import VerifiedGarbage.Proof.AesOfb.X86_64.Body
+meta import VerifiedGarbage.Proof.AesOfb.X86_64.Body
+public import VerifiedGarbage.Impl.AesCfb.X86_64
+meta import VerifiedGarbage.Impl.AesCfb.X86_64
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CFB128 on x86-64: one block, and constant time
@@ -12,6 +21,8 @@ AES-CBC's proofs share (`Proof/AesCbc/X86_64/Loop.lean`) from `k` blocks to
 (`Proof/AesOfb/X86_64/Body.lean`). `encBody_ct` and `decBody_ct`: they are
 constant time, by the shared framework, with the call on the block at `iv`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesCfb.X86_64
 

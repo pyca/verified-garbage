@@ -1,7 +1,17 @@
-import VerifiedGarbage.Impl.Camellia.X86_64.ExpandKey
-import VerifiedGarbage.Spec.Camellia.Contract
-import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
-import VerifiedGarbage.Proof.Camellia.X86_64.Lit
+module
+
+public import VerifiedGarbage.Impl.Camellia.X86_64.ExpandKey
+meta import VerifiedGarbage.Impl.Camellia.X86_64.ExpandKey
+public import VerifiedGarbage.Spec.Camellia.Contract
+meta import VerifiedGarbage.Spec.Camellia.Contract
+public import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
+meta import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
+public import VerifiedGarbage.Proof.Camellia.X86_64.Lit
+meta import VerifiedGarbage.Proof.Camellia.X86_64.Lit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The Camellia key schedule on x86-64: contract and constant time
@@ -14,6 +24,8 @@ which it keeps in registers or public slots (the key's length, at
 `dataSlot`); the key's words, and everything computed from them, are
 secret.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Camellia
 

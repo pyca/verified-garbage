@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Modes.CbcEnc
-import VerifiedGarbage.Impl.Modes.FbMode
-import VerifiedGarbage.Spec.Ofb
-import VerifiedGarbage.Spec.Cfb
+module
+
+public import VerifiedGarbage.Proof.Modes.CbcEnc
+public import VerifiedGarbage.Impl.Modes.FbMode
+public import VerifiedGarbage.Spec.Ofb
+public import VerifiedGarbage.Spec.Cfb
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # OFB's and CFB's results, for any block cipher and target
@@ -15,6 +21,8 @@ ciphertext for CFB. When it has, the blocks are `Spec.Ofb.crypt`'s,
 last is the block to continue from (`ofb_of`, `cfbEnc_of`, `cfbDec_of`).
 Nothing here depends on a cipher or a target.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Modes
 

@@ -1,6 +1,17 @@
-import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.Allocated
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ObservedInputs
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Kernel
+module
+
+public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.Allocated
+meta import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.Allocated
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ObservedInputs
+meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ObservedInputs
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Kernel
+meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Kernel
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.AArch64.Forward.InvAllocated
 open VG VG.AArch64 VG.Impl.Weierstrass.AArch64 VG.Impl.Ecdsa.AArch64

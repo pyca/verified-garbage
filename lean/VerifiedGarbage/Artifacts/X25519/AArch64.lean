@@ -1,10 +1,14 @@
-import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Impl.X25519.AArch64.Word
-import VerifiedGarbage.Proof.X25519.AArch64.Word.Verified
-import VerifiedGarbage.Impl.X25519.AArch64.Base
-import VerifiedGarbage.Proof.X25519.AArch64.Base.Verified
+module
+
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Impl.X25519.AArch64.Word
+public import VerifiedGarbage.Proof.X25519.AArch64.Word.Verified
+public import VerifiedGarbage.Impl.X25519.AArch64.Base
+public import VerifiedGarbage.Proof.X25519.AArch64.Base.Verified
 
 /-! # X25519 (RFC 7748) on AArch64 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.X25519.AArch64
 

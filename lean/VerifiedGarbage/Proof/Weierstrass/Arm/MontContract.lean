@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Weierstrass.Arm.MontFn
-import VerifiedGarbage.Proof.Mont.Read
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.Arm.MontFn
+public import VerifiedGarbage.Proof.Mont.Read
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Montgomery arithmetic as functions on 32-bit ARM: the contracts
@@ -11,6 +17,8 @@ for a modulus the functions support (`ModOk`): `numAt` reads what
 `wordsVal` does (`numAt_eq`), and what the functions keep is what the
 contracts say (`keeps_of_kept`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.Arm.Mont
 

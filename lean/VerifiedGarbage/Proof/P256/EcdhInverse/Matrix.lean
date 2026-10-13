@@ -1,7 +1,16 @@
-import VerifiedGarbage.Proof.Ed25519.AArch64.SqrRows
-import VerifiedGarbage.Proof.P256.EcdhInverse.MachineExtract
+module
+
+public import VerifiedGarbage.Proof.Ed25519.AArch64.SqrRows
+public import VerifiedGarbage.Proof.P256.EcdhInverse.MachineExtract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Fixed matrix multiplication blocks in the packed divstep batch. -/
+
+@[expose] public section
+
 namespace VG.Proof.P256.EcdhInverse.Matrix
 open VG VG.AArch64 VG.Proof.Ed25519.AArch64
 

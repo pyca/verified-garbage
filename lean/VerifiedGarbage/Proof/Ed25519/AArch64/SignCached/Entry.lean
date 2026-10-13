@@ -1,6 +1,14 @@
-import VerifiedGarbage.Proof.Ed25519.AArch64.SignCached.Args
-import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Wrap
-import VerifiedGarbage.Spec.Ed25519.CachedSign
+module
+
+public import VerifiedGarbage.Proof.Ed25519.AArch64.SignCached.Args
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Wrap
+public import VerifiedGarbage.Spec.Ed25519.CachedSign
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.Ed25519.AArch64.SignCached
 open VG VG.AArch64

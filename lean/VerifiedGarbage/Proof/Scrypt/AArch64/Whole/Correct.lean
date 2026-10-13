@@ -1,10 +1,18 @@
-import VerifiedGarbage.Proof.Scrypt.AArch64.Whole.Steps
-import VerifiedGarbage.Proof.Scrypt.AArch64.RoMixCT
-import VerifiedGarbage.Proof.Scrypt.AArch64.Lit
-import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Contract
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Spec.Pbkdf2.Generic
-import VerifiedGarbage.Proof.Framework.Omega
+module
+
+public import VerifiedGarbage.Proof.Scrypt.AArch64.Whole.Steps
+public import VerifiedGarbage.Proof.Scrypt.AArch64.RoMixCT
+public import VerifiedGarbage.Proof.Scrypt.AArch64.Lit
+public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Contract
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.Pbkdf2.Generic
+public import VerifiedGarbage.Proof.Framework.Omega
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 section
 

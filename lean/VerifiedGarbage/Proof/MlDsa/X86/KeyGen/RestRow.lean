@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.RestPack
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.RestPack
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA key generation on x86 (32-bit): the rows of `t`
@@ -7,6 +13,8 @@ Row `i` (`row_piece`): `t = Σⱼ Â[i, j] ŝ₁[j]` (`dotK`, a product then `�
 products added), `NTT⁻¹`, `s₂[i]` added (`tK`), `Power2Round`, and `t₁`
 `SimpleBitPack`ed to `pk` and `t₀` `BitPack`ed to `sk`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86.KeyGen
 

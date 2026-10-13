@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.X448.Arm.Fill
+module
+
+public import VerifiedGarbage.Proof.X448.Arm.Fill
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 on ARMv7: saving the callee-saved registers
@@ -6,6 +12,8 @@ import VerifiedGarbage.Proof.X448.Arm.Fill
 The first eight working-space words preserve the incoming values until the
 final restore.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448.Arm
 

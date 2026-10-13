@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.AesOcb.X86_64.SealCT
-import VerifiedGarbage.Proof.AesOcb.X86_64.Open
+module
+
+public import VerifiedGarbage.Proof.AesOcb.X86_64.SealCT
+meta import VerifiedGarbage.Proof.AesOcb.X86_64.SealCT
+public import VerifiedGarbage.Proof.AesOcb.X86_64.Open
+meta import VerifiedGarbage.Proof.AesOcb.X86_64.Open
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-OCB on x86-64: `vg_aes_ocb_open` is constant time
@@ -9,6 +17,8 @@ the copy of the received tag to `W`, the comparison, the mask and `restore`,
 which pass the taint analysis from the public slots and the address of the
 tag at `W + tgO`: the comparison's result is a value, not a branch.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

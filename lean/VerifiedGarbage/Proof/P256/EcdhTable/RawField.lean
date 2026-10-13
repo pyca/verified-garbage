@@ -1,6 +1,14 @@
-import VerifiedGarbage.Proof.P256.EcdhJac.TableMath
-import VerifiedGarbage.Proof.P256.VerifySparse.Fprog
-import VerifiedGarbage.Proof.P256.EcdhJac.Frame
+module
+
+public import VerifiedGarbage.Proof.P256.EcdhJac.TableMath
+public import VerifiedGarbage.Proof.P256.VerifySparse.Fprog
+public import VerifiedGarbage.Proof.P256.EcdhJac.Frame
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.P256.EcdhJac
 open VG VG.AArch64 VG.Impl.Mont VG.Impl.Weierstrass VG.Impl.Weierstrass.AArch64

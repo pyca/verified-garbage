@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Idea.Arith
-import VerifiedGarbage.Impl.Idea.AArch64
-import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+module
+
+public import VerifiedGarbage.Proof.Idea.Arith
+public import VerifiedGarbage.Impl.Idea.AArch64
+public import VerifiedGarbage.Proof.Framework.AArch64.Exec
+public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # IDEA on AArch64: ⊙ without branches
@@ -10,6 +16,8 @@ import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 changes nothing but `x11`, `x12` and `d`, given the mask `0xffff` in `x15`.
 The arithmetic is `Proof.Idea.prep_toNat` and `Proof.Idea.reduce`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Idea.AArch64
 

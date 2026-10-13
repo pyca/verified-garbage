@@ -1,6 +1,12 @@
-import VerifiedGarbage.Spec.Blowfish.Cbc
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Blowfish.Schedule
+module
+
+public import VerifiedGarbage.Spec.Blowfish.Cbc
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Blowfish.Schedule
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Blowfish-CBC with its working space as an argument
@@ -14,6 +20,8 @@ within the function's buffers (`cbcEncPostOut_local`, `cbcDecPostOut_local`),
 and, where the frame copies stack arguments (ARMv7), the memory on entry
 too (`cbcEncPost_local`, `cbcDecPost_local`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Blowfish
 

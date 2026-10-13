@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.Weierstrass.X86.MontVerified
-import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P192
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86.MontVerified
+meta import VerifiedGarbage.Proof.Weierstrass.X86.MontVerified
+public import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P192
+meta import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P192
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Montgomery arithmetic modulo P-192's `p` and `n`, as functions, on x86 (32-bit): verified
@@ -9,6 +17,8 @@ P-192's moduli, in three 64-bit words, are ones the functions support
 other curves' do (`MontVerified.lean`). Apart from the other curves', so
 that adding them rebuilds none of their proofs.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.X86.Mont
 

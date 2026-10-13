@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Weierstrass.Arm.LadderPCall
-import VerifiedGarbage.Proof.Weierstrass.Arm.Ladder
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.Arm.LadderPCall
+public import VerifiedGarbage.Proof.Weierstrass.Arm.Ladder
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The ladder by calls of the point functions, on 32-bit ARM
@@ -14,6 +20,8 @@ leaves `T = D + G` in `O`, `G` having been copied to `Q` (and `a` and `3b` to
 theirs) before the loop, and selects `R = T` or `D`; the ladder's slots lie
 below the point functions' (`LadPt`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.Arm.Point
 

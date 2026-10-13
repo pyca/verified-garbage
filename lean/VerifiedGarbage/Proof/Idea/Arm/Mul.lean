@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Idea.Arith32
-import VerifiedGarbage.Impl.Idea.Arm
-import VerifiedGarbage.Proof.Framework.Arm.Exec
-import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+module
+
+public import VerifiedGarbage.Proof.Idea.Arith32
+public import VerifiedGarbage.Impl.Idea.Arm
+public import VerifiedGarbage.Proof.Framework.Arm.Exec
+public import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # IDEA on ARMv7: ⊙ without branches
@@ -10,6 +16,8 @@ import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 changes nothing but `r8`, `r9` and `d`, given the mask `0xffff` in `r12`.
 The arithmetic is `Proof.Idea.prep32_toNat` and `Proof.Idea.reduce32`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Idea.Arm
 

@@ -1,11 +1,20 @@
-import VerifiedGarbage.Proof.Ed25519.X86.Whole.Layout
-import VerifiedGarbage.Proof.Sha512.X86.Stream.Init
-import VerifiedGarbage.Proof.Sha512.X86.Stream.Update
-import VerifiedGarbage.Proof.Sha512.X86.Stream.Finalize
-import VerifiedGarbage.Spec.Ed25519.Contract
-import VerifiedGarbage.Spec.Sha512.Contract
+module
+
+public import VerifiedGarbage.Proof.Ed25519.X86.Whole.Layout
+public import VerifiedGarbage.Proof.Sha512.X86.Stream.Init
+public import VerifiedGarbage.Proof.Sha512.X86.Stream.Update
+public import VerifiedGarbage.Proof.Sha512.X86.Stream.Finalize
+public import VerifiedGarbage.Spec.Ed25519.Contract
+public import VerifiedGarbage.Spec.Sha512.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Reusable verified SHA-512 calls within the complete-operation frame. -/
+
+@[expose] public section
+
 namespace VG.Proof.Ed25519.X86.Whole
 open VG VG.X86
 open VG.Impl.Sha512.X86.Stream

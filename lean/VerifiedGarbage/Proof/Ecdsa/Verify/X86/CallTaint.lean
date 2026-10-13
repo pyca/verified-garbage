@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Framework.TaintSum
-import VerifiedGarbage.Proof.Framework.X86.TaintMono
+module
+
+public import VerifiedGarbage.Proof.Framework.TaintSum
+public import VerifiedGarbage.Proof.Framework.X86.TaintMono
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDSA verification on x86 (32-bit): what the field functions' summaries start from
@@ -12,6 +18,8 @@ base. The summaries of the functions (`<curve>/CallSumsP`,
 `<curve>/CallSumsN`, each checked in a module of its own, in parallel)
 analyse each function once, in place of every call (`verify_ct`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Verify.X86
 

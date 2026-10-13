@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.RsaOaep.AArch64.CtBase
+module
+
+public import VerifiedGarbage.Proof.RsaOaep.AArch64.CtBase
+meta import VerifiedGarbage.Proof.RsaOaep.AArch64.CtBase
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-OAEP on AArch64: MGF1 in constant time
@@ -9,6 +16,8 @@ arguments in MGF1's slots: each round from two runs at the same counter
 through a pointer the block loads, so it is split there; the rounds, whose
 number is fixed by the lengths, by `count_ct` (`mgfXor_tr`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaOaep.AArch64
 

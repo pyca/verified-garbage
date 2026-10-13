@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.TripleDes.Bitslice.Round
-import VerifiedGarbage.Proof.TripleDes.Core
-import VerifiedGarbage.Proof.TripleDes.Word
+module
+
+public import VerifiedGarbage.Proof.TripleDes.Bitslice.Round
+meta import VerifiedGarbage.Proof.TripleDes.Bitslice.Round
+public import VerifiedGarbage.Proof.TripleDes.Core
+meta import VerifiedGarbage.Proof.TripleDes.Core
+public import VerifiedGarbage.Proof.TripleDes.Word
+meta import VerifiedGarbage.Proof.TripleDes.Word
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # A bitsliced DES pass, lane by lane
@@ -11,6 +20,8 @@ right half and the second the left (`pairs`), so that no word moves, and
 then the exchange of the halves (`swapW`): `pass_lane` proves that it does
 in every lane what `desCore` (DES between IP and FP) does.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.TripleDes.Bitslice
 

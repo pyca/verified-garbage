@@ -1,5 +1,7 @@
-import VerifiedGarbage.TCB.Emit
-import VerifiedGarbage.Proof.RsaOaep.AArch64.Inst
+module
+
+public import VerifiedGarbage.TCB.Emit
+public import VerifiedGarbage.Proof.RsaOaep.AArch64.Inst
 
 /-!
 # RSAES-OAEP decryption on AArch64
@@ -17,6 +19,8 @@ features.
 Its stack is its frames, 288 bytes, and `vg_rsa_private_checked`'s 3248
 bytes, which are more than the hash functions use.
 -/
+
+@[expose] public section
 
 namespace VG.Generic.MdHash.MdHash.RsaPrivateCrt.AArch64.RsaOaep
 

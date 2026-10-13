@@ -1,9 +1,18 @@
-import VerifiedGarbage.Impl.Ed25519.AArch64.Scalar
-import VerifiedGarbage.Proof.Ed25519.Scalar
-import VerifiedGarbage.Proof.Ed25519.AArch64.Step
-import VerifiedGarbage.Proof.Ed25519.Canonical64
+module
+
+public import VerifiedGarbage.Impl.Ed25519.AArch64.Scalar
+public import VerifiedGarbage.Proof.Ed25519.Scalar
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Step
+public import VerifiedGarbage.Proof.Ed25519.Canonical64
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! The conditional subtraction of the Ed25519 order from a four-word value. -/
+
+@[expose] public section
+
 namespace VG.Proof.Ed25519.AArch64
 open VG VG.AArch64 VG.Impl.Ed25519.AArch64 Word64
 open VG.Spec.Ed25519 (L)

@@ -1,8 +1,19 @@
-import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Ghash
-import VerifiedGarbage.Proof.Gcm.X86_64.Vpclmul.Exec
-import VerifiedGarbage.Impl.Gcm.X86_64.Vpclmul
-import VerifiedGarbage.Proof.Framework.X86_64.LaneSse
-import VerifiedGarbage.Proof.Framework.X86_64.YFrame
+module
+
+public import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Ghash
+meta import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Ghash
+public import VerifiedGarbage.Proof.Gcm.X86_64.Vpclmul.Exec
+meta import VerifiedGarbage.Proof.Gcm.X86_64.Vpclmul.Exec
+public import VerifiedGarbage.Impl.Gcm.X86_64.Vpclmul
+meta import VerifiedGarbage.Impl.Gcm.X86_64.Vpclmul
+public import VerifiedGarbage.Proof.Framework.X86_64.LaneSse
+meta import VerifiedGarbage.Proof.Framework.X86_64.LaneSse
+public import VerifiedGarbage.Proof.Framework.X86_64.YFrame
+meta import VerifiedGarbage.Proof.Framework.X86_64.YFrame
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # GHASH with VPCLMULQDQ
@@ -25,6 +36,8 @@ the lanes of `ymm12` and `ymm13` (`restore_inv`). After the loops,
 `vzeroupper` keeps `Pclmul.Inv`, and `vg_ghash_pclmul`'s loops finish
 (`Pclmul.tail_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Gcm.X86_64.Vpclmul
 

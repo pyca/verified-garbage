@@ -1,8 +1,12 @@
-import VerifiedGarbage.Proof.Sha512.AArch64.Sha3Backend
-import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.Sha512.AArch64.Shared
+module
+
+public import VerifiedGarbage.Proof.Sha512.AArch64.Sha3Backend
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.Sha512.AArch64.Shared
 
 /-! # SHA-384, SHA-512, SHA-512/224 and SHA-512/256 (FIPS 180-4) on AArch64 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.Sha512.AArch64
 

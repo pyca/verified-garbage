@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesGcm.Arm.OneShot
+module
+
+public import VerifiedGarbage.Proof.AesGcm.Arm.OneShot
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on ARMv7: `vg_aes_gcm_seal`
@@ -8,6 +14,8 @@ state at `W + 16`: `J₀` and the additional data (`oneAad`), the data
 encrypted in place (`oneCrypt`), and the tag of the ciphertext into `W`
 (`oneTag 0`), copied to `tag` (`tagOut`) (`seal_wp`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

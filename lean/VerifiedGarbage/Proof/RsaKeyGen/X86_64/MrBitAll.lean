@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrBit
+module
+
+public import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrBit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # A candidate on x86-64: `mrExpBit`
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrBit
 `y' = y² b^bt mod c` (as `y' R mod c`), the flag updated with `y' = 1` and
 `y' = c − 1`, `kV` doubled and `kBits` decremented.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaKeyGen.X86_64
 

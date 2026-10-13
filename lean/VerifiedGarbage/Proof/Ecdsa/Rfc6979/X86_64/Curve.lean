@@ -1,14 +1,20 @@
-import VerifiedGarbage.Impl.Ecdsa.X86_64
-import VerifiedGarbage.Spec.Ecdsa.Generic
-import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Core
-import VerifiedGarbage.Proof.Framework.X86_64.Abi
-import VerifiedGarbage.Proof.Framework.X86_64.Taint
-import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
-import VerifiedGarbage.Impl.Ecdsa.Rfc6979.X86_64
-import VerifiedGarbage.Impl.Sha256.X86_64.Stream
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Contract
+module
+
+public import VerifiedGarbage.Impl.Ecdsa.X86_64
+public import VerifiedGarbage.Spec.Ecdsa.Generic
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Core
+public import VerifiedGarbage.Proof.Framework.X86_64.Abi
+public import VerifiedGarbage.Proof.Framework.X86_64.Taint
+public import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
+public import VerifiedGarbage.Impl.Ecdsa.Rfc6979.X86_64
+public import VerifiedGarbage.Impl.Sha256.X86_64.Stream
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Deterministic ECDSA on x86-64: the curve
@@ -27,6 +33,8 @@ facts of every instruction the proof of the whole function needs. Each
 curve's file builds one, so that the heavy algebra of its proof stays out
 of the modules generic over the curve and the hash function.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Rfc6979.X86_64
 

@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.AesOcb.X86.HashCT
+module
+
+public import VerifiedGarbage.Proof.AesOcb.X86.HashCT
+meta import VerifiedGarbage.Proof.AesOcb.X86.HashCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-OCB on x86: the data and the tag in constant time
@@ -9,6 +16,8 @@ runs for their number, public, each block's offset by `lNtz` (`pass_ct`);
 data's end and `W` (`rest_ct`); `body` branches on the data's length
 (`body_ct`); the tag addresses only `W` (`tag_ct`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

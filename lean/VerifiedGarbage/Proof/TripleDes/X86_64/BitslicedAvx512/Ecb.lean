@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx512.Wide
-import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx2.Ecb
+module
+
+public import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx512.Wide
+public import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx2.Ecb
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The AVX-512 function
@@ -8,6 +14,8 @@ The batches of 512 blocks (`wide_ok`), then the AVX2 code on the blocks
 left (`BitslicedAvx2.ecb_post`): every block becomes its encryption or
 decryption (`ecb_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.TripleDes.X86_64.BitslicedAvx512
 

@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.RsaOaep.AArch64.Mgf
+module
+
+public import VerifiedGarbage.Proof.RsaOaep.AArch64.Mgf
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-OAEP on AArch64: the label's hash
@@ -9,6 +15,8 @@ the label's hash `H(label)` to `scratch + o` (`hashLabel_ok`): `init`,
 `finalize`. The working space changes only within the hash function's
 ranges and the digest's 64 bytes at `o`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaOaep.AArch64
 

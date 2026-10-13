@@ -1,5 +1,13 @@
-import VerifiedGarbage.Spec.TripleDes
-import VerifiedGarbage.Proof.Framework.Mem
+module
+
+public import VerifiedGarbage.Spec.TripleDes
+public import VerifiedGarbage.Proof.Framework.Mem
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.TripleDes
 

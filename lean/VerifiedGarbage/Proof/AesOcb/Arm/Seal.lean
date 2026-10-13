@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesOcb.Arm.Front
+module
+
+public import VerifiedGarbage.Proof.AesOcb.Arm.Front
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-OCB on ARMv7: `vg_aes_ocb_seal`
@@ -9,6 +15,8 @@ Untrusted: everything here is checked by Lean. `seal` is `front`: `entry`,
 (`tagOut_ok`), and `restore` (`seal_wp`), as on AArch64
 (`Proof.AesOcb.AArch64.seal_wp`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

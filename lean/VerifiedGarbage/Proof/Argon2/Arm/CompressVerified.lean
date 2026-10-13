@@ -1,8 +1,19 @@
-import VerifiedGarbage.Proof.Argon2.Arm.Compress
-import VerifiedGarbage.Proof.Argon2.Arm.CompressLit
-import VerifiedGarbage.Proof.Framework.Arm.Contract
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Spec.Argon2.Contract
+module
+
+public import VerifiedGarbage.Proof.Argon2.Arm.Compress
+meta import VerifiedGarbage.Proof.Argon2.Arm.Compress
+public import VerifiedGarbage.Proof.Argon2.Arm.CompressLit
+meta import VerifiedGarbage.Proof.Argon2.Arm.CompressLit
+public import VerifiedGarbage.Proof.Framework.Arm.Contract
+meta import VerifiedGarbage.Proof.Framework.Arm.Contract
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.Argon2.Contract
+meta import VerifiedGarbage.Spec.Argon2.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Argon2 compression on ARMv7: verified
@@ -13,6 +24,8 @@ it. `compress_verified'` is the proof against `compressArm`, which the
 derivation uses for its calls; the shared contract
 `Spec.Argon2.compressContract` implies it (`compress_verified`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Argon2.Arm
 

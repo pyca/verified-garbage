@@ -1,9 +1,21 @@
-import VerifiedGarbage.Proof.MlKem.X86.Common
-import VerifiedGarbage.Proof.MlDsa.Pack.Hint2
-import VerifiedGarbage.Spec.MlDsa.Poly
-import VerifiedGarbage.TCB.X86.Target
-import VerifiedGarbage.Proof.Framework.Sig
-import VerifiedGarbage.Proof.Framework.Contract
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86.Common
+meta import VerifiedGarbage.Proof.MlKem.X86.Common
+public import VerifiedGarbage.Proof.MlDsa.Pack.Hint2
+meta import VerifiedGarbage.Proof.MlDsa.Pack.Hint2
+public import VerifiedGarbage.Spec.MlDsa.Poly
+meta import VerifiedGarbage.Spec.MlDsa.Poly
+public import VerifiedGarbage.TCB.X86.Target
+meta import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Proof.Framework.Sig
+meta import VerifiedGarbage.Proof.Framework.Sig
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on x86 (32-bit): what the proofs of the hint encodings share
@@ -16,6 +28,8 @@ import VerifiedGarbage.Proof.Framework.Contract
   omega, w, wlen)` on the stack, `r` read-only, `w` and the arguments
   writable, and where a leaf's body finds its arguments.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86.Pack.Hint
 

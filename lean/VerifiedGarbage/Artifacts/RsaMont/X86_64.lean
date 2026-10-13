@@ -1,8 +1,12 @@
-import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.Bignum.X86_64.MontFnVerified
-import VerifiedGarbage.Proof.Bignum.X86_64.MontFnAdxVerified
+module
+
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontFnVerified
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontFnAdxVerified
 
 /-! # Montgomery multiplication in the RSA working space, as a function, on x86-64 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.RsaMont.X86_64
 

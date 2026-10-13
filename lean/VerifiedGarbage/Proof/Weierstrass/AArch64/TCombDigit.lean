@@ -1,8 +1,14 @@
-import VerifiedGarbage.Impl.Weierstrass.AArch64.TComb
-import VerifiedGarbage.Proof.Weierstrass.CombW
-import VerifiedGarbage.Proof.Weierstrass.CombDigitW
-import VerifiedGarbage.Proof.Weierstrass.AArch64.CombDigit
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Comb
+module
+
+public import VerifiedGarbage.Impl.Weierstrass.AArch64.TComb
+public import VerifiedGarbage.Proof.Weierstrass.CombW
+public import VerifiedGarbage.Proof.Weierstrass.CombDigitW
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.CombDigit
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Comb
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The comb from tables in memory on AArch64: digits
@@ -13,6 +19,8 @@ bits: `x16` points at it (`winIndex_ok`), Horner's rule adds its bits
 (`magnitudeH_ok`); `digitW_ok` is all three. The sign of the digit is the
 complement of the window's top bit (`signMaskW_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.AArch64
 

@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.AesGcm.X86.J0
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86.J0
+meta import VerifiedGarbage.Proof.AesGcm.X86.J0
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on x86: `vg_aes_gcm_stream_init`
@@ -7,6 +14,8 @@ Untrusted: everything here is checked by Lean. The entry, `J₀` and the
 first counter block (`j0`) and the exit, as one `Pc` (`streamInit_pc`):
 correct (`streamInit_correct`) and constant time (`streamInit_ct`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

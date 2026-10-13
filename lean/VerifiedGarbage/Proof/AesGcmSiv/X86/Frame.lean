@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.AesGcmSiv.X86.Verified
-import VerifiedGarbage.Proof.AesGcm.X86.Frame
-import VerifiedGarbage.Proof.Framework.X86.StackScratch
+module
+
+public import VerifiedGarbage.Proof.AesGcmSiv.X86.Verified
+public import VerifiedGarbage.Proof.AesGcm.X86.Frame
+public import VerifiedGarbage.Proof.Framework.X86.StackScratch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM-SIV on x86, with its working space on the stack
@@ -14,6 +20,8 @@ are read only where the pre- and postconditions read the buffers, and
 `open`'s leak, whether it succeeds, reads only its buffers
 (`Proof/AesGcmSiv/Scratch.lean`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

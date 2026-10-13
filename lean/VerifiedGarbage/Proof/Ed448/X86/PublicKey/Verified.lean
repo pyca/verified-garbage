@@ -1,7 +1,17 @@
-import VerifiedGarbage.Proof.Ed448.X86.PublicKey.Body
-import VerifiedGarbage.Proof.Ed448.X86.Shake.CT
-import VerifiedGarbage.Proof.Framework.X86.Lit
-import VerifiedGarbage.Proof.Framework.Contract
+module
+
+public import VerifiedGarbage.Proof.Ed448.X86.PublicKey.Body
+meta import VerifiedGarbage.Proof.Ed448.X86.PublicKey.Body
+public import VerifiedGarbage.Proof.Ed448.X86.Shake.CT
+meta import VerifiedGarbage.Proof.Ed448.X86.Shake.CT
+public import VerifiedGarbage.Proof.Framework.X86.Lit
+meta import VerifiedGarbage.Proof.Framework.X86.Lit
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 public-key derivation on x86 (32-bit): constant time, and `Verified`
@@ -14,6 +24,8 @@ and the blocks between the calls address memory only through `esp`
 `scalarBaseLocal` (`CalleeOk`), `code base` meets
 `Spec.Ed448.publicKeyContract X86.abi 280`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.X86.PublicKey
 

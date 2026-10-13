@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesGcm.AArch64.Env
-import VerifiedGarbage.Proof.Cmac.Block
+module
+
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Env
+public import VerifiedGarbage.Proof.Cmac.Block
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on AArch64: the byte loops and `minK`
@@ -9,6 +15,8 @@ from `x12` to `x11`, and `xor` XORs `x13` bytes at `x11` into those at `x12`,
 a byte at a time through advancing pointers (`copy_ok`, `xor_ok`); the buffers
 do not overlap. `minK` computes `min (16 - x25, x24)` (`minK_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesGcm.AArch64
 

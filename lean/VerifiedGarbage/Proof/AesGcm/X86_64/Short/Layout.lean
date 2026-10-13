@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Mid
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Mid
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM's short path on x86-64: what `G` holds
@@ -10,6 +16,8 @@ first `M = lead + na + nc + 1` blocks are then `lead` zero blocks, `a` and
 `c` each padded with zeros to whole blocks, and the lengths block
 (`gLayout`), whatever is written elsewhere (`K`, the data) in between.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

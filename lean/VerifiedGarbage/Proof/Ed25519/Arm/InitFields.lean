@@ -1,7 +1,16 @@
-import VerifiedGarbage.Impl.Ed25519.Arm.FieldMemory
-import VerifiedGarbage.Proof.Ed25519.Arm.FieldProg
+module
+
+public import VerifiedGarbage.Impl.Ed25519.Arm.FieldMemory
+public import VerifiedGarbage.Proof.Ed25519.Arm.FieldProg
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Establish the limb bounds for the whole field workspace. -/
+
+@[expose] public section
+
 namespace VG.Proof.Ed25519.Arm
 open VG VG.Arm VG.Impl.Ed25519.Arm VG.Proof.X25519.Arm
 variable {b : BitVec 32}

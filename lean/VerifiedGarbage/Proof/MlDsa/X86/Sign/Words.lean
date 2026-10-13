@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlDsa.X86.Sign.Inv
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86.Sign.Inv
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA signing on x86 (32-bit): words and bytes of `scratch`
@@ -7,6 +13,8 @@ The small blocks between calls, as what they leave in `scratch` and the frame
 of what they change: a word or a byte set (`wp_st32`, `wp_st8`), `OK ← OK ∧
 eax` (`wp_andOK`) and `ONES ← ONES + eax` (`wp_addOnes`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86.Sign
 

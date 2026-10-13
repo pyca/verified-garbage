@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Modes.AArch64.Steps
-import VerifiedGarbage.Proof.Modes.Words
-import VerifiedGarbage.Proof.Framework.Range
+module
+
+public import VerifiedGarbage.Proof.Modes.AArch64.Steps
+public import VerifiedGarbage.Proof.Modes.Words
+public import VerifiedGarbage.Proof.Framework.Range
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Copying and XORing blocks a word at a time, on AArch64
@@ -10,6 +16,8 @@ As on x86-64 (`Proof/Modes/X86_64/Words.lean`). `copyN_wp`: `k` words
 `k` words (`xorW`) XOR it into `P`'s. Both change only their temporaries,
 and leave memory `over` the `8 k` bytes at `P`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Modes.AArch64
 

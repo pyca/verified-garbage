@@ -1,6 +1,8 @@
-import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.MlKem.X86_64.Top768
-import VerifiedGarbage.Proof.MlKem1024.X86_64.Top
+module
+
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.MlKem.X86_64.Top768
+public import VerifiedGarbage.Proof.MlKem1024.X86_64.Top
 
 /-!
 # ML-KEM-768 and ML-KEM-1024 (FIPS 203) on x86-64: key generation, encapsulation (with `H(ek)` given) and decapsulation
@@ -13,6 +15,8 @@ with its suffix (e.g. `vg_mlkem768_keygen_avx2`), and need its CPU features.
 Both parameter sets are the same code and proofs for their layouts
 (`Impl/MlKem/X86_64/Kem.lean`).
 -/
+
+@[expose] public section
 
 namespace VG.Generic.MlKemSample4.X86_64.MlKem
 

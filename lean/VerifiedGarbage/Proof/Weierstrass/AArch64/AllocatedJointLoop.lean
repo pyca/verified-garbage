@@ -1,11 +1,20 @@
-import VerifiedGarbage.Proof.Weierstrass.AArch64.AllocatedFrame
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JointLoop
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.AllocatedFrame
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JointLoop
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! The joint scalar loop with an explicit internal register and byte frame.
 
 Only the loop counter must survive its arithmetic blocks. The outer verifier
 is responsible for restoring any additional ABI registers after the loop.
 -/
+
+@[expose] public section
+
 namespace VG.Proof.Weierstrass.AArch64
 open VG VG.AArch64 VG.Impl.Mont VG.Impl.Weierstrass VG.Impl.Weierstrass.AArch64
 open VG.Proof.Mont.AArch64 VG.Proof.Weierstrass Spec.Weierstrass

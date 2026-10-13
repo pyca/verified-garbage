@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Blowfish.F
+module
+
+public import VerifiedGarbage.Proof.Blowfish.F
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # A lookup that scans an S-box's planes a word at a time
@@ -9,6 +15,8 @@ row that holds `x`, masked to `x`'s byte lane `L = x mod 4` and plane `b`'s
 rotated left by `8b` (`hitWord`), ORed together; and, rotated right by
 `8L`, the entry (`hitWord_ror`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Blowfish
 

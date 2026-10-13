@@ -1,10 +1,18 @@
-import VerifiedGarbage.Proof.P256.EcdhJac.TableMath
-import VerifiedGarbage.Proof.P256.EcdhJac.DbluCertificate
-import VerifiedGarbage.Proof.P256.EcdhJac.ZadduCertificate
-import VerifiedGarbage.Proof.P256.EcdhJac.Frame
-import VerifiedGarbage.Proof.P256.EcdhJac.BuildState
+module
+
+public import VerifiedGarbage.Proof.P256.EcdhJac.TableMath
+public import VerifiedGarbage.Proof.P256.EcdhJac.DbluCertificate
+public import VerifiedGarbage.Proof.P256.EcdhJac.ZadduCertificate
+public import VerifiedGarbage.Proof.P256.EcdhJac.Frame
+public import VerifiedGarbage.Proof.P256.EcdhJac.BuildState
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## `TableField` -/
+
+@[expose] public section
 
 section
 

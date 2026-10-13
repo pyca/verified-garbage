@@ -1,9 +1,15 @@
-import VerifiedGarbage.Proof.AesCcm.X86.SealCT
-import VerifiedGarbage.Proof.AesCcm.X86.OpenCT
-import VerifiedGarbage.Proof.CmacAes.X86.Verified
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Spec.Ccm.Contract
-import VerifiedGarbage.Proof.AesCcm.Scratch
+module
+
+public import VerifiedGarbage.Proof.AesCcm.X86.SealCT
+public import VerifiedGarbage.Proof.AesCcm.X86.OpenCT
+public import VerifiedGarbage.Proof.CmacAes.X86.Verified
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.Ccm.Contract
+public import VerifiedGarbage.Proof.AesCcm.Scratch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CCM on x86: `Verified`
@@ -16,6 +22,8 @@ contracts with the working space as a last argument
 `vg_cmac_aes_update` (its six arguments and return address) and its own
 calls of `vg_aes_ctr32`.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

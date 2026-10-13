@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Ecdsa.X86.Fixed
-import VerifiedGarbage.Proof.Weierstrass.X86.LadderP
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.X86.Fixed
+public import VerifiedGarbage.Proof.Weierstrass.X86.LadderP
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDSA on x86 (32-bit): the point functions' slots
@@ -8,6 +14,8 @@ For coordinates of 3 to 6 words, the ladder calls the point functions
 (`ladderP_ok`), which also write their slots and own working space (`ptW`):
 above every numbered slot (`ladPt`) and below the tables of bits.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.X86
 

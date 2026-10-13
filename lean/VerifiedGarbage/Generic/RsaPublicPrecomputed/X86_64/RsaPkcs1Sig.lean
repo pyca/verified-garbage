@@ -1,7 +1,11 @@
-import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.PrecomputedCT
+module
+
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.PrecomputedCT
 
 /-! # PKCS #1 v1.5 verification over precomputed RSA public variants -/
+
+@[expose] public section
 
 namespace VG.Generic.RsaPublicPrecomputed.X86_64.RsaPkcs1Sig
 

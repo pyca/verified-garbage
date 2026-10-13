@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.AesGcm.AArch64.Absorb
-import VerifiedGarbage.Proof.Gcm.Be64
-import VerifiedGarbage.Proof.Cmac.Frame
+module
+
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Absorb
+public import VerifiedGarbage.Proof.Gcm.Be64
+public import VerifiedGarbage.Proof.Cmac.Frame
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on AArch64: padding (`flush`) and the lengths block (`lens`)
@@ -12,6 +18,8 @@ the call of `vg_ghash` on it, or on no block if there are none
 buffered bytes so (`flush_ok`). `lens yo ra rb` stores the lengths block
 `[8 ra]₆₄ ‖ [8 rb]₆₄` in `T` and absorbs it (`lensSeg_ok`, `lensCall_ok`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

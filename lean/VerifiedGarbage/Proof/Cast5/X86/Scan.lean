@@ -1,10 +1,16 @@
-import VerifiedGarbage.Proof.Cast5.X86.Run
-import VerifiedGarbage.Proof.Cast5.Table
-import VerifiedGarbage.Proof.Framework.X86.Sse
-import VerifiedGarbage.Proof.Framework.X86.SseDword
-import VerifiedGarbage.Proof.Framework.X86.SseLanes
-import VerifiedGarbage.Proof.Framework.X86.SymFrame
-import VerifiedGarbage.Proof.Framework.CallLay
+module
+
+public import VerifiedGarbage.Proof.Cast5.X86.Run
+public import VerifiedGarbage.Proof.Cast5.Table
+public import VerifiedGarbage.Proof.Framework.X86.Sse
+public import VerifiedGarbage.Proof.Framework.X86.SseDword
+public import VerifiedGarbage.Proof.Framework.X86.SseLanes
+public import VerifiedGarbage.Proof.Framework.X86.SymFrame
+public import VerifiedGarbage.Proof.Framework.CallLay
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # CAST5 on 32-bit x86: the scan of a table
@@ -15,6 +21,8 @@ leaves in each dword lane `k` of `xmm1` dword `k` of the entry whose number
 is in lane `k` of `xmm0` (`scan_ok`). Vector values are kept as their four
 dword lanes (`L`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Cast5.X86
 

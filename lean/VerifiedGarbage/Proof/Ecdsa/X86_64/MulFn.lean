@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Ecdsa.X86_64.MulBase
-import VerifiedGarbage.Proof.Ecdsa.X86_64.Inv
-import VerifiedGarbage.Proof.Weierstrass.X86_64.Copy
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.MulBase
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.Inv
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.Copy
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_<curve>_mul` on x86-64, and `R = [k]G` by its call
@@ -16,6 +22,8 @@ they come back is a fact of runs (`invFnX_gpr`). `gMulKC_ok`: `R = [k]G` in
 the signature and the public key, by a call of `vg_<curve>_mul_base` or of
 `vg_<curve>_mul` (with `G` copied to `R`'s slots), or inline.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.X86_64
 

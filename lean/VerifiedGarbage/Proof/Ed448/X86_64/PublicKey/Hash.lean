@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.Ed448.X86_64.PublicKey.Layout
-import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Absorb
-import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Pad
-import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Squeeze
-import VerifiedGarbage.Proof.Sha3.Stream
+module
+
+public import VerifiedGarbage.Proof.Ed448.X86_64.PublicKey.Layout
+public import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Absorb
+public import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Pad
+public import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Squeeze
+public import VerifiedGarbage.Proof.Sha3.Stream
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 public-key derivation on x86-64: the hash of the seed
@@ -13,6 +19,8 @@ From the state after the frame's push: the Keccak state at `scratch` zeroed
 `scratch + 256`, leave `SHAKE256(seed, 114)` at `scratch + 1024`
 (`hash_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.X86_64.PublicKey
 

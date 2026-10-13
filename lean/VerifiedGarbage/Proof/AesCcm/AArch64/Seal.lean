@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesCcm.AArch64.Crypt
+module
+
+public import VerifiedGarbage.Proof.AesCcm.AArch64.Crypt
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CCM on AArch64: `vg_aes_ccm_seal`
@@ -9,6 +15,8 @@ counter mode over the data (`ctr`), the tag copied to `tag`, whose address
 the entry keeps in `W` (`loadTag_ok`, `tagOut_ok`), and `restore`
 (`seal_wp`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

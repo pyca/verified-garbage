@@ -1,8 +1,16 @@
-import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombJEntry
-import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombJInvariant
-import VerifiedGarbage.Proof.Weierstrass.AArch64.CopyKeep
-import VerifiedGarbage.Proof.Weierstrass.AArch64.FprogJ
-import VerifiedGarbage.Proof.Weierstrass.CombFrame
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombJEntry
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombJInvariant
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.CopyKeep
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.FprogJ
+public import VerifiedGarbage.Proof.Weierstrass.CombFrame
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.AArch64
 open VG VG.AArch64 VG.Impl.Mont.AArch64 VG.Impl.Mont VG.Impl.Weierstrass.AArch64 VG.Impl.Weierstrass

@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Cmac.Frame
-import VerifiedGarbage.Proof.Framework.WriteBytes
-import VerifiedGarbage.Spec.Gcm
+module
+
+public import VerifiedGarbage.Proof.Cmac.Frame
+public import VerifiedGarbage.Proof.Framework.WriteBytes
+public import VerifiedGarbage.Spec.Gcm
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM: the key context under frames, and bytes written
@@ -10,6 +16,8 @@ Untrusted: everything here is checked by Lean. Facts the functions that call
 through writes apart from it (`ctx_frame`), and the bytes written at an
 address are there (`bytesAt_writeBytes_self`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesGcm
 

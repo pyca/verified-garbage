@@ -1,7 +1,17 @@
-import VerifiedGarbage.Proof.Blowfish.Arm.ModeCore
-import VerifiedGarbage.Proof.Blowfish.CbcScratch
-import VerifiedGarbage.Proof.Modes.Arm.Cbc
-import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
+module
+
+public import VerifiedGarbage.Proof.Blowfish.Arm.ModeCore
+meta import VerifiedGarbage.Proof.Blowfish.Arm.ModeCore
+public import VerifiedGarbage.Proof.Blowfish.CbcScratch
+meta import VerifiedGarbage.Proof.Blowfish.CbcScratch
+public import VerifiedGarbage.Proof.Modes.Arm.Cbc
+meta import VerifiedGarbage.Proof.Modes.Arm.Cbc
+public import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
+meta import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Blowfish-CBC on ARMv7 meets its contracts
@@ -14,6 +24,8 @@ the 256 bytes of stack the ECB functions use. `cbcEncrypt_framed` and
 `cbcDecrypt_framed` keep the buffer on the stack, zeroed on return: 64 bytes
 more.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Blowfish.Arm
 

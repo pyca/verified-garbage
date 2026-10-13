@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Camellia.X86_64.KeyChecks
-import VerifiedGarbage.Impl.Camellia.X86_64.ExpandKey
+module
+
+public import VerifiedGarbage.Proof.Camellia.X86_64.KeyChecks
+public import VerifiedGarbage.Impl.Camellia.X86_64.ExpandKey
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The key schedule's evaluated facts on x86-64
@@ -9,6 +15,8 @@ and `spread d`, which bitslices the word at `[rdi + d]` into all eight
 lanes as `toBs` bitslices eight words, keeping the masks and both halves'
 slots (`spread0_check`, `spread8_check`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Camellia.X86_64
 

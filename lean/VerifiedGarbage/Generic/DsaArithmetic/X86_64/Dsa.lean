@@ -1,6 +1,11 @@
-import VerifiedGarbage.Proof.Dsa.X86_64.Backend
+module
+
+public import VerifiedGarbage.Proof.Dsa.X86_64.Backend
 
 /-! # DSA signing and verification for every x86-64 arithmetic backend -/
+
+@[expose] public section
+
 namespace VG.Generic.DsaArithmetic.X86_64.Dsa
 open VG.Proof.Dsa.X86_64
 

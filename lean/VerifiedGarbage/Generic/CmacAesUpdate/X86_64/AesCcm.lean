@@ -1,5 +1,7 @@
-import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.AesCcm.X86_64.Frame
+module
+
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.AesCcm.X86_64.Frame
 
 /-!
 # AES-CCM (NIST SP 800-38C) on x86-64
@@ -19,6 +21,8 @@ address. Each keeps its working space, its last argument, in a frame of
 2608 bytes on the stack that also holds a copy of its four other stack
 arguments (`Verified.stackArgScratch`).
 -/
+
+@[expose] public section
 
 namespace VG.Generic.CmacAesUpdate.X86_64.AesCcm
 

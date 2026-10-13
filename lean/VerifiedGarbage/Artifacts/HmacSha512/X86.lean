@@ -1,6 +1,8 @@
-import VerifiedGarbage.TCB.X86.Target
-import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Sha512
-import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Frame
+module
+
+public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Sha512
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Frame
 
 /-!
 # HMAC-SHA-512 (RFC 2104) on x86
@@ -21,6 +23,8 @@ hash value, the inner digest, its padding and length.
 same code with it as an argument, are what PBKDF2's code calls.
 -/
 
+@[expose] public section
+
 namespace VG.Artifacts.HmacSha512.X86
 
 def artifacts : List Artifact := [
@@ -30,7 +34,7 @@ def artifacts : List Artifact := [
     code := Impl.StackScratch.X86.withStackScratch (Proof.Pbkdf2.Md.X86.initFrame Spec.Hmac.sha512I) 4
       Proof.Pbkdf2.Md.X86.sha512M'.hmacInit
     contract := Spec.Hmac.sha512I.initContract X86.abi (48 + Proof.Pbkdf2.Md.X86.initFrame Spec.Hmac.sha512I)
-    ofSig := ⟨_, _, _, by unfold Spec.Hmac.Instance.initContract; rfl⟩
+    ofSig := by exact (⟨_, _, _, by unfold Spec.Hmac.Instance.initContract; rfl⟩)
     stack := 48 + Proof.Pbkdf2.Md.X86.initFrame Spec.Hmac.sha512I
     verified := Proof.Pbkdf2.Md.X86.initFramed Proof.Pbkdf2.Md.X86.Instances.sha512_init (by decide) (by lit_decide)
       (by lit_decide) Proof.Pbkdf2.Md.X86.sha512_initFrameSat
@@ -41,7 +45,7 @@ def artifacts : List Artifact := [
     code := Impl.StackScratch.X86.withStackScratch (Proof.Pbkdf2.Md.X86.finFrame Spec.Hmac.sha512I) 5
       Proof.Pbkdf2.Md.X86.sha512M'.hmacFin
     contract := Spec.Hmac.sha512I.finalizeContract X86.abi (48 + Proof.Pbkdf2.Md.X86.finFrame Spec.Hmac.sha512I)
-    ofSig := ⟨_, _, _, by unfold Spec.Hmac.Instance.finalizeContract; rfl⟩
+    ofSig := by exact (⟨_, _, _, by unfold Spec.Hmac.Instance.finalizeContract; rfl⟩)
     stack := 48 + Proof.Pbkdf2.Md.X86.finFrame Spec.Hmac.sha512I
     verified := Proof.Pbkdf2.Md.X86.finFramed Proof.Pbkdf2.Md.X86.Instances.sha512_finalize (by decide) Proof.Hmac.sha512_local
       (by decide) (by lit_decide) (by lit_decide) Proof.Pbkdf2.Md.X86.sha512_finFrameSat
@@ -51,7 +55,7 @@ def artifacts : List Artifact := [
     doc := Spec.Hmac.sha512I.initScratchApi.doc
     code := Proof.Pbkdf2.Md.X86.sha512M'.hmacInit
     contract := Spec.Hmac.sha512I.initScratchContract X86.abi 48
-    ofSig := ⟨_, _, _, by unfold Spec.Hmac.Instance.initScratchContract; rfl⟩
+    ofSig := by exact (⟨_, _, _, by unfold Spec.Hmac.Instance.initScratchContract; rfl⟩)
     stack := 48
     verified := Proof.Pbkdf2.Md.X86.Instances.sha512_init
     spSafe := Code.all_of_allInstrs (by lit_decide) },
@@ -60,7 +64,7 @@ def artifacts : List Artifact := [
     doc := Spec.Hmac.sha512I.finalizeScratchApi.doc
     code := Proof.Pbkdf2.Md.X86.sha512M'.hmacFin
     contract := Spec.Hmac.sha512I.finalizeScratchContract X86.abi 48
-    ofSig := ⟨_, _, _, by unfold Spec.Hmac.Instance.finalizeScratchContract; rfl⟩
+    ofSig := by exact (⟨_, _, _, by unfold Spec.Hmac.Instance.finalizeScratchContract; rfl⟩)
     stack := 48
     verified := Proof.Pbkdf2.Md.X86.Instances.sha512_finalize
     spSafe := Code.all_of_allInstrs (by lit_decide) }]

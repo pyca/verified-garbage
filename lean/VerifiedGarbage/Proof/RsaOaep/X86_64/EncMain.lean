@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.RsaOaep.X86_64.EncCall
-import VerifiedGarbage.Proof.RsaOaep.X86_64.Good
-import VerifiedGarbage.Proof.RsaOaep.X86_64.Out
-import VerifiedGarbage.Proof.RsaOaep.Encode
+module
+
+public import VerifiedGarbage.Proof.RsaOaep.X86_64.EncCall
+public import VerifiedGarbage.Proof.RsaOaep.X86_64.Good
+public import VerifiedGarbage.Proof.RsaOaep.X86_64.Out
+public import VerifiedGarbage.Proof.RsaOaep.Encode
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-OAEP encryption on x86-64: after the checks
@@ -9,6 +15,8 @@ import VerifiedGarbage.Proof.RsaOaep.Encode
 `encMain` (`encMain_ok`): `EM` written and masked in our working space, then
 `vg_rsa_public_checked` of it into `out`: the encryption.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaOaep.X86_64
 

@@ -1,11 +1,19 @@
-import VerifiedGarbage.Impl.Argon2.X86_64.HPrime
-import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.Proof.Framework.WriteBytes
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Argon2.HPrime
+module
+
+public import VerifiedGarbage.Impl.Argon2.X86_64.HPrime
+public import VerifiedGarbage.Proof.Framework.X86_64.Exec
+public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+public import VerifiedGarbage.Proof.Framework.WriteBytes
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Argon2.HPrime
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # H′: copying digest bytes -/
+
+@[expose] public section
 
 namespace VG.Proof.Argon2.X86_64.HPrime
 

@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Ed448.VerifyFormulas
-import VerifiedGarbage.Proof.X448.X86.Square
-import VerifiedGarbage.Impl.Ed448.X86.VerifyEquation
+module
+
+public import VerifiedGarbage.Proof.Ed448.VerifyFormulas
+public import VerifiedGarbage.Proof.X448.X86.Square
+public import VerifiedGarbage.Impl.Ed448.X86.VerifyEquation
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 verification's equation on x86 (32-bit): field programs
@@ -13,6 +19,8 @@ addition and the steps of decoding are in `Proof/Ed448/VerifyFormulas.lean`).
 registers, the counter `esi`, and the working space from `BAD` to the slots'
 end and from X448's `ACC`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.X86
 

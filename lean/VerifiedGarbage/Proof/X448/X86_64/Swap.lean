@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.X448.X86_64.AddSub
+module
+
+public import VerifiedGarbage.Proof.X448.X86_64.AddSub
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 on x86-64: the conditional swap
@@ -6,6 +12,8 @@ import VerifiedGarbage.Proof.X448.X86_64.AddSub
 An XOR mask exchanges the words without a branch or an address depending on
 the swap bit, word by word (`wp_range_flatMap`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448.X86_64
 

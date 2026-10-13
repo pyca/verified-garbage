@@ -1,7 +1,11 @@
-import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Proof.Blake2.Arm.Blake2b
+module
+
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.Proof.Blake2.Arm.Blake2b
 
 /-! # BLAKE2b (RFC 7693) on ARMv7 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.Blake2b.Arm
 

@@ -1,6 +1,10 @@
-import VerifiedGarbage.Proof.Blowfish.X86.CbcVerified
+module
+
+public import VerifiedGarbage.Proof.Blowfish.X86.CbcVerified
 
 /-! # Blowfish-CBC artifacts on baseline x86 (32-bit) -/
+
+@[expose] public section
 
 namespace VG.Artifacts.BlowfishCbc.X86
 

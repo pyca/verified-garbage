@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Copy
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Copy
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Short Weierstrass curves on AArch64: words to and from big-endian bytes
@@ -7,6 +13,8 @@ The steps of the loads and stores of numbers as bytes (`BytesLen.lean`): a
 word loaded and byte-reversed (`rev`, which is `byteRev64`), masked and
 byte-reversed, and stored.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.AArch64
 

@@ -1,8 +1,14 @@
-import VerifiedGarbage.Impl.Ed448.AArch64.PublicKey
-import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Layout
-import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Setup
-import VerifiedGarbage.Spec.Ed448.Contract
-import VerifiedGarbage.Proof.Ed448.AArch64.Whole.Ctx
+module
+
+public import VerifiedGarbage.Impl.Ed448.AArch64.PublicKey
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Layout
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Setup
+public import VerifiedGarbage.Spec.Ed448.Contract
+public import VerifiedGarbage.Proof.Ed448.AArch64.Whole.Ctx
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 public-key derivation on AArch64: where everything is
@@ -14,6 +20,8 @@ complete AArch64 operations (`Proof.Ed25519.AArch64.Whole`), from `E` up: the
 holds in the frame's body; `setup_ok` moves a call's arguments into its
 registers.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.AArch64.PublicKey
 

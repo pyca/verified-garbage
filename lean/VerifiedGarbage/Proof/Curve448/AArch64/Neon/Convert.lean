@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Curve448.AArch64.Neon.Exec
-import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import VerifiedGarbage.Proof.Framework.Range
+module
+
+public import VerifiedGarbage.Proof.Curve448.AArch64.Neon.Exec
+public import VerifiedGarbage.Proof.Framework.AArch64.Exec
+public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+public import VerifiedGarbage.Proof.Framework.Range
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Splitting two elements' limbs into radix-2²⁸ vectors
@@ -10,6 +16,8 @@ Untrusted: everything here is checked by Lean. `convert x₁ x₂ dst` stores, a
 word `c` of vector `i` at `dst`, the low 28 bits of limb `i` of element `c`
 (`c < 2`) or the rest of limb `i` of element `c - 2`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Curve448.AArch64.Neon
 

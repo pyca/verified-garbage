@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Ed25519.Arm.FnCall
-import VerifiedGarbage.Spec.Ed25519.Point16
+module
+
+public import VerifiedGarbage.Proof.Ed25519.Arm.FnCall
+public import VerifiedGarbage.Spec.Ed25519.Point16
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed25519 on ARMv7: the elements as the specification of the functions reads them
@@ -9,6 +15,8 @@ at a byte offset given as a 32-bit word; the proofs read it at an offset in
 `Nat` (`limb`, `V`, `env`). They agree (`limbAt_ofNat`, `valAt_ofNat`,
 `limbs_ofNat`, `elemAt_eq`, `pointAt_eq`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed25519.Arm
 

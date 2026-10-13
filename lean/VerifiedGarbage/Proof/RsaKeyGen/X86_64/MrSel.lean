@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Copy
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
+module
+
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Copy
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # A candidate on x86-64: Miller–Rabin's selection and comparisons
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
 `selLoop_ok`: `[aXm] := bit ? [aB] : [aR1]` under the mask of the bit, in
 `r15`; `eqMask_ok`: the mask of `[aY] = [j]`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaKeyGen.X86_64
 

@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.X25519.Arm.Field
+module
+
+public import VerifiedGarbage.Proof.X25519.Arm.Field
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X25519 on 32-bit ARM: the conditional swap
@@ -6,6 +12,8 @@ import VerifiedGarbage.Proof.X25519.Arm.Field
 `cswap x y` swaps the elements at `x` and `y` if the mask in `r9` is `-1` and
 leaves them if it is `0` (`cswap_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X25519.Arm
 

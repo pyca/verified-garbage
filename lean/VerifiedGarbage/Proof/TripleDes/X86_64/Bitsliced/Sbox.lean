@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.SboxLit
-import VerifiedGarbage.Proof.TripleDes.X86_64.Sbox
+module
+
+public import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.SboxLit
+public import VerifiedGarbage.Proof.TripleDes.X86_64.Sbox
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The bitsliced S-box circuits' machine code
@@ -10,6 +16,8 @@ arbitrary 64-bit words, as for the scalar code (`../Sbox.lean`). The
 circuits spill to the scratch buffer (`[rcx + 8k]`, `k < spills`) and leave
 `rcx`, `rsp` and `r15` (the round key) alone.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.TripleDes.X86_64.Bitsliced
 

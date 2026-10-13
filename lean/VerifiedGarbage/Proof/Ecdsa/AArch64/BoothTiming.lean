@@ -1,6 +1,17 @@
-import VerifiedGarbage.Proof.Ecdsa.AArch64.BoothLit
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Verified
-import VerifiedGarbage.Proof.EcKey.AArch64.Verified
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.BoothLit
+meta import VerifiedGarbage.Proof.Ecdsa.AArch64.BoothLit
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.Verified
+meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Verified
+public import VerifiedGarbage.Proof.EcKey.AArch64.Verified
+meta import VerifiedGarbage.Proof.EcKey.AArch64.Verified
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.AArch64
 open VG VG.AArch64 VG.Impl.Ecdsa.AArch64

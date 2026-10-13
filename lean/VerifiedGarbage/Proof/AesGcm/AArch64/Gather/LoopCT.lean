@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.AesGcm.AArch64.Gather.Loop
-import VerifiedGarbage.Proof.AesGcm.AArch64.RelBase
-import VerifiedGarbage.Proof.Framework.Scratch
+module
+
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Gather.Loop
+meta import VerifiedGarbage.Proof.AesGcm.AArch64.Gather.Loop
+public import VerifiedGarbage.Proof.AesGcm.AArch64.RelBase
+meta import VerifiedGarbage.Proof.AesGcm.AArch64.RelBase
+public import VerifiedGarbage.Proof.Framework.Scratch
+meta import VerifiedGarbage.Proof.Framework.Scratch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Gathering a list of slices, AArch64: constant time
@@ -13,6 +22,8 @@ the addresses they give, with branches on the number of slices and their
 lengths (by the taint analysis from the registers the correctness proof pins
 to the same values in both runs).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

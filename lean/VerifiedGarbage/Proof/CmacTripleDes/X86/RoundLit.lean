@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.Framework.X86.Lit
-import VerifiedGarbage.Impl.CmacTripleDes.X86.Round
-import VerifiedGarbage.Proof.CmacTripleDes.IndexLit
+module
+
+public import VerifiedGarbage.Proof.Framework.X86.Lit
+meta import VerifiedGarbage.Proof.Framework.X86.Lit
+public import VerifiedGarbage.Impl.CmacTripleDes.X86.Round
+meta import VerifiedGarbage.Impl.CmacTripleDes.X86.Round
+public import VerifiedGarbage.Proof.CmacTripleDes.IndexLit
+meta import VerifiedGarbage.Proof.CmacTripleDes.IndexLit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The DES block's x86 code as literals, for kernel-evaluated checks
@@ -11,6 +20,8 @@ the checks of each part (`Round.lean`, `Block.lean`) and the literals of the
 functions that run the block (`Lit.lean`) read these literals rather than
 evaluate the S-box leaves and bit permutations again.
 -/
+
+@[expose] public section
 
 namespace VG
 

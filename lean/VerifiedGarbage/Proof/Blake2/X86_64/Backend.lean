@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Blake2.X86_64.Stream.Verified
-import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
+module
+
+public import VerifiedGarbage.Proof.Blake2.X86_64.Stream.Verified
+public import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # BLAKE2b compression backends on x86-64
@@ -9,6 +15,8 @@ A backend supplies constant-time and instruction-property certificates for
 the streaming code that calls it. Generic registrations emit those callers
 and constructions built on them with the same suffix.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Blake2.X86_64
 

@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Argon2.Arm.Derive.MemoryInit
-import VerifiedGarbage.Proof.Argon2.Arm.Mix
+module
+
+public import VerifiedGarbage.Proof.Argon2.Arm.Derive.MemoryInit
+public import VerifiedGarbage.Proof.Argon2.Arm.Mix
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Argon2 on ARMv7: the steps of the filling loops
@@ -10,6 +16,8 @@ column), `blockAddr_ok` (a block's address from its lane and column) and
 by `Only` (the registers they may write), which keeps the body's invariant
 when `r11` is not among them (`Inv.only`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Argon2.Arm.Derive
 

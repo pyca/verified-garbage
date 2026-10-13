@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Camellia.AArch64.KaKb
-import VerifiedGarbage.Proof.Camellia.AArch64.KeyContract
+module
+
+public import VerifiedGarbage.Proof.Camellia.AArch64.KaKb
+public import VerifiedGarbage.Proof.Camellia.AArch64.KeyContract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The Camellia key schedule on AArch64: its parts
@@ -10,6 +16,8 @@ and stores the planes of `Sigma1 … Sigma6` as a table of subkeys
 `loadKey_wp` loads `KL` and `KR` into their slots, and `loadValues_ok`
 byte-swaps the four values into registers.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Camellia.AArch64
 

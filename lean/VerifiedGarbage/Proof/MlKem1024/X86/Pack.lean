@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.MlKem.X86.Pack
-import VerifiedGarbage.Proof.MlKem.X86.Unpack
-import VerifiedGarbage.Proof.MlKem.Compress1024
-import VerifiedGarbage.Impl.MlKem1024.X86.Compress
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86.Pack
+public import VerifiedGarbage.Proof.MlKem.X86.Unpack
+public import VerifiedGarbage.Proof.MlKem.Compress1024
+public import VerifiedGarbage.Impl.MlKem1024.X86.Compress
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM-1024 on x86 (32-bit): compressing and packing coefficients
@@ -12,6 +18,8 @@ compressed coefficient into `ebx` (`accS_spec`), and `accSs d o j` packs `j` of
 them, from `o + j - 1` down to `o` (`accSs_spec`), as the number `pk` whose
 base-`2ᵈ` digits they are.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem1024.X86
 

@@ -1,9 +1,15 @@
-import VerifiedGarbage.Proof.Cast5.AArch64.Ecb
-import VerifiedGarbage.Proof.Cast5.AArch64.ModesLit
-import VerifiedGarbage.Proof.Cast5.ModeCipher
-import VerifiedGarbage.Proof.Modes.AArch64.Core
-import VerifiedGarbage.Proof.Modes.AArch64.FbLoop
-import VerifiedGarbage.Impl.Cast5.AArch64.Modes
+module
+
+public import VerifiedGarbage.Proof.Cast5.AArch64.Ecb
+public import VerifiedGarbage.Proof.Cast5.AArch64.ModesLit
+public import VerifiedGarbage.Proof.Cast5.ModeCipher
+public import VerifiedGarbage.Proof.Modes.AArch64.Core
+public import VerifiedGarbage.Proof.Modes.AArch64.FbLoop
+public import VerifiedGarbage.Impl.Cast5.AArch64.Modes
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # CAST5's core for the modes on AArch64
@@ -20,6 +26,8 @@ either. `crypt` is ECB's block code (`encryptBlock_ok`, `decryptBlock_ok`)
 on the buffer, between its own setup and finish. `crypt_keeps`: the core
 keeps `x25`, where the feedback modes keep the IV's address.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Cast5.AArch64.Mode
 

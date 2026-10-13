@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Ed448.X86_64.BaseConst
-import VerifiedGarbage.Proof.Ed448.X86_64.ScalarMain
+module
+
+public import VerifiedGarbage.Proof.Ed448.X86_64.BaseConst
+public import VerifiedGarbage.Proof.Ed448.X86_64.ScalarMain
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 base-point multiplication on x86-64: the encoding
@@ -9,6 +15,8 @@ fully reduced; the seven words of `y` and a byte holding the low bit of `x`
 as its top bit are the 57 bytes at the output's address (RFC 8032 §5.2.2);
 then the callee-saved registers are restored.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.X86_64
 

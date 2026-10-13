@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.X448.Field
-import Batteries.Tactic.Init
-import Batteries.Logic
-import VerifiedGarbage.Proof.Framework.PowLit
+module
+
+public import VerifiedGarbage.Proof.X448.Field
+public import Batteries.Tactic.Init
+public import Batteries.Logic
+public import VerifiedGarbage.Proof.Framework.PowLit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448: radix-2¹⁶ arithmetic
@@ -9,6 +15,8 @@ import VerifiedGarbage.Proof.Framework.PowLit
 The twenty-eight limbs of a field element, carries, and reduction using `2^448 =
 2^224 + 1` modulo p. These lemmas do not depend on an instruction set.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448.Radix16
 

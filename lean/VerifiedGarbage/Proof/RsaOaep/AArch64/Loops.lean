@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.RsaOaep.AArch64.Hash
+module
+
+public import VerifiedGarbage.Proof.RsaOaep.AArch64.Hash
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-OAEP on AArch64: counted loops over bytes
@@ -8,6 +14,8 @@ the code that XOR, copy and clear bytes of our working space, as functions
 of its view `V`: `xorLoop_ok` XORs the `n` bytes at `a` into those at `b`
 (`xorV`), as MGF1 does with the digest.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaOaep.AArch64
 

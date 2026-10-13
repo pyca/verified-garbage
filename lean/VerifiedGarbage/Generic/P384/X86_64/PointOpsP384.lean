@@ -1,7 +1,9 @@
-import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.Weierstrass.X86_64.InvInterface
-import VerifiedGarbage.Proof.Weierstrass.PointFacts
-import VerifiedGarbage.Proof.P384.X86_64.PointOpsContract
+module
+
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvInterface
+public import VerifiedGarbage.Proof.Weierstrass.PointFacts
+public import VerifiedGarbage.Proof.P384.X86_64.PointOpsContract
 
 /-!
 # P-384's Jacobian point operations on x86-64
@@ -12,6 +14,8 @@ verifier calls. A generic file (see `TCB/Emit.lean`) over P-384's group law
 `h`, the variant `Variants/P384/X86_64/Law.lean`, which gives Fermat's
 little theorem in `Fin p`, so that `R⁻¹ = R^(p-2)` in the contracts.
 -/
+
+@[expose] public section
 
 namespace VG.Generic.P384.X86_64.PointOpsP384
 

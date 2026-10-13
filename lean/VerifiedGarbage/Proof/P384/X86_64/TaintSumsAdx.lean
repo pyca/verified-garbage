@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.P384.X86_64.TaintSums
+module
+
+public import VerifiedGarbage.Proof.P384.X86_64.TaintSums
+meta import VerifiedGarbage.Proof.P384.X86_64.TaintSums
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # P-384 on x86-64 with BMI2 and ADX: summaries of the shared loops
@@ -6,6 +13,8 @@ import VerifiedGarbage.Proof.P384.X86_64.TaintSums
 As `TaintSums.lean`, for `p384x` (P-384 multiplying modulo `p` with BMI2 and
 ADX), whose loops are the same but for their multiplications.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.P384.X86_64
 

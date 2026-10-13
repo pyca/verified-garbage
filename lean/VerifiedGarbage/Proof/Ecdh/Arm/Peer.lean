@@ -1,7 +1,13 @@
-import VerifiedGarbage.Impl.Ecdh.Arm
-import VerifiedGarbage.Proof.Ecdsa.Arm.Finish
-import VerifiedGarbage.Proof.Ecdsa.Arm.Scalar
-import VerifiedGarbage.Proof.Weierstrass.Arm.Copy
+module
+
+public import VerifiedGarbage.Impl.Ecdh.Arm
+public import VerifiedGarbage.Proof.Ecdsa.Arm.Finish
+public import VerifiedGarbage.Proof.Ecdsa.Arm.Scalar
+public import VerifiedGarbage.Proof.Weierstrass.Arm.Copy
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDH on 32-bit ARM: reading and checking the peer's key
@@ -16,6 +22,8 @@ Each check ands a mask into the flag, as the signature's checks do
 below `p` (`checkLtP_ok`, the signature's comparison `ltM` with `MP`) and a
 number is zero (`checkZero_ok`, `-(-m) - 1` of `nonzero`'s mask `m`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdh.Arm
 

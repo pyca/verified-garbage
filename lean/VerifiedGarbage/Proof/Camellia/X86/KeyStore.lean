@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Camellia.X86.KaKb
-import VerifiedGarbage.Proof.Camellia.KeySched
+module
+
+public import VerifiedGarbage.Proof.Camellia.X86.KaKb
+public import VerifiedGarbage.Proof.Camellia.KeySched
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Camellia's key schedule on x86 (32-bit): the subkeys' stores
@@ -12,6 +18,8 @@ words byte-swapped in place, which makes them the 32-bit words of the
 byte-swapped and stored at `edx`, so that its bytes are those of `rotHalf`
 (as `schedule_of_stores` takes them).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Camellia.X86
 

@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.Weierstrass.WinLay
-import VerifiedGarbage.Proof.Weierstrass.X86.Fprog
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.WinLay
+public import VerifiedGarbage.Proof.Weierstrass.X86.Fprog
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.X86
 open VG VG.Impl.Mont VG.Impl.Mont.X86 VG.Impl.Weierstrass

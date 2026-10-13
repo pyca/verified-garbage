@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.AesCcm.X86.TopCT
-import VerifiedGarbage.Proof.AesCcm.X86.Open
+module
+
+public import VerifiedGarbage.Proof.AesCcm.X86.TopCT
+meta import VerifiedGarbage.Proof.AesCcm.X86.TopCT
+public import VerifiedGarbage.Proof.AesCcm.X86.Open
+meta import VerifiedGarbage.Proof.AesCcm.X86.Open
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CCM on x86: `vg_aes_ccm_open` is constant time
@@ -9,6 +17,8 @@ has (`SealCT.lean`), `open` compares the tags without a branch (AES-GCM's
 `recv` and `cmp`, `cmp96_ct`), keeps the result and masks the data with it,
 looping over the data's length alone (`mask_ct`): `open_top_ct`, `open_ct`.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

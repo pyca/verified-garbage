@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.AesGcm.AArch64.Init
-import VerifiedGarbage.Proof.AesGcm.AArch64.PieceCT
+module
+
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Init
+meta import VerifiedGarbage.Proof.AesGcm.AArch64.Init
+public import VerifiedGarbage.Proof.AesGcm.AArch64.PieceCT
+meta import VerifiedGarbage.Proof.AesGcm.AArch64.PieceCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on AArch64: `vg_aes_gcm_init` is constant time
@@ -9,6 +17,8 @@ the taint analysis, from the public arguments and the registers the
 correctness proof pins (`init1_ok`, `init2_ok`); the calls by their callees'
 proofs, with the arguments those proofs give.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

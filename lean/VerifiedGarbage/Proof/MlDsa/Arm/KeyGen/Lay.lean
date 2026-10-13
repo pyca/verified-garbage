@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.CallPack
-import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.CallArith
-import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.CallSample
-import VerifiedGarbage.Impl.MlDsa.Arm.KeyGen.KeyGen
-import VerifiedGarbage.Proof.Framework.Omega
+module
+
+public import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.CallPack
+public import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.CallArith
+public import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.CallSample
+public import VerifiedGarbage.Impl.MlDsa.Arm.KeyGen.KeyGen
+public import VerifiedGarbage.Proof.Framework.Omega
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA key generation on 32-bit ARM: its parameters, precondition and buffers
@@ -14,6 +20,8 @@ disjoint, of which all but `seed` are written. `lsep` proves the facts about
 the offsets of pointers into them (`sepB`, `inB`) by `omega`, for any
 parameter set.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Arm.KeyGen
 

@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.Curve448.AArch64.AddEval
-import VerifiedGarbage.Proof.Curve448.AArch64.SubEval
-import VerifiedGarbage.Proof.Curve448.AArch64.SmallEval
+module
+
+public import VerifiedGarbage.Proof.Curve448.AArch64.AddEval
+public import VerifiedGarbage.Proof.Curve448.AArch64.SubEval
+public import VerifiedGarbage.Proof.Curve448.AArch64.SmallEval
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
+
 namespace VG.Proof.Curve448.AArch64
 open VG VG.AArch64 VG.Proof.X448.Wide VG.Proof.X448.Wide.Representation
 open VG.Proof.X448.AArch64

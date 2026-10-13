@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.TripleDes.AArch64.Pre
-import VerifiedGarbage.Proof.Modes.AArch64.Core
-import VerifiedGarbage.Proof.Modes.AArch64.Words
-import VerifiedGarbage.Impl.TripleDes.AArch64.Cbc
-import VerifiedGarbage.Proof.TripleDes.CbcBlocks
+module
+
+public import VerifiedGarbage.Proof.TripleDes.AArch64.Pre
+public import VerifiedGarbage.Proof.Modes.AArch64.Core
+public import VerifiedGarbage.Proof.Modes.AArch64.Words
+public import VerifiedGarbage.Impl.TripleDes.AArch64.Cbc
+public import VerifiedGarbage.Proof.TripleDes.CbcBlocks
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Triple DES's core for the modes on AArch64
@@ -15,6 +21,8 @@ its cipher `Spec.TripleDes.cipher` for encryption and
 in the core's slots is the schedule. `crypt` is the block function
 (`block_ok`) on the buffer.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.TripleDes.AArch64
 

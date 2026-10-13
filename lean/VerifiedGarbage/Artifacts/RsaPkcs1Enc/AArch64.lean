@@ -1,7 +1,11 @@
-import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.Callees
+module
+
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.Callees
 
 /-! # RSAES-PKCS1-v1_5 encryption (RFC 8017 §7.2.1) on AArch64 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.RsaPkcs1Enc.AArch64
 

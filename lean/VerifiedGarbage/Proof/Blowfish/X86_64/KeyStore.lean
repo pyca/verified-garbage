@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Blowfish.X86_64.KeyP
+module
+
+public import VerifiedGarbage.Proof.Blowfish.X86_64.KeyP
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Key expansion: an encryption's output into the schedule
@@ -8,6 +14,8 @@ from there to `r11` and back into the halves (`take_run`), and to the
 P-array as words (`store32_idx_run`) or to the S-boxes' planes a byte at a
 time (`storeEntry_run`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Blowfish.X86_64
 

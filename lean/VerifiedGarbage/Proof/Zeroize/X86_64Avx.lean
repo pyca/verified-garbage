@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.Zeroize.X86_64
-import VerifiedGarbage.Proof.Framework.X86_64.Avx
+module
+
+public import VerifiedGarbage.Proof.Zeroize.X86_64
+meta import VerifiedGarbage.Proof.Zeroize.X86_64
+public import VerifiedGarbage.Proof.Framework.X86_64.Avx
+meta import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_zeroize_avx` on x86-64
@@ -8,6 +16,8 @@ import VerifiedGarbage.Proof.Framework.X86_64.Avx
 at a time from `ymm0`, which holds zero throughout the first loop (`InvY`),
 and then `zeroize`'s word and byte loops.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Zeroize.X86_64
 open VG VG.X86_64 VG.Impl.Zeroize.X86_64 VG.Proof.MlKem.X86_64

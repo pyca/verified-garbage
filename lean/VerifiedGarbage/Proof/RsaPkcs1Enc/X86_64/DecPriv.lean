@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecFrame
+module
+
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecFrame
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-PKCS1-v1_5 decryption on x86-64: the private-key operation
@@ -7,6 +13,8 @@ Its precondition with its stack arguments in the frame (`priv_pre`), and
 what it leaves (`priv_call`): `out` holds its outcome for the ciphertext,
 and the frame its slots.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPkcs1Enc.X86_64.Dec
 

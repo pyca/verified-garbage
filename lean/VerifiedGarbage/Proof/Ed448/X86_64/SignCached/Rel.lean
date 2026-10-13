@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Ed448.X86_64.SignCached.Hash
-import VerifiedGarbage.Proof.Ed448.X86_64.Verify.Rel
+module
+
+public import VerifiedGarbage.Proof.Ed448.X86_64.SignCached.Hash
+public import VerifiedGarbage.Proof.Ed448.X86_64.Verify.Rel
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 signing with a cached public key on x86-64: relating two runs
@@ -11,6 +17,8 @@ code whose public data agree in both runs leaks the same (`call_tr`). Blocks
 addressed from `rsp` and the moves of arguments are `Verify`'s
 (`block_rsp_tr`, `setArgs_spOnly`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.X86_64.SignCached
 

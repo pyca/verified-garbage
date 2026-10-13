@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Idea.AArch64.Ecb
-import VerifiedGarbage.Proof.Idea.KeyBits
-import VerifiedGarbage.Proof.Framework.AArch64.Linear
+module
+
+public import VerifiedGarbage.Proof.Idea.AArch64.Ecb
+public import VerifiedGarbage.Proof.Idea.KeyBits
+public import VerifiedGarbage.Proof.Framework.AArch64.Linear
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # IDEA key expansion on AArch64
@@ -12,6 +18,8 @@ key's two quadwords, checked by evaluation over the lane domain
 subkey bit is then the key bit `Spec.Idea.expandKey` takes
 (`expandKey_getLsbD`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Idea.AArch64
 

@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.AesGcm.X86.Top
-import VerifiedGarbage.Proof.AesGcm.X86.Tag
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86.Top
+meta import VerifiedGarbage.Proof.AesGcm.X86.Top
+public import VerifiedGarbage.Proof.AesGcm.X86.Tag
+meta import VerifiedGarbage.Proof.AesGcm.X86.Tag
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on x86: checking a tag
@@ -10,6 +18,8 @@ length (`tagLenOk_pc`), `recv` copies the received tag, padded with zeros
 (`cmp_ok`), and `tagOut o` copies a computed tag to the caller's buffer
 (`tagOut_ok`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

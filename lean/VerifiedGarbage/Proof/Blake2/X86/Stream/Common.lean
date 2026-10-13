@@ -1,9 +1,15 @@
-import VerifiedGarbage.Proof.Blake2.X86.Contract
-import VerifiedGarbage.Proof.MdStream.X86.Common
-import VerifiedGarbage.Proof.Framework.X86.Wp
-import VerifiedGarbage.Proof.Framework.X86.Spill
-import VerifiedGarbage.Proof.Framework.WriteBytes
-import VerifiedGarbage.Impl.Blake2.X86.Stream
+module
+
+public import VerifiedGarbage.Proof.Blake2.X86.Contract
+public import VerifiedGarbage.Proof.MdStream.X86.Common
+public import VerifiedGarbage.Proof.Framework.X86.Wp
+public import VerifiedGarbage.Proof.Framework.X86.Spill
+public import VerifiedGarbage.Proof.Framework.WriteBytes
+public import VerifiedGarbage.Impl.Blake2.X86.Stream
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Streaming BLAKE2 on x86 (32-bit): common lemmas
@@ -13,6 +19,8 @@ What the proofs of `init`, `update` and `finalize` need of the parameters
 BLAKE2b's, verified against `compressX86`), the call (`call_ok`), and the loop
 copying bytes into the buffer (`copyLoop_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Blake2.X86.Stream
 

@@ -1,5 +1,7 @@
-import VerifiedGarbage.TCB.Emit
-import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.Callees
+module
+
+public import VerifiedGarbage.TCB.Emit
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.Callees
 
 /-!
 # RSAES-PKCS1-v1_5 decryption with implicit rejection on AArch64
@@ -17,6 +19,8 @@ features.
 Its stack is its frames, 224 bytes, and `vg_rsa_private_checked`'s 3248
 bytes, which are more than the hash functions use.
 -/
+
+@[expose] public section
 
 namespace VG.Generic.MdHash.RsaPrivateCrt.AArch64.RsaPkcs1Enc
 

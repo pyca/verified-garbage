@@ -1,7 +1,9 @@
-import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.Weierstrass.AArch64.InvInterface
-import VerifiedGarbage.Proof.P256.Comb7
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Sha384
+module
+
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvInterface
+public import VerifiedGarbage.Proof.P256.Comb7
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Sha384
 
 /-!
 # Deterministic ECDSA (RFC 6979) over P-256 with HMAC-SHA-384 on AArch64
@@ -19,6 +21,8 @@ below it that HMAC's functions use (`vg_ecdsa_p256_sign` uses none).
 It is generic over P-256's group law `h` too, the variant
 `Variants/P256/AArch64/Law.lean`.
 -/
+
+@[expose] public section
 
 namespace VG.Generic.MdHash.P256.AArch64.EcdsaP256Sha384
 

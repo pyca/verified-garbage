@@ -1,8 +1,17 @@
-import VerifiedGarbage.Proof.Weierstrass.X86.InvRedWord
-import VerifiedGarbage.Proof.Weierstrass.X86.InvShift
-import VerifiedGarbage.Proof.Weierstrass.X86.InvLoop
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86.InvRedWord
+public import VerifiedGarbage.Proof.Weierstrass.X86.InvShift
+public import VerifiedGarbage.Proof.Weierstrass.X86.InvLoop
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # The signed numerator of a divstep coefficient reduction -/
+
+@[expose] public section
+
 namespace VG.Proof.Weierstrass.X86.Inv
 open VG VG.X86 VG.X86.Wp VG.Impl.Mont.X86 VG.Impl.Weierstrass.X86.Inv
   VG.Proof.Mont.X86 VG.Proof.Mont VG.Proof.Weierstrass

@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Call
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Call
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on x86 (32-bit): code that writes `esp` only by frames and calls
@@ -8,6 +14,8 @@ sequences (`NoSp.seq`, `NoSp.seqR`) and calls with their arguments
 (`NoSp.callP`, `NoSp.callPR`). Code that calls no primitive is checked by
 evaluation (`NoSp.of_all`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86.KeyGen
 

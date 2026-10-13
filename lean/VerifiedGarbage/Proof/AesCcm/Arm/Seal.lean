@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesCcm.Arm.Args
-import VerifiedGarbage.Proof.AesGcm.Arm.Entry
+module
+
+public import VerifiedGarbage.Proof.AesCcm.Arm.Args
+public import VerifiedGarbage.Proof.AesGcm.Arm.Entry
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CCM on ARMv7: `vg_aes_ccm_seal`
@@ -11,6 +17,8 @@ leave the MAC of the payload, encrypted, at `W + y` (`front_wp`); `seal` then
 encrypts the data (`ctr`), copies the tag to `tag` (`tagOut_ok`) and restores
 the registers (`seal_wp`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

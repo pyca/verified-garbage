@@ -1,10 +1,14 @@
-import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Impl.X25519.X86_64
-import VerifiedGarbage.Proof.X25519.X86_64.Invert
-import VerifiedGarbage.Proof.X25519.X86_64.Divstep.Sound
-import VerifiedGarbage.Proof.X25519.X86_64.Lit
+module
+
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Impl.X25519.X86_64
+public import VerifiedGarbage.Proof.X25519.X86_64.Invert
+public import VerifiedGarbage.Proof.X25519.X86_64.Divstep.Sound
+public import VerifiedGarbage.Proof.X25519.X86_64.Lit
 
 /-! # Curve25519's inversion, in radix `2^64`, on x86-64 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.Gf25519R64.X86_64
 

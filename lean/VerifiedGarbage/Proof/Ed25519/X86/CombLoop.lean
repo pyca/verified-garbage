@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Ed25519.X86.CombSelect
-import VerifiedGarbage.Proof.Ed25519.X86.PointMul
-import VerifiedGarbage.Proof.Ed25519.X86.Point32.Call
-import VerifiedGarbage.Proof.Ed25519.PointDouble
+module
+
+public import VerifiedGarbage.Proof.Ed25519.X86.CombSelect
+public import VerifiedGarbage.Proof.Ed25519.X86.PointMul
+public import VerifiedGarbage.Proof.Ed25519.X86.Point32.Call
+public import VerifiedGarbage.Proof.Ed25519.PointDouble
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The comb's loop
@@ -15,6 +21,8 @@ represents `[G + Σ_{i < j} d_{2i+1} 256^i]B` and `B` (slots 17–20) represents
 `[G + Σ_{i < j} d_{2i} 256^i]B` (`Proof/Ed25519/CombDigits.lean`); at the end,
 `16 A + B` is the scalar's multiple.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed25519.X86
 

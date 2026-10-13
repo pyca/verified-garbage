@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Steps
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Reduce
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Bytes
-import VerifiedGarbage.Proof.Weierstrass.Arm.BytesLen
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Steps
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Reduce
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Bytes
+public import VerifiedGarbage.Proof.Weierstrass.Arm.BytesLen
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Deterministic ECDSA on 32-bit ARM: scalars longer than the hash
@@ -17,6 +23,8 @@ number shifted left by `sh` bits (`coreDigest_ok`); and the candidate, `V`
 kept in the frame's top words and, after the next `V`, its first word after
 it, shifted right by `sh` bits (`candW_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Rfc6979.Arm
 

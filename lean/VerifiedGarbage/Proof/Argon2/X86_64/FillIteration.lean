@@ -1,7 +1,16 @@
-import VerifiedGarbage.Impl.Argon2.X86_64.FillIteration
-import VerifiedGarbage.Proof.Argon2.X86_64.FillSlices
+module
+
+public import VerifiedGarbage.Impl.Argon2.X86_64.FillIteration
+public import VerifiedGarbage.Proof.Argon2.X86_64.FillSlices
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Argon2.X86_64.FillIterationPrepare`. -/
+
+@[expose] public section
+
 section
 /-! Start a pass at slice zero regardless of its incoming lane and slice coordinates. -/
 

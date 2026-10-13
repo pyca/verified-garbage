@@ -1,4 +1,6 @@
-import VerifiedGarbage.Proof.CmacAes.X86_64.Variant
+module
+
+public import VerifiedGarbage.Proof.CmacAes.X86_64.Variant
 
 /-!
 # `vg_cmac_aes_update` on x86-64: by calls of the bitsliced `vg_aes_ctr32`
@@ -6,6 +8,8 @@ import VerifiedGarbage.Proof.CmacAes.X86_64.Variant
 A variant of `CmacAesUpdate` on x86-64 (see `TCB/Emit.lean`):
 `vg_cmac_aes_update`, in the baseline ISA.
 -/
+
+@[expose] public section
 
 namespace VG.Variants.CmacAesUpdate.X86_64.Scalar
 

@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Finish
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512Tail.Tail
+module
+
+public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Finish
+public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512Tail.Tail
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ChaCha20 on x86-64 with AVX-512: the last 513 to 1023 bytes
@@ -11,6 +17,8 @@ to the end of the function. The code around the rounds runs with `buf` at
 at most 512 bytes of data, cover it: `finishP` writes only the first 512
 bytes, and the code after it the next ones, from `rsi + 512`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.ChaCha20.X86_64.Avx512Last
 

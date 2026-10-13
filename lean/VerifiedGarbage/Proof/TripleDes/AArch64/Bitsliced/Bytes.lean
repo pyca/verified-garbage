@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.TripleDes.AArch64.Bytes
-import VerifiedGarbage.Proof.Framework.AArch64.SimdMem64
+module
+
+public import VerifiedGarbage.Proof.TripleDes.AArch64.Bytes
+public import VerifiedGarbage.Proof.Framework.AArch64.SimdMem64
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Blocks as little-endian words
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.Framework.AArch64.SimdMem64
 A block's little-endian word holds bit `i` of the block (big-endian, as
 `decodeBlock` reads it) at bit `i ^^^ 56`: the byte order is reversed.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.TripleDes.AArch64.BitslicedNeon
 

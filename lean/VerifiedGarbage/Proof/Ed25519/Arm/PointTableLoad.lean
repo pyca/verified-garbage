@@ -1,8 +1,17 @@
-import VerifiedGarbage.Proof.Ed25519.Arm.PackField
-import VerifiedGarbage.Proof.Ed25519.Arm.UnpackField
-import VerifiedGarbage.Proof.Ed25519.Arm.Points
+module
+
+public import VerifiedGarbage.Proof.Ed25519.Arm.PackField
+public import VerifiedGarbage.Proof.Ed25519.Arm.UnpackField
+public import VerifiedGarbage.Proof.Ed25519.Arm.Points
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Ed25519.Arm.PointTable`. -/
+
+@[expose] public section
+
 section
 /-! Compact point tables in the caller's eight-KiB workspace. -/
 namespace VG.Proof.Ed25519.Arm

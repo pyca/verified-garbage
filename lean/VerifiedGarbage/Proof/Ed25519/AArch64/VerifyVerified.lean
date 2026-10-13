@@ -1,15 +1,34 @@
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
-import VerifiedGarbage.Impl.Ed25519.AArch64.Verify
-import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyCTLit
-import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyContext
-import VerifiedGarbage.Proof.Ed25519.VerifyBytes
-import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarMemory
-import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseMain
-import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyCTBody
-import VerifiedGarbage.Proof.Framework.Contract
+module
+
+public import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
+public import VerifiedGarbage.Impl.Ed25519.AArch64.Verify
+meta import VerifiedGarbage.Impl.Ed25519.AArch64.Verify
+public import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyCTLit
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyCTLit
+public import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyContext
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyContext
+public import VerifiedGarbage.Proof.Ed25519.VerifyBytes
+meta import VerifiedGarbage.Proof.Ed25519.VerifyBytes
+public import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarMemory
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarMemory
+public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+meta import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+public import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseMain
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseMain
+public import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyCTBody
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyCTBody
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Ed25519.AArch64.VerifyLit`. -/
+
+@[expose] public section
+
 section
 /-! A checked literal for the complete verification program. -/
 

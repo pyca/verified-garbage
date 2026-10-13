@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Base
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Base
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA key generation on x86 (32-bit): what holds between the pieces
@@ -11,6 +17,8 @@ if key generation fails within the least bounds (`Good`, `KSamp`). Each is
 kept by a piece that writes only buffers apart from those it describes
 (`KB.keep`, `KSamp.keep`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86.KeyGen
 

@@ -1,6 +1,14 @@
-import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.Joint
-import VerifiedGarbage.Proof.Weierstrass.AArch64.CachedInit
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JointInvariant
+module
+
+public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.Joint
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.CachedInit
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JointInvariant
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Verify.AArch64
 open VG VG.AArch64 VG.Impl.Mont VG.Impl.Weierstrass VG.Impl.Weierstrass.AArch64

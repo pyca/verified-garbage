@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Framework.AArch64.TaintSplit
-import VerifiedGarbage.Proof.Framework.KernelRfl
-import VerifiedGarbage.Impl.X448.AArch64.Base
+module
+
+public import VerifiedGarbage.Proof.Framework.AArch64.TaintSplit
+public import VerifiedGarbage.Proof.Framework.KernelRfl
+public import VerifiedGarbage.Impl.X448.AArch64.Base
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Curve448's register-resident field arithmetic on AArch64, erased
@@ -11,6 +17,8 @@ field operation on the working space's slots is the same code whatever its
 slots: the constants `mulE`, `sqrE`, … (`Op.code_eraseT`, by the kernel's
 evaluation for any slots), whose analysis the kernel then caches.
 -/
+
+@[expose] public section
 
 namespace VG.AArch64
 

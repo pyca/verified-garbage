@@ -1,13 +1,29 @@
-import VerifiedGarbage.Proof.TripleDes.AArch64.ModeCore
-import VerifiedGarbage.Proof.Modes.AArch64.CbcDecrypt
-import VerifiedGarbage.Proof.Modes.AArch64.CbcEncrypt
-import VerifiedGarbage.Proof.TripleDes.CbcScratch
-import VerifiedGarbage.Proof.TripleDes.AArch64.CbcLit
-import VerifiedGarbage.Proof.Framework.AArch64.Inline
-import VerifiedGarbage.Proof.Framework.AArch64.Taint
-import VerifiedGarbage.Proof.Framework.AArch64.VectorTaint
-import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
-import VerifiedGarbage.Proof.Framework.Contract
+module
+
+public import VerifiedGarbage.Proof.TripleDes.AArch64.ModeCore
+meta import VerifiedGarbage.Proof.TripleDes.AArch64.ModeCore
+public import VerifiedGarbage.Proof.Modes.AArch64.CbcDecrypt
+meta import VerifiedGarbage.Proof.Modes.AArch64.CbcDecrypt
+public import VerifiedGarbage.Proof.Modes.AArch64.CbcEncrypt
+meta import VerifiedGarbage.Proof.Modes.AArch64.CbcEncrypt
+public import VerifiedGarbage.Proof.TripleDes.CbcScratch
+meta import VerifiedGarbage.Proof.TripleDes.CbcScratch
+public import VerifiedGarbage.Proof.TripleDes.AArch64.CbcLit
+meta import VerifiedGarbage.Proof.TripleDes.AArch64.CbcLit
+public import VerifiedGarbage.Proof.Framework.AArch64.Inline
+meta import VerifiedGarbage.Proof.Framework.AArch64.Inline
+public import VerifiedGarbage.Proof.Framework.AArch64.Taint
+meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
+public import VerifiedGarbage.Proof.Framework.AArch64.VectorTaint
+meta import VerifiedGarbage.Proof.Framework.AArch64.VectorTaint
+public import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
+meta import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Triple DES-CBC on AArch64 meets its contracts
@@ -22,6 +38,8 @@ is secret. `cbcEncrypt_framed` and `cbcDecrypt_framed` run them with their
 working space on the stack, zeroed on return: 1008 bytes, the 125 words of
 the scratch buffer rounded up to the stack's alignment.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.TripleDes
 

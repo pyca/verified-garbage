@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Weierstrass.X86.MontRow
-import VerifiedGarbage.Proof.Mont.X86.SparseChain
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86.MontRow
+public import VerifiedGarbage.Proof.Mont.X86.SparseChain
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Montgomery arithmetic as functions on x86 (32-bit): P-256's sparse reduction
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.Mont.X86.SparseChain
 the working space at `ebp` (`Bx`): the proofs of `Proof/Mont/X86/P256Red.lean`
 and the chains it is built from, for the window addressed from `ebp`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.X86.Mont
 

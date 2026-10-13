@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlDsa.X86.Sign.Prims
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86.Sign.Prims
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA signing on x86 (32-bit): calls of the rounding and hint primitives
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.MlDsa.X86.Sign.Prims
 check (`norm_piece`) and `MakeHint` (`hint_piece`), which return their results
 in `eax`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86.Sign
 

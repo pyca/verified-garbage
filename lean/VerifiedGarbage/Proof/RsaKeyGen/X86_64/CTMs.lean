@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.RsaKeyGen.X86_64.CTMrLoop
+module
+
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.CTMrLoop
+meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.CTMrLoop
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # A candidate on x86-64: constant time of `montSetup`
@@ -8,6 +15,8 @@ then the number of uniform witnesses. Between the pieces each run keeps
 `Good` (whose header words `w` and the bases are all its pieces read) and
 enough for the multiplications to run (`MsMid`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaKeyGen.X86_64
 

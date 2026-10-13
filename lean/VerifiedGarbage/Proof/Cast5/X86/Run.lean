@@ -1,11 +1,17 @@
-import VerifiedGarbage.Impl.Cast5.X86
-import VerifiedGarbage.Proof.Framework.X86.Exec
-import VerifiedGarbage.Proof.Framework.X86.RegUpd
-import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
-import VerifiedGarbage.Proof.Framework.X86.Inline
-import VerifiedGarbage.Proof.Framework.X86.Syms
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.X86.Wp
+module
+
+public import VerifiedGarbage.Impl.Cast5.X86
+public import VerifiedGarbage.Proof.Framework.X86.Exec
+public import VerifiedGarbage.Proof.Framework.X86.RegUpd
+public import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
+public import VerifiedGarbage.Proof.Framework.X86.Inline
+public import VerifiedGarbage.Proof.Framework.X86.Syms
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.X86.Wp
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # CAST5 on 32-bit x86: running blocks
@@ -17,6 +23,8 @@ import VerifiedGarbage.Proof.Framework.X86.Wp
   memory updates whose registers `RegUpd` reads.
 * `Keep`: what code that writes only the registers `rs` keeps.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Cast5.X86
 

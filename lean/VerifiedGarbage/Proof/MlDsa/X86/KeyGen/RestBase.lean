@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Samp
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Samp
+meta import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Samp
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA key generation on x86 (32-bit): after the samplers
@@ -9,6 +16,8 @@ are (`KR`): after the copies of `ρ` and `K` (`copies_piece`), the first `np`
 entries of `s₁ ‖ s₂` packed to `sk`, the first `nj` of `s₁` in the NTT domain,
 and the first `nr` rows of `t` packed to `pk` and `sk`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86.KeyGen
 

@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Prim
-import VerifiedGarbage.Impl.MlDsa.X86.KeyGen.KeyGen
-import VerifiedGarbage.Spec.MlDsa.Contract
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.MlDsa.DecideAt
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Prim
+public import VerifiedGarbage.Impl.MlDsa.X86.KeyGen.KeyGen
+public import VerifiedGarbage.Spec.MlDsa.Contract
+public import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.MlDsa.DecideAt
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA key generation on x86 (32-bit): parameters and layout
@@ -13,6 +19,8 @@ of stack), and the tactic `lay`, which proves the checks of buffers against a
 layout (`Lay.ok`, `Lay.sep`, `Lay.apart`, …) whose offsets depend on the
 parameters and on indices, by unfolding them into arithmetic for `omega`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86.KeyGen
 

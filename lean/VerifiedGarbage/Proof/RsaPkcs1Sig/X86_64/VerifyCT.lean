@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCorrect
-import VerifiedGarbage.Proof.Bignum.X86_64.Mont
+module
+
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCorrect
+meta import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCorrect
+public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
+meta import VerifiedGarbage.Proof.Bignum.X86_64.Mont
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_pkcs1_verify` on x86-64: constant time
@@ -13,6 +21,8 @@ between the call and the branches are checked by the taint analysis from the
 registers this fixes, each branch's condition is fixed by it too, and the
 call is constant time for its callee's contract, whose public data it fixes.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPkcs1Sig.X86_64.Ver
 

@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Blowfish.AArch64.Lookup
-import VerifiedGarbage.Proof.Blowfish.AArch64.Transpose
+module
+
+public import VerifiedGarbage.Proof.Blowfish.AArch64.Lookup
+public import VerifiedGarbage.Proof.Blowfish.AArch64.Transpose
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Byte planes in and out, and the accumulation of F
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.Blowfish.AArch64.Transpose
 `L`. `words_run`: `words` turns the byte planes in `outReg` into words.
 `combine_run`: `combine j` accumulates them into `fReg`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Blowfish.AArch64
 

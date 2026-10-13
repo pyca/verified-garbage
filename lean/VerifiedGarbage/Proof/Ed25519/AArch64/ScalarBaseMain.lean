@@ -1,10 +1,19 @@
-import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseEngine
-import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarMemory
-import VerifiedGarbage.Proof.Ed25519.AArch64.MulAddCodec
-import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarMain
+module
+
+public import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseEngine
+public import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarMemory
+public import VerifiedGarbage.Proof.Ed25519.AArch64.MulAddCodec
+public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+public import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarMain
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Ed25519.AArch64.ScalarBaseMemory`. -/
+
+@[expose] public section
+
 section
 /-! Output pointer and saved registers remain outside the point workspace. -/
 namespace VG.Proof.Ed25519.AArch64

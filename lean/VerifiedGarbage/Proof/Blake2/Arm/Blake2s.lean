@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Blake2.Arm.CompressS.Compress
-import VerifiedGarbage.Proof.Blake2.Arm.Stream.Verified
-import VerifiedGarbage.Proof.Blake2.Scratch
-import VerifiedGarbage.Proof.Framework.Arm.StackScratch
+module
+
+public import VerifiedGarbage.Proof.Blake2.Arm.CompressS.Compress
+public import VerifiedGarbage.Proof.Blake2.Arm.Stream.Verified
+public import VerifiedGarbage.Proof.Blake2.Scratch
+public import VerifiedGarbage.Proof.Framework.Arm.StackScratch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # BLAKE2s on ARMv7: the streaming functions
@@ -10,6 +16,8 @@ The streaming layer (`Proof/Blake2/Arm/Stream/`) instantiated with BLAKE2s and
 its compression function (`Proof/Blake2/Arm/CompressS/`), against the shared
 contracts of `Spec/Blake2/Contract.lean`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Blake2.Arm.Blake2s
 

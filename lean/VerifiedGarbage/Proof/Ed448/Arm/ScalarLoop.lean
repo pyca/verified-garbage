@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Ed448.Arm.ScalarStep
+module
+
+public import VerifiedGarbage.Proof.Ed448.Arm.ScalarStep
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 scalar arithmetic on ARMv7: the loops
@@ -7,6 +13,8 @@ The remainder of an input's bytes from the top, sixteen bits at a time
 (`byteLoop_ok`), and of the product's limbs (`limbLoop_ok`), and the
 remainders they start from (`zeroR_ok`, `init57_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.Arm
 

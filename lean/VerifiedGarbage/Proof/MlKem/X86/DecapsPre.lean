@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.MlKem.X86.EncV
-import VerifiedGarbage.Impl.MlKem.X86.Decaps
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86.EncV
+public import VerifiedGarbage.Impl.MlKem.X86.Decaps
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86 (32-bit): the setting of decapsulation
@@ -11,6 +17,8 @@ the values the body computes: `m'` (`mD`), and the inputs of the re-encryption
 (`I`). `dk`, `ct` and the values computed from them are irreducible, so that
 elaboration never evaluates their bytes.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.X86.Decaps
 

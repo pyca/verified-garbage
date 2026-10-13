@@ -1,10 +1,16 @@
-import VerifiedGarbage.Proof.AesCcm.BytesAt
-import VerifiedGarbage.Proof.AesCcm.Ctr
-import VerifiedGarbage.Proof.Cmac.Mem
-import VerifiedGarbage.Proof.Framework.Bswap
-import VerifiedGarbage.Proof.Framework.WriteBytes
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Gcm.Be64
+module
+
+public import VerifiedGarbage.Proof.AesCcm.BytesAt
+public import VerifiedGarbage.Proof.AesCcm.Ctr
+public import VerifiedGarbage.Proof.Cmac.Mem
+public import VerifiedGarbage.Proof.Framework.Bswap
+public import VerifiedGarbage.Proof.Framework.WriteBytes
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Gcm.Be64
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CCM: blocks built from words and bytes
@@ -20,6 +26,8 @@ the last 8 bytes of a counter block (`ctr_or`) and the encodings of the
 length of the associated data (`encodeLen_lo`, …) follow; and the flags of
 `B₀` (`flags_val`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesCcm
 

@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesCcm.Arm.Aad
+module
+
+public import VerifiedGarbage.Proof.AesCcm.Arm.Aad
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CCM on ARMv7: `B₀` (`b0 y`)
@@ -9,6 +15,8 @@ flags `64 [a > 0] + 4 (t − 2) + q − 1` (which is A.2.1's for an even `t`);
 replaced by the flags (`le4_flags`) and `[p]₃₂` ORed into its last word, and
 zeroes the MAC state at `W + y`; `b0 y` then chains `B₀` into it (`b0_ok`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

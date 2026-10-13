@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.X448.X86.Mul
-import VerifiedGarbage.Proof.X448.X86.Small
-import VerifiedGarbage.Proof.Framework.X86.Spill
+module
+
+public import VerifiedGarbage.Proof.X448.X86.Mul
+public import VerifiedGarbage.Proof.X448.X86.Small
+public import VerifiedGarbage.Proof.Framework.X86.Spill
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 on x86 (32-bit): the field functions
@@ -14,6 +20,8 @@ operation writes its result (`Mul.lean`, `AddSub.lean`, `Small.lean`), and
 `eax`, `ecx`, `edx` and the flags, the result and its own working space
 (`FnOut`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448.X86
 

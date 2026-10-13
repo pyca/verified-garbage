@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.AesOcb.AArch64.CTBase
-import VerifiedGarbage.Proof.AesOcb.AArch64.Body
+module
+
+public import VerifiedGarbage.Proof.AesOcb.AArch64.CTBase
+meta import VerifiedGarbage.Proof.AesOcb.AArch64.CTBase
+public import VerifiedGarbage.Proof.AesOcb.AArch64.Body
+meta import VerifiedGarbage.Proof.AesOcb.AArch64.Body
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-OCB on AArch64: the data and the tag are constant time
@@ -11,6 +19,8 @@ which are the same in both runs; what each piece keeps of them is read off
 its instructions (`exec_keep`) or from its correctness proof. The calls have
 the same arguments in both runs (`callBlocks_rel`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

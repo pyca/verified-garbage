@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Camellia.Arm.Copy
+module
+
+public import VerifiedGarbage.Proof.Camellia.Arm.Copy
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Slots, and saving and restoring registers, on ARMv7
@@ -9,6 +15,8 @@ saving and restoring of the callee-saved registers (`save_ok`,
 `restore_ok`) in the slots from `savedSlot`, as SM4's
 (`Proof/Sm4/Arm/Prologue.lean`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Camellia.Arm
 

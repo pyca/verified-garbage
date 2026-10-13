@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Fprog
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Fprog
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Short Weierstrass curves on AArch64: code as a sequence of blocks
@@ -6,6 +12,8 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.Fprog
 `blocks ls` runs as the block `ls.flatten` (`blocks_wp`), so `fprogB` (a block
 per field operation) runs as `fprog`, and `fprog_ok`/`rcb_ok` hold for it.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.AArch64
 

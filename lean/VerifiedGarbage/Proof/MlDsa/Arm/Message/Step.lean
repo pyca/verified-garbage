@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlDsa.Arm.Message.Layout
+module
+
+public import VerifiedGarbage.Proof.MlDsa.Arm.Message.Layout
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on ARMv7, `sign_message` and `verify_message`: single instructions
@@ -8,6 +14,8 @@ functions run, as a step of a block that leaves its result and changes
 nothing else (`Only` the register it writes, or `MemTo` the memory a store
 leaves), passed on to the rest of the block.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Arm.Message
 

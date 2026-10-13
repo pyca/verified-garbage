@@ -1,5 +1,11 @@
-import VerifiedGarbage.Impl.Weierstrass.X86.Mont
-import VerifiedGarbage.Proof.Mont.X86.Step
+module
+
+public import VerifiedGarbage.Impl.Weierstrass.X86.Mont
+public import VerifiedGarbage.Proof.Mont.X86.Step
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Montgomery arithmetic as functions on x86 (32-bit): the working space at `ebp`
@@ -13,6 +19,8 @@ and the multiply-accumulate steps of a row of the product (`stepG_ok`,
 `step0G_ok`, `stepZ_ok`), whose multiplicand word comes from any source: a
 pointer (`[esi + 4j]`) or an immediate (a word of the modulus).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.X86.Mont
 

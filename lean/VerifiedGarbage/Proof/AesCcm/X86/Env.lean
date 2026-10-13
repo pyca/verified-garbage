@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.AesCcm.X86.Contract
-import VerifiedGarbage.Proof.AesCcm.Ctr
-import VerifiedGarbage.Proof.AesGcm.X86.Common
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Impl.AesCcm.X86
+module
+
+public import VerifiedGarbage.Proof.AesCcm.X86.Contract
+public import VerifiedGarbage.Proof.AesCcm.Ctr
+public import VerifiedGarbage.Proof.AesGcm.X86.Common
+public import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Impl.AesCcm.X86
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CCM on x86: where everything is
@@ -15,6 +21,8 @@ the entry keeps in `W` (`Slots`). The pieces write the parts of `W` in
 `mutR` (and the data, and the stack below `SP`), so the slots and our
 caller's registers saved in `W` stay as the entry left them.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

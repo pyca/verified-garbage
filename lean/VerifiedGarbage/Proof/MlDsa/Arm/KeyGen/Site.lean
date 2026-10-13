@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Base
-import VerifiedGarbage.Proof.MlKem.Arm.Prf
+module
+
+public import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Base
+public import VerifiedGarbage.Proof.MlKem.Arm.Prf
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on 32-bit ARM: the buffers of the top-level functions
@@ -17,6 +23,8 @@ in ML-KEM). The sponge (`hash`) is ML-KEM's (`hash_ok`, `hash_ct`), which
 use the 8 bytes below the stack pointer as buffer 1: `hashLay` is the layout
 with buffer 1 so narrowed (`hashS`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Arm.KeyGen
 

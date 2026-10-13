@@ -1,7 +1,15 @@
-import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Rounds
-import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.ChaCha20.Keystream
+module
+
+public import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Rounds
+public import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.ChaCha20.Keystream
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.ChaCha20.AArch64.Neon4
 

@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.Ed448.AArch64.VerifyCT.Erase
-import VerifiedGarbage.Proof.X448.AArch64.Base.Erase
+module
+
+public import VerifiedGarbage.Proof.Ed448.AArch64.VerifyCT.Erase
+meta import VerifiedGarbage.Proof.Ed448.AArch64.VerifyCT.Erase
+public import VerifiedGarbage.Proof.X448.AArch64.Base.Erase
+meta import VerifiedGarbage.Proof.X448.AArch64.Base.Erase
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 verification's equation on AArch64: constant time of the entry, the table and `[S]B`
@@ -13,6 +21,8 @@ space's pointer, `x3`, is public. The field operations, erased
 (`Proof/X448/AArch64/Fast/Erase.lean`), are analysed as pieces of their
 blocks (`Split`): once each, not once for every slot they work on.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.AArch64
 

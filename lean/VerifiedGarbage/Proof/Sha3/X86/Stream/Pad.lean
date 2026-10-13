@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.Sha3.X86.Permute
-import VerifiedGarbage.Proof.Framework.Offset
+module
+
+public import VerifiedGarbage.Proof.Sha3.X86.Permute
+meta import VerifiedGarbage.Proof.Sha3.X86.Permute
+public import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Offset
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The SHA-3 sponge on x86 (32-bit): `pad`
@@ -8,6 +16,8 @@ The structure of the x86-64 proof (`VG.Proof.Sha3.X86_64.Stream.Pad`): two
 bytes of the state XORed, then the permutation, with `ebx` and `esi` saved in
 the scratch space.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sha3.X86.Stream.Pad
 

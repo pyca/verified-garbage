@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.X448.AArch64.Base.Negate
-import VerifiedGarbage.Proof.X448.AArch64.Base.AddEnv
+module
+
+public import VerifiedGarbage.Proof.X448.AArch64.Base.Negate
+public import VerifiedGarbage.Proof.X448.AArch64.Base.AddEnv
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 of the base point on AArch64: one step of the comb
@@ -9,6 +15,8 @@ selects table `j`'s entries, negates each for a negative digit and adds it to
 its accumulator: the invariant `StepInv` (as Ed25519's `CombInv`) holds for
 `j + 1` after the step if it held for `j`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448.AArch64.Base
 

@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Comb
-import VerifiedGarbage.Impl.Weierstrass.AArch64.Chain
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Comb
+public import VerifiedGarbage.Impl.Weierstrass.AArch64.Chain
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Short Weierstrass curves on AArch64: powers by sliding windows
@@ -11,6 +17,8 @@ holds `B^(2 i + 1)` and `B²` (`table_ok`), each step takes `B^v` to
 multiplication by the table), so the steps take `B^first` to `B^e`
 (`chainPow_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.AArch64
 

@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Round
-import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
+module
+
+public import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Round
+public import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # DES on AArch64: spreading the round keys
@@ -11,6 +17,8 @@ shifted copy whose low six bits are its box's bits of the key
 (`gather_facts`); masking those and XORing the tables' numbers into the
 top two bits gives the two spread keys (`spreadV_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.CmacTripleDes.AArch64
 

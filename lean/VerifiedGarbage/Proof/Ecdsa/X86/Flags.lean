@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Weierstrass.X86.Bytes
-import VerifiedGarbage.Impl.Ecdsa.X86
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86.Bytes
+public import VerifiedGarbage.Impl.Ecdsa.X86
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDSA on x86 (32-bit): the masks of the checks, and the flag
@@ -11,6 +17,8 @@ the flag word (`andFlag_ok`); so `checkRange a` ands the mask of
 `0 < [a] < [MN]` into the flag (`checkRange_ok`) and `checkNonzero a` the mask
 of `[a] ≠ 0` (`checkNonzero_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.X86
 

@@ -1,9 +1,21 @@
-import VerifiedGarbage.Proof.Ed448.X86_64.BaseMain
-import VerifiedGarbage.Proof.Ed448.X86_64.BaseLit
-import VerifiedGarbage.Proof.Framework.X86_64.Taint
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Spec.Ed448.Contract
-import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
+module
+
+public import VerifiedGarbage.Proof.Ed448.X86_64.BaseMain
+meta import VerifiedGarbage.Proof.Ed448.X86_64.BaseMain
+public import VerifiedGarbage.Proof.Ed448.X86_64.BaseLit
+meta import VerifiedGarbage.Proof.Ed448.X86_64.BaseLit
+public import VerifiedGarbage.Proof.Framework.X86_64.Taint
+meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.Ed448.Contract
+meta import VerifiedGarbage.Spec.Ed448.Contract
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 base-point multiplication on x86-64: `Verified`
@@ -18,6 +30,8 @@ return address (`Verified.of_inline_ct`). Callers get the code's correctness
 for states that keep their buffers off those 8 bytes (`scalarBase_ok`,
 `scalarBaseLocal.clear`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.X86_64
 

@@ -1,7 +1,13 @@
-import VerifiedGarbage.Spec.Rsa.Contract
-import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Framework.AArch64.Depth
+module
+
+public import VerifiedGarbage.Spec.Rsa.Contract
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.AArch64.Depth
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-PKCS1-v1_5 encryption on AArch64: the public-key operation, as a callee
@@ -16,6 +22,8 @@ arguments (`scratch` and `scratch_len`, at `sp` and `sp + 8`), with `S + 1`
 bytes of stack below `sp`: `pub_correct` and `pub_ct` are the
 implementation's correctness and constant time under it.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPkcs1Enc.AArch64
 

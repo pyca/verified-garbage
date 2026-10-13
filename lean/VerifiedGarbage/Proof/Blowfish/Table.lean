@@ -1,5 +1,11 @@
-import VerifiedGarbage.Impl.Blowfish.Table
-import VerifiedGarbage.Proof.Blowfish.Blocks
+module
+
+public import VerifiedGarbage.Impl.Blowfish.Table
+public import VerifiedGarbage.Proof.Blowfish.Blocks
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The table of the initial schedule
@@ -9,6 +15,8 @@ initial schedule's image; `initByte_entry`: byte `b` of entry `i` of that
 image is byte `b` of `initial[i]`; `scheduleAt_of_bytes`: memory holding the
 bytes of each entry of a schedule holds the schedule.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Blowfish
 

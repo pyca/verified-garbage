@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Blowfish.X86_64.Scan
-import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.Proof.Framework.X86_64.LaneSse
+module
+
+public import VerifiedGarbage.Proof.Blowfish.X86_64.Scan
+public import VerifiedGarbage.Proof.Framework.X86_64.Exec
+public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+public import VerifiedGarbage.Proof.Framework.X86_64.LaneSse
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # A row of the scan, instruction by instruction
@@ -9,6 +15,8 @@ import VerifiedGarbage.Proof.Framework.X86_64.LaneSse
 `masks_run`: the masks of the row; `plane_run`: one plane's row into its
 accumulator.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Blowfish.X86_64
 

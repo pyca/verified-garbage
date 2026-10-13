@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Ed448.AArch64.ScalarOperands
-import VerifiedGarbage.Proof.Ed448.AArch64.ScalarLit
-import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-import VerifiedGarbage.TCB.AArch64.Target
+module
+
+public import VerifiedGarbage.Proof.Ed448.AArch64.ScalarOperands
+public import VerifiedGarbage.Proof.Ed448.AArch64.ScalarLit
+public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+public import VerifiedGarbage.TCB.AArch64.Target
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 scalar reduction on AArch64: the whole function
@@ -12,6 +18,8 @@ correctness of `vg_ed448_scalar_reduce` against it: the working space is
 written only where the callee-saved registers are saved, so the input is
 read unchanged; they are restored before the result is written.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.AArch64
 

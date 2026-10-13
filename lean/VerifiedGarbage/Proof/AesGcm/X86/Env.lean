@@ -1,9 +1,15 @@
-import VerifiedGarbage.Proof.AesGcm.X86.Callee
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.X86.RegUpd
-import VerifiedGarbage.Proof.Framework.WriteBytes
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.X86.Wp
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86.Callee
+public import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.X86.RegUpd
+public import VerifiedGarbage.Proof.Framework.WriteBytes
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.X86.Wp
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on x86: where everything is
@@ -17,6 +23,8 @@ which registers hold `W`, the state and `SP`, that the context may be read
 and the state and `W` written, and that `W + ctxO` holds `Ctx`. `xrun`
 runs a straight-line block symbolically.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

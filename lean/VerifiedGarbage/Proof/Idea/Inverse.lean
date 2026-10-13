@@ -1,5 +1,11 @@
-import VerifiedGarbage.Spec.Idea
-import VerifiedGarbage.Proof.Framework.Pratt
+module
+
+public import VerifiedGarbage.Spec.Idea
+public import VerifiedGarbage.Proof.Framework.Pratt
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # IDEA: the ⊙-inverse by squaring and multiplying
@@ -10,6 +16,8 @@ steps of `t := (t ⊙ t) ⊙ a` from `t = a`, which is `a ^ (2¹⁶ - 1)`
 modulo the prime 2¹⁶ + 1 (`residue_mul`), whose primality (`prime`, by a
 Pratt certificate) keeps every product nonzero.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Idea
 

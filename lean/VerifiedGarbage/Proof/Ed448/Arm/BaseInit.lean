@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.X448.Arm.Save
-import VerifiedGarbage.Proof.X448.Arm.Env
-import VerifiedGarbage.Impl.Ed448.Arm.ScalarBase
+module
+
+public import VerifiedGarbage.Proof.X448.Arm.Save
+public import VerifiedGarbage.Proof.X448.Arm.Env
+public import VerifiedGarbage.Impl.Ed448.Arm.ScalarBase
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 base-point multiplication on ARMv7: the entry
@@ -9,6 +15,8 @@ The callee-saved registers saved (X448's `setupHead`) and every slot set to
 its initial value (`initSlots_ok`): `R = (0 : 1 : 1)`, `Q` the base point, `d`,
 and zero elsewhere, every limb below `2¹⁶`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.Arm
 

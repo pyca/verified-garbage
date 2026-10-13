@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Ecdsa.X86_64.Middle
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.Middle
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDSA on x86-64: the checks, and `s = k⁻¹ (e + r d) mod n`
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.Ecdsa.X86_64.Middle
 `scalarOps_ok`: `r`, `d` and `e` enter Montgomery's form modulo `n`, then
 `s = k⁻¹ (e + r d)`, with `k⁻¹ R` in `ACC`, and `s` leaves it.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.X86_64
 

@@ -1,21 +1,45 @@
-import VerifiedGarbage.Proof.Poly1305.X86_64.Init
-import VerifiedGarbage.Proof.Poly1305.X86_64.Blocks
-import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Blocks
-import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Blocks
-import VerifiedGarbage.Proof.Poly1305.X86_64.Ifma.Blocks
-import VerifiedGarbage.Proof.Poly1305.X86_64.Finalize
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Variant
-import VerifiedGarbage.Proof.ChaCha20Poly1305.Spec
-import VerifiedGarbage.Impl.ChaCha20Poly1305.X86_64
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Spec.ChaCha20Poly1305
-import VerifiedGarbage.TCB.X86_64.Target
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.ContractPost
-import VerifiedGarbage.Proof.Framework.X86_64.RelCT
-import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.XorBufX
+module
+
+public import VerifiedGarbage.Proof.Poly1305.X86_64.Init
+meta import VerifiedGarbage.Proof.Poly1305.X86_64.Init
+public import VerifiedGarbage.Proof.Poly1305.X86_64.Blocks
+meta import VerifiedGarbage.Proof.Poly1305.X86_64.Blocks
+public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Blocks
+meta import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Blocks
+public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Blocks
+meta import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Blocks
+public import VerifiedGarbage.Proof.Poly1305.X86_64.Ifma.Blocks
+meta import VerifiedGarbage.Proof.Poly1305.X86_64.Ifma.Blocks
+public import VerifiedGarbage.Proof.Poly1305.X86_64.Finalize
+meta import VerifiedGarbage.Proof.Poly1305.X86_64.Finalize
+public import VerifiedGarbage.Proof.ChaCha20.X86_64.Variant
+meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Variant
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.Spec
+meta import VerifiedGarbage.Proof.ChaCha20Poly1305.Spec
+public import VerifiedGarbage.Impl.ChaCha20Poly1305.X86_64
+meta import VerifiedGarbage.Impl.ChaCha20Poly1305.X86_64
+public import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Spec.ChaCha20Poly1305
+meta import VerifiedGarbage.Spec.ChaCha20Poly1305
+public import VerifiedGarbage.TCB.X86_64.Target
+meta import VerifiedGarbage.TCB.X86_64.Target
+public import Mathlib.Tactic.SplitIfs
+meta import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.ContractPost
+meta import VerifiedGarbage.Proof.Framework.ContractPost
+public import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+public import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
+meta import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
+public import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.XorBufX
+meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.XorBufX
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ChaCha20-Poly1305 on x86-64: the calls
@@ -24,6 +48,8 @@ Each call of a verified function, from its proof of `Verified` (with
 `WP.call`): what it needs of the state it is called from, and what holds when
 it returns.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.ChaCha20Poly1305.X86_64
 

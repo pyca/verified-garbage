@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Core
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Reduce
-import VerifiedGarbage.Proof.Weierstrass.Words32
-import VerifiedGarbage.Proof.Ecdsa.Arm.Setup
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Core
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Reduce
+public import VerifiedGarbage.Proof.Weierstrass.Words32
+public import VerifiedGarbage.Proof.Ecdsa.Arm.Setup
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Deterministic ECDSA on 32-bit ARM: the blocks between the calls
@@ -11,6 +17,8 @@ As on x86 (`Proof/Ecdsa/Rfc6979/X86/Blocks.lean`): `V = 0x01…` and
 (`initCnt_ok`), whether to go on (`goOn_ok`, `again_ok`, `stop_ok`), and the
 wiping of the frame with our caller's registers restored (`wipe_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Rfc6979.Arm
 

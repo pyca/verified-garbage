@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.AesGcm.X86.CryptWhole
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86.CryptWhole
+meta import VerifiedGarbage.Proof.AesGcm.X86.CryptWhole
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on x86: the last bytes of the text (`cryptTail`), and `crypt`
@@ -9,6 +16,8 @@ counter block encrypted onto zeros, by `vg_aes_ctr32`) and XORs it into
 them (`cryptTail_pc`), by `Proof.Gcm.ctr_tail`. `crypt_pc`: the three
 pieces.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

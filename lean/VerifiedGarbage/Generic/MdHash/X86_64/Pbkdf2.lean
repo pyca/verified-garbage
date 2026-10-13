@@ -1,5 +1,7 @@
-import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Variant
+module
+
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Variant
 
 /-!
 # PBKDF2-HMAC (RFC 8018) over a Merkle–Damgård hash function on x86-64
@@ -21,6 +23,8 @@ second stack argument (`Verified.stackArgScratch`). For SHA-256, whose
 emitted on its own, as `vg_pbkdf2_hmac_sha256_scratch`.
 -/
 
+@[expose] public section
+
 namespace VG.Generic.MdHash.X86_64.Pbkdf2
 
 def artifacts (v : Proof.Pbkdf2.Md.X86_64.MdHash) : List Artifact := [
@@ -30,7 +34,7 @@ def artifacts (v : Proof.Pbkdf2.Md.X86_64.MdHash) : List Artifact := [
     doc := v.I.iterateApi.doc
     code := v.H.iterate
     contract := v.I.iterateContract X86_64.abi 8
-    ofSig := ⟨_, _, _, by unfold Spec.Hmac.Instance.iterateContract; rfl⟩
+    ofSig := by exact (⟨_, _, _, by unfold Spec.Hmac.Instance.iterateContract; rfl⟩)
     stack := 8
     verified := v.iterate
     spSafe := v.iterateSp
@@ -41,7 +45,7 @@ def artifacts (v : Proof.Pbkdf2.Md.X86_64.MdHash) : List Artifact := [
     doc := v.I.pbkdf2Api.doc
     code := Impl.StackScratch.X86_64.withStackArgScratch (Proof.Pbkdf2.Md.X86_64.pbkdf2Frame v.I) 1 v.H.pbkdf2
     contract := v.I.pbkdf2Contract X86_64.abi (24 + Proof.Pbkdf2.Md.X86_64.pbkdf2Frame v.I)
-    ofSig := ⟨_, _, _, by unfold Spec.Hmac.Instance.pbkdf2Contract Spec.Pbkdf2.pbkdf2Contract; rfl⟩
+    ofSig := by exact (⟨_, _, _, by unfold Spec.Hmac.Instance.pbkdf2Contract Spec.Pbkdf2.pbkdf2Contract; rfl⟩)
     stack := 24 + Proof.Pbkdf2.Md.X86_64.pbkdf2Frame v.I
     verified := v.pbkdf2F
     spSafe := X86_64.withStackArgScratch_spSafe v.pbkdf2Sp
@@ -56,7 +60,7 @@ def artifacts (v : Proof.Pbkdf2.Md.X86_64.MdHash) : List Artifact := [
       doc := v.I.pbkdf2ScratchApi.doc
       code := v.H.pbkdf2
       contract := v.I.pbkdf2ScratchContract X86_64.abi 24
-      ofSig := ⟨_, _, _, by unfold Spec.Hmac.Instance.pbkdf2ScratchContract; rfl⟩
+      ofSig := by exact (⟨_, _, _, by unfold Spec.Hmac.Instance.pbkdf2ScratchContract; rfl⟩)
       stack := 24
       verified := v.pbkdf2
       spSafe := v.pbkdf2Sp

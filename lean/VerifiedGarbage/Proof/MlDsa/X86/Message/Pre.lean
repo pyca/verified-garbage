@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.MlDsa.X86.Message.HashMu
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.TCB.X86.Target
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86.Message.HashMu
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.TCB.X86.Target
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on x86 (32-bit), `sign_message` and `verify_message`: the preconditions and the layouts
@@ -11,6 +17,8 @@ Untrusted: everything here is checked by Lean. The preconditions of
 satisfying them (`slay`, `vlay`), and what the contracts' public data say of
 two runs (`spub_of`, `vpub_of`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86.Message
 

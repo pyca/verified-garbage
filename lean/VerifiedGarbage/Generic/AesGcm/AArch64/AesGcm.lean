@@ -1,7 +1,9 @@
-import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.AesGcm.AArch64.Frame
-import VerifiedGarbage.Proof.AesGcm.AArch64.GhashImpls
-import VerifiedGarbage.Proof.AesGcm.AArch64.Gather.Verified
+module
+
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Frame
+public import VerifiedGarbage.Proof.AesGcm.AArch64.GhashImpls
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Gather.Verified
 
 /-!
 # AES-GCM (NIST SP 800-38D) on AArch64
@@ -26,6 +28,8 @@ the stack. Every function keeps its working space in a frame of 2560 bytes,
 or, for `seal` and `open`, 2576 and 2592 bytes that also hold a copy of
 their stack arguments.
 -/
+
+@[expose] public section
 
 namespace VG.Generic.AesGcm.AArch64.AesGcm
 

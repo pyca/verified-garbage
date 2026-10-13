@@ -1,8 +1,17 @@
-import VerifiedGarbage.Proof.Ed25519.AArch64.Mul
-import VerifiedGarbage.Impl.Ed25519.AArch64.MulAdd
-import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarMemory
+module
+
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Mul
+public import VerifiedGarbage.Impl.Ed25519.AArch64.MulAdd
+public import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarMemory
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Ed25519.AArch64.WideMul`. -/
+
+@[expose] public section
+
 section
 /-! Full-width multiplication with an initial four-word addend. -/
 namespace VG.Proof.Ed25519.AArch64

@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesGcm.Arm.Entry
+module
+
+public import VerifiedGarbage.Proof.AesGcm.Arm.Entry
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on ARMv7: stack arguments read after other code
@@ -9,6 +15,8 @@ of `s₀`; code that writes only regions apart from the arguments keeps it
 (`ArgsKeep.frame`), and `ldr rX, [sp, #4i]` then loads argument `i` of `s₀`
 (`ArgsKeep.read`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesGcm.Arm
 

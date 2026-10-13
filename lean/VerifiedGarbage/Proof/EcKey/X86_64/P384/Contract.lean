@@ -1,7 +1,13 @@
-import VerifiedGarbage.Spec.EcKey.P384
-import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.Tables
+module
+
+public import VerifiedGarbage.Spec.EcKey.P384
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.Tables
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # P-384 public keys on x86-64: the contract the proof is written against
@@ -12,6 +18,8 @@ by name: `vg_ec_p384_public_key(out = rdi, d = rsi, scratch = rdx)`, the
 result in `eax`, and the tables at the address of the static
 `VG_P384_COMB`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.EcKey.X86_64.P384
 

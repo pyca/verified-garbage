@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Blowfish.X86.Ecb
-import VerifiedGarbage.Proof.Blowfish.KeyTable
+module
+
+public import VerifiedGarbage.Proof.Blowfish.X86.Ecb
+public import VerifiedGarbage.Proof.Blowfish.KeyTable
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Blowfish on x86 (32-bit): the initial schedule and the key into the P-array
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.Blowfish.KeyTable
 immediates, into the schedule at `ebx`. `keyP_run`: Pᵢ ^= the `i`-th 32 bits
 of the key, cycling through its bytes, for the 18 entries.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Blowfish.X86
 

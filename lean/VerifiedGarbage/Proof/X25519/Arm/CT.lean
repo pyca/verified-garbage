@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.X25519.Arm.Lit
-import VerifiedGarbage.Proof.Framework.Arm.Taint
+module
+
+public import VerifiedGarbage.Proof.X25519.Arm.Lit
+meta import VerifiedGarbage.Proof.X25519.Arm.Lit
+public import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X25519 on 32-bit ARM: constant time
@@ -8,6 +16,8 @@ Only the pointers in `r0`–`r3` are public; the taint analysis (`taint_decide`)
 finds that every branch and address depends on them and on the loop counters
 alone.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X25519.Arm
 

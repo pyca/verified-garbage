@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Weierstrass.AArch64.MontFnG
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.MontFnG
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Montgomery products as functions on AArch64: the moduli
@@ -6,6 +12,8 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.MontFnG
 The prime `p` of P-384 and of P-521, and P-384's and P-521's orders `n`, are moduli the
 functions support (`ModOk`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.AArch64.Mont
 

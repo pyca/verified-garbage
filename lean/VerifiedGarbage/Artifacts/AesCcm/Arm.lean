@@ -1,5 +1,7 @@
-import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Proof.AesCcm.Arm.Frame
+module
+
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.Proof.AesCcm.Arm.Frame
 
 /-!
 # AES-CCM (NIST SP 800-38C) on ARMv7
@@ -17,6 +19,8 @@ Both functions run in a frame of 2592 bytes holding their working space
 `vg_cmac_aes_update`'s own frame for its call of `vg_aes_ctr32` pushes two
 more: 2608 bytes of stack in all.
 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.AesCcm.Arm
 

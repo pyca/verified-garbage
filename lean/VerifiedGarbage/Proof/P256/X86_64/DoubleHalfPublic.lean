@@ -1,8 +1,17 @@
-import VerifiedGarbage.Impl.P256.X86_64.DoubleHalfPublic
-import VerifiedGarbage.Proof.P256.X86_64.DoubleHalfForward
-import VerifiedGarbage.Proof.Weierstrass.X86_64.FieldTiming
+module
+
+public import VerifiedGarbage.Impl.P256.X86_64.DoubleHalfPublic
+public import VerifiedGarbage.Proof.P256.X86_64.DoubleHalfForward
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.FieldTiming
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Point correctness and a shared field environment for the joint loop's doubler. -/
+
+@[expose] public section
+
 namespace VG.Proof.P256.X86_64
 open VG VG.X86_64 VG.Impl.Mont VG.Impl.Weierstrass VG.Impl.Weierstrass.X86_64
 open VG.Impl.P256.X86_64 VG.Proof.Weierstrass VG.Proof.Weierstrass.X86_64

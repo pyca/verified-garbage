@@ -1,7 +1,16 @@
-import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombPublic
-import VerifiedGarbage.Impl.Weierstrass.AArch64.Jacobian
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombPublic
+public import VerifiedGarbage.Impl.Weierstrass.AArch64.Jacobian
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Public Jacobian table loads within the scratch allocation. -/
+
+@[expose] public section
+
 namespace VG.Proof.Weierstrass.AArch64
 open VG VG.AArch64 VG.Impl.Mont.AArch64 VG.Impl.Mont VG.Impl.Weierstrass.AArch64 VG.Impl.Weierstrass
 open VG.Proof.Mont.AArch64 VG.Proof.Mont

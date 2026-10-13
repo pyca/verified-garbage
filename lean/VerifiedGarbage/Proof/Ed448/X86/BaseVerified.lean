@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Ed448.X86.BaseCT
+module
+
+public import VerifiedGarbage.Proof.Ed448.X86.BaseCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 base-point multiplication on x86 (32-bit): `Verified`
@@ -12,6 +18,8 @@ imports). The local contract only reads the arguments; the shared one lets
 the code write them too (`writeArgs`), which it does not
 (`Verified.narrowTo`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.X86
 

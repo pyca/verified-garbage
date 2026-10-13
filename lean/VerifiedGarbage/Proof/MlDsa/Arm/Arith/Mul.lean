@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.MlDsa.Arm.Arith.AddSub
-import VerifiedGarbage.Proof.MlDsa.Arm.Arith.Saving
-import VerifiedGarbage.Impl.MlDsa.Arm.Arith.Mul
+module
+
+public import VerifiedGarbage.Proof.MlDsa.Arm.Arith.AddSub
+meta import VerifiedGarbage.Proof.MlDsa.Arm.Arith.AddSub
+public import VerifiedGarbage.Proof.MlDsa.Arm.Arith.Saving
+meta import VerifiedGarbage.Proof.MlDsa.Arm.Arith.Saving
+public import VerifiedGarbage.Impl.MlDsa.Arm.Arith.Mul
+meta import VerifiedGarbage.Impl.MlDsa.Arm.Arith.Mul
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on 32-bit ARM: `vg_mldsa_multiply_ntt` and `vg_mldsa_multiply_add_ntt`
@@ -11,6 +20,8 @@ the loads and the zPieces (`head_ok`), `mulz` (`mulz_ok`) and the rest
 are done (`Inv`), and `wp_saving` puts the loop in the frames that save
 `r4`–`r9`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Arm.Arith.Mul
 

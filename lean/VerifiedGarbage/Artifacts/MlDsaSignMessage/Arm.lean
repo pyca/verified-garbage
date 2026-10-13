@@ -1,5 +1,7 @@
-import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Proof.MlDsa.Arm.Message.Verified
+module
+
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.Proof.MlDsa.Arm.Message.Verified
 
 /-!
 # ML-DSA (FIPS 204) on 32-bit ARM: signing messages
@@ -13,6 +15,8 @@ implementation. The emitter adds the `# Safety` items that depend on the
 target (`Sig.layoutDoc`), from `stack` and `writeArgs`, which `ofSig` checks
 against the contract.
 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.MlDsaSignMessage.Arm
 

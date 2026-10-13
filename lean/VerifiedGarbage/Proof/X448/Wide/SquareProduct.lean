@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.X448.Wide.Product
+module
+
+public import VerifiedGarbage.Proof.X448.Wide.Product
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Untrusted: symmetric diagonal accumulation for an eight-limb square. -/
+
+@[expose] public section
+
 namespace VG.Proof.X448.Wide
 
 def sqrSum (f : Nat → Nat) (k : Nat) : Nat → Nat

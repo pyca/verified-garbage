@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.AesOcb.AArch64.Body
-import VerifiedGarbage.Proof.AesOcb.AArch64.Entry
-import VerifiedGarbage.Proof.AesOcb.AArch64.Hash
-import VerifiedGarbage.Proof.AesOcb.AArch64.Nonce
+module
+
+public import VerifiedGarbage.Proof.AesOcb.AArch64.Body
+public import VerifiedGarbage.Proof.AesOcb.AArch64.Entry
+public import VerifiedGarbage.Proof.AesOcb.AArch64.Hash
+public import VerifiedGarbage.Proof.AesOcb.AArch64.Nonce
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-OCB on AArch64: `vg_aes_ocb_seal`
@@ -13,6 +19,8 @@ and `openPreA` give the facts the proofs use about the arguments (`Args`,
 then the copy of the tag to `tag`, whose address is on the stack
 (`tagOut`), and `restore` (`seal_wp`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

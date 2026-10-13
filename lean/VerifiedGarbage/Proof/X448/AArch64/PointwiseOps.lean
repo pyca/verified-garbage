@@ -1,9 +1,18 @@
-import VerifiedGarbage.Proof.X448.AArch64.PointwiseFused
-import VerifiedGarbage.Proof.X448.AArch64.PointwiseAdd
-import VerifiedGarbage.Proof.X448.AArch64.PointwiseSub
-import VerifiedGarbage.Proof.X448.AArch64.PointwiseSmall
+module
+
+public import VerifiedGarbage.Proof.X448.AArch64.PointwiseFused
+public import VerifiedGarbage.Proof.X448.AArch64.PointwiseAdd
+public import VerifiedGarbage.Proof.X448.AArch64.PointwiseSub
+public import VerifiedGarbage.Proof.X448.AArch64.PointwiseSmall
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Untrusted: fused pointwise operations satisfy the existing slot contract. -/
+
+@[expose] public section
+
 namespace VG.Proof.X448.AArch64
 open VG VG.AArch64 VG.Impl.X448.AArch64
 

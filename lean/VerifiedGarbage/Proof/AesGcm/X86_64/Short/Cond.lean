@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Small
-import VerifiedGarbage.Proof.AesGcm.X86_64.Cmp
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Small
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Cmp
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM's short path on x86-64: the condition
@@ -9,6 +15,8 @@ the short path applies: a 12-byte nonce, fewer than 512 bytes of additional
 data and of text, fewer than 32 blocks of them, and some text or more than 16
 bytes of additional data (`cond_ok`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

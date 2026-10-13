@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.AesCtr.X86_64.Iter
-import VerifiedGarbage.Proof.AesCbc.X86_64.CT
+module
+
+public import VerifiedGarbage.Proof.AesCtr.X86_64.Iter
+meta import VerifiedGarbage.Proof.AesCtr.X86_64.Iter
+public import VerifiedGarbage.Proof.AesCbc.X86_64.CT
+meta import VerifiedGarbage.Proof.AesCbc.X86_64.CT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CTR on x86-64: constant time
@@ -14,6 +22,8 @@ number of blocks it takes depends only on the public data (`mOf_eq`); and
 the branches (the carry, the loop) are on facts the correctness proof gives
 in terms of the public data (`After.zf`, `iter_wp`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesCtr.X86_64
 

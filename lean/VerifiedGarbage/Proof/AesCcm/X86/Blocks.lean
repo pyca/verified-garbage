@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.AesCcm.X86.Callee
-import VerifiedGarbage.Proof.AesCcm.Words32
-import VerifiedGarbage.Proof.AesGcm.X86.Cmp
+module
+
+public import VerifiedGarbage.Proof.AesCcm.X86.Callee
+meta import VerifiedGarbage.Proof.AesCcm.X86.Callee
+public import VerifiedGarbage.Proof.AesCcm.Words32
+meta import VerifiedGarbage.Proof.AesCcm.Words32
+public import VerifiedGarbage.Proof.AesGcm.X86.Cmp
+meta import VerifiedGarbage.Proof.AesGcm.X86.Cmp
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CCM on x86: `Ctr₀`, counter blocks and chaining a block
@@ -11,6 +20,8 @@ after it: `Ctr₀` (`ctrs_ok`). `ctrAt` makes `Ctrᵢ` at `W + 64` from `Ctr₀`
 (`ctrAt_ok`); `updBlock y` chains the block `B` at `W + 32` into the MAC
 state at `W + y` (`updBlock_ok`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

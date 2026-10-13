@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.AesXts.Alpha
-import VerifiedGarbage.Proof.AesXts.Spec
-import VerifiedGarbage.Proof.AesCbc.X86.Body
-import VerifiedGarbage.Proof.Framework.X86.RegUpd
-import VerifiedGarbage.Impl.AesXts.X86
+module
+
+public import VerifiedGarbage.Proof.AesXts.Alpha
+public import VerifiedGarbage.Proof.AesXts.Spec
+public import VerifiedGarbage.Proof.AesCbc.X86.Body
+public import VerifiedGarbage.Proof.Framework.X86.RegUpd
+public import VerifiedGarbage.Impl.AesXts.X86
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # XTS-AES on x86: multiplication by `α`
@@ -11,6 +17,8 @@ import VerifiedGarbage.Impl.AesXts.X86
 canonical words of `mulAlpha_words32` (`Proof/AesXts/Alpha.lean`), from
 `add`, `adc`, `sbb`, `and` and `xor`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesXts.X86
 

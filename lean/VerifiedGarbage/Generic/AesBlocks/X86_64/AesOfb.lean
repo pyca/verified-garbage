@@ -1,5 +1,7 @@
-import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.AesOfb.X86_64.Verified
+module
+
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.AesOfb.X86_64.Verified
 
 /-!
 # AES-OFB (NIST SP 800-38A §6.4) on x86-64
@@ -12,6 +14,8 @@ implementation (`Variants/AesBlocks/X86_64/`), named with its suffix (e.g.
 The stack is 8 bytes: the return address of the call of the block function,
 which uses no stack.
 -/
+
+@[expose] public section
 
 namespace VG.Generic.AesBlocks.X86_64.AesOfb
 

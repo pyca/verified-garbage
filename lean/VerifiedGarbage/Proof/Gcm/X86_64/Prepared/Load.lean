@@ -1,9 +1,17 @@
-import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Context
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Cvt
-import VerifiedGarbage.Impl.Gcm.X86_64.StitchZR
-import VerifiedGarbage.Proof.Framework.X86_64.ZFrameBlock
+module
+
+public import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Context
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Cvt
+public import VerifiedGarbage.Impl.Gcm.X86_64.StitchZR
+public import VerifiedGarbage.Proof.Framework.X86_64.ZFrameBlock
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # Loading two prepared powers without per-record conversion -/
+
+@[expose] public section
 
 namespace VG.Proof.Gcm.X86_64.StitchZR
 open VG VG.X86_64

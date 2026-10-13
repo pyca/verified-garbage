@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Curve
-import VerifiedGarbage.Proof.Ecdsa.X86_64.Secp256k1.Verified
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Curve
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Curve
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.Secp256k1.Verified
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.Secp256k1.Verified
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Deterministic ECDSA on x86-64: secp256k1
@@ -10,6 +18,8 @@ proven correct (given the group law and the inversions'
 soundness) and constant time against its contract (`coreK` at secp256k1's sizes,
 which is `Proof.Ecdsa.X86_64.Secp256k1.signX86_64`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Rfc6979.X86_64
 

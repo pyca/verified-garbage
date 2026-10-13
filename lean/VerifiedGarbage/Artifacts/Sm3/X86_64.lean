@@ -1,7 +1,11 @@
-import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.Sm3.X86_64.Shared
+module
+
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.Sm3.X86_64.Shared
 
 /-! # SM3 (GB/T 32905-2016) on x86-64 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.Sm3.X86_64
 

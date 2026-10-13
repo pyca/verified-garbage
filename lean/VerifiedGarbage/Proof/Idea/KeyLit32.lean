@@ -1,5 +1,13 @@
-import VerifiedGarbage.Impl.Idea.Key32
-import VerifiedGarbage.Proof.Framework.Lit
+module
+
+public import VerifiedGarbage.Impl.Idea.Key32
+meta import VerifiedGarbage.Impl.Idea.Key32
+public import VerifiedGarbage.Proof.Framework.Lit
+meta import VerifiedGarbage.Proof.Framework.Lit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The 32-bit key schedule's bit groups, once
@@ -8,6 +16,8 @@ import VerifiedGarbage.Proof.Framework.Lit
 targets' key expansion moves together, as a table (`materialize_table`), as
 `KeyLit.lean` for the 64-bit targets.
 -/
+
+@[expose] public section
 
 namespace VG
 

@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Correct
-import VerifiedGarbage.Proof.Framework.AArch64.Taint
-import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Correct
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Correct
+public import VerifiedGarbage.Proof.Framework.AArch64.Taint
+meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
+public import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+meta import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Deterministic ECDSA on AArch64: constant time, up to the number of candidates
@@ -15,6 +24,8 @@ each call is of constant-time code whose public data agree (`RelCT.callEx`);
 and the loop's branch agrees, since in both runs it goes on after candidate
 `i` iff `i` is before the candidate it stops at (`go_iff`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Rfc6979.AArch64
 

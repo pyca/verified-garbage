@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.X25519.Field
-import VerifiedGarbage.Proof.Framework.Omega
+module
+
+public import VerifiedGarbage.Proof.X25519.Field
+public import VerifiedGarbage.Proof.Framework.Omega
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X25519 on AArch64: field elements as fifteen 17-bit limbs
@@ -10,6 +16,8 @@ each operation is a function of the limbs, computed as the machine does
 (modulo `2⁶⁴`); here they are shown to compute the field operations, for limbs
 within bounds (`Bnd f k`: every limb is less than `2^k`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X25519.AArch64
 

@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Idea.X86_64.Verified
-import VerifiedGarbage.Proof.Idea.KeyBits
-import VerifiedGarbage.Proof.Framework.X86_64.Linear
+module
+
+public import VerifiedGarbage.Proof.Idea.X86_64.Verified
+public import VerifiedGarbage.Proof.Idea.KeyBits
+public import VerifiedGarbage.Proof.Framework.X86_64.Linear
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # IDEA key expansion on x86-64
@@ -12,6 +18,8 @@ key's two quadwords, checked by evaluation over the lane domain
 subkey bit is then the key bit `Spec.Idea.expandKey` takes
 (`expandKey_getLsbD`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Idea.X86_64
 

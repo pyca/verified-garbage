@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.SpecP
-import VerifiedGarbage.Spec.Gcm.Prepared
+module
+
+public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.SpecP
+public import VerifiedGarbage.Spec.Gcm.Prepared
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Prepared GHASH contexts: preservation under disjoint writes
@@ -7,6 +13,8 @@ import VerifiedGarbage.Spec.Gcm.Prepared
 The trusted storage format is in `Spec.Gcm.Prepared`. This module supplies
 its instance of the existing context-mode interface; no contract changes.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Gcm.X86_64.Stitch
 open VG VG.X86_64

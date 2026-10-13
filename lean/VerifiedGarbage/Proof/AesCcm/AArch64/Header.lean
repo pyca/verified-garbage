@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesCcm.AArch64.Absorb
+module
+
+public import VerifiedGarbage.Proof.AesCcm.AArch64.Absorb
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CCM on AArch64: the first block of the associated data
@@ -9,6 +15,8 @@ writes the encoding of the length `a > 0` (A.2.2) at its start: `[a]₁₆`,
 shifting `a` (`header_ok`); its length is in `x25`. `aadHead y` copies the
 first `min (a, 16 − h)` bytes after it and chains the block (`aadHead_ok`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

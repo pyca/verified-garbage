@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.RsaOaep.AArch64.MgfCT
-import VerifiedGarbage.Proof.RsaOaep.AArch64.LabelCT
-import VerifiedGarbage.Proof.RsaOaep.AArch64.DecMain
+module
+
+public import VerifiedGarbage.Proof.RsaOaep.AArch64.MgfCT
+meta import VerifiedGarbage.Proof.RsaOaep.AArch64.MgfCT
+public import VerifiedGarbage.Proof.RsaOaep.AArch64.LabelCT
+meta import VerifiedGarbage.Proof.RsaOaep.AArch64.LabelCT
+public import VerifiedGarbage.Proof.RsaOaep.AArch64.DecMain
+meta import VerifiedGarbage.Proof.RsaOaep.AArch64.DecMain
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-OAEP decryption on AArch64: the decoding in constant time
@@ -13,6 +22,8 @@ scan and the shift, each run also keeps the index the scan found and the
 zeros after the buffer's first 1024 bytes, which the shift's correctness
 needs.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaOaep.AArch64
 

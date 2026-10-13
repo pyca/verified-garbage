@@ -1,14 +1,29 @@
-import VerifiedGarbage.Proof.Cast5.X86_64.Key
-import VerifiedGarbage.Proof.Cast5.X86_64.Lit
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Framework.ConstMem
-import VerifiedGarbage.Proof.Framework.X86_64.TaintSym
-import VerifiedGarbage.Spec.Cast5.Contract
-import VerifiedGarbage.TCB.X86_64.Target
+module
+
+public import VerifiedGarbage.Proof.Cast5.X86_64.Key
+meta import VerifiedGarbage.Proof.Cast5.X86_64.Key
+public import VerifiedGarbage.Proof.Cast5.X86_64.Lit
+meta import VerifiedGarbage.Proof.Cast5.X86_64.Lit
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.ConstMem
+meta import VerifiedGarbage.Proof.Framework.ConstMem
+public import VerifiedGarbage.Proof.Framework.X86_64.TaintSym
+meta import VerifiedGarbage.Proof.Framework.X86_64.TaintSym
+public import VerifiedGarbage.Spec.Cast5.Contract
+meta import VerifiedGarbage.Spec.Cast5.Contract
+public import VerifiedGarbage.TCB.X86_64.Target
+meta import VerifiedGarbage.TCB.X86_64.Target
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # CAST5 key expansion on x86-64: verified against the shared contract
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Cast5.X86_64
 

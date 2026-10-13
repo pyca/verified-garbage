@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Blowfish.X86.Verified
-import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
+module
+
+public import VerifiedGarbage.Proof.Blowfish.X86.Verified
+public import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Blowfish on x86 (32-bit), with the working space on the stack
@@ -12,6 +18,8 @@ argument slots, and zero the 40 bytes of it they use after the code
 (`Verified.stackScratchWiped`): 84 bytes for key expansion (64 of working
 space) and 276 for ECB (256). The code uses no other stack.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Blowfish.X86
 

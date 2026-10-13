@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecD
-import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Hashes.Sha256
-import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.PbkCalls
+module
+
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecD
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Hashes.Sha256
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.PbkCalls
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-PKCS1-v1_5 decryption on x86-64: `DH = SHA256(D)`
@@ -9,6 +15,8 @@ SHA-256's functions, with an implementation `v` of its compression function
 (`HH v`), and what is proven of them; the regions of `scratch` the calls use
 (`scD`, `stkD`, `scS`), and the hash of `D` (`hashD_step`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPkcs1Enc.X86_64.Dec
 

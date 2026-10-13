@@ -1,10 +1,14 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.Variant
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Variant
 
 /-!
 # The functions AES-GCM calls on x86-64: Scalar
 
 A variant of `AesGcm` on x86-64 (see `TCB/Emit.lean`): the baseline ISA: `vg_aes_ctr32`, `vg_aes_expand_key_scratch` and `vg_ghash`.
 -/
+
+@[expose] public section
 
 namespace VG.Variants.AesGcm.X86_64.Scalar
 

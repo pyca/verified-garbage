@@ -1,24 +1,26 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.InitVerified
-import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.BlocksTo
-import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.StreamTo
-import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.Gather
-import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.StreamCallee
-import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.GatherCallee
-import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.Short
-import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.AesGcm.X86_64.Frame
-import VerifiedGarbage.Proof.AesGcm.X86_64.VerifiedP
-import VerifiedGarbage.Proof.AesGcm.X86_64.Variant
-import VerifiedGarbage.Proof.AesGcm.X86_64.GhashImpls
-import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Ok
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Ok
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.OkP
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.Ok
-import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Verified
-import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Field
-import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Verified
-import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Verified
-import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Verified
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.InitVerified
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.BlocksTo
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.StreamTo
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.Gather
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.StreamCallee
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.GatherCallee
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.Short
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Frame
+public import VerifiedGarbage.Proof.AesGcm.X86_64.VerifiedP
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Variant
+public import VerifiedGarbage.Proof.AesGcm.X86_64.GhashImpls
+public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Ok
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Ok
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.OkP
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.Ok
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Verified
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Field
+public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Verified
+public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Verified
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Verified
 
 /-!
 # AES-GCM (NIST SP 800-38D) on x86-64
@@ -93,6 +95,8 @@ and `stream_finish` (`Impl/AesGcm/X86_64/SealGather.lean`), in a frame of
 240 bytes for its 184 bytes of working space (`Gather/Verified.lean`), and
 5128 bytes of stack in all.
 -/
+
+@[expose] public section
 
 /-! The interleaved loops a variant names, with their proofs (which import the
 algebra of `Proof/Gcm/Poly.lean`, so that the variants need not), and the

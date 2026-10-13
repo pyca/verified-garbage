@@ -1,6 +1,8 @@
-import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
-import VerifiedGarbage.Proof.Ecdsa.AArch64.P224.PointOpsVerified
+module
+
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.P224.PointOpsVerified
 
 /-!
 # P-224's complete projective addition on AArch64
@@ -12,6 +14,8 @@ law and inversions `h`, the variant `Variants/P224/AArch64/Law.lean`, which
 gives Fermat's little theorem in `Fin p`, so that `R⁻¹ = R^(p-2)` in the
 contract.
 -/
+
+@[expose] public section
 
 namespace VG.Generic.P224.AArch64.PointOpsP224
 

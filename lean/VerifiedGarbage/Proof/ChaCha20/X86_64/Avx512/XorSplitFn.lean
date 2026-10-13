@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.LastSel
-import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Copy
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Variant
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Lit
+module
+
+public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.LastSel
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Copy
+public import VerifiedGarbage.Proof.ChaCha20.X86_64.Variant
+public import VerifiedGarbage.Proof.ChaCha20.X86_64.Lit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ChaCha20 keystream XOR with the data's first bytes from another buffer on x86-64 with AVX-512: the function
@@ -12,6 +18,8 @@ loop's registers), the last bytes after the loop (by a call of
 then at most where they start, `tailCall_ok`; else by `last16Sel_ok`), and
 the postcondition.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.ChaCha20.X86_64.Avx512Split
 

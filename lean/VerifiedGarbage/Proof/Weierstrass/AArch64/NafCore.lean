@@ -1,6 +1,14 @@
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Production
-import VerifiedGarbage.Proof.Weierstrass.AArch64.NafInvariant
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowCore
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Production
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafInvariant
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowCore
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.AArch64
 open VG VG.AArch64 VG.Impl.Mont.AArch64 VG.Impl.Mont VG.Impl.Weierstrass.AArch64 VG.Impl.Weierstrass

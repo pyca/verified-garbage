@@ -1,7 +1,16 @@
-import VerifiedGarbage.Proof.P256.VerifySparse.Arithmetic
-import VerifiedGarbage.Spec.P256
+module
+
+public import VerifiedGarbage.Proof.P256.VerifySparse.Arithmetic
+public import VerifiedGarbage.Spec.P256
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Quotient estimate shared by the fixed small P-256 linear combinations. -/
+
+@[expose] public section
+
 namespace VG.Proof.P256.Linear
 open VG
 abbrev p := Spec.P256.p

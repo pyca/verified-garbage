@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.AesCcm.Arm.CTMac
+module
+
+public import VerifiedGarbage.Proof.AesCcm.Arm.CTMac
+meta import VerifiedGarbage.Proof.AesCcm.Arm.CTMac
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CCM on ARMv7: the tag and counter mode are constant time
@@ -7,6 +14,8 @@ Untrusted: everything here is checked by Lean. The calls of `vg_aes_ctr32`
 get the same arguments in both runs (`Proof.AesGcm.Arm.CT.ctr`); the
 branches are on the length of the data.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

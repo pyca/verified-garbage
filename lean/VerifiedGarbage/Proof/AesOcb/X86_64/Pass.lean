@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesOcb.X86_64.Hash
+module
+
+public import VerifiedGarbage.Proof.AesOcb.X86_64.Hash
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-OCB on x86-64: a pass over the whole blocks (`pass`)
@@ -15,6 +21,8 @@ offset, and the checksum with `fC` of them (`BodyOk`: `[xorOfs]`,
 `ntz` 0, 1 and 0), then one at a time (`single_ok`); `pass_ok` gives the
 blocks, the offset and the checksum in `W` after all `m`.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

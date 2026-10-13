@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Prefix
-import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.CT
+module
+
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Prefix
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.CT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ChaCha20 and Poly1305 together (x86-64): `cryptS`
@@ -14,6 +20,8 @@ encrypts them (`bulk_ok`, moved to `seal`'s permissions with
 (`call_mid`), if any is left (`callIf_ok`); or, with 1 to 256 bytes left,
 `bulk` encrypts those too and absorbs all the chunks (`DoneT`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.ChaCha20Poly1305.X86_64.Stitch
 

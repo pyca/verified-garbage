@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.AesOcb.Arm.Open
-import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
+module
+
+public import VerifiedGarbage.Proof.AesOcb.Arm.Open
+meta import VerifiedGarbage.Proof.AesOcb.Arm.Open
+public import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
+meta import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
+public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-OCB on ARMv7: relating two runs
@@ -17,6 +26,8 @@ branch on a flag both runs agree on (`rel_ite`); a loop whose condition both
 runs agree on (`rel_loop`); and the next piece from the states the
 correctness proofs describe (`rel_seq`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

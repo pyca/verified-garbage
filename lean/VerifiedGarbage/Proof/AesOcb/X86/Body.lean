@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesOcb.X86.RestTag
+module
+
+public import VerifiedGarbage.Proof.AesOcb.X86.RestTag
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-OCB on x86: the data (`body`)
@@ -9,6 +15,8 @@ whole blocks `m = len / 16` in `W` and runs `whole` on them if there are any
 are any (`restIte_ok`): for `seal` (`bodySeal_ok`) and `open`
 (`bodyOpen_ok`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

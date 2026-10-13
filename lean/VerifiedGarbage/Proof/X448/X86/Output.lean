@@ -1,10 +1,18 @@
-import VerifiedGarbage.Proof.X448.X86.Pack
+module
+
+public import VerifiedGarbage.Proof.X448.X86.Pack
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 on x86 (32-bit): the output buffer
 
 Output stores cover exactly 56 bytes and preserve the disjoint working space.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448.X86
 

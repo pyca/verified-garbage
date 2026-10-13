@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.X448.AArch64.Decode
-import VerifiedGarbage.Proof.X448.AArch64.Swap
+module
+
+public import VerifiedGarbage.Proof.X448.AArch64.Decode
+public import VerifiedGarbage.Proof.X448.AArch64.Swap
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 on AArch64: storing decoded limb pairs
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.X448.AArch64.Swap
 Each seven-byte chunk is split into two limbs and stored into both copies of
 the input coordinate.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448.AArch64
 

@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.X448.X86.Frame
-import VerifiedGarbage.Proof.Framework.X86.Spill
+module
+
+public import VerifiedGarbage.Proof.X448.X86.Frame
+public import VerifiedGarbage.Proof.Framework.X86.Spill
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 on x86 (32-bit): saving the callee-saved registers
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.Framework.X86.Spill
 Four scratch words hold the incoming values of ebx, esi, edi, and ebp until
 the final restore.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448.X86
 

@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Fn
+module
+
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Fn
+meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Fn
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ChaCha20-Poly1305 encryption out of place, from a list of slices, x86-64: constant time
@@ -12,6 +19,8 @@ frames are pushed and popped at `rsp`, the same in both runs
 `gather_rel`; and the call is constant time by its callee's contract, whose
 public arguments agree (`sealGather_ct`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

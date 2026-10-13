@@ -1,9 +1,22 @@
-import VerifiedGarbage.Proof.Scrypt.X86.RoMixFun
-import VerifiedGarbage.Proof.Scrypt.X86.BlockMixVerified
-import VerifiedGarbage.Proof.Framework.X86.RelCT
-import Mathlib.Tactic.DefEqTransformations
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Spec.Scrypt.Contract
+module
+
+public import VerifiedGarbage.Proof.Scrypt.X86.RoMixFun
+meta import VerifiedGarbage.Proof.Scrypt.X86.RoMixFun
+public import VerifiedGarbage.Proof.Scrypt.X86.BlockMixVerified
+meta import VerifiedGarbage.Proof.Scrypt.X86.BlockMixVerified
+public import VerifiedGarbage.Proof.Framework.X86.RelCT
+meta import VerifiedGarbage.Proof.Framework.X86.RelCT
+public import Mathlib.Tactic.DefEqTransformations
+meta import Mathlib.Tactic.DefEqTransformations
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.Scrypt.Contract
+meta import VerifiedGarbage.Spec.Scrypt.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+import all Init.Data.Nat.Power2.Basic
 
 /-!
 # scryptROMix on x86 (32-bit): verified
@@ -23,6 +36,8 @@ both compute their indices in order (`Inv3.js`) and agree on the whole list.
 The proof is written against a contract under which the code only reads its
 arguments, and moved to the shared contract with `Verified.narrowTo`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Scrypt.X86.RoMix
 

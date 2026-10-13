@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Points
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Points
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDSA verification on 32-bit ARM: `x` and the result
@@ -12,6 +18,8 @@ difference being zero (`x ≡ r` modulo `n`) into the flag, returns its low
 bit and restores the callee-saved registers (`vfinish_ok`, the signature's
 `tail_ok`). It writes only the working space.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Verify.Arm
 

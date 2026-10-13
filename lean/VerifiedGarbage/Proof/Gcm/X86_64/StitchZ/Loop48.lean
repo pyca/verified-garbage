@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Loop
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Gh48
+module
+
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Loop
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Gh48
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Interleaved counter mode and GHASH with AVX-512: 48 blocks at a time
@@ -17,6 +23,8 @@ those of one (`Loop.lean`), for any powers whose products add up to `GHASH`
 the field: `StitchZ/Ok.lean` proves those and `StitchOk` of `StitchZ.enc`
 and `StitchZ.dec` (`stitch_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Gcm.X86_64.StitchZ
 

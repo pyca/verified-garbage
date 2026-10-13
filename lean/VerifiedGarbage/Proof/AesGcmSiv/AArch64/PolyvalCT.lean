@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Fn
-import VerifiedGarbage.Proof.AesGcm.AArch64.Rel
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
+module
+
+public import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Fn
+meta import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Fn
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Rel
+meta import VerifiedGarbage.Proof.AesGcm.AArch64.Rel
+public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM-SIV on AArch64: relating two runs, the keys and POLYVAL
@@ -13,6 +22,8 @@ analysis, from the registers that hold the public arguments in both runs
 by its callee's proof; and the next piece from the states the correctness
 proofs describe.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesGcmSiv.AArch64
 

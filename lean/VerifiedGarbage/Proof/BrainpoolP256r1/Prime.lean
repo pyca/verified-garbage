@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Framework.Pratt
-import VerifiedGarbage.Spec.BrainpoolP256r1
+module
+
+public import VerifiedGarbage.Proof.Framework.Pratt
+public import VerifiedGarbage.Spec.BrainpoolP256r1
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The brainpoolP256r1 field prime is prime
@@ -9,6 +15,8 @@ theorem per prime of the tree, from the factors of `p - 1`. Factors below
 `2^16` are prime by trial division (`prime_small`). The group law needs only
 `p` prime (`Weierstrass.Good`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.BrainpoolP256r1
 

@@ -1,9 +1,15 @@
-import VerifiedGarbage.Proof.X448.AArch64.Finish
-import VerifiedGarbage.Proof.X448.AArch64.Ladder
-import VerifiedGarbage.Proof.X448.AArch64.FinalSwap
-import VerifiedGarbage.Proof.X448.AArch64.Inv
-import VerifiedGarbage.Spec.X448.Contract
-import VerifiedGarbage.TCB.AArch64.Target
+module
+
+public import VerifiedGarbage.Proof.X448.AArch64.Finish
+public import VerifiedGarbage.Proof.X448.AArch64.Ladder
+public import VerifiedGarbage.Proof.X448.AArch64.FinalSwap
+public import VerifiedGarbage.Proof.X448.AArch64.Inv
+public import VerifiedGarbage.Spec.X448.Contract
+public import VerifiedGarbage.TCB.AArch64.Target
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 on AArch64: the whole function
@@ -14,6 +20,8 @@ The contract the proof is written against (the facts of
 the arguments are read unchanged, the callee-saved registers restored from the
 working space, and the return address kept.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448
 

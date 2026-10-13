@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Ed448.X86.Shake.Entry
-import VerifiedGarbage.Spec.Ed448.Contract
+module
+
+public import VerifiedGarbage.Proof.Ed448.X86.Shake.Entry
+public import VerifiedGarbage.Spec.Ed448.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 signing with a cached key on x86 (32-bit): the contract the proof is written against
@@ -12,6 +18,8 @@ of stack below its return address, the public key of the private key, and a
 context of at most 255 bytes. Only pointers and lengths are public. `Facts`
 are its separation and bounds, and `kit` the layout facts the calls need.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.X86.SignCached
 

@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.MlDsa.X86.Message.Entry
-import VerifiedGarbage.Proof.MlDsa.X86.Message.Pre
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86.Message.Entry
+public import VerifiedGarbage.Proof.MlDsa.X86.Message.Pre
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on x86 (32-bit), `sign_message` and `verify_message`: the layouts' shapes
@@ -9,6 +15,8 @@ spelled out (`SPub`, `VPub`), and the layouts of `sign_message` and
 `verify_message` (`slay`, `vlay`) meet what the proofs of the check, the
 entry and the hashes need (`sShape`, `vShape`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86.Message
 

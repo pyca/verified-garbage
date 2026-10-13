@@ -1,6 +1,12 @@
-import VerifiedGarbage.Spec.Ecdh.P256
-import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Proof.Framework.Contract
+module
+
+public import VerifiedGarbage.Spec.Ecdh.P256
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.Proof.Framework.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDH over P-256 on 32-bit ARM: the contract the proof is written against
@@ -9,6 +15,8 @@ The facts of `Spec.Ecdh.P256.inst.exchangeContract` for 32-bit ARM, by
 name: `vg_ecdh_p256(out, d, peer, scratch)`, with the arguments in `r0`–`r3`
 (AAPCS), the result in `r0` (the low word of `r1:r0`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdh.Arm
 

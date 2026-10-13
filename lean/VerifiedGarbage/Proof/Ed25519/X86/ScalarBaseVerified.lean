@@ -1,11 +1,26 @@
-import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseCTSetup
-import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseLit
-import VerifiedGarbage.Proof.Ed25519.X86.CombCT
-import VerifiedGarbage.Proof.Ed25519.X86.CombLoop
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Framework.X86.Inline
+module
+
+public import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseCTSetup
+meta import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseCTSetup
+public import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseLit
+meta import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseLit
+public import VerifiedGarbage.Proof.Ed25519.X86.CombCT
+meta import VerifiedGarbage.Proof.Ed25519.X86.CombCT
+public import VerifiedGarbage.Proof.Ed25519.X86.CombLoop
+meta import VerifiedGarbage.Proof.Ed25519.X86.CombLoop
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.X86.Inline
+meta import VerifiedGarbage.Proof.Framework.X86.Inline
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Ed25519.X86.ScalarBaseCT`. -/
+
+@[expose] public section
+
 section
 /-! Merged from `Proof.Ed25519.X86.ScalarBaseCTFinish`. -/
 section

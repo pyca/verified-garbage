@@ -1,5 +1,11 @@
-import VerifiedGarbage.Spec.EcKey.P224
-import VerifiedGarbage.Proof.Ecdsa.AArch64.P224.Contract
+module
+
+public import VerifiedGarbage.Spec.EcKey.P224
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.P224.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # P-224 public keys on AArch64: the contract the proof is written against
@@ -9,6 +15,8 @@ calling convention with the comb's tables (`Abi.withConsts p224.combConsts`),
 by name: `vg_ec_p224_public_key(out = x0, d = x1, scratch = x2)`, the result
 in `w0`, and the tables at the address of the static `p224.tsym`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.EcKey.AArch64.P224
 

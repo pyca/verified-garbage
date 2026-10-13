@@ -1,21 +1,46 @@
-import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import VerifiedGarbage.Spec.Poly1305
-import VerifiedGarbage.Proof.Framework.PowLit
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Impl.Poly1305.AArch64
-import VerifiedGarbage.Proof.Poly1305.AArch64.Lit
-import VerifiedGarbage.Proof.Poly1305.Spec
-import VerifiedGarbage.Proof.Framework.Mem
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.Framework.AArch64.Taint
-import VerifiedGarbage.Proof.Framework.AArch64.Inline
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Spec.Poly1305.Contract
+module
+
+public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+meta import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+public import VerifiedGarbage.Spec.Poly1305
+meta import VerifiedGarbage.Spec.Poly1305
+public import VerifiedGarbage.Proof.Framework.PowLit
+meta import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+public import VerifiedGarbage.Impl.Poly1305.AArch64
+meta import VerifiedGarbage.Impl.Poly1305.AArch64
+public import VerifiedGarbage.Proof.Poly1305.AArch64.Lit
+meta import VerifiedGarbage.Proof.Poly1305.AArch64.Lit
+public import VerifiedGarbage.Proof.Poly1305.Spec
+meta import VerifiedGarbage.Proof.Poly1305.Spec
+public import VerifiedGarbage.Proof.Framework.Mem
+meta import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.TCB.AArch64.Target
+meta import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.Framework.AArch64.Taint
+meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
+public import VerifiedGarbage.Proof.Framework.AArch64.Inline
+meta import VerifiedGarbage.Proof.Framework.AArch64.Inline
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.Poly1305.Contract
+meta import VerifiedGarbage.Spec.Poly1305.Contract
 
 -- Formerly the module `VerifiedGarbage.Proof.Poly1305.AArch64.Steps`.
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
+
 section
 
 section

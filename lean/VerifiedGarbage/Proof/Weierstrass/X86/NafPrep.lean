@@ -1,8 +1,16 @@
-import VerifiedGarbage.Proof.Weierstrass.X86.NafAdjust
-import VerifiedGarbage.Proof.Weierstrass.X86.Copy
-import VerifiedGarbage.Proof.Weierstrass.X86.NafSubChain
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86.NafAdjust
+public import VerifiedGarbage.Proof.Weierstrass.X86.Copy
+public import VerifiedGarbage.Proof.Weierstrass.X86.NafSubChain
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## `NafPrepIO` -/
+
+@[expose] public section
 
 section
 

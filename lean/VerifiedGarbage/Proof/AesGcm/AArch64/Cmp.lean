@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesGcm.AArch64.J0
-import VerifiedGarbage.Proof.AesGcm.AArch64.Tag
+module
+
+public import VerifiedGarbage.Proof.AesGcm.AArch64.J0
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Tag
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on AArch64: checking a received tag (`tagLenOk`, `cmpSeg`, `verRet`), moving tags
@@ -12,6 +18,8 @@ not (`cmpSeg_ok`); `verRet` returns 1 or 0 (`verRet_ok`). `tagIn` copies the
 received tag into `W` (`tagIn_ok`), and `tagOut` the computed one out of it
 (`tagOut_ok`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

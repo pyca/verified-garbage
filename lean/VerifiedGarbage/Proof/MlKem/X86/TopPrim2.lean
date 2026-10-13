@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.MlKem.X86.TopPrim
-import VerifiedGarbage.Proof.MlKem.X86.Cbd
-import VerifiedGarbage.Proof.MlKem.X86.Encode12
-import VerifiedGarbage.Proof.MlKem.X86.Decode12
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86.TopPrim
+public import VerifiedGarbage.Proof.MlKem.X86.Cbd
+public import VerifiedGarbage.Proof.MlKem.X86.Encode12
+public import VerifiedGarbage.Proof.MlKem.X86.Decode12
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86 (32-bit): calls of the primitives of two arguments
@@ -10,6 +16,8 @@ As `TopPrim.lean`, for `vg_mlkem_add` and `vg_mlkem_sub` (`acc_call`),
 `vg_mlkem_cbd2`, `vg_mlkem_encode12` and `vg_mlkem_decode12`, with their first
 argument in `eax` and their second in `ecx`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.X86.Top
 

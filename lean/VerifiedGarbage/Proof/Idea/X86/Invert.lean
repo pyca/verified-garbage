@@ -1,7 +1,17 @@
-import VerifiedGarbage.Proof.Idea.X86.Key
-import VerifiedGarbage.Proof.Idea.X86.Block
-import VerifiedGarbage.Proof.Idea.Inverse
-import VerifiedGarbage.Proof.Idea.Scratch32
+module
+
+public import VerifiedGarbage.Proof.Idea.X86.Key
+meta import VerifiedGarbage.Proof.Idea.X86.Key
+public import VerifiedGarbage.Proof.Idea.X86.Block
+meta import VerifiedGarbage.Proof.Idea.X86.Block
+public import VerifiedGarbage.Proof.Idea.Inverse
+meta import VerifiedGarbage.Proof.Idea.Inverse
+public import VerifiedGarbage.Proof.Idea.Scratch32
+meta import VerifiedGarbage.Proof.Idea.Scratch32
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # IDEA decryption subkeys on x86 (32-bit)
@@ -13,6 +23,8 @@ subkey (at `esi`; `invertKey_getD`, `Impl.Idea.invOp`), computed into `ecx`
 (`invWord_ok`; the inverse by a loop of fifteen steps of `t := (t ⊙ t) ⊙ a`,
 `invLoop_ok`) and stored a byte at a time at `edi` (`invStore_run`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Idea.X86
 

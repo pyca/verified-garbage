@@ -1,14 +1,23 @@
-import VerifiedGarbage.Proof.Ed25519.Arm.VerifyHeaders
-import VerifiedGarbage.Proof.Ed25519.Arm.PointDecode
-import VerifiedGarbage.Proof.Ed25519.Arm.ScalarCodec
-import VerifiedGarbage.Proof.Ed25519.Arm.InitFields
-import VerifiedGarbage.Proof.Ed25519.VerifyBytes
-import VerifiedGarbage.Proof.Ed25519.Arm.ScalarABI
-import VerifiedGarbage.Spec.Ed25519.Contract
-import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTFrom
+module
+
+public import VerifiedGarbage.Proof.Ed25519.Arm.VerifyHeaders
+public import VerifiedGarbage.Proof.Ed25519.Arm.PointDecode
+public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarCodec
+public import VerifiedGarbage.Proof.Ed25519.Arm.InitFields
+public import VerifiedGarbage.Proof.Ed25519.VerifyBytes
+public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarABI
+public import VerifiedGarbage.Spec.Ed25519.Contract
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTFrom
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Ed25519.Arm.VerifyBody`. -/
+
+@[expose] public section
+
 section
 /-! Merged from `Proof.Ed25519.Arm.VerifyDecodeR`. -/
 section

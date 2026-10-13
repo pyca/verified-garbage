@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Cast5.X86_64.KeyLine
+module
+
+public import VerifiedGarbage.Proof.Cast5.X86_64.KeyLine
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # CAST5 key expansion on x86-64: the working space and the subkeys
@@ -7,6 +13,8 @@ The working space at `c` holds `x` and `z` (`HoldsXZ`) and the group's extra
 lookups (`Extras`); the subkeys so far are at `K` (`Keys`). Each write of key
 expansion keeps what it does not overwrite.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Cast5.X86_64
 

@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Derive
-import VerifiedGarbage.Proof.GcmSiv.MulX
-import VerifiedGarbage.Proof.Gcm.X86_64.Bits
+module
+
+public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Derive
+public import VerifiedGarbage.Proof.GcmSiv.MulX
+public import VerifiedGarbage.Proof.Gcm.X86_64.Bits
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM-SIV on x86-64: the encryption key's schedule and GHASH's key
@@ -12,6 +18,8 @@ GHASH's order at `W + 64`, and zeroes its accumulator (`hkey_ok`): the
 shift of `hi ++ lo` by one bit to the right, and `R` added when the bit
 shifted out is set (`mulXG_words`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

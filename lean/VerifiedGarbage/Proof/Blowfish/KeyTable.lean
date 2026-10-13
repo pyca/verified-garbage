@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Blowfish.Table
-import VerifiedGarbage.Proof.Blowfish.KeySched
+module
+
+public import VerifiedGarbage.Proof.Blowfish.Table
+public import VerifiedGarbage.Proof.Blowfish.KeySched
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Key expansion's facts about memory, on every target
@@ -9,6 +15,8 @@ The table of the initial schedule as bytes and words (`table_byte`,
 `keyed key` (`keyed_of_mem`); the key's bytes and words; where the S-box
 entries the encryptions write go (`entryOff_sbox`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Blowfish
 

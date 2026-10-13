@@ -1,10 +1,19 @@
-import VerifiedGarbage.Proof.Ed25519.X86.ScalarBody
-import VerifiedGarbage.Impl.Ed25519.X86.BitsExpand
-import VerifiedGarbage.Proof.Ed25519.X86.ScalarCodec
-import VerifiedGarbage.Impl.Ed25519.X86.InputBits
-import VerifiedGarbage.Proof.Ed25519.X86.CommonInput
+module
+
+public import VerifiedGarbage.Proof.Ed25519.X86.ScalarBody
+public import VerifiedGarbage.Impl.Ed25519.X86.BitsExpand
+public import VerifiedGarbage.Proof.Ed25519.X86.ScalarCodec
+public import VerifiedGarbage.Impl.Ed25519.X86.InputBits
+public import VerifiedGarbage.Proof.Ed25519.X86.CommonInput
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Ed25519.X86.BitsExpand`. -/
+
+@[expose] public section
+
 section
 /-! Merged from `Proof.Ed25519.X86.BitsExpandStep`. -/
 section

@@ -1,5 +1,7 @@
-import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Proof.AesCtr.Arm.Verified
+module
+
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.Proof.AesCtr.Arm.Verified
 
 /-!
 # AES-CTR (NIST SP 800-38A §6.5) on ARMv7
@@ -11,6 +13,8 @@ generic over them.
 The function calls `vg_aes_encrypt_blocks` in a frame that pushes its stack
 argument and `lr`, so uses 8 bytes of stack.
 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.AesCtr.Arm
 

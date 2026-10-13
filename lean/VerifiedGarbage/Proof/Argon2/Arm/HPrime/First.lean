@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Argon2.Arm.HPrime.Body
-import VerifiedGarbage.Proof.Argon2.Initial
+module
+
+public import VerifiedGarbage.Proof.Argon2.Arm.HPrime.Body
+public import VerifiedGarbage.Proof.Argon2.Initial
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Argon2 H′ on ARMv7: the first digest
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.Argon2.Initial
 start of the digest, `scratch[768, 832)`. The input is read before anything
 is written to the output, so the two may overlap.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Argon2.Arm.HPrime
 

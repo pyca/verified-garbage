@@ -1,7 +1,15 @@
-import VerifiedGarbage.Impl.Argon2.X86_64.FillLanes
-import VerifiedGarbage.Proof.Argon2.X86_64.SegmentSetup
+module
+
+public import VerifiedGarbage.Impl.Argon2.X86_64.FillLanes
+public import VerifiedGarbage.Proof.Argon2.X86_64.SegmentSetup
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Lane advancement retains the allocation and public segment parameters. -/
+
+@[expose] public section
 
 namespace VG.Proof.Argon2.X86_64.FillLanes
 

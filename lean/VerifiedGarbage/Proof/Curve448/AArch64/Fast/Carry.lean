@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.X448.Wide.Product
+module
+
+public import VerifiedGarbage.Proof.X448.Wide.Product
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Carrying a product's coefficients
@@ -9,6 +15,8 @@ into each other and into `4`, and `4`–`7` into each other and, by
 into `1` and `5` leaves limbs within `2⁵⁶ + 2⁸`. `out` describes the limbs,
 `out_val` their value.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Curve448.AArch64.Fast
 

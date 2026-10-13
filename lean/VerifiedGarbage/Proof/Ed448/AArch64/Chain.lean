@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Ed25519.AArch64.Step
+module
+
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Step
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 on AArch64: carry chains along registers
@@ -10,6 +16,8 @@ carry out is the sum of the sources' values. A chain may write a register
 it reads only when no later instruction of the chain reads or writes it
 (`ChainOk`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.AArch64
 

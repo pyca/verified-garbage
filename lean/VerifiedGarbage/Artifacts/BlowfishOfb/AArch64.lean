@@ -1,6 +1,10 @@
-import VerifiedGarbage.Proof.Blowfish.AArch64.FbVerified
+module
+
+public import VerifiedGarbage.Proof.Blowfish.AArch64.FbVerified
 
 /-! # Blowfish-OFB artifacts on baseline AArch64 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.BlowfishOfb.AArch64
 

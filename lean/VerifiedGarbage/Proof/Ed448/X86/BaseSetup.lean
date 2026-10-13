@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.X448.X86.Env
-import VerifiedGarbage.Proof.X448.X86.RowMem
-import VerifiedGarbage.Proof.X448.X86.Bits
-import VerifiedGarbage.Proof.Ed448.Scalar
-import VerifiedGarbage.Impl.Ed448.X86.ScalarBase
+module
+
+public import VerifiedGarbage.Proof.X448.X86.Env
+public import VerifiedGarbage.Proof.X448.X86.RowMem
+public import VerifiedGarbage.Proof.X448.X86.Bits
+public import VerifiedGarbage.Proof.Ed448.Scalar
+public import VerifiedGarbage.Impl.Ed448.X86.ScalarBase
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 base-point multiplication on x86 (32-bit): the entry
@@ -12,6 +18,8 @@ the base point, `d`, and zero elsewhere, every limb below `2¹⁶`. Then the
 scalar's 57 bytes expanded into its 456 bits at `BITS` (`baseBytes_ok`), by
 X448's `bitsLoop`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.X86
 

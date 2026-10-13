@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Seed.X86_64.Copy
-import VerifiedGarbage.Proof.Seed.Memory
+module
+
+public import VerifiedGarbage.Proof.Seed.X86_64.Copy
+public import VerifiedGarbage.Proof.Seed.Memory
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # A batch on x86-64
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.Seed.Memory
 `rsi` in place (`n = rdx`), with the keys at `rdi` (`keysAt`), and moves
 `rsi` and `rdx` past them.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Seed.X86_64
 

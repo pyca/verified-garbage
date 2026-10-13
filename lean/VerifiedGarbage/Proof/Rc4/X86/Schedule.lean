@@ -1,9 +1,17 @@
-import VerifiedGarbage.Proof.Rc4.X86.Replace
-import VerifiedGarbage.Proof.Rc4.Identity
-import VerifiedGarbage.Proof.Rc4.Schedule
-import VerifiedGarbage.Proof.Rc4.Stream
+module
+
+public import VerifiedGarbage.Proof.Rc4.X86.Replace
+public import VerifiedGarbage.Proof.Rc4.Identity
+public import VerifiedGarbage.Proof.Rc4.Schedule
+public import VerifiedGarbage.Proof.Rc4.Stream
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # RC4 on x86 (32-bit): key scheduling -/
+
+@[expose] public section
 
 namespace VG.Proof.Rc4.X86
 open VG VG.X86 VG.Impl.Rc4.X86 VG.Spec.Rc4 VG.Proof.Rc4

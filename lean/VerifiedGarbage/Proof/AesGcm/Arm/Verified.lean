@@ -1,10 +1,16 @@
-import VerifiedGarbage.Proof.AesGcm.Arm.InitCT
-import VerifiedGarbage.Proof.AesGcm.Arm.CTStream
-import VerifiedGarbage.Proof.AesGcm.Arm.CTCryptFn
-import VerifiedGarbage.Proof.AesGcm.Arm.CTOpen
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Framework.Arm.Contract
-import VerifiedGarbage.Proof.AesGcm.Scratch
+module
+
+public import VerifiedGarbage.Proof.AesGcm.Arm.InitCT
+public import VerifiedGarbage.Proof.AesGcm.Arm.CTStream
+public import VerifiedGarbage.Proof.AesGcm.Arm.CTCryptFn
+public import VerifiedGarbage.Proof.AesGcm.Arm.CTOpen
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.Arm.Contract
+public import VerifiedGarbage.Proof.AesGcm.Scratch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on ARMv7: `Verified`
@@ -15,6 +21,8 @@ time, a state satisfying each precondition, and the shared contracts of
 (`Proof/AesGcm/Scratch.lean`), with 8 bytes of stack: each call of
 `vg_aes_ctr32` or `vg_ghash` pushes two words.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesGcm.Arm
 

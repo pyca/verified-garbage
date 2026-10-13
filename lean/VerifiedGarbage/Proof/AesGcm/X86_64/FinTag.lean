@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.Fn
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Fn
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on x86-64: the tag of a streaming state (`finTag o`)
@@ -8,6 +14,8 @@ bytes (of the additional data if there is no text, of the text if there is)
 and writes the tag to `W + o`, from the lengths kept at `W + 184` and
 `W + 192` (`finTag_ok`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

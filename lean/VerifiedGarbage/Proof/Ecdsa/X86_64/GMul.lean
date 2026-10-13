@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Ecdsa.X86_64.CombLays
-import VerifiedGarbage.Proof.Weierstrass.X86_64.Rep
-import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombJ
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.CombLays
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.Rep
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombJ
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDSA on x86-64: `[k]G`
@@ -10,6 +16,8 @@ secret scalar, the comb with Booth's digits where the curve's has them); each le
 `R = [k]G`, from the table of `k`'s bits, changing only the slots and word of
 `gW` (`gMul_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.X86_64
 

@@ -1,4 +1,10 @@
-import VerifiedGarbage.Spec.P384
+module
+
+public import VerifiedGarbage.Spec.P384
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # P-384's base point is on the curve
@@ -6,6 +12,8 @@ import VerifiedGarbage.Spec.P384
 Evaluated by the kernel; it needs none of the algebra of `Curve.lean`, so the
 proofs of the code can use it.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.P384
 

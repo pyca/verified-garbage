@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Loop
+module
+
+public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Loop
+meta import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Loop
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # PBKDF2-HMAC on x86 (32-bit), the whole derivation: constant time
@@ -12,6 +19,8 @@ related by their contracts (`init_rel`, `upd_rel`, `fin_rel`, `hi_rel`,
 same public arguments (`PubEq`). The branches (whether the password is hashed,
 and the loop over the blocks) depend only on the lengths.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Pbkdf2.Whole.X86
 

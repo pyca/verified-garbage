@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx512.Pass
-import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Passes
+module
+
+public import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx512.Pass
+public import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Passes
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The three AVX-512 passes
@@ -8,6 +14,8 @@ The loop of passes, counted down from 3 in `r11`, does to the state words
 what three DES passes do (`chain`), with the components and directions of
 TDEA, in every lane.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.TripleDes.X86_64.BitslicedAvx512
 

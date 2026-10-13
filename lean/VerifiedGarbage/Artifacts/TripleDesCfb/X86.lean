@@ -1,6 +1,10 @@
-import VerifiedGarbage.Proof.TripleDes.X86.FbVerified
+module
+
+public import VerifiedGarbage.Proof.TripleDes.X86.FbVerified
 
 /-! # Triple DES-CFB64 artifacts on baseline x86 (32-bit) -/
+
+@[expose] public section
 
 namespace VG.Artifacts.TripleDesCfb.X86
 

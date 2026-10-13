@@ -1,7 +1,13 @@
-import VerifiedGarbage.Impl.Ed448.Arm.PublicKey
-import VerifiedGarbage.Proof.Ed25519.Arm.Whole.Layout
-import VerifiedGarbage.Proof.Ed25519.Arm.Whole.Setup
-import VerifiedGarbage.Spec.Ed448.Contract
+module
+
+public import VerifiedGarbage.Impl.Ed448.Arm.PublicKey
+public import VerifiedGarbage.Proof.Ed25519.Arm.Whole.Layout
+public import VerifiedGarbage.Proof.Ed25519.Arm.Whole.Setup
+public import VerifiedGarbage.Spec.Ed448.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 public-key derivation on ARMv7: the layout
@@ -12,6 +18,8 @@ callee-saved registers, and memory changed only in the frame and in the
 outputs `out` and `scratch`). `Lay` names the pointers and the frame's base
 `E`, and `setup_ok` sets a call's arguments from them.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.Arm.PublicKey
 

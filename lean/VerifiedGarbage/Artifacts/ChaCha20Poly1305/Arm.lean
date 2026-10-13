@@ -1,8 +1,10 @@
-import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Impl.ChaCha20Poly1305.Arm
-import VerifiedGarbage.Proof.ChaCha20Poly1305.Arm.Verified
-import VerifiedGarbage.Proof.ChaCha20Poly1305.Arm.Lit
-import VerifiedGarbage.Proof.ChaCha20Poly1305.Arm.Gather.Verified
+module
+
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.Impl.ChaCha20Poly1305.Arm
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.Arm.Verified
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.Arm.Lit
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.Arm.Gather.Verified
 
 /-!
 # ChaCha20-Poly1305 (RFC 8439 §2.8) on ARMv7
@@ -16,6 +18,8 @@ arguments), zeroed after the code, as it holds the one-time Poly1305 key and
 keystream. `seal_gather` gathers its slices to its output and calls `seal`
 on them there.
 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.ChaCha20Poly1305.Arm
 

@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesSiv.AArch64.Seal
-import VerifiedGarbage.Proof.AesSiv.Mask
+module
+
+public import VerifiedGarbage.Proof.AesSiv.AArch64.Seal
+public import VerifiedGarbage.Proof.AesSiv.Mask
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-SIV on AArch64: the end of `vg_aes_siv_decrypt`
@@ -12,6 +18,8 @@ mask of the result, a word at a time and then its last bytes one at a time
 (`maskData_wp`) and restores the registers
 (`openTail_wp`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesSiv.AArch64
 

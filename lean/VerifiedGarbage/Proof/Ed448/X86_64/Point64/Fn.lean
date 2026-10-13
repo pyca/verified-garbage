@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Ed448.X86_64.BaseField
-import VerifiedGarbage.Proof.Framework.X86_64.KeepReg
+module
+
+public import VerifiedGarbage.Proof.Ed448.X86_64.BaseField
+public import VerifiedGarbage.Proof.Framework.X86_64.KeepReg
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448's point functions on x86-64: what they compute
@@ -14,6 +20,8 @@ change only in the slots its operations write and in the product's words
 values are RFC 8032's (`doubleOps_eval`), the affine addition's `addOps`'s
 for a second point with `Z = 1` (`addAffineOps_eval`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.X86_64.Point64
 
@@ -108,18 +116,18 @@ theorem fieldCode_frame (ops : List FOp) (hv : ∀ op ∈ ops, fopValid op) {s :
 /-- A function running the field program `ops`: the registers but `clob` kept, the slots'
 values `evalOps ops` of theirs, and memory changed only at the program's results and the
 product's words. -/
-theorem fn_ok (ops : List FOp) (hv : ∀ op ∈ ops, fopValid op) {s : State} {base : Addr}
+theorem fnWith_ok {F : Impl.X448.X86_64.Field} (hf : FieldOk F) (ops : List FOp) (hv : ∀ op ∈ ops, fopValid op) {s : State} {base : Addr}
     (hs : Scr s base) :
-    WP isa (fn ops) s fun t =>
+    WP isa (fnWith F ops) s fun t =>
       Keep base s t ∧ E t.mem base = evalOps ops (E s.mem base) ∧
         ∀ x, (∀ op ∈ ops, OutOf base x op) → (ofs base x < ACC ∨ ACC + 112 ≤ ofs base x) →
           t.mem x = s.mem x := by
-  simp only [fn, List.append_assoc]
+  simp only [fnWith, List.append_assoc]
   rw [WP.block_append_iff]
   refine WP.mono (saves_ok s) fun s₁ ⟨g₁, m₁, rd₁, wr₁⟩ => ?_
   have hs₁ : Scr s₁ base := ⟨by rw [g₁]; exact hs.rdi, by rw [wr₁]; exact hs.wr, hs.nowrap⟩
   rw [WP.block_append_iff]
-  refine WP.mono (fieldCode_frame Proof.X448.X86_64.baseline_ok ops hv hs₁) fun s₂ ⟨k₂, e₂, f₂⟩ => ?_
+  refine WP.mono (fieldCode_frame hf ops hv hs₁) fun s₂ ⟨k₂, e₂, f₂⟩ => ?_
   refine WP.mono (restores_ok s₂) fun s₃ ⟨g₃, m₃, rd₃, wr₃⟩ => ?_
   refine ⟨⟨fun r hr => ?_, by rw [rd₃, k₂.rd, rd₁], by rw [wr₃, k₂.wr, wr₁], ?_⟩, by rw [m₃, e₂, m₁],
     fun x hx ha => by rw [m₃, f₂ x hx ha, m₁]⟩
@@ -130,6 +138,14 @@ theorem fn_ok (ops : List FOp) (hv : ∀ op ∈ ops, fopValid op) {s : State} {b
     rw [g₃ r hk, k₂.gpr r hr, g₁]
   · intro x hx
     rw [m₃, k₂.mem x hx, m₁]
+
+theorem fn_ok (ops : List FOp) (hv : ∀ op ∈ ops, fopValid op) {s : State} {base : Addr}
+    (hs : Scr s base) :
+    WP isa (fn ops) s fun t =>
+      Keep base s t ∧ E t.mem base = evalOps ops (E s.mem base) ∧
+        ∀ x, (∀ op ∈ ops, OutOf base x op) → (ofs base x < ACC ∨ ACC + 112 ≤ ofs base x) →
+          t.mem x = s.mem x :=
+  fnWith_ok Proof.X448.X86_64.baseline_ok ops hv hs
 
 /-- `fn_ok`, with the registers the function restores kept too (`KeepReg.keeps`). -/
 theorem fn_regs (ops : List FOp) (hv : ∀ op ∈ ops, fopValid op)

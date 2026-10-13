@@ -1,6 +1,12 @@
-import VerifiedGarbage.Spec.Ecdh.P192
-import VerifiedGarbage.TCB.X86.Target
-import VerifiedGarbage.Proof.Framework.Contract
+module
+
+public import VerifiedGarbage.Spec.Ecdh.P192
+public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Proof.Framework.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDH over P-192 on x86 (32-bit): the contract the proof is written against
@@ -10,6 +16,8 @@ The facts of `Spec.Ecdh.P192.inst.exchangeContract` for x86, by name:
 (cdecl), the result in `eax`. Its arguments' slots are readable here; the
 shared contract makes them writable (`Verified.narrowTo`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdh.X86.P192
 

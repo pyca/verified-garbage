@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecPost
-import VerifiedGarbage.Proof.RsaPkcs1Enc.Steps
+module
+
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecPost
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.Steps
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-PKCS1-v1_5 decryption on AArch64: `D = I2OSP(d, k)`
@@ -8,6 +14,8 @@ The result of the private-key operation to its slot (`dPtrs₁`), `k` zeros at
 `scratch + sD` (`zeroLoop`), and `d` copied to their end (`dPtrs₂`,
 `copyLoop`): `dBuild_ok`, from `Called` to `DB`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPkcs1Enc.AArch64.Dec
 

@@ -1,7 +1,18 @@
-import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTSupport
-import VerifiedGarbage.Proof.Ed25519.Arm.DecodeCTLit
+module
+
+public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTSupport
+meta import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTSupport
+public import VerifiedGarbage.Proof.Ed25519.Arm.DecodeCTLit
+meta import VerifiedGarbage.Proof.Ed25519.Arm.DecodeCTLit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Straight-line and fixed-loop pieces of public point decoding. -/
+
+@[expose] public section
+
 namespace VG.Proof.Ed25519.Arm
 open VG VG.Arm VG.Impl.Ed25519.Arm
 

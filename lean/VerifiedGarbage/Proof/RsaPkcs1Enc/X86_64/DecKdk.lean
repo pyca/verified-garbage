@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecMac
+module
+
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecMac
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-PKCS1-v1_5 decryption on x86-64: `KDK = HMAC(DH, C)`
@@ -6,6 +12,8 @@ import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecMac
 The key derivation key of draft-irtf-cfrg-rsa-guidance-10 §7.2 step 3.1,
 from `DH` and the ciphertext `C` (`kdkMac_step`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPkcs1Enc.X86_64.Dec
 

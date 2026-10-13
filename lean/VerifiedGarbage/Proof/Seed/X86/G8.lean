@@ -1,7 +1,13 @@
-import VerifiedGarbage.Impl.Seed.X86.G8
-import VerifiedGarbage.Proof.Seed.G8
-import VerifiedGarbage.Proof.Framework.X86.Linear
-import VerifiedGarbage.Proof.Aes.X86.Sbox
+module
+
+public import VerifiedGarbage.Impl.Seed.X86.G8
+public import VerifiedGarbage.Proof.Seed.G8
+public import VerifiedGarbage.Proof.Framework.X86.Linear
+public import VerifiedGarbage.Proof.Aes.X86.Sbox
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `g8` on x86 (32-bit)
@@ -13,6 +19,8 @@ the planes of `M` in slots `0 … 7`, and the words from the S-box's planes,
 as `Proof/Seed/G8.lean` states them), the S-box by AES's proof
 (`Proof.Aes.X86.sbox_ok`), and `g8_words` puts them together.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Seed.X86
 

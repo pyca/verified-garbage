@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesGcm.AArch64.Front
-import VerifiedGarbage.Proof.AesGcm.AArch64.StreamVerify
+module
+
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Front
+public import VerifiedGarbage.Proof.AesGcm.AArch64.StreamVerify
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on AArch64: what `seal` and `open` share
@@ -8,6 +14,8 @@ Untrusted: everything here is checked by Lean. The layout of a one-shot call
 (`oneLay`): the state at `W + 16`, inside `work`; everything the pieces
 write is inside `work`, but for the data (`*_work`) and the tag.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

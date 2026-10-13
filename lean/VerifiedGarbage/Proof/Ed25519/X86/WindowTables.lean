@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.Ed25519.X86.VerifyTables
-import VerifiedGarbage.Proof.Ed25519.X86.PointPowers
-import VerifiedGarbage.Proof.Ed25519.WindowConstants
-import VerifiedGarbage.Proof.Ed25519.X86.Point32.Call
-import VerifiedGarbage.Proof.Ed25519.Group.Double
+module
+
+public import VerifiedGarbage.Proof.Ed25519.X86.VerifyTables
+public import VerifiedGarbage.Proof.Ed25519.X86.PointPowers
+public import VerifiedGarbage.Proof.Ed25519.WindowConstants
+public import VerifiedGarbage.Proof.Ed25519.X86.Point32.Call
+public import VerifiedGarbage.Proof.Ed25519.Group.Double
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Verification's tables: `[1]A … [15]A` and `-[1]B … -[15]B`
@@ -12,6 +18,8 @@ each entry representing its multiple (`Rep`); the table of negated multiples
 of `B` (byte 3072) is stored from constants. Both hold points with the
 specification's coordinates, added with `pointAdd`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed25519.X86
 

@@ -1,6 +1,8 @@
-import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Sha256
-import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Frame
+module
+
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Sha256
+public import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Frame
 
 /-!
 # HMAC-SHA-256 (RFC 2104) on ARMv7
@@ -22,6 +24,8 @@ offsets in `scratch`. It pushes 8 bytes of stack (the stack arguments of
 same code with it as an argument, are what PBKDF2's code calls.
 -/
 
+@[expose] public section
+
 namespace VG.Artifacts.HmacSha256.Arm
 
 def artifacts : List Artifact := [
@@ -30,7 +34,7 @@ def artifacts : List Artifact := [
     doc := Spec.Hmac.sha256I.initApi.doc
     code := Impl.StackScratch.Arm.withStackScratch (Proof.Pbkdf2.Md.Arm.frame Spec.Hmac.sha256I) 0 Proof.Pbkdf2.Md.Arm.sha256Md.hmacInit
     contract := Spec.Hmac.sha256I.initContract Arm.abi (16 + Proof.Pbkdf2.Md.Arm.frame Spec.Hmac.sha256I)
-    ofSig := ⟨_, _, _, by unfold Spec.Hmac.Instance.initContract; rfl⟩
+    ofSig := by exact (⟨_, _, _, by unfold Spec.Hmac.Instance.initContract; rfl⟩)
     writeArgs := true
     stack := 16 + Proof.Pbkdf2.Md.Arm.frame Spec.Hmac.sha256I
     verified := Proof.Pbkdf2.Md.Arm.initFramed Proof.Pbkdf2.Md.Arm.Instances.sha256_init (by decide)
@@ -41,7 +45,7 @@ def artifacts : List Artifact := [
     doc := Spec.Hmac.sha256I.finalizeApi.doc
     code := Impl.StackScratch.Arm.withStackScratch (Proof.Pbkdf2.Md.Arm.frame Spec.Hmac.sha256I) 1 Proof.Pbkdf2.Md.Arm.sha256Md.hmacFin
     contract := Spec.Hmac.sha256I.finalizeContract Arm.abi (16 + Proof.Pbkdf2.Md.Arm.frame Spec.Hmac.sha256I)
-    ofSig := ⟨_, _, _, by unfold Spec.Hmac.Instance.finalizeContract; rfl⟩
+    ofSig := by exact (⟨_, _, _, by unfold Spec.Hmac.Instance.finalizeContract; rfl⟩)
     writeArgs := true
     stack := 16 + Proof.Pbkdf2.Md.Arm.frame Spec.Hmac.sha256I
     verified := Proof.Pbkdf2.Md.Arm.finFramed Proof.Pbkdf2.Md.Arm.Instances.sha256_finalize (by decide)
@@ -52,7 +56,7 @@ def artifacts : List Artifact := [
     doc := Spec.Hmac.sha256I.initScratchApi.doc
     code := Proof.Pbkdf2.Md.Arm.sha256Md.hmacInit
     contract := Spec.Hmac.sha256I.initScratchContract Arm.abi 16
-    ofSig := ⟨_, _, _, by unfold Spec.Hmac.Instance.initScratchContract; rfl⟩
+    ofSig := by exact (⟨_, _, _, by unfold Spec.Hmac.Instance.initScratchContract; rfl⟩)
     writeArgs := true
     stack := 16
     verified := Proof.Pbkdf2.Md.Arm.Instances.sha256_init
@@ -62,7 +66,7 @@ def artifacts : List Artifact := [
     doc := Spec.Hmac.sha256I.finalizeScratchApi.doc
     code := Proof.Pbkdf2.Md.Arm.sha256Md.hmacFin
     contract := Spec.Hmac.sha256I.finalizeScratchContract Arm.abi 16
-    ofSig := ⟨_, _, _, by unfold Spec.Hmac.Instance.finalizeScratchContract; rfl⟩
+    ofSig := by exact (⟨_, _, _, by unfold Spec.Hmac.Instance.finalizeScratchContract; rfl⟩)
     writeArgs := true
     stack := 16
     verified := Proof.Pbkdf2.Md.Arm.Instances.sha256_finalize

@@ -1,6 +1,8 @@
-import VerifiedGarbage.TCB.Emit
-import VerifiedGarbage.Proof.RsaOaep.X86_64.Sp
-import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.Callees
+module
+
+public import VerifiedGarbage.TCB.Emit
+public import VerifiedGarbage.Proof.RsaOaep.X86_64.Sp
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.Callees
 
 /-!
 # RSAES-OAEP decryption on x86-64
@@ -18,6 +20,8 @@ features.
 Its stack is its frame, a return address and `vg_rsa_private_checked`'s
 3256 bytes, which are more than the hash functions use.
 -/
+
+@[expose] public section
 
 namespace VG.Generic.MdHash.MdHash.RsaPrivateCrt.X86_64.RsaOaep
 

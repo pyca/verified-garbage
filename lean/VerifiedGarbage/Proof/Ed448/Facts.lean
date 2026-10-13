@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Ed448.VerifyEq
-import VerifiedGarbage.Proof.Ed448.Recover
-import Mathlib.Tactic.Abel
+module
+
+public import VerifiedGarbage.Proof.Ed448.VerifyEq
+public import VerifiedGarbage.Proof.Ed448.Recover
+public import Mathlib.Tactic.Abel
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448: the reference computations agree with the specification
@@ -16,6 +22,8 @@ The facts `Ref.lean` states, which every target's proofs take as hypotheses:
 
 Only registration files import this module.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448
 

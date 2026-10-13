@@ -1,10 +1,16 @@
-import VerifiedGarbage.Proof.MlKem.X86.Piece
-import VerifiedGarbage.Proof.MlKem.X86.Common
-import VerifiedGarbage.Proof.Sha3.X86.Stream.Absorb
-import VerifiedGarbage.Proof.Sha3.X86.Stream.Pad
-import VerifiedGarbage.Proof.Sha3.X86.Stream.Squeeze
-import VerifiedGarbage.Proof.Sha3.X86.Permute
-import VerifiedGarbage.Impl.MlKem.X86.Basic
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86.Piece
+public import VerifiedGarbage.Proof.MlKem.X86.Common
+public import VerifiedGarbage.Proof.Sha3.X86.Stream.Absorb
+public import VerifiedGarbage.Proof.Sha3.X86.Stream.Pad
+public import VerifiedGarbage.Proof.Sha3.X86.Stream.Squeeze
+public import VerifiedGarbage.Proof.Sha3.X86.Permute
+public import VerifiedGarbage.Impl.MlKem.X86.Basic
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86 (32-bit): calling the Keccak streaming functions
@@ -21,6 +27,8 @@ make the calls from a state satisfying `AbsorbAt`, `PadAt` or `SqueezeAt`,
 whose pointers are functions of the entry state, public when the entry
 states' pointers agree.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.X86
 

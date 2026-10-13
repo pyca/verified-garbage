@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Rel
-import VerifiedGarbage.Proof.MlDsa.Arm.Sign.CopyTr
+module
+
+public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Rel
+public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.CopyTr
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA signing on ARMv7: `ExpandA` leaks only `ρ`
@@ -8,6 +14,8 @@ Two runs of `ExpandA` with the same `ρ` compute the same results of
 `vg_mldsa_rej_ntt_poly`, so they agree on `r11` (`RA`), and leak the same
 (`expandA_tr`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Arm.Sign
 

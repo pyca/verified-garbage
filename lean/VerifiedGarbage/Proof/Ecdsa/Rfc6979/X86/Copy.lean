@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Regs
-import VerifiedGarbage.Proof.Hmac.Common
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Regs
+public import VerifiedGarbage.Proof.Hmac.Common
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Deterministic ECDSA on x86 (32-bit): copying words
@@ -12,6 +18,8 @@ computes from `src` and `dst` are those of ranges at `SA` and `DA`.
 `copyBytes Q` copies `Q ≥ 4` bytes: the whole words, then the last four bytes
 again (`copyBytes_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Rfc6979.X86
 

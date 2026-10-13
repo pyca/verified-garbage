@@ -1,7 +1,16 @@
-import VerifiedGarbage.Proof.Argon2.SegmentStart
-import VerifiedGarbage.Proof.Argon2.X86_64.SegmentSetupPrepare
+module
+
+public import VerifiedGarbage.Proof.Argon2.SegmentStart
+public import VerifiedGarbage.Proof.Argon2.X86_64.SegmentSetupPrepare
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Argon2.X86_64.SegmentSetupCheck`. -/
+
+@[expose] public section
+
 section
 /-! Check the prepared index before entering the nonempty segment loop. -/
 

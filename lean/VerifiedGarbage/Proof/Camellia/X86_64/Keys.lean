@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Camellia.X86_64.Crypt8
-import VerifiedGarbage.Proof.Camellia.X86_64.KeyChecks
+module
+
+public import VerifiedGarbage.Proof.Camellia.X86_64.Crypt8
+public import VerifiedGarbage.Proof.Camellia.X86_64.KeyChecks
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The table of bitsliced subkeys on x86-64
@@ -10,6 +16,8 @@ bytes, the most significant first: `wordAt`) into the table's entry at
 `encKeys_wp` and `decKeys_wp` build the table in the order the rounds use
 the subkeys: for encryption the stored order, for decryption `decPerm`'s.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Camellia.X86_64
 

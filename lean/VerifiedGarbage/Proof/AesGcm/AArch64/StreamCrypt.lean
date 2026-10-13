@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesGcm.AArch64.Body
-import VerifiedGarbage.Proof.AesGcm.AArch64.StreamAad
+module
+
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Body
+public import VerifiedGarbage.Proof.AesGcm.AArch64.StreamAad
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on AArch64: `vg_aes_gcm_stream_encrypt` and `vg_aes_gcm_stream_decrypt`
@@ -9,6 +15,8 @@ registers and sets up the body's arguments (`crEntry_ok`); the body
 encrypts (`encBody_ok`) or decrypts (`decBody_ok`) and absorbs the
 ciphertext, for any message so far of those lengths (`WP.forall_det`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

@@ -1,5 +1,7 @@
-import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.AesCbc.AArch64.Verified
+module
+
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.AesCbc.AArch64.Verified
 
 /-!
 # AES-CBC (NIST SP 800-38A §6.2) on AArch64
@@ -13,6 +15,8 @@ features.
 No stack is used: the calls keep the return address in `x30`, which each
 function saves in the scratch buffer.
 -/
+
+@[expose] public section
 
 namespace VG.Generic.AesBlocks.AArch64.AesCbc
 

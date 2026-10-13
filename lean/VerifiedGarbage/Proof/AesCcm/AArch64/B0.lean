@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesCcm.AArch64.Blocks
+module
+
+public import VerifiedGarbage.Proof.AesCcm.AArch64.Blocks
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CCM on AArch64: `B₀` (`b0 y`)
@@ -8,6 +14,8 @@ Untrusted: everything here is checked by Lean. `flagsSeg` computes the flags
 `flags_ok`); `b0Seg y` writes `B₀` to `W + 32` from `Ctr₀` and zeroes the MAC
 state at `W + y` (`b0Seg_ok`); `b0 y` then chains `B₀` into it (`b0_ok`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

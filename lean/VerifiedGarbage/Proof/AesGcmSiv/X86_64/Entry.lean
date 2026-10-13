@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Env
+module
+
+public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Env
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM-SIV on x86-64: the entry, the exit and the arguments
@@ -7,6 +13,8 @@ Untrusted: everything here is checked by Lean. `entry` reads the stack
 arguments, saves our caller's registers at `W + 144` and keeps the arguments
 but `tag` in `W` (`entry_ok`); `restore` reads the registers back (`restore_ok`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

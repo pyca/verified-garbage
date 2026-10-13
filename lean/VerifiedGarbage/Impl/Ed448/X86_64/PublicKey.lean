@@ -114,12 +114,15 @@ def pkHash : Prog isa :=
     (callWith pkSqueezeArgs "vg_keccak_squeeze_scratch" Impl.Sha3.X86_64.Stream.squeeze)
 
 /-- The frame's body. -/
-def pkBody : Prog isa :=
+def pkBodyFor (v : FieldVariant) : Prog isa :=
   .seq pkHash <| .seq pkPrune <| .seq (.block pkBaseArgs) <|
-    .seq (.call "vg_ed448_scalar_base" scalarBase) (.block pkWipe)
+    .seq (.call ("vg_ed448_scalar_base" ++ v.suffix) (scalarBaseFor v)) (.block pkWipe)
 
 /-- `vg_ed448_public_key`. -/
-def publicKey : Prog isa :=
-  .frame (.push [.rdi, .rsi, .rdx, .rax, .rax, .rax, .rax, .rax, .rax, .rax, .rax]) pkBody (.pop .rax 11)
+def publicKeyFor (v : FieldVariant) : Prog isa :=
+  .frame (.push [.rdi, .rsi, .rdx, .rax, .rax, .rax, .rax, .rax, .rax, .rax, .rax]) (pkBodyFor v) (.pop .rax 11)
+
+def pkBody : Prog isa := pkBodyFor .scalar
+def publicKey : Prog isa := publicKeyFor .scalar
 
 end VG.Impl.Ed448.X86_64

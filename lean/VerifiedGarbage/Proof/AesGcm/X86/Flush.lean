@@ -1,7 +1,17 @@
-import VerifiedGarbage.Proof.AesGcm.X86.Absorb
-import VerifiedGarbage.Proof.Gcm.Be64
-import VerifiedGarbage.Proof.Cmac.Mem32
-import VerifiedGarbage.Proof.Cmac.Block32
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86.Absorb
+meta import VerifiedGarbage.Proof.AesGcm.X86.Absorb
+public import VerifiedGarbage.Proof.Gcm.Be64
+meta import VerifiedGarbage.Proof.Gcm.Be64
+public import VerifiedGarbage.Proof.Cmac.Mem32
+meta import VerifiedGarbage.Proof.Cmac.Mem32
+public import VerifiedGarbage.Proof.Cmac.Block32
+meta import VerifiedGarbage.Proof.Cmac.Block32
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on x86: padding the buffer (`flush`) and the lengths block (`lens`)
@@ -11,6 +21,8 @@ buffered bytes with zeros in `T` and absorbs them (`flush_pc`); `lens yo`
 stores the lengths block of the 64-bit lengths kept in `W` in `T` and
 absorbs it (`lens_pc`). Both are correct and constant time.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

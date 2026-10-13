@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.AesGcm.X86.Seal
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86.Seal
+meta import VerifiedGarbage.Proof.AesGcm.X86.Seal
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on x86: `vg_aes_gcm_open`
@@ -13,6 +20,8 @@ the ciphertext into `W + 112` (`oneTag_pc`), the received tag copied
 (`open_ct`), which the contract lets it leak: the index of the `Pc` is the
 public data and that bit.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

@@ -1,7 +1,17 @@
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Curve
-import VerifiedGarbage.Proof.Ecdsa.X86.CombVerified
-import VerifiedGarbage.Proof.Ecdsa.X86.Lit
-import VerifiedGarbage.Proof.Framework.X86.Lit
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Curve
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Curve
+public import VerifiedGarbage.Proof.Ecdsa.X86.CombVerified
+meta import VerifiedGarbage.Proof.Ecdsa.X86.CombVerified
+public import VerifiedGarbage.Proof.Ecdsa.X86.Lit
+meta import VerifiedGarbage.Proof.Ecdsa.X86.Lit
+public import VerifiedGarbage.Proof.Framework.X86.Lit
+meta import VerifiedGarbage.Proof.Framework.X86.Lit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Deterministic ECDSA on x86 (32-bit): P-256
@@ -13,6 +23,8 @@ correct (given the group law) and constant time against its contract
 table as public-key generation and verification, using four bytes of stack
 for position-independent addressing, within the 20 its calls use.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Rfc6979.X86
 

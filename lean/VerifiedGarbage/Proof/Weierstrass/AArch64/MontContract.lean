@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Weierstrass.AArch64.MontFnG
-import VerifiedGarbage.Proof.Mont.Read
-import VerifiedGarbage.Proof.Framework.AArch64.Taint
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.MontFnG
+public import VerifiedGarbage.Proof.Mont.Read
+public import VerifiedGarbage.Proof.Framework.AArch64.Taint
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Montgomery products as functions on AArch64: the contracts
@@ -14,6 +20,8 @@ contract says (`keeps_of_kept`). The functions are constant time
 agreeing on the offsets' low halves agree on, from which the rest is checked
 by taint tracking.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.AArch64.Mont
 

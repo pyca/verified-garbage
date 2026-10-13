@@ -1,6 +1,10 @@
-import VerifiedGarbage.Proof.Idea.AArch64.FbVerified
+module
+
+public import VerifiedGarbage.Proof.Idea.AArch64.FbVerified
 
 /-! # IDEA-OFB artifacts on baseline AArch64 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.IdeaOfb.AArch64
 

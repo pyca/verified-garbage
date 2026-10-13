@@ -1,7 +1,11 @@
-import VerifiedGarbage.TCB.X86.Target
-import VerifiedGarbage.Proof.Md5.X86.Shared
+module
+
+public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Proof.Md5.X86.Shared
 
 /-! # MD5 (RFC 1321) on x86 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.Md5.X86
 

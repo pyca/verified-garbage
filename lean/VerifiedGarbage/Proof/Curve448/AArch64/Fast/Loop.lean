@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Curve448.AArch64.Fast.Prelude
-import VerifiedGarbage.Proof.Curve448.AArch64.Fast.Bounds
+module
+
+public import VerifiedGarbage.Proof.Curve448.AArch64.Fast.Prelude
+public import VerifiedGarbage.Proof.Curve448.AArch64.Fast.Bounds
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The four columns of a product
@@ -9,6 +15,8 @@ whose accumulators `L` and `H` hold coefficients `d` and `d + 4` of `r` after
 column `d` (`hsem`), the columns stage the limbs of both carry chains and
 leave their last carries in `CL` and `CH`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Curve448.AArch64.Fast
 

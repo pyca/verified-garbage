@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Dec
-import VerifiedGarbage.Proof.Aes.X86_64.Blocks
+module
+
+public import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Dec
+meta import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Dec
+public import VerifiedGarbage.Proof.Aes.X86_64.Blocks
+meta import VerifiedGarbage.Proof.Aes.X86_64.Blocks
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-NI: encryption and decryption of whole blocks
@@ -15,6 +23,8 @@ given what it needs of the state (`KP`, which the loops keep): `aes` and
 original ones (`Inv`); the eight-block and one-block bodies are the same
 code for different lists of registers (`blocks_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Aes.X86_64.AesNi
 

@@ -1,9 +1,15 @@
-import VerifiedGarbage.Proof.Ed448.X86.BaseLocal
-import VerifiedGarbage.Proof.Ed448.X86.BaseSetup
-import VerifiedGarbage.Proof.Ed448.X86.BaseStep
-import VerifiedGarbage.Proof.Ed448.X86.BaseEncode
-import VerifiedGarbage.Proof.Ed448.X86.ScalarMain
-import VerifiedGarbage.Proof.X448.X86.Runs
+module
+
+public import VerifiedGarbage.Proof.Ed448.X86.BaseLocal
+public import VerifiedGarbage.Proof.Ed448.X86.BaseSetup
+public import VerifiedGarbage.Proof.Ed448.X86.BaseStep
+public import VerifiedGarbage.Proof.Ed448.X86.BaseEncode
+public import VerifiedGarbage.Proof.Ed448.X86.ScalarMain
+public import VerifiedGarbage.Proof.X448.X86.Runs
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 base-point multiplication on x86 (32-bit): the whole function
@@ -18,6 +24,8 @@ working space but the result's, so the arguments and the scalar are read
 unchanged; the callee-saved registers are restored from the working space,
 and the return address is kept.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.X86
 

@@ -1,7 +1,11 @@
-import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.Sm3.AArch64.Shared
+module
+
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.Sm3.AArch64.Shared
 
 /-! # SM3 (GB/T 32905-2016) on AArch64 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.Sm3.AArch64
 

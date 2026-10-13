@@ -1,8 +1,19 @@
-import VerifiedGarbage.Proof.Sm4.Arm.ModeCore
-import VerifiedGarbage.Proof.Sm4.FbScratch
-import VerifiedGarbage.Proof.Modes.Arm.OfbCfb
-import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
-import VerifiedGarbage.Impl.Sm4.Arm.Fb
+module
+
+public import VerifiedGarbage.Proof.Sm4.Arm.ModeCore
+meta import VerifiedGarbage.Proof.Sm4.Arm.ModeCore
+public import VerifiedGarbage.Proof.Sm4.FbScratch
+meta import VerifiedGarbage.Proof.Sm4.FbScratch
+public import VerifiedGarbage.Proof.Modes.Arm.OfbCfb
+meta import VerifiedGarbage.Proof.Modes.Arm.OfbCfb
+public import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
+meta import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
+public import VerifiedGarbage.Impl.Sm4.Arm.Fb
+meta import VerifiedGarbage.Impl.Sm4.Arm.Fb
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # SM4-OFB and SM4-CFB128 on ARMv7 meet their contracts
@@ -13,6 +24,8 @@ with a scratch buffer of 9 words (`Proof.Sm4.fbScratchContract`), with the
 1456 bytes of stack the ECB function uses; the `_framed` theorems keep the
 buffer on the stack, zeroed on return: 80 bytes more.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sm4.Arm
 

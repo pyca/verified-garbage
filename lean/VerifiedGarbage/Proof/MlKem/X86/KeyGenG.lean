@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.MlKem.X86.KeyGenPre
-import VerifiedGarbage.Proof.MlKem.X86.TopKeep
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86.KeyGenPre
+public import VerifiedGarbage.Proof.MlKem.X86.TopKeep
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86 (32-bit): the start of key generation
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.MlKem.X86.TopKeep
 (`start_piece`), which is `P 0`: the state of the loop over `N` that computes
 `ŝ` and `ê`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.X86.KeyGen
 

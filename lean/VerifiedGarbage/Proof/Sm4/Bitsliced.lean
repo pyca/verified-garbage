@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Sm4.SboxTable
-import VerifiedGarbage.Proof.Aes.Bitsliced
-import VerifiedGarbage.Impl.Sm4.Lin
+module
+
+public import VerifiedGarbage.Proof.Sm4.SboxTable
+public import VerifiedGarbage.Proof.Aes.Bitsliced
+public import VerifiedGarbage.Impl.Sm4.Lin
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Bitsliced SM4: the layout and the layers
@@ -17,6 +23,8 @@ proof states it, by evaluation) into the function of the specification it
 computes on the words: the S-box (`tau_rel`), `L` and `L'` (`lin_rel`), and
 a round (`round_rel`). Nothing here depends on the target.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sm4
 

@@ -1,9 +1,17 @@
-import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.Contract
-import VerifiedGarbage.Proof.Framework.Contract
+module
+
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.Contract
+public import VerifiedGarbage.Proof.Framework.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # An RSA key from its primes on x86-64: the shared contract implies `keyCtr`
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaKeyGen.X86_64.Key
 

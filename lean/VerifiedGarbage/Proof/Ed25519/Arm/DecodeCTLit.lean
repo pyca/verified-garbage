@@ -1,6 +1,17 @@
-import VerifiedGarbage.Impl.Ed25519.Arm.PointDecode
-import VerifiedGarbage.Impl.Ed25519.Arm.PointEqual
-import VerifiedGarbage.Proof.Framework.Arm.Lit
+module
+
+public import VerifiedGarbage.Impl.Ed25519.Arm.PointDecode
+meta import VerifiedGarbage.Impl.Ed25519.Arm.PointDecode
+public import VerifiedGarbage.Impl.Ed25519.Arm.PointEqual
+meta import VerifiedGarbage.Impl.Ed25519.Arm.PointEqual
+public import VerifiedGarbage.Proof.Framework.Arm.Lit
+meta import VerifiedGarbage.Proof.Framework.Arm.Lit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.Ed25519.Arm
 open VG VG.Arm VG.Impl.Ed25519.Arm

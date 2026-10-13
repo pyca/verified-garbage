@@ -1,7 +1,15 @@
-import VerifiedGarbage.Impl.P256.EcdhDouble
-import VerifiedGarbage.Proof.P256.EcdhDouble.WeakField
-import VerifiedGarbage.Proof.P256.EcdhDouble.MacroField
-import VerifiedGarbage.Proof.P256.EcdhDouble.Arithmetic
+module
+
+public import VerifiedGarbage.Impl.P256.EcdhDouble
+public import VerifiedGarbage.Proof.P256.EcdhDouble.WeakField
+public import VerifiedGarbage.Proof.P256.EcdhDouble.MacroField
+public import VerifiedGarbage.Proof.P256.EcdhDouble.Arithmetic
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.P256.EcdhDouble
 open VG VG.AArch64 VG.Impl.Mont VG.Impl.Weierstrass

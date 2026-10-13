@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Curve448.AArch64.Neon.Folds
-import Mathlib.Tactic.Linarith
-import Mathlib.Tactic.Ring
-import Mathlib.Tactic.LinearCombination
+module
+
+public import VerifiedGarbage.Proof.Curve448.AArch64.Neon.Folds
+public import Mathlib.Tactic.Linarith
+public import Mathlib.Tactic.Ring
+public import Mathlib.Tactic.LinearCombination
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The coefficients' carries
@@ -11,6 +17,8 @@ Untrusted: everything here is checked by Lean. Two chains carry in radix
 `2⁴⁴⁸ = 2²²⁴ + 1`. With coefficients small enough, every lane holds its exact
 value.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Curve448.AArch64.Neon
 

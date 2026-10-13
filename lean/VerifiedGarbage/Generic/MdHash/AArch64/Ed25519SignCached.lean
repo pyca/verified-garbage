@@ -1,5 +1,9 @@
-import VerifiedGarbage.Proof.Ed25519.AArch64.SignCached.Verified
-import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Variant
+module
+
+public import VerifiedGarbage.Proof.Ed25519.AArch64.SignCached.Verified
+public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Variant
+
+@[expose] public section
 
 namespace VG.Generic.MdHash.AArch64.Ed25519SignCached
 

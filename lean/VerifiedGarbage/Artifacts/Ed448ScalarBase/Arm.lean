@@ -1,6 +1,8 @@
-import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Proof.Ed448.Arm.BaseVerified
-import VerifiedGarbage.Proof.Ed448.Facts
+module
+
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.Proof.Ed448.Arm.BaseVerified
+public import VerifiedGarbage.Proof.Ed448.Facts
 
 /-!
 # Ed448 base-point multiplication on ARMv7
@@ -9,6 +11,8 @@ The signature and documentation come from the reviewed Ed448 API. The
 reference ladder's agreement with the specification (`Proof/Ed448/Facts.lean`)
 is passed to the proof here, so that only registration files import it.
 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.Ed448ScalarBase.Arm
 
