@@ -60,7 +60,7 @@ runs:
             return 1
           }
           {
-            retry "Installing elan" 60 sh -c '
+            retry "Installing elan" 15 sh -c '
               curl -sSfL --connect-timeout 20 https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh \
                 | sh -s -- -y --default-toolchain none' &&
             retry "Installing $(cat lean-toolchain)" 180 \
