@@ -81,6 +81,7 @@ structure EcbPre (c : Core) (keyLen stack : Nat) (rok : BitVec 32 → Prop) (s :
   fK : (s.gpr .r0).toNat + keyLen ≤ 2 ^ 32
   fD : (s.gpr c.dReg).toNat + (s.gpr c.nReg).toNat * c.bs ≤ 2 ^ 32
   rr : c.rounds = true → rok (s.gpr .r1)
+  a3 : ∀ k, c.arg3 = some k → s.gpr .r3 = BitVec.ofNat 32 k
 
 /-- The regions of the tables `K` at their addresses in `s`. -/
 abbrev tabRegs (K : List (String × List (BitVec 64))) (s : State) : List Region :=
@@ -119,6 +120,7 @@ structure EcbPreS (c : Core) (keyLen stack : Nat) (rok : BitVec 32 → Prop) (K 
   held : Abi.constsHeld s.mem (fun n => State.addr (s.syms n)) K
   tabs : ∀ t ∈ tabRegs K s, t.base.toNat + t.len ≤ 2 ^ 32 ∧ (∀ r ∈ s.wr, t.Disjoint r) ∧
     t.Disjoint ⟨State.addr s.sp - BitVec.ofNat 64 (stack - 8), stack - 8⟩
+  a3 : ∀ k, c.arg3 = some k → s.gpr .r3 = BitVec.ofNat 32 k
 
 /-- What the modes need of the core `c` (see above). -/
 structure CoreSpec (c : Core) where
@@ -137,7 +139,7 @@ structure CoreSpec (c : Core) where
       (blocksOf c.bs s.mem (State.addr (s.gpr c.dReg)) (s.gpr c.nReg).toNat).map
         (ciphAt s.mem (State.addr (s.gpr .r0)) (s.gpr .r1))
   pub_of : c.stackScratch = 0 → ∀ s₁ s₂, s₁.sp = s₂.sp → s₁.gpr .r0 = s₂.gpr .r0 → s₁.gpr .r1 = s₂.gpr .r1 →
-    s₁.gpr .r2 = s₂.gpr .r2 → (c.rounds = true → s₁.gpr .r3 = s₂.gpr .r3) → contract.pub s₁ s₂
+    s₁.gpr .r2 = s₂.gpr .r2 → (c.r3Pub = true → s₁.gpr .r3 = s₂.gpr .r3) → contract.pub s₁ s₂
   ciphAt_congr : ∀ {m m' : Mem} {K : Addr} {R : BitVec 32},
     (∀ i < keyLen, m (K + BitVec.ofNat 64 i) = m' (K + BitVec.ofNat 64 i)) → ciphAt m K R = ciphAt m' K R
   ciphAt_R : c.rounds = false → ∀ m K R R', ciphAt m K R = ciphAt m K R'
@@ -154,11 +156,13 @@ structure CoreSpec (c : Core) where
         (ciphAt s.mem (State.addr (s.gpr .r0)) (s.gpr .r1)) := by
     intro h; exact absurd rfl h
   pub_ofS : c.stackScratch ≠ 0 → ∀ s₁ s₂, s₁.sp = s₂.sp → s₁.gpr .r0 = s₂.gpr .r0 → s₁.gpr .r1 = s₂.gpr .r1 →
-    s₁.gpr .r2 = s₂.gpr .r2 → (c.rounds = true → s₁.gpr .r3 = s₂.gpr .r3) → stackArg s₁ 0 = stackArg s₂ 0 →
+    s₁.gpr .r2 = s₂.gpr .r2 → (c.r3Pub = true → s₁.gpr .r3 = s₂.gpr .r3) → stackArg s₁ 0 = stackArg s₂ 0 →
     (∀ x ∈ consts, s₁.syms x.1 = s₂.syms x.1) → contract.pub s₁ s₂ := by
     intro h; exact absurd rfl h
   depthS : c.stackScratch ≠ 0 → armStack c.code + 8 ≤ stack := by intro h; exact absurd rfl h
   cs_enc : c.stackScratch ≠ 0 → encodable (BitVec.ofNat 32 c.csOff) = true := by intro h; exact absurd rfl h
+  arg3_enc : ∀ k, c.arg3 = some k → encodable (BitVec.ofNat 32 k) = true := by intro _ h; cases h
+  arg3_rounds : c.arg3.isSome = true → c.rounds = false := by intro h; cases h
 
 /-- Tables held in memory, later: kept by writes apart from them. -/
 theorem held_frame {K : List (String × List (BitVec 64))} {rs : List Region} {m m' : Mem} {f : String → Addr}
@@ -185,6 +189,7 @@ structure CallPre (c : Core) (S : CoreSpec c) (s : State) (K R B C : BitVec 32) 
   rok : c.rounds = true → S.rok R
   rd : s.gpr c.dReg = B
   rn : s.gpr c.nReg = 1
+  a3 : ∀ k, c.arg3 = some k → s.gpr .r3 = BitVec.ofNat 32 k
   stk : S.stack ≤ s.sp.toNat
   fK : K.toNat + S.keyLen ≤ 2 ^ 32
   fB : B.toNat + c.bs ≤ 2 ^ 32
@@ -241,7 +246,7 @@ theorem CallPre.ecbPre {c : Core} {S : CoreSpec c} {s : State} {K R B C : BitVec
       (s.callEntry.withRegions [⟨State.addr K, S.keyLen⟩] [⟨State.addr B, c.bs⟩]) := by
   have hd := c.dReg_ne
   have hn := c.nReg_ne
-  refine ⟨by simpa using h.stk, ?_, ?_, ?_, ?_, ?_, ?_, ?_, fun hr => ?_⟩ <;>
+  refine ⟨by simpa using h.stk, ?_, ?_, ?_, ?_, ?_, ?_, ?_, fun hr => ?_, fun k hk => ?_⟩ <;>
     try simp only [entry_gpr _ _ _ (show Reg.r0 ≠ .r12 by decide) (by decide), entry_gpr _ _ _ hd.1 hd.2.1,
       entry_gpr _ _ _ hn.1 hn.2.1, h.r0, h.rd, h.rn, one_mul', State.withRegions_rd, State.withRegions_wr,
       State.withRegions_sp, State.callEntry_sp]
@@ -251,6 +256,7 @@ theorem CallPre.ecbPre {c : Core} {S : CoreSpec c} {s : State} {K R B C : BitVec
   · exact h.fK
   · exact h.fB
   · rw [entry_gpr _ _ _ (by decide) (by decide), h.r1 hr]; exact h.rok hr
+  · rw [entry_gpr _ _ _ (by decide) (by decide), h.a3 k hk]
 
 /-- The call of a core without a working space. -/
 theorem callPlain_wp {c : Core} (S : CoreSpec c) {s : State} {K R B C : BitVec 32} (h : CallPre c S s K R B C)
@@ -324,7 +330,7 @@ theorem CallPre.ecbPreS (h : CallPre c S s K R B C) (hs : c.stackScratch ≠ 0) 
     rw [show (8 : Addr) = BitVec.ofNat 64 8 from rfl, VG.Offset.sub_ofNat_eq (State.addr s.sp) (a := 8) (b := S.stack)
       (by omega)]
     exact VG.Offset.base_disjoint _ (by omega) (by omega)
-  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, fun hr => ?_, ?_, ?_⟩ <;>
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, fun hr => ?_, ?_, ?_, fun k hk => ?_⟩ <;>
     try simp only [e0 .r0 (by decide) (by decide), e0 _ hd.1 hd.2.1, e0 _ hn.1 hn.2.1, h.r0, h.rd, h.rn, one_mul',
       State.withRegions_rd, State.withRegions_wr, Push.arg0 h8, h.r12 hs, Push.sa0 h8, h.calleeBelow hs]
   · rw [Push.view_sp h8]; omega
@@ -361,6 +367,7 @@ theorem CallPre.ecbPreS (h : CallPre c S s K R B C) (hs : c.stackScratch ≠ 0) 
     rcases hr with rfl | rfl
     · exact h.tB t ht
     · exact h.tC t ht
+  · rw [e0 .r3 (by decide) (by decide), h.a3 k hk]
 
 theorem covers_mem {rs xs : List Region} {r : Region} (h : Covers rs xs) (hr : r ∈ rs) : Covers [r] xs :=
   (Covers.of_mem fun x hx => by simp only [List.mem_singleton] at hx; subst hx; exact hr).trans h

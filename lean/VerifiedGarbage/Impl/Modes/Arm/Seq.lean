@@ -14,7 +14,9 @@ calls (`bl`) once for each block, with `n = 1`. Each cipher's ECB function
 is already an artifact, so the mode adds no cryptographic code of its own.
 A core may also take a working space of `stackScratch` bytes as its first
 stack argument (after `n`; CAST5's does): the mode passes it the end of its
-own scratch buffer, pushed (`push {r12, lr}`) around each call.
+own scratch buffer, pushed (`push {r12, lr}`) around each call. A core
+without a number of rounds may take a constant after `n`, in `r3` (`arg3`;
+the direction of a function shared by encryption and decryption).
 
 The function, `(schedule = r0, iv = r1, data = r2, n = r3, scratch = [sp])`
 (or `(schedule = r0, rounds = r1, iv = r2, data = r3, n = [sp],
@@ -62,6 +64,10 @@ structure Core where
   /-- The size of the working space the function takes as its first stack
   argument, or 0 if it takes none. -/
   stackScratch : Nat := 0
+  /-- A constant the function takes after `n`, in `r3` (e.g. the direction
+  of a function shared by encryption and decryption), if any; only for a
+  function without a number of rounds. -/
+  arg3 : Option Nat := none
 
 /-- The blocks a mode works on: the data block (`r6`), the chaining block
 and the spare block (in the scratch buffer). -/
@@ -178,12 +184,23 @@ def setup : List Instr :=
 def scrArg : List Instr :=
   if c.stackScratch = 0 then [] else [.dp .add .r12 .r8 (.imm (BitVec.ofNat 32 c.csOff))]
 
+/-- The constant argument to `r3`, if the function takes one. -/
+def arg3Code : List Instr :=
+  match c.arg3 with
+  | some k => [.mov .r3 (.imm (BitVec.ofNat 32 k))]
+  | none => []
+
+/-- Whether `r3` holds a public argument of the call: the number of blocks
+of a function with a number of rounds, or the constant `arg3`. -/
+def r3Pub : Bool := c.rounds || c.arg3.isSome
+
 /-- The arguments of the call on block `x`: the schedule, the number of
-rounds (if any), the block, `n = 1`, and the callee's working space (if
-any) in `r12`, which the call pushes. -/
+rounds (if any), the block, `n = 1`, the constant argument (if any), and
+the callee's working space (if any) in `r12`, which the call pushes. -/
 def callArgs (x : Blk) : List Instr :=
   mov .r0 .r4 :: ((if c.rounds then [mov .r1 .r11] else []) ++
-    [.dp .add c.dReg (c.base x).1 (.imm (BitVec.ofNat 32 (c.base x).2)), .mov c.nReg (.imm 1)]) ++ c.scrArg
+    [.dp .add c.dReg (c.base x).1 (.imm (BitVec.ofNat 32 (c.base x).2)), .mov c.nReg (.imm 1)]) ++
+    c.arg3Code ++ c.scrArg
 
 /-- The call: with the callee's working space, in a frame that pushes its
 address (`r12`) as the stack argument, and `lr` to keep the stack 8-byte
