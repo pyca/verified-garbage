@@ -38,10 +38,10 @@ structure KeyPost (s s' : State) : Prop where
   sched : Spec.Seed.scheduleAt s'.mem (s.gpr .rsi) = Spec.Seed.expandKey (Spec.Seed.blockAt s.mem (s.gpr .rdi))
   frame : Frame [⟨s.gpr .rdx, 8 * scratchSlots⟩, ⟨s.gpr .rsi, 128⟩] s.mem s'.mem
 
-theorem expandKey_eq_code : expandKey = .block (([movR .r9 .rdx] ++
+theorem expandKey_eq_code : expandKey = .seq (.block (([movR .r9 .rdx] ++
     (Impl.Seed.X86_64.savedRegs.map fun p => (p.2, p.1)).map (fun p => st p.1 p.2) ++ setG16Masks) ++
-    Impl.Seed.X86_64.keyLoad ++ keyBody ++ restore) := by
-  simp only [expandKey, keyBody, List.append_assoc]
+    Impl.Seed.X86_64.keyLoad ++ keyPre)) (.seq (.loop keyHalf .ne) (.block restore)) := by
+  simp only [expandKey, keyPre, List.append_assoc]
   rfl
 
 theorem expandKey_ok {s : State} (h : KeyPre s) : WP isa expandKey s (KeyPost s) := by
@@ -98,23 +98,35 @@ theorem expandKey_ok {s : State} (h : KeyPre s) : WP isa expandKey s (KeyPost s)
     show s₅.mem.readW (Straight.wordAddr (s₅.gpr .r9) kv.1) 64 = s₃.mem.readW (Straight.wordAddr (s₃.gpr .r9) kv.1) 64
     rw [mem₅, r9₅, r9₃]
   have rsi₅ : s₅.gpr .rsi = s.gpr .rsi := by rw [G₅ _ (by decide) (by decide) (by decide), G₃ _ (by decide) (by decide)]
-  -- the schedule
-  obtain ⟨s₆, e₆, v₆, g₆, rd₆, wr₆, f₆⟩ := keyBody_ok key room₅ masks₅ h10 h11
-    (by rw [rsi₅, wr₅']; exact h.schedIn) (by rw [rsi₅, scr₅]; exact h.schedBuf)
+  -- the rounds, and the schedule's end
+  obtain ⟨s₆, e₆, room₆, masks₆, cur₆, next₆, rdx₆, g₆, rd₆, wr₆, f₆⟩ := keyPre_ok key room₅ masks₅ h10 h11
   have r9₆ : s₆.gpr .r9 = s₅.gpr .r9 := g₆ _ (by simp)
-  have room₆ : Room s₆ := room_congr room₅ r9₆ wr₆
-  obtain ⟨s', e', m', set', keep'⟩ := loads_ok room₆ Impl.Seed.X86_64.savedRegs
+  have rsi₆ : s₆.gpr .rsi = s.gpr .rsi := (g₆ _ (by simp)).trans rsi₅
+  have scr₆ : scratchR s₆ = ⟨s.gpr .rdx, 8 * scratchSlots⟩ := by simp only [scratchR, r9₆, r9₅]
+  have h0 : HalfInv key s₆ (s.gpr .rsi) 0 s₆ :=
+    ⟨room₆, masks₆, rfl, rfl, by rw [rsi₆]; exact (BitVec.add_zero _).symm, by rw [rdx₆, rsi₅],
+      fun w hw => by rw [cur₆ w hw, Nat.mul_zero, Nat.zero_add], fun _ => next₆, fun i hi => by omega, rfl, rfl,
+      Frame.refl _ _⟩
+  refine WP.seq (WP.of_runBlock ⟨s₆, runBlock_trans (runBlock_trans (runBlock_trans
+    (runBlock_trans e₁ e₂) e₃) (runBlock_trans e₄ e₅)) e₆, WP.seq (keyHalves_wp key
+      (by rw [wr₆, wr₅']; exact h.schedIn) (by rw [scr₆]; exact h.schedBuf) h0
+      fun s₇ v₇ r9₇ rsp₇ rd₇ wr₇ f₇ => ?_)⟩)
+  have room₇ : Room s₇ := room_congr room₆ r9₇ wr₇
+  obtain ⟨s', e', m', set', keep'⟩ := loads_ok room₇ Impl.Seed.X86_64.savedRegs
     (fun q hq => ⟨(savedRegs_ok q hq).1, (savedRegs_ok q hq).2.1⟩) (by decide)
-  refine WP.of_runBlock ⟨s', runBlock_trans (runBlock_trans (runBlock_trans (runBlock_trans
-    (runBlock_trans e₁ e₂) e₃) (runBlock_trans e₄ e₅)) e₆) (by rw [restore_eq]; exact e'), ?_⟩
-  rw [rsi₅] at v₆ f₆
-  have workR₅ : workR s₅ = ⟨s.gpr .rdx, 8 * 125⟩ := by simp only [workR, r9₅]
-  rw [workR₅] at f₆
+  refine WP.of_runBlock ⟨s', by rw [restore_eq]; exact e', ?_⟩
+  have workR₆ : workR s₆ = ⟨s.gpr .rdx, 8 * 125⟩ := by simp only [workR, r9₆, r9₅]
+  rw [workR₆] at f₇
+  have arr₅ : Region.Sub (arraysR s₅) ⟨s.gpr .rdx, 8 * 125⟩ := by
+    have := arraysR_sub_work' s₅; simp only [workR, r9₅] at this; exact this
+  -- `s₅`'s memory to `s₇`'s
+  have f₅₇ : Frame [⟨s.gpr .rdx, 8 * 125⟩, ⟨s.gpr .rsi, 128⟩] s₅.mem s₇.mem :=
+    (f₆.sub fun r hr => ⟨_, List.mem_cons_self, by simp at hr; subst hr; exact arr₅⟩).trans f₇
   have frame : Frame [⟨s.gpr .rdx, 8 * scratchSlots⟩, ⟨s.gpr .rsi, 128⟩] s.mem s'.mem := by
     rw [m']
     refine (f₃'.mono (by simp)).trans ?_
     rw [← mem₅]
-    refine f₆.sub fun r hr => ?_
+    refine f₅₇.sub fun r hr => ?_
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact ⟨_, List.mem_cons_self, Region.sub_prefix (by unfold scratchSlots; omega)⟩
@@ -124,11 +136,11 @@ theorem expandKey_ok {s : State} (h : KeyPre s) : WP isa expandKey s (KeyPost s)
       intro q hq
       have hq' := savedRegs_ok q hq
       rw [set' q hq]
-      have e6 : slotW s₆ q.2 = slotW s₅ q.2 := by
-        show s₆.mem.readW (Straight.wordAddr (s₆.gpr .r9) q.2) 64 =
+      have e7 : slotW s₇ q.2 = slotW s₅ q.2 := by
+        show s₇.mem.readW (Straight.wordAddr (s₇.gpr .r9) q.2) 64 =
           s₅.mem.readW (Straight.wordAddr (s₅.gpr .r9) q.2) 64
-        rw [r9₆, r9₅]
-        refine f₆.readW (r := ⟨Straight.wordAddr (s.gpr .rdx) q.2, 8⟩) (Region.contains_self _ _) ?_ (by decide)
+        rw [r9₇, r9₆, r9₅]
+        refine f₅₇.readW (r := ⟨Straight.wordAddr (s.gpr .rdx) q.2, 8⟩) (Region.contains_self _ _) ?_ (by decide)
         intro r hr
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl
@@ -138,13 +150,13 @@ theorem expandKey_ok {s : State} (h : KeyPre s) : WP isa expandKey s (KeyPost s)
         show s₅.mem.readW (Straight.wordAddr (s₅.gpr .r9) q.2) 64 =
           s₃.mem.readW (Straight.wordAddr (s₃.gpr .r9) q.2) 64
         rw [mem₅, r9₅, r9₃]
-      rw [e6, e5, keep₃ _ hq'.1 (fun p hp => by have := maskSlots_lt p hp; omega),
+      rw [e7, e5, keep₃ _ hq'.1 (fun p hp => by have := maskSlots_lt p hp; omega),
         set₂ (q.2, q.1) (List.mem_map_of_mem hq), g₁ _ hq'.2.1]
     simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
     · exact saved (.rbx, 125) (by decide)
     · exact saved (.rbp, 126) (by decide)
-    · rw [keep' .rsp (by decide), g₆ _ (by simp), G₅ _ (by decide) (by decide) (by decide),
+    · rw [keep' .rsp (by decide), rsp₇, g₆ _ (by simp), G₅ _ (by decide) (by decide) (by decide),
         G₃ _ (by decide) (by decide)]
     · exact saved (.r12, 127) (by decide)
     · exact saved (.r13, 128) (by decide)
@@ -159,6 +171,6 @@ theorem expandKey_ok {s : State} (h : KeyPre s) : WP isa expandKey s (KeyPost s)
   · rw [Proof.Seed.expandKey_eq]
     apply Vector.ext
     intro i hi
-    rw [scheduleAt_readW _ _ i hi, m', v₆ i hi, Vector.getElem_ofFn]
+    rw [scheduleAt_readW _ _ i hi, m', v₇ i hi, Vector.getElem_ofFn]
 
 end VG.Proof.Seed.X86_64

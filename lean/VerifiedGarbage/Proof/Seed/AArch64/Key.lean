@@ -36,10 +36,10 @@ structure KeyPost (s s' : State) : Prop where
   sched : Spec.Seed.scheduleAt s'.mem (s.gpr .x1) = Spec.Seed.expandKey (Spec.Seed.blockAt s.mem (s.gpr .x0))
   frame : Frame [⟨s.gpr .x2, 8 * scratchSlots⟩, ⟨s.gpr .x1, 128⟩] s.mem s'.mem
 
-theorem expandKey_eq_code : expandKey = .block (([movR .x5 .x2] ++
+theorem expandKey_eq_code : expandKey = .seq (.block (([movR .x5 .x2] ++
     (Impl.Seed.AArch64.savedRegs.map fun p => (p.2, p.1)).map (fun p => stS p.1 p.2)) ++
-    (keyLoad2 .x3 0 ++ keyLoad2 .x4 8) ++ keyBody ++ restore) := by
-  simp only [expandKey, keyBody, Impl.Seed.AArch64.keyLoad, List.append_assoc]
+    (keyLoad2 .x3 0 ++ keyLoad2 .x4 8) ++ keyPre)) (.seq (.loop keyHalf (.nonzero .x .x3)) (.block restore)) := by
+  simp only [expandKey, keyPre, Impl.Seed.AArch64.keyLoad, List.append_assoc]
   rfl
 
 theorem expandKey_ok {s : State} (h : KeyPre s) : WP isa expandKey s (KeyPost s) := by
@@ -88,23 +88,34 @@ theorem expandKey_ok {s : State} (h : KeyPre s) : WP isa expandKey s (KeyPost s)
   have scr₄ : scratchR s₄ = ⟨s.gpr .x2, 8 * scratchSlots⟩ := by simp only [scratchR, r9₄]
   have room₄ : Room s₄ := .of_mem (by rw [scr₄, wr₄']; exact h.scratch)
   have x1₄ : s₄.gpr .x1 = s.gpr .x1 := by rw [G₄ _ (by decide) (by decide) (by decide), G₂ _ (by decide)]
-  -- the schedule
-  obtain ⟨s₆, e₆, v₆, g₆, rd₆, wr₆, f₆⟩ := keyBody_ok key room₄ h3 h4
-    (by rw [x1₄, wr₄']; exact h.schedIn) (by rw [x1₄, scr₄]; exact h.schedBuf)
-  have r9₆ : s₆.gpr .x5 = s₄.gpr .x5 := g₆ _ (by simp)
-  have room₆ : Room s₆ := room_congr room₄ r9₆ wr₆
+  -- the rounds, and the count of halves
+  obtain ⟨s₅, e₅, room₅, cur₅, next₅, x3₅, g₅, rd₅, wr₅, f₅⟩ := keyPre_ok key room₄ h3 h4
+  have r9₅ : s₅.gpr .x5 = s₄.gpr .x5 := g₅ _ (by simp)
+  have x1₅ : s₅.gpr .x1 = s.gpr .x1 := (g₅ _ (by simp)).trans x1₄
+  have scr₅ : scratchR s₅ = ⟨s.gpr .x2, 8 * scratchSlots⟩ := by simp only [scratchR, r9₅, r9₄]
+  have h0 : HalfInv key s₅ (s.gpr .x1) 0 s₅ :=
+    ⟨room₅, rfl, by rw [x1₅]; exact (BitVec.add_zero _).symm, x3₅,
+      fun w hw => by rw [cur₅ w hw, Nat.mul_zero, Nat.zero_add], fun _ => next₅, fun i hi => by omega, rfl, rfl,
+      Frame.refl _ _⟩
+  refine WP.seq (WP.of_runBlock ⟨s₅, runBlock_trans (runBlock_trans (runBlock_trans e₁ e₂)
+    (runBlock_trans e₃ e₄)) e₅, WP.seq (keyHalves_wp key
+      (by rw [wr₅, wr₄']; exact h.schedIn) (by rw [scr₅]; exact h.schedBuf) h0
+      fun s₆ v₆ r9₆ rd₆ wr₆ f₆ => ?_)⟩)
+  have room₆ : Room s₆ := room_congr room₅ r9₆ wr₆
   obtain ⟨s', e', m', -, set', -⟩ := loads_ok room₆ Impl.Seed.AArch64.savedRegs
     (fun q hq => ⟨(savedRegs_ok q hq).1, (savedRegs_ok q hq).2.1⟩) (by decide)
-  refine WP.of_runBlock ⟨s', runBlock_trans (runBlock_trans (runBlock_trans
-    (runBlock_trans e₁ e₂) (runBlock_trans e₃ e₄)) e₆) (by rw [restore_eq]; exact e'), ?_⟩
-  rw [x1₄] at v₆ f₆
-  have workR₄ : workR s₄ = ⟨s.gpr .x2, 8 * 112⟩ := by simp only [workR, r9₄]
-  rw [workR₄] at f₆
+  refine WP.of_runBlock ⟨s', by rw [restore_eq]; exact e', ?_⟩
+  have workR₅ : workR s₅ = ⟨s.gpr .x2, 8 * 112⟩ := by simp only [workR, r9₅, r9₄]
+  rw [workR₅] at f₆
+  have arr₄ : Region.Sub (arraysR s₄) ⟨s.gpr .x2, 8 * 112⟩ := by
+    have := arraysR_sub_work s₄; simp only [workR, r9₄] at this; exact this
+  have f₄₆ : Frame [⟨s.gpr .x2, 8 * 112⟩, ⟨s.gpr .x1, 128⟩] s₄.mem s₆.mem :=
+    (f₅.sub fun r hr => ⟨_, List.mem_cons_self, by simp at hr; subst hr; exact arr₄⟩).trans f₆
   have frame : Frame [⟨s.gpr .x2, 8 * scratchSlots⟩, ⟨s.gpr .x1, 128⟩] s.mem s'.mem := by
     rw [m']
     refine (f₂'.mono (by simp)).trans ?_
     rw [← mem₄]
-    refine f₆.sub fun r hr => ?_
+    refine f₄₆.sub fun r hr => ?_
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact ⟨_, List.mem_cons_self, Region.sub_prefix (by unfold scratchSlots; omega)⟩
@@ -115,8 +126,8 @@ theorem expandKey_ok {s : State} (h : KeyPre s) : WP isa expandKey s (KeyPost s)
     have e6 : slotW s₆ q.2 = slotW s₄ q.2 := by
       show s₆.mem.readW (Straight.wordAddr (s₆.gpr .x5) q.2) 64 =
         s₄.mem.readW (Straight.wordAddr (s₄.gpr .x5) q.2) 64
-      rw [r9₆, r9₄]
-      refine f₆.readW (r := ⟨Straight.wordAddr (s.gpr .x2) q.2, 8⟩) (Region.contains_self _ _) ?_ (by decide)
+      rw [r9₆, r9₅, r9₄]
+      refine f₄₆.readW (r := ⟨Straight.wordAddr (s.gpr .x2) q.2, 8⟩) (Region.contains_self _ _) ?_ (by decide)
       intro r hr
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
