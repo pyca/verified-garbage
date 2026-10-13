@@ -25,8 +25,8 @@ def squareHelper (slot : Spec.Rsa.MontSquare.Slot) : Artifact :=
       (notes := ["Baseline AArch64 symmetric square with eight-limb blocked reduction for widths \
         of at least sixteen limbs divisible by eight; other widths retain the row-wise reduction."])
     contract := Spec.Rsa.MontSquare.squareContract slot AArch64.abi
-    code := Proof.Bignum.AArch64.Mont.blocked.mm slot.index slot.index slot.index
-    verified := Proof.Bignum.AArch64.SquareHelper.verified Proof.Bignum.AArch64.Mont.blocked slot
+    code := Proof.Bignum.AArch64.Mont.squareEight.mm slot.index slot.index slot.index
+    verified := Proof.Bignum.AArch64.SquareHelper.verified Proof.Bignum.AArch64.Mont.squareEight slot
     spSafe := Code.all_of_forall (fun _ => rfl) _ }
 
 def artifacts : List Artifact := [squareHelper .r2, squareHelper .y,
