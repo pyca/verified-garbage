@@ -278,18 +278,19 @@ structure BlocksPost (K W SP : Addr) (D : Addr) (n : Nat) (ciph : Spec.GcmSiv.Ci
   data : bytesAt t'.mem D n = GcmSiv.ctrPart ciph icb x (16 * b)
   frame : Frame (cryR W SP D n) t.mem t'.mem
 
-theorem blocks_ok (eb : BlocksImpl) (wide : Bool) {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R = 14) {t : State}
-    (E : Env K W SP t) {N A D : Addr} {al n : Nat} (S : Slots W R N A D al n t.mem) (hD : Buf K W SP t D n)
-    (hDw : Covers [⟨D, n⟩] t.wr) {ciph : Spec.GcmSiv.Cipher} {icb x : List Byte} (hxl : x.length = n) {b : Nat}
-    (hb : 16 * b ≤ n) (hb1 : 1 ≤ b) (h12 : t.gpr .r12 = D) (hbx : t.gpr .rbx = BitVec.ofNat 64 b)
-    (C : CtrSt W icb 0 t.mem) (hx : bytesAt t.mem D n = x)
+/-- The whole blocks of counter mode from block `j₀`, the ones before done. -/
+theorem blocksFrom_ok (eb : BlocksImpl) (wide : Bool) {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R = 14)
+    {t : State} (E : Env K W SP t) {N A D : Addr} {al n : Nat} (S : Slots W R N A D al n t.mem) (hD : Buf K W SP t D n)
+    (hDw : Covers [⟨D, n⟩] t.wr) {ciph : Spec.GcmSiv.Cipher} {icb x : List Byte} (hxl : x.length = n) {b j₀ : Nat}
+    (hb : 16 * b ≤ n) (hj₀ : j₀ < b) (h12 : t.gpr .r12 = D + BitVec.ofNat 64 (16 * j₀))
+    (hbx : t.gpr .rbx = BitVec.ofNat 64 (b - j₀)) (C : CtrSt W icb j₀ t.mem)
+    (hx : bytesAt t.mem D n = GcmSiv.ctrPart ciph icb x (16 * j₀))
     (hc : Spec.GcmSiv.ctxCiph t.mem (W + BitVec.ofNat 64 248) R = ciph) :
     WP isa (.loop (cryptChunk ⟨eb.enc.name, eb.enc.code⟩ wide) .ne) t (BlocksPost K W SP D n ciph icb x b t) := by
   refine WP.loop (M := isa) (body := cryptChunk ⟨eb.enc.name, eb.enc.code⟩ wide) (c := .ne)
     (fun (m : Nat) (t' : State) => ∃ j, m = b - j ∧ j < b ∧ BlocksPost K W SP D n ciph icb x j t t' ∧
-      t'.gpr .rbx = BitVec.ofNat 64 (b - j)) ?_ (b - 0) t
-    ⟨0, rfl, hb1, ⟨E, rfl, rfl, rfl, by rw [h12, Nat.mul_zero, BitVec.add_zero], C,
-      by rw [hx, Nat.mul_zero, GcmSiv.ctrPart_zero], Frame.refl _ _⟩, by rw [hbx, Nat.sub_zero]⟩
+      t'.gpr .rbx = BitVec.ofNat 64 (b - j)) ?_ (b - j₀) t
+    ⟨j₀, rfl, hj₀, ⟨E, rfl, rfl, rfl, h12, C, hx, Frame.refl _ _⟩, hbx⟩
   rintro m t' ⟨j, rfl, hj, P, hbx'⟩
   have hc' : Spec.GcmSiv.ctxCiph t'.mem (W + BitVec.ofNat 64 248) R = ciph := by
     rw [ctxCiph_frame P.frame (key_cryR L hD) (by rcases hR with h | h <;> subst h <;> decide), hc]
@@ -304,6 +305,16 @@ theorem blocks_ok (eb : BlocksImpl) (wide : Bool) {K W SP : Addr} (L : Lay K W S
   · right
     exact ⟨(eval_ne Q.zf).trans (by simp [he]), b - (j + min 64 (b - j)), by omega, j + min 64 (b - j), rfl,
       by omega, P', Q.rbx⟩
+
+theorem blocks_ok (eb : BlocksImpl) (wide : Bool) {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R = 14) {t : State}
+    (E : Env K W SP t) {N A D : Addr} {al n : Nat} (S : Slots W R N A D al n t.mem) (hD : Buf K W SP t D n)
+    (hDw : Covers [⟨D, n⟩] t.wr) {ciph : Spec.GcmSiv.Cipher} {icb x : List Byte} (hxl : x.length = n) {b : Nat}
+    (hb : 16 * b ≤ n) (hb1 : 1 ≤ b) (h12 : t.gpr .r12 = D) (hbx : t.gpr .rbx = BitVec.ofNat 64 b)
+    (C : CtrSt W icb 0 t.mem) (hx : bytesAt t.mem D n = x)
+    (hc : Spec.GcmSiv.ctxCiph t.mem (W + BitVec.ofNat 64 248) R = ciph) :
+    WP isa (.loop (cryptChunk ⟨eb.enc.name, eb.enc.code⟩ wide) .ne) t (BlocksPost K W SP D n ciph icb x b t) :=
+  blocksFrom_ok eb wide L hR E S hD hDw hxl hb hb1 (by rw [h12, Nat.mul_zero, BitVec.add_zero])
+    (by rw [hbx, Nat.sub_zero]) C (by rw [hx, Nat.mul_zero, GcmSiv.ctrPart_zero]) hc
 
 /-- What the last bytes of counter mode leave, from `t`. -/
 structure TailPost (K W SP : Addr) (D : Addr) (n : Nat) (ciph : Spec.GcmSiv.Cipher) (icb x : List Byte)
