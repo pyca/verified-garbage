@@ -4,9 +4,9 @@ public import VerifiedGarbage.Impl.ChaCha20Poly1305.AArch64
 public import VerifiedGarbage.Impl.ChaCha20.AArch64.Mixed5
 
 /-!
-# ChaCha20-Poly1305: AArch64, 64 to 256 bytes
+# ChaCha20-Poly1305: AArch64, up to 256 bytes
 
-With 64 to 256 bytes of data, `seal` and `open` compute the one-time key and
+With 64 to 256 bytes of data (1 to 256 with SVE2: `lo`), `seal` and `open` compute the one-time key and
 the data's keystream together, in one pass of the five-block ChaCha20 kernel
 (`Mixed5.chunk`: four blocks in NEON lanes and one in the integer
 registers; with SVE2, each vector XOR and rotation is one XAR), rather than
@@ -40,12 +40,17 @@ namespace VG.Impl.ChaCha20Poly1305.AArch64.Short
 open VG.AArch64
 open VG.Impl.ChaCha20.AArch64.Xor (mov)
 
-/-- `x9 = 0` iff `64 ≤ len ≤ 256`: `(len - 1) >> 8` is zero iff `1 ≤ len ≤ 256`
-and `(len - 64) >> 8` iff `64 ≤ len < 320` (each wraps around below). Shorter
-data needs at most one block of keystream, which two scalar blocks compute
-faster than the five-block kernel. -/
-def check : List Instr :=
-  [.subImm .x .x9 .x5 1, .lsr .x .x9 .x9 8, .subImm .x .x10 .x5 64, .lsr .x .x10 .x10 8,
+/-- The shortest length this code takes: 1 with SVE2 (`sve`), whose kernel is
+faster than the two scalar blocks of the existing path even for one block of
+keystream, and 64 without, where it is not. -/
+def lo (sve : Bool) : Nat := if sve then 1 else 64
+
+/-- `x9 = 0` iff `lo sve ≤ len ≤ 256`: `(len - 1) >> 8` is zero iff
+`1 ≤ len ≤ 256` and `(len - 64) >> 8` iff `64 ≤ len < 320` (each wraps around
+below). -/
+def check (sve : Bool) : List Instr :=
+  if sve then [.subImm .x .x9 .x5 1, .lsr .x .x9 .x9 8]
+  else [.subImm .x .x9 .x5 1, .lsr .x .x9 .x9 8, .subImm .x .x10 .x5 64, .lsr .x .x10 .x10 8,
     .logic .orr .x .x9 .x9 .x10]
 
 /-- The ChaCha20 state for counter 0, at `x21`. -/

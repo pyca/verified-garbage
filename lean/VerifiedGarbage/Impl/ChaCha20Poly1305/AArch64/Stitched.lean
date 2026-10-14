@@ -103,14 +103,14 @@ def openStitchedMain (c : XorCallee) : Prog isa :=
 def openStitched (c : XorCallee) : Prog isa := .seq (openStitchedMain c) openTail
 
 /-- The code up to the tag (`sealTail`, `openTail`), which the taint analysis
-checks on its own: for 64 to 256 bytes `Short.lean`'s, and otherwise stitched
+checks on its own: for `Short.lo c.sve` to 256 bytes `Short.lean`'s, and otherwise stitched
 with the eight-block kernel or not. -/
 def sealMainCode (c : XorCallee) (stitched : Bool) : Prog isa :=
-  .seq (.block Short.check)
+  .seq (.block (Short.check c.sve))
     (.ite (.zero .x .x9) (Short.sealMain c.sve) (if stitched then sealStitchedMain c else sealMain c))
 
 def openMainCode (c : XorCallee) (stitched : Bool) : Prog isa :=
-  .seq (.block Short.check)
+  .seq (.block (Short.check c.sve))
     (.ite (.zero .x .x9) (Short.openMain c.sve) (if stitched then openStitchedMain c else openMain c))
 
 /-- The code for a stream backend. -/
