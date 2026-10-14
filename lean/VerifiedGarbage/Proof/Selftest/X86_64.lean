@@ -1,9 +1,9 @@
 module
 
-public import VerifiedGarbage.Spec.Selftest
+import VerifiedGarbage.Spec.Selftest
 public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Impl.Selftest.X86_64
-public import VerifiedGarbage.Proof.Framework.Semantics
+import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.Selftest.Contract
 import all Init.Data.Array.Basic

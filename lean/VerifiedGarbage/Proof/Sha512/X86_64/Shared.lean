@@ -2,9 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.X86_64.Inline
-public import VerifiedGarbage.Proof.Sha512.X86_64.Wide
-public import VerifiedGarbage.Proof.Sha512.X86_64.Stream.Init
-public import VerifiedGarbage.Proof.Sha512.X86_64.Stream.Md
+import VerifiedGarbage.Proof.Sha512.X86_64.Wide
+import VerifiedGarbage.Proof.Sha512.X86_64.Stream.Init
+import VerifiedGarbage.Proof.Sha512.X86_64.Stream.Md
 public import VerifiedGarbage.Proof.Sha512.X86_64.Stream.Digest
 public import VerifiedGarbage.Spec.Sha512.Contract
 public import VerifiedGarbage.Proof.Framework.X86_64.StackScratch

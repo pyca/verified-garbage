@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.X86_64.KeyCTCode
 meta import VerifiedGarbage.Proof.Rsa.X86_64.KeyCTCode
-public import VerifiedGarbage.Proof.Rsa.X86_64.CrtKeyCTMain
+import VerifiedGarbage.Proof.Rsa.X86_64.CrtKeyCTMain
 meta import VerifiedGarbage.Proof.Rsa.X86_64.CrtKeyCTMain
 public import VerifiedGarbage.Proof.Rsa.X86_64.CrtKeyCode
 meta import VerifiedGarbage.Proof.Rsa.X86_64.CrtKeyCode

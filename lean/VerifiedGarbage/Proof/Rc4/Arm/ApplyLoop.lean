@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Rc4.Arm.ApplyStep
-public import VerifiedGarbage.Proof.Rc4.Update
+import VerifiedGarbage.Proof.Rc4.Update
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

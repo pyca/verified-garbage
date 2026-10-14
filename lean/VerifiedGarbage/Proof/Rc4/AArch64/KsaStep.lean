@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Rc4.AArch64.Group
-public import VerifiedGarbage.Proof.Rc4.AArch64.ApplySetup
+import VerifiedGarbage.Proof.Rc4.AArch64.ApplySetup
 public import VerifiedGarbage.Proof.Rc4.Schedule
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

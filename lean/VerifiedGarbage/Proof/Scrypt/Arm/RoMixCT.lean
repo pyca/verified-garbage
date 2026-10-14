@@ -14,9 +14,9 @@ public import Mathlib.Tactic.DefEqTransformations
 meta import Mathlib.Tactic.DefEqTransformations
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
 meta import VerifiedGarbage.Proof.Framework.Arm.Contract
-public import VerifiedGarbage.Spec.Scrypt.Contract
+import VerifiedGarbage.Spec.Scrypt.Contract
 meta import VerifiedGarbage.Spec.Scrypt.Contract
-public import VerifiedGarbage.Proof.Scrypt.Arm.Lit
+import VerifiedGarbage.Proof.Scrypt.Arm.Lit
 meta import VerifiedGarbage.Proof.Scrypt.Arm.Lit
 public import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Framework.Omega

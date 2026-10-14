@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.Main
-public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.Contract
+import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.Contract
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyBody
-public import VerifiedGarbage.Proof.RsaPss.AArch64.SignTop
+import VerifiedGarbage.Proof.RsaPss.AArch64.SignTop
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

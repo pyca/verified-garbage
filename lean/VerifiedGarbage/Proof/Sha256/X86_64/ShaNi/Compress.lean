@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
 public import VerifiedGarbage.Proof.Sha256.X86_64.ShaNi.Spec
 meta import VerifiedGarbage.Proof.Sha256.X86_64.ShaNi.Spec

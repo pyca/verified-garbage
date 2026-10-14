@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 meta import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 public import VerifiedGarbage.Proof.Framework.AArch64.Exec
 meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
@@ -10,11 +10,11 @@ public import VerifiedGarbage.Proof.Scrypt.Spec
 meta import VerifiedGarbage.Proof.Scrypt.Spec
 public import VerifiedGarbage.Proof.Framework.AArch64.Taint
 meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
-public import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.Range
 meta import VerifiedGarbage.Proof.Framework.Range
-public import VerifiedGarbage.Spec.Scrypt.Contract
+import VerifiedGarbage.Spec.Scrypt.Contract
 meta import VerifiedGarbage.Spec.Scrypt.Contract
-public import VerifiedGarbage.TCB.AArch64.Target
+import VerifiedGarbage.TCB.AArch64.Target
 meta import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract

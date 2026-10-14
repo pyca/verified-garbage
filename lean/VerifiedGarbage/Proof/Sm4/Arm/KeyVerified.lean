@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Sm4.Arm.KeyEk
 meta import VerifiedGarbage.Proof.Sm4.Arm.KeyEk
-public import VerifiedGarbage.Proof.Sm4.Arm.Ecb
+import VerifiedGarbage.Proof.Sm4.Arm.Ecb
 meta import VerifiedGarbage.Proof.Sm4.Arm.Ecb
 public import VerifiedGarbage.Proof.Sm4.Scratch
 meta import VerifiedGarbage.Proof.Sm4.Scratch

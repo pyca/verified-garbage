@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Impl.Seed.X86_64.Ecb
+import VerifiedGarbage.Impl.Seed.X86_64.Ecb
 meta import VerifiedGarbage.Impl.Seed.X86_64.Ecb
 public import VerifiedGarbage.Impl.Seed.X86_64.ExpandKey
 meta import VerifiedGarbage.Impl.Seed.X86_64.ExpandKey

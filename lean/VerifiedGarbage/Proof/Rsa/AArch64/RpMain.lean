@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.AArch64.RpRest
-public import VerifiedGarbage.Proof.Rsa.AArch64.CvMain
-public import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Rsa.AArch64.CvMain
+import VerifiedGarbage.Proof.Bignum.Octets
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

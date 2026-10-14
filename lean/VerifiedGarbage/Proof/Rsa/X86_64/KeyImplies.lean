@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86_64.KeyCode
-public import VerifiedGarbage.Proof.Bignum.X86_64.CrtImplies
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtImplies
 public import VerifiedGarbage.Proof.Bignum.X86_64.PubVerified
 public import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.Proof.Framework.Contract

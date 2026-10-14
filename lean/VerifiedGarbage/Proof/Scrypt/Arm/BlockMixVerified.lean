@@ -4,23 +4,23 @@ public import VerifiedGarbage.Proof.Scrypt.BlockMix
 meta import VerifiedGarbage.Proof.Scrypt.BlockMix
 public import VerifiedGarbage.Proof.Scrypt.Spec
 meta import VerifiedGarbage.Proof.Scrypt.Spec
-public import VerifiedGarbage.Spec.Scrypt.Contract
+import VerifiedGarbage.Spec.Scrypt.Contract
 meta import VerifiedGarbage.Spec.Scrypt.Contract
 public import VerifiedGarbage.TCB.Arm.Target
 meta import VerifiedGarbage.TCB.Arm.Target
-public import VerifiedGarbage.Proof.Scrypt.Memory
+import VerifiedGarbage.Proof.Scrypt.Memory
 meta import VerifiedGarbage.Proof.Scrypt.Memory
 public import VerifiedGarbage.Proof.Framework.Range
 meta import VerifiedGarbage.Proof.Framework.Range
 public import VerifiedGarbage.Proof.MdStream.Arm.Common
 meta import VerifiedGarbage.Proof.MdStream.Arm.Common
-public import VerifiedGarbage.Proof.Hmac.Common
+import VerifiedGarbage.Proof.Hmac.Common
 meta import VerifiedGarbage.Proof.Hmac.Common
-public import VerifiedGarbage.Impl.Scrypt.Arm.Salsa
+import VerifiedGarbage.Impl.Scrypt.Arm.Salsa
 meta import VerifiedGarbage.Impl.Scrypt.Arm.Salsa
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
 meta import VerifiedGarbage.Proof.Framework.Arm.Contract
-public import VerifiedGarbage.Proof.Framework.Arm.RelCT
+import VerifiedGarbage.Proof.Framework.Arm.RelCT
 meta import VerifiedGarbage.Proof.Framework.Arm.RelCT
 public import VerifiedGarbage.Impl.Scrypt.Arm.BlockMix
 meta import VerifiedGarbage.Impl.Scrypt.Arm.BlockMix

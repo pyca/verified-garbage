@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.CTTail
 meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.CTTail
-public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.Implies
+import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.Implies
 meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.Implies
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

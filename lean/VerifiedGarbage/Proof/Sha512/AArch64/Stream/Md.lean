@@ -2,9 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.MdStream.AArch64.Update
 public import VerifiedGarbage.Proof.MdStream.AArch64.Finalize
-public import VerifiedGarbage.Proof.MdStream.AArch64.Words
+import VerifiedGarbage.Proof.MdStream.AArch64.Words
 public import VerifiedGarbage.Proof.Sha512.Md
-public import VerifiedGarbage.Proof.Sha512.AArch64.Compress
+import VerifiedGarbage.Proof.Sha512.AArch64.Compress
 public import VerifiedGarbage.Impl.Sha512.AArch64.Stream
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

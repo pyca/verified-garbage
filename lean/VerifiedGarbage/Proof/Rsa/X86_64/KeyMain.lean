@@ -1,9 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86_64.KeyPhases
-public import VerifiedGarbage.Proof.Bignum.X86_64.PubOut
+import VerifiedGarbage.Proof.Bignum.X86_64.PubOut
 public import VerifiedGarbage.Proof.Rsa.KeyParts
-public import VerifiedGarbage.Proof.Bignum.X86_64.R2
+import VerifiedGarbage.Proof.Bignum.X86_64.R2
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

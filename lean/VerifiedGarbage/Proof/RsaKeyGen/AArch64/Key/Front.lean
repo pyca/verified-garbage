@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Pieces
-public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.GcdE
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.GcdE
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

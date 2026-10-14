@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Rc2.X86.Lit
 meta import VerifiedGarbage.Proof.Rc2.X86.Lit
 public import VerifiedGarbage.Proof.Framework.X86.Taint
 meta import VerifiedGarbage.Proof.Framework.X86.Taint
-public import VerifiedGarbage.Proof.Framework.X86.SseTaint
+import VerifiedGarbage.Proof.Framework.X86.SseTaint
 meta import VerifiedGarbage.Proof.Framework.X86.SseTaint
 public import VerifiedGarbage.Proof.Rc2.X86.BlockArgs
 meta import VerifiedGarbage.Proof.Rc2.X86.BlockArgs

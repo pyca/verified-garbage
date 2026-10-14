@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.MdStream.Arm.Update
 meta import VerifiedGarbage.Proof.MdStream.Arm.Update
 public import VerifiedGarbage.Proof.MdStream.Arm.Finalize
 meta import VerifiedGarbage.Proof.MdStream.Arm.Finalize
-public import VerifiedGarbage.Proof.MdStream.Arm.Words
+import VerifiedGarbage.Proof.MdStream.Arm.Words
 meta import VerifiedGarbage.Proof.MdStream.Arm.Words
 public import VerifiedGarbage.Proof.Sha1.Md
 meta import VerifiedGarbage.Proof.Sha1.Md
@@ -14,7 +14,7 @@ public import VerifiedGarbage.Proof.Sha1.Arm.Compress
 meta import VerifiedGarbage.Proof.Sha1.Arm.Compress
 public import VerifiedGarbage.Impl.Sha1.Arm.Stream
 meta import VerifiedGarbage.Impl.Sha1.Arm.Stream
-public import VerifiedGarbage.Proof.Sha1.Arm.Lit
+import VerifiedGarbage.Proof.Sha1.Arm.Lit
 meta import VerifiedGarbage.Proof.Sha1.Arm.Lit
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.X86_64.CTBase
+import VerifiedGarbage.Proof.Rsa.X86_64.CTBase
 meta import VerifiedGarbage.Proof.Rsa.X86_64.CTBase
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

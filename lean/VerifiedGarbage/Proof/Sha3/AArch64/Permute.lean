@@ -1,16 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 meta import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 public import VerifiedGarbage.Proof.Framework.AArch64.Inline
 meta import VerifiedGarbage.Proof.Framework.AArch64.Inline
 public import VerifiedGarbage.Proof.Framework.AArch64.Taint
 meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
-public import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.Range
 meta import VerifiedGarbage.Proof.Framework.Range
 public import VerifiedGarbage.Proof.Sha3.Lanes
 meta import VerifiedGarbage.Proof.Sha3.Lanes
-public import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
 public import VerifiedGarbage.Proof.Framework.Mem
 meta import VerifiedGarbage.Proof.Framework.Mem
@@ -18,17 +18,17 @@ public import VerifiedGarbage.Impl.Sha3.AArch64
 meta import VerifiedGarbage.Impl.Sha3.AArch64
 public import VerifiedGarbage.Spec.Sha3.Contract
 meta import VerifiedGarbage.Spec.Sha3.Contract
-public import VerifiedGarbage.TCB.AArch64.Target
+import VerifiedGarbage.TCB.AArch64.Target
 meta import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Sha3.Stream
+import VerifiedGarbage.Proof.Sha3.Stream
 meta import VerifiedGarbage.Proof.Sha3.Stream
-public import VerifiedGarbage.Proof.Sha3.Arith
+import VerifiedGarbage.Proof.Sha3.Arith
 meta import VerifiedGarbage.Proof.Sha3.Arith
 public import VerifiedGarbage.Proof.Framework.AArch64.Call
 meta import VerifiedGarbage.Proof.Framework.AArch64.Call
-public import VerifiedGarbage.Impl.Sha3.AArch64.Stream
+import VerifiedGarbage.Impl.Sha3.AArch64.Stream
 meta import VerifiedGarbage.Impl.Sha3.AArch64.Stream
 public import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Offset

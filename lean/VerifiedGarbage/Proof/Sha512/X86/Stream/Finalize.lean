@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Sha512.X86.Stream.Update
 meta import VerifiedGarbage.Proof.Sha512.X86.Stream.Update
 public import VerifiedGarbage.Proof.MdStream.X86.Finalize
 meta import VerifiedGarbage.Proof.MdStream.X86.Finalize
-public import VerifiedGarbage.Proof.MdStream.X86.Words
+import VerifiedGarbage.Proof.MdStream.X86.Words
 meta import VerifiedGarbage.Proof.MdStream.X86.Words
 public import VerifiedGarbage.Proof.Sha512.Word64
 meta import VerifiedGarbage.Proof.Sha512.Word64

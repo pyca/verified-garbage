@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.RsaOaep.X86_64.DecMain
-public import VerifiedGarbage.Proof.RsaOaep.X86_64.EncCorrect
+import VerifiedGarbage.Proof.RsaOaep.X86_64.EncCorrect
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

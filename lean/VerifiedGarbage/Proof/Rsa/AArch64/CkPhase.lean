@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.AArch64.CkSteps
-public import VerifiedGarbage.Proof.Rsa.AArch64.CvMain
+import VerifiedGarbage.Proof.Rsa.AArch64.CvMain
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

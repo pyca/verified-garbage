@@ -1,9 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Rc4.AArch64.Lit
-public import VerifiedGarbage.Proof.Rc4.AArch64.Init
+import VerifiedGarbage.Proof.Rc4.AArch64.Init
 public import VerifiedGarbage.Proof.Framework.AArch64.Inline
-public import VerifiedGarbage.Proof.Rc4.AArch64.Taint
+import VerifiedGarbage.Proof.Rc4.AArch64.Taint
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.Rc4.Contract
 import all Init.Data.Array.Basic

@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Sha512.AArch64.Stream.Md
-public import VerifiedGarbage.Proof.Sha512.Digest
+import VerifiedGarbage.Proof.Sha512.Digest
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

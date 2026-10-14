@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Spec.Sm4.Ofb
 public import VerifiedGarbage.Spec.Sm4.Cfb
 public import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.Sm4.CtrCipher
+import VerifiedGarbage.Proof.Sm4.CtrCipher
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

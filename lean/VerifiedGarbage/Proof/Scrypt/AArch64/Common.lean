@@ -1,10 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Scrypt.Memory
+import VerifiedGarbage.Proof.Scrypt.Memory
 public import VerifiedGarbage.Proof.MdStream.AArch64.Common
 public import VerifiedGarbage.Impl.Scrypt.AArch64.BlockMix
 public import VerifiedGarbage.Spec.Scrypt.Contract
-public import VerifiedGarbage.TCB.AArch64.Target
+import VerifiedGarbage.TCB.AArch64.Target
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

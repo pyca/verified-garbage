@@ -3,9 +3,9 @@ module
 public import VerifiedGarbage.Proof.Framework.X86_64.Sse
 public import VerifiedGarbage.Proof.Sha256.X86_64.ShaNi.Spec
 public import VerifiedGarbage.Impl.Sha256.X86_64.Avx2
-public import VerifiedGarbage.Proof.Sha256.X86_64.Avx2.Lit
+import VerifiedGarbage.Proof.Sha256.X86_64.Avx2.Lit
 public import VerifiedGarbage.Proof.Framework.X86_64.Exec
-public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

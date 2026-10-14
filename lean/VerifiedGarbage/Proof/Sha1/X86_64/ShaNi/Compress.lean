@@ -1,12 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 public import VerifiedGarbage.Proof.Framework.X86_64.Sse
 meta import VerifiedGarbage.Proof.Framework.X86_64.Sse
-public import VerifiedGarbage.Proof.Sha1.Spec
+import VerifiedGarbage.Proof.Sha1.Spec
 meta import VerifiedGarbage.Proof.Sha1.Spec
-public import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
 public import VerifiedGarbage.Impl.Sha1.X86_64.ShaNi
 meta import VerifiedGarbage.Impl.Sha1.X86_64.ShaNi

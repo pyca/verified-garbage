@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Rc2.X86.Block
 meta import VerifiedGarbage.Impl.Rc2.X86.Block
-public import VerifiedGarbage.Proof.Rc2.X86.KeyLit
+import VerifiedGarbage.Proof.Rc2.X86.KeyLit
 meta import VerifiedGarbage.Proof.Rc2.X86.KeyLit
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

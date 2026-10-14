@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyPre
-public import VerifiedGarbage.Proof.RsaPss.AArch64.SignFrame
+import VerifiedGarbage.Proof.RsaPss.AArch64.SignFrame
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

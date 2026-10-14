@@ -1,16 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 meta import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-public import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Block
 meta import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Proof.Framework.Mem
 meta import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.AArch64.Taint
 meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
-public import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
-public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 public import VerifiedGarbage.Proof.Sha256.Spec
 meta import VerifiedGarbage.Proof.Sha256.Spec
@@ -22,7 +22,7 @@ public import VerifiedGarbage.Proof.Sha256.StateMem
 meta import VerifiedGarbage.Proof.Sha256.StateMem
 public import VerifiedGarbage.Proof.Sha256.AArch64.Contract
 meta import VerifiedGarbage.Proof.Sha256.AArch64.Contract
-public import VerifiedGarbage.Proof.Sha256.AArch64.Lit
+import VerifiedGarbage.Proof.Sha256.AArch64.Lit
 meta import VerifiedGarbage.Proof.Sha256.AArch64.Lit
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

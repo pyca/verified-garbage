@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86_64.PubChecked
-public import VerifiedGarbage.Proof.Bignum.X86_64.PubVerified
+import VerifiedGarbage.Proof.Bignum.X86_64.PubVerified
 public import VerifiedGarbage.Spec.RsaPss.Contract
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Hash
 import all Init.Data.Array.Basic

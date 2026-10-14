@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.AArch64.CvMain
-public import VerifiedGarbage.Proof.Rsa.AArch64.CvFail
+import VerifiedGarbage.Proof.Rsa.AArch64.CvFail
 public import VerifiedGarbage.Proof.Bignum.AArch64.HdrPairs
 public import VerifiedGarbage.Proof.Bignum.AArch64.PcCode
 import all Init.Data.Array.Basic

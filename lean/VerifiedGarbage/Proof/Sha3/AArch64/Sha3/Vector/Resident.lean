@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.ResidentBulk
+import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.ResidentBulk
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.ResidentBulk
 public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Backend
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Backend

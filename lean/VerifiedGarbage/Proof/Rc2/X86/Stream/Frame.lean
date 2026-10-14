@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Rc2.X86.Stream.Verified
-public import VerifiedGarbage.Proof.Rc2.X86.Stream.Lit
-public import VerifiedGarbage.Proof.Rc2.Scratch
+import VerifiedGarbage.Proof.Rc2.X86.Stream.Lit
+import VerifiedGarbage.Proof.Rc2.Scratch
 public import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

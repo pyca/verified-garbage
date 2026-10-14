@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Spec.Sm4.Cbc
-public import VerifiedGarbage.Proof.Sm4.CtrCipher
+import VerifiedGarbage.Proof.Sm4.CtrCipher
 public import VerifiedGarbage.Proof.Framework.Offset
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

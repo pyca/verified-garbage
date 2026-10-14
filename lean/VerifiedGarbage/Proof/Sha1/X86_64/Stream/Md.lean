@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.MdStream.X86_64.UpdateCT
 meta import VerifiedGarbage.Proof.MdStream.X86_64.UpdateCT
 public import VerifiedGarbage.Proof.MdStream.X86_64.FinalizeCT
 meta import VerifiedGarbage.Proof.MdStream.X86_64.FinalizeCT
-public import VerifiedGarbage.Proof.MdStream.X86_64.Words
+import VerifiedGarbage.Proof.MdStream.X86_64.Words
 meta import VerifiedGarbage.Proof.MdStream.X86_64.Words
 public import VerifiedGarbage.Proof.Sha1.Md
 meta import VerifiedGarbage.Proof.Sha1.Md
@@ -12,7 +12,7 @@ public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Sha1.X86_64.Compress
 meta import VerifiedGarbage.Proof.Sha1.X86_64.Compress
-public import VerifiedGarbage.Proof.Sha1.X86_64.ShaNi.Compress
+import VerifiedGarbage.Proof.Sha1.X86_64.ShaNi.Compress
 meta import VerifiedGarbage.Proof.Sha1.X86_64.ShaNi.Compress
 public import VerifiedGarbage.Impl.Sha1.X86_64.Stream
 meta import VerifiedGarbage.Impl.Sha1.X86_64.Stream

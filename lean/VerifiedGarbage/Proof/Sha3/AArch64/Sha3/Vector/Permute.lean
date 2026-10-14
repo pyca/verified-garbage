@@ -2,15 +2,15 @@ module
 
 public import VerifiedGarbage.TCB.Axioms
 meta import VerifiedGarbage.TCB.Axioms
-public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Save
+import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Save
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Save
 public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Load
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Load
-public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Store
+import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Store
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Store
-public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Restore
+import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Restore
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Restore
-public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Lit
+import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Lit
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Lit
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

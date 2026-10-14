@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Sha512.X86_64.Stream.Md
 meta import VerifiedGarbage.Proof.Sha512.X86_64.Stream.Md
-public import VerifiedGarbage.Proof.Sha512.Digest
+import VerifiedGarbage.Proof.Sha512.Digest
 meta import VerifiedGarbage.Proof.Sha512.Digest
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Scrypt.AArch64.Whole.Steps
 public import VerifiedGarbage.Proof.Scrypt.AArch64.RoMixCT
-public import VerifiedGarbage.Proof.Scrypt.AArch64.Lit
+import VerifiedGarbage.Proof.Scrypt.AArch64.Lit
 public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Contract
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.Pbkdf2.Generic

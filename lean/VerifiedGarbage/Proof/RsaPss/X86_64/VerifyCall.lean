@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyFrame
-public import VerifiedGarbage.Proof.RsaPss.X86_64.SignCall
+import VerifiedGarbage.Proof.RsaPss.X86_64.SignCall
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

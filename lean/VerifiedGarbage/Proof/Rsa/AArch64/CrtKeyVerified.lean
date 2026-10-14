@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.AArch64.CrtKeyCTCode
-public import VerifiedGarbage.Proof.Rsa.AArch64.CkVerified
+import VerifiedGarbage.Proof.Rsa.AArch64.CkVerified
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Rc4.X86_64.Lit
 meta import VerifiedGarbage.Proof.Rc4.X86_64.Lit
-public import VerifiedGarbage.Proof.Rc4.X86_64.Apply
+import VerifiedGarbage.Proof.Rc4.X86_64.Apply
 meta import VerifiedGarbage.Proof.Rc4.X86_64.Apply
 public import VerifiedGarbage.Proof.Framework.X86_64.Taint
 meta import VerifiedGarbage.Proof.Framework.X86_64.Taint

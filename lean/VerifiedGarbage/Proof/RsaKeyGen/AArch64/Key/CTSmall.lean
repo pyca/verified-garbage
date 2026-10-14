@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.CTD
 meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.CTD
-public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Small
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Small
 meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Small
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

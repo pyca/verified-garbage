@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.AArch64.VectorCaller
+import VerifiedGarbage.Proof.Framework.AArch64.VectorCaller
 meta import VerifiedGarbage.Proof.Framework.AArch64.VectorCaller
 public import VerifiedGarbage.Proof.Sha3.AArch64.Variant
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Variant

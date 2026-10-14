@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.CTLcm
 meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.CTLcm
-public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.DPart
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.DPart
 meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.DPart
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

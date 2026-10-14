@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.RsaPss.X86_64.SaltBackCT
+import VerifiedGarbage.Proof.RsaPss.X86_64.SaltBackCT
 public import VerifiedGarbage.Proof.RsaPss.X86_64.PrecomputedCtCall
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

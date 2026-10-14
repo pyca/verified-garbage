@@ -1,9 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Rc2.Memory32
-public import VerifiedGarbage.Proof.Rc2.Memory
+import VerifiedGarbage.Proof.Rc2.Memory
 public import VerifiedGarbage.Proof.Rc2.X86.RoundSteps
-public import VerifiedGarbage.Proof.Rc2.X86.KeyLookup
+import VerifiedGarbage.Proof.Rc2.X86.KeyLookup
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

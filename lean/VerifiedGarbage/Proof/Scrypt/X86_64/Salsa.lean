@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
 public import VerifiedGarbage.Proof.Framework.Mem
 meta import VerifiedGarbage.Proof.Framework.Mem
@@ -8,11 +8,11 @@ public import VerifiedGarbage.Impl.Scrypt.X86_64.Salsa
 meta import VerifiedGarbage.Impl.Scrypt.X86_64.Salsa
 public import VerifiedGarbage.Proof.Scrypt.Spec
 meta import VerifiedGarbage.Proof.Scrypt.Spec
-public import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.Range
 meta import VerifiedGarbage.Proof.Framework.Range
-public import VerifiedGarbage.Spec.Scrypt.Contract
+import VerifiedGarbage.Spec.Scrypt.Contract
 meta import VerifiedGarbage.Spec.Scrypt.Contract
-public import VerifiedGarbage.TCB.X86_64.Target
+import VerifiedGarbage.TCB.X86_64.Target
 meta import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Framework.X86_64.Abi
 meta import VerifiedGarbage.Proof.Framework.X86_64.Abi

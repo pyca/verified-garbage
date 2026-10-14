@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Spec.Sm3.Contract
 public import VerifiedGarbage.Proof.Framework.Scratch
-public import VerifiedGarbage.Proof.Sm3.Stream
+import VerifiedGarbage.Proof.Sm3.Stream
 public import VerifiedGarbage.Proof.Framework.Offset
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

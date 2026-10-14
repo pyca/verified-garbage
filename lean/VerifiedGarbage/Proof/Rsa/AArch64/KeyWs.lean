@@ -2,8 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.AArch64.KeyLoops
 public import VerifiedGarbage.Proof.Bignum.AArch64.PubSetup
-public import VerifiedGarbage.Proof.Bignum.AArch64.Store
-public import VerifiedGarbage.Proof.Rsa.Ranges
+import VerifiedGarbage.Proof.Bignum.AArch64.Store
+import VerifiedGarbage.Proof.Rsa.Ranges
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

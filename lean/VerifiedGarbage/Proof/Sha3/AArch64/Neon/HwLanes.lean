@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Squeeze
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Squeeze
 public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Round
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

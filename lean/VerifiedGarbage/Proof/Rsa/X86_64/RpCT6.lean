@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.X86_64.RpCT5
 meta import VerifiedGarbage.Proof.Rsa.X86_64.RpCT5
-public import VerifiedGarbage.Proof.Rsa.RecoverTries
+import VerifiedGarbage.Proof.Rsa.RecoverTries
 meta import VerifiedGarbage.Proof.Rsa.RecoverTries
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

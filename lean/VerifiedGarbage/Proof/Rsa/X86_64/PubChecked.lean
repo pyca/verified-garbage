@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.X86_64.Guarded
 public import VerifiedGarbage.Proof.Bignum.X86_64.PubVerified
-public import VerifiedGarbage.Proof.Bignum.X86_64.PdVerified
+import VerifiedGarbage.Proof.Bignum.X86_64.PdVerified
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

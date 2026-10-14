@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.RsaPss.AArch64
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Encode
+import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Encode
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Wp
 import all Init.Data.Array.Basic

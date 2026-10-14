@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.DOdd
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.DOdd
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.DEven
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

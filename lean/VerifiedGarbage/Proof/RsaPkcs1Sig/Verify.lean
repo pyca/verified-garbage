@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.Octets
+import VerifiedGarbage.Proof.RsaPkcs1Sig.Octets
 public import VerifiedGarbage.Spec.RsaPkcs1Sig
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Sm4.AArch64.Group
-public import VerifiedGarbage.Proof.Sm4.Common
+import VerifiedGarbage.Proof.Sm4.Common
 public import VerifiedGarbage.Spec.Sm4.Contract
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

@@ -1,14 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 meta import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-public import VerifiedGarbage.Proof.MdStream.AArch64.Common
+import VerifiedGarbage.Proof.MdStream.AArch64.Common
 meta import VerifiedGarbage.Proof.MdStream.AArch64.Common
 public import VerifiedGarbage.Proof.Sha1.AArch64.Compress
 meta import VerifiedGarbage.Proof.Sha1.AArch64.Compress
 public import VerifiedGarbage.Impl.Sha1.AArch64.Stream
 meta import VerifiedGarbage.Impl.Sha1.AArch64.Stream
-public import VerifiedGarbage.Proof.Sha1.Stream
+import VerifiedGarbage.Proof.Sha1.Stream
 meta import VerifiedGarbage.Proof.Sha1.Stream
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

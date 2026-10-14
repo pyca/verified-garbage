@@ -18,9 +18,9 @@ public import VerifiedGarbage.Proof.Framework.Scratch
 meta import VerifiedGarbage.Proof.Framework.Scratch
 public import VerifiedGarbage.Proof.Sm4.Scratch
 meta import VerifiedGarbage.Proof.Sm4.Scratch
-public import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
+import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
 meta import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
-public import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
+import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
 meta import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

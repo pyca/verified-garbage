@@ -3,8 +3,8 @@ module
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrCtx
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.LoadC
 public import VerifiedGarbage.Proof.RsaKeyGen.CandMath
-public import VerifiedGarbage.Proof.Bignum.AArch64.Copy
-public import VerifiedGarbage.Proof.Bignum.AArch64.Csub
+import VerifiedGarbage.Proof.Bignum.AArch64.Copy
+import VerifiedGarbage.Proof.Bignum.AArch64.Csub
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

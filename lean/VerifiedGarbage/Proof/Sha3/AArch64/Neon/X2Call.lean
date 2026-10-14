@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2
 public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Squeeze
 public import VerifiedGarbage.Proof.Framework.AArch64.Call
-public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
+import VerifiedGarbage.Proof.MlKem.AArch64.Wp
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

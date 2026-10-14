@@ -6,7 +6,7 @@ public import VerifiedGarbage.Impl.Sm4.AArch64.Ecb
 meta import VerifiedGarbage.Impl.Sm4.AArch64.Ecb
 public import VerifiedGarbage.Impl.Sm4.AArch64.ExpandKey
 meta import VerifiedGarbage.Impl.Sm4.AArch64.ExpandKey
-public import VerifiedGarbage.Impl.Sm4.AArch64.Ctr
+import VerifiedGarbage.Impl.Sm4.AArch64.Ctr
 meta import VerifiedGarbage.Impl.Sm4.AArch64.Ctr
 public import VerifiedGarbage.Impl.Sm4.AArch64.Cbc
 meta import VerifiedGarbage.Impl.Sm4.AArch64.Cbc

@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.RelCT
+import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

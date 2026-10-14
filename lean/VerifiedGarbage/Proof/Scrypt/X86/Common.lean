@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Scrypt.X86.Salsa
-public import VerifiedGarbage.Proof.Scrypt.BlockMix
+import VerifiedGarbage.Proof.Scrypt.BlockMix
 public import VerifiedGarbage.Proof.Framework.X86.CallWith
 public import VerifiedGarbage.Proof.Framework.X86.Spill
 public import VerifiedGarbage.Impl.Scrypt.X86.BlockMix

@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Sm3.X86_64.Compress
 meta import VerifiedGarbage.Proof.Sm3.X86_64.Compress
-public import VerifiedGarbage.Proof.Sm3.Stream
+import VerifiedGarbage.Proof.Sm3.Stream
 meta import VerifiedGarbage.Proof.Sm3.Stream
 public import VerifiedGarbage.Proof.Framework.X86_64.Call
 meta import VerifiedGarbage.Proof.Framework.X86_64.Call

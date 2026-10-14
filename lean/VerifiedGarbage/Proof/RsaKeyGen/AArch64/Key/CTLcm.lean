@@ -2,9 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.CTUnits
 meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.CTUnits
-public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Lcm
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Lcm
 meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Lcm
-public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Front
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Front
 meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Front
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86_64.RpRest
-public import VerifiedGarbage.Proof.Rsa.X86_64.CvMain
+import VerifiedGarbage.Proof.Rsa.X86_64.CvMain
 public import VerifiedGarbage.Proof.Bignum.X86_64.PubCode
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

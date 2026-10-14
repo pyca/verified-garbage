@@ -2,9 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Rc2.X86.RoundSteps
 public import VerifiedGarbage.Proof.Rc2.X86.PiLookup
-public import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
-public import VerifiedGarbage.Proof.Framework.X86.SseLanes
-public import VerifiedGarbage.Proof.Framework.CallLay
+import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
+import VerifiedGarbage.Proof.Framework.X86.SseLanes
+import VerifiedGarbage.Proof.Framework.CallLay
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

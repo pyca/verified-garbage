@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Sha512.Word64
 public import VerifiedGarbage.Spec.Sha512.Contract
 public import VerifiedGarbage.Proof.Sha512.Stream
 public import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.MdStream.Prefix
+import VerifiedGarbage.Proof.MdStream.Prefix
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

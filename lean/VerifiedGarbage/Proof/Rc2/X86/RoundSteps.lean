@@ -2,8 +2,8 @@ module
 
 public import VerifiedGarbage.Impl.Rc2.X86.Block
 public import VerifiedGarbage.Proof.Rc2.X86.KeyIO
-public import VerifiedGarbage.Proof.Rc2.Word32
-public import VerifiedGarbage.Proof.Rc2.X86.KeySteps
+import VerifiedGarbage.Proof.Rc2.Word32
+import VerifiedGarbage.Proof.Rc2.X86.KeySteps
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

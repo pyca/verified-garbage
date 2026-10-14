@@ -1,9 +1,9 @@
 module
 
 public import VerifiedGarbage.Impl.Rsa.AArch64.Keys
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtArith
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtSel
-public import VerifiedGarbage.Proof.Bignum.AArch64.Copy
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtArith
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtSel
+import VerifiedGarbage.Proof.Bignum.AArch64.Copy
 public import VerifiedGarbage.Proof.Bignum.AArch64.Double
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Sha256.Arm.Stream.Common
 meta import VerifiedGarbage.Proof.Sha256.Arm.Stream.Common
-public import VerifiedGarbage.Proof.Sha256.StateMem
+import VerifiedGarbage.Proof.Sha256.StateMem
 meta import VerifiedGarbage.Proof.Sha256.StateMem
 public import VerifiedGarbage.Proof.Sha256.Arm.Contract
 meta import VerifiedGarbage.Proof.Sha256.Arm.Contract

@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.X86.Exec
-public import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
+import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
 public import VerifiedGarbage.Proof.Framework.X86.Sse
 public import VerifiedGarbage.Proof.Sha512.Shifts
 public import VerifiedGarbage.Impl.Sha512.X86

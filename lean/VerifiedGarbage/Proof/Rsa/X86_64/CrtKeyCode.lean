@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86_64.KeyCode
-public import VerifiedGarbage.Proof.Rsa.X86_64.CrtKeyMain
+import VerifiedGarbage.Proof.Rsa.X86_64.CrtKeyMain
 public import VerifiedGarbage.Proof.Rsa.X86_64.CrtKeyEntry
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

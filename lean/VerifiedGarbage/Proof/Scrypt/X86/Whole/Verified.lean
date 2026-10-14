@@ -1,12 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Sha256
+import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Sha256
 meta import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Sha256
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Frame
 meta import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Frame
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Framework.X86.RelCT
+import VerifiedGarbage.Proof.Framework.X86.RelCT
 meta import VerifiedGarbage.Proof.Framework.X86.RelCT
 public import VerifiedGarbage.Proof.Scrypt.X86.Whole.Calls
 meta import VerifiedGarbage.Proof.Scrypt.X86.Whole.Calls

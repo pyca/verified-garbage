@@ -2,11 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.Rc2.X86.Cbc.Contract
 meta import VerifiedGarbage.Proof.Rc2.X86.Cbc.Contract
-public import VerifiedGarbage.Proof.Rc2.X86.Cbc.Loop
+import VerifiedGarbage.Proof.Rc2.X86.Cbc.Loop
 meta import VerifiedGarbage.Proof.Rc2.X86.Cbc.Loop
-public import VerifiedGarbage.Proof.Rc2.X86.Cbc.Body
+import VerifiedGarbage.Proof.Rc2.X86.Cbc.Body
 meta import VerifiedGarbage.Proof.Rc2.X86.Cbc.Body
-public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 public import VerifiedGarbage.Proof.Framework.X86.RelCT
 meta import VerifiedGarbage.Proof.Framework.X86.RelCT

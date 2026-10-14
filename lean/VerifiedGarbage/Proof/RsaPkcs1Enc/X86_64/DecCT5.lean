@@ -2,9 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecCT4
 meta import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecCT4
-public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecCorrect
+import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecCorrect
 meta import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecCorrect
-public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.Alloc
+import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.Alloc
 meta import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.Alloc
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

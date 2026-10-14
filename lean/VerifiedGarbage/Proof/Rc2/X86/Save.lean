@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Rc2.X86.KeySteps
-public import VerifiedGarbage.Proof.Rc2.Memory32
+import VerifiedGarbage.Proof.Rc2.Memory32
 public import VerifiedGarbage.Proof.Framework.Offset
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

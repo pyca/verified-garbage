@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Rc4.X86.Schedule
+import VerifiedGarbage.Proof.Rc4.X86.Schedule
 public import VerifiedGarbage.Proof.Rc4.X86.Save
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

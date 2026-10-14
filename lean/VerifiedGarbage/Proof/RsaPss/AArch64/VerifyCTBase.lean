@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyTop
 meta import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyTop
 public import VerifiedGarbage.Proof.RsaPss.AArch64.CtHashCT
 meta import VerifiedGarbage.Proof.RsaPss.AArch64.CtHashCT
-public import VerifiedGarbage.Proof.RsaPss.AArch64.RelSplit
+import VerifiedGarbage.Proof.RsaPss.AArch64.RelSplit
 meta import VerifiedGarbage.Proof.RsaPss.AArch64.RelSplit
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.RsaPss.AArch64.SignEnc
+import VerifiedGarbage.Proof.RsaPss.AArch64.SignEnc
 public import VerifiedGarbage.Proof.RsaPss.AArch64.EmView
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

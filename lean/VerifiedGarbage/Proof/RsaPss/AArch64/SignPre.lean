@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Spec.RsaPss.Contract
 public import VerifiedGarbage.Proof.RsaPss.AArch64.SignEncOk
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.SignPre
+import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.SignPre
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

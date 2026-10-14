@@ -3,9 +3,9 @@ module
 public import VerifiedGarbage.Proof.Framework.KernelRfl
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
 public import VerifiedGarbage.Proof.Sha512.Arm.Compress
-public import VerifiedGarbage.Proof.Sha512.Stream
+import VerifiedGarbage.Proof.Sha512.Stream
 public import VerifiedGarbage.Impl.Sha512.Arm.Stream
-public import VerifiedGarbage.Proof.Sha512.Arm.Lit
+import VerifiedGarbage.Proof.Sha512.Arm.Lit
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

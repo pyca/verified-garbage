@@ -10,7 +10,7 @@ public import VerifiedGarbage.Proof.Sha512.Arm.Compress
 meta import VerifiedGarbage.Proof.Sha512.Arm.Compress
 public import VerifiedGarbage.Impl.Sha512.Arm.Stream
 meta import VerifiedGarbage.Impl.Sha512.Arm.Stream
-public import VerifiedGarbage.Proof.Sha512.Arm.Lit
+import VerifiedGarbage.Proof.Sha512.Arm.Lit
 meta import VerifiedGarbage.Proof.Sha512.Arm.Lit
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

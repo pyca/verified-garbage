@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Base
-public import VerifiedGarbage.Proof.RsaKeyGen.Table
-public import VerifiedGarbage.Proof.RsaKeyGen.TrialMath
+import VerifiedGarbage.Proof.RsaKeyGen.Table
+import VerifiedGarbage.Proof.RsaKeyGen.TrialMath
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

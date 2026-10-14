@@ -1,11 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.MdStream.X86_64.Common
-public import VerifiedGarbage.Proof.Scrypt.BlockMix
-public import VerifiedGarbage.Proof.Scrypt.Memory
+import VerifiedGarbage.Proof.Scrypt.BlockMix
+import VerifiedGarbage.Proof.Scrypt.Memory
 public import VerifiedGarbage.Impl.Scrypt.X86_64.BlockMix
 public import VerifiedGarbage.Spec.Scrypt.Contract
-public import VerifiedGarbage.TCB.X86_64.Target
+import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Framework.Offset
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

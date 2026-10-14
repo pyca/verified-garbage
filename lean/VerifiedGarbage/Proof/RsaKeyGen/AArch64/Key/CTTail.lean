@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.CTLcm
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.CTLcm
 meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.CTLcm
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.CTOut
 meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.CTOut

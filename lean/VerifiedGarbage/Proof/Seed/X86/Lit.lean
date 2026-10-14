@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.X86.Lit
 meta import VerifiedGarbage.Proof.Framework.X86.Lit
-public import VerifiedGarbage.Impl.Seed.X86.Ecb
+import VerifiedGarbage.Impl.Seed.X86.Ecb
 meta import VerifiedGarbage.Impl.Seed.X86.Ecb
 public import VerifiedGarbage.Impl.Seed.X86.ExpandKey
 meta import VerifiedGarbage.Impl.Seed.X86.ExpandKey

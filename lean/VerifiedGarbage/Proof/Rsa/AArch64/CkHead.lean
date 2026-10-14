@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.AArch64.CvHead
+import VerifiedGarbage.Proof.Rsa.AArch64.CvHead
 public import VerifiedGarbage.Proof.Rsa.AArch64.CkPieces
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

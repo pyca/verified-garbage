@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Spec.Sha512.Contract
-public import VerifiedGarbage.Proof.Sha512.Stream
+import VerifiedGarbage.Proof.Sha512.Stream
 public import VerifiedGarbage.Proof.Framework.Offset
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

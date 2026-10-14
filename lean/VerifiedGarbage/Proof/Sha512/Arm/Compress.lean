@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Sha512.Arm.Rounds
 meta import VerifiedGarbage.Proof.Sha512.Arm.Rounds
 public import Mathlib.Tactic.Set
 meta import Mathlib.Tactic.Set
-public import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 meta import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 public import VerifiedGarbage.Proof.Framework.Arm.Spill
 meta import VerifiedGarbage.Proof.Framework.Arm.Spill

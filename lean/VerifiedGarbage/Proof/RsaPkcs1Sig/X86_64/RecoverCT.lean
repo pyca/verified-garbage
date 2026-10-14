@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.RecoverCorrect
 meta import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.RecoverCorrect
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCT
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCT
 meta import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCT
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

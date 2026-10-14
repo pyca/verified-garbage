@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtEntry
 public import VerifiedGarbage.Impl.Rsa.X86_64.CheckCrtKey
-public import VerifiedGarbage.Proof.Rsa.X86_64.KeyEntry
+import VerifiedGarbage.Proof.Rsa.X86_64.KeyEntry
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

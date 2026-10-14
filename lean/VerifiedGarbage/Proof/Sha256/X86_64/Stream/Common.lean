@@ -2,9 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Sha256.X86_64.Compress
 meta import VerifiedGarbage.Proof.Sha256.X86_64.Compress
-public import VerifiedGarbage.Proof.Sha256.X86_64.ShaNi.Compress
+import VerifiedGarbage.Proof.Sha256.X86_64.ShaNi.Compress
 meta import VerifiedGarbage.Proof.Sha256.X86_64.ShaNi.Compress
-public import VerifiedGarbage.Proof.Sha256.Stream
+import VerifiedGarbage.Proof.Sha256.Stream
 meta import VerifiedGarbage.Proof.Sha256.Stream
 public import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT

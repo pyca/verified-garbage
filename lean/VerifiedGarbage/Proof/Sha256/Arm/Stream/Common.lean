@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.MdStream.Arm.Common
 public import VerifiedGarbage.Proof.Sha256.Arm.Compress
 public import VerifiedGarbage.Impl.Sha256.Arm.Stream
-public import VerifiedGarbage.Proof.Sha256.Arm.Lit
+import VerifiedGarbage.Proof.Sha256.Arm.Lit
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

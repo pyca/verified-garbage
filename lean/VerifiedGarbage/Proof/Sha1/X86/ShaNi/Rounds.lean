@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.X86.Exec
-public import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
+import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
 public import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Sha1.X86.ShaNi.Spec
 public import VerifiedGarbage.Impl.Sha1.X86.ShaNi

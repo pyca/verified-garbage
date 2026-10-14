@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Sha256.X86.ShaNi.Whole
 meta import VerifiedGarbage.Proof.Sha256.X86.ShaNi.Whole
 public import VerifiedGarbage.Proof.Sha256.X86.ShaNi.Lit
 meta import VerifiedGarbage.Proof.Sha256.X86.ShaNi.Lit
-public import VerifiedGarbage.Proof.Framework.X86.SseTaint
+import VerifiedGarbage.Proof.Framework.X86.SseTaint
 meta import VerifiedGarbage.Proof.Framework.X86.SseTaint
 public import VerifiedGarbage.Proof.Framework.X86.CallWith
 meta import VerifiedGarbage.Proof.Framework.X86.CallWith

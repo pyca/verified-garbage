@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Scrypt.X86_64.Salsa
 meta import VerifiedGarbage.Proof.Scrypt.X86_64.Salsa
-public import VerifiedGarbage.Proof.Scrypt.Memory
+import VerifiedGarbage.Proof.Scrypt.Memory
 meta import VerifiedGarbage.Proof.Scrypt.Memory
 public import VerifiedGarbage.Proof.MdStream.X86_64.Common
 meta import VerifiedGarbage.Proof.MdStream.X86_64.Common
