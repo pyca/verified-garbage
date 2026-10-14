@@ -16,6 +16,8 @@ import VerifiedGarbage.Proof.Framework.PowLit
 meta import VerifiedGarbage.Proof.Framework.AArch64.Call
 meta import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Spec.Dsa.SignVerify
+meta import VerifiedGarbage.Spec.Dsa.SignVerify
 
 /-!
 # FFDH on AArch64: the front in constant time

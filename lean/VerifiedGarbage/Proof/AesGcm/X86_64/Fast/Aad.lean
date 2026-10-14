@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Finish
-public import VerifiedGarbage.Proof.AesGcm.X86_64.OneShot
+import VerifiedGarbage.Proof.AesGcm.X86_64.OneShot
 public import VerifiedGarbage.Impl.AesGcm.X86_64.Fast
 import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks
 import all Init.Data.Array.Basic

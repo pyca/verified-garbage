@@ -1,9 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.CheckCall
-public import VerifiedGarbage.Proof.Dsa.X86_64.LoadRange
-public import VerifiedGarbage.Proof.Dsa.X86_64.MaskContext
-public import VerifiedGarbage.Proof.Dsa.X86_64.CallHeader
+import VerifiedGarbage.Proof.Dsa.X86_64.LoadRange
+import VerifiedGarbage.Proof.Dsa.X86_64.MaskContext
+import VerifiedGarbage.Proof.Dsa.X86_64.CallHeader
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

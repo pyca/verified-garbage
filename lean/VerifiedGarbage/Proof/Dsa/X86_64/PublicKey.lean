@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.CheckOperands
-public import VerifiedGarbage.Proof.Dsa.X86_64.PublicCalls
+import VerifiedGarbage.Proof.Dsa.X86_64.PublicCalls
 public import VerifiedGarbage.Proof.Dsa.Zero
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

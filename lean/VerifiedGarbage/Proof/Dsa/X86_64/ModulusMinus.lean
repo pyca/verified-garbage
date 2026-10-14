@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Minus
+import VerifiedGarbage.Proof.Dsa.X86_64.Minus
 public import VerifiedGarbage.Proof.Dsa.X86_64.ResultCall
 public import VerifiedGarbage.Impl.Dsa.X86_64.Checks
 import all Init.Data.Array.Basic

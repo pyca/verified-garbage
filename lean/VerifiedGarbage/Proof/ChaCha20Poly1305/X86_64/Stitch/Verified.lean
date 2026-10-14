@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Crypt
-public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.SmallTest
+import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.SmallTest
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.TailO
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Pad
 meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Crypt

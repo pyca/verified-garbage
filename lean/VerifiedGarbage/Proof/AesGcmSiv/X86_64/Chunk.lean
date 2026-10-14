@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Tag
 public import VerifiedGarbage.Proof.GcmSiv.Ctr
-public import VerifiedGarbage.Proof.AesOcb.X86_64.Callee
+import VerifiedGarbage.Proof.AesOcb.X86_64.Callee
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

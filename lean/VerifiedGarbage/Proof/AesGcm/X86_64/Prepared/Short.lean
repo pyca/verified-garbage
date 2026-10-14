@@ -1,12 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.VerifiedP
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.Verified
+import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.Verified
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.OpenCT
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.AesGcm.X86_64.Short.PowP
 
 /-! # Prepared contexts: the short path with the context's powers
 

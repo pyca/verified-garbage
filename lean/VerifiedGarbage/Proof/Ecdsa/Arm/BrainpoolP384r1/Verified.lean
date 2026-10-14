@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Arm.Main
-public import VerifiedGarbage.Proof.Weierstrass.Arm.MontBrainpoolP384r1
+import VerifiedGarbage.Proof.Weierstrass.Arm.MontBrainpoolP384r1
 meta import VerifiedGarbage.Proof.Weierstrass.Arm.MontBrainpoolP384r1
 meta import VerifiedGarbage.Proof.Ecdsa.Arm.Main
 public import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP384r1.Contract

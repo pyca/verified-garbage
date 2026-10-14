@@ -4,6 +4,7 @@ public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.Weierstrass.Law
 public import VerifiedGarbage.Impl.Ecdh.BrainpoolP384r1.Arm
 public import VerifiedGarbage.Proof.Ecdh.Arm.BrainpoolP384r1.Verified
+import VerifiedGarbage.Proof.Framework.Arm.Contract
 
 /-!
 # ECDH over brainpoolP384r1 (SP 800-56A) on 32-bit ARM

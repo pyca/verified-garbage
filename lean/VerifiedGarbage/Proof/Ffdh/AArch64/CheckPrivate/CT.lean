@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.AArch64.CheckPrivate.Correct
-public import VerifiedGarbage.Proof.Ffdh.AArch64.CheckDomain.CT
+import VerifiedGarbage.Proof.Ffdh.AArch64.CheckDomain.CT
 meta import VerifiedGarbage.Proof.Ffdh.AArch64.CheckPrivate.Correct
 meta import VerifiedGarbage.Proof.Ffdh.AArch64.CheckDomain.CT
 import all Init.Data.Array.Basic
@@ -14,6 +14,8 @@ import VerifiedGarbage.Proof.Framework.PowLit
 meta import VerifiedGarbage.Proof.Framework.AArch64.Call
 meta import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Spec.Dsa.SignVerify
+meta import VerifiedGarbage.Spec.Dsa.SignVerify
 
 /-!
 # `vg_ffdh_check_private` on AArch64: constant time

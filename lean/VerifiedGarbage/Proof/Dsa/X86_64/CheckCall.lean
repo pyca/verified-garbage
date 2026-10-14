@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.MaskContext
-public import VerifiedGarbage.Proof.Dsa.X86_64.CallHeader
+import VerifiedGarbage.Proof.Dsa.X86_64.CallHeader
 public import VerifiedGarbage.Proof.Dsa.X86_64.CheckFrame
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

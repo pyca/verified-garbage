@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.Mid
+import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.Mid
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.OpenTag
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Main
 import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks

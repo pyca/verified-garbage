@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.ReleaseBytes
+import VerifiedGarbage.Proof.Dsa.X86_64.ReleaseBytes
 public import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleState
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

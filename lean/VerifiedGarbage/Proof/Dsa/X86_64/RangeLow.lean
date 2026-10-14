@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.OrWords
-public import VerifiedGarbage.Proof.RsaKeyGen.CandMath
+import VerifiedGarbage.Proof.RsaKeyGen.CandMath
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

@@ -12,6 +12,8 @@ import VerifiedGarbage.Proof.Framework.PowLit
 meta import VerifiedGarbage.Proof.Framework.AArch64.Call
 meta import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Spec.Dsa.SignVerify
+meta import VerifiedGarbage.Spec.Dsa.SignVerify
 
 /-!
 # `vg_ffdh_check_public` on AArch64: constant time

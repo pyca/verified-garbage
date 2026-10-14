@@ -1,9 +1,9 @@
 module
 
 public import VerifiedGarbage.Impl.Gcm.X86_64.StitchR
-public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Ok
+import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Ok
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchTo.Loop
-public import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Setup
+import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Setup
 public import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.OutOfPlace
 public import VerifiedGarbage.Proof.Gcm.Powers
 import all Init.Data.Array.Basic

@@ -2,7 +2,7 @@ module
 
 import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.TailRounds
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Bulk
-public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.TailK
+import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.TailK
 import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Pad
 import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.XorBufX
 import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2Tail.Out

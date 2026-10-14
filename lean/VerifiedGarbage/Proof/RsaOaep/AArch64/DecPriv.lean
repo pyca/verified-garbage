@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.RsaOaep.AArch64.DecEntry
-public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncCall
+import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncCall
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

@@ -4,7 +4,7 @@ public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Weierstrass.Law
 public import VerifiedGarbage.Impl.Ecdh.BrainpoolP384r1.X86
 public import VerifiedGarbage.Proof.Ecdh.X86.BrainpoolP384r1.Verified
-public import VerifiedGarbage.Proof.Ecdh.X86.BrainpoolP384r1.Lit
+import VerifiedGarbage.Proof.Ecdh.X86.BrainpoolP384r1.Lit
 import VerifiedGarbage.Proof.X25519.X86.Column
 
 /-!

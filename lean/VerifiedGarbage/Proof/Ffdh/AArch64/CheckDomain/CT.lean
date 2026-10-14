@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.AArch64.CheckDomain.Correct
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTRedc
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTRedc
 meta import VerifiedGarbage.Proof.Ffdh.AArch64.CheckDomain.Correct
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTRedc
 import all Init.Data.Array.Basic
@@ -14,6 +14,8 @@ import VerifiedGarbage.Proof.Framework.PowLit
 meta import VerifiedGarbage.Proof.Framework.AArch64.Call
 meta import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Spec.Dsa.SignVerify
+meta import VerifiedGarbage.Spec.Dsa.SignVerify
 
 /-!
 # `vg_ffdh_check_domain` on AArch64: constant time

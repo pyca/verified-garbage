@@ -10,6 +10,8 @@ import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.Proof.Ffdh.AArch64.Ws
+meta import VerifiedGarbage.Proof.Ffdh.AArch64.Ws
 
 /-!
 # FFDH on AArch64: the scan for the first nonzero octet

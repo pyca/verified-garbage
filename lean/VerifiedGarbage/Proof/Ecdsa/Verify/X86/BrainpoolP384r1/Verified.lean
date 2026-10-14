@@ -12,9 +12,9 @@ public import VerifiedGarbage.Proof.Framework.X86.Taint
 meta import VerifiedGarbage.Proof.Framework.X86.Taint
 public import VerifiedGarbage.Proof.Framework.X86.Inline
 meta import VerifiedGarbage.Proof.Framework.X86.Inline
-public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.BrainpoolP384r1.CallSumsP
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86.BrainpoolP384r1.CallSumsP
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.BrainpoolP384r1.CallSumsP
-public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.BrainpoolP384r1.CallSumsN
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86.BrainpoolP384r1.CallSumsN
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.BrainpoolP384r1.CallSumsN
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

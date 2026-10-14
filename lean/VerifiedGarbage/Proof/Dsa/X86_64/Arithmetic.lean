@@ -1,9 +1,9 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.X86_64.Arithmetic
-public import VerifiedGarbage.Proof.Dsa.Arithmetic
+import VerifiedGarbage.Proof.Dsa.Arithmetic
 public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
-public import VerifiedGarbage.Proof.Bignum.X86_64.CrtArith
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtArith
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

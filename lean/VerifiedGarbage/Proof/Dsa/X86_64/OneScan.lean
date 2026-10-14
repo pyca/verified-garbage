@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.Words
+import VerifiedGarbage.Proof.Dsa.Words
 public import VerifiedGarbage.Proof.Dsa.X86_64.OrWords
 public import VerifiedGarbage.Proof.Dsa.X86_64.ZeroMask
 import all Init.Data.Array.Basic

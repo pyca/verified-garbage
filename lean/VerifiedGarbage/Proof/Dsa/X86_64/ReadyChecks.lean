@@ -1,10 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Modulus
-public import VerifiedGarbage.Proof.Dsa.X86_64.Range
+import VerifiedGarbage.Proof.Dsa.X86_64.Range
 public import VerifiedGarbage.Proof.Dsa.X86_64.IsOne
-public import VerifiedGarbage.Proof.Dsa.X86_64.Zero
-public import VerifiedGarbage.Proof.Dsa.X86_64.Equal
+import VerifiedGarbage.Proof.Dsa.X86_64.Zero
+import VerifiedGarbage.Proof.Dsa.X86_64.Equal
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

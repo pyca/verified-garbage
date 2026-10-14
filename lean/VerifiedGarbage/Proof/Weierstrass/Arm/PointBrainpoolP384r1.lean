@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.Arm.PointCurves
 meta import VerifiedGarbage.Proof.Weierstrass.Arm.PointCurves
-public import VerifiedGarbage.Proof.Weierstrass.Arm.MontBrainpoolP384r1
+import VerifiedGarbage.Proof.Weierstrass.Arm.MontBrainpoolP384r1
 meta import VerifiedGarbage.Proof.Weierstrass.Arm.MontBrainpoolP384r1
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint

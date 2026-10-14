@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.CheckOperands
-public import VerifiedGarbage.Proof.Dsa.X86_64.PublicCalls
+import VerifiedGarbage.Proof.Dsa.X86_64.PublicCalls
 public import VerifiedGarbage.Proof.Dsa.Zero
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
@@ -9,6 +9,8 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 
 /-! # DSA signing domain validation without a redundant public-value power -/
 

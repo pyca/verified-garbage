@@ -8,6 +8,9 @@ import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.PowLit
+import Mathlib.Data.Int.ModEq
+import VerifiedGarbage.Proof.Rsa.Octets
+import VerifiedGarbage.Spec.Dsa.SignVerify
 
 /-!
 # `vg_ffdh_generate_key` on AArch64: correctness

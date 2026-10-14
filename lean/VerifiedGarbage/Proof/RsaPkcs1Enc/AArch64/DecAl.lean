@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecIrprf
-public import VerifiedGarbage.Proof.RsaPkcs1Enc.Select
+import VerifiedGarbage.Proof.RsaPkcs1Enc.Select
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

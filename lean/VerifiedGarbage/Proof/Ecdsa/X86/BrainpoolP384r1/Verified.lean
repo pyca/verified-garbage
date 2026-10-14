@@ -1,12 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.NativeTaint
-public import VerifiedGarbage.Proof.Weierstrass.X86.MontBrainpoolP384r1
+import VerifiedGarbage.Proof.Weierstrass.X86.MontBrainpoolP384r1
 meta import VerifiedGarbage.Proof.Weierstrass.X86.MontBrainpoolP384r1
 meta import VerifiedGarbage.Proof.Framework.NativeTaint
 public import VerifiedGarbage.Proof.Ecdsa.X86.Main
 meta import VerifiedGarbage.Proof.Ecdsa.X86.Main
-public import VerifiedGarbage.Proof.Weierstrass.X86.MontContract
+import VerifiedGarbage.Proof.Weierstrass.X86.MontContract
 meta import VerifiedGarbage.Proof.Weierstrass.X86.MontContract
 public import VerifiedGarbage.Proof.Ecdsa.X86.BrainpoolP384r1.Contract
 meta import VerifiedGarbage.Proof.Ecdsa.X86.BrainpoolP384r1.Contract

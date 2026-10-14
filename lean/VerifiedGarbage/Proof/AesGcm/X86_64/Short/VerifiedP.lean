@@ -1,13 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Verified
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.PowP
+import VerifiedGarbage.Proof.AesGcm.X86_64.Short.PowP
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.OpenSel
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.AesGcm.X86_64.FnCT
+import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.Mid
 
 /-!
 # AES-GCM's short path on x86-64 with a prepared key context: the functions verified

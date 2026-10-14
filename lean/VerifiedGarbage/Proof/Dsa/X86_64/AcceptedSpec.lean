@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.SignCompute
 public import VerifiedGarbage.Proof.Dsa.X86_64.VerifyCompute
-public import VerifiedGarbage.Proof.Dsa.SizeBounds
+import VerifiedGarbage.Proof.Dsa.SizeBounds
 public import VerifiedGarbage.Proof.Dsa.SignVerify
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

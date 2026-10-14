@@ -2,13 +2,13 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.RangeCT
 meta import VerifiedGarbage.Proof.Dsa.X86_64.RangeCT
-public import VerifiedGarbage.Proof.Dsa.X86_64.RangeMask
+import VerifiedGarbage.Proof.Dsa.X86_64.RangeMask
 meta import VerifiedGarbage.Proof.Dsa.X86_64.RangeMask
 public import VerifiedGarbage.Proof.Dsa.X86_64.ReduceInitCT
 meta import VerifiedGarbage.Proof.Dsa.X86_64.ReduceInitCT
-public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetupLoad
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetupLoad
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetupLoad
-public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTRedc
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTRedc
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTRedc
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

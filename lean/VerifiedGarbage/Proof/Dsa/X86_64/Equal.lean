@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.EqualHead
-public import VerifiedGarbage.Proof.Dsa.X86_64.EqualLoop
-public import VerifiedGarbage.Proof.Dsa.X86_64.ZeroMask
+import VerifiedGarbage.Proof.Dsa.X86_64.EqualHead
+import VerifiedGarbage.Proof.Dsa.X86_64.EqualLoop
+import VerifiedGarbage.Proof.Dsa.X86_64.ZeroMask
 public import VerifiedGarbage.Proof.Dsa.X86_64.MaskContext
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

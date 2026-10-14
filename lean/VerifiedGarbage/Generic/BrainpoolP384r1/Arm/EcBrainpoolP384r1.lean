@@ -4,6 +4,8 @@ public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.Weierstrass.Law
 public import VerifiedGarbage.Impl.EcKey.BrainpoolP384r1.Arm
 public import VerifiedGarbage.Proof.EcKey.Arm.BrainpoolP384r1.Verified
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Arm.Lit
 
 /-!
 # brainpoolP384r1 public keys (FIPS 186-5 §A.2) on 32-bit ARM

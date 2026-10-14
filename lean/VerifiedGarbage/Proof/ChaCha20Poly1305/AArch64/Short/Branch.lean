@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Correct
-public import VerifiedGarbage.Impl.ChaCha20Poly1305.AArch64.Short
+import VerifiedGarbage.Impl.ChaCha20Poly1305.AArch64.Short
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

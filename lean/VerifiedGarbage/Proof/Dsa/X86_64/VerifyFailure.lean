@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.X86_64.SignVerify
-public import VerifiedGarbage.Proof.Dsa.X86_64.Operands
+import VerifiedGarbage.Proof.Dsa.X86_64.Operands
 public import VerifiedGarbage.Proof.Bignum.X86_64.PubOut
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

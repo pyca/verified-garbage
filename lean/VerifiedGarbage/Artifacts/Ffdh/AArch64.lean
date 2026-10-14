@@ -9,6 +9,8 @@ public import VerifiedGarbage.Proof.Ffdh.AArch64.GenerateKey.Verified
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowBase
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
+import Mathlib.Data.Int.ModEq
+import VerifiedGarbage.Spec.Dsa.SignVerify
 
 @[expose] public section
 

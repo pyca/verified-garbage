@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.StoreCT
 meta import VerifiedGarbage.Proof.Dsa.X86_64.StoreCT
-public import VerifiedGarbage.Proof.Dsa.X86_64.Finish
+import VerifiedGarbage.Proof.Dsa.X86_64.Finish
 meta import VerifiedGarbage.Proof.Dsa.X86_64.Finish
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

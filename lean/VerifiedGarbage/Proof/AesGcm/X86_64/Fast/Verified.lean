@@ -6,6 +6,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Piece
+import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.Mid
 
 /-!
 # AES-GCM `seal_split` on x86-64 with a prepared key context: `Verified`

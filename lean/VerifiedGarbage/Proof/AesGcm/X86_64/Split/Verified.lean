@@ -2,8 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Split.ShortCT
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Split.End
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.SealFin
-public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Verified
+import VerifiedGarbage.Proof.AesGcm.X86_64.Short.SealFin
+import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Verified
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.Verified
 public import VerifiedGarbage.Proof.AesGcm.ScratchSplit
 import all Init.Data.Array.Basic

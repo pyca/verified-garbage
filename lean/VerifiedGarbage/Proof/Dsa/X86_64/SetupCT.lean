@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.SetupChoice
+import VerifiedGarbage.Proof.Dsa.X86_64.SetupChoice
 meta import VerifiedGarbage.Proof.Dsa.X86_64.SetupChoice
 public import VerifiedGarbage.Proof.Dsa.X86_64.ProductCT
 meta import VerifiedGarbage.Proof.Dsa.X86_64.ProductCT

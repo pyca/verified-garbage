@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Spec.Ffdh.Contract
-public import VerifiedGarbage.Proof.Dsa.PackedBytes
-public import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Dsa.PackedBytes
+import VerifiedGarbage.Proof.Bignum.Octets
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

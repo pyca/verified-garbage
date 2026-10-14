@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.TCB.X86_64.Target
+import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvInterface
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.BrainpoolP512r1.MulVerified
 import Mathlib.Data.Finset.Card
@@ -9,6 +9,9 @@ import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
 import VerifiedGarbage.Proof.Mont.X86_64.Wide
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.BrainpoolP512r1.MulLit
+import VerifiedGarbage.Spec.EcKey.Generic
+import VerifiedGarbage.Spec.Weierstrass.PointOps
 
 /-!
 # brainpoolP512r1's point multiplication on x86-64

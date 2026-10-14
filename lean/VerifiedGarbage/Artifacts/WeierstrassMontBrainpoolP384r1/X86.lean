@@ -5,6 +5,7 @@ public import VerifiedGarbage.Impl.Weierstrass.X86.Mont
 public import VerifiedGarbage.Proof.Weierstrass.X86.MontBrainpoolP384r1
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.X25519.X86.Column
+public import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.BrainpoolP384r1
 
 /-! # Montgomery arithmetic modulo brainpoolP384r1's `p` and `n` on x86 (32-bit)
 

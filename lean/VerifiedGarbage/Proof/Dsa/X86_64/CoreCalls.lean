@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Call
-public import VerifiedGarbage.Proof.Dsa.X86_64.Power
-public import VerifiedGarbage.Proof.Dsa.X86_64.Multiply
+import VerifiedGarbage.Proof.Dsa.X86_64.Power
+import VerifiedGarbage.Proof.Dsa.X86_64.Multiply
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

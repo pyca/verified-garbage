@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.Ecdh.Arm.BrainpoolP384r1.Contract
 meta import VerifiedGarbage.Proof.Ecdh.Arm.BrainpoolP384r1.Contract
 public import VerifiedGarbage.Proof.Ecdh.Arm.BrainpoolP384r1.Lit
 meta import VerifiedGarbage.Proof.Ecdh.Arm.BrainpoolP384r1.Lit
-public import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP384r1.Verified
+import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP384r1.Verified
 meta import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP384r1.Verified
 public import VerifiedGarbage.Impl.Ecdh.BrainpoolP384r1.Arm
 meta import VerifiedGarbage.Impl.Ecdh.BrainpoolP384r1.Arm
@@ -14,6 +14,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+meta import VerifiedGarbage.Proof.Framework.Arm.Contract
 
 /-!
 # ECDH over brainpoolP384r1 on 32-bit ARM: `Verified`

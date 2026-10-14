@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.JointRun
-public import VerifiedGarbage.Proof.Dsa.X86_64.JointPrepare
+import VerifiedGarbage.Proof.Dsa.X86_64.JointPrepare
 public import VerifiedGarbage.Proof.Dsa.X86_64.Prepare
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

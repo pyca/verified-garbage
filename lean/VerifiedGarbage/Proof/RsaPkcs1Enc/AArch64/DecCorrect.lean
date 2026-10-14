@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecOut
-public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncCorrect
+import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncCorrect
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.Decrypt
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

@@ -4,11 +4,11 @@ public import VerifiedGarbage.Proof.AesGcm.X86_64.Split.Run
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Split.Run
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Split.FinCT
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Split.FinCT
-public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.CT
+import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.CT
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.CT
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.CT
+import VerifiedGarbage.Proof.AesGcm.X86_64.Short.CT
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Short.CT
-public import VerifiedGarbage.Proof.AesGcm.X86_64.SealCT
+import VerifiedGarbage.Proof.AesGcm.X86_64.SealCT
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.SealCT
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
