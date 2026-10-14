@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.PreparedTo
 import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Prepared
 public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemTo
+import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemD
 import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.OutOfPlace
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.LoopP
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Ok
@@ -348,10 +349,17 @@ theorem encR_ok {s₀ : State} (hp : SPrePrepared s₀) :
     encTailRG_ok hp.base (finZ (finP hpw)) (remZ (finP hpw))
       (fun _ h256 hI hC => bigP_ok hp (finZ (finP hpw)) hpw (fin48P (hk s₀)) h256 hI hC) hR hK)
 
-/-- Encryption of any number of blocks, decryption of a multiple of 16. -/
+/-- `decR`, for any number of blocks from 16 on. -/
+theorem decR_ok {s₀ : State} (hp : SPrePrepared s₀) :
+    WP isa Impl.Gcm.X86_64.StitchZH.decR s₀ (DPost s₀) :=
+  WP.seq (WP.mono (setup_ok hp) fun _ ⟨_, hR, hpw, hK⟩ =>
+    decTailRG_ok hp.base (finZ (finP hpw)) (remZ (finP hpw))
+      (fun _ h256 hI hC => bigDP_ok hp hpw (fin48P (hk s₀)) h256 hI hC) hR hK)
+
+/-- Encryption and decryption of any number of blocks from 16 on. -/
 theorem stitchR_ok :
-    StitchOkM CtxMode.prepared Impl.Gcm.X86_64.StitchZH.encR Impl.Gcm.X86_64.StitchZH.dec 1 :=
-  ⟨fun _ hp _ => encR_ok hp.toPrepared, fun _ hp hm => dec_ok hp.toPrepared hm⟩
+    StitchOkM CtxMode.prepared Impl.Gcm.X86_64.StitchZH.encR Impl.Gcm.X86_64.StitchZH.decR 1 1 :=
+  ⟨fun _ hp _ => encR_ok hp.toPrepared, fun _ hp _ => decR_ok hp.toPrepared⟩
 
 end VG.Proof.Gcm.X86_64.StitchZH
 

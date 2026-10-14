@@ -20,8 +20,9 @@ meta import VerifiedGarbage.Spec.TripleDes
 
 The counter value in `r8` is secret; its arithmetic never controls an
 address or branch. The original counter pointer stays public in `rsi`.
-Encryption is checked as `Blocks.stitchPart` runs it with `full`: the number
-of blocks after the pipeline's, in `r9`, is public.
+Encryption, and decryption with a prepared key context, are checked as
+`Blocks.stitchPart` runs them with `full`: the number of blocks after the
+pipeline's, in `r9`, is public.
 
 With a prepared key context (`encR`, `dec`), the working tables are
 aligned (`Blocks.stitchPart`'s `aligned`).
@@ -64,7 +65,7 @@ theorem encR_piece : Piece encR true true :=
   ⟨by lit_decide, by lit_decide, by lit_decide, by lit_decide,
     by lit_decide, ⟨_, by taint_decide⟩⟩
 
-theorem decR_piece : Piece decR true :=
+theorem decR_piece : Piece decR true true :=
   ⟨by lit_decide, by lit_decide, by lit_decide, by lit_decide,
     by lit_decide, ⟨_, by taint_decide⟩⟩
 

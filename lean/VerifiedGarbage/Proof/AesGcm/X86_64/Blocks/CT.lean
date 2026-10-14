@@ -134,6 +134,10 @@ theorem entry_check : ∃ hc, ((taint.check (Taint.ofRegs (.r11 :: args)) (.bloc
 theorem rest_check : ∃ hc, ((taint.check (Taint.ofRegs [.r11, .rsp]) (.block rest.tail) hc).map fun τ' =>
     (RegSet.ofList [Reg.rsp]).subset τ'.regs && (!false || τ'.flags)) = some true := ⟨_, by taint_decide⟩
 
+theorem cmp_check : ∃ hc, ((taint.check (Taint.ofRegs (.r11 :: args)) (.block [.alu .cmp .r9 (imm 16)]) hc).map
+    fun τ' => (RegSet.ofList (.r11 :: args)).subset τ'.regs && (!false || τ'.flags)) = some true :=
+  ⟨_, by taint_decide⟩
+
 theorem nil_check : ∃ hc, ((taint.check (Taint.ofRegs (.r11 :: args)) (.block []) hc).map
     fun τ' => (RegSet.ofList [Reg.rsp]).subset τ'.regs && (!false || τ'.flags)) = some true := ⟨_, by taint_decide⟩
 
@@ -271,27 +275,44 @@ theorem part_rel (aligned : Bool) (piece : Option (Prog isa)) {ys : State → Na
       fun _ _ h => ⟨n s₀ - n s₀ % 16, h.2.1, ?_⟩
     rw [← pb.en]; exact h.2.2
 
-/-- A `piece` that takes all the blocks, and `rest`, in two runs. -/
-theorem partFull_rel (aligned : Bool) (p : Prog isa) {ys : State → Nat → List Block}
+/-- With a `piece` that takes all the blocks: the comparison, then `piece`,
+or `rest` and the calls, in two runs. -/
+theorem fullBody_rel (aligned : Bool) (p first second : Prog isa) {ys : State → Nat → List Block}
+    (hys : ∀ s, ys s 0 = [])
     (hc : ∃ hc, ((taint.check (Taint.ofRegs (.r11 :: args)) (stitchPart p aligned true) hc).map
       fun τ' => (RegSet.ofList [Reg.rsp]).subset τ'.regs && (!false || τ'.flags)) = some true)
-    (hw : ∀ {s : State}, BP M s → ∀ {s₁ : State}, EntryPost s s₁ →
-      WP isa (stitchPart p aligned true) s₁ (Mid s (qf s) (qf s) (ys s (qf s)))) :
+    (htail : RelCT isa (fun s₁ s₂ => Mid s₀ 0 0 (ys s₀ 0) s₁ ∧ Mid s₀' 0 0 (ys s₀' 0) s₂) (tail first second)
+      fun _ _ => True) :
     RelCT isa (fun s₁ s₂ => (∀ r ∈ .r11 :: args, s₁.gpr r = s₂.gpr r) ∧ EntryPost s₀ s₁ ∧ EntryPost s₀' s₂)
-      (head (some p) aligned true)
-      fun s₁ s₂ => ∃ q, Mid s₀ q q (ys s₀ q) s₁ ∧ Mid s₀' q q (ys s₀' q) s₂ := by
-  have eq : qf s₀' = qf s₀ := by simp only [qf, pb.en]
+      (fullBody p first second aligned) fun _ _ => True := by
+  have post : ∀ {s : State}, BP M s → ∀ {s₁ : State}, EntryPost s s₁ →
+      WP isa (.block [.alu .cmp .r9 (imm 16)]) s₁ fun s₂ => EntryPost s s₂ ∧ s₂.cf = some (decide (n s < 16)) :=
+    fun {s} _ {s₁} ⟨h11, hg, hk, hf, hrd, hwr⟩ => WP.mono (cmp16_ok (s := s) (hg _ (by decide)))
+      fun s₂ ⟨g₂, m₂, rd₂, wr₂, cf₂⟩ => ⟨⟨by rw [g₂]; exact h11, fun r h => by rw [g₂]; exact hg r h,
+        by rw [m₂]; exact hk, by rw [m₂]; exact hf, rd₂.trans hrd, wr₂.trans hwr⟩, cf₂⟩
   have a := rel_wp (P := fun s₁ s₂ => (∀ r ∈ .r11 :: args, s₁.gpr r = s₂.gpr r) ∧ EntryPost s₀ s₁ ∧
-      EntryPost s₀' s₂) (rel_regs (.r11 :: args) [.rsp] false (fun _ _ h => h.1) hc) (fun _ _ h => h.2)
-    (fun _ h => hw hp h) (fun _ h => hw hp' h)
-  have b := rel_wp (rel_r11 (l₀ := rest) (l := rest.tail) rfl
-    (P := fun s₁ s₂ => (∀ r ∈ [Reg.rsp], s₁.gpr r = s₂.gpr r) ∧
-      Mid s₀ (qf s₀) (qf s₀) (ys s₀ (qf s₀)) s₁ ∧ Mid s₀' (qf s₀') (qf s₀') (ys s₀' (qf s₀')) s₂) [.rsp] [.rsp]
-    (by simp) (fun _ _ h => h.1) (fun _ _ h => ready_hS hp hp' pb (h.2.1.ready hp) (h.2.2.ready hp')) rest_check)
-    (fun _ _ h => h.2) (fun _ h => restFull_ok hp h) (fun _ h => restFull_ok hp' h)
-  refine (RelCT.seq (a.mono (fun _ _ h => h) fun _ _ h => ⟨h.1.1, h.2⟩) b).mono (fun _ _ h => h)
-    fun _ _ h => ⟨qf s₀, h.2.1, ?_⟩
-  rw [← eq]; exact h.2.2
+      EntryPost s₀' s₂) (rel_regs (.r11 :: args) (.r11 :: args) false (fun _ _ h => h.1) cmp_check) (fun _ _ h => h.2)
+    (fun _ h => post hp h) (fun _ h => post hp' h)
+  refine RelCT.seq a (RelCT.ite (fun s₁ s₂ h => by
+    simp only [isa, eval, h.2.1.2, h.2.2.2, pb.en]) ?_ ?_)
+  · -- Fewer than 16 blocks: `rest`, then the calls.
+    have b := rel_wp (rel_r11 (l₀ := rest) (l := rest.tail) rfl
+      (P := fun s₁ s₂ => (∀ r ∈ [Reg.rsp], s₁.gpr r = s₂.gpr r) ∧ n s₀ < 16 ∧
+        Mid s₀ 0 0 (ys s₀ 0) s₁ ∧ Mid s₀' 0 0 (ys s₀' 0) s₂) [.rsp] [.rsp] (by simp) (fun _ _ h => h.1)
+      (fun _ _ h => ready_hS hp hp' pb (h.2.2.1.ready hp) (h.2.2.2.ready hp')) rest_check)
+      (F₁ := fun t => n s₀ < 16 ∧ Mid s₀ 0 0 (ys s₀ 0) t) (F₂ := fun t => n s₀' < 16 ∧ Mid s₀' 0 0 (ys s₀' 0) t)
+      (fun _ _ h => ⟨⟨h.2.1, h.2.2.1⟩, by rw [pb.en]; exact h.2.1, h.2.2.2⟩)
+      (fun _ h => rest_ok hp (by have := h.1; omega) h.2) (fun _ h => rest_ok hp' (by have := h.1; omega) h.2)
+    refine (RelCT.seq b (htail.mono (fun _ _ h => ⟨h.2.1, h.2.2⟩) fun _ _ h => h)).mono (fun s₁ s₂ h => ?_)
+      fun _ _ h => h
+    obtain ⟨⟨⟨hr, -⟩, ⟨⟨-, b₁, c₁, d₁, e₁, f₁⟩, cf₁⟩, ⟨⟨-, b₂, c₂, d₂, e₂, f₂⟩, -⟩⟩, ht⟩ := h
+    have h16 : n s₀ < 16 := by
+      simp only [isa, eval, cf₁, Option.some.injEq, decide_eq_true_eq] at ht; exact ht
+    refine ⟨fun r hr' => hr r (by simp only [List.mem_singleton] at hr'; subst hr'; simp [args]), h16, ?_, ?_⟩
+    · rw [hys]; exact mid_entry hp b₁ c₁ d₁ e₁ f₁
+    · rw [hys]; exact mid_entry hp' b₂ c₂ d₂ e₂ f₂
+  · -- At least 16: `piece` takes them all.
+    exact (rel_regs (.r11 :: args) [.rsp] false (fun _ _ h => h.1.1.1) hc).mono (fun _ _ h => h) fun _ _ _ => trivial
 
 end
 
@@ -302,42 +323,60 @@ theorem encrypt_ct (v : GcmImpl) {M : CtxMode} {aligned : Bool} (st : Option (St
   have hp := BP.ofM h
   have hp' := BP.ofM h'
   have pb := Pub.of hq
-  refine RelCT.seq (entry_rel hp hp' pb) (RelCT.seq (R := fun s₁ s₂ => ∃ q,
-    Mid s₀ q q (ctr32 (ciph s₀) (cb s₀) (blocksAt s₀.mem (D s₀) q)) s₁ ∧
-      Mid s₀' q q (ctr32 (ciph s₀') (cb s₀') (blocksAt s₀'.mem (D s₀') q)) s₂) ?_ ?_)
-  · rcases st with _ | ⟨enc, dec, full, ok, encP, decP⟩
-    · exact part_rel hp hp' pb aligned none (ys := fun s q => ctr32 (ciph s) (cb s) (blocksAt s.mem (D s) q))
-        (fun _ => rfl) (fun _ e => by cases e) fun _ e => by cases e
-    · cases full with
-      | false =>
-        exact part_rel hp hp' pb aligned (some enc) (ys := fun s q => ctr32 (ciph s) (cb s) (blocksAt s.mem (D s) q))
-          (fun _ => rfl) (fun _ e => by cases e; exact encP.ct)
-          fun _ e {_} hp {_} h => by
-            cases e
-            obtain ⟨a, b, c, d, e, f⟩ := h; exact stitchE_ok hp ok a b c d e f
-      | true =>
-        exact partFull_rel hp hp' pb aligned enc (ys := fun s q => ctr32 (ciph s) (cb s) (blocksAt s.mem (D s) q))
-          encP.ct fun {_} hp {_} h => by
-          obtain ⟨a, b, c, d, e, f⟩ := h; exact stitchEFull_ok hp ok a b c d e f
-  intro s₁ s₂ t₁ t₂ s₁' s₂' ⟨q, M₁, M₂⟩ e₁ e₂
-  exact tail_rel hp hp' pb (fun q hq => ctrCall_rel hp hp' pb v.ctr hq) (fun q hq => ghCall_rel hp hp' pb v.gh hq)
-    _ _ _ _ _ _ ⟨M₁, M₂⟩ e₁ e₂
+  have tl : ∀ q ys ys', RelCT isa (fun s₁ s₂ => Mid s₀ q q ys s₁ ∧ Mid s₀' q q ys' s₂) (tail (ctrCall v.callees.ctr) (ghCall v.callees.gh))
+      fun _ _ => True := fun _ _ _ => tail_rel hp hp' pb (fun q hq => ctrCall_rel hp hp' pb v.ctr hq) (fun q hq => ghCall_rel hp hp' pb v.gh hq)
+  refine RelCT.seq (entry_rel hp hp' pb) ?_
+  -- The first blocks by the loops (none, `16 ⌊n / 16⌋` or all), then the rest by the calls.
+  have part : ∀ (pc : Option (Prog isa)), RelCT isa (fun s₁ s₂ => (∀ r ∈ .r11 :: args, s₁.gpr r = s₂.gpr r) ∧
+      EntryPost s₀ s₁ ∧ EntryPost s₀' s₂) (head pc aligned) (fun s₁ s₂ => ∃ q,
+        Mid s₀ q q (ctr32 (ciph s₀) (cb s₀) (blocksAt s₀.mem (D s₀) q)) s₁ ∧
+          Mid s₀' q q (ctr32 (ciph s₀') (cb s₀') (blocksAt s₀'.mem (D s₀') q)) s₂) →
+      RelCT isa (fun s₁ s₂ => (∀ r ∈ .r11 :: args, s₁.gpr r = s₂.gpr r) ∧ EntryPost s₀ s₁ ∧ EntryPost s₀' s₂)
+        (.seq (head pc aligned) (tail _ _)) fun _ _ => True := fun _ hh =>
+    RelCT.seq hh fun s₁ s₂ t₁ t₂ s₁' s₂' ⟨q, M₁, M₂⟩ e₁ e₂ => tl q _ _ _ _ _ _ _ _ ⟨M₁, M₂⟩ e₁ e₂
+  rcases st with _ | ⟨enc, dec, full, fullD, ok, encP, decP⟩
+  · exact part none (part_rel hp hp' pb aligned none (ys := fun s q => ctr32 (ciph s) (cb s) (blocksAt s.mem (D s) q))
+      (fun _ => rfl) (fun _ e => by cases e) fun _ e => by cases e)
+  · cases full with
+    | false =>
+      exact part (some enc) (part_rel hp hp' pb aligned (some enc) (ys := fun s q => ctr32 (ciph s) (cb s) (blocksAt s.mem (D s) q))
+        (fun _ => rfl) (fun _ e => by cases e; exact encP.ct)
+        fun _ e {_} hp {_} h => by
+          cases e
+          obtain ⟨a, b, c, d, e, f⟩ := h; exact stitchE_ok hp ok a b c d e f)
+    | true =>
+      exact fullBody_rel hp hp' pb aligned enc _ _ (ys := fun s q => ctr32 (ciph s) (cb s) (blocksAt s.mem (D s) q)) (fun _ => rfl) encP.ct
+        (tl 0 _ _)
 
 theorem decrypt_ct (v : GcmImpl) {M : CtxMode} {aligned : Bool} (st : Option (StitchCode M aligned)) :
     ConstantTime isa (Proof.AesGcm.decryptBlocksX86_64M M).pre Proof.AesGcm.blocksPub
-      (decrypt v.callees.ctr v.callees.gh (st.map (·.dec)) aligned) := by
+      (decrypt v.callees.ctr v.callees.gh (st.map (·.dec)) aligned (decFull st)) := by
   refine ct_of_rel fun s₀ s₀' h h' hq => ?_
   have hp := BP.ofM h
   have hp' := BP.ofM h'
   have pb := Pub.of hq
-  refine RelCT.seq (entry_rel hp hp' pb) (RelCT.seq (part_rel hp hp' pb aligned (st.map (·.dec))
-    (ys := fun s q => blocksAt s.mem (D s) q) (fun _ => rfl)
-    (fun _ e => by obtain ⟨i, -, rfl⟩ := Option.map_eq_some_iff.1 e; exact i.decP.ct)
-    fun _ e {_} hp {_} h => by
-      obtain ⟨i, -, rfl⟩ := Option.map_eq_some_iff.1 e
-      obtain ⟨a, b, c, d, e, f⟩ := h; exact stitchD_ok hp i.ok a b c d e f) ?_)
-  intro s₁ s₂ t₁ t₂ s₁' s₂' ⟨q, M₁, M₂⟩ e₁ e₂
-  exact tail_rel hp hp' pb (fun q hq => ghCall_rel hp hp' pb v.gh hq) (fun q hq => ctrCall_rel hp hp' pb v.ctr hq)
-    _ _ _ _ _ _ ⟨M₁, M₂⟩ e₁ e₂
+  have tl : ∀ q ys ys', RelCT isa (fun s₁ s₂ => Mid s₀ q q ys s₁ ∧ Mid s₀' q q ys' s₂) (tail (ghCall v.callees.gh) (ctrCall v.callees.ctr))
+      fun _ _ => True := fun _ _ _ => tail_rel hp hp' pb (fun q hq => ghCall_rel hp hp' pb v.gh hq) (fun q hq => ctrCall_rel hp hp' pb v.ctr hq)
+  refine RelCT.seq (entry_rel hp hp' pb) ?_
+  -- The first blocks by the loops (none, `16 ⌊n / 16⌋` or all), then the rest by the calls.
+  have part : ∀ (pc : Option (Prog isa)), RelCT isa (fun s₁ s₂ => (∀ r ∈ .r11 :: args, s₁.gpr r = s₂.gpr r) ∧
+      EntryPost s₀ s₁ ∧ EntryPost s₀' s₂) (head pc aligned) (fun s₁ s₂ => ∃ q,
+        Mid s₀ q q (blocksAt s₀.mem (D s₀) q) s₁ ∧ Mid s₀' q q (blocksAt s₀'.mem (D s₀') q) s₂) →
+      RelCT isa (fun s₁ s₂ => (∀ r ∈ .r11 :: args, s₁.gpr r = s₂.gpr r) ∧ EntryPost s₀ s₁ ∧ EntryPost s₀' s₂)
+        (.seq (head pc aligned) (tail _ _)) fun _ _ => True := fun _ hh =>
+    RelCT.seq hh fun s₁ s₂ t₁ t₂ s₁' s₂' ⟨q, M₁, M₂⟩ e₁ e₂ => tl q _ _ _ _ _ _ _ _ ⟨M₁, M₂⟩ e₁ e₂
+  rcases st with _ | ⟨enc, dec, full, fullD, ok, encP, decP⟩
+  · exact part none (part_rel hp hp' pb aligned none (ys := fun s q => blocksAt s.mem (D s) q)
+      (fun _ => rfl) (fun _ e => by cases e) fun _ e => by cases e)
+  · cases fullD with
+    | false =>
+      exact part (some dec) (part_rel hp hp' pb aligned (some dec) (ys := fun s q => blocksAt s.mem (D s) q)
+        (fun _ => rfl) (fun _ e => by cases e; exact decP.ct)
+        fun _ e {_} hp {_} h => by
+          cases e
+          obtain ⟨a, b, c, d, e, f⟩ := h; exact stitchD_ok hp ok a b c d e f)
+    | true =>
+      exact fullBody_rel hp hp' pb aligned dec _ _ (ys := fun s q => blocksAt s.mem (D s) q) (fun _ => rfl) decP.ct
+        (tl 0 _ _)
 
 end VG.Proof.AesGcm.X86_64.Blocks
