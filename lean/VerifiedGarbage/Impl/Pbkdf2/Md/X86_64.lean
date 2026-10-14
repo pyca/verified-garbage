@@ -238,13 +238,42 @@ message, as in `iterate` (`Impl/Pbkdf2/X86_64.lean`). The inner state is no
 longer needed, so it holds them: its hash value at `rbx` and the block in
 its buffer, at `rbp = rbx + N`. -/
 
-/-- The outer hash value over the inner state's, the inner digest into its
-buffer, then the padding after it (`padLen`), and the block's address for
-the compression function. -/
+/-- Dword `k` of the block into `rax`: dword `k` of the inner digest, at
+`scratch + buf`, then the padding's `0x80` and zeros. -/
+def blkDw (k : Nat) : List Instr :=
+  if k < H.D / 4 then [.mov32 .rax (.mem (at_ .r15 (H.stream.buf + 4 * k)))]
+  else [.mov32 .rax (.imm (if k = H.D / 4 then 0x80 else 0))]
+
+/-- The 16 bytes of the block at `rbp + 16 c`, before its last 16, with
+one store: dwords `4 c` to `4 c + 3`, each through `rax` into an SSE
+register, interleaved by `punpckldq` and `punpcklqdq`; or, after the digest,
+the `0x80` alone, or zeros. One store of 16 bytes lets the compression
+function's 16-byte loads of the block take their bytes from it, where they
+would wait for narrower stores to reach the cache. -/
+def blkChunk (c : Nat) : List Instr :=
+  if H.D / 4 < 4 * c then [.xop (.bin .pxor .xmm0 .xmm0), .movdquStore (at_ .rbp (16 * c)) .xmm0]
+  else if H.D / 4 = 4 * c then
+    [.mov32 .rax (.imm 0x80), .xop (.movq .xmm0 .rax), .movdquStore (at_ .rbp (16 * c)) .xmm0]
+  else
+    H.blkDw (4 * c) ++ [.xop (.movq .xmm0 .rax)] ++ H.blkDw (4 * c + 1) ++ [.xop (.movq .xmm1 .rax)] ++
+      H.blkDw (4 * c + 2) ++ [.xop (.movq .xmm2 .rax)] ++ H.blkDw (4 * c + 3) ++
+      [.xop (.movq .xmm3 .rax), .xop (.bin .punpckldq .xmm0 .xmm1), .xop (.bin .punpckldq .xmm2 .xmm3),
+        .xop (.bin .punpcklqdq .xmm0 .xmm2), .movdquStore (at_ .rbp (16 * c)) .xmm0]
+
+/-- The block at `rbp`: the inner digest and the padding of a `B + D`-byte
+message, 16 bytes at a time, the last 16 (zeros and the length field) from
+the hash function's `lenV`. -/
+def blkV : List Instr :=
+  (List.range (H.P.B / 16 - 1)).flatMap H.blkChunk ++
+    ([.mov32 .r12 (.imm (BitVec.ofNat 32 (H.P.B + H.D)))] : List Instr) ++ H.P.lenV ++
+    ([.movdquStore (at_ .rbp (H.P.B - 16)) .xmm7] : List Instr)
+
+/-- The outer hash value over the inner state's, then the block in its
+buffer (`blkV`), and the block's address for the compression function. -/
 def finMid : List Instr :=
-  copy32 .r12 0 .rbx 0 (H.P.N / 4) ++ copy32 .r15 H.stream.buf .rbx H.P.N (H.D / 4) ++
+  copy32 .r12 0 .rbx 0 (H.P.N / 4) ++
     ([.mov .rbp (.reg .rbx), .alu .add .rbp (.imm (BitVec.ofNat 32 H.P.N))] : List Instr) ++
-    Impl.Pbkdf2.X86_64.padLen H.P H.D ++ ([.mov .rsi (.reg .rbp)] : List Instr)
+    H.blkV ++ ([.mov .rsi (.reg .rbp)] : List Instr)
 
 /-- The MAC to `out`: the digest of the hash value, written there directly,
 or for a digest shorter than the hash value (`P.out` writes `N` bytes) into

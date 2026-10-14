@@ -148,6 +148,7 @@ def ok : HashOK (hash v) where
   hD4 := by simp only [hash] <;> decide
   hN4 := by simp only [hash] <;> decide
   hDL := by simp only [hash] <;> decide
+  hD20 := by simp only [hash] <;> decide
   hL4 := by simp only [hash] <;> decide
   hNL := by simp only [hash] <;> decide
   hso := by simp only [hash] <;> decide

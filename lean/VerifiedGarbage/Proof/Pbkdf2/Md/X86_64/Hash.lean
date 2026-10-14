@@ -70,6 +70,9 @@ structure HashOK (H : Hash) where
   hD4 : H.D % 4 = 0
   hN4 : H.P.N % 4 = 0
   hDL : H.D + H.P.L + 4 ≤ H.P.B
+  /-- The digest and the padding's `0x80` fit in the block before its last 16
+  bytes, which HMAC's `finalize` writes from `lenV`. -/
+  hD20 : H.D + 20 ≤ H.P.B
   hL4 : H.P.L % 4 = 0
   hNL : H.P.N + H.P.L ≤ H.P.B
   hso : H.P.so % 8 = 0 ∧ H.P.so + 48 ≤ 8 * 256

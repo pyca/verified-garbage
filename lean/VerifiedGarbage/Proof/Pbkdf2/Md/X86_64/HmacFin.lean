@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Words
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.HmacFinInner
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Blk
 public import VerifiedGarbage.Proof.Framework.Omega
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
@@ -35,7 +36,6 @@ open VG.X86_64 VG.Proof.MdStream
 open VG.Proof.MdStream.X86_64 (add_ofNat sx_ofNat wp_mov wp_addi CallOk compressAt_ok compressAt_rel)
 open VG.Impl.MdStream.X86_64 (compressAt)
 open VG.Impl.Pbkdf2.Md.X86_64 (Hash)
-open VG.Proof.Pbkdf2.X86_64 (padLen_ok)
 open VG.Proof.Pbkdf2.Md.X86_64.Calls (finG FinArgs rel_taint rel_wp fin_rel restore_ok SavedRegs saveR repr_keep
   PubEq args)
 open VG.Proof.Hmac.Generic.Common (bytes_keep bytesAt_take bytesAt_writeBytes_self')
@@ -153,31 +153,22 @@ theorem mid_ok {s : State} (hk : KR (H := H.stream) s₀ s) :
   rw [hk.r12, hk.rbx, eN, z, z] at m₁
   have r15 : s₁.gpr .r15 = scr s₀ := by rw [g₁ _ (by decide), hk.r15]
   have rbx : s₁.gpr .rbx = inn s₀ := by rw [g₁ _ (by decide), hk.rbx]
-  refine copy32_ok (src := .r15) (dst := .rbx) (by decide) (by decide) H.stream.buf H.P.N (H.D / 4) _ s₁ _
-    (fun j hj => by
-      rw [r15, add_ofNat, rd₁, wr₁, hk.rd, hk.wr]
-      exact ⟨_, List.mem_append_right _ sR, Offset.contains_base _ (by omega_using [hj, hbuf, hDN]) (by omega_using [hj, hbuf, h8, hDN])⟩)
-    (fun j hj => by
-      rw [rbx, add_ofNat, wr₁, hk.wr]
-      exact ⟨_, iR, Offset.contains_base _ (by omega_using [hj, hS, hDL]) (by omega_using [hj, hB, hNL, hDL])⟩)
-    (by
-      rw [r15, rbx, eD]
-      exact hp.i_s.symm.sep (Offset.contains_base _ (by omega) (by omega_using [hbuf, h8, hDN, hD0]))
-        (Offset.contains_base _ (by omega_using [hS, hDL]) (by omega_using [hB, hNL])))
-    (by omega_using [hB, hDL]) fun s₂ g₂ rd₂ wr₂ m₂ => ?_
-  rw [r15, rbx, eD] at m₂
   simp only [List.cons_append, List.nil_append]
   refine wp_mov fun s₃ u₃ _ _ => wp_addi fun s₄ u₄ => ?_
   have rbp₄ : s₄.gpr .rbp = blk H s₀ := by
-    rw [u₄.gpr, u₃.gpr, g₂ _ (by decide), rbx, sx_ofNat (by omega_using [hB, hNL])]
+    rw [u₄.gpr, u₃.gpr, rbx, sx_ofNat (by omega_using [hB, hNL])]
   have G₄ : ∀ r, r ≠ .rax → r ≠ .rbp → s₄.gpr r = s₁.gpr r := fun r h1 h2 => by
-    rw [u₄.other r h2, u₃.other r h2, g₂ r h1]
-  refine padLen_ok hH.shape (hH.lenOk _ (by omega_using [hB, hDL])) hD4 hL4 hB4 (by omega_using [hDL]) hB (s := s₄) rbp₄
-    (by rw [G₄ _ (by decide) (by decide), rbx, add_ofNat,
-      show H.P.N + (H.P.B - H.P.L) = H.P.N + H.P.B - H.P.L by omega_using [hDL]])
+    rw [u₄.other r h2, u₃.other r h2]
+  refine Blk.blkV_ok H hH.shape (hH.lenOk _ (by omega_using [hB, hDL])) hD4 hH.dims.B
+    (by have := hH.hD20; omega) hH.dims.L.2 rbp₄ (by rw [G₄ _ (by decide) (by decide), r15])
+    (fun j hj => by
+      rw [u₄.rd, u₃.rd, u₄.wr, u₃.wr, rd₁, wr₁, hk.rd, hk.wr, add_ofNat]
+      exact ⟨_, List.mem_append_right _ sR, Offset.contains_base _ (by omega_using [hj, hbuf, hDN, eD]) (by omega_using [hj, hbuf, h8, hDN, eD])⟩)
     (fun a n h' => by
-      rw [u₄.wr, u₃.wr, wr₂, wr₁, hk.wr, add_ofNat]
-      exact ⟨_, iR, Offset.contains_base _ (by omega_using [h', hS]) (by omega_using [h', hB, hNL])⟩) fun s₅ g₅ rd₅ wr₅ f₅ p₅ d₅ => ?_
+      rw [u₄.wr, u₃.wr, wr₁, hk.wr, add_ofNat]
+      exact ⟨_, iR, Offset.contains_base _ (by omega_using [h', hS]) (by omega_using [h', hB, hNL])⟩)
+    ((hp.i_s.sub_right tsub).symm.sub_right (in_inR (by omega)))
+    fun s₅ g₅ rd₅ wr₅ f₅ d₅ p₅ => ?_
   refine wp_mov fun s₆ u₆ _ _ => WP.block_nil ?_
   have G : ∀ r, r ≠ .rax → r ≠ .rbp → r ≠ .r12 → r ≠ .rsi → s₆.gpr r = s.gpr r := fun r h1 h2 h3 h4 => by
     rw [u₆.other r h4, g₅ r h1 h3, G₄ r h1 h2, g₁ r h1]
@@ -185,19 +176,16 @@ theorem mid_ok {s : State} (hk : KR (H := H.stream) s₀ s) :
   -- What each piece writes.
   have f₁ : Frame [⟨inn s₀, H.P.N⟩] s.mem s₁.mem := by
     rw [m₁]; exact writeBytes_frame _ _ _ (by rw [bytesAt_length]; exact Region.contains_self _ _)
-  have f₂ : Frame [⟨blk H s₀, H.D⟩] s₁.mem s₂.mem := by
-    rw [m₂]; exact writeBytes_frame _ _ _ (by rw [bytesAt_length]; exact Region.contains_self _ _)
-  have f₄ : s₄.mem = s₂.mem := by rw [u₄.mem, u₃.mem]
+  have f₄ : s₄.mem = s₁.mem := by rw [u₄.mem, u₃.mem]
   rw [f₄] at f₅ d₅
   have fI : Frame [inR (H := H.stream) s₀] s.mem s₆.mem := by
     rw [hm]
-    refine ((f₁.sub fun r hr => ?_).trans (f₂.sub fun r hr => ?_)).trans (f₅.sub fun r hr => ?_) <;>
+    refine (f₁.sub fun r hr => ?_).trans (f₅.sub fun r hr => ?_) <;>
       simp only [List.mem_singleton] at hr <;> subst hr
     · exact ⟨_, List.mem_singleton_self _, Region.sub_prefix (by omega_using [hS])⟩
-    · exact ⟨_, List.mem_singleton_self _, in_inR (by omega_using [hDL])⟩
     · exact ⟨_, List.mem_singleton_self _, in_inR (by omega)⟩
-  refine ⟨KO.of_kr hp hk (by rw [u₆.rd, rd₅, u₄.rd, u₃.rd, rd₂, rd₁])
-      (by rw [u₆.wr, wr₅, u₄.wr, u₃.wr, wr₂, wr₁])
+  refine ⟨KO.of_kr hp hk (by rw [u₆.rd, rd₅, u₄.rd, u₃.rd, rd₁])
+      (by rw [u₆.wr, wr₅, u₄.wr, u₃.wr, wr₁])
       (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl | rfl <;> exact G _ (by decide) (by decide) (by decide) (by decide)) fI,
@@ -208,11 +196,10 @@ theorem mid_ok {s : State} (hk : KR (H := H.stream) s₀ s) :
         ∀ r ∈ [(⟨inn s₀ + BitVec.ofNat 64 a, n⟩ : Region)], Region.Disjoint ⟨inn s₀, H.P.N⟩ r := fun ha hn => by
       simp only [List.mem_singleton]; rintro r rfl; exact Offset.base_disjoint _ ha (by omega_using [hn, hB, hNL])
     rw [hm, f₅.bytes (R := ⟨inn s₀, H.P.N⟩) (hd (Nat.le_refl _) (by omega)) (by show H.P.N ≤ 2 ^ 64; omega_using [hB, hNL]) hi,
-      f₂.bytes (R := ⟨inn s₀, H.P.N⟩) (hd (Nat.le_refl _) (by omega_using [hDL])) (by show H.P.N ≤ 2 ^ 64; omega_using [hB, hNL]) hi,
       m₁, writeBytes_at _ _ _ (by rw [bytesAt_length]; exact hi) (by rw [bytesAt_length]; omega_using [hB, hNL]),
       bytesAt_getD' _ _ hi]
   · -- The inner digest.
-    rw [hm, d₅, m₂, bytesAt_writeBytes_self' (bytesAt_length _ _ _) (by omega_using [hB, hDL])]
+    rw [hm, d₅]
     exact bytes_keep f₁ (by
       simp only [List.mem_singleton]; rintro r rfl
       exact (hp.i_s.sub_right tsub).symm.sub_right (Region.sub_prefix (by omega_using [hS]))) (by omega_using [hB, hDL])
