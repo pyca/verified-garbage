@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.X448.Arm.FreezePrep
-public import VerifiedGarbage.Proof.X448.Arm.Select
+import VerifiedGarbage.Proof.X448.Arm.FreezePrep
+import VerifiedGarbage.Proof.X448.Arm.Select
 public import VerifiedGarbage.Proof.X448.Arm.Env
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

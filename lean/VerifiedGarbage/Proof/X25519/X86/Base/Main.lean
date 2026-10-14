@@ -1,9 +1,9 @@
 module
 
 public import VerifiedGarbage.Impl.X25519.X86.Base
-public import VerifiedGarbage.Proof.X25519.Edwards.Ladder
-public import VerifiedGarbage.Proof.Ed25519.Bytes
-public import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseVerified
+import VerifiedGarbage.Proof.X25519.Edwards.Ladder
+import VerifiedGarbage.Proof.Ed25519.Bytes
+import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseVerified
 public import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseEntry
 public import VerifiedGarbage.Spec.X25519.Contract
 import all Init.Data.Array.Basic

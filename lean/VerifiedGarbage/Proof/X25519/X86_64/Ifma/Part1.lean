@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Lanes
-public import VerifiedGarbage.Proof.X25519.X86_64.Iter
+import VerifiedGarbage.Proof.X25519.X86_64.Iter
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

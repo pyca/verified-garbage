@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.X448.AArch64.Bits
-public import VerifiedGarbage.Proof.X448.Encoding
+import VerifiedGarbage.Proof.X448.Encoding
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

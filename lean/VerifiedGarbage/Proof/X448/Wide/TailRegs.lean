@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.X448.AArch64.Tail
-public import VerifiedGarbage.Proof.X448.Wide.TailBounds
+import VerifiedGarbage.Proof.X448.Wide.TailBounds
 public import VerifiedGarbage.Proof.X448.Wide.UnpackRegs
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

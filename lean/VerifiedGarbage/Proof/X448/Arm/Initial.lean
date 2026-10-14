@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.X448.Arm.Env
-public import VerifiedGarbage.Proof.X448.Arm.Fill
+import VerifiedGarbage.Proof.X448.Arm.Fill
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.X448.Wide.TailNormalize
-public import VerifiedGarbage.Proof.X448.Wide.Encoded
+import VerifiedGarbage.Proof.X448.Wide.TailNormalize
+import VerifiedGarbage.Proof.X448.Wide.Encoded
 public import VerifiedGarbage.Proof.X448.AArch64.Mul
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

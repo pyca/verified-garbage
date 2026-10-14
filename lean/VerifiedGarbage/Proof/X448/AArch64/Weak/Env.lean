@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Curve448.AArch64.Pointwise
-public import VerifiedGarbage.Proof.Curve448.AArch64.Square
+import VerifiedGarbage.Proof.Curve448.AArch64.Pointwise
+import VerifiedGarbage.Proof.Curve448.AArch64.Square
 public import VerifiedGarbage.Proof.Curve448.AArch64.Swap
 public import VerifiedGarbage.Proof.X448.AArch64.Env
 public import VerifiedGarbage.Impl.X448.AArch64.Weak

@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.X448.X86.Main
 meta import VerifiedGarbage.Proof.X448.X86.Main
 public import VerifiedGarbage.Proof.X448.X86.Runs
 meta import VerifiedGarbage.Proof.X448.X86.Runs
-public import VerifiedGarbage.Proof.X448.X86.Lit
+import VerifiedGarbage.Proof.X448.X86.Lit
 meta import VerifiedGarbage.Proof.X448.X86.Lit
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

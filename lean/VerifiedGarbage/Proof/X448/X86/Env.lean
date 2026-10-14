@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.X448.X86.FieldCall
-public import VerifiedGarbage.Proof.X448.X86.Copy
+import VerifiedGarbage.Proof.X448.X86.Copy
 public import VerifiedGarbage.Proof.X448.X86.Swap
 public import Mathlib.Logic.Function.Basic
 import all Init.Data.Array.Basic

@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.X448.Wide.CarryRegs
+import VerifiedGarbage.Proof.X448.Wide.CarryRegs
 public import VerifiedGarbage.Proof.X448.AArch64.Step
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

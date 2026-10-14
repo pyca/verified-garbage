@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.X448.X86.CallCT
 meta import VerifiedGarbage.Proof.X448.X86.CallCT
-public import VerifiedGarbage.Proof.X448.X86.Square
+import VerifiedGarbage.Proof.X448.X86.Square
 meta import VerifiedGarbage.Proof.X448.X86.Square
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

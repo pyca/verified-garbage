@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.AArch64.Interleave
 public import VerifiedGarbage.Proof.X448.AArch64.Fast.StepOps
-public import VerifiedGarbage.Proof.X448.AArch64.Fast.Bounds
+import VerifiedGarbage.Proof.X448.AArch64.Fast.Bounds
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

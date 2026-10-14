@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.X448.Wide.TailRegs
+import VerifiedGarbage.Proof.X448.Wide.TailRegs
 public import VerifiedGarbage.Proof.X448.Wide.CarryStep
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

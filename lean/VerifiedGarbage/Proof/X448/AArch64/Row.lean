@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.X448.AArch64.Step
 public import VerifiedGarbage.Proof.X448.Product
-public import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.Range
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

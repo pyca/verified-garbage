@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.X25519.X86_64.Base.Main
 meta import VerifiedGarbage.Proof.X25519.X86_64.Base.Main
 public import VerifiedGarbage.Proof.X25519.X86_64.Base.Lit
 meta import VerifiedGarbage.Proof.X25519.X86_64.Base.Lit
-public import VerifiedGarbage.Proof.Framework.X86_64.Syms
+import VerifiedGarbage.Proof.Framework.X86_64.Syms
 meta import VerifiedGarbage.Proof.Framework.X86_64.Syms
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

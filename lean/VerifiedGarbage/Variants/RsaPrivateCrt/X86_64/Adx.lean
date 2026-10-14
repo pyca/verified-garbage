@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Variants.RsaPublicPrecomputed.X86_64.Adx
 public import VerifiedGarbage.Proof.Rsa.X86_64.PrivImpl
 public import VerifiedGarbage.Proof.Rsa.X86_64.Calls
-public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSelV
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSelV
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtVerified
 import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.CTMain
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTExpL

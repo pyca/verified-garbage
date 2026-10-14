@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.X448.AArch64.Setup
-public import VerifiedGarbage.Proof.X448.AArch64.Output
-public import VerifiedGarbage.Proof.X448.AArch64.Freeze
+import VerifiedGarbage.Proof.X448.AArch64.Output
+import VerifiedGarbage.Proof.X448.AArch64.Freeze
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

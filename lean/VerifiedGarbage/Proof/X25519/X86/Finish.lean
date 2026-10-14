@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.X25519.X86.Setup
-public import VerifiedGarbage.Proof.X25519.X86.Invert
+import VerifiedGarbage.Proof.X25519.X86.Invert
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

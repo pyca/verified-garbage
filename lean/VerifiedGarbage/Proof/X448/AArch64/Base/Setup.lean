@@ -2,11 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.X448.AArch64.Base.Step
 public import VerifiedGarbage.Proof.X448.AArch64.Base.AddGen
-public import VerifiedGarbage.Proof.X448.AArch64.Weak.Counters
+import VerifiedGarbage.Proof.X448.AArch64.Weak.Counters
 public import VerifiedGarbage.Proof.X448.AArch64.Fast.Setup
-public import VerifiedGarbage.Proof.X448.AArch64.Fast.VSave
-public import VerifiedGarbage.Proof.X448.AArch64.Bits
-public import VerifiedGarbage.Proof.X448.AArch64.Base.Const
+import VerifiedGarbage.Proof.X448.AArch64.Fast.VSave
+import VerifiedGarbage.Proof.X448.AArch64.Bits
+import VerifiedGarbage.Proof.X448.AArch64.Base.Const
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

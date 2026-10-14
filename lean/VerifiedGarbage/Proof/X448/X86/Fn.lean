@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.X448.X86.Mul
+import VerifiedGarbage.Proof.X448.X86.Mul
 public import VerifiedGarbage.Proof.X448.X86.Small
 public import VerifiedGarbage.Proof.Framework.X86.Spill
 import all Init.Data.Array.Basic

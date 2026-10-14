@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.X448.AArch64.Finish
-public import VerifiedGarbage.Proof.X448.AArch64.Ladder
-public import VerifiedGarbage.Proof.X448.AArch64.FinalSwap
+import VerifiedGarbage.Proof.X448.AArch64.Finish
+import VerifiedGarbage.Proof.X448.AArch64.Ladder
+import VerifiedGarbage.Proof.X448.AArch64.FinalSwap
 public import VerifiedGarbage.Proof.X448.AArch64.Inv
 public import VerifiedGarbage.Spec.X448.Contract
 public import VerifiedGarbage.TCB.AArch64.Target

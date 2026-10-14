@@ -1,10 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 meta import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 public import VerifiedGarbage.Proof.X448.AArch64.Fast.Main
 meta import VerifiedGarbage.Proof.X448.AArch64.Fast.Main
-public import VerifiedGarbage.Proof.X448.AArch64.Fast.Lit
+import VerifiedGarbage.Proof.X448.AArch64.Fast.Lit
 meta import VerifiedGarbage.Proof.X448.AArch64.Fast.Lit
 public import VerifiedGarbage.Proof.Framework.AArch64.Taint
 meta import VerifiedGarbage.Proof.Framework.AArch64.Taint

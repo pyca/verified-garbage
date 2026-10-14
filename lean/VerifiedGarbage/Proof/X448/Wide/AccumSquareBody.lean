@@ -2,8 +2,8 @@ module
 
 public import VerifiedGarbage.Impl.X448.AArch64.Symmetric
 public import VerifiedGarbage.Proof.X448.Wide.LoadCached
-public import VerifiedGarbage.Proof.X448.Wide.SquareProduct
-public import VerifiedGarbage.Proof.X448.Wide.DoubleTerm
+import VerifiedGarbage.Proof.X448.Wide.SquareProduct
+import VerifiedGarbage.Proof.X448.Wide.DoubleTerm
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

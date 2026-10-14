@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.P521.Curve
+import VerifiedGarbage.Proof.P521.Curve
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvMain
 public import VerifiedGarbage.Proof.Weierstrass.InvArith
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvInterface

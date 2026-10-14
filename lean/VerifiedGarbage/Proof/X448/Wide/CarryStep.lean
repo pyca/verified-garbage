@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.X448.Wide.UnpackRegs
+import VerifiedGarbage.Proof.X448.Wide.UnpackRegs
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

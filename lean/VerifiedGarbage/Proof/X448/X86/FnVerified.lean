@@ -10,7 +10,7 @@ public import VerifiedGarbage.Proof.Framework.X86.CallWith
 meta import VerifiedGarbage.Proof.Framework.X86.CallWith
 public import VerifiedGarbage.Spec.X448.Field16
 meta import VerifiedGarbage.Spec.X448.Field16
-public import VerifiedGarbage.Proof.X448.X86.FnLit
+import VerifiedGarbage.Proof.X448.X86.FnLit
 meta import VerifiedGarbage.Proof.X448.X86.FnLit
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

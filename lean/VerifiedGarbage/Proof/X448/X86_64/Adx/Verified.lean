@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.X448.X86_64.Adx.Sqr
+import VerifiedGarbage.Proof.X448.X86_64.Adx.Sqr
 meta import VerifiedGarbage.Proof.X448.X86_64.Adx.Sqr
 public import VerifiedGarbage.Proof.X448.X86_64.Adx.Lit
 meta import VerifiedGarbage.Proof.X448.X86_64.Adx.Lit
