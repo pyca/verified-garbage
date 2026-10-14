@@ -201,6 +201,7 @@ macro_rules! streaming_hash {
                 // does not wrap around the end of the address space.
                 unsafe { $init(&mut state) };
                 let backend = $backend::select($crate::cpu::detected());
+                core::hint::black_box($crate::__placement_pad as fn(u64) -> u64);
                 $name { state, length: 0, backend }
             }
 

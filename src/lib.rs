@@ -188,3 +188,50 @@ mod tests {
         }
     }
 }
+
+/// Measurement only: code that shifts the addresses of the functions after it.
+#[doc(hidden)]
+#[inline(never)]
+pub fn __placement_pad(mut x: u64) -> u64 {
+    x = core::hint::black_box(x.wrapping_mul(0x9E3779B97F4A7C15).rotate_left(1) ^ 1);
+    x = core::hint::black_box(x.wrapping_mul(0x9E3779B97F4A7C15).rotate_left(8) ^ 19088744);
+    x = core::hint::black_box(x.wrapping_mul(0x9E3779B97F4A7C15).rotate_left(15) ^ 38177487);
+    x = core::hint::black_box(x.wrapping_mul(0x9E3779B97F4A7C15).rotate_left(22) ^ 57266230);
+    x = core::hint::black_box(x.wrapping_mul(0x9E3779B97F4A7C15).rotate_left(29) ^ 76354973);
+    x = core::hint::black_box(x.wrapping_mul(0x9E3779B97F4A7C15).rotate_left(36) ^ 95443716);
+    x = core::hint::black_box(x.wrapping_mul(0x9E3779B97F4A7C15).rotate_left(43) ^ 114532459);
+    x = core::hint::black_box(x.wrapping_mul(0x9E3779B97F4A7C15).rotate_left(50) ^ 133621202);
+    x = core::hint::black_box(x.wrapping_mul(0x9E3779B97F4A7C15).rotate_left(57) ^ 152709945);
+    x = core::hint::black_box(x.wrapping_mul(0x9E3779B97F4A7C15).rotate_left(1) ^ 171798688);
+    x = core::hint::black_box(x.wrapping_mul(0x9E3779B97F4A7C15).rotate_left(8) ^ 190887431);
+    x = core::hint::black_box(x.wrapping_mul(0x9E3779B97F4A7C15).rotate_left(15) ^ 209976174);
+    x = core::hint::black_box(x.wrapping_mul(0x9E3779B97F4A7C15).rotate_left(22) ^ 229064917);
+    x = core::hint::black_box(x.wrapping_mul(0x9E3779B97F4A7C15).rotate_left(29) ^ 248153660);
+    x = core::hint::black_box(x.wrapping_mul(0x9E3779B97F4A7C15).rotate_left(36) ^ 267242403);
+    x = core::hint::black_box(x.wrapping_mul(0x9E3779B97F4A7C15).rotate_left(43) ^ 286331146);
+    x = core::hint::black_box(x.wrapping_mul(0x9E3779B97F4A7C15).rotate_left(50) ^ 305419889);
+    x = core::hint::black_box(x.wrapping_mul(0x9E3779B97F4A7C15).rotate_left(57) ^ 324508632);
+    x = core::hint::black_box(x.wrapping_mul(0x9E3779B97F4A7C15).rotate_left(1) ^ 343597375);
+    x = core::hint::black_box(x.wrapping_mul(0x9E3779B97F4A7C15).rotate_left(8) ^ 362686118);
+    x = core::hint::black_box(x.wrapping_mul(0x9E3779B97F4A7C15).rotate_left(15) ^ 381774861);
+    x = core::hint::black_box(x.wrapping_mul(0x9E3779B97F4A7C15).rotate_left(22) ^ 400863604);
+    x = core::hint::black_box(x.wrapping_mul(0x9E3779B97F4A7C15).rotate_left(29) ^ 419952347);
+    x = core::hint::black_box(x.wrapping_mul(0x9E3779B97F4A7C15).rotate_left(36) ^ 439041090);
+    x = core::hint::black_box(x.wrapping_mul(0x9E3779B97F4A7C15).rotate_left(43) ^ 458129833);
+    x = core::hint::black_box(x.wrapping_mul(0x9E3779B97F4A7C15).rotate_left(50) ^ 477218576);
+    x = core::hint::black_box(x.wrapping_mul(0x9E3779B97F4A7C15).rotate_left(57) ^ 496307319);
+    x = core::hint::black_box(x.wrapping_mul(0x9E3779B97F4A7C15).rotate_left(1) ^ 515396062);
+    x = core::hint::black_box(x.wrapping_mul(0x9E3779B97F4A7C15).rotate_left(8) ^ 534484805);
+    x = core::hint::black_box(x.wrapping_mul(0x9E3779B97F4A7C15).rotate_left(15) ^ 553573548);
+    x = core::hint::black_box(x.wrapping_mul(0x9E3779B97F4A7C15).rotate_left(22) ^ 572662291);
+    x = core::hint::black_box(x.wrapping_mul(0x9E3779B97F4A7C15).rotate_left(29) ^ 591751034);
+    x = core::hint::black_box(x.wrapping_mul(0x9E3779B97F4A7C15).rotate_left(36) ^ 610839777);
+    x = core::hint::black_box(x.wrapping_mul(0x9E3779B97F4A7C15).rotate_left(43) ^ 629928520);
+    x = core::hint::black_box(x.wrapping_mul(0x9E3779B97F4A7C15).rotate_left(50) ^ 649017263);
+    x = core::hint::black_box(x.wrapping_mul(0x9E3779B97F4A7C15).rotate_left(57) ^ 668106006);
+    x = core::hint::black_box(x.wrapping_mul(0x9E3779B97F4A7C15).rotate_left(1) ^ 687194749);
+    x = core::hint::black_box(x.wrapping_mul(0x9E3779B97F4A7C15).rotate_left(8) ^ 706283492);
+    x = core::hint::black_box(x.wrapping_mul(0x9E3779B97F4A7C15).rotate_left(15) ^ 725372235);
+    x = core::hint::black_box(x.wrapping_mul(0x9E3779B97F4A7C15).rotate_left(22) ^ 744460978);
+    x
+}
