@@ -10,6 +10,10 @@ import VerifiedGarbage.Proof.MillerRabin.X86_64.EntrySaved
 import VerifiedGarbage.Proof.MillerRabin.X86_64.StackCall
 import VerifiedGarbage.Proof.MillerRabin.X86_64.StackPrepared
 import VerifiedGarbage.Proof.MillerRabin.X86_64.StageContext
+import VerifiedGarbage.Proof.MillerRabin.X86_64.Correct
+import VerifiedGarbage.Proof.MillerRabin.X86_64.FramedCall
+import VerifiedGarbage.Proof.MillerRabin.X86_64.BodyCT
+import VerifiedGarbage.Proof.MillerRabin.X86_64.StackRegions
 import VerifiedGarbage.TCB.Axioms
 
 /-! Audit wrapper lemmas before the callable artifacts are registered. -/
@@ -33,3 +37,8 @@ import VerifiedGarbage.TCB.Axioms
 #assert_standard_axioms VG.Proof.MillerRabin.X86_64.entered_ctx
 #assert_standard_axioms VG.Proof.MillerRabin.X86_64.entered_exp
 #assert_standard_axioms VG.Proof.MillerRabin.X86_64.staged_context
+
+#assert_standard_axioms VG.Proof.MillerRabin.X86_64.round_correct
+#assert_standard_axioms VG.Proof.MillerRabin.X86_64.framed_call_ok
+#assert_standard_axioms VG.Proof.MillerRabin.X86_64.body_ct
+#assert_standard_axioms VG.Proof.MillerRabin.X86_64.entered_kw
