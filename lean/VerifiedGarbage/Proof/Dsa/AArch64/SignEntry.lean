@@ -8,6 +8,9 @@ import all Init.Data.Vector.Basic
 import Mathlib.Data.Int.ModEq
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.AArch64.Call
+public import VerifiedGarbage.Impl.Dsa.AArch64.SignVerify
+import VerifiedGarbage.Proof.Dsa.AArch64.EntryFieldsFrame
+import VerifiedGarbage.Proof.Dsa.Layout
 
 /-! # Complete AAPCS64 entry for a DSA signing attempt -/
 

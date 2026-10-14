@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.ReduceSetupCT
 meta import VerifiedGarbage.Proof.Dsa.AArch64.ReduceSetupCT
-public import VerifiedGarbage.Proof.Dsa.AArch64.ReduceInitCT
+import VerifiedGarbage.Proof.Dsa.AArch64.ReduceInitCT
 meta import VerifiedGarbage.Proof.Dsa.AArch64.ReduceInitCT
 public import VerifiedGarbage.Proof.Dsa.AArch64.ReduceLoopCT
 meta import VerifiedGarbage.Proof.Dsa.AArch64.ReduceLoopCT

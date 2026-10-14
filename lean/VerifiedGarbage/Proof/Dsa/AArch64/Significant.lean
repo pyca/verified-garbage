@@ -1,13 +1,14 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.AArch64.Checks
-public import VerifiedGarbage.Proof.Dsa.DomainShape
+import VerifiedGarbage.Proof.Dsa.DomainShape
 public import VerifiedGarbage.Proof.Dsa.AArch64.ReduceCount
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.MdStream.Spec
 
 /-! # First-nonzero selection in the public modulus-width scan -/
 

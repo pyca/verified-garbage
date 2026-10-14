@@ -2,13 +2,15 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleReduceCT
 public import VerifiedGarbage.Proof.Dsa.AArch64.ReadyRangeCT
-public import VerifiedGarbage.Proof.Dsa.AArch64.ReadyByteChecksCT
+import VerifiedGarbage.Proof.Dsa.AArch64.ReadyByteChecksCT
 public import VerifiedGarbage.Proof.Dsa.AArch64.ReadyMinusCT
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.MdStream.Spec
+import VerifiedGarbage.Spec.RsaPss
 
 /-! # Validation timing steps that preserve the complete schedule state -/
 

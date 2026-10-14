@@ -8,6 +8,7 @@ import all Init.Data.Vector.Basic
 import Mathlib.Data.Int.ModEq
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Dsa.Layout
 
 /-! # Saved arguments and the memory footprint of DSA entry stores -/
 

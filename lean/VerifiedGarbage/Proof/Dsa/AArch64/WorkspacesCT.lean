@@ -12,6 +12,8 @@ public import VerifiedGarbage.Proof.Dsa.Layout
 import VerifiedGarbage.Proof.Framework.AArch64.Call
 meta import VerifiedGarbage.Proof.Dsa.Layout
 meta import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.MdStream.Spec
+meta import VerifiedGarbage.Proof.MdStream.Spec
 
 /-! # Constant time of initializing both Montgomery workspaces -/
 

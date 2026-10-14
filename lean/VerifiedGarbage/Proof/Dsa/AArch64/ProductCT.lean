@@ -7,6 +7,7 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Spec.Dsa
 
 /-! # Constant time of DSA's ordinary modular product -/
 

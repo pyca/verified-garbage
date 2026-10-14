@@ -14,6 +14,12 @@ import VerifiedGarbage.Proof.Framework.AArch64.Call
 meta import VerifiedGarbage.Proof.Dsa.AArch64.ChildBases
 meta import VerifiedGarbage.Proof.Dsa.AArch64.ChildCount
 meta import VerifiedGarbage.Proof.Framework.AArch64.Call
+public import VerifiedGarbage.Proof.Dsa.AArch64.InitInverse
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTSetupLoad
+import VerifiedGarbage.Spec.Dsa.SignVerify
+meta import VerifiedGarbage.Proof.Dsa.AArch64.InitInverse
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTSetupLoad
+meta import VerifiedGarbage.Spec.Dsa.SignVerify
 
 /-! # Constant time of creating and initializing a modulus workspace -/
 

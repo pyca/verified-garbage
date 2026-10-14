@@ -6,6 +6,9 @@ import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.AArch64.Call
+import Mathlib.Basic.IsEmpty.Basic
+import VerifiedGarbage.Proof.Dsa.SizeBounds
+import VerifiedGarbage.Proof.MdStream.Spec
 
 /-! # The verification mask implements the packed DSA verification spec -/
 

@@ -10,6 +10,10 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.AArch64.Call
 meta import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.MdStream.Spec
+import VerifiedGarbage.Spec.RsaPss
+meta import VerifiedGarbage.Proof.MdStream.Spec
+meta import VerifiedGarbage.Spec.RsaPss
 
 /-! # Timing of one public modulus-width scan byte -/
 

@@ -1,15 +1,18 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Modulus
-public import VerifiedGarbage.Proof.Dsa.AArch64.Range
+import VerifiedGarbage.Proof.Dsa.AArch64.Range
 public import VerifiedGarbage.Proof.Dsa.AArch64.IsOne
-public import VerifiedGarbage.Proof.Dsa.AArch64.Zero
-public import VerifiedGarbage.Proof.Dsa.AArch64.Equal
+import VerifiedGarbage.Proof.Dsa.AArch64.Zero
+import VerifiedGarbage.Proof.Dsa.AArch64.Equal
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Dsa.Layout
+import VerifiedGarbage.Proof.MdStream.Spec
+import VerifiedGarbage.Spec.RsaPss
 
 /-! # Preserving both DSA arithmetic contexts across validation checks -/
 

@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Dsa.AArch64.Run
 public import VerifiedGarbage.Impl.Dsa.AArch64.Arithmetic
 public import VerifiedGarbage.Proof.Dsa.Digest
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtFrame
-public import VerifiedGarbage.Proof.Bignum.AArch64.Store
+import VerifiedGarbage.Proof.Bignum.AArch64.Store
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

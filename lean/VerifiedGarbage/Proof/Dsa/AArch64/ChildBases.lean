@@ -8,6 +8,7 @@ import all Init.Data.Vector.Basic
 import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Bignum.AArch64.Setup
 
 /-! # Constructing a child workspace header before loading its modulus -/
 

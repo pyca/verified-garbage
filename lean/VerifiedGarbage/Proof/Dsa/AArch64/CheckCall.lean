@@ -1,13 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.MaskContext
-public import VerifiedGarbage.Proof.Dsa.AArch64.CallHeader
+import VerifiedGarbage.Proof.Dsa.AArch64.CallHeader
 public import VerifiedGarbage.Proof.Dsa.AArch64.CheckFrame
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Spec.Dsa.SignVerify
 
 /-! # Returning DSA validation predicates through the parent workspace -/
 

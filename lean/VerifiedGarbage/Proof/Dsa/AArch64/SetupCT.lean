@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.Setup
+import VerifiedGarbage.Proof.Dsa.AArch64.Setup
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Setup
 public import VerifiedGarbage.Proof.Dsa.AArch64.ProductCT
 meta import VerifiedGarbage.Proof.Dsa.AArch64.ProductCT
@@ -14,6 +14,8 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.AArch64.Call
 meta import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Spec.Dsa
+meta import VerifiedGarbage.Spec.Dsa
 
 /-! # Constant-time Montgomery constants for padded DSA moduli -/
 

@@ -7,6 +7,8 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Spec.Dsa.SignVerify
 import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Dsa.AArch64.Run
+import VerifiedGarbage.Proof.MdStream.Spec
 
 /-! # Public shape acceptance and early rejection in the DSA specification -/
 

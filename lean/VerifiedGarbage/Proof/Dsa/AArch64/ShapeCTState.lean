@@ -8,6 +8,9 @@ import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Dsa.AArch64.ScanField
+import VerifiedGarbage.Proof.MdStream.Spec
+import VerifiedGarbage.Spec.Dsa.SignVerify
 
 /-! # Public state carried through DSA domain-shape validation -/
 

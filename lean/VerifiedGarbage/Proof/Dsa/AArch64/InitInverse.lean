@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.Parent
+import VerifiedGarbage.Proof.Dsa.AArch64.Parent
 public import VerifiedGarbage.Proof.Bignum.AArch64.Setup
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

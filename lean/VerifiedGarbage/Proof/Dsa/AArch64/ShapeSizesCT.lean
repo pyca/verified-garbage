@@ -2,9 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.ShapeCTState
 meta import VerifiedGarbage.Proof.Dsa.AArch64.ShapeCTState
-public import VerifiedGarbage.Proof.Dsa.AArch64.WidthChoiceCT
+import VerifiedGarbage.Proof.Dsa.AArch64.WidthChoiceCT
 meta import VerifiedGarbage.Proof.Dsa.AArch64.WidthChoiceCT
-public import VerifiedGarbage.Proof.Dsa.AArch64.CTBlocks
+import VerifiedGarbage.Proof.Dsa.AArch64.CTBlocks
 meta import VerifiedGarbage.Proof.Dsa.AArch64.CTBlocks
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
@@ -14,6 +14,10 @@ public import VerifiedGarbage.Proof.Dsa.AArch64.ShapeSizes
 import VerifiedGarbage.Proof.Framework.AArch64.Call
 meta import VerifiedGarbage.Proof.Dsa.AArch64.ShapeSizes
 meta import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.MdStream.Spec
+import VerifiedGarbage.Spec.Dsa.SignVerify
+meta import VerifiedGarbage.Proof.MdStream.Spec
+meta import VerifiedGarbage.Spec.Dsa.SignVerify
 
 /-! # Constant time of both public width scans and size selection -/
 

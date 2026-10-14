@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.LoadCheckCT
 meta import VerifiedGarbage.Proof.Dsa.AArch64.LoadCheckCT
-public import VerifiedGarbage.Proof.Dsa.AArch64.OneScan
+import VerifiedGarbage.Proof.Dsa.AArch64.OneScan
 meta import VerifiedGarbage.Proof.Dsa.AArch64.OneScan
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
@@ -10,6 +10,10 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.AArch64.Call
 meta import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTRedc
+import VerifiedGarbage.Spec.Dsa.SignVerify
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTRedc
+meta import VerifiedGarbage.Spec.Dsa.SignVerify
 
 /-! # Fixed-trace subgroup result checks -/
 @[expose] public section

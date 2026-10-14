@@ -1,8 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Backend
-public import VerifiedGarbage.Proof.Dsa.AArch64.VerifyingVerified
+import VerifiedGarbage.Proof.Dsa.AArch64.VerifyingVerified
 import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Dsa.AArch64.EqualCT
+import VerifiedGarbage.Proof.Dsa.AArch64.ReadyMinusCT
+import VerifiedGarbage.Proof.Dsa.AArch64.ReadyRangeCT
+import VerifiedGarbage.Proof.Dsa.AArch64.ZeroCT
+import VerifiedGarbage.Proof.MdStream.Spec
 
 /-! # DSA signing and verification for every AArch64 arithmetic backend -/
 

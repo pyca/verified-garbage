@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.ProductCallCT
 meta import VerifiedGarbage.Proof.Dsa.AArch64.ProductCallCT
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTRedc
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTRedc
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTRedc
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

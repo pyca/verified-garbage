@@ -8,6 +8,9 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtSel
 import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Dsa.Layout
+import VerifiedGarbage.Proof.MdStream.Spec
+import VerifiedGarbage.Spec.RsaPss
 
 /-! # Release both signature scalars, or zero the complete output -/
 

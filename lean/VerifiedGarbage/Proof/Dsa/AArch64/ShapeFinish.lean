@@ -6,6 +6,8 @@ import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.AArch64.Call
+import Mathlib.Order.Lattice
+import VerifiedGarbage.Spec.Dsa.SignVerify
 
 /-! # Digest-prefix selection and the public domain-check result -/
 

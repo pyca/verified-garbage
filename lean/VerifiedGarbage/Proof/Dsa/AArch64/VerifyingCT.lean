@@ -8,6 +8,16 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.AArch64.Call
 meta import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Dsa.AArch64.EqualCT
+import VerifiedGarbage.Proof.Dsa.AArch64.ReadyMinusCT
+import VerifiedGarbage.Proof.Dsa.AArch64.ReadyRangeCT
+import VerifiedGarbage.Proof.Dsa.AArch64.ZeroCT
+import VerifiedGarbage.Proof.MdStream.Spec
+meta import VerifiedGarbage.Proof.Dsa.AArch64.EqualCT
+meta import VerifiedGarbage.Proof.Dsa.AArch64.ReadyMinusCT
+meta import VerifiedGarbage.Proof.Dsa.AArch64.ReadyRangeCT
+meta import VerifiedGarbage.Proof.Dsa.AArch64.ZeroCT
+meta import VerifiedGarbage.Proof.MdStream.Spec
 
 /-! # Constant time of the complete verifying entry point -/
 

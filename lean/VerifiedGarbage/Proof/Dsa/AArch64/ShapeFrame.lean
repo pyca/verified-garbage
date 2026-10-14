@@ -6,6 +6,8 @@ import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.AArch64.Call
+import Mathlib.Order.RelClasses
+import VerifiedGarbage.Proof.Dsa.Layout
 
 /-! # Memory changed by the public DSA domain-shape check -/
 

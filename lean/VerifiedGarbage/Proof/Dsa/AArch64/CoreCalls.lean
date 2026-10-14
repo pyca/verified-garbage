@@ -1,13 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Call
-public import VerifiedGarbage.Proof.Dsa.AArch64.Power
-public import VerifiedGarbage.Proof.Dsa.AArch64.Multiply
+import VerifiedGarbage.Proof.Dsa.AArch64.Power
+import VerifiedGarbage.Proof.Dsa.AArch64.Multiply
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Spec.Dsa.SignVerify
 
 /-! # Exponentiation and multiplication in the DSA parent workspace -/
 

@@ -14,6 +14,10 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.AArch64.Call
 meta import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Dsa.AArch64.EncodePower
+import VerifiedGarbage.Proof.Dsa.AArch64.Exponent
+meta import VerifiedGarbage.Proof.Dsa.AArch64.EncodePower
+meta import VerifiedGarbage.Proof.Dsa.AArch64.Exponent
 
 /-! # Constant-time components of DSA exponentiation -/
 

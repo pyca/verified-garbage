@@ -1,12 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.VerifyingABIPre
-public import VerifiedGarbage.Proof.Dsa.AArch64.PublicSlices
+import VerifiedGarbage.Proof.Dsa.AArch64.PublicSlices
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Dsa.AArch64.EqualCT
+import VerifiedGarbage.Proof.Dsa.AArch64.ReadyMinusCT
+import VerifiedGarbage.Proof.Dsa.AArch64.ReadyRangeCT
+import VerifiedGarbage.Proof.Dsa.AArch64.ZeroCT
+import VerifiedGarbage.Proof.MdStream.Spec
 
 /-! # Only the verifying ABI's declared public observations determine its schedule -/
 

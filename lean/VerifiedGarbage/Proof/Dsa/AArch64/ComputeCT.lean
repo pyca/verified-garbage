@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.PublicKeyCT
+import VerifiedGarbage.Proof.Dsa.AArch64.PublicKeyCT
 meta import VerifiedGarbage.Proof.Dsa.AArch64.PublicKeyCT
-public import VerifiedGarbage.Proof.Dsa.AArch64.PrivateKeyCT
+import VerifiedGarbage.Proof.Dsa.AArch64.PrivateKeyCT
 meta import VerifiedGarbage.Proof.Dsa.AArch64.PrivateKeyCT
 public import VerifiedGarbage.Proof.Dsa.AArch64.CoreSignCT
 meta import VerifiedGarbage.Proof.Dsa.AArch64.CoreSignCT
@@ -18,6 +18,14 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.AArch64.Call
 meta import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Dsa.AArch64.EqualCT
+import VerifiedGarbage.Proof.Dsa.AArch64.ZeroCT
+import VerifiedGarbage.Proof.MdStream.Spec
+import VerifiedGarbage.Spec.RsaPss
+meta import VerifiedGarbage.Proof.Dsa.AArch64.EqualCT
+meta import VerifiedGarbage.Proof.Dsa.AArch64.ZeroCT
+meta import VerifiedGarbage.Proof.MdStream.Spec
+meta import VerifiedGarbage.Spec.RsaPss
 
 /-! # Constant time of validation and signing/verification together -/
 

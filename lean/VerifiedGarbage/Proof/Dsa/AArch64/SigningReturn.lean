@@ -1,12 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.SigningInitialize
-public import VerifiedGarbage.Proof.Dsa.AArch64.Failure
+import VerifiedGarbage.Proof.Dsa.AArch64.Failure
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.MdStream.Spec
 
 /-! # Both signing branches return the packed byte specification -/
 

@@ -7,6 +7,8 @@ import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Dsa.AArch64.Run
+import VerifiedGarbage.Spec.Dsa.SignVerify
 
 /-! # Composition of domain masks, parity, and digest-prefix selection -/
 

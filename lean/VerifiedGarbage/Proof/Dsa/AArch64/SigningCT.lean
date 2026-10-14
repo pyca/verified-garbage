@@ -6,6 +6,11 @@ import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Dsa.AArch64.EqualCT
+import VerifiedGarbage.Proof.Dsa.AArch64.ReadyMinusCT
+import VerifiedGarbage.Proof.Dsa.AArch64.ReadyRangeCT
+import VerifiedGarbage.Proof.Dsa.AArch64.ZeroCT
+import VerifiedGarbage.Proof.MdStream.Spec
 
 /-! # Constant time of the complete signing entry point -/
 

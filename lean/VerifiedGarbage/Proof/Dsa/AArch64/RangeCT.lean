@@ -10,6 +10,8 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.AArch64.Call
 meta import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Spec.Dsa.SignVerify
+meta import VerifiedGarbage.Spec.Dsa.SignVerify
 
 /-! # Fixed-trace scalar range scans -/
 @[expose] public section

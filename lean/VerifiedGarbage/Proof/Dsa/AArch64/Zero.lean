@@ -1,14 +1,17 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.ZeroHead
-public import VerifiedGarbage.Proof.Dsa.AArch64.ZeroLoop
-public import VerifiedGarbage.Proof.Dsa.AArch64.ZeroMask
+import VerifiedGarbage.Proof.Dsa.AArch64.ZeroHead
+import VerifiedGarbage.Proof.Dsa.AArch64.ZeroLoop
+import VerifiedGarbage.Proof.Dsa.AArch64.ZeroMask
 public import VerifiedGarbage.Proof.Dsa.AArch64.MaskContext
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.MdStream.Spec
+import VerifiedGarbage.Spec.Dsa.SignVerify
+import VerifiedGarbage.Spec.RsaPss
 
 /-! # Complete byte-buffer zero and nonzero checks -/
 

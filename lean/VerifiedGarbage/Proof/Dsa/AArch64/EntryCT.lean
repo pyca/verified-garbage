@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.EntryScratch
+import VerifiedGarbage.Proof.Dsa.AArch64.EntryScratch
 meta import VerifiedGarbage.Proof.Dsa.AArch64.EntryScratch
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTDefs
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTDefs
@@ -10,6 +10,10 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.AArch64.Call
 meta import VerifiedGarbage.Proof.Framework.AArch64.Call
+public import VerifiedGarbage.Impl.Dsa.AArch64.SignVerify
+import VerifiedGarbage.Spec.Dsa.SignVerify
+meta import VerifiedGarbage.Impl.Dsa.AArch64.SignVerify
+meta import VerifiedGarbage.Spec.Dsa.SignVerify
 
 /-! # Constant-time argument capture and packed-key pointer setup -/
 

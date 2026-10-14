@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Prepare
-public import VerifiedGarbage.Proof.Dsa.AArch64.Exponent
-public import VerifiedGarbage.Proof.Dsa.AArch64.EncodePower
+import VerifiedGarbage.Proof.Dsa.AArch64.Exponent
+import VerifiedGarbage.Proof.Dsa.AArch64.EncodePower
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

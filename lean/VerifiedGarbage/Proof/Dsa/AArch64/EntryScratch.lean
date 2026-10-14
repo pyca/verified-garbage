@@ -1,12 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.EntryFieldsFrame
+import VerifiedGarbage.Proof.Dsa.AArch64.EntryFieldsFrame
 public import VerifiedGarbage.Proof.Bignum.AArch64.PdCode
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Spec.Dsa.SignVerify
 
 /-! # Loading caller scratch from the AAPCS64 stack argument area -/
 @[expose] public section
