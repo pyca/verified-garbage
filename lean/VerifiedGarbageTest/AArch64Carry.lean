@@ -49,6 +49,19 @@ theorem high_product :
     result (.umulh .x0 .x0 .x1) 0x8000000000000000 2 true = some (1, true) ∧
     result (.umulh .x0 .x0 .x1) 0xffffffff 0xffffffff false = some (0, false) := by decide
 
+-- UMADDL and UMULL multiply the low 32 bits of their W operands (the upper
+-- halves are ignored), zero-extended, add the X addend modulo 2^64, and keep
+-- the carry.
+theorem long_product :
+    result (.umaddl .x0 .x0 .x1 .x1) 0x12345678ffffffff 0xabcdef0100000002 true =
+      some (0xabcdef0300000000, true) ∧
+    result (.umull .x0 .x0 .x1) 0x12345678ffffffff 0xabcdef0100000002 false =
+      some (0x1fffffffe, false) ∧
+    result (.umaddl .x0 .x0 .x1 .x1) 0xffffffffffffffff 0xffffffffffffffff false =
+      some (0xfffffffe00000000, false) ∧
+    result (.umull .x0 .x0 .x1) 0xffffffffffffffff 0xffffffffffffffff true =
+      some (0xfffffffe00000001, true) := by decide
+
 -- Non-flag-setting arithmetic must not destroy a carry between limbs.
 theorem carry_preserved :
     result (.add .x .x0 .x0 .x1) 1 1 true = some (2, true) ∧
@@ -78,14 +91,18 @@ theorem veneer_unknowns (s : State) (n : Nat) :
 #guard Instr.asm (.subs .w .x0 .x1 .x2) == ["subs w0, w1, w2"]
 #guard Instr.asm (.sbcs .x .x0 .x1 .x2) == ["sbcs x0, x1, x2"]
 #guard Instr.asm (.umulh .x0 .x1 .x2) == ["umulh x0, x1, x2"]
+#guard Instr.asm (.umaddl .x0 .x1 .x2 .x3) == ["umaddl x0, w1, w2, x3"]
+#guard Instr.asm (.umull .x0 .x1 .x2) == ["umull x0, w1, w2"]
 
 #guard ([Instr.adds .x .x0 .x1 .x2, .adcs .w .x0 .x1 .x2, .subs .w .x0 .x1 .x2,
-  .sbcs .x .x0 .x1 .x2, .umulh .x0 .x1 .x2].all (·.requires.isEmpty))
+  .sbcs .x .x0 .x1 .x2, .umulh .x0 .x1 .x2, .umaddl .x0 .x1 .x2 .x3,
+  .umull .x0 .x1 .x2].all (·.requires.isEmpty))
 
 #assert_standard_axioms carry64
 #assert_standard_axioms borrow64
 #assert_standard_axioms word32
 #assert_standard_axioms high_product
+#assert_standard_axioms long_product
 #assert_standard_axioms carry_preserved
 #assert_standard_axioms two_limb_chains
 #assert_standard_axioms veneer_carry

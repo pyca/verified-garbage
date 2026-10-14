@@ -73,7 +73,7 @@ theorem pop_mono {τ σ τ' : T} (i : Instr) (h : τ.subset σ = true) (hs : Tai
 /-- The general-purpose register an instruction writes, if any. -/
 def gprDst : Instr → Option Reg
   | .add _ d .. | .sub _ d .. | .adds _ d .. | .subs _ d .. | .logic _ _ d .. | .logicRor _ _ d ..
-  | .bicRor _ d .. | .extr _ d .. | .mul _ d .. | .umulh d .. | .adcs _ d .. | .sbcs _ d ..
+  | .bicRor _ d .. | .extr _ d .. | .mul _ d .. | .umulh d .. | .umaddl d .. | .umull d .. | .adcs _ d .. | .sbcs _ d ..
   | .adc _ d .. | .sbc _ d .. | .csel _ d .. | .cselc _ d .. | .csneg _ d .. | .adrSym d _
   | .madd _ d .. | .addImm _ d .. | .subImm _ d .. | .ror _ d .. | .lsr _ d .. | .lsl _ d ..
   | .rev32 d _ | .rev d _ | .addSp d _ | .movz _ d .. | .movk _ d .. | .ldr _ d .. | .ldrb d ..

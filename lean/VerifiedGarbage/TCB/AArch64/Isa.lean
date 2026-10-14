@@ -52,12 +52,15 @@ Modelling choices:
   within `wr`; otherwise the instruction faults. Memory is little-endian.
 * Instructions whose timing depends on their operands (e.g. `udiv`) must never
   be added: the constant-time leakage model assumes they do not exist. The
-  multiplies (`madd`, `mul`) and the shifts (`lsl`, `lsr`: UBFM) are among the
+  multiplies (`madd`, `mul`, `umaddl`, `umull`) and the shifts (`lsl`, `lsr`: UBFM) are among the
   data-processing instructions that Arm specifies to take a time independent
   of their data when PSTATE.DIT is 1 (DDI 0487, "About PSTATE.DIT", FEAT_DIT,
   which lists MADD and UBFM, as it does the other modelled data-processing
   instructions that read a register: ADD, SUB, AND, BIC, EOR, ORR, EXTR, REV and
-  MOVK, ADDS, ADCS, SUBS, SBCS, ADC, SBC, CSEL, CSNEG, CCMP, TST and UMULH). The code does not set PSTATE.DIT,
+  MOVK, ADDS, ADCS, SUBS, SBCS, ADC, SBC, CSEL, CSNEG, CCMP, TST and UMULH; the
+  description of UMADDL, of which UMULL is an alias, says "This instruction is a
+  data-independent-time instruction as described in About PSTATE.DIT": DDI
+  0602, A64 ISA XML 2025-12, `umaddl.xml`). The code does not set PSTATE.DIT,
   for these as for the others.
 * Calls are `bl` and returns `ret` (DDI 0487, C6.2 "BL", "RET"). The return
   addresses are the next of the state's `unknowns`, which nothing constrains
@@ -408,6 +411,12 @@ inductive Instr
   | mul (sz : Size) (d n m : Reg)
   /-- UMULH: bits 127:64 of the unsigned 64-by-64-bit product. -/
   | umulh (d n m : Reg)
+  /-- `umaddl xd, wn, wm, xa` (UMADDL): `a + n<31:0> * m<31:0>`, the
+  product of the low 32 bits of `n` and `m`, zero-extended, modulo `2 ^ 64` -/
+  | umaddl (d n m a : Reg)
+  /-- `umull xd, wn, wm` (UMULL, the alias of UMADDL with the zero register as
+  the addend): `n<31:0> * m<31:0>`, zero-extended -/
+  | umull (d n m : Reg)
   /-- `rev wd, wn` (REV, 32-bit): reverse the bytes of the low 32 bits -/
   | rev32 (d n : Reg)
   /-- `rev xd, xn` (REV, 64-bit): reverse the bytes of all 64 bits -/
@@ -975,6 +984,14 @@ def exec : Instr → State → Option State
   -- DDI 0487 C6.2, UMULH: UInt(X[n]) * UInt(X[m]), bits 127:64.
   | .umulh d n m, s =>
     some (s.write .x d (BitVec.ofNat 64 ((s.gpr n).toNat * (s.gpr m).toNat / 2 ^ 64)))
+  -- DDI 0602 (A64 ISA XML 2025-12), UMADDL: operand1 = X(n)<31:0>,
+  -- operand2 = X(m)<31:0>, operand3 = X(a); result = UInt(operand3) +
+  -- UInt(operand1) * UInt(operand2); X(d) = result<63:0>. UMULL is UMADDL
+  -- with Ra = XZR (operand3 = 0).
+  | .umaddl d n m a, s =>
+    some (s.write .x d (s.gpr a + (s.read .w n).setWidth 64 * (s.read .w m).setWidth 64))
+  | .umull d n m, s =>
+    some (s.write .x d ((s.read .w n).setWidth 64 * (s.read .w m).setWidth 64))
   | .rev32 d n, s => some (s.write .w d (rev32 (s.read .w n)))
   | .rev d n, s => some (s.write .x d (rev64 (s.read .x n)))
   | .movz sz d imm hw, s =>

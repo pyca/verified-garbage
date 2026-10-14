@@ -48,7 +48,7 @@ can share this result between checks of the instruction from different taints. -
 def stepFn : Instr → Step
   | .add _ d n m | .sub _ d n m | .adds _ d n m | .subs _ d n m
   | .logic _ _ d n m | .logicRor _ _ d n m _ | .bicRor _ d n m _ | .extr _ d n m _
-  | .mul _ d n m | .umulh d n m => ⟨fun τ =>
+  | .mul _ d n m | .umulh d n m | .umull d n m => ⟨fun τ =>
     some (set τ d (pub τ n && pub τ m))⟩
   -- This register-only domain conservatively treats the carry as secret.
   | .adcs _ d _ _ | .sbcs _ d _ _ | .adc _ d _ _ | .sbc _ d _ _ | .csel _ d _ _
@@ -59,6 +59,7 @@ def stepFn : Instr → Step
   -- Nor does it track the addresses of statics.
   | .adrSym d _ => ⟨fun τ => some (set τ d false)⟩
   | .madd _ d n m a => ⟨fun τ => some (set τ d (pub τ n && pub τ m && pub τ a))⟩
+  | .umaddl d n m a => ⟨fun τ => some (set τ d (pub τ n && pub τ m && pub τ a))⟩
   | .addImm _ d n _ | .subImm _ d n _ | .ror _ d n _ | .lsr _ d n _ | .lsl _ d n _ | .rev32 d n
   | .rev d n => ⟨fun τ => some (set τ d (pub τ n))⟩
   | .addSp d _ | .movz _ d _ _ => ⟨fun τ => some (set τ d true)⟩
@@ -160,6 +161,18 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     refine ⟨rfl, ha.write .x d fun hp => ?_⟩
     simp only [Bool.and_eq_true] at hp
     rw [ha.reg hp.1, ha.reg hp.2]
+  | umull d n m =>
+    simp only [step, stepFn, Option.some.injEq] at hs; subst hs
+    simp only [exec, Option.some.injEq] at e₁ e₂; subst e₁ e₂
+    refine ⟨rfl, ha.write .x d fun hp => ?_⟩
+    simp only [Bool.and_eq_true] at hp
+    rw [ha.read hp.1, ha.read hp.2]
+  | umaddl d n m a =>
+    simp only [step, stepFn, Option.some.injEq] at hs; subst hs
+    simp only [exec, Option.some.injEq] at e₁ e₂; subst e₁ e₂
+    refine ⟨rfl, ha.write .x d fun hp => ?_⟩
+    simp only [Bool.and_eq_true] at hp
+    rw [ha.reg hp.2, ha.read hp.1.1, ha.read hp.1.2]
   | logic op sz d n m =>
     simp only [step, stepFn, Option.some.injEq] at hs; subst hs
     simp only [exec, Option.some.injEq] at e₁ e₂; subst e₁ e₂
