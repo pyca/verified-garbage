@@ -2,11 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.Ed25519.X86.PointCTBlocks
 meta import VerifiedGarbage.Proof.Ed25519.X86.PointCTBlocks
-public import VerifiedGarbage.Proof.Ed25519.X86.PointPowersLoop
+import VerifiedGarbage.Proof.Ed25519.X86.PointPowersLoop
 meta import VerifiedGarbage.Proof.Ed25519.X86.PointPowersLoop
 public import VerifiedGarbage.Proof.Ed25519.X86.PointMulCounter
 meta import VerifiedGarbage.Proof.Ed25519.X86.PointMulCounter
-public import VerifiedGarbage.Proof.Ed25519.X86.PointMul
+import VerifiedGarbage.Proof.Ed25519.X86.PointMul
 meta import VerifiedGarbage.Proof.Ed25519.X86.PointMul
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

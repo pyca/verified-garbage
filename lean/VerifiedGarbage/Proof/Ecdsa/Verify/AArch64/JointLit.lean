@@ -4,17 +4,17 @@ public import VerifiedGarbage.Proof.Framework.AArch64.Lit
 meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
 public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.Joint
 meta import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.Joint
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointLit.CachedHead
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointLit.CachedHead
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointLit.CachedHead
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointLit.CachedTail
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointLit.CachedTail
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointLit.CachedTail
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointLit.DoubleRR
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointLit.DoubleRR
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointLit.DoubleRR
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointLit.MixedAdd
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointLit.MixedAdd
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointLit.MixedAdd
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointLit.TableHead
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointLit.TableHead
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointLit.TableHead
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointLit.TableTail
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointLit.TableTail
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointLit.TableTail
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

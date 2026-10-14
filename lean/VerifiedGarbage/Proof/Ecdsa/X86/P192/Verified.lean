@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Framework.NativeTaint
 meta import VerifiedGarbage.Proof.Framework.NativeTaint
 public import VerifiedGarbage.Proof.Ecdsa.X86.Main
 meta import VerifiedGarbage.Proof.Ecdsa.X86.Main
-public import VerifiedGarbage.Proof.Weierstrass.X86.MontP192
+import VerifiedGarbage.Proof.Weierstrass.X86.MontP192
 meta import VerifiedGarbage.Proof.Weierstrass.X86.MontP192
 public import VerifiedGarbage.Proof.Ecdsa.X86.P192.Contract
 meta import VerifiedGarbage.Proof.Ecdsa.X86.P192.Contract

@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.X86.CombStepCT
+import VerifiedGarbage.Proof.Ecdsa.X86.CombStepCT
 meta import VerifiedGarbage.Proof.Ecdsa.X86.CombStepCT
 public import VerifiedGarbage.Proof.Ecdsa.X86.CombFinishCT
 meta import VerifiedGarbage.Proof.Ecdsa.X86.CombFinishCT

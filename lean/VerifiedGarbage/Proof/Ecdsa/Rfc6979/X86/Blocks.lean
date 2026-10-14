@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Copy
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Hmac
-public import VerifiedGarbage.Proof.Weierstrass.Words32
+import VerifiedGarbage.Proof.Weierstrass.Words32
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

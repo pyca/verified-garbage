@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Impl.Ed25519.X86.Verify
-public import VerifiedGarbage.Proof.Ed25519.X86.PointTable
-public import VerifiedGarbage.Proof.Ed25519.X86.PrepareAdd
+import VerifiedGarbage.Proof.Ed25519.X86.PointTable
+import VerifiedGarbage.Proof.Ed25519.X86.PrepareAdd
 public import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseMain
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

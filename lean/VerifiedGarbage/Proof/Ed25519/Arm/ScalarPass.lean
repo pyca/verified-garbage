@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Ed25519.Scalar
+import VerifiedGarbage.Proof.Ed25519.Scalar
 public import VerifiedGarbage.Proof.X25519.Arm.Limbs
 public import VerifiedGarbage.Impl.Ed25519.Arm.Scalar
 public import VerifiedGarbage.Proof.Ed25519.Arm.Field

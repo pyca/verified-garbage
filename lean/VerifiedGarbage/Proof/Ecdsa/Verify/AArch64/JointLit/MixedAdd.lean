@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.AArch64.Lit
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointLit.Double
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointLit.Program
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointLit.Program
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticMixedHead
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticMixedTail
 public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.Joint

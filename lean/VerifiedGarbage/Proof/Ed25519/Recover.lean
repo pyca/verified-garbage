@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Spec.Ed25519
-public import VerifiedGarbage.Proof.X25519.Invert
+import VerifiedGarbage.Proof.X25519.Invert
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.Ed25519.X86.PointCTLit
 meta import VerifiedGarbage.Proof.Ed25519.X86.PointCTLit
 public import VerifiedGarbage.Proof.Framework.X86.TaintMono
 meta import VerifiedGarbage.Proof.Framework.X86.TaintMono
-public import VerifiedGarbage.Proof.X25519.X86.Field32.Pow250Sum
+import VerifiedGarbage.Proof.X25519.X86.Field32.Pow250Sum
 meta import VerifiedGarbage.Proof.X25519.X86.Field32.Pow250Sum
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

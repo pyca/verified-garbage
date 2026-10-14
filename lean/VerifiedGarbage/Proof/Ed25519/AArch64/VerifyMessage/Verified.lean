@@ -6,11 +6,11 @@ public import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyMessage.Args
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyMessage.Args
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Wrap
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Wrap
-public import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyMessage.Body
+import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyMessage.Body
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyMessage.Body
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.WrapCT
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.WrapCT
-public import VerifiedGarbage.Proof.Ed25519.AArch64.RecoverParity
+import VerifiedGarbage.Proof.Ed25519.AArch64.RecoverParity
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.RecoverParity
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract

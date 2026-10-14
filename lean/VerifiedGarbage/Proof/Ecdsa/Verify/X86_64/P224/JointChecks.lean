@@ -4,15 +4,15 @@ public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointPointsTiming
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointPointsTiming
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointTiming
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointTiming
-public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P224.JointContract
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P224.JointContract
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P224.JointContract
-public import VerifiedGarbage.Proof.P224.X86_64.JointTiming
+import VerifiedGarbage.Proof.P224.X86_64.JointTiming
 meta import VerifiedGarbage.Proof.P224.X86_64.JointTiming
 public import VerifiedGarbage.Proof.P224.X86_64.NafTableTiming
 meta import VerifiedGarbage.Proof.P224.X86_64.NafTableTiming
 public import VerifiedGarbage.Proof.P224.X86_64.JointLayout
 meta import VerifiedGarbage.Proof.P224.X86_64.JointLayout
-public import VerifiedGarbage.Proof.P224.X86_64.JointFrame
+import VerifiedGarbage.Proof.P224.X86_64.JointFrame
 meta import VerifiedGarbage.Proof.P224.X86_64.JointFrame
 public import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
 meta import VerifiedGarbage.Proof.Framework.X86_64.TaintErase

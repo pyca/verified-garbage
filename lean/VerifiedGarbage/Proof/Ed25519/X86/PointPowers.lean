@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.X86.PointTable
-public import VerifiedGarbage.Impl.Ed25519.X86.PointLoop
-public import VerifiedGarbage.Proof.Ed25519.X86.Points
+import VerifiedGarbage.Impl.Ed25519.X86.PointLoop
+import VerifiedGarbage.Proof.Ed25519.X86.Points
 public import VerifiedGarbage.Proof.Ed25519.X86.PowerEnv
 public import VerifiedGarbage.Proof.Ed25519.ScalarMul
 public import VerifiedGarbage.Impl.Ed25519.X86.PointPowers

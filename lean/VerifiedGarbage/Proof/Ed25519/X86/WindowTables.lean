@@ -2,11 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.Ed25519.X86.VerifyTables
 public import VerifiedGarbage.Proof.Ed25519.X86.PointPowers
-public import VerifiedGarbage.Proof.Ed25519.WindowConstants
-public import VerifiedGarbage.Proof.Ed25519.X86.Point32.Call
+import VerifiedGarbage.Proof.Ed25519.WindowConstants
+import VerifiedGarbage.Proof.Ed25519.X86.Point32.Call
 public import VerifiedGarbage.Proof.Ed25519.Group.Double
 public import VerifiedGarbage.Proof.Ed25519.X86.VerifyTbl
-public import VerifiedGarbage.Proof.Framework.X86.SymFrame
+import VerifiedGarbage.Proof.Framework.X86.SymFrame
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

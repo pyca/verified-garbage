@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.X86.Workspace
-public import VerifiedGarbage.Proof.Ed25519.Scalar
+import VerifiedGarbage.Proof.Ed25519.Scalar
 public import VerifiedGarbage.Impl.Ed25519.X86.Scalar
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

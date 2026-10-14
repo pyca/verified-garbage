@@ -1,9 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.X86.AccumulateStep
-public import VerifiedGarbage.Impl.Ed25519.X86.PointBatch
-public import VerifiedGarbage.Proof.Ed25519.X86.PointPowersLoop
-public import VerifiedGarbage.Proof.Ed25519.X86.PrepareAdd
+import VerifiedGarbage.Impl.Ed25519.X86.PointBatch
+import VerifiedGarbage.Proof.Ed25519.X86.PointPowersLoop
+import VerifiedGarbage.Proof.Ed25519.X86.PrepareAdd
 public import VerifiedGarbage.Impl.Ed25519.X86.PointMul
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

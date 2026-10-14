@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.Verified
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.Verified
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.LitAdx
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.LitAdx
-public import VerifiedGarbage.Proof.P521.X86_64.TaintSumsAdx
+import VerifiedGarbage.Proof.P521.X86_64.TaintSumsAdx
 meta import VerifiedGarbage.Proof.P521.X86_64.TaintSumsAdx
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

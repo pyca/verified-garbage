@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Steps
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Steps
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Core
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Reduce
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Reduce
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Wide
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Search
 import all Init.Data.Array.Basic

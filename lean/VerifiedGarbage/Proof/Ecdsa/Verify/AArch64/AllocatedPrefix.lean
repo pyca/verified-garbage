@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Main
-public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.Joint
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Main
+import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.Joint
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacPrefix
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAddTiming
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedInput

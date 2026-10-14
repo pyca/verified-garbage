@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ed25519.X86.ScalarContract
 meta import VerifiedGarbage.Proof.Ed25519.X86.ScalarContract
-public import VerifiedGarbage.Proof.Ed25519.X86.ScalarEngine
+import VerifiedGarbage.Proof.Ed25519.X86.ScalarEngine
 meta import VerifiedGarbage.Proof.Ed25519.X86.ScalarEngine
 public import VerifiedGarbage.Proof.Ed25519.X86.ScalarLit
 meta import VerifiedGarbage.Proof.Ed25519.X86.ScalarLit

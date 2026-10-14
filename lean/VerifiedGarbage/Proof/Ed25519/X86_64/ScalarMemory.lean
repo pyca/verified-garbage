@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarWord
 public import VerifiedGarbage.Spec.Ed25519.Contract
-public import VerifiedGarbage.Proof.Ed25519.Bytes
+import VerifiedGarbage.Proof.Ed25519.Bytes
 public import VerifiedGarbage.Proof.X25519.X86_64.Finish
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

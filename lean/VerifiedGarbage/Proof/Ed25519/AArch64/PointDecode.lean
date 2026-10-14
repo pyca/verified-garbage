@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Impl.Ed25519.AArch64.PointDecode
-public import VerifiedGarbage.Proof.Ed25519.AArch64.RecoverParity
-public import VerifiedGarbage.Proof.Ed25519.AArch64.DecodeBits
+import VerifiedGarbage.Proof.Ed25519.AArch64.RecoverParity
+import VerifiedGarbage.Proof.Ed25519.AArch64.DecodeBits
 public import VerifiedGarbage.Proof.Ed25519.Decode
 public import VerifiedGarbage.Proof.Ed25519.AArch64.RecoverPoint
 import all Init.Data.Array.Basic

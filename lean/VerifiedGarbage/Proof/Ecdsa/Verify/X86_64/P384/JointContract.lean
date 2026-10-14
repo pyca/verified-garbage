@@ -2,8 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.Contract
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointPublic
-public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.PubVerify
-public import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.VerifiedAdx
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.PubVerify
+import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.VerifiedAdx
 public import VerifiedGarbage.Impl.P384.X86_64.Joint
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

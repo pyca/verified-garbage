@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Main
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedScalars
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedScalars
 public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.Joint
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

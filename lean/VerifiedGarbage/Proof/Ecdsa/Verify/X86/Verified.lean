@@ -12,9 +12,9 @@ public import VerifiedGarbage.Proof.Framework.X86.Taint
 meta import VerifiedGarbage.Proof.Framework.X86.Taint
 public import VerifiedGarbage.Proof.Framework.X86.Inline
 meta import VerifiedGarbage.Proof.Framework.X86.Inline
-public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CallSumsP256P
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CallSumsP256P
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CallSumsP256P
-public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CallSumsP256N
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CallSumsP256N
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CallSumsP256N
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

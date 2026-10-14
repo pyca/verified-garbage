@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Impl.Ed25519.AArch64.Recover
-public import VerifiedGarbage.Proof.Ed25519.AArch64.Power
-public import VerifiedGarbage.Proof.Ed25519.AArch64.CounterKeep
+import VerifiedGarbage.Proof.Ed25519.AArch64.Power
+import VerifiedGarbage.Proof.Ed25519.AArch64.CounterKeep
 public import VerifiedGarbage.Proof.Ed25519.Recover
 public import VerifiedGarbage.Proof.Ed25519.AArch64.RecoverSign
 import all Init.Data.Array.Basic

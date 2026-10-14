@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Framework.X86.Lit
 meta import VerifiedGarbage.Proof.Framework.X86.Lit
 public import VerifiedGarbage.Impl.Ed25519.X86.ScalarBase
 meta import VerifiedGarbage.Impl.Ed25519.X86.ScalarBase
-public import VerifiedGarbage.Proof.Ed25519.X86.PointCTLit
+import VerifiedGarbage.Proof.Ed25519.X86.PointCTLit
 meta import VerifiedGarbage.Proof.Ed25519.X86.PointCTLit
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

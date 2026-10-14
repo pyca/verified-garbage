@@ -2,9 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Ed25519.Arm.RecoverCTBlocks
 meta import VerifiedGarbage.Proof.Ed25519.Arm.RecoverCTBlocks
-public import VerifiedGarbage.Proof.Ed25519.Arm.RecoverAdjust
+import VerifiedGarbage.Proof.Ed25519.Arm.RecoverAdjust
 meta import VerifiedGarbage.Proof.Ed25519.Arm.RecoverAdjust
-public import VerifiedGarbage.Proof.Ed25519.Arm.RecoverSign
+import VerifiedGarbage.Proof.Ed25519.Arm.RecoverSign
 meta import VerifiedGarbage.Proof.Ed25519.Arm.RecoverSign
 public import VerifiedGarbage.Proof.Ed25519.Arm.RecoverPoint
 meta import VerifiedGarbage.Proof.Ed25519.Arm.RecoverPoint

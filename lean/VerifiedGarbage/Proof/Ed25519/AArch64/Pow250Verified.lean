@@ -4,13 +4,13 @@ public import VerifiedGarbage.Proof.Ed25519.AArch64.Power
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.Power
 public import VerifiedGarbage.Proof.X25519.Chain250
 meta import VerifiedGarbage.Proof.X25519.Chain250
-public import VerifiedGarbage.Proof.Mont.Read
+import VerifiedGarbage.Proof.Mont.Read
 meta import VerifiedGarbage.Proof.Mont.Read
 public import VerifiedGarbage.Proof.Framework.AArch64.Taint
 meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.TCB.AArch64.Target
+import VerifiedGarbage.TCB.AArch64.Target
 meta import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Spec.X25519.Field64
 meta import VerifiedGarbage.Spec.X25519.Field64

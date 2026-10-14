@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Timing
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Timing
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Timing
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Contract
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Contract
@@ -8,7 +8,7 @@ public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Lit
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Lit
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.LitErase
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.LitErase
-public import VerifiedGarbage.Proof.Ecdsa.X86_64.Verified
+import VerifiedGarbage.Proof.Ecdsa.X86_64.Verified
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.Verified
 public import VerifiedGarbage.Proof.Framework.X86_64.TaintSym
 meta import VerifiedGarbage.Proof.Framework.X86_64.TaintSym

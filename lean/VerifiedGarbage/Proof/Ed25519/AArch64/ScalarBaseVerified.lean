@@ -1,10 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseCTEngine
+import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseCTEngine
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseCTEngine
 public import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseMain
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseMain
-public import VerifiedGarbage.Proof.Framework.ConstMem
+import VerifiedGarbage.Proof.Framework.ConstMem
 meta import VerifiedGarbage.Proof.Framework.ConstMem
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract

@@ -8,9 +8,9 @@ public import VerifiedGarbage.TCB.Arm.Target
 meta import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarLoop
 meta import VerifiedGarbage.Proof.Ed25519.Arm.ScalarLoop
-public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarFinish
+import VerifiedGarbage.Proof.Ed25519.Arm.ScalarFinish
 meta import VerifiedGarbage.Proof.Ed25519.Arm.ScalarFinish
-public import VerifiedGarbage.Impl.Ed25519.Arm.ScalarABI
+import VerifiedGarbage.Impl.Ed25519.Arm.ScalarABI
 meta import VerifiedGarbage.Impl.Ed25519.Arm.ScalarABI
 public import VerifiedGarbage.Proof.Framework.Arm.Lit
 meta import VerifiedGarbage.Proof.Framework.Arm.Lit

@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P224.JointCorrect
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P224.JointCorrect
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P224.JointCT
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P224.JointLit
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified

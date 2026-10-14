@@ -2,14 +2,14 @@ module
 
 public import VerifiedGarbage.Proof.Ed25519.X86.PublicKey.Layout
 public import VerifiedGarbage.Proof.Ed25519.X86.Whole.Setup
-public import VerifiedGarbage.Proof.Ed25519.X86.Whole.Hash
+import VerifiedGarbage.Proof.Ed25519.X86.Whole.Hash
 public import VerifiedGarbage.Impl.Ed25519.X86.PublicKey
-public import VerifiedGarbage.Proof.Ed25519.X86.PublicKey.Prune
+import VerifiedGarbage.Proof.Ed25519.X86.PublicKey.Prune
 public import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseVerified
 public import VerifiedGarbage.Proof.Ed25519.X86.Whole.HashPre
-public import VerifiedGarbage.Proof.Ed25519.X86.Whole.Wipe
+import VerifiedGarbage.Proof.Ed25519.X86.Whole.Wipe
 public import VerifiedGarbage.Proof.Ed25519.X86.Whole.CallCT
-public import VerifiedGarbage.Proof.Framework.X86.Syms
+import VerifiedGarbage.Proof.Framework.X86.Syms
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

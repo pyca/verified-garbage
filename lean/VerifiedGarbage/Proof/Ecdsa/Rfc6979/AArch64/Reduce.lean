@@ -3,12 +3,12 @@ module
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Hmac
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Bytes
 public import VerifiedGarbage.Proof.Mont.AArch64.Csub
-public import VerifiedGarbage.Proof.Mont.AArch64.Blocks
-public import VerifiedGarbage.Proof.Weierstrass.Words
-public import VerifiedGarbage.Proof.Weierstrass.BytesLen
-public import VerifiedGarbage.Proof.Framework.Bswap
+import VerifiedGarbage.Proof.Mont.AArch64.Blocks
+import VerifiedGarbage.Proof.Weierstrass.Words
+import VerifiedGarbage.Proof.Weierstrass.BytesLen
+import VerifiedGarbage.Proof.Framework.Bswap
 public import VerifiedGarbage.Proof.Framework.Omega
-public import VerifiedGarbage.Proof.Gcm.Bits
+import VerifiedGarbage.Proof.Gcm.Bits
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.X86.P521.Lit
+import VerifiedGarbage.Proof.Ecdsa.X86.P521.Lit
 public import VerifiedGarbage.Proof.Framework.X86.Taint
 public import VerifiedGarbage.Proof.Framework.X86.TaintMono
 import all Init.Data.Array.Basic

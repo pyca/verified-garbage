@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafMulSetup
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafMulSetup
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafMulSetup
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafWindowChecks
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafWindowChecks

@@ -1,10 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Ed25519.Group.Double
+import VerifiedGarbage.Proof.Ed25519.Group.Double
 public import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.CombAdd
 public import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.CombSelect
 public import VerifiedGarbage.Proof.Ed25519.X86_64.CombLoop
-public import VerifiedGarbage.Proof.Framework.X86_64.VecKeep
+import VerifiedGarbage.Proof.Framework.X86_64.VecKeep
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

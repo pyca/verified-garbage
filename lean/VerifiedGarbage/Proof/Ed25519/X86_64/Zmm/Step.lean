@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Halves
-public import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Digits
+import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Digits
 public import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.CombLoop
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

@@ -3,10 +3,10 @@ module
 public import VerifiedGarbage.Proof.Ed25519.X86_64.WindowSlide
 public import VerifiedGarbage.Proof.Ed25519.X86_64.RecodeAll
 public import VerifiedGarbage.Proof.Ed25519.X86_64.Bits
-public import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulCounter
-public import VerifiedGarbage.Proof.Ed25519.Window
+import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulCounter
+import VerifiedGarbage.Proof.Ed25519.Window
 public import VerifiedGarbage.Proof.Ed25519.X86_64.PointEqual
-public import VerifiedGarbage.Proof.Ed25519.X86_64.PointMul
+import VerifiedGarbage.Proof.Ed25519.X86_64.PointMul
 public import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

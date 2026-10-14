@@ -10,9 +10,9 @@ public import VerifiedGarbage.Proof.Ed25519.Arm.SignCached.MulAdd
 public import VerifiedGarbage.Impl.Ed25519.Arm.SignCached.Prefix
 public import VerifiedGarbage.Proof.Ed25519.Arm.Whole.Wipe
 public import VerifiedGarbage.Spec.Ed25519.Contract
-public import VerifiedGarbage.Proof.Ed25519.Signing
+import VerifiedGarbage.Proof.Ed25519.Signing
 public import VerifiedGarbage.Proof.Ed25519.Arm.PublicKey.Prune
-public import VerifiedGarbage.Proof.Ed25519.VerifyBytes
+import VerifiedGarbage.Proof.Ed25519.VerifyBytes
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.MulBase
-public import VerifiedGarbage.Proof.Ecdsa.X86_64.Inv
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.Copy
+import VerifiedGarbage.Proof.Ecdsa.X86_64.Inv
+import VerifiedGarbage.Proof.Weierstrass.X86_64.Copy
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

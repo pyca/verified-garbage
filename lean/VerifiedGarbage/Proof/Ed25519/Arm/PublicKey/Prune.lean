@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Ed25519.Bytes
 public import VerifiedGarbage.Impl.Ed25519.Arm.PublicKey
 public import VerifiedGarbage.Proof.Framework.Arm.Inline
-public import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 public import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Framework.Omega
 import all Init.Data.Array.Basic

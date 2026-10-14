@@ -6,9 +6,9 @@ public import VerifiedGarbage.Proof.Ed25519.AArch64.PointEqual
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.PointEqual
 public import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyPoints
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyPoints
-public import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyCTLit
+import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyCTLit
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyCTLit
-public import VerifiedGarbage.Proof.Ed25519.AArch64.CTSupport
+import VerifiedGarbage.Proof.Ed25519.AArch64.CTSupport
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.CTSupport
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

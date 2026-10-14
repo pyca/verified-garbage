@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Wide
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Core
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Reduce
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Reduce
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Search
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

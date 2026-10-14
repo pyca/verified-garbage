@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.X86.SignCached.HashFinalize
-public import VerifiedGarbage.Proof.Ed25519.X86.SignCached.HashUpdate
+import VerifiedGarbage.Proof.Ed25519.X86.SignCached.HashUpdate
 public import VerifiedGarbage.Proof.Ed25519.X86.SignCached.Base
 public import VerifiedGarbage.Proof.Ed25519.X86.SignCached.MulAdd
 public import VerifiedGarbage.Proof.Ed25519.X86.Whole.Reduce

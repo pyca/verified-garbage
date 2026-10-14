@@ -2,11 +2,11 @@ module
 
 public import VerifiedGarbage.Impl.Ed25519.X86.Comb
 meta import VerifiedGarbage.Impl.Ed25519.X86.Comb
-public import VerifiedGarbage.Proof.Ed25519.X86.CombLit
+import VerifiedGarbage.Proof.Ed25519.X86.CombLit
 meta import VerifiedGarbage.Proof.Ed25519.X86.CombLit
 public import VerifiedGarbage.Proof.Ed25519.X86.PointCTSupport
 meta import VerifiedGarbage.Proof.Ed25519.X86.PointCTSupport
-public import VerifiedGarbage.Proof.Ed25519.X86.Point32.AddSum
+import VerifiedGarbage.Proof.Ed25519.X86.Point32.AddSum
 meta import VerifiedGarbage.Proof.Ed25519.X86.Point32.AddSum
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

@@ -4,19 +4,19 @@ public import VerifiedGarbage.Proof.Ecdsa.X86_64.Main
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.Main
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.Contract
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.Contract
-public import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.Lit
+import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.Lit
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.Lit
 public import VerifiedGarbage.Proof.P521.Point
 meta import VerifiedGarbage.Proof.P521.Point
 public import VerifiedGarbage.Proof.Framework.X86_64.Taint
 meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
-public import VerifiedGarbage.Proof.Framework.X86_64.Abi
+import VerifiedGarbage.Proof.Framework.X86_64.Abi
 meta import VerifiedGarbage.Proof.Framework.X86_64.Abi
 public import VerifiedGarbage.Proof.Framework.X86_64.Inline
 meta import VerifiedGarbage.Proof.Framework.X86_64.Inline
-public import VerifiedGarbage.Proof.P521.X86_64.TaintSums
+import VerifiedGarbage.Proof.P521.X86_64.TaintSums
 meta import VerifiedGarbage.Proof.P521.X86_64.TaintSums
-public import VerifiedGarbage.Proof.P521.Prime
+import VerifiedGarbage.Proof.P521.Prime
 meta import VerifiedGarbage.Proof.P521.Prime
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified

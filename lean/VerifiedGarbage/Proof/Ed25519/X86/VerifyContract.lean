@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.X86.InputSlice
-public import VerifiedGarbage.Proof.Ed25519.X86.CopyWords
+import VerifiedGarbage.Proof.Ed25519.X86.CopyWords
 public import VerifiedGarbage.Proof.Ed25519.X86.RecoverParity
 public import VerifiedGarbage.Proof.Ed25519.X86.VerifyTbl
 import all Init.Data.Array.Basic

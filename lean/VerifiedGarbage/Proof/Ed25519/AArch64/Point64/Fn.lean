@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Impl.Ed25519.AArch64.Point64
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Points
 public import VerifiedGarbage.Proof.Framework.AArch64.LaneSave
-public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

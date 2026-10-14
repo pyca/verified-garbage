@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Impl.Ed25519.Arm.Recover
-public import VerifiedGarbage.Proof.Ed25519.Arm.Power
-public import VerifiedGarbage.Proof.Ed25519.Arm.PointAffine
+import VerifiedGarbage.Proof.Ed25519.Arm.Power
+import VerifiedGarbage.Proof.Ed25519.Arm.PointAffine
 public import VerifiedGarbage.Proof.Ed25519.Recover
 public import VerifiedGarbage.Proof.Ed25519.Arm.RecoverSign
 import all Init.Data.Array.Basic

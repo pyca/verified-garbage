@@ -4,15 +4,15 @@ public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointPointsTiming
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointPointsTiming
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointTiming
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointTiming
-public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.JointContract
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.JointContract
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.JointContract
-public import VerifiedGarbage.Proof.P384.X86_64.JointTiming
+import VerifiedGarbage.Proof.P384.X86_64.JointTiming
 meta import VerifiedGarbage.Proof.P384.X86_64.JointTiming
-public import VerifiedGarbage.Proof.P384.X86_64.NafTableTiming
+import VerifiedGarbage.Proof.P384.X86_64.NafTableTiming
 meta import VerifiedGarbage.Proof.P384.X86_64.NafTableTiming
 public import VerifiedGarbage.Proof.P384.X86_64.JointLayout
 meta import VerifiedGarbage.Proof.P384.X86_64.JointLayout
-public import VerifiedGarbage.Proof.P384.X86_64.JointFrame
+import VerifiedGarbage.Proof.P384.X86_64.JointFrame
 meta import VerifiedGarbage.Proof.P384.X86_64.JointFrame
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

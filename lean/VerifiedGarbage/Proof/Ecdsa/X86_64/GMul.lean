@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.CombLays
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.Rep
+import VerifiedGarbage.Proof.Weierstrass.X86_64.Rep
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombJ
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyContext
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyContext
 public import VerifiedGarbage.Proof.Ed25519.X86_64.RecoverCTBlocks
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.RecoverCTBlocks
-public import VerifiedGarbage.Proof.Ed25519.X86_64.RootPair
+import VerifiedGarbage.Proof.Ed25519.X86_64.RootPair
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.RootPair
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

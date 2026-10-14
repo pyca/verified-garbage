@@ -1,13 +1,13 @@
 module
 
 public import VerifiedGarbage.Impl.Ed25519.AArch64.SignCached.Prefix
-public import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
-public import VerifiedGarbage.Proof.Ed25519.Signing
-public import VerifiedGarbage.Proof.Ed25519.AArch64.MulAddCodec
+import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
+import VerifiedGarbage.Proof.Ed25519.Signing
+import VerifiedGarbage.Proof.Ed25519.AArch64.MulAddCodec
 public import VerifiedGarbage.Proof.Ed25519.AArch64.SignCached.Preserve
 public import VerifiedGarbage.Proof.Ed25519.AArch64.PublicKey.Prune
-public import VerifiedGarbage.Proof.Ed25519.VerifyBytes
-public import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Wipe
+import VerifiedGarbage.Proof.Ed25519.VerifyBytes
+import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Wipe
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

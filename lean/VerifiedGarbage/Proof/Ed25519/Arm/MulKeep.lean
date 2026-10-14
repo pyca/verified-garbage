@@ -1,9 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Ed25519.Arm.PointPowers
+import VerifiedGarbage.Proof.Ed25519.Arm.PointPowers
 public import VerifiedGarbage.Proof.Ed25519.Arm.AccumulateStep
 public import VerifiedGarbage.Impl.Ed25519.Arm.PointBatch
-public import VerifiedGarbage.Proof.Ed25519.Arm.BatchBits
+import VerifiedGarbage.Proof.Ed25519.Arm.BatchBits
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

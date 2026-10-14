@@ -2,8 +2,8 @@ module
 
 public import VerifiedGarbage.Impl.Ed25519.X86.PointEncode
 public import VerifiedGarbage.Proof.Ed25519.X86.Power
-public import VerifiedGarbage.Proof.Ed25519.X86.FreezeField
-public import VerifiedGarbage.Proof.Ed25519.X86.ScalarCodec
+import VerifiedGarbage.Proof.Ed25519.X86.FreezeField
+import VerifiedGarbage.Proof.Ed25519.X86.ScalarCodec
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

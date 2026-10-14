@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Ed25519.X86_64.PointAffine
+import VerifiedGarbage.Proof.Ed25519.X86_64.PointAffine
 public import VerifiedGarbage.Impl.Ed25519.X86_64.Recover
 public import VerifiedGarbage.Proof.Ed25519.Recover
 public import VerifiedGarbage.Proof.Ed25519.X86_64.RecoverSign

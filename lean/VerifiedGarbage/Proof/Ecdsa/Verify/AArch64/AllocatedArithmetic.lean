@@ -2,13 +2,13 @@ module
 
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedFieldTiming
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.AllocatedJointDigits
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.AllocatedJointLoop
+import VerifiedGarbage.Proof.Weierstrass.AArch64.AllocatedJointLoop
 public import VerifiedGarbage.Proof.P256.VerifyAllocated.Double
 public import VerifiedGarbage.Proof.P256.VerifyAllocated.MixedHead
 public import VerifiedGarbage.Proof.P256.VerifyAllocated.MixedTail
 public import VerifiedGarbage.Proof.P256.VerifyAllocated.JacTail
 public import VerifiedGarbage.Proof.P256.VerifyAllocated.CachedHead
-public import VerifiedGarbage.Proof.Weierstrass.JacInplace
+import VerifiedGarbage.Proof.Weierstrass.JacInplace
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

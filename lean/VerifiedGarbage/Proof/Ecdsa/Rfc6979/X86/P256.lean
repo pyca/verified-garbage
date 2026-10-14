@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Curve
 meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Curve
 public import VerifiedGarbage.Proof.Ecdsa.X86.CombVerified
 meta import VerifiedGarbage.Proof.Ecdsa.X86.CombVerified
-public import VerifiedGarbage.Proof.Ecdsa.X86.Lit
+import VerifiedGarbage.Proof.Ecdsa.X86.Lit
 meta import VerifiedGarbage.Proof.Ecdsa.X86.Lit
 public import VerifiedGarbage.Proof.Framework.X86.Lit
 meta import VerifiedGarbage.Proof.Framework.X86.Lit

@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Ed25519.AArch64.PointMul
-public import VerifiedGarbage.Proof.Ed25519.AArch64.PointPowers
+import VerifiedGarbage.Proof.Ed25519.AArch64.PointPowers
 public import VerifiedGarbage.Proof.Ed25519.AArch64.CounterKeep
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

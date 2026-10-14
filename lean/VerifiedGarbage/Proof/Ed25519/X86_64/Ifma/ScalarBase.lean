@@ -1,12 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Mul
+import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Mul
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Mul
 public import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.CombLit
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.CombLit
 public import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBasePrecomputedVerified
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBasePrecomputedVerified
-public import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
+import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
 meta import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

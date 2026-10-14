@@ -1,18 +1,18 @@
 module
 
-public import VerifiedGarbage.Proof.Ed25519.X86.SignCached.CTReady
+import VerifiedGarbage.Proof.Ed25519.X86.SignCached.CTReady
 meta import VerifiedGarbage.Proof.Ed25519.X86.SignCached.CTReady
 public import VerifiedGarbage.Proof.Ed25519.X86.Whole.CallCT
 meta import VerifiedGarbage.Proof.Ed25519.X86.Whole.CallCT
-public import VerifiedGarbage.Proof.Ed25519.X86.Whole.BlocksCT
+import VerifiedGarbage.Proof.Ed25519.X86.Whole.BlocksCT
 meta import VerifiedGarbage.Proof.Ed25519.X86.Whole.BlocksCT
 public import VerifiedGarbage.Proof.Ed25519.X86.SignCached.HashFinalize
 meta import VerifiedGarbage.Proof.Ed25519.X86.SignCached.HashFinalize
-public import VerifiedGarbage.Proof.Ed25519.X86.SignCached.HashInputs
+import VerifiedGarbage.Proof.Ed25519.X86.SignCached.HashInputs
 meta import VerifiedGarbage.Proof.Ed25519.X86.SignCached.HashInputs
 public import VerifiedGarbage.Proof.Ed25519.X86.SignCached.Calls
 meta import VerifiedGarbage.Proof.Ed25519.X86.SignCached.Calls
-public import VerifiedGarbage.Proof.Ed25519.X86.Whole.Reduce
+import VerifiedGarbage.Proof.Ed25519.X86.Whole.Reduce
 meta import VerifiedGarbage.Proof.Ed25519.X86.Whole.Reduce
 public import VerifiedGarbage.Proof.Ed25519.X86.SignCached.Base
 meta import VerifiedGarbage.Proof.Ed25519.X86.SignCached.Base
@@ -20,13 +20,13 @@ public import VerifiedGarbage.Proof.Ed25519.X86.SignCached.MulAdd
 meta import VerifiedGarbage.Proof.Ed25519.X86.SignCached.MulAdd
 public import VerifiedGarbage.Proof.Ed25519.X86.SignCached.Prefix
 meta import VerifiedGarbage.Proof.Ed25519.X86.SignCached.Prefix
-public import VerifiedGarbage.Proof.Ed25519.VerifyBytes
+import VerifiedGarbage.Proof.Ed25519.VerifyBytes
 meta import VerifiedGarbage.Proof.Ed25519.VerifyBytes
-public import VerifiedGarbage.Proof.Ed25519.X86.Whole.Wipe
+import VerifiedGarbage.Proof.Ed25519.X86.Whole.Wipe
 meta import VerifiedGarbage.Proof.Ed25519.X86.Whole.Wipe
 public import VerifiedGarbage.Proof.Ed25519.X86.SignCached.Entry
 meta import VerifiedGarbage.Proof.Ed25519.X86.SignCached.Entry
-public import VerifiedGarbage.Proof.Framework.X86.Syms
+import VerifiedGarbage.Proof.Framework.X86.Syms
 meta import VerifiedGarbage.Proof.Framework.X86.Syms
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

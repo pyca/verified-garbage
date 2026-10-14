@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacChecks
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacChecks
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointCache
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointCache
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedFieldTiming
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedFieldTiming
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedFieldTiming
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JointGenerator
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.JointGenerator

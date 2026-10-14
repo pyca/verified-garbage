@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Ed25519.AArch64.ScalarBase
 public import VerifiedGarbage.Proof.Ed25519.AArch64.CombLoop
-public import VerifiedGarbage.Proof.Ed25519.AArch64.PointEncode
+import VerifiedGarbage.Proof.Ed25519.AArch64.PointEncode
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Bits
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

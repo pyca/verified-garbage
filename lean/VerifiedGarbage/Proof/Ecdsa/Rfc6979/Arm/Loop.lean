@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Blocks
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Blocks
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Wide
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Search
 import all Init.Data.Array.Basic

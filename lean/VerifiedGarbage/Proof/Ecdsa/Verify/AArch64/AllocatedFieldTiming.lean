@@ -1,12 +1,12 @@
 module
 
-public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.Joint
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.JointInvariant
+import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.Joint
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JointInvariant
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JointFixed
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.NafWindowTiming
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.NafWindowTiming
 public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.Allocated
 public import VerifiedGarbage.Proof.P256.VerifyAllocated.Case
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.AllocatedState
+import VerifiedGarbage.Proof.Weierstrass.AArch64.AllocatedState
 public import VerifiedGarbage.Proof.P256.VerifyAllocated.Timing
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

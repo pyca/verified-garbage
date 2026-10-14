@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyLit
+import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyLit
 public import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
 public import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyCall
 public import VerifiedGarbage.Proof.Ed25519.X86_64.WindowSlideCT

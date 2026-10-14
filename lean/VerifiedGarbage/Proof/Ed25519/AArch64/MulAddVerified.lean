@@ -4,9 +4,9 @@ public import VerifiedGarbage.Proof.Framework.AArch64.Lit
 meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
 public import VerifiedGarbage.Impl.Ed25519.AArch64.MulAdd
 meta import VerifiedGarbage.Impl.Ed25519.AArch64.MulAdd
-public import VerifiedGarbage.Proof.Ed25519.AArch64.MulAddCodec
+import VerifiedGarbage.Proof.Ed25519.AArch64.MulAddCodec
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.MulAddCodec
-public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 meta import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 public import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarMain
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarMain

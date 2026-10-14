@@ -2,9 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyMessage.Args
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyMessage.Args
-public import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarVerified
+import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarVerified
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarVerified
-public import VerifiedGarbage.Proof.Ed25519.X86_64.PublicKey.Base
+import VerifiedGarbage.Proof.Ed25519.X86_64.PublicKey.Base
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.PublicKey.Base
 public import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarMain
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarMain

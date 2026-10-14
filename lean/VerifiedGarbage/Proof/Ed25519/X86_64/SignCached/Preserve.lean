@@ -4,9 +4,9 @@ public import VerifiedGarbage.Proof.Ed25519.X86_64.SignCached.Layout
 public import VerifiedGarbage.Proof.Ed25519.X86_64.PublicKey.Base
 public import VerifiedGarbage.Proof.Ed25519.X86_64.SignCached.Args
 public import VerifiedGarbage.Proof.Ed25519.X86_64.MulAddVerified
-public import VerifiedGarbage.Proof.Ed25519.Signing
-public import VerifiedGarbage.Proof.Ed25519.VerifyBytes
-public import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarVerified
+import VerifiedGarbage.Proof.Ed25519.Signing
+import VerifiedGarbage.Proof.Ed25519.VerifyBytes
+import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarVerified
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

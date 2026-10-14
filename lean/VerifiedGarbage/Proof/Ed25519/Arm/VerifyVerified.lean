@@ -4,13 +4,13 @@ public import VerifiedGarbage.Proof.Ed25519.Arm.VerifyCTRhs
 meta import VerifiedGarbage.Proof.Ed25519.Arm.VerifyCTRhs
 public import VerifiedGarbage.Proof.Ed25519.Arm.RecoverCTBlocks
 meta import VerifiedGarbage.Proof.Ed25519.Arm.RecoverCTBlocks
-public import VerifiedGarbage.Proof.Ed25519.Arm.RecoverCTRoot
+import VerifiedGarbage.Proof.Ed25519.Arm.RecoverCTRoot
 meta import VerifiedGarbage.Proof.Ed25519.Arm.RecoverCTRoot
-public import VerifiedGarbage.Proof.Ed25519.Arm.PointDecode
+import VerifiedGarbage.Proof.Ed25519.Arm.PointDecode
 meta import VerifiedGarbage.Proof.Ed25519.Arm.PointDecode
-public import VerifiedGarbage.Proof.Ed25519.Arm.VerifyCTPublic
+import VerifiedGarbage.Proof.Ed25519.Arm.VerifyCTPublic
 meta import VerifiedGarbage.Proof.Ed25519.Arm.VerifyCTPublic
-public import VerifiedGarbage.Proof.Ed25519.Arm.VerifyCTLit
+import VerifiedGarbage.Proof.Ed25519.Arm.VerifyCTLit
 meta import VerifiedGarbage.Proof.Ed25519.Arm.VerifyCTLit
 public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTLit
 meta import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTLit
@@ -18,7 +18,7 @@ public import VerifiedGarbage.Impl.Ed25519.Arm.Verify
 meta import VerifiedGarbage.Impl.Ed25519.Arm.Verify
 public import VerifiedGarbage.Proof.Framework.Arm.Lit
 meta import VerifiedGarbage.Proof.Framework.Arm.Lit
-public import VerifiedGarbage.Proof.Ed25519.Arm.DecodeCTLit
+import VerifiedGarbage.Proof.Ed25519.Arm.DecodeCTLit
 meta import VerifiedGarbage.Proof.Ed25519.Arm.DecodeCTLit
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
 meta import VerifiedGarbage.Proof.Framework.Arm.Contract

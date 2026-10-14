@@ -14,7 +14,7 @@ public import VerifiedGarbage.Proof.Ed25519.X86.PublicKey.Layout
 meta import VerifiedGarbage.Proof.Ed25519.X86.PublicKey.Layout
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Framework.X86.Syms
+import VerifiedGarbage.Proof.Framework.X86.Syms
 meta import VerifiedGarbage.Proof.Framework.X86.Syms
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

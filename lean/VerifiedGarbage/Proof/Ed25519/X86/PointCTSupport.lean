@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.X86.CommonCT
-public import VerifiedGarbage.Proof.Ed25519.X86.ScalarCodec
+import VerifiedGarbage.Proof.Ed25519.X86.ScalarCodec
 public import VerifiedGarbage.Proof.Framework.RelCT
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

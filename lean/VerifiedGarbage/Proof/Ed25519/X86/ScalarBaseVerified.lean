@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseLit
 meta import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseLit
 public import VerifiedGarbage.Proof.Ed25519.X86.CombCT
 meta import VerifiedGarbage.Proof.Ed25519.X86.CombCT
-public import VerifiedGarbage.Proof.Ed25519.X86.CombLoop
+import VerifiedGarbage.Proof.Ed25519.X86.CombLoop
 meta import VerifiedGarbage.Proof.Ed25519.X86.CombLoop
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract

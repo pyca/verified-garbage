@@ -1,11 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+import VerifiedGarbage.Proof.Framework.AArch64.RelCT
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Main
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombTiming
 public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.Jacobian
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTiming
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacPoints
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTiming
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacPoints
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

@@ -6,9 +6,9 @@ public import VerifiedGarbage.Proof.Ecdsa.X86.CombLit
 meta import VerifiedGarbage.Proof.Ecdsa.X86.CombLit
 public import VerifiedGarbage.Proof.Weierstrass.X86.NafPrepTiming
 meta import VerifiedGarbage.Proof.Weierstrass.X86.NafPrepTiming
-public import VerifiedGarbage.Proof.Framework.X86.TaintSym
+import VerifiedGarbage.Proof.Framework.X86.TaintSym
 meta import VerifiedGarbage.Proof.Framework.X86.TaintSym
-public import VerifiedGarbage.Proof.Framework.X86.RelCT
+import VerifiedGarbage.Proof.Framework.X86.RelCT
 meta import VerifiedGarbage.Proof.Framework.X86.RelCT
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

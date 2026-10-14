@@ -1,9 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyFrame
+import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyFrame
 public import VerifiedGarbage.Proof.Ed25519.X86_64.BaseEntry
 public import VerifiedGarbage.Impl.Ed25519.X86_64.Verify
-public import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulBatch
+import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulBatch
 public import VerifiedGarbage.Proof.Ed25519.X86_64.PointDecode
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

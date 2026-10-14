@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Impl.Ed25519.X86_64.FieldCheck
+import VerifiedGarbage.Impl.Ed25519.X86_64.FieldCheck
 public import VerifiedGarbage.Proof.Ed25519.X86_64.PointEncode
 public import VerifiedGarbage.Impl.Ed25519.X86_64.RecoverSign
 import all Init.Data.Array.Basic

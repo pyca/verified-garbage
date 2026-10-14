@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.X25519.X86.Lit
+import VerifiedGarbage.Proof.X25519.X86.Lit
 meta import VerifiedGarbage.Proof.X25519.X86.Lit
 public import VerifiedGarbage.Proof.Framework.X86.Lit
 meta import VerifiedGarbage.Proof.Framework.X86.Lit
