@@ -40,6 +40,13 @@ def R10 (be : Bool) (s₀ : State) (c : Nat) (s : State) : Prop :=
   if be then s.gpr .r10 = idxR s₀ c ∧ BeConsts (pp s₀) s.mem
   else s.gpr .r10 = kp s₀ + BitVec.ofNat 64 (16 * nr s₀)
 
+/-- The block index at `rsp + off` (a public argument): the low word of the
+counter block, readable, and apart from the regions `rs` the code writes. -/
+def IdxOk (off : Nat) (rs : List Region) (s₀ : State) : Prop :=
+  s₀.mem.readW (s₀.gpr .rsp + BitVec.ofNat 64 off) 32 = (cb s₀).extractLsb' 0 32 ∧
+    InRegions (s₀.rd ++ s₀.wr) (s₀.gpr .rsp + BitVec.ofNat 64 off) 4 ∧
+    ∀ r ∈ rs, Region.Disjoint ⟨s₀.gpr .rsp + BitVec.ofNat 64 off, 4⟩ r
+
 theorem R10.keep {be : Bool} {s₀ : State} {c : Nat} {s s' : State} (h : R10 be s₀ c s)
     (hg : s'.gpr .r10 = s.gpr .r10) (hm : s'.mem = s.mem) : R10 be s₀ c s' := by
   cases be

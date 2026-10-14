@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Rem
 import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemD
 import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemG
 import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemGTo
+import VerifiedGarbage.Proof.Gcm.X86_64.Cached.BeSetupTo
 public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemGLanes
 import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.OutOfPlace
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.LoopP
@@ -359,6 +360,17 @@ theorem decR_ok {s₀ : State} (hp : SPrePrepared s₀) :
     decTailRG_ok hp.base (finZ (finP hpw)) (remZG (finP hpw))
       (fun _ h256 hI hC => bigDP_ok hp hpw (fin48P (hk s₀)) h256 hI hC) hR hK)
 
+/-- `decR` with the block index at `rsp + 16`: the counters of most batches
+added to as bytes. -/
+theorem decRI_ok {s₀ : State} (hp : SPrePrepared s₀)
+    (hx : StitchZ.IdxOk 16 [Stitch.dR s₀, Stitch.pR s₀] s₀) :
+    WP isa (Impl.Gcm.X86_64.StitchZH.decR true) s₀ (DPost s₀) :=
+  WP.seq (WP.mono (setup_ok hp) fun _ ⟨_, hR, hpw, hK⟩ =>
+    WP.seq_iff.mpr (WP.block_append_iff.mpr (WP.mono (ready_be hp.base hx hR) fun _ ⟨hR', hh⟩ =>
+      WP.seq_iff.mp (decTailRG_ok hp.base (finZ (finP hpw)) (remZG (finP hpw))
+        (fun _ h256 hI hC => bigDP_ok hp hpw (fin48P (hk s₀)) h256 hI hC) hR'
+        (hK.keep hh (hR'.a.keys hp.base))))))
+
 /-- Encryption and decryption of any number of blocks from 16 on. -/
 theorem stitchR_ok :
     StitchOkM CtxMode.prepared Impl.Gcm.X86_64.StitchZH.encR Impl.Gcm.X86_64.StitchZH.decR 1 1 :=
@@ -384,6 +396,17 @@ theorem encRTo_ok {s₀ : State} (hp : Proof.Gcm.X86_64.Stitch.SPreTo CtxMode.pr
   WP.seq (WP.mono (setup_ok hp) fun _ ⟨_, hR, hpw, hK⟩ =>
     encTailRGTo_ok hp (finZ (finP hpw)) (StitchZH.remZG (finP hpw))
       (fun _ h256 hI hC => bigPTo_ok hp (finZ (finP hpw)) hpw (fin48P (hk s₀)) h256 hI hC) (firstTo_ok hp hR hK))
+
+/-- `encR` with the block index at `rsp + 32`: the counters of most batches
+added to as bytes. -/
+theorem encRToI_ok {s₀ : State} (hp : Proof.Gcm.X86_64.Stitch.SPreTo CtxMode.prepared s₀)
+    (hx : StitchZ.IdxOk 32 [Stitch.oR s₀, Stitch.pR s₀] s₀) :
+    WP isa (Impl.Gcm.X86_64.StitchZHTo.encR true) s₀ (Proof.Gcm.X86_64.Stitch.EPostTo s₀) :=
+  WP.seq (WP.mono (setup_ok hp) fun _ ⟨_, hR, hpw, hK⟩ =>
+    encTailRGTo_ok hp (finZ (finP hpw)) (StitchZH.remZG (finP hpw))
+      (fun _ h256 hI hC => bigPTo_ok hp (finZ (finP hpw)) hpw (fin48P (hk s₀)) h256 hI hC)
+      (WP.seq (WP.mono (readyTo_be hp hx hR) fun _ ⟨hR', hh⟩ =>
+        firstBatchTo_ok hp hR' (hK.keep hh (hR'.a.keys hp)))))
 
 /-- Prepared powers and cached AES keys, out of place, for any number of
 blocks from 16 on. -/
