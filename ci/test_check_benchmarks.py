@@ -695,24 +695,34 @@ if __name__ == '__main__':
 
 
 class FreshCopies(unittest.TestCase):
-    def test_only_the_p521_comb_groups_run_from_copies(self):
+    def test_only_the_p521_comb_and_chacha20poly1305_groups_run_from_copies(self):
         # P-521's comb table (747 KB) moved its times by up to 7% between
         # identical copies of one binary; P-384's and P-256's did not move.
-        for group in ['ecdsa_p521_sha512_sign', 'ecdsa_p521_sha512_verify', 'ec_p521_public_key']:
+        # ChaCha20-Poly1305's moved by up to 29% on AMD's Zen 3; ChaCha20's
+        # and Poly1305's own groups are not known to.
+        for group in ['ecdsa_p521_sha512_sign', 'ecdsa_p521_sha512_verify', 'ec_p521_public_key',
+                      'chacha20poly1305', 'chacha20poly1305-decrypt',
+                      'chacha20poly1305-encrypt-out-of-place', 'chacha20poly1305-copy-encrypt-in-place']:
             self.assertTrue(bench_compare.FRESH_COPIES.match(group), group)
-        for group in ['ecdh_p521', 'ecdsa_p384_sha384_sign', 'ec_p384_public_key', 'ec_p256_public_key']:
+        for group in ['ecdh_p521', 'ecdsa_p384_sha384_sign', 'ec_p384_public_key', 'ec_p256_public_key',
+                      'chacha20', 'poly1305', 'xchacha20poly1305']:
             self.assertFalse(bench_compare.FRESH_COPIES.match(group), group)
 
-    def test_the_copies_select_only_the_module_with_those_groups(self):
+    def test_the_copies_select_only_the_modules_with_those_groups(self):
         # Every group of FRESH_COPIES is in the benchmarks that
         # FRESH_COPIES_MODULES selects, and those alone run from the copies.
         root = pathlib.Path(__file__).resolve().parent.parent
         catalog = planner.bench_catalog(root=str(root))
+        modules = bench_compare.FRESH_COPIES_MODULES.split()
         selected = [name for name, uses in catalog.items()
-                    if bench_compare.FRESH_COPIES_MODULES in uses]
-        self.assertEqual(selected, ['ecdsa_p521'])
+                    if any(m in uses for m in modules)]
+        self.assertEqual(sorted(selected), ['chacha20poly1305', 'ecdsa_p521'])
         source = (root / 'bench/benches/primitives/ecdsa_p521.rs').read_text()
         for group in ['ec_p521_public_key', 'ecdsa_p521_{name}_sign', 'ecdsa_p521_{name}_verify']:
+            self.assertIn(f'"{group}"', source)
+        source = (root / 'bench/benches/primitives/chacha20poly1305.rs').read_text()
+        for group in ['chacha20poly1305', 'chacha20poly1305-decrypt', 'chacha20poly1305-encrypt-out-of-place',
+                      'chacha20poly1305-copy-encrypt-in-place']:
             self.assertIn(f'"{group}"', source)
 
     def test_both_sides_are_built_at_one_path(self):
