@@ -14,6 +14,10 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Lit
 meta import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Lit
+import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Short.Main
+import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Short.Branch
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed5.Lit
+meta import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed5.Lit
 
 /-!
 # ChaCha20-Poly1305 on AArch64: `Verified`
@@ -84,16 +88,28 @@ theorem openCode_eq (c : Impl.ChaCha20.AArch64.XorCallee) (stitched : Bool) :
 theorem sealMainCode_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : APre true s₀) :
     WP isa (sealMainCode v.callee v.stitched) s₀ (MainS s₀) := by
   unfold sealMainCode
-  split
-  · exact sealStitchedMain_ok v hp
-  · exact sealMain_ok v hp
+  refine WP.seq (WP.mono (Short.check_ok s₀) fun s₁ ⟨ag, x9⟩ => ?_)
+  have hp₁ := Short.APre.agree ag hp
+  refine WP.ite (decide (1 ≤ L s₀ ∧ L s₀ ≤ 256)) (Short.check_eval x9) (fun h => ?_) (fun _ => ?_)
+  · have hL₁ : L s₁ ≤ 256 := by
+      rw [L, ag.gpr .x5 (by decide)]; exact (of_decide_eq_true h).2
+    exact WP.mono (Short.sealMain_ok hp₁ hL₁) fun _ h => Short.MainS.agree ag h
+  · split
+    · exact WP.mono (sealStitchedMain_ok v hp₁) fun _ h => Short.MainS.agree ag h
+    · exact WP.mono (sealMain_ok v hp₁) fun _ h => Short.MainS.agree ag h
 
 theorem openMainCode_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : APre false s₀) :
     WP isa (openMainCode v.callee v.stitched) s₀ (MainO s₀) := by
   unfold openMainCode
-  split
-  · exact openStitchedMain_ok v hp
-  · exact openMain_ok v hp
+  refine WP.seq (WP.mono (Short.check_ok s₀) fun s₁ ⟨ag, x9⟩ => ?_)
+  have hp₁ := Short.APre.agree ag hp
+  refine WP.ite (decide (1 ≤ L s₀ ∧ L s₀ ≤ 256)) (Short.check_eval x9) (fun h => ?_) (fun _ => ?_)
+  · have hL₁ : L s₁ ≤ 256 := by
+      rw [L, ag.gpr .x5 (by decide)]; exact (of_decide_eq_true h).2
+    exact WP.mono (Short.openMain_ok hp₁ hL₁) fun _ h => Short.MainO.agree ag h
+  · split
+    · exact WP.mono (openStitchedMain_ok v hp₁) fun _ h => Short.MainO.agree ag h
+    · exact WP.mono (openMain_ok v hp₁) fun _ h => Short.MainO.agree ag h
 
 theorem seal_ok (v : Proof.ChaCha20.AArch64.XorImpl) (s : State) (hs : sealAArch64.pre s) :
     ∃ t s', Exec isa (sealCode v.callee v.stitched) s t s' ∧

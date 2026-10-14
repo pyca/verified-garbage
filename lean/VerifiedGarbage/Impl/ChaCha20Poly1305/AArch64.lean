@@ -84,8 +84,11 @@ def stSrc (k : Nat) : List Instr :=
   else if k = 12 then [.movz .w .x9 0 0]
   else [.ldr .w .x9 .x1 (4 * (k - 13))]
 
+/-- Word `k` of the ChaCha20 state, at `x21 + b + 4k`. -/
+def stWAt (b k : Nat) : List Instr := stSrc k ++ ([.str .w .x9 .x21 (b + 4 * k)] : List Instr)
+
 /-- Word `k` of the ChaCha20 state, at `x21 + 64 + 4k`. -/
-def stW (k : Nat) : List Instr := stSrc k ++ ([.str .w .x9 .x21 (64 + 4 * k)] : List Instr)
+def stW (k : Nat) : List Instr := stWAt 64 k
 
 /-- The ChaCha20 state for counter 0. -/
 def initState : List Instr := (List.range 16).flatMap stW
