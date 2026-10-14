@@ -22,11 +22,14 @@
 //! list of slices, such as a record's header and payload, or a single one)
 //! into one output buffer. Usually this is one call of `vg_aes_gcm_seal_gather`
 //! (`VG.Spec.Gcm.sealGatherContract`), which reads each piece where it is.
-//! With a prepared key, a 96-bit nonce, at most 16 bytes of AAD, and a long
-//! piece followed by at most one of at most 16 bytes (a TLS record and its
-//! content type), it is one call of `vg_aes_gcm_seal_split_prepared`
-//! (`VG.Spec.Gcm.sealSplitPreparedContract`) instead, after the second piece
-//! is copied to the end of the output.
+//! With a prepared key, a 96-bit nonce, at most 16 bytes of AAD and a long
+//! plaintext, it is instead one call of `vg_aes_gcm_seal_split_prepared`
+//! (`VG.Spec.Gcm.sealSplitPreparedContract`) for one piece, or for a piece
+//! of whole blocks and one of fewer than 16 bytes (a TLS record and its
+//! content type), copied to the end of the output first. For other long
+//! slices followed by at most one byte, Rust instead composes the verified
+//! CTR, GHASH and interleaved block primitives directly. This composition,
+//! like the incremental API's Rust bookkeeping, is outside the Lean proof.
 //!
 //! # Tags
 //!
@@ -844,13 +847,14 @@ impl AesGcm {
         }
     }
 
-    /// `encrypt` of a long first piece and at most one more of at most 16
-    /// bytes, with the key context with the powers if it is ready: one call
-    /// of `vg_aes_gcm_seal_split_prepared`, after the second piece is copied
-    /// to the end of `out`. For a 96-bit nonce and at most 16 bytes of
+    /// `encrypt` of one long piece, or of a long piece of whole blocks and
+    /// one of fewer than 16 bytes, with the key context with the powers if
+    /// it is ready: one call of `vg_aes_gcm_seal_split_prepared`, after the
+    /// second piece is copied to the end of `out`. For a 96-bit nonce and at most 16 bytes of
     /// additional data (a TLS record), it absorbs the additional data with
     /// the prepared `H` and takes no other call before the interleaved loop.
     #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
+    #[inline(always)]
     fn seal_split_prepared(
         &self,
         nonce: &[u8],
@@ -859,9 +863,12 @@ impl AesGcm {
         out: &mut [u8],
     ) -> Option<Block> {
         use crate::arch::gcm::vg_aes_gcm_seal_split_prepared_vaes_vpclmul_avx512;
+        // `seal_split` reads `src` where it is, then encrypts the bytes after
+        // its whole blocks one at a time: with a second piece, only those
+        // without any (`seal_two_slices_prepared` takes the others).
         let (src, rest): (&[u8], &[u8]) = match plaintext {
             [a] => (a, &[]),
-            [a, b] if b.len() <= 16 => (a, b),
+            [a, b] if a.len() % 16 == 0 && b.len() < 16 => (a, b),
             _ => return None,
         };
         if nonce.len() != 12 || aad.len() > 16 || src.len() < POWERS_MIN_LEN {
@@ -913,6 +920,135 @@ impl AesGcm {
         Some(tag)
     }
 
+    /// Encrypts a long first slice and at most one trailing byte without
+    /// constructing a streaming state. A prepared key, a 96-bit nonce and
+    /// at most one AAD block let the verified CTR, GHASH and interleaved
+    /// block primitives handle the record directly. The ordinary gather
+    /// implementation handles every other shape.
+    #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
+    fn seal_two_slices_prepared(
+        &self,
+        nonce: &[u8],
+        aad: &[u8],
+        plaintext: &[&[u8]],
+        out: &mut [u8],
+    ) -> Option<Block> {
+        use crate::arch::aes::{vg_aes_ctr32, vg_aes_ctr32_aesni, vg_aes_ctr32_vaes};
+        use crate::arch::gcm::{
+            vg_aes_gcm_encrypt_blocks_to_prepared_vaes_vpclmul_avx512, vg_ghash, vg_ghash_pclmul,
+            vg_ghash_vpclmul,
+        };
+        if nonce.len() != 12
+            || aad.len() > 16
+            || plaintext.len() != 2
+            || plaintext[1].len() > 1
+            || plaintext[0].len() < 256
+        {
+            return None;
+        }
+        // Follow the same exhaustive backend mapping as the generic
+        // assembly callers. New AES/GHASH combinations must be handled here.
+        let ctr = instance!(self.backend, vg_aes_ctr32,
+            x86_64: [vg_aes_ctr32_aesni, vg_aes_ctr32, vg_aes_ctr32_aesni],
+            vaes: [vg_aes_ctr32_vaes, vg_aes_ctr32, vg_aes_ctr32_vaes,
+                vg_aes_ctr32_aesni, vg_aes_ctr32_vaes, vg_aes_ctr32_vaes],
+            avx: [vg_aes_ctr32_aesni], aarch64: [vg_aes_ctr32_aes]);
+        let gh = instance!(self.backend, vg_ghash,
+            x86_64: [vg_ghash, vg_ghash_pclmul, vg_ghash_pclmul],
+            vaes: [vg_ghash, vg_ghash_vpclmul, vg_ghash_pclmul,
+                vg_ghash_vpclmul, vg_ghash_vpclmul, vg_ghash_vpclmul],
+            avx: [vg_ghash_pclmul], aarch64: [vg_ghash_aes]);
+        let blocks = match self.backend {
+            Backend::VaesVpclmulAvx512 => vg_aes_gcm_encrypt_blocks_to_prepared_vaes_vpclmul_avx512,
+            Backend::Scalar
+            | Backend::AesNi
+            | Backend::Pclmul
+            | Backend::AesNiPclmul
+            | Backend::Vaes
+            | Backend::Vpclmul
+            | Backend::VaesPclmul
+            | Backend::AesNiVpclmul
+            | Backend::VaesVpclmul
+            | Backend::AesNiPclmulAvx => return None,
+        };
+        let ctx = self.powers.ctx.load(Ordering::Acquire);
+        if ctx.is_null() {
+            return None;
+        }
+        let mut scratch = MaybeUninit::<[u64; 264]>::uninit();
+        let work = scratch.as_mut_ptr();
+        let mut counter = [0u8; 16];
+        counter[..12].copy_from_slice(nonce);
+        counter[15] = 1;
+        let mut tag = [0u8; 16];
+        let mut y = [0u8; 16];
+        let mut padded_aad = [0u8; 16];
+        padded_aad[..aad.len()].copy_from_slice(aad);
+        let head = plaintext[0].len() & !15;
+        let count = head / 16;
+        let mut finish = [[0u8; 16]; 2];
+        let rem = plaintext[0].len() - head;
+        let tail = rem + plaintext[1].len();
+        finish[0][..rem].copy_from_slice(&plaintext[0][head..]);
+        finish[0][rem..tail].copy_from_slice(plaintext[1]);
+        finish[1][..8].copy_from_slice(&((aad.len() as u64) * 8).to_be_bytes());
+        finish[1][8..].copy_from_slice(&((out.len() as u64) * 8).to_be_bytes());
+        // SAFETY: the exhaustive dispatch above selects the key's CPU
+        // features. The acquired context was initialized for this key and
+        // lives as long as `self`; its first 256 bytes contain the ordinary
+        // schedule and H. The caller checked nonce, AAD, text and output
+        // lengths. The nonce forms J0 = nonce || 1; CTR first computes
+        // E(K, J0), leaving inc32(J0) for the text. `head` is a whole-block
+        // prefix; `rem + suffix.len() <= 16`. Each call gets separate
+        // readable inputs and writable buffers of its specified size,
+        // including 2112 scratch bytes. The final ciphertext is zero-padded
+        // before GHASH, followed by the big-endian bit lengths (§7.1).
+        unsafe {
+            ctr(
+                ctx.cast(),
+                self.rounds,
+                &mut counter,
+                &mut tag,
+                1,
+                work.cast(),
+            );
+            let h = ctx.cast::<u8>().add(240).cast::<[u8; 16]>();
+            if !aad.is_empty() {
+                gh(h, &mut y, &padded_aad, 1, work.cast());
+            }
+            blocks(
+                ctx,
+                self.rounds,
+                &mut counter,
+                &mut y,
+                plaintext[0].as_ptr().cast(),
+                count,
+                out.as_mut_ptr().cast(),
+                count,
+                work,
+            );
+            if tail != 0 {
+                ctr(
+                    ctx.cast(),
+                    self.rounds,
+                    &mut counter,
+                    &mut finish[0],
+                    1,
+                    work.cast(),
+                );
+                out[head..].copy_from_slice(&finish[0][..tail]);
+                finish[0][tail..].fill(0);
+                gh(h, &mut y, finish.as_ptr(), 2, work.cast());
+            } else {
+                gh(h, &mut y, &finish[1], 1, work.cast());
+            }
+        }
+        for i in 0..16 {
+            tag[i] ^= y[i];
+        }
+        Some(tag)
+    }
+
     /// The most pieces [`encrypt`](Self::encrypt) takes a plaintext in.
     pub const MAX_PIECES: usize = 64;
 
@@ -944,6 +1080,10 @@ impl AesGcm {
         add_len(0, aad.len(), MAX_AAD).map_err(|()| Error::InvalidAadLength)?;
         #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
         if let Some(tag) = self.seal_split_prepared(nonce, aad, plaintext, out) {
+            return Ok(tag);
+        }
+        #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
+        if let Some(tag) = self.seal_two_slices_prepared(nonce, aad, plaintext, out) {
             return Ok(tag);
         }
         // The descriptors of the pieces, as `vg_aes_gcm_seal_gather` takes
@@ -2047,9 +2187,10 @@ mod tests {
                             warm.decrypt_in_place(nonce, aad, &mut actual, &tag)
                                 .unwrap();
                             assert_eq!(actual, plain);
-                            // One piece; a second of 1, 16 (both taking
-                            // `seal_split_prepared` from 256 bytes on) or 17
-                            // bytes; and three.
+                            // One piece (`seal_split_prepared` from 256
+                            // bytes on); a second of 1 byte (the same after
+                            // whole blocks, `seal_two_slices_prepared`
+                            // otherwise), 16 or 17 bytes; and three.
                             let (a, b) = plain.split_at(len - 17);
                             let (b, c) = b.split_at(1);
                             let ways: [&[&[u8]]; 5] = [
