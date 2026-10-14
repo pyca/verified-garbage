@@ -1,6 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemQuad
+public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemBody
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Gh
 public import VerifiedGarbage.Proof.Framework.X86_64.MaskedPrefix
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
@@ -9,11 +10,10 @@ import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchZTo.Base
 
 /-!
-# The first blocks after the last group, through a mask
+# The blocks after the last group, through a mask
 
 What the masked loads of the blocks after the last group share
-(`RemQuadKD.lean`, `RemGXor.lean`, `RemGHash.lean`): the registers the masked
-first blocks write (`quadRegsK`), and a masked load's result in a register
+(`RemGXor.lean`, `RemGHash.lean`): a masked load's result in a register
 (`setZv`, `zlane_setZv`).
 -/
 
@@ -28,9 +28,6 @@ open VG.Proof.Gcm.X86_64.StitchZ (restZ ldAcc ldAcc_ok)
 open VG.Proof.Aes.X86_64.VaesZ (zmm_lane)
 open VG.Proof.Gcm.X86_64 (revMask blockAt_eq)
 open VG.Spec.Gcm (Block blockAt)
-
-/-- The registers `remQuadK` writes. -/
-abbrev quadRegsK : List XReg := [.xmm7, .xmm12, .xmm13, .xmm2, .xmm8, .xmm9, .xmm10, .xmm11]
 
 /-- The lanes of a 512-bit value written to a register. -/
 theorem zlane_setZv (s : State) (d : XReg) (v : BitVec 512) {l : Nat} (hl : l < 4) :

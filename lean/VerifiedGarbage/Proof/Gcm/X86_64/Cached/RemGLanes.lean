@@ -13,7 +13,7 @@ In the masked group (`StitchZH.remG`), block `j` of the last `r` is lane
 `j mod 4` of register `j / 4`, and each lane's products add up over the
 registers in order: `laneAccG`, whose four lanes' reduced products add up to
 `GHASH` over the `r` blocks for the powers of a group's table (`RemOkG`,
-which `StitchZ/OkP.lean` proves as it proves `RemOk`). Lanes after the `r`
+which `StitchZ/OkP.lean` proves, `remZG`). Lanes after the `r`
 blocks are multiplied by zero, and add nothing (`laneAccG_pad`).
 -/
 

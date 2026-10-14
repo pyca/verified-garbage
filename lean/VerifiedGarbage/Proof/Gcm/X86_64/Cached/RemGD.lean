@@ -74,7 +74,7 @@ theorem ksBatchGD_ok {s₀ : State} (hp : SPre s₀) {k r : Nat} (hk4 : k ≤ 4)
       s'.zlane .xmm2 0 = yLanes (fun n => blockAt s.mem (A + BitVec.ofNat 64 (16 * n))) T y r ∧
       (∀ l, 1 ≤ l → l < 4 → s'.zlane .xmm2 l = 0) ∧
       (∀ q, q ≠ .r10 → s'.gpr q = s.gpr q) ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
-      (∀ x, x ∉ aregs → x ∉ ([.xmm13, .xmm14] ++ gRegs : List XReg) → ∀ l < 4, s'.zlane x l = s.zlane x l) := by
+      (∀ x, x ∉ aregs → x ∉ ([.xmm13, .xmm14, .xmm12, .xmm7, .xmm8, .xmm9, .xmm10, .xmm11, .xmm2] : List XReg) → ∀ l < 4, s'.zlane x l = s.zlane x l) := by
   have hwp := hp.wrap_p
   obtain ⟨hnd, h13, hx⟩ := aregs_ok
   have hnd' : (aregs.take k).Nodup := hnd.sublist (List.take_sublist _ _)
@@ -193,7 +193,7 @@ theorem ksBatchGD_ok {s₀ : State} (hp : SPre s₀) {k r : Nat} (hk4 : k ≤ 4)
     simp only [yLanes]
     rw [laneAccG_pad X' T y 0 r (4 * k) hrk, laneAccG_pad X' T y 1 r (4 * k) hrk,
       laneAccG_pad X' T y 2 r (4 * k) hrk, laneAccG_pad X' T y 3 r (4 * k) hrk]
-  · simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false, not_or] at hx'
+  · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hx'
     obtain ⟨n13, n14, n12, n7, n8, n9, n10, n11, n2⟩ := hx'
     rw [k' x (nA x hx) n13 l hl, f₂.zlane x (by
       simp only [List.mem_cons, List.mem_append, List.not_mem_nil, or_false, not_or]
@@ -230,7 +230,7 @@ theorem ksSelGD_ok {s₀ : State} (hp : SPre s₀) {r : Nat} (hr1 : 1 ≤ r) (hr
       s'.zlane .xmm2 0 = yLanes (fun n => blockAt s.mem (A + BitVec.ofNat 64 (16 * n))) T y r ∧
       (∀ l, 1 ≤ l → l < 4 → s'.zlane .xmm2 l = 0) ∧
       (∀ q, q ≠ .r10 → s'.gpr q = s.gpr q) ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
-      (∀ x, x ∉ aregs → x ∉ ([.xmm13, .xmm14] ++ gRegs : List XReg) → ∀ l < 4, s'.zlane x l = s.zlane x l) := by
+      (∀ x, x ∉ aregs → x ∉ ([.xmm13, .xmm14, .xmm12, .xmm7, .xmm8, .xmm9, .xmm10, .xmm11, .xmm2] : List XReg) → ∀ l < 4, s'.zlane x l = s.zlane x l) := by
   have br : ∀ k, r ≤ 4 * k → 4 * k < r + 4 → k ≤ 4 → ∀ t : State, t.gpr = s.gpr →
       (∀ x l, t.zlane x l = s.zlane x l) → t.mem = s.mem → t.rd = s.rd → t.wr = s.wr → HKeep s t →
       WP isa (ksBatchGD k) t fun s' =>
@@ -240,7 +240,7 @@ theorem ksSelGD_ok {s₀ : State} (hp : SPre s₀) {r : Nat} (hr1 : 1 ≤ r) (hr
         s'.zlane .xmm2 0 = yLanes (fun n => blockAt s.mem (A + BitVec.ofNat 64 (16 * n))) T y r ∧
         (∀ l, 1 ≤ l → l < 4 → s'.zlane .xmm2 l = 0) ∧
         (∀ q, q ≠ .r10 → s'.gpr q = s.gpr q) ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
-        (∀ x, x ∉ aregs → x ∉ ([.xmm13, .xmm14] ++ gRegs : List XReg) → ∀ l < 4, s'.zlane x l = s.zlane x l) := by
+        (∀ x, x ∉ aregs → x ∉ ([.xmm13, .xmm14, .xmm12, .xmm7, .xmm8, .xmm9, .xmm10, .xmm11, .xmm2] : List XReg) → ∀ l < 4, s'.zlane x l = s.zlane x l) := by
     intro k hrk hkr hk4 t hg' hl hm hrd' hwr' hh
     have hm' : ∀ a : Addr, blockAt t.mem a = blockAt s.mem a := fun a => by rw [hm]
     refine WP.mono (ksBatchGD_ok hp hk4 hr1 hr15 hrk hkr (A := A) (W := W) (T := T) (y := y) (c := c)
