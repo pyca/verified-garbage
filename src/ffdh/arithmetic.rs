@@ -1,4 +1,5 @@
 //! Public modulus setup and fixed-schedule secret exponentiation.
+#[cfg(target_arch = "x86_64")]
 use crate::arch::ffdh::vg_ffdh_choose;
 use crate::arch::rsa_mont::vg_rsa_mont_mul;
 #[cfg(target_arch = "x86_64")]
@@ -35,6 +36,7 @@ pub(crate) fn minus_one(a: &[u8]) -> Vec<u8> {
 }
 
 /// Public long reduction for q | p-1 checks, with a spare carry byte.
+#[cfg(target_arch = "x86_64")]
 pub(crate) fn divides(q: &[u8], n: &[u8]) -> bool {
     let modulus = scalar(q, q.len() + 1);
     let mut rem = vec![0u8; modulus.len()];
@@ -82,6 +84,7 @@ pub(crate) struct Montgomery {
     modulus: Vec<u64>,
     r2: Vec<u64>,
     minv: u64,
+    #[cfg(target_arch = "x86_64")]
     len: usize,
     backend: Backend,
 }
@@ -104,10 +107,12 @@ impl Montgomery {
             modulus,
             r2,
             minv: inv.wrapping_neg(),
+            #[cfg(target_arch = "x86_64")]
             len: p.len(),
             backend: Backend::select(detected()),
         }
     }
+    #[cfg(target_arch = "x86_64")]
     pub(crate) fn power(&self, base: &[u8], exponent: &[u8]) -> Vec<u8> {
         let w = self.modulus.len();
         let window = if exponent.len() >= 39 { 5 } else { 4 };
@@ -179,6 +184,7 @@ impl Montgomery {
 
     /// Variable-time exponentiation for public exponents only (e.g. subgroup
     /// orders). Never use this for a private scalar or a secret prime exponent.
+    #[cfg(target_arch = "x86_64")]
     pub(crate) fn power_public(&self, base: &[u8], exponent: &[u8]) -> Vec<u8> {
         let mut ws = self.power_public_montgomery(base, exponent);
         self.finish(&mut ws)
@@ -295,6 +301,7 @@ impl Montgomery {
         ws
     }
 
+    #[cfg(target_arch = "x86_64")]
     fn finish(&self, ws: &mut [u64]) -> Vec<u8> {
         let at = |j| 32 + j * (self.modulus.len() + 2);
         self.mul(ws, 5, 5, 7);
@@ -375,6 +382,7 @@ mod tests {
         }
     }
 
+    #[cfg(target_arch = "x86_64")]
     #[test]
     fn public_and_secret_exponents_agree() {
         // Differential checks, including zero/leading-zero exponents, every
