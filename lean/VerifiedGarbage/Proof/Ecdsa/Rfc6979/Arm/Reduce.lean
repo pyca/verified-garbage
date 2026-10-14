@@ -433,7 +433,7 @@ theorem reduce_ok (hA : P.R.wide = false) (hL : L.Ok) {t : State} (hc : Ctx L g 
       Frame [⟨L.B + BitVec.ofNat 64 24, 176⟩] t.mem t'.mem ∧
       Spec.Weierstrass.ofBytes (Spec.Sha256.bytesAt t'.mem (L.B + BitVec.ofNat 64 152) (4 * P.k)) =
         Spec.Weierstrass.ofBytes (Spec.Sha256.bytesAt m₀ (State.addr L.dg) (4 * P.k)) % P.R.E.C.n := by
-  have hk : P.k ≤ 12 := by have := (P.sizesA hA).2.1; simp only [RfcHash.k, RfcHash.w] at *; omega_arith
+  have hk : P.k ≤ 12 := (P.sizesA hA).2.1
   simp only [Cfg.reduce, w_cfgOf, List.append_assoc, List.cons_append, List.nil_append]
   refine wp_movw fun u₁ v₁ => wp_mov (op2_imm (by decide)) fun u₂ v₂ => ?_
   have hc₂ : Ctx L g m₀ u₂ := (hc.upd v₁ (by decide)).upd v₂ (by decide)
@@ -455,11 +455,11 @@ theorem reduce_ok (hA : P.R.wide = false) (hL : L.Ok) {t : State} (hc : Ctx L g 
   have hH := ofBytes_words t'.mem (Sw P.R.E.C.n P.k L t.mem) (L.B + BitVec.ofNat 64 152) P.k fun j hj => by
     rw [Offset.add_add, h'.h j hj]
     exact Proof.Pbkdf2.Whole.byteRev32_byteRev32 _
-  have e32 : 32 * P.k = 64 * P.R.E.n := by simp only [RfcHash.k]; omega_arith
+  have e32 : 32 * P.k = 8 * P.R.E.C.len := by have := (P.sizesA hA).1; simp only [RfcHash.Q] at this; omega_arith
   rw [dg_ofBytes hL hc hn]
   change Spec.Weierstrass.ofBytes (Spec.Ecdsa.bytesAt _ _ (4 * P.k)) =
     Spec.Weierstrass.ofBytes (Spec.Ecdsa.bytesAt _ _ (4 * P.k)) % _
   rw [hH, hX]
-  exact reduce_math _ _ _ _ (by rw [e32]; exact P.R.n_lt) (by rw [e32]; exact (P.R.sizesA hA).2.2.2)
+  exact reduce_math _ _ _ _ (by rw [e32]; exact (Nat.log2_lt P.R.n_ne).mp (by rw [← (P.R.sizesA hA).2.2.1]; unfold Spec.Ecdsa.nBits; omega)) (by rw [e32]; exact (P.R.sizesA hA).2.2.2)
 
 end VG.Proof.Ecdsa.Rfc6979.Arm

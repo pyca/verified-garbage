@@ -116,7 +116,7 @@ theorem rekey_gen (hL : L.Ok) (hq : HOk P L) {t : State} (hc : Ctx L g m₀ t) {
     (by anums) hq
     (fun hf hwf => by
       have := P.sizesA (by rw [hwd, hf] at hwf; exact hwf)
-      simp only [RfcHash.k, RfcHash.w] at this ⊢; exact ⟨by omega, by omega⟩)
+      simp only [RfcHash.k] at this ⊢; exact ⟨by omega, by omega⟩)
     (fun hf hwt => by
       have hW : P.R.wide = true := by rw [hwd, hf] at hwt; exact hwt
       have := P.sizesW hW; exact ⟨by omega, by omega, hdn hW⟩)

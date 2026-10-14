@@ -79,7 +79,7 @@ theorem conv_ok (hL : L.Ok) (hw : L.wide = P.R.wide) (hW : P.R.wide = true) {t :
   have hFN := hL.FN
   have e272 := hL.e272
   have e20 := hL.e20
-  have hw2 : (cfgOf P).w / 2 = P.w := by simp only [cfgOf, RfcHash.w]; omega_arith
+  have hw2 : (cfgOf P).w / 2 = P.w := by simp only [cfgOf, show P.R.E.C.len = 66 from hQ66, show P.w = 9 from hw9]; decide
   refine WP.of_syms ?_
   rw [Cfg.conv, hw2, WP.block_append_iff, WP.block_append_iff, WP.block_append_iff, WP.block_append_iff]
   refine WP.mono (fr_ok hL hc (d := .esi) (by decide) o) fun u₁ h₁ => ?_

@@ -9,7 +9,7 @@ public import VerifiedGarbage.Impl.Weierstrass.Arm
 `sign R H core (out = r0, d = r1, digest = r2, scratch = r3) -> r0`, as on
 x86 and AArch64 (`Impl/Ecdsa/Rfc6979/X86.lean`): RFC 6979 §3.2 for a curve
 of `Q`-byte scalars in `w` 32-bit words and a Merkle–Damgård hash function
-`H` whose output is `D` bytes, a multiple of 8, at most 64, with HMAC
+`H` whose output is `D` bytes, a multiple of 4, at most 64, with HMAC
 computed by calling `H`'s HMAC `init`, streaming `update` and HMAC
 `finalize`, and each candidate tried by calling `core`, the signature with a
 given `k` (`vg_ecdsa_<curve>_sign`), which reads `Q` bytes of the digest and
@@ -18,7 +18,7 @@ shift by `sh = 8 Q - qlen` bits).
 
 Two kinds of curve and hash function, as on x86:
 
-* `Q = 4 w ≤ D` and `qlen = 8 Q` (P-256 and P-384, `wide = false`): one `V`
+* `Q = 4 w ≤ D` and `qlen = 8 Q` (P-192, P-224, P-256 and P-384, `wide = false`): one `V`
   makes a candidate, its leftmost `Q` bytes; `bits2octets` is a conditional
   subtraction of `n` from the digest's leftmost `Q` bytes; and `core` reads
   the digest and `V` in place.
@@ -116,7 +116,7 @@ structure Cfg where
   `finalize` with their working space as an argument (the functions
   PBKDF2's code calls). -/
   F : Impl.Pbkdf2.Whole.Arm.Fns
-  /-- The 32-bit words of the curve's scalars (an even number). -/
+  /-- The 32-bit words of the curve's scalars (seven for P-224; otherwise an even number). -/
   w : Nat
   /-- The bytes of the curve's scalars, `Q`. -/
   len : Nat := 4 * w

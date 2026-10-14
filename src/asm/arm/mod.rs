@@ -173,6 +173,9 @@ pub(crate) mod ecdsa_p192_sha256;
 pub(crate) mod ecdsa_p224;
 
 #[rustfmt::skip]
+pub(crate) mod ecdsa_p224_sha224;
+
+#[rustfmt::skip]
 pub(crate) mod ecdsa_p256;
 
 #[rustfmt::skip]
