@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Mont.AArch64
+public import VerifiedGarbage.Impl.Mont.AArch64.P384Mul
 public import VerifiedGarbage.Spec.Weierstrass.Mont
 public import VerifiedGarbage.TCB.AArch64.Target
 
@@ -94,8 +95,15 @@ def mRegs (n m : Nat) : List Reg := (List.range n).map (mReg n m)
 /-- Each distinct word of `m` and its register. -/
 def mLoads (n m : Nat) : List (Reg × BitVec 64) := (mPool n).zip (mDistinct n m)
 
-/-- The modulus's words into their registers. -/
-def mLoadCode (n m : Nat) : List Instr := (mLoads n m).flatMap fun p => const64 p.1 p.2
+/-- P-384's `p` into its registers, from `x7 = 0`: all ones (`x26`), its
+low and high halves (`x23`, `x24`) and all ones but the lowest bit (`x25`),
+four instructions rather than sixteen for `const64`. -/
+def sparseLoadCode : List Instr :=
+  [.subImm .x .x26 .x7 1, .lsr .x .x23 .x26 32, .lsl .x .x24 .x26 32, .subImm .x .x25 .x26 1]
+
+/-- The modulus's words into their registers (`x7` being zero). -/
+def mLoadCode (n m : Nat) : List Instr :=
+  if sparseOk n m then sparseLoadCode else (mLoads n m).flatMap fun p => const64 p.1 p.2
 
 /-- Words in registers, as a row multiplies by them. -/
 def regWords (rs : List Reg) : List RWord := rs.map fun r => .gen (.reg r)
@@ -182,8 +190,9 @@ def exitCode (n m : Nat) : List Instr :=
   mLoadCode n m ++ csubM n (lowF n) (win n n n) (mRegs n m) ++
     storesR (roF n) (lowF n) 0 ++ restoreCode n
 
-/-- `vg_<curve>_mul_mod_<p|n>` for P-384's sparse `p` or a friendly
-modulus: the entry, the rounds, the exit. -/
+/-- `vg_<curve>_mul_mod_<p|n>` for a friendly modulus (or P-384's sparse `p`,
+whose function `mulFn` takes from `mulFn384` instead): the entry, the rounds,
+the exit. -/
 def mulFnS (n m : Nat) : Prog isa :=
   .seq (.block zextCode)
     (.block (entryRest n m ++ (List.range n).flatMap (roundF n m) ++ exitCode n m))
@@ -234,8 +243,28 @@ def mulFnG (n m : Nat) : Prog isa :=
   .seq (.block zextCode)
     (.block (saveCodeG n ++ ptrsG ++ setMod n m ++ mulR (mod n m) raG rbG roG 0 0 0 ++ restoreCodeG n))
 
+/-! ## P-384's `p`
+
+The product, then the reductions (`Impl/Mont/AArch64/P384Mul.lean`, adapted
+from s2n-bignum's `bignum_montmul_p384_alt`), rather than word-by-word
+Montgomery multiplication: each of P-384's six short reductions touches only
+the low half's six words, where word-by-word multiplication's carries
+ripple through the whole accumulator. -/
+
+/-- `vg_p384_mul_mod_p`: the entry (`mulFnS`'s registers saved, the
+pointers, `[b]` loaded, `x7 = 0`), the product and its reductions, `p` into
+its registers (`sparseLoadCode`), the sum reduced below `p` (`csubM`, its top
+word in `x21`) and stored through `ro`, the registers restored. -/
+def mulFn384 : Prog isa :=
+  .seq (.block zextCode)
+    (.block (saveCode 6 ++ [.add .x (roF 6) .x0 .x1, .add .x (raF 6) .x0 .x2, .add .x .x3 .x0 .x3] ++
+      loadsR .x3 P384Mul.bRegs384 0 ++ zero7 :: P384Mul.prod ++ P384Mul.reds ++ P384Mul.addHigh ++
+      sparseLoadCode ++ csubM 6 P384Mul.lowRegs .x21 [.x23, .x24, .x25, .x26, .x26, .x26] ++
+      storesR (roF 6) P384Mul.lowRegs 0 ++ restoreCode 6))
+
 /-- `vg_<curve>_mul_mod_<p|n>`. -/
-def mulFn (n m : Nat) : Prog isa := if general n m then mulFnG n m else mulFnS n m
+def mulFn (n m : Nat) : Prog isa :=
+  if sparseOk n m then mulFn384 else if general n m then mulFnG n m else mulFnS n m
 
 open Spec.Weierstrass.Mont in
 /-- The moduli whose products are functions on AArch64: P-384's and P-521's

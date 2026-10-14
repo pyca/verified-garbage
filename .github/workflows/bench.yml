@@ -32,7 +32,7 @@ on:
         description: The commit to compare against (empty to run the branch alone, next to OpenSSL and aws-lc-rs)
         required: false
       arches:
-        description: Space-separated architectures to run (x86_64 aarch64 x86 arm; empty for all)
+        description: Space-separated architectures to run (x86_64 aarch64 x86 arm, or aarch64-apple, which only a run by hand measures; empty for all but aarch64-apple)
         required: false
       cpu_features:
         description: Space-separated VG_CPU_FEATURES configurations to run on each, `-` for none (empty for those that choose among the modules' implementations; `python3 ci/bench_arches.py --choices` lists them)
@@ -130,7 +130,11 @@ jobs:
       - name: Record CPU and OpenSSL capabilities
         run: |
           openssl version -a
-          python3 -c 'from pathlib import Path; print(Path("/proc/cpuinfo").read_text().split("\n\n", 1)[0])'
+          if [ -r /proc/cpuinfo ]; then
+            python3 -c 'from pathlib import Path; print(Path("/proc/cpuinfo").read_text().split("\n\n", 1)[0])'
+          else
+            sysctl -n machdep.cpu.brand_string hw.optional.arm
+          fi
       - name: Install Rust
         # ci.yml's `rust` job lints the benchmarks, once per architecture.
         run: rustup toolchain install stable --profile minimal
@@ -148,7 +152,13 @@ jobs:
         env:
           MODULES: ${{ matrix.modules }}
           SHARD: ${{ matrix.shard }}
+          # Interleaved runs of each side (ci/bench_arches.py's platforms say
+          # how many; one but on a shared VM).
+          ROUNDS: ${{ matrix.rounds || 1 }}
           # OpenSSL's and aws-lc-rs's times are a reference for manual runs; a
           # pull request needs only its comparison with the base.
           OPENSSL: ${{ github.event_name == 'workflow_dispatch' && '--openssl' || '' }}
-        run: python3 head/ci/bench_compare.py base head --modules "$MODULES" --shard "$SHARD" --summary "$GITHUB_STEP_SUMMARY" $OPENSSL
+        run: |
+          # The `openssl` crate needs Homebrew's OpenSSL on macOS.
+          if [ "$RUNNER_OS" = macOS ]; then export OPENSSL_DIR="$(brew --prefix openssl@3)"; fi
+          python3 head/ci/bench_compare.py base head --rounds "$ROUNDS" --modules "$MODULES" --shard "$SHARD" --summary "$GITHUB_STEP_SUMMARY" $OPENSSL
