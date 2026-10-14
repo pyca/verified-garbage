@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemG
-public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemTo
+public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Loop48To
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

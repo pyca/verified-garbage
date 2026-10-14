@@ -13,15 +13,18 @@ that `vg_aes_gcm_encrypt_blocks` need not call `vg_aes_ctr32` and
 `vg_ghash` for them (`rem`). After the loops, the last group is still to
 hash and `r9 = 16 + r`. The counter after the last block is stored first,
 and `rax` pointed at the powers of the last `r` blocks, `H'ʳ` … `H'`, at
-`scratch + 256 - 16 r` (`remSetup`). Then the keystream of the `r` blocks,
-`4 ⌈r / 4⌉` counters encrypted in the lanes of `zmm3` … (`ksBatch`), is
-computed while the last group is hashed between its rounds, as in a body,
-and stored to `scratch + 768`. The first `r mod 4` blocks are then encrypted
-one at a time with their keystream, each block's product with its power
-added to the lane 0 products (`remBody`, with `Y` added to the first block,
-then cleared), and the rest four at a time in the lanes of `zmm7`, each
-lane's product added to that lane's (`remQuad`). The four lanes are reduced
-once and added (`StitchZ.fin`).
+`scratch + 256 - 16 r` (`remSetup`). Then the `r` blocks are encrypted as one
+more group of `⌈r / 4⌉` registers (`remG`): their counters are encrypted in
+the lanes of `zmm3` … while the last group is hashed between their rounds,
+as in a body; the data is added to them and the blocks stored, the last
+register's through the mask of its blocks; and the registers are hashed
+with their powers, the last one's loaded through the same mask so that its
+other lanes add nothing, and the four lanes reduced once and added
+(`StitchZ.fin`).
+
+`decR` takes them as before: their keystream stored to `scratch + 768`
+(`ksBatch`), then the first `r mod 4` blocks one at a time (`remBodyD`) or
+through a mask (`remQuadKD`), and the rest four at a time (`remQuadD`).
 -/
 
 @[expose] public section
@@ -102,10 +105,6 @@ def ksSelWith (g : Nat → List Instr) : Prog isa :=
         (.ite .b (ksBatch 2 g)
           (.seq (.block [.alu .cmp .r10 (.imm 193)]) (.ite .b (ksBatch 3 g) (ksBatch 4 g))))))
 
-/-- The keystream of `4 ⌈r / 4⌉` blocks, from `r10 = 16 r`, while the group
-at `rdx` is hashed. -/
-def ksSel : Prog isa := ksSelWith gq
-
 /-- Block `r10 / 16` of the last `r`, read at `src + r10`: its keystream from
 `scratch + 768`, the ciphertext written to `rdx + r10`, and its product with
 its power (at `rax + r10`) added to those in the lower lanes of `xmm8` …
@@ -123,31 +122,6 @@ def remNext : List Instr := [.alu .add .r10 (.imm 16), .alu .sub .r9 (.imm 1), .
 
 /-- The next block, and whether the blocks left are a multiple of four. -/
 def remNext1 : List Instr := [.alu .add .r10 (.imm 16), .alu .sub .r9 (.imm 1), .alu .test .r9 (.imm 3)]
-
-/-- Blocks `r10 / 16` … `r10 / 16 + 3` of the last `r`, read at `src + r10`,
-in the lanes of `zmm7`: their keystream from `scratch + 768`, the ciphertext
-written to `rdx + r10`, and each lane's product with its power (at
-`rax + r10`) added to that lane's (as the loads of a group, `StitchZ.ghLoad`),
-with `Y` (in lane 0 of `zmm2`, its other lanes clear) added to the first;
-then `Y` cleared. -/
-def remQuad (src : Reg) : List Instr :=
-  ([.vmovdqu32Load .xmm7 (atIx src .r10 0), .vmovdqu32Load .xmm12 (atIx .r11 .r10 768),
-   .zop (.zbin .vpxord .xmm7 .xmm7 .xmm12), .vmovdqu32Store (atIx .rdx .r10 0) .xmm7,
-   .vmovdqu32Load .xmm12 (atIx .rax .r10 0),
-   .zop (.zbin .vpshufb .xmm7 .xmm7 .xmm0), .zop (.zbin .vpxord .xmm7 .xmm7 .xmm2)] : List Instr) ++
-  StitchZ.acc .xmm7 .xmm12 ++ ([.zop (.zbin .vpxord .xmm2 .xmm2 .xmm2)] : List Instr)
-
-/-- The first `r mod 4` (2 or 3) of the last `r` blocks, at `src`, through
-the mask in `r10` (bits `2 (r mod 4) - 1` … 0, `remMask`), in the lanes of
-`zmm7`: their powers (at `rax`) into `zmm12` and their keystream (at
-`scratch + 768`) into `zmm13`, the ciphertext written to `rdx`, and each
-lane's product added to that lane's, with `Y` added to the first; then `Y`
-cleared. The masked-off lanes are zero, and read and write nothing. -/
-def remQuadK (src : Reg) : List Instr :=
-  ([.kLoad .r10 .xmm12 (at_ .rax 0), .kLoad .r10 .xmm7 (at_ src 0), .kLoad .r10 .xmm13 (at_ .r11 768),
-   .zop (.zbin .vpxord .xmm7 .xmm7 .xmm13), .kStore (at_ .rdx 0) .r10 .xmm7,
-   .zop (.zbin .vpshufb .xmm7 .xmm7 .xmm0), .zop (.zbin .vpxord .xmm7 .xmm7 .xmm2)] : List Instr) ++
-  StitchZ.acc .xmm7 .xmm12 ++ ([.zop (.zbin .vpxord .xmm2 .xmm2 .xmm2)] : List Instr)
 
 /-- The mask of `r mod 4` (2 or 3) blocks in `r10`, from `r9 = 16 + r`. -/
 def remMask : Prog isa :=
@@ -171,23 +145,6 @@ def remFirst (one quad : List Instr) : Prog isa :=
 
 /-- The next four blocks, and whether they were the last. -/
 def remNext4 : List Instr := [.alu .add .r10 (.imm 64), .alu .sub .r9 (.imm 4), .alu .cmp .r9 (.imm 16)]
-
-/-- The `r9 - 16` blocks at `src + r10`: the first `r mod 4` one at a time,
-the rest four at a time, and the four lanes' products reduced into `Y`. -/
-def remLoops (src : Reg) : Prog isa :=
-  .seq (remFirst (remBody src) (remQuadK src))
-    (.seq (.block [.alu .cmp .r9 (.imm 16)])
-        (.seq (.ite .e (.block []) (.loop (.block (remQuad src ++ remNext4)) .ne)) (.block fin)))
-
-/-- The `r9 - 16` blocks after the last group, the last group hashed, and
-`Y` stored; the blocks are read at `src` (`pre` points it at them once `rdx`
-does). -/
-def remWith (pre : List Instr) (src : Reg) : Prog isa :=
-  .seq (.block remSetup)
-    (.seq ksSel
-      (.seq (.block (([.alu .add .rdx (.imm 256), .mov32 .r10 (.imm 0)] : List Instr) ++ pre ++ StitchAvx.zero))
-        (.seq (remLoops src) (.block storeY))))
-
 
 /-! ## The blocks after the last group, as a masked group
 

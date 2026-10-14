@@ -2,7 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.PreparedTo
 import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Prepared
-public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemTo
+public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Loop48To
+public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Rem
 import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemD
 import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemG
 import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemGTo
