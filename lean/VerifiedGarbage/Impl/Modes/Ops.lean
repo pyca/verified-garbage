@@ -25,6 +25,8 @@ inductive Loc | dat | chn | buf
 /-- `dst := src` or `dst := src ⊕ xr`, on a word (`wide`) or a byte, at
 byte offsets into the areas. -/
 structure Op where
+  /-- Increment the 16-byte big-endian destination, ignoring the sources. -/
+  inc : Bool := false
   wide : Bool
   dst : Loc
   dOff : Nat

@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Modes.Ops
 public import VerifiedGarbage.TCB.Mem
+public import VerifiedGarbage.Spec.Ctr
 public import VerifiedGarbage.Proof.Framework.PowLit
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
@@ -33,11 +34,13 @@ open VG VG.Impl.Modes
 abbrev Areas := Loc → Nat → Byte
 
 /-- The bytes an operation writes. -/
-def _root_.VG.Impl.Modes.Op.width (o : Op) : Nat := if o.wide then 4 else 1
+def _root_.VG.Impl.Modes.Op.width (o : Op) : Nat := if o.inc then 16 else if o.wide then 4 else 1
 
 /-- Byte `t` of what `o` writes, from the areas `a` before it. -/
 def _root_.VG.Impl.Modes.Op.val (o : Op) (a : Areas) (t : Nat) : Byte :=
-  a o.src (o.sOff + t) ^^^ match o.xr with
+  if o.inc then
+    (Spec.Ctr.inc ((List.range 16).map fun i => a o.dst (o.dOff + i))).getD t 0
+  else a o.src (o.sOff + t) ^^^ match o.xr with
     | none => 0
     | some (l, off) => a l (off + t)
 
@@ -76,12 +79,20 @@ theorem _root_.VG.Impl.Modes.Op.apply_agree {len : Loc → Nat} {o : Op} (ho : o
   · rename_i hl
     obtain ⟨-, h1, h2⟩ := hl
     simp only [Op.val]
-    rw [h _ _ (by have := ho.2.1; omega)]
-    congr 1
     split
-    · rfl
-    · rename_i l' off e
-      exact h _ _ (by have := ho.2.2 l' off e; omega)
+    · rename_i hinc
+      have hd := ho.1
+      simp only [Op.width, hinc, ite_true] at hd
+      have he : (List.range 16).map (fun j => a o.dst (o.dOff + j)) =
+          (List.range 16).map (fun j => a' o.dst (o.dOff + j)) :=
+        List.map_congr_left fun j hj => h _ _ (by have := List.mem_range.mp hj; omega)
+      rw [he]
+    · rw [h _ _ (by have := ho.2.1; omega)]
+      congr 1
+      split
+      · rfl
+      · rename_i l' off e
+        exact h _ _ (by have := ho.2.2 l' off e; omega)
   · exact h l i hi
 
 theorem applyOps_agree {len : Loc → Nat} : ∀ {os : List Op}, (∀ o ∈ os, o.InBounds len) →
@@ -115,7 +126,7 @@ theorem copyBlk_apply {dst src : Loc} (hne : dst ≠ src) (a : Areas) :
   | 0, l, i => by simp [copyBlk]
   | bw + 1, l, i => by
     rw [copyBlk_succ, applyOps_snoc]
-    simp only [Op.apply, Op.val, Op.width, ite_true, copyBlk_apply hne a bw]
+    simp only [Op.apply, Op.val, Op.width, Bool.false_eq_true, ite_false, ite_true, copyBlk_apply hne a bw]
     by_cases hl : l = dst
     · subst hl
       simp only [true_and, Ne.symm hne, false_and, ite_false]
@@ -129,7 +140,7 @@ theorem xorBlk_apply (dst x y : Loc) (a : Areas) :
   | 0, l, i => by simp [xorBlk]
   | bw + 1, l, i => by
     rw [xorBlk_succ, applyOps_snoc]
-    simp only [Op.apply, Op.val, Op.width, ite_true, xorBlk_apply dst x y a bw]
+    simp only [Op.apply, Op.val, Op.width, Bool.false_eq_true, ite_false, ite_true, xorBlk_apply dst x y a bw]
     have h4 : ¬ (4 * bw + (i - 4 * bw) < 4 * bw) := by omega
     simp only [h4, and_false, ite_false]
     by_cases hl : l = dst

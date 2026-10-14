@@ -2,7 +2,12 @@
 //! byte-for-byte vendored RFC, and the increment of the counter block across
 //! its words and past `2¹²⁸`, against Camellia-ECB on the counter blocks.
 
-#![cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
+#![cfg(any(
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    target_arch = "x86",
+    target_arch = "arm"
+))]
 
 use verified_garbage::camellia_ctr::{CamelliaCtr, InvalidKeyLength};
 use verified_garbage::camellia_ecb::CamelliaEcb;
@@ -169,5 +174,34 @@ fn limits_and_lengths() {
         let mut ctr = [0x3c; 16];
         ctx.apply_keystream(&mut ctr, &mut []);
         assert_eq!(ctr, [0x3c; 16]);
+    }
+}
+
+/// Batches and partial blocks must not touch bytes outside the slice, even
+/// when its address is unaligned. Compare with ECB of independently counted
+/// counter blocks, including a carry between batches.
+#[test]
+fn unaligned_batch_boundaries() {
+    for key_len in [16, 24, 32] {
+        let key: Vec<_> = (0..key_len).map(|i| (19 * i + 1) as u8).collect();
+        let ctx = CamelliaCtr::new(&key).unwrap();
+        let ecb = CamelliaEcb::new(&key).unwrap();
+        let start = u128::MAX - 7;
+        for len in [0usize, 1, 15, 16, 17, 127, 128, 129, 255, 256, 257, 1025] {
+            let mut stream: Vec<_> = (0..len.div_ceil(16))
+                .flat_map(|i| start.wrapping_add(i as u128).to_be_bytes())
+                .collect();
+            ecb.encrypt(&mut stream).unwrap();
+            for offset in 1..16 {
+                let mut buffer = vec![0xa5; offset + len + 16];
+                let mut ctr = start.to_be_bytes();
+                ctx.apply_keystream(&mut ctr, &mut buffer[offset..offset + len]);
+                assert!(buffer[..offset].iter().all(|&b| b == 0xa5));
+                assert!(buffer[offset + len..].iter().all(|&b| b == 0xa5));
+                let expected: Vec<_> = stream[..len].iter().map(|b| b ^ 0xa5).collect();
+                assert_eq!(&buffer[offset..offset + len], expected);
+                assert_eq!(ctr, add(&start.to_be_bytes(), len.div_ceil(16)));
+            }
+        }
     }
 }

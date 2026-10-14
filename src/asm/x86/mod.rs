@@ -77,6 +77,9 @@ pub(crate) mod camellia_cbc;
 pub(crate) mod camellia_cfb;
 
 #[rustfmt::skip]
+pub(crate) mod camellia_ctr;
+
+#[rustfmt::skip]
 pub(crate) mod camellia_ofb;
 
 #[rustfmt::skip]

@@ -34,11 +34,11 @@ namespace VG.Proof.Modes.Arm
 open VG VG.Arm VG.Impl.Modes.Arm
 
 theorem ofb_ok (c : Core) : ModeOk c ofb :=
-  ⟨by decide, by decide, by decide, by show encodable (BitVec.ofNat 32 40) = true; decide⟩
+  ⟨by rfl, by rfl, by decide, by show encodable (BitVec.ofNat 32 40) = true; decide⟩
 theorem cfbEnc_ok (c : Core) : ModeOk c cfbEnc :=
-  ⟨by decide, by decide, by decide, by show encodable (BitVec.ofNat 32 40) = true; decide⟩
+  ⟨by rfl, by rfl, by decide, by show encodable (BitVec.ofNat 32 40) = true; decide⟩
 theorem cfbDec_ok (c : Core) : ModeOk c cfbDec :=
-  ⟨by decide, by decide, by decide, by show encodable (BitVec.ofNat 32 40) = true; decide⟩
+  ⟨by rfl, by rfl, by decide, by show encodable (BitVec.ofNat 32 40) = true; decide⟩
 
 theorem runSeq_ofb (ciph : Spec.Cbc.Cipher) :
     ∀ (b : Blks) (xs : List (List Byte)),

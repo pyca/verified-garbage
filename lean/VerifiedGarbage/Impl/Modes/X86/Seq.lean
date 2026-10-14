@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.TCB.X86.Isa
 public import VerifiedGarbage.Impl.Modes.Ops
+public import VerifiedGarbage.Impl.Modes.X86.Counter
 
 /-!
 # Block cipher modes on x86 (32-bit), for any block cipher with blocks of 8 or 16 bytes
@@ -100,7 +101,8 @@ def opAt (l : Loc) (off : Nat) : MemOp := at_ (c.loc l).1 ((c.loc l).2 + off)
 
 /-- An operation's code, through `eax` (and `ecx` for a byte XOR). -/
 def opCode (o : Op) : List Instr :=
-  if o.wide then
+  if o.inc then incAt (c.loc o.dst).1 ((c.loc o.dst).2 + o.dOff)
+  else if o.wide then
     ([.mov .eax (.mem (c.opAt o.src o.sOff))] : List Instr) ++
       (match o.xr with
        | none => []

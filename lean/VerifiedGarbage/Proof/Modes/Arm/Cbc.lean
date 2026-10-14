@@ -28,9 +28,9 @@ namespace VG.Proof.Modes.Arm
 open VG VG.Arm VG.Impl.Modes.Arm
 
 theorem cbcEnc_ok (c : Core) : ModeOk c cbcEnc :=
-  ⟨by decide, by decide, by decide, by show encodable (BitVec.ofNat 32 40) = true; decide⟩
+  ⟨by rfl, by rfl, by decide, by show encodable (BitVec.ofNat 32 40) = true; decide⟩
 theorem cbcDec_ok (c : Core) : ModeOk c cbcDec :=
-  ⟨by decide, by decide, by decide, by show encodable (BitVec.ofNat 32 0) = true; decide⟩
+  ⟨by rfl, by rfl, by decide, by show encodable (BitVec.ofNat 32 0) = true; decide⟩
 
 theorem xor_comm (x y : List Byte) : Spec.Cbc.xor x y = Spec.Cbc.xor y x := by
   simp only [Spec.Cbc.xor]
