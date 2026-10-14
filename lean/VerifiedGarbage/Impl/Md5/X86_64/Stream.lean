@@ -43,6 +43,7 @@ def params : Params where
   L := 8
   so := 64
   len := len64 72 false
+  lenV := MdStream.X86_64.lenV64 false
   out := out32 4 false
 
 def update : Prog isa := MdStream.X86_64.update params "vg_md5_compress" compress

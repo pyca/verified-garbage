@@ -44,6 +44,7 @@ def params : Params where
   L := 8
   so := 112
   len := len64 88 true
+  lenV := MdStream.X86_64.lenV64 true
   out := out32 8 true
 
 def update : Prog isa := MdStream.X86_64.update params "vg_sm3_compress" compress

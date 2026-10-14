@@ -44,6 +44,7 @@ abbrev params := Impl.Md5.X86_64.Stream.params
 theorem dims : Dims params := ⟨.inl rfl, by decide, by decide, by decide⟩
 
 theorem shape : Shape (P := params) md where
+  lenV s := (lenV64_ok false s).mono fun _ ⟨g, rd, wr, m, x0, x7⟩ => ⟨g, rd, wr, m, x0, x7⟩
   len s hout := by
     rw [show params.len = len64 72 false ++ [] from rfl]
     exact len64_ok hout fun s' g rd wr m => WP.block_nil ⟨g, rd, wr, m⟩
