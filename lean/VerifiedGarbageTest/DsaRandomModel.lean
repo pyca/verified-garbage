@@ -1,3 +1,14 @@
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomTermination
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomCopyCandidate
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomSampleLoop
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomPrepare
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomCopyWhole
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomScan
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomMask
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomCopy
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomInRange
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomCT
+import VerifiedGarbage.Proof.Dsa.RandomEncoding
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomStructure
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomBorrow
 import VerifiedGarbageTest.DsaModel
@@ -84,3 +95,68 @@ run_cmd
 #assert_standard_axioms VG.Proof.Dsa.X86_64.random_borrow_ok
 #assert_no_compiler_overrides VG.Impl.Dsa.X86_64.RandomSign.code
 #assert_spec_origin
+
+#assert_standard_axioms VG.Proof.Dsa.X86_64.random_significant_ok
+#assert_standard_axioms VG.Proof.Dsa.X86_64.random_mask_ok
+#assert_standard_axioms VG.Proof.Dsa.X86_64.randomMaskValue_eq
+#assert_standard_axioms VG.Proof.Dsa.X86_64.random_copyLoop_ok
+#assert_standard_axioms VG.Proof.Dsa.X86_64.random_rangeByte_ok
+#assert_standard_axioms VG.Proof.Dsa.X86_64.random_rangeLoop_ok
+#assert_standard_axioms VG.Proof.Dsa.X86_64.random_rangeFinish_ok
+#assert_standard_axioms VG.Proof.Dsa.X86_64.random_rangeInit_ok
+#assert_standard_axioms VG.Proof.Dsa.X86_64.random_inRange_ok
+#assert_standard_axioms VG.Proof.Dsa.X86_64.random_copyLoop_ct
+#assert_standard_axioms VG.Proof.Dsa.X86_64.random_rangeBody_ct
+#assert_standard_axioms VG.Proof.Dsa.X86_64.random_mask_ct
+#assert_standard_axioms VG.Proof.Dsa.randomBorrow_eq
+#assert_standard_axioms VG.Proof.Dsa.randomOr_zero
+#assert_standard_axioms VG.Proof.Dsa.random_drawBytes_scan
+#assert_standard_axioms VG.Proof.Dsa.random_mask_byte
+#assert_standard_axioms VG.Proof.Dsa.random_mask_decode
+
+#assert_standard_axioms VG.Proof.Dsa.X86_64.random_clear_ok
+#assert_standard_axioms VG.Proof.Dsa.X86_64.random_clear_outside
+#assert_standard_axioms VG.Proof.Dsa.X86_64.random_clear_byte
+#assert_standard_axioms VG.Proof.Dsa.X86_64.random_copyInit_ok
+#assert_standard_axioms VG.Proof.Dsa.X86_64.random_copy_of_init
+#assert_standard_axioms VG.Proof.Dsa.X86_64.random_copy_ok
+#assert_standard_axioms VG.Proof.Dsa.X86_64.random_prepareFinish_ok
+#assert_standard_axioms VG.Proof.Dsa.X86_64.random_prepare_ok
+#assert_standard_axioms VG.Proof.Dsa.X86_64.random_prepare_valid
+#assert_standard_axioms VG.Proof.Dsa.X86_64.random_prepare_width
+#assert_standard_axioms VG.Proof.Dsa.X86_64.random_prepare_pointer
+#assert_standard_axioms VG.Proof.Dsa.X86_64.random_prepare_mask
+#assert_standard_axioms VG.Proof.Dsa.X86_64.random_prepare_outside
+#assert_standard_axioms VG.Proof.Dsa.X86_64.random_prepare_zero
+#assert_standard_axioms VG.Proof.Dsa.random_candidate_mask
+#assert_standard_axioms VG.Proof.Dsa.random_valid_scan
+#assert_standard_axioms VG.Proof.Dsa.random_valid_scan_ge
+
+#assert_standard_axioms VG.Proof.Dsa.X86_64.random_drawHead_ok
+#assert_standard_axioms VG.Proof.Dsa.X86_64.random_status_ok
+#assert_standard_axioms VG.Proof.Dsa.X86_64.random_draw_short_ok
+#assert_standard_axioms VG.Proof.Dsa.X86_64.random_used_ok
+#assert_standard_axioms VG.Proof.Dsa.X86_64.random_drawFinish_ok
+#assert_standard_axioms VG.Proof.Dsa.X86_64.random_sampleLoop_rule
+
+#assert_standard_axioms VG.Proof.Dsa.X86_64.random_copy_candidate_ok
+
+#assert_standard_axioms VG.Proof.Dsa.X86_64.random_src_drop
+#assert_standard_axioms VG.Proof.Dsa.X86_64.random_src_take
+#assert_standard_axioms VG.Proof.Dsa.X86_64.random_nonce_addr
+#assert_standard_axioms VG.Proof.Dsa.X86_64.random_nonce_offset
+#assert_standard_axioms VG.Proof.Dsa.X86_64.random_copy_outside
+#assert_standard_axioms VG.Proof.Dsa.X86_64.random_copy_draw_ok
+#assert_standard_axioms VG.Proof.Dsa.X86_64.random_check_candidate_ok
+#assert_standard_axioms VG.Proof.Dsa.X86_64.random_draw_full_ok
+#assert_standard_axioms VG.Proof.Dsa.X86_64.random_drawFinish_outside
+#assert_standard_axioms VG.Proof.Dsa.X86_64.random_drawFinish_status
+#assert_standard_axioms VG.Proof.Dsa.X86_64.random_drawFinish_draws
+#assert_standard_axioms VG.Proof.Dsa.X86_64.random_drawFinish_word
+#assert_standard_axioms VG.Proof.Dsa.X86_64.RandomReady.congr
+#assert_standard_axioms VG.Proof.Dsa.X86_64.RandomReady.after_draw
+#assert_standard_axioms VG.Proof.Dsa.X86_64.RandomReady.after_status
+#assert_standard_axioms VG.Proof.Dsa.X86_64.random_draw_progress
+#assert_standard_axioms VG.Proof.Dsa.X86_64.random_sampleLoop_terminates
+#assert_standard_axioms VG.Proof.Dsa.random_significant_drop
+#assert_standard_axioms VG.Proof.Dsa.random_significant_drop_length
