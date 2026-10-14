@@ -22,6 +22,7 @@
 
 mod aarch64;
 mod arithmetic;
+pub use arithmetic::mb_hack;
 mod generation;
 
 use crate::zeroize::zeroize;

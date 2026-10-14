@@ -514,3 +514,22 @@ mod tests {
         }
     }
 }
+
+/// Scratch microbenchmark: TSC ticks of squarings (5 = 5^2) and products (5 = 5*4), strict vs lazy.
+pub fn mb_hack(p: &[u8], n: usize) -> [u64; 4] {
+    use core::arch::x86_64::_rdtsc;
+    let m = Montgomery::new(p);
+    let mut ws = m.workspace(&p[1..], 0);
+    let mut best = [u64::MAX; 4];
+    for _ in 0..n {
+        for (k, (lazy, b)) in [(false, 5u32), (true, 5), (false, 4), (true, 4)].into_iter().enumerate() {
+            let t = unsafe { _rdtsc() };
+            for _ in 0..16 {
+                if lazy { m.mul_lazy(&mut ws, 5, 5, b) } else { m.mul(&mut ws, 5, 5, b) }
+            }
+            let d = unsafe { _rdtsc() } - t;
+            best[k] = best[k].min(d / 16);
+        }
+    }
+    best
+}
