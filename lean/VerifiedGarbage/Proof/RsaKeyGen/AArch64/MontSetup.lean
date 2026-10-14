@@ -46,6 +46,7 @@ public import VerifiedGarbage.Proof.Framework.Range
 public import VerifiedGarbage.Proof.Framework.WriteBytes
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Entry
 public import VerifiedGarbage.Proof.RsaKeyGen.Bits
+public import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightInternal
 
 /-!
 # A candidate on AArch64: Montgomery arithmetic modulo `c`

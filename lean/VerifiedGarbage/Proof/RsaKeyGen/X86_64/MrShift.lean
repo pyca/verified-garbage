@@ -8,6 +8,8 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.RsaKeyGen.MrMont
+import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrSel
 
 /-!
 # A candidate on x86-64: Miller–Rabin's exponent

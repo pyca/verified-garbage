@@ -11,6 +11,7 @@ import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightRowMath
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightRows
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightSetup
+import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightInternal
 
 @[expose] public section
 namespace VG.Proof.Bignum.AArch64.SquareEight

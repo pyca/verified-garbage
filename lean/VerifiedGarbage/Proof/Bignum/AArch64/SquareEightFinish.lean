@@ -11,6 +11,7 @@ import VerifiedGarbage.Proof.Framework.TaintBatch
 import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightCarry
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightRowMath
+public import VerifiedGarbage.Proof.Bignum.AArch64.SquareMath
 
 @[expose] public section
 namespace VG.Proof.Bignum.AArch64.SquareEight

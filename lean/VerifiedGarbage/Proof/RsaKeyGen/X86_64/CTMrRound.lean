@@ -8,6 +8,14 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.X86_64.Call
 meta import VerifiedGarbage.Proof.Framework.X86_64.Call
+public import VerifiedGarbage.Proof.RsaKeyGen.Bits
+public import VerifiedGarbage.Proof.RsaKeyGen.MrMont
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrSel
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrWit
+meta import VerifiedGarbage.Proof.RsaKeyGen.Bits
+meta import VerifiedGarbage.Proof.RsaKeyGen.MrMont
+meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrSel
+meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrWit
 
 /-!
 # A candidate on x86-64: constant time of a round of Miller–Rabin
