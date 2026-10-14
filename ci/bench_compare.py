@@ -31,7 +31,7 @@ base,head=Path(sys.argv[1]).resolve(),Path(sys.argv[2]).resolve()
 prepare_openssl4()
 subprocess.run(['rustc','-Vv'],check=True)
 print('PRIVATE_WINDOW_BASE '+subprocess.check_output(['git','rev-parse','HEAD'],cwd=base,text=True).strip(),flush=True)
-os.environ['VG_BENCH_MODULES']='rsa rsa_pss rsa_oaep'
+os.environ['VG_BENCH_MODULES']='rsa'
 os.environ.pop('VG_CPU_FEATURES',None)
 original=b.stage
 mode='base'
@@ -47,18 +47,18 @@ def stage(checkout,bench=None):
  return r
 b.stage=stage
 root=Path('private-window-results').resolve();root.mkdir(exist_ok=True)
-modes=['base','fused','lazy'];bins={}
+modes=['base','lazy','holes','trim','holes_trim'];bins={}
 for mode in modes:
  dest=root/f'bench-{mode}';shutil.copy2(b.build(base),dest);bins[mode]=dest
  subprocess.run([str(dest),'--test','^rsa_(private|pss_sha256_mgf1_sha256_sign|oaep_sha256_mgf1_sha256_decrypt)/'],check=True)
 env=dict(os.environ,CRITERION_HOME=str(root/'criterion'))
-groups='rsa_(private|pss_sha256_mgf1_sha256_sign|oaep_sha256_mgf1_sha256_decrypt)'
-for i,order in enumerate([modes,list(reversed(modes)),['fused','base','lazy']],1):
+groups='rsa_private'
+for i,order in enumerate([modes,list(reversed(modes)),modes[2:]+modes[:2]],1):
  for mode in order+['reference']:
   lib='(openssl|aws-lc-rs)' if mode=='reference' else 'verified-garbage'
   binary=bins['base'] if mode=='reference' else bins[mode]
   print(f'PRIVATE_WINDOW round {i} {mode}',flush=True)
-  subprocess.run([str(binary),'--bench',f'^{groups}/{lib}/(256|384|512)$','--noplot','--warm-up-time','1','--measurement-time','3','--sample-size','50','--nresamples','1000','--save-baseline',f'{mode}-{i}'],env=env,check=True)
+  subprocess.run([str(binary),'--bench',f'^{groups}/{lib}/(256|384|512)$','--noplot','--warm-up-time','0.5','--measurement-time','2','--sample-size','40','--nresamples','1000','--save-baseline',f'{mode}-{i}'],env=env,check=True)
 rows=[]
 for est in sorted((root/'criterion').glob('*/*/*/*/estimates.json')):
  rel=est.relative_to(root/'criterion');row=dict(operation=rel.parts[0],library=rel.parts[1],bytes=int(rel.parts[2]),run=rel.parts[3],estimates=json.loads(est.read_text()),samples=json.loads((est.parent/'sample.json').read_text()))
