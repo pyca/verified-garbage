@@ -1,6 +1,11 @@
 //! RFC 7027 §A.3: brainpoolP512r1.
 
-#![cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
+#![cfg(any(
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    target_arch = "arm",
+    target_arch = "x86"
+))]
 
 use verified_garbage::ecdh::{BrainpoolP512r1, Error, PrivateKey};
 

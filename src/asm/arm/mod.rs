@@ -68,6 +68,9 @@ pub(crate) mod brainpoolp384r1_mont;
 pub(crate) mod brainpoolp384r1_point;
 
 #[rustfmt::skip]
+pub(crate) mod brainpoolp512r1_mont;
+
+#[rustfmt::skip]
 pub(crate) mod camellia;
 
 #[rustfmt::skip]
@@ -119,6 +122,9 @@ pub(crate) mod ec_brainpoolp256r1;
 pub(crate) mod ec_brainpoolp384r1;
 
 #[rustfmt::skip]
+pub(crate) mod ec_brainpoolp512r1;
+
+#[rustfmt::skip]
 pub(crate) mod ec_p192;
 
 #[rustfmt::skip]
@@ -141,6 +147,9 @@ pub(crate) mod ecdh_brainpoolp256r1;
 
 #[rustfmt::skip]
 pub(crate) mod ecdh_brainpoolp384r1;
+
+#[rustfmt::skip]
+pub(crate) mod ecdh_brainpoolp512r1;
 
 #[rustfmt::skip]
 pub(crate) mod ecdh_p192;
