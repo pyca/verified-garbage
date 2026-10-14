@@ -108,20 +108,21 @@ theorem ghash_append48 (h y : Block) (f : Nat → Block) (g : Nat) :
   rfl
 
 /-- The encryption state kept by changes of `rdx` and `r9` alone. -/
-theorem AInv.gpr2 {s₀ : State} {c : Nat} {s s' : State} (h : AInv s₀ c s)
+theorem AInv.gpr2 {s₀ : State} {c : Nat} {be : Bool} {s s' : State} (h : AInv s₀ c s be)
     (hg : ∀ r, r ≠ .rdx → r ≠ .r9 → s'.gpr r = s.gpr r) (hl : ∀ r l, s'.zlane r l = s.zlane r l)
-    (hm : s'.mem = s.mem) (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) : AInv s₀ c s' :=
+    (hm : s'.mem = s.mem) (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) : AInv s₀ c s' be :=
   ⟨h.le, fun l hl' => by rw [hl]; exact h.ctr l hl', fun l hl' => by rw [hl]; exact h.msk l hl',
     fun l hl' => by rw [hl]; exact h.inc l hl',
     by rw [hg _ (by decide) (by decide)]; exact h.rdi, by rw [hg _ (by decide) (by decide)]; exact h.rsi,
-    by show _ = _; rw [hg _ (by decide) (by decide)]; exact h.r10, by rw [hm]; exact h.frame,
+    h.r10.keep (hg _ (by decide) (by decide)) hm, by rw [hm]; exact h.frame,
     fun k hk => by rw [hm]; exact h.blocks k hk, by rw [hrd]; exact h.rd, by rw [hwr]; exact h.wr⟩
 
-/-- The encryption state kept by `pow48`, which writes only the working space. -/
-theorem AInv.pow {s₀ : State} (hp : SPre s₀) {c : Nat} {s s' : State} (h : AInv s₀ c s)
+/-- The encryption state kept by `pow48`, which writes only the working space,
+given `R10` after it. -/
+theorem AInv.powR {s₀ : State} (hp : SPre s₀) {c : Nat} {be : Bool} {s s' : State} (h : AInv s₀ c s be)
     (hf : Frame [pR s₀] s.mem s'.mem) (hg : s'.gpr = s.gpr) (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr)
     (hl : ∀ r, r ≠ .xmm7 → r ≠ .xmm8 → r ≠ .xmm9 → r ≠ .xmm10 → r ≠ .xmm11 → r ≠ .xmm12 → ∀ l < 4,
-      s'.zlane r l = s.zlane r l) : AInv s₀ c s' := by
+      s'.zlane r l = s.zlane r l) (hR : R10 be s₀ c s') : AInv s₀ c s' be := by
   have hw := hp.wrap_d
   have k : ∀ r ∈ ([.xmm14, .xmm0, .xmm15] : List XReg), ∀ l < 4, s'.zlane r l = s.zlane r l := by
     intro r hr l hl'
@@ -130,7 +131,7 @@ theorem AInv.pow {s₀ : State} (hp : SPre s₀) {c : Nat} {s s' : State} (h : A
   refine ⟨h.le, fun l hl' => by rw [k _ (by decide) l hl']; exact h.ctr l hl',
     fun l hl' => by rw [k _ (by decide) l hl']; exact h.msk l hl',
     fun l hl' => by rw [k _ (by decide) l hl']; exact h.inc l hl',
-    by rw [hg]; exact h.rdi, by rw [hg]; exact h.rsi, by show _ = _; rw [hg]; exact h.r10,
+    by rw [hg]; exact h.rdi, by rw [hg]; exact h.rsi, hR,
     h.frame.trans (hf.sub fun r hr => ⟨pR s₀, by simp, fun a ha => by
       simp only [List.mem_singleton] at hr; subst hr; exact ha⟩),
     fun k hk => ?_, by rw [hrd]; exact h.rd, by rw [hwr]; exact h.wr⟩
@@ -138,6 +139,13 @@ theorem AInv.pow {s₀ : State} (hp : SPre s₀) {c : Nat} {s s' : State} (h : A
     simp only [List.mem_singleton] at hr; subst hr
     exact hp.d_p.sub_left (Offset.sub_base _ (by omega))]
   exact h.blocks k hk
+
+/-- The encryption state kept by `pow48`, which writes only the working space. -/
+theorem AInv.pow {s₀ : State} (hp : SPre s₀) {c : Nat} {s s' : State} (h : AInv s₀ c s)
+    (hf : Frame [pR s₀] s.mem s'.mem) (hg : s'.gpr = s.gpr) (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr)
+    (hl : ∀ r, r ≠ .xmm7 → r ≠ .xmm8 → r ≠ .xmm9 → r ≠ .xmm10 → r ≠ .xmm11 → r ≠ .xmm12 → ∀ l < 4,
+      s'.zlane r l = s.zlane r l) : AInv s₀ c s' :=
+  h.powR hp hf hg hrd hwr hl (by show _ = _; rw [hg]; exact h.r10)
 
 /-- A word of the working space, kept by the data written. -/
 theorem keepW {s₀ : State} (hp : SPre s₀) {c : Nat} (hc : c + 16 ≤ nb s₀) {m m' : Mem}

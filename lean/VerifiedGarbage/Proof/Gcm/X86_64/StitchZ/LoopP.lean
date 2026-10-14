@@ -220,7 +220,8 @@ theorem powP48_ok {s₀ : State} (hp : SPreP s₀) {s : State} (hdi : s.gpr .rdi
       (∀ g < 2, ∀ k < 4, ∀ l < 4, s'.mem.readW (pp s₀ + BitVec.ofNat 64 (tab g + 64 * k + 16 * l)) 128 =
         hInvF (Spec.Gcm.hpow (Spec.Gcm.ctxH s.mem (kp s₀)) (48 - 16 * g - 4 * k - l))) ∧
       (∀ l < 4, s'.mem.readW (pp s₀ + BitVec.ofNat 64 (832 + 16 * l)) 128 = poly) ∧
-      (∀ o, o + 16 ≤ 256 → s'.mem.readW (pp s₀ + BitVec.ofNat 64 o) 128 = s.mem.readW (pp s₀ + BitVec.ofNat 64 o) 128) ∧
+      (∀ o, o + 16 ≤ 256 ∨ 896 ≤ o ∧ o + 16 ≤ 1024 →
+        s'.mem.readW (pp s₀ + BitVec.ofNat 64 o) 128 = s.mem.readW (pp s₀ + BitVec.ofNat 64 o) 128) ∧
       Frame [pR s₀] s.mem s'.mem ∧ s'.gpr = s.gpr ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
       (∀ r, r ≠ .xmm7 → r ≠ .xmm8 → r ≠ .xmm9 → r ≠ .xmm10 → r ≠ .xmm12 → ∀ l < 4, s'.zlane r l = s.zlane r l) := by
   have hwp := hp.base.wrap_p
@@ -256,7 +257,7 @@ theorem powP48_ok {s₀ : State} (hp : SPreP s₀) {s : State} (hdi : s.gpr .rdi
   rw [WP.block_cons_iff]
   refine ⟨s₃.setMem (s₃.mem.writeW (pp s₀ + BitVec.ofNat 64 832) (s₃.zmm .xmm1)),
     by simp only [isa, exec, State.store512_eq, ea_at, hin832, ite_true]; rw [e832], WP.block_nil ?_⟩
-  have k₅ : ∀ o, o + 16 ≤ 832 → (s₃.mem.writeW (pp s₀ + BitVec.ofNat 64 832) (s₃.zmm .xmm1)).readW
+  have k₅ : ∀ o, o + 16 ≤ 832 ∨ 896 ≤ o ∧ o + 16 ≤ 1024 → (s₃.mem.writeW (pp s₀ + BitVec.ofNat 64 832) (s₃.zmm .xmm1)).readW
       (pp s₀ + BitVec.ofNat 64 o) 128 = s₃.mem.readW (pp s₀ + BitVec.ofNat 64 o) 128 := fun o ho =>
     Mem.readW_writeW_sep (Offset.sep (pp s₀) (d := o) (n := 128 / 8) (e := 832) (k := 512 / 8) (by omega) (by omega)
       (by omega)) (by decide)
