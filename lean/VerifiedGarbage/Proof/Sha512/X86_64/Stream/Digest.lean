@@ -84,16 +84,19 @@ theorem out224_ok (s : State) (hin : InRegions (s.rd ++ s.wr) (s.gpr .rbx) 64)
 theorem shape384 : ShapeD (P := params384) md 48 where
   le := by decide
   len := shape.len
+  lenV := shape.lenV
   out s hin hout hd := out64_take (n := 6) (by decide) s hin hout hd
 
 theorem shape512_256 : ShapeD (P := params512_256) md 32 where
   le := by decide
   len := shape.len
+  lenV := shape.lenV
   out s hin hout hd := out64_take (n := 4) (by decide) s hin hout hd
 
 theorem shape512_224 : ShapeD (P := params512_224) md 28 where
   le := by decide
   len := shape.len
+  lenV := shape.lenV
   out s hin hout hd := out224_ok s hin hout hd
 
 theorem taints384 : Taints params384 :=

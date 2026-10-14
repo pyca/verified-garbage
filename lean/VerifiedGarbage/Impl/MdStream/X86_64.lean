@@ -20,8 +20,15 @@ followed by a `B`-byte buffer.
   blocks at once can), and otherwise copies bytes into the buffer (eight at a
   time, then one at a time), compressing it once it is full.
 * `finalize(state = rdi, count = rsi, out = rdx, scratch = rcx)` pads the
-  buffered bytes (one or two blocks; the zeros eight at a time, then one at a
-  time), compresses them and writes the digest.
+  buffered bytes (one or two blocks), compresses them and writes the digest.
+  It writes each block's padding 16 bytes at a time, as the compression
+  functions read the block: a 16-byte load from several narrower stores
+  waits until they reach the cache (it cannot be forwarded from them), which
+  would make the last block's compression wait for the previous one's. The
+  first 16 bytes it writes are those holding the `0x80` byte, the buffered
+  bytes before it kept (a mask from comparing the byte's position with
+  `0, 1, …, 15`, `pcmpgtb` and `pcmpeqb`), then zeros, and, in the last
+  block, the length field in the last 16 bytes (`lenV`).
 
 The compression function (`name`, `code`) is called with `scratch` as its
 scratch space; it preserves `rbx, rbp, r12–r15`, so our own variables live
@@ -53,6 +60,10 @@ structure Params where
   /-- Stores the length field, from `count` in `r12`, at `rbx + N + B - L`;
   writes only `rax` (and the flags). -/
   len : List Instr
+  /-- The last 16 bytes of the last block, zeros then the length field (from
+  `count` in `r12`), into `xmm7`; writes only `rax`, `xmm7` and `xmm8` (and
+  the flags). -/
+  lenV : List Instr
   /-- Writes the digest, from the hash value at `rbx`, to `rbp`; writes only
   `rax` (and the flags). -/
   out : List Instr
@@ -157,52 +168,59 @@ def update (name : String) (code : Prog isa) : Prog isa :=
 
 /-! ## `finalize`
 
-Registers: `rbp` = `out`, `r12` = `count`, `r13` = bytes in the buffer,
-`r14` = 1 while the block being padded is not the last one. -/
+Registers: `rbp` = `out`, `r12` = `count`, `r13` = bytes in the buffer, `r9`
+= the byte after them (`0x80` in the first block, `0` in the second), `r14` =
+1 while the block being padded is not the last one. -/
 
-/-- The loop zeroing the buffer from `r13` on, eight bytes at a time, while
-at least eight of the `rax` left remain. -/
-def zeroWords : Prog isa :=
-  .loop (.block [.store (bufByte P) .r9, .alu .add .r13 (.imm 8), .alu .sub .rax (.imm 8),
-    .alu .cmp .rax (.imm 8)]) .ae
+/-- The bytes `0, 1, …, 15`, in `xmm1`. -/
+def idxV : List Instr :=
+  [.movImm64 .rax 0x0706050403020100, .xop (.movq .xmm1 .rax),
+   .movImm64 .rax 0x0f0e0d0c0b0a0908, .xop (.movq .xmm2 .rax), .xop (.bin .punpcklqdq .xmm1 .xmm2)]
 
-/-- The loop zeroing the buffer from `r13` on, `rax` bytes. -/
-def zeroLoop : Prog isa :=
-  .loop (.block [.store8 (bufByte P) .r9, .alu .add .r13 (.imm 1), .alu .sub .rax (.imm 1)]) .ne
+/-- The byte `rax` (less than 256) in each of the 16 bytes of `x`, through `r10`. -/
+def bcast (x : XReg) : List Instr :=
+  [.movImm64 .r10 0x0101010101010101, .imul .rax .r10, .xop (.movq x .rax), .xop (.bin .punpcklqdq x x)]
 
-/-- Zero `rax` bytes of the buffer from `r13` on (with `r9 = 0`): eight at a
-time, then one at a time. -/
-def zero : Prog isa :=
-  .seq (.block [.alu .cmp .rax (.imm 8)])
-  (.seq (.ite .b (.block []) (zeroWords P))
-  (.seq (.block [.alu .test .rax (.reg .rax)])
-    (.ite .e (.block []) (zeroLoop P))))
+/-- The first 16 bytes of the padding, in `xmm0`: those of the buffer from
+`r13` rounded down to a multiple of 16, with the bytes before `r13` kept,
+`r9` at `r13` and zeros after it; `r13` is rounded down. -/
+def head : List Instr :=
+  idxV ++ [.mov .rax (.reg .r13), .alu .and .rax (.imm 15)] ++ bcast .xmm3 ++
+    [.mov .rax (.reg .r9)] ++ bcast .xmm4 ++
+    [.xop (.bin .movdqa .xmm5 .xmm3), .xop (.bin .pcmpgtb .xmm5 .xmm1),
+     .xop (.bin .pcmpeqb .xmm3 .xmm1), .xop (.bin .pand .xmm3 .xmm4),
+     .alu .and .r13 (.imm 0xFFFFFFF0), .movdquLoad .xmm0 (bufByte P),
+     .xop (.bin .pand .xmm0 .xmm5), .xop (.bin .por .xmm0 .xmm3)]
+
+/-- Store `xmm0` at `r13` and zero it, for each 16 bytes before the last. -/
+def chunks : Prog isa :=
+  .seq (.block [.alu .cmp .r13 (.imm (BitVec.ofNat 32 (P.B - 16)))])
+    (.ite .ae (.block [])
+      (.loop (.block [.movdquStore (bufByte P) .xmm0, .xop (.bin .pxor .xmm0 .xmm0),
+        .alu .add .r13 (.imm 16), .alu .cmp .r13 (.imm (BitVec.ofNat 32 (P.B - 16)))]) .b))
 
 /-- Pad the block, up to the call of the compression function. -/
 def finalizePad : Prog isa :=
-  -- Zero the buffer from `r13` to `B`, or to `B - L` in the last block.
-  .seq (.block [.mov32 .rax (.imm (BitVec.ofNat 32 P.B)), .alu .test .r14 (.reg .r14)])
-  (.seq (.ite .e (.block [.mov32 .rax (.imm (BitVec.ofNat 32 (P.B - P.L)))]) (.block []))
-  (.seq (.block [.mov32 .r9 (.imm 0), .alu .sub .rax (.reg .r13)])
-  (.seq (zero P)
-  -- In the last block, the length field.
+  .seq (.block (head P))
+  (.seq (chunks P)
+  -- In the last block, the length field in the last 16 bytes.
   (.seq (.block [.alu .test .r14 (.reg .r14)])
-  (.seq (.ite .e (.block P.len) (.block []))
-    (.block [.mov .rsi (.reg .rbx), .alu .add .rsi (.imm (BitVec.ofNat 32 P.N))]))))))
+  (.seq (.ite .e (.block (P.lenV ++ [.xop (.bin .por .xmm0 .xmm7)])) (.block []))
+    (.block [.movdquStore (at_ .rbx (P.N + P.B - 16)) .xmm0, .mov .rsi (.reg .rbx),
+      .alu .add .rsi (.imm (BitVec.ofNat 32 P.N))]))))
 
 def finalizeBody (name : String) (code : Prog isa) : Prog isa :=
   .seq (finalizePad P)
   (.seq (compressAt name code)
-    (.block [.mov32 .r13 (.imm 0), .alu .sub .r14 (.imm 1)]))
+    (.block [.mov32 .r13 (.imm 0), .mov32 .r9 (.imm 0), .alu .sub .r14 (.imm 1)]))
 
-/-- Save registers, append the `0x80` byte and choose the number of blocks. -/
+/-- Save registers, set the `0x80` byte to append and choose the number of blocks. -/
 def finalizeStart : Prog isa :=
   .seq (.block (save P .rcx ++ [.mov .rbx (.reg .rdi), .mov .r15 (.reg .rcx), .mov .rbp (.reg .rdx),
       .mov .r12 (.reg .rsi), .mov .r13 (.reg .rsi), .alu .and .r13 (.imm (BitVec.ofNat 32 (P.B - 1))),
-      -- The `0x80` byte.
-      .mov32 .rax (.imm 0x80), .store8 (bufByte P) .rax, .alu .add .r13 (.imm 1),
-      -- Two blocks if it leaves fewer than `L` bytes for the length.
-      .mov32 .r14 (.imm 0), .alu .cmp .r13 (.imm (BitVec.ofNat 32 (P.B - P.L + 1)))]))
+      .mov32 .r9 (.imm 0x80),
+      -- Two blocks if the `0x80` byte leaves fewer than `L` bytes for the length.
+      .mov32 .r14 (.imm 0), .alu .cmp .r13 (.imm (BitVec.ofNat 32 (P.B - P.L)))]))
     (.ite .ae (.block [.mov32 .r14 (.imm 1)]) (.block []))
 
 def finalize (name : String) (code : Prog isa) : Prog isa :=
@@ -219,6 +237,19 @@ bytes at `rbx + d`, big-endian if `be` and little-endian otherwise. -/
 def len64 (d : Nat) (be : Bool) : List Instr :=
   [.mov .rax (.reg .r12), .alu .add .rax (.reg .rax), .alu .add .rax (.reg .rax), .alu .add .rax (.reg .rax)] ++
     (if be then [.bswap .rax] else []) ++ [.store (at_ .rbx d) .rax]
+
+/-- The length in bits, `8 · count`, as the last 8 of 16 bytes in `xmm7`
+(zeros before it), big-endian if `be` and little-endian otherwise. -/
+def lenV64 (be : Bool) : List Instr :=
+  [.mov .rax (.reg .r12), .alu .add .rax (.reg .rax), .alu .add .rax (.reg .rax), .alu .add .rax (.reg .rax)] ++
+    (if be then [.bswap .rax] else []) ++ [.xop (.movq .xmm7 .rax), .xop (.shift .pslldq .xmm7 8)]
+
+/-- The length in bits of `count` (`r12`), as 16 big-endian bytes in `xmm7`:
+`count >> 61`, then `8 · count` (modulo 2⁶⁴), through `xmm8`. -/
+def lenV128 : List Instr :=
+  [.mov .rax (.reg .r12), .shift .shr .rax 61, .bswap .rax, .xop (.movq .xmm7 .rax),
+    .mov .rax (.reg .r12), .alu .add .rax (.reg .rax), .alu .add .rax (.reg .rax),
+    .alu .add .rax (.reg .rax), .bswap .rax, .xop (.movq .xmm8 .rax), .xop (.bin .punpcklqdq .xmm7 .xmm8)]
 
 /-- The `n` 32-bit words at `rbx`, written to `rbp`, big-endian if `be` and
 little-endian otherwise. -/

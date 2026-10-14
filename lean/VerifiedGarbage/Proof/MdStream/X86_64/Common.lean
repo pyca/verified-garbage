@@ -14,6 +14,8 @@ public import VerifiedGarbage.Impl.MdStream.X86_64
 meta import VerifiedGarbage.Impl.MdStream.X86_64
 public import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.MdStream.X86_64.Pad
+meta import VerifiedGarbage.Proof.MdStream.X86_64.Pad
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -331,6 +333,9 @@ structure Shape {P : Params} (H : Md P.B P.N P.L) : Prop where
     WP isa (.block P.len) s fun s' => (∀ r, r ≠ .rax → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧
       s'.wr = s.wr ∧
       s'.mem = writeBytes s.mem (s.gpr .rbx + BitVec.ofNat 64 (P.N + P.B - P.L)) (H.lenOf (s.gpr .r12))
+  lenV : ∀ s : State, WP isa (.block P.lenV) s fun s' => (∀ r, r ≠ .rax → s'.gpr r = s.gpr r) ∧
+    s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.mem = s.mem ∧ s'.xmm .xmm0 = s.xmm .xmm0 ∧
+    vbytes (s'.xmm .xmm7) = List.replicate (16 - P.L) 0 ++ H.lenOf (s.gpr .r12)
   out : ∀ s : State, InRegions (s.rd ++ s.wr) (s.gpr .rbx) P.N → InRegions s.wr (s.gpr .rbp) P.N →
     Region.Disjoint ⟨s.gpr .rbx, P.N⟩ ⟨s.gpr .rbp, P.N⟩ →
     WP isa (.block P.out) s fun s' => (∀ r, r ≠ .rax → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧
@@ -344,6 +349,9 @@ structure ShapeD {P : Params} (H : Md P.B P.N P.L) (D : Nat) : Prop where
     WP isa (.block P.len) s fun s' => (∀ r, r ≠ .rax → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧
       s'.wr = s.wr ∧
       s'.mem = writeBytes s.mem (s.gpr .rbx + BitVec.ofNat 64 (P.N + P.B - P.L)) (H.lenOf (s.gpr .r12))
+  lenV : ∀ s : State, WP isa (.block P.lenV) s fun s' => (∀ r, r ≠ .rax → s'.gpr r = s.gpr r) ∧
+    s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.mem = s.mem ∧ s'.xmm .xmm0 = s.xmm .xmm0 ∧
+    vbytes (s'.xmm .xmm7) = List.replicate (16 - P.L) 0 ++ H.lenOf (s.gpr .r12)
   out : ∀ s : State, InRegions (s.rd ++ s.wr) (s.gpr .rbx) P.N → InRegions s.wr (s.gpr .rbp) D →
     Region.Disjoint ⟨s.gpr .rbx, P.N⟩ ⟨s.gpr .rbp, D⟩ →
     WP isa (.block P.out) s fun s' => (∀ r, r ≠ .rax → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧
@@ -352,7 +360,7 @@ structure ShapeD {P : Params} (H : Md P.B P.N P.L) (D : Nat) : Prop where
 
 /-- The whole digest is its first `N` bytes. -/
 theorem Shape.toD {P : Params} {H : Md P.B P.N P.L} (hs : Shape H) : ShapeD H P.N :=
-  ⟨Nat.le_refl _, hs.len, fun s hin hout hd => (hs.out s hin hout hd).mono fun _ ⟨g, rd, wr, m⟩ =>
+  ⟨Nat.le_refl _, hs.len, hs.lenV, fun s hin hout hd => (hs.out s hin hout hd).mono fun _ ⟨g, rd, wr, m⟩ =>
     ⟨g, rd, wr, by rw [m, List.take_of_length_le (by rw [H.digest_length])]⟩⟩
 
 /-- The initial taint of `update`: the arguments and `rsp` are public, and
@@ -371,7 +379,7 @@ structure Taints (P : Params) : Prop where
   updEnd : ∃ hc, (taint.check (X86_64.Taint.ofRegs [.r15]) (.block (restore P)) hc).isSome = true
   finStart : ∃ hc, (taint.check (X86_64.Taint.ofRegs [.rdi, .rsi, .rdx, .rcx, .rsp]) (finalizeStart P) hc).isSome
     = true
-  finPad : ∃ hc, (taint.check (X86_64.Taint.ofRegs [.rbx, .r15, .rbp, .r12, .rsp, .r13, .r14]) (finalizePad P)
+  finPad : ∃ hc, (taint.check (X86_64.Taint.ofRegs [.rbx, .r15, .rbp, .r12, .rsp, .r13, .r14, .r9]) (finalizePad P)
     hc).isSome = true
   finEnd : ∃ hc, (taint.check (X86_64.Taint.ofRegs [.rbx, .rbp, .r15]) (.block (P.out ++ restore P)) hc).isSome
     = true
