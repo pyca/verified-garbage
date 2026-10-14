@@ -43,8 +43,8 @@ open VG.Spec.Gcm (Block blockAt blocksAt ghashFrom inc32)
 
 /-- The encryption state with `c` blocks encrypted and the first `e - 1`
 groups hashed: `EInvTo` when `c = 16 e`. -/
-structure EGenTo (s₀ : State) (P : Nat → Nat → Block) (e c : Nat) (s : State) : Prop where
-  a : AInvTo s₀ c s
+structure EGenTo (s₀ : State) (P : Nat → Nat → Block) (e c : Nat) (s : State) (be : Bool := false) : Prop where
+  a : AInvTo s₀ c s be
   one : 1 ≤ e
   ec : 16 * e ≤ c
   rdx : (s.gpr .rdx).toNat = (op s₀).toNat + 256 * (e - 1)
@@ -112,8 +112,8 @@ theorem EGenTo.einv {s₀ : State} {P : Nat → Nat → Block} {e : Nat} {s : St
 /-- `e + 2` groups encrypted, the first `e - 1` hashed, the powers of 48
 blocks and the reduction constant in the working space; `rdx` points to
 output group `e - 1`, the first of the three to hash. -/
-structure EInv3To (s₀ : State) (T : Nat → Nat → Nat → Block) (e : Nat) (s : State) : Prop where
-  a : AInvTo s₀ (16 * (e + 2)) s
+structure EInv3To (s₀ : State) (T : Nat → Nat → Nat → Block) (e : Nat) (s : State) (be : Bool := false) : Prop where
+  a : AInvTo s₀ (16 * (e + 2)) s be
   one : 1 ≤ e
   rdx : (s.gpr .rdx).toNat = (op s₀).toNat + 256 * (e - 1)
   r9 : s.gpr .r9 = BitVec.ofNat 64 (nb s₀ - 16 * (e - 1))
@@ -229,7 +229,7 @@ theorem AInvTo.pow {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {c : Nat} {
   refine ⟨h.le, fun l hl' => by rw [k _ (by decide) l hl']; exact h.ctr l hl',
     fun l hl' => by rw [k _ (by decide) l hl']; exact h.msk l hl',
     fun l hl' => by rw [k _ (by decide) l hl']; exact h.inc l hl',
-    by rw [hg]; exact h.rdi, by rw [hg]; exact h.rsi, by rw [hg]; exact h.r10, by rw [hg]; exact h.r8,
+    by rw [hg]; exact h.rdi, by rw [hg]; exact h.rsi, by show _ = _; rw [hg]; exact h.r10, by rw [hg]; exact h.r8,
     h.frame.trans (hf.sub fun r hr => ⟨pR s₀, by simp, fun a ha => by
       simp only [List.mem_singleton] at hr; subst hr; exact ha⟩),
     fun k hk => ?_, by rw [hrd]; exact h.rd, by rw [hwr]; exact h.wr⟩

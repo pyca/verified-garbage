@@ -143,8 +143,8 @@ theorem setupTTo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {s₁ : St
       by rw [hr11, Nat.zero_add], sv k (by simp [pregs]; omega) l hl, pregs_get]
 
 /-- The state the loop starts from. -/
-structure ReadyTo (s₀ : State) (P : Nat → Nat → Block) (s : State) : Prop where
-  a : AInvTo s₀ 0 s
+structure ReadyTo (s₀ : State) (P : Nat → Nat → Block) (s : State) (be : Bool := false) : Prop where
+  a : AInvTo s₀ 0 s be
   rdx : s.gpr .rdx = op s₀
   rax : s.gpr .rax = cp s₀
   gpr : ∀ r, r ≠ .rax → r ≠ .rdx → r ≠ .r8 → r ≠ .r10 → s.gpr r = s₀.gpr r
@@ -199,7 +199,7 @@ theorem setupZTo_ok {s₀ : State} {P : Nat → Nat → Block} {s : State} (hR :
       | (rw [c1, i1, VG.Proof.Aes.X86_64.Vaes.paddd_two]; rfl)
       | (rw [i0]; exact paddd_two_two) | (rw [i1]; exact paddd_two_two)
   · refine ⟨⟨Nat.zero_le _, fun l hl => by rw [c14 l hl, Nat.zero_add], m0, i15, by rw [f.gpr]; exact hR.rdi,
-      by rw [f.gpr]; exact hR.rsi, by rw [f.gpr]; exact hR.r10, by rw [f.gpr]; exact hR.r8,
+      by rw [f.gpr]; exact hR.rsi, by show _ = _; rw [f.gpr]; exact hR.r10, by rw [f.gpr]; exact hR.r8,
       by rw [f.mem]; exact hR.frame.mono fun r hr => by simp at hr ⊢; exact Or.inr hr,
       fun k hk => absurd hk (Nat.not_lt_zero _), by rw [f.rd]; exact hR.rd, by rw [f.wr]; exact hR.wr⟩,
       by rw [f.gpr]; exact hR.rdx, by rw [f.gpr]; exact hR.rax,
@@ -210,8 +210,8 @@ theorem setupZTo_ok {s₀ : State} {P : Nat → Nat → Block} {s : State} (hR :
 
 /-! ## The loop of one group -/
 
-structure EInvTo (s₀ : State) (P : Nat → Nat → Block) (e : Nat) (s : State) : Prop where
-  a : AInvTo s₀ (16 * e) s
+structure EInvTo (s₀ : State) (P : Nat → Nat → Block) (e : Nat) (s : State) (be : Bool := false) : Prop where
+  a : AInvTo s₀ (16 * e) s be
   one : 1 ≤ e
   rdx : (s.gpr .rdx).toNat = (op s₀).toNat + 256 * (e - 1)
   r9 : s.gpr .r9 = BitVec.ofNat 64 (nb s₀ - 16 * (e - 1))

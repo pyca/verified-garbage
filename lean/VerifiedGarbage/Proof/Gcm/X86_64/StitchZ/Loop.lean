@@ -97,8 +97,8 @@ theorem QG.data {s₀ : State} (hp : SPre s₀) {lo : Nat → Nat} {a : Addr} {X
 
 /-! ## The encryption loop -/
 
-structure EInv (s₀ : State) (P : Nat → Nat → Block) (e : Nat) (s : State) : Prop where
-  a : AInv s₀ (16 * e) s
+structure EInv (s₀ : State) (P : Nat → Nat → Block) (e : Nat) (s : State) (be : Bool := false) : Prop where
+  a : AInv s₀ (16 * e) s be
   one : 1 ≤ e
   rdx : (s.gpr .rdx).toNat = (dp s₀).toNat + 256 * (e - 1)
   r9 : s.gpr .r9 = BitVec.ofNat 64 (nb s₀ - 16 * (e - 1))
@@ -203,7 +203,7 @@ theorem body_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} (hf 
     exact ⟨hA₂.le, fun l hl => by rw [fl]; exact hA₂.ctr l hl, fun l hl => by rw [fl]; exact hA₂.msk l hl,
       fun l hl => by rw [fl]; exact hA₂.inc l hl,
       by rw [fg _ (by decide) (by decide)]; exact hA₂.rdi, by rw [fg _ (by decide) (by decide)]; exact hA₂.rsi,
-      by rw [fg _ (by decide) (by decide)]; exact hA₂.r10, by rw [fm]; exact hA₂.frame,
+      by show _ = _; rw [fg _ (by decide) (by decide)]; exact hA₂.r10, by rw [fm]; exact hA₂.frame,
       fun k hk => by rw [fm]; exact hA₂.blocks k hk, by rw [frd]; exact hA₂.rd, by rw [fwr]; exact hA₂.wr⟩
   have hr9 : s₂.gpr .r9 - 16 = BitVec.ofNat 64 (nb s₀ - 16 * (e + 1 - 1)) := by
     rw [hg₂, f₁.gpr, hI.r9, show (16 : BitVec 64) = BitVec.ofNat 64 16 from rfl,
@@ -247,8 +247,8 @@ theorem shuf44_1 (a b : Nat → BitVec 128) : shuf4Lanes a b 0x44 1 = a 1 := rfl
 theorem shuf44_2 (a b : Nat → BitVec 128) : shuf4Lanes a b 0x44 2 = b 0 := rfl
 theorem shuf44_3 (a b : Nat → BitVec 128) : shuf4Lanes a b 0x44 3 = b 1 := rfl
 
-structure Ready (s₀ : State) (P : Nat → Nat → Block) (s : State) : Prop where
-  a : AInv s₀ 0 s
+structure Ready (s₀ : State) (P : Nat → Nat → Block) (s : State) (be : Bool := false) : Prop where
+  a : AInv s₀ 0 s be
   rdx : s.gpr .rdx = dp s₀
   rax : s.gpr .rax = cp s₀
   gpr : ∀ r, r ≠ .rax → r ≠ .rdx → r ≠ .r10 → s.gpr r = s₀.gpr r
@@ -305,7 +305,7 @@ theorem setupZ_ok {s₀ : State} {P : Nat → Nat → Block} {s : State} (hR : S
       | (rw [i0]; exact paddd_two_two) | (rw [i1]; exact paddd_two_two)
   · have hA := hR.a
     refine ⟨⟨Nat.zero_le _, fun l hl => by rw [c14 l hl, Nat.zero_add], m0, i15, by rw [f.gpr]; exact hA.rdi,
-      by rw [f.gpr]; exact hA.rsi, by rw [f.gpr]; exact hA.r10, by rw [f.mem]; exact hA.frame,
+      by rw [f.gpr]; exact hA.rsi, by show _ = _; rw [f.gpr]; exact hA.r10, by rw [f.mem]; exact hA.frame,
       fun k hk => by rw [f.mem]; exact hA.blocks k hk, by rw [f.rd]; exact hA.rd, by rw [f.wr]; exact hA.wr⟩,
       by rw [f.gpr]; exact hR.rdx, by rw [f.gpr]; exact hR.rax, fun r h1 h2 h3 => by rw [f.gpr]; exact hR.gpr r h1 h2 h3,
       fun k hk l hl => ?_, fun l hl => ?_, by rw [y0]; exact hR.y, y1⟩
@@ -465,8 +465,8 @@ theorem final_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} (hf
 
 /-! ## Decryption -/
 
-structure DInv (s₀ : State) (P : Nat → Nat → Block) (e : Nat) (s : State) : Prop where
-  a : AInv s₀ (16 * e) s
+structure DInv (s₀ : State) (P : Nat → Nat → Block) (e : Nat) (s : State) (be : Bool := false) : Prop where
+  a : AInv s₀ (16 * e) s be
   rdx : s.gpr .rdx = dp s₀ + BitVec.ofNat 64 (256 * e)
   r9 : s.gpr .r9 = BitVec.ofNat 64 (nb s₀ - 16 * e)
   rax : s.gpr .rax = cp s₀
@@ -533,7 +533,7 @@ theorem dbody_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} (hf
     exact ⟨hA₂.le, fun l hl => by rw [fl]; exact hA₂.ctr l hl, fun l hl => by rw [fl]; exact hA₂.msk l hl,
       fun l hl => by rw [fl]; exact hA₂.inc l hl,
       by rw [fg _ (by decide) (by decide)]; exact hA₂.rdi, by rw [fg _ (by decide) (by decide)]; exact hA₂.rsi,
-      by rw [fg _ (by decide) (by decide)]; exact hA₂.r10, by rw [fm]; exact hA₂.frame,
+      by show _ = _; rw [fg _ (by decide) (by decide)]; exact hA₂.r10, by rw [fm]; exact hA₂.frame,
       fun k hk => by rw [fm]; exact hA₂.blocks k hk, by rw [frd]; exact hA₂.rd, by rw [fwr]; exact hA₂.wr⟩
   have hr9 : s₂.gpr .r9 - 16 = BitVec.ofNat 64 (nb s₀ - 16 * (e + 1)) := by
     rw [hg₂, f₁.gpr, hI.r9, show (16 : BitVec 64) = BitVec.ofNat 64 16 from rfl,

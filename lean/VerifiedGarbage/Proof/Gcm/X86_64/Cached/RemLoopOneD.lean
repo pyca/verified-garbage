@@ -92,7 +92,7 @@ theorem remStepD_ok {E : REnv} (hE : E.Ok) {i : Nat} (hi : i < E.r) {t : State} 
   have hH : XBinOp.eval .pshufb (t.mem.readW (E.aS i) 128) revMask = E.H i := by
     rw [← blockAt_eq, bS]
   refine WP.mono (remNext_ok t₁ (m := E.r - i) (i := i) (by omega) (by omega) (by rw [g₁, hI.r9])
-    (by rw [g₁, hI.r10])) fun t' ⟨a10, a9, z, gg, ln, mm, rd', wr'⟩ => ⟨?_, z⟩
+    (by show _ = _; rw [g₁, hI.r10])) fun t' ⟨a10, a9, z, gg, ln, mm, rd', wr'⟩ => ⟨?_, z⟩
   have m' : t'.mem = t.mem.writeW (E.aD i) (t.mem.readW (E.aK i) 128 ^^^ t.mem.readW (E.aS i) 128) := by
     rw [mm, m₁]
   refine ⟨by omega, a10, by rw [a9, show E.r - i - 1 = E.r - (i + 1) by omega],

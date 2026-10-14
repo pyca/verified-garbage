@@ -114,7 +114,7 @@ theorem AInv.gpr2 {s₀ : State} {c : Nat} {s s' : State} (h : AInv s₀ c s)
   ⟨h.le, fun l hl' => by rw [hl]; exact h.ctr l hl', fun l hl' => by rw [hl]; exact h.msk l hl',
     fun l hl' => by rw [hl]; exact h.inc l hl',
     by rw [hg _ (by decide) (by decide)]; exact h.rdi, by rw [hg _ (by decide) (by decide)]; exact h.rsi,
-    by rw [hg _ (by decide) (by decide)]; exact h.r10, by rw [hm]; exact h.frame,
+    by show _ = _; rw [hg _ (by decide) (by decide)]; exact h.r10, by rw [hm]; exact h.frame,
     fun k hk => by rw [hm]; exact h.blocks k hk, by rw [hrd]; exact h.rd, by rw [hwr]; exact h.wr⟩
 
 /-- The encryption state kept by `pow48`, which writes only the working space. -/
@@ -130,7 +130,7 @@ theorem AInv.pow {s₀ : State} (hp : SPre s₀) {c : Nat} {s s' : State} (h : A
   refine ⟨h.le, fun l hl' => by rw [k _ (by decide) l hl']; exact h.ctr l hl',
     fun l hl' => by rw [k _ (by decide) l hl']; exact h.msk l hl',
     fun l hl' => by rw [k _ (by decide) l hl']; exact h.inc l hl',
-    by rw [hg]; exact h.rdi, by rw [hg]; exact h.rsi, by rw [hg]; exact h.r10,
+    by rw [hg]; exact h.rdi, by rw [hg]; exact h.rsi, by show _ = _; rw [hg]; exact h.r10,
     h.frame.trans (hf.sub fun r hr => ⟨pR s₀, by simp, fun a ha => by
       simp only [List.mem_singleton] at hr; subst hr; exact ha⟩),
     fun k hk => ?_, by rw [hrd]; exact h.rd, by rw [hwr]; exact h.wr⟩
@@ -191,8 +191,8 @@ theorem cmp_ok (s : State) (i : BitVec 32) (n : Nat) (hi : BitVec.signExtend 64 
 
 /-- The encryption state with `c` blocks encrypted and the first `e - 1`
 groups hashed: `EInv` when `c = 16 e`. -/
-structure EGen (s₀ : State) (P : Nat → Nat → Block) (e c : Nat) (s : State) : Prop where
-  a : AInv s₀ c s
+structure EGen (s₀ : State) (P : Nat → Nat → Block) (e c : Nat) (s : State) (be : Bool := false) : Prop where
+  a : AInv s₀ c s be
   one : 1 ≤ e
   ec : 16 * e ≤ c
   rdx : (s.gpr .rdx).toNat = (dp s₀).toNat + 256 * (e - 1)
@@ -282,8 +282,8 @@ theorem EGen.einv {s₀ : State} {P : Nat → Nat → Block} {e : Nat} {s : Stat
 /-- `e + 2` groups encrypted, the first `e - 1` hashed, the powers of 48
 blocks and the reduction constant in the working space; `rdx` points to
 group `e - 1`, the first of the three to hash. -/
-structure EInv3 (s₀ : State) (T : Nat → Nat → Nat → Block) (e : Nat) (s : State) : Prop where
-  a : AInv s₀ (16 * (e + 2)) s
+structure EInv3 (s₀ : State) (T : Nat → Nat → Nat → Block) (e : Nat) (s : State) (be : Bool := false) : Prop where
+  a : AInv s₀ (16 * (e + 2)) s be
   one : 1 ≤ e
   rdx : (s.gpr .rdx).toNat = (dp s₀).toNat + 256 * (e - 1)
   r9 : s.gpr .r9 = BitVec.ofNat 64 (nb s₀ - 16 * (e - 1))
@@ -560,8 +560,8 @@ theorem encTail_ok {s₀ : State} (hp : SPre s₀) (hm : nb s₀ % 16 = 0) {P : 
 
 /-- `e` groups hashed and decrypted, the powers of 48 blocks and the
 reduction constant in the working space; `rdx` points to group `e`. -/
-structure DInv3 (s₀ : State) (T : Nat → Nat → Nat → Block) (e : Nat) (s : State) : Prop where
-  a : AInv s₀ (16 * e) s
+structure DInv3 (s₀ : State) (T : Nat → Nat → Nat → Block) (e : Nat) (s : State) (be : Bool := false) : Prop where
+  a : AInv s₀ (16 * e) s be
   rdx : s.gpr .rdx = dp s₀ + BitVec.ofNat 64 (256 * e)
   r9 : s.gpr .r9 = BitVec.ofNat 64 (nb s₀ - 16 * e)
   rax : s.gpr .rax = cp s₀

@@ -90,7 +90,7 @@ theorem batch_ok {s₀ : State} (hp : SPre s₀) (g : Nat → List Instr) (G : L
     fun r h13' h14 hr hg' l hl => by
       rw [x₃ r h13' hr l hl, f₂.zlane r (by simp [h13', hr, hg']) l hl, f₁.zlane r (by simp [h14, hr]) l hl]
   refine ⟨⟨by omega, fun l hl => ?_, fun l hl => ?_, fun l hl => ?_, by rw [g₃, f₂.gpr, f₁.gpr, hI.rdi],
-    by rw [g₃, f₂.gpr, f₁.gpr, hI.rsi], by rw [g₃, f₂.gpr, f₁.gpr, hI.r10], ?_, ?_,
+    by rw [g₃, f₂.gpr, f₁.gpr, hI.rsi], by show _ = _; rw [g₃, f₂.gpr, f₁.gpr, hI.r10], ?_, ?_,
     by rw [rd₃, f₂.rd, f₁.rd, hI.rd], by rw [wr₃, f₂.wr, f₁.wr, hI.wr]⟩,
     hqx s₂ s₃ hQ₂ g₃ rd₃ wr₃ (fun r h1 h2 l hl => x₃ r h1 h2 l hl) (by rw [hm₂]; exact fr'),
     by rw [g₃, f₂.gpr, f₁.gpr], kx, fr'⟩

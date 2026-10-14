@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Aes
 public import VerifiedGarbage.Proof.Aes.X86_64.VaesZ.Ctr
 public import VerifiedGarbage.Impl.Gcm.X86_64.StitchZ
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.R10
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -26,7 +27,7 @@ may write `zmm13`, which the next round reloads.
 namespace VG.Proof.Gcm.X86_64.StitchZ
 
 open VG VG.X86_64
-open VG.Proof.Gcm.X86_64.Stitch (SPre nb nr kp cb dp dR pR bAddr blk ctb ciph sch sch_frame addr_eq in_sub)
+open VG.Proof.Gcm.X86_64.Stitch (SPre nb nr kp pp cb dp dR pR bAddr blk ctb ciph sch sch_frame addr_eq in_sub)
 open VG.Impl.Gcm.X86_64.Stitch (aregs)
 open VG.Impl.Gcm.X86_64.StitchZ (batch)
 open VG.Proof.Aes.X86_64.VaesZ (ctrsZ_ok aesZ_ok xorDataZ_ok four ZFrame.of_keys)
@@ -34,30 +35,30 @@ open VG.Proof.Aes.X86_64.AesNi (Keys aesWith_eq blockAt_frame)
 open VG.Spec.Gcm (Block blockAt inc32 aesWith)
 
 /-- The encryption after `c` blocks: the four counters, the mask, the
-increment, the key schedule and its last round key, and the data (blocks
-below `c` encrypted, the others as they were). -/
-structure AInv (s₀ : State) (c : Nat) (s : State) : Prop where
+increment, the key schedule, `r10` (`R10`), and the data (blocks below `c`
+encrypted, the others as they were). -/
+structure AInv (s₀ : State) (c : Nat) (s : State) (be : Bool := false) : Prop where
   le : c ≤ nb s₀
   ctr : ∀ l < 4, s.zlane .xmm14 l = Nat.repeat inc32 (c + l) (cb s₀)
   msk : ∀ l < 4, s.zlane .xmm0 l = revMask
   inc : ∀ l < 4, s.zlane .xmm15 l = four
   rdi : s.gpr .rdi = kp s₀
   rsi : s.gpr .rsi = s₀.gpr .rsi
-  r10 : s.gpr .r10 = kp s₀ + BitVec.ofNat 64 (16 * nr s₀)
+  r10 : R10 be s₀ c s
   frame : Frame [dR s₀, pR s₀] s₀.mem s.mem
   blocks : ∀ k < nb s₀, blockAt s.mem (bAddr s₀ k) = if k < c then ctb s₀ k else blk s₀ k
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
 
-theorem AInv.zframe {s₀ : State} {c : Nat} {s s' : State} {rs : List XReg} (h : AInv s₀ c s)
-    (f : ZFrame rs s s') (h14 : .xmm14 ∉ rs) (h0 : .xmm0 ∉ rs) (h15 : .xmm15 ∉ rs) : AInv s₀ c s' :=
+theorem AInv.zframe {s₀ : State} {c : Nat} {s s' : State} {be : Bool} {rs : List XReg} (h : AInv s₀ c s be)
+    (f : ZFrame rs s s') (h14 : .xmm14 ∉ rs) (h0 : .xmm0 ∉ rs) (h15 : .xmm15 ∉ rs) : AInv s₀ c s' be :=
   ⟨h.le, fun l hl => by rw [f.zlane _ h14 l hl]; exact h.ctr l hl,
     fun l hl => by rw [f.zlane _ h0 l hl]; exact h.msk l hl,
     fun l hl => by rw [f.zlane _ h15 l hl]; exact h.inc l hl, by rw [f.gpr]; exact h.rdi,
-    by rw [f.gpr]; exact h.rsi, by rw [f.gpr]; exact h.r10, by rw [f.mem]; exact h.frame,
+    by rw [f.gpr]; exact h.rsi, h.r10.keep (by rw [f.gpr]) f.mem, by rw [f.mem]; exact h.frame,
     fun k hk => by rw [f.mem]; exact h.blocks k hk, by rw [f.rd]; exact h.rd, by rw [f.wr]; exact h.wr⟩
 
-theorem AInv.keys {s₀ : State} (hp : SPre s₀) {c : Nat} {s : State} (hI : AInv s₀ c s) :
+theorem AInv.keys {s₀ : State} (hp : SPre s₀) {c : Nat} {s : State} {be : Bool} (hI : AInv s₀ c s be) :
     Keys (nr s₀) (sch s₀) s :=
   ⟨by rw [hI.rdi, sch_frame hp hI.frame], by rcases hp.rounds with h | h | h <;> omega,
     fun j hj => by
@@ -121,7 +122,7 @@ theorem batch_ok {s₀ : State} (hp : SPre s₀) (g : Nat → List Instr) (G : L
     fun r h13' h14 hr hg' l hl => by
       rw [x₃ r h13' hr l hl, f₂.zlane r (by simp [h13', hr, hg']) l hl, f₁.zlane r (by simp [h14, hr]) l hl]
   refine ⟨⟨by omega, fun l hl => ?_, fun l hl => ?_, fun l hl => ?_, by rw [g₃, f₂.gpr, f₁.gpr, hI.rdi],
-    by rw [g₃, f₂.gpr, f₁.gpr, hI.rsi], by rw [g₃, f₂.gpr, f₁.gpr, hI.r10], ?_, ?_,
+    by rw [g₃, f₂.gpr, f₁.gpr, hI.rsi], by show _ = _; rw [g₃, f₂.gpr, f₁.gpr, hI.r10], ?_, ?_,
     by rw [rd₃, f₂.rd, f₁.rd, hI.rd], by rw [wr₃, f₂.wr, f₁.wr, hI.wr]⟩,
     hqx s₂ s₃ hQ₂ g₃ rd₃ wr₃ (fun r h1 h2 l hl => x₃ r h1 h2 l hl) (by rw [hm₂]; exact fr'),
     by rw [g₃, f₂.gpr, f₁.gpr], kx, fr'⟩

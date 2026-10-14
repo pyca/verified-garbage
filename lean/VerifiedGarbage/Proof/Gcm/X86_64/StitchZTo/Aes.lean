@@ -7,6 +7,7 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Aes.X86_64.VaesZ.Ctr
 import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Aes
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.R10
 
 /-!
 # The out-of-place AVX-512 loop: a batch of sixteen blocks
@@ -36,40 +37,40 @@ open VG.Spec.Gcm (Block blockAt inc32 aesWith)
 increment, the key schedule and its last round key, `src - dst` in `r8`,
 nothing written but the output and the working space, and output blocks
 below `c` the ciphertext of the plaintext's. -/
-structure AInvTo (s₀ : State) (c : Nat) (s : State) : Prop where
+structure AInvTo (s₀ : State) (c : Nat) (s : State) (be : Bool := false) : Prop where
   le : c ≤ nb s₀
   ctr : ∀ l < 4, s.zlane .xmm14 l = Nat.repeat inc32 (c + l) (cb s₀)
   msk : ∀ l < 4, s.zlane .xmm0 l = revMask
   inc : ∀ l < 4, s.zlane .xmm15 l = four
   rdi : s.gpr .rdi = kp s₀
   rsi : s.gpr .rsi = s₀.gpr .rsi
-  r10 : s.gpr .r10 = kp s₀ + BitVec.ofNat 64 (16 * nr s₀)
+  r10 : StitchZ.R10 be s₀ c s
   r8 : s.gpr .r8 = sp s₀ - op s₀
   frame : Frame [oR s₀, pR s₀] s₀.mem s.mem
   blocks : ∀ k < c, blockAt s.mem (oAddr s₀ k) = ctbT s₀ k
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
 
-theorem AInvTo.zframe {s₀ : State} {c : Nat} {s s' : State} {rs : List XReg} (h : AInvTo s₀ c s)
-    (f : ZFrame rs s s') (h14 : .xmm14 ∉ rs) (h0 : .xmm0 ∉ rs) (h15 : .xmm15 ∉ rs) : AInvTo s₀ c s' :=
+theorem AInvTo.zframe {s₀ : State} {c : Nat} {s s' : State} {be : Bool} {rs : List XReg} (h : AInvTo s₀ c s be)
+    (f : ZFrame rs s s') (h14 : .xmm14 ∉ rs) (h0 : .xmm0 ∉ rs) (h15 : .xmm15 ∉ rs) : AInvTo s₀ c s' be :=
   ⟨h.le, fun l hl => by rw [f.zlane _ h14 l hl]; exact h.ctr l hl,
     fun l hl => by rw [f.zlane _ h0 l hl]; exact h.msk l hl,
     fun l hl => by rw [f.zlane _ h15 l hl]; exact h.inc l hl, by rw [f.gpr]; exact h.rdi,
-    by rw [f.gpr]; exact h.rsi, by rw [f.gpr]; exact h.r10, by rw [f.gpr]; exact h.r8, by rw [f.mem]; exact h.frame,
+    by rw [f.gpr]; exact h.rsi, h.r10.keep (by rw [f.gpr]) f.mem, by rw [f.gpr]; exact h.r8, by rw [f.mem]; exact h.frame,
     fun k hk => by rw [f.mem]; exact h.blocks k hk, by rw [f.rd]; exact h.rd, by rw [f.wr]; exact h.wr⟩
 
 /-- The encryption state kept by changes of `rdx` and `r9` alone. -/
-theorem AInvTo.gpr2 {s₀ : State} {c : Nat} {s s' : State} (h : AInvTo s₀ c s)
+theorem AInvTo.gpr2 {s₀ : State} {c : Nat} {s s' : State} {be : Bool} (h : AInvTo s₀ c s be)
     (hg : ∀ r, r ≠ .rdx → r ≠ .r9 → s'.gpr r = s.gpr r) (hl : ∀ r l, s'.zlane r l = s.zlane r l)
-    (hm : s'.mem = s.mem) (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) : AInvTo s₀ c s' :=
+    (hm : s'.mem = s.mem) (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) : AInvTo s₀ c s' be :=
   ⟨h.le, fun l hl' => by rw [hl]; exact h.ctr l hl', fun l hl' => by rw [hl]; exact h.msk l hl',
     fun l hl' => by rw [hl]; exact h.inc l hl',
     by rw [hg _ (by decide) (by decide)]; exact h.rdi, by rw [hg _ (by decide) (by decide)]; exact h.rsi,
-    by rw [hg _ (by decide) (by decide)]; exact h.r10, by rw [hg _ (by decide) (by decide)]; exact h.r8,
+    h.r10.keep (hg _ (by decide) (by decide)) hm, by rw [hg _ (by decide) (by decide)]; exact h.r8,
     by rw [hm]; exact h.frame, fun k hk => by rw [hm]; exact h.blocks k hk, by rw [hrd]; exact h.rd,
     by rw [hwr]; exact h.wr⟩
 
-theorem AInvTo.keys {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {c : Nat} {s : State} (hI : AInvTo s₀ c s) :
+theorem AInvTo.keys {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {c : Nat} {s : State} {be : Bool} (hI : AInvTo s₀ c s be) :
     Keys (nr s₀) (sch s₀) s :=
   ⟨by rw [hI.rdi]; exact (sch_frame hp.toD hI.frame).symm, by rcases hp.rounds with h | h | h <;> omega,
     fun j hj => by
@@ -159,7 +160,7 @@ theorem batchTo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) (g : Nat �
       rw [x₃ r h13' hr l hl, f₂.zlane r (by simp [h13', hr, hg']) l hl, f₁.zlane r (by simp [h14, hr]) l hl]
   have gs : s₃.gpr = s.gpr := by rw [g₃, hg₂]
   refine ⟨⟨by omega, fun l hl => ?_, fun l hl => ?_, fun l hl => ?_, by rw [gs, hI.rdi],
-    by rw [gs, hI.rsi], by rw [gs, hI.r10], by rw [gs, hI.r8], ?_, ?_,
+    by rw [gs, hI.rsi], by show _ = _; rw [gs, hI.r10], by rw [gs, hI.r8], ?_, ?_,
     by rw [rd₃, f₂.rd, f₁.rd, hI.rd], by rw [wr₃, f₂.wr, f₁.wr, hI.wr]⟩,
     hqx s₂ s₃ hQ₂ g₃ rd₃ wr₃ (fun r h1 h2 l hl => x₃ r h1 h2 l hl) (by rw [hm₂]; exact fr'),
     gs, kx, fr'⟩

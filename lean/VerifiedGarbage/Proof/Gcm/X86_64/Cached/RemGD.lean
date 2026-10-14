@@ -301,7 +301,7 @@ theorem remGD_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} (hr
   have hA' : AInv s₀ (16 * e) s' :=
     ⟨hI.a.le, fun l hl => by rw [la]; exact hI.a.ctr l hl, fun l hl => by rw [la]; exact hI.a.msk l hl,
       fun l hl => by rw [la]; exact hI.a.inc l hl, by rw [ga _ (by decide)]; exact hI.a.rdi,
-      by rw [ga _ (by decide)]; exact hI.a.rsi, by rw [ga _ (by decide)]; exact hI.a.r10,
+      by rw [ga _ (by decide)]; exact hI.a.rsi, by show _ = _; rw [ga _ (by decide)]; exact hI.a.r10,
       by rw [ma]; exact hI.a.frame, fun k hk => by rw [ma]; exact hI.a.blocks k hk, by rw [rda]; exact hI.a.rd,
       by rw [wra]; exact hI.a.wr⟩
   have hCache' := hCache.keep hha (hA'.keys hp)
