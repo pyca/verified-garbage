@@ -134,7 +134,7 @@ mod triple_des_ofb;
 mod x25519;
 mod x448;
 
-const SIZES: [usize; 3] = [64, 1024, 16384];
+const SIZES: [usize; 5] = [55, 64, 111, 119, 1024];
 
 /// A buffer of `len` bytes for an operation in place, into which each
 /// iteration first copies `source`.
