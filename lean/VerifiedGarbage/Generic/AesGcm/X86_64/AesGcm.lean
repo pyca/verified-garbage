@@ -18,6 +18,7 @@ public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Ok
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Ok
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.OkP
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.Ok
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchR.Ok
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Verified
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Field
 public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Verified
@@ -177,7 +178,7 @@ number of blocks from 16 on if `fullR`). -/
 theorem StitchName.okR : (n : StitchName) →
     Proof.Gcm.X86_64.Stitch.StitchOkM Proof.Gcm.X86_64.Stitch.CtxMode.prepared n.encR n.decR
       (if n.fullR then 1 else 16)
-  | .vaes => Proof.Gcm.X86_64.Stitch.stitch_ok.toM _
+  | .vaes => Proof.Gcm.X86_64.StitchR.stitch_ok
   | .vaesAvx512 => Proof.Gcm.X86_64.StitchZH.stitchR_ok
   | .aesniAvx => Proof.Gcm.X86_64.StitchAvx8.stitchR_ok
 
@@ -187,7 +188,7 @@ def GcmVariant.stitchR (v : GcmVariant) : Option (StitchCode Proof.Gcm.X86_64.St
 theorem StitchToName.okR : (n : StitchToName) →
     Proof.Gcm.X86_64.Stitch.StitchToOkM Proof.Gcm.X86_64.Stitch.CtxMode.prepared n.encR
       (if n.fullR then 1 else 16)
-  | .vaes => Proof.Gcm.X86_64.StitchTo.stitchTo_ok _
+  | .vaes => Proof.Gcm.X86_64.StitchR.stitchTo_ok
   | .vaesAvx512 => Proof.Gcm.X86_64.StitchZHTo.stitchToR_ok
   | .aesniAvx => Proof.Gcm.X86_64.StitchAvx8.stitchToR_ok
 

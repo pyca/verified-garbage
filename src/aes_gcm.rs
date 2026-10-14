@@ -66,11 +66,12 @@
 //! `aes` feature stands for together) run the `_aes` ones (with
 //! `vg_aes_ctr32_aes` and `vg_ghash_aes`).
 //!
-//! On x86-64, the `_vaes_vpclmul_avx512` and `_aesni_pclmul_avx` instances
-//! also have `_prepared` ones (`VG.Spec.Gcm.PreparedPowersRepr`), whose
-//! interleaved loops read encoded pairs of powers `H¹ … H⁴⁸` from a larger
-//! key context, which `vg_aes_gcm_init_prepared` writes, instead of
-//! computing them on every call (`H¹ … H⁸` on 128-bit registers). The
+//! On x86-64, the `_vaes_vpclmul_avx512`, `_vaes_vpclmul` and
+//! `_aesni_pclmul_avx` instances also have `_prepared` ones
+//! (`VG.Spec.Gcm.PreparedPowersRepr`), whose interleaved loops read encoded
+//! pairs of powers `H¹ … H⁴⁸` from a larger key context, which
+//! `vg_aes_gcm_init_prepared` writes, instead of computing them on every
+//! call (`H¹ … H¹⁶` for `_vaes_vpclmul`, `H¹ … H⁸` on 128-bit registers). The
 //! `_vaes_vpclmul_avx512` loops also load the AES round keys into
 //! `zmm16`–`zmm31` once per block call and reuse them across batches.
 //! `vg_aes_gcm_init_prepared` needs AVX2 too, so the `_aesni_pclmul_avx`
@@ -91,14 +92,18 @@ use crate::arch::gcm::vg_aes_gcm_seal_gather;
 use crate::arch::gcm::{
     VG_AES_GCM_INIT_PREPARED_AESNI_PCLMUL_AVX_FEATURES,
     VG_AES_GCM_INIT_PREPARED_VAES_VPCLMUL_AVX512_FEATURES,
-    vg_aes_gcm_init_prepared_aesni_pclmul_avx, vg_aes_gcm_init_prepared_vaes_vpclmul_avx512,
-    vg_aes_gcm_open_prepared_aesni_pclmul_avx, vg_aes_gcm_open_prepared_vaes_vpclmul_avx512,
-    vg_aes_gcm_seal_gather_prepared_aesni_pclmul_avx,
+    VG_AES_GCM_INIT_PREPARED_VAES_VPCLMUL_FEATURES, vg_aes_gcm_init_prepared_aesni_pclmul_avx,
+    vg_aes_gcm_init_prepared_vaes_vpclmul, vg_aes_gcm_init_prepared_vaes_vpclmul_avx512,
+    vg_aes_gcm_open_prepared_aesni_pclmul_avx, vg_aes_gcm_open_prepared_vaes_vpclmul,
+    vg_aes_gcm_open_prepared_vaes_vpclmul_avx512, vg_aes_gcm_seal_gather_prepared_aesni_pclmul_avx,
+    vg_aes_gcm_seal_gather_prepared_vaes_vpclmul,
     vg_aes_gcm_seal_gather_prepared_vaes_vpclmul_avx512, vg_aes_gcm_seal_prepared_aesni_pclmul_avx,
-    vg_aes_gcm_seal_prepared_vaes_vpclmul_avx512,
+    vg_aes_gcm_seal_prepared_vaes_vpclmul, vg_aes_gcm_seal_prepared_vaes_vpclmul_avx512,
     vg_aes_gcm_stream_decrypt_prepared_aesni_pclmul_avx,
+    vg_aes_gcm_stream_decrypt_prepared_vaes_vpclmul,
     vg_aes_gcm_stream_decrypt_prepared_vaes_vpclmul_avx512,
     vg_aes_gcm_stream_encrypt_prepared_aesni_pclmul_avx,
+    vg_aes_gcm_stream_encrypt_prepared_vaes_vpclmul,
     vg_aes_gcm_stream_encrypt_prepared_vaes_vpclmul_avx512,
 };
 #[cfg(target_arch = "aarch64")]
@@ -418,6 +423,17 @@ static PREPARED_VAES_VPCLMUL_AVX512: Prepared = Prepared {
 };
 
 #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
+static PREPARED_VAES_VPCLMUL: Prepared = Prepared {
+    features: VG_AES_GCM_INIT_PREPARED_VAES_VPCLMUL_FEATURES,
+    init: vg_aes_gcm_init_prepared_vaes_vpclmul,
+    seal: vg_aes_gcm_seal_prepared_vaes_vpclmul,
+    open: vg_aes_gcm_open_prepared_vaes_vpclmul,
+    seal_gather: vg_aes_gcm_seal_gather_prepared_vaes_vpclmul,
+    stream_encrypt: vg_aes_gcm_stream_encrypt_prepared_vaes_vpclmul,
+    stream_decrypt: vg_aes_gcm_stream_decrypt_prepared_vaes_vpclmul,
+};
+
+#[cfg(all(target_arch = "x86_64", feature = "alloc"))]
 static PREPARED_AESNI_PCLMUL_AVX: Prepared = Prepared {
     features: VG_AES_GCM_INIT_PREPARED_AESNI_PCLMUL_AVX_FEATURES,
     init: vg_aes_gcm_init_prepared_aesni_pclmul_avx,
@@ -436,6 +452,7 @@ impl Backend {
     fn prepared(self) -> Option<&'static Prepared> {
         let p = match self {
             Backend::VaesVpclmulAvx512 => &PREPARED_VAES_VPCLMUL_AVX512,
+            Backend::VaesVpclmul => &PREPARED_VAES_VPCLMUL,
             Backend::AesNiPclmulAvx => &PREPARED_AESNI_PCLMUL_AVX,
             Backend::Scalar
             | Backend::AesNi
@@ -444,8 +461,7 @@ impl Backend {
             | Backend::Vaes
             | Backend::Vpclmul
             | Backend::VaesPclmul
-            | Backend::AesNiVpclmul
-            | Backend::VaesVpclmul => return None,
+            | Backend::AesNiVpclmul => return None,
         };
         detected().contains(p.features).then_some(p)
     }
@@ -1726,6 +1742,12 @@ mod tests {
                         VG_AES_GCM_STREAM_DECRYPT_VAES_VPCLMUL_FEATURES,
                         VG_AES_GCM_STREAM_FINISH_VAES_VPCLMUL_FEATURES,
                         VG_AES_GCM_STREAM_VERIFY_VAES_VPCLMUL_FEATURES,
+                        VG_AES_GCM_INIT_PREPARED_VAES_VPCLMUL_FEATURES,
+                        VG_AES_GCM_SEAL_PREPARED_VAES_VPCLMUL_FEATURES,
+                        VG_AES_GCM_OPEN_PREPARED_VAES_VPCLMUL_FEATURES,
+                        VG_AES_GCM_STREAM_ENCRYPT_PREPARED_VAES_VPCLMUL_FEATURES,
+                        VG_AES_GCM_SEAL_GATHER_PREPARED_VAES_VPCLMUL_FEATURES,
+                        VG_AES_GCM_STREAM_DECRYPT_PREPARED_VAES_VPCLMUL_FEATURES,
                     ][..],
                 ),
                 (
@@ -2025,7 +2047,11 @@ mod tests {
     #[test]
     fn prepared_boundaries() {
         use super::POWERS_AFTER;
-        for b in [Backend::VaesVpclmulAvx512, Backend::AesNiPclmulAvx] {
+        for b in [
+            Backend::VaesVpclmulAvx512,
+            Backend::VaesVpclmul,
+            Backend::AesNiPclmulAvx,
+        ] {
             if !detected().contains(b.features()) || b.prepared().is_none() {
                 continue;
             }
@@ -2106,7 +2132,11 @@ mod tests {
             let k = AesGcm::new(&[0x3c; 32][..key_len]).unwrap();
             let base = k.with_backend(Backend::Scalar);
             assert!(base.powers.get(base.rounds, &base.ctx).is_none());
-            for b in [Backend::VaesVpclmulAvx512, Backend::AesNiPclmulAvx] {
+            for b in [
+                Backend::VaesVpclmulAvx512,
+                Backend::VaesVpclmul,
+                Backend::AesNiPclmulAvx,
+            ] {
                 // Without the backend's features (or those of its key setup with
                 // the powers), only what needs none of them.
                 if !detected().contains(b.features()) || b.prepared().is_none() {
