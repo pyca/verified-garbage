@@ -10,7 +10,12 @@ use criterion::{BenchmarkId, Criterion, Throughput};
 use openssl::symm::{Cipher, Crypter, Mode};
 use verified_garbage::chacha20::ChaCha20;
 
-use crate::{OPENSSL, SIZES, VG};
+use crate::{OPENSSL, VG};
+
+/// The shared sizes, and TLS 1.3's records of 1 KiB and 4 KiB of payload,
+/// whose plaintext is one byte longer (the content type): a partial last
+/// block, which ChaCha20-Poly1305 encrypts at these sizes too.
+const SIZES: [usize; 5] = [64, 1024, 1025, 4097, 16384];
 
 pub const USES: &[&str] = &["chacha20"];
 
