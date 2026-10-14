@@ -227,9 +227,26 @@ def tagK (o : Nat) : List Instr :=
 `[rdi + r10]` (`G`). -/
 def kB : MemOp := { base := .rdx, index := some .r10 }
 
+/-- Eight (if `w`) or four bytes at `[rsi + r10]` XORed with those at
+`[rdx + r10]` through `rax`, stored back and, if `g`, at `[rdi + r10]`. -/
+def xorWord (g w : Bool) : List Instr :=
+  (if w then ([.mov .rax (.mem srcB), .alu .xor .rax (.mem kB), .store srcB .rax] : List Instr) ++
+      (if g then [.store dstB .rax] else [])
+    else ([.mov32 .rax (.mem srcB), .alu32 .xor .rax (.mem kB), .store32 srcB .rax] : List Instr) ++
+      (if g then [.store32 dstB .rax] else [])) ++
+  [.alu .add .r10 (imm (if w then 8 else 4))]
+
+/-- The bytes from `r10` to `rcx` at `rsi` XORed with those at `rdx`, one at
+a time, and if `g` also stored at `rdi`. -/
+def xorBytes (g : Bool) : Prog isa :=
+  .loop (.block (([.movzx8 .rax srcB, .movzx8 .r9 kB, .alu .xor .rax (.reg .r9), .store8 srcB .rax] : List Instr) ++
+    (if g then [.store8 dstB .rax] else []) ++
+    ([.alu .add .r10 (imm 1), .alu .cmp .r10 (.reg .rcx)] : List Instr))) .ne
+
 /-- The `rcx` bytes at `rsi` XORed with the keystream at `rdx`, and, if `g`,
-also stored at `rdi`: 16 at a time (through `xmm4`), then one at
-a time. -/
+also stored at `rdi`: 16 at a time (through `xmm4`), then, of the fewer than
+16 left, 8 and 4 at a time (through `rax`) as the bits of `rcx` say, and the
+last one at a time; fewer than 4 left go straight to the last loop. -/
 def xorText (g : Bool) : Prog isa :=
   .seq (.block [.mov32 .r10 (imm 0), .mov .r8 (.reg .rcx), .shift .shr .r8 4, .shift .shl .r8 4, .alu .cmp .r8 (imm 0)])
   (.seq (.ite .e (.block [])
@@ -237,11 +254,16 @@ def xorText (g : Bool) : Prog isa :=
           .vmovdquStore .l128 srcB .xmm4] : List Instr) ++
           (if g then [.vmovdquStore .l128 dstB .xmm4] else []) ++
           ([.alu .add .r10 (imm 16), .alu .cmp .r10 (.reg .r8)] : List Instr))) .ne))
-  (.seq (.block [.alu .cmp .r10 (.reg .rcx)])
+  (.seq (.block [.alu .test .rcx (imm 15)])
     (.ite .e (.block [])
-      (.loop (.block (([.movzx8 .rax srcB, .movzx8 .r9 kB, .alu .xor .rax (.reg .r9), .store8 srcB .rax] : List Instr) ++
-          (if g then [.store8 dstB .rax] else []) ++
-          ([.alu .add .r10 (imm 1), .alu .cmp .r10 (.reg .rcx)] : List Instr))) .ne))))
+      (.seq (.block [.alu .test .rcx (imm 12)])
+        (.ite .e (xorBytes g)
+          (.seq (.block [.alu .test .rcx (imm 8)])
+          (.seq (.ite .e (.block []) (.block (xorWord g true)))
+          (.seq (.block [.alu .test .rcx (imm 4)])
+          (.seq (.ite .e (.block []) (.block (xorWord g false)))
+          (.seq (.block [.alu .test .rcx (imm 3)])
+            (.ite .e (.block []) (xorBytes g))))))))))))
 
 /-- The arguments of `xorText`: the data, `K[1]`, the text's blocks in `G`
 and the length. -/
