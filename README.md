@@ -1674,9 +1674,9 @@ yours to keep:
 
 <td>✅</td>
 
-<td>❌</td>
+<td>✅</td>
 
-<td>❌</td>
+<td>✅</td>
 
 </tr>
 
@@ -1904,9 +1904,9 @@ yours to keep:
 
 <td>✅ SHA extensions</td>
 
-<td>❌</td>
+<td>✅</td>
 
-<td>❌</td>
+<td>✅ SHA extensions</td>
 
 </tr>
 

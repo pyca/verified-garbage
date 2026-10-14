@@ -134,6 +134,9 @@ pub(crate) mod ec_p384;
 pub(crate) mod ec_p521;
 
 #[rustfmt::skip]
+pub(crate) mod ec_secp256k1;
+
+#[rustfmt::skip]
 pub(crate) mod ecdh_brainpoolp256r1;
 
 #[rustfmt::skip]
@@ -153,6 +156,9 @@ pub(crate) mod ecdh_p384;
 
 #[rustfmt::skip]
 pub(crate) mod ecdh_p521;
+
+#[rustfmt::skip]
+pub(crate) mod ecdh_secp256k1;
 
 #[rustfmt::skip]
 pub(crate) mod ecdsa_brainpoolp256r1;
@@ -198,6 +204,12 @@ pub(crate) mod ecdsa_p521;
 
 #[rustfmt::skip]
 pub(crate) mod ecdsa_p521_sha512;
+
+#[rustfmt::skip]
+pub(crate) mod ecdsa_secp256k1;
+
+#[rustfmt::skip]
+pub(crate) mod ecdsa_secp256k1_sha256;
 
 #[rustfmt::skip]
 pub(crate) mod ed25519;
@@ -339,6 +351,12 @@ pub(crate) mod rc4;
 
 #[rustfmt::skip]
 pub(crate) mod scrypt;
+
+#[rustfmt::skip]
+pub(crate) mod secp256k1_mont;
+
+#[rustfmt::skip]
+pub(crate) mod secp256k1_point;
 
 #[rustfmt::skip]
 pub(crate) mod seed;
