@@ -79,19 +79,22 @@ def rawBase (w : Nat) := slot w aAcc+16
 def rowRanges (w : Nat) : List (Nat × Nat) :=
   [(rawBase w,16*w),(carryOffset,8),(8*sFn 13,8)]
 
-structure RowInv (s₀ : State) (B : Addr) (Z w a b i j₀ k : Nat) (mi : BitVec 64) (s : State) : Prop where
+/-- After the row's `k` column blocks: the raw product, plus `x` (a carry
+another row hands to this one, 0 for a product's rows), plus the row's
+contribution, with its pending carry. -/
+structure RowInv (s₀ : State) (B : Addr) (Z w a b i j₀ k : Nat) (mi : BitVec 64) (x cb : Nat) (s : State) : Prop where
   scr : Scr s B Z
   hdr : Hdr s.mem B w mi
   rdi : s.gpr .rdi = B
   indexI : word s.mem B (8*sFn 12) = BitVec.ofNat 64 i
   indexJ : word s.mem B (8*sFn 13) = BitVec.ofNat 64 (j₀+8*k)
-  carry : (word s.mem B carryOffset).toNat ≤ 1
+  carry : (word s.mem B carryOffset).toNat ≤ cb
   keep : Keep mmRegs s₀ s
   frame : Frm B (rowRanges w) s₀.mem s.mem
   endPtr : k=0 ∨ s.gpr .rsi = off B (rawBase w+8*(i+j₀+8*k))
   val : wv s.mem B (rawBase w) (2*w) +
       (2 : Nat)^(64*(i+j₀+8*(k+1))) * (word s.mem B carryOffset).toNat =
-    wv s₀.mem B (rawBase w) (2*w) +
+    wv s₀.mem B (rawBase w) (2*w) + x +
       (2 : Nat)^(64*(i+j₀)) * wv s₀.mem B (slot w a+8*i) 8 * wv s₀.mem B (slot w b+8*j₀) (8*k)
 
 /-- Input arrays remain disjoint from the entire raw product and its counters. -/
@@ -129,13 +132,15 @@ def streamVal (s : State) (B : Addr) (w d : Nat) : Nat :=
   wv s.mem B (rawBase w) d + 2^(64*d) * cols s +
     2^(64*(d+8)) * wv s.mem B (rawBase w+8*(d+8)) (2*w-(d+8))
 
-structure StreamInv (s₀ : State) (B : Addr) (Z w a b i j₀ k : Nat) (mi : BitVec 64) (s : State) : Prop where
+/-- As `RowInv`, with the columns the eight words at the block's start and
+the pending carry at most `cb`. -/
+structure StreamInv (s₀ : State) (B : Addr) (Z w a b i j₀ k : Nat) (mi : BitVec 64) (x cb : Nat) (s : State) : Prop where
   scr : Scr s B Z
   hdr : Hdr s.mem B w mi
   rdi : s.gpr .rdi = B
   indexI : word s.mem B (8*sFn 12) = BitVec.ofNat 64 i
   indexJ : word s.mem B (8*sFn 13) = BitVec.ofNat 64 (j₀+8*k)
-  carry : (word s.mem B carryOffset).toNat ≤ 1
+  carry : (word s.mem B carryOffset).toNat ≤ cb
   keep : Keep mmRegs s₀ s
   frame : Frm B (rowRanges w) s₀.mem s.mem
   pa : s.gpr .rcx = off B (slot w a+8*i)
@@ -143,7 +148,7 @@ structure StreamInv (s₀ : State) (B : Addr) (Z w a b i j₀ k : Nat) (mi : Bit
   po : s.gpr .rsi = off B (rawBase w+8*(i+j₀+8*k))
   val : streamVal s B w (i+j₀+8*k) +
       (2 : Nat)^(64*(i+j₀+8*(k+1))) * (word s.mem B carryOffset).toNat =
-    wv s₀.mem B (rawBase w) (2*w) +
+    wv s₀.mem B (rawBase w) (2*w) + x +
       (2 : Nat)^(64*(i+j₀)) * wv s₀.mem B (slot w a+8*i) 8 * wv s₀.mem B (slot w b+8*j₀) (8*k)
 
 private theorem stream_arith {L Lo Cs Ct U H A Yb Bk W Q T R cs ct P : Nat}
@@ -167,13 +172,21 @@ theorem streamVal_eq {s : State} {B : Addr} {w d : Nat} (hd : d+8 ≤ 2*w)
   generalize (2 : Nat)^(64*8) = R
   grind
 
-theorem streamStep_inv {s₀ s : State} {B : Addr} {Z w a b i j₀ k n : Nat} {mi : BitVec 64}
+/-- A column block, then a block `blk` that moves the column index to the
+next block (any such, setting ZF to `zfv`). -/
+theorem streamStep_gen {s₀ s : State} {B : Addr} {Z w a b i j₀ k n x cb : Nat} {mi : BitVec 64}
+    {blk : List Instr} {zfv : Bool}
     (hZ : slot w 8 ≤ Z) (hw : w < (2 : Nat)^31) (hi : i+8 ≤ w)
     (ha : a < 8) (hb : b < 8) (ha1 : a ≠ aAcc) (ha2 : a ≠ aTmp)
     (hb1 : b ≠ aAcc) (hb2 : b ≠ aTmp) (hn : w = j₀+8*n) (hk : k < n)
-    (h : StreamInv s₀ B Z w a b i j₀ k mi s) :
-    WP isa AdxRect8.rowStep s fun t =>
-      t.zf = some (decide (k+1=n)) ∧ StreamInv s₀ B Z w a b i j₀ (k+1) mi t := by
+    (hblk : ∀ u : State, Scr u B Z → u.gpr .rdi = B → Hdr u.mem B w mi →
+      word u.mem B (8*sFn 13) = BitVec.ofNat 64 (j₀+8*k) →
+      WP isa (.block blk) u fun t =>
+        t.mem = u.mem.writeW (off B (8*sFn 13)) (BitVec.ofNat 64 (j₀+8*k+8)) ∧ t.zf = some zfv ∧
+          Keep [.rax] u t)
+    (h : StreamInv s₀ B Z w a b i j₀ k mi x cb s) :
+    WP isa (.seq AdxRect8.streamTile (.block blk)) s fun t =>
+      t.zf = some zfv ∧ StreamInv s₀ B Z w a b i j₀ (k+1) mi x 2 t := by
   have nowrap := h.scr.nowrap
   have Z64 : slot w 8 ≤ (2 : Nat)^64 := by omega
   have hj : j₀+8*k+8 ≤ w := by omega
@@ -195,9 +208,8 @@ theorem streamStep_inv {s₀ s : State} {B : Addr} {Z w a b i j₀ k n : Nat} {m
   have eR : rawBase w ≤ e ∧ e+128 ≤ rawBase w+8*(2*w) := by rw [← he]; omega
   have cJ : 8*sFn 13+8 ≤ carryOffset ∨ carryOffset+8 ≤ 8*sFn 13 := by unfold carryOffset sFn; omega
   have cI : 8*sFn 12+8 ≤ carryOffset ∨ carryOffset+8 ≤ 8*sFn 12 := by unfold carryOffset sFn; omega
-  unfold AdxRect8.rowStep
   refine WP.seq (WP.mono (streamTile_ok h.scr h.rdi h.pa h.pb po (by omega) (by omega) (by omega)
-    ar.2.2 (by omega) (by rw [← eOdef]; exact eC)) fun u ⟨eq,_,one,fr,pu,bu,ku⟩ => ?_)
+    ar.2.2 (by omega) (by rw [← eOdef]; exact eC)) fun u ⟨eq,two,_,fr,pu,bu,ku⟩ => ?_)
   rw [← eOdef] at fr eq pu
   have fr3 : Frm B [(e,64),(carryOffset,8),(8*sFn 13,8)] s.mem u.mem := fr.mono (by simp)
   have hu : Hdr u.mem B w mi := frame_hdr h.hdr eH fr3
@@ -217,8 +229,8 @@ theorem streamStep_inv {s₀ s : State} {B : Addr} {Z w a b i j₀ k n : Nat} {m
       · exact Or.inl eI
       · exact cI) (by unfold sFn; omega)]
     exact h.indexI
-  refine WP.mono (nextColumn_ok (h.scr.congr ku.2.2) ((ku.gpr (by decide)).trans h.rdi)
-    hu hZ (by omega) (by omega) ju) fun t ⟨mt,zt,kt⟩ => ?_
+  refine WP.mono (hblk u (h.scr.congr ku.2.2) ((ku.gpr (by decide)).trans h.rdi) hu ju)
+    fun t ⟨mt,zt,kt⟩ => ?_
   have ot : Outside B (8*sFn 13) 8 u.mem t.mem := by
     rw [mt]; exact writeW_outside _ _ _ (by unfold sFn; omega)
   have toU : Frm B (rowRanges w) s.mem u.mem := by
@@ -238,10 +250,10 @@ theorem streamStep_inv {s₀ s : State} {B : Addr} {Z w a b i j₀ k n : Nat} {m
     ot.word cJ.symm (by omega)
   have colsT : cols t = cols u := cols_keep kt (by decide)
   refine ⟨?_,⟨h.scr.congr (ku.trans kt).2.2,frame_hdr (n := 64) hu eH (Frm.of_outside ot (by simp)),
-    (kt.gpr (by decide)).trans ((ku.gpr (by decide)).trans h.rdi),?_,?_,by rw [ct]; exact one h.carry,
+    (kt.gpr (by decide)).trans ((ku.gpr (by decide)).trans h.rdi),?_,?_,by rw [ct]; exact two,
     (h.keep.trans (ku.trans kt)).mono (by decide),h.frame.trans wider,
     (kt.gpr (by decide)).trans ((ku.gpr (by decide)).trans h.pa),?_,?_,?_⟩⟩
-  · rw [zt]; exact congrArg some (decide_eq_decide.mpr (by omega))
+  · exact zt
   · rw [ot.word (by unfold sFn; omega) (by unfold sFn; omega)]; exact iu
   · rw [mt,word_writeW_self,show j₀+8*(k+1) = j₀+8*k+8 by omega]
   · rw [kt.gpr (by decide),bu]
@@ -299,6 +311,18 @@ theorem streamStep_inv {s₀ s : State} {B : Addr} {Z w a b i j₀ k n : Nat} {m
     generalize (2 : Nat)^(64*d) = P at hPQ prev ⊢
     exact stream_arith hPQ eq prev
 
+theorem streamStep_inv {s₀ s : State} {B : Addr} {Z w a b i j₀ k n x cb : Nat} {mi : BitVec 64}
+    (hZ : slot w 8 ≤ Z) (hw : w < (2 : Nat)^31) (hi : i+8 ≤ w)
+    (ha : a < 8) (hb : b < 8) (ha1 : a ≠ aAcc) (ha2 : a ≠ aTmp)
+    (hb1 : b ≠ aAcc) (hb2 : b ≠ aTmp) (hn : w = j₀+8*n) (hk : k < n)
+    (h : StreamInv s₀ B Z w a b i j₀ k mi x cb s) :
+    WP isa AdxRect8.rowStep s fun t =>
+      t.zf = some (decide (k+1=n)) ∧ StreamInv s₀ B Z w a b i j₀ (k+1) mi x 2 t := by
+  unfold AdxRect8.rowStep
+  refine WP.mono (streamStep_gen hZ hw hi ha hb ha1 ha2 hb1 hb2 hn hk
+    (fun u hs hd hh hj => nextColumn_ok hs hd hh hZ (by omega) (by omega) hj) h) fun t ⟨zt,ht⟩ => ⟨?_,ht⟩
+  rw [zt]; exact congrArg some (decide_eq_decide.mpr (by omega))
+
 end VG.Proof.Bignum.X86_64.AdxRect8
 
 end
@@ -326,7 +350,7 @@ theorem rowLoad_ok {s₀ u : State} {B : Addr} {Z w a b i j₀ : Nat} {mi : BitV
     (ua : u.gpr .rcx = off B (slot w a+8*i)) (ub : u.gpr .rbp = off B (slot w b+8*j₀))
     (uo : u.gpr .rsi = off B (slot w aAcc+16+8*(i+j₀)))
     (hm : u.mem = s₀.mem) (hk : Keep mmRegs s₀ u) :
-    WP isa (.block AdxRotate8.loadCols) u (StreamInv s₀ B Z w a b i j₀ 0 mi) := by
+    WP isa (.block AdxRotate8.loadCols) u (StreamInv s₀ B Z w a b i j₀ 0 mi 0 2) := by
   have nowrap := hs.nowrap
   have rt := slot_le (w := w) (show aTmp < 8 by decide)
   have rawZ : rawBase w+8*(2*w) ≤ Z := by unfold rawBase slot aAcc aTmp at *; omega
@@ -343,10 +367,10 @@ theorem rowLoad_ok {s₀ u : State} {B : Addr} {Z w a b i j₀ : Nat} {mi : BitV
       simp only [Nat.mul_zero,Nat.add_zero,wv]⟩
 
 /-- The columns stored after the loop's last column block. -/
-theorem rowEnd_ok {s₀ t : State} {B : Addr} {Z w a b i j₀ n : Nat} {mi : BitVec 64}
+theorem rowEnd_ok {s₀ t : State} {B : Addr} {Z w a b i j₀ n x cb : Nat} {mi : BitVec 64}
     (hZ : slot w 8 ≤ Z) (hi : i+8 ≤ w) (hwN : w = j₀+8*n)
-    (ht : StreamInv s₀ B Z w a b i j₀ n mi t) :
-    WP isa (.block AdxRotate8.storeCols) t (RowInv s₀ B Z w a b i j₀ n mi) := by
+    (ht : StreamInv s₀ B Z w a b i j₀ n mi x cb t) :
+    WP isa (.block AdxRotate8.storeCols) t (RowInv s₀ B Z w a b i j₀ n mi x cb) := by
   have rt := slot_le (w := w) (show aTmp < 8 by decide)
   have rawZ : rawBase w+8*(2*w) ≤ Z := by unfold rawBase slot aAcc aTmp at *; omega
   have tnow := ht.scr.nowrap
@@ -389,13 +413,13 @@ theorem row_ok {s : State} {B : Addr} {Z w a b i j₀ n : Nat} {mi : BitVec 64}
     (hidx : word s.mem B (8*sFn 12) = BitVec.ofNat 64 i)
     (hjdx : word s.mem B (8*sFn 13) = BitVec.ofNat 64 j₀)
     (hc : (word s.mem B carryOffset).toNat = 0) :
-    WP isa (AdxRect8.row ca cb) s (RowInv s B Z w a b i j₀ n mi) := by
+    WP isa (AdxRect8.row ca cb) s (RowInv s B Z w a b i j₀ n mi 0 2) := by
   unfold AdxRect8.row
   refine WP.seq (WP.mono (setup_ok hs hd hh hZ hv pa pb hidx hjdx) fun u ⟨ua,ub,uo,um,ku⟩ => ?_)
   refine WP.seq (WP.mono (rowLoad_ok (s₀ := s) (hs.congr ku.2.2) ((ku.gpr (by decide)).trans hd) (um ▸ hh) hZ hi
     (by omega) (um ▸ hidx) (um ▸ hjdx) (um ▸ hc) ua ub uo um (ku.mono (by decide))) fun v hv0 => ?_)
-  exact WP.seq (WP.mono (wp_upto (a := 0) (N := n) (Q := StreamInv s B Z w a b i j₀ n mi) hn
-    (StreamInv s B Z w a b i j₀ · mi)
+  exact WP.seq (WP.mono (wp_upto (a := 0) (N := n) (Q := StreamInv s B Z w a b i j₀ n mi 0 2) hn
+    (StreamInv s B Z w a b i j₀ · mi 0 2)
     (fun _ _ hk _ h => streamStep_inv hZ hw hi ha hb ha1 ha2 hb1 hb2 hwN hk h)
     (fun _ h => h) hv0) fun t ht => rowEnd_ok hZ hi hwN ht)
 
