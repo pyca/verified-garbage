@@ -19,7 +19,7 @@
 ))]
 
 mod aarch64;
-pub(crate) mod arithmetic;
+mod arithmetic;
 mod generation;
 
 use crate::zeroize::zeroize;

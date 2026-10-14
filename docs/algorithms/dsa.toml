@@ -2,4 +2,4 @@ name = "DSA"
 family = "Signatures"
 specs = ["Dsa"]
 modules = ["src/dsa.rs"]
-asm = ["dsa", "rsa_mont", "ffdh", "ct"]
+asm = ["dsa"]
