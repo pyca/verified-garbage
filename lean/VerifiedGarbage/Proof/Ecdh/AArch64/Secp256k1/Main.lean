@@ -94,7 +94,7 @@ theorem exchange_ok (hc : BaseCfgOk secp256k1) (hC : Law secp256k1.C) {s₀ : St
   have hs₅ := L.scr
   have F₅ := L.fixed
   have aq : ∀ {i}, i < 45 → i ∉ [EXPP, BM, RX, RY, RZ, ACC, PT, TX, TY, TZ, T0, T1, T2, T3, T4, T5, DX, DY, DZ,
-      TMP] → i ≠ 54 ∧ i ≠ 82 → ∀ w ∈ qW, secp256k1.sl i + 8 * secp256k1.n ≤ w.1 ∨ w.1 + w.2 ≤ secp256k1.sl i :=
+      TMP] → i ≠ 54 ∧ i ≠ 61 ∧ i ≠ 82 → ∀ w ∈ qW, secp256k1.sl i + 8 * secp256k1.n ≤ w.1 ∨ w.1 + w.2 ≤ secp256k1.sl i :=
     fun hi hl ha => by
       have s₁ : ∀ x ∈ [EXPP], x ∈ [EXPP, BM, RX, RY, RZ, ACC, PT, TX, TY, TZ, T0, T1, T2, T3, T4, T5, DX, DY,
         DZ, TMP] := by decide

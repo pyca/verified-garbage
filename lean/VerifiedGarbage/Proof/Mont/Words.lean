@@ -141,13 +141,20 @@ def _root_.VG.Impl.Mont.Red.ok : Red → Nat → Nat → Bool
       mwVal ws == (m + 1) / 2 ^ 64 && ws.all MWord.ok
 
 /-- What the arithmetic needs of the modulus `m`: its reduction's (`Red.ok`),
-`tightOk` if `M.tight`, `sparseOk` if `M.sparse`, and `fnNOk` if `M.fnN`. -/
+`tightOk` if `M.tight`, `sparseOk` if `M.sparse`, `fnNOk` if `M.fnN`,
+and agreement with the named modulus if `M.fnMod` is present. -/
 def _root_.VG.Impl.Mont.Mod.ok (M : Mod) (m : Nat) : Bool :=
-  M.red.ok M.n m && (!M.tight || tightOk M.n m) && (!M.sparse || sparseOk M.n m) && (!M.fnN || fnNOk M.n m)
+  (M.red.ok M.n m && M.fnMod.all (· == m)) && (!M.tight || tightOk M.n m) && (!M.sparse || sparseOk M.n m) && (!M.fnN || fnNOk M.n m)
 
 theorem _root_.VG.Impl.Mont.Mod.ok_red {M : Mod} {m : Nat} (h : M.ok m = true) :
     M.red.ok M.n m = true := by
-  simp only [Mod.ok, Bool.and_eq_true] at h; exact h.1.1.1
+  simp only [Mod.ok, Bool.and_eq_true] at h; exact h.1.1.1.1
+
+/-- A named modulus must agree with the value in memory. -/
+theorem _root_.VG.Impl.Mont.Mod.ok_fnMod {M : Mod} {m named : Nat} (h : M.ok m = true)
+    (hf : M.fnMod = some named) : named = m := by
+  simp only [Mod.ok, Bool.and_eq_true, hf, Option.all_some, beq_iff_eq] at h
+  exact h.1.1.1.2
 
 theorem _root_.VG.Impl.Mont.Mod.ok_fnN {M : Mod} {m : Nat} (h : M.ok m = true)
     (hf : M.fnN = true) : M.n = 9 ∧

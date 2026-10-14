@@ -186,8 +186,8 @@ theorem keeps_of_unch {C : Spec.Weierstrass.CheckPoint.Curve} (hk : C.k = c.n) (
     or_false, exists_eq_or_imp, exists_eq_left, not_or, not_and_or, Nat.not_lt, Nat.not_le] at hown hp
   simp only [slW, List.map_cons, List.map_nil, List.cons_append, List.nil_append, List.mem_cons,
     List.not_mem_nil, or_false] at hw
-  have hT : c.sl TMP = 64 + 8 * c.n * 2 ∨ c.sl TMP = 4096 - 16 * c.n ∧ (c.n = 6 ∨ c.n = 9) := by
-    by_cases hr : c.n = 6 ∨ c.n = 9
+  have hT : c.sl TMP = 64 + 8 * c.n * 2 ∨ c.sl TMP = 4096 - 16 * c.n ∧ (c.n = 6 ∨ c.n = 8 ∨ c.n = 9) := by
+    by_cases hr : c.n = 6 ∨ c.n = 8 ∨ c.n = 9
     · exact .inr ⟨sl_tmp c hr, hr⟩
     · exact .inl (sl_aff c hr TMP)
   rcases hw with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> dsimp only <;>

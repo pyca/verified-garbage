@@ -271,6 +271,22 @@ theorem opProg_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat �
               (hL.le a hS.2.1) (hL.le b hS.2.2) (hI.lt b hR.2))
               fun s' ⟨hk, hlt, heq⟩ => ⟨hk, hI.update hL hS.1 hk hlt ?_⟩
             rw [toM_mul hm heq, hI.val a hR.1, hI.val b hR.2]
+          split at hcall
+          · rename_i hM
+            obtain ⟨hn8, ht⟩ := hM
+            split at hcall
+            · rename_i hf
+              cases hcall
+              refine WP.mono (Mont.mulCall8_ok false hI.scr hI.mod hf hn8 ht (hn8 ▸ hlow) (hI.lt b hR.2))
+                fun s' ⟨hk, hlt, heq⟩ => ⟨hk, hI.update hL hS.1 hk hlt ?_⟩
+              rw [toM_mul hm heq, hI.val a hR.1, hI.val b hR.2]
+            split at hcall
+            · rename_i hf
+              cases hcall
+              refine WP.mono (Mont.mulCall8_ok true hI.scr hI.mod hf hn8 ht (hn8 ▸ hlow) (hI.lt b hR.2))
+                fun s' ⟨hk, hlt, heq⟩ => ⟨hk, hI.update hL hS.1 hk hlt ?_⟩
+              rw [toM_mul hm heq, hI.val a hR.1, hI.val b hR.2]
+            · cases hcall
           · cases hcall
         · cases hc
       · cases hc
@@ -310,6 +326,18 @@ theorem opMulN_ok {M : Mod} {base : Addr} {Z m : Nat} {s : State} (hs : Scr s ba
         have hbody : body = Mont.mulFnN6 false ∨ body = Mont.mulFnN6 true := by
           split at hcall <;> (cases hcall; simp)
         exact Mont.mulCallN6_ok hbody hs hM hf hn6 ht (hn6 ▸ hlow) hoZ haZ hbZ hB
+      split at hcall
+      · rename_i h
+        obtain ⟨hn8, ht⟩ := h
+        split at hcall
+        · rename_i hm
+          cases hcall
+          exact Mont.mulCall8_ok false hs hM hm hn8 ht (hn8 ▸ hlow) hB
+        split at hcall
+        · rename_i hm
+          cases hcall
+          exact Mont.mulCall8_ok true hs hM hm hn8 ht (hn8 ▸ hlow) hB
+        · cases hcall
       · cases hcall
     · exact hin
 
@@ -349,6 +377,18 @@ theorem opMulP_ok {M : Mod} {base : Addr} {Z m : Nat} {s : State} (hs : Scr s ba
       · rename_i h; rw [hfn] at h; exact absurd h.2.1 (by simp)
       split at hcall
       · rename_i h; rw [hfn] at h; exact absurd h.2.1 (by simp)
+      split at hcall
+      · rename_i h
+        obtain ⟨hn8, ht⟩ := h
+        split at hcall
+        · rename_i hm
+          cases hcall
+          exact Mont.mulCall8_ok false hs hM hm hn8 ht (hn8 ▸ hlow) hB
+        split at hcall
+        · rename_i hm
+          cases hcall
+          exact Mont.mulCall8_ok true hs hM hm hn8 ht (hn8 ▸ hlow) hB
+        · cases hcall
       · cases hcall
     · exact hin
 

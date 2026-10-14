@@ -57,6 +57,7 @@ theorem p224_sh : p224.sh = 0 := by
   rfl
 
 theorem p224_ok (hI : Weierstrass.AArch64.InvSounds) : CfgOk p224 where
+  window_tmp := by decide +kernel
   n0 := by decide
   n10 := by decide
   onG := Proof.P224.onCurve_G

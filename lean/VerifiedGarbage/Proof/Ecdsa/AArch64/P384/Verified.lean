@@ -51,6 +51,7 @@ theorem p384_nBits : 64 * p384.n ≤ Spec.Ecdsa.nBits p384.C := by
   omega
 
 theorem p384_ok (hI : Weierstrass.AArch64.InvSounds) : CfgOk p384 where
+  window_tmp := by decide +kernel
   n0 := by decide
   n10 := by decide
   onG := Proof.P384.onCurve_G

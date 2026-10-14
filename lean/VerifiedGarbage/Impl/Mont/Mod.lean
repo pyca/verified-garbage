@@ -100,5 +100,7 @@ structure Mod where
   sparse : Bool := false
   inl : Bool := false
   fnN : Bool := false
+  /-- A named modulus for a shared arithmetic function; `Mod.ok` checks the name's value. -/
+  fnMod : Option Nat := none
 
 end VG.Impl.Mont

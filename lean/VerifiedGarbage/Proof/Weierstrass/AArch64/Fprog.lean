@@ -38,9 +38,11 @@ open VG VG.AArch64 VG.Impl.Mont.AArch64 VG.Impl.Mont VG.Impl.Weierstrass.AArch64
 theorem callOf_small {M : Mod} (h : M.n ≤ 4) : Mont.callOf M = none := by
   unfold Mont.callOf; split
   · have h6 : (6 == M.n) = false := by simp only [beq_eq_false_iff_ne]; omega
+    have h8 : (8 == M.n) = false := by simp only [beq_eq_false_iff_ne]; omega
     have h9 : (9 == M.n) = false := by simp only [beq_eq_false_iff_ne]; omega
     simp only [Mont.fns, List.find?_cons, List.find?_nil, Spec.Weierstrass.Mont.p384p,
-      Spec.Weierstrass.Mont.p521p, Spec.Weierstrass.Mont.p384n, Spec.Weierstrass.Mont.p521n, h6, h9,
+      Spec.Weierstrass.Mont.p521p, Spec.Weierstrass.Mont.p384n, Spec.Weierstrass.Mont.p521n,
+      Spec.Weierstrass.Mont.brainpoolp512r1p, Spec.Weierstrass.Mont.brainpoolp512r1n, h6, h8, h9,
       Bool.false_and, Option.map_none]
   · rfl
 

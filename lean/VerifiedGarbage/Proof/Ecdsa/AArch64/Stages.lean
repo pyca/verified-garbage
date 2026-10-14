@@ -132,7 +132,7 @@ theorem x0_not_powClob {n : Nat} (_hn : n < 10) : Reg.x0 ∉ powClob n := fun h 
 /-- The flag word apart from numbered slots. -/
 theorem flag_unch {base : Addr} {l : List Nat} {m m' : Mem} (hu : Unch base (slW c l) m m')
     (h7 : c.n < 10) (h0 : 0 < c.n) (hn : base.toNat + size ≤ 2 ^ 64) (hl : FLAG ∉ l)
-    (hlA : ∀ j ∈ l, j ≠ 54 ∧ j ≠ 82 := by decide) :
+    (hlA : ∀ j ∈ l, j ≠ 54 ∧ j ≠ 61 ∧ j ≠ 82 := by decide) :
     word m' base (c.sl FLAG) = word m base (c.sl FLAG) := by
   have hF := sl_le c h7 (i := FLAG) (by decide)
   refine hu.word (fun w hw => ?_) (by omega)

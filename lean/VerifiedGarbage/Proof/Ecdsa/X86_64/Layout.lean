@@ -350,6 +350,19 @@ theorem sl_le (c : Cfg) (hn : c.n < 10) {i : Nat} (hi : i < 45) : c.sl i + 8 * c
   show _ ≤ 8192
   omega
 
+theorem sl_le84 (c : Cfg) (hn : c.n < 10) {i : Nat} (hi : i < 84) : c.sl i + 8 * c.n ≤ size := by
+  rw [sl_eq']
+  have hix : ix c i < 84 := by
+    have hT : TMP = 2 := rfl
+    unfold ix
+    repeat' split
+    all_goals omega
+  have := Nat.mul_le_mul_left (8 * c.n) hix
+  rw [Nat.mul_succ] at this
+  have : 8 * c.n * 84 ≤ 8 * 9 * 84 := Nat.mul_le_mul_right _ (by omega)
+  show _ ≤ 8192
+  omega
+
 theorem bitsAt_le (c : Cfg) (hn : c.n < 10) {j : Nat} (hj : j < 3) : bitsAt c.n j + 64 * c.n ≤ size := by
   rw [bitsAt_eq]
   have := Nat.mul_le_mul_left (64 * c.n + 8) hj
