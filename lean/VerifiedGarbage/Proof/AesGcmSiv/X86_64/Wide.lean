@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Keys
-import VerifiedGarbage.Proof.Aes.X86_64.Vaes.Ctr32
+public import VerifiedGarbage.Proof.Aes.X86_64.Vaes.Ctr32
 public import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Exec
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

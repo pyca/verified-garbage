@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.PolyvalCT
 meta import VerifiedGarbage.Proof.AesGcmSiv.X86_64.PolyvalCT
-import VerifiedGarbage.Proof.Framework.X86_64.Narrow
+public import VerifiedGarbage.Proof.Framework.X86_64.Narrow
 meta import VerifiedGarbage.Proof.Framework.X86_64.Narrow
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
