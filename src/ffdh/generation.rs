@@ -134,7 +134,7 @@ pub(super) fn probable_prime<E>(
             }
         }
         let a = witness.ok_or(Error::TooManyIterations)?;
-        if !mont.strong_probable_prime(&a, &d, s) {
+        if !mont.strong_probable_prime(&a, s) {
             return Ok(false);
         }
     }

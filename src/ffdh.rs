@@ -9,6 +9,8 @@
 //! Rust composes these primitives, validates
 //! domains and keys, samples randomness and encodes the result. These Rust
 //! operations, as elsewhere in the crate, are outside the Lean proof boundary.
+//! Parameter generation uses the shared verified windowed Miller–Rabin round;
+//! Rust currently prepares its workspace and selects independent witnesses.
 //! Imported parameters receive structural and algebraic checks; callers must
 //! establish primality/provenance. Optional q enables subgroup checks.
 //! Exchange returns exactly ceil(bits(p)/8) bytes, without applying a KDF.
