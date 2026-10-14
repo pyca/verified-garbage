@@ -145,9 +145,10 @@ theorem xorG_ok (src : Reg) : ∀ (rs : List XReg) (j : Nat) (s : State) {c : Na
     State.qOn (s.gpr .r10) = List.range (2 * c) → (∀ i < 8, (s.gpr .r10).getLsbD i = decide (i < 2 * c)) →
     InRegions (s.rd ++ s.wr) (s.gpr src + BitVec.ofNat 64 (64 * j)) (64 * (rs.length - 1) + 16 * c) →
     InRegions s.wr (s.gpr .rdx + BitVec.ofNat 64 (64 * j)) (64 * (rs.length - 1) + 16 * c) →
-    (∀ q q', q' < q → q < rs.length →
-      Region.Disjoint ⟨s.gpr src + BitVec.ofNat 64 (64 * (j + q)), 64⟩ ⟨s.gpr .rdx + BitVec.ofNat 64 (64 * (j + q')), 64⟩) →
-    (s.gpr .rdx).toNat + 64 * (j + rs.length) < 2 ^ 64 →
+    (∀ n q', q' < n / 4 → n < 4 * (rs.length - 1) + c →
+      Region.Disjoint ⟨s.gpr src + BitVec.ofNat 64 (16 * (4 * j + n)), 16⟩
+        ⟨s.gpr .rdx + BitVec.ofNat 64 (64 * (j + q')), 64⟩) →
+    j + rs.length ≤ 4 →
     WP isa (.block (xorG src rs j)) s fun s' =>
       (∀ n < 4 * (rs.length - 1) + c, blockAt s'.mem (s.gpr .rdx + BitVec.ofNat 64 (16 * (4 * j + n))) =
         blockAt s.mem (s.gpr src + BitVec.ofNat 64 (16 * (4 * j + n))) ^^^
@@ -206,10 +207,10 @@ theorem xorG_ok (src : Reg) : ∀ (rs : List XReg) (j : Nat) (s : State) {c : Na
         have := CallLay.inRegions_sub (off := 64) (l := 64 * ((b₂ :: bs).length - 1) + 16 * c) hinD
           (by simp only [List.length_cons]; omega) hn64
         rwa [Offset.add_add, show 64 * j + 64 = 64 * (j + 1) by omega] at this)
-      (fun q q' hq hq' => by
-        rw [g₁, show j + 1 + q = j + (q + 1) by omega, show j + 1 + q' = j + (q' + 1) by omega]
-        exact hsep (q + 1) (q' + 1) (by omega) (by simp only [List.length_cons] at hq' ⊢; omega))
-      (by rw [g₁]; simp only [List.length_cons] at hw ⊢; omega))
+      (fun n q' hq hn => by
+        rw [g₁, show 4 * (j + 1) + n = 4 * j + (n + 4) by omega, show j + 1 + q' = j + (q' + 1) by omega]
+        exact hsep (n + 4) (q' + 1) (by omega) (by simp only [List.length_cons] at hn ⊢; omega))
+      (by simp only [List.length_cons] at hw ⊢; omega))
       fun s' ⟨b', z', f', g', rd', wr', k'⟩ => ?_
     simp only [List.length_cons] at b' z' f'
     rw [g₁] at b' z' f'
@@ -225,11 +226,8 @@ theorem xorG_ok (src : Reg) : ∀ (rs : List XReg) (j : Nat) (s : State) {c : Na
           blockAt s.mem (s.gpr src + BitVec.ofNat 64 (16 * (4 * j + n))) := fun n h4 hn => by
       rw [m₁]
       apply Stitch.blockAt_writeW_sep' (R := ⟨s.gpr .rdx + BitVec.ofNat 64 (64 * j), 64⟩) _ rfl
-      have := hsep (n / 4) 0 (by omega) (by omega)
-      rw [Nat.add_zero] at this
-      refine this.sub_left ?_
-      rw [show 16 * (4 * j + n) = 64 * (j + n / 4) + 16 * (n % 4) by omega]
-      exact Offset.sub _ (by omega) (by omega)
+      have := hsep n 0 (by omega) (by omega)
+      rwa [Nat.add_zero] at this
     refine ⟨fun n hn => ?_, fun n hn => ?_, ?_, by rw [g', g₁], by rw [rd', rd₁], by rw [wr', wr₁],
       fun r hr h13'' l hl => ?_⟩
     · by_cases h4 : n < 4
