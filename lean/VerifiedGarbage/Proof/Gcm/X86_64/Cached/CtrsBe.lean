@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Aes.X86_64.VaesZ.Ctr
 public import VerifiedGarbage.Impl.Gcm.X86_64.StitchZH
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Pow
 import VerifiedGarbage.Proof.Gcm.Ctr
+public import VerifiedGarbage.Proof.Framework.X86_64.HighKeep
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -163,5 +164,114 @@ theorem fastCtrs_ok (s : State) (X : Block) (j : Nat)
     rw [f₇.zlane _ (by simp [h14]) l hl, f₆.zlane _ (by simp [h13]) l hl, f₅.zlane _ (by simp [h6]) l hl,
       f₄.zlane _ (by simp [h5]) l hl, f₃.zlane _ (by simp [h4']) l hl, f₂.zlane _ (by simp [h3]) l hl,
       f₁.zlane _ (by simp [h13]) l hl]
+
+/-- `add r10d, 0x10000000`. -/
+theorem add10_ok (s : State) :
+    WP isa (.block [.alu32 .add .r10 (.imm 0x10000000)]) s fun t =>
+      t.gpr .r10 = ((s.gpr .r10).setWidth 32 + 0x10000000).setWidth 64 ∧
+      t.cf = some (decide (2 ^ 32 ≤ ((s.gpr .r10).setWidth 32).toNat + 2 ^ 28)) ∧
+      (∀ r, r ≠ .r10 → t.gpr r = s.gpr r) ∧ (∀ x l, t.zlane x l = s.zlane x l) ∧
+      t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ HKeep s t := by
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, isa, execAlu32, readSrc32, Option.bind_some,
+    State.setReg32, Option.some.injEq, exists_eq_left']
+  exact ⟨by simp only [RegUpd.gpr_setReg_self], rfl, fun r hr => by
+    simp only [RegUpd.gpr_setReg_of_ne _ _ hr, RegUpd.gpr_arithFlags], fun _ _ => rfl, rfl, rfl, rfl, rfl, rfl⟩
+
+/-- A shift into the top byte keeps the low byte. -/
+theorem shl24_toNat (x : BitVec 32) : (x <<< 24).toNat = x.toNat % 256 * 2 ^ 24 := by
+  rw [BitVec.toNat_shiftLeft, Nat.shiftLeft_eq, show 2 ^ 32 = 256 * 2 ^ 24 from rfl, Nat.mul_mod_mul_right]
+/-- The low byte of `i + n - 1`. -/
+theorem idx_lo (i : BitVec 32) (n : Nat) : (i + BitVec.ofNat 32 n - 1).toNat % 256 = (i.toNat + n + 255) % 256 := by
+  have one : (1 : BitVec 32).toNat = 1 := rfl
+  rw [BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_ofNat, one]
+  have := i.isLt
+  omega
+/-- 16 more in the top byte of the index's word. -/
+theorem idx_add (i : BitVec 32) (c : Nat) :
+    ((((i + BitVec.ofNat 32 c - 1) <<< 24).setWidth 64).setWidth 32 + 0x10000000).setWidth 64 =
+      ((i + BitVec.ofNat 32 (c + 16) - 1) <<< 24).setWidth 64 := by
+  rw [BitVec.setWidth_setWidth_of_le _ (by decide), BitVec.setWidth_eq]
+  refine congrArg (BitVec.setWidth 64) (BitVec.eq_of_toNat_eq ?_)
+  rw [BitVec.toNat_add, shl24_toNat, shl24_toNat, idx_lo, idx_lo,
+    show (0x10000000 : BitVec 32).toNat = 16 * 2 ^ 24 from rfl]
+  omega
+/-- The low byte of a block is that of its low word. -/
+theorem lo8_32 (Y : BitVec 128) : (Y.extractLsb' 0 8).toNat = (Y.extractLsb' 0 32).toNat % 256 := by
+  simp only [BitVec.extractLsb'_toNat, Nat.shiftRight_zero]
+  exact (Nat.mod_mod_of_dvd _ (by decide)).symm
+/-- Without a carry out of the top byte, the low byte of the index of block `c` is at most 240. -/
+theorem idx_nc (Y : BitVec 128) (c : Nat)
+    (h : decide (2 ^ 32 ≤ ((((Y.extractLsb' 0 32 + BitVec.ofNat 32 c - 1) <<< 24).setWidth 64).setWidth 32).toNat + 2 ^ 28) = false) :
+    ((Y.extractLsb' 0 8).toNat + c) % 256 ≤ 240 := by
+  rw [BitVec.setWidth_setWidth_of_le _ (by decide), BitVec.setWidth_eq, shl24_toNat, idx_lo] at h
+  simp only [decide_eq_false_iff_not, Nat.not_le] at h
+  rw [lo8_32]
+  omega
+
+open VG.Proof.Gcm.X86_64.StitchZ (R10 idxR BeConsts) in
+open VG.Proof.Gcm.X86_64.Stitch (cb pp) in
+open VG.Proof.Aes.X86_64.VaesZ (ctrsZ_ok) in
+/-- The counter blocks of a batch from block `c` (`StitchZH.ctrs`): as
+`ctrsZ`, through `fastCtrs` when the block index is public (`be`) and the low
+bytes do not wrap; `r10` advanced to the next batch's (`R10`). -/
+theorem ctrs_ok (be : Bool) {s₀ : State} {c : Nat} (s : State)
+    (hc : ∀ l < 4, s.zlane .xmm14 l = Nat.repeat inc32 (c + l) (cb s₀))
+    (hm : ∀ l < 4, s.zlane .xmm0 l = revMask) (hi : ∀ l < 4, s.zlane .xmm15 l = four)
+    (hR : R10 be s₀ c s) (hr11 : s.gpr .r11 = pp s₀)
+    (hin : be = true → InRegions (s.rd ++ s.wr) (pp s₀ + BitVec.ofNat 64 896) 16 ∧
+      InRegions (s.rd ++ s.wr) (pp s₀ + BitVec.ofNat 64 912) 16) :
+    WP isa (Impl.Gcm.X86_64.StitchZH.ctrs be) s fun s' =>
+      (∀ k (h : k < aregs.length), ∀ l < 4,
+        s'.zlane aregs[k] l = XBinOp.eval .pshufb (Nat.repeat inc32 (c + 4 * k + l) (cb s₀)) revMask) ∧
+      (∀ l < 4, s'.zlane .xmm14 l = Nat.repeat inc32 (c + 16 + l) (cb s₀)) ∧
+      (∀ x, x ≠ .xmm13 → x ≠ .xmm14 → x ∉ aregs → ∀ l < 4, s'.zlane x l = s.zlane x l) ∧
+      (∀ r, r ≠ .r10 → s'.gpr r = s.gpr r) ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
+      R10 be s₀ (c + 16) s' ∧ (be = false → s'.gpr = s.gpr) ∧ HKeep s s' := by
+  have slow : ∀ t : State, (∀ l < 4, t.zlane .xmm14 l = Nat.repeat inc32 (c + l) (cb s₀)) →
+      (∀ l < 4, t.zlane .xmm0 l = revMask) → (∀ l < 4, t.zlane .xmm15 l = four) →
+      WP isa (.block (Impl.Aes.X86_64.VaesZ.ctrsZ .xmm14 .xmm0 .xmm15 aregs)) t fun t' =>
+        (∀ k (h : k < aregs.length), ∀ l < 4,
+          t'.zlane aregs[k] l = XBinOp.eval .pshufb (Nat.repeat inc32 (c + 4 * k + l) (cb s₀)) revMask) ∧
+        (∀ l < 4, t'.zlane .xmm14 l = Nat.repeat inc32 (c + 16 + l) (cb s₀)) ∧
+        ZFrame (.xmm13 :: .xmm14 :: aregs) t t' ∧ HKeep t t' := fun t tc tm ti =>
+    WP.mono (WP.hkeep (by decide) (ctrsZ_ok .xmm14 .xmm0 .xmm15 (by decide) (by decide) aregs t (cb s₀) c
+      (by decide) (by decide) tc tm ti)) fun t' ⟨⟨e, c', f⟩, hh⟩ =>
+      ⟨e, fun l hl => by rw [c' l hl]; rfl, f.mono fun r hr => List.mem_cons_of_mem _ hr, hh⟩
+  cases be
+  · refine WP.mono (slow s hc hm hi) fun s' ⟨e, c', f, hh⟩ => ⟨e, c', fun x h13 h14 hx l hl =>
+      f.zlane x (by simp [h13, h14, hx]) l hl, fun r _ => by rw [f.gpr], f.mem, f.rd, f.wr,
+      by show _ = _; rw [f.gpr]; exact hR, fun _ => f.gpr, hh⟩
+  · obtain ⟨h4in, h16in⟩ := hin rfl
+    obtain ⟨hr10, hk⟩ : s.gpr .r10 = idxR s₀ c ∧ BeConsts (pp s₀) s.mem := hR
+    refine WP.seq (WP.mono (add10_ok s) fun s₁ ⟨g10, cf₁, gk, zk, m₁, rd₁, wr₁, hk₁⟩ => ?_)
+    have r10' : s₁.gpr .r10 = idxR s₀ (c + 16) := by rw [g10, hr10]; exact idx_add _ c
+    have r11' : s₁.gpr .r11 = pp s₀ := by rw [gk _ (by decide), hr11]
+    have done : ∀ s' : State, (∀ k (h : k < aregs.length), ∀ l < 4,
+          s'.zlane aregs[k] l = XBinOp.eval .pshufb (Nat.repeat inc32 (c + 4 * k + l) (cb s₀)) revMask) →
+        (∀ l < 4, s'.zlane .xmm14 l = Nat.repeat inc32 (c + 16 + l) (cb s₀)) →
+        ZFrame (.xmm13 :: .xmm14 :: aregs) s₁ s' → HKeep s₁ s' →
+        (∀ k (h : k < aregs.length), ∀ l < 4,
+          s'.zlane aregs[k] l = XBinOp.eval .pshufb (Nat.repeat inc32 (c + 4 * k + l) (cb s₀)) revMask) ∧
+        (∀ l < 4, s'.zlane .xmm14 l = Nat.repeat inc32 (c + 16 + l) (cb s₀)) ∧
+        (∀ x, x ≠ .xmm13 → x ≠ .xmm14 → x ∉ aregs → ∀ l < 4, s'.zlane x l = s.zlane x l) ∧
+        (∀ r, r ≠ .r10 → s'.gpr r = s.gpr r) ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
+        R10 true s₀ (c + 16) s' ∧ (true = false → s'.gpr = s.gpr) ∧ HKeep s s' :=
+      fun s' e c' f hh => ⟨e, c', fun x h13 h14 hx l hl => by
+          rw [f.zlane x (by simp [h13, h14, hx]) l hl, zk], fun r hr => by rw [f.gpr, gk r hr],
+        by rw [f.mem, m₁], by rw [f.rd, rd₁], by rw [f.wr, wr₁],
+        ⟨by rw [f.gpr, r10'], by rw [f.mem, m₁]; exact hk⟩, fun h => absurd h (by decide), hk₁.trans hh⟩
+    refine WP.ite (!decide (2 ^ 32 ≤ ((s.gpr .r10).setWidth 32).toNat + 2 ^ 28)) (by simp only [eval, cf₁, Option.map_some])
+      (fun h => ?_) (fun _ => ?_)
+    · rw [hr10] at h
+      have h' : decide (2 ^ 32 ≤ ((idxR s₀ c).setWidth 32).toNat + 2 ^ 28) = false :=
+        Bool.eq_false_iff.mpr fun e => by rw [e] at h; exact absurd h (by decide)
+      have hb := idx_nc (cb s₀) c h'
+      refine WP.mono (WP.hkeep (by decide) (fastCtrs_ok s₁ (cb s₀) c (fun l hl => by rw [zk]; exact hc l hl)
+        (fun l hl => by rw [zk]; exact hm l hl) hb (by rw [r11', m₁]; exact hk.1) (by rw [r11', m₁]; exact hk.2)
+        (by rw [r11', rd₁, wr₁]; exact h4in) (by rw [r11', rd₁, wr₁]; exact h16in)))
+        fun s' ⟨⟨e, c', f⟩, hh⟩ => done s' e c' f hh
+    · exact WP.mono (slow s₁ (fun l hl => by rw [zk]; exact hc l hl) (fun l hl => by rw [zk]; exact hm l hl)
+        (fun l hl => by rw [zk]; exact hi l hl)) fun s' ⟨e, c', f, hh⟩ => done s' e c' f hh
 
 end VG.Proof.Gcm.X86_64.StitchZH
