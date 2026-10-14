@@ -34,7 +34,7 @@ jobs:
     # More independent files, with two compiler threads per file (lakefile.toml).
     env:
       LEAN_NUM_THREADS: "6"
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     # To find the merge queue's run of this commit, and download its outputs.
     permissions:
       actions: read
@@ -174,7 +174,7 @@ jobs:
     # job, and shows them as written. It adds the shard to each running
     # job's name itself ("Lean: shard (3)").
     name: "Lean: shard"
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     defaults:
       run:
         working-directory: lean
@@ -289,7 +289,7 @@ jobs:
 
   lean-imports:
     name: Static checks
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -313,18 +313,22 @@ jobs:
       fail-fast: false
       matrix:
         platform:
-          - os: ubuntu-latest
+          - os: ubuntu-26.04
           # x86: a 32-bit userspace, run natively on the x86-64 host, in the
           # image ci/runner.Dockerfile builds (Runner images workflow). It
           # holds only that platform, so it is named.
-          - os: ubuntu-latest
+          - os: ubuntu-26.04
             container:
               image: ghcr.io/pyca/verified-garbage-runner:i686
-              options: --platform linux/386
-          - os: ubuntu-24.04-arm
+              # Docker 29.4.2 on ubuntu-26.04 denies socketcall(2), which i386
+              # glibc makes its socket calls through, so the container has no
+              # network (actions/runner-images#14790); drop the flag once the
+              # runner has Docker 29.4.3 or later.
+              options: --platform linux/386 --security-opt seccomp=unconfined
+          - os: ubuntu-26.04-arm
           # ARMv7: a 32-bit userspace, run natively on the ARM64 host, in the
           # same Dockerfile's image for it.
-          - os: ubuntu-24.04-arm
+          - os: ubuntu-26.04-arm
             container:
               image: ghcr.io/pyca/verified-garbage-runner:armv7l
               options: --platform linux/arm/v7
@@ -335,15 +339,15 @@ jobs:
           # The minimum supported Rust version (Cargo.toml's `rust-version`),
           # on one platform.
           - platform:
-              os: ubuntu-latest
+              os: ubuntu-26.04
             rust: "1.88"
           # One job each for the upcoming toolchains, to catch regressions (and
           # new warnings, which are errors here) before they reach stable.
           - platform:
-              os: ubuntu-latest
+              os: ubuntu-26.04
             rust: beta
           - platform:
-              os: ubuntu-latest
+              os: ubuntu-26.04
             rust: nightly
     runs-on: ${{ matrix.platform.os }}
     # With an empty image the job runs directly on the runner.
@@ -461,7 +465,7 @@ jobs:
         # The minimum supported Rust version is tested in the `rust` job.
         rust: [stable]
     name: Rust (Thumb, ${{ matrix.rust }})
-    runs-on: ubuntu-24.04-arm
+    runs-on: ubuntu-26.04-arm
     container:
       image: ghcr.io/pyca/verified-garbage-runner:armv7l
       options: --platform linux/arm/v7
@@ -509,7 +513,7 @@ jobs:
   # saved any.
   cpu-features-times:
     name: "Rust: times of the CPU feature runs"
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     outputs:
       times: ${{ steps.times.outputs.times }}
     steps:
@@ -584,7 +588,11 @@ jobs:
             arch: x86
             container:
               image: ghcr.io/pyca/verified-garbage-runner:i686
-              options: --platform linux/386
+              # Docker 29.4.2 on ubuntu-26.04 denies socketcall(2), which i386
+              # glibc makes its socket calls through, so the container has no
+              # network (actions/runner-images#14790); drop the flag once the
+              # runner has Docker 29.4.3 or later.
+              options: --platform linux/386 --security-opt seccomp=unconfined
             runs: |
               - | sha1 sha224 sha256 sha384 sha512 aes_ccm aes_gcm aes_gcm_siv aes_ocb aes_ecb aes_cbc aes_ofb aes_cfb aes_cfb8 aes_ctr aes_xts aes_siv cmac chacha20 mlkem scrypt x25519 ed25519 ecdsa p256_sha cpu
               none | all
@@ -619,8 +627,12 @@ jobs:
             runs: |
               - | dsa sha1 sha224 sha256 sha384 sha512 blake2 aes_gcm cmac chacha20 triple_des_ecb poly1305 mlkem mldsa scrypt argon2 rfc9106 x25519 x448 ed25519 ed448 rsa_pkcs1 rsa_pss rsa_oaep p256 p384 p521 message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
           # Nothing beyond x86-64's baseline, not even CPUID leaf 7.
+          # Ubuntu 26.04's x86-64 userspace is built for x86-64-v3 (AVX2), so
+          # SDE stops on its dynamic loader's AVX instructions: this CPU runs
+          # on 24.04, whose userspace is the baseline ISA's.
           - chip: p4p
             arch: x86_64
+            runner: ubuntu-24.04
             runs: |
               - | ffdh dsa sha1 sha224 sha256 sha384 sha512 blake2 aes_gcm aes_ocb aes_ecb aes_cbc aes_ofb aes_cfb aes_cfb8 aes_ctr aes_xts cmac chacha20 triple_des_ecb poly1305 mlkem mldsa scrypt argon2 rfc9106 x25519 x448 ed25519 ed448 rsa message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
           # Arrow Lake: the SHA512 extension, which no runner has (and
@@ -685,7 +697,7 @@ jobs:
           # `sha2,sha3` both extensions together.
           - chip: native
             arch: aarch64
-            os: ubuntu-24.04-arm
+            os: ubuntu-26.04-arm
             runs: |
               - | aes_gcm aes_gcm_siv aes_ocb aes_ecb aes_cbc aes_ofb aes_cfb aes_cfb8 aes_ctr aes_xts aes_siv aes_ccm cmac sha1 sha224 sha256 sha384 sha512 sha3 shake mlkem mldsa ed448 scrypt chacha20 ed25519 message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
               neon | chacha20
@@ -693,7 +705,7 @@ jobs:
               sha2,sha3 | rsa_oaep
               none | dsa aes_siv chacha20 sha3 shake mlkem mldsa ecdsa p224_sha p256_sha p384_sha ed448 aes_gcm_siv aes_ccm aes_ocb aes_ecb aes_cbc aes_ofb aes_cfb aes_cfb8 aes_ctr aes_xts rsa_pkcs1 rsa_oaep
     name: Rust (${{ matrix.os && format('native, {0}', matrix.os) || matrix.chip == 'native' && 'native' || format('sde -{0}', matrix.chip) }}${{ matrix.arch && format(', {0}', matrix.arch) || '' }}${{ matrix.shard && format(', {0}', matrix.shard) || '' }})
-    runs-on: ${{ matrix.os || 'ubuntu-latest' }}
+    runs-on: ${{ matrix.runner || matrix.os || 'ubuntu-26.04' }}
     container:
       image: ${{ matrix.container.image || '' }}
       options: ${{ matrix.container.options || '' }}
@@ -872,7 +884,7 @@ jobs:
     name: "Rust: save the times of the CPU feature runs"
     if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
     needs: rust-cpu-features
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     # To find the merge queue's run of this commit, and download its times.
     permissions:
       actions: read
@@ -928,7 +940,7 @@ jobs:
     name: Rust coverage
     needs: [rust, rust-cpu-features]
     if: ${{ github.event_name != 'push' || github.ref != 'refs/heads/main' }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -980,7 +992,7 @@ jobs:
   all-green:
     if: ${{ always() }}
     needs: [lean, lean-shard, lean-imports, rust, rust-thumb, rust-cpu-features, coverage]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     # To list the run's artifacts.
     permissions:
       actions: read

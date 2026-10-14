@@ -29,7 +29,7 @@ jobs:
       && github.event.workflow_run.conclusion == 'success'
       && github.event.workflow_run.event == 'push'
       && github.event.workflow_run.head_repository.full_name == github.repository }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     # Only the steps that talk to the registry see the token: the others run
     # third-party code (elan's installer, Mathlib's `cache` tool).
     permissions:

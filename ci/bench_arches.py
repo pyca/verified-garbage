@@ -125,15 +125,18 @@ import tomllib
 # ci.yml's `rust` job: the 32-bit ones in a 32-bit userspace container, built
 # by ci/runner.Dockerfile, on the 64-bit host of the same family).
 PLATFORMS = {
-    "x86_64": {"os": "ubuntu-latest"},
-    "aarch64": {"os": "ubuntu-24.04-arm"},
+    "x86_64": {"os": "ubuntu-26.04"},
+    "aarch64": {"os": "ubuntu-26.04-arm"},
     "x86": {
-        "os": "ubuntu-latest",
+        "os": "ubuntu-26.04",
         "image": "ghcr.io/pyca/verified-garbage-runner:i686",
-        "options": "--platform linux/386",
+        # Docker 29.4.2 on ubuntu-26.04 denies socketcall(2), which i386
+        # glibc makes its socket calls through (actions/runner-images#14790);
+        # drop seccomp=unconfined once the runner has Docker 29.4.3 or later.
+        "options": "--platform linux/386 --security-opt seccomp=unconfined",
     },
     "arm": {
-        "os": "ubuntu-24.04-arm",
+        "os": "ubuntu-26.04-arm",
         "image": "ghcr.io/pyca/verified-garbage-runner:armv7l",
         "options": "--platform linux/arm/v7",
     },
