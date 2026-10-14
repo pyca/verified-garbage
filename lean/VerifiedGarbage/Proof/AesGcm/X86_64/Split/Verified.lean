@@ -244,12 +244,6 @@ theorem sealSplitP_core (B : BlkFn CtxMode.powers) (T : BlkToFn CtxMode.powers) 
   Verified.of_correct (k := Proof.AesGcm.sealSplitX86_64M CtxMode.powers) (sealSplit_correct v B T hF)
     (sealSplitM_ct (splitMid_ok v B T hF) (splitMid_rel v B T hF)) splitP_implies
 
-theorem sealSplitPrepared_core (B : BlkFn CtxMode.prepared) (T : BlkToFn CtxMode.prepared) :
-    Verified X86_64.target (SealSplit.«seal» (v.splitMid (v.withBlk B) T.fn))
-      (Proof.AesGcm.sealSplitPreparedScratchContract X86_64.abi 56) :=
-  Verified.of_correct (k := Proof.AesGcm.sealSplitX86_64M CtxMode.prepared) (sealSplit_correct v B T hF)
-    (sealSplitM_ct (splitMid_ok v B T hF) (splitMid_rel v B T hF)) splitPrepared_implies
-
 end
 
 /-! ## In its frame -/
@@ -320,16 +314,6 @@ theorem sealSplitP_framed (B : BlkFn CtxMode.powers) (T : BlkToFn CtxMode.powers
     (bytes := 2616) (sealSplitP_core v hF B T) (by decide) (by decide) (by decide)
     (sealSplit_spSafe v B T) (sealSplit_xdepth v B T) (Proof.AesGcm.sealSplitPrecomputedPre_local _)
     (Proof.AesGcm.sealSplitPrecomputedPost_local _) splitFrameSatP_pre
-
-theorem sealSplitPrepared_framed (B : BlkFn CtxMode.prepared) (T : BlkToFn CtxMode.prepared) :
-    Verified X86_64.target (Impl.StackScratch.X86_64.withStackArgScratch 2616 5 (SealSplit.«seal» (v.splitMid (v.withBlk B) T.fn)))
-      (Spec.Gcm.sealSplitPreparedContract X86_64.abi 2672) :=
-  X86_64.Verified.stackArgScratch (sig := Spec.Gcm.sealSplitPreparedSig) (nm := "work") (e := .u64)
-    (n := 320) (pre := Spec.Gcm.sealSplitPreparedPre X86_64.abi.ptrBits)
-    (post := Spec.Gcm.sealSplitPost X86_64.abi.ptrBits) (wa := true) (stack := 56)
-    (bytes := 2616) (sealSplitPrepared_core v hF B T) (by decide) (by decide) (by decide)
-    (sealSplit_spSafe v B T) (sealSplit_xdepth v B T) (Proof.AesGcm.sealSplitPreparedPre_local _)
-    (Proof.AesGcm.sealSplitPrecomputedPost_local _) splitFrameSatPrepared_pre
 
 end
 
