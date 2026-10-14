@@ -3,7 +3,7 @@
 #[path = "../../support/ffdh.rs"]
 mod aws_lc;
 use criterion::Criterion;
-pub const USES: &[&str] = &["ffdh", "rsa_mont"];
+pub const USES: &[&str] = &["ffdh", "rsa_mont", "miller_rabin"];
 #[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
 pub fn bench(c: &mut Criterion) {
     use crate::{AWS_LC, OPENSSL, VG};

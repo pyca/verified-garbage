@@ -1,6 +1,9 @@
 //! Public modulus setup and fixed-schedule secret exponentiation.
 #[cfg(any(target_arch = "x86_64", test))]
 use crate::arch::ffdh::vg_ffdh_choose;
+use crate::arch::miller_rabin::vg_miller_rabin_round;
+#[cfg(target_arch = "x86_64")]
+use crate::arch::miller_rabin::vg_miller_rabin_round_adx;
 use crate::arch::rsa_mont::vg_rsa_mont_mul;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::rsa_mont::{
@@ -95,7 +98,7 @@ impl Montgomery {
     /// Only public values are used in precomputation. Works for any odd
     /// modulus >=3, including the 511-bit Sophie Germain prime of a 512-bit p.
     pub(super) fn new(p: &[u8]) -> Self {
-        let w = p.len().div_ceil(8).max(2);
+        let w = p.len().div_ceil(8).max(4);
         let modulus = words(p, w);
         let mut inv = 1u64;
         for _ in 0..6 {
@@ -196,6 +199,7 @@ impl Montgomery {
         self.finish(&mut ws)
     }
 
+    #[cfg(any(target_arch = "x86_64", test))]
     fn power_public_montgomery(&self, base: &[u8], exponent: &[u8]) -> Scratch {
         let exponent = canonical(exponent);
         let window = if exponent.len() > 32 {
@@ -251,37 +255,51 @@ impl Montgomery {
         ws
     }
 
-    /// One strong probable-prime witness for a public candidate p, with
-    /// p-1 = d * 2^s. Keep every residue in Montgomery form until the test ends.
-    pub(super) fn strong_probable_prime(&self, base: &[u8], d: &[u8], s: usize) -> bool {
+    /// One strong probable-prime witness, using the shared verified RSA round.
+    /// `s` is the number of trailing zero bits of the public candidate minus one.
+    pub(super) fn strong_probable_prime(&self, base: &[u8], s: usize) -> bool {
         let w = self.modulus.len();
         let at = |j| 32 + j * (w + 2);
-        let mut ws = self.power_public_montgomery(base, d);
-        self.mul(&mut ws, 6, 7, 1);
-        // Montgomery(-1) = p - Montgomery(1), since the latter is in 1..p.
-        let mut negative_one = self.modulus.clone();
+        let mut ws = self.workspace(base, 20 * (w + 2));
+        #[cfg(target_arch = "x86_64")]
+        let (exponent, one, minus_one) = (24, 25, 26);
+        #[cfg(target_arch = "aarch64")]
+        let (exponent, one, minus_one) = (27, 9, 10);
+        ws.copy_within(at(5)..at(5) + w, at(one));
+        ws.copy_within(at(4)..at(4) + w, at(5));
         let mut borrow = false;
-        for (dst, &one) in negative_one.iter_mut().zip(&ws[at(6)..at(6) + w]) {
-            let (v, b1) = dst.overflowing_sub(one);
-            let (v, b2) = v.overflowing_sub(u64::from(borrow));
-            *dst = v;
+        for i in 0..w {
+            let (value, b1) = self.modulus[i].overflowing_sub(ws[at(one) + i]);
+            let (value, b2) = value.overflowing_sub(u64::from(borrow));
+            ws[at(minus_one) + i] = value;
             borrow = b1 | b2;
         }
-        let is_one = |ws: &[u64]| ws[at(5)..at(5) + w] == ws[at(6)..at(6) + w];
-        let is_negative_one = |ws: &[u64]| ws[at(5)..at(5) + w] == negative_one;
-        if is_one(&ws) || is_negative_one(&ws) {
-            return true;
+        // Shift only 1..=4 bits: the window proof handles the remaining
+        // trailing zero bits. Its final window mask also needs s modulo 64.
+        let shift = 1 + (s - 1) % 4;
+        for i in 0..w {
+            let low = self.modulus[i] - u64::from(i == 0);
+            let high = self.modulus.get(i + 1).copied().unwrap_or(0);
+            ws[at(exponent) + i] = (low >> shift) | (high << (64 - shift));
         }
-        for _ in 1..s {
-            self.mul(&mut ws, 5, 5, 5);
-            if is_negative_one(&ws) {
-                return true;
-            }
-            if is_one(&ws) {
-                return false;
-            }
+        ws[at(exponent) + w] = 1 << (s % 64);
+        #[cfg(target_arch = "aarch64")]
+        {
+            ws[28] = (8 * (w + 2)) as u64;
         }
-        false
+        let round = match self.backend {
+            Backend::Baseline => vg_miller_rabin_round,
+            #[cfg(target_arch = "x86_64")]
+            Backend::Adx => vg_miller_rabin_round_adx,
+        };
+        // SAFETY: w is 4..=128, the odd modulus is at least 3, and the
+        // stable allocation contains 28 arrays of w+2 words. The Montgomery
+        // header and witness are initialized by workspace; one and minus
+        // one are their canonical Montgomery residues. The exponent and
+        // extra word have the shared prepared-round contract's values.
+        // The allocation is disjoint from the stack and wiped on drop.
+        // The ADX backend is selected only when BMI2 and ADX are available.
+        unsafe { round(ws.as_mut_ptr(), ws.len()) == 1 }
     }
 
     fn workspace(&self, base: &[u8], table_words: usize) -> Scratch {
@@ -394,11 +412,29 @@ mod tests {
                     expected = expected * expected % p;
                     passes |= expected == p - 1;
                 }
-                assert_eq!(
-                    mont.strong_probable_prime(&a.to_be_bytes(), &d.to_be_bytes(), s),
-                    passes
-                );
+                assert_eq!(mont.strong_probable_prime(&a.to_be_bytes(), s), passes);
             }
+        }
+    }
+
+    #[test]
+    fn strong_witness_matches_public_power_at_limb_boundaries() {
+        // Construct 2^k+1 arithmetically. Its odd exponent is one, and its
+        // two-adic valuation exercises the shifted exponent's extra word.
+        for k in [63, 64, 65, 127, 255, 511, 8191] {
+            let mut p = vec![0; (k + 1_usize).div_ceil(8)];
+            p[0] = 1 << (k % 8);
+            let last = p.len() - 1;
+            p[last] |= 1;
+            let mont = Montgomery::new(&p);
+            let mut value = mont.power_public(&[2], &[1]);
+            let negative_one = minus_one(&p);
+            let mut passes = canonical(&value) == [1] || value == negative_one;
+            for _ in 1..k {
+                value = mont.power_public(&value, &[2]);
+                passes |= value == negative_one;
+            }
+            assert_eq!(mont.strong_probable_prime(&[2], k), passes);
         }
     }
 
