@@ -101,8 +101,14 @@ def full : StitchName → Bool
 /-- Decryption using a prepared context. -/
 def decR : StitchName → Prog isa
   | .vaes => Impl.Gcm.X86_64.StitchR.dec
-  | .vaesAvx512 => Impl.Gcm.X86_64.StitchZH.dec
+  | .vaesAvx512 => Impl.Gcm.X86_64.StitchZH.decR
   | .aesniAvx => Impl.Gcm.X86_64.StitchAvx8.decR
+
+/-- Whether the decryption loop named `n` for a prepared context takes all
+the blocks, from 16 on (`Blocks.stitchPart`'s `full`). -/
+def fullDR : StitchName → Bool
+  | .vaesAvx512 => true
+  | _ => false
 
 /-- Whether `seal` and `open` calling the loops named `n` take the short path
 for short inputs (`GcmImpl.short`): the loops on 512-bit registers, whose
@@ -122,7 +128,7 @@ structure PieceP (n : StitchName) : Type where
 /-- Static and constant-time facts for prepared-context loops. -/
 structure PieceR (n : StitchName) : Type where
   enc : Piece n.encR true n.fullR
-  dec : Piece n.decR true
+  dec : Piece n.decR true n.fullDR
 
 /-- Interleaved loops that encrypt out of place, for
 `vg_aes_gcm_encrypt_blocks_to`, by name. `StitchToName.ok`, in the generic

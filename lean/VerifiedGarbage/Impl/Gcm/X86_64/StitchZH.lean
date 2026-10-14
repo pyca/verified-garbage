@@ -93,14 +93,18 @@ def ksBatch (k : Nat) (g : Nat → List Instr) : Prog isa :=
   .seq (.block (ctrsZ .xmm14 .xmm0 .xmm15 (aregs.take k)))
     (.seq (Aes.X86_64.VaesZH.aes (aregs.take k) g) (.block (ksStores (aregs.take k) 0)))
 
+/-- The keystream of `4 ⌈r / 4⌉` blocks, from `r10 = 16 r`, with the
+instructions `g j` after round `j`. -/
+def ksSelWith (g : Nat → List Instr) : Prog isa :=
+  .seq (.block [.alu .cmp .r10 (.imm 65)])
+    (.ite .b (ksBatch 1 g)
+      (.seq (.block [.alu .cmp .r10 (.imm 129)])
+        (.ite .b (ksBatch 2 g)
+          (.seq (.block [.alu .cmp .r10 (.imm 193)]) (.ite .b (ksBatch 3 g) (ksBatch 4 g))))))
+
 /-- The keystream of `4 ⌈r / 4⌉` blocks, from `r10 = 16 r`, while the group
 at `rdx` is hashed. -/
-def ksSel : Prog isa :=
-  .seq (.block [.alu .cmp .r10 (.imm 65)])
-    (.ite .b (ksBatch 1 gq)
-      (.seq (.block [.alu .cmp .r10 (.imm 129)])
-        (.ite .b (ksBatch 2 gq)
-          (.seq (.block [.alu .cmp .r10 (.imm 193)]) (.ite .b (ksBatch 3 gq) (ksBatch 4 gq))))))
+def ksSel : Prog isa := ksSelWith gq
 
 /-- Block `r10 / 16` of the last `r`, read at `src + r10`: its keystream from
 `scratch + 768`, the ciphertext written to `rdx + r10`, and its product with
@@ -167,6 +171,57 @@ def encR : Prog isa :=
         (.seq (.ite .b (.block []) bigP)
           (.seq (.block [.alu .cmp .r9 (.imm 32)])
             (.seq (.ite .b (.block []) (.loop body .ae)) (tailR rem))))))
+
+/-! ## Decryption: the blocks after the last group -/
+
+/-- `remBody` for decryption: block `r10 / 16` of the last `r`, read at
+`src + r10`, is hashed as it is read (byte-reversed, with `Y` added, times its
+power at `rax + r10`), and its keystream from `scratch + 768` added to it in
+`xmm12`, stored to `rdx + r10`. -/
+def remBodyD (src : Reg) : List Instr :=
+  ([.vmovdquLoad .l128 .xmm13 (atIx src .r10 0), .vmovdquLoad .l128 .xmm12 (atIx .r11 .r10 768),
+   .vop (.vbin .vpxor .l128 .xmm12 .xmm12 .xmm13), .vmovdquStore .l128 (atIx .rdx .r10 0) .xmm12,
+   .vop (.vbin .vpshufb .l128 .xmm13 .xmm13 .xmm0), .vop (.vbin .vpxor .l128 .xmm13 .xmm13 .xmm2),
+   .vop (.vbin .vpxor .l128 .xmm2 .xmm2 .xmm2), .vmovdquLoad .l128 .xmm12 (atIx .rax .r10 0)] : List Instr) ++
+  StitchAvx.acc .xmm13 .xmm12
+
+/-- `remQuad` for decryption: the four blocks at `src + r10` are hashed as
+they are read, in the lanes of `zmm7`, and their keystream added to them in
+`zmm12`, stored to `rdx + r10`. -/
+def remQuadD (src : Reg) : List Instr :=
+  ([.vmovdqu32Load .xmm7 (atIx src .r10 0), .vmovdqu32Load .xmm12 (atIx .r11 .r10 768),
+   .zop (.zbin .vpxord .xmm12 .xmm12 .xmm7), .vmovdqu32Store (atIx .rdx .r10 0) .xmm12,
+   .vmovdqu32Load .xmm12 (atIx .rax .r10 0),
+   .zop (.zbin .vpshufb .xmm7 .xmm7 .xmm0), .zop (.zbin .vpxord .xmm7 .xmm7 .xmm2)] : List Instr) ++
+  StitchZ.acc .xmm7 .xmm12 ++ ([.zop (.zbin .vpxord .xmm2 .xmm2 .xmm2)] : List Instr)
+
+/-- `remLoops` for decryption. -/
+def remLoopsD (src : Reg) : Prog isa :=
+  .seq (.block [.alu .test .r9 (.imm 3)])
+    (.seq (.ite .e (.block []) (.loop (.block (remBodyD src ++ remNext1)) .ne))
+      (.seq (.block [.alu .cmp .r9 (.imm 16)])
+        (.seq (.ite .e (.block []) (.loop (.block (remQuadD src ++ remNext4)) .ne)) (.block fin))))
+
+/-- The `r9 - 16` blocks at `rdx` after the last group, which the loop has
+already hashed, decrypted, and `Y` stored: the keystream computed alone, then
+the blocks hashed and decrypted in place. -/
+def remD : Prog isa :=
+  .seq (.block remSetup)
+    (.seq (ksSelWith fun _ => [])
+      (.seq (.block (([.mov32 .r10 (.imm 0)] : List Instr) ++ StitchAvx.zero))
+        (.seq (remLoopsD .rdx) (.block storeY))))
+
+/-- `dec`, for any number of blocks from 16 on: the `r9` blocks after the
+last group, if any, by `remD`. -/
+def decR : Prog isa :=
+  .seq (.seq (.block setupP) Aes.X86_64.VaesZH.loadKeys)
+    (.seq (.block [.alu .cmp .r9 (.imm 256)])
+      (.seq (.ite .b (.block []) bigDP)
+        (.seq (.block [.alu .cmp .r9 (.imm 16)])
+          (.seq (.ite .b (.block []) (.loop dbody .ae))
+            (.seq (.block [.alu .test .r9 (.reg .r9)])
+              (.ite .e (.block (storeCtr ++ storeY))
+                (.seq (.block [.alu .add .r9 (.imm 16)]) remD)))))))
 
 def dec : Prog isa :=
   .seq (.seq (.block setupP) Aes.X86_64.VaesZH.loadKeys)
