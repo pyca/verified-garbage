@@ -1,7 +1,12 @@
 //! Wycheproof's secp256k1 WebCrypto vectors. JWK coordinates are converted
 //! to the uncompressed SEC 1 encoding accepted by the public API.
 
-#![cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
+#![cfg(any(
+    target_arch = "x86_64",
+    target_arch = "x86",
+    target_arch = "aarch64",
+    target_arch = "arm"
+))]
 
 use serde::Deserialize;
 use verified_garbage::ecdh::{Error, PrivateKey, Secp256k1};

@@ -1,6 +1,11 @@
 //! Published deterministic ECDSA vectors and public API boundary checks.
 
-#![cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
+#![cfg(any(
+    target_arch = "x86_64",
+    target_arch = "x86",
+    target_arch = "aarch64",
+    target_arch = "arm"
+))]
 
 use serde::Deserialize;
 use verified_garbage::ecdh::PrivateKey;
