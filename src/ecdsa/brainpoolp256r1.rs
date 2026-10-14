@@ -2,7 +2,7 @@
 //! (`vg_ecdsa_brainpoolp256r1_sha256_sign`, which calls `vg_ecdsa_brainpoolp256r1_sign`), public
 //! keys (`vg_ec_brainpoolp256r1_public_key`), and verification (`vg_ecdsa_brainpoolp256r1_verify`).
 
-#![cfg(target_arch = "x86_64")]
+#![cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
 
 use super::{BrainpoolP256r1, Error, SignatureHash, SigningKey, sealed};
 use crate::arch::ec_brainpoolp256r1::vg_ec_brainpoolp256r1_public_key;
