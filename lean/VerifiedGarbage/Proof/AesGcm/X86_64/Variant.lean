@@ -108,6 +108,7 @@ def decR : StitchName → Prog isa
 the blocks, from 16 on (`Blocks.stitchPart`'s `full`). -/
 def fullDR : StitchName → Bool
   | .vaesAvx512 => true
+  | .aesniAvx => true
   | _ => false
 
 /-- Whether `seal` and `open` calling the loops named `n` take the short path
