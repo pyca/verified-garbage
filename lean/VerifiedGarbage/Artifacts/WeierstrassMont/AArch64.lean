@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.Mont
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.MontVerified
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.MontSqrVerified
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Spec.Ecdsa.Generic
 
@@ -22,6 +23,13 @@ def notes384 : List String := ["The function zero-extends the offsets, saves the
   short Montgomery reductions of its low half, each multiplying by the three nonzero words of \
   `2^384 - p` rather than by `p`, then the high half added and a final conditional subtraction \
   against `p`, built in registers, selected by `csel`."]
+
+/-- How the square modulo P-384's `p` works. -/
+def notesSqr384 : List String := ["The function is the product modulo P-384's `p` (its saves, \
+  reductions and final subtraction) with `[a]` loaded in place of `[b]` and a square in place of \
+  the product, its schedule adapted from s2n-bignum's `bignum_montsqr_p384_alt` (Apache-2.0 OR ISC \
+  OR MIT-0): the fifteen products of distinct words once (a `mul` and `umulh` row for each word), the \
+  sum doubled, then the six squares of the words added."]
 
 /-- How the functions work. -/
 def notes : List String := ["The function zero-extends the offsets, saves the callee-saved \
@@ -47,6 +55,13 @@ def artifacts : List Artifact := [
     code := mulFn p384p.k p384p.m
     contract := p384p.mulContract AArch64.abi
     verified := p384p_mul_verified
+    spSafe := Code.all_of_forall (fun _ => rfl) _ },
+  { p384p.sqrApi with
+    target := AArch64.target
+    doc := p384p.sqrApi.doc (notes := notesSqr384)
+    code := sqrFn384
+    contract := p384p.sqrContract AArch64.abi
+    verified := p384p_sqr_verified
     spSafe := Code.all_of_forall (fun _ => rfl) _ },
   { p521p.mulApi with
     target := AArch64.target
