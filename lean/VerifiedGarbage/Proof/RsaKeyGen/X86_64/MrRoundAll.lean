@@ -38,7 +38,7 @@ theorem mrRound_eq (mul : Nat → Nat → Nat → Prog isa) : mrRound mul =
           .alu .cmp .rax (.imm 17), .alu .sbb .rcx (.reg .rcx), .alu .cmp .rdx (.mem (hdr kChecks)),
           .alu .sbb .rax (.reg .rax), .alu .or .rcx (.reg .rax), .alu .and .rcx (.imm 3), .alu .add .rcx (.imm 1)]),
       .block [.store (hdr kStat) .rcx]] : List (Prog isa))) := by
-  simp only [mrRound, List.append_assoc]
+  simp only [mrRound, preparedRound, List.append_assoc]
 
 theorem preRanges_lt (w : Nat) : ∀ r ∈ preRanges w, r.1 + r.2 ≤ slot w aE := by
   intro r hr
