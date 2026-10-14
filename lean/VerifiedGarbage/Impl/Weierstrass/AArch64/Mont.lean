@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Mont.AArch64
 public import VerifiedGarbage.Impl.Mont.AArch64.P384Mul
+public import VerifiedGarbage.Impl.Mont.AArch64.P384Sqr
 public import VerifiedGarbage.Spec.Weierstrass.Mont
 public import VerifiedGarbage.TCB.AArch64.Target
 
@@ -259,6 +260,16 @@ def mulFn384 : Prog isa :=
   .seq (.block zextCode)
     (.block (saveCode 6 ++ [.add .x (roF 6) .x0 .x1, .add .x (raF 6) .x0 .x2, .add .x .x3 .x0 .x3] ++
       loadsR .x3 P384Mul.bRegs384 0 ++ zero7 :: P384Mul.prod ++ P384Mul.reds ++ P384Mul.addHigh ++
+      sparseLoadCode ++ csubM 6 P384Mul.lowRegs .x21 [.x23, .x24, .x25, .x26, .x26, .x26] ++
+      storesR (roF 6) P384Mul.lowRegs 0 ++ restoreCode 6))
+
+/-- `vg_p384_sqr_mod_p`: `mulFn384` with `[a]` loaded through `ra` in
+place of `[b]`, and the square (`P384Sqr.sq`, adapted from s2n-bignum's
+`bignum_montsqr_p384_alt`) in place of the product. -/
+def sqrFn384 : Prog isa :=
+  .seq (.block zextCode)
+    (.block (saveCode 6 ++ [.add .x (roF 6) .x0 .x1, .add .x (raF 6) .x0 .x2, .add .x .x3 .x0 .x3] ++
+      loadsR (raF 6) P384Sqr.aRegs 0 ++ zero7 :: P384Sqr.sq ++ P384Mul.reds ++ P384Mul.addHigh ++
       sparseLoadCode ++ csubM 6 P384Mul.lowRegs .x21 [.x23, .x24, .x25, .x26, .x26, .x26] ++
       storesR (roF 6) P384Mul.lowRegs 0 ++ restoreCode 6))
 
