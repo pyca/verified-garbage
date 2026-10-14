@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.Ranges
+import VerifiedGarbage.Proof.Rsa.Ranges
 public import VerifiedGarbage.Proof.Bignum.X86_64.R2wStep
-public import VerifiedGarbage.Proof.Bignum.X86_64.PubR2
+import VerifiedGarbage.Proof.Bignum.X86_64.PubR2
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

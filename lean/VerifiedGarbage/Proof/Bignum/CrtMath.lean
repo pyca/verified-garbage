@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.Math
+import VerifiedGarbage.Proof.Bignum.Math
 public import Mathlib.Data.Int.ModEq
 public import Mathlib.Data.Int.GCD
 import all Init.Data.Array.Basic

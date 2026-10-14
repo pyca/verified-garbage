@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.SquareDiagonalCore
+import VerifiedGarbage.Proof.Bignum.AArch64.SquareDiagonalCore
 public import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

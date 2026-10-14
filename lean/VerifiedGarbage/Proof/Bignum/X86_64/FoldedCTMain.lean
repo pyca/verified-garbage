@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.FoldedCT
 meta import VerifiedGarbage.Proof.Bignum.X86_64.FoldedCT
-public import VerifiedGarbage.Proof.Bignum.X86_64.FoldedMain
+import VerifiedGarbage.Proof.Bignum.X86_64.FoldedMain
 meta import VerifiedGarbage.Proof.Bignum.X86_64.FoldedMain
 public import VerifiedGarbage.Proof.Bignum.X86_64.FoldedIOCT
 meta import VerifiedGarbage.Proof.Bignum.X86_64.FoldedIOCT

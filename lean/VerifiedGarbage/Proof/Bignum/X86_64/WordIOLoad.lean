@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Impl.Rsa.X86_64.WordIO
-public import VerifiedGarbage.Proof.Bignum.X86_64.WordIOBytes
-public import VerifiedGarbage.Proof.Framework.CallLay
+import VerifiedGarbage.Proof.Bignum.X86_64.WordIOBytes
+import VerifiedGarbage.Proof.Framework.CallLay
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

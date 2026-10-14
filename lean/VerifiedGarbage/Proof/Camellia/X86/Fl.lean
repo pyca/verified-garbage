@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Camellia.X86.Round
-public import VerifiedGarbage.Proof.Framework.X86.Exec
+import VerifiedGarbage.Proof.Framework.X86.Exec
 public import VerifiedGarbage.Proof.Framework.X86.RegUpd
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.Ranges
+import VerifiedGarbage.Proof.Rsa.Ranges
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtWs
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

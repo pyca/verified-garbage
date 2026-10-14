@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowExp
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowExp
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowBuildCT
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowRunCT
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowRunCT
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowBuildCT
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowRunCT
 public meta import VerifiedGarbage.Impl.Rsa.AArch64.WindowLoop

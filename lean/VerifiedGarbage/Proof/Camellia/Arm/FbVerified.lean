@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.Camellia.FbScratch
 meta import VerifiedGarbage.Proof.Camellia.FbScratch
 public import VerifiedGarbage.Proof.Modes.Arm.OfbCfb
 meta import VerifiedGarbage.Proof.Modes.Arm.OfbCfb
-public import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
+import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
 meta import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
 public import VerifiedGarbage.Impl.Camellia.Arm.Fb
 meta import VerifiedGarbage.Impl.Camellia.Arm.Fb

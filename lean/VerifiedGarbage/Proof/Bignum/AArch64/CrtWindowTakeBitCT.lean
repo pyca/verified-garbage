@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowTakeBit
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowPendingMath
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowPendingMath
 import Mathlib.Data.Int.ModEq
 
 /-! A tail bit's branch depends only on the public pending-bit count. -/

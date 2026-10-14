@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcSquare
-public import VerifiedGarbage.Proof.Bignum.AArch64.SquareCT
+import VerifiedGarbage.Proof.Bignum.AArch64.SquareCT
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

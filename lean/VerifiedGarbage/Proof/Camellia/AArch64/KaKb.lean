@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Camellia.AArch64.KeyPair
-public import VerifiedGarbage.Proof.Camellia.KeySched
+import VerifiedGarbage.Proof.Camellia.KeySched
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

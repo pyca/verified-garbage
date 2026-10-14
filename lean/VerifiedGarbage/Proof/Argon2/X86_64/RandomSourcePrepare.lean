@@ -2,13 +2,13 @@ module
 
 public import VerifiedGarbage.Impl.Argon2.X86_64.RandomSource
 public import VerifiedGarbage.Proof.Argon2.Matrix
-public import VerifiedGarbage.Proof.Argon2.X86_64.FillKernelStable
+import VerifiedGarbage.Proof.Argon2.X86_64.FillKernelStable
 public import VerifiedGarbage.Proof.Argon2.X86_64.AddressCacheSelect
-public import VerifiedGarbage.Proof.Argon2.X86_64.AddressCacheWord
-public import VerifiedGarbage.Proof.Argon2.X86_64.ReferenceMapState
+import VerifiedGarbage.Proof.Argon2.X86_64.AddressCacheWord
+import VerifiedGarbage.Proof.Argon2.X86_64.ReferenceMapState
 public import VerifiedGarbage.Impl.Argon2.X86_64.AddressMode
-public import VerifiedGarbage.Proof.Argon2.X86_64.Memory
-public import VerifiedGarbage.Proof.Argon2.X86_64.DivideStep
+import VerifiedGarbage.Proof.Argon2.X86_64.Memory
+import VerifiedGarbage.Proof.Argon2.X86_64.DivideStep
 public import VerifiedGarbage.Proof.Argon2.X86_64.FillKernel
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

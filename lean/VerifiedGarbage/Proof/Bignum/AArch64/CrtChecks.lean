@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.Copy
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtFrame
+import VerifiedGarbage.Proof.Bignum.AArch64.Copy
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtFrame
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtArith
 public import VerifiedGarbage.Proof.Bignum.AArch64.PubOut
 import all Init.Data.Array.Basic

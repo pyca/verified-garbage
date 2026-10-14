@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Argon2.X86_64.RandomSourcePrepare
 public import VerifiedGarbage.Proof.Argon2.X86_64.DependentWord
-public import VerifiedGarbage.Proof.Argon2.X86_64.FillKernelStable
+import VerifiedGarbage.Proof.Argon2.X86_64.FillKernelStable
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

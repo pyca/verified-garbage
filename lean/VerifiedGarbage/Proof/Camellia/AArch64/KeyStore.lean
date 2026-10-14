@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Camellia.AArch64.Group
-public import VerifiedGarbage.Proof.Camellia.KeySched
+import VerifiedGarbage.Proof.Camellia.KeySched
 public import VerifiedGarbage.Impl.Camellia.AArch64.ExpandKey
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

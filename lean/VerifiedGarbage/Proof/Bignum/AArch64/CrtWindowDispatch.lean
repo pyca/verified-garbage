@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowMain
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtCode
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtCode
 public import VerifiedGarbage.Impl.Rsa.AArch64.WindowDispatch
 import Mathlib.Data.Int.ModEq
 

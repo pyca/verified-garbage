@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Blowfish.AArch64.Lit
 meta import VerifiedGarbage.Proof.Blowfish.AArch64.Lit
-public import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
+import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
 meta import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

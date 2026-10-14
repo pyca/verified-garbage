@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcCtSquare
+import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcCtSquare
 meta import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcCtSquare
 public import VerifiedGarbage.Proof.Bignum.AArch64.SquareMont
 meta import VerifiedGarbage.Proof.Bignum.AArch64.SquareMont

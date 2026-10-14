@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Impl.Argon2.X86_64.ReducePointers
 public import VerifiedGarbage.Proof.Argon2.X86_64.BlockAddress
 public import VerifiedGarbage.Proof.Argon2.X86_64.Initialize
-public import VerifiedGarbage.Proof.Argon2.FinalReduction
+import VerifiedGarbage.Proof.Argon2.FinalReduction
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.Bytes
+import VerifiedGarbage.Proof.Bignum.X86_64.Bytes
 public import VerifiedGarbage.Proof.Rsa.Octets
 public import VerifiedGarbage.Proof.Framework.X86_64.Sse
 import all Init.Data.Array.Basic

@@ -1,9 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
-public import VerifiedGarbage.Proof.Bignum.X86_64.Cmp
-public import VerifiedGarbage.Proof.Bignum.X86_64.Copy
-public import VerifiedGarbage.Proof.Bignum.X86_64.CrtFrame
+import VerifiedGarbage.Proof.Bignum.X86_64.Cmp
+import VerifiedGarbage.Proof.Bignum.X86_64.Copy
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtFrame
 public import VerifiedGarbage.Impl.Rsa.X86_64.Crt
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

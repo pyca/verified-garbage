@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.FoldedCTCode
+import VerifiedGarbage.Proof.Bignum.X86_64.FoldedCTCode
 public import VerifiedGarbage.Proof.Bignum.X86_64.FoldedChecked
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

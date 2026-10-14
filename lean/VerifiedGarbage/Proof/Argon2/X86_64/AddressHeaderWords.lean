@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Argon2.X86_64.AddressHeader
-public import VerifiedGarbage.Proof.Argon2.X86_64.DivideStep
+import VerifiedGarbage.Proof.Argon2.X86_64.DivideStep
 public import VerifiedGarbage.Proof.Argon2.X86_64.Initialize
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

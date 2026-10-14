@@ -12,11 +12,11 @@ public import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 public import VerifiedGarbage.Proof.Framework.X86_64.Lit
 meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
-public import VerifiedGarbage.Impl.Argon2.X86_64.CountCandidates
+import VerifiedGarbage.Impl.Argon2.X86_64.CountCandidates
 meta import VerifiedGarbage.Impl.Argon2.X86_64.CountCandidates
-public import VerifiedGarbage.Impl.Argon2.X86_64.SelectWindow
+import VerifiedGarbage.Impl.Argon2.X86_64.SelectWindow
 meta import VerifiedGarbage.Impl.Argon2.X86_64.SelectWindow
-public import VerifiedGarbage.Proof.Argon2.X86_64.DivideStep
+import VerifiedGarbage.Proof.Argon2.X86_64.DivideStep
 meta import VerifiedGarbage.Proof.Argon2.X86_64.DivideStep
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

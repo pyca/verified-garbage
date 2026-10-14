@@ -2,9 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Camellia.Arm.Fl
 public import VerifiedGarbage.Proof.Camellia.Words
-public import VerifiedGarbage.Proof.Camellia.Common
-public import VerifiedGarbage.Proof.Framework.Block
-public import VerifiedGarbage.Proof.Framework.Semantics
+import VerifiedGarbage.Proof.Camellia.Common
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Semantics
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

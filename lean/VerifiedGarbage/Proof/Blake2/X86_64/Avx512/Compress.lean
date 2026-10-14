@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Blake2.X86_64.Avx512.Round
+import VerifiedGarbage.Proof.Blake2.X86_64.Avx512.Round
 meta import VerifiedGarbage.Proof.Blake2.X86_64.Avx512.Round
 public import VerifiedGarbage.Proof.Blake2.X86_64.Avx512.Lit
 meta import VerifiedGarbage.Proof.Blake2.X86_64.Avx512.Lit

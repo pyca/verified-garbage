@@ -1,9 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTri8RowCore
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxHeaderSave
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTri8Value
-public import VerifiedGarbage.Proof.Bignum.Triangular
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxHeaderSave
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxTri8Value
+import VerifiedGarbage.Proof.Bignum.Triangular
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

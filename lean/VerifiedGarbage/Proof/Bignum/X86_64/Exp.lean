@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.R2
+import VerifiedGarbage.Proof.Bignum.X86_64.R2
 public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

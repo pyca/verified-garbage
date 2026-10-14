@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Blake2.X86.CompressB.Body
-public import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
 public import VerifiedGarbage.Proof.Framework.X86.Spill
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

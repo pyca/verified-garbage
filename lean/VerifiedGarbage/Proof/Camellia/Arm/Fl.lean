@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Camellia.Arm.Round
-public import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Arm.Exec
 public import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

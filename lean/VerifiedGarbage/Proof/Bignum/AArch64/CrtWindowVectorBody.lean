@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorFinish
-public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import Mathlib.Data.Int.ModEq
 
 /-! The blocked selector's exact instruction shape and selected byte sequence. -/

@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Blowfish.Arm.Verified
-public import VerifiedGarbage.Proof.Framework.Arm.RegScratchWipe
-public import VerifiedGarbage.Proof.Framework.Arm.RegScratchConsts
+import VerifiedGarbage.Proof.Framework.Arm.RegScratchWipe
+import VerifiedGarbage.Proof.Framework.Arm.RegScratchConsts
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

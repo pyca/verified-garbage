@@ -4,9 +4,9 @@ public import VerifiedGarbage.Impl.Argon2.X86_64.BlockAddress
 meta import VerifiedGarbage.Impl.Argon2.X86_64.BlockAddress
 public import VerifiedGarbage.Proof.Argon2.X86_64.DivideStep
 meta import VerifiedGarbage.Proof.Argon2.X86_64.DivideStep
-public import VerifiedGarbage.Proof.Argon2.X86_64.MemoryInitScale
+import VerifiedGarbage.Proof.Argon2.X86_64.MemoryInitScale
 meta import VerifiedGarbage.Proof.Argon2.X86_64.MemoryInitScale
-public import VerifiedGarbage.Proof.Framework.X86_64.Abi
+import VerifiedGarbage.Proof.Framework.X86_64.Abi
 meta import VerifiedGarbage.Proof.Framework.X86_64.Abi
 public import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT

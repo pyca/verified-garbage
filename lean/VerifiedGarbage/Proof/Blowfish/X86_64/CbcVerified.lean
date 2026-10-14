@@ -2,13 +2,13 @@ module
 
 public import VerifiedGarbage.Proof.Blowfish.X86_64.ModeCore
 meta import VerifiedGarbage.Proof.Blowfish.X86_64.ModeCore
-public import VerifiedGarbage.Proof.Modes.X86_64.CbcDecrypt
+import VerifiedGarbage.Proof.Modes.X86_64.CbcDecrypt
 meta import VerifiedGarbage.Proof.Modes.X86_64.CbcDecrypt
-public import VerifiedGarbage.Proof.Modes.X86_64.CbcEncrypt
+import VerifiedGarbage.Proof.Modes.X86_64.CbcEncrypt
 meta import VerifiedGarbage.Proof.Modes.X86_64.CbcEncrypt
 public import VerifiedGarbage.Proof.Blowfish.CbcScratch
 meta import VerifiedGarbage.Proof.Blowfish.CbcScratch
-public import VerifiedGarbage.Proof.Blowfish.X86_64.ModesLit
+import VerifiedGarbage.Proof.Blowfish.X86_64.ModesLit
 meta import VerifiedGarbage.Proof.Blowfish.X86_64.ModesLit
 public import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
 meta import VerifiedGarbage.Proof.Framework.X86_64.TaintMono

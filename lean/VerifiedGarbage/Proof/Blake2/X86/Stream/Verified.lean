@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Blake2.X86.Stream.Init
-public import VerifiedGarbage.Proof.Blake2.X86.Stream.Update
+import VerifiedGarbage.Proof.Blake2.X86.Stream.Init
+import VerifiedGarbage.Proof.Blake2.X86.Stream.Update
 public import VerifiedGarbage.Proof.Blake2.X86.Stream.Finalize
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

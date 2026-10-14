@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Camellia.Arm.Verified
 public import VerifiedGarbage.Proof.Modes.Arm.Core
 public import VerifiedGarbage.Impl.Camellia.Arm.Cbc
-public import VerifiedGarbage.Proof.Camellia.CtrCipher
+import VerifiedGarbage.Proof.Camellia.CtrCipher
 public import VerifiedGarbage.Spec.Camellia.Cbc
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

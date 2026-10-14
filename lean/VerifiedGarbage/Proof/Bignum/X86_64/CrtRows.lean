@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.Row
+import VerifiedGarbage.Proof.Bignum.X86_64.Row
 public import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 public import VerifiedGarbage.Impl.Rsa.X86_64.Crt
 import all Init.Data.Array.Basic

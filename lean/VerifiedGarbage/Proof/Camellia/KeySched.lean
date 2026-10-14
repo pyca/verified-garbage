@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Camellia.Layout
+import VerifiedGarbage.Proof.Camellia.Layout
 public import VerifiedGarbage.Proof.Camellia.Words
 public import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Impl.Camellia.KeyOrder

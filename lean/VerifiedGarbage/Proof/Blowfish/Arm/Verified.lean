@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Blowfish.Arm.KeyMain
+import VerifiedGarbage.Proof.Blowfish.Arm.KeyMain
 meta import VerifiedGarbage.Proof.Blowfish.Arm.KeyMain
 public import VerifiedGarbage.Proof.Blowfish.Arm.Lit
 meta import VerifiedGarbage.Proof.Blowfish.Arm.Lit

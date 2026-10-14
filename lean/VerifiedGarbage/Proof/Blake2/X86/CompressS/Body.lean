@@ -1,14 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Blake2.X86.Stream.Common
+import VerifiedGarbage.Proof.Blake2.X86.Stream.Common
 public import VerifiedGarbage.Proof.Blake2.X86.Contract
 public import VerifiedGarbage.Proof.Blake2.X86.CompressS.Round
 public import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Framework.X86.Spill
-public import VerifiedGarbage.Proof.Framework.X86.Wp
-public import VerifiedGarbage.Proof.Framework.X86.RegUpd
-public import VerifiedGarbage.Proof.MdStream.X86.Common
-public import VerifiedGarbage.Proof.Blake2.Spec
+import VerifiedGarbage.Proof.Framework.X86.Wp
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.MdStream.X86.Common
+import VerifiedGarbage.Proof.Blake2.Spec
 public import VerifiedGarbage.Impl.Blake2.X86.CompressS
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.SquareCrossRow
-public import VerifiedGarbage.Proof.Bignum.AArch64.SquareZero
+import VerifiedGarbage.Proof.Bignum.AArch64.SquareZero
 public import VerifiedGarbage.Proof.Bignum.AArch64.SquareMath
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

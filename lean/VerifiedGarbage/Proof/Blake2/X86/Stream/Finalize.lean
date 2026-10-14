@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Blake2.X86.Stream.Common
-public import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.Range
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

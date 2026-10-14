@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtQ
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtQ
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowPow
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

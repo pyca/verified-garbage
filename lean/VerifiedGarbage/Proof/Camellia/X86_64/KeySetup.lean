@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Camellia.X86_64.KaKb
-public import VerifiedGarbage.Proof.Camellia.X86_64.KeyContract
+import VerifiedGarbage.Proof.Camellia.X86_64.KeyContract
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

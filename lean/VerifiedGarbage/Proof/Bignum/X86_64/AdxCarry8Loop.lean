@@ -1,10 +1,10 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.X86_64.AdxCarry8
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Add
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Add
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Store
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRow
-public import VerifiedGarbage.Proof.Bignum.Rectangular
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxRow
+import VerifiedGarbage.Proof.Bignum.Rectangular
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

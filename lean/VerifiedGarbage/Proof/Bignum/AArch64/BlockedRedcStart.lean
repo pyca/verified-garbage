@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcCancelTile
+import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcCancelTile
 public import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcLoad
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

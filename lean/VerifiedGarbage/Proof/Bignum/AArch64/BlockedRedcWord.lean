@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Impl.Bignum.AArch64.BlockedRedc
+import VerifiedGarbage.Impl.Bignum.AArch64.BlockedRedc
 public import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcMath
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

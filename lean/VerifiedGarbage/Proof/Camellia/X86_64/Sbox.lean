@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Impl.Camellia.X86_64.Sbox
 public import VerifiedGarbage.Proof.Camellia.SboxTable
 public import VerifiedGarbage.Proof.Framework.X86_64.Straight
-public import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 public import VerifiedGarbage.Proof.Aes.Bitsliced
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

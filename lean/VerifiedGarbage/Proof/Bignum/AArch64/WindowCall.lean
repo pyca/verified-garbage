@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Rsa.AArch64.WindowCall
-public import VerifiedGarbage.Proof.Framework.AArch64.LaneSave
+import VerifiedGarbage.Proof.Framework.AArch64.LaneSave
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowTakeBit
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

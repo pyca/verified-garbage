@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Blowfish.AArch64.EcbMain
-public import VerifiedGarbage.Proof.Blowfish.Table
-public import VerifiedGarbage.Proof.Blowfish.KeyTable
+import VerifiedGarbage.Proof.Blowfish.Table
+import VerifiedGarbage.Proof.Blowfish.KeyTable
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

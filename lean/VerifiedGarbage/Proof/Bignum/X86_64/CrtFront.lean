@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtChk
-public import VerifiedGarbage.Proof.Bignum.X86_64.PubMain
+import VerifiedGarbage.Proof.Bignum.X86_64.PubMain
 public import VerifiedGarbage.Proof.Bignum.X86_64.R2wFast
 public import VerifiedGarbage.Proof.Bignum.CrtHdr
 import all Init.Data.Array.Basic

@@ -2,9 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareMont
 meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareMont
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxCT
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxCT
 meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxCT
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareRedcFrame
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareRedcFrame
 meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareRedcFrame
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareRedcChoice
 meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareRedcChoice

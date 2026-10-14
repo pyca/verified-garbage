@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightMath
-public import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcColumns
+import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcColumns
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

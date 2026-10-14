@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Cast5.AArch64.Lit
+import VerifiedGarbage.Proof.Cast5.AArch64.Lit
 meta import VerifiedGarbage.Proof.Cast5.AArch64.Lit
 public import VerifiedGarbage.Impl.Cast5.AArch64.Modes
 meta import VerifiedGarbage.Impl.Cast5.AArch64.Modes

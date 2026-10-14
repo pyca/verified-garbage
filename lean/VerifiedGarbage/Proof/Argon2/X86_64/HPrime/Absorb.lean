@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Fixed
+import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Fixed
 public import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Frame
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

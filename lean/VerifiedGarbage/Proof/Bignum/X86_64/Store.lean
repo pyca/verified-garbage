@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.Bytes
-public import VerifiedGarbage.Proof.Framework.WriteBytes
+import VerifiedGarbage.Proof.Framework.WriteBytes
 public import Mathlib.Tactic.Set
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledSquareRowsCT
 meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledSquareRowsCT
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledSquareChoice
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledSquareChoice
 meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledSquareChoice
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

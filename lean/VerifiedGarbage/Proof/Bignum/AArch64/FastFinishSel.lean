@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.FastFinishSelTile
+import VerifiedGarbage.Proof.Bignum.AArch64.FastFinishSelTile
 public import VerifiedGarbage.Proof.Bignum.AArch64.SquareCount
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

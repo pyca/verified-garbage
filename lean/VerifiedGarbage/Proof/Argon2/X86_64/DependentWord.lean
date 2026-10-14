@@ -2,8 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Argon2.X86_64.FillKernelSpec
 public import VerifiedGarbage.Impl.Argon2.X86_64.DependentWord
-public import VerifiedGarbage.Proof.Argon2.X86_64.FillKernelArgs
-public import VerifiedGarbage.Proof.Argon2.X86_64.FillKernelPrepare
+import VerifiedGarbage.Proof.Argon2.X86_64.FillKernelArgs
+import VerifiedGarbage.Proof.Argon2.X86_64.FillKernelPrepare
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

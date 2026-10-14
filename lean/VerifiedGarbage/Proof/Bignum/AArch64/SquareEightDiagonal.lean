@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightRows
+import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightRows
 public import VerifiedGarbage.Proof.Bignum.AArch64.WideDiagonal
-public import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightRaw
+import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightRaw
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

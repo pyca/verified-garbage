@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Memory
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareRedcRow
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareRedcRow
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

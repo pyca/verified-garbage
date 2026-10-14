@@ -1,9 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.PubFail
-public import VerifiedGarbage.Proof.Bignum.X86_64.Copy
+import VerifiedGarbage.Proof.Bignum.X86_64.PubFail
+import VerifiedGarbage.Proof.Bignum.X86_64.Copy
 public import VerifiedGarbage.Proof.Bignum.X86_64.R2Impl
-public import VerifiedGarbage.Spec.Rsa.Contract
+import VerifiedGarbage.Spec.Rsa.Contract
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

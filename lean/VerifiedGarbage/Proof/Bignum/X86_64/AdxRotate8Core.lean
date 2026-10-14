@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Word
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Math
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareDiagonalStep
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Math
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareDiagonalStep
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

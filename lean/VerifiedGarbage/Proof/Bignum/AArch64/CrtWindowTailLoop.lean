@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowLoadTail
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowTailByte
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowTailByte
 import Mathlib.Data.Int.ModEq
 
 /-! Trailing bytes extend the exact exponent prefix, carrying partial windows. -/

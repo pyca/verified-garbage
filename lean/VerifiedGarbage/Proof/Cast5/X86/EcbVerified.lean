@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Cast5.X86.Ecb
 meta import VerifiedGarbage.Proof.Cast5.X86.Ecb
 public import VerifiedGarbage.Proof.Framework.X86.TaintSym
 meta import VerifiedGarbage.Proof.Framework.X86.TaintSym
-public import VerifiedGarbage.Proof.Framework.X86.SseTaint
+import VerifiedGarbage.Proof.Framework.X86.SseTaint
 meta import VerifiedGarbage.Proof.Framework.X86.SseTaint
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract

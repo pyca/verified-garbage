@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Lemmas
 public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Pre
-public import VerifiedGarbage.Proof.Bignum.X86_64.CrtP
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtP
 public import VerifiedGarbage.Impl.Rsa.X86_64.CrtIfma
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

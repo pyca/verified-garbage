@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.MontFnSquare
-public import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightMont
+import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightMont
 meta import VerifiedGarbage.Proof.Bignum.AArch64.MontFnSquare
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
