@@ -48,23 +48,18 @@ def scratchSetup (aligned : Bool) : List Instr :=
   if aligned then [.alu .add .r11 (imm 127), .alu .and .r11 (.imm (-64))]
   else [.alu .add .r11 (imm 64)]
 
-/-- All the blocks taken: the arguments kept become those of no rest
-(`data + 16 n`, and 0 blocks). -/
-def takeAll : List Instr :=
-  [.mov .rax (.reg .r9), .alu .add .rax (.reg .rax), .alu .add .rax (.reg .rax), .alu .add .rax (.reg .rax),
-    .alu .add .rax (.reg .rax), .alu .add .rax (.reg .r8), .store (at_ .r11 argData) .rax,
-    .mov32 .rax (imm 0), .store (at_ .r11 argN) .rax]
-
 /-- If there are at least 16 blocks, the first `16 ⌊n / 16⌋` by `piece`, with
-`r11` at the powers, `scratch + 64`, rounded up to 64 bytes when `aligned`;
-all of them if `full` (a `piece` that also takes the blocks after the last
-16), with the arguments kept those of no rest. -/
+`r11` at the powers, `scratch + 64`, rounded up to 64 bytes when `aligned`.
+If `full` (a `piece` that also takes the blocks after the last 16), only
+`r11` set and `piece`, which `blocks` runs once it has found at least 16
+blocks. -/
 def stitchPart (piece : Prog isa) (aligned : Bool := false) (full : Bool := false) : Prog isa :=
-  .seq (.block [.alu .cmp .r9 (imm 16)])
-    (.ite .b (.block [])
-      (.seq (.block ((if full then takeAll else
-        [.mov .rax (.reg .r9), .alu .and .rax (imm 15), .alu .sub .r9 (.reg .rax)]) ++
-        scratchSetup aligned)) piece))
+  if full then .seq (.block (scratchSetup aligned)) piece
+  else
+    .seq (.block [.alu .cmp .r9 (imm 16)])
+      (.ite .b (.block [])
+        (.seq (.block ([.mov .rax (.reg .r9), .alu .and .rax (imm 15), .alu .sub .r9 (.reg .rax)] ++
+          scratchSetup aligned)) piece))
 
 /-- The arguments of the rest: `n mod 16` blocks after the first
 `16 ⌊n / 16⌋`. -/
@@ -97,14 +92,28 @@ def ctrCall : Prog isa := .seq (.block ctrArgs) (.call ctr.name ctr.code)
 def ghCall : Prog isa := .seq (.block ghArgs) (.call gh.name gh.code)
 
 /-- The first blocks by `piece`, if any, then the rest. -/
-def head (piece : Option (Prog isa)) (aligned : Bool := false) (full : Bool := false) : Prog isa :=
+def head (piece : Option (Prog isa)) (aligned : Bool := false) : Prog isa :=
   match piece with
-  | some piece => .seq (stitchPart piece aligned full) (.block rest)
+  | some piece => .seq (stitchPart piece aligned) (.block rest)
   | none => .block []
+
+/-- With a `piece` that takes all the blocks: all of them by it if at least
+16, else all of them with `first` and `second`. -/
+def fullBody (piece first second : Prog isa) (aligned : Bool := false) : Prog isa :=
+  .seq (.block [.alu .cmp .r9 (imm 16)])
+    (.ite .b (.seq (.block rest) (tail first second)) (stitchPart piece aligned true))
+
+/-- After the entry: the blocks by `piece` (all of them if `full`), and the
+rest with `first` and `second`. -/
+def body (piece : Option (Prog isa)) (first second : Prog isa) (aligned : Bool := false) (full : Bool := false) :
+    Prog isa :=
+  match piece, full with
+  | some piece, true => fullBody piece first second aligned
+  | piece, _ => .seq (head piece aligned) (tail first second)
 
 def blocks (piece : Option (Prog isa)) (first second : Prog isa) (aligned : Bool := false) (full : Bool := false) :
     Prog isa :=
-  .seq (.block entry) (.seq (head piece aligned full) (tail first second))
+  .seq (.block entry) (body piece first second aligned full)
 
 /-- `vg_aes_gcm_encrypt_blocks`, with the encrypting `piece`, if any (taking
 all the blocks if `full`). -/

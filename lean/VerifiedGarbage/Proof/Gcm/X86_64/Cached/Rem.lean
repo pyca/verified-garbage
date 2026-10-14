@@ -64,11 +64,13 @@ theorem cmp10_ok (s : State) (i : BitVec 32) (n : Nat) (hi : BitVec.signExtend 6
   exact ⟨trivial, trivial, fun _ _ => rfl, trivial, trivial, trivial⟩
 
 /-- The keystream of the `r` blocks after the last group, `4 ⌈r / 4⌉` blocks
-of it, while the last group is hashed between the rounds. -/
-theorem ksSel_ok {s₀ : State} (hp : SPre s₀) {r : Nat} (hr1 : 1 ≤ r) (hr15 : r ≤ 15)
+of it, while `g` runs between the rounds. -/
+theorem ksSelWith_ok {s₀ : State} (hp : SPre s₀) {r : Nat} (hr1 : 1 ≤ r) (hr15 : r ≤ 15)
+    (g : Nat → List Instr) (G : List XReg) (hG : ∀ r ∈ G, r ∉ aregs ∧ r ≠ .xmm14 ∧ r ≠ .xmm0 ∧ r ≠ .xmm15)
+    (hgh : ∀ j, (g j).all Instr.keepsH = true)
     (Q : Nat → State → Prop)
     (hg : ∀ j, 1 ≤ j → j ≤ 9 → ∀ s, Keys (nr s₀) (sch s₀) s → Q j s →
-      WP isa (.block (gq j)) s fun s' => Q (j + 1) s' ∧ ZFrame gRegs s s')
+      WP isa (.block (g j)) s fun s' => Q (j + 1) s' ∧ ZFrame G s s')
     (hq : ∀ j s s', Q j s → ZFrame (.xmm13 :: .xmm14 :: aregs) s s' → Q j s')
     (hqx : ∀ s s', Q 10 s → s'.gpr = s.gpr → s'.rd = s.rd → s'.wr = s.wr →
       (∀ r l, s'.zlane r l = s.zlane r l) → Frame [ksR s₀] s.mem s'.mem → Q 10 s')
@@ -78,29 +80,29 @@ theorem ksSel_ok {s₀ : State} (hp : SPre s₀) {r : Nat} (hr1 : 1 ≤ r) (hr15
     (hrdi : s.gpr .rdi = kp s₀) (hrsi : s.gpr .rsi = s₀.gpr .rsi) (h11 : s.gpr .r11 = pp s₀)
     (hrd : s.rd = s₀.rd) (hwr : s.wr = s₀.wr) (hfr : Frame [dR s₀, pR s₀, cR s₀] s₀.mem s.mem)
     (hCache : VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s) (hQ : Q 1 s) :
-    WP isa ksSel s fun s' => Q 10 s' ∧
+    WP isa (Impl.Gcm.X86_64.StitchZH.ksSelWith g) s fun s' => Q 10 s' ∧
       (∀ i < r, blockAt s'.mem (pp s₀ + BitVec.ofNat 64 (768 + 16 * i)) =
         ciph s₀ (Nat.repeat inc32 (c + i) (cb s₀))) ∧
       s'.gpr = s.gpr ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
-      (∀ x, x ≠ .xmm13 → x ≠ .xmm14 → x ∉ aregs → x ∉ gRegs → ∀ l < 4, s'.zlane x l = s.zlane x l) ∧
+      (∀ x, x ≠ .xmm13 → x ≠ .xmm14 → x ∉ aregs → x ∉ G → ∀ l < 4, s'.zlane x l = s.zlane x l) ∧
       Frame [ksR s₀] s.mem s'.mem := by
   -- A batch of `4 k ≥ r` blocks, from a state the comparisons leave as `s` was.
   have br : ∀ k, r ≤ 4 * k → k ≤ 4 → ∀ t : State, t.gpr = s.gpr → (∀ x l, t.zlane x l = s.zlane x l) →
       t.mem = s.mem → t.rd = s.rd → t.wr = s.wr → HKeep s t →
-      WP isa (ksBatch k gq) t fun s' => Q 10 s' ∧
+      WP isa (ksBatch k g) t fun s' => Q 10 s' ∧
         (∀ i < r, blockAt s'.mem (pp s₀ + BitVec.ofNat 64 (768 + 16 * i)) =
           ciph s₀ (Nat.repeat inc32 (c + i) (cb s₀))) ∧
         s'.gpr = s.gpr ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
-        (∀ x, x ≠ .xmm13 → x ≠ .xmm14 → x ∉ aregs → x ∉ gRegs → ∀ l < 4, s'.zlane x l = s.zlane x l) ∧
+        (∀ x, x ≠ .xmm13 → x ≠ .xmm14 → x ∉ aregs → x ∉ G → ∀ l < 4, s'.zlane x l = s.zlane x l) ∧
         Frame [ksR s₀] s.mem s'.mem := by
     intro k hrk hk4 t hg' hl hm hrd' hwr' hh
     have hQt : Q 1 t := hq 1 s t hQ ⟨hg', hm, hrd', hwr', fun x _ l _ => hl x l⟩
-    refine WP.mono (ksBatch_ok hp hk4 gq gRegs gRegs_ok Q hg hq hqx
+    refine WP.mono (ksBatch_ok hp hk4 g G hG Q hg hq hqx
       (fun l hl' => by rw [hl]; exact hctr l hl') (fun l hl' => by rw [hl]; exact hmsk l hl')
       (fun l hl' => by rw [hl]; exact hinc l hl') (by rw [hg']; exact hrdi) (by rw [hg']; exact hrsi)
       (by rw [hg']; exact h11) (by rw [hrd']; exact hrd) (by rw [hwr']; exact hwr) (by rw [hm]; exact hfr)
       (hCache.keep hh (Keys.mk (by rw [hg', hm]; exact (hCache.base).sched) hCache.base.le
-        (by rw [hrd', hwr', hg']; exact hCache.base.keys))) gq_keeps hQt)
+        (by rw [hrd', hwr', hg']; exact hCache.base.keys))) hgh hQt)
       fun s' ⟨q', ks', g', rd', wr', l', f', _⟩ => ⟨q', fun i hi => ks' i (by omega), by rw [g', hg'],
         by rw [rd', hrd'], by rw [wr', hwr'], fun x h1 h2 h3 h4 l hl' => by rw [l' x h1 h2 h3 h4 l hl', hl],
         by rw [← hm]; exact f'⟩
@@ -127,6 +129,30 @@ theorem ksSel_ok {s₀ : State} (hp : SPre s₀) {r : Nat} (hr1 : 1 ≤ r) (hr15
       (by rw [m₃, m₂, m₁]) (by rw [rd₃, rd₂, rd₁]) (by rw [wr₃, wr₂, wr₁]) ((hh₁.trans hh₂).trans hh₃)
   · exact br 4 (by omega) (by decide) s₃ (by rw [g₃, g₂, g₁]) (fun x l => by rw [l₃, l₂, l₁])
       (by rw [m₃, m₂, m₁]) (by rw [rd₃, rd₂, rd₁]) (by rw [wr₃, wr₂, wr₁]) ((hh₁.trans hh₂).trans hh₃)
+
+/-- The keystream of the `r` blocks after the last group, `4 ⌈r / 4⌉` blocks
+of it, while the last group is hashed between the rounds. -/
+theorem ksSel_ok {s₀ : State} (hp : SPre s₀) {r : Nat} (hr1 : 1 ≤ r) (hr15 : r ≤ 15)
+    (Q : Nat → State → Prop)
+    (hg : ∀ j, 1 ≤ j → j ≤ 9 → ∀ s, Keys (nr s₀) (sch s₀) s → Q j s →
+      WP isa (.block (gq j)) s fun s' => Q (j + 1) s' ∧ ZFrame gRegs s s')
+    (hq : ∀ j s s', Q j s → ZFrame (.xmm13 :: .xmm14 :: aregs) s s' → Q j s')
+    (hqx : ∀ s s', Q 10 s → s'.gpr = s.gpr → s'.rd = s.rd → s'.wr = s.wr →
+      (∀ r l, s'.zlane r l = s.zlane r l) → Frame [ksR s₀] s.mem s'.mem → Q 10 s')
+    {c : Nat} {s : State} (h10 : s.gpr .r10 = BitVec.ofNat 64 (16 * r))
+    (hctr : ∀ l < 4, s.zlane .xmm14 l = Nat.repeat inc32 (c + l) (cb s₀))
+    (hmsk : ∀ l < 4, s.zlane .xmm0 l = revMask) (hinc : ∀ l < 4, s.zlane .xmm15 l = four)
+    (hrdi : s.gpr .rdi = kp s₀) (hrsi : s.gpr .rsi = s₀.gpr .rsi) (h11 : s.gpr .r11 = pp s₀)
+    (hrd : s.rd = s₀.rd) (hwr : s.wr = s₀.wr) (hfr : Frame [dR s₀, pR s₀, cR s₀] s₀.mem s.mem)
+    (hCache : VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s) (hQ : Q 1 s) :
+    WP isa ksSel s fun s' => Q 10 s' ∧
+      (∀ i < r, blockAt s'.mem (pp s₀ + BitVec.ofNat 64 (768 + 16 * i)) =
+        ciph s₀ (Nat.repeat inc32 (c + i) (cb s₀))) ∧
+      s'.gpr = s.gpr ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
+      (∀ x, x ≠ .xmm13 → x ≠ .xmm14 → x ∉ aregs → x ∉ gRegs → ∀ l < 4, s'.zlane x l = s.zlane x l) ∧
+      Frame [ksR s₀] s.mem s'.mem :=
+  ksSelWith_ok hp hr1 hr15 gq gRegs gRegs_ok gq_keeps Q hg hq hqx h10 hctr hmsk hinc hrdi hrsi h11 hrd hwr hfr
+    hCache hQ
 
 /-- The GHASH state of the last group, kept by the keystream stored. -/
 theorem QG.ksR {s₀ : State} (hp : SPre s₀) {lo : Nat → Nat} {a : Addr} {X : Nat → Block}

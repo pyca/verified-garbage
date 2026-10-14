@@ -31,7 +31,7 @@ def stitch : Proof.AesGcm.X86_64.StitchPart where
      (⟨by lit_decide, by lit_decide, by lit_decide, by decide, by lit_decide, (by exact ⟨_, by taint_decide⟩)⟩ : Proof.AesGcm.X86_64.Piece Impl.Gcm.X86_64.StitchZP.dec)⟩)
   pieceR := by exact (some
     ⟨(⟨by lit_decide, by lit_decide, by lit_decide, by decide, by lit_decide, (by exact ⟨_, by taint_decide⟩)⟩ : Proof.AesGcm.X86_64.Piece Impl.Gcm.X86_64.StitchZH.encR true true),
-     (⟨by lit_decide, by lit_decide, by lit_decide, by decide, by lit_decide, (by exact ⟨_, by taint_decide⟩)⟩ : Proof.AesGcm.X86_64.Piece Impl.Gcm.X86_64.StitchZH.dec true)⟩)
+     (⟨by lit_decide, by lit_decide, by lit_decide, by decide, by lit_decide, (by exact ⟨_, by taint_decide⟩)⟩ : Proof.AesGcm.X86_64.Piece Impl.Gcm.X86_64.StitchZH.decR true true)⟩)
   toPart := some
     { name := .vaesAvx512
       piece := by exact (⟨by lit_decide, by lit_decide, by lit_decide, by decide, by lit_decide,
