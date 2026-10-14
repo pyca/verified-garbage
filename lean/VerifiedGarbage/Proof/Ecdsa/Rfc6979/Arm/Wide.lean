@@ -79,7 +79,7 @@ theorem conv_ok (hL : L.Ok) (hw : L.wide = P.R.wide) (hW : P.R.wide = true) {t :
   have nc := hL.nc
   have hfp := fp_toNat' hL
   have := L.sp.isLt
-  have hw2 : (cfgOf P).w / 2 = P.w := by simp only [cfgOf, RfcHash.w]; omega_arith
+  have hw2 : (cfgOf P).w / 2 = P.w := by simp only [cfgOf, show P.R.E.C.len = 66 from hQ66, show P.w = 9 from hw9]; decide
   have hlen : (cfgOf P).len = P.Q := rfl
   simp only [Cfg.conv, hw2, hlen, List.append_assoc, List.cons_append, List.nil_append]
   refine wp_mov (op2_reg _ _) fun u₁ v₁ => wp_mov (op2_reg _ _) fun u₂ v₂ => ?_

@@ -190,20 +190,19 @@ structure Blks (k Q D B : Nat) (wide : Bool) : Prop where
   msg₁f : TaintOk (Cfg.msg k Q D 1 true wide)
 
 theorem blks (P : RfcHash) : Blks P.k P.Q P.F.H.D P.F.H.B P.R.wide := by
-  have hk : P.k = 2 * P.R.E.n := rfl
+  have hk (hw : P.R.wide = false) : P.k = P.Q / 4 := by have := (P.sizesA hw).1; omega
   cases hw : P.R.wide
-  · obtain ⟨hQ8, h6, hQD⟩ := P.sizesA hw
-    have hQ : P.Q = 8 * P.R.E.n := hQ8
-    rw [hQ, hk]
-    rcases (P.R.sizesA hw).1 with hn | hn | hn <;> rcases P.hDB with ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ <;>
-      rw [hn, h, h'] <;>
+  · have hQD := (P.sizesA hw).2.2
+    rcases P.lengthsA hw with hQ | hQ | hQ | hQ <;>
+      rcases P.hDB with ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ <;>
+      simp only [hk hw, hQ, h, h'] <;>
       first
-      | (exfalso; rw [hQ, hn, h] at hQD; omega)
+      | (exfalso; rw [hQ, h] at hQD; omega)
       | exact ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
           ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
           ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
   · obtain ⟨hw9, hQ66, hD64, hB⟩ := P.sizesW hw
-    rw [hQ66, hD64, hB, hk, show P.R.E.n = 9 from hw9]
+    simp only [RfcHash.k, show P.R.E.n = 9 from hw9, show P.R.E.C.len = 66 from hQ66, hD64, hB]
     exact ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
       ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
       ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
@@ -231,7 +230,8 @@ theorem wideBlks (hw : P.R.wide = true) : WideBlks P := by
   obtain ⟨hw9, hQ66, hD64, -⟩ := P.sizesW hw
   have hsh := sh7 hw
   have e₁ : (cfgOf P).len = 66 := hQ66
-  have e₂ : (cfgOf P).w = 18 := by show 2 * P.R.E.n = 18; simp only [RfcHash.w] at hw9; omega
+  have e₂ : (cfgOf P).w = 18 := by
+    simp only [cfgOf, show P.R.E.C.len = 66 from hQ66, show P.R.E.n = 9 from hw9]; decide
   have e₃ : (cfgOf P).F.H.D = 64 := hD64
   have e₄ : (cfgOf P).sh = 7 := hsh
   refine ⟨?_, ?_, ?_⟩ <;> simp only [Cfg.coreDigest, Cfg.keepV, Cfg.candTop, Cfg.conv, e₁, e₂, e₃, e₄] <;>
@@ -355,7 +355,7 @@ theorem rekey_gen_ct {Φ : Pred P} {b : Nat} (hb : b < 2) {full wd : Bool} (hwd 
       (by anums) (by rw [hk.1])
       (fun hf hwf => by
         have := P.sizesA (by rw [hwd, hf] at hwf; exact hwf)
-        simp only [RfcHash.k, RfcHash.w] at this ⊢; exact ⟨by omega, by omega⟩)
+        simp only [RfcHash.k] at this ⊢; exact ⟨by omega, by omega⟩)
       (fun hf hwt => by
         have hW : P.R.wide = true := by rw [hwd, hf] at hwt; exact hwt
         have := P.sizesW hW; exact ⟨by omega, by omega, by rw [P.len]⟩))

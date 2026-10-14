@@ -128,7 +128,7 @@ theorem stageB_ok (hL : L.Ok) (hk : CoreOk P L) {u : State} (hc : Ctx L g m₀ u
   · obtain ⟨hQ8, h6, hQD⟩ := P.sizesA hw
     have hB : Spec.Ecdsa.nBits P.R.E.C = 8 * P.Q := by
       have h₁ := (P.R.sizesA hw).2.1; have h₂ := (P.R.sizesA hw).2.2.1; show _ = 8 * P.R.E.C.len; omega_arith
-    have e4 : 4 * P.k = P.Q := by simp only [RfcHash.k, RfcHash.Q, RfcHash.w] at *; omega_arith
+    have e4 : 4 * P.k = P.Q := by simp only [RfcHash.k, RfcHash.Q] at *; omega_arith
     have hwc : (cfgOf P).wide = false := hw
     simp only [hwc, Bool.false_eq_true, ite_false]
     refine WP.mono (reduce_ok (P := P) hw hL hc (by rw [e4, ← hD]; exact hQD)) fun u₁ ⟨hc₁, _, hh₁⟩ => ?_
@@ -196,10 +196,10 @@ theorem hOf_kvw (hL : L.Ok) {m m' : Mem} (hf : Frame (KVW L) m m') : hOf P L m' 
   cases hw : P.R.wide
   · obtain ⟨hQ8, h6, hQD⟩ := P.sizesA hw
     simp only [Bool.false_eq_true, ite_false]
-    refine bytesAt_frame hf (fun r hr => ?_) (by simp only [RfcHash.Q, RfcHash.w] at *; omega_arith)
+    refine bytesAt_frame hf (fun r hr => ?_) (by simp only [RfcHash.Q] at *; omega_arith)
     simp only [KVW, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · exact hL.stk_SCR (by simp only [RfcHash.Q, RfcHash.w] at *; omega_arith)
+    · exact hL.stk_SCR (by simp only [RfcHash.Q] at *; omega_arith)
     · exact Offset.disjoint_base _ (by omega_arith) (by omega_arith)
   · simp only [ite_true]
     refine congrArg (_ ++ ·) (bytesAt_frame hf (fun r hr => ?_) (by anums))
@@ -268,8 +268,8 @@ theorem blocks_eq (P : RfcHash) : Spec.Ecdsa.Rfc6979.blocks P.R.E.C P.F.H.D = P.
   · obtain ⟨hQ8, h6, hQD⟩ := P.sizesA hw
     have h₁ := (P.R.sizesA hw).2.1; have h₂ := (P.R.sizesA hw).2.2.1
     simp only [RfcHash.nb, hw, Bool.false_eq_true, ite_false]
-    exact Nat.div_eq_of_lt_le (by simp only [RfcHash.Q, RfcHash.w] at *; omega_arith)
-      (by simp only [RfcHash.Q, RfcHash.w] at *; omega_arith)
+    exact Nat.div_eq_of_lt_le (by simp only [RfcHash.Q] at *; omega_arith)
+      (by simp only [RfcHash.Q] at *; omega_arith)
   · obtain ⟨hw9, hQ66, hD64, -⟩ := P.sizesW hw
     have h₂ := (P.R.sizesW hw).2.2
     simp only [RfcHash.nb, hw, ite_true, h₂, hD64]

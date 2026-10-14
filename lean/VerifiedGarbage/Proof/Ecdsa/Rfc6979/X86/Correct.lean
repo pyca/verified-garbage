@@ -125,7 +125,7 @@ theorem stageB_ok (hL : L.Ok) (hk : CoreOk P L) {u : State} (hc : Ctx L g m₀ u
   · obtain ⟨hQ8, h6, hQD⟩ := P.sizesA hw
     have hB : Spec.Ecdsa.nBits P.R.E.C = 8 * P.Q := by
       have h₁ := (P.R.sizesA hw).2.1; have h₂ := (P.R.sizesA hw).2.2.1; show _ = 8 * P.R.E.C.len; omega
-    have e4 : 4 * P.k = P.Q := by simp only [RfcHash.k, RfcHash.Q, RfcHash.w] at *; omega
+    have e4 : 4 * P.k = P.Q := by simp only [RfcHash.k, RfcHash.Q] at *; omega
     have hwc : (cfgOf P).wide = false := hw
     simp only [hwc, Bool.false_eq_true, ite_false]
     refine WP.mono (reduce_ok (P := P) hw hL hc hsi (by rw [e4, ← hD]; exact hQD)) fun u₁ ⟨hc₁, _, hh₁⟩ => ?_
@@ -395,7 +395,7 @@ theorem body_nosp (P : RfcHash) : NoSp (cfgOf P).body := by
   have hU := allInstrs_of_noSp P.ok.hH.updSp
   have hF := allInstrs_of_noSp P.ok.hfSp
   have hK := allInstrs_of_noSp P.R.coreNs
-  have hw : (cfgOf P).w = 2 * P.R.E.n := rfl
+  have hw : (cfgOf P).w = 2 * P.R.E.n - (if P.R.E.C.len = 28 then 1 else 0) := rfl
   have hl : (cfgOf P).len = P.R.E.C.len := rfl
   have hwd : (cfgOf P).wide = P.R.wide := rfl
   have hsh : (cfgOf P).sh = P.R.sh := rfl
@@ -405,14 +405,14 @@ theorem body_nosp (P : RfcHash) : NoSp (cfgOf P).body := by
     rfl
   cases hW : P.R.wide
   · have hR := reduceKV_nosp (cfgOf P)
-    obtain ⟨hn, hlen, -, -⟩ := P.R.sizesA hW
+    have hlen := P.lengthsA hW
     simp only [Cfg.body, Cfg.tryOne, Cfg.cand, Cfg.rekeyFull, Cfg.rekey, Cfg.hmacV, Cfg.hmac, Code.allInstrs.eq_2,
       Code.allInstrs.eq_3, Code.allInstrs.eq_4, Code.allInstrs.eq_5, Code.allInstrs.eq_6, hwd, hW,
       Bool.false_eq_true, ite_false, cfgOf_F, coreC_eq, hI, hU, hF, hK, hR, initCnt_nosp, Bool.and_true,
       Bool.true_and]
-    simp only [hl, hlen]
-    rcases P.hDB with ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ <;> rcases hn with h'' | h'' | h'' <;>
-      simp only [h, h', h''] <;> decide +kernel
+    simp only [hl]
+    rcases P.hDB with ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ <;> rcases hlen with h'' | h'' | h'' | h'' <;>
+      simp only [show P.R.E.C.len = P.Q from rfl, h, h', h''] <;> decide +kernel
   · obtain ⟨hn, hlen, -⟩ := P.R.sizesW hW
     obtain ⟨-, -, hD, hB⟩ := P.sizesW hW
     have h7 := sh7 hW

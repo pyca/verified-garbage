@@ -1,6 +1,11 @@
 //! RFC 6979 §A.2.4: P-224, with SHA-224.
 
-#![cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
+#![cfg(any(
+    target_arch = "x86_64",
+    target_arch = "x86",
+    target_arch = "aarch64",
+    target_arch = "arm"
+))]
 
 use verified_garbage::ecdsa::{Error, P224, SigningKey, VerifyingKey};
 use verified_garbage::hashes::sha224::Sha224;
@@ -39,6 +44,35 @@ fn p224_sha224() {
         assert_eq!(signed, [Ok(*rs); 2], "{hash} {message}");
     }
     assert_eq!(format!("{key:?}"), "SigningKey { .. }");
+}
+
+/// RFC 6979's bits2octets reduces the full seven-word digest modulo n.
+/// These boundary inputs exercise the subtraction that ordinary hashes
+/// almost never need; the key and order come from the published RFC.
+#[test]
+fn p224_sha224_digest_reduction() {
+    let (n, x, q, _) = p224();
+    let signing = SigningKey::<P224>::from_bytes(&x);
+    let verifying = VerifyingKey::<P224>::from_bytes(&q);
+    for (digest, reduced) in [(n, [0; 28]), (add(&n, 1), add(&[0; 28], 1))] {
+        let signature = signing.sign_prehashed::<Sha224>(&digest).unwrap();
+        assert_eq!(signing.sign_prehashed::<Sha224>(&reduced), Ok(signature));
+        assert_eq!(
+            verifying.verify_prehashed::<Sha224>(&digest, &signature),
+            Ok(())
+        );
+        assert_eq!(
+            verifying.verify_prehashed::<Sha224>(&reduced, &signature),
+            Ok(())
+        );
+    }
+    for digest in [add(&n, -1), [0xff; 28]] {
+        let signature = signing.sign_prehashed::<Sha224>(&digest).unwrap();
+        assert_eq!(
+            verifying.verify_prehashed::<Sha224>(&digest, &signature),
+            Ok(())
+        );
+    }
 }
 
 /// The signatures verify with the public key, and not of another message,

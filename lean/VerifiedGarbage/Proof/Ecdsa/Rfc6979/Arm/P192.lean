@@ -42,7 +42,7 @@ def p192 (hL : Weierstrass.Law Spec.P192.curve) : RfcCurve where
   inst := Spec.Ecdsa.P192.inst
   curve := rfl
   wide := false
-  sizes := ⟨.inl rfl, rfl, p192_nBits, by decide +kernel⟩
+  sizes := ⟨.inl rfl, .inl rfl, p192_nBits, by decide +kernel⟩
   n_lt := by decide +kernel
   sh := 0
   sh_eq := by show 8 * 24 - Spec.Ecdsa.nBits Spec.P192.curve = 0; rw [p192_nBits]

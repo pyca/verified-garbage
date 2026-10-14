@@ -170,13 +170,12 @@ structure Blks (Q D B : Nat) (wide : Bool) : Prop where
 
 theorem blks (P : RfcHash) : Blks P.Q P.F.H.D P.F.H.B P.R.wide := by
   cases hw : P.R.wide
-  · obtain ⟨hQ8, h6, hQD⟩ := P.sizesA hw
-    have hQ : P.Q = 8 * P.w := hQ8
-    rw [hQ]
-    rcases (P.R.sizesA hw).1 with hn | hn | hn <;> rcases P.hDB with ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ <;>
-      rw [show P.w = P.R.E.n from rfl, hn, h, h'] <;>
+  · have hQD := (P.sizesA hw).2.2
+    rcases P.lengthsA hw with hQ | hQ | hQ | hQ <;>
+      rcases P.hDB with ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ <;>
+      simp only [hQ, h, h'] <;>
       first
-      | (exfalso; rw [hQ, show P.w = P.R.E.n from rfl, hn, h] at hQD; omega)
+      | (exfalso; rw [hQ, h] at hQD; omega)
       | exact ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
           ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
           ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
@@ -214,7 +213,8 @@ theorem wideBlks (hw : P.R.wide = true) : WideBlks P := by
   obtain ⟨hw9, hQ66, hD64, -⟩ := P.sizesW hw
   have hsh := sh7 hw
   have e₁ : (cfgOf P).len = 66 := hQ66
-  have e₂ : (cfgOf P).w = 18 := by show 2 * P.R.E.n = 18; simp only [RfcHash.w] at hw9; omega
+  have e₂ : (cfgOf P).w = 18 := by
+    simp only [cfgOf, show P.R.E.C.len = 66 from hQ66, show P.R.E.n = 9 from hw9]; decide
   have e₃ : (cfgOf P).F.H.D = 64 := hD64
   have e₄ : (cfgOf P).sh = 7 := hsh
   refine ⟨?_, ?_, ?_⟩ <;> simp only [Cfg.coreDigest, Cfg.keepV, Cfg.candTop, Cfg.conv, e₁, e₂, e₃, e₄] <;>

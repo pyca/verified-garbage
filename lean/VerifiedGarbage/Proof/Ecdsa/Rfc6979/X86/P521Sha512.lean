@@ -73,7 +73,7 @@ def pack (hL : Weierstrass.Law Spec.P521.curve) : RfcHash where
     exact Proof.Hmac.Generic.Common.finalHash_length _ _
   tries_pos := Nat.le_of_ble_eq_true rfl
   tries_lt := Nat.le_of_ble_eq_true rfl
-  hDB := .inr (.inr ⟨rfl, rfl⟩)
+  hDB := .inr (.inr (.inl ⟨rfl, rfl⟩))
   hS := Nat.le_of_ble_eq_true rfl
   hWi := Nat.le_of_ble_eq_true rfl
   hWf := Nat.le_of_ble_eq_true rfl

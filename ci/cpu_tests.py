@@ -282,6 +282,7 @@ GROUPS = {
             "cavp::sha224",
             "pbkdf2::sha224",
             "rfc6979::p224::p224_sha224",
+            "rfc6979::p224::p224_sha224_digest_reduction",
             "wycheproof::ecdsa_p224::ecdsa_secp224r1_sha224_p1363_test",
             "wycheproof::hmac_sha224",
             "wycheproof::pbkdf2_sha224",
