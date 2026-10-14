@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.ZeroStep
 public import VerifiedGarbage.Proof.Mont.Words32
+public import VerifiedGarbage.Proof.Framework.CallLay
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -18,7 +19,7 @@ open VG.Proof.X25519.Arm (Rest ofNat_beq_zero)
 structure ZeroCtx (s : State) (base : BitVec 32) (size o n : Nat) : Prop where
   nowrap : base.toNat + size ≤ 2 ^ 32
   fits : o + 4 * n ≤ size
-  writable : (⟨State.addr base, size⟩ : Region) ∈ s.wr
+  writable : InRegions s.wr (State.addr base) size
 
 structure ZeroInv (s0 : State) (base : BitVec 32) (o n i : Nat) (s : State) : Prop where
   index : i ≤ n
@@ -38,7 +39,7 @@ theorem zeroBody_ok {s0 s : State} {base : BitVec 32} {size o n i : Nat}
   have writable (d : Nat) (hd : d + 4 ≤ size) :
       InRegions s.wr (off (State.addr base) d) 4 := by
     rw [inv.rest.wr]
-    exact ⟨_, ctx.writable, Offset.contains_base _ hd (by omega)⟩
+    exact CallLay.inRegions_sub ctx.writable hd (by omega)
   have alo : State.addr (s.gpr .r0 + BitVec.ofNat 32 0) =
       off (State.addr base) (o + 4 * i) := by
     rw [inv.ptr, Offset.add_add, Nat.add_zero]

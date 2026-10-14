@@ -20,7 +20,7 @@ theorem loadBE_ok (s : State) {src dst : BitVec 32} {n k : Nat}
     (hk : 0 < k) (fit : k ≤ 4 * n) (countFits : k < 2 ^ 32)
     (srcFit : src.toNat + k ≤ 2 ^ 32) (dstFit : dst.toNat + 4 * n ≤ 2 ^ 32)
     (read : InRegions (s.rd ++ s.wr) (State.addr src) k)
-    (write : (⟨State.addr dst, 4 * n⟩ : Region) ∈ s.wr)
+    (write : InRegions s.wr (State.addr dst) (4 * n))
     (sep : Region.Disjoint ⟨State.addr src, k⟩ ⟨State.addr dst, 4 * n⟩)
     (p0 : s.gpr .r0 = dst) (p4 : s.gpr .r4 = src) (p5 : s.gpr .r5 = dst)
     (p6 : s.gpr .r6 = BitVec.ofNat 32 k) (count : s.gpr .lr = BitVec.ofNat 32 n)
@@ -41,7 +41,8 @@ theorem loadBE_ok (s : State) {src dst : BitVec 32} {n k : Nat}
   have vr : InRegions (v.rd ++ v.wr) (State.addr src) k := by rw [keep.rd, keep.wr]; exact read
   have vw : InRegions v.wr (State.addr dst) k := by
     rw [keep.wr]
-    exact ⟨_, write, by simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero, Nat.zero_add]; exact fit⟩
+    simpa only [BitVec.ofNat_eq_ofNat, BitVec.add_zero] using
+      CallLay.inRegions_sub (off := 0) write (by omega : 0 + k ≤ 4 * n) (by omega)
   have ctx := reverseCtx_of_regions v src dst countFits srcFit (by omega) vr vw
     (sep.sub_right (Region.sub_prefix fit))
   refine WP.mono (reverseBytes_ok v ctx hk

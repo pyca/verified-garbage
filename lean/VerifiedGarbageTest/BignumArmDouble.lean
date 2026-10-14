@@ -1,4 +1,4 @@
-import VerifiedGarbage.Proof.Bignum.Arm.DoubleLoopCT
+import VerifiedGarbage.Proof.Bignum.Arm.R2CT
 import VerifiedGarbage.Proof.Bignum.Arm.DoubleBody
 import VerifiedGarbage.Proof.Bignum.Arm.DoubleFnRestore
 import VerifiedGarbage.Proof.Bignum.Arm.KeepsLayout
@@ -22,3 +22,7 @@ import VerifiedGarbage.TCB.Audit
 #assert_standard_axioms VG.Proof.Bignum.Arm.r2_from_one
 #assert_standard_axioms VG.Proof.Bignum.Arm.doubleLoop_ct
 #assert_no_compiler_overrides VG.Impl.Bignum.Arm.doubleLoop
+
+#assert_standard_axioms VG.Proof.Bignum.Arm.r2_ok
+#assert_standard_axioms VG.Proof.Bignum.Arm.r2_ct
+#assert_no_compiler_overrides VG.Impl.Bignum.Arm.r2

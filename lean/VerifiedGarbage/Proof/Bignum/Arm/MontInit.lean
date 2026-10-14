@@ -48,7 +48,7 @@ theorem montInit_ok (s : State) {base : BitVec 32} {size out tmp a b mod acc n :
   refine WP.mono (prepareZero_ok u ((restU.gpr .r7 (by simp)).trans regs.count)) ?_
   rintro v ⟨ptrV, countV, zeroV, memV, restV⟩
   have cv : ZeroCtx v base size acc (n + 2) := ⟨nowrap, ctx.accFits, by
-    rw [restV.wr, restU.wr]; exact ctx.workspace.writable⟩
+    rw [restV.wr, restU.wr]; exact ⟨_, ctx.workspace.writable, Region.contains_self _ _⟩⟩
   have pv : v.gpr .r0 = base + BitVec.ofNat 32 acc :=
     ptrV.trans ((restU.gpr .r6 (by simp)).trans regs.accPtr)
   rw [WP.seq_iff]
