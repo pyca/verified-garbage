@@ -296,10 +296,22 @@ def source_refs(n: str) -> set[str]:
         return set()
     out = set()
     for key in json.loads(p.read_text())["references"]:
+        # Most keys are `{"c":{"m":"<module>",…}}`: read the module without
+        # decoding the key (a million keys in all), unless it has an escape.
+        if key.startswith(ILEAN_CONST):
+            end = key.find('"', len(ILEAN_CONST))
+            m = key[len(ILEAN_CONST):end]
+            if "\\" not in m:
+                out.add(m)
+                continue
         ref = json.loads(key)
-        if "c" in ref and ref["c"]["m"] != n:
+        if "c" in ref:
             out.add(ref["c"]["m"])
+    out.discard(n)
     return out
+
+
+ILEAN_CONST = '{"c":{"m":"'
 
 
 def plan_visibility(mods: dict) -> dict:
@@ -325,15 +337,29 @@ def plan_visibility(mods: dict) -> dict:
     for n in project:
         p = module_path(n)
         src[n] = p.read_text() if p.exists() else ""
-    surface = {n for n in project
-               if mods[n][3] or SURFACE_SYNTAX.search(src[n]) or SIMP_ATTR.search(src[n])}
-    keep = {n for n in names if n not in project or n in surface or not is_module(src[n].split("\n"))}
+    syntax = {n for n in project if SURFACE_SYNTAX.search(src[n])}
+    modules = {n for n in project if is_module(src[n].split("\n"))}
+    surface = {n for n in project if mods[n][3] or n in syntax or SIMP_ATTR.search(src[n])}
+    keep = {n for n in names if n not in project or n in surface or n not in modules}
     implicit = {n for n in names if n == "Init" or n.startswith("Init.")}
-    bit = lambda ns: sum(1 << idx[n] for n in ns if n in idx)
+    # Sets of modules are bit sets over their indices, built through a
+    # byte array: adding bits one at a time to an int copies it each time.
+    nbytes = len(names) // 8 + 1
+
+    def bit(ns) -> int:
+        b = bytearray(nbytes)
+        for n in ns:
+            i = idx.get(n)
+            if i is not None:
+                b[i >> 3] |= 1 << (i & 7)
+        return int.from_bytes(b, "little")
+
+    implicit_bits = bit(implicit)
     ns_owners: dict[str, set] = {}
     for n in project:
         for ns in mods[n][4]:
             ns_owners.setdefault(ns, set()).add(n)
+    ns_bits = {ns: bit(owners) for ns, owners in ns_owners.items()}
 
     def order():
         seen, out = set(), []
@@ -366,15 +392,15 @@ def plan_visibility(mods: dict) -> dict:
 
     old_pub = lambda n: [m for m, p, mt in mods[n][0] if p and m in mods]
     old_clo = closures(old_pub)
-    keep_bits = bit(keep - implicit)
+    keep_bits = bit(keep) & ~implicit_bits
     plan, new_pub_edges = {}, {}
     new_clo = {}
     for n in order():
         imports = mods[n][0]
-        if n not in project or not is_module(src[n].split("\n")):
+        if n not in modules:
             new_pub_edges[n] = old_pub(n)
         else:
-            pub_need = bit(mods[n][1] - implicit) & ~(1 << idx[n])
+            pub_need = bit(mods[n][1]) & ~implicit_bits & ~(1 << idx[n])
             public, private, optional = [], [], []
             # A module imported twice alike is decided once, as its most
             # visible import.
@@ -420,17 +446,17 @@ def plan_visibility(mods: dict) -> dict:
                     old_sees |= old_clo[m]
             # The `.ilean` also names builtins (an option, a simproc) from
             # modules it does not import: only what it sees counts.
-            need = (bit(mods[n][2] - implicit) | (bit(source_refs(n) - implicit) & old_sees)
+            need = ((bit(mods[n][2]) | (bit(source_refs(n)) & old_sees)) & ~implicit_bits
                     | (old_sees & keep_bits))
             # A macro's quotations name constants that neither its terms nor
             # its `.ilean` show: a module defining one keeps all it sees.
-            if SURFACE_SYNTAX.search(src[n]):
-                need |= old_sees & ~bit(implicit)
+            if n in syntax:
+                need |= old_sees & ~implicit_bits
             # What a module uses it sees today: an import added for it changes
             # what no module sees, and adds no dependency.
             unseen = need & ~old_sees & ~(1 << idx[n])
             if unseen:
-                bad = [names[i] for i in range(unseen.bit_length()) if unseen >> i & 1]
+                bad = [names[i] for i in members(unseen)]
                 raise SystemExit(f"{n} uses {bad[:3]}, which it does not see: rerun ImportUses.lean")
             add = cover(need & ~sees & ~(1 << idx[n]), names, new_clo)
             for m in add:
@@ -439,15 +465,17 @@ def plan_visibility(mods: dict) -> dict:
             # sight, one the module sees today (an import, as above, that
             # changes what no module sees).
             for cands in opened_namespaces(src[n]):
-                owners = bit(o for ns in cands for o in ns_owners.get(ns, ()))
+                owners = 0
+                for ns in cands:
+                    owners |= ns_bits.get(ns, 0)
                 if owners & old_sees and not owners & (sees | 1 << idx[n]):
-                    m = min((names[i] for i in range(owners.bit_length()) if owners >> i & 1 and old_sees >> i & 1),
+                    m = min((names[i] for i in members(owners & old_sees)),
                             key=lambda o: (-new_clo[o].bit_count(), o), default=None)
                     if m is not None:
                         add.append(m)
                         sees |= new_clo[m]
             # What a macro names, it names where it expands: importers see it.
-            if SURFACE_SYNTAX.search(src[n]):
+            if n in syntax:
                 add_pub, add = add_pub + add, []
             if demoted or add_pub or add:
                 plan[n] = (demoted, add_pub, add)
@@ -463,7 +491,7 @@ def cover(missing: int, names: list[str], clo: dict) -> list[str]:
     """Modules whose public closures together cover the bit set `missing`,
     taking the largest closures first (a closure contains those of the
     modules in it)."""
-    ms = [names[i] for i in range(missing.bit_length()) if missing >> i & 1]
+    ms = [names[i] for i in members(missing)]
     ms.sort(key=lambda m: (-clo[m].bit_count(), m))
     out, covered = [], 0
     for m in ms:
@@ -474,6 +502,11 @@ def cover(missing: int, names: list[str], clo: dict) -> list[str]:
             covered |= clo[m]
     assert missing & ~covered == 0
     return sorted(out)
+
+
+def members(bits: int) -> list[int]:
+    """The indices of the bits set in `bits`, in increasing order."""
+    return [i for i, c in enumerate(reversed(bin(bits))) if c == "1"]
 
 
 _IDX = {}
