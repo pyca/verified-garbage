@@ -241,6 +241,24 @@ theorem remTo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {P : Nat → 
           ⟨oAddr s₀ (16 * e), 16 * r⟩
         rw [Offset.add_add]
         exact (hp.o_p.symm.sub_left (Offset.sub_base _ (by omega))).sub_right (Offset.sub_base _ (by omega)) }
+  have hK : E.OkK :=
+    { inSK := by
+        show InRegions (s₃.rd ++ s₃.wr) (sAddr s₀ (16 * e) + BitVec.ofNat 64 (16 * 0)) (16 * (r % 4))
+        rw [hrd₃, hwr₃, Offset.add_add, ← Nat.mul_add]
+        exact in_sub hp.s_in (by omega)
+      inKK := by
+        show InRegions (s₃.rd ++ s₃.wr) (pp s₀ + BitVec.ofNat 64 (768 + 16 * 0)) (16 * (r % 4))
+        rw [hrd₃, hwr₃]
+        exact in_rdwr (in_sub hp.p_in (by omega))
+      inDK := by
+        show InRegions s₃.wr (oAddr s₀ (16 * e) + BitVec.ofNat 64 (16 * 0)) (16 * (r % 4))
+        rw [hwr₃, Offset.add_add, ← Nat.mul_add]
+        exact in_sub hp.o_in (by omega)
+      inWK := by
+        show InRegions (s₃.rd ++ s₃.wr) (pp s₀ + BitVec.ofNat 64 (256 - 16 * r) + BitVec.ofNat 64 (16 * 0))
+          (16 * (r % 4))
+        rw [hrd₃, hwr₃, Offset.add_add]
+        exact in_rdwr (in_sub hp.p_in (by omega)) }
   have hI₃ : RInv1 E 0 s₃ :=
     { le := Nat.zero_le _, r10 := z₃
       r9 := by
@@ -266,7 +284,7 @@ theorem remTo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {P : Nat → 
       m1 := fun l hl => by
         rw [l₃ _ (by decide) (by decide) (by decide) l hl]
         exact h1₂ l hl }
-  refine WP.seq (WP.mono (remLoops_ok hE h4 hI₃) fun s₄ hI₄ => ?_)
+  refine WP.seq (WP.mono (remLoops_ok hE h4 hK hI₃) fun s₄ hI₄ => ?_)
   -- `Y` stored.
   have hrcx : s₄.gpr .rcx = yp s₀ := by
     rw [hI₄.gpr _ (by decide) (by decide)]

@@ -139,15 +139,15 @@ def remQuad (src : Reg) : List Instr :=
 
 /-- The first `r mod 4` (2 or 3) of the last `r` blocks, at `src`, through
 the mask in `r10` (bits `2 (r mod 4) - 1` … 0, `remMask`), in the lanes of
-`zmm7`: their powers (at `rax`) into `zmm13` and their keystream (at
-`scratch + 768`) into `zmm12`, the ciphertext written to `rdx`, and each
+`zmm7`: their powers (at `rax`) into `zmm12` and their keystream (at
+`scratch + 768`) into `zmm13`, the ciphertext written to `rdx`, and each
 lane's product added to that lane's, with `Y` added to the first; then `Y`
 cleared. The masked-off lanes are zero, and read and write nothing. -/
 def remQuadK (src : Reg) : List Instr :=
-  ([.kLoad .r10 .xmm13 (at_ .rax 0), .kLoad .r10 .xmm7 (at_ src 0), .kLoad .r10 .xmm12 (at_ .r11 768),
-   .zop (.zbin .vpxord .xmm7 .xmm7 .xmm12), .kStore (at_ .rdx 0) .r10 .xmm7,
+  ([.kLoad .r10 .xmm12 (at_ .rax 0), .kLoad .r10 .xmm7 (at_ src 0), .kLoad .r10 .xmm13 (at_ .r11 768),
+   .zop (.zbin .vpxord .xmm7 .xmm7 .xmm13), .kStore (at_ .rdx 0) .r10 .xmm7,
    .zop (.zbin .vpshufb .xmm7 .xmm7 .xmm0), .zop (.zbin .vpxord .xmm7 .xmm7 .xmm2)] : List Instr) ++
-  StitchZ.acc .xmm7 .xmm13 ++ ([.zop (.zbin .vpxord .xmm2 .xmm2 .xmm2)] : List Instr)
+  StitchZ.acc .xmm7 .xmm12 ++ ([.zop (.zbin .vpxord .xmm2 .xmm2 .xmm2)] : List Instr)
 
 /-- The mask of `r mod 4` (2 or 3) blocks in `r10`, from `r9 = 16 + r`. -/
 def remMask : Prog isa :=
@@ -224,12 +224,12 @@ def remQuadD (src : Reg) : List Instr :=
   StitchZ.acc .xmm7 .xmm12 ++ ([.zop (.zbin .vpxord .xmm2 .xmm2 .xmm2)] : List Instr)
 
 /-- `remQuadK` for decryption: the blocks at `src` are hashed as they are
-read, and their keystream added to them in `zmm12`, written to `rdx`. -/
+read, and their keystream added to them in `zmm13`, written to `rdx`. -/
 def remQuadKD (src : Reg) : List Instr :=
-  ([.kLoad .r10 .xmm13 (at_ .rax 0), .kLoad .r10 .xmm7 (at_ src 0), .kLoad .r10 .xmm12 (at_ .r11 768),
-   .zop (.zbin .vpxord .xmm12 .xmm12 .xmm7), .kStore (at_ .rdx 0) .r10 .xmm12,
+  ([.kLoad .r10 .xmm12 (at_ .rax 0), .kLoad .r10 .xmm7 (at_ src 0), .kLoad .r10 .xmm13 (at_ .r11 768),
+   .zop (.zbin .vpxord .xmm13 .xmm13 .xmm7), .kStore (at_ .rdx 0) .r10 .xmm13,
    .zop (.zbin .vpshufb .xmm7 .xmm7 .xmm0), .zop (.zbin .vpxord .xmm7 .xmm7 .xmm2)] : List Instr) ++
-  StitchZ.acc .xmm7 .xmm13 ++ ([.zop (.zbin .vpxord .xmm2 .xmm2 .xmm2)] : List Instr)
+  StitchZ.acc .xmm7 .xmm12 ++ ([.zop (.zbin .vpxord .xmm2 .xmm2 .xmm2)] : List Instr)
 
 /-- `remLoops` for decryption. -/
 def remLoopsD (src : Reg) : Prog isa :=

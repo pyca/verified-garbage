@@ -4,6 +4,8 @@ import VerifiedGarbage.Proof.Gcm.X86_64.Rev
 import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Base
 import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Ctr32
 public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemQuad
+public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemQuadK
+public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemMask
 public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemLoopOne
 import VerifiedGarbage.Proof.Framework.X86_64.Lane0Zero
 import all Init.Data.Array.Basic
@@ -19,9 +21,10 @@ import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.SpecP
 (read through `src`), their keystream at `P + 768` and their powers at `W`,
 write their encryption to `A` and leave in `Y` their products with their
 powers (`Y` added to the first), reduced and added. The first `r mod 4`
-blocks go one at a time to lane 0 (`remStep1_ok`, `RInv1`), the rest four at
-a time, one to each lane (`remStep4_ok`, `RInv4`): block `j` to lane
-`laneOf r j`, whose products are `laneAcc`. `StitchZ.fin` reduces the four
+blocks go each to its own lane: one alone to lane 0 (`remStep1_ok`, `RInv1`),
+two or three through a mask (`remStepK_ok`); the rest four at a time, one to
+each lane (`remStep4_ok`, `RInv4`): block `j` to lane `laneOf r j`, whose
+products are `laneAcc`. `StitchZ.fin` reduces the four
 lanes and adds them (`RPost`).
 -/
 
@@ -40,9 +43,9 @@ open VG.Proof.Gcm.X86_64.Stitch (blockAt_writeW_sep')
 open VG.Proof.Aes.X86_64.AesNi (blockAt_frame)
 open VG.Spec.Gcm (Block blockAt)
 
-/-- The lane block `j` of the last `r` goes to: the first `r mod 4` to lane
-0, the others four at a time, one to each lane. -/
-def laneOf (r j : Nat) : Nat := if j < r % 4 then 0 else (j - r % 4) % 4
+/-- The lane block `j` of the last `r` goes to: each of the first `r mod 4`
+to its own, the others four at a time, one to each lane. -/
+def laneOf (r j : Nat) : Nat := if j < r % 4 then j else (j - r % 4) % 4
 
 /-- The products in lane `l` of the first `n` of the last `r` blocks `X`
 with their powers `T`, `y` added to the first. -/
@@ -59,19 +62,26 @@ theorem laneAcc_congr {X X' : Nat → Block} {T T' : Nat → BitVec 128} (y : Bl
     rw [laneAcc_congr y r l n (fun j hj => hX j (by omega)) (fun j hj => hT j (by omega)), hX n (by omega),
       hT n (by omega)]
 
-/-- Lanes 1–3 have none of the first `r mod 4` blocks. -/
-theorem laneAcc_hi {X : Nat → Block} {T : Nat → BitVec 128} {y : Block} {r l : Nat} (hl : 1 ≤ l) :
-    ∀ n, n ≤ r % 4 → laneAcc X T y r l n = Prod.zero
-  | 0, _ => rfl
+/-- The first `r mod 4` blocks, each in its own lane. -/
+theorem laneAcc_first {X : Nat → Block} {T : Nat → BitVec 128} {y : Block} {r l : Nat} :
+    ∀ n, n ≤ r % 4 → laneAcc X T y r l n =
+      if l < n then Prod.zero.acc ((if l = 0 then y else 0) ^^^ X l) (T l) else Prod.zero
+  | 0, _ => by simp [laneAcc]
   | n + 1, hn => by
-    have h0 : laneOf r n = 0 := by unfold laneOf; split <;> omega
+    have h0 : laneOf r n = n := by unfold laneOf; rw [ite_eq_left (show n < r % 4 by omega)]
     simp only [laneAcc, h0]
-    split
-    · omega
-    · exact laneAcc_hi hl n (by omega)
+    rw [laneAcc_first n (by omega)]
+    by_cases hnl : n = l
+    · subst hnl
+      rw [ite_eq_left rfl, ite_eq_right (Nat.lt_irrefl n), ite_eq_left (Nat.lt_succ_self n)]
+    · rw [ite_eq_right hnl]
+      by_cases hl : l < n
+      · rw [ite_eq_left hl, ite_eq_left (show l < n + 1 by omega)]
+      · rw [ite_eq_right hl, ite_eq_right (show ¬ l < n + 1 by omega)]
 
-/-- One of the first `r mod 4` blocks, to lane 0. -/
-theorem laneAcc_lo {X : Nat → Block} {T : Nat → BitVec 128} {y : Block} {r i : Nat} (hi : i < r % 4) :
+/-- The block alone of the first `r mod 4 = 1`, to lane 0. -/
+theorem laneAcc_lo {X : Nat → Block} {T : Nat → BitVec 128} {y : Block} {r i : Nat} (hi : i < r % 4)
+    (h1 : r % 4 = 1) :
     laneAcc X T y r 0 (i + 1) = (laneAcc X T y r 0 i).acc ((if i = 0 then y else 0) ^^^ X i) (T i) := by
   have h0 : laneOf r i = 0 := by unfold laneOf; split <;> omega
   simp only [laneAcc, h0, ite_true]
@@ -163,7 +173,8 @@ theorem addrLK (p : Addr) (i l : Nat) :
   rw [Offset.add_add, Nat.mul_add, Nat.add_assoc]
 
 /-- One block, to lane 0. -/
-theorem remStep1_ok {E : REnv} (hE : E.Ok) {i : Nat} (hi : i < E.r % 4) {t : State} (hI : RInv1 E i t) :
+theorem remStep1_ok {E : REnv} (hE : E.Ok) {i : Nat} (hi : i < E.r % 4) (h1 : E.r % 4 = 1) {t : State}
+    (hI : RInv1 E i t) :
     WP isa (.block (remBody E.src ++ remNext1)) t fun t' =>
       RInv1 E (i + 1) t' ∧ t'.zf = some (decide (E.r % 4 = i + 1)) := by
   have r15 := hE.r15
@@ -227,7 +238,7 @@ theorem remStep1_ok {E : REnv} (hE : E.Ok) {i : Nat} (hi : i < E.r % 4) {t : Sta
         rw [blockAt_eq, Mem.readW_writeW_self _ _ 16 _ (by decide), hX]
     · have e : prod (t'.proj 0) = prod (t₁.proj 0) := by
         simp only [prod, State.proj_xmm, ln]
-      rw [e, p₁, hI.prod, hX, rW, ← State.zlane_lt2 _ _ (by decide), hI.y 0 (by decide), laneAcc_lo hi,
+      rw [e, p₁, hI.prod, hX, rW, ← State.zlane_lt2 _ _ (by decide), hI.y 0 (by decide), laneAcc_lo hi h1,
         Nat.add_zero, BitVec.xor_comm]
     · obtain ⟨z8, z9, z10⟩ := hI.zhi l h1 h4
       exact ⟨by rw [zl]; exact hz _ _ h1 h4 z8, by rw [zl]; exact hz _ _ h1 h4 z9,
@@ -311,18 +322,6 @@ theorem remStep4_ok {E : REnv} (hE : E.Ok) (h4 : E.Ok4) {i : Nat} (hi : i < E.r)
     · rw [zl, k₁ .xmm1 (by decide) l hl]; exact hI.m1 l hl
   · rw [z]; congr 1; simp only [decide_eq_decide]; omega
 
-/-- The single blocks, if any. -/
-theorem loop1_ok {E : REnv} (hE : E.Ok) {t : State} (hI : RInv1 E 0 t) (hk : E.r % 4 ≠ 0) :
-    WP isa (.loop (.block (remBody E.src ++ remNext1)) .ne) t (RInv1 E (E.r % 4)) := by
-  refine WP.loop (M := isa) (fun n s => ∃ i, n = E.r % 4 - i ∧ i < E.r % 4 ∧ RInv1 E i s) ?_ (E.r % 4) t
-    ⟨0, rfl, by omega, hI⟩
-  rintro n s ⟨i, rfl, hi, hIs⟩
-  refine WP.mono (remStep1_ok hE hi hIs) fun s' ⟨hI', hz⟩ => ?_
-  by_cases h1 : E.r % 4 = i + 1
-  · refine .inl ⟨by simp [eval, hz, h1], ?_⟩
-    rwa [h1]
-  · exact .inr ⟨by simp [eval, hz, h1], E.r % 4 - (i + 1), by omega, i + 1, rfl, by omega, hI'⟩
-
 /-- The blocks four at a time, if any. -/
 theorem loop4_ok {E : REnv} (hE : E.Ok) (h4 : E.Ok4) {k : Nat} {t : State} (hI : RInv4 E k t) (hk : k < E.r) :
     WP isa (.loop (.block (remQuad E.src ++ remNext4)) .ne) t (RInv4 E E.r) := by
@@ -336,8 +335,8 @@ theorem loop4_ok {E : REnv} (hE : E.Ok) (h4 : E.Ok4) {k : Nat} {t : State} (hI :
   · have := hI'.le
     exact .inr ⟨by simp [eval, hz, h4], E.r - (i + 4), by omega, i + 4, rfl, by omega, hI'⟩
 
-/-- After the single blocks, the lanes are those of `RInv4`. -/
-theorem RInv1.toQuad {E : REnv} {t : State} (h : RInv1 E (E.r % 4) t) (hr : E.r % 4 ≤ E.r) :
+/-- After at most one block alone, the lanes are those of `RInv4`. -/
+theorem RInv1.toQuad {E : REnv} {t : State} (h : RInv1 E (E.r % 4) t) (hr : E.r % 4 ≤ E.r) (h1 : E.r % 4 ≤ 1) :
     RInv4 E (E.r % 4) t :=
   { le := hr, k := Nat.le_refl _, md := by simp, r10 := h.r10, r9 := h.r9, gpr := h.gpr, rd := h.rd,
     wr := h.wr, frame := h.frame, ct := h.ct
@@ -346,10 +345,98 @@ theorem RInv1.toQuad {E : REnv} {t : State} (h : RInv1 E (E.r % 4) t) (hr : E.r 
       · rw [← h.prod]
         simp only [VG.Proof.Gcm.X86_64.Pclmul.prod, State.zproj_xmm, State.proj_xmm, State.zlane_lt2 _ _ (show 0 < 2 by decide)]
       · obtain ⟨z8, z9, z10⟩ := h.zhi l hl0 hl
-        rw [laneAcc_hi hl0 _ (Nat.le_refl _)]
+        rw [laneAcc_first _ (Nat.le_refl _), ite_eq_right (show ¬ l < E.r % 4 by omega)]
         simp only [VG.Proof.Gcm.X86_64.Pclmul.prod, State.zproj_xmm, z8, z9, z10]
         rfl
     y := h.y, m0 := h.m0, m1 := h.m1 }
+
+namespace REnv
+variable (E : REnv)
+
+/-- What the first `r mod 4` blocks, through a mask, need of their regions. -/
+structure OkK : Prop where
+  inSK : InRegions (E.rd ++ E.wr) (E.aS 0) (16 * (E.r % 4))
+  inKK : InRegions (E.rd ++ E.wr) (E.aK 0) (16 * (E.r % 4))
+  inDK : InRegions E.wr (E.aD 0) (16 * (E.r % 4))
+  inWK : InRegions (E.rd ++ E.wr) (E.aW 0) (16 * (E.r % 4))
+
+end REnv
+
+theorem addrK0 (p : Addr) : p + BitVec.ofInt 64 ((0 : Nat) : Int) = p + BitVec.ofNat 64 (16 * 0) := by
+  rw [BitVec.ofInt_natCast]
+
+theorem addrK768 (p : Addr) : p + BitVec.ofInt 64 ((768 : Nat) : Int) = p + BitVec.ofNat 64 (768 + 16 * 0) := by
+  rw [BitVec.ofInt_natCast]
+
+theorem addrK0' (p : Addr) : p + BitVec.ofInt 64 ((0 : Nat) : Int) = p := by
+  rw [BitVec.ofInt_natCast]; exact BitVec.add_zero _
+
+theorem frame_nil {A : Addr} {m m' : Mem} (h : Frame [⟨A, 16 * 0⟩] m m') : m' = m := by
+  funext x
+  exact h x fun r hr => by
+    simp only [List.mem_singleton] at hr; subst hr
+    simp [Region.Contains]
+
+/-- The first `r mod 4` (2 or 3) blocks through a mask, each to its own lane. -/
+theorem remStepK_ok {E : REnv} (hE : E.Ok) (hK : E.OkK) (hc : 2 ≤ E.r % 4) {t : State} (hI : RInv1 E 0 t) :
+    WP isa (.seq Impl.Gcm.X86_64.StitchZH.remMask
+      (.block (Impl.Gcm.X86_64.StitchZH.remQuadK E.src ++ Impl.Gcm.X86_64.StitchZH.remAfterK))) t
+      (RInv4 E (E.r % 4)) := by
+  have r15 := hE.r15
+  have hm0 : t.mem = E.m := frame_nil hI.frame
+  refine WP.seq (WP.mono (remMask_ok t (m := E.r) (by omega) hc (by rw [hI.r9, Nat.sub_zero]))
+    fun t₁ ⟨a10, g₁, l₁, m₁, rd₁, wr₁⟩ => ?_)
+  obtain ⟨hk, hb⟩ := mask_ok (E.r % 4) (by omega) hc
+  have gq : ∀ q, q ≠ .r9 → q ≠ .r10 → t₁.gpr q = E.g q := fun q h9 h10 => by
+    rw [g₁ q h10]; exact hI.gpr q h9 h10
+  have gS : t₁.gpr E.src = E.S := by rw [gq _ hE.src9 hE.src10, hE.gS]
+  have gA : t₁.gpr .rdx = E.A := by rw [gq _ (by decide) (by decide), hE.gA]
+  have gP : t₁.gpr .r11 = E.P := by rw [gq _ (by decide) (by decide), hE.gP]
+  have gW : t₁.gpr .rax = E.W := by rw [gq _ (by decide) (by decide), hE.gW]
+  have mt : t₁.mem = E.m := by rw [m₁, hm0]
+  have rdt : t₁.rd ++ t₁.wr = E.rd ++ E.wr := by rw [rd₁, wr₁, hI.rd, hI.wr]
+  rw [WP.block_append_iff]
+  refine WP.mono (remQuadK_ok E.src t₁ (c := E.r % 4) (by omega) (by rw [a10]; exact hk)
+    (by rw [a10]; exact hb) (fun l hl => by rw [l₁]; exact hI.m0 l hl)
+    (by rw [gS, rdt, addrK0]; exact hK.inSK) (by rw [gP, rdt, addrK768]; exact hK.inKK)
+    (by rw [gA, wr₁, hI.wr, addrK0]; exact hK.inDK) (by rw [gW, rdt, addrK0]; exact hK.inWK))
+    fun t₂ ⟨⟨v, m₂⟩, b₂, p₂, y₂, g₂, rd₂, wr₂, k₂⟩ => ?_
+  refine WP.mono (remAfterK_ok t₂ (m := E.r) (by omega) (by rw [g₂, g₁ _ (by decide), hI.r9, Nat.sub_zero]))
+    fun t₃ ⟨a10', a9', gg, zl, mm, rd₃, wr₃⟩ => ?_
+  rw [gS, gP, gW, mt] at p₂
+  rw [gA, mt] at m₂
+  rw [gA, gS, gP, mt] at b₂
+  -- Block `l` of the first, read and encrypted.
+  have hX : ∀ l, XBinOp.eval .pshufb (E.m.readW (E.S + BitVec.ofInt 64 ((0 : Nat) : Int) + BitVec.ofNat 64 (16 * l)) 128 ^^^
+      E.m.readW (E.P + BitVec.ofInt 64 ((768 : Nat) : Int) + BitVec.ofNat 64 (16 * l)) 128) revMask = E.X l := fun l => by
+    rw [pshufb_rev_xor, addrK0', addrK768, addrLK, Nat.zero_add, ← blockAt_eq, ← blockAt_eq]
+  refine ⟨by omega, Nat.le_refl _, by simp, a10', a9', fun q h9 h10 => by
+      rw [gg q h9 h10, g₂]; exact gq q h9 h10, by rw [rd₃, rd₂, rd₁, hI.rd], by rw [wr₃, wr₂, wr₁, hI.wr], ?_,
+    fun j hj => ?_, fun l hl => ?_, fun l hl => ?_, fun l hl => ?_, fun l hl => ?_⟩
+  · rw [mm, m₂, addrK0']
+    exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _
+      (by rw [show 128 * (E.r % 4) / 8 = 16 * (E.r % 4) by omega]; exact Region.contains_self _ _)
+  · have := b₂ j hj
+    rw [addrK0, addrL, Nat.zero_add] at this
+    rw [mm, this, hX j]
+  · have e : prod (t₃.zproj l) = prod (t₂.zproj l) := by simp only [prod, State.zproj_xmm, zl]
+    have p₁ : prod (t₁.zproj l) = Prod.zero := by
+      rcases Nat.eq_zero_or_pos l with rfl | hl0
+      · have := hI.prod
+        rw [show laneAcc E.X E.T E.y E.r 0 0 = Prod.zero from rfl] at this
+        rw [← this]
+        simp only [prod, State.zproj_xmm, l₁]
+        simp only [State.proj_xmm, State.zlane_lt2 _ _ (show 0 < 2 by decide)]
+      · obtain ⟨z8, z9, z10⟩ := hI.zhi l hl0 hl
+        simp only [prod, State.zproj_xmm, l₁, z8, z9, z10]
+        rfl
+    rw [e, p₂ l hl, p₁, l₁, hI.y l hl, laneAcc_first _ (Nat.le_refl _), Nat.zero_add]
+    by_cases hlc : l < E.r % 4
+    · rw [ite_eq_left hlc, ite_eq_left hlc, ite_eq_left hlc, hX l, addrK0']
+    · rw [ite_eq_right hlc, ite_eq_right hlc, ite_eq_right hlc, Prod.acc_zero_right]
+  · rw [zl, y₂ l hl, ite_eq_right (show ¬ E.r % 4 + l = 0 by omega)]
+  · rw [zl, k₂ .xmm0 (by decide) l hl, l₁]; exact hI.m0 l hl
+  · rw [zl, k₂ .xmm1 (by decide) l hl, l₁]; exact hI.m1 l hl
 
 /-- `test r9, 3`: whether the blocks after the last group are a multiple of four. -/
 theorem test9_ok (s : State) {r : Nat} (hr : r < 16) (h9 : s.gpr .r9 = BitVec.ofNat 64 (16 + r)) :
@@ -401,20 +488,36 @@ theorem RInv4.keep {E : REnv} {i : Nat} {t t' : State} (h : RInv4 E i t) (hg : t
     m0 := fun l hl => by rw [hz]; exact h.m0 l hl
     m1 := fun l hl => by rw [hz]; exact h.m1 l hl }
 
-/-- The loops over the `r` blocks, and the four lanes' products reduced and added into `Y`. -/
-theorem remLoops_ok {E : REnv} (hE : E.Ok) (h4 : E.Ok4) {t : State} (hI : RInv1 E 0 t) :
-    WP isa (remLoops E.src) t (RPost E) := by
+/-- The first `r mod 4` blocks: none, one alone, or two or three through a mask. -/
+theorem remFirst_ok {E : REnv} (hE : E.Ok) (hK : E.OkK) {t : State} (hI : RInv1 E 0 t) :
+    WP isa (Impl.Gcm.X86_64.StitchZH.remFirst (remBody E.src) (Impl.Gcm.X86_64.StitchZH.remQuadK E.src)) t
+      (RInv4 E (E.r % 4)) := by
   have r1 := hE.r1
   have r15 := hE.r15
   refine WP.seq (WP.mono (test9_ok t (r := E.r) (by omega) (by rw [hI.r9, Nat.sub_zero]))
     fun t₁ ⟨z₁, g₁, l₁, m₁, rd₁, wr₁⟩ => ?_)
   have hI₁ := hI.keep g₁ l₁ m₁ rd₁ wr₁
-  refine WP.seq (WP.mono (Q := RInv4 E (E.r % 4)) (WP.ite (decide (E.r % 4 = 0)) (by simp only [eval, z₁])
-    (fun h => WP.block_nil ?_) (fun h => WP.mono (loop1_ok hE hI₁ (by simpa using h))
-      fun t₂ h₂ => h₂.toQuad (Nat.mod_le _ _))) fun t₂ hI₂ => ?_)
+  refine WP.ite (decide (E.r % 4 = 0)) (by simp only [eval, z₁]) (fun h => WP.block_nil ?_) (fun h => ?_)
   · have h0 : E.r % 4 = 0 := by simpa using h
     have hI₁' : RInv1 E (E.r % 4) t₁ := by rw [h0]; exact hI₁
-    exact hI₁'.toQuad (Nat.mod_le _ _)
+    exact hI₁'.toQuad (Nat.mod_le _ _) (by omega)
+  have h0 : E.r % 4 ≠ 0 := by simpa using h
+  refine WP.seq (WP.mono (testR9_ok t₁ 2) fun t₂ ⟨z₂, g₂, l₂, m₂, rd₂, wr₂⟩ => ?_)
+  have hI₂ := hI₁.keep g₂ l₂ m₂ rd₂ wr₂
+  have z₂' : t₂.zf = some (decide (E.r % 4 < 2)) := by rw [z₂, hI₁.r9, Nat.sub_zero, test2 E.r (by omega)]
+  refine WP.ite (!decide (E.r % 4 < 2)) (by simp only [eval, z₂', Option.map_some]) (fun h2 => ?_) (fun h2 => ?_)
+  · exact remStepK_ok hE hK (by simp at h2; omega) hI₂
+  · have h1 : E.r % 4 = 1 := by simp at h2; omega
+    refine WP.mono (remStep1_ok hE (i := 0) (by omega) h1 hI₂) fun t₃ ⟨hI₃, _⟩ => ?_
+    have hI₃' : RInv1 E (E.r % 4) t₃ := by rw [h1]; exact hI₃
+    exact hI₃'.toQuad (Nat.mod_le _ _) (by omega)
+
+/-- The loops over the `r` blocks, and the four lanes' products reduced and added into `Y`. -/
+theorem remLoops_ok {E : REnv} (hE : E.Ok) (h4 : E.Ok4) (hK : E.OkK) {t : State} (hI : RInv1 E 0 t) :
+    WP isa (remLoops E.src) t (RPost E) := by
+  have r1 := hE.r1
+  have r15 := hE.r15
+  refine WP.seq (WP.mono (remFirst_ok hE hK hI) fun t₂ hI₂ => ?_)
   refine WP.seq (WP.mono (cmp16_ok t₂) fun t₃ ⟨z₃, g₃, l₃, m₃, rd₃, wr₃⟩ => ?_)
   have hI₃ := hI₂.keep g₃ l₃ m₃ rd₃ wr₃
   have z₃' : t₃.zf = some (decide (E.r - E.r % 4 = 0)) := by
