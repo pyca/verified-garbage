@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Aes.X86_64.Ctr32
+import VerifiedGarbage.Proof.Aes.X86_64.Ctr32
 public import VerifiedGarbage.Proof.Aes.X86_64.Decrypt
 public import VerifiedGarbage.Spec.Aes.Contract
 import all Init.Data.Array.Basic

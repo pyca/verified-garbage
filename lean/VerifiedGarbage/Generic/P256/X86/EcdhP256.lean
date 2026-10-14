@@ -1,9 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.X86.InvInterface
-public import VerifiedGarbage.TCB.X86.Target
+import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Weierstrass.Law
-public import VerifiedGarbage.Impl.Ecdh.P256.X86
+import VerifiedGarbage.Impl.Ecdh.P256.X86
 public import VerifiedGarbage.Proof.Ecdh.X86.Verified
 public import VerifiedGarbage.Proof.Ecdh.X86.Lit
 import Mathlib.Data.Finset.Card

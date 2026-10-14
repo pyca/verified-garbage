@@ -1,13 +1,13 @@
 module
 
 public import VerifiedGarbage.TCB.X86_64.Target
-public import VerifiedGarbage.Proof.Aes.X86_64.Ctr32
-public import VerifiedGarbage.Proof.Aes.X86_64.ExpandKey
-public import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Ctr32
-public import VerifiedGarbage.Proof.Aes.X86_64.AesNi.ExpandKey
+import VerifiedGarbage.Proof.Aes.X86_64.Ctr32
+import VerifiedGarbage.Proof.Aes.X86_64.ExpandKey
+import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Ctr32
+import VerifiedGarbage.Proof.Aes.X86_64.AesNi.ExpandKey
 public import VerifiedGarbage.Proof.Aes.X86_64.Vaes.Ctr32
-public import VerifiedGarbage.Proof.Aes.X86_64.Blocks
-public import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Blocks
+import VerifiedGarbage.Proof.Aes.X86_64.Blocks
+import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Blocks
 public import VerifiedGarbage.Proof.Aes.X86_64.VaesBlocks.Blocks
 public import VerifiedGarbage.Proof.Aes.X86_64.Frame
 

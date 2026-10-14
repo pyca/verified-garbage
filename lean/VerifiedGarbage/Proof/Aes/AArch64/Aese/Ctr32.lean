@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 meta import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 public import VerifiedGarbage.Proof.Aes.AArch64.Aese.Rounds
 meta import VerifiedGarbage.Proof.Aes.AArch64.Aese.Rounds
@@ -8,7 +8,7 @@ public import VerifiedGarbage.Proof.Aes.AArch64.Ctr32
 meta import VerifiedGarbage.Proof.Aes.AArch64.Ctr32
 public import VerifiedGarbage.Proof.Framework.AArch64.Inline
 meta import VerifiedGarbage.Proof.Framework.AArch64.Inline
-public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 public import VerifiedGarbage.Proof.Gcm.Spec
 meta import VerifiedGarbage.Proof.Gcm.Spec

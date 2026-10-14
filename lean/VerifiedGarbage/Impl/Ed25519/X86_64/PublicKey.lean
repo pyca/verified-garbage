@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Impl.Ed25519.X86_64.ScalarBasePrecomputed
+import VerifiedGarbage.Impl.Ed25519.X86_64.ScalarBasePrecomputed
 public import VerifiedGarbage.Impl.Sha512.X86_64.Stream
 public import VerifiedGarbage.Spec.Sha512.Contract
 

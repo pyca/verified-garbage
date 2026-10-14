@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.TCB.AArch64.Target
+import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Ed448.AArch64.Point56.Verified
 public import VerifiedGarbage.Proof.Ed448.AArch64.CombBase
 

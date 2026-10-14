@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Impl.Ecdh.X86
+import VerifiedGarbage.Impl.Ecdh.X86
 public import VerifiedGarbage.Impl.Weierstrass.X86.Naf
 public import VerifiedGarbage.Impl.Ecdh.X86.Window
 

@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Message
-public import VerifiedGarbage.Spec.MlDsa.CachedVerify
+import VerifiedGarbage.Spec.MlDsa.CachedVerify
 
 @[expose] public section
 

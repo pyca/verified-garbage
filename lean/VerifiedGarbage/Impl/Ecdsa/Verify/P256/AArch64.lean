@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.Jacobian
-public import VerifiedGarbage.Impl.Ecdsa.P256.AArch64
+import VerifiedGarbage.Impl.Ecdsa.P256.AArch64
 
 /-! # ECDSA verification over P-256 on AArch64: four-word field elements and scalars -/
 

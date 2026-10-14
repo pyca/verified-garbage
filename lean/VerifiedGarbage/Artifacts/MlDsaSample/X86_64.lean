@@ -4,7 +4,7 @@ public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejNttCT
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejBoundedCT
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.ExpandMask
+import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.ExpandMask
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.BallCT
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej5Verified
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.M4Verified

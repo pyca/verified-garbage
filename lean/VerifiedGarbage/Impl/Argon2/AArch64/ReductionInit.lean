@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Impl.Argon2.AArch64.Instructions
+import VerifiedGarbage.Impl.Argon2.AArch64.Instructions
 public import VerifiedGarbage.Impl.Argon2.AArch64.ClearBlock
-public import VerifiedGarbage.Impl.Argon2.AArch64.Compress
+import VerifiedGarbage.Impl.Argon2.AArch64.Compress
 
 /-! Begin the final reduction at lane zero with a zero accumulator in matrix block zero.
 The accumulator is cleared sixteen words per pass of a loop counted down in

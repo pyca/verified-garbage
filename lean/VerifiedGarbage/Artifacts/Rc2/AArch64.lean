@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Rc2.AArch64.Block
-public import VerifiedGarbage.Proof.Rc2.AArch64.Key
+import VerifiedGarbage.Proof.Rc2.AArch64.Key
 public import VerifiedGarbage.Proof.Rc2.AArch64.Cbc.Verified
 public import VerifiedGarbage.Proof.Rc2.AArch64.Stream.Frame
 import Mathlib.Tactic.SplitIfs

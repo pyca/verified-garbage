@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.AesCbc.Arm.Loop
-public import VerifiedGarbage.Proof.CmacAes.Arm.Words
+import VerifiedGarbage.Proof.CmacAes.Arm.Words
 public import VerifiedGarbage.Proof.AesOcb.Arm.Callee
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

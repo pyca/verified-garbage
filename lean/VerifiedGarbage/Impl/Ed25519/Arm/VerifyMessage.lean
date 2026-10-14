@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Impl.Ed25519.Arm.Scalar
+import VerifiedGarbage.Impl.Ed25519.Arm.Scalar
 public import VerifiedGarbage.Impl.Ed25519.Arm.Verify
 public import VerifiedGarbage.Impl.Ed25519.Arm.Whole.Setup
 public import VerifiedGarbage.Impl.Ed25519.Arm.Whole.Entry

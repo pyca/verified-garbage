@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Ed25519.CombTable
 public import VerifiedGarbage.Impl.Ed25519.AArch64.PointSelect
-public import VerifiedGarbage.Impl.Ed25519.AArch64.FieldMemory
+import VerifiedGarbage.Impl.Ed25519.AArch64.FieldMemory
 public import VerifiedGarbage.Impl.Ed25519.AArch64.Point64
 
 /-!

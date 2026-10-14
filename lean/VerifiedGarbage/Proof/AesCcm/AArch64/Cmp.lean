@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.AesCcm.AArch64.Env
-public import VerifiedGarbage.Proof.AesGcm.AArch64.Cmp
+import VerifiedGarbage.Proof.AesGcm.AArch64.Cmp
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

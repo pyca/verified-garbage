@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.AesCcm.X86_64.OpenCT
-public import VerifiedGarbage.Proof.CmacAes.X86_64.Verified
+import VerifiedGarbage.Proof.CmacAes.X86_64.Verified
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.AesCcm.Scratch
 import all Init.Data.Array.Basic

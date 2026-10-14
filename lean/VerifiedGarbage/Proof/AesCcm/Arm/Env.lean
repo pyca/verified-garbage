@@ -1,9 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.AesCcm.Arm.Contract
-public import VerifiedGarbage.Proof.AesCcm.Ctr
+import VerifiedGarbage.Proof.AesCcm.Ctr
 public import VerifiedGarbage.Proof.AesGcm.Arm.Fn
-public import VerifiedGarbage.Impl.AesCcm.Arm
+import VerifiedGarbage.Impl.AesCcm.Arm
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

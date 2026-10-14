@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.Weierstrass.Law
-public import VerifiedGarbage.Impl.Ecdsa.P224.Arm
+import VerifiedGarbage.Impl.Ecdsa.P224.Arm
 public import VerifiedGarbage.Proof.Ecdsa.Arm.P224.Verified
 public import VerifiedGarbage.Impl.Ecdsa.Verify.P224.Arm
 public import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.P224.Verified

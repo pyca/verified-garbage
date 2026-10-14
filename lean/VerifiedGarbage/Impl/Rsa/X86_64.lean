@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Impl.Bignum.X86_64
+import VerifiedGarbage.Impl.Bignum.X86_64
 public import VerifiedGarbage.Impl.Bignum.X86_64.R2Words
 
 /-!

@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.AesCcm.AArch64.OpenCT
-public import VerifiedGarbage.Proof.AesCcm.AArch64.SealCT
+import VerifiedGarbage.Proof.AesCcm.AArch64.SealCT
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.AesCcm.Scratch
 import all Init.Data.Array.Basic

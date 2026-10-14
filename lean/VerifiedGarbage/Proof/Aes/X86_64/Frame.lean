@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Aes.X86_64.ExpandKey
 public import VerifiedGarbage.Proof.Aes.X86_64.AesNi.ExpandKey
-public import VerifiedGarbage.Proof.Aes.Scratch
+import VerifiedGarbage.Proof.Aes.Scratch
 public import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Ed448.X86_64.Window
-public import VerifiedGarbage.Impl.Ed448.Wnaf
+import VerifiedGarbage.Impl.Ed448.Wnaf
 
 /-! Public width-five recoding into byte digits in unused verification scratch. -/
 

@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.TCB.X86_64.Target
-public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Verified
+import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Verified
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.Verified
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Calls
 import VerifiedGarbage.Proof.Framework.X86_64.Call

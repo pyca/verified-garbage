@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Aes.X86.AesNi.Load
+import VerifiedGarbage.Proof.Aes.X86.AesNi.Load
 public import VerifiedGarbage.Proof.Aes.X86.AesNi.Data
 public import VerifiedGarbage.Proof.Aes.X86.Ctr32CT
 import all Init.Data.Array.Basic

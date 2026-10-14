@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Impl.ChaCha20.X86_64.Xor
+import VerifiedGarbage.Impl.ChaCha20.X86_64.Xor
 public import VerifiedGarbage.Impl.ChaCha20.X86_64.Avx2Tail
 
 /-!

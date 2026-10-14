@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Ed25519.X86.InputBits
-public import VerifiedGarbage.Impl.Ed25519.X86.PointMul
+import VerifiedGarbage.Impl.Ed25519.X86.PointMul
 public import VerifiedGarbage.Impl.Ed25519.X86.PointEncode
 public import VerifiedGarbage.Impl.Ed25519.X86.Comb
 public import VerifiedGarbage.Impl.Ed25519.X86.CommonMemory

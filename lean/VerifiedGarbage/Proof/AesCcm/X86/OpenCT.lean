@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesCcm.X86.TopCT
 meta import VerifiedGarbage.Proof.AesCcm.X86.TopCT
-public import VerifiedGarbage.Proof.AesCcm.X86.Open
+import VerifiedGarbage.Proof.AesCcm.X86.Open
 meta import VerifiedGarbage.Proof.AesCcm.X86.Open
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

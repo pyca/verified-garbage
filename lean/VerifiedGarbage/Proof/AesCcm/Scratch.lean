@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Spec.Ccm.Contract
-public import VerifiedGarbage.Proof.AesGcm.Scratch
+import VerifiedGarbage.Proof.AesGcm.Scratch
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

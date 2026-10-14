@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.AesCcm.X86_64.Contract
-public import VerifiedGarbage.Proof.AesCcm.Ctr
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Loops
+import VerifiedGarbage.Proof.AesCcm.Ctr
+import VerifiedGarbage.Proof.AesGcm.X86_64.Loops
 public import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Impl.AesCcm.X86_64
 import all Init.Data.Array.Basic

@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Impl.X25519.AArch64
 public import VerifiedGarbage.Impl.X25519.AArch64.Small
 public import VerifiedGarbage.Impl.Ed25519.AArch64.Field
-public import VerifiedGarbage.Impl.Ed25519.AArch64.Power
+import VerifiedGarbage.Impl.Ed25519.AArch64.Power
 public import VerifiedGarbage.Impl.Ed25519.AArch64.PointDecode
 
 /-! Four-word X25519, sharing Ed25519's field operations and inversion. -/

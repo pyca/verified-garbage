@@ -2,9 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.AesCcm.X86.Callee
 meta import VerifiedGarbage.Proof.AesCcm.X86.Callee
-public import VerifiedGarbage.Proof.AesCcm.Words32
+import VerifiedGarbage.Proof.AesCcm.Words32
 meta import VerifiedGarbage.Proof.AesCcm.Words32
-public import VerifiedGarbage.Proof.AesGcm.X86.Cmp
+import VerifiedGarbage.Proof.AesGcm.X86.Cmp
 meta import VerifiedGarbage.Proof.AesGcm.X86.Cmp
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

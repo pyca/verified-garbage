@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.Impl.Bignum.AArch64
-public import VerifiedGarbage.Impl.Bignum.AArch64.SquareEightDispatch
+import VerifiedGarbage.Impl.Bignum.AArch64
+import VerifiedGarbage.Impl.Bignum.AArch64.SquareEightDispatch
 public import VerifiedGarbage.Impl.Bignum.AArch64.ProductDispatch
 
 @[expose] public section

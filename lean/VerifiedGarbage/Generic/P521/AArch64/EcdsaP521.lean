@@ -1,9 +1,9 @@
 module
 
-public import VerifiedGarbage.TCB.AArch64.Target
+import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
 public import VerifiedGarbage.Proof.P521.Comb7
-public import VerifiedGarbage.Impl.Ecdsa.P521.AArch64
+import VerifiedGarbage.Impl.Ecdsa.P521.AArch64
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.P521.Verified
 public import VerifiedGarbage.Impl.Ecdsa.Verify.P521.AArch64
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.Verified

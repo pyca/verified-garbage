@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Ed25519.X86_64.PublicKey
-public import VerifiedGarbage.Impl.Ed25519.X86_64.Scalar
+import VerifiedGarbage.Impl.Ed25519.X86_64.Scalar
 public import VerifiedGarbage.Impl.Ed25519.X86_64.MulAdd
 import VerifiedGarbage.Impl.Ed25519.X86_64.Point64
 

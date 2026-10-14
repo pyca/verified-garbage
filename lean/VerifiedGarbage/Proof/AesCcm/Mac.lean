@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Spec.Ccm
 public import VerifiedGarbage.Proof.Cmac.Spec
-public import VerifiedGarbage.Proof.Cmac.Stream
+import VerifiedGarbage.Proof.Cmac.Stream
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

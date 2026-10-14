@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Impl.Ed25519.X86_64.CombTable
-public import VerifiedGarbage.Impl.Ed25519.X86_64.VerifyWindow
-public import VerifiedGarbage.Impl.Ed25519.X86_64.PointSelect
+import VerifiedGarbage.Impl.Ed25519.X86_64.VerifyWindow
+import VerifiedGarbage.Impl.Ed25519.X86_64.PointSelect
 public import VerifiedGarbage.Impl.Ed25519.X86_64.Point64
 
 /-!

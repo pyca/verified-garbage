@@ -4,7 +4,7 @@ public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Weierstrass.Law
 public import VerifiedGarbage.Impl.Ecdh.P384.X86
 public import VerifiedGarbage.Proof.Ecdh.X86.P384.Verified
-public import VerifiedGarbage.Proof.Ecdh.X86.P384.Lit
+import VerifiedGarbage.Proof.Ecdh.X86.P384.Lit
 import VerifiedGarbage.Proof.X25519.X86.Column
 
 /-!

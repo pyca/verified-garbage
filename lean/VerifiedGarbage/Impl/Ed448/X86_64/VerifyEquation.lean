@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Ed448.X86_64.Wnaf.Joint
-public import VerifiedGarbage.Impl.Ed448.X86_64.Window
+import VerifiedGarbage.Impl.Ed448.X86_64.Window
 
 /-!
 # Ed448 verification's equation on x86-64

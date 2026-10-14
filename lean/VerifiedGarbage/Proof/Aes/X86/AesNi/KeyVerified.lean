@@ -1,9 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyDispatch
-public import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyBranches
+import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyBranches
 public import VerifiedGarbage.Proof.Aes.X86.AesNi.CT
-public import VerifiedGarbage.Proof.Aes.X86.ExpandKey
+import VerifiedGarbage.Proof.Aes.X86.ExpandKey
 public import VerifiedGarbage.Spec.Aes.Contract
 public import VerifiedGarbage.Proof.Framework.Contract
 import all Init.Data.Array.Basic

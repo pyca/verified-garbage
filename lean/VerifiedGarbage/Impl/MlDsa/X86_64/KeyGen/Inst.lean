@@ -2,9 +2,9 @@ module
 
 public import VerifiedGarbage.Impl.MlDsa.X86_64.KeyGen.KeyGen
 public import VerifiedGarbage.Impl.MlDsa.X86_64.Arith.Backend
-public import VerifiedGarbage.Impl.MlDsa.X86_64.Sample.RejNtt
+import VerifiedGarbage.Impl.MlDsa.X86_64.Sample.RejNtt
 public import VerifiedGarbage.Impl.MlDsa.X86_64.Sample.RejBounded
-public import VerifiedGarbage.Impl.MlDsa.X86_64.Round.Round
+import VerifiedGarbage.Impl.MlDsa.X86_64.Round.Round
 public import VerifiedGarbage.Impl.MlDsa.X86_64.Pack.Encode
 
 /-!

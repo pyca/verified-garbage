@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.P256.VerifyDouble
 public import VerifiedGarbage.Impl.Weierstrass.JacAdd
-public import VerifiedGarbage.Impl.Weierstrass.AArch64.Window
+import VerifiedGarbage.Impl.Weierstrass.AArch64.Window
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.TComb
 
 /-!

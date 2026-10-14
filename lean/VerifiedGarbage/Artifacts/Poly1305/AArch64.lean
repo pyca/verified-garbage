@@ -2,13 +2,13 @@ module
 
 public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Impl.Poly1305.AArch64.Radix64
-public import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Blocks
-public import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Finalize
+import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Blocks
+import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Finalize
 public import VerifiedGarbage.Proof.Poly1305.AArch64.Init
-public import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Update
+import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Update
 public import VerifiedGarbage.Proof.Poly1305.AArch64.Vector.Update
-public import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Lit
-public import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Frame
+import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Lit
+import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Frame
 import VerifiedGarbage.Proof.Poly1305.AArch64.Vector.Finish
 
 /-! # Poly1305 (RFC 8439 §2.5) on AArch64 -/

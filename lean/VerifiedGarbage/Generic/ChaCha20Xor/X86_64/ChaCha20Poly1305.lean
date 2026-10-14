@@ -1,9 +1,9 @@
 module
 
 public import VerifiedGarbage.TCB.X86_64.Target
-public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Verified
+import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Verified
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Instance
-public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Verified
+import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Verified
 
 /-!
 # ChaCha20-Poly1305 (RFC 8439 §2.8) on x86-64
