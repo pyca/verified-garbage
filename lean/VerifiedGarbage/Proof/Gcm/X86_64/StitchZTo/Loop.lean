@@ -323,9 +323,9 @@ theorem firstTo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {P : Nat �
   rw [hg₁, hR.gpr _ (by decide) (by decide) (by decide) (by decide)]; simp
 
 /-- `cmp r9, 32`. -/
-theorem cmpE_ok {s₀ : State} {P : Nat → Nat → Block} {e : Nat} {s : State} (hI : EInvTo s₀ P e s) :
+theorem cmpE_ok {s₀ : State} {P : Nat → Nat → Block} {e : Nat} {s : State} {be : Bool} (hI : EInvTo s₀ P e s be) :
     WP isa (.block [.alu .cmp .r9 (.imm 32)]) s fun s' =>
-      EInvTo s₀ P e s' ∧ s'.cf = some (decide (nb s₀ - 16 * (e - 1) < 32)) := by
+      EInvTo s₀ P e s' be ∧ s'.cf = some (decide (nb s₀ - 16 * (e - 1) < 32)) := by
   have hn : nb s₀ < 2 ^ 64 := (s₀.gpr .r9).isLt
   have e32 : BitVec.signExtend 64 (32 : BitVec 32) = 32 := by decide
   have hr9 := hI.r9
@@ -349,7 +349,7 @@ theorem blocks_ctr32To {s₀ : State} {m : Mem} (hb : ∀ k < nb s₀, blockAt m
     exact hb k hk
 
 theorem finalTo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {P : Nat → Nat → Block} (hf : FinOk (hk s₀) P)
-    {e : Nat} (he : nb s₀ = 16 * e) {s : State} (hI : EInvTo s₀ P e s) :
+    {e : Nat} (he : nb s₀ = 16 * e) {s : State} {be : Bool} (hI : EInvTo s₀ P e s be) :
     WP isa (.block (storeCtr ++ lastG ++ storeY)) s (EPostTo s₀) := by
   have hw := hp.wrap_o
   have hwp := hp.wrap_p

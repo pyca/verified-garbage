@@ -344,9 +344,9 @@ theorem bigTo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) (hm : nb s₀
     fun s₁ ⟨hA₁, hv₁, hm₁, hg₁, hl₁⟩ => bigRestTo_ok hp hm hf hT (fun k l => by simp only [T48, ↓reduceIte]) h256 hI
       hA₁ hv₁ hm₁ hg₁ fun l hl => hl₁ _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) l hl)
 
-theorem EInvTo.of_eq {s₀ : State} {P : Nat → Nat → Block} {e : Nat} {s s' : State} (h : EInvTo s₀ P e s)
+theorem EInvTo.of_eq {s₀ : State} {P : Nat → Nat → Block} {e : Nat} {s s' : State} {be : Bool} (h : EInvTo s₀ P e s be)
     (hg : s'.gpr = s.gpr) (hl : ∀ r l, s'.zlane r l = s.zlane r l) (hm : s'.mem = s.mem) (hrd : s'.rd = s.rd)
-    (hwr : s'.wr = s.wr) : EInvTo s₀ P e s' :=
+    (hwr : s'.wr = s.wr) : EInvTo s₀ P e s' be :=
   ⟨h.a.gpr2 (fun r _ _ => by rw [hg]) hl hm hrd hwr, h.one, by rw [hg]; exact h.rdx, by rw [hg]; exact h.r9,
     by rw [hg]; exact h.rax, fun r h1 h2 h3 h4 h5 => by rw [hg]; exact h.gpr r h1 h2 h3 h4 h5,
     fun k hk l hl' => by rw [hm]; exact h.pw k hk l hl', fun l hl' => by rw [hl]; exact h.m1 l hl',

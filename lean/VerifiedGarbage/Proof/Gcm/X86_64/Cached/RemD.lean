@@ -47,17 +47,17 @@ theorem test99_ok (s : State) :
 
 /-- The decryption loop, for any number of blocks: it stops with fewer than 16 left. -/
 theorem loopDR_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} (hf : FinOk (hk s₀) P) {e : Nat}
-    {s : State} (hI : DInv s₀ P e s) (hcf : s.cf = some (decide (nb s₀ - 16 * e < 16)))
+    {s : State} {be : Bool} (hI : DInv s₀ P e s be) (hcf : s.cf = some (decide (nb s₀ - 16 * e < 16)))
     (hCache : VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s) :
-    WP isa (.ite .b (.block []) (.loop dbody .ae)) s fun s' => ∃ e, nb s₀ - 16 * e < 16 ∧ DInv s₀ P e s' ∧
+    WP isa (.ite .b (.block []) (.loop (dbody be) .ae)) s fun s' => ∃ e, nb s₀ - 16 * e < 16 ∧ DInv s₀ P e s' be ∧
       VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s' := by
   have hle := hI.a.le
   refine WP.ite (decide (nb s₀ - 16 * e < 16)) (by simp only [eval, hcf]) (fun h => ?_) (fun h => ?_)
   · exact WP.block_nil ⟨e, by simpa using h, hI, hCache⟩
-  · let I : Nat → State → Prop := fun m s => ∃ e, m = nb s₀ - 16 * e ∧ 16 * (e + 1) ≤ nb s₀ ∧ DInv s₀ P e s ∧
+  · let I : Nat → State → Prop := fun m s => ∃ e, m = nb s₀ - 16 * e ∧ 16 * (e + 1) ≤ nb s₀ ∧ DInv s₀ P e s be ∧
       VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s
-    have hstep : ∀ m s, I m s → WP isa dbody s (fun s' =>
-        (eval .ae s' = some false ∧ ∃ e, nb s₀ - 16 * e < 16 ∧ DInv s₀ P e s' ∧
+    have hstep : ∀ m s, I m s → WP isa (dbody be) s (fun s' =>
+        (eval .ae s' = some false ∧ ∃ e, nb s₀ - 16 * e < 16 ∧ DInv s₀ P e s' be ∧
           VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s') ∨
         (eval .ae s' = some true ∧ ∃ m' < m, I m' s')) := by
       rintro m s ⟨e, rfl, he, hI, hCI⟩
@@ -72,18 +72,19 @@ theorem loopDR_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} (h
 /-- `decR` after the setup, for any number of blocks from 16 on. -/
 theorem decTailRG_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} (hf : FinOk (hk s₀) P)
     (hr : RemOkG (hk s₀) P)
-    {bigC : Prog isa} (hbig : ∀ s, 256 ≤ nb s₀ → DInv s₀ P 0 s → VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s →
-      WP isa bigC s fun s' => ∃ e, DInv s₀ P e s' ∧ VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s')
-    {s : State} (hR : Ready s₀ P s)
+    {be : Bool} {bigC : Prog isa} (hbig : ∀ s, 256 ≤ nb s₀ → DInv s₀ P 0 s be →
+      VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s →
+      WP isa bigC s fun s' => ∃ e, DInv s₀ P e s' be ∧ VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s')
+    {s : State} (hR : Ready s₀ P s be)
     (hCache : VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s) :
     WP isa (.seq (.block [.alu .cmp .r9 (.imm 256)]) (.seq (.ite .b (.block []) bigC)
       (.seq (.block [.alu .cmp .r9 (.imm 16)])
-        (.seq (.ite .b (.block []) (.loop dbody .ae))
+        (.seq (.ite .b (.block []) (.loop (dbody be) .ae))
           (.seq (.block [.alu .test .r9 (.reg .r9)])
             (.ite .e (.block (storeCtr ++ storeY)) (.seq (.block [.alu .add .r9 (.imm 16)]) remGD))))))) s
       (DPost s₀) := by
   have hn : nb s₀ < 2 ^ 64 := (s₀.gpr .r9).isLt
-  have hI₁ : DInv s₀ P 0 s :=
+  have hI₁ : DInv s₀ P 0 s be :=
     ⟨hR.a, by rw [hR.rdx]; simp, by rw [hR.gpr _ (by decide) (by decide) (by decide)]; simp, hR.rax,
       fun r h1 h2 _ h4 => hR.gpr r h1 h2 h4, hR.pw, hR.m1, by rw [hR.y]; simp [ghashFrom], hR.y1⟩
   refine WP.seq (WP.mono (WP.hkeep (by decide) (cmp_ok s 256 256 (by decide)))
@@ -91,7 +92,7 @@ theorem decTailRG_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block}
   have hI₂ := hI₁.of_eq g l m rd wr
   have hCache₂ := hCache.keep hh (hI₂.a.keys hp)
   rw [hI₁.r9, toNat_ofNat_lt (by omega), toNat_ofNat_lt (by decide)] at hcf
-  refine WP.seq (WP.mono (WP.ite (Q := fun s' => ∃ e, DInv s₀ P e s' ∧
+  refine WP.seq (WP.mono (WP.ite (Q := fun s' => ∃ e, DInv s₀ P e s' be ∧
       VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s') (decide (nb s₀ - 16 * 0 < 256))
     (by simp only [eval, hcf]) (fun _ => WP.block_nil ⟨0, hI₂, hCache₂⟩)
     (fun h => hbig _ (by simp at h; omega) hI₂ hCache₂)) fun s₃ ⟨e, hI₃, hCache₃⟩ => ?_)

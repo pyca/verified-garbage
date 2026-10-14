@@ -507,9 +507,9 @@ theorem big_ok {s₀ : State} (hp : SPre s₀) (hm : nb s₀ % 16 = 0) {P : Nat 
     fun s₁ ⟨hA₁, hv₁, hm₁, hg₁, hl₁⟩ => bigRest_ok hp hm hf hT (fun k l => by simp only [T48, ↓reduceIte]) h256 hI hA₁
       hv₁ hm₁ hg₁ fun l hl => hl₁ _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) l hl)
 
-theorem EInv.of_eq {s₀ : State} {P : Nat → Nat → Block} {e : Nat} {s s' : State} (h : EInv s₀ P e s)
+theorem EInv.of_eq {s₀ : State} {P : Nat → Nat → Block} {e : Nat} {s s' : State} {be : Bool} (h : EInv s₀ P e s be)
     (hg : s'.gpr = s.gpr) (hl : ∀ r l, s'.zlane r l = s.zlane r l) (hm : s'.mem = s.mem) (hrd : s'.rd = s.rd)
-    (hwr : s'.wr = s.wr) : EInv s₀ P e s' :=
+    (hwr : s'.wr = s.wr) : EInv s₀ P e s' be :=
   ⟨h.a.gpr2 (fun r _ _ => by rw [hg]) hl hm hrd hwr, h.one, by rw [hg]; exact h.rdx, by rw [hg]; exact h.r9,
     by rw [hg]; exact h.rax, fun r h1 h2 h3 h4 => by rw [hg]; exact h.gpr r h1 h2 h3 h4,
     fun k hk l hl' => by rw [hm]; exact h.pw k hk l hl', fun l hl' => by rw [hl]; exact h.m1 l hl',
@@ -714,9 +714,9 @@ theorem bigD_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} (hT 
     bigDRest_ok hp hT (fun k l => by simp only [T48, ↓reduceIte]) h256 hI hA₁ hv₁ hm₁ hg₁
       fun l hl => hl₁ _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) l hl)
 
-theorem DInv.of_eq {s₀ : State} {P : Nat → Nat → Block} {e : Nat} {s s' : State} (h : DInv s₀ P e s)
+theorem DInv.of_eq {s₀ : State} {P : Nat → Nat → Block} {e : Nat} {s s' : State} {be : Bool} (h : DInv s₀ P e s be)
     (hg : s'.gpr = s.gpr) (hl : ∀ r l, s'.zlane r l = s.zlane r l) (hm : s'.mem = s.mem) (hrd : s'.rd = s.rd)
-    (hwr : s'.wr = s.wr) : DInv s₀ P e s' :=
+    (hwr : s'.wr = s.wr) : DInv s₀ P e s' be :=
   ⟨h.a.gpr2 (fun r _ _ => by rw [hg]) hl hm hrd hwr, by rw [hg]; exact h.rdx, by rw [hg]; exact h.r9,
     by rw [hg]; exact h.rax, fun r h1 h2 h3 h4 => by rw [hg]; exact h.gpr r h1 h2 h3 h4,
     fun k hk l hl' => by rw [hm]; exact h.pw k hk l hl', fun l hl' => by rw [hl]; exact h.m1 l hl',

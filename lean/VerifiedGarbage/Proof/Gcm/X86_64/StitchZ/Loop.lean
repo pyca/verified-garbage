@@ -553,7 +553,7 @@ theorem dbody_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} (hf
   · rw [fcf, hr9, toNat_ofNat_lt (by omega)]
 
 theorem dfinal_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} {e : Nat} (he : nb s₀ = 16 * e) {s : State}
-    (hI : DInv s₀ P e s) :
+    {be : Bool} (hI : DInv s₀ P e s be) :
     WP isa (.block (storeCtr ++ storeY)) s (DPost s₀) := by
   have hw := hp.wrap_d
   have hm0 : s.lane .xmm0 0 = revMask := by rw [← State.zlane_lt2 _ _ (by decide)]; exact hI.a.msk 0 (by decide)

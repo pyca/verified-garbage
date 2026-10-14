@@ -383,7 +383,7 @@ theorem encRTo_ok {s₀ : State} (hp : Proof.Gcm.X86_64.Stitch.SPreTo CtxMode.pr
     WP isa Impl.Gcm.X86_64.StitchZHTo.encR s₀ (Proof.Gcm.X86_64.Stitch.EPostTo s₀) :=
   WP.seq (WP.mono (setup_ok hp) fun _ ⟨_, hR, hpw, hK⟩ =>
     encTailRGTo_ok hp (finZ (finP hpw)) (StitchZH.remZG (finP hpw))
-      (fun _ h256 hI hC => bigPTo_ok hp (finZ (finP hpw)) hpw (fin48P (hk s₀)) h256 hI hC) hR hK)
+      (fun _ h256 hI hC => bigPTo_ok hp (finZ (finP hpw)) hpw (fin48P (hk s₀)) h256 hI hC) (firstTo_ok hp hR hK))
 
 /-- Prepared powers and cached AES keys, out of place, for any number of
 blocks from 16 on. -/

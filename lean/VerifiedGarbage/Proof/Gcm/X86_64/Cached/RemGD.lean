@@ -281,7 +281,7 @@ theorem ksSelGD_ok {s₀ : State} (hp : SPre s₀) {r : Nat} (hr1 : 1 ≤ r) (hr
       ((hh₁.trans hh₂).trans hh₃)
 
 theorem remGD_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} (hr : RemOkG (hk s₀) P) {e : Nat}
-    {s : State} (hI : DInv s₀ P e s) (hlt : nb s₀ - 16 * e < 16) (hne : nb s₀ ≠ 16 * e)
+    {s : State} {be : Bool} (hI : DInv s₀ P e s be) (hlt : nb s₀ - 16 * e < 16) (hne : nb s₀ ≠ 16 * e)
     (hCache : VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s) :
     WP isa (.seq (.block [.alu .add .r9 (.imm 16)]) remGD) s (DPost s₀) := by
   have hw := hp.wrap_d
@@ -298,10 +298,10 @@ theorem remGD_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} (hr
   have hrax : s'.gpr .rax = cp s₀ := by rw [ga _ (by decide)]; exact hI.rax
   have hr11 : s'.gpr .r11 = pp s₀ := by
     rw [ga _ (by decide)]; exact hI.gpr .r11 (by decide) (by decide) (by decide) (by decide)
-  have hA' : AInv s₀ (16 * e) s' :=
+  have hA' : AInv s₀ (16 * e) s' be :=
     ⟨hI.a.le, fun l hl => by rw [la]; exact hI.a.ctr l hl, fun l hl => by rw [la]; exact hI.a.msk l hl,
       fun l hl => by rw [la]; exact hI.a.inc l hl, by rw [ga _ (by decide)]; exact hI.a.rdi,
-      by rw [ga _ (by decide)]; exact hI.a.rsi, by show _ = _; rw [ga _ (by decide)]; exact hI.a.r10,
+      by rw [ga _ (by decide)]; exact hI.a.rsi, hI.a.r10.keep (ga _ (by decide)) ma,
       by rw [ma]; exact hI.a.frame, fun k hk => by rw [ma]; exact hI.a.blocks k hk, by rw [rda]; exact hI.a.rd,
       by rw [wra]; exact hI.a.wr⟩
   have hCache' := hCache.keep hha (hA'.keys hp)
