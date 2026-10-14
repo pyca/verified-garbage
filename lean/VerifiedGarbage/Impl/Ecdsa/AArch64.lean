@@ -285,9 +285,9 @@ the powers change: past the powers' working slots, in the functions' working
 area. -/
 def invSave : Nat := c.invTbl + 9 * (8 * c.n)
 
-/-- The callee-saved registers but `x19` that the powers change: those of
-nine-word products (`x21`–`x25`). -/
-def invRegs : List Reg := if c.n = 9 then [.x21, .x22, .x23, .x24, .x25] else []
+/-- The callee-saved registers but `x19` that the powers and the ladder
+change: those of eight- and nine-word products (`x21`–`x25`). -/
+def invRegs : List Reg := if 8 ≤ c.n then [.x21, .x22, .x23, .x24, .x25] else []
 
 /-- `x19` and `invRegs`, kept in consecutive words from `invSave`. -/
 def invKept : List Reg := .x19 :: c.invRegs
@@ -341,13 +341,14 @@ def mulBody : Prog isa :=
     copy c.n (c.sl RX) (c.sl ZERO) ++ copy c.n (c.sl RY) (c.sl ONEP) ++ copy c.n (c.sl RZ) (c.sl ZERO)))
     (ladder c.mulLadder)
 
-/-- Where `vg_<curve>_mul` keeps `x19`, which the ladder counts with: the word
-past the table of bits, in its own working space. -/
+/-- Where `vg_<curve>_mul` keeps `x19`, which the ladder counts with, and
+`invRegs`: the words past the table of bits, in its own working space. -/
 def mulSave : Nat := bitsAt c.n 0 + 64 * c.n
 
-/-- `vg_<curve>_mul`: its body between keeping `x19` and restoring it. -/
+/-- `vg_<curve>_mul`: its body between keeping `x19` and `invRegs` and
+restoring them (for fewer than eight words, `x19` alone). -/
 def mulFn : Prog isa :=
-  .seq (.block [st .x19 c.mulSave]) (.seq c.mulBody (.block [ld .x19 c.mulSave]))
+  .seq (.block (stAll c.invKept c.mulSave)) (.seq c.mulBody (.block (ldAll c.invKept c.mulSave)))
 
 /-- `R = [k]P` for the `k` in `K`'s slot and the point at `px`, `py` (affine,
 Montgomery's form), by a call of the function `name` (`vg_<curve>_mul`,
