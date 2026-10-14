@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.MontFn
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.MontFn384
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.SetConst
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
@@ -233,6 +234,12 @@ theorem ModOkS.general {n m : Nat} (h : ModOkS n m) : general n m = false := by
   · unfold VG.Impl.Weierstrass.AArch64.Mont.general; rw [hr, hs]; rfl
   · unfold VG.Impl.Weierstrass.AArch64.Mont.general; rw [hr]
 
+theorem sparseOk_of_general {n m : Nat} (h : general n m = true) : sparseOk n m = false := by
+  unfold VG.Impl.Weierstrass.AArch64.Mont.general at h
+  split at h
+  · simpa using h
+  · exact absurd h (by decide)
+
 /-- `vg_<curve>_mul_mod_<p|n>`: `[o] = [a] [b] R⁻¹ mod m`. -/
 theorem mulFn_ok {n m W : Nat} (hM : ModOk n m) {s : State} (hp : Pre n W s)
     (hb : wordsVal s.mem (s.gpr .x0) (arg s .x3) n < m) :
@@ -243,9 +250,13 @@ theorem mulFn_ok {n m W : Nat} (hM : ModOk n m) {s : State} (hp : Pre n W s)
       s'.gpr .x0 = s.gpr .x0 ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
       ∀ d, (∀ i < 10, d ≠ (slot i).1) → s'.v d = s.v d := by
   rcases hM with hM | hM
-  · simp only [mulFn, hM.general, Bool.false_eq_true, ↓reduceIte]
-    exact mulFnS_ok hM hp hb
-  · simp only [mulFn, hM.g, ↓reduceIte]
+  · by_cases hsp : sparseOk n m = true
+    · obtain ⟨rfl, rfl⟩ := sparseOk_eq hsp
+      simp only [mulFn, hsp, ↓reduceIte]
+      exact mulFn384_ok hp hb
+    · simp only [mulFn, hsp, hM.general, Bool.false_eq_true, ↓reduceIte]
+      exact mulFnS_ok hM hp hb
+  · simp only [mulFn, sparseOk_of_general hM.g, hM.g, Bool.false_eq_true, ↓reduceIte]
     exact mulFnG_ok hM hp hb
 
 end VG.Proof.Weierstrass.AArch64.Mont

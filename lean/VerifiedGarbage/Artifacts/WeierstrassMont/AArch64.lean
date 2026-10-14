@@ -14,15 +14,22 @@ namespace VG.Artifacts.WeierstrassMont.AArch64
 
 open VG.Spec.Weierstrass.Mont VG.Impl.Weierstrass.AArch64.Mont VG.Proof.Weierstrass.AArch64.Mont
 
+/-- How the function for P-384's `p` works. -/
+def notes384 : List String := ["The function zero-extends the offsets, saves the callee-saved \
+  registers it writes in lanes of `v16`–`v20`, and keeps all of `[b]` in registers. Its schedule \
+  is adapted from s2n-bignum's `bignum_montmul_p384_alt` (Apache-2.0 OR ISC OR MIT-0): the full \
+  twelve-word product in registers (`mul` and `umulh`, one word of `[a]` loaded per row), then six \
+  short Montgomery reductions of its low half, each multiplying by the three nonzero words of \
+  `2^384 - p` rather than by `p`, then the high half added and a final conditional subtraction \
+  against `p`, built in registers, selected by `csel`."]
+
 /-- How the functions work. -/
 def notes : List String := ["The function zero-extends the offsets, saves the callee-saved \
   registers it writes in lanes of `v16`–`v20`, and keeps every word it multiplies by in a register: \
   all of `[b]`. The product is word-by-word Montgomery multiplication (CIOS, with `mul` and \
   `umulh`, the accumulator in registers, one word of `[a]` loaded per round), whose reductions \
-  multiply by no word of the modulus: P-384's `p` is sparse (`u p` is `u (2^384 + 2^32)`, by \
-  shifts, less `u (2^128 + 2^96 + 1)`, by a subtraction), P-521's reduced by shifts. A final \
-  conditional subtraction against the modulus, built in registers (`movz`/`movk`), is selected by \
-  `csel`."]
+  multiply by no word of the modulus: P-521's `p` reduces by shifts. A final conditional \
+  subtraction against the modulus, built in registers (`movz`/`movk`), is selected by `csel`."]
 
 /-- How the functions for a general modulus work. -/
 def notesG : List String := ["The function zero-extends the offsets, saves the callee-saved \
@@ -36,7 +43,7 @@ def notesG : List String := ["The function zero-extends the offsets, saves the c
 def artifacts : List Artifact := [
   { p384p.mulApi with
     target := AArch64.target
-    doc := p384p.mulApi.doc (notes := notes)
+    doc := p384p.mulApi.doc (notes := notes384)
     code := mulFn p384p.k p384p.m
     contract := p384p.mulContract AArch64.abi
     verified := p384p_mul_verified
