@@ -1,9 +1,12 @@
 //! OS randomness, rejection sampling and probable safe-prime generation.
+#[cfg(not(target_arch = "aarch64"))]
 use super::arithmetic::{Montgomery, bits, canonical, minus_one, value_cmp};
 use super::{Error, MAX_BITS, MIN_BITS, Parameters};
+#[cfg(not(target_arch = "aarch64"))]
 use crate::zeroize::zeroize;
 use alloc::{vec, vec::Vec};
 
+#[cfg(not(target_arch = "aarch64"))]
 /// Independent uniform integer in [1,upper-1]. The top-bit mask and byte
 /// width are public. Only acceptance/rejection controls a branch. The
 /// accepted scalar's leading-zero count is never inspected.
@@ -46,6 +49,40 @@ pub(super) fn parameters<E>(
     )
 }
 
+/// Candidates by the verified code, each from the front of a buffer of
+/// random bytes: the bytes a rejected candidate read are dropped, and the
+/// buffer grows when a candidate needs more. Every call counts toward
+/// `limit`.
+#[cfg(target_arch = "aarch64")]
+fn parameters_limit<E>(
+    size: usize,
+    generator: u32,
+    limit: usize,
+    mut fill: impl FnMut(&mut [u8]) -> Result<(), E>,
+) -> Result<Parameters, Error> {
+    if !(MIN_BITS..=MAX_BITS).contains(&size) || ![2, 5].contains(&generator) {
+        return Err(Error::InvalidParameters);
+    }
+    let len = size.div_ceil(8);
+    let mut p = vec![0; len];
+    let mut rand = Vec::new();
+    for _ in 0..limit {
+        match super::aarch64::parameter_candidate(&mut p, size, generator, &rand) {
+            (1, _) => return Parameters::from_components(&p, &generator.to_be_bytes(), None),
+            (2, used) => {
+                rand.drain(..used);
+            }
+            _ => {
+                let start = rand.len();
+                rand.resize(start + 64 * len, 0);
+                fill(&mut rand[start..]).map_err(|_| Error::Randomness)?;
+            }
+        }
+    }
+    Err(Error::TooManyIterations)
+}
+
+#[cfg(not(target_arch = "aarch64"))]
 fn parameters_limit<E>(
     size: usize,
     generator: u32,
@@ -83,15 +120,18 @@ fn parameters_limit<E>(
     }
     Err(Error::TooManyIterations)
 }
+#[cfg(not(target_arch = "aarch64"))]
 fn rem_small(n: &[u8], divisor: u32) -> u32 {
     n.iter().fold(0, |r, &b| (256 * r + u32::from(b)) % divisor)
 }
+#[cfg(not(target_arch = "aarch64"))]
 fn trial_composite(p: &[u8]) -> bool {
     (3..=251)
         .step_by(2)
         .filter(|&d| (3..d).step_by(2).all(|s| d % s != 0))
         .any(|d| rem_small(p, d) == 0 && value_cmp(p, &d.to_be_bytes()).is_ne())
 }
+#[cfg(not(target_arch = "aarch64"))]
 fn halve(n: &mut [u8]) {
     let mut carry = 0;
     for b in n {
@@ -100,6 +140,7 @@ fn halve(n: &mut [u8]) {
         carry = next;
     }
 }
+#[cfg(not(target_arch = "aarch64"))]
 /// Public probable-primality test. Independent uniform witnesses, never
 /// fixed bases or RSA's lower random-candidate-specific round counts.
 pub(super) fn probable_prime<E>(
@@ -144,6 +185,7 @@ pub(super) fn probable_prime<E>(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[cfg(not(target_arch = "aarch64"))]
     #[test]
     fn rejection_sampler_bounds_and_error() {
         let mut zero = |out: &mut [u8]| {
@@ -167,6 +209,7 @@ mod tests {
         assert_eq!(x, [0, 1]);
         assert_eq!(calls, 2);
     }
+    #[cfg(not(target_arch = "aarch64"))]
     #[test]
     fn probable_prime_and_witness_failures() {
         let mut two = |out: &mut [u8]| {

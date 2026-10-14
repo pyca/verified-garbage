@@ -8,13 +8,44 @@
 
 use crate::arch::ffdh::{
     vg_ffdh_check_domain, vg_ffdh_check_private, vg_ffdh_check_public, vg_ffdh_exchange,
-    vg_ffdh_generate_key,
+    vg_ffdh_generate_key, vg_ffdh_parameter_candidate,
 };
 use crate::rsa::Scratch;
 
 /// The working space every function needs, `16 p_len + 32` words.
 fn scratch(p_len: usize) -> Scratch {
     Scratch::new(16 * p_len + 32)
+}
+
+/// One candidate for the safe prime p of `bits` bits for `generator` (2 or
+/// 5), from the front of `rand` (`vg_ffdh_parameter_candidate`): the status
+/// (0: `rand` too short; 1: p in `out`, `⌈bits / 8⌉` bytes; 2: rejected) and
+/// the bytes of `rand` read.
+pub(super) fn parameter_candidate(
+    out: &mut [u8],
+    bits: usize,
+    generator: u32,
+    rand: &[u8],
+) -> (u32, usize) {
+    let mut used = [0u64; 1];
+    let mut ws = scratch(out.len());
+    // SAFETY: `out` is `⌈bits / 8⌉` bytes for `bits` in 512..=8192 and
+    // `generator` 2 or 5 (the callers check both), `ws` is
+    // `16 out_len + 32` words; all are distinct objects.
+    let status = unsafe {
+        vg_ffdh_parameter_candidate(
+            out.as_mut_ptr(),
+            out.len(),
+            &mut used,
+            bits,
+            generator,
+            rand.as_ptr(),
+            rand.len(),
+            ws.as_mut_ptr(),
+            ws.len(),
+        )
+    };
+    (status, used[0] as usize)
 }
 
 /// A checked domain: p, g and, if present, q, each `p_len` bytes.

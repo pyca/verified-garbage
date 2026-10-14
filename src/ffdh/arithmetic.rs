@@ -239,6 +239,7 @@ impl Montgomery {
         ws
     }
 
+    #[cfg(not(target_arch = "aarch64"))]
     /// One strong probable-prime witness for a public candidate p, with
     /// p-1 = d * 2^s. Keep every residue in Montgomery form until the test ends.
     pub(super) fn strong_probable_prime(&self, base: &[u8], d: &[u8], s: usize) -> bool {
@@ -362,6 +363,7 @@ fn double_mod(a: &mut [u64], m: &[u64]) {
 mod tests {
     use super::*;
 
+    #[cfg(not(target_arch = "aarch64"))]
     #[test]
     fn strong_witness_matches_integer_arithmetic() {
         // An independent small-integer oracle exercises early acceptance,
