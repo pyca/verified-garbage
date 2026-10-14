@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.R10
+public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Spec
+import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Aes.X86_64.VaesZ.Ctr
 public import VerifiedGarbage.Impl.Gcm.X86_64.StitchZH
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Pow
@@ -273,5 +275,30 @@ theorem ctrs_ok (be : Bool) {s₀ : State} {c : Nat} (s : State)
         fun s' ⟨⟨e, c', f⟩, hh⟩ => done s' e c' f hh
     · exact WP.mono (slow s₁ (fun l hl => by rw [zk]; exact hc l hl) (fun l hl => by rw [zk]; exact hm l hl)
         (fun l hl => by rw [zk]; exact hi l hl)) fun s' ⟨e, c', f, hh⟩ => done s' e c' f hh
+
+open VG.Proof.Gcm.X86_64.Stitch (SPre nb pp bAddr pR) in
+/-- The working space at `pp + o` is kept by the sixteen blocks of data written
+from block `c`. -/
+theorem keepAt {s₀ : State} (hp : SPre s₀) {c : Nat} (hc : c + 16 ≤ nb s₀) {m m' : Mem}
+    (hf : Frame [⟨bAddr s₀ c, 256⟩] m m') {o : Nat} (ho : o + 16 ≤ 1024) :
+    m'.readW (pp s₀ + BitVec.ofNat 64 o) 128 = m.readW (pp s₀ + BitVec.ofNat 64 o) 128 := by
+  have hw := hp.wrap_d
+  have hwp := hp.wrap_p
+  exact hf.readW (r := pR s₀) (Offset.contains_base _ (by omega) (by omega)) (fun r hr => by
+    simp only [List.mem_singleton] at hr; subst hr
+    exact hp.d_p.symm.sub_right (Offset.sub_base _ (by omega))) (by decide)
+
+open VG.Proof.Gcm.X86_64.Stitch (SPre nb pp bAddr) in
+open VG.Proof.Gcm.X86_64.StitchZ (R10 BeConsts) in
+/-- `R10` is kept by the sixteen blocks of data written from block `c`, with
+`r10` kept. -/
+theorem R10.data {be : Bool} {s₀ : State} (hp : SPre s₀) {c c' : Nat} (hc : c + 16 ≤ nb s₀) {s s' : State}
+    (h : R10 be s₀ c' s) (hg : s'.gpr .r10 = s.gpr .r10) (hf : Frame [⟨bAddr s₀ c, 256⟩] s.mem s'.mem) :
+    R10 be s₀ c' s' := by
+  cases be
+  · simp only [R10, Bool.false_eq_true, ↓reduceIte] at h ⊢; rw [hg]; exact h
+  · simp only [R10, ↓reduceIte, BeConsts] at h ⊢
+    exact ⟨by rw [hg]; exact h.1, by rw [keepAt hp hc hf (by decide)]; exact h.2.1,
+      by rw [keepAt hp hc hf (by decide)]; exact h.2.2⟩
 
 end VG.Proof.Gcm.X86_64.StitchZH

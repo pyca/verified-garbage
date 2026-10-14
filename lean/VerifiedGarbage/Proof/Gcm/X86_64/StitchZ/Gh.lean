@@ -386,6 +386,36 @@ theorem QG.zframe {s₀ : State} {lo : Nat → Nat} {a : Addr} {X : Nat → Bloc
   · rw [ite_f (by assumption)] at h2
     exact ⟨fun hj l hl => by rw [kp l hl]; exact h2.1 hj l hl, fun l hl => by rw [k .xmm2 (by decide) l hl]; exact h2.2 l hl⟩
 
+/-- `GEnv` depends on `rdx`, `r11`, the memory, the regions and `zmm0` only. -/
+theorem GEnv.keepG {s₀ : State} {lo : Nat} {a : Addr} {X : Nat → Block} {P : Nat → Nat → Block}
+    {s s' : State} (h : GEnv s₀ lo a X P s) (hd : s'.gpr .rdx = s.gpr .rdx) (h11 : s'.gpr .r11 = s.gpr .r11)
+    (hm : s'.mem = s.mem) (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr)
+    (h0 : ∀ l < 4, s'.zlane .xmm0 l = s.zlane .xmm0 l) : GEnv s₀ lo a X P s' :=
+  ⟨by rw [hd]; exact h.rdx, by rw [h11]; exact h.r11, fun i hi hi' => by rw [hm]; exact h.xs i hi hi',
+    fun k hk l hl => by rw [hm]; exact h.pv k hk l hl, fun k hk => by rw [hrd, hwr]; exact h.ina k hk,
+    fun k hk => by rw [hrd, hwr]; exact h.inp k hk, fun l hl => by rw [h0 l hl]; exact h.m0 l hl⟩
+
+/-- `QG` depends on `rdx`, `r11`, the memory, the regions and `zmm0`–`zmm2`,
+`zmm8`–`zmm10` only. -/
+theorem QG.keepG {s₀ : State} {lo : Nat → Nat} {a : Addr} {X : Nat → Block} {P : Nat → Nat → Block}
+    {yl : Nat → Block} {j : Nat} {s s' : State} (h : QG s₀ lo a X P yl j s)
+    (hd : s'.gpr .rdx = s.gpr .rdx) (h11 : s'.gpr .r11 = s.gpr .r11)
+    (hm : s'.mem = s.mem) (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr)
+    (k : ∀ r ∈ ([.xmm0, .xmm1, .xmm2, .xmm8, .xmm9, .xmm10] : List XReg), ∀ l < 4, s'.zlane r l = s.zlane r l) :
+    QG s₀ lo a X P yl j s' := by
+  obtain ⟨hE, h1, h2⟩ := h
+  have kp : ∀ l < 4, prod (s'.zproj l) = prod (s.zproj l) := fun l hl => by
+    simp only [prod, State.zproj_xmm, k .xmm8 (by decide) l hl, k .xmm9 (by decide) l hl,
+      k .xmm10 (by decide) l hl]
+  refine ⟨hE.keepG hd h11 hm hrd hwr (k .xmm0 (by decide)), fun l hl => by
+    rw [k .xmm1 (by decide) l hl]; exact h1 l hl, ?_⟩
+  split
+  · rw [ite_t (by assumption)] at h2
+    exact ⟨by rw [k .xmm2 (by decide) 0 (by decide)]; exact h2.1,
+      fun l h1 h4 => by rw [k .xmm2 (by decide) l h4]; exact h2.2 l h1 h4⟩
+  · rw [ite_f (by assumption)] at h2
+    exact ⟨fun hj l hl => by rw [kp l hl]; exact h2.1 hj l hl, fun l hl => by rw [k .xmm2 (by decide) l hl]; exact h2.2 l hl⟩
+
 /-- `batch_ok`'s obligation for the GHASH work between the rounds. -/
 theorem gq_ok {s₀ : State} {lo : Nat → Nat} {a : Addr} {X : Nat → Block} {P : Nat → Nat → Block}
     {yl : Nat → Block} (hmono : ∀ j, lo j ≤ lo (j + 1))
