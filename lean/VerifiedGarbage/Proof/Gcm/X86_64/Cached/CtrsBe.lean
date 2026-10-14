@@ -301,4 +301,12 @@ theorem R10.data {be : Bool} {s₀ : State} (hp : SPre s₀) {c c' : Nat} (hc : 
     exact ⟨by rw [hg]; exact h.1, by rw [keepAt hp hc hf (by decide)]; exact h.2.1,
       by rw [keepAt hp hc hf (by decide)]; exact h.2.2⟩
 
+/-- The registers `QG` reads, which the counters of a batch do not write. -/
+theorem qgRegs_ok : ∀ r ∈ ([.xmm0, .xmm1, .xmm2, .xmm8, .xmm9, .xmm10] : List XReg),
+    r ≠ .xmm13 ∧ r ≠ .xmm14 ∧ r ∉ aregs := by decide
+
+/-- The registers `QG48` reads, which the counters of a batch do not write. -/
+theorem qg48Regs_ok : ∀ r ∈ ([.xmm0, .xmm2, .xmm8, .xmm9, .xmm10] : List XReg),
+    r ≠ .xmm13 ∧ r ≠ .xmm14 ∧ r ∉ aregs := by decide
+
 end VG.Proof.Gcm.X86_64.StitchZH

@@ -231,7 +231,7 @@ theorem keepPTo {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {c : Nat} (hc 
 /-- What hashing output group `e - 1` needs, from `rdx` pointing to it with
 its blocks below `c` encrypted. -/
 theorem genv {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {P : Nat → Nat → Block} {e c : Nat} {s : State}
-    (hA : AInvTo s₀ c s) (h1e : 1 ≤ e) (hec : 16 * e ≤ c)
+    {be : Bool} (hA : AInvTo s₀ c s be) (h1e : 1 ≤ e) (hec : 16 * e ≤ c)
     (hrdx : (s.gpr .rdx).toNat = (op s₀).toNat + 256 * (e - 1)) (hr11 : s.gpr .r11 = pp s₀)
     (hpw : ∀ k < 4, ∀ l < 4, s.mem.readW (pp s₀ + BitVec.ofNat 64 (64 * k + 16 * l)) 128 = P k l) :
     GEnv (dst s₀) 0 (s.gpr .rdx) (fun i => ctbT s₀ (16 * (e - 1) + i)) P s :=

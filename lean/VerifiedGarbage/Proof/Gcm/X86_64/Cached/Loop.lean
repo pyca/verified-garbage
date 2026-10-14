@@ -26,10 +26,6 @@ open VG.Proof.Aes.X86_64.AesNi (blockAt_frame run_sep Keys)
 open VG.Proof.Aes.X86_64.VaesZ (four)
 open VG.Spec.Gcm (Block blockAt blocksAt ghashFrom inc32)
 
-/-- The registers `QG` reads, which the counters of a batch do not write. -/
-theorem qgRegs_ok : ∀ r ∈ ([.xmm0, .xmm1, .xmm2, .xmm8, .xmm9, .xmm10] : List XReg),
-    r ≠ .xmm13 ∧ r ≠ .xmm14 ∧ r ∉ aregs := by decide
-
 theorem body_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} (hf : FinOk (hk s₀) P) {e : Nat}
     (he : 16 * (e + 1) ≤ nb s₀) {s : State} (hI : EInv s₀ P e s)
     (hCache : VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s) :

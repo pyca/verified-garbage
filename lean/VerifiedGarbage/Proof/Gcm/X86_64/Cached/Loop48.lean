@@ -241,10 +241,6 @@ theorem encTailG_ok {s₀ : State} (hp : SPre s₀) (hm : nb s₀ % 16 = 0) {P :
   refine WP.seq (WP.mono (WP.hkeep (by decide) (cmpE_ok hI₄)) fun s₅ ⟨⟨hI₅, hcf₅⟩, hh₅⟩ => ?_)
   exact WP.seq (WP.mono (loopE_ok hp hm hf hI₅ hcf₅ (hCache₄.keep hh₅ (hI₅.a.keys hp))) fun s₆ ⟨e, he, hI₆⟩ => final_ok hp hf he hI₆)
 
-/-- The registers `QG48` reads, which the counters of a batch do not write. -/
-theorem qg48Regs_ok : ∀ r ∈ ([.xmm0, .xmm2, .xmm8, .xmm9, .xmm10] : List XReg),
-    r ≠ .xmm13 ∧ r ≠ .xmm14 ∧ r ∉ aregs := by decide
-
 theorem dbody48_ok {s₀ : State} (hp : SPre s₀) {T : Nat → Nat → Nat → Block} (hT : FinOk48 (hk s₀) T) {e : Nat}
     (he : 16 * (e + 3) ≤ nb s₀) {be : Bool} {s : State} (hI : DInv3 s₀ T e s be)
     (hCache : VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s) :
