@@ -211,7 +211,8 @@ fn exponent(e: &[u8]) -> Result<&[u8], Error> {
 /// needs (`VG.Spec.Rsa.publicPrecompute`), once its first operation has
 /// computed them.
 ///
-/// After PSS verification, retains one wiped working buffer for reuse.
+/// After PSS or PKCS #1 signature verification, retains one wiped working
+/// buffer for reuse.
 /// Concurrent verifications use independent buffers; cloning a key starts with an
 /// empty cache, and with the values of `n` if they are computed.
 #[derive(Clone, Debug, PartialEq, Eq)]
