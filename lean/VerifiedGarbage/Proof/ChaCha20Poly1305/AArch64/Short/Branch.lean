@@ -100,26 +100,21 @@ theorem MainO.agree {s₀ s₁ s : State} (h : Agree s₀ s₁) (hm : MainO s₁
 
 /-- The value `check sve` leaves in `x9`. -/
 abbrev checkVal (sve : Bool) (x : BitVec 64) : BitVec 64 :=
-  if sve then (x - BitVec.ofNat 64 1) >>> 8
-  else ((x - BitVec.ofNat 64 1) >>> 8) ||| ((x - BitVec.ofNat 64 64) >>> 8)
+  ((x - BitVec.ofNat 64 1) >>> 8) ||| ((x - BitVec.ofNat 64 (lo sve)) >>> 8)
 
 /-- `x9`, zero iff `lo sve ≤ len ≤ 256`. -/
 theorem check_ok (sve : Bool) (s₀ : State) :
     WP isa (.block (check sve)) s₀ fun s₁ => Agree s₀ s₁ ∧ s₁.gpr .x9 = checkVal sve (s₀.gpr .x5) := by
+  have hlo : lo sve < 4096 := by cases sve <;> decide
   have h : WP isa (.block (check sve)) s₀ fun s₁ => (∀ r, r ≠ .x9 → r ≠ .x10 → s₁.gpr r = s₀.gpr r) ∧
-      s₁.gpr .x9 = checkVal sve (s₀.gpr .x5) ∧ s₁.mem = s₀.mem ∧ s₁.rd = s₀.rd ∧ s₁.wr = s₀.wr := by
-    cases sve
-    · exact wp_subImm (by decide) fun s₁ u₁ => wp_lsr (by decide) fun s₂ u₂ => wp_subImm (by decide) fun s₃ u₃ =>
-        wp_lsr (by decide) fun s₄ u₄ => wp_orr fun s₅ u₅ => WP.block_nil
-        ⟨fun r h9 h10 => by rw [u₅.other r h9, u₄.other r h10, u₃.other r h10, u₂.other r h9, u₁.other r h9],
-          by rw [u₅.gpr, u₄.gpr, u₃.gpr, u₄.other _ (by decide), u₃.other _ (by decide), u₂.gpr, u₁.gpr,
-            u₂.other _ (by decide), u₁.other _ (by decide)]; rfl,
-          by rw [u₅.mem, u₄.mem, u₃.mem, u₂.mem, u₁.mem], by rw [u₅.rd, u₄.rd, u₃.rd, u₂.rd, u₁.rd],
-          by rw [u₅.wr, u₄.wr, u₃.wr, u₂.wr, u₁.wr]⟩
-    · exact wp_subImm (by decide) fun s₁ u₁ => wp_lsr (by decide) fun s₂ u₂ => WP.block_nil
-        ⟨fun r h9 _ => by rw [u₂.other r h9, u₁.other r h9],
-          by rw [u₂.gpr, u₁.gpr]; rfl,
-          by rw [u₂.mem, u₁.mem], by rw [u₂.rd, u₁.rd], by rw [u₂.wr, u₁.wr]⟩
+      s₁.gpr .x9 = checkVal sve (s₀.gpr .x5) ∧ s₁.mem = s₀.mem ∧ s₁.rd = s₀.rd ∧ s₁.wr = s₀.wr :=
+    wp_subImm (by decide) fun s₁ u₁ => wp_lsr (by decide) fun s₂ u₂ => wp_subImm hlo fun s₃ u₃ =>
+      wp_lsr (by decide) fun s₄ u₄ => wp_orr fun s₅ u₅ => WP.block_nil
+      ⟨fun r h9 h10 => by rw [u₅.other r h9, u₄.other r h10, u₃.other r h10, u₂.other r h9, u₁.other r h9],
+        by rw [u₅.gpr, u₄.gpr, u₃.gpr, u₄.other _ (by decide), u₃.other _ (by decide), u₂.gpr, u₁.gpr,
+          u₂.other _ (by decide), u₁.other _ (by decide)],
+        by rw [u₅.mem, u₄.mem, u₃.mem, u₂.mem, u₁.mem], by rw [u₅.rd, u₄.rd, u₃.rd, u₂.rd, u₁.rd],
+        by rw [u₅.wr, u₄.wr, u₃.wr, u₂.wr, u₁.wr]⟩
   exact WP.mono (WP.preservedV (WP.withSp h) (by cases sve <;> lit_decide))
     fun s₁ ⟨⟨⟨g, x9, m, rd, wr⟩, sp⟩, v⟩ => ⟨⟨g, m, v, sp, rd, wr⟩, x9⟩
 
