@@ -18,12 +18,15 @@
     feature = "alloc"
 ))]
 
+mod aarch64;
 pub(crate) mod arithmetic;
 mod generation;
 
 use crate::zeroize::zeroize;
 use alloc::vec::Vec;
-use arithmetic::{Montgomery, canonical, minus_one, scalar, value_cmp};
+#[cfg(not(target_arch = "aarch64"))]
+use arithmetic::{Montgomery, minus_one, value_cmp};
+use arithmetic::{canonical, scalar};
 use core::fmt;
 
 /// Minimum supported modulus size, including legacy cryptography keys.
@@ -67,7 +70,10 @@ pub struct Parameters {
     p: Vec<u8>,
     g: Vec<u8>,
     q: Option<Vec<u8>>,
+    #[cfg(not(target_arch = "aarch64"))]
     mont: Montgomery,
+    #[cfg(target_arch = "aarch64")]
+    domain: aarch64::Domain,
 }
 impl PartialEq for Parameters {
     fn eq(&self, other: &Self) -> bool {
@@ -82,6 +88,23 @@ impl Parameters {
     /// with q, also odd 2<q<p-1, q|(p-1) and g^q mod p=1. Does not
     /// primality-test imported parameters.
     pub fn from_components(p: &[u8], g: &[u8], q: Option<&[u8]>) -> Result<Self, Error> {
+        #[cfg(target_arch = "aarch64")]
+        {
+            let (p, g, q) = (canonical(p), canonical(g), q.map(canonical));
+            let domain = aarch64::Domain::new(p, g, q).ok_or(Error::InvalidParameters)?;
+            Ok(Self {
+                p: p.to_vec(),
+                g: g.to_vec(),
+                q: q.map(<[u8]>::to_vec),
+                domain,
+            })
+        }
+        #[cfg(not(target_arch = "aarch64"))]
+        Self::from_components_rust(p, g, q)
+    }
+
+    #[cfg(not(target_arch = "aarch64"))]
+    fn from_components_rust(p: &[u8], g: &[u8], q: Option<&[u8]>) -> Result<Self, Error> {
         let p = canonical(p);
         let g = canonical(g);
         let bits = arithmetic::bits(p);
@@ -135,6 +158,50 @@ impl Parameters {
         self.generate_with(getrandom::fill)
     }
 
+    /// Key generation on AArch64: the verified code draws the scalar from
+    /// `p_len` random bytes and checks it and its public value. As before,
+    /// up to 128 draws for a scalar in range, and up to 128 for a public
+    /// value that is not degenerate.
+    #[cfg(target_arch = "aarch64")]
+    fn generate_with<E>(
+        &self,
+        mut fill: impl FnMut(&mut [u8]) -> Result<(), E>,
+    ) -> Result<PrivateKey, Error> {
+        let len = self.p.len();
+        let exponent_len = self.q.as_ref().map_or(len, Vec::len);
+        let mut rand = alloc::vec![0; len];
+        let mut x = alloc::vec![0; len];
+        let mut y = alloc::vec![0; len];
+        let mut result = Err(Error::TooManyIterations);
+        'keys: for _ in 0..128 {
+            for _ in 0..128 {
+                if fill(&mut rand).is_err() {
+                    result = Err(Error::Randomness);
+                    break 'keys;
+                }
+                match self.domain.generate_key(&rand, &mut x, &mut y) {
+                    1 => {
+                        result = Ok(PrivateKey {
+                            public: PublicKey {
+                                params: self.clone(),
+                                y: canonical(&y).to_vec(),
+                            },
+                            x: core::mem::take(&mut x),
+                            exponent_len,
+                        });
+                        break 'keys;
+                    }
+                    2 => continue,
+                    _ => continue 'keys,
+                }
+            }
+            break;
+        }
+        zeroize(&mut rand);
+        result
+    }
+
+    #[cfg(not(target_arch = "aarch64"))]
     fn generate_with<E>(
         &self,
         mut fill: impl FnMut(&mut [u8]) -> Result<(), E>,
@@ -155,6 +222,12 @@ impl Parameters {
         Err(Error::TooManyIterations)
     }
 
+    #[cfg(target_arch = "aarch64")]
+    fn public_valid(&self, y: &[u8]) -> bool {
+        self.domain.check_public(y)
+    }
+
+    #[cfg(not(target_arch = "aarch64"))]
     fn public_valid(&self, y: &[u8]) -> bool {
         value_cmp(y, &[1]).is_gt()
             && value_cmp(y, &minus_one(&self.p)).is_lt()
@@ -219,6 +292,30 @@ impl PrivateKey {
     /// exponentiation schedule, capped at the modulus width. Leading zeros
     /// are retained in that schedule; the scalar value does not set its length.
     pub fn from_components(params: &Parameters, y: &[u8], x: &[u8]) -> Result<Self, Error> {
+        #[cfg(target_arch = "aarch64")]
+        {
+            // Only zeros may precede the modulus' width: the value is then too large.
+            let exponent_len = x.len().min(params.p.len());
+            let (zeros, x) = x.split_at(x.len() - exponent_len);
+            let y = canonical(y);
+            if zeros.iter().any(|&b| b != 0) || !params.domain.check_private(y, x) {
+                return Err(Error::InvalidKey);
+            }
+            Ok(Self {
+                public: PublicKey {
+                    params: params.clone(),
+                    y: y.to_vec(),
+                },
+                x: scalar(x, params.p.len()),
+                exponent_len,
+            })
+        }
+        #[cfg(not(target_arch = "aarch64"))]
+        Self::from_components_rust(params, y, x)
+    }
+
+    #[cfg(not(target_arch = "aarch64"))]
+    fn from_components_rust(params: &Parameters, y: &[u8], x: &[u8]) -> Result<Self, Error> {
         let key = Self::from_private_component(params, x)?;
         if !crate::ct::eq(&key.public.y, canonical(y)) {
             return Err(Error::InvalidKey);
@@ -228,6 +325,7 @@ impl PrivateKey {
     /// Import x and derive y. x is unsigned big-endian; its encoding length
     /// is public and determines the exponentiation schedule. Import validation
     /// may reveal whether x is in range, and is not a constant-time parser.
+    #[cfg(not(target_arch = "aarch64"))]
     fn from_private_component(params: &Parameters, x: &[u8]) -> Result<Self, Error> {
         let upper = params.q.clone().unwrap_or_else(|| minus_one(&params.p));
         if value_cmp(x, &[0]).is_le() || value_cmp(x, &upper).is_ge() {
@@ -237,6 +335,7 @@ impl PrivateKey {
         let x = scalar(x, params.p.len());
         Self::from_padded(params, x, exponent_len)
     }
+    #[cfg(not(target_arch = "aarch64"))]
     fn from_padded(params: &Parameters, x: Vec<u8>, exponent_len: usize) -> Result<Self, Error> {
         let y = params.mont.power(&params.g, &x[x.len() - exponent_len..]);
         if !params.public_valid(&y) {
@@ -270,6 +369,23 @@ impl PrivateKey {
         if params != &peer.params {
             return Err(Error::ParametersMismatch);
         }
+        #[cfg(target_arch = "aarch64")]
+        {
+            let mut z = alloc::vec![0; params.p.len()];
+            let x = &self.x[self.x.len() - self.exponent_len..];
+            if params.domain.exchange(x, &peer.y, &mut z) {
+                Ok(z)
+            } else {
+                Err(Error::InvalidSharedSecret)
+            }
+        }
+        #[cfg(not(target_arch = "aarch64"))]
+        self.exchange_rust(peer)
+    }
+
+    #[cfg(not(target_arch = "aarch64"))]
+    fn exchange_rust(&self, peer: &PublicKey) -> Result<Vec<u8>, Error> {
+        let params = &self.public.params;
         let mut z = params
             .mont
             .power(&peer.y, &self.x[self.x.len() - self.exponent_len..]);
@@ -300,10 +416,13 @@ mod tests {
     #[test]
     fn shared_failure_and_key_wiping() {
         let params = composite_domain();
-        let k = PrivateKey::from_private_component(&params, &[2]).unwrap();
+        // y = g^2 = 2^256.
+        let mut y = vec![0; 33];
+        y[0] = 1;
+        let k = PrivateKey::from_components(&params, &y, &[2]).unwrap();
         assert_eq!(k.exchange(k.public_key()), Err(Error::InvalidSharedSecret));
         let mut x = vec![2];
-        let k = PrivateKey::from_private_component(&params, &x).unwrap();
+        let k = PrivateKey::from_components(&params, &y, &x).unwrap();
         x[0] = 0;
         assert_eq!(k.private_component()[63], 2);
         assert!(k.private_component()[..63].iter().all(|&b| b == 0));

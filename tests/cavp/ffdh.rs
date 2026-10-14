@@ -162,12 +162,18 @@ fn malformed_components_and_domains() {
             Error::InvalidKey
         );
     }
-    for y in [vec![], vec![0], vec![1], vec![2], p.clone()] {
+    let mut long = vec![1];
+    long.extend(&p);
+    for y in [vec![], vec![0], vec![1], vec![2], p.clone(), long.clone()] {
         assert_eq!(
             PublicKey::from_components(&params, &y).unwrap_err(),
             Error::InvalidKey
         );
     }
+    assert_eq!(
+        PrivateKey::from_components(&params, &long, &hex(&v["XstatIUT"])).unwrap_err(),
+        Error::InvalidKey
+    );
     let y = hex(&v["YstatIUT"]);
     assert_eq!(
         PrivateKey::from_components(&params, &y, &[1]).unwrap_err(),
