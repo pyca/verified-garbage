@@ -32,7 +32,7 @@ theorem implies :
     (rfcWide Spec.Ecdsa.Rfc6979.P256Sha256.inst 272 Impl.Ecdsa.X86.p256Comb.combConsts).Implies
       (Spec.Ecdsa.Rfc6979.P256Sha256.inst.signContract
         (X86.abi.withConsts Impl.Ecdsa.X86.p256Comb.combConsts) 272) :=
-  comb_implies _ rfl (by decide)
+  comb_implies _ rfl (by decide) rfl
 
 open VG.Proof.Sha256.X86.Variants (Backend)
 
