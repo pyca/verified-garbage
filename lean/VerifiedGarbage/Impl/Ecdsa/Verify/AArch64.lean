@@ -23,15 +23,16 @@ on x86-64 (`Impl/Ecdsa/Verify/X86_64.lean`):
 3. the masks of `r` and `s` in `[1, n-1]` into the flag, and
    `w = s^(n-2)`, in Montgomery form modulo `n`;
 4. `u = e w` and `v = r w` modulo `n`, out of Montgomery's form;
-5. `[u]G` by the signature's comb (from the table of `u`'s bits), saved
+5. `[u]G` by the signature's comb (from the table of `u`'s bits), reading
+   the entries of the public `u`'s digits directly, saved
    to `U`, and `R` reset to `O`; then `[v]Q` by ECDH's window method and
    `[u]G + [v]Q` by the complete addition, into `R`;
 6. for P-256, compare `X` with `rZ` and, when `r+n < p`, `(r+n)Z`, without
    inversion; for the other curves, compute `x = X Z^(p-2)` and compare it
    with `r` modulo `n`. Reject `Z = 0` and return the accumulated flag.
 
-All validity checks run regardless of earlier failures. P-256's comb
-addresses depend on its public scalar; the remaining memory accesses and
+All validity checks run regardless of earlier failures. The comb's
+addresses depend on the public scalar `u`; the remaining memory accesses and
 branches depend only on pointers and fixed loop counters.
 -/
 
@@ -127,10 +128,11 @@ def final : Prog isa :=
     (.block (c.checkNonzero (c.sl RZ) ++ Impl.Ecdh.AArch64.Cfg.checkZero c (c.sl W) ++ finish c))
 
 /-- `[u]G + [v]Q`, into `R`: `[u]G` by the comb from the table of the bits of
-`u`, `[v]Q` by ECDH's window method. P-256 verification selects its public
-comb digits directly; the other curves retain the table scan. -/
+`u`, `[v]Q` by ECDH's window method. `u` is public (from the digest and
+the signature), so the comb reads its entries directly, without the table
+scan of signing. -/
 def points : Prog isa :=
-  .seq (bits (c.sl U) (bitsAt c.n 0) (8 * c.n)) <| .seq (TCombCfg.comb c.combCfg (c.C.len == 32)) <|
+  .seq (bits (c.sl U) (bitsAt c.n 0) (8 * c.n)) <| .seq (TCombCfg.comb c.combCfg true) <|
   .seq (.block (save c)) <|
   .seq (c.winPrep (c.sl V)) <| .seq (WinCfg.window (c.winCfg PX PY)) (sum c)
 
