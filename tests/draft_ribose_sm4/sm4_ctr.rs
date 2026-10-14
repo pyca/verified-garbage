@@ -4,7 +4,12 @@
 //! (`Sm4Ecb`, tested on the draft's ECB examples) on every length up to
 //! a few groups of sixteen blocks and across the carries of the counter.
 
-#![cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
+#![cfg(any(
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    target_arch = "arm",
+    target_arch = "x86"
+))]
 
 use verified_garbage::sm4_ctr::Sm4Ctr;
 use verified_garbage::sm4_ecb::Sm4Ecb;
@@ -12,10 +17,13 @@ use verified_garbage::sm4_ecb::Sm4Ecb;
 use super::{field, section};
 
 /// `ctr` plus `k`, modulo `2¹²⁸`.
-fn add(ctr: [u8; 16], k: usize) -> [u8; 16] {
-    u128::from_be_bytes(ctr)
-        .wrapping_add(k as u128)
-        .to_be_bytes()
+fn add(mut ctr: [u8; 16], mut k: usize) -> [u8; 16] {
+    for byte in ctr.iter_mut().rev() {
+        let (sum, carry) = byte.overflowing_add(k as u8);
+        *byte = sum;
+        k = (k >> 8) + usize::from(carry);
+    }
+    ctr
 }
 
 /// CTR from ECB: `data` XORed with the encryptions of `ctr`, `ctr + 1`, ….
@@ -74,7 +82,7 @@ fn draft_examples() {
 }
 
 /// Every length up to three groups of sixteen blocks and a bit, from
-/// counter blocks whose last 64 bits, or all 128, wrap around within them.
+/// counter blocks that carry across each 32-bit word boundary or wrap entirely.
 #[test]
 fn from_ecb() {
     let key: [u8; 16] = core::array::from_fn(|i| (17 * i + 3) as u8);
@@ -84,6 +92,8 @@ fn from_ecb() {
     for ctr in [
         [0; 16],
         core::array::from_fn(|i| (i * 11) as u8),
+        (u128::from(u32::MAX) - 20).to_be_bytes(),
+        ((1u128 << 96) - 21).to_be_bytes(),
         low.to_be_bytes(),
         ((5 << 64) | low).to_be_bytes(),
         (u128::MAX - 20).to_be_bytes(),
@@ -98,5 +108,26 @@ fn from_ecb() {
             assert_eq!(c, add(ctr, len.div_ceil(16)));
         }
         check(&ctx, ctr, &data, &reference(&key, ctr, &data));
+    }
+}
+
+/// Unaligned slices and every tail through seventeen blocks;
+/// bytes outside the requested slice must remain untouched.
+#[test]
+fn unaligned_batches() {
+    let key = core::array::from_fn(|i| (i * 7 + 1) as u8);
+    let ctx = Sm4Ctr::new(&key);
+    let ctr = (u128::MAX - 8).to_be_bytes();
+    for offset in 1..=4 {
+        for len in 0..=16 * 17 {
+            let mut buffer = vec![0xa5; offset + len + 4];
+            let expected = reference(&key, ctr, &buffer[offset..offset + len]);
+            let mut c = ctr;
+            ctx.apply_keystream(&mut c, &mut buffer[offset..offset + len]);
+            assert_eq!(&buffer[offset..offset + len], expected);
+            assert_eq!(c, add(ctr, len.div_ceil(16)));
+            assert!(buffer[..offset].iter().all(|&b| b == 0xa5));
+            assert!(buffer[offset + len..].iter().all(|&b| b == 0xa5));
+        }
     }
 }
