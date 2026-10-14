@@ -12,3 +12,5 @@ import VerifiedGarbage.TCB.Axioms
 #assert_standard_axioms VG.Proof.MillerRabin.AArch64.core_ct
 #assert_standard_axioms VG.Proof.MillerRabin.round_mod
 #assert_standard_axioms VG.Proof.MillerRabin.witness_exists
+
+#assert_standard_axioms VG.Proof.MillerRabin.round_eq_of_mont
