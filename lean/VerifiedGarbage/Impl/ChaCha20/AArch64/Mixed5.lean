@@ -42,17 +42,18 @@ def scalarCode : Neon4.Op → List Instr
         (VG.Impl.ChaCha20.AArch64.wreg a) (VG.Impl.ChaCha20.AArch64.wreg b),
        .ror .w (VG.Impl.ChaCha20.AArch64.wreg d) (VG.Impl.ChaCha20.AArch64.wreg d) (32 - n)]
 
-def scheduled : List Neon4.Op → Prog isa
+/-- The vector operations use SVE2 if `sve`. -/
+def scheduled (sve : Bool := false) : List Neon4.Op → Prog isa
   | [] => .block []
-  | op :: ops => .seq (.block op.code) (.seq (.block (scalarCode op)) (scheduled ops))
+  | op :: ops => .seq (.block (op.codeFor sve)) (.seq (.block (scalarCode op)) (scheduled sve ops))
 
 def roundOps : List Neon4.Op := Neon4.quarters Neon4.cols ++ Neon4.quarters Neon4.diags
 
-def parallelRound : Prog isa := scheduled roundOps
+def parallelRound (sve : Bool := false) : Prog isa := scheduled sve roundOps
 
-def rounds : Nat → Prog isa
+def rounds (sve : Bool := false) : Nat → Prog isa
   | 0 => .block []
-  | n + 1 => .seq (rounds n) parallelRound
+  | n + 1 => .seq (rounds sve n) (parallelRound sve)
 
 def restoreArgs : List Instr :=
   [.addImm .x .x1 .x26 0, .addImm .x .x2 .x19 0, .addImm .x .x3 .x20 0]
@@ -75,12 +76,14 @@ def finish : Prog isa := .seq (.block restoreArgs)
 def last : Prog isa := .seq (.block [.addImm .x .x1 .x1 256])
   (.seq (.block ((List.finRange 4).flatMap xorLastRow)) (.block [.subImm .x .x1 .x1 256]))
 
-def chunk : Prog isa := .seq prepare (.seq (rounds 10) (.seq spill (.seq finish last)))
+/-- One chunk of five blocks; its vector rounds use SVE2 if `sve`. -/
+def chunk (sve : Bool := false) : Prog isa :=
+  .seq prepare (.seq (rounds sve 10) (.seq spill (.seq finish last)))
 
 def next : List Instr := counter 5 ++
   ([.addImm .x .x1 .x1 320, .subImm .x .x2 .x2 320] : List Instr) ++ check
 
-def body : Prog isa := .seq chunk (.block next)
+def body : Prog isa := .seq (chunk false) (.block next)
 
 def xor : Prog isa :=
   .seq (.block check)

@@ -227,8 +227,8 @@ structure Post2 (s₀ : State) (s : State) : Prop where
   x1 : s.gpr .x1 = off (cx s₀) 64
 
 open VG.Proof.ChaCha20.AArch64.Mixed5 in
-theorem chunkLeave_ok {s₀ s : State} (hp : APre e s₀) (h : Post1 s₀ s) :
-    WP isa (.seq VG.Impl.ChaCha20.AArch64.Mixed5.chunk (.block leave)) s (Post2 s₀) := by
+theorem chunkLeave_ok {sve : Bool} {s₀ s : State} (hp : APre e s₀) (h : Post1 s₀ s) :
+    WP isa (.seq (VG.Impl.ChaCha20.AArch64.Mixed5.chunk sve) (.block leave)) s (Post2 s₀) := by
   refine WP.seq ((chunk_ok s (h.cp hp)).mono fun s₂ c₂ => ?_)
   have x21₂ : s₂.gpr .x21 = cx s₀ := by rw [c₂.cs _ (by decide) (by decide) (by decide), h.x21]
   have hf₂ : Frame [sub s₀ 0 64, sub s₀ 384 64, sub s₀ 64 320] s.mem s₂.mem := by
@@ -298,7 +298,8 @@ theorem otk_eq {s₀ : State} {m : Mem} (h : ∀ k < 320, m (off (cx s₀) 64 + 
     rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (by
       rw [VG.Proof.ChaCha20.length_serialize]; omega), Option.getD_some]
 
-theorem prologue_ok {s₀ : State} (hp : APre e s₀) : WP isa Short.prologue s₀ (PostP s₀) := by
+theorem prologue_ok {sve : Bool} {s₀ : State} (hp : APre e s₀) :
+    WP isa (Short.prologue sve) s₀ (PostP s₀) := by
   unfold Short.prologue
   refine WP.seq (WP.mono (block1_ok hp) fun s₁ h₁ => ?_)
   refine WP.seq ((chunkLeave_ok hp h₁).mono fun s₂ h₂ => ?_)
