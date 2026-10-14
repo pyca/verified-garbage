@@ -32,7 +32,15 @@ def r2Count : List Instr := [ldh .x13 sW, .lsl .x .x13 .x13 7]
 def doublingR2 : Prog isa := seqs [
   small aR2 1, .block r2Count, doubles aN aAcc aTmp aR2 sCnt]
 
-def constants : Prog isa := .seq (small aOne 1) doublingR2
+/-- The modulus' top word into `x3`, which is zero only for padded moduli. -/
+def topWord : List Instr :=
+  [ldh .x12 sW, ldh .x8 (sArr aN), .subImm .x .x4 .x12 1, .lsl .x .x4 .x4 3, .add .x .x4 .x8 .x4, ld .x3 .x4]
+
+/-- One and R². RSA's setup (`r2Steps`: at most `64 + w` doublings and six
+squares) when the modulus' top word is nonzero; padded moduli use the
+general doubling fallback. -/
+def constants (mul : Nat → Nat → Nat → Prog isa) : Prog isa :=
+  .seq (small aOne 1) (.seq (.block topWord) (.ite (.zero .x .x3) doublingR2 (seqs (r2Steps mul))))
 
 def encodedPower (mul : Nat → Nat → Nat → Prog isa) (exp expLen : Nat) : Prog isa :=
   .seq (seqs (Crt.expLoop mul exp expLen)) (mul aY aY aOne)
@@ -45,13 +53,13 @@ def powerCore (mul : Nat → Nat → Nat → Prog isa) (exp expLen : Nat) : Prog
   .seq (encodePower mul) (encodedPower mul exp expLen)
 
 def power (mul : Nat → Nat → Nat → Prog isa) (base baseLen exp expLen : Nat) : Prog isa :=
-  .seq constants (.seq (load aX base baseLen) (powerCore mul exp expLen))
+  .seq (constants mul) (.seq (load aX base baseLen) (powerCore mul exp expLen))
 
 def productCore (mul : Nat → Nat → Nat → Prog isa) : Prog isa := seqs [
   mul aX aX aR2, mul aXm aXm aR2, mul aY aXm aX, mul aY aY aOne]
 
 def product (mul : Nat → Nat → Nat → Prog isa) (a aLen b bLen : Nat) : Prog isa := seqs [
-  constants, load aX a aLen, load aXm b bLen, productCore mul]
+  constants mul, load aX a aLen, load aXm b bLen, productCore mul]
 
 /-- Array Xm holds 256R, X the next input byte, and Y the ordinary residue. -/
 def reduceStep (mul : Nat → Nat → Nat → Prog isa) : Prog isa :=
@@ -68,7 +76,7 @@ def reduceByte (mul : Nat → Nat → Nat → Prog isa) : Prog isa := seqs [
   .block reduceRead, reduceStep mul, .block reduceCount]
 
 def reduceSetup (mul : Nat → Nat → Nat → Prog isa) : Prog isa := seqs [
-  constants, small aX 256, mul aXm aX aR2, zero aY, zero aX]
+  constants mul, small aX 256, mul aXm aX aR2, zero aY, zero aX]
 
 def reduceInit (ptr len : Nat) : List Instr :=
   [ldh .x5 Crt.sLink, Crt.ldw .x1 .x5 ptr, Crt.ldw .x3 .x5 len,

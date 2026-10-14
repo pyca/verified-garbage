@@ -61,7 +61,7 @@ theorem PowerCallBytes.frame {p : PowerCallPublic} {s t : State} (h : PowerCallB
     hbl, helen, work_source hc hf hk hb, work_source hc hf hk he⟩
 
 theorem powerCall_prepare (M : Mont) {p : PowerCallPublic} {s : State} (h : PowerCallPre p s) :
-    WP isa (Arithmetic.constants) s (PowerCallPrepared p) := by
+    WP isa (Arithmetic.constants M.mm) s (PowerCallPrepared p) := by
   refine WP.mono (prepare_ok M h.1 p.lower p.width48 p.greater p.odd h.2.1.modulus h.2.1.inverse)
     fun t ⟨hc, hm, hone, hr2, hf, hk⟩ => ?_
   exact ⟨⟨hc, hm, h.2.2.frame h.1 hf hk⟩, hone, hr2⟩
@@ -94,7 +94,7 @@ theorem powerCall_ct (M : Mont) : RelCT isa (Two PowerCallPre)
   unfold Arithmetic.power
   refine RelCT.seq (two_post (Ψ := PowerCallPrepared)
     (two_map (fun p : PowerCallPublic => p.toPowerPublic.product) (fun p s h =>
-      ⟨h.2.1, p.width48, p.greater, p.odd⟩) (constants_ct)) (fun _ _ h => powerCall_prepare M h)) ?_
+      ⟨h.2.1, p.width48, p.greater, p.odd⟩) (constants_ct M)) (fun _ _ h => powerCall_prepare M h)) ?_
   refine RelCT.seq (two_post (Ψ := fun p s => PowerCorePre p.toPowerPublic s)
     (two_map (fun p : PowerCallPublic => (⟨p.x, p.base, p.baseLen⟩ : BPub)) ?_
       (loadArr_ct (j := aX) (sp := arg) (sl := argLen) (by decide) (by taint_decide) (by taint_decide)))
