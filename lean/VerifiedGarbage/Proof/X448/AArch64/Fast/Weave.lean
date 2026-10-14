@@ -21,24 +21,12 @@ Untrusted: everything here is checked by Lean. `weave a b` is a merge of
 namespace VG.Proof.X448.AArch64.Fast
 
 open VG VG.AArch64 VG.AArch64.Interleave
-open VG.Impl.X448.AArch64.Fast (weave weaveGo codeOf ops)
-
-theorem weaveGo_merge (n m : Nat) : ∀ f i j (a b : List Instr), Merge (weaveGo n m f i j a b) a b
-  | 0, _, _, a, b => Merge.append a b
-  | _ + 1, _, _, [], b => Merge.nil_left b
-  | _ + 1, _, _, x :: a, [] => Merge.nil_right (x :: a)
-  | f + 1, i, j, x :: a, y :: b => by
-    rw [weaveGo]
-    split
-    · exact .left (weaveGo_merge n m f _ _ _ _)
-    · exact .right (weaveGo_merge n m f _ _ _ _)
-
-theorem weave_merge (a b : List Instr) : Merge (weave a b) a b := weaveGo_merge _ _ _ _ _ _ _
+open VG.Impl.X448.AArch64.Fast (weave codeOf ops)
 
 /-- Independent blocks, interleaved, run as the first and then the second. -/
-theorem WP.weave {a b : List Instr} (hind : Indeps a b) {s : State}
+theorem WP.weave {xb : Reg} {a b : List Instr} (hind : Indeps xb a b) {s : State}
     {Q : State → Prop} (h : WP isa (.block a) s fun t => WP isa (.block b) t Q) : WP isa (.block (weave a b)) s Q :=
-  WP.merge (weave_merge a b) hind (WP.block_append_iff.mpr h)
+  Interleave.WP.weave hind h
 
 theorem block_codeOf {l : List Impl.X448.AArch64.Fast.Op} {s : State} {Q : State → Prop}
     (h : WP isa (ops l) s Q) : WP isa (.block (codeOf l)) s Q := by

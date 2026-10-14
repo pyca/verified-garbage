@@ -26,8 +26,10 @@ any slots). Independence then needs only the bounds' (`indeps_of_bnd`).
 
 namespace VG.AArch64.Interleave
 
+variable {xb : Reg}
+
 /-- A bound on footprints: register masks, the flags, and the windows
-`(base, len)` of the bytes (at offsets from `x3`) read and written. -/
+`(base, len)` of the bytes (at offsets from the base register) read and written. -/
 structure Bnd where
   gr : Nat
   gw : Nat
@@ -66,8 +68,8 @@ def memIn (U : Bnd) : Instr → Bool
   | _ => true
 
 /-- The instruction has a footprint, within the bound. -/
-def fpIn (U : Bnd) (i : Instr) : Bool :=
-  match fp i with
+def fpIn (xb : Reg) (U : Bnd) (i : Instr) : Bool :=
+  match fp xb i with
   | none => false
   | some F => subM F.gr U.gr && subM F.gw U.gw && subM F.vr U.vr && subM F.vw U.vw &&
       (!F.cr || U.cr) && (!F.cw || U.cw) && memIn U i
@@ -92,7 +94,7 @@ theorem winMask_bit {off n : Nat} : ∀ {ws : List (Nat × Nat)}, inWin off n ws
       omega
     · exact .inr (winMask_bit h k hk)
 
-theorem fp_mem {i : Instr} {F : Fp} (hf : fp i = some F) {U : Bnd} (hm : memIn U i = true) :
+theorem fp_mem {i : Instr} {F : Fp} (hf : fp xb i = some F) {U : Bnd} (hm : memIn U i = true) :
     (∀ k, F.mr.testBit k = true → (winMask U.rd).testBit k = true) ∧
     (∀ k, F.mw.testBit k = true → (winMask U.wr).testBit k = true) := by
   cases i with
@@ -130,9 +132,9 @@ theorem fp_mem {i : Instr} {F : Fp} (hf : fp i = some F) {U : Bnd} (hm : memIn U
     simp only [fp, regFp, Option.some.injEq, reduceCtorEq] at hf
     all_goals (subst hf; exact ⟨fun k hk => by simp at hk, fun k hk => by simp at hk⟩)
 
-theorem fpIn_sub {U : Bnd} {i : Instr} (h : fpIn U i = true) : ∃ F, fp i = some F ∧ Sub F U.toFp := by
+theorem fpIn_sub {U : Bnd} {i : Instr} (h : fpIn xb U i = true) : ∃ F, fp xb i = some F ∧ Sub F U.toFp := by
   unfold fpIn at h
-  cases hf : fp i with
+  cases hf : fp xb i with
   | none => rw [hf] at h; cases h
   | some F =>
     rw [hf] at h
@@ -149,8 +151,8 @@ theorem fpIn_sub {U : Bnd} {i : Instr} (h : fpIn U i = true) : ∃ F, fp i = som
       · exact h6
 
 /-- Blocks within bounds that are independent are independent. -/
-theorem indeps_of_bnd {a b : List Instr} {A B : Bnd} (ha : ∀ x ∈ a, fpIn A x = true)
-    (hb : ∀ y ∈ b, fpIn B y = true) (h : A.toFp.indep B.toFp = true) : Indeps a b := by
+theorem indeps_of_bnd {a b : List Instr} {A B : Bnd} (ha : ∀ x ∈ a, fpIn xb A x = true)
+    (hb : ∀ y ∈ b, fpIn xb B y = true) (h : A.toFp.indep xb B.toFp = true) : Indeps xb a b := by
   intro x hx y hy
   obtain ⟨F, hx', hF⟩ := fpIn_sub (ha x hx)
   obtain ⟨G, hy', hG⟩ := fpIn_sub (hb y hy)
@@ -241,14 +243,14 @@ theorem inWin_reloc {off n : Nat} (hn : 0 < n) {ws : List (Nat × Nat)} (hs : se
     · exact .inr (inWin_reloc hn hs (fun w hw => ha w (List.mem_cons_of_mem _ hw)) h)
 
 theorem fpIn_reloc {ws : List (Nat × Nat)} (hs : sepB (ws.map Prod.fst) = true) {U : Bnd}
-    (ha : ∀ w ∈ U.rd ++ U.wr, alignedB (ws.map Prod.fst) w = true) {i : Instr} (h : fpIn U i = true) :
-    fpIn (U.reloc ws) (relocI ws i) = true := by
+    (ha : ∀ w ∈ U.rd ++ U.wr, alignedB (ws.map Prod.fst) w = true) {i : Instr} (h : fpIn xb U i = true) :
+    fpIn xb (U.reloc ws) (relocI ws i) = true := by
   have hr : ∀ w ∈ U.rd, alignedB (ws.map Prod.fst) w = true := fun w hw => ha w (List.mem_append_left _ hw)
   have hw : ∀ w ∈ U.wr, alignedB (ws.map Prod.fst) w = true := fun w hw => ha w (List.mem_append_right _ hw)
   cases i with
   | ldr sz t n off =>
-    show fpIn (U.reloc ws) (.ldr sz t n (relocOff ws off)) = true
-    by_cases hn : n = .x3
+    show fpIn xb (U.reloc ws) (.ldr sz t n (relocOff ws off)) = true
+    by_cases hn : n = xb
     · subst hn
       unfold fpIn at h ⊢
       simp only [fp, ite_true, memIn, Bool.and_eq_true] at h ⊢
@@ -257,8 +259,8 @@ theorem fpIn_reloc {ws : List (Nat × Nat)} (hs : sepB (ws.map Prod.fst) = true)
       simp only [fp, hn, ite_false] at h
       cases h
   | str sz t n off =>
-    show fpIn (U.reloc ws) (.str sz t n (relocOff ws off)) = true
-    by_cases hn : n = .x3
+    show fpIn xb (U.reloc ws) (.str sz t n (relocOff ws off)) = true
+    by_cases hn : n = xb
     · subst hn
       unfold fpIn at h ⊢
       simp only [fp, ite_true, memIn, Bool.and_eq_true] at h ⊢
@@ -267,8 +269,8 @@ theorem fpIn_reloc {ws : List (Nat × Nat)} (hs : sepB (ws.map Prod.fst) = true)
       simp only [fp, hn, ite_false] at h
       cases h
   | ldrq t n off =>
-    show fpIn (U.reloc ws) (.ldrq t n (relocOff ws off)) = true
-    by_cases hn : n = .x3
+    show fpIn xb (U.reloc ws) (.ldrq t n (relocOff ws off)) = true
+    by_cases hn : n = xb
     · subst hn
       unfold fpIn at h ⊢
       simp only [fp, ite_true, memIn, Bool.and_eq_true] at h ⊢
@@ -277,8 +279,8 @@ theorem fpIn_reloc {ws : List (Nat × Nat)} (hs : sepB (ws.map Prod.fst) = true)
       simp only [fp, hn, ite_false] at h
       cases h
   | strq t n off =>
-    show fpIn (U.reloc ws) (.strq t n (relocOff ws off)) = true
-    by_cases hn : n = .x3
+    show fpIn xb (U.reloc ws) (.strq t n (relocOff ws off)) = true
+    by_cases hn : n = xb
     · subst hn
       unfold fpIn at h ⊢
       simp only [fp, ite_true, memIn, Bool.and_eq_true] at h ⊢
@@ -291,9 +293,9 @@ theorem fpIn_reloc {ws : List (Nat × Nat)} (hs : sepB (ws.map Prod.fst) = true)
 /-- Code at any slots, as code at the probe slots with its offsets moved, is within the bound
 checked at the probe slots, moved. -/
 theorem fpIn_relocs {ws : List (Nat × Nat)} {ps : List Nat} {c c' : List Instr} {U : Bnd}
-    (he : c' = c.map (relocI ws)) (hc : c.all (fpIn U) = true) (hps : ws.map Prod.fst = ps)
+    (he : c' = c.map (relocI ws)) (hc : c.all (fpIn xb U) = true) (hps : ws.map Prod.fst = ps)
     (hs : sepB ps = true) (ha : (U.rd ++ U.wr).all (alignedB ps) = true) :
-    ∀ x ∈ c', fpIn (U.reloc ws) x = true := by
+    ∀ x ∈ c', fpIn xb (U.reloc ws) x = true := by
   subst he hps
   intro x hx
   obtain ⟨y, hy, rfl⟩ := List.mem_map.mp hx
@@ -329,9 +331,9 @@ theorem inWin_append_right {off n : Nat} {a b : List (Nat × Nat)} (h : inWin of
   | nil => exact h
   | cons w a ih => simp only [inWin, List.cons_append, Bool.or_eq_true]; exact .inr ih
 
-theorem fpIn_union_left {U V : Bnd} {i : Instr} (h : fpIn U i = true) : fpIn (U.union V) i = true := by
+theorem fpIn_union_left {U V : Bnd} {i : Instr} (h : fpIn xb U i = true) : fpIn xb (U.union V) i = true := by
   unfold fpIn at h ⊢
-  cases hf : fp i with
+  cases hf : fp xb i with
   | none => rw [hf] at h; cases h
   | some F =>
     rw [hf] at h
@@ -346,9 +348,9 @@ theorem fpIn_union_left {U V : Bnd} {i : Instr} (h : fpIn U i = true) : fpIn (U.
       · exact .inr (by simp [Bnd.union, h6])
     · cases i <;> simp only [memIn, Bnd.union] at h7 ⊢ <;> first | rfl | exact inWin_append_left h7
 
-theorem fpIn_union_right {U V : Bnd} {i : Instr} (h : fpIn V i = true) : fpIn (U.union V) i = true := by
+theorem fpIn_union_right {U V : Bnd} {i : Instr} (h : fpIn xb V i = true) : fpIn xb (U.union V) i = true := by
   unfold fpIn at h ⊢
-  cases hf : fp i with
+  cases hf : fp xb i with
   | none => rw [hf] at h; cases h
   | some F =>
     rw [hf] at h

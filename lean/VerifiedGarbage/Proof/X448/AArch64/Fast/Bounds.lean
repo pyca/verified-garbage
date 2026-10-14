@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.X448.AArch64.Footprint
+public import VerifiedGarbage.Proof.Framework.AArch64.Footprint
 public import VerifiedGarbage.Proof.Framework.KernelRfl
 public import VerifiedGarbage.Impl.X448.AArch64.Fast
 import all Init.Data.Array.Basic
@@ -46,13 +46,13 @@ def copyB : Bnd := ⟨24, 16, 0, 0, false, false, [(P 1, 64)], [(P 0, 64)]⟩
 def mul2B : Bnd := ⟨4104, 0, 4294967295, 4294967295, false, false,
   [(4096, 624), (P 1, 64), (P 2, 64), (P 4, 64), (P 5, 64)], [(4096, 624), (P 0, 64), (P 3, 64)]⟩
 
-theorem sqr_bnd : (Fast.sqr (P 0) (P 1)).all (fpIn sqrB) = true := by decide +kernel
-theorem mul_bnd : (Fast.mul (P 0) (P 1) (P 2)).all (fpIn mulB) = true := by decide +kernel
-theorem sub_bnd : (Fast.sub (P 0) (P 1) (P 2)).all (fpIn subB) = true := by decide +kernel
-theorem addSub_bnd : (Fast.addSub (P 0) (P 1) (P 2) (P 3)).all (fpIn addSubB) = true := by decide +kernel
-theorem small_bnd : (Fast.small (P 0) (P 1) (P 2)).all (fpIn smallB) = true := by decide +kernel
-theorem copy_bnd : (VG.Impl.Curve448.AArch64.copy (P 0) (P 1)).all (fpIn copyB) = true := by decide +kernel
-theorem mul2_bnd : (Neon.mul2 (P 0) (P 1) (P 2) (P 3) (P 4) (P 5)).all (fpIn mul2B) = true := by
+theorem sqr_bnd : (Fast.sqr (P 0) (P 1)).all (fpIn .x3 sqrB) = true := by decide +kernel
+theorem mul_bnd : (Fast.mul (P 0) (P 1) (P 2)).all (fpIn .x3 mulB) = true := by decide +kernel
+theorem sub_bnd : (Fast.sub (P 0) (P 1) (P 2)).all (fpIn .x3 subB) = true := by decide +kernel
+theorem addSub_bnd : (Fast.addSub (P 0) (P 1) (P 2) (P 3)).all (fpIn .x3 addSubB) = true := by decide +kernel
+theorem small_bnd : (Fast.small (P 0) (P 1) (P 2)).all (fpIn .x3 smallB) = true := by decide +kernel
+theorem copy_bnd : (VG.Impl.Curve448.AArch64.copy (P 0) (P 1)).all (fpIn .x3 copyB) = true := by decide +kernel
+theorem mul2_bnd : (Neon.mul2 (P 0) (P 1) (P 2) (P 3) (P 4) (P 5)).all (fpIn .x3 mul2B) = true := by
   decide +kernel
 
 theorem sep2 : sepB [P 0, P 1] = true := by decide
@@ -99,7 +99,7 @@ def opBnd : Op → Bnd
   | .small o a e => smallB.reloc [(P 0, o), (P 1, a), (P 2, e)]
   | .copy o a => copyB.reloc [(P 0, o), (P 1, a)]
 
-theorem op_in : ∀ (op : Op), ∀ x ∈ op.code, fpIn (opBnd op) x = true
+theorem op_in : ∀ (op : Op), ∀ x ∈ op.code, fpIn .x3 (opBnd op) x = true
   | .mul o a b => by
     simp only [Impl.X448.AArch64.Fast.Op.code, fmul, opBnd]
     split
@@ -117,7 +117,7 @@ def opsBnd : List Op → Bnd
   | [] => ⟨0, 0, 0, 0, false, false, [], []⟩
   | op :: l => (opBnd op).union (opsBnd l)
 
-theorem codeOf_in : ∀ (l : List Op), ∀ x ∈ codeOf l, fpIn (opsBnd l) x = true
+theorem codeOf_in : ∀ (l : List Op), ∀ x ∈ codeOf l, fpIn .x3 (opsBnd l) x = true
   | [] => fun _ h => by cases h
   | op :: l => fun x hx => by
     simp only [codeOf, List.flatMap_cons, List.mem_append] at hx
@@ -130,14 +130,14 @@ def mul2Bnd (o₁ a₁ b₁ o₂ a₂ b₂ : Nat) : Bnd :=
   mul2B.reloc [(P 0, o₁), (P 1, a₁), (P 2, b₁), (P 3, o₂), (P 4, a₂), (P 5, b₂)]
 
 theorem mul2_in (o₁ a₁ b₁ o₂ a₂ b₂ : Nat) :
-    ∀ x ∈ Neon.mul2 o₁ a₁ b₁ o₂ a₂ b₂, fpIn (mul2Bnd o₁ a₁ b₁ o₂ a₂ b₂) x = true :=
+    ∀ x ∈ Neon.mul2 o₁ a₁ b₁ o₂ a₂ b₂, fpIn .x3 (mul2Bnd o₁ a₁ b₁ o₂ a₂ b₂) x = true :=
   fpIn_relocs (mul2_reloc o₁ a₁ b₁ o₂ a₂ b₂) mul2_bnd rfl sep6 mul2_al
 
 /-- Field operations interleaved with a pair of products in AdvSIMD are independent if their
 bounds are. -/
 theorem indeps_ops_mul2 (l : List Op) (o₁ a₁ b₁ o₂ a₂ b₂ : Nat)
-    (h : (opsBnd l).toFp.indep (mul2Bnd o₁ a₁ b₁ o₂ a₂ b₂).toFp = true) :
-    Indeps (codeOf l) (Neon.mul2 o₁ a₁ b₁ o₂ a₂ b₂) :=
+    (h : (opsBnd l).toFp.indep .x3 (mul2Bnd o₁ a₁ b₁ o₂ a₂ b₂).toFp = true) :
+    Indeps .x3 (codeOf l) (Neon.mul2 o₁ a₁ b₁ o₂ a₂ b₂) :=
   indeps_of_bnd (codeOf_in l) (mul2_in o₁ a₁ b₁ o₂ a₂ b₂) h
 
 end VG.Proof.X448.AArch64.Fast
