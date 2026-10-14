@@ -837,7 +837,7 @@ theorem nonzero_false {s : State} {r : Reg} {b : Bool} (h : (s.gpr r != 0) = b)
 /-- `kMain` leaks the same in runs that agree on the public data, given that
 Montgomery setup, Miller–Rabin and the result do from `TS`. -/
 theorem kMain_ct (M : Mont)
-    (hT : RelCT isa (Two TS) (seqs (montSetup M.mm ++ millerRabin M.mm ++ [mrResult])) fun _ _ => True) :
+    (hT : RelCT isa (Two TS) (seqs (montSetup M.mm ++ expSetup ++ millerRabin M.mm ++ [mrResult])) fun _ _ => True) :
     RelCT isa (Two K0) (kMain M.mm) fun _ _ => True := by
   unfold kMain
   rw [List.append_assoc]

@@ -42,35 +42,6 @@ theorem sqRanges_sub (w : Nat) : ∀ r ∈ sqRanges w, r ∈ expRanges w := by
 
 theorem winRanges_sub (w : Nat) : ∀ r ∈ winRanges w, r ∈ expRanges w := fun _ hr => List.mem_append_left _ hr
 
-/-- The digit at the top of a word shifted left by `4 t`: digit `15 − t`. -/
-theorem shl_shr60 (x : BitVec 64) {t : Nat} (ht : t < 16) :
-    ((x <<< (4 * t)) >>> 60).toNat = x.toNat / 2 ^ (60 - 4 * t) % 2 ^ 4 := by
-  apply Nat.eq_of_testBit_eq
-  intro i
-  rw [BitVec.toNat_ushiftRight, BitVec.toNat_shiftLeft, Nat.shiftLeft_eq, Nat.shiftRight_eq_div_pow,
-    Nat.testBit_div_two_pow, Nat.testBit_mod_two_pow, Nat.testBit_mul_two_pow, Nat.testBit_mod_two_pow,
-    Nat.testBit_div_two_pow]
-  by_cases hi : i < 4
-  · simp only [show i + 60 < 64 by omega, hi, decide_true, Bool.true_and, show 4 * t ≤ i + 60 by omega]
-    congr 1; omega
-  · simp only [show ¬ i + 60 < 64 by omega, hi, decide_false, Bool.false_and]
-
-theorem mod_div_mod {x a b n : Nat} (h : a + b ≤ n) : x % 2 ^ n / 2 ^ a % 2 ^ b = x / 2 ^ a % 2 ^ b := by
-  apply Nat.eq_of_testBit_eq
-  intro i
-  rw [Nat.testBit_mod_two_pow, Nat.testBit_div_two_pow, Nat.testBit_mod_two_pow, Nat.testBit_mod_two_pow,
-    Nat.testBit_div_two_pow]
-  by_cases hi : i < b
-  · simp [hi, show i + a < n by omega]
-  · simp [hi]
-
-/-- The digit of the window: digit `16 (k − 1) + 15 − t` of `E`. -/
-theorem win_digit {W : BitVec 64} {E k t : Nat} (hW : W.toNat = E / 2 ^ (64 * (k - 1)) % 2 ^ 64) (ht : t < 16) :
-    ((W <<< (4 * t)) >>> 60).toNat = E / 16 ^ (16 * (k - 1) + (15 - t)) % 16 := by
-  rw [shl_shr60 W ht, hW, mod_div_mod (by omega), Nat.div_div_eq_div_mul, ← Nat.pow_add, sixteen_pow,
-    show 64 * (k - 1) + (60 - 4 * t) = 4 * (16 * (k - 1) + (15 - t)) by omega]
-  rfl
-
 /-- After `t` windows of word `k − 1`, `W`, of `E`. -/
 structure WinInv (B : Addr) (Z w : Nat) (mi : BitVec 64) (c bm b k : Nat) (W : BitVec 64) (s₀ : State) (t : Nat)
     (s : State) : Prop where
@@ -83,9 +54,6 @@ structure WinInv (B : Addr) (Z w : Nat) (mi : BitVec 64) (c bm b k : Nat) (W : B
   words : word s.mem B (8 * kWords) = BitVec.ofNat 64 (k - 1)
   frm : Frm B (expRanges w) s₀.mem s.mem
   keep : Keep mmRegs s₀ s
-
-theorem shl4_succ (x : BitVec 64) (t : Nat) : x <<< (4 * t) <<< 4 = x <<< (4 * (t + 1)) := by
-  rw [← BitVec.shiftLeft_add, show 4 * t + 4 = 4 * (t + 1) by omega]
 
 /-- One window of word `k − 1`. -/
 theorem mrWinStep_ok (M : Mont) {B : Addr} {Z w : Nat} {mi : BitVec 64} {c bm b k : Nat} {W : BitVec 64}

@@ -25,8 +25,13 @@ def artifacts : List Artifact := [
         masks of all primes or'ed; `gcd(c − 1, e)` by `(c − 1) mod e` bit by bit and 128 steps of a \
         binary gcd with masks; and Miller–Rabin with `vg_rsa_public_checked`'s Montgomery \
         multiplication, a witness outside `[2, c − 2]` given bit 1 and cleared its top bit by masks, \
-        and each exponentiated over all the bits of `c − 1` but the lowest, a square per bit and the \
-        factor chosen by the bit's mask, with the flag of a passing witness kept by masks. The code \
+        and each exponentiated by `E = (c − 1) / 2^σ` (`σ ∈ [1, 4]`, `σ` congruent to the exponent of \
+        2 in `c − 1` mod 4, so that `E`'s lowest set bit ends a window; `E` by halvings under masks \
+        from the lowest set bit of `c − 1`) in fixed windows of 4 bits: four squarings, the table \
+        entry of the window's digit selected from all 16 powers of the witness under the masks of \
+        each entry's index against the digit, and a multiplication; then three more squarings. The \
+        flag of a passing witness is kept by masks: or'ed with `y = −1` after each squaring (under the \
+        masks of the last three's count), and reset to `y = ±1` after a nonzero digit. The code \
         branches only on what the leak allows: the result of each check, and whether each witness \
         passed."])
     code := Impl.RsaKeyGen.AArch64.Candidate.code Proof.Bignum.AArch64.Mont.base.mm

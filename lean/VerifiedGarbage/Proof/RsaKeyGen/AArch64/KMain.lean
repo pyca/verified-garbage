@@ -209,7 +209,7 @@ theorem kMain_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {op up eP pP rP :
     exact hc₃
   have hM₄ : word s₄.mem B (8 * Public.sMask) = mask true :=
     (hW f₄ (by decide) (by k_disj)).trans ((hW f₃ (by decide) (by k_disj)).trans ((hW f₂ (by decide) (by k_disj)).trans hM₁))
-  refine WP.mono (kTail_ok M h₄ hw4 hw64 hc₄ hsh ho₄ ((hk₄ (by decide) (by decide) (by k_disj) (by k_disj)).trans h.out)
+  refine WP.mono (kTail_ok M h₄ hw4 hw64 (by simp only [slot, hdrBytes, aE]; omega_arith) hc₄ hsh ho₄ ((hk₄ (by decide) (by decide) (by k_disj) (by k_disj)).trans h.out)
     ((hk₄ (by decide) (by decide) (by k_disj) (by k_disj)).trans h.len) hU₄ hM₄
     ((hk₄ (by decide) (by decide) (by k_disj) (by k_disj)).trans h.rand) ((hk₄ (by decide) (by decide) (by k_disj) (by k_disj)).trans h.rlen)
     hus₄ (h.rsrc.congrK hin₄ k14) h.rl hrk) fun t ht => ?_
