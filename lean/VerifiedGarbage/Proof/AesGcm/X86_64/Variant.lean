@@ -100,16 +100,16 @@ def full : StitchName → Bool
 
 /-- Decryption using a prepared context. -/
 def decR : StitchName → Prog isa
-  | .vaes => Impl.Gcm.X86_64.StitchR.dec
+  | .vaes => Impl.Gcm.X86_64.StitchR.decR
   | .vaesAvx512 => Impl.Gcm.X86_64.StitchZH.decR
   | .aesniAvx => Impl.Gcm.X86_64.StitchAvx8.decR
 
 /-- Whether the decryption loop named `n` for a prepared context takes all
 the blocks, from 16 on (`Blocks.stitchPart`'s `full`). -/
 def fullDR : StitchName → Bool
+  | .vaes => true
   | .vaesAvx512 => true
   | .aesniAvx => true
-  | _ => false
 
 /-- Whether `seal` and `open` calling the loops named `n` take the short path
 for short inputs (`GcmImpl.short`): the loops on 512-bit registers, whose

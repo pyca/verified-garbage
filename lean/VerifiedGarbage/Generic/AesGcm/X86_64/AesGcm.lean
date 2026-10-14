@@ -178,7 +178,7 @@ number of blocks from 16 on if `fullR`). -/
 theorem StitchName.okR : (n : StitchName) →
     Proof.Gcm.X86_64.Stitch.StitchOkM Proof.Gcm.X86_64.Stitch.CtxMode.prepared n.encR n.decR
       (if n.fullR then 1 else 16) (if n.fullDR then 1 else 16)
-  | .vaes => Proof.Gcm.X86_64.StitchR.stitch_ok
+  | .vaes => Proof.Gcm.X86_64.StitchR.stitchR_ok
   | .vaesAvx512 => Proof.Gcm.X86_64.StitchZH.stitchR_ok
   | .aesniAvx => Proof.Gcm.X86_64.StitchAvx8.stitchR_ok
 
