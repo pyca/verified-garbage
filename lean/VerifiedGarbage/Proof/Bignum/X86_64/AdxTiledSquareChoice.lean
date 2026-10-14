@@ -301,18 +301,23 @@ open VG.Proof.Bignum.X86_64.AdxTri8 (chunks)
 open VG.Proof.Bignum.X86_64.AdxRect8 (rawBase)
 open VG.Proof.MlKem.X86_64 (Keep WP.keep)
 
+/-- Before row `k`: the raw product, the carry the row before handed in
+`sFn 15` (none after the last row), and the rows to come. -/
 structure Inv (s₀ : State) (B : Addr) (Z w a n k : Nat) (mi : BitVec 64) (s : State) : Prop where
   scr : Scr s B Z
   hdr : Hdr s.mem B w mi
   rdi : s.gpr .rdi=B
   indexI : word s.mem B (8*sFn 12)=BitVec.ofNat 64 (8*k)
+  hand : (word s.mem B AdxRect8.handOffset).toNat ≤ 2
   keep : Keep mmRegs s₀ s
   frame : Frm B (ranges w) s₀.mem s.mem
-  val : ∃ c, wv s.mem B (rawBase w) (2*w)+2^(128*w)*c+remaining s₀.mem B (slot w a) n k=
+  val : ∃ c, wv s.mem B (rawBase w) (2*w) +
+      2^(64*(8*k+w))*(if 8*k+8=w then 0 else (word s.mem B AdxRect8.handOffset).toNat) +
+      2^(128*w)*c+remaining s₀.mem B (slot w a) n k=
     wv s₀.mem B (rawBase w) (2*w)+remaining s₀.mem B (slot w a) n 0
 
-private theorem advance {W W' R C D S S' T A : Nat}
-    (prev : W+R*C+S=T) (step : W'+R*D=W+A) (rest : S=A+S') : W'+R*(C+D)+S'=T := by grind
+private theorem advance {W W' H H' R C D S S' T A : Nat}
+    (prev : W+H+R*C+S=T) (step : W'+H'+R*D=W+H+A) (rest : S=A+S') : W'+H'+R*(C+D)+S'=T := by grind
 
 theorem step_inv {s₀ s : State} {B : Addr} {Z w a n k : Nat} {mi : BitVec 64}
     {ps : List (Nat × Nat)} (hv : Ops s₀.mem B w ps) {ca : Nat} (pa : (ca, a) ∈ ps)
@@ -322,18 +327,20 @@ theorem step_inv {s₀ s : State} {B : Addr} {Z w a n k : Nat} {mi : BitVec 64}
   have nowrap := h.scr.nowrap
   have Z64 : slot w 8≤(2 : Nat)^64 := by omega
   refine WP.mono (row_ok h.scr h.rdi h.hdr (frame_ops hv h.frame) pa hZ hw (by omega : w=8*k+8+8*(n-k-1))
-    (by omega) ha ha1 ha2 h.indexI) fun t ⟨zt,it,⟨d,eq⟩,ht,ft,kt⟩ => ?_
+    (by omega) ha ha1 ha2 h.indexI rfl h.hand) fun t ⟨zt,it,σt,⟨d,eq⟩,ht,ft,kt⟩ => ?_
   rw [input_preserved ha ha1 ha2 (by omega : 8*k+8≤w) Z64 h.frame,
     input_preserved ha ha1 ha2 (by omega : (8*k+8)+8*(n-k-1)≤w) Z64 h.frame] at eq
   rw [show 64*(8*k+(8*k+8))=512*(2*k+1) by omega,
     show slot w a+8*(8*k)=slot w a+64*k by omega,
     show slot w a+8*(8*k+8)=slot w a+64*(k+1) by omega] at eq
   obtain ⟨c,prev⟩ := h.val
-  refine ⟨?_,⟨h.scr.congr kt.2.2,ht,(kt.gpr (by decide)).trans h.rdi,?_,
+  simp only [show (8*k+8=w) = False from eq_false (by omega),ite_false] at prev
+  refine ⟨?_,⟨h.scr.congr kt.2.2,ht,(kt.gpr (by decide)).trans h.rdi,?_,σt,
     (h.keep.trans kt).mono (by decide),h.frame.trans ft,c+d,?_⟩⟩
   · rw [zt]; exact congrArg some (decide_eq_decide.mpr (by omega))
   · simpa only [show 8*(k+1)=8*k+8 by omega] using it
-  · exact advance prev eq (remaining_step s₀.mem B (slot w a) n k (by omega))
+  · rw [show 8*(k+1)+8=8*k+16 by omega,show 8*(k+1)+w=8*k+w+8 by omega]
+    exact advance prev eq (remaining_step s₀.mem B (slot w a) n k (by omega))
 
 theorem rows_ok {s : State} {B : Addr} {Z w a n : Nat} {mi : BitVec 64}
     (hs : Scr s B Z) (hd : s.gpr .rdi=B) (hh : Hdr s.mem B w mi) (hZ : slot w 8≤Z)
@@ -346,25 +353,38 @@ theorem rows_ok {s : State} {B : Addr} {Z w a n : Nat} {mi : BitVec 64}
       Hdr t.mem B w mi ∧ Frm B (ranges w) s.mem t.mem ∧ Keep mmRegs s t := by
   have nowrap := hs.nowrap
   have iZ : 8*sFn 12+8≤Z := by have := hdr_lt_slot w 8 (show sFn 12<32 by decide); omega
-  have init : WP isa (.block [.mov32 .rax (.imm 0),.store (hdr (sFn 12)) .rax]) s fun t =>
-      t.mem=s.mem.writeW (off B (8*sFn 12)) (0 : BitVec 64) ∧ Keep [.rax] s t := by
-    apply WP.keep [.rax] (Q := fun t => t.mem=s.mem.writeW (off B (8*sFn 12)) (0 : BitVec 64)) _ rfl
-    xrun [State.ea,hdr,hd,hdrOff,hs.st iZ]; rfl
+  have hZ15 : 8*sFn 15+8≤Z := by have := hdr_lt_slot w 8 (show sFn 15<32 by decide); omega
+  have init : WP isa (.block [.mov32 .rax (.imm 0),.store (hdr (sFn 12)) .rax,.store (hdr (sFn 15)) .rax]) s
+      fun t => t.mem=(s.mem.writeW (off B (8*sFn 12)) (0 : BitVec 64)).writeW (off B (8*sFn 15)) (0 : BitVec 64) ∧
+        Keep [.rax] s t := by
+    apply WP.keep [.rax] (Q := fun t => t.mem=(s.mem.writeW (off B (8*sFn 12)) (0 : BitVec 64)).writeW
+      (off B (8*sFn 15)) (0 : BitVec 64)) _ rfl
+    xrun [State.ea,hdr,hd,hdrOff,hs.st iZ,hs.st hZ15]; rfl
   unfold AdxTiledSquare.rows
   refine WP.seq (WP.mono init fun u ⟨mu,ku⟩ => ?_)
-  have ou : Outside B (8*sFn 12) 8 s.mem u.mem := by rw [mu]; exact writeW_outside _ _ _ (by decide)
+  have o1 : Outside B (8*sFn 12) 8 s.mem (s.mem.writeW (off B (8*sFn 12)) (0 : BitVec 64)) :=
+    writeW_outside _ _ _ (by decide)
+  have o2 : Outside B (8*sFn 15) 8 (s.mem.writeW (off B (8*sFn 12)) (0 : BitVec 64)) u.mem := by
+    rw [mu]; exact writeW_outside _ _ _ (by decide)
   have fu : Frm B (ranges w) s.mem u.mem := by
     intro x hx
-    apply ou x
-    have := hx (8*sFn 12,32) (by simp [ranges]); omega
+    have := hx (8*sFn 12,32) (by simp [ranges])
+    exact (o2 x (by simp only [sFn] at *; omega)).trans (o1 x (by simp only [sFn] at *; omega))
+  have i0 : word u.mem B (8*sFn 12) = BitVec.ofNat 64 (8*0) := by
+    rw [o2.word (by decide) (by decide),word_writeW_self]; rfl
+  have h00 : word u.mem B AdxRect8.handOffset = 0 := by
+    rw [mu]; exact word_writeW_self ..
   have h0 : Inv s B Z w a n 0 mi u :=
-    ⟨hs.congr ku.2.2,frame_hdr hh fu,(ku.gpr (by decide)).trans hd,by rw [mu,word_writeW_self]; rfl,
+    ⟨hs.congr ku.2.2,frame_hdr hh fu,(ku.gpr (by decide)).trans hd,i0,by rw [h00]; decide,
       ku.mono (by decide),fu,0,by
-        rw [ou.wv (by unfold rawBase slot hdrBytes sFn; omega) (by unfold rawBase slot aAcc at *; omega),Nat.mul_zero,Nat.add_zero]⟩
+        rw [h00,o2.wv (by unfold rawBase slot hdrBytes sFn; omega) (by unfold rawBase slot aAcc at *; omega),
+          o1.wv (by unfold rawBase slot hdrBytes sFn; omega) (by unfold rawBase slot aAcc at *; omega)]
+        simp⟩
   apply wp_upto (a := 0) (N := n-1) (by omega) (Inv s B Z w a n · mi)
     (fun _ _ hk _ h => step_inv hv pa hZ hw hwN hk ha ha1 ha2 h) ?_ h0
   intro t h
   obtain ⟨c,eq⟩ := h.val
+  simp only [show (8*(n-1)+8=w) = True from eq_true (by omega),ite_true,Nat.mul_zero,Nat.add_zero] at eq
   rw [remaining_end s.mem B (slot w a) n (by omega),Nat.add_zero] at eq
   simp only [remaining,Nat.mul_zero,Nat.pow_zero,Nat.one_mul,Nat.zero_add,Nat.sub_zero] at eq
   exact ⟨⟨c,eq⟩,h.hdr,h.frame,h.keep⟩
