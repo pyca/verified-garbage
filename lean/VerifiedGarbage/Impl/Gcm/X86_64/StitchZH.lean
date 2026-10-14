@@ -274,17 +274,27 @@ def ksSelGD : Prog isa :=
 already hashed, hashed and decrypted as a masked group, and `Y` stored. -/
 def remGD : Prog isa := .seq (.block remSetup) (.seq ksSelGD (.block storeY))
 
+/-- The setup of `decR`: the powers and the AES keys loaded. -/
+def decRHead : Prog isa := .seq (.block setupP) Aes.X86_64.VaesZH.loadKeys
+
+/-- `decR` after its setup and the comparison with 256. -/
+def decRTail (be : Bool := false) : Prog isa :=
+  .seq (.ite .b (.block []) (bigDP be))
+    (.seq (.block [.alu .cmp .r9 (.imm 16)])
+      (.seq (.ite .b (.block []) (.loop (dbody be) .ae))
+        (.seq (.block [.alu .test .r9 (.reg .r9)])
+          (.ite .e (.block (storeCtr ++ storeY))
+            (.seq (.block [.alu .add .r9 (.imm 16)]) remGD)))))
+
+/-- What follows the load of the block index in `decR true`. -/
+def decRBeRest : Prog isa :=
+  .seq (.block [.alu32 .sub .r10 (.imm 1), .shift32 .shl .r10 24, .alu .cmp .r9 (.imm 256)]) (decRTail true)
+
 /-- `dec`, for any number of blocks from 16 on: the `r9` blocks after the
 last group, if any, by `remGD`. -/
 def decR (be : Bool := false) : Prog isa :=
-  .seq (.seq (.block setupP) Aes.X86_64.VaesZH.loadKeys)
-    (.seq (.block ((if be then beSetup 16 else []) ++ [.alu .cmp .r9 (.imm 256)]))
-      (.seq (.ite .b (.block []) (bigDP be))
-        (.seq (.block [.alu .cmp .r9 (.imm 16)])
-          (.seq (.ite .b (.block []) (.loop (dbody be) .ae))
-            (.seq (.block [.alu .test .r9 (.reg .r9)])
-              (.ite .e (.block (storeCtr ++ storeY))
-                (.seq (.block [.alu .add .r9 (.imm 16)]) remGD)))))))
+  .seq decRHead
+    (.seq (.block ((if be then beSetup 16 else []) ++ [.alu .cmp .r9 (.imm 256)])) (decRTail be))
 
 def dec : Prog isa :=
   .seq (.seq (.block setupP) Aes.X86_64.VaesZH.loadKeys)

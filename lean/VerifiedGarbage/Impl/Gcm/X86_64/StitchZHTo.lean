@@ -52,13 +52,24 @@ def encP : Prog isa := encWith setupP bigPTo
 `rdx + r8` (`r8` is `src - dst`). -/
 def remTo : Prog isa := StitchZH.remG [.alu .add .r8 (.reg .rdx)] .r8
 
+/-- The setup of `encR`: the powers and the AES keys loaded. -/
+def encRHead : Prog isa := .seq (.block setupP) Aes.X86_64.VaesZH.loadKeys
+
+/-- `encR` after the first group. -/
+def encRTail (be : Bool := false) : Prog isa :=
+  .seq (.block [.alu .cmp .r9 (.imm 256)])
+    (.seq (.ite .b (.block []) (bigPTo be))
+      (.seq (.block [.alu .cmp .r9 (.imm 32)])
+        (.seq (.ite .b (.block []) (.loop (bodyTo be) .ae)) (StitchZH.tailR remTo))))
+
+/-- The first group with the block index, after its index is loaded, and
+the rest: what follows the load in `encR true`. -/
+def encRBeRest : Prog isa :=
+  .seq (.block [.alu32 .sub .r10 (.imm 1), .shift32 .shl .r10 24])
+    (.seq (batchTo 0 (fun _ => []) true) (encRTail true))
+
 /-- `encP`, for any number of blocks from 16 on. -/
 def encR (be : Bool := false) : Prog isa :=
-  .seq (.seq (.block setupP) Aes.X86_64.VaesZH.loadKeys)
-    (.seq (firstTo be)
-      (.seq (.block [.alu .cmp .r9 (.imm 256)])
-        (.seq (.ite .b (.block []) (bigPTo be))
-          (.seq (.block [.alu .cmp .r9 (.imm 32)])
-            (.seq (.ite .b (.block []) (.loop (bodyTo be) .ae)) (StitchZH.tailR remTo))))))
+  .seq encRHead (.seq (firstTo be) (encRTail be))
 
 end VG.Impl.Gcm.X86_64.StitchZHTo
