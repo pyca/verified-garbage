@@ -13,9 +13,9 @@ import VerifiedGarbage.Proof.Framework.Omega
 
 `amm_ok`: for each prime `p`, with its region at
 `B + D p` (`B` in `rbx`), the numbers of `4 R` limbs of 52 bits at offsets
-`a` and `b` multiplied and divided by `2^(208 R)` modulo the modulus at
+`a` and `b` multiplied and divided by `2^(52 S)` modulo the modulus at
 `oM`, into offset `o`: below twice the modulus when both operands are, and
-congruent to their product over `2^(208 R)`.
+congruent to their product over `2^(52 S)`.
 
 The numbers are in the stride layout: limb `j` at `Lay.off j`, read by
 `limb`; `val52` is their value.
@@ -37,6 +37,22 @@ abbrev limb (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (m : Mem) (B : Addr) (d j : Nat
 
 /-- The number at `B + d`. -/
 def val52 (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (m : Mem) (B : Addr) (d : Nat) : Nat := lval (limb l m B d) l.L
+
+/-- Limbs of a value below `2^(52 S)` from limb `S` on are zero. -/
+theorem lval_trunc {b : Nat → Nat} {S : Nat} : ∀ n, S ≤ n → lval b n < 2 ^ (52 * S) → lval b n = lval b S
+  | 0, h, _ => by rw [Nat.le_zero.1 h]
+  | n + 1, h, hl => by
+    rcases Nat.eq_or_lt_of_le h with rfl | h'
+    · rfl
+    rw [lval_succ] at hl ⊢
+    have hp : 2 ^ (52 * S) ≤ 2 ^ (52 * n) := Nat.pow_le_pow_right (by decide) (by omega)
+    have hz : b n = 0 := by
+      rcases Nat.eq_zero_or_pos (b n) with h0 | h0
+      · exact h0
+      · have : 2 ^ (52 * n) ≤ b n * 2 ^ (52 * n) := Nat.le_mul_of_pos_left _ h0
+        omega
+    rw [hz, Nat.zero_mul, Nat.add_zero] at hl ⊢
+    exact lval_trunc n (by omega) hl
 
 theorem LayOk.D_ge (hl : LayOk l) : l.NB + 32 ≤ l.D := by
   rcases hl with rfl | rfl | rfl <;> decide
@@ -60,11 +76,11 @@ theorem ammCoreSpec_ok (hl : LayOk l) {s : State} {B : Addr} {o a b : Nat} {k : 
     (hklt : ∀ p < 2, k p < 2 ^ 52) (hk0 : ∀ p < 2, (limb l s.mem B (l.D * p + oM) 0 * k p + 1) % 2 ^ 52 = 0)
     (hA : ∀ p < 2, val52 l s.mem B (l.D * p + a) < 2 * val52 l s.mem B (l.D * p + oM))
     (hBv : ∀ p < 2, val52 l s.mem B (l.D * p + b) < 2 * val52 l s.mem B (l.D * p + oM))
-    (hM : ∀ p < 2, 4 * val52 l s.mem B (l.D * p + oM) ≤ 2 ^ (52 * l.L)) :
+    (hM : ∀ p < 2, 4 * val52 l s.mem B (l.D * p + oM) ≤ 2 ^ (52 * l.S)) :
     WP isa (ammCore l) s fun s' => (∀ p < 2,
       (∀ j < l.L, limb l s'.mem B (l.D * p + o) j < 2 ^ 52) ∧
       val52 l s'.mem B (l.D * p + o) < 2 * val52 l s.mem B (l.D * p + oM) ∧
-      val52 l s'.mem B (l.D * p + o) * 2 ^ (52 * l.L) % val52 l s.mem B (l.D * p + oM) =
+      val52 l s'.mem B (l.D * p + o) * 2 ^ (52 * l.S) % val52 l s.mem B (l.D * p + oM) =
         val52 l s.mem B (l.D * p + a) * val52 l s.mem B (l.D * p + b) % val52 l s.mem B (l.D * p + oM)) ∧
       Out2 l B o l.NB s.mem s'.mem ∧
       (∀ r, r ≠ .rax → r ≠ .rcx → r ≠ .rdx → r ≠ .rsi → r ≠ .r9 → r ≠ .r10 → r ≠ .r12 → s'.gpr r = s.gpr r) ∧
@@ -108,37 +124,46 @@ theorem ammCoreSpec_ok (hl : LayOk l) {s : State} {B : Addr} {o a b : Nat} {k : 
   have hs₃ : Scr s (off B o) (l.D + l.NB) := hs.sub (by omega) (by omega)
   refine WP.mono (ammCore_ok hl e r11₃ hs₃) fun s' ⟨hw, hdx, hsi, hf, hg, hrd, hwr, hx⟩ => ?_
   refine ⟨fun p hp => ?_, hf.rebase (by omega), hg, hrd, hwr, hx⟩
-  have hq : ∀ j < l.L, limb l s'.mem B (l.D * p + o) j = carried (lm l A M k Bl p l.L) j := fun j hj => by
+  have hq : ∀ j < l.L, limb l s'.mem B (l.D * p + o) j = carried (lm l A M k Bl p l.S) j := fun j hj => by
     have := hw p hp j hj
     simp only [word, off_off] at this
     show (s'.mem.readW (off B _) 64).toNat = _
     rw [show l.D * p + o + l.off j = o + (l.D * p + l.off j) by omega, this, BitVec.toNat_ofNat,
-      Nat.mod_eq_of_lt (by have := carried_lt (lm l A M k Bl p l.L) j; omega)]
-  have hv : val52 l s'.mem B (l.D * p + o) = lval (carried (lm l A M k Bl p l.L)) l.L := by
+      Nat.mod_eq_of_lt (by have := carried_lt (lm l A M k Bl p l.S) j; omega)]
+  have hv : val52 l s'.mem B (l.D * p + o) = lval (carried (lm l A M k Bl p l.S)) l.L := by
     unfold val52; exact lval_congr hq
   have ok : Amm52N.Ok l.L (ops A M k p) :=
     ⟨fun j hj => (hlt p hp j hj).1, fun j hj => (hlt p hp j hj).2.2, hk0 p hp⟩
-  obtain ⟨he, hU⟩ := Amm52N.amm_val (by simp only [Lay.L]; omega) ok (b := Bl p)
-    fun i hi => (hlt p hp i hi).2.1
-  have hcv := carried_val (lm l A M k Bl p l.L) l.L
+  have hst := hl.steps
+  have he := Amm52N.steps_val (by simp only [Lay.L]; omega) ok (b := Bl p) (fun i hi => (hlt p hp i hi).2.1)
+    (fun _ => 0) l.S hst.2.2.2.1
+  have z : lval (fun _ => 0) l.L = 0 := by
+    rw [show (fun _ : Nat => 0) = fun j => (fun _ : Nat => 0) j * 0 by funext; rfl, lval_mul, Nat.mul_zero]
+  rw [z, Nat.zero_add] at he
+  have hU : lval (Amm52N.stepsU l.L (ops A M k p) (Bl p) fun _ => 0) l.S < 2 ^ (52 * l.S) :=
+    lval_lt fun j _ => lo_lt _ _
+  have hcv := carried_val (lm l A M k Bl p l.S) l.L
   have hA' := hA p hp
   have hB' := hBv p hp
   have hM' := hM p hp
   rw [hv]
   unfold val52 at hA' hB' hM' ⊢
-  change lval (lm l A M k Bl p l.L) l.L * _ = lval (A p) l.L * lval (Bl p) l.L + lval (M p) l.L * _ at he
+  change lval (lm l A M k Bl p l.S) l.L * _ = lval (A p) l.L * lval (Bl p) l.S + lval (M p) l.L * _ at he
   change lval (A p) l.L < 2 * lval (M p) l.L at hA'
   change lval (Bl p) l.L < 2 * lval (M p) l.L at hB'
   change 4 * lval (M p) l.L ≤ _ at hM'
+  have hbS : lval (Bl p) l.L = lval (Bl p) l.S := lval_trunc _ hst.2.2.2.1 (by omega)
+  rw [hbS] at hB'
+  have hSL : 2 ^ (52 * l.S) ≤ 2 ^ (52 * l.L) := Nat.pow_le_pow_right (by decide) (by omega)
   have hlt2 := amm_lt he hU hA' hB' hM'
-  have hz : lval (lm l A M k Bl p l.L) l.L < 2 ^ (52 * l.L) := by
-    generalize 2 ^ (52 * l.L) = R at hM' ⊢; omega
+  have hz : lval (lm l A M k Bl p l.S) l.L < 2 ^ (52 * l.L) := by
+    generalize 2 ^ (52 * l.L) = R at hSL ⊢; generalize 2 ^ (52 * l.S) = R' at hM' hSL; omega
   rw [Amm52N.carryIn_zero hz] at hcv
-  replace hcv : lval (carried (lm l A M k Bl p l.L)) l.L = lval (lm l A M k Bl p l.L) l.L := by
+  replace hcv : lval (carried (lm l A M k Bl p l.S)) l.L = lval (lm l A M k Bl p l.S) l.L := by
     generalize 2 ^ (52 * l.L) = R at hcv; omega
   rw [hcv]
   refine ⟨fun j hj => (hq j hj) ▸ carried_lt _ j, hlt2, ?_⟩
-  rw [he, Nat.add_mul_mod_self_left]
+  rw [he, hbS, Nat.add_mul_mod_self_left]
 
 /-- `[o] := [a] [b] / 2^(208 R)` for both primes. -/
 theorem amm_ok (hl : LayOk l) {s : State} {B : Addr} {o a b : Nat} {k : Nat → Nat}
@@ -150,11 +175,11 @@ theorem amm_ok (hl : LayOk l) {s : State} {B : Addr} {o a b : Nat} {k : Nat → 
     (hklt : ∀ p < 2, k p < 2 ^ 52) (hk0 : ∀ p < 2, (limb l s.mem B (l.D * p + oM) 0 * k p + 1) % 2 ^ 52 = 0)
     (hA : ∀ p < 2, val52 l s.mem B (l.D * p + a) < 2 * val52 l s.mem B (l.D * p + oM))
     (hBv : ∀ p < 2, val52 l s.mem B (l.D * p + b) < 2 * val52 l s.mem B (l.D * p + oM))
-    (hM : ∀ p < 2, 4 * val52 l s.mem B (l.D * p + oM) ≤ 2 ^ (52 * l.L)) :
+    (hM : ∀ p < 2, 4 * val52 l s.mem B (l.D * p + oM) ≤ 2 ^ (52 * l.S)) :
     WP isa (amm l o a b) s fun s' => (∀ p < 2,
       (∀ j < l.L, limb l s'.mem B (l.D * p + o) j < 2 ^ 52) ∧
       val52 l s'.mem B (l.D * p + o) < 2 * val52 l s.mem B (l.D * p + oM) ∧
-      val52 l s'.mem B (l.D * p + o) * 2 ^ (52 * l.L) % val52 l s.mem B (l.D * p + oM) =
+      val52 l s'.mem B (l.D * p + o) * 2 ^ (52 * l.S) % val52 l s.mem B (l.D * p + oM) =
         val52 l s.mem B (l.D * p + a) * val52 l s.mem B (l.D * p + b) % val52 l s.mem B (l.D * p + oM)) ∧
       Out2 l B o l.NB s.mem s'.mem ∧
       (∀ r, r ≠ .rax → r ≠ .rcx → r ≠ .rdx → r ≠ .rsi → r ≠ .r8 → r ≠ .r9 → r ≠ .r10 → r ≠ .r11 → r ≠ .r12 →
