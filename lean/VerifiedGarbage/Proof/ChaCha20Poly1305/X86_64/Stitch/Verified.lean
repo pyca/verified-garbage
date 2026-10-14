@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Crypt
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.SmallTest
 meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Crypt
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Verified
 meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Verified
@@ -1347,64 +1348,72 @@ of the constant-time proof take the same branch, `len` being public. -/
 
 /-- A state that differs from `s` at most in the flags. -/
 structure FlagsOnly (s t : State) : Prop where
-  gpr : t.gpr = s.gpr
+  gpr : ∀ r, r ≠ .rax → r ≠ .r10 → t.gpr r = s.gpr r
   mem : t.mem = s.mem
   rd : t.rd = s.rd
   wr : t.wr = s.wr
   mx : t.mxcsr = s.mxcsr
 
-/-- The comparison of `len` with `smallLim`. -/
-abbrev cmpSmall (vl : Bool) : List Instr := [.alu .cmp .r9 (.imm (BitVec.ofNat 32 (smallLim vl)))]
+/-- The comparison of `len` with `smallLim` and the window. -/
+abbrev cmpSmall (vl : Bool) : List Instr := smallTest (smallLim vl)
 
 /-- What the comparison leaves, from `s`. -/
 def Cmped (vl : Bool) (s t : State) : Prop :=
-  isa.eval .b t = some (decide ((s.gpr .r9).toNat < smallLim vl)) ∧ FlagsOnly s t
+  isa.eval .b t = some (decide ((s.gpr .r9).toNat < smallLim vl ∨
+    (winLo ≤ (s.gpr .r9).toNat ∧ (s.gpr .r9).toNat < winHi))) ∧ FlagsOnly s t
 
-theorem cmpSmall_ok (vl : Bool) (s : State) : WP isa (.block (cmpSmall vl)) s (Cmped vl s) := by
-  cases vl <;>
-  · apply WP.of_runBlock
-    simp only [cmpSmall, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc, Option.bind_some,
-      Option.some.injEq, exists_eq_left']
-    refine ⟨?_, ⟨rfl, rfl, rfl, rfl, rfl⟩⟩
-    show (State.cf _) = _
-    simp only [RegUpd.cf_arithFlags]
-    rfl
+theorem cmpSmall_ok (vl : Bool) (s : State) : WP isa (.block (cmpSmall vl)) s (Cmped vl s) :=
+  WP.mono (smallTest_ok (by cases vl <;> decide) (by cases vl <;> decide) (by cases vl <;> decide) s)
+    fun _ ⟨e, g, m, rd, wr, mx⟩ => ⟨e, g, m, rd, wr, mx⟩
 
 namespace FlagsOnly
 
 variable {s t : State} (h : FlagsOnly s t)
 include h
 
+theorem rdi : t.gpr .rdi = s.gpr .rdi := h.gpr _ (by decide) (by decide)
+theorem rsi : t.gpr .rsi = s.gpr .rsi := h.gpr _ (by decide) (by decide)
+theorem rdx : t.gpr .rdx = s.gpr .rdx := h.gpr _ (by decide) (by decide)
+theorem rcx : t.gpr .rcx = s.gpr .rcx := h.gpr _ (by decide) (by decide)
+theorem r8 : t.gpr .r8 = s.gpr .r8 := h.gpr _ (by decide) (by decide)
+theorem r9 : t.gpr .r9 = s.gpr .r9 := h.gpr _ (by decide) (by decide)
+theorem rsp : t.gpr .rsp = s.gpr .rsp := h.gpr _ (by decide) (by decide)
+
 theorem arg (i : Nat) : stackArg t i = stackArg s i := by
   show t.mem.readW (t.gpr .rsp + _) 64 = s.mem.readW (s.gpr .rsp + _) 64
-  rw [h.mem, h.gpr]
+  rw [h.mem, h.rsp]
 
 theorem argAddr (i : Nat) : stackArgAddr t i = stackArgAddr s i := by
   show t.gpr .rsp + _ = s.gpr .rsp + _
-  rw [h.gpr]
+  rw [h.rsp]
 
 theorem pre (hs : sealX86_64.pre s) : sealX86_64.pre t := by
   show preX86_64 true t
   have ha := h.arg
   have hb := h.argAddr
-  simp only [preX86_64, h.gpr, h.rd, h.wr, ha, hb] at hs ⊢
+  simp only [preX86_64, h.rdi, h.rsi, h.rdx, h.rcx, h.r8, h.r9, h.rsp, h.rd, h.wr, ha, hb] at hs ⊢
   exact hs
 
 theorem post {z : State} (hz : sealX86_64.post t z) : sealX86_64.post s z := by
   have ha := h.arg
-  simp only [sealX86_64, h.gpr, h.mem, ha] at hz ⊢
+  simp only [sealX86_64, h.rdi, h.rsi, h.rdx, h.rcx, h.r8, h.r9, h.mem, ha] at hz ⊢
   exact hz
 
 theorem abi {z : State} (hz : abiPreserved t z) : abiPreserved s z := by
   obtain ⟨h₁, h₂, h₃⟩ := hz
-  exact ⟨fun r hr => by rw [h₁ r hr, h.gpr], by rw [← h.mem, ← h.gpr]; exact h₂, by rw [← h.mx]; exact h₃⟩
+  refine ⟨fun r hr => ?_, by rw [← h.mem, ← h.rsp]; exact h₂, by rw [← h.mx]; exact h₃⟩
+  have : r ≠ .rax ∧ r ≠ .r10 := by
+    simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
+  rw [h₁ r hr, h.gpr r this.1 this.2]
 
 end FlagsOnly
 
 theorem FlagsOnly.pub {s₁ s₂ t₁ t₂ : State} (h₁ : FlagsOnly s₁ t₁) (h₂ : FlagsOnly s₂ t₂)
     (hp : sealX86_64.pub s₁ s₂) : sealX86_64.pub t₁ t₂ := by
   show pubX86_64 t₁ t₂
-  simp only [pubX86_64, h₁.gpr, h₂.gpr, h₁.arg, h₂.arg]
+  simp only [pubX86_64, h₁.rdi, h₁.rsi, h₁.rdx, h₁.rcx, h₁.r8, h₁.r9, h₁.rsp, h₂.rdi, h₂.rsi, h₂.rdx,
+    h₂.rcx, h₂.r8, h₂.r9, h₂.rsp, h₁.arg, h₂.arg]
   exact hp
 
 theorem sealSmall_ok (u : Proof.ChaCha20.X86_64.XorImpl) (hu : u.poly = .avx2) {big : Prog isa}
@@ -3083,40 +3092,36 @@ theorem openS_framed (v : Proof.ChaCha20.X86_64.XorImpl) :
 `openSmall big`, as `sealSmall`: the comparison changes only the flags,
 which `open`'s contract does not read either. -/
 
-/-- The comparison of `len` with `openLim`. -/
-abbrev cmpOpen (vl : Bool) : List Instr := [.alu .cmp .r9 (.imm (BitVec.ofNat 32 (openLim vl)))]
+/-- The comparison of `len` with `openLim` and the window. -/
+abbrev cmpOpen (vl : Bool) : List Instr := smallTest (openLim vl)
 
 /-- What the comparison leaves, from `s`. -/
 def CmpedO (vl : Bool) (s t : State) : Prop :=
-  isa.eval .b t = some (decide ((s.gpr .r9).toNat < openLim vl)) ∧ FlagsOnly s t
+  isa.eval .b t = some (decide ((s.gpr .r9).toNat < openLim vl ∨
+    (winLo ≤ (s.gpr .r9).toNat ∧ (s.gpr .r9).toNat < winHi))) ∧ FlagsOnly s t
 
-theorem cmpOpen_ok (vl : Bool) (s : State) : WP isa (.block (cmpOpen vl)) s (CmpedO vl s) := by
-  cases vl <;>
-  · apply WP.of_runBlock
-    simp only [cmpOpen, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc, Option.bind_some,
-      Option.some.injEq, exists_eq_left']
-    refine ⟨?_, ⟨rfl, rfl, rfl, rfl, rfl⟩⟩
-    show (State.cf _) = _
-    simp only [RegUpd.cf_arithFlags]
-    rfl
+theorem cmpOpen_ok (vl : Bool) (s : State) : WP isa (.block (cmpOpen vl)) s (CmpedO vl s) :=
+  WP.mono (smallTest_ok (by cases vl <;> decide) (by cases vl <;> decide) (by cases vl <;> decide) s)
+    fun _ ⟨e, g, m, rd, wr, mx⟩ => ⟨e, g, m, rd, wr, mx⟩
 
 theorem FlagsOnly.preO {s t : State} (h : FlagsOnly s t) (hs : openX86_64.pre s) : openX86_64.pre t := by
   show preX86_64 false t
   have ha := h.arg
   have hb := h.argAddr
-  simp only [preX86_64, h.gpr, h.rd, h.wr, ha, hb] at hs ⊢
+  simp only [preX86_64, h.rdi, h.rsi, h.rdx, h.rcx, h.r8, h.r9, h.rsp, h.rd, h.wr, ha, hb] at hs ⊢
   exact hs
 
 theorem FlagsOnly.postO {s t z : State} (h : FlagsOnly s t) (hz : openX86_64.post t z) :
     openX86_64.post s z := by
   have ha := h.arg
-  simp only [openX86_64, h.gpr, h.mem, ha] at hz ⊢
+  simp only [openX86_64, h.rdi, h.rsi, h.rdx, h.rcx, h.r8, h.r9, h.mem, ha] at hz ⊢
   exact hz
 
 theorem FlagsOnly.pubO {s₁ s₂ t₁ t₂ : State} (h₁ : FlagsOnly s₁ t₁) (h₂ : FlagsOnly s₂ t₂)
     (hp : openX86_64.pub s₁ s₂) : openX86_64.pub t₁ t₂ := by
   show pubX86_64 t₁ t₂
-  simp only [pubX86_64, h₁.gpr, h₂.gpr, h₁.arg, h₂.arg]
+  simp only [pubX86_64, h₁.rdi, h₁.rsi, h₁.rdx, h₁.rcx, h₁.r8, h₁.r9, h₁.rsp, h₂.rdi, h₂.rsi, h₂.rdx,
+    h₂.rcx, h₂.r8, h₂.r9, h₂.rsp, h₁.arg, h₂.arg]
   exact hp
 
 theorem openSmall_ok (u : Proof.ChaCha20.X86_64.XorImpl) (hu : u.poly = .avx2) {big : Prog isa}

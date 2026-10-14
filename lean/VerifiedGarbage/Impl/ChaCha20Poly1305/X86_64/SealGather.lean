@@ -235,13 +235,23 @@ def sealGatherWhole (w : Width) (name : String) (code : Prog isa) : Prog isa :=
     (.pop .rax 6)
 
 /-- `vg_chacha20_poly1305_seal_gather` calling `seal` (`sealName`,
-`sealCode`) for at most 960 bytes of data, which the first keystream of
-`seal_split` with `vg_chacha20_xor_avx512` would cover and copy anyway
-(`sealGatherWhole`), and `seal_split` (`splitName`, `splitCode`) for more
-(`sealGather`), branching on `len` (`[rsp + 16]`) in `rax`. -/
-def sealGatherBy (w : Width) (sealName : String) (sealCode : Prog isa) (splitName : String)
+`sealCode`) for fewer than `lim` bytes of data (`sealGatherWhole`), and
+`seal_split` (`splitName`, `splitCode`) for more (`sealGather`), branching on
+`len` (`[rsp + 16]`) in `rax`. With `lim` 961, `seal` takes the data the
+first keystream of `seal_split` with `vg_chacha20_xor_avx512` would cover and
+copy anyway; with `byLim`'s 1025 for the AVX-512 instances without IFMA,
+also the lengths their `seal` encrypts with the AVX2 code (`Stitch.winLo` to
+`Stitch.winHi - 1`), much faster on their CPUs than `seal_split`'s AVX-512
+code, for a copy of the first slice. -/
+def sealGatherBy (lim : Nat) (w : Width) (sealName : String) (sealCode : Prog isa) (splitName : String)
     (splitCode : Prog isa) : Prog isa :=
-  .seq (.block [.mov .rax (.mem (at_ .rsp 16)), .alu .cmp .rax (imm 961)])
+  .seq (.block [.mov .rax (.mem (at_ .rsp 16)), .alu .cmp .rax (imm lim)])
     (.ite .b (sealGatherWhole w sealName sealCode) (sealGather w splitName splitCode))
+
+/-- `sealGatherBy`'s limit for an implementation of `vg_poly1305_blocks`:
+`Stitch.winHi` (1025) for the AVX-512 one without IFMA, 961 otherwise. -/
+def byLim : Poly1305.X86_64.Blocks → Nat
+  | .avx512 => 1025
+  | _ => 961
 
 end VG.Impl.ChaCha20Poly1305.X86_64.SealGather

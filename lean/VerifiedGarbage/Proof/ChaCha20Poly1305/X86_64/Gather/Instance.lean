@@ -16,7 +16,7 @@ Untrusted: everything here is checked by Lean. The instance of
 `vg_chacha20_xor` copies as many bytes at a time as its CPUs can (`width`).
 With the AVX-512 implementations of `vg_poly1305_blocks`, it calls that
 implementation's `vg_chacha20_poly1305_seal` (`Whole.sealFn`) for at most
-960 bytes of data, and its `vg_chacha20_poly1305_seal_split` (`sealSplitFn`)
+960 bytes of data (1024 without IFMA, `byLim`), and its `vg_chacha20_poly1305_seal_split` (`sealSplitFn`)
 for more (`sealGatherBy`). The others always gather every slice and call
 `seal` (`sealGatherWhole`): their `seal_split` would copy the first slice
 too (`gatherCode`, `gather_verified`). The code writes `rsp` only in frames
@@ -67,16 +67,23 @@ open VG.Proof.ChaCha20.X86_64 in
 /-- The code of the instance for `v`. -/
 def gatherCode (v : XorImpl) : Prog isa :=
   match v.poly with
-  | .avx512 | .ifma => sealGatherBy (width v) (Whole.sealFn v).name (Whole.sealFn v).code (sealSplitFn v).name
+  | .avx512 | .ifma => sealGatherBy (byLim v.poly) (width v) (Whole.sealFn v).name (Whole.sealFn v).code (sealSplitFn v).name
       (sealSplitFn v).code
   | _ => sealGatherWhole (width v) (Whole.sealFn v).name (Whole.sealFn v).code
+
+open VG.Proof.ChaCha20.X86_64 in
+theorem byLim_cases (v : XorImpl) : byLim v.poly = 961 ∨ byLim v.poly = 1025 := by
+  generalize v.poly = b
+  cases b <;> decide
 
 open VG.Proof.ChaCha20.X86_64 in
 theorem gather_verified (v : XorImpl) :
     Verified X86_64.target (gatherCode v) (Spec.ChaCha20Poly1305.sealGatherContract X86_64.abi 1880) := by
   unfold gatherCode
   split
-  all_goals first | exact sealGatherBy_verified _ _ _ | exact sealGatherWhole_verified _ _
+  all_goals first
+    | exact sealGatherBy_verified (byLim_cases v) _ _ _
+    | exact sealGatherWhole_verified _ _
 
 open VG.Proof.ChaCha20.X86_64 in
 theorem gather_spSafe (v : XorImpl) : (gatherCode v).all (fun i => !X86_64.isa.writesSp i) = true := by
@@ -87,6 +94,6 @@ theorem gather_spSafe (v : XorImpl) : (gatherCode v).all (fun i => !X86_64.isa.w
   all_goals first
     | exact hw
     | (simp only [sealGatherBy, Code.all, Bool.and_eq_true]
-       exact ⟨by decide, hw, hs⟩)
+       exact ⟨by rcases byLim_cases v with h | h <;> rw [h] <;> decide, hw, hs⟩)
 
 end VG.Proof.ChaCha20Poly1305.X86_64.Gather
