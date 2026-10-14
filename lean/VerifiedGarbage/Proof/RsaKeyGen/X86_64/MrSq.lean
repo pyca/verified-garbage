@@ -70,7 +70,7 @@ theorem sqHead_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 64}
   have hZ := hd.z
   have hXZ := hd.x
   have hw := hd.w4
-  have hw' : w < 2 ^ 31 := by have := hd.w64; omega_arith
+  have hw' : w < 2 ^ 31 := by have := hd.w128; omega_arith
   have hR : Nat.Coprime (2 ^ (64 * w)) c := VG.Proof.Bignum.coprime_pow2 hodd _
   have hc0 : 0 < c := by omega_arith
   refine wp_seqs_append (by simp) (by simp [eqMask]) ?_
@@ -155,7 +155,7 @@ theorem mrLast_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 64}
   have hn := hc.good.scr.nowrap
   have hZ := hd.z
   have hXZ := hd.x
-  have hw' : w < 2 ^ 31 := by have := hd.w64; omega_arith
+  have hw' : w < 2 ^ 31 := by have := hd.w128; omega_arith
   unfold mrLast
   refine wp_seqs_append (by simp) (by simp) ?_
   refine WP.mono (sqHead_ok M hd hc hodd hc1 hY) fun s₁ ⟨hc₁, hY₁, hbp, hf₁, k₁⟩ => ?_

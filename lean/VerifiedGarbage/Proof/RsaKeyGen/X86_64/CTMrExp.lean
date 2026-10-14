@@ -185,7 +185,7 @@ theorem LastW.goodW {q : EPub} {s : State} (h : LastW q s) : GoodW ⟨q.p.B, q.p
 /-- `LastW` after `y := y²`. -/
 theorem lastW_mm (M : Mont) {q : EPub} {s : State} (h : LastW q s) : WP isa (M.mm aY aY aY) s fun t => LastW q t := by
   obtain ⟨hk, hp, hd, mi, c, bm, hc, hE, hodd, hc1, hy⟩ := h
-  have hw' : q.p.w < 2 ^ 31 := by have := hd.w64; omega_arith
+  have hw' : q.p.w < 2 ^ 31 := by have := hd.w128; omega_arith
   have hn := hc.good.scr.nowrap
   refine WP.mono (M.mm_ok hc.good hd.z (by have := hd.w4; omega_arith) hw' (o := aY) (a := aY) (b := aY) (by decide)
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) hc.inv (by rw [hc.n]; exact hy))
@@ -212,7 +212,7 @@ theorem lastW_tail {q : EPub} {s : State} (h : LastW q s) (j : Nat) :
   obtain ⟨hk, hp, hd, mi, c, bm, hc, hE, hodd, hc1, hy⟩ := h
   have hg := hc.good
   have hn := hg.scr.nowrap
-  have hw' : q.p.w < 2 ^ 31 := by have := hd.w64; omega_arith
+  have hw' : q.p.w < 2 ^ 31 := by have := hd.w128; omega_arith
   have hEZ := aE_fits hd
   refine wp_seqs_append (by simp [eqMask]) (by simp) (WP.mono (eqMask_ok hg hd.z (by have := hd.w4; omega_arith) hw'
     (j := aRm1) (by decide) hd.x) fun s₁ ⟨_, hm₁, k₁⟩ => ?_)

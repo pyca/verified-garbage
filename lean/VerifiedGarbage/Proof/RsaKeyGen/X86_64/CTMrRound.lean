@@ -115,7 +115,7 @@ theorem mrWitness_ct : RelCT isa (Two R0) (seqs mrWitness) (Two W2) := by
     rintro q s ⟨hk, hp, hd, mi, c, bm, r, uni, hc, -, -, -, -, hsrc, -, hlen, -⟩
     have hm := (hp0 hp).mrh
     have hw4 := hd.w4
-    refine WP.mono (witLoad_ok hc.good hd.z (by omega_arith) (by have := hd.w64; omega_arith) hm.rand hm.used hm.len
+    refine WP.mono (witLoad_ok hc.good hd.z (by omega_arith) (by have := hd.w128; omega_arith) hm.rand hm.used hm.len
       (VG.Proof.RsaKeyGen.X86_64.Src.seg hsrc hlen) (by
         simp only [VG.Proof.RsaKeyGen.seg, List.length_take, List.length_drop]; omega_arith))
       fun t ⟨_, hu, hf, hg, k⟩ => ⟨hk, hp_used hp hg k.2.2 hf (by rng_disj) hu⟩
@@ -160,7 +160,7 @@ theorem tvs_lt (q : RPub) (j : Nat) : ∀ e ∈ q.tvs j, e.1 < 32 :=
 /-- `y := y T_1` keeps `TLW`. -/
 theorem tlw_mm (M : Mont) {p : RPub × Nat} {s : State} (h : TLW p s) : WP isa (M.mm aY aY aXm) s (TLW p) := by
   obtain ⟨hk, hp, hd, hj, mi, c, bm, hc, hx⟩ := h
-  have hw' : p.1.p.w < 2 ^ 31 := by have := hd.w64; omega_arith
+  have hw' : p.1.p.w < 2 ^ 31 := by have := hd.w128; omega_arith
   refine WP.mono (M.mm_ok hc.good hd.z (by have := hd.w4; omega_arith) hw' (o := aY) (a := aY) (b := aXm) (by decide)
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) hc.inv (by rw [hc.n]; exact hx))
     fun t ⟨hg, _, _, ha', k⟩ => ?_
@@ -182,7 +182,7 @@ theorem tabCopy_ok {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 64} {c bm j :
   have hg := hc.good
   have hn := hg.scr.nowrap
   have hZ := hd.z
-  have hw' : w < 2 ^ 31 := by have := hd.w64; omega
+  have hw' : w < 2 ^ 31 := by have := hd.w128; omega
   have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off B (8 * i)) 8 := fun i hi =>
     hg.scr.ld (by have := hdr_lt_slot w 8 hi; omega)
   have hE := ent_in_tab w (e := j + 2) (by omega)
@@ -335,7 +335,7 @@ theorem roundPre_ct (M : Mont) : RelCT isa (Two R0) (seqs (mrWitness ++ [M.mm aX
       (fun _ _ h => let ⟨_, hd, mi, _, _, hc, _⟩ := h; ⟨mi, hc.good, hd.z⟩)
       (M.ct (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨rfl, rfl, rfl⟩))))))) ?_
     rintro q s ⟨⟨hk, hp⟩, hd, mi, c, bm, hc, hR2, hodd, hc1⟩
-    have hw' : q.p.w < 2 ^ 31 := by have := hd.w64; omega_arith
+    have hw' : q.p.w < 2 ^ 31 := by have := hd.w128; omega_arith
     have hRc : Nat.Coprime (2 ^ (64 * q.p.w)) c := VG.Proof.Bignum.coprime_pow2 hodd _
     have hc0 : 0 < c := by omega_arith
     refine WP.mono (M.mm_ok hc.good hd.z (by have := hd.w4; omega_arith) hw' (o := aXm) (a := aX) (b := aR2) (by decide)

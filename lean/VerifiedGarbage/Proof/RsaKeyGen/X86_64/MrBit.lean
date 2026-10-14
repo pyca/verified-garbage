@@ -41,7 +41,7 @@ structure MrDims (B : Addr) (Z w : Nat) : Prop where
   z : slot w 8 ≤ Z
   x : slot w aRm1 + 8 * (w + 2) ≤ Z
   w4 : 4 ≤ w
-  w64 : w ≤ 64
+  w128 : w ≤ 128
 
 theorem sxm1' : BitVec.signExtend 64 (BitVec.ofInt 32 (-1)) = BitVec.allOnes 64 := by decide
 

@@ -47,7 +47,7 @@ theorem expStart_ok {B : Addr} {Z w : Nat} {mi : BitVec 64} {c bm b : Nat} {s : 
         (by unfold kFlag kPlen sFn; omega_arith)) (expRanges_hdr w (Or.inr (Or.inr (Or.inr rfl)))))
   have hs₁ := hg.scr.congr k₁.2.2
   refine ⟨hc.of_exp hd hf₁ hs₁ ((k₁.gpr (by decide)).trans hg.rdi), hT.of_low hf₁ (expRanges_low w)
-    (by have := hd.w64; omega_arith), ?_, ?_, ?_, hf₁, k₁.mono (by decide)⟩
+    (by have := hd.w128; omega_arith), ?_, ?_, ?_, hf₁, k₁.mono (by decide)⟩
   · rw [hm₁, hdrStore_wv _ _ _ (by decide) (by decide) (by omega_arith), hdrStore_wv _ _ _ (by decide) (by decide) (by omega_arith),
       hY, Nat.mul_zero]
     simp only [wRun, Nat.one_mul]

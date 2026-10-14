@@ -34,7 +34,7 @@ open VG.Impl.Bignum.Public (aN aAcc aTmp aXm aY sCnt)
 /-- What the table's code keeps: the working space and its bounds, `c`, and
 `[aXm]` below `c`. -/
 def TB (L : WsP) (s : State) : Prop :=
-  4 ≤ L.w ∧ L.w ≤ 64 ∧ slot L.w aE + 8 * (L.w + 2) ≤ L.Z ∧ ∃ c bm b, MrCtx s L.B L.Z L.w c bm ∧ c % 2 = 1 ∧
+  4 ≤ L.w ∧ L.w ≤ 128 ∧ slot L.w aE + 8 * (L.w + 2) ≤ L.Z ∧ ∃ c bm b, MrCtx s L.B L.Z L.w c bm ∧ c % 2 = 1 ∧
     1 < c ∧ wv s.mem L.B (slot L.w aXm) L.w = Spec.Rsa.powMod b 1 c * 2 ^ (64 * L.w) % c
 
 /-- `TB`, with entry `e` in `kV`. -/
@@ -46,12 +46,12 @@ theorem TB.ws {L : WsP} {s : State} (h : TB L s) : Ws s L.B L.Z L.w := by
 
 theorem TB.of_tab {L : WsP} {s t : State} (h : TB L s) {rs : List (Nat × Nat)} (hf : Frm L.B rs s.mem t.mem)
     (hs : ∀ r ∈ rs, r ∈ tabRanges L.w) {regs : List Reg} (k : Keep regs s t) (hr : .x0 ∉ regs) : TB L t := by
-  obtain ⟨h4, h64, hEZ, c, bm, b, hc, hodd, hc1, hX⟩ := h
+  obtain ⟨h4, h128, hEZ, c, bm, b, hc, hodd, hc1, hX⟩ := h
   have hn := hc.ws.scr.nowrap
   have hXZ := hc.ws.sl (show aXm < 16 by decide)
   have dX : ∀ r ∈ tabRanges L.w, slot L.w aXm + 8 * L.w ≤ r.1 ∨ r.1 + r.2 ≤ slot L.w aXm := by
     unfold tabRanges; w_disj
-  exact ⟨h4, h64, hEZ, c, bm, b, hc.of_tab hf hs k hr, hodd, hc1,
+  exact ⟨h4, h128, hEZ, c, bm, b, hc.of_tab hf hs k hr, hodd, hc1,
     by rw [hf.wv_eq (fun r hr' => dX r (hs r hr')) (by omega)]; exact hX⟩
 
 /-- The registers pinned before an entry's copy. -/
@@ -135,7 +135,7 @@ theorem nextEnt_ct {e : Nat} (he : e + 1 < 16) :
 
 /-- The table's loop: after `i` entries. -/
 def TL (L : WsP) (i : Nat) (s : State) : Prop :=
-  4 ≤ L.w ∧ L.w ≤ 64 ∧ slot L.w aE + 8 * (L.w + 2) ≤ L.Z ∧ ∃ c bm b s₀, TabI L.B L.Z L.w c bm b s₀ i s ∧
+  4 ≤ L.w ∧ L.w ≤ 128 ∧ slot L.w aE + 8 * (L.w + 2) ≤ L.Z ∧ ∃ c bm b s₀, TabI L.B L.Z L.w c bm b s₀ i s ∧
     c % 2 = 1 ∧ 1 < c
 
 theorem copyA_tct {α : Type} {Φ : α → State → Prop} (B : α → Addr) (Z w : α → Nat)
@@ -155,7 +155,7 @@ theorem copyA_tct {α : Type} {Φ : α → State → Prop} (B : α → Addr) (Z 
 
 theorem tabMul_ok (M : Mont) {L : WsP} {i : Nat} {s : State} (hi : i < 14) (h : TL L i s) :
     WP isa (M.mm aY aY aXm) s fun t => TBE L (i + 2) t := by
-  obtain ⟨h4, h64, hEZ, c, bm, b, s₀, hI, hodd, hc1⟩ := h
+  obtain ⟨h4, h128, hEZ, c, bm, b, s₀, hI, hodd, hc1⟩ := h
   have hc := hI.ctx
   have hn := hc.ws.scr.nowrap
   have hX : wv s.mem L.B (slot L.w aXm) L.w < c := by rw [hI.xm]; exact Nat.mod_lt _ (by omega)
@@ -164,7 +164,7 @@ theorem tabMul_ok (M : Mont) {L : WsP} {i : Nat} {s : State} (hi : i < 14) (h : 
     (by rw [hc.n]; exact hX)) fun t ⟨_, _, _, ha, k⟩ => ?_
   have hf : Frm L.B [(slot L.w aAcc, 8 * (L.w + 2)), (slot L.w aTmp, 8 * (L.w + 2)),
       (slot L.w aY, 8 * (L.w + 2))] s.mem t.mem := Frm.of_arrays ha (by simp)
-  have hT : TB L s := ⟨h4, h64, hEZ, c, bm, b, hc, hodd, hc1, hI.xm⟩
+  have hT : TB L s := ⟨h4, h128, hEZ, c, bm, b, hc, hodd, hc1, hI.xm⟩
   exact ⟨hT.of_tab hf (by simp [tabRanges]) k (by decide), by omega,
     by rw [hf.word_eq (by w_disj) (by decide)]; exact hI.v⟩
 
@@ -200,14 +200,14 @@ theorem tabBuild_ct (M : Mont) : RelCT isa (Two TB) (seqs (tabBuild M.mm)) fun _
       refine RelCT.seq (nextEnt_ct (by decide)) ?_
       exact copyA_tct (fun L : WsP => L.B) (fun L : WsP => L.Z) (fun L : WsP => L.w) (fun _ _ h => h.1.ws)
         (by decide) (by decide) (by decide) (by taint_decide)
-    · obtain ⟨h4, h64, hEZ, c, bm, b, hc, hodd, hc1, hX⟩ := h
-      exact WP.mono (tabHead_ok hEZ hc hc1 hX) fun t ⟨hI, _⟩ => ⟨by decide, h4, h64, hEZ, c, bm, b, t, hI, hodd, hc1⟩
+    · obtain ⟨h4, h128, hEZ, c, bm, b, hc, hodd, hc1, hX⟩ := h
+      exact WP.mono (tabHead_ok hEZ hc hc1 hX) fun t ⟨hI, _⟩ => ⟨by decide, h4, h128, hEZ, c, bm, b, t, hI, hodd, hc1⟩
   refine RelCT.seq (two_loop (Φ := TL) (Ψ := fun L s => Ws s L.B L.Z L.w) (fun _ => 14) (tabStep_ct M) ?_)
     (copyA_tct (fun L : WsP => L.B) (fun L : WsP => L.Z) (fun L : WsP => L.w) (fun _ _ h => h)
       (by decide) (by decide) (by decide) (by taint_decide))
-  rintro L i s hi ⟨h4, h64, hEZ, c, bm, b, s₀, hI, hodd, hc1⟩
-  exact WP.mono (tabStep_ok M h64 hEZ hodd hc1 hi hI) fun t ⟨hI', hz⟩ =>
-    ⟨eval_cnt .x3 hi hz, fun _ => ⟨h4, h64, hEZ, c, bm, b, s₀, hI', hodd, hc1⟩, fun _ => hI'.ctx.ws⟩
+  rintro L i s hi ⟨h4, h128, hEZ, c, bm, b, s₀, hI, hodd, hc1⟩
+  exact WP.mono (tabStep_ok M h128 hEZ hodd hc1 hi hI) fun t ⟨hI', hz⟩ =>
+    ⟨eval_cnt .x3 hi hz, fun _ => ⟨h4, h128, hEZ, c, bm, b, s₀, hI', hodd, hc1⟩, fun _ => hI'.ctx.ws⟩
 
 
 end VG.Proof.RsaKeyGen.AArch64

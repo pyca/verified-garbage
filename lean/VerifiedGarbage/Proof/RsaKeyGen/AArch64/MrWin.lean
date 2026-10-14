@@ -81,16 +81,16 @@ theorem sqRanges_win (w : Nat) : ∀ r ∈ sqRanges w, r ∈ winRanges w := by
   simp only [sqRanges, List.mem_cons, List.not_mem_nil, or_false]
   rintro _ (rfl | rfl | rfl | rfl) <;> simp [winRanges]
 
-theorem mrSq_wsq (M : Mont) {s : State} {B : Addr} {Z w c bm : Nat} {st : Nat × Bool} (hw64 : w ≤ 64)
+theorem mrSq_wsq (M : Mont) {s : State} {B : Addr} {Z w c bm : Nat} {st : Nat × Bool} (hw128 : w ≤ 128)
     (hc : MrCtx s B Z w c bm) (hodd : c % 2 = 1) (hc1 : 1 < c)
     (hY : wv s.mem B (slot w aY) w = st.1 * 2 ^ (64 * w) % c) (hP : word s.mem B (8 * kFlag) = mask st.2) :
     WP isa (seqs (mrSq M.mm)) s fun t =>
       MrCtx t B Z w c bm ∧ wv t.mem B (slot w aY) w = (wSq c true st).1 * 2 ^ (64 * w) % c ∧
       word t.mem B (8 * kFlag) = mask (wSq c true st).2 ∧ Frm B (sqRanges w) s.mem t.mem ∧ Keep mmRegs s t :=
-  mrSq_ok M hw64 hc hodd hc1 hY hP
+  mrSq_ok M hw128 hc hodd hc1 hY hP
 
 /-- Four squarings. -/
-theorem sq4_ok (M : Mont) {s : State} {B : Addr} {Z w c bm : Nat} {st : Nat × Bool} (hw64 : w ≤ 64)
+theorem sq4_ok (M : Mont) {s : State} {B : Addr} {Z w c bm : Nat} {st : Nat × Bool} (hw128 : w ≤ 128)
     (hc : MrCtx s B Z w c bm) (hodd : c % 2 = 1) (hc1 : 1 < c)
     (hY : wv s.mem B (slot w aY) w = st.1 * 2 ^ (64 * w) % c) (hP : word s.mem B (8 * kFlag) = mask st.2) :
     WP isa (seqs (mrSq M.mm ++ (mrSq M.mm ++ (mrSq M.mm ++ mrSq M.mm)))) s fun t =>
@@ -98,13 +98,13 @@ theorem sq4_ok (M : Mont) {s : State} {B : Addr} {Z w c bm : Nat} {st : Nat × B
       wv t.mem B (slot w aY) w = (wSq c true (wSq c true (wSq c true (wSq c true st)))).1 * 2 ^ (64 * w) % c ∧
       word t.mem B (8 * kFlag) = mask (wSq c true (wSq c true (wSq c true (wSq c true st)))).2 ∧
       Frm B (sqRanges w) s.mem t.mem ∧ Keep mmRegs s t := by
-  refine wp_seqs_append (by simp [mrSq]) (by simp [mrSq]) (WP.mono (mrSq_wsq M hw64 hc hodd hc1 hY hP)
+  refine wp_seqs_append (by simp [mrSq]) (by simp [mrSq]) (WP.mono (mrSq_wsq M hw128 hc hodd hc1 hY hP)
     fun s₁ ⟨hc₁, hY₁, hP₁, hf₁, k₁⟩ => ?_)
-  refine wp_seqs_append (by simp [mrSq]) (by simp [mrSq]) (WP.mono (mrSq_wsq M hw64 hc₁ hodd hc1 hY₁ hP₁)
+  refine wp_seqs_append (by simp [mrSq]) (by simp [mrSq]) (WP.mono (mrSq_wsq M hw128 hc₁ hodd hc1 hY₁ hP₁)
     fun s₂ ⟨hc₂, hY₂, hP₂, hf₂, k₂⟩ => ?_)
-  refine wp_seqs_append (by simp [mrSq]) (by simp [mrSq]) (WP.mono (mrSq_wsq M hw64 hc₂ hodd hc1 hY₂ hP₂)
+  refine wp_seqs_append (by simp [mrSq]) (by simp [mrSq]) (WP.mono (mrSq_wsq M hw128 hc₂ hodd hc1 hY₂ hP₂)
     fun s₃ ⟨hc₃, hY₃, hP₃, hf₃, k₃⟩ => ?_)
-  exact WP.mono (mrSq_wsq M hw64 hc₃ hodd hc1 hY₃ hP₃) fun t ⟨hct, hYt, hPt, hft, kt⟩ =>
+  exact WP.mono (mrSq_wsq M hw128 hc₃ hodd hc1 hY₃ hP₃) fun t ⟨hct, hYt, hPt, hft, kt⟩ =>
     ⟨hct, hYt, hPt, ((hf₁.trans hf₂).trans hf₃).trans hft, (((k₁.trans k₂).trans k₃).trans kt).mono (by decide)⟩
 
 /-- The window's flag. -/
@@ -175,7 +175,7 @@ theorem winDigit_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {V : Bit
     hs.ld (d := 8 * kV) (by simp only [kV, kT0, sCnt, sFn]; omega), hs.st (d := 8 * kG) (by simp only [kG]; omega), hV]
 
 /-- One window. -/
-theorem mrWin_ok (M : Mont) {s : State} {B : Addr} {Z w c bm b y : Nat} {P : Bool} (hw64 : w ≤ 64)
+theorem mrWin_ok (M : Mont) {s : State} {B : Addr} {Z w c bm b y : Nat} {P : Bool} (hw128 : w ≤ 128)
     (hEZ : slot w aE + 8 * (w + 2) ≤ Z) (hc : MrCtx s B Z w c bm) (hT : TabOK s.mem B w c b) (hodd : c % 2 = 1)
     (hc1 : 1 < c) (hY : wv s.mem B (slot w aY) w = y * 2 ^ (64 * w) % c) (hP : word s.mem B (8 * kFlag) = mask P)
     {V : BitVec 64} {n : Nat} (hV : word s.mem B (8 * kV) = V)
@@ -200,7 +200,7 @@ theorem mrWin_ok (M : Mont) {s : State} {B : Addr} {Z w c bm b y : Nat} {P : Boo
   have hd16 : d < 16 := hd' ▸ top_nibble V
   rw [mrWin_eq]
   -- The four squarings.
-  refine wp_seqs_append (by simp [mrSq]) (by simp) (WP.mono (sq4_ok M hw64 hc hodd hc1 (st := (y, P)) hY hP)
+  refine wp_seqs_append (by simp [mrSq]) (by simp) (WP.mono (sq4_ok M hw128 hc hodd hc1 (st := (y, P)) hY hP)
     fun s₁ ⟨hc₁, hY₁, hP₁, hf₁, k₁⟩ => ?_)
   generalize hs4 : wSq c true (wSq c true (wSq c true (wSq c true (y, P)))) = s4 at hY₁ hP₁
   have hf₁w := hf₁.mono (sqRanges_win w)

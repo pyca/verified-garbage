@@ -125,7 +125,7 @@ theorem wordStart_ok {B : Addr} {Z w : Nat} {mi : BitVec 64} {c bm b : Nat} {s�
   have hZ := hd.z
   have hXZ := hd.x
   have hw4 := hd.w4
-  have hw' : w < 2 ^ 31 := by have := hd.w64; omega_arith
+  have hw' : w < 2 ^ 31 := by have := hd.w128; omega_arith
   have hn := hg.scr.nowrap
   have hl : ∀ (t : State), Scr t B Z → ∀ i < 32, InRegions (t.rd ++ t.wr) (off B (8 * i)) 8 := fun t hs i hi =>
     hs.ld (by have := hdr_lt_slot w 8 hi; omega_arith)
@@ -183,7 +183,7 @@ theorem wordEnd_ok {B : Addr} {Z w : Nat} {mi : BitVec 64} {c bm b : Nat} {W : B
   have hg₂ := hB.ctx.good
   have hn := hg₂.scr.nowrap
   have hZ := hd.z
-  have h64 := hd.w64
+  have h64 := hd.w128
   have hl : InRegions (s.rd ++ s.wr) (off B (8 * kWords)) 8 :=
     hg₂.scr.ld (by have := hdr_lt_slot w 8 (show kWords < 32 by decide); omega_arith)
   refine WP.mono (WP.keep [.rax] (Q := fun t => t.zf = some (decide (j + 1 = w)) ∧ t.mem = s.mem) (by

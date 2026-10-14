@@ -80,14 +80,14 @@ theorem winW_mm (M : Mont) {q : WPub} {s : State} (h : WinW q s) {b : Nat} (hb :
     (hB : wv s.mem q.p.B (slot q.p.w b) q.p.w < wv s.mem q.p.B (slot q.p.w aN) q.p.w) :
     WP isa (M.mm aY aY b) s fun t => WinW q t := by
   obtain ⟨hk, hp, hd, mi, c, b', bm, hc, hT, hodd, hc1, hy⟩ := h
-  have hw' : q.p.w < 2 ^ 31 := by have := hd.w64; omega_arith
+  have hw' : q.p.w < 2 ^ 31 := by have := hd.w128; omega_arith
   refine WP.mono (M.mm_ok hc.good hd.z (by have := hd.w4; omega_arith) hw' (o := aY) (a := aY) (b := b) (by decide)
     (by decide) hb (by decide) (by decide) (by decide) d4 hc.inv hB (by decide) d6) fun t ⟨hg, hlt, _, ha', k⟩ => ?_
   have hf : Frm q.p.B [(slot q.p.w aAcc, 8 * (q.p.w + 2)), (slot q.p.w aTmp, 8 * (q.p.w + 2)),
       (slot q.p.w aY, 8 * (q.p.w + 2))] s.mem t.mem := Frm.of_arrays ha' (by simp)
   refine ⟨hk, hp.frm hf (by rng_le) q.vs_lt hg.rdi k.2.2, hd, mi, c, b', bm,
     hc.of_frm hd hf hg.scr hg.rdi (by rng_disj) (by rng_disj) (by rng_disj) (by rng_disj) (by rng_disj),
-    hT.of_low hf (by rng_le) (by have := hd.w64; omega_arith), hodd, hc1, by rw [← hc.n]; exact hlt⟩
+    hT.of_low hf (by rng_le) (by have := hd.w128; omega_arith), hodd, hc1, by rw [← hc.n]; exact hlt⟩
 
 /-- The comparison and the flag after a squaring keep `WinW`. -/
 theorem winW_sqTail {q : WPub} {s : State} (h : WinW q s) :
@@ -96,7 +96,7 @@ theorem winW_sqTail {q : WPub} {s : State} (h : WinW q s) :
   obtain ⟨hk, hp, hd, mi, c, b, bm, hc, hT, hodd, hc1, hy⟩ := h
   have hg := hc.good
   have hn := hg.scr.nowrap
-  have hw' : q.p.w < 2 ^ 31 := by have := hd.w64; omega_arith
+  have hw' : q.p.w < 2 ^ 31 := by have := hd.w128; omega_arith
   refine wp_seqs_append (by simp [eqMask]) (by simp) (WP.mono (eqMask_ok hg hd.z (by have := hd.w4; omega_arith) hw'
     (j := aRm1) (by decide) hd.x) fun s₁ ⟨_, hm₁, k₁⟩ => ?_)
   have hdi₁ : s₁.gpr .rdi = q.p.B := (k₁.gpr (by decide)).trans hg.rdi
@@ -140,7 +140,7 @@ theorem winW_sel {q : WPub} {s : State} (h : WinW q s) :
   obtain ⟨hk, hp, hd, mi, c, b, bm, hc, hT, hodd, hc1, hy⟩ := h
   have hg := hc.good
   have hn := hg.scr.nowrap
-  have hw' : q.p.w < 2 ^ 30 := by have := hd.w64; omega_arith
+  have hw' : q.p.w < 2 ^ 30 := by have := hd.w128; omega_arith
   have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off q.p.B (8 * i)) 8 := fun i hi =>
     hg.scr.ld (by have := hdr_lt_slot q.p.w 8 hi; have := hd.z; omega_arith)
   have hst : InRegions s.wr (off q.p.B (8 * kG)) 8 :=

@@ -96,7 +96,7 @@ theorem ofNat_sub_ofNat' {a b : Nat} (h : b ≤ a) (ha : a < 2 ^ 64) :
 
 /-- The test of `rand`'s octets left: `x5 = 0` iff fewer than `8 w`. -/
 theorem iterHead_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {r : List Byte} {used : Nat}
-    (hw64 : w ≤ 64) (hrl : r.length < 2 ^ 64) (hul : used ≤ r.length)
+    (hw128 : w ≤ 128) (hrl : r.length < 2 ^ 64) (hul : used ≤ r.length)
     (hlen : word s.mem B (8 * kLen) = BitVec.ofNat 64 (8 * w))
     (hrlen : word s.mem B (8 * kRandLen) = BitVec.ofNat 64 r.length)
     (hus : word s.mem B (8 * kUsed) = BitVec.ofNat 64 used) :
@@ -128,7 +128,7 @@ theorem iterHead_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {r : Lis
 
 /-- One iteration of `millerRabin`'s loop. -/
 theorem mrIter_ok (M : Mont) {B : Addr} {Z w c ch : Nat} {rp : Addr} {r : List Byte}
-    {s₀ : State} {res : Option (Bool × List Byte)} (hw4 : 4 ≤ w) (hw64 : w ≤ 64)
+    {s₀ : State} {res : Option (Bool × List Byte)} (hw4 : 4 ≤ w) (hw128 : w ≤ 128)
     (hEZ : slot w aE + 8 * (w + 2) ≤ Z) (hc1 : 1 < c) (hsh : VG.Proof.RsaKeyGen.PrimeShape (64 * w) c) (hrl : r.length < 2 ^ 64) (hch : ch < 2 ^ 62)
     {i uni used : Nat} (s : State) (hI : MrSt B Z w c ch rp r s₀ res i uni used s) :
     WP isa (seqs [
@@ -151,7 +151,7 @@ theorem mrIter_ok (M : Mont) {B : Addr} {Z w c ch : Nat} {rp : Addr} {r : List B
   have hres' := VG.Proof.RsaKeyGen.mrLoop_step c ch (Spec.Rsa.splitTwos (c - 1)).1 (Spec.Rsa.splitTwos (c - 1)).2
     (8 * w) r i uni used hgo hwb (by omega_arith)
   simp only [seqs]
-  refine WP.seq (WP.mono (iterHead_ok h hw64 hrl hul hlen hrlen hus) fun s₁ ⟨hz₁, hm₁, k₁⟩ => ?_)
+  refine WP.seq (WP.mono (iterHead_ok h hw128 hrl hul hlen hrlen hus) fun s₁ ⟨hz₁, hm₁, k₁⟩ => ?_)
   refine WP.seq (WP.ite (decide (r.length < used + 8 * w)) hz₁ (fun hb => ?_) (fun hb => ?_))
   · -- Out of octets: `kStat := 0`.
     simp only [decide_eq_true_eq] at hb
@@ -184,7 +184,7 @@ theorem mrIter_ok (M : Mont) {B : Addr} {Z w c ch : Nat} {rp : Addr} {r : List B
     have hi61 : i < 2 ^ 61 := by
       have : 32 * i ≤ 8 * w * i := Nat.mul_le_mul_right _ (by omega_arith)
       omega_arith
-    refine WP.mono (mrRound_ok (rp := rp) (used := used) (r := r) (i := i) (uni := uni) (ch := ch) M hw4 hw64 hEZ hc₁
+    refine WP.mono (mrRound_ok (rp := rp) (used := used) (r := r) (i := i) (uni := uni) (ch := ch) M hw4 hw128 hEZ hc₁
       (by rw [hm₁]; exact hE) (by rw [hm₁]; exact hr2) hc1 hsh (by rw [hm₁]; exact hrp)
       (by rw [hm₁]; exact hus) (by rw [hm₁]; exact hlen) (hsrc.congrK (by rw [hm₁]; exact InScr.refl _ _ _) k₁) hb
       (by rw [hm₁]; exact hi) (by rw [hm₁]; exact hun) (by rw [hm₁]; exact hchk) hi61 (by omega_arith) hch)
@@ -307,7 +307,7 @@ theorem mrInit_ok {B : Addr} {Z w c ch bm : Nat} {rp : Addr} {r : List Byte} {s 
 /-- `millerRabin`: the witnesses from offset `used`, as `primalityTest`'s
 loop from `(1, 0)`. -/
 theorem millerRabin_ok (M : Mont) {B : Addr} {Z w c ch bm : Nat} {rp : Addr}
-    {r : List Byte} {s : State} {used : Nat} (hw4 : 4 ≤ w) (hw64 : w ≤ 64) (hEZ : slot w aE + 8 * (w + 2) ≤ Z)
+    {r : List Byte} {s : State} {used : Nat} (hw4 : 4 ≤ w) (hw128 : w ≤ 128) (hEZ : slot w aE + 8 * (w + 2) ≤ Z)
     (hc1 : 1 < c) (hsh : VG.Proof.RsaKeyGen.PrimeShape (64 * w) c) (hrl : r.length < 2 ^ 64) (hch : ch < 2 ^ 62)
     (hc : MrCtx s B Z w c bm) (hE : ECtx s.mem B w c) (hr2 : wv s.mem B (slot w aR2) w = 2 ^ (64 * w) * 2 ^ (64 * w) % c)
     (hrp : word s.mem B (8 * kRand) = rp) (hlen : word s.mem B (8 * kLen) = BitVec.ofNat 64 (8 * w))
@@ -319,7 +319,7 @@ theorem millerRabin_ok (M : Mont) {B : Addr} {Z w c ch bm : Nat} {rp : Addr}
   simp only [seqs]
   refine WP.seq (WP.mono (mrInit_ok hc hE hEZ hr2 hrp hlen hrlen hchk hsrc hus hu1 hu2) fun s₁ h => ?_)
   exact WP.loop (fun n t => ∃ i uni u, n = r.length - u ∧ MrSt B Z w c ch rp r s (mrRest c ch r 1 0 used) i uni u t)
-    (fun n t ⟨i, uni, u, hn, hI⟩ => WP.mono (mrIter_ok M hw4 hw64 hEZ hc1 hsh hrl hch t hI)
+    (fun n t ⟨i, uni, u, hn, hI⟩ => WP.mono (mrIter_ok M hw4 hw128 hEZ hc1 hsh hrl hch t hI)
       fun t' h => h.imp (fun h => ⟨h.1, h.2.1⟩)
       fun ⟨he, uni', hI'⟩ => ⟨he, r.length - (u + 8 * w), by have := hI'.ul; omega_arith,
         i + 1, uni', u + 8 * w, rfl, hI'⟩) (r.length - used) s₁ ⟨1, 0, used, rfl, h⟩

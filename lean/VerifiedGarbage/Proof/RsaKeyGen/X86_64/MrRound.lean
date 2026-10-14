@@ -70,7 +70,7 @@ theorem roundPre_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 6
   have hZ := hd.z
   have hXZ := hd.x
   have hw4 := hd.w4
-  have hw' : w < 2 ^ 31 := by have := hd.w64; omega_using [this]
+  have hw' : w < 2 ^ 31 := by have := hd.w128; omega_using [this]
   have hn := hg.scr.nowrap
   have hRc : Nat.Coprime (2 ^ (64 * w)) c := VG.Proof.Bignum.coprime_pow2 hodd _
   have hc0 : 0 < c := by omega_using [hc1]

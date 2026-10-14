@@ -72,7 +72,7 @@ structure TDims (q : TPub) : Prop where
   w4 : 4 ≤ q.w
   w64 : q.w ≤ 64
 
-theorem TDims.mr {q : TPub} (h : TDims q) : MrDims q.B q.Z q.w := ⟨h.z, h.x, h.w4, h.w64⟩
+theorem TDims.mr {q : TPub} (h : TDims q) : MrDims q.B q.Z q.w := ⟨h.z, h.x, h.w4, by have := h.w64; omega_arith⟩
 
 /-- `Good`, in the writable regions. -/
 def GW (q : TPub) (s : State) : Prop :=
