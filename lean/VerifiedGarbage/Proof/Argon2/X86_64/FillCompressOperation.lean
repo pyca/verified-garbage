@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Argon2.X86_64.FillCompressCall
-public import VerifiedGarbage.Proof.Argon2.X86_64.FillWriteCover
+import VerifiedGarbage.Proof.Argon2.X86_64.FillWriteCover
 public import VerifiedGarbage.Impl.Argon2.X86_64.FillCompress
 public import VerifiedGarbage.Proof.Argon2.X86_64.Memory
 public import VerifiedGarbage.Proof.Argon2.X86_64.DivideStep

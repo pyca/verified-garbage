@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.SquarePrefix
+import VerifiedGarbage.Proof.Bignum.AArch64.SquarePrefix
 public import VerifiedGarbage.Proof.Bignum.AArch64.Row
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

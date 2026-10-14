@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.X86_64.R2Adx
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxStep
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxStep
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxBlock
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

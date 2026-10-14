@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowTakeBitCT
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowTailByte
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowTailByte
 import Mathlib.Data.Int.ModEq
 
 /-! Constant time through all tail bits, with a public pending-bit counter. -/

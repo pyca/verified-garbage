@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcCorrect
-public import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcRestore
+import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcRestore
 public import VerifiedGarbage.Proof.Bignum.AArch64.SquareLayout
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

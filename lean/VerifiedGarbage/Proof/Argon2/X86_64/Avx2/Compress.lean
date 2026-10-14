@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Argon2.X86_64.Avx2.Ends
 meta import VerifiedGarbage.Proof.Argon2.X86_64.Avx2.Ends
-public import VerifiedGarbage.Proof.Argon2.X86_64.Avx2.Lit
+import VerifiedGarbage.Proof.Argon2.X86_64.Avx2.Lit
 meta import VerifiedGarbage.Proof.Argon2.X86_64.Avx2.Lit
 public import VerifiedGarbage.Proof.Argon2.X86_64.Compress
 meta import VerifiedGarbage.Proof.Argon2.X86_64.Compress

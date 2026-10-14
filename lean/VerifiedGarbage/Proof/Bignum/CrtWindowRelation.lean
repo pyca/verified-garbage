@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.CrtExp
+import VerifiedGarbage.Proof.Bignum.CrtExp
 
 /-! Integer relations for a complete window on arbitrary reduced table entries. -/
 

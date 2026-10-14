@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Cast5.AArch64.CbcVerified
 meta import VerifiedGarbage.Proof.Cast5.AArch64.CbcVerified
-public import VerifiedGarbage.Proof.Modes.AArch64.Fb
+import VerifiedGarbage.Proof.Modes.AArch64.Fb
 meta import VerifiedGarbage.Proof.Modes.AArch64.Fb
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

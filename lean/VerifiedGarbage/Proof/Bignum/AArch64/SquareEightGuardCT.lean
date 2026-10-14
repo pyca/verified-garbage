@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightGuard
+import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightGuard
 meta import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightGuard
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

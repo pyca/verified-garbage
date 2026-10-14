@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Impl.Bignum.AArch64.Square
+import VerifiedGarbage.Impl.Bignum.AArch64.Square
 public import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

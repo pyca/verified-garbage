@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtSelV
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtRedc
-public import VerifiedGarbage.Proof.Framework.X86_64.VecKeep
+import VerifiedGarbage.Proof.Framework.X86_64.VecKeep
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

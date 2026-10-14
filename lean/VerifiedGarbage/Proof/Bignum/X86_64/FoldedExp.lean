@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.FoldedLoop
-public import VerifiedGarbage.Proof.Bignum.X86_64.FoldedPublic
+import VerifiedGarbage.Proof.Bignum.X86_64.FoldedPublic
 public import VerifiedGarbage.Proof.Bignum.X86_64.PdExp
 public import VerifiedGarbage.Proof.Rsa.X86_64.ExpCheck
 public import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup

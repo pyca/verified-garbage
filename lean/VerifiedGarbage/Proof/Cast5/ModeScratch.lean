@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Spec.Cast5.Cbc
+import VerifiedGarbage.Spec.Cast5.Cbc
 public import VerifiedGarbage.Spec.Cast5.Ofb
 public import VerifiedGarbage.Spec.Cast5.Cfb
 public import VerifiedGarbage.Proof.Framework.Offset

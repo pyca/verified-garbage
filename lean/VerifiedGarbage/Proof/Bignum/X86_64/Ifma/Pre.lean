@@ -1,9 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtUnit
-public import VerifiedGarbage.Proof.Bignum.X86_64.CrtPow
-public import VerifiedGarbage.Proof.Bignum.X86_64.CrtQ
-public import VerifiedGarbage.Impl.Rsa.X86_64.Crt
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtPow
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtQ
+import VerifiedGarbage.Impl.Rsa.X86_64.Crt
 public import VerifiedGarbage.Impl.Rsa.X86_64.CrtIfma
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

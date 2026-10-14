@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Blowfish.X86_64.Verified
+import VerifiedGarbage.Proof.Blowfish.X86_64.Verified
 public import VerifiedGarbage.Proof.Blowfish.X86_64.KeyVerified
 public import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
 import all Init.Data.Array.Basic

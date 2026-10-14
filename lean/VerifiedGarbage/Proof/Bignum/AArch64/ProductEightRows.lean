@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightSetup
-public import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightRowMath
-public import VerifiedGarbage.Proof.Bignum.AArch64.SquareLayout
+import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightSetup
+import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightRowMath
+import VerifiedGarbage.Proof.Bignum.AArch64.SquareLayout
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.SquareCross
-public import VerifiedGarbage.Proof.Bignum.AArch64.SquareDiagonalLoop
+import VerifiedGarbage.Proof.Bignum.AArch64.SquareCross
+import VerifiedGarbage.Proof.Bignum.AArch64.SquareDiagonalLoop
 public import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

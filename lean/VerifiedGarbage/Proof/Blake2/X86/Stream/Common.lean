@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Blake2.X86.Contract
 public import VerifiedGarbage.Proof.MdStream.X86.Common
-public import VerifiedGarbage.Proof.Framework.X86.Wp
+import VerifiedGarbage.Proof.Framework.X86.Wp
 public import VerifiedGarbage.Proof.Framework.X86.Spill
 public import VerifiedGarbage.Proof.Framework.WriteBytes
 public import VerifiedGarbage.Impl.Blake2.X86.Stream

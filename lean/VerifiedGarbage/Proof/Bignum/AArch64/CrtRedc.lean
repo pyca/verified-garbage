@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtChecks
 public import VerifiedGarbage.Proof.Bignum.CrtRedc
-public import VerifiedGarbage.Proof.Bignum.CrtMath
+import VerifiedGarbage.Proof.Bignum.CrtMath
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

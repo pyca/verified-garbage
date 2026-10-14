@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTExp
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTExp
-public import VerifiedGarbage.Proof.Bignum.X86_64.CrtSelVExp
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtSelVExp
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtSelVExp
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

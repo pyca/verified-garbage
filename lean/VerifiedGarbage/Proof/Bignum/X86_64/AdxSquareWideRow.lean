@@ -1,9 +1,9 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.X86_64.AdxSquareWide
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareBlock
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareBlock
 public import VerifiedGarbage.Proof.Framework.Omega
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareDiagonalStep
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareDiagonalStep
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareRow
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

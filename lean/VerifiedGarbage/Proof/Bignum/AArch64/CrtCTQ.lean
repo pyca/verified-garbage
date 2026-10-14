@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTExp
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTExp
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtQ
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtQ
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtQ
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

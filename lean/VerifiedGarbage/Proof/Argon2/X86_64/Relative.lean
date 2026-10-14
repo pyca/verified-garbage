@@ -2,9 +2,9 @@ module
 
 public import VerifiedGarbage.Impl.Argon2.X86_64.Relative
 meta import VerifiedGarbage.Impl.Argon2.X86_64.Relative
-public import VerifiedGarbage.Proof.Argon2.Reference
+import VerifiedGarbage.Proof.Argon2.Reference
 meta import VerifiedGarbage.Proof.Argon2.Reference
-public import VerifiedGarbage.Proof.Argon2.X86_64.Mix
+import VerifiedGarbage.Proof.Argon2.X86_64.Mix
 meta import VerifiedGarbage.Proof.Argon2.X86_64.Mix
 public import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT

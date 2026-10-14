@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Camellia.Arm.KeyStore
-public import VerifiedGarbage.Proof.Camellia.Arm.Prologue
-public import VerifiedGarbage.Proof.Camellia.Scratch
+import VerifiedGarbage.Proof.Camellia.Arm.Prologue
+import VerifiedGarbage.Proof.Camellia.Scratch
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

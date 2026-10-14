@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.CompareContract
 public import VerifiedGarbage.Proof.Bignum.X86_64.Valid
-public import VerifiedGarbage.Proof.Bignum.X86_64.Cmp
+import VerifiedGarbage.Proof.Bignum.X86_64.Cmp
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

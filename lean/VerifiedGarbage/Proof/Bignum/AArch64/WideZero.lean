@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Bignum.AArch64.WideLoops
 public import VerifiedGarbage.Proof.Bignum.AArch64.SquareZero
-public import VerifiedGarbage.Proof.Bignum.AArch64.SquareGuard
+import VerifiedGarbage.Proof.Bignum.AArch64.SquareGuard
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

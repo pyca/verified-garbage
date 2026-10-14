@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Rc2.X86_64.Sse2Vector
+import VerifiedGarbage.Proof.Rc2.X86_64.Sse2Vector
 public import VerifiedGarbage.Impl.Blowfish.X86_64
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

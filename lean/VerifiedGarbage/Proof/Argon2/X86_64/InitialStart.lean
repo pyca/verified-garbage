@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Absorb
+import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Absorb
 public import VerifiedGarbage.Proof.Argon2.X86_64.InitialLayout
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

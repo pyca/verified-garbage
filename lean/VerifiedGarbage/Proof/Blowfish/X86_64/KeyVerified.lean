@@ -1,9 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Blowfish.X86_64.KeyMain
+import VerifiedGarbage.Proof.Blowfish.X86_64.KeyMain
 public import VerifiedGarbage.Proof.Blowfish.X86_64.ConstantTime
 public import VerifiedGarbage.Proof.Blowfish.Scratch
-public import VerifiedGarbage.Proof.Framework.X86_64.Abi
+import VerifiedGarbage.Proof.Framework.X86_64.Abi
 public import VerifiedGarbage.Proof.Framework.Contract
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

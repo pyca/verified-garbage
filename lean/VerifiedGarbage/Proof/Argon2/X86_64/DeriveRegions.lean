@@ -3,8 +3,8 @@ module
 public import VerifiedGarbage.Proof.Argon2.X86_64.Parameters
 public import VerifiedGarbage.Proof.Argon2.X86_64.DeriveAbi
 public import VerifiedGarbage.Proof.Argon2.X86_64.DeriveSaved
-public import VerifiedGarbage.Proof.Argon2.X86_64.DeriveNormalize
-public import VerifiedGarbage.TCB.X86_64.Target
+import VerifiedGarbage.Proof.Argon2.X86_64.DeriveNormalize
+import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Framework.X86_64.Inline
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

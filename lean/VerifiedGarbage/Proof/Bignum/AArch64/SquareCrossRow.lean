@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.SquareTiledRow
+import VerifiedGarbage.Proof.Bignum.AArch64.SquareTiledRow
 public import VerifiedGarbage.Proof.Bignum.AArch64.Rounds
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

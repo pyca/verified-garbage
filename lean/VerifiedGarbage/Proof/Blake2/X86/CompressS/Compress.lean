@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Blake2.X86.CompressS.Body
 public import VerifiedGarbage.Proof.Framework.X86.Taint
-public import VerifiedGarbage.TCB.X86.Target
+import VerifiedGarbage.TCB.X86.Target
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

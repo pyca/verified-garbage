@@ -1,12 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtRows
-public import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
+import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxFused
-public import VerifiedGarbage.Proof.Bignum.X86_64.Setup
-public import VerifiedGarbage.Proof.Bignum.X86_64.R2
-public import VerifiedGarbage.Proof.Bignum.X86_64.Exp
+import VerifiedGarbage.Proof.Bignum.X86_64.Setup
+import VerifiedGarbage.Proof.Bignum.X86_64.R2
+import VerifiedGarbage.Proof.Bignum.X86_64.Exp
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

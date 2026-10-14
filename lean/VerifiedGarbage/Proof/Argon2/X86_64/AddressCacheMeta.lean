@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Argon2.X86_64.ReferenceStart
+import VerifiedGarbage.Proof.Argon2.X86_64.ReferenceStart
 public import VerifiedGarbage.Impl.Argon2.X86_64.AddressCache
 public import VerifiedGarbage.Proof.Argon2.X86_64.AddressCallsPrepare
 import all Init.Data.Array.Basic

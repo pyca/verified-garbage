@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightRows
-public import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightCarry
+import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightCarry
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

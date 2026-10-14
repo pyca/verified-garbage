@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Blowfish.Blocks
+import VerifiedGarbage.Proof.Blowfish.Blocks
 public import VerifiedGarbage.Proof.Modes.Ctr
 public import VerifiedGarbage.Spec.Blowfish.Cbc
 public import VerifiedGarbage.Spec.Aes

@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowPrefixInv
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowPrefixInv
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTExp
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTExp
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTExp
 public meta import VerifiedGarbage.Impl.Rsa.AArch64.WindowLoop
 public meta import VerifiedGarbage.Impl.Rsa.AArch64.WindowFive

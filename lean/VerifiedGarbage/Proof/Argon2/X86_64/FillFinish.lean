@@ -3,8 +3,8 @@ module
 public import VerifiedGarbage.Impl.Argon2.X86_64.FillFinish
 public import VerifiedGarbage.Proof.Argon2.X86_64.FillIterations
 public import VerifiedGarbage.Proof.Argon2.X86_64.FinishReady
-public import VerifiedGarbage.Impl.Argon2.X86_64.Finish
-public import VerifiedGarbage.Proof.Argon2.X86_64.FinalOutputReady
+import VerifiedGarbage.Impl.Argon2.X86_64.Finish
+import VerifiedGarbage.Proof.Argon2.X86_64.FinalOutputReady
 public import VerifiedGarbage.Proof.Argon2.Serialization
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

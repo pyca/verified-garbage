@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Store
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Store
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Digit
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

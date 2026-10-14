@@ -4,25 +4,25 @@ public import VerifiedGarbage.Proof.Argon2.X86_64.FinalOutputReady
 meta import VerifiedGarbage.Proof.Argon2.X86_64.FinalOutputReady
 public import VerifiedGarbage.Impl.Argon2.X86_64.FinalReduction
 meta import VerifiedGarbage.Impl.Argon2.X86_64.FinalReduction
-public import VerifiedGarbage.Proof.Argon2.X86_64.ClearBlockLit
+import VerifiedGarbage.Proof.Argon2.X86_64.ClearBlockLit
 meta import VerifiedGarbage.Proof.Argon2.X86_64.ClearBlockLit
 public import VerifiedGarbage.Proof.Argon2.X86_64.ReduceLane
 meta import VerifiedGarbage.Proof.Argon2.X86_64.ReduceLane
-public import VerifiedGarbage.Proof.Argon2.X86_64.ReduceBlockLit
+import VerifiedGarbage.Proof.Argon2.X86_64.ReduceBlockLit
 meta import VerifiedGarbage.Proof.Argon2.X86_64.ReduceBlockLit
-public import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
-public import VerifiedGarbage.Proof.Argon2.X86_64.ReducePointers
+import VerifiedGarbage.Proof.Argon2.X86_64.ReducePointers
 meta import VerifiedGarbage.Proof.Argon2.X86_64.ReducePointers
 public import VerifiedGarbage.Impl.Argon2.X86_64.ReductionInit
 meta import VerifiedGarbage.Impl.Argon2.X86_64.ReductionInit
-public import VerifiedGarbage.Proof.Argon2.X86_64.ReductionLoopState
+import VerifiedGarbage.Proof.Argon2.X86_64.ReductionLoopState
 meta import VerifiedGarbage.Proof.Argon2.X86_64.ReductionLoopState
-public import VerifiedGarbage.Proof.Argon2.X86_64.ClearBlock
+import VerifiedGarbage.Proof.Argon2.X86_64.ClearBlock
 meta import VerifiedGarbage.Proof.Argon2.X86_64.ClearBlock
-public import VerifiedGarbage.Impl.Argon2.X86_64.ReduceLanes
+import VerifiedGarbage.Impl.Argon2.X86_64.ReduceLanes
 meta import VerifiedGarbage.Impl.Argon2.X86_64.ReduceLanes
-public import VerifiedGarbage.Proof.Argon2.X86_64.FillLaneAdvance
+import VerifiedGarbage.Proof.Argon2.X86_64.FillLaneAdvance
 meta import VerifiedGarbage.Proof.Argon2.X86_64.FillLaneAdvance
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

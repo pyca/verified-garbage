@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Blake2.Arm.CompressS.Block
 meta import VerifiedGarbage.Proof.Blake2.Arm.CompressS.Block
 public import VerifiedGarbage.Proof.Blake2.Arm.Contract
 meta import VerifiedGarbage.Proof.Blake2.Arm.Contract
-public import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 meta import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
 meta import VerifiedGarbage.Proof.Framework.Arm.Contract

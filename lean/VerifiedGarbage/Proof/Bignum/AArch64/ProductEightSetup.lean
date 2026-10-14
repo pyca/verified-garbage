@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightSave
+import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightSave
 public import VerifiedGarbage.Proof.Bignum.AArch64.WideZero
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

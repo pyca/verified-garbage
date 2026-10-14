@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Blowfish.AArch64.KeySetup
-public import VerifiedGarbage.Proof.Blowfish.AArch64.KeyLoop
+import VerifiedGarbage.Proof.Blowfish.AArch64.KeyLoop
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

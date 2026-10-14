@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWs
 public import VerifiedGarbage.Proof.Bignum.AArch64.Double
-public import VerifiedGarbage.Proof.Bignum.AArch64.R2
+import VerifiedGarbage.Proof.Bignum.AArch64.R2
 public import VerifiedGarbage.Proof.Bignum.CrtGPow
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

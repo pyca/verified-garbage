@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Blowfish.X86_64.Block
-public import VerifiedGarbage.Proof.Blowfish.KeyTable
+import VerifiedGarbage.Proof.Blowfish.KeyTable
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

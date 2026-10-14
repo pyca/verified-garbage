@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareGroupedWord
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareDiagonal
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareDiagonalStep
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareGroupedWord
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareDiagonal
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareDiagonalStep
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareDiagonalLoop
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

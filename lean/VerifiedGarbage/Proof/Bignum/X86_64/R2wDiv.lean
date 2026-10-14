@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.R2
-public import VerifiedGarbage.Proof.Bignum.WordStep
+import VerifiedGarbage.Proof.Bignum.WordStep
 public import VerifiedGarbage.Impl.Bignum.X86_64.R2Words
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

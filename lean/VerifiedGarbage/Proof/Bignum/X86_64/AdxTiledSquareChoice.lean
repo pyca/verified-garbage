@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTri8Block
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledCounter
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledCounter
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledSquareRow
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

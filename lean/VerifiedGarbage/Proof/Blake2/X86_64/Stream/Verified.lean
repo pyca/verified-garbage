@@ -1,10 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Blake2.X86_64.Compress
-public import VerifiedGarbage.Proof.Blake2.X86_64.Stream.CT
+import VerifiedGarbage.Proof.Blake2.X86_64.Compress
+import VerifiedGarbage.Proof.Blake2.X86_64.Stream.CT
 public import VerifiedGarbage.Proof.Blake2.X86_64.Stream.Init
-public import VerifiedGarbage.Proof.Blake2.X86_64.Stream.Update
-public import VerifiedGarbage.Proof.Blake2.X86_64.Stream.Finalize
+import VerifiedGarbage.Proof.Blake2.X86_64.Stream.Update
+import VerifiedGarbage.Proof.Blake2.X86_64.Stream.Finalize
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.Blake2.Contract
 public import VerifiedGarbage.Proof.Framework.X86_64.StackScratch

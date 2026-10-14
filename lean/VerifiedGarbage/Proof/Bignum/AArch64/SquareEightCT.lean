@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightCtSetup
-public import VerifiedGarbage.Proof.Bignum.AArch64.FastFinishCT
+import VerifiedGarbage.Proof.Bignum.AArch64.FastFinishCT
 meta import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightCtSetup
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

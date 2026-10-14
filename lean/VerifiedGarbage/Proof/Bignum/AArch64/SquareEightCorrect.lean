@@ -1,9 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcLayout
+import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcLayout
 public import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightRaw
-public import VerifiedGarbage.Proof.Bignum.AArch64.SquareCorrect
-public import VerifiedGarbage.Proof.Bignum.AArch64.FastFinish
+import VerifiedGarbage.Proof.Bignum.AArch64.SquareCorrect
+import VerifiedGarbage.Proof.Bignum.AArch64.FastFinish
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

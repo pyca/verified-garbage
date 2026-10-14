@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.FoldedPublic
+import VerifiedGarbage.Proof.Bignum.FoldedPublic
 public import VerifiedGarbage.Proof.Bignum.AArch64.PdExp
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

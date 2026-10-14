@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowDigit
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowDigit
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowTable
 public import VerifiedGarbage.Impl.Rsa.AArch64.WindowTail
 import all Init.Data.Array.Basic

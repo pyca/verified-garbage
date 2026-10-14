@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxDualAddWord
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxDualAddWord
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Core
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

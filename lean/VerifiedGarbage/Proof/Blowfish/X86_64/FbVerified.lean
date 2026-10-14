@@ -2,11 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.Blowfish.X86_64.ModeCore
 meta import VerifiedGarbage.Proof.Blowfish.X86_64.ModeCore
-public import VerifiedGarbage.Proof.Modes.X86_64.Fb
+import VerifiedGarbage.Proof.Modes.X86_64.Fb
 meta import VerifiedGarbage.Proof.Modes.X86_64.Fb
 public import VerifiedGarbage.Proof.Blowfish.FbScratch
 meta import VerifiedGarbage.Proof.Blowfish.FbScratch
-public import VerifiedGarbage.Proof.Blowfish.X86_64.ModesLit
+import VerifiedGarbage.Proof.Blowfish.X86_64.ModesLit
 meta import VerifiedGarbage.Proof.Blowfish.X86_64.ModesLit
 public import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
 meta import VerifiedGarbage.Proof.Framework.X86_64.TaintMono

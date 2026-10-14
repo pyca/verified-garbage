@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.SquareCorrect
+import VerifiedGarbage.Proof.Bignum.AArch64.SquareCorrect
 meta import VerifiedGarbage.Proof.Bignum.AArch64.SquareCorrect
 public import VerifiedGarbage.Proof.Bignum.AArch64.SquareGuard
 meta import VerifiedGarbage.Proof.Bignum.AArch64.SquareGuard

@@ -1,9 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Argon2.X86_64.FillCompressSetup
-public import VerifiedGarbage.Proof.Argon2.X86_64.FillCompressCall
+import VerifiedGarbage.Proof.Argon2.X86_64.FillCompressCall
 public import VerifiedGarbage.Impl.Argon2.X86_64.AddressCalls
-public import VerifiedGarbage.Proof.Argon2.X86_64.AddressHeaderWords
+import VerifiedGarbage.Proof.Argon2.X86_64.AddressHeaderWords
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

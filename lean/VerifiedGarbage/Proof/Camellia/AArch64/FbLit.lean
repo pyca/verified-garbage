@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Camellia.AArch64.Lit
+import VerifiedGarbage.Proof.Camellia.AArch64.Lit
 meta import VerifiedGarbage.Proof.Camellia.AArch64.Lit
 public import VerifiedGarbage.Impl.Camellia.AArch64.Fb
 meta import VerifiedGarbage.Impl.Camellia.AArch64.Fb

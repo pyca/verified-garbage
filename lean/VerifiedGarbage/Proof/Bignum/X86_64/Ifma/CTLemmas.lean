@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
-public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTPSub
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTPSub
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTPSub
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

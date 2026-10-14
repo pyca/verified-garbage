@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Spec.Blowfish.Ofb
 public import VerifiedGarbage.Spec.Blowfish.Cfb
 public import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.Blowfish.Schedule
+import VerifiedGarbage.Proof.Blowfish.Schedule
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

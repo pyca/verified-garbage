@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Camellia.X86_64.KeyWords
-public import VerifiedGarbage.Proof.Camellia.X86_64.Group
-public import VerifiedGarbage.Proof.Camellia.KeySched
+import VerifiedGarbage.Proof.Camellia.X86_64.Group
+import VerifiedGarbage.Proof.Camellia.KeySched
 public import VerifiedGarbage.Impl.Camellia.X86_64.ExpandKey
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

@@ -8,9 +8,9 @@ public import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Framework.AArch64.Taint
 meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
-public import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
-public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
@@ -20,11 +20,11 @@ public import VerifiedGarbage.Impl.Blake2.AArch64
 meta import VerifiedGarbage.Impl.Blake2.AArch64
 public import VerifiedGarbage.Spec.Blake2.Contract
 meta import VerifiedGarbage.Spec.Blake2.Contract
-public import VerifiedGarbage.TCB.AArch64.Target
+import VerifiedGarbage.TCB.AArch64.Target
 meta import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Blake2.AArch64.Contract
 meta import VerifiedGarbage.Proof.Blake2.AArch64.Contract
-public import VerifiedGarbage.Proof.Blake2.AArch64.Lit
+import VerifiedGarbage.Proof.Blake2.AArch64.Lit
 meta import VerifiedGarbage.Proof.Blake2.AArch64.Lit
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

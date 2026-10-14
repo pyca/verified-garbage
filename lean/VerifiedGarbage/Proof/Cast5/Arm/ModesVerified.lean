@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Cast5.Arm.ModeCore
 meta import VerifiedGarbage.Proof.Cast5.Arm.ModeCore
 public import VerifiedGarbage.Proof.Modes.Arm.Cbc
 meta import VerifiedGarbage.Proof.Modes.Arm.Cbc
-public import VerifiedGarbage.Proof.Modes.Arm.OfbCfb
+import VerifiedGarbage.Proof.Modes.Arm.OfbCfb
 meta import VerifiedGarbage.Proof.Modes.Arm.OfbCfb
 public import VerifiedGarbage.Proof.Framework.Arm.StackScratchConsts
 meta import VerifiedGarbage.Proof.Framework.Arm.StackScratchConsts

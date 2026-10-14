@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Cast5.X86.KeyHalf
+import VerifiedGarbage.Proof.Cast5.X86.KeyHalf
 public import VerifiedGarbage.Proof.Cast5.X86.Ecb
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

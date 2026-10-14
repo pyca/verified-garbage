@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Spec.Blowfish.Contract
-public import VerifiedGarbage.Proof.Blowfish.Schedule
+import VerifiedGarbage.Proof.Blowfish.Schedule
 public import VerifiedGarbage.Proof.Framework.Offset
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

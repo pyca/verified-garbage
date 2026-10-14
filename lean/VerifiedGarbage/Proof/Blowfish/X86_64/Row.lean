@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Blowfish.X86_64.Scan
-public import VerifiedGarbage.Proof.Framework.X86_64.Exec
-public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 public import VerifiedGarbage.Proof.Framework.X86_64.LaneSse
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

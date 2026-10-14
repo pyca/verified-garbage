@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Bignum.X86_64.AdxTiledProduct
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxHeaderSave
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxCarry8Loop
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxCarry8Loop
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRect8Row
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

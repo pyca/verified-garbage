@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Branch
-public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Ws
+import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Ws
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCode
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

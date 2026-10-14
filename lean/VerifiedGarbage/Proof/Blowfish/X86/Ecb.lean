@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Blowfish.X86.Cipher
-public import VerifiedGarbage.Proof.Blowfish.Blocks
+import VerifiedGarbage.Proof.Blowfish.Blocks
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

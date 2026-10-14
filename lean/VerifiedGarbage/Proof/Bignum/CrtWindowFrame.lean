@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.CrtExp
-public import VerifiedGarbage.Proof.Bignum.FrameTrim
+import VerifiedGarbage.Proof.Bignum.FrameTrim
 
 /-! The window helper preserves the packed exponent word. -/
 

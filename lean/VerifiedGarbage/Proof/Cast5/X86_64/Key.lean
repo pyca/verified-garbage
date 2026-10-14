@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Cast5.X86_64.KeyHalf
-public import VerifiedGarbage.Proof.Framework.X86_64.Abi
+import VerifiedGarbage.Proof.Framework.X86_64.Abi
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

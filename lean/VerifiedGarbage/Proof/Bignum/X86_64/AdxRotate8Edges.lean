@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareRedcRow
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareDiagonalStep
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareDiagonalStep
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8TileEdges
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

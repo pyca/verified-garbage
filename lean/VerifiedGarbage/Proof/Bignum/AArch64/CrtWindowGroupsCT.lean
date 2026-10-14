@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowBodyCT
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowRunPost
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowRunPost
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowRunPost
 public meta import VerifiedGarbage.Impl.Rsa.AArch64.WindowLoop
 import Mathlib.Data.Int.ModEq

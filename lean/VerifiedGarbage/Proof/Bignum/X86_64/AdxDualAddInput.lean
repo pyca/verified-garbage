@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxDualAddChain
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxDualAddClose
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxDualAddChain
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxDualAddClose
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Add
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

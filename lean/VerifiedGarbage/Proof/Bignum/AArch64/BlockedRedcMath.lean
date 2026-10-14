@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.SquareRedcMath
+import VerifiedGarbage.Proof.Bignum.AArch64.SquareRedcMath
 public import VerifiedGarbage.Proof.Bignum.Square
 public import VerifiedGarbage.Proof.Ed25519.Word64
 import all Init.Data.Array.Basic

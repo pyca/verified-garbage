@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Rsa.X86_64.Folded
-public import VerifiedGarbage.Proof.Bignum.X86_64.FoldedExp
+import VerifiedGarbage.Proof.Bignum.X86_64.FoldedExp
 public import VerifiedGarbage.Proof.Bignum.X86_64.FoldedIO
 public import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
 import all Init.Data.Array.Basic

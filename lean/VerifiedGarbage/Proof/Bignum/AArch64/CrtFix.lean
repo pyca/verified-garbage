@@ -1,10 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.Ranges
+import VerifiedGarbage.Proof.Rsa.Ranges
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtChecks
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtRows
-public import VerifiedGarbage.Proof.Bignum.AArch64.R2
-public import VerifiedGarbage.Proof.Bignum.AArch64.Setup
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtRows
+import VerifiedGarbage.Proof.Bignum.AArch64.R2
+import VerifiedGarbage.Proof.Bignum.AArch64.Setup
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

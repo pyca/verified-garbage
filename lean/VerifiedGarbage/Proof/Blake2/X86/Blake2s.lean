@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Blake2.X86.LitS
 meta import VerifiedGarbage.Proof.Blake2.X86.LitS
-public import VerifiedGarbage.Proof.Blake2.X86.CompressS.Compress
+import VerifiedGarbage.Proof.Blake2.X86.CompressS.Compress
 meta import VerifiedGarbage.Proof.Blake2.X86.CompressS.Compress
 public import VerifiedGarbage.Proof.Blake2.X86.Stream.Verified
 meta import VerifiedGarbage.Proof.Blake2.X86.Stream.Verified
@@ -10,11 +10,11 @@ public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.Blake2.Contract
 meta import VerifiedGarbage.Spec.Blake2.Contract
-public import VerifiedGarbage.Proof.Blake2.Scratch
+import VerifiedGarbage.Proof.Blake2.Scratch
 meta import VerifiedGarbage.Proof.Blake2.Scratch
 public import VerifiedGarbage.Proof.Framework.X86.StackScratch
 meta import VerifiedGarbage.Proof.Framework.X86.StackScratch
-public import VerifiedGarbage.Proof.Framework.X86.SseTaint
+import VerifiedGarbage.Proof.Framework.X86.SseTaint
 meta import VerifiedGarbage.Proof.Framework.X86.SseTaint
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

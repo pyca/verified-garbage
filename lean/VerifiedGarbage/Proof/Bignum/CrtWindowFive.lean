@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.CrtExp
+import VerifiedGarbage.Proof.Bignum.CrtExp
 
 /-! Arithmetic for extracting eight five-bit windows from a group of five
 big-endian exponent bytes. No padding bits are added to the exponent. -/

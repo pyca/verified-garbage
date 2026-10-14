@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtRedc
-public import VerifiedGarbage.Proof.Bignum.AArch64.Bytes
-public import VerifiedGarbage.Proof.Bignum.AArch64.Setup
+import VerifiedGarbage.Proof.Bignum.AArch64.Bytes
+import VerifiedGarbage.Proof.Bignum.AArch64.Setup
 public import VerifiedGarbage.Proof.Bignum.AArch64.PubSetup
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

@@ -2,9 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledRowsCT
 meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledRowsCT
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxHeaderCT
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxHeaderCT
 meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxHeaderCT
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledRaw
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledRaw
 meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledRaw
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

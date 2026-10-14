@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Blowfish.AArch64.ModeCore
 meta import VerifiedGarbage.Proof.Blowfish.AArch64.ModeCore
-public import VerifiedGarbage.Proof.Modes.AArch64.Fb
+import VerifiedGarbage.Proof.Modes.AArch64.Fb
 meta import VerifiedGarbage.Proof.Modes.AArch64.Fb
 public import VerifiedGarbage.Proof.Blowfish.FbScratch
 meta import VerifiedGarbage.Proof.Blowfish.FbScratch

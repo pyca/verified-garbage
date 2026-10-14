@@ -2,9 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Blowfish.AArch64.ModeCore
 meta import VerifiedGarbage.Proof.Blowfish.AArch64.ModeCore
-public import VerifiedGarbage.Proof.Modes.AArch64.CbcDecrypt
+import VerifiedGarbage.Proof.Modes.AArch64.CbcDecrypt
 meta import VerifiedGarbage.Proof.Modes.AArch64.CbcDecrypt
-public import VerifiedGarbage.Proof.Modes.AArch64.CbcEncrypt
+import VerifiedGarbage.Proof.Modes.AArch64.CbcEncrypt
 meta import VerifiedGarbage.Proof.Modes.AArch64.CbcEncrypt
 public import VerifiedGarbage.Proof.Blowfish.CbcScratch
 meta import VerifiedGarbage.Proof.Blowfish.CbcScratch

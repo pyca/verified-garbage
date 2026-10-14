@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Argon2.X86_64.InitialArgs
+import VerifiedGarbage.Proof.Argon2.X86_64.InitialArgs
 public import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Frame
 public import VerifiedGarbage.Proof.Argon2.Initial
 import all Init.Data.Array.Basic

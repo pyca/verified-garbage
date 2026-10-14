@@ -1,14 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTri8Sum
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxTri8Sum
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTri8Math
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRect8Frame
-public import VerifiedGarbage.Proof.Bignum.X86_64.OpAt
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxRect8Frame
+import VerifiedGarbage.Proof.Bignum.X86_64.OpAt
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
-public import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
+import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxTri8Value
 
 /-! ## AdxTri8Rows -/

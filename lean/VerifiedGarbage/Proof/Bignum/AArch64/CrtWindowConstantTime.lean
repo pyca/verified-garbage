@@ -4,8 +4,8 @@ public import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTCode
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTCode
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowFinCT
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTNSetup
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTSetupFix
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTNSetup
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTSetupFix
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowFinCT
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTNSetup
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTSetupFix

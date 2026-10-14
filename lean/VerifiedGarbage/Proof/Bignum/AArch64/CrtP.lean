@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtQ
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtFix
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtFix
 public import VerifiedGarbage.Proof.Bignum.CrtPRanges
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledSquareRow
 meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledSquareRow
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledTailCT
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledTailCT
 meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledTailCT
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledRowsCT
 meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledRowsCT

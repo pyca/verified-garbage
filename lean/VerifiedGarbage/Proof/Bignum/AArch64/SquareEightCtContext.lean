@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightCorrect
+import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightCorrect
 public import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightCtContext
-public import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcCtSpill
+import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcCtSpill
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

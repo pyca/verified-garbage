@@ -8,15 +8,15 @@ meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTCode
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTFin
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTFin
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTP
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTP
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTP
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTQ
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTQ
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTQ
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTSetup
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTSetup
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTSetup
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTRedc
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTRedc
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTRedc
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtCode
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtCode
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCode
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

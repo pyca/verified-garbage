@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.FoldedPhaseCT
-public import VerifiedGarbage.Proof.Bignum.AArch64.FoldedMain
+import VerifiedGarbage.Proof.Bignum.AArch64.FoldedMain
 public import VerifiedGarbage.Proof.Bignum.AArch64.PdCTRest
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledTail
 meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledTail
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRect8RowCT
 meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxRect8RowCT
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxCarry8CT
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxCarry8CT
 meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxCarry8CT
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
