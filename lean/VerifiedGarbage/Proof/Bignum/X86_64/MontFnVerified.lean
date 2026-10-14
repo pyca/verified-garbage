@@ -52,7 +52,7 @@ def fnContract : Contract isa where
       (s₁.gpr .rdx).setWidth 32 = (s₂.gpr .rdx).setWidth 32 ∧ (s₁.gpr .rcx).setWidth 32 = (s₂.gpr .rcx).setWidth 32 ∧
       (s₁.gpr .r8).setWidth 32 = (s₂.gpr .r8).setWidth 32 ∧ wOf s₁.mem (s₁.gpr .rdi) = wOf s₂.mem (s₂.gpr .rdi)
 
-/-- `vg_rsa_mont_mul_lazy(ws = rdi, ws_len = rsi, o = edx, a = ecx, b = r8d)`:
+/-- `vg_rsa_lazy_mont_mul(ws = rdi, ws_len = rsi, o = edx, a = ecx, b = r8d)`:
 `fnContract` without `[b] < m` and `[o] < m`. -/
 def fnLazyContract : Contract isa where
   pre s :=

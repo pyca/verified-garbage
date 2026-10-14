@@ -54,7 +54,7 @@ def artifacts : List Artifact := [
     spSafe := Code.all_of_allInstrs (by decide +kernel) },
   { Spec.Rsa.Mont.mulLazyApi with
     target := X86_64.target
-    name := "vg_rsa_mont_mul_lazy_adx"
+    name := "vg_rsa_lazy_mont_mul_adx"
     doc := Spec.Rsa.Mont.mulLazyApi.doc
       (notes := ["For `w` a multiple of 8 (below 2^30 + 8), BMI2 and ADX: `vg_rsa_mont_mul_adx`'s tiles \
         and reduction, then, in one pass, the subtraction of `m` masked by the reduction's top word \

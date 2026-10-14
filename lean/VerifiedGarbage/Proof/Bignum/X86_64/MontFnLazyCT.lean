@@ -14,7 +14,7 @@ import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledLazyCT
 meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledLazyCT
 
 /-!
-# `vg_rsa_mont_mul_lazy_adx`: constant time
+# `vg_rsa_lazy_mont_mul_adx`: constant time
 
 `vg_rsa_mont_mul_adx`'s proof, with the lazy reduction of the tiles
 (`AdxTiledProduct.redcLazy_ct`).
@@ -82,14 +82,14 @@ theorem adxBodyLazy_ct : RelCT isa (Two AdxMid) adxBodyLazy fun _ _ => True := b
   exact WP.mono (alignTest_ok hs hdi hH hZ) fun t ⟨hz, hm', k⟩ =>
     ⟨⟨AdxIn.of_keep hm hm' k (k.gpr (by decide)) (by decide), hm' ▸ hv⟩, hz⟩
 
-/-- `vg_rsa_mont_mul_lazy_adx` after the head. -/
+/-- `vg_rsa_lazy_mont_mul_adx` after the head. -/
 theorem adxTailLazy_ct : RelCT isa (Two AdxMid) (.seq adxBodyLazy (.block restore)) fun _ _ => True :=
   RelCT.seq (RelCT.keepRdi (f := CallData.B) adxBodyLazy_ct (by rw [← Code.allInstrs_eq]; decide +kernel)
     fun _ _ h => h.1.2.1)
     (two_taint [.rdi] (fun _ _ _ h₁ h₂ r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; subst hr; rw [h₁, h₂]) (by taint_decide))
 
-/-- `vg_rsa_mont_mul_lazy_adx` after `zext`. -/
+/-- `vg_rsa_lazy_mont_mul_adx` after `zext`. -/
 theorem adxCoreLazy_ct : RelCT isa (Two AdxIn)
     (.seq (.block (saves ++ slotsIn)) (.seq adxBodyLazy (.block restore)))
     fun _ _ => True :=

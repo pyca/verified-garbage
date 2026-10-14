@@ -4,7 +4,8 @@ use crate::arch::ffdh::vg_ffdh_choose;
 use crate::arch::rsa_mont::vg_rsa_mont_mul;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::rsa_mont::{
-    VG_RSA_MONT_MUL_ADX_FEATURES, vg_rsa_mont_mul_adx, vg_rsa_mont_mul_lazy, vg_rsa_mont_mul_lazy_adx,
+    VG_RSA_MONT_MUL_ADX_FEATURES, vg_rsa_lazy_mont_mul, vg_rsa_lazy_mont_mul_adx,
+    vg_rsa_mont_mul_adx,
 };
 use crate::cpu::{Features, detected};
 use crate::rsa::Scratch;
@@ -319,8 +320,8 @@ impl Montgomery {
     #[cfg(target_arch = "x86_64")]
     fn mul_lazy(&self, ws: &mut [u64], out: u32, a: u32, b: u32) {
         let f = match self.backend {
-            Backend::Baseline => vg_rsa_mont_mul_lazy,
-            Backend::Adx => vg_rsa_mont_mul_lazy_adx,
+            Backend::Baseline => vg_rsa_lazy_mont_mul,
+            Backend::Adx => vg_rsa_lazy_mont_mul_adx,
         };
         // SAFETY: as for `mul`, but the lazy multiplication requires no
         // operand below the modulus.
