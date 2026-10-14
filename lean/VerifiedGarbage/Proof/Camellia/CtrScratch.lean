@@ -61,6 +61,31 @@ end
 
 variable (pb : Nat)
 
+theorem ctrPre_local : ∀ vs m₁ m₂, vs.length = (ctrSig.words pb).length →
+    (∀ b ∈ Sig.bufs ctrSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (ctrSig.words pb) (ctrPre pb) vs m₁ → Curry.apply (ctrSig.words pb) (ctrPre pb) vs m₂
+  | [_, _, _, _, _], _, _, _, _, h => h
+
+theorem ctrPost_local : ∀ vs m₁ m₂ m' r, vs.length = (ctrSig.words pb).length →
+    (∀ b ∈ Sig.bufs ctrSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (ctrSig.words pb) (ctrPost pb) vs m₁ m' r → Curry.apply (ctrSig.words pb) (ctrPost pb) vs m₂ m' r
+  | [_, _, iv, data, n], m₁, m₂, m', r, _, hb, h => by
+    simp only [ctrSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+      forall_eq, Elem.size, Nat.mul_one] at hb
+    have hs := agree_of hb.1
+    have hv := agree_of hb.2.1
+    have hd := agree_of hb.2.2
+    change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.addr, ArgWord.int pb]
+      (ctrPost pb) _ m₁ m' r at h
+    change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.addr, ArgWord.int pb]
+      (ctrPost pb) _ m₂ m' r
+    dsimp only [Curry.apply, ctrPost, ArgWord.ofRaw] at h ⊢
+    have := Nat.mod_le n.toNat (2 ^ pb)
+    intro hR
+    rw [subkeysAt_congr (by simp only [scheduleLength]; omega) fun i hi => hs i (by omega), bytesAt_congr' hv,
+      cbcBlocksAt_congr (n := (n.setWidth pb).toNat) fun i hi => hd i (by rw [BitVec.toNat_setWidth] at hi; omega)]
+    exact h hR
+
 theorem ctrPostOut_local : ∀ vs m m₁ m₂ r, vs.length = (ctrSig.words pb).length →
     (∀ b ∈ Sig.bufs ctrSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
     Curry.apply (ctrSig.words pb) (ctrPost pb) vs m m₁ r →

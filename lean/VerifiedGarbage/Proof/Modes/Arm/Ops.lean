@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Modes.Arm.Words
 public import VerifiedGarbage.Impl.Modes.Arm.Seq
 public import VerifiedGarbage.Spec.Cbc
+public import VerifiedGarbage.Proof.Modes.Arm.Counter
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -74,6 +75,7 @@ def xorHead (l y : List Byte) : List Byte :=
 
 /-- What an operation does to the blocks. -/
 def runOp : Op → Blks → Blks
+  | .inc, b => b.set .o (Spec.Ctr.inc b.o)
   | .copy x y, b => b.set x (b.get y)
   | .xor x y, b => b.set x (Spec.Cbc.xor (b.get x) (b.get y))
   | .xorB x y, b => b.set x (xorHead (b.get x) (b.get y))
@@ -91,7 +93,8 @@ def stepOf (M : Mode) (ciph : Spec.Cbc.Cipher) (b : Blks) : Blks :=
 /-- An operation on two different blocks, and, when the data comes a byte
 at a time (`byte`), no whole-block operation on the data block, and no shift
 of it. -/
-def opOk (byte : Bool) : Op → Bool
+def opOk (bs : Nat) (byte : Bool) : Op → Bool
+  | .inc => bs == 16
   | .copy x y => x != y && (!byte || (x != .d && y != .d))
   | .xor x y => x != y && (!byte || (x != .d && y != .d))
   | .xorB x y => x != y
@@ -336,7 +339,7 @@ theorem bm_len {c : Core} {ds : Nat} {Dp S : BitVec 32} {m : Mem} {b : Blks} (hb
 /-- The code of one operation. -/
 theorem opCode_wp {c : Core} {ds : Nat} {byte : Bool} (hds : byte = false → ds = c.bs) {Dp S : BitVec 32}
     {s : State} (h : Lay c ds Dp S s.wr) (h6 : s.gpr .r6 = Dp) (h8 : s.gpr .r8 = S) {b : Blks}
-    (hb : BlkMem c ds Dp S s.mem b) {op : Op} (hok : opOk byte op = true) :
+    (hb : BlkMem c ds Dp S s.mem b) {op : Op} (hok : opOk c.bs byte op = true) :
     WP isa (.block (c.opCode op)) s (OpsInv c ds Dp S s (runOp op b)) := by
   have hfit : c.bs ≤ 2 ^ 64 := by have := h.fS; omega
   have hl := bm_len hb
@@ -350,6 +353,54 @@ theorem opCode_wp {c : Core} {ds : Nat} {byte : Bool} (hds : byte = false → ds
     · cases y <;> simp [sz, hds hb']
     · cases y <;> simp_all [sz]
   cases op with
+  | inc =>
+    have hbs : c.bs = 16 := by simpa [opOk] using hok
+    let P := addrOf c Dp S .o
+    have w : Covers [⟨P, 16⟩] s.wr := by simpa [P, sz, hbs] using h.writable .o
+    have inW (d n : Nat) (hd : d + n ≤ 16) : InRegions s.wr (P + BitVec.ofNat 64 d) n :=
+      w _ _ ⟨_, List.mem_singleton_self _, Offset.contains_base P hd (by omega)⟩
+    obtain ⟨s', he, hg, hsp, hm, hrd, hwr⟩ := Counter.incr_ok s (base := .r8) (off := oOff)
+      (by decide) (by decide) (by decide) (Q := P)
+      (fun d hd => h.byte_addr h6 h8 .o (by simpa [sz, hbs] using hd))
+      (fun d n hd => by
+        obtain ⟨r, hr, hc⟩ := inW d n hd
+        exact ⟨r, List.mem_append_right _ hr, hc⟩) inW
+    have hf := Counter.incMem_frame s.mem P
+    refine WP.of_runBlock ⟨s', he, hg, hrd, hwr, hsp, ?_, ?_⟩
+    · rw [hm]
+      exact hf.sub (fun r hr => by
+        simp only [List.mem_singleton] at hr
+        subst hr
+        simpa [P, sz, hbs] using (Lay.sub (c := c) (ds := ds) (Dp := Dp) (S := S) .o))
+    · intro x
+      rw [hm]
+      cases x with
+      | o =>
+        change bytesAt (Counter.incMem s.mem P) P c.bs = Spec.Ctr.inc b.o
+        rw [hbs, Counter.incMem_bytes]
+        have e := hb .o
+        change bytesAt s.mem P c.bs = b.o at e
+        rw [hbs] at e
+        rw [e]
+      | d =>
+        change bytesAt (Counter.incMem s.mem P) (addrOf c Dp S .d) ds = b.d
+        have e : bytesAt s.mem (addrOf c Dp S .d) ds = b.d := hb .d
+        rw [← e]
+        exact List.map_congr_left fun i hi => hf.bytes
+          (R := ⟨addrOf c Dp S .d, ds⟩) (by
+            intro r hr; simp only [List.mem_singleton] at hr; subst hr
+            simpa [P, sz, hbs] using h.disjoint (x := .d) (y := .o) (by decide))
+          (by change ds ≤ 2 ^ 64; have := h.ds_le; omega) (List.mem_range.mp hi)
+      | t =>
+        change bytesAt (Counter.incMem s.mem P) (addrOf c Dp S .t) c.bs = b.t
+        have e : bytesAt s.mem (addrOf c Dp S .t) c.bs = b.t := hb .t
+        rw [← e]
+        exact List.map_congr_left fun i hi => hf.bytes
+          (R := ⟨addrOf c Dp S .t, c.bs⟩) (by
+            intro r hr; simp only [List.mem_singleton] at hr; subst hr
+            simpa [P, sz, hbs] using h.disjoint (x := .t) (y := .o) (by decide))
+          hfit (List.mem_range.mp hi)
+
   | copy x y =>
     obtain ⟨hxy, hx, hy⟩ := whole hok
     refine WP.mono (copyN_wp (h.npre h6 h8 hxy hx hy)) fun s' hi => ⟨hi.regs, hi.rd, hi.wr, hi.sp, ?_, ?_⟩
@@ -498,11 +549,18 @@ theorem opCode_wp {c : Core} {ds : Nat} {byte : Bool} (hds : byte = false → ds
       simp only [bytesAt, List.range_succ_eq_map, List.map_cons, List.tail_cons, List.map_map, List.headD_cons, add0]
       rfl
 
-theorem runOp_length {op : Op} {byte : Bool} (hok : opOk byte op = true) {b : Blks} {c : Core} {ds : Nat}
+theorem runOp_length {c : Core} {op : Op} {byte : Bool} (hok : opOk c.bs byte op = true) {b : Blks} {ds : Nat}
     (hpos : ∀ x, 0 < sz c ds x) (hl : ∀ x, (b.get x).length = sz c ds x)
     (hds : byte = false → ds = c.bs) : ∀ x, ((runOp op b).get x).length = sz c ds x := by
   intro z
   cases op with
+  | inc =>
+    have hbs : c.bs = 16 := by simpa [opOk] using hok
+    cases z with
+    | d => exact hl .d
+    | t => exact hl .t
+    | o => simp [runOp, Blks.set, Blks.get, Spec.Ctr.inc, Spec.Ctr.ofNat, sz, hbs]
+
   | copy x y =>
     by_cases hz : z = x
     · subst hz; simp only [runOp, Blks.get_set_self, hl]
@@ -535,7 +593,7 @@ theorem runOp_length {op : Op} {byte : Bool} (hok : opOk byte op = true) {b : Bl
 /-- The code of a list of operations. -/
 theorem opsCode_wp {c : Core} {ds : Nat} {byte : Bool} (hds : byte = false → ds = c.bs) {Dp S : BitVec 32}
     {s : State} (h : Lay c ds Dp S s.wr) (h6 : s.gpr .r6 = Dp) (h8 : s.gpr .r8 = S) {b : Blks}
-    (hb : BlkMem c ds Dp S s.mem b) {ops : List Op} (hok : ops.all (opOk byte) = true) :
+    (hb : BlkMem c ds Dp S s.mem b) {ops : List Op} (hok : ops.all (opOk c.bs byte) = true) :
     WP isa (.block (c.opsCode ops)) s (OpsInv c ds Dp S s (runOps ops b)) := by
   induction ops generalizing s b with
   | nil => exact WP.block_nil (OpsInv.refl hb)

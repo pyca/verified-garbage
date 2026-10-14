@@ -37,8 +37,8 @@ open VG.Proof.MdStream.Arm (Upd wp_mov wp_add wp_subs op2_imm op2_reg ofNat_beq_
 at a time, do not treat the data byte as a block), and which calls the
 cipher on a whole block at an encodable offset. -/
 structure ModeOk (c : Core) (M : Mode) : Prop where
-  pre : M.pre.all (opOk M.byte) = true
-  post : M.post.all (opOk M.byte) = true
+  pre : M.pre.all (opOk c.bs M.byte) = true
+  post : M.post.all (opOk c.bs M.byte) = true
   tgt : M.byte = true → M.tgt ≠ .d
   tgt_enc : encodable (BitVec.ofNat 32 (c.base M.tgt).2) = true
 

@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.TCB.Arm.Isa
+public import VerifiedGarbage.Impl.Modes.Arm.Counter
 
 /-!
 # Block cipher modes on ARMv7, one block at a time, for any block cipher
@@ -79,6 +80,7 @@ XORs block `y` into block `x`; `xorB x y` XORs the first byte of `y` into
 the first byte of `x`, and `shift x y` shifts block `x` left by a byte,
 with the first byte of `y` shifted in (for CFB8). -/
 inductive Op
+  | inc
   | copy (x y : Blk)
   | xor (x y : Blk)
   | xorB (x y : Blk)
@@ -159,6 +161,7 @@ def base : Blk → Reg × Nat
 
 /-- A block operation, a word at a time. -/
 def opCode : Op → List Instr
+  | .inc => incAt .r8 oOff
   | .copy x y => (List.range c.bw).flatMap (copyWord (c.base x).1 (c.base y).1 (c.base x).2 (c.base y).2)
   | .xor x y => (List.range c.bw).flatMap (xorWord (c.base x).1 (c.base y).1 (c.base x).2 (c.base y).2)
   | .xorB x y =>
