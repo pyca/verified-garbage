@@ -47,7 +47,7 @@ def encP : Prog isa := encWith setupP bigPTo
 
 /-- The blocks after the last group, as `StitchZH.rem`'s, read at
 `rdx + r8` (`r8` is `src - dst`). -/
-def remTo : Prog isa := StitchZH.remWith [.alu .add .r8 (.reg .rdx)] .r8
+def remTo : Prog isa := StitchZH.remG [.alu .add .r8 (.reg .rdx)] .r8
 
 /-- `encP`, for any number of blocks from 16 on. -/
 def encR : Prog isa :=
