@@ -22,7 +22,7 @@ inductive XBinOp
   | pand | pandn | paddq | psubq | pmuludq
   | paddw | psubw | psubd | pmullw | pmulhw | packssdw | punpcklwd | punpckhwd
   | aesenc | aesenclast | aesdec | aesdeclast | aesimc
-  | pcmpeqd
+  | pcmpeqd | pcmpeqb | pcmpgtb
   deriving DecidableEq, Repr
 
 /-- SSE2 shifts by an immediate count: of each word (`psllw`, `psrlw`,
@@ -317,6 +317,13 @@ bits above 127 unmodified; no flags are affected):
 * AESIMC: `DEST[127:0] := InvMixColumns(SRC)`.
 * PCMPEQD: `IF DEST[31:0] = SRC[31:0] THEN DEST[31:0] := FFFFFFFFH; ELSE
   DEST[31:0] := 0; FI;`, and likewise for doublewords 1–3.
+* PCMPEQB (SDM Vol. 2B, "PCMPEQB/PCMPEQW/PCMPEQD — Compare Packed Data
+  for Equal"): `IF DEST[7:0] = SRC[7:0] THEN DEST[7:0] := FFH; ELSE
+  DEST[7:0] := 0; FI;`, and likewise for bytes 1–15.
+* PCMPGTB (SDM Vol. 2B, "PCMPGTB/PCMPGTW/PCMPGTD — Compare Packed Signed
+  Integers for Greater Than"): `IF DEST[7:0] > SRC[7:0] THEN DEST[7:0] :=
+  FFH; ELSE DEST[7:0] := 0; FI;`, and likewise for bytes 1–15, the bytes
+  compared as signed integers.
 
 (`SRC1` is the destination, `SRC2` the source.) -/
 def XBinOp.eval : XBinOp → BitVec 128 → BitVec 128 → BitVec 128
@@ -370,6 +377,8 @@ def XBinOp.eval : XBinOp → BitVec 128 → BitVec 128 → BitVec 128
   | .pcmpeqd, a, b =>
     let eq (i : Nat) : BitVec 32 := if dword a i = dword b i then 0xFFFFFFFF else 0
     ofDwords (eq 0) (eq 1) (eq 2) (eq 3)
+  | .pcmpeqb, a, b => ofBytes fun i => if byte a i = byte b i then 0xFF else 0
+  | .pcmpgtb, a, b => ofBytes fun i => if (byte b i).slt (byte a i) then 0xFF else 0
 
 /-- SDM Vol. 2, the forms with an immediate count (no flags are affected):
 

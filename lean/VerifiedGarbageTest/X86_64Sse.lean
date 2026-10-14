@@ -84,6 +84,33 @@ def pcmpeqd (x : BitVec 128) : BitVec 128 :=
 #guard pcmpeqd b == 0x00000000000000000000000000000000#128
 #guard pcmpeqd a == 0xffffffffffffffffffffffffffffffff#128
 #guard pcmpeqd 0x89abcdef81234567fedcba9876543211#128 == 0xffffffff00000000ffffffff00000000#128
+
+/-- `xmm0` after `op xmm0, xmm1` with `x` in `xmm0` and `y` in `xmm1` (computed in inline
+assembly, on an Intel Xeon). -/
+def binXY (op : XBinOp) (x y : BitVec 128) : BitVec 128 :=
+  ((XOp.bin op .xmm0 .xmm1).exec
+    { s with xmm := fun r => if r = .xmm0 then x else if r = .xmm1 then y else s.xmm r }).xmm .xmm0
+
+/-- Bytes `0x7f`, `0x80`, `0x00`, `0xff`, `0x01`, `0xfe` against their neighbours, to tell a
+signed from an unsigned comparison. -/
+def f : BitVec 128 := 0x7f80007f80ff01fe0001020304050607#128
+def g : BitVec 128 := 0x807f7f0080ff01000001020304050608#128
+
+-- `pcmpeqb`: no byte equal, all equal, two bytes differing (one in its highest bit, one in
+-- its lowest), and mixed.
+#guard binXY .pcmpeqb a b == 0x00000000000000000000000000000000#128
+#guard binXY .pcmpeqb a a == 0xffffffffffffffffffffffffffffffff#128
+#guard binXY .pcmpeqb a 0x89abcdef81234567fedcba9876543211#128 ==
+  0xffffffff00ffffffffffffffffffff00#128
+#guard binXY .pcmpeqb f g == 0x00000000ffffff00ffffffffffffff00#128
+-- `pcmpgtb`, signed: `0x01 > 0x81`, `0x7f > 0x80` and `0x00 > 0xfe`.
+#guard binXY .pcmpgtb a b == 0x00000000ffffffff00000000ffff0000#128
+#guard binXY .pcmpgtb b a == 0xffffffff00000000ffffffff0000ffff#128
+#guard binXY .pcmpgtb a a == 0x00000000000000000000000000000000#128
+#guard binXY .pcmpgtb a 0x89abcdef81234567fedcba9876543211#128 ==
+  0x00000000ff0000000000000000000000#128
+#guard binXY .pcmpgtb f g == 0xff0000ff000000000000000000000000#128
+#guard binXY .pcmpgtb g f == 0x00ffff00000000ff00000000000000ff#128
 #guard bin .pmullw == 0x765532118000000001244568f110d780#128
 #guard bin .pmulhw == 0x00000000ff6e0000ff6e0000086910e8#128
 #guard bin .packssdw == 0xffff80007fff7fff80007fff80007fff#128
@@ -319,6 +346,8 @@ def stored (v : BitVec 32) : State :=
 #guard printer.instr (.xop (.bin .psubd .xmm5 .xmm6)) == ["psubd xmm5, xmm6"]
 #guard printer.instr (.xop (.bin .psubq .xmm5 .xmm6)) == ["psubq xmm5, xmm6"]
 #guard printer.instr (.xop (.bin .pcmpeqd .xmm5 .xmm6)) == ["pcmpeqd xmm5, xmm6"]
+#guard printer.instr (.xop (.bin .pcmpeqb .xmm5 .xmm6)) == ["pcmpeqb xmm5, xmm6"]
+#guard printer.instr (.xop (.bin .pcmpgtb .xmm7 .xmm8)) == ["pcmpgtb xmm7, xmm8"]
 #guard printer.instr (.xop (.bin .pmullw .xmm7 .xmm8)) == ["pmullw xmm7, xmm8"]
 #guard printer.instr (.xop (.bin .pmulhw .xmm9 .xmm10)) == ["pmulhw xmm9, xmm10"]
 #guard printer.instr (.xop (.bin .packssdw .xmm11 .xmm12)) == ["packssdw xmm11, xmm12"]
@@ -336,6 +365,8 @@ def stored (v : BitVec 32) : State :=
 
 -- SSE2 is in the x86-64 baseline.
 #guard isa.requires (.xop (.pshufd .xmm3 .xmm4 0x93)) == []
+#guard isa.requires (.xop (.bin .pcmpeqb .xmm1 .xmm2)) == []
+#guard isa.requires (.xop (.bin .pcmpgtb .xmm1 .xmm2)) == []
 #guard isa.requires (.xop (.movq .xmm1 .rax)) == []
 #guard isa.requires (.movqR .rax .xmm1) == []
 #guard !isa.writesSp (.movqR .rax .xmm1)

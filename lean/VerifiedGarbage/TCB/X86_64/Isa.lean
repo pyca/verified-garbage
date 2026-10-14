@@ -35,8 +35,9 @@ Modelling choices:
   their data operands ("Data Operand Independent Timing Instruction Set
   Architecture (ISA) Guidance", which lists `MUL`), and so are BMI2's `mulx`
   and ADX's `adcx` and `adox` (it lists `MULX`, `ADCX` and `ADOX`), `shl`
-  (`SHL`), `cmovcc` (`CMOVcc`), and SSE2's `pcmpeqd` and its VEX forms
-  `vpcmpeqd` (`PCMPEQD`, `VPCMPEQD`). `cmovcc` is not a branch: whether the
+  (`SHL`), `cmovcc` (`CMOVcc`), SSE2's `pcmpeqd` and its VEX forms
+  `vpcmpeqd` (`PCMPEQD`, `VPCMPEQD`), and SSE2's `pcmpeqb` and `pcmpgtb`
+  (`PCMPEQB`, `PCMPGTB`). `cmovcc` is not a branch: whether the
   condition holds changes the destination, not which instructions run or
   for how long, so the model's leakage of it is only its memory source's
   address (`addrs`), which it reads whether or not the condition holds.

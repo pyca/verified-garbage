@@ -89,6 +89,7 @@ def XBinOp.name : XBinOp → String
   | .punpckhwd => "punpckhwd"
   | .aesenc => "aesenc" | .aesenclast => "aesenclast" | .aesdec => "aesdec"
   | .aesdeclast => "aesdeclast" | .aesimc => "aesimc" | .pcmpeqd => "pcmpeqd"
+  | .pcmpeqb => "pcmpeqb" | .pcmpgtb => "pcmpgtb"
 
 def XShiftOp.name : XShiftOp → String
   | .pslld => "pslld" | .psrld => "psrld" | .psllq => "psllq" | .psrlq => "psrlq"
