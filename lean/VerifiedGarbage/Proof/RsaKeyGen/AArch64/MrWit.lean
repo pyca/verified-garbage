@@ -478,7 +478,7 @@ theorem mrWitness_eq : mrWitness =
 `8 w` octets `x` of `rand` in `aX`, the mask of its uniformity in `kU`, and
 `kUsed` advanced. -/
 theorem mrWitness_ok {s : State} {B : Addr} {Z w c bm : Nat} (hc : MrCtx s B Z w c bm) (hw4 : 4 ≤ w)
-    (_hw64 : w ≤ 64) (hodd : c % 2 = 1) (hb : Spec.RsaKeyGen.bitLength (c - 1) = 64 * w)
+    (_hw128 : w ≤ 128) (hodd : c % 2 = 1) (hb : Spec.RsaKeyGen.bitLength (c - 1) = 64 * w)
     {rp : Addr} {u : Nat} {bs : List Byte} (hR : word s.mem B (8 * kRand) = rp)
     (hU : word s.mem B (8 * kUsed) = BitVec.ofNat 64 u) (hK : word s.mem B (8 * kLen) = BitVec.ofNat 64 (8 * w))
     (hsrc : Src s B Z (rp + BitVec.ofNat 64 u) bs) (hbl : bs.length = 8 * w) :

@@ -58,7 +58,7 @@ theorem expStart_ok {B : Addr} {Z w c bm b : Nat} {s : State} (hEZ : slot w aE +
   · rw [hm₁, hdrStore_hdr _ _ _ (by decide) (by decide) (by decide), word_writeW_self, Nat.sub_zero]
 
 /-- `mrLast j` as a squaring of `wEnd`. -/
-theorem mrLast_wsq (M : Mont) {s : State} {B : Addr} {Z w c bm : Nat} {st : Nat × Bool} (hw64 : w ≤ 64)
+theorem mrLast_wsq (M : Mont) {s : State} {B : Addr} {Z w c bm : Nat} {st : Nat × Bool} (hw128 : w ≤ 128)
     (hEZ : slot w aE + 8 * (w + 2) ≤ Z) (hc : MrCtx s B Z w c bm) (hE : ECtx s.mem B w c) (hodd : c % 2 = 1)
     (hc1 : 1 < c) (hY : wv s.mem B (slot w aY) w = st.1 * 2 ^ (64 * w) % c)
     (hP : word s.mem B (8 * kFlag) = mask st.2) {j : Nat} (hj : 1 ≤ j ∧ j ≤ 3) :
@@ -68,7 +68,7 @@ theorem mrLast_wsq (M : Mont) {s : State} {B : Addr} {Z w c bm : Nat} {st : Nat 
       word t.mem B (8 * kFlag) = mask (wSq c (decide (j < mrSig c)) st).2 ∧
       Frm B (sqRanges w) s.mem t.mem ∧ Keep mmRegs s t := by
   have hn := hc.ws.scr.nowrap
-  refine WP.mono (mrLast_ok M hw64 hEZ hc hE hodd hc1 hY hP hj) fun t ⟨hct, hyt, hft, hfr, kt⟩ =>
+  refine WP.mono (mrLast_ok M hw128 hEZ hc hE hodd hc1 hY hP hj) fun t ⟨hct, hyt, hft, hfr, kt⟩ =>
     ⟨hct, hE.of_low hfr (fun r hr => winRanges_low w r (sqRanges_win w r hr)) hEZ hn,
       hyt, by rw [hft, Bool.and_comm]; rfl, hfr, kt⟩
 
@@ -81,7 +81,7 @@ theorem mrExpLoop_eq (mul : Nat → Nat → Nat → Prog isa) : mrExpLoop mul =
 
 /-- The exponentiation: from `y = 1` (`R mod c` in `aY`) and the table, the
 flag of `wEnd` over the windows of `E`. -/
-theorem mrExpLoop_ok (M : Mont) {B : Addr} {Z w c bm b : Nat} {s : State} (hw64 : w ≤ 64)
+theorem mrExpLoop_ok (M : Mont) {B : Addr} {Z w c bm b : Nat} {s : State} (hw128 : w ≤ 128)
     (hEZ : slot w aE + 8 * (w + 2) ≤ Z) (hc : MrCtx s B Z w c bm) (hT : TabOK s.mem B w c b)
     (hE : ECtx s.mem B w c) (hodd : c % 2 = 1) (hc1 : 1 < c) (hY : wv s.mem B (slot w aY) w = 2 ^ (64 * w) % c) :
     WP isa (seqs (mrExpLoop M.mm)) s fun t => MrCtx t B Z w c bm ∧ ECtx t.mem B w c ∧
@@ -94,17 +94,17 @@ theorem mrExpLoop_ok (M : Mont) {B : Addr} {Z w c bm b : Nat} {s : State} (hw64 
   simp only [seqs]
   refine WP.seq (WP.mono (expStart_ok hEZ hc hT hY) fun s₁ hI0 => ?_)
   refine WP.mono (count_loop (cr := .x3) (n := w) (by omega_arith) (WordInv B Z w c bm b s)
-    (fun j hj t hI => mrWord_ok M hw64 hEZ (hE.of_low hI.frm (expRanges_low w) hEZ hn) hodd hc1 hj hI) hI0)
+    (fun j hj t hI => mrWord_ok M hw128 hEZ (hE.of_low hI.frm (expRanges_low w) hEZ hn) hodd hc1 hj hI) hI0)
     fun s₂ hI => ?_
   have hE₂ : ECtx s₂.mem B w c := hE.of_low hI.frm (expRanges_low w) hEZ hn
   generalize hst : wRun c b (mrE c) (16 * w) (16 * w) = st
   have hY₂ : wv s₂.mem B (slot w aY) w = st.1 * 2 ^ (64 * w) % c := by rw [← hst]; exact hI.y
   have hP₂ : word s₂.mem B (8 * kFlag) = mask st.2 := by rw [← hst]; exact hI.flag
-  refine wp_seqs_append (by simp [mrLast]) (by simp [mrLast]) (WP.mono (mrLast_wsq M hw64 hEZ hI.ctx hE₂ hodd hc1
+  refine wp_seqs_append (by simp [mrLast]) (by simp [mrLast]) (WP.mono (mrLast_wsq M hw128 hEZ hI.ctx hE₂ hodd hc1
     hY₂ hP₂ (j := 1) (by decide)) fun s₃ ⟨hc₃, hE₃, hY₃, hP₃, hf₃, k₃⟩ => ?_)
-  refine wp_seqs_append (by simp [mrLast]) (by simp [mrLast]) (WP.mono (mrLast_wsq M hw64 hEZ hc₃ hE₃ hodd hc1
+  refine wp_seqs_append (by simp [mrLast]) (by simp [mrLast]) (WP.mono (mrLast_wsq M hw128 hEZ hc₃ hE₃ hodd hc1
     hY₃ hP₃ (j := 2) (by decide)) fun s₄ ⟨hc₄, hE₄, hY₄, hP₄, hf₄, k₄⟩ => ?_)
-  refine WP.mono (mrLast_wsq M hw64 hEZ hc₄ hE₄ hodd hc1 hY₄ hP₄ (j := 3) (by decide))
+  refine WP.mono (mrLast_wsq M hw128 hEZ hc₄ hE₄ hodd hc1 hY₄ hP₄ (j := 3) (by decide))
     fun t ⟨hct, hEt, _, hPt, hft, kt⟩ => ⟨hct, hEt, hPt, ?_, ?_⟩
   · exact ((hI.frm.trans (hf₃.mono (sqRanges_sub w))).trans (hf₄.mono (sqRanges_sub w))).trans
       (hft.mono (sqRanges_sub w))

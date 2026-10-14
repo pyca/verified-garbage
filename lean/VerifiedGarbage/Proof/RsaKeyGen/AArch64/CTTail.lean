@@ -273,7 +273,7 @@ theorem expSetup_mrpre {q : FPub} {s : State} (h : MrPre0 q s) : WP isa (seqs ex
       have := hdr_lt_slot q.w aE hi; exact Or.inl (by simp only; omega)) (by omega)
   have hin : InScr q.B q.Z s.mem t.mem := InScr.of_frm hf (fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr; simp only; omega)
-  refine ⟨h4, h64, hEZ, hrl, c, bm, r, hc.of_frm hf (by w_mut) k (by decide) (by w_disj) (by w_disj) (by w_disj)
+  refine ⟨h4, by omega_arith, hEZ, hrl, c, bm, r, hc.of_frm hf (by w_mut) k (by decide) (by w_disj) (by w_disj) (by w_disj)
       (by w_disj) (by w_disj), hE, ?_, hc1, hsh, by rw [hW (by decide)]; exact hR,
     by rw [hW (by decide)]; exact hRL, hrlen, by rw [hW (by decide)]; exact hC, hsrc.congrK hin k,
     by rw [hW (by decide)]; exact hU, hu1, hS, by rw [hW (by decide)]; exact hO, by rw [hW (by decide)]; exact hUP,

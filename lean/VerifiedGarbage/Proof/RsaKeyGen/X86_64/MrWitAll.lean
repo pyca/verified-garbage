@@ -60,7 +60,7 @@ theorem mrWitness_ok {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 64} {c bm :
   have hg := hc.good
   have hZ := hd.z
   have hw4 := hd.w4
-  have hw' : w < 2 ^ 27 := by have := hd.w64; omega
+  have hw' : w < 2 ^ 27 := by have := hd.w128; omega
   have hn := hg.scr.nowrap
   have sX := Nat.le_trans (slot_le (w := w) (show aX < 8 by decide)) hZ
   rw [mrWitness_eq]

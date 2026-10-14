@@ -94,7 +94,7 @@ theorem MrCtx.setB {s t : State} {B : Addr} {Z w c bm bm' : Nat} {rs : List (Nat
 
 /-- The start of a round: the witness, its Montgomery form into `aXm` and
 `aB`, the table, and `y := 1`. -/
-theorem roundPre_ok (M : Mont) {s : State} {B : Addr} {Z w c bm : Nat} (hw4 : 4 ≤ w) (hw64 : w ≤ 64)
+theorem roundPre_ok (M : Mont) {s : State} {B : Addr} {Z w c bm : Nat} (hw4 : 4 ≤ w) (hw128 : w ≤ 128)
     (hEZ : slot w aE + 8 * (w + 2) ≤ Z) (hc : MrCtx s B Z w c bm)
     (hR2 : wv s.mem B (slot w aR2) w = 2 ^ (64 * w) * 2 ^ (64 * w) % c) (hodd : c % 2 = 1) (hc1 : 1 < c)
     (hb : Spec.RsaKeyGen.bitLength (c - 1) = 64 * w)
@@ -114,7 +114,7 @@ theorem roundPre_ok (M : Mont) {s : State} {B : Addr} {Z w c bm : Nat} (hw4 : 4 
       Frm B (preRanges w) s.mem t.mem ∧ Keep mmRegs s t := by
   have hn := hc.ws.scr.nowrap
   have hZ := hc.ws.hZ
-  have hw' : w < 2 ^ 31 := by omega_using [hw64]
+  have hw' : w < 2 ^ 31 := by omega_using [hw128]
   have hRc : Nat.Coprime (2 ^ (64 * w)) c := VG.Proof.Bignum.coprime_pow2 hodd _
   have hc0 : 0 < c := by omega_using [hc1]
   have sl : ∀ {j : Nat}, j < 16 → slot w j + 8 * (w + 2) ≤ Z := fun hj => by
@@ -124,7 +124,7 @@ theorem roundPre_ok (M : Mont) {s : State} {B : Addr} {Z w c bm : Nat} (hw4 : 4 
   have sY := sl (show aY < 16 by decide)
   have sXm := sl (show aXm < 16 by decide)
   refine wp_seqs_append (by simp [mrWitness]) (by simp) ?_
-  refine WP.mono (mrWitness_ok hc hw4 hw64 hodd hb hR hU hK (Src.seg hsrc hlen) (by
+  refine WP.mono (mrWitness_ok hc hw4 hw128 hodd hb hR hU hK (Src.seg hsrc hlen) (by
     simp only [VG.Proof.RsaKeyGen.seg, List.length_take, List.length_drop]; omega_using [hlen]))
     fun s₁ ⟨hc₁, hx₁, hu₁, hus₁, hf₁, k₁⟩ => ?_
   generalize Spec.RsaKeyGen.witness (c - 1) (Spec.Rsa.os2ip (VG.Proof.RsaKeyGen.seg r used (8 * w))) = wt
@@ -159,7 +159,7 @@ theorem roundPre_ok (M : Mont) {s : State} {B : Addr} {Z w c bm : Nat} (hw4 : 4 
   have hXm₃ : wv s₃.mem B (slot w aXm) w = Spec.Rsa.powMod wt.1 1 c * 2 ^ (64 * w) % c := by
     rw [f₃.wv_eq (d := slot w aXm) (k := w) (by rd_disj) (by omega_using [hn, sXm]), hXm,
       VG.Proof.Bignum.powMod_eq, Nat.pow_one, Nat.mod_mul_mod]
-  refine WP.mono (tabBuild_ok M hw64 hEZ hc₃ hodd hc1 hXm₃) fun t ⟨hct, hTt, hYt, ft, k⟩ => ?_
+  refine WP.mono (tabBuild_ok M hw128 hEZ hc₃ hodd hc1 hXm₃) fun t ⟨hct, hTt, hYt, ft, k⟩ => ?_
   have f13 : Frm B ([(slot w aAcc, 8 * (w + 2)), (slot w aTmp, 8 * (w + 2)), (slot w aXm, 8 * (w + 2)),
       (slot w aB, 8 * (w + 2))] ++ tabRanges w) s₁.mem t.mem :=
     ((f₂.mono (by simp)).trans (f₃.mono (by simp))).trans (ft.mono fun r hr => List.mem_append_right _ hr)
@@ -201,7 +201,7 @@ abbrev passOf (c w used : Nat) (r : List Byte) : Bool :=
   Spec.RsaKeyGen.mrIteration c (Spec.Rsa.splitTwos (c - 1)).1 (Spec.Rsa.splitTwos (c - 1)).2 (wtOf c w used r).1
 
 /-- `mrRound` up to its flag: the witness, and the flag of its test. -/
-theorem roundMid_ok (M : Mont) {s : State} {B : Addr} {Z w c bm : Nat} (hw4 : 4 ≤ w) (hw64 : w ≤ 64)
+theorem roundMid_ok (M : Mont) {s : State} {B : Addr} {Z w c bm : Nat} (hw4 : 4 ≤ w) (hw128 : w ≤ 128)
     (hEZ : slot w aE + 8 * (w + 2) ≤ Z) (hc : MrCtx s B Z w c bm) (hE : ECtx s.mem B w c)
     (hR2 : wv s.mem B (slot w aR2) w = 2 ^ (64 * w) * 2 ^ (64 * w) % c) (hc1 : 1 < c)
     (hsh : VG.Proof.RsaKeyGen.PrimeShape (64 * w) c)
@@ -225,11 +225,11 @@ theorem roundMid_ok (M : Mont) {s : State} {B : Addr} {Z w c bm : Nat} (hw4 : 4 
   have hZ := hc.ws.hZ
   have sR2 : slot w aR2 + 8 * (w + 2) ≤ Z := by have := slot_lt (w := w) (show aR2 < 16 by decide); omega_using [hZ, this]
   refine wp_seqs_append (by simp [mrWitness]) (by simp [mrExpLoop]) ?_
-  refine WP.mono (roundPre_ok M hw4 hw64 hEZ hc hR2 hodd hc1 hb hR hU hK hsrc hlen)
+  refine WP.mono (roundPre_ok M hw4 hw128 hEZ hc hR2 hodd hc1 hb hR hU hK hsrc hlen)
     fun s₁ ⟨hc₁, hT₁, hy₁, hr₁, hu₁, hus₁, hf₁, k₁⟩ => ?_
   have hE₁ : ECtx s₁.mem B w c := hE.of_frm hf₁ (fun r hr => Or.inr (roundRanges_lt w r (by
     simp only [roundRanges, List.mem_append]; exact Or.inl (Or.inl hr)))) (by omega_arith)
-  refine WP.mono (mrExpLoop_ok M hw64 hEZ hc₁ hT₁ hE₁ hodd hc1 hy₁) fun s₂ ⟨hc₂, _, hfl₂, hf₂, k₂⟩ => ?_
+  refine WP.mono (mrExpLoop_ok M hw128 hEZ hc₁ hT₁ hE₁ hodd hc1 hy₁) fun s₂ ⟨hc₂, _, hfl₂, hf₂, k₂⟩ => ?_
   rw [VG.Proof.RsaKeyGen.wEnd_cand _ (by omega_arith) hsh] at hfl₂
   have hf02 : Frm B (preRanges w ++ expRanges w) s.mem s₂.mem :=
     (hf₁.mono fun r hr => List.mem_append_left _ hr).trans (hf₂.mono fun r hr => List.mem_append_right _ hr)
@@ -242,7 +242,7 @@ theorem roundMid_ok (M : Mont) {s : State} {B : Addr} {Z w c bm : Nat} (hw4 : 4 
   · rw [hf₂.wv_eq (d := slot w aR2) (k := w) (by rd_disj) (by omega_using [hn, sR2])]; exact hr₁
 
 /-- `mrRound`. -/
-theorem mrRound_ok (M : Mont) {s : State} {B : Addr} {Z w c bm : Nat} (hw4 : 4 ≤ w) (hw64 : w ≤ 64)
+theorem mrRound_ok (M : Mont) {s : State} {B : Addr} {Z w c bm : Nat} (hw4 : 4 ≤ w) (hw128 : w ≤ 128)
     (hEZ : slot w aE + 8 * (w + 2) ≤ Z) (hc : MrCtx s B Z w c bm) (hE : ECtx s.mem B w c)
     (hR2 : wv s.mem B (slot w aR2) w = 2 ^ (64 * w) * 2 ^ (64 * w) % c) (hc1 : 1 < c)
     (hsh : VG.Proof.RsaKeyGen.PrimeShape (64 * w) c)
@@ -275,7 +275,7 @@ theorem mrRound_ok (M : Mont) {s : State} {B : Addr} {Z w c bm : Nat} (hw4 : 4 �
   have sR2 : slot w aR2 + 8 * (w + 2) ≤ Z := by have := slot_lt (w := w) (show aR2 < 16 by decide); omega_using [hZ, this]
   rw [mrRound_eq, ← List.append_assoc]
   refine wp_seqs_append (by simp [mrWitness]) (by simp) ?_
-  refine WP.mono (roundMid_ok M hw4 hw64 hEZ hc hE hR2 hc1 hsh hR hU hK hsrc hlen hI hN hC)
+  refine WP.mono (roundMid_ok M hw4 hw128 hEZ hc hE hR2 hc1 hsh hR hU hK hsrc hlen hI hN hC)
     fun s₂ ⟨hc₂, hfl₂, hI₂, hN₂, hC₂, hU₂, hUs₂, hR2₂, hf02, k₁₂⟩ => ?_
   simp only [wtOf, passOf] at hc₂ hU₂ hfl₂
   generalize Spec.RsaKeyGen.witness (c - 1) (Spec.Rsa.os2ip (VG.Proof.RsaKeyGen.seg r used (8 * w))) = wt

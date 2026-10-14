@@ -93,7 +93,7 @@ theorem kTail_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 64} 
     WP isa (seqs (montSetup M.mm ++ expSetup ++ millerRabin M.mm ++ [mrResult])) s fun t =>
       TestEnd s t B Z op up (8 * w) r c (Spec.RsaKeyGen.primalityTest c (r.drop (8 * w))) := by
   have hnw := hg.scr.nowrap
-  have hd : MrDims B Z w := ⟨hZ, hXZ, hw4, hw64⟩
+  have hd : MrDims B Z w := ⟨hZ, hXZ, hw4, by omega_arith⟩
   obtain ⟨hodd, hlo, hhi⟩ := hsh
   have htop : 2 ^ (64 * w - 1) ≤ c := by
     have : 2 ^ (64 * w - 1) = 2 ^ (64 * w - 2) * 2 := by rw [← Nat.pow_succ]; congr 1; omega_arith

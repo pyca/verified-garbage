@@ -293,7 +293,7 @@ theorem lowBit_ok {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 64} {c : Nat} 
       t.gpr .r15 = mask true ∧ Keep [.rax, .rbx, .rsi, .r12, .r15] s t := by
   have hn := hg.scr.nowrap
   have hZ := hd.z
-  have hw' : w < 2 ^ 31 := by have := hd.w64; omega
+  have hw' : w < 2 ^ 31 := by have := hd.w128; omega
   have hEZ := aE_fits hd
   have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off B (8 * i)) 8 := fun i hi =>
     hg.scr.ld (by have := hdr_lt_slot w 8 hi; omega)
@@ -341,7 +341,7 @@ theorem halfCond_ok {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 64} {c : Nat
       wv t.mem B (slot w aE) w = (if j < mrSig c then wv s.mem B (slot w aE) w / 2 else wv s.mem B (slot w aE) w) ∧
       Outside B (slot w aE) (8 * w) s.mem t.mem ∧ Keep [.rax, .rbp, .rcx, .rdx, .r14, .rsi, .r15] s t := by
   have hEZ := aE_fits hd
-  have hw' : w < 2 ^ 31 := by have := hd.w64; omega
+  have hw' : w < 2 ^ 31 := by have := hd.w128; omega
   rw [show seqs (halfCond j) = .seq (.block [.mov .rsi (.reg .rbx), .movImm64 .r15 (sigK j),
       .alu .and .r15 (.mem (ix .rbx .r12)), .alu .cmp .r15 (.imm 1), .alu .sbb .r15 (.reg .r15),
       .alu .xor .r15 (.imm (BitVec.ofInt 32 (-1)))]) (seqs halfPass) from rfl]
@@ -360,7 +360,7 @@ theorem expSetup_ok {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 64} {c : Nat
   have hnw := hg.scr.nowrap
   have hZ := hd.z
   have hw4 := hd.w4
-  have hw' : w < 2 ^ 31 := by have := hd.w64; omega
+  have hw' : w < 2 ^ 31 := by have := hd.w128; omega
   have hEZ := aE_fits hd
   have hN8 := slot_le (w := w) (show aN < 8 by decide)
   have h8E : slot w 8 ≤ slot w aE := by

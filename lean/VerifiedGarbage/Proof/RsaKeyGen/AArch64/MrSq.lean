@@ -66,7 +66,7 @@ theorem mrSq_eq (mul : Nat → Nat → Nat → Prog isa) : mrSq mul =
 
 /-- `y := y²`, as `y R mod c` in `aY`: the multiplication, then the mask of
 `y = c − 1` into `x15`. -/
-theorem sqHead_ok (M : Mont) {s : State} {B : Addr} {Z w c bm y : Nat} (hw64 : w ≤ 64)
+theorem sqHead_ok (M : Mont) {s : State} {B : Addr} {Z w c bm y : Nat} (hw128 : w ≤ 128)
     (hc : MrCtx s B Z w c bm) (hodd : c % 2 = 1) (hc1 : 1 < c)
     (hY : wv s.mem B (slot w aY) w = y * 2 ^ (64 * w) % c) :
     WP isa (seqs (([M.mm aY aY aY] : List (Prog isa)) ++ eqMask aRm1)) s fun t =>
@@ -111,7 +111,7 @@ theorem flagOr_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {P b : Boo
     (by decide) (by decide) (by decide +kernel)) fun t ⟨hm, k⟩ => ⟨hm, k⟩
 
 /-- `mrSq`: `y := y²` and the flag or'ed with `y = c − 1`. -/
-theorem mrSq_ok (M : Mont) {s : State} {B : Addr} {Z w c bm y : Nat} {P : Bool} (hw64 : w ≤ 64)
+theorem mrSq_ok (M : Mont) {s : State} {B : Addr} {Z w c bm y : Nat} {P : Bool} (hw128 : w ≤ 128)
     (hc : MrCtx s B Z w c bm) (hodd : c % 2 = 1) (hc1 : 1 < c)
     (hY : wv s.mem B (slot w aY) w = y * 2 ^ (64 * w) % c) (hP : word s.mem B (8 * kFlag) = mask P) :
     WP isa (seqs (mrSq M.mm)) s fun t =>
@@ -121,7 +121,7 @@ theorem mrSq_ok (M : Mont) {s : State} {B : Addr} {Z w c bm y : Nat} {P : Bool} 
   have hn := hc.ws.scr.nowrap
   rw [mrSq_eq, ← List.append_assoc]
   refine wp_seqs_append (by simp) (by simp) ?_
-  refine WP.mono (sqHead_ok M hw64 hc hodd hc1 hY) fun s₁ ⟨hc₁, hY₁, h15, hf₁, k₁⟩ => ?_
+  refine WP.mono (sqHead_ok M hw128 hc hodd hc1 hY) fun s₁ ⟨hc₁, hY₁, h15, hf₁, k₁⟩ => ?_
   have hP₁ : word s₁.mem B (8 * kFlag) = mask P := by
     rw [hf₁.word_eq (d := 8 * kFlag) (by w_disj) (by have := hc.ws.hZ; simp only [slot, hdrBytes, kFlag, kPlen, sFn] at *; omega_arith)]
     exact hP
@@ -218,7 +218,7 @@ theorem lastTail_ok {s : State} {B : Addr} {Z w c : Nat} (h : Ws s B Z w) (hEZ :
   exact ⟨by rw [hm, m₄, m₃, m₂, m₁], (k14.trans k).mono (by decide)⟩
 
 /-- `mrLast j`: `y := y²` and the flag or'ed with `y = c − 1` if `σ > j`. -/
-theorem mrLast_ok (M : Mont) {s : State} {B : Addr} {Z w c bm y : Nat} {P : Bool} (hw64 : w ≤ 64)
+theorem mrLast_ok (M : Mont) {s : State} {B : Addr} {Z w c bm y : Nat} {P : Bool} (hw128 : w ≤ 128)
     (hEZ : slot w aE + 8 * (w + 2) ≤ Z) (hc : MrCtx s B Z w c bm) (hE : ECtx s.mem B w c) (hodd : c % 2 = 1)
     (hc1 : 1 < c) (hY : wv s.mem B (slot w aY) w = y * 2 ^ (64 * w) % c) (hP : word s.mem B (8 * kFlag) = mask P)
     {j : Nat} (hj : 1 ≤ j ∧ j ≤ 3) :
@@ -229,7 +229,7 @@ theorem mrLast_ok (M : Mont) {s : State} {B : Addr} {Z w c bm y : Nat} {P : Bool
   have hn := hc.ws.scr.nowrap
   rw [mrLast_eq, ← List.append_assoc]
   refine wp_seqs_append (by simp) (by simp) ?_
-  refine WP.mono (sqHead_ok M hw64 hc hodd hc1 hY) fun s₁ ⟨hc₁, hY₁, h15, hf₁, k₁⟩ => ?_
+  refine WP.mono (sqHead_ok M hw128 hc hodd hc1 hY) fun s₁ ⟨hc₁, hY₁, h15, hf₁, k₁⟩ => ?_
   have hP₁ : word s₁.mem B (8 * kFlag) = mask P := by
     rw [hf₁.word_eq (d := 8 * kFlag) (by w_disj) (by have := hc.ws.hZ; simp only [slot, hdrBytes, kFlag, kPlen, sFn] at *; omega_arith)]
     exact hP

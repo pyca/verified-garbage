@@ -154,7 +154,7 @@ theorem mrWin_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 64} 
   have hZ := hd.z
   have hXZ := hd.x
   have hw := hd.w4
-  have hw' : w < 2 ^ 30 := by have := hd.w64; omega_arith
+  have hw' : w < 2 ^ 30 := by have := hd.w128; omega_arith
   have hn := hg.scr.nowrap
   have hR : Nat.Coprime (2 ^ (64 * w)) c := VG.Proof.Bignum.coprime_pow2 hodd _
   have hc0 : 0 < c := by omega_arith

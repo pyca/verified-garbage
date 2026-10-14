@@ -101,7 +101,7 @@ theorem copyT0_ok {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 64} (hg : Good
       Outside B (slot w aT0) (8 * w) s.mem t.mem ∧ Keep [.rax, .rbx, .rsi, .r12, .r14] s t := by
   have hn := hg.scr.nowrap
   have hZ := hd.z
-  have hw' : w < 2 ^ 31 := by have := hd.w64; omega
+  have hw' : w < 2 ^ 31 := by have := hd.w128; omega
   have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off B (8 * i)) 8 := fun i hi =>
     hg.scr.ld (by have := hdr_lt_slot w 8 hi; omega)
   have h1 := slot_succ w aR1
@@ -169,7 +169,7 @@ theorem tabStep_ok (M : Mont) {B : Addr} {Z w : Nat} {mi : BitVec 64} {c bm b : 
   have hZ := hd.z
   have hx := hd.x
   have hw4 := hd.w4
-  have hw' : w < 2 ^ 31 := by have := hd.w64; omega_arith
+  have hw' : w < 2 ^ 31 := by have := hd.w128; omega_arith
   have hn := hg.scr.nowrap
   have hR : Nat.Coprime (2 ^ (64 * w)) c := VG.Proof.Bignum.coprime_pow2 hodd _
   have hc0 : 0 < c := by omega_arith
@@ -289,7 +289,7 @@ theorem tabBases_ok {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 64} (hg : Go
         (BitVec.ofNat 64 (14 - 0)) ∧ Keep [.rax, .rcx, .r8, .r9, .r10, .r11, .r12, .r13] s t := by
   have hn := hg.scr.nowrap
   have hZ := hd.z
-  have hw' : w < 2 ^ 31 := by have := hd.w64; omega
+  have hw' : w < 2 ^ 31 := by have := hd.w128; omega
   have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off B (8 * i)) 8 := fun i hi =>
     hg.scr.ld (by have := hdr_lt_slot w 8 hi; omega)
   rw [WP.block_append_iff, WP.block_append_iff, WP.block_append_iff, WP.block_append_iff, WP.block_append_iff]
@@ -348,7 +348,7 @@ theorem tabHead_ok {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 64} {c bm b :
   have hZ := hd.z
   have hx := hd.x
   have hw4 := hd.w4
-  have hw' : w < 2 ^ 31 := by have := hd.w64; omega_arith
+  have hw' : w < 2 ^ 31 := by have := hd.w128; omega_arith
   have hn := hg.scr.nowrap
   have hY8 := slot_le (w := w) (show aY < 8 by decide)
   have hX8 := slot_le (w := w) (show aXm < 8 by decide)
@@ -447,7 +447,7 @@ theorem tabBuild_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 6
       wv t.mem B (slot w aY) w = 2 ^ (64 * w) % c ∧ Frm B (tabRanges w) s.mem t.mem ∧ Keep mmRegs s t := by
   have hZ := hd.z
   have hx := hd.x
-  have hw' : w < 2 ^ 31 := by have := hd.w64; omega_arith
+  have hw' : w < 2 ^ 31 := by have := hd.w128; omega_arith
   have hn := hc.good.scr.nowrap
   have hY8 := slot_le (w := w) (show aY < 8 by decide)
   have hR1 := slot_mono w (show aR1 + 1 ≤ aRm1 by decide)

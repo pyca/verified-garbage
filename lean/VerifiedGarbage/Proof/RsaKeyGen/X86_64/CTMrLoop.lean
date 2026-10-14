@@ -156,7 +156,7 @@ theorem mrLoop_ct (M : Mont) :
       obtain ⟨hk, hd, hch, hrl, mi, c, r, s₀, res, uni, hI, hS, hrlen, hc1, hsh, ho, hu, hl0, hw, hit⟩ := h'
       obtain ⟨bm, hc⟩ := hI.ctx
       refine WP.mono (availCmp_ok hc.good hd.z (hI.rlen.trans (by rw [hrlen])) hI.kused hI.len (by rw [← hrlen]; exact hI.ul)
-        hrl (by have := hd.w64; omega)) fun t ⟨hcf, hm, k⟩ =>
+        hrl (by have := hd.w128; omega)) fun t ⟨hcf, hm, k⟩ =>
           ⟨⟨hk, hd, hch, hrl, mi, c, r, s₀, res, uni, hI.congr hd hm k (by decide), hS, hrlen, hc1, hsh, ho, hu, hl0, hw,
             hit⟩, hcf⟩
     · exact kt_ct (fun p : LPub × Nat => p.1.p.B) (fun p => p.1.p.wr) [] (fun _ => []) [] (by decide)

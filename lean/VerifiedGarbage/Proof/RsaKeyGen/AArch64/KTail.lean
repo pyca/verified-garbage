@@ -108,7 +108,7 @@ theorem kTail_ok (M : Mont) {s : State} {B : Addr} {Z w c : Nat} {op up rp : Add
     rw [VG.Proof.RsaKeyGen.primalityTest_cand (by omega_arith) ⟨hodd, hlo, hhi⟩,
       VG.Proof.RsaKeyGen.checksW_eq w (by omega_arith) hw4]
   refine wp_seqs_append (by simp [millerRabin]) (by simp) ?_
-  refine WP.mono (millerRabin_ok M hw4 hw64 hEZ hc1 ⟨hodd, hlo, hhi⟩ hrl (by
+  refine WP.mono (millerRabin_ok M hw4 (by omega_arith) hEZ hc1 ⟨hodd, hlo, hhi⟩ hrl (by
       unfold VG.Proof.RsaKeyGen.checksW; split <;> (try split) <;> (try split) <;> (try split) <;> (try split) <;>
         (try split) <;> decide) hc₁ hE₁ hr2₁
     ((hW f₁ (by decide) (by kt_disj)).trans hrp)

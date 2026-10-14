@@ -136,7 +136,7 @@ theorem mrIter_ok (M : Mont) {B : Addr} {Z w : Nat} {mi : BitVec 64} {c ch : Nat
   have e1 : BitVec.ofNat 64 r.length - BitVec.ofNat 64 used = BitVec.ofNat 64 (r.length - used) :=
     ofNat_sub_ofNat' hul hrl
   have e2 : r.length - used < 2 ^ 64 := by omega
-  have e3 : 8 * w < 2 ^ 64 := by have := hd.w64; omega
+  have e3 : 8 * w < 2 ^ 64 := by have := hd.w128; omega
   refine WP.seq (WP.mono (WP.keep [.rcx, .rax] (Q := fun t => t.cf = some (decide (r.length < used + 8 * w)) ∧
       t.mem = s.mem) (by
     xrun [State.ea, hdr, hg.rdi, hdrOff, hl kUsed (by decide), hl kLen (by decide), hl kRandLen (by decide), hus, hlen,

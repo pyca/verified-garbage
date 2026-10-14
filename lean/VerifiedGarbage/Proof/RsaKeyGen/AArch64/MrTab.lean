@@ -138,7 +138,7 @@ theorem tabNext_ok {s : State} {B : Addr} {Z w X n : Nat} (h : Ws s B Z w) (hV :
     ofNat64_pred hn1 hn']
 
 /-- One entry of the table. -/
-theorem tabStep_ok (M : Mont) {B : Addr} {Z w c bm b : Nat} {s₀ s : State} (hw64 : w ≤ 64)
+theorem tabStep_ok (M : Mont) {B : Addr} {Z w c bm b : Nat} {s₀ s : State} (hw128 : w ≤ 128)
     (hEZ : slot w aE + 8 * (w + 2) ≤ Z) (hodd : c % 2 = 1) (hc1 : 1 < c) {i : Nat} (hi : i < 14)
     (hI : TabI B Z w c bm b s₀ i s) :
     WP isa (seqs (([M.mm aY aY aXm] : List (Prog isa)) ++ toEnt aY ++
@@ -362,7 +362,7 @@ theorem tabHead_ok {s : State} {B : Addr} {Z w c bm b : Nat} (hEZ : slot w aE + 
       hf₂.word_eq (by w_disj) (by decide), hm₁, word_writeW_self]
 
 /-- The table, from `b R mod c` in `aXm`: `TabOK`, and `y := 1`. -/
-theorem tabBuild_ok (M : Mont) {s : State} {B : Addr} {Z w c bm b : Nat} (hw64 : w ≤ 64)
+theorem tabBuild_ok (M : Mont) {s : State} {B : Addr} {Z w c bm b : Nat} (hw128 : w ≤ 128)
     (hEZ : slot w aE + 8 * (w + 2) ≤ Z) (hc : MrCtx s B Z w c bm) (hodd : c % 2 = 1) (hc1 : 1 < c)
     (hX : wv s.mem B (slot w aXm) w = Spec.Rsa.powMod b 1 c * 2 ^ (64 * w) % c) :
     WP isa (seqs (tabBuild M.mm)) s fun t =>
@@ -377,7 +377,7 @@ theorem tabBuild_ok (M : Mont) {s : State} {B : Addr} {Z w c bm b : Nat} (hw64 :
   refine wp_seqs_append (by simp) (by simp) ?_
   simp only [seqs]
   refine WP.mono (count_loop (cr := .x3) (n := 14) (by decide) (TabI B Z w c bm b s₄)
-    (fun i hi t hI => tabStep_ok M hw64 hEZ hodd hc1 hi hI) hI0) fun s₅ hI => ?_
+    (fun i hi t hI => tabStep_ok M hw128 hEZ hodd hc1 hi hI) hI0) fun s₅ hI => ?_
   -- `y := 1`.
   refine WP.mono (copyA_ok hI.ctx.ws (o := aY) (a := aR1) (by decide) (by decide) (by decide))
     fun t ⟨hv, ho, _, _, k⟩ => ?_
