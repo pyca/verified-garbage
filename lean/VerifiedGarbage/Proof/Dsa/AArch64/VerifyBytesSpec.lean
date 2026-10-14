@@ -7,6 +7,7 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtSel
 import VerifiedGarbage.Proof.Framework.AArch64.Call
+import Mathlib.Data.Int.ModEq
 
 /-! # The verification mask implements the packed DSA verification spec -/
 
