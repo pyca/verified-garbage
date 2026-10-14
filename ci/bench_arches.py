@@ -91,6 +91,10 @@ With a `BENCHMARKS_PER_JOB`, each configuration is split into jobs of at most
 that many of the benchmarks it runs (`shard` is `i/n`, empty for one):
 `bench_compare.py --shard` runs that share of them.
 
+A pull request never runs every benchmark of an architecture, which takes
+dozens of jobs: `--base` leaves out the architectures a change needs every
+benchmark on (`modules` empty), and names them on stderr, for a manual run.
+
 `--all` (the workflow's manual runs) runs every benchmark in every
 configuration of every architecture, or, for a targeted run, only those of
 `--arches` (space-separated names of `PLATFORMS`); only the benchmarks that
@@ -1087,6 +1091,18 @@ def cpu_modules(arch, changes, known, revisions):
     return modules
 
 
+def without_full_runs(matrix):
+    """`matrix` without the entries that run every benchmark, which only a
+    manual run does, and the architectures of those, in words (or None)."""
+    full = [a for a in PLATFORMS if any(p["arch"] == a and not p["modules"] for p in matrix)]
+    if not full:
+        return matrix, None
+    return [p for p in matrix if p["arch"] not in full], (
+        f"This change needs every benchmark on {', '.join(full)}, which pull requests never run:"
+        " run the Benchmarks workflow by hand (workflow_dispatch) with base_commit set to the"
+        f" base and arches='{' '.join(full)}' to compare them, or narrow the change.")
+
+
 def run_requirements(arch, modules, catalogs, revisions):
     """The `requirements` of the benchmarks that use any of `modules`, or
     None (every configuration) for all of them or an unreadable catalog."""
@@ -1203,5 +1219,8 @@ if __name__ == "__main__":
     else:
         if sys.argv[1:] and (len(sys.argv) != 3 or sys.argv[1] != "--base"):
             sys.exit(USAGE)
-        matrix = arches(sys.stdin.read().split(), sys.argv[2] if len(sys.argv) == 3 else None)
+        matrix, skipped = without_full_runs(
+            arches(sys.stdin.read().split(), sys.argv[2] if len(sys.argv) == 3 else None))
+        if skipped:
+            print(skipped, file=sys.stderr)
     print(json.dumps(matrix))
