@@ -28,7 +28,9 @@ pub fn bench(c: &mut Criterion) {
     use crate::{AWS_LC, OPENSSL, VG};
     // The shared sizes, and more below 1 KiB and at 4 KiB, where the TLS
     // records of interactive traffic fall.
-    const SIZES: [usize; 8] = [16, 64, 256, 512, 768, 1024, 4096, 16384];
+    const SIZES: [usize; 15] = [
+        16, 64, 256, 512, 768, 769, 832, 960, 1024, 1281, 1400, 1472, 1473, 4096, 16384,
+    ];
     let key = [0x42; 32];
     let nonce = [0x24; 12];
     let aad = [0x11; 16];
