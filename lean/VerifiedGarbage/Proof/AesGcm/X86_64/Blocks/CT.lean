@@ -277,10 +277,10 @@ theorem part_rel (aligned : Bool) (piece : Option (Prog isa)) {ys : State → Na
 
 /-- With a `piece` that takes all the blocks: the comparison, then `piece`,
 or `rest` and the calls, in two runs. -/
-theorem fullBody_rel (aligned : Bool) (p first second : Prog isa) {ys : State → Nat → List Block}
+theorem fullBody_relG (aligned : Bool) (p first second : Prog isa) {ys : State → Nat → List Block}
     (hys : ∀ s, ys s 0 = [])
-    (hc : ∃ hc, ((taint.check (Taint.ofRegs (.r11 :: args)) (stitchPart p aligned true) hc).map
-      fun τ' => (RegSet.ofList [Reg.rsp]).subset τ'.regs && (!false || τ'.flags)) = some true)
+    (hpart : RelCT isa (fun s₁ s₂ => (∀ r ∈ .r11 :: args, s₁.gpr r = s₂.gpr r) ∧ EntryPost s₀ s₁ ∧
+      EntryPost s₀' s₂ ∧ 16 ≤ n s₀) (stitchPart p aligned true) fun _ _ => True)
     (htail : RelCT isa (fun s₁ s₂ => Mid s₀ 0 0 (ys s₀ 0) s₁ ∧ Mid s₀' 0 0 (ys s₀' 0) s₂) (tail first second)
       fun _ _ => True) :
     RelCT isa (fun s₁ s₂ => (∀ r ∈ .r11 :: args, s₁.gpr r = s₂.gpr r) ∧ EntryPost s₀ s₁ ∧ EntryPost s₀' s₂)
@@ -312,7 +312,23 @@ theorem fullBody_rel (aligned : Bool) (p first second : Prog isa) {ys : State �
     · rw [hys]; exact mid_entry hp b₁ c₁ d₁ e₁ f₁
     · rw [hys]; exact mid_entry hp' b₂ c₂ d₂ e₂ f₂
   · -- At least 16: `piece` takes them all.
-    exact (rel_regs (.r11 :: args) [.rsp] false (fun _ _ h => h.1.1.1) hc).mono (fun _ _ h => h) fun _ _ _ => trivial
+    refine hpart.mono (fun s₁ s₂ h => ?_) fun _ _ h => h
+    obtain ⟨⟨⟨hr, -⟩, ⟨e₁, cf₁⟩, ⟨e₂, -⟩⟩, ht⟩ := h
+    refine ⟨hr, e₁, e₂, ?_⟩
+    simp only [isa, eval, cf₁, Option.some.injEq, decide_eq_false_iff_not] at ht
+    omega
+
+/-- `fullBody_relG` for a `piece` checked by the taint analysis. -/
+theorem fullBody_rel (aligned : Bool) (p first second : Prog isa) {ys : State → Nat → List Block}
+    (hys : ∀ s, ys s 0 = [])
+    (hc : ∃ hc, ((taint.check (Taint.ofRegs (.r11 :: args)) (stitchPart p aligned true) hc).map
+      fun τ' => (RegSet.ofList [Reg.rsp]).subset τ'.regs && (!false || τ'.flags)) = some true)
+    (htail : RelCT isa (fun s₁ s₂ => Mid s₀ 0 0 (ys s₀ 0) s₁ ∧ Mid s₀' 0 0 (ys s₀' 0) s₂) (tail first second)
+      fun _ _ => True) :
+    RelCT isa (fun s₁ s₂ => (∀ r ∈ .r11 :: args, s₁.gpr r = s₂.gpr r) ∧ EntryPost s₀ s₁ ∧ EntryPost s₀' s₂)
+      (fullBody p first second aligned) fun _ _ => True :=
+  fullBody_relG hp hp' pb aligned p first second hys
+    ((rel_regs (.r11 :: args) [.rsp] false (fun _ _ h => h.1) hc).mono (fun _ _ h => h) fun _ _ _ => trivial) htail
 
 end
 

@@ -42,6 +42,14 @@ structure DecCodeI (M : CtxMode) where
   ok : ∀ s₀, Gcm.X86_64.Stitch.SPreM M s₀ →
     Gcm.X86_64.StitchZ.IdxOk 16 [Gcm.X86_64.Stitch.dR s₀, Gcm.X86_64.Stitch.pR s₀] s₀ →
     WP isa dec s₀ (Gcm.X86_64.Stitch.DPost s₀)
+  /-- Constant time, from the arguments in their registers and the same index
+  at `rsp + 16` in both runs. -/
+  ct : RelCT isa (fun s₁ s₂ => (∀ r ∈ ([.r11, .rdi, .rsi, .rdx, .rcx, .r8, .r9, .rsp] : List Reg),
+      s₁.gpr r = s₂.gpr r) ∧ Gcm.X86_64.Stitch.SPreM M s₁ ∧ Gcm.X86_64.Stitch.SPreM M s₂ ∧
+    Gcm.X86_64.StitchZ.IdxOk 16 [Gcm.X86_64.Stitch.dR s₁, Gcm.X86_64.Stitch.pR s₁] s₁ ∧
+    Gcm.X86_64.StitchZ.IdxOk 16 [Gcm.X86_64.Stitch.dR s₂, Gcm.X86_64.Stitch.pR s₂] s₂ ∧
+    s₁.mem.readW (s₁.gpr .rsp + BitVec.ofNat 64 16) 32 = s₂.mem.readW (s₂.gpr .rsp + BitVec.ofNat 64 16) 32)
+    dec fun _ _ => True
 
 section
 variable {M : CtxMode} {s : State} (hp : BP M s)
@@ -76,6 +84,31 @@ theorem idxOk_of {aligned : Bool} {off : Nat} (hx : IdxArg off s) {s₃ : State}
       exact hx.d.sub_right (Region.sub_prefix (by omega))
     · simp only [Gcm.X86_64.Stitch.pR, Gcm.X86_64.Stitch.pp, h11, hsp]
       exact hx.s.sub_right (Offset.sub_base _ (by omega))
+
+/-- `r11` at the working space, from the state after the entry, with at
+least 16 blocks: what the loop needs, and the index kept. -/
+theorem scratchI_ok {aligned : Bool} {off : Nat} (hx : IdxArg off s) (h16 : 16 ≤ n s) {s₁ : State}
+    (h11 : s₁.gpr .r11 = S s) (hg : ∀ r, r ≠ .r11 → s₁.gpr r = s.gpr r)
+    (hf : Frame [kR' s] s.mem s₁.mem) (hrd : s₁.rd = s.rd) (hwr : s₁.wr = s.wr) :
+    WP isa (.block (Blocks.scratchSetup aligned)) s₁ fun s₃ => Gcm.X86_64.Stitch.SPreM M s₃ ∧
+      Gcm.X86_64.StitchZ.IdxOk off [Gcm.X86_64.Stitch.dR s₃, Gcm.X86_64.Stitch.pR s₃] s₃ ∧
+      s₃.mem.readW (s₃.gpr .rsp + BitVec.ofNat 64 off) 32 = s.mem.readW (SP s + BitVec.ofNat 64 off) 32 := by
+  refine WP.mono (scratch_ok (aligned := aligned) s₁) fun s₄ ⟨h11₄, g₄, m₄, rd₄, wr₄⟩ => ?_
+  have keepR : ∀ r, r ≠ .r11 → s₄.gpr r = s.gpr r := fun r c => by rw [g₄ r c, hg r c]
+  have ga : ∀ r ∈ Blocks.argRegs, s₄.gpr r = s.gpr r := fun r hr => by
+    simp only [Blocks.argRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> exact keepR _ (by decide)
+  have g11 : s₄.gpr .r11 = S s + BitVec.ofNat 64 (AlignedScratch.offset aligned (S s)) := by
+    rw [h11₄, h11]; exact AlignedScratch.ptr_eq aligned (S s) hp.w_s
+  have h9 : s₄.gpr .r9 = BitVec.ofNat 64 (n s) := by
+    rw [keepR _ (by decide)]; exact (BitVec.ofNat_toNat _ _).trans (BitVec.setWidth_eq _)|>.symm
+  have rd₄' : s₄.rd = s.rd := by rw [rd₄, hrd]
+  have wr₄' : s₄.wr = s.wr := by rw [wr₄, hwr]
+  have hf₄ : Frame [kR' s] s.mem s₄.mem := by rw [m₄]; exact hf
+  have hsp : s₄.gpr .rsp = s.gpr .rsp := keepR _ (by decide)
+  refine ⟨spreM_of hp h16 (Nat.le_refl _) h9 ga g11 rd₄' wr₄' hf₄, idxOk_of hp hx ga hsp h9 g11 hf₄ rd₄', ?_⟩
+  rw [hsp, hf₄.readW (Region.contains_self _ _) (fun r hr => by
+    simp only [List.mem_singleton] at hr; subst hr; exact hx.s.sub_right kR'_sub) (show 32 / 8 < 2 ^ 64 by decide)]
 
 end
 
