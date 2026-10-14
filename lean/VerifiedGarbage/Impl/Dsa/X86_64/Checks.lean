@@ -142,6 +142,11 @@ def publicPrefix (mul : Nat → Nat → Nat → Prog isa) : List (Prog isa) := [
   Core.reduce mul (Core.element t) (Core.scalar u), zero (Core.scalar u),
   modulusMinus qWorkspace 2 (Core.scalar qMinusTwo)]
 
+/-- Signing also checks `g^x = y`, so `g^q = 1` implies the public value's subgroup check. -/
+def signingKey (mul : Nat → Nat → Nat → Prog isa) : Prog isa := seqs (publicPrefix mul ++ [
+  Core.publicPow mul pWorkspace Core.generator ⟨.input .q, .qLen⟩ (Core.element t),
+  isOne pWorkspace (Core.element t)])
+
 /-- Check both subgroup memberships independently, with public q windows. -/
 def publicKey (mul : Nat → Nat → Nat → Prog isa) : Prog isa := seqs (publicPrefix mul ++ [
   Core.publicPow mul pWorkspace Core.generator ⟨.input .q, .qLen⟩ (Core.element t),

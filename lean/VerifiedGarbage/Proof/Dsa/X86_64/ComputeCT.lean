@@ -53,7 +53,7 @@ theorem verifyComputeInputs_stable (p : SchedulePublic) (a : Operand × Nat)
 
 theorem signCompute_ct (M : Mont) : RelCT isa (Two (PublicKeyPre signComputeInputs))
     (signCompute M.mm) (Two (ScheduleState signComputeInputs)) := by
-  have h1 := publicKey_ct M signComputeInputs signComputeInputs_stable
+  have h1 := signingKey_ct M signComputeInputs signComputeInputs_stable
     (by intro p; simp [signComputeInputs, signInputs])
     (by intro p; simp [signComputeInputs]) (by intro p; simp [signComputeInputs])
   have h2 := privateKey_ct M signComputeInputs signComputeInputs_stable

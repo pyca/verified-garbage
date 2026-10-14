@@ -17,6 +17,7 @@ def artifacts (v : Backend) : List Artifact := [
     name := Spec.Dsa.signApi.name ++ v.suffix
     doc := Spec.Dsa.signApi.doc (notes := ["Fixed-window exponentiation and streaming modular reduction \
       use the selected Montgomery backend. Leading-zero component padding is supported. \
+      Signing derives public-key subgroup membership from g^q = 1 and g^x = y. \
       Scratch is initialized before use; every failure zeros the entire output."])
     code := Impl.Dsa.X86_64.SignVerify.sign v.mul
     contract := Spec.Dsa.signContract X86_64.abi v.stack

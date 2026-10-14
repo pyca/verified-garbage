@@ -100,7 +100,7 @@ def sign (mul : Nat → Nat → Nat → Prog isa) : Prog isa := seqs [
   .block signEntry,
   Checks.domainShape,
   .ite .e signFailure (seqs [
-    workspaces, Checks.publicKey mul, Checks.privateKey mul,
+    workspaces, Checks.signingKey mul, Checks.privateKey mul,
     Core.sign mul, Checks.zero (Core.scalar r) true, Checks.zero (Core.scalar s) true,
     writeScalar r false, writeScalar s true, .block result])]
 
