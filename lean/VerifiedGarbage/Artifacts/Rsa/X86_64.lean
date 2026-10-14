@@ -16,6 +16,7 @@ import VerifiedGarbage.Proof.Rsa.X86_64.Calls
 public import VerifiedGarbage.Proof.Rsa.X86_64.IfmaLit
 import VerifiedGarbage.Proof.Framework.X86_64.Call
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTExpL
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontSqFn
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetupWs
 import VerifiedGarbage.Proof.Bignum.X86_64.FoldedCTLoop
 
@@ -112,13 +113,17 @@ def artifacts : List Artifact := [
         window's power of the input, from a table of all 16 after the prime's working space, read \
         by a masked selection from every entry."])
     code := Impl.Rsa.X86_64.Crt.code Proof.Rsa.X86_64.CallMont.base.mm
-      (Impl.Rsa.X86_64.Crt.expLoop Proof.Rsa.X86_64.CallMont.base.mm Impl.Rsa.X86_64.Crt.tabSelect)
+      (Impl.Rsa.X86_64.Crt.expLoopS Proof.Rsa.X86_64.CallMont.lazyBase Proof.Rsa.X86_64.CallMont.base.mm
+        Impl.Rsa.X86_64.Crt.tabSelect)
     contract := Spec.Rsa.privateCrtContract X86_64.abi 8
     stack := 8
     verified := Proof.Rsa.X86_64.crt_call_verified (by decide +kernel)
-      (Proof.Bignum.X86_64.crtCode_correct Proof.Bignum.X86_64.Mont.fnBase (Proof.Bignum.X86_64.CrtExpL.w4 Proof.Bignum.X86_64.Mont.fnBase) (by decide +kernel))
-      (Proof.Bignum.X86_64.crtCode_constantTime Proof.Bignum.X86_64.Mont.fnBase (Proof.Bignum.X86_64.CrtExpL.w4 Proof.Bignum.X86_64.Mont.fnBase)
-        (Proof.Bignum.X86_64.CrtExpL.w4_ct Proof.Bignum.X86_64.Mont.fnBase))
+      (Proof.Bignum.X86_64.crtCode_correct Proof.Bignum.X86_64.Mont.fnBase
+        (Proof.Bignum.X86_64.CrtExpL.w4S Proof.Bignum.X86_64.Mont.fnBase Proof.Bignum.X86_64.MontS.fnLazy)
+        (by decide +kernel))
+      (Proof.Bignum.X86_64.crtCode_constantTime Proof.Bignum.X86_64.Mont.fnBase
+        (Proof.Bignum.X86_64.CrtExpL.w4S Proof.Bignum.X86_64.Mont.fnBase Proof.Bignum.X86_64.MontS.fnLazy)
+        (Proof.Bignum.X86_64.CrtExpL.w4S_ct Proof.Bignum.X86_64.Mont.fnBase Proof.Bignum.X86_64.MontS.fnLazy))
     spSafe := Code.all_of_allInstrs (by decide +kernel) },
   { Spec.Rsa.privateCrtApi with
     target := X86_64.target
@@ -129,14 +134,17 @@ def artifacts : List Artifact := [
         multiplication by the window's power, from a table of all 32, read by a masked selection four \
         words at a time in AVX2's 256-bit registers."])
     code := Impl.Rsa.X86_64.Crt.code Proof.Rsa.X86_64.CallMont.adx.mm
-      (Impl.Rsa.X86_64.Crt.expLoop5 Proof.Rsa.X86_64.CallMont.adx.mm Impl.Rsa.X86_64.Crt.tabSelectV)
+      (Impl.Rsa.X86_64.Crt.expLoop5S Proof.Rsa.X86_64.CallMont.lazyAdx Proof.Rsa.X86_64.CallMont.adx.mm
+        Impl.Rsa.X86_64.Crt.tabSelectV)
     contract := Spec.Rsa.privateCrtContract X86_64.abi 8
     stack := 8
     verified := Proof.Rsa.X86_64.crt_call_verified (by decide +kernel)
-      (Proof.Bignum.X86_64.crtCode_correct Proof.Bignum.X86_64.Mont.fnAdx (Proof.Bignum.X86_64.CrtExpL.w5 Proof.Bignum.X86_64.Mont.fnAdx)
+      (Proof.Bignum.X86_64.crtCode_correct Proof.Bignum.X86_64.Mont.fnAdx
+        (Proof.Bignum.X86_64.CrtExpL.w5S Proof.Bignum.X86_64.Mont.fnAdx Proof.Bignum.X86_64.MontS.fnLazyAdx)
         (by decide +kernel))
-      (Proof.Bignum.X86_64.crtCode_constantTime Proof.Bignum.X86_64.Mont.fnAdx (Proof.Bignum.X86_64.CrtExpL.w5 Proof.Bignum.X86_64.Mont.fnAdx)
-        (Proof.Bignum.X86_64.CrtExpL.w5_ct Proof.Bignum.X86_64.Mont.fnAdx))
+      (Proof.Bignum.X86_64.crtCode_constantTime Proof.Bignum.X86_64.Mont.fnAdx
+        (Proof.Bignum.X86_64.CrtExpL.w5S Proof.Bignum.X86_64.Mont.fnAdx Proof.Bignum.X86_64.MontS.fnLazyAdx)
+        (Proof.Bignum.X86_64.CrtExpL.w5S_ct Proof.Bignum.X86_64.Mont.fnAdx Proof.Bignum.X86_64.MontS.fnLazyAdx))
     features := ["avx", "avx2", "bmi2", "adx"]
     spSafe := Code.all_of_allInstrs (by decide +kernel) },
   { Spec.Rsa.privateCrtApi with
