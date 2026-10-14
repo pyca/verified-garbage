@@ -180,10 +180,7 @@ fn encrypt_with(key: &PublicKey, plaintext: &[u8], ps: &[u8]) -> Vec<u8> {
     // The working space holds powers of the encoded message.
     zeroize(&mut scratch);
     // `PublicKey::new` checked `n` and `e`, and `PS` has no zero byte.
-    assert_eq!(
-        r, 1,
-        "vg_rsa_pkcs1_encrypt_precomputed refused a valid key and padding"
-    );
+    assert_eq!(r, 1, "precomputed encryption refused a valid key");
     out
 }
 

@@ -12,6 +12,8 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Wp
+meta import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Wp
 
 /-!
 # `vg_rsa_pkcs1_recover_precomputed` on AArch64: `Verified`
