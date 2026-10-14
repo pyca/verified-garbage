@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Argon2.AArch64.Instructions
 public import VerifiedGarbage.Impl.Argon2.AArch64.RandomSource
-public import VerifiedGarbage.Impl.Argon2.AArch64.FillKernel
+import VerifiedGarbage.Impl.Argon2.AArch64.FillKernel
 
 /-! Select the random word and update one active matrix cell. -/
 

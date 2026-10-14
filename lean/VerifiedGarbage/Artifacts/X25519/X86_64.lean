@@ -2,15 +2,15 @@ module
 
 public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Impl.X25519.X86_64
-public import VerifiedGarbage.Proof.X25519.X86_64.Verified
-public import VerifiedGarbage.Proof.X25519.X86_64.Lit
-public import VerifiedGarbage.Impl.X25519.X86_64.Adx
-public import VerifiedGarbage.Proof.X25519.X86_64.Adx.Verified
+import VerifiedGarbage.Proof.X25519.X86_64.Verified
+import VerifiedGarbage.Proof.X25519.X86_64.Lit
+import VerifiedGarbage.Impl.X25519.X86_64.Adx
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.Verified
 public import VerifiedGarbage.Proof.X25519.X86_64.Adx.Lit
 public import VerifiedGarbage.Impl.X25519.X86_64.Ifma
 public import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Verified
 public import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Lit
-public import VerifiedGarbage.Proof.X25519.X86_64.Base.Verified
+import VerifiedGarbage.Proof.X25519.X86_64.Base.Verified
 public import VerifiedGarbage.Proof.X25519.X86_64.Base.Ifma
 public import VerifiedGarbage.Proof.X25519.X86_64.Base.Adx
 public import VerifiedGarbage.Proof.X25519.X86_64.Divstep.Sound

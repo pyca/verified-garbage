@@ -1,10 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.AesCcm.X86.SealCT
-public import VerifiedGarbage.Proof.AesCcm.X86.OpenCT
+import VerifiedGarbage.Proof.AesCcm.X86.OpenCT
 public import VerifiedGarbage.Proof.CmacAes.X86.Verified
 public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Spec.Ccm.Contract
+import VerifiedGarbage.Spec.Ccm.Contract
 public import VerifiedGarbage.Proof.AesCcm.Scratch
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

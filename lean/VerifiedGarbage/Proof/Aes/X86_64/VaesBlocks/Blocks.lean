@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Aes.X86_64.VaesBlocks.Dec
 meta import VerifiedGarbage.Proof.Aes.X86_64.VaesBlocks.Dec
-public import VerifiedGarbage.Proof.Aes.X86_64.Vaes.Ctr32
+import VerifiedGarbage.Proof.Aes.X86_64.Vaes.Ctr32
 meta import VerifiedGarbage.Proof.Aes.X86_64.Vaes.Ctr32
 public import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Blocks
 meta import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Blocks

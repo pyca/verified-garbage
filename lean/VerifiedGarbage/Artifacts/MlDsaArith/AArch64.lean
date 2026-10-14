@@ -3,8 +3,8 @@ module
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseVerified
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.NttOutVerified
 public import VerifiedGarbage.TCB.AArch64.Target
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.AddSub
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Mul
+import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.AddSub
+import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Mul
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.NttInv
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.Lit

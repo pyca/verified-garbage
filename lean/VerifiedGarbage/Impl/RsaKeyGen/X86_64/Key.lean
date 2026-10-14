@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Rsa.X86_64.Keys
-public import VerifiedGarbage.Impl.Rsa.X86_64.Crt
+import VerifiedGarbage.Impl.Rsa.X86_64.Crt
 public import VerifiedGarbage.Impl.RsaKeyGen.X86_64.Candidate
 
 /-!

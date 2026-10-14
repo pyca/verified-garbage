@@ -5,14 +5,14 @@ public import VerifiedGarbage.Proof.Rsa.X86_64.PubChecked
 public import VerifiedGarbage.Proof.Bignum.X86_64.PcVerified
 public import VerifiedGarbage.Proof.Bignum.X86_64.FoldedBackend
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtVerified
-public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSelV
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSelV
 public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Verified
 public import VerifiedGarbage.Proof.Rsa.X86_64.CvVerified
-public import VerifiedGarbage.Proof.Rsa.X86_64.RpVerified
+import VerifiedGarbage.Proof.Rsa.X86_64.RpVerified
 public import VerifiedGarbage.Proof.Rsa.X86_64.KeyVerified
 public import VerifiedGarbage.Proof.Rsa.X86_64.CrtKeyVerified
-public import VerifiedGarbage.Proof.Bignum.X86_64.PcFn
-public import VerifiedGarbage.Proof.Rsa.X86_64.Calls
+import VerifiedGarbage.Proof.Bignum.X86_64.PcFn
+import VerifiedGarbage.Proof.Rsa.X86_64.Calls
 public import VerifiedGarbage.Proof.Rsa.X86_64.IfmaLit
 import VerifiedGarbage.Proof.Framework.X86_64.Call
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTExpL

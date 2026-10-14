@@ -1,9 +1,9 @@
 module
 
 public import VerifiedGarbage.Impl.Aes.AArch64.Ctr32
-public import VerifiedGarbage.Impl.Aes.AArch64.Linear
+import VerifiedGarbage.Impl.Aes.AArch64.Linear
 public import VerifiedGarbage.Proof.Framework.AArch64.Linear
-public import VerifiedGarbage.Impl.Aes.AArch64.Sbox
+import VerifiedGarbage.Impl.Aes.AArch64.Sbox
 public import VerifiedGarbage.Proof.Aes.SboxSpec
 public import VerifiedGarbage.Proof.Aes.Bitsliced
 public import VerifiedGarbage.Proof.Framework.AArch64.Straight

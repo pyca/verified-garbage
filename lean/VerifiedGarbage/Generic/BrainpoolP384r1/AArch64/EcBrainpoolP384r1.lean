@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.TCB.AArch64.Target
+import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
 public import VerifiedGarbage.Proof.EcKey.AArch64.BrainpoolP384r1.Verified
 import Mathlib.Data.Finset.Card

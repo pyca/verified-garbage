@@ -1,11 +1,11 @@
 module
 
 public import VerifiedGarbage.TCB.X86.Target
-public import VerifiedGarbage.Proof.Aes.X86.Ctr32
+import VerifiedGarbage.Proof.Aes.X86.Ctr32
 public import VerifiedGarbage.Proof.Aes.X86.ExpandKey
 public import VerifiedGarbage.Proof.Aes.X86.AesNi.Ctr32
 public import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyBlocks
-public import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyVerified
+import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyVerified
 public import VerifiedGarbage.Proof.Aes.X86.BlocksCT
 public import VerifiedGarbage.Proof.Aes.X86.AesNi.BlocksMain
 public import VerifiedGarbage.Proof.Aes.X86.Frame

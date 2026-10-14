@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.AesCcm.X86_64.Seal
-public import VerifiedGarbage.Proof.AesCcm.X86_64.Cmp
-public import VerifiedGarbage.Proof.AesCcm.X86_64.Mask
+import VerifiedGarbage.Proof.AesCcm.X86_64.Cmp
+import VerifiedGarbage.Proof.AesCcm.X86_64.Mask
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

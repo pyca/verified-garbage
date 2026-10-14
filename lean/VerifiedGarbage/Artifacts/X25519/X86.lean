@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Impl.X25519.X86.Fn
 public import VerifiedGarbage.Proof.X25519.X86.Verified
-public import VerifiedGarbage.Proof.X25519.X86.Lit
+import VerifiedGarbage.Proof.X25519.X86.Lit
 public import VerifiedGarbage.Proof.X25519.X86.Base.Verified
 import VerifiedGarbage.Proof.Framework.X86.CallWith
 import VerifiedGarbage.Spec.Rc2

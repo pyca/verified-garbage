@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.AesCcm.X86.Seal
+import VerifiedGarbage.Proof.AesCcm.X86.Seal
 public import VerifiedGarbage.Proof.AesCcm.X86.Mask
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

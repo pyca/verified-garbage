@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.TCB.X86.Target
-public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Sha512
+import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Sha512
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Instances
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Frame
 

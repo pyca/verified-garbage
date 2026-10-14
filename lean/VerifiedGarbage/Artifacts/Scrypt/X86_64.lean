@@ -2,11 +2,11 @@ module
 
 public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Impl.Scrypt.X86_64.Salsa
-public import VerifiedGarbage.Impl.Scrypt.X86_64.BlockMix
+import VerifiedGarbage.Impl.Scrypt.X86_64.BlockMix
 public import VerifiedGarbage.Impl.Scrypt.X86_64.RoMix
-public import VerifiedGarbage.Proof.Scrypt.X86_64.FusedVerified
+import VerifiedGarbage.Proof.Scrypt.X86_64.FusedVerified
 public import VerifiedGarbage.Proof.Scrypt.X86_64.DirectFill
-public import VerifiedGarbage.Proof.Scrypt.X86_64.Salsa
+import VerifiedGarbage.Proof.Scrypt.X86_64.Salsa
 public import VerifiedGarbage.Proof.Scrypt.X86_64.Lit
 
 /-!

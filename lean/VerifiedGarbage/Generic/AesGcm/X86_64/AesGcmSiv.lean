@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Verified
 public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Stitch.Verified
-public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Stitch.SealVerified
+import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Stitch.SealVerified
 public import VerifiedGarbage.Generic.AesGcm.X86_64.AesGcm
 import VerifiedGarbage.Proof.Framework.X86_64.HighRegs
 import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemLoopOne

@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Weierstrass.Law
 public import VerifiedGarbage.Proof.P224.Comb7
-public import VerifiedGarbage.Impl.Ecdsa.P224.X86_64
+import VerifiedGarbage.Impl.Ecdsa.P224.X86_64
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.P224.Verified
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.P224.Lit
 public import VerifiedGarbage.Impl.Ecdsa.Verify.P224.X86_64

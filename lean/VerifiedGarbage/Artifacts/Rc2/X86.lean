@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Rc2.X86.Cbc.Lit
-public import VerifiedGarbage.Proof.Rc2.X86.Block
+import VerifiedGarbage.Proof.Rc2.X86.Cbc.Lit
+import VerifiedGarbage.Proof.Rc2.X86.Block
 public import VerifiedGarbage.Proof.Rc2.X86.Key
 public import VerifiedGarbage.Proof.Rc2.X86.Cbc.Verified
 public import VerifiedGarbage.Proof.Rc2.X86.Stream.Lit

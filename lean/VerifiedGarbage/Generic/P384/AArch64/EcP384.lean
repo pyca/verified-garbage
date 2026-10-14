@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.TCB.AArch64.Target
+import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
 public import VerifiedGarbage.Proof.P384.Comb7
 public import VerifiedGarbage.Impl.EcKey.P384.AArch64

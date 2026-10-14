@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Aes.X86.AesNi.Loops
-public import VerifiedGarbage.Proof.Aes.X86.AesNi.Restore
-public import VerifiedGarbage.Proof.Aes.X86.AesNi.CT
+import VerifiedGarbage.Proof.Aes.X86.AesNi.Restore
+import VerifiedGarbage.Proof.Aes.X86.AesNi.CT
 public import VerifiedGarbage.Spec.Gcm.Contract
 public import VerifiedGarbage.Proof.Framework.Contract
 import all Init.Data.Array.Basic

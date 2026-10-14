@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Impl.AesXts.X86_64
+import VerifiedGarbage.Impl.AesXts.X86_64
 public import VerifiedGarbage.Impl.Aes.X86_64.VaesBlocks
 
 /-!

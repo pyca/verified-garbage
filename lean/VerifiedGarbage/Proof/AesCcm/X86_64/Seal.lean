@@ -1,9 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.AesCcm.X86_64.Args
-public import VerifiedGarbage.Proof.AesCcm.X86_64.Mac
-public import VerifiedGarbage.Proof.AesCcm.X86_64.Crypt
-public import VerifiedGarbage.Proof.AesCcm.X86_64.Cmp
+import VerifiedGarbage.Proof.AesCcm.X86_64.Mac
+import VerifiedGarbage.Proof.AesCcm.X86_64.Crypt
+import VerifiedGarbage.Proof.AesCcm.X86_64.Cmp
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

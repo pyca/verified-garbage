@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.ChaCha20.X86_64.Callee
 public import VerifiedGarbage.Impl.Poly1305.X86_64.Callee
-public import VerifiedGarbage.Impl.ChaCha20.X86_64.XorBuf
+import VerifiedGarbage.Impl.ChaCha20.X86_64.XorBuf
 
 /-!
 # ChaCha20-Poly1305: x86-64 implementation

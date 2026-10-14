@@ -1,15 +1,15 @@
 module
 
-public import VerifiedGarbage.TCB.X86_64.Target
-public import VerifiedGarbage.Proof.ChaCha20.X86_64.Xor
+import VerifiedGarbage.TCB.X86_64.Target
+import VerifiedGarbage.Proof.ChaCha20.X86_64.Xor
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.Verified
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512VL
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Xor
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.XorSplitVerified
-public import VerifiedGarbage.Impl.ChaCha20.X86_64.Xor
-public import VerifiedGarbage.Impl.ChaCha20.X86_64.Avx2
-public import VerifiedGarbage.Impl.ChaCha20.X86_64.Avx512
-public import VerifiedGarbage.Proof.ChaCha20.X86_64.Lit
+import VerifiedGarbage.Impl.ChaCha20.X86_64.Xor
+import VerifiedGarbage.Impl.ChaCha20.X86_64.Avx2
+import VerifiedGarbage.Impl.ChaCha20.X86_64.Avx512
+import VerifiedGarbage.Proof.ChaCha20.X86_64.Lit
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Stream.Init
 import Mathlib.Data.List.Induction
 import Mathlib.Tactic.SplitIfs

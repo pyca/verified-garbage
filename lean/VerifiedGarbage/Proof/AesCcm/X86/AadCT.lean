@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.AesCcm.X86.Aad
+import VerifiedGarbage.Proof.AesCcm.X86.Aad
 meta import VerifiedGarbage.Proof.AesCcm.X86.Aad
 public import VerifiedGarbage.Proof.AesCcm.X86.AbsorbCT
 meta import VerifiedGarbage.Proof.AesCcm.X86.AbsorbCT

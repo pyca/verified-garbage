@@ -1,20 +1,20 @@
 module
 
-public import VerifiedGarbage.TCB.X86.Target
-public import VerifiedGarbage.Proof.MlKem.X86.AddSub
-public import VerifiedGarbage.Proof.MlKem.X86.Encode12
-public import VerifiedGarbage.Proof.MlKem.X86.Decode12
-public import VerifiedGarbage.Proof.MlKem.X86.Cbd
-public import VerifiedGarbage.Proof.MlKem.X86.CompressEncode
-public import VerifiedGarbage.Proof.MlKem.X86.DecodeDecompress
-public import VerifiedGarbage.Proof.MlKem.X86.NttInv
-public import VerifiedGarbage.Proof.MlKem.X86.Mul
+import VerifiedGarbage.TCB.X86.Target
+import VerifiedGarbage.Proof.MlKem.X86.AddSub
+import VerifiedGarbage.Proof.MlKem.X86.Encode12
+import VerifiedGarbage.Proof.MlKem.X86.Decode12
+import VerifiedGarbage.Proof.MlKem.X86.Cbd
+import VerifiedGarbage.Proof.MlKem.X86.CompressEncode
+import VerifiedGarbage.Proof.MlKem.X86.DecodeDecompress
+import VerifiedGarbage.Proof.MlKem.X86.NttInv
+import VerifiedGarbage.Proof.MlKem.X86.Mul
 public import VerifiedGarbage.Proof.MlKem.X86.CheckEk
-public import VerifiedGarbage.Proof.MlKem.X86.Sample
+import VerifiedGarbage.Proof.MlKem.X86.Sample
 public import VerifiedGarbage.Proof.MlKem.X86.KeyGen
 public import VerifiedGarbage.Proof.MlKem.X86.Encaps
 public import VerifiedGarbage.Proof.MlKem.X86.Decaps
-public import VerifiedGarbage.Proof.Sha3.X86.Lit
+import VerifiedGarbage.Proof.Sha3.X86.Lit
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-!

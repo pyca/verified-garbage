@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Aes.Arm.ExpandKey
-public import VerifiedGarbage.Proof.Aes.Scratch
+import VerifiedGarbage.Proof.Aes.Scratch
 public import VerifiedGarbage.Proof.Framework.Arm.RegScratchWipe
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

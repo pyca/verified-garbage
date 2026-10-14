@@ -1,12 +1,12 @@
 module
 
 public import VerifiedGarbage.TCB.Arm.Target
-public import VerifiedGarbage.Impl.Scrypt.Arm.Salsa
-public import VerifiedGarbage.Impl.Scrypt.Arm.BlockMix
-public import VerifiedGarbage.Impl.Scrypt.Arm.RoMix
-public import VerifiedGarbage.Proof.Scrypt.Arm.BlockMixVerified
-public import VerifiedGarbage.Proof.Scrypt.Arm.RoMixCT
-public import VerifiedGarbage.Proof.Scrypt.Arm.Lit
+import VerifiedGarbage.Impl.Scrypt.Arm.Salsa
+import VerifiedGarbage.Impl.Scrypt.Arm.BlockMix
+import VerifiedGarbage.Impl.Scrypt.Arm.RoMix
+import VerifiedGarbage.Proof.Scrypt.Arm.BlockMixVerified
+import VerifiedGarbage.Proof.Scrypt.Arm.RoMixCT
+import VerifiedGarbage.Proof.Scrypt.Arm.Lit
 public import VerifiedGarbage.Proof.Scrypt.Arm.Whole.Verified
 
 /-!

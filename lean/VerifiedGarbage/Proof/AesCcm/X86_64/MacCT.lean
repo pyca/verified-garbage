@@ -4,9 +4,9 @@ public import VerifiedGarbage.Proof.AesCcm.X86_64.CTBase
 meta import VerifiedGarbage.Proof.AesCcm.X86_64.CTBase
 public import VerifiedGarbage.Proof.AesCcm.X86_64.Mac
 meta import VerifiedGarbage.Proof.AesCcm.X86_64.Mac
-public import VerifiedGarbage.Proof.AesCcm.X86_64.Args
+import VerifiedGarbage.Proof.AesCcm.X86_64.Args
 meta import VerifiedGarbage.Proof.AesCcm.X86_64.Args
-public import VerifiedGarbage.Proof.AesCcm.X86_64.Tag
+import VerifiedGarbage.Proof.AesCcm.X86_64.Tag
 meta import VerifiedGarbage.Proof.AesCcm.X86_64.Tag
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

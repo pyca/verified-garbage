@@ -2,8 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Framework.AArch64.Exec
 public import VerifiedGarbage.Impl.Aes.AArch64.Aese
-public import VerifiedGarbage.Spec.Aes
-public import VerifiedGarbage.TCB.AArch64.Target
+import VerifiedGarbage.Spec.Aes
+import VerifiedGarbage.TCB.AArch64.Target
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Impl.Ed25519.X86_64.Comb
+import VerifiedGarbage.Impl.Ed25519.X86_64.Comb
 public import VerifiedGarbage.Impl.Ed25519.X86_64.CombZmm
 public import VerifiedGarbage.Impl.Ed25519.X86_64.ScalarBase
 

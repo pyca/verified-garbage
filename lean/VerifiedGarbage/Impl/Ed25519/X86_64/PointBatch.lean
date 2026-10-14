@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Ed25519.X86_64.PointPowers
-public import VerifiedGarbage.Impl.Ed25519.X86_64.PointAccumulateLoop
+import VerifiedGarbage.Impl.Ed25519.X86_64.PointAccumulateLoop
 
 /-! Rebuild sixteen adjacent powers from a checkpoint, preserving the accumulator. -/
 

@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Impl.Ed448.SignedWindow
+import VerifiedGarbage.Impl.Ed448.SignedWindow
 
 /-! Public width-five non-adjacent recoding. The integer is used in full,
 without reduction modulo the group order. -/

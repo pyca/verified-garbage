@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.TCB.X86_64.Target
+import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvInterface
 public import VerifiedGarbage.Proof.Ecdh.X86_64.P256.CheckVerified
 import VerifiedGarbage.Proof.Framework.LitShare

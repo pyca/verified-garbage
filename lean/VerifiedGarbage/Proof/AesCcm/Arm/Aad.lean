@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesCcm.Arm.Header
 public import VerifiedGarbage.Proof.AesGcm.Arm.Args
-public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.TCB.AArch64.Target
+import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
 public import VerifiedGarbage.Proof.Ecdh.AArch64.P521.CheckVerified
 import Mathlib.Data.Finset.Card

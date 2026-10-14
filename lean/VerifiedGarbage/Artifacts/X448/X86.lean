@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Impl.X448.X86
 public import VerifiedGarbage.Proof.X448.X86.Verified
-public import VerifiedGarbage.Proof.X448.X86.Lit
+import VerifiedGarbage.Proof.X448.X86.Lit
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Spec.X25519
 

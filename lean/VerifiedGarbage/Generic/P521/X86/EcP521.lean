@@ -4,7 +4,7 @@ public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Weierstrass.Law
 public import VerifiedGarbage.Impl.EcKey.P521.X86
 public import VerifiedGarbage.Proof.EcKey.X86.P521.Verified
-public import VerifiedGarbage.Proof.EcKey.X86.P521.Lit
+import VerifiedGarbage.Proof.EcKey.X86.P521.Lit
 import VerifiedGarbage.Proof.Framework.TaintSum
 import VerifiedGarbage.Proof.X25519.X86.Column
 import VerifiedGarbage.Proof.Framework.X86.TaintMono

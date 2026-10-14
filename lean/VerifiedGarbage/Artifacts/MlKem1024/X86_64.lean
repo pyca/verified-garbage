@@ -3,8 +3,8 @@ module
 public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.MlKem1024.X86_64.DecodeDecompress
 public import VerifiedGarbage.Proof.MlKem1024.X86_64.CheckEk
-public import VerifiedGarbage.Proof.MlKem.X86_64.DecMulV
-public import VerifiedGarbage.Proof.MlKem.X86_64.EncMulV
+import VerifiedGarbage.Proof.MlKem.X86_64.DecMulV
+import VerifiedGarbage.Proof.MlKem.X86_64.EncMulV
 import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
 import VerifiedGarbage.Proof.Sha3.X86_64.X4.Wp

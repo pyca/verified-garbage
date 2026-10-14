@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Impl.X448.Arm
 public import VerifiedGarbage.Proof.X448.Arm.Verified
-public import VerifiedGarbage.Proof.X448.Arm.Lit
+import VerifiedGarbage.Proof.X448.Arm.Lit
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Arm.Call
 

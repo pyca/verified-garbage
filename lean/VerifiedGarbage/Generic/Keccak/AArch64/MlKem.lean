@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.KeyGen
+import VerifiedGarbage.Proof.MlKem.AArch64.KeyGen
 public import VerifiedGarbage.Proof.MlKem.AArch64.Encaps
-public import VerifiedGarbage.Proof.MlKem.AArch64.Decaps
+import VerifiedGarbage.Proof.MlKem.AArch64.Decaps
 public import VerifiedGarbage.Proof.MlKem1024.AArch64.KeyGen
 public import VerifiedGarbage.Proof.MlKem1024.AArch64.Encaps
 public import VerifiedGarbage.Proof.MlKem1024.AArch64.Decaps

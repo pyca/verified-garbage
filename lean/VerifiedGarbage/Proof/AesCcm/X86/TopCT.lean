@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesCcm.X86.Top
 meta import VerifiedGarbage.Proof.AesCcm.X86.Top
-public import VerifiedGarbage.Proof.AesCcm.X86.Seal
+import VerifiedGarbage.Proof.AesCcm.X86.Seal
 meta import VerifiedGarbage.Proof.AesCcm.X86.Seal
 public import VerifiedGarbage.Proof.AesCcm.X86.MacCT
 meta import VerifiedGarbage.Proof.AesCcm.X86.MacCT

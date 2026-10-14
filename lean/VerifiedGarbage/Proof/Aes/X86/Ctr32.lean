@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Aes.X86.Ctr32CT
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.X86.Spill
 public import VerifiedGarbage.Spec.Gcm.Contract
-public import VerifiedGarbage.Proof.Gcm.Spec
+import VerifiedGarbage.Proof.Gcm.Spec
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

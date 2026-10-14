@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.TCB.X86.Target
-public import VerifiedGarbage.Proof.AesGcm.X86.Frame
+import VerifiedGarbage.Proof.AesGcm.X86.Frame
 public import VerifiedGarbage.Proof.AesGcm.X86.GhashImpls
 public import VerifiedGarbage.Proof.AesGcm.X86.Gather.Verified
 

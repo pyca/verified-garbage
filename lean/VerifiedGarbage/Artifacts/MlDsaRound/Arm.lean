@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.MlDsa.Arm.Round.Power2Round
-public import VerifiedGarbage.Proof.MlDsa.Arm.Round.Bits
+import VerifiedGarbage.Proof.MlDsa.Arm.Round.Bits
 public import VerifiedGarbage.Proof.MlDsa.Arm.Round.NormLt
 public import VerifiedGarbage.Proof.MlDsa.Arm.Round.MakeHint
 public import VerifiedGarbage.Proof.MlDsa.Arm.Round.UseHint

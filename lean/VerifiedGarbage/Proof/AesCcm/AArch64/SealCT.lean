@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.AesCcm.AArch64.EntryCT
+import VerifiedGarbage.Proof.AesCcm.AArch64.EntryCT
 meta import VerifiedGarbage.Proof.AesCcm.AArch64.EntryCT
-public import VerifiedGarbage.Proof.AesCcm.AArch64.MacCT
+import VerifiedGarbage.Proof.AesCcm.AArch64.MacCT
 meta import VerifiedGarbage.Proof.AesCcm.AArch64.MacCT
 public import VerifiedGarbage.Proof.AesCcm.AArch64.CtrCT
 meta import VerifiedGarbage.Proof.AesCcm.AArch64.CtrCT

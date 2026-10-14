@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.AesCcm.Arm.Env
+import VerifiedGarbage.Proof.AesCcm.Arm.Env
 public import VerifiedGarbage.Proof.CmacAes.Stream.Arm.Call
 public import VerifiedGarbage.Proof.AesGcm.Arm.Callee
 import all Init.Data.Array.Basic

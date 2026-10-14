@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Weierstrass.X86.NafPrep
 public import VerifiedGarbage.Impl.Weierstrass.X86.TCombJ
-public import VerifiedGarbage.Impl.Weierstrass.X86.Window
+import VerifiedGarbage.Impl.Weierstrass.X86.Window
 
 /-! Width-five NAF multiplication for public P-256 verification scalars. -/
 

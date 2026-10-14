@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.AesCcm.X86.Mac
+import VerifiedGarbage.Proof.AesCcm.X86.Mac
 meta import VerifiedGarbage.Proof.AesCcm.X86.Mac
 public import VerifiedGarbage.Proof.AesCcm.X86.AadCT
 meta import VerifiedGarbage.Proof.AesCcm.X86.AadCT

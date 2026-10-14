@@ -2,9 +2,9 @@ module
 
 public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Weierstrass.Law
-public import VerifiedGarbage.Impl.Ecdsa.P224.X86
-public import VerifiedGarbage.Proof.Ecdsa.X86.P224.Verified
-public import VerifiedGarbage.Proof.Ecdsa.X86.P224.Lit
+import VerifiedGarbage.Impl.Ecdsa.P224.X86
+import VerifiedGarbage.Proof.Ecdsa.X86.P224.Verified
+import VerifiedGarbage.Proof.Ecdsa.X86.P224.Lit
 public import VerifiedGarbage.Impl.Ecdsa.Verify.P224.X86
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.P224.Verified
 import VerifiedGarbage.Proof.Framework.TaintSum

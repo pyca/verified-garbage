@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Spec.Ccm.Contract
-public import VerifiedGarbage.TCB.X86_64.Target
+import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Framework.X86_64.Call
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

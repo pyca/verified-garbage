@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.ResidentRejFour
-public import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.RejNtt4
+import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.RejNtt4
 
 @[expose] public section
 

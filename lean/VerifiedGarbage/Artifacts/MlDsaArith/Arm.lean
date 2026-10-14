@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.TCB.Arm.Target
-public import VerifiedGarbage.Proof.MlDsa.Arm.Arith.AddSub
+import VerifiedGarbage.Proof.MlDsa.Arm.Arith.AddSub
 public import VerifiedGarbage.Proof.MlDsa.Arm.Arith.Mul
 public import VerifiedGarbage.Proof.MlDsa.Arm.Arith.NttInv
 import Mathlib.Tactic.SplitIfs

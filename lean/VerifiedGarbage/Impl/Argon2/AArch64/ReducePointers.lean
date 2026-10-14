@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Impl.Argon2.AArch64.Instructions
+import VerifiedGarbage.Impl.Argon2.AArch64.Instructions
 public import VerifiedGarbage.Impl.Argon2.AArch64.BlockAddress
-public import VerifiedGarbage.Impl.Argon2.AArch64.Compress
+import VerifiedGarbage.Impl.Argon2.AArch64.Compress
 
 /-! Select block zero and the last block of the current public lane. -/
 

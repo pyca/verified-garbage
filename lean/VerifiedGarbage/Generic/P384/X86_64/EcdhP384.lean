@@ -1,13 +1,13 @@
 module
 
-public import VerifiedGarbage.TCB.X86_64.Target
+import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvInterface
 public import VerifiedGarbage.Proof.Weierstrass.Law
-public import VerifiedGarbage.Impl.Ecdh.P384.X86_64
-public import VerifiedGarbage.Proof.Ecdh.X86_64.P384.Verified
-public import VerifiedGarbage.Proof.Ecdh.X86_64.P384.Lit
+import VerifiedGarbage.Impl.Ecdh.P384.X86_64
+import VerifiedGarbage.Proof.Ecdh.X86_64.P384.Verified
+import VerifiedGarbage.Proof.Ecdh.X86_64.P384.Lit
 public import VerifiedGarbage.Proof.Ecdh.X86_64.P384.VerifiedAdx
-public import VerifiedGarbage.Proof.Ecdh.X86_64.P384.LitAdx
+import VerifiedGarbage.Proof.Ecdh.X86_64.P384.LitAdx
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.VerifiedAdx
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find

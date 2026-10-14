@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Aes.Arm.Group
 meta import VerifiedGarbage.Proof.Aes.Arm.Group
-public import VerifiedGarbage.Spec.Gcm
+import VerifiedGarbage.Spec.Gcm
 meta import VerifiedGarbage.Spec.Gcm
 public import VerifiedGarbage.TCB.Arm.Target
 meta import VerifiedGarbage.TCB.Arm.Target

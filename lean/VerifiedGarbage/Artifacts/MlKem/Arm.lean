@@ -1,16 +1,16 @@
 module
 
 public import VerifiedGarbage.TCB.Arm.Target
-public import VerifiedGarbage.Proof.MlKem.Arm.Add
-public import VerifiedGarbage.Proof.MlKem.Arm.Encode12
-public import VerifiedGarbage.Proof.MlKem.Arm.Decode12
-public import VerifiedGarbage.Proof.MlKem.Arm.Cbd2
+import VerifiedGarbage.Proof.MlKem.Arm.Add
+import VerifiedGarbage.Proof.MlKem.Arm.Encode12
+import VerifiedGarbage.Proof.MlKem.Arm.Decode12
+import VerifiedGarbage.Proof.MlKem.Arm.Cbd2
 public import VerifiedGarbage.Proof.MlKem.Arm.CheckEk
-public import VerifiedGarbage.Proof.MlKem.Arm.CompressEncode
-public import VerifiedGarbage.Proof.MlKem.Arm.Decompress
-public import VerifiedGarbage.Proof.MlKem.Arm.Mul
-public import VerifiedGarbage.Proof.MlKem.Arm.NttInv
-public import VerifiedGarbage.Proof.MlKem.Arm.SampleCT
+import VerifiedGarbage.Proof.MlKem.Arm.CompressEncode
+import VerifiedGarbage.Proof.MlKem.Arm.Decompress
+import VerifiedGarbage.Proof.MlKem.Arm.Mul
+import VerifiedGarbage.Proof.MlKem.Arm.NttInv
+import VerifiedGarbage.Proof.MlKem.Arm.SampleCT
 public import VerifiedGarbage.Proof.MlKem.Arm.KeyGenCT
 public import VerifiedGarbage.Proof.MlKem.Arm.EncapsCT
 public import VerifiedGarbage.Proof.MlKem.Arm.DecapsCT

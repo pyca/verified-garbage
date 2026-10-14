@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Aes.X86.AesNi.Blocks
 meta import VerifiedGarbage.Proof.Aes.X86.AesNi.Blocks
-public import VerifiedGarbage.Proof.Framework.X86.SseTaint
+import VerifiedGarbage.Proof.Framework.X86.SseTaint
 meta import VerifiedGarbage.Proof.Framework.X86.SseTaint
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract

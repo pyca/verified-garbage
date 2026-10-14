@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Aes.X86.AesNi.Dec
-public import VerifiedGarbage.Proof.Aes.X86.AesNi.Data
+import VerifiedGarbage.Proof.Aes.X86.AesNi.Data
 public import VerifiedGarbage.Proof.Aes.X86.Common
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

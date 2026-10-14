@@ -1,11 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.AesCbc.Mem
-public import VerifiedGarbage.Proof.Framework.AArch64.Exec
-public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 public import VerifiedGarbage.Proof.Framework.AArch64.RelCT
 public import VerifiedGarbage.Proof.Aes.AArch64.BlocksVariant
-public import VerifiedGarbage.Impl.AesCbc.AArch64
+import VerifiedGarbage.Impl.AesCbc.AArch64
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

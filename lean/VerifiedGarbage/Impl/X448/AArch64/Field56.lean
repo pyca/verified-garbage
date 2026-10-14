@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.X448.AArch64.Fast
-public import VerifiedGarbage.Spec.X448.Field56
+import VerifiedGarbage.Spec.X448.Field56
 public import VerifiedGarbage.Spec.X448.Field56Mul
 
 /-!

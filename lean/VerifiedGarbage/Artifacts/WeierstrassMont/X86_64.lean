@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.Mont
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFnXVerified
+import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFnXVerified
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFn6Verified
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFnNVerified
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFnN6Verified

@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Ed25519.Arm.Power
-public import VerifiedGarbage.Impl.Ed25519.Arm.FieldCheck
+import VerifiedGarbage.Impl.Ed25519.Arm.FieldCheck
 
 /-! Recover the candidate x-coordinate and its square check from y in slot 1. -/
 

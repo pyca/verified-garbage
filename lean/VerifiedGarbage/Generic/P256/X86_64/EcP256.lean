@@ -1,11 +1,11 @@
 module
 
-public import VerifiedGarbage.TCB.X86_64.Target
+import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Weierstrass.Law
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvInterface
 public import VerifiedGarbage.Proof.P256.Comb7
-public import VerifiedGarbage.Impl.EcKey.P256.X86_64
-public import VerifiedGarbage.Proof.EcKey.X86_64.Verified
+import VerifiedGarbage.Impl.EcKey.P256.X86_64
+import VerifiedGarbage.Proof.EcKey.X86_64.Verified
 public import VerifiedGarbage.Proof.EcKey.X86_64.Lit
 public import VerifiedGarbage.Proof.EcKey.X86_64.VerifiedAdx
 public import VerifiedGarbage.Proof.EcKey.X86_64.LitAdx

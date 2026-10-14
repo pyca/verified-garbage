@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Aes.X86.AesNi.KeySteps
-public import VerifiedGarbage.Proof.Aes.X86.ExpandKeyCT
+import VerifiedGarbage.Proof.Aes.X86.ExpandKeyCT
 public import VerifiedGarbage.Proof.Framework.Offset
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

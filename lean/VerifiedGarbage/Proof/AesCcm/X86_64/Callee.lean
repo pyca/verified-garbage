@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.AesCcm.X86_64.Env
 public import VerifiedGarbage.Proof.CmacAes.Stream.X86_64.Call
 public import VerifiedGarbage.Proof.Aes.X86_64.Variant
-public import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
