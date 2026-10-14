@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.Tail
-public import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.RemD
+public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemLoopOneD
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx.Loop
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
@@ -21,7 +21,7 @@ blocks from `g`, leaving `t = nb - g - 8 < 8` blocks (`TailReadyD`);
 `tail_ok`'s (`Tail.lean`), once `r9` and `rdx` are moved to where encryption
 leaves them: `ksTail` encrypts the eight counters the last batch prepared,
 `tailSetup` advances the counter by `t` and points `rax` at the powers
-`H'ᵗ` … `H'`, and the loop (`remLoopD_ok`) decrypts the `t` blocks in place
+`H'ᵗ` … `H'`, and the loop (`StitchZH.remLoopD1_ok`) decrypts the `t` blocks in place
 and adds the products of the blocks as they were with their powers, which
 `tailEnd` reduces into `Y` (`TailLaw`).
 -/
@@ -36,7 +36,7 @@ open VG.Impl.Aes.X86_64.AesNi (at_)
 open VG.Spec.Gcm (Block inc32 blockAt ghashFrom)
 open VG.Proof.Gcm.X86_64 (revMask)
 open VG.Proof.Gcm.X86_64.Pclmul (prod reduceB)
-open VG.Proof.Gcm.X86_64.StitchZH (REnv accR accR_congr)
+open VG.Proof.Gcm.X86_64.StitchZH (REnv RInvD accR accR_congr remLoopD1_ok)
 
 /-- After the last batch of decryption: the blocks before `g + 8` decrypted
 and hashed, the counters of the next eight prepared, and `nb - g - 8 < 8`
@@ -198,7 +198,7 @@ theorem tailD_ok {s₀ s : State} {P : Nat → Block} {g : Nat} (hp : SPre s₀)
       m1 := by
         rw [f₄.lane _ (by decide) 0 (by decide), a1, hE₂.r11]
         exact hE₂.poly }
-  refine WP.seq (WP.mono (remLoopD_ok hEok rfl hI₄) fun s₅ hI₅ => ?_)
+  refine WP.seq (WP.mono (remLoopD1_ok hEok hI₄) fun s₅ hI₅ => ?_)
   refine WP.mono (tailEnd_ok s₅ hp.rounds hI₅.m1) fun s₆ ⟨y₆, r11₆, r10₆, g₆, m₆, rd₆, wr₆⟩ => ?_
   -- What the tail leaves.
   have g₆₄ : ∀ q, q ≠ .r11 → q ≠ .r10 → q ≠ .r9 → s₆.gpr q = s₄.gpr q := fun q h11 h10 h9' => by
@@ -222,13 +222,13 @@ theorem tailD_ok {s₀ s : State} {P : Nat → Block} {g : Nat} (hp : SPre s₀)
   have hD₂ : DataInv s₀ false (g + 8) s₂.mem := (m₁ ▸ h.data).frameP hp (SrcOk.inplace hp) hF₂ (fun r hr => by
     simp only [List.mem_singleton] at hr; subst r
     exact Offset.sub_base (pp s₀) (d := 832) (n := 128) (k := 1024) (by decide))
-  have hB : ∀ j < t, hblk E j = blk s₀ (g + 8 + j) := fun j hj => by
+  have hB : ∀ j < t, E.H j = blk s₀ (g + 8 + j) := fun j hj => by
     show blockAt s₄.mem (bAddr s₀ (g + 8) + BitVec.ofNat 64 (16 * j)) = _
     rw [m₄, bAddr_add, ← srcBlk_false, (hD₂ _ (by omega)).2 (by omega)]
   have hX : ∀ j < t, E.X j = ctb s₀ (g + 8 + j) := fun j hj => by
     show blockAt s₄.mem (bAddr s₀ (g + 8) + BitVec.ofNat 64 (16 * j)) ^^^
       blockAt s₄.mem (pp s₀ + BitVec.ofNat 64 64 + BitVec.ofNat 64 (768 + 16 * j)) = _
-    rw [show blockAt s₄.mem (bAddr s₀ (g + 8) + BitVec.ofNat 64 (16 * j)) = hblk E j from rfl, hB j hj, m₄,
+    rw [show blockAt s₄.mem (bAddr s₀ (g + 8) + BitVec.ofNat 64 (16 * j)) = E.H j from rfl, hB j hj, m₄,
       Offset.add_add, show 64 + (768 + 16 * j) = 832 + 16 * j by omega, hks j (by omega)]
   have hT : ∀ j < t, E.T j = P (8 - t + j) := fun j hj => by
     show s₄.mem.readW (pp s₀ + BitVec.ofNat 64 (256 - 16 * t) + BitVec.ofNat 64 (16 * j)) 128 = _
