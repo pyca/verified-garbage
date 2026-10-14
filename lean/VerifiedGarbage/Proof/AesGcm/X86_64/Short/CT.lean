@@ -153,22 +153,35 @@ theorem cond_rel {W : Addr} {nl al n : Nat} {F₁ F₂ : State → Prop}
 
 /-! ## The pieces -/
 
-section
-variable {s₀ s₀' : State} {Ctx W SP Np A D : Addr} {nl al n R : Nat} {J J' : Block} {tl tl' : BitVec 64}
-  {k k' : Nat} (C : OneCtx s₀ k Ctx W SP Np A D nl al n) (C' : OneCtx s₀' k' Ctx W SP Np A D nl al n)
-include C C'
+/-- What constant time needs of a table of powers' code `pw`: its addresses
+and branches in two runs from the states after `J₀` and the counts. -/
+def PowCT (pw : Prog isa) : Prop :=
+  ∀ {s₀ s₀' : State} {Ctx W SP A D : Addr} {R al n : Nat} {J J' : Block} {tl tl' : BitVec 64},
+    RelCT isa (fun s₁ s₂ => SM s₀ Ctx W SP A D R al n J tl s₁ ∧ SM s₀' Ctx W SP A D R al n J' tl' s₂) pw
+      fun _ _ => True
 
-theorem powers_rel (hF : ShortFacts) (h32 : nb16 al + nb16 n < 32) :
-    RelCT isa (fun s₁ s₂ => SM s₀ Ctx W SP A D R al n J tl s₁ ∧ SM s₀' Ctx W SP A D R al n J' tl' s₂) powers
-      fun s₁ s₂ => SJ s₀ Ctx W SP A D R al n J tl s₁ ∧ SJ s₀' Ctx W SP A D R al n J' tl' s₂ :=
-  rel_next (rel_piece [.rax, .r11] (fun _ h => h.env) (fun _ h => h.env) (keepsEnv (by decide +kernel)) ⟨_, by taint_decide⟩
+theorem powers_ct (hF : ShortFacts) : PowCT powers := by
+  intro s₀ s₀' Ctx W SP A D R al n J J' tl tl'
+  exact rel_piece [.rax, .r11] (fun _ h => h.env) (fun _ h => h.env) (keepsEnv (by decide +kernel))
+      ⟨_, by taint_decide⟩
       (fun s h => hF.powHead s h.env h.r288) (fun s h => hF.powHead s h.env h.r288)
       (fun _ _ h₁ h₂ r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl
         · rw [h₁.1, h₂.1]
-        · rw [h₁.2, h₂.2]) ⟨_, by taint_decide⟩)
-    (fun _ h => powers_sj hF C h32 h) (fun _ h => powers_sj hF C' h32 h)
+        · rw [h₁.2, h₂.2]) ⟨_, by taint_decide⟩
+
+section
+variable {s₀ s₀' : State} {Ctx W SP Np A D : Addr} {nl al n R : Nat} {J J' : Block} {tl tl' : BitVec 64}
+  {k k' : Nat} (C : OneCtx s₀ k Ctx W SP Np A D nl al n) (C' : OneCtx s₀' k' Ctx W SP Np A D nl al n)
+include C C'
+
+/-- A table of powers' code `pw` in two runs. -/
+theorem pw_rel {pw : Prog isa} (hpc : PowCT pw) (hpw : PowFrom pw s₀ Ctx W SP D n)
+    (hpw' : PowFrom pw s₀' Ctx W SP D n) (h32 : nb16 al + nb16 n < 32) :
+    RelCT isa (fun s₁ s₂ => SM s₀ Ctx W SP A D R al n J tl s₁ ∧ SM s₀' Ctx W SP A D R al n J' tl' s₂) pw
+      fun s₁ s₂ => SJ s₀ Ctx W SP A D R al n J tl s₁ ∧ SJ s₀' Ctx W SP A D R al n J' tl' s₂ :=
+  rel_next hpc (fun _ h => powSj C hpw h32 h) (fun _ h => powSj C' hpw' h32 h)
 
 theorem zeroG_rel :
     RelCT isa (fun s₁ s₂ => SJ s₀ Ctx W SP A D R al n J tl s₁ ∧ SJ s₀' Ctx W SP A D R al n J' tl' s₂)
@@ -433,13 +446,14 @@ theorem sealRunF_rel (hF : ShortFacts) {ks : Prog isa} (hks : KsOk ks) (hkr : Ks
 /-! ## `seal` -/
 
 /-- The short `seal` in two runs with the same public data. -/
-theorem sealShort_rel (hF : ShortFacts) {s₀ s₀' : State} {Ctx W SP Np A D : Addr} {nl al n R : Nat}
+theorem sealShort_rel {pw : Prog isa} (hpc : PowCT pw) {s₀ s₀' : State} {Ctx W SP Np A D : Addr} {nl al n R : Nat}
     (C : OneCtx s₀ 4 Ctx W SP Np A D nl al n) (C' : OneCtx s₀' 4 Ctx W SP Np A D nl al n)
+    (hpw : PowFrom pw s₀ Ctx W SP D n) (hpw' : PowFrom pw s₀' Ctx W SP D n)
     (hNp : s₀.gpr .rdx = Np) (hnl : (s₀.gpr .rcx).toNat = nl) (hal : (s₀.gpr .r9).toNat = al)
     (hR : (s₀.gpr .rsi).toNat = R)
     (hNp' : s₀'.gpr .rdx = Np) (hnl' : (s₀'.gpr .rcx).toNat = nl) (hal' : (s₀'.gpr .r9).toNat = al)
     (hR' : (s₀'.gpr .rsi).toNat = R) (hs : IsShort nl al n) :
-    RelCT isa (fun s₁ s₂ => OneEntry s₀ Ctx W SP A D n s₁ ∧ OneEntry s₀' Ctx W SP A D n s₂) sealShort
+    RelCT isa (fun s₁ s₂ => OneEntry s₀ Ctx W SP A D n s₁ ∧ OneEntry s₀' Ctx W SP A D n s₂) (sealShort pw)
       fun _ _ => True := by
   obtain ⟨h12, hal5, hn5, h32, -⟩ := hs
   subst h12
@@ -455,7 +469,7 @@ theorem sealShort_rel (hF : ShortFacts) {s₀ s₀' : State} {Ctx W SP Np A D : 
       SM s₀ Ctx W SP A D R al n (Spec.Gcm.j0 (ctxH s₀.mem Ctx) (bytesAt s₀.mem Np 12)) p.1 s₁ ∧
       SM s₀' Ctx W SP A D R al n (Spec.Gcm.j0 (ctxH s₀'.mem Ctx) (bytesAt s₀'.mem Np 12)) p.2 s₂) fun _ => ?_).mono
     (fun _ _ ⟨⟨tl, h₁⟩, ⟨tl', h₂⟩⟩ => ⟨(tl, tl'), h₁, h₂⟩) fun _ _ h => h)
-  exact RelCT.seq (powers_rel C C' hF h32) (RelCT.seq (zeroG_rel C C') (RelCT.seq (copyA_rel C C' hal5 h32)
+  exact RelCT.seq (pw_rel C C' hpc hpw hpw' h32) (RelCT.seq (zeroG_rel C C') (RelCT.seq (copyA_rel C C' hal5 h32)
     (RelCT.seq (keystream_rel C C' hRr h32) (RelCT.seq (text_rel C C' true hn5 h32)
     (RelCT.seq (RelCT.seq (lens_rel C C' hal5 hn5 h32) (ghash_rel C C' h32)) tagK_rel)))))
 
@@ -524,8 +538,10 @@ theorem textSM_rel {s₀ s₀' : State} {Ctx W SP Np A D : Addr} {nl al n R : Na
 
 /-- The short `open` in two runs with the same public data, whose results
 `open` may leak (`hres`). -/
-theorem openShort_rel (hF : ShortFacts) {s₀ s₀' : State} {Ctx W SP Np A D Tp : Addr} {nl al n R t : Nat}
+theorem openShort_rel (hF : ShortFacts) {pw : Prog isa} (hpc : PowCT pw) {s₀ s₀' : State}
+    {Ctx W SP Np A D Tp : Addr} {nl al n R t : Nat}
     (C : OneCtx s₀ 5 Ctx W SP Np A D nl al n) (C' : OneCtx s₀' 5 Ctx W SP Np A D nl al n)
+    (hpw : PowFrom pw s₀ Ctx W SP D n) (hpw' : PowFrom pw s₀' Ctx W SP D n)
     (hNp : s₀.gpr .rdx = Np) (hnl : (s₀.gpr .rcx).toNat = nl) (hal : (s₀.gpr .r9).toNat = al)
     (hR : (s₀.gpr .rsi).toNat = R)
     (hNp' : s₀'.gpr .rdx = Np) (hnl' : (s₀'.gpr .rcx).toNat = nl) (hal' : (s₀'.gpr .r9).toNat = al)
@@ -537,7 +553,7 @@ theorem openShort_rel (hF : ShortFacts) {s₀ s₀' : State} {Ctx W SP Np A D Tp
       (Spec.Gcm.openResult (ctxCiph s₀'.mem Ctx R) (ctxH s₀'.mem Ctx) t (bytesAt s₀'.mem Np nl)
         (bytesAt s₀'.mem D n) (bytesAt s₀'.mem A al) (bytesAt s₀'.mem Tp t)).isSome)
     (hok : Spec.Gcm.tagLenOk t = true) :
-    RelCT isa (fun s₁ s₂ => OpenIn s₀ Ctx W SP A D n t s₁ ∧ OpenIn s₀' Ctx W SP A D n t s₂) openShort
+    RelCT isa (fun s₁ s₂ => OpenIn s₀ Ctx W SP A D n t s₁ ∧ OpenIn s₀' Ctx W SP A D n t s₂) (openShort pw)
       fun s₁ s₂ => Env Ctx (W + BitVec.ofNat 64 16) W SP s₁ ∧ Env Ctx (W + BitVec.ofNat 64 16) W SP s₂ := by
   obtain ⟨h12, hal5, hn5, h32, -⟩ := hs
   subst h12
@@ -566,13 +582,13 @@ theorem openShort_rel (hF : ShortFacts) {s₀ s₀' : State} {Ctx W SP Np A D Tp
         (BitVec.ofNat 64 t) u ∧ bytesAt u.mem A al = bytesAt s₀.mem A al ∧ bytesAt u.mem D n = bytesAt s₀.mem D n)
       (F₂ := fun u => SM s₀' Ctx W SP A D R al n (Spec.Gcm.j0 (ctxH s₀'.mem Ctx) (bytesAt s₀'.mem Np 12))
         (BitVec.ofNat 64 t) u ∧ bytesAt u.mem A al = bytesAt s₀'.mem A al ∧ bytesAt u.mem D n = bytesAt s₀'.mem D n)
-    ((RelCT.seq (powers_rel C C' hF h32) (RelCT.seq (zeroG_rel C C') (RelCT.seq
+    ((RelCT.seq (pw_rel C C' hpc hpw hpw' h32) (RelCT.seq (zeroG_rel C C') (RelCT.seq
       (copyA_rel C C' hal5 h32) (RelCT.seq (keystream_rel C C' hRr h32) (RelCT.seq (copyC_rel C C' hn5 h32)
       (RelCT.seq (lens_rel C C' hal5 hn5 h32) (RelCT.seq (ghash_rel C C' h32)
       (chkTail_rel C C' hT hT' hTar hTar' oA)))))))).mono (fun _ _ h => ⟨h.1.1, h.2.1⟩) fun _ _ h => h)
-    (fun _ ⟨S, a, d⟩ => front_ok hF C hR.symm hal5 hn5 h32 S a d fun _ F =>
+    (fun _ ⟨S, a, d⟩ => front_ok C hpw hR.symm hal5 hn5 h32 S a d fun _ F =>
       openChk_ok hF C hal5 hn5 h32 F hb.1 hb.2 hT hTar hTr oT oA)
-    (fun _ ⟨S, a, d⟩ => front_ok hF C' hR'.symm hal5 hn5 h32 S a d fun _ F =>
+    (fun _ ⟨S, a, d⟩ => front_ok C' hpw' hR'.symm hal5 hn5 h32 S a d fun _ F =>
       openChk_ok hF C' hal5 hn5 h32 F hb.1 hb.2 hT' hTar' hTr' oT oA)
   have hk : openK s₀ Ctx A D R al n (Spec.Gcm.j0 (ctxH s₀.mem Ctx) (bytesAt s₀.mem Np 12)) t Tp =
       openK s₀' Ctx A D R al n (Spec.Gcm.j0 (ctxH s₀'.mem Ctx) (bytesAt s₀'.mem Np 12)) t Tp := by
@@ -597,12 +613,13 @@ theorem openShort_rel (hF : ShortFacts) {s₀ s₀' : State} {Ctx W SP Np A D Tp
 /-! ## The functions -/
 
 /-- `vg_aes_gcm_seal` with the short path, in two runs. -/
-theorem sealM_rel (hF : ShortFacts) (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M) {s₀ s₀' : State}
+theorem sealMW_rel (hF : ShortFacts) (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M)
+    {pw : Prog isa} (hpw : PowOk M pw) (hpc : PowCT pw) {s₀ s₀' : State}
     (hp : (Proof.AesGcm.sealX86_64M M).pre s₀) (hp' : (Proof.AesGcm.sealX86_64M M).pre s₀')
     (hq : Proof.AesGcm.sealX86_64.pub s₀ s₀') :
-    RelCT isa (fun s₁ s₂ => s₁ = s₀ ∧ s₂ = s₀') (Impl.AesGcm.X86_64.Short.«seal» (v.withBlk B))
+    RelCT isa (fun s₁ s₂ => s₁ = s₀ ∧ s₂ = s₀') (Impl.AesGcm.X86_64.Short.«seal» (v.withBlk B) pw)
       fun _ _ => True :=
-  sealM_relOf hp hp' hq (sealMid_ok hF v B) fun {Ctx W SP _ A D nl al n _} C C' X X' hNp hnl hal hR hNp' hnl' hal' hR' => by
+  sealM_relOf hp hp' hq (sealMid_ok hF v B hpw) fun {Ctx W SP _ A D nl al n _} C C' X X' hNp hnl hal hR hNp' hnl' hal' hR' => by
     have hlt := C.data.ok.lt
     have hw : ∀ {s₀ : State} {Np : Addr} (C : OneCtx s₀ 4 Ctx W SP Np A D nl al n), (s₀.gpr .rcx).toNat = nl →
         (s₀.gpr .r9).toNat = al → ∀ s, OneEntry s₀ Ctx W SP A D n s →
@@ -616,20 +633,34 @@ theorem sealM_rel (hF : ShortFacts) (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMode
       ((sealRunF_rel hF finKs_ksOk finKs_rel v B C C' X X' hNp hnl hal hR hNp' hnl' hal' hR').mono
         (fun _ _ h => ⟨trivial, h.1.1.2, h.1.2.2⟩) fun _ _ h => h) ?_)
     by_cases hs : IsShort nl al n
-    · exact (sealShort_rel hF C C' hNp hnl hal hR hNp' hnl' hal' hR' hs).mono
+    · exact (sealShort_rel hpc C C' (hpw X) (hpw X') hNp hnl hal hR hNp' hnl' hal' hR' hs).mono
         (fun _ _ h => ⟨h.1.1.2, h.1.2.2⟩) fun _ _ h => h
     · exact RelCT.of_false fun _ _ h => by have := h.1.1.1.symm.trans h.2; simp [hs] at this
+
+theorem sealM_rel (hF : ShortFacts) (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M) {s₀ s₀' : State}
+    (hp : (Proof.AesGcm.sealX86_64M M).pre s₀) (hp' : (Proof.AesGcm.sealX86_64M M).pre s₀')
+    (hq : Proof.AesGcm.sealX86_64.pub s₀ s₀') :
+    RelCT isa (fun s₁ s₂ => s₁ = s₀ ∧ s₂ = s₀') (Impl.AesGcm.X86_64.Short.«seal» (v.withBlk B))
+      fun _ _ => True :=
+  sealMW_rel hF v B (powOk_powers hF) (powers_ct hF) hp hp' hq
+
+theorem sealMW_ct (hF : ShortFacts) (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M)
+    {pw : Prog isa} (hpw : PowOk M pw) (hpc : PowCT pw) :
+    ConstantTime isa (Proof.AesGcm.sealX86_64M M).pre Proof.AesGcm.sealX86_64.pub
+      (Impl.AesGcm.X86_64.Short.«seal» (v.withBlk B) pw) :=
+  ct_of_rel fun _ _ hp hp' hq => sealMW_rel hF v B hpw hpc hp hp' hq
 
 theorem sealM_ct (hF : ShortFacts) (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M) :
     ConstantTime isa (Proof.AesGcm.sealX86_64M M).pre Proof.AesGcm.sealX86_64.pub
       (Impl.AesGcm.X86_64.Short.«seal» (v.withBlk B)) :=
-  ct_of_rel fun _ _ hp hp' hq => sealM_rel hF v B hp hp' hq
+  sealMW_ct hF v B (powOk_powers hF) (powers_ct hF)
 
 /-- `vg_aes_gcm_open` with the short path, in two runs. -/
-theorem openM_rel (hF : ShortFacts) (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M) {s₀ s₀' : State}
+theorem openMW_rel (hF : ShortFacts) (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M)
+    {pw : Prog isa} (hpw : PowOk M pw) (hpc : PowCT pw) {s₀ s₀' : State}
     (hp : (Proof.AesGcm.openX86_64M M).pre s₀) (hp' : (Proof.AesGcm.openX86_64M M).pre s₀')
     (hq : Proof.AesGcm.openX86_64.pub s₀ s₀') :
-    RelCT isa (fun s₁ s₂ => s₁ = s₀ ∧ s₂ = s₀') (Impl.AesGcm.X86_64.Short.«open» (v.withBlk B))
+    RelCT isa (fun s₁ s₂ => s₁ = s₀ ∧ s₂ = s₀') (Impl.AesGcm.X86_64.Short.«open» (v.withBlk B) pw)
       fun _ _ => True :=
   openM_relOf hp hp' hq fun {Ctx W SP _ A D _ nl al n _ t} C C' X X' hNp hnl hal hR hNp' hnl' hal' hR' hT hT' hTr
       hTr' oT hres hok => by
@@ -647,13 +678,27 @@ theorem openM_rel (hF : ShortFacts) (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMode
       ((openOk_rel v B C C' X X' hNp hnl hal hR hNp' hnl' hal' hR' hT hT' hTr hTr' oT hres hok).mono
         (fun _ _ h => ⟨h.1.1.2, h.1.2.2⟩) fun _ _ h => h) ?_)
     by_cases hs : IsShort nl al n
-    · exact (openShort_rel hF C C' hNp hnl hal hR hNp' hnl' hal' hR' hs hT hT' hTr hTr' oT hres hok).mono
+    · exact (openShort_rel hF hpc C C' (hpw X) (hpw X') hNp hnl hal hR hNp' hnl' hal' hR' hs hT hT' hTr hTr' oT hres
+        hok).mono
         (fun _ _ h => ⟨h.1.1.2, h.1.2.2⟩) fun _ _ h => h
     · exact RelCT.of_false fun _ _ h => by have := h.1.1.1.symm.trans h.2; simp [hs] at this
+
+theorem openM_rel (hF : ShortFacts) (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M) {s₀ s₀' : State}
+    (hp : (Proof.AesGcm.openX86_64M M).pre s₀) (hp' : (Proof.AesGcm.openX86_64M M).pre s₀')
+    (hq : Proof.AesGcm.openX86_64.pub s₀ s₀') :
+    RelCT isa (fun s₁ s₂ => s₁ = s₀ ∧ s₂ = s₀') (Impl.AesGcm.X86_64.Short.«open» (v.withBlk B))
+      fun _ _ => True :=
+  openMW_rel hF v B (powOk_powers hF) (powers_ct hF) hp hp' hq
+
+theorem openMW_ct (hF : ShortFacts) (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M)
+    {pw : Prog isa} (hpw : PowOk M pw) (hpc : PowCT pw) :
+    ConstantTime isa (Proof.AesGcm.openX86_64M M).pre Proof.AesGcm.openX86_64.pub
+      (Impl.AesGcm.X86_64.Short.«open» (v.withBlk B) pw) :=
+  ct_of_rel fun _ _ hp hp' hq => openMW_rel hF v B hpw hpc hp hp' hq
 
 theorem openM_ct (hF : ShortFacts) (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M) :
     ConstantTime isa (Proof.AesGcm.openX86_64M M).pre Proof.AesGcm.openX86_64.pub
       (Impl.AesGcm.X86_64.Short.«open» (v.withBlk B)) :=
-  ct_of_rel fun _ _ hp hp' hq => openM_rel hF v B hp hp' hq
+  openMW_ct hF v B (powOk_powers hF) (powers_ct hF)
 
 end VG.Proof.AesGcm.X86_64.Short

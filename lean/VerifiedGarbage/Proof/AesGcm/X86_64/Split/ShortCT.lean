@@ -35,7 +35,7 @@ namespace VG.Proof.AesGcm.X86_64.Split
 open VG VG.X86_64 VG.X86_64.RegUpd VG.Impl.AesGcm.X86_64
 open VG.Proof.Gcm.X86_64.Stitch (CtxMode)
 open VG.Proof.AesGcm.X86_64.Short (ShortFacts IsShort condE_ok condS_of cond_rel rel_next rel_piece keepsEnv
-  sealShort_rel)
+  sealShort_rel powers_ct powFrom_powers)
 open VG.Proof.AesGcm.X86_64.StreamTo (BlkToFn)
 
 theorem copySrcArgs_check : ∃ hc, (taint.check (Taint.ofRegs [.r13, .r14, .r15, .rsp])
@@ -79,7 +79,7 @@ theorem runShort_rel (hF : ShortFacts) (v : GcmImpl) {M : CtxMode} (B : BlkFn M)
         · rw [h₁.2.1, h₂.2.1]
         · rw [h₁.2.2, h₂.2.2]) gatherCopy_check
     have cp' := rel_next cp (fun _ h => copySrc_ok C h hn5) (fun _ h => copySrc_ok C' h hn5)
-    exact (RelCT.seq cp' ((sealShort_rel hF C.oneCtx4 C'.oneCtx4 hNp hnl hal hR hNp' hnl' hal' hR' hs).mono
+    exact (RelCT.seq cp' ((sealShort_rel (powers_ct hF) C.oneCtx4 C'.oneCtx4 (powFrom_powers hF) (powFrom_powers hF) hNp hnl hal hR hNp' hnl' hal' hR' hs).mono
       (fun _ _ h => h) fun _ _ h => h)).mono (fun _ _ h => ⟨h.1.1.2, h.1.2.2⟩) fun _ _ h => h
   · exact RelCT.of_false fun _ _ h => by have := h.1.1.1.symm.trans h.2; simp [hs] at this
 

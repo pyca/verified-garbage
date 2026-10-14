@@ -213,6 +213,14 @@ def shortNote (v : GcmImpl) : List String :=
       subkey and the keystream they need, on 512-bit registers, without calls."]
   else []
 
+/-- How an instance of `seal_prepared` or `open_prepared` works, besides `note`. -/
+def shortNoteP (v : GcmImpl) : List String :=
+  if v.short then
+    ["For a 12-byte nonce and fewer than 32 blocks of additional data and text, with some text or \
+      more than 16 bytes of additional data, this implementation copies the powers of the hash subkey \
+      from the key context and computes just the keystream it needs, on 512-bit registers, without calls."]
+  else []
+
 /-- How an instance of `seal` ends, besides `note` and `shortNote`. -/
 def finNote (v : GcmImpl) : List String :=
   if v.fin then
@@ -610,6 +618,18 @@ theorem sealCode_mx (v : GcmImpl) {M : Proof.Gcm.X86_64.Stitch.CtxMode} (B : Blk
     · exact SealFin.sealFM_mx v B
     · exact sealM_mx v B
 
+theorem sealCodeP_xdepth (v : GcmImpl) {M : Proof.Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M) :
+    (v.sealCodeP (v.withBlk B)).x86_64Depth ≤ 24 := by
+  unfold GcmImpl.sealCodeP; split
+  · exact Short.sealMP_xdepth v B
+  · exact sealCode_xdepth v B
+
+theorem sealCodeP_mx (v : GcmImpl) {M : Proof.Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M) :
+    (v.sealCodeP (v.withBlk B)).allInstrs (fun i => !VG.X86_64.loadsMxcsr i) = true := by
+  unfold GcmImpl.sealCodeP; split
+  · exact Short.sealMP_mx v B
+  · exact sealCode_mx v B
+
 /-- The instance of `vg_aes_gcm_seal` calling the implementations `v`. -/
 def sealFn (v : GcmImpl) : Gather.SealFn Proof.Gcm.X86_64.Stitch.CtxMode.base :=
   .ofBase ⟨Spec.Gcm.sealApi.name ++ v.suffix,
@@ -774,22 +794,22 @@ def artifactsR (v : GcmVariant) : List Artifact := [
   { Spec.Gcm.sealPreparedApi with
     name := Spec.Gcm.sealPreparedApi.name ++ v.impl.suffix
     target := X86_64.target
-    doc := Spec.Gcm.sealPreparedApi.doc (notes := note v.impl :: shortNote v.impl ++ finNote v.impl)
-    code := Impl.StackScratch.X86_64.withStackArgScratch 2600 3 (v.impl.sealCode (v.impl.withBlk (blkR v)))
+    doc := Spec.Gcm.sealPreparedApi.doc (notes := note v.impl :: shortNoteP v.impl ++ finNote v.impl)
+    code := Impl.StackScratch.X86_64.withStackArgScratch 2600 3 (v.impl.sealCodeP (v.impl.withBlk (blkR v)))
     contract := Spec.Gcm.sealPreparedContract X86_64.abi 2624
     stack := 2624
     verified := sealSelPrepared_framed v.impl (blkR v) Short.shortFacts
-    spSafe := X86_64.withStackArgScratch_spSafe (sealCode_spSafe v.impl (blkR v))
+    spSafe := X86_64.withStackArgScratch_spSafe (sealCodeP_spSafe v.impl (blkR v))
     features := v.impl.features },
   { Spec.Gcm.openPreparedApi with
     name := Spec.Gcm.openPreparedApi.name ++ v.impl.suffix
     target := X86_64.target
-    doc := Spec.Gcm.openPreparedApi.doc (notes := note v.impl :: shortNote v.impl)
-    code := Impl.StackScratch.X86_64.withStackArgScratch 2608 4 (v.impl.openCode (v.impl.withBlk (blkR v)))
+    doc := Spec.Gcm.openPreparedApi.doc (notes := note v.impl :: shortNoteP v.impl)
+    code := Impl.StackScratch.X86_64.withStackArgScratch 2608 4 (v.impl.openCodeP (v.impl.withBlk (blkR v)))
     contract := Spec.Gcm.openPreparedContract X86_64.abi 2632
     stack := 2632
     verified := openSelPrepared_framed v.impl (blkR v) Short.shortFacts
-    spSafe := X86_64.withStackArgScratch_spSafe (openCode_spSafe v.impl (blkR v))
+    spSafe := X86_64.withStackArgScratch_spSafe (openCodeP_spSafe v.impl (blkR v))
     features := v.impl.features },
   { Spec.Gcm.streamEncryptPreparedApi with
     name := Spec.Gcm.streamEncryptPreparedApi.name ++ v.impl.suffix
@@ -865,10 +885,10 @@ def artifactsToR (v : GcmVariant) : List Artifact :=
 /-- The instance of `vg_aes_gcm_seal_prepared` of a variant. -/
 def sealFnR (v : GcmVariant) : Gather.SealFn Proof.Gcm.X86_64.Stitch.CtxMode.prepared :=
   .ofPrepared ⟨Spec.Gcm.sealPreparedApi.name ++ v.impl.suffix,
-      Impl.StackScratch.X86_64.withStackArgScratch 2600 3 (v.impl.sealCode (v.impl.withBlk (blkR v)))⟩
+      Impl.StackScratch.X86_64.withStackArgScratch 2600 3 (v.impl.sealCodeP (v.impl.withBlk (blkR v)))⟩
     (sealSelPrepared_framed v.impl (blkR v) Short.shortFacts)
-    (X86_64.withStackArgScratch_spSafe (sealCode_spSafe v.impl (blkR v)))
-    (StreamTo.framed_xdepth (sealCode_xdepth v.impl (blkR v))) (StreamTo.framed_mx (sealCode_mx v.impl (blkR v)))
+    (X86_64.withStackArgScratch_spSafe (sealCodeP_spSafe v.impl (blkR v)))
+    (StreamTo.framed_xdepth (sealCodeP_xdepth v.impl (blkR v))) (StreamTo.framed_mx (sealCodeP_mx v.impl (blkR v)))
 
 /-- The instance of `vg_aes_gcm_seal_split_prepared` of a variant. -/
 def splitFnR (v : GcmVariant) : Gather.SplitFn Proof.Gcm.X86_64.Stitch.CtxMode.prepared :=
