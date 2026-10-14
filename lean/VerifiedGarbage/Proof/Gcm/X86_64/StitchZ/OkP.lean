@@ -411,7 +411,7 @@ theorem encR_ok {s₀ : State} (hp : SPrePrepared s₀) :
 theorem decR_ok {s₀ : State} (hp : SPrePrepared s₀) :
     WP isa Impl.Gcm.X86_64.StitchZH.decR s₀ (DPost s₀) :=
   WP.seq (WP.mono (setup_ok hp) fun _ ⟨_, hR, hpw, hK⟩ =>
-    decTailRG_ok hp.base (finZ (finP hpw)) (remZ (finP hpw))
+    decTailRG_ok hp.base (finZ (finP hpw)) (remZG (finP hpw))
       (fun _ h256 hI hC => bigDP_ok hp hpw (fin48P (hk s₀)) h256 hI hC) hR hK)
 
 /-- Encryption and decryption of any number of blocks from 16 on. -/

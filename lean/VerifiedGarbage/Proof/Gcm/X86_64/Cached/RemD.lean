@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Rem
+public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemGD
 public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemLoopD
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx.Loop
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx.Reduction
@@ -31,22 +32,11 @@ open VG.Proof.Gcm.X86_64.Stitch (SPre DPost nb nr kp pp cp yp cb dp dR pR cR yR 
 open VG.Proof.Gcm.X86_64.Pclmul (Prod prod reduceB toNat_ofNat_lt)
 open VG.Impl.Gcm.X86_64.Pclmul (poly at_)
 open VG.Impl.Gcm.X86_64.Stitch (aregs storeCtr storeY)
-open VG.Impl.Gcm.X86_64.StitchZH (ksSelWith remD remSetup remLoopsD dbody)
+open VG.Impl.Gcm.X86_64.StitchZH (ksSelWith remD remGD remSetup remLoopsD dbody)
 open VG.Proof.Gcm.X86_64.StitchZ (DInv AInv FinOk Ready cmp_ok dfinal_ok)
 open VG.Proof.Aes.X86_64.AesNi (blockAt_frame Keys)
 open VG.Proof.Gcm.X86_64 (revMask)
 open VG.Spec.Gcm (Block blockAt blocksAt ghashFrom inc32)
-
-/-- `add r9, 16`. -/
-theorem add9_ok (s : State) :
-    WP isa (.block [.alu .add .r9 (.imm 16)]) s fun s' =>
-      s'.gpr .r9 = s.gpr .r9 + 16 ∧ (∀ q, q ≠ .r9 → s'.gpr q = s.gpr q) ∧ (∀ x l, s'.zlane x l = s.zlane x l) ∧
-        s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
-  have e16 : BitVec.signExtend 64 (16 : BitVec 32) = 16 := by decide
-  apply WP.of_runBlock
-  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc, arithFlags, State.setFlags, isa,
-    State.setReg, e16, ↓reduceIte, Option.bind_some, Option.some.injEq, exists_eq_left']
-  exact ⟨trivial, fun q h => by simp only [h, ↓reduceIte], fun _ _ => rfl, trivial, trivial, trivial⟩
 
 /-- `test r9, r9`. -/
 theorem test99_ok (s : State) :
@@ -398,7 +388,7 @@ theorem loopDR_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} (h
 
 /-- `decR` after the setup, for any number of blocks from 16 on. -/
 theorem decTailRG_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} (hf : FinOk (hk s₀) P)
-    (hr : RemOk (hk s₀) P)
+    (hr : RemOkG (hk s₀) P)
     {bigC : Prog isa} (hbig : ∀ s, 256 ≤ nb s₀ → DInv s₀ P 0 s → VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s →
       WP isa bigC s fun s' => ∃ e, DInv s₀ P e s' ∧ VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s')
     {s : State} (hR : Ready s₀ P s)
@@ -407,7 +397,7 @@ theorem decTailRG_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block}
       (.seq (.block [.alu .cmp .r9 (.imm 16)])
         (.seq (.ite .b (.block []) (.loop dbody .ae))
           (.seq (.block [.alu .test .r9 (.reg .r9)])
-            (.ite .e (.block (storeCtr ++ storeY)) (.seq (.block [.alu .add .r9 (.imm 16)]) remD))))))) s
+            (.ite .e (.block (storeCtr ++ storeY)) (.seq (.block [.alu .add .r9 (.imm 16)]) remGD))))))) s
       (DPost s₀) := by
   have hn : nb s₀ < 2 ^ 64 := (s₀.gpr .r9).isLt
   have hI₁ : DInv s₀ P 0 s :=
@@ -443,6 +433,6 @@ theorem decTailRG_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block}
       rw [beq_false_of_ne this, decide_eq_false h]
   refine WP.ite (decide (nb s₀ = 16 * e)) (by simp only [eval, z₆, hz]) (fun h => ?_) (fun h => ?_)
   · exact dfinal_ok hp (by simpa using h) hI₆
-  · exact remD_ok hp hr hI₆ hlt (by simpa using h) (hC₅.keep hh₆ (hI₆.a.keys hp))
+  · exact remGD_ok hp hr hI₆ hlt (by simpa using h) (hC₅.keep hh₆ (hI₆.a.keys hp))
 
 end VG.Proof.Gcm.X86_64.StitchZH
