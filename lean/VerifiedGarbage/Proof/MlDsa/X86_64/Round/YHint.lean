@@ -1,10 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
+import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
 meta import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Round.YNorm
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.Round.YNorm
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Round.MakeHint
+import VerifiedGarbage.Proof.MlDsa.X86_64.Round.MakeHint
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.Round.MakeHint
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

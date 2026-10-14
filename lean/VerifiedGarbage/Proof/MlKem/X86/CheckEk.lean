@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.X86.CheckEkBody
-public import VerifiedGarbage.Spec.MlKem.Contract
-public import VerifiedGarbage.TCB.X86.Target
+import VerifiedGarbage.Spec.MlKem.Contract
+import VerifiedGarbage.TCB.X86.Target
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

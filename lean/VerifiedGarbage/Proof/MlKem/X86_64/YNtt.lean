@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.X86_64.VLay42
+import VerifiedGarbage.Proof.MlKem.X86_64.VLay42
 public import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
 public import VerifiedGarbage.Impl.MlKem.X86_64.NttAvx2

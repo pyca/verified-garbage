@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Modes.AArch64.Setup
-public import VerifiedGarbage.Proof.Modes.AArch64.Xor
+import VerifiedGarbage.Proof.Modes.AArch64.Xor
 public import VerifiedGarbage.Proof.Modes.Ctr
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

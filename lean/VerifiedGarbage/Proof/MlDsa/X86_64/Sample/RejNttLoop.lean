@@ -1,10 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
+import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Pro
 public import VerifiedGarbage.Impl.MlDsa.X86_64.Sample.RejNtt
 public import VerifiedGarbage.Proof.MlDsa.Sample.RejNtt
-public import VerifiedGarbage.Proof.MlKem.X86_64.Bytes
+import VerifiedGarbage.Proof.MlKem.X86_64.Bytes
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

@@ -1,9 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Rc2.AArch64.CopyKey
-public import VerifiedGarbage.Proof.Rc2.AArch64.FillKey
-public import VerifiedGarbage.Proof.Rc2.AArch64.DescendKey
-public import VerifiedGarbage.Proof.Rc2.AArch64.Mask
+import VerifiedGarbage.Proof.Rc2.AArch64.FillKey
+import VerifiedGarbage.Proof.Rc2.AArch64.DescendKey
+import VerifiedGarbage.Proof.Rc2.AArch64.Mask
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.P256.VerifySparse.Arithmetic
+import VerifiedGarbage.Proof.P256.VerifySparse.Arithmetic
 public import VerifiedGarbage.Spec.P256
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

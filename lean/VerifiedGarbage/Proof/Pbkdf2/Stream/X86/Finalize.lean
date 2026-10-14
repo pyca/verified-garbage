@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Stream.X86.Common
-public import VerifiedGarbage.Proof.Hmac.Generic.Common
+import VerifiedGarbage.Proof.Hmac.Generic.Common
 public import VerifiedGarbage.Proof.Framework.OmegaLit
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Impl.Mont.X86_64.Cms
-public import VerifiedGarbage.Proof.Mont.X86_64.MulS
-public import VerifiedGarbage.Proof.Mont.X86_64.Friendly
+import VerifiedGarbage.Proof.Mont.X86_64.MulS
+import VerifiedGarbage.Proof.Mont.X86_64.Friendly
 public import VerifiedGarbage.Proof.Mont.X86_64.OpsReg
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.P256.EcdhTable.RawField
+import VerifiedGarbage.Proof.P256.EcdhTable.RawField
 public import VerifiedGarbage.Proof.P256.EcdhJac.Dblu
-public import VerifiedGarbage.Proof.P256.EcdhJac.BuildState
+import VerifiedGarbage.Proof.P256.EcdhJac.BuildState
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

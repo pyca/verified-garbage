@@ -1,9 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.X86_64.AddSub
+import VerifiedGarbage.Proof.MlKem.X86_64.AddSub
 public import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.MlKem.X86_64.SampleLoop
-public import VerifiedGarbage.Proof.MlKem.KPke
+import VerifiedGarbage.Proof.MlKem.KPke
 public import VerifiedGarbage.Proof.Sha3.X86_64.X4.Wp
 public import VerifiedGarbage.Impl.MlKem.X86_64.Sample4
 import all Init.Data.Array.Basic

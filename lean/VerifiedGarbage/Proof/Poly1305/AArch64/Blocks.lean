@@ -1,20 +1,20 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 meta import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-public import VerifiedGarbage.Spec.Poly1305
+import VerifiedGarbage.Spec.Poly1305
 meta import VerifiedGarbage.Spec.Poly1305
 public import VerifiedGarbage.Proof.Framework.PowLit
 meta import VerifiedGarbage.Proof.Framework.PowLit
 public import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Framework.Omega
-public import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
 public import VerifiedGarbage.Impl.Poly1305.AArch64
 meta import VerifiedGarbage.Impl.Poly1305.AArch64
-public import VerifiedGarbage.Proof.Poly1305.AArch64.Lit
+import VerifiedGarbage.Proof.Poly1305.AArch64.Lit
 meta import VerifiedGarbage.Proof.Poly1305.AArch64.Lit
 public import VerifiedGarbage.Proof.Poly1305.Spec
 meta import VerifiedGarbage.Proof.Poly1305.Spec
@@ -22,7 +22,7 @@ public import VerifiedGarbage.Proof.Framework.Mem
 meta import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.TCB.AArch64.Target
+import VerifiedGarbage.TCB.AArch64.Target
 meta import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Framework.AArch64.Taint
 meta import VerifiedGarbage.Proof.Framework.AArch64.Taint

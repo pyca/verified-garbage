@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.X86.NttLoop
 meta import VerifiedGarbage.Proof.MlKem.X86.NttLoop
-public import VerifiedGarbage.TCB.X86.Target
+import VerifiedGarbage.TCB.X86.Target
 meta import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Framework.Sig
 meta import VerifiedGarbage.Proof.Framework.Sig

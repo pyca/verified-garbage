@@ -7,10 +7,10 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.Decode12
 public import VerifiedGarbage.Proof.MlKem.AArch64.CompressEncode
 public import VerifiedGarbage.Proof.MlKem.AArch64.DecodeDecompress
 public import VerifiedGarbage.Proof.MlKem.AArch64.Mul
-public import VerifiedGarbage.Proof.MlKem.AArch64.NttInv
+import VerifiedGarbage.Proof.MlKem.AArch64.NttInv
 public import VerifiedGarbage.Proof.MlKem.AArch64.Sample
-public import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
-public import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+import VerifiedGarbage.Proof.Framework.AArch64.RelCT
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

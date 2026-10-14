@@ -6,9 +6,9 @@ public import VerifiedGarbage.Spec.Rc2.Contract
 meta import VerifiedGarbage.Spec.Rc2.Contract
 public import VerifiedGarbage.Proof.Rc2.Arm.Cbc.StepCT
 meta import VerifiedGarbage.Proof.Rc2.Arm.Cbc.StepCT
-public import VerifiedGarbage.Proof.Rc2.Arm.KeyIO
+import VerifiedGarbage.Proof.Rc2.Arm.KeyIO
 meta import VerifiedGarbage.Proof.Rc2.Arm.KeyIO
-public import VerifiedGarbage.Proof.Rc2.Arm.Cbc.Body
+import VerifiedGarbage.Proof.Rc2.Arm.Cbc.Body
 meta import VerifiedGarbage.Proof.Rc2.Arm.Cbc.Body
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

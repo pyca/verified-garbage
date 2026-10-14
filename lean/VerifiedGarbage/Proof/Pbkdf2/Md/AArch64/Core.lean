@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Pbkdf2CT
-public import VerifiedGarbage.Proof.Pbkdf2.AArch64.IterateCT
-public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.HmacFinInner
+import VerifiedGarbage.Proof.Pbkdf2.AArch64.IterateCT
+import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.HmacFinInner
 public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.HmacFin
 public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.HmacInit
 import all Init.Data.Array.Basic

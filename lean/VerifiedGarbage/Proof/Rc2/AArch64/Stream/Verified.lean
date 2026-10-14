@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Rc2.AArch64.Stream.Init
-public import VerifiedGarbage.Proof.Rc2.AArch64.Stream.Update
+import VerifiedGarbage.Proof.Rc2.AArch64.Stream.Update
 public import VerifiedGarbage.Proof.Rc2.AArch64.Stream.ConstantTime
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Rc2.Scratch

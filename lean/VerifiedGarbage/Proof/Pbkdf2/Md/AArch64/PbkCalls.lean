@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.PbkCommon
-public import VerifiedGarbage.Proof.Pbkdf2.AArch64.Iterate
+import VerifiedGarbage.Proof.Pbkdf2.AArch64.Iterate
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 meta import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-public import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Lit
+import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Lit
 meta import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Lit
 public import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Blocks
 meta import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Blocks
@@ -10,7 +10,7 @@ public import VerifiedGarbage.Proof.Poly1305.AArch64.Buffer
 meta import VerifiedGarbage.Proof.Poly1305.AArch64.Buffer
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Spec.Poly1305.Contract
+import VerifiedGarbage.Spec.Poly1305.Contract
 meta import VerifiedGarbage.Spec.Poly1305.Contract
 public import VerifiedGarbage.Proof.Framework.PowLit
 meta import VerifiedGarbage.Proof.Framework.PowLit

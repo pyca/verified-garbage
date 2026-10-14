@@ -1,9 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.P256.EcdhJac.Timing
-public import VerifiedGarbage.Proof.P256.EcdhJac.Adapter
+import VerifiedGarbage.Proof.P256.EcdhJac.Adapter
 public import VerifiedGarbage.Proof.P256.EcdhJac.Window
-public import VerifiedGarbage.Proof.P256.EcdhJac.Exchange
+import VerifiedGarbage.Proof.P256.EcdhJac.Exchange
 public import VerifiedGarbage.Proof.P256.EcdhInverse.Inverse
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

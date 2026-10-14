@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvStep
+import VerifiedGarbage.Proof.Weierstrass.AArch64.InvStep
 public import VerifiedGarbage.Proof.Divstep.BatchBasic
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

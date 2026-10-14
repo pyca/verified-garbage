@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.X86.Round.Arith
-public import VerifiedGarbage.Proof.MlKem.X86.Leaf
+import VerifiedGarbage.Proof.MlKem.X86.Leaf
 public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.Proof.Framework.Contract

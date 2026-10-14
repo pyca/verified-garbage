@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Key
-public import VerifiedGarbage.Proof.Pbkdf2.Whole.Common
+import VerifiedGarbage.Proof.Pbkdf2.Whole.Common
 public import VerifiedGarbage.Proof.Framework.Omega
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

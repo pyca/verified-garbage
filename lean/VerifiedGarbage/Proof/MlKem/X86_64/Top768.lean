@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.X86_64.KgTop
+import VerifiedGarbage.Proof.MlKem.X86_64.KgTop
 meta import VerifiedGarbage.Proof.MlKem.X86_64.KgTop
 public import VerifiedGarbage.Proof.MlKem.X86_64.EcTop
 meta import VerifiedGarbage.Proof.MlKem.X86_64.EcTop

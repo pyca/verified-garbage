@@ -2,15 +2,15 @@ module
 
 public import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
 meta import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
-public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
-public import VerifiedGarbage.Proof.Rc2.Arm.Stream.Common
+import VerifiedGarbage.Proof.Rc2.Arm.Stream.Common
 meta import VerifiedGarbage.Proof.Rc2.Arm.Stream.Common
-public import VerifiedGarbage.Proof.Rc2.PairMem
+import VerifiedGarbage.Proof.Rc2.PairMem
 meta import VerifiedGarbage.Proof.Rc2.PairMem
 public import VerifiedGarbage.Proof.Rc2.Arm.Stream.Long
 meta import VerifiedGarbage.Proof.Rc2.Arm.Stream.Long
-public import VerifiedGarbage.Proof.Rc2.Scratch
+import VerifiedGarbage.Proof.Rc2.Scratch
 meta import VerifiedGarbage.Proof.Rc2.Scratch
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

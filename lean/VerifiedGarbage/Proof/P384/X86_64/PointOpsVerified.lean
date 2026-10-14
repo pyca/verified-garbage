@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.P384.X86_64.PointOpsLay
 public import VerifiedGarbage.Proof.P384.X86_64.PointOpsLit
-public import VerifiedGarbage.Proof.P384.X86_64.JointTiming
+import VerifiedGarbage.Proof.P384.X86_64.JointTiming
 public import VerifiedGarbage.Proof.P384.X86_64.JacTiming
 public import VerifiedGarbage.Proof.Framework.X86_64.Taint
 public import VerifiedGarbage.Proof.Framework.Contract

@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Rc2.Memory
-public import VerifiedGarbage.Proof.Framework.WriteBytes
+import VerifiedGarbage.Proof.Framework.WriteBytes
 public import VerifiedGarbage.Proof.Framework.Offset
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

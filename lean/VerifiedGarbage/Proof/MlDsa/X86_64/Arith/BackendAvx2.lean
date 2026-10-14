@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YMontgomeryInv
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej5Verified
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Backend
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.LazyNtt
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YMul
+import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YMul
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YAddSub
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Round.YHint
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Round.YUse

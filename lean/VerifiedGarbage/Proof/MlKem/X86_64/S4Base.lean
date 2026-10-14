@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.SampleNtt
-public import VerifiedGarbage.Proof.Sha3.X86_64.X4.Bytes
+import VerifiedGarbage.Proof.Sha3.X86_64.X4.Bytes
 public import VerifiedGarbage.Impl.MlKem.X86_64.Sample4
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

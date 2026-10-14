@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.Compress
+import VerifiedGarbage.Proof.MlKem.Compress
 public import VerifiedGarbage.Spec.MlKem.Contract1024
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

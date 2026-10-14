@@ -1,12 +1,12 @@
 module
 
 public import VerifiedGarbage.Impl.Modes.X86_64.Ctr
-public import VerifiedGarbage.Proof.Modes.Addr
-public import VerifiedGarbage.Proof.Framework.Block
-public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-public import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Modes.Addr
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 public import VerifiedGarbage.Proof.Framework.X86_64.Straight
-public import VerifiedGarbage.Spec.Aes
+import VerifiedGarbage.Spec.Aes
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Rc2.AArch64.Vec.Load
-public import VerifiedGarbage.Proof.Rc2.CbcMemory
+import VerifiedGarbage.Proof.Rc2.CbcMemory
 public import VerifiedGarbage.Proof.Framework.Omega
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

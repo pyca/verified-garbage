@@ -1,10 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.P256.EcdhJac.Frame
+import VerifiedGarbage.Proof.P256.EcdhJac.Frame
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombJDigit
 public import VerifiedGarbage.Proof.P256.EcdhJac.BuildDblu
-public import VerifiedGarbage.Proof.P256.EcdhJac.Zaddu
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.CopyKeep
+import VerifiedGarbage.Proof.P256.EcdhJac.Zaddu
+import VerifiedGarbage.Proof.Weierstrass.AArch64.CopyKeep
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

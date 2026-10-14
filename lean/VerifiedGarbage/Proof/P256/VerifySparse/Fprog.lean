@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.P256.VerifySparse.Code
+import VerifiedGarbage.Proof.P256.VerifySparse.Code
 public import VerifiedGarbage.Proof.P256.VerifySparse.Sub
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Fprog
 import all Init.Data.Array.Basic

@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.P256.EcdhTable.RawField
+import VerifiedGarbage.Proof.P256.EcdhTable.RawField
 public import VerifiedGarbage.Proof.P256.EcdhJac.Zaddu
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

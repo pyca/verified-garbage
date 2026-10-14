@@ -1,9 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YBase
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.VLay21
-public import VerifiedGarbage.Proof.MlKem.X86_64.YNtt
-public import VerifiedGarbage.Proof.MlKem.X86_64.YNttLay
+import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.VLay21
+import VerifiedGarbage.Proof.MlKem.X86_64.YNtt
+import VerifiedGarbage.Proof.MlKem.X86_64.YNttLay
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

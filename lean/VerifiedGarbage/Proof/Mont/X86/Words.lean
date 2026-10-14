@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Mont.X86
 public import VerifiedGarbage.Proof.Mont.Words32
-public import VerifiedGarbage.Proof.Framework.X86.Wp
+import VerifiedGarbage.Proof.Framework.X86.Wp
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

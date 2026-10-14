@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
+import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.M4Absorb
-public import VerifiedGarbage.Proof.MlKem.X86_64.S4Squeeze
+import VerifiedGarbage.Proof.MlKem.X86_64.S4Squeeze
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

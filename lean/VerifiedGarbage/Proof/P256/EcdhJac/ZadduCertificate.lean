@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.P256.EcdhJac.FieldCase
 meta import VerifiedGarbage.Proof.P256.EcdhJac.FieldCase
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Kernel
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Kernel
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Kernel
 public import VerifiedGarbage.Proof.Framework.AArch64.Taint
 meta import VerifiedGarbage.Proof.Framework.AArch64.Taint

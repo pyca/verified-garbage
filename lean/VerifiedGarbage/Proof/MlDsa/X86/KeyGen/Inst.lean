@@ -2,15 +2,15 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Verified
 public import VerifiedGarbage.Impl.MlDsa.X86.KeyGen.Inst
-public import VerifiedGarbage.Proof.MlDsa.X86.Arith.AddSub
-public import VerifiedGarbage.Proof.MlDsa.X86.Arith.Mul
-public import VerifiedGarbage.Proof.MlDsa.X86.Arith.Ntt
-public import VerifiedGarbage.Proof.MlDsa.X86.Arith.NttInv
-public import VerifiedGarbage.Proof.MlDsa.X86.Sample.RejNtt
-public import VerifiedGarbage.Proof.MlDsa.X86.Sample.RejBounded
-public import VerifiedGarbage.Proof.MlDsa.X86.Round.Power2Round
-public import VerifiedGarbage.Proof.MlDsa.X86.Pack.SimpleBitPack
-public import VerifiedGarbage.Proof.MlDsa.X86.Pack.BitPack
+import VerifiedGarbage.Proof.MlDsa.X86.Arith.AddSub
+import VerifiedGarbage.Proof.MlDsa.X86.Arith.Mul
+import VerifiedGarbage.Proof.MlDsa.X86.Arith.Ntt
+import VerifiedGarbage.Proof.MlDsa.X86.Arith.NttInv
+import VerifiedGarbage.Proof.MlDsa.X86.Sample.RejNtt
+import VerifiedGarbage.Proof.MlDsa.X86.Sample.RejBounded
+import VerifiedGarbage.Proof.MlDsa.X86.Round.Power2Round
+import VerifiedGarbage.Proof.MlDsa.X86.Pack.SimpleBitPack
+import VerifiedGarbage.Proof.MlDsa.X86.Pack.BitPack
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

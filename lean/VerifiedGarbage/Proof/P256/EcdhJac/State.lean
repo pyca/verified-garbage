@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Impl.P256.EcdhJac
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.AllocatedState
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.SlotOps
-public import VerifiedGarbage.Proof.Weierstrass.WinJacPoint
+import VerifiedGarbage.Proof.Weierstrass.WinJacPoint
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

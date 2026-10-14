@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.VLanes
 public import VerifiedGarbage.Proof.Framework.Omega
-public import VerifiedGarbage.Proof.MlKem.Mem
+import VerifiedGarbage.Proof.MlKem.Mem
 public import VerifiedGarbage.Proof.MlKem.Ntt
 public import VerifiedGarbage.Proof.Framework.X86_64.Avx
 public import VerifiedGarbage.Impl.MlKem.X86_64.Ntt

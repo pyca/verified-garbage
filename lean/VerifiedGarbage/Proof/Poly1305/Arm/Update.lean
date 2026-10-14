@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.Framework.Arm.Taint
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
 meta import VerifiedGarbage.Proof.Framework.Arm.Contract
-public import VerifiedGarbage.Spec.Poly1305.Contract
+import VerifiedGarbage.Spec.Poly1305.Contract
 meta import VerifiedGarbage.Spec.Poly1305.Contract
 public import VerifiedGarbage.Proof.Framework.PowLit
 meta import VerifiedGarbage.Proof.Framework.PowLit

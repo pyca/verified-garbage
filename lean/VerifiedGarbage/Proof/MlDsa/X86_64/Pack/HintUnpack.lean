@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
+import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
 meta import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.HintPack
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.HintPack

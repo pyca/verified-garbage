@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Impl.MlKem.X86_64.Frag
 meta import VerifiedGarbage.Impl.MlKem.X86_64.Frag
-public import VerifiedGarbage.Proof.MlKem.X86_64.Lay
+import VerifiedGarbage.Proof.MlKem.X86_64.Lay
 meta import VerifiedGarbage.Proof.MlKem.X86_64.Lay
 public import VerifiedGarbage.Proof.Framework.KernelRfl
 meta import VerifiedGarbage.Proof.Framework.KernelRfl

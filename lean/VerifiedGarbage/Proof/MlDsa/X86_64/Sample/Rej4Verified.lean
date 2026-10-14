@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.Sample.Rej4
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej4Scalar
-public import VerifiedGarbage.Proof.MlKem.X86_64.S4Verified
+import VerifiedGarbage.Proof.MlKem.X86_64.S4Verified
 public import VerifiedGarbage.Proof.MlDsa.KeyGen.Mono
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

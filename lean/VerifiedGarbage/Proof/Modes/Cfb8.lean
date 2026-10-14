@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Spec.Cfb8
-public import VerifiedGarbage.Spec.Aes
+import VerifiedGarbage.Spec.Aes
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

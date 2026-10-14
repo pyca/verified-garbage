@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseOCT
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseOCT
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseACT
+import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseACT
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseACT
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

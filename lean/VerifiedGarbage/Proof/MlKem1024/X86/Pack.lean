@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.X86.Pack
-public import VerifiedGarbage.Proof.MlKem.X86.Unpack
+import VerifiedGarbage.Proof.MlKem.X86.Unpack
 public import VerifiedGarbage.Proof.MlKem.Compress1024
 public import VerifiedGarbage.Impl.MlKem1024.X86.Compress
 import all Init.Data.Array.Basic

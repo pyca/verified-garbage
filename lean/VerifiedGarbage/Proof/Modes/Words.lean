@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Modes.Addr
-public import VerifiedGarbage.Proof.Modes.Ctr
+import VerifiedGarbage.Proof.Modes.Ctr
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

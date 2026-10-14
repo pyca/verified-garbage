@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.P256.EcdhJac.State
-public import VerifiedGarbage.Proof.Ecdh.AArch64.Window
-public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.P256.EcdhJac.State
+import VerifiedGarbage.Proof.Ecdh.AArch64.Window
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
 public import VerifiedGarbage.Proof.P256.EcdhJac.Finish
 public import VerifiedGarbage.Proof.P256.EcdhJac.Multiply
 public import VerifiedGarbage.Proof.P256.EcdhJac.Lit

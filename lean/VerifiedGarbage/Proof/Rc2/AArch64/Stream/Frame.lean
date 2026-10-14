@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Rc2.AArch64.Stream.Verified
-public import VerifiedGarbage.Proof.Rc2.Scratch
+import VerifiedGarbage.Proof.Rc2.Scratch
 public import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

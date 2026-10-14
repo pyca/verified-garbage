@@ -6,9 +6,9 @@ public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Basic
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Basic
 public import VerifiedGarbage.Proof.MlKem.X86_64.VMxcsr
 meta import VerifiedGarbage.Proof.MlKem.X86_64.VMxcsr
-public import VerifiedGarbage.Proof.Framework.X86_64.Abi
+import VerifiedGarbage.Proof.Framework.X86_64.Abi
 meta import VerifiedGarbage.Proof.Framework.X86_64.Abi
-public import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.Range
 meta import VerifiedGarbage.Proof.Framework.Range
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

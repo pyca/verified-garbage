@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Modes.X86_64.FbLoop
-public import VerifiedGarbage.Proof.Modes.X86_64.Ctr
+import VerifiedGarbage.Proof.Modes.X86_64.Ctr
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

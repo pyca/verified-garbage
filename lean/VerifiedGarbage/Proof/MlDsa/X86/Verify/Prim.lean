@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Prim
-public import VerifiedGarbage.Proof.MlDsa.Verify.Mem
-public import VerifiedGarbage.Proof.MlDsa.Pack.Hint2
+import VerifiedGarbage.Proof.MlDsa.Verify.Mem
+import VerifiedGarbage.Proof.MlDsa.Pack.Hint2
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

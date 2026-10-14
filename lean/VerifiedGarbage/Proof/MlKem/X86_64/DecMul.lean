@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.KpkeBodiesY
-public import VerifiedGarbage.Proof.MlKem.X86_64.YAddSub
+import VerifiedGarbage.Proof.MlKem.X86_64.YAddSub
 public import VerifiedGarbage.Proof.Framework.X86_64.Spill
 public import VerifiedGarbage.Proof.Framework.X86_64.Inline
 public import VerifiedGarbage.Spec.MlKem.KpkeMul

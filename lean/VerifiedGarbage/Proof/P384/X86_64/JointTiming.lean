@@ -2,21 +2,21 @@ module
 
 public import VerifiedGarbage.Impl.Ecdsa.Verify.P384.X86_64
 meta import VerifiedGarbage.Impl.Ecdsa.Verify.P384.X86_64
-public import VerifiedGarbage.Proof.P384.X86_64.JacTiming
+import VerifiedGarbage.Proof.P384.X86_64.JacTiming
 meta import VerifiedGarbage.Proof.P384.X86_64.JacTiming
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointCachedDigitTiming
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.JointCachedDigitTiming
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointFixedDigitTiming
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.JointFixedDigitTiming
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointFixedTiming
+import VerifiedGarbage.Proof.Weierstrass.X86_64.JointFixedTiming
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.JointFixedTiming
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.FastNafTiming
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.FastNafTiming
 public import VerifiedGarbage.Proof.Framework.X86_64.TaintSym
 meta import VerifiedGarbage.Proof.Framework.X86_64.TaintSym
-public import VerifiedGarbage.Proof.P384.X86_64.JointPartsLit
+import VerifiedGarbage.Proof.P384.X86_64.JointPartsLit
 meta import VerifiedGarbage.Proof.P384.X86_64.JointPartsLit
-public import VerifiedGarbage.Proof.P384.X86_64.JointPartsLitAdx
+import VerifiedGarbage.Proof.P384.X86_64.JointPartsLitAdx
 meta import VerifiedGarbage.Proof.P384.X86_64.JointPartsLitAdx
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

@@ -1,11 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.Arm.Spill
-public import VerifiedGarbage.Proof.Framework.Arm.Exec
-public import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 public import VerifiedGarbage.Proof.Rc2.Memory32
-public import VerifiedGarbage.Proof.Rc2.Memory
-public import VerifiedGarbage.Proof.Framework.WriteBytes
+import VerifiedGarbage.Proof.Rc2.Memory
+import VerifiedGarbage.Proof.Framework.WriteBytes
 public import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Rc2.Arm.Rounds
 import all Init.Data.Array.Basic

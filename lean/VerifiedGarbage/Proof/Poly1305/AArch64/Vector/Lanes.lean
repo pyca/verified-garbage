@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Curve448.AArch64.Neon.Lanes
+import VerifiedGarbage.Proof.Curve448.AArch64.Neon.Lanes
 public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-public import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 public import VerifiedGarbage.Impl.Poly1305.AArch64.Vector
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

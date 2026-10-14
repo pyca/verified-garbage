@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.X86.Message.Args
-public import VerifiedGarbage.Proof.MlKem.X86.CallRet
+import VerifiedGarbage.Proof.MlKem.X86.CallRet
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

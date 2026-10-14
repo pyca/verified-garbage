@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.Arith
+import VerifiedGarbage.Proof.MlKem.Arith
 public import VerifiedGarbage.Spec.MlKem.Poly
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

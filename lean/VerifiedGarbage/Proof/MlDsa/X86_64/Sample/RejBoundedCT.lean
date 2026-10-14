@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejBounded
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejBounded
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejNttCT
+import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejNttCT
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejNttCT
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

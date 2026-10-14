@@ -1,16 +1,16 @@
 module
 
 public import VerifiedGarbage.Spec.Poly1305
-public import VerifiedGarbage.Proof.Poly1305.Limbs64
+import VerifiedGarbage.Proof.Poly1305.Limbs64
 public import VerifiedGarbage.Proof.Framework.PowLit
 public import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Framework.X86_64.Exec
-public import VerifiedGarbage.Proof.Framework.X86_64.Abi
+import VerifiedGarbage.Proof.Framework.X86_64.Abi
 public import VerifiedGarbage.Impl.Poly1305.X86_64
-public import VerifiedGarbage.Proof.Poly1305.Spec
+import VerifiedGarbage.Proof.Poly1305.Spec
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.TCB.X86_64.Target
-public import VerifiedGarbage.Proof.Poly1305.X86_64.Lit
+import VerifiedGarbage.Proof.Poly1305.X86_64.Lit
 public import VerifiedGarbage.Proof.Framework.Offset
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

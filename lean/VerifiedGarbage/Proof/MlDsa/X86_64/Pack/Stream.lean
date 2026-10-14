@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
+import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
 public import VerifiedGarbage.Impl.MlDsa.X86_64.Pack.Stream
 public import VerifiedGarbage.Proof.MlKem.X86_64.DecodeDecompress
 public import VerifiedGarbage.Proof.MlDsa.Pack.Stream

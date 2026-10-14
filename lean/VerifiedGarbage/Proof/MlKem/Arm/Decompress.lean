@@ -4,9 +4,9 @@ public import VerifiedGarbage.Proof.MlKem.Arm.Add
 meta import VerifiedGarbage.Proof.MlKem.Arm.Add
 public import VerifiedGarbage.Proof.MlKem.Encode
 meta import VerifiedGarbage.Proof.MlKem.Encode
-public import VerifiedGarbage.Proof.MlKem.Compress
+import VerifiedGarbage.Proof.MlKem.Compress
 meta import VerifiedGarbage.Proof.MlKem.Compress
-public import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.Range
 meta import VerifiedGarbage.Proof.Framework.Range
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

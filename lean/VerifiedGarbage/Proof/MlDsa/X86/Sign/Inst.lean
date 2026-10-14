@@ -1,16 +1,16 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.X86.Sign.Prims
-public import VerifiedGarbage.Proof.MlDsa.X86.Arith.AddSub
+import VerifiedGarbage.Proof.MlDsa.X86.Arith.AddSub
 public import VerifiedGarbage.Proof.MlDsa.X86.Arith.Mul
 public import VerifiedGarbage.Proof.MlDsa.X86.Arith.Ntt
 public import VerifiedGarbage.Proof.MlDsa.X86.Arith.NttInv
-public import VerifiedGarbage.Proof.MlDsa.X86.Round.Bits
+import VerifiedGarbage.Proof.MlDsa.X86.Round.Bits
 public import VerifiedGarbage.Proof.MlDsa.X86.Round.NormLt
 public import VerifiedGarbage.Proof.MlDsa.X86.Round.HintF
 public import VerifiedGarbage.Proof.MlDsa.X86.Pack.Unpack
 public import VerifiedGarbage.Proof.MlDsa.X86.Pack.HintPack
-public import VerifiedGarbage.Proof.MlDsa.X86.Sample.RejNtt
+import VerifiedGarbage.Proof.MlDsa.X86.Sample.RejNtt
 public import VerifiedGarbage.Proof.MlDsa.X86.Sample.ExpandMask
 public import VerifiedGarbage.Proof.MlDsa.X86.Sample.BallTop
 import all Init.Data.Array.Basic

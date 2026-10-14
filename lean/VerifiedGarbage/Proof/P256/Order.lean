@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.P256.Prime
-public import VerifiedGarbage.Proof.P256.Point
+import VerifiedGarbage.Proof.P256.Point
 public import VerifiedGarbage.Proof.Weierstrass.Order
 public import VerifiedGarbage.Proof.Weierstrass.Booth
 import all Init.Data.Array.Basic

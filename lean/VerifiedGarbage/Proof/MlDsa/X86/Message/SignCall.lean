@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.X86.Message.Shapes
 meta import VerifiedGarbage.Proof.MlDsa.X86.Message.Shapes
-public import VerifiedGarbage.Proof.MlKem.X86.TopCall
+import VerifiedGarbage.Proof.MlKem.X86.TopCall
 meta import VerifiedGarbage.Proof.MlKem.X86.TopCall
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

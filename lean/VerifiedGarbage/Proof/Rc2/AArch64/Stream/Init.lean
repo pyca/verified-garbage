@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Rc2.AArch64.Stream.Prep
 public import VerifiedGarbage.Proof.Rc2.AArch64.Stream.Contract
 public import VerifiedGarbage.Proof.Rc2.AArch64.Key
-public import VerifiedGarbage.Proof.Rc2.AArch64.Lit
+import VerifiedGarbage.Proof.Rc2.AArch64.Lit
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

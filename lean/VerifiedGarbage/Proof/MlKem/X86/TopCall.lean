@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.X86.Top
-public import VerifiedGarbage.Proof.MlKem.X86.CallRet
+import VerifiedGarbage.Proof.MlKem.X86.CallRet
 public import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.Proof.Framework.Contract
 import all Init.Data.Array.Basic

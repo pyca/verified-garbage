@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.P256.EcdhInverse.Shift
-public import VerifiedGarbage.Proof.Divstep.Packed20Extract
+import VerifiedGarbage.Proof.Divstep.Packed20Extract
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

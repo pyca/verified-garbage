@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Mont.X86_64.SqrS
+import VerifiedGarbage.Proof.Mont.X86_64.SqrS
 public import VerifiedGarbage.Proof.Mont.X86_64.Rounds
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Lit
+import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Lit
 meta import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Lit
 public import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Setup
 meta import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Setup

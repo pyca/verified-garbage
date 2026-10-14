@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MdStream.X86_64.Words
-public import VerifiedGarbage.Proof.Hmac.Common
+import VerifiedGarbage.Proof.Hmac.Common
 public import VerifiedGarbage.Impl.Pbkdf2.X86_64
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

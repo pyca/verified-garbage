@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Divstep.Packed
+import VerifiedGarbage.Proof.Divstep.Packed
 public import VerifiedGarbage.Proof.P256.EcdhInverse.Chunk
 public import VerifiedGarbage.Proof.P256.EcdhInverse.MachineExtract
 public import VerifiedGarbage.Proof.P256.EcdhInverse.LowUpdate

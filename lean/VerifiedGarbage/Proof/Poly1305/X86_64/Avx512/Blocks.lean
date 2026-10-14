@@ -1,14 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Final
+import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Final
 meta import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Final
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.StoreY
 meta import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.StoreY
-public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Lit
+import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Lit
 meta import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Lit
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Blocks
 meta import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Blocks
-public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Store
+import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Store
 meta import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Store
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Variant
 meta import VerifiedGarbage.Proof.Poly1305.X86_64.Variant

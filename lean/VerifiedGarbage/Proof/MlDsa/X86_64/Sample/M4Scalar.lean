@@ -1,9 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.M4CT
-public import VerifiedGarbage.Proof.MlDsa.Arith.Mem
-public import VerifiedGarbage.Proof.MlKem.X86_64.ArithOk
-public import VerifiedGarbage.Proof.MlKem.X86_64.FragCall
+import VerifiedGarbage.Proof.MlDsa.Arith.Mem
+import VerifiedGarbage.Proof.MlKem.X86_64.ArithOk
+import VerifiedGarbage.Proof.MlKem.X86_64.FragCall
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

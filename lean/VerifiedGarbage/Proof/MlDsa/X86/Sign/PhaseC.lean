@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.X86.Sign.PhaseD
-public import VerifiedGarbage.Proof.MlDsa.X86.Sign.PrimC
+import VerifiedGarbage.Proof.MlDsa.X86.Sign.PrimC
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

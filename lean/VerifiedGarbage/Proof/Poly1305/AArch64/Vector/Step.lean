@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Poly1305.AArch64.Vector.Group
-public import VerifiedGarbage.Proof.Poly1305.Spec
+import VerifiedGarbage.Proof.Poly1305.Spec
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

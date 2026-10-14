@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.P256.EcdhJac.StoreWords
+import VerifiedGarbage.Proof.P256.EcdhJac.StoreWords
 public import VerifiedGarbage.Proof.P256.EcdhJac.Frame
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
 import all Init.Data.Array.Basic

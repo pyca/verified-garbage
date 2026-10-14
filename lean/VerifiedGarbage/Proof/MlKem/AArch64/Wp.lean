@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 public import VerifiedGarbage.Proof.Framework.AArch64.Inline
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Impl.MlKem.AArch64.Compress

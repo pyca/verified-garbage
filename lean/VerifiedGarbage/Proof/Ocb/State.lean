@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ocb.Spec
-public import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.Cmac.Frame
 public import VerifiedGarbage.Spec.Aes.Contract
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

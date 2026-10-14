@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.MlKem.X86.Red
 public import VerifiedGarbage.Proof.Framework.X86.Wp
 public import VerifiedGarbage.Impl.MlDsa.X86.Round.Round
 public import VerifiedGarbage.Proof.MlDsa.Round.Decompose
-public import VerifiedGarbage.Proof.MlDsa.Round.Mem
+import VerifiedGarbage.Proof.MlDsa.Round.Mem
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.P256.X86_64.DoubleHalf
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafState
+import VerifiedGarbage.Proof.Weierstrass.X86_64.NafState
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

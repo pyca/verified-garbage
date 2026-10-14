@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.MlDsa.Sample.RejNtt
 meta import VerifiedGarbage.Proof.MlDsa.Sample.RejNtt
 public import VerifiedGarbage.Impl.MlDsa.X86.Sample.RejNtt
 meta import VerifiedGarbage.Impl.MlDsa.X86.Sample.RejNtt
-public import VerifiedGarbage.Proof.MlKem.X86.Sample
+import VerifiedGarbage.Proof.MlKem.X86.Sample
 meta import VerifiedGarbage.Proof.MlKem.X86.Sample
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 meta import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 public import VerifiedGarbage.Proof.Poly1305.AArch64.Blocks
 meta import VerifiedGarbage.Proof.Poly1305.AArch64.Blocks

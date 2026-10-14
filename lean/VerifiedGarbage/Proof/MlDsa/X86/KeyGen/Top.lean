@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.RestRow
 meta import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.RestRow
-public import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.NoSp
+import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.NoSp
 meta import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.NoSp
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

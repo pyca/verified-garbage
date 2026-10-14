@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.Encode
-public import VerifiedGarbage.Proof.MlKem.Arith
-public import VerifiedGarbage.Spec.MlKem.Contract
+import VerifiedGarbage.Proof.MlKem.Arith
+import VerifiedGarbage.Spec.MlKem.Contract
 public import VerifiedGarbage.Proof.Sha3.Stream
 public import VerifiedGarbage.Spec.Sha3.Contract
 public import VerifiedGarbage.Spec.MlKem

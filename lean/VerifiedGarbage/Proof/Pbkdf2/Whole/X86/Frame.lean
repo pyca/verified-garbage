@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Pbkdf2.Scratch
+import VerifiedGarbage.Proof.Pbkdf2.Scratch
 public import VerifiedGarbage.Proof.Framework.X86.StackScratch
 public import VerifiedGarbage.Proof.Sha256.X86.Variants.Interface
 import all Init.Data.Array.Basic

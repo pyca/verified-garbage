@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.Arm.Encaps
 meta import VerifiedGarbage.Proof.MlKem.Arm.Encaps
-public import VerifiedGarbage.Proof.MlKem.Arm.EncryptCT
+import VerifiedGarbage.Proof.MlKem.Arm.EncryptCT
 meta import VerifiedGarbage.Proof.MlKem.Arm.EncryptCT
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

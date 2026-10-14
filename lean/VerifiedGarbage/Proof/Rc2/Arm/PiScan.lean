@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Rc2.Arm.KeySteps
-public import VerifiedGarbage.Proof.Rc2.Table
+import VerifiedGarbage.Proof.Rc2.Table
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

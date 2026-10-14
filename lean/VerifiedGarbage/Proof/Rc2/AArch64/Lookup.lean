@@ -1,12 +1,12 @@
 module
 
 public import VerifiedGarbage.Impl.Rc2.AArch64.Lookup
-public import VerifiedGarbage.Proof.Rc2.Select
+import VerifiedGarbage.Proof.Rc2.Select
 public import VerifiedGarbage.Proof.Framework.AArch64.Tbl
-public import VerifiedGarbage.Proof.Framework.CallLay
-public import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
-public import VerifiedGarbage.Proof.Framework.AArch64.Exec
-public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.CallLay
+import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
