@@ -15,7 +15,7 @@ import Mathlib.Tactic.SplitIfs
 namespace VG.Proof.Gcm.X86_64.StitchZH
 open VG VG.X86_64
 open VG.Proof.Gcm.X86_64.Stitch (SPrePrepared kp pp hk nr sch nb)
-open VG.Proof.Gcm.X86_64.StitchZ (Ready EInv DInv FinOk FinOk48 AInv.pow)
+open VG.Proof.Gcm.X86_64.StitchZ (Ready EInv DInv FinOk FinOk48 AInv.pow AInv.powR)
 open VG.Proof.Gcm.X86_64.StitchZR (ctx_keep powP48_ok setupP_ok)
 open VG.Proof.Gcm.X86_64.StitchZP (hInvF)
 open VG.Impl.Gcm.X86_64.StitchZ (tab)
@@ -81,8 +81,9 @@ theorem bigDP_ok {s₀ : State} (hp : SPrePrepared s₀) {P : Nat → Nat → Bl
     (hFin : ∀ T : Nat → Nat → Nat → Block,
       (∀ g < 3, ∀ k < 4, ∀ l < 4, T g k l = hInvF (Spec.Gcm.hpow (hk s₀) (48 - 16 * g - 4 * k - l))) →
         FinOk48 (hk s₀) T) (h256 : 256 ≤ nb s₀) {s : State}
-    (hI : DInv s₀ P 0 s)
-    (hCache : VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s) : WP isa bigDP s fun s' => ∃ e, DInv s₀ P e s' ∧ VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s' := by
+    {be : Bool} (hI : DInv s₀ P 0 s be)
+    (hCache : VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s) :
+    WP isa (bigDP be) s fun s' => ∃ e, DInv s₀ P e s' be ∧ VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s' := by
   have hdi : s.gpr .rdi = kp s₀ := hI.gpr .rdi (by decide) (by decide) (by decide) (by decide)
   have hr11 : s.gpr .r11 = pp s₀ := hI.gpr .r11 (by decide) (by decide) (by decide) (by decide)
   obtain ⟨hpw, hH⟩ := ctx_keep hp hI.a.frame
@@ -103,7 +104,8 @@ theorem bigDP_ok {s₀ : State} (hp : SPrePrepared s₀) {P : Nat → Nat → Bl
     by_cases h2 : g = 2
     · subst h2; simp only [T, ↓reduceIte]; rw [hP k hk l hl]
     · simp only [T, h2, ↓reduceIte]; exact t g (by omega) k hk l hl
-  have hA₁ := (hI.a.pow hp.base fr g₁ rd₁ wr₁ fun r h7 h8 h9 h10 _ h12 l hl => z₁ r h7 h8 h9 h10 h12 l hl)
+  have hA₁ := (hI.a.powR hp.base fr g₁ rd₁ wr₁ (fun r h7 h8 h9 h10 _ h12 l hl => z₁ r h7 h8 h9 h10 h12 l hl)
+    (R10.pow hI.a.r10 g₁ fun o h1 h2 => keep o (Or.inr ⟨h1, h2⟩)))
   exact bigDRest_ok hp.base hT (fun k l => by simp only [T, ↓reduceIte]) h256 hI
     hA₁ hv pm g₁
     (fun l hl => z₁ _ (by decide) (by decide) (by decide) (by decide) (by decide) l hl)

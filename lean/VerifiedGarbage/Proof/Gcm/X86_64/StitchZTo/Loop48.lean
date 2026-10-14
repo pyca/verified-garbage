@@ -217,10 +217,11 @@ theorem loop48To_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) (hm : nb s
 /-! ## The tables of 48 blocks -/
 
 /-- The encryption state kept by writes to the working space alone. -/
-theorem AInvTo.pow {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {c : Nat} {s s' : State} (h : AInvTo s₀ c s)
+theorem AInvTo.powR {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {c : Nat} {be : Bool} {s s' : State}
+    (h : AInvTo s₀ c s be)
     (hf : Frame [pR s₀] s.mem s'.mem) (hg : s'.gpr = s.gpr) (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr)
     (hl : ∀ r, r ≠ .xmm7 → r ≠ .xmm8 → r ≠ .xmm9 → r ≠ .xmm10 → r ≠ .xmm11 → r ≠ .xmm12 → ∀ l < 4,
-      s'.zlane r l = s.zlane r l) : AInvTo s₀ c s' := by
+      s'.zlane r l = s.zlane r l) (hR : StitchZ.R10 be s₀ c s') : AInvTo s₀ c s' be := by
   have hw := hp.wrap_o
   have k : ∀ r ∈ ([.xmm14, .xmm0, .xmm15] : List XReg), ∀ l < 4, s'.zlane r l = s.zlane r l := by
     intro r hr l hl'
@@ -229,7 +230,7 @@ theorem AInvTo.pow {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {c : Nat} {
   refine ⟨h.le, fun l hl' => by rw [k _ (by decide) l hl']; exact h.ctr l hl',
     fun l hl' => by rw [k _ (by decide) l hl']; exact h.msk l hl',
     fun l hl' => by rw [k _ (by decide) l hl']; exact h.inc l hl',
-    by rw [hg]; exact h.rdi, by rw [hg]; exact h.rsi, by show _ = _; rw [hg]; exact h.r10, by rw [hg]; exact h.r8,
+    by rw [hg]; exact h.rdi, by rw [hg]; exact h.rsi, hR, by rw [hg]; exact h.r8,
     h.frame.trans (hf.sub fun r hr => ⟨pR s₀, by simp, fun a ha => by
       simp only [List.mem_singleton] at hr; subst hr; exact ha⟩),
     fun k hk => ?_, by rw [hrd]; exact h.rd, by rw [hwr]; exact h.wr⟩
@@ -237,6 +238,12 @@ theorem AInvTo.pow {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {c : Nat} {
     simp only [List.mem_singleton] at hr; subst hr
     exact hp.o_p.sub_left (Offset.sub_base _ (by have := h.le; omega))]
   exact h.blocks k hk
+
+theorem AInvTo.pow {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {c : Nat} {s s' : State} (h : AInvTo s₀ c s)
+    (hf : Frame [pR s₀] s.mem s'.mem) (hg : s'.gpr = s.gpr) (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr)
+    (hl : ∀ r, r ≠ .xmm7 → r ≠ .xmm8 → r ≠ .xmm9 → r ≠ .xmm10 → r ≠ .xmm11 → r ≠ .xmm12 → ∀ l < 4,
+      s'.zlane r l = s.zlane r l) : AInvTo s₀ c s' :=
+  h.powR hp hf hg hrd hwr hl (by show _ = _; rw [hg]; exact h.r10)
 
 /-- `pow48`, from the sixteen powers `P` in the working space. -/
 theorem powSetupTo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {P : Nat → Nat → Block} {c : Nat} {s : State}

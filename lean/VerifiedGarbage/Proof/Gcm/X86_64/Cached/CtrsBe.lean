@@ -309,4 +309,19 @@ theorem qgRegs_ok : ∀ r ∈ ([.xmm0, .xmm1, .xmm2, .xmm8, .xmm9, .xmm10] : Lis
 theorem qg48Regs_ok : ∀ r ∈ ([.xmm0, .xmm2, .xmm8, .xmm9, .xmm10] : List XReg),
     r ≠ .xmm13 ∧ r ≠ .xmm14 ∧ r ∉ aregs := by decide
 
+open VG.Proof.Gcm.X86_64.StitchZ (R10 BeConsts) in
+open VG.Proof.Gcm.X86_64.Stitch (pp) in
+/-- `R10` is kept by code that keeps the registers and the working space
+from `pp + 896` on (the powers' tables, `powP48`). -/
+theorem R10.pow {be : Bool} {s₀ : State} {c : Nat} {s s' : State} (h : R10 be s₀ c s)
+    (hg : s'.gpr = s.gpr)
+    (hk : ∀ o, 896 ≤ o → o + 16 ≤ 1024 →
+      s'.mem.readW (pp s₀ + BitVec.ofNat 64 o) 128 = s.mem.readW (pp s₀ + BitVec.ofNat 64 o) 128) :
+    R10 be s₀ c s' := by
+  cases be
+  · simp only [R10, Bool.false_eq_true, ↓reduceIte] at h ⊢; rw [hg]; exact h
+  · simp only [R10, ↓reduceIte, BeConsts] at h ⊢
+    exact ⟨by rw [hg]; exact h.1, by rw [hk 896 (by decide) (by decide)]; exact h.2.1,
+      by rw [hk 912 (by decide) (by decide)]; exact h.2.2⟩
+
 end VG.Proof.Gcm.X86_64.StitchZH
