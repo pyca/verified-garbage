@@ -1,0 +1,28 @@
+module
+
+public import VerifiedGarbage.Impl.Ecdh.AArch64
+public import VerifiedGarbage.Impl.Ecdsa.BrainpoolP512r1.AArch64
+
+@[expose] public section
+
+namespace VG.Impl.Ecdh.AArch64.BrainpoolP512r1
+
+open VG VG.AArch64 VG.Impl.Ecdsa.AArch64 VG.Impl.Weierstrass VG.Impl.Weierstrass.AArch64
+
+/-- `R = [k]P`, for the `k` in `K`'s slot and the point `P` at `PX` and `PY`, by
+a call of `vg_brainpoolp512r1_mul`, with `3 b R mod p` at `EXPP`'s slot for the complete
+addition that may follow. -/
+def qMul : Prog isa :=
+  .seq (.block (setConst 8 (brainpoolp512r1.sl EXPP) (brainpoolp512r1.mont (3 * brainpoolp512r1.C.b))))
+    (brainpoolp512r1.mulAt Spec.Weierstrass.Mul.brainpoolp512r1.mulApi.name PX PY)
+
+/-- ECDH with a validated peer and the general complete ladder. -/
+def exchange : Prog isa :=
+  .seq (.block Cfg.args) <|
+  .seq (Cfg.prefix' brainpoolp512r1) <|
+  .seq (.block (Cfg.peer brainpoolp512r1)) <|
+  .seq (Cfg.validate brainpoolp512r1) <|
+  .seq qMul <|
+  .seq brainpoolp512r1.pPow (Cfg.middle brainpoolp512r1)
+
+end VG.Impl.Ecdh.AArch64.BrainpoolP512r1

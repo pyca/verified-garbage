@@ -23,8 +23,8 @@ at infinity (copies of zero and one, `copy_ok`), then `R = [k]Q` by the
 ladder (`ladder_ok`, `step_rep`), which reads `p`, `a R` and `3 b R` (at
 `BM`'s slot, where the contract has it) and writes only its slots, `R`'s,
 `ACC`'s, `PT`'s and the table of bits (`mulBody_ok`). `Cfg.mulFn` runs it
-between keeping `x19` in the word past the table and restoring it
-(`mulFn_ok`). `mulAt_ok`: `R = [k]P` by a call of the function, with `P`
+between keeping `x19` and `invRegs` (`invKept`) in the words past the table
+and restoring them (`mulFn_ok`). `mulAt_ok`: `R = [k]P` by a call of the function, with `P`
 copied to `R`'s first two slots and `3 b R` to `BM`'s slot, then `b R` back,
 which keeps the signature's constants (`Fixed`).
 -/
@@ -40,8 +40,8 @@ open VG.Proof.Mont.AArch64 VG.Proof.Mont VG.Proof.Weierstrass.AArch64 VG.Proof.W
 variable {c : Cfg}
 
 /-- Where `vg_<curve>_mul`'s products keep their temporary area (`invTmp`,
-`Cfg.mulLadder`): `TMP`'s slot, or past the word where it keeps `x19`. -/
-def MulTmp (c : Cfg) : Prop := c.invTmp = c.sl TMP ∨ c.mulSave + 8 ≤ c.invTmp
+`Cfg.mulLadder`): `TMP`'s slot, or past the words where it keeps `invKept`. -/
+def MulTmp (c : Cfg) : Prop := c.invTmp = c.sl TMP ∨ c.mulSave + c.invSaveLen ≤ c.invTmp
 
 /-- What `vg_<curve>_mul`'s body writes: `R`'s slots, `ACC`'s and `PT`'s (its
 copy of `Q`), the ladder's, its products' temporary area and the table of
@@ -50,11 +50,11 @@ abbrev mulW (c : Cfg) : List (Nat × Nat) :=
   slW c [RX, RY, RZ, ACC, PT, TX, TY, TZ, T0, T1, T2, T3, T4, T5, DX, DY, DZ] ++
     [(c.invTmp, 8 * c.n), (bitsAt c.n 0, 64 * c.n)]
 
-/-- What the function writes: its body's, and the word past the table, where it
-keeps `x19`. -/
+/-- What the function writes: its body's, and the words past the table, where
+it keeps `invKept`. -/
 abbrev mulWF (c : Cfg) : List (Nat × Nat) :=
   slW c [RX, RY, RZ, ACC, PT, TX, TY, TZ, T0, T1, T2, T3, T4, T5, DX, DY, DZ] ++
-    [(c.invTmp, 8 * c.n), (bitsAt c.n 0, 64 * c.n + 8)]
+    [(c.invTmp, 8 * c.n), (bitsAt c.n 0, 64 * c.n + c.invSaveLen)]
 
 /-- The point `Q` in `R`'s first two slots, as the proofs decode it. -/
 abbrev ptQ (c : Cfg) (base : Addr) (s : State) : Point c.C :=
@@ -66,7 +66,7 @@ theorem ladWM_eq (c : Cfg) : ladW c.mulLadder = slW c [RX, RY, RZ, T0, T1, T2, T
 /-- `R = [k]Q` for the `k` in `K`'s slot and the point `Q` on the curve in
 `R`'s first two slots, with the table of `k`'s bits, from `p`, zero, one,
 `a R` and `3 b R` in their slots. -/
-theorem mulBody_ok (hc : BaseCfgOk c) (h4 : c.n = 4 ∨ c.n = 6) (hL : LadLay c.mulLadder size) (hA : LadA c.mulLadder)
+theorem mulBody_ok (hc : BaseCfgOk c) (h4 : c.n = 4 ∨ c.n = 6 ∨ c.n = 8) (hL : LadLay c.mulLadder size) (hA : LadA c.mulLadder)
     (hC : Law c.C) {base : Addr} {s : State} (hs : Scr s base size)
     (hmp : sv c base s MP = c.C.p) (hz : sv c base s ZERO = 0)
     (hone : sv c base s ONEP = 2 ^ (64 * c.n) % c.C.p)
@@ -93,7 +93,7 @@ theorem mulBody_ok (hc : BaseCfgOk c) (h4 : c.n = 4 ∨ c.n = 6) (hL : LadLay c.
   rw [Cfg.mulBody]
   -- The table of `k`'s bits.
   refine WP.seq (WP.mono (bits_ok hs h0 (by omega) (sz (i := K) (by decide)) hsz
-    (by rcases h4 with h4 | h4 <;> rw [sl_eq c K (by decide), h4] <;> decide) (by omega)
+    (by rcases h4 with h4 | h4 | h4 <;> rw [sl_eq c K (by decide), h4] <;> decide) (by omega)
     (Or.inl (by have := sl_below_bits c (i := K) (by decide) 0 0; omega)))
     fun s₁ ⟨b₁, k₁, O₁⟩ => ?_)
   have hs₁ := hs.of_keepRegs k₁ (by decide)
@@ -216,16 +216,16 @@ theorem mulBody_ok (hc : BaseCfgOk c) (h4 : c.n = 4 ∨ c.n = 6) (hL : LadLay c.
   · rw [Nat.shiftRight_zero] at R'
     exact R'
 
-/-- `vg_<curve>_mul`: what its body gives (`mulBody_ok`), with `x19` back from
-the word past the table of bits; it changes only `clob`'s registers. -/
-theorem mulFn_ok (hc : BaseCfgOk c) (h4 : c.n = 4 ∨ c.n = 6) (hT : MulTmp c) (hL : LadLay c.mulLadder size) (hA : LadA c.mulLadder)
+/-- `vg_<curve>_mul`: what its body gives (`mulBody_ok`), with `invKept` back
+from the words past the table of bits; it changes only `invClob`'s registers. -/
+theorem mulFn_ok (hc : BaseCfgOk c) (h4 : c.n = 4 ∨ c.n = 6 ∨ c.n = 8) (hT : MulTmp c) (hL : LadLay c.mulLadder size) (hA : LadA c.mulLadder)
     (hC : Law c.C) {base : Addr} {s : State} (hs : Scr s base size)
     (hmp : sv c base s MP = c.C.p) (hz : sv c base s ZERO = 0)
     (hone : sv c base s ONEP = 2 ^ (64 * c.n) % c.C.p)
     (hap : sv c base s AP = c.mont c.C.a) (hb3 : sv c base s BM = c.mont (3 * c.C.b))
     (hqx : sv c base s RX < c.C.p) (hqy : sv c base s RY < c.C.p)
     (hQ : onCurve c.C (ptQ c base s) = true) :
-    WP isa c.mulFn s fun s' => KeepRegs (clob c.n) s s' ∧ Unch base (mulWF c) s.mem s'.mem ∧
+    WP isa c.mulFn s fun s' => KeepRegs (invClob c) s s' ∧ Unch base (mulWF c) s.mem s'.mem ∧
       ModOkA c.MP' size c.C.p s'.mem base ∧
       (∀ x ∈ [c.sl RX, c.sl RY, c.sl RZ], wordsVal s'.mem base x c.n < c.C.p) ∧
       Rep c.C (tmv c.C c.n base s' (c.sl RX)) (tmv c.C c.n base s' (c.sl RY))
@@ -233,19 +233,23 @@ theorem mulFn_ok (hc : BaseCfgOk c) (h4 : c.n = 4 ∨ c.n = 6) (hT : MulTmp c) (
   have h7 := hc.n10
   have hn := hs.nowrap
   have hb4 := bitsAt0_le c h7
-  have hsz : c.mulSave + 8 ≤ size := by unfold Cfg.mulSave; have : size = 8192 := rfl; omega
+  have hl : c.invSaveLen = 8 * c.invKept.length := rfl
+  have hk : c.invSaveLen ≤ 48 := by unfold Cfg.invSaveLen Cfg.invKept Cfg.invRegs; split <;> simp
+  have hsz : c.mulSave + c.invSaveLen ≤ size := by unfold Cfg.mulSave; have : size = 8192 := rfl; omega
   have hsv8 : c.mulSave % 8 = 0 := by unfold Cfg.mulSave; have := bitsAt_mod8 c 0; omega
   rw [Cfg.mulFn]
-  refine WP.seq (WP.mono (st_out hs (o := c.mulSave) hsz hsv8 .x19) fun s₁ ⟨m₁, k₁, g₁⟩ => ?_)
-  have hs₁ := hs.of_keepRegs k₁ (by decide)
-  have O₁ : Outside base c.mulSave 8 s.mem s₁.mem := m₁ ▸ writeW_outside _ _ _ (by omega)
-  have U₁ : Unch base [(c.mulSave, 8)] s.mem s₁.mem := O₁.unch
-  have below : ∀ {i}, i < 45 → c.sl i + 8 * c.n ≤ c.mulSave ∨ c.mulSave + 8 ≤ c.sl i := fun {i} hi => by
+  refine WP.seq (WP.mono (stAll_ok hs c.invKept (d := c.mulSave) (by omega) hsv8)
+    fun s₁ ⟨k₁, g₁, O₁, S₁⟩ => ?_)
+  have hs₁ : Scr s₁ base size := hs.of_keepRegs k₁ (by decide)
+  have U₁ : Unch base [(c.mulSave, c.invSaveLen)] s.mem s₁.mem := by rw [hl]; exact O₁.unch
+  have below : ∀ {i}, i < 45 → c.sl i + 8 * c.n ≤ c.mulSave ∨ c.mulSave + c.invSaveLen ≤ c.sl i :=
+      fun {i} hi => by
     by_cases hT : i = TMP
     · subst hT
-      rcases h4 with h4 | h4
+      rcases h4 with h4 | h4 | h4
       · rw [sl_eq4 c (by omega), Cfg.mulSave, bitsAt_eq, h4]; left; simp only [TMP]; omega
       · rw [sl_tmp c (.inl h4), Cfg.mulSave, bitsAt_eq, h4]; right; simp only [Mont.moAt]; omega
+      · rw [sl_aff c (by omega), Cfg.mulSave, bitsAt_eq, h4]; left; simp only [TMP]; omega
     · left
       have := Nat.mul_le_mul_left (8 * c.n) (show i + 1 ≤ 45 from hi)
       rw [sl_eq c i hT, Cfg.mulSave, bitsAt_eq, Nat.mul_succ] at *; omega
@@ -255,35 +259,41 @@ theorem mulFn_ok (hc : BaseCfgOk c) (h4 : c.n = 4 ∨ c.n = 6) (hT : MulTmp c) (
   have q₁ : ptQ c base s₁ = ptQ c base s := by
     show Point.affine (toM _ _ (sv c base s₁ RX)) (toM _ _ (sv c base s₁ RY)) = _
     rw [e₁ (by decide), e₁ (by decide)]
-  have w₁ : word s₁.mem base c.mulSave = s.gpr .x19 := by rw [m₁, word_writeW_self]
   refine WP.seq (WP.mono (mulBody_ok hc h4 hL hA hC hs₁ ((e₁ (by decide)).trans hmp)
     ((e₁ (by decide)).trans hz) ((e₁ (by decide)).trans hone) ((e₁ (by decide)).trans hap)
     ((e₁ (by decide)).trans hb3) (by rw [e₁ (by decide)]; exact hqx) (by rw [e₁ (by decide)]; exact hqy)
     (by rw [q₁]; exact hQ)) fun s₂ ⟨K₂, U₂, M₂, L₂, R₂⟩ => ?_)
   rw [q₁, e₁ (by decide)] at R₂
   have hs₂ := hs₁.of_keepRegs K₂ (x0_not_powClob h7)
-  have w₂ : word s₂.mem base c.mulSave = s.gpr .x19 := by
-    rw [U₂.word (fun w hw => ?_) (by omega), w₁]
+  have S₂ : SavedAt s₂.mem base s.gpr c.mulSave c.invKept := SavedAt.congr S₁ fun e h₁ h₂ => by
+    refine U₂.word (fun w hw => ?_) (by omega)
     rcases List.mem_append.mp hw with hw | hw
     · obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hw
       have hi45 : ∀ i ∈ [RX, RY, RZ, ACC, PT, TX, TY, TZ, T0, T1, T2, T3, T4, T5, DX, DY, DZ], i < 45 := by
         decide
-      exact (below (hi45 i hi)).symm
+      rcases below (hi45 i hi) with h | h
+      · exact Or.inr (by dsimp only; omega)
+      · exact Or.inl (by dsimp only; omega)
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
       rcases hw with rfl | rfl
       · rcases hT with h | h
-        · rw [h]; exact (below (i := TMP) (by decide)).symm
-        · exact Or.inl h
-      · exact Or.inr (by unfold Cfg.mulSave; omega)
-  refine WP.mono (ld_ok hs₂ (d := c.mulSave) hsz hsv8 .x19) fun s₃ ⟨l₃, k₃, _⟩ => ?_
-  have m₃ : s₃.mem = s₂.mem := k₃.mem
-  refine ⟨⟨fun r hr => ?_, by rw [k₃.rd, K₂.rd, k₁.rd], by rw [k₃.wr, K₂.wr, k₁.wr],
-    by rw [k₃.sp, K₂.sp, k₁.sp]⟩, ?_, by rw [m₃]; exact M₂, by rw [m₃]; exact L₂, ?_⟩
-  · by_cases h19 : r = .x19
-    · subst h19; rw [l₃, w₂]
-    · rw [k₃.gpr r (by simpa using h19), K₂.gpr r (by simp [powClob, h19, hr]), k₁.gpr r (by simp)]
+        · rw [h]
+          rcases below (i := TMP) (by decide) with h | h
+          · exact Or.inr (by dsimp only; omega)
+          · exact Or.inl (by dsimp only; omega)
+        · exact Or.inl (by dsimp only; omega)
+      · exact Or.inr (by unfold Cfg.mulSave at *; dsimp only; omega)
+  refine WP.mono (ldAll_ok hs₂ c.invKept (d := c.mulSave) (by omega) hsv8 (invKept_ne_x0 c))
+    fun s₃ ⟨K₃, m₃, V₃⟩ => ?_
+  refine ⟨⟨fun r hr => ?_, by rw [K₃.rd, K₂.rd, k₁.rd], by rw [K₃.wr, K₂.wr, k₁.wr],
+    by rw [K₃.sp, K₂.sp, k₁.sp]⟩, ?_, by rw [m₃]; exact M₂, by rw [m₃]; exact L₂, ?_⟩
+  · by_cases hkp : r ∈ c.invKept
+    · exact V₃ s.gpr S₂ r hkp
+    · have h19 : r ≠ .x19 := fun e => hkp (e ▸ List.mem_cons_self)
+      have hcl : r ∉ clob c.n := fun h => hr (List.mem_filter.mpr ⟨h, by simpa using hkp⟩)
+      rw [K₃.gpr _ hkp, K₂.gpr _ (by simp [powClob, h19, hcl]), k₁.gpr _ (by simp)]
   · rw [m₃]
-    have hB : (bitsAt c.n 0, 64 * c.n + 8) ∈ mulWF c :=
+    have hB : (bitsAt c.n 0, 64 * c.n + c.invSaveLen) ∈ mulWF c :=
       List.mem_append_right _ (List.mem_cons_of_mem _ (List.mem_singleton_self _))
     have hI : (c.invTmp, 8 * c.n) ∈ mulWF c := List.mem_append_right _ (List.mem_cons_self ..)
     refine (U₁.trans U₂).cover fun w hw => ?_
@@ -297,21 +307,21 @@ theorem mulFn_ok (hc : BaseCfgOk c) (h4 : c.n = 4 ∨ c.n = 6) (hT : MulTmp c) (
       show toM _ _ _ = toM _ _ _; rw [m₃]
     rw [e, e, e]; exact R₂
 
-/-- What the call of a function that changes only `clob`'s registers and the
-ranges `W` needs and gives, from its caller's memory. -/
+/-- What the call of a function that changes only `invClob`'s registers and
+the ranges `W` needs and gives, from its caller's memory. -/
 def fnK (c : Cfg) (base : Addr) (mem : Mem) (W : List (Nat × Nat)) (R : Mem → Mem → Prop) : Contract isa where
   pre t := Scr t base size ∧ t.mem = mem
-  post t t' := KeepRegs (clob c.n) t t' ∧ Unch base W t.mem t'.mem ∧ t'.v = t.v ∧ R t.mem t'.mem
+  post t t' := KeepRegs (invClob c) t t' ∧ Unch base W t.mem t'.mem ∧ t'.v = t.v ∧ R t.mem t'.mem
   pub _ _ := True
 
-/-- A call of the function `name`, whose code `fn` changes only `clob`'s
+/-- A call of the function `name`, whose code `fn` changes only `invClob`'s
 registers (none of them callee-saved) and the ranges `W`, writes no vector
 register, and gives `R`: as `fn` inline, keeping `x30` (in `v29`). -/
 theorem fnCall_ok {name : String} {fn : Prog isa} {s : State} {base : Addr}
     (hs : Scr s base size) {W : List (Nat × Nat)} {R : Mem → Mem → Prop}
     (hfn : ∀ t, Scr t base size → t.mem = s.mem → WP isa fn t fun t' =>
-      KeepRegs (clob c.n) t t' ∧ Unch base W t.mem t'.mem ∧ R t.mem t'.mem)
-    (hpres : ∀ r ∈ preserved, r ∉ clob c.n)
+      KeepRegs (invClob c) t t' ∧ Unch base W t.mem t'.mem ∧ R t.mem t'.mem)
+    (hpres : ∀ r ∈ preserved, r ∉ clob c.n ∨ r ∈ c.invKept)
     (hv : fn.allInstrs (fun i => (vdstOf i).isNone) = true) (hnf : fn.noFrames = true) :
     WP isa (Cfg.invCall name fn) s fun s' => KeepRegs (powClob c.n) s s' ∧
       Unch base W s.mem s'.mem ∧ R s.mem s'.mem := by
@@ -328,7 +338,8 @@ theorem fnCall_ok {name : String} {fn : Prog isa} {s : State} {base : Addr}
   refine WP.seq (WP.callV (k := fnK c base s.mem W R)
     (fun t ⟨ht, hm⟩ => by
       obtain ⟨tr, t', he, K, U, Rr⟩ := hfn t ht hm
-      exact ⟨tr, t', he, ⟨fun r hr => K.gpr r (hpres r hr), K.sp, Exec.preservedV he (by
+      exact ⟨tr, t', he, ⟨fun r hr => K.gpr r fun h => (List.mem_filter.mp h).elim fun h₁ h₂ =>
+          (hpres r hr).elim (· h₁) (by simpa using h₂), K.sp, Exec.preservedV he (by
         rw [Code.allInstrs_eq]; exact List.all_eq_true.mpr fun i hi => by
           unfold keepsV
           cases h : vdstOf i with
@@ -350,7 +361,7 @@ theorem fnCall_ok {name : String} {fn : Prog isa} {s : State} {base : Addr}
   · simp only [powClob, List.mem_cons, not_or] at hr
     have h16 : Reg.x16 ∈ clob c.n := by simp [clob]
     have h17 : Reg.x17 ∈ clob c.n := by simp [clob]
-    refine (k₃.gpr _ (by simpa using h30)).trans ((K.gpr r hr.2).trans ?_)
+    refine (k₃.gpr _ (by simpa using h30)).trans ((K.gpr r fun h => hr.2 (List.mem_filter.mp h).1).trans ?_)
     rw [State.withRegions_gpr, State.callEntry_gpr _ (by
       simp only [linkRegs, List.mem_cons, List.not_mem_nil, or_false, not_or]
       exact ⟨fun e => hr.2 (e ▸ h16), fun e => hr.2 (e ▸ h17), h30⟩), k₁.gpr _ (by simp)]
@@ -420,7 +431,7 @@ theorem fixedOk_mulWF (hT : MulTmp c) : FixedOk c (mulWF c) := by
 /-- `R = [k]P`, for the `k` in `K`'s slot and the affine point `P` on the curve
 at `px` and `py`, by a call of `vg_<curve>_mul`: `P` copied to `R`'s first two
 slots and `3 b R` to `BM`'s slot, then `b R` back; the constants are kept. -/
-theorem mulAt_ok (hc : BaseCfgOk c) (h4 : c.n = 4 ∨ c.n = 6) (hT : MulTmp c) (hL : LadLay c.mulLadder size) (hA : LadA c.mulLadder)
+theorem mulAt_ok (hc : BaseCfgOk c) (h4 : c.n = 4 ∨ c.n = 6 ∨ c.n = 8) (hT : MulTmp c) (hL : LadLay c.mulLadder size) (hA : LadA c.mulLadder)
     (hC : Law c.C) (hv : c.mulFn.allInstrs (fun i => (vdstOf i).isNone) = true)
     (hnf : c.mulFn.noFrames = true) {name : String} {px py : Nat}
     (hpx45 : px < 45) (hpy45 : py < 45) (hpxl : px ∉ [RX, RY, BM, TMP]) (hpyl : py ∉ [RX, RY, BM, TMP])
@@ -480,7 +491,8 @@ theorem mulAt_ok (hc : BaseCfgOk c) (h4 : c.n = 4 ∨ c.n = 6) (hT : MulTmp c) (
       (toM c.C.p (2 ^ (64 * c.n)) (wordsVal m' base (c.sl RY) c.n))
       (toM c.C.p (2 ^ (64 * c.n)) (wordsVal m' base (c.sl RZ) c.n))
       (mul (sv c base s K) (.affine (tmv c.C c.n base s (c.sl px)) (tmv c.C c.n base s (c.sl py))))
-  have hpres : ∀ r ∈ preserved, r ∉ clob c.n := by rcases h4 with h4 | h4 <;> rw [h4] <;> decide
+  have hpres : ∀ r ∈ preserved, r ∉ clob c.n ∨ r ∈ c.invKept := by
+    unfold Cfg.invKept Cfg.invRegs; rcases h4 with h4 | h4 | h4 <;> rw [h4] <;> decide
   refine WP.seq (WP.mono (fnCall_ok (name := name) (W := mulWF c) (R := Rr) hs₃ (fun t ht hm => ?_) hpres hv hnf)
     fun s₄ ⟨K₄, U₄, R₄⟩ => ?_)
   · have et : ∀ i, sv c base t i = sv c base s₃ i := fun i => by

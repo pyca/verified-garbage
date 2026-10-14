@@ -156,7 +156,7 @@ theorem mul_correct (hL : Law Spec.BrainpoolP384r1.curve) (hI : InvSounds) (s : 
     rfl
   have hQ : onCurve brainpoolp384r1.C (ptQ brainpoolp384r1 (s.gpr .x0) s) = true := by rw [← eP]; exact hon
   obtain ⟨t, s', he, K', U', -, L', R'⟩ :=
-    mulFn_ok hc (.inr rfl) (.inr (by decide)) ladLayM ladAM hL hS hmp' hz' hone' ha' hb3' hx' hy' hQ
+    mulFn_ok hc (.inr (.inl rfl)) (.inr (by decide)) ladLayM ladAM hL hS hmp' hz' hone' ha' hb3' hx' hy' hQ
   refine ⟨t, s', he, ⟨fun r hr => K'.gpr r (by revert r; decide), K'.sp, Exec.preservedV he
     (show brainpoolp384r1.mulFn.allInstrs keepsV = true by lit_decide)⟩, ?_⟩
   show C.Result (mul (C.scalar (s.gpr .x0) s.mem) (C.point (s.gpr .x0) s.mem)) (s.gpr .x0) s.mem s'.mem
