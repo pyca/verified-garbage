@@ -3,8 +3,8 @@ module
 public import VerifiedGarbage.Proof.Ed448.X86.VerifyLocal
 public import VerifiedGarbage.Proof.Ed448.X86.VerifyDecodeLoop
 public import VerifiedGarbage.Proof.Ed448.X86.VerifyLoop
-public import VerifiedGarbage.Proof.Ed448.X86.VerifyFinish
-public import VerifiedGarbage.Proof.Ed448.X86.BaseMain
+import VerifiedGarbage.Proof.Ed448.X86.VerifyFinish
+import VerifiedGarbage.Proof.Ed448.X86.BaseMain
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

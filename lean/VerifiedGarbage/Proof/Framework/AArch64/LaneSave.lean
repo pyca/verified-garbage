@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.AArch64.LaneRestore
-public import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import Mathlib.Tactic.SplitIfs
 

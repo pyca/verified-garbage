@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Gcm.Compose
-public import VerifiedGarbage.Proof.Gcm.Ctr
+import VerifiedGarbage.Proof.Gcm.Compose
+import VerifiedGarbage.Proof.Gcm.Ctr
 public import VerifiedGarbage.Spec.Gcm.OutOfPlace
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

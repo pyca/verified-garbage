@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ed448.Limbs16
 public import VerifiedGarbage.Proof.X448.X86.Freeze
-public import VerifiedGarbage.Proof.X448.X86.RowPass
+import VerifiedGarbage.Proof.X448.X86.RowPass
 public import VerifiedGarbage.Proof.X448.X86.Carry
 public import VerifiedGarbage.Impl.Ed448.X86.Scalar
 import all Init.Data.Array.Basic

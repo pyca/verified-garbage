@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Gcm.X86.Step
 public import VerifiedGarbage.Proof.Gcm.X86.GhashCT
-public import VerifiedGarbage.Proof.Aes.Blocks
+import VerifiedGarbage.Proof.Aes.Blocks
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.X86.Spill
 public import VerifiedGarbage.Spec.Gcm.Contract

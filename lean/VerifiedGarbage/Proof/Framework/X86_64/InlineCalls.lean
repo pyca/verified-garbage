@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.X86_64.Depth
-public import VerifiedGarbage.Proof.Framework.RelCT
+import VerifiedGarbage.Proof.Framework.RelCT
 
 /-!
 # Inlining verified code that calls functions (x86-64)

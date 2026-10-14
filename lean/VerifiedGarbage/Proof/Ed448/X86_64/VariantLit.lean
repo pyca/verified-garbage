@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ed448.X86_64.FieldVariant
 meta import VerifiedGarbage.Proof.Ed448.X86_64.FieldVariant
-public import VerifiedGarbage.Proof.Ed448.X86_64.BaseLit
+import VerifiedGarbage.Proof.Ed448.X86_64.BaseLit
 meta import VerifiedGarbage.Proof.Ed448.X86_64.BaseLit
 public import VerifiedGarbage.Proof.Ed448.X86_64.VerifyLit
 meta import VerifiedGarbage.Proof.Ed448.X86_64.VerifyLit

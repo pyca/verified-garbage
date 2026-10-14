@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Md5.X86_64.Compress
 meta import VerifiedGarbage.Proof.Md5.X86_64.Compress
-public import VerifiedGarbage.Proof.Md5.Stream
+import VerifiedGarbage.Proof.Md5.Stream
 meta import VerifiedGarbage.Proof.Md5.Stream
 public import VerifiedGarbage.Proof.Framework.X86_64.Call
 meta import VerifiedGarbage.Proof.Framework.X86_64.Call

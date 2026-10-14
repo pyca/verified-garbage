@@ -1,13 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.X86.Shake.Layout
-public import VerifiedGarbage.Proof.Ed25519.X86.Whole.HashPre
+import VerifiedGarbage.Proof.Ed25519.X86.Whole.HashPre
 public import VerifiedGarbage.Proof.Ed25519.X86.Whole.CallCT
 public import VerifiedGarbage.Proof.Sha3.X86.Stream.Absorb
-public import VerifiedGarbage.Proof.Sha3.X86.Stream.Pad
-public import VerifiedGarbage.Proof.Sha3.X86.Stream.Squeeze
-public import VerifiedGarbage.Proof.Sha3.Stream
-public import VerifiedGarbage.Proof.Framework.X86.Wp
+import VerifiedGarbage.Proof.Sha3.X86.Stream.Pad
+import VerifiedGarbage.Proof.Sha3.X86.Stream.Squeeze
+import VerifiedGarbage.Proof.Sha3.Stream
+import VerifiedGarbage.Proof.Framework.X86.Wp
 public import VerifiedGarbage.Impl.Ed448.X86.Shake
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

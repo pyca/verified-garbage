@@ -3,8 +3,8 @@ module
 public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Loop48
 public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Ks
 public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemSetup
-public import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx.Loop
-public import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx.Reduction
+import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx.Loop
+import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx.Reduction
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

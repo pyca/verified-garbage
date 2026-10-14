@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.AArch64.Simd64
-public import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
+import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
 import Mathlib.Tactic.SplitIfs
 import Mathlib.Util.CompileInductive
 import VerifiedGarbage.Proof.Framework.Mem

@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Ed448.AArch64.Window.Checks
+import VerifiedGarbage.Proof.Ed448.AArch64.Window.Checks
 public import VerifiedGarbage.Proof.Ed448.AArch64.VerifySign
 public import VerifiedGarbage.Proof.Ed448.AArch64.DecodeOps
 public import VerifiedGarbage.Proof.X448.AArch64.Fast.Chain

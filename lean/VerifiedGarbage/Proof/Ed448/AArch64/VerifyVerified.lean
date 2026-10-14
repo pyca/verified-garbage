@@ -1,10 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.AArch64.VerifyMain
-public import VerifiedGarbage.Proof.Ed448.AArch64.VerifyCT.Front
-public import VerifiedGarbage.Proof.Ed448.AArch64.VerifyCT.Windows
+import VerifiedGarbage.Proof.Ed448.AArch64.VerifyCT.Front
+import VerifiedGarbage.Proof.Ed448.AArch64.VerifyCT.Windows
 public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Framework.ConstMem
+import VerifiedGarbage.Proof.Framework.ConstMem
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

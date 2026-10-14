@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Impl.Gcm.X86_64.StitchAvx8
-public import VerifiedGarbage.Proof.Framework.X86_64.Exec
-public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 public import VerifiedGarbage.Proof.Framework.X86_64.Avx
 public import VerifiedGarbage.Proof.Framework.X86_64.YFrame
 public import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Ctr32

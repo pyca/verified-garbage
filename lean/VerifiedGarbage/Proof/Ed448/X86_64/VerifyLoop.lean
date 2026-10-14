@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Ed448.VerifyFormulas
-public import VerifiedGarbage.Proof.Ed448.X86_64.BaseField
+import VerifiedGarbage.Proof.Ed448.VerifyFormulas
+import VerifiedGarbage.Proof.Ed448.X86_64.BaseField
 public import VerifiedGarbage.Impl.Ed448.X86_64.VerifyEquation
 public import VerifiedGarbage.Proof.Ed448.X86_64.BaseConst
 import all Init.Data.Array.Basic

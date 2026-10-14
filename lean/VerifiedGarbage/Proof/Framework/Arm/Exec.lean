@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.Block
-public import VerifiedGarbage.Proof.Framework.Bswap
+import VerifiedGarbage.Proof.Framework.Bswap
 public import VerifiedGarbage.TCB.Arm.Isa
 
 /-!

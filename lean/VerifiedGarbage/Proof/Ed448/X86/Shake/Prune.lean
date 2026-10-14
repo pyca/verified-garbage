@@ -1,11 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.X86.Shake.Layout
-public import VerifiedGarbage.Proof.Ed448.PruneBytes
-public import VerifiedGarbage.Proof.Ed448.Scalar
-public import VerifiedGarbage.Proof.X25519.Bytes
-public import VerifiedGarbage.Proof.Framework.X86.Wp
-public import VerifiedGarbage.Proof.Framework.WriteBytes
+import VerifiedGarbage.Proof.Ed448.PruneBytes
+import VerifiedGarbage.Proof.Ed448.Scalar
+import VerifiedGarbage.Proof.X25519.Bytes
+import VerifiedGarbage.Proof.Framework.X86.Wp
+import VerifiedGarbage.Proof.Framework.WriteBytes
 public import VerifiedGarbage.Impl.Ed448.X86.Shake
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

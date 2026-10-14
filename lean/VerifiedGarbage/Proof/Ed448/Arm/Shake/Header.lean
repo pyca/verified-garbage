@@ -4,7 +4,7 @@ public import VerifiedGarbage.Impl.Ed448.Arm.Shake
 public import VerifiedGarbage.Proof.Ed448.Arm.Shake.Layout
 public import VerifiedGarbage.Proof.X25519.Arm.Instr
 public import VerifiedGarbage.Proof.X25519.Bytes
-public import VerifiedGarbage.Proof.Ed448.Scalar
+import VerifiedGarbage.Proof.Ed448.Scalar
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

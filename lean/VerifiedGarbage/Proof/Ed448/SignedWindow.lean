@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Ed448.SignedWindow
 public import VerifiedGarbage.Proof.Ed448.Window
-public import VerifiedGarbage.Proof.Ed448.VerifyEq
+import VerifiedGarbage.Proof.Ed448.VerifyEq
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

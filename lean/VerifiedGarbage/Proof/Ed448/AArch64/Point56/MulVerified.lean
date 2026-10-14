@@ -2,13 +2,13 @@ module
 
 public import VerifiedGarbage.Proof.Ed448.AArch64.Point56.MulFn
 meta import VerifiedGarbage.Proof.Ed448.AArch64.Point56.MulFn
-public import VerifiedGarbage.Proof.Ed448.AArch64.Point56.Conv
-public import VerifiedGarbage.Proof.Curve448.AArch64.Fast.Field
+import VerifiedGarbage.Proof.Ed448.AArch64.Point56.Conv
+import VerifiedGarbage.Proof.Curve448.AArch64.Fast.Field
 public import VerifiedGarbage.Proof.Framework.AArch64.Taint
 meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.TCB.AArch64.Target
+import VerifiedGarbage.TCB.AArch64.Target
 meta import VerifiedGarbage.TCB.AArch64.Target
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

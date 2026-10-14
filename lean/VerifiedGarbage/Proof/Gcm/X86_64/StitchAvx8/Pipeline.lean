@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.Buffers
-public import VerifiedGarbage.Proof.Aes.X86_64.Ctr32
-public import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Ctr32
+import VerifiedGarbage.Proof.Aes.X86_64.Ctr32
+import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Ctr32
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.Ops
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.AesHash
 import all Init.Data.Array.Basic

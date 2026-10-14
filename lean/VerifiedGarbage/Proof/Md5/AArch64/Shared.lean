@@ -1,9 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Md5.AArch64.Compress
+import VerifiedGarbage.Proof.Md5.AArch64.Compress
 public import VerifiedGarbage.Proof.Md5.AArch64.Stream.Init
-public import VerifiedGarbage.Proof.Md5.AArch64.Stream.Md
+import VerifiedGarbage.Proof.Md5.AArch64.Stream.Md
 public import VerifiedGarbage.Spec.Md5.Contract
 public import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
 import all Init.Data.Array.Basic

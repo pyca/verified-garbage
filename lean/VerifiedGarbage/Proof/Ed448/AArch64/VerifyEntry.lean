@@ -1,10 +1,10 @@
 module
 
-public import VerifiedGarbage.Impl.Ed448.AArch64.ScalarBase
+import VerifiedGarbage.Impl.Ed448.AArch64.ScalarBase
 public import VerifiedGarbage.Proof.X448.AArch64.Weak.Ops
 public import VerifiedGarbage.Proof.Ed448.Formulas
-public import VerifiedGarbage.Proof.X448.AArch64.Base.Const
-public import VerifiedGarbage.Proof.X448.AArch64.Weak.Main
+import VerifiedGarbage.Proof.X448.AArch64.Base.Const
+import VerifiedGarbage.Proof.X448.AArch64.Weak.Main
 public import VerifiedGarbage.Impl.Ed448.AArch64.VerifyEquation
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

@@ -4,9 +4,9 @@ public import VerifiedGarbage.Impl.Ed448.X86_64.FieldVariant
 meta import VerifiedGarbage.Impl.Ed448.X86_64.FieldVariant
 public import VerifiedGarbage.Proof.Ed448.X86_64.Point64.Verified
 meta import VerifiedGarbage.Proof.Ed448.X86_64.Point64.Verified
-public import VerifiedGarbage.Proof.X448.X86_64.Adx.Sqr
+import VerifiedGarbage.Proof.X448.X86_64.Adx.Sqr
 meta import VerifiedGarbage.Proof.X448.X86_64.Adx.Sqr
-public import VerifiedGarbage.Proof.X448.X86_64.Adx.Lit
+import VerifiedGarbage.Proof.X448.X86_64.Adx.Lit
 meta import VerifiedGarbage.Proof.X448.X86_64.Adx.Lit
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

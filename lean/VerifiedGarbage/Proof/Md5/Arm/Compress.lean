@@ -4,13 +4,13 @@ public import VerifiedGarbage.Proof.Framework.Mem
 meta import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
-public import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Arm.Exec
 meta import VerifiedGarbage.Proof.Framework.Arm.Exec
 public import VerifiedGarbage.Proof.Md5.Spec
 meta import VerifiedGarbage.Proof.Md5.Spec
 public import VerifiedGarbage.Impl.Md5.Arm
 meta import VerifiedGarbage.Impl.Md5.Arm
-public import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 meta import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 public import VerifiedGarbage.Proof.Framework.Arm.Spill
 meta import VerifiedGarbage.Proof.Framework.Arm.Spill
@@ -18,7 +18,7 @@ public import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Spec.Md5
+import VerifiedGarbage.Spec.Md5
 meta import VerifiedGarbage.Spec.Md5
 public import VerifiedGarbage.TCB.Arm.Target
 meta import VerifiedGarbage.TCB.Arm.Target

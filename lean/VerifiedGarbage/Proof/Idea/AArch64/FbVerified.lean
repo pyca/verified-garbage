@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.Modes.AArch64.Fb
 meta import VerifiedGarbage.Proof.Modes.AArch64.Fb
 public import VerifiedGarbage.Proof.Idea.FbScratch
 meta import VerifiedGarbage.Proof.Idea.FbScratch
-public import VerifiedGarbage.Proof.Idea.AArch64.ModesLit
+import VerifiedGarbage.Proof.Idea.AArch64.ModesLit
 meta import VerifiedGarbage.Proof.Idea.AArch64.ModesLit
 public import VerifiedGarbage.Proof.Framework.AArch64.Inline
 meta import VerifiedGarbage.Proof.Framework.AArch64.Inline

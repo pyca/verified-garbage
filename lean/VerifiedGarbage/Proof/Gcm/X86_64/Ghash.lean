@@ -18,17 +18,17 @@ public import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Framework.PowLit
 meta import VerifiedGarbage.Proof.Framework.PowLit
-public import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
-public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-public import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.Range
 meta import VerifiedGarbage.Proof.Framework.Range
 public import Mathlib.Tactic.LinearCombination
 meta import Mathlib.Tactic.LinearCombination
-public import VerifiedGarbage.Proof.Framework.X86_64.Bswap
+import VerifiedGarbage.Proof.Framework.X86_64.Bswap
 meta import VerifiedGarbage.Proof.Framework.X86_64.Bswap
-public import VerifiedGarbage.Proof.Gcm.X86_64.Bits
+import VerifiedGarbage.Proof.Gcm.X86_64.Bits
 meta import VerifiedGarbage.Proof.Gcm.X86_64.Bits
 public import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Framework.Omega
@@ -36,9 +36,9 @@ public import VerifiedGarbage.Proof.Framework.X86_64.Abi
 meta import VerifiedGarbage.Proof.Framework.X86_64.Abi
 public import VerifiedGarbage.Proof.Framework.X86_64.Spill
 meta import VerifiedGarbage.Proof.Framework.X86_64.Spill
-public import VerifiedGarbage.Spec.Gcm
+import VerifiedGarbage.Spec.Gcm
 meta import VerifiedGarbage.Spec.Gcm
-public import VerifiedGarbage.TCB.X86_64.Target
+import VerifiedGarbage.TCB.X86_64.Target
 meta import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Framework.X86_64.Taint
 meta import VerifiedGarbage.Proof.Framework.X86_64.Taint

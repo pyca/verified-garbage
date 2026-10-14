@@ -1,10 +1,10 @@
 module
 
 public import VerifiedGarbage.Spec.Hmac.Generic
-public import VerifiedGarbage.Proof.Md5.Stream
-public import VerifiedGarbage.Proof.Sha1.Stream
-public import VerifiedGarbage.Proof.Sha256.Scratch
-public import VerifiedGarbage.Proof.Sha512.Stream
+import VerifiedGarbage.Proof.Md5.Stream
+import VerifiedGarbage.Proof.Sha1.Stream
+import VerifiedGarbage.Proof.Sha256.Scratch
+import VerifiedGarbage.Proof.Sha512.Stream
 public import VerifiedGarbage.Proof.Framework.Offset
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ed448.X86_64.Window.SelectBase
 public import VerifiedGarbage.Proof.Ed448.X86_64.Window.SelectKey
-public import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Sign
+import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Sign
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

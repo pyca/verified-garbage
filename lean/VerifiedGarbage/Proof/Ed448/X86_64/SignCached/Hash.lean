@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.X86_64.SignCached.Layout
-public import VerifiedGarbage.Proof.Ed448.X86_64.Verify.Hash
+import VerifiedGarbage.Proof.Ed448.X86_64.Verify.Hash
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

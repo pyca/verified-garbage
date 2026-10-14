@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.AArch64.Inline
 public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import Mathlib.Tactic.SplitIfs
 
 /-!

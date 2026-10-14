@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.Pipeline
+import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.Pipeline
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.AesHash
 public import Mathlib.Tactic.IntervalCases
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.Data

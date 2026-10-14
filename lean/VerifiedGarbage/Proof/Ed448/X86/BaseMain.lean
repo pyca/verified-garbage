@@ -1,9 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.X86.BaseLocal
-public import VerifiedGarbage.Proof.Ed448.X86.BaseSetup
+import VerifiedGarbage.Proof.Ed448.X86.BaseSetup
 public import VerifiedGarbage.Proof.Ed448.X86.BaseStep
-public import VerifiedGarbage.Proof.Ed448.X86.BaseEncode
+import VerifiedGarbage.Proof.Ed448.X86.BaseEncode
 public import VerifiedGarbage.Proof.Ed448.X86.ScalarMain
 public import VerifiedGarbage.Proof.X448.X86.Runs
 import all Init.Data.Array.Basic

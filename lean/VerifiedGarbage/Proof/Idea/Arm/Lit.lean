@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.Arm.Lit
 meta import VerifiedGarbage.Proof.Framework.Arm.Lit
-public import VerifiedGarbage.Proof.Idea.KeyLit32
+import VerifiedGarbage.Proof.Idea.KeyLit32
 meta import VerifiedGarbage.Proof.Idea.KeyLit32
 public import VerifiedGarbage.Impl.Idea.Arm
 meta import VerifiedGarbage.Impl.Idea.Arm

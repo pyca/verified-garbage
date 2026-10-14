@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ed448.X86_64.SignCached.Rel
 meta import VerifiedGarbage.Proof.Ed448.X86_64.SignCached.Rel
-public import VerifiedGarbage.Proof.Ed448.X86_64.Verify.HashCT
+import VerifiedGarbage.Proof.Ed448.X86_64.Verify.HashCT
 meta import VerifiedGarbage.Proof.Ed448.X86_64.Verify.HashCT
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Idea.Memory
+import VerifiedGarbage.Proof.Idea.Memory
 public import VerifiedGarbage.Proof.Modes.Ctr
 public import VerifiedGarbage.Spec.Idea.Cbc
 public import VerifiedGarbage.Spec.Aes

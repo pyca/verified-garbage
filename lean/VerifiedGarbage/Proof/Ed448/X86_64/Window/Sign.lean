@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Ed448.X86_64.Window.Register
+import VerifiedGarbage.Proof.Ed448.X86_64.Window.Register
 public import VerifiedGarbage.Proof.Ed448.X86_64.Window.Ops
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

@@ -1,10 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
 meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
 public import VerifiedGarbage.Proof.Framework.Mem
 meta import VerifiedGarbage.Proof.Framework.Mem
-public import VerifiedGarbage.Proof.Framework.X86.Exec
+import VerifiedGarbage.Proof.Framework.X86.Exec
 meta import VerifiedGarbage.Proof.Framework.X86.Exec
 public import VerifiedGarbage.Proof.Framework.X86.Spill
 meta import VerifiedGarbage.Proof.Framework.X86.Spill
@@ -14,7 +14,7 @@ public import VerifiedGarbage.Proof.Md5.Spec
 meta import VerifiedGarbage.Proof.Md5.Spec
 public import VerifiedGarbage.Impl.Md5.X86
 meta import VerifiedGarbage.Impl.Md5.X86
-public import VerifiedGarbage.Proof.Md5.X86.Lit
+import VerifiedGarbage.Proof.Md5.X86.Lit
 meta import VerifiedGarbage.Proof.Md5.X86.Lit
 public import VerifiedGarbage.Proof.Md5.X86.Contract
 meta import VerifiedGarbage.Proof.Md5.X86.Contract

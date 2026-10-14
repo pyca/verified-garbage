@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Ed448.AArch64.Point56
 public import VerifiedGarbage.Proof.Framework.AArch64.LaneSave
-public import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

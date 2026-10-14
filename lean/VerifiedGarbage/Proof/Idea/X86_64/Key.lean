@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Idea.X86_64.Verified
-public import VerifiedGarbage.Proof.Idea.KeyBits
+import VerifiedGarbage.Proof.Idea.KeyBits
 public import VerifiedGarbage.Proof.Framework.X86_64.Linear
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

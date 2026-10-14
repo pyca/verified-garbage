@@ -1,10 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.Arm.VerifyChecks
-public import VerifiedGarbage.Proof.Ed448.Arm.VerifySign
+import VerifiedGarbage.Proof.Ed448.Arm.VerifySign
 public import VerifiedGarbage.Proof.X448.Arm.Restore
-public import VerifiedGarbage.Proof.X448.Arm.Counters
-public import VerifiedGarbage.Proof.Ed448.Arm.BaseStep
+import VerifiedGarbage.Proof.X448.Arm.Counters
+import VerifiedGarbage.Proof.Ed448.Arm.BaseStep
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

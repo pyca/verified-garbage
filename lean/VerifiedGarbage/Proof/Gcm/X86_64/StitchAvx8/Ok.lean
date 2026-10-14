@@ -1,13 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx.Dec
-public import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Ghash
+import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx.Dec
+import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Ghash
 public import VerifiedGarbage.Impl.Gcm.X86_64.StitchAvx8
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.AesHash
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.SetupDispatch
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.Tail
 public import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Load
-public import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Context
+import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Context
 public import VerifiedGarbage.Proof.Gcm.Powers
 public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.SpecTo
 import all Init.Data.Array.Basic

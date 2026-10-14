@@ -1,10 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Ed448.X86_64.VariantBounds
+import VerifiedGarbage.Proof.Ed448.X86_64.VariantBounds
 public import VerifiedGarbage.Proof.Ed448.X86_64.SignCached.Prune
 public import VerifiedGarbage.Proof.Ed448.X86_64.Verify.Calls
 public import VerifiedGarbage.Proof.Ed448.X86_64.BaseLocal
-public import VerifiedGarbage.Proof.Ed448.X86_64.BaseLit
+import VerifiedGarbage.Proof.Ed448.X86_64.BaseLit
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

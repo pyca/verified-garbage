@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Arm.RegScratchWipe
+import VerifiedGarbage.Proof.Framework.Arm.RegScratchWipe
 public import VerifiedGarbage.Proof.Framework.Arm.StackScratchConsts
 import Mathlib.Tactic.SplitIfs
 

@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ed448.X86_64.FieldVariant
 meta import VerifiedGarbage.Proof.Ed448.X86_64.FieldVariant
-public import VerifiedGarbage.Proof.X448.X86_64.Pow223Verified
+import VerifiedGarbage.Proof.X448.X86_64.Pow223Verified
 meta import VerifiedGarbage.Proof.X448.X86_64.Pow223Verified
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

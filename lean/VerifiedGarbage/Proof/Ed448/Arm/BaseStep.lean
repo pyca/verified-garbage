@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ed448.Ref
 public import VerifiedGarbage.Proof.X448.Arm.Counters
-public import VerifiedGarbage.Proof.X448.Arm.FinalSwap
+import VerifiedGarbage.Proof.X448.Arm.FinalSwap
 public import VerifiedGarbage.Impl.Ed448.Arm.ScalarBase
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Impl.Gcm.X86_64
-public import VerifiedGarbage.Proof.Framework.X86_64.Bswap
-public import VerifiedGarbage.Proof.Gcm.Bits
+import VerifiedGarbage.Proof.Framework.X86_64.Bswap
+import VerifiedGarbage.Proof.Gcm.Bits
 public import VerifiedGarbage.Proof.Gcm.Spec
 public import VerifiedGarbage.Proof.Framework.PowLit
 public import VerifiedGarbage.Proof.Framework.Omega

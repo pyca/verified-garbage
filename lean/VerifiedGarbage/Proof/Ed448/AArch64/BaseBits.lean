@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Ed448.AArch64.ScalarBase
 public import VerifiedGarbage.Proof.X448.AArch64.BitBody
-public import VerifiedGarbage.Proof.X448.AArch64.Finish
+import VerifiedGarbage.Proof.X448.AArch64.Finish
 public import VerifiedGarbage.Proof.Ed448.Scalar
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

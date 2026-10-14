@@ -2,8 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Ed448.X86.ScalarIO
 public import VerifiedGarbage.Proof.X448.X86.Inv
-public import VerifiedGarbage.Proof.X448.X86.Freeze
-public import VerifiedGarbage.Proof.Ed448.Ref
+import VerifiedGarbage.Proof.X448.X86.Freeze
+import VerifiedGarbage.Proof.Ed448.Ref
 public import VerifiedGarbage.Impl.Ed448.X86.ScalarBase
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

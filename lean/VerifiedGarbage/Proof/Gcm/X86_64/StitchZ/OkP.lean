@@ -1,13 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.PreparedTo
-public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Prepared
+import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Prepared
 public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemTo
-public import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.OutOfPlace
-public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.LoopP
-public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Ok
-public import VerifiedGarbage.Proof.Gcm.Powers
-public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZTo.LoopP
+import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.OutOfPlace
+import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.LoopP
+import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Ok
+import VerifiedGarbage.Proof.Gcm.Powers
+import VerifiedGarbage.Proof.Gcm.X86_64.StitchZTo.LoopP
 public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Ok
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchTo.Loop
 import all Init.Data.Array.Basic

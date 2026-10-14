@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.MdStream.X86_64.UpdateCT
 meta import VerifiedGarbage.Proof.MdStream.X86_64.UpdateCT
 public import VerifiedGarbage.Proof.MdStream.X86_64.FinalizeCT
 meta import VerifiedGarbage.Proof.MdStream.X86_64.FinalizeCT
-public import VerifiedGarbage.Proof.MdStream.X86_64.Words
+import VerifiedGarbage.Proof.MdStream.X86_64.Words
 meta import VerifiedGarbage.Proof.MdStream.X86_64.Words
 public import VerifiedGarbage.Proof.Md5.Md
 meta import VerifiedGarbage.Proof.Md5.Md

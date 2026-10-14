@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.Arm.Shake.Setup
-public import VerifiedGarbage.Proof.Ed25519.Arm.Whole.Layout
+import VerifiedGarbage.Proof.Ed25519.Arm.Whole.Layout
 public import VerifiedGarbage.Spec.Ed448.Contract
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

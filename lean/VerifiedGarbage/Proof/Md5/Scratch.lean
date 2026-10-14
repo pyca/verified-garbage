@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Spec.Md5.Contract
-public import VerifiedGarbage.Proof.Md5.Stream
+import VerifiedGarbage.Proof.Md5.Stream
 public import VerifiedGarbage.Proof.Framework.Offset
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

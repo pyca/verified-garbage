@@ -4,13 +4,13 @@ public import VerifiedGarbage.Proof.Ed448.Arm.VerifyMain
 meta import VerifiedGarbage.Proof.Ed448.Arm.VerifyMain
 public import VerifiedGarbage.Proof.Ed448.Arm.VerifyLocal
 meta import VerifiedGarbage.Proof.Ed448.Arm.VerifyLocal
-public import VerifiedGarbage.Proof.Ed448.Arm.VerifyLit
+import VerifiedGarbage.Proof.Ed448.Arm.VerifyLit
 meta import VerifiedGarbage.Proof.Ed448.Arm.VerifyLit
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Spec.Ed448.Contract
+import VerifiedGarbage.Spec.Ed448.Contract
 meta import VerifiedGarbage.Spec.Ed448.Contract
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

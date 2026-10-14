@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ed448.X86.VerifyMain
 meta import VerifiedGarbage.Proof.Ed448.X86.VerifyMain
-public import VerifiedGarbage.Proof.Ed448.X86.VerifyLit
+import VerifiedGarbage.Proof.Ed448.X86.VerifyLit
 meta import VerifiedGarbage.Proof.Ed448.X86.VerifyLit
 public import VerifiedGarbage.Proof.X448.X86.Runs
 meta import VerifiedGarbage.Proof.X448.X86.Runs

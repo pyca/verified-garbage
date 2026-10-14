@@ -1,10 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.Arm.VerifyChecks
-public import VerifiedGarbage.Proof.Ed448.Arm.BaseEncode
-public import VerifiedGarbage.Proof.Ed448.Scalar
-public import VerifiedGarbage.Proof.Ed448.Arm.ScalarNat
-public import VerifiedGarbage.Proof.X448.Arm.Carry
+import VerifiedGarbage.Proof.Ed448.Arm.BaseEncode
+import VerifiedGarbage.Proof.Ed448.Scalar
+import VerifiedGarbage.Proof.Ed448.Arm.ScalarNat
+import VerifiedGarbage.Proof.X448.Arm.Carry
 public import VerifiedGarbage.Proof.X448.Radix16Bytes
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

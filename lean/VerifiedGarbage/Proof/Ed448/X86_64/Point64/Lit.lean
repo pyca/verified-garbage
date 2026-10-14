@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.X448.X86_64.Lit
+import VerifiedGarbage.Proof.X448.X86_64.Lit
 meta import VerifiedGarbage.Proof.X448.X86_64.Lit
 public import VerifiedGarbage.Impl.Ed448.X86_64.Point64
 meta import VerifiedGarbage.Impl.Ed448.X86_64.Point64

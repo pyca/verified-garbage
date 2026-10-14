@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.X86.VerifyDecodeY
-public import VerifiedGarbage.Proof.Ed448.X86.BaseEncode
+import VerifiedGarbage.Proof.Ed448.X86.BaseEncode
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

@@ -8,7 +8,7 @@ public import VerifiedGarbage.Impl.Gcm.X86_64.Vpclmul
 meta import VerifiedGarbage.Impl.Gcm.X86_64.Vpclmul
 public import VerifiedGarbage.Proof.Framework.X86_64.LaneSse
 meta import VerifiedGarbage.Proof.Framework.X86_64.LaneSse
-public import VerifiedGarbage.Proof.Framework.X86_64.YFrame
+import VerifiedGarbage.Proof.Framework.X86_64.YFrame
 meta import VerifiedGarbage.Proof.Framework.X86_64.YFrame
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

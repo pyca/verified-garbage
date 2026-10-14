@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Ed448.X86_64.Window.Loop
+import VerifiedGarbage.Proof.Ed448.X86_64.Window.Loop
 public import VerifiedGarbage.Proof.Ed448.X86_64.Window.First
 public import VerifiedGarbage.Proof.X448.X86_64.Inv
 import all Init.Data.Array.Basic

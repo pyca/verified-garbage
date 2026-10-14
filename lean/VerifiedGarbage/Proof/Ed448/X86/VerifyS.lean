@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.X86.VerifyChecks
-public import VerifiedGarbage.Proof.Ed448.X86.ScalarStep
-public import VerifiedGarbage.Proof.Ed448.Scalar
+import VerifiedGarbage.Proof.Ed448.X86.ScalarStep
+import VerifiedGarbage.Proof.Ed448.Scalar
 public import VerifiedGarbage.Proof.X448.X86.Decode
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx.Aes
-public import VerifiedGarbage.Proof.Framework.X86_64.Lane0
+import VerifiedGarbage.Proof.Framework.X86_64.Lane0
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx.Reduction
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

@@ -1,10 +1,10 @@
 module
 
 public import VerifiedGarbage.Spec.Ffdh.Contract
-public import VerifiedGarbage.Proof.Ffdh.Choose
-public import VerifiedGarbage.TCB.AArch64.Target
+import VerifiedGarbage.Proof.Ffdh.Choose
+import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Impl.Ffdh.AArch64
-public import VerifiedGarbage.Proof.Framework.Semantics
+import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Bignum.AArch64.Run
 import all Init.Data.Array.Basic

@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.RelCT
-public import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Block
 
 /-!
 # Regrouping sequences in relational constant-time proofs

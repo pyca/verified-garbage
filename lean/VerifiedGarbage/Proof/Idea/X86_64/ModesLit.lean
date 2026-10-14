@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Idea.X86_64.Lit
+import VerifiedGarbage.Proof.Idea.X86_64.Lit
 meta import VerifiedGarbage.Proof.Idea.X86_64.Lit
 public import VerifiedGarbage.Impl.Idea.X86_64.Modes
 meta import VerifiedGarbage.Impl.Idea.X86_64.Modes

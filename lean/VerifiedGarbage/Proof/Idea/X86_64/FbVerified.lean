@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.Modes.X86_64.Fb
 meta import VerifiedGarbage.Proof.Modes.X86_64.Fb
 public import VerifiedGarbage.Proof.Idea.FbScratch
 meta import VerifiedGarbage.Proof.Idea.FbScratch
-public import VerifiedGarbage.Proof.Idea.X86_64.ModesLit
+import VerifiedGarbage.Proof.Idea.X86_64.ModesLit
 meta import VerifiedGarbage.Proof.Idea.X86_64.ModesLit
 public import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
 meta import VerifiedGarbage.Proof.Framework.X86_64.TaintMono

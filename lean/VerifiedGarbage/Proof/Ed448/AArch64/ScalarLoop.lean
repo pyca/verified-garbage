@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.AArch64.ScalarWord
-public import VerifiedGarbage.Proof.Ed448.ScalarWords
+import VerifiedGarbage.Proof.Ed448.ScalarWords
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

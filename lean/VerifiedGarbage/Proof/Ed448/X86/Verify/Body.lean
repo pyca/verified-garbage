@@ -3,11 +3,11 @@ module
 public import VerifiedGarbage.Proof.Ed448.X86.Verify.Layout
 public import VerifiedGarbage.Proof.Ed448.X86.Shake.Sponge
 public import VerifiedGarbage.Proof.Ed448.X86.Shake.Header
-public import VerifiedGarbage.Proof.Ed448.X86.Shake.Prune
+import VerifiedGarbage.Proof.Ed448.X86.Shake.Prune
 public import VerifiedGarbage.Proof.Ed448.X86.VerifyLocal
 public import VerifiedGarbage.Proof.Ed448.X86.Callee
 public import VerifiedGarbage.Proof.Ed448.X86.ScalarVerified
-public import VerifiedGarbage.Proof.Ed448.X86.ScalarLit
+import VerifiedGarbage.Proof.Ed448.X86.ScalarLit
 public import VerifiedGarbage.Impl.Ed448.X86.Verify
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

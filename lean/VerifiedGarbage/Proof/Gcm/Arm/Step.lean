@@ -2,9 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Impl.Gcm.Arm
-public import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Arm.Exec
 public import VerifiedGarbage.Proof.Framework.Arm.Straight
-public import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.Range
 public import VerifiedGarbage.Proof.Gcm.Spec
 public import VerifiedGarbage.Proof.MdStream.Arm.Common
 import all Init.Data.Array.Basic
