@@ -99,7 +99,7 @@ theorem arg_of {v : BitVec 64} {x : Nat} (h : v.toNat = x) : (v.setWidth 32).toN
   rw [BitVec.toNat_setWidth, h]
 
 theorem mulFn_noFrames (n m : Nat) : (mulFn n m).noFrames = true := by
-  unfold mulFn; split <;> rfl
+  unfold mulFn; split <;> (try split) <;> rfl
 
 /-- `[o] = [a] [b] R⁻¹ mod m` by a call of `vg_<curve>_mul_mod_<p|n>`, as the
 inline product (`mul_ok`). -/

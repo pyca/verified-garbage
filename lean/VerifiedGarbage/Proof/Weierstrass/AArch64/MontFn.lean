@@ -517,17 +517,29 @@ theorem mulFnS_wp (n m : Nat) {s : State} {Q : State → Prop} : WP isa (mulFnS 
   rw [mulFnS, WP.seq_iff, ← WP.block_append_iff]
   simp only [entryRest, exitCode, bodyCode, ptrsCode, List.append_assoc, List.cons_append, List.nil_append]
 
-/-- `vg_<curve>_mul_mod_<p|n>`: `[o] = [a] [b] R⁻¹ mod m`. -/
-theorem mulFnS_ok {n m W : Nat} (hM : ModOkS n m) {s : State} (hp : Pre n W s)
+/-- The function around a body that computes `[po] = [pa] [pb] R⁻¹ mod m`,
+changing only the registers `bodyW n` and the memory at `[po]`: the entry
+(`zext_ok`, `saves_ok`, `ptrsF_ok`), the body, the restores. -/
+theorem mulFnOf_ok {n m W : Nat} (hn : n = 6 ∨ n = 9) {body : List Instr}
+    (hnv : ∀ i ∈ body, vdstOf i = none)
+    (hbody : ∀ {s : State} {base : Addr} {size : Nat}, Scr s base size → ∀ {pa pb po : Addr},
+      Ptr s (raF n) pa (8 * n) → Ptr s .x3 pb (8 * n) → PtrW s (roF n) po (8 * n) →
+      wordsVal s.mem pb 0 n < m →
+      WP isa (.block body) s fun s' =>
+        (∀ r, r ∉ bodyW n → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧
+        Outside po 0 (8 * n) s.mem s'.mem ∧ wordsVal s'.mem po 0 n < m ∧
+        wordsVal s'.mem po 0 n * 2 ^ (64 * n) % m = wordsVal s.mem pa 0 n * wordsVal s.mem pb 0 n % m)
+    {s : State} (hp : Pre n W s)
     (hb : wordsVal s.mem (s.gpr .x0) (arg s .x3) n < m) :
-    WP isa (mulFnS n m) s fun s' => abiPreserved s s' ∧ Kept n (s.gpr .x0) (arg s .x1) s.mem s'.mem ∧
+    WP isa (.block (zextCode ++ (saveCode n ++ (ptrsCode n ++ (body ++ restoreCode n))))) s fun s' =>
+      abiPreserved s s' ∧ Kept n (s.gpr .x0) (arg s .x1) s.mem s'.mem ∧
       (wordsVal s'.mem (s.gpr .x0) (arg s .x1) n < m ∧
       wordsVal s'.mem (s.gpr .x0) (arg s .x1) n * 2 ^ (64 * n) % m =
         wordsVal s.mem (s.gpr .x0) (arg s .x2) n * wordsVal s.mem (s.gpr .x0) (arg s .x3) n % m) ∧
       s'.gpr .x0 = s.gpr .x0 ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
       ∀ d, (∀ i < 10, d ≠ (slot i).1) → s'.v d = s.v d := by
-  have R := regs_ok n hM.hn
-  have hn9 := hM.n9
+  have R := regs_ok n hn
+  have hn9 : n ≤ 9 := by rcases hn with rfl | rfl <;> decide
   have hown := own_eq hn9
   have hfit := hp.fit
   have hw := hp.w
@@ -536,9 +548,9 @@ theorem mulFnS_ok {n m W : Nat} (hM : ModOkS n m) {s : State} (hp : Pre n W s)
   have ha := hp.a
   have hb' := hp.b
   have k0 := R.keep0 .x0 (by simp)
-  have hn4 := hM.n4
-  obtain ⟨hmo1, hmo2, hmo8⟩ := moAt_facts hn9 hM.n4
-  rw [mulFnS_wp, WP.block_append_iff]
+  have hn4 : 4 ≤ n := by rcases hn with rfl | rfl <;> decide
+  obtain ⟨hmo1, hmo2, hmo8⟩ := moAt_facts hn9 hn4
+  rw [WP.block_append_iff]
   refine WP.mono (zext_ok s) fun s₁ ⟨g1, g2, g3, K₁, V₁⟩ => ?_
   rw [WP.block_append_iff, saveCode_eq]
   refine WP.mono (saves_ok (saved n) 0 (s := s₁) (by have := R.slen; omega)) fun s₂ ⟨K₂, L₂, _, V₂⟩ => ?_
@@ -575,8 +587,7 @@ theorem mulFnS_ok {n m W : Nat} (hM : ModOkS n m) {s : State} (hp : Pre n W s)
   have hB : wordsVal s₃.mem (off (s.gpr .x0) (arg s .x3)) 0 n < m := by
     rw [wordsVal_off, Nat.add_zero, hmem₃]; exact hb
   rw [WP.block_append_iff]
-  refine WP.mono (WP.block_novec (fun i hi => hM.novec i (List.mem_append_right _ hi))
-    (bodyF_ok hM hs₃ hpa hpb hpo hB)) fun s₄ ⟨⟨G₄, rd₄, wr₄, sp₄, O₄, V, C⟩, Vv⟩ => ?_
+  refine WP.mono (WP.block_novec hnv (hbody hs₃ hpa hpb hpo hB)) fun s₄ ⟨⟨G₄, rd₄, wr₄, sp₄, O₄, V, C⟩, Vv⟩ => ?_
   rw [restoreCode_eq]
   refine WP.mono (restores_ok (saved n) 0 (by have := R.slen; omega) R.snd) fun s₅ ⟨K₅, V₅, R₅⟩ => ?_
   have mem₅ : s₅.mem = s₄.mem := K₅.mem
@@ -617,5 +628,18 @@ theorem mulFnS_ok {n m W : Nat} (hM : ModOkS n m) {s : State} (hp : Pre n W s)
   · have e := wordsVal_off s₄.mem (s.gpr .x0) (arg s .x1) 0 n
     rw [Nat.add_zero] at e
     rw [mem₅, ← e, C, ev, ev]
+
+/-- `vg_<curve>_mul_mod_<p|n>`: `[o] = [a] [b] R⁻¹ mod m`. -/
+theorem mulFnS_ok {n m W : Nat} (hM : ModOkS n m) {s : State} (hp : Pre n W s)
+    (hb : wordsVal s.mem (s.gpr .x0) (arg s .x3) n < m) :
+    WP isa (mulFnS n m) s fun s' => abiPreserved s s' ∧ Kept n (s.gpr .x0) (arg s .x1) s.mem s'.mem ∧
+      (wordsVal s'.mem (s.gpr .x0) (arg s .x1) n < m ∧
+      wordsVal s'.mem (s.gpr .x0) (arg s .x1) n * 2 ^ (64 * n) % m =
+        wordsVal s.mem (s.gpr .x0) (arg s .x2) n * wordsVal s.mem (s.gpr .x0) (arg s .x3) n % m) ∧
+      s'.gpr .x0 = s.gpr .x0 ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
+      ∀ d, (∀ i < 10, d ≠ (slot i).1) → s'.v d = s.v d := by
+  rw [mulFnS_wp]
+  exact mulFnOf_ok hM.hn (fun i hi => hM.novec i (List.mem_append_right _ hi))
+    (fun hs _ _ _ hpa hpb hpo hB => bodyF_ok hM hs hpa hpb hpo hB) hp hb
 
 end VG.Proof.Weierstrass.AArch64.Mont
