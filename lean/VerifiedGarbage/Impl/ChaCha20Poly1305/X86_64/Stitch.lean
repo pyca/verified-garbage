@@ -503,10 +503,26 @@ registers restored. -/
 def tailO (two : Bool) (k : Nat) : Prog isa :=
   .seq (.block (tailA two)) (.seq (troundsG two (oblocks k) (ofirst k) 10) (.block (tailBO two k)))
 
+/-- `n` bytes (not 1) of instructions that only write `r`, from what it
+held or 0: `mov r32, 0` (5 bytes, for `rax` to `rdi`), `mov r64, r64` (3)
+and `mov r32, r32` (2). They pad code so that what follows keeps its offsets
+modulo 32 when code is added before it (`restO`, `cryptO`, `decRest`): on
+Cascade Lake, whose microcode mitigates the JCC erratum, a shift of the
+code for the lengths an addition does not touch made them up to 2% slower. -/
+def padIns (r : Reg) : Nat → List Instr
+  | 0 => []
+  | 2 => [.mov32 r (.reg r)]
+  | 3 => [.mov r (.reg r)]
+  | 4 => [.mov32 r (.reg r), .mov32 r (.reg r)]
+  | 6 => [.mov r (.reg r), .mov r (.reg r)]
+  | n + 5 => .mov32 r (.imm 0) :: padIns r n
+  | _ => []
+
 /-- After the whole chunks: with 64 to 256 bytes left, `tailO` (4 blocks
 absorbed up to 128 bytes, 8 below 192, 12 from 192); otherwise `leaveO`. -/
 def restO : Prog isa :=
-  .seq (.block [.mov .rdx (.mem (at_ .rcx lenOff)), .alu .sub .rdx (.imm 64), .alu .cmp .rdx (.imm 193)])
+  .seq (.block (padIns .rdx 8 ++
+    ([.mov .rdx (.mem (at_ .rcx lenOff)), .alu .sub .rdx (.imm 64), .alu .cmp .rdx (.imm 193)] : List Instr)))
   (.ite .b
     (.seq (.block [.alu .cmp .rdx (.imm 65)]) (.ite .b (tailO false 4)
       (.seq (.block [.alu .cmp .rdx (.imm 128)]) (.ite .b (tailO true 8) (tailO true 12)))))
@@ -536,9 +552,10 @@ implementation `x` of `vg_chacha20_xor` from the counter the chunks left. -/
 def decRest (x : ChaCha20.X86_64.Callee) : Prog isa :=
   .seq (.block [.alu .cmp .r13 (.imm 512)])
   (.ite .b (.seq (.block restArgs) (.call x.name x.code))
-    (.seq (.block [.mov .rax (.reg .r13), .alu .and .rax (.imm 511), .alu .sub .rax (.imm 64),
+    (.seq (.seq (.block [.mov .rax (.reg .r13), .alu .and .rax (.imm 511), .alu .sub .rax (.imm 64),
       .alu .cmp .rax (.imm 193)])
-      (.ite .b (xorTail x.wide) (.seq (.block restArgs) (.call x.name x.code)))))
+      (.ite .b (xorTail x.wide) (.seq (.block restArgs) (.call x.name x.code))))
+      (.block (padIns .rax 20))))
 
 /-- `open`'s `macPadLengths` and `crypt`: if the data is at most `fold`
 bytes, as `open` does; otherwise the whole chunks decrypted and absorbed by
@@ -551,8 +568,9 @@ def cryptO (x : ChaCha20.X86_64.Callee) (b : Poly1305.X86_64.Blocks) : Prog isa 
         (.seq (xorBufX x.wide .r14) (.block (ptr .rsi .r15 128)))))
     (.seq (.block (cryptArgs ++ [.alu .cmp .rdx (.imm 512)]))
       (.seq (.ite .b (.block whole) (bulkO x.vl))
+      (.seq (.block (padIns .rax 18))
       (.seq (macPadLengths b .rbx .rbp)
-      (decRest x)))))
+      (decRest x))))))
   (.seq (.block (anchor .rsi 128))
   (.seq (foldM x.fold x.pass)
   (.seq (.block [.alu .add .rdx (.imm 64)]) (zeroKs x.wide)))))
