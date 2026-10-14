@@ -41,8 +41,10 @@ The working space `ws` of 8192 bytes is the x86-64 code's: numbers of `k`
 words in slots from byte 64 (`slot`), where the caller provides `p` (slot 0)
 or `n` (slot 1) and the number to invert. The functions take no offsets.
 Slot 30, the curve's temporary slot (`tmpAt`) and the `64 k + 64` bytes from
-`workAt` (past the code's three tables of bits), and for P-521 72 more
-(`workExtra`), are the functions' own working space (`Own`); on return they are unspecified and may hold intermediate
+`workAt` (past the code's three tables of bits), and for P-521 72 more and
+for brainpoolP512r1 48 more (`workExtra`, where the AArch64 code keeps the
+callee-saved registers its products change), are the functions' own working
+space (`Own`); on return they are unspecified and may hold intermediate
 values, secret ones among them, and the caller's callee-saved registers.
 Every other byte of `ws` keeps its value but the result's (`Keeps`).
 
@@ -222,7 +224,7 @@ def brainpoolp384r1 : Curve :=
 
 def brainpoolp512r1 : Curve :=
   { W := Spec.BrainpoolP512r1.curve, curve := "brainpoolp512r1", k := 8, desc := "brainpoolP512r1",
-    tmp := 2 }
+    tmp := 2, workExtra := 48 }
 
 /-- Every curve. -/
 def curves : List Curve := [p192, p224, p256, secp256k1, p384, p521, brainpoolp256r1, brainpoolp384r1,

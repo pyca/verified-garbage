@@ -5,8 +5,11 @@ import VerifiedGarbage.Spec.Weierstrass.Mul
 
 * the function's own working space is where the documentation says, and
   apart from what the caller provides (`p`, zero, the constants, `Q` and
-  `k`), from the result (where `Q` is), and from the other tables of bits of the x86-64
-  code (`p - 2`'s and `n - 2`'s, from byte `bitsAt + 64 k + 8`);
+  `k`), from the result (where `Q` is), and from the bytes past the words
+  where the function keeps registers (`bitsAt + 64 k + 8 saved`): on x86-64,
+  the other tables of bits (`p - 2`'s and `n - 2`'s, from byte
+  `bitsAt + 64 k + 8`), whose first `8 (saved - 1)` bytes are the function's
+  for brainpoolP512r1 (its code inverts by divsteps, not by those tables);
 * each curve's base point satisfies `PointOk` in Montgomery's form, and the
   constants `ConstsOk` asks for are the curve's.
 -/
@@ -18,7 +21,7 @@ open Spec.Weierstrass Spec.Weierstrass.Mul
 /-- Byte `i` is in the own working space, as a `Bool`. -/
 def own (C : Mul.Curve) (i : Nat) : Bool :=
   (C.slot 17 ≤ i && i < C.slot 31) || (C.tmpAt ≤ i && i < C.tmpAt + 8 * C.k) ||
-    (C.bitsAt ≤ i && i < C.bitsAt + 64 * C.k + 8)
+    (C.bitsAt ≤ i && i < C.bitsAt + 64 * C.k + 8 * C.saved)
 
 theorem own_iff (C : Mul.Curve) (i : Nat) : own C i = true ↔ C.Own i := by
   simp [own, Curve.Own, or_assoc]
@@ -29,7 +32,7 @@ def checkApart (C : Mul.Curve) : Bool :=
   let words := 8 * C.k
   (List.range words).all (fun i => [C.modAt, C.zeroAt, C.oneAt, C.aAt, C.b3At, C.qAt, C.qAt + words,
       C.kAt].all fun o => !own C (o + i)) &&
-    (List.range (2 * (64 * C.k + 8))).all (fun i => !own C (C.bitsAt + 64 * C.k + 8 + i)) &&
+    (List.range (2 * (64 * C.k + 8))).all (fun i => !own C (C.bitsAt + 64 * C.k + 8 * C.saved + i)) &&
     (List.range C.ptBytes).all (fun i => !own C (C.pAt + i))
 
 #guard curves.all checkApart

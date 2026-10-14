@@ -2,7 +2,7 @@
 //! Verified `brainpoolp512r1_inverse` functions for `x86_64`.
 #![allow(dead_code)]
 
-/// The power `A = Z^(p-2)` modulo brainpoolP512r1's prime `p` (the inverse of `Z` if it is nonzero), of the number `Z` at byte 1088 of `ws`. Numbers are 8 64-bit words (`64` bytes), little-endian, in Montgomery's form modulo brainpoolP512r1's prime `p`. The function reads `p` at byte 64 and the number to invert at byte 1088, and writes the result at bytes 1920 to 1983, below `p`. Bytes 1984 to 2047, 192 to 255 and 4504 to 5079 of `ws` are the function's own working space; every other byte of `ws` but the result's keeps its value. Constant time: only the pointer may affect timing.
+/// The power `A = Z^(p-2)` modulo brainpoolP512r1's prime `p` (the inverse of `Z` if it is nonzero), of the number `Z` at byte 1088 of `ws`. Numbers are 8 64-bit words (`64` bytes), little-endian, in Montgomery's form modulo brainpoolP512r1's prime `p`. The function reads `p` at byte 64 and the number to invert at byte 1088, and writes the result at bytes 1920 to 1983, below `p`. Bytes 1984 to 2047, 192 to 255 and 4504 to 5127 of `ws` are the function's own working space; every other byte of `ws` but the result's keeps its value. Constant time: only the pointer may affect timing.
 ///
 /// Contract: `invPContract` of `VG.Spec.Weierstrass.Inverse.Curve`.
 ///
@@ -12,7 +12,7 @@
 ///
 /// * `ws` must be valid for reads and writes of 8192 bytes.
 /// * The 8 words at byte 64 of `ws` must be brainpoolP512r1's prime `p`, and the number at byte 1088 must be below it.
-/// * Bytes 1984 to 2047, 192 to 255 and 4504 to 5079 of `ws` are unspecified on return and may hold intermediate values, which are secret and which the caller must destroy.
+/// * Bytes 1984 to 2047, 192 to 255 and 4504 to 5127 of `ws` are unspecified on return and may hold intermediate values, which are secret and which the caller must destroy.
 /// * `ws` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_brainpoolp512r1_inv_mod_p(ws: *mut [u64; 1024]) {
@@ -4560,7 +4560,7 @@ pub(crate) unsafe extern "sysv64" fn vg_brainpoolp512r1_inv_mod_p(ws: *mut [u64;
     )
 }
 
-/// The power `A = x^(n-2)` modulo brainpoolP512r1's order `n` (the inverse of `x` if it is nonzero), of the number `x` at byte 2432 of `ws`. Numbers are 8 64-bit words (`64` bytes), little-endian, in Montgomery's form modulo brainpoolP512r1's order `n`. The function reads `n` at byte 128 and the number to invert at byte 2432, and writes the result at bytes 1920 to 1983, below `n`. Bytes 1984 to 2047, 192 to 255 and 4504 to 5079 of `ws` are the function's own working space; every other byte of `ws` but the result's keeps its value. Constant time: only the pointer may affect timing.
+/// The power `A = x^(n-2)` modulo brainpoolP512r1's order `n` (the inverse of `x` if it is nonzero), of the number `x` at byte 2432 of `ws`. Numbers are 8 64-bit words (`64` bytes), little-endian, in Montgomery's form modulo brainpoolP512r1's order `n`. The function reads `n` at byte 128 and the number to invert at byte 2432, and writes the result at bytes 1920 to 1983, below `n`. Bytes 1984 to 2047, 192 to 255 and 4504 to 5127 of `ws` are the function's own working space; every other byte of `ws` but the result's keeps its value. Constant time: only the pointer may affect timing.
 ///
 /// Contract: `invNContract` of `VG.Spec.Weierstrass.Inverse.Curve`.
 ///
@@ -4570,7 +4570,7 @@ pub(crate) unsafe extern "sysv64" fn vg_brainpoolp512r1_inv_mod_p(ws: *mut [u64;
 ///
 /// * `ws` must be valid for reads and writes of 8192 bytes.
 /// * The 8 words at byte 128 of `ws` must be brainpoolP512r1's order `n`, and the number at byte 2432 must be below it.
-/// * Bytes 1984 to 2047, 192 to 255 and 4504 to 5079 of `ws` are unspecified on return and may hold intermediate values, which are secret and which the caller must destroy.
+/// * Bytes 1984 to 2047, 192 to 255 and 4504 to 5127 of `ws` are unspecified on return and may hold intermediate values, which are secret and which the caller must destroy.
 /// * `ws` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_brainpoolp512r1_inv_mod_n(ws: *mut [u64; 1024]) {
