@@ -82,6 +82,37 @@ theorem idxOk_of {aligned : Bool} {off : Nat} (hx : IdxArg off s) {s₃ : State}
     · simp only [Gcm.X86_64.Stitch.pR, Gcm.X86_64.Stitch.pp, h11, hsp]
       exact hx.s.sub_right (Offset.sub_base _ (by omega))
 
+/-- Taking all the blocks and `r11` at the working space, with at least 16
+blocks: what the loop needs, and the index kept. -/
+theorem takeScratchI_ok {aligned : Bool} {off : Nat} (hx : IdxArg off s) (h16 : 16 ≤ n s) {s₂ : State}
+    (h11 : s₂.gpr .r11 = S s) (h10 : s₂.gpr .r10 = Dst s) (hg : ∀ r, r ≠ .r11 → r ≠ .r10 → s₂.gpr r = s.gpr r)
+    (hk : Kept s 0 s₂.mem) (hf : Frame [kR' s] s.mem s₂.mem) (hrd : s₂.rd = s.rd) (hwr : s₂.wr = s.wr) :
+    WP isa (.block (takeAllTo ++ Blocks.scratchSetup aligned)) s₂ fun s₄ => Gcm.X86_64.Stitch.SPreTo M s₄ ∧
+      Gcm.X86_64.StitchZ.IdxOk off [Gcm.X86_64.Stitch.oR s₄, Gcm.X86_64.Stitch.pR s₄] s₄ ∧
+      s₄.mem.readW (s₄.gpr .rsp + BitVec.ofNat 64 off) 32 = s.mem.readW (SP s + BitVec.ofNat 64 off) 32 := by
+  rw [WP.block_append_iff]
+  refine WP.mono (takeAllTo_ok hp h11 (hg _ (by decide) (by decide)) (hg _ (by decide) (by decide)) h10 hk hf hwr)
+    fun s₃ ⟨_, f₃, g₃, rd₃, wr₃⟩ => ?_
+  refine WP.mono (Blocks.scratch_ok (aligned := aligned) s₃) fun s₄ ⟨h11₄, g₄, m₄, rd₄, wr₄⟩ => ?_
+  have keepR : ∀ r, r ≠ .rax → r ≠ .r10 → r ≠ .r11 → s₄.gpr r = s.gpr r := fun r a b c => by
+    rw [g₄ r c, g₃ r a, hg r c b]
+  have ga : ∀ r ∈ BlocksTo.argRegs, s₄.gpr r = s.gpr r := fun r hr => by
+    simp only [BlocksTo.argRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> exact keepR _ (by decide) (by decide) (by decide)
+  have h10₄ : s₄.gpr .r10 = Dst s := by rw [g₄ _ (by decide), g₃ _ (by decide), h10]
+  have g11 : s₄.gpr .r11 = S s + BitVec.ofNat 64 (AlignedScratch.offset aligned (S s)) := by
+    rw [h11₄, g₃ _ (by decide), h11]; exact AlignedScratch.ptr_eq aligned (S s) hp.w_s
+  have h9 : s₄.gpr .r9 = BitVec.ofNat 64 (n s) := by
+    rw [keepR _ (by decide) (by decide) (by decide)]
+    exact (BitVec.ofNat_toNat _ _).trans (BitVec.setWidth_eq _) |>.symm
+  have rd₄' : s₄.rd = s.rd := by rw [rd₄, rd₃, hrd]
+  have wr₄' : s₄.wr = s.wr := by rw [wr₄, wr₃, hwr]
+  have hf₄ : Frame [kR' s] s.mem s₄.mem := by rw [m₄]; exact f₃
+  have hsp : s₄.gpr .rsp = s.gpr .rsp := ga _ (by simp [BlocksTo.argRegs])
+  refine ⟨spreTo_of hp h16 (Nat.le_refl _) h9 ga h10₄ g11 rd₄' wr₄' hf₄, idxOk_of hp hx ga h9 h10₄ g11 hf₄ rd₄', ?_⟩
+  rw [hsp, hf₄.readW (Region.contains_self _ _) (fun r hr => by
+    simp only [List.mem_singleton] at hr; subst hr; exact hx.s.sub_right kR'_sub) (show 32 / 8 < 2 ^ 64 by decide)]
+
 end
 
 /-- `vg_aes_gcm_encrypt_blocks_to` with a loop given the block index. -/
