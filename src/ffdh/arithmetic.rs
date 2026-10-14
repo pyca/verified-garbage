@@ -3,7 +3,9 @@
 use crate::arch::ffdh::vg_ffdh_choose;
 use crate::arch::rsa_mont::vg_rsa_mont_mul;
 #[cfg(target_arch = "x86_64")]
-use crate::arch::rsa_mont::{VG_RSA_MONT_MUL_ADX_FEATURES, vg_rsa_mont_mul_adx};
+use crate::arch::rsa_mont::{
+    VG_RSA_MONT_MUL_ADX_FEATURES, vg_rsa_mont_mul_adx, vg_rsa_mont_mul_lazy, vg_rsa_mont_mul_lazy_adx,
+};
 use crate::cpu::{Features, detected};
 use crate::rsa::Scratch;
 use alloc::{vec, vec::Vec};
@@ -119,6 +121,9 @@ impl Montgomery {
         let mut ws = self.workspace(base, (1 << window) * w);
         let at = |j| 32 + j * (w + 2);
         let table_at = at(8);
+        // The table and the accumulator hold residues below 2^(64 w), not
+        // necessarily below p: the lazy multiplication takes and returns any
+        // such numbers, and `finish` reduces the result below p.
         // All window powers, including Montgomery one, in wiped storage.
         // The verified multiplication preserves this extension of the workspace.
         for i in 0..w {
@@ -135,10 +140,10 @@ impl Montgomery {
                     table_at + (digit / 2) * w..table_at + (digit / 2 + 1) * w,
                     at(5),
                 );
-                self.mul(&mut ws, 5, 5, 5);
+                self.mul_lazy(&mut ws, 5, 5, 5);
                 ws.copy_within(at(5)..at(5) + w, at(6));
             } else {
-                self.mul(&mut ws, 6, 6, 4);
+                self.mul_lazy(&mut ws, 6, 6, 4);
             }
             ws.copy_within(at(6)..at(6) + w, table_at + digit * w);
         }
@@ -154,7 +159,7 @@ impl Montgomery {
             }
             if start != 0 {
                 for _ in 0..width {
-                    self.mul(&mut ws, 5, 5, 5);
+                    self.mul_lazy(&mut ws, 5, 5, 5);
                 }
             }
             let (arrays, table) = ws.split_at_mut(table_at);
@@ -176,7 +181,7 @@ impl Montgomery {
                 // The first window replaces Montgomery one directly.
                 ws.copy_within(at(6)..at(6) + w, at(5));
             } else {
-                self.mul(&mut ws, 5, 5, 6);
+                self.mul_lazy(&mut ws, 5, 5, 6);
             }
         }
         self.finish(&mut ws)
@@ -307,6 +312,23 @@ impl Montgomery {
             *b = (ws[at(5) + i / 8] >> (8 * (i % 8))) as u8;
         }
         out
+    }
+    /// `mul` without its result reduced below the modulus, nor `b` required
+    /// to be. Elsewhere, where `power` runs only in tests, it is `mul`, and
+    /// every value stays below the modulus.
+    #[cfg(target_arch = "x86_64")]
+    fn mul_lazy(&self, ws: &mut [u64], out: u32, a: u32, b: u32) {
+        let f = match self.backend {
+            Backend::Baseline => vg_rsa_mont_mul_lazy,
+            Backend::Adx => vg_rsa_mont_mul_lazy_adx,
+        };
+        // SAFETY: as for `mul`, but the lazy multiplication requires no
+        // operand below the modulus.
+        unsafe { f(ws.as_mut_ptr(), ws.len(), out, a, b) }
+    }
+    #[cfg(all(not(target_arch = "x86_64"), test))]
+    fn mul_lazy(&self, ws: &mut [u64], out: u32, a: u32, b: u32) {
+        self.mul(ws, out, a, b);
     }
     fn mul(&self, ws: &mut [u64], out: u32, a: u32, b: u32) {
         let f = match self.backend {
