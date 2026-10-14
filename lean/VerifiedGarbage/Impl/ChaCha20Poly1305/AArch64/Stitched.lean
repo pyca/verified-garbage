@@ -107,11 +107,11 @@ checks on its own: for 64 to 256 bytes `Short.lean`'s, and otherwise stitched
 with the eight-block kernel or not. -/
 def sealMainCode (c : XorCallee) (stitched : Bool) : Prog isa :=
   .seq (.block Short.check)
-    (.ite (.zero .x .x9) Short.sealMain (if stitched then sealStitchedMain c else sealMain c))
+    (.ite (.zero .x .x9) (Short.sealMain c.sve) (if stitched then sealStitchedMain c else sealMain c))
 
 def openMainCode (c : XorCallee) (stitched : Bool) : Prog isa :=
   .seq (.block Short.check)
-    (.ite (.zero .x .x9) Short.openMain (if stitched then openStitchedMain c else openMain c))
+    (.ite (.zero .x .x9) (Short.openMain c.sve) (if stitched then openStitchedMain c else openMain c))
 
 /-- The code for a stream backend. -/
 def sealCode (c : XorCallee) (stitched : Bool) : Prog isa := .seq (sealMainCode c stitched) sealTail

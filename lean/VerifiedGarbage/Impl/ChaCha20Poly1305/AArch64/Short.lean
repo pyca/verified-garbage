@@ -9,8 +9,9 @@ public import VerifiedGarbage.Impl.ChaCha20.AArch64.Mixed5
 With 64 to 256 bytes of data, `seal` and `open` compute the one-time key and
 the data's keystream together, in one pass of the five-block ChaCha20 kernel
 (`Mixed5.chunk`: four blocks in NEON lanes and one in the integer
-registers), rather than the one-time key with `vg_chacha20_block` and the
-keystream with `vg_chacha20_xor`. The kernel XORs the keystream of its five
+registers; with SVE2, each vector XOR and rotation is one XAR), rather than
+the one-time key with `vg_chacha20_block` and the keystream with
+`vg_chacha20_xor`. The kernel XORs the keystream of its five
 blocks into 320 bytes; given zeros, it leaves the keystream itself. The
 context (`../AArch64.lean`) is laid out differently while it runs:
 
@@ -66,10 +67,11 @@ def leave : List Instr :=
    .addImm .x .x0 .x21 448, .addImm .x .x1 .x21 64]
 
 /-- Saves the registers, moves the arguments, and computes the keystream of
-counters 0 to 4 and the Poly1305 state for the one-time key. -/
-def prologue : Prog isa :=
+counters 0 to 4 and the Poly1305 state for the one-time key; the kernel's
+vector rounds use SVE2's XAR if `sve`. -/
+def prologue (sve : Bool) : Prog isa :=
   .seq (.block (save ++ moves ++ initState0 ++ zero ++ enter))
-  (.seq (.seq VG.Impl.ChaCha20.AArch64.Mixed5.chunk (.block leave))
+  (.seq (.seq (VG.Impl.ChaCha20.AArch64.Mixed5.chunk sve) (.block leave))
     (.call "vg_poly1305_init" Impl.Poly1305.AArch64.init))
 
 /-- XORs `x11` (nonzero) blocks of 16 bytes at `x10` into `x9`, advancing both. -/
@@ -90,8 +92,8 @@ def xorKs : Prog isa :=
     (.ite (.zero .x .x11) (.block []) xor1)))
 
 /-- `seal` but for the tag. -/
-def sealMain : Prog isa :=
-  .seq prologue
+def sealMain (sve : Bool) : Prog isa :=
+  .seq (prologue sve)
   (.seq (macPad .x24 .x25)
   (.seq (.block lengths)
   (.seq xorKs
@@ -99,8 +101,8 @@ def sealMain : Prog isa :=
     absorbLengths))))
 
 /-- `open` up to the tag computed. -/
-def openMain : Prog isa :=
-  .seq prologue
+def openMain (sve : Bool) : Prog isa :=
+  .seq (prologue sve)
   (.seq (macPad .x24 .x25)
   (.seq (macPad .x22 .x23)
   (.seq (.block lengths)

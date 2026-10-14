@@ -46,6 +46,15 @@ def Op.code : Op → List Instr
     else [.vop (.shift .ushr .s4 (vreg d) .v31 (32 - n)),
       .vop (.shift .sli .s4 (vreg d) .v31 n)]
 
+/-- The code of `op`, using SVE2 if `sve`: an `xorRol` whose destination is
+its first source, by a nonzero rotation, is then one XAR, `ROR(d XOR b, 32 -
+n)`, which is `ROL(d XOR b, n)` (as `Rows6.Op.codeFor`). -/
+def Op.codeFor (sve : Bool) (op : Op) : List Instr :=
+  match sve, op with
+  | true, .xorRol d a b n =>
+    if d = a ∧ 0 < n.val then [.vop (.xarS (vreg d) (vreg b) (32 - n.val))] else op.code
+  | _, _ => op.code
+
 def cols : List (Fin 16 × Fin 16 × Fin 16 × Fin 16) :=
   [(0,4,8,12), (1,5,9,13), (2,6,10,14), (3,7,11,15)]
 def diags : List (Fin 16 × Fin 16 × Fin 16 × Fin 16) :=
