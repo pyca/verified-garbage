@@ -1,3 +1,4 @@
+import VerifiedGarbage.Proof.Bignum.Arm.DoubleLoopCT
 import VerifiedGarbage.Proof.Bignum.Arm.DoubleBody
 import VerifiedGarbage.Proof.Bignum.Arm.DoubleFnRestore
 import VerifiedGarbage.Proof.Bignum.Arm.KeepsLayout
@@ -16,3 +17,8 @@ import VerifiedGarbage.TCB.Audit
 #assert_standard_axioms VG.Proof.Bignum.Arm.keeps_layout
 #assert_standard_axioms VG.Proof.Bignum.Arm.keeps_array_num
 #assert_no_compiler_overrides VG.Impl.Bignum.Arm.doubleFnRestore
+
+#assert_standard_axioms VG.Proof.Bignum.Arm.doubleLoop_ok
+#assert_standard_axioms VG.Proof.Bignum.Arm.r2_from_one
+#assert_standard_axioms VG.Proof.Bignum.Arm.doubleLoop_ct
+#assert_no_compiler_overrides VG.Impl.Bignum.Arm.doubleLoop
