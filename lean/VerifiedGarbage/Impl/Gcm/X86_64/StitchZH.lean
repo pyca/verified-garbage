@@ -190,6 +190,74 @@ def remWith (pre : List Instr) (src : Reg) : Prog isa :=
 
 def rem : Prog isa := remWith [] .rdx
 
+/-! ## The blocks after the last group, as a masked group
+
+`remG` encrypts the `r` blocks after the last group as one more group of
+`k = ⌈r / 4⌉` registers, without storing their keystream: while the last
+group is hashed between their rounds (`gq`), as in a body, their
+counters are encrypted in the lanes of `zmm3` …, the data added to them
+and stored, the last register's through the mask of its blocks
+(`remMaskG`, in `r10`) (`xorG`), and the `k` registers hashed with the
+powers `H'ʳ` … `H'` at `rax`, the last register's loaded through the same
+mask, so that its lanes after the `r` blocks add nothing (`hashG`). -/
+
+/-- The mask of the last register's blocks, `r mod 4` of them (four if
+`r` is a multiple of four), in `r10`, from `r9 = 16 + r`. -/
+def remMaskG : Prog isa :=
+  .seq (.block [.alu .test .r9 (.imm 1)])
+    (.ite .e
+      (.seq (.block [.alu .test .r9 (.imm 2)])
+        (.ite .e (.block [.mov32 .r10 (.imm 255)]) (.block [.mov32 .r10 (.imm 15)])))
+      (.seq (.block [.alu .test .r9 (.imm 2)])
+        (.ite .e (.block [.mov32 .r10 (.imm 3)]) (.block [.mov32 .r10 (.imm 63)]))))
+
+/-- The registers `rs`, from the `j`-th, XORed with the data at `src + 64 j`
+… and stored to `rdx + 64 j` …; the last through the mask in `r10`. -/
+def xorG (src : Reg) : List XReg → Nat → List Instr
+  | [], _ => []
+  | [b], j => [.kLoad .r10 .xmm13 (at_ src (64 * j)), .zop (.zbin .vpxord b b .xmm13),
+      .kStore (at_ .rdx (64 * j)) .r10 b]
+  | b :: bs, j => ([.vmovdqu32Load .xmm13 (at_ src (64 * j)), .zop (.zbin .vpxord b b .xmm13),
+      .vmovdqu32Store (at_ .rdx (64 * j)) b] : List Instr) ++ xorG src bs (j + 1)
+
+/-- The lane-wise products of register `b` byte-reversed (with `Y` added if
+`j = 0`) with the powers in `zmm12`, written (`j = 0`) or added. -/
+def hash1 (b : XReg) (j : Nat) : List Instr :=
+  ([.zop (.zbin .vpshufb .xmm7 b .xmm0)] : List Instr) ++
+    (if j = 0 then [.zop (.zbin .vpxord .xmm7 .xmm7 .xmm2)] else []) ++
+    (if j = 0 then StitchZ.accInit .xmm7 .xmm12 else StitchZ.acc .xmm7 .xmm12)
+
+/-- The registers `rs`, from the `j`-th, hashed with the powers at
+`rax + 64 j` …; the last's through the mask in `r10`. -/
+def hashG : List XReg → Nat → List Instr
+  | [], _ => []
+  | [b], j => .kLoad .r10 .xmm12 (at_ .rax (64 * j)) :: hash1 b j
+  | b :: bs, j => (.vmovdqu32Load .xmm12 (at_ .rax (64 * j)) :: hash1 b j) ++ hashG bs (j + 1)
+
+/-- The `r` blocks of a group of `k` registers, while `g` runs between
+their rounds: their keystream, the data at `src` (`pre` points it at the
+blocks once `rdx` does) added and stored, hashed, and the four lanes'
+products reduced into `Y`. -/
+def ksBatchG (k : Nat) (g : Nat → List Instr) (pre : List Instr) (src : Reg) : Prog isa :=
+  .seq (.block (ctrsZ .xmm14 .xmm0 .xmm15 (aregs.take k)))
+    (.seq (Aes.X86_64.VaesZH.aes (aregs.take k) g)
+      (.seq (.block (.alu .add .rdx (.imm 256) :: pre))
+        (.seq remMaskG (.block (xorG src (aregs.take k) 0 ++ hashG (aregs.take k) 0 ++ fin)))))
+
+/-- `ksBatchG` of `⌈r / 4⌉` registers, from `r10 = 16 r`. -/
+def ksSelG (pre : List Instr) (src : Reg) : Prog isa :=
+  .seq (.block [.alu .cmp .r10 (.imm 65)])
+    (.ite .b (ksBatchG 1 gq pre src)
+      (.seq (.block [.alu .cmp .r10 (.imm 129)])
+        (.ite .b (ksBatchG 2 gq pre src)
+          (.seq (.block [.alu .cmp .r10 (.imm 193)])
+            (.ite .b (ksBatchG 3 gq pre src) (ksBatchG 4 gq pre src))))))
+
+/-- The `r9 - 16` blocks after the last group, the last group hashed, and
+`Y` stored, as a masked group. -/
+def remG (pre : List Instr) (src : Reg) : Prog isa :=
+  .seq (.block remSetup) (.seq (ksSelG pre src) (.block storeY))
+
 /-- The end of `encR`: the last group, and the blocks after it if any. -/
 def tailR (r : Prog isa) : Prog isa :=
   .seq (.block [.alu .cmp .r9 (.imm 16)]) (.ite .e (.block (storeCtr ++ lastG ++ storeY)) r)
