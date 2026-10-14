@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacBuild
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJNorm
-public import VerifiedGarbage.Proof.Weierstrass.JacCoZ
+import VerifiedGarbage.Proof.Weierstrass.JacCoZ
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

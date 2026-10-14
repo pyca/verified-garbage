@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.TripleDes.AArch64.Key.Permutation
-public import VerifiedGarbage.Proof.TripleDes.AArch64.BlockIO
+import VerifiedGarbage.Proof.TripleDes.AArch64.BlockIO
 public import VerifiedGarbage.Impl.TripleDes.AArch64.ExpandKey
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

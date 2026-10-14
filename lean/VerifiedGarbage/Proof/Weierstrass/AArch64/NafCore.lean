@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Production
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Production
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafInvariant
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowCore
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowCore
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

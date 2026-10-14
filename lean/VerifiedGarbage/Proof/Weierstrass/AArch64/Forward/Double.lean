@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.Forward
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Refine
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Refine
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowDouble
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

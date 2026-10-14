@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowSum
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowTable
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowEntry
+import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowSum
+import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowTable
+import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowEntry
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowQuad
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

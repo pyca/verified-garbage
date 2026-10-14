@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.TripleDes.X86_64.EcbCall
 meta import VerifiedGarbage.Impl.TripleDes.X86_64.EcbCall
-public import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx512.Lit
+import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx512.Lit
 meta import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx512.Lit
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

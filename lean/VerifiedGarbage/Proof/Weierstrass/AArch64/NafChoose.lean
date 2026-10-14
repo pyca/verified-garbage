@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.NafPrep
 public import VerifiedGarbage.Proof.Weierstrass.Naf5
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.BytesLen

@@ -2,8 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointFixedFields
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafDigitRead
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.JacZero
-public import VerifiedGarbage.Proof.Framework.X86_64.Syms
+import VerifiedGarbage.Proof.Weierstrass.X86_64.JacZero
+import VerifiedGarbage.Proof.Framework.X86_64.Syms
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

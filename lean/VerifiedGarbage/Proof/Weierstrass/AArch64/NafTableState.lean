@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafInvariant
+import VerifiedGarbage.Proof.Weierstrass.AArch64.NafInvariant
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTree
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

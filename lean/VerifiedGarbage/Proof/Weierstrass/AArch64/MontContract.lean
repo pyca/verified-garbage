@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.MontFnG
-public import VerifiedGarbage.Proof.Mont.Read
+import VerifiedGarbage.Proof.Mont.Read
 public import VerifiedGarbage.Proof.Framework.AArch64.Taint
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

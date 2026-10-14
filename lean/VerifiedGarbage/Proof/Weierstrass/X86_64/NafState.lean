@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JacState
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.Unch
+import VerifiedGarbage.Proof.Weierstrass.X86_64.Unch
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.Ladder
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

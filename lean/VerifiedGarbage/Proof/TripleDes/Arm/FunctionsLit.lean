@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.TripleDes.Arm.Lit
+import VerifiedGarbage.Proof.TripleDes.Arm.Lit
 meta import VerifiedGarbage.Proof.TripleDes.Arm.Lit
 public import VerifiedGarbage.Proof.Framework.Arm.Lit
 meta import VerifiedGarbage.Proof.Framework.Arm.Lit

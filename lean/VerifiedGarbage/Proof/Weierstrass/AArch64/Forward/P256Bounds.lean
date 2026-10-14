@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Selected
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Selected
 public import VerifiedGarbage.Proof.Framework.AArch64.Lit
 meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Kernel
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Kernel
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Kernel
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

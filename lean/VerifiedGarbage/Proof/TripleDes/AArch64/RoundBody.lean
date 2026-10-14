@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.TripleDes.AArch64.Box
-public import VerifiedGarbage.Proof.TripleDes.AArch64.RoundFunction
+import VerifiedGarbage.Proof.TripleDes.AArch64.RoundFunction
 public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

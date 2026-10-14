@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.X25519.Arm.Instr
-public import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.Range
 public import VerifiedGarbage.Impl.X25519.Arm
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

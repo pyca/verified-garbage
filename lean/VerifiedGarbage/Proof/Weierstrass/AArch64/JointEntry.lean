@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JointLoad
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeArithmetic
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowState
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeArithmetic
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowState
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafNeg
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafDigitRead
 import all Init.Data.Array.Basic

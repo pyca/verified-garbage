@@ -1,12 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointLoopTiming
+import VerifiedGarbage.Proof.Weierstrass.X86_64.JointLoopTiming
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.JointLoopTiming
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointLoop
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.JointLoop
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.RegFieldTiming
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.RegFieldTiming
-public import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
+import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
 meta import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

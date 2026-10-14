@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.TripleDes.SboxTables
 public import VerifiedGarbage.Proof.TripleDes.Arm.Lit
 public import VerifiedGarbage.Spec.TripleDes
 public import VerifiedGarbage.Proof.Framework.Arm.Straight
-public import VerifiedGarbage.Proof.Framework.Bitslice.Table
+import VerifiedGarbage.Proof.Framework.Bitslice.Table
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

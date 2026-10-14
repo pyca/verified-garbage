@@ -3,10 +3,10 @@ module
 public import VerifiedGarbage.Proof.TripleDes.Arm.VerifiedBlock
 public import VerifiedGarbage.Impl.TripleDes.Arm.Ecb
 public import VerifiedGarbage.Proof.Framework.Arm.Call
-public import VerifiedGarbage.Proof.TripleDes.EcbMemory
-public import VerifiedGarbage.Proof.Rc2.Arm.KeySteps
+import VerifiedGarbage.Proof.TripleDes.EcbMemory
+import VerifiedGarbage.Proof.Rc2.Arm.KeySteps
 public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Spec.TripleDes.Contract
+import VerifiedGarbage.Spec.TripleDes.Contract
 public import VerifiedGarbage.Proof.TripleDes.Scratch
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

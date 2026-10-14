@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointSeed
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafTableTiming
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafCacheBuildTiming
+import VerifiedGarbage.Proof.Weierstrass.X86_64.NafCacheBuildTiming
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

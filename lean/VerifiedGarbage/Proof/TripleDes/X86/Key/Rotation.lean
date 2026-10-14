@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.TripleDes.X86.ExpandKey
-public import VerifiedGarbage.Proof.TripleDes.X86.Word
+import VerifiedGarbage.Proof.TripleDes.X86.Word
 public import VerifiedGarbage.Proof.Rc2.X86.RoundSteps
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

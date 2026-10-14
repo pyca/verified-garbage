@@ -2,9 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafTable
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeTiming
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTableTiming
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowLoadTiming
-public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTableTiming
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowLoadTiming
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

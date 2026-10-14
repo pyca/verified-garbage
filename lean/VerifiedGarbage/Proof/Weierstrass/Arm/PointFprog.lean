@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.Arm.PointCall
-public import VerifiedGarbage.Proof.Weierstrass.Arm.Saves
+import VerifiedGarbage.Proof.Weierstrass.Arm.Saves
 public import VerifiedGarbage.Proof.Weierstrass.Arm.Fprog
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

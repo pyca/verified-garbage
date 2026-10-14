@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.MontSaves
+import VerifiedGarbage.Proof.Weierstrass.AArch64.MontSaves
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.MontRound
 public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 public import VerifiedGarbage.TCB.AArch64.Target

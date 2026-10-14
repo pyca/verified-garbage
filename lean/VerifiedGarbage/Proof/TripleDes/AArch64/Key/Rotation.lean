@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.TripleDes.AArch64.KeySteps
-public import VerifiedGarbage.Proof.TripleDes.KeySchedule
+import VerifiedGarbage.Proof.TripleDes.KeySchedule
 public import VerifiedGarbage.Proof.Rc2.AArch64.Lookup
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

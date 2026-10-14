@@ -1,9 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFnB
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFn6
+import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFnB
+import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFn6
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFnN6
-public import VerifiedGarbage.Proof.Mont.X86_64.Ops
+import VerifiedGarbage.Proof.Mont.X86_64.Ops
 public import VerifiedGarbage.Proof.Framework.X86_64.CallInline
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

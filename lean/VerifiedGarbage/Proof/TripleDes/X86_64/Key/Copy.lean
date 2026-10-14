@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.TripleDes.X86_64.Key.Component
-public import VerifiedGarbage.Proof.Rc2.X86_64.Cbc.Steps
+import VerifiedGarbage.Proof.Rc2.X86_64.Cbc.Steps
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

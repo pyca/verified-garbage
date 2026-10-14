@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombJ
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacSelect
+import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacSelect
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacOps
 public import VerifiedGarbage.Proof.Weierstrass.WinJacMath
 import all Init.Data.Array.Basic

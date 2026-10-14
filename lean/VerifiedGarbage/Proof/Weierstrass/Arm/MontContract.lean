@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.Arm.MontFn
-public import VerifiedGarbage.Proof.Mont.Read
+import VerifiedGarbage.Proof.Mont.Read
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

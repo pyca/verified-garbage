@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Production
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Production
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
 public import VerifiedGarbage.Proof.Weierstrass.Comb
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.Jacobian

@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.TripleDes.AArch64.Key.Rotation
+import VerifiedGarbage.Proof.TripleDes.AArch64.Key.Rotation
 public import VerifiedGarbage.Proof.TripleDes.AArch64.Key.Store
 public import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Framework.Omega

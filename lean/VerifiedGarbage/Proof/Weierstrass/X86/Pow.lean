@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Weierstrass.Layout
 public import VerifiedGarbage.Proof.Weierstrass.X86.Bits
 public import VerifiedGarbage.Proof.Weierstrass.X86.CallOps
-public import VerifiedGarbage.Proof.Weierstrass.Pow
+import VerifiedGarbage.Proof.Weierstrass.Pow
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

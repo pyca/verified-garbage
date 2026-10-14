@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.X86.TCombOne
-public import VerifiedGarbage.Proof.Framework.X86.SseDword
-public import VerifiedGarbage.Proof.Framework.CallLay
+import VerifiedGarbage.Proof.Framework.X86.SseDword
+import VerifiedGarbage.Proof.Framework.CallLay
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

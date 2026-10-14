@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.CachedJacField
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.ForwardField
+import VerifiedGarbage.Proof.Weierstrass.X86_64.ForwardField
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

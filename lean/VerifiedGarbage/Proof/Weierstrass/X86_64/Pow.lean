@@ -3,9 +3,9 @@ module
 public import VerifiedGarbage.Proof.Weierstrass.Layout
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.Loop
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.Unch
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.Copy
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.Bits
-public import VerifiedGarbage.Proof.Weierstrass.Pow
+import VerifiedGarbage.Proof.Weierstrass.X86_64.Copy
+import VerifiedGarbage.Proof.Weierstrass.X86_64.Bits
+import VerifiedGarbage.Proof.Weierstrass.Pow
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

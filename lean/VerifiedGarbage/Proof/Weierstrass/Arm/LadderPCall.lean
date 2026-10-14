@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.Arm.PointFn
-public import VerifiedGarbage.Proof.Weierstrass.Arm.Copy
-public import VerifiedGarbage.Proof.Framework.Arm.RelCT
+import VerifiedGarbage.Proof.Weierstrass.Arm.Copy
+import VerifiedGarbage.Proof.Framework.Arm.RelCT
 public import VerifiedGarbage.Impl.Weierstrass.Arm.LadderP
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

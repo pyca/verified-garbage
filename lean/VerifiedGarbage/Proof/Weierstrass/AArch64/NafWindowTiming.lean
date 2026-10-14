@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafLoopTiming
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafFinishTiming
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafTableTiming
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafWindow
+import VerifiedGarbage.Proof.Weierstrass.AArch64.NafWindow
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

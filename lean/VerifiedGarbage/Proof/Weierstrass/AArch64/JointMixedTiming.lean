@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Production
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Timing
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Production
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Timing
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAddTiming
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JointMixed
 import all Init.Data.Array.Basic

@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedSse.SboxLit
 public import VerifiedGarbage.Proof.Framework.X86_64.StraightX
-public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 public import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.TripleDes.Bitslice.Io
 public import VerifiedGarbage.Proof.Framework.Bitslice.Atoms

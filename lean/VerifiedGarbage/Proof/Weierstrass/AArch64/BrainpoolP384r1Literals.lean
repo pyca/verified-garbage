@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.AArch64.Lit
 meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
-public import VerifiedGarbage.Impl.Ecdsa.BrainpoolP384r1.AArch64
+import VerifiedGarbage.Impl.Ecdsa.BrainpoolP384r1.AArch64
 meta import VerifiedGarbage.Impl.Ecdsa.BrainpoolP384r1.AArch64
 public import VerifiedGarbage.Impl.Ecdh.BrainpoolP384r1.AArch64
 meta import VerifiedGarbage.Impl.Ecdh.BrainpoolP384r1.AArch64

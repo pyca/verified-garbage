@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Sm4.X86.Group
-public import VerifiedGarbage.Proof.Sm4.Common
+import VerifiedGarbage.Proof.Sm4.Common
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.TCB.X86.Target
 import all Init.Data.Array.Basic

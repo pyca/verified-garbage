@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFnN6
+import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFnN6
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFnN6
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFnXVerified
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFnXVerified

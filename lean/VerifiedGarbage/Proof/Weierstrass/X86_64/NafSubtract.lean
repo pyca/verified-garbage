@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.NafPrep
 public import VerifiedGarbage.Proof.Weierstrass.Naf5
-public import VerifiedGarbage.Proof.X25519.X86_64.Step
+import VerifiedGarbage.Proof.X25519.X86_64.Step
 public import VerifiedGarbage.Proof.Mont.X86_64.Words
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

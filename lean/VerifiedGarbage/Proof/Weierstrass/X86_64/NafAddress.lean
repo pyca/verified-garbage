@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafCopy
+import VerifiedGarbage.Proof.Weierstrass.X86_64.NafCopy
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafDigitRead
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

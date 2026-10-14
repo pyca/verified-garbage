@@ -2,13 +2,13 @@ module
 
 public import VerifiedGarbage.Proof.TripleDes.AArch64.Link
 meta import VerifiedGarbage.Proof.TripleDes.AArch64.Link
-public import VerifiedGarbage.Proof.Modes.AArch64.Fb
+import VerifiedGarbage.Proof.Modes.AArch64.Fb
 meta import VerifiedGarbage.Proof.Modes.AArch64.Fb
 public import VerifiedGarbage.Proof.Modes.AArch64.Cfb8
 meta import VerifiedGarbage.Proof.Modes.AArch64.Cfb8
 public import VerifiedGarbage.Proof.TripleDes.FbScratch
 meta import VerifiedGarbage.Proof.TripleDes.FbScratch
-public import VerifiedGarbage.Proof.TripleDes.AArch64.FbLit
+import VerifiedGarbage.Proof.TripleDes.AArch64.FbLit
 meta import VerifiedGarbage.Proof.TripleDes.AArch64.FbLit
 public import VerifiedGarbage.Proof.Framework.AArch64.Inline
 meta import VerifiedGarbage.Proof.Framework.AArch64.Inline

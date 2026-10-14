@@ -1,9 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointFixedDigit
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.Loop
+import VerifiedGarbage.Proof.Weierstrass.X86_64.Loop
 public import VerifiedGarbage.Proof.Weierstrass.Joint
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointLoopTiming
+import VerifiedGarbage.Proof.Weierstrass.X86_64.JointLoopTiming
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

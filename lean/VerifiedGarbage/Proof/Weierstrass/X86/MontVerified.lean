@@ -4,11 +4,11 @@ public import VerifiedGarbage.Proof.Weierstrass.X86.MontContract
 meta import VerifiedGarbage.Proof.Weierstrass.X86.MontContract
 public import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P224
 meta import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P224
-public import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P256
+import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P256
 meta import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P256
-public import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P384
+import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P384
 meta import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P384
-public import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P521
+import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P521
 meta import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P521
 public import VerifiedGarbage.Proof.Framework.X86.Taint
 meta import VerifiedGarbage.Proof.Framework.X86.Taint

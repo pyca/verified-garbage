@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.X86.PointFn
-public import VerifiedGarbage.Proof.Weierstrass.X86.Copy
+import VerifiedGarbage.Proof.Weierstrass.X86.Copy
 public import VerifiedGarbage.Impl.Weierstrass.X86.LadderP
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.X86.WinJacEntryState
-public import VerifiedGarbage.Proof.Weierstrass.X86.TCombJSelect
+import VerifiedGarbage.Proof.Weierstrass.X86.TCombJSelect
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

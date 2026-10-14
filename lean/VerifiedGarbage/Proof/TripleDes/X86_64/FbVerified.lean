@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.TripleDes.X86_64.ModeCore
 meta import VerifiedGarbage.Proof.TripleDes.X86_64.ModeCore
 public import VerifiedGarbage.Proof.TripleDes.X86_64.CallPatch
 meta import VerifiedGarbage.Proof.TripleDes.X86_64.CallPatch
-public import VerifiedGarbage.Proof.Modes.X86_64.Fb
+import VerifiedGarbage.Proof.Modes.X86_64.Fb
 meta import VerifiedGarbage.Proof.Modes.X86_64.Fb
 public import VerifiedGarbage.Proof.Modes.X86_64.Cfb8
 meta import VerifiedGarbage.Proof.Modes.X86_64.Cfb8

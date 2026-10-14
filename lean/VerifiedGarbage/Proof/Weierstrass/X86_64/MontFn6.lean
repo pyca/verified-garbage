@@ -2,9 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.Reloc
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFnX
-public import VerifiedGarbage.Proof.Mont.X86_64.SqrM
-public import VerifiedGarbage.Proof.Mont.X86_64.MulS
-public import VerifiedGarbage.Proof.Mont.X86_64.CsubR
+import VerifiedGarbage.Proof.Mont.X86_64.SqrM
+import VerifiedGarbage.Proof.Mont.X86_64.MulS
+import VerifiedGarbage.Proof.Mont.X86_64.CsubR
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

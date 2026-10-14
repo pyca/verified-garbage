@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.TripleDes.Bitslice.LayoutLit
+import VerifiedGarbage.Proof.TripleDes.Bitslice.LayoutLit
 meta import VerifiedGarbage.Proof.TripleDes.Bitslice.LayoutLit
 public import VerifiedGarbage.Impl.TripleDes.X86_64.BitslicedSse
 meta import VerifiedGarbage.Impl.TripleDes.X86_64.BitslicedSse

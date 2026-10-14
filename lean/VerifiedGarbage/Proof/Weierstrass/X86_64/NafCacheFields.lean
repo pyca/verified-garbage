@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafCache
+import VerifiedGarbage.Proof.Weierstrass.X86_64.NafCache
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafCachePoint
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

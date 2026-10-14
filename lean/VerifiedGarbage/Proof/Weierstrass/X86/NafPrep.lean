@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.X86.NafAdjust
-public import VerifiedGarbage.Proof.Weierstrass.X86.Copy
+import VerifiedGarbage.Proof.Weierstrass.X86.Copy
 public import VerifiedGarbage.Proof.Weierstrass.X86.NafSubChain
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

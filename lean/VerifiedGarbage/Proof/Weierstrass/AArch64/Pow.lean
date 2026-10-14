@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.Layout
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Bits
-public import VerifiedGarbage.Proof.Weierstrass.Pow
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Bits
+import VerifiedGarbage.Proof.Weierstrass.Pow
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

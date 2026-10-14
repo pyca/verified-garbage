@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.Pass
-public import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.Transpose
-public import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.Bytes
+import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.Transpose
+import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.Bytes
 public import VerifiedGarbage.Proof.Framework.AArch64.SimdMem64
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

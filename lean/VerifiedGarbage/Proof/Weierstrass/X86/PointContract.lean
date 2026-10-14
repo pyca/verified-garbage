@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.X86.PointFn
-public import VerifiedGarbage.Proof.Weierstrass.X86.MontContract
+import VerifiedGarbage.Proof.Weierstrass.X86.MontContract
 public import VerifiedGarbage.Proof.Weierstrass.PointFacts
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

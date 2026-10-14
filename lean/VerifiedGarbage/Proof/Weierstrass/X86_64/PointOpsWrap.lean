@@ -6,9 +6,9 @@ public import VerifiedGarbage.Proof.X25519.X86_64.Step
 meta import VerifiedGarbage.Proof.X25519.X86_64.Step
 public import VerifiedGarbage.Proof.Framework.X86_64.KeepReg
 meta import VerifiedGarbage.Proof.Framework.X86_64.KeepReg
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.JacState
+import VerifiedGarbage.Proof.Weierstrass.X86_64.JacState
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.JacState
-public import VerifiedGarbage.Proof.Framework.X86_64.Syms
+import VerifiedGarbage.Proof.Framework.X86_64.Syms
 meta import VerifiedGarbage.Proof.Framework.X86_64.Syms
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.FieldTiming
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.FieldTiming

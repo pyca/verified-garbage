@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Arithmetic
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Arithmetic
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Kernel
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Kernel
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Kernel
 public import VerifiedGarbage.Proof.Framework.AArch64.Taint
 meta import VerifiedGarbage.Proof.Framework.AArch64.Taint

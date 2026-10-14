@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.TripleDes.X86.Key.Verified
+import VerifiedGarbage.Proof.TripleDes.X86.Key.Verified
 public import VerifiedGarbage.Proof.TripleDes.X86.Ecb.Verified
-public import VerifiedGarbage.Proof.TripleDes.Scratch
+import VerifiedGarbage.Proof.TripleDes.Scratch
 public import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

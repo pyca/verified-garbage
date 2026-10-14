@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafTableInit
+import VerifiedGarbage.Proof.Weierstrass.AArch64.NafTableInit
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafTableStep
-public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

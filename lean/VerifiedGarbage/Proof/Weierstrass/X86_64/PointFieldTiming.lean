@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.FieldTiming
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.ForwardField
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.JacAdd
+import VerifiedGarbage.Proof.Weierstrass.X86_64.JacAdd
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

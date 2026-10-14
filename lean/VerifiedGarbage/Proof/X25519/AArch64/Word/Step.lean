@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.X25519.AArch64.Word.Head
 public import VerifiedGarbage.Proof.X25519.AArch64.Word.Formula
-public import VerifiedGarbage.Proof.X25519.AArch64.Word.Small
+import VerifiedGarbage.Proof.X25519.AArch64.Word.Small
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

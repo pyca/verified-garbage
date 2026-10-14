@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.TripleDes.X86_64.Body
-public import VerifiedGarbage.Proof.TripleDes.X86_64.BlockIO
+import VerifiedGarbage.Proof.TripleDes.X86_64.BlockIO
 public import VerifiedGarbage.Proof.TripleDes.X86_64.Save
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

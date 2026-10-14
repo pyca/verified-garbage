@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.TripleDes.X86_64.Store
+import VerifiedGarbage.Proof.TripleDes.X86_64.Store
 public import VerifiedGarbage.Proof.TripleDes.X86_64.Save
 public import VerifiedGarbage.Proof.TripleDes.X86_64.WordState
 import all Init.Data.Array.Basic

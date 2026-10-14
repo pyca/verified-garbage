@@ -1,12 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticRR
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticMixedHead
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticMixedTail
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticJacHead
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticJacTail
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticTableHead
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticTableTail
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticRR
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticMixedHead
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticMixedTail
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticJacHead
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticJacTail
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticTableHead
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticTableTail
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticCachedHead
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Domain
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Domain
 public import VerifiedGarbage.Proof.Weierstrass.Unch
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

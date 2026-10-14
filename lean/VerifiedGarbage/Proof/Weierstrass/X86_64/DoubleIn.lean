@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.DoubleIn
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.ForwardField
+import VerifiedGarbage.Proof.Weierstrass.X86_64.ForwardField
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacState
 public import VerifiedGarbage.Proof.Weierstrass.Jac
 import all Init.Data.Array.Basic

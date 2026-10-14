@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.TComb
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombJDigit
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.FprogJ
-public import VerifiedGarbage.Proof.Weierstrass.CombFrame
+import VerifiedGarbage.Proof.Weierstrass.CombFrame
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

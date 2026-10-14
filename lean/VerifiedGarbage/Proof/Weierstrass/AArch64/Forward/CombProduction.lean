@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.CombMixed
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.CombOut
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.CombOut
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.FprogJ
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

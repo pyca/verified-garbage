@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.TripleDes.Bytes
+import VerifiedGarbage.Proof.TripleDes.Bytes
 public import VerifiedGarbage.Proof.TripleDes.Arm.Permutation
-public import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Arm.Exec
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

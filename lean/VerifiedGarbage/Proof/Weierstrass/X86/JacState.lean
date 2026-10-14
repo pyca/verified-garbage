@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Weierstrass.X86.Jacobian
 public import VerifiedGarbage.Proof.Weierstrass.JacAdd
-public import VerifiedGarbage.Proof.Weierstrass.X86.Fprog
+import VerifiedGarbage.Proof.Weierstrass.X86.Fprog
 public import VerifiedGarbage.Proof.Weierstrass.X86.TComb
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

@@ -2,9 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.X25519.AArch64.Word.Top
 meta import VerifiedGarbage.Proof.X25519.AArch64.Word.Top
-public import VerifiedGarbage.Proof.X25519.AArch64.Word.Lit
+import VerifiedGarbage.Proof.X25519.AArch64.Word.Lit
 meta import VerifiedGarbage.Proof.X25519.AArch64.Word.Lit
-public import VerifiedGarbage.Proof.X25519.AArch64.Verified
+import VerifiedGarbage.Proof.X25519.AArch64.Verified
 meta import VerifiedGarbage.Proof.X25519.AArch64.Verified
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

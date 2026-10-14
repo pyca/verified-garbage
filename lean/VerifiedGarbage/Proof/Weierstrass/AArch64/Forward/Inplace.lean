@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Arithmetic
-public import VerifiedGarbage.Proof.Weierstrass.JacInplace
+import VerifiedGarbage.Proof.Weierstrass.JacInplace
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

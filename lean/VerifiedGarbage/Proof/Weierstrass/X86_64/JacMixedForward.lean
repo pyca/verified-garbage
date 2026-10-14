@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.JacMixedForward
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JacMixedAdd
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.JacDoubleForward
+import VerifiedGarbage.Proof.Weierstrass.X86_64.JacDoubleForward
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

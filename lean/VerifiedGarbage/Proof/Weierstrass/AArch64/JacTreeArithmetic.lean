@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Production
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeFetch
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Production
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeFetch
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowInvariant
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.TripleDes.Arm.Head
-public import VerifiedGarbage.Proof.TripleDes.Arm.WordStore
-public import VerifiedGarbage.Proof.TripleDes.Word
+import VerifiedGarbage.Proof.TripleDes.Arm.WordStore
+import VerifiedGarbage.Proof.TripleDes.Word
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

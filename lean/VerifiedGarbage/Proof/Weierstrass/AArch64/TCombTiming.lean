@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
 public import VerifiedGarbage.Proof.Framework.RelCTAssoc
-public import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
+import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

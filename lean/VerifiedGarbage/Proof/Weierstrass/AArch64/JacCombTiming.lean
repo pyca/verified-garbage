@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacFinishTiming
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacCombSum
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacCombSum
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacMixedTiming
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombTiming
 import all Init.Data.Array.Basic

@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.X25519.Edwards.URep
 public import VerifiedGarbage.Proof.X25519.Ladder
-public import VerifiedGarbage.Proof.X25519.Bytes
+import VerifiedGarbage.Proof.X25519.Bytes
 public import VerifiedGarbage.Proof.Framework.PowLit
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

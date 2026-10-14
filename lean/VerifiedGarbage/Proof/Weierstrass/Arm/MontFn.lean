@@ -2,8 +2,8 @@ module
 
 public import VerifiedGarbage.Impl.Weierstrass.Arm.Mont
 public import VerifiedGarbage.Proof.Mont.Arm.Ops
-public import VerifiedGarbage.Proof.Weierstrass.Arm.Const
-public import VerifiedGarbage.Proof.Weierstrass.Arm.Saves
+import VerifiedGarbage.Proof.Weierstrass.Arm.Const
+import VerifiedGarbage.Proof.Weierstrass.Arm.Saves
 public import VerifiedGarbage.TCB.Arm.Target
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

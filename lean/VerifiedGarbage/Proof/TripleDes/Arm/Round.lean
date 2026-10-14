@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.TripleDes.Arm.Lit
+import VerifiedGarbage.Proof.TripleDes.Arm.Lit
 public import VerifiedGarbage.Proof.TripleDes.Arm.Sbox
-public import VerifiedGarbage.Proof.TripleDes.Permutation
+import VerifiedGarbage.Proof.TripleDes.Permutation
 public import VerifiedGarbage.Proof.Framework.Arm.Linear
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

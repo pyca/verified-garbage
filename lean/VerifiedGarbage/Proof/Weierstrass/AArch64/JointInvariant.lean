@@ -3,8 +3,8 @@ module
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.Joint
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.CachedJac
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafInvariant
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowInvariant
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowInvariant
 public import VerifiedGarbage.Proof.Weierstrass.FastNaf
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

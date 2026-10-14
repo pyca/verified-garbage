@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.TripleDes.AArch64.Bytes
-public import VerifiedGarbage.Proof.TripleDes.AArch64.Initial
-public import VerifiedGarbage.Proof.TripleDes.AArch64.Word
+import VerifiedGarbage.Proof.TripleDes.AArch64.Bytes
+import VerifiedGarbage.Proof.TripleDes.AArch64.Initial
+import VerifiedGarbage.Proof.TripleDes.AArch64.Word
 public import VerifiedGarbage.Proof.TripleDes.AArch64.Box
 public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import all Init.Data.Array.Basic

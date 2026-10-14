@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Checked
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
 public import VerifiedGarbage.Proof.Framework.AArch64.Taint
 public import VerifiedGarbage.Proof.Framework.AllBelow
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.OptimizeK
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.OptimizeK
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

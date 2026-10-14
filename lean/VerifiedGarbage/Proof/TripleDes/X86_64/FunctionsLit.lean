@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.TripleDes.X86_64.SboxTable
+import VerifiedGarbage.Proof.TripleDes.X86_64.SboxTable
 meta import VerifiedGarbage.Proof.TripleDes.X86_64.SboxTable
 public import VerifiedGarbage.Proof.Framework.X86_64.Lit
 meta import VerifiedGarbage.Proof.Framework.X86_64.Lit

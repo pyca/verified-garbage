@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.TripleDes.AArch64.Key.Component
+import VerifiedGarbage.Proof.TripleDes.AArch64.Key.Component
 public import VerifiedGarbage.Proof.Rc2.AArch64.Lookup
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

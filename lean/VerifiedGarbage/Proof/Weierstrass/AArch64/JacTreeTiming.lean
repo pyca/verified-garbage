@@ -1,11 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Production
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Timing
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Production
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Timing
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTree
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTableTiming
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowLoadTiming
-public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowLoadTiming
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

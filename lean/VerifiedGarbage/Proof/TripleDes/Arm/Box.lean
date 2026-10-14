@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.TripleDes.Arm.Sbox
+import VerifiedGarbage.Proof.TripleDes.Arm.Sbox
 public import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 public import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Framework.Omega

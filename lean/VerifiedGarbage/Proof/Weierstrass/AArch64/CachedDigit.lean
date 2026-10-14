@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.CachedEntry
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.CachedAdd
-public import VerifiedGarbage.Proof.Framework.AArch64.Syms
+import VerifiedGarbage.Proof.Weierstrass.AArch64.CachedAdd
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

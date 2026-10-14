@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.TripleDes.Arm.Frame
-public import VerifiedGarbage.Proof.TripleDes.CbcScratch
+import VerifiedGarbage.Proof.TripleDes.CbcScratch
 public import VerifiedGarbage.Proof.Modes.Arm.Core
 public import VerifiedGarbage.Impl.TripleDes.Arm.Cbc
 import all Init.Data.Array.Basic

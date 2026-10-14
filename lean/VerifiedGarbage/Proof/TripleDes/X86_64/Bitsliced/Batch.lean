@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Passes
+import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Passes
 public import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.BatchIO
-public import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Bytes
+import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Bytes
 public import VerifiedGarbage.Proof.TripleDes.Core
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

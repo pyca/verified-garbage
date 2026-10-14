@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.TripleDes.CbcScratch
 meta import VerifiedGarbage.Proof.TripleDes.CbcScratch
 public import VerifiedGarbage.Proof.Modes.Arm.Cbc
 meta import VerifiedGarbage.Proof.Modes.Arm.Cbc
-public import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
+import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
 meta import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

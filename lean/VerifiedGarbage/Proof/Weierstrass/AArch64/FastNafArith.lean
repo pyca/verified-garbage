@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafSubtract
 public import VerifiedGarbage.Proof.Weierstrass.FastNaf
-public import VerifiedGarbage.Impl.Weierstrass.AArch64.FastNaf
+import VerifiedGarbage.Impl.Weierstrass.AArch64.FastNaf
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

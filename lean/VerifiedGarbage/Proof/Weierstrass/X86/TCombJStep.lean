@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.X86.TCombJInvariant
-public import VerifiedGarbage.Proof.Weierstrass.X86.TCombJSelect
-public import VerifiedGarbage.Proof.Weierstrass.CombFrame
+import VerifiedGarbage.Proof.Weierstrass.X86.TCombJSelect
+import VerifiedGarbage.Proof.Weierstrass.CombFrame
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

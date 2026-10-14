@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseVerified
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseVerified
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Framework.ConstMem
+import VerifiedGarbage.Proof.Framework.ConstMem
 meta import VerifiedGarbage.Proof.Framework.ConstMem
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

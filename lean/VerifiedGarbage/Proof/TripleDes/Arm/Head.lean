@@ -1,9 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.TripleDes.Arm.Bytes
-public import VerifiedGarbage.Proof.TripleDes.Arm.Initial
+import VerifiedGarbage.Proof.TripleDes.Arm.Bytes
+import VerifiedGarbage.Proof.TripleDes.Arm.Initial
 public import VerifiedGarbage.Proof.TripleDes.Arm.Body
-public import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 public import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Rc2.Arm.Save
 import all Init.Data.Array.Basic
