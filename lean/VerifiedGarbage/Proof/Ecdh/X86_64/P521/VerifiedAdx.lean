@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.P521.X86_64.TaintSumsWinAdx
 meta import VerifiedGarbage.Proof.P521.X86_64.TaintSumsWinAdx
 public import VerifiedGarbage.Proof.Ecdh.X86_64.P521.LitAdx
 meta import VerifiedGarbage.Proof.Ecdh.X86_64.P521.LitAdx
-public import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.VerifiedAdx
+import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.VerifiedAdx
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.VerifiedAdx
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

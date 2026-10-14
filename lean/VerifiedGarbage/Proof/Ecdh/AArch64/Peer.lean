@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.Layout
-public import VerifiedGarbage.Impl.Ecdh.AArch64
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.Finish
+import VerifiedGarbage.Impl.Ecdh.AArch64
+import VerifiedGarbage.Proof.Ecdsa.AArch64.Finish
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.Fixed
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

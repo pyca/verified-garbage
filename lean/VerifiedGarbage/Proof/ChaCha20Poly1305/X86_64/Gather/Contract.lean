@@ -1,9 +1,9 @@
 module
 
 public import VerifiedGarbage.Spec.ChaCha20Poly1305.OutOfPlace
-public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.LoopCT
+import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.LoopCT
 public import VerifiedGarbage.Proof.Framework.X86_64.Call
-public import VerifiedGarbage.TCB.X86_64.Target
+import VerifiedGarbage.TCB.X86_64.Target
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

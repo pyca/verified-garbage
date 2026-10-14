@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed5.Schedule
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed5.Schedule
 public import VerifiedGarbage.Impl.ChaCha20.AArch64.Mixed5
 public import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Rounds
 public import VerifiedGarbage.Proof.ChaCha20.AArch64.Block

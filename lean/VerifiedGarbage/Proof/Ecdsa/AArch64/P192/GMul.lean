@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.MulFn
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.P192Literals
+import VerifiedGarbage.Proof.Weierstrass.AArch64.P192Literals
 public import VerifiedGarbage.Impl.Ecdsa.P192.AArch64
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

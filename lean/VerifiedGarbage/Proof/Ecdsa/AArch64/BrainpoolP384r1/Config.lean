@@ -2,8 +2,8 @@ module
 
 public import VerifiedGarbage.Impl.Ecdsa.BrainpoolP384r1.AArch64
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.Layout
-public import VerifiedGarbage.Proof.BrainpoolP384r1.Point
-public import VerifiedGarbage.Proof.BrainpoolP384r1.Prime
+import VerifiedGarbage.Proof.BrainpoolP384r1.Point
+import VerifiedGarbage.Proof.BrainpoolP384r1.Prime
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

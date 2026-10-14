@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.Finish
-public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2Tail.RoundsVL
+import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2Tail.RoundsVL
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

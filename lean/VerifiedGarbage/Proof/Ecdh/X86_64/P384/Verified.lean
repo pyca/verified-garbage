@@ -6,13 +6,13 @@ public import VerifiedGarbage.Proof.Ecdh.X86_64.P384.Contract
 meta import VerifiedGarbage.Proof.Ecdh.X86_64.P384.Contract
 public import VerifiedGarbage.Proof.Ecdh.X86_64.P384.LitErase
 meta import VerifiedGarbage.Proof.Ecdh.X86_64.P384.LitErase
-public import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.Verified
+import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.Verified
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.Verified
 public import VerifiedGarbage.Proof.Ecdh.X86_64.WinJacA
 meta import VerifiedGarbage.Proof.Ecdh.X86_64.WinJacA
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.DoubleIn
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.DoubleIn
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
+import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

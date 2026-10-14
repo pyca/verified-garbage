@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Impl.Ecdh.BrainpoolP256r1.X86_64
+import VerifiedGarbage.Impl.Ecdh.BrainpoolP256r1.X86_64
 meta import VerifiedGarbage.Impl.Ecdh.BrainpoolP256r1.X86_64
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.BrainpoolP256r1Literals
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.BrainpoolP256r1Literals

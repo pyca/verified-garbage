@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Arm.Fixed
-public import VerifiedGarbage.Proof.Ecdsa.Arm.Flags
+import VerifiedGarbage.Proof.Ecdsa.Arm.Flags
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

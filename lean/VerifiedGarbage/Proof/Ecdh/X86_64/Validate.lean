@@ -1,9 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdh.X86_64.Peer
-public import VerifiedGarbage.Proof.Ecdsa.X86_64.Lays
-public import VerifiedGarbage.Proof.Ecdsa.X86_64.SlotOps
-public import VerifiedGarbage.Proof.Ecdsa.X86_64.Stages
+import VerifiedGarbage.Proof.Ecdsa.X86_64.Lays
+import VerifiedGarbage.Proof.Ecdsa.X86_64.SlotOps
+import VerifiedGarbage.Proof.Ecdsa.X86_64.Stages
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.Inv
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

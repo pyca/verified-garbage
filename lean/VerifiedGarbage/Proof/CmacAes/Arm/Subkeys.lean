@@ -1,9 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.CmacAes.Arm.UpdateCorrect
-public import VerifiedGarbage.Proof.CmacAes.Arm.Words
+import VerifiedGarbage.Proof.CmacAes.Arm.Words
 public import VerifiedGarbage.Proof.Cmac.Dbl32
-public import VerifiedGarbage.Proof.Cmac.Dbl
+import VerifiedGarbage.Proof.Cmac.Dbl
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

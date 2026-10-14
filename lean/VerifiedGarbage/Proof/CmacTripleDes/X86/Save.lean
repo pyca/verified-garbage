@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.CmacTripleDes.X86.Contract
-public import VerifiedGarbage.Proof.CmacTripleDes.X86.Block
+import VerifiedGarbage.Proof.CmacTripleDes.X86.Contract
+import VerifiedGarbage.Proof.CmacTripleDes.X86.Block
 public import VerifiedGarbage.Proof.MdStream.X86.Common
 public import VerifiedGarbage.Proof.Framework.X86.Spill
 import all Init.Data.Array.Basic

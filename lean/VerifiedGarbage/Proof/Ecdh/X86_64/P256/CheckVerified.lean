@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Ecdh.X86_64.CheckFn
 meta import VerifiedGarbage.Proof.Ecdh.X86_64.CheckFn
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.P256.InverseVerified
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P256.InverseVerified
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.P256Literals
+import VerifiedGarbage.Proof.Weierstrass.X86_64.P256Literals
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.P256Literals
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

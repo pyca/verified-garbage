@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Curve448.AArch64.Bounds
+import VerifiedGarbage.Proof.Curve448.AArch64.Bounds
 public import VerifiedGarbage.Proof.Curve448.AArch64.AccumSquareBody
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

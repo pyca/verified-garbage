@@ -6,13 +6,13 @@ public import VerifiedGarbage.Proof.EcKey.X86_64.Secp256k1.Contract
 meta import VerifiedGarbage.Proof.EcKey.X86_64.Secp256k1.Contract
 public import VerifiedGarbage.Proof.EcKey.X86_64.Secp256k1.Lit
 meta import VerifiedGarbage.Proof.EcKey.X86_64.Secp256k1.Lit
-public import VerifiedGarbage.Proof.Ecdsa.X86_64.Secp256k1.Verified
+import VerifiedGarbage.Proof.Ecdsa.X86_64.Secp256k1.Verified
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.Secp256k1.Verified
 public import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
 meta import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
 public import VerifiedGarbage.Proof.Framework.LitShare
 meta import VerifiedGarbage.Proof.Framework.LitShare
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
+import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

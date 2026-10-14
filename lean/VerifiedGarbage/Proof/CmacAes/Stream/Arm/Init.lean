@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.CmacAes.Stream.Arm.Common
 meta import VerifiedGarbage.Proof.CmacAes.Stream.Arm.Common
-public import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
+import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
 meta import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

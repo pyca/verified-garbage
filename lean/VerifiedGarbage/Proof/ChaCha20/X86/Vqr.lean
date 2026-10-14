@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.X86.Exec
-public import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
-public import VerifiedGarbage.Proof.Framework.X86.SseDword
+import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
+import VerifiedGarbage.Proof.Framework.X86.SseDword
 public import VerifiedGarbage.Proof.ChaCha20.Spec
 public import VerifiedGarbage.Impl.ChaCha20.X86
 import all Init.Data.Array.Basic

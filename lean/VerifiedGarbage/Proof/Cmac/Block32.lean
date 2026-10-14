@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Cmac.Mem32
-public import VerifiedGarbage.Proof.Cmac.Block
+import VerifiedGarbage.Proof.Cmac.Block
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

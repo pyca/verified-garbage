@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.ChaCha20.AArch64.Stream.Bytes
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Stream.Bytes
 public import VerifiedGarbage.Proof.ChaCha20.AArch64.XorVariant
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

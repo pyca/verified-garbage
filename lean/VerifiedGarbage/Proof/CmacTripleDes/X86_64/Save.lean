@@ -1,9 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.CmacTripleDes.X86_64.Contract
-public import VerifiedGarbage.Proof.CmacTripleDes.X86_64.Block
-public import VerifiedGarbage.Proof.Framework.X86_64.Exec
-public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.CmacTripleDes.X86_64.Block
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 public import VerifiedGarbage.Proof.Framework.X86_64.Spill
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

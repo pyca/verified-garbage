@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.EcKey.X86_64.P521.Verified
 meta import VerifiedGarbage.Proof.EcKey.X86_64.P521.Verified
 public import VerifiedGarbage.Proof.EcKey.X86_64.P521.LitAdx
 meta import VerifiedGarbage.Proof.EcKey.X86_64.P521.LitAdx
-public import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.VerifiedAdx
+import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.VerifiedAdx
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.VerifiedAdx
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

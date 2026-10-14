@@ -6,9 +6,9 @@ public import VerifiedGarbage.Proof.Ecdh.AArch64.BrainpoolP384r1.Contract
 meta import VerifiedGarbage.Proof.Ecdh.AArch64.BrainpoolP384r1.Contract
 public import VerifiedGarbage.Proof.Ecdh.AArch64.BrainpoolP384r1.Lit
 meta import VerifiedGarbage.Proof.Ecdh.AArch64.BrainpoolP384r1.Lit
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP384r1.Config
+import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP384r1.Config
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP384r1.Config
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
+import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

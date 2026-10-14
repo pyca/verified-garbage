@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Framework.Arm.Lit
 meta import VerifiedGarbage.Proof.Framework.Arm.Lit
 public import VerifiedGarbage.Impl.CmacTripleDes.Arm.Round
 meta import VerifiedGarbage.Impl.CmacTripleDes.Arm.Round
-public import VerifiedGarbage.Proof.CmacTripleDes.IndexLit
+import VerifiedGarbage.Proof.CmacTripleDes.IndexLit
 meta import VerifiedGarbage.Proof.CmacTripleDes.IndexLit
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

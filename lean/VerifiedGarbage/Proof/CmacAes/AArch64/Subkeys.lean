@@ -2,8 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.CmacAes.AArch64.UpdateCorrect
 public import VerifiedGarbage.Proof.Cmac.Dbl
-public import VerifiedGarbage.Proof.Cmac.Mem
-public import VerifiedGarbage.Proof.Gcm.AArch64.Ghash
+import VerifiedGarbage.Proof.Cmac.Mem
+import VerifiedGarbage.Proof.Gcm.AArch64.Ghash
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

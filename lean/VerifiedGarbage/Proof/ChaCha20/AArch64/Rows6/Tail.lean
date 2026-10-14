@@ -1,9 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.ChaCha20.AArch64.Rows6.Loop
-public import VerifiedGarbage.Proof.ChaCha20.AArch64.Small.Xor
-public import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Lit
-public import VerifiedGarbage.Proof.ChaCha20.AArch64.Backends
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Small.Xor
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Lit
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Backends
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

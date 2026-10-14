@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.X448.Wide.Fold
-public import VerifiedGarbage.Proof.X448.Wide.TailPass
+import VerifiedGarbage.Proof.X448.Wide.TailPass
 public import VerifiedGarbage.Proof.Curve448.AArch64.Collect
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

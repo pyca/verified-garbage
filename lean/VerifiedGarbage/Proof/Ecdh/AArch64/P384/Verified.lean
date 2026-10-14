@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.Ecdh.AArch64.P384.Contract
 meta import VerifiedGarbage.Proof.Ecdh.AArch64.P384.Contract
 public import VerifiedGarbage.Proof.Ecdh.AArch64.P384.Lit
 meta import VerifiedGarbage.Proof.Ecdh.AArch64.P384.Lit
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.P384.Verified
+import VerifiedGarbage.Proof.Ecdsa.AArch64.P384.Verified
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.P384.Verified
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

@@ -2,8 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.CmacTripleDes.X86.Round
 public import VerifiedGarbage.Proof.CmacTripleDes.Block
-public import VerifiedGarbage.Proof.CmacTripleDes.Words
-public import VerifiedGarbage.Proof.Framework.X86.Wp
+import VerifiedGarbage.Proof.CmacTripleDes.Words
+import VerifiedGarbage.Proof.Framework.X86.Wp
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

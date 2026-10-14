@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Framework.X86_64.Lit
 meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.P224Literals
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.P224Literals
-public import VerifiedGarbage.Impl.Ecdh.P224.X86_64
+import VerifiedGarbage.Impl.Ecdh.P224.X86_64
 meta import VerifiedGarbage.Impl.Ecdh.P224.X86_64
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

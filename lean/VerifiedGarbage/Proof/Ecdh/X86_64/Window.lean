@@ -1,11 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdh.X86_64.Validate
-public import VerifiedGarbage.Proof.Ecdsa.X86_64.MulFn
+import VerifiedGarbage.Proof.Ecdsa.X86_64.MulFn
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinLoop
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.AddConst
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.Bits
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.Rep
+import VerifiedGarbage.Proof.Weierstrass.X86_64.AddConst
+import VerifiedGarbage.Proof.Weierstrass.X86_64.Bits
+import VerifiedGarbage.Proof.Weierstrass.X86_64.Rep
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

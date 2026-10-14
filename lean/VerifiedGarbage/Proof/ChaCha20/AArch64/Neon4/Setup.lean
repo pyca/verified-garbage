@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Rounds
-public import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
+import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
 public import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.ChaCha20.Keystream
 import all Init.Data.Array.Basic

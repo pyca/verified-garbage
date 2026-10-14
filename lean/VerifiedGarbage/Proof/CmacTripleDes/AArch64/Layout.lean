@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.TripleDes.SboxTables
+import VerifiedGarbage.Proof.TripleDes.SboxTables
 public import VerifiedGarbage.Proof.CmacTripleDes.AArch64.RoundLit
 public import VerifiedGarbage.Proof.CmacTripleDes.Des
 public import VerifiedGarbage.Proof.Framework.Bitslice.Table

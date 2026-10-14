@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Spec.Dsa.SignVerify
-public import VerifiedGarbage.Proof.Dsa.Encoding
+import VerifiedGarbage.Proof.Dsa.Encoding
 public import VerifiedGarbage.Proof.Framework.Mem
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

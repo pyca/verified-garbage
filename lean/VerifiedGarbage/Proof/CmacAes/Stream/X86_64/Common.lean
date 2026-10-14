@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.CmacAes.Stream.X86_64.Call
+import VerifiedGarbage.Proof.CmacAes.Stream.X86_64.Call
 public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 public import VerifiedGarbage.Proof.Framework.WriteBytes
 import all Init.Data.Array.Basic

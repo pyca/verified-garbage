@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP384r1.GMul
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP384r1.GMul
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP384r1.Config
+import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP384r1.Config
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP384r1.Config
 public import VerifiedGarbage.Proof.Framework.AArch64.Taint
 meta import VerifiedGarbage.Proof.Framework.AArch64.Taint

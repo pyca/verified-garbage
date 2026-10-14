@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Stream.Apply
 meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Stream.Apply
-public import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

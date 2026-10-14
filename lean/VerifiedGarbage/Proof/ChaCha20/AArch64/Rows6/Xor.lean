@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.ChaCha20.AArch64.Rows6.Save
 meta import VerifiedGarbage.Proof.ChaCha20.AArch64.Rows6.Save
-public import VerifiedGarbage.Proof.ChaCha20.AArch64.Rows6.Lit
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Rows6.Lit
 meta import VerifiedGarbage.Proof.ChaCha20.AArch64.Rows6.Lit
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

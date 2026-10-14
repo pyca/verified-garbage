@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Cmac.Frame
-public import VerifiedGarbage.Proof.Framework.AArch64.Exec
-public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 public import VerifiedGarbage.Impl.CmacAes.AArch64
 public import VerifiedGarbage.Proof.Aes.AArch64.Variant
 public import VerifiedGarbage.Proof.Framework.AArch64.RelCT

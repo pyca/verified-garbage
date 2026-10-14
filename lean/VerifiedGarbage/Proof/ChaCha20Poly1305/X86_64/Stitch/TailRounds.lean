@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Chunk
-public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2Tail.Rounds
+import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2Tail.Rounds
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

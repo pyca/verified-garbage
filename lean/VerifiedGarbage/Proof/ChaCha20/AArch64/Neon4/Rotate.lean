@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.AArch64.Simd
+import VerifiedGarbage.Proof.Framework.AArch64.Simd
 public import VerifiedGarbage.Impl.ChaCha20.AArch64.Neon4
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

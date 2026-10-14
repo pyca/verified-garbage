@@ -1,9 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 public import VerifiedGarbage.Proof.Framework.WriteBytes
 public import VerifiedGarbage.Proof.CmacAes.AArch64.Variant
-public import VerifiedGarbage.Proof.CmacAes.AArch64.Verified
+import VerifiedGarbage.Proof.CmacAes.AArch64.Verified
 public import VerifiedGarbage.Proof.Cmac.Stream
 public import VerifiedGarbage.Impl.CmacAes.Stream.AArch64
 import all Init.Data.Array.Basic

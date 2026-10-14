@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Poly1305.Spec
 public import VerifiedGarbage.Proof.Framework.X86_64.VecKeep
 public import VerifiedGarbage.Impl.ChaCha20Poly1305.X86_64.Stitch
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.Xor
-public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.RoundsVL
+import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.RoundsVL
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

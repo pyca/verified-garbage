@@ -4,13 +4,13 @@ public import VerifiedGarbage.Proof.Ecdsa.AArch64.Main
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Main
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.Contract
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Contract
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.Lit
+import VerifiedGarbage.Proof.Ecdsa.AArch64.Lit
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Lit
-public import VerifiedGarbage.Proof.P256.Point
+import VerifiedGarbage.Proof.P256.Point
 meta import VerifiedGarbage.Proof.P256.Point
-public import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
+import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
 meta import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
+import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec

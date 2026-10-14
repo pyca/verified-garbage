@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.Layout
 public import VerifiedGarbage.Impl.Ecdh.X86_64
-public import VerifiedGarbage.Proof.Ecdsa.X86_64.Finish
+import VerifiedGarbage.Proof.Ecdsa.X86_64.Finish
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.Fixed
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

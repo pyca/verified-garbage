@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ecdsa.X86.Inv
 public import VerifiedGarbage.Proof.Weierstrass.X86.P256Power
-public import VerifiedGarbage.Proof.Ecdh.X86.Main
+import VerifiedGarbage.Proof.Ecdh.X86.Main
 public import VerifiedGarbage.Proof.Ecdh.X86.JacMul
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

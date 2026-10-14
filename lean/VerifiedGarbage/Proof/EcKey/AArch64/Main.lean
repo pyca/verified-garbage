@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.Finish
+import VerifiedGarbage.Proof.Ecdsa.AArch64.Finish
 public import VerifiedGarbage.Impl.EcKey.AArch64
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.Middle
+import VerifiedGarbage.Proof.Ecdsa.AArch64.Middle
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.Main
 public import VerifiedGarbage.Proof.EcKey.PublicKey
 public import VerifiedGarbage.Proof.Framework.AArch64.Inline

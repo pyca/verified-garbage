@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.EcKey.X86_64.Verified
 meta import VerifiedGarbage.Proof.EcKey.X86_64.Verified
 public import VerifiedGarbage.Proof.EcKey.X86_64.LitAdx
 meta import VerifiedGarbage.Proof.EcKey.X86_64.LitAdx
-public import VerifiedGarbage.Proof.Ecdsa.X86_64.VerifiedAdx
+import VerifiedGarbage.Proof.Ecdsa.X86_64.VerifiedAdx
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.VerifiedAdx
 public import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
 meta import VerifiedGarbage.Proof.Framework.X86_64.TaintErase

@@ -2,9 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Tail
 meta import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Tail
-public import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Lit
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Lit
 meta import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Lit
-public import VerifiedGarbage.Proof.ChaCha20.AArch64.Rows6.Xor
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Rows6.Xor
 meta import VerifiedGarbage.Proof.ChaCha20.AArch64.Rows6.Xor
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

@@ -4,9 +4,9 @@ public import VerifiedGarbage.Proof.Framework.Arm.Lit
 meta import VerifiedGarbage.Proof.Framework.Arm.Lit
 public import VerifiedGarbage.Impl.CmacTripleDes.Arm
 meta import VerifiedGarbage.Impl.CmacTripleDes.Arm
-public import VerifiedGarbage.Proof.CmacTripleDes.Arm.KeysLit
+import VerifiedGarbage.Proof.CmacTripleDes.Arm.KeysLit
 meta import VerifiedGarbage.Proof.CmacTripleDes.Arm.KeysLit
-public import VerifiedGarbage.Proof.CmacTripleDes.Arm.RoundLit
+import VerifiedGarbage.Proof.CmacTripleDes.Arm.RoundLit
 meta import VerifiedGarbage.Proof.CmacTripleDes.Arm.RoundLit
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

@@ -4,9 +4,9 @@ public import VerifiedGarbage.Proof.ChaCha20.StreamBytes
 meta import VerifiedGarbage.Proof.ChaCha20.StreamBytes
 public import VerifiedGarbage.Proof.ChaCha20.Arm.Block
 meta import VerifiedGarbage.Proof.ChaCha20.Arm.Block
-public import VerifiedGarbage.Proof.MdStream.Arm.Common
+import VerifiedGarbage.Proof.MdStream.Arm.Common
 meta import VerifiedGarbage.Proof.MdStream.Arm.Common
-public import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.Range
 meta import VerifiedGarbage.Proof.Framework.Range
 public import VerifiedGarbage.Impl.ChaCha20.Arm.Stream
 meta import VerifiedGarbage.Impl.ChaCha20.Arm.Stream

@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.CmacTripleDes.Arm.FinalizeCorrect
-public import VerifiedGarbage.Proof.CmacTripleDes.Arm.CT
+import VerifiedGarbage.Proof.CmacTripleDes.Arm.CT
 public import VerifiedGarbage.Proof.CmacTripleDes.Arm.Implies
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

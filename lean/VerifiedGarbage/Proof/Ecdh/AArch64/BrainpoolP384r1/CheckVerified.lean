@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ecdh.AArch64.CheckPoint
 meta import VerifiedGarbage.Proof.Ecdh.AArch64.CheckPoint
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP384r1.Config
+import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP384r1.Config
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP384r1.Config
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.BrainpoolP384r1Literals
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.BrainpoolP384r1Literals

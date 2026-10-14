@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.JacMadd
+import VerifiedGarbage.Proof.Weierstrass.JacMadd
 public import VerifiedGarbage.Proof.Ecdh.X86.JacWrites
-public import VerifiedGarbage.Proof.Ecdh.X86.JacPrep
+import VerifiedGarbage.Proof.Ecdh.X86.JacPrep
 public import VerifiedGarbage.Proof.Weierstrass.X86.WinJacLoop
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

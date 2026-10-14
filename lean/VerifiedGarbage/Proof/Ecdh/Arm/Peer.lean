@@ -1,9 +1,9 @@
 module
 
 public import VerifiedGarbage.Impl.Ecdh.Arm
-public import VerifiedGarbage.Proof.Ecdsa.Arm.Finish
+import VerifiedGarbage.Proof.Ecdsa.Arm.Finish
 public import VerifiedGarbage.Proof.Ecdsa.Arm.Scalar
-public import VerifiedGarbage.Proof.Weierstrass.Arm.Copy
+import VerifiedGarbage.Proof.Weierstrass.Arm.Copy
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

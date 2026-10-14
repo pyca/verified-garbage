@@ -1,9 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.X86.RelCT
+import VerifiedGarbage.Proof.Framework.X86.RelCT
 public import VerifiedGarbage.Proof.CmacAes.X86.Verified
-public import VerifiedGarbage.Proof.Aes.X86.ExpandKey
-public import VerifiedGarbage.Proof.Cmac.Stream
+import VerifiedGarbage.Proof.Aes.X86.ExpandKey
+import VerifiedGarbage.Proof.Cmac.Stream
 public import VerifiedGarbage.Impl.CmacAes.Stream.X86
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

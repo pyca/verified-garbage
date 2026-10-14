@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Impl.CmacTripleDes.X86
+import VerifiedGarbage.Impl.CmacTripleDes.X86
 public import VerifiedGarbage.Spec.Cmac.TripleDesContract
 public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Framework.PowLit

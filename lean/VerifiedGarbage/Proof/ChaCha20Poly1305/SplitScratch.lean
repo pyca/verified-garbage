@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Spec.ChaCha20Poly1305.OutOfPlace
-public import VerifiedGarbage.Proof.ChaCha20Poly1305.Scratch
+import VerifiedGarbage.Proof.ChaCha20Poly1305.Scratch
 public import VerifiedGarbage.Proof.Framework.Scratch
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

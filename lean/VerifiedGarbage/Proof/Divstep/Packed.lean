@@ -5,7 +5,7 @@ public import Mathlib.Tactic.Linarith
 public import Mathlib.Tactic.NormNum
 public import Mathlib.Tactic.Ring
 public import VerifiedGarbage.Proof.Divstep.Batch
-public import VerifiedGarbage.Proof.Divstep.Word
+import VerifiedGarbage.Proof.Divstep.Word
 public import VerifiedGarbage.Proof.Divstep.PackedDef
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

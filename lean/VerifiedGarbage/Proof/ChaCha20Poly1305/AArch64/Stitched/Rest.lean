@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitched.Crypted
-public import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Tail
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Tail
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

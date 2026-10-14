@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.EcKey.X86_64.P224.Contract
 meta import VerifiedGarbage.Proof.EcKey.X86_64.P224.Contract
 public import VerifiedGarbage.Proof.EcKey.X86_64.P224.Lit
 meta import VerifiedGarbage.Proof.EcKey.X86_64.P224.Lit
-public import VerifiedGarbage.Proof.Ecdsa.X86_64.P224.Verified
+import VerifiedGarbage.Proof.Ecdsa.X86_64.P224.Verified
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P224.Verified
 public import VerifiedGarbage.Proof.Framework.X86_64.TaintSym
 meta import VerifiedGarbage.Proof.Framework.X86_64.TaintSym
@@ -14,7 +14,7 @@ public import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
 meta import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
 public import VerifiedGarbage.Proof.Framework.LitShare
 meta import VerifiedGarbage.Proof.Framework.LitShare
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
+import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

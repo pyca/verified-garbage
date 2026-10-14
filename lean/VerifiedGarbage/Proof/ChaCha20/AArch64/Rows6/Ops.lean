@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Impl.ChaCha20.AArch64.Rows6
-public import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Rotate
-public import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon.Lanes
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Rotate
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon.Lanes
 public import VerifiedGarbage.Proof.Framework.Block
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

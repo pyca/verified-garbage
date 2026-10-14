@@ -1,9 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdh.X86_64.Check
+import VerifiedGarbage.Proof.Ecdh.X86_64.Check
 public import VerifiedGarbage.Proof.Ecdh.X86_64.MulOk
 public import VerifiedGarbage.Proof.Ecdh.Exchange
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.Rep
+import VerifiedGarbage.Proof.Weierstrass.X86_64.Rep
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

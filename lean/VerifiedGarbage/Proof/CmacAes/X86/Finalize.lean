@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.CmacAes.X86.UpdateCorrect
-public import VerifiedGarbage.Proof.Cmac.Block
-public import VerifiedGarbage.Proof.Framework.WriteBytes
+import VerifiedGarbage.Proof.Cmac.Block
+import VerifiedGarbage.Proof.Framework.WriteBytes
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

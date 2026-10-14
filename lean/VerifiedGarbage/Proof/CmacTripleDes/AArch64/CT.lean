@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Lit
+import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Lit
 meta import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Lit
 public import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Contract
 meta import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Contract

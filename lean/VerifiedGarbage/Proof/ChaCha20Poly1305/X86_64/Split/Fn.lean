@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Split.Head
-public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Split.Correct
-public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Verified
+import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Split.Correct
+import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Verified
 public import VerifiedGarbage.Proof.Framework.X86_64.CallFrame
 meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.LitSplit
 import all Init.Data.Array.Basic

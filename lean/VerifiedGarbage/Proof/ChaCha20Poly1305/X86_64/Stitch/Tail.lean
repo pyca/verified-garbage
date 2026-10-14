@@ -1,9 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.TailRounds
+import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.TailRounds
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Bulk
-public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.XorBufX
-public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2Tail.Out
+import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.XorBufX
+import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2Tail.Out
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.Xor
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
