@@ -94,8 +94,15 @@ def mRegs (n m : Nat) : List Reg := (List.range n).map (mReg n m)
 /-- Each distinct word of `m` and its register. -/
 def mLoads (n m : Nat) : List (Reg × BitVec 64) := (mPool n).zip (mDistinct n m)
 
-/-- The modulus's words into their registers. -/
-def mLoadCode (n m : Nat) : List Instr := (mLoads n m).flatMap fun p => const64 p.1 p.2
+/-- P-384's `p` into its registers, from `x7 = 0`: all ones (`x26`), its
+low and high halves (`x23`, `x24`) and all ones but the lowest bit (`x25`),
+four instructions rather than sixteen for `const64`. -/
+def sparseLoadCode : List Instr :=
+  [.subImm .x .x26 .x7 1, .lsr .x .x23 .x26 32, .lsl .x .x24 .x26 32, .subImm .x .x25 .x26 1]
+
+/-- The modulus's words into their registers (`x7` being zero). -/
+def mLoadCode (n m : Nat) : List Instr :=
+  if sparseOk n m then sparseLoadCode else (mLoads n m).flatMap fun p => const64 p.1 p.2
 
 /-- Words in registers, as a row multiplies by them. -/
 def regWords (rs : List Reg) : List RWord := rs.map fun r => .gen (.reg r)
