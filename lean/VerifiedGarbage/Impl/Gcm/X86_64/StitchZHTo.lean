@@ -16,23 +16,26 @@ open VG.Impl.Gcm.X86_64.StitchZTo (xorDataZTo)
 open VG.Impl.Gcm.X86_64.StitchZR (powP48)
 open VG.Impl.Gcm.X86_64.StitchZRTo (setupP)
 
-def batchTo (j : Nat) (g : Nat → List Instr) : Prog isa :=
-  .seq (.block (ctrsZ .xmm14 .xmm0 .xmm15 aregs)) (.seq (Aes.X86_64.VaesZH.aes aregs g) (.block (xorDataZTo .xmm13 .rdx .r8 aregs j)))
+def batchTo (j : Nat) (g : Nat → List Instr) (be : Bool := false) : Prog isa :=
+  .seq (StitchZH.ctrs be) (.seq (Aes.X86_64.VaesZH.aes aregs g) (.block (xorDataZTo .xmm13 .rdx .r8 aregs j)))
 
-def firstTo : Prog isa := batchTo 0 fun _ => []
+/-- The first group, encrypted only; with a public block index (`be`), after
+`StitchZH.beSetup`, the index being at `[rsp + 32]`. -/
+def firstTo (be : Bool := false) : Prog isa :=
+  if be then .seq (.block (StitchZH.beSetup 32)) (batchTo 0 (fun _ => []) true) else batchTo 0 fun _ => []
 
-def bodyTo : Prog isa :=
-  .seq (batchTo 4 gq) (.block [.alu .add .rdx (.imm 256), .alu .sub .r9 (.imm 16), .alu .cmp .r9 (.imm 32)])
+def bodyTo (be : Bool := false) : Prog isa :=
+  .seq (batchTo 4 gq be) (.block [.alu .add .rdx (.imm 256), .alu .sub .r9 (.imm 16), .alu .cmp .r9 (.imm 32)])
 
-def body48To : Prog isa :=
-  .seq (batchTo 12 (gq48 0)) (.seq (batchTo 16 (gq48 1)) (.seq (batchTo 20 (gq48 2))
+def body48To (be : Bool := false) : Prog isa :=
+  .seq (batchTo 12 (gq48 0) be) (.seq (batchTo 16 (gq48 1) be) (.seq (batchTo 20 (gq48 2) be)
     (.block [.alu .add .rdx (.imm 768), .alu .sub .r9 (.imm 48), .alu .cmp .r9 (.imm 96)])))
 
-def bigRestTo : Prog isa :=
-  .seq (batchTo 4 fun _ => []) (.seq (batchTo 8 fun _ => [])
-    (.seq (.loop body48To .ae) (.block (.vmovdqu32Load .xmm1 (at_ .r11 832) :: (lastG ++ adv ++ lastG ++ adv)))))
+def bigRestTo (be : Bool := false) : Prog isa :=
+  .seq (batchTo 4 (fun _ => []) be) (.seq (batchTo 8 (fun _ => []) be)
+    (.seq (.loop (body48To be) .ae) (.block (.vmovdqu32Load .xmm1 (at_ .r11 832) :: (lastG ++ adv ++ lastG ++ adv)))))
 
-def bigPTo : Prog isa := .seq (.block powP48) bigRestTo
+def bigPTo (be : Bool := false) : Prog isa := .seq (.block powP48) (bigRestTo be)
 
 def encWith (su : List Instr) (bigC : Prog isa) : Prog isa :=
   .seq (.seq (.block su) Aes.X86_64.VaesZH.loadKeys)
@@ -50,12 +53,12 @@ def encP : Prog isa := encWith setupP bigPTo
 def remTo : Prog isa := StitchZH.remG [.alu .add .r8 (.reg .rdx)] .r8
 
 /-- `encP`, for any number of blocks from 16 on. -/
-def encR : Prog isa :=
+def encR (be : Bool := false) : Prog isa :=
   .seq (.seq (.block setupP) Aes.X86_64.VaesZH.loadKeys)
-    (.seq firstTo
+    (.seq (firstTo be)
       (.seq (.block [.alu .cmp .r9 (.imm 256)])
-        (.seq (.ite .b (.block []) bigPTo)
+        (.seq (.ite .b (.block []) (bigPTo be))
           (.seq (.block [.alu .cmp .r9 (.imm 32)])
-            (.seq (.ite .b (.block []) (.loop bodyTo .ae)) (StitchZH.tailR remTo))))))
+            (.seq (.ite .b (.block []) (.loop (bodyTo be) .ae)) (StitchZH.tailR remTo))))))
 
 end VG.Impl.Gcm.X86_64.StitchZHTo

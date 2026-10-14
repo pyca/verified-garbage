@@ -37,8 +37,42 @@ open VG.Impl.Gcm.X86_64.StitchZ (gq gq48 lastG adv fin)
 open VG.Impl.Gcm.X86_64.StitchZR (setupP powP48)
 open VG.Impl.Gcm.X86_64.StitchZTo (atIx)
 
-def batch (j : Nat) (g : Nat → List Instr) : Prog isa :=
-  .seq (.block (ctrsZ .xmm14 .xmm0 .xmm15 aregs))
+/-! ## The counters of a batch
+
+With a public block index (`be`), `r10d` holds the index of the batch's
+first block, less one, in its top byte. Adding 16 there carries exactly when
+the low byte of the sixteen indices from the batch's on may wrap around; if it
+does not, the counter blocks are the first one byte-reversed (`vpshufb`) and
+then 4, 8 and 12 more in its last byte, a `vpaddd` of `0x04` in the top byte
+of each lane (`fastCtrs`), the constant at `scratch + 896`; the counters
+advance by 16, at `scratch + 912`. Otherwise, and without an index, each
+register's counters are byte-reversed (`ctrsZ`). -/
+
+/-- The counter blocks of a batch whose low bytes do not wrap. -/
+def fastCtrs : List Instr :=
+  [.vbroadcasti32x4 .xmm13 (at_ .r11 896), .zop (.zbin .vpshufb .xmm3 .xmm14 .xmm0),
+   .zop (.zbin .vpaddd .xmm4 .xmm3 .xmm13), .zop (.zbin .vpaddd .xmm5 .xmm4 .xmm13),
+   .zop (.zbin .vpaddd .xmm6 .xmm5 .xmm13), .vbroadcasti32x4 .xmm13 (at_ .r11 912),
+   .zop (.zbin .vpaddd .xmm14 .xmm14 .xmm13)]
+
+/-- The counter blocks of a batch, through `fastCtrs` when the block index is
+public (`be`) and the low bytes do not wrap. -/
+def ctrs (be : Bool) : Prog isa :=
+  if be then
+    .seq (.block [.alu32 .add .r10 (.imm 0x10000000)])
+      (.ite .ae (.block fastCtrs) (.block (ctrsZ .xmm14 .xmm0 .xmm15 aregs)))
+  else .block (ctrsZ .xmm14 .xmm0 .xmm15 aregs)
+
+/-- The constants of `fastCtrs` stored, and `r10d` set from the block index
+at `[rsp + off]` (`r10` is the scratch register). -/
+def beSetup (off : Nat) : List Instr :=
+  [.movImm64 .r10 0x0400000000000000, .vop (.vmovq .xmm13 .r10),
+   .vop (.vshift .pslldq .l128 .xmm13 .xmm13 8), .vmovdquStore .l128 (at_ .r11 896) .xmm13,
+   .movImm64 .r10 16, .vop (.vmovq .xmm13 .r10), .vmovdquStore .l128 (at_ .r11 912) .xmm13,
+   .mov32 .r10 (.mem (at_ .rsp off)), .alu32 .sub .r10 (.imm 1), .shift32 .shl .r10 24]
+
+def batch (j : Nat) (g : Nat → List Instr) (be : Bool := false) : Prog isa :=
+  .seq (ctrs be)
     (.seq (Aes.X86_64.VaesZH.aes aregs g) (.block (xorDataZ .xmm13 .rdx aregs j)))
 
 def first : Prog isa := batch 0 fun _ => []
@@ -50,19 +84,19 @@ def body48 : Prog isa :=
   .seq (batch 12 (gq48 0)) (.seq (batch 16 (gq48 1)) (.seq (batch 20 (gq48 2))
     (.block [.alu .add .rdx (.imm 768), .alu .sub .r9 (.imm 48), .alu .cmp .r9 (.imm 96)])))
 
-def dbody : Prog isa :=
-  .seq (batch 0 gq) (.block [.alu .add .rdx (.imm 256), .alu .sub .r9 (.imm 16), .alu .cmp .r9 (.imm 16)])
+def dbody (be : Bool := false) : Prog isa :=
+  .seq (batch 0 gq be) (.block [.alu .add .rdx (.imm 256), .alu .sub .r9 (.imm 16), .alu .cmp .r9 (.imm 16)])
 
-def dbody48 : Prog isa :=
-  .seq (batch 0 (gq48 0)) (.seq (batch 4 (gq48 1)) (.seq (batch 8 (gq48 2))
+def dbody48 (be : Bool := false) : Prog isa :=
+  .seq (batch 0 (gq48 0) be) (.seq (batch 4 (gq48 1) be) (.seq (batch 8 (gq48 2) be)
     (.block [.alu .add .rdx (.imm 768), .alu .sub .r9 (.imm 48), .alu .cmp .r9 (.imm 48)])))
 
 def bigP : Prog isa :=
   .seq (.block powP48) (.seq (batch 4 fun _ => []) (.seq (batch 8 fun _ => [])
     (.seq (.loop body48 .ae) (.block (.vmovdqu32Load .xmm1 (at_ .r11 832) :: (lastG ++ adv ++ lastG ++ adv))))))
 
-def bigDP : Prog isa :=
-  .seq (.block powP48) (.seq (.loop dbody48 .ae) (.block [.vmovdqu32Load .xmm1 (at_ .r11 832)]))
+def bigDP (be : Bool := false) : Prog isa :=
+  .seq (.block powP48) (.seq (.loop (dbody48 be) .ae) (.block [.vmovdqu32Load .xmm1 (at_ .r11 832)]))
 
 def enc : Prog isa :=
   .seq (.seq (.block setupP) Aes.X86_64.VaesZH.loadKeys)
@@ -242,12 +276,12 @@ def remGD : Prog isa := .seq (.block remSetup) (.seq ksSelGD (.block storeY))
 
 /-- `dec`, for any number of blocks from 16 on: the `r9` blocks after the
 last group, if any, by `remGD`. -/
-def decR : Prog isa :=
+def decR (be : Bool := false) : Prog isa :=
   .seq (.seq (.block setupP) Aes.X86_64.VaesZH.loadKeys)
-    (.seq (.block [.alu .cmp .r9 (.imm 256)])
-      (.seq (.ite .b (.block []) bigDP)
+    (.seq (.block ((if be then beSetup 16 else []) ++ [.alu .cmp .r9 (.imm 256)]))
+      (.seq (.ite .b (.block []) (bigDP be))
         (.seq (.block [.alu .cmp .r9 (.imm 16)])
-          (.seq (.ite .b (.block []) (.loop dbody .ae))
+          (.seq (.ite .b (.block []) (.loop (dbody be) .ae))
             (.seq (.block [.alu .test .r9 (.reg .r9)])
               (.ite .e (.block (storeCtr ++ storeY))
                 (.seq (.block [.alu .add .r9 (.imm 16)]) remGD)))))))

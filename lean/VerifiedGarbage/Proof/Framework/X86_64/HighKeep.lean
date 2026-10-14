@@ -11,7 +11,7 @@ namespace VG.X86_64
 
 /-- Instructions covered by the high-register preservation lemma. -/
 def Instr.keepsH : Instr → Bool
-  | .vop _ | .zop _ | .mov .. | .mov32 .. | .alu .. | .shift ..
+  | .vop _ | .zop _ | .mov .. | .mov32 .. | .alu .. | .alu32 .. | .shift ..
   | .vmovdquLoad .. | .vmovdquStore .. | .vmovdqu32Load .. | .vmovdqu32Store ..
   | .vbroadcasti128 .. | .vbroadcasti32x4 .. | .kLoad .. => true
   | _ => false
@@ -33,6 +33,18 @@ theorem HKeep.alu (op : AluOp) (d : Reg) (a : Src) {s t : State}
       | (cases h <;> exact ⟨rfl, rfl⟩)
       | exact HKeep.of_map h (fun _ => ⟨rfl, rfl⟩)
 
+theorem HKeep.alu32 (op : AluOp) (d : Reg) (a : Src) {s t : State}
+    (h : execAlu32 op d a s = some t) : HKeep s t := by
+  simp only [execAlu32] at h
+  cases he : readSrc32 s a with
+  | none => simp [he] at h
+  | some v =>
+    simp only [he, Option.bind_some] at h
+    cases op
+    all_goals first
+      | (cases h <;> exact ⟨rfl, rfl⟩)
+      | exact HKeep.of_map h (fun _ => ⟨rfl, rfl⟩)
+
 theorem HKeep.shift (op : ShiftOp) (d : Reg) (n : Nat) {s t : State}
     (h : execShift op d n s = some t) : HKeep s t := by
   cases op <;> simp only [execShift] at h
@@ -45,6 +57,7 @@ theorem HKeep.instr {i : Instr} (hi : i.keepsH = true) {s t : State}
   case mov d a => exact HKeep.of_map he (fun _ => ⟨rfl, rfl⟩)
   case mov32 d a => exact HKeep.of_map he (fun _ => ⟨rfl, rfl⟩)
   case alu op d a => exact HKeep.alu op d a he
+  case alu32 op d a => exact HKeep.alu32 op d a he
   case shift op d n => exact HKeep.shift op d n he
   case vop op =>
     simp only [exec, Option.some.injEq] at he

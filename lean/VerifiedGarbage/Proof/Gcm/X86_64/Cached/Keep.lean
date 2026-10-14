@@ -24,8 +24,8 @@ theorem aes_keeps (rs : List XReg) (g : Nat → List Instr)
   simp [aes, keyOp, round, Code.all, List.all_flatMap, List.all_map, Instr.keepsH, hg]
 
 theorem batch_keeps (j : Nat) (g : Nat → List Instr)
-    (hg : ∀ j, (g j).all Instr.keepsH = true) : (batch j g).all Instr.keepsH = true := by
-  simp [batch, Code.all, aes_keeps _ g hg, ctrsZ, xorDataZ, aregs, Instr.keepsH]
+    (hg : ∀ j, (g j).all Instr.keepsH = true) (be : Bool := false) : (batch j g be).all Instr.keepsH = true := by
+  cases be <;> simp [batch, ctrs, fastCtrs, Code.all, aes_keeps _ g hg, ctrsZ, xorDataZ, aregs, Instr.keepsH]
 
 theorem gq_keeps (j : Nat) : (Impl.Gcm.X86_64.StitchZ.gq j).all Instr.keepsH = true := by
   unfold Impl.Gcm.X86_64.StitchZ.gq
