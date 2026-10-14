@@ -6,7 +6,7 @@ public import VerifiedGarbage.TCB.Artifact
 # Montgomery multiplication in the RSA working space, as a function
 
 **Trusted** (as every file in `Spec/`). The contracts of
-`vg_rsa_mont_mul` and `vg_rsa_mont_mul_lazy`, in the module `rsa_mont`, so that the code of the RSA
+`vg_rsa_mont_mul` and `vg_rsa_lazy_mont_mul`, in the module `rsa_mont`, so that the code of the RSA
 functions can call one copy of its Montgomery multiplication instead of
 repeating it at every use. It is not an algorithm of a standard but the
 arithmetic the RSA functions are built from: what it computes is stated on
@@ -31,7 +31,7 @@ and timing may depend on it (`leak`). The function is otherwise constant
 time.
 
 `vg_rsa_mont_mul` reduces its result below `m` and takes `b` below `m`;
-`vg_rsa_mont_mul_lazy` (`mulLazyContract`) takes and returns any numbers of
+`vg_rsa_lazy_mont_mul` (`mulLazyContract`) takes and returns any numbers of
 `w` words, congruent to the same value, which saves a pass over the result in
 every multiplication of an exponentiation. Its callers reduce once, where they
 need a value below `m`.
@@ -163,10 +163,10 @@ def mulLazyContract {I : ISA} (A : Abi I) (stack : Nat := 0) : Contract I :=
     (stack := stack)
     (leak := some fun ws _ _ _ _ m => [wOf m ws])
 
-/-- `vg_rsa_mont_mul_lazy` on every target. -/
+/-- `vg_rsa_lazy_mont_mul` on every target. -/
 def mulLazyApi : Api where
   module := "rsa_mont"
-  name := "vg_rsa_mont_mul_lazy"
+  name := "vg_rsa_lazy_mont_mul"
   sig := sig
   contracts := some fun A stack => mulLazyContract A stack
   summary := "Lazy Montgomery multiplication in the working space of the RSA functions: writes \
