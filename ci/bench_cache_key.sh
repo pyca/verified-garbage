@@ -6,5 +6,7 @@
 # entry on main; bench.yml's `compare` restores it.
 set -e
 bench=$1
-hash=$({ rustc -vV; cat "$bench/Cargo.toml" "$bench/Cargo.lock"; } | sha256sum | cut -c1-16)
+# macOS has `shasum`, Linux `sha256sum`.
+if command -v sha256sum >/dev/null; then sum="sha256sum"; else sum="shasum -a 256"; fi
+hash=$({ rustc -vV; cat "$bench/Cargo.toml" "$bench/Cargo.lock"; } | $sum | cut -c1-16)
 echo "bench-deps-$(rustc -vV | sed -n 's/^host: //p')-$hash"
