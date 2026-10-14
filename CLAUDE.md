@@ -664,7 +664,9 @@ with `base_commit` (empty to run the branch alone, next to OpenSSL and
 aws-lc-rs), `arches`, `cpu_features` (space-separated configurations, `-`
 for none; empty for those choosing among the modules' implementations) and
 `modules`; the results are in each job's summary. Leaving all three empty
-runs every benchmark in about thirty jobs: never do that for one change.
+runs every benchmark in about thirty jobs: never do that for one change,
+except one that needs every benchmark (which pull requests skip, naming the
+architectures in the Benchmarks run's summary): then pass those `arches`.
 
 ## Checks to run before pushing
 

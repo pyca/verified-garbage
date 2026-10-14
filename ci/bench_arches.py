@@ -1099,8 +1099,8 @@ def without_full_runs(matrix):
         return matrix, None
     return [p for p in matrix if p["arch"] not in full], (
         f"This change needs every benchmark on {', '.join(full)}, which pull requests never run:"
-        " run the Benchmarks workflow by hand (workflow_dispatch) with base_commit set to"
-        " compare them, or narrow the change.")
+        " run the Benchmarks workflow by hand (workflow_dispatch) with base_commit set to the"
+        f" base and arches='{' '.join(full)}' to compare them, or narrow the change.")
 
 
 def run_requirements(arch, modules, catalogs, revisions):

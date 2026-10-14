@@ -2246,8 +2246,9 @@ lake env lean --run Emit.lean        # regenerate src/asm/ after changing lean/V
 
 To benchmark against OpenSSL (through rust-openssl; needs its headers) and
 aws-lc-rs (built from source; needs a C compiler), and
-to compare a branch with a checkout of `main`, as CI does for every pull
-request that changes the library:
+to compare a branch with a checkout of `main`, as CI does for each pull
+request that changes the library (except on an architecture where the
+change needs every benchmark, which only a manual run measures, below):
 
 ```sh
 (cd bench && cargo bench)
@@ -2267,8 +2268,11 @@ VG_CPU_FEATURES=none python3 ci/bench_compare.py --modules chacha20 path/to/main
 
 The Benchmarks workflow's manual runs take the architectures, the
 `VG_CPU_FEATURES` configurations (`-` for none) and the modules to run, so
-that an implementation can be measured on a runner of its architecture.
-`python3 ci/bench_arches.py --choices` lists the values each takes:
+that an implementation can be measured on a runner of its architecture, or
+that a change a pull request did not benchmark (one needing every benchmark
+on an architecture: its Benchmarks run names them) can be measured with
+`arches` alone. `python3 ci/bench_arches.py --choices` lists the values each
+takes:
 
 ```sh
 gh workflow run bench.yml --ref my-branch -f base_commit=<sha> \
