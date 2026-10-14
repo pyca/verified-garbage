@@ -4,9 +4,9 @@ public import VerifiedGarbage.Impl.X25519.X86_64.Base
 meta import VerifiedGarbage.Impl.X25519.X86_64.Base
 public import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBasePrecomputedCT
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBasePrecomputedCT
-public import VerifiedGarbage.Proof.X25519.Edwards.Base
+import VerifiedGarbage.Proof.X25519.Edwards.Base
 meta import VerifiedGarbage.Proof.X25519.Edwards.Base
-public import VerifiedGarbage.Proof.Framework.X86_64.Syms
+import VerifiedGarbage.Proof.Framework.X86_64.Syms
 meta import VerifiedGarbage.Proof.Framework.X86_64.Syms
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

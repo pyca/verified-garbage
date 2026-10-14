@@ -1,9 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.X448.AArch64.PointwiseOps
-public import VerifiedGarbage.Proof.X448.Wide.TailMul
-public import VerifiedGarbage.Proof.X448.AArch64.AddSub
-public import VerifiedGarbage.Proof.X448.AArch64.Small
+import VerifiedGarbage.Proof.X448.AArch64.PointwiseOps
+import VerifiedGarbage.Proof.X448.Wide.TailMul
+import VerifiedGarbage.Proof.X448.AArch64.AddSub
+import VerifiedGarbage.Proof.X448.AArch64.Small
 public import VerifiedGarbage.Proof.X448.AArch64.Swap
 public import Mathlib.Logic.Function.Basic
 import all Init.Data.Array.Basic

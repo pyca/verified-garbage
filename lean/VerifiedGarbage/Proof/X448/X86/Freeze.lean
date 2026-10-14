@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.X448.X86.FreezePrep
+import VerifiedGarbage.Proof.X448.X86.FreezePrep
 public import VerifiedGarbage.Proof.X448.X86.Select
 public import VerifiedGarbage.Proof.X448.X86.Env
 import all Init.Data.Array.Basic

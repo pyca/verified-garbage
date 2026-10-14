@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.X448.X86.RowPass
+import VerifiedGarbage.Proof.X448.X86.RowPass
 public import VerifiedGarbage.Proof.X448.X86.Args
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

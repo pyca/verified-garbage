@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.X448.AArch64.Weak.Finish
-public import VerifiedGarbage.Proof.X448.AArch64.Weak.Ladder
-public import VerifiedGarbage.Proof.X448.AArch64.Weak.FinalSwap
+import VerifiedGarbage.Proof.X448.AArch64.Weak.Finish
+import VerifiedGarbage.Proof.X448.AArch64.Weak.Ladder
+import VerifiedGarbage.Proof.X448.AArch64.Weak.FinalSwap
 public import VerifiedGarbage.Proof.X448.AArch64.Weak.Inv
 public import VerifiedGarbage.Proof.X448.AArch64.Main
 import all Init.Data.Array.Basic

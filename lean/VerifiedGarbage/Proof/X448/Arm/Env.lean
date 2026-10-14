@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.X448.Arm.Call
+import VerifiedGarbage.Proof.X448.Arm.Call
 public import VerifiedGarbage.Proof.X448.Arm.Swap
 public import Mathlib.Logic.Function.Basic
 import all Init.Data.Array.Basic

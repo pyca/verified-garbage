@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.X448.AArch64.PointwiseCarry
-public import VerifiedGarbage.Proof.X448.AArch64.PointwiseFinish
+import VerifiedGarbage.Proof.X448.AArch64.PointwiseCarry
+import VerifiedGarbage.Proof.X448.AArch64.PointwiseFinish
 public import VerifiedGarbage.Proof.X448.AArch64.Columns
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

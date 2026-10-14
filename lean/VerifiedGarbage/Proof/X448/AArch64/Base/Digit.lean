@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Impl.X448.AArch64.Base
 public import VerifiedGarbage.Proof.X448.AArch64.BitStep
 public import VerifiedGarbage.Proof.X448.BaseDigits
-public import VerifiedGarbage.Proof.Curve448.AArch64.Swap
+import VerifiedGarbage.Proof.Curve448.AArch64.Swap
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

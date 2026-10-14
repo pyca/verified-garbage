@@ -4,15 +4,15 @@ public import VerifiedGarbage.Proof.X25519.X86_64.Divstep.Main
 meta import VerifiedGarbage.Proof.X25519.X86_64.Divstep.Main
 public import VerifiedGarbage.Proof.X25519.X86_64.Lit
 meta import VerifiedGarbage.Proof.X25519.X86_64.Lit
-public import VerifiedGarbage.Proof.X25519.Invert
+import VerifiedGarbage.Proof.X25519.Invert
 meta import VerifiedGarbage.Proof.X25519.Invert
-public import VerifiedGarbage.Proof.Mont.Read
+import VerifiedGarbage.Proof.Mont.Read
 meta import VerifiedGarbage.Proof.Mont.Read
-public import VerifiedGarbage.Proof.Framework.X86_64.Abi
+import VerifiedGarbage.Proof.Framework.X86_64.Abi
 meta import VerifiedGarbage.Proof.Framework.X86_64.Abi
 public import VerifiedGarbage.Proof.Framework.X86_64.Taint
 meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
-public import VerifiedGarbage.Proof.Framework.X86_64.VecKeep
+import VerifiedGarbage.Proof.Framework.X86_64.VecKeep
 meta import VerifiedGarbage.Proof.Framework.X86_64.VecKeep
 public import VerifiedGarbage.Proof.Framework.X86_64.CallInline
 meta import VerifiedGarbage.Proof.Framework.X86_64.CallInline

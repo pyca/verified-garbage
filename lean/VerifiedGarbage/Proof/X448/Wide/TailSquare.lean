@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.X448.Wide.TailProduct
-public import VerifiedGarbage.Proof.X448.Wide.SymmetricColumns
+import VerifiedGarbage.Proof.X448.Wide.TailProduct
+import VerifiedGarbage.Proof.X448.Wide.SymmetricColumns
 public import VerifiedGarbage.Proof.X448.Wide.Mul
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.X448.AArch64.Cached
-public import VerifiedGarbage.Proof.X448.Wide.Term
+import VerifiedGarbage.Proof.X448.Wide.Term
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

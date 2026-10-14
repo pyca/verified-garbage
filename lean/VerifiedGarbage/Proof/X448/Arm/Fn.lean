@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.X448.Arm.Mul
+import VerifiedGarbage.Proof.X448.Arm.Mul
 public import VerifiedGarbage.Proof.X448.Arm.AddSub
-public import VerifiedGarbage.Proof.X448.Arm.Small
+import VerifiedGarbage.Proof.X448.Arm.Small
 public import VerifiedGarbage.TCB.Arm.Target
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

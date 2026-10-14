@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.X448.Arm.MulLoop
+import VerifiedGarbage.Proof.X448.Arm.MulLoop
 public import VerifiedGarbage.Proof.X448.Arm.Reduce
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

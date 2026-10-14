@@ -1,9 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.X448.Arm.Bits
-public import VerifiedGarbage.Proof.X448.Arm.Finish
-public import VerifiedGarbage.Proof.X448.Arm.Ladder
-public import VerifiedGarbage.Proof.X448.Arm.FinalSwap
+import VerifiedGarbage.Proof.X448.Arm.Bits
+import VerifiedGarbage.Proof.X448.Arm.Finish
+import VerifiedGarbage.Proof.X448.Arm.Ladder
+import VerifiedGarbage.Proof.X448.Arm.FinalSwap
 public import VerifiedGarbage.Proof.X448.Arm.Inv
 public import VerifiedGarbage.Spec.X448.Contract
 public import VerifiedGarbage.TCB.Arm.Target

@@ -2,8 +2,8 @@ module
 
 public import VerifiedGarbage.Impl.X448.AArch64
 public import VerifiedGarbage.Proof.X448.Limbs
-public import VerifiedGarbage.Proof.Framework.AArch64.Exec
-public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.Offset
 import all Init.Data.Array.Basic

@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.X448.Arm
 public import VerifiedGarbage.Proof.X448.Radix16
-public import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Arm.Exec
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.Offset
 import all Init.Data.Array.Basic

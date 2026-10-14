@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.X448.X86.Instr
+import VerifiedGarbage.Proof.X448.X86.Instr
 public import VerifiedGarbage.Proof.X25519.X86.Basic
 public import VerifiedGarbage.Spec.X448.Contract
 public import VerifiedGarbage.TCB.X86.Target

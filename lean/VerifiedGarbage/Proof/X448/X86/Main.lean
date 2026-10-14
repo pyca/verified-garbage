@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.X448.X86.BitsInput
-public import VerifiedGarbage.Proof.X448.X86.Finish
-public import VerifiedGarbage.Proof.X448.X86.Ladder
+import VerifiedGarbage.Proof.X448.X86.BitsInput
+import VerifiedGarbage.Proof.X448.X86.Finish
+import VerifiedGarbage.Proof.X448.X86.Ladder
 public import VerifiedGarbage.Proof.X448.X86.FinalSwap
 public import VerifiedGarbage.Proof.X448.X86.Inv
 public import VerifiedGarbage.Spec.X448.Contract

@@ -1,11 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.X25519.X86_64.Finish
-public import VerifiedGarbage.Proof.X25519.X86_64.Divstep.Main
+import VerifiedGarbage.Proof.X25519.X86_64.Finish
+import VerifiedGarbage.Proof.X25519.X86_64.Divstep.Main
 public import VerifiedGarbage.Proof.X25519.X86_64.Invert
 public import VerifiedGarbage.Spec.X25519.Contract
 public import VerifiedGarbage.TCB.X86_64.Target
-public import VerifiedGarbage.Proof.Framework.X86_64.Abi
+import VerifiedGarbage.Proof.Framework.X86_64.Abi
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

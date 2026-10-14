@@ -1,12 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Ladder
+import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Ladder
 meta import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Ladder
 public import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Lit
 meta import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Lit
 public import VerifiedGarbage.Proof.X25519.X86_64.Adx.Verified
 meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.Verified
-public import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
+import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
 meta import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

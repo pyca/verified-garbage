@@ -6,9 +6,9 @@ public import VerifiedGarbage.Proof.X25519.X86.Base.Lit
 meta import VerifiedGarbage.Proof.X25519.X86.Base.Lit
 public import VerifiedGarbage.Proof.Ed25519.X86.CombCT
 meta import VerifiedGarbage.Proof.Ed25519.X86.CombCT
-public import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseCTSetup
+import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseCTSetup
 meta import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseCTSetup
-public import VerifiedGarbage.Proof.Ed25519.X86.PointCTBlocks
+import VerifiedGarbage.Proof.Ed25519.X86.PointCTBlocks
 meta import VerifiedGarbage.Proof.Ed25519.X86.PointCTBlocks
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract

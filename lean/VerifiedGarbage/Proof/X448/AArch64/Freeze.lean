@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.X448.AArch64.FreezePrep
-public import VerifiedGarbage.Proof.X448.AArch64.Select
+import VerifiedGarbage.Proof.X448.AArch64.FreezePrep
+import VerifiedGarbage.Proof.X448.AArch64.Select
 public import VerifiedGarbage.Proof.X448.AArch64.Env
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

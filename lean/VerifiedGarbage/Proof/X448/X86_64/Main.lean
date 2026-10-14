@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.X448.X86_64.Finish
 public import VerifiedGarbage.Proof.X448.X86_64.InvCall
 public import VerifiedGarbage.Spec.X448.Contract
 public import VerifiedGarbage.TCB.X86_64.Target
-public import VerifiedGarbage.Proof.Framework.X86_64.Abi
+import VerifiedGarbage.Proof.Framework.X86_64.Abi
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

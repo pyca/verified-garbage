@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.X448.AArch64.Init
-public import VerifiedGarbage.Proof.X448.AArch64.MulLoop
-public import VerifiedGarbage.Proof.X448.AArch64.Reduce
+import VerifiedGarbage.Proof.X448.AArch64.MulLoop
+import VerifiedGarbage.Proof.X448.AArch64.Reduce
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

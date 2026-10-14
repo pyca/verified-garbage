@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.X448.AArch64.Weak.Setup
-public import VerifiedGarbage.Proof.X448.AArch64.Finish
+import VerifiedGarbage.Proof.X448.AArch64.Finish
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

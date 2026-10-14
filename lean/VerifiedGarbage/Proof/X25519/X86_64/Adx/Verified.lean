@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.X25519.X86_64.Adx.A24
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.A24
 meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.A24
 public import VerifiedGarbage.Proof.X25519.X86_64.Adx.Lit
 meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.Lit

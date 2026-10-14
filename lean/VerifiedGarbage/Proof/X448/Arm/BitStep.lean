@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.X448.Arm.Ops
-public import VerifiedGarbage.Proof.X448.Ladder
+import VerifiedGarbage.Proof.X448.Ladder
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
