@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.AesGcm.AArch64.RelBase
 # ChaCha20-Poly1305 (RFC 8439 §2.8) on AArch64
 
 A generic caller (see `TCB/Emit.lean`), emitted for every ChaCha20 stream
-backend. With 64 to 256 bytes of data, one pass of the five-block kernel (four
+backend. With 64 to 256 bytes of data (1 to 256 with SVE2), one pass of the five-block kernel (four
 blocks in NEON lanes and one in the integer registers) computes the one-time
 Poly1305 key and the data's keystream together
 (`Impl/ChaCha20Poly1305/AArch64/Short.lean`); otherwise the one-time key uses
@@ -33,8 +33,8 @@ namespace VG.Generic.ChaCha20Xor.AArch64.ChaCha20Poly1305
 
 /-- Notes on the implementation. -/
 def notes (v : Proof.ChaCha20.AArch64.XorImpl) : List String :=
-  ["With 64 to 256 bytes of data, computes the one-time Poly1305 key and the data's keystream in one " ++
-    "pass of four NEON blocks and one integer block."] ++
+  ["With " ++ (if v.callee.sve then "1" else "64") ++ " to 256 bytes of data, computes the one-time " ++
+    "Poly1305 key and the data's keystream in one pass of four NEON blocks and one integer block."] ++
   if v.stitched then ["Absorbs each 512 bytes into Poly1305 with integer instructions while " ++
     "computing the keystream of the next with the eight-block ChaCha20 kernel."] else []
 
