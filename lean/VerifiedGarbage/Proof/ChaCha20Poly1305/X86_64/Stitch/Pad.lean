@@ -60,8 +60,10 @@ theorem pad_ok (r : Reg) : ∀ (l : List Instr), (∀ i ∈ l, IsPad r i) → �
     exact WP.block_append (WP.mono (pad1_ok (h i (List.mem_cons_self ..)) s) fun t ht =>
       WP.mono (pad_ok r l (fun j hj => h j (List.mem_cons_of_mem _ hj)) t) fun u hu => ht.trans hu)
 
-theorem padIns_ok (r : Reg) {n : Nat} (hn : n = 8 ∨ n = 18 ∨ n = 20) (s : State) :
+theorem padIns_ok (r : Reg) {n : Nat} (hn : n ∈ [8, 18, 19, 20, 29]) (s : State) :
     WP isa (.block (padIns r n)) s (PadPost r s) :=
-  pad_ok r _ (by rcases hn with rfl | rfl | rfl <;> simp [padIns, IsPad]) s
+  pad_ok r _ (by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hn
+    rcases hn with rfl | rfl | rfl | rfl | rfl <;> simp [padIns, IsPad]) s
 
 end VG.Proof.ChaCha20Poly1305.X86_64.Stitch

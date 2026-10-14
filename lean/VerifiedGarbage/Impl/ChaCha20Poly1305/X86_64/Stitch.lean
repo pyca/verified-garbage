@@ -310,13 +310,79 @@ def tailS (two pre : Bool) : Prog isa :=
   (.seq (xorBufX 5 .rbx)
     (.block [.vop .vzeroupper, .mov .rcx (.reg .r9), .mov32 .rdx (.imm 0)])))
 
-/-- After the whole chunks: if 1 to 256 bytes are left, `tailS`; otherwise
-`leave`. -/
-def restT : Prog isa :=
+/-- `n` bytes (not 1) of instructions that only write `r`, from what it
+held or 0: `mov r32, 0` (5 bytes, for `rax` to `rdi`), `mov r64, r64` (3)
+and `mov r32, r32` (2). They pad code so that what follows keeps its offsets
+modulo 32 when code is added before it (`restT`, `tailK`, `restO`, `cryptO`, `decRest`): on
+Cascade Lake, whose microcode mitigates the JCC erratum, a shift of the
+code for the lengths an addition does not touch made them up to 2% slower. -/
+def padIns (r : Reg) : Nat → List Instr
+  | 0 => []
+  | 2 => [.mov32 r (.reg r)]
+  | 3 => [.mov r (.reg r)]
+  | 4 => [.mov32 r (.reg r), .mov32 r (.reg r)]
+  | 6 => [.mov r (.reg r), .mov r (.reg r)]
+  | n + 5 => .mov32 r (.imm 0) :: padIns r n
+  | _ => []
+
+/-! ### 257 to 448 bytes left
+
+`tailK` computes the keystream of eight blocks, as a chunk does, while its
+rounds absorb the last chunk; but it stores the keystream to `ctx + 736`
+(`buf + 608`, `kOff`), past the Poly1305 state, unused once the prologue's
+keystream is (none is computed for these lengths, `splitM`), and XORs the
+bytes left into the data from there, as `tailS` does from `buf`. So
+`macPadLengths` absorbs only the bytes left, not the last chunk too, and
+there is no call of `vg_chacha20_xor`. -/
+
+/-- Where `tailK` stores the keystream, from `buf`. -/
+def kOff : Nat := 608
+
+/-- Row `row` of the eight blocks, transposed into `xs` (as for `xorRow`),
+stored to `buf + off`: block `i` at `off + 64 i`. -/
+def storeRow (off row : Nat) (xs : List XReg) : List Instr :=
+  (List.range 4).flatMap fun i =>
+    [.vmovdquStore .l128 (at_ .rcx (off + 64 * i + 16 * row)) (xs.getD i .xmm0),
+     .vop (.vextracti128 .xmm13 (xs.getD i .xmm0) 1),
+     .vmovdquStore .l128 (at_ .rcx (off + 64 * (i + 4) + 16 * row)) .xmm13]
+
+/-- The eight blocks' keystream stored at `buf + kOff` while the 512 bytes
+at `rsi` (the last chunk) are absorbed. -/
+def tailKMain (vl : Bool) : Prog isa :=
+  .seq (.block ChaCha20.X86_64.Avx2.setup)
+  (.seq (sroundsFor vl false) (.block (ChaCha20.X86_64.Avx2.finishWith (storeRow kOff))))
+
+/-- `tailK`'s moves: `buf` into `r9`, the stored keystream into `rsi`, the
+bytes left into `rdx`. -/
+def movK : List Instr :=
+  [.mov .r9 (.reg .rcx), .mov .rsi (.reg .rcx), .alu .add .rsi (.imm (BitVec.ofNat 32 kOff)),
+   .mov .rdx (.reg .rbp)]
+
+/-- `tailKMain`, then `leaveT` and `movK`: `tailK` but for the XOR. -/
+def tailKAB (vl : Bool) : Prog isa :=
+  .seq (tailKMain vl) (.block (leaveT false ++ movK))
+
+/-- `tailKAB`; then the bytes left encrypted from the stored keystream, as
+`tailS` does from `buf`. -/
+def tailKX (vl : Bool) : Prog isa :=
+  .seq (tailKAB vl)
+  (.seq (.block [.alu .test .rdx (.reg .rdx)])
+  (.seq (xorBufX 5 .rbx)
+    (.block [.vop .vzeroupper, .mov .rcx (.reg .r9), .mov32 .rdx (.imm 0)])))
+
+/-- 257 to 448 bytes left: `tailKX`, padded (with `rax`, dead here) so that
+with the padding before `restT`'s comparison with 448 the code after it keeps
+its offsets modulo 32. -/
+def tailK (vl : Bool) : Prog isa :=
+  .seq (tailKX vl) (.block (padIns .rax 29))
+
+/-- After the whole chunks: if 1 to 256 bytes are left, `tailS`; if 257 to
+448, `tailK`; otherwise `leave`. -/
+def restT (vl : Bool) : Prog isa :=
   .seq (.block [.mov .rdx (.mem (at_ .rcx lenOff)), .alu .sub .rdx (.imm 1), .alu .cmp .rdx (.imm 256)])
   (.ite .b
     (.seq (.block [.alu .cmp .rdx (.imm 128)]) (.ite .b (tailS false false) (tailS true false)))
-    (.block leave))
+    (.seq (.block (padIns .rax 19 ++ ([.alu .cmp .rdx (.imm 448)] : List Instr))) (.ite .b (tailK vl) (.block leave))))
 
 /-- The whole chunks of at least 512 bytes of data, and the rest if at most
 256 bytes. -/
@@ -324,7 +390,7 @@ def bulk (vl : Bool) : Prog isa :=
   .seq (.block enter)
   (.seq (firstChunk vl)
   (.seq (.ite .b (.block []) (.loop (chunk vl false) .ae))
-    restT))
+    (restT vl)))
 
 /-- As `bulk`, after the first 448 bytes are encrypted from the prologue's
 keystream (`rsi` at them): the first chunk absorbs them, and the rest is as
@@ -333,7 +399,7 @@ def bulkP (vl : Bool) : Prog isa :=
   .seq (.block enter)
   (.seq (chunk vl true)
   (.seq (.ite .b (.block []) (.loop (chunk vl false) .ae))
-    restT))
+    (restT vl)))
 
 /-- The data and the ciphertext to absorb when there are no whole chunks:
 all of it. -/
@@ -502,21 +568,6 @@ computed into `buf` while their first `k` blocks are absorbed, and the
 registers restored. -/
 def tailO (two : Bool) (k : Nat) : Prog isa :=
   .seq (.block (tailA two)) (.seq (troundsG two (oblocks k) (ofirst k) 10) (.block (tailBO two k)))
-
-/-- `n` bytes (not 1) of instructions that only write `r`, from what it
-held or 0: `mov r32, 0` (5 bytes, for `rax` to `rdi`), `mov r64, r64` (3)
-and `mov r32, r32` (2). They pad code so that what follows keeps its offsets
-modulo 32 when code is added before it (`restO`, `cryptO`, `decRest`): on
-Cascade Lake, whose microcode mitigates the JCC erratum, a shift of the
-code for the lengths an addition does not touch made them up to 2% slower. -/
-def padIns (r : Reg) : Nat → List Instr
-  | 0 => []
-  | 2 => [.mov32 r (.reg r)]
-  | 3 => [.mov r (.reg r)]
-  | 4 => [.mov32 r (.reg r), .mov32 r (.reg r)]
-  | 6 => [.mov r (.reg r), .mov r (.reg r)]
-  | n + 5 => .mov32 r (.imm 0) :: padIns r n
-  | _ => []
 
 /-- After the whole chunks: with 64 to 256 bytes left, `tailO` (4 blocks
 absorbed up to 128 bytes, 8 below 192, 12 from 192); otherwise `leaveO`. -/
