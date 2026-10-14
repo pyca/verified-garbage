@@ -195,6 +195,12 @@ theorem stepKD_nil (h : τ.bases = []) {i : Instr} {τ' : T} (hs : stepKD τ i =
   | evLoad _ m => obtain ⟨-, rfl⟩ := some_cond hs; exact nx
   | evMadd52Load _ _ _ m => obtain ⟨-, rfl⟩ := some_cond hs; exact nx
   | evStore m _ => exact storeStepKD_nil h hs
+  | kLoad _ _ m => obtain ⟨-, rfl⟩ := some_cond hs; exact nx
+  | kStore m k _ =>
+    simp only [stepKD, stepKDFn] at hs
+    cases hk : pub τ k <;> rw [hk] at hs
+    · cases hs
+    · exact storeStepKD_nil h hs
   | stmxcsr m => exact storeStepKD_nil h hs
   | ldmxcsr m => obtain ⟨-, rfl⟩ := some_cond hs; exact h
   | lfence => cases hs; exact h

@@ -284,6 +284,8 @@ def Instr.asm : Instr → List String
   | .evStore m r => [s!"vmovdqu64 {m.strV .l256}, {r.yname}"]
   | .evMadd52Load hi d a m =>
     [s!"vpmadd52{if hi then "h" else "l"}uq {d.yname}, {a.yname}, {m.strV .l256}"]
+  | .kLoad k d m => [s!"kmovw k1, {k.name32}", s!"vmovdqu64 {d.zname} " ++ "{k1}{z}" ++ s!", {m.str512}"]
+  | .kStore m k r => [s!"kmovw k1, {k.name32}", s!"vmovdqu64 {m.str512} " ++ "{k1}" ++ s!", {r.zname}"]
   | .stmxcsr m => [s!"stmxcsr {m.str32}"]
   | .ldmxcsr m => [s!"ldmxcsr {m.str32}"]
   | .lfence => ["lfence"]
@@ -321,7 +323,7 @@ def Instr.memOps : Instr → List MemOp
   | .store m _ | .store32 m _ | .movzx8 _ m | .store8 m _ | .movdquLoad _ m | .movdquStore m _
   | .vmovdquLoad _ _ m | .vmovdquStore _ m _ | .vbroadcasti128 _ m | .vbinLoad _ _ _ _ m
   | .vmovdqu32Load _ m | .vmovdqu32Store m _ | .vbroadcasti32x4 _ m | .vbroadcasti32x4H _ m | .zbcst _ _ _ m | .vpmadd52Load _ _ _ m
-  | .evLoad _ m | .evStore m _ | .evMadd52Load _ _ _ m
+  | .evLoad _ m | .evStore m _ | .evMadd52Load _ _ _ m | .kLoad _ _ m | .kStore m _ _
   | .stmxcsr m | .ldmxcsr m => [m]
   | .shift32 .. | .bswap32 _ | .rorx32 .. | .andn32 .. | .rorx .. | .andn .. | .bswap _
   | .shift .. | .movImm64 .. | .leaSym .. | .movqR .. | .xop _ | .vop _ | .vpmovmskb .. | .zop _ | .eop _
