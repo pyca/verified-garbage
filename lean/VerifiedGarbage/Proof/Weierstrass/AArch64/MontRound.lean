@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Mont.AArch64.Ops
-public import VerifiedGarbage.Proof.Weierstrass.Words
+import VerifiedGarbage.Proof.Weierstrass.Words
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.Mont
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

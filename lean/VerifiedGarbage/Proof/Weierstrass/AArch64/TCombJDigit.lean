@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.TCombJ
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombDigit
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Zero
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Zero
 public import VerifiedGarbage.Proof.Weierstrass.Booth
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

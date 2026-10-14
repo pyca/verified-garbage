@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.TripleDes.X86_64.Key.Rotation
-public import VerifiedGarbage.Proof.TripleDes.X86_64.Key.Store
+import VerifiedGarbage.Proof.TripleDes.X86_64.Key.Store
 public import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Framework.Omega
 import all Init.Data.Array.Basic

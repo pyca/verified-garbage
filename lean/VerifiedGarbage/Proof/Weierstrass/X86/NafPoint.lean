@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.X86.NafTableIO
+import VerifiedGarbage.Proof.Weierstrass.X86.NafTableIO
 public import VerifiedGarbage.Proof.Weierstrass.X86.NafAdjust
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

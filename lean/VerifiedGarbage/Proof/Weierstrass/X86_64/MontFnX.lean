@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Mont.X86_64.SqrPX
-public import VerifiedGarbage.Proof.Mont.X86_64.Chain
+import VerifiedGarbage.Proof.Mont.X86_64.Chain
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.Mont
 public import VerifiedGarbage.Proof.Framework.X86_64.VecKeep
 import all Init.Data.Array.Basic

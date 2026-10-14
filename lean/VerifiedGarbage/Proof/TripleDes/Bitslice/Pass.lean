@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.TripleDes.Bitslice.Round
 meta import VerifiedGarbage.Proof.TripleDes.Bitslice.Round
 public import VerifiedGarbage.Proof.TripleDes.Core
 meta import VerifiedGarbage.Proof.TripleDes.Core
-public import VerifiedGarbage.Proof.TripleDes.Word
+import VerifiedGarbage.Proof.TripleDes.Word
 meta import VerifiedGarbage.Proof.TripleDes.Word
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

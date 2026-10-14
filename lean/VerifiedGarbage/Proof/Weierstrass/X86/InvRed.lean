@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Divstep.Red32
 public import VerifiedGarbage.Proof.Weierstrass.X86.InvRedSum
 public import VerifiedGarbage.Proof.Weierstrass.X86.InvShift
-public import VerifiedGarbage.Proof.Weierstrass.X86.InvRedMath
+import VerifiedGarbage.Proof.Weierstrass.X86.InvRedMath
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

@@ -1,11 +1,11 @@
 module
 
-public import VerifiedGarbage.Impl.Weierstrass.X86.NafPrep
+import VerifiedGarbage.Impl.Weierstrass.X86.NafPrep
 public import VerifiedGarbage.Proof.Weierstrass.Naf5
 public import VerifiedGarbage.Proof.Weierstrass.X86.TCombDigit
 public import VerifiedGarbage.Impl.Weierstrass.X86.Naf
 public import VerifiedGarbage.Proof.Weierstrass.X86.TCombScan
-public import VerifiedGarbage.Proof.Framework.X86.SseDword
+import VerifiedGarbage.Proof.Framework.X86.SseDword
 public import VerifiedGarbage.Proof.Weierstrass.X86.JacState
 public import VerifiedGarbage.Proof.Weierstrass.X86.Ladder
 public import VerifiedGarbage.Proof.Weierstrass.X86.NafSubChain

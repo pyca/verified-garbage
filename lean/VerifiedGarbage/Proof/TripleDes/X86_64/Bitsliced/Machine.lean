@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Impl.TripleDes.X86_64.Bitsliced
 public import VerifiedGarbage.Proof.Framework.X86_64.Straight
 public import VerifiedGarbage.Proof.Framework.Bitslice.Vars
-public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 public import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Sbox
 import all Init.Data.Array.Basic

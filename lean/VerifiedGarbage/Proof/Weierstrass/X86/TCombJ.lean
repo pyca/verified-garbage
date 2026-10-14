@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.X86.TCombJFirst
-public import VerifiedGarbage.Proof.Weierstrass.X86.TCombJStep
+import VerifiedGarbage.Proof.Weierstrass.X86.TCombJFirst
+import VerifiedGarbage.Proof.Weierstrass.X86.TCombJStep
 public import VerifiedGarbage.Proof.Weierstrass.X86.TCombJSelect
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

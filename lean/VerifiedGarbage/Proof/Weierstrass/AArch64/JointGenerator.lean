@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JointEntry
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.JointInvariant
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JointInvariant
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

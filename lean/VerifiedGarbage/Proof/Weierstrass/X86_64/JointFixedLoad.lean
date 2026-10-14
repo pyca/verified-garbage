@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.JointFixed
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafExternalCopy
+import VerifiedGarbage.Proof.Weierstrass.X86_64.NafExternalCopy
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafState
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

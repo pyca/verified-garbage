@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
 public import VerifiedGarbage.Proof.Weierstrass.Booth
 public import VerifiedGarbage.Proof.Weierstrass.JacMadd
-public import VerifiedGarbage.Impl.Weierstrass.AArch64.TCombJ
+import VerifiedGarbage.Impl.Weierstrass.AArch64.TCombJ
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

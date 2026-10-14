@@ -4,9 +4,9 @@ public import VerifiedGarbage.Proof.TripleDes.X86_64.EcbCall.Lit
 meta import VerifiedGarbage.Proof.TripleDes.X86_64.EcbCall.Lit
 public import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedSse.Verified
 meta import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedSse.Verified
-public import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx2.Verified
+import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx2.Verified
 meta import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx2.Verified
-public import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx512.Verified
+import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx512.Verified
 meta import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx512.Verified
 public import VerifiedGarbage.Proof.TripleDes.X86_64.SpSafe
 meta import VerifiedGarbage.Proof.TripleDes.X86_64.SpSafe

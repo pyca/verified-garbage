@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.TripleDes.AArch64.Key.Body
-public import VerifiedGarbage.Proof.TripleDes.AArch64.Key.Save
+import VerifiedGarbage.Proof.TripleDes.AArch64.Key.Body
+import VerifiedGarbage.Proof.TripleDes.AArch64.Key.Save
 public import VerifiedGarbage.Proof.TripleDes.AArch64.ConstantTime
 public import VerifiedGarbage.Spec.TripleDes.Contract
 import all Init.Data.Array.Basic

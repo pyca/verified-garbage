@@ -2,9 +2,9 @@ module
 
 public import VerifiedGarbage.Impl.Weierstrass.X86.InvCfg
 public import VerifiedGarbage.Proof.Weierstrass.X86.Copy
-public import VerifiedGarbage.Proof.Weierstrass.X86.InvRedMath
+import VerifiedGarbage.Proof.Weierstrass.X86.InvRedMath
 public import VerifiedGarbage.Proof.Mont.X86.Ops
-public import VerifiedGarbage.Proof.Weierstrass.X86.InvShift
+import VerifiedGarbage.Proof.Weierstrass.X86.InvShift
 public import VerifiedGarbage.Proof.Weierstrass.X86.InvLinear
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

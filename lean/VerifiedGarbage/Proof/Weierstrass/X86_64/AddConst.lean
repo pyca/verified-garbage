@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.Window
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.Copy
+import VerifiedGarbage.Proof.Weierstrass.X86_64.Copy
 public import VerifiedGarbage.Proof.Mont.X86_64.WideOps
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

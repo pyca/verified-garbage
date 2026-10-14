@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.CachedEntryTiming
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.CachedSumTiming
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.CachedDigit
+import VerifiedGarbage.Proof.Weierstrass.AArch64.CachedDigit
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

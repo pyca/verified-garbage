@@ -1,9 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.TripleDes.X86_64.Key.Body
-public import VerifiedGarbage.Proof.TripleDes.X86_64.Key.Save
+import VerifiedGarbage.Proof.TripleDes.X86_64.Key.Body
+import VerifiedGarbage.Proof.TripleDes.X86_64.Key.Save
 public import VerifiedGarbage.Proof.TripleDes.X86_64.ConstantTime
-public import VerifiedGarbage.Proof.Framework.X86_64.Abi
+import VerifiedGarbage.Proof.Framework.X86_64.Abi
 public import VerifiedGarbage.Spec.TripleDes.Contract
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

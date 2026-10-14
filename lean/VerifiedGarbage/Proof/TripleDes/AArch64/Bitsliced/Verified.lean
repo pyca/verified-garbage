@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.Loop
+import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.Loop
 public import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.ConstantTime
 public import VerifiedGarbage.Proof.TripleDes.AArch64.Ecb.Contract
 public import VerifiedGarbage.Proof.Framework.AArch64.Inline

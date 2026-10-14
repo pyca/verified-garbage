@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Bytes
-public import VerifiedGarbage.Proof.Weierstrass.BytesLen
+import VerifiedGarbage.Proof.Weierstrass.BytesLen
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

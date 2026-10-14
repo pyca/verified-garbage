@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx2.SboxLit
 meta import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx2.SboxLit
-public import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedSse.Lit
+import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedSse.Lit
 meta import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedSse.Lit
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

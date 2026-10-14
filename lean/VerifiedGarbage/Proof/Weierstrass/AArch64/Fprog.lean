@@ -2,8 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.Env
 public import VerifiedGarbage.Impl.Weierstrass.AArch64
-public import VerifiedGarbage.Proof.Mont.AArch64.Ops
-public import VerifiedGarbage.Proof.Mont.AArch64.P256Square.Core
+import VerifiedGarbage.Proof.Mont.AArch64.Ops
+import VerifiedGarbage.Proof.Mont.AArch64.P256Square.Core
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.MontCall
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

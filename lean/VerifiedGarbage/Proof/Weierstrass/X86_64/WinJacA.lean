@@ -1,9 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacNorm
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacEntryA
+import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacEntryA
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJac
-public import VerifiedGarbage.Proof.Weierstrass.JacMadd
+import VerifiedGarbage.Proof.Weierstrass.JacMadd
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

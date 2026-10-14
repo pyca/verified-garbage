@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.X86_64.Lit
 meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
-public import VerifiedGarbage.Impl.Ecdsa.Secp256k1.X86_64
+import VerifiedGarbage.Impl.Ecdsa.Secp256k1.X86_64
 meta import VerifiedGarbage.Impl.Ecdsa.Secp256k1.X86_64
 public import VerifiedGarbage.Impl.Ecdh.Secp256k1.X86_64
 meta import VerifiedGarbage.Impl.Ecdh.Secp256k1.X86_64

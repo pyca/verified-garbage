@@ -1,14 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.TripleDes.X86.Key.Permutation
-public import VerifiedGarbage.Proof.TripleDes.X86.Bytes
+import VerifiedGarbage.Proof.TripleDes.X86.Key.Permutation
+import VerifiedGarbage.Proof.TripleDes.X86.Bytes
 public import VerifiedGarbage.Proof.TripleDes.X86.RoundStep
-public import VerifiedGarbage.Proof.Rc2.X86.RoundSteps
+import VerifiedGarbage.Proof.Rc2.X86.RoundSteps
 public import VerifiedGarbage.Impl.TripleDes.X86.ExpandKey
-public import VerifiedGarbage.Proof.TripleDes.X86.WordStore
-public import VerifiedGarbage.Proof.TripleDes.X86.Word
-public import VerifiedGarbage.Proof.TripleDes.X86.Key.Compare
-public import VerifiedGarbage.Proof.TripleDes.Schedule
+import VerifiedGarbage.Proof.TripleDes.X86.WordStore
+import VerifiedGarbage.Proof.TripleDes.X86.Word
+import VerifiedGarbage.Proof.TripleDes.X86.Key.Compare
+import VerifiedGarbage.Proof.TripleDes.Schedule
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedSse.Machine
-public import VerifiedGarbage.Proof.TripleDes.Bitslice.Pass
+import VerifiedGarbage.Proof.TripleDes.Bitslice.Pass
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeInvariant
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeStore
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeStep
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeStore
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeStep
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

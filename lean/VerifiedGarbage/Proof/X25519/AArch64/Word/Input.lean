@@ -2,8 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.X25519.AArch64.Word.Ladder
 public import VerifiedGarbage.Proof.X25519.AArch64.Top
-public import VerifiedGarbage.Proof.Ed25519.AArch64.DecodeBits
-public import VerifiedGarbage.Proof.Ed25519.Bytes
+import VerifiedGarbage.Proof.Ed25519.AArch64.DecodeBits
+import VerifiedGarbage.Proof.Ed25519.Bytes
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

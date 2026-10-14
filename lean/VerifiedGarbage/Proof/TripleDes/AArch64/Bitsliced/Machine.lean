@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.SboxLit
+import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.SboxLit
 public import VerifiedGarbage.Proof.Framework.AArch64.StraightV
-public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 public import VerifiedGarbage.Proof.Framework.Bitslice.Vars
 public import VerifiedGarbage.Proof.Framework.Offset
 import all Init.Data.Array.Basic

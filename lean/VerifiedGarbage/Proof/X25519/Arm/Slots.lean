@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.X25519.Arm.Mul
+import VerifiedGarbage.Proof.X25519.Arm.Mul
 public import VerifiedGarbage.Proof.X25519.Arm.Cswap
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

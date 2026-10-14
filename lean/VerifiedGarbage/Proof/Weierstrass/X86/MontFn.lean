@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.X86.MontTail
-public import VerifiedGarbage.Proof.Weierstrass.X86.MontBody
+import VerifiedGarbage.Proof.Weierstrass.X86.MontBody
 public import VerifiedGarbage.TCB.X86.Target
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

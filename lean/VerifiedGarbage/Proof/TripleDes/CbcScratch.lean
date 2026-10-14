@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Spec.TripleDes.Cbc
 public import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.TripleDes.CbcBlocks
+import VerifiedGarbage.Proof.TripleDes.CbcBlocks
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

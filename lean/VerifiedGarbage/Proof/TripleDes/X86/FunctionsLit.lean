@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.TripleDes.X86.RoundLit
+import VerifiedGarbage.Proof.TripleDes.X86.RoundLit
 meta import VerifiedGarbage.Proof.TripleDes.X86.RoundLit
 public import VerifiedGarbage.Proof.Framework.X86.Lit
 meta import VerifiedGarbage.Proof.Framework.X86.Lit

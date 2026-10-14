@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.FastNafExec
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafPrep
+import VerifiedGarbage.Proof.Weierstrass.AArch64.NafPrep
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

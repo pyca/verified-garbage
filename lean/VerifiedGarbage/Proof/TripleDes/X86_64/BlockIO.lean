@@ -1,11 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.TripleDes.X86_64.Bytes
+import VerifiedGarbage.Proof.TripleDes.X86_64.Bytes
 public import VerifiedGarbage.Proof.TripleDes.X86_64.Initial
-public import VerifiedGarbage.Proof.TripleDes.Core
+import VerifiedGarbage.Proof.TripleDes.Core
 public import VerifiedGarbage.Impl.TripleDes.X86_64.Block
-public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-public import VerifiedGarbage.Proof.TripleDes.X86_64.Box
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.TripleDes.X86_64.Box
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

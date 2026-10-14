@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.Naf
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombSelectPass
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafArith
+import VerifiedGarbage.Proof.Weierstrass.X86_64.NafArith
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

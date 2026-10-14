@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.X86.MontRed
-public import VerifiedGarbage.Proof.Mont.X86.Loop
+import VerifiedGarbage.Proof.Mont.X86.Loop
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

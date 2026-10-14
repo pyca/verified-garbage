@@ -2,7 +2,7 @@ module
 
 public import Batteries.Logic
 public import VerifiedGarbage.Proof.TripleDes.X86.Key.Component
-public import VerifiedGarbage.Proof.Rc2.X86.RoundSteps
+import VerifiedGarbage.Proof.Rc2.X86.RoundSteps
 public import VerifiedGarbage.Proof.TripleDes.X86.CorrectBlock
 public import VerifiedGarbage.Proof.TripleDes.KeyMemory
 public import VerifiedGarbage.Proof.TripleDes.X86.ConstantTime

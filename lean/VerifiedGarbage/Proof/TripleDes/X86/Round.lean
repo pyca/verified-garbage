@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.TripleDes.X86.Sbox
+import VerifiedGarbage.Proof.TripleDes.X86.Sbox
 public import VerifiedGarbage.Proof.TripleDes.X86.Spills
 public import VerifiedGarbage.Proof.TripleDes.Permutation
 import all Init.Data.Array.Basic

@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.PowLit
-public import VerifiedGarbage.Proof.Weierstrass.Affine
+import VerifiedGarbage.Proof.Weierstrass.Affine
 public import VerifiedGarbage.Proof.Weierstrass.Field
 public import VerifiedGarbage.Proof.Weierstrass.Law
 import all Init.Data.Array.Basic

@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Mont.Words32
+import VerifiedGarbage.Proof.Mont.Words32
 public import VerifiedGarbage.Impl.Mont.X86.Sparse
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

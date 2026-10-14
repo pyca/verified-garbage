@@ -4,7 +4,7 @@ public import VerifiedGarbage.Impl.X25519.AArch64.Base
 public import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseEngine
 public import VerifiedGarbage.Proof.Ed25519.AArch64.BitByte
 public import VerifiedGarbage.Proof.Ed25519.Bytes
-public import VerifiedGarbage.Proof.X25519.Edwards.Base
+import VerifiedGarbage.Proof.X25519.Edwards.Base
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

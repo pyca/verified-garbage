@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Impl.Weierstrass.X86.InvMemory
 public import VerifiedGarbage.Proof.Weierstrass.X86.Copy
 public import VerifiedGarbage.Proof.Weierstrass.X86.InvUnsigned
-public import VerifiedGarbage.Proof.Mont.X86.Ops
+import VerifiedGarbage.Proof.Mont.X86.Ops
 public import VerifiedGarbage.Proof.Weierstrass.X86.InvShiftMath
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

@@ -4,13 +4,13 @@ public import VerifiedGarbage.Proof.TripleDes.X86_64.ModeCore
 meta import VerifiedGarbage.Proof.TripleDes.X86_64.ModeCore
 public import VerifiedGarbage.Proof.TripleDes.X86_64.CallPatch
 meta import VerifiedGarbage.Proof.TripleDes.X86_64.CallPatch
-public import VerifiedGarbage.Proof.Modes.X86_64.CbcDecrypt
+import VerifiedGarbage.Proof.Modes.X86_64.CbcDecrypt
 meta import VerifiedGarbage.Proof.Modes.X86_64.CbcDecrypt
-public import VerifiedGarbage.Proof.Modes.X86_64.CbcEncrypt
+import VerifiedGarbage.Proof.Modes.X86_64.CbcEncrypt
 meta import VerifiedGarbage.Proof.Modes.X86_64.CbcEncrypt
 public import VerifiedGarbage.Proof.TripleDes.CbcScratch
 meta import VerifiedGarbage.Proof.TripleDes.CbcScratch
-public import VerifiedGarbage.Proof.TripleDes.X86_64.CbcLit
+import VerifiedGarbage.Proof.TripleDes.X86_64.CbcLit
 meta import VerifiedGarbage.Proof.TripleDes.X86_64.CbcLit
 public import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
 meta import VerifiedGarbage.Proof.Framework.X86_64.TaintMono

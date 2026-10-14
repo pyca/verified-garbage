@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.TripleDes.X86.RoundLit
 meta import VerifiedGarbage.Proof.TripleDes.X86.RoundLit
 public import VerifiedGarbage.Proof.TripleDes.X86.Linear
 meta import VerifiedGarbage.Proof.TripleDes.X86.Linear
-public import VerifiedGarbage.Impl.TripleDes.X86.Sbox
+import VerifiedGarbage.Impl.TripleDes.X86.Sbox
 meta import VerifiedGarbage.Impl.TripleDes.X86.Sbox
 public import VerifiedGarbage.Impl.TripleDes.X86.Permutation
 meta import VerifiedGarbage.Impl.TripleDes.X86.Permutation
@@ -14,7 +14,7 @@ public import VerifiedGarbage.Proof.TripleDes.SboxTables
 meta import VerifiedGarbage.Proof.TripleDes.SboxTables
 public import VerifiedGarbage.Proof.Framework.X86.Straight
 meta import VerifiedGarbage.Proof.Framework.X86.Straight
-public import VerifiedGarbage.Proof.Framework.Bitslice.Table
+import VerifiedGarbage.Proof.Framework.Bitslice.Table
 meta import VerifiedGarbage.Proof.Framework.Bitslice.Table
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

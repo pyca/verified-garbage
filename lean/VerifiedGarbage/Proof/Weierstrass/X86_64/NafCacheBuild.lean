@@ -1,11 +1,11 @@
 module
 
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.NafCacheBuild
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.ForwardField
+import VerifiedGarbage.Proof.Weierstrass.X86_64.ForwardField
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafState
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafArith
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafAddress
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafTableState
+import VerifiedGarbage.Proof.Weierstrass.X86_64.NafArith
+import VerifiedGarbage.Proof.Weierstrass.X86_64.NafAddress
+import VerifiedGarbage.Proof.Weierstrass.X86_64.NafTableState
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

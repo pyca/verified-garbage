@@ -1,9 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.TripleDes.X86.Save
-public import VerifiedGarbage.Proof.TripleDes.X86.WordStore
-public import VerifiedGarbage.Proof.TripleDes.Word
-public import VerifiedGarbage.Proof.TripleDes.X86.RoundStep
+import VerifiedGarbage.Proof.TripleDes.X86.WordStore
+import VerifiedGarbage.Proof.TripleDes.Word
+import VerifiedGarbage.Proof.TripleDes.X86.RoundStep
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

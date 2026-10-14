@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.Arm.MontContract
 meta import VerifiedGarbage.Proof.Weierstrass.Arm.MontContract
-public import VerifiedGarbage.Proof.Weierstrass.Arm.MontModuli
+import VerifiedGarbage.Proof.Weierstrass.Arm.MontModuli
 meta import VerifiedGarbage.Proof.Weierstrass.Arm.MontModuli
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint

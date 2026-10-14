@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.TripleDes.FbScratch
 meta import VerifiedGarbage.Proof.TripleDes.FbScratch
 public import VerifiedGarbage.Proof.Modes.Arm.Cfb8
 meta import VerifiedGarbage.Proof.Modes.Arm.Cfb8
-public import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
+import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
 meta import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
 public import VerifiedGarbage.Impl.TripleDes.Arm.Fb
 meta import VerifiedGarbage.Impl.TripleDes.Arm.Fb

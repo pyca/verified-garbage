@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx512.Ecb
+import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx512.Ecb
 public import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx512.Lit
 public import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Verified
 import all Init.Data.Array.Basic

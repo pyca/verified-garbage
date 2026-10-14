@@ -1,11 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.X86.MontCall
-public import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P224
-public import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P256
-public import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P384
-public import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P521
-public import VerifiedGarbage.Proof.Mont.Read
+import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P224
+import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P256
+import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P384
+import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P521
+import VerifiedGarbage.Proof.Mont.Read
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

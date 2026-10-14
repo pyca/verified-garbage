@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Rc2.X86.KeySteps
+import VerifiedGarbage.Proof.Rc2.X86.KeySteps
 public import VerifiedGarbage.Proof.Framework.Mem
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

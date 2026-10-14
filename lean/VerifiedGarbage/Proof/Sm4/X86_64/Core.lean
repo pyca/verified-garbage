@@ -1,10 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Sm4.X86_64.Round
-public import VerifiedGarbage.Proof.Sm4.Layout
-public import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Sm4.Layout
+import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-public import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

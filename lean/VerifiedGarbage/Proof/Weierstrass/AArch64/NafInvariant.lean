@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeInvariant
-public import VerifiedGarbage.Impl.Weierstrass.AArch64.Naf
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowLayout
+import VerifiedGarbage.Impl.Weierstrass.AArch64.Naf
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowLayout
 public import VerifiedGarbage.Proof.Weierstrass.Window5
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

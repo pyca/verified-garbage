@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.X25519.X86.Arith
 public import VerifiedGarbage.Proof.Weierstrass.X86.MontBase
-public import VerifiedGarbage.Impl.Weierstrass.X86.Mont
+import VerifiedGarbage.Impl.Weierstrass.X86.Mont
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.CombDigit
-public import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.Range
 public import VerifiedGarbage.Proof.Weierstrass.Unch
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

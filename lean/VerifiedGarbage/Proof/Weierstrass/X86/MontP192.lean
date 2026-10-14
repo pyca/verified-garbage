@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.X86.MontVerified
 meta import VerifiedGarbage.Proof.Weierstrass.X86.MontVerified
-public import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P192
+import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P192
 meta import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P192
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

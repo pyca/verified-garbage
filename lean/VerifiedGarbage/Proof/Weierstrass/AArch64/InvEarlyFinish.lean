@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvMain
-public import VerifiedGarbage.Proof.Divstep.Early
+import VerifiedGarbage.Proof.Divstep.Early
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

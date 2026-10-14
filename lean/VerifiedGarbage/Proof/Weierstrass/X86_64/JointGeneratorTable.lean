@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointGenerator
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombLay
-public import VerifiedGarbage.Proof.Weierstrass.CombW
+import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombLay
+import VerifiedGarbage.Proof.Weierstrass.CombW
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

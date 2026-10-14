@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.MontContract
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.MontContract
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.MontModuli
+import VerifiedGarbage.Proof.Weierstrass.AArch64.MontModuli
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.MontModuli
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract

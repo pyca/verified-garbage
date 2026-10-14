@@ -3,8 +3,8 @@ module
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.Window
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.TComb
 public import VerifiedGarbage.Proof.Weierstrass.WinLay
-public import VerifiedGarbage.Proof.Weierstrass.Window
-public import VerifiedGarbage.Proof.Weierstrass.Jac
+import VerifiedGarbage.Proof.Weierstrass.Window
+import VerifiedGarbage.Proof.Weierstrass.Jac
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

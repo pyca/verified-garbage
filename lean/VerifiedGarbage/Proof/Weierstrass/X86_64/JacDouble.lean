@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.Blocks
+import VerifiedGarbage.Proof.Weierstrass.X86_64.Blocks
 public import VerifiedGarbage.Proof.Weierstrass.JacMul
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.Fprog
 import all Init.Data.Array.Basic

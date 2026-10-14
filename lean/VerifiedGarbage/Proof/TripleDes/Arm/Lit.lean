@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Impl.TripleDes.Arm.Sbox
+import VerifiedGarbage.Impl.TripleDes.Arm.Sbox
 meta import VerifiedGarbage.Impl.TripleDes.Arm.Sbox
 public import VerifiedGarbage.Proof.Framework.Arm.Lit
 meta import VerifiedGarbage.Proof.Framework.Arm.Lit

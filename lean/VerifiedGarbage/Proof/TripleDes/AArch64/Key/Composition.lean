@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.TripleDes.AArch64.Key.Copy
+import VerifiedGarbage.Proof.TripleDes.AArch64.Key.Copy
 public import VerifiedGarbage.Proof.TripleDes.KeyMemory
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

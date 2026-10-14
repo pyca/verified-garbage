@@ -1,9 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Sm4.X86.Round
-public import VerifiedGarbage.Proof.Framework.Block
-public import VerifiedGarbage.Proof.Framework.X86.RegUpd
-public import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Impl.Sm4.X86.Ecb
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

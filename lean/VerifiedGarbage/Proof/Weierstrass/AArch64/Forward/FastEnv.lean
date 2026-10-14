@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Data
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Domain
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Tree
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Domain
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Tree
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.X86.JacState
-public import VerifiedGarbage.Proof.Weierstrass.X86.WinFinish
-public import VerifiedGarbage.Proof.Weierstrass.X86.JacDouble
+import VerifiedGarbage.Proof.Weierstrass.X86.WinFinish
+import VerifiedGarbage.Proof.Weierstrass.X86.JacDouble
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

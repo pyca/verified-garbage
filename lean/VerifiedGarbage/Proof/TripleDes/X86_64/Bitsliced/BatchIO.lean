@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Copy
-public import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Transpose
+import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Transpose
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.Arm.PointVerified
 meta import VerifiedGarbage.Proof.Weierstrass.Arm.PointVerified
-public import VerifiedGarbage.Proof.Weierstrass.Arm.MontP192
+import VerifiedGarbage.Proof.Weierstrass.Arm.MontP192
 meta import VerifiedGarbage.Proof.Weierstrass.Arm.MontP192
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint

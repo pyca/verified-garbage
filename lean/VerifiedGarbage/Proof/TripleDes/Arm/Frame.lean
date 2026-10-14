@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.TripleDes.Arm.Key.Verified
-public import VerifiedGarbage.Proof.TripleDes.Arm.Ecb.Verified
+import VerifiedGarbage.Proof.TripleDes.Arm.Ecb.Verified
 public import VerifiedGarbage.Proof.TripleDes.Scratch
 public import VerifiedGarbage.Proof.Framework.Arm.RegScratchWipe
 import all Init.Data.Array.Basic

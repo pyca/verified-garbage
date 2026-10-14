@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedSse.Sbox
+import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedSse.Sbox
 public import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedSse.Transpose
 public import VerifiedGarbage.Proof.Framework.Bitslice.Vars
 public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
