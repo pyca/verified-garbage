@@ -41,6 +41,68 @@ def isAux (n : Name) : Bool :=
     | .str _ s => s.startsWith "proof_" || s.startsWith "_proof" || s.startsWith "_auxLemma"
     | _ => false
 
+/-- The line of module `i` of `env`, given each module's closure `clo` and the
+modules `alts` that realize a constant again. -/
+def moduleLine (env : Environment) (clo : Array Nat) (alts : Std.HashMap Name (Array Nat))
+    (i : Nat) : String := Id.run do
+  let mods := env.header.moduleNames
+  let data := env.header.moduleData[i]!
+  let imps := data.imports.toList.map fun im =>
+    im.module.toString ++ (if im.isExported then "+p" else "") ++ (if im.isMeta then "+m" else "")
+  let line := s!"{mods[i]!}\t{",".intercalate imps}"
+  unless (`VerifiedGarbage).isPrefixOf mods[i]! do
+    return line ++ "\t\t\t-\t"
+  let byName : Std.HashMap Name ConstantInfo :=
+    data.constants.foldl (fun m ci => m.insert ci.name ci) {}
+  let modOf (c : Name) : Option Nat := do
+    let j := (← env.getModuleIdxFor? c).toNat
+    if clo[i]!.testBit j then return j
+    (alts.getD c #[]).find? (clo[i]!.testBit ·)
+  -- Everything the module's constants use: each constant once, since
+  -- declarations share most of them.
+  let mut used : NameSet := {}
+  let mut all : Std.HashSet Nat := {}
+  -- An instance can serve elaboration alone (a `ToExpr` for a literal).
+  let mut isMeta := !(Lean.Meta.instanceExtension.ext.getModuleEntries env i).isEmpty
+  for ci in data.constants do
+    if let some hd := ci.type.getForallBody.getAppFn.constName? then
+      if metaTypes.contains hd then isMeta := true
+    -- `value?` leaves out theorems' proofs unless `allowOpaque`.
+    for e in [ci.type] ++ (ci.value? (allowOpaque := true)).toList do
+      used := e.foldConsts used fun c s => s.insert c
+  for c in used do
+    if let some j := modOf c then
+      if j != i then all := all.insert j
+  -- The public surface, from every declaration that is not private.
+  let mut pub : Std.HashSet Nat := {}
+  let mut seen : Std.HashSet Name := {}
+  let mut todo : Array Name := data.constants.filterMap fun ci =>
+    if isPrivateName ci.name then none else some ci.name
+  while !todo.isEmpty do
+    let n := todo.back!
+    todo := todo.pop
+    if seen.contains n then continue
+    seen := seen.insert n
+    let some ci := byName[n]? | continue
+    let es := match ci with
+      | .thmInfo t => if isAux n then [t.type, t.value] else [t.type]
+      | _ => [ci.type] ++ ci.value?.toList
+    for e in es do
+      for c in e.getUsedConstants do
+        match modOf c with
+        | some j => if j != i then pub := pub.insert j else todo := todo.push c
+        | none => pure ()
+  let names (s : Std.HashSet Nat) := ",".intercalate (s.toList.map (mods[·]!.toString))
+  -- The namespaces its constants are in, for the `open`s of other modules.
+  let mut nss : Std.HashSet Name := {}
+  for c in data.constNames do
+    let mut p := (privateToUserName? c).getD c
+    while !p.isAnonymous do
+      p := p.getPrefix
+      if (`VG).isPrefixOf p then nss := nss.insert p
+  let nsList := ",".intercalate (nss.toList.map toString)
+  return s!"{line}\t{names pub}\t{names all}\t{if isMeta then "meta" else "-"}\t{nsList}"
+
 def main (args : List String) : IO Unit := do
   let out :: roots := args | throw <| IO.userError "usage: ImportUses.lean OUT MODULE…"
   initSearchPath (← findSysroot)
@@ -62,59 +124,8 @@ def main (args : List String) : IO Unit := do
     for c in env.header.moduleData[i]!.constNames do
       if (env.getModuleIdxFor? c).map (·.toNat) != some i then
         alts := alts.insert c ((alts.getD c #[]).push i)
+  -- The modules are independent: analyse them in parallel, write them in order.
+  let lines := (Array.range mods.size).map fun i => Task.spawn fun _ => moduleLine env clo alts i
   let h ← IO.FS.Handle.mk out .write
-  for i in [0:mods.size] do
-    let data := env.header.moduleData[i]!
-    let imps := data.imports.toList.map fun im =>
-      im.module.toString ++ (if im.isExported then "+p" else "") ++ (if im.isMeta then "+m" else "")
-    let line := s!"{mods[i]!}\t{",".intercalate imps}"
-    unless (`VerifiedGarbage).isPrefixOf mods[i]! do
-      h.putStrLn (line ++ "\t\t\t-\t")
-      continue
-    let byName : Std.HashMap Name ConstantInfo :=
-      data.constants.foldl (fun m ci => m.insert ci.name ci) {}
-    let modOf (c : Name) : Option Nat := do
-      let j := (← env.getModuleIdxFor? c).toNat
-      if clo[i]!.testBit j then return j
-      (alts.getD c #[]).find? (clo[i]!.testBit ·)
-    -- Everything the module's constants use.
-    let mut all : Std.HashSet Nat := {}
-    -- An instance can serve elaboration alone (a `ToExpr` for a literal).
-    let mut isMeta := !(Lean.Meta.instanceExtension.ext.getModuleEntries env i).isEmpty
-    for ci in data.constants do
-      if let some hd := ci.type.getForallBody.getAppFn.constName? then
-        if metaTypes.contains hd then isMeta := true
-      -- `value?` leaves out theorems' proofs unless `allowOpaque`.
-      for e in [ci.type] ++ (ci.value? (allowOpaque := true)).toList do
-        for c in e.getUsedConstants do
-          if let some j := modOf c then
-            if j != i then all := all.insert j
-    -- The public surface, from every declaration that is not private.
-    let mut pub : Std.HashSet Nat := {}
-    let mut seen : Std.HashSet Name := {}
-    let mut todo : Array Name := data.constants.filterMap fun ci =>
-      if isPrivateName ci.name then none else some ci.name
-    while !todo.isEmpty do
-      let n := todo.back!
-      todo := todo.pop
-      if seen.contains n then continue
-      seen := seen.insert n
-      let some ci := byName[n]? | continue
-      let es := match ci with
-        | .thmInfo t => if isAux n then [t.type, t.value] else [t.type]
-        | _ => [ci.type] ++ ci.value?.toList
-      for e in es do
-        for c in e.getUsedConstants do
-          match modOf c with
-          | some j => if j != i then pub := pub.insert j else todo := todo.push c
-          | none => pure ()
-    let names (s : Std.HashSet Nat) := ",".intercalate (s.toList.map (mods[·]!.toString))
-    -- The namespaces its constants are in, for the `open`s of other modules.
-    let mut nss : Std.HashSet Name := {}
-    for c in data.constNames do
-      let mut p := (privateToUserName? c).getD c
-      while !p.isAnonymous do
-        p := p.getPrefix
-        if (`VG).isPrefixOf p then nss := nss.insert p
-    let nsList := ",".intercalate (nss.toList.map toString)
-    h.putStrLn s!"{line}\t{names pub}\t{names all}\t{if isMeta then "meta" else "-"}\t{nsList}"
+  for t in lines do
+    h.putStrLn t.get
