@@ -15,15 +15,17 @@ and SSSE3.
   hash value's `[u32; 8]` layout once per call. Each `sha256rnds2` does two
   rounds and swaps the roles of the two registers.
 * Four rounds at a time, `Wₜ + Kₜ` for them is formed in `xmm0` (the implicit
-  operand of `sha256rnds2`): the four constants are loaded as immediates
-  through `rax` and `xmm11`, since the model has no constant pool.
+  operand of `sha256rnds2`). The four constants are built from immediates
+  through `rax` and `xmm11`. With more than one block, the first block also
+  stores them in `scratch` (sixteen bytes per group, at `16i`), and later
+  blocks load them from there, one load instead of five instructions.
 * The message schedule is kept four words to a register, `W₄ᵢ … W₄ᵢ₊₃` in
   `xmm(3 + i mod 4)`, computed with `sha256msg1`, `palignr` and `sha256msg2`.
 * `xmm8` holds the `pshufb` mask that makes the message words big-endian;
   `xmm9` and `xmm10` hold the working variables at the start of the block.
-* `scratch` is not used, and no callee-saved register is written. `rdi, rsi,
-  rdx` (the pointers and the block count) are public; no address and no
-  branch depends on anything else.
+* `scratch` holds only the round constants, and no callee-saved register is
+  written. `rdi, rsi, rdx, rcx` (the pointers and the block count) are
+  public; no address and no branch depends on anything else.
 -/
 
 @[expose] public section
@@ -62,23 +64,35 @@ def schedule (i : Nat) : List Instr :=
      .xop (.bin .paddd (msg i) .xmm7),
      .xop (.bin .sha256msg2 (msg i) (msg (i + 3)))]
 
+/-- How a block gets its round constants: built from immediates (`build`, the
+only block of a call), built and stored at `scratch + 16i` (`store`, the
+first of several), or loaded from there (`load`, the others). -/
+inductive KMode | build | store | load
+  deriving DecidableEq
+
+/-- `K₄ᵢ … K₄ᵢ₊₃` into `xmm0`. -/
+def kload : KMode → Nat → List Instr
+  | .build, i => const .xmm0 (kQuad (4 * i))
+  | .store, i => const .xmm0 (kQuad (4 * i)) ++ [.movdquStore (at_ .rcx (16 * i)) .xmm0]
+  | .load, i => [.movdquLoad .xmm0 (at_ .rcx (16 * i))]
+
 /-- Rounds `4i … 4i+3`, with `W₄ᵢ … W₄ᵢ₊₃` in `msg i`. -/
-def rounds4 (i : Nat) : List Instr :=
-  const .xmm0 (kQuad (4 * i)) ++
+def rounds4 (c : KMode) (i : Nat) : List Instr :=
+  kload c i ++
   ([.xop (.bin .paddd .xmm0 (msg i)),
    .xop (.sha256rnds2 .xmm2 .xmm1),
    .xop (.pshufd .xmm0 .xmm0 0x0e),
    .xop (.sha256rnds2 .xmm1 .xmm2)] : List Instr)
 
 /-- Rounds `0 … 4n-1`. -/
-def rounds : Nat → Prog isa
+def rounds (c : KMode) : Nat → Prog isa
   | 0 => .block []
-  | n + 1 => .seq (rounds n) (.block (schedule n ++ rounds4 n))
+  | n + 1 => .seq (rounds c n) (.block (schedule n ++ rounds4 c n))
 
-/-- One block. -/
-def body : Prog isa :=
+/-- One block, with its round constants as `c` says. -/
+def body (c : KMode) : Prog isa :=
   .seq (.block [.xop (.bin .movdqa .xmm9 .xmm1), .xop (.bin .movdqa .xmm10 .xmm2)])
-    (.seq (rounds 16)
+    (.seq (rounds c 16)
       (.block [.xop (.bin .paddd .xmm1 .xmm9), .xop (.bin .paddd .xmm2 .xmm10),
         .alu .add .rsi (.imm 64), .alu .sub .rdx (.imm 1)]))
 
@@ -100,8 +114,12 @@ def store : List Instr :=
    .xop (.pshufd .xmm7 .xmm7 0xb1), .xop (.pshufd .xmm1 .xmm1 0xb1),
    .movdquStore (at_ .rdi 0) .xmm7, .movdquStore (at_ .rdi 16) .xmm1]
 
+/-- One block takes the branch laid out last, which falls through to `store`;
+none, or several, the other. -/
 def compress : Prog isa :=
-  .seq (.block (load ++ ([.alu .test .rdx (.reg .rdx)] : List Instr)))
-    (.seq (.ite .e (.block []) (.loop body .ne)) (.block store))
+  .seq (.block (load ++ ([.alu .cmp .rdx (.imm 1)] : List Instr)))
+    (.seq (.ite .e (body .build)
+      (.seq (.block [.alu .test .rdx (.reg .rdx)])
+        (.ite .e (.block []) (.seq (body .store) (.loop (body .load) .ne))))) (.block store))
 
 end VG.Impl.Sha256.X86_64.ShaNi
