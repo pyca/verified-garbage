@@ -137,16 +137,44 @@ def remQuad (src : Reg) : List Instr :=
    .zop (.zbin .vpshufb .xmm7 .xmm7 .xmm0), .zop (.zbin .vpxord .xmm7 .xmm7 .xmm2)] : List Instr) ++
   StitchZ.acc .xmm7 .xmm12 ++ ([.zop (.zbin .vpxord .xmm2 .xmm2 .xmm2)] : List Instr)
 
+/-- The first `r mod 4` (2 or 3) of the last `r` blocks, at `src`, through
+the mask in `r10` (bits `2 (r mod 4) - 1` … 0, `remMask`), in the lanes of
+`zmm7`: their powers (at `rax`) into `zmm13` and their keystream (at
+`scratch + 768`) into `zmm12`, the ciphertext written to `rdx`, and each
+lane's product added to that lane's, with `Y` added to the first; then `Y`
+cleared. The masked-off lanes are zero, and read and write nothing. -/
+def remQuadK (src : Reg) : List Instr :=
+  ([.kLoad .r10 .xmm13 (at_ .rax 0), .kLoad .r10 .xmm7 (at_ src 0), .kLoad .r10 .xmm12 (at_ .r11 768),
+   .zop (.zbin .vpxord .xmm7 .xmm7 .xmm12), .kStore (at_ .rdx 0) .r10 .xmm7,
+   .zop (.zbin .vpshufb .xmm7 .xmm7 .xmm0), .zop (.zbin .vpxord .xmm7 .xmm7 .xmm2)] : List Instr) ++
+  StitchZ.acc .xmm7 .xmm13 ++ ([.zop (.zbin .vpxord .xmm2 .xmm2 .xmm2)] : List Instr)
+
+/-- The mask of `r mod 4` (2 or 3) blocks in `r10`, from `r9 = 16 + r`. -/
+def remMask : Prog isa :=
+  .seq (.block [.alu .test .r9 (.imm 1)])
+    (.ite .e (.block [.mov32 .r10 (.imm 15)]) (.block [.mov32 .r10 (.imm 63)]))
+
+/-- After `remQuadK`: `r10 = 16 (r mod 4)` and `r9 = 16 + r - r mod 4`. -/
+def remAfterK : List Instr :=
+  [.mov .r10 (.reg .r9), .alu .and .r10 (.imm 3), .shift .shl .r10 4, .alu .and .r9 (.imm 0xFFFFFFFC)]
+
+/-- The first `r mod 4` of the last `r` blocks, if any: one block alone, or
+two or three through a mask (`remQuadK`). -/
+def remFirst (one quad : List Instr) : Prog isa :=
+  .seq (.block [.alu .test .r9 (.imm 3)])
+    (.ite .e (.block [])
+      (.seq (.block [.alu .test .r9 (.imm 2)])
+        (.ite .ne (.seq remMask (.block (quad ++ remAfterK))) (.block (one ++ remNext1)))))
+
 /-- The next four blocks, and whether they were the last. -/
 def remNext4 : List Instr := [.alu .add .r10 (.imm 64), .alu .sub .r9 (.imm 4), .alu .cmp .r9 (.imm 16)]
 
 /-- The `r9 - 16` blocks at `src + r10`: the first `r mod 4` one at a time,
 the rest four at a time, and the four lanes' products reduced into `Y`. -/
 def remLoops (src : Reg) : Prog isa :=
-  .seq (.block [.alu .test .r9 (.imm 3)])
-    (.seq (.ite .e (.block []) (.loop (.block (remBody src ++ remNext1)) .ne))
-      (.seq (.block [.alu .cmp .r9 (.imm 16)])
-        (.seq (.ite .e (.block []) (.loop (.block (remQuad src ++ remNext4)) .ne)) (.block fin))))
+  .seq (remFirst (remBody src) (remQuadK src))
+    (.seq (.block [.alu .cmp .r9 (.imm 16)])
+        (.seq (.ite .e (.block []) (.loop (.block (remQuad src ++ remNext4)) .ne)) (.block fin)))
 
 /-- The `r9 - 16` blocks after the last group, the last group hashed, and
 `Y` stored; the blocks are read at `src` (`pre` points it at them once `rdx`
@@ -195,12 +223,19 @@ def remQuadD (src : Reg) : List Instr :=
    .zop (.zbin .vpshufb .xmm7 .xmm7 .xmm0), .zop (.zbin .vpxord .xmm7 .xmm7 .xmm2)] : List Instr) ++
   StitchZ.acc .xmm7 .xmm12 ++ ([.zop (.zbin .vpxord .xmm2 .xmm2 .xmm2)] : List Instr)
 
+/-- `remQuadK` for decryption: the blocks at `src` are hashed as they are
+read, and their keystream added to them in `zmm12`, written to `rdx`. -/
+def remQuadKD (src : Reg) : List Instr :=
+  ([.kLoad .r10 .xmm13 (at_ .rax 0), .kLoad .r10 .xmm7 (at_ src 0), .kLoad .r10 .xmm12 (at_ .r11 768),
+   .zop (.zbin .vpxord .xmm12 .xmm12 .xmm7), .kStore (at_ .rdx 0) .r10 .xmm12,
+   .zop (.zbin .vpshufb .xmm7 .xmm7 .xmm0), .zop (.zbin .vpxord .xmm7 .xmm7 .xmm2)] : List Instr) ++
+  StitchZ.acc .xmm7 .xmm13 ++ ([.zop (.zbin .vpxord .xmm2 .xmm2 .xmm2)] : List Instr)
+
 /-- `remLoops` for decryption. -/
 def remLoopsD (src : Reg) : Prog isa :=
-  .seq (.block [.alu .test .r9 (.imm 3)])
-    (.seq (.ite .e (.block []) (.loop (.block (remBodyD src ++ remNext1)) .ne))
-      (.seq (.block [.alu .cmp .r9 (.imm 16)])
-        (.seq (.ite .e (.block []) (.loop (.block (remQuadD src ++ remNext4)) .ne)) (.block fin))))
+  .seq (remFirst (remBodyD src) (remQuadKD src))
+    (.seq (.block [.alu .cmp .r9 (.imm 16)])
+        (.seq (.ite .e (.block []) (.loop (.block (remQuadD src ++ remNext4)) .ne)) (.block fin)))
 
 /-- The `r9 - 16` blocks at `rdx` after the last group, which the loop has
 already hashed, decrypted, and `Y` stored: the keystream computed alone, then
