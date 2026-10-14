@@ -143,9 +143,12 @@ PLATFORMS = {
 # selection, each with the architecture whose code, configurations and
 # benchmarks it runs: Apple's cores, whose choices among implementations
 # (e.g. `vg_poly1305_update_neon`, chosen for `target_vendor = "apple"`) are
-# measured before they are made.
+# measured before they are made. Its runner is a shared VM: one run of each
+# side measured `x25519` 22% slower and `x25519_raw` 39% faster on code
+# that did not change, so it runs `rounds` interleaved runs of each side
+# and compares the fastest (bench_compare.py's `--rounds`).
 MANUAL_PLATFORMS = {
-    "aarch64-apple": {"os": "macos-latest", "of": "aarch64"},
+    "aarch64-apple": {"os": "macos-latest", "of": "aarch64", "rounds": 5},
 }
 
 # The other `VG_CPU_FEATURES` each architecture is benchmarked with, so that
