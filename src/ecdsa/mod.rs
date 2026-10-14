@@ -43,6 +43,8 @@
 
 mod brainpoolp256r1;
 mod brainpoolp384r1;
+#[cfg(test)]
+mod brainpoolp512r1_tests;
 mod p192;
 mod p224;
 mod p256;
