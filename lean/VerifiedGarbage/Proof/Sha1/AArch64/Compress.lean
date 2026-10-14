@@ -1,14 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 meta import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-public import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Block
 meta import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Framework.AArch64.Taint
 meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
-public import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
 public import VerifiedGarbage.Proof.Sha1.Spec
 meta import VerifiedGarbage.Proof.Sha1.Spec
@@ -16,15 +16,15 @@ public import VerifiedGarbage.Impl.Sha1.AArch64
 meta import VerifiedGarbage.Impl.Sha1.AArch64
 public import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.SplitIfs
-public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Spec.Sha1
+import VerifiedGarbage.Spec.Sha1
 meta import VerifiedGarbage.Spec.Sha1
-public import VerifiedGarbage.TCB.AArch64.Target
+import VerifiedGarbage.TCB.AArch64.Target
 meta import VerifiedGarbage.TCB.AArch64.Target
-public import VerifiedGarbage.Proof.Sha1.AArch64.Lit
+import VerifiedGarbage.Proof.Sha1.AArch64.Lit
 meta import VerifiedGarbage.Proof.Sha1.AArch64.Lit
 public import VerifiedGarbage.Proof.Sha1.StateMem
 meta import VerifiedGarbage.Proof.Sha1.StateMem

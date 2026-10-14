@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.RsaOaep.X86_64.Sp
+import VerifiedGarbage.Proof.RsaOaep.X86_64.Sp
 public import VerifiedGarbage.Proof.RsaOaep.X86_64.PcCT
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

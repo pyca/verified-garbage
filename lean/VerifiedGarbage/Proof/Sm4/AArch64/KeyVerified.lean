@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Sm4.AArch64.KeyEk
 meta import VerifiedGarbage.Proof.Sm4.AArch64.KeyEk
 public import VerifiedGarbage.Proof.Sm4.AArch64.Verified
 meta import VerifiedGarbage.Proof.Sm4.AArch64.Verified
-public import VerifiedGarbage.Proof.Sm4.AArch64.Lit
+import VerifiedGarbage.Proof.Sm4.AArch64.Lit
 meta import VerifiedGarbage.Proof.Sm4.AArch64.Lit
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Rc4.AArch64.KsaSetup
-public import VerifiedGarbage.Proof.Rc4.AArch64.ApplyFinish
+import VerifiedGarbage.Proof.Rc4.AArch64.ApplyFinish
 public import VerifiedGarbage.TCB.AArch64.Target
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

@@ -2,9 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Seed.AArch64.Link
 meta import VerifiedGarbage.Proof.Seed.AArch64.Link
-public import VerifiedGarbage.Proof.Modes.AArch64.Fb
+import VerifiedGarbage.Proof.Modes.AArch64.Fb
 meta import VerifiedGarbage.Proof.Modes.AArch64.Fb
-public import VerifiedGarbage.Proof.Modes.AArch64.ViaV
+import VerifiedGarbage.Proof.Modes.AArch64.ViaV
 meta import VerifiedGarbage.Proof.Modes.AArch64.ViaV
 public import VerifiedGarbage.Proof.Framework.AArch64.VectorTaint
 meta import VerifiedGarbage.Proof.Framework.AArch64.VectorTaint
@@ -18,7 +18,7 @@ public import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
 meta import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Seed.AArch64.ModesLit
+import VerifiedGarbage.Proof.Seed.AArch64.ModesLit
 meta import VerifiedGarbage.Proof.Seed.AArch64.ModesLit
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

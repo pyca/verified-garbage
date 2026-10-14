@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyBody
-public import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyFixed
+import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyFixed
 public import VerifiedGarbage.Proof.RsaPss.X86_64.MgfCT
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

@@ -3,8 +3,8 @@ module
 public import VerifiedGarbage.Proof.Rsa.X86_64.KeyMain
 public import VerifiedGarbage.Proof.Rsa.X86_64.KeyEntry
 public import VerifiedGarbage.Proof.Rsa.X86_64.ExpCheck
-public import VerifiedGarbage.Proof.Bignum.X86_64.PubCode
-public import VerifiedGarbage.Proof.Bignum.X86_64.CrtContract
+import VerifiedGarbage.Proof.Bignum.X86_64.PubCode
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtContract
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

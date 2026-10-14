@@ -2,7 +2,7 @@ module
 
 public import Batteries.Tactic.Init
 public import VerifiedGarbage.Proof.Mgf1.Bytes
-public import VerifiedGarbage.Spec.RsaOaep
+import VerifiedGarbage.Spec.RsaOaep
 public import VerifiedGarbage.Proof.Framework.Omega
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Seed.X86_64.Key
+import VerifiedGarbage.Proof.Seed.X86_64.Key
 public import VerifiedGarbage.Proof.Seed.X86_64.Verified
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

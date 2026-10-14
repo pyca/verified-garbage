@@ -4,19 +4,19 @@ public import VerifiedGarbage.Proof.MdStream.X86.Finalize
 meta import VerifiedGarbage.Proof.MdStream.X86.Finalize
 public import VerifiedGarbage.Proof.MdStream.X86.Update
 meta import VerifiedGarbage.Proof.MdStream.X86.Update
-public import VerifiedGarbage.Proof.MdStream.X86.Words
+import VerifiedGarbage.Proof.MdStream.X86.Words
 meta import VerifiedGarbage.Proof.MdStream.X86.Words
 public import VerifiedGarbage.Proof.Sm3.Md
 meta import VerifiedGarbage.Proof.Sm3.Md
-public import VerifiedGarbage.Proof.Sm3.X86.Contract
+import VerifiedGarbage.Proof.Sm3.X86.Contract
 meta import VerifiedGarbage.Proof.Sm3.X86.Contract
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Sm3.X86.Compress
 meta import VerifiedGarbage.Proof.Sm3.X86.Compress
-public import VerifiedGarbage.Impl.Sm3.X86.Stream
+import VerifiedGarbage.Impl.Sm3.X86.Stream
 meta import VerifiedGarbage.Impl.Sm3.X86.Stream
-public import VerifiedGarbage.Proof.Sm3.X86.Lit
+import VerifiedGarbage.Proof.Sm3.X86.Lit
 meta import VerifiedGarbage.Proof.Sm3.X86.Lit
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

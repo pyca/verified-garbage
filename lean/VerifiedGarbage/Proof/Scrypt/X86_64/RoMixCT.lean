@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.Scrypt.RoMix
 meta import VerifiedGarbage.Proof.Scrypt.RoMix
 public import VerifiedGarbage.Impl.Scrypt.X86_64.RoMix
 meta import VerifiedGarbage.Impl.Scrypt.X86_64.RoMix
-public import VerifiedGarbage.Proof.Framework.X86_64.Abi
+import VerifiedGarbage.Proof.Framework.X86_64.Abi
 meta import VerifiedGarbage.Proof.Framework.X86_64.Abi
 public import VerifiedGarbage.Proof.Scrypt.X86_64.RoMixLoops
 meta import VerifiedGarbage.Proof.Scrypt.X86_64.RoMixLoops
@@ -18,9 +18,9 @@ public import Mathlib.Tactic.DefEqTransformations
 meta import Mathlib.Tactic.DefEqTransformations
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Spec.Scrypt.Contract
+import VerifiedGarbage.Spec.Scrypt.Contract
 meta import VerifiedGarbage.Spec.Scrypt.Contract
-public import VerifiedGarbage.Proof.Scrypt.X86_64.Lit
+import VerifiedGarbage.Proof.Scrypt.X86_64.Lit
 meta import VerifiedGarbage.Proof.Scrypt.X86_64.Lit
 public import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Framework.Omega

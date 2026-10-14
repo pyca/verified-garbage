@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Sm4.Arm.EcbAny
 meta import VerifiedGarbage.Proof.Sm4.Arm.EcbAny
 public import VerifiedGarbage.Impl.Sm4.Arm.Cbc
 meta import VerifiedGarbage.Impl.Sm4.Arm.Cbc
-public import VerifiedGarbage.Proof.Framework.Arm.RelCT
+import VerifiedGarbage.Proof.Framework.Arm.RelCT
 meta import VerifiedGarbage.Proof.Framework.Arm.RelCT
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

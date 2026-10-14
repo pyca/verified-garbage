@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Rc4.X86_64.Schedule
-public import VerifiedGarbage.Proof.Rc4.Stream
+import VerifiedGarbage.Proof.Rc4.Stream
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

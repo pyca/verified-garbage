@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Rc4.AArch64.Consts
+import VerifiedGarbage.Proof.Rc4.AArch64.Consts
 public import VerifiedGarbage.Proof.Rc4.AArch64.Group
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

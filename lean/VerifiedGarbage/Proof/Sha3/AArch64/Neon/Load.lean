@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Sha3.AArch64.Neon.Pair
 public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Rounds
-public import VerifiedGarbage.Proof.Framework.AArch64.SimdMem64
+import VerifiedGarbage.Proof.Framework.AArch64.SimdMem64
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

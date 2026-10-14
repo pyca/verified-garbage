@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Res
-public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Main
-public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Entry
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Main
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Entry
 public import VerifiedGarbage.Proof.Bignum.AArch64.PcCode
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

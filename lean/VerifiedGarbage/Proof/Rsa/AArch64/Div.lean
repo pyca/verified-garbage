@@ -1,10 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.CarrySelect
+import VerifiedGarbage.Proof.Bignum.AArch64.CarrySelect
 public import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Rsa.AArch64.KeyWs
 public import VerifiedGarbage.Proof.Rsa.KeyMath
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWs
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtWs
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

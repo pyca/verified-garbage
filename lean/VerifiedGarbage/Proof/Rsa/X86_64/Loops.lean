@@ -1,11 +1,11 @@
 module
 
 public import VerifiedGarbage.Impl.Rsa.X86_64.Keys
-public import VerifiedGarbage.Proof.Bignum.X86_64.CrtArith
-public import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
-public import VerifiedGarbage.Proof.Bignum.X86_64.Cmp
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtArith
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
+import VerifiedGarbage.Proof.Bignum.X86_64.Cmp
 public import VerifiedGarbage.Proof.Bignum.X86_64.Copy
-public import VerifiedGarbage.Proof.Bignum.X86_64.Double
+import VerifiedGarbage.Proof.Bignum.X86_64.Double
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

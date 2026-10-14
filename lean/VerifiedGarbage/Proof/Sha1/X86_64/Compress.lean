@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
 public import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Framework.Omega
@@ -14,19 +14,19 @@ public import VerifiedGarbage.Impl.Sha1.X86_64
 meta import VerifiedGarbage.Impl.Sha1.X86_64
 public import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.SplitIfs
-public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 public import VerifiedGarbage.Proof.Framework.X86_64.Abi
 meta import VerifiedGarbage.Proof.Framework.X86_64.Abi
 public import VerifiedGarbage.Proof.Framework.X86_64.Spill
 meta import VerifiedGarbage.Proof.Framework.X86_64.Spill
-public import VerifiedGarbage.Proof.Framework.X86_64.Bswap
+import VerifiedGarbage.Proof.Framework.X86_64.Bswap
 meta import VerifiedGarbage.Proof.Framework.X86_64.Bswap
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Spec.Sha1
+import VerifiedGarbage.Spec.Sha1
 meta import VerifiedGarbage.Spec.Sha1
-public import VerifiedGarbage.TCB.X86_64.Target
+import VerifiedGarbage.TCB.X86_64.Target
 meta import VerifiedGarbage.TCB.X86_64.Target
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Ctx
-public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.LoadC
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.LoadC
 public import VerifiedGarbage.Proof.Bignum.AArch64.HdrPairs
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

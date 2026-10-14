@@ -2,10 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.LoadC
 public import VerifiedGarbage.Proof.RsaKeyGen.CandMath
-public import VerifiedGarbage.Proof.Bignum.AArch64.R2
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtSel
+import VerifiedGarbage.Proof.Bignum.AArch64.R2
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtSel
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtArith
-public import VerifiedGarbage.Proof.Rsa.AArch64.Div
+import VerifiedGarbage.Proof.Rsa.AArch64.Div
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

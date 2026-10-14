@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.RsaOaep.X86_64.DecLoops
+import VerifiedGarbage.Proof.RsaOaep.X86_64.DecLoops
 public import VerifiedGarbage.Proof.RsaOaep.X86_64.Out
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

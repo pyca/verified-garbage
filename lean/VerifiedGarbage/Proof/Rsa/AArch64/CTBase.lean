@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.AArch64.KeyWs
 meta import VerifiedGarbage.Proof.Rsa.AArch64.KeyWs
-public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 public import VerifiedGarbage.Proof.Bignum.AArch64.PdCTRest
 meta import VerifiedGarbage.Proof.Bignum.AArch64.PdCTRest

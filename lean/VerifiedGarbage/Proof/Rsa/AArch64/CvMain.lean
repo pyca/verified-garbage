@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.AArch64.CvCheck
 public import VerifiedGarbage.Proof.Rsa.AArch64.CvStore
-public import VerifiedGarbage.Proof.Rsa.KeyMath
+import VerifiedGarbage.Proof.Rsa.KeyMath
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

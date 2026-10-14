@@ -1,11 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
-public import VerifiedGarbage.Proof.Sha1.Arm.Compress
-public import VerifiedGarbage.Proof.Sha1.Arm.Stream.Init
+import VerifiedGarbage.Proof.Sha1.Arm.Compress
+import VerifiedGarbage.Proof.Sha1.Arm.Stream.Init
 public import VerifiedGarbage.Proof.Sha1.Arm.Stream.Md
 public import VerifiedGarbage.Spec.Sha1.Contract
-public import VerifiedGarbage.Proof.Sha1.Scratch
+import VerifiedGarbage.Proof.Sha1.Scratch
 public import VerifiedGarbage.Proof.Framework.Arm.StackScratch
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

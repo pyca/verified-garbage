@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPss.X86_64.Mgf
-public import VerifiedGarbage.Proof.RsaPss.X86_64.SignEnc
-public import VerifiedGarbage.Proof.Framework.X86_64.CallFrame
+import VerifiedGarbage.Proof.RsaPss.X86_64.SignEnc
+import VerifiedGarbage.Proof.Framework.X86_64.CallFrame
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.AArch64.Inline
 public import VerifiedGarbage.Proof.Sha256.AArch64.Compress
 public import VerifiedGarbage.Proof.Sha256.AArch64.Stream.Init
-public import VerifiedGarbage.Proof.Sha256.AArch64.Stream.Md
+import VerifiedGarbage.Proof.Sha256.AArch64.Stream.Md
 public import VerifiedGarbage.Proof.Sha256.AArch64.Stream.Digest
 public import VerifiedGarbage.Spec.Sha256.Contract
 public import VerifiedGarbage.Proof.Framework.AArch64.StackScratch

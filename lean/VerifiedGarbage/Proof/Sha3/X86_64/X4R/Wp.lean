@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Sha3.X86_64.X4.Wp
-public import VerifiedGarbage.Impl.Sha3.X86_64.X4Reg
+import VerifiedGarbage.Impl.Sha3.X86_64.X4Reg
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

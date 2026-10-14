@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Rc4.Arm.Contract
+import VerifiedGarbage.Proof.Rc4.Arm.Contract
 meta import VerifiedGarbage.Proof.Rc4.Arm.Contract
-public import VerifiedGarbage.Proof.Rc4.Arm.Lit
+import VerifiedGarbage.Proof.Rc4.Arm.Lit
 meta import VerifiedGarbage.Proof.Rc4.Arm.Lit
 public import VerifiedGarbage.Proof.Rc4.Arm.Apply
 meta import VerifiedGarbage.Proof.Rc4.Arm.Apply

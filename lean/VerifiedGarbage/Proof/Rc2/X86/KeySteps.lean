@@ -1,11 +1,11 @@
 module
 
 public import VerifiedGarbage.Impl.Rc2.X86.ExpandKey
-public import VerifiedGarbage.Proof.Rc2.Expansion
-public import VerifiedGarbage.Impl.Rc2.X86.Lookup
-public import VerifiedGarbage.Proof.Rc2.Select32
-public import VerifiedGarbage.Proof.Framework.X86.Exec
-public import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Rc2.Expansion
+import VerifiedGarbage.Impl.Rc2.X86.Lookup
+import VerifiedGarbage.Proof.Rc2.Select32
+import VerifiedGarbage.Proof.Framework.X86.Exec
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
 public import VerifiedGarbage.Proof.Rc2.X86.PiLookup
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

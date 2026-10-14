@@ -10,7 +10,7 @@ public import Mathlib.Tactic.Conv
 meta import Mathlib.Tactic.Conv
 public import Mathlib.Tactic.Set
 meta import Mathlib.Tactic.Set
-public import VerifiedGarbage.Proof.Scrypt.AArch64.BlockMixVerified
+import VerifiedGarbage.Proof.Scrypt.AArch64.BlockMixVerified
 meta import VerifiedGarbage.Proof.Scrypt.AArch64.BlockMixVerified
 public import VerifiedGarbage.Proof.Framework.AArch64.RelCT
 meta import VerifiedGarbage.Proof.Framework.AArch64.RelCT
@@ -18,11 +18,11 @@ public import Mathlib.Tactic.DefEqTransformations
 meta import Mathlib.Tactic.DefEqTransformations
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Spec.Scrypt.Contract
+import VerifiedGarbage.Spec.Scrypt.Contract
 meta import VerifiedGarbage.Spec.Scrypt.Contract
 public import VerifiedGarbage.Proof.Framework.AArch64.Spill
 meta import VerifiedGarbage.Proof.Framework.AArch64.Spill
-public import VerifiedGarbage.Proof.Scrypt.AArch64.Lit
+import VerifiedGarbage.Proof.Scrypt.AArch64.Lit
 meta import VerifiedGarbage.Proof.Scrypt.AArch64.Lit
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

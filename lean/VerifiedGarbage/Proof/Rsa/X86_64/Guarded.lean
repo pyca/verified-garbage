@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.X86_64.ExpCheck
 meta import VerifiedGarbage.Proof.Rsa.X86_64.ExpCheck
-public import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 public import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc

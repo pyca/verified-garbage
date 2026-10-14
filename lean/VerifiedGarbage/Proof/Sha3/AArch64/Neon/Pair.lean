@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Squeeze
-public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.HwRounds
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.HwRounds
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Seed.X86.Ecb
 public import VerifiedGarbage.Proof.Seed.X86.G8
-public import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
 public import VerifiedGarbage.Proof.Framework.Offset
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

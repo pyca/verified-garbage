@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Rsa.X86_64.PubChecked
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtContract
 public import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Bignum.X86_64.PcVerified
+import VerifiedGarbage.Proof.Bignum.X86_64.PcVerified
 public import VerifiedGarbage.Impl.Rsa.X86_64.PrivChecked
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

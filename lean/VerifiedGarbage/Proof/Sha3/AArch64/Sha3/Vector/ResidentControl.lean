@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.ResidentSelect
-public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.ResidentMath
+import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.ResidentMath
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

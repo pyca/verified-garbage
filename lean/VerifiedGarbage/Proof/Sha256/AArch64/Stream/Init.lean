@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 meta import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 public import VerifiedGarbage.Proof.Sha256.AArch64.Stream.Common
 meta import VerifiedGarbage.Proof.Sha256.AArch64.Stream.Common

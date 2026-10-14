@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.RsaPss.X86_64.CtComp
+import VerifiedGarbage.Proof.RsaPss.X86_64.CtComp
 public import VerifiedGarbage.Proof.RsaPss.X86_64.FixedPad
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.Sm4.FbScratch
 meta import VerifiedGarbage.Proof.Sm4.FbScratch
 public import VerifiedGarbage.Proof.Modes.Arm.OfbCfb
 meta import VerifiedGarbage.Proof.Modes.Arm.OfbCfb
-public import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
+import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
 meta import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
 public import VerifiedGarbage.Impl.Sm4.Arm.Fb
 meta import VerifiedGarbage.Impl.Sm4.Arm.Fb

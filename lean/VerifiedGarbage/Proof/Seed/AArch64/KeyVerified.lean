@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Seed.AArch64.Key
+import VerifiedGarbage.Proof.Seed.AArch64.Key
 public import VerifiedGarbage.Proof.Seed.AArch64.Verified
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

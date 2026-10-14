@@ -2,13 +2,13 @@ module
 
 public import VerifiedGarbage.Proof.Seed.AArch64.Link
 meta import VerifiedGarbage.Proof.Seed.AArch64.Link
-public import VerifiedGarbage.Proof.Modes.AArch64.CbcDecrypt
+import VerifiedGarbage.Proof.Modes.AArch64.CbcDecrypt
 meta import VerifiedGarbage.Proof.Modes.AArch64.CbcDecrypt
-public import VerifiedGarbage.Proof.Modes.AArch64.CbcEncrypt
+import VerifiedGarbage.Proof.Modes.AArch64.CbcEncrypt
 meta import VerifiedGarbage.Proof.Modes.AArch64.CbcEncrypt
 public import VerifiedGarbage.Proof.Seed.CbcScratch
 meta import VerifiedGarbage.Proof.Seed.CbcScratch
-public import VerifiedGarbage.Proof.Seed.AArch64.ModesLit
+import VerifiedGarbage.Proof.Seed.AArch64.ModesLit
 meta import VerifiedGarbage.Proof.Seed.AArch64.ModesLit
 public import VerifiedGarbage.Proof.Framework.AArch64.Inline
 meta import VerifiedGarbage.Proof.Framework.AArch64.Inline

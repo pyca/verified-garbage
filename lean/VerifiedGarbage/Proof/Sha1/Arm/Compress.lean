@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Block
 meta import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Framework.Omega
@@ -8,7 +8,7 @@ public import VerifiedGarbage.Proof.Framework.Mem
 meta import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
-public import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Arm.Exec
 meta import VerifiedGarbage.Proof.Framework.Arm.Exec
 public import VerifiedGarbage.Proof.Sha1.Spec
 meta import VerifiedGarbage.Proof.Sha1.Spec
@@ -16,7 +16,7 @@ public import VerifiedGarbage.Impl.Sha1.Arm
 meta import VerifiedGarbage.Impl.Sha1.Arm
 public import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.SplitIfs
-public import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 meta import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 public import VerifiedGarbage.Proof.Framework.Arm.Spill
 meta import VerifiedGarbage.Proof.Framework.Arm.Spill
@@ -24,11 +24,11 @@ public import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Spec.Sha1
+import VerifiedGarbage.Spec.Sha1
 meta import VerifiedGarbage.Spec.Sha1
 public import VerifiedGarbage.TCB.Arm.Target
 meta import VerifiedGarbage.TCB.Arm.Target
-public import VerifiedGarbage.Proof.Sha1.Arm.Lit
+import VerifiedGarbage.Proof.Sha1.Arm.Lit
 meta import VerifiedGarbage.Proof.Sha1.Arm.Lit
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

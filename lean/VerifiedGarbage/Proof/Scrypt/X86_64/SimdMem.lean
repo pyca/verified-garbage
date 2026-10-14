@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.X86_64.Exec
-public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 public import VerifiedGarbage.Impl.Scrypt.X86_64.Salsa
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

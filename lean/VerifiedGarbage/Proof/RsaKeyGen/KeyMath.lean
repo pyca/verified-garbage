@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.KeyMath
-public import VerifiedGarbage.Proof.Rsa.Octets
+import VerifiedGarbage.Proof.Rsa.Octets
 public import VerifiedGarbage.Spec.RsaKeyGen
 public import VerifiedGarbage.Proof.Framework.PowLit
 public import VerifiedGarbage.Proof.Framework.Omega

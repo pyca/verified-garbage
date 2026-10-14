@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.EncCorrect
 meta import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.EncCorrect
-public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.Alloc
+import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.Alloc
 meta import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.Alloc
 public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 meta import VerifiedGarbage.Proof.Bignum.X86_64.Mont

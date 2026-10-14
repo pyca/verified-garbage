@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Rsa.X86_64.Loops
 public import VerifiedGarbage.Proof.Rsa.KeyMath
 public import VerifiedGarbage.Proof.Rsa.Ranges
-public import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
+import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

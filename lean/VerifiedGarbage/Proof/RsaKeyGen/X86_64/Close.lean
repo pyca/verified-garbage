@@ -3,9 +3,9 @@ module
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.LoadC
 public import VerifiedGarbage.Spec.RsaKeyGen.Contract
 public import VerifiedGarbage.Proof.Bignum.X86_64.Cmp
-public import VerifiedGarbage.Proof.Bignum.X86_64.R2
-public import VerifiedGarbage.Proof.Framework.RelCTAssoc
-public import VerifiedGarbage.Proof.RsaKeyGen.CandMath
+import VerifiedGarbage.Proof.Bignum.X86_64.R2
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.RsaKeyGen.CandMath
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Seed.AArch64.Rounds
-public import VerifiedGarbage.Proof.Seed.G
+import VerifiedGarbage.Proof.Seed.G
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

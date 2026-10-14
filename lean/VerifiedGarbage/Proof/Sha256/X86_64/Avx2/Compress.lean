@@ -8,9 +8,9 @@ public import VerifiedGarbage.Proof.Sha256.X86_64.Compress
 meta import VerifiedGarbage.Proof.Sha256.X86_64.Compress
 public import VerifiedGarbage.Proof.Framework.X86_64.Avx
 meta import VerifiedGarbage.Proof.Framework.X86_64.Avx
-public import VerifiedGarbage.Proof.Sha256.X86_64.Avx2.Lit
+import VerifiedGarbage.Proof.Sha256.X86_64.Avx2.Lit
 meta import VerifiedGarbage.Proof.Sha256.X86_64.Avx2.Lit
-public import VerifiedGarbage.Proof.Sha256.X86_64.ShaNi.Compress
+import VerifiedGarbage.Proof.Sha256.X86_64.ShaNi.Compress
 meta import VerifiedGarbage.Proof.Sha256.X86_64.ShaNi.Compress
 public import VerifiedGarbage.Proof.Framework.X86_64.Spill
 meta import VerifiedGarbage.Proof.Framework.X86_64.Spill

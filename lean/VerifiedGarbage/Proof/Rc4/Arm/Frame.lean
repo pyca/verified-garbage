@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Rc4.Arm.Verified
-public import VerifiedGarbage.Proof.Rc4.Scratch
+import VerifiedGarbage.Proof.Rc4.Scratch
 public import VerifiedGarbage.Proof.Framework.Arm.RegScratchWipe
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

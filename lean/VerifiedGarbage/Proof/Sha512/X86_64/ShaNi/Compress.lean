@@ -1,14 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
-public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 public import VerifiedGarbage.Proof.Framework.X86_64.Avx
 meta import VerifiedGarbage.Proof.Framework.X86_64.Avx
 public import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Spec
 meta import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Spec
-public import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Lit
+import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Lit
 meta import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Lit
 public import VerifiedGarbage.Proof.Sha512.X86_64.Avx2.Compress
 meta import VerifiedGarbage.Proof.Sha512.X86_64.Avx2.Compress

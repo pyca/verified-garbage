@@ -1,9 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Sha256.Md
-public import VerifiedGarbage.Proof.MdStream.Prefix
+import VerifiedGarbage.Proof.MdStream.Prefix
 public import VerifiedGarbage.Spec.Sha256.Contract
-public import VerifiedGarbage.Proof.Sha256.Scratch
+import VerifiedGarbage.Proof.Sha256.Scratch
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

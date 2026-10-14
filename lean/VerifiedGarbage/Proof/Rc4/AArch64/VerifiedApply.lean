@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Rc4.AArch64.Lit
-public import VerifiedGarbage.Proof.Rc4.AArch64.ApplyCT
-public import VerifiedGarbage.Proof.Rc4.AArch64.Apply
+import VerifiedGarbage.Proof.Rc4.AArch64.ApplyCT
+import VerifiedGarbage.Proof.Rc4.AArch64.Apply
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.Rc4.Contract
 import all Init.Data.Array.Basic

@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.Bytes
-public import VerifiedGarbage.Proof.Bignum.X86_64.Store
-public import VerifiedGarbage.Proof.Framework.WriteBytes
+import VerifiedGarbage.Proof.Bignum.X86_64.Store
+import VerifiedGarbage.Proof.Framework.WriteBytes
 public import VerifiedGarbage.Impl.Rsa.X86_64.Checked
 public import VerifiedGarbage.Spec.Rsa.Contract
 import all Init.Data.Array.Basic

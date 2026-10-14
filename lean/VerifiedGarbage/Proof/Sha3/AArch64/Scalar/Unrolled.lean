@@ -2,17 +2,17 @@ module
 
 public import VerifiedGarbage.Impl.Sha3.AArch64.Scalar.Unrolled
 meta import VerifiedGarbage.Impl.Sha3.AArch64.Scalar.Unrolled
-public import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Control
+import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Control
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Control
-public import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Round
+import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Round
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Round
 public import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Wrap
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Wrap
 public import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.ScheduleFacts
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.ScheduleFacts
-public import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.VectorCoreExec
+import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.VectorCoreExec
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.VectorCoreExec
-public import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.UnrolledLit
+import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.UnrolledLit
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.UnrolledLit
 public import VerifiedGarbage.Proof.Framework.AArch64.VectorTaint
 meta import VerifiedGarbage.Proof.Framework.AArch64.VectorTaint

@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.RsaKeyGen.Bits
+import VerifiedGarbage.Proof.RsaKeyGen.Bits
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.TrialLoop
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

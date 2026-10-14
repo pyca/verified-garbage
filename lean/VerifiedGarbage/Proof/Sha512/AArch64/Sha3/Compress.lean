@@ -1,10 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 meta import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 public import VerifiedGarbage.Proof.Sha512.AArch64.Sha3.Spec
 meta import VerifiedGarbage.Proof.Sha512.AArch64.Sha3.Spec
-public import VerifiedGarbage.Proof.Framework.AArch64.SimdMem64
+import VerifiedGarbage.Proof.Framework.AArch64.SimdMem64
 meta import VerifiedGarbage.Proof.Framework.AArch64.SimdMem64
 public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd

@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Sha256.X86_64.Stream.Md
 meta import VerifiedGarbage.Proof.Sha256.X86_64.Stream.Md
-public import VerifiedGarbage.Proof.Sha256.Digest
+import VerifiedGarbage.Proof.Sha256.Digest
 meta import VerifiedGarbage.Proof.Sha256.Digest
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

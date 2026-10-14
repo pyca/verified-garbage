@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Rc2.X86_64.Sse2Vector
-public import VerifiedGarbage.Proof.Rc2.RestoreMemory
-public import VerifiedGarbage.Proof.Rc2.Word
+import VerifiedGarbage.Proof.Rc2.RestoreMemory
+import VerifiedGarbage.Proof.Rc2.Word
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

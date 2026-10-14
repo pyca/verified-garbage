@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86_64.RpSkip
-public import VerifiedGarbage.Proof.Rsa.X86_64.Inv
+import VerifiedGarbage.Proof.Rsa.X86_64.Inv
 public import VerifiedGarbage.Proof.Rsa.RecoverMath
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

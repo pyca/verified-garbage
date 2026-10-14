@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Sha512.X86.Steps
 meta import VerifiedGarbage.Proof.Sha512.X86.Steps
 public import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Framework.Omega
-public import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
 meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
 public import VerifiedGarbage.Proof.Framework.X86.Spill
 meta import VerifiedGarbage.Proof.Framework.X86.Spill
@@ -12,7 +12,7 @@ public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.Sha512
 meta import VerifiedGarbage.Spec.Sha512
-public import VerifiedGarbage.TCB.X86.Target
+import VerifiedGarbage.TCB.X86.Target
 meta import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Sha512.X86.Lit
 meta import VerifiedGarbage.Proof.Sha512.X86.Lit

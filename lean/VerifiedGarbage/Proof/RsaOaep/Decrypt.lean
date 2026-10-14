@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.RsaOaep.Encoding
-public import VerifiedGarbage.Proof.RsaPss.Sign
+import VerifiedGarbage.Proof.RsaPss.Sign
 public import VerifiedGarbage.Spec.RsaOaep.Contract
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

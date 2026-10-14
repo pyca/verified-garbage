@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyCall
 public import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyBlocks
-public import VerifiedGarbage.Proof.RsaPss.X86_64.SignCorrect
+import VerifiedGarbage.Proof.RsaPss.X86_64.SignCorrect
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

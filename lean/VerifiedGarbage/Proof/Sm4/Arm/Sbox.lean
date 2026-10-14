@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Impl.Sm4.Arm.Sbox
 public import VerifiedGarbage.Proof.Sm4.SboxTable
 public import VerifiedGarbage.Proof.Framework.Arm.Straight
-public import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Arm.Exec
 public import VerifiedGarbage.Proof.Sm4.Bitsliced32
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

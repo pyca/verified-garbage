@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.SignEntry
 public import VerifiedGarbage.Proof.Rsa.X86_64.PrivCT
-public import VerifiedGarbage.Proof.Framework.X86_64.CallSp
+import VerifiedGarbage.Proof.Framework.X86_64.CallSp
 public import VerifiedGarbage.Proof.Framework.X86_64.CallFrame
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

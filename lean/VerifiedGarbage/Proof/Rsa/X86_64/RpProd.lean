@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86_64.RpBase
-public import VerifiedGarbage.Proof.Rsa.RecoverMath
+import VerifiedGarbage.Proof.Rsa.RecoverMath
 public import VerifiedGarbage.Proof.Bignum.X86_64.Row
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

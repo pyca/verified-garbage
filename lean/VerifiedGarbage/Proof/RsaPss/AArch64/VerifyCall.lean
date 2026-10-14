@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyFrame
-public import VerifiedGarbage.Proof.RsaPss.AArch64.SignCall
+import VerifiedGarbage.Proof.RsaPss.AArch64.SignCall
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Callee
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

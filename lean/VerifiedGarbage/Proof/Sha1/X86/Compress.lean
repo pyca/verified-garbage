@@ -1,12 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
 meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
 public import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.Framework.X86.Exec
+import VerifiedGarbage.Proof.Framework.X86.Exec
 meta import VerifiedGarbage.Proof.Framework.X86.Exec
 public import VerifiedGarbage.Proof.Framework.X86.Spill
 meta import VerifiedGarbage.Proof.Framework.X86.Spill
@@ -20,7 +20,7 @@ public import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.SplitIfs
 public import Mathlib.Tactic.Set
 meta import Mathlib.Tactic.Set
-public import VerifiedGarbage.Proof.Sha1.X86.Lit
+import VerifiedGarbage.Proof.Sha1.X86.Lit
 meta import VerifiedGarbage.Proof.Sha1.X86.Lit
 public import VerifiedGarbage.Proof.Sha1.X86.Contract
 meta import VerifiedGarbage.Proof.Sha1.X86.Contract

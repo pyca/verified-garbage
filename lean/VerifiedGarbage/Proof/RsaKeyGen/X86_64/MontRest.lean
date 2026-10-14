@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MontSetup
+import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MontSetup
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Copy
 public import VerifiedGarbage.Proof.RsaKeyGen.CandSpec
 import all Init.Data.Array.Basic

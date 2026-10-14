@@ -2,9 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.AArch64.RpCT5
 meta import VerifiedGarbage.Proof.Rsa.AArch64.RpCT5
-public import VerifiedGarbage.Proof.Rsa.AArch64.RpCands
+import VerifiedGarbage.Proof.Rsa.AArch64.RpCands
 meta import VerifiedGarbage.Proof.Rsa.AArch64.RpCands
-public import VerifiedGarbage.Proof.Rsa.RecoverTries
+import VerifiedGarbage.Proof.Rsa.RecoverTries
 meta import VerifiedGarbage.Proof.Rsa.RecoverTries
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

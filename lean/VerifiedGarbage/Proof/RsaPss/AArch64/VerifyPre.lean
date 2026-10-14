@@ -1,9 +1,9 @@
 module
 
 public import VerifiedGarbage.Spec.RsaPss.Precomputed
-public import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyLogic
+import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyLogic
 public import VerifiedGarbage.Proof.RsaPss.AArch64.SignPre
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.PrecomputedCorrect
+import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.PrecomputedCorrect
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

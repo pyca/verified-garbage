@@ -1,10 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.AArch64.VectorCaller
+import VerifiedGarbage.Proof.Framework.AArch64.VectorCaller
 meta import VerifiedGarbage.Proof.Framework.AArch64.VectorCaller
 public import VerifiedGarbage.Proof.Sha3.AArch64.Variant
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Variant
-public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Backend
+import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Backend
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Backend
 public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Resident
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Resident

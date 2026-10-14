@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPss.X86_64.SignVerified
-public import VerifiedGarbage.Proof.RsaPss.X86_64.SignFixed
+import VerifiedGarbage.Proof.RsaPss.X86_64.SignFixed
 public import VerifiedGarbage.Proof.RsaPss.X86_64.MgfCT
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

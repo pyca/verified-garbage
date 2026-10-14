@@ -2,13 +2,13 @@ module
 
 public import VerifiedGarbage.Proof.Seed.X86_64.ModeCore
 meta import VerifiedGarbage.Proof.Seed.X86_64.ModeCore
-public import VerifiedGarbage.Proof.Modes.X86_64.Fb
+import VerifiedGarbage.Proof.Modes.X86_64.Fb
 meta import VerifiedGarbage.Proof.Modes.X86_64.Fb
-public import VerifiedGarbage.Proof.Modes.X86_64.KeepIv
+import VerifiedGarbage.Proof.Modes.X86_64.KeepIv
 meta import VerifiedGarbage.Proof.Modes.X86_64.KeepIv
 public import VerifiedGarbage.Proof.Seed.FbScratch
 meta import VerifiedGarbage.Proof.Seed.FbScratch
-public import VerifiedGarbage.Proof.Seed.X86_64.ModesLit
+import VerifiedGarbage.Proof.Seed.X86_64.ModesLit
 meta import VerifiedGarbage.Proof.Seed.X86_64.ModesLit
 public import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
 meta import VerifiedGarbage.Proof.Framework.X86_64.TaintMono

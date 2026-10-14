@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Sm4.AArch64.Lit
+import VerifiedGarbage.Proof.Sm4.AArch64.Lit
 meta import VerifiedGarbage.Proof.Sm4.AArch64.Lit
 public import VerifiedGarbage.Impl.Sm4.AArch64.Fb
 meta import VerifiedGarbage.Impl.Sm4.AArch64.Fb

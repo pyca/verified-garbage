@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.RsaOaep.X86_64.EncCall
 public import VerifiedGarbage.Proof.RsaOaep.X86_64.Good
-public import VerifiedGarbage.Proof.RsaOaep.X86_64.Out
+import VerifiedGarbage.Proof.RsaOaep.X86_64.Out
 public import VerifiedGarbage.Proof.RsaOaep.Encode
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

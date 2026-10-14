@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Sha3.AArch64.Neon.Vector
 public import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-public import VerifiedGarbage.Proof.Framework.AArch64.Simd64
+import VerifiedGarbage.Proof.Framework.AArch64.Simd64
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

@@ -1,10 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Qinv
-public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Crt
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Crt
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.NFin
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Out
-public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Front
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Front
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

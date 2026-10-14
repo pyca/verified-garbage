@@ -6,19 +6,19 @@ public import VerifiedGarbage.Proof.MdStream.X86_64.UpdateCT
 meta import VerifiedGarbage.Proof.MdStream.X86_64.UpdateCT
 public import VerifiedGarbage.Proof.MdStream.X86_64.FinalizeCT
 meta import VerifiedGarbage.Proof.MdStream.X86_64.FinalizeCT
-public import VerifiedGarbage.Proof.MdStream.X86_64.Words
+import VerifiedGarbage.Proof.MdStream.X86_64.Words
 meta import VerifiedGarbage.Proof.MdStream.X86_64.Words
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Sha512.X86_64.Wide
 meta import VerifiedGarbage.Proof.Sha512.X86_64.Wide
-public import VerifiedGarbage.Proof.Sha512.X86_64.Avx2.Compress
+import VerifiedGarbage.Proof.Sha512.X86_64.Avx2.Compress
 meta import VerifiedGarbage.Proof.Sha512.X86_64.Avx2.Compress
-public import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Compress
+import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Compress
 meta import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Compress
 public import VerifiedGarbage.Impl.Sha512.X86_64.Stream
 meta import VerifiedGarbage.Impl.Sha512.X86_64.Stream
-public import VerifiedGarbage.Proof.Sha512.X86_64.Lit
+import VerifiedGarbage.Proof.Sha512.X86_64.Lit
 meta import VerifiedGarbage.Proof.Sha512.X86_64.Lit
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

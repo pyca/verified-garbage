@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPss.X86_64.MgfDirect
-public import VerifiedGarbage.Proof.RsaPss.X86_64.BufferXor
+import VerifiedGarbage.Proof.RsaPss.X86_64.BufferXor
 public import VerifiedGarbage.Proof.RsaPss.MgfBytes
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

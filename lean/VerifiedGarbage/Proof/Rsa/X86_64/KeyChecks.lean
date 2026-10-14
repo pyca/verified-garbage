@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86_64.KeyReduce
-public import VerifiedGarbage.Proof.Bignum.X86_64.CrtRows
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtRows
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxFused
 public import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
 import all Init.Data.Array.Basic

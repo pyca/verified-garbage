@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.Decrypt
-public import VerifiedGarbage.Proof.Rsa.Octets
+import VerifiedGarbage.Proof.Rsa.Octets
 public import Mathlib.Data.Fintype.Card
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.Octets
 import all Init.Data.Array.Basic

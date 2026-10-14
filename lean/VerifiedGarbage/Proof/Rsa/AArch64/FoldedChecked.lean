@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.AArch64.PdChecked
-public import VerifiedGarbage.Proof.Bignum.AArch64.FoldedCodeCT
+import VerifiedGarbage.Proof.Bignum.AArch64.FoldedCodeCT
 public import VerifiedGarbage.Proof.Bignum.AArch64.FoldedCode
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

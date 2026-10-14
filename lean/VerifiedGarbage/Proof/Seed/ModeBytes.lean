@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Seed.Memory
+import VerifiedGarbage.Proof.Seed.Memory
 public import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Spec.Seed.Cbc
 public import VerifiedGarbage.Spec.Aes

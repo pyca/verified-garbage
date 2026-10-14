@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Rc2.CbcMemory
+import VerifiedGarbage.Proof.Rc2.CbcMemory
 public import VerifiedGarbage.Proof.Rc2.X86_64.Block
 public import VerifiedGarbage.Impl.Rc2.X86_64.Cbc
 public import VerifiedGarbage.Proof.Framework.X86_64.Call

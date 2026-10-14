@@ -8,7 +8,7 @@ public import VerifiedGarbage.Proof.Scrypt.AArch64.Salsa
 meta import VerifiedGarbage.Proof.Scrypt.AArch64.Salsa
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Spec.Scrypt.Contract
+import VerifiedGarbage.Spec.Scrypt.Contract
 meta import VerifiedGarbage.Spec.Scrypt.Contract
 public import VerifiedGarbage.Proof.Framework.AArch64.Spill
 meta import VerifiedGarbage.Proof.Framework.AArch64.Spill

@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.CTFront
 meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.CTFront
-public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.Lcm
+import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.Lcm
 meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.Lcm
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

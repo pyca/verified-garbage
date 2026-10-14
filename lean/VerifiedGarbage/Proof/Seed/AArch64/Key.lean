@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Seed.AArch64.KeyBody
-public import VerifiedGarbage.Proof.Seed.AArch64.Ecb
+import VerifiedGarbage.Proof.Seed.AArch64.Ecb
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

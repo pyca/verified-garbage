@@ -1,13 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.X86.Exec
-public import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
+import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
 public import VerifiedGarbage.Proof.Sha256.X86.ShaNi.Spec
 public import VerifiedGarbage.Impl.Sha256.X86.ShaNi
-public import VerifiedGarbage.Proof.Sha256.X86.Compress
+import VerifiedGarbage.Proof.Sha256.X86.Compress
 public import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.Sha256.X86.ShaNi.Memory
-public import VerifiedGarbage.Proof.Sha256.X86.ShaNi.Const
+import VerifiedGarbage.Proof.Sha256.X86.ShaNi.Memory
+import VerifiedGarbage.Proof.Sha256.X86.ShaNi.Const
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

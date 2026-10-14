@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.RsaOaep.X86_64.DecPriv
 public import VerifiedGarbage.Proof.RsaOaep.X86_64.DecOut
 public import VerifiedGarbage.Proof.RsaOaep.X86_64.DecSpec
-public import VerifiedGarbage.Proof.RsaOaep.X86_64.EncMain
+import VerifiedGarbage.Proof.RsaOaep.X86_64.EncMain
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

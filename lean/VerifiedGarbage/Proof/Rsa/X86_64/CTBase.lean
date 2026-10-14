@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Rsa.X86_64.Pieces
 meta import VerifiedGarbage.Proof.Rsa.X86_64.Pieces
 public import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
-public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

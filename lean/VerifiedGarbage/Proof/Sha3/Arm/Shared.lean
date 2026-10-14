@@ -2,9 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import VerifiedGarbage.Proof.Sha3.Arm.Permute
-public import VerifiedGarbage.Proof.Sha3.Arm.Stream.Absorb
-public import VerifiedGarbage.Proof.Sha3.Arm.Stream.Pad
-public import VerifiedGarbage.Proof.Sha3.Arm.Stream.Squeeze
+import VerifiedGarbage.Proof.Sha3.Arm.Stream.Absorb
+import VerifiedGarbage.Proof.Sha3.Arm.Stream.Pad
+import VerifiedGarbage.Proof.Sha3.Arm.Stream.Squeeze
 public import VerifiedGarbage.Spec.Sha3.Contract
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

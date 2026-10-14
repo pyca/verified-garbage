@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.KEnd
-public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrShift
+import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrShift
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

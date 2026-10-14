@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.CTUnits
 meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.CTUnits
-public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Front
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Front
 meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Front
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Entry
 meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Entry

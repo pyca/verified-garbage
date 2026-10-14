@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Spec.Seed.Ofb
 public import VerifiedGarbage.Spec.Seed.Cfb
 public import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.Seed.Scratch
+import VerifiedGarbage.Proof.Seed.Scratch
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

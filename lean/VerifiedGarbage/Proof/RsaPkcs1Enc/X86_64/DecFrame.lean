@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecContract
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.Bytes
-public import VerifiedGarbage.Proof.Bignum.X86_64.Loop
+import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 public import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

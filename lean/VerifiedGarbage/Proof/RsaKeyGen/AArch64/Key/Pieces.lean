@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.State
-public import VerifiedGarbage.Proof.Rsa.AArch64.CkPieces
-public import VerifiedGarbage.Proof.Rsa.AArch64.Inv
+import VerifiedGarbage.Proof.Rsa.AArch64.CkPieces
+import VerifiedGarbage.Proof.Rsa.AArch64.Inv
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

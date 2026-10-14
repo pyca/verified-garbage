@@ -2,15 +2,15 @@ module
 
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Sha256.X86_64.Compress
+import VerifiedGarbage.Proof.Sha256.X86_64.Compress
 meta import VerifiedGarbage.Proof.Sha256.X86_64.Compress
-public import VerifiedGarbage.Proof.Sha256.X86_64.ShaNi.Compress
+import VerifiedGarbage.Proof.Sha256.X86_64.ShaNi.Compress
 meta import VerifiedGarbage.Proof.Sha256.X86_64.ShaNi.Compress
-public import VerifiedGarbage.Proof.Sha256.X86_64.Avx2.Compress
+import VerifiedGarbage.Proof.Sha256.X86_64.Avx2.Compress
 meta import VerifiedGarbage.Proof.Sha256.X86_64.Avx2.Compress
-public import VerifiedGarbage.Proof.Sha256.X86_64.Stream.Md
+import VerifiedGarbage.Proof.Sha256.X86_64.Stream.Md
 meta import VerifiedGarbage.Proof.Sha256.X86_64.Stream.Md
-public import VerifiedGarbage.Proof.Sha256.X86_64.Stream.Digest
+import VerifiedGarbage.Proof.Sha256.X86_64.Stream.Digest
 meta import VerifiedGarbage.Proof.Sha256.X86_64.Stream.Digest
 public import VerifiedGarbage.Spec.Sha256.Contract
 meta import VerifiedGarbage.Spec.Sha256.Contract

@@ -2,13 +2,13 @@ module
 
 public import VerifiedGarbage.TCB.Axioms
 meta import VerifiedGarbage.TCB.Axioms
-public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Pair
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Pair
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Pair
 public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Store
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Store
 public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
-public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.BoundaryCommon
+import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.BoundaryCommon
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.BoundaryCommon
 public import VerifiedGarbage.Proof.Framework.Sig
 meta import VerifiedGarbage.Proof.Framework.Sig

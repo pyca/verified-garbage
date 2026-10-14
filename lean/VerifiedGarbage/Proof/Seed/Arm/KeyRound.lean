@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Seed.Arm.Ecb
-public import VerifiedGarbage.Proof.Seed.KeyRot
+import VerifiedGarbage.Proof.Seed.KeyRot
 public import VerifiedGarbage.Impl.Seed.Arm.ExpandKey
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

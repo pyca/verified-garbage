@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Sha3.Arm.Shared
+import VerifiedGarbage.Proof.Sha3.Arm.Shared
 public import VerifiedGarbage.Proof.Sha3.Scratch
 public import VerifiedGarbage.Proof.Framework.Arm.StackScratch
 import all Init.Data.Array.Basic

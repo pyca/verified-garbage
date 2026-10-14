@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.AArch64.CvLoad
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtRows
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtRows
 public import VerifiedGarbage.Impl.Rsa.AArch64.CheckKey
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

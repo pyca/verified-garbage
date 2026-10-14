@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPss.Verify
-public import VerifiedGarbage.Proof.Rsa.Checked
+import VerifiedGarbage.Proof.Rsa.Checked
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
