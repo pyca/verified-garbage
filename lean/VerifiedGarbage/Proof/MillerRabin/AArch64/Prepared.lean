@@ -1,0 +1,58 @@
+module
+
+public import VerifiedGarbage.Spec.MillerRabin
+public import VerifiedGarbage.Proof.MillerRabin.AArch64.Core
+import VerifiedGarbage.Proof.Bignum.AArch64.MontFnVerified
+import VerifiedGarbage.Proof.Framework.Omega
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+/-! # Existing Montgomery contexts satisfy the callable's prepared contract -/
+
+@[expose] public section
+
+namespace VG.Proof.MillerRabin.AArch64
+
+open VG VG.AArch64 VG.Proof.Bignum VG.Proof.Bignum.AArch64
+open VG.Proof.RsaKeyGen VG.Proof.RsaKeyGen.AArch64
+open VG.Impl.Bignum VG.Impl.Bignum.Public VG.Impl.RsaKeyGen.AArch64.Candidate
+open VG.Proof.Bignum.AArch64.MontFn (numAt_eq)
+
+theorem ctx_width {s : State} {B : Addr} {Z w c bm : Nat} (hc : MrCtx s B Z w c bm) :
+    Spec.Rsa.Mont.wOf s.mem B = w := by
+  change (word s.mem B (8 * sW)).toNat = w
+  rw [hc.ws.hw, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := hc.ws.w2; omega_arith)]
+
+theorem prepared_of_ctx {s : State} {B : Addr} {Z w c bm : Nat}
+    (hc : MrCtx s B Z w c bm) (he : ECtx s.mem B w c)
+    (ho : c % 2 = 1) (h3 : 3 ≤ c) (hx : wv s.mem B (slot w aXm) w < c) :
+    Spec.MillerRabin.Prepared Spec.MillerRabin.compact s.mem B := by
+  have hw := ctx_width hc
+  have hn : Spec.Rsa.Mont.numAt s.mem B w 0 = c := (numAt_eq s.mem B w 0).trans hc.n
+  simp only [Spec.MillerRabin.Prepared, hw, hn, Spec.MillerRabin.compact]
+  refine ⟨h3, ho, hc.inv, ?_, ?_, ?_, ?_, ?_⟩
+  · rw [numAt_eq]
+    exact hx
+  · rw [numAt_eq]
+    exact hc.r1
+  · rw [numAt_eq]
+    exact hc.rm1
+  · rw [numAt_eq]
+    simpa only [Spec.MillerRabin.exponent, Spec.MillerRabin.shift, mrE, mrSig, sigOf, mrA, aE] using he.e
+  · exact he.l
+
+theorem layout_of_ctx {s : State} {B : Addr} {Z w c bm : Nat}
+    (hc : MrCtx s B Z w c bm) (h4 : 4 ≤ w) (h128 : w ≤ 128) :
+    Spec.MillerRabin.Layout Spec.MillerRabin.compact s.mem B (32 + 28 * (w + 2)) := by
+  simp only [Spec.MillerRabin.Layout, ctx_width hc, Spec.MillerRabin.compact,
+    Spec.Rsa.Mont.Layout, Spec.Rsa.Mont.arrAt, Spec.Rsa.Mont.hdrBytes]
+  refine ⟨Or.inr trivial, ⟨by omega_arith, by omega_arith, by omega_arith, ?_⟩,
+    h4, h128, ?_, hc.ws.hS⟩
+  · intro j hj
+    exact hc.ws.harr j hj
+  · change 256 + 28 * (8 * (w + 2)) ≤ 8 * (32 + 28 * (w + 2))
+    omega_arith
+
+end VG.Proof.MillerRabin.AArch64

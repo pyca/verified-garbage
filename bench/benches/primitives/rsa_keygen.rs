@@ -3,7 +3,7 @@
 
 use criterion::Criterion;
 
-pub const USES: &[&str] = &["rsa_keygen"];
+pub const USES: &[&str] = &["rsa_keygen", "miller_rabin"];
 
 #[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
 pub fn bench(c: &mut Criterion) {

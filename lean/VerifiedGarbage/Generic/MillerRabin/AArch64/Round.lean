@@ -1,7 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.MillerRabin.AArch64.Verified
-public import VerifiedGarbage.Proof.Bignum.AArch64.Mont
+public import VerifiedGarbage.Proof.MillerRabin.AArch64.Backend
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -11,19 +10,21 @@ import all Init.Data.Vector.Basic
 
 @[expose] public section
 
-namespace VG.Artifacts.MillerRabin.AArch64
+namespace VG.Generic.MillerRabin.AArch64.Round
 
 open VG.AArch64
 
-def artifacts : List Artifact := [
+def artifacts (v : Proof.MillerRabin.AArch64.RoundImpl) : List Artifact := [
   { Spec.MillerRabin.roundApi Spec.MillerRabin.compact with
+    name := v.name
     target := target
     doc := (Spec.MillerRabin.roundApi Spec.MillerRabin.compact).doc
       (notes := ["Four-bit windows using RSA's verified Montgomery arithmetic. \
         The round result is returned without branching on it."])
-    code := Impl.MillerRabin.AArch64.round Proof.Bignum.AArch64.Mont.base.mm
+    code := v.code
     contract := Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact
-    verified := Proof.MillerRabin.AArch64.round_verified Proof.Bignum.AArch64.Mont.base
-    spSafe := Code.all_of_allInstrs (by decide +kernel) }]
+    verified := by exact v.verified
+    spSafe := Code.all_of_forall (fun _ => rfl) _
+    features := v.features }]
 
-end VG.Artifacts.MillerRabin.AArch64
+end VG.Generic.MillerRabin.AArch64.Round
