@@ -2,7 +2,7 @@
 //! Verified `brainpoolp512r1_mul` functions for `x86_64`.
 #![allow(dead_code)]
 
-/// The multiple `P = [k]Q` of a point `Q` of brainpoolP512r1, for the number `k` of 8 64-bit words (`64` bytes), little-endian, at byte 2048 of `ws`, and `Q`'s affine coordinates `x` and `y` at bytes 960 and 1024, in projective coordinates (`(X : Y : Z)` for `(X / Z, Y / Z)`, and `(0 : Y : 0)` for the point at infinity) in `Q`'s place, at bytes 960 to 1151: coordinates of 8 64-bit words, little-endian, in Montgomery's form modulo brainpoolP512r1's prime `p`, below it. The function reads `p` at byte 64, zero at byte 256, and one, `a` and `3 b` in Montgomery's form at bytes 384, 448 and 512. Bytes 1152 to 2047, 192 to 255 and 2944 to 3463 of `ws` are the function's own working space; every other byte of `ws` but the result's keeps its value. Constant time: only the pointer may affect timing.
+/// The multiple `P = [k]Q` of a point `Q` of brainpoolP512r1, for the number `k` of 8 64-bit words (`64` bytes), little-endian, at byte 2048 of `ws`, and `Q`'s affine coordinates `x` and `y` at bytes 960 and 1024, in projective coordinates (`(X : Y : Z)` for `(X / Z, Y / Z)`, and `(0 : Y : 0)` for the point at infinity) in `Q`'s place, at bytes 960 to 1151: coordinates of 8 64-bit words, little-endian, in Montgomery's form modulo brainpoolP512r1's prime `p`, below it. The function reads `p` at byte 64, zero at byte 256, and one, `a` and `3 b` in Montgomery's form at bytes 384, 448 and 512. Bytes 1152 to 2047, 192 to 255 and 2944 to 3503 of `ws` are the function's own working space; every other byte of `ws` but the result's keeps its value. Constant time: only the pointer may affect timing.
 ///
 /// Contract: `mulContract` of `VG.Spec.Weierstrass.Mul.Curve`.
 ///
@@ -13,7 +13,7 @@
 /// * `ws` must be valid for reads and writes of 8192 bytes.
 /// * The 8 words at byte 64 of `ws` must be brainpoolP512r1's prime `p`, the 8 words at byte 256 zero, and those at bytes 384, 448 and 512 `R mod p`, `a R mod p` and `3 b R mod p`, for `R = 2^512`.
 /// * The 8 words at bytes 960 and 1024 of `ws` must be below `p`, and stand (in Montgomery's form) for the coordinates of a point on the curve.
-/// * Bytes 1152 to 2047, 192 to 255 and 2944 to 3463 of `ws` are unspecified on return and may hold intermediate values, which are secret and which the caller must destroy.
+/// * Bytes 1152 to 2047, 192 to 255 and 2944 to 3503 of `ws` are unspecified on return and may hold intermediate values, which are secret and which the caller must destroy.
 /// * `ws` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_brainpoolp512r1_mul(ws: *mut [u64; 1024]) {
