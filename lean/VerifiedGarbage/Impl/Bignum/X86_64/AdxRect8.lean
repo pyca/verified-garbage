@@ -44,4 +44,37 @@ def row (a b : Nat) : Prog isa :=
   .seq (.block (setup a b)) (.seq (.block AdxRotate8.loadCols)
     (.seq (.loop rowStep .ne) (.block AdxRotate8.storeCols)))
 
+/-! ## A row of a square, with the carry of the row before
+
+A square's rows, from the lowest, each leave their top carry in `sFn 15`
+(`hand`) instead of propagating it through the words above, which other
+rows and blocks have written; the next row, whose last input block starts at
+that carry's word, adds it to its pending carry before that block. -/
+
+/-- The slot of the carry handed from a row to the next. -/
+def handOffset : Nat := 8 * sFn 15
+
+/-- The column index up to the next block, ZF set when that block is the last. -/
+def nextColumnS : List Instr :=
+  [.mov .rax (.mem (hdr (sFn 13))), .alu .add .rax (.imm 8),
+   .store (hdr (sFn 13)) .rax, .alu .add .rax (.imm 8), .alu .cmp .rax (.mem (hdr sW))]
+
+def rowStepS : Prog isa :=
+  .seq streamTile (.block nextColumnS)
+
+/-- ZF set when the row has one block. -/
+def oneTest : List Instr :=
+  [.mov .rax (.mem (hdr (sFn 13))), .alu .add .rax (.imm 8), .alu .cmp .rax (.mem (hdr sW))]
+
+/-- The handed carry added to the pending carry (its slot is left as it is:
+the next row's tail overwrites it, and the last row's is not read again). -/
+def addHand : List Instr :=
+  [.mov .rax (.mem (hdr (sFn 15))), .alu .add .rax (.mem (hdr (sFn 14))), .store (hdr (sFn 14)) .rax]
+
+/-- `row`, with the handed carry added before the last block. -/
+def rowS (a b : Nat) : Prog isa :=
+  .seq (.block (setup a b)) (.seq (.block AdxRotate8.loadCols)
+    (.seq (.seq (.block oneTest) (.ite .e (.block []) (.loop rowStepS .ne)))
+      (.seq (.block addHand) (.seq rowStep (.block AdxRotate8.storeCols)))))
+
 end VG.Impl.Bignum.X86_64.AdxRect8

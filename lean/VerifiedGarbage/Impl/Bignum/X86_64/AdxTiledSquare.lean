@@ -18,15 +18,35 @@ def nextRow : List Instr :=
   [.mov .rax (.mem (hdr (sFn 12))),.alu .add .rax (.imm 8),.store (hdr (sFn 12)) .rax,
    .mov .rcx (.mem (hdr sW)),.alu .sub .rcx (.imm 8),.alu .cmp .rax (.reg .rcx)]
 
+/-- ZF set for the last row. -/
+def lastTest : List Instr :=
+  [.mov .rax (.mem (hdr (sFn 12))),.alu .add .rax (.imm 16),.alu .cmp .rax (.mem (hdr sW))]
+
+/-- The row's carry: through the words above for the last row, handed to the
+next row otherwise. -/
+def tail : Prog isa := .seq (.block lastTest)
+  (.ite .e AdxTiledProduct.tail (.block [.mov .rax (.mem (hdr (sFn 14))),.store (hdr (sFn 15)) .rax]))
+
 def row (a : Nat) : Prog isa := .seq (.block rowInit)
-  (.seq (AdxRect8.row a a) (.seq AdxTiledProduct.tail (.block nextRow)))
+  (.seq (AdxRect8.rowS a a) (.seq tail (.block nextRow)))
 
 def rows (a : Nat) : Prog isa :=
-  .seq (.block [.mov32 .rax (.imm 0),.store (hdr (sFn 12)) .rax]) (.loop (row a) .ne)
+  .seq (.block [.mov32 .rax (.imm 0),.store (hdr (sFn 12)) .rax,.store (hdr (sFn 15)) .rax]) (.loop (row a) .ne)
 
+/-- A row of a square of one row (16 words), which has no carry to hand on:
+its carry through the words above. -/
+def row1 (a : Nat) : Prog isa := .seq (.block rowInit)
+  (.seq (AdxRect8.row a a) (.seq AdxTiledProduct.tail (.block nextRow)))
+
+def rows1 (a : Nat) : Prog isa :=
+  .seq (.block [.mov32 .rax (.imm 0),.store (hdr (sFn 12)) .rax]) (.loop (row1 a) .ne)
+
+/-- No rows for 8 words, the row without hand-off for 16, the rows with it
+otherwise. -/
 def rowsChoice (a : Nat) : Prog isa :=
   .seq (.block [.mov .rax (.mem (hdr sW)),.alu .cmp .rax (.imm 8)])
-    (.ite .e (.block []) (rows a))
+    (.ite .e (.block [])
+      (.seq (.block [.mov .rax (.mem (hdr sW)),.alu .cmp .rax (.imm 16)]) (.ite .e (rows1 a) (rows a))))
 
 def rawCross (a : Nat) : Prog isa := .seq (.block (Adx.setup a))
   (.seq AdxHeader.save (.seq (.seq (AdxTri8.blocks a)
