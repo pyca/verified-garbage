@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesGcmSiv.X86.FnCT
 public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Spec.GcmSiv.Contract
+import VerifiedGarbage.Spec.GcmSiv.Contract
 public import VerifiedGarbage.Proof.AesGcmSiv.Scratch
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

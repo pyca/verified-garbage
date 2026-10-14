@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesGcm.AArch64.StreamVerify
 meta import VerifiedGarbage.Proof.AesGcm.AArch64.StreamVerify
-public import VerifiedGarbage.Proof.AesGcm.AArch64.BodyCT
+import VerifiedGarbage.Proof.AesGcm.AArch64.BodyCT
 meta import VerifiedGarbage.Proof.AesGcm.AArch64.BodyCT
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

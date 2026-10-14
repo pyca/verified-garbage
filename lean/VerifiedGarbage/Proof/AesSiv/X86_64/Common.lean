@@ -1,10 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.AesSiv.X86_64.Call
+import VerifiedGarbage.Proof.AesSiv.X86_64.Call
 public import VerifiedGarbage.Proof.CmacAes.Stream.X86_64.Common
 public import VerifiedGarbage.Proof.Framework.X86_64.Spill
 public import VerifiedGarbage.Proof.Framework.X86_64.Taint
-public import VerifiedGarbage.Proof.Cmac.Block
+import VerifiedGarbage.Proof.Cmac.Block
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamVerify
+import VerifiedGarbage.Proof.AesGcm.X86_64.StreamVerify
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.StreamVerify
 public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamFinishCT
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.StreamFinishCT

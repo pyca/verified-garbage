@@ -4,13 +4,13 @@ public import VerifiedGarbage.Proof.Argon2.AArch64.ReferenceMapState
 meta import VerifiedGarbage.Proof.Argon2.AArch64.ReferenceMapState
 public import VerifiedGarbage.Impl.Argon2.AArch64.FirstLane
 meta import VerifiedGarbage.Impl.Argon2.AArch64.FirstLane
-public import VerifiedGarbage.Proof.Argon2.AArch64.DivideStep
+import VerifiedGarbage.Proof.Argon2.AArch64.DivideStep
 meta import VerifiedGarbage.Proof.Argon2.AArch64.DivideStep
 public import VerifiedGarbage.Impl.Argon2.AArch64.ReferenceLane
 meta import VerifiedGarbage.Impl.Argon2.AArch64.ReferenceLane
 public import VerifiedGarbage.Proof.Argon2.AArch64.Divide
 meta import VerifiedGarbage.Proof.Argon2.AArch64.Divide
-public import VerifiedGarbage.Proof.Argon2.AArch64.DivideCT
+import VerifiedGarbage.Proof.Argon2.AArch64.DivideCT
 meta import VerifiedGarbage.Proof.Argon2.AArch64.DivideCT
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

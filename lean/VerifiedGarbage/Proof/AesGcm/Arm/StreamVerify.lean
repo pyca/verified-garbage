@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcm.Arm.StreamFinish
+import VerifiedGarbage.Proof.AesGcm.Arm.StreamFinish
 public import VerifiedGarbage.Proof.AesGcm.Arm.Compare
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

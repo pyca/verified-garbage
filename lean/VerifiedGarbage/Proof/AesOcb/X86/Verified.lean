@@ -1,9 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.AesOcb.X86.SealCT
+import VerifiedGarbage.Proof.AesOcb.X86.SealCT
 public import VerifiedGarbage.Proof.AesOcb.X86.Init
 public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Spec.Ocb.Contract
+import VerifiedGarbage.Spec.Ocb.Contract
 public import VerifiedGarbage.Proof.AesOcb.Scratch
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

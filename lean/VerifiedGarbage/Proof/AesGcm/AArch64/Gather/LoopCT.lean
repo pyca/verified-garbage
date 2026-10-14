@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.AesGcm.AArch64.Gather.Loop
 meta import VerifiedGarbage.Proof.AesGcm.AArch64.Gather.Loop
 public import VerifiedGarbage.Proof.AesGcm.AArch64.RelBase
 meta import VerifiedGarbage.Proof.AesGcm.AArch64.RelBase
-public import VerifiedGarbage.Proof.Framework.Scratch
+import VerifiedGarbage.Proof.Framework.Scratch
 meta import VerifiedGarbage.Proof.Framework.Scratch
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

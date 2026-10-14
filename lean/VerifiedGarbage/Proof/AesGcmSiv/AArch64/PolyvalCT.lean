@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Fn
 meta import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Fn
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Rel
 meta import VerifiedGarbage.Proof.AesGcm.AArch64.Rel
-public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

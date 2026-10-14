@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Argon2.AArch64.FillKernelStable
+import VerifiedGarbage.Proof.Argon2.AArch64.FillKernelStable
 public import VerifiedGarbage.Impl.Argon2.AArch64.FillSegment
 public import VerifiedGarbage.Proof.Argon2.AArch64.FillBlock
 import all Init.Data.Array.Basic

@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.AesSiv.Arm.CTEnc
-public import VerifiedGarbage.Proof.AesSiv.Arm.CTInit
+import VerifiedGarbage.Proof.AesSiv.Arm.CTInit
 public import VerifiedGarbage.Proof.AesSiv.Scratch
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Arm.Contract

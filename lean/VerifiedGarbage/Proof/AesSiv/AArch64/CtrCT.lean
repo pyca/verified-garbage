@@ -2,9 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.AesSiv.AArch64.Ctr
 meta import VerifiedGarbage.Proof.AesSiv.AArch64.Ctr
-public import VerifiedGarbage.Proof.AesSiv.AArch64.Finish
+import VerifiedGarbage.Proof.AesSiv.AArch64.Finish
 meta import VerifiedGarbage.Proof.AesSiv.AArch64.Finish
-public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

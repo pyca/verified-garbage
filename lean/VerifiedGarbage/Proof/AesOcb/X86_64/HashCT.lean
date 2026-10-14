@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.AesOcb.X86_64.CTBase
 meta import VerifiedGarbage.Proof.AesOcb.X86_64.CTBase
 public import VerifiedGarbage.Proof.AesOcb.X86_64.Hash
 meta import VerifiedGarbage.Proof.AesOcb.X86_64.Hash
-public import VerifiedGarbage.Proof.AesOcb.X86_64.TagCT
+import VerifiedGarbage.Proof.AesOcb.X86_64.TagCT
 meta import VerifiedGarbage.Proof.AesOcb.X86_64.TagCT
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

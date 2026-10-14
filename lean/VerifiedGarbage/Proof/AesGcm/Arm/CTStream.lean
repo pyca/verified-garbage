@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcm.Arm.CTFn
+import VerifiedGarbage.Proof.AesGcm.Arm.CTFn
 meta import VerifiedGarbage.Proof.AesGcm.Arm.CTFn
 public import VerifiedGarbage.Proof.AesGcm.Arm.StreamAad
 meta import VerifiedGarbage.Proof.AesGcm.Arm.StreamAad

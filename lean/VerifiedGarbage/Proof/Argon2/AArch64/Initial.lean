@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Argon2.AArch64.InitialStart
-public import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Output
-public import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Finalize
+import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Output
+import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Finalize
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

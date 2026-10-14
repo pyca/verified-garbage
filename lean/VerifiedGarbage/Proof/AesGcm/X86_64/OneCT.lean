@@ -2,9 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Seal
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Seal
-public import VerifiedGarbage.Proof.AesGcm.X86_64.FinTagCT
+import VerifiedGarbage.Proof.AesGcm.X86_64.FinTagCT
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.FinTagCT
-public import VerifiedGarbage.Proof.AesGcm.X86_64.CryptCT
+import VerifiedGarbage.Proof.AesGcm.X86_64.CryptCT
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.CryptCT
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

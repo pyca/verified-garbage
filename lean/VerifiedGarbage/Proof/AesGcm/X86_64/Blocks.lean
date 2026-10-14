@@ -6,7 +6,7 @@ import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Impl.AesGcm.X86_64
-public import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Block
 import Mathlib.Data.List.Induction
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Aes.KeyExp

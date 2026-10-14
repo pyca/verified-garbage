@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.TCB.X86.Target
-public import VerifiedGarbage.Proof.Blake2.X86.CompressB.Body
+import VerifiedGarbage.Proof.Blake2.X86.CompressB.Body
 public import VerifiedGarbage.Spec.Argon2.Contract
 public import VerifiedGarbage.Proof.Argon2.X86.Gb
 public import VerifiedGarbage.Proof.Argon2.Permutation

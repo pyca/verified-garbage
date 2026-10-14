@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.AesSiv.X86.Callee
-public import VerifiedGarbage.Proof.AesGcm.X86.Cmp
+import VerifiedGarbage.Proof.AesGcm.X86.Cmp
 public import VerifiedGarbage.Proof.AesSiv.Ctr32
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

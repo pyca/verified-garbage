@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesOcb.X86_64.SealCT
 meta import VerifiedGarbage.Proof.AesOcb.X86_64.SealCT
-public import VerifiedGarbage.Proof.AesOcb.X86_64.Open
+import VerifiedGarbage.Proof.AesOcb.X86_64.Open
 meta import VerifiedGarbage.Proof.AesOcb.X86_64.Open
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

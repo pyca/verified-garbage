@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Argon2.Iterations
+import VerifiedGarbage.Proof.Argon2.Iterations
 public import VerifiedGarbage.Proof.Argon2.FillStep
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

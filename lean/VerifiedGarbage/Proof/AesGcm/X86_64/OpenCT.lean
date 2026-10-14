@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Open
+import VerifiedGarbage.Proof.AesGcm.X86_64.Open
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Open
 public import VerifiedGarbage.Proof.AesGcm.X86_64.SealCT
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.SealCT

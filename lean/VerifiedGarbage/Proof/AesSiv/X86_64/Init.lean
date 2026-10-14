@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.AesSiv.X86_64.Common
+import VerifiedGarbage.Proof.AesSiv.X86_64.Common
 meta import VerifiedGarbage.Proof.AesSiv.X86_64.Common
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

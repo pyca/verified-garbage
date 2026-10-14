@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Backend
-public import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Copy
+import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Copy
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

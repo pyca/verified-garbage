@@ -1,9 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.Arm.InitCT
-public import VerifiedGarbage.Proof.AesGcm.Arm.CTStream
-public import VerifiedGarbage.Proof.AesGcm.Arm.CTCryptFn
-public import VerifiedGarbage.Proof.AesGcm.Arm.CTOpen
+import VerifiedGarbage.Proof.AesGcm.Arm.CTStream
+import VerifiedGarbage.Proof.AesGcm.Arm.CTCryptFn
+import VerifiedGarbage.Proof.AesGcm.Arm.CTOpen
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import VerifiedGarbage.Proof.AesGcm.Scratch

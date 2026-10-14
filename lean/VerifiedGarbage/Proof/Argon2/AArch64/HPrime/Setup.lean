@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Copy
-public import VerifiedGarbage.Proof.Blake2.Stream
+import VerifiedGarbage.Proof.Blake2.Stream
 public import VerifiedGarbage.Spec.Argon2
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

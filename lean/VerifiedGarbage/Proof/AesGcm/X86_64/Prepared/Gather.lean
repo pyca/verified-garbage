@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Verified
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.GatherSeal
+import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.GatherSeal
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.Verified
 public import VerifiedGarbage.Proof.AesGcm.ScratchPreparedTo
 import all Init.Data.Array.Basic

@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.Cmac.Frame
 public import VerifiedGarbage.Proof.Framework.WriteBytes
 public import VerifiedGarbage.Spec.Gcm
 import all Init.Data.Array.Basic

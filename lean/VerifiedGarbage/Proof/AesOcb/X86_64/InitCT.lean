@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesOcb.X86_64.Init
 meta import VerifiedGarbage.Proof.AesOcb.X86_64.Init
-public import VerifiedGarbage.Proof.AesOcb.X86_64.CTBase
+import VerifiedGarbage.Proof.AesOcb.X86_64.CTBase
 meta import VerifiedGarbage.Proof.AesOcb.X86_64.CTBase
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

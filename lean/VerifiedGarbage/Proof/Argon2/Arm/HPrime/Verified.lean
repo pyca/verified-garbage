@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Argon2.Arm.HPrime.Correct
+import VerifiedGarbage.Proof.Argon2.Arm.HPrime.Correct
 meta import VerifiedGarbage.Proof.Argon2.Arm.HPrime.Correct
 public import VerifiedGarbage.Proof.Argon2.Arm.HPrime.OutputCT
 meta import VerifiedGarbage.Proof.Argon2.Arm.HPrime.OutputCT

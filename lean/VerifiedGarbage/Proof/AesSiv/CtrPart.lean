@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Siv.Spec
-public import VerifiedGarbage.Proof.Cmac.Mem
+import VerifiedGarbage.Proof.Cmac.Mem
 public import VerifiedGarbage.Proof.Framework.WriteBytes
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

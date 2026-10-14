@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Argon2.Arm.Derive.Frame
-public import VerifiedGarbage.Proof.Argon2.Arm.Divide
+import VerifiedGarbage.Proof.Argon2.Arm.Divide
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

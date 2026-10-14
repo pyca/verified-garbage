@@ -1,14 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Contract
-public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-public import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Compare
+import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Compare
 public import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Space
-public import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Absorb
-public import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Input
-public import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Length
-public import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Frame
-public import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Setup
+import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Absorb
+import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Input
+import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Length
+import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Frame
+import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Setup
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

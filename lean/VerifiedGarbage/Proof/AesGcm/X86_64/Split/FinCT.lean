@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Split.Body
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.KsA
-public import VerifiedGarbage.Proof.AesGcm.X86_64.SealCT
+import VerifiedGarbage.Proof.AesGcm.X86_64.SealCT
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

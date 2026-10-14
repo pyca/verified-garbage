@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.Step
-public import VerifiedGarbage.Proof.Aes.X86_64.VaesBlocks.Blocks
+import VerifiedGarbage.Proof.Aes.X86_64.VaesBlocks.Blocks
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

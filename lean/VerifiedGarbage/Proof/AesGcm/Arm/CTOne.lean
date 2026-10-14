@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesGcm.Arm.CTVerify
 meta import VerifiedGarbage.Proof.AesGcm.Arm.CTVerify
-public import VerifiedGarbage.Proof.AesGcm.Arm.Open
+import VerifiedGarbage.Proof.AesGcm.Arm.Open
 meta import VerifiedGarbage.Proof.AesGcm.Arm.Open
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

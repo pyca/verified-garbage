@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesGcm.Arm.Init
 meta import VerifiedGarbage.Proof.AesGcm.Arm.Init
-public import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
+import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
 meta import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

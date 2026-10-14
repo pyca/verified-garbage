@@ -1,9 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.AesOcb.X86.Setup
-public import VerifiedGarbage.Proof.AesCcm.Bytes
-public import VerifiedGarbage.Proof.AesGcm.X86.Loops
-public import VerifiedGarbage.Proof.Ocb.Bytes
+import VerifiedGarbage.Proof.AesCcm.Bytes
+import VerifiedGarbage.Proof.AesGcm.X86.Loops
+import VerifiedGarbage.Proof.Ocb.Bytes
 public import VerifiedGarbage.Proof.Ocb.Nonce
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.AesOcb.AArch64.Callee
+import VerifiedGarbage.Proof.AesOcb.AArch64.Callee
 public import VerifiedGarbage.Proof.Framework.AArch64.Spill
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

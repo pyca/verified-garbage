@@ -7,7 +7,7 @@ public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Framework.Covers
 public import VerifiedGarbage.Proof.Argon2.AArch64.FillCompress
 public import VerifiedGarbage.Impl.Argon2.AArch64.Derive
-public import VerifiedGarbage.Proof.Argon2.AArch64.InitialArgs
+import VerifiedGarbage.Proof.Argon2.AArch64.InitialArgs
 public import VerifiedGarbage.Proof.Framework.Offset
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

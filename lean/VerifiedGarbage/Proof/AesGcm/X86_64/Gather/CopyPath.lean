@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Steps
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Calls
+import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Calls
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.CopyLoop
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

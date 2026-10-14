@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesGcm.X86.Top
 meta import VerifiedGarbage.Proof.AesGcm.X86.Top
-public import VerifiedGarbage.Proof.Cmac.Dbl32
+import VerifiedGarbage.Proof.Cmac.Dbl32
 meta import VerifiedGarbage.Proof.Cmac.Dbl32
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

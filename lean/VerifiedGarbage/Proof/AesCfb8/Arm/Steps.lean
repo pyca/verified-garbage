@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.AesCfb8.Arm.Loop
-public import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Arm.Exec
 public import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

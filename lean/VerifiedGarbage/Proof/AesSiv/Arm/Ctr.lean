@@ -1,9 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.AesSiv.Arm.FinishLong
-public import VerifiedGarbage.Proof.AesGcm.Arm.Compare
-public import VerifiedGarbage.Proof.AesGcm.Arm.Tag
-public import VerifiedGarbage.Proof.AesGcm.Arm.Flush
+import VerifiedGarbage.Proof.AesGcm.Arm.Compare
+import VerifiedGarbage.Proof.AesGcm.Arm.Tag
+import VerifiedGarbage.Proof.AesGcm.Arm.Flush
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

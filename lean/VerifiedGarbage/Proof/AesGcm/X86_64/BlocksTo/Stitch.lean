@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks.Stitch
+import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks.Stitch
 public import VerifiedGarbage.Proof.AesGcm.X86_64.AlignedScratch
 public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Mid
 public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.SpecTo

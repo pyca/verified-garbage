@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.CopyPath
+import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.CopyPath
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Fn
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

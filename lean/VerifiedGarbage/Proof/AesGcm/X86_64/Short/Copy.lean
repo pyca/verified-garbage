@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Loops
+import VerifiedGarbage.Proof.AesGcm.X86_64.Loops
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Run
 public import VerifiedGarbage.Impl.AesGcm.X86_64.Short
 public import VerifiedGarbage.Proof.Framework.X86_64.Avx512

@@ -2,13 +2,13 @@ module
 
 public import VerifiedGarbage.Proof.AesGcm.X86.Gather.Callee
 public import VerifiedGarbage.Proof.AesGcm.X86.Loops
-public import VerifiedGarbage.Proof.Cmac.Stream
-public import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.Cmac.Stream
+import VerifiedGarbage.Proof.Cmac.Frame
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
-public import VerifiedGarbage.Impl.AesGcm.X86.SealGather
+import VerifiedGarbage.Impl.AesGcm.X86.SealGather
 
 /-!
 # AES-GCM one-shot encryption out of place, from a list of slices, x86: copying a slice

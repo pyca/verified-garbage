@@ -2,9 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Argon2.X86.HPrime.Finish
 meta import VerifiedGarbage.Proof.Argon2.X86.HPrime.Finish
-public import VerifiedGarbage.Proof.Argon2.X86.HPrime.Output
+import VerifiedGarbage.Proof.Argon2.X86.HPrime.Output
 meta import VerifiedGarbage.Proof.Argon2.X86.HPrime.Output
-public import VerifiedGarbage.Proof.Argon2.X86.HPrime.HashCT
+import VerifiedGarbage.Proof.Argon2.X86.HPrime.HashCT
 meta import VerifiedGarbage.Proof.Argon2.X86.HPrime.HashCT
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

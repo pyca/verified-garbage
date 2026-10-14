@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcm.AArch64.StreamCrypt
+import VerifiedGarbage.Proof.AesGcm.AArch64.StreamCrypt
 meta import VerifiedGarbage.Proof.AesGcm.AArch64.StreamCrypt
-public import VerifiedGarbage.Proof.AesGcm.AArch64.Open
+import VerifiedGarbage.Proof.AesGcm.AArch64.Open
 meta import VerifiedGarbage.Proof.AesGcm.AArch64.Open
 public import VerifiedGarbage.Proof.AesGcm.AArch64.BodyCT
 meta import VerifiedGarbage.Proof.AesGcm.AArch64.BodyCT

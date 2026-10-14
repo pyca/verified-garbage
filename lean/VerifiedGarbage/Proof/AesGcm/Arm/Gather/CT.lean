@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesGcm.Arm.Gather.Fn
 meta import VerifiedGarbage.Proof.AesGcm.Arm.Gather.Fn
-public import VerifiedGarbage.Proof.AesGcm.Arm.Gather.LoopCT
+import VerifiedGarbage.Proof.AesGcm.Arm.Gather.LoopCT
 meta import VerifiedGarbage.Proof.AesGcm.Arm.Gather.LoopCT
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

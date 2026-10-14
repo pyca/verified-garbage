@@ -3,9 +3,9 @@ module
 public import VerifiedGarbage.Proof.Argon2.HPrime
 public import VerifiedGarbage.Proof.Argon2.Arm.Push
 public import VerifiedGarbage.Proof.Framework.Arm.Spill
-public import VerifiedGarbage.Proof.MdStream.Arm.Common
+import VerifiedGarbage.Proof.MdStream.Arm.Common
 public import VerifiedGarbage.TCB.Arm.Target
-public import VerifiedGarbage.Impl.Argon2.Arm.HPrime
+import VerifiedGarbage.Impl.Argon2.Arm.HPrime
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

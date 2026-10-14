@@ -2,9 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.AesOcb.X86_64.Seal
 meta import VerifiedGarbage.Proof.AesOcb.X86_64.Seal
-public import VerifiedGarbage.Proof.AesOcb.X86_64.NonceCT
+import VerifiedGarbage.Proof.AesOcb.X86_64.NonceCT
 meta import VerifiedGarbage.Proof.AesOcb.X86_64.NonceCT
-public import VerifiedGarbage.Proof.AesOcb.X86_64.HashCT
+import VerifiedGarbage.Proof.AesOcb.X86_64.HashCT
 meta import VerifiedGarbage.Proof.AesOcb.X86_64.HashCT
 public import VerifiedGarbage.Proof.AesOcb.X86_64.BodyCT
 meta import VerifiedGarbage.Proof.AesOcb.X86_64.BodyCT

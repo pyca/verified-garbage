@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.Dec
 meta import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.Dec
-public import VerifiedGarbage.Proof.AesCbc.X86_64.Verified
+import VerifiedGarbage.Proof.AesCbc.X86_64.Verified
 meta import VerifiedGarbage.Proof.AesCbc.X86_64.Verified
 public import VerifiedGarbage.Proof.Framework.X86_64.Taint
 meta import VerifiedGarbage.Proof.Framework.X86_64.Taint

@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.AesSiv.CtrPart
-public import VerifiedGarbage.Proof.AesSiv.Words
+import VerifiedGarbage.Proof.AesSiv.Words
 public import VerifiedGarbage.Proof.AesCcm.Ctr
 public import VerifiedGarbage.Proof.Cmac.Dbl32
 import all Init.Data.Array.Basic

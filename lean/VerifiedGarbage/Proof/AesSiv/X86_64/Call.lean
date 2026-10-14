@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.AesSiv.X86_64.Contract
-public import VerifiedGarbage.Proof.AesSiv.X86_64.Bits
-public import VerifiedGarbage.Proof.CmacAes.X86_64.Verified
+import VerifiedGarbage.Proof.AesSiv.X86_64.Bits
+import VerifiedGarbage.Proof.CmacAes.X86_64.Verified
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

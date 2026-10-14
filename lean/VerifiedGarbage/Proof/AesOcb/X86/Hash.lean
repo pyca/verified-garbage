@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.AesOcb.X86.HashChunk
-public import VerifiedGarbage.Proof.AesOcb.X86.PadTo
+import VerifiedGarbage.Proof.AesOcb.X86.PadTo
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

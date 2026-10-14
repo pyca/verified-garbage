@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Blocks
+import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Blocks
 public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Head
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

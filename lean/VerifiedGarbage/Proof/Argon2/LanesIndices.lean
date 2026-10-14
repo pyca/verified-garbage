@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Argon2.Lanes
-public import VerifiedGarbage.Proof.Argon2.SegmentIndices
+import VerifiedGarbage.Proof.Argon2.SegmentIndices
 public import VerifiedGarbage.Proof.Argon2.SegmentStart
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Argon2.Arm.Derive.CTBase
-public import VerifiedGarbage.Proof.Argon2.Arm.HPrime.Verified
+import VerifiedGarbage.Proof.Argon2.Arm.HPrime.Verified
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

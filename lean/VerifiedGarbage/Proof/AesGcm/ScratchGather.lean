@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcm.ScratchP
-public import VerifiedGarbage.Proof.Framework.Scratch
+import VerifiedGarbage.Proof.AesGcm.ScratchP
+import VerifiedGarbage.Proof.Framework.Scratch
 public import VerifiedGarbage.Spec.Gcm.OutOfPlace
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

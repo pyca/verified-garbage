@@ -1,10 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcmSiv.Arm.FnCT
-public import VerifiedGarbage.Proof.GcmSiv.Polyval
+import VerifiedGarbage.Proof.GcmSiv.Polyval
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
-public import VerifiedGarbage.Spec.GcmSiv.Contract
+import VerifiedGarbage.Spec.GcmSiv.Contract
 public import VerifiedGarbage.Proof.AesGcmSiv.Scratch
 public import VerifiedGarbage.Proof.Framework.Arm.StackScratch
 import all Init.Data.Array.Basic

@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.CT
-public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksVerifiedP
+import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksVerifiedP
 public import VerifiedGarbage.Spec.Gcm.OutOfPlace
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

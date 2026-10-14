@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesCtr.Spec
 public import VerifiedGarbage.Proof.AesCtr.Inc
-public import VerifiedGarbage.Proof.AesSiv.Ctr32
+import VerifiedGarbage.Proof.AesSiv.Ctr32
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

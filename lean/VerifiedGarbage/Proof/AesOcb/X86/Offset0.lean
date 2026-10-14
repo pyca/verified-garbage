@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.AesOcb.X86.NonceBlock
-public import VerifiedGarbage.Proof.Ocb.Stretch
+import VerifiedGarbage.Proof.Ocb.Stretch
 public import VerifiedGarbage.Proof.Ocb.Stretch32
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.CT
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.CT
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Fn
+import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Fn
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Fn
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

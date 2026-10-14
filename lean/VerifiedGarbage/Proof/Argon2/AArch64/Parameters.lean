@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Argon2.AArch64.Memory
 public import VerifiedGarbage.Impl.Argon2.AArch64.Parameters
 public import VerifiedGarbage.Proof.Argon2.AArch64.DivideLoop
-public import VerifiedGarbage.Proof.Argon2.AArch64.Instructions
+import VerifiedGarbage.Proof.Argon2.AArch64.Instructions
 public import VerifiedGarbage.Proof.Argon2.Dimensions
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

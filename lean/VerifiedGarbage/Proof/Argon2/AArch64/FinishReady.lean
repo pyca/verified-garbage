@@ -4,23 +4,23 @@ public import VerifiedGarbage.Proof.Argon2.AArch64.FinalOutputReady
 meta import VerifiedGarbage.Proof.Argon2.AArch64.FinalOutputReady
 public import VerifiedGarbage.Impl.Argon2.AArch64.FinalReduction
 meta import VerifiedGarbage.Impl.Argon2.AArch64.FinalReduction
-public import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.RelCT
+import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.RelCT
 meta import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.RelCT
-public import VerifiedGarbage.Proof.Argon2.AArch64.ReduceLane
+import VerifiedGarbage.Proof.Argon2.AArch64.ReduceLane
 meta import VerifiedGarbage.Proof.Argon2.AArch64.ReduceLane
-public import VerifiedGarbage.Proof.Argon2.AArch64.ReduceBlockLit
+import VerifiedGarbage.Proof.Argon2.AArch64.ReduceBlockLit
 meta import VerifiedGarbage.Proof.Argon2.AArch64.ReduceBlockLit
-public import VerifiedGarbage.Proof.Argon2.AArch64.ReducePointers
+import VerifiedGarbage.Proof.Argon2.AArch64.ReducePointers
 meta import VerifiedGarbage.Proof.Argon2.AArch64.ReducePointers
 public import VerifiedGarbage.Impl.Argon2.AArch64.ReductionInit
 meta import VerifiedGarbage.Impl.Argon2.AArch64.ReductionInit
-public import VerifiedGarbage.Proof.Argon2.AArch64.ReductionLoopState
+import VerifiedGarbage.Proof.Argon2.AArch64.ReductionLoopState
 meta import VerifiedGarbage.Proof.Argon2.AArch64.ReductionLoopState
-public import VerifiedGarbage.Proof.Argon2.AArch64.ReductionClear
+import VerifiedGarbage.Proof.Argon2.AArch64.ReductionClear
 meta import VerifiedGarbage.Proof.Argon2.AArch64.ReductionClear
-public import VerifiedGarbage.Impl.Argon2.AArch64.ReduceLanes
+import VerifiedGarbage.Impl.Argon2.AArch64.ReduceLanes
 meta import VerifiedGarbage.Impl.Argon2.AArch64.ReduceLanes
-public import VerifiedGarbage.Proof.Argon2.AArch64.FillLaneAdvance
+import VerifiedGarbage.Proof.Argon2.AArch64.FillLaneAdvance
 meta import VerifiedGarbage.Proof.Argon2.AArch64.FillLaneAdvance
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

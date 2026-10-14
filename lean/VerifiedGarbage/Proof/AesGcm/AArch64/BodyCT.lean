@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Body
 meta import VerifiedGarbage.Proof.AesGcm.AArch64.Body
-public import VerifiedGarbage.Proof.AesGcm.AArch64.FinTag
+import VerifiedGarbage.Proof.AesGcm.AArch64.FinTag
 meta import VerifiedGarbage.Proof.AesGcm.AArch64.FinTag
 public import VerifiedGarbage.Proof.AesGcm.AArch64.PieceCT
 meta import VerifiedGarbage.Proof.AesGcm.AArch64.PieceCT

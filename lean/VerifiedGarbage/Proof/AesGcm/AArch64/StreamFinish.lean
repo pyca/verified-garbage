@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.AArch64.FinTag
-public import VerifiedGarbage.Proof.AesGcm.AArch64.StreamCrypt
+import VerifiedGarbage.Proof.AesGcm.AArch64.StreamCrypt
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

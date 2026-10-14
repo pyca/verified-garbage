@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Argon2.X86.Derive.Correct
-public import VerifiedGarbage.Proof.Argon2.X86.HPrime.CallsCT
+import VerifiedGarbage.Proof.Argon2.X86.HPrime.CallsCT
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

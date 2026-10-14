@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.X86.Gather.Loop
-public import VerifiedGarbage.Proof.AesGcm.ScratchGather
-public import VerifiedGarbage.Proof.AesGcm.CtxFrame
+import VerifiedGarbage.Proof.AesGcm.ScratchGather
+import VerifiedGarbage.Proof.AesGcm.CtxFrame
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
