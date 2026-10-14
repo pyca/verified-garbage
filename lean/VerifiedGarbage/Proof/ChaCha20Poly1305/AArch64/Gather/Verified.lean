@@ -118,10 +118,11 @@ theorem sealCode_noFrames (v : Proof.ChaCha20.AArch64.XorImpl) : (sealCode v.cal
   generalize v.stitched = st
   generalize v.callee = c at hv
   have hs : (cryptStitched c.sve true).noFrames = true := by cases c.sve <;> decide +kernel
+  have hshort : Short.sealMain.noFrames = true := by decide +kernel
   cases st <;>
-  simp only [sealCode, sealStitched, sealWith, sealMain, sealStitchedMain, sealTail, prologue, macPad, cryptWith,
-    absorbLengths, finalizeTag, padTail, Code.noFrames, hv, hs, Bool.and_true, Bool.true_and, Bool.false_eq_true,
-    ite_false, ite_true] <;>
+  simp only [sealCode, sealMainCode, sealStitched, sealWith, sealMain, sealStitchedMain, sealTail, prologue, macPad,
+    cryptWith, absorbLengths, finalizeTag, padTail, Code.noFrames, hv, hs, hshort, Bool.and_true, Bool.true_and,
+    Bool.false_eq_true, ite_false, ite_true] <;>
   decide +kernel
 
 open VG.Impl.ChaCha20Poly1305.AArch64 in
