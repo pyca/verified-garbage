@@ -45,7 +45,10 @@ theorem scratch_ok (s₁ : State) :
 /-- With `full`: at least 16 blocks all by `piece`, which leaves `Done`
 (`hpost`), or fewer by `rest` and the calls (`hsmall`). -/
 theorem fullBody_ok {piece first second : Prog isa} {Post : State → State → Prop} {Done : State → Prop}
-    (hpiece : ∀ s₃, Gcm.X86_64.Stitch.SPreM M s₃ → WP isa piece s₃ (Post s₃))
+    (hpiece : ∀ s₃, Gcm.X86_64.Stitch.SPreM M s₃ → (∀ r ∈ argRegs, s₃.gpr r = s.gpr r) →
+      s₃.gpr .rsp = s.gpr .rsp → s₃.gpr .r9 = BitVec.ofNat 64 (n s) →
+      s₃.gpr .r11 = S s + BitVec.ofNat 64 (AlignedScratch.offset aligned (S s)) →
+      Frame [kR' s] s.mem s₃.mem → s₃.rd = s.rd → WP isa piece s₃ (Post s₃))
     (hpost : ∀ s₃ s₄, s₃.gpr .r9 = BitVec.ofNat 64 (n s) → (∀ r ∈ argRegs, s₃.gpr r = s.gpr r) →
       (∀ r ∈ calleeSaved, s₃.gpr r = s.gpr r) →
       s₃.gpr .r11 = S s + BitVec.ofNat 64 (AlignedScratch.offset aligned (S s)) → s₃.rd = s.rd →
@@ -75,7 +78,8 @@ theorem fullBody_ok {piece first second : Prog isa} {Post : State → State → 
     have wr₄' : s₄.wr = s.wr := by rw [wr₄, wr₂, hwr]
     have hk₄ : Kept s 0 s₄.mem := by rw [m₄, m₂]; exact hk
     have hf₄ : Frame [kR' s] s.mem s₄.mem := by rw [m₄, m₂]; exact hf
-    exact WP.mono (hpiece s₄ (spreM_of hp h16 (Nat.le_refl _) h9 ga g11 rd₄' wr₄' hf₄)) fun s₅ hP =>
+    exact WP.mono (hpiece s₄ (spreM_of hp h16 (Nat.le_refl _) h9 ga g11 rd₄' wr₄' hf₄) ga (keepR _ (by decide))
+      h9 g11 hf₄ rd₄') fun s₅ hP =>
       hpost s₄ s₅ h9 ga gc g11 rd₄' wr₄' hk₄ hf₄ hP
 
 /-- After a loop that encrypts all the blocks: the blocks hashed are those

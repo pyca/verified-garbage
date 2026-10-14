@@ -61,7 +61,7 @@ section
 variable {M : CtxMode} {s : State} (hp : BP M s)
 include hp
 
-theorem cov_k : Covers [kR M s] (s.rd ++ s.wr) := covers_of_mem (by rw [hp.rd]; simp)
+theorem cov_k : Covers [kR M s] (s.rd ++ s.wr) := covers_of_mem (List.mem_append_left _ hp.k_rd)
 theorem cov_c : Covers [cR s] s.wr := covers_of_mem (by rw [hp.wr]; simp)
 theorem cov_y : Covers [yR s] s.wr := covers_of_mem (by rw [hp.wr]; simp)
 theorem cov_d : Covers [dR s] s.wr := covers_of_mem (by rw [hp.wr]; simp)

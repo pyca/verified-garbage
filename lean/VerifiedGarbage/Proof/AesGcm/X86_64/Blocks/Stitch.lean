@@ -84,7 +84,7 @@ theorem spre_of {s₃ : State} {q : Nat} (h16 : 16 ≤ q) (hqn' : q ≤ n s) (h9
     Gcm.X86_64.Stitch.cp, Gcm.X86_64.Stitch.yp, Gcm.X86_64.Stitch.dp, Gcm.X86_64.Stitch.pp,
     Gcm.X86_64.Stitch.kR, Gcm.X86_64.Stitch.cR, Gcm.X86_64.Stitch.yR, Gcm.X86_64.Stitch.dR,
     Gcm.X86_64.Stitch.pR, ek, er, ec, ey, ed, h11, hq, hrd, hwr]
-  exacts [hp.rounds, by omega, ⟨kR M s, by rw [hp.rd]; simp, contains_prefix _ M.ge⟩,
+  exacts [hp.rounds, by omega, ⟨kR M s, List.mem_append_left _ hp.k_rd, contains_prefix _ M.ge⟩,
     ⟨cR s, by rw [wr]; simp, Region.contains_self _ _⟩, ⟨yR s, by rw [wr]; simp, Region.contains_self _ _⟩,
     ⟨dR s, by rw [wr]; simp, contains_prefix _ hqn⟩, ⟨sR s, by rw [wr]; simp, Offset.contains_base _ (by have := AlignedScratch.offset_bounds aligned (S s); omega) (by have := AlignedScratch.offset_bounds aligned (S s); omega)⟩,
     (hp.k_d.symm.sub_left pd).sub_right pk, hp.c_d.symm.sub_left pd, hp.y_d.symm.sub_left pd,
@@ -108,7 +108,7 @@ theorem spreM_of {s₃ : State} {q : Nat} (h16 : 16 ≤ q) (hqn' : q ≤ n s) (h
   simp only [Gcm.X86_64.Stitch.kp, Gcm.X86_64.Stitch.kMR, Gcm.X86_64.Stitch.dR, Gcm.X86_64.Stitch.pR,
     Gcm.X86_64.Stitch.dp, Gcm.X86_64.Stitch.nb, Gcm.X86_64.Stitch.pp, ek, h11, hq, hrd, hwr,
     show s₃.gpr .r8 = D s from hg _ (by simp [argRegs])]
-  exacts [⟨kR M s, by rw [hp.rd]; simp, Region.contains_self _ _⟩, hp.w_k, hp.k_d.symm.sub_left pd,
+  exacts [⟨kR M s, List.mem_append_left _ hp.k_rd, Region.contains_self _ _⟩, hp.w_k, hp.k_d.symm.sub_left pd,
     hp.k_s.symm.sub_left ps,
     M.frame hf₃ (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact hp.k_s.sub_right kR'_sub) hp.w_k hp.ok]

@@ -54,7 +54,8 @@ abbrev kR (M : CtxMode) (s : State) : Region := ⟨K s, M.len⟩
 
 /-- `blocksPreM M`, by name. -/
 structure BP (M : CtxMode) (s : State) : Prop where
-  rd : s.rd = [kR M s, aR s]
+  k_rd : kR M s ∈ s.rd
+  a_rd : InRegions s.rd (SP s + BitVec.ofNat 64 8) 8
   wr : s.wr = wR s
   k_c : (kR M s).Disjoint (cR s)
   k_y : (kR M s).Disjoint (yR s)
@@ -98,7 +99,7 @@ theorem BP.ofM {M : CtxMode} {s : State} (h : Proof.AesGcm.blocksPreM M s) : BP 
     a₂₈ a₂₉ a₃₀ a₃₁ a₃₂
   have a₃₃ := h
   clear h
-  exact ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈, a₉, a₁₀, a₁₁, a₁₂, a₁₃, a₁₄, a₁₅, a₁₆, a₁₇, a₁₈, a₁₉, a₂₀, a₂₁, a₂₂, a₂₃,
+  exact ⟨by rw [a₁]; simp, ⟨_, by rw [a₁]; simp, Region.contains_self _ _⟩, a₂, a₃, a₄, a₅, a₆, a₇, a₈, a₉, a₁₀, a₁₁, a₁₂, a₁₃, a₁₄, a₁₅, a₁₆, a₁₇, a₁₈, a₁₉, a₂₀, a₂₁, a₂₂, a₂₃,
     a₂₄, a₂₅, a₂₆, a₂₇, a₂₈, a₂₉, a₃₀, a₃₁, a₃₂, a₃₃⟩
 
 theorem BP.of {s : State} (h : Proof.AesGcm.blocksPre s) : BP CtxMode.base s := BP.ofM (Proof.AesGcm.blocksPreM_base h)
@@ -129,7 +130,7 @@ theorem s_in' {d k : Nat} (h : d + k ≤ 2112) : InRegions (s.rd ++ s.wr) (S s +
   in_left (s_in hp h)
 
 theorem a_in : InRegions (s.rd ++ s.wr) (SP s + BitVec.ofNat 64 8) 8 :=
-  ⟨aR s, by rw [hp.rd]; simp, Region.contains_self _ _⟩
+  let ⟨r, hr, hc⟩ := hp.a_rd; ⟨r, List.mem_append_left _ hr, hc⟩
 
 omit hp in
 /-- The slots of the arguments are in `scratch`, apart from the powers. -/
