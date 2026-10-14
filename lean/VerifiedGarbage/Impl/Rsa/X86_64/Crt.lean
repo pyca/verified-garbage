@@ -454,9 +454,10 @@ def tabSelectV : List (Prog isa) :=
     .loop (seqs gatherPassV) .ne, .block [.vop .vzeroupper]]
 
 /-- One window: `Y := Y¹⁶ T_v R⁻¹` for `v` the top 4 bits of the byte in
-`sV`, which moves up 4 bits. -/
-def expWin (mul : Nat → Nat → Nat → Prog isa) (sel : List (Prog isa)) : List (Prog isa) :=
-  [mul aY aY aY, mul aY aY aY, mul aY aY aY, mul aY aY aY,
+`sV`, which moves up 4 bits, by four squarings `sq` and a multiplication by
+the table. -/
+def expWin (sq : Prog isa) (mul : Nat → Nat → Nat → Prog isa) (sel : List (Prog isa)) : List (Prog isa) :=
+  [sq, sq, sq, sq,
     .block [.mov .rdx (.mem (hdr sV)), .mov .rax (.reg .rdx), .alu .add .rax (.reg .rax), .alu .add .rax (.reg .rax),
       .alu .add .rax (.reg .rax), .alu .add .rax (.reg .rax), .store (hdr sV) .rax, .shift .shr .rdx 4,
       .alu .and .rdx (.imm 15), .store (hdr sNib) .rdx]] ++
@@ -466,8 +467,8 @@ def expWin (mul : Nat → Nat → Nat → Prog isa) (sel : List (Prog isa)) : Li
 
 /-- `Y := Y^d` (`Y` 1 and `[aXc]` in Montgomery form) for the exponent whose
 pointer and length are in `n`'s header slots `slotPtr` and `slotLen`, its
-bytes most significant first, two windows a byte. -/
-def expLoop (mul : Nat → Nat → Nat → Prog isa) (sel : List (Prog isa)) (slotPtr slotLen : Nat) :
+bytes most significant first, two windows a byte, its squarings by `sq`. -/
+def expLoopS (sq : Prog isa) (mul : Nat → Nat → Nat → Prog isa) (sel : List (Prog isa)) (slotPtr slotLen : Nat) :
     List (Prog isa) := [
   .block [.mov .rax (.mem (hdr sLink)), .mov .rdx (.mem (ws .rax slotPtr)), .store (hdr sExp) .rdx,
     .mov .rdx (.mem (ws .rax slotLen)), .store (hdr sExpLen) .rdx, .mov32 .rdx (.imm 0), .store (hdr sI) .rdx]] ++
@@ -475,9 +476,13 @@ def expLoop (mul : Nat → Nat → Nat → Prog isa) (sel : List (Prog isa)) (sl
   .loop (seqs [
     .block [.mov .rax (.mem (hdr sExp)), .mov .rcx (.mem (hdr sI)), .movzx8 .rax { base := .rax, index := some .rcx },
       .store (hdr sV) .rax, .mov32 .rax (.imm 2), .store (hdr sBit) .rax],
-    .loop (seqs (expWin mul sel)) .ne,
+    .loop (seqs (expWin sq mul sel)) .ne,
     .block [.mov .rax (.mem (hdr sI)), .alu .add .rax (.imm 1), .store (hdr sI) .rax,
       .alu .cmp .rax (.mem (hdr sExpLen))]]) .ne]
+
+/-- `expLoopS` with the squarings by `mul`. -/
+def expLoop (mul : Nat → Nat → Nat → Prog isa) (sel : List (Prog isa)) (slotPtr slotLen : Nat) :
+    List (Prog isa) := expLoopS (mul aY aY aY) mul sel slotPtr slotLen
 
 /-! ### The exponentiation by windows of 5 bits
 
@@ -527,21 +532,25 @@ def takeWin : List Instr :=
 /-- One window: a byte more into `sV` if fewer than 5 bits are left there,
 then `Y := Y³² T_v R⁻¹` for `v` its top 5 bits, read by `sel`; `ZF` once no
 byte nor bit is left. -/
-def expWin5 (mul : Nat → Nat → Nat → Prog isa) (sel : List (Prog isa)) : List (Prog isa) :=
+def expWin5 (sq : Prog isa) (mul : Nat → Nat → Nat → Prog isa) (sel : List (Prog isa)) : List (Prog isa) :=
   [.block [.mov .rax (.mem (hdr sBit)), .alu .cmp .rax (.imm 5)],
     .ite .b (.block refill) (.block []),
-    mul aY aY aY, mul aY aY aY, mul aY aY aY, mul aY aY aY, mul aY aY aY,
+    sq, sq, sq, sq, sq,
     .block takeWin] ++
   sel ++
   [mul aY aY aT,
     .block [.mov .rax (.mem (hdr sExpLen)), .alu .sub .rax (.mem (hdr sI)), .alu .add .rax (.mem (hdr sBit))]]
 
-/-- `expLoop` by windows of 5 bits, the table's 32 entries read by `sel`. -/
-def expLoop5 (mul : Nat → Nat → Nat → Prog isa) (sel : List (Prog isa)) (slotPtr slotLen : Nat) :
+/-- `expLoopS` by windows of 5 bits, the table's 32 entries read by `sel`. -/
+def expLoop5S (sq : Prog isa) (mul : Nat → Nat → Nat → Prog isa) (sel : List (Prog isa)) (slotPtr slotLen : Nat) :
     List (Prog isa) := [
   .block [.mov .rax (.mem (hdr sLink)), .mov .rdx (.mem (ws .rax slotPtr)), .store (hdr sExp) .rdx,
     .mov .rdx (.mem (ws .rax slotLen)), .store (hdr sExpLen) .rdx, .mov32 .rdx (.imm 0), .store (hdr sI) .rdx]] ++
-  tabBuildN mul 30 ++ [.block padInit, .loop (seqs (expWin5 mul sel)) .ne]
+  tabBuildN mul 30 ++ [.block padInit, .loop (seqs (expWin5 sq mul sel)) .ne]
+
+/-- `expLoop5S` with the squarings by `mul`. -/
+def expLoop5 (mul : Nat → Nat → Nat → Prog isa) (sel : List (Prog isa)) (slotPtr slotLen : Nat) :
+    List (Prog isa) := expLoop5S (mul aY aY aY) mul sel slotPtr slotLen
 
 /-! ## The primes -/
 

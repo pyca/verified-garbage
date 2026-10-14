@@ -66,7 +66,7 @@ theorem crtExpRanges_widen5 (wx : Nat) :
 /-- `expLoop` by windows of 4 bits, its table of 16 read with SSE2. -/
 def CrtExpL.w4 (M : Mont) : CrtExpL M where
   code := Crt.expLoop M.mm Crt.tabSelect
-  ne _ _ := by simp [Crt.expLoop]
+  ne _ _ := by simp [Crt.expLoop, Crt.expLoopS]
   ok hc _ hw2 hwx hw30 hn hinv hodd hxl hxc hyl hyc _ _ hsp hsl _ _ hep hel hL1 hL2 he :=
     WP.mono (crtExpLoop_ok M CrtSel.sse hc hw2 hwx hw30 hn hinv hodd hxl hxc hyl hyc hsp hsl hep hel hL1 hL2 he)
       fun _ ⟨h1, h2, h3, f, k⟩ => ⟨h1, h2, h3, f.widen (crtExpRanges_widen5 _), k⟩
@@ -74,8 +74,23 @@ def CrtExpL.w4 (M : Mont) : CrtExpL M where
 /-- `expLoop5` by windows of 5 bits, its table of 32 read with AVX2. -/
 def CrtExpL.w5 (M : Mont) : CrtExpL M where
   code := Crt.expLoop5 M.mm Crt.tabSelectV
-  ne _ _ := by simp [Crt.expLoop5]
+  ne _ _ := by simp [Crt.expLoop5, Crt.expLoop5S]
   ok hc hT hw2 hwx hw30 hn hinv hodd hxl hxc hyl hyc _ _ hsp hsl _ _ hep hel hL1 hL2 he :=
     crtExpLoop5_ok M CrtSel.avx hc hT hw2 hwx hw30 hn hinv hodd hxl hxc hyl hyc hsp hsl hep hel hL1 hL2 he
+
+/-- `CrtExpL.w4` with its squarings by `Sq`. -/
+def CrtExpL.w4S (M : Mont) (Sq : MontS) : CrtExpL M where
+  code := Crt.expLoopS Sq.mm M.mm Crt.tabSelect
+  ne _ _ := by simp [Crt.expLoopS]
+  ok hc _ hw2 hwx hw30 hn hinv hodd hxl hxc hyl hyc _ _ hsp hsl _ _ hep hel hL1 hL2 he :=
+    WP.mono (crtExpLoopS_ok M Sq CrtSel.sse hc hw2 hwx hw30 hn hinv hodd hxl hxc hyl hyc hsp hsl hep hel hL1 hL2 he)
+      fun _ ⟨h1, h2, h3, f, k⟩ => ⟨h1, h2, h3, f.widen (crtExpRanges_widen5 _), k⟩
+
+/-- `CrtExpL.w5` with its squarings by `Sq`. -/
+def CrtExpL.w5S (M : Mont) (Sq : MontS) : CrtExpL M where
+  code := Crt.expLoop5S Sq.mm M.mm Crt.tabSelectV
+  ne _ _ := by simp [Crt.expLoop5S]
+  ok hc hT hw2 hwx hw30 hn hinv hodd hxl hxc hyl hyc _ _ hsp hsl _ _ hep hel hL1 hL2 he :=
+    crtExpLoop5S_ok M Sq CrtSel.avx hc hT hw2 hwx hw30 hn hinv hodd hxl hxc hyl hyc hsp hsl hep hel hL1 hL2 he
 
 end VG.Proof.Bignum.X86_64
