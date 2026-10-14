@@ -12,7 +12,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.Call
 import VerifiedGarbage.Proof.Framework.X86_64.VecKeep
 meta import VerifiedGarbage.Proof.Framework.X86_64.Call
 
-/-! # `vg_rsa_mont_mul_lazy` and `vg_rsa_mont_mul_lazy_adx` meet `mulLazyContract` -/
+/-! # `vg_rsa_lazy_mont_mul` and `vg_rsa_lazy_mont_mul_adx` meet `mulLazyContract` -/
 
 @[expose] public section
 
@@ -100,7 +100,7 @@ theorem fnLazy_ct : ConstantTime isa fnLazyContract.pre fnLazyContract.pub mulBa
       ⟨h₂, hdi.symm, by rw [hsi], (congrArg (wOf s₂.mem) hdi).trans hw.symm, by simp only [idx, hdx], by simp only [idx, hcx],
         by simp only [idx, h8]⟩⟩) fun _ _ h => h)
 
-/-- `vg_rsa_mont_mul_lazy` on x86-64: `vg_rsa_mont_mul`'s code. -/
+/-- `vg_rsa_lazy_mont_mul` on x86-64: `vg_rsa_mont_mul`'s code. -/
 theorem fnLazy_verified : Verified target mulBase (Spec.Rsa.Mont.mulLazyContract abi) :=
   Verified.of_correct fnLazy_correct fnLazy_ct fnLazy_implies
 
@@ -161,7 +161,7 @@ theorem fnAdxLazy_ct : ConstantTime isa fnLazyContract.pre fnLazyContract.pub mu
       ⟨h₂, hdi.symm, by rw [hsi], (congrArg (wOf s₂.mem) hdi).trans hw.symm, by simp only [idx, hdx], by simp only [idx, hcx],
         by simp only [idx, h8]⟩⟩) fun _ _ h => h)
 
-/-- `vg_rsa_mont_mul_lazy_adx` on x86-64. -/
+/-- `vg_rsa_lazy_mont_mul_adx` on x86-64. -/
 theorem fnAdxLazy_verified : Verified target mulAdxLazy (Spec.Rsa.Mont.mulLazyContract abi) :=
   Verified.of_correct fnAdxLazy_correct fnAdxLazy_ct fnLazy_implies
 

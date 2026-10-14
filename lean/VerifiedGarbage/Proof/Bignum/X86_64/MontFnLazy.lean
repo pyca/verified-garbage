@@ -15,7 +15,7 @@ import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledSquareRaw
 import VerifiedGarbage.Proof.Framework.X86_64.VecKeep
 
 /-!
-# `vg_rsa_mont_mul_lazy_adx`: correctness
+# `vg_rsa_lazy_mont_mul_adx`: correctness
 
 `mulAdx_ok`'s proof, with the lazy reduction of the tiles
 (`AdxTiledProduct.redcLazy_ok`) and `montMul`'s rounds without `[b] < m`
@@ -103,7 +103,7 @@ theorem adxBodyLazy_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hs
     rw [hm₂] at h2 h3
     exact post t ⟨h2, h3, (k₂.trans k).mono (by decide)⟩
 
-/-- `vg_rsa_mont_mul_lazy_adx`'s code: what `mulAdx_ok` says, but `[o] < m`, without `[b] < m`. -/
+/-- `vg_rsa_lazy_mont_mul_adx`'s code: what `mulAdx_ok` says, but `[o] < m`, without `[b] < m`. -/
 theorem mulAdxLazy_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hs : Scr s B Z)
     (hdi : s.gpr .rdi = B) (hH : Hdr s.mem B w minv) (hZ : slot w 8 ≤ Z) (hw : 2 ≤ w) (hw' : w < 2 ^ 31)
     {o a b : Nat} (ho : o < 8) (ha : a < 8) (hb : b < 8) (ho1 : o ≠ aAcc) (ho2 : o ≠ aTmp) (ha1 : a ≠ aAcc)
