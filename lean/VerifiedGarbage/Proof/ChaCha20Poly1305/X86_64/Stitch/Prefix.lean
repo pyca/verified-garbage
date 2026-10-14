@@ -224,7 +224,7 @@ structure PreDone (c dp : Addr) (L : Nat) (s : State) (key msg : List Byte) (s' 
 
 /-- The 448 bytes: apart from the context. -/
 theorem pre_ctx {c dp : Addr} {L : Nat} (hl : Lay c dp L) (h448 : 448 ≤ L) {k : Nat} (hk : k < 448) {d n : Nat}
-    (hd : d + n ≤ 576) : ¬ (⟨c + BitVec.ofNat 64 d, n⟩ : Region).Contains (dp + BitVec.ofNat 64 k) 1 := fun hc =>
+    (hd : d + n ≤ 1248) : ¬ (⟨c + BitVec.ofNat 64 d, n⟩ : Region).Contains (dp + BitVec.ofNat 64 k) 1 := fun hc =>
   hl.cd hd _ hc (Proof.ChaCha20.X86_64.Xor.contains_ofNat (by have := hl.L_lt; omega) (by have := hl.L_lt; omega))
 
 /-- The 448 bytes: apart from the data after them. -/
@@ -269,12 +269,13 @@ theorem bulkP_ok (vl : Bool) {c dp : Addr} {L : Nat} (hl : Lay c dp L) (hge : 96
     rw [wr₂, wr₁, hwr]
     refine Covers.of_sub fun r hr' => ?_
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr'
-    rcases hr' with rfl | rfl | rfl | rfl
+    rcases hr' with rfl | rfl | rfl | rfl | rfl
     · exact ⟨stR (stA c), by simp, 0, by simp, by simp⟩
     · exact ⟨⟨dp, L⟩, by simp, 448, rfl, by show 448 + (L - 448) ≤ L; omega⟩
     · exact ⟨bufR (bfA c), by simp, 0, by simp, by simp⟩
     · exact ⟨psR c, by simp, 0, by simp, by simp⟩
-  have hn : ((.seq (.ite .b (.block []) (.loop (chunk vl false) .ae)) restT : Prog isa)).noCalls = true := by
+    · exact ⟨kR (bfA c), by simp, 0, by simp, by simp⟩
+  have hn : ((.seq (.ite .b (.block []) (.loop (chunk vl false) .ae)) (restT vl) : Prog isa)).noCalls = true := by
     cases vl <;>
     decide +kernel
   have hlen : (msg ++ bytesAt s.mem dp 448).length % 16 = 0 := by
@@ -294,11 +295,13 @@ theorem bulkP_ok (vl : Bool) {c dp : Addr} {L : Nat} (hl : Lay c dp L) (hge : 96
     rw [f₃' _ (by
         intro r hr'
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr'
-        rcases hr' with rfl | rfl | rfl | rfl
+        rcases hr' with rfl | rfl | rfl | rfl | rfl
         · exact pre_ctx hl (by omega) hk (by decide)
         · exact pre_after hLe hnw (by omega) hk (Nat.le_refl _) (by omega)
         · exact pre_ctx hl (by omega) hk (by decide)
-        · exact pre_ctx hl (by omega) hk (by decide)),
+        · exact pre_ctx hl (by omega) hk (by decide)
+        · rw [show kR (bfA c) = ⟨c + BitVec.ofNat 64 736, 512⟩ by simp only [kR, kA, bfA, Offset.add_add]]
+          exact pre_ctx hl (by omega) hk (by decide)),
       F₂ _ (by
         intro r hr'
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr'
@@ -413,7 +416,7 @@ theorem bulkPHead_ok (vl : Bool) {c dp : Addr} {L : Nat} (hl : Lay c dp L) (hge 
         (∃ R0 R1 A m₀, Key R0 R1 ∧ LI c (dp + BitVec.ofNat 64 448) (L - 448) R0 R1 A m₀ (s.gpr .rsp) 1
           (s₂.withRegions [] (bulkWr c (dp + BitVec.ofNat 64 448) (L - 448)))) ∧
         s₂.cf = some (decide (L - 448 - 512 * 1 < 512)) ∧ s₂.rd = s.rd ∧ s₂.wr = s.wr ∧
-        ∃ F, WP isa (.seq (.ite .b (.block []) (.loop (chunk vl false) .ae)) restT)
+        ∃ F, WP isa (.seq (.ite .b (.block []) (.loop (chunk vl false) .ae)) (restT vl))
           (s₂.withRegions [] (bulkWr c (dp + BitVec.ofNat 64 448) (L - 448))) F := by
   have hl' := hl.shift (o := 448) (by omega)
   refine WP.mono (enter_ok hwr hrcx)
