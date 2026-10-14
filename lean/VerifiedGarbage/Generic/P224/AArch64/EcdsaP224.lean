@@ -63,14 +63,15 @@ def artifacts (h : Proof.Weierstrass.AArch64.HasLawInv Spec.P224.curve) : List A
       branches (its first byte, both coordinates below `p`, and the curve's equation), and \
       `[v]Q` is computed for the key's point if it is valid, else `G`, so always on a point of \
       the curve. `s⁻¹` modulo `n` and `Z⁻¹` are calls of `vg_p224_inv_mod_n` and `vg_p224_inv_mod_p`, by the \
-      signature's divsteps; `[u]G` is the signature's comb over the 7-bit windows of `u` (from the static \
-      `VG_P224_COMB`), and `[v]Q` `vg_ecdh_p224`'s signed 4-bit windows (65 digits of `v + 8 \
+      signature's divsteps; `[u]G` is the signature's comb over the 7-bit windows of `u` (from the static `VG_P224_COMB`, reading the entry of each \
+      digit of the public `u` directly rather than scanning its table), and `[v]Q` `vg_ecdh_p224`'s signed 4-bit windows (65 digits of `v + 8 \
       Σ_{j<65} 16^j`, four doublings in Jacobian coordinates and a constant-time selection from \
       a table of `[1 … 8]Q` each), with the complete formulas of Renes, Costello and Batina for \
       `a = -3`, which also add the two. The result is the conjunction of the checks (the key, \
       `r` and `s` in `[1, n-1]`, the sum not the point at infinity, and `x ≡ r` modulo `n`) as a \
-      mask, so the time depends only on the pointers, although the contract would let every \
-      input affect it."])
+      mask, so the \
+      comb's addresses depend on `u`, from the digest and the signature, and the rest of the \
+      time only on the pointers."])
     consts := Impl.Ecdsa.AArch64.p224.combConsts
     code := Impl.Ecdsa.Verify.AArch64.verifyP224
     contract := Spec.Ecdsa.P224.inst.verifyContract (AArch64.abi.withConsts Impl.Ecdsa.AArch64.p224.combConsts)
