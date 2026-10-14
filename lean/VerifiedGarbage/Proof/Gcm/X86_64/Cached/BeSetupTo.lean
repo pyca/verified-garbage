@@ -70,4 +70,25 @@ theorem readyTo_be {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {off : Nat}
     by rw [z _ (by decide) 0 (by decide)]; exact hR.y,
     fun l h1 h4 => by rw [z _ (by decide) l h4]; exact hR.y1 l h1 h4⟩
 
+/-- `StitchZH.consts_keep`, out of place. -/
+theorem constsTo_keep {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {off : Nat} (hx : IdxOk off [oR s₀, pR s₀] s₀)
+    {P : Nat → Nat → Block} {s : State} (hR : ReadyTo s₀ P s) :
+    WP isa (.block ((beSetup 0).take 7)) s fun u =>
+      u.mem.readW (u.gpr .rsp + BitVec.ofNat 64 off) 32 = s₀.mem.readW (s₀.gpr .rsp + BitVec.ofNat 64 off) 32 ∧
+      InRegions (u.rd ++ u.wr) (u.gpr .rsp + BitVec.ofNat 64 off) 4 := by
+  have hwp := hp.wrap_p
+  have hr11 : s.gpr .r11 = pp s₀ := hR.gpr .r11 (by decide) (by decide) (by decide) (by decide)
+  have hsp : s.gpr .rsp = s₀.gpr .rsp := hR.gpr .rsp (by decide) (by decide) (by decide) (by decide)
+  obtain ⟨-, hI, hd⟩ := hx
+  have c896 : (pR s₀).Contains (pp s₀ + BitVec.ofNat 64 896) (128 / 8) := Offset.contains_base _ (by omega) (by omega)
+  have c912 : (pR s₀).Contains (pp s₀ + BitVec.ofNat 64 912) (128 / 8) := Offset.contains_base _ (by omega) (by omega)
+  refine WP.mono (StitchZH.beConsts_ok s (by rw [hr11, hR.a.wr]; exact in_sub hp.p_in (by omega))
+    (by rw [hr11, hR.a.wr]; exact in_sub hp.p_in (by omega))) fun u ⟨m, g, _, rd, wr⟩ => ⟨?_, ?_⟩
+  · rw [g _ (by decide), hsp, m, hr11,
+      (((Frame.refl [pR s₀] s.mem).writeW (List.mem_singleton_self _) _ c896).writeW (List.mem_singleton_self _) _
+        c912).readW (Region.contains_self _ _) (fun r hr => by
+          simp only [List.mem_singleton] at hr; subst hr; exact hd _ (by simp)) (show 32 / 8 < 2 ^ 64 by decide),
+      hR.a.frame.readW (Region.contains_self _ _) hd (show 32 / 8 < 2 ^ 64 by decide)]
+  · rw [g _ (by decide), hsp, rd, wr, hR.a.rd, hR.a.wr]; exact hI
+
 end VG.Proof.Gcm.X86_64.StitchZHTo
