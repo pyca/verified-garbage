@@ -53,7 +53,10 @@ Lake rebuilds your changes and anything not yet cached.
   next to OpenSSL's equivalent, and aws-lc-rs's if it has one. The
   Benchmarks check compares each pull request that changes an
   architecture's code with its base, and fails on a slowdown; an
-  optimization's speedup is shown in its run summary.
+  optimization's speedup is shown in its run summary. A pull request never
+  runs every benchmark of an architecture: a change that needs that (e.g.
+  to `Cargo.lock` or the benchmarks' shared code) is measured by a manual
+  run.
 * **An optimized implementation reaches everything built on it.** An
   implementation of a function for CPU features (or any other faster
   version) is a *variant*: named `<function>_<suffix>` (`_shani`, `_avx2`),

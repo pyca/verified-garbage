@@ -7,18 +7,28 @@ benchmark code against different library code), each at the same path
 (`STAGE`); if that doesn't build against BASE (it benchmarks an API BASE
 doesn't have yet), BASE uses its own `bench/` crate, and HEAD's other
 benchmarks show as new. Their benchmark
-binaries are run on this machine one after the other, `--rounds` times each
-(alternately, keeping the fastest time of each benchmark on each side, if
-more than one): one round, with a short warm-up and measurement, is the
-default, since the check fails only on a slowdown of more than
-`--threshold`, far beyond the noise between two runs of the same code (in
-an A/A run on CI, with two rounds of 0.2 s and 0.5 s: 99% of benchmarks
-within 3%, the largest 12%). A single run is exposed to a few slow seconds
-of the runner, though (an A/A run of one round found three neighbouring
-benchmarks 35% slower), so the benchmarks over the threshold after the
-rounds run again, base and head alternately, `--confirm` more times each:
-a slowdown fails only if it is still there in the fastest time of every
-run.
+binaries are run on this machine `--rounds` times each (keeping the fastest
+time of each benchmark on each side, if more than one): one round, with a
+short warm-up and measurement, is the default, since the check fails only
+on a slowdown of more than `--threshold`, far beyond the noise between two
+runs of the same code (in an A/A run on CI, with two rounds of 0.2 s and
+0.5 s: 99% of benchmarks within 3%, the largest 12%).
+
+The two sides are interleaved: each round runs one benchmark (a `BENCHES`
+entry of bench/benches/primitives/main.rs, selected by `VG_BENCHES`) on
+base, then on head, then the next one on head, then on base, and so on, so
+that a few slow seconds of the runner (an A/A run of one round, with each
+side's benchmarks all run one after the other, found three neighbouring
+benchmarks 35% slower) hit both sides of a benchmark, or neither, rather
+than a stretch of one side's. Each run sets up only its own benchmark
+(generating RSA keys, …), so this costs no more than running each side's
+benchmarks at once; only the processes' start, a few milliseconds each.
+When BASE runs its own `bench/` crate, whose benchmarks need not be HEAD's,
+each side runs all of its benchmarks at once, alternately, as before.
+
+The benchmarks still over the threshold after the rounds run again, base
+and head alternately, `--confirm` more times each: a slowdown fails only if
+it is still there in the fastest time of every run.
 
 Writes a Markdown table of the results to stdout (and appends it to
 `--summary`, e.g. `$GITHUB_STEP_SUMMARY`), and exits with status 1 if any
@@ -95,10 +105,11 @@ TARGET = pathlib.Path("bench-target").resolve()
 # comb's table of hundreds of kilobytes, ChaCha20-Poly1305's and AES-GCM's.
 # They run from `--copies` copies of each binary.
 FRESH_COPIES = re.compile(r"^(?:ec_p521_public_key|ecdsa_p521_|chacha20poly1305|aes-(?:128|256)-gcm-(?!siv))")
-# The `VG_BENCH_MODULES` of the copies' runs: the modules whose benchmarks
-# hold those groups. The binary sets up every selected benchmark before
-# criterion's filter applies (RSA keys of up to 4096 bits among them),
-# which took about 110 s of each copy's run with every module.
+# The `VG_BENCH_MODULES` of the copies' runs when the sides are not
+# interleaved (which select each benchmark by `VG_BENCHES`): the modules
+# whose benchmarks hold those groups. The binary sets up every selected
+# benchmark before criterion's filter applies (RSA keys of up to 4096 bits
+# among them), which took about 110 s of each copy's run with every module.
 FRESH_COPIES_MODULES = "ecdsa_p521 chacha20poly1305 aes_gcm"
 
 # How src/cpu.rs stops a run whose `VG_CPU_FEATURES` names features this CPU
@@ -213,24 +224,60 @@ def selected_modules(checkout, requested):
 
 def list_groups(binary, modules):
     """The benchmark groups (`<primitive>`s) of verified-garbage that
-    `binary` runs for `modules`, with how many benchmarks each has."""
+    `binary` runs for `modules`, with how many benchmarks each has, and the
+    benchmark (`BENCHES` entry) each is in, in the order they run (None if
+    the binary does not name them)."""
     # Without `VG_CPU_FEATURES`: listing runs no benchmark, and the library
     # stops at its start if this CPU lacks a feature it names, which the
     # runs report.
     env = {k: v for k, v in os.environ.items() if k != "VG_CPU_FEATURES"}
     out = subprocess.run(
         [binary, "--bench", "--list", f"/{VG}/"],
-        env={**env, "VG_BENCH_MODULES": modules},
+        env={**env, "VG_BENCH_MODULES": modules, "VG_BENCH_NAMES": "1"},
         check=True,
         stdout=subprocess.PIPE,
         text=True,
     ).stdout
-    groups = {}
+    return parse_list(out)
+
+
+def parse_list(out):
+    """`list_groups`'s results from the binary's `--list` output."""
+    groups, owner, bench, shared = {}, {}, None, False
     for line in out.splitlines():
-        if line.endswith(": benchmark"):
+        if line.endswith(": bench"):
+            bench = line.removesuffix(": bench")
+        elif line.endswith(": benchmark"):
             group = line.split("/", 1)[0]
             groups[group] = groups.get(group, 0) + 1
-    return groups
+            if bench is not None:
+                # A group in two benchmarks cannot run with either alone.
+                shared |= owner.setdefault(group, bench) != bench
+    return groups, (owner if bench is not None and not shared else None)
+
+
+def units(groups, owner):
+    """The runs each round consists of, as `(bench, groups)`: with `owner`
+    (each group's benchmark), one per benchmark, of its groups among
+    `groups`, in the order the benchmarks run; without, one run of all of
+    `groups` (None: every group)."""
+    if owner is None:
+        return [(None, groups)]
+    runs, wanted = {}, set(groups)
+    for group, bench in owner.items():
+        if group in wanted:
+            runs.setdefault(bench, []).append(group)
+    return list(runs.items())
+
+
+def interleaved(runs, binaries, start=0):
+    """The order to run `runs` (`units`) in on the sides that have a binary,
+    as `(side, bench, groups)`: each run on both sides, one after the other,
+    alternating which goes first, from base for `start` even."""
+    for k, (bench, groups) in enumerate(runs):
+        for side in ("base", "head") if (start + k) % 2 == 0 else ("head", "base"):
+            if binaries[side] is not None:
+                yield side, bench, groups
 
 
 def shard_groups(groups, shard, shards):
@@ -246,9 +293,10 @@ def shard_groups(groups, shard, shards):
     return sorted(mine)
 
 
-def run(binary, home, library, args, checkout, modules, groups=None):
+def run(binary, home, library, args, checkout, modules, groups=None, bench=None):
     """Runs the benchmarks of `checkout` once (only those of `groups`, if
-    given), returning each one's median time (ns)."""
+    given, in the benchmark `bench`, if given), returning each one's median
+    time (ns)."""
     pattern = f"/{library}/"
     if groups is not None:
         pattern = f"^(?:{'|'.join(map(re.escape, groups))})/{library}/"
@@ -279,6 +327,7 @@ def run(binary, home, library, args, checkout, modules, groups=None):
             **os.environ,
             "CRITERION_HOME": str(home),
             "VG_BENCH_MODULES": modules,
+            "VG_BENCHES": bench or "",
             "VG_CPU_FEATURES": cpu_features(checkout),
         },
         stdout=subprocess.DEVNULL,
@@ -373,25 +422,47 @@ def main():
         if binaries["base"] is not None:
             modules["base"] = selected_modules(source, args.modules)
 
-    # Both sides run the same groups, which head's list of them decides.
+    # Both sides run the same groups, which head's list of them decides. It
+    # also says which benchmark has each group, so that the sides can run
+    # one benchmark at a time, if both binaries have head's benchmarks.
+    listed, owner = list_groups(binaries["head"], modules["head"])
+    if note is not None and binaries["base"] is not None:
+        owner = None
     groups = None
     if shards > 1:
-        groups = shard_groups(list_groups(binaries["head"], modules["head"]), shard, shards)
+        groups = shard_groups(listed, shard, shards)
+    # Interleaved, every group is named (base's runs of a benchmark it lacks
+    # measure nothing); otherwise, unsharded, each side runs all of its own.
+    selected = groups if groups is not None or owner is None else sorted(listed)
 
-    shutil.rmtree(args.work_dir, ignore_errors=True)
+    work = args.work_dir.resolve()
+    shutil.rmtree(work, ignore_errors=True)
+
+    def measure(order, binary_of, home, modules_of, into):
+        """Runs `order` (`interleaved`), adding each benchmark's times to
+        `into[side]`, a list of them per benchmark."""
+        for side, bench, unit in order:
+            print(f"{home(side)}{f': {bench}' if bench else ''}", file=sys.stderr)
+            checkout = base if side == "base" else head
+            times = run(binary_of(side), work / home(side) / (bench or "all"), VG, args, checkout,
+                        modules_of(side, bench), unit, bench)
+            for bench_id, t in times.items():
+                into[side].setdefault(bench_id, []).append(t)
+
+    def keep_fastest(runs):
+        for side, times in runs.items():
+            for bench_id, ts in times.items():
+                best[side][bench_id] = min(*ts, best[side].get(bench_id, ts[0]))
+
     best = {"base": {}, "head": {}}
+    rounds = units(selected, owner)
     try:
         for r in range(args.rounds):
             # Alternate which side goes first, so neither always runs warmer.
-            for side in ("base", "head") if r % 2 == 0 else ("head", "base"):
-                if binaries[side] is None:
-                    continue
-                print(f"round {r + 1}/{args.rounds}: {side}", file=sys.stderr)
-                checkout = base if side == "base" else head
-                times = run(binaries[side], args.work_dir.resolve() / f"{side}-{r}", VG, args, checkout,
-                            modules[side], groups)
-                for bench_id, t in times.items():
-                    best[side][bench_id] = min(t, best[side].get(bench_id, t))
+            runs = {"base": {}, "head": {}}
+            measure(interleaved(rounds, binaries, r), binaries.get, lambda side, r=r: f"{side}-{r}",
+                    lambda side, _bench: modules[side], runs)
+            keep_fastest(runs)
     except Lacking as e:
         # The first run of either side stops, before any other.
         report = not_measured(os.environ.get("VG_CPU_FEATURES", ""), e.args[0], cpu_model())
@@ -407,26 +478,23 @@ def main():
     # time of the copies (the rounds above counting as the first copy).
     copied = []
     if args.copies > 1:
-        listed = groups if groups is not None else list_groups(binaries["head"], modules["head"])
-        copied = sorted(g for g in listed if FRESH_COPIES.match(g))
+        copied = sorted(g for g in (groups if groups is not None else listed) if FRESH_COPIES.match(g))
     spread = {"base": {}, "head": {}}
     if copied:
         for side in spread:
             spread[side] = {i: [t] for i, t in best[side].items() if i[0] in copied}
+        copy_modules = (lambda side, _bench: modules[side]) if owner is not None else (
+            lambda _side, _bench: FRESH_COPIES_MODULES)
         for c in range(1, args.copies):
-            for side in ("head", "base") if c % 2 else ("base", "head"):
-                if binaries[side] is None:
-                    continue
-                print(f"copy {c + 1}/{args.copies} of {len(copied)} group(s): {side}", file=sys.stderr)
-                checkout = base if side == "base" else head
-                copy = fresh_copy(binaries[side], c)
-                try:
-                    times = run(str(copy), args.work_dir.resolve() / f"{side}-copy-{c}", VG, args, checkout,
-                                FRESH_COPIES_MODULES, copied)
-                finally:
-                    copy.unlink()
-                for bench_id, t in times.items():
-                    spread[side].setdefault(bench_id, []).append(t)
+            print(f"copy {c + 1}/{args.copies} of {len(copied)} group(s)", file=sys.stderr)
+            copies = {side: fresh_copy(b, c) if b is not None else None for side, b in binaries.items()}
+            try:
+                measure(interleaved(units(copied, owner), copies, c), lambda side: str(copies[side]),
+                        lambda side, c=c: f"{side}-copy-{c}", copy_modules, spread)
+            finally:
+                for copy in copies.values():
+                    if copy is not None:
+                        copy.unlink()
         for side, times in spread.items():
             for bench_id, ts in times.items():
                 best[side][bench_id] = min(ts)
@@ -442,13 +510,11 @@ def main():
     # runs.)
     confirmed = [g for g in suspects() if g not in copied] if binaries["base"] is not None else []
     for r in range(args.confirm if confirmed else 0):
-        for side in ("head", "base") if r % 2 == 0 else ("base", "head"):
-            print(f"confirming {len(confirmed)} group(s), {r + 1}/{args.confirm}: {side}", file=sys.stderr)
-            checkout = base if side == "base" else head
-            times = run(binaries[side], args.work_dir.resolve() / f"{side}-confirm-{r}", VG, args, checkout,
-                        modules[side], confirmed)
-            for bench_id, t in times.items():
-                best[side][bench_id] = min(t, best[side].get(bench_id, t))
+        runs = {"base": {}, "head": {}}
+        print(f"confirming {len(confirmed)} group(s), {r + 1}/{args.confirm}", file=sys.stderr)
+        measure(interleaved(units(confirmed, owner), binaries, r + 1), binaries.get,
+                lambda side, r=r: f"{side}-confirm-{r}", lambda side, _bench: modules[side], runs)
+        keep_fastest(runs)
     cpu_features = os.environ.get("VG_CPU_FEATURES", "")
     references = {}
     with_references = (args.openssl or binaries["base"] is None) and not cpu_features
@@ -460,8 +526,9 @@ def main():
 
     title = ", ".join([*([f"VG_CPU_FEATURES={cpu_features}"] if cpu_features else []),
                        *([f"shard {shard}/{shards}"] if shards > 1 else [])])
-    runs = (f"Fastest of {args.rounds} interleaved runs of each side" if args.rounds > 1
-            else "One run of each side")
+    runs = (f"Fastest of {args.rounds} runs of each side" if args.rounds > 1 else "One run of each side")
+    runs += (", interleaved benchmark by benchmark" if owner is not None
+             else ", each side's benchmarks at once, alternately")
     lines = [
         f"## Benchmarks ({title})" if title else "## Benchmarks",
         "",

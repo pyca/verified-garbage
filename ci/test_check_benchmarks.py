@@ -521,6 +521,21 @@ class Selection(unittest.TestCase):
         # More shards than groups leaves some empty.
         self.assertEqual(bench_compare.shard_groups({'a': 1}, 2, 2), [])
 
+    def test_pull_requests_never_run_every_benchmark(self):
+        for path in ['Cargo.lock', 'ci/bench_compare.py', 'src/unknown.rs']:
+            with self.subTest(path=path):
+                rows, skipped = planner.without_full_runs(self.rows([path]))
+                self.assertEqual(rows, [])
+                self.assertIn(', '.join(planner.PLATFORMS), skipped)
+        # Targeted entries stay, those of an architecture needing every
+        # benchmark go, in all of its configurations.
+        matrix = (planner.platforms('x86_64', {'sha256'}, benchmarks=1)
+                  + planner.platforms('aarch64', benchmarks=200))
+        rows, skipped = planner.without_full_runs(matrix)
+        self.assertEqual(rows, planner.platforms('x86_64', {'sha256'}, benchmarks=1))
+        self.assertIn('every benchmark on aarch64,', skipped)
+        self.assertEqual(planner.without_full_runs(rows), (rows, None))
+
     def test_changes_to_tests_alone_need_nothing(self):
         code = 'fn f() {}\n'
         tests = '#[cfg(test)]\nmod tests {\n    #[test]\n    fn a() {}\n}\n'
@@ -658,6 +673,41 @@ class Selection(unittest.TestCase):
             self.assertEqual(bench_compare.selected_modules('base', ''), '')
 
 
+class Interleaving(unittest.TestCase):
+    """The order the two sides' benchmarks run in."""
+
+    LIST = ("sha256: bench\nsha256/verified-garbage/64: benchmark\nsha256/verified-garbage/1024: benchmark\n\n"
+            "hmac_sha256: bench\nhmac-sha256/verified-garbage/64: benchmark\n\n"
+            "hmac-sha256-verify/verified-garbage/64: benchmark\n")
+
+    def test_the_list_names_each_groups_benchmark(self):
+        groups, owner = bench_compare.parse_list(self.LIST)
+        self.assertEqual(groups, {'sha256': 2, 'hmac-sha256': 1, 'hmac-sha256-verify': 1})
+        self.assertEqual(owner, {'sha256': 'sha256', 'hmac-sha256': 'hmac_sha256',
+                                 'hmac-sha256-verify': 'hmac_sha256'})
+        # A binary that does not name them (base's own benchmarks), or a group
+        # in two benchmarks, leaves the sides whole.
+        unnamed = re.sub(r'^\w+: bench\n', '', self.LIST, flags=re.M)
+        self.assertEqual(bench_compare.parse_list(unnamed), (groups, None))
+        self.assertIsNone(bench_compare.parse_list(self.LIST + 'x: bench\nsha256/verified-garbage/9: benchmark\n')[1])
+
+    def test_each_benchmark_runs_on_both_sides_alternately(self):
+        _, owner = bench_compare.parse_list(self.LIST)
+        runs = bench_compare.units(['hmac-sha256-verify', 'sha256', 'hmac-sha256'], owner)
+        self.assertEqual(runs, [('sha256', ['sha256']), ('hmac_sha256', ['hmac-sha256', 'hmac-sha256-verify'])])
+        both = {'base': 'b', 'head': 'h'}
+        self.assertEqual([(s, b) for s, b, _ in bench_compare.interleaved(runs, both)],
+                         [('base', 'sha256'), ('head', 'sha256'), ('head', 'hmac_sha256'), ('base', 'hmac_sha256')])
+        self.assertEqual([s for s, _, _ in bench_compare.interleaved(runs, both, 1)],
+                         ['head', 'base', 'base', 'head'])
+        self.assertEqual([s for s, _, _ in bench_compare.interleaved(runs, {'base': None, 'head': 'h'})],
+                         ['head', 'head'])
+        # Without the benchmarks' names, each side runs at once.
+        self.assertEqual(bench_compare.units(None, None), [(None, None)])
+        self.assertEqual(list(bench_compare.interleaved([(None, None)], both, 1)),
+                         [('head', None, None), ('base', None, None)])
+
+
 class Lacking(unittest.TestCase):
     """A benchmark run that src/cpu.rs stops for naming features the CPU
     does not have."""
@@ -764,9 +814,10 @@ class FreshCopies(unittest.TestCase):
             return subprocess.CompletedProcess(cmd, 0, stdout='a/verified-garbage/1: benchmark\n')
         with mock.patch.dict(os.environ, {'VG_CPU_FEATURES': 'avx512f'}), \
                 mock.patch.object(bench_compare.subprocess, 'run', fake_run):
-            self.assertEqual(bench_compare.list_groups('bin', 'ec_p521'), {'a': 1})
+            self.assertEqual(bench_compare.list_groups('bin', 'ec_p521'), ({'a': 1}, None))
         self.assertNotIn('VG_CPU_FEATURES', seen)
         self.assertEqual(seen['VG_BENCH_MODULES'], 'ec_p521')
+        self.assertEqual(seen['VG_BENCH_NAMES'], '1')
 
     def test_a_copy_is_a_new_executable_file(self):
         with tempfile.TemporaryDirectory() as tmp:

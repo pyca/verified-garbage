@@ -4,7 +4,9 @@ name: Benchmarks
 # architecture whose code it changes (see ci/bench_arches.py), and fails if a
 # benchmark slowed down by more than ci/bench_compare.py's threshold. The
 # results are in the run's summary. Not part of `all-green`: it only runs for
-# some pull requests.
+# some pull requests. A pull request never runs every benchmark of an
+# architecture (e.g. for a change to Cargo.lock or to the benchmarks' shared
+# code): the run's summary names those architectures, to run by hand.
 #
 # It can also be run by hand (Actions > Benchmarks > Run workflow), comparing
 # the chosen branch with any earlier commit on every architecture, e.g. to
@@ -81,7 +83,12 @@ jobs:
             # base branch, whose later changes would then count as the pull
             # request's (selecting every benchmark) and be measured as such.
             base=$(git rev-parse HEAD^1)
-            matrix=$(git diff --name-only "$base" HEAD | python3 ci/bench_arches.py --base "$base")
+            matrix=$(git diff --name-only "$base" HEAD | python3 ci/bench_arches.py --base "$base" 2> skipped.txt) \
+              || { cat skipped.txt >&2; exit 1; }
+            if [ -s skipped.txt ]; then
+              echo "::notice title=Benchmarks not run::$(cat skipped.txt)"
+              { echo "## Benchmarks not run"; echo; cat skipped.txt; } >> "$GITHUB_STEP_SUMMARY"
+            fi
           fi
           echo "$matrix"
           echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
