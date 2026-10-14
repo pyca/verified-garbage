@@ -655,12 +655,36 @@ theorem sealM_ct (hF : ShortFacts) (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMode}
       (Impl.AesGcm.X86_64.Short.«seal» (v.withBlk B)) :=
   sealMW_ct hF v B (powOk_powers hF) (powers_ct hF)
 
-/-- `vg_aes_gcm_open` with the short path, in two runs. -/
+/-- What `open` needs of the code `lng` it runs when the short path does not
+apply, in two runs: what `openOk_rel` gives. -/
+def LongRel (M : Gcm.X86_64.Stitch.CtxMode) (lng : Prog isa) : Prop :=
+  ∀ {s₀ s₀' : State} {Ctx W SP Np A D Tp : Addr} {nl al n R t : Nat},
+    OneCtx s₀ 5 Ctx W SP Np A D nl al n → OneCtx s₀' 5 Ctx W SP Np A D nl al n →
+    CtxExt M Ctx (W + BitVec.ofNat 64 16) W SP D n s₀ → CtxExt M Ctx (W + BitVec.ofNat 64 16) W SP D n s₀' →
+    s₀.gpr .rdx = Np → (s₀.gpr .rcx).toNat = nl → (s₀.gpr .r9).toNat = al → (s₀.gpr .rsi).toNat = R →
+    s₀'.gpr .rdx = Np → (s₀'.gpr .rcx).toNat = nl → (s₀'.gpr .r9).toNat = al → (s₀'.gpr .rsi).toNat = R →
+    ArgT SP Tp s₀ → ArgT SP Tp s₀' → Covers [⟨Tp, t⟩] (s₀.rd ++ s₀.wr) → Covers [⟨Tp, t⟩] (s₀'.rd ++ s₀'.wr) →
+    OutWDS W D SP n ⟨Tp, t⟩ →
+    (Spec.Gcm.openResult (ctxCiph s₀.mem Ctx R) (ctxH s₀.mem Ctx) t (bytesAt s₀.mem Np nl)
+        (bytesAt s₀.mem D n) (bytesAt s₀.mem A al) (bytesAt s₀.mem Tp t)).isSome =
+      (Spec.Gcm.openResult (ctxCiph s₀'.mem Ctx R) (ctxH s₀'.mem Ctx) t (bytesAt s₀'.mem Np nl)
+        (bytesAt s₀'.mem D n) (bytesAt s₀'.mem A al) (bytesAt s₀'.mem Tp t)).isSome →
+    Spec.Gcm.tagLenOk t = true →
+    RelCT isa (fun s₁ s₂ => OpenIn s₀ Ctx W SP A D n t s₁ ∧ OpenIn s₀' Ctx W SP A D n t s₂) lng
+      fun s₁ s₂ => Env Ctx (W + BitVec.ofNat 64 16) W SP s₁ ∧ Env Ctx (W + BitVec.ofNat 64 16) W SP s₂
+
+theorem longRel_openLong (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M) :
+    LongRel M (Impl.AesGcm.X86_64.Short.openLong (v.withBlk B)) :=
+  fun C C' X X' hNp hnl hal hR hNp' hnl' hal' hR' hT hT' hTr hTr' oT hres hok =>
+    openOk_rel v B C C' X X' hNp hnl hal hR hNp' hnl' hal' hR' hT hT' hTr hTr' oT hres hok
+
+/-- `vg_aes_gcm_open` with the short path, the table of powers from `pw`,
+and `lng` when the short path does not apply, in two runs. -/
 theorem openMW_rel (hF : ShortFacts) (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M)
-    {pw : Prog isa} (hpw : PowOk M pw) (hpc : PowCT pw) {s₀ s₀' : State}
+    {pw lng : Prog isa} (hpw : PowOk M pw) (hpc : PowCT pw) (hlr : LongRel M lng) {s₀ s₀' : State}
     (hp : (Proof.AesGcm.openX86_64M M).pre s₀) (hp' : (Proof.AesGcm.openX86_64M M).pre s₀')
     (hq : Proof.AesGcm.openX86_64.pub s₀ s₀') :
-    RelCT isa (fun s₁ s₂ => s₁ = s₀ ∧ s₂ = s₀') (Impl.AesGcm.X86_64.Short.«open» (v.withBlk B) pw)
+    RelCT isa (fun s₁ s₂ => s₁ = s₀ ∧ s₂ = s₀') (Impl.AesGcm.X86_64.Short.«open» (v.withBlk B) pw lng)
       fun _ _ => True :=
   openM_relOf hp hp' hq fun {Ctx W SP _ A D _ nl al n _ t} C C' X X' hNp hnl hal hR hNp' hnl' hal' hR' hT hT' hTr
       hTr' oT hres hok => by
@@ -675,7 +699,7 @@ theorem openMW_rel (hF : ShortFacts) (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMod
         (by rw [← hnl]; exact BitVec.isLt _) (by rw [← hal]; exact BitVec.isLt _) (by omega)))
       (hw C hnl hal) (hw C' hnl' hal')
     refine RelCT.seq c (rel_ite_e (fun _ _ h => by rw [h.1.1, h.2.1])
-      ((openOk_rel v B C C' X X' hNp hnl hal hR hNp' hnl' hal' hR' hT hT' hTr hTr' oT hres hok).mono
+      ((hlr C C' X X' hNp hnl hal hR hNp' hnl' hal' hR' hT hT' hTr hTr' oT hres hok).mono
         (fun _ _ h => ⟨h.1.1.2, h.1.2.2⟩) fun _ _ h => h) ?_)
     by_cases hs : IsShort nl al n
     · exact (openShort_rel hF hpc C C' (hpw X) (hpw X') hNp hnl hal hR hNp' hnl' hal' hR' hs hT hT' hTr hTr' oT hres
@@ -688,17 +712,17 @@ theorem openM_rel (hF : ShortFacts) (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMode
     (hq : Proof.AesGcm.openX86_64.pub s₀ s₀') :
     RelCT isa (fun s₁ s₂ => s₁ = s₀ ∧ s₂ = s₀') (Impl.AesGcm.X86_64.Short.«open» (v.withBlk B))
       fun _ _ => True :=
-  openMW_rel hF v B (powOk_powers hF) (powers_ct hF) hp hp' hq
+  openMW_rel hF v B (powOk_powers hF) (powers_ct hF) (longRel_openLong v B) hp hp' hq
 
 theorem openMW_ct (hF : ShortFacts) (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M)
-    {pw : Prog isa} (hpw : PowOk M pw) (hpc : PowCT pw) :
+    {pw lng : Prog isa} (hpw : PowOk M pw) (hpc : PowCT pw) (hlr : LongRel M lng) :
     ConstantTime isa (Proof.AesGcm.openX86_64M M).pre Proof.AesGcm.openX86_64.pub
-      (Impl.AesGcm.X86_64.Short.«open» (v.withBlk B) pw) :=
-  ct_of_rel fun _ _ hp hp' hq => openMW_rel hF v B hpw hpc hp hp' hq
+      (Impl.AesGcm.X86_64.Short.«open» (v.withBlk B) pw lng) :=
+  ct_of_rel fun _ _ hp hp' hq => openMW_rel hF v B hpw hpc hlr hp hp' hq
 
 theorem openM_ct (hF : ShortFacts) (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M) :
     ConstantTime isa (Proof.AesGcm.openX86_64M M).pre Proof.AesGcm.openX86_64.pub
       (Impl.AesGcm.X86_64.Short.«open» (v.withBlk B)) :=
-  openMW_ct hF v B (powOk_powers hF) (powers_ct hF)
+  openMW_ct hF v B (powOk_powers hF) (powers_ct hF) (longRel_openLong v B)
 
 end VG.Proof.AesGcm.X86_64.Short

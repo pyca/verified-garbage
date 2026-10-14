@@ -64,14 +64,16 @@ structure LoopPre (s : State) (S D : Addr) (n : Nat) : Prop where
 abbrev copyBody : List Instr :=
   [.movzx8 .rax srcB, .store8 dstB .rax, .alu .add .r10 (imm 1), .alu .cmp .r10 (.reg .rcx)]
 
-theorem copyStep_ok (s : State) {S D : Addr} {i n : Nat} (hs : s.gpr .rsi = S) (hd : s.gpr .rdi = D)
+/-- `copyStep_ok`, and the vector registers kept. -/
+theorem copyStepX_ok (s : State) {S D : Addr} {i n : Nat} (hs : s.gpr .rsi = S) (hd : s.gpr .rdi = D)
     (hi : s.gpr .r10 = BitVec.ofNat 64 i) (hn : s.gpr .rcx = BitVec.ofNat 64 n)
     (r : InRegions (s.rd ++ s.wr) (S + BitVec.ofNat 64 i) 1) (w : InRegions s.wr (D + BitVec.ofNat 64 i) 1) :
     ∃ s', runBlock isa copyBody s = some s' ∧
       s'.mem = s.mem.writeW (D + BitVec.ofNat 64 i) (s.mem (S + BitVec.ofNat 64 i)) ∧
       s'.gpr .r10 = BitVec.ofNat 64 i + 1 ∧
       s'.zf = some (BitVec.ofNat 64 i + 1 - BitVec.ofNat 64 n == 0) ∧
-      (∀ r, r ≠ .rax → r ≠ .r10 → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
+      (∀ r, r ≠ .rax → r ≠ .r10 → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
+      s'.xmm = s.xmm := by
   have e₁ := ea_idx s .rsi hs hi
   have e₂ := ea_idx s .rdi hd hi
   refine ⟨_, by
@@ -80,12 +82,23 @@ theorem copyStep_ok (s : State) {S D : Addr} {i n : Nat} (hs : s.gpr .rsi = S) (
       Option.map_some, gpr_setReg, gpr_arithFlags, mem_setReg, rd_setReg, wr_setReg, ite_true, ite_false,
       e₁, e₂, r, w]
     rfl, ?_⟩
-  refine ⟨?_, ?_, ?_, ?_, rfl, rfl⟩
+  refine ⟨?_, ?_, ?_, ?_, rfl, rfl, rfl⟩
   · simp only [mem_setReg, mem_arithFlags, BitVec.setWidth_setWidth_of_le _ (show 8 ≤ 64 by decide),
       BitVec.setWidth_eq]
   · simp [gpr_setReg, hi]
   · simp [hi, hn]
   · intro r h₁ h₂; simp [gpr_setReg, h₁, h₂]
+
+theorem copyStep_ok (s : State) {S D : Addr} {i n : Nat} (hs : s.gpr .rsi = S) (hd : s.gpr .rdi = D)
+    (hi : s.gpr .r10 = BitVec.ofNat 64 i) (hn : s.gpr .rcx = BitVec.ofNat 64 n)
+    (r : InRegions (s.rd ++ s.wr) (S + BitVec.ofNat 64 i) 1) (w : InRegions s.wr (D + BitVec.ofNat 64 i) 1) :
+    ∃ s', runBlock isa copyBody s = some s' ∧
+      s'.mem = s.mem.writeW (D + BitVec.ofNat 64 i) (s.mem (S + BitVec.ofNat 64 i)) ∧
+      s'.gpr .r10 = BitVec.ofNat 64 i + 1 ∧
+      s'.zf = some (BitVec.ofNat 64 i + 1 - BitVec.ofNat 64 n == 0) ∧
+      (∀ r, r ≠ .rax → r ≠ .r10 → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr :=
+  let ⟨s', a, b, c, d, e, f, g, _⟩ := copyStepX_ok s hs hd hi hn r w
+  ⟨s', a, b, c, d, e, f, g⟩
 
 /-- The source byte `i` is not overwritten by the copy so far. -/
 theorem src_kept {m : Mem} {S D : Addr} {n i : Nat} (hd : (⟨S, n⟩ : Region).Disjoint ⟨D, n⟩) (hi : i < n)
@@ -96,9 +109,10 @@ theorem src_kept {m : Mem} {S D : Addr} {n i : Nat} (hd : (⟨S, n⟩ : Region).
       simp only [List.mem_singleton] at hr; subst hr
       exact hd _ (Offset.contains_base S (by omega) (by omega)) (Region.sub_prefix (by omega) _ hcon)
 
-theorem copyLoop_ok (s : State) {S D : Addr} {n : Nat} (h : LoopPre s S D n) :
+/-- `copyLoop_ok`, and the vector registers kept. -/
+theorem copyLoopX_ok (s : State) {S D : Addr} {n : Nat} (h : LoopPre s S D n) :
     WP isa copyLoop s fun s' => s'.mem = writeBytes s.mem D (bytesAt s.mem S n) ∧
-      (∀ r, r ≠ .rax → r ≠ .r10 → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
+      (∀ r, r ≠ .rax → r ≠ .r10 → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.xmm = s.xmm := by
   obtain ⟨s₁, run₁, r10₁, g₁⟩ : ∃ s₁, runBlock isa [.mov32 .r10 (imm 0)] s = some s₁ ∧
       s₁.gpr .r10 = BitVec.ofNat 64 0 ∧ s₁ = s.setReg .r10 (BitVec.setWidth 64 (BitVec.ofNat 32 0)) :=
     ⟨_, by simp only [imm, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc32, Option.map_some,
@@ -108,11 +122,11 @@ theorem copyLoop_ok (s : State) {S D : Addr} {n : Nat} (h : LoopPre s S D n) :
   refine WP.loop (M := isa) (body := .block copyBody) (c := .ne)
     (fun (k : Nat) (t : State) => ∃ i, k = n - i ∧ i < n ∧ t.gpr .r10 = BitVec.ofNat 64 i ∧
       t.mem = writeBytes s.mem D (bytesAt s.mem S i) ∧
-      (∀ r, r ≠ .rax → r ≠ .r10 → t.gpr r = s.gpr r) ∧ t.rd = s.rd ∧ t.wr = s.wr) ?_ (n - 0) _
+      (∀ r, r ≠ .rax → r ≠ .r10 → t.gpr r = s.gpr r) ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.xmm = s.xmm) ?_ (n - 0) _
     ⟨0, rfl, h.pos, r10₁, by simp [bytesAt, writeBytes_nil, mem_setReg],
-      fun r h₁ h₂ => by simp [gpr_setReg, h₂], rfl, rfl⟩
-  rintro k t ⟨i, rfl, hi, r10, mem, g, rd, wr⟩
-  obtain ⟨t', run', mem', r10', zf', g', rd', wr'⟩ := copyStep_ok t
+      fun r h₁ h₂ => by simp [gpr_setReg, h₂], rfl, rfl, rfl⟩
+  rintro k t ⟨i, rfl, hi, r10, mem, g, rd, wr, xm⟩
+  obtain ⟨t', run', mem', r10', zf', g', rd', wr', xm'⟩ := copyStepX_ok t
     (by rw [g _ (by decide) (by decide), h.rsi]) (by rw [g _ (by decide) (by decide), h.rdi]) r10
     (by rw [g _ (by decide) (by decide), h.rcx])
     (by rw [rd, wr]; exact in_of_covers h.rd hi (by have := h.lt; omega))
@@ -127,10 +141,15 @@ theorem copyLoop_ok (s : State) {S D : Addr} {n : Nat} (h : LoopPre s S D n) :
   have gg : ∀ r, r ≠ .rax → r ≠ .r10 → t'.gpr r = s.gpr r := fun r h₁ h₂ => by rw [g' r h₁ h₂, g r h₁ h₂]
   by_cases he : i + 1 = n
   · left
-    refine ⟨by simp [eval, hz, he], by rw [hmem, he], gg, by rw [rd', rd], by rw [wr', wr]⟩
+    refine ⟨by simp [eval, hz, he], by rw [hmem, he], gg, by rw [rd', rd], by rw [wr', wr], by rw [xm', xm]⟩
   · right
     refine ⟨by simp [eval, hz, he], n - (i + 1), by omega, i + 1, rfl, by omega, by rw [r10', succ_ofNat],
-      hmem, gg, by rw [rd', rd], by rw [wr', wr]⟩
+      hmem, gg, by rw [rd', rd], by rw [wr', wr], by rw [xm', xm]⟩
+
+theorem copyLoop_ok (s : State) {S D : Addr} {n : Nat} (h : LoopPre s S D n) :
+    WP isa copyLoop s fun s' => s'.mem = writeBytes s.mem D (bytesAt s.mem S n) ∧
+      (∀ r, r ≠ .rax → r ≠ .r10 → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr :=
+  WP.mono (copyLoopX_ok s h) fun _ ⟨a, b, c, d, _⟩ => ⟨a, b, c, d⟩
 
 /-! ## `xorLoop` -/
 

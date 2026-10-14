@@ -1,6 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.AesGcm.X86_64.Open
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Open
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Open
 public import VerifiedGarbage.Proof.AesGcm.X86_64.SealCT
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.SealCT
@@ -62,27 +62,42 @@ abbrev ArgT (SP T : Addr) (s : State) : Prop := s.mem.readW (SP + BitVec.ofNat 6
 abbrev ArgR (SP T : Addr) (s : State) : Prop :=
   ArgT SP T s ∧ InRegions (s.rd ++ s.wr) (SP + BitVec.ofNat 64 24) 8
 
+/-- What `open` needs of the code `tg` computing the tag in two runs: what
+`oneTag_rel` gives for `oneTag 112`. -/
+def TagRel (M : Gcm.X86_64.Stitch.CtxMode) (tg : Prog isa) : Prop :=
+  ∀ {Ctx W SP : Addr}, Lay Ctx (W + BitVec.ofNat 64 16) W SP →
+    ∀ {R : Nat} {A : Addr} {al : Nat} {D : Addr} {n N : Nat}, (⟨D, n⟩ : Region).Disjoint ⟨W, 2560⟩ →
+    RelCT isa (OneS₂ M Ctx W SP R A al D n (some N)) tg fun _ _ => True
+
+theorem tagRel_oneTag (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMode} : TagRel M (oneTag v.callees uO) :=
+  fun {_ _ _} L {_ _ _ _ _ _} hDW => oneTag_rel v L (.inr rfl) hDW
+
 section
 variable (v : GcmImpl) {Ctx W SP : Addr} (L : Lay Ctx (W + BitVec.ofNat 64 16) W SP)
   {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M)
 include L
 
-/-- `oneAad` keeps the tag length, and the address of the received tag. -/
-theorem aadTl_ok {s₀ s : State} {Np A D T : Addr} {nl al n t : Nat} (C : OneCtx s₀ 5 Ctx W SP Np A D nl al n)
+/-- The additional data's code `aadP`, which leaves what `oneAad` does, keeps
+`OneS`, the tag length, and the address of the received tag. -/
+theorem aadTlW_ok {aadP : Prog isa} {s₀ s : State} {Np A D T : Addr} {nl al n t R : Nat}
+    (C : OneCtx s₀ 5 Ctx W SP Np A D nl al n) (X : CtxExt M Ctx (W + BitVec.ofNat 64 16) W SP D n s₀)
     (hNp : s₀.gpr .rdx = Np) (hnl : (s₀.gpr .rcx).toNat = nl) (hal : (s₀.gpr .r9).toNat = al)
-    (hT : ArgT SP T s₀) (h : OpenIn s₀ Ctx W SP A D n t s) :
-    WP isa (oneAad v.callees) s fun s' => s'.mem.readW (W + BitVec.ofNat 64 224) 64 = BitVec.ofNat 64 t ∧
-      ArgR SP T s' :=
-  WP.mono (oneMid_ok v C h.1 hNp hnl hal) fun _ M => by
-    refine ⟨?_, ?_, by rw [M.rd, M.wr]; exact C.args 2 (by decide)⟩
-    · rw [M.fr.readW (r := ⟨W + BitVec.ofNat 64 224, 8⟩) (Region.contains_self _ _) (fun r hr => by
+    (hR : (s₀.gpr .rsi).toNat = R) (hT : ArgT SP T s₀) (h : OpenIn s₀ Ctx W SP A D n t s)
+    (ha : WP isa aadP s
+      (OneMid s₀ Ctx W SP D n (ctxH s₀.mem Ctx) (bytesAt s₀.mem Np nl) (bytesAt s₀.mem A al) s.mem)) :
+    WP isa aadP s fun s' => OneS M Ctx W SP R A al D n none s' ∧
+      s'.mem.readW (W + BitVec.ofNat 64 224) 64 = BitVec.ofNat 64 t ∧ ArgR SP T s' :=
+  WP.mono ha fun _ Mi => by
+    refine ⟨(h.1.aadPre C X hNp hnl hal hR).1.frame L Mi.env (Mi.rd.trans h.1.rd.symm) (Mi.wr.trans h.1.wr.symm)
+      C.dE (wFrame_one (.inl rfl) (wFrame_cons Mi.fr)), ?_, ?_, by rw [Mi.rd, Mi.wr]; exact C.args 2 (by decide)⟩
+    · rw [Mi.fr.readW (r := ⟨W + BitVec.ofNat 64 224, 8⟩) (Region.contains_self _ _) (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl | rfl
         · exact L.w_w (.inr (by decide)) (by decide) (by decide)
         · exact L.w_w (.inr (by decide)) (by decide) (by decide)
         · exact L.w_w (.inl (by decide)) (by decide) (by decide)
         · exact (L.stk_w (by decide)).symm) (by decide), h.2.2]
-    · rw [ArgT, M.frame.readW (r := ⟨SP + BitVec.ofNat 64 24, 8⟩) (Region.contains_self _ _) (fun r hr => by
+    · rw [ArgT, Mi.frame.readW (r := ⟨SP + BitVec.ofNat 64 24, 8⟩) (Region.contains_self _ _) (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl
         · exact C.arg24 (by decide) _ (.inl fun _ h => h)
@@ -104,15 +119,16 @@ theorem blocksTl_ok {R : Nat} {A : Addr} {al : Nat} {D : Addr} {n t : Nat} {Tp :
       rw [ArgT, (obFrame_B P.frame).readW (r := ⟨SP + BitVec.ofNat 64 24, 8⟩) (Region.contains_self _ _)
         oA.oneFrameB (by decide), h.2.2.1], by rw [P.rd, P.wr]; exact h.2.2.2⟩
 
-/-- `oneTag` keeps `OneS` and the tag length. -/
-theorem tagTl_ok {R : Nat} {A : Addr} {al : Nat} {D : Addr} {n N t : Nat} {Tp : Addr} {s : State} (hN : N < 2 ^ 64)
+/-- The tag's code `tg` keeps `OneS` and the tag length. -/
+theorem tagTl_ok {tg : Prog isa} (htg : TagOk M tg) {R : Nat} {A : Addr} {al : Nat} {D : Addr} {n N t : Nat}
+    {Tp : Addr} {s : State} (hN : N < 2 ^ 64) (hn16 : n < 16)
     (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 2560⟩) (oA : OutWS W SP ⟨SP + BitVec.ofNat 64 24, 8⟩)
     (h : OneS M Ctx W SP R A al D n (some N) s ∧ s.mem.readW (W + BitVec.ofNat 64 224) 64 = BitVec.ofNat 64 t ∧
       ArgR SP Tp s) :
-    WP isa (oneTag v.callees uO) s fun s' => OneS M Ctx W SP R A al D n (some N) s' ∧
+    WP isa tg s fun s' => OneS M Ctx W SP R A al D n (some N) s' ∧
       s'.mem.readW (W + BitVec.ofNat 64 224) 64 = BitVec.ofNat 64 t ∧ ArgR SP Tp s' :=
-  WP.mono (oneTag_ok v L (.inr rfl) (x := []) (by decide) h.1.env rfl h.1.rounds h.1.dat h.1.len (h.1.tlen N rfl) hN
-    h.1.alen h.1.dD.ok hDW h.1.dD.ctx) fun _ ⟨he, f, hrd, hwr, _⟩ => by
+  WP.mono (htg L (x := []) (by decide) h.1.env rfl h.1.rounds h.1.dat h.1.len hn16 (h.1.tlen N rfl) hN
+    h.1.alen h.1.dD.ok hDW h.1.dD.ctx h.1.ext) fun _ ⟨he, f, hrd, hwr, _⟩ => by
     have f' := wFrame_one (D := D) (n := n) (.inr rfl) f
     exact ⟨h.1.frame L he hrd hwr hDW f', by
       rw [f'.readW (r := ⟨W + BitVec.ofNat 64 224, 8⟩) (Region.contains_self _ _)
@@ -159,14 +175,16 @@ end
 
 /-- From the entry, for an allowed tag length: ZF says whether
 `openResult` fails. -/
-theorem openPre_ok (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M) {s s₁ : State}
-    {Ctx W SP Np A D Tp : Addr} {nl al n R t : Nat}
+theorem openPre_ok {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M) {aadP tg : Prog isa} (htg : TagOk M tg)
+    {s s₁ : State} {Ctx W SP Np A D Tp : Addr} {nl al n R t : Nat}
     (C : OneCtx s 5 Ctx W SP Np A D nl al n) (X : CtxExt M Ctx (W + BitVec.ofNat 64 16) W SP D n s)
     (h : OpenIn s Ctx W SP A D n t s₁)
     (hNp : s.gpr .rdx = Np) (hnl : (s.gpr .rcx).toNat = nl) (hal : (s.gpr .r9).toNat = al)
     (hR : (s.gpr .rsi).toNat = R) (hok : Spec.Gcm.tagLenOk t = true) (hT : ArgT SP Tp s)
-    (hTr : Covers [⟨Tp, t⟩] (s.rd ++ s.wr)) (oT : OutWDS W D SP n ⟨Tp, t⟩) :
-    WP isa (.seq (oneAad v.callees) (.seq (oneBlocks B.dec) (.seq (oneTag v.callees uO)
+    (hTr : Covers [⟨Tp, t⟩] (s.rd ++ s.wr)) (oT : OutWDS W D SP n ⟨Tp, t⟩)
+    (ha : WP isa aadP s₁
+      (OneMid s Ctx W SP D n (ctxH s.mem Ctx) (bytesAt s.mem Np nl) (bytesAt s.mem A al) s₁.mem)) :
+    WP isa (.seq aadP (.seq (oneBlocks B.dec) (.seq tg
       (.seq (.block [.mov .rbx (.mem (at_ .r15 tlO)), .mov .rsi (.mem (at_ .rsp 24))])
       (.seq recv (.seq (cmp uO) (.block [.store (at_ .r15 auxO) .rax, .alu .test .rax (.reg .rax)]))))))) s₁
       fun s' => (OneS M Ctx W SP R A al (D + BitVec.ofNat 64 (16 * (n / 16))) (n - 16 * (n / 16)) (some n) s' ∧
@@ -181,7 +199,7 @@ theorem openPre_ok (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M) {
     simp only [Spec.Gcm.tagLenOk, Bool.or_eq_true, beq_iff_eq, Bool.and_eq_true, decide_eq_true_eq] at hok
     omega
   have hlt := C.data.ok.lt
-  refine WP.seq (WP.mono (oneMid_ok v C E hNp hnl hal) fun s₃ Mi => ?_)
+  refine WP.seq (WP.mono ha fun s₃ Mi => ?_)
   have hal₃ : s₃.mem.readW (W + BitVec.ofNat 64 184) 64 = BitVec.ofNat 64 al := by
     rw [Mi.alen, ← hal, BitVec.ofNat_toNat, BitVec.setWidth_eq]
   have htl₃ : s₃.mem.readW (W + BitVec.ofNat 64 224) 64 = BitVec.ofNat 64 t := by
@@ -202,7 +220,7 @@ theorem openPre_ok (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M) {
       rcases hr with rfl | rfl
       · exact oA _ (.inl fun _ h => h)
       · exact oA _ (.inr (.inr (below_sub (by decide) (by decide))))) (by decide), hT]
-  refine WP.mono (openFront_ok v L B (al := al) ⟨Mi.env, hR ▸ Mi.rounds, Mi.dat, Mi.len, hd₃, C.t_c, C.t_w, C.t_d, C.sp24, hS₃.ext⟩
+  refine WP.mono (openFront_ok L B htg (al := al) ⟨Mi.env, hR ▸ Mi.rounds, Mi.dat, Mi.len, hd₃, C.t_c, C.t_w, C.t_d, C.sp24, hS₃.ext⟩
     Mi.hH hal₃ htl₃ hb.1 hb.2 Mi.abs Mi.j0 Mi.cb hTa₃ (by rw [Mi.rd, Mi.wr]; exact C.args 2 (by decide))
     (by rw [Mi.rd, Mi.wr]; exact hTr) oT oA) fun s' F => ?_
   have kp : ∀ d, (128 ≤ d ∧ d + 8 ≤ 192) ∨ (224 ≤ d ∧ d + 8 ≤ 240) →
@@ -239,16 +257,24 @@ variable (v : GcmImpl) {Ctx W SP : Addr} (L : Lay Ctx (W + BitVec.ofNat 64 16) W
   {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M)
 include L
 
-/-- From the entry to the comparison, for an allowed tag length. -/
-theorem openPre_rel {s₀ s₀' : State} {Np A D Tp : Addr} {nl al n R t : Nat}
+/-- From the entry to the comparison, for an allowed tag length, with the
+additional data's code `aadP` and the tag's `tg`. -/
+theorem openPreW_rel {aadP tg : Prog isa} (htr : TagRel M tg) (htg : TagOk M tg) {s₀ s₀' : State}
+    {Np A D Tp : Addr} {nl al n R t : Nat}
     (C : OneCtx s₀ 5 Ctx W SP Np A D nl al n) (C' : OneCtx s₀' 5 Ctx W SP Np A D nl al n)
     (X : CtxExt M Ctx (W + BitVec.ofNat 64 16) W SP D n s₀) (X' : CtxExt M Ctx (W + BitVec.ofNat 64 16) W SP D n s₀')
     (hNp : s₀.gpr .rdx = Np) (hnl : (s₀.gpr .rcx).toNat = nl) (hal : (s₀.gpr .r9).toNat = al)
     (hR : (s₀.gpr .rsi).toNat = R)
     (hNp' : s₀'.gpr .rdx = Np) (hnl' : (s₀'.gpr .rcx).toNat = nl) (hal' : (s₀'.gpr .r9).toNat = al)
-    (hR' : (s₀'.gpr .rsi).toNat = R) (hT : ArgT SP Tp s₀) (hT' : ArgT SP Tp s₀') :
+    (hR' : (s₀'.gpr .rsi).toNat = R) (hT : ArgT SP Tp s₀) (hT' : ArgT SP Tp s₀')
+    (har : RelCT isa (fun s₁ s₂ => OpenIn s₀ Ctx W SP A D n t s₁ ∧ OpenIn s₀' Ctx W SP A D n t s₂) aadP
+      fun _ _ => True)
+    (ha : ∀ s, OpenIn s₀ Ctx W SP A D n t s → WP isa aadP s
+      (OneMid s₀ Ctx W SP D n (ctxH s₀.mem Ctx) (bytesAt s₀.mem Np nl) (bytesAt s₀.mem A al) s.mem))
+    (ha' : ∀ s, OpenIn s₀' Ctx W SP A D n t s → WP isa aadP s
+      (OneMid s₀' Ctx W SP D n (ctxH s₀'.mem Ctx) (bytesAt s₀'.mem Np nl) (bytesAt s₀'.mem A al) s.mem)) :
     RelCT isa (fun s₁ s₂ => OpenIn s₀ Ctx W SP A D n t s₁ ∧ OpenIn s₀' Ctx W SP A D n t s₂)
-      (.seq (oneAad v.callees) (.seq (oneBlocks B.dec) (.seq (oneTag v.callees uO)
+      (.seq aadP (.seq (oneBlocks B.dec) (.seq tg
         (.seq (.block [.mov .rbx (.mem (at_ .r15 tlO)), .mov .rsi (.mem (at_ .rsp 24))])
         (.seq recv (.seq (cmp uO) (.block [.store (at_ .r15 auxO) .rax, .alu .test .rax (.reg .rax)])))))))
       fun _ _ => True := by
@@ -256,10 +282,8 @@ theorem openPre_rel {s₀ s₀' : State} {Np A D Tp : Addr} {nl al n R t : Nat}
   have hlt := C.data.ok.lt
   have hDW' := C.dE.sub_left (Offset.sub_base D (d := 16 * (n / 16)) (n := n - 16 * (n / 16)) (by omega))
   have oA := C.arg24 (by decide)
-  have a := rel_wp ((oneAad_rel v L (R := R) (Np := Np) (nl := nl) (A := A) (al := al) (T := none) hDW).mono
-      (P' := fun (s₁ s₂ : State) => OpenIn s₀ Ctx W SP A D n t s₁ ∧ OpenIn s₀' Ctx W SP A D n t s₂)
-      (fun _ _ h => ⟨h.1.1.aadPre C X hNp hnl hal hR, h.2.1.aadPre C' X' hNp' hnl' hal' hR'⟩) fun _ _ h => h)
-    (fun _ _ h => h) (fun _ h => aadTl_ok v L C hNp hnl hal hT h) (fun _ h => aadTl_ok v L C' hNp' hnl' hal' hT' h)
+  have a := rel_wp har (fun _ _ h => h) (fun _ h => aadTlW_ok L C X hNp hnl hal hR hT h (ha _ h))
+    (fun _ h => aadTlW_ok L C' X' hNp' hnl' hal' hR' hT' h (ha' _ h))
   have bl := rel_wp ((oneBlocksD_rel B L (R := R) (A := A) (al := al) (T := none) C.t_c C.t_w C.t_d C.sp24).mono
       (P' := fun (s₁ s₂ : State) =>
         (OneS M Ctx W SP R A al D n none s₁ ∧ s₁.mem.readW (W + BitVec.ofNat 64 224) 64 = BitVec.ofNat 64 t ∧
@@ -269,13 +293,13 @@ theorem openPre_rel {s₀ s₀' : State} {Np A D Tp : Addr} {nl al n R t : Nat}
       (fun _ _ h => ⟨h.1.1, h.2.1⟩) fun _ _ h => h) (fun _ _ h => h)
     (fun _ h => blocksTl_ok L B C.t_c C.t_w C.t_d C.sp24 oA h)
     (fun _ h => blocksTl_ok L B C.t_c C.t_w C.t_d C.sp24 oA h)
-  have b := rel_wp ((oneTag_rel v L (M := M) (.inr rfl) hDW' (N := n)).mono (P' := fun (s₁ s₂ : State) =>
+  have b := rel_wp ((htr L hDW' (N := n)).mono (P' := fun (s₁ s₂ : State) =>
         (OneS M Ctx W SP R A al (D + BitVec.ofNat 64 (16 * (n / 16))) (n - 16 * (n / 16)) (some n) s₁ ∧
           s₁.mem.readW (W + BitVec.ofNat 64 224) 64 = BitVec.ofNat 64 t ∧ ArgR SP Tp s₁) ∧
         (OneS M Ctx W SP R A al (D + BitVec.ofNat 64 (16 * (n / 16))) (n - 16 * (n / 16)) (some n) s₂ ∧
           s₂.mem.readW (W + BitVec.ofNat 64 224) 64 = BitVec.ofNat 64 t ∧ ArgR SP Tp s₂))
       (fun _ _ h => ⟨h.1.1, h.2.1⟩) fun _ _ h => h) (fun _ _ h => h)
-    (fun _ h => tagTl_ok v L hlt hDW' oA.ws h) (fun _ h => tagTl_ok v L hlt hDW' oA.ws h)
+    (fun _ h => tagTl_ok L htg hlt (by omega) hDW' oA.ws h) (fun _ h => tagTl_ok L htg hlt (by omega) hDW' oA.ws h)
   have c := rel_wp (rel_taint (P := fun (s₁ s₂ : State) => True ∧
       (OneS M Ctx W SP R A al (D + BitVec.ofNat 64 (16 * (n / 16))) (n - 16 * (n / 16)) (some n) s₁ ∧
         s₁.mem.readW (W + BitVec.ofNat 64 224) 64 = BitVec.ofNat 64 t ∧ ArgR SP Tp s₁) ∧
@@ -295,7 +319,7 @@ theorem openPre_rel {s₀ s₀' : State} {Np A D Tp : Addr} {nl al n R t : Nat}
       rcases hr with rfl | rfl
       · rw [h.2.1.2.1, h.2.2.2.1]
       · rw [h.2.1.2.2, h.2.2.2.2]⟩) ⟨_, by taint_decide⟩
-  exact RelCT.seq (a.mono (fun _ _ h => h) fun _ _ h => ⟨⟨h.1.1, h.2.1⟩, h.1.2, h.2.2⟩)
+  exact RelCT.seq (a.mono (fun _ _ h => h) fun _ _ h => ⟨h.2.1, h.2.2⟩)
     (RelCT.seq (bl.mono (fun _ _ h => h) fun _ _ h => h.2) (RelCT.seq b (RelCT.seq c d)))
 
 /-- `oneUndo` in two runs: the same branch on the public length, and the same
@@ -413,6 +437,51 @@ theorem openBody_relOf {s₀ s₀' : State} {Ctx W SP A D : Addr} {n t : Nat} {m
     · exact RelCT.of_false fun _ _ h => by have := h.1.2.1.2.symm.trans h.2; simp [hok] at this
     exact (hrel hok).mono (fun _ _ h => ⟨h.1.2.1.1, h.1.2.2.1⟩) fun _ _ h => h
 
+/-- For an allowed tag length: the additional data (`aadP`, which leaves what
+`oneAad` does), `oneBlocks`, the tag (`tg`), the tags compared, and the rest
+decrypted or the whole blocks encrypted again. -/
+theorem openOkW_rel (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M) {aadP tg : Prog isa}
+    (htr : TagRel M tg) (htg : TagOk M tg) {s₀ s₀' : State}
+    {Ctx W SP Np A D Tp : Addr} {nl al n R t : Nat}
+    (C : OneCtx s₀ 5 Ctx W SP Np A D nl al n) (C' : OneCtx s₀' 5 Ctx W SP Np A D nl al n)
+    (X : CtxExt M Ctx (W + BitVec.ofNat 64 16) W SP D n s₀) (X' : CtxExt M Ctx (W + BitVec.ofNat 64 16) W SP D n s₀')
+    (hNp : s₀.gpr .rdx = Np) (hnl : (s₀.gpr .rcx).toNat = nl) (hal : (s₀.gpr .r9).toNat = al)
+    (hR : (s₀.gpr .rsi).toNat = R)
+    (hNp' : s₀'.gpr .rdx = Np) (hnl' : (s₀'.gpr .rcx).toNat = nl) (hal' : (s₀'.gpr .r9).toNat = al)
+    (hR' : (s₀'.gpr .rsi).toNat = R) (hT : ArgT SP Tp s₀) (hT' : ArgT SP Tp s₀')
+    (hTr : Covers [⟨Tp, t⟩] (s₀.rd ++ s₀.wr)) (hTr' : Covers [⟨Tp, t⟩] (s₀'.rd ++ s₀'.wr))
+    (oT : OutWDS W D SP n ⟨Tp, t⟩)
+    (hres : (Spec.Gcm.openResult (ctxCiph s₀.mem Ctx R) (ctxH s₀.mem Ctx) t (bytesAt s₀.mem Np nl)
+        (bytesAt s₀.mem D n) (bytesAt s₀.mem A al) (bytesAt s₀.mem Tp t)).isSome =
+      (Spec.Gcm.openResult (ctxCiph s₀'.mem Ctx R) (ctxH s₀'.mem Ctx) t (bytesAt s₀'.mem Np nl)
+        (bytesAt s₀'.mem D n) (bytesAt s₀'.mem A al) (bytesAt s₀'.mem Tp t)).isSome)
+    (hok : Spec.Gcm.tagLenOk t = true)
+    (har : RelCT isa (fun s₁ s₂ => OpenIn s₀ Ctx W SP A D n t s₁ ∧ OpenIn s₀' Ctx W SP A D n t s₂) aadP
+      fun _ _ => True)
+    (ha : ∀ s, OpenIn s₀ Ctx W SP A D n t s → WP isa aadP s
+      (OneMid s₀ Ctx W SP D n (ctxH s₀.mem Ctx) (bytesAt s₀.mem Np nl) (bytesAt s₀.mem A al) s.mem))
+    (ha' : ∀ s, OpenIn s₀' Ctx W SP A D n t s → WP isa aadP s
+      (OneMid s₀' Ctx W SP D n (ctxH s₀'.mem Ctx) (bytesAt s₀'.mem Np nl) (bytesAt s₀'.mem A al) s.mem)) :
+    RelCT isa (fun s₁ s₂ => OpenIn s₀ Ctx W SP A D n t s₁ ∧ OpenIn s₀' Ctx W SP A D n t s₂)
+      (.seq aadP
+        (.seq (oneBlocks B.dec)
+        (.seq tg
+        (.seq (.block [.mov .rbx (.mem (at_ .r15 tlO)), .mov .rsi (.mem (at_ .rsp 24))])
+        (.seq recv
+        (.seq (cmp uO)
+        (.seq (.block [.store (at_ .r15 auxO) .rax, .alu .test .rax (.reg .rax)])
+        (.seq (.ite .e (oneUndo v.callees) (oneCrypt v.callees))
+          (.block [.mov .rax (.mem (at_ .r15 auxO))])))))))))
+      fun s₁ s₂ => Env Ctx (W + BitVec.ofNat 64 16) W SP s₁ ∧ Env Ctx (W + BitVec.ofNat 64 16) W SP s₂ := by
+  have L := C.lay
+  have hlt := C.data.ok.lt
+  refine rel_reassoc7 (RelCT.seq ?_ (openPost_rel v L (M := M) (R := R) (A := A) (al := al) (congrArg (!·) hres)
+    (C.dE.sub_left (Offset.sub_base D (d := 16 * (n / 16)) (n := n - 16 * (n / 16)) (by omega)))))
+  exact rel_wp ((openPreW_rel L B htr htg C C' X X' hNp hnl hal hR hNp' hnl' hal' hR' hT hT' har ha ha').mono
+      (fun _ _ h => h) fun _ _ h => h) (fun _ _ h => h)
+    (fun _ h => openPre_ok B htg C X h hNp hnl hal hR hok hT hTr oT (ha _ h))
+    (fun _ h => openPre_ok B htg C' X' h hNp' hnl' hal' hR' hok hT' hTr' oT (ha' _ h))
+
 /-- For an allowed tag length: `oneAad`, `oneBlocks`, the tags compared, and
 the rest decrypted or the whole blocks encrypted again. -/
 theorem openOk_rel (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M) {s₀ s₀' : State}
@@ -440,15 +509,13 @@ theorem openOk_rel (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M) {
         (.seq (.block [.store (at_ .r15 auxO) .rax, .alu .test .rax (.reg .rax)])
         (.seq (.ite .e (oneUndo v.callees) (oneCrypt v.callees))
           (.block [.mov .rax (.mem (at_ .r15 auxO))])))))))))
-      fun s₁ s₂ => Env Ctx (W + BitVec.ofNat 64 16) W SP s₁ ∧ Env Ctx (W + BitVec.ofNat 64 16) W SP s₂ := by
+      fun s₁ s₂ => Env Ctx (W + BitVec.ofNat 64 16) W SP s₁ ∧ Env Ctx (W + BitVec.ofNat 64 16) W SP s₂ :=
   have L := C.lay
-  have hlt := C.data.ok.lt
-  refine rel_reassoc7 (RelCT.seq ?_ (openPost_rel v L (M := M) (R := R) (A := A) (al := al) (congrArg (!·) hres)
-    (C.dE.sub_left (Offset.sub_base D (d := 16 * (n / 16)) (n := n - 16 * (n / 16)) (by omega)))))
-  exact rel_wp ((openPre_rel v L B C C' X X' hNp hnl hal hR hNp' hnl' hal' hR' hT hT').mono
-      (fun _ _ h => h) fun _ _ h => h) (fun _ _ h => h)
-    (fun _ h => openPre_ok v B C X h hNp hnl hal hR hok hT hTr oT)
-    (fun _ h => openPre_ok v B C' X' h hNp' hnl' hal' hR' hok hT' hTr' oT)
+  openOkW_rel v B (tagRel_oneTag v) (tagOk_oneTag v) C C' X X' hNp hnl hal hR hNp' hnl' hal' hR' hT hT' hTr hTr' oT
+    hres hok ((oneAad_rel v L (R := R) (Np := Np) (nl := nl) (A := A) (al := al) (T := none) C.dE).mono
+      (P' := fun (s₁ s₂ : State) => OpenIn s₀ Ctx W SP A D n t s₁ ∧ OpenIn s₀' Ctx W SP A D n t s₂)
+      (fun _ _ h => ⟨h.1.1.aadPre C X hNp hnl hal hR, h.2.1.aadPre C' X' hNp' hnl' hal' hR'⟩) fun _ _ _ => trivial)
+    (fun _ h => oneMid_ok v C h.1 hNp hnl hal) (fun _ h => oneMid_ok v C' h.1 hNp' hnl' hal')
 
 /-- The leak `open` may have: whether it succeeds. -/
 theorem leak_bool {a b : Bool} (h : [if a = true then 1 else 0] = [if b = true then 1 else 0]) : a = b := by

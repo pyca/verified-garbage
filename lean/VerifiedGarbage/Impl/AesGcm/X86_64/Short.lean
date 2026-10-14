@@ -439,23 +439,25 @@ def «seal» (pw : Prog isa := powers) : Prog isa :=
         (.seq (oneAad c) (.seq (oneBlocks c.enc) finish)) (sealShort pw)))
       (.seq (.block (tagOut (at_ .rsp 24))) (.block restore)))
 
+/-- The other instances' body of `open`, after the entry and `tagLenOk`. -/
+def openLong : Prog isa :=
+  .seq (oneAad c)
+  (.seq (oneBlocks c.dec)
+  (.seq (oneTag c uO)
+  (.seq (.block [.mov .rbx (.mem (at_ .r15 tlO)), .mov .rsi (.mem (at_ .rsp 24))])
+  (.seq recv
+  (.seq (cmp uO)
+  (.seq (.block [.store (at_ .r15 auxO) .rax, .alu .test .rax (.reg .rax)])
+  (.seq (.ite .e (oneUndo c) (oneCrypt c))
+    (.block [.mov .rax (.mem (at_ .r15 auxO))]))))))))
+
 /-- `open` with the short path (`cond`), with the table of powers from `pw`,
-or else the other instances' body. -/
-def «open» (pw : Prog isa := powers) : Prog isa :=
+or else `lng` (the other instances' body, `openLong`, by default). -/
+def «open» (pw : Prog isa := powers) (lng : Prog isa := openLong c) : Prog isa :=
   .seq (.block (oneEntry 40 ++ ([.mov .rbx (.mem (at_ .rsp 32)), .store (at_ .r15 tlO) .rbx] : List Instr)))
   (.seq tagLenOk
   (.seq (.ite .e (.block [.mov32 .rax (imm 0)])
-      (.seq cond (.ite .e
-        (.seq (oneAad c)
-        (.seq (oneBlocks c.dec)
-        (.seq (oneTag c uO)
-        (.seq (.block [.mov .rbx (.mem (at_ .r15 tlO)), .mov .rsi (.mem (at_ .rsp 24))])
-        (.seq recv
-        (.seq (cmp uO)
-        (.seq (.block [.store (at_ .r15 auxO) .rax, .alu .test .rax (.reg .rax)])
-        (.seq (.ite .e (oneUndo c) (oneCrypt c))
-          (.block [.mov .rax (.mem (at_ .r15 auxO))])))))))))
-        (openShort pw))))
+      (.seq cond (.ite .e lng (openShort pw))))
     (.block restore)))
 
 end VG.Impl.AesGcm.X86_64.Short

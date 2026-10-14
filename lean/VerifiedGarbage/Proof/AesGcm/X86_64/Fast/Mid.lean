@@ -37,6 +37,17 @@ open VG.Proof.AesGcm.X86_64.Short (ShortFacts KsOk CondKeep IsH1 condS_of)
 open VG.Spec.Aes (bytesAt)
 open VG.Spec.Gcm (blockAt ctxH)
 
+theorem fastCond_mx : (Impl.AesGcm.X86_64.Fast.cond : Prog isa).allInstrs (fun i => !loadsMxcsr i) = true := by
+  decide +kernel
+theorem fastCond_spSafe : (Impl.AesGcm.X86_64.Fast.cond : Prog isa).all (fun i => !X86_64.isa.writesSp i) = true := by
+  decide +kernel
+theorem fastCond_xdepth : (Impl.AesGcm.X86_64.Fast.cond : Prog isa).x86_64Depth = 0 := by decide +kernel
+theorem fastAad_mx : (Impl.AesGcm.X86_64.Fast.aad : Prog isa).allInstrs (fun i => !loadsMxcsr i) = true := by
+  decide +kernel
+theorem fastAad_spSafe : (Impl.AesGcm.X86_64.Fast.aad : Prog isa).all (fun i => !X86_64.isa.writesSp i) = true := by
+  decide +kernel
+theorem fastAad_xdepth : (Impl.AesGcm.X86_64.Fast.aad : Prog isa).x86_64Depth = 0 := by decide +kernel
+
 /-- `aad` after the entry, for a 12-byte nonce and at most 16 bytes of
 additional data: what `oneAad` leaves. -/
 theorem aad_mid (hF : ShortFacts) {k : Nat} {s s₁ : State} {Ctx W SP Np A D : Addr} {al n : Nat}

@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.VerifiedP
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.Verified
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.OpenCT
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -12,7 +13,7 @@ import all Init.Data.Vector.Basic
 `vg_aes_gcm_seal_prepared` and `vg_aes_gcm_open_prepared` take the short
 path with its table of powers copied from the prepared key context
 (`GcmImpl.sealCodeP`, `GcmImpl.openCodeP`), and otherwise the code of the
-other instances. -/
+other instances, which `open` replaces for TLS records with `FastOpen.sel`. -/
 
 @[expose] public section
 
@@ -40,7 +41,9 @@ theorem openSelPrepared_framed (hF : Short.ShortFacts) :
       (Spec.Gcm.openPreparedContract X86_64.abi 2632) := by
   unfold GcmImpl.openCodeP GcmImpl.openCode; split
   · exact openPreparedCode_framed (openPreparedCode_verified (Short.openMP_correct v B hF)
-      (Short.openMW_ct hF v B Short.powOk_powersP Short.powersP_ct)) (Short.openMP_spSafe v B) (Short.openMP_xdepth v B)
+      (Short.openMW_ct hF v B Short.powOk_powersP Short.powersP_ct
+        (FastOpen.openSel_rel hF v B (Short.longRel_openLong v B)))) (Short.openMP_spSafe v B)
+      (Short.openMP_xdepth v B)
   · exact openPrepared_framed v B
 
 end VG.Proof.AesGcm.X86_64
