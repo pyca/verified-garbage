@@ -5,6 +5,7 @@ import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Prepared
 public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemTo
 import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemD
 import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemG
+import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemGTo
 public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemGLanes
 import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.OutOfPlace
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.LoopP
@@ -435,7 +436,7 @@ theorem stitchTo_ok : StitchToOkM CtxMode.prepared Impl.Gcm.X86_64.StitchZHTo.en
 theorem encRTo_ok {s₀ : State} (hp : Proof.Gcm.X86_64.Stitch.SPreTo CtxMode.prepared s₀) :
     WP isa Impl.Gcm.X86_64.StitchZHTo.encR s₀ (Proof.Gcm.X86_64.Stitch.EPostTo s₀) :=
   WP.seq (WP.mono (setup_ok hp) fun _ ⟨_, hR, hpw, hK⟩ =>
-    encTailRGTo_ok hp (finZ (finP hpw)) (StitchZH.remZ (finP hpw))
+    encTailRGTo_ok hp (finZ (finP hpw)) (StitchZH.remZG (finP hpw))
       (fun _ h256 hI hC => bigPTo_ok hp (finZ (finP hpw)) hpw (fin48P (hk s₀)) h256 hI hC) hR hK)
 
 /-- Prepared powers and cached AES keys, out of place, for any number of
