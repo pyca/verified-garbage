@@ -37,8 +37,8 @@ def variant : Proof.Rsa.AArch64.CrtImpl where
   pcVerified := precompute_verified Mont.base
   pcNoFrames := by decide +kernel
   pdName := Spec.Rsa.publicPrecomputedCheckedApi.name
-  pd := Impl.Rsa.AArch64.Folded.checked Mont.base.mm
-  pdVerified := Proof.Rsa.AArch64.FoldedPublic.checked_verified Mont.base
+  pd := Impl.Rsa.AArch64.Folded.checked Mont.productEight.mm
+  pdVerified := Proof.Rsa.AArch64.FoldedPublic.checked_verified Mont.productEight
   pdNoFrames := by decide +kernel
   suffix := ""
   features := []
