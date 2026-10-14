@@ -191,8 +191,11 @@ CPU_FEATURES = {
 # (bench_compare.py), every benchmark took 21-28 minutes on the x86-64
 # runners, and some passed the 30-minute timeout once P-521's groups also
 # ran from fresh copies (bench_compare.py's FRESH_COPIES), so a run of all
-# of them is split in two. A targeted run, of fewer, stays one job.
-BENCHMARKS_PER_JOB = 60
+# of them was split in two. With AES-GCM's groups from copies too, those
+# took about 7.7 minutes of each half (14 runs of about 75 benchmark ids),
+# and the slower runners passed the timeout again, so it is split in three.
+# A targeted run, of fewer, stays one job.
+BENCHMARKS_PER_JOB = 40
 
 # Changes to this script choose benchmarks but are not measured by any:
 # `ci/test_check_benchmarks.py` tests it.

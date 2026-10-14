@@ -101,8 +101,9 @@ jobs:
     # the timeout. One round with a shorter warm-up and measurement, and no
     # OpenSSL or aws-lc-rs reference on pull requests (bench_compare.py), take
     # about half, until running P-521's groups from fresh copies took some
-    # x86-64 configurations past it again: BENCHMARKS_PER_JOB
-    # (ci/bench_arches.py) splits a run of every benchmark into shards.
+    # x86-64 configurations past it again, and AES-GCM's from copies did once
+    # more: BENCHMARKS_PER_JOB (ci/bench_arches.py) splits a run of every
+    # benchmark into shards.
     timeout-minutes: 30
     # With an empty image the job runs directly on the runner.
     container:

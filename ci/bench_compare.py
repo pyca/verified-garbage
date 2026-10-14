@@ -56,7 +56,10 @@ ChaCha20-Poly1305's groups depend on the draw too, on AMD's Zen 3 and Zen 5
 (its code of up to about 100 KB a function, rather than a table): eight
 copies of one binary on an EPYC 7763 sealed 4096 bytes in 2.05–2.51 µs and
 16384 in 7.15–9.21 µs, and one run of each side of an unchanged function
-reported it up to 46% slower, so they run from copies as well.
+reported it up to 46% slower, so they run from copies as well. So do
+AES-GCM's (not AES-GCM-SIV's): eight copies of one binary on an x86-64
+runner spread by up to 35% (`aes-256-gcm-tls-open` at 1025 bytes), 29%
+(`aes-128-gcm-encrypt-out-of-place` at 64) and 28% (the TLS seal at 4095).
 
 `--modules` runs only the benchmarks of those library modules (see
 `bench_arches.py`), and `--shard i/n` only the i-th of n shares of them,
@@ -89,14 +92,14 @@ TARGET = pathlib.Path("bench-target").resolve()
 
 # The benchmark groups (`<primitive>`s) whose time depends on the physical
 # pages that hold the binary (see the module docstring): those that read a
-# comb's table of hundreds of kilobytes, and ChaCha20-Poly1305's. They run
-# from `--copies` copies of each binary.
-FRESH_COPIES = re.compile(r"^(?:ec_p521_public_key|ecdsa_p521_|chacha20poly1305)")
+# comb's table of hundreds of kilobytes, ChaCha20-Poly1305's and AES-GCM's.
+# They run from `--copies` copies of each binary.
+FRESH_COPIES = re.compile(r"^(?:ec_p521_public_key|ecdsa_p521_|chacha20poly1305|aes-(?:128|256)-gcm-(?!siv))")
 # The `VG_BENCH_MODULES` of the copies' runs: the modules whose benchmarks
 # hold those groups. The binary sets up every selected benchmark before
 # criterion's filter applies (RSA keys of up to 4096 bits among them),
 # which took about 110 s of each copy's run with every module.
-FRESH_COPIES_MODULES = "ecdsa_p521 chacha20poly1305"
+FRESH_COPIES_MODULES = "ecdsa_p521 chacha20poly1305 aes_gcm"
 
 # How src/cpu.rs stops a run whose `VG_CPU_FEATURES` names features this CPU
 # does not have.
