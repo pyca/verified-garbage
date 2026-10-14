@@ -59,7 +59,7 @@ def signFailure : Prog isa := seqs [
 
 def sign (mul : Nat → Nat → Nat → Prog isa) : Prog isa := seqs [
   .block signEntry, Checks.domainShape,
-  .ite (.zero .x .x3) signFailure (seqs [workspaces, Checks.publicKey mul,
+  .ite (.zero .x .x3) signFailure (seqs [workspaces, Checks.signingKey mul,
     Checks.privateKey mul, Core.sign mul, Checks.zero (Core.scalar r) true,
     Checks.zero (Core.scalar s) true, writeScalar r false, writeScalar s true, .block result])]
 

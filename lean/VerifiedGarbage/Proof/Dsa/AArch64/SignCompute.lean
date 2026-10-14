@@ -2,14 +2,14 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.CoreSign
 public import VerifiedGarbage.Proof.Dsa.AArch64.PublicKey
-import VerifiedGarbage.Proof.Dsa.AArch64.PrivateKey
+public import VerifiedGarbage.Proof.Dsa.AArch64.SigningKey
+public import VerifiedGarbage.Proof.Dsa.AArch64.PrivateKey
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtSel
 import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Proof.MdStream.Spec
-import VerifiedGarbage.Spec.RsaPss
 
 /-! # Signing computation, including every key and scalar rejection mask -/
 
@@ -27,12 +27,38 @@ def privateAccepted (L : ExecutionLayout) (data : SignValues) (yb : List Byte) (
   (decide (0 < Spec.Dsa.decodeBE data.privateScalar ∧ Spec.Dsa.decodeBE data.privateScalar < L.subgroup) &&
     publicAccepted L data.generator yb valid))
 
+/-- The omitted public-value check follows from the generator check and the
+private/public key equality, even when the domain integers are composite. -/
+theorem privateAccepted_signingKey (L : ExecutionLayout) (data : SignValues)
+    (yb : List Byte) (valid : Bool) (hp : 1 < L.modulus)
+    (hpf : L.modulus ≤ 256 ^ L.pLen) :
+    (decide (Spec.Dsa.encodeBE L.pLen
+      (Spec.Dsa.powMod (Spec.Dsa.decodeBE data.generator) (Spec.Dsa.decodeBE data.privateScalar) L.modulus) = yb) &&
+    (decide (0 < Spec.Dsa.decodeBE data.nonce ∧ Spec.Dsa.decodeBE data.nonce < L.subgroup) &&
+    (decide (0 < Spec.Dsa.decodeBE data.privateScalar ∧ Spec.Dsa.decodeBE data.privateScalar < L.subgroup) &&
+      signingKeyAccepted L data.generator yb valid))) = privateAccepted L data yb valid := by
+  by_cases he : Spec.Dsa.encodeBE L.pLen
+      (Spec.Dsa.powMod (Spec.Dsa.decodeBE data.generator) (Spec.Dsa.decodeBE data.privateScalar) L.modulus) = yb
+  · by_cases hg : Spec.Dsa.powMod (Spec.Dsa.decodeBE data.generator) L.subgroup L.modulus = 1
+    · have hy : Spec.Dsa.decodeBE yb =
+          Spec.Dsa.powMod (Spec.Dsa.decodeBE data.generator) (Spec.Dsa.decodeBE data.privateScalar) L.modulus := by
+        rw [← he, decodeBE_encodeBE (Nat.lt_of_lt_of_le (VG.Proof.Dsa.powMod_lt _ _ (by omega)) hpf)]
+      have hsub : Spec.Dsa.powMod (Spec.Dsa.decodeBE yb) L.subgroup L.modulus = 1 := by
+        rw [hy, VG.Proof.Dsa.powMod_eq, VG.Proof.Dsa.powMod_eq, ← Nat.pow_mod,
+          ← Nat.pow_mul, Nat.mul_comm (Spec.Dsa.decodeBE data.privateScalar) L.subgroup,
+          Nat.pow_mul, Nat.pow_mod,
+          ← VG.Proof.Dsa.powMod_eq (Spec.Dsa.decodeBE data.generator) L.subgroup L.modulus, hg]
+        simp [Nat.mod_eq_of_lt hp]
+      simp only [privateAccepted, publicAccepted, signingKeyAccepted, hsub, decide_true, Bool.true_and]
+    · simp [privateAccepted, publicAccepted, signingKeyAccepted, hg]
+  · simp [privateAccepted, he]
+
 def signAccepted (L : ExecutionLayout) (data : SignValues) (yb : List Byte) (valid : Bool) : Bool :=
   !decide (∀ b ∈ Spec.Dsa.encodeBE L.qLen (data.s L), b = 0) &&
   (!decide (∀ b ∈ Spec.Dsa.encodeBE L.qLen (data.r L), b = 0) && privateAccepted L data yb valid)
 
 def signCompute (mul : Nat → Nat → Nat → Prog isa) : Prog isa := seqs [
-  Checks.publicKey mul, Checks.privateKey mul, Core.sign mul,
+  Checks.signingKey mul, Checks.privateKey mul, Core.sign mul,
   Checks.zero (Core.scalar r) true, Checks.zero (Core.scalar s) true]
 
 theorem signCompute_ok (M : Mont) {L : ExecutionLayout} {s0 : State} (h0 : Ready L s0)
@@ -60,7 +86,7 @@ theorem signCompute_ok (M : Mont) {L : ExecutionLayout} {s0 : State} (h0 : Ready
   have hr : r + L.qLen ≤ usedBytes := by unfold r usedBytes; omega
   have hs : s + L.qLen ≤ usedBytes := by unfold s usedBytes; omega
   unfold signCompute
-  refine WP.seq (WP.mono (publicKey_ok M h0 hp hq hop hoq hpf hqf hg hy hqb hgl hyl hqlen hqval hm)
+  refine WP.seq (WP.mono (signingKey_ok M h0 hp hq hop hoq hpf hqf hg hy hqb hgl hyl hqlen hqval hm)
     fun s1 ⟨h1, hm1, hqm1, hf1, hk1⟩ => ?_)
   have hg1 := h0.preserveExternal h1 hf1 hk1 (by decide) (by simp [stablePointer, Core.generator]) hg
   have hy1 := h0.preserveExternal h1 hf1 hk1 (by decide) (by simp [stablePointer, Core.publicValue]) hy
@@ -69,6 +95,7 @@ theorem signCompute_ok (M : Mont) {L : ExecutionLayout} {s0 : State} (h0 : Ready
   have hz1 := h0.preserveExternal h1 hf1 hk1 (by decide) (by simp [stablePointer, Core.digest]) hz
   refine WP.seq (WP.mono (privateKey_ok M h1 hp hop hg1 hy1 hx1 hn1 hgl hyl hxl hnl hm1)
     fun s2 ⟨h2, hm2, hqm2bytes, hf2, hk2⟩ => ?_)
+  rw [privateAccepted_signingKey L data yb valid hp hpf] at hm2
   have hg2 := h1.preserveExternal h2 hf2 hk2 (by decide) (by simp [stablePointer, Core.generator]) hg1
   have hx2 := h1.preserveExternal h2 hf2 hk2 (by decide) (by simp [stablePointer, Core.privateScalar]) hx1
   have hn2 := h1.preserveExternal h2 hf2 hk2 (by decide) (by simp [stablePointer, Core.nonce]) hn1

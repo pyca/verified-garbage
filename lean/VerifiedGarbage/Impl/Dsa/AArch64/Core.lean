@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Impl.Dsa.Layout
 public import VerifiedGarbage.Impl.Dsa.AArch64.Arithmetic
 public import VerifiedGarbage.Impl.Dsa.AArch64.Joint
+public import VerifiedGarbage.Impl.Dsa.AArch64.PublicPower
 
 /-!
 # DSA signing and verification arithmetic on AArch64
@@ -44,6 +45,12 @@ def pow (mul : Nat → Nat → Nat → Prog isa) (ws : Nat) (base exponent outpu
   seqs ([.block (operand arg argLen base ++ operand arg2 arg2Len exponent ++
     operand result resultLen output ++ enter ws),
     Arithmetic.power mul arg argLen arg2 arg2Len] ++ finish)
+
+/-- Only for exponents declared public by the caller's contract. -/
+def publicPow (mul : Nat → Nat → Nat → Prog isa) (ws : Nat) (base exponent output : Operand) : Prog isa :=
+  seqs ([.block (operand arg argLen base ++ operand arg2 arg2Len exponent ++
+    operand result resultLen output ++ enter ws),
+    PublicPower.power mul arg argLen arg2 arg2Len] ++ finish)
 
 def product (mul : Nat → Nat → Nat → Prog isa) (ws : Nat) (a b output : Operand) : Prog isa :=
   seqs ([.block (operand arg argLen a ++ operand arg2 arg2Len b ++
