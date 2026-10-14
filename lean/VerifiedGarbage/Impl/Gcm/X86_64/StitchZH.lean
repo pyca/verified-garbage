@@ -99,6 +99,17 @@ def remBody (src : Reg) : List Instr :=
 /-- The next block, and whether it is the last. -/
 def remNext : List Instr := [.alu .add .r10 (.imm 16), .alu .sub .r9 (.imm 1), .alu .cmp .r9 (.imm 16)]
 
+/-- `remBody` for decryption: block `r10 / 16` of the last `r`, read at
+`src + r10`, is hashed as it is read (byte-reversed, with `Y` added, times its
+power at `rax + r10`), and its keystream from `scratch + 768` added to it in
+`xmm12`, stored to `rdx + r10`. -/
+def remBodyD (src : Reg) : List Instr :=
+  ([.vmovdquLoad .l128 .xmm13 (atIx src .r10 0), .vmovdquLoad .l128 .xmm12 (atIx .r11 .r10 768),
+   .vop (.vbin .vpxor .l128 .xmm12 .xmm12 .xmm13), .vmovdquStore .l128 (atIx .rdx .r10 0) .xmm12,
+   .vop (.vbin .vpshufb .l128 .xmm13 .xmm13 .xmm0), .vop (.vbin .vpxor .l128 .xmm13 .xmm13 .xmm2),
+   .vop (.vbin .vpxor .l128 .xmm2 .xmm2 .xmm2), .vmovdquLoad .l128 .xmm12 (atIx .rax .r10 0)] : List Instr) ++
+  StitchAvx.acc .xmm13 .xmm12
+
 /-! ## The blocks after the last group, as a masked group
 
 `remG` encrypts the `r` blocks after the last group as one more group of

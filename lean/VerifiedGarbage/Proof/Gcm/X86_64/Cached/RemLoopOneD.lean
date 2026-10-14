@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemLoopOne
 public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemBodyD
-public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemLoopD
 import VerifiedGarbage.Proof.Gcm.X86_64.Rev
 import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Base
 import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Ctr32
@@ -36,6 +35,9 @@ open VG.Proof.Gcm.X86_64 (revMask blockAt_eq pshufb_rev_xor)
 open VG.Proof.Gcm.X86_64.Stitch (blockAt_writeW_sep')
 open VG.Proof.Aes.X86_64.AesNi (blockAt_frame)
 open VG.Spec.Gcm (Block blockAt)
+
+/-- Block `j`, as read: what decryption hashes. -/
+abbrev REnv.H (E : REnv) (j : Nat) : Block := blockAt E.m (E.aS j)
 
 /-- After `i` of the `r` blocks. -/
 structure RInvD (E : REnv) (i : Nat) (t : State) : Prop where
@@ -128,5 +130,21 @@ theorem remLoopD1_ok {E : REnv} (hE : E.Ok) {t : State} (hI : RInvD E 0 t) :
     rwa [show E.r = i + 1 by omega]
   · exact .inr ⟨by simp only [eval, hz, h1, decide_false, Option.map_some, Bool.not_false],
       E.r - (i + 1), by omega, i + 1, rfl, by omega, hI'⟩
+
+/-- `StitchAvx.zero` (`VEX.128`) clears every lane of `xmm8` … `xmm10`. -/
+theorem zeroZ_ok (s : State) :
+    WP isa (.block Impl.Gcm.X86_64.StitchAvx.zero) s fun s' =>
+      (∀ l < 4, s'.zlane .xmm8 l = 0 ∧ s'.zlane .xmm9 l = 0 ∧ s'.zlane .xmm10 l = 0) ∧
+      (∀ x, x ≠ .xmm8 → x ≠ .xmm9 → x ≠ .xmm10 → ∀ l < 4, s'.zlane x l = s.zlane x l) ∧
+      s'.gpr = s.gpr ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
+  apply WP.of_runBlock
+  simp only [Impl.Gcm.X86_64.StitchAvx.zero, runBlock_cons, runStep_some, runBlock_nil, exec, isa,
+    Option.some.injEq, exists_eq_left']
+  refine ⟨fun l hl => ?_, fun x h8 h9 h10 l hl => ?_, rfl, rfl, rfl, rfl⟩
+  · have z : ((if l = 0 then 0#128 else 0) : BitVec 128) = 0 := ite_self _
+    simp only [VOp.exec, State.zlane_setV128 _ _ _ _ _ hl, VBinOp.sse, Pclmul.eval_pxor, BitVec.xor_self,
+      reduceCtorEq, ite_true, ite_false, z]
+    exact ⟨trivial, trivial, trivial⟩
+  · simp only [VOp.exec, State.zlane_setV128 _ _ _ _ _ hl, h8, h9, h10, ite_false]
 
 end VG.Proof.Gcm.X86_64.StitchZH
