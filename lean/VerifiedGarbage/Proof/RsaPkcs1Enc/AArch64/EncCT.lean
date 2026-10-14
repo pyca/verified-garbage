@@ -33,10 +33,12 @@ namespace VG.Proof.RsaPkcs1Enc.AArch64.Enc
 
 open VG VG.AArch64 VG.Impl.RsaPkcs1Enc.AArch64.Encrypt
 
-/-- `n` and `e` agree in the two runs' memories. -/
+/-- `n`, `e` and the words of the buffers `X` agree in the two runs'
+memories. -/
 def LeakEq (L : Lay) (m₁ m₂ : Mem) : Prop :=
   Spec.Rsa.bytesAt m₁ L.n L.k.toNat = Spec.Rsa.bytesAt m₂ L.n L.k.toNat ∧
-    Spec.Rsa.bytesAt m₁ L.e L.el.toNat = Spec.Rsa.bytesAt m₂ L.e L.el.toNat
+    Spec.Rsa.bytesAt m₁ L.e L.el.toNat = Spec.Rsa.bytesAt m₂ L.e L.el.toNat ∧
+    ∀ R ∈ L.X, Spec.Rsa.wordsAt m₁ R.base (R.len / 8) = Spec.Rsa.wordsAt m₂ R.base (R.len / 8)
 
 /-- The layout of two runs, and what each has on entry. -/
 structure Env where
@@ -51,24 +53,27 @@ structure Env where
 /-- What correctness says of a point of the code. -/
 abbrev Inv := Lay → (Reg → BitVec 64) → (VReg → BitVec 128) → Mem → State → Prop
 
-/-- Two runs with the same layout, each satisfying `Φ`. -/
-def Two (S : Nat) (Φ : Inv) (a b : State) : Prop :=
-  ∃ e : Env, e.L.Ok ∧ e.L.P = S + 1 ∧ LeakEq e.L e.m₁ e.m₂ ∧ RegsOf e.L e.g₁ ∧ RegsOf e.L e.g₂ ∧
-    Φ e.L e.g₁ e.v₁ e.m₁ a ∧ Φ e.L e.g₂ e.v₂ e.m₂ b
+/-- Two runs with the same layout, with `S` bytes of stack for the callee,
+each satisfying `Φ`, and with entry memories satisfying `Q`. -/
+def Two (Q : Lay → Mem → Prop) (S : Nat) (Φ : Inv) (a b : State) : Prop :=
+  ∃ e : Env, e.L.Ok ∧ e.L.P = S ∧ LeakEq e.L e.m₁ e.m₂ ∧ RegsOf e.L e.g₁ ∧ RegsOf e.L e.g₂ ∧
+    Φ e.L e.g₁ e.v₁ e.m₁ a ∧ Φ e.L e.g₂ e.v₂ e.m₂ b ∧ Q e.L e.m₁ ∧ Q e.L e.m₂
+
+variable {Q : Lay → Mem → Prop}
 
 /-- Code whose runs leak the same, and which establishes `Ψ`. -/
-theorem two_wp {S : Nat} {c : Prog isa} {Φ Ψ : Inv} (hct : RelCT isa (Two S Φ) c fun _ _ => True)
-    (hw : ∀ (L : Lay) g vv m₀ (t : State), L.Ok → L.P = S + 1 → RegsOf L g → Φ L g vv m₀ t →
+theorem two_wp {S : Nat} {c : Prog isa} {Φ Ψ : Inv} (hct : RelCT isa (Two Q S Φ) c fun _ _ => True)
+    (hw : ∀ (L : Lay) g vv m₀ (t : State), L.Ok → L.P = S → RegsOf L g → Q L m₀ → Φ L g vv m₀ t →
       WP isa c t (Ψ L g vv m₀)) :
-    RelCT isa (Two S Φ) c (Two S Ψ) := by
+    RelCT isa (Two Q S Φ) c (Two Q S Ψ) := by
   intro s₁ s₂ t₁ t₂ s₁' s₂' hp e₁ e₂
   obtain ⟨ht, -⟩ := hct _ _ _ _ _ _ hp e₁ e₂
-  obtain ⟨e, hL, hP, hk, r₁, r₂, f₁, f₂⟩ := hp
-  obtain ⟨_, u₁, x₁, y₁⟩ := hw _ _ _ _ s₁ hL hP r₁ f₁
-  obtain ⟨_, u₂, x₂, y₂⟩ := hw _ _ _ _ s₂ hL hP r₂ f₂
+  obtain ⟨e, hL, hP, hk, r₁, r₂, f₁, f₂, q₁, q₂⟩ := hp
+  obtain ⟨_, u₁, x₁, y₁⟩ := hw _ _ _ _ s₁ hL hP r₁ q₁ f₁
+  obtain ⟨_, u₂, x₂, y₂⟩ := hw _ _ _ _ s₂ hL hP r₂ q₂ f₂
   obtain ⟨-, rfl⟩ := Exec.det e₁ x₁
   obtain ⟨-, rfl⟩ := Exec.det e₂ x₂
-  exact ⟨ht, e, hL, hP, hk, r₁, r₂, y₁, y₂⟩
+  exact ⟨ht, e, hL, hP, hk, r₁, r₂, y₁, y₂, q₁, q₂⟩
 
 /-- Code checked by the taint analysis from the registers `rs`, which both
 runs agree on, with `sp`. -/
@@ -76,8 +81,8 @@ theorem two_taint {S : Nat} {c : Prog isa} {Φ : Inv} (rs : List Reg) {hc : VG.T
     (h : (taint.check (Taint.ofRegs rs) c hc).isSome = true)
     (hag : ∀ (L : Lay) g₁ g₂ v₁ v₂ m₁ m₂ (a b : State), L.Ok → Φ L g₁ v₁ m₁ a → Φ L g₂ v₂ m₂ b →
       a.sp = b.sp ∧ ∀ r ∈ rs, a.gpr r = b.gpr r) :
-    RelCT isa (Two S Φ) c fun _ _ => True :=
-  RelCT.taint (A := taint) (Taint.ofRegs rs) (fun _ _ ⟨_, hL, _, _, _, _, f₁, f₂⟩ => by
+    RelCT isa (Two Q S Φ) c fun _ _ => True :=
+  RelCT.taint (A := taint) (Taint.ofRegs rs) (fun _ _ ⟨_, hL, _, _, _, _, f₁, f₂, _, _⟩ => by
     obtain ⟨hsp, hr⟩ := hag _ _ _ _ _ _ _ _ _ hL f₁ f₂
     exact ⟨hsp, fun r hr' => hr r (Taint.mem_ofRegs.mp hr')⟩) h
 
@@ -86,49 +91,49 @@ theorem two {S : Nat} {c : Prog isa} {Φ Ψ : Inv} (rs : List Reg) {hc : VG.Tain
     (h : (taint.check (Taint.ofRegs rs) c hc).isSome = true)
     (hag : ∀ (L : Lay) g₁ g₂ v₁ v₂ m₁ m₂ (a b : State), L.Ok → Φ L g₁ v₁ m₁ a → Φ L g₂ v₂ m₂ b →
       a.sp = b.sp ∧ ∀ r ∈ rs, a.gpr r = b.gpr r)
-    (hw : ∀ (L : Lay) g vv m₀ (t : State), L.Ok → L.P = S + 1 → RegsOf L g → Φ L g vv m₀ t →
+    (hw : ∀ (L : Lay) g vv m₀ (t : State), L.Ok → L.P = S → RegsOf L g → Q L m₀ → Φ L g vv m₀ t →
       WP isa c t (Ψ L g vv m₀)) :
-    RelCT isa (Two S Φ) c (Two S Ψ) :=
+    RelCT isa (Two Q S Φ) c (Two Q S Ψ) :=
   two_wp (two_taint rs h hag) hw
 
 /-! ## The pieces -/
 
 theorem psLoop_ct (S : Nat) :
-    RelCT isa (Two S fun L g vv m₀ t => PsInv L g vv m₀ 0 t) psLoop
-      (Two S fun L g vv m₀ t => PsInv L g vv m₀ L.pl.toNat t) :=
+    RelCT isa (Two Q S fun L g vv m₀ t => PsInv L g vv m₀ 0 t) psLoop
+      (Two Q S fun L g vv m₀ t => PsInv L g vv m₀ L.pl.toNat t) :=
   two [.x11, .x12, .x13] (by taint_decide) (fun _ _ _ _ _ _ _ _ _ _ f₁ f₂ =>
     ⟨f₁.ctx.sp.trans f₂.ctx.sp.symm, by
       simp only [List.mem_cons, List.not_mem_nil, or_false]
       rintro r (rfl | rfl | rfl)
       exacts [f₁.x11.trans f₂.x11.symm, f₁.x12.trans f₂.x12.symm, f₁.x13.trans f₂.x13.symm]⟩)
-    fun _ _ _ _ _ hL _ _ h => psLoop_ok hL h
+    fun _ _ _ _ _ hL _ _ _ h => psLoop_ok hL h
 
 theorem sep_ct (S : Nat) :
-    RelCT isa (Two S fun L g vv m₀ t => PsInv L g vv m₀ L.pl.toNat t) (.block sep)
-      (Two S fun L g vv m₀ t => MsgInv L g vv m₀ 0 t) :=
+    RelCT isa (Two Q S fun L g vv m₀ t => PsInv L g vv m₀ L.pl.toNat t) (.block sep)
+      (Two Q S fun L g vv m₀ t => MsgInv L g vv m₀ 0 t) :=
   two [.x13] (by taint_decide) (fun _ _ _ _ _ _ _ _ _ _ f₁ f₂ =>
     ⟨f₁.ctx.sp.trans f₂.ctx.sp.symm, by
       simp only [List.mem_cons, List.not_mem_nil, or_false]
       rintro r rfl
       exact f₁.x13.trans f₂.x13.symm⟩)
-    fun _ _ _ _ _ hL _ hg h => sep_inv hL ⟨hg.2.2.2.2.2.2.1.symm, hg.2.2.2.2.2.2.2.symm⟩ h
+    fun _ _ _ _ _ hL _ hg _ h => sep_inv hL ⟨hg.2.2.2.2.2.2.1.symm, hg.2.2.2.2.2.2.2.symm⟩ h
 
 theorem msgCopy_ct (S : Nat) :
-    RelCT isa (Two S fun L g vv m₀ t => MsgInv L g vv m₀ 0 t) msgCopy
-      (Two S fun L g vv m₀ t => MsgInv L g vv m₀ L.ml.toNat t) :=
+    RelCT isa (Two Q S fun L g vv m₀ t => MsgInv L g vv m₀ 0 t) msgCopy
+      (Two Q S fun L g vv m₀ t => MsgInv L g vv m₀ L.ml.toNat t) :=
   two [.x6, .x7, .x13] (by taint_decide) (fun _ _ _ _ _ _ _ _ _ _ f₁ f₂ =>
     ⟨f₁.ctx.sp.trans f₂.ctx.sp.symm, by
       simp only [List.mem_cons, List.not_mem_nil, or_false]
       rintro r (rfl | rfl | rfl)
       exacts [f₁.x6.trans f₂.x6.symm, f₁.x7.trans f₂.x7.symm, f₁.x13.trans f₂.x13.symm]⟩)
-    fun _ _ _ _ _ hL _ _ h => msgCopy_ok hL h
+    fun _ _ _ _ _ hL _ _ _ h => msgCopy_ok hL h
 
 theorem callArgs_ct (S : Nat) :
-    RelCT isa (Two S fun L g vv m₀ t => MsgInv L g vv m₀ L.ml.toNat t) (.block callArgs)
-      (Two S CallReady) :=
+    RelCT isa (Two Q S fun L g vv m₀ t => MsgInv L g vv m₀ L.ml.toNat t) (.block callArgs)
+      (Two Q S CallReady) :=
   two [] (by taint_decide) (fun _ _ _ _ _ _ _ _ _ _ f₁ f₂ =>
     ⟨f₁.ctx.sp.trans f₂.ctx.sp.symm, fun _ h => absurd h List.not_mem_nil⟩)
-    fun _ _ _ _ _ hL _ hg h => callArgs_inv hL hg h
+    fun _ _ _ _ _ hL _ hg _ h => callArgs_inv hL hg h
 
 theorem pub_pub' {L : Lay} {S : Nat} {g₁ g₂ : Reg → BitVec 64} {v₁ v₂ : VReg → BitVec 128} {m₁ m₂ : Mem}
     (hL : L.Ok) (hk : LeakEq L m₁ m₂) {a b : State} (ha : CallReady L g₁ v₁ m₁ a) (hb : CallReady L g₂ v₂ m₂ b) :
@@ -146,12 +151,12 @@ theorem pub_pub' {L : Lay} {S : Nat} {g₁ g₂ : Reg → BitVec 64} {v₁ v₂ 
     gpr_ce _ _ _ (by decide : Reg.x6 ∉ linkRegs), gpr_ce _ _ _ (by decide : Reg.x7 ∉ linkRegs),
     stackArg_ce, ha.x0, ha.x1, ha.x2, ha.x3, ha.x4, ha.x5, ha.x6, ha.x7, hb.x0, hb.x1, hb.x2, hb.x3, hb.x4, hb.x5,
     hb.x6, hb.x7, ha.ctx.sp, hb.ctx.sp, bn ha, bn hb, be ha, be hb, Nat.mul_zero, Nat.mul_one, true_and]
-  exact ⟨by rw [ha.ctx.kept.scr, hb.ctx.kept.scr], by rw [ha.ctx.kept.sl, hb.ctx.kept.sl], hk.1, hk.2⟩
+  exact ⟨by rw [ha.ctx.kept.scr, hb.ctx.kept.scr], by rw [ha.ctx.kept.sl, hb.ctx.kept.sl], hk.1, hk.2.1⟩
 
 theorem call_ct (v : PubImpl) :
-    RelCT isa (Two v.S CallReady) (.call v.name v.code) (Two v.S Called) :=
+    RelCT isa (Two Q (v.S + 1) CallReady) (.call v.name v.code) (Two Q (v.S + 1) CalledF) :=
   two_wp (fun s₁ s₂ t₁ t₂ s₁' s₂' hp e₁ e₂ => by
-    obtain ⟨e, hL, hP, hk, _, _, f₁, f₂⟩ := hp
+    obtain ⟨e, hL, hP, hk, _, _, f₁, f₂, _, _⟩ := hp
     have c₁ := covers_pub hL f₁.ctx
     have c₂ := covers_pub hL f₂.ctx
     exact RelCT.call (n := v.name) v.correct v.ct (P := fun a b => a = s₁ ∧ b = s₂) (pubRd e.L) (pubWr e.L)
@@ -159,17 +164,17 @@ theorem call_ct (v : PubImpl) :
         subst h₁ h₂
         exact ⟨pub_pre' hL hP f₁, pub_pre' hL hP f₂, pub_pub' hL hk f₁ f₂, c₁.1, c₁.2, c₂.1, c₂.2⟩)
       _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂)
-    fun _ _ _ _ _ hL hP _ h => pub_call v hL hP h
+    fun _ _ _ _ _ hL hP _ _ h => WP.mono (pub_call v hL hP h) fun _ h => h.toCalledF
 
 theorem maskArgs_ct (S : Nat) :
-    RelCT isa (Two S Called) (.block maskArgs)
-      (Two S fun L g vv m₀ t => ∃ y r z, MaskInv L g vv m₀ y r z 0 t) :=
+    RelCT isa (Two Q S CalledF) (.block maskArgs)
+      (Two Q S fun L g vv m₀ t => ∃ y r z, MaskInv L g vv m₀ y r z 0 t) :=
   two [] (by taint_decide) (fun _ _ _ _ _ _ _ _ _ _ f₁ f₂ =>
     ⟨f₁.ctx.sp.trans f₂.ctx.sp.symm, fun _ h => absurd h List.not_mem_nil⟩)
-    fun _ _ _ _ t _ _ _ h => WP.mono (maskArgs_inv h) fun _ h' => ⟨_, _, _, h'⟩
+    fun _ _ _ _ t _ _ _ _ h => WP.mono (maskArgs_inv h) fun _ h' => ⟨_, _, _, h'⟩
 
 theorem maskLoop_ct (S : Nat) :
-    RelCT isa (Two S fun L g vv m₀ t => ∃ y r z, MaskInv L g vv m₀ y r z 0 t) maskLoop fun _ _ => True :=
+    RelCT isa (Two Q S fun L g vv m₀ t => ∃ y r z, MaskInv L g vv m₀ y r z 0 t) maskLoop fun _ _ => True :=
   two_taint [.x11, .x12, .x13] (by taint_decide) fun _ _ _ _ _ _ _ _ _ _ ⟨_, _, _, f₁⟩ ⟨_, _, _, f₂⟩ =>
     ⟨f₁.ctx.sp.trans f₂.ctx.sp.symm, by
       simp only [List.mem_cons, List.not_mem_nil, or_false]
@@ -184,7 +189,7 @@ def Entered (S : Nat) (a b : State) : Prop :=
     b = entered s₂
 
 theorem setup_ct (S : Nat) :
-    RelCT isa (Entered S) (.block setup) (Two S fun L g vv m₀ t => PsInv L g vv m₀ 0 t) := by
+    RelCT isa (Entered S) (.block setup) (Two (fun _ _ => True) (S + 1) fun L g vv m₀ t => PsInv L g vv m₀ 0 t) := by
   intro a b ta tb a' b' ⟨s₁, s₂, h₁, h₂, hp, ea, eb⟩ e₁ e₂
   subst ea eb
   obtain ⟨hsp, h0, h1, h2, h3, h4, h5, h6, h7, a0, a1, a2, a3, hn, he⟩ := hp
@@ -198,7 +203,8 @@ theorem setup_ct (S : Nat) :
   have e : lay (S + 1) s₂ = lay (S + 1) s₁ := by
     simp only [lay, h0, h1, h2, h3, h4, h5, h6, h7, a0, a1, a2, a3, hsp]
   refine ⟨ht, ⟨lay (S + 1) s₁, s₁.gpr, s₂.gpr, s₁.v, s₂.v, s₁.mem, s₂.mem⟩, lay_ok h₁, rfl,
-    ⟨?_, ?_⟩, regsOf _ s₁, e ▸ regsOf _ s₂, setup_inv y₁.1 y₁.2, e ▸ setup_inv y₂.1 y₂.2⟩
+    ⟨?_, ?_, fun R hR => absurd hR List.not_mem_nil⟩, regsOf _ s₁, e ▸ regsOf _ s₂, setup_inv y₁.1 y₁.2, e ▸ setup_inv y₂.1 y₂.2,
+    trivial, trivial⟩
   · show Spec.Rsa.bytesAt s₁.mem (s₁.gpr .x2) (s₁.gpr .x3).toNat = Spec.Rsa.bytesAt s₂.mem (s₁.gpr .x2) (s₁.gpr .x3).toNat
     rw [hn, h2, h3]
   · show Spec.Rsa.bytesAt s₁.mem (s₁.gpr .x4) (s₁.gpr .x5).toNat = Spec.Rsa.bytesAt s₂.mem (s₁.gpr .x4) (s₁.gpr .x5).toNat
@@ -208,8 +214,8 @@ theorem enc_ct (v : PubImpl) :
     ConstantTime isa (encK (v.S + 1)).pre (encK (v.S + 1)).pub (code v.name v.code) := by
   refine RelCT.constantTime (RelCT.pushFrame (fun _ _ h => h.2.2.1) (RelCT.alloc (R := fun _ _ => True) ?_))
   rw [body_eq]
-  refine ((setup_ct v.S).seq ((psLoop_ct v.S).seq ((sep_ct v.S).seq ((msgCopy_ct v.S).seq
-    ((callArgs_ct v.S).seq ((call_ct v).seq ((maskArgs_ct v.S).seq (maskLoop_ct v.S)))))))).mono ?_
+  refine ((setup_ct v.S).seq ((psLoop_ct _).seq ((sep_ct _).seq ((msgCopy_ct _).seq
+    ((callArgs_ct _).seq ((call_ct v).seq ((maskArgs_ct _).seq (maskLoop_ct _)))))))).mono ?_
     fun _ _ _ => trivial
   rintro _ _ ⟨_, _, ⟨s₁, s₂, ⟨h₁, h₂, hp⟩, rfl, rfl⟩, rfl, rfl⟩
   exact ⟨s₁, s₂, h₁, h₂, hp, rfl, rfl⟩

@@ -1,13 +1,10 @@
 //! RSAES-OAEP encryption and decryption (RFC 8017 §7.1).
 //!
-//! [`encrypt`] is the verified `vg_rsa_oaep_<H>_mgf1_<G>_encrypt` (contract
-//! `VG.Spec.RsaOaep.encryptContract`; on x86-64,
-//! `vg_rsa_oaep_<H>_mgf1_<G>_encrypt_precomputed` and its variants, contract
-//! `VG.Spec.RsaOaep.encryptPrecomputedContract`, which reuse the public key's
-//! precomputed modulus values, with ADX multiplication when available), with
-//! a seed from the operating system's generator; it encrypts the encoded
-//! message with `vg_rsa_public_checked` (on x86-64,
-//! `vg_rsa_public_precomputed_checked`).
+//! [`encrypt`] is the verified `vg_rsa_oaep_<H>_mgf1_<G>_encrypt_precomputed`
+//! (contract `VG.Spec.RsaOaep.encryptPrecomputedContract`), with a seed from
+//! the operating system's generator; it encrypts the encoded message with
+//! `vg_rsa_public_precomputed_checked`, reusing the public key's precomputed
+//! modulus values (on x86-64, with ADX multiplication when available).
 //!
 //! [`decrypt`] is the verified `vg_rsa_oaep_<H>_mgf1_<G>_decrypt` (contract
 //! `VG.Spec.RsaOaep.decryptContract`), which computes the encoded message
@@ -108,9 +105,8 @@ fn os_random(buf: &mut [u8]) -> Result<(), Error> {
     getrandom::fill(buf).map_err(|_| Error::Randomness)
 }
 
-/// The type of the implementations of `vg_rsa_oaep_<H>_mgf1_<G>_encrypt`
-/// (on x86-64, `vg_rsa_oaep_<H>_mgf1_<G>_encrypt_precomputed`), for `H` of
-/// `L` bytes.
+/// The type of the implementations of
+/// `vg_rsa_oaep_<H>_mgf1_<G>_encrypt_precomputed`, for `H` of `L` bytes.
 #[cfg(target_arch = "x86_64")]
 type EncryptFn<const L: usize> = unsafe extern "sysv64" fn(
     *mut u8,
@@ -143,6 +139,8 @@ type EncryptFn<const L: usize> = unsafe extern "C" fn(
     usize,
     *const [u8; L],
     *mut u64,
+    usize,
+    *const u64,
     usize,
 ) -> u32;
 
@@ -248,14 +246,13 @@ fn encrypt_with<const L: usize>(
     os_random(&mut seed)?;
     let mut out = vec![0u8; k];
     let mut scratch = vec![0u64; oaep_scratch_words(k)];
-    #[cfg(target_arch = "x86_64")]
     let pre = key.pre(&mut scratch);
     // SAFETY: each pointer is valid for its length (`out` and `scratch` for
     // writes, `seed` for `L` bytes, the hash function's length), and none
     // overlaps another or wraps around, as they are distinct Rust
     // allocations; `PublicKey::new` gives `64 ≤ n_len ≤ 1024`,
     // `1 ≤ e_len ≤ 5 ≤ n_len`, and `out_len = n_len` and
-    // `scratch_len = 16 n_len + 1056`; on x86-64, `pre` holds the verified
+    // `scratch_len = 16 n_len + 1056`; `pre` holds the verified
     // precomputation for `key.n`, with `2 * ceil(n_len / 8)` words; and the
     // CPU has the features of the implementations of the hash functions and
     // of the public-key operation that `encrypt_impl` chose, which are those
@@ -275,9 +272,7 @@ fn encrypt_with<const L: usize>(
             &seed,
             scratch.as_mut_ptr(),
             scratch.len(),
-            #[cfg(target_arch = "x86_64")]
             pre.as_ptr(),
-            #[cfg(target_arch = "x86_64")]
             pre.len(),
         )
     };

@@ -3,9 +3,10 @@ module
 public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.PrecomputedVerified
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Callees
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.RecPcVerified
 import VerifiedGarbage.Proof.Framework.Omega
 
-/-! # PKCS #1 v1.5 verification over precomputed RSA public variants on AArch64 -/
+/-! # PKCS #1 v1.5 verification and recovery over precomputed RSA public variants on AArch64 -/
 
 @[expose] public section
 
@@ -27,6 +28,21 @@ def artifacts (v : PublicImpl) : List Artifact := [
     contract := Spec.RsaPkcs1Sig.verifyPrecomputedContract AArch64.abi (Ver.stk (pdOf v).stack)
     stack := Ver.stk (pdOf v).stack
     verified := Pc.code_verified (pdOf v)
+    spSafe := Code.all_of_forall (fun _ => rfl) _
+    features := v.features },
+  { Spec.RsaPkcs1Sig.recoverPrecomputedApi with
+    name := Spec.RsaPkcs1Sig.recoverPrecomputedApi.name ++ v.suffix
+    target := AArch64.target
+    doc := Spec.RsaPkcs1Sig.recoverPrecomputedApi.doc (notes := ["This implementation calls `" ++ v.name ++
+      "` with the cached modulus values into its frame, writes EMSA-PKCS1-v1_5's encoding of the last \
+      `out_len` bytes of the result beside it and compares the two, then copies those bytes to `out` and \
+      masks them to zeros, and the result to 0, unless the public operation succeeded and the two are \
+      equal: nothing after the call branches on its result. It uses 2144 bytes of stack: its frame and 16 \
+      bytes below it for the call."])
+    code := Impl.RsaPkcs1Sig.AArch64.RecoverPrecomputed.code (pdOf v).name (pdOf v).code
+    contract := Spec.RsaPkcs1Sig.recoverPrecomputedContract AArch64.abi (Ver.stk (pdOf v).stack)
+    stack := Ver.stk (pdOf v).stack
+    verified := RecPc.code_verified (pdOf v)
     spSafe := Code.all_of_forall (fun _ => rfl) _
     features := v.features }]
 

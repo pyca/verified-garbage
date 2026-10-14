@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.RsaOaep.AArch64.EncCT1
 meta import VerifiedGarbage.Proof.RsaOaep.AArch64.EncCT1
-public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncVerified
+import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncVerified
 meta import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncVerified
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
@@ -20,11 +20,11 @@ The prologue and the check of `k` (`head_ct`), from two entry states whose
 public data agree; the failure (`encFail_tr`); the check of the message's
 length; and `encMain_tr`, put together (`enc_ct`): the two branches are on
 `k` and the message's length, which are public. With correctness
-(`enc_ok`), `vg_rsa_oaep_<H>_mgf1_<G>_encrypt`, for any implementation of the
-hash functions and `pv` of `vg_rsa_public_checked`, is verified against the
-shared contract with the stack it and its callee use (`enc_verified`), given
-that the contract is satisfiable for it (which the registration file
-checks).
+(`enc_ok`), `vg_rsa_oaep_<H>_mgf1_<G>_encrypt_precomputed`, for any
+implementation of the hash functions and `c` of a precomputed public
+operation, is verified against the shared contract with the stack it and its
+callee use (`enc_verified`), given that the contract is satisfiable for it
+(which the registration file checks).
 -/
 
 @[expose] public section
@@ -35,7 +35,7 @@ open VG VG.AArch64 VG.Impl.RsaOaep.AArch64
 open VG.Proof.Mgf1 (ifp ifn)
 open VG.Impl.Pbkdf2.Md.AArch64 (Hash)
 open VG.Proof.Pbkdf2.Md.AArch64.Calls (StreamOK)
-open VG.Proof.RsaPkcs1Enc.AArch64 (PubImpl)
+open VG.Proof.RsaPkcs1Sig.AArch64 (PdChecked)
 open VG.Proof.RsaPkcs1Enc.AArch64.Enc (leak_split bytesAt_length)
 open VG.Proof.RsaOaep.AArch64.Dec (entered)
 
@@ -86,12 +86,13 @@ def Entered (Hs Gs : Spec.Mgf1.Hash) (P : Nat) (a b : State) : Prop :=
 
 theorem head_ct (Hs Gs : Spec.Mgf1.Hash) {H : Hash} (hD : H.D ≤ 64) {P : Nat} (hP : 16 ≤ P) :
     RelCT isa (Entered Hs Gs P) (.block (encPrologue ++ chkK H))
-      fun a b => ∃ e : Env, e.L.D = Hs.len ∧ PW P e (KX H.D e.L.k.toNat) a b := by
+      fun a b => ∃ e : Env, e.L.D = Hs.len ∧ PreOk e.L e.m₁ ∧ PreOk e.L e.m₂ ∧
+        PW P e (KX H.D e.L.k.toNat) a b := by
   intro a b ta tb a' b' ⟨s₁, s₂, h₁, h₂, hp, ea, eb⟩ e₁ e₂
   subst ea eb
-  sig_pub [Spec.RsaOaep.encryptContract, Spec.RsaOaep.encryptSig, AArch64.abi, AArch64.argRegs,
-    _root_.List.range, _root_.List.range.loop, List.append_eq] at hp
-  obtain ⟨hsp, hl, h0, h1, h2, h3, h4, h5, h6, h7, a0, a1, a2, a3, a4⟩ := hp
+  sig_pub [Spec.RsaOaep.encryptPrecomputedContract, Spec.RsaOaep.encryptPrecomputedSig, AArch64.abi,
+    AArch64.argRegs, _root_.List.range, _root_.List.range.loop, List.append_eq] at hp
+  obtain ⟨hsp, hl, h0, h1, h2, h3, h4, h5, h6, h7, a0, a1, a2, a3, a4, a5, a6⟩ := hp
   have ht := (RelCT.taint (A := taint) (P := fun x y => x.sp = y.sp) (Taint.ofRegs [])
     (fun _ _ h => ⟨h, fun _ hr => False.elim (by simp at hr)⟩)
     (check_of_zImm (τ := Taint.ofRegs []) (c' := .block (encPrologue ++ chkK gH)) (by rfl) (by taint_decide))
@@ -103,21 +104,29 @@ theorem head_ct (Hs Gs : Spec.Mgf1.Hash) {H : Hash} (hD : H.D ≤ 64) {P : Nat} 
   obtain ⟨-, rfl⟩ := Exec.det e₁ x₁
   obtain ⟨-, rfl⟩ := Exec.det e₂ x₂
   have e : lay Hs.len P s₂ = lay Hs.len P s₁ := by
-    simp only [lay, h0, h1, h2, h3, h4, h5, h6, h7, a0, a1, a2, a3, a4, hsp]
-  obtain ⟨hn, he⟩ := leak_split hl (by rw [bytesAt_length, bytesAt_length, h3])
-  refine ⟨ht, ⟨lay Hs.len P s₁, s₁.gpr, s₂.gpr, s₁.v, s₂.v, s₁.mem, s₂.mem⟩, rfl, lay_ok h₁, rfl, ⟨?_, ?_⟩,
-    y₁, e ▸ y₂⟩
+    simp only [lay, preX, h0, h1, h2, h3, h4, h5, h6, h7, a0, a1, a2, a3, a4, a5, a6, hsp]
+  obtain ⟨hb, hq⟩ := List.append_inj hl (by simp [Spec.Rsa.bytesAt, h3, h5])
+  have hw := (List.map_inj_right (fun _ _ h => BitVec.toNat_inj.1 h)).1 hq
+  obtain ⟨hn, he⟩ := leak_split hb (by rw [bytesAt_length, bytesAt_length, h3])
+  refine ⟨ht, ⟨lay Hs.len P s₁, s₁.gpr, s₂.gpr, s₁.v, s₂.v, s₁.mem, s₂.mem⟩, rfl, preOk_lay h₁,
+    e ▸ preOk_lay h₂, lay_ok h₁, rfl, ⟨?_, ?_, ?_⟩, y₁, e ▸ y₂⟩
   · show Spec.Rsa.bytesAt s₁.mem (s₁.gpr .x2) (s₁.gpr .x3).toNat =
       Spec.Rsa.bytesAt s₂.mem (s₁.gpr .x2) (s₁.gpr .x3).toNat
     rw [hn, h2, h3]
   · show Spec.Rsa.bytesAt s₁.mem (s₁.gpr .x4) (s₁.gpr .x5).toNat =
       Spec.Rsa.bytesAt s₂.mem (s₁.gpr .x4) (s₁.gpr .x5).toNat
     rw [he, h4, h5]
+  · intro R hR
+    simp only [lay, preX, List.mem_singleton] at hR
+    subst hR
+    show Spec.Rsa.wordsAt s₁.mem (stackArg s₁ 5) ((stackArg s₁ 6).toNat * 8 / 8) =
+      Spec.Rsa.wordsAt s₂.mem (stackArg s₁ 5) ((stackArg s₁ 6).toNat * 8 / 8)
+    rw [Nat.mul_div_cancel _ (by decide : 0 < 8), hw, a5, a6]
 
 theorem pub_sp {Hs Gs : Spec.Mgf1.Hash} {P : Nat} {s₁ s₂ : State} (h : (encSpec Hs Gs P).pub s₁ s₂) :
     s₁.sp = s₂.sp := by
-  sig_pub [Spec.RsaOaep.encryptContract, Spec.RsaOaep.encryptSig, AArch64.abi, AArch64.argRegs,
-    _root_.List.range, _root_.List.range.loop, List.append_eq] at h
+  sig_pub [Spec.RsaOaep.encryptPrecomputedContract, Spec.RsaOaep.encryptPrecomputedSig, AArch64.abi,
+    AArch64.argRegs, _root_.List.range, _root_.List.range.loop, List.append_eq] at h
   exact h.1
 
 /-- `In` with `X`, as `In` with nothing more. -/
@@ -129,19 +138,20 @@ variable {Hl Gm : Hash} (hH : StreamOK Hl.stream) (hG : StreamOK Gm.stream)
 
 include hH hG in
 theorem enc_ct {Hs Gs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hH.SH.H.hash x) (hHl : Hs.len = Hl.D)
-    (hGh : ∀ x, Gs.hash x = hG.SH.H.hash x) (hGl : Gs.len = Gm.D) (hGv : Proof.Mgf1.Valid Gs) (pv : PubImpl)
-    {P : Nat} (hP : pv.S + 1 ≤ P) (hP16 : 16 ≤ P) :
-    ConstantTime isa (encSpec Hs Gs P).pre (encSpec Hs Gs P).pub (encrypt Hl Gm pv.name pv.code) := by
+    (hGh : ∀ x, Gs.hash x = hG.SH.H.hash x) (hGl : Gs.len = Gm.D) (hGv : Proof.Mgf1.Valid Gs) (c : PdChecked)
+    {P : Nat} (hP : c.stack ≤ P) (hP16 : 16 ≤ P) :
+    ConstantTime isa (encSpec Hs Gs P).pre (encSpec Hs Gs P).pub
+      (Impl.RsaOaep.AArch64.Precomputed.encrypt Hl Gm c.name c.code) := by
   obtain ⟨-, hzF, -, hzDF, -⟩ := sizes hH
   have hD64 : Hl.D ≤ 64 := Nat.le_trans hzDF hzF
   refine RelCT.constantTime (RelCT.pushFrame (fun _ _ h => pub_sp h.2.2) (RelCT.alloc (R := fun _ _ => True) ?_))
   rw [encBody_eq]
   refine ((head_ct Hs Gs hD64 hP16).seq (Q := fun _ _ => True) ?_).mono ?_ fun _ _ _ => trivial
-  · refine RelCT.ite (fun a b ⟨e, _, _, _, _, ⟨_, _, _, _, _, xa⟩, ⟨_, _, _, _, _, xb⟩⟩ => by
+  · refine RelCT.ite (fun a b ⟨e, _, _, _, _, _, _, ⟨_, _, _, _, _, xa⟩, ⟨_, _, _, _, _, xb⟩⟩ => by
       rw [eval_nonzero, eval_nonzero, xa, xb]) ?_ ?_
-    · intro s₁ s₂ t₁ t₂ s₁' s₂' ⟨⟨e, _, hL, hP', hp⟩, _⟩ e₁ e₂
+    · intro s₁ s₂ t₁ t₂ s₁' s₂' ⟨⟨e, _, _, _, hL, hP', hp⟩, _⟩ e₁ e₂
       exact encFail_tr hL (hP' ▸ hP16) _ _ _ _ _ _ ⟨hL, hP', hp⟩ e₁ e₂
-    intro s₁ s₂ t₁ t₂ s₁' s₂' ⟨⟨e, hDe, hL, hP', hk, f₁, f₂⟩, hb⟩ e₁ e₂
+    intro s₁ s₂ t₁ t₂ s₁' s₂' ⟨⟨e, hDe, q₁, q₂, hL, hP', hk, f₁, f₂⟩, hb⟩ e₁ e₂
     have hP16' : 16 ≤ e.L.P := hP' ▸ hP16
     have hkD : 2 * Hl.D + 2 ≤ e.L.k.toNat := by
       by_contra hc
@@ -162,29 +172,30 @@ theorem enc_ct {Hs Gs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hH.SH.H.hash x
         by_contra hc
         rw [eval_nonzero, g₁.2.choose_spec.choose_spec.2.2, ifn (by omega)] at hb'
         exact absurd hb' (by decide)
-      exact encMain_tr hH hG hHh hGh hGl hGv pv hL (hP' ▸ hP) hP16' (hDe.trans hHl) (by omega) _ _ _ _ _ _
+      exact encMain_tr hH hG hHh hGh hGl hGv c hL (hP' ▸ hP) hP16' (hDe.trans hHl) q₁ q₂ (by omega) _ _ _ _ _ _
         ⟨hL, hP', hk, g₁.forget, g₂.forget⟩ e₁ e₂
   · rintro _ _ ⟨_, _, ⟨s₁, s₂, ⟨h₁, h₂, hp⟩, rfl, rfl⟩, rfl, rfl⟩
     exact ⟨s₁, s₂, h₁, h₂, hp, rfl, rfl⟩
 
 /-- The stack below the frames: the callee's, and at least 16 bytes. -/
-def encP (pv : PubImpl) : Nat := max pv.stack 16
+def encP (c : PdChecked) : Nat := max c.stack 16
 
 /-- The stack the function uses: the callee's and the frames'. -/
-def encStack (pv : PubImpl) : Nat := encP pv + 288
+def encStack (c : PdChecked) : Nat := encP c + 288
 
 include hH hG in
-/-- `vg_rsa_oaep_<H>_mgf1_<G>_encrypt`, with `pv`. -/
+/-- `vg_rsa_oaep_<H>_mgf1_<G>_encrypt_precomputed`, calling the precomputed
+public operation `c`. -/
 theorem enc_verified {Hs Gs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hH.SH.H.hash x) (hHl : Hs.len = Hl.D)
     (hHv : Proof.Mgf1.Valid Hs) (hGh : ∀ x, Gs.hash x = hG.SH.H.hash x) (hGl : Gs.len = Gm.D)
-    (hGv : Proof.Mgf1.Valid Gs) (pv : PubImpl)
-    (hsat : ∃ s, (Spec.RsaOaep.encryptContract Hs Gs AArch64.abi (encStack pv)).pre s) :
-    Verified AArch64.target (encrypt Hl Gm pv.name pv.code)
-      (Spec.RsaOaep.encryptContract Hs Gs AArch64.abi (encStack pv)) := by
-  have hP : pv.S + 1 ≤ encP pv := pv.stack_eq ▸ Nat.le_max_left _ _
-  have hP16 : 16 ≤ encP pv := Nat.le_max_right _ _
+    (hGv : Proof.Mgf1.Valid Gs) (c : PdChecked)
+    (hsat : ∃ s, (Spec.RsaOaep.encryptPrecomputedContract Hs Gs AArch64.abi (encStack c)).pre s) :
+    Verified AArch64.target (Impl.RsaOaep.AArch64.Precomputed.encrypt Hl Gm c.name c.code)
+      (Spec.RsaOaep.encryptPrecomputedContract Hs Gs AArch64.abi (encStack c)) := by
+  have hP : c.stack ≤ encP c := Nat.le_max_left _ _
+  have hP16 : 16 ≤ encP c := Nat.le_max_right _ _
   exact Verified.of_correct (fun _ h => by
-    obtain ⟨t, s', he, hp⟩ := enc_ok hH hG hHh hHl hHv hGh hGl hGv pv hP hP16 h
-    exact ⟨t, s', he, hp⟩) (enc_ct hH hG hHh hHl hGh hGl hGv pv hP hP16) (Contract.Implies.refl hsat)
+    obtain ⟨t, s', he, hp⟩ := enc_ok hH hG hHh hHl hHv hGh hGl hGv c hP hP16 h
+    exact ⟨t, s', he, hp⟩) (enc_ct hH hG hHh hHl hGh hGl hGv c hP hP16) (Contract.Implies.refl hsat)
 
 end VG.Proof.RsaOaep.AArch64.Enc

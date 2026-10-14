@@ -15,8 +15,9 @@ meta import Mathlib.Tactic.SplitIfs
 `encMain` from two runs in the same layout (`encMain_tr`): the copies into
 `EM` from the registers their heads fix (`*E_pin`), the label's hash and
 MGF1 as for any caller (`pw_lr`), the arguments' blocks by the taint
-analysis, and the call of `vg_rsa_public_checked` with the same public
-arguments in both runs (`pub_pub'`).
+analysis, and the call of a precomputed public operation, whose public
+arguments, `pre`'s words and `e` agree in both runs (`pdCallCT`). Nothing
+after the call branches on its result.
 -/
 
 @[expose] public section
@@ -28,34 +29,20 @@ open VG.Impl.RsaOaep.AArch64.Mgf1 (seqs)
 open VG.Proof.Mgf1 (ifp ifn)
 open VG.Impl.Pbkdf2.Md.AArch64 (Hash)
 open VG.Proof.Pbkdf2.Md.AArch64.Calls (StreamOK)
-open VG.Proof.RsaPkcs1Enc.AArch64 (PubImpl pubK)
-open VG.Proof.RsaPkcs1Enc.AArch64.Enc (gpr_ce stackArg_ce)
+open VG.Proof.RsaPkcs1Sig.AArch64 (PdChecked pdCallCT)
 
-/-- The call's public arguments agree in two runs in the same layout. -/
-theorem pub_pub' {L : ELay} {S : Nat} {g₁ g₂ : Reg → BitVec 64} {v₁ v₂ : VReg → BitVec 128} {m₁ m₂ : Mem}
-    (hL : L.Ok) (hk : LeakEq L m₁ m₂) {a b : State} (ca : Ctx L g₁ v₁ m₁ a) (ra : PReady L a)
-    {Va : Nat → Byte} {Wa : Nat → BitVec 64} (Ra : Rep a.mem L.Q L.scr Va Wa) (Aa : CallArgs L Wa)
-    (cb : Ctx L g₂ v₂ m₂ b) (rb : PReady L b)
-    {Vb : Nat → Byte} {Wb : Nat → BitVec 64} (Rb : Rep b.mem L.Q L.scr Vb Wb) (Ab : CallArgs L Wb) :
-    (pubK S).pub (a.callEntry.withRegions (pubRd L) (pubWr L)) (b.callEntry.withRegions (pubRd L) (pubWr L)) := by
-  have sa : ∀ i < 2, stackArg (a.callEntry.withRegions (pubRd L) (pubWr L)) i = Wa i := fun i hi => by
-    rw [stackArg_ce, ca.sp]; exact Ra.fr i (by unfold nW frameBytes; omega)
-  have sb : ∀ i < 2, stackArg (b.callEntry.withRegions (pubRd L) (pubWr L)) i = Wb i := fun i hi => by
-    rw [stackArg_ce, cb.sp]; exact Rb.fr i (by unfold nW frameBytes; omega)
-  have na := ca.bytes_ro hL (ro_N L)
-  have nb := cb.bytes_ro hL (ro_N L)
-  have ea := ca.bytes_ro hL (ro_E L)
-  have eb := cb.bytes_ro hL (ro_E L)
-  simp only at na nb ea eb
-  simp only [pubK, State.withRegions_sp, State.callEntry_sp, State.withRegions_mem, State.callEntry_mem,
-    gpr_ce _ _ _ (by decide : Reg.x0 ∉ linkRegs), gpr_ce _ _ _ (by decide : Reg.x1 ∉ linkRegs),
-    gpr_ce _ _ _ (by decide : Reg.x2 ∉ linkRegs), gpr_ce _ _ _ (by decide : Reg.x3 ∉ linkRegs),
-    gpr_ce _ _ _ (by decide : Reg.x4 ∉ linkRegs), gpr_ce _ _ _ (by decide : Reg.x5 ∉ linkRegs),
-    gpr_ce _ _ _ (by decide : Reg.x6 ∉ linkRegs), gpr_ce _ _ _ (by decide : Reg.x7 ∉ linkRegs),
-    ra.x0, ra.x1, ra.x2, ra.x3, ra.x4, ra.x5, ra.x6, ra.x7, rb.x0, rb.x1, rb.x2, rb.x3, rb.x4, rb.x5, rb.x6,
-    rb.x7, ca.sp, cb.sp, na, nb, ea, eb, sa 0 (by decide), sa 1 (by decide), sb 0 (by decide),
-    sb 1 (by decide), Aa.s0, Aa.s1, Ab.s0, Ab.s1, true_and]
-  exact hk
+/-- Two layouts' `pre` from the two entry memories are the same. -/
+theorem pre_eq {L : ELay} {m₁ m₂ : Mem} (q₁ : PreOk L m₁) (q₂ : PreOk L m₂) :
+    preW L m₁ = preW L m₂ ∧ prlW L m₁ = prlW L m₂ := by
+  have h := q₁.hx.symm.trans q₂.hx
+  simp only [List.cons.injEq, Region.mk.injEq, and_true] at h
+  exact ⟨h.1, BitVec.eq_of_toNat_eq (by omega)⟩
+
+/-- The registers of the call, with the first run's `pre`. -/
+theorem readyP_of {L : ELay} {m m' : Mem} {t : State} (q : PreOk L m) (q' : PreOk L m') (h : PReadyP L m t) :
+    PReadyP L m' t := by
+  obtain ⟨w, wl⟩ := pre_eq q q'
+  exact ⟨h.x0, h.x1, h.x2.trans w, h.x3.trans wl, h.x4, h.x5, h.x6, h.x7⟩
 
 theorem putMsg_eq : putMsg = .seq (.block ((([.ldrSp .x11 sMsg] : List Instr) ++ scr .x12 oEm ++
     ([.ldrSp .x10 sK, .add .x .x12 .x12 .x10, .ldrSp .x13 sMsgLen, .sub .x .x12 .x12 .x13,
@@ -67,10 +54,11 @@ variable {Hl Gm : Hash} (hH : StreamOK Hl.stream) (hG : StreamOK Gm.stream)
 
 include hH hG in
 theorem encMain_tr {Hs Gs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hH.SH.H.hash x)
-    (hGh : ∀ x, Gs.hash x = hG.SH.H.hash x) (hGl : Gs.len = Gm.D) (hGv : Proof.Mgf1.Valid Gs) (pv : PubImpl)
-    {P : Nat} {e : Env} (hL : e.L.Ok) (hP : pv.S + 1 ≤ e.L.P) (hP16 : 16 ≤ e.L.P) (hD : e.L.D = Hl.D)
-    (hk : 2 * Hl.D + 2 + e.L.ml.toNat ≤ e.L.k.toNat) :
-    RelCT isa (PW P e fun _ _ => True) (encMain Hl Gm pv.name pv.code) fun _ _ => True := by
+    (hGh : ∀ x, Gs.hash x = hG.SH.H.hash x) (hGl : Gs.len = Gm.D) (hGv : Proof.Mgf1.Valid Gs) (c : PdChecked)
+    {P : Nat} {e : Env} (hL : e.L.Ok) (hP : c.stack ≤ e.L.P) (hP16 : 16 ≤ e.L.P) (hD : e.L.D = Hl.D)
+    (q₁ : PreOk e.L e.m₁) (q₂ : PreOk e.L e.m₂) (hk : 2 * Hl.D + 2 + e.L.ml.toNat ≤ e.L.k.toNat) :
+    RelCT isa (PW P e fun _ _ => True) (Impl.RsaOaep.AArch64.Precomputed.encMain Hl Gm c.name c.code)
+      fun _ _ => True := by
   obtain ⟨-, hzF, -, hzDF, hD0⟩ := sizes hH
   have hD64 : Hl.D ≤ 64 := Nat.le_trans hzDF hzF
   replace hD0 : 0 < Hl.D := hD0
@@ -99,10 +87,10 @@ theorem encMain_tr {Hs Gs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hH.SH.H.ha
       (h' ▸ Offset.contains_base e.L.msg (d := i) (n := 1) (k := e.L.ml.toNat) (by omega)
         (by have := hL.bR _ (ro_MSG e.L); simp only at this; omega))
   have inRd : ∀ {g vv m₀} {u : State} {R : Region}, Ctx e.L g vv m₀ u →
-      R ∈ [e.L.N, e.L.E, e.L.LAB, e.L.MSG, e.L.SD, e.L.ARGS] →
+      R ∈ [e.L.N, e.L.E, e.L.LAB, e.L.MSG, e.L.SD] ++ e.L.X ++ [e.L.ARGS] →
       ∀ {a : Addr} {n : Nat}, R.Contains a n → InRegions (u.rd ++ u.wr) a n := fun hcu hR _ _ h3 =>
     ⟨_, List.mem_append_left _ (by rw [hcu.rd]; exact hR), h3⟩
-  simp only [encMain, encEm, seqs]
+  simp only [Impl.RsaOaep.AArch64.Precomputed.encMain, encEm, seqs]
   -- `EM`'s place cleared.
   refine RelCT.seq (R := PW P e fun _ _ => True) (RelCT.seq (pw_wp (X' := fun _ _ => True) (pw_seq_tr [.x11, .x12, .x13]
       (fun r => ([(Reg.x11, off e.L.scr oEm), (.x12, BitVec.ofNat 64 128), (.x13, BitVec.ofNat 64 0)].lookup r).getD 0)
@@ -172,17 +160,38 @@ theorem encMain_tr {Hs Gs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hH.SH.H.ha
       fun _ ⟨_, Su, _, W', Ru, hW', _⟩ => In.of_step hL hP16 hc Su nil_ws Ru
         (hS.of fun j _ h2 h3 => hW' j (by unfold nW frameBytes; omega) (by omega) (by omega)) trivial) ?_
   -- The call.
-  refine RelCT.seq (pw_blk (X' := fun W t => PReady e.L t ∧ CallArgs e.L W) [] (by taint_decide) nopin
-    fun _ _ _ t V W _ _ hc R hS _ => ?_) ?_
+  refine RelCT.seq (pw_wpQ (X' := fun W t => PReadyP e.L e.m₁ t ∧ CallArgs e.L W) (Q := PreOk e.L) q₁ q₂
+    (pw_taint [] (by taint_decide) nopin) fun _ _ _ t V W hq _ _ hc R hS _ => ?_) ?_
   · have hS10 : Slots e.L (pubW e.L W) := hS.of fun j h1 _ _ => by
       simp only [pubW, upd]; rw [ifn (by omega), ifn (by omega)]
-    rw [pubArgs_eq, WP.block_append_iff]
+    rw [Impl.RsaOaep.AArch64.Precomputed.pubArgs, pubArgs_eq, WP.block_append_iff, WP.block_append_iff]
     exact WP.mono (pubW_ok hL hP16 hc R hS) fun _ ⟨hc10, R10⟩ =>
       WP.mono (pubR_ok hL hP16 hc10 R10 hS10) fun _ ⟨hc11, hm11, hr11⟩ =>
-        ⟨hc11, V, _, hm11 ▸ R10, hS10, hr11, ⟨by simp [pubW, upd], by simp [pubW, upd]⟩⟩
-  exact RelCT.call (n := pv.name) pv.correct pv.ct (pubRd e.L) (pubWr e.L)
-    fun _ _ ⟨_, _, hl, ⟨ca, _, _, Ra, _, ra, Aa⟩, ⟨cb, _, _, Rb, _, rb, Ab⟩⟩ =>
-      ⟨pub_pre' hL hP ca ra Ra Aa, pub_pre' hL hP cb rb Rb Ab, pub_pub' hL hl ca ra Ra Aa cb rb Rb Ab,
-        (covers_pub hL ca).1, (covers_pub hL ca).2, (covers_pub hL cb).1, (covers_pub hL cb).2⟩
+        WP.mono (loads_ok hL hP16 hc11 hq hr11) fun _ ⟨hc12, hm12, hr12⟩ =>
+          ⟨hc12, V, _, hm12 ▸ hm11 ▸ R10, hS10, readyP_of hq q₁ hr12, ⟨by simp [pubW, upd], by simp [pubW, upd]⟩⟩
+  refine pdCallCT c fun t₁ t₂ ⟨_, _, hl, ⟨c₁, _, _, R₁, _, r₁, A₁⟩, ⟨c₂, _, _, R₂, _, r₂, A₂⟩⟩ => ?_
+  have r₂' := readyP_of q₁ q₂ r₂
+  obtain ⟨w, wl⟩ := pre_eq q₁ q₂
+  have sa : ∀ {g vv m₀} {t : State} {V W}, Ctx e.L g vv m₀ t → Rep t.mem e.L.Q e.L.scr V W → CallArgs e.L W →
+      stackArg t 0 = e.L.scr + BitVec.ofNat 64 8192 ∧ stackArg t 1 = e.L.sl - BitVec.ofNat 64 1024 :=
+    fun hc R hA => ⟨by rw [stackArg, stackArgAddr, hc.sp]; exact (R.fr 0 (by unfold nW frameBytes; omega)).trans hA.s0,
+      by rw [stackArg, stackArgAddr, hc.sp]; exact (R.fr 1 (by unfold nW frameBytes; omega)).trans hA.s1⟩
+  refine ⟨pd_ok hL hP c₁ q₁ r₁ R₁ A₁, pd_ok hL hP c₂ q₂ r₂' R₂ A₂,
+    ⟨c₁.sp.trans c₂.sp.symm, fun r hr => ?_, fun i hi => ?_⟩, ?_, ?_⟩
+  · simp only [argRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+    exacts [r₁.x0.trans r₂.x0.symm, r₁.x1.trans r₂.x1.symm, r₁.x2.trans r₂.x2.symm, r₁.x3.trans r₂.x3.symm,
+      r₁.x4.trans r₂.x4.symm, r₁.x5.trans r₂.x5.symm, r₁.x6.trans r₂.x6.symm, r₁.x7.trans r₂.x7.symm]
+  · rcases (by omega : i = 0 ∨ i = 1) with rfl | rfl
+    · rw [(sa c₁ R₁ A₁).1, (sa c₂ R₂ A₂).1]
+    · rw [(sa c₁ R₁ A₁).2, (sa c₂ R₂ A₂).2]
+  · have hx := hl.2.2 (PRE e.L e.m₁) (by rw [q₁.hx]; exact List.mem_singleton_self _)
+    simp only [Nat.mul_div_cancel _ (by decide : 0 < 8)] at hx
+    rw [r₁.x2, r₁.x3, r₂'.x2, r₂'.x3, pre_words hL c₁ q₁, pre_words hL c₂ q₂, ← w, ← wl, hx]
+  · rw [r₁.x4, r₁.x5, r₂.x4, r₂.x5]
+    have b₁ := c₁.bytes_ro hL (ro_E e.L)
+    have b₂ := c₂.bytes_ro hL (ro_E e.L)
+    simp only at b₁ b₂
+    rw [b₁, b₂, hl.2.1]
 
 end VG.Proof.RsaOaep.AArch64.Enc

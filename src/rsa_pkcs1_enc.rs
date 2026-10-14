@@ -7,15 +7,13 @@
 //! encapsulation mechanism, instead. It is here for interoperating with
 //! protocols and data that require it.
 //!
-//! [`encrypt`] is the verified `vg_rsa_pkcs1_encrypt` (contract
-//! `VG.Spec.RsaPkcs1Enc.encryptContract`), with a padding string of nonzero
-//! bytes from the operating system's generator; it encrypts the encoded
-//! message with `vg_rsa_public_checked`. On x86-64 it is
-//! `vg_rsa_pkcs1_encrypt_precomputed` (contract
-//! `VG.Spec.RsaPkcs1Enc.encryptPrecomputedContract`), which reuses the public
-//! key's precomputed modulus values, and with BMI2 and ADX its variant
-//! `vg_rsa_pkcs1_encrypt_precomputed_adx`, with the faster Montgomery
-//! multiplication.
+//! [`encrypt`] is the verified `vg_rsa_pkcs1_encrypt_precomputed` (contract
+//! `VG.Spec.RsaPkcs1Enc.encryptPrecomputedContract`), with a padding string
+//! of nonzero bytes from the operating system's generator; it encrypts the
+//! encoded message with `vg_rsa_public_precomputed_checked`, reusing the
+//! public key's precomputed modulus values. On an x86-64 CPU with BMI2 and
+//! ADX it is its variant `vg_rsa_pkcs1_encrypt_precomputed_adx`, with the
+//! faster Montgomery multiplication.
 //!
 //! [`decrypt`] is the verified `vg_rsa_pkcs1_decrypt` (contract
 //! `VG.Spec.RsaPkcs1Enc.decryptContract`), which computes the encoded
@@ -51,15 +49,13 @@ use core::fmt;
 use crate::arch::rsa_pkcs1_enc::vg_rsa_pkcs1_decrypt;
 #[cfg(target_arch = "aarch64")]
 use crate::arch::rsa_pkcs1_enc::vg_rsa_pkcs1_decrypt_sha256_sha2;
-#[cfg(target_arch = "aarch64")]
-use crate::arch::rsa_pkcs1_enc::vg_rsa_pkcs1_encrypt;
+use crate::arch::rsa_pkcs1_enc::vg_rsa_pkcs1_encrypt_precomputed;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::rsa_pkcs1_enc::{
     vg_rsa_pkcs1_decrypt_crt_adx, vg_rsa_pkcs1_decrypt_crt_ifma, vg_rsa_pkcs1_decrypt_sha256_avx2,
     vg_rsa_pkcs1_decrypt_sha256_avx2_crt_adx, vg_rsa_pkcs1_decrypt_sha256_avx2_crt_ifma,
     vg_rsa_pkcs1_decrypt_sha256_shani, vg_rsa_pkcs1_decrypt_sha256_shani_crt_adx,
-    vg_rsa_pkcs1_decrypt_sha256_shani_crt_ifma, vg_rsa_pkcs1_encrypt_precomputed,
-    vg_rsa_pkcs1_encrypt_precomputed_adx,
+    vg_rsa_pkcs1_decrypt_sha256_shani_crt_ifma, vg_rsa_pkcs1_encrypt_precomputed_adx,
 };
 use crate::cpu::detected;
 use crate::hashes::sha256::Sha256Backend;
@@ -142,55 +138,29 @@ pub fn encrypt(key: &PublicKey, plaintext: &[u8]) -> Result<Vec<u8>, Error> {
     Ok(c)
 }
 
-/// `vg_rsa_pkcs1_encrypt` of `plaintext` with the padding string `ps`, of
+/// `vg_rsa_pkcs1_encrypt_precomputed` of `plaintext` with the padding string `ps`, of
 /// `k - plaintext.len() - 3` nonzero bytes.
 fn encrypt_with(key: &PublicKey, plaintext: &[u8], ps: &[u8]) -> Vec<u8> {
     let k = key.modulus_len();
     let mut out = vec![0u8; k];
     let mut scratch = vec![0u64; scratch_words(k)];
-    #[cfg(target_arch = "x86_64")]
-    let r = {
-        let pre = key.pre(&mut scratch);
-        let f = match Backend::select(detected()) {
-            Backend::Baseline => vg_rsa_pkcs1_encrypt_precomputed,
-            Backend::Adx | Backend::Ifma => vg_rsa_pkcs1_encrypt_precomputed_adx,
-        };
-        // SAFETY: each pointer is valid for its length (`out` and `scratch`
-        // for writes), and none overlaps another or wraps around, as they
-        // are distinct Rust allocations; `PublicKey::new` and `encrypt` give
-        // `64 ≤ n_len ≤ 1024`, `out_len = n_len`, `1 ≤ e_len ≤ 5 ≤ n_len`,
-        // `msg_len + 11 ≤ n_len`, `ps_len = n_len - msg_len - 3` and
-        // `scratch_len = 16 n_len + 32`; `pre` holds the verified
-        // precomputation for `key.n`, with `2 * ceil(n_len / 8)` words; and
-        // the CPU supports the selected function's features.
-        unsafe {
-            f(
-                out.as_mut_ptr(),
-                k,
-                key.n.as_ptr(),
-                k,
-                key.e.as_ptr(),
-                key.e.len(),
-                plaintext.as_ptr(),
-                plaintext.len(),
-                ps.as_ptr(),
-                ps.len(),
-                scratch.as_mut_ptr(),
-                scratch.len(),
-                pre.as_ptr(),
-                pre.len(),
-            )
-        }
+    let pre = key.pre(&mut scratch);
+    let f = match Backend::select(detected()) {
+        Backend::Baseline => vg_rsa_pkcs1_encrypt_precomputed,
+        // `select` chose it because the CPU has the features it needs.
+        #[cfg(target_arch = "x86_64")]
+        Backend::Adx | Backend::Ifma => vg_rsa_pkcs1_encrypt_precomputed_adx,
     };
     // SAFETY: each pointer is valid for its length (`out` and `scratch` for
     // writes), and none overlaps another or wraps around, as they are
     // distinct Rust allocations; `PublicKey::new` and `encrypt` give
     // `64 ≤ n_len ≤ 1024`, `out_len = n_len`, `1 ≤ e_len ≤ 5 ≤ n_len`,
     // `msg_len + 11 ≤ n_len`, `ps_len = n_len - msg_len - 3` and
-    // `scratch_len = 16 n_len + 32`. It needs no CPU feature.
-    #[cfg(target_arch = "aarch64")]
+    // `scratch_len = 16 n_len + 32`; `pre` holds the verified
+    // precomputation for `key.n`, with `2 * ceil(n_len / 8)` words; and the
+    // CPU supports the selected function's features.
     let r = unsafe {
-        vg_rsa_pkcs1_encrypt(
+        f(
             out.as_mut_ptr(),
             k,
             key.n.as_ptr(),
@@ -203,12 +173,14 @@ fn encrypt_with(key: &PublicKey, plaintext: &[u8], ps: &[u8]) -> Vec<u8> {
             ps.len(),
             scratch.as_mut_ptr(),
             scratch.len(),
+            pre.as_ptr(),
+            pre.len(),
         )
     };
     // The working space holds powers of the encoded message.
     zeroize(&mut scratch);
     // `PublicKey::new` checked `n` and `e`, and `PS` has no zero byte.
-    assert_eq!(r, 1, "vg_rsa_pkcs1_encrypt refused a valid key and padding");
+    assert_eq!(r, 1, "precomputed encryption refused a valid key");
     out
 }
 

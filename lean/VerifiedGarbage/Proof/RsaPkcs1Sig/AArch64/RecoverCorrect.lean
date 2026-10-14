@@ -8,6 +8,7 @@ import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Wp
 
 /-!
 # `vg_rsa_pkcs1_recover` on AArch64: correctness
@@ -156,7 +157,9 @@ theorem frame_bytes {s u : State} (hwr : u.wr = ⟨fb s, frameBytes⟩ :: s.wr) 
 
 theorem copyOut_ok {K : Nat} {s y : State} (hp : PreR K s) (hm : Mid s y) :
     WP isa copyOut y fun w => Mid s w ∧ Spec.Rsa.written w.mem (s.gpr .x0) (s.gpr .x1).toNat
-      ((w.gpr .x0).setWidth 32) (some (Spec.Rsa.bytesAt y.mem (valA s) (s.gpr .x1).toNat)) := by
+      ((w.gpr .x0).setWidth 32) (some (Spec.Rsa.bytesAt y.mem (valA s) (s.gpr .x1).toNat)) ∧
+      w.mem = writeBytes y.mem (s.gpr .x0) (Spec.Rsa.bytesAt y.mem (valA s) (s.gpr .x1).toNat) ∧
+      w.gpr .x0 = 1 := by
   obtain ⟨hl0, hl1⟩ := hlen hp
   have := hp.k2
   unfold copyOut
@@ -175,7 +178,8 @@ theorem copyOut_ok {K : Nat} {s y : State} (hp : PreR K s) (hm : Mid s y) :
     (fun j hj i hi => ne_of_disjoint hd (by omega) (by omega) hj hi)) fun u₄ ⟨k₄, m₄⟩ => ?_)
   refine wp_movz fun u₅ o₅ e₅ => wp_nil ⟨((hm.only O₃).frame k₄ (R := oR s) (by
     rw [m₄]; have := frame_writeBytes u₃.mem (s.gpr .x0) (Spec.Rsa.bytesAt u₃.mem (valA s) (s.gpr .x1).toNat)
-    rwa [bytesAt_length] at this) (slots_out hp)).only o₅, by rw [e₅]; rfl, ?_⟩
+    rwa [bytesAt_length] at this) (slots_out hp)).only o₅, ⟨by rw [e₅]; rfl, ?_⟩,
+    by rw [o₅.mem, m₄, O₃.mem], by rw [e₅]; rfl⟩
   rw [o₅.mem, m₄, O₃.mem]
   have := bytesAt_writeBytes y.mem (s.gpr .x0) (Spec.Rsa.bytesAt y.mem (valA s) (s.gpr .x1).toNat)
     (by rw [bytesAt_length]; omega)
@@ -240,7 +244,8 @@ structure AfterEnc (s : State) (h : Spec.RsaPkcs1Sig.Hash) (em : List Byte) (w :
 
 theorem enc_ok {K : Nat} {s u : State} (hp : PreR K s) {h : Spec.RsaPkcs1Sig.Hash}
     (hh : Spec.RsaPkcs1Sig.Hash.ofId ((s.gpr .x6).setWidth 32).toNat = some h) (hol : (s.gpr .x1).toNat = h.len)
-    {em : List Byte} (hu : AtEnc s em u) : WP isa encode u (AfterEnc s h em) := by
+    {em : List Byte} (hu : AtEnc s em u) :
+    WP isa encode u fun w => AfterEnc s h em w ∧ Frame [⟨fb s + BitVec.ofNat 64 oEM2, (s.gpr .x3).toNat⟩] u.mem w.mem := by
   obtain ⟨hl0, hl1⟩ := hlen hp
   have hk1 := hp.k1; have hk2 := hp.k2
   have hval : Spec.Rsa.bytesAt u.mem (u.gpr .x11) (u.gpr .x12).toNat = em.drop ((s.gpr .x3).toNat - h.len) := by
@@ -264,7 +269,7 @@ theorem enc_ok {K : Nat} {s u : State} (hp : PreR K s) {h : Spec.RsaPkcs1Sig.Has
       encRes s h em := by
     unfold encodeId encRes; rw [hh]
   rw [hval, henc] at hout
-  refine ⟨?_, ?_⟩
+  refine ⟨⟨?_, ?_⟩, ?_⟩
   · cases heo : encRes s h em with
     | none =>
       rw [heo] at hout
@@ -293,6 +298,14 @@ theorem enc_ok {K : Nat} {s u : State} (hp : PreR K s) {h : Spec.RsaPkcs1Sig.Has
       · rw [hme, hu.x8, ← hl', bytesAt_writeBytes _ _ _ (by omega)]
       · rw [← hol, ← val_bytes hl1 hu.em1]
         exact bytes_apart (R := ⟨valA s, (s.gpr .x1).toNat⟩) fw dv (by dsimp only; omega)
+  · cases heo : encRes s h em with
+    | none =>
+      rw [heo] at hout
+      rw [(Ver.Only.of_keep hK hout.2).mem]; exact Frame.refl _ _
+    | some em' =>
+      rw [heo] at hout
+      have hl' : em'.length = (s.gpr .x3).toNat := Proof.RsaPkcs1Sig.encode_length heo
+      rw [hout.2, hu.x8, ← hl']; exact frame_writeBytes _ _ _
 
 /-- Before `compare`. -/
 structure AtCmp (s : State) (h : Spec.RsaPkcs1Sig.Hash) (em em' : List Byte) (v : State) : Prop where
@@ -341,7 +354,7 @@ theorem release_ok {K : Nat} {s y : State} (hp : PreR K s) {h : Spec.RsaPkcs1Sig
   unfold release
   by_cases he : em = em'
   · refine WP.ite false (by rw [eval_nonzero]; simp [hy.hiff.mpr he]) (by simp) fun _ => ?_
-    refine WP.mono (copyOut_ok hp hy.mid) fun w' ⟨m', hw'⟩ => ⟨m', ?_⟩
+    refine WP.mono (copyOut_ok hp hy.mid) fun w' ⟨m', hw', _⟩ => ⟨m', ?_⟩
     rw [hy.val] at hw'
     simpa [he] using hw'
   · have hne : y.gpr .x12 ≠ 0 := fun h' => he (hy.hiff.mp h')
@@ -388,7 +401,7 @@ theorem afterPub_ok {K : Nat} {s t : State} (hp : PreR K s) {h : Spec.RsaPkcs1Si
     dsimp only
     refine WP.ite false (by simp [eval, State.read, hr]) (by simp) fun _ => ?_
     exact WP.seq (WP.mono (atEnc_ok hp ha.toMid hem) fun u hu =>
-      WP.seq (WP.mono (enc_ok hp hh hol hu) fun w hw => tail_ok hp hw))
+      WP.seq (WP.mono (enc_ok hp hh hol hu) fun w hw => tail_ok hp hw.1))
 
 /-! ## The restores, and the whole function -/
 

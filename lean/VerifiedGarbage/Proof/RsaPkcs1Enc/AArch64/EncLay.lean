@@ -11,6 +11,8 @@ import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+public import VerifiedGarbage.Proof.Framework.Bswap
 
 /-!
 # RSAES-PKCS1-v1_5 encryption on AArch64: where everything is
@@ -94,6 +96,11 @@ structure Lay where
   sl : BitVec 64
   Q : Addr
   P : Nat
+  /-- More buffers the function only reads (none for
+  `vg_rsa_pkcs1_encrypt`; `pre` for `vg_rsa_pkcs1_encrypt_precomputed`), and
+  the bytes of its stack arguments (32; 48). -/
+  X : List Region
+  al : Nat
 
 namespace Lay
 
@@ -108,7 +115,7 @@ abbrev SCR : Region := ⟨L.scr, L.sl.toNat * 8⟩
 /-- The inner frame, the frame of our return address, our stack arguments. -/
 abbrev FR : Region := ⟨L.Q, frameBytes⟩
 abbrev LR : Region := ⟨L.Q + BitVec.ofNat 64 1072, 16⟩
-abbrev ARGS : Region := ⟨L.Q + BitVec.ofNat 64 1088, 32⟩
+abbrev ARGS : Region := ⟨L.Q + BitVec.ofNat 64 1088, L.al⟩
 /-- The stack the call uses, and all the stack used. -/
 abbrev LOW : Region := ⟨L.Q - BitVec.ofNat 64 L.P, L.P⟩
 abbrev STK : Region := ⟨L.Q - BitVec.ofNat 64 L.P, L.P + 1088⟩
@@ -150,6 +157,13 @@ structure Ok : Prop where
   mlk : L.ml.toNat + 11 ≤ L.k.toNat
   plk : L.pl.toNat = L.k.toNat - L.ml.toNat - 3
   slk : Spec.Rsa.scratchWords L.k.toNat ≤ L.sl.toNat
+  al32 : 32 ≤ L.al
+  al64 : L.al ≤ 64
+  nQa : L.Q.toNat + 1088 + L.al ≤ 2 ^ 64
+  xO : ∀ R ∈ L.X, R.Disjoint L.OUT
+  xS : ∀ R ∈ L.X, R.Disjoint L.SCR
+  xK : ∀ R ∈ L.X, L.STK.Disjoint R
+  xw : ∀ R ∈ L.X, R.base.toNat + R.len ≤ 2 ^ 64
 
 end Lay
 
@@ -212,7 +226,8 @@ theorem kept_buf {d : Nat} (hd : keptOff d) {R : Region} (hR : Region.Sub R L.OU
   · rcases hR with hs | hs
     · exact (h.stk_buf h₁ (.inl rfl)).sub_right hs
     · exact (h.stk_buf h₁ (.inr (.inr (.inr (.inr (.inr rfl)))))).sub_right hs
-  · have hs : Region.Sub ⟨L.Q + BitVec.ofNat 64 d, 8⟩ L.ARGS := Offset.sub _ (by omega) (by omega)
+  · have := h.al32
+    have hs : Region.Sub ⟨L.Q + BitVec.ofNat 64 d, 8⟩ L.ARGS := Offset.sub _ (by omega) (by omega)
     rcases hR with hR | hR
     · exact (h.args_out.sub_left hs).sub_right hR
     · exact (h.args_scr.sub_left hs).sub_right hR
@@ -255,7 +270,7 @@ theorem Kept.frame {L : Lay} {lr : BitVec 64} {m m' : Mem} {rs : List Region} (h
 written: `g` and `vv` are the registers on entry, `m₀` the memory. -/
 structure Ctx (L : Lay) (g : Reg → BitVec 64) (vv : VReg → BitVec 128) (m₀ : Mem) (t : State) :
     Prop where
-  rd : t.rd = [L.N, L.E, L.MSG, L.PS, L.ARGS]
+  rd : t.rd = [L.N, L.E, L.MSG, L.PS] ++ L.X ++ [L.ARGS]
   wr : t.wr = [L.FR, L.LR, L.OUT, L.SCR]
   sp : t.sp = L.Q
   cs : ∀ r ∈ preserved, r ≠ .x30 → t.gpr r = g r
@@ -305,7 +320,8 @@ theorem inFrR {d n : Nat} (hd : d + n ≤ frameBytes) : InRegions (t.rd ++ t.wr)
 
 theorem inArgs (hL : L.Ok) {d : Nat} (h₁ : 1088 ≤ d) (h₂ : d + 8 ≤ 1120) :
     InRegions (t.rd ++ t.wr) (L.Q + BitVec.ofNat 64 d) 8 :=
-  ⟨L.ARGS, by rw [hc.rd, hc.wr]; simp, Offset.contains _ h₁ (by omega) (by have := hL.nQ; omega)⟩
+  ⟨L.ARGS, by rw [hc.rd, hc.wr]; simp, Offset.contains _ h₁ (by have := hL.al32; omega)
+    (by have := hL.al64; omega)⟩
 
 end Ctx
 
