@@ -240,10 +240,38 @@ theorem mRegs_sub {n m : Nat} (hM : ModOkS n m) : ∀ r ∈ mRegs n m, r ∈ mPo
 
 theorem mRegs_length (n m : Nat) : (mRegs n m).length = n := by simp [mRegs]
 
-/-- The modulus's words into their registers. -/
-theorem mLoad_ok {n m : Nat} (hM : ModOkS n m) (s : State) :
+/-- P-384's `p` from `x7 = 0`, in the registers `mLoads` names. -/
+theorem sparseLoad_ok (s : State) (hz : s.gpr .x7 = 0) :
+    WP isa (.block sparseLoadCode) s fun t =>
+      t.gpr .x23 = 0x00000000ffffffff ∧ t.gpr .x24 = 0xffffffff00000000 ∧
+      t.gpr .x25 = 0xfffffffffffffffe ∧ t.gpr .x26 = 0xffffffffffffffff ∧
+      Keeps [.x23, .x24, .x25, .x26] s t := by
+  apply WP.of_runBlock
+  simp only [sparseLoadCode, runBlock_cons, runStep_some, runBlock_nil, exec, State.read,
+    show (1 : Nat) < 4096 from by decide, show 32 < Size.x.bits from by decide, ite_true,
+    RegUpd.gpr_write, BitVec.setWidth_eq, Option.some.injEq, exists_eq_left', hz, reduceCtorEq, ite_false]
+  refine ⟨by decide, by decide, by decide, by decide, ⟨fun r hr => ?_, rfl, rfl, rfl, rfl⟩⟩
+  simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+  simp only [RegUpd.gpr_write, hr.1, hr.2.1, hr.2.2.1, hr.2.2.2, ite_false]
+
+/-- The modulus's words into their registers, `x7` being zero. -/
+theorem mLoad_ok {n m : Nat} (hM : ModOkS n m) (s : State) (hz : s.gpr .x7 = 0) :
     WP isa (.block (mLoadCode n m)) s fun s' => regsVal s' (mRegs n m) = m ∧ Keeps (mPool n) s s' := by
   rw [mLoadCode]
+  by_cases hs : sparseOk n m = true
+  · simp only [hs, ite_true]
+    have hn : n = 6 := by simp only [sparseOk, Bool.and_eq_true, beq_iff_eq] at hs; exact hs.1
+    have hm : m = 39402006196394479212279040100143613805079739270465446667948293404245721771496870329047266088258938001861606973112319 := by
+      simp only [sparseOk, Bool.and_eq_true, beq_iff_eq] at hs; exact hs.2
+    subst hn hm
+    refine WP.mono (sparseLoad_ok s hz) fun t ⟨h23, h24, h25, h26, k⟩ => ⟨?_, by
+      rw [show mPool 6 = [.x23, .x24, .x25, .x26] by decide]; exact k⟩
+    rw [show mRegs 6 39402006196394479212279040100143613805079739270465446667948293404245721771496870329047266088258938001861606973112319 =
+      [.x23, .x24, .x25, .x26, .x26, .x26] by decide +kernel]
+    simp only [regsVal, h23, h24, h25, h26]
+    decide
+  simp only [Bool.not_eq_true] at hs
+  simp only [hs, Bool.false_eq_true, ite_false]
   refine WP.mono (constLoads_ok (mLoads n m) hM.lnd) fun s' ⟨e, k⟩ => ⟨?_, k.mono fun r hr => by
     obtain ⟨p, hp, rfl⟩ := List.mem_map.mp hr; exact mLoads_fst hp⟩
   rw [mRegs, List.range_eq_range']
@@ -410,10 +438,8 @@ theorem bodyF_ok {n m : Nat} (hM : ModOkS n m) {s : State} {base : Addr} {size :
   rw [hmem₅, hB₅] at eU
   -- The modulus into its registers.
   rw [WP.block_append_iff]
-  refine WP.mono (mLoad_ok hM s₆) fun s₇ ⟨e₇, k₇⟩ => ?_
-  have g₇ : ∀ r, r ∉ mPool n → s₇.gpr r = s₆.gpr r := fun r hr => k₇.gpr r hr
-  have hz₇ : s₇.gpr .x7 = 0 := by
-    rw [g₇ _ (fun h => (R.m2 _ h).2.1 rfl), k₆.gpr _ (fun h => by
+  have hz₆ : s₆.gpr .x7 = 0 := by
+    rw [k₆.gpr _ (fun h => by
       simp only [List.mem_cons] at h
       rcases h with h | h | h | h | h
       · exact absurd h (by decide)
@@ -421,6 +447,10 @@ theorem bodyF_ok {n m : Nat} (hM : ModOkS n m) {s : State} {base : Addr} {size :
       · exact absurd h (by decide)
       · exact absurd h (by decide)
       · have := hacc _ h; simp at this), z₇]
+  refine WP.mono (mLoad_ok hM s₆ hz₆) fun s₇ ⟨e₇, k₇⟩ => ?_
+  have g₇ : ∀ r, r ∉ mPool n → s₇.gpr r = s₆.gpr r := fun r hr => k₇.gpr r hr
+  have hz₇ : s₇.gpr .x7 = 0 := by
+    rw [g₇ _ (fun h => (R.m2 _ h).2.1 rfl), hz₆]
   -- The result reduced.
   have hsplit := wins_split n n
   have hlowlen : (lowF n).length = n := by simp [lowF]
