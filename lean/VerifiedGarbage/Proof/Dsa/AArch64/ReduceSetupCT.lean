@@ -35,7 +35,7 @@ theorem reduceSetup_ct (M : Mont) : RelCT isa (Two ReduceSetupPre)
   refine RelCT.seq (two_post (Ψ := fun p s => ReduceContext p s ∧
     wv s.mem (off p.bytes.x.B p.bytes.x.o) (slot p.bytes.x.wx aR2) p.bytes.x.wx < p.modulus)
     (two_map (fun p : ReducePublic => p.toPowerPublic.product)
-      (fun p s h => ⟨h.1.2, h.2, p.greater, p.odd⟩) constants_ct) ?_) ?_
+      (fun p s h => ⟨h.1.2, h.2, p.greater, p.odd⟩) (constants_ct M)) ?_) ?_
   · intro p s ⟨⟨hc, hm⟩, hw⟩
     exact WP.mono (prepare_ok M hc p.lower hw p.greater p.odd hm.modulus hm.inverse)
       fun t ⟨hct, hmt, _, hr, _⟩ => ⟨⟨hct, hmt⟩, hr ▸ Nat.mod_lt _ (by have := p.greater; omega)⟩

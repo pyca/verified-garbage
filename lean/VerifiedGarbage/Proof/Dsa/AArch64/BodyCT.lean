@@ -33,9 +33,9 @@ def SigningBodyPre (p : SchedulePublic) (s : State) : Prop :=
   (∀ i < 2 * p.layout.qLen, usedBytes ≤ ofs p.layout.base (p.layout.fields .out + BitVec.ofNat 64 i))
 
 theorem SigningBodyPre.schedule {p : SchedulePublic} {s : State} (h : SigningBodyPre p s) :
-    ScheduleState signComputeInputs p s := by
+    PublicKeyPre signComputeInputs p s := by
   obtain ⟨hr, ⟨data, yb, qb, ho, hd⟩, hm, _, _⟩ := h
-  refine ⟨hr, ?_, hm⟩
+  refine ⟨⟨hr, ?_, hm⟩, qb, ho.subgroup, ho.subgroupLength, ho.subgroupValue⟩
   intro a ha
   simp only [signComputeInputs, signInputs, List.mem_cons, List.not_mem_nil, or_false] at ha
   rcases ha with rfl | rfl | rfl | rfl | rfl | rfl
@@ -77,9 +77,9 @@ def VerifyingBodyPre (p : SchedulePublic) (s : State) : Prop :=
   ∃ valid : Bool, word s.mem p.layout.base Field.mask.offset = mask valid
 
 theorem VerifyingBodyPre.schedule {p : SchedulePublic} {s : State} (h : VerifyingBodyPre p s) :
-    ScheduleState verifyComputeInputs p s := by
+    PublicKeyPre verifyComputeInputs p s := by
   obtain ⟨hr, ⟨data, qb, ho, hd⟩, hm⟩ := h
-  refine ⟨hr, ?_, hm⟩
+  refine ⟨⟨hr, ?_, hm⟩, qb, ho.subgroup, ho.subgroupLength, ho.subgroupValue⟩
   intro a ha
   simp only [verifyComputeInputs, verifyInputs, List.mem_cons, List.not_mem_nil, or_false] at ha
   rcases ha with rfl | rfl | rfl | rfl | rfl | rfl

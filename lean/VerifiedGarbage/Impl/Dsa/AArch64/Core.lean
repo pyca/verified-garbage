@@ -1,7 +1,9 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.Layout
-public import VerifiedGarbage.Impl.Dsa.AArch64.Arithmetic
+import VerifiedGarbage.Impl.Dsa.AArch64.Arithmetic
+public import VerifiedGarbage.Impl.Dsa.AArch64.Joint
+public import VerifiedGarbage.Impl.Dsa.AArch64.PublicPower
 
 /-!
 # DSA signing and verification arithmetic on AArch64
@@ -44,10 +46,21 @@ def pow (mul : Nat → Nat → Nat → Prog isa) (ws : Nat) (base exponent outpu
     operand result resultLen output ++ enter ws),
     Arithmetic.power mul arg argLen arg2 arg2Len] ++ finish)
 
+/-- Only for exponents declared public by the caller's contract. -/
+def publicPow (mul : Nat → Nat → Nat → Prog isa) (ws : Nat) (base exponent output : Operand) : Prog isa :=
+  seqs ([.block (operand arg argLen base ++ operand arg2 arg2Len exponent ++
+    operand result resultLen output ++ enter ws),
+    PublicPower.power mul arg argLen arg2 arg2Len] ++ finish)
+
 def product (mul : Nat → Nat → Nat → Prog isa) (ws : Nat) (a b output : Operand) : Prog isa :=
   seqs ([.block (operand arg argLen a ++ operand arg2 arg2Len b ++
     operand result resultLen output ++ enter ws),
     Arithmetic.product mul arg argLen arg2 arg2Len] ++ finish)
+
+/-- `g^u y^v` for verification's scalars `u` and `v` (`Joint.power`). -/
+def joint (mul : Nat → Nat → Nat → Prog isa) (ws : Nat) (a b output : Operand) : Prog isa :=
+  seqs ([.block (operand arg argLen a ++ operand arg2 arg2Len b ++
+    operand result resultLen output ++ enter ws), Joint.power mul] ++ finish)
 
 def reduce (mul : Nat → Nat → Nat → Prog isa) (input output : Operand) : Prog isa :=
   seqs ([.block (operand arg argLen input ++ operand result resultLen output ++ enter qWorkspace),
@@ -81,16 +94,15 @@ def sign (mul : Nat → Nat → Nat → Prog isa) : Prog isa := seqs [
   add (scalar z) (scalar u) (scalar v),
   product mul qWorkspace (scalar inverse) (scalar v) (scalar s)]
 
-/-- Compute the verification value into u; the caller compares it with r
+/-- Compute the verification value into u: `g^u y^v` by one joint
+exponentiation, reduced modulo q. The caller compares it with r
 and combines that equality with parameter, key and scalar-range checks. -/
 def verify (mul : Nat → Nat → Nat → Prog isa) : Prog isa := seqs [
   pow mul qWorkspace signatureS (scalar qMinusTwo) (scalar inverse),
   reduce mul digest (scalar z),
   product mul qWorkspace (scalar z) (scalar inverse) (scalar u),
   product mul qWorkspace signatureR (scalar inverse) (scalar v),
-  pow mul pWorkspace generator (scalar u) (element t),
-  pow mul pWorkspace publicValue (scalar v) (element t2),
-  product mul pWorkspace (element t) (element t2) (element t),
+  joint mul pWorkspace generator publicValue (element t),
   reduce mul (element t) (scalar u)]
 
 end VG.Impl.Dsa.AArch64.Core

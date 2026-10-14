@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleOperands
+public import VerifiedGarbage.Proof.Dsa.AArch64.ReadyJoint
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -8,7 +9,7 @@ import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtSel
 import VerifiedGarbage.Proof.Framework.AArch64.Call
 
-/-! # Correctness of the complete eight-operation DSA verification core -/
+/-! # Correctness of the complete DSA verification core -/
 
 @[expose] public section
 
@@ -130,68 +131,33 @@ theorem coreVerify_ok (M : Mont) {L : ExecutionLayout} {s0 : State} (h0 : Ready 
   have hu4 := h4.local (by decide) hv (h3.output (by decide) hu)
     (by simp only [encodeBE_length, ModulusSide.length]; exact hu)
     (Or.inl (by simp only [encodeBE_length, ModulusSide.length]; unfold u v; omega))
-  have ht2 : t2 + L.pLen ≤ usedBytes := by unfold t2 usedBytes; omega
-  have step5 := readyPow_ok M h4.ready .p hp hop Core.generator (Core.scalar u)
-    (by trivial) (by change u < 2 ^ 16; decide) hg4.active hu4
+  have step5 := readyJoint_ok M h4.ready hp hop Core.generator Core.publicValue
+    (by trivial) (by trivial) hg4.active hy4.active
     (by rw [hgl]; omega) (by simp only [hgl, ModulusSide.words, ModulusSide.length]; exact Nat.le_refl _)
-    (by simp only [encodeBE_length, ModulusSide.length]; omega)
-    (by simp only [encodeBE_length, ModulusSide.length]; omega) t (by decide) ht
-  have step5' : WP isa (Core.pow M.mm pWorkspace Core.generator (Core.scalar u) (Core.element t)) s4
-      (CallResult L .p t tt s4) := by
-    simpa only [Core.element, ModulusSide.offset, ModulusSide.lengthField, ModulusSide.length,
-      ModulusSide.value, fitq _ huu, tt] using step5
-  refine WP.seq (WP.mono step5' fun s5 h5 => ?_)
-  have hy5 := h5.external (by decide) ht hy4
-  have hv5 := h5.local (by decide) ht (h4.output (by decide) hv)
-    (by simp only [encodeBE_length, ModulusSide.length]; exact hv)
-    (Or.inl (by simp only [encodeBE_length, ModulusSide.length]; unfold v t; omega))
-  have step6 := readyPow_ok M h5.ready .p hp hop Core.publicValue (Core.scalar v)
-    (by trivial) (by change v < 2 ^ 16; decide) hy5.active hv5
     (by rw [hyl]; omega) (by simp only [hyl, ModulusSide.words, ModulusSide.length]; exact Nat.le_refl _)
-    (by simp only [encodeBE_length, ModulusSide.length]; omega)
-    (by simp only [encodeBE_length, ModulusSide.length]; omega) t2 (by decide) ht2
-  have step6' : WP isa (Core.pow M.mm pWorkspace Core.publicValue (Core.scalar v) (Core.element t2)) s5
-      (CallResult L .p t2 tt2 s5) := by
-    simpa only [Core.element, ModulusSide.offset, ModulusSide.lengthField, ModulusSide.length,
-      ModulusSide.value, fitq _ hvv, tt2] using step6
-  refine WP.seq (WP.mono step6' fun s6 h6 => ?_)
-  have ht6 := h6.local (by decide) ht2 (h5.output (by decide) ht)
-    (by simp only [encodeBE_length, ModulusSide.length]; exact ht)
-    (Or.inl (by simp only [encodeBE_length, ModulusSide.length]; unfold t t2; omega))
-  have step7 := readyProduct_ok M h6.ready .p hp hop (Core.element t) (Core.element t2)
-    (by change t < 2 ^ 16; decide) (by change t2 < 2 ^ 16; decide)
-    ht6 (h6.output (by decide) ht2)
-    (by simp only [encodeBE_length, ModulusSide.length]; omega)
-    (by simp only [encodeBE_length, ModulusSide.length, ModulusSide.words]; exact Nat.le_refl _)
-    (by simp only [encodeBE_length, ModulusSide.length]; omega)
-    (by simp only [encodeBE_length, ModulusSide.length, ModulusSide.words]; exact Nat.le_refl _) t (by decide) ht
-  have step7' : WP isa (Core.product M.mm pWorkspace (Core.element t) (Core.element t2) (Core.element t)) s6
-      (CallResult L .p t prod s6) := by
-    simpa only [Core.element, ModulusSide.offset, ModulusSide.lengthField, ModulusSide.length,
-      ModulusSide.value, fitp _ (VG.Proof.Dsa.powMod_lt _ _ (by omega)), prod, tt, tt2] using step7
-  refine WP.seq (WP.mono step7' fun s7 h7 => ?_)
+    hu4 (h4.output (by decide) hv) (encodeBE_length _ _) (encodeBE_length _ _) t (by decide) ht
+  have step5' : WP isa (Core.joint M.mm pWorkspace Core.generator Core.publicValue (Core.element t)) s4
+      (CallResult L .p t prod s4) := by
+    simpa only [Core.element, ModulusSide.offset, ModulusSide.lengthField, ModulusSide.length, ModulusSide.value,
+      fitq _ huu, fitq _ hvv, prod, tt, tt2] using step5
+  refine WP.seq (WP.mono step5' fun s7 h7 => ?_)
   have step8 := readyReduce_ok M h7.ready hq hoq (Core.element t) (by change t < 2 ^ 16; decide)
     (h7.output (by decide) ht) (by simp only [encodeBE_length, ModulusSide.length]; omega) u (by decide) hu
   have step8' : WP isa (Core.reduce M.mm (Core.element t) (Core.scalar u)) s7
       (CallResult L .q u (data.value L) s7) := by
     simpa only [ModulusSide.length, fitp _ hprod, prod, tt, tt2, uu, vv, zz, ki, VerifyValues.value] using step8
   refine WP.mono step8' fun s8 h8 => ⟨h8.ready, h8.bytes, ?_, ?_, ?_⟩
-  · exact (((((((h1.scheduleFrame (by decide) hi).trans (h2.scheduleFrame (by decide) hz')).trans
+  · exact (((((h1.scheduleFrame (by decide) hi).trans (h2.scheduleFrame (by decide) hz')).trans
       (h3.scheduleFrame (by decide) hu)).trans (h4.scheduleFrame (by decide) hv)).trans
-      (h5.scheduleFrame (by decide) ht)).trans (h6.scheduleFrame (by decide) ht2)).trans
       (h7.scheduleFrame (by decide) ht)).trans (h8.scheduleFrame (by decide) hu)
   · exact (h8.fields (by decide) hu .mask).trans ((h7.fields (by decide) ht .mask).trans
-      ((h6.fields (by decide) ht2 .mask).trans ((h5.fields (by decide) ht .mask).trans
       ((h4.fields (by decide) hv .mask).trans ((h3.fields (by decide) hu .mask).trans
-      ((h2.fields (by decide) hz' .mask).trans (h1.fields (by decide) hi .mask)))))))
+      ((h2.fields (by decide) hz' .mask).trans (h1.fields (by decide) hi .mask)))))
   · have k1 := h1.keep
     have k2 : Keep coreRegs s0 s2 := (k1.trans h2.keep).mono (by decide)
     have k3 : Keep coreRegs s0 s3 := (k2.trans h3.keep).mono (by decide)
     have k4 : Keep coreRegs s0 s4 := (k3.trans h4.keep).mono (by decide)
-    have k5 : Keep coreRegs s0 s5 := (k4.trans h5.keep).mono (by decide)
-    have k6 : Keep coreRegs s0 s6 := (k5.trans h6.keep).mono (by decide)
-    have k7 : Keep coreRegs s0 s7 := (k6.trans h7.keep).mono (by decide)
-    have k8 : Keep coreRegs s0 s8 := (k7.trans h8.keep).mono (by decide)
-    exact k8
+    have k7 : Keep coreRegs s0 s7 := (k4.trans h7.keep).mono (by decide)
+    exact (k7.trans h8.keep).mono (by decide)
 
 end VG.Proof.Dsa.AArch64
