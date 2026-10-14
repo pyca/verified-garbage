@@ -48,9 +48,9 @@ def encryptBlocksToPreparedIv96Sig : Sig where
 the counter block. -/
 def encryptBlocksToPreparedIv96Pre (pb : Nat) :
     Curry (encryptBlocksToPreparedIv96Sig.words pb) (Mem → Prop) :=
-  fun ctx rounds counter _y _src n _dst dstN _scratch index m =>
-    (rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14) ∧
-      dstN = n ∧ PreparedPowersRepr m ctx ∧ ctrIndex (blockAt m counter) = index
+  fun ctx rounds counter y src n dst dstN scratch index m =>
+    encryptBlocksToPreparedPre pb ctx rounds counter y src n dst dstN scratch m ∧
+      ctrIndex (blockAt m counter) = index
 
 /-- `encryptBlocksToPost`, unchanged. -/
 def encryptBlocksToPreparedIv96Post (pb : Nat) : encryptBlocksToPreparedIv96Sig.Post pb :=
@@ -97,9 +97,9 @@ def decryptBlocksPreparedIv96Sig : Sig where
 counter block. -/
 def decryptBlocksPreparedIv96Pre (pb : Nat) :
     Curry (decryptBlocksPreparedIv96Sig.words pb) (Mem → Prop) :=
-  fun ctx rounds counter _y _data _n _scratch index m =>
-    (rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14) ∧
-      PreparedPowersRepr m ctx ∧ ctrIndex (blockAt m counter) = index
+  fun ctx rounds counter y data n scratch index m =>
+    cryptBlocksPreparedPre pb ctx rounds counter y data n scratch m ∧
+      ctrIndex (blockAt m counter) = index
 
 /-- For `decryptBlocksPreparedIv96Pre`: `decryptBlocksPreparedContract`'s
 postcondition, unchanged. The key context, the counter block, `Y` and the
