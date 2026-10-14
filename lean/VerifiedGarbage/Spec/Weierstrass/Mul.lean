@@ -5,13 +5,14 @@ public import VerifiedGarbage.Spec.P192
 public import VerifiedGarbage.Spec.Secp256k1
 public import VerifiedGarbage.Spec.BrainpoolP256r1
 public import VerifiedGarbage.Spec.BrainpoolP384r1
+public import VerifiedGarbage.Spec.BrainpoolP512r1
 
 /-!
 # The multiplication of a point, in a curve's working space, as a function
 
 **Trusted** (as every file in `Spec/`). The contract of one function for each
-curve of `curves` (so far P-192, secp256k1, brainpoolP256r1 and
-brainpoolP384r1), on the working space where the x86-64 code of the curve's
+curve of `curves` (so far P-192, secp256k1, brainpoolP256r1,
+brainpoolP384r1 and brainpoolP512r1), on the working space where the x86-64 code of the curve's
 ECDSA signature and verification, public key derivation and ECDH keeps its
 numbers, so that all of them can call one copy of the multiplication instead
 of repeating it:
@@ -220,7 +221,11 @@ def brainpoolp384r1 : Curve :=
   { W := Spec.BrainpoolP384r1.curve, curve := "brainpoolp384r1", k := 6, desc := "brainpoolP384r1",
     tmp := 83 }
 
+def brainpoolp512r1 : Curve :=
+  { W := Spec.BrainpoolP512r1.curve, curve := "brainpoolp512r1", k := 8, desc := "brainpoolP512r1",
+    tmp := 2 }
+
 /-- Every curve. -/
-def curves : List Curve := [p192, secp256k1, brainpoolp256r1, brainpoolp384r1]
+def curves : List Curve := [p192, secp256k1, brainpoolp256r1, brainpoolp384r1, brainpoolp512r1]
 
 end VG.Spec.Weierstrass.Mul
