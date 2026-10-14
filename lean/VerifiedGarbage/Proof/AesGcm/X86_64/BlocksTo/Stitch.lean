@@ -72,7 +72,6 @@ theorem spreTo_of {q : Nat} {s₃ : State} (hq16 : 16 ≤ q) (hqle : q ≤ n s) 
   have ec : s₃.gpr .rdx = C s := hg _ (by simp [argRegs])
   have ey : s₃.gpr .rcx = Y s := hg _ (by simp [argRegs])
   have ed : s₃.gpr .r8 = Src s := hg _ (by simp [argRegs])
-  have rd : s.rd = [kR M s, srcR s, aR s] := hp.rd
   have wr : s.wr = wR s := hp.wr
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_,
     ?_⟩ <;>
@@ -80,9 +79,9 @@ theorem spreTo_of {q : Nat} {s₃ : State} (hq16 : 16 ≤ q) (hqle : q ≤ n s) 
     Gcm.X86_64.Stitch.cp, Gcm.X86_64.Stitch.yp, Gcm.X86_64.Stitch.sp, Gcm.X86_64.Stitch.op, Gcm.X86_64.Stitch.pp,
     Gcm.X86_64.Stitch.cR, Gcm.X86_64.Stitch.yR, Gcm.X86_64.Stitch.sR, Gcm.X86_64.Stitch.oR,
     Gcm.X86_64.Stitch.pR, ek, er, ec, ey, ed, h10, h11, hq, hrd, hwr]
-  exacts [hp.rounds, by omega, ⟨kR M s, by rw [rd]; simp, Region.contains_self _ _⟩,
+  exacts [hp.rounds, by omega, ⟨kR M s, List.mem_append_left _ hp.k_rd, Region.contains_self _ _⟩,
     ⟨cR s, by rw [wr]; simp, Region.contains_self _ _⟩, ⟨yR s, by rw [wr]; simp, Region.contains_self _ _⟩,
-    ⟨srcR s, by rw [rd]; simp, contains_prefix _ hqn⟩, ⟨dR s, by rw [wr]; simp, contains_prefix _ hqn⟩,
+    ⟨srcR s, List.mem_append_left _ hp.r_rd, contains_prefix _ hqn⟩, ⟨dR s, by rw [wr]; simp, contains_prefix _ hqn⟩,
     ⟨sR s, by rw [wr]; simp, Offset.contains_base _ (by have := AlignedScratch.offset_bounds aligned (S s); omega) (by have := AlignedScratch.offset_bounds aligned (S s); omega)⟩,
     hp.k_c, hp.k_y, hp.k_d.sub_right pd, hp.k_s.sub_right ps,
     hp.c_r.symm.sub_left pr, hp.y_r.symm.sub_left pr, (hp.r_d.sub_left pr).sub_right pd,

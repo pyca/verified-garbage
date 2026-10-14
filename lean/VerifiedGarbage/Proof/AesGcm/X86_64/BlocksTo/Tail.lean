@@ -112,7 +112,7 @@ theorem copy_ok {q : Nat} {st : State} (h : Mid s q q st) (hlt : q < n s)
   have ds : Region.Sub ⟨dq s q, 16 * (n s - q)⟩ (dR s) := Offset.sub_base _ (by omega)
   have pre : CopyPre st (sq s q) (dq s q) (n s - q) :=
     ⟨hsi, hdi, hcx, by omega, by omega,
-      Blocks.covers_off' (covers_of_mem (r := srcR s) (by rw [h.rd, h.wr, hp.rd]; simp)) (by omega) (by omega),
+      Blocks.covers_off' (covers_of_mem (r := srcR s) (by rw [h.rd]; exact List.mem_append_left _ hp.r_rd)) (by omega) (by omega),
       Blocks.covers_off' (covers_of_mem (r := dR s) (by rw [h.wr, hp.wr]; simp)) (by omega) (by omega),
       (hp.r_d.sub_left ss).sub_right ds⟩
   refine WP.mono (copyBlocks_wp st pre) fun st' ⟨hm, hg, hrd, hwr'⟩ => ⟨?_, ?_, hg, hrd, hwr'⟩
@@ -219,8 +219,8 @@ theorem blkCall_of {q : Nat} {st : State} (h : Mid s q q st) (hlt : q < n s)
   · rw [psp, show SP s - BitVec.ofNat 64 8 - 8 = SP s - BitVec.ofNat 64 16 by rw [← Offset.sub_add_eq]; rfl,
       toNat_sub_ofNat (by omega)]
     omega
-  · simp only [pushed_rd, pushed_wr, h.rd, h.wr, hp.rd, hp.wr, hsp]
-    refine covers_cons (covers_of_mem (by simp)) (covers_cons (covers_of_mem (by rw [pushed_rsp, hsp]; simp))
+  · simp only [pushed_rd, pushed_wr, h.rd, h.wr, hp.wr, hsp]
+    refine covers_cons (covers_of_mem (List.mem_append_left _ hp.k_rd)) (covers_cons (covers_of_mem (by rw [pushed_rsp, hsp]; simp))
       (covers_cons (covers_of_mem (by simp)) (covers_cons (covers_of_mem (by simp))
       (covers_cons ?_ (covers_cons (covers_of_mem (by simp)) covers_nil)))))
     exact Blocks.covers_off' (covers_of_mem (r := dR s) (by simp)) (by omega) (by omega)

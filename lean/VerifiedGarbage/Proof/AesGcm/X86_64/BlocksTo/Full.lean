@@ -139,8 +139,13 @@ theorem restFullTo_ok {st : State} (h : Mid s (qf s) (qf s) st) :
     exact rest_ok hp (by omega) h
   · exact restZeroTo_ok hp (by simp [qf, h16]) h
 
-/-- With `full`, all the blocks by `piece` (if at least 16). -/
-theorem stitchFullTo_ok {piece : Prog isa} (hpiece : StitchToOkM M piece 1)
+/-- With `full`, all the blocks by `piece` (if at least 16), given what
+`piece` needs in terms of the entry. -/
+theorem stitchFullTo_okG {piece : Prog isa}
+    (hpiece : ∀ s₄, Gcm.X86_64.Stitch.SPreTo M s₄ → (∀ r ∈ argRegs, s₄.gpr r = s.gpr r) →
+      s₄.gpr .r9 = BitVec.ofNat 64 (n s) → s₄.gpr .r10 = Dst s →
+      s₄.gpr .r11 = S s + BitVec.ofNat 64 (AlignedScratch.offset aligned (S s)) →
+      Frame [kR' s] s.mem s₄.mem → s₄.rd = s.rd → WP isa piece s₄ (Gcm.X86_64.Stitch.EPostTo s₄))
     {s₁ : State} (h11 : s₁.gpr .r11 = S s) (h10 : s₁.gpr .r10 = Dst s)
     (hg : ∀ r, r ≠ .r11 → r ≠ .r10 → s₁.gpr r = s.gpr r)
     (hk : Kept s 0 s₁.mem) (hf : Frame [kR' s] s.mem s₁.mem) (hrd : s₁.rd = s.rd) (hwr : s₁.wr = s.wr) :
@@ -183,8 +188,16 @@ theorem stitchFullTo_ok {piece : Prog isa} (hpiece : StitchToOkM M piece 1)
     have wr₄' : s₄.wr = s.wr := by rw [wr₄, wr₃, wr₂, hwr]
     have hk₄ : Kept s (n s) s₄.mem := by rw [m₄]; exact k₃
     have hf₄ : Frame [kR' s] s.mem s₄.mem := by rw [m₄]; exact f₃
-    exact WP.mono (hpiece s₄ (spreTo_of hp h16 (Nat.le_refl _) h9 ga h10₄ g11 rd₄' wr₄' hf₄) (Nat.mod_one _))
+    exact WP.mono (hpiece s₄ (spreTo_of hp h16 (Nat.le_refl _) h9 ga h10₄ g11 rd₄' wr₄' hf₄) ga h9 h10₄ g11 hf₄ rd₄')
       fun s₅ hP => mid_of_postTo hp (Nat.le_refl _) h9 ga gc h10₄ g11 rd₄' wr₄' hk₄ hf₄ hP
+
+/-- With `full`, all the blocks by `piece` (if at least 16). -/
+theorem stitchFullTo_ok {piece : Prog isa} (hpiece : StitchToOkM M piece 1)
+    {s₁ : State} (h11 : s₁.gpr .r11 = S s) (h10 : s₁.gpr .r10 = Dst s)
+    (hg : ∀ r, r ≠ .r11 → r ≠ .r10 → s₁.gpr r = s.gpr r)
+    (hk : Kept s 0 s₁.mem) (hf : Frame [kR' s] s.mem s₁.mem) (hrd : s₁.rd = s.rd) (hwr : s₁.wr = s.wr) :
+    WP isa (stitchPart piece aligned true) s₁ (Mid s (qf s) (qf s)) :=
+  stitchFullTo_okG hp (fun s₄ h _ _ _ _ _ _ => hpiece s₄ h (Nat.mod_one _)) h11 h10 hg hk hf hrd hwr
 
 end
 

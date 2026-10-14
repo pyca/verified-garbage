@@ -59,7 +59,9 @@ abbrev kR (M : CtxMode) (s : State) : Region := ⟨K s, M.len⟩
 /-- `blocksToPreM M`, by name (with the output's length `dst_n` replaced by
 `n`, which it equals). -/
 structure BT (M : CtxMode) (s : State) : Prop where
-  rd : s.rd = [kR M s, srcR s, aR s]
+  k_rd : kR M s ∈ s.rd
+  r_rd : srcR s ∈ s.rd
+  a_rd : Covers [aR s] s.rd
   wr : s.wr = wR s
   dn : stackArg s 1 = s.gpr .r9
   k_c : (kR M s).Disjoint (cR s)
@@ -112,8 +114,8 @@ theorem BT.ofM {M : CtxMode} {s : State} (h : Proof.AesGcm.blocksToPreM M s) : B
   clear h
   rw [hA] at a₁ a₁₂ a₁₆ a₂₀ a₂₁
   rw [a₃] at a₂ a₆ a₁₀ a₁₄ a₁₇ a₁₉ a₂₀ a₂₄ a₃₀ a₃₆
-  exact ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈, a₉, a₁₀, a₁₁, a₁₂, a₁₃, a₁₄, a₁₅, a₁₆, a₁₇, a₁₈, a₁₉, a₂₀, a₂₁, a₂₂,
-    a₂₃, a₂₄, a₂₅, a₂₆, a₂₇, a₂₈, a₂₉, a₃₀, a₃₁, a₃₂, a₃₃, a₃₄, a₃₅, a₃₆, a₃₇, a₃₈, a₃₉, a₄₀, a₄₁⟩
+  exact ⟨by rw [a₁]; simp, by rw [a₁]; simp, covers_of_mem (by rw [a₁]; simp), a₂, a₃, a₄, a₅, a₆, a₇, a₈, a₉,
+    a₁₀, a₁₁, a₁₂, a₁₃, a₁₄, a₁₅, a₁₆, a₁₇, a₁₈, a₁₉, a₂₀, a₂₁, a₂₂, a₂₃, a₂₄, a₂₅, a₂₆, a₂₇, a₂₈, a₂₉, a₃₀, a₃₁, a₃₂, a₃₃, a₃₄, a₃₅, a₃₆, a₃₇, a₃₈, a₃₉, a₄₀, a₄₁⟩
 
 /-! ## The arguments kept -/
 
@@ -143,7 +145,8 @@ theorem s_in' {d k : Nat} (h : d + k ≤ 2112) : InRegions (s.rd ++ s.wr) (S s +
 
 /-- The stack argument `i` (of three) is readable. -/
 theorem a_in {i : Nat} (hi : i < 3) : InRegions (s.rd ++ s.wr) (SP s + BitVec.ofNat 64 (8 * (i + 1))) 8 :=
-  ⟨aR s, by rw [hp.rd]; simp, Offset.contains _ (by omega) (by omega) (by have := hp.w_sp; omega)⟩
+  hp.a_rd _ _ ⟨aR s, List.mem_singleton_self _, Offset.contains _ (by omega) (by omega) (by have := hp.w_sp; omega)⟩
+    |>.elim fun r ⟨hr, hc⟩ => ⟨r, List.mem_append_left _ hr, hc⟩
 
 omit hp in
 /-- The slots of the arguments are in `scratch`, apart from the powers. -/
