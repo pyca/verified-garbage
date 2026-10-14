@@ -266,7 +266,7 @@ theorem tail_dispatch_ok (hc : BaseCfgOk c) (hC : Law c.C) {s₀ : State} {base 
   unfold Impl.Ecdsa.Verify.AArch64.Cfg.tail
   split
   · rename_i h
-    exact projectiveFinal_ok hc hC h.2.1 h.2.2 hP
+    exact projectiveFinal_ok hc hC h.1 h.2 hP
   · exact tail_ok hc hP
 
 end VG.Proof.Ecdsa.Verify.AArch64

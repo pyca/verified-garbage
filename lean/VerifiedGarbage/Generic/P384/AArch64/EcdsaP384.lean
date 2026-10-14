@@ -65,14 +65,14 @@ def artifacts (h : Proof.Weierstrass.AArch64.HasLawInv Spec.P384.curve) : List A
       final conditional subtraction. The key is checked without branches \
       (its first byte, both coordinates below `p`, and the curve's equation), and `[v]Q` is \
       computed for the key's point if it is valid, else `G`, so always on a point of the curve. \
-      `s⁻¹` modulo `n` and `Z⁻¹` are calls of `vg_p384_inv_mod_n` and `vg_p384_inv_mod_p`, by the signature's divsteps; `[u]G` is the \
+      `s⁻¹` modulo `n` is a call of `vg_p384_inv_mod_n`, by the signature's divsteps; `[u]G` is the \
       signature's comb over the 7-bit windows of `u` (from the static `VG_P384_COMB`, reading the entry of each \
       digit of the public `u` directly rather than scanning its table), and `[v]Q` `vg_ecdh_p384`'s signed 4-bit windows \
       (97 digits of `v + 8 Σ_{j<97} 16^j`, four doublings in Jacobian coordinates and a \
       constant-time selection from a \
       table of `[1 … 8]Q` each), with the complete formulas of Renes, Costello and Batina for \
       `a = -3`, which also add the two. The result is the conjunction of the checks (the key, \
-      `r` and `s` in `[1, n-1]`, the sum not the point at infinity, and `x ≡ r` modulo `n`) as a mask, so the \
+      `r` and `s` in `[1, n-1]`, the sum not the point at infinity, and `X = rZ` or, when `r + n < p`, `X = (r + n)Z`, compared in projective coordinates without inverting `Z`) as a mask, so the \
       comb's addresses depend on `u`, from the digest and the signature, and the rest of the \
       time only on the pointers."])
     consts := Impl.Ecdsa.AArch64.p384.combConsts
