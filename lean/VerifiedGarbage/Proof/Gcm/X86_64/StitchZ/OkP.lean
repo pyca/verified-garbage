@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.PreparedTo
 import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Prepared
 public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemTo
 import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemD
+import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemG
 public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemGLanes
 import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.OutOfPlace
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.LoopP
@@ -401,7 +402,7 @@ theorem remZG {H : Block} {P : Nat → Nat → Block}
 theorem encR_ok {s₀ : State} (hp : SPrePrepared s₀) :
     WP isa Impl.Gcm.X86_64.StitchZH.encR s₀ (EPost s₀) :=
   WP.seq (WP.mono (setup_ok hp) fun _ ⟨_, hR, hpw, hK⟩ =>
-    encTailRG_ok hp.base (finZ (finP hpw)) (remZ (finP hpw))
+    encTailRG_ok hp.base (finZ (finP hpw)) (remZG (finP hpw))
       (fun _ h256 hI hC => bigP_ok hp (finZ (finP hpw)) hpw (fin48P (hk s₀)) h256 hI hC) hR hK)
 
 /-- `decR`, for any number of blocks from 16 on. -/

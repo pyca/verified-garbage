@@ -188,7 +188,6 @@ def remWith (pre : List Instr) (src : Reg) : Prog isa :=
       (.seq (.block (([.alu .add .rdx (.imm 256), .mov32 .r10 (.imm 0)] : List Instr) ++ pre ++ StitchAvx.zero))
         (.seq (remLoops src) (.block storeY))))
 
-def rem : Prog isa := remWith [] .rdx
 
 /-! ## The blocks after the last group, as a masked group
 
@@ -257,6 +256,9 @@ def ksSelG (pre : List Instr) (src : Reg) : Prog isa :=
 `Y` stored, as a masked group. -/
 def remG (pre : List Instr) (src : Reg) : Prog isa :=
   .seq (.block remSetup) (.seq (ksSelG pre src) (.block storeY))
+
+/-- The blocks after the last group, in place. -/
+def rem : Prog isa := remG [] .rdx
 
 /-- The end of `encR`: the last group, and the blocks after it if any. -/
 def tailR (r : Prog isa) : Prog isa :=
