@@ -81,7 +81,7 @@ theorem vecR_ok (hl : LayOk l) {s : State} {F : Addr} {M K1 Xc Y Fin x : Nat →
         r ≠ .r13 → r ≠ .r14 → r ≠ .r15 → s'.gpr r = s.gpr r) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.mxcsr = s.mxcsr &&& 0xFFFF := by
   subst hR hw
-  obtain ⟨cb1, cb2, cb3, cb4, cb5⟩ := conv_bounds hl
+  obtain ⟨cb1, cb2, cb3, cb4, cb5, cb6⟩ := conv_bounds hl
   have hv : ∀ {c} {v : Nat → Nat}, LimbsAt l s.mem F c v → ∀ p < 2, v p < 2 * M p →
       val52 l s.mem F (l.D * p + c) = v p :=
     fun h p hp hlt => val52_of hl (h p hp) (by have := two_mul_lt (hMlt p hp); omega)
@@ -97,7 +97,7 @@ theorem vecR_ok (hl : LayOk l) {s : State} {F : Addr} {M K1 Xc Y Fin x : Nat →
         have := hMlt p hp
         rw [Nat.pow_succ, Nat.pow_succ]; omega
       exact Nat.le_trans h4 (pow2_le (by omega))
-  have e2 : 2 ^ (416 * l.R - 64 * l.W) = 2 ^ l.dbls * 2 ^ (64 * l.W) := by
+  have e2 : 2 ^ (104 * l.S - 64 * l.W) = 2 ^ l.dbls * 2 ^ (64 * l.W) := by
     rw [← Nat.pow_add]; congr 1; simp only [Lay.dbls]; omega
   refine WP.mono (vec_ok hl (Q := Q) (x := x) hB hs ar (fun p hp => cop2 (hModd p hp) _)
     (fun p hp => good_of hl (hX p hp) (by have := hXlt p hp; omega) (hMlt p hp))

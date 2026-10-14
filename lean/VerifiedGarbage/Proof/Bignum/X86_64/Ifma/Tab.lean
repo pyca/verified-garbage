@@ -156,7 +156,7 @@ theorem copyN_ok (hl : LayOk l) {s : State} {B : Addr} {o a : Nat} (hB : s.gpr .
 theorem NB_le (hl : LayOk l) : l.NB ≤ 320 ∧ 160 ≤ l.NB := by
   rcases hl with rfl | rfl | rfl <;> decide
 
-theorem dbl_le (hl : LayOk l) : 64 * l.W ≤ 416 * l.R := by rcases hl with rfl | rfl | rfl <;> decide
+theorem dbl_le (hl : LayOk l) : 64 * l.W ≤ 104 * l.S := by rcases hl with rfl | rfl | rfl <;> decide
 
 /-! ## The pieces of `convTabBody` -/
 
@@ -304,11 +304,11 @@ structure TabInv (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (s₀ : State) (B : Addr) 
   scr : Scr t B (2 * l.D)
   ar : Ar l t.mem B M k
   tab : ∀ j < i, ∀ p < 2, Good l t.mem B M (l.oTab + l.NB * j) p ∧
-    (Q → val52 l t.mem B (l.D * p + (l.oTab + l.NB * j)) % M p = x p ^ j * 2 ^ (52 * l.L) % M p)
+    (Q → val52 l t.mem B (l.D * p + (l.oTab + l.NB * j)) % M p = x p ^ j * 2 ^ (52 * l.S) % M p)
   yg : ∀ p < 2, Good l t.mem B M l.oY p
-  yv : Q → ∀ p < 2, val52 l t.mem B (l.D * p + l.oY) % M p = x p ^ 0 * 2 ^ (52 * l.L) % M p
+  yv : Q → ∀ p < 2, val52 l t.mem B (l.D * p + l.oY) % M p = x p ^ 0 * 2 ^ (52 * l.S) % M p
   xg : ∀ p < 2, Good l t.mem B M l.oX p
-  xv : Q → ∀ p < 2, val52 l t.mem B (l.D * p + l.oX) % M p = x p ^ 1 * 2 ^ (52 * l.L) % M p
+  xv : Q → ∀ p < 2, val52 l t.mem B (l.D * p + l.oX) % M p = x p ^ 1 * 2 ^ (52 * l.S) % M p
   frame : Out2 l B l.oY (l.oTab + 16 * l.NB - l.oY) s₀.mem t.mem
   gpr : ∀ r, r ≠ .rax → r ≠ .rcx → r ≠ .rdx → r ≠ .rsi → r ≠ .r8 → r ≠ .r9 → r ≠ .r10 → r ≠ .r11 → r ≠ .r12 →
     r ≠ .r13 → t.gpr r = s₀.gpr r
@@ -318,7 +318,7 @@ structure TabInv (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (s₀ : State) (B : Addr) 
 
 /-- Entry `i ≥ 2` of the table. -/
 theorem tabIter_ok (hl : LayOk l) {s₀ t : State} {B : Addr} {M k x : Nat → Nat} {Q : Prop} {i : Nat}
-    (hi : 2 ≤ i) (hi' : i < 16) (hR : ∀ p < 2, Nat.Coprime (2 ^ (52 * l.L)) (M p))
+    (hi : 2 ≤ i) (hi' : i < 16) (hR : ∀ p < 2, Nat.Coprime (2 ^ (52 * l.S)) (M p))
     (h : TabInv l s₀ B M k x Q i t) :
     WP isa (convTabBody l) t fun t' => TabInv l s₀ B M k x Q (i + 1) t' ∧ t'.zf = some (decide (i + 1 = 16)) := by
   have hD := hl.D_bounds
@@ -366,7 +366,7 @@ theorem tabIter_ok (hl : LayOk l) {s₀ t : State} {B : Addr} {M k x : Nat → N
     · obtain ⟨g, v⟩ := hv₂ p hp
       refine ⟨by rw [me₃]; exact g, fun hq => ?_⟩
       rw [me₁] at v
-      have e := mont_mul2 (R := 2 ^ (52 * l.L)) (hR p hp) ((h.tab (j - 1) (by omega_using [hi]) p hp).2 hq) (h.xv hq p hp) v
+      have e := mont_mul2 (R := 2 ^ (52 * l.S)) (hR p hp) ((h.tab (j - 1) (by omega_using [hi]) p hp).2 hq) (h.xv hq p hp) v
       rw [show j - 1 + 1 = j by omega_using [hi]] at e
       rw [me₃]; exact e
   · intro p hp
@@ -398,13 +398,13 @@ structure ConvPre (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (s₀ : State) (B : Addr)
   rbx : s₀.gpr .rbx = B
   scr : Scr s₀ B (2 * l.D)
   ar : Ar l s₀.mem B M k
-  hR : ∀ p < 2, Nat.Coprime (2 ^ (52 * l.L)) (M p)
+  hR : ∀ p < 2, Nat.Coprime (2 ^ (52 * l.S)) (M p)
   gx : ∀ p < 2, Good l s₀.mem B M l.oX p
   gy : ∀ p < 2, Good l s₀.mem B M l.oY p
   gk : ∀ p < 2, Good l s₀.mem B M l.oK1 p
   vx : Q → ∀ p < 2, val52 l s₀.mem B (l.D * p + l.oX) % M p = x p * 2 ^ (64 * l.W) % M p
   vy : Q → ∀ p < 2, val52 l s₀.mem B (l.D * p + l.oY) % M p = 1 * 2 ^ (64 * l.W) % M p
-  vk : Q → ∀ p < 2, val52 l s₀.mem B (l.D * p + l.oK1) % M p = 2 ^ (416 * l.R - 64 * l.W) % M p
+  vk : Q → ∀ p < 2, val52 l s₀.mem B (l.D * p + l.oK1) % M p = 2 ^ (104 * l.S - 64 * l.W) % M p
 
 /-- The state before entry 0, from `s₀`. -/
 structure At0 (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (s₀ t : State) : Prop where
@@ -420,7 +420,7 @@ structure At1 (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (s₀ : State) (B : Addr) (M 
   r13 : t.gpr .r13 = BitVec.ofNat 64 (l.oTab + l.NB * 1)
   ar : Ar l t.mem B M k
   yg : ∀ p < 2, Good l t.mem B M l.oY p
-  yv : ∀ p < 2, val52 l t.mem B (l.D * p + l.oY) * 2 ^ (52 * l.L) % M p =
+  yv : ∀ p < 2, val52 l t.mem B (l.D * p + l.oY) * 2 ^ (52 * l.S) % M p =
     val52 l s₀.mem B (l.D * p + l.oY) * val52 l s₀.mem B (l.D * p + l.oK1) % M p
   f : Out2 l B l.oY l.NB s₀.mem t.mem
   gpr : ∀ r, r ≠ .rax → r ≠ .rcx → r ≠ .rdx → r ≠ .rsi → r ≠ .r8 → r ≠ .r9 → r ≠ .r10 → r ≠ .r11 → r ≠ .r12 →
@@ -464,9 +464,9 @@ theorem conv1_ok (hl : LayOk l) {s₀ t : State} {B : Addr} {M k x : Nat → Nat
     WP isa (convTabBody l) t fun t' => TabInv l s₀ B M k x Q 2 t' ∧ t'.zf = some false := by
   have hD := hl.D_bounds
   obtain ⟨o1, o2, o3, o4, o5, o6, o7, o8, o9, o10⟩ := lay_offs l
-  have e2 : 2 ^ (64 * l.W) * 2 ^ (416 * l.R - 64 * l.W) = 2 ^ (52 * l.L) * 2 ^ (52 * l.L) := by
+  have e2 : 2 ^ (64 * l.W) * 2 ^ (104 * l.S - 64 * l.W) = 2 ^ (52 * l.S) * 2 ^ (52 * l.S) := by
     have := dbl_le hl
-    rw [← Nat.pow_add, ← Nat.pow_add]; congr 1; simp only [Lay.L]; omega_using [this]
+    rw [← Nat.pow_add, ← Nat.pow_add]; congr 1; omega_using [this]
   have hB : t.gpr .rbx = B := by
     rw [h.gpr _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
       (by decide) (by decide) (by decide)]; exact hc.rbx
@@ -514,13 +514,13 @@ theorem conv1_ok (hl : LayOk l) {s₀ t : State} {B : Addr} {M k x : Nat → Nat
   have hoD : l.oTab + l.NB ≤ l.D := by omega_using [o5, o10]
   have hoD' : l.oTab + l.NB + l.NB ≤ l.D := by omega_using [o5, o10]
   -- `Y` and `X` in Montgomery form, after the conversions
-  have vy₂ : Q → ∀ p < 2, val52 l t₂.mem B (l.D * p + l.oY) % M p = x p ^ 0 * 2 ^ (52 * l.L) % M p :=
+  have vy₂ : Q → ∀ p < 2, val52 l t₂.mem B (l.D * p + l.oY) % M p = x p ^ 0 * 2 ^ (52 * l.S) % M p :=
     fun hq p hp => by
       rw [f₂.val hl hp (.inl (by omega_using [o2, o3])) (by omega_using [o2, o10]) (by omega_using [o3, o10])]
       exact mont_into0 (hc.hR p hp) (hc.vy hq p hp) (hc.vk hq p hp) e2 (h.yv p hp)
   have gy₂ : ∀ p < 2, Good l t₂.mem B M l.oY p := fun p hp =>
     (h.yg p hp).of_out2 hl hp f₂ (.inl (by omega_using [o2, o3])) (by omega_using [o2, o10]) (by omega_using [o3, o10])
-  have vx₂ : Q → ∀ p < 2, val52 l t₂.mem B (l.D * p + l.oX) % M p = x p ^ 1 * 2 ^ (52 * l.L) % M p :=
+  have vx₂ : Q → ∀ p < 2, val52 l t₂.mem B (l.D * p + l.oX) % M p = x p ^ 1 * 2 ^ (52 * l.S) % M p :=
     fun hq p hp => by
       have e := (hv₂ p hp).2
       rw [h.f.val hl hp (.inr (by omega_using [o2, o3])) (by omega_using [o3, o10]) (by omega_using [o2, o10]),
