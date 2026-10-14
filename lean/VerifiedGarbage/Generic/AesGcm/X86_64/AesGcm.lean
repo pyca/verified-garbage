@@ -221,6 +221,14 @@ def shortNoteP (v : GcmImpl) : List String :=
       from the key context and computes just the keystream it needs, on 512-bit registers, without calls."]
   else []
 
+/-- How an instance of `open_prepared` works, besides `note` and `shortNoteP`. -/
+def openFastNote (v : GcmImpl) : List String :=
+  if v.short then
+    ["For a 12-byte nonce, at most 16 bytes of additional data and at least 256 bytes of text, this \
+      implementation multiplies the additional data by the prepared power of the hash subkey in the key \
+      context, and computes the tag from the prepared powers in the key context, without calls."]
+  else []
+
 /-- How an instance of `seal` ends, besides `note` and `shortNote`. -/
 def finNote (v : GcmImpl) : List String :=
   if v.fin then
@@ -804,7 +812,7 @@ def artifactsR (v : GcmVariant) : List Artifact := [
   { Spec.Gcm.openPreparedApi with
     name := Spec.Gcm.openPreparedApi.name ++ v.impl.suffix
     target := X86_64.target
-    doc := Spec.Gcm.openPreparedApi.doc (notes := note v.impl :: shortNoteP v.impl)
+    doc := Spec.Gcm.openPreparedApi.doc (notes := note v.impl :: shortNoteP v.impl ++ openFastNote v.impl)
     code := Impl.StackScratch.X86_64.withStackArgScratch 2608 4 (v.impl.openCodeP (v.impl.withBlk (blkR v)))
     contract := Spec.Gcm.openPreparedContract X86_64.abi 2632
     stack := 2632

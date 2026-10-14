@@ -2053,6 +2053,15 @@ mod tests {
                             warm.decrypt_in_place(nonce, aad, &mut actual, &tag)
                                 .unwrap();
                             assert_eq!(actual, plain);
+                            // A wrong tag leaves the ciphertext as it was.
+                            let mut bad_tag = tag;
+                            bad_tag[15] ^= 1;
+                            actual.clone_from(&want);
+                            assert!(
+                                warm.decrypt_in_place(nonce, aad, &mut actual, &bad_tag)
+                                    .is_err()
+                            );
+                            assert_eq!(actual, want);
                             // One piece (`seal_split_prepared` from 256
                             // bytes on); a second of 1 byte (the same), 16
                             // bytes (the same when the first ends on a

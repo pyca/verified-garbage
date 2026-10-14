@@ -28,6 +28,8 @@ open VG VG.X86_64 VG.Impl.AesGcm.X86_64
 open VG.Proof.Gcm.X86_64.Stitch (CtxMode)
 open VG.Proof.AesGcm.X86_64.StreamTo (BlkToFn)
 open VG.Proof.AesGcm.X86_64.Short (ShortFacts)
+open VG.Proof.AesGcm.X86_64.Fast (fastCond_mx fastCond_spSafe fastCond_xdepth fastAad_mx fastAad_spSafe
+  fastAad_xdepth)
 
 /-- `seal_split`'s code after the entry for the implementations `v` and a
 prepared key context: the path for TLS records first if `v` has `seal`'s
@@ -35,12 +37,6 @@ short path. -/
 def _root_.VG.Proof.AesGcm.X86_64.GcmImpl.splitMidR (v : GcmImpl) (c : Callees) (fTo : Fn) : Prog isa :=
   if v.short then Fast.sel c fTo Short.finKs v.splitFin (v.splitMid c fTo) else v.splitMid c fTo
 
-theorem fastCond_mx : (Fast.cond : Prog isa).allInstrs (fun i => !loadsMxcsr i) = true := by decide +kernel
-theorem fastCond_spSafe : (Fast.cond : Prog isa).all (fun i => !X86_64.isa.writesSp i) = true := by decide +kernel
-theorem fastCond_xdepth : (Fast.cond : Prog isa).x86_64Depth = 0 := by decide +kernel
-theorem fastAad_mx : (Fast.aad : Prog isa).allInstrs (fun i => !loadsMxcsr i) = true := by decide +kernel
-theorem fastAad_spSafe : (Fast.aad : Prog isa).all (fun i => !X86_64.isa.writesSp i) = true := by decide +kernel
-theorem fastAad_xdepth : (Fast.aad : Prog isa).x86_64Depth = 0 := by decide +kernel
 theorem fastTail_mx : (Fast.tail Short.finKs : Prog isa).allInstrs (fun i => !loadsMxcsr i) = true := by
   decide +kernel
 theorem fastTail_spSafe : (Fast.tail Short.finKs : Prog isa).all (fun i => !X86_64.isa.writesSp i) = true := by
