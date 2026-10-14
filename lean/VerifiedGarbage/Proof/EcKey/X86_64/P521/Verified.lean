@@ -6,9 +6,9 @@ public import VerifiedGarbage.Proof.EcKey.X86_64.P521.Contract
 meta import VerifiedGarbage.Proof.EcKey.X86_64.P521.Contract
 public import VerifiedGarbage.Proof.EcKey.X86_64.P521.Lit
 meta import VerifiedGarbage.Proof.EcKey.X86_64.P521.Lit
-public import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.Verified
+import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.Verified
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.Verified
-public import VerifiedGarbage.Proof.P521.X86_64.TaintSums
+import VerifiedGarbage.Proof.P521.X86_64.TaintSums
 meta import VerifiedGarbage.Proof.P521.X86_64.TaintSums
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified

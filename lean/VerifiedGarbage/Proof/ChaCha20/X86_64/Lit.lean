@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.X86_64.Lit
 meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
-public import VerifiedGarbage.Impl.ChaCha20.X86_64.Xor
+import VerifiedGarbage.Impl.ChaCha20.X86_64.Xor
 meta import VerifiedGarbage.Impl.ChaCha20.X86_64.Xor
 public import VerifiedGarbage.Impl.ChaCha20.X86_64.Avx2
 meta import VerifiedGarbage.Impl.ChaCha20.X86_64.Avx2

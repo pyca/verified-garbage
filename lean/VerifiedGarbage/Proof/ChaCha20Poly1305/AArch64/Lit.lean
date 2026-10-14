@@ -2,9 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Framework.AArch64.Lit
 meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
-public import VerifiedGarbage.Impl.ChaCha20Poly1305.AArch64
+import VerifiedGarbage.Impl.ChaCha20Poly1305.AArch64
 meta import VerifiedGarbage.Impl.ChaCha20Poly1305.AArch64
-public import VerifiedGarbage.Proof.ChaCha20.AArch64.Lit
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Lit
 meta import VerifiedGarbage.Proof.ChaCha20.AArch64.Lit
 public import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Lit
 meta import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Lit

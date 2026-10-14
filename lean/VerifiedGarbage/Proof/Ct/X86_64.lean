@@ -12,7 +12,7 @@ public import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Spec.Ct.Contract
 meta import VerifiedGarbage.Spec.Ct.Contract
-public import VerifiedGarbage.TCB.X86_64.Target
+import VerifiedGarbage.TCB.X86_64.Target
 meta import VerifiedGarbage.TCB.X86_64.Target
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

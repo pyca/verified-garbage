@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Divstep.Alg32
-public import VerifiedGarbage.Proof.Divstep.Tc32Red
+import VerifiedGarbage.Proof.Divstep.Tc32Red
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

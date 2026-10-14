@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Arm.Flags
-public import VerifiedGarbage.Proof.Weierstrass.Arm.Ladder
-public import VerifiedGarbage.Proof.Weierstrass.Arm.MontModuli
+import VerifiedGarbage.Proof.Weierstrass.Arm.Ladder
+import VerifiedGarbage.Proof.Weierstrass.Arm.MontModuli
 public import VerifiedGarbage.TCB.Arm.Target
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

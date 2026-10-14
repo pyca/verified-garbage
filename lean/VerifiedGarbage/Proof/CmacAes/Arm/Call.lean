@@ -3,8 +3,8 @@ module
 public import VerifiedGarbage.Proof.Aes.Arm.Ctr32
 public import VerifiedGarbage.Proof.Cmac.Frame
 public import VerifiedGarbage.Proof.Framework.Arm.Frame
-public import VerifiedGarbage.Proof.Framework.Arm.RelCT
-public import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.RelCT
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 public import VerifiedGarbage.Impl.CmacAes.Arm
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

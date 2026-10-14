@@ -1,9 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.X86.Exec
-public import VerifiedGarbage.Proof.Framework.X86.Wp
-public import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
-public import VerifiedGarbage.Proof.Framework.X86.SseDword
+import VerifiedGarbage.Proof.Framework.X86.Wp
+import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
+import VerifiedGarbage.Proof.Framework.X86.SseDword
 public import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Impl.ChaCha20.X86.Xor

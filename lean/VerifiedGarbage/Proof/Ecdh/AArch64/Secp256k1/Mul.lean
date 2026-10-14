@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.Secp256k1.GMul
 public import VerifiedGarbage.Impl.Ecdh.Secp256k1.AArch64
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.Stages
+import VerifiedGarbage.Proof.Ecdsa.AArch64.Stages
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.CmacTripleDes.Bytes
-public import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Cmac.Spec
 public import VerifiedGarbage.Proof.Cmac.Block
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

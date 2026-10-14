@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Impl.ChaCha20Poly1305.AArch64.Stitch
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Poly
 public import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.LoopRounds
-public import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed5.Scalar
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed5.Scalar
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

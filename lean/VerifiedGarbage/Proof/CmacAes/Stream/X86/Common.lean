@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.CmacAes.Stream.X86.Call
-public import VerifiedGarbage.Proof.CmacAes.X86.Finalize
+import VerifiedGarbage.Proof.CmacAes.X86.Finalize
 public import VerifiedGarbage.Proof.Framework.WriteBytes
 public import VerifiedGarbage.Proof.Framework.X86.ArgTaint
 public import VerifiedGarbage.Proof.Framework.X86.Spill

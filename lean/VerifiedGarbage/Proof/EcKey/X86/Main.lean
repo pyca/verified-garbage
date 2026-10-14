@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.EcKey.X86.Finish
-public import VerifiedGarbage.Proof.Ecdsa.X86.Middle
+import VerifiedGarbage.Proof.Ecdsa.X86.Middle
 public import VerifiedGarbage.Proof.Ecdsa.X86.Main
 public import VerifiedGarbage.Proof.EcKey.PublicKey
 import all Init.Data.Array.Basic

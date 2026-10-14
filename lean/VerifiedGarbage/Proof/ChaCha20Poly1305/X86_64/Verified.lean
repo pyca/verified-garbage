@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.CT
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.Scratch
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratchWipe
-public import VerifiedGarbage.Spec.ChaCha20Poly1305.Contract
+import VerifiedGarbage.Spec.ChaCha20Poly1305.Contract
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

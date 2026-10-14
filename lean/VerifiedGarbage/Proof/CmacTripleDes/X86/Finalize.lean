@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.CmacTripleDes.X86.Update
-public import VerifiedGarbage.Proof.Framework.WriteBytes
+import VerifiedGarbage.Proof.Framework.WriteBytes
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

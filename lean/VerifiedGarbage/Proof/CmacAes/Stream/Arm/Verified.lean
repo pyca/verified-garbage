@@ -1,12 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.CmacAes.Stream.Arm.Init
+import VerifiedGarbage.Proof.CmacAes.Stream.Arm.Init
 meta import VerifiedGarbage.Proof.CmacAes.Stream.Arm.Init
-public import VerifiedGarbage.Proof.CmacAes.Stream.Arm.Finish
+import VerifiedGarbage.Proof.CmacAes.Stream.Arm.Finish
 meta import VerifiedGarbage.Proof.CmacAes.Stream.Arm.Finish
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
 meta import VerifiedGarbage.Proof.Framework.Arm.Contract
-public import VerifiedGarbage.Spec.Cmac.Contract
+import VerifiedGarbage.Spec.Cmac.Contract
 meta import VerifiedGarbage.Spec.Cmac.Contract
 public import VerifiedGarbage.Proof.CmacAes.Stream.Arm.AbsorbCorrect
 meta import VerifiedGarbage.Proof.CmacAes.Stream.Arm.AbsorbCorrect

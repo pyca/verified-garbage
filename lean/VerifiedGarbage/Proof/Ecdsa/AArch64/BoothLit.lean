@@ -2,9 +2,9 @@ module
 
 public import VerifiedGarbage.Impl.P256.Booth
 meta import VerifiedGarbage.Impl.P256.Booth
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.Lit
+import VerifiedGarbage.Proof.Ecdsa.AArch64.Lit
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Lit
-public import VerifiedGarbage.Proof.EcKey.AArch64.Lit
+import VerifiedGarbage.Proof.EcKey.AArch64.Lit
 meta import VerifiedGarbage.Proof.EcKey.AArch64.Lit
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.CombMixed
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.CombMixed

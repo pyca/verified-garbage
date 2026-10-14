@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Split.Pre
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.XorSplitVerified
 public import VerifiedGarbage.Proof.Framework.X86_64.InlineCalls
-public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.LitSplit
+import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.LitSplit
 meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.LitSplit
 public import VerifiedGarbage.Impl.ChaCha20Poly1305.X86_64.SealSplit
 import Mathlib.Data.List.Induction

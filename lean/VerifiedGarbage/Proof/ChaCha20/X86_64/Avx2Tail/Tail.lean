@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2Tail.Last3
-public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2Tail.RoundsVL
+import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2Tail.Last3
+import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2Tail.RoundsVL
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512Tail.Tail
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

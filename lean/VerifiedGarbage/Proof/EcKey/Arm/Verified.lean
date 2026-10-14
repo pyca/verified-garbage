@@ -4,9 +4,9 @@ public import VerifiedGarbage.Proof.EcKey.Arm.Main
 meta import VerifiedGarbage.Proof.EcKey.Arm.Main
 public import VerifiedGarbage.Proof.EcKey.Arm.Contract
 meta import VerifiedGarbage.Proof.EcKey.Arm.Contract
-public import VerifiedGarbage.Proof.EcKey.Arm.Lit
+import VerifiedGarbage.Proof.EcKey.Arm.Lit
 meta import VerifiedGarbage.Proof.EcKey.Arm.Lit
-public import VerifiedGarbage.Proof.Ecdsa.Arm.Verified
+import VerifiedGarbage.Proof.Ecdsa.Arm.Verified
 meta import VerifiedGarbage.Proof.Ecdsa.Arm.Verified
 public import VerifiedGarbage.Impl.EcKey.P256.Arm
 meta import VerifiedGarbage.Impl.EcKey.P256.Arm

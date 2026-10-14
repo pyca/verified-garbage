@@ -10,7 +10,7 @@ public import VerifiedGarbage.Proof.P192.Point
 meta import VerifiedGarbage.Proof.P192.Point
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
-public import VerifiedGarbage.Proof.Weierstrass.Arm.MontP192
+import VerifiedGarbage.Proof.Weierstrass.Arm.MontP192
 meta import VerifiedGarbage.Proof.Weierstrass.Arm.MontP192
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

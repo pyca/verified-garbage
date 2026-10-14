@@ -4,9 +4,9 @@ public import VerifiedGarbage.Proof.Ecdh.X86_64.P384.Verified
 meta import VerifiedGarbage.Proof.Ecdh.X86_64.P384.Verified
 public import VerifiedGarbage.Proof.Ecdh.X86_64.P384.LitEraseAdx
 meta import VerifiedGarbage.Proof.Ecdh.X86_64.P384.LitEraseAdx
-public import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.VerifiedAdx
+import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.VerifiedAdx
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.VerifiedAdx
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.DoubleCms
+import VerifiedGarbage.Proof.Weierstrass.X86_64.DoubleCms
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.DoubleCms
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

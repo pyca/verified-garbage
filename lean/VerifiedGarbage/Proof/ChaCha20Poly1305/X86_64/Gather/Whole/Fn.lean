@@ -2,14 +2,14 @@ module
 
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Whole.Callee
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.Gathered
-public import VerifiedGarbage.Proof.AesGcm.ScratchGather
+import VerifiedGarbage.Proof.AesGcm.ScratchGather
 public import VerifiedGarbage.Proof.Framework.X86_64.Frame
-public import VerifiedGarbage.Proof.Framework.X86_64.Abi
+import VerifiedGarbage.Proof.Framework.X86_64.Abi
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
-public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Whole.Contract
+import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Whole.Contract
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Loop
 import Mathlib.Data.List.Induction
 import Mathlib.Tactic.SplitIfs

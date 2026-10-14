@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Curve448.AArch64.Columns
+import VerifiedGarbage.Proof.Curve448.AArch64.Columns
 public import VerifiedGarbage.Proof.Curve448.AArch64.Normalize
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

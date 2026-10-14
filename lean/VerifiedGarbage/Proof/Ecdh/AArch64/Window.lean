@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdh.AArch64.Validate
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.CombLays
+import VerifiedGarbage.Proof.Ecdsa.AArch64.CombLays
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.AddConst
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

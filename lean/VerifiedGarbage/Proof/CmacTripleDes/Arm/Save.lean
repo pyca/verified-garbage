@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.CmacTripleDes.Arm.Contract
-public import VerifiedGarbage.Proof.CmacTripleDes.Arm.Block
+import VerifiedGarbage.Proof.CmacTripleDes.Arm.Block
 public import VerifiedGarbage.Proof.MdStream.Arm.Common
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

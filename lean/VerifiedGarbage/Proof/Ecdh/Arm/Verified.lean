@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.Ecdh.Arm.Contract
 meta import VerifiedGarbage.Proof.Ecdh.Arm.Contract
 public import VerifiedGarbage.Proof.Ecdh.Arm.Lit
 meta import VerifiedGarbage.Proof.Ecdh.Arm.Lit
-public import VerifiedGarbage.Proof.Ecdsa.Arm.Verified
+import VerifiedGarbage.Proof.Ecdsa.Arm.Verified
 meta import VerifiedGarbage.Proof.Ecdsa.Arm.Verified
 public import VerifiedGarbage.Impl.Ecdh.P256.Arm
 meta import VerifiedGarbage.Impl.Ecdh.P256.Arm

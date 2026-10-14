@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdh.Arm.Peer
-public import VerifiedGarbage.Proof.Ecdsa.Arm.Lays
-public import VerifiedGarbage.Proof.Ecdsa.Arm.Middle
+import VerifiedGarbage.Proof.Ecdsa.Arm.Lays
+import VerifiedGarbage.Proof.Ecdsa.Arm.Middle
 public import VerifiedGarbage.Proof.Ecdsa.Arm.Main
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

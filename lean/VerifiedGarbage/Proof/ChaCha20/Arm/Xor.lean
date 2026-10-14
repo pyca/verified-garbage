@@ -12,7 +12,7 @@ public import VerifiedGarbage.Impl.ChaCha20.Arm.Xor
 meta import VerifiedGarbage.Impl.ChaCha20.Arm.Xor
 public import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.ChaCha20.Arm.Lit
+import VerifiedGarbage.Proof.ChaCha20.Arm.Lit
 meta import VerifiedGarbage.Proof.ChaCha20.Arm.Lit
 public import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Framework.Omega

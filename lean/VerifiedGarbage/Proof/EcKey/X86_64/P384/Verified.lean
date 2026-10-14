@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.EcKey.X86_64.P384.Contract
 meta import VerifiedGarbage.Proof.EcKey.X86_64.P384.Contract
 public import VerifiedGarbage.Proof.EcKey.X86_64.P384.Lit
 meta import VerifiedGarbage.Proof.EcKey.X86_64.P384.Lit
-public import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.Verified
+import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.Verified
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.Verified
 public import VerifiedGarbage.Proof.Framework.X86_64.TaintSym
 meta import VerifiedGarbage.Proof.Framework.X86_64.TaintSym

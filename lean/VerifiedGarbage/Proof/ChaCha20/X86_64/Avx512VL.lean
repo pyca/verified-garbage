@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.ChaCha20.X86_64.Avx512VL
-public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.Verified
+import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.Verified
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Xor
 meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Xor
 meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.Verified

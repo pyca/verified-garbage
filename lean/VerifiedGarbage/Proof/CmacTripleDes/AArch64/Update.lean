@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Block
 public import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Contract
 public import VerifiedGarbage.Proof.CmacTripleDes.Cmac
-public import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.Cmac.Frame
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

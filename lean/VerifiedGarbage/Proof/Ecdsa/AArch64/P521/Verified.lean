@@ -1,22 +1,22 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.MontModuli
+import VerifiedGarbage.Proof.Weierstrass.AArch64.MontModuli
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.MontModuli
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.Main
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Main
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.P521.Contract
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.P521.Contract
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.P521.Lit
+import VerifiedGarbage.Proof.Ecdsa.AArch64.P521.Lit
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.P521.Lit
-public import VerifiedGarbage.Proof.P521.Point
+import VerifiedGarbage.Proof.P521.Point
 meta import VerifiedGarbage.Proof.P521.Point
-public import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
+import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
 meta import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
+import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
-public import VerifiedGarbage.Proof.P521.Prime
+import VerifiedGarbage.Proof.P521.Prime
 meta import VerifiedGarbage.Proof.P521.Prime
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

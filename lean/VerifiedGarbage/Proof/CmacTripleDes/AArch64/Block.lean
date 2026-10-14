@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Spread
 public import VerifiedGarbage.Proof.CmacTripleDes.Block
-public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 public import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Framework.AArch64.Spill
 import all Init.Data.Array.Basic

@@ -1,9 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.Lays
+import VerifiedGarbage.Proof.Ecdsa.AArch64.Lays
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.Stages
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.Padd
+import VerifiedGarbage.Proof.Ecdsa.AArch64.Padd
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

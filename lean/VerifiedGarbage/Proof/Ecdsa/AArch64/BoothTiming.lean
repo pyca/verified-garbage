@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.BoothLit
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.BoothLit
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.Verified
+import VerifiedGarbage.Proof.Ecdsa.AArch64.Verified
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Verified
 public import VerifiedGarbage.Proof.EcKey.AArch64.Verified
 meta import VerifiedGarbage.Proof.EcKey.AArch64.Verified

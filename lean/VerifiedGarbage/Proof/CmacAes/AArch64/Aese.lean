@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.CmacAes.AArch64.Aese
 meta import VerifiedGarbage.Impl.CmacAes.AArch64.Aese
-public import VerifiedGarbage.Proof.Aes.AArch64.Aese.Ctr32
+import VerifiedGarbage.Proof.Aes.AArch64.Aese.Ctr32
 meta import VerifiedGarbage.Proof.Aes.AArch64.Aese.Ctr32
 public import VerifiedGarbage.Proof.CmacAes.AArch64.Verified
 meta import VerifiedGarbage.Proof.CmacAes.AArch64.Verified

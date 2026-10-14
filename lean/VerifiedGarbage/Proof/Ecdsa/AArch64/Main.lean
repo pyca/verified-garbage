@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.Stages
+import VerifiedGarbage.Proof.Ecdsa.AArch64.Stages
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.CombLays
 public import VerifiedGarbage.Proof.Ecdsa.Sign
 import all Init.Data.Array.Basic

@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.CmacTripleDes.Arm.Update
-public import VerifiedGarbage.Proof.CmacTripleDes.Arm.Keys
+import VerifiedGarbage.Proof.CmacTripleDes.Arm.Keys
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

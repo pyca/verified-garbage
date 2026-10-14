@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.EcKey.X86_64.P384.Verified
 meta import VerifiedGarbage.Proof.EcKey.X86_64.P384.Verified
 public import VerifiedGarbage.Proof.EcKey.X86_64.P384.LitAdx
 meta import VerifiedGarbage.Proof.EcKey.X86_64.P384.LitAdx
-public import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.VerifiedAdx
+import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.VerifiedAdx
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.VerifiedAdx
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

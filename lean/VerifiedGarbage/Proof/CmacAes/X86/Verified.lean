@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.CmacAes.X86.UpdateCT
 meta import VerifiedGarbage.Proof.CmacAes.X86.UpdateCT
-public import VerifiedGarbage.Proof.CmacAes.X86.FinalizeCT
+import VerifiedGarbage.Proof.CmacAes.X86.FinalizeCT
 meta import VerifiedGarbage.Proof.CmacAes.X86.FinalizeCT
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract

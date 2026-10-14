@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.ChaCha20.Arm.Stream.Bytes
-public import VerifiedGarbage.Proof.ChaCha20.Stream
-public import VerifiedGarbage.Proof.Framework.Arm.RelCT
+import VerifiedGarbage.Proof.ChaCha20.Stream
+import VerifiedGarbage.Proof.Framework.Arm.RelCT
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

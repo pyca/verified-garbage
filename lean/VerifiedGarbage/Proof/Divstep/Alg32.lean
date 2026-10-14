@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Divstep.Batch
+import VerifiedGarbage.Proof.Divstep.Batch
 public import VerifiedGarbage.Proof.Divstep.Word32
 public import VerifiedGarbage.Proof.Divstep.Mred32
 import all Init.Data.Array.Basic

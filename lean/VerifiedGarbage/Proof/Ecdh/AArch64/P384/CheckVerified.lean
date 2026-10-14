@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ecdh.AArch64.CheckPoint
 meta import VerifiedGarbage.Proof.Ecdh.AArch64.CheckPoint
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.P384.Verified
+import VerifiedGarbage.Proof.Ecdsa.AArch64.P384.Verified
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.P384.Verified
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.P384Literals
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.P384Literals

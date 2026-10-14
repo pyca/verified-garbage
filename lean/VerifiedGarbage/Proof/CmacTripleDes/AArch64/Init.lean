@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Update
-public import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Keys
+import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Keys
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

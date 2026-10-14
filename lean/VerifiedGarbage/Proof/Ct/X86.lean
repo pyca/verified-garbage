@@ -8,7 +8,7 @@ public import VerifiedGarbage.Proof.MlDsa.X86.Pack.Run
 meta import VerifiedGarbage.Proof.MlDsa.X86.Pack.Run
 public import VerifiedGarbage.Proof.Framework.X86.ArgTaint
 meta import VerifiedGarbage.Proof.Framework.X86.ArgTaint
-public import VerifiedGarbage.Proof.Framework.X86.RelCT
+import VerifiedGarbage.Proof.Framework.X86.RelCT
 meta import VerifiedGarbage.Proof.Framework.X86.RelCT
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract

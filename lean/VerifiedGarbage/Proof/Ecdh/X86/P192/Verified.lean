@@ -8,7 +8,7 @@ public import VerifiedGarbage.Proof.Ecdh.X86.P192.Contract
 meta import VerifiedGarbage.Proof.Ecdh.X86.P192.Contract
 public import VerifiedGarbage.Proof.Ecdh.X86.P192.Lit
 meta import VerifiedGarbage.Proof.Ecdh.X86.P192.Lit
-public import VerifiedGarbage.Proof.Ecdsa.X86.P192.Verified
+import VerifiedGarbage.Proof.Ecdsa.X86.P192.Verified
 meta import VerifiedGarbage.Proof.Ecdsa.X86.P192.Verified
 public import VerifiedGarbage.Proof.Framework.X86.Taint
 meta import VerifiedGarbage.Proof.Framework.X86.Taint

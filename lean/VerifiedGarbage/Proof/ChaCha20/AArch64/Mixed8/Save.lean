@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.SaveGP
-public import VerifiedGarbage.Proof.ChaCha20.AArch64.Rows6.Save
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Rows6.Save
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

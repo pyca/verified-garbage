@@ -4,9 +4,9 @@ public import VerifiedGarbage.Proof.EcKey.Arm.Main
 meta import VerifiedGarbage.Proof.EcKey.Arm.Main
 public import VerifiedGarbage.Proof.EcKey.Arm.P521.Contract
 meta import VerifiedGarbage.Proof.EcKey.Arm.P521.Contract
-public import VerifiedGarbage.Proof.EcKey.Arm.P521.Lit
+import VerifiedGarbage.Proof.EcKey.Arm.P521.Lit
 meta import VerifiedGarbage.Proof.EcKey.Arm.P521.Lit
-public import VerifiedGarbage.Proof.Ecdsa.Arm.P521.Verified
+import VerifiedGarbage.Proof.Ecdsa.Arm.P521.Verified
 meta import VerifiedGarbage.Proof.Ecdsa.Arm.P521.Verified
 public import VerifiedGarbage.Impl.EcKey.P521.Arm
 meta import VerifiedGarbage.Impl.EcKey.P521.Arm

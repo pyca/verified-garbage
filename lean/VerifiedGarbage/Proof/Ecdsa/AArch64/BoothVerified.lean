@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.BoothContract
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombJ
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.CombProduction
-public import VerifiedGarbage.Proof.P256.Order
+import VerifiedGarbage.Proof.P256.Order
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

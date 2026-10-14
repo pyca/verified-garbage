@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.P256Literals
+import VerifiedGarbage.Proof.Weierstrass.AArch64.P256Literals
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.P256Literals
 public import VerifiedGarbage.Proof.Framework.AArch64.Lit
 meta import VerifiedGarbage.Proof.Framework.AArch64.Lit

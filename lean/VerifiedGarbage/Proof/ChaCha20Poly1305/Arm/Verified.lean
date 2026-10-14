@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.Arm.Stages
 meta import VerifiedGarbage.Proof.ChaCha20Poly1305.Arm.Stages
-public import VerifiedGarbage.Proof.Framework.ContractPost
+import VerifiedGarbage.Proof.Framework.ContractPost
 meta import VerifiedGarbage.Proof.Framework.ContractPost
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
 meta import VerifiedGarbage.Proof.Framework.Arm.Contract
@@ -10,7 +10,7 @@ public import VerifiedGarbage.Spec.ChaCha20Poly1305.Contract
 meta import VerifiedGarbage.Spec.ChaCha20Poly1305.Contract
 public import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Framework.Omega
-public import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
+import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
 meta import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
 public import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
 meta import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe

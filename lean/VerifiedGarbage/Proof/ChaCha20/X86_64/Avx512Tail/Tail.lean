@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512Tail.Out
+import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512Tail.Out
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.Xor
-public import VerifiedGarbage.Proof.ChaCha20.X86_64.XorBuf
+import VerifiedGarbage.Proof.ChaCha20.X86_64.XorBuf
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

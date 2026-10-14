@@ -1,17 +1,17 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 public import VerifiedGarbage.Proof.Framework.AArch64.Spill
 public import VerifiedGarbage.Proof.Poly1305.AArch64.Init
-public import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Blocks
-public import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Finalize
+import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Blocks
+import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Finalize
 public import VerifiedGarbage.Proof.ChaCha20.AArch64.XorVariant
-public import VerifiedGarbage.Proof.ChaCha20Poly1305.Spec
-public import VerifiedGarbage.Impl.ChaCha20Poly1305.AArch64
+import VerifiedGarbage.Proof.ChaCha20Poly1305.Spec
+import VerifiedGarbage.Impl.ChaCha20Poly1305.AArch64
 public import VerifiedGarbage.Proof.Framework.PowLit
 public import VerifiedGarbage.Spec.ChaCha20Poly1305
-public import VerifiedGarbage.TCB.AArch64.Target
-public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Lit
+import VerifiedGarbage.TCB.AArch64.Target
+import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Lit
 public import VerifiedGarbage.Proof.Framework.Offset
 public import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Framework.Omega

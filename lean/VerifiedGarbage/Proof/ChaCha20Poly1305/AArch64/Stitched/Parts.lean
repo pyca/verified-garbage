@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.ChaCha20Poly1305.AArch64.Stitched
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stages
-public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitch.Bulk
+import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitch.Bulk
 public import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Setup
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

@@ -8,7 +8,7 @@ public import VerifiedGarbage.Proof.EcKey.X86.P224.Contract
 meta import VerifiedGarbage.Proof.EcKey.X86.P224.Contract
 public import VerifiedGarbage.Proof.EcKey.X86.P224.Lit
 meta import VerifiedGarbage.Proof.EcKey.X86.P224.Lit
-public import VerifiedGarbage.Proof.Ecdsa.X86.P224.Verified
+import VerifiedGarbage.Proof.Ecdsa.X86.P224.Verified
 meta import VerifiedGarbage.Proof.Ecdsa.X86.P224.Verified
 public import VerifiedGarbage.Proof.Framework.X86.Taint
 meta import VerifiedGarbage.Proof.Framework.X86.Taint

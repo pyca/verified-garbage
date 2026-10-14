@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.CT
-public import VerifiedGarbage.Impl.ChaCha20Poly1305.X86_64.SealSplit
+import VerifiedGarbage.Impl.ChaCha20Poly1305.X86_64.SealSplit
 
 /-!
 # ChaCha20-Poly1305 with the data's first bytes from `src`, x86-64: what `seal` starts from

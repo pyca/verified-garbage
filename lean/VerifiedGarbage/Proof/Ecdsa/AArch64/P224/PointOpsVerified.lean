@@ -2,11 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.P224.Verified
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.P224.Verified
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.Padd
+import VerifiedGarbage.Proof.Ecdsa.AArch64.Padd
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Padd
 public import VerifiedGarbage.Proof.Weierstrass.PointFacts
 meta import VerifiedGarbage.Proof.Weierstrass.PointFacts
-public import VerifiedGarbage.Proof.Mont.Read
+import VerifiedGarbage.Proof.Mont.Read
 meta import VerifiedGarbage.Proof.Mont.Read
 public import VerifiedGarbage.Spec.Weierstrass.PointOps
 meta import VerifiedGarbage.Spec.Weierstrass.PointOps

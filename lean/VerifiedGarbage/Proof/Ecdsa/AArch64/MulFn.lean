@@ -1,13 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.Fixed
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.Lays
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.Stages
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Ladder
+import VerifiedGarbage.Proof.Ecdsa.AArch64.Lays
+import VerifiedGarbage.Proof.Ecdsa.AArch64.Stages
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Ladder
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Rep
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Bits
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Copy
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.SetConst
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Bits
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Copy
+import VerifiedGarbage.Proof.Weierstrass.AArch64.SetConst
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

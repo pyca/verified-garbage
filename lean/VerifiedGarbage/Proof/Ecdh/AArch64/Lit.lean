@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.P256Literals
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.P256Literals
 public import VerifiedGarbage.Proof.Framework.AArch64.Lit
 meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
-public import VerifiedGarbage.Impl.Ecdh.P256.AArch64
+import VerifiedGarbage.Impl.Ecdh.P256.AArch64
 meta import VerifiedGarbage.Impl.Ecdh.P256.AArch64
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

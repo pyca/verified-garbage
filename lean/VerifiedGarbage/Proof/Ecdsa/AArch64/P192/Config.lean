@@ -2,8 +2,8 @@ module
 
 public import VerifiedGarbage.Impl.Ecdsa.P192.AArch64
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.Layout
-public import VerifiedGarbage.Proof.P192.Point
-public import VerifiedGarbage.Proof.P192.OrderPrime
+import VerifiedGarbage.Proof.P192.Point
+import VerifiedGarbage.Proof.P192.OrderPrime
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.CmacTripleDes.X86.Lit
 meta import VerifiedGarbage.Proof.CmacTripleDes.X86.Lit
-public import VerifiedGarbage.Proof.CmacTripleDes.X86.Init
+import VerifiedGarbage.Proof.CmacTripleDes.X86.Init
 meta import VerifiedGarbage.Proof.CmacTripleDes.X86.Init
 public import VerifiedGarbage.Proof.CmacTripleDes.X86.Finalize
 meta import VerifiedGarbage.Proof.CmacTripleDes.X86.Finalize

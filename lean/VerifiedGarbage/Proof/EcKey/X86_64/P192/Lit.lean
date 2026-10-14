@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.EcKey.P192.X86_64
 meta import VerifiedGarbage.Impl.EcKey.P192.X86_64
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.P192Literals
+import VerifiedGarbage.Proof.Weierstrass.X86_64.P192Literals
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.P192Literals
 public import VerifiedGarbage.Proof.Framework.X86_64.Lit
 meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
