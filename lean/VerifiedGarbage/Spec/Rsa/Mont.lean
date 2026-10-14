@@ -5,8 +5,8 @@ public import VerifiedGarbage.TCB.Artifact
 /-!
 # Montgomery multiplication in the RSA working space, as a function
 
-**Trusted** (as every file in `Spec/`). The contract of
-`vg_rsa_mont_mul`, in the module `rsa_mont`, so that the code of the RSA
+**Trusted** (as every file in `Spec/`). The contracts of
+`vg_rsa_mont_mul` and `vg_rsa_mont_mul_lazy`, in the module `rsa_mont`, so that the code of the RSA
 functions can call one copy of its Montgomery multiplication instead of
 repeating it at every use. It is not an algorithm of a standard but the
 arithmetic the RSA functions are built from: what it computes is stated on
@@ -29,6 +29,12 @@ result's array (`Keeps`). Everything is secret but the pointer, `ws_len`,
 the indices and `w`, which are public: `w` is the length of the numbers,
 and timing may depend on it (`leak`). The function is otherwise constant
 time.
+
+`vg_rsa_mont_mul` reduces its result below `m` and takes `b` below `m`;
+`vg_rsa_mont_mul_lazy` (`mulLazyContract`) takes and returns any numbers of
+`w` words, congruent to the same value, which saves a pass over the result in
+every multiplication of an exponentiation. Its callers reduce once, where they
+need a value below `m`.
 -/
 
 @[expose] public section
@@ -131,6 +137,54 @@ def mulApi : Api where
     "Header word 7 must be `-m⁻¹ mod 2^64` for the modulus `m` in array 0, which must be odd.",
     "`o`, `a` and `b` must be below 8, and not 2 or 3.",
     "The number in array `b` must be below `m`.",
+    "Arrays 2 and 3 are unspecified on return and may hold intermediate values, which the \
+      caller must destroy if they are secret."]
+
+/-- The lazy Montgomery multiplication: for `-m⁻¹ mod 2⁶⁴` in the header (so
+`m` is odd), the number at `o` is congruent to `a b R⁻¹` modulo `m`,
+`R = 2^(64 w)`, that is, its product with `R` is congruent to `a b`. Neither
+the operands nor the result need be below `m`: they are any numbers of `w`
+words (below `R`). With `a, b < R` and `m < R`, `(a b + q m) / R` is below
+`R + m`, so one subtraction of `m`, when that sum reaches `R`, brings it
+below `R`; a caller reduces below `m` once, where it needs to. `mulContract`
+implies it. -/
+def mulLazyContract {I : ISA} (A : Abi I) (stack : Nat := 0) : Contract I :=
+  sig.contract A
+    (pre := fun ws wsLen o a b m =>
+      let w := wOf m ws
+      Layout m ws wsLen.toNat ∧ Operand o.toNat ∧ Operand a.toNat ∧ Operand b.toNat ∧
+        ((m.readW (ws + BitVec.ofNat 64 (arrAt w aM)) 64).toNat * (wordAt m ws minvWord).toNat + 1) %
+          2 ^ 64 = 0)
+    (post := fun ws wsLen o a b m m' _ =>
+      let w := wOf m ws
+      let M := numAt m ws w aM
+      numAt m' ws w o.toNat * 2 ^ (64 * w) % M = numAt m ws w a.toNat * numAt m ws w b.toNat % M ∧
+        Keeps ws wsLen.toNat w o.toNat m m')
+    (stack := stack)
+    (leak := some fun ws _ _ _ _ m => [wOf m ws])
+
+/-- `vg_rsa_mont_mul_lazy` on every target. -/
+def mulLazyApi : Api where
+  module := "rsa_mont"
+  name := "vg_rsa_mont_mul_lazy"
+  sig := sig
+  contracts := some fun A stack => mulLazyContract A stack
+  summary := "Lazy Montgomery multiplication in the working space of the RSA functions: writes \
+    to array `o` a number of `w` words congruent to `a b 2^(-64 w)` modulo the modulus `m` \
+    (array 0), for the numbers in arrays `a` and `b`, which, like the result, need not be below \
+    `m`. The working space is laid out as for `vg_rsa_mont_mul`: a header of 32 words, then 8 \
+    arrays of `w + 2` words each; header word 6 holds `w`, word 7 `-m⁻¹ mod 2^64`, and words 8 \
+    to 15 the addresses of the arrays. The numbers are `w` 64-bit words, little-endian, at the \
+    start of their arrays; `o` may be `a` or `b`, and `a` may be `b`. Every byte of `ws` but \
+    those of arrays 2 and 3 (the function's own) and of array `o` keeps its value.\n\n\
+    Contract: `VG.Spec.Rsa.Mont.mulLazyContract`. Constant time but for `w`: timing may depend \
+    on the pointer, `ws_len`, the indices and `w`, not on the numbers."
+  safety := ["Header word 6 of `ws`, `w`, must be in 2..2^31, and `ws_len` at least \
+      `32 + 8 * (w + 2)`.",
+    "Header words 8 to 15 must hold the addresses of the arrays: word `8 + j` the address of \
+      word `32 + j * (w + 2)` of `ws`.",
+    "Header word 7 must be `-m⁻¹ mod 2^64` for the modulus `m` in array 0, which must be odd.",
+    "`o`, `a` and `b` must be below 8, and not 2 or 3.",
     "Arrays 2 and 3 are unspecified on return and may hold intermediate values, which the \
       caller must destroy if they are secret."]
 
