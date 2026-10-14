@@ -94,12 +94,12 @@ TARGET = pathlib.Path("bench-target").resolve()
 # pages that hold the binary (see the module docstring): those that read a
 # comb's table of hundreds of kilobytes, ChaCha20-Poly1305's and AES-GCM's.
 # They run from `--copies` copies of each binary.
-FRESH_COPIES = re.compile(r"^(?:ec_p521_public_key|ecdsa_p521_|chacha20poly1305|aes-(?:128|256)-gcm-(?!siv))")
+FRESH_COPIES = re.compile(r"^(?:ec_p521_public_key|ecdsa_p521_|chacha20poly1305|aes-(?:128|256)-gcm-(?!siv)|rsa_pkcs1_sign)")
 # The `VG_BENCH_MODULES` of the copies' runs: the modules whose benchmarks
 # hold those groups. The binary sets up every selected benchmark before
 # criterion's filter applies (RSA keys of up to 4096 bits among them),
 # which took about 110 s of each copy's run with every module.
-FRESH_COPIES_MODULES = "ecdsa_p521 chacha20poly1305 aes_gcm"
+FRESH_COPIES_MODULES = "ecdsa_p521 chacha20poly1305 aes_gcm rsa_pkcs1_sig"
 
 # How src/cpu.rs stops a run whose `VG_CPU_FEATURES` names features this CPU
 # does not have.
