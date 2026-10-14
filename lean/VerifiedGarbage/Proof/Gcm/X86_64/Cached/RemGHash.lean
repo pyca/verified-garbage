@@ -87,30 +87,31 @@ theorem hash1_ok {b : XReg} (hb : b ∈ aregs) (j : Nat) (t : State) (h0 : ∀ l
   · have := (hq l hl).2.xmm r hr
     simpa only [State.zproj_xmm] using this
 
-/-- The powers at `rax + d` in `zmm12`. -/
-theorem ldPow_ok (d : Nat) (t : State) (hin : InRegions (t.rd ++ t.wr) (t.gpr .rax + BitVec.ofNat 64 d) 64) :
-    WP isa (.block [.vmovdqu32Load .xmm12 (at_ .rax d)]) t fun t' =>
-      (∀ l < 4, t'.zlane .xmm12 l = t.mem.readW (t.gpr .rax + BitVec.ofNat 64 d + BitVec.ofNat 64 (16 * l)) 128) ∧
-      ZFrame [.xmm12] t t' := by
+/-- The 64 bytes at `b + d` in `zmm` `x`. -/
+theorem ld512_ok (x : XReg) (b : Reg) (d : Nat) (t : State)
+    (hin : InRegions (t.rd ++ t.wr) (t.gpr b + BitVec.ofNat 64 d) 64) :
+    WP isa (.block [.vmovdqu32Load x (at_ b d)]) t fun t' =>
+      (∀ l < 4, t'.zlane x l = t.mem.readW (t.gpr b + BitVec.ofNat 64 d + BitVec.ofNat 64 (16 * l)) 128) ∧
+      ZFrame [x] t t' := by
   rw [WP.block_cons_iff]
-  refine ⟨setZv t .xmm12 (t.mem.readW (t.gpr .rax + BitVec.ofNat 64 d) 512),
+  refine ⟨setZv t x (t.mem.readW (t.gpr b + BitVec.ofNat 64 d) 512),
     by simp only [isa, exec, State.load512, ea_at', hin, ite_true, Option.map_some], WP.block_nil ⟨fun l hl => ?_,
       ⟨rfl, rfl, rfl, rfl, fun r hr l hl => State.zlane_setZ_ne _ (fun h => hr (List.mem_singleton.mpr h)) _ _ _ _ hl⟩⟩⟩
   rw [zlane_setZv _ _ _ hl]; exact load512_lane _ _ hl
 
-/-- The powers of `c` blocks at `rax + d` in `zmm12`, through the mask in
-`r10`, and zero in its other lanes. -/
-theorem ldPowK_ok (d : Nat) (t : State) {c : Nat} (hc : c ≤ 4)
+/-- The `c` blocks at `b + d` in `zmm` `x`, through the mask in `r10`, and
+zero in its other lanes. -/
+theorem ld512K_ok (x : XReg) (b : Reg) (d : Nat) (t : State) {c : Nat} (hc : c ≤ 4)
     (hk : State.qOn (t.gpr .r10) = List.range (2 * c))
     (hbk : ∀ j < 8, (t.gpr .r10).getLsbD j = decide (j < 2 * c))
-    (hin : InRegions (t.rd ++ t.wr) (t.gpr .rax + BitVec.ofNat 64 d) (16 * c)) :
-    WP isa (.block [.kLoad .r10 .xmm12 (at_ .rax d)]) t fun t' =>
-      (∀ l < 4, t'.zlane .xmm12 l =
-        if l < c then t.mem.readW (t.gpr .rax + BitVec.ofNat 64 d + BitVec.ofNat 64 (16 * l)) 128 else 0) ∧
-      ZFrame [.xmm12] t t' := by
-  obtain ⟨v, ev, lv⟩ := State.loadMasked512_prefix (s := t) (a := t.gpr .rax + BitVec.ofNat 64 d) hc hk hbk hin
+    (hin : InRegions (t.rd ++ t.wr) (t.gpr b + BitVec.ofNat 64 d) (16 * c)) :
+    WP isa (.block [.kLoad .r10 x (at_ b d)]) t fun t' =>
+      (∀ l < 4, t'.zlane x l =
+        if l < c then t.mem.readW (t.gpr b + BitVec.ofNat 64 d + BitVec.ofNat 64 (16 * l)) 128 else 0) ∧
+      ZFrame [x] t t' := by
+  obtain ⟨v, ev, lv⟩ := State.loadMasked512_prefix (s := t) (a := t.gpr b + BitVec.ofNat 64 d) hc hk hbk hin
   rw [WP.block_cons_iff]
-  refine ⟨setZv t .xmm12 v, by simp only [isa, exec]; rw [ea_at', ev]; rfl, WP.block_nil ⟨fun l hl => ?_,
+  refine ⟨setZv t x v, by simp only [isa, exec]; rw [ea_at', ev]; rfl, WP.block_nil ⟨fun l hl => ?_,
       ⟨rfl, rfl, rfl, rfl, fun r hr l hl => State.zlane_setZ_ne _ (fun h => hr (List.mem_singleton.mpr h)) _ _ _ _ hl⟩⟩⟩
   rw [zlane_setZv _ _ _ hl, lv l hl]
 
@@ -153,7 +154,7 @@ theorem hashG_ok : ∀ (rs : List XReg) (j : Nat) (t : State) {c : Nat} (X : Nat
     simp only [List.length_singleton, Nat.sub_self, Nat.mul_zero, Nat.zero_add] at hin hX hT ⊢
     rw [show hashG [b] j = ([.kLoad .r10 .xmm12 (at_ .rax (64 * j))] : List Instr) ++ hash1 b j from rfl,
       WP.block_append_iff]
-    refine WP.mono (ldPowK_ok (64 * j) t hc hk hbk hin) fun t₁ ⟨l₁, f₁⟩ => ?_
+    refine WP.mono (ld512K_ok .xmm12 .rax (64 * j) t hc hk hbk hin) fun t₁ ⟨l₁, f₁⟩ => ?_
     refine WP.mono (hash1_ok hb j t₁ fun l hl => by rw [f₁.zlane _ (by decide) l hl, h0 l hl])
       fun t' ⟨p', f'⟩ => ⟨fun l hl => ?_, (f₁.comp f').mono (by decide)⟩
     rw [p' l hl]
@@ -173,7 +174,7 @@ theorem hashG_ok : ∀ (rs : List XReg) (j : Nat) (t : State) {c : Nat} (X : Nat
     have hn64 : 64 * (bs.length + 1 + 1 - 1) + 16 * c < 2 ^ 64 := by omega
     rw [show hashG (b :: b₂ :: bs) j = ([.vmovdqu32Load .xmm12 (at_ .rax (64 * j))] : List Instr) ++ hash1 b j ++
       hashG (b₂ :: bs) (j + 1) from rfl, WP.block_append_iff, WP.block_append_iff]
-    refine WP.mono (ldPow_ok (64 * j) t
+    refine WP.mono (ld512_ok .xmm12 .rax (64 * j) t
       (by have := CallLay.inRegions_sub (off := 0) (l := 64) hin (by omega) hn64
           rwa [BitVec.add_zero] at this)) fun t₁ ⟨l₁, f₁⟩ => ?_
     refine WP.mono (hash1_ok hb j t₁ fun l hl => by rw [f₁.zlane _ (by decide) l hl, h0 l hl])

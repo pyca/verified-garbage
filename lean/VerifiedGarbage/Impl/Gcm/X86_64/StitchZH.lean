@@ -276,8 +276,54 @@ def remD : Prog isa :=
       (.seq (.block (([.mov32 .r10 (.imm 0)] : List Instr) ++ StitchAvx.zero))
         (.seq (remLoopsD .rdx) (.block storeY))))
 
+/-! ## Decryption: the blocks after the last group, as a masked group
+
+`remGD` decrypts the `r` blocks after the last group as one more group of
+`k = ⌈r / 4⌉` registers: their counters are encrypted in the lanes of
+`zmm3` … while the ciphertext blocks are hashed between the rounds as they
+are in memory, as a body hashes a group (`gD`): register `i` of them,
+byte-reversed, with `Y` added to the first block, times the powers at
+`rax + 64 i`, the last register's blocks and powers loaded through the mask
+of its blocks (`remMaskG`, in `r10`), so that its other lanes read nothing
+and add nothing; the four lanes reduced after round 5. Then the ciphertext
+is added to the keystream in the registers and stored (`xorG`). -/
+
+/-- Load `i` of the GHASH of the `r` blocks: four powers and four blocks,
+through the mask if `last`, the products written (`i = 0`, with `Y` added
+to the first block) or added. -/
+def ldGD (last : Bool) (i : Nat) : List Instr :=
+  (if last then ([.kLoad .r10 .xmm12 (at_ .rax (64 * i)), .kLoad .r10 .xmm7 (at_ .rdx (64 * i))] : List Instr)
+    else [.vmovdqu32Load .xmm12 (at_ .rax (64 * i)), .vmovdqu32Load .xmm7 (at_ .rdx (64 * i))]) ++
+    ([.zop (.zbin .vpshufb .xmm7 .xmm7 .xmm0)] : List Instr) ++
+    (if i = 0 then [.zop (.zbin .vpxord .xmm7 .xmm7 .xmm2)] else []) ++
+    (if i = 0 then StitchZ.accInit .xmm7 .xmm12 else StitchZ.acc .xmm7 .xmm12)
+
+/-- The GHASH work between the rounds of `k` registers: the loads after
+rounds 1–`k`, the reduction after round 5. -/
+def gD (k j : Nat) : List Instr :=
+  if 1 ≤ j ∧ j ≤ k then ldGD (j == k) (j - 1) else if j = 5 then fin else []
+
+/-- The `r` blocks at `rdx` as a group of `k` registers, hashed between
+their rounds, and decrypted in place. -/
+def ksBatchGD (k : Nat) : Prog isa :=
+  .seq remMaskG
+    (.seq (.block (ctrsZ .xmm14 .xmm0 .xmm15 (aregs.take k)))
+      (.seq (Aes.X86_64.VaesZH.aes (aregs.take k) (gD k)) (.block (xorG .rdx (aregs.take k) 0))))
+
+/-- `ksBatchGD` of `⌈r / 4⌉` registers, from `r10 = 16 r`. -/
+def ksSelGD : Prog isa :=
+  .seq (.block [.alu .cmp .r10 (.imm 65)])
+    (.ite .b (ksBatchGD 1)
+      (.seq (.block [.alu .cmp .r10 (.imm 129)])
+        (.ite .b (ksBatchGD 2)
+          (.seq (.block [.alu .cmp .r10 (.imm 193)]) (.ite .b (ksBatchGD 3) (ksBatchGD 4))))))
+
+/-- The `r9 - 16` blocks at `rdx` after the last group, which the loop has
+already hashed, hashed and decrypted as a masked group, and `Y` stored. -/
+def remGD : Prog isa := .seq (.block remSetup) (.seq ksSelGD (.block storeY))
+
 /-- `dec`, for any number of blocks from 16 on: the `r9` blocks after the
-last group, if any, by `remD`. -/
+last group, if any, by `remGD`. -/
 def decR : Prog isa :=
   .seq (.seq (.block setupP) Aes.X86_64.VaesZH.loadKeys)
     (.seq (.block [.alu .cmp .r9 (.imm 256)])
@@ -286,7 +332,7 @@ def decR : Prog isa :=
           (.seq (.ite .b (.block []) (.loop dbody .ae))
             (.seq (.block [.alu .test .r9 (.reg .r9)])
               (.ite .e (.block (storeCtr ++ storeY))
-                (.seq (.block [.alu .add .r9 (.imm 16)]) remD)))))))
+                (.seq (.block [.alu .add .r9 (.imm 16)]) remGD)))))))
 
 def dec : Prog isa :=
   .seq (.seq (.block setupP) Aes.X86_64.VaesZH.loadKeys)
