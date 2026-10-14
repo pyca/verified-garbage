@@ -2,8 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.Aad
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.Cond
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.Tail
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Split.Run
 public import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Context
+import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -15,7 +17,8 @@ import all Init.Data.Vector.Basic
 Untrusted: everything here is checked by Lean. With a prepared key context
 (`CtxMode.prepared`), whose `H'` at `ctx + 272` multiplies as `H`
 (`ShortFacts.pp1`), `Fast.aad` leaves what `oneAad` does (`aad_mid`), so
-`Fast.run` meets `MidOk` as `SealSplit.run` does (`splitRun_of_mid`), and
+`Fast.run`, with `Fast.tail` for at most 16 bytes left (`fbody_ok`), meets
+`MidOk` as `SealSplit.run` does (`splitRun_of_midB`), and
 `Fast.sel` too, with `other` for the inputs `cond` turns away (`sel_ok`).
 -/
 
@@ -30,7 +33,7 @@ open VG.Proof.AesGcm.X86_64
 open VG.Proof.AesGcm.X86_64.Split
 open VG.Proof.Gcm.X86_64.Stitch (CtxMode)
 open VG.Proof.AesGcm.X86_64.StreamTo (BlkToFn)
-open VG.Proof.AesGcm.X86_64.Short (ShortFacts CondKeep IsH1 condS_of)
+open VG.Proof.AesGcm.X86_64.Short (ShortFacts KsOk CondKeep IsH1 condS_of)
 open VG.Spec.Aes (bytesAt)
 open VG.Spec.Gcm (blockAt ctxH)
 
@@ -99,8 +102,9 @@ theorem condE_ok {k : Nat} {s₀ s₁ : State} {Ctx W SP Np A D : Addr} {nl al n
 
 /-- `sel`: this path for the inputs it takes, `other` for the rest. -/
 theorem sel_ok (hF : ShortFacts) (v : GcmImpl) (B : BlkFn CtxMode.prepared) (T : BlkToFn CtxMode.prepared)
-    {fin : Prog isa} (hfin : FinOk CtxMode.prepared fin) {other : Prog isa} (ho : MidOk CtxMode.prepared other) :
-    MidOk CtxMode.prepared (Impl.AesGcm.X86_64.Fast.sel (v.withBlk B) T.fn fin other) := by
+    {ks : Prog isa} (hks : KsOk ks) {fin : Prog isa} (hfin : FinOk CtxMode.prepared fin) {other : Prog isa}
+    (ho : MidOk CtxMode.prepared other) :
+    MidOk CtxMode.prepared (Impl.AesGcm.X86_64.Fast.sel (v.withBlk B) T.fn ks fin other) := by
   intro s₀ s₁ Ctx W SP Np A D S T' nl al n sl C X kM E hNp hnl hal
   unfold Impl.AesGcm.X86_64.Fast.sel
   refine WP.seq (WP.mono (condE_ok C.toOneCtx E.toOneEntry hnl hal) fun s₂ ⟨hz, E₂, K⟩ => ?_)
@@ -108,6 +112,7 @@ theorem sel_ok (hF : ShortFacts) (v : GcmImpl) (B : BlkFn CtxMode.prepared) (T :
   refine WP.ite (decide ¬IsFast nl al n) (eval_e hz) (fun _ => ho C X kM S₂ hNp hnl hal) fun h => ?_
   obtain ⟨h12, h17, -⟩ : IsFast nl al n := Decidable.not_not.mp (of_decide_eq_false h)
   subst h12
-  exact splitRun_of_mid v B T hfin C X kM S₂ hal (aad_mid hF C.toOneCtx X S₂.toOneEntry hNp hnl hal (by omega))
+  exact splitRun_of_midB T (fbody_ok hF hks B hfin) C X kM S₂ hal
+    (aad_mid hF C.toOneCtx X S₂.toOneEntry hNp hnl hal (by omega))
 
 end VG.Proof.AesGcm.X86_64.Fast

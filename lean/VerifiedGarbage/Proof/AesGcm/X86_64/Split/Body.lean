@@ -235,4 +235,30 @@ theorem body_ok (B : BlkFn M) {fin : Prog isa} (hfin : FinOk M fin) {R : Nat} {D
 
 end
 
+/-- What `seal_split` needs of its code after `prefix`, with the data left
+at `D`: what `SealSplit.body` does (`body_ok`). -/
+def BodyOk (M : CtxMode) (body : Prog isa) : Prop :=
+  ∀ {Ctx W SP : Addr}, Lay Ctx (W + BitVec.ofNat 64 16) W SP →
+    ∀ {R : Nat} {D : Addr} {n al N : Nat} {H icb : Block} {a : List Byte} {s : State},
+    Env Ctx (W + BitVec.ofNat 64 16) W SP s → RoundsAt s.mem W R →
+    s.mem.readW (W + BitVec.ofNat 64 200) 64 = D → s.mem.readW (W + BitVec.ofNat 64 208) 64 = BitVec.ofNat 64 n →
+    DataW Ctx (W + BitVec.ofNat 64 16) W SP s D n →
+    (below SP 56).Disjoint ⟨W, 2560⟩ → (below SP 56).Disjoint ⟨D, n⟩ → (below SP 56).Disjoint ⟨Ctx, M.len⟩ →
+    56 ≤ SP.toNat → CtxExt M Ctx (W + BitVec.ofNat 64 16) W SP D n s →
+    blockAt s.mem (Ctx + BitVec.ofNat 64 240) = H → blockAt s.mem (cbA W) = icb →
+    s.mem.readW (W + BitVec.ofNat 64 184) 64 = BitVec.ofNat 64 al →
+    Absorbed s.mem (yA W) (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 32) H (a ++ zeros (padLen a.length)) →
+    s.mem.readW (W + BitVec.ofNat 64 216) 64 = BitVec.ofNat 64 N → N < 2 ^ 64 →
+    WP isa body s fun s' =>
+      Env Ctx (W + BitVec.ofNat 64 16) W SP s' ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
+      Frame (splitFrame W D SP n) s.mem s'.mem ∧
+      bytesAt s'.mem D n = xorKs (ciphOf s.mem Ctx R) icb 0 (bytesAt s.mem D n) ∧
+      bytesAt s'.mem W 16 = toBytes (ghashFrom H (ghash H (blocks (padded a (bytesAt s'.mem D n))))
+        [ofBytes (lensBlock al N)] ^^^ ciphOf s.mem Ctx R (blockAt s.mem (W + BitVec.ofNat 64 16)))
+
+theorem bodyOk_body {M : CtxMode} (B : BlkFn M) {fin : Prog isa} (hfin : FinOk M fin) :
+    BodyOk M (.frame (.push [.rax]) (.seq (oneBlocks B.enc) (.seq (.block SealSplit.fixTlen) fin)) (.pop .rax 1)) :=
+  fun L _ _ _ _ _ _ _ _ _ he hR hdat hlen hd kw kd kM sp X hH hcb hal habs haux hN =>
+    body_ok L B hfin he hR hdat hlen hd kw kd kM sp X hH hcb hal habs haux hN
+
 end VG.Proof.AesGcm.X86_64.Split

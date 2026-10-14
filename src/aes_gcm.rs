@@ -25,10 +25,11 @@
 //! With a prepared key, a 96-bit nonce, at most 16 bytes of AAD and a long
 //! plaintext, it is instead one call of `vg_aes_gcm_seal_split_prepared`
 //! (`VG.Spec.Gcm.sealSplitPreparedContract`) for one piece, or for a piece
-//! of whole blocks and one of fewer than 16 bytes (a TLS record and its
-//! content type), copied to the end of the output first. For other long
-//! slices followed by at most one byte, Rust instead composes the verified
-//! CTR, GHASH and interleaved block primitives directly. This composition,
+//! and a second one ending at most 16 bytes after the first's whole blocks
+//! (a TLS record and its content type), copied to the end of the output
+//! first, on the CPUs with AVX-512. On the others, Rust instead composes the
+//! verified CTR, GHASH and interleaved block primitives directly for long
+//! slices followed by at most one byte. This composition,
 //! like the incremental API's Rust bookkeeping, is outside the Lean proof.
 //!
 //! # Tags
@@ -847,10 +848,10 @@ impl AesGcm {
         }
     }
 
-    /// `encrypt` of one long piece, or of a long piece of whole blocks and
-    /// one of fewer than 16 bytes, with the key context with the powers if
-    /// it is ready: one call of `vg_aes_gcm_seal_split_prepared`, after the
-    /// second piece is copied to the end of `out`. For a 96-bit nonce and at most 16 bytes of
+    /// `encrypt` of one long piece, or of a long piece and one that ends at
+    /// most 16 bytes after its whole blocks, with the key context with the
+    /// powers if it is ready: one call of `vg_aes_gcm_seal_split_prepared`,
+    /// after the second piece is copied to the end of `out`. For a 96-bit nonce and at most 16 bytes of
     /// additional data (a TLS record), it absorbs the additional data with
     /// the prepared `H` and takes no other call before the interleaved loop.
     #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
@@ -863,12 +864,14 @@ impl AesGcm {
         out: &mut [u8],
     ) -> Option<Block> {
         use crate::arch::gcm::vg_aes_gcm_seal_split_prepared_vaes_vpclmul_avx512;
-        // `seal_split` reads `src` where it is, then encrypts the bytes after
-        // its whole blocks one at a time: with a second piece, only those
-        // without any (`seal_two_slices_prepared` takes the others).
+        // `seal_split` reads `src`'s whole blocks where they are, and ends
+        // without another call when at most 16 bytes are left after them:
+        // with a second piece, only for those shapes (a TLS record's
+        // payload and content type); `seal_two_slices_prepared` and the
+        // gathering take the others.
         let (src, rest): (&[u8], &[u8]) = match plaintext {
             [a] => (a, &[]),
-            [a, b] if a.len().is_multiple_of(16) && b.len() < 16 => (a, b),
+            [a, b] if a.len() % 16 + b.len() <= 16 => (a, b),
             _ => return None,
         };
         if nonce.len() != 12 || aad.len() > 16 || src.len() < POWERS_MIN_LEN {
@@ -2185,9 +2188,11 @@ mod tests {
                                 .unwrap();
                             assert_eq!(actual, plain);
                             // One piece (`seal_split_prepared` from 256
-                            // bytes on); a second of 1 byte (the same after
-                            // whole blocks, `seal_two_slices_prepared`
-                            // otherwise), 16 or 17 bytes; and three.
+                            // bytes on); a second of 1 byte (the same with
+                            // AVX-512, `seal_two_slices_prepared` otherwise
+                            // when the first does not end on a block), 16
+                            // bytes (`seal_split_prepared` when the first
+                            // ends on a block), or 17; and three.
                             let (a, b) = plain.split_at(len - 17);
                             let (b, c) = b.split_at(1);
                             let ways: [&[&[u8]]; 5] = [

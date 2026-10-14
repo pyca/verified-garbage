@@ -349,15 +349,15 @@ theorem finKs_rel : KsRel finKs := fun {Ctx W SP D R r} _ => by
         · rw [h₁.2.1, h₂.2.1]
         · rw [h₁.2.2, h₂.2.2]) ⟨_, by taint_decide⟩
 
-/-- `finishWith ks` in two runs with the same rounds and bytes left. -/
-theorem finish_rel (hF : ShortFacts) {ks : Prog isa} (hks : KsOk ks) (hkr : KsRel ks) {Ctx W SP D : Addr}
+/-- `finishWith ks` after `H'` and `H'²`, in two runs with the same rounds
+and bytes left: the keystream, the bytes left and the tag. -/
+theorem finRest_rel {ks : Prog isa} (hks : KsOk ks) (hkr : KsRel ks) {Ctx W SP D : Addr}
     {R r : Nat} (hR : R = 10 ∨ R = 12 ∨ R = 14) (hr : r < 2 ^ 64) :
-    RelCT isa (fun s₁ s₂ => FinI Ctx W SP D R r s₁ ∧ FinI Ctx W SP D R r s₂) (finishWith ks) fun _ _ => True := by
-  have wPow : ∀ s, FinI Ctx W SP D R r s → WP isa (.block finPow) s (FinI Ctx W SP D R r) := fun s h =>
-    WP.mono (hF.finPow s (by rw [h.env.r13, BitVec.ofInt_natCast]; exact h.env.perm.ctxR (by decide)))
-      fun _ ⟨_, _, _, _, o⟩ => h.keep (fun g hg => o.gpr g (by
-        simp only [List.mem_cons, List.not_mem_nil, or_false] at hg
-        rcases hg with rfl | rfl | rfl | rfl <;> decide)) o.rd o.wr (by rw [o.mem]; exact Frame.refl _ _)
+    RelCT isa (fun s₁ s₂ => FinI Ctx W SP D R r s₁ ∧ FinI Ctx W SP D R r s₂)
+      (.seq ks (.seq (.block [.mov .rax (.mem (at_ .r15 lenO)), .alu .test .rax (.reg .rax)])
+        (.ite .e (.block (finLens ++ finGh1 ++ tagK 0))
+          (.seq (.block finTextArgs) (.seq (xorText true) (.block (finLens ++ finGh2 ++ tagK 0)))))))
+      fun _ _ => True := by
   have wKs : ∀ s, FinI Ctx W SP D R r s → WP isa ks s (FinI Ctx W SP D R r) := fun s h =>
     WP.mono (hks s h.env h.rounds hR) fun _ ⟨_, _, f, g, rd, wr, _⟩ => h.keep (fun g' hg => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hg
@@ -372,8 +372,6 @@ theorem finish_rel (hF : ShortFacts) {ks : Prog isa} (hks : KsOk ks) (hkr : KsRe
         t.gpr .rcx = BitVec.ofNat 64 r := fun s h => by
     obtain ⟨t, run, -, di, si, dx, cx, -⟩ := finTextArgs_ok s h.env h.dat h.len
     exact WP.of_runBlock ⟨t, run, di, si, dx, cx⟩
-  have p := rel_next (rel_env_regs [] (fun _ h => h.env) (fun _ h => h.env) (fun _ _ _ _ _ hr => by cases hr)
-    (c := .block finPow) ⟨_, by taint_decide⟩) wPow wPow
   have k := rel_next (hkr hR) wKs wKs
   have t := rel_next (rel_env_regs [] (fun _ h => h.env) (fun _ h => h.env) (fun _ _ _ _ _ hr => by cases hr)
     (c := .block [.mov .rax (.mem (at_ .r15 lenO)), .alu .test .rax (.reg .rax)]) ⟨_, by taint_decide⟩) wTest wTest
@@ -389,9 +387,22 @@ theorem finish_rel (hF : ShortFacts) {ks : Prog isa} (hks : KsOk ks) (hkr : KsRe
       · rw [h₁.2.2.1, h₂.2.2.1]
       · rw [h₁.2.2.2, h₂.2.2.2])
     (c := .seq (xorText true) (.block (finLens ++ finGh2 ++ tagK 0))) ⟨_, by taint_decide⟩
-  refine RelCT.seq p (RelCT.seq k (RelCT.seq t (rel_ite_e (fun _ _ h => by rw [h.1.1, h.2.1])
+  refine RelCT.seq k (RelCT.seq t (rel_ite_e (fun _ _ h => by rw [h.1.1, h.2.1])
     (b₀.mono (fun _ _ h => ⟨h.1.1.2, h.1.2.2⟩) fun _ _ h => h)
-    (b₁.mono (fun _ _ h => ⟨h.1.1.2, h.1.2.2⟩) fun _ _ h => h))))
+    (b₁.mono (fun _ _ h => ⟨h.1.1.2, h.1.2.2⟩) fun _ _ h => h)))
+
+/-- `finishWith ks` in two runs with the same rounds and bytes left. -/
+theorem finish_rel (hF : ShortFacts) {ks : Prog isa} (hks : KsOk ks) (hkr : KsRel ks) {Ctx W SP D : Addr}
+    {R r : Nat} (hR : R = 10 ∨ R = 12 ∨ R = 14) (hr : r < 2 ^ 64) :
+    RelCT isa (fun s₁ s₂ => FinI Ctx W SP D R r s₁ ∧ FinI Ctx W SP D R r s₂) (finishWith ks) fun _ _ => True := by
+  have wPow : ∀ s, FinI Ctx W SP D R r s → WP isa (.block finPow) s (FinI Ctx W SP D R r) := fun s h =>
+    WP.mono (hF.finPow s (by rw [h.env.r13, BitVec.ofInt_natCast]; exact h.env.perm.ctxR (by decide)))
+      fun _ ⟨_, _, _, _, o⟩ => h.keep (fun g hg => o.gpr g (by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hg
+        rcases hg with rfl | rfl | rfl | rfl <;> decide)) o.rd o.wr (by rw [o.mem]; exact Frame.refl _ _)
+  have p := rel_next (rel_env_regs [] (fun _ h => h.env) (fun _ h => h.env) (fun _ _ _ _ _ hr => by cases hr)
+    (c := .block finPow) ⟨_, by taint_decide⟩) wPow wPow
+  exact RelCT.seq p (finRest_rel hks hkr hR hr)
 
 /-- After the entry, the long `seal` in two runs: `oneAad`, `oneBlocks` and
 `finishWith ks`. -/

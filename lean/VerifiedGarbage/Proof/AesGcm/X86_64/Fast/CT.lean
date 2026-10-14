@@ -4,6 +4,12 @@ public import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.Mid
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.Mid
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Split.CT
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Split.CT
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.TailCT
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.TailCT
+import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
+import VerifiedGarbage.Proof.AesGcm.X86_64.FinTagCT
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.FinTagCT
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -16,7 +22,8 @@ Untrusted: everything here is checked by Lean. Two runs test the same public
 lengths (`cond_rel`), so take the same path: `other`, or `Fast.run`, whose
 additional data `aad` addresses memory from the environment's registers, the
 nonce's pointer and, once they are loaded, the additional data's pointer and
-length, which are public (`aad_rel`): `sel_rel`.
+length, which are public (`aad_rel`), and whose end takes the same branch in
+both (`fbody_rel`): `sel_rel`.
 -/
 
 @[expose] public section
@@ -31,7 +38,7 @@ open VG.Proof.AesGcm.X86_64
 open VG.Proof.AesGcm.X86_64.Split
 open VG.Proof.Gcm.X86_64.Stitch (CtxMode)
 open VG.Proof.AesGcm.X86_64.StreamTo (BlkToFn)
-open VG.Proof.AesGcm.X86_64.Short (ShortFacts condS_of rel_next rel_piece keepsEnv)
+open VG.Proof.AesGcm.X86_64.Short (ShortFacts KsOk KsRel condS_of rel_next rel_piece keepsEnv)
 open VG.Spec.Aes (bytesAt)
 open VG.Spec.Gcm (Block blockAt)
 
@@ -143,8 +150,9 @@ end
 /-- `sel` in two runs: the same path, and on it the same addresses and
 branches. -/
 theorem sel_rel (v : GcmImpl) (B : BlkFn CtxMode.prepared) (T : BlkToFn CtxMode.prepared) (hF : ShortFacts)
-    {fin : Prog isa} (hfr : FinRel CtxMode.prepared fin) {other : Prog isa} (ho : MidRel CtxMode.prepared other) :
-    MidRel CtxMode.prepared (Impl.AesGcm.X86_64.Fast.sel (v.withBlk B) T.fn fin other) := by
+    {ks : Prog isa} (hks : KsOk ks) (hkr : KsRel ks) {fin : Prog isa} (hfr : FinRel CtxMode.prepared fin)
+    {other : Prog isa} (ho : MidRel CtxMode.prepared other) :
+    MidRel CtxMode.prepared (Impl.AesGcm.X86_64.Fast.sel (v.withBlk B) T.fn ks fin other) := by
   intro s₀ s₀' Ctx W SP Np A D S T' nl al n sl R C C' X X' kM hNp hnl hal hR hNp' hnl' hal' hR'
   have hlt := C.data.ok.lt
   unfold Impl.AesGcm.X86_64.Fast.sel
@@ -169,7 +177,7 @@ theorem sel_rel (v : GcmImpl) (B : BlkFn CtxMode.prepared) (T : BlkToFn CtxMode.
       (P' := fun (s₁ s₂ : State) => SEntry s₀ Ctx W SP A D S n sl s₁ ∧ SEntry s₀' Ctx W SP A D S n sl s₂)
       (fun _ _ g => ⟨g.1.toOneEntry.aadPre C.toOneCtx X hNp hnl hal hR,
         g.2.toOneEntry.aadPre C'.toOneCtx X' hNp' hnl' hal' hR'⟩) fun _ _ _ => trivial
-    exact (splitRun_rel_of_mid v B T hfr C C' X X' kM hNp hnl hal hR hNp' hnl' hal' hR' a
+    exact (splitRun_rel_of_midB T (fbody_rel hks hkr B hfr) C C' X X' kM hNp hnl hal hR hNp' hnl' hal' hR' a
       (fun s E => aad_mid hF C.toOneCtx X E.toOneEntry hNp hnl hal (by omega))
       (fun s E => aad_mid hF C'.toOneCtx X' E.toOneEntry hNp' hnl' hal' (by omega))).mono
       (fun _ _ h => ⟨h.1.1.2, h.1.2.2⟩) fun _ _ h => h

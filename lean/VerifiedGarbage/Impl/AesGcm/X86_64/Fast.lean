@@ -58,13 +58,23 @@ def aad : Prog isa :=
     (.seq (.block [.mov .rcx (.mem (at_ .r15 alenO)), .alu .test .rcx (.reg .rcx)])
       (.ite .e (.block []) (.seq aadPad (.block aadMul)))))
 
+/-- At most 16 bytes left after `prefix` (a TLS record's last bytes and its
+content type): the total length put back, then `seal`'s end without the
+whole blocks or calls, with `H'` and `H'²` from the prepared key context
+(`Short.finishP`) and the keystream of `ks`. -/
+def tail (ks : Prog isa) : Prog isa :=
+  .seq (.block SealSplit.fixTlen) (Short.finishP ks)
+
 /-- After the entry: `aad`, then `SealSplit.run`'s `prefix` (with `fTo`, the
-whole blocks at `src`) and `body`. -/
-def run (c : Callees) (fTo : Fn) (fin : Prog isa) : Prog isa :=
-  .seq aad (.seq (SealSplit.prefix fTo) (SealSplit.body c fin))
+whole blocks at `src`), and `tail` if at most 16 bytes are left, `body`
+otherwise. -/
+def run (c : Callees) (fTo : Fn) (ks fin : Prog isa) : Prog isa :=
+  .seq aad (.seq (SealSplit.prefix fTo)
+    (.seq (.block [.mov .rax (.mem (at_ .r15 lenO)), .alu .cmp .rax (imm 17)])
+      (.ite .b (tail ks) (SealSplit.body c fin))))
 
 /-- `cond`, then this path, or `other`. -/
-def sel (c : Callees) (fTo : Fn) (fin : Prog isa) (other : Prog isa) : Prog isa :=
-  .seq cond (.ite .e other (run c fTo fin))
+def sel (c : Callees) (fTo : Fn) (ks fin : Prog isa) (other : Prog isa) : Prog isa :=
+  .seq cond (.ite .e other (run c fTo ks fin))
 
 end VG.Impl.AesGcm.X86_64.Fast

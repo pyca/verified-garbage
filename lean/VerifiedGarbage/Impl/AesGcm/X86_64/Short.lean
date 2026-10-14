@@ -380,6 +380,24 @@ def finishWith (ks : Prog isa) : Prog isa :=
 /-- `finishWith` the keystream of `finKs`, in two lanes of `zmm5`. -/
 def finish : Prog isa := finishWith finKs
 
+/-- `H'` into `xmm3` and `H'²` into `xmm6` from a prepared key context
+(`VG.Spec.Gcm.PreparedPowersRepr`), which keeps them at `ctx + 272` and
+`ctx + 256`, with the constants in `xmm0` and `xmm1`. -/
+def finPowP : List Instr :=
+  Gcm.X86_64.Pclmul.const .xmm0 revMask ++ Gcm.X86_64.Pclmul.const .xmm1 poly ++
+  [.movdquLoad .xmm3 (at_ .r13 272), .movdquLoad .xmm6 (at_ .r13 256)]
+
+/-- `finishWith ks` with `H'` and `H'²` from a prepared key context
+(`finPowP`), for at most 16 bytes left, which `xorText` encrypts in one
+block. -/
+def finishP (ks : Prog isa) : Prog isa :=
+  .seq (.block finPowP)
+  (.seq ks
+  (.seq (.block [.mov .rax (.mem (at_ .r15 lenO)), .alu .test .rax (.reg .rax)])
+    (.ite .e (.block (finLens ++ finGh1 ++ tagK 0))
+      (.seq (.block finTextArgs)
+        (.seq (xorText true) (.block (finLens ++ finGh2 ++ tagK 0)))))))
+
 /-- `J₀` and the counter block in `xmm5` and `xmm7`, and the key schedule,
 the number of rounds and the last round key's address in `rdi`, `rsi` and
 `r10`, for `AesNi.aes`. -/

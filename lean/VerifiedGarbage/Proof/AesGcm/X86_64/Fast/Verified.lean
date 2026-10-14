@@ -33,7 +33,7 @@ open VG.Proof.AesGcm.X86_64.Short (ShortFacts)
 prepared key context: the path for TLS records first if `v` has `seal`'s
 short path. -/
 def _root_.VG.Proof.AesGcm.X86_64.GcmImpl.splitMidR (v : GcmImpl) (c : Callees) (fTo : Fn) : Prog isa :=
-  if v.short then Fast.sel c fTo v.splitFin (v.splitMid c fTo) else v.splitMid c fTo
+  if v.short then Fast.sel c fTo Short.finKs v.splitFin (v.splitMid c fTo) else v.splitMid c fTo
 
 theorem fastCond_mx : (Fast.cond : Prog isa).allInstrs (fun i => !loadsMxcsr i) = true := by decide +kernel
 theorem fastCond_spSafe : (Fast.cond : Prog isa).all (fun i => !X86_64.isa.writesSp i) = true := by decide +kernel
@@ -41,6 +41,11 @@ theorem fastCond_xdepth : (Fast.cond : Prog isa).x86_64Depth = 0 := by decide +k
 theorem fastAad_mx : (Fast.aad : Prog isa).allInstrs (fun i => !loadsMxcsr i) = true := by decide +kernel
 theorem fastAad_spSafe : (Fast.aad : Prog isa).all (fun i => !X86_64.isa.writesSp i) = true := by decide +kernel
 theorem fastAad_xdepth : (Fast.aad : Prog isa).x86_64Depth = 0 := by decide +kernel
+theorem fastTail_mx : (Fast.tail Short.finKs : Prog isa).allInstrs (fun i => !loadsMxcsr i) = true := by
+  decide +kernel
+theorem fastTail_spSafe : (Fast.tail Short.finKs : Prog isa).all (fun i => !X86_64.isa.writesSp i) = true := by
+  decide +kernel
+theorem fastTail_xdepth : (Fast.tail Short.finKs : Prog isa).x86_64Depth = 0 := by decide +kernel
 
 section
 variable (v : GcmImpl) (B : BlkFn CtxMode.prepared) (T : BlkToFn CtxMode.prepared)
@@ -61,36 +66,37 @@ theorem tail_xdepth :
 
 theorem splitMidR_mx : (v.splitMidR (v.withBlk B) T.fn).allInstrs (fun i => !loadsMxcsr i) = true := by
   unfold GcmImpl.splitMidR; split
-  · have t := tail_mx v B T
+  · obtain ⟨tp, tb⟩ := (Bool.and_eq_true _ _).mp (tail_mx v B T)
     have o := splitMid_mx v B T
-    simp only [Fast.sel, Fast.run, Code.allInstrs] at t o ⊢
-    rw [fastCond_mx, fastAad_mx, o, t]; rfl
+    simp only [Fast.sel, Fast.run, Code.allInstrs] at tp tb o ⊢
+    rw [fastCond_mx, fastAad_mx, o, tp, tb, fastTail_mx]; rfl
   · exact splitMid_mx v B T
 
 theorem splitMidR_spSafe : (v.splitMidR (v.withBlk B) T.fn).all (fun i => !X86_64.isa.writesSp i) = true := by
   unfold GcmImpl.splitMidR; split
-  · have t := tail_spSafe v B T
+  · obtain ⟨tp, tb⟩ := (Bool.and_eq_true _ _).mp (tail_spSafe v B T)
     have o := splitMid_spSafe v B T
-    simp only [Fast.sel, Fast.run, Code.all] at t o ⊢
-    rw [fastCond_spSafe, fastAad_spSafe, o, t]; rfl
+    simp only [Fast.sel, Fast.run, Code.all] at tp tb o ⊢
+    rw [fastCond_spSafe, fastAad_spSafe, o, tp, tb, fastTail_spSafe]; rfl
   · exact splitMid_spSafe v B T
 
 theorem splitMidR_xdepth : (v.splitMidR (v.withBlk B) T.fn).x86_64Depth ≤ 56 := by
   unfold GcmImpl.splitMidR; split
   · have t := tail_xdepth v B T
     have o := splitMid_xdepth v B T
-    simp only [Fast.sel, Fast.run, Code.x86_64Depth, fastCond_xdepth, fastAad_xdepth, Nat.max_le] at t o ⊢
+    simp only [Fast.sel, Fast.run, Code.x86_64Depth, fastCond_xdepth, fastAad_xdepth, fastTail_xdepth,
+      Nat.max_le] at t o ⊢
     omega
   · exact splitMid_xdepth v B T
 
 theorem splitMidR_ok (hF : ShortFacts) : MidOk CtxMode.prepared (v.splitMidR (v.withBlk B) T.fn) := by
   unfold GcmImpl.splitMidR; split
-  · exact Fast.sel_ok hF v B T (splitFin_ok v hF) (splitMid_ok v B T hF)
+  · exact Fast.sel_ok hF v B T Short.finKs_ksOk (splitFin_ok v hF) (splitMid_ok v B T hF)
   · exact splitMid_ok v B T hF
 
 theorem splitMidR_rel (hF : ShortFacts) : MidRel CtxMode.prepared (v.splitMidR (v.withBlk B) T.fn) := by
   unfold GcmImpl.splitMidR; split
-  · exact Fast.sel_rel v B T hF (splitFin_rel v hF) (splitMid_rel v B T hF)
+  · exact Fast.sel_rel v B T hF Short.finKs_ksOk Short.finKs_rel (splitFin_rel v hF) (splitMid_rel v B T hF)
   · exact splitMid_rel v B T hF
 
 theorem sealSplitR_mx :

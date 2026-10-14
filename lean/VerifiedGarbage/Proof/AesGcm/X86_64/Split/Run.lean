@@ -184,16 +184,16 @@ def MidOk (M : CtxMode) (mid : Prog isa) : Prop :=
 
 /-- After the entry, `seal_split` up to the tag at `W`: additional data
 `aadP` that leaves what `oneAad` does (`OneMid`), `prefix` and `body`. -/
-theorem splitRun_of_mid (v : GcmImpl) {M : CtxMode} (B : BlkFn M) (T : BlkToFn M) {fin : Prog isa}
-    (hfin : FinOk M fin) {aadP : Prog isa} {s₀ s₁ : State} {Ctx W SP Np A D S T' : Addr} {nl al n sl : Nat}
+theorem splitRun_of_midB {M : CtxMode} (T : BlkToFn M) {body : Prog isa}
+    (hbody : BodyOk M body) {aadP : Prog isa} {s₀ s₁ : State} {Ctx W SP Np A D S T' : Addr} {nl al n sl : Nat}
     (C : SplitCtx s₀ Ctx W SP Np A D S T' nl al n sl) (X : CtxExt M Ctx (W + BitVec.ofNat 64 16) W SP D n s₀)
     (kM : (below SP 56).Disjoint ⟨Ctx, M.len⟩) (E : SEntry s₀ Ctx W SP A D S n sl s₁)
     (hal : (s₀.gpr .r9).toNat = al)
     (ha : WP isa aadP s₁
       (OneMid s₀ Ctx W SP D n (ctxH s₀.mem Ctx) (bytesAt s₀.mem Np nl) (bytesAt s₀.mem A al) s₁.mem)) :
-    WP isa (.seq aadP (.seq (SealSplit.prefix T.fn) (SealSplit.body (v.withBlk B) fin))) s₁
+    WP isa (.seq aadP (.seq (SealSplit.prefix T.fn) body)) s₁
       (SplitRunPost s₀ Ctx W SP Np A D S nl al n sl) := by
-  unfold SealSplit.body SplitRunPost
+  unfold SplitRunPost
   have L := C.lay
   have hsl := C.sl_le
   have hn := C.data.ok.lt
@@ -251,7 +251,7 @@ theorem splitRun_of_mid (v : GcmImpl) {M : CtxMode} (B : BlkFn M) (T : BlkToFn M
     rw [padLen_mod h3]; simp [zeros]
   rw [← ez] at habs₃
   have hR₃ : RoundsAt s₃.mem W R := ⟨by rw [wsl 176 (by decide) (by decide)]; exact hRo.1, hRo.2⟩
-  refine WP.mono (body_ok L B hfin (R := R) (al := al) (N := n) Q.env hR₃ Q.dat Q.len ((C.data.of_eq rd₃ wr₃).drop hq) C.kw (C.kd.sub_right sD') kM C.sp56 X₃ hH₃
+  refine WP.mono (hbody L (R := R) (al := al) (N := n) Q.env hR₃ Q.dat Q.len ((C.data.of_eq rd₃ wr₃).drop hq) C.kw (C.kd.sub_right sD') kM C.sp56 X₃ hH₃
     hcb₃ hal₃ habs₃ Q.aux (by have := C.data.ok.lt; omega)) fun s₄ ⟨e₄, rd₄, wr₄, f₄, hC₄, hT₄⟩ => ?_
   -- The cipher, kept.
   have kc : (below SP 56).Disjoint ⟨Ctx, 256⟩ := kM.sub_right (Region.sub_prefix M.ge)
@@ -326,6 +326,18 @@ theorem splitRun_of_mid (v : GcmImpl) {M : CtxMode} (B : BlkFn M) (T : BlkToFn M
     simp only [Proof.Gcm.xorKs_append, length_bytesAt, Nat.zero_add, xorKs_shift, xorKs_shift', ciphOf, ctxCiph]
   · rw [hT₄, hc₃, hJ, padded_whole rfl hAl hC1l, ← hD₄]
     rfl
+
+/-- `splitRun_of_midB` with `SealSplit.body`. -/
+theorem splitRun_of_mid (v : GcmImpl) {M : CtxMode} (B : BlkFn M) (T : BlkToFn M) {fin : Prog isa}
+    (hfin : FinOk M fin) {aadP : Prog isa} {s₀ s₁ : State} {Ctx W SP Np A D S T' : Addr} {nl al n sl : Nat}
+    (C : SplitCtx s₀ Ctx W SP Np A D S T' nl al n sl) (X : CtxExt M Ctx (W + BitVec.ofNat 64 16) W SP D n s₀)
+    (kM : (below SP 56).Disjoint ⟨Ctx, M.len⟩) (E : SEntry s₀ Ctx W SP A D S n sl s₁)
+    (hal : (s₀.gpr .r9).toNat = al)
+    (ha : WP isa aadP s₁
+      (OneMid s₀ Ctx W SP D n (ctxH s₀.mem Ctx) (bytesAt s₀.mem Np nl) (bytesAt s₀.mem A al) s₁.mem)) :
+    WP isa (.seq aadP (.seq (SealSplit.prefix T.fn) (SealSplit.body (v.withBlk B) fin))) s₁
+      (SplitRunPost s₀ Ctx W SP Np A D S nl al n sl) :=
+  splitRun_of_midB T (bodyOk_body B hfin) C X kM E hal ha
 
 /-- After the entry, `seal_split` up to the tag at `W`: `oneAad`, `prefix` and
 `body`. -/
