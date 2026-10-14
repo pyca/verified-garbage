@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.AesGcmSiv.X86_64Stitch
 public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Stitch.Spec
-public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Aes
+import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Aes
 public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Chunk
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
