@@ -78,7 +78,9 @@
 //! ones are used only where the CPU has it. A key computes the
 //! prepared context once, after it has encrypted or decrypted
 //! `POWERS_AFTER` messages (or streaming updates) long enough to gain from
-//! it, so that one used for a few messages never pays for it.
+//! it, so that one used for a few messages never pays for it. Once it has,
+//! shorter messages sealed use it too on the `_vaes_vpclmul_avx512` backend,
+//! whose short path copies its powers from it; they never count towards it.
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -366,6 +368,10 @@ struct Prepared {
     seal_gather: SealGatherPrepared,
     stream_encrypt: StreamPrepared,
     stream_decrypt: StreamPrepared,
+    /// Whether `seal` and `seal_gather` have a short path that copies its
+    /// powers from the key context, so that messages shorter than
+    /// `POWERS_MIN_LEN` sealed gain from it too once it is ready.
+    short: bool,
 }
 
 #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
@@ -420,6 +426,7 @@ static PREPARED_VAES_VPCLMUL_AVX512: Prepared = Prepared {
     seal_gather: vg_aes_gcm_seal_gather_prepared_vaes_vpclmul_avx512,
     stream_encrypt: vg_aes_gcm_stream_encrypt_prepared_vaes_vpclmul_avx512,
     stream_decrypt: vg_aes_gcm_stream_decrypt_prepared_vaes_vpclmul_avx512,
+    short: true,
 };
 
 #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
@@ -431,6 +438,7 @@ static PREPARED_VAES_VPCLMUL: Prepared = Prepared {
     seal_gather: vg_aes_gcm_seal_gather_prepared_vaes_vpclmul,
     stream_encrypt: vg_aes_gcm_stream_encrypt_prepared_vaes_vpclmul,
     stream_decrypt: vg_aes_gcm_stream_decrypt_prepared_vaes_vpclmul,
+    short: false,
 };
 
 #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
@@ -442,6 +450,7 @@ static PREPARED_AESNI_PCLMUL_AVX: Prepared = Prepared {
     seal_gather: vg_aes_gcm_seal_gather_prepared_aesni_pclmul_avx,
     stream_encrypt: vg_aes_gcm_stream_encrypt_prepared_aesni_pclmul_avx,
     stream_decrypt: vg_aes_gcm_stream_decrypt_prepared_aesni_pclmul_avx,
+    short: false,
 };
 
 #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
@@ -480,6 +489,11 @@ const POWERS_MIN_LEN: usize = 256;
 #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
 const POWERS_AFTER: u32 = 32;
 
+/// `Powers::calls` once the powers are published, for a backend whose
+/// short path reads them.
+#[cfg(all(target_arch = "x86_64", feature = "alloc"))]
+const SHORT_READY: u32 = u32::MAX;
+
 /// The key context `vg_aes_gcm_init_prepared` writes for a key (that of
 /// `vg_aes_gcm_init`, then 24 encoded pairs of powers of the hash subkey:
 /// `VG.Spec.Gcm.PreparedPowersRepr`), which the `_prepared` instances read,
@@ -491,7 +505,12 @@ struct Powers {
     fns: Option<&'static Prepared>,
     /// The calls that could have read the powers, before they were ready
     /// (counted without a read-modify-write: one lost to a race only
-    /// delays the powers).
+    /// delays the powers); once they are published, `SHORT_READY` if the
+    /// backend has a short path that reads them (`Prepared::short`), so that
+    /// messages shorter than `POWERS_MIN_LEN` take the `_prepared` instances
+    /// too. That test comes after the length's, so longer messages pay
+    /// nothing for it, and such messages never count (`Powers::get` finds
+    /// the powers ready).
     calls: AtomicU32,
     /// Null, or the key context, from `Box::into_raw`: written before it is
     /// published here (with release ordering), never written again while it
@@ -544,7 +563,10 @@ impl Powers {
     }
 
     /// Publishes `ctx`, unless another thread has published a key context
-    /// first: the one published.
+    /// first: the one published. Kept out of `get`, whose ready path it
+    /// would otherwise cost a register move.
+    #[cold]
+    #[inline(never)]
     fn publish(&self, ctx: Box<[u64; 128]>) -> &[u64; 128] {
         let p = Box::into_raw(ctx);
         let q = match self.ctx.compare_exchange(
@@ -560,6 +582,9 @@ impl Powers {
                 q
             }
         };
+        if self.fns.is_some_and(|f| f.short) {
+            self.calls.store(SHORT_READY, Ordering::Relaxed);
+        }
         // SAFETY: as in `get`.
         unsafe { &*q }
     }
@@ -742,7 +767,8 @@ impl AesGcm {
         add_len(0, data.len(), MAX_TEXT).map_err(|()| Error::InvalidTextLength)?;
         add_len(0, aad.len(), MAX_AAD).map_err(|()| Error::InvalidAadLength)?;
         #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
-        if data.len() >= POWERS_MIN_LEN
+        if (data.len() >= POWERS_MIN_LEN
+            || self.powers.calls.load(Ordering::Relaxed) == SHORT_READY)
             && let Some(tag) = self.seal_prepared(nonce, aad, data)
         {
             return Ok(tag);
@@ -824,6 +850,10 @@ impl AesGcm {
         check_nonce(nonce)?;
         add_len(0, data.len(), MAX_TEXT).map_err(|()| Error::InvalidTextLength)?;
         add_len(0, aad.len(), MAX_AAD).map_err(|()| Error::InvalidAadLength)?;
+        // Not `SHORT_READY` here, though `open`'s short path reads the powers
+        // too: with that test, LLVM allocates registers on the long path
+        // differently, which costs every long message more than short ones
+        // gain.
         #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
         if data.len() >= POWERS_MIN_LEN
             && let Some(r) = self.open_prepared(nonce, aad, data, tag)
@@ -977,7 +1007,7 @@ impl AesGcm {
         }
         let src: *const [usize; 2] = descs.as_ptr().cast();
         #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
-        if out.len() >= POWERS_MIN_LEN
+        if (out.len() >= POWERS_MIN_LEN || self.powers.calls.load(Ordering::Relaxed) == SHORT_READY)
             && let Some(tag) = self.seal_gather_prepared(nonce, aad, src, plaintext.len(), out)
         {
             return Ok(tag);
@@ -2062,8 +2092,8 @@ mod tests {
                     warm.encrypt_in_place(&[0; 12], &[], &mut [0; 256]).unwrap();
                 }
                 for len in [
-                    255, 256, 257, 511, 512, 513, 767, 768, 769, 1024, 1536, 3071, 3072, 3073,
-                    4097, 10000,
+                    17, 100, 255, 256, 257, 511, 512, 513, 767, 768, 769, 1024, 1536, 3071, 3072,
+                    3073, 4097, 10000,
                 ] {
                     let plain: alloc::vec::Vec<u8> = (0..len).map(|i| (i * 29 + 7) as u8).collect();
                     for nonce_len in [12, 13] {
