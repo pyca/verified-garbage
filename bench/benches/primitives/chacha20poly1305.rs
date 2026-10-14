@@ -209,6 +209,28 @@ pub fn bench(c: &mut Criterion) {
         });
     }
     g.finish();
+
+    // Measurement only: 4096 bytes in place at offsets within a page.
+    let mut g = c.benchmark_group("chacha20poly1305-align");
+    let mut big = vec![0u8; 4 * 4096 + 8192];
+    let page = (4096 - big.as_ptr() as usize % 4096) % 4096;
+    let offsets = (0..32).map(|i| i * 16).chain((2..16).map(|i| i * 256));
+    for off in offsets {
+        g.throughput(Throughput::Bytes(4096));
+        let start = page + off;
+        g.bench_function(BenchmarkId::new(VG, off), |b| {
+            b.iter(|| {
+                ChaCha20Poly1305::new(black_box(&key))
+                    .encrypt_in_place(
+                        black_box(&nonce),
+                        black_box(&aad),
+                        black_box(&mut big[start..start + 4096]),
+                    )
+                    .unwrap()
+            })
+        });
+    }
+    g.finish();
 }
 
 #[cfg(not(any(
