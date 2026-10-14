@@ -12,7 +12,7 @@ import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Store
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Short.Zero
 
 /-!
-# ChaCha20-Poly1305 on AArch64, 1 to 256 bytes: the data XORed with its keystream
+# ChaCha20-Poly1305 on AArch64, 64 to 256 bytes: the data XORed with its keystream
 
 `Short.xor16` and `Short.xor1` XOR `x11` blocks of 16 bytes, and of 1 byte,
 at `x10` into `x9`; `Short.xorKs` XORs the data, `x23` bytes at `x22`, with

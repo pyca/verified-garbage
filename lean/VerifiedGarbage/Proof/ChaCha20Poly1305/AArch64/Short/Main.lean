@@ -13,7 +13,7 @@ import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Lit
 import VerifiedGarbage.Proof.ChaCha20Poly1305.Spec
 
 /-!
-# ChaCha20-Poly1305 on AArch64, 1 to 256 bytes: `seal` and `open` up to the tag
+# ChaCha20-Poly1305 on AArch64, 64 to 256 bytes: `seal` and `open` up to the tag
 
 The parts of `Short.sealMain` and `Short.openMain`, which leave what
 `MainS` and `MainO` say, as the other forms of the code do.

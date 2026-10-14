@@ -10,7 +10,7 @@ import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed5.Lit
 import VerifiedGarbage.Proof.ChaCha20Poly1305.Spec
 
 /-!
-# ChaCha20-Poly1305 on AArch64, 1 to 256 bytes: the prologue
+# ChaCha20-Poly1305 on AArch64, 64 to 256 bytes: the prologue
 
 `Short.prologue`: the registers saved and moved, the ChaCha20 state for
 counter 0 at `ctx[0, 64)`, the keystream of counters 0 to 4 at `ctx[64, 384)`

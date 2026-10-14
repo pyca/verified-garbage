@@ -90,9 +90,9 @@ theorem sealMainCode_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp 
   unfold sealMainCode
   refine WP.seq (WP.mono (Short.check_ok s₀) fun s₁ ⟨ag, x9⟩ => ?_)
   have hp₁ := Short.APre.agree ag hp
-  refine WP.ite (decide (1 ≤ L s₀ ∧ L s₀ ≤ 256)) (Short.check_eval x9) (fun h => ?_) (fun _ => ?_)
+  refine WP.ite (decide (64 ≤ L s₀ ∧ L s₀ ≤ 256)) (Short.check_eval x9) (fun h => ?_) (fun _ => ?_)
   · have hL₁ : L s₁ ≤ 256 := by
-      rw [L, ag.gpr .x5 (by decide)]; exact (of_decide_eq_true h).2
+      rw [L, ag.gpr .x5 (by decide) (by decide)]; exact (of_decide_eq_true h).2
     exact WP.mono (Short.sealMain_ok hp₁ hL₁) fun _ h => Short.MainS.agree ag h
   · split
     · exact WP.mono (sealStitchedMain_ok v hp₁) fun _ h => Short.MainS.agree ag h
@@ -103,9 +103,9 @@ theorem openMainCode_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp 
   unfold openMainCode
   refine WP.seq (WP.mono (Short.check_ok s₀) fun s₁ ⟨ag, x9⟩ => ?_)
   have hp₁ := Short.APre.agree ag hp
-  refine WP.ite (decide (1 ≤ L s₀ ∧ L s₀ ≤ 256)) (Short.check_eval x9) (fun h => ?_) (fun _ => ?_)
+  refine WP.ite (decide (64 ≤ L s₀ ∧ L s₀ ≤ 256)) (Short.check_eval x9) (fun h => ?_) (fun _ => ?_)
   · have hL₁ : L s₁ ≤ 256 := by
-      rw [L, ag.gpr .x5 (by decide)]; exact (of_decide_eq_true h).2
+      rw [L, ag.gpr .x5 (by decide) (by decide)]; exact (of_decide_eq_true h).2
     exact WP.mono (Short.openMain_ok hp₁ hL₁) fun _ h => Short.MainO.agree ag h
   · split
     · exact WP.mono (openStitchedMain_ok v hp₁) fun _ h => Short.MainO.agree ag h

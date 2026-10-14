@@ -103,7 +103,7 @@ def openStitchedMain (c : XorCallee) : Prog isa :=
 def openStitched (c : XorCallee) : Prog isa := .seq (openStitchedMain c) openTail
 
 /-- The code up to the tag (`sealTail`, `openTail`), which the taint analysis
-checks on its own: for 1 to 256 bytes `Short.lean`'s, and otherwise stitched
+checks on its own: for 64 to 256 bytes `Short.lean`'s, and otherwise stitched
 with the eight-block kernel or not. -/
 def sealMainCode (c : XorCallee) (stitched : Bool) : Prog isa :=
   .seq (.block Short.check)

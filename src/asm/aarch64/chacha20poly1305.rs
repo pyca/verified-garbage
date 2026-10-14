@@ -6,7 +6,7 @@
 ///
 /// Contract: `VG.Spec.ChaCha20Poly1305.sealContract`. Constant time: only the pointers and the lengths may affect timing, not the key, the nonce or the data. The block counter wraps around beyond 2³²-1 blocks of data (RFC 8439's `P_MAX`), which the caller must not exceed for the construction to be secure.
 ///
-/// With 1 to 256 bytes of data, computes the one-time Poly1305 key and the data's keystream in one pass of four NEON blocks and one integer block.
+/// With 64 to 256 bytes of data, computes the one-time Poly1305 key and the data's keystream in one pass of four NEON blocks and one integer block.
 ///
 /// Absorbs each 512 bytes into Poly1305 with integer instructions while computing the keystream of the next with the eight-block ChaCha20 kernel.
 ///
@@ -26,6 +26,9 @@ pub(crate) unsafe extern "C" fn vg_chacha20_poly1305_seal_neon(key: *const [u8; 
         "add x7, sp, #0",
         "sub x9, x5, #1",
         "lsr x9, x9, #8",
+        "sub x10, x5, #64",
+        "lsr x10, x10, #8",
+        "orr x9, x9, x10",
         "cbz x9, 20f",
         "str x22, [x7, #584]",
         "str x23, [x7, #592]",
@@ -5517,7 +5520,7 @@ pub(crate) unsafe extern "C" fn vg_chacha20_poly1305_seal_neon(key: *const [u8; 
 ///
 /// Contract: `VG.Spec.ChaCha20Poly1305.openContract`. Constant time: only the pointers and the lengths may affect timing, not the key, the nonce, the tag or the data.
 ///
-/// With 1 to 256 bytes of data, computes the one-time Poly1305 key and the data's keystream in one pass of four NEON blocks and one integer block.
+/// With 64 to 256 bytes of data, computes the one-time Poly1305 key and the data's keystream in one pass of four NEON blocks and one integer block.
 ///
 /// Absorbs each 512 bytes into Poly1305 with integer instructions while computing the keystream of the next with the eight-block ChaCha20 kernel.
 ///
@@ -5537,6 +5540,9 @@ pub(crate) unsafe extern "C" fn vg_chacha20_poly1305_open_neon(key: *const [u8; 
         "add x7, sp, #0",
         "sub x9, x5, #1",
         "lsr x9, x9, #8",
+        "sub x10, x5, #64",
+        "lsr x10, x10, #8",
+        "orr x9, x9, x10",
         "cbz x9, 20f",
         "str x22, [x7, #584]",
         "str x23, [x7, #592]",
@@ -9959,7 +9965,7 @@ pub(crate) unsafe extern "C" fn vg_chacha20_poly1305_seal_gather_neon(key: *cons
 ///
 /// Contract: `VG.Spec.ChaCha20Poly1305.sealContract`. Constant time: only the pointers and the lengths may affect timing, not the key, the nonce or the data. The block counter wraps around beyond 2³²-1 blocks of data (RFC 8439's `P_MAX`), which the caller must not exceed for the construction to be secure.
 ///
-/// With 1 to 256 bytes of data, computes the one-time Poly1305 key and the data's keystream in one pass of four NEON blocks and one integer block.
+/// With 64 to 256 bytes of data, computes the one-time Poly1305 key and the data's keystream in one pass of four NEON blocks and one integer block.
 ///
 /// # Safety
 ///
@@ -9977,6 +9983,9 @@ pub(crate) unsafe extern "C" fn vg_chacha20_poly1305_seal(key: *const [u8; 32], 
         "add x7, sp, #0",
         "sub x9, x5, #1",
         "lsr x9, x9, #8",
+        "sub x10, x5, #64",
+        "lsr x10, x10, #8",
+        "orr x9, x9, x10",
         "cbz x9, 20f",
         "str x22, [x7, #584]",
         "str x23, [x7, #592]",
@@ -12757,7 +12766,7 @@ pub(crate) unsafe extern "C" fn vg_chacha20_poly1305_seal(key: *const [u8; 32], 
 ///
 /// Contract: `VG.Spec.ChaCha20Poly1305.openContract`. Constant time: only the pointers and the lengths may affect timing, not the key, the nonce, the tag or the data.
 ///
-/// With 1 to 256 bytes of data, computes the one-time Poly1305 key and the data's keystream in one pass of four NEON blocks and one integer block.
+/// With 64 to 256 bytes of data, computes the one-time Poly1305 key and the data's keystream in one pass of four NEON blocks and one integer block.
 ///
 /// # Safety
 ///
@@ -12775,6 +12784,9 @@ pub(crate) unsafe extern "C" fn vg_chacha20_poly1305_open(key: *const [u8; 32], 
         "add x7, sp, #0",
         "sub x9, x5, #1",
         "lsr x9, x9, #8",
+        "sub x10, x5, #64",
+        "lsr x10, x10, #8",
+        "orr x9, x9, x10",
         "cbz x9, 20f",
         "str x22, [x7, #584]",
         "str x23, [x7, #592]",
@@ -15654,7 +15666,7 @@ pub(crate) const VG_CHACHA20_POLY1305_SEAL_SVE2_FEATURES: crate::cpu::Features =
 ///
 /// Contract: `VG.Spec.ChaCha20Poly1305.sealContract`. Constant time: only the pointers and the lengths may affect timing, not the key, the nonce or the data. The block counter wraps around beyond 2³²-1 blocks of data (RFC 8439's `P_MAX`), which the caller must not exceed for the construction to be secure.
 ///
-/// With 1 to 256 bytes of data, computes the one-time Poly1305 key and the data's keystream in one pass of four NEON blocks and one integer block.
+/// With 64 to 256 bytes of data, computes the one-time Poly1305 key and the data's keystream in one pass of four NEON blocks and one integer block.
 ///
 /// Absorbs each 512 bytes into Poly1305 with integer instructions while computing the keystream of the next with the eight-block ChaCha20 kernel.
 ///
@@ -15676,6 +15688,9 @@ pub(crate) unsafe extern "C" fn vg_chacha20_poly1305_seal_sve2(key: *const [u8; 
         "add x7, sp, #0",
         "sub x9, x5, #1",
         "lsr x9, x9, #8",
+        "sub x10, x5, #64",
+        "lsr x10, x10, #8",
+        "orr x9, x9, x10",
         "cbz x9, 20f",
         "str x22, [x7, #584]",
         "str x23, [x7, #592]",
@@ -20883,7 +20898,7 @@ pub(crate) const VG_CHACHA20_POLY1305_OPEN_SVE2_FEATURES: crate::cpu::Features =
 ///
 /// Contract: `VG.Spec.ChaCha20Poly1305.openContract`. Constant time: only the pointers and the lengths may affect timing, not the key, the nonce, the tag or the data.
 ///
-/// With 1 to 256 bytes of data, computes the one-time Poly1305 key and the data's keystream in one pass of four NEON blocks and one integer block.
+/// With 64 to 256 bytes of data, computes the one-time Poly1305 key and the data's keystream in one pass of four NEON blocks and one integer block.
 ///
 /// Absorbs each 512 bytes into Poly1305 with integer instructions while computing the keystream of the next with the eight-block ChaCha20 kernel.
 ///
@@ -20905,6 +20920,9 @@ pub(crate) unsafe extern "C" fn vg_chacha20_poly1305_open_sve2(key: *const [u8; 
         "add x7, sp, #0",
         "sub x9, x5, #1",
         "lsr x9, x9, #8",
+        "sub x10, x5, #64",
+        "lsr x10, x10, #8",
+        "orr x9, x9, x10",
         "cbz x9, 20f",
         "str x22, [x7, #584]",
         "str x23, [x7, #592]",

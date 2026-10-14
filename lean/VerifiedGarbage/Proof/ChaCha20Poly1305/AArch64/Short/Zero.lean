@@ -10,7 +10,7 @@ import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 
 /-!
-# ChaCha20-Poly1305 on AArch64, 1 to 256 bytes: the kernel's output zeroed
+# ChaCha20-Poly1305 on AArch64, 64 to 256 bytes: the kernel's output zeroed
 
 `Short.zero` zeroes `ctx[64, 384)`, where the five-block kernel then XORs
 its keystream.
