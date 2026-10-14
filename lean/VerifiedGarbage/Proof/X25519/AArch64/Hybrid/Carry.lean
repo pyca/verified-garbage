@@ -139,4 +139,11 @@ theorem carries_prod_lt {f g : Nat → Nat} (hf : ∀ i < 10, f i ≤ maxLimb i)
     ∀ k < 10, carries (prodCoef f g) k < 2 ^ 27 := fun k hk =>
   Nat.lt_of_le_of_lt (carries_le_go _ _ _ (by decide) (fun k _ => prodCoef_le hf hg k) k hk) (carriesB_prodB.2 k hk)
 
+/-- The bound on limb `k` after `Neon.prod2`'s carries. -/
+def limbB (k : Nat) : Nat := (carriesB prodB VG.Impl.X25519.AArch64.Neon.carryOrder).1 k
+
+theorem carries_prod_le {f g : Nat → Nat} (hf : ∀ i < 10, f i ≤ maxLimb i) (hg : ∀ i < 10, g i ≤ maxLimb i) :
+    ∀ k < 10, carries (prodCoef f g) k ≤ limbB k :=
+  carries_le_go _ _ _ (by decide) (fun k _ => prodCoef_le hf hg k)
+
 end VG.Proof.X25519.AArch64.Hybrid

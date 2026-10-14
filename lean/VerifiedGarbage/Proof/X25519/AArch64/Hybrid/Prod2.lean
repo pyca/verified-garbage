@@ -120,4 +120,7 @@ theorem prodLimbs_val (m : Mem) (base : Addr) (a b : Nat → Nat) (e : Nat) :
 theorem prodLimbs_lt (m : Mem) (base : Addr) (a b : Nat → Nat) (e : Nat) : ∀ k < 10, prodLimbs m base a b e k < 2 ^ 27 :=
   carries_prod_lt (fun _ _ => Nat.le_sub_one_of_lt (limbOf_lt _ _)) (fun _ _ => Nat.le_sub_one_of_lt (limbOf_lt _ _))
 
+theorem prodLimbs_le (m : Mem) (base : Addr) (a b : Nat → Nat) (e : Nat) : ∀ k < 10, prodLimbs m base a b e k ≤ limbB k :=
+  carries_prod_le (fun _ _ => Nat.le_sub_one_of_lt (limbOf_lt _ _)) (fun _ _ => Nat.le_sub_one_of_lt (limbOf_lt _ _))
+
 end VG.Proof.X25519.AArch64.Hybrid
