@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Impl.Gcm.X86
 public import VerifiedGarbage.Proof.Aes.X86.Common
 public import VerifiedGarbage.Proof.Gcm.Spec
-public import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.Range
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

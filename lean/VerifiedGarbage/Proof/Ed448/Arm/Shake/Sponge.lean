@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Ed448.Arm.Shake.Layout
 public import VerifiedGarbage.Proof.Ed448.Arm.PublicKey.Hash
 public import VerifiedGarbage.Impl.Ed448.Arm.Shake
-public import VerifiedGarbage.Proof.X25519.Arm.Instr
+import VerifiedGarbage.Proof.X25519.Arm.Instr
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

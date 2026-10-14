@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Gcm.Compose
+import VerifiedGarbage.Proof.Gcm.Compose
 public import VerifiedGarbage.Proof.Cmac.Mem
 public import VerifiedGarbage.Proof.Gcm.Bits
 import all Init.Data.Array.Basic

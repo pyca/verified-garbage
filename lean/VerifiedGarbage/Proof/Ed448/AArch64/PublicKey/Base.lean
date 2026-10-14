@@ -1,9 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.AArch64.PublicKey.Hash
-public import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Wipe
+import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Wipe
 public import VerifiedGarbage.Proof.Ed448.AArch64.BaseContract
-public import VerifiedGarbage.Proof.Ed448.AArch64.Whole.Prune
+import VerifiedGarbage.Proof.Ed448.AArch64.Whole.Prune
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Idea.X86.Mul
-public import VerifiedGarbage.Proof.Idea.Memory32
+import VerifiedGarbage.Proof.Idea.Memory32
 public import VerifiedGarbage.Proof.Framework.Offset
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

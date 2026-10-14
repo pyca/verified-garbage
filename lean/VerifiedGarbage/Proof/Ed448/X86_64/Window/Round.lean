@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.X86_64.Window.Table
-public import VerifiedGarbage.Proof.Ed448.X86_64.Window.SignedSelect
+import VerifiedGarbage.Proof.Ed448.X86_64.Window.SignedSelect
 
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

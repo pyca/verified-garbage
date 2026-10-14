@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Idea.AArch64.Lit
+import VerifiedGarbage.Proof.Idea.AArch64.Lit
 meta import VerifiedGarbage.Proof.Idea.AArch64.Lit
 public import VerifiedGarbage.Impl.Idea.AArch64.Modes
 meta import VerifiedGarbage.Impl.Idea.AArch64.Modes

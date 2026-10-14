@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MdStream.Spec
 public import VerifiedGarbage.Proof.Framework.X86.CallWith
-public import VerifiedGarbage.Proof.Framework.X86.Exec
+import VerifiedGarbage.Proof.Framework.X86.Exec
 public import VerifiedGarbage.Impl.MdStream.X86
 public import Mathlib.Tactic.Conv
 public import Mathlib.Tactic.Set

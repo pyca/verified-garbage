@@ -1,11 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.X86_64.VerifyChecks
-public import VerifiedGarbage.Proof.Ed448.VerifyFormulas
-public import VerifiedGarbage.Proof.Ed448.X86_64.BaseField
-public import VerifiedGarbage.Impl.Ed448.X86_64.VerifyEquation
-public import VerifiedGarbage.Proof.Ed448.Recover
-public import VerifiedGarbage.Proof.Ed448.DecodeBytes
+import VerifiedGarbage.Proof.Ed448.VerifyFormulas
+import VerifiedGarbage.Proof.Ed448.X86_64.BaseField
+import VerifiedGarbage.Impl.Ed448.X86_64.VerifyEquation
+import VerifiedGarbage.Proof.Ed448.Recover
+import VerifiedGarbage.Proof.Ed448.DecodeBytes
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

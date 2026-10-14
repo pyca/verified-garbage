@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.X448.AArch64.Init
-public import VerifiedGarbage.Proof.X448.AArch64.BitWrite
+import VerifiedGarbage.Proof.X448.AArch64.BitWrite
 public import VerifiedGarbage.Impl.Ed448.AArch64.VerifyWindow
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

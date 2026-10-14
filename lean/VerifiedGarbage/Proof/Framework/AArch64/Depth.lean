@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.TCB.AArch64.Isa
-public import VerifiedGarbage.Proof.Framework.Semantics
+import VerifiedGarbage.Proof.Framework.Semantics
 
 /-! Stack consumption in 16-byte units, including contiguous allocations. -/
 

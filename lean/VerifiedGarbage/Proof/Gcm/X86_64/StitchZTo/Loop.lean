@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZTo.Aes
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Loop
-public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Setup
+import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Setup
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

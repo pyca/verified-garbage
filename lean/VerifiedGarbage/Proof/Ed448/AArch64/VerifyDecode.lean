@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ed448.AArch64.DecodeSteps
 public import VerifiedGarbage.Proof.Ed448.AArch64.Point56.Call
-public import VerifiedGarbage.Proof.Ed448.Recover
+import VerifiedGarbage.Proof.Ed448.Recover
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

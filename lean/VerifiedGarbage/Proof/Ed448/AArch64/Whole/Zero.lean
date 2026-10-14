@@ -2,9 +2,9 @@ module
 
 public import VerifiedGarbage.Impl.Ed448.AArch64.Whole
 public import VerifiedGarbage.Proof.Framework.AArch64.Exec
-public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 public import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Spec.Sha3
+import VerifiedGarbage.Spec.Sha3
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.X86_64.VerifyLoop
-public import VerifiedGarbage.Proof.Ed448.Window
+import VerifiedGarbage.Proof.Ed448.Window
 public import VerifiedGarbage.Impl.Ed448.X86_64.WindowRegister
 public import VerifiedGarbage.Proof.Ed448.X86_64.Window.Mask
 import all Init.Data.Array.Basic

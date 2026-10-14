@@ -1,13 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Ed448.X86_64.FieldVariant
+import VerifiedGarbage.Proof.Ed448.X86_64.FieldVariant
 public import VerifiedGarbage.Proof.Ed448.X86_64.VerifyDecode
 public import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Joint
-public import VerifiedGarbage.Proof.Ed448.X86_64.VerifyPadding
-public import VerifiedGarbage.Proof.Ed448.X86_64.BaseConst
-public import VerifiedGarbage.Proof.Ed448.X86_64.BaseMain
+import VerifiedGarbage.Proof.Ed448.X86_64.VerifyPadding
+import VerifiedGarbage.Proof.Ed448.X86_64.BaseConst
+import VerifiedGarbage.Proof.Ed448.X86_64.BaseMain
 public import VerifiedGarbage.TCB.X86_64.Target
-public import VerifiedGarbage.Proof.Framework.X86_64.Abi
+import VerifiedGarbage.Proof.Framework.X86_64.Abi
 public import VerifiedGarbage.Proof.Ed448.X86_64.VerifyLocal
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

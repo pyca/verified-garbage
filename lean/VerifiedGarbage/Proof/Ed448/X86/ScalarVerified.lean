@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Ed448.X86.ScalarMain
+import VerifiedGarbage.Proof.Ed448.X86.ScalarMain
 meta import VerifiedGarbage.Proof.Ed448.X86.ScalarMain
 public import VerifiedGarbage.Proof.Ed448.X86.ScalarMulAddMain
 meta import VerifiedGarbage.Proof.Ed448.X86.ScalarMulAddMain

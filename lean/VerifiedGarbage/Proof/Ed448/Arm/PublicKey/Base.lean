@@ -1,10 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Ed448.Arm.PublicKey.Hash
+import VerifiedGarbage.Proof.Ed448.Arm.PublicKey.Hash
 public import VerifiedGarbage.Proof.Ed448.Arm.PublicKey.Prune
 public import VerifiedGarbage.Proof.Ed448.Arm.BaseVerified
-public import VerifiedGarbage.Proof.Ed448.Arm.BaseLit
-public import VerifiedGarbage.Proof.Ed25519.Arm.Whole.Wipe
+import VerifiedGarbage.Proof.Ed448.Arm.BaseLit
+import VerifiedGarbage.Proof.Ed25519.Arm.Whole.Wipe
 public import VerifiedGarbage.Proof.Ed25519.Arm.Whole.Wrap
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
 import all Init.Data.Array.Basic

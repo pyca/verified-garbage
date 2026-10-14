@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Spec.Idea.Contract
-public import VerifiedGarbage.Proof.Idea.Arith
+import VerifiedGarbage.Proof.Idea.Arith
 public import VerifiedGarbage.Proof.Framework.Offset
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

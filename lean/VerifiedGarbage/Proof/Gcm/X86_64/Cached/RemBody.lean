@@ -2,9 +2,9 @@ module
 
 public import VerifiedGarbage.Impl.Gcm.X86_64.StitchZH
 public import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Exec
-public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZTo.Base
+import VerifiedGarbage.Proof.Gcm.X86_64.StitchZTo.Base
 public import VerifiedGarbage.Proof.Framework.X86_64.Lane0
-public import VerifiedGarbage.Proof.Framework.X86_64.YFrame
+import VerifiedGarbage.Proof.Framework.X86_64.YFrame
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Idea.AArch64.Ecb
-public import VerifiedGarbage.Proof.Idea.KeyBits
+import VerifiedGarbage.Proof.Idea.KeyBits
 public import VerifiedGarbage.Proof.Framework.AArch64.Linear
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

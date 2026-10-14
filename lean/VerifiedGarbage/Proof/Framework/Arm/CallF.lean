@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.Arm.Frame
-public import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Arm.Exec
 public import VerifiedGarbage.Proof.Framework.Offset
 import Mathlib.Tactic.SplitIfs
 

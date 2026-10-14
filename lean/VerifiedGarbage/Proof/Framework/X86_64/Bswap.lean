@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Bswap
+import VerifiedGarbage.Proof.Framework.Bswap
 public import VerifiedGarbage.TCB.X86_64.Isa
 
 /-!

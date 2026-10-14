@@ -1,10 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.Arm.VerifyDecodeLoop
-public import VerifiedGarbage.Proof.Ed448.Arm.VerifyLoop
+import VerifiedGarbage.Proof.Ed448.Arm.VerifyLoop
 public import VerifiedGarbage.Proof.Ed448.Arm.VerifyFinish
 public import VerifiedGarbage.Proof.Ed448.Arm.BaseMain
-public import VerifiedGarbage.Proof.X448.Arm.Finish
+import VerifiedGarbage.Proof.X448.Arm.Finish
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

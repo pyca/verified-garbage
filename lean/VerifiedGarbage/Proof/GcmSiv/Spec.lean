@@ -1,9 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Cmac.Mem
+import VerifiedGarbage.Proof.Cmac.Mem
 public import VerifiedGarbage.Proof.Cmac.Mem32
 public import VerifiedGarbage.Spec.GcmSiv
-public import VerifiedGarbage.Spec.Gcm
+import VerifiedGarbage.Spec.Gcm
 public import VerifiedGarbage.Proof.GcmSiv.MulX
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

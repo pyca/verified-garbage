@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Cmac.Spec
 public import VerifiedGarbage.Proof.Gcm.Spec
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

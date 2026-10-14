@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.X86_64.PublicKey.Hash
-public import VerifiedGarbage.Proof.Ed448.Prune
-public import VerifiedGarbage.Proof.Ed448.X86_64.Words57
+import VerifiedGarbage.Proof.Ed448.Prune
+import VerifiedGarbage.Proof.Ed448.X86_64.Words57
 public import VerifiedGarbage.Proof.Ed448.X86_64.VariantVerified
 public import VerifiedGarbage.Proof.Ed448.X86_64.VariantBounds
 import all Init.Data.Array.Basic

@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Load
-public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.SetupP
-public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.LoopP
+import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.SetupP
+import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.LoopP
 public import VerifiedGarbage.Impl.AesGcm.X86_64.Prepared
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

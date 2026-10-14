@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.MdStream.X86.Common
 public import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Framework.X86.Inline
-public import VerifiedGarbage.Proof.MdStream.X86.ArgWord
+import VerifiedGarbage.Proof.MdStream.X86.ArgWord
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

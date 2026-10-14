@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MdStream.Spec
 public import VerifiedGarbage.Proof.Framework.AArch64.Call
-public import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Impl.MdStream.AArch64
 public import VerifiedGarbage.Proof.Framework.Offset
 import all Init.Data.Array.Basic

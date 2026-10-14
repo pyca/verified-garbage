@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Idea.X86_64.Block
 public import VerifiedGarbage.Proof.Idea.X86_64.ConstantTime
 public import VerifiedGarbage.Proof.Framework.X86_64.Abi
 public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Spec.Idea.Contract
+import VerifiedGarbage.Spec.Idea.Contract
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

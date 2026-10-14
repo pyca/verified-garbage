@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Ed448.X86_64.FieldVariant
+import VerifiedGarbage.Proof.Ed448.X86_64.FieldVariant
 public import VerifiedGarbage.Proof.X448.X86_64.Pow223
 public import VerifiedGarbage.Proof.Ed448.Root
 public import VerifiedGarbage.Impl.Ed448.X86_64.VerifyEquation

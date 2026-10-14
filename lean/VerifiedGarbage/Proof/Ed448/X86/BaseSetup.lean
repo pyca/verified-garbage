@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.X448.X86.Env
-public import VerifiedGarbage.Proof.X448.X86.RowMem
+import VerifiedGarbage.Proof.X448.X86.RowMem
 public import VerifiedGarbage.Proof.X448.X86.Bits
 public import VerifiedGarbage.Proof.Ed448.Scalar
 public import VerifiedGarbage.Impl.Ed448.X86.ScalarBase

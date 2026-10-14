@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.Arm.Verify.Entry
-public import VerifiedGarbage.Proof.Ed448.Arm.Verify.CT
-public import VerifiedGarbage.Proof.Ed25519.Arm.Whole.WrapCT
+import VerifiedGarbage.Proof.Ed448.Arm.Verify.CT
+import VerifiedGarbage.Proof.Ed25519.Arm.Whole.WrapCT
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

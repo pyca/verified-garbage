@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.AArch64.VerifyDecode
-public import VerifiedGarbage.Proof.Ed448.AArch64.VerifyBits
+import VerifiedGarbage.Proof.Ed448.AArch64.VerifyBits
 public import VerifiedGarbage.Proof.Ed448.AArch64.VerifyEntry
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

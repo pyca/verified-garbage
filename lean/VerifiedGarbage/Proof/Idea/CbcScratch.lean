@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Spec.Idea.Cbc
 public import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.Idea.Arith
+import VerifiedGarbage.Proof.Idea.Arith
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

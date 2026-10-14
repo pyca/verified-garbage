@@ -4,23 +4,23 @@ public import VerifiedGarbage.Proof.Gcm.X86.Pclmul.Arith
 meta import VerifiedGarbage.Proof.Gcm.X86.Pclmul.Arith
 public import VerifiedGarbage.Proof.Gcm.X86.Rev
 meta import VerifiedGarbage.Proof.Gcm.X86.Rev
-public import VerifiedGarbage.Proof.Framework.X86.Exec
+import VerifiedGarbage.Proof.Framework.X86.Exec
 meta import VerifiedGarbage.Proof.Framework.X86.Exec
-public import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
+import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
 meta import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
-public import VerifiedGarbage.Proof.Gcm.Spec
+import VerifiedGarbage.Proof.Gcm.Spec
 meta import VerifiedGarbage.Proof.Gcm.Spec
 public import VerifiedGarbage.Proof.Gcm.X86.GhashCT
 meta import VerifiedGarbage.Proof.Gcm.X86.GhashCT
 public import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.Framework.X86.Wp
+import VerifiedGarbage.Proof.Framework.X86.Wp
 meta import VerifiedGarbage.Proof.Framework.X86.Wp
 public import VerifiedGarbage.Proof.Gcm.X86.Ghash
 meta import VerifiedGarbage.Proof.Gcm.X86.Ghash
-public import VerifiedGarbage.Proof.Framework.X86.SseTaint
+import VerifiedGarbage.Proof.Framework.X86.SseTaint
 meta import VerifiedGarbage.Proof.Framework.X86.SseTaint
-public import VerifiedGarbage.Impl.Gcm.X86.Pclmul
+import VerifiedGarbage.Impl.Gcm.X86.Pclmul
 meta import VerifiedGarbage.Impl.Gcm.X86.Pclmul
 public import VerifiedGarbage.Proof.Framework.X86.Lit
 meta import VerifiedGarbage.Proof.Framework.X86.Lit

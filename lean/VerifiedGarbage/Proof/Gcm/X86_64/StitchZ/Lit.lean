@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Framework.X86_64.Lit
 meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
 public import VerifiedGarbage.Impl.Gcm.X86_64.StitchZHTo
 meta import VerifiedGarbage.Impl.Gcm.X86_64.StitchZHTo
-public import VerifiedGarbage.Impl.Gcm.X86_64.StitchZP
+import VerifiedGarbage.Impl.Gcm.X86_64.StitchZP
 meta import VerifiedGarbage.Impl.Gcm.X86_64.StitchZP
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

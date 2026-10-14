@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Base
+import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Base
 public import VerifiedGarbage.Proof.Gcm.X86_64.Vpclmul.Exec
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

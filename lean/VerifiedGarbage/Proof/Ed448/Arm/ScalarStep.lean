@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.Arm.ScalarNat
-public import VerifiedGarbage.Proof.X448.Arm.RowPass
+import VerifiedGarbage.Proof.X448.Arm.RowPass
 public import VerifiedGarbage.Proof.X25519.Arm.Field
 public import VerifiedGarbage.Proof.Framework.GetElem
 import all Init.Data.Array.Basic

@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ed448.AArch64.Point56.MulSlots
 public import VerifiedGarbage.Proof.Ed448.Root
-public import VerifiedGarbage.Impl.Ed448.AArch64.Point56
+import VerifiedGarbage.Impl.Ed448.AArch64.Point56
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

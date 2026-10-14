@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ed448.AArch64.VerifyCT.Erase
 meta import VerifiedGarbage.Proof.Ed448.AArch64.VerifyCT.Erase
-public import VerifiedGarbage.Proof.X448.AArch64.Base.Erase
+import VerifiedGarbage.Proof.X448.AArch64.Base.Erase
 meta import VerifiedGarbage.Proof.X448.AArch64.Base.Erase
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

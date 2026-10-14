@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Aes
+import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Aes
 public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.SpecTo
 public import VerifiedGarbage.Impl.Gcm.X86_64.StitchZTo
 import all Init.Data.Array.Basic

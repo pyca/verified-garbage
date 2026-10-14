@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Ed448.Group.Decode
+import VerifiedGarbage.Proof.Ed448.Group.Decode
 public import VerifiedGarbage.Proof.Ed448.AArch64.Window.KLoop
-public import VerifiedGarbage.Proof.X448.BaseAdd
+import VerifiedGarbage.Proof.X448.BaseAdd
 public import Mathlib.Tactic.Abel
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

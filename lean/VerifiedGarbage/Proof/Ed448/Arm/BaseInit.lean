@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.X448.Arm.Save
+import VerifiedGarbage.Proof.X448.Arm.Save
 public import VerifiedGarbage.Proof.X448.Arm.Env
 public import VerifiedGarbage.Impl.Ed448.Arm.ScalarBase
 import all Init.Data.Array.Basic

@@ -2,13 +2,13 @@ module
 
 public import VerifiedGarbage.Proof.Gcm.Arm.Step
 meta import VerifiedGarbage.Proof.Gcm.Arm.Step
-public import VerifiedGarbage.Proof.Framework.Arm.Bytes
+import VerifiedGarbage.Proof.Framework.Arm.Bytes
 meta import VerifiedGarbage.Proof.Framework.Arm.Bytes
 public import VerifiedGarbage.Proof.Framework.Bitslice.Sym
 meta import VerifiedGarbage.Proof.Framework.Bitslice.Sym
-public import VerifiedGarbage.Proof.Aes.Blocks
+import VerifiedGarbage.Proof.Aes.Blocks
 meta import VerifiedGarbage.Proof.Aes.Blocks
-public import VerifiedGarbage.Spec.Gcm
+import VerifiedGarbage.Spec.Gcm
 meta import VerifiedGarbage.Spec.Gcm
 public import VerifiedGarbage.TCB.Arm.Target
 meta import VerifiedGarbage.TCB.Arm.Target

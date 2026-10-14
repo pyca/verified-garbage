@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.Arm.RegScratch
-public import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Arm.Exec
 import Mathlib.Tactic.SplitIfs
 
 /-!

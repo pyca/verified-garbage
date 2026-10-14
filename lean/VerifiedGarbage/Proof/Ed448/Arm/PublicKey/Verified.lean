@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ed448.Arm.PublicKey.Base
 public import VerifiedGarbage.Proof.Ed25519.Arm.Whole.CallCT
-public import VerifiedGarbage.Proof.Ed25519.Arm.Whole.WrapCT
+import VerifiedGarbage.Proof.Ed25519.Arm.Whole.WrapCT
 public import VerifiedGarbage.Proof.Ed25519.Arm.Whole.BlocksCT
 public import VerifiedGarbage.Proof.Framework.Arm.Inline
 public import VerifiedGarbage.Spec.Ed448.Contract

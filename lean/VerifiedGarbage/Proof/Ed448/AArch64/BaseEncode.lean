@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Impl.Ed448.AArch64.ScalarBase
+import VerifiedGarbage.Impl.Ed448.AArch64.ScalarBase
 public import VerifiedGarbage.Proof.X448.AArch64.Weak.Ops
 public import VerifiedGarbage.Proof.Ed448.Formulas
 public import VerifiedGarbage.Proof.X448.AArch64.Weak.Main

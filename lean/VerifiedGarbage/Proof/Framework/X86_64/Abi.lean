@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Semantics
+import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Framework.X86_64.Taint
 
 /-!

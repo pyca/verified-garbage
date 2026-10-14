@@ -2,9 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Idea.X86.Lit
 meta import VerifiedGarbage.Proof.Idea.X86.Lit
-public import VerifiedGarbage.Proof.Idea.X86.Round
+import VerifiedGarbage.Proof.Idea.X86.Round
 meta import VerifiedGarbage.Proof.Idea.X86.Round
-public import VerifiedGarbage.Proof.Idea.KeyBits32
+import VerifiedGarbage.Proof.Idea.KeyBits32
 meta import VerifiedGarbage.Proof.Idea.KeyBits32
 public import VerifiedGarbage.Proof.Framework.X86.Linear
 meta import VerifiedGarbage.Proof.Framework.X86.Linear

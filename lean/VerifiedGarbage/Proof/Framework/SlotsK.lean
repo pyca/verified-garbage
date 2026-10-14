@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.Slots
-public import VerifiedGarbage.Proof.Framework.KernelList
+import VerifiedGarbage.Proof.Framework.KernelList
 
 /-!
 # `Slots` operations for the kernel

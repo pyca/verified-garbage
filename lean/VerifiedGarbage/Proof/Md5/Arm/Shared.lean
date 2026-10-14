@@ -1,11 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
-public import VerifiedGarbage.Proof.Md5.Arm.Compress
+import VerifiedGarbage.Proof.Md5.Arm.Compress
 public import VerifiedGarbage.Proof.Md5.Arm.Stream.Init
 public import VerifiedGarbage.Proof.Md5.Arm.Stream.Md
 public import VerifiedGarbage.Spec.Md5.Contract
-public import VerifiedGarbage.Proof.Md5.Scratch
+import VerifiedGarbage.Proof.Md5.Scratch
 public import VerifiedGarbage.Proof.Framework.Arm.StackScratch
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

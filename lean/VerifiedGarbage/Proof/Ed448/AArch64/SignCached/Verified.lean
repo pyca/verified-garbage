@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Ed448.AArch64.SignCached.Main
 meta import VerifiedGarbage.Proof.Ed448.AArch64.SignCached.Main
 public import VerifiedGarbage.Proof.Ed448.AArch64.Whole.CallsCT
 meta import VerifiedGarbage.Proof.Ed448.AArch64.Whole.CallsCT
-public import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.WrapCT
+import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.WrapCT
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.WrapCT
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract

@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Idea.X86_64.Ecb
 public import VerifiedGarbage.Proof.Idea.Scratch
 public import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
-public import VerifiedGarbage.Impl.StackScratch.X86_64
+import VerifiedGarbage.Impl.StackScratch.X86_64
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

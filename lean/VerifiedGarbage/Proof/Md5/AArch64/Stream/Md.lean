@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.MdStream.AArch64.Update
 meta import VerifiedGarbage.Proof.MdStream.AArch64.Update
 public import VerifiedGarbage.Proof.MdStream.AArch64.Finalize
 meta import VerifiedGarbage.Proof.MdStream.AArch64.Finalize
-public import VerifiedGarbage.Proof.MdStream.AArch64.Words
+import VerifiedGarbage.Proof.MdStream.AArch64.Words
 meta import VerifiedGarbage.Proof.MdStream.AArch64.Words
 public import VerifiedGarbage.Proof.Md5.Md
 meta import VerifiedGarbage.Proof.Md5.Md

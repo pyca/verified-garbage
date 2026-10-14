@@ -1,9 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.Pipeline
-public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Spec
-public import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.Ops
-public import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.Buffers
+import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Spec
+import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.Ops
+import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.Buffers
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

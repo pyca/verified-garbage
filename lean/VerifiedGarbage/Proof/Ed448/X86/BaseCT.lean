@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ed448.X86.BaseMain
 meta import VerifiedGarbage.Proof.Ed448.X86.BaseMain
-public import VerifiedGarbage.Proof.Ed448.X86.BaseLit
+import VerifiedGarbage.Proof.Ed448.X86.BaseLit
 meta import VerifiedGarbage.Proof.Ed448.X86.BaseLit
 public import VerifiedGarbage.Proof.Ed448.X86.ScalarVerified
 meta import VerifiedGarbage.Proof.Ed448.X86.ScalarVerified

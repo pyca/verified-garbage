@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.Arm.SignCached.Calls
-public import VerifiedGarbage.Proof.Ed448.Signing
+import VerifiedGarbage.Proof.Ed448.Signing
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
