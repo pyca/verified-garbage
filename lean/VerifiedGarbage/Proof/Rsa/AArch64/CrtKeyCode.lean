@@ -158,6 +158,7 @@ def ckcIn (s : State) : CkIn where
   B := stackArg s 6
   Z := (stackArg s 7).toNat * 8
   k := (s.gpr .x1).toNat
+  cap := CheckCrtKey.capacity (s.gpr .x1).toNat (s.gpr .x5).toNat (s.gpr .x7).toNat
   el := (s.gpr .x3).toNat
   dl := (s.gpr .x5).toNat
   pl := (s.gpr .x5).toNat
@@ -209,7 +210,13 @@ theorem ckcCtx_of {s : State} (h : ckcA.pre s) : CkcCtx s := by
   rw [hdql] at ddqs wDq hrd
   refine ⟨⟨hk1, hk2, hel1, hel2, hpl1, Nat.le_of_lt hpl2, hpl1, hpl2, hql1, hql2, bytesAt_length _ _ _,
       bytesAt_length _ _ _, bytesAt_length _ _ _, bytesAt_length _ _ _, bytesAt_length _ _ _, bytesAt_length _ _ _,
-      bytesAt_length _ _ _, bytesAt_length _ _ _, by simp only [ckcIn]; omega⟩, hs,
+      bytesAt_length _ _ _, bytesAt_length _ _ _, by simp only [ckcIn]; omega,
+      by simp only [ckcIn, CheckCrtKey.capacity]; omega,
+      by simp only [ckcIn, CheckCrtKey.capacity]; omega,
+      by simp only [ckcIn, CheckCrtKey.capacity]; omega,
+      by simp only [ckcIn, CheckCrtKey.capacity]; omega,
+      by simp only [ckcIn, CheckCrtKey.capacity]; omega,
+      by simp only [ckcIn, CheckCrtKey.capacity, wW, wk]; omega⟩, hs,
     fun j hj => ⟨_, hargs, by rw [stkAddr_eq s j]; exact Offset.contains_base _ (by omega) (by omega)⟩,
     fun j hj m' ho => Mem.readW_congr fun b hb => ho _ (Or.inr (by
       have := out_scr dsa.symm (contains_byte (stackArgAddr s 0) (i := 8 * j + b) (len := 64) (by omega) (by omega))
@@ -340,7 +347,7 @@ theorem ckcCode_correct (s : State) (h : ckcA.pre s) :
       rfl
     · have hv' : Spec.Rsa.modulusValid (ckcIn s).N (s.gpr .x1).toNat = true := by simpa using hb'
       have hpre := ckcPre_of c h₁ (by rw [hm₄, hm₃, hm₂]) ((k₂.trans (k₃.trans k₄)).mono (by decide))
-      refine WP.mono (WP.keep (.x0 :: mmRegs) (ckcMain_ok hpre hv' hv) (by decide +kernel)
+      refine WP.mono (WP.keep (.x0 :: mmRegs) (ckcMain_ok hpre hv' hv rfl) (by decide +kernel)
         (by decide) (by decide +kernel)) fun t ⟨hx, kt⟩ =>
         ⟨abiPreserved_of_keep ((kk₄.trans kt).mono (by decide)), ?_⟩
       show (t.gpr .x0).setWidth 32 = if ckcKeyOf s then 1 else 0

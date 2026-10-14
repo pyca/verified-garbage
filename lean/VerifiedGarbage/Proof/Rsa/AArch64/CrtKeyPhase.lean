@@ -31,14 +31,14 @@ open VG.Proof.MlKem.AArch64 (Keep)
 /-- `reduceTop top`: the remainder of `[aA]` by `[aM]` into `[aRem]`, when
 the words of `[aA]` from `c` up are below `[aM]`. -/
 theorem ckReduceTop_ok {I : CkIn} {m₀ : Mem} {s : State} (h : CkS I m₀ s) {top : List Instr} {c : Nat}
-    (hT : TopOk top I.B I.Z s.mem c) (hc1 : 1 ≤ c) (hc : c < wW I.k) :
+    (hT : TopOk top I.B I.Z s.mem c) (hc1 : 1 ≤ c) (hc : c < wW I.cap) :
     WP isa (seqs (reduceTop top)) s fun t =>
       CkS I m₀ t ∧ mword t.mem I.B = mword s.mem I.B ∧
       (I.av s.mem aA / 2 ^ (64 * c) < I.av s.mem aM → I.av t.mem aRem = I.av s.mem aA % I.av s.mem aM) ∧
       ∀ i < 16, i ≠ aRem → i ≠ aQ → i ≠ aT → I.av t.mem i = I.av s.mem i := by
   have hn := h.ws.scr.nowrap
   refine WP.mono (reduceTop_ok h.ws hT hc1 hc) fun t ⟨_, f, k, hv⟩ => ?_
-  have hr : ∀ r ∈ [ar (wW I.k) aQ, ar (wW I.k) aRem, ar (wW I.k) aT], ∃ j < 16, r = ar (wW I.k) j := by
+  have hr : ∀ r ∈ [ar (wW I.cap) aQ, ar (wW I.cap) aRem, ar (wW I.cap) aT], ∃ j < 16, r = ar (wW I.cap) j := by
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
@@ -50,20 +50,20 @@ theorem ckReduceTop_ok {I : CkIn} {m₀ : Mem} {s : State} (h : CkS I m₀ s) {t
     fun i hi h1 h2 h3 => ?_⟩
   · exact f.word_eq (fun r hr' => by
       obtain ⟨j, hj, rfl⟩ := hr r hr'
-      have := hdr_lt_slot (wW I.k) j (show Public.sMask < 32 by decide); exact Or.inl (by omega))
+      have := hdr_lt_slot (wW I.cap) j (show Public.sMask < 32 by decide); exact Or.inl (by omega))
       (by simp only [Public.sMask, sFn]; omega)
   · have hM : 0 < I.av s.mem aM := Nat.lt_of_le_of_lt (Nat.zero_le _) hlt
     have hr' := hv hlt
-    have hlt' : wv t.mem I.B (slot (wW I.k) aRem) (wW I.k + 1) < 2 ^ (64 * wW I.k) := by
+    have hlt' : wv t.mem I.B (slot (wW I.cap) aRem) (wW I.cap + 1) < 2 ^ (64 * wW I.cap) := by
       rw [hr']; exact Nat.lt_of_lt_of_le (Nat.mod_lt _ hM) (Nat.le_of_lt (wv_lt _ _ _ _))
     unfold CkIn.av
-    rw [wv_low_of_lt (v := wW I.k) (w := wW I.k + 1) (by omega) hlt', hr']
+    rw [wv_low_of_lt (v := wW I.cap) (w := wW I.cap + 1) (by omega) hlt', hr']
   · exact f.wv_eq (fun r hr' => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr'
       rcases hr' with rfl | rfl | rfl <;> dsimp only
-      · have := slot_sep (w := wW I.k) h2; omega
-      · have := slot_sep (w := wW I.k) h1; omega
-      · have := slot_sep (w := wW I.k) h3; omega) (by have := h.ws.sl hi; omega)
+      · have := slot_sep (w := wW I.cap) h2; omega
+      · have := slot_sep (w := wW I.cap) h1; omega
+      · have := slot_sep (w := wW I.cap) h3; omega) (by have := h.ws.sl hi; omega)
 
 /-- `topE`: `x13 := 1`. -/
 theorem topE_ok (B : Addr) (Z : Nat) (m₀ : Mem) : TopOk topE B Z m₀ 1 := fun t _ _ _ =>
@@ -84,7 +84,7 @@ theorem topQ_ok {B : Addr} {Z : Nat} {m₀ : Mem} {ql : Nat} (hq : word m₀ B (
 from `c` up are below `[aM]`. -/
 theorem ckModOneTop_ok {I : CkIn} {m₀ : Mem} {s : State} (h : CkS I m₀ s) {c : Bool} (hm : mword s.mem I.B = mask c)
     (hO : I.av s.mem aOne = 1) {top : List Instr} {k : Nat} (hT : TopOk top I.B I.Z s.mem k) (hk1 : 1 ≤ k)
-    (hk : k < wW I.k) :
+    (hk : k < wW I.cap) :
     WP isa (seqs (modOne top)) s fun t => CkS I m₀ t ∧ (∃ r : Nat,
       (I.av s.mem aA / 2 ^ (64 * k) < I.av s.mem aM → r = I.av s.mem aA % I.av s.mem aM) ∧
       mword t.mem I.B = mask (decide (r = 1) && c)) ∧
@@ -111,7 +111,7 @@ theorem ckcModChecks_eq (sX sXlen sDX : Nat) : modChecks sX sXlen sDX =
 (the bytes `xb`) and its exponent `dX` (the bytes `dxb`). -/
 theorem phModC_ok {I : CkIn} {m₀ : Mem} {s : State} {c : Bool} (h : KS I m₀ c s) (L : CkLens I) (hE64 : I.E < 2 ^ 64)
     {sX sXlen sDX xl : Nat} {pX pDX : Addr} {xb dxb : List Byte} (hsX : sX < 32) (hsL : sXlen < 32)
-    (hsD : sDX < 32) (hxl1 : 1 ≤ xl) (hxl2 : xl < I.k) (hxb : xb.length = xl) (hdxb : dxb.length = xl)
+    (hsD : sDX < 32) (hxl1 : 1 ≤ xl) (hxl2 : xl < I.k) (hxc : xl ≤ I.cap) (hxb : xb.length = xl) (hdxb : dxb.length = xl)
     (hA : ∀ t, CkS I m₀ t → word t.mem I.B (8 * sX) = pX ∧ word t.mem I.B (8 * sXlen) = BitVec.ofNat 64 xl ∧
       Src t I.B I.Z pX xb ∧ word t.mem I.B (8 * sDX) = pDX ∧ Src t I.B I.Z pDX dxb) :
     WP isa (seqs (modChecks sX sXlen sDX)) s fun t => ∃ g : Bool, KS I m₀ (g && c) t ∧
@@ -141,12 +141,12 @@ theorem phModC_ok {I : CkIn} {m₀ : Mem} {s : State} {c : Bool} (h : KS I m₀ 
       o₁ aE (by decide) (by decide), hE]
   have X₄ : I.av s₄.mem aX = Spec.Rsa.os2ip dxb := by rw [o₄ aX (by decide), v₃]
   refine wp_seqs_append (by simp [mulE]) (by simp [modOne]) (WP.mono (ckMulE_ok h₄ L
-    (by rw [X₄]; exact lt_w (by rw [hdxb]; exact Nat.le_of_lt hxl2))) fun s₅ ⟨h₅, m₅, v₅, o₅⟩ => ?_)
+    (by rw [X₄]; exact lt_w (by rw [hdxb]; exact hxc))) fun s₅ ⟨h₅, m₅, v₅, o₅⟩ => ?_)
   rw [X₄, e_word E₄ hE64] at v₅
   have O₅ : I.av s₅.mem aOne = 1 := by
     rw [o₅ aOne (by decide) (by decide), o₄ aOne (by decide), o₃ aOne (by decide) (by decide),
       o₂ aOne (by decide) (by decide), o₁ aOne (by decide) (by decide), hO]
-  have hw1 : 1 < wW I.k := by simp only [wW, wk]; omega
+  have hw1 : 1 < wW I.cap := by simp only [wW, wk]; omega
   refine WP.mono (ckModOneTop_ok h₅ (m₅.trans m₄) O₅ (topE_ok _ _ _) (Nat.le_refl _) hw1)
     fun t ⟨ht, ⟨r, hr, mt⟩, ot⟩ => ?_
   have M₅ : I.av s₅.mem aM = I.av s₂.mem aM := by
@@ -192,15 +192,15 @@ theorem phQIC_ok {I : CkIn} {m₀ : Mem} {s : State} {c : Bool} (h : KS I m₀ c
     (by decide) h₃.args.q h₃.args.ql h₃.q L.qbl L.ql1 (Nat.le_of_lt L.ql2)) fun s₄ ⟨h₄, m₄, v₄, o₄⟩ => ?_)
   have X₄ : I.av s₄.mem aX = I.QI := by rw [o₄ aX (by decide) (by decide), o₃ aX (by decide), v₂]
   refine wp_seqs_append (by simp [mulXR]) (by simp [modOne]) (WP.mono (ckMulXR_ok h₄ L
-    (by rw [X₄]; exact lt_w (by rw [L.qibl]; exact Nat.le_of_lt L.pl2))
-    (by rw [v₄]; exact lt_w (by rw [L.qbl]; exact Nat.le_of_lt L.ql2))) fun s₅ ⟨h₅, m₅, v₅, o₅⟩ => ?_)
+    (by rw [X₄]; exact lt_w (by rw [L.qibl]; exact L.pcap))
+    (by rw [v₄]; exact lt_w (by rw [L.qbl]; exact L.qcap))) fun s₅ ⟨h₅, m₅, v₅, o₅⟩ => ?_)
   rw [X₄, v₄] at v₅
   have O₅ : I.av s₅.mem aOne = 1 := by
     rw [o₅ aOne (by decide) (by decide), o₄ aOne (by decide) (by decide), o₃ aOne (by decide),
       o₂ aOne (by decide) (by decide), o₁ aOne (by decide) (by decide), hO]
   -- `c = ⌈q_len / 8⌉` words: `q < 2^(64 c)`.
   have hk1 : 1 ≤ (I.ql + 7) / 8 := by have := L.ql1; omega
-  have hk : (I.ql + 7) / 8 < wW I.k := by have := L.ql2; simp only [wW, wk]; omega
+  have hk : (I.ql + 7) / 8 < wW I.cap := by have := L.qcap; simp only [wW, wk]; omega
   refine WP.mono (ckModOneTop_ok h₅ (m₅.trans (m₄.trans m₃)) O₅ (topQ_ok h₅.args.ql
     (by have := L.ql2; have := L.k2; omega) (by have := h₅.ws.h256; omega)) hk1 hk)
     fun t ⟨ht, ⟨r, hr, mt⟩, ot⟩ => ?_

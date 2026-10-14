@@ -211,7 +211,9 @@ theorem ckCtx_of {s : State} (h : ckA.pre s) : CkCtx s := by
   rw [hdql] at ddqs wDq hrd
   refine ⟨⟨hk1, hk2, hel1, hel2, hdl1, hdl2, hpl1, hpl2, hql1, hql2, bytesAt_length _ _ _, bytesAt_length _ _ _,
       bytesAt_length _ _ _, bytesAt_length _ _ _, bytesAt_length _ _ _, bytesAt_length _ _ _, bytesAt_length _ _ _,
-      bytesAt_length _ _ _, by simp only [ckIn]; omega⟩, hs,
+      bytesAt_length _ _ _, by simp only [ckIn]; omega, by simp only [ckIn]; omega, by rfl,
+      by simp only [ckIn]; omega, by simp only [ckIn]; omega, by simp only [ckIn]; omega,
+      by simp only [ckIn, wW, wk]; omega⟩, hs,
     fun j hj => ⟨_, hargs, by rw [stkAddr_eq s j]; exact Offset.contains_base _ (by omega) (by omega)⟩,
     fun j hj m' ho => Mem.readW_congr fun b hb => ho _ (Or.inr (by
       have := out_scr dsa.symm (contains_byte (stackArgAddr s 0) (i := 8 * j + b) (len := 80) (by omega) (by omega))
@@ -343,7 +345,7 @@ theorem ckCode_correct (s : State) (h : ckA.pre s) :
       rfl
     · have hv' : Spec.Rsa.modulusValid (ckIn s).N (s.gpr .x1).toNat = true := by simpa using hb'
       have hpre := ckPre_of c h₁ (by rw [hm₄, hm₃, hm₂]) ((k₂.trans (k₃.trans k₄)).mono (by decide))
-      refine WP.mono (WP.keep (.x0 :: mmRegs) (ckMain_ok hpre hv' hv) (by decide +kernel)
+      refine WP.mono (WP.keep (.x0 :: mmRegs) (ckMain_ok hpre hv' hv rfl) (by decide +kernel)
         (by decide) (by decide +kernel)) fun t ⟨hx, kt⟩ =>
         ⟨abiPreserved_of_keep ((kk₄.trans kt).mono (by decide)), ?_⟩
       show (t.gpr .x0).setWidth 32 = if ckKeyOf s then 1 else 0

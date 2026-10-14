@@ -32,31 +32,31 @@ open VG.Proof.MlKem.AArch64 (Keep)
 /-- The registers `blkHi`'s copy uses, from the public data. -/
 def hiVal (C : CkP → Nat) (p : CkP) : Reg → BitVec 64
   | .x0 => p.B
-  | .x16 => off p.B (slot (wW p.k) aA + 8 * C p)
-  | .x17 => off p.B (slot (wW p.k) aRem)
-  | .x12 => BitVec.ofNat 64 (wW p.k - C p)
+  | .x16 => off p.B (slot (wW p.cap) aA + 8 * C p)
+  | .x17 => off p.B (slot (wW p.cap) aRem)
+  | .x12 => BitVec.ofNat 64 (wW p.cap - C p)
   | _ => 0
 
 /-- The registers `blkLo`'s copy uses. -/
 def loVal (C : CkP → Nat) (p : CkP) : Reg → BitVec 64
   | .x0 => p.B
-  | .x16 => off p.B (slot (wW p.k) aA)
-  | .x17 => off p.B (slot (wW p.k) aQ + 8 * (wW p.k - C p))
+  | .x16 => off p.B (slot (wW p.cap) aA)
+  | .x17 => off p.B (slot (wW p.cap) aQ + 8 * (wW p.cap - C p))
   | .x12 => BitVec.ofNat 64 (C p)
   | _ => 0
 
 /-- The registers the loop uses. -/
 def cntVal (C : CkP → Nat) (p : CkP) : Reg → BitVec 64
   | .x0 => p.B
-  | .x12 => BitVec.ofNat 64 (wW p.k)
-  | .x11 => BitVec.ofNat 64 (8 * (wW p.k + 2))
+  | .x12 => BitVec.ofNat 64 (wW p.cap)
+  | .x11 => BitVec.ofNat 64 (8 * (wW p.cap + 2))
   | .x6 => BitVec.ofNat 64 (64 * C p)
   | _ => 0
 
 /-- `reduceTop top` leaks the same in two runs with the same public data,
 for a count `C p` of words that `top` sets. -/
 theorem reduceTop_ckct {top : List Instr} (C : CkP → Nat)
-    (hT : ∀ p s, GK p s → TopOk top p.B p.Z s.mem (C p)) (hC : ∀ p s, GK p s → 1 ≤ C p ∧ C p < wW p.k)
+    (hT : ∀ p s, GK p s → TopOk top p.B p.Z s.mem (C p)) (hC : ∀ p s, GK p s → 1 ≤ C p ∧ C p < wW p.cap)
     {h₁ h₂ h₃ h₄ h₅ h₆ h₇ : VG.Taint.Hint VG.AArch64.Taint.T}
     (tR : (taint.check (Taint.ofRegs [.x0, .x12, .x11]) (.seq (.block (base aRem .x8 ++ [movi .x7 0])) zeroAcc)
       h₁).isSome = true)
@@ -70,7 +70,7 @@ theorem reduceTop_ckct {top : List Instr} (C : CkP → Nat)
       (.loop (VG.Impl.Rsa.AArch64.Keys.divStep aQ aRem aM aT) (.nonzero .x .x6)) h₇).isSome = true) :
     RelCT isa (Two GK) (seqs (reduceTop top)) (Two GK) := by
   -- The facts about the layout `Ws` gives.
-  have lay : ∀ {p : CkP} {s : State}, GK p s → slot (wW p.k) 16 ≤ p.Z ∧ 1 ≤ wW p.k ∧ wW p.k < 2 ^ 24 ∧
+  have lay : ∀ {p : CkP} {s : State}, GK p s → slot (wW p.cap) 16 ≤ p.Z ∧ 1 ≤ wW p.cap ∧ wW p.cap < 2 ^ 24 ∧
       p.B.toNat + p.Z ≤ 2 ^ 64 := fun h => ⟨h.ws.hZ, by have := h.ws.w1; omega, h.ws.w2, h.ws.scr.nowrap⟩
   have hct : RelCT isa (Two GK) (seqs (reduceTop top)) fun _ _ => True := by
     refine (ct_cons (by simp) (zeroA_ckct (by decide) tR) (ct_cons (by simp) (zeroA_ckct (by decide) tQ)
@@ -88,9 +88,9 @@ theorem reduceTop_ckct {top : List Instr} (C : CkP → Nat)
         · exact e12
       · obtain ⟨hZ, hw1, hw, hn⟩ := lay h
         have hc := (hC p s h).2
-        have sA := Nat.le_trans (slot_lt (w := wW p.k) (show aA < 16 by decide)) hZ
-        have sR := Nat.le_trans (slot_lt (w := wW p.k) (show aRem < 16 by decide)) hZ
-        have pAR := slot_sep (w := wW p.k) (show aA ≠ aRem by decide)
+        have sA := Nat.le_trans (slot_lt (w := wW p.cap) (show aA < 16 by decide)) hZ
+        have sR := Nat.le_trans (slot_lt (w := wW p.cap) (show aRem < 16 by decide)) hZ
+        have pAR := slot_sep (w := wW p.cap) (show aA ≠ aRem by decide)
         refine WP.seq (WP.mono (blkHi_ok h.ws (hT p s h) hc) fun t ⟨⟨e16, e17, e12, m⟩, k⟩ => ?_)
         have hs := h.ws.scr.congr k.wr
         refine WP.mono (copyWords_ok e16 e17 e12 (by omega) (by omega) (by omega)
@@ -112,9 +112,9 @@ theorem reduceTop_ckct {top : List Instr} (C : CkP → Nat)
       · obtain ⟨hZ, hw1, hw, hn⟩ := lay h
         have hc := (hC p s h).2
         have hc1 := (hC p s h).1
-        have sA := Nat.le_trans (slot_lt (w := wW p.k) (show aA < 16 by decide)) hZ
-        have sQ := Nat.le_trans (slot_lt (w := wW p.k) (show aQ < 16 by decide)) hZ
-        have pAQ := slot_sep (w := wW p.k) (show aA ≠ aQ by decide)
+        have sA := Nat.le_trans (slot_lt (w := wW p.cap) (show aA < 16 by decide)) hZ
+        have sQ := Nat.le_trans (slot_lt (w := wW p.cap) (show aQ < 16 by decide)) hZ
+        have pAQ := slot_sep (w := wW p.cap) (show aA ≠ aQ by decide)
         refine WP.seq (WP.mono (blkLo_ok h.ws (hT p s h) hc) fun t ⟨⟨e16, e17, e12, m⟩, k⟩ => ?_)
         have hs := h.ws.scr.congr k.wr
         refine WP.mono (copyWords_ok e16 e17 e12 hc1 (by omega) (by omega)
@@ -144,7 +144,7 @@ theorem reduceTop_ckct {top : List Instr} (C : CkP → Nat)
 
 /-- `modOne top`. -/
 theorem modOneTop_ckct {top : List Instr} (C : CkP → Nat)
-    (hT : ∀ p s, GK p s → TopOk top p.B p.Z s.mem (C p)) (hC : ∀ p s, GK p s → 1 ≤ C p ∧ C p < wW p.k)
+    (hT : ∀ p s, GK p s → TopOk top p.B p.Z s.mem (C p)) (hC : ∀ p s, GK p s → 1 ≤ C p ∧ C p < wW p.cap)
     {h₃ h₄ h₅ : VG.Taint.Hint VG.AArch64.Taint.T}
     (tHi : (taint.check (Taint.ofRegs [.x0]) (.block (ws ++ top ++ base aA .x16 ++ base aRem .x17 ++ hiTail)) h₃).isSome = true)
     (tLo : (taint.check (Taint.ofRegs [.x0]) (.block (ws ++ top ++ base aA .x16 ++ base aQ .x17 ++ loTail)) h₄).isSome = true)
@@ -162,10 +162,10 @@ theorem ckModC_ct {sX sXlen sDX : Nat} (hsX : sX < 32) (hsL : sXlen < 32) (hsD :
     (xl : CkP → Nat)
     (hX : ∀ (I : CkIn) (m₀ : Mem) (s : State), CkS I m₀ s → CkLens I → word s.mem I.B (8 * sX) = pX I.pub ∧
       word s.mem I.B (8 * sXlen) = BitVec.ofNat 64 (xl I.pub) ∧
-      (∃ bs, Src s I.B I.Z (pX I.pub) bs ∧ bs.length = xl I.pub) ∧ 1 ≤ xl I.pub ∧ xl I.pub ≤ I.k)
+      (∃ bs, Src s I.B I.Z (pX I.pub) bs ∧ bs.length = xl I.pub) ∧ 1 ≤ xl I.pub ∧ xl I.pub ≤ I.cap)
     (hDX : ∀ (I : CkIn) (m₀ : Mem) (s : State), CkS I m₀ s → CkLens I → word s.mem I.B (8 * sDX) = pDX I.pub ∧
       word s.mem I.B (8 * sXlen) = BitVec.ofNat 64 (xl I.pub) ∧
-      (∃ bs, Src s I.B I.Z (pDX I.pub) bs ∧ bs.length = xl I.pub) ∧ 1 ≤ xl I.pub ∧ xl I.pub ≤ I.k)
+      (∃ bs, Src s I.B I.Z (pDX I.pub) bs ∧ bs.length = xl I.pub) ∧ 1 ≤ xl I.pub ∧ xl I.pub ≤ I.cap)
     {hc₁ : VG.Taint.Hint VG.AArch64.Taint.T}
     (htX : (taint.check (Taint.ofRegs [.x0]) (.block (ws ++ base aM .x8 ++ [ldh .x1 sX, ldh .x2 sXlen]))
       hc₁).isSome = true)
@@ -190,15 +190,15 @@ theorem ckModC_ct {sX sXlen sDX : Nat} (hsX : sX < 32) (hsL : sXlen < 32) (hsD :
 theorem ckQIC_ct : RelCT isa (Two GK) (seqs (loadA aM sP sPlen ++ (loadA aX sQI sPlen ++ (ltA aX aM ++
     (loadA aR sQ sQlen ++ (mulXR ++ modOne topQ)))))) (Two GK) :=
   ct_app (by simp [loadA]) (by simp [loadA]) (toGK (ofGK (ld_ct (by decide) (by decide) (by decide) CkP.pP CkP.pl
-    (by decide) (fun I m₀ s hs L => ⟨hs.args.p, hs.args.pl, ⟨_, hs.p, L.pbl⟩, L.pl1, Nat.le_of_lt L.pl2⟩)
+    (by decide) (fun I m₀ s hs L => ⟨hs.args.p, hs.args.pl, ⟨_, hs.p, L.pbl⟩, L.pl1, L.pcap⟩)
     (by taint_decide) (by taint_decide) (by taint_decide))))
   (ofGK (ct_app (by simp [loadA]) (by simp [ltA]) (ld_ct (by decide) (by decide) (by decide) CkP.pQi CkP.pl
-    (by decide) (fun I m₀ s hs L => ⟨hs.args.qi, hs.args.pl, ⟨_, hs.qi, L.qibl⟩, L.pl1, Nat.le_of_lt L.pl2⟩)
+    (by decide) (fun I m₀ s hs L => ⟨hs.args.qi, hs.args.pl, ⟨_, hs.qi, L.qibl⟩, L.pl1, L.pcap⟩)
     (by taint_decide) (by taint_decide) (by taint_decide))
   (ct_app (by simp [ltA]) (by simp [loadA]) (ltA_ckct (a := aX) (b := aM) (js := [aX]) (by decide) (by decide)
     (by decide) (by taint_decide))
   (ct_app (by simp [loadA]) (by simp [mulXR]) (toGKb (ld_ct (by decide) (by decide) (by decide) CkP.pQ CkP.ql
-    (js := [aX]) (by decide) (fun I m₀ s hs L => ⟨hs.args.q, hs.args.ql, ⟨_, hs.q, L.qbl⟩, L.ql1, Nat.le_of_lt L.ql2⟩)
+    (js := [aX]) (by decide) (fun I m₀ s hs L => ⟨hs.args.q, hs.args.ql, ⟨_, hs.q, L.qbl⟩, L.ql1, L.qcap⟩)
     (by taint_decide) (by taint_decide) (by taint_decide)) (js' := [aX, aR]) (by decide))
   (ct_app (by simp [mulXR]) (by simp [modOne]) (mulXR_ckct (by taint_decide) (by taint_decide))
     (modOneTop_ckct (fun p => (p.ql + 7) / 8) (fun p s h => by
@@ -207,31 +207,43 @@ theorem ckQIC_ct : RelCT isa (Two GK) (seqs (loadA aM sP sPlen ++ (loadA aX sQI 
           (by simp only [CkIn.pub]; have := hs.ws.h256; omega))
       (fun p s h => by
         obtain ⟨I, m₀, c, rfl, -, L, -⟩ := h
-        have := L.ql1; have := L.ql2
+        have := L.ql1; have := L.qcap
         exact ⟨by simp only [CkIn.pub]; omega, by simp only [CkIn.pub, wW, wk]; omega⟩) (by taint_decide) (by taint_decide) (by taint_decide)))))))
 
 /-! ## `main` -/
 
+/-- The CRT entry chooses capacity from public lengths. -/
+def GKCM (p : CkP) (s : State) : Prop := ∃ I : CkIn, I.pub = p ∧ CkPre I s ∧
+  I.cap = VG.Impl.Rsa.AArch64.CheckCrtKey.capacity I.k I.pl I.ql
+
+theorem ckcHead_ct : RelCT isa (Two GKCM) (.block VG.Impl.Rsa.AArch64.CheckCrtKey.head) (Two GK) :=
+  two_piece [.x0] (fun _ _ _ ⟨_, e₁, h₁, _⟩ ⟨_, e₂, h₂, _⟩ r hr => by
+    simp only [List.mem_singleton] at hr; subst hr
+    rw [h₁.x0, h₂.x0]
+    exact (congrArg CkP.B e₁).trans (congrArg CkP.B e₂).symm)
+    (by taint_decide) fun _ s ⟨I, e, h, hc⟩ =>
+      WP.mono (ckcHeadS_ok h hc) fun _ ⟨ht, hm⟩ => ⟨I, s.mem, true, e, ht, h.L, hm⟩
+
 /-- `main` leaks the same in two runs with the same public data. -/
-theorem ckcMain_ct : RelCT isa (Two GKM) VG.Impl.Rsa.AArch64.CheckCrtKey.main fun _ _ => True := by
+theorem ckcMain_ct : RelCT isa (Two GKCM) VG.Impl.Rsa.AArch64.CheckCrtKey.main fun _ _ => True := by
   rw [ckcMain_eq]
-  refine (ct_app (by simp) (by simp [loadA]) (ct_one ckHead_ct)
-    (ct_app (by simp [loadA]) (by simp [loadA]) (toGK (ofGK (ld_ct (by decide) (by decide) (by decide) CkP.pN CkP.k
+  refine (ct_app (by simp) (by simp [loadA]) (ct_one ckcHead_ct)
+    (ct_app (by simp [loadA]) (by simp [loadA]) (toGK (ofGK (ldWide_ct (by decide) (by decide) (by decide) CkP.pN CkP.k
       (by decide) (fun I m₀ s hs L => ⟨hs.args.n, hs.args.k, ⟨_, hs.n, L.nl⟩, show 1 ≤ I.k by have := L.k1; omega, Nat.le_refl _⟩)
       (by taint_decide) (by taint_decide) (by taint_decide))))
-    (ct_app (by simp [loadA]) (by simp) (toGK (ofGK (ld_ct (by decide) (by decide) (by decide) CkP.pE CkP.el
+    (ct_app (by simp [loadA]) (by simp) (toGK (ofGK (ldWide_ct (by decide) (by decide) (by decide) CkP.pE CkP.el
       (by decide) (fun I m₀ s hs L => ⟨hs.args.e, hs.args.el, ⟨_, hs.e, L.ebl⟩, L.el1, L.el2⟩)
       (by taint_decide) (by taint_decide) (by taint_decide))))
     (ct_app (by simp) (by simp [loadA]) (ct_cons (by simp) (zeroA_ckct (by decide) (by taint_decide))
       (ct_one (setOneA_ckct (by decide) (by taint_decide))))
     (ct_app (by simp [loadA]) (by simp [modChecks]) ckPQ_ct
     (ct_app (by simp [modChecks]) (by simp [modChecks]) (ckModC_ct (by decide) (by decide) (by decide) CkP.pP CkP.pDp
-      CkP.pl (fun I m₀ s hs L => ⟨hs.args.p, hs.args.pl, ⟨_, hs.p, L.pbl⟩, L.pl1, Nat.le_of_lt L.pl2⟩)
-      (fun I m₀ s hs L => ⟨hs.args.dp, hs.args.pl, ⟨_, hs.dp, L.dpbl⟩, L.pl1, Nat.le_of_lt L.pl2⟩)
+      CkP.pl (fun I m₀ s hs L => ⟨hs.args.p, hs.args.pl, ⟨_, hs.p, L.pbl⟩, L.pl1, L.pcap⟩)
+      (fun I m₀ s hs L => ⟨hs.args.dp, hs.args.pl, ⟨_, hs.dp, L.dpbl⟩, L.pl1, L.pcap⟩)
       (by taint_decide) (by taint_decide))
     (ct_app (by simp [modChecks]) (by simp [loadA]) (ckModC_ct (by decide) (by decide) (by decide) CkP.pQ CkP.pDq
-      CkP.ql (fun I m₀ s hs L => ⟨hs.args.q, hs.args.ql, ⟨_, hs.q, L.qbl⟩, L.ql1, Nat.le_of_lt L.ql2⟩)
-      (fun I m₀ s hs L => ⟨hs.args.dq, hs.args.ql, ⟨_, hs.dq, L.dqbl⟩, L.ql1, Nat.le_of_lt L.ql2⟩)
+      CkP.ql (fun I m₀ s hs L => ⟨hs.args.q, hs.args.ql, ⟨_, hs.q, L.qbl⟩, L.ql1, L.qcap⟩)
+      (fun I m₀ s hs L => ⟨hs.args.dq, hs.args.ql, ⟨_, hs.dq, L.dqbl⟩, L.ql1, L.qcap⟩)
       (by taint_decide) (by taint_decide))
     (ct_app (by simp [loadA]) (by simp) ckQIC_ct (ct_one retMaskK_ct))))))))).mono
     (fun _ _ h => h) fun _ _ _ => trivial
