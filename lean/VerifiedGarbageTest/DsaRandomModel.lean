@@ -1,3 +1,7 @@
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomSample
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomPrepareState
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomCopyCT
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomRangeCT
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomTermination
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomCopyCandidate
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomSampleLoop
@@ -160,3 +164,19 @@ run_cmd
 #assert_standard_axioms VG.Proof.Dsa.X86_64.random_sampleLoop_terminates
 #assert_standard_axioms VG.Proof.Dsa.random_significant_drop
 #assert_standard_axioms VG.Proof.Dsa.random_significant_drop_length
+
+#assert_standard_axioms VG.Proof.Dsa.X86_64.random_sampleLoop_correct
+#assert_standard_axioms VG.Proof.Dsa.X86_64.random_sample_correct
+#assert_standard_axioms VG.Proof.Dsa.X86_64.random_sample_encoded
+#assert_standard_axioms VG.Proof.Dsa.X86_64.random_nonce_encoding
+#assert_standard_axioms VG.Proof.Dsa.X86_64.random_prepare_ready
+#assert_standard_axioms VG.Proof.Dsa.X86_64.random_copy_ct
+#assert_standard_axioms VG.Proof.Dsa.X86_64.random_inRange_ct
+#assert_standard_axioms VG.Proof.Dsa.X86_64.random_draw_full_result
+#assert_standard_axioms VG.Proof.Dsa.Random.sample_trace_nonempty
+#assert_standard_axioms VG.Proof.Dsa.Random.sampleStatus_reject
+#assert_standard_axioms VG.Proof.Dsa.Random.sample_short
+#assert_standard_axioms VG.Proof.Dsa.Random.sample_accept
+#assert_standard_axioms VG.Proof.Dsa.Random.sample_reject
+
+#assert_standard_axioms VG.Proof.Dsa.X86_64.random_statusLoop_rule

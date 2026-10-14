@@ -23,15 +23,15 @@ private theorem statusTest_ok {s : State} {B : Addr} {status : BitVec 64}
 
 /-- A draw either produces a terminal result or strictly decreases fuel.
 The actual status test is verified here; callers supply the draw invariant. -/
-theorem random_sampleLoop_rule (B : Addr) (Inv : Nat → State → Prop) (Q : State → Prop)
+theorem random_statusLoop_rule (body : Prog isa) (B : Addr) (Inv : Nat → State → Prop) (Q : State → Prop)
     (hstable : ∀ n s t, Inv n s → t.mem = s.mem → Keep [.rax] s t → Inv n t)
     (hqstable : ∀ s t, Q s → t.mem = s.mem → Keep [.rax] s t → Q t)
-    (hdraw : ∀ n s, Inv n s → WP isa Random.draw s fun t =>
+    (hdraw : ∀ n s, Inv n s → WP isa body s fun t =>
       Scr t B Random.frameBytes ∧ t.gpr .rsp = B ∧
       ((word t.mem B Random.oStatus ≠ 4 ∧ Q t) ∨
        (word t.mem B Random.oStatus = 4 ∧ ∃ k < n, Inv k t)))
     {n : Nat} {s : State} (hi : Inv n s) :
-    WP isa (.loop (.seq Random.draw (.block [.mov .rax (.mem (Random.sp Random.oStatus)),
+    WP isa (.loop (.seq body (.block [.mov .rax (.mem (Random.sp Random.oStatus)),
       .alu .cmp .rax (.imm 4)])) .e) s Q := by
   refine WP.loop (M := isa) Inv ?_ n s hi
   intro n u hu
@@ -42,5 +42,18 @@ theorem random_sampleLoop_rule (B : Addr) (Inv : Nat → State → Prop) (Q : St
       hqstable v t hq htm hkt⟩
   · exact Or.inr ⟨by simp only [eval, htz, he, beq_self_eq_true], k, hkn,
       hstable k v t hk htm hkt⟩
+
+
+theorem random_sampleLoop_rule (B : Addr) (Inv : Nat → State → Prop) (Q : State → Prop)
+    (hstable : ∀ n s t, Inv n s → t.mem = s.mem → Keep [.rax] s t → Inv n t)
+    (hqstable : ∀ s t, Q s → t.mem = s.mem → Keep [.rax] s t → Q t)
+    (hdraw : ∀ n s, Inv n s → WP isa Random.draw s fun t =>
+      Scr t B Random.frameBytes ∧ t.gpr .rsp = B ∧
+      ((word t.mem B Random.oStatus ≠ 4 ∧ Q t) ∨
+       (word t.mem B Random.oStatus = 4 ∧ ∃ k < n, Inv k t)))
+    {n : Nat} {s : State} (hi : Inv n s) :
+    WP isa (.loop (.seq Random.draw (.block [.mov .rax (.mem (Random.sp Random.oStatus)),
+      .alu .cmp .rax (.imm 4)])) .e) s Q :=
+  random_statusLoop_rule Random.draw B Inv Q hstable hqstable hdraw hi
 
 end VG.Proof.Dsa.X86_64

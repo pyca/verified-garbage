@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.SigningVerified
 public import VerifiedGarbage.Proof.Dsa.X86_64.VerifyingVerified
+public import VerifiedGarbage.Proof.Framework.X86_64.Depth
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -35,5 +36,7 @@ structure Backend where
   verifyVerified : Verified target (SignVerify.verify mul) (Spec.Dsa.verifyContract abi stack)
   signSp : (SignVerify.sign mul).all (fun i => !isa.writesSp i) = true
   verifySp : (SignVerify.verify mul).all (fun i => !isa.writesSp i) = true
+  signDepth : (SignVerify.sign mul).x86_64Depth ≤ stack
+  stackBound : stack < 2 ^ 32
 
 end VG.Proof.Dsa.X86_64

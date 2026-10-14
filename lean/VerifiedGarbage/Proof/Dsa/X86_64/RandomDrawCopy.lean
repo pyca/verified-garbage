@@ -26,7 +26,8 @@ theorem random_copy_draw_ok {s : State} {B R : Addr} {used : Nat} {qBytes rand :
         (off B (200 + qBytes.length - (VG.Proof.Dsa.significant qBytes).1) + BitVec.ofNat 64 i) = copied[i]) ∧
       Spec.Dsa.decodeBE copied = Spec.Dsa.Random.candidate (Spec.Dsa.decodeBE qBytes)
         ((rand.drop used).take (VG.Proof.Dsa.significant qBytes).1) ∧
-      Outside B 200 32 s.mem t.mem ∧ Keep [.rax, .r10, .rdx, .r11] s t := by
+      Outside B (200 + qBytes.length - (VG.Proof.Dsa.significant qBytes).1)
+        (VG.Proof.Dsa.significant qBytes).1 s.mem t.mem ∧ Keep [.rax, .r10, .rdx, .r11] s t := by
   let n := (VG.Proof.Dsa.significant qBytes).1
   have hnfit : n ≤ qBytes.length := VG.Proof.Dsa.significant_fits qBytes
   have hlen : ((rand.drop used).take n).length = n := by
@@ -63,7 +64,6 @@ theorem random_copy_draw_ok {s : State} {B R : Addr} {used : Nat} {qBytes rand :
     fun t ⟨copied, hclen, hcv, hcdec, hcf, hck⟩ => ?_
   refine ⟨copied, hclen.trans htlen, hcv, ?_, ?_, hck⟩
   · rw [he]; exact hcdec
-  · exact (random_copy_outside hnfit hqlen (by simpa only [htlen] using hcf)).mono
-      (by omega) (by omega)
+  · exact random_copy_outside hnfit hqlen (by simpa only [htlen] using hcf)
 
 end VG.Proof.Dsa.X86_64

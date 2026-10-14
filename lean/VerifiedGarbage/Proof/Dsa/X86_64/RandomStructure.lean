@@ -28,7 +28,7 @@ theorem randomSign_spSafe (name : String) (signer : Prog isa)
     (h : signer.all (fun i => !isa.writesSp i) = true) :
     (RandomSign.code name signer).all (fun i => !isa.writesSp i) = true := by
   simp only [RandomSign.code, RandomSign.body, RandomSign.attempt, RandomSign.finish,
-    RandomSign.zeroOut, Code.all, h]
+    RandomSign.zeroOut, RandomSign.callFinish, Code.all, h]
   decide +kernel
 
 end VG.Proof.Dsa.X86_64

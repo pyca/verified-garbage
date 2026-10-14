@@ -47,6 +47,10 @@ def frameBytes : Nat := 248
 def address (r : Reg) (offset : Nat) : List Instr :=
   [.mov r (.reg .rsp), .alu .add r (.imm (BitVec.ofNat 32 offset))]
 
+/-- Transfer one frame word through a caller-saved register. -/
+def copySlot (src dst : Nat) : List Instr :=
+  [.mov .rax (.mem (sp src)), .store (sp dst) .rax]
+
 /-- Reuse the verified full-buffer scan; adapt its result to the sampler's
 first-byte pointer, remaining width, and leading-byte registers. -/
 def significant : Prog isa :=
@@ -92,13 +96,17 @@ def copyByte : List Instr :=
    .alu .add .r10 (.imm 1), .alu .add .rdx (.imm 1), .alu .sub .r11 (.imm 1)]
 
 /-- Copy one masked draw into the right-aligned nonce buffer. -/
-def copyInit : List Instr :=
+def copyHeader : List Instr :=
   [.mov .r10 (.mem (sp oRand)), .alu .add .r10 (.mem (sp oUsed)),
    .mov .r11 (.mem (sp oWidth))] ++ address .rdx oNonce ++
-  [.alu .add .rdx (.mem (sp oQLen)), .alu .sub .rdx (.reg .r11),
-   .movzx8 .rax { base := .r10 }, .alu .and .rax (.mem (sp oMask)),
+  [.alu .add .rdx (.mem (sp oQLen)), .alu .sub .rdx (.reg .r11)]
+
+def copyFirst : List Instr :=
+  [.movzx8 .rax { base := .r10 }, .alu .and .rax (.mem (sp oMask)),
    .store8 { base := .rdx } .rax,
    .alu .add .r10 (.imm 1), .alu .add .rdx (.imm 1), .alu .sub .r11 (.imm 1)]
+
+def copyInit : List Instr := copyHeader ++ copyFirst
 
 def copyRest : Prog isa := .ite .ne (.loop (.block copyByte) .ne) (.block [])
 

@@ -33,7 +33,8 @@ theorem random_draw_full_ok {s : State} {B R Q : Addr} {used draws : Nat} {qByte
         (off B (200 + qBytes.length - (VG.Proof.Dsa.significant qBytes).1) + BitVec.ofNat 64 i) = copied[i]) ∧
       Spec.Dsa.decodeBE copied = Spec.Dsa.Random.candidate (Spec.Dsa.decodeBE qBytes)
         ((rand.drop used).take (VG.Proof.Dsa.significant qBytes).1) ∧
-      Outside B 200 32 s.mem m ∧
+      Outside B (200 + qBytes.length - (VG.Proof.Dsa.significant qBytes).1)
+        (VG.Proof.Dsa.significant qBytes).1 s.mem m ∧
       t.mem = randomDrawFinishMem
         (m.writeW (off B Random.oUsed) (BitVec.ofNat 64 (used + copied.length))) B
         (decide (0 < Spec.Dsa.decodeBE copied ∧ Spec.Dsa.decodeBE copied < Spec.Dsa.decodeBE qBytes)) draws ∧
@@ -58,7 +59,9 @@ theorem random_draw_full_ok {s : State} {B R Q : Addr} {used draws : Nat} {qByte
   have hbk := hka.trans hkb
   have hbs := hs.congr hbk.2.2
   have hbsp := (hbk.gpr (by decide)).trans hsp
-  have hbf' : Outside B 200 32 s.mem b.mem := by rw [← ham]; exact hbf
+  have hbf' : Outside B 200 32 s.mem b.mem := by
+    rw [← ham]
+    exact hbf.mono (by omega) (by omega)
   have hbu : word b.mem B Random.oUsed = BitVec.ofNat 64 used := by
     rw [hbf'.word (by decide) (by decide)]; exact hu
   have hbn : word b.mem B Random.oWidth = BitVec.ofNat 64 n := by
@@ -96,7 +99,7 @@ theorem random_draw_full_ok {s : State} {B R Q : Addr} {used draws : Nat} {qByte
   refine WP.mono (random_drawFinish_ok (hs.congr hdk.2.2)
     ((hdk.gpr (by decide)).trans hsp) hdd hdz hdpos hdbound)
     fun t ⟨htm, hkt⟩ => ?_
-  refine ⟨b.mem, copied, hclen, hcv, hcdec, hbf', ?_, (hdk.trans hkt).mono (by decide)⟩
+  refine ⟨b.mem, copied, hclen, hcv, hcdec, (by rw [← ham]; exact hbf), ?_, (hdk.trans hkt).mono (by decide)⟩
   rw [htm, hdm, hcm, hclen]
 
 end VG.Proof.Dsa.X86_64

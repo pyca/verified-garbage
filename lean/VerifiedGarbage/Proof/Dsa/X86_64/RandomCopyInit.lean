@@ -35,7 +35,7 @@ theorem random_copyInit_ok {s : State} {B R src dst : Addr} {l n used : Nat} {ma
       t.zf = some (decide (n = 1)) ∧
       t.mem = s.mem.writeW dst (((s.mem src).setWidth 64 &&& mask).setWidth 8)) ?_ rfl)
     fun _ ⟨⟨ha, hb, hc, hd, hm⟩, hk⟩ => ⟨ha, hb, hc, hd, hm, hk⟩
-  unfold Random.copyInit Random.address
+  unfold Random.copyInit Random.copyHeader Random.copyFirst Random.address
   xrun [List.append_assoc, List.cons_append, List.nil_append, random_ea_sp, hsp,
     hs.ld (d := Random.oRand) (by decide), hs.ld (d := Random.oUsed) (by decide),
     hs.ld (d := Random.oWidth) (by decide), hs.ld (d := Random.oQLen) (by decide),

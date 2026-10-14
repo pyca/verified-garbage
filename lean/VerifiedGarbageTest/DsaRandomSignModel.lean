@@ -1,3 +1,16 @@
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomRestore
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignSaved
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignCallResult
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignCallMemory
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignFrame
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignFinish
+import VerifiedGarbage.Proof.Dsa.RandomSignResult
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignArgs
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignEntry
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignPublish
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignRetry
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignCall
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignZero
 import VerifiedGarbage.Impl.Dsa.X86_64.RandomSign
 import VerifiedGarbageTest.DsaModel
 import VerifiedGarbage.Spec.Dsa.RandomSign
@@ -100,3 +113,33 @@ run_cmd do
     match VG.Test.DsaRandomSignModel.check invalid rand with
     | .ok () => pure ()
     | .error e => throwError e
+
+#assert_standard_axioms VG.Proof.Dsa.X86_64.random_signCallArgs_ok
+#assert_standard_axioms VG.Proof.Dsa.X86_64.random_signOutgoing_words
+#assert_standard_axioms VG.Proof.Dsa.X86_64.random_signOutgoing_frame
+#assert_standard_axioms VG.Proof.Dsa.X86_64.random_entry_ok
+#assert_standard_axioms VG.Proof.Dsa.X86_64.random_publish_ok
+#assert_standard_axioms VG.Proof.Dsa.X86_64.random_callFinish_ok
+#assert_standard_axioms VG.Proof.Dsa.X86_64.random_signer_call
+#assert_standard_axioms VG.Proof.Dsa.X86_64.random_zeroOut_ok
+#assert_standard_axioms VG.Proof.Dsa.X86_64.random_copySlots_ok
+#assert_standard_axioms VG.Proof.Dsa.X86_64.random_slots_outside
+
+#assert_standard_axioms VG.Proof.Dsa.X86_64.randomSignABI_of
+#assert_standard_axioms VG.Proof.Dsa.X86_64.random_frame_ok
+#assert_standard_axioms VG.Proof.Dsa.X86_64.random_incoming_read
+#assert_standard_axioms VG.Proof.Dsa.X86_64.random_finish_ok
+#assert_standard_axioms VG.Proof.Dsa.randomSignLoop_sample_none
+#assert_standard_axioms VG.Proof.Dsa.randomSignLoop_step_success
+#assert_standard_axioms VG.Proof.Dsa.randomSignLoop_retry
+#assert_standard_axioms VG.Proof.Dsa.randomSignLoop_status_le
+
+#assert_standard_axioms VG.Proof.Dsa.X86_64.random_call_pre
+#assert_standard_axioms VG.Proof.Dsa.X86_64.random_call_covers
+#assert_standard_axioms VG.Proof.Dsa.X86_64.random_signer_outcome
+#assert_standard_axioms VG.Proof.Dsa.X86_64.random_call_frameBytes
+#assert_standard_axioms VG.Proof.Dsa.X86_64.random_call_inputBytes
+#assert_standard_axioms VG.Proof.Dsa.X86_64.random_callEntry_bytes
+
+#assert_standard_axioms VG.Proof.Dsa.X86_64.RandomReady.restore
+#assert_standard_axioms VG.Proof.Dsa.X86_64.random_entry_values

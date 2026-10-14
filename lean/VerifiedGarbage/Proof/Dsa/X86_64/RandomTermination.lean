@@ -38,7 +38,7 @@ theorem random_draw_progress (C : RandomContext) (draws : Nat) (s : State)
       rw [htm', random_drawFinish_status]
       have he : word (m.writeW (off C.B Random.oUsed) (BitVec.ofNat 64 (used + n))) C.B Random.oStatus = 4 := by
         rw [(writeW_outside _ C.B _ (by decide)).word (by decide) (by decide),
-          hcopy.word (by decide) (by decide)]
+          (hcopy.mono (o' := 200) (n' := 32) (by have := VG.Proof.Dsa.significant_fits C.qBytes; omega) (by have := C.qlen; have := VG.Proof.Dsa.significant_fits C.qBytes; omega)).word (by decide) (by decide)]
         exact hstatus
       rw [he]
     refine ⟨htready.scr, htready.sp, ?_⟩

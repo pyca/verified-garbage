@@ -31,5 +31,7 @@ def variant : Backend where
   verifyVerified := verifying_call_verified Mont.fnAdx (by decide +kernel) rfl (by decide +kernel)
   signSp := Code.all_of_allInstrs (by decide +kernel)
   verifySp := Code.all_of_allInstrs (by decide +kernel)
+  signDepth := by decide +kernel
+  stackBound := by decide
 
 end VG.Variants.DsaArithmetic.X86_64.Adx
