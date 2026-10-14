@@ -70,7 +70,8 @@ fn hex(s: &str) -> std::vec::Vec<u8> {
 #[test]
 fn wycheproof() {
     let Some(root) = std::env::var_os("WYCHEPROOF_ROOT") else {
-        // NO-COVERAGE-START: CI always supplies the Wycheproof checkout.
+        // CI always supplies the Wycheproof checkout.
+        // NO-COVERAGE-START
         std::eprintln!("skipping: set WYCHEPROOF_ROOT to a C2SP/wycheproof checkout");
         return;
         // NO-COVERAGE-END
@@ -96,12 +97,9 @@ fn wycheproof() {
                 continue;
             };
             let digest = Sha512::digest(&hex(test["msg"].as_str().unwrap()));
-            assert_eq!(
-                verify(&q, &digest, &signature),
-                u32::from(expected),
-                "tcId {}",
-                test["tcId"]
-            );
+            let tc_id = &test["tcId"];
+            let result = verify(&q, &digest, &signature);
+            assert_eq!(result, u32::from(expected), "tcId {tc_id}");
             valid += usize::from(expected);
         }
     }
