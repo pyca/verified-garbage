@@ -191,7 +191,7 @@ theorem mrRound_eq (mul : Nat → Nat → Nat → Prog isa) : mrRound mul =
           ldh .x5 kUni, .add .x .x4 .x4 .x5, sth .x4 kUni,
           movi .x9 4, movi .x10 1, movi .x5 17, .subs .x .x6 .x3 .x5, .csel .x .x13 .x10 .x9, ldh .x5 kChecks,
           .subs .x .x6 .x4 .x5, .csel .x .x13 .x13 .x9, sth .x13 kStat])] : List (Prog isa))) := by
-  simp only [mrRound, List.append_assoc]
+  simp only [mrRound, preparedRound, List.append_assoc]
 
 /-- The witness of a round, and whether it passes. -/
 abbrev wtOf (c w used : Nat) (r : List Byte) : Nat × Bool :=
