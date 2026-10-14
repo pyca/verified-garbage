@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Init
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Init
-public import VerifiedGarbage.Proof.AesGcm.X86_64.FnCT
+import VerifiedGarbage.Proof.AesGcm.X86_64.FnCT
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.FnCT
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

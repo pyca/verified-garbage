@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.CmacAes.Stream.X86.Common
 meta import VerifiedGarbage.Proof.CmacAes.Stream.X86.Common
 public import VerifiedGarbage.Proof.AesSiv.X86.Contract
 meta import VerifiedGarbage.Proof.AesSiv.X86.Contract
-public import VerifiedGarbage.Proof.AesSiv.Key
+import VerifiedGarbage.Proof.AesSiv.Key
 meta import VerifiedGarbage.Proof.AesSiv.Key
 public import VerifiedGarbage.Impl.AesSiv.X86
 meta import VerifiedGarbage.Impl.AesSiv.X86

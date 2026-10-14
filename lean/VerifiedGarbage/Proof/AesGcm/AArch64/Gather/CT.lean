@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Gather.Fn
 meta import VerifiedGarbage.Proof.AesGcm.AArch64.Gather.Fn
-public import VerifiedGarbage.Proof.AesGcm.AArch64.Gather.LoopCT
+import VerifiedGarbage.Proof.AesGcm.AArch64.Gather.LoopCT
 meta import VerifiedGarbage.Proof.AesGcm.AArch64.Gather.LoopCT
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

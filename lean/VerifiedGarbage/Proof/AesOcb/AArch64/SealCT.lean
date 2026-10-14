@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.AesOcb.AArch64.NonceCT
+import VerifiedGarbage.Proof.AesOcb.AArch64.NonceCT
 meta import VerifiedGarbage.Proof.AesOcb.AArch64.NonceCT
-public import VerifiedGarbage.Proof.AesOcb.AArch64.HashCT
+import VerifiedGarbage.Proof.AesOcb.AArch64.HashCT
 meta import VerifiedGarbage.Proof.AesOcb.AArch64.HashCT
 public import VerifiedGarbage.Proof.AesOcb.AArch64.BodyCT
 meta import VerifiedGarbage.Proof.AesOcb.AArch64.BodyCT

@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.AesSiv.Arm.Call
-public import VerifiedGarbage.Proof.AesCcm.Arm.Callee
-public import VerifiedGarbage.Proof.AesSiv.Ctr32
+import VerifiedGarbage.Proof.AesCcm.Arm.Callee
+import VerifiedGarbage.Proof.AesSiv.Ctr32
 public import VerifiedGarbage.Proof.Siv.Spec
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

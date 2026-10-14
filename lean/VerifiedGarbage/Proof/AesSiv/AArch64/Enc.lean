@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.AesSiv.AArch64.Open
-public import VerifiedGarbage.Proof.AesSiv.AArch64.S2vAd
-public import VerifiedGarbage.Proof.AesSiv.AArch64.Call
+import VerifiedGarbage.Proof.AesSiv.AArch64.S2vAd
+import VerifiedGarbage.Proof.AesSiv.AArch64.Call
 public import VerifiedGarbage.Spec.Siv.Contract
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

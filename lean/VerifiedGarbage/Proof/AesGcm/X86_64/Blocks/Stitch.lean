@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.AlignedScratch
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks.Mid
-public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Spec
+import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Spec
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

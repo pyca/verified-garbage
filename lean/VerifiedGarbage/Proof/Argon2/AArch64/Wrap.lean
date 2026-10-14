@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Argon2.AArch64.Wrap
 meta import VerifiedGarbage.Impl.Argon2.AArch64.Wrap
-public import VerifiedGarbage.Proof.Argon2.Reference
+import VerifiedGarbage.Proof.Argon2.Reference
 meta import VerifiedGarbage.Proof.Argon2.Reference
 public import VerifiedGarbage.Proof.Argon2.AArch64.DivideStep
 meta import VerifiedGarbage.Proof.Argon2.AArch64.DivideStep

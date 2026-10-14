@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.Loop
-public import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.TailOps
+import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.TailOps
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

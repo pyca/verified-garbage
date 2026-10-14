@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Split.ShortRun
+import VerifiedGarbage.Proof.AesGcm.X86_64.Split.ShortRun
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Split.ShortRun
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Split.CT
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Split.CT

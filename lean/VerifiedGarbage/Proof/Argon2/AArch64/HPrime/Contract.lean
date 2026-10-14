@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.AArch64.Call
 public import VerifiedGarbage.Spec.Argon2.Contract
-public import VerifiedGarbage.TCB.AArch64.Target
+import VerifiedGarbage.TCB.AArch64.Target
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Argon2.Arm.Derive.FillCT3
+import VerifiedGarbage.Proof.Argon2.Arm.Derive.FillCT3
 meta import VerifiedGarbage.Proof.Argon2.Arm.Derive.FillCT3
 public import VerifiedGarbage.Proof.Argon2.Arm.Derive.ReduceCT
 meta import VerifiedGarbage.Proof.Argon2.Arm.Derive.ReduceCT

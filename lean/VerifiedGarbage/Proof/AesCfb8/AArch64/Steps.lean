@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.AesCfb8.AArch64.Loop
-public import VerifiedGarbage.Proof.AesCbc.AArch64.Body
+import VerifiedGarbage.Proof.AesCbc.AArch64.Body
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

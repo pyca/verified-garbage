@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Loops
 public import VerifiedGarbage.Impl.AesGcm.AArch64.SealGather
-public import VerifiedGarbage.Proof.Cmac.Stream
+import VerifiedGarbage.Proof.Cmac.Stream
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

@@ -2,9 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.AesGcm.X86.Absorb
 meta import VerifiedGarbage.Proof.AesGcm.X86.Absorb
-public import VerifiedGarbage.Proof.Gcm.Be64
+import VerifiedGarbage.Proof.Gcm.Be64
 meta import VerifiedGarbage.Proof.Gcm.Be64
-public import VerifiedGarbage.Proof.Cmac.Mem32
+import VerifiedGarbage.Proof.Cmac.Mem32
 meta import VerifiedGarbage.Proof.Cmac.Mem32
 public import VerifiedGarbage.Proof.Cmac.Block32
 meta import VerifiedGarbage.Proof.Cmac.Block32

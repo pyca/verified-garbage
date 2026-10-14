@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesCtr.X86_64.Iter
 meta import VerifiedGarbage.Proof.AesCtr.X86_64.Iter
-public import VerifiedGarbage.Proof.AesCbc.X86_64.CT
+import VerifiedGarbage.Proof.AesCbc.X86_64.CT
 meta import VerifiedGarbage.Proof.AesCbc.X86_64.CT
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

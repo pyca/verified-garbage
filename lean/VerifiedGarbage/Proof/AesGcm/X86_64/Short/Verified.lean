@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.CT
+import VerifiedGarbage.Proof.AesGcm.X86_64.Short.CT
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.SealFin
 public import VerifiedGarbage.Proof.AesGcm.X86_64.VerifiedP
 import all Init.Data.Array.Basic

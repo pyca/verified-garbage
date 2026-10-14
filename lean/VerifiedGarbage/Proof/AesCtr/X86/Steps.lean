@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.AesCtr.Inc
-public import VerifiedGarbage.Proof.AesCtr.Spec
+import VerifiedGarbage.Proof.AesCtr.Spec
 public import VerifiedGarbage.Proof.AesCbc.X86.Body
 public import VerifiedGarbage.Proof.Framework.X86.RegUpd
 public import VerifiedGarbage.Impl.AesCtr.X86

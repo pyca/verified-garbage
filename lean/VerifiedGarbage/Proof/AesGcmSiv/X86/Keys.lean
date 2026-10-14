@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesGcmSiv.X86.Derive
 public import VerifiedGarbage.Proof.GcmSiv.Words32
-public import VerifiedGarbage.Proof.AesGcm.X86.J0
+import VerifiedGarbage.Proof.AesGcm.X86.J0
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

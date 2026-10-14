@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Argon2.AArch64.AddressCacheMeta
-public import VerifiedGarbage.Proof.Argon2.AArch64.AddressCallsPrepare
+import VerifiedGarbage.Proof.Argon2.AArch64.AddressCallsPrepare
 public import VerifiedGarbage.Proof.Argon2.AArch64.AddressCalls
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

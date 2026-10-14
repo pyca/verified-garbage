@@ -2,8 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Small
 public import VerifiedGarbage.Proof.Gcm.Compose
-public import VerifiedGarbage.Proof.Gcm.Stream
-public import VerifiedGarbage.Proof.Aes.Blocks
+import VerifiedGarbage.Proof.Gcm.Stream
+import VerifiedGarbage.Proof.Aes.Blocks
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

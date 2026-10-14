@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcm.X86_64.InitPCT
+import VerifiedGarbage.Proof.AesGcm.X86_64.InitPCT
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.InitPCT
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.Init
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.Init

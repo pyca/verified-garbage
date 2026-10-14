@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcm.X86_64.InitP
+import VerifiedGarbage.Proof.AesGcm.X86_64.InitP
 public import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Convert
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

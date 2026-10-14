@@ -2,9 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Split.Entry
 public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.BlkCall
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Loops
+import VerifiedGarbage.Proof.AesGcm.X86_64.Loops
 public import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.Piece
-public import VerifiedGarbage.Proof.Framework.X86_64.CallSp
+import VerifiedGarbage.Proof.Framework.X86_64.CallSp
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

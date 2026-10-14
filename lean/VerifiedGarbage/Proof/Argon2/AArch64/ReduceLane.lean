@@ -1,10 +1,10 @@
 module
 
 public import VerifiedGarbage.Impl.Argon2.AArch64.ReduceLane
-public import VerifiedGarbage.Proof.Argon2.AArch64.FillCompressSetup
+import VerifiedGarbage.Proof.Argon2.AArch64.FillCompressSetup
 public import VerifiedGarbage.Proof.Argon2.AArch64.ReducePointers
-public import VerifiedGarbage.Proof.Argon2.AArch64.ReduceBlock
-public import VerifiedGarbage.Proof.Argon2.AArch64.FillWriteCover
+import VerifiedGarbage.Proof.Argon2.AArch64.ReduceBlock
+import VerifiedGarbage.Proof.Argon2.AArch64.FillWriteCover
 public import VerifiedGarbage.Proof.Argon2.FinalReduction
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Absorb
-public import VerifiedGarbage.Proof.Gcm.Be64
-public import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.Gcm.Be64
+import VerifiedGarbage.Proof.Cmac.Frame
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

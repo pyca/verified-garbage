@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.AesOcb.X86.Entry
 public import VerifiedGarbage.Proof.Aes.X86.BlocksVariant
 public import VerifiedGarbage.Proof.AesGcm.X86.Callee
-public import VerifiedGarbage.Proof.Ocb.State
+import VerifiedGarbage.Proof.Ocb.State
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

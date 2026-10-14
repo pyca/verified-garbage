@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Spec.Gcm.OutOfPlace
 public import VerifiedGarbage.Proof.AesGcm.X86.Callee
-public import VerifiedGarbage.TCB.X86.Target
+import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Framework.PowLit
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

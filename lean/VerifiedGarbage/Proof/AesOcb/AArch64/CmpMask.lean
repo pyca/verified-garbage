@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.AesOcb.AArch64.PadTo
-public import VerifiedGarbage.Proof.Ocb.Bytes
+import VerifiedGarbage.Proof.Ocb.Bytes
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

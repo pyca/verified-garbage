@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesXts.X86_64.Clmul87
 public import VerifiedGarbage.Proof.AesXts.X86_64.Steps
-public import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Rounds
+import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Rounds
 public import VerifiedGarbage.Impl.AesXts.X86_64Vaes
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

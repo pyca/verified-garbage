@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Callee
 public import VerifiedGarbage.Proof.Gcm.X86_64.Ghash
-public import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Ghash
+import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Ghash
 public import VerifiedGarbage.Proof.Gcm.X86_64.Vpclmul.Ghash
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

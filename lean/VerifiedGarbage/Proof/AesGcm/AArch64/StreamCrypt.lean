@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Body
-public import VerifiedGarbage.Proof.AesGcm.AArch64.StreamAad
+import VerifiedGarbage.Proof.AesGcm.AArch64.StreamAad
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

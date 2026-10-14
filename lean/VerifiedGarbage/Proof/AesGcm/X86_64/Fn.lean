@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Cmp
-public import VerifiedGarbage.Proof.AesGcm.X86_64.CryptOk
+import VerifiedGarbage.Proof.AesGcm.X86_64.CryptOk
 public import VerifiedGarbage.Proof.Framework.X86_64.Inline
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

@@ -1,9 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.AesSiv.X86_64.S2vAd
-public import VerifiedGarbage.Proof.AesSiv.X86_64.Finish
-public import VerifiedGarbage.Proof.AesSiv.X86_64.CtrCT
-public import VerifiedGarbage.Proof.Cmac.Dbl32
+import VerifiedGarbage.Proof.AesSiv.X86_64.Finish
+import VerifiedGarbage.Proof.AesSiv.X86_64.CtrCT
+import VerifiedGarbage.Proof.Cmac.Dbl32
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

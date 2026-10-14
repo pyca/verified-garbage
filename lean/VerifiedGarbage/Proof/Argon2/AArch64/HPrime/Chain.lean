@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Compare
+import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Compare
 public import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Output
 public import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Absorb
 import all Init.Data.Array.Basic

@@ -1,9 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Gh
-public import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Ghash
-public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Pow
-public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Field48
+import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Gh
+import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Ghash
+import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Pow
+import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Field48
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Tab
 public import VerifiedGarbage.Proof.Gcm.Powers
 import all Init.Data.Array.Basic

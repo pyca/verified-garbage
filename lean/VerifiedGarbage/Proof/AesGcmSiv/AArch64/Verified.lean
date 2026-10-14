@@ -1,9 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcmSiv.AArch64.FnCT
-public import VerifiedGarbage.Proof.GcmSiv.Polyval
+import VerifiedGarbage.Proof.GcmSiv.Polyval
 public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Spec.GcmSiv.Contract
+import VerifiedGarbage.Spec.GcmSiv.Contract
 public import VerifiedGarbage.Proof.AesGcmSiv.Scratch
 public import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
 import all Init.Data.Array.Basic

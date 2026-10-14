@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.AesOcb.X86_64.Nonce
-public import VerifiedGarbage.Proof.AesCcm.X86_64.CTBase
+import VerifiedGarbage.Proof.AesCcm.X86_64.CTBase
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

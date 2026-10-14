@@ -1,9 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Argon2.Arm.HPrime.Verified
-public import VerifiedGarbage.Proof.Argon2.Arm.CompressVerified
+import VerifiedGarbage.Proof.Argon2.Arm.CompressVerified
 public import VerifiedGarbage.Proof.Argon2.Dimensions
-public import VerifiedGarbage.Proof.Argon2.Matrix
+import VerifiedGarbage.Proof.Argon2.Matrix
 public import VerifiedGarbage.Impl.Argon2.Arm.Derive
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

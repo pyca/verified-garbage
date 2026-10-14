@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesSiv.X86_64.Ctr
 meta import VerifiedGarbage.Proof.AesSiv.X86_64.Ctr
-public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

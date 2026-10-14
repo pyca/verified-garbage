@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.SplitPath
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.SplitCallee
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.SealCall
+import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.SealCall
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

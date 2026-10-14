@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.X86.Wp
-public import VerifiedGarbage.Proof.Argon2.Divide
+import VerifiedGarbage.Proof.Argon2.Divide
 public import VerifiedGarbage.Impl.Argon2.X86.Divide
 public import VerifiedGarbage.Proof.Framework.Omega
 import all Init.Data.Array.Basic

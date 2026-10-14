@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesXts.X86.Steps
 public import VerifiedGarbage.Proof.AesXts.Batch
-public import VerifiedGarbage.Proof.AesCbc.X86.CT
+import VerifiedGarbage.Proof.AesCbc.X86.CT
 public import VerifiedGarbage.Proof.AesOcb.X86.Callee
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

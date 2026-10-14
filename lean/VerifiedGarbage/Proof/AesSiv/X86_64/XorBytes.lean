@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.AesSiv.X86_64.Env
-public import VerifiedGarbage.Proof.CmacAes.Stream.X86_64.Copy
+import VerifiedGarbage.Proof.CmacAes.Stream.X86_64.Copy
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

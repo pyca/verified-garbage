@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesGcmSiv.X86.Open
 meta import VerifiedGarbage.Proof.AesGcmSiv.X86.Open
-public import VerifiedGarbage.Proof.AesGcmSiv.X86.CryptCT
+import VerifiedGarbage.Proof.AesGcmSiv.X86.CryptCT
 meta import VerifiedGarbage.Proof.AesGcmSiv.X86.CryptCT
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

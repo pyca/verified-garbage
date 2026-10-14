@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.Facts
+import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.Facts
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.Facts
 public import VerifiedGarbage.Proof.AesGcm.X86_64.OneCT
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.OneCT

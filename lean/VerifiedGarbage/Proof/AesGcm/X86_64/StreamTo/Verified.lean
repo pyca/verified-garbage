@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.CT
 public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Verified
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Frame
-public import VerifiedGarbage.Proof.AesGcm.X86_64.VerifiedP
+import VerifiedGarbage.Proof.AesGcm.X86_64.VerifiedP
 public import VerifiedGarbage.Proof.AesGcm.ScratchTo
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

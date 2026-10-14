@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.AesOcb.X86_64.Args
-public import VerifiedGarbage.Proof.Ocb.LowBit
+import VerifiedGarbage.Proof.Ocb.LowBit
 public import VerifiedGarbage.Proof.Gcm.X86_64.Rev
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

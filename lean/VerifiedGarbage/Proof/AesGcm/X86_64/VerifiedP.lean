@@ -1,9 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Frame
-public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksVerifiedP
+import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksVerifiedP
 public import VerifiedGarbage.Proof.AesGcm.ScratchP
-public import VerifiedGarbage.Proof.AesGcm.X86_64.InitPCT
+import VerifiedGarbage.Proof.AesGcm.X86_64.InitPCT
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

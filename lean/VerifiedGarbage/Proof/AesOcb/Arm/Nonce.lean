@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.AesOcb.Arm.Offset0
+import VerifiedGarbage.Proof.AesOcb.Arm.Offset0
 public import VerifiedGarbage.Proof.AesOcb.Arm.Calls
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Argon2.AArch64.FillCompressCall
-public import VerifiedGarbage.Proof.Argon2.AArch64.InitialArgs
+import VerifiedGarbage.Proof.Argon2.AArch64.InitialArgs
 public import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Frame
 public import VerifiedGarbage.Proof.Argon2.Initial
 import all Init.Data.Array.Basic

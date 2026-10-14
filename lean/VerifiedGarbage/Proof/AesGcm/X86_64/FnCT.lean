@@ -1,10 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Contract
+import VerifiedGarbage.Proof.AesGcm.X86_64.Contract
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Contract
 public import VerifiedGarbage.Proof.AesGcm.X86_64.CryptCT
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.CryptCT
-public import VerifiedGarbage.Proof.AesGcm.X86_64.J0CT
+import VerifiedGarbage.Proof.AesGcm.X86_64.J0CT
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.J0CT
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

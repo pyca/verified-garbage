@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcm.Arm.StreamVerify
-public import VerifiedGarbage.Proof.AesGcm.Arm.Init
+import VerifiedGarbage.Proof.AesGcm.Arm.StreamVerify
+import VerifiedGarbage.Proof.AesGcm.Arm.Init
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

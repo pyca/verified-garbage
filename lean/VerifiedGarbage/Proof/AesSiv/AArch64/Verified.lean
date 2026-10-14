@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesSiv.AArch64.Init
 public import VerifiedGarbage.Proof.AesSiv.AArch64.EncCT
-public import VerifiedGarbage.Proof.CmacAes.AArch64.Verified
+import VerifiedGarbage.Proof.CmacAes.AArch64.Verified
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.Siv.Contract
 public import VerifiedGarbage.Proof.AesSiv.Scratch

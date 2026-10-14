@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Bytes
 public import VerifiedGarbage.Proof.AesGcm.X86_64.OneShot
-public import VerifiedGarbage.Proof.AesGcm.X86_64.J0
+import VerifiedGarbage.Proof.AesGcm.X86_64.J0
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

@@ -2,9 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.AesSiv.AArch64.Call
 meta import VerifiedGarbage.Proof.AesSiv.AArch64.Call
-public import VerifiedGarbage.Proof.CmacAes.Stream.AArch64.AbsorbBlocks
+import VerifiedGarbage.Proof.CmacAes.Stream.AArch64.AbsorbBlocks
 meta import VerifiedGarbage.Proof.CmacAes.Stream.AArch64.AbsorbBlocks
-public import VerifiedGarbage.Proof.AesSiv.CtrPart
+import VerifiedGarbage.Proof.AesSiv.CtrPart
 meta import VerifiedGarbage.Proof.AesSiv.CtrPart
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

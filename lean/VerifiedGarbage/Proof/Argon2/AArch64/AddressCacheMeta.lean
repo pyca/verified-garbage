@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Argon2.AArch64.ReferenceStart
-public import VerifiedGarbage.Proof.Argon2.AArch64.Carry
+import VerifiedGarbage.Proof.Argon2.AArch64.ReferenceStart
+import VerifiedGarbage.Proof.Argon2.AArch64.Carry
 public import VerifiedGarbage.Impl.Argon2.AArch64.AddressCache
 public import VerifiedGarbage.Proof.Argon2.AArch64.AddressCallsPrepare
 import all Init.Data.Array.Basic

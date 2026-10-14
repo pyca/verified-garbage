@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamRun
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.StreamRun
-public import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.CT
+import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.CT
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.CT
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

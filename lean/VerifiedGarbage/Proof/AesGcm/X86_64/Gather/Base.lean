@@ -1,10 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Contract
-public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Mid
+import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Mid
 public import VerifiedGarbage.Proof.Gcm.SealGather
 public import VerifiedGarbage.Impl.AesGcm.X86_64.SealGather
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
+import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

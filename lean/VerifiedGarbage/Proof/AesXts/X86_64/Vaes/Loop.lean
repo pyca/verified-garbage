@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.PrePost
-public import VerifiedGarbage.Proof.AesCbc.X86_64.Body
+import VerifiedGarbage.Proof.AesCbc.X86_64.Body
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

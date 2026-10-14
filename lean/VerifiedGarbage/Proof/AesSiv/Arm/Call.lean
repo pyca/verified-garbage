@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.CmacAes.Stream.Arm.Call
-public import VerifiedGarbage.Proof.CmacAes.Arm.Verified
+import VerifiedGarbage.Proof.CmacAes.Arm.Verified
 public import VerifiedGarbage.Impl.AesSiv.Arm
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

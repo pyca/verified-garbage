@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcm.X86_64.FinTag
+import VerifiedGarbage.Proof.AesGcm.X86_64.FinTag
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.FinTag
 public import VerifiedGarbage.Proof.AesGcm.X86_64.FnCT
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.FnCT

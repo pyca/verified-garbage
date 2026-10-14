@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesOcb.X86.Callee
 public import VerifiedGarbage.Proof.Cmac.Dbl32
-public import VerifiedGarbage.Proof.Ocb.Spec
+import VerifiedGarbage.Proof.Ocb.Spec
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

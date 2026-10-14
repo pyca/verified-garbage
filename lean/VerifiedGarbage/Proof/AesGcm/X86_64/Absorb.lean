@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Ghash1
-public import VerifiedGarbage.Proof.Gcm.Stream
+import VerifiedGarbage.Proof.AesGcm.X86_64.Ghash1
+import VerifiedGarbage.Proof.Gcm.Stream
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

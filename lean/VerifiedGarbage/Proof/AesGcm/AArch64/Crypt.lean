@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Flush
-public import VerifiedGarbage.Proof.Gcm.Ctr
+import VerifiedGarbage.Proof.Gcm.Ctr
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

@@ -1,10 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.AesXts.Alpha
-public import VerifiedGarbage.Proof.AesXts.Spec
+import VerifiedGarbage.Proof.AesXts.Spec
 public import VerifiedGarbage.Proof.AesCbc.X86_64.Body
 public import VerifiedGarbage.Impl.AesXts.X86_64
-public import VerifiedGarbage.Proof.Cmac.Mem
+import VerifiedGarbage.Proof.Cmac.Mem
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

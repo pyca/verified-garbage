@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.AesOcb.AArch64.Seal
-public import VerifiedGarbage.Proof.AesOcb.AArch64.CmpMask
+import VerifiedGarbage.Proof.AesOcb.AArch64.CmpMask
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

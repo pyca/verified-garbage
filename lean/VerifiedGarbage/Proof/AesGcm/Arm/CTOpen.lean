@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesGcm.Arm.CTOne
 meta import VerifiedGarbage.Proof.AesGcm.Arm.CTOne
-public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

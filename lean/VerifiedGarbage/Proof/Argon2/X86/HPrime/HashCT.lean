@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Argon2.X86.HPrime.Next
+import VerifiedGarbage.Proof.Argon2.X86.HPrime.Next
 meta import VerifiedGarbage.Proof.Argon2.X86.HPrime.Next
 public import VerifiedGarbage.Proof.Argon2.X86.HPrime.CallsCT
 meta import VerifiedGarbage.Proof.Argon2.X86.HPrime.CallsCT

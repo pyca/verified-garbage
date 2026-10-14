@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Cmac.Mem32
-public import VerifiedGarbage.Proof.Cmac.Dbl32
+import VerifiedGarbage.Proof.Cmac.Mem32
+import VerifiedGarbage.Proof.Cmac.Dbl32
 public import VerifiedGarbage.Proof.Gcm.Be64
 public import VerifiedGarbage.TCB.Arm.Isa
 import all Init.Data.Array.Basic

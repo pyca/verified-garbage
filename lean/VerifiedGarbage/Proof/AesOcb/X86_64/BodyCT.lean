@@ -2,9 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.AesOcb.X86_64.WholeCT
 meta import VerifiedGarbage.Proof.AesOcb.X86_64.WholeCT
-public import VerifiedGarbage.Proof.AesOcb.X86_64.RestCT
+import VerifiedGarbage.Proof.AesOcb.X86_64.RestCT
 meta import VerifiedGarbage.Proof.AesOcb.X86_64.RestCT
-public import VerifiedGarbage.Proof.AesOcb.X86_64.Body
+import VerifiedGarbage.Proof.AesOcb.X86_64.Body
 meta import VerifiedGarbage.Proof.AesOcb.X86_64.Body
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
