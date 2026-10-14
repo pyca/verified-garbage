@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Chunk
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.StoreRow
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -49,19 +50,21 @@ abbrev psA : Addr := c + BitVec.ofNat 64 448
 abbrev psR : Region := ⟨psA c, 128⟩
 end
 
-/-- The permissions of the whole chunks. -/
-abbrev bulkWr (c dp : Addr) (L : Nat) : List Region := [stR (stA c), ⟨dp, L⟩, bufR (bfA c), psR c]
+/-- The permissions of the whole chunks: with `seal`'s `tailK`'s keystream
+(`kR`) too. -/
+abbrev bulkWr (c dp : Addr) (L : Nat) : List Region :=
+  [stR (stA c), ⟨dp, L⟩, bufR (bfA c), psR c, kR (bfA c)]
 
 /-- The context and the data: apart, and neither wrapping around. -/
 structure Lay (c dp : Addr) (L : Nat) : Prop where
   L_lt : L < 2 ^ 64
   nowrap : dp.toNat + L ≤ 2 ^ 64
-  dc : (⟨c, 576⟩ : Region).Disjoint ⟨dp, L⟩
+  dc : (⟨c, 1248⟩ : Region).Disjoint ⟨dp, L⟩
 
 section
 variable {c dp : Addr} {L : Nat}
 
-theorem sub_c {d n : Nat} (h : d + n ≤ 576) : Region.Sub ⟨c + BitVec.ofNat 64 d, n⟩ ⟨c, 576⟩ :=
+theorem sub_c {d n : Nat} (h : d + n ≤ 1248) : Region.Sub ⟨c + BitVec.ofNat 64 d, n⟩ ⟨c, 1248⟩ :=
   Offset.sub_base c h
 
 theorem st_bf : (stR (stA c)).Disjoint (bufR (bfA c)) := Offset.disjoint c (Or.inl (by decide)) (by decide) (by decide)
@@ -87,14 +90,14 @@ include hl
 
 theorem Lay.L_le : L ≤ 2 ^ 64 := Nat.le_of_lt hl.L_lt
 
-theorem Lay.cd {d n : Nat} (h : d + n ≤ 576) : (⟨c + BitVec.ofNat 64 d, n⟩ : Region).Disjoint ⟨dp, L⟩ :=
+theorem Lay.cd {d n : Nat} (h : d + n ≤ 1248) : (⟨c + BitVec.ofNat 64 d, n⟩ : Region).Disjoint ⟨dp, L⟩ :=
   hl.dc.sub_left (sub_c h)
 
 theorem Lay.st_d : (stR (stA c)).Disjoint ⟨dp, L⟩ := hl.cd (by decide)
 theorem Lay.bf_d : (bufR (bfA c)).Disjoint ⟨dp, L⟩ := hl.cd (by decide)
 theorem Lay.ps_d : (psR c).Disjoint ⟨dp, L⟩ := hl.cd (by decide)
 
-theorem Lay.win_cd {t : Nat} (h : 512 * t + 512 ≤ L) {d n : Nat} (hd : d + n ≤ 576) :
+theorem Lay.win_cd {t : Nat} (h : 512 * t + 512 ≤ L) {d n : Nat} (hd : d + n ≤ 1248) :
     (⟨c + BitVec.ofNat 64 d, n⟩ : Region).Disjoint (dR5 (dp + BitVec.ofNat 64 (512 * t))) :=
   (hl.cd hd).sub_right (win h)
 
