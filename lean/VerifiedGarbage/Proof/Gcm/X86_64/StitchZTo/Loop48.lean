@@ -58,7 +58,7 @@ structure EGenTo (s₀ : State) (P : Nat → Nat → Block) (e c : Nat) (s : Sta
 
 /-- Group `e - 1` hashed (after the loop of three groups: `lastG`). -/
 theorem lastGTo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {P : Nat → Nat → Block} (hf : FinOk (hk s₀) P)
-    {e c : Nat} {s : State} (hI : EGenTo s₀ P e c s) :
+    {e c : Nat} {be : Bool} {s : State} (hI : EGenTo s₀ P e c s be) :
     WP isa (.block lastG) s fun s' =>
       s'.zlane .xmm2 0 = ghashFrom (hk s₀) (y₀ s₀) ((List.range (16 * e)).map (ctbT s₀)) ∧
       (∀ l, 1 ≤ l → l < 4 → s'.zlane .xmm2 l = 0) ∧
@@ -80,8 +80,8 @@ theorem lastGTo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {P : Nat �
 
 /-- Group `e - 1` hashed, and the next. -/
 theorem drainStepTo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {P : Nat → Nat → Block} (hf : FinOk (hk s₀) P)
-    {e c : Nat} (hc : 16 * (e + 1) ≤ c) {s : State} (hI : EGenTo s₀ P e c s) :
-    WP isa (.block (lastG ++ adv)) s (EGenTo s₀ P (e + 1) c) := by
+    {e c : Nat} (hc : 16 * (e + 1) ≤ c) {be : Bool} {s : State} (hI : EGenTo s₀ P e c s be) :
+    WP isa (.block (lastG ++ adv)) s (EGenTo s₀ P (e + 1) c · be) := by
   have hw := hp.wrap_o
   have hn : nb s₀ < 2 ^ 64 := (s₀.gpr .r9).isLt
   have hcn := hI.a.le
@@ -103,8 +103,8 @@ theorem drainStepTo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {P : Na
       ofNat_sub_ofNat (by omega) (by omega)]
     congr 1; omega
 
-theorem EGenTo.einv {s₀ : State} {P : Nat → Nat → Block} {e : Nat} {s : State} (h : EGenTo s₀ P e (16 * e) s) :
-    EInvTo s₀ P e s :=
+theorem EGenTo.einv {s₀ : State} {P : Nat → Nat → Block} {e : Nat} {be : Bool} {s : State}
+    (h : EGenTo s₀ P e (16 * e) s be) : EInvTo s₀ P e s be :=
   ⟨h.a, h.one, h.rdx, h.r9, h.rax, h.gpr, h.pw, h.m1, h.y, h.y1⟩
 
 /-! ## The loop of three groups -/
