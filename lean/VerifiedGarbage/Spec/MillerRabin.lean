@@ -12,7 +12,7 @@ This is a round, not a primality certificate or a witness-sampling policy.
 RSA and FFDH keep their own witness counts and rejection-sampling policies.
 
 The input is an already prepared Montgomery workspace, so a caller can
-reuse the modulus and exponent preparation across witnesses. Array 6 holds
+reuse the modulus and exponent preparation across witnesses. Array 5 holds
 the witness in Montgomery form. The additional arrays hold Montgomery one,
 minus one, the shifted exponent, and a table of sixteen powers. The two
 layouts below describe the existing RSA workspaces; they have identical
@@ -89,7 +89,7 @@ def Prepared (L : Workspace) (m : Mem) (ws : Addr) : Prop :=
   3 ≤ c ∧ c % 2 = 1 ∧
     ((m.readW (ws + BitVec.ofNat 64 (arrAt w 0)) 64).toNat *
       (wordAt m ws Rsa.Mont.minvWord).toNat + 1) % 2 ^ 64 = 0 ∧
-    numAt m ws w 6 < c ∧
+    numAt m ws w 5 < c ∧
     numAt m ws w L.one = R % c ∧ numAt m ws w L.minusOne = c - R % c ∧
     numAt m ws w L.exponent = exponent c ∧
     m.readW (ws + BitVec.ofNat 64 (arrAt w L.exponent + 8 * w)) 64 =
@@ -111,7 +111,7 @@ def roundSig : Sig where
 
 /-- Returns 1 exactly when the witness passes one Miller–Rabin round.
 The implication quantifies over the ordinary witness represented by array
-6: congruent witnesses have the same test result. The input is already in
+5: congruent witnesses have the same test result. The input is already in
 Montgomery form, avoiding conversion or modulus preparation on each call. -/
 def roundContract {I : ISA} (A : Abi I) (L : Workspace) (stack : Nat := 0) : Contract I :=
   roundSig.contract A
@@ -119,7 +119,7 @@ def roundContract {I : ISA} (A : Abi I) (L : Workspace) (stack : Nat := 0) : Con
     (post := fun ws wsLen m m' r =>
       let w := wOf m ws
       let c := numAt m ws w 0
-      (∀ b, numAt m ws w 6 = b % c * 2 ^ (64 * w) % c →
+      (∀ b, numAt m ws w 5 = b % c * 2 ^ (64 * w) % c →
         r.toNat = if round c b then 1 else 0) ∧
       Keeps L ws wsLen.toNat w m m')
     (stack := stack)
@@ -144,7 +144,7 @@ def roundApi (L : Workspace) : Api where
       Montgomery header must be initialized, with 4..=128 limbs and an odd candidate >= 3.",
     s!"The power table begins at array {L.table}, the copied base is array {L.base}, \
       the shifted exponent is array {L.exponent}, Montgomery one is array {L.one}, \
-      and Montgomery minus one is array {L.minusOne}. Array 6 contains the witness \
+      and Montgomery minus one is array {L.minusOne}. Array 5 contains the witness \
       in Montgomery form. Arrays have `w + 2` words after the 32-word header.",
     s!"After the exponent's `w` words, one word holds `2^((v2(candidate-1)) mod 64)`. \
       The exponent is `(candidate-1) / 2^sigma`, for sigma in 1..=4 congruent to \
