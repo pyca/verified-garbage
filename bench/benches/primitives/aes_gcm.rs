@@ -502,8 +502,12 @@ fn tls_records(c: &mut Criterion) {
 
     use crate::{AWS_LC, OPENSSL, VG};
 
-    /// The payloads: a full record, a common web record, and smaller ones.
-    const TLS_SIZES: [usize; 4] = [1024, 4096, 10000, 16384];
+    /// The payloads: a full record, a common web record, and smaller ones,
+    /// each next to sizes that are not a multiple of 16 (as most records'
+    /// are), since the end of a record costs differently from its blocks.
+    const TLS_SIZES: [usize; 15] = [
+        255, 256, 257, 1023, 1024, 1025, 4095, 4096, 4097, 9999, 10000, 10001, 16383, 16384, 16385,
+    ];
 
     let nonce = [0x24; 12];
     let aad = [0x17, 0x03, 0x03, 0x40, 0x11];
