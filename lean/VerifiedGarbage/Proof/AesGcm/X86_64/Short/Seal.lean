@@ -209,14 +209,15 @@ theorem sealBack_ok (hF : ShortFacts) {k : Nat} {s₀ s : State} {Ctx W SP Np A 
 
 /-- The short `seal`, after the entry, for a 12-byte nonce and at most 32
 blocks to hash: what `sealRun_ok` leaves. -/
-theorem sealShort_ok (hF : ShortFacts) {k : Nat} {s₀ s₁ : State} {Ctx W SP Np A D : Addr} {nl al n : Nat}
-    (C : OneCtx s₀ k Ctx W SP Np A D nl al n) (E : OneEntry s₀ Ctx W SP A D n s₁)
+theorem sealShort_ok (hF : ShortFacts) {pw : Prog isa} {k : Nat} {s₀ s₁ : State} {Ctx W SP Np A D : Addr}
+    {nl al n : Nat} (C : OneCtx s₀ k Ctx W SP Np A D nl al n) (hpw : PowFrom pw s₀ Ctx W SP D n)
+    (E : OneEntry s₀ Ctx W SP A D n s₁)
     (hNp : s₀.gpr .rdx = Np) (hnl' : (s₀.gpr .rcx).toNat = nl) (hal' : (s₀.gpr .r9).toNat = al)
     (hnl : nl = 12) (hal5 : al < 512) (hn5 : n < 512) (h32 : nb16 al + nb16 n < 32) :
-    WP isa sealShort s₁ (SealPost s₀ Ctx W SP D n (s₀.gpr .rsi).toNat al (ctxH s₀.mem Ctx)
+    WP isa (sealShort pw) s₁ (SealPost s₀ Ctx W SP D n (s₀.gpr .rsi).toNat al (ctxH s₀.mem Ctx)
       (Spec.Gcm.j0 (ctxH s₀.mem Ctx) (bytesAt s₀.mem Np nl)) (bytesAt s₀.mem A al)) := by
   subst hnl
   exact WP.seq (WP.mono (shortStart_ok C E hNp hnl' rfl hal' hal5 hn5) fun s₂ ⟨S, haad, hdat⟩ =>
-    front_ok hF C rfl hal5 hn5 h32 S haad hdat fun t F => sealBack_ok hF C hal5 hn5 h32 F)
+    front_ok C hpw rfl hal5 hn5 h32 S haad hdat fun t F => sealBack_ok hF C hal5 hn5 h32 F)
 
 end VG.Proof.AesGcm.X86_64.Short

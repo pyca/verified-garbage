@@ -163,6 +163,20 @@ def powMore : Prog isa :=
 def powers : Prog isa :=
   .seq (.block (powSse ++ ptr .r11 .r15 tbO ++ pow4 ++ ([.mov .rax (.mem (at_ .r15 mpO))] : List Instr))) powMore
 
+/-- With a prepared key context (`VG.Spec.Gcm.PreparedPowersRepr`), the
+constants in every lane of `zmm0` and `zmm1`, and the table of powers copied
+from the context, whose 64 bytes at `ctx + 256 + 64 j` hold `H'⁴ʲ⁺²`,
+`H'⁴ʲ⁺¹`, `H'⁴ʲ⁺⁴`, `H'⁴ʲ⁺³`: each group swapped by halves into the table's
+`H'⁴ʲ⁺⁴`–`H'⁴ʲ⁺¹`, all eight groups. -/
+def powersP : Prog isa :=
+  .block (Gcm.X86_64.Pclmul.const .xmm0 revMask ++ Gcm.X86_64.Pclmul.const .xmm1 poly ++
+    ([.vop (.vinserti128 .xmm0 .xmm0 .xmm0 1), .zop (.vshufi32x4 .xmm0 .xmm0 .xmm0 0x44),
+      .vop (.vinserti128 .xmm1 .xmm1 .xmm1 1), .zop (.vshufi32x4 .xmm1 .xmm1 .xmm1 0x44)] : List Instr) ++
+    ptr .r11 .r15 tbO ++
+    (List.range 8).flatMap fun j =>
+      [.vmovdqu32Load .xmm8 (at_ .r13 (256 + 64 * j)), .zop (.vshufi32x4 .xmm8 .xmm8 .xmm8 0x4E),
+        .vmovdqu32Store (at_ .r11 (64 * j)) .xmm8])
+
 /-! ## The keystream -/
 
 /-- The counters `J₀`, `J₀ + 1`, `J₀ + 2`, `J₀ + 3` in the lanes of `zmm14`
@@ -272,11 +286,12 @@ def textArgs : List Instr :=
 
 /-! ## `seal` and `open` -/
 
-/-- The short `seal`: the ciphertext written to the data and `G`, and the
-tag at `W`. -/
-def sealShort : Prog isa :=
+/-- The short `seal`, with the table of powers from `pw` (`powers`, or
+`powersP` with a prepared key context): the ciphertext written to the data
+and `G`, and the tag at `W`. -/
+def sealShort (pw : Prog isa := powers) : Prog isa :=
   .seq (.block (j012 ++ sizes))
-  (.seq powers
+  (.seq pw
   (.seq (.block zeroG)
   (.seq copyA
   (.seq keystream
@@ -299,9 +314,9 @@ def openChk : Prog isa :=
 /-- The short `open`, after `tagLenOk` (with `rbx` the tag's length, kept
 at `tlO`): the tag compared with the received one (`openChk`), and the data
 decrypted only if they are equal; `rax` as `open` returns it. -/
-def openShort : Prog isa :=
+def openShort (pw : Prog isa := powers) : Prog isa :=
   .seq (.block (j012 ++ sizes))
-  (.seq (.seq powers (.seq (.block zeroG) (.seq copyA (.seq keystream openChk))))
+  (.seq (.seq pw (.seq (.block zeroG) (.seq copyA (.seq keystream openChk))))
   (.seq (.ite .e (.block []) (.seq (.block textArgs) (xorText false)))
     (.block [.mov .rax (.mem (at_ .r15 auxO))])))
 
@@ -416,15 +431,17 @@ def finKsA : Prog isa :=
 
 variable (c : Callees)
 
-/-- `seal` with the short path (`cond`), or else the other instances' body. -/
-def «seal» : Prog isa :=
+/-- `seal` with the short path (`cond`), with the table of powers from `pw`,
+or else the other instances' body. -/
+def «seal» (pw : Prog isa := powers) : Prog isa :=
   .seq (.block (oneEntry 32))
     (.seq (.seq cond (.ite .e
-        (.seq (oneAad c) (.seq (oneBlocks c.enc) finish)) sealShort))
+        (.seq (oneAad c) (.seq (oneBlocks c.enc) finish)) (sealShort pw)))
       (.seq (.block (tagOut (at_ .rsp 24))) (.block restore)))
 
-/-- `open` with the short path (`cond`), or else the other instances' body. -/
-def «open» : Prog isa :=
+/-- `open` with the short path (`cond`), with the table of powers from `pw`,
+or else the other instances' body. -/
+def «open» (pw : Prog isa := powers) : Prog isa :=
   .seq (.block (oneEntry 40 ++ ([.mov .rbx (.mem (at_ .rsp 32)), .store (at_ .r15 tlO) .rbx] : List Instr)))
   (.seq tagLenOk
   (.seq (.ite .e (.block [.mov32 .rax (imm 0)])
@@ -438,7 +455,7 @@ def «open» : Prog isa :=
         (.seq (.block [.store (at_ .r15 auxO) .rax, .alu .test .rax (.reg .rax)])
         (.seq (.ite .e (oneUndo c) (oneCrypt c))
           (.block [.mov .rax (.mem (at_ .r15 auxO))])))))))))
-        openShort)))
+        (openShort pw))))
     (.block restore)))
 
 end VG.Impl.AesGcm.X86_64.Short

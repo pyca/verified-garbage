@@ -41,17 +41,22 @@ structure SJ (s₀ : State) (Ctx W SP A D : Addr) (R al n : Nat) (J : Block) (tl
 section
 variable {k : Nat} {s₀ s : State} {Ctx W SP Np A D : Addr} {nl al n R : Nat} {J : Block} {tl : BitVec 64}
 
-theorem powers_sj (hF : ShortFacts) (C : OneCtx s₀ k Ctx W SP Np A D nl al n) (h32 : nb16 al + nb16 n < 32)
-    (S : SM s₀ Ctx W SP A D R al n J tl s) : WP isa powers s (SJ s₀ Ctx W SP A D R al n J tl) := by
+theorem powSj {pw : Prog isa} (C : OneCtx s₀ k Ctx W SP Np A D nl al n) (hpw : PowFrom pw s₀ Ctx W SP D n)
+    (h32 : nb16 al + nb16 n < 32) (S : SM s₀ Ctx W SP A D R al n J tl s) :
+    WP isa pw s (SJ s₀ Ctx W SP A D R al n J tl) := by
   have h32' := h32
   simp only [nb16] at h32'
   have hg1 : 1 ≤ grp al n := by simp only [grp, nb16]; omega
   have hg8 : grp al n ≤ 8 := by simp only [grp, nb16]; omega
-  exact WP.mono (hF.powers s S.env S.r288 hg1 hg8) fun t ⟨_, fT, z0, z1, g, rd, wr⟩ =>
+  exact WP.mono (hpw s S.env S.r288 hg1 hg8 S.frame S.rd S.wr) fun t ⟨_, fT, z0, z1, g, rd, wr⟩ =>
     ⟨S.keep C.dE fT (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact wk_T)
       (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl | rfl <;> exact g _ (by decide) (by decide)) rd wr, z0, z1⟩
+
+theorem powers_sj (hF : ShortFacts) (C : OneCtx s₀ k Ctx W SP Np A D nl al n) (h32 : nb16 al + nb16 n < 32)
+    (S : SM s₀ Ctx W SP A D R al n J tl s) : WP isa powers s (SJ s₀ Ctx W SP A D R al n J tl) :=
+  powSj C (powFrom_powers hF) h32 S
 
 theorem zeroG_sj (C : OneCtx s₀ k Ctx W SP Np A D nl al n) (S : SJ s₀ Ctx W SP A D R al n J tl s) :
     WP isa (.block zeroG) s (SJ s₀ Ctx W SP A D R al n J tl) :=

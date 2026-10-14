@@ -28,7 +28,7 @@ namespace VG.Proof.AesGcm.X86_64.Split
 
 open VG VG.X86_64 VG.X86_64.RegUpd VG.Impl.AesGcm.X86_64 VG.WriteBytes
 open VG.Proof.Gcm.X86_64.Stitch (CtxMode)
-open VG.Proof.AesGcm.X86_64.Short (ShortFacts IsShort CopyPre condE_ok sealShort_ok)
+open VG.Proof.AesGcm.X86_64.Short (ShortFacts IsShort CopyPre condE_ok sealShort_ok powFrom_powers)
 open VG.Proof.AesGcm.X86_64.StreamTo (BlkToFn)
 open VG.Spec.Aes (bytesAt)
 open VG.Spec.Gcm (Block blockAt ctxCiph ctxH gctr inc32 ghashFrom ghash blocks ofBytes toBytes)
@@ -154,7 +154,7 @@ theorem shortPath_ok (hF : ShortFacts) {s : State} (E : SEntry s₀ Ctx W SP A D
   have hsl := C.sl_le
   have hn := C.data.ok.lt
   refine WP.seq (WP.mono (copySrc_ok C E hn5) fun s₄ E' => ?_)
-  refine WP.mono (sealShort_ok hF C.oneCtx4 E' hNp hnl hal h12 hal5 hn5 h32) fun s₅ P => ?_
+  refine WP.mono (sealShort_ok hF C.oneCtx4 (powFrom_powers hF) E' hNp hnl hal h12 hal5 hn5 h32) fun s₅ P => ?_
   obtain ⟨he₅, rd₅, wr₅, sv₅, f₅, hC₅, hT₅⟩ := P
   -- What `withSrc` changes: `D`'s first `sl` bytes.
   have f₀ : Frame [⟨D, sl⟩] s₀.mem (withSrc s₀ D S sl).mem := writeBytes_frame' _ (length_bytesAt _ _ _)
