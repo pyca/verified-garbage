@@ -158,13 +158,16 @@ def remMask : Prog isa :=
 def remAfterK : List Instr :=
   [.mov .r10 (.reg .r9), .alu .and .r10 (.imm 3), .shift .shl .r10 4, .alu .and .r9 (.imm 0xFFFFFFFC)]
 
+/-- The next block, the only one before those taken four at a time. -/
+def remNextOne : List Instr := [.alu .add .r10 (.imm 16), .alu .sub .r9 (.imm 1)]
+
 /-- The first `r mod 4` of the last `r` blocks, if any: one block alone, or
 two or three through a mask (`remQuadK`). -/
 def remFirst (one quad : List Instr) : Prog isa :=
   .seq (.block [.alu .test .r9 (.imm 3)])
     (.ite .e (.block [])
       (.seq (.block [.alu .test .r9 (.imm 2)])
-        (.ite .ne (.seq remMask (.block (quad ++ remAfterK))) (.block (one ++ remNext1)))))
+        (.ite .e (.block (one ++ remNextOne)) (.seq remMask (.block (quad ++ remAfterK))))))
 
 /-- The next four blocks, and whether they were the last. -/
 def remNext4 : List Instr := [.alu .add .r10 (.imm 64), .alu .sub .r9 (.imm 4), .alu .cmp .r9 (.imm 16)]
