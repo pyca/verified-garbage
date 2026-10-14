@@ -868,7 +868,7 @@ impl AesGcm {
         // without any (`seal_two_slices_prepared` takes the others).
         let (src, rest): (&[u8], &[u8]) = match plaintext {
             [a] => (a, &[]),
-            [a, b] if a.len() % 16 == 0 && b.len() < 16 => (a, b),
+            [a, b] if a.len().is_multiple_of(16) && b.len() < 16 => (a, b),
             _ => return None,
         };
         if nonce.len() != 12 || aad.len() > 16 || src.len() < POWERS_MIN_LEN {
@@ -920,8 +920,8 @@ impl AesGcm {
         Some(tag)
     }
 
-    /// Encrypts a long first slice and at most one trailing byte without
-    /// constructing a streaming state. A prepared key, a 96-bit nonce and
+    /// Encrypts a long first slice that does not end on a whole block and at
+    /// most one trailing byte without constructing a streaming state. A prepared key, a 96-bit nonce and
     /// at most one AAD block let the verified CTR, GHASH and interleaved
     /// block primitives handle the record directly. The ordinary gather
     /// implementation handles every other shape.
@@ -943,6 +943,7 @@ impl AesGcm {
             || plaintext.len() != 2
             || plaintext[1].len() > 1
             || plaintext[0].len() < 256
+            || plaintext[0].len().is_multiple_of(16)
         {
             return None;
         }
@@ -999,7 +1000,7 @@ impl AesGcm {
         // schedule and H. The caller checked nonce, AAD, text and output
         // lengths. The nonce forms J0 = nonce || 1; CTR first computes
         // E(K, J0), leaving inc32(J0) for the text. `head` is a whole-block
-        // prefix; `rem + suffix.len() <= 16`. Each call gets separate
+        // prefix; `1 <= rem + suffix.len() <= 16`. Each call gets separate
         // readable inputs and writable buffers of its specified size,
         // including 2112 scratch bytes. The final ciphertext is zero-padded
         // before GHASH, followed by the big-endian bit lengths (§7.1).
@@ -1027,21 +1028,17 @@ impl AesGcm {
                 count,
                 work,
             );
-            if tail != 0 {
-                ctr(
-                    ctx.cast(),
-                    self.rounds,
-                    &mut counter,
-                    &mut finish[0],
-                    1,
-                    work.cast(),
-                );
-                out[head..].copy_from_slice(&finish[0][..tail]);
-                finish[0][tail..].fill(0);
-                gh(h, &mut y, finish.as_ptr(), 2, work.cast());
-            } else {
-                gh(h, &mut y, &finish[1], 1, work.cast());
-            }
+            ctr(
+                ctx.cast(),
+                self.rounds,
+                &mut counter,
+                &mut finish[0],
+                1,
+                work.cast(),
+            );
+            out[head..].copy_from_slice(&finish[0][..tail]);
+            finish[0][tail..].fill(0);
+            gh(h, &mut y, finish.as_ptr(), 2, work.cast());
         }
         for i in 0..16 {
             tag[i] ^= y[i];
