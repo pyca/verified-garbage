@@ -36,4 +36,19 @@ theorem wordsAt_two_reads {m : Mem} {p : Addr} {w x y : Nat}
   · intro i hi
     rw [word_eq_ofNat m p (8 * w) w hi, hy]
 
+theorem wordsAt_zero_read {m : Mem} {p : Addr} {n : Nat}
+    (zero : (m.read p (8 * n)).toNat = 0) :
+    Spec.Rsa.wordsAt m p n = List.replicate n 0 := by
+  have hz : wv m p 0 n = 0 := by
+    rw [← read_eq_wv]; simpa only [off, BitVec.add_zero] using zero
+  apply List.ext_getElem
+  · simp only [Spec.Rsa.wordsAt, List.length_map, List.length_range, List.length_replicate]
+  · intro i hi hj
+    have bound : i < n := by simpa only [List.length_replicate] using hj
+    have h := word_eq_ofNat m p 0 n bound
+    rw [hz, Nat.zero_div] at h
+    simp only [Spec.Rsa.wordsAt, List.getElem_map, List.getElem_range, List.getElem_replicate]
+    change word m p (8 * i) = BitVec.ofNat 64 0
+    simpa only [Nat.zero_add] using h
+
 end VG.Proof.Bignum.Arm
