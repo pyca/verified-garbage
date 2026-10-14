@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedPrims
-public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedSecrets
+import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedSecrets
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.Depth
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

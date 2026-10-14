@@ -1,9 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.UseHintPackFields
-public import VerifiedGarbage.Proof.MlDsa.Round.Mem
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.UseHintPackFields
+import VerifiedGarbage.Proof.MlDsa.Round.Mem
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.UseHintPackLoop
-public import VerifiedGarbage.Proof.Framework.CallLay
+import VerifiedGarbage.Proof.Framework.CallLay
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

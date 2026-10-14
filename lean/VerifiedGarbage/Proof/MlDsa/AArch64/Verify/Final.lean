@@ -2,13 +2,13 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Cmp
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Cmp
-public import VerifiedGarbage.Proof.MlDsa.KeyGen.Rest
+import VerifiedGarbage.Proof.MlDsa.KeyGen.Rest
 meta import VerifiedGarbage.Proof.MlDsa.KeyGen.Rest
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Hash
+import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Hash
 import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.MlKem.AArch64.DecapsA
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Hash

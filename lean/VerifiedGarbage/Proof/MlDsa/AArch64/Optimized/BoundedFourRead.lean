@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourMask
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourMask
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourCompact
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

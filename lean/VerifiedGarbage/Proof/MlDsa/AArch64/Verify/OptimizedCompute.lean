@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedVectors
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedPiece
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedRowTiming
+import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedRowTiming
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedFinish
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

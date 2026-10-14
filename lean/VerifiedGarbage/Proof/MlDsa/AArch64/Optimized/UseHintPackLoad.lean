@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.UseHintPackWord
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackVec
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseHintVec
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackVec
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseHintVec
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackBlock
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

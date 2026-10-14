@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedRow
+import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedRow
 public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedFinish
-public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedRoundTiming
+import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedRoundTiming
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejBodyTiming
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFourLoop
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFourLoop
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

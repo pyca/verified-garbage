@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.NttLoop
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.NttLoop
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Lit
+import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Lit
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Lit
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

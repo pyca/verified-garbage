@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedCompute
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedSamplesRoots
+import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedSamplesRoots
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Verify.OptimizedTop
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

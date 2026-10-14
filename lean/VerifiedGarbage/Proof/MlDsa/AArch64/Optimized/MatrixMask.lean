@@ -1,9 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseAdd
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseAdd
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.MatrixMask
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourMaskStep
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourMaskMemory
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourMaskStep
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourMaskMemory
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourMaskInit
 public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Blocks
 import all Init.Data.Array.Basic

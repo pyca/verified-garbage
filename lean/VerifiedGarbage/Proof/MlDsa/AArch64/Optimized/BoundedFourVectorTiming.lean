@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourSelect
-public import VerifiedGarbage.Proof.MlDsa.Sample.RejBounded
+import VerifiedGarbage.Proof.MlDsa.Sample.RejBounded
 public import VerifiedGarbage.Proof.Framework.RelCTAssoc
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourTaint
 import all Init.Data.Array.Basic

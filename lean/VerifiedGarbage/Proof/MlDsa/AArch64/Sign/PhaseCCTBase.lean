@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.Rel
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseDCT
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseDCT
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseC
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

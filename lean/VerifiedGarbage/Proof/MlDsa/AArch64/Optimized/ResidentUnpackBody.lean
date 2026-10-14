@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentUnpackOne
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentUnpackValue
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentUnpackValue
 public import VerifiedGarbage.Proof.Framework.Offset
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

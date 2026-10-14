@@ -1,14 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedChecksInit
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedChecksInit
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedChecksInit
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedChecksEnd
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedChecksEnd
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedChecksEnd
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedLoopEnd
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedLoopEnd
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedCommitmentTiming
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedCommitmentTiming
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseLCT
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseLCT
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseLCT
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFourStep
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFrame
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFourStep
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFrame
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejPhase
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

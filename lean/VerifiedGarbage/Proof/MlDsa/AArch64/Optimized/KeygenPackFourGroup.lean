@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackFourBytes
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackLoads
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackField
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackField
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

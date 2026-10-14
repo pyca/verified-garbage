@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedResponseState
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedLowCheck
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedLowCheck
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedLow
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.RejBoundedLoop
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.RejNttCT
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.BallLoop
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.RejNttCT
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.BallLoop
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

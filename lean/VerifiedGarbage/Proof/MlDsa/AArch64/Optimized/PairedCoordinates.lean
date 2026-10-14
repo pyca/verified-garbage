@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Spec.MlDsa.PairedResponse
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedProductField
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedProductField
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedCheckSlot
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

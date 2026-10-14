@@ -1,12 +1,12 @@
 module
 
-public import VerifiedGarbage.Impl.MlDsa.Arm.Pack.Hint
+import VerifiedGarbage.Impl.MlDsa.Arm.Pack.Hint
 public import VerifiedGarbage.Proof.MlKem.Arm.Common
 public import VerifiedGarbage.Proof.MlKem.Arm.CallF
 public import VerifiedGarbage.Proof.MlDsa.Pack.Hint
-public import VerifiedGarbage.Proof.MlDsa.Pack.Mem
+import VerifiedGarbage.Proof.MlDsa.Pack.Mem
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
-public import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

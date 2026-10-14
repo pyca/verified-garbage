@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.Arm.Pack.Contracts
 meta import VerifiedGarbage.Proof.MlDsa.Arm.Pack.Contracts
-public import VerifiedGarbage.Proof.MlKem.Arm.Add
+import VerifiedGarbage.Proof.MlKem.Arm.Add
 meta import VerifiedGarbage.Proof.MlKem.Arm.Add
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

@@ -1,10 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Samp4
+import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Samp4
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Samp4
 public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.RestRow
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.RestRow
-public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedSecrets
+import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedSecrets
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedSecrets
 public import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.Prims
 meta import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.Prims
@@ -12,7 +12,7 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Hash
+import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Hash
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlKem.AArch64.KgC

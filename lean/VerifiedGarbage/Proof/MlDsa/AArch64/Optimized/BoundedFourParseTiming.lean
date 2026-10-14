@@ -6,15 +6,15 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourParseSetu
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourParseSetup
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourVectorTiming
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourVectorTiming
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourLoop
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourLoop
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourLoop
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourScalarTiming
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourScalarTiming
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourScalarLoop
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourScalarLoop
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourScalarLoop
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourFallback
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourFallback
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourFallback
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourParse
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourParse
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourParse
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

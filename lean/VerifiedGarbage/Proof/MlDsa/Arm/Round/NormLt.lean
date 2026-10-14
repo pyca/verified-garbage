@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.Arm.Round.Loop
 meta import VerifiedGarbage.Proof.MlDsa.Arm.Round.Loop
-public import VerifiedGarbage.Proof.MlDsa.Arm.Arith.AddSub
+import VerifiedGarbage.Proof.MlDsa.Arm.Arith.AddSub
 meta import VerifiedGarbage.Proof.MlDsa.Arm.Arith.AddSub
 public import VerifiedGarbage.Proof.MlDsa.Arm.Arith.Saving
 meta import VerifiedGarbage.Proof.MlDsa.Arm.Arith.Saving

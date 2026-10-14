@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedRootsFrame
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedRootsFrame
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.PairedPre
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.StaticRootsFrame
 import all Init.Data.Array.Basic

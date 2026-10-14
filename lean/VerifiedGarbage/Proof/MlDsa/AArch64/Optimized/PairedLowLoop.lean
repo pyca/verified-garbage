@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedLowRun
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedCheckSource
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedCheckSource
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedConstants
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFinalLoop
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedRestoreLoop

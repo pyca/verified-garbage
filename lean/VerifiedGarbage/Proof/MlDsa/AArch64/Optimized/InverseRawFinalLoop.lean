@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseRawFinalSlice
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseFinalLoop
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.SliceFrame
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseFinalLoop
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.SliceFrame
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

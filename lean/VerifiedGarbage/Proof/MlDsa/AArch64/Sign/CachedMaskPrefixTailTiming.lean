@@ -6,7 +6,7 @@ public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.CachedCommitment
 meta import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.CachedCommitment
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedCommitmentTiming
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedCommitmentTiming
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedMaskTail
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedMaskTail
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedMaskTail
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

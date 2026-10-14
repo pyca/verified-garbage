@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Contracts
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Contracts
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Lit
+import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Lit
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Lit
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

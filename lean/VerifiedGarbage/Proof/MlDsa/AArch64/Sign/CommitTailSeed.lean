@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CommitTailCoreState
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentSeed66
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentSeed66
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentSeed
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

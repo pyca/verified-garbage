@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedTiming
+import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedTiming
 public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedDepth
 public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedSat
 import all Init.Data.Array.Basic

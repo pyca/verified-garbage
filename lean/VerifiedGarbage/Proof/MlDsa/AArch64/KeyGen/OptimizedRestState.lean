@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.RestBase
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.LazyInv
-public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedEntry
+import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedEntry
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductCore
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductFullTiming
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductFullTiming
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseSpecPre
 public import VerifiedGarbage.Spec.MlDsa.RawInverse
 import all Init.Data.Array.Basic

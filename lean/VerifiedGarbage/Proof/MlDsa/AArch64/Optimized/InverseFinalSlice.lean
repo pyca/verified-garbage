@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseFinalStore
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InversePackedRun
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InversePackedRun
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

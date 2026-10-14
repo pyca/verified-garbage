@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseDCT
 public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseC
-public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.CopyTr
+import VerifiedGarbage.Proof.MlDsa.Arm.Sign.CopyTr
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

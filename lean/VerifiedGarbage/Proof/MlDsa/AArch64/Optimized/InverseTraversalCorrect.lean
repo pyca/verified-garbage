@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversal
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversalChecked
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversalChecked
 public import VerifiedGarbage.Proof.MlDsa.Arith.Montgomery
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackField
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackField
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackFields
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackWritten
 import all Init.Data.Array.Basic

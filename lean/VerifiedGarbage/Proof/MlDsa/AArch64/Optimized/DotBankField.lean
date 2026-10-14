@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.DotBank
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.DotField
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductBankField
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductBankField
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedPairedChecks
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedChecksPrefix
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedHints
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedChecksPrefix
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedHints
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedHintEnd
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedRootsExec
 import all Init.Data.Array.Basic

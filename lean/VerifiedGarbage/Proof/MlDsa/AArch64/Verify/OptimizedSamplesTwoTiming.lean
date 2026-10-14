@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedSamplesFourTiming
+import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedSamplesFourTiming
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedSamplesTwo
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

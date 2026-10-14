@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseVec
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Batch
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Batch
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseScale
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

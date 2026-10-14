@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.AbsorbArgs
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.AbsorbArgs
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.SeedFrame
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

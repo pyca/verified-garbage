@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourBody
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourBody
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rel
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rel
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rel
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.Arm.Pack.HintUnpackMain
 meta import VerifiedGarbage.Proof.MlDsa.Arm.Pack.HintUnpackMain
-public import VerifiedGarbage.Proof.MlDsa.Arm.Pack.HintCT
+import VerifiedGarbage.Proof.MlDsa.Arm.Pack.HintCT
 meta import VerifiedGarbage.Proof.MlDsa.Arm.Pack.HintCT
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Samp4
+import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Samp4
 public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedMatrixSeeds
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MatrixMask
 import all Init.Data.Array.Basic

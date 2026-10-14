@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackVec
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackVec
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackShuffle
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

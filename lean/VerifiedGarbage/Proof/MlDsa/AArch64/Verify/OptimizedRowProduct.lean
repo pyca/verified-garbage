@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedRowStart
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MontProductCallTiming
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.AddSubVerified
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MontProductCallTiming
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.AddSubVerified
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

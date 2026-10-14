@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.MlDsa.Arm.Arith.NttLoop
 meta import VerifiedGarbage.Proof.MlDsa.Arm.Arith.NttLoop
 public import VerifiedGarbage.Proof.MlDsa.Arm.Arith.Saving
 meta import VerifiedGarbage.Proof.MlDsa.Arm.Arith.Saving
-public import VerifiedGarbage.Proof.MlDsa.Arm.Arith.AddSub
+import VerifiedGarbage.Proof.MlDsa.Arm.Arith.AddSub
 meta import VerifiedGarbage.Proof.MlDsa.Arm.Arith.AddSub
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint

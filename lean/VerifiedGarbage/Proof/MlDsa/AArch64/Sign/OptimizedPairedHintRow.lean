@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedRoots
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedHintCallTiming
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedHintRow
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedZ
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedZ
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedHintState
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedPairedHints
 import all Init.Data.Array.Basic

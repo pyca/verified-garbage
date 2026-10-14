@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseScale
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackInit
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Loads
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Loads
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

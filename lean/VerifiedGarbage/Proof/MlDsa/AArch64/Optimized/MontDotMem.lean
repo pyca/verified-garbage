@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MontDotLoad
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Vec
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Pro
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseFrame
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseFrame
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

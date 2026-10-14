@@ -1,9 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejPro
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.AbsorbPair
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.AbsorbPair
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.ResidentRejFour
-public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.ResidentRejTwo
+import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.ResidentRejTwo
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

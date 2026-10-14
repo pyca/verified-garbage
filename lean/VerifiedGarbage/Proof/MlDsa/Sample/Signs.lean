@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.Sample.Word
+import VerifiedGarbage.Proof.MlDsa.Sample.Word
 public import VerifiedGarbage.Proof.MlDsa.Sample.LeNat
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

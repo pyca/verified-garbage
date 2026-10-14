@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Arith.Neon.Vec
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Word
 public import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-public import VerifiedGarbage.Proof.Framework.AArch64.Simd64
+import VerifiedGarbage.Proof.Framework.AArch64.Simd64
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

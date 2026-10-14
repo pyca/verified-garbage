@@ -2,9 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackWidth
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackWidth
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.BitPack
+import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.BitPack
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.BitPack
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackDispatch
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackDispatch
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackDispatch
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

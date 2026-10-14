@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedLoopTiming
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedRestCorrect
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedInitializationTiming
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedInitializationTiming
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedOutputTiming
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

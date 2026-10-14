@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejScalarStep
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejScalarStep
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejLoopState
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

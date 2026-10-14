@@ -1,9 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourVec
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourVec
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourCompact
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Mem
-public import VerifiedGarbage.Proof.MlDsa.Sample.Mem
+import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Mem
+import VerifiedGarbage.Proof.MlDsa.Sample.Mem
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

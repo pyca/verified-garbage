@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLowCall
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Residue
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Representation
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Residue
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Representation
 public import VerifiedGarbage.Proof.MlDsa.Round.Decompose
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

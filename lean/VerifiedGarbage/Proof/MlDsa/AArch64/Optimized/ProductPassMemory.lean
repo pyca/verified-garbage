@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductBank
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseFiveSlice
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductBankField
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseFiveSlice
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductBankField
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseStaticCore
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

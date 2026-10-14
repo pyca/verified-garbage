@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.Blocks
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.Blocks
 public import VerifiedGarbage.Proof.MlDsa.Sign.Setup
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

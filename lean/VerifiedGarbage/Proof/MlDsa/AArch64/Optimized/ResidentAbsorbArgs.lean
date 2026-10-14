@@ -1,10 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentAbsorb
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentAbsorb
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.ResidentMask
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentSaved
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentParsePair
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentMaskBytes
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentParsePair
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentMaskBytes
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

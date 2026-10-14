@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.DotMemory
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.DotFive
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseSetup
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseSetup
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseMiddle
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseFinalLoop
 import all Init.Data.Array.Basic

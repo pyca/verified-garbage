@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejWideBody
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejAdvance
-public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejAdvance
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejLoopState
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

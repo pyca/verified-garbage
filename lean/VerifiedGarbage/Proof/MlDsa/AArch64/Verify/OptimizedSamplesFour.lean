@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Samp4
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MatrixMask
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MatrixMask
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Verify.OptimizedSamples
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

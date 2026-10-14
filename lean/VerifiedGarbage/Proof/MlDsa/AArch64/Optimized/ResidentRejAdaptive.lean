@@ -2,9 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejPrefix
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejLastProgress
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFlags
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Advance
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejSqueezeSetup
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFlags
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Advance
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejSqueezeSetup
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejDone
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

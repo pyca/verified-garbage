@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedProductField
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductMemoryBankField
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductMemoryField
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductMemoryBankField
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductMemoryField
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductMemoryCorrect
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

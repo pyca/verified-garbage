@@ -2,8 +2,8 @@ module
 
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Verify.OptimizedTop
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedSamplesDepth
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.NttCallee
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseSingleCall
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.NttCallee
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseSingleCall
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

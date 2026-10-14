@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.RejNttLoop
 public import VerifiedGarbage.Proof.MlDsa.Sample.ExpandMask
-public import VerifiedGarbage.Proof.MlDsa.Sample.LeWord
+import VerifiedGarbage.Proof.MlDsa.Sample.LeWord
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.Ball
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

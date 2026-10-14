@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedNtt
 public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedFinish
 public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedTimingBase
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.NttCallTiming
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.NttCallTiming
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

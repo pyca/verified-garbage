@@ -1,15 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.SignCT
-public import VerifiedGarbage.Proof.MlDsa.Arm.Arith.AddSub
+import VerifiedGarbage.Proof.MlDsa.Arm.Arith.AddSub
 public import VerifiedGarbage.Proof.MlDsa.Arm.Arith.Mul
 public import VerifiedGarbage.Proof.MlDsa.Arm.Arith.NttInv
 public import VerifiedGarbage.Proof.MlDsa.Arm.Round.Bits
 public import VerifiedGarbage.Proof.MlDsa.Arm.Round.NormLt
 public import VerifiedGarbage.Proof.MlDsa.Arm.Round.MakeHint
-public import VerifiedGarbage.Proof.MlDsa.Arm.Pack.SimpleBitPack
-public import VerifiedGarbage.Proof.MlDsa.Arm.Pack.BitPack
-public import VerifiedGarbage.Proof.MlDsa.Arm.Pack.Unpack
+import VerifiedGarbage.Proof.MlDsa.Arm.Pack.SimpleBitPack
+import VerifiedGarbage.Proof.MlDsa.Arm.Pack.BitPack
+import VerifiedGarbage.Proof.MlDsa.Arm.Pack.Unpack
 public import VerifiedGarbage.Proof.MlDsa.Arm.Pack.HintPackCT
 public import VerifiedGarbage.Proof.MlDsa.Arm.Sample.RejNttCT
 public import VerifiedGarbage.Proof.MlDsa.Arm.Sample.ExpandMask

@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTableMemory
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTableMemory
 public import VerifiedGarbage.Proof.Framework.ConstMem
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.InverseTable
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Contracts

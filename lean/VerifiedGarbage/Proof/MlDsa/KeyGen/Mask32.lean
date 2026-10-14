@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.KeyGen.Leak
+import VerifiedGarbage.Proof.MlDsa.KeyGen.Leak
 public import VerifiedGarbage.Spec.MlDsa.Contract
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

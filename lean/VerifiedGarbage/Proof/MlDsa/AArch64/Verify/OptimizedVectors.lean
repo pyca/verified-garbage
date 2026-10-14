@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedRow
+import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedRow
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedNttTiming
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

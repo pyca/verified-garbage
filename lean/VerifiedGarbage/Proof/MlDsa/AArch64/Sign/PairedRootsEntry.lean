@@ -1,10 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedRoots
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.StaticRootsEntry
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.StaticRootsEntry
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.StaticRoots
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.Verified
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.NttVerified
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.NttVerified
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

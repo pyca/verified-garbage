@@ -1,12 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedChecksBoundary
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedChecksBoundary
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedLoopEnd
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedChecksBase
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedChecksZVector
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedChecksZVector
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.CachedLoop
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedMaskCopy
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedRootsExec
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedRootsExec
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

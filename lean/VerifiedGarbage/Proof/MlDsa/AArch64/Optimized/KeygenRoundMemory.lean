@@ -2,9 +2,9 @@ module
 
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.KeygenRound
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenRoundWord
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseVec
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseVec
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseFrame
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Mem
+import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Mem
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

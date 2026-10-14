@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.OptimizedRel
+import VerifiedGarbage.Proof.MlDsa.AArch64.Message.OptimizedRel
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.SignCT
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

@@ -2,9 +2,9 @@ module
 
 public import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.OptimizedPrims
 public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Inst
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.AddSubVerified
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenRoundVerified
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackVerified
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.AddSubVerified
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenRoundVerified
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackVerified
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejVerified
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

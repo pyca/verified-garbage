@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejOutcome
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejRows
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejRows
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejParsePublic
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
