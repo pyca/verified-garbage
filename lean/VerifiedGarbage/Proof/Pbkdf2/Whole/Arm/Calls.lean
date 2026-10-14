@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Spec.Pbkdf2.Generic
+import VerifiedGarbage.Spec.Pbkdf2.Generic
 public import VerifiedGarbage.Proof.Pbkdf2.Stream.Arm.Hash
 public import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.Proof.Framework.Arm.Contract

@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.P256.EcdhDouble
-public import VerifiedGarbage.Proof.P256.EcdhDouble.WeakField
+import VerifiedGarbage.Proof.P256.EcdhDouble.WeakField
 public import VerifiedGarbage.Proof.P256.EcdhDouble.MacroField
 public import VerifiedGarbage.Proof.P256.EcdhDouble.Arithmetic
 import all Init.Data.Array.Basic

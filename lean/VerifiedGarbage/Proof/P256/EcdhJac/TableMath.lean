@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.P256.EcdhJac
 public import VerifiedGarbage.Proof.Weierstrass.JacCoZ
-public import VerifiedGarbage.Proof.Weierstrass.Env
+import VerifiedGarbage.Proof.Weierstrass.Env
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

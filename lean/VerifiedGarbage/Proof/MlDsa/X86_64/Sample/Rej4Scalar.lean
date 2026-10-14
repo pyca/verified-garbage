@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej4CT
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej4CT
-public import VerifiedGarbage.Proof.MlDsa.Arith.Mem
+import VerifiedGarbage.Proof.MlDsa.Arith.Mem
 meta import VerifiedGarbage.Proof.MlDsa.Arith.Mem
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

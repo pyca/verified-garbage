@@ -1,9 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.P256.EcdhJac.Frame
+import VerifiedGarbage.Proof.P256.EcdhJac.Frame
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedArithmetic
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedRaw
-public import VerifiedGarbage.Proof.P256.EcdhDouble.Verified
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedRaw
+import VerifiedGarbage.Proof.P256.EcdhDouble.Verified
 public import VerifiedGarbage.Proof.P256.EcdhJac.First
 public import VerifiedGarbage.Proof.P256.EcdhJac.Masks
 public import VerifiedGarbage.Proof.P256.EcdhJac.Finish

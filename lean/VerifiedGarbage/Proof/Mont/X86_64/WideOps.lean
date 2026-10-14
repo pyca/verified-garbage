@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Mont.X86_64.WideMul
+import VerifiedGarbage.Proof.Mont.X86_64.WideMul
 public import VerifiedGarbage.Proof.Mont.X86_64.OpsReg
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

@@ -4,7 +4,7 @@ public import VerifiedGarbage.Impl.MlDsa.X86.Pack.Stream
 public import VerifiedGarbage.Proof.MlDsa.X86.Pack.Run
 public import VerifiedGarbage.Proof.MlDsa.Pack.Stream
 public import VerifiedGarbage.Proof.MlDsa.Pack.Written
-public import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.Range
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

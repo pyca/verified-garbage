@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.P256.Linear
 public import VerifiedGarbage.Proof.P256.Linear.CorrectionWords
-public import VerifiedGarbage.Proof.Ed25519.AArch64.SqrRows
+import VerifiedGarbage.Proof.Ed25519.AArch64.SqrRows
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

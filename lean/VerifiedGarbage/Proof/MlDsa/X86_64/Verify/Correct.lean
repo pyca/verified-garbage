@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.StageC
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Instrs
+import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Instrs
 public import VerifiedGarbage.Proof.MlDsa.Verify.Norm
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

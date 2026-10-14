@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.VMul
 meta import VerifiedGarbage.Proof.MlKem.X86_64.VMul
-public import VerifiedGarbage.Proof.MlKem.X86_64.VMxcsr
+import VerifiedGarbage.Proof.MlKem.X86_64.VMxcsr
 meta import VerifiedGarbage.Proof.MlKem.X86_64.VMxcsr
 public import VerifiedGarbage.Proof.MlKem.Ntt
 meta import VerifiedGarbage.Proof.MlKem.Ntt

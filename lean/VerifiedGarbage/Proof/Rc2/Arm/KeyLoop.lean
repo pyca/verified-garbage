@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Rc2.Arm.PiScan
-public import VerifiedGarbage.Proof.Framework.Arm.Syms
+import VerifiedGarbage.Proof.Framework.Arm.Syms
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

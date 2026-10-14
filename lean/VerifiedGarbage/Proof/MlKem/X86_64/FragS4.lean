@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.X86_64.FragS
+import VerifiedGarbage.Proof.MlKem.X86_64.FragS
 meta import VerifiedGarbage.Proof.MlKem.X86_64.FragS
-public import VerifiedGarbage.Proof.MlKem.X86_64.FragHash
+import VerifiedGarbage.Proof.MlKem.X86_64.FragHash
 meta import VerifiedGarbage.Proof.MlKem.X86_64.FragHash
 public import VerifiedGarbage.Proof.MlKem.X86_64.Sample4Impl
 meta import VerifiedGarbage.Proof.MlKem.X86_64.Sample4Impl

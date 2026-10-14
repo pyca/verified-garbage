@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.Weierstrass.X86_64.CachedJacTiming
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CachedJacTiming
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JacMixedTiming
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.JacMixedTiming
-public import VerifiedGarbage.Proof.P521.X86_64.FieldTmpl
+import VerifiedGarbage.Proof.P521.X86_64.FieldTmpl
 meta import VerifiedGarbage.Proof.P521.X86_64.FieldTmpl
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

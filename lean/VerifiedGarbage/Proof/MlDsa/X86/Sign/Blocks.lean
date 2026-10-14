@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.X86.Sign.Local
+import VerifiedGarbage.Proof.MlDsa.X86.Sign.Local
 public import VerifiedGarbage.Proof.MlDsa.X86.Sign.Params
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

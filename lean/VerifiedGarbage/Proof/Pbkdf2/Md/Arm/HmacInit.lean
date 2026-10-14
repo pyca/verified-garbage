@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Hash
-public import VerifiedGarbage.Proof.Pbkdf2.MdKeys
+import VerifiedGarbage.Proof.Pbkdf2.MdKeys
 public import VerifiedGarbage.Proof.Framework.Omega
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

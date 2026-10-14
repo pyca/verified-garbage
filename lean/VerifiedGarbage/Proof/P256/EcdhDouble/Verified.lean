@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.P256.EcdhDouble.Field
-public import VerifiedGarbage.Proof.P256.Linear.Linear129
-public import VerifiedGarbage.Proof.P256.Linear.Linear38
+import VerifiedGarbage.Proof.P256.Linear.Linear129
+import VerifiedGarbage.Proof.P256.Linear.Linear38
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

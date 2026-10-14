@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.P256.EcdhTable.Dblu
 public import VerifiedGarbage.Proof.P256.EcdhTable.Zaddu
 public import VerifiedGarbage.Proof.P256.EcdhTable.DbluRaw
-public import VerifiedGarbage.Proof.P256.EcdhTable.ZadduRaw
+import VerifiedGarbage.Proof.P256.EcdhTable.ZadduRaw
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

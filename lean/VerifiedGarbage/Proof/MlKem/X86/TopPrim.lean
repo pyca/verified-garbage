@@ -1,10 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.X86.TopCall
-public import VerifiedGarbage.Proof.MlKem.X86.Ntt
-public import VerifiedGarbage.Proof.MlKem.X86.NttInv
-public import VerifiedGarbage.Proof.MlKem.X86.Mul
-public import VerifiedGarbage.Proof.MlKem.X86.AddSub
+import VerifiedGarbage.Proof.MlKem.X86.Ntt
+import VerifiedGarbage.Proof.MlKem.X86.NttInv
+import VerifiedGarbage.Proof.MlKem.X86.Mul
+import VerifiedGarbage.Proof.MlKem.X86.AddSub
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.P256.Curve
-public import VerifiedGarbage.Proof.P256.Order
+import VerifiedGarbage.Proof.P256.Order
 public import VerifiedGarbage.Proof.Weierstrass.GroupOrder
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

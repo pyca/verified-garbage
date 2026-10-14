@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-public import VerifiedGarbage.Proof.Rc2.AArch64.KeyIO
+import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+import VerifiedGarbage.Proof.Rc2.AArch64.KeyIO
 public import VerifiedGarbage.Proof.Framework.AArch64.Inline
 public import VerifiedGarbage.Proof.Rc2.AArch64.ConstantTime
 public import VerifiedGarbage.Proof.Framework.Contract

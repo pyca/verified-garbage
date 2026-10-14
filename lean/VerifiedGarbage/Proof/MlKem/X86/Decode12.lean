@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.MlKem.Encode
 meta import VerifiedGarbage.Proof.MlKem.Encode
 public import VerifiedGarbage.Impl.MlKem.X86.Encode
 meta import VerifiedGarbage.Impl.MlKem.X86.Encode
-public import VerifiedGarbage.Spec.MlKem.Poly
+import VerifiedGarbage.Spec.MlKem.Poly
 meta import VerifiedGarbage.Spec.MlKem.Poly
 public import VerifiedGarbage.TCB.X86.Target
 meta import VerifiedGarbage.TCB.X86.Target

@@ -1,9 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.X86.TopPrim
-public import VerifiedGarbage.Proof.MlKem.X86.Cbd
-public import VerifiedGarbage.Proof.MlKem.X86.Encode12
-public import VerifiedGarbage.Proof.MlKem.X86.Decode12
+import VerifiedGarbage.Proof.MlKem.X86.Cbd
+import VerifiedGarbage.Proof.MlKem.X86.Encode12
+import VerifiedGarbage.Proof.MlKem.X86.Decode12
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

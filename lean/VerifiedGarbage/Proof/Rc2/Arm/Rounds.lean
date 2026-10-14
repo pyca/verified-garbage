@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Rc2.Arm.Block
 public import VerifiedGarbage.Proof.Rc2.Arm.Lookup
-public import VerifiedGarbage.Proof.Rc2.Word32
+import VerifiedGarbage.Proof.Rc2.Word32
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

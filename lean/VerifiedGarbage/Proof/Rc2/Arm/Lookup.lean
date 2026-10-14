@@ -1,9 +1,9 @@
 module
 
 public import VerifiedGarbage.Impl.Rc2.Arm.Lookup
-public import VerifiedGarbage.Proof.Rc2.Select32
+import VerifiedGarbage.Proof.Rc2.Select32
 public import VerifiedGarbage.Proof.Framework.Arm.Exec
-public import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

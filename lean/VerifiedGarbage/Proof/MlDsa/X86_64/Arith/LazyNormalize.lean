@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.LazyReduce
+import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.LazyReduce
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.LazyNttLayers
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

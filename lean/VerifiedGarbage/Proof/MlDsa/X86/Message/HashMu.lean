@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.X86.Message.Hash
 meta import VerifiedGarbage.Proof.MlDsa.X86.Message.Hash
-public import VerifiedGarbage.Proof.MlKem.KPke
+import VerifiedGarbage.Proof.MlKem.KPke
 meta import VerifiedGarbage.Proof.MlKem.KPke
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

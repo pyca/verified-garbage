@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.P384.X86_64.PointOps
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.PointOpsFn
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.PointOpsCT
+import VerifiedGarbage.Proof.Weierstrass.X86_64.PointOpsCT
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

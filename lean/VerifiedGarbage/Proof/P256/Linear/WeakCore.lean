@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.P256.Linear.WeakWords
-public import VerifiedGarbage.Proof.Mont.AArch64.Ops
+import VerifiedGarbage.Proof.Mont.AArch64.Ops
 public import VerifiedGarbage.Proof.Ed25519.AArch64.SqrRows
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

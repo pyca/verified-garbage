@@ -1,16 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
+import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
 meta import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
 public import VerifiedGarbage.Impl.MlDsa.X86_64.Pack.Hint
 meta import VerifiedGarbage.Impl.MlDsa.X86_64.Pack.Hint
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.Unpack
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.Unpack
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.MemTaint
+import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.MemTaint
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.MemTaint
 public import VerifiedGarbage.Proof.MlDsa.Pack.Hint
 meta import VerifiedGarbage.Proof.MlDsa.Pack.Hint
-public import VerifiedGarbage.Proof.MlKem.X86_64.Rel
+import VerifiedGarbage.Proof.MlKem.X86_64.Rel
 meta import VerifiedGarbage.Proof.MlKem.X86_64.Rel
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

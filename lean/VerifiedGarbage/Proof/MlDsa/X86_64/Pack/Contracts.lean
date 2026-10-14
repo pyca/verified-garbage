@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Spec.MlDsa.Poly
 public import VerifiedGarbage.Impl.MlDsa.X86_64.Pack.Encode
 public import VerifiedGarbage.Proof.MlKem.X86_64.Contracts
-public import VerifiedGarbage.Proof.MlKem.X86_64.CompressEncode
+import VerifiedGarbage.Proof.MlKem.X86_64.CompressEncode
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

@@ -4,7 +4,7 @@ public import VerifiedGarbage.Impl.MlKem.X86_64.Decode12Avx2
 meta import VerifiedGarbage.Impl.MlKem.X86_64.Decode12Avx2
 public import VerifiedGarbage.Proof.MlKem.X86_64.S4Vec
 meta import VerifiedGarbage.Proof.MlKem.X86_64.S4Vec
-public import VerifiedGarbage.Proof.MlKem.X86_64.Decode12
+import VerifiedGarbage.Proof.MlKem.X86_64.Decode12
 meta import VerifiedGarbage.Proof.MlKem.X86_64.Decode12
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

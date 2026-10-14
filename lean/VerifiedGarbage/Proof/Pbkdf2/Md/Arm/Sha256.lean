@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.Pbkdf2.Stream.Arm.Sha256
 meta import VerifiedGarbage.Proof.Pbkdf2.Stream.Arm.Sha256
 public import VerifiedGarbage.Proof.Sha256.Arm.Stream.Md
 meta import VerifiedGarbage.Proof.Sha256.Arm.Stream.Md
-public import VerifiedGarbage.Proof.Sha256.Arm.Lit
+import VerifiedGarbage.Proof.Sha256.Arm.Lit
 meta import VerifiedGarbage.Proof.Sha256.Arm.Lit
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Absorb
-public import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Reduce
+import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Reduce
 public import VerifiedGarbage.Proof.Poly1305.AArch64.Blocks
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.X86_64.NttAvx2
-public import VerifiedGarbage.Proof.MlKem.X86_64.MulAvx2
+import VerifiedGarbage.Proof.MlKem.X86_64.NttAvx2
+import VerifiedGarbage.Proof.MlKem.X86_64.MulAvx2
 public import VerifiedGarbage.Proof.MlKem.X86_64.KpkeBodies
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

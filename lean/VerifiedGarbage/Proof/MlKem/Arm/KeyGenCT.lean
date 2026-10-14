@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.Arm.KeyGen
 meta import VerifiedGarbage.Proof.MlKem.Arm.KeyGen
-public import VerifiedGarbage.Proof.MlKem.Arm.RowCT
+import VerifiedGarbage.Proof.MlKem.Arm.RowCT
 meta import VerifiedGarbage.Proof.MlKem.Arm.RowCT
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

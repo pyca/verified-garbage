@@ -4,7 +4,7 @@ public import VerifiedGarbage.Impl.MlDsa.X86.Sign.Sign
 public import VerifiedGarbage.Proof.MlKem.X86.TopKeep
 public import VerifiedGarbage.Proof.Framework.X86.Inline
 public import VerifiedGarbage.Proof.MlDsa.Sign.Vals
-public import VerifiedGarbage.Proof.MlDsa.Sign.Mem
+import VerifiedGarbage.Proof.MlDsa.Sign.Mem
 public import VerifiedGarbage.Spec.MlDsa.Contract
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

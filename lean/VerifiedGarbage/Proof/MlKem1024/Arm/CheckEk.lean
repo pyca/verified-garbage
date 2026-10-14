@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.Arm.CheckEk
 meta import VerifiedGarbage.Proof.MlKem.Arm.CheckEk
-public import VerifiedGarbage.Proof.MlKem.EkCheck
+import VerifiedGarbage.Proof.MlKem.EkCheck
 meta import VerifiedGarbage.Proof.MlKem.EkCheck
 public import VerifiedGarbage.Impl.MlKem1024.Arm.Poly
 meta import VerifiedGarbage.Impl.MlKem1024.Arm.Poly

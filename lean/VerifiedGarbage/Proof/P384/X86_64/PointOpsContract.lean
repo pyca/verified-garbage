@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.P384.X86_64.PointOpsVerified
-public import VerifiedGarbage.Proof.P384.X86_64.PointOpsLit
+import VerifiedGarbage.Proof.P384.X86_64.PointOpsLit
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

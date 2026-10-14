@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MdStream.AArch64.Common
-public import VerifiedGarbage.Proof.Hmac.Common
+import VerifiedGarbage.Proof.Hmac.Common
 public import VerifiedGarbage.Impl.Pbkdf2.AArch64
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

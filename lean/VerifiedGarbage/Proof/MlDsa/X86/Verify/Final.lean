@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.X86.Verify.Row
 meta import VerifiedGarbage.Proof.MlDsa.X86.Verify.Row
-public import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Seeds
+import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Seeds
 meta import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Seeds
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

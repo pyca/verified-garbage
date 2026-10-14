@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.EncBase
-public import VerifiedGarbage.Proof.MlKem.X86_64.Prfs
+import VerifiedGarbage.Proof.MlKem.X86_64.Prfs
 public import VerifiedGarbage.Proof.MlKem.X86_64.FragEM
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

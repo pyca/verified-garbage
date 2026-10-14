@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Modes.AArch64.FbLoop
-public import VerifiedGarbage.Proof.Modes.Cfb8
-public import VerifiedGarbage.Proof.Framework.WriteBytes
+import VerifiedGarbage.Proof.Modes.Cfb8
+import VerifiedGarbage.Proof.Framework.WriteBytes
 public import VerifiedGarbage.Impl.Modes.AArch64.Cfb8
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

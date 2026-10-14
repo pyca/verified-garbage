@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Mont.AArch64.Ops
-public import VerifiedGarbage.Impl.P256.VerifySparse
+import VerifiedGarbage.Impl.P256.VerifySparse
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

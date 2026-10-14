@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
+import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejNttLoop
 public import VerifiedGarbage.Impl.MlDsa.X86_64.Sample.RejBounded
 public import VerifiedGarbage.Proof.MlDsa.Sample.RejBounded

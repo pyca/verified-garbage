@@ -1,9 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Rc2.Arm.KeyLoop
-public import VerifiedGarbage.Proof.Rc2.CbcMemory
+import VerifiedGarbage.Proof.Rc2.Arm.KeyLoop
+import VerifiedGarbage.Proof.Rc2.CbcMemory
 public import VerifiedGarbage.Proof.Rc2.Arm.KeySteps
-public import VerifiedGarbage.Proof.Rc2.PairMem
+import VerifiedGarbage.Proof.Rc2.PairMem
 public import VerifiedGarbage.Proof.Rc2.Arm.Block
 public import VerifiedGarbage.Impl.Rc2.Arm.Cbc
 public import VerifiedGarbage.Proof.Framework.Arm.Call

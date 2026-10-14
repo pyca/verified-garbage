@@ -4,11 +4,11 @@ public import VerifiedGarbage.Proof.MlKem.X86.Keccak
 meta import VerifiedGarbage.Proof.MlKem.X86.Keccak
 public import VerifiedGarbage.Proof.MlKem.X86.Leaf
 meta import VerifiedGarbage.Proof.MlKem.X86.Leaf
-public import VerifiedGarbage.Proof.MlKem.KPke
+import VerifiedGarbage.Proof.MlKem.KPke
 meta import VerifiedGarbage.Proof.MlKem.KPke
 public import VerifiedGarbage.Impl.MlKem.X86.Sample
 meta import VerifiedGarbage.Impl.MlKem.X86.Sample
-public import VerifiedGarbage.Spec.MlKem.Poly
+import VerifiedGarbage.Spec.MlKem.Poly
 meta import VerifiedGarbage.Spec.MlKem.Poly
 public import VerifiedGarbage.TCB.X86.Target
 meta import VerifiedGarbage.TCB.X86.Target

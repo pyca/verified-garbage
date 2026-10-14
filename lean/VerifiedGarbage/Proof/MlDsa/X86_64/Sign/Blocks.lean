@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Top
-public import VerifiedGarbage.Proof.MlKem.X86_64.FragBase
+import VerifiedGarbage.Proof.MlKem.X86_64.FragBase
 public import VerifiedGarbage.Proof.Framework.X86_64.Avx
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

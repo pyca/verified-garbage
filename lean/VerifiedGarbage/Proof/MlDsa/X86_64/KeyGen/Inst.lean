@@ -2,15 +2,15 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.Top
 public import VerifiedGarbage.Impl.MlDsa.X86_64.KeyGen.Inst
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Ntt
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.NttInv
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Mul
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.AddSub
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejNttCT
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejBoundedCT
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Round.Power2Round
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.SimpleBitPack
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.BitPack
+import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Ntt
+import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.NttInv
+import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Mul
+import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.AddSub
+import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejNttCT
+import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejBoundedCT
+import VerifiedGarbage.Proof.MlDsa.X86_64.Round.Power2Round
+import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.SimpleBitPack
+import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.BitPack
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Backend
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Same
 import all Init.Data.Array.Basic

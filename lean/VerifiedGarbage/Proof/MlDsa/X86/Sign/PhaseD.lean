@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.X86.Sign.PhaseA
-public import VerifiedGarbage.Proof.MlDsa.X86.Sign.PrimA
-public import VerifiedGarbage.Proof.MlDsa.X86.Sign.PrimD
+import VerifiedGarbage.Proof.MlDsa.X86.Sign.PrimA
+import VerifiedGarbage.Proof.MlDsa.X86.Sign.PrimD
 public import VerifiedGarbage.Proof.MlDsa.Sample.Hash
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

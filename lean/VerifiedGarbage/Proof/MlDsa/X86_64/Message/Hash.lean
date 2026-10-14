@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Message.Args
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Keccak
-public import VerifiedGarbage.Proof.MlKem.KPke
+import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Keccak
+import VerifiedGarbage.Proof.MlKem.KPke
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

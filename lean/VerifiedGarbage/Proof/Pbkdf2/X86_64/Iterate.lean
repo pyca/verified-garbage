@@ -1,10 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Pbkdf2.MdStep
-public import VerifiedGarbage.Proof.Pbkdf2.Memory
+import VerifiedGarbage.Proof.Pbkdf2.Memory
 public import VerifiedGarbage.Proof.MdStream.X86_64.Words
-public import VerifiedGarbage.Proof.Pbkdf2.X86_64.Copy
-public import VerifiedGarbage.Proof.Hmac.Generic.Common
+import VerifiedGarbage.Proof.Pbkdf2.X86_64.Copy
+import VerifiedGarbage.Proof.Hmac.Generic.Common
 public import VerifiedGarbage.Impl.Pbkdf2.X86_64
 public import VerifiedGarbage.Proof.Framework.Omega
 import all Init.Data.Array.Basic

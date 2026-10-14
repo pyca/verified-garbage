@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.Unch
+import VerifiedGarbage.Proof.Weierstrass.Unch
 public import VerifiedGarbage.Impl.P256.EcdhSelect
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombSelectV
 import all Init.Data.Array.Basic

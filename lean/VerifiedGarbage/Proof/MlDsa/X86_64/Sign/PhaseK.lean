@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
+import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseC
 public import VerifiedGarbage.Proof.Framework.X86_64.Avx
 import all Init.Data.Array.Basic

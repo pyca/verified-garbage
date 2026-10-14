@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Rc2.Arm.Stream.Verified
 public import VerifiedGarbage.Proof.Rc2.Scratch
-public import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
+import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
 public import VerifiedGarbage.Proof.Framework.Arm.StackScratchConsts
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

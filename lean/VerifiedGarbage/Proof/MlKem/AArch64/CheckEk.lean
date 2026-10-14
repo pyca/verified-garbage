@@ -6,9 +6,9 @@ public import VerifiedGarbage.Proof.MlKem.EkCheck
 meta import VerifiedGarbage.Proof.MlKem.EkCheck
 public import VerifiedGarbage.Impl.MlKem.AArch64.Encode
 meta import VerifiedGarbage.Impl.MlKem.AArch64.Encode
-public import VerifiedGarbage.Spec.MlKem.Contract
+import VerifiedGarbage.Spec.MlKem.Contract
 meta import VerifiedGarbage.Spec.MlKem.Contract
-public import VerifiedGarbage.Spec.MlKem.Contract1024
+import VerifiedGarbage.Spec.MlKem.Contract1024
 meta import VerifiedGarbage.Spec.MlKem.Contract1024
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

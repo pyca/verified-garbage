@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlKem1024.AArch64.Stream
 meta import VerifiedGarbage.Proof.MlKem1024.AArch64.Stream
-public import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.Range
 meta import VerifiedGarbage.Proof.Framework.Range
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Modes.Words
 public import VerifiedGarbage.Proof.CmacAes.Arm.Words
-public import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.Range
 public import VerifiedGarbage.Impl.Modes.Arm.Seq
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

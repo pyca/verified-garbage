@@ -2,13 +2,13 @@ module
 
 public import VerifiedGarbage.Impl.Ecdsa.Verify.P224.X86_64
 meta import VerifiedGarbage.Impl.Ecdsa.Verify.P224.X86_64
-public import VerifiedGarbage.Proof.P224.X86_64.JacTiming
+import VerifiedGarbage.Proof.P224.X86_64.JacTiming
 meta import VerifiedGarbage.Proof.P224.X86_64.JacTiming
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointCachedDigitTiming
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.JointCachedDigitTiming
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointFixedDigitTiming
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.JointFixedDigitTiming
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointFixedTiming
+import VerifiedGarbage.Proof.Weierstrass.X86_64.JointFixedTiming
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.JointFixedTiming
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.FastNafTiming
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.FastNafTiming

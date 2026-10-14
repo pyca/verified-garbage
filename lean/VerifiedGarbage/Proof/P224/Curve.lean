@@ -1,9 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.PowLit
-public import VerifiedGarbage.Proof.P224.Prime
+import VerifiedGarbage.Proof.P224.Prime
 public import VerifiedGarbage.Proof.P224.Point
-public import VerifiedGarbage.Proof.Weierstrass.Group
+import VerifiedGarbage.Proof.Weierstrass.Group
 public import VerifiedGarbage.Proof.Weierstrass.Cubic
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

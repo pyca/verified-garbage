@@ -2,9 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.P256.X86_64.JointLayout
 meta import VerifiedGarbage.Proof.P256.X86_64.JointLayout
-public import VerifiedGarbage.Proof.P256.X86_64.JointFixedTiming
+import VerifiedGarbage.Proof.P256.X86_64.JointFixedTiming
 meta import VerifiedGarbage.Proof.P256.X86_64.JointFixedTiming
-public import VerifiedGarbage.Proof.P256.X86_64.NafCacheTiming
+import VerifiedGarbage.Proof.P256.X86_64.NafCacheTiming
 meta import VerifiedGarbage.Proof.P256.X86_64.NafCacheTiming
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointCachedDigitTiming
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.JointCachedDigitTiming

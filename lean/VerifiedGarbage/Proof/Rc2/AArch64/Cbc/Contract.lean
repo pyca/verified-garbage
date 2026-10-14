@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Rc2.AArch64.Cbc.IO
+import VerifiedGarbage.Proof.Rc2.AArch64.Cbc.IO
 public import VerifiedGarbage.Proof.Rc2.AArch64.Cbc.ConstantTime
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.Rc2.Contract

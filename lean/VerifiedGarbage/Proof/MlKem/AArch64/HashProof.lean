@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.KeccakCall
-public import VerifiedGarbage.Proof.MlKem.KPke
-public import VerifiedGarbage.Proof.MlKem.Mem
+import VerifiedGarbage.Proof.MlKem.KPke
+import VerifiedGarbage.Proof.MlKem.Mem
 public import VerifiedGarbage.Impl.MlKem.AArch64.Top
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

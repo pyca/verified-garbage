@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Spec.Ocb
-public import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Cmac.Spec
 public import VerifiedGarbage.Proof.Cmac.Dbl32
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

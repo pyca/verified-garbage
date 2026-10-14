@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Flag
-public import VerifiedGarbage.Proof.MlDsa.Verify.Norm
+import VerifiedGarbage.Proof.MlDsa.Verify.Norm
 public import VerifiedGarbage.Spec.MlDsa.Contract
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Call
-public import VerifiedGarbage.Proof.MlKem.X86_64.KCall
-public import VerifiedGarbage.Proof.Framework.X86_64.Abi
+import VerifiedGarbage.Proof.MlKem.X86_64.KCall
+import VerifiedGarbage.Proof.Framework.X86_64.Abi
 public import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

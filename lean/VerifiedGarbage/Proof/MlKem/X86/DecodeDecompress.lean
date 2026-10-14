@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.MlKem.X86.Unpack
 meta import VerifiedGarbage.Proof.MlKem.X86.Unpack
 public import VerifiedGarbage.Proof.MlKem.Encode
 meta import VerifiedGarbage.Proof.MlKem.Encode
-public import VerifiedGarbage.Spec.MlKem.Poly
+import VerifiedGarbage.Spec.MlKem.Poly
 meta import VerifiedGarbage.Spec.MlKem.Poly
 public import VerifiedGarbage.TCB.X86.Target
 meta import VerifiedGarbage.TCB.X86.Target

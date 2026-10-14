@@ -1,7 +1,7 @@
 module
 
 public import Mathlib.Tactic.Ring
-public import VerifiedGarbage.Proof.P256.EcdhInverse.Shift
+import VerifiedGarbage.Proof.P256.EcdhInverse.Shift
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

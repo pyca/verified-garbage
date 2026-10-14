@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Rc2.AArch64.Vec.Mix
 public import VerifiedGarbage.Proof.Rc2.AArch64.Lookup
-public import VerifiedGarbage.Proof.Rc2.AArch64.Rounds
+import VerifiedGarbage.Proof.Rc2.AArch64.Rounds
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

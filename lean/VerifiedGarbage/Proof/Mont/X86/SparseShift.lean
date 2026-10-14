@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Mont.X86.SparseChain
+import VerifiedGarbage.Proof.Mont.X86.SparseChain
 public import VerifiedGarbage.Proof.Mont.X86.Row
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

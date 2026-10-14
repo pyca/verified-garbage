@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Rc2.Arm.Save
+import VerifiedGarbage.Proof.Rc2.Arm.Save
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import VerifiedGarbage.Proof.Rc2.Arm.KeyLoop
 import all Init.Data.Array.Basic

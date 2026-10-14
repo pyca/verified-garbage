@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.MlKem.Arm.Decompress
 meta import VerifiedGarbage.Proof.MlKem.Arm.Decompress
 public import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Framework.Omega
-public import VerifiedGarbage.Proof.MlKem.Encode1024
+import VerifiedGarbage.Proof.MlKem.Encode1024
 meta import VerifiedGarbage.Proof.MlKem.Encode1024
 public import VerifiedGarbage.Impl.MlKem1024.Arm.Poly
 meta import VerifiedGarbage.Impl.MlKem1024.Arm.Poly
