@@ -26,7 +26,7 @@ namespace VG.Proof.X25519.AArch64.Hybrid
 open VG VG.AArch64
 open VG.Impl.X25519.AArch64.Hybrid
 open VG.Impl.X25519.AArch64.Neon (limbOff)
-open VG.Proof.Ed25519.AArch64 (read_x Scr word load_sc Keep F fold_ok store4_ok fe_st4 st4_outside clob)
+open VG.Proof.Ed25519.AArch64 (read_x Scr word load_sc Keep F fold_ok store4_ok fe_st4 st4_outside clob Outside)
 open VG.Proof.Ed25519.Word64 (val4)
 open VG.Proof.X25519 (toFe toFe_congr fold256)
 
@@ -259,7 +259,7 @@ theorem limbs_ok {s : State} {base : Addr} (hs : Scr s base false) (sub : Bool)
     rw [vg r (by simp only [placeRegs, List.mem_cons, List.not_mem_nil, or_false, not_or]; exact ⟨hr.1, hr.2.1, hr.2.2.1, hr.2.2.2.1, hr.2.2.2.2.1, hr.2.2.2.2.2.2.2.1, hr.2.2.2.2.2.2.2.2⟩),
       ug r hr.2.2.2.2.2.1 hr.2.2.2.2.2.2.1, tg r (by simp only [loopRegs, List.mem_cons, List.not_mem_nil, or_false, not_or]; exact hr)]
 
-theorem prefix_ok (s : State) (sub : Bool) :
+theorem recPrefix_ok (s : State) (sub : Bool) :
     WP isa (.block ([.movz .w .x10 0 0, .movz .w .x11 38 0, .movz .w .x4 0 0, .movz .w .x5 0 0, .movz .w .x6 0 0,
       .movz .w .x7 0 0, .movz .w .x20 0 0] ++
       (if sub then
@@ -296,9 +296,10 @@ theorem recombine_ok {s : State} {base : Addr} (hs : Scr s base false) (sub : Bo
     (hL : ∀ k < 10, (word s.mem base (LBUF + 16 * k)).toNat < 2 ^ 27 ∧
       (word s.mem base (LBUF + 16 * k + 8)).toNat ≤ limbB k) :
     WP isa (.block (recombine sub o)) s fun t =>
-      Keep base s t ∧ F t.mem base o = toFe (VG.Proof.X25519.AArch64.Hybrid.val (limbSumVal s.mem base sub)) := by
+      Keep base s t ∧ Outside base o 32 s.mem t.mem ∧
+      F t.mem base o = toFe (VG.Proof.X25519.AArch64.Hybrid.val (limbSumVal s.mem base sub)) := by
   rw [recombine, WP.block_append_iff, WP.block_append_iff, WP.block_append_iff]
-  refine WP.mono (prefix_ok s sub) fun t ⟨tz, t38, ta, tb, tg, tm, tr, tw, tsp⟩ => ?_
+  refine WP.mono (recPrefix_ok s sub) fun t ⟨tz, t38, ta, tb, tg, tm, tr, tw, tsp⟩ => ?_
   have ht : Scr t base false := ⟨by rw [tg _ (by decide)]; exact hs.x0, tw ▸ hs.wr, hs.nowrap⟩
   refine WP.mono (limbs_ok ht sub tz tb (by rw [tm]; exact hL) ta) fun u ⟨ua, ub, ug, um, ur, uw, usp⟩ => ?_
   have hu : Scr u base false := ⟨by rw [ug _ (by decide), tg _ (by decide)]; exact hs.x0, uw ▸ tw ▸ hs.wr, hs.nowrap⟩
@@ -314,13 +315,16 @@ theorem recombine_ok {s : State} {base : Addr} (hs : Scr s base false) (sub : Bo
   refine WP.mono (store4_ok hv ⟨ho, show o + 32 ≤ 4096 by omega⟩) fun w hw => ?_
   subst hw
   refine ⟨⟨fun r hr => ?_, by simp only; rw [vk.rd, ur, tr], by simp only; rw [vk.wr, uw, tw],
-    by simp only; rw [vk.sp, usp, tsp], ?_⟩, ?_⟩
+    by simp only; rw [vk.sp, usp, tsp], ?_⟩, ?_, ?_⟩
   · have sub : ∀ L : List Reg, (∀ x ∈ L, x ∈ clob) → r ∉ L := fun L hL h => hr (hL r h)
     simp only
     rw [vk.gpr r (sub _ (by decide)), ug r (sub _ (by decide)), tg r (sub _ (by decide))]
   · simp only
     rw [vk.mem, um, tm]
     exact (st4_outside _ _ (by omega) _ _ _ _).mono (by omega) (by omega)
+  · simp only
+    rw [vk.mem, um, tm]
+    exact st4_outside _ _ (by omega) _ _ _ _
   · simp only [F]
     rw [fe_st4 _ _ (by omega), ve]
     apply toFe_congr
