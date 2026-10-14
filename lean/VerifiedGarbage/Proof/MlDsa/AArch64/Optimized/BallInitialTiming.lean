@@ -4,9 +4,9 @@ public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Backend
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Backend
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Ball
 meta import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Ball
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallFirst
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallFirst
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallFirst
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallChunkTiming
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallChunkTiming
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallChunkTiming
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallInitial
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallInitial

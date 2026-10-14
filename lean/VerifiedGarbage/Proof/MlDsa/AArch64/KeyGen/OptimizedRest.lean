@@ -2,8 +2,8 @@ module
 
 public import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.OptimizedRest
 public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedFinish
-public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedPackSecret
-public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedNtt
+import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedPackSecret
+import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedNtt
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

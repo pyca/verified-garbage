@@ -2,9 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.RejNttLoop
 public import VerifiedGarbage.Proof.MlDsa.Sample.LeNat
-public import VerifiedGarbage.Proof.MlDsa.Sample.LeWord
+import VerifiedGarbage.Proof.MlDsa.Sample.LeWord
 public import VerifiedGarbage.Proof.MlDsa.Pack.Arith
-public import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.Range
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.ExpandMask
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

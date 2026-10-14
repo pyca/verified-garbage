@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejWideValue
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejWideValue
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejParsePublic
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

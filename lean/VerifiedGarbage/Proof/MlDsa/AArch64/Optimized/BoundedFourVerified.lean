@@ -1,12 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourSpec
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourSpec
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourSpec
 public import VerifiedGarbage.Proof.MlDsa.KeyGen.Masked
 meta import VerifiedGarbage.Proof.MlDsa.KeyGen.Masked
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourShake
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourShake
-public import VerifiedGarbage.Proof.MlDsa.KeyGen.Leak
+import VerifiedGarbage.Proof.MlDsa.KeyGen.Leak
 meta import VerifiedGarbage.Proof.MlDsa.KeyGen.Leak
 public import VerifiedGarbage.Spec.MlDsa.BoundedFour
 meta import VerifiedGarbage.Spec.MlDsa.BoundedFour
@@ -16,17 +16,17 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourBatch
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourBatch
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourOuterTaint
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourOuterTaint
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourRound
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourRound
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourRound
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourAdaptive
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourAdaptive
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourAdaptive
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourFinish
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourFinish
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourFinish
 public import VerifiedGarbage.Proof.MlKem.AArch64.Common
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Common
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Verified
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Verified
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Verified
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

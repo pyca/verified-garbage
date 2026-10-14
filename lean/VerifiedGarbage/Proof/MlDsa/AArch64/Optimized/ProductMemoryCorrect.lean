@@ -1,16 +1,16 @@
 module
 
 public import VerifiedGarbage.Spec.MlDsa.RawInverse
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MemoryBank
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseFinalBankFieldRun
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseFinalBankFieldFold
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseRawFinalSlice
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MemoryBank
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseFinalBankFieldRun
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseFinalBankFieldFold
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseRawFinalSlice
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseRawMemoryValues
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseSliceComposition
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductMemory
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductMemory
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductMemoryField
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseMemoryCorrect
-public import VerifiedGarbage.Spec.MlDsa.FusedInverse
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseMemoryCorrect
+import VerifiedGarbage.Spec.MlDsa.FusedInverse
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Final
+import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Final
 public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Inst
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

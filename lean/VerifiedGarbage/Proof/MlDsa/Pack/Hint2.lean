@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.Pack.Hint
 public import VerifiedGarbage.Proof.MlDsa.Pack.Mem
-public import VerifiedGarbage.Proof.MlDsa.Pack.HintMem
+import VerifiedGarbage.Proof.MlDsa.Pack.HintMem
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

@@ -1,10 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Inline
+import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Inline
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.Base
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Pack
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Sample
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Round
+import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Round
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

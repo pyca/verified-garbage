@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedRawField
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedRawField
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFinalMemory
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedLowRun
 import all Init.Data.Array.Basic

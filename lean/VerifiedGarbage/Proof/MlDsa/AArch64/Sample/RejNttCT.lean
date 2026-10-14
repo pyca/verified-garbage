@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.RejNtt
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.RejNtt
-public import VerifiedGarbage.Proof.MlKem.AArch64.Sample
+import VerifiedGarbage.Proof.MlKem.AArch64.Sample
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Sample
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

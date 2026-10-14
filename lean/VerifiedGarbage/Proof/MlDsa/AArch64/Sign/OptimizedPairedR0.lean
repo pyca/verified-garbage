@@ -1,11 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedCalls
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedCalls
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedLowCorrect
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedLowCheck
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedLowCheck
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedPairedLow
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedRoots
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedZ
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedZ
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedR0
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.Arm.Message.Args
-public import VerifiedGarbage.Proof.MlKem.Arm.Sample
+import VerifiedGarbage.Proof.MlKem.Arm.Sample
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

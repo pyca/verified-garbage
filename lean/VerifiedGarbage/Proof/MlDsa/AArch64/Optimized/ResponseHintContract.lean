@@ -1,12 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseHintPacked
-public import VerifiedGarbage.Proof.MlDsa.Round.Ones
+import VerifiedGarbage.Proof.MlDsa.Round.Ones
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseHintNorm
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseHintMemory
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLoop
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseHintFinish
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseHintField
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseHintFinish
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseHintField
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

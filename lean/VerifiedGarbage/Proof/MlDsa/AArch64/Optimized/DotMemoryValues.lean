@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.DotMemory
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseMemory
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseMemory
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseSliceComposition
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

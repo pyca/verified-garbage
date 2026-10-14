@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.OptimizedMatrix
-public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedMatrixFour
+import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedMatrixFour
 public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedMatrixTwo
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

@@ -1,9 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedCorrect
-public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedRowTiming
+import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedRowTiming
 public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedNttTiming
-public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedPieceTiming
+import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedPieceTiming
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Lay
 meta import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Lay
 public import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Piece
 meta import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Piece
-public import VerifiedGarbage.Proof.MlDsa.KeyGen.Good
+import VerifiedGarbage.Proof.MlDsa.KeyGen.Good
 meta import VerifiedGarbage.Proof.MlDsa.KeyGen.Good
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

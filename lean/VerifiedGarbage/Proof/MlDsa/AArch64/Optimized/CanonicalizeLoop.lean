@@ -1,9 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseVec
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseVec
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Response
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseAdd
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Mem
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseAdd
+import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Mem
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLoop
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

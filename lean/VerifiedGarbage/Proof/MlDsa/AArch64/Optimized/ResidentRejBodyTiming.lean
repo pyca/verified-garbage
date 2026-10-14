@@ -4,9 +4,9 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejProbePubl
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejProbePublic
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejChoiceTiming
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejChoiceTiming
-public import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
-public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

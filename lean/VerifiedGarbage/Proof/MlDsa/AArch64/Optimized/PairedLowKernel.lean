@@ -2,13 +2,13 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedKernel
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedEntry
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Basic
+import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Basic
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedSpecPre
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedLowRun
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedLowLoop
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Mem
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedLowRun
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedLowLoop
+import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Mem
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedLowPair
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedRawField
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedRawField
 public import VerifiedGarbage.Spec.MlDsa.PairedResponse
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

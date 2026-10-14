@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedCalls
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedCalls
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseZCallTiming
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Samp
-public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Call4
-public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Mask4
+import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Call4
+import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Mask4
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

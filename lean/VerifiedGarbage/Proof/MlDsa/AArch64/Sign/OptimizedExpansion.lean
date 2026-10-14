@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.StaticRootsExecution
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseA4
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseA4
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.Depth
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

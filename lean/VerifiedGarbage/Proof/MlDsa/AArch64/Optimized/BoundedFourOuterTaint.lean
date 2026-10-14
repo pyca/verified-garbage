@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourInitializ
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourInitialized
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourMaskFour
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourMaskFour
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rel
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rel
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rel
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

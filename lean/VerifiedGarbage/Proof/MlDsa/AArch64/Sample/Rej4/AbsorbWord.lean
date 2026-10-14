@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.RejNtt4
 public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Keep
-public import VerifiedGarbage.Proof.Sha3.Seed34
+import VerifiedGarbage.Proof.Sha3.Seed34
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.MlDsa.Arm.Sign.Sign
 public import VerifiedGarbage.Proof.MlKem.Arm.CallF
-public import VerifiedGarbage.Proof.MlKem.Mem
+import VerifiedGarbage.Proof.MlKem.Mem
 public import VerifiedGarbage.Proof.MlDsa.Sign.Mem
 public import VerifiedGarbage.Proof.Framework.Offset
 import all Init.Data.Array.Basic

@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFold
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejAdvance
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejAdvance
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

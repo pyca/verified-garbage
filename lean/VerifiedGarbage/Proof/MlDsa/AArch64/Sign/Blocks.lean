@@ -1,10 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CallMore
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Hash
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CallMore
+import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Hash
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Blocks
-public import VerifiedGarbage.Proof.MlKem.AArch64.KgEnd
-public import VerifiedGarbage.Proof.MlKem.AArch64.KgA
+import VerifiedGarbage.Proof.MlKem.AArch64.KgEnd
+import VerifiedGarbage.Proof.MlKem.AArch64.KgA
 public import VerifiedGarbage.Proof.MlDsa.KeyGen.Mono
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

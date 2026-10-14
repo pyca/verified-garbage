@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedVerified
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedVerified
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedVerified
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedVerified
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.CachedVerified
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

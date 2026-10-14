@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.ResidentRejSelected
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejVerified
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejVerified
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Depth
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

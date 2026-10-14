@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Pro
+import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Pro
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Ntt
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.OuterFrame
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.FiveInit

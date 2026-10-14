@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseCCTBase
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.MaskPairLoop
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.MaskPairLoop
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

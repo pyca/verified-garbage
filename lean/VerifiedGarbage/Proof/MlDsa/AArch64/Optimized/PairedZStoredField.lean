@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedPassOutput
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedCheckOutput
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseHintField
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedPassOutput
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedCheckOutput
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseHintField
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseZ
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedCoordinates
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedRawField

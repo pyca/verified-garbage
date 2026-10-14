@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductPassMemory
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MemoryBank
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductPassMemory
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MemoryBank
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductMemoryBankField
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseSliceComposition
 import all Init.Data.Array.Basic

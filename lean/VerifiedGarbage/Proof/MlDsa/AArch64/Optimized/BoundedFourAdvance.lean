@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejGuard
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejGuard
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

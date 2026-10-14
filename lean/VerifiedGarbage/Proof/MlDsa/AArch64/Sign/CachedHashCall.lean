@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CommitTailVerified
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CommitTailVerified
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Call
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedMaskTail
 public import VerifiedGarbage.Spec.MlDsa.CommitTail

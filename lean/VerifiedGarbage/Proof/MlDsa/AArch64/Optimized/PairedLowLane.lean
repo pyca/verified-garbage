@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedReduce
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLowVec
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLowVec
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLowWord
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseFrame
 import all Init.Data.Array.Basic

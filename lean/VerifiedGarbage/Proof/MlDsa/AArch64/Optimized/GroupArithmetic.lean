@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Group
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Indexed
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Indexed
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

@@ -2,9 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedRestTiming
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedRestTiming
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedCorrect
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedCorrect
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedCorrect
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.SignCT
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.SignCT
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.SignCT
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

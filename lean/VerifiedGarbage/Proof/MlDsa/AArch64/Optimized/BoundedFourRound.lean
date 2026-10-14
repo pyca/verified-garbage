@@ -2,9 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourSqueezePast
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourBatchState
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourSamplerState
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourSamplerState
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourInitialized
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourBatch
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourBatch
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

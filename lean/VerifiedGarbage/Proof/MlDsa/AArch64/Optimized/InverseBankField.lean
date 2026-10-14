@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseBankFieldPackedBounds
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InversePackedRun
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InversePackedTable
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InversePackedTable
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseBankFieldRun
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseFive
 import all Init.Data.Array.Basic

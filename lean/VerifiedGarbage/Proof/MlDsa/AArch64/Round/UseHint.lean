@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Round.MakeHint
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Round.MakeHint
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Round.NormLt
+import VerifiedGarbage.Proof.MlDsa.AArch64.Round.NormLt
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Round.NormLt
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

@@ -1,9 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedCommitmentHash
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedMasksTiming
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedMasksTiming
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedDecodeTiming
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseCCTBase
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseCCTBase
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackMath
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Round.UseHint
+import VerifiedGarbage.Proof.MlDsa.AArch64.Round.UseHint
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.UseHintPack
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

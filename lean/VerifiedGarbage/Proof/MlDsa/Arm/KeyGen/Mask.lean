@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.StepsCT
+import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.StepsCT
 public import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Lay
-public import VerifiedGarbage.Proof.MlDsa.KeyGen.Mono
+import VerifiedGarbage.Proof.MlDsa.KeyGen.Mono
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallSave
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallSave
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallFrame
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

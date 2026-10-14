@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejState
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.RestoreV
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.RestoreG
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.RestoreV
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.RestoreG
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

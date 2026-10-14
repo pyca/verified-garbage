@@ -1,9 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.BallLoop
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallSecondCall
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallLoop
-public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.BallLoop
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallSecondCall
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallLoop
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallInitial
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

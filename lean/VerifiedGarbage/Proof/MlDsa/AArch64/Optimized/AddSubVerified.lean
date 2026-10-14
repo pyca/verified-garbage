@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.AddSubLoop
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.AddSubLoop
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.AddSub
+import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.AddSub
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.AddSub
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

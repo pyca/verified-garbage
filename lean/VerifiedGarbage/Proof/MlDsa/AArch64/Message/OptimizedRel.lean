@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.Rel
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.OptimizedCall
+import VerifiedGarbage.Proof.MlDsa.AArch64.Message.OptimizedCall
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

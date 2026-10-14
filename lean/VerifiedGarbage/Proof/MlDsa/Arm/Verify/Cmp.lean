@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.Arm.Verify.Hash
 meta import VerifiedGarbage.Proof.MlDsa.Arm.Verify.Hash
-public import VerifiedGarbage.Proof.MlKem.Arm.CmpSel
+import VerifiedGarbage.Proof.MlKem.Arm.CmpSel
 meta import VerifiedGarbage.Proof.MlKem.Arm.CmpSel
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

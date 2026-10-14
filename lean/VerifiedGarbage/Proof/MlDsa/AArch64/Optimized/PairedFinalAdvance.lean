@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFinalCheck
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedCallFrame
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedCallFrame
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

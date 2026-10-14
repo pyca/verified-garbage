@@ -1,12 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackFourGroup
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackAdvance
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackStreamMemory
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackInput
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackFourGroup
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackAdvance
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackStreamMemory
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackInput
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackBody
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackFourSetup
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.BitPack
+import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.BitPack
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

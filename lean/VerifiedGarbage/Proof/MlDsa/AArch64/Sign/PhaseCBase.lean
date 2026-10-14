@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackCall
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackCall
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseD
-public import VerifiedGarbage.Proof.MlDsa.Sign.Mem
+import VerifiedGarbage.Proof.MlDsa.Sign.Mem
 public import VerifiedGarbage.Proof.MlDsa.Sign.Iter
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

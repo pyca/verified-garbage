@@ -1,12 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CommitTailSeed
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CommitTailInitial
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentMaskBytes
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CommitTailInitial
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentMaskBytes
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Unpack
 public import VerifiedGarbage.Proof.Framework.AArch64.Inline
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CommitTailOutput
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CommitTailHash
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CommitTailOutput
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CommitTailHash
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentBytes
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CommitTailSaved
 import all Init.Data.Array.Basic

@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedDotValue
 public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedRoundCall
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.StaticRootsExecution
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.StaticRootsExecution
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

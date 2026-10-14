@@ -10,7 +10,7 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.Common
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Common
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Contracts
+import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Contracts
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Contracts
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Arith
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Arith

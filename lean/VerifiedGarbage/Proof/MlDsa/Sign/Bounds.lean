@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Sha3.Stream
+import VerifiedGarbage.Proof.Sha3.Stream
 public import VerifiedGarbage.Spec.MlDsa.Contract
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

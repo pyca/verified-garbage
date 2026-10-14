@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedDot
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedNtt
+import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedNtt
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

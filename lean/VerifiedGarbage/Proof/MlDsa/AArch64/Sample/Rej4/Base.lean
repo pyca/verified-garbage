@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Absorb
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Zero
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Zero
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.RejNttLoop
 public import VerifiedGarbage.Proof.MlDsa.Sample.Hash
 import all Init.Data.Array.Basic

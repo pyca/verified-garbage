@@ -6,9 +6,9 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Contracts
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Contracts
 public import VerifiedGarbage.Proof.MlDsa.Pack.HintMem
 meta import VerifiedGarbage.Proof.MlDsa.Pack.HintMem
-public import VerifiedGarbage.Proof.MlKem.AArch64.MemTaint
+import VerifiedGarbage.Proof.MlKem.AArch64.MemTaint
 meta import VerifiedGarbage.Proof.MlKem.AArch64.MemTaint
-public import VerifiedGarbage.Proof.Framework.RelCT
+import VerifiedGarbage.Proof.Framework.RelCT
 meta import VerifiedGarbage.Proof.Framework.RelCT
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

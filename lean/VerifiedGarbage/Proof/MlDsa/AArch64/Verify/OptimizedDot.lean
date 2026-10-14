@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedState
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MontDotCallTiming
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MontDotCallTiming
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Verify.Optimized
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

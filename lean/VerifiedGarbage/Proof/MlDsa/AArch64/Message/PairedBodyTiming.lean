@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedRootsExec
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedRootsExec
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.PairedCallTiming
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.StaticRootsExecution
 import all Init.Data.Array.Basic

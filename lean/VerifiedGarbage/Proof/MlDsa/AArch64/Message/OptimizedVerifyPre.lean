@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.VerifyCall
+import VerifiedGarbage.Proof.MlDsa.AArch64.Message.VerifyCall
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.OptimizedRoots
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

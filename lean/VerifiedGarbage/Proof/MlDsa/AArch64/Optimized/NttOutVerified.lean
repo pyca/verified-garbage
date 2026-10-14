@@ -2,9 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.OutCore
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MemoryOuterPass
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MemoryTraversal
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.StaticCore
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.NttTiming
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MemoryTraversal
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.StaticCore
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.NttTiming
 public import VerifiedGarbage.Proof.MlKem.AArch64.Common
 public import VerifiedGarbage.Spec.MlDsa.PositiveNtt
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.NttTable

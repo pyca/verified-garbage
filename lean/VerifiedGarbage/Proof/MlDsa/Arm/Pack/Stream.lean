@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Impl.MlDsa.Arm.Pack.Encode
 public import VerifiedGarbage.Proof.MlKem.Arm.Common
 public import VerifiedGarbage.Proof.Framework.Arm.Inline
-public import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.Range
 public import VerifiedGarbage.Proof.MlDsa.Pack.Stream
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

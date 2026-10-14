@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackVerify
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackVerify
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackFourContracts
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

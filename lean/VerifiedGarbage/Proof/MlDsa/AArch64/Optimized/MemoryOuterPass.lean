@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MemoryBank
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MemoryBank
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MemorySchedule
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.TraversalBank
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.OuterLoop

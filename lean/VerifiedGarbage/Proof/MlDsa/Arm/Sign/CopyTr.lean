@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Blocks
 meta import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Blocks
-public import VerifiedGarbage.Proof.MlKem.Arm.CallsCT
+import VerifiedGarbage.Proof.MlKem.Arm.CallsCT
 meta import VerifiedGarbage.Proof.MlKem.Arm.CallsCT
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

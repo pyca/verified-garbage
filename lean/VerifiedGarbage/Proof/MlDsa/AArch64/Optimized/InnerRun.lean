@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.OuterGroup
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.OuterGroup
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.OuterRun
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

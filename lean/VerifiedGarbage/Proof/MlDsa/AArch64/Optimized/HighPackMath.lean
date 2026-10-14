@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Arith
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentUnpackWord
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentUnpackWord
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.HighPack
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
