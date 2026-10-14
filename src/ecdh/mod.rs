@@ -2,9 +2,9 @@
 //! Rev. 3, §5.7.1.2.
 //!
 //! A [`PrivateKey<C>`] holds a private key on the curve `C` (so far [`P256`],
-//! [`P384`], and on x86-64, x86, 32-bit ARM and AArch64, `P521`, `P224`, `P192`
-//! and `BrainpoolP384r1`; secp256k1 and brainpoolP256r1 are supported on x86-64
-//! and AArch64, and brainpoolP512r1 on x86-64). Each exchange is one call of
+//! [`P384`], and on x86-64, x86, 32-bit ARM and AArch64, `P521`, `P224`, `P192`,
+//! `BrainpoolP256r1` and `BrainpoolP384r1`; secp256k1 is supported on x86-64 and
+//! AArch64, and brainpoolP512r1 on x86-64). Each exchange is one call of
 //! verified code (`vg_ecdh_<curve>`, contract
 //! `VG.Spec.Ecdh.Instance.exchangeContract`): it validates the peer's public
 //! key as SP 800-56A §5.6.2.3.3 requires (the uncompressed form of SEC 1
@@ -29,7 +29,12 @@ mod p384;
 mod p521;
 mod secp256k1;
 
-#[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
+#[cfg(any(
+    target_arch = "x86_64",
+    target_arch = "x86",
+    target_arch = "arm",
+    target_arch = "aarch64"
+))]
 pub use crate::ec::BrainpoolP256r1;
 #[cfg(any(
     target_arch = "x86_64",
