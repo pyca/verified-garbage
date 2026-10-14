@@ -3,6 +3,10 @@ module
 public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemLoop
 public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemBodyD
 public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemQuadD
+import VerifiedGarbage.Proof.Gcm.X86_64.Rev
+import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Base
+import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Ctr32
+import VerifiedGarbage.Proof.Framework.X86_64.Lane0Zero
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

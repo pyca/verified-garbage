@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Rem
 public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemLoopD
+import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx.Loop
+import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx.Reduction
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
