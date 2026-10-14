@@ -314,4 +314,21 @@ theorem ecbPost_local (direction : Direction) : ∀ vs m₁ m₂ m' r,
       rw [BitVec.toNat_setWidth] at hi; have := Nat.mul_le_mul_right 16 this; omega)]
     exact h
 
+theorem ctrPost_local : ∀ vs m₁ m₂ m' r, vs.length = (ctrSig.words pb).length →
+    (∀ b ∈ Sig.bufs ctrSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (ctrSig.words pb) (ctrPost pb) vs m₁ m' r → Curry.apply (ctrSig.words pb) (ctrPost pb) vs m₂ m' r
+  | [_, _, data, n], m₁, m₂, m', r, _, hb, h => by
+    simp only [ctrSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+      forall_eq, Elem.size, Nat.mul_one] at hb
+    have hs := agree_of hb.1
+    have hv := agree_of hb.2.1
+    have hd := agree_of hb.2.2
+    change Curry.apply [ArgWord.addr, ArgWord.addr, ArgWord.addr, ArgWord.int pb] (ctrPost pb) _ m₁ m' r at h
+    change Curry.apply [ArgWord.addr, ArgWord.addr, ArgWord.addr, ArgWord.int pb] (ctrPost pb) _ m₂ m' r
+    dsimp only [Curry.apply, ctrPost, ArgWord.ofRaw] at h ⊢
+    have := Nat.mod_le n.toNat (2 ^ pb)
+    rw [scheduleAt_congr hs, bytesAt_congr hv, cbcBlocksAt_congr (n := (n.setWidth pb).toNat) fun i hi => hd i (by
+      rw [BitVec.toNat_setWidth] at hi; have := Nat.mul_le_mul_right 16 this; omega)]
+    exact h
+
 end VG.Proof.Sm4
