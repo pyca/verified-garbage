@@ -4,11 +4,11 @@ public import VerifiedGarbage.Proof.Framework.AArch64.Lit
 meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
 public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.Allocated
 meta import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.Allocated
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointLit.Double
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointLit.Double
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointLit.Double
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointLit.TableHead
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointLit.TableHead
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointLit.TableHead
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointLit.TableTail
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointLit.TableTail
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointLit.TableTail
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

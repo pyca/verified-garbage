@@ -1,9 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.X86_64.PublicKey.Hash
-public import VerifiedGarbage.Proof.Ed25519.Bytes
+import VerifiedGarbage.Proof.Ed25519.Bytes
 public import VerifiedGarbage.Proof.Ed25519.X86_64.BaseCallee
-public import VerifiedGarbage.Proof.Ed25519.X86_64.CombLit
+import VerifiedGarbage.Proof.Ed25519.X86_64.CombLit
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

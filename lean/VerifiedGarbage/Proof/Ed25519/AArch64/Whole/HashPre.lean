@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Layout
-public import VerifiedGarbage.Proof.Sha512.AArch64.Stream.Init
+import VerifiedGarbage.Proof.Sha512.AArch64.Stream.Init
 public import VerifiedGarbage.Proof.Sha512.AArch64.Variant
 public import VerifiedGarbage.Spec.Ed25519.Contract
 public import VerifiedGarbage.Spec.Sha512.Contract

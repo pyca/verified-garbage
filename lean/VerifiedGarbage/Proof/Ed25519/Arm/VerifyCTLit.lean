@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Framework.Arm.Lit
 meta import VerifiedGarbage.Proof.Framework.Arm.Lit
 public import VerifiedGarbage.Impl.Ed25519.Arm.Verify
 meta import VerifiedGarbage.Impl.Ed25519.Arm.Verify
-public import VerifiedGarbage.Proof.Ed25519.Arm.DecodeCTLit
+import VerifiedGarbage.Proof.Ed25519.Arm.DecodeCTLit
 meta import VerifiedGarbage.Proof.Ed25519.Arm.DecodeCTLit
 public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTLit
 meta import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTLit

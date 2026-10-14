@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Impl.Ed25519.Arm.Whole.Wipe
-public import VerifiedGarbage.Proof.Framework.Arm.Exec
-public import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 public import VerifiedGarbage.Proof.Ed25519.Arm.Whole.Layout
 public import VerifiedGarbage.Proof.Framework.Offset
 import all Init.Data.Array.Basic

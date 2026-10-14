@@ -1,12 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Ed25519.Arm.RecoverCTBlocks
+import VerifiedGarbage.Proof.Ed25519.Arm.RecoverCTBlocks
 meta import VerifiedGarbage.Proof.Ed25519.Arm.RecoverCTBlocks
-public import VerifiedGarbage.Proof.Ed25519.Arm.PointEqual
+import VerifiedGarbage.Proof.Ed25519.Arm.PointEqual
 meta import VerifiedGarbage.Proof.Ed25519.Arm.PointEqual
 public import VerifiedGarbage.Proof.Ed25519.Arm.VerifyCTPublic
 meta import VerifiedGarbage.Proof.Ed25519.Arm.VerifyCTPublic
-public import VerifiedGarbage.Proof.Ed25519.Arm.VerifyCTLit
+import VerifiedGarbage.Proof.Ed25519.Arm.VerifyCTLit
 meta import VerifiedGarbage.Proof.Ed25519.Arm.VerifyCTLit
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

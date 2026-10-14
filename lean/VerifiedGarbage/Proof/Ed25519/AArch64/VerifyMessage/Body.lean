@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyMessage.Args
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.HashPre
 public import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarVerified
 public import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyVerified
-public import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Wipe
+import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Wipe
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

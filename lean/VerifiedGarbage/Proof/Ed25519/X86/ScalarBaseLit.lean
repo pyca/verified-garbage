@@ -6,7 +6,7 @@ public import VerifiedGarbage.Impl.Ed25519.X86.ScalarBase
 meta import VerifiedGarbage.Impl.Ed25519.X86.ScalarBase
 public import VerifiedGarbage.Proof.Ed25519.X86.PointCTLit
 meta import VerifiedGarbage.Proof.Ed25519.X86.PointCTLit
-public import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseCTLit
+import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseCTLit
 meta import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseCTLit
 public import VerifiedGarbage.Proof.Ed25519.X86.CombLit
 meta import VerifiedGarbage.Proof.Ed25519.X86.CombLit

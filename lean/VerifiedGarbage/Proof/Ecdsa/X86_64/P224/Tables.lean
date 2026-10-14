@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Ecdsa.P224.X86_64
 public import VerifiedGarbage.Proof.Framework.ConstMem
-public import VerifiedGarbage.Proof.Weierstrass.TCombWords
+import VerifiedGarbage.Proof.Weierstrass.TCombWords
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

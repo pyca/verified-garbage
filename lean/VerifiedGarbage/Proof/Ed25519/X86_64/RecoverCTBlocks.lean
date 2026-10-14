@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyCTLit
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyCTLit
 public import VerifiedGarbage.Proof.Ed25519.X86_64.CTSupport
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.CTSupport
-public import VerifiedGarbage.Proof.Ed25519.X86_64.RecoverPoint
+import VerifiedGarbage.Proof.Ed25519.X86_64.RecoverPoint
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.RecoverPoint
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

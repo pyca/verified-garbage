@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Ed25519.Arm.FieldMemory
 public import VerifiedGarbage.Proof.Ed25519.Arm.MulFnFn
 public import VerifiedGarbage.Proof.Framework.Arm.Call
-public import VerifiedGarbage.Proof.Framework.Covers
+import VerifiedGarbage.Proof.Framework.Covers
 public import Mathlib.Logic.Function.Basic
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

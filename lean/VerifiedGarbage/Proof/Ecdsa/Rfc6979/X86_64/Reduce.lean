@@ -1,10 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Hmac
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Bytes
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Bytes
 public import VerifiedGarbage.Proof.X25519.X86_64.Step
 public import VerifiedGarbage.Proof.Weierstrass.Words
-public import VerifiedGarbage.Proof.Weierstrass.BytesLen
+import VerifiedGarbage.Proof.Weierstrass.BytesLen
 public import VerifiedGarbage.Proof.Framework.Omega
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

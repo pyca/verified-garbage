@@ -1,9 +1,9 @@
 module
 
 public import VerifiedGarbage.Impl.Ed25519.X86_64.ScalarBase
-public import VerifiedGarbage.Proof.Ed25519.X86_64.PointMul
-public import VerifiedGarbage.Proof.Ed25519.X86_64.PointEncode
-public import VerifiedGarbage.Proof.Ed25519.X86_64.Bits
+import VerifiedGarbage.Proof.Ed25519.X86_64.PointMul
+import VerifiedGarbage.Proof.Ed25519.X86_64.PointEncode
+import VerifiedGarbage.Proof.Ed25519.X86_64.Bits
 public import VerifiedGarbage.Proof.Ed25519.X86_64.CombSelect
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

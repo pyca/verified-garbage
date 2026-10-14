@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.AArch64.SignCached.Args
-public import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarVerified
+import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarVerified
 public import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseVerified
 public import VerifiedGarbage.Proof.Ed25519.AArch64.MulAddVerified
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.HashPre

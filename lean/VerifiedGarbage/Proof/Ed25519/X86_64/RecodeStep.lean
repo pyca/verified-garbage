@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Impl.Ed25519.X86_64.VerifyWindow
 public import VerifiedGarbage.Proof.Ed25519.X86_64.FieldWide
 public import VerifiedGarbage.Proof.Ed25519.Recode
-public import VerifiedGarbage.Proof.Framework.WriteBytes
+import VerifiedGarbage.Proof.Framework.WriteBytes
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

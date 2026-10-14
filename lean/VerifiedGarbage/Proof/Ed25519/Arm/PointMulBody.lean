@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Ed25519.Arm.PointMul
-public import VerifiedGarbage.Proof.Ed25519.Arm.MulKeep
+import VerifiedGarbage.Proof.Ed25519.Arm.MulKeep
 public import VerifiedGarbage.Proof.Ed25519.Arm.MulInput
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

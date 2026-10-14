@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.Lit
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.Lit
-public import VerifiedGarbage.Proof.Ecdsa.X86_64.LitAdx
+import VerifiedGarbage.Proof.Ecdsa.X86_64.LitAdx
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.LitAdx
 public import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
 meta import VerifiedGarbage.Proof.Framework.X86_64.TaintErase

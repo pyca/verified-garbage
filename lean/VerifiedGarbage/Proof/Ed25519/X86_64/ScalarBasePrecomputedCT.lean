@@ -4,13 +4,13 @@ public import VerifiedGarbage.Impl.Ed25519.X86_64.ScalarBasePrecomputed
 meta import VerifiedGarbage.Impl.Ed25519.X86_64.ScalarBasePrecomputed
 public import VerifiedGarbage.Proof.Ed25519.X86_64.CombLoop
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.CombLoop
-public import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBaseEngine
+import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBaseEngine
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBaseEngine
-public import VerifiedGarbage.Proof.Ed25519.X86_64.CombLit
+import VerifiedGarbage.Proof.Ed25519.X86_64.CombLit
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.CombLit
 public import VerifiedGarbage.Proof.Ed25519.X86_64.CTSupport
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.CTSupport
-public import VerifiedGarbage.Proof.Ed25519.X86_64.RecoverCTBlocks
+import VerifiedGarbage.Proof.Ed25519.X86_64.RecoverCTBlocks
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.RecoverCTBlocks
 public import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBaseCT
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBaseCT

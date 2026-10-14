@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.Fixed
-public import VerifiedGarbage.Proof.Ecdsa.X86_64.Finish
-public import VerifiedGarbage.Proof.Framework.X86_64.Syms
+import VerifiedGarbage.Proof.Ecdsa.X86_64.Finish
+import VerifiedGarbage.Proof.Framework.X86_64.Syms
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

@@ -1,9 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.JointCorrect
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.JointCorrect
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.JointCT
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.JointLit
-public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.JointLitAdx
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.JointLitAdx
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

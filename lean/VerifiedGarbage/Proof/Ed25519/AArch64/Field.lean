@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Ed25519.AArch64.SqrRows
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Mul
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Ops
 public import VerifiedGarbage.Impl.Ed25519.AArch64.Field
-public import VerifiedGarbage.Proof.Ed25519.AArch64.Sub
+import VerifiedGarbage.Proof.Ed25519.AArch64.Sub
 public import VerifiedGarbage.Spec.Ed25519
 public import Mathlib.Logic.Function.Basic
 import all Init.Data.Array.Basic

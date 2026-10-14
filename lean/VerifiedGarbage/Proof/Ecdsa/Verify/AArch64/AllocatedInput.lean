@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedScalars
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedScalars
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedScalars
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacPrefix
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacPrefix
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacPrefix
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacChecks
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacChecks

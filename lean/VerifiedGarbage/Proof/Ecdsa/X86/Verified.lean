@@ -8,13 +8,13 @@ public import VerifiedGarbage.Proof.P256.Order
 meta import VerifiedGarbage.Proof.P256.Order
 public import VerifiedGarbage.Proof.Ecdsa.X86.Main
 meta import VerifiedGarbage.Proof.Ecdsa.X86.Main
-public import VerifiedGarbage.Proof.Weierstrass.X86.MontContract
+import VerifiedGarbage.Proof.Weierstrass.X86.MontContract
 meta import VerifiedGarbage.Proof.Weierstrass.X86.MontContract
 public import VerifiedGarbage.Proof.Ecdsa.X86.Contract
 meta import VerifiedGarbage.Proof.Ecdsa.X86.Contract
 public import VerifiedGarbage.Proof.Ecdsa.X86.Lit
 meta import VerifiedGarbage.Proof.Ecdsa.X86.Lit
-public import VerifiedGarbage.Proof.P256.Point
+import VerifiedGarbage.Proof.P256.Point
 meta import VerifiedGarbage.Proof.P256.Point
 public import VerifiedGarbage.Proof.Framework.X86.Taint
 meta import VerifiedGarbage.Proof.Framework.X86.Taint

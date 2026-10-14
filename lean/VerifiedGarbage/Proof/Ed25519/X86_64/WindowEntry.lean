@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Ed25519.X86_64.VerifyWindow
 public import VerifiedGarbage.Proof.Ed25519.X86_64.CachedPoint
-public import VerifiedGarbage.Proof.Ed25519.X86_64.PointTableAddr
+import VerifiedGarbage.Proof.Ed25519.X86_64.PointTableAddr
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

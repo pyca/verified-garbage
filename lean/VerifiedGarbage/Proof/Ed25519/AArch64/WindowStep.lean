@@ -1,15 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.Ed25519.AArch64.PointAccumulate
+import VerifiedGarbage.Proof.Ed25519.AArch64.PointAccumulate
 public import VerifiedGarbage.Impl.Ed25519.AArch64.BaseMultiply
 public import VerifiedGarbage.Proof.Ed25519.BaseTable
 public import VerifiedGarbage.Spec.Ed25519.Contract
 public import VerifiedGarbage.Proof.Ed25519.AArch64.PointMulBatch
 public import VerifiedGarbage.Impl.Ed25519.AArch64.Verify
-public import VerifiedGarbage.Proof.Ed25519.AArch64.DecodeBits
+import VerifiedGarbage.Proof.Ed25519.AArch64.DecodeBits
 public import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarStep
 public import VerifiedGarbage.Impl.Ed25519.AArch64.VerifyWindow
-public import VerifiedGarbage.Proof.Ed25519.AArch64.PointLoop
+import VerifiedGarbage.Proof.Ed25519.AArch64.PointLoop
 public import VerifiedGarbage.Proof.Ed25519.Group.Double
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

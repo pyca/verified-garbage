@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Ed25519.AArch64.Step
+import VerifiedGarbage.Proof.Ed25519.AArch64.Step
 public import VerifiedGarbage.Proof.Ed25519.Field64
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
 import all Init.Data.Array.Basic

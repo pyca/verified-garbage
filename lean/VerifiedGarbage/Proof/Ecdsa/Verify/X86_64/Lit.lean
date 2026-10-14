@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.X86_64.Lit
 meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.P256Templates
+import VerifiedGarbage.Proof.Weierstrass.X86_64.P256Templates
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.P256Templates
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.P256Literals
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.P256Literals

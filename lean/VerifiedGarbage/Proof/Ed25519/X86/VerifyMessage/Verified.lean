@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Ed25519.X86.VerifyMessage.Body
 meta import VerifiedGarbage.Proof.Ed25519.X86.VerifyMessage.Body
 public import VerifiedGarbage.Proof.Ed25519.X86.Whole.CallCT
 meta import VerifiedGarbage.Proof.Ed25519.X86.Whole.CallCT
-public import VerifiedGarbage.Proof.Ed25519.X86.Whole.BlocksCT
+import VerifiedGarbage.Proof.Ed25519.X86.Whole.BlocksCT
 meta import VerifiedGarbage.Proof.Ed25519.X86.Whole.BlocksCT
 public import VerifiedGarbage.Proof.Ed25519.X86.VerifyMessage.Args
 meta import VerifiedGarbage.Proof.Ed25519.X86.VerifyMessage.Args
@@ -12,9 +12,9 @@ public import VerifiedGarbage.Proof.Ed25519.X86.RecoverParity
 meta import VerifiedGarbage.Proof.Ed25519.X86.RecoverParity
 public import VerifiedGarbage.Proof.Framework.X86.CallWith
 meta import VerifiedGarbage.Proof.Framework.X86.CallWith
-public import VerifiedGarbage.Spec.Ed25519.Contract
+import VerifiedGarbage.Spec.Ed25519.Contract
 meta import VerifiedGarbage.Spec.Ed25519.Contract
-public import VerifiedGarbage.Impl.Ed25519.X86.VerifyMessage
+import VerifiedGarbage.Impl.Ed25519.X86.VerifyMessage
 meta import VerifiedGarbage.Impl.Ed25519.X86.VerifyMessage
 public import VerifiedGarbage.Proof.Framework.X86.Lit
 meta import VerifiedGarbage.Proof.Framework.X86.Lit

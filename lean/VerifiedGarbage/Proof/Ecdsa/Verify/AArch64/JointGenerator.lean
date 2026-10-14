@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.JointGenerator
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JointGenerator
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedFieldTiming
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.CombLays
 import all Init.Data.Array.Basic

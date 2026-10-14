@@ -4,9 +4,9 @@ public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Verified
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Verified
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.LitAdx
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.LitAdx
-public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.LitEraseAdx
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.LitEraseAdx
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.LitEraseAdx
-public import VerifiedGarbage.Proof.Ecdsa.X86_64.VerifiedAdx
+import VerifiedGarbage.Proof.Ecdsa.X86_64.VerifiedAdx
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.VerifiedAdx
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified

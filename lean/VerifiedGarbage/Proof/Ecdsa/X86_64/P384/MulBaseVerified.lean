@@ -2,13 +2,13 @@ module
 
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.Verified
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.Verified
-public import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.VerifiedAdx
+import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.VerifiedAdx
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.VerifiedAdx
-public import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.MulBaseLit
+import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.MulBaseLit
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.MulBaseLit
 public import VerifiedGarbage.Proof.Weierstrass.PointFacts
 meta import VerifiedGarbage.Proof.Weierstrass.PointFacts
-public import VerifiedGarbage.Proof.Mont.Read
+import VerifiedGarbage.Proof.Mont.Read
 meta import VerifiedGarbage.Proof.Mont.Read
 public import VerifiedGarbage.Spec.Weierstrass.MulBase
 meta import VerifiedGarbage.Spec.Weierstrass.MulBase

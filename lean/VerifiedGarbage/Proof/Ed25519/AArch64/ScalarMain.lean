@@ -1,9 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarLit
-public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarLit
+import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 public import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarMemory
-public import VerifiedGarbage.Proof.Ed25519.AArch64.Codec
+import VerifiedGarbage.Proof.Ed25519.AArch64.Codec
 public import VerifiedGarbage.TCB.AArch64.Target
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

@@ -4,9 +4,9 @@ public import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Main
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Main
 public import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Contract
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Contract
-public import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Lit
+import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Lit
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Lit
-public import VerifiedGarbage.Proof.Ecdsa.Arm.Verified
+import VerifiedGarbage.Proof.Ecdsa.Arm.Verified
 meta import VerifiedGarbage.Proof.Ecdsa.Arm.Verified
 public import VerifiedGarbage.Impl.Ecdsa.Verify.P256.Arm
 meta import VerifiedGarbage.Impl.Ecdsa.Verify.P256.Arm

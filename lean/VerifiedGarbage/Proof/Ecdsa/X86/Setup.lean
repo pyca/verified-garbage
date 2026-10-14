@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.X86.Layout
-public import VerifiedGarbage.Proof.Weierstrass.X86.BytesLen
+import VerifiedGarbage.Proof.Weierstrass.X86.BytesLen
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

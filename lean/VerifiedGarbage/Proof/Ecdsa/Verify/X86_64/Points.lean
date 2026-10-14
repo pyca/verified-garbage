@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Scalars
-public import VerifiedGarbage.Proof.Ecdsa.X86_64.GMul
+import VerifiedGarbage.Proof.Ecdsa.X86_64.GMul
 public import VerifiedGarbage.Proof.Ecdh.X86_64.Window
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

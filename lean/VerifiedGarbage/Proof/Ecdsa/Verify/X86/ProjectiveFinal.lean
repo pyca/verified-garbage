@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.ProjectiveArithmetic
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86.ProjectiveArithmetic
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.ProjectiveFlags
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

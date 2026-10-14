@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Ed25519.X86.ScalarBody
-public import VerifiedGarbage.Impl.Ed25519.X86.BitsExpand
+import VerifiedGarbage.Proof.Ed25519.X86.ScalarBody
+import VerifiedGarbage.Impl.Ed25519.X86.BitsExpand
 public import VerifiedGarbage.Proof.Ed25519.X86.ScalarCodec
 public import VerifiedGarbage.Impl.Ed25519.X86.InputBits
 public import VerifiedGarbage.Proof.Ed25519.X86.CommonInput

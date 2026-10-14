@@ -1,9 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Copy
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Copy
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Hmac
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.Words
-public import VerifiedGarbage.Proof.Framework.WriteBytes
+import VerifiedGarbage.Proof.Weierstrass.X86_64.Words
+import VerifiedGarbage.Proof.Framework.WriteBytes
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

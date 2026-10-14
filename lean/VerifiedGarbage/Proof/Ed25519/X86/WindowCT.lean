@@ -4,13 +4,13 @@ public import VerifiedGarbage.Proof.Ed25519.X86.WindowLoop
 meta import VerifiedGarbage.Proof.Ed25519.X86.WindowLoop
 public import VerifiedGarbage.Proof.Ed25519.X86.VerifyCTBytes
 meta import VerifiedGarbage.Proof.Ed25519.X86.VerifyCTBytes
-public import VerifiedGarbage.Proof.Ed25519.X86.VerifyCTLit
+import VerifiedGarbage.Proof.Ed25519.X86.VerifyCTLit
 meta import VerifiedGarbage.Proof.Ed25519.X86.VerifyCTLit
-public import VerifiedGarbage.Proof.Ed25519.X86.PointCTSupport
+import VerifiedGarbage.Proof.Ed25519.X86.PointCTSupport
 meta import VerifiedGarbage.Proof.Ed25519.X86.PointCTSupport
-public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
-public import VerifiedGarbage.Proof.Ed25519.X86.Point32.AddSum
+import VerifiedGarbage.Proof.Ed25519.X86.Point32.AddSum
 meta import VerifiedGarbage.Proof.Ed25519.X86.Point32.AddSum
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

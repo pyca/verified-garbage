@@ -1,9 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Ed25519.AArch64.CounterKeep
-public import VerifiedGarbage.Proof.Ed25519.AArch64.PointSelect
+import VerifiedGarbage.Proof.Ed25519.AArch64.CounterKeep
+import VerifiedGarbage.Proof.Ed25519.AArch64.PointSelect
 public import VerifiedGarbage.Proof.Ed25519.AArch64.PointTableAddr
-public import VerifiedGarbage.Proof.Ed25519.AArch64.PointPowers
+import VerifiedGarbage.Proof.Ed25519.AArch64.PointPowers
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

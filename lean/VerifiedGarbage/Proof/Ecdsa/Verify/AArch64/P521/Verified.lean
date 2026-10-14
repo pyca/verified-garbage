@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.Contract
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.Contract
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.Lit
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.Lit
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.P521.Verified
+import VerifiedGarbage.Proof.Ecdsa.AArch64.P521.Verified
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.P521.Verified
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointChecks
-public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointCorrect
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointCorrect
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointContract
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

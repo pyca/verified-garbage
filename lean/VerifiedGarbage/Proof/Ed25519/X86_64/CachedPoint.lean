@@ -2,10 +2,10 @@ module
 
 public import VerifiedGarbage.Impl.Ed25519.X86_64.Cached
 public import VerifiedGarbage.Proof.Ed25519.BaseTable
-public import VerifiedGarbage.Proof.Ed25519.X86_64.PointPowers
-public import VerifiedGarbage.Proof.Ed25519.X86_64.FieldMemory
+import VerifiedGarbage.Proof.Ed25519.X86_64.PointPowers
+import VerifiedGarbage.Proof.Ed25519.X86_64.FieldMemory
 public import VerifiedGarbage.Proof.Ed25519.X86_64.PointAccumulateLoop
-public import VerifiedGarbage.Proof.Ed25519.X86_64.FieldLazy
+import VerifiedGarbage.Proof.Ed25519.X86_64.FieldLazy
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

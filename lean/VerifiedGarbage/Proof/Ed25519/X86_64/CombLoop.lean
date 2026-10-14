@@ -1,13 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Ed25519.X86_64.WindowStep
+import VerifiedGarbage.Proof.Ed25519.X86_64.WindowStep
 public import VerifiedGarbage.Proof.Ed25519.X86_64.CombConstants
 public import VerifiedGarbage.Proof.Ed25519.X86_64.CombNeg
 public import VerifiedGarbage.Proof.Ed25519.X86_64.PointSelect
 public import VerifiedGarbage.Proof.Ed25519.X86_64.PointMul
 public import VerifiedGarbage.Proof.Ed25519.X86_64.WindowEntry
 public import Mathlib.Tactic.Module
-public import VerifiedGarbage.Proof.Framework.X86_64.Syms
+import VerifiedGarbage.Proof.Framework.X86_64.Syms
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

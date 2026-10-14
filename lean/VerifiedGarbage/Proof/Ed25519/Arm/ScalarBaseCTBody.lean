@@ -1,12 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Ed25519.Arm.BatchBits
+import VerifiedGarbage.Proof.Ed25519.Arm.BatchBits
 meta import VerifiedGarbage.Proof.Ed25519.Arm.BatchBits
 public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTSupport
 meta import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTSupport
 public import VerifiedGarbage.Proof.Ed25519.Arm.PointMulBody
 meta import VerifiedGarbage.Proof.Ed25519.Arm.PointMulBody
-public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTLit
+import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTLit
 meta import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTLit
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

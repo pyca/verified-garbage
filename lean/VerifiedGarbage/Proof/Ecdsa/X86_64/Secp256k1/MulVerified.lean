@@ -2,15 +2,15 @@ module
 
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.Secp256k1.Verified
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.Secp256k1.Verified
-public import VerifiedGarbage.Proof.Ecdsa.X86_64.Secp256k1.MulLit
+import VerifiedGarbage.Proof.Ecdsa.X86_64.Secp256k1.MulLit
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.Secp256k1.MulLit
-public import VerifiedGarbage.Proof.Ecdsa.X86_64.MulFn
+import VerifiedGarbage.Proof.Ecdsa.X86_64.MulFn
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.MulFn
-public import VerifiedGarbage.Proof.Ecdsa.X86_64.InvFnX
+import VerifiedGarbage.Proof.Ecdsa.X86_64.InvFnX
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.InvFnX
 public import VerifiedGarbage.Proof.Weierstrass.PointFacts
 meta import VerifiedGarbage.Proof.Weierstrass.PointFacts
-public import VerifiedGarbage.Proof.Mont.Read
+import VerifiedGarbage.Proof.Mont.Read
 meta import VerifiedGarbage.Proof.Mont.Read
 public import VerifiedGarbage.Spec.Weierstrass.Mul
 meta import VerifiedGarbage.Spec.Weierstrass.Mul

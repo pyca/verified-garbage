@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedFieldTiming
-public import VerifiedGarbage.Proof.P256.VerifySparse.Fprog
+import VerifiedGarbage.Proof.P256.VerifySparse.Fprog
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

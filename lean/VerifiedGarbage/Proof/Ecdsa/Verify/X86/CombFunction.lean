@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombBodyCT
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombBodyCT
-public import VerifiedGarbage.Proof.Ecdsa.X86.CombFacts
+import VerifiedGarbage.Proof.Ecdsa.X86.CombFacts
 meta import VerifiedGarbage.Proof.Ecdsa.X86.CombFacts
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

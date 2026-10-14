@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointMain
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointMain
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P521.JointChecks
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

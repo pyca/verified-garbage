@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Fn
 public import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Lit
-public import VerifiedGarbage.Proof.Mont.Read
+import VerifiedGarbage.Proof.Mont.Read
 public import VerifiedGarbage.Proof.Framework.X86_64.Abi
 public import VerifiedGarbage.Proof.Framework.X86_64.Taint
 public import VerifiedGarbage.Proof.Framework.Contract

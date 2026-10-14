@@ -1,24 +1,24 @@
 module
 
-public import VerifiedGarbage.Impl.Ed25519.Arm.Scalar
+import VerifiedGarbage.Impl.Ed25519.Arm.Scalar
 meta import VerifiedGarbage.Impl.Ed25519.Arm.Scalar
-public import VerifiedGarbage.Proof.Ed25519.Arm.Field
+import VerifiedGarbage.Proof.Ed25519.Arm.Field
 meta import VerifiedGarbage.Proof.Ed25519.Arm.Field
 public import VerifiedGarbage.Proof.X25519.Arm.Mul
 meta import VerifiedGarbage.Proof.X25519.Arm.Mul
 public import VerifiedGarbage.Impl.Ed25519.Arm.ScalarMulAdd
 meta import VerifiedGarbage.Impl.Ed25519.Arm.ScalarMulAdd
-public import VerifiedGarbage.Proof.X25519.Arm.AddSub
+import VerifiedGarbage.Proof.X25519.Arm.AddSub
 meta import VerifiedGarbage.Proof.X25519.Arm.AddSub
-public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarCodec
+import VerifiedGarbage.Proof.Ed25519.Arm.ScalarCodec
 meta import VerifiedGarbage.Proof.Ed25519.Arm.ScalarCodec
-public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarLoop
+import VerifiedGarbage.Proof.Ed25519.Arm.ScalarLoop
 meta import VerifiedGarbage.Proof.Ed25519.Arm.ScalarLoop
 public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarABI
 meta import VerifiedGarbage.Proof.Ed25519.Arm.ScalarABI
 public import VerifiedGarbage.TCB.Arm.Target
 meta import VerifiedGarbage.TCB.Arm.Target
-public import VerifiedGarbage.Proof.Ed25519.Arm.UnpackField
+import VerifiedGarbage.Proof.Ed25519.Arm.UnpackField
 meta import VerifiedGarbage.Proof.Ed25519.Arm.UnpackField
 public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarFinish
 meta import VerifiedGarbage.Proof.Ed25519.Arm.ScalarFinish

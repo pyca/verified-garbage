@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Ed25519.AArch64.SignCached.Body
+import VerifiedGarbage.Proof.Ed25519.AArch64.SignCached.Body
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.SignCached.Body
 public import VerifiedGarbage.Proof.Ed25519.AArch64.SignCached.Entry
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.SignCached.Entry

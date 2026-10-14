@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.Ed25519.X86.RecoverCTBlocks
 meta import VerifiedGarbage.Proof.Ed25519.X86.RecoverCTBlocks
 public import VerifiedGarbage.Proof.Ed25519.X86.PointEqual
 meta import VerifiedGarbage.Proof.Ed25519.X86.PointEqual
-public import VerifiedGarbage.Proof.Ed25519.X86.VerifyPoints
+import VerifiedGarbage.Proof.Ed25519.X86.VerifyPoints
 meta import VerifiedGarbage.Proof.Ed25519.X86.VerifyPoints
 public import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc

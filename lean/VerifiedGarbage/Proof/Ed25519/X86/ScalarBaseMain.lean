@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Ed25519.X86.CommonInput
 public import VerifiedGarbage.Proof.Ed25519.X86.CommonFinish
 public import VerifiedGarbage.Proof.Ed25519.X86.PointEncodeSign
 public import VerifiedGarbage.Impl.Ed25519.X86.ScalarBase
-public import VerifiedGarbage.Proof.Ed25519.X86.InputBits
+import VerifiedGarbage.Proof.Ed25519.X86.InputBits
 public import VerifiedGarbage.Proof.Ed25519.X86.PointMul
 public import VerifiedGarbage.Proof.Ed25519.X86.CombTbl
 public import VerifiedGarbage.Proof.Framework.X86.Call

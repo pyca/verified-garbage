@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Ed25519.X86_64.RecoverCTBlocks
+import VerifiedGarbage.Proof.Ed25519.X86_64.RecoverCTBlocks
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.RecoverCTBlocks
 public import VerifiedGarbage.Proof.Ed25519.X86_64.PointEqual
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.PointEqual

@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Ed25519.Arm.Power
 public import VerifiedGarbage.Proof.Ed25519.Arm.FnCall
-public import VerifiedGarbage.Proof.X25519.Invert
+import VerifiedGarbage.Proof.X25519.Invert
 public import VerifiedGarbage.Proof.Ed25519.RootPower
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

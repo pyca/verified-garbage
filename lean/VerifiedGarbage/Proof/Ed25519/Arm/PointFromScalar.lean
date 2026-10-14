@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Ed25519.Arm.PointFromScalar
-public import VerifiedGarbage.Proof.Ed25519.Arm.PointMul
+import VerifiedGarbage.Proof.Ed25519.Arm.PointMul
 public import VerifiedGarbage.Proof.Ed25519.Arm.PointKeep
 public import VerifiedGarbage.Proof.Ed25519.Bytes
 import all Init.Data.Array.Basic

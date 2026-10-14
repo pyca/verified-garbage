@@ -2,21 +2,21 @@ module
 
 public import VerifiedGarbage.Proof.Ed25519.X86.VerifyDecode
 meta import VerifiedGarbage.Proof.Ed25519.X86.VerifyDecode
-public import VerifiedGarbage.Proof.Ed25519.X86.VerifyScalar
+import VerifiedGarbage.Proof.Ed25519.X86.VerifyScalar
 meta import VerifiedGarbage.Proof.Ed25519.X86.VerifyScalar
-public import VerifiedGarbage.Proof.Ed25519.X86.VerifyFinish
+import VerifiedGarbage.Proof.Ed25519.X86.VerifyFinish
 meta import VerifiedGarbage.Proof.Ed25519.X86.VerifyFinish
-public import VerifiedGarbage.Proof.Ed25519.VerifyBytes
+import VerifiedGarbage.Proof.Ed25519.VerifyBytes
 meta import VerifiedGarbage.Proof.Ed25519.VerifyBytes
-public import VerifiedGarbage.Proof.Ed25519.X86.VerifyCTBytes
+import VerifiedGarbage.Proof.Ed25519.X86.VerifyCTBytes
 meta import VerifiedGarbage.Proof.Ed25519.X86.VerifyCTBytes
 public import VerifiedGarbage.Proof.Ed25519.X86.VerifyDecodeInput
 meta import VerifiedGarbage.Proof.Ed25519.X86.VerifyDecodeInput
-public import VerifiedGarbage.Proof.Ed25519.X86.VerifyCTEquation
+import VerifiedGarbage.Proof.Ed25519.X86.VerifyCTEquation
 meta import VerifiedGarbage.Proof.Ed25519.X86.VerifyCTEquation
 public import VerifiedGarbage.Proof.Ed25519.X86.VerifyCTInputs
 meta import VerifiedGarbage.Proof.Ed25519.X86.VerifyCTInputs
-public import VerifiedGarbage.Proof.Ed25519.X86.VerifyContract
+import VerifiedGarbage.Proof.Ed25519.X86.VerifyContract
 meta import VerifiedGarbage.Proof.Ed25519.X86.VerifyContract
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract

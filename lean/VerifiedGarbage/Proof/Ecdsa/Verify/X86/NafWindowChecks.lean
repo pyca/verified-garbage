@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafPointChecks
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafPointChecks
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafPointChecks
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafDigitChecks
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafDigitChecks

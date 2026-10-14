@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Tail
-public import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.CombMul
+import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.CombMul
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

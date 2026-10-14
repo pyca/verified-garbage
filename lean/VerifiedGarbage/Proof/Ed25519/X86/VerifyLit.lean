@@ -4,11 +4,11 @@ public import VerifiedGarbage.Proof.X25519.X86.Lit
 meta import VerifiedGarbage.Proof.X25519.X86.Lit
 public import VerifiedGarbage.Proof.Framework.X86.Lit
 meta import VerifiedGarbage.Proof.Framework.X86.Lit
-public import VerifiedGarbage.Impl.Ed25519.X86.Verify
+import VerifiedGarbage.Impl.Ed25519.X86.Verify
 meta import VerifiedGarbage.Impl.Ed25519.X86.Verify
-public import VerifiedGarbage.Proof.Ed25519.X86.PointCTLit
+import VerifiedGarbage.Proof.Ed25519.X86.PointCTLit
 meta import VerifiedGarbage.Proof.Ed25519.X86.PointCTLit
-public import VerifiedGarbage.Proof.Ed25519.X86.RecoverCTLit
+import VerifiedGarbage.Proof.Ed25519.X86.RecoverCTLit
 meta import VerifiedGarbage.Proof.Ed25519.X86.RecoverCTLit
 public import VerifiedGarbage.Proof.Ed25519.X86.VerifyCTLit
 meta import VerifiedGarbage.Proof.Ed25519.X86.VerifyCTLit

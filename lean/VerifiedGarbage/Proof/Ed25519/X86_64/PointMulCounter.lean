@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Ed25519.X86_64.PointBatch
-public import VerifiedGarbage.Proof.Ed25519.X86_64.PointAccumulateLoop
+import VerifiedGarbage.Proof.Ed25519.X86_64.PointAccumulateLoop
 public import VerifiedGarbage.Proof.Ed25519.X86_64.PointPowersLoop
 public import VerifiedGarbage.Impl.Ed25519.X86_64.PointMul
 import all Init.Data.Array.Basic

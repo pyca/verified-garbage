@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Ed25519.AArch64.WindowCT
+import VerifiedGarbage.Proof.Ed25519.AArch64.WindowCT
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.WindowCT
 public import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyContext
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyContext

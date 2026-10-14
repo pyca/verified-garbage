@@ -2,11 +2,11 @@ module
 
 public import VerifiedGarbage.Impl.Ed25519.AArch64.Power
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Field
-public import VerifiedGarbage.Proof.X25519.Invert
+import VerifiedGarbage.Proof.X25519.Invert
 public import VerifiedGarbage.Proof.Ed25519.RootPower
 public import VerifiedGarbage.Proof.Framework.AArch64.Call
 public import VerifiedGarbage.Proof.Framework.AArch64.LaneSave
-public import VerifiedGarbage.Proof.Framework.Covers
+import VerifiedGarbage.Proof.Framework.Covers
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

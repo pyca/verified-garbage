@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Ed25519.Arm.MulFn
 public import VerifiedGarbage.Proof.X25519.Arm.Mul
-public import VerifiedGarbage.Proof.Ed25519.Arm.Field
+import VerifiedGarbage.Proof.Ed25519.Arm.Field
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

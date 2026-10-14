@@ -1,11 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.X86.Syms
+import VerifiedGarbage.Proof.Framework.X86.Syms
 public import VerifiedGarbage.Proof.Ed25519.X86.VerifyDecodeInput
 public import VerifiedGarbage.Proof.Ed25519.X86.VerifyPoints
-public import VerifiedGarbage.Proof.Ed25519.X86.VerifyTables
-public import VerifiedGarbage.Proof.Framework.RelCTAssoc
-public import VerifiedGarbage.Proof.Ed25519.Group.Decode
+import VerifiedGarbage.Proof.Ed25519.X86.VerifyTables
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Ed25519.Group.Decode
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

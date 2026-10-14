@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ed25519.X86.PointCTMul
 meta import VerifiedGarbage.Proof.Ed25519.X86.PointCTMul
-public import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseCTLit
+import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseCTLit
 meta import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseCTLit
 public import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseMain
 meta import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseMain

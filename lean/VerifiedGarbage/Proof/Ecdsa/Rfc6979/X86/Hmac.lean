@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Hash
-public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Calls
+import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Calls
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

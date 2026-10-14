@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Blocks
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Reduce
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Reduce
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

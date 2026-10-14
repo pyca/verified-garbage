@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.X86.Lays
+import VerifiedGarbage.Proof.Ecdsa.X86.Lays
 public import VerifiedGarbage.Proof.Ecdsa.X86.Stages
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

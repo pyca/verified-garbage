@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Ed25519.Arm.Freeze
-public import VerifiedGarbage.Proof.Ed25519.Arm.FieldMemory
+import VerifiedGarbage.Proof.Ed25519.Arm.FieldMemory
 public import VerifiedGarbage.Proof.Ed25519.Arm.FieldProg
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

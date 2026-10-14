@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTBody
 meta import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTBody
 public import VerifiedGarbage.Proof.Ed25519.Arm.PointMulLoop
 meta import VerifiedGarbage.Proof.Ed25519.Arm.PointMulLoop
-public import VerifiedGarbage.Proof.Ed25519.Arm.PointMul
+import VerifiedGarbage.Proof.Ed25519.Arm.PointMul
 meta import VerifiedGarbage.Proof.Ed25519.Arm.PointMul
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

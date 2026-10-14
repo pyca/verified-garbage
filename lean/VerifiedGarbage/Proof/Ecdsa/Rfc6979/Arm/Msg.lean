@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Hmac
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Hmac
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Copy
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

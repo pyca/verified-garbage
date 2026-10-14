@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Ed25519.Arm.VerifyMessage.Calls
+import VerifiedGarbage.Proof.Ed25519.Arm.VerifyMessage.Calls
 public import VerifiedGarbage.Proof.Ed25519.Arm.VerifyMessage.Args
 public import VerifiedGarbage.Impl.Ed25519.Arm.VerifyMessage
 public import VerifiedGarbage.Proof.Ed25519.Arm.VerifyVerified

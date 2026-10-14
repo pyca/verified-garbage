@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.Main
-public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.ProjectiveFinal
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86.ProjectiveFinal
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.WindowPoints
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.X86.Fixed
-public import VerifiedGarbage.Proof.Ecdsa.X86.Finish
+import VerifiedGarbage.Proof.Ecdsa.X86.Fixed
+import VerifiedGarbage.Proof.Ecdsa.X86.Finish
 public import VerifiedGarbage.Proof.Ecdsa.X86.PtLays
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

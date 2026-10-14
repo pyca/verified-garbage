@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.MulFn
-public import VerifiedGarbage.Proof.Ecdsa.X86_64.Inv
+import VerifiedGarbage.Proof.Ecdsa.X86_64.Inv
 public import VerifiedGarbage.Proof.Ecdsa.Sign
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

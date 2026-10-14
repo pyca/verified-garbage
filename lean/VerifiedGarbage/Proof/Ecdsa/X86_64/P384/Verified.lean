@@ -4,19 +4,19 @@ public import VerifiedGarbage.Proof.Ecdsa.X86_64.Main
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.Main
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.Contract
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.Contract
-public import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.LitErase
+import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.LitErase
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.LitErase
 public import VerifiedGarbage.Proof.P384.Point
 meta import VerifiedGarbage.Proof.P384.Point
 public import VerifiedGarbage.Proof.Framework.X86_64.Taint
 meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
-public import VerifiedGarbage.Proof.Framework.X86_64.Abi
+import VerifiedGarbage.Proof.Framework.X86_64.Abi
 meta import VerifiedGarbage.Proof.Framework.X86_64.Abi
 public import VerifiedGarbage.Proof.Framework.X86_64.Inline
 meta import VerifiedGarbage.Proof.Framework.X86_64.Inline
 public import VerifiedGarbage.Proof.Framework.X86_64.TaintSym
 meta import VerifiedGarbage.Proof.Framework.X86_64.TaintSym
-public import VerifiedGarbage.Proof.P384.Prime
+import VerifiedGarbage.Proof.P384.Prime
 meta import VerifiedGarbage.Proof.P384.Prime
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified

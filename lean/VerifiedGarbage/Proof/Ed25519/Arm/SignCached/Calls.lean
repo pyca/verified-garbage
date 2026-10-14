@@ -1,9 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.Arm.SignCached.Layout
-public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarVerified
-public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseVerified
-public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarMulAddVerified
+import VerifiedGarbage.Proof.Ed25519.Arm.ScalarVerified
+import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseVerified
+import VerifiedGarbage.Proof.Ed25519.Arm.ScalarMulAddVerified
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

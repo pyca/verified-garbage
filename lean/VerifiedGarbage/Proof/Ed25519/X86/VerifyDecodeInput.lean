@@ -3,8 +3,8 @@ module
 public import VerifiedGarbage.Impl.Ed25519.X86.Verify
 public import VerifiedGarbage.Proof.Ed25519.X86.VerifyContract
 public import VerifiedGarbage.Proof.Ed25519.X86.PointDecode
-public import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseMain
-public import VerifiedGarbage.Proof.Ed25519.Decode
+import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseMain
+import VerifiedGarbage.Proof.Ed25519.Decode
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.ProjectiveFlags
 public import VerifiedGarbage.Proof.Ecdsa.Projective
 public import VerifiedGarbage.Proof.Ecdsa.Verify
-public import VerifiedGarbage.Proof.Ecdh.AArch64.Main
+import VerifiedGarbage.Proof.Ecdh.AArch64.Main
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

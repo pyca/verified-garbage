@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Ed25519.AArch64.PointDecode
 public import VerifiedGarbage.Proof.Ed25519.AArch64.RecoverParity
-public import VerifiedGarbage.Proof.Ed25519.Bytes
+import VerifiedGarbage.Proof.Ed25519.Bytes
 public import VerifiedGarbage.Proof.Ed25519.AArch64.MulAddMemory
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

@@ -6,15 +6,15 @@ public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.P521.Contract
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.P521.Contract
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.P521.Lit
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.P521.Lit
-public import VerifiedGarbage.Proof.Ecdsa.X86.P521.Verified
+import VerifiedGarbage.Proof.Ecdsa.X86.P521.Verified
 meta import VerifiedGarbage.Proof.Ecdsa.X86.P521.Verified
 public import VerifiedGarbage.Proof.Framework.X86.Taint
 meta import VerifiedGarbage.Proof.Framework.X86.Taint
 public import VerifiedGarbage.Proof.Framework.X86.Inline
 meta import VerifiedGarbage.Proof.Framework.X86.Inline
-public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.P521.CallSumsP
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86.P521.CallSumsP
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.P521.CallSumsP
-public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.P521.CallSumsN
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86.P521.CallSumsN
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.P521.CallSumsN
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

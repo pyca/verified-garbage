@@ -1,12 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.X86_64.BrainpoolP384r1.Verified
+import VerifiedGarbage.Proof.Ecdsa.X86_64.BrainpoolP384r1.Verified
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.BrainpoolP384r1.Verified
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.BrainpoolP384r1.InverseLit
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.BrainpoolP384r1.InverseLit
 public import VerifiedGarbage.Proof.Framework.Pratt
 meta import VerifiedGarbage.Proof.Framework.Pratt
-public import VerifiedGarbage.Proof.Mont.Read
+import VerifiedGarbage.Proof.Mont.Read
 meta import VerifiedGarbage.Proof.Mont.Read
 public import VerifiedGarbage.Spec.Weierstrass.Inverse
 meta import VerifiedGarbage.Spec.Weierstrass.Inverse

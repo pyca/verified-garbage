@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Ecdsa.Verify.X86_64.Joint
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointMul
-public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointGenerator
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointGenerator
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointFrame
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
