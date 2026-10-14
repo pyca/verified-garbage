@@ -243,7 +243,7 @@ keeps the six registers in `xmm` registers for, as the inversions); and
 products written out (the functions call no other). -/
 def MulBaseOk (c : Cfg) : Prop :=
   (c.mulBase.isSome = true → ∃ d, c.comb = some d ∧ 3 ≤ c.n ∧ c.mulBaseFn.noCalls = true) ∧
-    (c.mul.isSome = true → (c.n = 4 ∨ c.n = 6) ∧ c.mulFn.noCalls = true)
+    (c.mul.isSome = true → (c.n = 4 ∨ c.n = 6 ∨ c.n = 8) ∧ c.mulFn.noCalls = true)
 
 theorem apart_gWA {i : Nat} (hi : i < 45)
     (hl : i ∉ [RX, RY, RZ, TX, TY, TZ, PT, T0, T1, T2, T3, T4, T5, DX, DY, DZ, TMP, EM]) (ha : i ∉ [ACC, TT]) :

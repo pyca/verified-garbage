@@ -24,6 +24,7 @@ mod cmac_aes;
 mod dsa;
 mod ecdh_brainpoolp256r1;
 mod ecdh_brainpoolp384r1;
+mod ecdh_brainpoolp512r1;
 mod ecdh_p224;
 mod ecdh_p256;
 mod ecdh_p384;

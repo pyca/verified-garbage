@@ -605,7 +605,7 @@ theorem points_eqM {C : Spec.Weierstrass.Mul.Curve} (hm : c.mul = some C) :
 
 /-- `[u]G + [v]Q`, into `R`, by calls of `vg_<curve>_mul`: `r` is kept in
 `D` while `K` holds `u`, then `v`. -/
-theorem pointsM_ok {C : Spec.Weierstrass.Mul.Curve} (hm : c.mul = some C) (h4 : c.n = 4 ∨ c.n = 6)
+theorem pointsM_ok {C : Spec.Weierstrass.Mul.Curve} (hm : c.mul = some C) (h4 : c.n = 4 ∨ c.n = 6 ∨ c.n = 8)
     (hnc : c.mulFn.noCalls = true) (hc : BaseCfgOk c) (hC : Law c.C) {s₀ : State} {base : Addr}
     {g : Reg → BitVec 64} {s : State} (hM : Mid c s₀ base g s)
     {P : Point c.C} (hP : onCurve c.C P = true)
@@ -806,7 +806,7 @@ theorem pointsM_ok {C : Spec.Weierstrass.Mul.Curve} (hm : c.mul = some C) (h4 : 
 /-- `[u]G + [v]Q`, into `R`: by calls of `vg_<curve>_mul` if the curve has
 it (of four words, that function with no calls), else inline. -/
 theorem points_ok (hc : BaseCfgOk c) (hC : Law c.C) (hT : CombTbls c)
-    (hm : c.mul.isSome = true → (c.n = 4 ∨ c.n = 6) ∧ c.mulFn.noCalls = true) {s₀ : State} {base : Addr}
+    (hm : c.mul.isSome = true → (c.n = 4 ∨ c.n = 6 ∨ c.n = 8) ∧ c.mulFn.noCalls = true) {s₀ : State} {base : Addr}
     {g : Reg → BitVec 64} {s : State} (hM : Mid c s₀ base g s) (htb : TblsHeld c s₀ s₀.wr)
     (hsc : (⟨base, size⟩ : Region) ∈ s₀.wr)
     (hrdT : ∀ r ∈ Abi.constRegions (fun n => s₀.syms n) c.combConsts, r ∈ s₀.rd)
