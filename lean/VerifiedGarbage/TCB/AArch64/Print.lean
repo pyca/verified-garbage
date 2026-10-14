@@ -172,6 +172,8 @@ def Instr.asm : Instr → List String
   | .madd sz d n m a => [s!"madd {d.name sz}, {n.name sz}, {m.name sz}, {a.name sz}"]
   | .mul sz d n m => [s!"mul {d.name sz}, {n.name sz}, {m.name sz}"]
   | .umulh d n m => [s!"umulh {d.name .x}, {n.name .x}, {m.name .x}"]
+  | .umaddl d n m a => [s!"umaddl {d.name .x}, {n.name .w}, {m.name .w}, {a.name .x}"]
+  | .umull d n m => [s!"umull {d.name .x}, {n.name .w}, {m.name .w}"]
   | .rev32 d n => [s!"rev {d.name .w}, {n.name .w}"]
   | .rev d n => [s!"rev {d.name .x}, {n.name .x}"]
   | .movz sz d imm hw => [s!"movz {d.name sz}, #{imm.toNat}, lsl #{16 * hw}"]
