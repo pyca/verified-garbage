@@ -163,6 +163,42 @@ theorem store512_patch (hc : Clear H s) (a : Addr) (v : BitVec 512) :
   by_cases hi : InRegions s.wr a 64 <;> simp only [hi, ite_true, ite_false, Option.map_some, Option.map_none]
   rw [overlay_writeW fun x hx => hc.miss wr_mem hi hx]; rfl
 
+theorem loadMasked512_patch (hc : Clear H s) (a : Addr) (k : BitVec 64) :
+    (s.patch H hv u).loadMasked512 a k = s.loadMasked512 a k := by
+  simp only [State.loadMasked512, State.patch]
+  by_cases hi : ∀ j ∈ State.qOn k, InRegions (s.rd ++ s.wr) (State.qAddr a j) 8
+  · have hq : ∀ j, j < 8 →
+        (if k.getLsbD j then (overlay H hv s.mem).readW (State.qAddr a j) 64 else 0) =
+          (if k.getLsbD j then s.mem.readW (State.qAddr a j) 64 else 0) := fun j hj => by
+      cases hk : k.getLsbD j
+      · rfl
+      · simp only [↓reduceIte]
+        exact overlay_readW (by decide) fun x hx =>
+          hc.miss (fun _ h => h) (hi j (List.mem_filter.mpr ⟨List.mem_range.mpr hj, hk⟩)) hx
+    simp only [hq 0 (by decide), hq 1 (by decide), hq 2 (by decide), hq 3 (by decide),
+      hq 4 (by decide), hq 5 (by decide), hq 6 (by decide), hq 7 (by decide)]
+  · simp only [hi, ↓reduceIte]
+
+theorem foldl_qwrites_patch (hc : Clear H s) {a : Addr} (f : Nat → BitVec 64) :
+    ∀ (l : List Nat), (∀ j ∈ l, InRegions s.wr (State.qAddr a j) 8) → ∀ m : Mem,
+      l.foldl (fun m j => m.writeW (State.qAddr a j) (f j)) (overlay H hv m) =
+        overlay H hv (l.foldl (fun m j => m.writeW (State.qAddr a j) (f j)) m)
+  | [], _, _ => rfl
+  | j :: l, hl, m => by
+    simp only [List.foldl_cons]
+    rw [overlay_writeW fun x hx => hc.miss wr_mem (hl j List.mem_cons_self) hx]
+    exact foldl_qwrites_patch hc f l (fun j h => hl j (List.mem_cons_of_mem _ h)) _
+
+theorem storeMasked512_patch (hc : Clear H s) (a : Addr) (k : BitVec 64) (v : BitVec 512) :
+    (s.patch H hv u).storeMasked512 a k v = (s.storeMasked512 a k v).map (State.patch H hv u) := by
+  unfold State.storeMasked512
+  rw [show (s.patch H hv u).wr = s.wr from rfl]
+  by_cases hi : ∀ j ∈ State.qOn k, InRegions s.wr (State.qAddr a j) 8
+  · rw [ite_eq_left hi, ite_eq_left hi, Option.map_some]
+    simp only [State.patch]
+    rw [foldl_qwrites_patch hc _ _ hi]
+  · rw [ite_eq_right hi, ite_eq_right hi]; rfl
+
 theorem readSrc_patch (hc : Clear H s) (src : Src) : readSrc (s.patch H hv u) src = readSrc s src := by
   cases src with
   | mem m => exact load64_patch hc _
@@ -237,6 +273,11 @@ theorem exec_patch (hc : Clear H s) (i : Instr) :
     simp only [exec, Option.map_map]; rw [show (s.patch H hv u).ea m = s.ea m from rfl, load256_patch hc]
     congr 1; funext v; cases d <;> rfl
   | evStore m r => exact store256_patch hc _ _
+  | kLoad k d m =>
+    simp only [exec, Option.map_map]
+    rw [show (s.patch H hv u).ea m = s.ea m from rfl, show (s.patch H hv u).gpr k = s.gpr k from rfl,
+      loadMasked512_patch hc]; rfl
+  | kStore m k r => exact storeMasked512_patch hc _ _ _
   | evMadd52Load hi d a m =>
     simp only [exec, Option.map_map]; rw [show (s.patch H hv u).ea m = s.ea m from rfl, load256_patch hc]
     congr 1; funext v; cases d <;> rfl
