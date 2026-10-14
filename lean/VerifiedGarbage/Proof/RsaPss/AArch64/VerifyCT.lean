@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyCTMain
-meta import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyCTMain
+public import VerifiedGarbage.Proof.RsaPss.AArch64.FixedSaltCT
+meta import VerifiedGarbage.Proof.RsaPss.AArch64.FixedSaltCT
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -113,16 +113,26 @@ theorem main_ct :
   refine RelCT.seq (two_post (Ψ := fun a u => VOk H.D a ∧ ∃ s, E H.D K a s ∧ PreCall H.D s (loV (nxV s)) (cbA s) u)
     (two_taint [] (fun a w₁ w₂ ⟨⟨s₁, h₁, j₁⟩, _⟩ ⟨⟨s₂, h₂, j₂⟩, _⟩ =>
       ⟨by rw [j₁.m.sp, j₂.m.sp, h₁.fb, h₂.fb], fun _ h => absurd h List.not_mem_nil⟩) (by taint_decide))
-    fun a w ⟨⟨s, e, hS⟩, _⟩ => ?_) ?_
+    fun a w ⟨⟨s, e, hS⟩, hcond⟩ => ?_) ?_
   · have hk := hS.hk
     have hp := e.1
     have hk1 := hp.k1; have hk2 := hp.k2
     have ok : VOk H.D a := by
-      refine ⟨?_, ?_, ?_, ?_⟩
+      refine ⟨?_, ?_, ?_, ?_, ?_⟩
       · show 64 ≤ (a.gpr .x1).toNat; rw [← e.k]; exact hk1
       · show (a.gpr .x1).toNat ≤ 1024; rw [← e.k]; exact hk2
       · show H.D + 2 ≤ (a.gpr .x1).toNat - loV (nxV a); rw [← e.k, ← e.nx]; omega
       · show loV (nxV a) ≤ 1; unfold loV; split <;> omega
+      · intro ha
+        have hb := hS.x10
+        have he : anyV s = 0 := e.any.trans ha
+        rw [eval_nonzero] at hcond
+        rw [Option.some.inj hcond] at hb
+        have hn := of_decide_eq_false hb.symm
+        simp only [sLenV, he, ↓reduceIte, Option.getD_some] at hn
+        show (a.gpr .x7).toNat < (a.gpr .x1).toNat - loV (nxV a) - H.D - 1
+        rw [← e.gpr (r := .x7) (by decide), ← e.k, ← e.nx]
+        omega
     exact WP.mono (pre_ok hp hK hS.m (by omega)) fun u hu => ⟨ok, s, e, hu⟩
   refine RelCT.seq (two_post (Ψ := fun a u => VOk H.D a ∧ ∃ s, E H.D K a s ∧ AtCall H.D s (loV (nxV s)) (cbA s) u)
     (two_taint [] (fun a w₁ w₂ ⟨_, s₁, h₁, j₁⟩ ⟨_, s₂, h₂, j₂⟩ =>

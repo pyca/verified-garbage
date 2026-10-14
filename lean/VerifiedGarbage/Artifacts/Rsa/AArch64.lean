@@ -86,7 +86,7 @@ def artifacts : List Artifact := [squareHelper .r2, squareHelper .y, windowHelpe
         the general exponentiation. `pre` is checked (`n` odd, \
         its top word not zero, `R² mod n` below it) before any arithmetic, so that values of no modulus \
         are safe."])
-    code := Impl.Rsa.AArch64.Folded.checked Proof.Bignum.AArch64.Mont.base.mm
+    code := Impl.Rsa.AArch64.Folded.checked Proof.Bignum.AArch64.Mont.productEight.mm
     contract := Spec.Rsa.publicPrecomputedCheckedContract AArch64.abi
     verified := Proof.Rsa.AArch64.FoldedPublic.checked_verified _
     spSafe := Code.all_of_forall (fun _ => rfl) _ },

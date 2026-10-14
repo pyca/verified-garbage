@@ -473,12 +473,32 @@ def cmpH : Prog isa :=
         (.nonzero .x .x12))
       (.block [.subImm .x .x0 .x26 1, .lsr .x .x0 .x0 63]))
 
+namespace FixedSalt
+
+/-- Copy the publicly specified salt length from the end of DB. The preceding
+checks still accumulate delimiter and actual-length failures. -/
+def copySalt : Prog isa :=
+  .seq (.block [.add .x .x11 .x24 .x25, ld .x12 sSaltLen,
+    .sub .x .x11 .x11 .x12, .addImm .x .x14 .x20 (oY + 8 + H.D)])
+    (.ite (.zero .x .x12) (.block []) copyLoop)
+
+def finish : Prog isa :=
+  seqs [clearY, copyDigest H, copySalt H, .block (signLen H), ctHash H, cmpH H]
+
+/-- Only the public salt-length mode selects this path. Unknown salt lengths
+retain the oblivious shift and maximum-length hash. -/
+def select : Prog isa :=
+  .seq (.block [ld .x9 sAny]) (.ite (.zero .x .x9) (finish H)
+    (seqs [clearY, copyDigest H, copyDb H, shift H, .block (verifyNb H), ctHash H, cmpH H]))
+
+end FixedSalt
+
 variable (pubN : String) (pubC : Prog isa)
 
 /-- After the public checks. -/
 def verifyMain : Prog isa :=
   seqs [.block dbRegs, .block pubArgs, .call pubN pubC, .block acc0, mgfXor H, .block clearTop, posScan,
-    posCheck, clearY, copyDigest H, copyDb H, shift H, .block (verifyNb H), ctHash H, cmpH H]
+    posCheck, FixedSalt.select H]
 
 /-- The checks, then `verifyMain`. -/
 def verifyBody : Prog isa :=
