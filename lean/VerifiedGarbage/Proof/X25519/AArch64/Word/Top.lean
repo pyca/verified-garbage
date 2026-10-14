@@ -1,15 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.X25519.AArch64.Word.Output
-import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Ed25519.AArch64.MulAddMemory
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
 
-/-! The four-word implementation under the unchanged RFC 7748 signature. -/
+/-! The contract the X25519 function is proven against, and the saved registers. -/
 
 @[expose] public section
 
@@ -35,39 +33,4 @@ theorem saved_of_words {base : Addr} {m : Mem} {g : Reg → BitVec 64}
 theorem preservedCases : ∀ r ∈ preserved,
     (∃ rd ∈ saved, rd.1 = r) ∨ r ∉ clob ++ ([.x0,.x1,.x19] : List Reg) := by decide
 
-theorem correct {s₀ : State} (hp : localContract.pre s₀) :
-    WP isa VG.Impl.X25519.AArch64.Word.x25519 s₀ fun t =>
-      (∀ r ∈ preserved, t.gpr r = s₀.gpr r) ∧ localContract.post s₀ t := by
-  have pre := VG.Proof.X25519.AArch64.Pre.of s₀ hp.1
-  let base := s₀.gpr .x3
-  have hs : Sc base s₀ := ⟨rfl,by rw [pre.wr]; simp [base,VG.Proof.X25519.AArch64.scR]⟩
-  rw [VG.Impl.X25519.AArch64.Word.x25519]
-  refine WP.seq (WP.mono (setup_ok hs hp.2 rfl rfl
-    (by rw [pre.rd]; simp) (by rw [pre.rd]; simp) pre.scalar_sc pre.point_sc)
-    fun a ⟨ha,ga,wa,oa,ba,sva,ka⟩ => ?_)
-  refine WP.seq (WP.mono (ladder_ok ha ga wa ba) fun b ⟨kb,gb,wb⟩ => ?_)
-  refine WP.seq (WP.mono (lastSwap_ok (kb.scratch ha) gb (ladderAfter_swap_le _ _ (by decide)) wb)
-    fun c ⟨kc,cx,cz⟩ => ?_)
-  have kac := kb.trans kc
-  refine WP.seq (WP.mono (VG.Proof.Ed25519.AArch64.invert_ok (kac.scratch ha)) fun d ⟨kd,di⟩ => ?_)
-  have kad := kac.trans (LoopKeep.of_invert kd)
-  have od : d.gpr .x1 = s₀.gpr .x0 := (kad.gpr _ (by decide) (by decide)).trans oa
-  have svd : Saved base s₀.gpr d.mem := (saved_of_words sva).outside kad.mem (by decide)
-  have dx : env d.mem base 1 = env c.mem base 1 := by
-    exact congrArg toFe (kd.mem.fe (Or.inl (by decide : offset 1+32 ≤ 512)) (by decide))
-  refine WP.mono (finish_ok (kad.scratch ha) od
-    (by rw [kad.wr,ka.wr,pre.wr]; simp) pre.out_sc svd) fun t ⟨tg,kt,rt⟩ => ?_
-  refine ⟨fun r hr => ?_,?_⟩
-  · rcases preservedCases r hr with ⟨rd,hrd,er⟩ | hn
-    · rw [← er]; exact tg rd hrd
-    · have kk := (ka.trans kad.kp).trans kt
-      exact kk.sub (by decide) |>.gpr r hn
-  · change bytesAt t.mem (s₀.gpr .x0) 32 = Spec.X25519.x25519
-      (bytesAt s₀.mem (s₀.gpr .x1) 32) (bytesAt s₀.mem (s₀.gpr .x2) 32)
-    rw [rt,dx,di,cx,cz,x25519_eq]
-
-theorem x25519_ok (s : State) (hs : localContract.pre s) :
-    ∃ tr t, Exec isa VG.Impl.X25519.AArch64.Word.x25519 s tr t ∧ abiPreserved s t ∧ localContract.post s t := by
-  obtain ⟨tr,t,he,hg,hp⟩ := correct hs
-  exact ⟨tr,t,he,⟨hg,Exec.sp he,Exec.preservedV he (by lit_decide)⟩,hp⟩
 end VG.Proof.X25519.AArch64.Word

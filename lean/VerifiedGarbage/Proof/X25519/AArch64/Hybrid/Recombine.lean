@@ -260,11 +260,11 @@ theorem limbs_ok {s : State} {base : Addr} (hs : Scr s base false) (sub : Bool)
       ug r hr.2.2.2.2.2.1 hr.2.2.2.2.2.2.1, tg r (by simp only [loopRegs, List.mem_cons, List.not_mem_nil, or_false, not_or]; exact hr)]
 
 theorem recPrefix_ok (s : State) (sub : Bool) :
-    WP isa (.block ([.movz .w .x10 0 0, .movz .w .x11 38 0, .movz .w .x4 0 0, .movz .w .x5 0 0, .movz .w .x6 0 0,
-      .movz .w .x7 0 0, .movz .w .x20 0 0] ++
+    WP isa (.block (([.movz .w .x10 0 0, .movz .w .x11 38 0, .movz .w .x4 0 0, .movz .w .x5 0 0, .movz .w .x6 0 0,
+      .movz .w .x7 0 0, .movz .w .x20 0 0] : List Instr) ++
       (if sub then
-        [.movz .w .x9 0xffb4 0, .movk .w .x9 0x0fff 1, .movz .w .x16 0xfffc 0, .movk .w .x16 0x0fff 1,
-          .movz .w .x17 0xfffc 0, .movk .w .x17 0x07ff 1]
+        ([.movz .w .x9 0xffb4 0, .movk .w .x9 0x0fff 1, .movz .w .x16 0xfffc 0, .movk .w .x16 0x0fff 1,
+          .movz .w .x17 0xfffc 0, .movk .w .x17 0x07ff 1] : List Instr)
        else []))) s fun t =>
       t.gpr .x10 = 0 ∧ t.gpr .x11 = 38 ∧ accVal t = 0 ∧
       (sub = true → ∀ k < 10, t.gpr (biasReg k) = BitVec.ofNat 64 (bias k)) ∧
