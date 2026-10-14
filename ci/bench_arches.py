@@ -139,6 +139,15 @@ PLATFORMS = {
     },
 }
 
+# Platforms only a run by hand measures (`--arches`), never a pull request's
+# selection, each with the architecture whose code, configurations and
+# benchmarks it runs: Apple's cores, whose choices among implementations
+# (e.g. `vg_poly1305_update_neon`, chosen for `target_vendor = "apple"`) are
+# measured before they are made.
+MANUAL_PLATFORMS = {
+    "aarch64-apple": {"os": "macos-latest", "of": "aarch64"},
+}
+
 # The other `VG_CPU_FEATURES` each architecture is benchmarked with, so that
 # each implementation a runner can run is measured (on x86-64, each of
 # Ed25519's combinations of SHA-512 and field multiplication, and, on
@@ -1119,18 +1128,27 @@ def manual(arch_names="", cpu_features="", modules=""):
     the space-separated `modules`, if given, in the configurations that
     choose among their implementations (unless `cpu_features` names them)."""
     chosen = arch_names.split() or list(PLATFORMS)
-    if unknown := [a for a in chosen if a not in PLATFORMS]:
-        raise ValueError(f"unknown architecture(s) {', '.join(unknown)}; known: {', '.join(PLATFORMS)}"
-                         " (see --choices)")
+    if unknown := [a for a in chosen if a not in PLATFORMS and a not in MANUAL_PLATFORMS]:
+        raise ValueError(f"unknown architecture(s) {', '.join(unknown)}; known: "
+                         f"{', '.join([*PLATFORMS, *MANUAL_PLATFORMS])} (see --choices)")
     catalog = bench_catalog()
     selected = set(modules.split()) or ALL
     if selected is not ALL and (unknown := sorted(selected - set().union(*(catalog or {}).values()))):
         raise ValueError(f"no benchmark uses module(s) {', '.join(unknown)} (see --choices)")
     configurations = [("" if c == "-" else c) for c in cpu_features.split()] or None
-    return [p for a in PLATFORMS if a in chosen
+    runs = [p for a in PLATFORMS if a in chosen
             for p in platforms(a, selected,
                                None if configurations else run_requirements(a, selected, [catalog], [None]),
                                bench_count(selected), configurations)]
+    for name, platform in MANUAL_PLATFORMS.items():
+        if name not in chosen:
+            continue
+        of = platform["of"]
+        runs += [{**p, "arch": name, **{k: v for k, v in platform.items() if k != "of"}}
+                 for p in platforms(of, selected,
+                                    None if configurations else run_requirements(of, selected, [catalog], [None]),
+                                    bench_count(selected), configurations)]
+    return runs
 
 
 def choices():
@@ -1146,6 +1164,9 @@ def choices():
         lines += [f"  {arch} (runner: {platform['os']}{', in ' + platform['image'] if 'image' in platform else ''})",
                   f"    configurations: {' '.join(['-', *CPU_FEATURES.get(arch, [])])}",
                   f"    features: {','.join(sorted(detected)) if detected else '(none)'}"]
+    for name, platform in MANUAL_PLATFORMS.items():
+        lines += [f"  {name} (runner: {platform['os']}; only when named, with {platform['of']}'s"
+                  " configurations and benchmarks)"]
     lines += ["", "A configuration naming a feature the runner's CPU lacks measures nothing, with a"
               " warning. Modules (--modules), with the benchmarks (bench/benches/primitives/<name>.rs)"
               " that run for each:", ""]

@@ -298,11 +298,17 @@ def run(binary, home, library, args, checkout, modules, groups=None):
 
 
 def cpu_model():
-    """This machine's CPU model, from /proc/cpuinfo, or None."""
+    """This machine's CPU model, from /proc/cpuinfo (or, on macOS, `sysctl`),
+    or None."""
     try:
         cpuinfo = pathlib.Path("/proc/cpuinfo").read_text()
     except OSError:
-        return None
+        try:
+            out = subprocess.run(["sysctl", "-n", "machdep.cpu.brand_string"], capture_output=True,
+                                 text=True, check=True).stdout.strip()
+        except (OSError, subprocess.CalledProcessError):
+            return None
+        return out or None
     m = re.search(r"^model name\s*:\s*(.+)$", cpuinfo, re.M)
     return m[1].strip() if m else None
 
