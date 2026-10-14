@@ -313,4 +313,41 @@ def code (mul : Nat → Nat → Nat → Prog isa) : Prog isa :=
   seqs [.block kEntry, zeroOut kOut kLen, .block ([ldh .x3 kRandLen, ldh .x4 kLen] ++ geFlag),
     .ite (.zero .x .x5) finNone (kMain mul)]
 
+/-! ## Generic prepared-round callers
+
+Witness preparation and the RSA policy stay here; the prepared round can be
+inlined or called through the shared Miller–Rabin entry point.
+-/
+
+def mrRoundWith (mul : Nat → Nat → Nat → Prog isa) (roundCode : List (Prog isa)) : List (Prog isa) :=
+  mrWitness ++ [mul aXm aX aR2, copyA aB aXm] ++ roundCode ++ ([
+  .block [ldh .x3 kFlag],
+  .ite (.zero .x .x3) (.block [movi .x3 3, sth .x3 kStat])
+    (.block [ldh .x3 kI, .addImm .x .x3 .x3 1, sth .x3 kI, ldh .x4 kU, movi .x5 1, .logic .and .x .x4 .x4 .x5,
+      ldh .x5 kUni, .add .x .x4 .x4 .x5, sth .x4 kUni,
+      -- `x13 := 4` if `i ≤ 16` or `uniform < checks`, else 1.
+      movi .x9 4, movi .x10 1, movi .x5 17, .subs .x .x6 .x3 .x5, .csel .x .x13 .x10 .x9, ldh .x5 kChecks,
+      .subs .x .x6 .x4 .x5, .csel .x .x13 .x13 .x9, sth .x13 kStat])] : List (Prog isa))
+
+
+def millerRabinWith (mul : Nat → Nat → Nat → Prog isa) (roundCode : List (Prog isa)) : List (Prog isa) := [
+  .block [movi .x3 1, sth .x3 kI, movi .x3 0, sth .x3 kUni],
+  .loop (seqs [
+    .block ([ldh .x3 kRandLen, ldh .x4 kUsed, .sub .x .x3 .x3 .x4, ldh .x4 kLen] ++ geFlag),
+    .ite (.zero .x .x5) (.block [movi .x3 0, sth .x3 kStat]) (seqs (mrRoundWith mul roundCode)),
+    .block [ldh .x3 kStat, .subImm .x .x3 .x3 4]]) (.zero .x .x3)]
+
+
+def kMainWith (mul : Nat → Nat → Nat → Prog isa) (roundCode : List (Prog isa)) : Prog isa :=
+  seqs (loadC ++ closeCheck ++ ([.ite (.nonzero .x .x15) (finUsed 2) (seqs (trial ++
+    ([.ite (.nonzero .x .x1) (finUsed 3) (seqs (gcdCheck ++
+      ([.ite (.nonzero .x .x3) (finUsed 3) (seqs (montSetup mul ++ expSetup ++ millerRabinWith mul roundCode ++
+        [mrResult]))] : List (Prog isa))))] : List (Prog isa))))] : List (Prog isa)))
+
+
+def codeWith (mul : Nat → Nat → Nat → Prog isa) (roundCode : List (Prog isa)) : Prog isa :=
+  seqs [.block kEntry, zeroOut kOut kLen, .block ([ldh .x3 kRandLen, ldh .x4 kLen] ++ geFlag),
+    .ite (.zero .x .x5) finNone (kMainWith mul roundCode)]
+
+
 end VG.Impl.RsaKeyGen.AArch64.Candidate
