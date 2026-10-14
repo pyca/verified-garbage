@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Framework.TaintBatch
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightRowMath
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareLayout
+import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightFinish
 
 @[expose] public section
 namespace VG.Proof.Bignum.AArch64.SquareEight

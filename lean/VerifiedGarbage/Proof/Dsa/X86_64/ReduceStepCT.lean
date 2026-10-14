@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.AddCT
+import VerifiedGarbage.Proof.Dsa.X86_64.AddCT
 meta import VerifiedGarbage.Proof.Dsa.X86_64.AddCT
 public import VerifiedGarbage.Proof.Dsa.X86_64.ProductCT
 meta import VerifiedGarbage.Proof.Dsa.X86_64.ProductCT

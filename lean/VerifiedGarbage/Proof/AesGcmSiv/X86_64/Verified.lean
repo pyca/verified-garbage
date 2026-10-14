@@ -1,11 +1,11 @@
 module
 
 public import Mathlib.Data.List.Dedup
-public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.FnCT
+import VerifiedGarbage.Proof.AesGcmSiv.X86_64.FnCT
 public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Fn
 public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Spec.GcmSiv.Contract
-public import VerifiedGarbage.Proof.GcmSiv.Polyval
+import VerifiedGarbage.Spec.GcmSiv.Contract
+import VerifiedGarbage.Proof.GcmSiv.Polyval
 public import VerifiedGarbage.Proof.AesGcmSiv.Scratch
 public import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
 import all Init.Data.Array.Basic

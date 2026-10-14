@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecArgs
 meta import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecArgs
-public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecCT1
+import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecCT1
 meta import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecCT1
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

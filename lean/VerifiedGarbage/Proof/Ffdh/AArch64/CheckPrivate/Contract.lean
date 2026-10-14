@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Spec.Ffdh.Contract
-public import VerifiedGarbage.TCB.AArch64.Target
+import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.PowLit
 public import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch

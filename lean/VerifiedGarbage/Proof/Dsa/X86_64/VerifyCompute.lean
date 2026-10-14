@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.CoreVerify
 public import VerifiedGarbage.Proof.Dsa.X86_64.PublicKey
-public import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleState
+import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleState
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

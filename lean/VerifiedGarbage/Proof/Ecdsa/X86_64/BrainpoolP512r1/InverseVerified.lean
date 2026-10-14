@@ -1,12 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.X86_64.BrainpoolP512r1.Verified
+import VerifiedGarbage.Proof.Ecdsa.X86_64.BrainpoolP512r1.Verified
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.BrainpoolP512r1.Verified
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.BrainpoolP512r1.InverseLit
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.BrainpoolP512r1.InverseLit
 public import VerifiedGarbage.Proof.Framework.Pratt
 meta import VerifiedGarbage.Proof.Framework.Pratt
-public import VerifiedGarbage.Proof.Mont.Read
+import VerifiedGarbage.Proof.Mont.Read
 meta import VerifiedGarbage.Proof.Mont.Read
 public import VerifiedGarbage.Spec.Weierstrass.Inverse
 meta import VerifiedGarbage.Spec.Weierstrass.Inverse
@@ -24,6 +24,8 @@ meta import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
 meta import VerifiedGarbage.Proof.Mont.X86_64.Wide
 meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
 meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+import VerifiedGarbage.Spec.EcKey.Generic
+meta import VerifiedGarbage.Spec.EcKey.Generic
 
 /-!
 # `vg_brainpoolp512r1_inv_mod_p` and `_n` on x86-64: `Verified`

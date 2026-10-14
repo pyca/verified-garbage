@@ -2,13 +2,14 @@ module
 
 public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Weierstrass.Law
-public import VerifiedGarbage.Impl.Ecdsa.BrainpoolP384r1.X86
-public import VerifiedGarbage.Proof.Ecdsa.X86.BrainpoolP384r1.Verified
-public import VerifiedGarbage.Proof.Ecdsa.X86.BrainpoolP384r1.Lit
+import VerifiedGarbage.Impl.Ecdsa.BrainpoolP384r1.X86
+import VerifiedGarbage.Proof.Ecdsa.X86.BrainpoolP384r1.Verified
+import VerifiedGarbage.Proof.Ecdsa.X86.BrainpoolP384r1.Lit
 public import VerifiedGarbage.Impl.Ecdsa.Verify.BrainpoolP384r1.X86
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.BrainpoolP384r1.Verified
 import VerifiedGarbage.Proof.Framework.TaintSum
 import VerifiedGarbage.Proof.X25519.X86.Column
+import VerifiedGarbage.Proof.Framework.X86.TaintMono
 
 /-!
 # ECDSA over brainpoolP384r1 (FIPS 186-5) on x86 (32-bit)

@@ -9,7 +9,7 @@ import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Store
-public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Short.Zero
+import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Short.Zero
 
 /-!
 # ChaCha20-Poly1305 on AArch64, 64 to 256 bytes: the data XORed with its keystream

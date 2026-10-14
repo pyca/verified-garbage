@@ -1,9 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.ShapeSizes
+import VerifiedGarbage.Proof.Dsa.X86_64.ShapeSizes
 public import VerifiedGarbage.Proof.Dsa.X86_64.ShapeTail
 public import VerifiedGarbage.Proof.Dsa.DomainWidths
-public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

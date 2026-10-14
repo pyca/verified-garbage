@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.SignCall
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.RecoverCorrect
+import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.RecoverCorrect
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

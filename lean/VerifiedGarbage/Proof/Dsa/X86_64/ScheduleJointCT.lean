@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleCallCT
-public import VerifiedGarbage.Proof.Dsa.X86_64.JointReadyCT
-public import VerifiedGarbage.Proof.Dsa.X86_64.ReadyJoint
+import VerifiedGarbage.Proof.Dsa.X86_64.JointReadyCT
+import VerifiedGarbage.Proof.Dsa.X86_64.ReadyJoint
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

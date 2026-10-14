@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.Layout
+import VerifiedGarbage.Proof.Dsa.Layout
 public import VerifiedGarbage.Impl.Dsa.X86_64.Core
 public import VerifiedGarbage.Proof.Dsa.X86_64.Prepare
 import all Init.Data.Array.Basic

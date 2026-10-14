@@ -2,11 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.PublicCallCT
 meta import VerifiedGarbage.Proof.Dsa.X86_64.PublicCallCT
-public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTExp
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTExp
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTExp
 public import VerifiedGarbage.Proof.Dsa.X86_64.ReadyCallCT
 meta import VerifiedGarbage.Proof.Dsa.X86_64.ReadyCallCT
-public import VerifiedGarbage.Proof.Dsa.X86_64.PublicPower
+import VerifiedGarbage.Proof.Dsa.X86_64.PublicPower
 meta import VerifiedGarbage.Impl.Dsa.X86_64.PublicPower
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

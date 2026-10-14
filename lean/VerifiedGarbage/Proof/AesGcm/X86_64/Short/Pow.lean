@@ -5,7 +5,7 @@ import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Ghash
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Pow
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Field48
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Tab
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Bcast
+import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Bcast
 public import VerifiedGarbage.Proof.Gcm.Powers
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

@@ -2,11 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.SmallCT
 meta import VerifiedGarbage.Proof.Dsa.X86_64.SmallCT
-public import VerifiedGarbage.Proof.Dsa.X86_64.JointTableInit
+import VerifiedGarbage.Proof.Dsa.X86_64.JointTableInit
 meta import VerifiedGarbage.Proof.Dsa.X86_64.JointTableInit
 public import VerifiedGarbage.Proof.Dsa.X86_64.JointBuild
 meta import VerifiedGarbage.Proof.Dsa.X86_64.JointBuild
-public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTExp
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTExp
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTExp
 public import VerifiedGarbage.Proof.Dsa.X86_64.ProductCT
 meta import VerifiedGarbage.Proof.Dsa.X86_64.ProductCT

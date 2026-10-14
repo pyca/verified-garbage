@@ -2,15 +2,15 @@ module
 
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.BrainpoolP512r1.Verified
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.BrainpoolP512r1.Verified
-public import VerifiedGarbage.Proof.Ecdsa.X86_64.BrainpoolP512r1.MulLit
+import VerifiedGarbage.Proof.Ecdsa.X86_64.BrainpoolP512r1.MulLit
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.BrainpoolP512r1.MulLit
-public import VerifiedGarbage.Proof.Ecdsa.X86_64.MulFn
+import VerifiedGarbage.Proof.Ecdsa.X86_64.MulFn
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.MulFn
-public import VerifiedGarbage.Proof.Ecdsa.X86_64.InvFnX
+import VerifiedGarbage.Proof.Ecdsa.X86_64.InvFnX
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.InvFnX
 public import VerifiedGarbage.Proof.Weierstrass.PointFacts
 meta import VerifiedGarbage.Proof.Weierstrass.PointFacts
-public import VerifiedGarbage.Proof.Mont.Read
+import VerifiedGarbage.Proof.Mont.Read
 meta import VerifiedGarbage.Proof.Mont.Read
 public import VerifiedGarbage.Spec.Weierstrass.Mul
 meta import VerifiedGarbage.Spec.Weierstrass.Mul
@@ -30,6 +30,8 @@ meta import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
 meta import VerifiedGarbage.Proof.Mont.X86_64.Wide
 meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
 meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+import VerifiedGarbage.Spec.EcKey.Generic
+meta import VerifiedGarbage.Spec.EcKey.Generic
 
 /-!
 # `vg_brainpoolp512r1_mul` on x86-64: `Verified`

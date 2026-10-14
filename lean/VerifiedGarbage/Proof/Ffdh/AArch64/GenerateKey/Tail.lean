@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ffdh.AArch64.GenerateKey.Range
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Exchange.Stages
-public import VerifiedGarbage.Proof.Rsa.Octets
+import VerifiedGarbage.Proof.Rsa.Octets
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -10,6 +10,7 @@ import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Spec.Dsa.SignVerify
 
 /-!
 # `vg_ffdh_generate_key` on AArch64: the public value

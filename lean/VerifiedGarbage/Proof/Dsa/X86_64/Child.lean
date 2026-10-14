@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.NewChild
+import VerifiedGarbage.Proof.Dsa.X86_64.NewChild
 public import VerifiedGarbage.Proof.Dsa.X86_64.SealChild
 public import VerifiedGarbage.Proof.Dsa.X86_64.InitFrame
 import all Init.Data.Array.Basic

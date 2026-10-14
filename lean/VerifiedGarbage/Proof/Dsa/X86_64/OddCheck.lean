@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.LastByte
+import VerifiedGarbage.Proof.Dsa.X86_64.LastByte
 public import VerifiedGarbage.Proof.Dsa.X86_64.Parity
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

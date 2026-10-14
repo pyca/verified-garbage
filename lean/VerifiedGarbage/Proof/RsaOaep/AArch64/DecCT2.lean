@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.RsaOaep.AArch64.MgfCT
+import VerifiedGarbage.Proof.RsaOaep.AArch64.MgfCT
 meta import VerifiedGarbage.Proof.RsaOaep.AArch64.MgfCT
 public import VerifiedGarbage.Proof.RsaOaep.AArch64.LabelCT
 meta import VerifiedGarbage.Proof.RsaOaep.AArch64.LabelCT

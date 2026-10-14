@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.SigningVerified
-public import VerifiedGarbage.Proof.Dsa.X86_64.VerifyingVerified
+import VerifiedGarbage.Proof.Dsa.X86_64.VerifyingVerified
 public import VerifiedGarbage.Proof.Rsa.X86_64.CallMont
 import VerifiedGarbage.Proof.Framework.X86_64.Call
 import VerifiedGarbage.Proof.Dsa.X86_64.EqualCT

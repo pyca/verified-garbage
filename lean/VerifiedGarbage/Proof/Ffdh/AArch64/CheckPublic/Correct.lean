@@ -10,6 +10,7 @@ import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Dsa.PackedBytes
 
 /-!
 # `vg_ffdh_check_public` on AArch64: correctness

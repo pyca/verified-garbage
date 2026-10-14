@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Spec.RsaPkcs1Sig.Contract
 public import VerifiedGarbage.Impl.RsaPkcs1Sig.AArch64.Sign
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Callee
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Wp
+import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Wp
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

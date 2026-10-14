@@ -3,8 +3,8 @@ module
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Pow
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Checks
 public import VerifiedGarbage.Proof.Ffdh.Domain
-public import VerifiedGarbage.Proof.Bignum.AArch64.PubValid
-public import VerifiedGarbage.Proof.Bignum.AArch64.PubR2
+import VerifiedGarbage.Proof.Bignum.AArch64.PubValid
+import VerifiedGarbage.Proof.Bignum.AArch64.PubR2
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -12,6 +12,7 @@ import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Spec.Dsa.SignVerify
 
 /-!
 # FFDH on AArch64: the front of the domain operations

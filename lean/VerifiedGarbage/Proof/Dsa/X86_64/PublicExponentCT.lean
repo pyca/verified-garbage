@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.PublicWindowCT
+import VerifiedGarbage.Proof.Dsa.X86_64.PublicWindowCT
 meta import VerifiedGarbage.Proof.Dsa.X86_64.PublicWindowCT
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTExp
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTExp

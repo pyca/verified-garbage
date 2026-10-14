@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.ProductCallCT
 meta import VerifiedGarbage.Proof.Dsa.X86_64.ProductCallCT
-public import VerifiedGarbage.Proof.Dsa.X86_64.JointEncodeCT
+import VerifiedGarbage.Proof.Dsa.X86_64.JointEncodeCT
 meta import VerifiedGarbage.Proof.Dsa.X86_64.JointEncodeCT
 public import VerifiedGarbage.Proof.Dsa.X86_64.JointPrepare
 meta import VerifiedGarbage.Proof.Dsa.X86_64.JointPrepare

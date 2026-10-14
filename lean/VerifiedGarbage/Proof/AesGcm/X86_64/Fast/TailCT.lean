@@ -8,6 +8,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.CT
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.CT
 
 /-!
 # AES-GCM `seal_split`'s path for TLS records: at most 16 bytes left, in two runs

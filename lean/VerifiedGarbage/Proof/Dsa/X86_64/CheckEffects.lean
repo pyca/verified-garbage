@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.ReadyChecks
+import VerifiedGarbage.Proof.Dsa.X86_64.ReadyChecks
 public import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleOperands
-public import VerifiedGarbage.Proof.Dsa.X86_64.ModulusMinus
+import VerifiedGarbage.Proof.Dsa.X86_64.ModulusMinus
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

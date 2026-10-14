@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.CheckOperands
-public import VerifiedGarbage.Proof.Dsa.Zero
+import VerifiedGarbage.Proof.Dsa.X86_64.CheckOperands
+import VerifiedGarbage.Proof.Dsa.Zero
 public import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleCTState
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

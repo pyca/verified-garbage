@@ -2,10 +2,11 @@ module
 
 public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.Weierstrass.Law
-public import VerifiedGarbage.Impl.Ecdsa.BrainpoolP384r1.Arm
+import VerifiedGarbage.Impl.Ecdsa.BrainpoolP384r1.Arm
 public import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP384r1.Verified
 public import VerifiedGarbage.Impl.Ecdsa.Verify.BrainpoolP384r1.Arm
 public import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.BrainpoolP384r1.Verified
+import VerifiedGarbage.Proof.Framework.Arm.Contract
 
 /-!
 # ECDSA over brainpoolP384r1 (FIPS 186-5) on 32-bit ARM

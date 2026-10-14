@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.PublicKeyCT
 meta import VerifiedGarbage.Proof.Dsa.X86_64.PublicKeyCT
-public import VerifiedGarbage.Proof.Dsa.X86_64.PrivateKeyCT
+import VerifiedGarbage.Proof.Dsa.X86_64.PrivateKeyCT
 meta import VerifiedGarbage.Proof.Dsa.X86_64.PrivateKeyCT
 public import VerifiedGarbage.Proof.Dsa.X86_64.CoreSignCT
 meta import VerifiedGarbage.Proof.Dsa.X86_64.CoreSignCT
@@ -18,6 +18,12 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.X86_64.Call
 meta import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Dsa.X86_64.EqualCT
+import VerifiedGarbage.Proof.Dsa.X86_64.JointCallCT
+import VerifiedGarbage.Proof.Dsa.X86_64.ZeroCT
+meta import VerifiedGarbage.Proof.Dsa.X86_64.EqualCT
+meta import VerifiedGarbage.Proof.Dsa.X86_64.JointCallCT
+meta import VerifiedGarbage.Proof.Dsa.X86_64.ZeroCT
 
 /-! # Constant time of validation and signing/verification together -/
 

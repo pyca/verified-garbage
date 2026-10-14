@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleJointCT
 meta import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleJointCT
-public import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleReduceCT
+import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleReduceCT
 meta import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleReduceCT
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

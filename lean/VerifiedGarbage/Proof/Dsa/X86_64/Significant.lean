@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.X86_64.Checks
-public import VerifiedGarbage.Proof.Dsa.DomainShape
+import VerifiedGarbage.Proof.Dsa.DomainShape
 public import VerifiedGarbage.Proof.Dsa.X86_64.ReduceCount
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

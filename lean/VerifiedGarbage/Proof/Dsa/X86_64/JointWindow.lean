@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.X86_64.Joint
-public import VerifiedGarbage.Proof.Dsa.Joint
+import VerifiedGarbage.Proof.Dsa.Joint
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

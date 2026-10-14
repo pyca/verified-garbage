@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.X86.PointCurves
 meta import VerifiedGarbage.Proof.Weierstrass.X86.PointCurves
-public import VerifiedGarbage.Proof.Weierstrass.X86.MontBrainpoolP384r1
+import VerifiedGarbage.Proof.Weierstrass.X86.MontBrainpoolP384r1
 meta import VerifiedGarbage.Proof.Weierstrass.X86.MontBrainpoolP384r1
 public import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.BrainpoolP384r1
 meta import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.BrainpoolP384r1

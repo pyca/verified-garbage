@@ -8,7 +8,7 @@ public import VerifiedGarbage.Proof.EcKey.X86.BrainpoolP384r1.Contract
 meta import VerifiedGarbage.Proof.EcKey.X86.BrainpoolP384r1.Contract
 public import VerifiedGarbage.Proof.EcKey.X86.BrainpoolP384r1.Lit
 meta import VerifiedGarbage.Proof.EcKey.X86.BrainpoolP384r1.Lit
-public import VerifiedGarbage.Proof.Ecdsa.X86.BrainpoolP384r1.Verified
+import VerifiedGarbage.Proof.Ecdsa.X86.BrainpoolP384r1.Verified
 meta import VerifiedGarbage.Proof.Ecdsa.X86.BrainpoolP384r1.Verified
 public import VerifiedGarbage.Proof.Framework.X86.Taint
 meta import VerifiedGarbage.Proof.Framework.X86.Taint

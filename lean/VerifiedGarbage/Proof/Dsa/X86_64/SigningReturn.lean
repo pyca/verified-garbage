@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.SigningInitialize
-public import VerifiedGarbage.Proof.Dsa.X86_64.Failure
+import VerifiedGarbage.Proof.Dsa.X86_64.Failure
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

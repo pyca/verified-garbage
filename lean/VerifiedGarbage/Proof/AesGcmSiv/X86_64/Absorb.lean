@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Wide
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Loops
+import VerifiedGarbage.Proof.AesGcm.X86_64.Loops
 public import VerifiedGarbage.Proof.Cmac.Block
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Run
 import all Init.Data.Array.Basic

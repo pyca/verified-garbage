@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.Aad
+import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.Aad
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.Cond
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.Tail
+import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.Tail
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Split.Run
 public import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Context
 import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks

@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Pow
-public import VerifiedGarbage.Proof.Gcm.Stream
+import VerifiedGarbage.Proof.Gcm.Stream
 public import VerifiedGarbage.Proof.Gcm.Split
 public import Mathlib.Tactic.LinearCombination
 import all Init.Data.Array.Basic

@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.JointRunCT
 meta import VerifiedGarbage.Proof.Dsa.X86_64.JointRunCT
-public import VerifiedGarbage.Proof.Dsa.X86_64.JointPower
+import VerifiedGarbage.Proof.Dsa.X86_64.JointPower
 meta import VerifiedGarbage.Proof.Dsa.X86_64.JointPower
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

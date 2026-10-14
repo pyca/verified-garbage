@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.ReduceByteCT
 meta import VerifiedGarbage.Proof.Dsa.X86_64.ReduceByteCT
-public import VerifiedGarbage.Proof.Dsa.X86_64.SetupCT
+import VerifiedGarbage.Proof.Dsa.X86_64.SetupCT
 meta import VerifiedGarbage.Proof.Dsa.X86_64.SetupCT
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

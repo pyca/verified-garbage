@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Ffdh.AArch64.Domain
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWs
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtFix
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtFix
 public import VerifiedGarbage.Proof.Bignum.CrtWindowFiveLayout
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

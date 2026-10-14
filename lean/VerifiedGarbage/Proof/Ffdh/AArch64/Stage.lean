@@ -11,6 +11,7 @@ import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Spec.Dsa.SignVerify
 
 /-!
 # FFDH on AArch64: the stages of a run
