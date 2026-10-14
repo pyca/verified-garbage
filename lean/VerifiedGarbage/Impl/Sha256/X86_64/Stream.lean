@@ -87,6 +87,7 @@ def params : MdStream.X86_64.Params where
   L := 8
   so := 560
   len := MdStream.X86_64.len64 88 true
+  lenV := MdStream.X86_64.lenV64 true
   out := MdStream.X86_64.out32 8 true
 
 def update (f : Callee) : Prog isa := MdStream.X86_64.update params f.name f.code

@@ -104,6 +104,8 @@ theorem digest_eq (mem : Mem) (p : Addr) :
     Spec.Sha512.wordBytes]
 
 theorem shape : Shape (P := params) md where
+  lenV s := (lenV128_ok s).mono fun _ ⟨g, rd, wr, m, x0, x7⟩ => ⟨g, rd, wr, m, x0, by
+    rw [x7, lenOf_split]; rfl⟩
   len s hout := len_ok s hout
   out s hin hout hd := by
     refine (out64_ok (n := 8) (by decide) hin hout hd).mono fun s' ⟨g, rd, wr, m⟩ => ⟨g, rd, wr, ?_⟩

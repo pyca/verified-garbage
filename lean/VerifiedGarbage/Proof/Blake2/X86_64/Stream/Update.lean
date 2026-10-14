@@ -39,7 +39,7 @@ As the Merkle–Damgård hash functions do, after the compression function's
 512 bytes of scratch space. -/
 
 /-- The Merkle–Damgård streaming parameters with the same saved registers. -/
-def mdP : Impl.MdStream.X86_64.Params := ⟨1, 64, 1, 512, [], []⟩
+def mdP : Impl.MdStream.X86_64.Params := ⟨1, 64, 1, 512, [], [], []⟩
 
 theorem mdP_dims : MdStream.X86_64.Dims mdP := ⟨.inl rfl, by decide, by decide, by decide⟩
 
