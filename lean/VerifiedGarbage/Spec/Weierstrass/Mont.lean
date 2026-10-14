@@ -119,6 +119,17 @@ def mulContract {I : ISA} (A : Abi I) (stack : Nat := 0) : Contract I :=
       Keeps M.k ws o m m')
     (stack := stack)
 
+/-- `sqr`: `mul` with `a` for `b` (the number at `b` is not read): for `a`
+below `m`, the number at `o` is below `m` and congruent to `a² R⁻¹`. -/
+def sqrContract {I : ISA} (A : Abi I) (stack : Nat := 0) : Contract I :=
+  sig.contract A
+    (pre := fun ws o a b m => M.Fit o a b ∧ numAt m ws a M.k < M.m)
+    (post := fun ws o a _ m m' _ =>
+      numAt m' ws o M.k < M.m ∧
+      numAt m' ws o M.k * M.R % M.m = numAt m ws a M.k * numAt m ws a M.k % M.m ∧
+      Keeps M.k ws o m m')
+    (stack := stack)
+
 /-- `add`: for `a + b` below `2 m`, the number at `o` is `(a + b) mod m`. -/
 def addContract {I : ISA} (A : Abi I) (stack : Nat := 0) : Contract I :=
   sig.contract A
@@ -170,6 +181,17 @@ def mulApi : Api where
   summary := s!"Montgomery's product modulo {M.desc}: writes the number below the modulus \
     congruent to `a b 2^-{64 * M.k}` to `o`. " ++ M.common
   safety := M.safety s!"The number at `b` must be below {M.desc}."
+
+/-- `vg_<curve>_sqr_mod_<which>`, on the targets with a squaring. -/
+def sqrApi : Api where
+  module := M.module
+  name := M.fn "sqr"
+  sig := sig
+  contracts := some fun A stack => M.sqrContract A stack
+  summary := s!"Montgomery's square modulo {M.desc}: writes the number below the modulus \
+    congruent to `a² 2^-{64 * M.k}` to `o`, as the product with `b = a` would, without \
+    reading `b` (contract: `sqrContract`). " ++ M.common
+  safety := M.safety s!"The number at `a` must be below {M.desc}."
 
 /-- `vg_<curve>_add_mod_<which>` on every target. -/
 def addApi : Api where
