@@ -1,10 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.SmallCT
+import VerifiedGarbage.Proof.Dsa.AArch64.SmallCT
 meta import VerifiedGarbage.Proof.Dsa.AArch64.SmallCT
 public import VerifiedGarbage.Proof.Dsa.AArch64.JointTableInit
 meta import VerifiedGarbage.Proof.Dsa.AArch64.JointTableInit
-public import VerifiedGarbage.Proof.Dsa.AArch64.JointBuild
+import VerifiedGarbage.Proof.Dsa.AArch64.JointBuild
 meta import VerifiedGarbage.Proof.Dsa.AArch64.JointBuild
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTExp
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTExp

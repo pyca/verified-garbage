@@ -16,6 +16,8 @@ import VerifiedGarbage.Proof.MdStream.Spec
 import VerifiedGarbage.Spec.RsaPss
 meta import VerifiedGarbage.Proof.MdStream.Spec
 meta import VerifiedGarbage.Spec.RsaPss
+import VerifiedGarbage.Proof.Dsa.AArch64.JointCallCT
+meta import VerifiedGarbage.Proof.Dsa.AArch64.JointCallCT
 
 /-! # Constant time of the complete DSA verification arithmetic schedule -/
 

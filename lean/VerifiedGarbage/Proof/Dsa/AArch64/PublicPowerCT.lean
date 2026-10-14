@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.PublicExponentCT
+import VerifiedGarbage.Proof.Dsa.AArch64.PublicExponentCT
 meta import VerifiedGarbage.Proof.Dsa.AArch64.PublicExponentCT
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTExp
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTExp
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTExp
 public import VerifiedGarbage.Proof.Dsa.AArch64.PowerCallCT
 meta import VerifiedGarbage.Proof.Dsa.AArch64.PowerCallCT

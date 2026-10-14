@@ -1,12 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.PublicFinishCT
+import VerifiedGarbage.Proof.Dsa.AArch64.PublicFinishCT
 meta import VerifiedGarbage.Proof.Dsa.AArch64.PublicFinishCT
 public import VerifiedGarbage.Proof.Dsa.AArch64.PublicPrefix
 meta import VerifiedGarbage.Proof.Dsa.AArch64.PublicPrefix
-public import VerifiedGarbage.Proof.Dsa.AArch64.PublicCalls
+import VerifiedGarbage.Proof.Dsa.AArch64.PublicCalls
 meta import VerifiedGarbage.Proof.Dsa.AArch64.PublicCalls
-public import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleCheckCT
+import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleCheckCT
 meta import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleCheckCT
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

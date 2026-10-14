@@ -2,12 +2,14 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.JointRunCT
 meta import VerifiedGarbage.Proof.Dsa.AArch64.JointRunCT
-public import VerifiedGarbage.Proof.Dsa.AArch64.JointPower
+import VerifiedGarbage.Proof.Dsa.AArch64.JointPower
 meta import VerifiedGarbage.Proof.Dsa.AArch64.JointPower
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Dsa.AArch64.JointPrepare
+meta import VerifiedGarbage.Proof.Dsa.AArch64.JointPrepare
 
 /-! # Constant time of complete joint DSA exponentiation -/
 

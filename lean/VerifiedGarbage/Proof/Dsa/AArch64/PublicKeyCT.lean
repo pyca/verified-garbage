@@ -8,6 +8,10 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.AArch64.Call
 meta import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Dsa.AArch64.ReadyMinusCT
+import VerifiedGarbage.Proof.Dsa.AArch64.ReadyRangeCT
+meta import VerifiedGarbage.Proof.Dsa.AArch64.ReadyMinusCT
+meta import VerifiedGarbage.Proof.Dsa.AArch64.ReadyRangeCT
 
 /-! # Constant time of DSA domain and public-key validation -/
 

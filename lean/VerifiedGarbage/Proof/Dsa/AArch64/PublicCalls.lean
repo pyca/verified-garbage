@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.ReadyCalls
-public import VerifiedGarbage.Proof.Dsa.AArch64.Call
-public import VerifiedGarbage.Proof.Dsa.AArch64.PublicPower
+import VerifiedGarbage.Proof.Dsa.AArch64.Call
+import VerifiedGarbage.Proof.Dsa.AArch64.PublicPower
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

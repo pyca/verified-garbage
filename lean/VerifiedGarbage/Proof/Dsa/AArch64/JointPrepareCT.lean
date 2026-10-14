@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Dsa.AArch64.ProductCallCT
 meta import VerifiedGarbage.Proof.Dsa.AArch64.ProductCallCT
 public import VerifiedGarbage.Proof.Dsa.AArch64.JointEncodeCT
 meta import VerifiedGarbage.Proof.Dsa.AArch64.JointEncodeCT
-public import VerifiedGarbage.Proof.Dsa.AArch64.JointPrepare
+import VerifiedGarbage.Proof.Dsa.AArch64.JointPrepare
 meta import VerifiedGarbage.Proof.Dsa.AArch64.JointPrepare
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

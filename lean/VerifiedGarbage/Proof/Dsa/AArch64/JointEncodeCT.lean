@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.JointEncode
+import VerifiedGarbage.Proof.Dsa.AArch64.JointEncode
 meta import VerifiedGarbage.Proof.Dsa.AArch64.JointEncode
 public import VerifiedGarbage.Proof.Dsa.AArch64.JointBuildCT
 meta import VerifiedGarbage.Proof.Dsa.AArch64.JointBuildCT
