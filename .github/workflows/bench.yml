@@ -54,7 +54,7 @@ env:
 jobs:
   arches:
     name: Choose architectures
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     timeout-minutes: 5
     outputs:
       matrix: ${{ steps.arches.outputs.matrix }}

@@ -27,8 +27,8 @@ jobs:
       fail-fast: false
       matrix:
         image:
-          - {tag: "verified-garbage-runner:i686", platform: "linux/386", os: ubuntu-latest}
-          - {tag: "verified-garbage-runner:armv7l", platform: "linux/arm/v7", os: ubuntu-24.04-arm}
+          - {tag: "verified-garbage-runner:i686", platform: "linux/386", os: ubuntu-26.04}
+          - {tag: "verified-garbage-runner:armv7l", platform: "linux/arm/v7", os: ubuntu-26.04-arm}
     name: ${{ matrix.image.tag }}
     runs-on: ${{ matrix.image.os }}
     timeout-minutes: 20
