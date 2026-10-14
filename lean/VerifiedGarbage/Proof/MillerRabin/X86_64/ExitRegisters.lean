@@ -15,10 +15,10 @@ namespace VG.Proof.MillerRabin.X86_64
 
 open VG VG.X86_64 VG.Impl.MillerRabin.X86_64
 
-theorem exited_registers {s t : State} {B : Addr} {Z : Nat}
+theorem exited_registers {s t : State} {writes : List Region}
     (hs : 120 ≤ (s.gpr .rsp).toNat)
-    (hd : Region.Disjoint ⟨B, Z⟩ ⟨s.gpr .rsp - 112#64, 112⟩)
-    (hf : Frame [⟨B, Z⟩] (entered s).mem t.mem)
+    (hd : ∀ r ∈ writes, Region.Disjoint ⟨s.gpr .rsp - 112#64, 112⟩ r)
+    (hf : Frame writes (entered s).mem t.mem)
     (hsp : t.gpr .rsp = (entered s).gpr .rsp)
     (hbx : t.gpr .rbx = (entered s).mem.readW ((entered s).gpr .rsp + 104#64) 64)
     (h12 : t.gpr .r12 = (entered s).mem.readW ((entered s).gpr .rsp + 96#64) 64)
@@ -32,10 +32,7 @@ theorem exited_registers {s t : State} {B : Addr} {Z : Nat}
     apply hf.readW (r := ⟨s.gpr .rsp - 112#64, 112⟩)
     · simpa only [show BitVec.ofNat 64 0 = 0#64 from rfl, BitVec.add_zero] using
         Offset.contains_base (s.gpr .rsp - 112#64) (d := 0) (n := 8) (k := 112) (by decide) (by decide)
-    · intro r hr
-      simp only [List.mem_singleton] at hr
-      subst hr
-      exact hd.symm
+    · exact hd
     · decide
   simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false]
   rintro r (rfl | rfl | rfl | rfl | rfl | rfl | rfl)
