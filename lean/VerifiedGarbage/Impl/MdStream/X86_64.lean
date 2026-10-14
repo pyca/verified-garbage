@@ -209,9 +209,8 @@ def zero : Prog isa :=
 
 /-- The padding otherwise: `r9`, then zeros up to `B`, or up to `B - L` and
 the length field in the last block. Loading the buffered bytes, which `update`
-stored a byte at a time, to pad them 16 bytes at a time would make that load
-wait for those stores instead (and on some CPUs, at some addresses, the load is
-speculated past them and replayed). -/
+stored a byte at a time, to pad them 16 bytes at a time would only make that
+load wait for those stores instead. -/
 def bytePad : Prog isa :=
   .seq (.block [.store8 (bufByte P) .r9, .alu .add .r13 (.imm 1),
     .mov32 .rax (.imm (BitVec.ofNat 32 P.B)), .alu .test .r14 (.reg .r14)])
