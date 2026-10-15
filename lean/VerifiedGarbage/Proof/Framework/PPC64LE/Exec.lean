@@ -1,8 +1,10 @@
-import Mathlib.Tactic.IntervalCases
-import VerifiedGarbage.Proof.Framework.Mem
-import VerifiedGarbage.Proof.Framework.Bswap
-import VerifiedGarbage.TCB.PPC64LE.Isa
-import VerifiedGarbage.Proof.Framework.Block
+module
+
+public import Mathlib.Tactic.IntervalCases
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.Bswap
+public import VerifiedGarbage.TCB.PPC64LE.Isa
+public import VerifiedGarbage.Proof.Framework.Block
 
 /-!
 # PPC64LE: instruction-level rewrite lemmas for symbolic execution
@@ -14,6 +16,8 @@ on all of them, so 32-bit values are tracked by the low word of a register,
 `s.read .w r` (`(s.gpr r).setWidth 32`); `lo32_add` and friends push the
 low word through the 64-bit operations.
 -/
+
+@[expose] public section
 
 namespace VG.PPC64LE
 

@@ -1,10 +1,23 @@
-import VerifiedGarbage.Proof.ChaCha20.PPC64LE.Block
-import VerifiedGarbage.Proof.ChaCha20.Keystream
-import VerifiedGarbage.Proof.Framework.PPC64LE.Call
-import VerifiedGarbage.Impl.ChaCha20.PPC64LE.Xor
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Spec.ChaCha20.Contract
-import Mathlib.Tactic.Conv
+module
+
+public import VerifiedGarbage.Proof.ChaCha20.PPC64LE.Block
+meta import VerifiedGarbage.Proof.ChaCha20.PPC64LE.Block
+public import VerifiedGarbage.Proof.ChaCha20.Keystream
+meta import VerifiedGarbage.Proof.ChaCha20.Keystream
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Call
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.Call
+public import VerifiedGarbage.Impl.ChaCha20.PPC64LE.Xor
+meta import VerifiedGarbage.Impl.ChaCha20.PPC64LE.Xor
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.ChaCha20.Contract
+meta import VerifiedGarbage.Spec.ChaCha20.Contract
+public import Mathlib.Tactic.Conv
+meta import Mathlib.Tactic.Conv
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ChaCha20 keystream XOR on PPC64LE
@@ -12,6 +25,8 @@ import Mathlib.Tactic.Conv
 Untrusted: everything here is checked by Lean. The same structure as the
 AArch64 proof (`VG.Proof.ChaCha20.AArch64.Xor`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.ChaCha20
 

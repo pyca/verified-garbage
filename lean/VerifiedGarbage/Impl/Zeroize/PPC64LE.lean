@@ -1,4 +1,6 @@
-import VerifiedGarbage.TCB.PPC64LE.Isa
+module
+
+public import VerifiedGarbage.TCB.PPC64LE.Isa
 
 /-!
 # Zeroization: PPC64LE implementation
@@ -7,6 +9,8 @@ import VerifiedGarbage.TCB.PPC64LE.Isa
 (`stb`), as on AArch64. Stores to normal memory may be unaligned. The loops
 count down to zero, and only `p` and `len` decide the branches and addresses.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Zeroize.PPC64LE
 open VG.PPC64LE

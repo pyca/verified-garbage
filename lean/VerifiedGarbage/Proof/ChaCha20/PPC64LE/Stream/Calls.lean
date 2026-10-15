@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.ChaCha20.PPC64LE.Stream.Bytes
+module
+
+public import VerifiedGarbage.Proof.ChaCha20.PPC64LE.Stream.Bytes
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Streaming ChaCha20 on PPC64LE: the calls
@@ -8,6 +14,8 @@ Untrusted: everything here is checked by Lean. The calls of
 correctness (with `WP.call`). A call stores nothing in memory, so the callee
 changes memory only within the regions it may write.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.ChaCha20.PPC64LE.Stream
 

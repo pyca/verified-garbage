@@ -1,4 +1,6 @@
-import VerifiedGarbage.TCB.PPC64LE.Isa
+module
+
+public import VerifiedGarbage.TCB.PPC64LE.Isa
 
 /-!
 # ChaCha20 block function: PPC64LE implementation
@@ -18,6 +20,8 @@ import VerifiedGarbage.TCB.PPC64LE.Isa
 * Every address is `r3` or `r4` plus a constant, and there are no branches,
   so only the pointers can affect timing.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.ChaCha20.PPC64LE
 

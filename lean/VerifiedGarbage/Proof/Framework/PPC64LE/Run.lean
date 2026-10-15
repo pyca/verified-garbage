@@ -1,5 +1,9 @@
-import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
+module
+
+public import VerifiedGarbage.Proof.Framework.Block
+public meta import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
+public meta import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 
 /-!
 # Running short PPC64LE blocks symbolically
@@ -10,6 +14,8 @@ Untrusted: everything here is checked by Lean. `crun [h, …]` proves `WP isa
 and simplifying with the given facts, as AArch64's does. It suits blocks of
 a few instructions; longer ones are composed from them.
 -/
+
+public meta section
 
 namespace VG.PPC64LE
 

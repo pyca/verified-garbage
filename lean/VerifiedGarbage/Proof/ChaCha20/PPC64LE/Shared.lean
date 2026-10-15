@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.ChaCha20.PPC64LE.Block
-import VerifiedGarbage.Spec.ChaCha20.Contract
+module
+
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.ChaCha20.PPC64LE.Block
+public import VerifiedGarbage.Spec.ChaCha20.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ChaCha20 on PPC64LE: the shared contracts
@@ -10,6 +16,8 @@ per-target contracts (`Proof/ChaCha20/PPC64LE/Contract.lean`); these theorems mo
 them to the shared contracts of `Spec/ChaCha20/Contract.lean`, which the
 artifacts are emitted with.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.ChaCha20.PPC64LE.Shared
 

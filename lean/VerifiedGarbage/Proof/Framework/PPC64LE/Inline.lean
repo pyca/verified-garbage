@@ -1,6 +1,8 @@
-import VerifiedGarbage.Proof.Framework.Semantics
-import VerifiedGarbage.Proof.Framework.Mem
-import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
+module
+
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 
 /-!
 # Inlining verified code (PPC64LE)
@@ -11,6 +13,8 @@ code never writes outside the regions its state permits (`Exec.regions`),
 and `WP.inline` combines the two with the correctness part of the inlined
 function's `Verified` proof.
 -/
+
+@[expose] public section
 
 namespace VG.PPC64LE
 

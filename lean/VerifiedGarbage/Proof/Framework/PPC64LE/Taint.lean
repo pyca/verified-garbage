@@ -1,6 +1,8 @@
-import VerifiedGarbage.Proof.Framework.Taint
-import VerifiedGarbage.Proof.Framework.RegSet
-import VerifiedGarbage.TCB.PPC64LE.Target
+module
+
+public import VerifiedGarbage.Proof.Framework.Taint
+public import VerifiedGarbage.Proof.Framework.RegSet
+public import VerifiedGarbage.TCB.PPC64LE.Target
 
 /-!
 # Taint tracking for PPC64LE
@@ -13,6 +15,8 @@ and an address must be computed from public registers or the stack pointer.
 The link register is not tracked: `mflr` gives a secret. (No modelled
 instruction touches the condition register outside a branch condition.)
 -/
+
+@[expose] public section
 
 namespace VG.PPC64LE.Taint
 
