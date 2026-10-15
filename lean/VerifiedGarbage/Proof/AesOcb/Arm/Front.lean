@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.AesOcb.Arm.Body
 public import VerifiedGarbage.Proof.AesOcb.Arm.Nonce
 public import VerifiedGarbage.Proof.AesGcm.Arm.Entry
+public import VerifiedGarbage.Proof.AesOcb.Arm.FrontTac
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -159,25 +160,6 @@ theorem args_W (A : Args p m) : Args p m' :=
   A.frame L h fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact L.w_args.symm
 
 end
-
-/-- Proves that a block of `W` misses a frame of parts of `W` and the stack
-below `sp`. -/
-macro "wdisj" L:term : tactic => `(tactic| plain_simp_names (
-                   simp only [nonceR, hashR, bodyR, List.forall_mem_cons, List.not_mem_nil, false_implies, implies_true, and_true]
-                   and_intros
-                   all_goals first
-                     | (with_reducible refine Lay.w_w $L ?_ ?_ ?_) <;> decide
-                     | (with_reducible refine (Lay.bw' $L ?_).symm) <;> decide
-                     | (with_reducible refine (Lay.d_w' $L ?_).symm) <;> decide))
-
-/-- Proves that the data misses a frame of parts of `W` and the stack below
-`sp`. -/
-macro "ddisj" L:term : tactic => `(tactic| plain_simp_names (
-                   simp only [nonceR, hashR, bodyR, List.forall_mem_cons, List.not_mem_nil, false_implies, implies_true, and_true]
-                   and_intros
-                   all_goals first
-                     | (with_reducible refine Lay.d_w' $L ?_) <;> decide
-                     | with_reducible exact (Lay.bd $L).symm))
 
 /-! ## The entry -/
 
