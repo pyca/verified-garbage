@@ -58,8 +58,8 @@ theorem Instr.rspFree_erase (i : Instr) : i.erase.rspFree = i.rspFree := by
 
 theorem Code.InlineOk_erase : ∀ c : Prog isa, (Code.erase c).InlineOk = c.InlineOk
   | .block is => by
-    show List.all (KList.map Instr.erase is) _ = List.all is _
-    simp only [KList.map_eq, List.all_map, Function.comp_def, Taint.clobbers_erase]
+    show KList.all (KList.map Instr.erase is) _ = KList.all is _
+    simp only [KList.all_eq, KList.map_eq, List.all_map, Function.comp_def, Taint.clobbers_erase]
   | .seq a b => by
     show ((Code.erase a).InlineOk && (Code.erase b).InlineOk) = _
     rw [Code.InlineOk_erase a, Code.InlineOk_erase b]; rfl
