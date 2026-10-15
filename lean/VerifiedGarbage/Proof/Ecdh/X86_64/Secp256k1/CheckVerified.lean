@@ -49,7 +49,7 @@ abbrev C : CP := Spec.Weierstrass.CheckPoint.secp256k1
 abbrev code (adx : Bool) : Prog isa := Cfg.invFnX (Impl.Ecdh.X86_64.Cfg.checkBody (cfg adx))
 
 theorem agree (adx : Bool) : Agree (cfg adx) C := by
-  cases adx <;> exact ⟨rfl, rfl, by decide +kernel, keeps_of (by decide +kernel), by decide +kernel⟩
+  cases adx <;> exact ⟨rfl, rfl, by decide +kernel, keeps_of_covers (by decide +kernel), by decide +kernel⟩
 
 theorem hvm (adx : Bool) : (Impl.Ecdh.X86_64.Cfg.checkBody (cfg adx)).allInstrs
     (fun i => !KeepReg.writesVec i && !loadsMxcsr i) = true := by
