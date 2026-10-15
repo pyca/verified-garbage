@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Proof.MlDsa.DecideAt
 public import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.Mask
 public import VerifiedGarbage.Proof.MlDsa.KeyGen.Leak
@@ -132,22 +134,20 @@ end VG.Proof.MlDsa.X86_64.KeyGen
 namespace VG.Proof.MlDsa.X86_64.KeyGen
 
 /-- `lay`, which also unfolds the checks of pieces (`kcChk`, `copyChk`, `hashChk`, …). -/
-syntax "layk" (" [" Lean.Parser.Tactic.simpLemma,* "]")? : tactic
-macro_rules
-  | `(tactic| layk) => `(tactic| layk [])
-  | `(tactic| layk [$ls,*]) => `(tactic| lay [VG.Proof.MlDsa.X86_64.KeyGen.kcChk, VG.Proof.MlDsa.X86_64.KeyGen.k1Chk, VG.Proof.MlKem.X86_64.topChk, VG.Proof.MlKem.X86_64.copyChk,
+tactic_template "layk" " [" ls:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| lay [VG.Proof.MlDsa.X86_64.KeyGen.kcChk, VG.Proof.MlDsa.X86_64.KeyGen.k1Chk, VG.Proof.MlKem.X86_64.topChk, VG.Proof.MlKem.X86_64.copyChk,
       VG.Proof.MlKem.X86_64.hashChk, VG.Proof.MlKem.X86_64.pieceChk, VG.Proof.MlKem.X86_64.kabsChk,
       VG.Proof.MlKem.X86_64.ksqzChk, VG.Proof.MlKem.X86_64.kChk, VG.Proof.MlKem.X86_64.rdOk,
       VG.Proof.MlKem.X86_64.wrOk, List.range_succ, List.range_zero, List.all_append, List.nil_append,
       List.all_cons, List.all_nil, VG.Impl.MlKem.X86_64.oSV, $ls,*])
 
+/-- `layk` without extra lemmas. -/
+macro "layk" : tactic => `(tactic| layk [])
+
 /-- A check about the layout that mentions no variable but the parameter set and
 bounded indices, decided for each parameter set (`decide_at`): cheaper than
 `layk`, which unfolds it into arithmetic on the parameters for `omega`, unless
 there are many indices to try. -/
-syntax "layd" : tactic
-macro_rules
-  | `(tactic| layd) => `(tactic| (
+tactic_template "layd" : tactic => `(tactic| (
       have hmem := (‹VG.Proof.MlDsa.X86_64.KeyGen.PFacts _›).mem; decide_at hmem))
 
 section

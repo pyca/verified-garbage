@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Proof.MlKem.Arm.Loops
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
@@ -151,7 +153,7 @@ def inB (w w' : Nat × Nat × Nat) : Bool :=
 
 /-- Arithmetic on the offsets in `scratch`, with the bounds on `k` of the
 `KemLay.WF` in the context, if any. -/
-macro "offs" : tactic => `(tactic| plain_simp_names (
+tactic_template "offs" : tactic => `(tactic| (
                    (try have := (‹KemLay.WF _›).k1)
                    (try have := (‹KemLay.WF _›).k4)
                    (try have := (‹KemLay.WF _›).du)
@@ -166,7 +168,7 @@ theorem enc_le9 : ∀ n, n ≤ 9 → encodable (BitVec.ofNat 32 n) = true := by 
 /-- Decides that an immediate is encodable: by evaluation, or, for an offset
 or a count that depends on the parameter set, from the bounds of its
 `KemLay.WF`. -/
-macro "kenc" : tactic => `(tactic| first
+tactic_template "kenc" : tactic => `(tactic| first
   | decide
   | exact enc_le9 _ (by have := (‹KemLay.WF _›).k4; omega)
   | exact (‹KemLay.WF _›).enc (by omega))
@@ -174,7 +176,7 @@ macro "kenc" : tactic => `(tactic| first
 /-- Decides a fact about offsets and regions: by evaluation, or, for one that
 depends on the parameter set (of the `KemLay.WF` in the context), by `omega`
 on the offsets. -/
-macro "kdecide" : tactic => `(tactic| plain_simp_names first
+tactic_template "kdecide" : tactic => `(tactic| first
                    | decide
                    | (
                    (try have := (‹KemLay.WF _›).k1)

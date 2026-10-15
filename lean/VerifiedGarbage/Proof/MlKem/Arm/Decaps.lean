@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Proof.MlKem.Arm.Encrypt
 public import VerifiedGarbage.Proof.MlKem.Arm.CmpSel
 import all Init.Data.Array.Basic
@@ -242,7 +244,7 @@ def didx : Reg → Nat
   | .r4 => 2 | _ => 0
 
 /-- Decides a fact about the offsets in the buffers. -/
-macro "ddecide" : tactic => `(tactic| plain_simp_names first
+tactic_template "ddecide" : tactic => `(tactic| first
                    | decide
                    | ((try have := (‹Pre _ _›).wf)
                       (try simp only [lay_sizes, layC_sizes, dSz, okW, okD, didx, kRegs, List.all_cons, List.all_nil,

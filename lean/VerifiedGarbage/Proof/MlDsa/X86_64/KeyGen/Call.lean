@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.Lay
 public import VerifiedGarbage.Proof.MlDsa.KeyGen.Poly
 import all Init.Data.Array.Basic
@@ -197,9 +199,7 @@ open VG.Spec.Sha3 (bytesAt)
 theorem sc_ok (o : Nat) (h : o < 2 ^ 31) : PtrOk (sc o) := ⟨h, show Reg.rbx ∉ MlKem.X86_64.argRegs by decide⟩
 
 /-- The region facts of a callee's precondition, from the layout. -/
-syntax "cpre " term:max term:max term:max : tactic
-macro_rules
-  | `(tactic| cpre $L $hsp $h24) => `(tactic| (
+tactic_template "cpre " L:term:max hsp:term:max h24:term:max : tactic => `(tactic| (
       and_intros
       all_goals first
         | with_reducible exact True.intro
