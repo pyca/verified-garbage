@@ -76,18 +76,22 @@ theorem post_of {s s' : State} (h : EPost p256 s s') : ecdhX86_64.post s s' := b
 /-- The exchange `code` of a curve `c` (P-256, with either multiplication)
 that the proof supports, with a scalar multiplication `mq` that computes
 `[d]P` (`MulOk`, writing only `W`: `MulW`), whose precondition the
-contract's gives (`hpre`), never loading MXCSR, and inlinable (`InlineOk`,
-which rules out writes of `rsp` too), which its literal decides. -/
+contract's gives (`hpre`), never writing `rsp` or loading MXCSR, its calls inlined
+(which its literal decides). -/
 theorem ecdh_x86_of {c : Cfg} {mq code : Prog isa} {W : List (Nat × Nat)} (hc : CfgOk c)
     (hL : Weierstrass.Law c.C) (hmq : MulOk c mq W) (hW : MulW c W)
     (hpre : ∀ s, ecdhX86_64.pre s → EPre c s) (hpost : ∀ s s', EPost c s s' → ecdhX86_64.post s s')
     (hcode : Impl.Ecdh.X86_64.Cfg.exchangeWith c mq = code)
+    (hsp : code.allInstrs (fun i => !Taint.clobbers i .rsp) = true)
     (hnc : code.InlineOk = true) (hmx : code.allInstrs (fun i => !loadsMxcsr i) = true) (s : State)
     (hs : ecdhX86_64.pre s) :
     ∃ t s', Exec isa code.inline s t s' ∧ abiPreserved s s' ∧ ecdhX86_64.post s s' := by
   subst hcode
   obtain ⟨t, s', he, hsv, hpost'⟩ := exchangeWith_ok hc hL hmq hW (hpre s hs)
-  have hsp := Code.clobbers_rsp_of_inlineOk hnc
+  have hsp : ∀ i ∈ instrs (Impl.Ecdh.X86_64.Cfg.exchangeWith c mq).inline, Taint.clobbers i .rsp = false := by
+    rw [← Code.allInstrs_inline, Code.allInstrs_eq, List.all_eq_true] at hsp
+    intro i hi
+    simpa using hsp i hi
   have F := (Exec.regions he (Code.noCalls_inline hnc)).2.2
   obtain ⟨-, hwr, -, -, -, -, -, hro, hrs, -, -⟩ := hs
   refine ⟨t, s', he, abiPreserved_of_exec (by rw [Code.allInstrs_inline]; exact hmx) he ⟨fun r hr => ?_, ?_⟩, hpost _ _ hpost'⟩
@@ -117,13 +121,11 @@ theorem mulQJP256_ok (hI : Weierstrass.X86_64.InvSounds) (hL : Weierstrass.Law S
     (Weierstrass.unitMod_pow_two (p256_ok hI).p_odd _) hL (p256_ok hI).am3) (Nat.le_of_eq Proof.P256.X86_64.n_mod32.symm)
     Proof.P256.X86_64.n_ge64
 
-theorem ecdh_inlineOk : exchangeP256.InlineOk = true := by lit_decide
-
 theorem ecdh_x86 (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.X86_64.InvSounds)
     (hO : Weierstrass.PrimeOrder Spec.P256.curve) (s : State) (hs : ecdhX86_64.pre s) :
     ∃ t s', Exec isa exchangeP256.inline s t s' ∧ abiPreserved s s' ∧ ecdhX86_64.post s s' :=
   ecdh_x86_of (p256_ok hI) hL (mulQJP256_ok hI hL hO) (mulQJ_w (p256_ok hI))
-    (fun _ => pre_of) (fun _ _ => post_of) rfl ecdh_inlineOk (by lit_decide) s hs
+    (fun _ => pre_of) (fun _ _ => post_of) rfl (by lit_decide) (by lit_decide) (by lit_decide) s hs
 
 /-- `exchangeP256` without its displacements, as a literal of shared blocks
 (`materialize_shared`): what its constant-time check analyses
@@ -165,7 +167,7 @@ theorem ecdh_patch (s b : State) (hv : Mem) (u : Nat → BitVec 64)
 theorem ecdh_verified (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.X86_64.InvSounds)
     (hO : Weierstrass.PrimeOrder Spec.P256.curve) :
     Verified X86_64.target exchangeP256 (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P256.inst X86_64.abi 8) :=
-  Verified.of_inline_ct ecdh_inlineOk (ecdh_x86 hL hI hO) ecdh_ct implies8
+  Verified.of_inline_ct (by lit_decide) (ecdh_x86 hL hI hO) ecdh_ct implies8
     (fun _ h => Sig.clear_of_pre h) ecdh_patch
 
 end VG.Proof.Ecdh.X86_64
