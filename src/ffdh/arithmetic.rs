@@ -1,15 +1,10 @@
-//! Public modulus setup and fixed-schedule secret exponentiation.
-#[cfg(any(target_arch = "x86_64", test))]
-use crate::arch::ffdh::vg_ffdh_choose;
+//! Public arithmetic for domain validation and parameter generation.
 use crate::arch::miller_rabin::vg_miller_rabin_round;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::miller_rabin::vg_miller_rabin_round_adx;
 use crate::arch::rsa_mont::vg_rsa_mont_mul;
 #[cfg(target_arch = "x86_64")]
-use crate::arch::rsa_mont::{
-    VG_RSA_MONT_MUL_ADX_FEATURES, vg_rsa_lazy_mont_mul, vg_rsa_lazy_mont_mul_adx,
-    vg_rsa_mont_mul_adx,
-};
+use crate::arch::rsa_mont::{VG_RSA_MONT_MUL_ADX_FEATURES, vg_rsa_mont_mul_adx};
 use crate::cpu::{Features, detected};
 use crate::rsa::Scratch;
 use alloc::{vec, vec::Vec};
@@ -118,79 +113,6 @@ impl Montgomery {
             backend: Backend::select(detected()),
         }
     }
-    #[cfg(any(target_arch = "x86_64", test))]
-    pub(super) fn power(&self, base: &[u8], exponent: &[u8]) -> Vec<u8> {
-        let w = self.modulus.len();
-        let window = if exponent.len() >= 39 { 5 } else { 4 };
-        let mut ws = self.workspace(base, (1 << window) * w);
-        let at = |j| 32 + j * (w + 2);
-        let table_at = at(8);
-        // The table and the accumulator hold residues below 2^(64 w), not
-        // necessarily below p: the lazy multiplication takes and returns any
-        // such numbers, and `finish` reduces the result below p.
-        // All window powers, including Montgomery one, in wiped storage.
-        // The verified multiplication preserves this extension of the workspace.
-        for i in 0..w {
-            ws[table_at + i] = ws[at(5) + i];
-            ws[table_at + w + i] = ws[at(4) + i];
-            ws[at(6) + i] = ws[at(4) + i];
-        }
-        for digit in 2..(1 << window) {
-            if digit % 2 == 0 {
-                // Public table indices. Route even powers through squares
-                // of accumulator 5, which both targets' multiplications
-                // compute with their faster squaring.
-                ws.copy_within(
-                    table_at + (digit / 2) * w..table_at + (digit / 2 + 1) * w,
-                    at(5),
-                );
-                self.mul_lazy(&mut ws, 5, 5, 5);
-                ws.copy_within(at(5)..at(5) + w, at(6));
-            } else {
-                self.mul_lazy(&mut ws, 6, 6, 4);
-            }
-            ws.copy_within(at(6)..at(6) + w, table_at + digit * w);
-        }
-        ws.copy_within(table_at..table_at + w, at(5));
-        // Window size and bit positions depend only on the public encoding
-        // length. Every table entry is read in the same order, even for zero.
-        let bits = exponent.len() * 8;
-        for start in (0..bits).step_by(window) {
-            let width = window.min(bits - start);
-            let mut digit = 0u64;
-            for bit in start..start + width {
-                digit = (digit << 1) | u64::from((exponent[bit / 8] >> (7 - bit % 8)) & 1);
-            }
-            if start != 0 {
-                for _ in 0..width {
-                    self.mul_lazy(&mut ws, 5, 5, 5);
-                }
-            }
-            let (arrays, table) = ws.split_at_mut(table_at);
-            let selected = &mut arrays[at(6)..at(6) + w];
-            selected.fill(0);
-            for (candidate, row) in table.chunks_exact(w).enumerate() {
-                // Both values are below 32: the high bit of (x-1)
-                // is set exactly when x is zero.
-                let equal = (digit ^ candidate as u64).wrapping_sub(1) >> 63;
-                // SAFETY: choose has no preconditions. The opaque assembly
-                // call returns a mask; Rust sees an arbitrary u64, so the
-                // following AND/OR operations need no conditional select.
-                let mask = unsafe { vg_ffdh_choose(0, u64::MAX, equal) };
-                for (dst, &src) in selected.iter_mut().zip(row) {
-                    *dst |= src & mask;
-                }
-            }
-            if start == 0 {
-                // The first window replaces Montgomery one directly.
-                ws.copy_within(at(6)..at(6) + w, at(5));
-            } else {
-                self.mul_lazy(&mut ws, 5, 5, 6);
-            }
-        }
-        self.finish(&mut ws)
-    }
-
     /// Variable-time exponentiation for public exponents only (e.g. subgroup
     /// orders). Never use this for a private scalar or a secret prime exponent.
     #[cfg(any(target_arch = "x86_64", test))]
@@ -332,23 +254,6 @@ impl Montgomery {
         }
         out
     }
-    /// `mul` without its result reduced below the modulus, nor `b` required
-    /// to be. Elsewhere, where `power` runs only in tests, it is `mul`, and
-    /// every value stays below the modulus.
-    #[cfg(target_arch = "x86_64")]
-    fn mul_lazy(&self, ws: &mut [u64], out: u32, a: u32, b: u32) {
-        let f = match self.backend {
-            Backend::Baseline => vg_rsa_lazy_mont_mul,
-            Backend::Adx => vg_rsa_lazy_mont_mul_adx,
-        };
-        // SAFETY: as for `mul`, but the lazy multiplication requires no
-        // operand below the modulus.
-        unsafe { f(ws.as_mut_ptr(), ws.len(), out, a, b) }
-    }
-    #[cfg(all(not(target_arch = "x86_64"), test))]
-    fn mul_lazy(&self, ws: &mut [u64], out: u32, a: u32, b: u32) {
-        self.mul(ws, out, a, b);
-    }
     fn mul(&self, ws: &mut [u64], out: u32, a: u32, b: u32) {
         let f = match self.backend {
             Backend::Baseline => vg_rsa_mont_mul,
@@ -439,9 +344,10 @@ mod tests {
     }
 
     #[test]
-    fn public_and_secret_exponents_agree() {
-        // Differential checks, including zero/leading-zero exponents, every
-        // window-size boundary, sparse windows, and partial modulus words.
+    fn public_exponents_match_powers_of_two() {
+        // Modulo 2^n-1, 2^e is the one-bit value at e mod n. This checks
+        // public exponentiation independently, including zero and padded
+        // exponents, every window boundary and partial modulus words.
         for bytes in [1, 8, 17, 32, 65] {
             let mont = Montgomery::new(&vec![0xff; bytes]);
             for len in [0, 1, 2, 32, 33, 39] {
@@ -449,7 +355,11 @@ mod tests {
                     let exponent = vec![byte; len];
                     let mut padded = vec![0; 3];
                     padded.extend_from_slice(&exponent);
-                    let expected = mont.power(&[2], &exponent);
+                    let shift = exponent
+                        .iter()
+                        .fold(0usize, |r, &b| (r * 256 + usize::from(b)) % (8 * bytes));
+                    let mut expected = vec![0; bytes];
+                    expected[bytes - 1 - shift / 8] = 1 << (shift % 8);
                     assert_eq!(mont.power_public(&[2], &exponent), expected);
                     assert_eq!(mont.power_public(&[2], &padded), expected);
                 }

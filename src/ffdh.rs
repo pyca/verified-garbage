@@ -3,9 +3,8 @@
 //! Public-key validation and exchange call the verified FFDH operations.
 //! Exchange secret exponentiation follows a fixed schedule over the public encoding
 //! length supplied at import, or the public sampling bound for generated keys.
-//! Every multiplication calls the verified Montgomery primitive
-//! (`VG.Spec.Rsa.Mont.mulContract`); secret table selection uses the verified
-//! `VG.Spec.Ffdh.chooseContract`. Public exponents may directly index a table.
+//! All secret exponentiation runs in the verified fixed-window code. Public
+//! exponents in the remaining Rust parameter checks may directly index a table.
 //! Rust composes these primitives, validates
 //! domains and private keys on x86-64, samples randomness and encodes the result. These Rust
 //! operations, as elsewhere in the crate, are outside the Lean proof boundary.
@@ -67,14 +66,12 @@ impl fmt::Display for Error {
 }
 impl core::error::Error for Error {}
 
-/// Imported domain components and their public Montgomery precomputation.
+/// Imported, checked domain components.
 #[derive(Clone, Debug)]
 pub struct Parameters {
     p: Vec<u8>,
     g: Vec<u8>,
     q: Option<Vec<u8>>,
-    #[cfg(not(target_arch = "aarch64"))]
-    mont: Montgomery,
     #[cfg(target_arch = "aarch64")]
     domain: aarch64::Domain,
 }
@@ -118,14 +115,13 @@ impl Parameters {
         if value_cmp(g, &[1]).is_le() || value_cmp(g, &p1).is_ge() {
             return Err(Error::InvalidParameters);
         }
-        let mont = Montgomery::new(p);
         let q = q.map(canonical);
         if let Some(q) = q
             && (value_cmp(q, &[2]).is_le()
                 || q[q.len() - 1] & 1 == 0
                 || value_cmp(q, &p1).is_ge()
                 || !arithmetic::divides(q, &p1)
-                || value_cmp(&mont.power_public(g, q), &[1]).is_ne())
+                || value_cmp(&Montgomery::new(p).power_public(g, q), &[1]).is_ne())
         {
             return Err(Error::InvalidParameters);
         }
@@ -133,7 +129,6 @@ impl Parameters {
             p: p.to_vec(),
             g: g.to_vec(),
             q: q.map(<[u8]>::to_vec),
-            mont,
         })
     }
 
@@ -335,8 +330,18 @@ impl PrivateKey {
     }
     #[cfg(not(target_arch = "aarch64"))]
     fn from_padded(params: &Parameters, x: Vec<u8>, exponent_len: usize) -> Result<Self, Error> {
-        let y = params.mont.power(&params.g, &x[x.len() - exponent_len..]);
-        if !params.public_valid(&y) {
+        let mut y = alloc::vec![0; params.p.len()];
+        // The generator is a checked public value of this domain. Its powers
+        // stay in the q subgroup when q is present; the verified operation
+        // rejects degenerate public values and writes zeros on failure.
+        if !x86_64::exchange(
+            &params.p,
+            &params.g,
+            params.q.as_deref(),
+            &x[x.len() - exponent_len..],
+            &params.g,
+            &mut y,
+        ) {
             let mut x = x;
             zeroize(&mut x);
             return Err(Error::InvalidKey);
