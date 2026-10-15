@@ -41,7 +41,16 @@ errs=re.findall(r'^\S+?:(\d+):(\d+): error.*',o,re.M)
 if errs: print("ERRORS:",o[:3000]); sys.exit(1)
 res={}
 for m in re.finditer(r'OMIN(-KEEP)?@(\d+):(\d+) (.*)$',o,re.M):
-    res[(int(m.group(2))-1,int(m.group(3)))]=(m.group(1),m.group(4))
+    k=(int(m.group(2))-1,int(m.group(3)))
+    keep,arg=m.group(1),m.group(4)
+    if k in res:
+        pk,pa=res[k]
+        if pk or keep: res[k]=("-KEEP",""); continue
+        names=[x for x in pa.strip("[]").split(", ") if x]
+        for x in arg.strip("[]").split(", "):
+            if x and x not in names: names.append(x)
+        res[k]=(None,"["+", ".join(names)+"]")
+    else: res[k]=(keep,arg)
 # build output on ORIGINAL text
 ol=text.split("\n"); n_rep=n_keep=0; sizes=[]
 inv={}
