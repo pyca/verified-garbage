@@ -1,10 +1,12 @@
-import VerifiedGarbage.Impl.StackScratch.PPC64LE
-import VerifiedGarbage.Proof.Framework.Scratch
-import VerifiedGarbage.Proof.Framework.PPC64LE.Call
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.Covers
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.TCB.PPC64LE.Target
+module
+
+public import VerifiedGarbage.Impl.StackScratch.PPC64LE
+public import VerifiedGarbage.Proof.Framework.Scratch
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Call
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.Covers
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.TCB.PPC64LE.Target
 
 /-!
 # A scratch buffer on the stack (PPC64LE)
@@ -25,6 +27,8 @@ of the function, which the contract without the argument says nothing of:
 as on ARMv7, the precondition and postcondition must read memory only
 within the function's buffers (`hpre`, `hpost`).
 -/
+
+@[expose] public section
 
 namespace VG.PPC64LE
 
