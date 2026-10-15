@@ -4,6 +4,8 @@ import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.Mid
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.Mid
 import VerifiedGarbage.Proof.AesGcm.X86_64.Split.CT
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Split.CT
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Split.PrefixICT
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Split.PrefixICT
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.TailCT
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.TailCT
 import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
@@ -42,7 +44,7 @@ open VG.Proof.Gcm.X86_64.Stitch (CtxMode)
 open VG.Proof.AesGcm.X86_64.StreamTo (BlkToFn)
 open VG.Proof.AesGcm.X86_64.Short (ShortFacts KsOk KsRel condS_of rel_next rel_piece keepsEnv)
 open VG.Spec.Aes (bytesAt)
-open VG.Spec.Gcm (Block blockAt)
+open VG.Spec.Gcm (Block blockAt ctxH inc32 ctrIndex)
 
 /-- Before `aad`. -/
 def A0 (M : CtxMode) (Ctx W SP : Addr) (R : Nat) (A : Addr) (al : Nat) (D : Addr) (n : Nat) (Np : Addr)
@@ -151,10 +153,11 @@ end
 
 /-- `sel` in two runs: the same path, and on it the same addresses and
 branches. -/
-theorem sel_rel (v : GcmImpl) (B : BlkFn CtxMode.prepared) (T : BlkToFn CtxMode.prepared) (hF : ShortFacts)
+theorem sel_rel (v : GcmImpl) (B : BlkFn CtxMode.prepared) (T : BlkToFn CtxMode.prepared)
+    (TI : Option (BlkToFnI CtxMode.prepared)) (hF : ShortFacts)
     {ks : Prog isa} (hks : KsOk ks) (hkr : KsRel ks) {fin : Prog isa} (hfr : FinRel CtxMode.prepared fin)
     {other : Prog isa} (ho : MidRel CtxMode.prepared other) :
-    MidRel CtxMode.prepared (Impl.AesGcm.X86_64.Fast.sel (v.withBlk B) T.fn ks fin other) := by
+    MidRel CtxMode.prepared (Impl.AesGcm.X86_64.Fast.sel (v.withBlk B) T.fn (TI.map (·.fn)) ks fin other) := by
   intro s₀ s₀' Ctx W SP Np A D S T' nl al n sl R C C' X X' kM hNp hnl hal hR hNp' hnl' hal' hR'
   have hlt := C.data.ok.lt
   unfold Impl.AesGcm.X86_64.Fast.sel
@@ -179,10 +182,21 @@ theorem sel_rel (v : GcmImpl) (B : BlkFn CtxMode.prepared) (T : BlkToFn CtxMode.
       (P' := fun (s₁ s₂ : State) => SEntry s₀ Ctx W SP A D S n sl s₁ ∧ SEntry s₀' Ctx W SP A D S n sl s₂)
       (fun _ _ g => ⟨g.1.toOneEntry.aadPre C.toOneCtx X hNp hnl hal hR,
         g.2.toOneEntry.aadPre C'.toOneCtx X' hNp' hnl' hal' hR'⟩) fun _ _ _ => trivial
-    exact (splitRun_rel_of_midB T (fbody_rel hks hkr B hfr) C C' X X' kM hNp hnl hal hR hNp' hnl' hal' hR' a
-      (fun s E => aad_mid hF C.toOneCtx X E.toOneEntry hNp hnl hal (by omega))
-      (fun s E => aad_mid hF C'.toOneCtx X' E.toOneEntry hNp' hnl' hal' (by omega))).mono
-      (fun _ _ h => ⟨h.1.1.2, h.1.2.2⟩) fun _ _ h => h
+    rcases TI with _ | TI
+    · exact (splitRun_rel_of_midB T (fbody_rel hks hkr B hfr) C C' X X' kM hNp hnl hal hR hNp' hnl' hal' hR' a
+        (fun s E => aad_mid hF C.toOneCtx X E.toOneEntry hNp hnl hal (by omega))
+        (fun s E => aad_mid hF C'.toOneCtx X' E.toOneEntry hNp' hnl' hal' (by omega))).mono
+        (fun _ _ h => ⟨h.1.1.2, h.1.2.2⟩) fun _ _ h => h
+    · have i₂ : ∀ {s₀ : State} {s : State}, blockAt s.mem (cbA W) =
+          inc32 (Spec.Gcm.j0 (ctxH s₀.mem Ctx) (bytesAt s₀.mem Np 12)) → ctrIndex (blockAt s.mem (cbA W)) = 2 :=
+        fun cb => by rw [cb, ctrIndex_first _ (length_bytesAt _ _ _)]
+      exact (splitRun_rel_of_midP (fbody_rel hks hkr B hfr) C C' X X' kM hNp hnl hal hR hNp' hnl' hal' hR' a
+        (fun s E => aad_mid hF C.toOneCtx X E.toOneEntry hNp hnl hal (by omega))
+        (fun s E => aad_mid hF C'.toOneCtx X' E.toOneEntry hNp' hnl' hal' (by omega))
+        (fun _ P cb => prefixI_ok P C.kw64 C.kd64 C.ks64 kM C.sp64 TI (i₂ cb))
+        (fun _ P cb => prefixI_ok P C.kw64 C.kd64 C.ks64 kM C.sp64 TI (i₂ cb))
+        fun _ _ P cb P' cb' => prefixI_rel P P' C.kw64 C.kd64 C.ks64 kM C.sp64 TI (i₂ cb) (i₂ cb')).mono
+        (fun _ _ h => ⟨h.1.1.2, h.1.2.2⟩) fun _ _ h => h
   · exact RelCT.of_false fun _ _ h => by have := h.1.1.1.symm.trans h.2; simp [hs] at this
 
 end VG.Proof.AesGcm.X86_64.Fast

@@ -262,3 +262,18 @@ theorem bodyOk_body {M : CtxMode} (B : BlkFn M) {fin : Prog isa} (hfin : FinOk M
     body_ok L B hfin he hR hdat hlen hd kw kd kM sp X hH hcb hal habs haux hN
 
 end VG.Proof.AesGcm.X86_64.Split
+
+namespace VG.Proof.AesGcm.X86_64
+
+open VG.X86_64 VG.X86_64.RegUpd VG.Impl.AesGcm.X86_64
+
+/-- The index of the first counter block, for a 12-byte nonce, into `rax`. -/
+theorem movIdx_ok (s : State) : ∃ s', runBlock isa [.mov32 .rax (imm 2)] s = some s' ∧
+    s'.gpr .rax = BitVec.ofNat 64 2 ∧ (∀ r, r ≠ .rax → s'.gpr r = s.gpr r) ∧ s'.mem = s.mem ∧
+    s'.rd = s.rd ∧ s'.wr = s.wr := by
+  refine ⟨_, by xrun [], ?_, ?_, ?_, ?_, ?_⟩
+  · simp [gpr_setReg, imm]
+  · intro r hr; simp [gpr_setReg, hr]
+  all_goals rfl
+
+end VG.Proof.AesGcm.X86_64

@@ -85,7 +85,8 @@ theorem callInI {q : Nat} (hq : 16 * q ≤ sl) {st : State}
     (h_ax : st.gpr .rax = W + BitVec.ofNat 64 448) :
     (Proof.AesGcm.encryptBlocksToIv96X86_64M M).pre (callUI M Ctx W SP D S q st) ∧
       Covers (callRdI M Ctx SP S q ++ callWr W D q)
-        ((pushed [.rax, .r10, .r11] st).rd ++ (pushed [.rax, .r10, .r11] st).wr) := by
+        ((pushed [.rax, .r10, .r11] st).rd ++ (pushed [.rax, .r10, .r11] st).wr) ∧
+      (Proof.AesGcm.arg (callUI M Ctx W SP D S q st) 3).setWidth 32 = 2 := by
   have L := h.lay
   have sp := h.sp56
   have top := hI.top
@@ -116,15 +117,16 @@ theorem callInI {q : Nat} (hq : 16 * q ≤ sl) {st : State}
     simp only [Proof.AesGcm.args, stackArgAddr, hU', e8]
   -- The index word, at `SP`, outside the 56 bytes below it.
   have kI : (⟨SP, 8⟩ : Region).Disjoint (below SP 56) := Offset.base_disjoint_below SP (by omega)
+  have harg : Proof.AesGcm.arg (callUI M Ctx W SP D S q st) 3 = s.mem.readW SP 64 := by
+    simp only [Proof.AesGcm.arg, stackArg, stackArgAddr, State.withRegions_mem, hU',
+      show 8 * (3 + 1) = 32 from rfl, e32]
+    rw [fS.readW (Region.contains_self _ _) (fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr; exact kI) (by decide), hm]
   have hidx : ctrIndex (blockAt (callUI M Ctx W SP D S q st).mem (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 48)) =
       (Proof.AesGcm.arg (callUI M Ctx W SP D S q st) 3).setWidth 32 := by
     have cW : Region.Sub (cbR W) ⟨W, 2560⟩ := fun a hc => st_w a (cb_sub a hc)
-    simp only [Proof.AesGcm.arg, stackArg, stackArgAddr, State.withRegions_mem, hU',
-      show 8 * (3 + 1) = 32 from rfl, e32]
-    rw [blockAt_frame fS (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact (h.kw.sub_right cW).symm),
-      fS.readW (Region.contains_self _ _) (fun r hr => by
-        simp only [List.mem_singleton] at hr; subst hr; exact kI) (by decide), hm]
+    rw [harg, State.withRegions_mem, blockAt_frame fS (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact (h.kw.sub_right cW).symm), hm]
     exact hI.cb.trans hI.w.symm
   have cbW : Region.Sub (cbR W) ⟨W, 2560⟩ := fun a hc => st_w a (cb_sub a hc)
   have yW : Region.Sub (yR W) ⟨W, 2560⟩ := fun a hc => st_w a (y_sub a hc)
@@ -142,7 +144,7 @@ theorem callInI {q : Nat} (hq : 16 * q ≤ sl) {st : State}
     rw [State.withRegions_gpr, State.callEntry_gpr _ (by decide), pushed_gpr _ _ (by decide), h_dx]
   have hqn : (BitVec.ofNat 64 q).toNat = q := by
     rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by have := h.sl_le; omega)
-  refine ⟨⟨?_, ?_, ?_, ?_, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, ?_, b13, b14, b15, ?_, b17, b18, b19, ?_, ?_, b22, b23, b24, b25, b26, b27, b28, b29, b30, b31, b32, b33, b34, b35, b36, b37, b38, ?_, b40, b41, ?_⟩, ?_⟩
+  refine ⟨⟨?_, ?_, ?_, ?_, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, ?_, b13, b14, b15, ?_, b17, b18, b19, ?_, ?_, b22, b23, b24, b25, b26, b27, b28, b29, b30, b31, b32, b33, b34, b35, b36, b37, b38, ?_, b40, b41, ?_⟩, ?_, by rw [harg]; exact hI.w⟩
   · rw [hrdU, hdi]; simp
   · rw [hrdU, hr8, hr9, hqn]; simp
   · rw [hrdU, hU', e8]; exact covers_of_mem (by simp)
@@ -176,7 +178,7 @@ theorem prefix_okI (T : BlkToFnI M) :
     WP isa (SealSplit.prefix T.fn) s (PPost Ctx W SP D S R n sl 56 s) :=
   prefix_okG h T.fn fun hq _ hsp hrd hwr hm h_di h_si h_dx h_cx h_8 h_9 h_10 h_11 h_ax =>
     have c := callInI h hI hq hsp hrd hwr hm h_di h_si h_dx h_cx h_8 h_9 h_10 h_11 h_ax
-    preCall_okG h _ rfl T.fn T.ok T.sp T.xd hq hsp hrd hwr hm h_di h_si h_dx h_cx h_8 h_9 h_10 h_11 h_ax _ c.1 c.2
+    preCall_okG h _ rfl T.fn T.ok T.sp T.xd hq hsp hrd hwr hm h_di h_si h_dx h_cx h_8 h_9 h_10 h_11 h_ax _ c.1 c.2.1
 
 end
 

@@ -33,27 +33,6 @@ open VG.Spec.Gcm (Block blockAt ctxH ctxCiph inc32 zeros padLen ghashFrom ghash 
 open VG.Proof.Gcm (Absorbed xorKs lensBlock padded)
 open Gcm.X86_64.Stitch (CtxMode)
 
-theorem ctrIndex_inc32 (x : Block) : ctrIndex (inc32 x) = ctrIndex x + 1 := by
-  simp only [ctrIndex, inc32]
-  exact BitVec.extractLsb'_append_eq_right
-
-/-- The index of `J₀` for a 12-byte nonce is 1. -/
-theorem ctrIndex_j0 (H : Block) {iv : List Byte} (h : iv.length = 12) : ctrIndex (Spec.Gcm.j0 H iv) = 1 := by
-  simp only [Spec.Gcm.j0, h, ite_true, ctrIndex, Spec.Gcm.ofBytes, List.foldl_append, List.foldl_cons, List.foldl_nil]
-  apply BitVec.eq_of_toNat_eq
-  have h0 : (0 : Byte).toNat = 0 := rfl
-  have h1 : (1 : Byte).toNat = 1 := rfl
-  simp only [BitVec.extractLsb'_toNat, BitVec.toNat_ofNat, Nat.shiftRight_zero, h0, h1]
-  generalize List.foldl (fun acc b => 256 * acc + BitVec.toNat b) 0 iv = A
-  show _ = 1
-  rw [Nat.mod_mod_of_dvd _ (by decide)]
-  omega
-
-/-- The index of the first counter block for a 12-byte nonce is 2. -/
-theorem ctrIndex_first (H : Block) {iv : List Byte} (h : iv.length = 12) :
-    ctrIndex (inc32 (Spec.Gcm.j0 H iv)) = 2 := by
-  rw [ctrIndex_inc32, ctrIndex_j0 H h]; rfl
-
 /-- The stack below `SP - 8`, in the 32 bytes below `SP`. -/
 theorem below8_sub32 {SP : Addr} {k : Nat} (hk : k + 8 ≤ 32) :
     Region.Sub (below (SP - BitVec.ofNat 64 8) k) (below SP 32) :=
@@ -286,15 +265,6 @@ theorem bodyI_ok (v : GcmImpl) (B : BlkFn M) (F : DecFnI M) {tg : Prog isa} (htg
     · next e => simp only [e, ↓reduceIte] at d' ⊢; exact ⟨ax', d'⟩
 
 end
-
-/-- The index into `rax`. -/
-theorem movIdx_ok (s : State) : ∃ s', runBlock isa [.mov32 .rax (imm 2)] s = some s' ∧
-    s'.gpr .rax = BitVec.ofNat 64 2 ∧ (∀ r, r ≠ .rax → s'.gpr r = s.gpr r) ∧ s'.mem = s.mem ∧
-    s'.rd = s.rd ∧ s'.wr = s.wr := by
-  refine ⟨_, by xrun [], ?_, ?_, ?_, ?_, ?_⟩
-  · simp [gpr_setReg, imm]
-  · intro r hr; simp [gpr_setReg, hr]
-  all_goals rfl
 
 /-- `open`'s body for a tag length it allows and a 12-byte nonce, after the
 entry: the additional data (`aadP`, which leaves what `oneAad` does), then,

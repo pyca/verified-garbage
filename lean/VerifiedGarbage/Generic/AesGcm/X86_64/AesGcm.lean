@@ -238,12 +238,20 @@ def shortNoteP (v : GcmImpl) : List String :=
       from the key context and computes just the keystream it needs, on 512-bit registers, without calls."]
   else []
 
+/-- The whole blocks of the path for TLS records, by `f` given the index of the
+first counter block if there is one. -/
+def idxNote (verb : String) : Option String → String
+  | some f => ", and " ++ verb ++ " the whole blocks with `" ++ f ++ "`, given the index of the first \
+      counter block"
+  | none => ""
+
 /-- How an instance of `open_prepared` works, besides `note` and `shortNoteP`. -/
-def openFastNote (v : GcmImpl) : List String :=
+def openFastNote (v : GcmImpl) (idx : Option String) : List String :=
   if v.short then
     ["For a 12-byte nonce, at most 16 bytes of additional data and at least 256 bytes of text, this \
       implementation multiplies the additional data by the prepared power of the hash subkey in the key \
-      context, and computes the tag from the prepared powers in the key context, without calls."]
+      context, and computes the tag from the prepared powers in the key context, without calls" ++
+      idxNote "decrypts" idx ++ "."]
   else []
 
 /-- How an instance of `seal` ends, besides `note` and `shortNote`. -/
@@ -857,7 +865,8 @@ def artifactsR (v : GcmVariant) : List Artifact := [
   { Spec.Gcm.openPreparedApi with
     name := Spec.Gcm.openPreparedApi.name ++ v.impl.suffix
     target := X86_64.target
-    doc := Spec.Gcm.openPreparedApi.doc (notes := note v.impl :: shortNoteP v.impl ++ openFastNote v.impl)
+    doc := Spec.Gcm.openPreparedApi.doc (notes := note v.impl :: shortNoteP v.impl ++
+      openFastNote v.impl ((v.decI.map (decFnI v.impl)).map (·.fn.name)))
     code := Impl.StackScratch.X86_64.withStackArgScratch 2608 4
       (v.impl.openCodeP (v.impl.withBlk (blkR v)) ((v.decI.map (decFnI v.impl)).map (·.fn)))
     contract := Spec.Gcm.openPreparedContract X86_64.abi 2640
@@ -902,6 +911,11 @@ def artifactsR (v : GcmVariant) : List Artifact := [
 
 def blkToR (v : GcmVariant) : StreamTo.BlkToFn Proof.Gcm.X86_64.Stitch.CtxMode.prepared :=
   .ofBlocks (Spec.Gcm.encryptBlocksToPreparedApi.name ++ v.impl.suffix) (blkR v) v.stitchToR
+
+/-- `vg_aes_gcm_encrypt_blocks_to_prepared_iv96` of a variant with a loop given
+the block index, for `seal_split_prepared`'s path for TLS records. -/
+def blkToI (v : GcmVariant) : Option (Split.BlkToFnI Proof.Gcm.X86_64.Stitch.CtxMode.prepared) :=
+  v.encI.map (encFnI (Spec.Gcm.encryptBlocksToPreparedIv96Api.name ++ v.impl.suffix) (blkR v))
 
 
 def encFnR (v : GcmVariant) : StreamTo.EncFn Proof.Gcm.X86_64.Stitch.CtxMode.prepared :=
@@ -990,11 +1004,12 @@ def sealFnR (v : GcmVariant) : Gather.SealFn Proof.Gcm.X86_64.Stitch.CtxMode.pre
 def splitFnR (v : GcmVariant) : Gather.SplitFn Proof.Gcm.X86_64.Stitch.CtxMode.prepared :=
   .ofPrepared ⟨Spec.Gcm.sealSplitPreparedApi.name ++ v.impl.suffix,
       Impl.StackScratch.X86_64.withStackArgScratch 2616 5
-        (Impl.AesGcm.X86_64.SealSplit.«seal» (v.impl.splitMidR (v.impl.withBlk (blkR v)) (blkToR v).fn))⟩
-    (Split.sealSplitPrepared_framed v.impl (blkR v) (blkToR v) Short.shortFacts)
-    (X86_64.withStackArgScratch_spSafe (Split.sealSplitR_spSafe v.impl (blkR v) (blkToR v)))
-    (StreamTo.framed_xdepth (by have := Split.sealSplitR_xdepth v.impl (blkR v) (blkToR v); omega))
-    (StreamTo.framed_mx (Split.sealSplitR_mx v.impl (blkR v) (blkToR v)))
+        (Impl.AesGcm.X86_64.SealSplit.«seal»
+          (v.impl.splitMidR (v.impl.withBlk (blkR v)) (blkToR v).fn ((blkToI v).map (·.fn))))⟩
+    (Split.sealSplitPrepared_framed v.impl (blkR v) (blkToR v) (blkToI v) Short.shortFacts)
+    (X86_64.withStackArgScratch_spSafe (Split.sealSplitR_spSafe v.impl (blkR v) (blkToR v) (blkToI v)))
+    (StreamTo.framed_xdepth (by have := Split.sealSplitR_xdepth v.impl (blkR v) (blkToR v) (blkToI v); omega))
+    (StreamTo.framed_mx (Split.sealSplitR_mx v.impl (blkR v) (blkToR v) (blkToI v)))
 
 /-- The short path of `vg_aes_gcm_seal_gather_prepared` of a variant. -/
 def shortFnR (v : GcmVariant) : Gather.ShortFn Proof.Gcm.X86_64.Stitch.CtxMode.prepared :=
@@ -1026,11 +1041,11 @@ def splitNote (blk : String) : String :=
     encrypts the rest in place, then the bytes left after its whole blocks, and computes the tag."
 
 /-- How an instance of `seal_split_prepared` works, besides `note` and `splitNote`. -/
-def fastNote (v : GcmImpl) : List String :=
+def fastNote (v : GcmImpl) (idx : Option String) : List String :=
   if v.short then
     ["For a 12-byte nonce, at most 16 bytes of additional data and at least 256 bytes of text, this \
       implementation multiplies the additional data by the prepared power of the hash subkey in the key \
-      context, without calls."]
+      context, without calls" ++ idxNote "encrypts" idx ++ "."]
   else []
 
 /-- `vg_aes_gcm_seal_split` of a variant, and the `_precomputed` or
@@ -1065,13 +1080,15 @@ def artifactsSplit (v : GcmVariant) : List Artifact :=
       name := Spec.Gcm.sealSplitPreparedApi.name ++ v.impl.suffix
       target := X86_64.target
       doc := Spec.Gcm.sealSplitPreparedApi.doc
-        (notes := [note v.impl, splitNote (blkToR v).fn.name] ++ fastNote v.impl)
+        (notes := [note v.impl, splitNote (blkToR v).fn.name] ++
+          fastNote v.impl ((blkToI v).map (·.fn.name)))
       code := Impl.StackScratch.X86_64.withStackArgScratch 2616 5
-        (Impl.AesGcm.X86_64.SealSplit.«seal» (v.impl.splitMidR (v.impl.withBlk (blkR v)) (blkToR v).fn))
+        (Impl.AesGcm.X86_64.SealSplit.«seal»
+          (v.impl.splitMidR (v.impl.withBlk (blkR v)) (blkToR v).fn ((blkToI v).map (·.fn))))
       contract := Spec.Gcm.sealSplitPreparedContract X86_64.abi 2680
       stack := 2680
-      verified := Split.sealSplitPrepared_framed v.impl (blkR v) (blkToR v) Short.shortFacts
-      spSafe := X86_64.withStackArgScratch_spSafe (Split.sealSplitR_spSafe v.impl (blkR v) (blkToR v))
+      verified := Split.sealSplitPrepared_framed v.impl (blkR v) (blkToR v) (blkToI v) Short.shortFacts
+      spSafe := X86_64.withStackArgScratch_spSafe (Split.sealSplitR_spSafe v.impl (blkR v) (blkToR v) (blkToI v))
       features := v.impl.features }]
   else [])
 

@@ -73,8 +73,22 @@ def run (c : Callees) (fTo : Fn) (ks fin : Prog isa) : Prog isa :=
     (.seq (.block [.mov .rax (.mem (at_ .r15 lenO)), .alu .cmp .rax (imm 17)])
       (.ite .b (tail ks) (SealSplit.body c fin))))
 
-/-- `cond`, then this path, or `other`. -/
-def sel (c : Callees) (fTo : Fn) (ks fin : Prog isa) (other : Prog isa) : Prog isa :=
-  .seq cond (.ite .e other (run c fTo ks fin))
+/-- `SealSplit.prefix` calling `f`, the encryption function given the block
+index (`vg_aes_gcm_encrypt_blocks_to_prepared_iv96`): the index of the first
+counter block, 2 for a 12-byte nonce, pushed in a frame of one word around
+it, so that `f`'s three other stack arguments are pushed right below it. -/
+def prefixI (f : Fn) : Prog isa :=
+  .seq (.block [.mov32 .rax (imm 2)]) (.frame (.push [.rax]) (SealSplit.prefix f) (.pop .r10 1))
+
+/-- `run` with `prefixI`. -/
+def runI (c : Callees) (f : Fn) (ks fin : Prog isa) : Prog isa :=
+  .seq aad (.seq (prefixI f)
+    (.seq (.block [.mov .rax (.mem (at_ .r15 lenO)), .alu .cmp .rax (imm 17)])
+      (.ite .b (tail ks) (SealSplit.body c fin))))
+
+/-- `cond`, then this path, or `other`: `runI` if the encryption function
+given the block index `fi` is there, `run` otherwise. -/
+def sel (c : Callees) (fTo : Fn) (fi : Option Fn) (ks fin : Prog isa) (other : Prog isa) : Prog isa :=
+  .seq cond (.ite .e other (match fi with | some f => runI c f ks fin | none => run c fTo ks fin))
 
 end VG.Impl.AesGcm.X86_64.Fast

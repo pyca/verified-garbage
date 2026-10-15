@@ -26,8 +26,29 @@ and give `BP` or `BT` (the proofs of the functions without the index) and
 namespace VG.Proof.AesGcm
 
 open VG VG.X86_64
-open VG.Spec.Gcm (Block blockAt blocksAt ctrIndex)
+open VG.Spec.Gcm (Block blockAt blocksAt ctrIndex inc32)
 open VG.Proof.Gcm.X86_64.Stitch (CtxMode)
+
+theorem ctrIndex_inc32 (x : Block) : ctrIndex (inc32 x) = ctrIndex x + 1 := by
+  simp only [ctrIndex, inc32]
+  exact BitVec.extractLsb'_append_eq_right
+
+/-- The index of `J₀` for a 12-byte nonce is 1. -/
+theorem ctrIndex_j0 (H : Block) {iv : List Byte} (h : iv.length = 12) : ctrIndex (Spec.Gcm.j0 H iv) = 1 := by
+  simp only [Spec.Gcm.j0, h, ite_true, ctrIndex, Spec.Gcm.ofBytes, List.foldl_append, List.foldl_cons, List.foldl_nil]
+  apply BitVec.eq_of_toNat_eq
+  have h0 : (0 : Byte).toNat = 0 := rfl
+  have h1 : (1 : Byte).toNat = 1 := rfl
+  simp only [BitVec.extractLsb'_toNat, BitVec.toNat_ofNat, Nat.shiftRight_zero, h0, h1]
+  generalize List.foldl (fun acc b => 256 * acc + BitVec.toNat b) 0 iv = A
+  show _ = 1
+  rw [Nat.mod_mod_of_dvd _ (by decide)]
+  omega
+
+/-- The index of the first counter block for a 12-byte nonce is 2. -/
+theorem ctrIndex_first (H : Block) {iv : List Byte} (h : iv.length = 12) :
+    ctrIndex (inc32 (Spec.Gcm.j0 H iv)) = 2 := by
+  rw [ctrIndex_inc32, ctrIndex_j0 H h]; rfl
 
 /-- A 32-bit word from its bytes. -/
 theorem readW32_of_bytes {m : Mem} {a : Addr} {V : BitVec 32}

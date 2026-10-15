@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.AesGcm.X86_64.Iv96Contract
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks.Iv96CT
 public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Iv96CT
 public import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.CallI
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Split.PrefixI
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -281,18 +282,38 @@ theorem idx32 (s : State) :
     s.mem.readW (BlocksTo.SP s + BitVec.ofNat 64 32) 32 = (Proof.AesGcm.arg s 3).setWidth 32 :=
   Proof.AesGcm.idx_readW s 3
 
+theorem encryptToI_correct (B : BlkFn CtxMode.prepared) (c : BlocksTo.EncCodeI CtxMode.prepared) :
+    ∀ s, (Proof.AesGcm.encryptBlocksToIv96X86_64M CtxMode.prepared).pre s →
+      ∃ t s', Exec isa (BlocksTo.encrypt B.enc (some c.enc) true true) s t s' ∧ abiPreserved s s' ∧
+        (Proof.AesGcm.encryptBlocksToIv96X86_64M CtxMode.prepared).post s s' := fun s h => by
+  obtain ⟨hp, hx⟩ := BlocksTo.BT.ofMI h
+  obtain ⟨t, s', he, hg, hq⟩ := BlocksTo.encryptI_wp B true c hp hx
+  exact ⟨t, s', he, abiPreserved_of_exec (encryptToI_mx B c.S) he hg, hq⟩
+
+theorem encryptToI_ctP (B : BlkFn CtxMode.prepared) (c : BlocksTo.EncCodeI CtxMode.prepared) :
+    ConstantTime isa (Proof.AesGcm.encryptBlocksToIv96X86_64M CtxMode.prepared).pre Proof.AesGcm.blocksToPubI
+      (BlocksTo.encrypt B.enc (some c.enc) true true) :=
+  BlocksTo.encryptI_ct B true c (k := Proof.AesGcm.encryptBlocksToIv96X86_64M CtxMode.prepared)
+    (fun _ h => BlocksTo.BT.ofMI h) fun s s' h => ⟨h.1, by rw [idx32, idx32]; exact h.2⟩
+
 /-- With a loop given the block index. -/
 theorem encryptBlocksToPreparedIv96_verifiedI (B : BlkFn CtxMode.prepared) (c : BlocksTo.EncCodeI CtxMode.prepared) :
     Verified X86_64.target (BlocksTo.encrypt B.enc (some c.enc) true true)
       (Spec.Gcm.encryptBlocksToPreparedIv96Contract X86_64.abi 24) :=
-  Verified.of_correct (k := Proof.AesGcm.encryptBlocksToIv96X86_64M CtxMode.prepared)
-    (fun s h => by
-      obtain ⟨hp, hx⟩ := BlocksTo.BT.ofMI h
-      obtain ⟨t, s', he, hg, hq⟩ := BlocksTo.encryptI_wp B true c hp hx
-      exact ⟨t, s', he, abiPreserved_of_exec (encryptToI_mx B c.S) he hg, hq⟩)
-    (BlocksTo.encryptI_ct B true c (k := Proof.AesGcm.encryptBlocksToIv96X86_64M CtxMode.prepared)
-      (fun _ h => BlocksTo.BT.ofMI h) fun s s' h => ⟨h.1, by rw [idx32, idx32]; exact h.2⟩)
-    encryptBlocksToIv96_implies
+  Verified.of_correct (k := Proof.AesGcm.encryptBlocksToIv96X86_64M CtxMode.prepared) (encryptToI_correct B c)
+    (encryptToI_ctP B c) encryptBlocksToIv96_implies
+
+/-- `vg_aes_gcm_encrypt_blocks_to_prepared_iv96`, named `n`, with a loop given
+the block index, for its callers. -/
+def encFnI (n : String) (B : BlkFn CtxMode.prepared) (c : BlocksTo.EncCodeI CtxMode.prepared) :
+    Split.BlkToFnI CtxMode.prepared where
+  fn := ⟨n, BlocksTo.encrypt B.enc (some c.enc) true true⟩
+  ok := encryptToI_correct B c
+  ct := encryptToI_ctP B c
+  sp := SpSafe.of_all (encryptToI_spSafe B c.S)
+  xd := encryptToI_xdepth B c.S
+  mx := encryptToI_mx B c.S
+  spAll := encryptToI_spSafe B c.S
 
 /-- With the loop of the function without the index, which ignores it. -/
 theorem encryptBlocksToPreparedIv96_verified (B : BlkFn CtxMode.prepared)
