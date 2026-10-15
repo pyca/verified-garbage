@@ -77,7 +77,7 @@ inductive Q
   | shuf (a b : Q) (sel : Nat)
   /-- `vpmadd52luq` (`h = false`) or `vpmadd52huq` of `a` and `b`, added to `c`. -/
   | mad (h : Bool) (c a b : Q)
-  deriving DecidableEq, Repr
+  deriving DecidableEq
 
 def Q.eval (s₀ : State) : Q → Nat → BitVec 64
   | .reg r, k => qz s₀ (xr r) k

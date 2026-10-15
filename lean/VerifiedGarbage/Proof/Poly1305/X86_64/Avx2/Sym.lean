@@ -311,7 +311,7 @@ inductive Q
   | perm (a : Q) (o : Nat)
   /-- `vpblendd` with the immediate `sel`. -/
   | blend (a b : Q) (sel : Nat)
-  deriving DecidableEq, Repr
+  deriving DecidableEq
 
 def Q.eval (s₀ : State) : Q → Nat → BitVec 64
   | .reg r, k => qw s₀ (xr r) k
