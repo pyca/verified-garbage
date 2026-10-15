@@ -16,6 +16,8 @@ meta import VerifiedGarbage.Proof.MlKem.AArch64.Shared
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Vec
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Common
 meta import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # ML-DSA verification on AArch64: the prologue, the hint and `z`
@@ -193,9 +195,7 @@ theorem VFacts.scr {p : Params} (_ : VFacts p) : scrLen p = 1024 * (p.k * p.ℓ 
   scr_eq p
 
 /-- Proves a `VZChk`: each check decided for each parameter set if it can be (`vlayd`). -/
-syntax "vzchk " term:max : tactic
-macro_rules
-  | `(tactic| vzchk $hF) => `(tactic| (
+tactic_template "vzchk " hF:term:max : tactic => `(tactic| (
       have := ($hF).k; have := ($hF).l; have := ($hF).kl; have := ($hF).scr; have := ($hF).small
       refine ⟨?_, ?_, ?_⟩ <;> intros <;> (try unfold VG.Proof.MlDsa.AArch64.Verify.vcChk) <;> first | vlayd | vlay))
 

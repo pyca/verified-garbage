@@ -20,6 +20,8 @@ meta import VerifiedGarbage.Proof.MlKem.AArch64.Shared
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Vec
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Common
 meta import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # ML-DSA verification on AArch64: the samplers
@@ -68,9 +70,7 @@ structure VAChk (p : Params) (e : Nat) (ws : List (Ptr × Nat)) : Prop where
   a : ∀ e' < e, keepB (vR p) (vW p) ws (aP e') 1024 = true
 
 /-- Proves a `VAChk`: each check decided for each parameter set if it can be (`vlayd`). -/
-syntax "vachk " term:max : tactic
-macro_rules
-  | `(tactic| vachk $hF) => `(tactic| (
+tactic_template "vachk " hF:term:max : tactic => `(tactic| (
       have := ($hF).k; have := ($hF).l; have := ($hF).kl; have := ($hF).scr; have := ($hF).small
       refine ⟨⟨?_, ?_, ?_⟩, ?_, ?_⟩ <;> intros <;> (try unfold VG.Proof.MlDsa.AArch64.Verify.vcChk) <;> first | vlayd | vlay))
 

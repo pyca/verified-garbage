@@ -23,6 +23,8 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.Shared
 public import VerifiedGarbage.Proof.MlKem.AArch64.Vec
 public import VerifiedGarbage.Proof.MlKem.AArch64.Common
 public import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # ML-DSA key generation on AArch64: parameters and buffers
@@ -202,9 +204,7 @@ macro_rules
 bounded indices, decided for each parameter set (`decide_at`): cheaper than
 `lay`, which unfolds it into arithmetic on the parameters for `omega`, unless
 there are many indices to try. -/
-syntax "layd" : tactic
-macro_rules
-  | `(tactic| layd) => `(tactic| (
+tactic_template "layd" : tactic => `(tactic| (
       have hmem := (‹VG.Proof.MlDsa.AArch64.KeyGen.PFacts _›).mem; decide_at hmem))
 
 end VG.Proof.MlDsa.AArch64.KeyGen
