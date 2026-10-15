@@ -11,13 +11,13 @@ import all Init.Data.Vector.Basic
 @[expose] public section
 
 namespace VG.Proof.Bignum.Arm
-open VG VG.Arm VG.Proof.Mont
+open VG VG.Arm VG.Proof.Mont VG.Impl.Bignum.Arm.Crt
 open VG.Proof.X25519.Arm (Rest)
 
-theorem CrtProductInput.after_control {s t : State} {base value : BitVec 32} {size o a b cp cq w d : Nat}
-    (h : CrtProductInput base size o a b cp cq w s) (hd : 128 ≤ d) (hd' : d + 4 ≤ 148)
+theorem CrtProductInput.after_control {s t : State} {base value : BitVec 32} {size o a b cp cq w d : Nat} {coefficient : Bool}
+    (h : CrtProductInput base size o a b cp cq w s coefficient) (hd : 128 ≤ d) (hd' : d + 4 ≤ 148)
     (mem : t.mem = s.mem.writeW (off (State.addr base) d) value) (rest : Rest [.r1] s t) :
-    CrtProductInput base size o a b cp cq w t := by
+    CrtProductInput base size o a b cp cq w t coefficient := by
   have fit := h.parentFit
   have nowrap := h.workspace.nowrap
   have pHeader := h.pHeader
@@ -32,7 +32,7 @@ theorem CrtProductInput.after_control {s t : State} {base value : BitVec 32} {si
     (rest.gpr .r0 (by simp)).trans h.ptr, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [outside_read32 outside (d := 224) (by omega) (by decide)]; exact h.pLink
   · rw [outside_read32 outside (d := 228) (by omega) (by decide)]; exact h.qLink
-  · rw [outside_read32 outside (d := cp + 64) (by omega) (by omega)]; exact h.pArray
+  · rw [outside_read32 outside (d := cp + productOperandSlot coefficient) (by omega) (by omega)]; exact h.pArray
   · rw [outside_read32 outside (d := cq + 64) (by omega) (by omega)]; exact h.qArray
   · rw [outside_read32 outside (d := 232) (by omega) (by decide)]; exact h.product
   · rw [outside_read32 outside (d := 48) (by omega) (by decide)]; exact h.count

@@ -16,17 +16,17 @@ namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Impl.Bignum.Arm.Crt VG.Proof.Mont
 open VG.Proof.X25519.Arm (Rest)
 
-structure CrtProductInput (base : BitVec 32) (size o a b cp cq w : Nat) (s : State) : Prop
+structure CrtProductInput (base : BitVec 32) (size o a b cp cq w : Nat) (s : State) (coefficient : Bool := false) : Prop
     extends WideProductCtx s base size o a b (2 * w) (2 * w) where
   parentFit : 236 ≤ size
   pHeader : 256 ≤ cp
   qHeader : 256 ≤ cq
-  pBeforeOut : cp + 68 ≤ o
+  pBeforeOut : cp + productOperandSlot coefficient + 4 ≤ o
   qBeforeOut : cq + 68 ≤ o
   ptr : s.gpr .r0 = base
   pLink : s.mem.readW (off (State.addr base) 224) 32 = base + BitVec.ofNat 32 cp
   qLink : s.mem.readW (off (State.addr base) 228) 32 = base + BitVec.ofNat 32 cq
-  pArray : s.mem.readW (off (State.addr base) (cp + 64)) 32 = base + BitVec.ofNat 32 a
+  pArray : s.mem.readW (off (State.addr base) (cp + productOperandSlot coefficient)) 32 = base + BitVec.ofNat 32 a
   qArray : s.mem.readW (off (State.addr base) (cq + 64)) 32 = base + BitVec.ofNat 32 b
   product : s.mem.readW (off (State.addr base) 232) 32 = base + BitVec.ofNat 32 o
   count : s.mem.readW (off (State.addr base) 48) 32 = BitVec.ofNat 32 w
@@ -41,9 +41,9 @@ theorem WideProductCtx.after_frame {s t : State} {base : BitVec 32} {size o a b 
   · rw [rest.sp]; exact h.stackSep
   · exact saved_base_kept frame h.stackSep h.saved rest.sp
 
-theorem crt_productClear_ready (s : State) {base : BitVec 32} {size o a b cp cq w : Nat}
-    (h : CrtProductInput base size o a b cp cq w s) :
-    WP isa (clearWide 232) s fun t => CrtProductInput base size o a b cp cq w t ∧
+theorem crt_productClear_ready (s : State) {base : BitVec 32} {size o a b cp cq w : Nat} {coefficient : Bool}
+    (h : CrtProductInput base size o a b cp cq w s coefficient) :
+    WP isa (clearWide 232) s fun t => CrtProductInput base size o a b cp cq w t coefficient ∧
       val32 t.mem (State.addr base) o (2 * w + 2 * w + 2) = 0 ∧
       Outside (State.addr base) o (4 * (2 * w + 2 * w + 2)) s.mem t.mem ∧
       Frame [⟨State.addr base, size⟩] s.mem t.mem ∧ Rest roundClobbers s t := by
@@ -61,7 +61,7 @@ theorem crt_productClear_ready (s : State) {base : BitVec 32} {size o a b cp cq 
     zero, outside, frame, rest⟩
   · rw [outside_read32 outside (d := 224) (by omega) (by decide)]; exact h.pLink
   · rw [outside_read32 outside (d := 228) (by omega) (by decide)]; exact h.qLink
-  · rw [outside_read32 outside (d := cp + 64) (by omega) (by omega)]; exact h.pArray
+  · rw [outside_read32 outside (d := cp + productOperandSlot coefficient) (by omega) (by omega)]; exact h.pArray
   · rw [outside_read32 outside (d := cq + 64) (by omega) (by omega)]; exact h.qArray
   · rw [outside_read32 outside (d := 232) (by omega) (by decide)]; exact h.product
   · rw [outside_read32 outside (d := 48) (by omega) (by decide)]; exact h.count

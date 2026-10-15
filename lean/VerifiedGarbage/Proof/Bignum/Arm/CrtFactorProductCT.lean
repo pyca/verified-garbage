@@ -16,10 +16,10 @@ import all Init.Data.Vector.Basic
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Impl.Bignum.Arm.Crt VG.Proof.Mont
 
-theorem crt_factorProduct_ct {base : BitVec 32} {size o a b cp cq w : Nat} (fit : 236 ≤ size) :
-    RelCT isa (fun s t => CrtProductInput base size o a b cp cq w s ∧
-      CrtProductInput base size o a b cp cq w t ∧ s.sp = t.sp) factorProduct (fun _ _ => True) := by
-  let P := CrtProductInput base size o a b cp cq w
+theorem crt_factorProduct_ct {base : BitVec 32} {size o a b cp cq w : Nat} {coefficient : Bool} (fit : 236 ≤ size) :
+    RelCT isa (fun s t => CrtProductInput base size o a b cp cq w s coefficient ∧
+      CrtProductInput base size o a b cp cq w t coefficient ∧ s.sp = t.sp) (factorProduct coefficient) (fun _ _ => True) := by
+  let P := fun s => CrtProductInput base size o a b cp cq w s coefficient
   let R := fun s : State => P s ∧ val32 s.mem (State.addr base) o (2 * w + 2 * w + 2) = 0
   have clear := (crt_clearWide_ct (base := base) (dst := base + BitVec.ofNat 32 o) (size := size) (slot := 232) (w := w)
     (by omega) (by omega) (by decide)).mono (P' := fun (s t : State) => P s ∧ P t ∧ s.sp = t.sp)
@@ -29,10 +29,10 @@ theorem crt_factorProduct_ct {base : BitVec 32} {size o a b cp cq w : Nat} (fit 
     WP.mono (crt_productClear_ready s h) (fun _ j => ⟨j.1, j.2.1⟩)
   have first := (relCT_keep_sp clear (fun _ _ h => h.2.2)).wp
     (fun s t h => ⟨clearWP s h.1, clearWP t h.2.1⟩)
-  have args := (crt_productArgs_ct (base := base) (o := o) (a := a) (b := b) (cp := cp) (cq := cq) (w := w) fit).mono
+  have args := (crt_productArgs_ct (base := base) (o := o) (a := a) (b := b) (cp := cp) (cq := cq) (w := w) (coefficient := coefficient) fit).mono
     (P' := fun (s t : State) => s.sp = t.sp ∧ R s ∧ R t)
     (fun _ _ h => ⟨h.2.1.1, h.2.2.1⟩) (fun _ _ _ => trivial)
-  have argsWP (s : State) (h : R s) : WP isa productArgs s (CrtProductStart base size o a b w) :=
+  have argsWP (s : State) (h : R s) : WP isa (productArgs coefficient) s (CrtProductStart base size o a b w) :=
     WP.mono (crt_productArgs_ready s h.1 h.2) (fun _ j => j.1)
   have second := (relCT_keep_sp args (fun _ _ h => h.1)).wp
     (fun s t h => ⟨argsWP s h.2.1, argsWP t h.2.2⟩)
