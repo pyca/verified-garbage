@@ -24,28 +24,49 @@ open VG.Proof.MlKem.AArch64 (Keep)
 
 def sharedMidRanges (w : Nat) : List (Nat × Nat) := witnessRanges w ++ Caller.callRanges w
 
-/-- Every range of the kernel's calls is past the header, or one of five header words. -/
-theorem sharedKernel_shape (w : Nat) : ∀ r ∈ Caller.callRanges w,
-    hdrBytes ≤ r.1 ∨ r ∈ ([(8, 8), (184, 8), (208, 8), (232, 8), (240, 8)] : List (Nat × Nat)) := by
-  simp only [Caller.callRanges, mutRanges, Spec.MillerRabin.compact, List.map_cons, List.map_nil,
-    List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false,
-    forall_eq_or_imp, forall_eq, Caller.pad, slot, hdrBytes, aOne,
-    Spec.Rsa.Mont.arrAt, Spec.Rsa.Mont.hdrBytes]
-  and_intros <;> first | decide | omega_arith
+/-- The kernel's calls' ranges, in the header and in the arrays. -/
+theorem sharedKernel_shape (w : Nat) : VG.Proof.RsaKeyGen.RangeShape w [(8, 8), (184, 8), (208, 8), (232, 8), (240, 8)]
+    [(7, 1), (2, 1), (3, 1), (5, 1), (6, 1), (8, 1), (11, 16)] (Caller.callRanges w) := by
+  intro r hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false, List.cons_append, List.nil_append, Caller.callRanges,
+    mutRanges, Spec.MillerRabin.compact, List.map_cons, List.map_nil, Caller.pad, aOne, Spec.Rsa.Mont.arrAt,
+    Spec.Rsa.Mont.hdrBytes] at hr
+  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+  · exact .inr ⟨(7, 1), by decide, by simp only [slot, hdrBytes]; omega_using [],
+      by simp only [slot, hdrBytes]; omega_using []⟩
+  · exact .inl (by decide)
+  · exact .inl (by decide)
+  · exact .inl (by decide)
+  · exact .inl (by decide)
+  · exact .inl (by decide)
+  · exact .inr ⟨(2, 1), by decide, by simp only [slot, hdrBytes]; omega_using [],
+      by simp only [slot, hdrBytes]; omega_using []⟩
+  · exact .inr ⟨(3, 1), by decide, by simp only [slot, hdrBytes]; omega_using [],
+      by simp only [slot, hdrBytes]; omega_using []⟩
+  · exact .inr ⟨(5, 1), by decide, by simp only [slot, hdrBytes]; omega_using [],
+      by simp only [slot, hdrBytes]; omega_using []⟩
+  · exact .inr ⟨(6, 1), by decide, by simp only [slot, hdrBytes]; omega_using [],
+      by simp only [slot, hdrBytes]; omega_using []⟩
+  · exact .inr ⟨(8, 1), by decide, by simp only [slot, hdrBytes]; omega_using [],
+      by simp only [slot, hdrBytes]; omega_using []⟩
+  · exact .inr ⟨(11, 16), by decide, by simp only [slot, hdrBytes]; omega_using [],
+      by simp only [slot, hdrBytes]; omega_using []⟩
+
+theorem sharedMidRanges_shape (w : Nat) : VG.Proof.RsaKeyGen.RangeShape w
+    ([(216, 8), (0, 8)] ++ [(8, 8), (184, 8), (208, 8), (232, 8), (240, 8)])
+    ([(1, 1), (2, 1), (3, 1), (5, 1), (8, 1)] ++ [(7, 1), (2, 1), (3, 1), (5, 1), (6, 1), (8, 1), (11, 16)])
+    (sharedMidRanges w) :=
+  VG.Proof.RsaKeyGen.shape_append (witnessRanges_shape w) (sharedKernel_shape w)
 
 theorem sharedKernel_hdr (w j : Nat) (hj : j ∈ [0, 16, 17, 18, 19, 20, 21, 22, 24, 25, 27]) :
     ∀ r ∈ Caller.callRanges w, 8 * j + 8 ≤ r.1 ∨ r.1 + r.2 ≤ 8 * j := by
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
   rcases hj with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-    exact VG.Proof.RsaKeyGen.hdr_of_shape _ (sharedKernel_shape w) (by decide) (by decide)
+    exact VG.Proof.RsaKeyGen.hdr_of_shape (sharedKernel_shape w) (by decide) (by decide)
 
 private theorem kernel_r2 (w : Nat) :
-    ∀ r ∈ Caller.callRanges w, slot w aR2 + 8 * w ≤ r.1 ∨ r.1 + r.2 ≤ slot w aR2 := by
-  simp only [Caller.callRanges, mutRanges, Spec.MillerRabin.compact, List.map_cons, List.map_nil,
-    List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false,
-    forall_eq_or_imp, forall_eq, Caller.pad, slot, hdrBytes, aOne, aR2,
-    Spec.Rsa.Mont.arrAt, Spec.Rsa.Mont.hdrBytes]
-  and_intros <;> omega_arith
+    ∀ r ∈ Caller.callRanges w, slot w aR2 + 8 * w ≤ r.1 ∨ r.1 + r.2 ≤ slot w aR2 :=
+  VG.Proof.RsaKeyGen.arr_of_shape (sharedKernel_shape w) (by decide) (by decide) (by omega_using [])
 
 private theorem witness_exp (w : Nat) : ∀ r ∈ witnessRanges w, r.1 + r.2 ≤ slot w aE := by
   intro r hr
@@ -123,14 +144,12 @@ theorem sharedMid_ok (M : Mont) (R : Kernel) {s : State} {B : Addr} {Z w c bm : 
 def sharedRoundRanges (w : Nat) : List (Nat × Nat) :=
   sharedMidRanges w ++ [(8 * kI, 8), (8 * kUni, 8), (8 * kStat, 8)]
 
-/-- `sharedRoundRanges`'s ranges are past the header or in its header ranges. -/
-theorem sharedRoundRanges_shape (w : Nat) : ∀ r ∈ sharedRoundRanges w, hdrBytes ≤ r.1 ∨ r ∈ ([(216, 8), (0, 8),
-    (184, 8), (208, 8), (232, 8), (240, 8), (8, 8), (160, 8), (168, 8), (248, 8)] : List (Nat × Nat)) :=
-  VG.Proof.RsaKeyGen.shape_append (VG.Proof.RsaKeyGen.shape_append
-    (VG.Proof.RsaKeyGen.shape_mono (witnessRanges_shape w) (by decide))
-    (VG.Proof.RsaKeyGen.shape_mono (sharedKernel_shape w) (by decide))) (by
-      simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq, kI, kUni, kStat, kElen, kP, sFn]
-      decide)
+theorem sharedRoundRanges_shape (w : Nat) : VG.Proof.RsaKeyGen.RangeShape w
+    ([(216, 8), (0, 8)] ++ [(8, 8), (184, 8), (208, 8), (232, 8), (240, 8)] ++ [(8 * kI, 8), (8 * kUni, 8), (8 * kStat, 8)])
+    ([(1, 1), (2, 1), (3, 1), (5, 1), (8, 1)] ++ [(7, 1), (2, 1), (3, 1), (5, 1), (6, 1), (8, 1), (11, 16)] ++ [])
+    (sharedRoundRanges w) :=
+  VG.Proof.RsaKeyGen.shape_append (sharedMidRanges_shape w) (VG.Proof.RsaKeyGen.shape_self w _)
+
 
 theorem sharedRound_ok (M : Mont) (R : Kernel) {s : State} {B : Addr} {Z w c bm : Nat} (hw4 : 4 ≤ w) (hw128 : w ≤ 128)
     (hEZ : slot w aE + 8 * (w + 2) ≤ Z) (hc : MrCtx s B Z w c bm) (hE : ECtx s.mem B w c)

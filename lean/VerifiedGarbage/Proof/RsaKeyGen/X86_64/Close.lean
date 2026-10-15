@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.RsaKeyGen.Hdr
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.LoadC
 public import VerifiedGarbage.Spec.RsaKeyGen.Contract
 public import VerifiedGarbage.Proof.Bignum.X86_64.Cmp
@@ -171,6 +172,20 @@ theorem neg_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hg : Good 
 /-- What `closeCheck` changes: `aX`, `aAcc` and `aTmp`. -/
 def closeRanges (w : Nat) : List (Nat × Nat) :=
   [(slot w aX, 8 * (w + 2)), (slot w aAcc, 8 * (w + 2)), (slot w aTmp, 8 * (w + 2))]
+
+/-- `closeRanges`'s ranges, in the header and in the arrays. -/
+theorem closeRanges_shape (w : Nat) : VG.Proof.RsaKeyGen.RangeShape w []
+    [(1, 1), (2, 1), (3, 1)] (closeRanges w) := by
+  intro r hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false,
+    closeRanges, Public.aX, Public.aAcc, Public.aTmp, aX, aAcc, aTmp] at hr
+  rcases hr with rfl | rfl | rfl
+  · exact .inr ⟨(1, 1), by decide, by simp only [slot, hdrBytes]; omega_using [],
+      by simp only [slot, hdrBytes]; omega_using []⟩
+  · exact .inr ⟨(2, 1), by decide, by simp only [slot, hdrBytes]; omega_using [],
+      by simp only [slot, hdrBytes]; omega_using []⟩
+  · exact .inr ⟨(3, 1), by decide, by simp only [slot, hdrBytes]; omega_using [],
+      by simp only [slot, hdrBytes]; omega_using []⟩
 
 theorem sxm1 : BitVec.signExtend 64 (BitVec.ofInt 32 (-1)) = BitVec.allOnes 64 := by decide
 

@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.RsaKeyGen.Hdr
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrWin
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
@@ -31,12 +32,23 @@ def tabRanges (w : Nat) : List (Nat × Nat) :=
   [(slot w aT0, 128 * (w + 2)), (slot w aAcc, 8 * (w + 2)), (slot w aTmp, 8 * (w + 2)), (slot w aY, 8 * (w + 2)),
     (8 * kV, 8), (8 * kBits, 8)]
 
-/-- `tabRanges`'s ranges are past the header or in its header ranges. -/
-theorem tabRanges_shape (w : Nat) : ∀ r ∈ tabRanges w,
-    VG.Impl.Bignum.hdrBytes ≤ r.1 ∨ r ∈ ([(208, 8), (240, 8)] : List (Nat × Nat)) := by
-  simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq,
-    tabRanges, slot, hdrBytes, aAcc, aTmp, aY, aT0, kT0, sFn, sCnt, kV, kBits, kT2]
-  and_intros <;> first | decide | exact .inl (by omega_arith)
+/-- `tabRanges`'s ranges, in the header and in the arrays. -/
+theorem tabRanges_shape (w : Nat) : VG.Proof.RsaKeyGen.RangeShape w [(208, 8), (240, 8)]
+    [(11, 16), (2, 1), (3, 1), (6, 1)] (tabRanges w) := by
+  intro r hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false,
+    tabRanges, Public.sCnt, Public.aAcc, Public.aTmp, Public.aY, aAcc, aTmp, aY, aT0, kT0, sFn, sCnt, kV, kBits, kT2] at hr
+  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
+  · exact .inr ⟨(11, 16), by decide, by simp only [slot, hdrBytes]; omega_using [],
+      by simp only [slot, hdrBytes]; omega_using []⟩
+  · exact .inr ⟨(2, 1), by decide, by simp only [slot, hdrBytes]; omega_using [],
+      by simp only [slot, hdrBytes]; omega_using []⟩
+  · exact .inr ⟨(3, 1), by decide, by simp only [slot, hdrBytes]; omega_using [],
+      by simp only [slot, hdrBytes]; omega_using []⟩
+  · exact .inr ⟨(6, 1), by decide, by simp only [slot, hdrBytes]; omega_using [],
+      by simp only [slot, hdrBytes]; omega_using []⟩
+  · exact .inl (by decide)
+  · exact .inl (by decide)
 
 theorem tabRanges_mut (w : Nat) : ∀ r ∈ tabRanges w, KMut r := by unfold tabRanges; w_mut
 

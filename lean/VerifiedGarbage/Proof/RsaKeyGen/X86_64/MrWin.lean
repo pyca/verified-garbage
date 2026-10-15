@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.RsaKeyGen.Hdr
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrSelW
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
@@ -62,10 +63,47 @@ def winRanges (w : Nat) : List (Nat × Nat) :=
   [(slot w aAcc, 8 * (w + 2)), (slot w aTmp, 8 * (w + 2)), (slot w aY, 8 * (w + 2)), (slot w aXm, 8 * (w + 2)),
     (8 * kG, 8), (8 * kFlag, 8), (8 * kV, 8), (8 * kBits, 8)]
 
+/-- `winRanges`'s ranges, in the header and in the arrays. -/
+theorem winRanges_shape (w : Nat) : VG.Proof.RsaKeyGen.RangeShape w [(248, 8), (176, 8), (208, 8), (224, 8)]
+    [(2, 1), (3, 1), (6, 1), (5, 1)] (winRanges w) := by
+  intro r hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false,
+    winRanges, Public.aAcc, Public.aTmp, Public.aXm, Public.aY, aAcc, aTmp, aXm, aY, kT0, sFn, kG, kV, kBits, kFlag, kPlen, kT2] at hr
+  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+  · exact .inr ⟨(2, 1), by decide, by simp only [slot, hdrBytes]; omega_using [],
+      by simp only [slot, hdrBytes]; omega_using []⟩
+  · exact .inr ⟨(3, 1), by decide, by simp only [slot, hdrBytes]; omega_using [],
+      by simp only [slot, hdrBytes]; omega_using []⟩
+  · exact .inr ⟨(6, 1), by decide, by simp only [slot, hdrBytes]; omega_using [],
+      by simp only [slot, hdrBytes]; omega_using []⟩
+  · exact .inr ⟨(5, 1), by decide, by simp only [slot, hdrBytes]; omega_using [],
+      by simp only [slot, hdrBytes]; omega_using []⟩
+  · exact .inl (by decide)
+  · exact .inl (by decide)
+  · exact .inl (by decide)
+  · exact .inl (by decide)
+
 /-- What a window changes before its flag. -/
 def midRanges (w : Nat) : List (Nat × Nat) :=
   [(slot w aAcc, 8 * (w + 2)), (slot w aTmp, 8 * (w + 2)), (slot w aY, 8 * (w + 2)), (slot w aXm, 8 * (w + 2)),
     (8 * kG, 8)]
+
+/-- `midRanges`'s ranges, in the header and in the arrays. -/
+theorem midRanges_shape (w : Nat) : VG.Proof.RsaKeyGen.RangeShape w [(248, 8)]
+    [(2, 1), (3, 1), (6, 1), (5, 1)] (midRanges w) := by
+  intro r hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false,
+    midRanges, Public.aAcc, Public.aTmp, Public.aXm, Public.aY, aAcc, aTmp, aXm, aY, sFn, kG] at hr
+  rcases hr with rfl | rfl | rfl | rfl | rfl
+  · exact .inr ⟨(2, 1), by decide, by simp only [slot, hdrBytes]; omega_using [],
+      by simp only [slot, hdrBytes]; omega_using []⟩
+  · exact .inr ⟨(3, 1), by decide, by simp only [slot, hdrBytes]; omega_using [],
+      by simp only [slot, hdrBytes]; omega_using []⟩
+  · exact .inr ⟨(6, 1), by decide, by simp only [slot, hdrBytes]; omega_using [],
+      by simp only [slot, hdrBytes]; omega_using []⟩
+  · exact .inr ⟨(5, 1), by decide, by simp only [slot, hdrBytes]; omega_using [],
+      by simp only [slot, hdrBytes]; omega_using []⟩
+  · exact .inl (by decide)
 
 theorem midRanges_sub (w : Nat) : ∀ r ∈ midRanges w, r ∈ winRanges w := by
   simp only [midRanges, winRanges, List.mem_cons, List.not_mem_nil, or_false]
