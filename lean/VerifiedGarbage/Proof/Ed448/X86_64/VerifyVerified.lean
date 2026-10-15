@@ -72,8 +72,6 @@ theorem verifyEquation_agree {s₁ s₂ : State} (h₁ : verifyEquationLocal.pre
   · intro sl h; simp [verifyEquationτ] at h
   · intro sl h; simp [verifyEquationτ] at h
 
-theorem verifyEquation_inlineOk : verifyEquation.InlineOk = true := by lit_decide
-
 theorem verifyEquation_okI (hR : Proof.Ed448.RecoverOk) (hE : Proof.Ed448.VerifyEqOk) (s : State)
     (hs : verifyEquationLocal.pre s) :
     ∃ t s', Exec isa verifyEquation.inline s t s' ∧ abiPreserved s s' ∧ verifyEquationLocal.post s s' := by

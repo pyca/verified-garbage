@@ -81,8 +81,6 @@ theorem scalarBase_agree {s₁ s₂ : State} (h₁ : scalarBaseLocal.pre s₁)
   · intro sl h; simp [scalarBaseτ] at h
   · intro sl h; simp [scalarBaseτ] at h
 
-theorem scalarBase_inlineOk : scalarBase.InlineOk = true := by lit_decide
-
 theorem scalarBase_okI (hL : Proof.Ed448.BaseLadderOk) (s : State) (hs : scalarBaseLocal.pre s) :
     ∃ t s', Exec isa scalarBase.inline s t s' ∧ abiPreserved s s' ∧ scalarBaseLocal.post s s' := by
   obtain ⟨t, s', he, h⟩ := scalarBase_correct_inline hL hs

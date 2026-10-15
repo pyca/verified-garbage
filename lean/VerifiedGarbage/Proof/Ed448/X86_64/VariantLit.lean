@@ -6,6 +6,8 @@ import VerifiedGarbage.Proof.Ed448.X86_64.BaseLit
 meta import VerifiedGarbage.Proof.Ed448.X86_64.BaseLit
 public import VerifiedGarbage.Proof.Ed448.X86_64.VerifyLit
 meta import VerifiedGarbage.Proof.Ed448.X86_64.VerifyLit
+public import VerifiedGarbage.Proof.Framework.X86_64.CallInline
+meta import VerifiedGarbage.Proof.Framework.X86_64.CallInline
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -23,3 +25,11 @@ materialize_code Impl.Ed448.X86_64.scalarBaseAdx
 materialize_code Impl.Ed448.X86_64.verifyEquationAdx
 
 end VG
+
+namespace VG.Proof.Ed448.X86_64
+
+theorem scalarBaseAdx_inlineOk : Impl.Ed448.X86_64.scalarBaseAdx.InlineOk = true := by lit_decide
+theorem verifyEquationAdx_inlineOk : Impl.Ed448.X86_64.verifyEquationAdx.InlineOk = true := by
+  lit_decide
+
+end VG.Proof.Ed448.X86_64

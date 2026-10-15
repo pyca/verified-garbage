@@ -23,7 +23,7 @@ theorem scalarBaseFor_inlineOk (v : Impl.Ed448.X86_64.FieldVariant) :
     (scalarBaseFor v).InlineOk = true := by
   cases v
   · exact scalarBase_inlineOk
-  · change scalarBaseAdx.InlineOk = true; lit_decide
+  · exact scalarBaseAdx_inlineOk
 
 theorem scalarBaseFor_okI (v : Impl.Ed448.X86_64.FieldVariant) (hL : Proof.Ed448.BaseLadderOk)
     (s : State) (hs : scalarBaseLocal.pre s) :
@@ -59,7 +59,7 @@ theorem verifyEquationFor_inlineOk (v : Impl.Ed448.X86_64.FieldVariant) :
     (verifyEquationFor v).InlineOk = true := by
   cases v
   · exact verifyEquation_inlineOk
-  · change verifyEquationAdx.InlineOk = true; lit_decide
+  · exact verifyEquationAdx_inlineOk
 
 theorem verifyEquationFor_okI (v : Impl.Ed448.X86_64.FieldVariant)
     (hR : Proof.Ed448.RecoverOk) (hE : Proof.Ed448.VerifyEqOk) (s : State)
