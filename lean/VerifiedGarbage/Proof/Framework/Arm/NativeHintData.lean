@@ -54,13 +54,57 @@ def movBases (τ : T) (d : Reg) : Op2 → List (Reg × Nat)
   | .reg r => kill τ d ++ (τ.bases.filter (·.1 == r)).map fun p => (d, p.2)
   | _ => kill τ d
 
-/-- `Arm.Taint.storeSlotsKD`: the slots after a store, without adding one that is there. -/
+/-- `Arm.Taint.touches`. -/
+def touches (s x : Nat × Nat × Nat) : Bool :=
+  s.1 == x.1 && s.2.1 ≤ x.2.1 + x.2.2 && x.2.1 ≤ s.2.1 + s.2.2
+
+/-- `Arm.Taint.joinSlot`. -/
+def joinSlot (s x : Nat × Nat × Nat) : Nat × Nat × Nat :=
+  (s.1, min s.2.1 x.2.1, max (s.2.1 + s.2.2) (x.2.1 + x.2.2) - min s.2.1 x.2.1)
+
+/-- `Arm.Taint.mergeSlot`: the slots with `x`, merged with those it touches. -/
+def mergeSlot (x : Nat × Nat × Nat) : List (Nat × Nat × Nat) → List (Nat × Nat × Nat)
+  | [] => [x]
+  | s :: l => if touches s x then mergeSlot (joinSlot s x) l else s :: mergeSlot x l
+
+/-- `Arm.Taint.containsSlot`. -/
+def containsSlot (s x : Nat × Nat × Nat) : Bool :=
+  s.1 == x.1 && s.2.1 ≤ x.2.1 && x.2.1 + x.2.2 ≤ s.2.1 + s.2.2
+
+/-- `Arm.Taint.cutSlot`: the parts of `sl` outside the bytes `d` to `d + w` of region `i`. -/
+def cutSlot (i d w : Nat) (sl : Nat × Nat × Nat) : List (Nat × Nat × Nat) :=
+  if sl.1 != i || d + w ≤ sl.2.1 || sl.2.1 + sl.2.2 ≤ d then [sl]
+  else (if sl.2.1 < d then [(i, sl.2.1, d - sl.2.1)] else []) ++
+    (if d + w < sl.2.1 + sl.2.2 then [(i, d + w, sl.2.1 + sl.2.2 - (d + w))] else [])
+
+/-- `Arm.Taint.cutSlots`. -/
+def cutSlots (i d w : Nat) : List (Nat × Nat × Nat) → List (Nat × Nat × Nat)
+  | [] => []
+  | sl :: l => cutSlot i d w sl ++ cutSlots i d w l
+
+/-- `Arm.Taint.interSlot`: the bytes of both slots, if any. -/
+def interSlot (x z : Nat × Nat × Nat) : List (Nat × Nat × Nat) :=
+  if x.1 == z.1 && max x.2.1 z.2.1 < min (x.2.1 + x.2.2) (z.2.1 + z.2.2) then
+    [(x.1, max x.2.1 z.2.1, min (x.2.1 + x.2.2) (z.2.1 + z.2.2) - max x.2.1 z.2.1)]
+  else []
+
+/-- `Arm.Taint.interAll`. -/
+def interAll (x : Nat × Nat × Nat) : List (Nat × Nat × Nat) → List (Nat × Nat × Nat)
+  | [] => []
+  | z :: l => interSlot x z ++ interAll x l
+
+/-- `Arm.Taint.interSlots`. -/
+def interSlots : List (Nat × Nat × Nat) → List (Nat × Nat × Nat) → List (Nat × Nat × Nat)
+  | [], _ => []
+  | x :: l, l₂ => interAll x l₂ ++ interSlots l l₂
+
+/-- `Arm.Taint.storeSlotsKM`: the slots after a store, the public bytes merged into their runs. -/
 def storeSlots (τ : T) (n : Reg) (off w : Nat) (p : Bool) : List (Nat × Nat × Nat) :=
   match addrOf τ n off with
   | some (i, d) =>
     if d + w ≤ τ.lens.getD i 0 then
-      if p then (if τ.slots.contains (i, d, w) then τ.slots else (i, d, w) :: τ.slots)
-      else τ.slots.filter fun sl => sl.1 != i || d + w ≤ sl.2.1 || sl.2.1 + sl.2.2 ≤ d
+      if p then mergeSlot (i, d, w) τ.slots
+      else cutSlots i d w τ.slots
     else if p then τ.slots else []
   | none => if p then τ.slots else []
 
@@ -70,7 +114,7 @@ def spBases (τ : T) (t : Reg) (off : Nat) : List (Reg × Nat) :=
 def storeStep (τ : T) (n : Reg) (off w : Nat) (p : Bool) : Option T :=
   if pub τ n then some { τ with slots := storeSlots τ n off w p } else none
 
-/-- `Arm.Taint.stepKD`. -/
+/-- `Arm.Taint.stepKM`. -/
 def step (τ : T) : Instr → Option T
   | .mov d op2 => some { τ with regs := set τ d (op2Pub τ op2), bases := movBases τ d op2 }
   | .dp _ d n op2 => some { τ with regs := set τ d (pub τ n && op2Pub τ op2), bases := kill τ d }
@@ -100,14 +144,14 @@ def meet (τ₁ τ₂ : T) : T where
   flags := τ₁.flags && τ₂.flags
   lens := if τ₁.lens = τ₂.lens then τ₁.lens else []
   bases := τ₁.bases.filter (τ₂.bases.contains ·)
-  slots := if τ₁.lens = τ₂.lens then τ₁.slots.filter (τ₂.slots.contains ·) else []
+  slots := if τ₁.lens = τ₂.lens then interSlots τ₁.slots τ₂.slots else []
   argLen := if τ₁.argLen = τ₂.argLen then τ₁.argLen else 0
   argBases := if τ₁.argLen = τ₂.argLen then τ₁.argBases.filter (τ₂.argBases.contains ·) else []
 
 def le (τ σ : T) : Bool :=
   τ.regs.subset σ.regs && (!τ.flags || σ.flags) && τ.lens == σ.lens &&
-    τ.bases.all (σ.bases.contains ·) && τ.slots.all (σ.slots.contains ·) && τ.argLen == σ.argLen &&
-    τ.argBases.all (σ.argBases.contains ·)
+    τ.bases.all (σ.bases.contains ·) && τ.slots.all (fun x => σ.slots.any (containsSlot · x)) &&
+    τ.argLen == σ.argLen && τ.argBases.all (σ.argBases.contains ·)
 
 /-- `Arm.Taint.callStep`: a call leaves unknown values in `lr`, `r12` and the flags. -/
 def callStep (τ : T) : T :=

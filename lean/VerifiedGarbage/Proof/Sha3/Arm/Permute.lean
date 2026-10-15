@@ -1224,7 +1224,7 @@ prologue stores at `[200, 392)` of the scratch space: public, but no
 address or branch depends on them, and the kernel checks the analysis much
 faster without them (`taint_decide_weak`). -/
 def dropRC (τ : VG.Arm.Taint.T) : VG.Arm.Taint.T :=
-  { τ with slots := τ.slots.filter fun sl => !(200 ≤ sl.2.1 && sl.2.1 < 392) }
+  { τ with slots := VG.Arm.Taint.cutSlots 1 200 192 τ.slots }
 
 /-- The initial taint: the pointers are public, and point at the writable regions. -/
 def τ₀ : VG.Arm.Taint.T :=
