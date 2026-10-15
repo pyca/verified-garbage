@@ -37,11 +37,11 @@ theorem x448Base_check :
     ∃ h, ((taintS [combSym]).check (Taint.ofRegs [.x0, .x1, .x2]) Impl.X448.AArch64.Base.x448Base h).isSome =
       true := by
   apply exists_isSome_of_eraseT
-  refine Split.exists_isSome (c' := ?c') ?s ⟨?h, ?g⟩
+  refine Split.exists_isSome (c' := ?c') ?s ?g
   case s =>
     simp only [x448Base, finish, Code.eraseT, Impl.X448.AArch64.Fast.invert, ops_eraseT, sqn_eraseT]
     exact .refl _
-  case g => taint_decide
+  case g => taint_decide_sum [VG.Proof.Ed448.AArch64.CombBase.combSum]
 
 theorem x448Base_ct : ConstantTime isa Proof.X448.x448BaseAArch64.pre Proof.X448.x448BaseAArch64.pub
     Impl.X448.AArch64.Base.x448Base :=
