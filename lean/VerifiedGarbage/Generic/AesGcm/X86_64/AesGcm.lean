@@ -814,17 +814,6 @@ def iv96Note (indexed : Bool) (base : String) : String :=
     "This implementation is `" ++ base ++ "`'s, which does not read `index`."
 
 def artifactsR (v : GcmVariant) : List Artifact := [
-  { Spec.Gcm.decryptBlocksPreparedIv96Api with
-    name := Spec.Gcm.decryptBlocksPreparedIv96Api.name ++ v.impl.suffix
-    target := X86_64.target
-    doc := Spec.Gcm.decryptBlocksPreparedIv96Api.doc
-      (notes := [iv96Note v.decI.isSome (Spec.Gcm.decryptBlocksPreparedApi.name ++ v.impl.suffix)])
-    code := decIv96Code v
-    contract := Spec.Gcm.decryptBlocksPreparedIv96Contract X86_64.abi 8
-    stack := 8
-    verified := decIv96_verified v
-    spSafe := decIv96_spSafe v
-    features := v.impl.features },
   { Spec.Gcm.initPreparedApi with
     name := Spec.Gcm.initPreparedApi.name ++ v.impl.suffix
     target := X86_64.target
@@ -896,6 +885,17 @@ def artifactsR (v : GcmVariant) : List Artifact := [
     stack := 2608
     verified := streamDecryptPrepared_framed v.impl (blkR v)
     spSafe := X86_64.withStackArgScratch_spSafe (streamDecryptM_spSafe v.impl (blkR v))
+    features := v.impl.features },
+  { Spec.Gcm.decryptBlocksPreparedIv96Api with
+    name := Spec.Gcm.decryptBlocksPreparedIv96Api.name ++ v.impl.suffix
+    target := X86_64.target
+    doc := Spec.Gcm.decryptBlocksPreparedIv96Api.doc
+      (notes := [iv96Note v.decI.isSome (Spec.Gcm.decryptBlocksPreparedApi.name ++ v.impl.suffix)])
+    code := decIv96Code v
+    contract := Spec.Gcm.decryptBlocksPreparedIv96Contract X86_64.abi 8
+    stack := 8
+    verified := decIv96_verified v
+    spSafe := decIv96_spSafe v
     features := v.impl.features }]
 
 
@@ -942,18 +942,7 @@ theorem encIv96_spSafe (v : GcmVariant) : (encIv96Code v).all (fun i => !X86_64.
   · exact encryptTo_spSafe v.stitchToR (blkR v)
 
 def artifactsToR (v : GcmVariant) : List Artifact :=
-  [{ Spec.Gcm.encryptBlocksToPreparedIv96Api with
-      name := Spec.Gcm.encryptBlocksToPreparedIv96Api.name ++ v.impl.suffix
-      target := X86_64.target
-      doc := Spec.Gcm.encryptBlocksToPreparedIv96Api.doc
-        (notes := [iv96Note v.encI.isSome (Spec.Gcm.encryptBlocksToPreparedApi.name ++ v.impl.suffix)])
-      code := encIv96Code v
-      contract := Spec.Gcm.encryptBlocksToPreparedIv96Contract X86_64.abi 24
-      stack := 24
-      verified := encIv96_verified v
-      spSafe := encIv96_spSafe v
-      features := v.impl.features },
-    { Spec.Gcm.encryptBlocksToPreparedApi with
+  [{ Spec.Gcm.encryptBlocksToPreparedApi with
       name := Spec.Gcm.encryptBlocksToPreparedApi.name ++ v.impl.suffix
       target := X86_64.target
       doc := Spec.Gcm.encryptBlocksToPreparedApi.doc
@@ -975,6 +964,17 @@ def artifactsToR (v : GcmVariant) : List Artifact :=
       stack := 4856
       verified := StreamTo.streamEncryptToPrepared_framed (blkToR v) (encFnR v)
       spSafe := X86_64.withStackArgScratch_spSafe (StreamTo.encrypt_spAll (blkToR v) (encFnR v))
+      features := v.impl.features },
+    { Spec.Gcm.encryptBlocksToPreparedIv96Api with
+      name := Spec.Gcm.encryptBlocksToPreparedIv96Api.name ++ v.impl.suffix
+      target := X86_64.target
+      doc := Spec.Gcm.encryptBlocksToPreparedIv96Api.doc
+        (notes := [iv96Note v.encI.isSome (Spec.Gcm.encryptBlocksToPreparedApi.name ++ v.impl.suffix)])
+      code := encIv96Code v
+      contract := Spec.Gcm.encryptBlocksToPreparedIv96Contract X86_64.abi 24
+      stack := 24
+      verified := encIv96_verified v
+      spSafe := encIv96_spSafe v
       features := v.impl.features }]
 
 /-- The instance of `vg_aes_gcm_seal_prepared` of a variant. -/
