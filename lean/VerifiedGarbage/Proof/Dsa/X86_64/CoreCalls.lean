@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
 public import VerifiedGarbage.Proof.Dsa.X86_64.Call
 import VerifiedGarbage.Proof.Dsa.X86_64.Power
 import VerifiedGarbage.Proof.Dsa.X86_64.Multiply
@@ -23,7 +24,7 @@ open VG.Impl.Dsa.X86_64
 
 /-- Complete parent-to-child exponentiation, with a reusable modulus and
 an ordinary big-endian result. No primality assumption is required. -/
-theorem corePow_ok (M : Mont) {s : State} {B : Addr} {Z o w wx m k : Nat}
+theorem corePow_ok (M : Mont) (Sq : MontS) {s : State} {B : Addr} {Z o w wx m k : Nat}
     {minv parentMinv : BitVec 64}
     (hg : Good s B Z w parentMinv) (child : ChildReady s.mem B o wx m minv)
     (hZ : pWorkspace ≤ Z) (hlo : slot w 8 ≤ o)
@@ -39,7 +40,7 @@ theorem corePow_ok (M : Mont) {s : State} {B : Addr} {Z o w wx m k : Nat}
     (hk1 : 1 ≤ k) (hk' : k < 2 ^ 31) (hkw : wx = (k + 7) / 8)
     (hout : ∀ j < k, InRegions s.wr (pointerValue s.mem B output.pointer + BitVec.ofNat 64 j) 1)
     (hprefix : ∀ j < k, Z ≤ ofs B (pointerValue s.mem B output.pointer + BitVec.ofNat 64 j)) :
-    WP isa (Core.pow M.mm o a b output) s fun t =>
+    WP isa (Core.pow Sq.mm M.mm o a b output) s fun t =>
       Good t B Z w parentMinv ∧ ChildReady t.mem B o wx m minv ∧
       Spec.Rsa.bytesAt t.mem (pointerValue s.mem B output.pointer) k =
         Spec.Dsa.encodeBE k (Spec.Dsa.powMod (Spec.Dsa.decodeBE ba) (Spec.Dsa.decodeBE bb) m) ∧
@@ -47,7 +48,7 @@ theorem corePow_ok (M : Mont) {s : State} {B : Addr} {Z o w wx m k : Nat}
   apply call3_ok hg child hZ hlo hhi ho a b output ha hb houtp hl hk1 hk' hkw hout hprefix
   intro u hc hchild hargs hf hk
   have hz : 176 ≤ Z := Nat.le_trans (by decide) hZ
-  refine WP.mono (power_ok M hc hw2 hw48 hwx hw30 hm hodd hchild.modulus hchild.inverse
+  refine WP.mono (power_ok M Sq hc hw2 hw48 hwx hw30 hm hodd hchild.modulus hchild.inverse
     (by decide) (by decide) (by decide) (by decide)
     hargs.1 (hargs.2.1.trans has.length) (arguments_source hf hk hz has.source) ha1 haw
     hargs.2.2.1 (hargs.2.2.2.1.trans hbs.length) (arguments_source hf hk hz hbs.source) hb1 hb2)

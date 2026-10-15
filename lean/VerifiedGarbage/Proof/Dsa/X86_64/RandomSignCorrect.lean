@@ -34,7 +34,7 @@ theorem random_sign_shared_post {extra : Nat} {s t : State} (h : RandomSignABI e
 
 theorem random_sign_correct (v : Backend) (s : State)
     (hpre : (Spec.Dsa.randomSignContract abi (v.stack + 256)).pre s) :
-    ∃ trace t, Exec isa (RandomSign.code (randomSignerName v) (SignVerify.sign v.mul)) s trace t ∧
+    ∃ trace t, Exec isa (RandomSign.code (randomSignerName v) (SignVerify.sign v.sq v.mul)) s trace t ∧
       abiPreserved s t ∧ (Spec.Dsa.randomSignContract abi (v.stack + 256)).post s t := by
   have h := randomSignABI_of hpre
   obtain ⟨trace, t, he, hp⟩ := random_sign_code v h

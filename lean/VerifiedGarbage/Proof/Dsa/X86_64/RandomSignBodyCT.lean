@@ -38,7 +38,7 @@ private theorem test_zero_mx {s : State} :
 def randomSignTail (v : Backend) : Prog isa :=
   .seq (.block [.alu .cmp .rax (.imm 0)])
     (.seq (.ite .e (.block [.store (Random.sp Random.oStatus) .rax])
-      (.loop (.seq (RandomSign.attempt (randomSignerName v) (SignVerify.sign v.mul)) randomSignStatusTest) .e)) RandomSign.finish)
+      (.loop (.seq (RandomSign.attempt (randomSignerName v) (SignVerify.sign v.sq v.mul)) randomSignStatusTest) .e)) RandomSign.finish)
 
 private theorem valid_tail (v : Backend) {s t a b : State}
     {hs : RandomSignABI v.stack s} {ht : RandomSignABI v.stack t}
@@ -82,8 +82,8 @@ theorem random_sign_body_valid_ct (v : Backend) {s t : State}
     (htrace : (randomSignRemaining (randomInput s) 0 8).trace = (randomSignRemaining (randomInput t) 0 8).trace)
     (hstatus : (randomSignRemaining (randomInput s) 0 8).status = (randomSignRemaining (randomInput t) 0 8).status)
     {tsa tsb : List Leak} {u w : State}
-    (ea : Exec isa (RandomSign.body (randomSignerName v) (SignVerify.sign v.mul)) (allocState Random.frameBytes s) tsa u)
-    (eb : Exec isa (RandomSign.body (randomSignerName v) (SignVerify.sign v.mul)) (allocState Random.frameBytes t) tsb w) : tsa = tsb := by
+    (ea : Exec isa (RandomSign.body (randomSignerName v) (SignVerify.sign v.sq v.mul)) (allocState Random.frameBytes s) tsa u)
+    (eb : Exec isa (RandomSign.body (randomSignerName v) (SignVerify.sign v.sq v.mul)) (allocState Random.frameBytes t) tsb w) : tsa = tsb := by
   have hqt : 1 < Spec.Dsa.decodeBE (randomQBytes t) := by rw [← hp.qbytes]; exact hq
   cases ea with
   | seq eae ear => cases ear with

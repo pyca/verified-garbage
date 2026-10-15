@@ -41,8 +41,8 @@ theorem random_sign_attempt_agreement (v : Backend) {s t a b : State}
     (htrace : (randomSignRemaining (randomInput s) used (fuel + 1)).trace =
       (randomSignRemaining (randomInput t) used (fuel + 1)).trace)
     {tsa tsb : List Leak} {u w : State}
-    (ea : Exec isa (RandomSign.attempt (randomSignerName v) (SignVerify.sign v.mul)) a tsa u)
-    (eb : Exec isa (RandomSign.attempt (randomSignerName v) (SignVerify.sign v.mul)) b tsb w) : tsa = tsb := by
+    (ea : Exec isa (RandomSign.attempt (randomSignerName v) (SignVerify.sign v.sq v.mul)) a tsa u)
+    (eb : Exec isa (RandomSign.attempt (randomSignerName v) (SignVerify.sign v.sq v.mul)) b tsb w) : tsa = tsb := by
   have hdraw := congrArg randomSamplingTrace htrace
   rw [random_sign_trace_draw, random_sign_trace_draw] at hdraw
   obtain ⟨hused, _, hstatus⟩ := random_sign_draw_agree hpub hdraw

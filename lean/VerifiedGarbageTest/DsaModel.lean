@@ -109,8 +109,10 @@ def initial (v : Dsa.Vector) (pLen qLen : Nat) (signing : Bool) : Except String 
 
 def check (v : Dsa.Vector) (pLen qLen : Nat) (signing : Bool) (expectedSuccess : Bool := true) : Except String Nat := do
   let before ← initial v pLen qLen signing
-  let program := if signing then Impl.Dsa.X86_64.SignVerify.sign Impl.Bignum.X86_64.Public.mm
-    else Impl.Dsa.X86_64.SignVerify.verify Impl.Bignum.X86_64.Public.mm
+  let program := if signing then Impl.Dsa.X86_64.SignVerify.sign (Impl.Bignum.X86_64.Public.mm Impl.Bignum.X86_64.Public.aY Impl.Bignum.X86_64.Public.aY
+      Impl.Bignum.X86_64.Public.aY) Impl.Bignum.X86_64.Public.mm
+    else Impl.Dsa.X86_64.SignVerify.verify (Impl.Bignum.X86_64.Public.mm Impl.Bignum.X86_64.Public.aY Impl.Bignum.X86_64.Public.aY
+      Impl.Bignum.X86_64.Public.aY) Impl.Bignum.X86_64.Public.mm
   let after ← evaluate 20000 program before
   unless after.state.gpr .rax == BitVec.ofNat 64 expectedSuccess.toNat do
     throw "unexpected success/failure result"
@@ -139,7 +141,8 @@ def arithmeticChecks : Except String Nat := do
       Impl.Dsa.X86_64.SignVerify.workspaces]
     let before ← evaluate 20000 setup before
     let mul := Impl.Bignum.X86_64.Public.mm
-    let pow := Impl.Dsa.X86_64.Core.pow mul Impl.Dsa.Layout.pWorkspace
+    let pow := Impl.Dsa.X86_64.Core.pow (mul Impl.Bignum.X86_64.Public.aY Impl.Bignum.X86_64.Public.aY
+      Impl.Bignum.X86_64.Public.aY) mul Impl.Dsa.Layout.pWorkspace
       Impl.Dsa.X86_64.Core.generator Impl.Dsa.X86_64.Core.nonce
       (Impl.Dsa.X86_64.Core.element Impl.Dsa.Layout.t)
     let product := Impl.Dsa.X86_64.Core.product mul Impl.Dsa.Layout.qWorkspace

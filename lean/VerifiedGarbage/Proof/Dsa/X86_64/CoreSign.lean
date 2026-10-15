@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
 public import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleOperands
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
@@ -34,7 +35,7 @@ def SignValues.s (L : ExecutionLayout) (data : SignValues) : Nat :=
 
 /-- Computes both signature scalars even for out-of-range secret inputs.
 The entry point applies the range and nonzero masks afterwards. -/
-theorem coreSign_ok (M : Mont) {L : ExecutionLayout} {s0 : State} (h0 : Ready L s0)
+theorem coreSign_ok (M : Mont) (Sq : MontS) {L : ExecutionLayout} {s0 : State} (h0 : Ready L s0)
     (hp : 1 < L.modulus) (hq : 255 < L.subgroup)
     (hop : L.modulus % 2 = 1) (hoq : L.subgroup % 2 = 1)
     (hpf : L.modulus ≤ 256 ^ L.pLen) (hqf : L.subgroup ≤ 256 ^ L.qLen)
@@ -46,7 +47,7 @@ theorem coreSign_ok (M : Mont) {L : ExecutionLayout} {s0 : State} (h0 : Ready L 
     (hgl : data.generator.length = L.pLen) (hnl : data.nonce.length = L.qLen)
     (hxl : data.privateScalar.length = L.qLen) (hzl : data.digest.length < 2 ^ 64)
     (hqm : OperandBytes s0 L.base activeBytes (Core.scalar qMinusTwo) (Spec.Dsa.encodeBE L.qLen (L.subgroup - 2))) :
-    WP isa (Core.sign M.mm) s0 fun s7 =>
+    WP isa (Core.sign Sq.mm M.mm) s0 fun s7 =>
       Ready L s7 ∧
       Spec.Rsa.bytesAt s7.mem (off L.base r) L.qLen = Spec.Dsa.encodeBE L.qLen (data.r L) ∧
       Spec.Rsa.bytesAt s7.mem (off L.base s) L.qLen = Spec.Dsa.encodeBE L.qLen (data.s L) ∧
@@ -76,7 +77,7 @@ theorem coreSign_ok (M : Mont) {L : ExecutionLayout} {s0 : State} (h0 : Ready L 
   have hs : s + L.qLen ≤ usedBytes := by unfold s usedBytes; omega
   have hqmLen := encodeBE_length L.qLen (L.subgroup - 2)
   unfold Core.sign
-  refine WP.seq (WP.mono (readyPow_ok M h0 .p hp hop Core.generator Core.nonce (by trivial) (by trivial)
+  refine WP.seq (WP.mono (readyPow_ok M Sq h0 .p hp hop Core.generator Core.nonce (by trivial) (by trivial)
     hg.active hn.active (by rw [hgl]; omega) (by simp only [hgl, ModulusSide.words, ModulusSide.length]; exact Nat.le_refl _)
     (by rw [hnl]; omega) (by rw [hnl]; omega) t (by decide) ht) fun s1 h1 => ?_)
   have hn1 := h1.external (by decide) ht hn
@@ -96,10 +97,10 @@ theorem coreSign_ok (M : Mont) {L : ExecutionLayout} {s0 : State} (h0 : Ready L 
   have hqm2 := h2.local (by decide) hr hqm1
     (by rw [hqmLen]; unfold qMinusTwo usedBytes; omega)
     (Or.inr (by simp only [ModulusSide.length]; unfold r qMinusTwo; omega))
-  have step3 := readyPow_ok M h2.ready .q (by change 1 < L.subgroup; omega) hoq Core.nonce (Core.scalar qMinusTwo)
+  have step3 := readyPow_ok M Sq h2.ready .q (by change 1 < L.subgroup; omega) hoq Core.nonce (Core.scalar qMinusTwo)
     (by trivial) (by change qMinusTwo < 2 ^ 31; decide) hn2.active hqm2 (by rw [hnl]; omega) (by simp only [hnl, ModulusSide.words, ModulusSide.length]; exact Nat.le_refl _)
     (by rw [hqmLen]; omega) (by rw [hqmLen]; omega) inverse (by decide) hi
-  have step3' : WP isa (Core.pow M.mm qWorkspace Core.nonce (Core.scalar qMinusTwo) (Core.scalar inverse)) s2
+  have step3' : WP isa (Core.pow Sq.mm M.mm qWorkspace Core.nonce (Core.scalar qMinusTwo) (Core.scalar inverse)) s2
       (CallResult L .q inverse ki s2) := by
     simpa only [ki, Core.scalar, ModulusSide.offset, ModulusSide.lengthField, ModulusSide.value, fitq (L.subgroup - 2) (by omega)] using step3
   refine WP.seq (WP.mono step3' fun s3 h3 => ?_)

@@ -155,9 +155,9 @@ def publicKey (mul : Nat → Nat → Nat → Prog isa) : Prog isa := seqs (publi
   isOne pWorkspace (Core.element t)])
 
 /-- Private/public key consistency and nonce rejection masks. -/
-def privateKey (mul : Nat → Nat → Nat → Prog isa) : Prog isa := seqs [
+def privateKey (sq : Prog isa) (mul : Nat → Nat → Nat → Prog isa) : Prog isa := seqs [
   range qWorkspace Core.privateScalar, range qWorkspace Core.nonce,
-  Core.pow mul pWorkspace Core.generator Core.privateScalar (Core.element t),
+  Core.pow sq mul pWorkspace Core.generator Core.privateScalar (Core.element t),
   equal (Core.element t) Core.publicValue]
 
 end VG.Impl.Dsa.X86_64.Checks

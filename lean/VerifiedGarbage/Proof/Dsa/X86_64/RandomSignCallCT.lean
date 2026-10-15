@@ -60,7 +60,7 @@ def RandomSignCallRelated (v : Backend) (a b : State) : Prop :=
     Spec.Dsa.signStatus (randomCallResult s a) = Spec.Dsa.signStatus (randomCallResult t b)
 
 theorem random_signer_ct (v : Backend) : RelCT isa (RandomSignCallRelated v)
-    (.call (randomSignerName v) (SignVerify.sign v.mul)) (fun _ _ => True) := by
+    (.call (randomSignerName v) (SignVerify.sign v.sq v.mul)) (fun _ _ => True) := by
   apply VG.X86_64.RelCT.callEx v.signVerified.1 v.signVerified.2.1
   intro a b ⟨s, t, hs, ht, ha, hb, hp, hk, hr⟩
   obtain ⟨hca, hwa⟩ := random_call_covers hs ha.rd ha.wr

@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
 public import VerifiedGarbage.Proof.Dsa.X86_64.VerifyingShapeCT
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
@@ -69,17 +70,17 @@ theorem verifyingReady_related {s₁ s₂ : State}
     (reference.val.input.shapeFacts reference.property).2.2
   exact ⟨_, h₁, h₂⟩
 
-theorem verifyingSuccess_ct (M : Mont) :
+theorem verifyingSuccess_ct (M : Mont) (Sq : MontS) :
     RelCT isa (Two (fun c : AcceptedVerifyingCall => VerifyingShaped c.val))
       (seqs [SignVerify.workspaces, Checks.publicKey M.mm,
         Checks.range qWorkspace Core.signatureR, Checks.range qWorkspace Core.signatureS,
-        Core.verify M.mm, Checks.equal (Core.scalar u) Core.signatureR, .block SignVerify.result])
+        Core.verify Sq.mm M.mm, Checks.equal (Core.scalar u) Core.signatureR, .block SignVerify.result])
       (fun _ _ => True) := by
   refine RelCT.seq verifyingWorkspaces_ct ?_
   apply RelCT.seqs_append (a := [Checks.publicKey M.mm,
     Checks.range qWorkspace Core.signatureR, Checks.range qWorkspace Core.signatureS,
-    Core.verify M.mm, Checks.equal (Core.scalar u) Core.signatureR])
+    Core.verify Sq.mm M.mm, Checks.equal (Core.scalar u) Core.signatureR])
     (b := [.block SignVerify.result]) (by simp) (by simp)
-  exact (verifyBody_ct M).mono (fun _ _ h => verifyingReady_related h) (fun _ _ h => h)
+  exact (verifyBody_ct M Sq).mono (fun _ _ h => verifyingReady_related h) (fun _ _ h => h)
 
 end VG.Proof.Dsa.X86_64

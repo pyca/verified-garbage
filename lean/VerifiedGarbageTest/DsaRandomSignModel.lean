@@ -80,7 +80,8 @@ def check (v : Dsa.Vector) (rand : List Byte) : Except String Unit := do
   let key := Spec.Rsa.bytesAt s.mem 0x1000 (3 * pLen + 2 * qLen)
   let expected := Spec.Dsa.randomSignBytes pLen qLen key digest rand
   let program := Impl.Dsa.X86_64.RandomSign.code "vg_dsa_sign"
-    (Impl.Dsa.X86_64.SignVerify.sign Impl.Bignum.X86_64.Public.mm)
+    (Impl.Dsa.X86_64.SignVerify.sign (Impl.Bignum.X86_64.Public.mm Impl.Bignum.X86_64.Public.aY
+      Impl.Bignum.X86_64.Public.aY Impl.Bignum.X86_64.Public.aY) Impl.Bignum.X86_64.Public.mm)
   let after ← evaluate 30000 program ⟨s, words, 0⟩
   unless after.state.gpr .rax == BitVec.ofNat 64 expected.status do throw "wrapper status"
   unless Spec.Rsa.bytesAt after.state.mem 0x3000 40 ==

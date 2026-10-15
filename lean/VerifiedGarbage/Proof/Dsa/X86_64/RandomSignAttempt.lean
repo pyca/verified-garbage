@@ -34,7 +34,7 @@ theorem random_sign_test_one {t : State} :
 theorem random_sign_attempt (v : Backend) {s t : State} {h : RandomSignABI v.stack s}
     {hq : 1 < Spec.Dsa.decodeBE (randomQBytes s)} {used fuel : Nat}
     (hr : RandomSignRunning h hq used fuel t) (hpos : 0 < fuel) (hbound : fuel < 2 ^ 64) :
-    WP isa (RandomSign.attempt (randomSignerName v) (SignVerify.sign v.mul)) t (RandomSignAttemptPost h hq used fuel) := by
+    WP isa (RandomSign.attempt (randomSignerName v) (SignVerify.sign v.sq v.mul)) t (RandomSignAttemptPost h hq used fuel) := by
   unfold RandomSign.attempt
   refine WP.seq (WP.mono (random_sign_sample hr) fun a ⟨ha, hstatus, har, hnonce⟩ => ?_)
   refine WP.seq (WP.mono_mx (by decide) (random_sign_test_one (t := a)) fun b ⟨⟨hbm, hbz⟩, hkb⟩ hmx => ?_)

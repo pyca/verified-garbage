@@ -97,7 +97,7 @@ theorem random_sign_invalid_store {s t : State} (hr : RandomSignFinishPre s 0 t)
 
 theorem random_sign_body_invalid (v : Backend) {s : State} (h : RandomSignABI v.stack s)
     (hq : ¬ 1 < Spec.Dsa.decodeBE (randomQBytes s)) :
-    WP isa (RandomSign.body (randomSignerName v) (SignVerify.sign v.mul))
+    WP isa (RandomSign.body (randomSignerName v) (SignVerify.sign v.sq v.mul))
       (allocState Random.frameBytes s)
       (RandomSignBodyPost s (randomSignRemaining (randomInput s) 0 8)) := by
   rw [random_invalid_remaining hq]

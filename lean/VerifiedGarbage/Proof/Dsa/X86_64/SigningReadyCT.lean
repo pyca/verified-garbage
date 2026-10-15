@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
 public import VerifiedGarbage.Proof.Dsa.X86_64.SigningShapeCT
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
@@ -74,17 +75,17 @@ theorem signingReady_related {s₁ s₂ : State}
     (reference.val.input.shapeFacts reference.property).2.2
   exact ⟨_, h₁, h₂⟩
 
-theorem signingSuccess_ct (M : Mont) :
+theorem signingSuccess_ct (M : Mont) (Sq : MontS) :
     RelCT isa (Two (fun c : AcceptedSigningCall => SigningShaped c.val))
-      (seqs [SignVerify.workspaces, Checks.signingKey M.mm, Checks.privateKey M.mm,
-        Core.sign M.mm, Checks.zero (Core.scalar r) true, Checks.zero (Core.scalar s) true,
+      (seqs [SignVerify.workspaces, Checks.signingKey M.mm, Checks.privateKey Sq.mm M.mm,
+        Core.sign Sq.mm M.mm, Checks.zero (Core.scalar r) true, Checks.zero (Core.scalar s) true,
         SignVerify.writeScalar r false, SignVerify.writeScalar s true, .block SignVerify.result])
       (fun _ _ => True) := by
   refine RelCT.seq signingWorkspaces_ct ?_
-  apply RelCT.seqs_append (a := [Checks.signingKey M.mm, Checks.privateKey M.mm,
-    Core.sign M.mm, Checks.zero (Core.scalar r) true, Checks.zero (Core.scalar s) true])
+  apply RelCT.seqs_append (a := [Checks.signingKey M.mm, Checks.privateKey Sq.mm M.mm,
+    Core.sign Sq.mm M.mm, Checks.zero (Core.scalar r) true, Checks.zero (Core.scalar s) true])
     (b := [SignVerify.writeScalar r false, SignVerify.writeScalar s true, .block SignVerify.result])
     (by simp) (by simp)
-  exact (signBody_ct M).mono (fun _ _ h => signingReady_related h) (fun _ _ h => h)
+  exact (signBody_ct M Sq).mono (fun _ _ h => signingReady_related h) (fun _ _ h => h)
 
 end VG.Proof.Dsa.X86_64

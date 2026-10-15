@@ -35,9 +35,9 @@ theorem random_sign_single_agreement (v : Backend) {s t a b : State}
     (hsuccess : (randomSingleResult s k).isSome = (randomSingleResult t l).isSome)
     {tsa tsb : List Leak} {u w : State}
     (ea : Exec isa (.seq (.block RandomSign.callArgs)
-      (.seq (.call (randomSignerName v) (SignVerify.sign v.mul)) RandomSign.callFinish)) a tsa u)
+      (.seq (.call (randomSignerName v) (SignVerify.sign v.sq v.mul)) RandomSign.callFinish)) a tsa u)
     (eb : Exec isa (.seq (.block RandomSign.callArgs)
-      (.seq (.call (randomSignerName v) (SignVerify.sign v.mul)) RandomSign.callFinish)) b tsb w) : tsa = tsb := by
+      (.seq (.call (randomSignerName v) (SignVerify.sign v.sq v.mul)) RandomSign.callFinish)) b tsb w) : tsa = tsb := by
   cases ea with
   | seq eaa ear => cases ear with
     | seq eac eaf =>

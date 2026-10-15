@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
 public import VerifiedGarbage.Proof.Dsa.X86_64.PublicKeyCT
 meta import VerifiedGarbage.Proof.Dsa.X86_64.PublicKeyCT
 import VerifiedGarbage.Proof.Dsa.X86_64.PrivateKeyCT
@@ -57,15 +58,15 @@ theorem verifyComputeInputs_stable (p : SchedulePublic) (a : Operand × Nat)
     decide
   · exact verifyInputs_stable p a ha
 
-theorem signCompute_ct (M : Mont) : RelCT isa (Two (PublicKeyPre signComputeInputs))
-    (signCompute M.mm) (Two (ScheduleState signComputeInputs)) := by
+theorem signCompute_ct (M : Mont) (Sq : MontS) : RelCT isa (Two (PublicKeyPre signComputeInputs))
+    (signCompute Sq.mm M.mm) (Two (ScheduleState signComputeInputs)) := by
   have h1 := signingKey_ct M signComputeInputs signComputeInputs_stable
     (by intro p; simp [signComputeInputs, signInputs])
     (by intro p; simp [signComputeInputs]) (by intro p; simp [signComputeInputs])
-  have h2 := privateKey_ct M signComputeInputs signComputeInputs_stable
+  have h2 := privateKey_ct M Sq signComputeInputs signComputeInputs_stable
     (by intro p; simp [signComputeInputs, signInputs]) (by intro p; simp [signComputeInputs])
     (by intro p; simp [signComputeInputs, signInputs]) (by intro p; simp [signComputeInputs, signInputs])
-  have h3 := coreSignSchedule_ct M signComputeInputs signComputeInputs_stable
+  have h3 := coreSignSchedule_ct M Sq signComputeInputs signComputeInputs_stable
     (by intro p a ha; simp [signComputeInputs, ha])
   have h4 := scheduleZero_ct signComputeInputs signComputeInputs_stable (Core.scalar r)
     (fun p => p.layout.qLen) true (by change r < 2 ^ 31; decide) (by trivial) (by decide)
@@ -80,8 +81,8 @@ theorem signCompute_ct (M : Mont) : RelCT isa (Two (PublicKeyPre signComputeInpu
   · exact two_map (fun p => p) (fun p st h =>
       ⟨h, h.1.availableLocal .q s (by decide) (scalar_space (by decide) p)⟩) h5
 
-theorem verifyCompute_ct (M : Mont) : RelCT isa (Two (PublicKeyPre verifyComputeInputs))
-    (verifyCompute M.mm) (Two (ScheduleState verifyComputeInputs)) := by
+theorem verifyCompute_ct (M : Mont) (Sq : MontS) : RelCT isa (Two (PublicKeyPre verifyComputeInputs))
+    (verifyCompute Sq.mm M.mm) (Two (ScheduleState verifyComputeInputs)) := by
   have h1 := publicKey_ct M verifyComputeInputs verifyComputeInputs_stable
     (by intro p; simp [verifyComputeInputs, verifyInputs])
     (by intro p; simp [verifyComputeInputs, verifyInputs]) (by intro p; simp [verifyComputeInputs])
@@ -91,7 +92,7 @@ theorem verifyCompute_ct (M : Mont) : RelCT isa (Two (PublicKeyPre verifyCompute
   have h3 := scheduleRange_ct verifyComputeInputs verifyComputeInputs_stable .q Core.signatureS
     (fun p => p.layout.qLen) false (by trivial) (by trivial)
     (fun p => p.layout.widths.1) (fun _ => Nat.le_refl _) (by taint_decide)
-  have h4 := coreVerifySchedule_ct M verifyComputeInputs verifyComputeInputs_stable
+  have h4 := coreVerifySchedule_ct M Sq verifyComputeInputs verifyComputeInputs_stable
     (by intro p a ha; simp [verifyComputeInputs, ha])
   have h5 := scheduleEqual_ct verifyComputeInputs verifyComputeInputs_stable (Core.scalar u) Core.signatureR
     (fun p => p.layout.qLen) false (by change u < 2 ^ 31; decide) (by trivial) (by trivial)

@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
 public import VerifiedGarbage.Proof.Dsa.X86_64.CoreSign
 public import VerifiedGarbage.Proof.Dsa.X86_64.PublicKey
 public import VerifiedGarbage.Proof.Dsa.X86_64.SigningKey
@@ -59,11 +60,11 @@ def signAccepted (L : ExecutionLayout) (data : SignValues) (yb : List Byte) (val
   !decide (∀ b ∈ Spec.Dsa.encodeBE L.qLen (data.s L), b = 0) &&
   (!decide (∀ b ∈ Spec.Dsa.encodeBE L.qLen (data.r L), b = 0) && privateAccepted L data yb valid)
 
-def signCompute (mul : Nat → Nat → Nat → Prog isa) : Prog isa := seqs [
-  Checks.signingKey mul, Checks.privateKey mul, Core.sign mul,
+def signCompute (sq : Prog isa) (mul : Nat → Nat → Nat → Prog isa) : Prog isa := seqs [
+  Checks.signingKey mul, Checks.privateKey sq mul, Core.sign sq mul,
   Checks.zero (Core.scalar r) true, Checks.zero (Core.scalar s) true]
 
-theorem signCompute_ok (M : Mont) {L : ExecutionLayout} {s0 : State} (h0 : Ready L s0)
+theorem signCompute_ok (M : Mont) (Sq : MontS) {L : ExecutionLayout} {s0 : State} (h0 : Ready L s0)
     (hp : 1 < L.modulus) (hq : 255 < L.subgroup)
     (hop : L.modulus % 2 = 1) (hoq : L.subgroup % 2 = 1)
     (hpf : L.modulus ≤ 256 ^ L.pLen) (hqf : L.subgroup ≤ 256 ^ L.qLen)
@@ -78,7 +79,7 @@ theorem signCompute_ok (M : Mont) {L : ExecutionLayout} {s0 : State} (h0 : Ready
     (hxl : data.privateScalar.length = L.qLen) (hnl : data.nonce.length = L.qLen)
     (hzl : data.digest.length < 2 ^ 64) (hqval : Spec.Dsa.decodeBE qb = L.subgroup)
     {valid : Bool} (hm : word s0.mem L.base Field.mask.offset = mask valid) :
-    WP isa (signCompute M.mm) s0 fun s5 =>
+    WP isa (signCompute Sq.mm M.mm) s0 fun s5 =>
       Ready L s5 ∧ word s5.mem L.base Field.mask.offset = mask (signAccepted L data yb valid) ∧
       Spec.Rsa.bytesAt s5.mem (off L.base r) L.qLen = Spec.Dsa.encodeBE L.qLen (data.r L) ∧
       Spec.Rsa.bytesAt s5.mem (off L.base s) L.qLen = Spec.Dsa.encodeBE L.qLen (data.s L) ∧
@@ -95,7 +96,7 @@ theorem signCompute_ok (M : Mont) {L : ExecutionLayout} {s0 : State} (h0 : Ready
   have hx1 := h0.preserveExternal h1 hf1 hk1 (by decide) (by simp [stablePointer, Core.privateScalar]) hx
   have hn1 := h0.preserveExternal h1 hf1 hk1 (by decide) (by simp [stablePointer, Core.nonce]) hn
   have hz1 := h0.preserveExternal h1 hf1 hk1 (by decide) (by simp [stablePointer, Core.digest]) hz
-  refine WP.seq (WP.mono (privateKey_ok M h1 hp hop hg1 hy1 hx1 hn1 hgl hyl hxl hnl hm1)
+  refine WP.seq (WP.mono (privateKey_ok M Sq h1 hp hop hg1 hy1 hx1 hn1 hgl hyl hxl hnl hm1)
     fun s2 ⟨h2, hm2, hqm2bytes, hf2, hk2⟩ => ?_)
   rw [privateAccepted_signingKey L data yb valid hp hpf] at hm2
   have hg2 := h1.preserveExternal h2 hf2 hk2 (by decide) (by simp [stablePointer, Core.generator]) hg1
@@ -105,7 +106,7 @@ theorem signCompute_ok (M : Mont) {L : ExecutionLayout} {s0 : State} (h0 : Ready
   have hqm1bytes := operand_bytesAt hqm1
   rw [encodeBE_length] at hqm1bytes
   have hqm2 := h2.encodedLocal .q qMinusTwo (L.subgroup - 2) (by decide) hqm (hqm2bytes.trans hqm1bytes)
-  refine WP.seq (WP.mono (coreSign_ok M h2 hp hq hop hoq hpf hqf data hg2 hn2 hx2 hz2 hgl hnl hxl hzl hqm2)
+  refine WP.seq (WP.mono (coreSign_ok M Sq h2 hp hq hop hoq hpf hqf data hg2 hn2 hx2 hz2 hgl hnl hxl hzl hqm2)
     fun s3 ⟨h3, hr3bytes, hs3bytes, hf3, hm3eq, hk3⟩ => ?_)
   have hm3 : word s3.mem L.base Field.mask.offset = mask (privateAccepted L data yb valid) := hm3eq.trans hm2
   have hr3 := h3.encodedLocal .q r (data.r L) (by decide) hr hr3bytes

@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
 public import VerifiedGarbage.Proof.Dsa.X86_64.PowerCT
 meta import VerifiedGarbage.Proof.Dsa.X86_64.PowerCT
 public import VerifiedGarbage.Proof.Dsa.X86_64.SetupCT
@@ -89,8 +90,8 @@ theorem powerCall_load {p : PowerCallPublic} {s : State} (h : PowerCallPrepared 
     helen, helen ▸ p.expPositive, helen ▸ p.expLimit, work_source hc hfw hk he⟩,
     (hfa.wv_of_not_mem (by decide) (by decide) hz).trans hr2⟩
 
-theorem powerCall_ct (M : Mont) : RelCT isa (Two PowerCallPre)
-    (Arithmetic.power M.mm arg argLen arg2 arg2Len) (fun _ _ => True) := by
+theorem powerCall_ct (M : Mont) (Sq : MontS) : RelCT isa (Two PowerCallPre)
+    (Arithmetic.power Sq.mm M.mm arg argLen arg2 arg2Len) (fun _ _ => True) := by
   unfold Arithmetic.power
   refine RelCT.seq (two_post (Ψ := PowerCallPrepared)
     (two_map (fun p : PowerCallPublic => p.toPowerPublic.product) (fun p s h =>
@@ -105,6 +106,6 @@ theorem powerCall_ct (M : Mont) : RelCT isa (Two PowerCallPre)
     have hbw : (bb.length + 7) / 8 ≤ p.x.wx := hbl ▸ p.baseFits
     have hw48 : p.x.wx ≤ 48 := p.width48
     omega
-  · exact two_map PowerCallPublic.toPowerPublic (fun _ _ h => h) (powerCore_ct M)
+  · exact two_map PowerCallPublic.toPowerPublic (fun _ _ h => h) (powerCore_ct M Sq)
 
 end VG.Proof.Dsa.X86_64

@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
 public import VerifiedGarbage.Proof.Dsa.X86_64.VerifyingReadyCT
 meta import VerifiedGarbage.Proof.Dsa.X86_64.VerifyingReadyCT
 import all Init.Data.Array.Basic
@@ -50,14 +51,14 @@ theorem verifyFailure_ct : RelCT isa (Two (fun B : Addr => fun s => s.gpr .rdi =
     subst r
     exact h)) (by taint_decide)
 
-theorem verifyingMain_ct (M : Mont) : RelCT isa (Two VerifyingStart) (SignVerify.verify M.mm) (fun _ _ => True) := by
+theorem verifyingMain_ct (M : Mont) (Sq : MontS) : RelCT isa (Two VerifyingStart) (SignVerify.verify Sq.mm M.mm) (fun _ _ => True) := by
   apply RelCT.assoc
   refine RelCT.seq verifyingShape_ct (RelCT.ite ?_ ?_ ?_)
   · rintro s₁ s₂ ⟨reference, h₁, h₂⟩
     exact h₁.branch.trans h₂.branch.symm
   · exact ((two_map (fun c : VerifyingCall => c.layout.base) (fun _ _ h => h.rdi) verifyFailure_ct).mono
       (fun _ _ h => h.1) (fun _ _ h => h))
-  · refine (verifyingSuccess_ct M).mono ?_ (fun _ _ h => h)
+  · refine (verifyingSuccess_ct M Sq).mono ?_ (fun _ _ h => h)
     rintro s₁ s₂ ⟨⟨reference, h₁, h₂⟩, hb⟩
     have ha : reference.input.accepted = true := by
       change eval .e s₁ = some false at hb

@@ -32,7 +32,7 @@ private theorem sample_none_status {draw : VG.Spec.Dsa.Random.Sample} (h : draw.
 private theorem attempt_progress (v : Backend) {s t : State} {h : RandomSignABI v.stack s}
     {hq : 1 < Spec.Dsa.decodeBE (randomQBytes s)} {start fuel : Nat} {result : Spec.Dsa.RandomSignResult}
     (hi : RandomSignLoopInv h hq start result fuel t) :
-    WP isa (RandomSign.attempt (randomSignerName v) (SignVerify.sign v.mul)) t fun u =>
+    WP isa (RandomSign.attempt (randomSignerName v) (SignVerify.sign v.sq v.mul)) t fun u =>
       Scr u (randomBase s) Random.frameBytes ∧ u.gpr .rsp = randomBase s ∧
       ((word u.mem (randomBase s) Random.oStatus ≠ 4 ∧ RandomSignLoopPost h hq start result u) ∨
         (word u.mem (randomBase s) Random.oStatus = 4 ∧ ∃ k < fuel, RandomSignLoopInv h hq start result k u)) := by
@@ -84,7 +84,7 @@ private theorem attempt_progress (v : Backend) {s t : State} {h : RandomSignABI 
 theorem random_sign_loop_correct (v : Backend) {s t : State} {h : RandomSignABI v.stack s}
     {hq : 1 < Spec.Dsa.decodeBE (randomQBytes s)} {used fuel : Nat}
     (hr : RandomSignRunning h hq used fuel t) (hpos : 0 < fuel) (hbound : fuel ≤ 8) :
-    WP isa (.loop (.seq (RandomSign.attempt (randomSignerName v) (SignVerify.sign v.mul))
+    WP isa (.loop (.seq (RandomSign.attempt (randomSignerName v) (SignVerify.sign v.sq v.mul))
       (.block [.mov .rax (.mem (Random.sp Random.oStatus)), .alu .cmp .rax (.imm 4)])) .e) t
       (RandomSignLoopPost h hq used (randomSignRemaining (randomInput s) used fuel)) := by
   apply random_statusLoop_rule_mx _ (randomBase s) (RandomSignLoopInv h hq used (randomSignRemaining (randomInput s) used fuel))

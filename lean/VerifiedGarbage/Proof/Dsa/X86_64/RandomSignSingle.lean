@@ -23,7 +23,7 @@ theorem random_sign_single (v : Backend) {s t : State} {h : RandomSignABI v.stac
     (hnonce : Spec.Rsa.bytesAt t.mem (off (randomBase s) Random.oNonce) (stackArg s 0).toNat =
       Spec.Dsa.encodeBE (stackArg s 0).toNat k) :
     WP isa (.seq (.block RandomSign.callArgs)
-      (.seq (.call (randomSignerName v) (SignVerify.sign v.mul)) RandomSign.callFinish)) t fun u =>
+      (.seq (.call (randomSignerName v) (SignVerify.sign v.sq v.mul)) RandomSign.callFinish)) t fun u =>
       RandomSignRunning h hq used (if (randomSingleResult s k).isSome then fuel else fuel - 1) u ∧
       word u.mem (randomBase s) Random.oStatus =
         (if (randomSingleResult s k).isSome then 1 else if fuel = 1 then 0 else 4) ∧

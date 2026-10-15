@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
 public import VerifiedGarbage.Proof.Dsa.X86_64.CallFinishCT
 public import VerifiedGarbage.Proof.Dsa.X86_64.Call
 import all Init.Data.Array.Basic
@@ -94,17 +95,17 @@ theorem callHead_ct {a b output : Operand} {o : Nat}
     exact h.1.rdi)) hT
 
 /-- Exponentiation from parent argument binding through result storage. -/
-theorem corePow_ct (M : Mont) {a b output : Operand} {o : Nat}
+theorem corePow_ct (M : Mont) (Sq : MontS) {a b output : Operand} {o : Nat}
     (ha : pointerFits a.pointer) (hb : pointerFits b.pointer) (ho : pointerFits output.pointer)
     {hc : VG.Taint.Hint VG.X86_64.Taint.T}
     (hT : (taint.check (Taint.ofRegs [.rdi]) (.block (callHead a b output o)) hc).isSome = true) :
     RelCT isa (Two fun p s => Call3Pre a b output p s ∧ p.x.o = o)
-      (Core.pow M.mm o a b output) (fun _ _ => True) := by
+      (Core.pow Sq.mm M.mm o a b output) (fun _ _ => True) := by
   change RelCT isa _ (.seq (.block (callHead a b output o))
-    (.seq (Arithmetic.power M.mm arg argLen arg2 arg2Len) (seqs Core.finish))) _
+    (.seq (Arithmetic.power Sq.mm M.mm arg argLen arg2 arg2Len) (seqs Core.finish))) _
   refine RelCT.seq (two_post (Ψ := fun p s => PowerFinishPre p.toPowerFinishPublic s)
     (two_map (fun p : Call3Public => p) (fun _ _ h => h.1) (callHead_ct hT)) ?_)
-    (two_map Call3Public.toPowerFinishPublic (fun _ _ h => h) (powerFinish_ct M))
+    (two_map Call3Public.toPowerFinishPublic (fun _ _ h => h) (powerFinish_ct M Sq))
   intro p s ⟨h, heq⟩
   rw [← heq]
   exact callHead_ok ha hb ho h

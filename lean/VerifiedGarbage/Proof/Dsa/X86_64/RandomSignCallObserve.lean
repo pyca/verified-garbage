@@ -32,7 +32,7 @@ theorem random_signer_retry_pre (v : Backend) {s t : State} {fuel : Nat} {h : Ra
     (hc : RandomSignCallState h t)
     (hn : word t.mem (randomBase s) Random.oAttempts = BitVec.ofNat 64 fuel)
     (hpos : 0 < fuel) (hbound : fuel < 2 ^ 64) :
-    WP isa (.call (randomSignerName v) (SignVerify.sign v.mul)) t
+    WP isa (.call (randomSignerName v) (SignVerify.sign v.sq v.mul)) t
       (RandomRetryPre ⟨randomBase s, (randomCallResult s t).isSome, fuel⟩) := by
   refine WP.mono (random_signer_outcome v h hc.sp hc.args hc.di hc.si hc.dx hc.cx hc.r8 hc.r9 hc.rd hc.wr)
     fun u ⟨_, huw, huc, hf, hstatus, _, _⟩ => ?_

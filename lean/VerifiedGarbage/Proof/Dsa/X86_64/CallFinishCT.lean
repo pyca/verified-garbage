@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
 public import VerifiedGarbage.Proof.Dsa.X86_64.FinishCT
 public import VerifiedGarbage.Proof.Dsa.X86_64.PowerCallCT
 public import VerifiedGarbage.Proof.Dsa.X86_64.ProductCallCT
@@ -43,13 +44,13 @@ def PowerFinishPublic.result (p : PowerFinishPublic) : BPub := ⟨p.x, p.output,
 def PowerFinishPre (p : PowerFinishPublic) (s : State) : Prop :=
   PowerCallPre p.toPowerCallPublic s ∧ FinishPre p.result s
 
-theorem powerFinish_ct (M : Mont) : RelCT isa (Two PowerFinishPre)
-    (.seq (Arithmetic.power M.mm arg argLen arg2 arg2Len) (seqs Core.finish)) (fun _ _ => True) := by
+theorem powerFinish_ct (M : Mont) (Sq : MontS) : RelCT isa (Two PowerFinishPre)
+    (.seq (Arithmetic.power Sq.mm M.mm arg argLen arg2 arg2Len) (seqs Core.finish)) (fun _ _ => True) := by
   refine RelCT.seq (two_post (Ψ := fun p s => FinishPre p.result s)
-    (two_map PowerFinishPublic.toPowerCallPublic (fun _ _ h => h.1) (powerCall_ct M)) ?_)
+    (two_map PowerFinishPublic.toPowerCallPublic (fun _ _ h => h.1) (powerCall_ct M Sq)) ?_)
     (two_map PowerFinishPublic.result (fun _ _ h => h) finish_ct)
   intro p s ⟨⟨hc, hm, bb, eb, hp, hl, hep, hel, hbl, helen, hb, he⟩, hf⟩
-  exact WP.mono (power_ok M hc p.lower p.width48 p.fits p.upper p.greater p.odd
+  exact WP.mono (power_ok M Sq hc p.lower p.width48 p.fits p.upper p.greater p.odd
     hm.modulus hm.inverse (by decide) (by decide) (by decide) (by decide)
     hp hl hb (hbl ▸ p.basePositive) (hbl ▸ p.baseFits)
     hep hel he (helen ▸ p.expPositive) (helen ▸ p.expLimit))
