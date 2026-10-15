@@ -1,13 +1,13 @@
-//! Verified public-key validation on x86-64. Rust pads the inputs and
-//! allocates the working space; the range and subgroup checks run in the
-//! code proven against `VG.Spec.Ffdh.checkPublicContract`.
+//! Verified FFDH key operations on x86-64. Rust pads the inputs,
+//! allocates scratch space, and selects the shared arithmetic backend.
 
 #![cfg(target_arch = "x86_64")]
 
 use super::arithmetic::{Backend, scalar};
 use crate::arch::ffdh::{
     vg_ffdh_check_private, vg_ffdh_check_private_adx, vg_ffdh_check_public,
-    vg_ffdh_check_public_adx, vg_ffdh_exchange, vg_ffdh_exchange_adx,
+    vg_ffdh_check_public_adx, vg_ffdh_exchange, vg_ffdh_exchange_adx, vg_ffdh_generate_key,
+    vg_ffdh_generate_key_adx,
 };
 use crate::cpu::detected;
 use crate::rsa::Scratch;
@@ -120,5 +120,42 @@ pub(super) fn check_private(p: &[u8], g: &[u8], q: Option<&[u8]>, y: &[u8], x: &
             ws.as_mut_ptr(),
             ws.len(),
         ) == 1
+    }
+}
+
+/// One verified private-key attempt from a modulus-width random string.
+pub(super) fn generate_key(
+    p: &[u8],
+    g: &[u8],
+    q: Option<&[u8]>,
+    rand: &[u8],
+    x: &mut [u8],
+    y: &mut [u8],
+) -> u32 {
+    let len = p.len();
+    assert!(rand.len() == len && x.len() == len && y.len() == len);
+    let domain = pack_domain(p, g, q);
+    let mut ws = Scratch::new(16 * len + 32);
+    let f = match Backend::select(detected()) {
+        Backend::Baseline => vg_ffdh_generate_key,
+        Backend::Adx => vg_ffdh_generate_key_adx,
+    };
+    // SAFETY: the checked domain has 2 or 3 modulus widths. Both outputs
+    // and randomness have one width, and scratch has 16*len+32 words.
+    // The output and scratch allocations are disjoint from all inputs.
+    unsafe {
+        f(
+            x.as_mut_ptr(),
+            x.len(),
+            y.as_mut_ptr(),
+            y.len(),
+            domain.as_ptr(),
+            domain.len(),
+            len,
+            rand.as_ptr(),
+            rand.len(),
+            ws.as_mut_ptr(),
+            ws.len(),
+        )
     }
 }

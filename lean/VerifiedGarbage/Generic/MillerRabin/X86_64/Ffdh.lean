@@ -3,8 +3,9 @@ module
 public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPublic.Backend
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Exchange.Backend
 public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.Backend
+public import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Backend
 
-/-! # Emit FFDH public-key validation for every shared arithmetic backend -/
+/-! # Emit FFDH domain operations for every shared arithmetic backend -/
 
 @[expose] public section
 
@@ -45,6 +46,18 @@ def artifacts (v : Proof.MillerRabin.X86_64.RoundImpl) : List Artifact := [
     contract := Spec.Ffdh.checkPrivateContract X86_64.abi
     verified := by exact Proof.Ffdh.X86_64.CheckPrivate.privateCode_verified v
     spSafe := by exact Proof.Ffdh.X86_64.CheckPrivate.privateCode_sp v
+    features := v.features },
+  { Spec.Ffdh.generateKeyApi with
+    name := Spec.Ffdh.generateKeyApi.name ++ v.suffix
+    target := X86_64.target
+    doc := Spec.Ffdh.generateKeyApi.doc
+      (notes := ["Scalar masking, scalar-range rejection, generator exponentiation, and \
+        degenerate-public-value rejection run in verified code. Fixed four-bit windows \
+        use the public bound's significant byte width and the selected Montgomery backend."])
+    code := Proof.Ffdh.X86_64.GenerateKey.generateCode v
+    contract := Spec.Ffdh.generateKeyContract X86_64.abi
+    verified := by exact Proof.Ffdh.X86_64.GenerateKey.generateCode_verified v
+    spSafe := by exact Proof.Ffdh.X86_64.GenerateKey.generateCode_sp v
     features := v.features }]
 
 end VG.Generic.MillerRabin.X86_64.Ffdh
