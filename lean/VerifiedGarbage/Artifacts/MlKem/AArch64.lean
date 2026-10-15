@@ -9,8 +9,7 @@ import VerifiedGarbage.Proof.MlKem.AArch64.CompressEncode
 import VerifiedGarbage.Proof.MlKem.AArch64.DecodeDecompress
 public import VerifiedGarbage.Proof.MlKem.AArch64.CheckEk
 import VerifiedGarbage.Proof.MlKem.AArch64.Mul
-import VerifiedGarbage.Proof.MlKem.AArch64.NttInv
-public import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Fwd
+public import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Inv
 import VerifiedGarbage.Proof.MlKem.AArch64.Sample
 import VerifiedGarbage.Proof.MlKem.AArch64.KeyGen
 public import VerifiedGarbage.Proof.MlKem.AArch64.Encaps
@@ -99,9 +98,9 @@ def artifacts : List Artifact := [
   { Spec.MlKem.nttInvApi with
     target := AArch64.target
     doc := Spec.MlKem.nttInvApi.doc
-    code := Impl.MlKem.AArch64.nttInv
+    code := Impl.MlKem.AArch64.Ntt16.nttInv
     contract := Spec.MlKem.nttInvContract AArch64.abi
-    verified := Proof.MlKem.AArch64.Ntt.ntt_inv_verified
+    verified := Proof.MlKem.AArch64.Ntt16.ntt_inv_verified
     ofSig := by exact (⟨_, _, _, by unfold Spec.MlKem.nttInvContract Spec.MlKem.inPlaceContract; rfl⟩)
     spSafe := Code.all_of_forall (fun _ => rfl) _ }]
 

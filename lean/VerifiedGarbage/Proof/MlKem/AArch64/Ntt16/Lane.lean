@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.MlKem.AArch64.Ntt16
-import Mathlib.Tactic.Linarith
+public import VerifiedGarbage.Proof.Framework.PowLit
 
 /-!
 # ML-KEM's 16-bit NTT on AArch64: one lane
@@ -26,8 +26,10 @@ theorem core {A z : Int} (hA : -32768 < A) (hA' : A < 32768) :
   have hd1 : -3329 ≤ z * 65536 - 6658 * C := by omega
   have hd2 : z * 65536 - 6658 * C < 3329 := by omega
   generalize hd : z * 65536 - 6658 * C = d at hd1 hd2
-  have hQ1 : A * d ≤ 32767 * 3329 := by nlinarith
-  have hQ2 : -(32767 * 3329) ≤ A * d := by nlinarith
+  have hn : (A * d).natAbs ≤ 32767 * 3329 := by
+    rw [Int.natAbs_mul]; exact Nat.mul_le_mul (by omega) (by omega)
+  have hQ1 : A * d ≤ 32767 * 3329 := by omega
+  have hQ2 : -(32767 * 3329) ≤ A * d := by omega
   have hX : A * z * 65536 = 6658 * (A * C) + A * d := by rw [← hd]; grind
   have h2 : 2 * A * C = 2 * (A * C) := by grind
   rw [h2]
