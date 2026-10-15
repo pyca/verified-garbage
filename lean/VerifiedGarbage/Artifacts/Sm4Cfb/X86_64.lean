@@ -24,7 +24,7 @@ def artifacts : List Artifact := [
     contract := Spec.Sm4.cfbEncryptContract X86_64.abi 3144
     stack := 3144
     verified := Proof.Sm4.X86_64.cfbEncrypt_framed
-    spSafe := Code.all_of_allInstrs (by decide +kernel) },
+    spSafe := Code.all_of_allInstrs (by lit_decide) },
   { Spec.Sm4.cfbDecryptApi with
     target := X86_64.target
     doc := Spec.Sm4.cfbDecryptApi.doc (notes := [note])
@@ -32,6 +32,6 @@ def artifacts : List Artifact := [
     contract := Spec.Sm4.cfbDecryptContract X86_64.abi 3144
     stack := 3144
     verified := Proof.Sm4.X86_64.cfbDecrypt_framed
-    spSafe := Code.all_of_allInstrs (by decide +kernel) }]
+    spSafe := Code.all_of_allInstrs (by lit_decide) }]
 
 end VG.Artifacts.Sm4Cfb.X86_64
