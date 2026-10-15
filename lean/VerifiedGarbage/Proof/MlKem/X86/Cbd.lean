@@ -46,7 +46,7 @@ theorem land5 (m : Nat) : m &&& 5 = m % 2 + 4 * (m / 4 % 2) := by
     rw [← Nat.and_two_pow_sub_one_eq_mod m 3, Nat.and_assoc]; rfl
   have key : ∀ r < 8, r &&& 5 = r % 2 + 4 * (r / 4 % 2) := by decide
   rw [h, key _ (Nat.mod_lt _ (by decide))]
-  omega
+  omega_using []
 
 /-- The sum `t` of the two masked halves, as numbers. -/
 theorem cbd_t (v : BitVec 32) :
@@ -57,9 +57,9 @@ theorem cbd_t (v : BitVec 32) :
   have a2 : (v >>> 1 &&& (5 : BitVec 32)).toNat = v.toNat / 2 % 2 + 4 * (v.toNat / 8 % 2) := by
     rw [BitVec.toNat_and, show (v >>> 1).toNat &&& (5 : BitVec 32).toNat = (v >>> 1).toNat &&& 5 from rfl,
       land5, toNat_shr]
-    omega
+    omega_using []
   rw [BitVec.toNat_add, a1, a2]
-  omega
+  omega_using []
 
 /-- `cbdNibble` computes `(x + q - y) mod q` of the nibble in `eax`, changing only `eax`, `edx`
 and the flags. -/
@@ -84,16 +84,16 @@ theorem nib_spec (is : List Instr) (s : State) (P : State → Prop)
     have hx : (t &&& (3 : BitVec 32)).toNat = cbdX v.toNat := by
       rw [show (3 : BitVec 32) = BitVec.ofNat 32 (2 ^ 2 - 1) from rfl, toNat_and_mask _ _ (by decide),
         ht, cbdX]
-      omega
+      omega_using []
     have hy : (t >>> 2).toNat = cbdY v.toNat := by
-      rw [toNat_shr, ht, cbdY]; omega
+      rw [toNat_shr, ht, cbdY]; omega_using []
     have hxl := cbdX_le v.toNat
     have hyl := cbdY_le v.toNat
     have e : ((t &&& (3 : BitVec 32)) + Q - t >>> 2).toNat = cbdX v.toNat + q - cbdY v.toNat := by
       have hQ : ((t &&& (3 : BitVec 32)) + Q).toNat = cbdX v.toNat + 3329 := by
-        rw [BitVec.toNat_add, hx, show Q.toNat = 3329 from rfl, Nat.mod_eq_of_lt (by omega)]
-      rw [BitVec.toNat_sub_of_le (by rw [BitVec.le_def, hQ, hy]; omega), hQ, hy, q_eq]
-    rw [csub_eq _ _ (by rw [e, q_eq]; omega), e]
+        rw [BitVec.toNat_add, hx, show Q.toNat = 3329 from rfl, Nat.mod_eq_of_lt (by omega_using [hxl])]
+      rw [BitVec.toNat_sub_of_le (by rw [BitVec.le_def, hQ, hy]; omega_using [hyl]), hQ, hy, q_eq]
+    rw [csub_eq _ _ (by rw [e, q_eq]; omega_using [hxl]), e]
 
 /-! ## The precondition -/
 
@@ -173,16 +173,16 @@ theorem init_piece :
     have fit := hp.sp'
     have a₀ := P0_argAddr s₀ 0
     have a₁ := P0_argAddr s₀ 1
-    have i₀ := P0_argIn (s₀ := s₀) (n := 2) (i := 0) (by omega) fit (by simp [hp.wr])
-    have i₁ := P0_argIn (s₀ := s₀) (n := 2) (i := 1) (by omega) fit (by simp [hp.wr])
-    have v₀ := P0_arg hp.sp (n := 2) (i := 0) (by omega) fit hp.stk_a
-    have v₁ := P0_arg hp.sp (n := 2) (i := 1) (by omega) fit hp.stk_a
+    have i₀ := P0_argIn (s₀ := s₀) (n := 2) (i := 0) (by omega_using []) fit (by simp [hp.wr])
+    have i₁ := P0_argIn (s₀ := s₀) (n := 2) (i := 1) (by omega_using []) fit (by simp [hp.wr])
+    have v₀ := P0_arg hp.sp (n := 2) (i := 0) (by omega_using []) fit hp.stk_a
+    have v₁ := P0_arg hp.sp (n := 2) (i := 1) (by omega_using []) fit hp.stk_a
     simp only [Nat.mul_zero, Nat.add_zero, Nat.mul_one, Nat.reduceAdd] at a₀ a₁
     apply WP.of_runBlock
     simp only [reduceCtorEq, ↓reduceIte, cbdInit, at_, runBlock_cons, runStep_some,
       runBlock_nil, exec, readSrc, State.ea, State.load32, State.setReg, Option.map_some, a₀, a₁, i₀,
       i₁, v₀, v₁, Option.some.injEq, exists_eq_left']
-    exact ⟨by simp, rfl, rfl, by simp, by simp, by simp, Frame.refl _ _, fun j hj => absurd hj (by omega)⟩
+    exact ⟨by simp, rfl, rfl, by simp, by simp, by simp, Frame.refl _ _, fun j hj => absurd hj (by omega_using [])⟩
   · simp only [List.mem_singleton] at hr
     subst hr
     rw [e, e', P0_esp, P0_esp, hq.1]
@@ -191,8 +191,8 @@ theorem init_piece :
 theorem V_eq (s₀ : State) {k : Nat} (hk : k < 128) {e : Nat} (he : e < 2) :
     V s₀ (2 * k + e) = BitVec.ofNat 32 ((cbdX (((B s₀).getD k 0).toNat / 16 ^ e) + q -
       cbdY (((B s₀).getD k 0).toNat / 16 ^ e)) % q) := by
-  rw [V, samplePolyCBD2_val _ (by rw [n_eq]; omega), nibble,
-    show (2 * k + e) / 2 = k by omega, show (2 * k + e) % 2 = e by omega]
+  rw [V, samplePolyCBD2_val _ (by rw [n_eq]; omega_using [hk, he]), nibble,
+    show (2 * k + e) / 2 = k by omega_using [he], show (2 * k + e) % 2 = e by omega_using [he]]
 
 theorem step {s₀ : State} (hp : Pre s₀) {k : Nat} (hk : k < 128) {s : State} (h : Inv s₀ k s) :
     WP isa (.block cbdBody) s fun s' => Inv s₀ (k + 1) s' ∧ eval .ne s' = some (decide (k + 1 < 128)) := by
@@ -200,15 +200,15 @@ theorem step {s₀ : State} (hp : Pre s₀) {k : Nat} (hk : k < 128) {s : State}
   have ff := hp.f_fit
   have eb : s.ea (at_ .esi 0) = bA s₀ + BitVec.ofNat 64 k := by
     show (s.gpr .esi + BitVec.ofNat 32 0).setWidth 64 = _
-    rw [h.esi, ea_add (by omega), Nat.add_zero]
+    rw [h.esi, ea_add (by omega_using [hk, fb]), Nat.add_zero]
   have inB : InRegions (s.rd ++ s.wr) (s.ea (at_ .esi 0)) 1 :=
-    ⟨bR s₀, by rw [h.rd, pushed_rd, hp.rd]; simp, by rw [eb]; exact contains_at (by omega) fb⟩
+    ⟨bR s₀, by rw [h.rd, pushed_rd, hp.rd]; simp, by rw [eb]; exact contains_at (by omega_using [hk]) fb⟩
   have outF : ∀ i < 256, InRegions s.wr (coeffAddr (fA s₀) i) 4 := fun i hi =>
     ⟨polyRegion (fA s₀), by rw [h.wr, P0_wr, hp.wr]; simp, coeff_contains _ hi⟩
   have o0 : (fP s₀ + BitVec.ofNat 32 (8 * k) + BitVec.ofNat 32 0).setWidth 64 =
-      coeffAddr (fA s₀) (2 * k) := by rw [ea_add (by omega)]; congr 2; omega
+      coeffAddr (fA s₀) (2 * k) := by rw [ea_add (by omega_using [hk, ff])]; congr 2; omega_using []
   have o1 : (fP s₀ + BitVec.ofNat 32 (8 * k) + BitVec.ofNat 32 4).setWidth 64 =
-      coeffAddr (fA s₀) (2 * k + 1) := by rw [ea_add (by omega)]; congr 2; omega
+      coeffAddr (fA s₀) (2 * k + 1) := by rw [ea_add (by omega_using [hk, ff])]; congr 2; omega_using []
   have hbyte : s.mem (s.ea (at_ .esi 0)) = (B s₀).getD k 0 := by rw [eb, hp.b_keep h.frame hk]
   generalize eB : (B s₀).getD k 0 = b at hbyte
   refine wp_movzx inB (wp_movr ?_)
@@ -222,7 +222,7 @@ theorem step {s₀ : State} (hp : Pre s₀) {k : Nat} (hk : k < 128) {s : State}
   refine nib_spec _ s₁ _ fun s₂ o₂ v₂ => ?_
   have in0 : InRegions s₂.wr (s₂.ea (at_ .edi 0)) 4 := by
     rw [State.ea, at_, o₂.gpr _ (by decide), g₁ _ (by decide) (by decide), h.edi, o0, o₂.wr]
-    exact outF _ (by omega)
+    exact outF _ (by omega_using [hk])
   refine wp_store in0 (wp_movr ?_)
   refine wp_shr (by decide) (by decide) fun s₃ o₃ v₃ => ?_
   refine nib_spec _ s₃ _ fun s₄ o₄ v₄ => ?_
@@ -246,7 +246,7 @@ theorem step {s₀ : State} (hp : Pre s₀) {k : Nat} (hk : k < 128) {s : State}
   have rd₄ : s₄.rd = s.rd := by rw [o₄.rd, o₃.rd, o₂.rd]; rfl
   have ax₃ : s₃.gpr .eax = b.setWidth 32 >>> 4 := by
     rw [v₃]; simp only [State.setReg, ite_true]; rw [o₂.gpr _ (by decide), bx₁]
-  have out1 : InRegions s₄.wr (coeffAddr (fA s₀) (2 * k + 1)) 4 := by rw [wr₄]; exact outF _ (by omega)
+  have out1 : InRegions s₄.wr (coeffAddr (fA s₀) (2 * k + 1)) 4 := by rw [wr₄]; exact outF _ (by omega_using [hk])
   apply WP.of_runBlock
   simp only [reduceCtorEq, ↓reduceIte, Nat.reducePow, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu,
     readSrc, State.ea, at_, State.store32, State.setReg, arithFlags, State.setFlags, edi₄, o1, out1,
@@ -268,10 +268,10 @@ theorem step {s₀ : State} (hp : Pre s₀) {k : Nat} (hk : k < 128) {s : State}
   · simp only [ite_true, ecx₄]
     exact cnt_next hk
   · rw [mem₄]
-    exact (h.frame.writeW (List.mem_singleton_self _) _ (coeff_contains _ (by rw [n_eq]; omega))).writeW
-      (List.mem_singleton_self _) _ (coeff_contains _ (by rw [n_eq]; omega))
-  · rw [show 2 * (k + 1) = 2 * k + 2 by omega, mem₄, c0, c1]
-    exact coef_extend2 (by omega) h.coef
+    exact (h.frame.writeW (List.mem_singleton_self _) _ (coeff_contains _ (by rw [n_eq]; omega_using [hk]))).writeW
+      (List.mem_singleton_self _) _ (coeff_contains _ (by rw [n_eq]; omega_using [hk]))
+  · rw [show 2 * (k + 1) = 2 * k + 2 by omega_using [], mem₄, c0, c1]
+    exact coef_extend2 (by omega_using [hk]) h.coef
   · simp only [eval, ecx₄]
     exact cnt_ne hk (by decide)
 
@@ -279,7 +279,7 @@ theorem piece : Piece Pre Pub (fun s₀ s => s = s₀) (fun s₀ s' => LeafPost 
     Impl.MlKem.X86.cbd2 :=
   Piece.leafLoop (fun s₀ => [polyRegion (fA s₀)]) (fun k s₀ s => Inv s₀ k s)
     (NoSp.of_all (by decide +kernel))
-    (fun _ hp => ⟨hp.sp, by have := hp.sp'; omega⟩)
+    (fun _ hp => ⟨hp.sp, by have := hp.sp'; omega_using [this]⟩)
     (fun _ hp r hr => by
       simp only [List.mem_singleton] at hr
       subst hr
@@ -307,7 +307,7 @@ theorem verified : Verified X86.target Impl.MlKem.X86.cbd2 (cbd2Contract X86.abi
     refine ⟨habi, ?_⟩
     sig_post [cbd2Contract, cbd2Sig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     rw [hm]
-    exact polyIs_of_coeffAt fun i hi => hinv.coef i (by rw [n_eq] at hi; omega)
+    exact polyIs_of_coeffAt fun i hi => hinv.coef i (by rw [n_eq] at hi; omega_using [hi])
   · let st := satState satMem [⟨0, 128⟩] [⟨0x400, 1024⟩, ⟨0x5004, 8⟩]
     refine ⟨st, ?_⟩
     sig_sat_check [cbd2Contract, cbd2Sig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
