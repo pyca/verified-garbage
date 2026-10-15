@@ -1,5 +1,8 @@
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Shape
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Halve
+import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Sieve
+import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Residue
+import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.ChecksCT
 import VerifiedGarbage.TCB.Axioms
 
 /-! Audit the exact byte encodings, native candidate shaping, and in-place halving. -/
@@ -8,3 +11,9 @@ import VerifiedGarbage.TCB.Axioms
 #assert_standard_axioms VG.Proof.Ffdh.ParameterCandidate.shapedOctets_half_value
 #assert_standard_axioms VG.Proof.Ffdh.X86_64.ParameterCandidate.shape_ok
 #assert_standard_axioms VG.Proof.Ffdh.X86_64.ParameterCandidate.halve_ok
+#assert_standard_axioms VG.Proof.Ffdh.ParameterCandidate.sieve_entries
+#assert_standard_axioms VG.Proof.Ffdh.ParameterCandidate.primeShape_sieve
+#assert_standard_axioms VG.Proof.Ffdh.X86_64.ParameterCandidate.primeCheck_ok
+#assert_standard_axioms VG.Proof.Ffdh.X86_64.ParameterCandidate.generatorCheck_ok
+#assert_standard_axioms VG.Proof.Ffdh.X86_64.ParameterCandidate.sieve_ct
+#assert_standard_axioms VG.Proof.Ffdh.X86_64.ParameterCandidate.generatorCheck_ct
