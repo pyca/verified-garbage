@@ -15,13 +15,19 @@ import all Init.Data.Vector.Basic
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseCCTBase
-import VerifiedGarbage.Proof.MlKem.AArch64.KgC
 meta import Mathlib.Tactic.Conv
 meta import Mathlib.Tactic.SplitIfs
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseCCTBase
-meta import VerifiedGarbage.Proof.MlKem.AArch64.KgC
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedMasksTiming
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedMasksTiming
+import VerifiedGarbage.Proof.MlKem.AArch64.Shared
+import VerifiedGarbage.Proof.MlKem.AArch64.Vec
+import VerifiedGarbage.Proof.MlKem.AArch64.Common
+import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Shared
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Vec
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Common
+meta import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
 
 /-! ## From `CachedMaskPrefix.lean` -/
 

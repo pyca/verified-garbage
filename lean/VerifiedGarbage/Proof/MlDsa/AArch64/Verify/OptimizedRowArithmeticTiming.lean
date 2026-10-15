@@ -6,10 +6,13 @@ import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.MlKem.AArch64.KgC
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.AddSubVerified
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseSingleCallTiming
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversal
+import VerifiedGarbage.Proof.MlKem.AArch64.Shared
+import VerifiedGarbage.Proof.MlKem.AArch64.Vec
+import VerifiedGarbage.Proof.MlKem.AArch64.Common
+import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
 
 @[expose] public section
 

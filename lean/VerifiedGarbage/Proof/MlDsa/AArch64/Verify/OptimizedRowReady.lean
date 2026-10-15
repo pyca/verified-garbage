@@ -10,8 +10,11 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseSingleCall
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MontProductCallTiming
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.UseHintPackCallTiming
 import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.MlKem.AArch64.KgC
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversal
+import VerifiedGarbage.Proof.MlKem.AArch64.Shared
+import VerifiedGarbage.Proof.MlKem.AArch64.Vec
+import VerifiedGarbage.Proof.MlKem.AArch64.Common
+import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
 
 @[expose] public section
 

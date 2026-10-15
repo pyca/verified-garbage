@@ -9,13 +9,16 @@ import all Init.Data.Vector.Basic
 import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFold
-import VerifiedGarbage.Proof.MlKem.AArch64.DecapsA
 import VerifiedGarbage.TCB.Axioms
 import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Ntt
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourSqueezeApart
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejBatchTiming
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejTailReadyTiming
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Traversal
+import VerifiedGarbage.Proof.MlKem.AArch64.Shared
+import VerifiedGarbage.Proof.MlKem.AArch64.Vec
+import VerifiedGarbage.Proof.MlKem.AArch64.Common
+import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
 
 /-!
 # ML-DSA verification on AArch64, with this library's primitives
