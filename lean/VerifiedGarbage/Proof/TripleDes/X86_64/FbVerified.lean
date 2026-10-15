@@ -11,6 +11,8 @@ meta import VerifiedGarbage.Proof.Modes.X86_64.Cfb8
 public import VerifiedGarbage.Proof.TripleDes.FbScratch
 meta import VerifiedGarbage.Proof.TripleDes.FbScratch
 public import VerifiedGarbage.Proof.TripleDes.X86_64.FbLit
+public import VerifiedGarbage.Proof.TripleDes.X86_64.BlockSum
+meta import VerifiedGarbage.Proof.TripleDes.X86_64.BlockSum
 meta import VerifiedGarbage.Proof.TripleDes.X86_64.FbLit
 public import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
 meta import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
@@ -284,8 +286,10 @@ theorem ofb_correct (s : State) (hs : ofbX86_64.pre s) :
   obtain ⟨t, s', he, hg, hpost⟩ := ofb_wp hs
   exact ⟨t, s', he, abiPreserved_of_exec (c := ofbI) (by lit_decide) he hg, hpost⟩
 
-theorem ofb_ct : ConstantTime isa ofbX86_64.pre ofbX86_64.pub ofb :=
-  (VG.Taint.constantTime (A := taint) fbTaint (fbTaint_agree blkLen_congr) (by taint_decide))
+theorem ofb_ct : ConstantTime isa ofbX86_64.pre ofbX86_64.pub ofb := by
+  obtain ⟨_, h⟩ : ∃ h, (taintS.check fbTaint ofb h).isSome = true :=
+    by taint_decide_sum [encSum]
+  exact VG.Taint.constantTime (A := taintS) fbTaint (fbTaint_agree blkLen_congr) h
 
 theorem ofb_implies : ofbX86_64.Implies (Proof.TripleDes.fbScratchContract X86_64.abi 121 Proof.TripleDes.ofbPost) := by
     sig_implies [Proof.TripleDes.fbScratchContract, Proof.TripleDes.fbScratchSig, Spec.TripleDes.ofbSig,
@@ -322,8 +326,10 @@ theorem cfbEncrypt_correct (s : State) (hs : cfbEncX86_64.pre s) :
   obtain ⟨t, s', he, hg, hpost⟩ := cfbEncrypt_wp hs
   exact ⟨t, s', he, abiPreserved_of_exec (c := cfbEncryptI) (by lit_decide) he hg, hpost⟩
 
-theorem cfbEncrypt_ct : ConstantTime isa cfbEncX86_64.pre cfbEncX86_64.pub cfbEncrypt :=
-  (VG.Taint.constantTime (A := taint) fbTaint (fbTaint_agree blkLen_congr) (by taint_decide))
+theorem cfbEncrypt_ct : ConstantTime isa cfbEncX86_64.pre cfbEncX86_64.pub cfbEncrypt := by
+  obtain ⟨_, h⟩ : ∃ h, (taintS.check fbTaint cfbEncrypt h).isSome = true :=
+    by taint_decide_sum [encSum]
+  exact VG.Taint.constantTime (A := taintS) fbTaint (fbTaint_agree blkLen_congr) h
 
 theorem cfbEncrypt_implies : cfbEncX86_64.Implies (Proof.TripleDes.fbScratchContract X86_64.abi 121 Proof.TripleDes.cfbEncPost) := by
     sig_implies [Proof.TripleDes.fbScratchContract, Proof.TripleDes.fbScratchSig, Spec.TripleDes.ofbSig,
@@ -360,8 +366,10 @@ theorem cfbDecrypt_correct (s : State) (hs : cfbDecX86_64.pre s) :
   obtain ⟨t, s', he, hg, hpost⟩ := cfbDecrypt_wp hs
   exact ⟨t, s', he, abiPreserved_of_exec (c := cfbDecryptI) (by lit_decide) he hg, hpost⟩
 
-theorem cfbDecrypt_ct : ConstantTime isa cfbDecX86_64.pre cfbDecX86_64.pub cfbDecrypt :=
-  (VG.Taint.constantTime (A := taint) fbTaint (fbTaint_agree blkLen_congr) (by taint_decide))
+theorem cfbDecrypt_ct : ConstantTime isa cfbDecX86_64.pre cfbDecX86_64.pub cfbDecrypt := by
+  obtain ⟨_, h⟩ : ∃ h, (taintS.check fbTaint cfbDecrypt h).isSome = true :=
+    by taint_decide_sum [encSum]
+  exact VG.Taint.constantTime (A := taintS) fbTaint (fbTaint_agree blkLen_congr) h
 
 theorem cfbDecrypt_implies : cfbDecX86_64.Implies (Proof.TripleDes.fbScratchContract X86_64.abi 121 Proof.TripleDes.cfbDecPost) := by
     sig_implies [Proof.TripleDes.fbScratchContract, Proof.TripleDes.fbScratchSig, Spec.TripleDes.ofbSig,
@@ -398,8 +406,10 @@ theorem cfb8Encrypt_correct (s : State) (hs : cfb8EncX86_64.pre s) :
   obtain ⟨t, s', he, hg, hpost⟩ := cfb8Encrypt_wp hs
   exact ⟨t, s', he, abiPreserved_of_exec (c := cfb8EncryptI) (by lit_decide) he hg, hpost⟩
 
-theorem cfb8Encrypt_ct : ConstantTime isa cfb8EncX86_64.pre cfb8EncX86_64.pub cfb8Encrypt :=
-  (VG.Taint.constantTime (A := taint) fbTaint (fbTaint_agree byteLen_congr) (by taint_decide))
+theorem cfb8Encrypt_ct : ConstantTime isa cfb8EncX86_64.pre cfb8EncX86_64.pub cfb8Encrypt := by
+  obtain ⟨_, h⟩ : ∃ h, (taintS.check fbTaint cfb8Encrypt h).isSome = true :=
+    by taint_decide_sum [encSum]
+  exact VG.Taint.constantTime (A := taintS) fbTaint (fbTaint_agree byteLen_congr) h
 
 theorem cfb8Encrypt_implies : cfb8EncX86_64.Implies (Proof.TripleDes.cfb8ScratchContract X86_64.abi 121 Proof.TripleDes.cfb8EncPost) := by
     sig_implies [Proof.TripleDes.cfb8ScratchContract, Proof.TripleDes.cfb8ScratchSig, Spec.TripleDes.cfb8Sig,
@@ -435,8 +445,10 @@ theorem cfb8Decrypt_correct (s : State) (hs : cfb8DecX86_64.pre s) :
   obtain ⟨t, s', he, hg, hpost⟩ := cfb8Decrypt_wp hs
   exact ⟨t, s', he, abiPreserved_of_exec (c := cfb8DecryptI) (by lit_decide) he hg, hpost⟩
 
-theorem cfb8Decrypt_ct : ConstantTime isa cfb8DecX86_64.pre cfb8DecX86_64.pub cfb8Decrypt :=
-  (VG.Taint.constantTime (A := taint) fbTaint (fbTaint_agree byteLen_congr) (by taint_decide))
+theorem cfb8Decrypt_ct : ConstantTime isa cfb8DecX86_64.pre cfb8DecX86_64.pub cfb8Decrypt := by
+  obtain ⟨_, h⟩ : ∃ h, (taintS.check fbTaint cfb8Decrypt h).isSome = true :=
+    by taint_decide_sum [encSum]
+  exact VG.Taint.constantTime (A := taintS) fbTaint (fbTaint_agree byteLen_congr) h
 
 theorem cfb8Decrypt_implies : cfb8DecX86_64.Implies (Proof.TripleDes.cfb8ScratchContract X86_64.abi 121 Proof.TripleDes.cfb8DecPost) := by
     sig_implies [Proof.TripleDes.cfb8ScratchContract, Proof.TripleDes.cfb8ScratchSig, Spec.TripleDes.cfb8Sig,
