@@ -5,6 +5,8 @@ public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvPacked
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvSpec
 public import VerifiedGarbage.Proof.Weierstrass.Unch
 public import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -109,10 +111,6 @@ theorem modOk_out {M : Mod} {size p : Nat} {mem mem' : Mem} {base : Addr} (hM : 
   ⟨hM.n0, hM.mo, hM.tmp, hM.sep, by rw [hU.wordsVal hsep (by have := hM.mo; omega_using [hn, this])]; exact hM.val,
     hM.inv, hM.red⟩
 
-/-- Apart from each range of a list written out. -/
-local macro "apart" : tactic => `(tactic| plain_simp_names (simp only [List.mem_cons, List.not_mem_nil, or_false,
-                   forall_eq_or_imp, forall_eq] <;> omega))
-
 /-- Half a batch's update of `f`, `g`: `[dst] = (u f + v g) / 2^59` (`L` words, signed). -/
 theorem fHalf_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {w w' : Reg}
     (hw : w ∉ [Reg.rax, .rcx, .rdx, .rbp, .r8, .rdi, .r13]) (hw' : w' ∉ [Reg.rax, .rcx, .rdx, .rbp, .r8, .rdi, .r13])
@@ -173,7 +171,9 @@ theorem abHalf_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) 
   have hs₁ := hs.of_keepRegs k₁ (by decide)
   rw [hu, hv, Divstep.toInt_small (le_trans (le_add_of_nonneg_right (abs_nonneg _)) huv),
     Divstep.toInt_small (le_trans (le_add_of_nonneg_left (abs_nonneg _)) huv), ha, hb] at e₁
-  have hM₁ := modOk_out hM O₁ (by have := hM.mo; apart) hn
+  have hM₁ := modOk_out hM O₁ (by
+    have := hM.mo
+    simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] <;> omega) hn
   have hT' : |u * a + v * b| ≤ 2 ^ 63 * (p : Int) := by
     have := Divstep.comb_le huv ha0 hb0
     exact le_trans this (Int.mul_le_mul_of_nonneg_right (by omega) (Int.natCast_nonneg _))
@@ -196,9 +196,8 @@ theorem slots (P : InvCfg) :
     simp only [InvCfg.L, InvCfg.sG, InvCfg.sA, InvCfg.sB, InvCfg.sNF, InvCfg.sNG, InvCfg.sT, InvCfg.sU] <;>
     omega_using []
 
-set_option hygiene false in
 /-- The slots' arithmetic, from `slots` and the layout (named `eL` … `eU`, `n4`, `htbl`, `hn`). -/
-local macro "slot_omega" : tactic =>
+tactic_template "inv_slot_omega" : tactic =>
   `(tactic| ((try simp only [eL, eF, eG, eA, eB, eNF, eNG, eT, eU]); omega_using [n4, htbl, hn]))
 
 /-- What a batch writes: the working area. -/
@@ -345,12 +344,11 @@ theorem words_ok {P : InvCfg} {base : Addr} {size : Nat} (hL : InvLay P size) {s
     exact ((((o₁.mono (by omega_using []) (by omega_using [])).trans o₂).trans o₃).trans o₄).trans o₅
   · exact ((((k₁.mono (by decide)).trans k₂).trans k₃).trans k₄).trans k₅ |>.trans ((Keeps.regs k).mono (by decide))
 
-set_option hygiene false in
-/-- Each range of a list written out in one of another's, by `slot_omega`. -/
-local macro "cover_omega" : tactic =>
+/-- Each range of a list written out in one of another's, by `inv_slot_omega`. -/
+tactic_template "inv_cover_omega" : tactic =>
   `(tactic| (set_option linter.unusedSimpArgs false in
     simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
-      forall_eq, exists_eq_or_imp, exists_eq_left] <;> slot_omega))
+      forall_eq, exists_eq_or_imp, exists_eq_left] <;> inv_slot_omega))
 
 /-- Both halves of the update of `f`, `g` into `f'`, `g'`. -/
 abbrev fgHalves (P : InvCfg) : List Instr :=
@@ -383,23 +381,23 @@ theorem fgHalves_ok {P : InvCfg} {base : Addr} {size p : Nat} (hL : InvLay P siz
   have hp' : p < 2 ^ (64 * (P.L - 1)) := by rw [eL, Nat.add_sub_cancel]; exact hp
   rw [WP.block_append_iff]
   refine WP.mono (fHalf_ok hs (w := .r9) (w' := .r10) (by decide) (by decide) h9 h10 huv
-    (T := P.sT) (x := P.sF) (y := P.sG) (U := P.sU) (dst := P.sNF) (L := P.L) (by slot_omega) (by slot_omega)
-    (by slot_omega) (by slot_omega) (by slot_omega) (by slot_omega) (by slot_omega) (by slot_omega)
-    (by slot_omega) (by slot_omega) (by slot_omega) (by slot_omega) hF hG hf hg hp' hdf) fun s₁ ⟨e₁, k₁, U₁⟩ => ?_
+    (T := P.sT) (x := P.sF) (y := P.sG) (U := P.sU) (dst := P.sNF) (L := P.L) (by inv_slot_omega) (by inv_slot_omega)
+    (by inv_slot_omega) (by inv_slot_omega) (by inv_slot_omega) (by inv_slot_omega) (by inv_slot_omega) (by inv_slot_omega)
+    (by inv_slot_omega) (by inv_slot_omega) (by inv_slot_omega) (by inv_slot_omega) hF hG hf hg hp' hdf) fun s₁ ⟨e₁, k₁, U₁⟩ => ?_
   have hs₁ := hs.of_keepRegs k₁ (by decide)
-  have U₁' : Unch base [(P.sNF, 32 * P.M.n + 40)] s.mem s₁.mem := Unch.cover U₁ (by cover_omega)
+  have U₁' : Unch base [(P.sNF, 32 * P.M.n + 40)] s.mem s₁.mem := Unch.cover U₁ (by inv_cover_omega)
   have rF : wordsVal s₁.mem base P.sF P.L = wordsVal s.mem base P.sF P.L :=
-    U₁'.wordsVal (by cover_omega) (by slot_omega)
+    U₁'.wordsVal (by inv_cover_omega) (by inv_slot_omega)
   have rG : wordsVal s₁.mem base P.sG P.L = wordsVal s.mem base P.sG P.L :=
-    U₁'.wordsVal (by cover_omega) (by slot_omega)
+    U₁'.wordsVal (by inv_cover_omega) (by inv_slot_omega)
   refine WP.mono (fHalf_ok hs₁ (w := .r11) (w' := .r12) (by decide) (by decide)
     (by rw [k₁.gpr _ (by decide)]; exact h11) (by rw [k₁.gpr _ (by decide)]; exact h12) hqr
-    (T := P.sT) (x := P.sF) (y := P.sG) (U := P.sU) (dst := P.sNG) (L := P.L) (by slot_omega) (by slot_omega)
-    (by slot_omega) (by slot_omega) (by slot_omega) (by slot_omega) (by slot_omega) (by slot_omega)
-    (by slot_omega) (by slot_omega) (by slot_omega) (by slot_omega)
+    (T := P.sT) (x := P.sF) (y := P.sG) (U := P.sU) (dst := P.sNG) (L := P.L) (by inv_slot_omega) (by inv_slot_omega)
+    (by inv_slot_omega) (by inv_slot_omega) (by inv_slot_omega) (by inv_slot_omega) (by inv_slot_omega) (by inv_slot_omega)
+    (by inv_slot_omega) (by inv_slot_omega) (by inv_slot_omega) (by inv_slot_omega)
     (by rw [rF]; exact hF) (by rw [rG]; exact hG) hf hg hp' hdg) fun t ⟨e₂, k₂, U₂⟩ => ⟨?_, e₂, k₁.trans k₂,
-      Unch.cover (U₁'.trans U₂) (by cover_omega)⟩
-  rw [U₂.wordsVal (by cover_omega) (by slot_omega)]; exact e₁
+      Unch.cover (U₁'.trans U₂) (by inv_cover_omega)⟩
+  rw [U₂.wordsVal (by inv_cover_omega) (by inv_slot_omega)]; exact e₁
 
 /-- A batch's update of `f`, `g`, by the matrix in `r9`–`r12`. -/
 theorem fgUpd_ok {P : InvCfg} {base : Addr} {size p : Nat} (hL : InvLay P size) {s : State} (hs : Scr s base size)
@@ -424,20 +422,19 @@ theorem fgUpd_ok {P : InvCfg} {base : Addr} {size p : Nat} (hL : InvLay P size) 
   refine WP.mono (fgHalves_ok hL hs hp h9 h10 h11 h12 huv hqr hF hG hf hg hdf hdg) fun s₂ ⟨e₁, e₂, k₂, U₂⟩ => ?_
   have hs₂ := hs.of_keepRegs k₂ (by decide)
   rw [WP.block_append_iff]
-  refine WP.mono (copy_ok P.L hs₂ (o := P.sF) (a := P.sNF) (by slot_omega) (by slot_omega) (by slot_omega))
+  refine WP.mono (copy_ok P.L hs₂ (o := P.sF) (a := P.sNF) (by inv_slot_omega) (by inv_slot_omega) (by inv_slot_omega))
     fun s₃ ⟨e₃, k₃, O₃⟩ => ?_
   have hs₃ := hs₂.of_keepRegs k₃ (by decide)
   have rNG : wordsVal s₃.mem base P.sNG P.L = wordsVal s₂.mem base P.sNG P.L :=
-    O₃.wordsVal (by slot_omega) (by slot_omega)
-  refine WP.mono (copy_ok P.L hs₃ (o := P.sG) (a := P.sNG) (by slot_omega) (by slot_omega) (by slot_omega))
+    O₃.wordsVal (by inv_slot_omega) (by inv_slot_omega)
+  refine WP.mono (copy_ok P.L hs₃ (o := P.sG) (a := P.sNG) (by inv_slot_omega) (by inv_slot_omega) (by inv_slot_omega))
     fun t ⟨e₄, k₄, O₄⟩ => ⟨?_, ?_, k₂.trans ((k₃.trans k₄).mono (by decide)), ?_⟩
-  · rw [O₄.wordsVal (by slot_omega) (by slot_omega), e₃]; exact e₁
+  · rw [O₄.wordsVal (by inv_slot_omega) (by inv_slot_omega), e₃]; exact e₁
   · rw [e₄, rNG]; exact e₂
-  · exact Unch.cover (U₂.trans (O₃.unch.trans O₄.unch)) (by cover_omega)
+  · exact Unch.cover (U₂.trans (O₃.unch.trans O₄.unch)) (by inv_cover_omega)
 
-set_option hygiene false in
-/-- `slot_omega` with the modulus's place (`hmt`, `hmo`). -/
-local macro "slotm_omega" : tactic =>
+/-- `inv_slot_omega` with the modulus's place (`hmt`, `hmo`). -/
+tactic_template "inv_slotm_omega" : tactic =>
   `(tactic| ((try simp only [eL, eF, eG, eA, eB, eNF, eNG, eT, eU]); omega_using [n4, htbl, hn, hmt, hmo]))
 
 /-- Both halves of the update of `a`, `b`, into `a'` and `b`. -/
@@ -467,26 +464,26 @@ theorem abHalves_ok {P : InvCfg} {base : Addr} {size p : Nat} (hL : InvLay P siz
   have hmo := hM.mo
   rw [WP.block_append_iff]
   refine WP.mono (abHalf_ok hs hM (by omega_using [n4]) (w := .r9) (w' := .r10) (by decide) (by decide) h9 h10 huv
-    (T := P.sT) (x := P.sA) (y := P.sB) (U := P.sU) (dst := P.sNF) (by slotm_omega) (by slotm_omega)
-    (by slotm_omega) (by slotm_omega) (by slotm_omega) (by slotm_omega) (by slotm_omega) (by slotm_omega)
-    (by slotm_omega) (by slotm_omega) (by slotm_omega) (by slotm_omega) (by slotm_omega) hA hB ha hb)
+    (T := P.sT) (x := P.sA) (y := P.sB) (U := P.sU) (dst := P.sNF) (by inv_slotm_omega) (by inv_slotm_omega)
+    (by inv_slotm_omega) (by inv_slotm_omega) (by inv_slotm_omega) (by inv_slotm_omega) (by inv_slotm_omega) (by inv_slotm_omega)
+    (by inv_slotm_omega) (by inv_slotm_omega) (by inv_slotm_omega) (by inv_slotm_omega) (by inv_slotm_omega) hA hB ha hb)
     fun s₁ ⟨e₁, k₁, U₁⟩ => ?_
   have hs₁ := hs.of_keepRegs k₁ (by decide)
-  have U₁' : Unch base [(P.sB, 40 * P.M.n + 40)] s.mem s₁.mem := Unch.cover U₁ (by cover_omega)
+  have U₁' : Unch base [(P.sB, 40 * P.M.n + 40)] s.mem s₁.mem := Unch.cover U₁ (by inv_cover_omega)
   have rA : wordsVal s₁.mem base P.sA P.M.n = wordsVal s.mem base P.sA P.M.n :=
-    U₁'.wordsVal (by cover_omega) (by slot_omega)
+    U₁'.wordsVal (by inv_cover_omega) (by inv_slot_omega)
   have rB : wordsVal s₁.mem base P.sB P.M.n = wordsVal s.mem base P.sB P.M.n :=
-    U₁.wordsVal (by cover_omega) (by slot_omega)
+    U₁.wordsVal (by inv_cover_omega) (by inv_slot_omega)
   have M₁ := modOk_out hM U₁' (by
-    simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq]; slotm_omega) hn
+    simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq]; inv_slotm_omega) hn
   refine WP.mono (abHalf_ok hs₁ M₁ (by omega_using [n4]) (w := .r11) (w' := .r12) (by decide) (by decide)
     (by rw [k₁.gpr _ (by decide)]; exact h11) (by rw [k₁.gpr _ (by decide)]; exact h12) hqr
-    (T := P.sT) (x := P.sA) (y := P.sB) (U := P.sU) (dst := P.sB) (by slotm_omega) (by slotm_omega)
-    (by slotm_omega) (by slotm_omega) (by slotm_omega) (by slotm_omega) (by slotm_omega) (by slotm_omega)
-    (by slotm_omega) (by slotm_omega) (by slotm_omega) (by slotm_omega) (by slotm_omega)
+    (T := P.sT) (x := P.sA) (y := P.sB) (U := P.sU) (dst := P.sB) (by inv_slotm_omega) (by inv_slotm_omega)
+    (by inv_slotm_omega) (by inv_slotm_omega) (by inv_slotm_omega) (by inv_slotm_omega) (by inv_slotm_omega) (by inv_slotm_omega)
+    (by inv_slotm_omega) (by inv_slotm_omega) (by inv_slotm_omega) (by inv_slotm_omega) (by inv_slotm_omega)
     (by rw [rA]; exact hA) (by rw [rB]; exact hB) ha hb) fun t ⟨e₂, k₂, U₂⟩ =>
-      ⟨?_, e₂, k₁.trans k₂, Unch.cover (U₁'.trans U₂) (by cover_omega)⟩
-  rw [U₂.wordsVal (by cover_omega) (by slot_omega)]; exact e₁
+      ⟨?_, e₂, k₁.trans k₂, Unch.cover (U₁'.trans U₂) (by inv_cover_omega)⟩
+  rw [U₂.wordsVal (by inv_cover_omega) (by inv_slot_omega)]; exact e₁
 
 /-- A batch's update of `a`, `b`, by the matrix in `r9`–`r12`. -/
 theorem abUpd_ok {P : InvCfg} {base : Addr} {size p : Nat} (hL : InvLay P size) {s : State} (hs : Scr s base size)
@@ -507,9 +504,9 @@ theorem abUpd_ok {P : InvCfg} {base : Addr} {size p : Nat} (hL : InvLay P size) 
   rw [WP.block_append_iff]
   refine WP.mono (abHalves_ok hL hs hM h9 h10 h11 h12 huv hqr hA hB ha hb) fun s₂ ⟨e₁, e₂, k₂, U₂⟩ => ?_
   have hs₂ := hs.of_keepRegs k₂ (by decide)
-  refine WP.mono (copy_ok P.M.n hs₂ (o := P.sA) (a := P.sNF) (by slot_omega) (by slot_omega) (by slot_omega))
-    fun t ⟨e₃, k₃, O₃⟩ => ⟨by rw [e₃]; exact e₁, by rw [O₃.wordsVal (by slot_omega) (by slot_omega)]; exact e₂,
-      k₂.trans (k₃.mono (by decide)), Unch.cover (U₂.trans O₃.unch) (by cover_omega)⟩
+  refine WP.mono (copy_ok P.M.n hs₂ (o := P.sA) (a := P.sNF) (by inv_slot_omega) (by inv_slot_omega) (by inv_slot_omega))
+    fun t ⟨e₃, k₃, O₃⟩ => ⟨by rw [e₃]; exact e₁, by rw [O₃.wordsVal (by inv_slot_omega) (by inv_slot_omega)]; exact e₂,
+      k₂.trans (k₃.mono (by decide)), Unch.cover (U₂.trans O₃.unch) (by inv_cover_omega)⟩
 
 /-- The count of batches less one, its zero flag whether it is now zero. -/
 theorem batchEnd_ok (s : State) {j : Nat} (hj : 1 ≤ j) (hj' : j < 2 ^ 64)
@@ -565,20 +562,20 @@ theorem batch_ok {P : InvCfg} {base : Addr} {size p : Nat} (hL : InvLay P size) 
   obtain ⟨hD, hU, hV, hQ, hR, O₂, k₂⟩ := h₂
   have hs₂ := hs.of_keepRegs k₂ (by decide)
   have hM₂ : ModOkW P.M size p s₂.mem base := modOk_out hM O₂.unch (by
-    simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq]; slotm_omega) hn
+    simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq]; inv_slotm_omega) hn
   rw [← List.append_assoc, update_eq, WP.block_append_iff]
-  refine WP.mono (fgUpd_ok hL hs₂ hp hU hV hQ hR buv bqr (by rw [O₂.wordsVal (by slot_omega) (by slot_omega)]; exact hI.f)
-    (by rw [O₂.wordsVal (by slot_omega) (by slot_omega)]; exact hI.g) hf hg
+  refine WP.mono (fgUpd_ok hL hs₂ hp hU hV hQ hR buv bqr (by rw [O₂.wordsVal (by inv_slot_omega) (by inv_slot_omega)]; exact hI.f)
+    (by rw [O₂.wordsVal (by inv_slot_omega) (by inv_slot_omega)]; exact hI.g) hf hg
     ⟨_, mf.symm⟩ ⟨_, mg.symm⟩) fun s₃ ⟨eF₃, eG₃, k₃, U₃⟩ => ?_
   have hs₃ := hs₂.of_keepRegs k₃ (by decide)
   have g₃ : ∀ r ∉ [Reg.rax, .rcx, .rdx, .rbp, .r8, .r13], s₃.gpr r = s₂.gpr r := k₃.gpr
   have M₃ : ModOkW P.M size p s₃.mem base := modOk_out hM₂ U₃ (by
-    simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]; slotm_omega) hn
+    simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]; inv_slotm_omega) hn
   rw [WP.block_append_iff]
   refine WP.mono (abUpd_ok hL hs₃ M₃ (by rw [g₃ _ (by decide)]; exact hU) (by rw [g₃ _ (by decide)]; exact hV)
     (by rw [g₃ _ (by decide)]; exact hQ) (by rw [g₃ _ (by decide)]; exact hR) buv bqr
-    (by rw [U₃.wordsVal (by cover_omega) (by slot_omega), O₂.wordsVal (by slot_omega) (by slot_omega)]; exact hI.a)
-    (by rw [U₃.wordsVal (by cover_omega) (by slot_omega), O₂.wordsVal (by slot_omega) (by slot_omega)]; exact hI.b)
+    (by rw [U₃.wordsVal (by inv_cover_omega) (by inv_slot_omega), O₂.wordsVal (by inv_slot_omega) (by inv_slot_omega)]; exact hI.a)
+    (by rw [U₃.wordsVal (by inv_cover_omega) (by inv_slot_omega), O₂.wordsVal (by inv_slot_omega) (by inv_slot_omega)]; exact hI.b)
     ha hb) fun s₄ ⟨eA₄, eB₄, k₄, U₄⟩ => ?_
   have c₄ : s₄.gpr .r14 = BitVec.ofNat 64 j := by
     rw [k₄.gpr _ (by decide), g₃ _ (by decide), k₂.gpr _ (by decide), hc]
@@ -587,14 +584,14 @@ theorem batch_ok {P : InvCfg} {base : Addr} {size p : Nat} (hL : InvLay P size) 
   · simp only [Divstep.batch]
     rw [kt.1 _ (by decide), k₄.gpr _ (by decide), g₃ _ (by decide)]; exact hD
   · simp only [Divstep.batch]
-    rw [kt.2.1, U₄.wordsVal (by cover_omega) (by slot_omega)]; exact eF₃
+    rw [kt.2.1, U₄.wordsVal (by inv_cover_omega) (by inv_slot_omega)]; exact eF₃
   · simp only [Divstep.batch]
-    rw [kt.2.1, U₄.wordsVal (by cover_omega) (by slot_omega)]; exact eG₃
+    rw [kt.2.1, U₄.wordsVal (by inv_cover_omega) (by inv_slot_omega)]; exact eG₃
   · simp only [Divstep.batch]
     rw [kt.2.1]; exact eA₄
   · simp only [Divstep.batch]
     rw [kt.2.1]; exact eB₄
   · exact ((k₂.mono (by decide)).trans ((k₃.trans k₄).mono (by decide))).trans ((Keeps.regs kt).mono (by decide))
-  · rw [kt.2.1]; exact Unch.cover ((O₂.unch.trans U₃).trans U₄) (by unfold batchW invTbl; cover_omega)
+  · rw [kt.2.1]; exact Unch.cover ((O₂.unch.trans U₃).trans U₄) (by unfold batchW invTbl; inv_cover_omega)
 
 end VG.Proof.Weierstrass.X86_64

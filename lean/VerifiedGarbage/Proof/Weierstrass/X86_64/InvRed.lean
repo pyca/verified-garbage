@@ -1,7 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvWords
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.Copy
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
@@ -260,7 +261,7 @@ theorem low_high_mod {L A y Q : Nat} (hL : L < A) (hQ : 0 < Q) : L + A * (y % Q)
   exact (Nat.mod_eq_of_lt h1).symm
 
 /-- Apart from each range of a list written out. -/
-local macro "apart" : tactic => `(tactic| plain_simp_names (simp only [List.mem_cons, List.not_mem_nil, or_false,
+tactic_template "inv_apart_arith" : tactic => `(tactic| (simp only [List.mem_cons, List.not_mem_nil, or_false,
                    forall_eq_or_imp, forall_eq] <;> omega_arith))
 
 /-- `[dst] = mred p m T` (`n` words), for `[t]` (`n + 1` words) holding `T`, `|T| ≤ 2^63 p`. -/
@@ -302,19 +303,19 @@ theorem mredC_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {
   have U₅ : Unch base [(t, 8 * (M.n + 2)), (U + 8 * M.n, 8)] s.mem s₅.mem := fun x hx => by
     simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at hx
     rw [O₅ x (by omega_using [hx]), O₄ x (by omega_using [hx]), O₃ x (by omega_using [hx]), O₂ x (by omega_using [hx]), k₁.2.1]
-  have P₅ : wordsVal s₅.mem base M.mo M.n = p := by rw [U₅.wordsVal (by apart) (by omega_using [hn, hmo]), hP]
+  have P₅ : wordsVal s₅.mem base M.mo M.n = p := by rw [U₅.wordsVal (by inv_apart_arith) (by omega_using [hn, hmo]), hP]
   -- `R₁ = R + (p if negative)`.
   rw [WP.block_append_iff]
   refine WP.mono (addIfNeg_ok hs₅ M ht hU hmo htU hUm htm z₅) fun s₆ ⟨e₆, k₆, O₆⟩ => ?_
   have hs₆ := hs₅.of_keepRegs k₆ (by decide)
-  have P₆ : wordsVal s₆.mem base M.mo M.n = p := by rw [O₆.wordsVal (by apart) (by omega_using [hn, hmo]), P₅]
-  have z₆ : word s₆.mem base (U + 8 * M.n) = 0 := by rw [O₆.word (by apart) (by omega_using [hU, hn]), z₅]
+  have P₆ : wordsVal s₆.mem base M.mo M.n = p := by rw [O₆.wordsVal (by inv_apart_arith) (by omega_using [hn, hmo]), P₅]
+  have z₆ : word s₆.mem base (U + 8 * M.n) = 0 := by rw [O₆.word (by inv_apart_arith) (by omega_using [hU, hn]), z₅]
   -- `R₂ = R₁ - p`.
   rw [WP.block_append_iff]
   refine WP.mono (subP_ok hs₆ M ht hU hmo htU hUm z₆) fun s₇ ⟨e₇, k₇, O₇⟩ => ?_
   have hs₇ := hs₆.of_keepRegs k₇ (by decide)
-  have P₇ : wordsVal s₇.mem base M.mo M.n = p := by rw [O₇.wordsVal (by apart) (by omega_using [hn, hmo]), P₆]
-  have z₇ : word s₇.mem base (U + 8 * M.n) = 0 := by rw [O₇.word (by apart) (by omega_using [hU, hn]), z₆]
+  have P₇ : wordsVal s₇.mem base M.mo M.n = p := by rw [O₇.wordsVal (by inv_apart_arith) (by omega_using [hn, hmo]), P₆]
+  have z₇ : word s₇.mem base (U + 8 * M.n) = 0 := by rw [O₇.word (by inv_apart_arith) (by omega_using [hU, hn]), z₆]
   -- `R₃ = R₂ + (p if negative)`.
   rw [WP.block_append_iff]
   refine WP.mono (addIfNeg_ok hs₇ M ht hU hmo htU hUm htm z₇) fun s₈ ⟨e₈, k₈, O₈⟩ => ?_
@@ -326,7 +327,7 @@ theorem mredC_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {
     (k₇.mono (by decide))).trans (k₈.mono (by decide))).trans (ku.mono (by decide)), fun x hx => ?_⟩
   rotate_left
   · simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at hx
-    rw [Ou x (by omega_using [hx]), O₈ x (by apart), O₇ x (by apart), O₆ x (by apart), U₅ x (by apart)]
+    rw [Ou x (by omega_using [hx]), O₈ x (by inv_apart_arith), O₇ x (by inv_apart_arith), O₆ x (by inv_apart_arith), U₅ x (by inv_apart_arith)]
   -- The arithmetic.
   have hp0 : 0 < p := by
     have := hM.inv
