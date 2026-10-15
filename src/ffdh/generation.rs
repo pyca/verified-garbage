@@ -64,13 +64,15 @@ fn parameters_limit<E>(
     let len = size.div_ceil(8);
     let mut p = vec![0; len];
     let mut scratch = crate::rsa::Scratch::new(16 * len + 32);
-    let mut tape = vec![0; len];
+    // Include a first witness so candidates rejected by their first
+    // Miller–Rabin round do not need to replay Montgomery preparation.
+    let mut tape = vec![0; 2 * len];
     // Bound entropy consumption even when a failed RNG keeps producing
     // rejected witnesses. The verified routine owns witness selection and
     // round counts; Rust only extends the same tape and replays it.
     let max_tape = (1 + (1 << 15)) * len;
     for _ in 0..limit {
-        tape.truncate(len);
+        tape.truncate(2 * len);
         fill(&mut tape).map_err(|_| Error::Randomness)?;
         loop {
             let (status, _) =
@@ -88,7 +90,8 @@ fn parameters_limit<E>(
                     tape.resize((2 * old_len).min(max_tape), 0);
                     fill(&mut tape[old_len..]).map_err(|_| Error::Randomness)?;
                 }
-                // NO-COVERAGE-START: the verified contract returns only 0, 1 or 2.
+                // The verified contract returns only 0, 1 or 2.
+                // NO-COVERAGE-START
                 _ => unreachable!(),
                 // NO-COVERAGE-END
             }
@@ -334,12 +337,25 @@ mod native_tests {
     #[test]
     fn published_candidates_and_tape_consumption() {
         // Published safe primes exercise both 64- and 128-witness policies.
-        // Zero and one draws must be skipped independently for q and p.
+        // Zero, one, n-1 and n must be skipped independently for q and p.
         for (bits, generator, rounds) in [(1024, 2, 64), (3072, 5, 128)] {
             let prime = published_prime(bits);
             let len = prime.len();
             let mut tape = prime.clone();
-            for _ in 0..2 {
+            let mut carry = 0;
+            let q: alloc::vec::Vec<u8> = prime
+                .iter()
+                .map(|&b| {
+                    let half = (b >> 1) | carry;
+                    carry = b << 7;
+                    half
+                })
+                .collect();
+            for modulus in [&q, &prime] {
+                let mut upper = modulus.clone();
+                *upper.last_mut().unwrap() -= 1;
+                tape.extend_from_slice(&upper);
+                tape.extend_from_slice(modulus);
                 for value in [0, 1].into_iter().chain(core::iter::repeat_n(2, rounds)) {
                     tape.resize(tape.len() + len, 0);
                     *tape.last_mut().unwrap() = value;
@@ -383,7 +399,9 @@ mod native_tests {
         let params = parameters_limit(1024, 2, 1, |out| {
             calls += 1;
             if calls == 1 {
-                out.copy_from_slice(&prime);
+                out.fill(0);
+                out[..prime.len()].copy_from_slice(&prime);
+                *out.last_mut().unwrap() = 2;
             } else {
                 for draw in out.chunks_exact_mut(prime.len()) {
                     draw.fill(0);
@@ -400,7 +418,7 @@ mod native_tests {
             parameters_limit(1024, 2, 1, |out| {
                 calls += 1;
                 if calls == 1 {
-                    out.copy_from_slice(&prime);
+                    out[..prime.len()].copy_from_slice(&prime);
                     Ok(())
                 } else {
                     Err(())
@@ -415,7 +433,7 @@ mod native_tests {
                 calls += 1;
                 out.fill(0);
                 if calls == 1 {
-                    out.copy_from_slice(&prime);
+                    out[..prime.len()].copy_from_slice(&prime);
                 }
                 Ok::<_, ()>(())
             })
