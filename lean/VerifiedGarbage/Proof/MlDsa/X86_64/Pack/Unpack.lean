@@ -79,17 +79,17 @@ theorem bu_wp {s₀ : State} (hp : bitUnpackK.pre s₀) :
     have hy := field_lt (inNum s₀.mem (s₀.gpr .rdi) d) d i hs.d20
     have hy' := hy
     unfold inNum at hy'
-    rw [hc i hi, buWord, subModQ_toNat (by rw [BitVec.toNat_ofNat]; omega) (by rw [BitVec.toNat_ofNat]; omega),
-      BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show B < 2 ^ 32 by omega),
-      Nat.mod_eq_of_lt (show _ < 2 ^ 32 by omega), toRq, Vector.getElem_map, bitUnpack_get _ _ _ hi,
-      hlen, hB, hd, ofInt_sub (by omega)]
+    rw [hc i hi, buWord, subModQ_toNat (by rw [BitVec.toNat_ofNat]; omega_using [hB19, hq]) (by rw [BitVec.toNat_ofNat]; omega_using [hq, hy]),
+      BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show B < 2 ^ 32 by omega_using [hB19]),
+      Nat.mod_eq_of_lt (show _ < 2 ^ 32 by omega_using [hy]), toRq, Vector.getElem_map, bitUnpack_get _ _ _ hi,
+      hlen, hB, hd, ofInt_sub (by omega_using [hq, hy'])]
   unfold Impl.MlDsa.X86_64.Pack.bitUnpack
   refine WP.seq (WP.mono (buPro_ok s₀) fun s₁ ⟨⟨cx₁, si₁, m₁⟩, k₁⟩ => ?_)
   have di₁ : s₁.gpr .rdi = s₀.gpr .rdi := k₁.gpr (by decide)
   have cases := mem_bitPackParams hab
   refine sel_ok .rcx 2 _ _ s₁ (fun s₂ ⟨g₂, m₂, rd₂, wr₂⟩ h => ?_) (fun s₂ ⟨g₂, m₂, rd₂, wr₂⟩ h => ?_)
   · have e : dArg s₀ .rcx = 2 := by rw [← cx₁, lo_of_eq h]
-    have ea : dArg s₀ .rdx = 2 := by omega
+    have ea : dArg s₀ .rdx = 2 := by omega_using [cases, e]
     exact go (d := 3) (c := 8) (nb := 3) ⟨by decide, by decide, rfl, by decide, by decide, rfl, rfl⟩ e
       (by decide) (by rw [ea]; decide) s₂ (by rw [g₂, di₁]) (by rw [g₂, si₁]) (by rw [rd₂, k₁.2.1])
       (by rw [wr₂, k₁.2.2]) (by rw [m₂, m₁])
@@ -97,7 +97,7 @@ theorem bu_wp {s₀ : State} (hp : bitUnpackK.pre s₀) :
   have ds₂ : dArg s₂ .rcx = dArg s₀ .rcx := by unfold dArg; rw [g₂]; exact cx₁
   refine sel_ok .rcx 4 _ _ s₂ (fun s₃ ⟨g₃, m₃, rd₃, wr₃⟩ h => ?_) (fun s₃ ⟨g₃, m₃, rd₃, wr₃⟩ h => ?_)
   · have e : dArg s₀ .rcx = 4 := by rw [← ds₂, lo_of_eq h]
-    have ea : dArg s₀ .rdx = 4 := by omega
+    have ea : dArg s₀ .rdx = 4 := by omega_using [cases, e]
     exact go (d := 4) (c := 2) (nb := 1) ⟨by decide, by decide, rfl, by decide, by decide, rfl, rfl⟩ e
       (by decide) (by rw [ea]; decide) s₃ (by rw [g₃, g₂, di₁]) (by rw [g₃, g₂, si₁])
       (by rw [rd₃, rd₂, k₁.2.1]) (by rw [wr₃, wr₂, k₁.2.2]) (by rw [m₃, m₂, m₁])
@@ -105,7 +105,7 @@ theorem bu_wp {s₀ : State} (hp : bitUnpackK.pre s₀) :
   have ds₃ : dArg s₃ .rcx = dArg s₀ .rcx := by unfold dArg; rw [g₃]; exact ds₂
   refine sel_ok .rcx 4096 _ _ s₃ (fun s₄ ⟨g₄, m₄, rd₄, wr₄⟩ h => ?_) (fun s₄ ⟨g₄, m₄, rd₄, wr₄⟩ h => ?_)
   · have e : dArg s₀ .rcx = 4096 := by rw [← ds₃, lo_of_eq h]
-    have ea : dArg s₀ .rdx = 4095 := by omega
+    have ea : dArg s₀ .rdx = 4095 := by omega_using [cases, e]
     exact go (d := 13) (c := 8) (nb := 13) ⟨by decide, by decide, rfl, by decide, by decide, rfl, rfl⟩ e
       (by decide) (by rw [ea]; decide) s₄ (by rw [g₄, g₃, g₂, di₁]) (by rw [g₄, g₃, g₂, si₁])
       (by rw [rd₄, rd₃, rd₂, k₁.2.1]) (by rw [wr₄, wr₃, wr₂, k₁.2.2]) (by rw [m₄, m₃, m₂, m₁])
@@ -113,13 +113,13 @@ theorem bu_wp {s₀ : State} (hp : bitUnpackK.pre s₀) :
   have ds₄ : dArg s₄ .rcx = dArg s₀ .rcx := by unfold dArg; rw [g₄]; exact ds₃
   refine sel_ok .rcx 131072 _ _ s₄ (fun s₅ ⟨g₅, m₅, rd₅, wr₅⟩ h => ?_) (fun s₅ ⟨g₅, m₅, rd₅, wr₅⟩ h => ?_)
   · have e : dArg s₀ .rcx = 131072 := by rw [← ds₄, lo_of_eq h]
-    have ea : dArg s₀ .rdx = 131071 := by omega
+    have ea : dArg s₀ .rdx = 131071 := by omega_using [cases, e]
     exact go (d := 18) (c := 4) (nb := 9) ⟨by decide, by decide, rfl, by decide, by decide, rfl, rfl⟩ e
       (by decide) (by rw [ea]; decide) s₅ (by rw [g₅, g₄, g₃, g₂, di₁]) (by rw [g₅, g₄, g₃, g₂, si₁])
       (by rw [rd₅, rd₄, rd₃, rd₂, k₁.2.1]) (by rw [wr₅, wr₄, wr₃, wr₂, k₁.2.2]) (by rw [m₅, m₄, m₃, m₂, m₁])
   · have n131072 : dArg s₀ .rcx ≠ 131072 := by rw [← ds₄]; exact lo_ne h
-    have e : dArg s₀ .rcx = 524288 := by omega
-    have ea : dArg s₀ .rdx = 524287 := by omega
+    have e : dArg s₀ .rcx = 524288 := by omega_using [cases, n2, n4, n4096, n131072]
+    have ea : dArg s₀ .rdx = 524287 := by omega_using [cases, e]
     exact go (d := 20) (c := 2) (nb := 5) ⟨by decide, by decide, rfl, by decide, by decide, rfl, rfl⟩ e
       (by decide) (by rw [ea]; decide) s₅ (by rw [g₅, g₄, g₃, g₂, di₁]) (by rw [g₅, g₄, g₃, g₂, si₁])
       (by rw [rd₅, rd₄, rd₃, rd₂, k₁.2.1]) (by rw [wr₅, wr₄, wr₃, wr₂, k₁.2.2]) (by rw [m₅, m₄, m₃, m₂, m₁])
@@ -183,8 +183,8 @@ theorem t1_wp {s₀ : State} (hp : unpackT1K.pre s₀) :
     (by rw [hwr]; exact List.mem_singleton_self _) hsep rfl rfl rfl rfl rfl) fun s' ⟨hc, hf, _⟩ => ⟨?_, hf⟩
   refine polyIs_of_toNat fun i hi => ?_
   have hy : inNum s₀.mem (s₀.gpr .rdi) 10 / 2 ^ (10 * i) % 2 ^ 10 < 2 ^ 10 := Nat.mod_lt _ (by decide)
-  rw [hc i hi, t1Word, rotr_toNat _ (by decide) (by rw [BitVec.toNat_ofNat]; omega), BitVec.toNat_ofNat,
-    Nat.mod_eq_of_lt (show _ < 2 ^ 32 by omega), Vector.getElem_map, simpleBitUnpack_get _ _ hi,
+  rw [hc i hi, t1Word, rotr_toNat _ (by decide) (by rw [BitVec.toNat_ofNat]; omega_using []), BitVec.toNat_ofNat,
+    Nat.mod_eq_of_lt (show _ < 2 ^ 32 by omega_using []), Vector.getElem_map, simpleBitUnpack_get _ _ hi,
     show bitlen t1Max = 10 by decide, ofInt_t1 hy]
 
 theorem unpackT1_correct (s : State) (hs : unpackT1K.pre s) :
