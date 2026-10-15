@@ -1,4 +1,8 @@
-import VerifiedGarbage.Proof.Ct.PPC64LE
+module
+
+public import VerifiedGarbage.Proof.Ct.PPC64LE
+
+@[expose] public section
 
 namespace VG.Artifacts.Ct.PPC64LE
 open VG.PPC64LE

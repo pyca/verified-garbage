@@ -1,5 +1,7 @@
-import VerifiedGarbage.TCB.PPC64LE.Target
-import VerifiedGarbage.Proof.Hmac.PPC64LE.Shared
+module
+
+public import VerifiedGarbage.TCB.PPC64LE.Target
+public import VerifiedGarbage.Proof.Hmac.PPC64LE.Shared
 
 /-!
 # HMAC-SHA-256 (RFC 2104) on PPC64LE
@@ -14,6 +16,8 @@ target (`Sig.layoutDoc`), from `stack` and `writeArgs`, which `ofSig` checks
 against the contract.
 -/
 
+@[expose] public section
+
 namespace VG.Artifacts.HmacSha256.PPC64LE
 
 def artifacts : List Artifact := [
@@ -22,7 +26,7 @@ def artifacts : List Artifact := [
     doc := Spec.Hmac.sha256I.initApi.doc
     code := Impl.StackScratch.PPC64LE.withStackScratch 864 .r7 Impl.Hmac.PPC64LE.init
     contract := Spec.Hmac.sha256I.initContract PPC64LE.abi 912
-    ofSig := ⟨_, _, _, by unfold Spec.Hmac.Instance.initContract; rfl⟩
+    ofSig := by exact (⟨_, _, _, by unfold Spec.Hmac.Instance.initContract; rfl⟩)
     writeArgs := true
     stack := 912
     verified := Proof.Hmac.PPC64LE.Shared.init
@@ -32,7 +36,7 @@ def artifacts : List Artifact := [
     doc := Spec.Hmac.sha256I.finalizeApi.doc
     code := Impl.StackScratch.PPC64LE.withStackScratch 864 .r7 Impl.Hmac.PPC64LE.finalize
     contract := Spec.Hmac.sha256I.finalizeContract PPC64LE.abi 960
-    ofSig := ⟨_, _, _, by unfold Spec.Hmac.Instance.finalizeContract; rfl⟩
+    ofSig := by exact (⟨_, _, _, by unfold Spec.Hmac.Instance.finalizeContract; rfl⟩)
     writeArgs := true
     stack := 960
     verified := Proof.Hmac.PPC64LE.Shared.finalize
@@ -42,7 +46,7 @@ def artifacts : List Artifact := [
     doc := Spec.Hmac.sha256I.initScratchApi.doc
     code := Impl.Hmac.PPC64LE.init
     contract := Spec.Hmac.sha256I.initScratchContract PPC64LE.abi 48
-    ofSig := ⟨_, _, _, by unfold Spec.Hmac.Instance.initScratchContract; rfl⟩
+    ofSig := by exact (⟨_, _, _, by unfold Spec.Hmac.Instance.initScratchContract; rfl⟩)
     writeArgs := true
     stack := 48
     verified := Proof.Hmac.PPC64LE.Shared.initScratch
@@ -52,7 +56,7 @@ def artifacts : List Artifact := [
     doc := Spec.Hmac.sha256I.finalizeScratchApi.doc
     code := Impl.Hmac.PPC64LE.finalize
     contract := Spec.Hmac.sha256I.finalizeScratchContract PPC64LE.abi 96
-    ofSig := ⟨_, _, _, by unfold Spec.Hmac.Instance.finalizeScratchContract; rfl⟩
+    ofSig := by exact (⟨_, _, _, by unfold Spec.Hmac.Instance.finalizeScratchContract; rfl⟩)
     writeArgs := true
     stack := 96
     verified := Proof.Hmac.PPC64LE.Shared.finalizeScratch

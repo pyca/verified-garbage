@@ -1,10 +1,16 @@
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Framework.PPC64LE.Inline
-import VerifiedGarbage.Proof.Framework.PPC64LE.StackScratch
-import VerifiedGarbage.Proof.Hmac.Scratch
-import VerifiedGarbage.Proof.Hmac.PPC64LE.Finalize
-import VerifiedGarbage.Proof.Hmac.PPC64LE.Init
-import VerifiedGarbage.Spec.Hmac.Generic
+module
+
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Inline
+public import VerifiedGarbage.Proof.Framework.PPC64LE.StackScratch
+public import VerifiedGarbage.Proof.Hmac.Scratch
+public import VerifiedGarbage.Proof.Hmac.PPC64LE.Finalize
+public import VerifiedGarbage.Proof.Hmac.PPC64LE.Init
+public import VerifiedGarbage.Spec.Hmac.Generic
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # HMAC-SHA-256 on PPC64LE: the shared contracts
@@ -19,6 +25,8 @@ bytes, sized for the other targets' functions): the per-target contracts are
 first widened to that scratch (`Verified.widen`, the same code running with
 the same trace and result), then moved to the shared ones.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Hmac.PPC64LE.Shared
 
