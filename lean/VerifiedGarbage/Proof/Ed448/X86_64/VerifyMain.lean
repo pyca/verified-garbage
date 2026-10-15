@@ -74,7 +74,7 @@ theorem result_ok {s : State} {base : Addr} (hs : Scr s base) :
   refine WP.mono (show WP isa (.block ([.mov .rax (.reg .rdx)] : List Instr)) s2 fun t =>
       t.gpr .rax = s2.gpr .rdx ∧ (∀ r, r ≠ .rax → t.gpr r = s2.gpr r) ∧ t.mem = s2.mem ∧
         t.rd = s2.rd ∧ t.wr = s2.wr by
-    erun
+    erun []
     exact fun r hr => by simp only [hr, ite_false]) fun t ⟨at', gt, mt, rdt, wrt⟩ => ?_
   refine ⟨by rw [at', d2, d1], fun r h1 h2 => by rw [gt r h1, g2 r h2, g1 r h2], by rw [mt, m2, m1],
     by rw [rdt, rd2, rd1], by rw [wrt, wr2, wr1]⟩
@@ -86,14 +86,14 @@ theorem movR957_ok (s : State) :
     WP isa (.block ([.mov .rsi (.reg .r9), .alu .add .rsi (.imm 57)] : List Instr)) s fun t =>
       t.gpr .rsi = s.gpr .r9 + BitVec.ofNat 64 57 ∧ (∀ r, r ≠ .rsi → t.gpr r = s.gpr r) ∧
         t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr := by
-  erun
+  erun []
   exact ⟨rfl, fun r hr => by simp only [hr, ite_false]⟩
 
 /-- `rax = 0`. -/
 theorem movRax0_ok (s : State) :
     WP isa (.block ([.mov32 .rax (.imm 0)] : List Instr)) s fun t =>
       t.gpr .rax = 0 ∧ (∀ r, r ≠ .rax → t.gpr r = s.gpr r) ∧ t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr := by
-  erun
+  erun []
   exact fun r hr => by simp only [hr, ite_false]
 
 /-- The moves of the entry. -/
@@ -103,7 +103,7 @@ theorem movArgs_ok (s : State) :
       t.gpr .r8 = s.gpr .rdi ∧ t.gpr .r9 = s.gpr .rsi ∧ t.gpr .rdi = s.gpr .rcx ∧
       t.gpr .rsi = s.gpr .rdx ∧ (∀ r, r ∉ [Reg.r8, .r9, .rdi, .rsi] → t.gpr r = s.gpr r) ∧
       t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr := by
-  erun
+  erun []
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
   simp only [hr.1, hr.2.1, hr.2.2.1, hr.2.2.2, ite_false]
