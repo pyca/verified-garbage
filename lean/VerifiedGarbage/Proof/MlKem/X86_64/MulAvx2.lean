@@ -145,15 +145,10 @@ theorem ystore4 (m : Mem) (H : Addr) {j : Nat} (hj : j + 32 ≤ 256) (Y0 Y1 Y2 Y
     simp (disch := bdd_omega) only [ite_eq_right]
   · rw [coeffAt_write256 _ _ (by bdd_omega) _ (by bdd_omega), coeffAt_write256 _ _ (by bdd_omega) _ (by bdd_omega),
       coeffAt_write256 _ _ (by bdd_omega) _ (by bdd_omega), coeffAt_write256 _ _ (by bdd_omega) _ (by bdd_omega)]
-    rcases (by bdd_omega : t = 0 ∨ t = 1 ∨ t = 2 ∨ t = 3) with rfl | rfl | rfl | rfl
-    · simp (disch := bdd_omega) only [ite_eq_left, ite_eq_right]
-      rw [show j + 8 * 0 + q - j = q by bdd_omega]; rfl
-    · simp (disch := bdd_omega) only [ite_eq_left, ite_eq_right]
-      rw [show j + 8 * 1 + q - (j + 8) = q by bdd_omega]; rfl
-    · simp (disch := bdd_omega) only [ite_eq_left, ite_eq_right]
-      rw [show j + 8 * 2 + q - (j + 16) = q by bdd_omega]; rfl
-    · simp (disch := bdd_omega) only [ite_eq_left]
-      rw [show j + 8 * 3 + q - (j + 24) = q by bdd_omega]; rfl
+    rcases (by bdd_omega : t = 0 ∨ t = 1 ∨ t = 2 ∨ t = 3) with rfl | rfl | rfl | rfl <;>
+    simp only [Nat.reduceMul, Nat.add_zero, Nat.add_assoc, Nat.reduceAdd, Nat.add_le_add_iff_left,
+      Nat.add_lt_add_iff_left, Nat.le_add_right, Nat.add_sub_add_left, Nat.add_sub_cancel_left, true_and] <;>
+    simp (disch := bdd_omega) only [ite_eq_left, ite_eq_right] <;> rfl
   · exact (((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Offset.contains_base _ (by bdd_omega) (by bdd_omega))).writeW
       (List.mem_singleton_self _) _ (Offset.contains_base _ (by bdd_omega) (by bdd_omega))).writeW
       (List.mem_singleton_self _) _ (Offset.contains_base _ (by bdd_omega) (by bdd_omega)) |>.writeW
@@ -257,18 +252,18 @@ theorem prod_valY {i l : Nat} (hi : i < 8) (hl : l < 2) {X1 X2 : BitVec 128} {F 
     (word (if (4 * t + j) % 2 = 0 then X1 else X2) ((4 * t + j) / 2)).toNat =
       ((multiplyNTTs F G)[32 * i + 8 * t + 4 * l + j]!).val := by
   rw [multiplyNTTs_get F G (by rw [n_eq]; omega)]
-  have hP : pairY i l ((4 * t + j) / 2) = 16 * i + 4 * t + j / 2 + 2 * l := by unfold pairY; omega
+  have hP : pairY i l ((4 * t + j) / 2) = 16 * i + 4 * t + j / 2 + 2 * l := by unfold pairY; bdd_omega 256
   split
   · rename_i he
-    rw [ite_eq_left_of_eq_true _ _ (eq_true (by bdd_omega)), h1 _ (by bdd_omega)]
+    rw [ite_eq_left_of_eq_true _ _ (eq_true (by bdd_omega 256)), h1 _ (by bdd_omega 256)]
     dsimp only
-    rw [hP, show 2 * (16 * i + 4 * t + j / 2 + 2 * l) = 32 * i + 8 * t + 4 * l + j by bdd_omega,
-      show (32 * i + 8 * t + 4 * l + j) / 2 = 16 * i + 4 * t + j / 2 + 2 * l by bdd_omega]
+    rw [hP, show 2 * (16 * i + 4 * t + j / 2 + 2 * l) = 32 * i + 8 * t + 4 * l + j by bdd_omega 256,
+      show (32 * i + 8 * t + 4 * l + j) / 2 = 16 * i + 4 * t + j / 2 + 2 * l by bdd_omega 256]
   · rename_i he
-    rw [ite_eq_right_of_eq_false _ _ (eq_false (by bdd_omega)), h2 _ (by bdd_omega)]
+    rw [ite_eq_right_of_eq_false _ _ (eq_false (by bdd_omega 256)), h2 _ (by bdd_omega 256)]
     dsimp only
-    rw [hP, show 2 * (16 * i + 4 * t + j / 2 + 2 * l) = 32 * i + 8 * t + 4 * l + j - 1 by bdd_omega,
-      show 32 * i + 8 * t + 4 * l + j - 1 + 1 = 32 * i + 8 * t + 4 * l + j by bdd_omega]
+    rw [hP, show 2 * (16 * i + 4 * t + j / 2 + 2 * l) = 32 * i + 8 * t + 4 * l + j - 1 by bdd_omega 256,
+      show 32 * i + 8 * t + 4 * l + j - 1 + 1 = 32 * i + 8 * t + 4 * l + j by bdd_omega 256]
 
 theorem step {i : Nat} (hi : i < 8) {s : State} (hI : Inv s₀ i s) :
     WP isa (.block (mulBodyY ++ ([.alu .sub .rcx (.imm 1)] : List Instr))) s fun s' =>
@@ -314,7 +309,7 @@ theorem step {i : Nat} (hi : i < 8) {s : State} (hI : Inv s₀ i s) :
   have g4 : s4.gpr = s.gpr := o14.gpr
   have idx : ∀ l < 2, ∀ e < 8, 32 * i + 8 * (2 * e / 4) + 4 * l + 2 * e % 4 = 2 * pairY i l e ∧
       32 * i + 8 * ((2 * e + 1) / 4) + 4 * l + (2 * e + 1) % 4 = 2 * pairY i l e + 1 := fun l _ e _ => by
-    unfold pairY; omega
+    unfold pairY; bdd_omega 128
   have LF : ∀ l < 2, Lanes (s5.lane .xmm0 l) (fun e => (F s₀)[2 * pairY i l e]!) ∧
       Lanes (s5.lane .xmm4 l) (fun e => (F s₀)[2 * pairY i l e + 1]!) := fun l hl => by
     have d := deintY hp hI.frame (.inl rfl) hj hl _ hI.rsi

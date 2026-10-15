@@ -353,15 +353,13 @@ theorem store4 (m : Mem) (H : Addr) {j : Nat} (hj : j + 16 ≤ 256) (Y0 Y1 Y2 Y3
     simp (disch := bdd_omega) only [ite_eq_right]
   · rw [coeffAt_write128 _ _ (by bdd_omega) _ (by bdd_omega), coeffAt_write128 _ _ (by bdd_omega) _ (by bdd_omega),
       coeffAt_write128 _ _ (by bdd_omega) _ (by bdd_omega), coeffAt_write128 _ _ (by bdd_omega) _ (by bdd_omega)]
-    rcases (by bdd_omega : k < 4 ∨ (4 ≤ k ∧ k < 8) ∨ (8 ≤ k ∧ k < 12) ∨ (12 ≤ k ∧ k < 16)) with h | h | h | h
-    · simp (disch := bdd_omega) only [ite_eq_left, ite_eq_right]
-      rw [show j + k - j = k % 4 by bdd_omega, show k / 4 = 0 by bdd_omega]; rfl
-    · simp (disch := bdd_omega) only [ite_eq_left, ite_eq_right]
-      rw [show j + k - (j + 4) = k % 4 by bdd_omega, show k / 4 = 1 by bdd_omega]; rfl
-    · simp (disch := bdd_omega) only [ite_eq_left, ite_eq_right]
-      rw [show j + k - (j + 8) = k % 4 by bdd_omega, show k / 4 = 2 by bdd_omega]; rfl
-    · simp (disch := bdd_omega) only [ite_eq_left]
-      rw [show j + k - (j + 12) = k % 4 by bdd_omega, show k / 4 = 3 by bdd_omega]; rfl
+    simp only [Nat.le_add_right, Nat.add_lt_add_iff_left, Nat.add_le_add_iff_left, Nat.add_sub_add_left,
+      Nat.add_sub_cancel_left, true_and]
+    rcases (by bdd_omega : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 ∨ k = 4 ∨ k = 5 ∨ k = 6 ∨ k = 7 ∨ k = 8 ∨ k = 9 ∨
+        k = 10 ∨ k = 11 ∨ k = 12 ∨ k = 13 ∨ k = 14 ∨ k = 15) with
+      rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
+    simp only [Nat.add_assoc, Nat.reduceAdd, Nat.add_lt_add_iff_left, Nat.reduceLT, Nat.reduceLeDiff, and_true,
+      and_false, ite_true, ite_false] <;> rfl
   · exact (((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Offset.contains_base _ (by bdd_omega) (by bdd_omega))).writeW
       (List.mem_singleton_self _) _ (Offset.contains_base _ (by bdd_omega) (by bdd_omega))).writeW
       (List.mem_singleton_self _) _ (Offset.contains_base _ (by bdd_omega) (by bdd_omega)) |>.writeW

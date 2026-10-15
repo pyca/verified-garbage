@@ -175,6 +175,16 @@ abbrev candV (a : BitVec 128) (l : Nat) : BitVec 128 :=
 theorem toNat_and_fff (x : BitVec 32) : (x &&& 0xfff#32).toNat = x.toNat % 4096 := by
   rw [BitVec.toNat_and, show (0xfff#32).toNat = 2 ^ 12 - 1 from rfl, Nat.and_two_pow_sub_one_eq_mod]
 
+/-- The value of an even candidate from its two bytes. -/
+theorem cand_lo {x y : Nat} (hx : x < 256) (_hy : y < 256) :
+    (x + 256 * y) / 2 ^ 0 % 4096 = (x + 256 * (y % 16)) % 2 ^ 32 := by
+  omega
+
+/-- The value of an odd candidate from its two bytes. -/
+theorem cand_hi {x y : Nat} (hx : x < 256) (hy : y < 256) :
+    (x + 256 * y) / 2 ^ 4 % 4096 = (x / 16 + 16 * y) % 2 ^ 32 := by
+  omega
+
 theorem cand_dword (a : BitVec 128) {l j : Nat} (hl : l < 2) (hj : j < 4) :
     dword (candV a l) j = BitVec.ofNat 32 (candN (fun i => (byte a i).toNat) (4 * l + j)) := by
   apply BitVec.eq_of_toNat_eq
@@ -189,7 +199,7 @@ theorem cand_dword (a : BitVec 128) {l j : Nat} (hl : l < 2) (hj : j < 4) :
     toNat_dword_ofBytes _ (show 2 < 4 by decide), toNat_dword_ofBytes _ (show 3 < 4 by decide),
     candN, cb, Nat.reduceMul, Nat.reduceAdd, Nat.reduceMod, Nat.reduceDiv, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow,
     show (0 : BitVec 8).toNat = 0 from rfl, Nat.reduceEqDiff, Nat.add_zero] <;>
-  omega
+  first | exact cand_lo (hb _) (hb _) | exact cand_hi (hb _) (hb _)
 
 def qV4 : BitVec 128 := 0x00000d0100000d0100000d0100000d01#128
 def sign0 : BitVec 128 := 0x0f0b0703808080808080808080808080#128
