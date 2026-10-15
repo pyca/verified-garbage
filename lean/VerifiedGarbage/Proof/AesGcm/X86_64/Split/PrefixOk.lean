@@ -44,13 +44,13 @@ structure Mid2 (Ctx W SP D S : Addr) (R sl : Nat) (s s₂ : State) : Prop where
   ctr : blockAt s₂.mem (cbA W) = Nat.repeat inc32 (sl / 16) (blockAt s.mem (cbA W))
   y : blockAt s₂.mem (yA W) = ghashFrom (ctxH s.mem Ctx) (blockAt s.mem (yA W)) (blocksAt s₂.mem D (sl / 16))
 
-/-- What `prefix` leaves. -/
-structure PPost (Ctx W SP D S : Addr) (R n sl : Nat) (s s' : State) : Prop where
+/-- What `prefix` leaves, using the `k` bytes below `SP`. -/
+structure PPost (Ctx W SP D S : Addr) (R n sl k : Nat) (s s' : State) : Prop where
   env : Env Ctx (W + BitVec.ofNat 64 16) W SP s'
   rd : s'.rd = s.rd
   wr : s'.wr = s.wr
   frame : Frame (callWr W D (sl / 16) ++ [⟨D + BitVec.ofNat 64 (16 * (sl / 16)), sl % 16⟩,
-    ⟨W + BitVec.ofNat 64 200, 24⟩, below SP 56]) s.mem s'.mem
+    ⟨W + BitVec.ofNat 64 200, 24⟩, below SP k]) s.mem s'.mem
   blocks : blocksAt s'.mem D (sl / 16) = ctr32 (ctxCiph s.mem Ctx R) (blockAt s.mem (cbA W)) (blocksAt s.mem S (sl / 16))
   ctr : blockAt s'.mem (cbA W) = Nat.repeat inc32 (sl / 16) (blockAt s.mem (cbA W))
   y : blockAt s'.mem (yA W) = ghashFrom (ctxH s.mem Ctx) (blockAt s.mem (yA W)) (blocksAt s'.mem D (sl / 16))
@@ -113,7 +113,7 @@ theorem rest_ok {s₄ : State} (he₄ : Env Ctx (W + BitVec.ofNat 64 16) W SP s�
     (y₄ : blockAt s₄.mem (yA W) = ghashFrom (ctxH s.mem Ctx) (blockAt s.mem (yA W)) (blocksAt s₄.mem D (sl / 16)))
     (tl₄ : bytesAt s₄.mem (D + BitVec.ofNat 64 (16 * (sl / 16))) (sl % 16) =
       bytesAt s.mem (S + BitVec.ofNat 64 (16 * (sl / 16))) (sl % 16)) :
-    WP isa (.block SealSplit.rest) s₄ (PPost Ctx W SP D S R n sl s) := by
+    WP isa (.block SealSplit.rest) s₄ (PPost Ctx W SP D S R n sl 56 s) := by
   have L := h.lay
   have hn := h.data.ok.lt
   have hsl := h.sl_le
@@ -152,7 +152,7 @@ theorem rest_ok {s₄ : State} (he₄ : Env Ctx (W + BitVec.ofNat 64 16) W SP s�
 /-- After the call (or none): the bytes left copied, and `rest`. -/
 theorem tail_ok {s₂ : State} (H : Mid2 Ctx W SP D S R sl s s₂) :
     WP isa (.seq (.block SealSplit.copyArgs) (.seq (.ite .e (.block []) copyLoop) (.block SealSplit.rest))) s₂
-      (PPost Ctx W SP D S R n sl s) := by
+      (PPost Ctx W SP D S R n sl 56 s) := by
   have L := h.lay
   have hn := h.data.ok.lt
   have hsl := h.sl_le
@@ -240,7 +240,7 @@ theorem prefix_okG (f : Fn)
         blockAt st'.mem (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 16) =
           ghashFrom (ctxH s.mem Ctx) (blockAt s.mem (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 16))
             (blocksAt st'.mem D q)) :
-    WP isa (SealSplit.prefix f) s (PPost Ctx W SP D S R n sl s) := by
+    WP isa (SealSplit.prefix f) s (PPost Ctx W SP D S R n sl 56 s) := by
   have L := h.lay
   have hn := h.data.ok.lt
   have hsl := h.sl_le
@@ -273,7 +273,7 @@ theorem prefix_okG (f : Fn)
 call of `vg_aes_gcm_encrypt_blocks_to` (`T`), the bytes left copied, and
 `len` and the data from them on kept. -/
 theorem prefix_ok (T : BlkToFn M) :
-    WP isa (SealSplit.prefix T.fn) s (PPost Ctx W SP D S R n sl s) :=
+    WP isa (SealSplit.prefix T.fn) s (PPost Ctx W SP D S R n sl 56 s) :=
   prefix_okG h T.fn fun hq _ hsp hrd hwr hm h_di h_si h_dx h_cx h_8 h_9 h_10 h_11 h_ax =>
     preCall_ok h T hq hsp hrd hwr hm h_di h_si h_dx h_cx h_8 h_9 h_10 h_11 h_ax
 end

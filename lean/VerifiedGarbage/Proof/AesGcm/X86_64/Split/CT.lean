@@ -357,28 +357,29 @@ theorem rel_each {P Q : State → State → Prop} {c : Prog isa}
     (h : ∀ a b, P a b → RelCT isa (fun x y => x = a ∧ y = b) c Q) : RelCT isa P c Q :=
   fun s₁ s₂ t₁ t₂ s₁' s₂' hp e₁ e₂ => h s₁ s₂ hp s₁ s₂ t₁ t₂ s₁' s₂' ⟨rfl, rfl⟩ e₁ e₂
 
-/-- What `body` needs, after `prefix`. -/
-theorem oneS_after {M : CtxMode} {Ctx W SP A D S : Addr} {R al n sl : Nat} {σ s : State}
+/-- What `body` needs, after `prefix` (using the `m` bytes below `SP`). -/
+theorem oneS_after {M : CtxMode} {Ctx W SP A D S : Addr} {R al n sl m : Nat} {σ s : State}
     (O : OneS M Ctx W SP R A al D n none σ) (h : PP M Ctx W SP D S R n sl σ)
-    (Q : PPost Ctx W SP D S R n sl σ s) :
+    (kw : (below SP m).Disjoint ⟨W, 2560⟩) (kM : (below SP m).Disjoint ⟨Ctx, M.len⟩)
+    (Q : PPost Ctx W SP D S R n sl m σ s) :
     OneS M Ctx W SP R A al (D + BitVec.ofNat 64 (16 * (sl / 16))) (n - 16 * (sl / 16)) none s := by
   have L := h.lay
   have hsl := h.sl_le
   have kp : ∀ d, (128 ≤ d ∧ d + 8 ≤ 200) ∨ (224 ≤ d ∧ d + 8 ≤ 448) →
       s.mem.readW (W + BitVec.ofNat 64 d) 64 = σ.mem.readW (W + BitVec.ofNat 64 d) 64 := fun d hd =>
     Q.frame.readW (r := ⟨W + BitVec.ofNat 64 d, 8⟩) (Region.contains_self _ _)
-      (pp_w L h.data.ok.w hsl h.kw (.inr hd)) (by decide)
+      (pp_w L h.data.ok.w hsl kw (.inr hd)) (by decide)
   exact ⟨Q.env, ⟨by rw [kp 176 (.inl ⟨by decide, by decide⟩)]; exact O.rounds.1, O.rounds.2⟩,
     by rw [kp 232 (.inr ⟨by decide, by decide⟩)]; exact O.aad, by rw [kp 184 (.inl ⟨by decide, by decide⟩)]; exact O.alen,
     Q.dat, Q.len, O.dA.of_eq Q.rd Q.wr, (O.dD.of_eq Q.rd Q.wr).drop (by omega), (fun _ e => nomatch e),
-    (O.ext.keep Q.rd Q.wr Q.frame (pp_out' hsl O.ext.cw O.ext.cd h.kM.symm)).sub (Offset.sub_base D (by omega))⟩
+    (O.ext.keep Q.rd Q.wr Q.frame (pp_out' hsl O.ext.cw O.ext.cd kM.symm)).sub (Offset.sub_base D (by omega))⟩
 
 /-- What constant time needs of `seal_split`'s code `mid` after the entry. -/
 def MidRel (M : CtxMode) (mid : Prog isa) : Prop :=
   ∀ {s₀ s₀' : State} {Ctx W SP Np A D S T' : Addr} {nl al n sl R : Nat},
     SplitCtx s₀ Ctx W SP Np A D S T' nl al n sl → SplitCtx s₀' Ctx W SP Np A D S T' nl al n sl →
     CtxExt M Ctx (W + BitVec.ofNat 64 16) W SP D n s₀ → CtxExt M Ctx (W + BitVec.ofNat 64 16) W SP D n s₀' →
-    (below SP 56).Disjoint ⟨Ctx, M.len⟩ →
+    (below SP 64).Disjoint ⟨Ctx, M.len⟩ →
     s₀.gpr .rdx = Np → (s₀.gpr .rcx).toNat = nl → (s₀.gpr .r9).toNat = al → (s₀.gpr .rsi).toNat = R →
     s₀'.gpr .rdx = Np → (s₀'.gpr .rcx).toNat = nl → (s₀'.gpr .r9).toNat = al → (s₀'.gpr .rsi).toNat = R →
     RelCT isa (fun s₁ s₂ => SEntry s₀ Ctx W SP A D S n sl s₁ ∧ SEntry s₀' Ctx W SP A D S n sl s₂) mid
@@ -396,12 +397,74 @@ theorem oneS_ofMid {M : CtxMode} {s₀ s₁ s₂ : State} {Ctx W SP Np A D S T' 
 
 /-- After the entry, `seal_split` up to the tag at `W`, in two runs: additional
 data `aadP` that leaves what `oneAad` does (`OneMid`) and takes the same
+branches in both, a prefix `pfx` that leaves what `prefix` does with the 64
+bytes below `SP` (`hpfx`, `hpfx'`) and takes the same branches in both
+(`hprel`), from the states `PP` describes with the first counter block, and
+`body`. -/
+theorem splitRun_rel_of_midP {M : CtxMode} {pfx body : Prog isa}
+    (hbody : BodyRel M body) {aadP : Prog isa} {s₀ s₀' : State} {Ctx W SP Np A D S T' : Addr} {nl al n sl R : Nat}
+    (C : SplitCtx s₀ Ctx W SP Np A D S T' nl al n sl) (C' : SplitCtx s₀' Ctx W SP Np A D S T' nl al n sl)
+    (X : CtxExt M Ctx (W + BitVec.ofNat 64 16) W SP D n s₀) (X' : CtxExt M Ctx (W + BitVec.ofNat 64 16) W SP D n s₀')
+    (kM : (below SP 64).Disjoint ⟨Ctx, M.len⟩)
+    (hNp : s₀.gpr .rdx = Np) (hnl : (s₀.gpr .rcx).toNat = nl) (hal : (s₀.gpr .r9).toNat = al)
+    (hR : (s₀.gpr .rsi).toNat = R)
+    (hNp' : s₀'.gpr .rdx = Np) (hnl' : (s₀'.gpr .rcx).toNat = nl) (hal' : (s₀'.gpr .r9).toNat = al)
+    (hR' : (s₀'.gpr .rsi).toNat = R)
+    (ha : RelCT isa (fun s₁ s₂ => SEntry s₀ Ctx W SP A D S n sl s₁ ∧ SEntry s₀' Ctx W SP A D S n sl s₂) aadP
+      fun _ _ => True)
+    (hm : ∀ s, SEntry s₀ Ctx W SP A D S n sl s → WP isa aadP s
+      (OneMid s₀ Ctx W SP D n (ctxH s₀.mem Ctx) (bytesAt s₀.mem Np nl) (bytesAt s₀.mem A al) s.mem))
+    (hm' : ∀ s, SEntry s₀' Ctx W SP A D S n sl s → WP isa aadP s
+      (OneMid s₀' Ctx W SP D n (ctxH s₀'.mem Ctx) (bytesAt s₀'.mem Np nl) (bytesAt s₀'.mem A al) s.mem))
+    (hpfx : ∀ s₂, PP M Ctx W SP D S R n sl s₂ →
+      blockAt s₂.mem (cbA W) = inc32 (Spec.Gcm.j0 (ctxH s₀.mem Ctx) (bytesAt s₀.mem Np nl)) →
+      WP isa pfx s₂ (PPost Ctx W SP D S R n sl 64 s₂))
+    (hpfx' : ∀ s₂, PP M Ctx W SP D S R n sl s₂ →
+      blockAt s₂.mem (cbA W) = inc32 (Spec.Gcm.j0 (ctxH s₀'.mem Ctx) (bytesAt s₀'.mem Np nl)) →
+      WP isa pfx s₂ (PPost Ctx W SP D S R n sl 64 s₂))
+    (hprel : ∀ σ σ', PP M Ctx W SP D S R n sl σ →
+      blockAt σ.mem (cbA W) = inc32 (Spec.Gcm.j0 (ctxH s₀.mem Ctx) (bytesAt s₀.mem Np nl)) →
+      PP M Ctx W SP D S R n sl σ' →
+      blockAt σ'.mem (cbA W) = inc32 (Spec.Gcm.j0 (ctxH s₀'.mem Ctx) (bytesAt s₀'.mem Np nl)) →
+      RelCT isa (fun a b => a = σ ∧ b = σ') pfx fun _ _ => True) :
+    RelCT isa (fun s₁ s₂ => SEntry s₀ Ctx W SP A D S n sl s₁ ∧ SEntry s₀' Ctx W SP A D S n sl s₂)
+      (.seq aadP (.seq pfx body)) fun _ _ => True := by
+  have L := C.lay
+  have hsl := C.sl_le
+  have kM56 : (below SP 56).Disjoint ⟨Ctx, M.len⟩ := kM.sub_left (below_sub (by decide) (by decide))
+  have hw : ∀ {s₀ : State} (C : SplitCtx s₀ Ctx W SP Np A D S T' nl al n sl)
+      (X : CtxExt M Ctx (W + BitVec.ofNat 64 16) W SP D n s₀), s₀.gpr .rdx = Np → (s₀.gpr .rcx).toNat = nl →
+      (s₀.gpr .r9).toNat = al → (s₀.gpr .rsi).toNat = R →
+      (∀ s, SEntry s₀ Ctx W SP A D S n sl s → WP isa aadP s
+        (OneMid s₀ Ctx W SP D n (ctxH s₀.mem Ctx) (bytesAt s₀.mem Np nl) (bytesAt s₀.mem A al) s.mem)) →
+      ∀ s, SEntry s₀ Ctx W SP A D S n sl s →
+      WP isa aadP s fun t => OneS M Ctx W SP R A al D n none t ∧ PP M Ctx W SP D S R n sl t ∧
+        blockAt t.mem (cbA W) = inc32 (Spec.Gcm.j0 (ctxH s₀.mem Ctx) (bytesAt s₀.mem Np nl)) :=
+    fun C X hNp hnl hal hR hm s E => WP.mono (hm s E) fun _ M₂ =>
+      ⟨oneS_ofMid C X E hNp hnl hal hR M₂, PP.ofMid C X kM56 hR M₂ (mid_slots C E M₂).1 (mid_slots C E M₂).2,
+        M₂.cb⟩
+  refine RelCT.seq (rel_wp ha (fun _ _ g => g) (hw C X hNp hnl hal hR hm) (hw C' X' hNp' hnl' hal' hR' hm')) ?_
+  have sD' : Region.Sub ⟨D + BitVec.ofNat 64 (16 * (sl / 16)), n - 16 * (sl / 16)⟩ ⟨D, n⟩ :=
+    Offset.sub_base D (by omega)
+  let G : State → Prop := fun a =>
+    OneS M Ctx W SP R A al (D + BitVec.ofNat 64 (16 * (sl / 16))) (n - 16 * (sl / 16)) none a ∧
+      a.mem.readW (W + BitVec.ofNat 64 216) 64 = BitVec.ofNat 64 n
+  refine RelCT.seq (R := fun a b => G a ∧ G b)
+    (rel_each fun σ σ' g => ?_) (hbody L C.kw (C.kd.sub_right sD') kM56 C.ka C.sp56 (N := n))
+  obtain ⟨-, ⟨O, P, cb⟩, O', P', cb'⟩ := g
+  exact (rel_wp (hprel σ σ' P cb P' cb') (F₁ := (· = σ)) (F₂ := (· = σ')) (fun _ _ g => g) (G₁ := G) (G₂ := G)
+    (fun _ hs => by rw [hs]; exact WP.mono (hpfx σ P cb) fun _ Q => ⟨oneS_after O P C.kw64 kM Q, Q.aux⟩)
+    (fun _ hs => by rw [hs]; exact WP.mono (hpfx' σ' P' cb') fun _ Q => ⟨oneS_after O' P' C.kw64 kM Q, Q.aux⟩)).mono
+    (fun _ _ g => g) fun _ _ g => g.2
+
+/-- After the entry, `seal_split` up to the tag at `W`, in two runs: additional
+data `aadP` that leaves what `oneAad` does (`OneMid`) and takes the same
 branches in both, `prefix` and `body`. -/
 theorem splitRun_rel_of_midB {M : CtxMode} (T : BlkToFn M) {body : Prog isa}
     (hbody : BodyRel M body) {aadP : Prog isa} {s₀ s₀' : State} {Ctx W SP Np A D S T' : Addr} {nl al n sl R : Nat}
     (C : SplitCtx s₀ Ctx W SP Np A D S T' nl al n sl) (C' : SplitCtx s₀' Ctx W SP Np A D S T' nl al n sl)
     (X : CtxExt M Ctx (W + BitVec.ofNat 64 16) W SP D n s₀) (X' : CtxExt M Ctx (W + BitVec.ofNat 64 16) W SP D n s₀')
-    (kM : (below SP 56).Disjoint ⟨Ctx, M.len⟩)
+    (kM : (below SP 64).Disjoint ⟨Ctx, M.len⟩)
     (hNp : s₀.gpr .rdx = Np) (hnl : (s₀.gpr .rcx).toNat = nl) (hal : (s₀.gpr .r9).toNat = al)
     (hR : (s₀.gpr .rsi).toNat = R)
     (hNp' : s₀'.gpr .rdx = Np) (hnl' : (s₀'.gpr .rcx).toNat = nl) (hal' : (s₀'.gpr .r9).toNat = al)
@@ -413,38 +476,17 @@ theorem splitRun_rel_of_midB {M : CtxMode} (T : BlkToFn M) {body : Prog isa}
     (hm' : ∀ s, SEntry s₀' Ctx W SP A D S n sl s → WP isa aadP s
       (OneMid s₀' Ctx W SP D n (ctxH s₀'.mem Ctx) (bytesAt s₀'.mem Np nl) (bytesAt s₀'.mem A al) s.mem)) :
     RelCT isa (fun s₁ s₂ => SEntry s₀ Ctx W SP A D S n sl s₁ ∧ SEntry s₀' Ctx W SP A D S n sl s₂)
-      (.seq aadP (.seq (SealSplit.prefix T.fn) body)) fun _ _ => True := by
-  have L := C.lay
-  have hsl := C.sl_le
-  have hw : ∀ {s₀ : State} (C : SplitCtx s₀ Ctx W SP Np A D S T' nl al n sl)
-      (X : CtxExt M Ctx (W + BitVec.ofNat 64 16) W SP D n s₀), s₀.gpr .rdx = Np → (s₀.gpr .rcx).toNat = nl →
-      (s₀.gpr .r9).toNat = al → (s₀.gpr .rsi).toNat = R →
-      (∀ s, SEntry s₀ Ctx W SP A D S n sl s → WP isa aadP s
-        (OneMid s₀ Ctx W SP D n (ctxH s₀.mem Ctx) (bytesAt s₀.mem Np nl) (bytesAt s₀.mem A al) s.mem)) →
-      ∀ s, SEntry s₀ Ctx W SP A D S n sl s →
-      WP isa aadP s fun t => OneS M Ctx W SP R A al D n none t ∧ PP M Ctx W SP D S R n sl t :=
-    fun C X hNp hnl hal hR hm s E => WP.mono (hm s E) fun _ M₂ =>
-      ⟨oneS_ofMid C X E hNp hnl hal hR M₂, PP.ofMid C X kM hR M₂ (mid_slots C E M₂).1 (mid_slots C E M₂).2⟩
-  refine RelCT.seq (rel_wp ha (fun _ _ g => g) (hw C X hNp hnl hal hR hm) (hw C' X' hNp' hnl' hal' hR' hm')) ?_
-  have sD' : Region.Sub ⟨D + BitVec.ofNat 64 (16 * (sl / 16)), n - 16 * (sl / 16)⟩ ⟨D, n⟩ :=
-    Offset.sub_base D (by omega)
-  let G : State → Prop := fun a =>
-    OneS M Ctx W SP R A al (D + BitVec.ofNat 64 (16 * (sl / 16))) (n - 16 * (sl / 16)) none a ∧
-      a.mem.readW (W + BitVec.ofNat 64 216) 64 = BitVec.ofNat 64 n
-  refine RelCT.seq (R := fun a b => G a ∧ G b)
-    (rel_each fun σ σ' g => ?_) (hbody L C.kw (C.kd.sub_right sD') kM C.ka C.sp56 (N := n))
-  obtain ⟨-, ⟨O, P⟩, O', P'⟩ := g
-  exact (rel_wp (prefix_ct P P' T) (F₁ := (· = σ)) (F₂ := (· = σ')) (fun _ _ g => g) (G₁ := G) (G₂ := G)
-    (fun _ hs => by rw [hs]; exact WP.mono (prefix_ok P T) fun _ Q => ⟨oneS_after O P Q, Q.aux⟩)
-    (fun _ hs => by rw [hs]; exact WP.mono (prefix_ok P' T) fun _ Q => ⟨oneS_after O' P' Q, Q.aux⟩)).mono
-    (fun _ _ g => g) fun _ _ g => g.2
+      (.seq aadP (.seq (SealSplit.prefix T.fn) body)) fun _ _ => True :=
+  splitRun_rel_of_midP hbody C C' X X' kM hNp hnl hal hR hNp' hnl' hal' hR' ha hm hm'
+    (fun _ P _ => (prefix_ok P T).mono fun _ Q => Q.widen) (fun _ P _ => (prefix_ok P T).mono fun _ Q => Q.widen)
+    fun _ _ P _ P' _ => prefix_ct P P' T
 
 /-- `splitRun_rel_of_midB` with `SealSplit.body`. -/
 theorem splitRun_rel_of_mid (v : GcmImpl) {M : CtxMode} (B : BlkFn M) (T : BlkToFn M) {fin : Prog isa}
     (hfr : FinRel M fin) {aadP : Prog isa} {s₀ s₀' : State} {Ctx W SP Np A D S T' : Addr} {nl al n sl R : Nat}
     (C : SplitCtx s₀ Ctx W SP Np A D S T' nl al n sl) (C' : SplitCtx s₀' Ctx W SP Np A D S T' nl al n sl)
     (X : CtxExt M Ctx (W + BitVec.ofNat 64 16) W SP D n s₀) (X' : CtxExt M Ctx (W + BitVec.ofNat 64 16) W SP D n s₀')
-    (kM : (below SP 56).Disjoint ⟨Ctx, M.len⟩)
+    (kM : (below SP 64).Disjoint ⟨Ctx, M.len⟩)
     (hNp : s₀.gpr .rdx = Np) (hnl : (s₀.gpr .rcx).toNat = nl) (hal : (s₀.gpr .r9).toNat = al)
     (hR : (s₀.gpr .rsi).toNat = R)
     (hNp' : s₀'.gpr .rdx = Np) (hnl' : (s₀'.gpr .rcx).toNat = nl) (hal' : (s₀'.gpr .r9).toNat = al)
@@ -477,7 +519,7 @@ theorem splitTag_rel {M : CtxMode} {mid : Prog isa} (hmid : MidOk M mid) (hrel :
     {Ctx W SP Np A D S T' : Addr} {nl al n sl R : Nat}
     (C : SplitCtx s₀ Ctx W SP Np A D S T' nl al n sl) (C' : SplitCtx s₀' Ctx W SP Np A D S T' nl al n sl)
     (X : CtxExt M Ctx (W + BitVec.ofNat 64 16) W SP D n s₀) (X' : CtxExt M Ctx (W + BitVec.ofNat 64 16) W SP D n s₀')
-    (kM : (below SP 56).Disjoint ⟨Ctx, M.len⟩)
+    (kM : (below SP 64).Disjoint ⟨Ctx, M.len⟩)
     (hNp : s₀.gpr .rdx = Np) (hnl : (s₀.gpr .rcx).toNat = nl) (hal : (s₀.gpr .r9).toNat = al)
     (hR : (s₀.gpr .rsi).toNat = R)
     (hNp' : s₀'.gpr .rdx = Np) (hnl' : (s₀'.gpr .rcx).toNat = nl) (hal' : (s₀'.gpr .r9).toNat = al)

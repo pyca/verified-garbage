@@ -61,16 +61,16 @@ theorem xorKs_shift' (ciph : Block → Block) (icb : Block) (q k : Nat) (d : Lis
   rw [show (16 * q + k + i) / 16 = (k + i) / 16 + q by omega, show (16 * q + k + i) % 16 = (k + i) % 16 by omega,
     Proof.Gcm.repeat_add]
 
-/-- What `prefix` writes. -/
-abbrev ppList (W D SP : Addr) (sl : Nat) : List Region :=
+/-- What `prefix` writes, using the `m` bytes below `SP`. -/
+abbrev ppList (W D SP : Addr) (sl m : Nat) : List Region :=
   callWr W D (sl / 16) ++ [⟨D + BitVec.ofNat 64 (16 * (sl / 16)), sl % 16⟩, ⟨W + BitVec.ofNat 64 200, 24⟩,
-    below SP 56]
+    below SP m]
 
-/-- A region apart from `W`, the bytes `prefix` writes at `dst` and the 56
+/-- A region apart from `W`, the bytes `prefix` writes at `dst` and the `m`
 bytes below `SP` is apart from what `prefix` writes. -/
-theorem pp_out {W D SP : Addr} {sl : Nat} {X : Region} (xw : X.Disjoint ⟨W, 2560⟩)
+theorem pp_out {W D SP : Addr} {sl m : Nat} {X : Region} (xw : X.Disjoint ⟨W, 2560⟩)
     (xq : X.Disjoint ⟨D, sl / 16 * 16⟩) (xr : X.Disjoint ⟨D + BitVec.ofNat 64 (16 * (sl / 16)), sl % 16⟩)
-    (xs : X.Disjoint (below SP 56)) : ∀ r ∈ ppList W D SP sl, X.Disjoint r := by
+    (xs : X.Disjoint (below SP m)) : ∀ r ∈ ppList W D SP sl m, X.Disjoint r := by
   intro r hr
   simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with (rfl | rfl | rfl | rfl) | rfl | rfl | rfl
@@ -83,16 +83,17 @@ theorem pp_out {W D SP : Addr} {sl : Nat} {X : Region} (xw : X.Disjoint ⟨W, 25
   · exact xs
 
 /-- `pp_out`, for a region apart from all of the data. -/
-theorem pp_out' {W D SP : Addr} {n sl : Nat} (hsl : sl ≤ n) {X : Region} (xw : X.Disjoint ⟨W, 2560⟩)
-    (xd : X.Disjoint ⟨D, n⟩) (xs : X.Disjoint (below SP 56)) : ∀ r ∈ ppList W D SP sl, X.Disjoint r :=
+theorem pp_out' {W D SP : Addr} {n sl m : Nat} (hsl : sl ≤ n) {X : Region} (xw : X.Disjoint ⟨W, 2560⟩)
+    (xd : X.Disjoint ⟨D, n⟩) (xs : X.Disjoint (below SP m)) : ∀ r ∈ ppList W D SP sl m, X.Disjoint r :=
   pp_out xw (xd.sub_right (Region.sub_prefix (by omega))) (xd.sub_right (Offset.sub_base D (by omega))) xs
 
 /-- A slot of `W` before the counter blocks, between the saved registers and
 `dataO`, or between `auxO` and the call's working space, is apart from what
 `prefix` writes. -/
-theorem pp_w {Ctx W SP : Addr} (L : Lay Ctx (W + BitVec.ofNat 64 16) W SP) {D : Addr} {n sl d k : Nat}
-    (hD : (⟨D, n⟩ : Region).Disjoint ⟨W, 2560⟩) (hsl : sl ≤ n) (kw : (below SP 56).Disjoint ⟨W, 2560⟩)
-    (h : d + k ≤ 32 ∨ (128 ≤ d ∧ d + k ≤ 200) ∨ (224 ≤ d ∧ d + k ≤ 448)) : ∀ r ∈ ppList W D SP sl, (⟨W + BitVec.ofNat 64 d, k⟩ : Region).Disjoint r := by
+theorem pp_w {Ctx W SP : Addr} (L : Lay Ctx (W + BitVec.ofNat 64 16) W SP) {D : Addr} {n sl d k m : Nat}
+    (hD : (⟨D, n⟩ : Region).Disjoint ⟨W, 2560⟩) (hsl : sl ≤ n) (kw : (below SP m).Disjoint ⟨W, 2560⟩)
+    (h : d + k ≤ 32 ∨ (128 ≤ d ∧ d + k ≤ 200) ∨ (224 ≤ d ∧ d + k ≤ 448)) :
+    ∀ r ∈ ppList W D SP sl m, (⟨W + BitVec.ofNat 64 d, k⟩ : Region).Disjoint r := by
   have hs : Region.Sub ⟨W + BitVec.ofNat 64 d, k⟩ ⟨W, 2560⟩ := Lay.wSub (by omega)
   intro r hr
   simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -160,16 +161,6 @@ theorem PP.ofMid {M : CtxMode} {s₀ s₂ : State} {mE : Mem} {Ctx W SP Np A D S
     by rw [M₂.rd, M₂.wr]; exact C.src, C.sW, C.sD, C.sWrap, C.sl_le, C.kw, C.kd, C.ks, kM, C.sp56,
     X.keep M₂.rd M₂.wr M₂.frame (dM X.cw (X.ct.sub_left (below_sub (by decide) (by decide))))⟩
 
-/-- A frame within the 56 bytes below `SP` is within the 64 bytes `seal_split`
-may use. -/
-theorem frame56_64 {W D SP : Addr} {n : Nat} {m m' : Mem} (h : Frame [⟨W, 2560⟩, ⟨D, n⟩, below SP 56] m m') :
-    Frame [⟨W, 2560⟩, ⟨D, n⟩, below SP 64] m m' := h.sub fun r hr => by
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl
-  · exact ⟨_, List.mem_cons_self .., fun _ h => h⟩
-  · exact ⟨_, by simp, fun _ h => h⟩
-  · exact ⟨below SP 64, by simp, below_sub (by decide) (by decide)⟩
-
 /-- What `seal_split` leaves at the tag at `W`, after the entry: what
 `sealRun_ok` does, for the plaintext of `sl` bytes at `S` and the rest at
 `D`. -/
@@ -188,28 +179,37 @@ abbrev SplitRunPost (s₀ : State) (Ctx W SP Np A D S : Addr) (nl al n sl : Nat)
 def MidOk (M : CtxMode) (mid : Prog isa) : Prop :=
   ∀ {s₀ s₁ : State} {Ctx W SP Np A D S T' : Addr} {nl al n sl : Nat},
     SplitCtx s₀ Ctx W SP Np A D S T' nl al n sl → CtxExt M Ctx (W + BitVec.ofNat 64 16) W SP D n s₀ →
-    (below SP 56).Disjoint ⟨Ctx, M.len⟩ → SEntry s₀ Ctx W SP A D S n sl s₁ →
+    (below SP 64).Disjoint ⟨Ctx, M.len⟩ → SEntry s₀ Ctx W SP A D S n sl s₁ →
     s₀.gpr .rdx = Np → (s₀.gpr .rcx).toNat = nl → (s₀.gpr .r9).toNat = al →
     WP isa mid s₁ (SplitRunPost s₀ Ctx W SP Np A D S nl al n sl)
 
 /-- After the entry, `seal_split` up to the tag at `W`: additional data
-`aadP` that leaves what `oneAad` does (`OneMid`), `prefix` and `body`. -/
-theorem splitRun_of_midB {M : CtxMode} (T : BlkToFn M) {body : Prog isa}
+`aadP` that leaves what `oneAad` does (`OneMid`), a prefix `pfx` that leaves
+what `prefix` does, using the 64 bytes below `SP`, from the state `PP`
+describes with the first counter block (`hpfx`), and `body`. -/
+theorem splitRun_of_midP {M : CtxMode} {pfx body : Prog isa}
     (hbody : BodyOk M body) {aadP : Prog isa} {s₀ s₁ : State} {Ctx W SP Np A D S T' : Addr} {nl al n sl : Nat}
     (C : SplitCtx s₀ Ctx W SP Np A D S T' nl al n sl) (X : CtxExt M Ctx (W + BitVec.ofNat 64 16) W SP D n s₀)
-    (kM : (below SP 56).Disjoint ⟨Ctx, M.len⟩) (E : SEntry s₀ Ctx W SP A D S n sl s₁)
+    (kM : (below SP 64).Disjoint ⟨Ctx, M.len⟩) (E : SEntry s₀ Ctx W SP A D S n sl s₁)
     (hal : (s₀.gpr .r9).toNat = al)
     (ha : WP isa aadP s₁
-      (OneMid s₀ Ctx W SP D n (ctxH s₀.mem Ctx) (bytesAt s₀.mem Np nl) (bytesAt s₀.mem A al) s₁.mem)) :
-    WP isa (.seq aadP (.seq (SealSplit.prefix T.fn) body)) s₁
+      (OneMid s₀ Ctx W SP D n (ctxH s₀.mem Ctx) (bytesAt s₀.mem Np nl) (bytesAt s₀.mem A al) s₁.mem))
+    (hpfx : ∀ s₂, PP M Ctx W SP D S (s₀.gpr .rsi).toNat n sl s₂ →
+      blockAt s₂.mem (cbA W) = inc32 (Spec.Gcm.j0 (ctxH s₀.mem Ctx) (bytesAt s₀.mem Np nl)) →
+      WP isa pfx s₂ (PPost Ctx W SP D S (s₀.gpr .rsi).toNat n sl 64 s₂)) :
+    WP isa (.seq aadP (.seq pfx body)) s₁
       (SplitRunPost s₀ Ctx W SP Np A D S nl al n sl) := by
   unfold SplitRunPost
   have L := C.lay
   have hsl := C.sl_le
   have hn := C.data.ok.lt
+  have kM56 : (below SP 56).Disjoint ⟨Ctx, M.len⟩ := kM.sub_left (below_sub (by decide) (by decide))
   generalize hR : (s₀.gpr .rsi).toNat = R at *
   have hR' : R = 10 ∨ R = 12 ∨ R = 14 := hR ▸ C.rounds
   refine WP.seq (WP.mono ha fun s₂ M₂ => ?_)
+  obtain ⟨hS₂, hsl₂⟩ := mid_slots C E M₂
+  have P : PP M Ctx W SP D S R n sl s₂ := PP.ofMid C X kM56 hR M₂ hS₂ hsl₂
+  have hP := hpfx s₂ P M₂.cb
   generalize hH : ctxH s₀.mem Ctx = H at M₂ ⊢
   generalize hiv : bytesAt s₀.mem Np nl = iv at M₂ ⊢
   generalize ha : bytesAt s₀.mem A al = a at M₂ ⊢
@@ -222,10 +222,8 @@ theorem splitRun_of_midB {M : CtxMode} (T : BlkToFn M) {body : Prog isa}
     rcases hr with rfl | rfl
     · exact h₁
     · exact h₂.symm
-  obtain ⟨hS₂, hsl₂⟩ := mid_slots C E M₂
-  have P : PP M Ctx W SP D S R n sl s₂ := PP.ofMid C X kM hR M₂ hS₂ hsl₂
   have X₂ := P.ext
-  refine WP.seq (WP.mono (prefix_ok P T) fun s₃ Q => ?_)
+  refine WP.seq (WP.mono hP fun s₃ Q => ?_)
   have fQ := Q.frame
   have rd₃ : s₃.rd = s₀.rd := Q.rd.trans M₂.rd
   have wr₃ : s₃.wr = s₀.wr := Q.wr.trans M₂.wr
@@ -234,7 +232,7 @@ theorem splitRun_of_midB {M : CtxMode} (T : BlkToFn M) {body : Prog isa}
   have wsl : ∀ d, 128 ≤ d → d + 8 ≤ 200 →
       s₃.mem.readW (W + BitVec.ofNat 64 d) 64 = s₂.mem.readW (W + BitVec.ofNat 64 d) 64 := fun d h₁ h₂ =>
     fQ.readW (r := ⟨W + BitVec.ofNat 64 d, 8⟩) (Region.contains_self _ _)
-      (pp_w L C.dE hsl C.kw (.inr (.inl ⟨h₁, h₂⟩))) (by decide)
+      (pp_w L C.dE hsl C.kw64 (.inr (.inl ⟨h₁, h₂⟩))) (by decide)
   have sD' : Region.Sub ⟨D + BitVec.ofNat 64 (16 * (sl / 16)), n - 16 * (sl / 16)⟩ ⟨D, n⟩ :=
     Offset.sub_base D (by omega)
   have X₃ : CtxExt M Ctx (W + BitVec.ofNat 64 16) W SP (D + BitVec.ofNat 64 (16 * (sl / 16)))
@@ -261,10 +259,10 @@ theorem splitRun_of_midB {M : CtxMode} (T : BlkToFn M) {body : Prog isa}
     rw [padLen_mod h3]; simp [zeros]
   rw [← ez] at habs₃
   have hR₃ : RoundsAt s₃.mem W R := ⟨by rw [wsl 176 (by decide) (by decide)]; exact hRo.1, hRo.2⟩
-  refine WP.mono (hbody L (R := R) (al := al) (N := n) Q.env hR₃ Q.dat Q.len ((C.data.of_eq rd₃ wr₃).drop hq) C.kw (C.kd.sub_right sD') kM C.sp56 X₃ hH₃
+  refine WP.mono (hbody L (R := R) (al := al) (N := n) Q.env hR₃ Q.dat Q.len ((C.data.of_eq rd₃ wr₃).drop hq) C.kw (C.kd.sub_right sD') kM56 C.sp56 X₃ hH₃
     hcb₃ hal₃ habs₃ Q.aux (by have := C.data.ok.lt; omega)) fun s₄ ⟨e₄, rd₄, wr₄, f₄, hC₄, hT₄⟩ => ?_
   -- The cipher, kept.
-  have kc : (below SP 56).Disjoint ⟨Ctx, 256⟩ := kM.sub_right (Region.sub_prefix M.ge)
+  have kc : (below SP 64).Disjoint ⟨Ctx, 256⟩ := kM.sub_right (Region.sub_prefix M.ge)
   have hc₂ : ciphOf s₂.mem Ctx R = ciphOf s₀.mem Ctx R := ciph_frame M₂.frame (dM L.cw' L.kc) hR'
   have hc₃ : ciphOf s₃.mem Ctx R = ciphOf s₀.mem Ctx R :=
     (ciph_frame fQ (pp_out' hsl L.cw' C.data.ctx kc.symm) hR').trans hc₂
@@ -300,17 +298,17 @@ theorem splitRun_of_midB {M : CtxMode} (T : BlkToFn M) {body : Prog isa}
   have sR : Region.Sub ⟨D + BitVec.ofNat 64 sl, n - sl⟩ ⟨D, n⟩ := Offset.sub_base D (by omega)
   have rest₃ : bytesAt s₃.mem (D + BitVec.ofNat 64 sl) (n - sl) = bytesAt s₀.mem (D + BitVec.ofNat 64 sl) (n - sl) := by
     rw [bytesAt_frame fQ (pp_out (C.dE.sub_left sR) (Offset.disjoint_base D (by omega) (by omega))
-      (Offset.disjoint D (.inr (by omega)) (by omega) (by omega)) (C.kd.sub_right sR).symm) (by omega)]
+      (Offset.disjoint D (.inr (by omega)) (by omega) (by omega)) (C.kd64.sub_right sR).symm) (by omega)]
     exact bytesAt_frame M₂.frame (dM (C.dE.sub_left sR) (C.data.ok.stk.sub_right sR)) (by omega)
   have hJ : blockAt s₃.mem (W + BitVec.ofNat 64 16) = Spec.Gcm.j0 H iv := by
-    rw [blockAt_frame fQ (pp_w L C.dE hsl C.kw (d := 16) (k := 16) (.inl (by decide)))]; exact M₂.j0
-  refine ⟨e₄, rd₄.trans rd₃, wr₄.trans wr₃, (M₂.saved.frame fQ (pp_w L C.dE hsl C.kw (d := 128) (k := 48)
+    rw [blockAt_frame fQ (pp_w L C.dE hsl C.kw64 (d := 16) (k := 16) (.inl (by decide)))]; exact M₂.j0
+  refine ⟨e₄, rd₄.trans rd₃, wr₄.trans wr₃, (M₂.saved.frame fQ (pp_w L C.dE hsl C.kw64 (d := 128) (k := 48)
     (.inr (.inl ⟨Nat.le_refl _, by decide⟩)))).frame f₄ (saved_sf L (C.dE.sub_left sD') C.kw), ?_, ?_, ?_⟩
-  · refine frame56_64 <| (M₂.frame.sub fun r hr => ?_).trans ((fQ.sub fun r hr => ?_).trans (f₄.sub fun r hr => ?_))
+  · refine (M₂.frame.sub fun r hr => ?_).trans ((fQ.sub fun r hr => ?_).trans (f₄.sub fun r hr => ?_))
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact ⟨_, List.mem_cons_self .., fun _ h => h⟩
-      · exact ⟨below SP 56, by simp, b8⟩
+      · exact ⟨below SP 64, by simp, below_sub (by decide) (by decide)⟩
     · simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with (rfl | rfl | rfl | rfl) | rfl | rfl | rfl
       · exact ⟨_, List.mem_cons_self .., fun a hc => st_w a (cb_sub a hc)⟩
@@ -319,14 +317,14 @@ theorem splitRun_of_midB {M : CtxMode} (T : BlkToFn M) {body : Prog isa}
       · exact ⟨_, List.mem_cons_self .., sc_w⟩
       · exact ⟨⟨D, n⟩, by simp, Offset.sub_base D (by omega)⟩
       · exact ⟨_, List.mem_cons_self .., Lay.wSub (by decide)⟩
-      · exact ⟨below SP 56, by simp, fun _ h => h⟩
+      · exact ⟨below SP 64, by simp, fun _ h => h⟩
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl | rfl
       · exact ⟨_, List.mem_cons_self .., Region.sub_prefix (by decide)⟩
       · exact ⟨_, List.mem_cons_self .., Lay.wSub (by decide)⟩
       · exact ⟨_, List.mem_cons_self .., Lay.wSub (by decide)⟩
       · exact ⟨⟨D, n⟩, by simp, sD'⟩
-      · exact ⟨below SP 56, by simp, fun _ h => h⟩
+      · exact ⟨below SP 64, by simp, below_sub (by decide) (by decide)⟩
   · have eS := bytesAt_add s₀.mem S (16 * (sl / 16)) (sl % 16)
     have eD := bytesAt_add s₀.mem D sl (n - sl)
     rw [hqr] at eS
@@ -337,11 +335,36 @@ theorem splitRun_of_midB {M : CtxMode} (T : BlkToFn M) {body : Prog isa}
   · rw [hT₄, hc₃, hJ, padded_whole rfl hAl hC1l, ← hD₄]
     rfl
 
+theorem widen_mem {W D SP : Addr} {sl : Nat} {r : Region} (hr : r ∈ ppList W D SP sl 56) :
+    ∃ r' ∈ ppList W D SP sl 64, Region.Sub r r' := by
+  simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with (rfl | rfl | rfl | rfl) | rfl | rfl | rfl
+  iterate 6 refine ⟨_, by simp, fun _ h => h⟩
+  exact ⟨below SP 64, by simp, below_sub (by decide) (by decide)⟩
+
+/-- `prefix` leaves what it does with the 56 bytes below `SP`, so with the 64. -/
+theorem PPost.widen {Ctx W SP D S : Addr} {R n sl : Nat} {s s' : State} (Q : PPost Ctx W SP D S R n sl 56 s s') :
+    PPost Ctx W SP D S R n sl 64 s s' :=
+  { Q with frame := Q.frame.sub fun _ hr => widen_mem hr }
+
+/-- After the entry, `seal_split` up to the tag at `W`: additional data
+`aadP` that leaves what `oneAad` does (`OneMid`), `prefix` and `body`. -/
+theorem splitRun_of_midB {M : CtxMode} (T : BlkToFn M) {body : Prog isa}
+    (hbody : BodyOk M body) {aadP : Prog isa} {s₀ s₁ : State} {Ctx W SP Np A D S T' : Addr} {nl al n sl : Nat}
+    (C : SplitCtx s₀ Ctx W SP Np A D S T' nl al n sl) (X : CtxExt M Ctx (W + BitVec.ofNat 64 16) W SP D n s₀)
+    (kM : (below SP 64).Disjoint ⟨Ctx, M.len⟩) (E : SEntry s₀ Ctx W SP A D S n sl s₁)
+    (hal : (s₀.gpr .r9).toNat = al)
+    (ha : WP isa aadP s₁
+      (OneMid s₀ Ctx W SP D n (ctxH s₀.mem Ctx) (bytesAt s₀.mem Np nl) (bytesAt s₀.mem A al) s₁.mem)) :
+    WP isa (.seq aadP (.seq (SealSplit.prefix T.fn) body)) s₁
+      (SplitRunPost s₀ Ctx W SP Np A D S nl al n sl) :=
+  splitRun_of_midP hbody C X kM E hal ha fun _ P _ => (prefix_ok P T).mono fun _ Q => Q.widen
+
 /-- `splitRun_of_midB` with `SealSplit.body`. -/
 theorem splitRun_of_mid (v : GcmImpl) {M : CtxMode} (B : BlkFn M) (T : BlkToFn M) {fin : Prog isa}
     (hfin : FinOk M fin) {aadP : Prog isa} {s₀ s₁ : State} {Ctx W SP Np A D S T' : Addr} {nl al n sl : Nat}
     (C : SplitCtx s₀ Ctx W SP Np A D S T' nl al n sl) (X : CtxExt M Ctx (W + BitVec.ofNat 64 16) W SP D n s₀)
-    (kM : (below SP 56).Disjoint ⟨Ctx, M.len⟩) (E : SEntry s₀ Ctx W SP A D S n sl s₁)
+    (kM : (below SP 64).Disjoint ⟨Ctx, M.len⟩) (E : SEntry s₀ Ctx W SP A D S n sl s₁)
     (hal : (s₀.gpr .r9).toNat = al)
     (ha : WP isa aadP s₁
       (OneMid s₀ Ctx W SP D n (ctxH s₀.mem Ctx) (bytesAt s₀.mem Np nl) (bytesAt s₀.mem A al) s₁.mem)) :
@@ -356,18 +379,17 @@ theorem splitRun_ok (v : GcmImpl) {M : CtxMode} (B : BlkFn M) (T : BlkToFn M) {f
   intro s₀ s₁ Ctx W SP Np A D S T' nl al n sl C X kM E hNp hnl hal
   exact splitRun_of_mid v B T hfin C X kM E hal (oneMid_ok v C.toOneCtx E.toOneEntry hNp hnl hal)
 
-/-- The key context, from `seal_split`'s precondition, and the 56 bytes below
+/-- The key context, from `seal_split`'s precondition, and the 64 bytes below
 the stack pointer apart from it. -/
 theorem CtxExt.ofSplit {M : CtxMode} {s : State} (hp : Proof.AesGcm.splitPre M.len s)
     (hok : M.ok s.mem (s.gpr .rdi)) :
     CtxExt M (s.gpr .rdi) (stackArg s 5 + BitVec.ofNat 64 16) (stackArg s 5) (s.gpr .rsp) (stackArg s 2)
-      (stackArg s 3).toNat s ∧ (below (s.gpr .rsp) 56).Disjoint ⟨s.gpr .rdi, M.len⟩ := by
+      (stackArg s 3).toNat s ∧ (below (s.gpr .rsp) 64).Disjoint ⟨s.gpr .rdi, M.len⟩ := by
   simp only [Proof.AesGcm.splitPre, Proof.AesGcm.stk64, Proof.AesGcm.ret, Proof.AesGcm.args,
     Proof.AesGcm.arg] at hp
   obtain ⟨hrd, -, d_cd, d_cw, -, -, -, -, -, -, -, -, -, -, -, -, -, -, t_c, -, -, -, -, -, wc, -⟩ := hp
   exact ⟨⟨wc, d_cw.sub_right (Lay.wSub (by decide)), d_cw, d_cd, t_c.sub_left (below_sub (by decide) (by decide)),
-    by rw [hrd]; exact covers_of_mem (List.mem_append_left _ (List.mem_cons_self ..)), hok⟩,
-    t_c.sub_left (below_sub (by decide) (by decide))⟩
+    by rw [hrd]; exact covers_of_mem (List.mem_append_left _ (List.mem_cons_self ..)), hok⟩, t_c⟩
 
 /-- `x; (a; (b; (c; (d; e))))` from `x; ((a; (b; c)); (d; e))`. -/
 theorem WP.reassoc_split {x a b c d e : Prog isa} {s : State} {Q : State → Prop}

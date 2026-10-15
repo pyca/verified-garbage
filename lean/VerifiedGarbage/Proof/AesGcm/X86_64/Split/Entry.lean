@@ -30,7 +30,8 @@ open VG.Spec.Aes (bytesAt)
 /-- What `seal_split`'s precondition gives: `seal`'s context, for the data
 `D` (`dst`) of `n` (`len`) bytes, and `sl` (`src_len`) bytes at `S` (`src`),
 apart from what is written, and the 56 bytes below the stack pointer apart
-from the buffers. -/
+from the buffers, and the 64 that `prefix` may use with the block index
+pushed apart from those it writes. -/
 structure SplitCtx (s : State) (Ctx W SP Np A D S T : Addr) (nl al n sl : Nat) : Prop
     extends OneCtx s 6 Ctx W SP Np A D nl al n where
   src : Covers [⟨S, sl⟩] (s.rd ++ s.wr)
@@ -50,6 +51,10 @@ structure SplitCtx (s : State) (Ctx W SP Np A D S T : Addr) (nl al n sl : Nat) :
   rT : (⟨SP, 8⟩ : Region).Disjoint ⟨T, 16⟩
   nD : (⟨Np, nl⟩ : Region).Disjoint ⟨D, n⟩
   aD : (⟨A, al⟩ : Region).Disjoint ⟨D, n⟩
+  kw64 : (below SP 64).Disjoint ⟨W, 2560⟩
+  kd64 : (below SP 64).Disjoint ⟨D, n⟩
+  ks64 : (below SP 64).Disjoint ⟨S, sl⟩
+  sp64 : 64 ≤ SP.toNat
 
 theorem SplitCtx.of {cl : Nat} {s : State} (hp : Proof.AesGcm.splitPre cl s) (hcl : 256 ≤ cl) :
     SplitCtx s (s.gpr .rdi) (stackArg s 5) (s.gpr .rsp) (s.gpr .rdx) (s.gpr .r8) (stackArg s 2) (stackArg s 0)
@@ -59,6 +64,9 @@ theorem SplitCtx.of {cl : Nat} {s : State} (hp : Proof.AesGcm.splitPre cl s) (hc
   obtain ⟨hrd, hwr, d_cd, d_cw, d_nd, d_nw, d_ad, d_aw, d_sd, d_sw, d_dw, d_da, d_wa, d_td, d_tw, r_d, r_w, r_t,
     t_c, t_n, t_a, t_s, t_d, t_w, wc, wn, wa, ws, wd, wt, ww, sp64, wsp, sl_le, hR⟩ := hp
   have b56 : Region.Sub (below (s.gpr .rsp) 56) (below (s.gpr .rsp) 64) := below_sub (by decide) (by decide)
+  have t_w64 := t_w
+  have t_d64 := t_d
+  have t_s64 := t_s
   replace t_c := t_c.sub_left b56
   replace t_n := t_n.sub_left b56
   replace t_a := t_a.sub_left b56
@@ -113,7 +121,7 @@ theorem SplitCtx.of {cl : Nat} {s : State} (hp : Proof.AesGcm.splitPre cl s) (hc
     ⟨⟨covers_left pd, by have := (stackArg s 3).isLt; omega, wd, d_dw.sub_right hSt, d_dw, t_d.sub_left b8⟩,
       pd, d_cd⟩,
     r_d, r_w, d_dw, d_da.symm, hR, t_c.sub_left b24, t_w.sub_left b24, t_d.sub_left b24, by omega⟩,
-    ps, d_sw, d_sd, ws, sl_le, t_c, t_w, t_d, t_s, t_a, sp56, pt, d_td, d_tw, r_t, d_nd, d_ad⟩
+    ps, d_sw, d_sd, ws, sl_le, t_c, t_w, t_d, t_s, t_a, sp56, pt, d_td, d_tw, r_t, d_nd, d_ad, t_w64, t_d64, t_s64, sp64⟩
   have := in_off pm (d := 8 * i) (n := 8) (by omega) (by omega)
   rwa [add_ofNat_assoc, show 8 + 8 * i = 8 * (i + 1) by omega] at this
 
