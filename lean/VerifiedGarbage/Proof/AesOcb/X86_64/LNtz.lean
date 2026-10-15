@@ -7,6 +7,7 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # AES-OCB on x86-64: the table of `L_j` (`table`, `lAddr`)
@@ -55,7 +56,7 @@ def slot (t : Nat) : Nat := 2 ^ t * debruijn.toNat % 2 ^ 64 / 2 ^ 58
 theorem slot_lt (t : Nat) : slot t < 64 := by
   unfold slot
   have := Nat.mod_lt (2 ^ t * debruijn.toNat) (show 0 < 2 ^ 64 by decide)
-  omega
+  omega_arith
 
 /-- The inverse of `slot`, for `t < 64`. -/
 def slotInv : List Nat :=
@@ -77,10 +78,10 @@ theorem slotOf_val (x : BitVec 64) : (x >>> 58).rotateRight 60 = BitVec.ofNat 64
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_rotateRight, BitVec.toNat_ushiftRight, BitVec.toNat_ofNat]
   simp only [Nat.reduceMod, Nat.reduceSub, Nat.shiftRight_eq_div_pow, Nat.shiftLeft_eq]
-  have h1 : x.toNat / 2 ^ 58 < 64 := by omega
-  have h2 : x.toNat / 2 ^ 58 / 2 ^ 60 = 0 := by omega
-  rw [h2, Nat.zero_or, Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
-  omega
+  have h1 : x.toNat / 2 ^ 58 < 64 := by omega_arith
+  have h2 : x.toNat / 2 ^ 58 / 2 ^ 60 = 0 := by omega_arith
+  rw [h2, Nat.zero_or, Nat.mod_eq_of_lt (by omega_arith), Nat.mod_eq_of_lt (by omega_arith)]
+  omega_arith
 
 /-- `2^t · debruijn` (`mul`), then `slotOf`: `16 · slot t`. -/
 theorem slot_val (t : Nat) (ht : t < 64) :
@@ -117,7 +118,7 @@ theorem lt_of_two_pow {j M : Nat} (h : 2 ^ j ≤ M) {k : Nat} (hM : M < 2 ^ k) :
 
 /-- A slot of the table is in `wT W`. -/
 theorem slot_sub (W : Addr) (j : Nat) : Region.Sub ⟨W + BitVec.ofNat 64 (tblO + 16 * slot j), 16⟩ (wT W) :=
-  Offset.sub W (by simp only [tblO]; omega) (by have := slot_lt j; simp only [tblO]; omega)
+  Offset.sub W (by simp only [tblO]; omega_arith) (by have := slot_lt j; simp only [tblO]; omega_arith)
 
 theorem Tbl.frame {W : Addr} {l : Block} {M : Nat} {m m' : Mem} {rs : List Region} (T : Tbl W l M m)
     (h : Frame rs m m') (hd : ∀ r ∈ rs, (wT W).Disjoint r) : Tbl W l M m' :=
@@ -133,12 +134,12 @@ theorem TblL.frame {W : Addr} {l : Block} {len : Nat} {m m' : Mem} {rs : List Re
   ⟨M, T.frame h hd, hM⟩
 
 theorem Tbl.mono {W : Addr} {l : Block} {M M' : Nat} {m : Mem} (T : Tbl W l M m) (h : M' ≤ M) : Tbl W l M' m :=
-  ⟨by have := T.lt; omega, fun j hj => T.val j (by omega)⟩
+  ⟨by have := T.lt; omega_arith, fun j hj => T.val j (by omega_arith)⟩
 
 /-- The table misses the rest of `W`. -/
 theorem Lay.wT_w {K W SP : Addr} (L : Lay K W SP) {a k : Nat} (h : a + k ≤ 2560) :
     (wT W).Disjoint ⟨W + BitVec.ofNat 64 a, k⟩ :=
-  L.w_w (.inr h) (by decide) (by omega)
+  L.w_w (.inr h) (by decide) (by omega_arith)
 
 /-- `L_{ntz(i)}`, for `0 < i ≤ M`, is in the table. -/
 theorem Tbl.ntz {W : Addr} {l : Block} {M : Nat} {m : Mem} (T : Tbl W l M m) {i : Nat} (hi : 0 < i) (hM : i ≤ M) :
@@ -167,7 +168,7 @@ abbrev tableBody : List Instr :=
 
 theorem shr1' {v : Nat} (hv : v < 2 ^ 64) : BitVec.ofNat 64 v >>> 1 = BitVec.ofNat 64 (v / 2) := by
   apply BitVec.eq_of_toNat_eq
-  rw [BitVec.toNat_ushiftRight, toNat_ofNat_of_lt hv, toNat_ofNat_of_lt (by omega), Nat.shiftRight_eq_div_pow]
+  rw [BitVec.toNat_ushiftRight, toNat_ofNat_of_lt hv, toNat_ofNat_of_lt (by omega_arith), Nat.shiftRight_eq_div_pow]
 
 theorem ofNat_self_beq {a : Nat} (ha : a < 2 ^ 64) :
     (BitVec.ofNat 64 a &&& BitVec.ofNat 64 a == 0) = decide (a = 0) :=
@@ -202,14 +203,14 @@ theorem tableStep_ok {K W SP : Addr} {t : State} (E : Env K W SP t) {j x : Nat} 
   have hslot := slot_lt (j + 1)
   have hslotj := slot_lt j
   have w₀ : InRegions t₁.wr (W + BitVec.ofNat 64 (16 * slot (j + 1)) + BitVec.ofNat 64 tblO) 8 := by
-    rw [slot_addr, wr₁]; exact E.perm.wW (by simp only [tblO]; omega)
+    rw [slot_addr, wr₁]; exact E.perm.wW (by simp only [tblO]; omega_arith)
   have w₁ : InRegions t₁.wr (W + BitVec.ofNat 64 (16 * slot (j + 1)) + BitVec.ofNat 64 (tblO + 8)) 8 := by
-    rw [Offset.add_add, wr₁, show 16 * slot (j + 1) + (tblO + 8) = tblO + 16 * slot (j + 1) + 8 by omega]
-    exact E.perm.wW (by simp only [tblO]; omega)
+    rw [Offset.add_add, wr₁, show 16 * slot (j + 1) + (tblO + 8) = tblO + 16 * slot (j + 1) + 8 by omega_arith]
+    exact E.perm.wW (by simp only [tblO]; omega_arith)
   have r₀ : InRegions (t₁.rd ++ t₁.wr) (W + BitVec.ofNat 64 (tblO + 16 * slot j) + BitVec.ofNat 64 0) 8 := by
-    rw [BitVec.add_zero, rd₁, wr₁]; exact E.perm.wR (by simp only [tblO]; omega)
+    rw [BitVec.add_zero, rd₁, wr₁]; exact E.perm.wR (by simp only [tblO]; omega_arith)
   have r₁ : InRegions (t₁.rd ++ t₁.wr) (W + BitVec.ofNat 64 (tblO + 16 * slot j) + BitVec.ofNat 64 (0 + 8)) 8 := by
-    rw [Offset.add_add, rd₁, wr₁]; exact E.perm.wR (by simp only [tblO]; omega)
+    rw [Offset.add_add, rd₁, wr₁]; exact E.perm.wR (by simp only [tblO]; omega_arith)
   obtain ⟨t₂, run₂, B₂⟩ := dbl_ok (s := t₁) (b := .r10) (o := .rdi) (a := 0) (d := tblO) hdi₁
     (by rw [g₁ _ (by decide) (by decide) (by decide) (by decide), h10]) (by decide) (by decide) (by decide)
     (by decide) (by decide) r₀ r₁ w₀ w₁
@@ -224,7 +225,7 @@ theorem tableStep_ok {K W SP : Addr} {t : State} (E : Env K W SP t) {j x : Nat} 
     refine ⟨_, by orun [hdi₂, h9₂], ?_, ?_, ?_, fun r h1 h2 => ?_, ?_, ?_, ?_⟩
     · simp only [gpr_setReg, gpr_setFlags, gpr_arithFlags, ite_true, ite_false, reduceCtorEq, h9₂, shr1' hx]
     · simp only [zf_arithFlags, gpr_setReg, gpr_setFlags, gpr_arithFlags, ite_true, ite_false, reduceCtorEq, h9₂,
-        shr1' hx, ofNat_self_beq (show x / 2 < 2 ^ 64 by omega)]
+        shr1' hx, ofNat_self_beq (show x / 2 < 2 ^ 64 by omega_arith)]
     · simp only [gpr_setReg, gpr_setFlags, gpr_arithFlags, ite_true, ite_false, reduceCtorEq, hdi₂]
       exact slot_addr W (j + 1)
     · simp only [gpr_setReg, gpr_setFlags, gpr_arithFlags, h1, h2, ite_false]
@@ -263,7 +264,7 @@ theorem table_ok {K W SP : Addr} {s : State} (E : Env K W SP s) {l : Block} {n a
   have h15 := E.r15
   have hor : n ||| al < 2 ^ 64 := Nat.or_lt_two_pow hn hal
   generalize hM : (n ||| al) / 16 = M
-  have hM60 : M < 2 ^ 60 := by omega
+  have hM60 : M < 2 ^ 60 := by omega_arith
   obtain ⟨s₁, run₁, B₁⟩ := copy16_ok (s := s) (a := l0O) (d := tblO) h15 (E.perm.wR (by decide))
     (E.perm.wR (by decide)) (E.perm.wW (by decide)) (E.perm.wW (by decide))
   have r₁ : InRegions (s₁.rd ++ s₁.wr) (W + BitVec.ofNat 64 216) 8 := by rw [B₁.rd, B₁.wr]; exact E.perm.wR (by decide)
@@ -284,12 +285,12 @@ theorem table_ok {K W SP : Addr} {s : State} (E : Env K W SP s) {l : Block} {n a
       s₂.gpr .r10 = W + BitVec.ofNat 64 (tblO + 16 * slot 0) ∧ s₂.gpr .r11 = BitVec.ofNat 64 (2 ^ 0) ∧
       s₂.gpr .rsi = debruijn ∧
       (∀ r ∈ calleeSaved, s₂.gpr r = s₁.gpr r) ∧ s₂.mem = s₁.mem ∧ s₂.rd = s₁.rd ∧ s₂.wr = s₁.wr := by
-    have e : (n ||| al) / 2 ^ 5 = M / 2 ^ (0 + 1) := by rw [← hM]; omega
+    have e : (n ||| al) / 2 ^ 5 = M / 2 ^ (0 + 1) := by rw [← hM]; omega_arith
     refine ⟨_, by orun [h15₁, r₁, r₂, hlen₁, halen₁], ?_, ?_, ?_, ?_, ?_, fun r hr => ?_, ?_, ?_, ?_⟩
     · simp only [gpr_setReg, gpr_setFlags, gpr_arithFlags, ite_true, ite_false, reduceCtorEq, hlen₁, halen₁,
         ofNat_or hn hal, shrK hor, e]
     · simp only [zf_arithFlags, gpr_setReg, gpr_setFlags, gpr_arithFlags, ite_true, ite_false, reduceCtorEq, hlen₁,
-        halen₁, ofNat_or hn hal, shrK hor, e, ofNat_self_beq (show M / 2 ^ (0 + 1) < 2 ^ 64 by omega)]
+        halen₁, ofNat_or hn hal, shrK hor, e, ofNat_self_beq (show M / 2 ^ (0 + 1) < 2 ^ 64 by omega_arith)]
     · simp only [gpr_setReg, gpr_setFlags, gpr_arithFlags, ite_true, ite_false, reduceCtorEq, h15₁, slot_zero]; rfl
     · simp only [gpr_setReg, gpr_setFlags, gpr_arithFlags, ite_true, ite_false, reduceCtorEq, sext1]
     · simp only [gpr_setReg, gpr_setFlags, gpr_arithFlags, ite_true, ite_false, reduceCtorEq]
@@ -319,10 +320,10 @@ theorem table_ok {K W SP : Addr} {s : State} (E : Env K W SP s) {l : Block} {n a
   · have h0 : M / 2 = 0 := by simpa using hb
     refine ⟨E₂, fr₂, ⟨hM60, fun j hj => ?_⟩, sv₂, by rw [rd₂, B₁.rd], by rw [wr₂, B₁.wr]⟩
     have : j = 0 := by
-      have := lt_of_two_pow hj (k := 1) (by omega)
-      omega
+      have := lt_of_two_pow hj (k := 1) (by omega_arith)
+      omega_arith
     subst this; exact v₂
-  have hpos : 0 < M / 2 ^ (0 + 1) := by have := of_decide_eq_false hb; omega
+  have hpos : 0 < M / 2 ^ (0 + 1) := by have := of_decide_eq_false hb; omega_arith
   refine WP.loop (M := isa) (c := .ne)
     (fun (k : Nat) (t : State) => ∃ j, k = M / 2 ^ (j + 1) ∧ 0 < M / 2 ^ (j + 1) ∧
       t.gpr .r9 = BitVec.ofNat 64 (M / 2 ^ (j + 1)) ∧ t.gpr .r10 = W + BitVec.ofNat 64 (tblO + 16 * slot j) ∧
@@ -340,7 +341,7 @@ theorem table_ok {K W SP : Addr} {s : State} (E : Env K W SP s) {l : Block} {n a
       _ ≤ M / 2 ^ (j + 1) * 2 ^ (j + 1) := Nat.mul_le_mul_right _ hpos
       _ ≤ M := Nat.div_mul_le_self M _) hM60
   obtain ⟨t', run', h9', zf', h10', h11', hsi', B'⟩ := tableStep_ok Et (j := j) (x := M / 2 ^ (j + 1))
-    (by omega) (Nat.lt_of_le_of_lt (Nat.div_le_self _ _) (by omega)) h9 h10 h11 hsi
+    (by omega_arith) (Nat.lt_of_le_of_lt (Nat.div_le_self _ _) (by omega_arith)) h9 h10 h11 hsi
   refine WP.of_runBlock ⟨t', run', ?_⟩
   have e2 : M / 2 ^ (j + 1) / 2 = M / 2 ^ (j + 1 + 1) := by rw [Nat.div_div_eq_div_mul, ← Nat.pow_succ]
   have hslot := slot_lt (j + 1)
@@ -350,12 +351,12 @@ theorem table_ok {K W SP : Addr} {s : State} (E : Env K W SP s) {l : Block} {n a
     intro k hk
     rcases Nat.lt_or_ge k (j + 1) with hk' | hk'
     · have hks := slot_lt k
-      have hne : slot k ≠ slot (j + 1) := fun h => by have := slot_inj (by omega) (by omega) h; omega
+      have hne : slot k ≠ slot (j + 1) := fun h => by have := slot_inj (by omega_arith) (by omega_arith) h; omega_arith
       rw [blockAtMem_frame B'.frame (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
-        exact Offset.disjoint W (by simp only [tblO]; omega) (by simp only [tblO]; omega)
-          (by simp only [tblO]; omega)), hv k (by omega)]
-    · obtain rfl : k = j + 1 := by omega
+        exact Offset.disjoint W (by simp only [tblO]; omega_arith) (by simp only [tblO]; omega_arith)
+          (by simp only [tblO]; omega_arith)), hv k (by omega_arith)]
+    · obtain rfl : k = j + 1 := by omega_arith
       rw [B'.val, hv j (Nat.le_refl _)]; rfl
   have Et' : Env K W SP t' := Et.of_saved (fun r hr => B'.gpr r (by
       simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -373,11 +374,11 @@ theorem table_ok {K W SP : Addr} {s : State} (E : Env K W SP s) {l : Block} {n a
       have := lt_of_two_pow hk (k := j + 1 + 1) (by
         rcases Nat.lt_or_ge M (2 ^ (j + 1 + 1)) with h | h
         · exact h
-        · have := (Nat.le_div_iff_mul_le (Nat.two_pow_pos _)).mpr (by omega : 1 * 2 ^ (j + 1 + 1) ≤ M); omega)
-      omega
+        · have := (Nat.le_div_iff_mul_le (Nat.two_pow_pos _)).mpr (by omega_arith : 1 * 2 ^ (j + 1 + 1) ≤ M); omega_arith)
+      omega_arith
     exact hv' k this
   · right
-    refine ⟨(eval_ne zf').trans (by simp [h0]), M / 2 ^ (j + 1 + 1), by omega, j + 1, rfl, by omega,
+    refine ⟨(eval_ne zf').trans (by simp [h0]), M / 2 ^ (j + 1 + 1), by omega_arith, j + 1, rfl, by omega_arith,
       by rw [h9', e2], h10', h11', hsi', hv', fr', Et', sv', by rw [B'.rd, rd], by rw [B'.wr, wr]⟩
 
 end VG.Proof.AesOcb.X86_64

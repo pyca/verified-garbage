@@ -5,6 +5,7 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # AES-OCB on x86-64: a pass over the whole blocks (`pass`)
@@ -92,15 +93,15 @@ theorem nextOffset_ok {K W SP : Addr} {t : State} (E : Env K W SP t) {l : Block}
     (T : Tbl W l M t.mem) (hi : i + 1 ≤ M) (hbp : t.gpr .rbp = BitVec.ofNat 64 (i + 1)) :
     OfsOk nextOffset l i t := by
   have hM := T.lt
-  obtain ⟨u, run, h1, g, m, x, rd, wr⟩ := lAddr_ok E.r15 (i := i + 1) (by omega) (by omega) hbp
+  obtain ⟨u, run, h1, g, m, x, rd, wr⟩ := lAddr_ok E.r15 (i := i + 1) (by omega_arith) (by omega_arith) hbp
   have hs := slot_lt (ntz (i + 1))
   have ea : u.gpr .rcx + BitVec.ofNat 64 2560 = W + BitVec.ofNat 64 (2560 + 16 * slot (ntz (i + 1))) := by
     rw [h1]; exact slot_addr W _
   have rT : InRegions (u.rd ++ u.wr) (W + BitVec.ofNat 64 (2560 + 16 * slot (ntz (i + 1)))) 16 := by
-    rw [rd, wr]; exact E.perm.wR (by omega)
+    rw [rd, wr]; exact E.perm.wR (by omega_arith)
   refine ⟨_, by rw [nextOffset, runBlock_append, run, Option.bind_some]
                 orun [XOp.exec, XBinOp.eval, State.load128, ea, rT], ?_, ?_, ?_, ?_, ?_, ?_⟩
-  · have e := T.ntz (by omega) hi
+  · have e := T.ntz (by omega_arith) hi
     simp only [tblO] at e
     simp only [xmm_setXmm, ite_true, reduceCtorEq, ite_false, rv_xor, x, ← blockAtMem_eq, m, e]
   · intro y h0 h2; simp only [xmm_setXmm, h0, h2, ite_false, x]
@@ -134,7 +135,7 @@ theorem blockStep_ok {K W SP D : Addr} {m : Nat} {O0 l : Block} {X : Nat → Blo
     ∃ t', runBlock isa (blockStep ofs body) t = some t' ∧ XInv K W SP D m O0 l X fB ckF t₀ t' (i + 1) ∧
       t'.gpr .r12 = t.gpr .r12 ∧ (∀ x, x ≠ .xmm0 → x ≠ .xmm1 → x ≠ .xmm2 → x ≠ .xmm3 → t'.xmm x = t.xmm x) := by
   have hDt : DBuf K W SP t D (16 * m) := hD.of_eq P.rd P.wr
-  have hBi := hDt.slice (a := 16 * i) (k := 16) (by omega)
+  have hBi := hDt.slice (a := 16 * i) (k := 16) (by omega_arith)
   generalize hB' : D + BitVec.ofNat 64 (16 * i) = B at hBi
   obtain ⟨u₁, run₁, o₁, x₁, g₁, m₁, rd₁, wr₁⟩ := hofs
   have hbx₁ : u₁.gpr .rbx = B := by rw [g₁ _ (by decide) (by decide) (by decide), P.rbx, hB']
@@ -162,7 +163,7 @@ theorem blockStep_ok {K W SP D : Addr} {m : Nat} {O0 l : Block} {X : Nat → Blo
       ?_, ?_, ?_⟩
     · simp only [mem_setReg, mem_arithFlags, BitVec.add_zero]
     · simp only [gpr_setReg, gpr_arithFlags, ite_true, ite_false, reduceCtorEq, hbx₃, ← hB', Offset.add_add]
-      rw [show 16 * i + 16 = 16 * (i + 1) by omega]
+      rw [show 16 * i + 16 = 16 * (i + 1) by omega_arith]
     · simp only [gpr_setReg, gpr_arithFlags, ite_true, ite_false, reduceCtorEq, hbp₃, ← BitVec.ofNat_add]
     · simp only [gpr_setReg, gpr_arithFlags, h1, h2, ite_false]
     all_goals rfl
@@ -187,7 +188,7 @@ theorem blockStep_ok {K W SP D : Addr} {m : Nat} {O0 l : Block} {X : Nat → Blo
       (by rw [rd₄, rd₃, rd_setXmm, rd₁]) (by rw [wr₄, wr₃, wr_setXmm, wr₁])
   · exact P.frame.trans (fB4.sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact ⟨⟨D, 16 * m⟩, List.mem_singleton_self _, by rw [← hB']; exact Offset.sub_base D (by omega)⟩)
+      exact ⟨⟨D, 16 * m⟩, List.mem_singleton_self _, by rw [← hB']; exact Offset.sub_base D (by omega_arith)⟩)
   · rw [rd₄, rd₃, rd_setXmm, rd₁, P.rd]
   · rw [wr₄, wr₃, wr_setXmm, wr₁, P.wr]
   · exact bx₄
@@ -198,20 +199,20 @@ theorem blockStep_ok {K W SP D : Addr} {m : Nat} {O0 l : Block} {X : Nat → Blo
   · by_cases hki : k = i
     · subst hki
       rw [hB', m₄, blockAtMem_writeW, e3]; simp
-    · have hBk := hDt.slice (a := 16 * k) (k := 16) (by omega)
+    · have hBk := hDt.slice (a := 16 * k) (k := 16) (by omega_arith)
       rw [blockAtMem_frame fB4 (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; rw [← hB']
-        exact Offset.disjoint D (by omega) (by have := hD.wrap; omega) (by have := hD.wrap; omega)), P.blk k hk]
+        exact Offset.disjoint D (by omega_arith) (by have := hD.wrap; omega_arith) (by have := hD.wrap; omega_arith)), P.blk k hk]
       by_cases hk' : k < i
-      · simp [hk', show k < i + 1 by omega]
-      · simp [hk', show ¬ k < i + 1 by omega]
+      · simp [hk', show k < i + 1 by omega_arith]
+      · simp [hk', show ¬ k < i + 1 by omega_arith]
   · rw [g₄ r h4 h5, g₃, gpr_setXmm, g₁ r h1 h3 h2, P.gpr r h1 h2 h3 h4 h5 h6]
 
-theorem ntz_4k1 (k : Nat) : ntz (4 * k + 1) = 0 := Proof.Ocb.ntz_odd (by omega)
-theorem ntz_4k3 (k : Nat) : ntz (4 * k + 3) = 0 := Proof.Ocb.ntz_odd (by omega)
+theorem ntz_4k1 (k : Nat) : ntz (4 * k + 1) = 0 := Proof.Ocb.ntz_odd (by omega_arith)
+theorem ntz_4k3 (k : Nat) : ntz (4 * k + 3) = 0 := Proof.Ocb.ntz_odd (by omega_arith)
 theorem ntz_4k2 (k : Nat) : ntz (4 * k + 2) = 1 := by
-  rw [Proof.Ocb.ntz_even (by omega) (by omega), show (4 * k + 2) / 2 = 2 * k + 1 by omega,
-    Proof.Ocb.ntz_odd (by omega)]
+  rw [Proof.Ocb.ntz_even (by omega_arith) (by omega_arith), show (4 * k + 2) / 2 = 2 * k + 1 by omega_arith,
+    Proof.Ocb.ntz_odd (by omega_arith)]
 
 /-- What the pass needs throughout: the table (for `M ≥ m`), and the block
 counter. -/
@@ -236,18 +237,18 @@ theorem quad_ok {K W SP D : Addr} {m : Nat} {O0 l : Block} {X : Nat → Block} {
     ∃ t', runBlock isa (quad body) t = some t' ∧ XInv K W SP D m O0 l X fB ckF t₀ t' (4 * (k + 1)) ∧
       t'.gpr .r12 = BitVec.ofNat 64 (m - 4 * (k + 1)) ∧ t'.cf = some (decide (m - 4 * (k + 1) < 4)) ∧
       rv (t'.xmm .xmm4) = lAt l 0 ∧ rv (t'.xmm .xmm5) = lAt l 1 := by
-  obtain ⟨t₁, run₁, P₁, r₁, x₁⟩ := blockStep_ok hB hckF C.data (by omega) P
+  obtain ⟨t₁, run₁, P₁, r₁, x₁⟩ := blockStep_ok hB hckF C.data (by omega_arith) P
     (ofsX_ok .xmm4 (by rw [h4, ntz_4k1]))
-  obtain ⟨t₂, run₂, P₂, r₂, x₂⟩ := blockStep_ok hB hckF C.data (by omega) P₁
+  obtain ⟨t₂, run₂, P₂, r₂, x₂⟩ := blockStep_ok hB hckF C.data (by omega_arith) P₁
     (ofsX_ok .xmm5 (by rw [x₁ .xmm5 (by decide) (by decide) (by decide) (by decide), h5,
-      show 4 * k + 1 + 1 = 4 * k + 2 by omega, ntz_4k2]))
-  obtain ⟨t₃, run₃, P₃, r₃, x₃⟩ := blockStep_ok hB hckF C.data (by omega) P₂
+      show 4 * k + 1 + 1 = 4 * k + 2 by omega_arith, ntz_4k2]))
+  obtain ⟨t₃, run₃, P₃, r₃, x₃⟩ := blockStep_ok hB hckF C.data (by omega_arith) P₂
     (ofsX_ok .xmm4 (by rw [x₂ .xmm4 (by decide) (by decide) (by decide) (by decide),
-      x₁ .xmm4 (by decide) (by decide) (by decide) (by decide), h4, show 4 * k + 1 + 1 + 1 = 4 * k + 3 by omega,
+      x₁ .xmm4 (by decide) (by decide) (by decide) (by decide), h4, show 4 * k + 1 + 1 + 1 = 4 * k + 3 by omega_arith,
       ntz_4k3]))
   obtain ⟨M, T, hM⟩ := C.tbl' P₃.frame
-  obtain ⟨t₄, run₄, P₄, r₄, x₄⟩ := blockStep_ok hB hckF C.data (by omega) P₃
-    (nextOffset_ok P₃.env T (by omega) P₃.rbp)
+  obtain ⟨t₄, run₄, P₄, r₄, x₄⟩ := blockStep_ok hB hckF C.data (by omega_arith) P₃
+    (nextOffset_ok P₃.env T (by omega_arith) P₃.rbp)
   have h12₄ : t₄.gpr .r12 = BitVec.ofNat 64 (m - 4 * k) := by rw [r₄, r₃, r₂, r₁, h12]
   obtain ⟨t₅, run₅, h12₅, cf₅, g₅, m₅, x₅, rd₅, wr₅⟩ : ∃ t₅, runBlock isa
       [.alu .sub .r12 (.imm 4), .alu .cmp .r12 (.imm 4)] t₄ = some t₅ ∧
@@ -256,18 +257,18 @@ theorem quad_ok {K W SP D : Addr} {m : Nat} {O0 l : Block} {X : Nat → Block} {
       t₅.wr = t₄.wr := by
     have e4 : BitVec.signExtend 64 (4 : BitVec 32) = BitVec.ofNat 64 4 := by decide
     have hs : BitVec.ofNat 64 (m - 4 * k) - BitVec.ofNat 64 4 = BitVec.ofNat 64 (m - 4 * (k + 1)) := by
-      rw [Proof.AesCcm.X86_64.ofNat_sub (by omega) (by have := C.data.lt; omega),
-        show m - 4 * k - 4 = m - 4 * (k + 1) by omega]
+      rw [Proof.AesCcm.X86_64.ofNat_sub (by omega_arith) (by have := C.data.lt; omega_arith),
+        show m - 4 * k - 4 = m - 4 * (k + 1) by omega_arith]
     refine ⟨_, by orun [h12₄], ?_, ?_, fun r h => ?_, ?_, ?_, ?_, ?_⟩
     · simp only [gpr_setReg, gpr_arithFlags, ite_true, h12₄, e4, hs]
     · simp only [cf_arithFlags, gpr_setReg, gpr_arithFlags, ite_true, h12₄, e4, hs]
-      rw [toNat_ofNat_of_lt (by have := C.data.lt; omega), toNat_ofNat_of_lt (by decide)]
+      rw [toNat_ofNat_of_lt (by have := C.data.lt; omega_arith), toNat_ofNat_of_lt (by decide)]
     · simp only [gpr_setReg, gpr_arithFlags, h, ite_false]
     all_goals rfl
   refine ⟨t₅, ?_, ?_, h12₅, cf₅, ?_, ?_⟩
   · rw [quad, runBlock_append, runBlock_append, runBlock_append, runBlock_append, run₁, Option.bind_some, run₂,
       Option.bind_some, run₃, Option.bind_some, run₄, Option.bind_some, run₅]
-  · rw [show 4 * (k + 1) = 4 * k + 1 + 1 + 1 + 1 by omega]
+  · rw [show 4 * (k + 1) = 4 * k + 1 + 1 + 1 + 1 by omega_arith]
     exact { P₄ with
       env := P₄.env.keep (fun r hr => g₅ r (by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; rcases hr with rfl | rfl | rfl <;> decide))
@@ -298,7 +299,7 @@ theorem single_ok {K W SP D : Addr} {m : Nat} {O0 l : Block} {X : Nat → Block}
       XInv K W SP D m O0 l X fB ckF t₀ t' (i + 1) ∧ t'.gpr .r12 = BitVec.ofNat 64 (m - (i + 1)) ∧
       t'.zf = some (decide (m - (i + 1) = 0)) := by
   obtain ⟨M, T, hM⟩ := C.tbl' P.frame
-  obtain ⟨t₁, run₁, P₁, r₁, -⟩ := blockStep_ok hB hckF C.data hi P (nextOffset_ok P.env T (by omega) P.rbp)
+  obtain ⟨t₁, run₁, P₁, r₁, -⟩ := blockStep_ok hB hckF C.data hi P (nextOffset_ok P.env T (by omega_arith) P.rbp)
   have h12₁ : t₁.gpr .r12 = BitVec.ofNat 64 (m - i) := by rw [r₁, h12]
   have hm := C.data.lt
   refine ⟨_, by rw [runBlock_append, run₁, Option.bind_some]; orun [h12₁], ?_, ?_, ?_⟩
@@ -311,10 +312,10 @@ theorem single_ok {K W SP D : Addr} {m : Nat} {O0 l : Block} {X : Nat → Block}
       gpr := fun r h1 h2 h3 h4 h5 h6 => by
         simp only [gpr_setReg, gpr_arithFlags, h6, ite_false]; exact P₁.gpr r h1 h2 h3 h4 h5 h6 }
   · simp only [gpr_setReg, gpr_arithFlags, ite_true, h12₁, Proof.AesOcb.X86_64.sext1]
-    rw [Proof.AesCcm.X86_64.ofNat_sub (by omega) (by omega), show m - i - 1 = m - (i + 1) by omega]
+    rw [Proof.AesCcm.X86_64.ofNat_sub (by omega_arith) (by omega_arith), show m - i - 1 = m - (i + 1) by omega_arith]
   · simp only [zf_setReg, zf_arithFlags, gpr_setReg, gpr_arithFlags, ite_true, h12₁, Proof.AesOcb.X86_64.sext1]
-    rw [Offset.ofNat_sub_ofNat_beq (by omega) (by omega)]
-    exact congrArg some (decide_eq_decide.mpr (by omega))
+    rw [Offset.ofNat_sub_ofNat_beq (by omega_arith) (by omega_arith)]
+    exact congrArg some (decide_eq_decide.mpr (by omega_arith))
 
 /-- What a pass over the `m` whole blocks at `D` leaves, from `t`: the blocks
 through `fB` with their offsets, the offset and the checksum in `W`. -/
@@ -375,34 +376,34 @@ theorem pass_ok {K W SP D : Addr} {m : Nat} {O0 l : Block} {fB : Block → Block
         gpr := fun _ _ _ _ _ _ _ => by simp only [gpr_arithFlags, gpr_setXmm] }
     · simp only [gpr_arithFlags, gpr_setXmm, h12]; simp
     · simp only [cf_arithFlags, gpr_setXmm, h12, e4]
-      rw [toNat_ofNat_of_lt (show m < 2 ^ 64 by omega), toNat_ofNat_of_lt (by decide)]
+      rw [toNat_ofNat_of_lt (show m < 2 ^ 64 by omega_arith), toNat_ofNat_of_lt (by decide)]
     · simp only [xmm_arithFlags, xmm_setXmm, reduceCtorEq, ite_true, ite_false, ← blockAtMem_eq]
-      have := T.val 0 (by simp; omega)
+      have := T.val 0 (by simp; omega_arith)
       rwa [slot_zero, Nat.mul_zero, Nat.add_zero] at this
     · simp only [xmm_arithFlags, xmm_setXmm, reduceCtorEq, ite_true, ite_false, ← blockAtMem_eq]
-      have := T.val 1 (by simp; omega)
+      have := T.val 1 (by simp; omega_arith)
       rwa [slot_one, Nat.mul_one] at this
   have C₁ : PCtx K W SP D m l t := C
   -- four blocks at a time
   have quads : WP isa (.ite .b (.block []) (.loop (.block (quad body)) .ae)) t₁ fun u =>
       XInv K W SP D m O0 l X fB ckF t u (4 * (m / 4)) ∧ u.gpr .r12 = BitVec.ofNat 64 (m - 4 * (m / 4)) := by
     refine WP.ite (decide (m < 4)) (eval_b cf₁) (fun hb => WP.block_nil ?_) (fun hb => ?_)
-    · have : m / 4 = 0 := by have := of_decide_eq_true hb; omega
+    · have : m / 4 = 0 := by have := of_decide_eq_true hb; omega_arith
       rw [this]; exact ⟨P₁, h12₁⟩
-    have h4m : 4 ≤ m := by have := of_decide_eq_false hb; omega
+    have h4m : 4 ≤ m := by have := of_decide_eq_false hb; omega_arith
     refine WP.loop (M := isa) (c := .ae)
       (fun (n : Nat) (u : State) => ∃ k, n = m / 4 - k ∧ 4 * k + 4 ≤ m ∧ XInv K W SP D m O0 l X fB ckF t u (4 * k) ∧
         u.gpr .r12 = BitVec.ofNat 64 (m - 4 * k) ∧ rv (u.xmm .xmm4) = lAt l 0 ∧ rv (u.xmm .xmm5) = lAt l 1)
-      ?_ (m / 4 - 0) t₁ ⟨0, rfl, by omega, P₁, h12₁, x4₁, x5₁ (by omega)⟩
+      ?_ (m / 4 - 0) t₁ ⟨0, rfl, by omega_arith, P₁, h12₁, x4₁, x5₁ (by omega_arith)⟩
     rintro n u ⟨k, rfl, hk, P, h12, h4, h5⟩
     obtain ⟨u', run', P', h12', cf', h4', h5'⟩ := quad_ok hB (fun i hi => hckF i hi) C₁ hk P h12 h4 h5
     refine WP.of_runBlock ⟨u', run', ?_⟩
     by_cases he : m - 4 * (k + 1) < 4
     · left
-      have : k + 1 = m / 4 := by omega
+      have : k + 1 = m / 4 := by omega_arith
       exact ⟨(eval_ae cf').trans (by simp [he]), by rw [← this]; exact ⟨P', h12'⟩⟩
     · right
-      exact ⟨(eval_ae cf').trans (by simp [he]), m / 4 - (k + 1), by omega, k + 1, rfl, by omega, P', h12', h4', h5'⟩
+      exact ⟨(eval_ae cf').trans (by simp [he]), m / 4 - (k + 1), by omega_arith, k + 1, rfl, by omega_arith, P', h12', h4', h5'⟩
   unfold pass
   refine WP.seq (WP.of_runBlock ⟨t₁, run₁, ?_⟩)
   refine WP.seq (WP.mono quads fun u ⟨Pu, h12u⟩ => ?_)
@@ -411,7 +412,7 @@ theorem pass_ok {K W SP D : Addr} {m : Nat} {O0 l : Block} {fB : Block → Block
       u₁.zf = some (decide (m - 4 * (m / 4) = 0)) ∧ u₁.gpr = u.gpr ∧ u₁.mem = u.mem ∧ u₁.xmm = u.xmm ∧
       u₁.rd = u.rd ∧ u₁.wr = u.wr := by
     refine ⟨_, by orun [h12u], ?_, ?_, ?_, ?_, ?_, ?_⟩
-    · simp only [zf_arithFlags, h12u, Proof.AesCcm.X86_64.and_self_beq (show m - 4 * (m / 4) < 2 ^ 64 by omega)]
+    · simp only [zf_arithFlags, h12u, Proof.AesCcm.X86_64.and_self_beq (show m - 4 * (m / 4) < 2 ^ 64 by omega_arith)]
     all_goals rfl
   have Pu₁ : XInv K W SP D m O0 l X fB ckF t u₁ (4 * (m / 4)) :=
     { Pu with
@@ -429,9 +430,9 @@ theorem pass_ok {K W SP D : Addr} {m : Nat} {O0 l : Block} {fB : Block → Block
       (.loop (.block (blockStep nextOffset body ++ [.alu .sub .r12 (.imm 1)])) .ne)) u₁ fun u' =>
       XInv K W SP D m O0 l X fB ckF t u' m := by
     refine WP.ite _ (eval_e zf₂) (fun hb => WP.block_nil ?_) (fun hb => ?_)
-    · have : 4 * (m / 4) = m := by have := of_decide_eq_true hb; omega
+    · have : 4 * (m / 4) = m := by have := of_decide_eq_true hb; omega_arith
       rw [this] at Pu₁; exact Pu₁
-    have hlt : 4 * (m / 4) < m := by have := of_decide_eq_false hb; omega
+    have hlt : 4 * (m / 4) < m := by have := of_decide_eq_false hb; omega_arith
     refine WP.loop (M := isa) (c := .ne)
       (fun (n : Nat) (u : State) => ∃ i, n = m - i ∧ i < m ∧ XInv K W SP D m O0 l X fB ckF t u i ∧
         u.gpr .r12 = BitVec.ofNat 64 (m - i)) ?_ (m - 4 * (m / 4)) u₁
@@ -441,9 +442,9 @@ theorem pass_ok {K W SP D : Addr} {m : Nat} {O0 l : Block} {fB : Block → Block
     refine WP.of_runBlock ⟨u', run', ?_⟩
     by_cases he : m - (i + 1) = 0
     · left
-      exact ⟨(eval_ne zf').trans (by simp [he]), (show i + 1 = m by omega) ▸ P'⟩
+      exact ⟨(eval_ne zf').trans (by simp [he]), (show i + 1 = m by omega_arith) ▸ P'⟩
     · right
-      exact ⟨(eval_ne zf').trans (by simp [he]), m - (i + 1), by omega, i + 1, rfl, by omega, P', h12'⟩
+      exact ⟨(eval_ne zf').trans (by simp [he]), m - (i + 1), by omega_arith, i + 1, rfl, by omega_arith, P', h12'⟩
   refine WP.seq (WP.of_runBlock ⟨u₁, run₂, ?_⟩)
   refine WP.seq (WP.mono singles fun v P => ?_)
   -- the end
@@ -472,7 +473,7 @@ theorem pass_ok {K W SP D : Addr} {m : Nat} {O0 l : Block} {fB : Block → Block
     rw [blockAtMem_writeW, P.ck]
   · show blockAtMem ((v.mem.writeW (W + BitVec.ofNat 64 16) (v.xmm .xmm0)).writeW (W + BitVec.ofNat 64 32)
       (v.xmm .xmm1)) _ = _
-    have hBk := C.data.slice (a := 16 * k) (k := 16) (by omega)
+    have hBk := C.data.slice (a := 16 * k) (k := 16) (by omega_arith)
     rw [blockAtMem_frame fw (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl
