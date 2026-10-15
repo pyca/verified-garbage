@@ -55,10 +55,10 @@ theorem winCopy_ok {K : WinCfg} {C : Curve} {base : Addr} {size : Nat} (hL : Win
     rcases hy with rfl | rfl | rfl <;> simp [rcbW]
   have wR : ∀ x ∈ [K.R.x, K.R.y, K.R.z], x ∈ winWs K := fun x hx => winOther_ws K x (by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
-    rcases hx with rfl | rfl | rfl <;> win_in)
+    rcases hx with rfl | rfl | rfl <;> simp only [winOther, rcbW, List.mem_append, List.mem_cons, true_or, or_true])
   have wD : ∀ x ∈ [K.D.x, K.D.y, K.D.z], x ∈ winWs K := fun x hx => winOther_ws K x (by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
-    rcases hx with rfl | rfl | rfl <;> win_in)
+    rcases hx with rfl | rfl | rfl <;> simp only [winOther, rcbW, List.mem_append, List.mem_cons, true_or, or_true])
   have ap : ∀ x ∈ [K.R.x, K.R.y, K.R.z, K.D.x, K.D.y, K.D.z],
       ∀ y ∈ [K.R.x, K.R.y, K.R.z, K.D.x, K.D.y, K.D.z], x ≠ y →
       x + 8 * K.M.n ≤ y ∨ y + 8 * K.M.n ≤ x := by
@@ -91,29 +91,29 @@ theorem winCopy_ok {K : WinCfg} {C : Curve} {base : Addr} {size : Nat} (hL : Win
     have := le x hx; omega_using [this, hn]
   have hs₁ := k₁.scr hs
   rw [copyPt, List.append_assoc, WP.block_append_iff]
-  have W2 := copy_ok K.M.n hs₁ (le _ (by win_in)) (le _ (by win_in)) (al _ (by win_in))
-    (al _ (by win_in)) (o := K.R.x) (a := K.D.x) (axd.imp (fun h => by omega_using [h]) id)
+  have W2 := copy_ok K.M.n hs₁ (le _ (by simp only [winOther, rcbW, List.mem_append, List.mem_cons, true_or])) (le _ (by simp only [winOther, rcbW, List.mem_append, List.mem_cons, true_or, or_true])) (al _ (by simp only [winOther, rcbW, List.mem_append, List.mem_cons, true_or]))
+    (al _ (by simp only [winOther, rcbW, List.mem_append, List.mem_cons, true_or, or_true])) (o := K.R.x) (a := K.D.x) (axd.imp (fun h => by omega_using [h]) id)
   refine WP.mono W2 fun s₂ h₂ => ?_
   obtain ⟨e₂, k₂, O₂⟩ := h₂
   have hs₂ := hs₁.of_keepRegs k₂ (by decide)
   rw [WP.block_append_iff]
-  have W3 := copy_ok K.M.n hs₂ (le _ (by win_in)) (le _ (by win_in)) (al _ (by win_in))
-    (al _ (by win_in)) (o := K.R.y) (a := K.D.y) (ayd.imp (fun h => by omega_using [h]) id)
+  have W3 := copy_ok K.M.n hs₂ (le _ (by simp only [winOther, rcbW, List.mem_append, List.mem_cons, true_or, or_true])) (le _ (by simp only [winOther, rcbW, List.mem_append, List.mem_cons, true_or, or_true])) (al _ (by simp only [winOther, rcbW, List.mem_append, List.mem_cons, true_or, or_true]))
+    (al _ (by simp only [winOther, rcbW, List.mem_append, List.mem_cons, true_or, or_true])) (o := K.R.y) (a := K.D.y) (ayd.imp (fun h => by omega_using [h]) id)
   refine WP.mono W3 fun s₃ h₃ => ?_
   obtain ⟨e₃, k₃, O₃⟩ := h₃
   have hs₃ := hs₂.of_keepRegs k₃ (by decide)
-  have W4 := copy_ok K.M.n hs₃ (le _ (by win_in)) (le _ (by win_in)) (al _ (by win_in))
-    (al _ (by win_in)) (o := K.R.z) (a := K.D.z) (azd.imp (fun h => by omega_using [h]) id)
+  have W4 := copy_ok K.M.n hs₃ (le _ (by simp only [winOther, rcbW, List.mem_append, List.mem_cons, true_or, or_true])) (le _ (by simp only [winOther, rcbW, List.mem_append, List.mem_cons, true_or, or_true])) (al _ (by simp only [winOther, rcbW, List.mem_append, List.mem_cons, true_or, or_true]))
+    (al _ (by simp only [winOther, rcbW, List.mem_append, List.mem_cons, true_or, or_true])) (o := K.R.z) (a := K.D.z) (azd.imp (fun h => by omega_using [h]) id)
   refine WP.mono W4 fun s₄ h₄ => ?_
   obtain ⟨e₄, k₄, O₄⟩ := h₄
   have hDx : K.D.x ∈ [K.D.x, K.D.y, K.D.z] ++ V := by simp
   have hDy : K.D.y ∈ [K.D.x, K.D.y, K.D.z] ++ V := by simp
   have hDz : K.D.z ∈ [K.D.x, K.D.y, K.D.z] ++ V := by simp
-  have bAx := b64 K.R.x (by win_in)
-  have bAy := b64 K.R.y (by win_in)
-  have bAz := b64 K.R.z (by win_in)
-  have bDy := b64 K.D.y (by win_in)
-  have bDz := b64 K.D.z (by win_in)
+  have bAx := b64 K.R.x (by simp only [winOther, rcbW, List.mem_append, List.mem_cons, true_or])
+  have bAy := b64 K.R.y (by simp only [winOther, rcbW, List.mem_append, List.mem_cons, true_or, or_true])
+  have bAz := b64 K.R.z (by simp only [winOther, rcbW, List.mem_append, List.mem_cons, true_or, or_true])
+  have bDy := b64 K.D.y (by simp only [winOther, rcbW, List.mem_append, List.mem_cons, true_or, or_true])
+  have bDz := b64 K.D.z (by simp only [winOther, rcbW, List.mem_append, List.mem_cons, true_or, or_true])
   have wx : wordsVal s₄.mem base K.R.x K.M.n = wordsVal s₁.mem base K.D.x K.M.n := by
     rw [O₄.wordsVal axz bAx, O₃.wordsVal axy bAx, e₂]
   have wy : wordsVal s₄.mem base K.R.y K.M.n = wordsVal s₁.mem base K.D.y K.M.n := by
@@ -154,7 +154,7 @@ theorem winAdd_ok {K : WinCfg} {C : Curve} {base : Addr} {size : Nat} (hL : WinL
     rcases List.mem_append.mp hx with hx | hx
     · exact List.mem_append_right _ (List.mem_append_right _ hx)
     simp only [rcbR, List.mem_cons, List.not_mem_nil, or_false] at hx
-    rcases hx with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> win_in
+    rcases hx with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp only [winRo, winOther, rcbW, List.mem_append, List.mem_cons, true_or, or_true]
   have hO : ∀ x ∈ rcbW K.S K.D ++ rcbR K.S K.R K.E, x ∈ winSlots K := fun x hx =>
     List.mem_append_left _ (hLo x hx)
   have hI : Inv K.M base size C.p (· ∈ winSlots K) (rcbR K.S K.R K.E) (tmv C K.M.n base s) s :=
