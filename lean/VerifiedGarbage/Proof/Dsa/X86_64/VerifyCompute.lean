@@ -31,7 +31,7 @@ def verifyAccepted (L : ExecutionLayout) (data : VerifyValues) (valid : Bool) : 
     publicAccepted L data.generator data.publicValue valid))
 
 def verifyCompute (sq : Prog isa) (mul : Nat → Nat → Nat → Prog isa) : Prog isa := seqs [
-  Checks.publicKey mul, Checks.range qWorkspace Core.signatureR, Checks.range qWorkspace Core.signatureS,
+  Checks.publicKey sq mul, Checks.range qWorkspace Core.signatureR, Checks.range qWorkspace Core.signatureS,
   Core.verify sq mul, Checks.equal (Core.scalar u) Core.signatureR]
 
 theorem verifyCompute_ok (M : Mont) (Sq : MontS) {L : ExecutionLayout} {s0 : State} (h0 : Ready L s0)
@@ -55,7 +55,7 @@ theorem verifyCompute_ok (M : Mont) (Sq : MontS) {L : ExecutionLayout} {s0 : Sta
   obtain ⟨hql, hqu, _, _⟩ := L.widths
   have hu : u + L.qLen ≤ usedBytes := by unfold u usedBytes; omega
   unfold verifyCompute
-  refine WP.seq (WP.mono (publicKey_ok M h0 hp hq hop hoq hpf hqf hg hy hqb hgl hyl hqlen hqval hm)
+  refine WP.seq (WP.mono (publicKey_ok M Sq h0 hp hq hop hoq hpf hqf hg hy hqb hgl hyl hqlen hqval hm)
     fun s1 ⟨h1, hm1, hqm1, hf1, hk1⟩ => ?_)
   have hg1 := h0.preserveExternal h1 hf1 hk1 (by decide) (by simp [stablePointer, Core.generator]) hg
   have hy1 := h0.preserveExternal h1 hf1 hk1 (by decide) (by simp [stablePointer, Core.publicValue]) hy

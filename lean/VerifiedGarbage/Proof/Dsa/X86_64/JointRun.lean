@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
 public import VerifiedGarbage.Proof.Dsa.X86_64.JointInit
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
@@ -28,7 +29,7 @@ theorem joint_source_out {s : State} {B p : Addr} {Z o w wx : Nat} {minv : BitVe
   have := hs.out i hi
   rcases ofs_rebase B (p + BitVec.ofNat 64 i) (o := o) (by omega) with ⟨_, h2⟩ | ⟨h1, _⟩ <;> omega
 
-theorem jointRun_ok (M : Mont) {s : State} {B : Addr} {Z o w wx n g y : Nat} {minv : BitVec 64}
+theorem jointRun_ok (M : Mont) (Sq : MontS) {s : State} {B : Addr} {Z o w wx n g y : Nat} {minv : BitVec 64}
     (hc : SubCtx s B Z o w wx minv) (hmctx : JointCtx s (off B o) wx n minv)
     (hw : 2 ≤ wx) (hw' : wx < 2 ^ 30) (hn : 1 < n) (hodd : n % 2 = 1)
     (htab : JointTab s.mem (off B o) wx n g y)
@@ -37,7 +38,7 @@ theorem jointRun_ok (M : Mont) {s : State} {B : Addr} {Z o w wx n g y : Nat} {mi
     {eb fb : List Byte} (he : Src s B Z (off B u) eb) (hf : Src s B Z (off B v) fb)
     (hlen : fb.length = eb.length) (hL0 : 0 < eb.length) (hL' : eb.length < 2 ^ 31)
     (hfield : 344 ≤ Z) (hl : word s.mem B Field.qLen.offset = BitVec.ofNat 64 eb.length) :
-    WP isa (Joint.run M.mm) s fun t =>
+    WP isa (Joint.run Sq.mm M.mm) s fun t =>
       SubCtx t B Z o w wx minv ∧ ModCtx t (off B o) (slot wx 8) wx minv n ∧
       wv t.mem (off B o) (slot wx aY) wx =
         (g ^ Spec.Dsa.decodeBE eb * y ^ Spec.Dsa.decodeBE fb) % n ∧
@@ -56,7 +57,7 @@ theorem jointRun_ok (M : Mont) {s : State} {B : Addr} {Z o w wx n g y : Nat} {mi
     refine ⟨hm1.exp, ht1, ?_, ?_, hi1, he1, hf1, hl1, Frm.refl _ _ _, Keep.refl _ _⟩
     · rw [hy1]; exact Nat.mod_lt _ (by omega)
     · rw [hy1, Nat.mod_mod, pre_zero, pre_zero, Nat.pow_zero, Nat.pow_zero, Nat.one_mul]
-  refine WP.seq (WP.mono (jointBytes_ok M hw hw' hR rfl hlen hL0 hL'
+  refine WP.seq (WP.mono (jointBytes_ok M Sq hw hw' hR rfl hlen hL0 hL'
     hsrc1.rd hsrc1.val (joint_source_out hc1 hsrc1)
     (by simpa only [hlen] using fsrc1.rd) (by simpa only [hlen] using fsrc1.val)
     (by simpa only [hlen] using joint_source_out hc1 fsrc1) hI) fun s2 h2 => ?_)
