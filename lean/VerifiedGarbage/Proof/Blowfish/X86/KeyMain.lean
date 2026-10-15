@@ -55,8 +55,8 @@ def KeyPost (s t : State) : Prop :=
 theorem argR_contains (s : State) (hsp : (s.gpr .esp).toNat + 20 ≤ 2 ^ 32) {i : Nat} (hi : i < 4) :
     (argR s).Contains (addr (s.gpr .esp) (4 + 4 * i)) 4 := by
   show Region.Contains ⟨addr (s.gpr .esp) 4, 16⟩ (addr (s.gpr .esp) (4 + 4 * i)) 4
-  rw [addr_of_fit (by omega), addr_of_fit (by omega), ← Offset.add_add]
-  exact Offset.contains_base _ (by omega) (by omega)
+  rw [addr_of_fit (by omega_arith), addr_of_fit (by omega_arith), ← Offset.add_add]
+  exact Offset.contains_base _ (by omega_arith) (by omega_arith)
 
 /-- Saving our caller's registers in the working space at `B`, its address the fourth argument. -/
 theorem save_run (s : State) {B : BitVec 32} (bfit : B.toNat + 40 ≤ 2 ^ 32)
@@ -70,8 +70,8 @@ theorem save_run (s : State) {B : BitVec 32} (bfit : B.toNat + 40 ≤ 2 ^ 32)
 theorem argR_sub (s : State) (hsp : (s.gpr .esp).toNat + 20 ≤ 2 ^ 32) {i : Nat} (hi : i < 4) :
     Region.Sub ⟨addr (s.gpr .esp) (4 + 4 * i), 4⟩ (argR s) := by
   show Region.Sub ⟨addr (s.gpr .esp) (4 + 4 * i), 4⟩ ⟨addr (s.gpr .esp) 4, 16⟩
-  rw [addr_of_fit (by omega), addr_of_fit (by omega)]
-  exact Offset.sub _ (by omega) (by omega)
+  rw [addr_of_fit (by omega_arith), addr_of_fit (by omega_arith)]
+  exact Offset.sub _ (by omega_arith) (by omega_arith)
 
 theorem expandKey_correct {s : State} (h : KeyPre s) : WP isa Impl.Blowfish.X86.expandKey s (KeyPost s) := by
   obtain ⟨hrd, hwr, ks, kb, sb, as, ab, rs, rb, fKey, fSch, fBuf, fsp, valid⟩ := h
@@ -81,7 +81,7 @@ theorem expandKey_correct {s : State} (h : KeyPre s) : WP isa Impl.Blowfish.X86.
   have eB : B.toNat = (arg s 3).toNat := rfl
   have hL := valid.1
   have hL' := valid.2
-  have bfit : B.toNat + 40 ≤ 2 ^ 32 := by omega
+  have bfit : B.toNat + 40 ≤ 2 ^ 32 := by omega_arith
   have bR : kBufR s ∈ s.wr := by rw [hwr]; exact List.mem_cons_of_mem _ List.mem_cons_self
   have sR : kSchR s ∈ s.wr := by rw [hwr]; exact List.mem_cons_self
   have rA : ∀ i, i < 4 → InRegions (s.rd ++ s.wr) (addr (s.gpr .esp) (4 + 4 * i)) 4 := fun i hi => by
@@ -95,7 +95,7 @@ theorem expandKey_correct {s : State} (h : KeyPre s) : WP isa Impl.Blowfish.X86.
   apply WP.seq
   rw [WP.block_append_iff]
   refine WP.mono (WP.keep [.eax, .ebp] (save_run s bfit (rA 3 (by decide)) rfl (fun d hd =>
-    ⟨_, bR, Offset.contains_base _ (by omega) (by omega)⟩)) (by decide))
+    ⟨_, bR, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩)) (by decide))
     fun u₁ ⟨⟨m₁, b₁⟩, k₁⟩ => ?_
   have F₁ : Frame [kSchR s, kBufR s] s.mem u₁.mem := by
     rw [m₁]
@@ -117,8 +117,8 @@ theorem expandKey_correct {s : State} (h : KeyPre s) : WP isa Impl.Blowfish.X86.
     rw [← m₂]; exact I₃.frame.mono (by simp)
   -- the key into the P-array
   have KE : KeyEnv (arg s 0) (arg s 1).toNat u₃ := by
-    refine ⟨fun i hi => ?_, ?_, ?_, by omega, hL', fKey, ?_, by rw [k₃.gpr (by decide)]; exact fsp⟩
-    · rw [keep_reads k₃, k₃.gpr (by decide)]; exact rA i (by omega)
+    refine ⟨fun i hi => ?_, ?_, ?_, by omega_arith, hL', fKey, ?_, by rw [k₃.gpr (by decide)]; exact fsp⟩
+    · rw [keep_reads k₃, k₃.gpr (by decide)]; exact rA i (by omega_arith)
     · rw [k₃.gpr (by decide)]; exact argF F₃ 0 (by decide)
     · rw [k₃.gpr (by decide), BitVec.ofNat_toNat, BitVec.setWidth_eq]; exact argF F₃ 1 (by decide)
     · rw [keep_reads k₃, hrd]; exact ⟨_, List.mem_cons_self, Region.contains_self _ _⟩
@@ -126,7 +126,7 @@ theorem expandKey_correct {s : State} (h : KeyPre s) : WP isa Impl.Blowfish.X86.
   apply WP.seq
   refine WP.mono (keyP_run KE (by rw [keep_reads k₃, k₃.gpr (by decide)]; exact rA 2 (by decide))
     (by rw [k₃.gpr (by decide)]; exact argF F₃ 2 (by decide)) fSch
-    (by rw [k₃.2.2]; exact ⟨_, sR, Offset.contains_base _ (by decide) (by omega)⟩) (ks.sub_right subP)
+    (by rw [k₃.2.2]; exact ⟨_, sR, Offset.contains_base _ (by decide) (by omega_arith)⟩) (ks.sub_right subP)
     (by rw [k₃.gpr (by decide)]
         exact (as.sub_left (Region.sub_prefix (by decide))).sub_right subP)) fun u₄ I₄ => ?_
   have k₄ : Keep [.eax, .ebp, .ebx, .ecx, .edx, .esi, .edi] s u₄ := (k₃.trans I₄.keep).mono (by decide)
@@ -136,24 +136,24 @@ theorem expandKey_correct {s : State} (h : KeyPre s) : WP isa Impl.Blowfish.X86.
   have hkey : bytesAt u₃.mem ((arg s 0).setWidth 64) (arg s 1).toNat = key :=
     bytesAt_frame F₃ fun c hc r hr => by
       rcases mem_two hr with rfl | rfl
-      · exact ks _ (Offset.contains_base _ (by omega) (by omega))
-      · exact kb _ (Offset.contains_base _ (by omega) (by omega))
+      · exact ks _ (Offset.contains_base _ (by omega_arith) (by omega_arith))
+      · exact kb _ (Offset.contains_base _ (by omega_arith) (by omega_arith))
   have hP : ∀ i < 18, u₄.mem.readW (K.setWidth 64 + BitVec.ofNat 64 (4096 + 4 * i)) 32 =
       initial.getD i 0 ^^^ Spec.Blowfish.keyWord key i := fun i hi => by
     rw [I₄.done i hi, hkey, table_P I₃.bytes hi]
   have hS : ∀ o < 4096, u₄.mem (K.setWidth 64 + BitVec.ofNat 64 o) = initByte o := fun o ho => by
-    rw [I₄.frame _ fun r hr => ?_, I₃.bytes o (by omega)]
+    rw [I₄.frame _ fun r hr => ?_, I₃.bytes o (by omega_arith)]
     simp only [List.mem_singleton] at hr; subst hr
-    exact (Offset.disjoint _ (d := o) (n := 1) (e := 4096) (k := 72) (by omega) (by omega) (by decide)) _
+    exact (Offset.disjoint _ (d := o) (n := 1) (e := 4096) (k := 72) (by omega_arith) (by omega_arith) (by decide)) _
       (Region.contains_self _ _)
   have hK : scheduleAt u₄.mem (K.setWidth 64) = keyed key := keyed_of_mem hS hP
   -- the halves zeroed
   have k₁₄ : Keep [.ebx, .ecx, .eax, .edx, .esi, .edi] u₁ u₄ := ((k₂.trans I₃.keep).trans I₄.keep).mono (by decide)
   have b₄ : u₄.gpr .ebp = B := (k₁₄.gpr (by decide)).trans b₁
   have w16 : InRegions u₄.wr (slot B 16) 4 := by
-    rw [k₄.2.2]; exact ⟨_, bR, Offset.contains_base _ (by decide) (by omega)⟩
+    rw [k₄.2.2]; exact ⟨_, bR, Offset.contains_base _ (by decide) (by omega_arith)⟩
   have w20 : InRegions u₄.wr (slot B 20) 4 := by
-    rw [k₄.2.2]; exact ⟨_, bR, Offset.contains_base _ (by decide) (by omega)⟩
+    rw [k₄.2.2]; exact ⟨_, bR, Offset.contains_base _ (by decide) (by omega_arith)⟩
   apply WP.seq
   refine WP.mono (WP.keep [.eax] (Q := fun t => t.mem = (u₄.mem.writeW (slot B 16) (0#32)).writeW (slot B 20)
       (0#32)) (by brun [b₄, addr_slot bfit, w16, w20]) (by decide)) fun u₅ ⟨m₅, k₅⟩ => ?_
@@ -187,13 +187,13 @@ theorem expandKey_correct {s : State} (h : KeyPre s) : WP isa Impl.Blowfish.X86.
         simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, List.mem_cons_self, subP⟩
       · rcases mem_two hr with rfl | rfl
         · exact sb.symm.sub_left (Region.sub_prefix (by decide))
-        · exact Offset.base_disjoint _ (by decide) (by omega)
+        · exact Offset.base_disjoint _ (by decide) (by omega_arith)
   apply WP.seq
   refine WP.mono (encryptP_run EE I₅) fun u₆ I₆ => ?_
   apply WP.seq
   refine WP.mono (encryptS_run EE I₆) fun u₇ I₇ => ?_
   have hr : ∀ d, d + 4 ≤ 16 → InRegions (u₇.rd ++ u₇.wr) (slot B d) 4 := fun d hd => by
-    rw [I₇.rd, I₇.wr]; exact region_in (EE.wB rfl (by omega))
+    rw [I₇.rd, I₇.wr]; exact region_in (EE.wB rfl (by omega_arith))
   refine WP.mono (WP.keep [.ebx, .esi, .edi, .ebp] (restore_run u₇ s I₇.ebp bfit hr I₇.saved) (by
       decide))
     fun t ⟨⟨tb, ts, td, tp, tm⟩, tk⟩ => ⟨⟨fun r hr => ?_, ?_⟩, by rw [tm, I₇.sched, expandKey_eq]⟩
