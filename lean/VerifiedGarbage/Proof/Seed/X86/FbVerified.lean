@@ -107,6 +107,7 @@ theorem data_eq (m : Mem) (s : State) :
     Proof.Modes.chunksAt (4 * (dirCore .encrypt).bw) m ((arg s 2).setWidth 64) (arg s 3).toNat = dataAt m s := rfl
 theorem iv_eq (m : Mem) (s : State) :
     Spec.Aes.bytesAt m ((arg s 1).setWidth 64) (4 * (dirCore .encrypt).bw) = ivAt m s := rfl
+attribute [local irreducible] Spec.Seed.cipher in
 theorem cipher_eq (s : State) :
     (dirCoreSpec .encrypt).cipher (Spec.Seed.scheduleAt s.mem ((arg s 0).setWidth 64)) = ciph s := rfl
 

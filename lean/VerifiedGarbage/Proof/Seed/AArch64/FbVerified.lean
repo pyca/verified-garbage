@@ -96,6 +96,7 @@ def cfbDecAArch64 : Contract isa where
 def fbCoreSpec : Modes.AArch64.BlockSpec fbCore :=
   (dirCoreSpec .encrypt).viaV .v31 (by decide) (by decide) (by decide) fun _ h => h
 
+attribute [local irreducible] Spec.Seed.cipher in
 /-- The core's cipher is the contract's, without unfolding it. -/
 theorem fbCipher_eq (k : Spec.Seed.Schedule) : fbCoreSpec.cipher k = Spec.Seed.cipher k := rfl
 
