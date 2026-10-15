@@ -28,7 +28,8 @@ open VG.Spec.Gcm (Block blockAt inc32 aesWith)
 theorem batchTo_keeps (j : Nat) (g : Nat → List Instr)
     (hg : ∀ j, (g j).all Instr.keepsH = true) : (batchTo j g).all Instr.keepsH = true := by
   simp [batchTo, Code.all, StitchZH.aes_keeps _ g hg, Impl.Aes.X86_64.VaesZ.ctrsZ,
-    Impl.Gcm.X86_64.StitchZTo.xorDataZTo, aregs, Instr.keepsH]
+    Impl.Gcm.X86_64.StitchZTo.xorDataZTo, Impl.Gcm.X86_64.StitchZTo.xorsZTo,
+    Impl.Gcm.X86_64.StitchZTo.storesZTo, aregs, Instr.keepsH]
 
 theorem batchTo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) (g : Nat → List Instr) (G : List XReg)
     (hG : ∀ r ∈ G, r ∉ aregs ∧ r ≠ .xmm14 ∧ r ≠ .xmm0 ∧ r ≠ .xmm15)
